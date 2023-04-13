@@ -30,13 +30,13 @@ import (
 
 func TestEACEngine_CreateVolume(t *testing.T) {
 	t.Setenv(utils.MountRoot, "/runtime-mnt")
-	testRuntimeInputs := []*datav1alpha1.EACRuntime{
+	testRuntimeInputs := []*datav1alpha1.EFCRuntime{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "hbase",
 				Namespace: "fluid",
 			},
-			Spec: datav1alpha1.EACRuntimeSpec{},
+			Spec: datav1alpha1.EFCRuntimeSpec{},
 		},
 	}
 
@@ -94,13 +94,13 @@ func TestEACEngine_CreateVolume(t *testing.T) {
 
 func TestEACEngine_createFusePersistentVolume(t *testing.T) {
 	t.Setenv(utils.MountRoot, "/runtime-mnt")
-	testRuntimeInputs := []*datav1alpha1.EACRuntime{
+	testRuntimeInputs := []*datav1alpha1.EFCRuntime{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "hbase",
 				Namespace: "fluid",
 			},
-			Spec: datav1alpha1.EACRuntimeSpec{},
+			Spec: datav1alpha1.EFCRuntimeSpec{},
 		},
 	}
 
@@ -147,13 +147,13 @@ func TestEACEngine_createFusePersistentVolume(t *testing.T) {
 }
 
 func TestEACEngine_createFusePersistentVolumeClaim(t *testing.T) {
-	testRuntimeInputs := []*datav1alpha1.EACRuntime{
+	testRuntimeInputs := []*datav1alpha1.EFCRuntime{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "hbase",
 				Namespace: "fluid",
 			},
-			Spec: datav1alpha1.EACRuntimeSpec{},
+			Spec: datav1alpha1.EFCRuntimeSpec{},
 		},
 	}
 

@@ -22,8 +22,8 @@ import (
 )
 
 const (
-	// EAC(Elastic Accelerate Client) is a fuse filesystem for NAS with distributed cache
-	EACRuntimeKind = "EACRuntime"
+	// EFC(Elastic File Client) is a fuse filesystem for NAS with distributed cache
+	EFCRuntimeKind = "EFCRuntime"
 )
 
 // InitFuseSpec is a description of initialize the fuse kernel module for runtime
@@ -44,8 +44,8 @@ type OSAdvise struct {
 	Enabled bool `json:"enabled,omitempty"`
 }
 
-// EACCompTemplateSpec is a description of the EAC components
-type EACCompTemplateSpec struct {
+// EFCCompTemplateSpec is a description of the EFC components
+type EFCCompTemplateSpec struct {
 	// Replicas is the desired number of replicas of the given template.
 	// If unspecified, defaults to 1.
 	// +kubebuilder:validation:Minimum=1
@@ -53,18 +53,18 @@ type EACCompTemplateSpec struct {
 	// +optional
 	Replicas int32 `json:"replicas,omitempty"`
 
-	// The version information that instructs fluid to orchestrate a particular version of EAC Comp
+	// The version information that instructs fluid to orchestrate a particular version of EFC Comp
 	Version VersionSpec `json:"version,omitempty"`
 
-	// Configurable properties for the EAC component.
+	// Configurable properties for the EFC component.
 	// +optional
 	Properties map[string]string `json:"properties,omitempty"`
 
-	// Ports used by EAC(e.g. rpc: 19998 for master).
+	// Ports used by EFC(e.g. rpc: 19998 for master).
 	// +optional
 	Ports map[string]int `json:"ports,omitempty"`
 
-	// Resources that will be requested by the EAC component. <br>
+	// Resources that will be requested by the EFC component. <br>
 	// <br>
 	// Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources
 	// already allocated to the pod.
@@ -85,21 +85,21 @@ type EACCompTemplateSpec struct {
 	// +optional
 	NetworkMode NetworkMode `json:"networkMode,omitempty"`
 
-	// PodMetadata defines labels and annotations that will be propagated to EAC's master and worker pods
+	// PodMetadata defines labels and annotations that will be propagated to EFC's master and worker pods
 	// +optional
 	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
 }
 
-// EACFuseSpec is a description of the EAC Fuse
-type EACFuseSpec struct {
-	// The version information that instructs fluid to orchestrate a particular version of EAC Fuse
+// EFCFuseSpec is a description of the EFC Fuse
+type EFCFuseSpec struct {
+	// The version information that instructs fluid to orchestrate a particular version of EFC Fuse
 	Version VersionSpec `json:"version,omitempty"`
 
-	// Configurable properties for EAC fuse
+	// Configurable properties for EFC fuse
 	// +optional
 	Properties map[string]string `json:"properties,omitempty"`
 
-	// Resources that will be requested by EAC Fuse. <br>
+	// Resources that will be requested by EFC Fuse. <br>
 	// <br>
 	// Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources
 	// already allocated to the pod.
@@ -111,7 +111,7 @@ type EACFuseSpec struct {
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
-	// CleanPolicy decides when to clean EAC Fuse pods.
+	// CleanPolicy decides when to clean EFC Fuse pods.
 	// Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
 	// OnDemand cleans fuse pod once th fuse pod on some node is not needed
 	// OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted
@@ -124,39 +124,39 @@ type EACFuseSpec struct {
 	// +optional
 	NetworkMode NetworkMode `json:"networkMode,omitempty"`
 
-	// PodMetadata defines labels and annotations that will be propagated to EAC's fuse pods
+	// PodMetadata defines labels and annotations that will be propagated to EFC's fuse pods
 	// +optional
 	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
 }
 
-// EACRuntimeSpec defines the desired state of EACRuntime
-type EACRuntimeSpec struct {
-	// The component spec of EAC master
-	Master EACCompTemplateSpec `json:"master,omitempty"`
+// EFCRuntimeSpec defines the desired state of EFCRuntime
+type EFCRuntimeSpec struct {
+	// The component spec of EFC master
+	Master EFCCompTemplateSpec `json:"master,omitempty"`
 
-	// The component spec of EAC worker
-	Worker EACCompTemplateSpec `json:"worker,omitempty"`
+	// The component spec of EFC worker
+	Worker EFCCompTemplateSpec `json:"worker,omitempty"`
 
 	// The spec of init alifuse
 	InitFuse InitFuseSpec `json:"initFuse,omitempty"`
 
-	// The component spec of EAC Fuse
-	Fuse EACFuseSpec `json:"fuse,omitempty"`
+	// The component spec of EFC Fuse
+	Fuse EFCFuseSpec `json:"fuse,omitempty"`
 
-	// Tiered storage used by EAC worker
+	// Tiered storage used by EFC worker
 	TieredStore TieredStore `json:"tieredstore,omitempty"`
 
 	// The replicas of the worker, need to be specified
 	Replicas int32 `json:"replicas,omitempty"`
 
-	// Operating system optimization for EAC
+	// Operating system optimization for EFC
 	OSAdvise OSAdvise `json:"osAdvise,omitempty"`
 
 	// CleanCachePolicy defines cleanCache Policy
 	// +optional
 	CleanCachePolicy CleanCachePolicy `json:"cleanCachePolicy,omitempty"`
 
-	// PodMetadata defines labels and annotations that will be propagated to all EAC's pods
+	// PodMetadata defines labels and annotations that will be propagated to all EFC's pods
 	// +optional
 	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
 
@@ -179,53 +179,53 @@ type EACRuntimeSpec struct {
 // +kubebuilder:printcolumn:name="Fuse Phase",type="string",JSONPath=`.status.fusePhase`,priority=0
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=`.metadata.creationTimestamp`,priority=0
 // +kubebuilder:resource:scope=Namespaced
-// +kubebuilder:resource:categories={fluid},shortName=eac
+// +kubebuilder:resource:categories={fluid},shortName=efc
 // +genclient
 
-// EACRuntime is the Schema for the eacruntimes API
-type EACRuntime struct {
+// EFCRuntime is the Schema for the efcruntimes API
+type EFCRuntime struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   EACRuntimeSpec `json:"spec,omitempty"`
+	Spec   EFCRuntimeSpec `json:"spec,omitempty"`
 	Status RuntimeStatus  `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Namespaced
 
-// EACRuntimeList contains a list of EACRuntime
-type EACRuntimeList struct {
+// EFCRuntimeList contains a list of EFCRuntime
+type EFCRuntimeList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []EACRuntime `json:"items"`
+	Items           []EFCRuntime `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&EACRuntime{}, &EACRuntimeList{})
+	SchemeBuilder.Register(&EFCRuntime{}, &EFCRuntimeList{})
 }
 
-func (runtime *EACRuntime) Enabled() bool {
+func (runtime *EFCRuntime) Enabled() bool {
 	return !runtime.Spec.Worker.Disabled
 }
 
 // Replicas gets the replicas of runtime worker
-func (runtime *EACRuntime) Replicas() int32 {
+func (runtime *EFCRuntime) Replicas() int32 {
 	if !runtime.Enabled() {
 		return 0
 	}
 	return runtime.Spec.Replicas
 }
 
-func (runtime *EACRuntime) GetStatus() *RuntimeStatus {
+func (runtime *EFCRuntime) GetStatus() *RuntimeStatus {
 	return &runtime.Status
 }
 
-func (runtime *EACRuntime) MasterEnabled() bool {
+func (runtime *EFCRuntime) MasterEnabled() bool {
 	return !runtime.Spec.Master.Disabled
 }
 
-func (runtime *EACRuntime) MasterReplicas() int32 {
+func (runtime *EFCRuntime) MasterReplicas() int32 {
 	if !runtime.MasterEnabled() {
 		return 0
 	}

@@ -81,7 +81,7 @@ func TestSetupMasterInternal(t *testing.T) {
 		}
 	}
 
-	eacruntime := &datav1alpha1.EACRuntime{
+	eacruntime := &datav1alpha1.EFCRuntime{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: "fluid",
@@ -209,12 +209,12 @@ func TestGenerateEACValueFile(t *testing.T) {
 	}
 
 	testObjs := []runtime.Object{}
-	eacruntime := &datav1alpha1.EACRuntime{
+	eacruntime := &datav1alpha1.EFCRuntime{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: "fluid",
 		},
-		Spec: datav1alpha1.EACRuntimeSpec{},
+		Spec: datav1alpha1.EFCRuntimeSpec{},
 	}
 	testObjs = append(testObjs, (*eacruntime).DeepCopy())
 

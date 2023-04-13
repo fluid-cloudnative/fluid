@@ -251,7 +251,7 @@ func (e *EACEngine) destroyWorkers(expectedWorkers int32) (currentWorkers int32,
 		}
 
 	} else {
-		// Destroy all workers. This is a subprocess during deletion of EACRuntime
+		// Destroy all workers. This is a subprocess during deletion of EFCRuntime
 		nodes = nodeList.Items
 	}
 

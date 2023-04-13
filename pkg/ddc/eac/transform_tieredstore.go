@@ -26,7 +26,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/tieredstore"
 )
 
-func (e *EACEngine) transformMasterTieredStore(runtime *datav1alpha1.EACRuntime,
+func (e *EACEngine) transformMasterTieredStore(runtime *datav1alpha1.EFCRuntime,
 	value *EAC) error {
 	// TODO: set master tiered store quota according to master properties
 	// TODO: allow user to config tiered store type
@@ -44,7 +44,7 @@ func (e *EACEngine) transformMasterTieredStore(runtime *datav1alpha1.EACRuntime,
 	return nil
 }
 
-func (e *EACEngine) transformFuseTieredStore(runtime *datav1alpha1.EACRuntime,
+func (e *EACEngine) transformFuseTieredStore(runtime *datav1alpha1.EFCRuntime,
 	value *EAC) error {
 	// TODO: set fuse tiered store according to fuse properties
 	// TODO: allow user to config tiered store type
@@ -62,7 +62,7 @@ func (e *EACEngine) transformFuseTieredStore(runtime *datav1alpha1.EACRuntime,
 	return nil
 }
 
-func (e *EACEngine) transformWorkerTieredStore(runtime *datav1alpha1.EACRuntime,
+func (e *EACEngine) transformWorkerTieredStore(runtime *datav1alpha1.EFCRuntime,
 	value *EAC) error {
 
 	runtimeInfo, err := e.getRuntimeInfo()

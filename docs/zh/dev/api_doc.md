@@ -13,7 +13,7 @@ Resource Types:
 </li><li>
 <a href="#data.fluid.io/v1alpha1.Dataset">Dataset</a>
 </li><li>
-<a href="#data.fluid.io/v1alpha1.EACRuntime">EACRuntime</a>
+<a href="#data.fluid.io/v1alpha1.EFCRuntime">EFCRuntime</a>
 </li><li>
 <a href="#data.fluid.io/v1alpha1.GooseFSRuntime">GooseFSRuntime</a>
 </li><li>
@@ -798,10 +798,10 @@ DatasetStatus
 </tr>
 </tbody>
 </table>
-<h3 id="data.fluid.io/v1alpha1.EACRuntime">EACRuntime
+<h3 id="data.fluid.io/v1alpha1.EFCRuntime">EFCRuntime
 </h3>
 <p>
-<p>EACRuntime is the Schema for the eacruntimes API</p>
+<p>EFCRuntime is the Schema for the efcruntimes API</p>
 </p>
 <table>
 <thead>
@@ -826,7 +826,7 @@ data.fluid.io/v1alpha1
 <code>kind</code></br>
 string
 </td>
-<td><code>EACRuntime</code></td>
+<td><code>EFCRuntime</code></td>
 </tr>
 <tr>
 <td>
@@ -846,8 +846,8 @@ Refer to the Kubernetes API documentation for the fields of the
 <td>
 <code>spec</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.EACRuntimeSpec">
-EACRuntimeSpec
+<a href="#data.fluid.io/v1alpha1.EFCRuntimeSpec">
+EFCRuntimeSpec
 </a>
 </em>
 </td>
@@ -859,26 +859,26 @@ EACRuntimeSpec
 <td>
 <code>master</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.EACCompTemplateSpec">
-EACCompTemplateSpec
+<a href="#data.fluid.io/v1alpha1.EFCCompTemplateSpec">
+EFCCompTemplateSpec
 </a>
 </em>
 </td>
 <td>
-<p>The component spec of EAC master</p>
+<p>The component spec of EFC master</p>
 </td>
 </tr>
 <tr>
 <td>
 <code>worker</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.EACCompTemplateSpec">
-EACCompTemplateSpec
+<a href="#data.fluid.io/v1alpha1.EFCCompTemplateSpec">
+EFCCompTemplateSpec
 </a>
 </em>
 </td>
 <td>
-<p>The component spec of EAC worker</p>
+<p>The component spec of EFC worker</p>
 </td>
 </tr>
 <tr>
@@ -898,13 +898,13 @@ InitFuseSpec
 <td>
 <code>fuse</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.EACFuseSpec">
-EACFuseSpec
+<a href="#data.fluid.io/v1alpha1.EFCFuseSpec">
+EFCFuseSpec
 </a>
 </em>
 </td>
 <td>
-<p>The component spec of EAC Fuse</p>
+<p>The component spec of EFC Fuse</p>
 </td>
 </tr>
 <tr>
@@ -917,7 +917,7 @@ TieredStore
 </em>
 </td>
 <td>
-<p>Tiered storage used by EAC worker</p>
+<p>Tiered storage used by EFC worker</p>
 </td>
 </tr>
 <tr>
@@ -941,7 +941,7 @@ OSAdvise
 </em>
 </td>
 <td>
-<p>Operating system optimization for EAC</p>
+<p>Operating system optimization for EFC</p>
 </td>
 </tr>
 <tr>
@@ -969,7 +969,7 @@ PodMetadata
 </td>
 <td>
 <em>(Optional)</em>
-<p>PodMetadata defines labels and annotations that will be propagated to all EAC&rsquo;s pods</p>
+<p>PodMetadata defines labels and annotations that will be propagated to all EFC&rsquo;s pods</p>
 </td>
 </tr>
 </table>
@@ -2555,7 +2555,7 @@ Kubernetes core/v1.NodeSelector
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#data.fluid.io/v1alpha1.EACRuntimeSpec">EACRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.EFCRuntimeSpec">EFCRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.GooseFSRuntimeSpec">GooseFSRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JuiceFSRuntimeSpec">JuiceFSRuntimeSpec</a>, 
@@ -3442,14 +3442,14 @@ This is mainly used as a lock to prevent concurrent DataBackup jobs.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="data.fluid.io/v1alpha1.EACCompTemplateSpec">EACCompTemplateSpec
+<h3 id="data.fluid.io/v1alpha1.EFCCompTemplateSpec">EFCCompTemplateSpec
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#data.fluid.io/v1alpha1.EACRuntimeSpec">EACRuntimeSpec</a>)
+<a href="#data.fluid.io/v1alpha1.EFCRuntimeSpec">EFCRuntimeSpec</a>)
 </p>
 <p>
-<p>EACCompTemplateSpec is a description of the EAC components</p>
+<p>EFCCompTemplateSpec is a description of the EFC components</p>
 </p>
 <table>
 <thead>
@@ -3483,7 +3483,7 @@ VersionSpec
 </em>
 </td>
 <td>
-<p>The version information that instructs fluid to orchestrate a particular version of EAC Comp</p>
+<p>The version information that instructs fluid to orchestrate a particular version of EFC Comp</p>
 </td>
 </tr>
 <tr>
@@ -3495,7 +3495,7 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Configurable properties for the EAC component.</p>
+<p>Configurable properties for the EFC component.</p>
 </td>
 </tr>
 <tr>
@@ -3507,7 +3507,7 @@ map[string]int
 </td>
 <td>
 <em>(Optional)</em>
-<p>Ports used by EAC(e.g. rpc: 19998 for master).</p>
+<p>Ports used by EFC(e.g. rpc: 19998 for master).</p>
 </td>
 </tr>
 <tr>
@@ -3521,7 +3521,7 @@ Kubernetes core/v1.ResourceRequirements
 </td>
 <td>
 <em>(Optional)</em>
-<p>Resources that will be requested by the EAC component. <br>
+<p>Resources that will be requested by the EFC component. <br>
 <br>
 Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources
 already allocated to the pod.</p>
@@ -3577,19 +3577,19 @@ PodMetadata
 </td>
 <td>
 <em>(Optional)</em>
-<p>PodMetadata defines labels and annotations that will be propagated to EAC&rsquo;s master and worker pods</p>
+<p>PodMetadata defines labels and annotations that will be propagated to EFC&rsquo;s master and worker pods</p>
 </td>
 </tr>
 </tbody>
 </table>
-<h3 id="data.fluid.io/v1alpha1.EACFuseSpec">EACFuseSpec
+<h3 id="data.fluid.io/v1alpha1.EFCFuseSpec">EFCFuseSpec
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#data.fluid.io/v1alpha1.EACRuntimeSpec">EACRuntimeSpec</a>)
+<a href="#data.fluid.io/v1alpha1.EFCRuntimeSpec">EFCRuntimeSpec</a>)
 </p>
 <p>
-<p>EACFuseSpec is a description of the EAC Fuse</p>
+<p>EFCFuseSpec is a description of the EFC Fuse</p>
 </p>
 <table>
 <thead>
@@ -3609,7 +3609,7 @@ VersionSpec
 </em>
 </td>
 <td>
-<p>The version information that instructs fluid to orchestrate a particular version of EAC Fuse</p>
+<p>The version information that instructs fluid to orchestrate a particular version of EFC Fuse</p>
 </td>
 </tr>
 <tr>
@@ -3621,7 +3621,7 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Configurable properties for EAC fuse</p>
+<p>Configurable properties for EFC fuse</p>
 </td>
 </tr>
 <tr>
@@ -3635,7 +3635,7 @@ Kubernetes core/v1.ResourceRequirements
 </td>
 <td>
 <em>(Optional)</em>
-<p>Resources that will be requested by EAC Fuse. <br>
+<p>Resources that will be requested by EFC Fuse. <br>
 <br>
 Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources
 already allocated to the pod.</p>
@@ -3665,7 +3665,7 @@ FuseCleanPolicy
 </td>
 <td>
 <em>(Optional)</em>
-<p>CleanPolicy decides when to clean EAC Fuse pods.
+<p>CleanPolicy decides when to clean EFC Fuse pods.
 Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
 OnDemand cleans fuse pod once th fuse pod on some node is not needed
 OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted
@@ -3697,19 +3697,19 @@ PodMetadata
 </td>
 <td>
 <em>(Optional)</em>
-<p>PodMetadata defines labels and annotations that will be propagated to EAC&rsquo;s fuse pods</p>
+<p>PodMetadata defines labels and annotations that will be propagated to EFC&rsquo;s fuse pods</p>
 </td>
 </tr>
 </tbody>
 </table>
-<h3 id="data.fluid.io/v1alpha1.EACRuntimeSpec">EACRuntimeSpec
+<h3 id="data.fluid.io/v1alpha1.EFCRuntimeSpec">EFCRuntimeSpec
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#data.fluid.io/v1alpha1.EACRuntime">EACRuntime</a>)
+<a href="#data.fluid.io/v1alpha1.EFCRuntime">EFCRuntime</a>)
 </p>
 <p>
-<p>EACRuntimeSpec defines the desired state of EACRuntime</p>
+<p>EFCRuntimeSpec defines the desired state of EFCRuntime</p>
 </p>
 <table>
 <thead>
@@ -3723,26 +3723,26 @@ PodMetadata
 <td>
 <code>master</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.EACCompTemplateSpec">
-EACCompTemplateSpec
+<a href="#data.fluid.io/v1alpha1.EFCCompTemplateSpec">
+EFCCompTemplateSpec
 </a>
 </em>
 </td>
 <td>
-<p>The component spec of EAC master</p>
+<p>The component spec of EFC master</p>
 </td>
 </tr>
 <tr>
 <td>
 <code>worker</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.EACCompTemplateSpec">
-EACCompTemplateSpec
+<a href="#data.fluid.io/v1alpha1.EFCCompTemplateSpec">
+EFCCompTemplateSpec
 </a>
 </em>
 </td>
 <td>
-<p>The component spec of EAC worker</p>
+<p>The component spec of EFC worker</p>
 </td>
 </tr>
 <tr>
@@ -3762,13 +3762,13 @@ InitFuseSpec
 <td>
 <code>fuse</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.EACFuseSpec">
-EACFuseSpec
+<a href="#data.fluid.io/v1alpha1.EFCFuseSpec">
+EFCFuseSpec
 </a>
 </em>
 </td>
 <td>
-<p>The component spec of EAC Fuse</p>
+<p>The component spec of EFC Fuse</p>
 </td>
 </tr>
 <tr>
@@ -3781,7 +3781,7 @@ TieredStore
 </em>
 </td>
 <td>
-<p>Tiered storage used by EAC worker</p>
+<p>Tiered storage used by EFC worker</p>
 </td>
 </tr>
 <tr>
@@ -3805,7 +3805,7 @@ OSAdvise
 </em>
 </td>
 <td>
-<p>Operating system optimization for EAC</p>
+<p>Operating system optimization for EFC</p>
 </td>
 </tr>
 <tr>
@@ -3833,7 +3833,7 @@ PodMetadata
 </td>
 <td>
 <em>(Optional)</em>
-<p>PodMetadata defines labels and annotations that will be propagated to all EAC&rsquo;s pods</p>
+<p>PodMetadata defines labels and annotations that will be propagated to all EFC&rsquo;s pods</p>
 </td>
 </tr>
 </tbody>
@@ -3919,7 +3919,7 @@ SecretKeySelector
 <p>
 (<em>Appears on:</em>
 <a href="#data.fluid.io/v1alpha1.AlluxioFuseSpec">AlluxioFuseSpec</a>, 
-<a href="#data.fluid.io/v1alpha1.EACFuseSpec">EACFuseSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.EFCFuseSpec">EFCFuseSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.GooseFSFuseSpec">GooseFSFuseSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JindoFuseSpec">JindoFuseSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JuiceFSFuseSpec">JuiceFSFuseSpec</a>, 
@@ -4521,7 +4521,7 @@ string
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#data.fluid.io/v1alpha1.EACRuntimeSpec">EACRuntimeSpec</a>)
+<a href="#data.fluid.io/v1alpha1.EFCRuntimeSpec">EFCRuntimeSpec</a>)
 </p>
 <p>
 <p>InitFuseSpec is a description of initialize the fuse kernel module for runtime</p>
@@ -5999,8 +5999,8 @@ bool
 (<em>Appears on:</em>
 <a href="#data.fluid.io/v1alpha1.AlluxioCompTemplateSpec">AlluxioCompTemplateSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.AlluxioFuseSpec">AlluxioFuseSpec</a>, 
-<a href="#data.fluid.io/v1alpha1.EACCompTemplateSpec">EACCompTemplateSpec</a>, 
-<a href="#data.fluid.io/v1alpha1.EACFuseSpec">EACFuseSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.EFCCompTemplateSpec">EFCCompTemplateSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.EFCFuseSpec">EFCFuseSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JuiceFSCompTemplateSpec">JuiceFSCompTemplateSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JuiceFSFuseSpec">JuiceFSFuseSpec</a>, 
@@ -6021,7 +6021,7 @@ bool
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#data.fluid.io/v1alpha1.EACRuntimeSpec">EACRuntimeSpec</a>)
+<a href="#data.fluid.io/v1alpha1.EFCRuntimeSpec">EFCRuntimeSpec</a>)
 </p>
 <p>
 <p>OSAdvise is a description of choices to have optimization on specific operating system</p>
@@ -6077,9 +6077,9 @@ not enabled by default.</p>
 <a href="#data.fluid.io/v1alpha1.AlluxioFuseSpec">AlluxioFuseSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.DataLoadSpec">DataLoadSpec</a>, 
-<a href="#data.fluid.io/v1alpha1.EACCompTemplateSpec">EACCompTemplateSpec</a>, 
-<a href="#data.fluid.io/v1alpha1.EACFuseSpec">EACFuseSpec</a>, 
-<a href="#data.fluid.io/v1alpha1.EACRuntimeSpec">EACRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.EFCCompTemplateSpec">EFCCompTemplateSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.EFCFuseSpec">EFCFuseSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.EFCRuntimeSpec">EFCRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JindoCompTemplateSpec">JindoCompTemplateSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JindoFuseSpec">JindoFuseSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec</a>, 
@@ -6342,7 +6342,7 @@ MetadataSyncPolicy
 <p>
 (<em>Appears on:</em>
 <a href="#data.fluid.io/v1alpha1.AlluxioRuntime">AlluxioRuntime</a>, 
-<a href="#data.fluid.io/v1alpha1.EACRuntime">EACRuntime</a>, 
+<a href="#data.fluid.io/v1alpha1.EFCRuntime">EFCRuntime</a>, 
 <a href="#data.fluid.io/v1alpha1.GooseFSRuntime">GooseFSRuntime</a>, 
 <a href="#data.fluid.io/v1alpha1.JindoRuntime">JindoRuntime</a>, 
 <a href="#data.fluid.io/v1alpha1.JuiceFSRuntime">JuiceFSRuntime</a>, 
@@ -7714,7 +7714,7 @@ Prometheus is enabled by default</p>
 <p>
 (<em>Appears on:</em>
 <a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>, 
-<a href="#data.fluid.io/v1alpha1.EACRuntimeSpec">EACRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.EFCRuntimeSpec">EFCRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.GooseFSRuntimeSpec">GooseFSRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JuiceFSRuntimeSpec">JuiceFSRuntimeSpec</a>, 
@@ -7820,8 +7820,8 @@ string
 <p>
 (<em>Appears on:</em>
 <a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>, 
-<a href="#data.fluid.io/v1alpha1.EACCompTemplateSpec">EACCompTemplateSpec</a>, 
-<a href="#data.fluid.io/v1alpha1.EACFuseSpec">EACFuseSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.EFCCompTemplateSpec">EFCCompTemplateSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.EFCFuseSpec">EFCFuseSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.GooseFSRuntimeSpec">GooseFSRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.InitFuseSpec">InitFuseSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec</a>, 

@@ -47,7 +47,7 @@ func getTestEACEngineNode(client client.Client, name string, namespace string, w
 		Log:         fake.NullLogger(),
 	}
 	if withRunTime {
-		engine.runtime = &datav1alpha1.EACRuntime{}
+		engine.runtime = &datav1alpha1.EFCRuntime{}
 		engine.runtimeInfo, _ = base.BuildRuntimeInfo(name, namespace, common.EACRuntimeType, datav1alpha1.TieredStore{})
 	}
 	return engine
@@ -162,7 +162,7 @@ func TestEACEngine_AssignNodesToCache(t *testing.T) {
 
 func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 	type fields struct {
-		// runtime   *datav1alpha1.EACRuntime
+		// runtime   *datav1alpha1.EFCRuntime
 		worker    *appsv1.StatefulSet
 		pods      []*v1.Pod
 		ds        *appsv1.DaemonSet

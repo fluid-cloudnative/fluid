@@ -130,8 +130,8 @@ func (e *ReferenceDatasetEngine) createConfigMapForRefDataset(client client.Clie
 			return err
 		}
 	case common.EACRuntime:
-		// TODO: EACRuntime needs worker-endpoint configmap which should be synced timely for ECI mode.
-		// Currently EACRuntime only supports CSI mode, so do nothing here.
+		// TODO: EFCRuntime needs worker-endpoint configmap which should be synced timely for ECI mode.
+		// Currently EFCRuntime only supports CSI mode, so do nothing here.
 		e.Log.Info("Skip createConfigMapForRefDataset because the mountedRuntimeType=EAC", "name", e.name, "namespace", e.namespace)
 	case common.ThinRuntime:
 		runtimesetConfigMapName := mountedRuntimeName + "-runtimeset"
