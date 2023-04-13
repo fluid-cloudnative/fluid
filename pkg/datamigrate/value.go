@@ -55,5 +55,11 @@ type DataMigrateInfo struct {
 	Annotations map[string]string `json:"annotations,omitempty"`
 
 	// image pull secrets
-	ImagePullSecrets []corev1.LocalObjectReference `yaml:"imagePullSecrets,omitempty"`
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+
+	// specifies local:// and pvc:// volume
+	NativeVolumes []corev1.Volume `json:"nativeVolumes,omitempty"`
+
+	// specifies local:// and pvc:// volume mount
+	NativeVolumeMounts []corev1.VolumeMount `json:"nativeVolumeMounts,omitempty"`
 }
