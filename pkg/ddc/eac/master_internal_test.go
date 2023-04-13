@@ -81,14 +81,14 @@ func TestSetupMasterInternal(t *testing.T) {
 		}
 	}
 
-	eacruntime := &datav1alpha1.EFCRuntime{
+	efcruntime := &datav1alpha1.EFCRuntime{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: "fluid",
 		},
 	}
 	testObjs := []runtime.Object{}
-	testObjs = append(testObjs, (*eacruntime).DeepCopy())
+	testObjs = append(testObjs, (*efcruntime).DeepCopy())
 
 	var datasetInputs = []datav1alpha1.Dataset{
 		{
@@ -99,7 +99,7 @@ func TestSetupMasterInternal(t *testing.T) {
 			Spec: datav1alpha1.DatasetSpec{
 				Mounts: []datav1alpha1.Mount{
 					{
-						MountPoint: "eac://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
+						MountPoint: "efc://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
 					},
 				},
 			},
@@ -115,7 +115,7 @@ func TestSetupMasterInternal(t *testing.T) {
 		namespace: "fluid",
 		Client:    client,
 		Log:       fake.NullLogger(),
-		runtime:   eacruntime,
+		runtime:   efcruntime,
 	}
 
 	err := portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
@@ -209,14 +209,14 @@ func TestGenerateEACValueFile(t *testing.T) {
 	}
 
 	testObjs := []runtime.Object{}
-	eacruntime := &datav1alpha1.EFCRuntime{
+	efcruntime := &datav1alpha1.EFCRuntime{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: "fluid",
 		},
 		Spec: datav1alpha1.EFCRuntimeSpec{},
 	}
-	testObjs = append(testObjs, (*eacruntime).DeepCopy())
+	testObjs = append(testObjs, (*efcruntime).DeepCopy())
 
 	var datasetInputs = []datav1alpha1.Dataset{
 		{
@@ -227,7 +227,7 @@ func TestGenerateEACValueFile(t *testing.T) {
 			Spec: datav1alpha1.DatasetSpec{
 				Mounts: []datav1alpha1.Mount{
 					{
-						MountPoint: "eac://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
+						MountPoint: "efc://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
 					},
 				},
 			},
@@ -244,7 +244,7 @@ func TestGenerateEACValueFile(t *testing.T) {
 		namespace: "fluid",
 		Client:    client,
 		Log:       fake.NullLogger(),
-		runtime:   eacruntime,
+		runtime:   efcruntime,
 	}
 
 	err := portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
@@ -256,7 +256,7 @@ func TestGenerateEACValueFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	_, err = engine.generateEACValueFile(eacruntime)
+	_, err = engine.generateEACValueFile(efcruntime)
 	if err != nil {
 		t.Errorf("fail to exec the function: %v", err)
 	}
@@ -266,7 +266,7 @@ func TestGenerateEACValueFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	_, err = engine.generateEACValueFile(eacruntime)
+	_, err = engine.generateEACValueFile(efcruntime)
 	if err == nil {
 		t.Error("fail to mock error")
 	}

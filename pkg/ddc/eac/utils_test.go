@@ -642,7 +642,7 @@ func TestEACEngine_getMountInfoAndSecret(t *testing.T) {
 			Spec: datav1alpha1.DatasetSpec{
 				Mounts: []datav1alpha1.Mount{
 					{
-						MountPoint: "eac://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
+						MountPoint: "efc://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
 						EncryptOptions: []datav1alpha1.EncryptOption{
 							{
 								Name: "eac.nas.accessKeyId",
@@ -675,7 +675,7 @@ func TestEACEngine_getMountInfoAndSecret(t *testing.T) {
 			Spec: datav1alpha1.DatasetSpec{
 				Mounts: []datav1alpha1.Mount{
 					{
-						MountPoint: "eac://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
+						MountPoint: "efc://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
 					},
 				},
 			},
@@ -688,7 +688,7 @@ func TestEACEngine_getMountInfoAndSecret(t *testing.T) {
 			Spec: datav1alpha1.DatasetSpec{
 				Mounts: []datav1alpha1.Mount{
 					{
-						MountPoint: "eac://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
+						MountPoint: "efc://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
 						EncryptOptions: []datav1alpha1.EncryptOption{
 							{
 								Name: AccessKeyIDName,

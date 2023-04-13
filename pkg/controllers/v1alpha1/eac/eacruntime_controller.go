@@ -70,7 +70,7 @@ func (r *RuntimeReconciler) Reconcile(context context.Context, req ctrl.Request)
 	defer utils.TimeTrack(time.Now(), "Reconcile EFCRuntime", "request", req)
 	ctx := cruntime.ReconcileRequestContext{
 		Context:        context,
-		Log:            r.Log.WithValues("eacruntime", req.NamespacedName),
+		Log:            r.Log.WithValues("efcruntime", req.NamespacedName),
 		NamespacedName: req.NamespacedName,
 		Recorder:       r.Recorder,
 		Category:       common.AccelerateCategory,

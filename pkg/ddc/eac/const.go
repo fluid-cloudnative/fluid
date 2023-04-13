@@ -28,5 +28,5 @@ const (
 
 	WorkerEndpointsDataName = "eac-worker-endpoints.json"
 
-	MountPointPrefix = "eac://"
+	MountPointPrefix = "efc://"
 )
