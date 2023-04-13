@@ -369,6 +369,7 @@ def main():
 
     name = "jfsdemo"
     datamigrate_name = "jfsdemo"
+    dataload_name = "jfsdemo-warmup"
     namespace = "default"
     test_write_job = "demo-write"
     test_read_job = "demo-read"
@@ -378,6 +379,9 @@ def main():
         .set_namespaced_name(namespace, name)
     runtime = fluidapi.assemble_runtime("juicefs-minio") \
         .set_namespaced_name(namespace, name)
+    dataload = fluidapi.DataLoad(name=dataload_name, namespace=namespace) \
+        .set_target_dataset(name, namespace)
+
 
     flow = TestFlow("JuiceFS - Access Minio data")
 
@@ -439,6 +443,21 @@ def main():
         StatusCheckStep(
             step_name="check data write job status",
             forth_fn=funcs.check_job_status_fn(name=test_write_job, namespace=namespace)
+        )
+    )
+
+    flow.append_step(
+        SimpleStep(
+            step_name="create dataload",
+            forth_fn=funcs.create_dataload_fn(dataload.dump()),
+            back_fn=dummy_back
+        )
+    )
+
+    flow.append_step(
+        StatusCheckStep(
+            step_name="check if dataload succeeds",
+            forth_fn=funcs.check_dataload_job_status_fn(dataload_name=dataload_name, dataload_namespace=namespace)
         )
     )
 
