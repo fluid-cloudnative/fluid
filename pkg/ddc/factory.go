@@ -40,7 +40,7 @@ func init() {
 		"goosefs":  goosefs.Build,
 		"juicefs":  juicefs.Build,
 		"thin":     thin.Build,
-		"eac":      eac.Build,
+		"efc":      eac.Build,
 	}
 
 	deploy.SetPrecheckFunc(map[string]deploy.CheckFunc{

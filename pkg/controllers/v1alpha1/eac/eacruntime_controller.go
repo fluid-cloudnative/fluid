@@ -62,7 +62,7 @@ func NewRuntimeReconciler(client client.Client,
 	return r
 }
 
-//Reconcile reconciles eac runtime
+//Reconcile reconciles efc runtime
 // +kubebuilder:rbac:groups=data.fluid.io,resources=efcruntimes,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=data.fluid.io,resources=efcruntimes/status,verbs=get;update;patch
 
