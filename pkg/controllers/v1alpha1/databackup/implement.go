@@ -146,7 +146,7 @@ func (r *DataBackupReconciler) GetOperationType() dataoperation.OperationType {
 	return dataoperation.DataBackup
 }
 
-func (r *DataBackupReconciler) GetTargetDatasetNamespacedName(object client.Object) (*types.NamespacedName, error) {
+func (r *DataBackupReconciler) GetTargetDataset(object client.Object) (*v1alpha1.Dataset, error) {
 	typeObject, ok := object.(*v1alpha1.DataBackup)
 	if !ok {
 		return nil, fmt.Errorf("object %v is not a DataBackup", object)
@@ -154,10 +154,7 @@ func (r *DataBackupReconciler) GetTargetDatasetNamespacedName(object client.Obje
 
 	targetDataBackup := *typeObject
 
-	return &types.NamespacedName{
-		Name:      targetDataBackup.Spec.Dataset,
-		Namespace: object.GetNamespace(),
-	}, nil
+	return utils.GetDataset(r.Client, targetDataBackup.Spec.Dataset, targetDataBackup.Namespace)
 }
 
 func (r *DataBackupReconciler) GetReleaseNameSpacedName(object client.Object) types.NamespacedName {

@@ -128,7 +128,7 @@ sys.path.insert(0, project_root)
 import fluid.fluidapi as fluidapi
 import fluid.step_funcs as funcs
 from framework.testflow import TestFlow
-from framework.step import SimpleStep, StatusCheckStep, dummy_back, currying_fn
+from framework.step import SimpleStep, StatusCheckStep, dummy_back, currying_fn, check
 from framework.exception import TestError
 
 from kubernetes import client, config
@@ -316,6 +316,29 @@ def clean_job(job_name, namespace="default"):
     return False
 
 
+def check_datamigrate_clean_up(datamigrate_name, namespace="default"):
+    def check_clean_up():
+        api = client.CustomObjectsApi()
+        print("datamigrate {} still exists...".format(datamigrate_name))
+        try:
+            api.get_namespaced_custom_object(
+                group="data.fluid.io",
+                version="v1alpha1",
+                name=datamigrate_name,
+                namespace=namespace,
+                plural="datamigrates"
+            )
+        except client.exceptions.ApiException as e:
+            if e.status == 404:
+                return True
+
+        return False
+
+    timeout_check_fn = check(check_clean_up, 20, 5)
+    timeout_check_fn()
+    print("datamigrate {} deleted".format(datamigrate_name))
+
+
 def clean_up_datamigrate(datamigrate_name, namespace):
     custom_api = client.CustomObjectsApi()
     custom_api.delete_namespaced_custom_object(
@@ -470,6 +493,14 @@ def main():
     finally:
         # clean up check cache job
         clean_job(check_cache_job, namespace=namespace)
+    print("> Post-Check: PASSED")
+
+    print("> Post-Check: Data Migrate deleted?")
+    try:
+        check_datamigrate_clean_up(datamigrate_name, name)
+    except Exception as e:
+        print(e)
+        exit(1)
     print("> Post-Check: PASSED")
 
 

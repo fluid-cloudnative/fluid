@@ -25,7 +25,8 @@ import (
 type OperationType string
 
 const (
-	DataBackup OperationType = "DataBackup"
+	DataBackup  OperationType = "DataBackup"
+	DataMigrate OperationType = "DataMigrate"
 )
 
 // ReconcileRequestContext loads or applys the configuration state of a service.

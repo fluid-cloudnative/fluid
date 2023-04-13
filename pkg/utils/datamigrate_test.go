@@ -17,6 +17,7 @@
 package utils
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"testing"
 
 	batchv1 "k8s.io/api/batch/v1"
@@ -208,9 +209,25 @@ func TestGetTargetDatasetOfMigrate(t *testing.T) {
 			Name:      "test-dataset",
 			Namespace: "fluid",
 		},
+		Status: datav1alpha1.DatasetStatus{
+			Runtimes: []datav1alpha1.Runtime{
+				{
+					Name:      "juicefs-runtime",
+					Namespace: "fluid",
+					Type:      "juicefs",
+					Category:  common.AccelerateCategory,
+				},
+			},
+		},
+	}
+	juicefsRuntime := &datav1alpha1.JuiceFSRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-dataset",
+			Namespace: "fluid",
+		},
 	}
 	runtimeObjs := []runtime.Object{}
-	runtimeObjs = append(runtimeObjs, dataSet.DeepCopy())
+	runtimeObjs = append(runtimeObjs, dataSet.DeepCopy(), juicefsRuntime.DeepCopy())
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, runtimeObjs...)
 
 	type args struct {
@@ -277,6 +294,47 @@ func TestGetTargetDatasetOfMigrate(t *testing.T) {
 								Namespace: "fluid",
 							},
 						},
+					},
+				},
+			},
+			wantDataset: nil,
+			wantErr:     true,
+		},
+		{
+			name: "test-to-type",
+			args: args{
+				dataMigrate: datav1alpha1.DataMigrate{
+					Spec: datav1alpha1.DataMigrateSpec{
+						To: datav1alpha1.DataToMigrate{
+							DataSet: &datav1alpha1.DatasetToMigrate{
+								Name:      "test-dataset",
+								Namespace: "fluid",
+							},
+						},
+						RuntimeType: "juicefs",
+					},
+				},
+			},
+			wantDataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-dataset",
+					Namespace: "fluid",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "test-wrong-type",
+			args: args{
+				dataMigrate: datav1alpha1.DataMigrate{
+					Spec: datav1alpha1.DataMigrateSpec{
+						To: datav1alpha1.DataToMigrate{
+							DataSet: &datav1alpha1.DatasetToMigrate{
+								Name:      "test-dataset",
+								Namespace: "fluid",
+							},
+						},
+						RuntimeType: "not-exist-runtime",
 					},
 				},
 			},

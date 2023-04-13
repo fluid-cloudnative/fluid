@@ -25,8 +25,8 @@ import (
 
 // OperationInterface the interface of data operation crd
 type OperationInterface interface {
-	// GetTargetDatasetNamespacedName get the target dataeset namespace and name of the data operation
-	GetTargetDatasetNamespacedName(object client.Object) (*types.NamespacedName, error)
+	// GetTargetDataset get the target dataset of the data operation
+	GetTargetDataset(object client.Object) (*datav1alpha1.Dataset, error)
 
 	// GetReleaseNameSpacedName get the installed helm chart name
 	GetReleaseNameSpacedName(object client.Object) types.NamespacedName

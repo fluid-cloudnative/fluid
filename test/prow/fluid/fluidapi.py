@@ -214,7 +214,7 @@ def assemble_dataset(testcase):
     elif testcase == "juicefs-minio":
         mount = Mount()
         mount.set_mount_info("juicefs-community", "juicefs:///")
-        mount.add_options("bucket", "https://%s:9000/minio/test" % minio_svc)
+        mount.add_options("bucket", "http://%s:9000/minio/test" % minio_svc)
         mount.add_options("storage", "minio")
         mount.add_encrypt_options("metaurl", "jfs-secret", "metaurl")
         mount.add_encrypt_options("access-key", "jfs-secret", "accesskey")

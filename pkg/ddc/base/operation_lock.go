@@ -24,6 +24,7 @@ import (
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	"reflect"
@@ -105,19 +106,13 @@ func SetDataOperationInTargetDataset(ctx cruntime.ReconcileRequestContext, objec
 // ReleaseTargetDataset release target dataset OperationRef field which marks the data operation being performed.
 func ReleaseTargetDataset(ctx cruntime.ReconcileRequestContext, object client.Object,
 	operation dataoperation.OperationInterface) error {
-	// Note: ctx.Dataset may be nil, so use the `GetTargetDatasetNamespacedName`
-	targetDatasetNamespacedName, err := operation.GetTargetDatasetNamespacedName(object)
-	if err != nil {
-		return err
-	}
-
 	operationTypeName := string(operation.GetOperationType())
-
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		dataset, err := utils.GetDataset(ctx.Client, targetDatasetNamespacedName.Name, targetDatasetNamespacedName.Namespace)
+	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		dataset, err := operation.GetTargetDataset(object)
 		if err != nil {
 			if utils.IgnoreNotFound(err) == nil {
-				ctx.Log.Info("can't find target dataset, won't release lock", "targetDataset", targetDatasetNamespacedName.Name)
+				statusError := err.(*apierrors.StatusError)
+				ctx.Log.Info("can't find target dataset, won't release lock", "dataset", statusError.Status().Details.Name)
 				return nil
 			}
 			// other error
@@ -134,15 +129,15 @@ func ReleaseTargetDataset(ctx cruntime.ReconcileRequestContext, object client.Ob
 
 		// different operation may set other fields
 		operation.RemoveTargetDatasetStatusInProgress(datasetToUpdate)
-		if !reflect.DeepEqual(datasetToUpdate.Status, dataset) {
-			if err := ctx.Client.Status().Update(context.TODO(), datasetToUpdate); err != nil {
+		if !reflect.DeepEqual(datasetToUpdate.Status, dataset.Status) {
+			if err = ctx.Client.Status().Update(context.TODO(), datasetToUpdate); err != nil {
 				return err
 			}
 		}
 		return nil
 	})
 	if err != nil {
-		ctx.Log.Error(err, "can't release lock on target dataset", "targetDataset", targetDatasetNamespacedName)
+		ctx.Log.Error(err, "can't release lock on target dataset")
 	}
 	return err
 }
