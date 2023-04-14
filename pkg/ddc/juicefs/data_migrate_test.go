@@ -359,7 +359,7 @@ func TestJuiceFSEngine_genDataUrl_PVC(t *testing.T) {
 				},
 				info: &cdatamigrate.DataMigrateInfo{},
 			},
-			wantDataUrl: "/mnt/native/",
+			wantDataUrl: NativeVolumeMigratePath,
 			wantErr:     false,
 			wantInfo: &cdatamigrate.DataMigrateInfo{
 				NativeVolumes: []corev1.Volume{
