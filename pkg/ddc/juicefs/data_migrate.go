@@ -233,9 +233,9 @@ func (j *JuiceFSEngine) genDataUrl(data datav1alpha1.DataToMigrate, info *cdatam
 				info.NativeVolumeMounts = append(info.NativeVolumeMounts, corev1.VolumeMount{
 					Name:      volName,
 					SubPath:   subPath,
-					MountPath: "/mnt/native/",
+					MountPath: NativeVolumeMigratePath,
 				})
-				return "/mnt/native/", nil
+				return NativeVolumeMigratePath, nil
 			}
 			// TODO: support host path scheme local://
 		} else {

@@ -295,7 +295,7 @@ func TestJuiceFSEngine_genDataUrl_PVC(t *testing.T) {
 				},
 				info: &cdatamigrate.DataMigrateInfo{},
 			},
-			wantDataUrl: "/mnt/native/",
+			wantDataUrl: NativeVolumeMigratePath,
 			wantErr:     false,
 			wantInfo: &cdatamigrate.DataMigrateInfo{
 				NativeVolumes: []corev1.Volume{
@@ -311,7 +311,7 @@ func TestJuiceFSEngine_genDataUrl_PVC(t *testing.T) {
 				NativeVolumeMounts: []corev1.VolumeMount{
 					{
 						Name:      "native-vol",
-						MountPath: "/mnt/native/",
+						MountPath: NativeVolumeMigratePath,
 						SubPath:   "",
 					},
 				},
@@ -327,7 +327,7 @@ func TestJuiceFSEngine_genDataUrl_PVC(t *testing.T) {
 				},
 				info: &cdatamigrate.DataMigrateInfo{},
 			},
-			wantDataUrl: "/mnt/native/",
+			wantDataUrl: NativeVolumeMigratePath,
 			wantErr:     false,
 			wantInfo: &cdatamigrate.DataMigrateInfo{
 				NativeVolumes: []corev1.Volume{
@@ -343,7 +343,7 @@ func TestJuiceFSEngine_genDataUrl_PVC(t *testing.T) {
 				NativeVolumeMounts: []corev1.VolumeMount{
 					{
 						Name:      "native-vol",
-						MountPath: "/mnt/native/",
+						MountPath: NativeVolumeMigratePath,
 						SubPath:   "path/to/dir",
 					},
 				},
@@ -375,7 +375,7 @@ func TestJuiceFSEngine_genDataUrl_PVC(t *testing.T) {
 				NativeVolumeMounts: []corev1.VolumeMount{
 					{
 						Name:      "native-vol",
-						MountPath: "/mnt/native/",
+						MountPath: NativeVolumeMigratePath,
 						SubPath:   "",
 					},
 				},
