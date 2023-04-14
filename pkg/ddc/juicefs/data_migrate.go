@@ -301,14 +301,14 @@ func (j *JuiceFSEngine) genDataUrl(data datav1alpha1.DataToMigrate, info *cdatam
 				keyName := name
 				switch name {
 				case "access-key":
-					accessKey = "${ACCESS_KEY}"
-					keyName = "ACCESS_KEY"
+					accessKey = "${EXTERNAL_ACCESS_KEY}"
+					keyName = "EXTERNAL_ACCESS_KEY"
 				case "secret-key":
-					secretKey = "${SECRET_KEY}"
-					keyName = "SECRET_KEY"
+					secretKey = "${EXTERNAL_SECRET_KEY}"
+					keyName = "EXTERNAL_SECRET_KEY"
 				case "token":
-					token = "${TOKEN}"
-					keyName = "TOKEN"
+					token = "${EXTERNAL_TOKEN}"
+					keyName = "EXTERNAL_TOKEN"
 				}
 				secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
 				_, err := kubeclient.GetSecret(j.Client, secretKeyRef.Name, j.namespace)
