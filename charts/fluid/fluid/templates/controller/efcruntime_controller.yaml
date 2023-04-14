@@ -2,33 +2,33 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: eacruntime-controller
+  name: efcruntime-controller
   namespace: {{ include "fluid.namespace" . }}
   labels:
-    control-plane: eacruntime-controller
+    control-plane: efcruntime-controller
 spec:
   selector:
     matchLabels:
-      control-plane: eacruntime-controller
-  {{ if .Values.runtime.eac.enabled -}}
-  replicas: {{ .Values.runtime.eac.replicas }}
+      control-plane: efcruntime-controller
+  {{ if .Values.runtime.efc.enabled -}}
+  replicas: {{ .Values.runtime.efc.replicas }}
   {{- else }}
   replicas: 0
   {{- end }}
   template:
     metadata:
       labels:
-        control-plane: eacruntime-controller
+        control-plane: efcruntime-controller
       annotations:
-      {{ if gt (.Values.runtime.eac.replicas | int ) 1 -}}
-        controller.runtime.fluid.io/replicas: {{ .Values.runtime.eac.replicas | quote }}
+      {{ if gt (.Values.runtime.efc.replicas | int ) 1 -}}
+        controller.runtime.fluid.io/replicas: {{ .Values.runtime.efc.replicas | quote }}
       {{- end }}
     spec:
       {{- with .Values.image.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: eacruntime-controller
+      serviceAccountName: efcruntime-controller
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -42,15 +42,15 @@ spec:
       - operator: Exists
       #hostNetwork: true
       containers:
-      - image: "{{ .Values.runtime.eac.controller.image }}"
-        imagePullPolicy: {{ .Values.runtime.eac.controller.imagePullPolicy }}
+      - image: "{{ .Values.runtime.efc.controller.image }}"
+        imagePullPolicy: {{ .Values.runtime.efc.controller.imagePullPolicy }}
         name: manager
         args:
           - --development=true
           - --pprof-addr=:6060
           - --enable-leader-election
           - --leader-election-namespace={{ include "fluid.namespace" . }}
-        command: ["eacruntime-controller", "start"]
+        command: ["efcruntime-controller", "start"]
         env:
           {{- if .Values.runtime.mountRoot }}
           - name: MOUNT_ROOT
@@ -64,21 +64,21 @@ spec:
           - name: FLUID_SYNC_RETRY_DURATION
             value: {{ .Values.runtime.syncRetryDuration | quote }}
           {{- end }}
-          {{- if .Values.runtime.eac.init.image }}
-          - name: EAC_INIT_FUSE_IMAGE_ENV
-            value: {{ .Values.runtime.eac.init.image | quote }}
+          {{- if .Values.runtime.efc.init.image }}
+          - name: EFC_INIT_FUSE_IMAGE_ENV
+            value: {{ .Values.runtime.efc.init.image | quote }}
           {{- end }}
-          {{- if .Values.runtime.eac.master.image }}
-          - name: EAC_MASTER_IMAGE_ENV
-            value: {{ .Values.runtime.eac.master.image | quote }}
+          {{- if .Values.runtime.efc.master.image }}
+          - name: EFC_MASTER_IMAGE_ENV
+            value: {{ .Values.runtime.efc.master.image | quote }}
           {{- end }}
-          {{- if .Values.runtime.eac.worker.image }}
-          - name: EAC_WORKER_IMAGE_ENV
-            value: {{ .Values.runtime.eac.worker.image | quote }}
+          {{- if .Values.runtime.efc.worker.image }}
+          - name: EFC_WORKER_IMAGE_ENV
+            value: {{ .Values.runtime.efc.worker.image | quote }}
           {{- end }}
-          {{- if .Values.runtime.eac.fuse.image }}
-          - name: EAC_FUSE_IMAGE_ENV
-            value: {{ .Values.runtime.eac.fuse.image | quote }}
+          {{- if .Values.runtime.efc.fuse.image }}
+          - name: EFC_FUSE_IMAGE_ENV
+            value: {{ .Values.runtime.efc.fuse.image | quote }}
           {{- end }}
         ports:
         - containerPort: 8080

@@ -37,7 +37,7 @@ import (
 func TestEACEngine_CreateDataLoadJob(t *testing.T) {
 	configMap := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "eacdemo-eac-values",
+			Name:      "efcdemo-efc-values",
 			Namespace: "fluid",
 		},
 		Data: map[string]string{
@@ -73,12 +73,12 @@ func TestEACEngine_CreateDataLoadJob(t *testing.T) {
 
 	targetDataLoad := datav1alpha1.DataLoad{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "eacdemo-dataload",
+			Name:      "efcdemo-dataload",
 			Namespace: "fluid",
 		},
 		Spec: datav1alpha1.DataLoadSpec{
 			Dataset: datav1alpha1.TargetDataset{
-				Name:      "eacdemo",
+				Name:      "efcdemo",
 				Namespace: "fluid",
 			},
 		},
@@ -86,7 +86,7 @@ func TestEACEngine_CreateDataLoadJob(t *testing.T) {
 	datasetInputs := []datav1alpha1.Dataset{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "eacdemo",
+				Name:      "efcdemo",
 				Namespace: "fluid",
 			},
 		},
@@ -94,7 +94,7 @@ func TestEACEngine_CreateDataLoadJob(t *testing.T) {
 	statefulsetInputs := []appsv1.StatefulSet{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "eacdemo-worker",
+				Name:      "efcdemo-worker",
 				Namespace: "fluid",
 			},
 			Spec: appsv1.StatefulSetSpec{
@@ -125,7 +125,7 @@ func TestEACEngine_CreateDataLoadJob(t *testing.T) {
 	testScheme.AddKnownTypes(v1.SchemeGroupVersion, configMap)
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 	engine := &EACEngine{
-		name:      "eacdemo",
+		name:      "efcdemo",
 		namespace: "fluid",
 		Client:    client,
 		Log:       fake.NullLogger(),
@@ -180,7 +180,7 @@ func TestEACEngine_GenerateDataLoadValueFileWithRuntime(t *testing.T) {
 func TestEACEngine_CheckExistenceOfPath(t *testing.T) {
 	configMap := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "eacdemo-eac-values",
+			Name:      "efcdemo-efc-values",
 			Namespace: "fluid",
 		},
 		Data: map[string]string{
@@ -191,7 +191,7 @@ func TestEACEngine_CheckExistenceOfPath(t *testing.T) {
 	datasetInputs := []datav1alpha1.Dataset{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "eacdemo",
+				Name:      "efcdemo",
 				Namespace: "fluid",
 			},
 			Spec: datav1alpha1.DatasetSpec{},
@@ -201,7 +201,7 @@ func TestEACEngine_CheckExistenceOfPath(t *testing.T) {
 	statefulsetInputs := []appsv1.StatefulSet{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "eacdemo-worker",
+				Name:      "efcdemo-worker",
 				Namespace: "fluid",
 			},
 			Spec: appsv1.StatefulSetSpec{
@@ -255,14 +255,14 @@ func TestEACEngine_CheckExistenceOfPath(t *testing.T) {
 	engine := EACEngine{
 		namespace: "fluid",
 		Log:       fake.NullLogger(),
-		name:      "eacdemo",
+		name:      "efcdemo",
 		Client:    client,
 	}
 
 	targetDataload := datav1alpha1.DataLoad{
 		Spec: datav1alpha1.DataLoadSpec{
 			Dataset: datav1alpha1.TargetDataset{
-				Name:      "eacdemo",
+				Name:      "efcdemo",
 				Namespace: "fluid",
 			},
 			Target: []datav1alpha1.TargetPath{

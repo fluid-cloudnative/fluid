@@ -53,7 +53,7 @@ func TestEACEngine_transform(t *testing.T) {
 			Spec: datav1alpha1.DatasetSpec{
 				Mounts: []datav1alpha1.Mount{
 					{
-						MountPoint: "eac://abcd-abc67.cn-zhangjiakou.nas.aliyuncs.com:/test-fluid-3/",
+						MountPoint: "efc://abcd-abc67.cn-zhangjiakou.nas.aliyuncs.com:/test-fluid-3/",
 					},
 				},
 			},

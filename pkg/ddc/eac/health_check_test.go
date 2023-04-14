@@ -440,7 +440,7 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 				Log:       ctrl.Log.WithName(tt.fields.name),
 			}
 
-			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, common.EACRuntimeType, datav1alpha1.TieredStore{})
+			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, common.EFCRuntime, datav1alpha1.TieredStore{})
 			if err != nil {
 				t.Errorf("EACEngine.CheckWorkersReady() error = %v", err)
 			}

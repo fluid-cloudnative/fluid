@@ -1,11 +1,11 @@
-# Build the eacruntime-controller manager binary
+# Build the efcruntime-controller manager binary
 FROM golang:1.18 AS builder
 
 WORKDIR /go/src/github.com/fluid-cloudnative/fluid
 COPY . .
 
-RUN make eacruntime-controller-build && \
-    cp bin/eacruntime-controller /go/bin/eacruntime-controller
+RUN make efcruntime-controller-build && \
+    cp bin/efcruntime-controller /go/bin/efcruntime-controller
 
 # Debug
 RUN go install github.com/go-delve/delve/cmd/dlv@v1.8.2
@@ -28,8 +28,8 @@ RUN curl -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-rel
 
 ADD charts/ /charts
 
-COPY --from=builder /go/bin/eacruntime-controller /usr/local/bin/eacruntime-controller
+COPY --from=builder /go/bin/efcruntime-controller /usr/local/bin/efcruntime-controller
 COPY --from=builder /go/bin/dlv /usr/local/bin/dlv
 RUN chmod -R u+x /usr/local/bin/
 
-CMD ["eacruntime-controller", "start"]
+CMD ["efcruntime-controller", "start"]

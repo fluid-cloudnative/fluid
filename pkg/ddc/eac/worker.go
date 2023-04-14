@@ -39,7 +39,7 @@ func (e *EACEngine) getWorkerSelectors() string {
 	labels := map[string]string{
 		"release":          e.name,
 		common.PodRoleType: workerPodRole,
-		"app":              common.EACRuntime,
+		"app":              common.EFCRuntime,
 	}
 	labelSelector := &metav1.LabelSelector{
 		MatchLabels: labels,

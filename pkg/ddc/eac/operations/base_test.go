@@ -34,12 +34,12 @@ const (
 
 func TestNewEACFileUtils(t *testing.T) {
 	var expectedResult = EACFileUtils{
-		podName:   "eacdemo",
+		podName:   "efcdemo",
 		namespace: "default",
 		container: "eac-master",
 		log:       fake.NullLogger(),
 	}
-	result := NewEACFileUtils("eacdemo", "eac-master", "default", fake.NullLogger())
+	result := NewEACFileUtils("efcdemo", "eac-master", "default", fake.NullLogger())
 	if !reflect.DeepEqual(expectedResult, result) {
 		t.Errorf("fail to create the EACFileUtils, want: %v, got: %v", expectedResult, result)
 	}

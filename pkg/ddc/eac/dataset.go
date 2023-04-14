@@ -124,7 +124,7 @@ func (e *EACEngine) UpdateCacheOfDataset() (err error) {
 		datasetToUpdate.Status.Runtimes = utils.AddRuntimesIfNotExist(datasetToUpdate.Status.Runtimes, utils.NewRuntime(e.name,
 			e.namespace,
 			common.AccelerateCategory,
-			common.EACRuntime,
+			common.EFCRuntime,
 			e.runtime.MasterReplicas()))
 
 		e.Log.Info("the dataset status", "status", datasetToUpdate.Status)

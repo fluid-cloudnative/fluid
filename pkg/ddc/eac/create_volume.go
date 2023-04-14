@@ -64,7 +64,7 @@ func (e *EACEngine) createFusePersistentVolume() (err error) {
 	// e.g. /runtime-mnt/eac-sock
 	sessMgrWorkDir := filepath.Join(mountRoot, "eac-sock")
 
-	return e.createPersistentVolumeForRuntime(runtimeInfo, e.getMountPath(), common.EACMountType, sessMgrWorkDir)
+	return e.createPersistentVolumeForRuntime(runtimeInfo, e.getMountPath(), common.EFCMountType, sessMgrWorkDir)
 }
 
 // createFusePersistentVolume
@@ -115,7 +115,7 @@ func (e *EACEngine) createPersistentVolumeForRuntime(runtime base.RuntimeInfoInt
 							common.VolumeAttrMountType:         mountType,
 							common.VolumeAttrNamespace:         runtime.GetNamespace(),
 							common.VolumeAttrName:              runtime.GetName(),
-							common.VolumeAttrEACSessMgrWorkDir: sessMgrWorkDir,
+							common.VolumeAttrEFCSessMgrWorkDir: sessMgrWorkDir,
 						},
 					},
 				},

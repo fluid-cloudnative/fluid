@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ template "eac.fullname" . }}-worker
+  name: {{ template "efc.fullname" . }}-worker
   labels:
-    app: {{ template "eac.name" . }}
-    chart: {{ template "eac.chart" . }}
+    app: {{ template "efc.name" . }}
+    chart: {{ template "efc.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
     role: eac-worker
@@ -22,10 +22,10 @@ metadata:
 spec:
   podManagementPolicy: "Parallel"
   replicas: {{ if .Values.worker.enabled -}} {{ $.Values.worker.count }} {{ else -}} 0 {{ end }}
-  serviceName: {{ template "eac.fullname" . }}-worker
+  serviceName: {{ template "efc.fullname" . }}-worker
   selector:
     matchLabels:
-      app: {{ template "eac.name" . }}
+      app: {{ template "efc.name" . }}
       release: {{ .Release.Name }}
       role: eac-worker
   template:
@@ -38,8 +38,8 @@ spec:
       {{- end }}
       {{- end }}
       labels:
-        app: {{ template "eac.name" . }}
-        chart: {{ template "eac.chart" . }}
+        app: {{ template "efc.name" . }}
+        chart: {{ template "efc.chart" . }}
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: eac-worker
@@ -82,7 +82,7 @@ spec:
             name: rpc
           volumeMounts:
             {{- if .Values.worker.tieredstore }}
-{{- include "eac.tieredstoreVolumeMounts" .Values.worker }}
+{{- include "efc.tieredstoreVolumeMounts" .Values.worker }}
             {{- end }}
             - name: localtime
               mountPath: /etc/localtime
@@ -92,7 +92,7 @@ spec:
       {{- end }}
       volumes:
         {{- if .Values.worker.tieredstore }}
-{{- include "eac.tieredstoreVolumes" .Values.worker }}
+{{- include "efc.tieredstoreVolumes" .Values.worker }}
         {{- end }}
         - name: localtime
           hostPath:

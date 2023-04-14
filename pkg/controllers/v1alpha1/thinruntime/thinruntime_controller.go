@@ -142,7 +142,7 @@ func NewCache(scheme *runtime.Scheme) cache.NewCacheFunc {
 		common.JindoRuntime,
 		common.JuiceFSRuntime,
 		common.GooseFSRuntime,
-		common.EACRuntime,
+		common.EFCRuntime,
 	})
 	if err != nil {
 		panic(err)

@@ -57,7 +57,7 @@ var (
 
 var startCmd = &cobra.Command{
 	Use:   "start",
-	Short: "start eacruntime-controller in Kubernetes",
+	Short: "start efcruntime-controller in Kubernetes",
 	Run: func(cmd *cobra.Command, args []string) {
 		handle()
 	},
@@ -99,11 +99,11 @@ func handle() {
 		MetricsBindAddress:      metricsAddr,
 		LeaderElection:          enableLeaderElection,
 		LeaderElectionNamespace: leaderElectionNamespace,
-		LeaderElectionID:        "eac.data.fluid.io",
+		LeaderElectionID:        "efc.data.fluid.io",
 		Port:                    9443,
 	})
 	if err != nil {
-		setupLog.Error(err, "unable to start eacruntime manager")
+		setupLog.Error(err, "unable to start efcruntime manager")
 		os.Exit(1)
 	}
 
@@ -138,9 +138,9 @@ func handle() {
 		os.Exit(1)
 	}
 
-	setupLog.Info("starting eacruntime-controller")
+	setupLog.Info("starting efcruntime-controller")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		setupLog.Error(err, "problem eacruntime-controller")
+		setupLog.Error(err, "problem efcruntime-controller")
 		os.Exit(1)
 	}
 }

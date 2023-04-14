@@ -48,7 +48,7 @@ func getTestEACEngineNode(client client.Client, name string, namespace string, w
 	}
 	if withRunTime {
 		engine.runtime = &datav1alpha1.EFCRuntime{}
-		engine.runtimeInfo, _ = base.BuildRuntimeInfo(name, namespace, common.EACRuntimeType, datav1alpha1.TieredStore{})
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo(name, namespace, common.EFCRuntime, datav1alpha1.TieredStore{})
 	}
 	return engine
 }
@@ -69,11 +69,11 @@ func TestEACEngine_AssignNodesToCache(t *testing.T) {
 				Name: "test-node-spark",
 				Labels: map[string]string{
 					"fluid.io/dataset-num":           "1",
-					"fluid.io/s-eac-fluid-spark":     "true",
+					"fluid.io/s-efc-fluid-spark":     "true",
 					"fluid.io/s-fluid-spark":         "true",
-					"fluid.io/s-h-eac-d-fluid-spark": "5B",
-					"fluid.io/s-h-eac-m-fluid-spark": "1B",
-					"fluid.io/s-h-eac-t-fluid-spark": "6B",
+					"fluid.io/s-h-efc-d-fluid-spark": "5B",
+					"fluid.io/s-h-efc-m-fluid-spark": "1B",
+					"fluid.io/s-h-efc-t-fluid-spark": "6B",
 					"fluid_exclusive":                "fluid_spark",
 				},
 			},
@@ -83,16 +83,16 @@ func TestEACEngine_AssignNodesToCache(t *testing.T) {
 				Name: "test-node-share",
 				Labels: map[string]string{
 					"fluid.io/dataset-num":            "2",
-					"fluid.io/s-eac-fluid-hadoop":     "true",
+					"fluid.io/s-efc-fluid-hadoop":     "true",
 					"fluid.io/s-fluid-hadoop":         "true",
-					"fluid.io/s-h-eac-d-fluid-hadoop": "5B",
-					"fluid.io/s-h-eac-m-fluid-hadoop": "1B",
-					"fluid.io/s-h-eac-t-fluid-hadoop": "6B",
-					"fluid.io/s-eac-fluid-hbase":      "true",
+					"fluid.io/s-h-efc-d-fluid-hadoop": "5B",
+					"fluid.io/s-h-efc-m-fluid-hadoop": "1B",
+					"fluid.io/s-h-efc-t-fluid-hadoop": "6B",
+					"fluid.io/s-efc-fluid-hbase":      "true",
 					"fluid.io/s-fluid-hbase":          "true",
-					"fluid.io/s-h-eac-d-fluid-hbase":  "5B",
-					"fluid.io/s-h-eac-m-fluid-hbase":  "1B",
-					"fluid.io/s-h-eac-t-fluid-hbase":  "6B",
+					"fluid.io/s-h-efc-d-fluid-hbase":  "5B",
+					"fluid.io/s-h-efc-m-fluid-hbase":  "1B",
+					"fluid.io/s-h-efc-t-fluid-hbase":  "6B",
 				},
 			},
 		},
@@ -101,11 +101,11 @@ func TestEACEngine_AssignNodesToCache(t *testing.T) {
 				Name: "test-node-hadoop",
 				Labels: map[string]string{
 					"fluid.io/dataset-num":            "1",
-					"fluid.io/s-eac-fluid-hadoop":     "true",
+					"fluid.io/s-efc-fluid-hadoop":     "true",
 					"fluid.io/s-fluid-hadoop":         "true",
-					"fluid.io/s-h-eac-d-fluid-hadoop": "5B",
-					"fluid.io/s-h-eac-m-fluid-hadoop": "1B",
-					"fluid.io/s-h-eac-t-fluid-hadoop": "6B",
+					"fluid.io/s-h-efc-d-fluid-hadoop": "5B",
+					"fluid.io/s-h-efc-m-fluid-hadoop": "1B",
+					"fluid.io/s-h-efc-t-fluid-hadoop": "6B",
 					"node-select":                     "true",
 				},
 			},
@@ -189,7 +189,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 					Spec: appsv1.StatefulSetSpec{
 						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
-								"app":              "eac",
+								"app":              "efc",
 								"role":             "eac-worker",
 								"fluid.io/dataset": "big-data-spark",
 							},
@@ -209,7 +209,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 								Controller: utilpointer.BoolPtr(true),
 							}},
 							Labels: map[string]string{
-								"app":              "eac",
+								"app":              "efc",
 								"role":             "eac-worker",
 								"fluid.io/dataset": "big-data-spark",
 							},
@@ -252,7 +252,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 					Spec: appsv1.StatefulSetSpec{
 						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
-								"app":              "eac",
+								"app":              "efc",
 								"role":             "eac-worker",
 								"fluid.io/dataset": "big-data-hbase",
 							},
@@ -272,7 +272,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 								Controller: utilpointer.BoolPtr(true),
 							}},
 							Labels: map[string]string{
-								"app":              "eac",
+								"app":              "efc",
 								"role":             "eac-worker",
 								"fluid.io/dataset": "big-data-hbase",
 							},
@@ -322,7 +322,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 					Spec: appsv1.StatefulSetSpec{
 						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
-								"app":              "eac",
+								"app":              "efc",
 								"role":             "eac-worker",
 								"fluid.io/dataset": "big-data-hbase-a",
 							},
@@ -335,7 +335,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 							Name:      "hbase-a-worker-0",
 							Namespace: "big-data",
 							Labels: map[string]string{
-								"app":              "eac",
+								"app":              "efc",
 								"role":             "eac-worker",
 								"fluid.io/dataset": "big-data-hbase-a",
 							},

@@ -30,7 +30,7 @@ import (
 func TestGetReservedPorts(t *testing.T) {
 	configMap := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase-eac-values",
+			Name:      "hbase-efc-values",
 			Namespace: "fluid",
 		},
 		Data: map[string]string{
@@ -48,7 +48,7 @@ func TestGetReservedPorts(t *testing.T) {
 					{
 						Name:      "hbase",
 						Namespace: "fluid",
-						Type:      common.EACRuntimeType,
+						Type:      common.EFCRuntime,
 					},
 				},
 			},
@@ -80,7 +80,7 @@ func TestGetReservedPorts(t *testing.T) {
 			Status: v1alpha1.DatasetStatus{
 				Runtimes: []v1alpha1.Runtime{
 					{
-						Type: common.EACRuntimeType,
+						Type: common.EFCRuntime,
 					},
 				},
 			},

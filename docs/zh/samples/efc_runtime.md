@@ -10,7 +10,7 @@ EFC 是一款针对分布式文件系统 NAS 的用户态客户端，并在提�
 
 您可以从 [Fluid Releases](https://github.com/fluid-cloudnative/fluid/releases) 下载最新的 Fluid 安装包。
 
-在 Fluid 的安装 chart values.yaml 中将 `runtime.eac.enable` 设置为 `true` ，再参考 [安装文档](../userguide/install.md) 完成安装。并检查Fluid各组件正常运行：
+在 Fluid 的安装 chart values.yaml 中将 `runtime.efc.enable` 设置为 `true` ，再参考 [安装文档](../userguide/install.md) 完成安装。并检查Fluid各组件正常运行：
 
 ```shell
 $ kubectl get po -n fluid-system
@@ -19,12 +19,12 @@ csi-nodeplugin-fluid-4m2rq               2/2     Running   0          81s
 csi-nodeplugin-fluid-8l6nr               2/2     Running   0          81s
 csi-nodeplugin-fluid-t7hl2               2/2     Running   0          81s
 dataset-controller-99bc4dcc8-sl6h7       1/1     Running   0          81s
-eacruntime-controller-6fd48c77fc-k2hhr   1/1     Running   0          81s
+efcruntime-controller-6fd48c77fc-k2hhr   1/1     Running   0          81s
 fluid-webhook-d8c4dcc7-whq5k             1/1     Running   0          81s
 fluidapp-controller-78c7ccd7fd-blw6w     1/1     Running   0          81s
 ```
 
-确保 `eacruntime-controller`、`dataset-controller`、`fluid-webhook` 的 pod 以及若干 `csi-nodeplugin` pod 正常运行。
+确保 `efcruntime-controller`、`dataset-controller`、`fluid-webhook` 的 pod 以及若干 `csi-nodeplugin` pod 正常运行。
 
 ## 新建工作环境
 
@@ -47,13 +47,13 @@ metadata:
   name: mydemo
 spec:
   mounts:
-    - mountPoint: "eac://nas-mount-point-address:/sub/path"
+    - mountPoint: "efc://nas-mount-point-address:/sub/path"
 EOF
 ```
 
 其中：
 
-- `mountPoint`：指的是 EFC 的子目录，是用户在 NAS 文件系统中存储数据的目录，以 `eac://` 开头；如 `eac://nas-mount-point-address:/sub/path` 为 `nas-mount-point-address` 文件系统的 `/sub/path` 子目录。
+- `mountPoint`：指的是 EFC 的子目录，是用户在 NAS 文件系统中存储数据的目录，以 `efc://` 开头；如 `efc://nas-mount-point-address:/sub/path` 为 `nas-mount-point-address` 文件系统的 `/sub/path` 子目录。
 
 **创建 `Dataset` 资源对象**
 ```shell
