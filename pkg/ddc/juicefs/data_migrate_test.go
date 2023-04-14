@@ -21,6 +21,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -268,6 +269,138 @@ func TestJuiceFSEngine_generateDataMigrateValueFile(t *testing.T) {
 		if !strings.Contains(fileName, test.expectFileName) {
 			t.Errorf("got value: %v, want value: %v", fileName, test.expectFileName)
 		}
+	}
+}
+
+func TestJuiceFSEngine_genDataUrl_PVC(t *testing.T) {
+	type args struct {
+		data v1alpha1.DataToMigrate
+		info *cdatamigrate.DataMigrateInfo
+	}
+
+	tests := []struct {
+		name        string
+		args        args
+		wantDataUrl string
+		wantErr     bool
+		wantInfo    *cdatamigrate.DataMigrateInfo
+	}{
+		{
+			name: "test-external-pvc",
+			args: args{
+				data: v1alpha1.DataToMigrate{
+					ExternalStorage: &v1alpha1.ExternalStorage{
+						URI: "pvc://my-pvc",
+					},
+				},
+				info: &cdatamigrate.DataMigrateInfo{},
+			},
+			wantDataUrl: NativeVolumeMigratePath,
+			wantErr:     false,
+			wantInfo: &cdatamigrate.DataMigrateInfo{
+				NativeVolumes: []corev1.Volume{
+					{
+						Name: "native-vol",
+						VolumeSource: corev1.VolumeSource{
+							PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+								ClaimName: "my-pvc",
+							},
+						},
+					},
+				},
+				NativeVolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      "native-vol",
+						MountPath: NativeVolumeMigratePath,
+						SubPath:   "",
+					},
+				},
+			},
+		},
+		{
+			name: "test-external-pvc-subpath",
+			args: args{
+				data: v1alpha1.DataToMigrate{
+					ExternalStorage: &v1alpha1.ExternalStorage{
+						URI: "pvc://my-pvc/path/to/dir",
+					},
+				},
+				info: &cdatamigrate.DataMigrateInfo{},
+			},
+			wantDataUrl: NativeVolumeMigratePath,
+			wantErr:     false,
+			wantInfo: &cdatamigrate.DataMigrateInfo{
+				NativeVolumes: []corev1.Volume{
+					{
+						Name: "native-vol",
+						VolumeSource: corev1.VolumeSource{
+							PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+								ClaimName: "my-pvc",
+							},
+						},
+					},
+				},
+				NativeVolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      "native-vol",
+						MountPath: NativeVolumeMigratePath,
+						SubPath:   "path/to/dir",
+					},
+				},
+			},
+		},
+		{
+			name: "test-external-pvc-rootpath",
+			args: args{
+				data: v1alpha1.DataToMigrate{
+					ExternalStorage: &v1alpha1.ExternalStorage{
+						URI: "pvc://my-pvc/",
+					},
+				},
+				info: &cdatamigrate.DataMigrateInfo{},
+			},
+			wantDataUrl: NativeVolumeMigratePath,
+			wantErr:     false,
+			wantInfo: &cdatamigrate.DataMigrateInfo{
+				NativeVolumes: []corev1.Volume{
+					{
+						Name: "native-vol",
+						VolumeSource: corev1.VolumeSource{
+							PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+								ClaimName: "my-pvc",
+							},
+						},
+					},
+				},
+				NativeVolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      "native-vol",
+						MountPath: NativeVolumeMigratePath,
+						SubPath:   "",
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			j := &JuiceFSEngine{
+				Client: fake.NewFakeClient(),
+				Log:    fake.NullLogger(),
+			}
+			gotDataUrl, err := j.genDataUrl(tt.args.data, tt.args.info)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("genDataUrl() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotDataUrl != tt.wantDataUrl {
+				t.Errorf("genDataUrl() gotDataUrl = %v, want %v", gotDataUrl, tt.wantDataUrl)
+			}
+			if !reflect.DeepEqual(tt.args.info, tt.wantInfo) {
+				t.Errorf("genDataUrl() got DataMigrateInfo = %v, want %v", tt.args.info, tt.wantInfo)
+			}
+		})
 	}
 }
 

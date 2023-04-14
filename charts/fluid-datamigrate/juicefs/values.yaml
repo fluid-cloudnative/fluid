@@ -43,3 +43,11 @@ datamigrate:
   # Optional
   # Description: optional image pull secrets on DataLoad pods
   imagePullSecrets: []
+
+  # Optional
+  # Description: optional native volumes
+  nativeVolumes:
+
+  # Optional
+  # Description: optional native volume mounts
+  nativeVolumeMounts:

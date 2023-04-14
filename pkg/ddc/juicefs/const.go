@@ -53,4 +53,6 @@ const (
 	Name                      = "name"
 	DefaultDataLoadTimeout    = "30m"
 	DefaultDataMigrateTimeout = "30m"
+
+	NativeVolumeMigratePath = "/mnt/fluid-native/"
 )
