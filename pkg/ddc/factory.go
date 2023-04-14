@@ -40,7 +40,7 @@ func init() {
 		"goosefs":  goosefs.Build,
 		"juicefs":  juicefs.Build,
 		"thin":     thin.Build,
-		"eac":      eac.Build,
+		"efc":      eac.Build,
 	}
 
 	deploy.SetPrecheckFunc(map[string]deploy.CheckFunc{
@@ -49,7 +49,7 @@ func init() {
 		"juicefsruntime-controller": juicefs.Precheck,
 		"goosefsruntime-controller": goosefs.Precheck,
 		"thinruntime-controller":    thin.Precheck,
-		"eacruntime-controller":     eac.Precheck,
+		"efcruntime-controller":     eac.Precheck,
 	})
 }
 
@@ -61,7 +61,7 @@ func CreateEngine(id string, ctx cruntime.ReconcileRequestContext) (engine base.
 	if buildeFunc, found := buildFuncMap[ctx.RuntimeType]; found {
 		engine, err = buildeFunc(id, ctx)
 	} else {
-		err = fmt.Errorf("failed to build the engine due to the type %s is not found", ctx.NamespacedName)
+		err = fmt.Errorf("failed to build the engine due to the type %s is not found", ctx.RuntimeType)
 	}
 
 	return

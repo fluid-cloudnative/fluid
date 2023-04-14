@@ -42,7 +42,7 @@ type TestCase struct {
 
 func newTestEACEngine(client client.Client, name string, namespace string, withRuntimeInfo bool) *EACEngine {
 	runTime := &datav1alpha1.EFCRuntime{}
-	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.EACRuntimeType, datav1alpha1.TieredStore{})
+	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.EFCRuntime, datav1alpha1.TieredStore{})
 	if !withRuntimeInfo {
 		runTimeInfo = nil
 		runTime = nil
@@ -96,7 +96,7 @@ func TestEACEngine_DeleteVolume(t *testing.T) {
 	testPVInputs := []*v1.PersistentVolume{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "fluid-eacdemo",
+				Name: "fluid-efcdemo",
 				//Namespace:   "fluid",
 				Annotations: common.ExpectedFluidAnnotations,
 			},
@@ -135,9 +135,9 @@ func TestEACEngine_DeleteVolume(t *testing.T) {
 	}
 
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, tests...)
-	eacEngineCommon := newTestEACEngine(fakeClient, "eacdemo", "fluid", true)
+	eacEngineCommon := newTestEACEngine(fakeClient, "efcdemo", "fluid", true)
 	eacEngineErr := newTestEACEngine(fakeClient, "error", "fluid", true)
-	eacEngineNoRunTime := newTestEACEngine(fakeClient, "eacdemo", "fluid", false)
+	eacEngineNoRunTime := newTestEACEngine(fakeClient, "efcdemo", "fluid", false)
 	var testCases = []TestCase{
 		{
 			engine:    eacEngineCommon,

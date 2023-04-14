@@ -52,7 +52,7 @@ func (e *EACEngine) CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, targ
 			log.Error(err, "failed to generate dataload chart's value file")
 			return err
 		}
-		chartName := utils.GetChartsDirectory() + "/" + cdataload.DataloadChart + "/" + common.EACRuntime
+		chartName := utils.GetChartsDirectory() + "/" + cdataload.DataloadChart + "/" + common.EFCRuntime
 		err = helm.InstallRelease(releaseName, targetDataload.Namespace, valueFileName, chartName)
 		if err != nil {
 			log.Error(err, "failed to install dataload chart")

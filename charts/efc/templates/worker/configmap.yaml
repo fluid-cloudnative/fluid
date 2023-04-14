@@ -3,13 +3,13 @@ kind: ConfigMap
 metadata:
   annotations:
     "helm.sh/hook": pre-install,post-delete,pre-upgrade
-  name: {{ template "eac.fullname" . }}-worker-endpoints
+  name: {{ template "efc.fullname" . }}-worker-endpoints
   labels:
-    app: {{ template "eac.name" . }}
-    chart: {{ template "eac.chart" . }}
+    app: {{ template "efc.name" . }}
+    chart: {{ template "efc.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
-    role: eac-worker-endpoints
+    role: efc-worker-endpoints
   ownerReferences:
   {{- if .Values.owner.enabled }}
   - apiVersion: {{ .Values.owner.apiVersion }}
@@ -20,5 +20,5 @@ metadata:
     uid: {{ .Values.owner.uid }}
   {{- end }}
 data:
-  eac-worker-endpoints.json: |
+  efc-worker-endpoints.json: |
     {"containerendpoints":[]}

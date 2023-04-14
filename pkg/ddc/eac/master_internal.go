@@ -33,7 +33,7 @@ import (
 // setup the cache master
 func (e *EACEngine) setupMasterInternal() (err error) {
 	var (
-		chartName = utils.GetChartsDirectory() + "/" + common.EACChart
+		chartName = utils.GetChartsDirectory() + "/" + common.EFCChart
 	)
 
 	runtime, err := e.getRuntime()

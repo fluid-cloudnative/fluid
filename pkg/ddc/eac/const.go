@@ -26,7 +26,7 @@ const (
 	AccessKeyIDName     = "eac.nas.accessKeyId"
 	AccessKeySecretName = "eac.nas.accessKeySecret"
 
-	WorkerEndpointsDataName = "eac-worker-endpoints.json"
+	WorkerEndpointsDataName = "efc-worker-endpoints.json"
 
-	MountPointPrefix = "eac://"
+	MountPointPrefix = "efc://"
 )

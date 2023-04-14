@@ -18,10 +18,10 @@ package app
 
 import "github.com/spf13/cobra"
 
-func NewEACControllerCommand() *cobra.Command {
+func NewEFCControllerCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "eacruntime-controller",
-		Short: "Controller for eacruntime",
+		Use:   "efcruntime-controller",
+		Short: "Controller for efcruntime",
 	}
 	cmd.AddCommand(startCmd)
 	cmd.AddCommand(versionCmd)

@@ -1,4 +1,4 @@
-# Default values for eac.
+# Default values for efc.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
@@ -51,10 +51,10 @@ fuse:
   image: image-work-in-progress
   imageTag: update
   imagePullPolicy: Always
-  option: g_tier_EnableClusterCache=true,g_unas_InodeAttrExpireTimeoutSec=100,g_unas_InodeEntryExpireTimeoutSec=100,assign_uuid=test-eac-helm-fuse
-  mountPoint: eac://nas-mount-point
-  # eac will mount mountPoint on /eac/eac-fuse in container which will be shared at hostMountPath/eac-fuse on host
-  hostMountPath: /test-mnt/eac-mnt/charts
+  option: g_tier_EnableClusterCache=true,g_unas_InodeAttrExpireTimeoutSec=100,g_unas_InodeEntryExpireTimeoutSec=100,assign_uuid=test-efc-helm-fuse
+  mountPoint: efc://nas-mount-point
+  # efc will mount mountPoint on /efc/efc-fuse in container which will be shared at hostMountPath/efc-fuse on host
+  hostMountPath: /test-mnt/efc-mnt/charts
   tieredstore:
     levels:
       - level: 0
@@ -82,8 +82,8 @@ master:
   image: image-work-in-progress
   imageTag: update
   imagePullPolicy: Always
-  option: g_tier_EnableClusterCache=true,g_unas_InodeAttrExpireTimeoutSec=100,g_unas_InodeEntryExpireTimeoutSec=100,assign_uuid=test-eac-helm-master
-  mountPoint: eac://nas-mount-point
+  option: g_tier_EnableClusterCache=true,g_unas_InodeAttrExpireTimeoutSec=100,g_unas_InodeEntryExpireTimeoutSec=100,assign_uuid=test-efc-helm-master
+  mountPoint: efc://nas-mount-point
   tieredstore:
     levels:
       - level: 0

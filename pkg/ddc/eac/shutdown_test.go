@@ -47,7 +47,7 @@ func init() {
 
 func TestDestroyWorker(t *testing.T) {
 	// runtimeInfoSpark tests destroy Worker in exclusive mode.
-	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "fluid", common.EACRuntimeType, datav1alpha1.TieredStore{})
+	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "fluid", common.EFCRuntime, datav1alpha1.TieredStore{})
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -56,7 +56,7 @@ func TestDestroyWorker(t *testing.T) {
 	})
 
 	// runtimeInfoHadoop tests destroy Worker in shareMode mode.
-	runtimeInfoHadoop, err := base.BuildRuntimeInfo("hadoop", "fluid", common.EACRuntimeType, datav1alpha1.TieredStore{})
+	runtimeInfoHadoop, err := base.BuildRuntimeInfo("hadoop", "fluid", common.EFCRuntime, datav1alpha1.TieredStore{})
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -74,11 +74,11 @@ func TestDestroyWorker(t *testing.T) {
 				Name: "test-node-spark",
 				Labels: map[string]string{
 					"fluid.io/dataset-num":           "1",
-					"fluid.io/s-eac-fluid-spark":     "true",
+					"fluid.io/s-efc-fluid-spark":     "true",
 					"fluid.io/s-fluid-spark":         "true",
-					"fluid.io/s-h-eac-d-fluid-spark": "5B",
-					"fluid.io/s-h-eac-m-fluid-spark": "1B",
-					"fluid.io/s-h-eac-t-fluid-spark": "6B",
+					"fluid.io/s-h-efc-d-fluid-spark": "5B",
+					"fluid.io/s-h-efc-m-fluid-spark": "1B",
+					"fluid.io/s-h-efc-t-fluid-spark": "6B",
 					"fluid_exclusive":                "fluid_spark",
 				},
 			},
@@ -88,16 +88,16 @@ func TestDestroyWorker(t *testing.T) {
 				Name: "test-node-share",
 				Labels: map[string]string{
 					"fluid.io/dataset-num":            "2",
-					"fluid.io/s-eac-fluid-hadoop":     "true",
+					"fluid.io/s-efc-fluid-hadoop":     "true",
 					"fluid.io/s-fluid-hadoop":         "true",
-					"fluid.io/s-h-eac-d-fluid-hadoop": "5B",
-					"fluid.io/s-h-eac-m-fluid-hadoop": "1B",
-					"fluid.io/s-h-eac-t-fluid-hadoop": "6B",
-					"fluid.io/s-eac-fluid-hbase":      "true",
+					"fluid.io/s-h-efc-d-fluid-hadoop": "5B",
+					"fluid.io/s-h-efc-m-fluid-hadoop": "1B",
+					"fluid.io/s-h-efc-t-fluid-hadoop": "6B",
+					"fluid.io/s-efc-fluid-hbase":      "true",
 					"fluid.io/s-fluid-hbase":          "true",
-					"fluid.io/s-h-eac-d-fluid-hbase":  "5B",
-					"fluid.io/s-h-eac-m-fluid-hbase":  "1B",
-					"fluid.io/s-h-eac-t-fluid-hbase":  "6B",
+					"fluid.io/s-h-efc-d-fluid-hbase":  "5B",
+					"fluid.io/s-h-efc-m-fluid-hbase":  "1B",
+					"fluid.io/s-h-efc-t-fluid-hbase":  "6B",
 				},
 			},
 		},
@@ -106,11 +106,11 @@ func TestDestroyWorker(t *testing.T) {
 				Name: "test-node-hadoop",
 				Labels: map[string]string{
 					"fluid.io/dataset-num":            "1",
-					"fluid.io/s-eac-fluid-hadoop":     "true",
+					"fluid.io/s-efc-fluid-hadoop":     "true",
 					"fluid.io/s-fluid-hadoop":         "true",
-					"fluid.io/s-h-eac-d-fluid-hadoop": "5B",
-					"fluid.io/s-h-eac-m-fluid-hadoop": "1B",
-					"fluid.io/s-h-eac-t-fluid-hadoop": "6B",
+					"fluid.io/s-h-efc-d-fluid-hadoop": "5B",
+					"fluid.io/s-h-efc-m-fluid-hadoop": "1B",
+					"fluid.io/s-h-efc-t-fluid-hadoop": "6B",
 					"node-select":                     "true",
 				},
 			},
@@ -138,24 +138,24 @@ func TestDestroyWorker(t *testing.T) {
 				"test-node-spark": {},
 				"test-node-share": {
 					"fluid.io/dataset-num":            "2",
-					"fluid.io/s-eac-fluid-hadoop":     "true",
+					"fluid.io/s-efc-fluid-hadoop":     "true",
 					"fluid.io/s-fluid-hadoop":         "true",
-					"fluid.io/s-h-eac-d-fluid-hadoop": "5B",
-					"fluid.io/s-h-eac-m-fluid-hadoop": "1B",
-					"fluid.io/s-h-eac-t-fluid-hadoop": "6B",
-					"fluid.io/s-eac-fluid-hbase":      "true",
+					"fluid.io/s-h-efc-d-fluid-hadoop": "5B",
+					"fluid.io/s-h-efc-m-fluid-hadoop": "1B",
+					"fluid.io/s-h-efc-t-fluid-hadoop": "6B",
+					"fluid.io/s-efc-fluid-hbase":      "true",
 					"fluid.io/s-fluid-hbase":          "true",
-					"fluid.io/s-h-eac-d-fluid-hbase":  "5B",
-					"fluid.io/s-h-eac-m-fluid-hbase":  "1B",
-					"fluid.io/s-h-eac-t-fluid-hbase":  "6B",
+					"fluid.io/s-h-efc-d-fluid-hbase":  "5B",
+					"fluid.io/s-h-efc-m-fluid-hbase":  "1B",
+					"fluid.io/s-h-efc-t-fluid-hbase":  "6B",
 				},
 				"test-node-hadoop": {
 					"fluid.io/dataset-num":            "1",
-					"fluid.io/s-eac-fluid-hadoop":     "true",
+					"fluid.io/s-efc-fluid-hadoop":     "true",
 					"fluid.io/s-fluid-hadoop":         "true",
-					"fluid.io/s-h-eac-d-fluid-hadoop": "5B",
-					"fluid.io/s-h-eac-m-fluid-hadoop": "1B",
-					"fluid.io/s-h-eac-t-fluid-hadoop": "6B",
+					"fluid.io/s-h-efc-d-fluid-hadoop": "5B",
+					"fluid.io/s-h-efc-m-fluid-hadoop": "1B",
+					"fluid.io/s-h-efc-t-fluid-hadoop": "6B",
 					"node-select":                     "true",
 				},
 			},
@@ -168,11 +168,11 @@ func TestDestroyWorker(t *testing.T) {
 				"test-node-spark": {},
 				"test-node-share": {
 					"fluid.io/dataset-num":           "1",
-					"fluid.io/s-eac-fluid-hbase":     "true",
+					"fluid.io/s-efc-fluid-hbase":     "true",
 					"fluid.io/s-fluid-hbase":         "true",
-					"fluid.io/s-h-eac-d-fluid-hbase": "5B",
-					"fluid.io/s-h-eac-m-fluid-hbase": "1B",
-					"fluid.io/s-h-eac-t-fluid-hbase": "6B",
+					"fluid.io/s-h-efc-d-fluid-hbase": "5B",
+					"fluid.io/s-h-efc-m-fluid-hbase": "1B",
+					"fluid.io/s-h-efc-t-fluid-hbase": "6B",
 				},
 				"test-node-hadoop": {
 					"node-select": "true",
@@ -230,10 +230,10 @@ func TestEACEngineCleanAll(t *testing.T) {
 			fields: fields{
 				name:        "spark",
 				namespace:   "fluid",
-				runtimeType: "eac",
+				runtimeType: "efc",
 				cm: &corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "spark-eac-values",
+						Name:      "spark-efc-values",
 						Namespace: "fluid",
 					},
 					Data: map[string]string{"data": valuesConfigMapData},
@@ -284,10 +284,10 @@ func TestEACEngineReleasePorts(t *testing.T) {
 			fields: fields{
 				name:        "spark",
 				namespace:   "fluid",
-				runtimeType: "eac",
+				runtimeType: "efc",
 				cm: &corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "spark-eac-values",
+						Name:      "spark-efc-values",
 						Namespace: "fluid",
 					},
 					Data: map[string]string{"data": valuesConfigMapData},

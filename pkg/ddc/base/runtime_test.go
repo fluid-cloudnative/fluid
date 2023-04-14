@@ -927,21 +927,21 @@ func TestGetRuntimeInfo(t *testing.T) {
 
 	eacRuntime := v1alpha1.EFCRuntime{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "eac",
+			Name:      "efc",
 			Namespace: "default",
 		},
 	}
 	dataEAC := v1alpha1.Dataset{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "eac",
+			Name:      "efc",
 			Namespace: "default",
 		},
 		Status: v1alpha1.DatasetStatus{
 			Runtimes: []v1alpha1.Runtime{
 				{
-					Name:      "eac",
+					Name:      "efc",
 					Namespace: "default",
-					Type:      common.EACRuntime,
+					Type:      common.EFCRuntime,
 				},
 			},
 		},
@@ -1093,13 +1093,13 @@ func TestGetRuntimeInfo(t *testing.T) {
 			name: "eac_test",
 			args: args{
 				client:    fakeutils.NewFakeClientWithScheme(s, eacRuntimeObjs...),
-				name:      "eac",
+				name:      "efc",
 				namespace: "default",
 			},
 			want: &RuntimeInfo{
-				name:        "eac",
+				name:        "efc",
 				namespace:   "default",
-				runtimeType: common.EACRuntime,
+				runtimeType: common.EFCRuntime,
 				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
 					Global:      true,
@@ -1118,7 +1118,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 			want: &RuntimeInfo{
 				name:        "eac-fake",
 				namespace:   "default",
-				runtimeType: common.EACRuntime,
+				runtimeType: common.EFCRuntime,
 				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
 					Global:      true,
@@ -1183,7 +1183,7 @@ func TestGetRuntimeStatus(t *testing.T) {
 
 	eacRuntime := v1alpha1.EFCRuntime{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "eac",
+			Name:      "efc",
 			Namespace: "default",
 		},
 	}
@@ -1312,9 +1312,9 @@ func TestGetRuntimeStatus(t *testing.T) {
 			name: "eac_test",
 			args: args{
 				client:      fakeutils.NewFakeClientWithScheme(s, eacRuntimeObjs...),
-				name:        "eac",
+				name:        "efc",
 				namespace:   "default",
-				runtimeType: common.EACRuntime,
+				runtimeType: common.EFCRuntime,
 			},
 			wantErr: false,
 		},
@@ -1324,7 +1324,7 @@ func TestGetRuntimeStatus(t *testing.T) {
 				client:      fakeutils.NewFakeClientWithScheme(s, eacRuntimeObjs...),
 				name:        "eac-error",
 				namespace:   "default",
-				runtimeType: common.EACRuntime,
+				runtimeType: common.EFCRuntime,
 			},
 			wantErr: true,
 		},

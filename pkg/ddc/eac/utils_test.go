@@ -38,17 +38,17 @@ import (
 )
 
 var valuesConfigMapData = `
-fullnameOverride: eacdemo
+fullnameOverride: efcdemo
 placement: Exclusive
 master:
-  image: registry.cn-zhangjiakou.aliyuncs.com/nasteam/eac-fluid-img
+  image: registry.cn-zhangjiakou.aliyuncs.com/nascache/eac-fuse
   imageTag: update
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
   mountPoint: 123456-abcd.cn-zhangjiakou.nas.aliyuncs.com:/test-fluid-3/
   count: 1
   enabled: true
-  option: client_owner=default-eacdemo-master,assign_uuid=default-eacdemo-master,g_tier_EnableDadi=true,g_tier_DadiEnablePrefetch=true
+  option: client_owner=default-efcdemo-master,assign_uuid=default-efcdemo-master,g_tier_EnableDadi=true,g_tier_DadiEnablePrefetch=true
   hostNetwork: true
   tieredstore:
     levels:
@@ -57,14 +57,14 @@ master:
       type: emptyDir
       path: /dev/shm
 worker:
-  image: registry.cn-zhangjiakou.aliyuncs.com/nasteam/eac-worker-img
+  image: registry.cn-zhangjiakou.aliyuncs.com/nascache/eac-worker
   imageTag: update
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
   port:
     rpc: 17673
   enabled: true
-  option: cache_capacity_gb=2,cache_media=/dev/eac-worker-cache-path/default/eacdemo,server_port=17673
+  option: cache_capacity_gb=2,cache_media=/dev/efc-worker-cache-path/default/efcdemo,server_port=17673
   resources:
     requests:
       memory: 1953125Ki
@@ -75,20 +75,20 @@ worker:
       level: 0
       mediumtype: SSD
       type: emptyDir
-      path: /dev/eac-worker-cache-path/default/eacdemo
+      path: /dev/efc-worker-cache-path/default/efcdemo
       quota: 2GB
 fuse:
-  image: registry.cn-zhangjiakou.aliyuncs.com/nasteam/eac-fluid-img
+  image: registry.cn-zhangjiakou.aliyuncs.com/nascache/eac-fuse
   imageTag: update
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
   mountPoint: 123456-abcd.cn-zhangjiakou.nas.aliyuncs.com:/test-fluid-3/
-  hostMountPath: /runtime-mnt/eac/default/eacdemo
+  hostMountPath: /runtime-mnt/efc/default/efcdemo
   port:
     monitor: 17645
-  option: assign_uuid=default-eacdemo-fuse,g_tier_EnableDadi=true,g_tier_DadiEnablePrefetch=true
+  option: assign_uuid=default-efcdemo-fuse,g_tier_EnableDadi=true,g_tier_DadiEnablePrefetch=true
   nodeSelector:
-    fluid.io/f-default-eacdemo: "true"
+    fluid.io/f-default-efcdemo: "true"
   hostNetwork: true
   tieredstore:
     levels:
@@ -98,7 +98,7 @@ fuse:
       path: /dev/shm
   criticalPod: true
 initFuse:
-  image: registry.cn-zhangjiakou.aliyuncs.com/nasteam/init-alifuse
+  image: registry.cn-zhangjiakou.aliyuncs.com/nascache/init-alifuse
   imageTag: update
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
@@ -112,7 +112,7 @@ var workerEndpointsConfigMapData = `
 `
 
 func newEACEngine(client client.Client, name string, namespace string) *EACEngine {
-	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.EACRuntimeType, datav1alpha1.TieredStore{})
+	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.EFCRuntime, datav1alpha1.TieredStore{})
 	engine := &EACEngine{
 		runtime:     &datav1alpha1.EFCRuntime{},
 		name:        name,
@@ -128,7 +128,7 @@ func newEACEngine(client client.Client, name string, namespace string) *EACEngin
 func Test_parsePortsFromConfigMap(t *testing.T) {
 	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase-eac-values",
+			Name:      "hbase-efc-values",
 			Namespace: "fluid",
 		},
 		Data: map[string]string{
@@ -147,7 +147,7 @@ func Test_parsePortsFromConfigMap(t *testing.T) {
 		name:        "hbase",
 		namespace:   "fluid",
 		Client:      mockClient,
-		runtimeType: common.EACRuntimeType,
+		runtimeType: common.EFCRuntime,
 		Log:         ctrl.Log.WithName("hbase"),
 	}
 	configMap, err := kubeclient.GetConfigmapByName(mockClient, e.getConfigmapName(), e.namespace)
@@ -168,7 +168,7 @@ func Test_parsePortsFromConfigMap(t *testing.T) {
 func Test_parseCacheDirFromConfigMap(t *testing.T) {
 	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase-eac-values",
+			Name:      "hbase-efc-values",
 			Namespace: "fluid",
 		},
 		Data: map[string]string{
@@ -187,7 +187,7 @@ func Test_parseCacheDirFromConfigMap(t *testing.T) {
 		name:        "hbase",
 		namespace:   "fluid",
 		Client:      mockClient,
-		runtimeType: common.EACRuntimeType,
+		runtimeType: common.EFCRuntime,
 		Log:         ctrl.Log.WithName("hbase"),
 	}
 	configMap, err := kubeclient.GetConfigmapByName(mockClient, e.getConfigmapName(), e.namespace)
@@ -200,7 +200,7 @@ func Test_parseCacheDirFromConfigMap(t *testing.T) {
 	}
 
 	cacheDir, cacheType, err := parseCacheDirFromConfigMap(configMap)
-	if err != nil || cacheDir != "/dev/eac-worker-cache-path/default/eacdemo" || cacheType != common.VolumeTypeEmptyDir {
+	if err != nil || cacheDir != "/dev/efc-worker-cache-path/default/efcdemo" || cacheType != common.VolumeTypeEmptyDir {
 		t.Errorf("fail to exec")
 	}
 }
@@ -283,7 +283,7 @@ func TestEACEngine_getMountPath(t *testing.T) {
 		{
 			name: "test",
 			fields: fields{
-				name:      "eac",
+				name:      "efc",
 				namespace: "default",
 				Log:       fake.NullLogger(),
 				MountRoot: "/tmp",
@@ -298,7 +298,7 @@ func TestEACEngine_getMountPath(t *testing.T) {
 				namespace: tt.fields.namespace,
 			}
 			t.Setenv("MOUNT_ROOT", tt.fields.MountRoot)
-			wantMountPath := fmt.Sprintf("%s/%s/%s/eac-fuse", tt.fields.MountRoot+"/eac", tt.fields.namespace, e.name)
+			wantMountPath := fmt.Sprintf("%s/%s/%s/eac-fuse", tt.fields.MountRoot+"/efc", tt.fields.namespace, e.name)
 			if gotMountPath := e.getMountPath(); gotMountPath != wantMountPath {
 				t.Errorf("EACEngine.getMountPoint() = %v, want %v", gotMountPath, wantMountPath)
 			}
@@ -321,12 +321,12 @@ func TestEACEngine_getHostMountPath(t *testing.T) {
 		{
 			name: "test",
 			fields: fields{
-				name:      "eac",
+				name:      "efc",
 				namespace: "default",
 				Log:       fake.NullLogger(),
 				MountRoot: "/tmp",
 			},
-			wantMountPath: "/tmp/eac/default/eac",
+			wantMountPath: "/tmp/efc/default/efc",
 		},
 	}
 	for _, tt := range tests {
@@ -361,11 +361,11 @@ func TestEACEngine_getRuntime(t *testing.T) {
 			fields: fields{
 				runtime: &datav1alpha1.EFCRuntime{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "eac",
+						Name:      "efc",
 						Namespace: "default",
 					},
 				},
-				name:      "eac",
+				name:      "efc",
 				namespace: "default",
 			},
 			want: &datav1alpha1.EFCRuntime{
@@ -374,7 +374,7 @@ func TestEACEngine_getRuntime(t *testing.T) {
 					APIVersion: "data.fluid.io/v1alpha1",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "eac",
+					Name:      "efc",
 					Namespace: "default",
 				},
 			},
@@ -412,7 +412,7 @@ func Test_getMountRoot(t *testing.T) {
 	}{
 		{
 			name:     "test",
-			wantPath: "/tmp/eac",
+			wantPath: "/tmp/efc",
 		},
 	}
 	for _, tt := range tests {
@@ -455,7 +455,7 @@ func TestEACEngine_getWorkerRunningPods(t *testing.T) {
 					Spec: appsv1.StatefulSetSpec{
 						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
-								"app":              "eac",
+								"app":              "efc",
 								"role":             "eac-worker",
 								"fluid.io/dataset": "big-data-spark",
 							},
@@ -475,7 +475,7 @@ func TestEACEngine_getWorkerRunningPods(t *testing.T) {
 								Controller: utilpointer.BoolPtr(true),
 							}},
 							Labels: map[string]string{
-								"app":              "eac",
+								"app":              "efc",
 								"role":             "eac-worker",
 								"fluid.io/dataset": "big-data-spark",
 							},
@@ -530,7 +530,7 @@ func TestEACEngine_getWorkerRunningPods(t *testing.T) {
 					Spec: appsv1.StatefulSetSpec{
 						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
-								"app":              "eac",
+								"app":              "efc",
 								"role":             "eac-worker",
 								"fluid.io/dataset": "big-data-spark",
 							},
@@ -550,7 +550,7 @@ func TestEACEngine_getWorkerRunningPods(t *testing.T) {
 								Controller: utilpointer.BoolPtr(true),
 							}},
 							Labels: map[string]string{
-								"app":  "eac",
+								"app":  "efc",
 								"role": "eac-worker",
 								//"fluid.io/dataset": "big-data-spark",
 							},
@@ -612,7 +612,7 @@ func TestEACEngine_getWorkerRunningPods(t *testing.T) {
 				Client:    mockClient,
 				Log:       ctrl.Log.WithName(tt.fields.name),
 			}
-			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, "eac", datav1alpha1.TieredStore{})
+			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, "efc", datav1alpha1.TieredStore{})
 			if err != nil {
 				t.Errorf("EACEngine.CheckWorkersReady() error = %v", err)
 			}
@@ -642,7 +642,7 @@ func TestEACEngine_getMountInfoAndSecret(t *testing.T) {
 			Spec: datav1alpha1.DatasetSpec{
 				Mounts: []datav1alpha1.Mount{
 					{
-						MountPoint: "eac://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
+						MountPoint: "efc://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
 						EncryptOptions: []datav1alpha1.EncryptOption{
 							{
 								Name: "eac.nas.accessKeyId",
@@ -675,7 +675,7 @@ func TestEACEngine_getMountInfoAndSecret(t *testing.T) {
 			Spec: datav1alpha1.DatasetSpec{
 				Mounts: []datav1alpha1.Mount{
 					{
-						MountPoint: "eac://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
+						MountPoint: "efc://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
 					},
 				},
 			},
@@ -688,7 +688,7 @@ func TestEACEngine_getMountInfoAndSecret(t *testing.T) {
 			Spec: datav1alpha1.DatasetSpec{
 				Mounts: []datav1alpha1.Mount{
 					{
-						MountPoint: "eac://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
+						MountPoint: "efc://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
 						EncryptOptions: []datav1alpha1.EncryptOption{
 							{
 								Name: AccessKeyIDName,

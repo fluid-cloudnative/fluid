@@ -28,7 +28,7 @@ func IsPodManagedByFluid(pod *corev1.Pod) bool {
 		common.GooseFSRuntime,
 		common.JuiceFSRuntime,
 		common.ThinRuntime,
-		common.EACRuntime}
+		common.EFCRuntime}
 	if _, ok := pod.Labels[common.PodRoleType]; ok && pod.Labels[common.PodRoleType] == common.DataloadPod {
 		return true
 	}

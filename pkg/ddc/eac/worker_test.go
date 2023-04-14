@@ -51,11 +51,11 @@ func TestEACEngine_ShouldSetupWorkers(t *testing.T) {
 			name: "test0",
 			fields: fields{
 				name:      "test0",
-				namespace: "eac",
+				namespace: "efc",
 				runtime: &datav1alpha1.EFCRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test0",
-						Namespace: "eac",
+						Namespace: "efc",
 					},
 					Status: datav1alpha1.RuntimeStatus{
 						WorkerPhase: datav1alpha1.RuntimePhaseNone,
@@ -69,11 +69,11 @@ func TestEACEngine_ShouldSetupWorkers(t *testing.T) {
 			name: "test1",
 			fields: fields{
 				name:      "test1",
-				namespace: "eac",
+				namespace: "efc",
 				runtime: &datav1alpha1.EFCRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test1",
-						Namespace: "eac",
+						Namespace: "efc",
 					},
 					Status: datav1alpha1.RuntimeStatus{
 						WorkerPhase: datav1alpha1.RuntimePhaseNotReady,
@@ -87,11 +87,11 @@ func TestEACEngine_ShouldSetupWorkers(t *testing.T) {
 			name: "test2",
 			fields: fields{
 				name:      "test2",
-				namespace: "eac",
+				namespace: "efc",
 				runtime: &datav1alpha1.EFCRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test2",
-						Namespace: "eac",
+						Namespace: "efc",
 					},
 					Status: datav1alpha1.RuntimeStatus{
 						WorkerPhase: datav1alpha1.RuntimePhasePartialReady,
@@ -105,11 +105,11 @@ func TestEACEngine_ShouldSetupWorkers(t *testing.T) {
 			name: "test3",
 			fields: fields{
 				name:      "test3",
-				namespace: "eac",
+				namespace: "efc",
 				runtime: &datav1alpha1.EFCRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test3",
-						Namespace: "eac",
+						Namespace: "efc",
 					},
 					Status: datav1alpha1.RuntimeStatus{
 						WorkerPhase: datav1alpha1.RuntimePhaseReady,
@@ -156,7 +156,7 @@ func TestEACEngine_ShouldSetupWorkers(t *testing.T) {
 }
 
 func TestEACEngine_SetupWorkers(t *testing.T) {
-	runtimeInfo, err := base.BuildRuntimeInfo("eac", "fluid", "eac", datav1alpha1.TieredStore{})
+	runtimeInfo, err := base.BuildRuntimeInfo("efc", "fluid", "efc", datav1alpha1.TieredStore{})
 
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
@@ -321,11 +321,11 @@ func TestEACEngine_CheckWorkersReady(t *testing.T) {
 			name: "test0",
 			fields: fields{
 				name:      "test0",
-				namespace: "eac",
+				namespace: "efc",
 				runtime: &datav1alpha1.EFCRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test0",
-						Namespace: "eac",
+						Namespace: "efc",
 					},
 					Spec: datav1alpha1.EFCRuntimeSpec{
 						Replicas: 1,
@@ -335,7 +335,7 @@ func TestEACEngine_CheckWorkersReady(t *testing.T) {
 				worker: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test0-worker",
-						Namespace: "eac",
+						Namespace: "efc",
 					},
 					Status: appsv1.StatefulSetStatus{
 						Replicas:      1,
@@ -350,11 +350,11 @@ func TestEACEngine_CheckWorkersReady(t *testing.T) {
 			name: "test1",
 			fields: fields{
 				name:      "test1",
-				namespace: "eac",
+				namespace: "efc",
 				runtime: &datav1alpha1.EFCRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test1",
-						Namespace: "eac",
+						Namespace: "efc",
 					},
 					Spec: datav1alpha1.EFCRuntimeSpec{
 						Replicas: 1,
@@ -364,7 +364,7 @@ func TestEACEngine_CheckWorkersReady(t *testing.T) {
 				worker: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test1-worker",
-						Namespace: "eac",
+						Namespace: "efc",
 					},
 					Status: appsv1.StatefulSetStatus{
 						Replicas:      1,
@@ -379,11 +379,11 @@ func TestEACEngine_CheckWorkersReady(t *testing.T) {
 			name: "test2",
 			fields: fields{
 				name:      "test2",
-				namespace: "eac",
+				namespace: "efc",
 				runtime: &datav1alpha1.EFCRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test2",
-						Namespace: "eac",
+						Namespace: "efc",
 					},
 					Spec: datav1alpha1.EFCRuntimeSpec{
 						Fuse: datav1alpha1.EFCFuseSpec{},
@@ -395,7 +395,7 @@ func TestEACEngine_CheckWorkersReady(t *testing.T) {
 				worker: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test2-worker",
-						Namespace: "eac",
+						Namespace: "efc",
 					},
 					Status: appsv1.StatefulSetStatus{
 						Replicas:      0,
@@ -432,7 +432,7 @@ func TestEACEngine_CheckWorkersReady(t *testing.T) {
 				Client:    mockClient,
 				Log:       ctrl.Log.WithName(tt.fields.name),
 			}
-			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, "eac", datav1alpha1.TieredStore{})
+			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, "efc", datav1alpha1.TieredStore{})
 			if err != nil {
 				t.Errorf("EACEngine.CheckWorkersReady() error = %v", err)
 			}
@@ -465,7 +465,7 @@ func TestEACEngine_GetWorkerSelectors(t *testing.T) {
 			fields: fields{
 				name: "spark",
 			},
-			want: "app=eac,release=spark,role=eac-worker",
+			want: "app=efc,release=spark,role=eac-worker",
 		},
 	}
 	for _, tt := range tests {
@@ -510,7 +510,7 @@ func TestEACEngine_syncWorkersEndpoints(t *testing.T) {
 					Spec: appsv1.StatefulSetSpec{
 						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
-								"app":              "eac",
+								"app":              "efc",
 								"role":             "eac-worker",
 								"fluid.io/dataset": "big-data-spark",
 							},
@@ -530,7 +530,7 @@ func TestEACEngine_syncWorkersEndpoints(t *testing.T) {
 								Controller: utilpointer.BoolPtr(true),
 							}},
 							Labels: map[string]string{
-								"app":              "eac",
+								"app":              "efc",
 								"role":             "eac-worker",
 								"fluid.io/dataset": "big-data-spark",
 							},
@@ -585,7 +585,7 @@ func TestEACEngine_syncWorkersEndpoints(t *testing.T) {
 					Spec: appsv1.StatefulSetSpec{
 						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
-								"app":              "eac",
+								"app":              "efc",
 								"role":             "eac-worker",
 								"fluid.io/dataset": "big-data-spark",
 							},
@@ -605,7 +605,7 @@ func TestEACEngine_syncWorkersEndpoints(t *testing.T) {
 								Controller: utilpointer.BoolPtr(true),
 							}},
 							Labels: map[string]string{
-								"app":              "eac",
+								"app":              "efc",
 								"role":             "eac-worker",
 								"fluid.io/dataset": "big-data-spark",
 							},
@@ -667,7 +667,7 @@ func TestEACEngine_syncWorkersEndpoints(t *testing.T) {
 				Client:    mockClient,
 				Log:       ctrl.Log.WithName(tt.fields.name),
 			}
-			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, "eac", datav1alpha1.TieredStore{})
+			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, "efc", datav1alpha1.TieredStore{})
 			if err != nil {
 				t.Errorf("EACEngine.CheckWorkersReady() error = %v", err)
 			}

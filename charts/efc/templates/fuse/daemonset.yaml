@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: {{ template "eac.fullname" . }}-fuse
+  name: {{ template "efc.fullname" . }}-fuse
   labels:
-    app: {{ template "eac.name" . }}
-    chart: {{ template "eac.chart" . }}
+    app: {{ template "efc.name" . }}
+    chart: {{ template "efc.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
     role: eac-fuse
@@ -22,8 +22,8 @@ spec:
     type: {{ .Values.fuse.updateStrategy.type }}
   selector:
     matchLabels:
-      app: {{ template "eac.name" . }}
-      chart: {{ template "eac.chart" . }}
+      app: {{ template "efc.name" . }}
+      chart: {{ template "efc.chart" . }}
       release: {{ .Release.Name }}
       heritage: {{ .Release.Service }}
       role: eac-fuse
@@ -37,8 +37,8 @@ spec:
       {{- end }}
       {{- end }}
       labels:
-        app: {{ template "eac.name" . }}
-        chart: {{ template "eac.chart" . }}
+        app: {{ template "efc.name" . }}
+        chart: {{ template "efc.chart" . }}
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: eac-fuse
@@ -105,10 +105,10 @@ spec:
             - name: eac-fuse-mount
               mountPath: /eac
               mountPropagation: Bidirectional
-            - name: eac-worker-endpoints
+            - name: efc-worker-endpoints
               mountPath: /etc/eac
             {{- if .Values.fuse.tieredstore }}
-{{- include "eac.tieredstoreVolumeMounts" .Values.fuse }}
+{{- include "efc.tieredstoreVolumeMounts" .Values.fuse }}
             {{- end }}
             - name: eac-sock
               mountPath: /var/run/eac
@@ -121,11 +121,11 @@ spec:
           hostPath:
             path: {{ .Values.fuse.hostMountPath }}
             type: DirectoryOrCreate
-        - name: eac-worker-endpoints
+        - name: efc-worker-endpoints
           configMap:
-            name: {{ template "eac.fullname" . }}-worker-endpoints
+            name: {{ template "efc.fullname" . }}-worker-endpoints
         {{- if .Values.fuse.tieredstore }}
-{{- include "eac.tieredstoreVolumes" .Values.fuse }}
+{{- include "efc.tieredstoreVolumes" .Values.fuse }}
         {{- end }}
         - name: host-os
           hostPath:

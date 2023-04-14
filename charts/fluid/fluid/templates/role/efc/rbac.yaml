@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: eacruntime-controller
+  name: efcruntime-controller
 rules:
   - apiGroups:
     - ""
@@ -124,18 +124,18 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: eacruntime-clusterrolebinding
+  name: efcruntime-clusterrolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: eacruntime-controller
+  name: efcruntime-controller
 subjects:
   - kind: ServiceAccount
-    name: eacruntime-controller
+    name: efcruntime-controller
     namespace: {{ include "fluid.namespace" . }}
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: eacruntime-controller
+  name: efcruntime-controller
   namespace: {{ include "fluid.namespace" . }}

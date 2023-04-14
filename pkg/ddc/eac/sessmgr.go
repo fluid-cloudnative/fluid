@@ -51,19 +51,19 @@ func (s *SessMgrInitializer) initSessMgr(ctx context.Context) error {
 }
 
 func (s *SessMgrInitializer) loadSessMgrConfig() (config config, err error) {
-	if imageEnvVar, exists := os.LookupEnv(common.EACSessMgrImageEnv); exists {
+	if imageEnvVar, exists := os.LookupEnv(common.EFCSessMgrImageEnv); exists {
 		config.SessMgrImage = imageEnvVar
 	} else {
-		config.SessMgrImage = common.DefaultEACSessMgrImage
+		config.SessMgrImage = common.DefaultEFCSessMgrImage
 	}
 
-	if imageEnvVar, exists := os.LookupEnv(common.EACInitFuseImageEnv); exists {
+	if imageEnvVar, exists := os.LookupEnv(common.EFCInitFuseImageEnv); exists {
 		config.InitFuseImage = imageEnvVar
 	} else {
-		config.InitFuseImage = common.DefaultEACInitFuseImage
+		config.InitFuseImage = common.DefaultEFCInitFuseImage
 	}
 
-	if updateStrategyEnvVar, exists := os.LookupEnv(common.EACSessMgrUpdateStrategyEnv); exists {
+	if updateStrategyEnvVar, exists := os.LookupEnv(common.EFCSessMgrUpdateStrategyEnv); exists {
 		switch updateStrategyEnvVar {
 		case string(appsv1.RollingUpdateDaemonSetStrategyType):
 			config.UpdateStrategy = appsv1.RollingUpdateDaemonSetStrategyType
@@ -127,7 +127,7 @@ func (s *SessMgrInitializer) deploySessMgr(ctx context.Context, config config) e
 			Spec: appsv1.DaemonSetSpec{
 				Selector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						"app": "eac-sessmgr",
+						"app": "efc-sessmgr",
 					},
 				},
 				UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
@@ -139,7 +139,7 @@ func (s *SessMgrInitializer) deploySessMgr(ctx context.Context, config config) e
 							"sidecar.istio.io/inject": "false",
 						},
 						Labels: map[string]string{
-							"app": "eac-sessmgr",
+							"app": "efc-sessmgr",
 						},
 					},
 					Spec: corev1.PodSpec{

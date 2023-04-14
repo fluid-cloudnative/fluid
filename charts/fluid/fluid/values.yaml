@@ -91,11 +91,11 @@ runtime:
     enabled: false
     controller:
       image: fluidcloudnative/thinruntime-controller:v0.9.0-51b8c38
-  eac:
+  efc:
     replicas: 1
     enabled: false
     controller:
-      image: fluidcloudnative/eacruntime-controller:v0.9.0-51b8c38
+      image: fluidcloudnative/efcruntime-controller:v0.9.0-51b8c38
       imagePullPolicy: Always
     init:
       image: registry.cn-zhangjiakou.aliyuncs.com/nascache/init-alifuse:v0.1.0-196d2b1

@@ -62,7 +62,7 @@ func NewRuntimeReconciler(client client.Client,
 	return r
 }
 
-//Reconcile reconciles eac runtime
+//Reconcile reconciles efc runtime
 // +kubebuilder:rbac:groups=data.fluid.io,resources=efcruntimes,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=data.fluid.io,resources=efcruntimes/status,verbs=get;update;patch
 
@@ -70,13 +70,13 @@ func (r *RuntimeReconciler) Reconcile(context context.Context, req ctrl.Request)
 	defer utils.TimeTrack(time.Now(), "Reconcile EFCRuntime", "request", req)
 	ctx := cruntime.ReconcileRequestContext{
 		Context:        context,
-		Log:            r.Log.WithValues("eacruntime", req.NamespacedName),
+		Log:            r.Log.WithValues("efcruntime", req.NamespacedName),
 		NamespacedName: req.NamespacedName,
 		Recorder:       r.Recorder,
 		Category:       common.AccelerateCategory,
-		RuntimeType:    common.EACRuntimeType,
+		RuntimeType:    common.EFCRuntime,
 		Client:         r.Client,
-		FinalizerName:  common.EACRuntimeResourceFinalizerName,
+		FinalizerName:  common.EFCRuntimeResourceFinalizerName,
 	}
 
 	ctx.Log.V(1).Info("process the request", "request", req)
@@ -112,7 +112,7 @@ func (r *RuntimeReconciler) SetupWithManager(mgr ctrl.Manager, options controlle
 }
 
 func (r *RuntimeReconciler) ControllerName() string {
-	return common.EACRuntimeControllerName
+	return common.EFCRuntimeControllerName
 }
 
 func (r *RuntimeReconciler) ManagedResource() client.Object {

@@ -118,7 +118,7 @@ func (a EACFileUtils) DeleteDir(dir string) (err error) {
 
 func (a EACFileUtils) Ready() (ready bool) {
 	var (
-		command = []string{"mount", "|", "grep", common.EACMountType}
+		command = []string{"mount", "|", "grep", common.EFCMountType}
 	)
 
 	_, _, err := a.exec(command, true)

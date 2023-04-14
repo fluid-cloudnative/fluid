@@ -92,7 +92,7 @@ func TestUpdateCacheOfDataset(t *testing.T) {
 					Name:           "hbase",
 					Namespace:      "fluid",
 					Category:       common.AccelerateCategory,
-					Type:           common.EACRuntime,
+					Type:           common.EFCRuntime,
 					MasterReplicas: 1,
 				},
 			},

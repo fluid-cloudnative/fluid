@@ -129,10 +129,10 @@ func (e *ReferenceDatasetEngine) createConfigMapForRefDataset(client client.Clie
 		if err != nil {
 			return err
 		}
-	case common.EACRuntime:
+	case common.EFCRuntime:
 		// TODO: EFCRuntime needs worker-endpoint configmap which should be synced timely for ECI mode.
 		// Currently EFCRuntime only supports CSI mode, so do nothing here.
-		e.Log.Info("Skip createConfigMapForRefDataset because the mountedRuntimeType=EAC", "name", e.name, "namespace", e.namespace)
+		e.Log.Info("Skip createConfigMapForRefDataset because the mountedRuntimeType=EFC", "name", e.name, "namespace", e.namespace)
 	case common.ThinRuntime:
 		runtimesetConfigMapName := mountedRuntimeName + "-runtimeset"
 		err := kubeclient.CopyConfigMap(client, types.NamespacedName{Name: runtimesetConfigMapName, Namespace: mountedRuntimeNamespace},

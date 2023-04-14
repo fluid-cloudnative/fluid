@@ -38,7 +38,7 @@ func GetReservedPorts(client client.Client) (ports []int, err error) {
 		if len(dataset.Status.Runtimes) != 0 {
 			// Assume there is only one runtime with category "Accelerate"
 			accelerateRuntime := dataset.Status.Runtimes[0]
-			if accelerateRuntime.Type != "eac" {
+			if accelerateRuntime.Type != "efc" {
 				continue
 			}
 			configMapName := fmt.Sprintf("%s-%s-values", accelerateRuntime.Name, accelerateRuntime.Type)

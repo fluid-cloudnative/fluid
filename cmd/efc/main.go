@@ -20,11 +20,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/fluid-cloudnative/fluid/cmd/eac/app"
+	"github.com/fluid-cloudnative/fluid/cmd/efc/app"
 )
 
 func main() {
-	cmd := app.NewEACControllerCommand()
+	cmd := app.NewEFCControllerCommand()
 	if err := cmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "%s", err.Error())
 		os.Exit(1)
