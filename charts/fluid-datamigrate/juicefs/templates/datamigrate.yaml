@@ -71,6 +71,9 @@ spec:
           volumeMounts:
             - mountPath: /scripts
               name: data-migrate-script
+            {{- with .Values.datamigrate.nativeVolumeMounts }}
+            {{ toYaml . | nindent 12 }}
+            {{- end }}
       volumes:
         - name: data-migrate-script
           configMap:
@@ -79,3 +82,6 @@ spec:
               - key: datamigrate.sh
                 path: juicefs_datamigrate.sh
                 mode: 365
+      {{- with .Values.datamigrate.nativeVolumes }}
+        {{ toYaml . | nindent 8 }}
+      {{- end }}

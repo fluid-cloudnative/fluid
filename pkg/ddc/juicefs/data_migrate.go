@@ -204,47 +204,83 @@ func (j *JuiceFSEngine) genDataUrl(data datav1alpha1.DataToMigrate, info *cdatam
 		return dataUrl, nil
 	}
 	if data.ExternalStorage != nil {
-		u, err := url.Parse(data.ExternalStorage.URI)
-		if err != nil {
-			return "", err
-		}
-		var accessKey, secretKey, token string
-		for _, encryptOption := range data.ExternalStorage.EncryptOptions {
-			name := encryptOption.Name
-			keyName := name
-			switch name {
-			case "access-key":
-				accessKey = "${ACCESS_KEY}"
-				keyName = "ACCESS_KEY"
-			case "secret-key":
-				secretKey = "${SECRET_KEY}"
-				keyName = "SECRET_KEY"
-			case "token":
-				token = "${TOKEN}"
-				keyName = "TOKEN"
+		if common.IsFluidNativeScheme(data.ExternalStorage.URI) {
+
+			if strings.HasPrefix(data.ExternalStorage.URI, common.VolumeScheme.String()) {
+				var (
+					volName = "native-vol"
+					subPath = ""
+					pvcName string
+				)
+				parts := strings.SplitN(strings.TrimPrefix(data.ExternalStorage.URI, common.VolumeScheme.String()), "/", 2)
+
+				if len(parts) > 1 {
+					// with subpath, e.g. pvc://my-pvc/path/to/dir
+					pvcName = parts[0]
+					subPath = parts[1]
+				} else {
+					// without subpath, e.g. pvc://my-pvc
+					pvcName = parts[0]
+				}
+				info.NativeVolumes = append(info.NativeVolumes, corev1.Volume{
+					Name: volName,
+					VolumeSource: corev1.VolumeSource{
+						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+							ClaimName: pvcName,
+						},
+					},
+				})
+				info.NativeVolumeMounts = append(info.NativeVolumeMounts, corev1.VolumeMount{
+					Name:      volName,
+					SubPath:   subPath,
+					MountPath: NativeVolumeMigratePath,
+				})
+				return NativeVolumeMigratePath, nil
 			}
-			secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
-			_, err := kubeclient.GetSecret(j.Client, secretKeyRef.Name, j.namespace)
+			// TODO: support host path scheme local://
+		} else {
+			u, err := url.Parse(data.ExternalStorage.URI)
 			if err != nil {
-				j.Log.Info("can't get the secret",
-					"namespace", j.namespace,
-					"name", j.name,
-					"secretName", secretKeyRef.Name)
 				return "", err
 			}
-			info.EncryptOptions = append(info.EncryptOptions, datav1alpha1.EncryptOption{
-				Name:      keyName,
-				ValueFrom: encryptOption.ValueFrom,
-			})
+			var accessKey, secretKey, token string
+			for _, encryptOption := range data.ExternalStorage.EncryptOptions {
+				name := encryptOption.Name
+				keyName := name
+				switch name {
+				case "access-key":
+					accessKey = "${ACCESS_KEY}"
+					keyName = "ACCESS_KEY"
+				case "secret-key":
+					secretKey = "${SECRET_KEY}"
+					keyName = "SECRET_KEY"
+				case "token":
+					token = "${TOKEN}"
+					keyName = "TOKEN"
+				}
+				secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
+				_, err := kubeclient.GetSecret(j.Client, secretKeyRef.Name, j.namespace)
+				if err != nil {
+					j.Log.Info("can't get the secret",
+						"namespace", j.namespace,
+						"name", j.name,
+						"secretName", secretKeyRef.Name)
+					return "", err
+				}
+				info.EncryptOptions = append(info.EncryptOptions, datav1alpha1.EncryptOption{
+					Name:      keyName,
+					ValueFrom: encryptOption.ValueFrom,
+				})
+			}
+			if token != "" {
+				secretKey = fmt.Sprintf("%s:%s", secretKey, token)
+			}
+			u.User = url.UserPassword(accessKey, secretKey)
+			decodedValue, _ := url.QueryUnescape(u.String())
+			dataUrl = decodedValue
+			j.Log.Info("dataUrl", "dataUrl", dataUrl)
+			return dataUrl, nil
 		}
-		if token != "" {
-			secretKey = fmt.Sprintf("%s:%s", secretKey, token)
-		}
-		u.User = url.UserPassword(accessKey, secretKey)
-		decodedValue, _ := url.QueryUnescape(u.String())
-		dataUrl = decodedValue
-		j.Log.Info("dataUrl", "dataUrl", dataUrl)
-		return dataUrl, nil
 	}
 	return
 }
