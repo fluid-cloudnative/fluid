@@ -53,7 +53,7 @@ spec:
             description: DataLoadSpec defines the desired state of DataLoad
             properties:
               affinity:
-                description: pod
+                description: Affinity defines affinity for DataLoad pod
                 properties:
                   nodeAffinity:
                     description: Describes node affinity scheduling rules for the
@@ -896,7 +896,7 @@ spec:
               nodeSelector:
                 additionalProperties:
                   type: string
-                description: pod node selector
+                description: NodeSelector defiens node selector for DataLoad pod
                 type: object
               options:
                 additionalProperties:
@@ -919,6 +919,8 @@ spec:
                     type: object
                 type: object
               schedulerName:
+                description: SchedulerName sets the scheduler to be used for DataLoad
+                  pod
                 type: string
               target:
                 description: Target defines target paths that needs to be loaded
@@ -937,6 +939,7 @@ spec:
                   type: object
                 type: array
               tolerations:
+                description: Tolerations defines tolerations for DataLoad pod
                 items:
                   description: The pod this Toleration is attached to tolerates any
                     taint that matches the triple <key,value,effect> using the matching

@@ -112,6 +112,22 @@ func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequest
 		ImagePullSecrets: imagePullSecrets,
 	}
 
+	if dataMigrate.Spec.Affinity != nil {
+		dataMigrateInfo.Affinity = dataMigrate.Spec.Affinity
+	}
+
+	if dataMigrate.Spec.NodeSelector != nil {
+		dataMigrateInfo.NodeSelector = dataMigrate.Spec.NodeSelector
+	}
+
+	if len(dataMigrate.Spec.Tolerations) > 0 {
+		dataMigrateInfo.Tolerations = dataMigrate.Spec.Tolerations
+	}
+
+	if len(dataMigrate.Spec.SchedulerName) > 0 {
+		dataMigrateInfo.SchedulerName = dataMigrate.Spec.SchedulerName
+	}
+
 	// 4. set options
 	timeout := dataMigrate.Spec.Options["timeout"]
 	delete(dataMigrate.Spec.Options, "timeout")

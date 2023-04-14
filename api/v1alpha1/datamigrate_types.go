@@ -17,6 +17,7 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -57,6 +58,22 @@ type DataMigrateSpec struct {
 
 	// PodMetadata defines labels and annotations that will be propagated to DataLoad pods
 	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
+
+	// +optional
+	// Affinity defines affinity for DataLoad pod
+	Affinity *corev1.Affinity `json:"affinity,omitempty"`
+
+	// +optional
+	// Tolerations defines tolerations for DataLoad pod
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+
+	// +optional
+	// NodeSelector defiens node selector for DataLoad pod
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// +optional
+	// SchedulerName sets the scheduler to be used for DataLoad pod
+	SchedulerName string `json:"schedulerName,omitempty"`
 }
 
 type Policy string

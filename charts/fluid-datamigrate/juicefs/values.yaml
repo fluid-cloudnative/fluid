@@ -51,3 +51,19 @@ datamigrate:
   # Optional
   # Description: optional native volume mounts
   nativeVolumeMounts:
+
+  # Optional
+  # Desciption: optional scheduler name for DataMigrate pods
+  schedulerName:
+
+  # Optional
+  # Description: node selector for DataMigrate pods
+  nodeSelector:
+
+  # Optional
+  # Description: affinity specs for DataMigrate pods
+  affinity:
+
+  # Optional
+  # Description: tolerations specs for DataMigrate pods
+  tolerations: []

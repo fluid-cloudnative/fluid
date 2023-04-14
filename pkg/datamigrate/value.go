@@ -62,4 +62,16 @@ type DataMigrateInfo struct {
 
 	// specifies local:// and pvc:// volume mount
 	NativeVolumeMounts []corev1.VolumeMount `json:"nativeVolumeMounts,omitempty"`
+
+	// specifies pod affinity
+	Affinity *corev1.Affinity `json:"affinity,omitempty"`
+
+	// specifies node selector
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// specifies pod tolerations
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+
+	// specifies scheduler name
+	SchedulerName string `json:"schedulerName,omitempty"`
 }

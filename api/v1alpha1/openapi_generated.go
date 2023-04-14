@@ -1142,13 +1142,14 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoadSpec(ref common.Referen
 					},
 					"affinity": {
 						SchemaProps: spec.SchemaProps{
-							Description: "pod",
+							Description: "Affinity defines affinity for DataLoad pod",
 							Ref:         ref("k8s.io/api/core/v1.Affinity"),
 						},
 					},
 					"tolerations": {
 						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
+							Description: "Tolerations defines tolerations for DataLoad pod",
+							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
@@ -1161,7 +1162,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoadSpec(ref common.Referen
 					},
 					"nodeSelector": {
 						SchemaProps: spec.SchemaProps{
-							Description: "pod node selector",
+							Description: "NodeSelector defiens node selector for DataLoad pod",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
 								Allows: true,
@@ -1177,8 +1178,9 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoadSpec(ref common.Referen
 					},
 					"schedulerName": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Description: "SchedulerName sets the scheduler to be used for DataLoad pod",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 				},
@@ -1378,12 +1380,55 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateSpec(ref common.Refe
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
 						},
 					},
+					"affinity": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Affinity defines affinity for DataLoad pod",
+							Ref:         ref("k8s.io/api/core/v1.Affinity"),
+						},
+					},
+					"tolerations": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Tolerations defines tolerations for DataLoad pod",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.Toleration"),
+									},
+								},
+							},
+						},
+					},
+					"nodeSelector": {
+						SchemaProps: spec.SchemaProps{
+							Description: "NodeSelector defiens node selector for DataLoad pod",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"schedulerName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SchedulerName sets the scheduler to be used for DataLoad pod",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 				Required: []string{"from", "to"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataToMigrate", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataToMigrate", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.Toleration"},
 	}
 }
 
