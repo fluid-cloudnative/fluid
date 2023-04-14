@@ -23,7 +23,7 @@ import (
 func TestParseMasterImage(t *testing.T) {
 	engine := &EACEngine{}
 	image, tag, imagePullPolicy := engine.parseMasterImage("", "", "")
-	if image != "registry.cn-zhangjiakou.aliyuncs.com/nasteam/eac-fluid-img" ||
+	if image != "registry.cn-zhangjiakou.aliyuncs.com/nascache/eac-master" ||
 		tag != "update" || imagePullPolicy != "IfNotPresent" {
 		t.Errorf("unexpected err")
 	}
@@ -32,7 +32,7 @@ func TestParseMasterImage(t *testing.T) {
 func TestParseFuseImage(t *testing.T) {
 	engine := &EACEngine{}
 	image, tag, imagePullPolicy := engine.parseFuseImage("", "", "")
-	if image != "registry.cn-zhangjiakou.aliyuncs.com/nasteam/eac-fluid-img" ||
+	if image != "registry.cn-zhangjiakou.aliyuncs.com/nascache/eac-fuse" ||
 		tag != "update" || imagePullPolicy != "IfNotPresent" {
 		t.Errorf("unexpected err")
 	}
@@ -41,7 +41,7 @@ func TestParseFuseImage(t *testing.T) {
 func TestParseWorkerImage(t *testing.T) {
 	engine := &EACEngine{}
 	image, tag, imagePullPolicy := engine.parseWorkerImage("", "", "")
-	if image != "registry.cn-zhangjiakou.aliyuncs.com/nasteam/eac-worker-img" ||
+	if image != "registry.cn-zhangjiakou.aliyuncs.com/nascache/eac-worker" ||
 		tag != "update" || imagePullPolicy != "IfNotPresent" {
 		t.Errorf("unexpected err")
 	}
@@ -50,7 +50,7 @@ func TestParseWorkerImage(t *testing.T) {
 func TestParseInitFuseImage(t *testing.T) {
 	engine := &EACEngine{}
 	image, tag, imagePullPolicy := engine.parseInitFuseImage("", "", "")
-	if image != "registry.cn-zhangjiakou.aliyuncs.com/nasteam/init-alifuse" ||
+	if image != "registry.cn-zhangjiakou.aliyuncs.com/nascache/init-alifuse" ||
 		tag != "update" || imagePullPolicy != "IfNotPresent" {
 		t.Errorf("unexpected err")
 	}

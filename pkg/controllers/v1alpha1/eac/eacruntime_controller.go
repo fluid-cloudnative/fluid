@@ -74,9 +74,9 @@ func (r *RuntimeReconciler) Reconcile(context context.Context, req ctrl.Request)
 		NamespacedName: req.NamespacedName,
 		Recorder:       r.Recorder,
 		Category:       common.AccelerateCategory,
-		RuntimeType:    common.EACRuntimeType,
+		RuntimeType:    common.EFCRuntime,
 		Client:         r.Client,
-		FinalizerName:  common.EACRuntimeResourceFinalizerName,
+		FinalizerName:  common.EFCRuntimeResourceFinalizerName,
 	}
 
 	ctx.Log.V(1).Info("process the request", "request", req)
@@ -112,7 +112,7 @@ func (r *RuntimeReconciler) SetupWithManager(mgr ctrl.Manager, options controlle
 }
 
 func (r *RuntimeReconciler) ControllerName() string {
-	return common.EACRuntimeControllerName
+	return common.EFCRuntimeControllerName
 }
 
 func (r *RuntimeReconciler) ManagedResource() client.Object {

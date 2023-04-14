@@ -29,9 +29,9 @@ func (e *EACEngine) parseMasterImage(image string, tag string, imagePullPolicy s
 	}
 
 	if len(image) == 0 {
-		image = docker.GetImageRepoFromEnv(common.EACMasterImageEnv)
+		image = docker.GetImageRepoFromEnv(common.EFCMasterImageEnv)
 		if len(image) == 0 {
-			runtimeImageInfo := strings.Split(common.DefaultEACMasterImage, ":")
+			runtimeImageInfo := strings.Split(common.DefaultEFCMasterImage, ":")
 			if len(runtimeImageInfo) < 1 {
 				panic("invalid default eac master image!")
 			} else {
@@ -41,9 +41,9 @@ func (e *EACEngine) parseMasterImage(image string, tag string, imagePullPolicy s
 	}
 
 	if len(tag) == 0 {
-		tag = docker.GetImageTagFromEnv(common.EACMasterImageEnv)
+		tag = docker.GetImageTagFromEnv(common.EFCMasterImageEnv)
 		if len(tag) == 0 {
-			runtimeImageInfo := strings.Split(common.DefaultEACMasterImage, ":")
+			runtimeImageInfo := strings.Split(common.DefaultEFCMasterImage, ":")
 			if len(runtimeImageInfo) < 2 {
 				panic("invalid default eac master image!")
 			} else {
@@ -61,9 +61,9 @@ func (e *EACEngine) parseWorkerImage(image string, tag string, imagePullPolicy s
 	}
 
 	if len(image) == 0 {
-		image = docker.GetImageRepoFromEnv(common.EACWorkerImageEnv)
+		image = docker.GetImageRepoFromEnv(common.EFCWorkerImageEnv)
 		if len(image) == 0 {
-			runtimeImageInfo := strings.Split(common.DefaultEACWorkerImage, ":")
+			runtimeImageInfo := strings.Split(common.DefaultEFCWorkerImage, ":")
 			if len(runtimeImageInfo) < 1 {
 				panic("invalid default eac worker image!")
 			} else {
@@ -73,9 +73,9 @@ func (e *EACEngine) parseWorkerImage(image string, tag string, imagePullPolicy s
 	}
 
 	if len(tag) == 0 {
-		tag = docker.GetImageTagFromEnv(common.EACWorkerImageEnv)
+		tag = docker.GetImageTagFromEnv(common.EFCWorkerImageEnv)
 		if len(tag) == 0 {
-			runtimeImageInfo := strings.Split(common.DefaultEACWorkerImage, ":")
+			runtimeImageInfo := strings.Split(common.DefaultEFCWorkerImage, ":")
 			if len(runtimeImageInfo) < 2 {
 				panic("invalid default eac worker image!")
 			} else {
@@ -93,9 +93,9 @@ func (e *EACEngine) parseFuseImage(image string, tag string, imagePullPolicy str
 	}
 
 	if len(image) == 0 {
-		image = docker.GetImageRepoFromEnv(common.EACFuseImageEnv)
+		image = docker.GetImageRepoFromEnv(common.EFCFuseImageEnv)
 		if len(image) == 0 {
-			runtimeImageInfo := strings.Split(common.DefaultEACFuseImage, ":")
+			runtimeImageInfo := strings.Split(common.DefaultEFCFuseImage, ":")
 			if len(runtimeImageInfo) < 1 {
 				panic("invalid default eac fuse image!")
 			} else {
@@ -105,9 +105,9 @@ func (e *EACEngine) parseFuseImage(image string, tag string, imagePullPolicy str
 	}
 
 	if len(tag) == 0 {
-		tag = docker.GetImageTagFromEnv(common.EACFuseImageEnv)
+		tag = docker.GetImageTagFromEnv(common.EFCFuseImageEnv)
 		if len(tag) == 0 {
-			runtimeImageInfo := strings.Split(common.DefaultEACFuseImage, ":")
+			runtimeImageInfo := strings.Split(common.DefaultEFCFuseImage, ":")
 			if len(runtimeImageInfo) < 2 {
 				panic("invalid default eac fuse image!")
 			} else {
@@ -125,9 +125,9 @@ func (e *EACEngine) parseInitFuseImage(image string, tag string, imagePullPolicy
 	}
 
 	if len(image) == 0 {
-		image = docker.GetImageRepoFromEnv(common.EACInitFuseImageEnv)
+		image = docker.GetImageRepoFromEnv(common.EFCInitFuseImageEnv)
 		if len(image) == 0 {
-			runtimeImageInfo := strings.Split(common.DefaultEACInitFuseImage, ":")
+			runtimeImageInfo := strings.Split(common.DefaultEFCInitFuseImage, ":")
 			if len(runtimeImageInfo) < 1 {
 				panic("invalid default eac init alifuse image!")
 			} else {
@@ -137,9 +137,9 @@ func (e *EACEngine) parseInitFuseImage(image string, tag string, imagePullPolicy
 	}
 
 	if len(tag) == 0 {
-		tag = docker.GetImageTagFromEnv(common.EACInitFuseImageEnv)
+		tag = docker.GetImageTagFromEnv(common.EFCInitFuseImageEnv)
 		if len(tag) == 0 {
-			runtimeImageInfo := strings.Split(common.DefaultEACInitFuseImage, ":")
+			runtimeImageInfo := strings.Split(common.DefaultEFCInitFuseImage, ":")
 			if len(runtimeImageInfo) < 2 {
 				panic("invalid default eac init alifuse image!")
 			} else {

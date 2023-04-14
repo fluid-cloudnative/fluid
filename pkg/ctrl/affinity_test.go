@@ -303,7 +303,7 @@ func TestBuildWorkersAffinityForEACRuntime(t *testing.T) {
 			},
 			worker: &appsv1.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-eac-worker",
+					Name:      "test-efc-worker",
 					Namespace: "big-data",
 				},
 				Spec: appsv1.StatefulSetSpec{
@@ -359,7 +359,7 @@ func TestBuildWorkersAffinityForEACRuntime(t *testing.T) {
 			runtimeObjs = append(runtimeObjs, tt.dataset)
 			runtimeObjs = append(runtimeObjs, tt.worker)
 			mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
-			runtimeInfo, err := base.BuildRuntimeInfo(tt.dataset.Name, tt.dataset.Namespace, common.EACRuntime, datav1alpha1.TieredStore{})
+			runtimeInfo, err := base.BuildRuntimeInfo(tt.dataset.Name, tt.dataset.Namespace, common.EFCRuntime, datav1alpha1.TieredStore{})
 			if err != nil {
 				t.Fatalf("testcase %s failed due to %v", tt.name, err)
 			}

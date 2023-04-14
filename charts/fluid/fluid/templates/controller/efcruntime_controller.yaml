@@ -65,19 +65,19 @@ spec:
             value: {{ .Values.runtime.syncRetryDuration | quote }}
           {{- end }}
           {{- if .Values.runtime.efc.init.image }}
-          - name: EAC_INIT_FUSE_IMAGE_ENV
+          - name: EFC_INIT_FUSE_IMAGE_ENV
             value: {{ .Values.runtime.efc.init.image | quote }}
           {{- end }}
           {{- if .Values.runtime.efc.master.image }}
-          - name: EAC_MASTER_IMAGE_ENV
+          - name: EFC_MASTER_IMAGE_ENV
             value: {{ .Values.runtime.efc.master.image | quote }}
           {{- end }}
           {{- if .Values.runtime.efc.worker.image }}
-          - name: EAC_WORKER_IMAGE_ENV
+          - name: EFC_WORKER_IMAGE_ENV
             value: {{ .Values.runtime.efc.worker.image | quote }}
           {{- end }}
           {{- if .Values.runtime.efc.fuse.image }}
-          - name: EAC_FUSE_IMAGE_ENV
+          - name: EFC_FUSE_IMAGE_ENV
             value: {{ .Values.runtime.efc.fuse.image | quote }}
           {{- end }}
         ports:

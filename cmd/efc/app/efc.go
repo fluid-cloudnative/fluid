@@ -99,7 +99,7 @@ func handle() {
 		MetricsBindAddress:      metricsAddr,
 		LeaderElection:          enableLeaderElection,
 		LeaderElectionNamespace: leaderElectionNamespace,
-		LeaderElectionID:        "eac.data.fluid.io",
+		LeaderElectionID:        "efc.data.fluid.io",
 		Port:                    9443,
 	})
 	if err != nil {

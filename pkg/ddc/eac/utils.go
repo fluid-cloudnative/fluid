@@ -97,9 +97,9 @@ func (e *EACEngine) getHostMountPath() (mountPath string) {
 func getMountRoot() (path string) {
 	path, err := utils.GetMountRoot()
 	if err != nil {
-		path = "/" + common.EACRuntime
+		path = "/" + common.EFCRuntime
 	} else {
-		path = path + "/" + common.EACRuntime
+		path = path + "/" + common.EFCRuntime
 	}
 	return
 }

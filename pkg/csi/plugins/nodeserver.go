@@ -283,7 +283,7 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	glog.Infof("NodeStageVolume: Starting NodeStage with VolumeId: %s, and VolumeContext: %v", req.GetVolumeId(), req.VolumeContext)
 
 	// 1. Start SessMgr Pod and wait for ready if FUSE pod requires SessMgr
-	sessMgrWorkDir := req.GetVolumeContext()[common.VolumeAttrEACSessMgrWorkDir]
+	sessMgrWorkDir := req.GetVolumeContext()[common.VolumeAttrEFCSessMgrWorkDir]
 	if len(sessMgrWorkDir) != 0 {
 		if err := ns.prepareSessMgr(sessMgrWorkDir); err != nil {
 			glog.Errorf("NodeStageVolume: fail to prepare SessMgr because: %v", err)

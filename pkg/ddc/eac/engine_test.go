@@ -92,7 +92,7 @@ func TestBuild(t *testing.T) {
 		},
 		Client:      client,
 		Log:         fake.NullLogger(),
-		RuntimeType: common.EACRuntimeType,
+		RuntimeType: common.EFCRuntime,
 		Runtime:     &runtime,
 	}
 
@@ -108,7 +108,7 @@ func TestBuild(t *testing.T) {
 		},
 		Client:      client,
 		Log:         fake.NullLogger(),
-		RuntimeType: common.EACRuntimeType,
+		RuntimeType: common.EFCRuntime,
 		Runtime:     nil,
 	}
 
@@ -124,7 +124,7 @@ func TestBuild(t *testing.T) {
 		},
 		Client:      client,
 		Log:         fake.NullLogger(),
-		RuntimeType: common.EACRuntimeType,
+		RuntimeType: common.EFCRuntime,
 		Runtime:     &runtime,
 	}
 
@@ -140,7 +140,7 @@ func TestBuild(t *testing.T) {
 		},
 		Client:      client,
 		Log:         fake.NullLogger(),
-		RuntimeType: common.EACRuntimeType,
+		RuntimeType: common.EFCRuntime,
 		Runtime:     &datav1alpha1.JindoRuntime{},
 	}
 

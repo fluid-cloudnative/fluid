@@ -33,7 +33,7 @@ import (
 )
 
 func newEACEngineRT(client client.Client, name string, namespace string, withRuntimeInfo bool, unittest bool) *EACEngine {
-	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.EACRuntimeType, datav1alpha1.TieredStore{})
+	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.EFCRuntime, datav1alpha1.TieredStore{})
 	engine := &EACEngine{
 		runtime:     nil,
 		name:        name,

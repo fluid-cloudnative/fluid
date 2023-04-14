@@ -1,11 +1,11 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ template "eac.fullname" . }}-master
+  name: {{ template "efc.fullname" . }}-master
   labels:
-    name: {{ template "eac.fullname" . }}-master
-    app: {{ template "eac.name" . }}
-    chart: {{ template "eac.chart" . }}
+    name: {{ template "efc.fullname" . }}-master
+    app: {{ template "efc.name" . }}
+    chart: {{ template "efc.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
     role: eac-master
@@ -21,11 +21,11 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: {{ template "eac.name" . }}
+      app: {{ template "efc.name" . }}
       role: eac-master
-      name: {{ template "eac.fullname" . }}-master
+      name: {{ template "efc.fullname" . }}-master
   replicas: {{ if .Values.master.enabled -}} {{ $.Values.master.count }} {{ else -}} 0 {{ end }}
-  serviceName: {{ template "eac.fullname" . }}-master
+  serviceName: {{ template "efc.fullname" . }}-master
   template:
     metadata:
       annotations:
@@ -36,9 +36,9 @@ spec:
       {{- end }}
       {{- end }}
       labels:
-        name: {{ template "eac.fullname" . }}-master
-        app: {{ template "eac.name" . }}
-        chart: {{ template "eac.chart" . }}
+        name: {{ template "efc.fullname" . }}-master
+        app: {{ template "efc.name" . }}
+        chart: {{ template "efc.chart" . }}
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: eac-master
@@ -110,16 +110,16 @@ spec:
               exec:
                 command: ["sh", "-c", "/entrypoint.sh stop_master /eac/eac-master"]
           volumeMounts:
-            - name: eac-worker-endpoints
+            - name: efc-worker-endpoints
               mountPath: /etc/eac
             {{- if .Values.master.tieredstore }}
-{{- include "eac.tieredstoreVolumeMounts" .Values.master }}
+{{- include "efc.tieredstoreVolumeMounts" .Values.master }}
             {{- end }}
             - name: localtime
               mountPath: /etc/localtime
             - name: eac-sock
               mountPath: /var/run/eac
-        - name: eac-sessmgr
+        - name: efc-sessmgr
           image: {{ .Values.master.image }}:{{ .Values.master.imageTag }}
           imagePullPolicy: {{ .Values.master.imagePullPolicy }}
           command: [ "/entrypoint.sh" ]
@@ -141,11 +141,11 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       volumes:
-        - name: eac-worker-endpoints
+        - name: efc-worker-endpoints
           configMap:
-            name: {{ template "eac.fullname" . }}-worker-endpoints
+            name: {{ template "efc.fullname" . }}-worker-endpoints
         {{- if .Values.master.tieredstore }}
-{{- include "eac.tieredstoreVolumes" .Values.master }}
+{{- include "efc.tieredstoreVolumes" .Values.master }}
         {{- end }}
         - name: localtime
           hostPath:
