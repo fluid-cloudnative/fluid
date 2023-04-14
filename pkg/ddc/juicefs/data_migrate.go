@@ -216,6 +216,42 @@ func (j *JuiceFSEngine) genDataUrl(data datav1alpha1.DataToMigrate, info *cdatam
 				u.Path = data.DataSet.Path
 			}
 			dataUrl = u.String()
+			if fsInfo[FormatCmd] != "" {
+				info.Options[FormatCmd] = fsInfo[FormatCmd]
+			}
+			if fsInfo[TokenSecret] != "" && fsInfo[TokenSecretKey] != "" {
+				info.EncryptOptions = append(info.EncryptOptions, datav1alpha1.EncryptOption{
+					Name: "TOKEN",
+					ValueFrom: datav1alpha1.EncryptOptionSource{
+						SecretKeyRef: datav1alpha1.SecretKeySelector{
+							Name: fsInfo[TokenSecret],
+							Key:  fsInfo[TokenSecretKey],
+						},
+					},
+				})
+			}
+			if fsInfo[AccessKeySecret] != "" && fsInfo[AccessKeySecretKey] != "" {
+				info.EncryptOptions = append(info.EncryptOptions, datav1alpha1.EncryptOption{
+					Name: "ACCESS_KEY",
+					ValueFrom: datav1alpha1.EncryptOptionSource{
+						SecretKeyRef: datav1alpha1.SecretKeySelector{
+							Name: fsInfo[AccessKeySecret],
+							Key:  fsInfo[AccessKeySecretKey],
+						},
+					},
+				})
+			}
+			if fsInfo[SecretKeySecret] != "" && fsInfo[SecretKeySecretKey] != "" {
+				info.EncryptOptions = append(info.EncryptOptions, datav1alpha1.EncryptOption{
+					Name: "SECRET_KEY",
+					ValueFrom: datav1alpha1.EncryptOptionSource{
+						SecretKeyRef: datav1alpha1.SecretKeySelector{
+							Name: fsInfo[SecretKeySecret],
+							Key:  fsInfo[SecretKeySecretKey],
+						},
+					},
+				})
+			}
 		}
 		return dataUrl, nil
 	}
