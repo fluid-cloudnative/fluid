@@ -61,17 +61,19 @@ type DataLoadSpec struct {
 	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
 
 	// +optional
-	// pod
+	// Affinity defines affinity for DataLoad pod
 	Affinity *corev1.Affinity `json:"affinity,omitempty"`
 
 	// +optional
+	// Tolerations defines tolerations for DataLoad pod
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 
 	// +optional
-	// pod node selector
+	// NodeSelector defiens node selector for DataLoad pod
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
 	// +optional
+	// SchedulerName sets the scheduler to be used for DataLoad pod
 	SchedulerName string `json:"schedulerName,omitempty"`
 }
 

@@ -37,6 +37,21 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if .Values.datamigrate.schedulerName }}
+      schedulerName: {{ .Values.datamigrate.schedulerName }}
+      {{- end }}
+      {{- with .Values.datamigrate.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.datamigrate.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.datamigrate.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: datamigrate
           image: {{ required "DataMigrate image should be set" .Values.datamigrate.image }}
