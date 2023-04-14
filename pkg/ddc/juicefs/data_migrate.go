@@ -209,8 +209,8 @@ func (j *JuiceFSEngine) genDataUrl(data datav1alpha1.DataToMigrate, info *cdatam
 			if strings.HasPrefix(data.ExternalStorage.URI, common.VolumeScheme.String()) {
 				var (
 					volName = "native-vol"
-					pvcName = ""
 					subPath = ""
+					pvcName string
 				)
 				parts := strings.SplitN(strings.TrimPrefix(data.ExternalStorage.URI, common.VolumeScheme.String()), "/", 2)
 
