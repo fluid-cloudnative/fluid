@@ -216,6 +216,42 @@ func (j *JuiceFSEngine) genDataUrl(data datav1alpha1.DataToMigrate, info *cdatam
 				u.Path = data.DataSet.Path
 			}
 			dataUrl = u.String()
+			if fsInfo[FormatCmd] != "" {
+				info.Options[FormatCmd] = fsInfo[FormatCmd]
+			}
+			if fsInfo[TokenSecret] != "" && fsInfo[TokenSecretKey] != "" {
+				info.EncryptOptions = append(info.EncryptOptions, datav1alpha1.EncryptOption{
+					Name: "TOKEN",
+					ValueFrom: datav1alpha1.EncryptOptionSource{
+						SecretKeyRef: datav1alpha1.SecretKeySelector{
+							Name: fsInfo[TokenSecret],
+							Key:  fsInfo[TokenSecretKey],
+						},
+					},
+				})
+			}
+			if fsInfo[AccessKeySecret] != "" && fsInfo[AccessKeySecretKey] != "" {
+				info.EncryptOptions = append(info.EncryptOptions, datav1alpha1.EncryptOption{
+					Name: "ACCESS_KEY",
+					ValueFrom: datav1alpha1.EncryptOptionSource{
+						SecretKeyRef: datav1alpha1.SecretKeySelector{
+							Name: fsInfo[AccessKeySecret],
+							Key:  fsInfo[AccessKeySecretKey],
+						},
+					},
+				})
+			}
+			if fsInfo[SecretKeySecret] != "" && fsInfo[SecretKeySecretKey] != "" {
+				info.EncryptOptions = append(info.EncryptOptions, datav1alpha1.EncryptOption{
+					Name: "SECRET_KEY",
+					ValueFrom: datav1alpha1.EncryptOptionSource{
+						SecretKeyRef: datav1alpha1.SecretKeySelector{
+							Name: fsInfo[SecretKeySecret],
+							Key:  fsInfo[SecretKeySecretKey],
+						},
+					},
+				})
+			}
 		}
 		return dataUrl, nil
 	}
@@ -265,14 +301,14 @@ func (j *JuiceFSEngine) genDataUrl(data datav1alpha1.DataToMigrate, info *cdatam
 				keyName := name
 				switch name {
 				case "access-key":
-					accessKey = "${ACCESS_KEY}"
-					keyName = "ACCESS_KEY"
+					accessKey = "${EXTERNAL_ACCESS_KEY}"
+					keyName = "EXTERNAL_ACCESS_KEY"
 				case "secret-key":
-					secretKey = "${SECRET_KEY}"
-					keyName = "SECRET_KEY"
+					secretKey = "${EXTERNAL_SECRET_KEY}"
+					keyName = "EXTERNAL_SECRET_KEY"
 				case "token":
-					token = "${TOKEN}"
-					keyName = "TOKEN"
+					token = "${EXTERNAL_TOKEN}"
+					keyName = "EXTERNAL_TOKEN"
 				}
 				secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
 				_, err := kubeclient.GetSecret(j.Client, secretKeyRef.Name, j.namespace)
