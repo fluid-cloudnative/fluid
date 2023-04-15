@@ -2,7 +2,6 @@ package utils
 
 import (
 	"testing"
-
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
