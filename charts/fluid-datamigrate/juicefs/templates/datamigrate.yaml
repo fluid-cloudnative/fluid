@@ -80,9 +80,6 @@ spec:
                   name: {{ .valueFrom.secretKeyRef.name }}
                   key: {{ .valueFrom.secretKeyRef.key }}
             {{- end }}
-          envFrom:
-            - configMapRef:
-                name: {{ required "targetDataset should be set" .Values.datamigrate.targetDataset }}-juicefs-values
           volumeMounts:
             - mountPath: /scripts
               name: data-migrate-script

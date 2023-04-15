@@ -494,7 +494,7 @@ func TestJuiceFSEngine_genDataUrl(t *testing.T) {
 					Options: map[string]string{},
 				},
 			},
-			wantDataUrl: "http://${ACCESS_KEY}:${SECRET_KEY}:${TOKEN}@minio/",
+			wantDataUrl: "http://${EXTERNAL_ACCESS_KEY}:${EXTERNAL_SECRET_KEY}:${EXTERNAL_TOKEN}@minio/",
 			wantErr:     false,
 		},
 		{
@@ -521,7 +521,7 @@ func TestJuiceFSEngine_genDataUrl(t *testing.T) {
 					Options: map[string]string{},
 				},
 			},
-			wantDataUrl: "http://${ACCESS_KEY}:@minio/test/",
+			wantDataUrl: "http://${EXTERNAL_ACCESS_KEY}:@minio/test/",
 			wantErr:     false,
 		},
 		{
@@ -548,7 +548,7 @@ func TestJuiceFSEngine_genDataUrl(t *testing.T) {
 					Options: map[string]string{},
 				},
 			},
-			wantDataUrl: "http://${ACCESS_KEY}:@minio/test",
+			wantDataUrl: "http://${EXTERNAL_ACCESS_KEY}:@minio/test",
 			wantErr:     false,
 		},
 		{

@@ -142,13 +142,30 @@ func TestGetFSInfoFromConfigMap(t *testing.T) {
 	runtimeObjs = append(runtimeObjs, configMap)
 	runtimeObjs = append(runtimeObjs, dataSet.DeepCopy())
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, runtimeObjs...)
-	wantMetaurlInfo := map[string]string{MetaurlSecret: "jfs-secret", MetaurlSecretKey: "metaurl", Name: "minio", Edition: "community"}
+	wantMetaurlInfo := map[string]string{
+		MetaurlSecret:      "jfs-secret",
+		MetaurlSecretKey:   "metaurl",
+		SecretKeySecret:    "jfs-secret",
+		SecretKeySecretKey: "secretkey",
+		TokenSecret:        "",
+		TokenSecretKey:     "",
+		AccessKeySecret:    "jfs-secret",
+		AccessKeySecretKey: "accesskey",
+		FormatCmd:          "/usr/local/bin/juicefs format --trash-days=0 --access-key=${ACCESS_KEY} --secret-key=${SECRET_KEY} --storage=minio --bucket=http://minio.default.svc.cluster.local:9000/minio/test2 ${METAURL} minio",
+		Name:               "minio",
+		Edition:            "community",
+	}
 	metaurlInfo, err := GetFSInfoFromConfigMap(fakeClient, dataSet.Name, dataSet.Namespace)
 	if err != nil {
 		t.Errorf("GetMetaUrlInfoFromConfigMap failed.")
 	}
-	if !reflect.DeepEqual(metaurlInfo, wantMetaurlInfo) {
-		t.Errorf("parseCacheInfoFromConfigMap() gotMetaurlInfo = %v, want %v", metaurlInfo, wantMetaurlInfo)
+	if len(metaurlInfo) != len(wantMetaurlInfo) {
+		t.Errorf("parseCacheInfoFromConfigMap() gotMetaurlInfo = %v,\n want %v", metaurlInfo, wantMetaurlInfo)
+	}
+	for k, v := range metaurlInfo {
+		if v != wantMetaurlInfo[k] {
+			t.Errorf("parseCacheInfoFromConfigMap() got %s = %v,\n want %v", k, v, wantMetaurlInfo[k])
+		}
 	}
 }
 
@@ -172,10 +189,17 @@ func Test_parseFSInfoFromConfigMap(t *testing.T) {
 				},
 			},
 			wantMetaurlInfo: map[string]string{
-				MetaurlSecret:    "jfs-secret",
-				MetaurlSecretKey: "metaurl",
-				Name:             "minio",
-				Edition:          CommunityEdition,
+				MetaurlSecret:      "jfs-secret",
+				MetaurlSecretKey:   "metaurl",
+				SecretKeySecret:    "jfs-secret",
+				SecretKeySecretKey: "secretkey",
+				TokenSecret:        "",
+				TokenSecretKey:     "",
+				AccessKeySecret:    "jfs-secret",
+				AccessKeySecretKey: "accesskey",
+				FormatCmd:          "/usr/local/bin/juicefs format --trash-days=0 --access-key=${ACCESS_KEY} --secret-key=${SECRET_KEY} --storage=minio --bucket=http://minio.default.svc.cluster.local:9000/minio/test2 ${METAURL} minio",
+				Name:               "minio",
+				Edition:            "community",
 			},
 			wantErr: false,
 		},
@@ -201,6 +225,14 @@ func Test_parseFSInfoFromConfigMap(t *testing.T) {
 			}
 			if !reflect.DeepEqual(gotMetaurlInfo, tt.wantMetaurlInfo) {
 				t.Errorf("parseFSInfoFromConfigMap() gotMetaurlInfo = %v, want %v", gotMetaurlInfo, tt.wantMetaurlInfo)
+			}
+			if len(gotMetaurlInfo) != len(tt.wantMetaurlInfo) {
+				t.Errorf("parseCacheInfoFromConfigMap() gotMetaurlInfo = %v,\n want %v", gotMetaurlInfo, tt.wantMetaurlInfo)
+			}
+			for k, v := range gotMetaurlInfo {
+				if v != tt.wantMetaurlInfo[k] {
+					t.Errorf("parseCacheInfoFromConfigMap() got %s = %v,\n want %v", k, v, tt.wantMetaurlInfo[k])
+				}
 			}
 		})
 	}

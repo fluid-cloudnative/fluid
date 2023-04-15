@@ -8,7 +8,7 @@ metadata:
 data:
   datamigrate.sh: |
     #!/bin/bash
-    set -xe
+    set -e
 
     function main() {
       echo "juicefs datamigrate job start..."
@@ -17,6 +17,11 @@ data:
       then
         timeout $TIMEOUT /usr/local/bin/juicefs sync {{ .Values.datamigrate.migrateFrom }} {{ .Values.datamigrate.migrateTo }} $OPTION
       else
+        {{- range $key, $val := .Values.datamigrate.options }}
+        {{- if eq $key "formatCmd" }}
+        {{ $val }}
+        {{- end }}
+        {{- end }}
         timeout $TIMEOUT /usr/bin/juicefs sync {{ .Values.datamigrate.migrateFrom }} {{ .Values.datamigrate.migrateTo }} $OPTION
       fi
       echo "juicefs datamigrate job end."
