@@ -44,6 +44,9 @@ func TransformQuantityToJindoUnit(q *resource.Quantity) (value string) {
 	if strings.HasSuffix(value, "Gi") {
 		value = strings.ReplaceAll(value, "Gi", "g")
 	}
+	if strings.HasSuffix(value, "Mi") {
+		value = strings.ReplaceAll(value, "Mi", "m")
+	}
 	return
 }
 
