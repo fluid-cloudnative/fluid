@@ -58,6 +58,28 @@ spec:
 - `spec.from(/to).dataset.path`：需要迁移数据的 dataset 的子路径；
 - `spec.options`：juicefs sync 的参数，具体请参考[文档](https://juicefs.com/docs/zh/community/command_reference#juicefs-sync)。
 
+### 基于 PVC 的 DataMigrate
+
+DataMigrate 还支持以 PVC 的形式作为数据源，需要额外准备需要迁移的 PVC，Fluid 会将已有的 PVC 挂载到执行 DataMigrate 的 Job 中。
+以下是一个 DataMigrate 的示例，PVC 名为 `oss-pvc`：
+
+```yaml
+apiVersion: data.fluid.io/v1alpha1
+kind: DataMigrate
+metadata:
+  name: jfs-migrate
+spec:
+  from:
+    externalStorage:
+      uri: pvc://oss-pvc/subpath
+  to:
+    dataset:
+      name: jfsdemo
+      namespace: default
+```
+
+只需要在 uri 中声明 PVC 的名称即可，格式为 `pvc://<pvc-name>/<subpath>`。
+
 ## DataMigrate 生命周期
 
 DataMigrate 的生命周期如下图所示：
