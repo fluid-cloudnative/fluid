@@ -39,7 +39,7 @@ spec:
       annotations:
         juicefs: "worker"
     networkMode: ContainerNetwork
-    envs:
+    env:
       - name: "GOOGLE_CLOUD_PROJECT"
         value: "xxx"
     resources:
@@ -58,7 +58,7 @@ spec:
 - `spec.worker.options`：指定 JuiceFS worker 的挂载参数，具体参数请参考 [JuiceFS 社区版文档](https://juicefs.com/docs/community/command_reference/#mount) 或 [JuiceFS 云服务文档](https://juicefs.com/docs/cloud/reference/commands_reference#mount)；
 - `spec.worker.podMetadata`：指定 JuiceFS worker 的 pod 元数据，包括 labels 和 annotations；
 - `spec.worker.networkMode`：指定 JuiceFS worker 的网络模式，目前支持 `HostNetwork` 和 `ContainerNetwork`，默认为 `HostNetwork`；
-- `spec.worker.envs`：指定 JuiceFS worker 的环境变量；
+- `spec.worker.env`：指定 JuiceFS worker 的环境变量；
 - `spec.worker.resources`：指定 JuiceFS worker 的资源限制。
 
 ## Worker 的 Volume 配置
