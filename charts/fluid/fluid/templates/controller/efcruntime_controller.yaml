@@ -79,6 +79,8 @@ spec:
           {{- if .Values.runtime.efc.fuse.image }}
           - name: EFC_FUSE_IMAGE_ENV
             value: {{ .Values.runtime.efc.fuse.image | quote }}
+          - name: EFC_SESSMGR_IMAGE_ENV
+            value: {{ .Values.runtime.efc.fuse.image | quote }}
           {{- end }}
         ports:
         - containerPort: 8080
