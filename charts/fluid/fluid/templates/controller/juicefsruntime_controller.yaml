@@ -48,6 +48,7 @@ spec:
           - --development=false
           - --pprof-addr=:6060
           - --enable-leader-election
+          - --runtime-workers={{ .Values.runtime.juicefs.runtimeWorkers }}
           - --leader-election-namespace={{ include "fluid.namespace" . }}
         command: ["juicefsruntime-controller", "start"]
         env:
