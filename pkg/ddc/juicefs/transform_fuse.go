@@ -60,6 +60,9 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 	// transform format cmd
 	j.genFormatCmd(value, runtime.Spec.Configs)
 
+	// transform quota cmd
+	j.genQuotaCmd(value, mount)
+
 	// transform mount cmd & stat cmd
 	err = j.genMount(value, runtime, option)
 	if err != nil {
@@ -352,6 +355,9 @@ func (j *JuiceFSEngine) genMount(value *JuiceFS, runtime *datav1alpha1.JuiceFSRu
 func genOption(optionMap map[string]string) []string {
 	options := []string{}
 	for k, v := range optionMap {
+		if k == "quota" {
+			continue
+		}
 		if v != "" {
 			k = fmt.Sprintf("%s=%s", k, v)
 		}
@@ -410,4 +416,29 @@ func (j *JuiceFSEngine) genFormatCmd(value *JuiceFS, config *[]string) {
 	args = append(args, value.Source)
 	cmd := append([]string{common.JuiceCliPath, "auth"}, args...)
 	value.Configs.FormatCmd = strings.Join(cmd, " ")
+}
+
+func (j *JuiceFSEngine) genQuotaCmd(value *JuiceFS, mount datav1alpha1.Mount) {
+	options := mount.Options
+	for k, v := range options {
+		if k == "quota" {
+			if value.Edition == CommunityEdition {
+				// ce
+				if value.Fuse.ImageTag == "" {
+					// todo: use v1.1.0 and above image or nightly image
+				}
+				// juicefs quota set ${metaurl} --path ${path} --capacity ${capacity}
+				value.Configs.QuotaCmd = fmt.Sprintf("/usr/local/bin/juicefs quota set %s --path %s --capacity %s", value.Source, value.Fuse.SubPath, v)
+				return
+			}
+			// ee
+			if value.Fuse.ImageTag == "" {
+				// todo: use v4.10.0 and above image or nightly image
+			}
+			// juicefs quota set ${metaurl} --path ${path} --capacity ${capacity}
+			cli := "/usr/bin/juicefs" // todo: use go binary path
+			value.Configs.QuotaCmd = fmt.Sprintf("%s quota set %s --path %s --capacity %s", cli, value.Source, value.Fuse.SubPath, v)
+			return
+		}
+	}
 }

@@ -180,6 +180,10 @@ data:
     {{ .Values.configs.formatCmd }}
     {{- end }}
 
+    {{- if .Values.configs.quotaCmd }}
+    {{ .Values.configs.quotaCmd }}
+    {{- end }}
+
     {{ .Values.fuse.command }}
 
 {{- end }}

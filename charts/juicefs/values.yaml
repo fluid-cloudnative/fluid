@@ -71,6 +71,7 @@ configs:
   tokenSecret: ""
   tokenSecretKey: ""
   formatCmd : ""
+  quotaCmd: ""
 
 ## FUSE ##
 

@@ -50,3 +50,6 @@
 
 0.2.13
 - Add `sidecar.istio.io/inject` to components annotation
+
+0.2.14
+- Support subpath quota
