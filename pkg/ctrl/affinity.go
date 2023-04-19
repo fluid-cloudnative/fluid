@@ -127,8 +127,8 @@ func (e *Helper) BuildWorkersAffinity(workers *appsv1.StatefulSet) (workersToUpd
 				},
 			}
 
-			// TODO: remove this when EAC is ready for spread-first scheduling policy
-			// Currently EAC prefers binpack-first scheduling policy to spread-first scheduling policy. Set PreferredDuringSchedulingIgnoredDuringExecution to empty
+			// TODO: remove this when EFC is ready for spread-first scheduling policy
+			// Currently EFC prefers binpack-first scheduling policy to spread-first scheduling policy. Set PreferredDuringSchedulingIgnoredDuringExecution to empty
 			// to avoid using spread-first scheduling policy
 			if e.runtimeInfo.GetRuntimeType() == common.EFCRuntime {
 				workersToUpdate.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution = []corev1.WeightedPodAffinityTerm{}

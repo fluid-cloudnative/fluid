@@ -64,10 +64,10 @@ func TransformQuantityToGooseFSUnit(q *resource.Quantity) (value string) {
 
 }
 
-// TransformQuantityToEACUnit transform a given input quantity to another one
-// that can be recognized by EAC. This is necessary because EAC takes decimal byte units(e.g. KB, MB, GB, etc.)
+// TransformQuantityToEFCUnit transform a given input quantity to another one
+// that can be recognized by EFC. This is necessary because EFC takes decimal byte units(e.g. KB, MB, GB, etc.)
 // as binary byte units(e.g. Ki, Mi, Gi)
-func TransformQuantityToEACUnit(q *resource.Quantity) (value string) {
+func TransformQuantityToEFCUnit(q *resource.Quantity) (value string) {
 	value = q.String()
 	if strings.HasSuffix(value, "i") {
 		value = strings.ReplaceAll(value, "i", "B")
@@ -75,7 +75,7 @@ func TransformQuantityToEACUnit(q *resource.Quantity) (value string) {
 	return
 }
 
-func TransformEACUnitToQuantity(value string) (q *resource.Quantity) {
+func TransformEFCUnitToQuantity(value string) (q *resource.Quantity) {
 	if strings.HasSuffix(value, "B") {
 		value = strings.ReplaceAll(value, "B", "i")
 	}
