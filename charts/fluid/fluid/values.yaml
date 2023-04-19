@@ -82,6 +82,7 @@ runtime:
   juicefs:
     replicas: 1
     enabled: false
+    runtimeWorkers: 3
     controller:
       image: fluidcloudnative/juicefsruntime-controller:v0.9.0-9f75489
     fuse:
