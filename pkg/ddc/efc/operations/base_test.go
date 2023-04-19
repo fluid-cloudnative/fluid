@@ -36,10 +36,10 @@ func TestNewEFCFileUtils(t *testing.T) {
 	var expectedResult = EFCFileUtils{
 		podName:   "efcdemo",
 		namespace: "default",
-		container: "eac-master",
+		container: "efc-master",
 		log:       fake.NullLogger(),
 	}
-	result := NewEFCFileUtils("efcdemo", "eac-master", "default", fake.NullLogger())
+	result := NewEFCFileUtils("efcdemo", "efc-master", "default", fake.NullLogger())
 	if !reflect.DeepEqual(expectedResult, result) {
 		t.Errorf("fail to create the EFCFileUtils, want: %v, got: %v", expectedResult, result)
 	}

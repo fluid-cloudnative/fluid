@@ -108,7 +108,7 @@ func (e *EFCEngine) cleanupCache() (err error) {
 	}
 
 	for _, pod := range workerPods {
-		fileUtils := operations.NewEFCFileUtils(pod.Name, "eac-worker", e.namespace, e.Log)
+		fileUtils := operations.NewEFCFileUtils(pod.Name, "efc-worker", e.namespace, e.Log)
 
 		e.Log.Info("Remove cache in worker pod", "pod", pod.Name, "cache", cacheDir)
 		cacheDirToBeDeleted := filepath.Join(cacheDir, "tier_dadi")

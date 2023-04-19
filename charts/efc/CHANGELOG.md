@@ -16,5 +16,5 @@
 
 0.1.4
 
-- Fix eac-fuse mount options
-- Add eac-master image splited from eac-fuse image
+- Fix efc-fuse mount options
+- Add efc-master image splited from efc-fuse image
