@@ -283,7 +283,7 @@ func TestBuildWorkersAffinity(t *testing.T) {
 	}
 }
 
-func TestBuildWorkersAffinityForEACRuntime(t *testing.T) {
+func TestBuildWorkersAffinityForEFCRuntime(t *testing.T) {
 	tests := []struct {
 		name    string
 		dataset *datav1alpha1.Dataset
@@ -291,10 +291,10 @@ func TestBuildWorkersAffinityForEACRuntime(t *testing.T) {
 		want    *v1.Affinity
 	}{
 		{
-			name: "eac-shared",
+			name: "efc-shared",
 			dataset: &datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-eac",
+					Name:      "test-efc",
 					Namespace: "big-data",
 				},
 				Spec: datav1alpha1.DatasetSpec{
@@ -335,7 +335,7 @@ func TestBuildWorkersAffinityForEACRuntime(t *testing.T) {
 							Preference: v1.NodeSelectorTerm{
 								MatchExpressions: []v1.NodeSelectorRequirement{
 									{
-										Key:      "fluid.io/f-big-data-test-eac",
+										Key:      "fluid.io/f-big-data-test-efc",
 										Operator: v1.NodeSelectorOpIn,
 										Values:   []string{"true"},
 									},

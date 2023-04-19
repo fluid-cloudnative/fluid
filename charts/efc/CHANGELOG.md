@@ -4,11 +4,11 @@
 
 0.1.1
 
-- Support ownerReferences on EACRuntime resources
+- Support ownerReferences on EFCRuntime resources
 
 0.1.2
 
-- Support podMetadata for EACRuntime resources
+- Support podMetadata for EFCRuntime resources
 
 0.1.3
 

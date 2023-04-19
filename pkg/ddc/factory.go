@@ -16,7 +16,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/controllers/deploy"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/eac"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/efc"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/goosefs"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindofsx"
@@ -40,7 +40,7 @@ func init() {
 		"goosefs":  goosefs.Build,
 		"juicefs":  juicefs.Build,
 		"thin":     thin.Build,
-		"efc":      eac.Build,
+		"efc":      efc.Build,
 	}
 
 	deploy.SetPrecheckFunc(map[string]deploy.CheckFunc{
@@ -49,7 +49,7 @@ func init() {
 		"juicefsruntime-controller": juicefs.Precheck,
 		"goosefsruntime-controller": goosefs.Precheck,
 		"thinruntime-controller":    thin.Precheck,
-		"efcruntime-controller":     eac.Precheck,
+		"efcruntime-controller":     efc.Precheck,
 	})
 }
 

@@ -393,16 +393,16 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		runtimeInfo.SetupFuseDeployMode(true, thinRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(thinRuntime.Spec.Fuse.CleanPolicy)
 	case common.EFCRuntime:
-		eacRuntime, err := utils.GetEFCRuntime(client, name, namespace)
+		efcRuntime, err := utils.GetEFCRuntime(client, name, namespace)
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.EFCRuntime, datav1alpha1.TieredStore{}, WithMetadataList(eacRuntime.Spec.MetadataList))
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.EFCRuntime, datav1alpha1.TieredStore{}, WithMetadataList(efcRuntime.Spec.MetadataList))
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo.SetupFuseDeployMode(true, eacRuntime.Spec.Fuse.NodeSelector)
-		runtimeInfo.SetupFuseCleanPolicy(eacRuntime.Spec.Fuse.CleanPolicy)
+		runtimeInfo.SetupFuseDeployMode(true, efcRuntime.Spec.Fuse.NodeSelector)
+		runtimeInfo.SetupFuseCleanPolicy(efcRuntime.Spec.Fuse.CleanPolicy)
 	default:
 		err = fmt.Errorf("fail to get runtimeInfo for runtime type: %s", runtimeType)
 		return

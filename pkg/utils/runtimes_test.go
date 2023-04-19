@@ -414,10 +414,10 @@ func TestGetThinRuntimeProfile(t *testing.T) {
 	}
 }
 
-func TestGetEACRuntime(t *testing.T) {
+func TestGetEFCRuntime(t *testing.T) {
 	runtimeNamespace := "default"
-	runtimeName := "eac-runtime-1"
-	eacRuntime := &datav1alpha1.EFCRuntime{
+	runtimeName := "efc-runtime-1"
+	efcRuntime := &datav1alpha1.EFCRuntime{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      runtimeName,
 			Namespace: runtimeNamespace,
@@ -425,9 +425,9 @@ func TestGetEACRuntime(t *testing.T) {
 	}
 
 	s := runtime.NewScheme()
-	s.AddKnownTypes(datav1alpha1.GroupVersion, eacRuntime)
+	s.AddKnownTypes(datav1alpha1.GroupVersion, efcRuntime)
 
-	fakeClient := fake.NewFakeClientWithScheme(s, eacRuntime)
+	fakeClient := fake.NewFakeClientWithScheme(s, efcRuntime)
 
 	tests := []struct {
 		name      string

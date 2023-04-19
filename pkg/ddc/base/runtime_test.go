@@ -925,13 +925,13 @@ func TestGetRuntimeInfo(t *testing.T) {
 		},
 	}
 
-	eacRuntime := v1alpha1.EFCRuntime{
+	efcRuntime := v1alpha1.EFCRuntime{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "efc",
 			Namespace: "default",
 		},
 	}
-	dataEAC := v1alpha1.Dataset{
+	dataEFC := v1alpha1.Dataset{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "efc",
 			Namespace: "default",
@@ -957,13 +957,13 @@ func TestGetRuntimeInfo(t *testing.T) {
 	goosefsRuntimeObjs := []runtime.Object{}
 	jindoRuntimeObjs := []runtime.Object{}
 	juicefsRuntimeObjs := []runtime.Object{}
-	eacRuntimeObjs := []runtime.Object{}
+	efcRuntimeObjs := []runtime.Object{}
 
 	alluxioRuntimeObjs = append(alluxioRuntimeObjs, &alluxioRuntime, &dataAlluxio)
 	goosefsRuntimeObjs = append(goosefsRuntimeObjs, &goosefsRuntime, &dataGooseFS)
 	jindoRuntimeObjs = append(jindoRuntimeObjs, &jindoRuntime, &dataJindo)
 	juicefsRuntimeObjs = append(juicefsRuntimeObjs, &juicefsRuntime, &dataJuice)
-	eacRuntimeObjs = append(eacRuntimeObjs, &eacRuntime, &dataEAC)
+	efcRuntimeObjs = append(efcRuntimeObjs, &efcRuntime, &dataEFC)
 	type args struct {
 		client    client.Client
 		name      string
@@ -1090,9 +1090,9 @@ func TestGetRuntimeInfo(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "eac_test",
+			name: "efc_test",
 			args: args{
-				client:    fakeutils.NewFakeClientWithScheme(s, eacRuntimeObjs...),
+				client:    fakeutils.NewFakeClientWithScheme(s, efcRuntimeObjs...),
 				name:      "efc",
 				namespace: "default",
 			},
@@ -1109,14 +1109,14 @@ func TestGetRuntimeInfo(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "eac_test_err",
+			name: "efc_test_err",
 			args: args{
-				client:    fakeutils.NewFakeClientWithScheme(s, eacRuntimeObjs...),
-				name:      "eac-fake",
+				client:    fakeutils.NewFakeClientWithScheme(s, efcRuntimeObjs...),
+				name:      "efc-fake",
 				namespace: "default",
 			},
 			want: &RuntimeInfo{
-				name:        "eac-fake",
+				name:        "efc-fake",
 				namespace:   "default",
 				runtimeType: common.EFCRuntime,
 				// fuse global is set to true since v0.7.0
@@ -1181,7 +1181,7 @@ func TestGetRuntimeStatus(t *testing.T) {
 		},
 	}
 
-	eacRuntime := v1alpha1.EFCRuntime{
+	efcRuntime := v1alpha1.EFCRuntime{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "efc",
 			Namespace: "default",
@@ -1208,14 +1208,14 @@ func TestGetRuntimeStatus(t *testing.T) {
 	goosefsRuntimeObjs := []runtime.Object{}
 	jindoRuntimeObjs := []runtime.Object{}
 	juicefsRuntimeObjs := []runtime.Object{}
-	eacRuntimeObjs := []runtime.Object{}
+	efcRuntimeObjs := []runtime.Object{}
 	thinRuntimeObjs := []runtime.Object{}
 
 	alluxioRuntimeObjs = append(alluxioRuntimeObjs, &alluxioRuntime)
 	goosefsRuntimeObjs = append(goosefsRuntimeObjs, &goosefsRuntime)
 	jindoRuntimeObjs = append(jindoRuntimeObjs, &jindoRuntime)
 	juicefsRuntimeObjs = append(juicefsRuntimeObjs, &juicefsRuntime)
-	eacRuntimeObjs = append(eacRuntimeObjs, &eacRuntime)
+	efcRuntimeObjs = append(efcRuntimeObjs, &efcRuntime)
 	thinRuntimeObjs = append(thinRuntimeObjs, &thinRuntime)
 	type args struct {
 		client      client.Client
@@ -1309,9 +1309,9 @@ func TestGetRuntimeStatus(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "eac_test",
+			name: "efc_test",
 			args: args{
-				client:      fakeutils.NewFakeClientWithScheme(s, eacRuntimeObjs...),
+				client:      fakeutils.NewFakeClientWithScheme(s, efcRuntimeObjs...),
 				name:        "efc",
 				namespace:   "default",
 				runtimeType: common.EFCRuntime,
@@ -1319,10 +1319,10 @@ func TestGetRuntimeStatus(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "eac_test_error",
+			name: "efc_test_error",
 			args: args{
-				client:      fakeutils.NewFakeClientWithScheme(s, eacRuntimeObjs...),
-				name:        "eac-error",
+				client:      fakeutils.NewFakeClientWithScheme(s, efcRuntimeObjs...),
+				name:        "efc-error",
 				namespace:   "default",
 				runtimeType: common.EFCRuntime,
 			},

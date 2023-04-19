@@ -138,7 +138,7 @@ func TestTransformQuantityToGooseFSUnit(t *testing.T) {
 	}
 }
 
-func TestTransformQuantityToEACUnit(t *testing.T) {
+func TestTransformQuantityToEFCUnit(t *testing.T) {
 	testQuantity1 := resource.MustParse("10Gi")
 	testQuantity2 := resource.MustParse("10M")
 
@@ -148,20 +148,20 @@ func TestTransformQuantityToEACUnit(t *testing.T) {
 		wantValue string
 	}{
 		{
-			name:      "test1 for TransformQuantityToEACUnit",
+			name:      "test1 for TransformQuantityToEFCUnit",
 			quantity:  &testQuantity1,
 			wantValue: "10GB",
 		},
 		{
-			name:      "test2 for TransformQuantityToEACUnit",
+			name:      "test2 for TransformQuantityToEFCUnit",
 			quantity:  &testQuantity2,
 			wantValue: "10M",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotValue := TransformQuantityToEACUnit(tt.quantity); gotValue != tt.wantValue {
-				t.Errorf("TransformQuantityToEACUnit() = %v, want %v", gotValue, tt.wantValue)
+			if gotValue := TransformQuantityToEFCUnit(tt.quantity); gotValue != tt.wantValue {
+				t.Errorf("TransformQuantityToEFCUnit() = %v, want %v", gotValue, tt.wantValue)
 			}
 		})
 	}

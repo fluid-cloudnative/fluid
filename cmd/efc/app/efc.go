@@ -20,7 +20,7 @@ import (
 	"os"
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/eac"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/efc"
 	"k8s.io/apimachinery/pkg/util/net"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -35,7 +35,7 @@ import (
 
 	"github.com/fluid-cloudnative/fluid"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	eacctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/eac"
+	efcctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/efc"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 )
 
@@ -43,7 +43,7 @@ var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
 	// Use compiler to check if the struct implements all the interface
-	_ base.Implement = (*eac.EACEngine)(nil)
+	_ base.Implement = (*efc.EFCEngine)(nil)
 
 	eventDriven             bool
 	metricsAddr             string
@@ -73,7 +73,7 @@ func init() {
 	startCmd.Flags().StringVarP(&pprofAddr, "pprof-addr", "", "", "The address for pprof to use while exporting profiling results")
 	startCmd.Flags().BoolVarP(&development, "development", "", true, "Enable development mode for fluid controller.")
 	startCmd.Flags().BoolVar(&eventDriven, "event-driven", true, "The reconciler's loop strategy. if it's false, it indicates period driven.")
-	startCmd.Flags().StringVar(&portRange, "runtime-node-port-range", "16000-17999", "Set available port range for EAC")
+	startCmd.Flags().StringVar(&portRange, "runtime-node-port-range", "16000-17999", "Set available port range for EFC")
 }
 
 func handle() {
@@ -111,8 +111,8 @@ func handle() {
 		MaxConcurrentReconciles: maxConcurrentReconciles,
 	}
 
-	if err = (eacctl.NewRuntimeReconciler(mgr.GetClient(),
-		ctrl.Log.WithName("eacctl").WithName("EFCRuntime"),
+	if err = (efcctl.NewRuntimeReconciler(mgr.GetClient(),
+		ctrl.Log.WithName("efcctl").WithName("EFCRuntime"),
 		mgr.GetScheme(),
 		mgr.GetEventRecorderFor("EFCRuntime"),
 	)).SetupWithManager(mgr, controllerOptions, eventDriven); err != nil {
@@ -127,13 +127,13 @@ func handle() {
 	}
 	setupLog.Info("port range parsed", "port range", pr.String())
 
-	// portallocator.SetupRuntimePortAllocator(mgr.GetClient(), pr, eac.GetReservedPorts)
+	// portallocator.SetupRuntimePortAllocator(mgr.GetClient(), pr, efc.GetReservedPorts)
 	portallocator.SetupRuntimePortAllocatorWithType(mgr.GetClient(),
 		pr,
 		portallocator.Random,
-		eac.GetReservedPorts)
+		efc.GetReservedPorts)
 
-	if err := mgr.Add(eac.NewSessMgrInitializer(mgr.GetClient())); err != nil {
+	if err := mgr.Add(efc.NewSessMgrInitializer(mgr.GetClient())); err != nil {
 		setupLog.Error(err, "fail to add SessMgrInitializer to controller manager")
 		os.Exit(1)
 	}
