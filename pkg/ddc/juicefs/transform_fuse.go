@@ -19,10 +19,12 @@ package juicefs
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -418,27 +420,125 @@ func (j *JuiceFSEngine) genFormatCmd(value *JuiceFS, config *[]string) {
 	value.Configs.FormatCmd = strings.Join(cmd, " ")
 }
 
-func (j *JuiceFSEngine) genQuotaCmd(value *JuiceFS, mount datav1alpha1.Mount) {
+func (j *JuiceFSEngine) getQuota(v string) (int64, error) {
+	q, err := resource.ParseQuantity(v)
+	if err != nil {
+		return 0, fmt.Errorf("invalid quota %s: %v", v, err)
+	}
+	qs := q.Value() / 1024 / 1024 / 1024
+	if qs <= 0 {
+		return 0, fmt.Errorf("quota %s is too small, at least 1GiB for quota", v)
+	}
+
+	return qs, nil
+}
+
+func (j *JuiceFSEngine) genQuotaCmd(value *JuiceFS, mount datav1alpha1.Mount) error {
 	options := mount.Options
 	for k, v := range options {
 		if k == "quota" {
+			qs, err := j.getQuota(v)
+			if err != nil {
+				return err
+			}
+			if value.Fuse.SubPath == "" {
+				return fmt.Errorf("subPath must be set when quota is enabled")
+			}
+			ceVersion, eeVersion, err := ParseImageTag(value.Fuse.ImageTag)
+			if err != nil {
+				return err
+			}
 			if value.Edition == CommunityEdition {
 				// ce
-				if value.Fuse.ImageTag == "" {
-					// todo: use v1.1.0 and above image or nightly image
+				if ceVersion.LessThan(&ClientVersion{1, 1, 0, ""}) {
+					return fmt.Errorf("quota is not supported in juicefs-ce version %s", value.Fuse.ImageTag)
 				}
 				// juicefs quota set ${metaurl} --path ${path} --capacity ${capacity}
-				value.Configs.QuotaCmd = fmt.Sprintf("/usr/local/bin/juicefs quota set %s --path %s --capacity %s", value.Source, value.Fuse.SubPath, v)
-				return
+				value.Configs.QuotaCmd = fmt.Sprintf("/usr/local/bin/juicefs quota set %s --path %s --capacity %d", value.Source, value.Fuse.SubPath, qs)
+				return nil
 			}
 			// ee
-			if value.Fuse.ImageTag == "" {
-				// todo: use v4.10.0 and above image or nightly image
+			if eeVersion.LessThan(&ClientVersion{4, 9, 2, ""}) {
+				return fmt.Errorf("quota is not supported in juicefs-ee version %s", value.Fuse.ImageTag)
 			}
 			// juicefs quota set ${metaurl} --path ${path} --capacity ${capacity}
-			cli := "/usr/bin/juicefs" // todo: use go binary path
-			value.Configs.QuotaCmd = fmt.Sprintf("%s quota set %s --path %s --capacity %s", cli, value.Source, value.Fuse.SubPath, v)
-			return
+			cli := "/usr/bin/juicefs"
+			value.Configs.QuotaCmd = fmt.Sprintf("%s quota set %s --path %s --capacity %d", cli, value.Source, value.Fuse.SubPath, qs)
+			return nil
 		}
 	}
+	return nil
+}
+
+func ParseImageTag(imageTag string) (*ClientVersion, *ClientVersion, error) {
+	if imageTag == "nightly" {
+		return &ClientVersion{0, 0, 0, "nightly"}, &ClientVersion{0, 0, 0, "nightly"}, nil
+	}
+	versions := strings.Split(imageTag, "-")
+	if len(versions) < 2 {
+		return nil, nil, fmt.Errorf("can not parse version from image tag: %s", imageTag)
+	}
+
+	ceVersion, err := parseVersion(versions[0])
+	if err != nil {
+		return nil, nil, err
+	}
+	eeVersion, err := parseVersion(versions[1])
+	if err != nil {
+		return nil, nil, err
+	}
+	return ceVersion, eeVersion, nil
+}
+
+func parseVersion(version string) (*ClientVersion, error) {
+	re := regexp.MustCompile(`^v?(\d+)\.(\d+)\.(\d+)(?:-(.+))?$`)
+	matches := re.FindStringSubmatch(strings.TrimSpace(version))
+	if matches == nil {
+		return nil, fmt.Errorf("invalid version string: %s", version)
+	}
+	major, err := strconv.Atoi(matches[1])
+	if err != nil {
+		return nil, fmt.Errorf("invalid major version: %s", matches[1])
+	}
+	minor, err := strconv.Atoi(matches[2])
+	if err != nil {
+		return nil, fmt.Errorf("invalid minor version: %s", matches[2])
+	}
+	patch, err := strconv.Atoi(matches[3])
+	if err != nil {
+		return nil, fmt.Errorf("invalid patch version: %s", matches[3])
+	}
+	return &ClientVersion{
+		Major: major,
+		Minor: minor,
+		Patch: patch,
+		Tag:   matches[4],
+	}, nil
+}
+
+type ClientVersion struct {
+	Major, Minor, Patch int
+	Tag                 string
+}
+
+func (v *ClientVersion) LessThan(other *ClientVersion) bool {
+	if v.Tag == "nightly" {
+		return false
+	}
+	if v.Major < other.Major {
+		return true
+	}
+	if v.Major > other.Major {
+		return false
+	}
+	if v.Minor < other.Minor {
+		return true
+	}
+	if v.Minor > other.Minor {
+		return false
+	}
+	if v.Patch < other.Patch {
+		return true
+	}
+	return false
 }

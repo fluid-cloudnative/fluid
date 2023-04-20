@@ -175,6 +175,7 @@ metadata:
 data:
   script.sh: |
     #!/bin/bash
+    set -e
 
     {{- if .Values.configs.formatCmd }}
     {{ .Values.configs.formatCmd }}
