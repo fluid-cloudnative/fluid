@@ -41,7 +41,7 @@ var valuesConfigMapData = `
 fullnameOverride: efcdemo
 placement: Exclusive
 master:
-  image: registry.cn-zhangjiakou.aliyuncs.com/nascache/eac-fuse
+  image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-fuse
   imageTag: update
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
@@ -57,7 +57,7 @@ master:
       type: emptyDir
       path: /dev/shm
 worker:
-  image: registry.cn-zhangjiakou.aliyuncs.com/nascache/eac-worker
+  image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-worker
   imageTag: update
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
@@ -78,7 +78,7 @@ worker:
       path: /dev/efc-worker-cache-path/default/efcdemo
       quota: 2GB
 fuse:
-  image: registry.cn-zhangjiakou.aliyuncs.com/nascache/eac-fuse
+  image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-fuse
   imageTag: update
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
@@ -298,7 +298,7 @@ func TestEFCEngine_getMountPath(t *testing.T) {
 				namespace: tt.fields.namespace,
 			}
 			t.Setenv("MOUNT_ROOT", tt.fields.MountRoot)
-			wantMountPath := fmt.Sprintf("%s/%s/%s/eac-fuse", tt.fields.MountRoot+"/efc", tt.fields.namespace, e.name)
+			wantMountPath := fmt.Sprintf("%s/%s/%s/efc-fuse", tt.fields.MountRoot+"/efc", tt.fields.namespace, e.name)
 			if gotMountPath := e.getMountPath(); gotMountPath != wantMountPath {
 				t.Errorf("EFCEngine.getMountPoint() = %v, want %v", gotMountPath, wantMountPath)
 			}
@@ -456,7 +456,7 @@ func TestEFCEngine_getWorkerRunningPods(t *testing.T) {
 						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
 								"app":              "efc",
-								"role":             "eac-worker",
+								"role":             "efc-worker",
 								"fluid.io/dataset": "big-data-spark",
 							},
 						},
@@ -476,14 +476,14 @@ func TestEFCEngine_getWorkerRunningPods(t *testing.T) {
 							}},
 							Labels: map[string]string{
 								"app":              "efc",
-								"role":             "eac-worker",
+								"role":             "efc-worker",
 								"fluid.io/dataset": "big-data-spark",
 							},
 						},
 						Spec: corev1.PodSpec{
 							Containers: []corev1.Container{
 								{
-									Name: "eac-worker",
+									Name: "efc-worker",
 									Ports: []corev1.ContainerPort{
 										{
 											Name:          "rpc",
@@ -531,7 +531,7 @@ func TestEFCEngine_getWorkerRunningPods(t *testing.T) {
 						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
 								"app":              "efc",
-								"role":             "eac-worker",
+								"role":             "efc-worker",
 								"fluid.io/dataset": "big-data-spark",
 							},
 						},
@@ -551,14 +551,14 @@ func TestEFCEngine_getWorkerRunningPods(t *testing.T) {
 							}},
 							Labels: map[string]string{
 								"app":  "efc",
-								"role": "eac-worker",
+								"role": "efc-worker",
 								//"fluid.io/dataset": "big-data-spark",
 							},
 						},
 						Spec: corev1.PodSpec{
 							Containers: []corev1.Container{
 								{
-									Name: "eac-worker",
+									Name: "efc-worker",
 									Ports: []corev1.ContainerPort{
 										{
 											Name:          "rpc",

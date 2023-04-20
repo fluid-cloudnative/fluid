@@ -63,13 +63,13 @@ func (e *EFCEngine) getFuseName() (dsName string) {
 
 func (e *EFCEngine) getMasterPodInfo() (podName string, containerName string) {
 	podName = e.getMasterName() + "-0"
-	containerName = "eac-master"
+	containerName = "efc-master"
 	return
 }
 
 func (e *EFCEngine) getWorkerPodInfo() (podName string, containerName string) {
 	podName = e.getWorkerName() + "-0"
-	containerName = "eac-worker"
+	containerName = "efc-worker"
 	return
 }
 

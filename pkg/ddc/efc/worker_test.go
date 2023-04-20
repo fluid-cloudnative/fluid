@@ -465,7 +465,7 @@ func TestEFCEngine_GetWorkerSelectors(t *testing.T) {
 			fields: fields{
 				name: "spark",
 			},
-			want: "app=efc,release=spark,role=eac-worker",
+			want: "app=efc,release=spark,role=efc-worker",
 		},
 	}
 	for _, tt := range tests {
@@ -511,7 +511,7 @@ func TestEFCEngine_syncWorkersEndpoints(t *testing.T) {
 						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
 								"app":              "efc",
-								"role":             "eac-worker",
+								"role":             "efc-worker",
 								"fluid.io/dataset": "big-data-spark",
 							},
 						},
@@ -531,14 +531,14 @@ func TestEFCEngine_syncWorkersEndpoints(t *testing.T) {
 							}},
 							Labels: map[string]string{
 								"app":              "efc",
-								"role":             "eac-worker",
+								"role":             "efc-worker",
 								"fluid.io/dataset": "big-data-spark",
 							},
 						},
 						Spec: v1.PodSpec{
 							Containers: []v1.Container{
 								{
-									Name: "eac-worker",
+									Name: "efc-worker",
 									Ports: []v1.ContainerPort{
 										{
 											Name:          "rpc",
@@ -586,7 +586,7 @@ func TestEFCEngine_syncWorkersEndpoints(t *testing.T) {
 						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
 								"app":              "efc",
-								"role":             "eac-worker",
+								"role":             "efc-worker",
 								"fluid.io/dataset": "big-data-spark",
 							},
 						},
@@ -606,14 +606,14 @@ func TestEFCEngine_syncWorkersEndpoints(t *testing.T) {
 							}},
 							Labels: map[string]string{
 								"app":              "efc",
-								"role":             "eac-worker",
+								"role":             "efc-worker",
 								"fluid.io/dataset": "big-data-spark",
 							},
 						},
 						Spec: v1.PodSpec{
 							Containers: []v1.Container{
 								{
-									Name: "eac-worker",
+									Name: "efc-worker",
 									Ports: []v1.ContainerPort{
 										{
 											Name:          "rpc",

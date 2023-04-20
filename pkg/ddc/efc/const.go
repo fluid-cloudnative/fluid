@@ -18,10 +18,10 @@ package efc
 
 const (
 	// PodRoleType     = "role"
-	workerPodRole = "eac-worker"
+	workerPodRole = "efc-worker"
 
-	MasterMountPath = "/eac/eac-master"
-	FuseMountDir    = "eac-fuse"
+	MasterMountPath = "/efc/efc-master"
+	FuseMountDir    = "efc-fuse"
 
 	AccessKeyIDName     = "efc.nas.accessKeyId"
 	AccessKeySecretName = "efc.nas.accessKeySecret"

@@ -56,10 +56,10 @@ $ kubectl logs -n fluid-system csi-nodeplugin-fluid-xxxxx -c plugins
 I0210 17:50:36.916699    5193 utils.go:97] GRPC call: /csi.v1.Node/NodeStageVolume
 I0210 17:50:36.916709    5193 utils.go:98] GRPC request: {"staging_target_path":"/var/lib/kubelet/plugins/kubernetes.io/csi/f
 use.csi.fluid.io/dfed9324cd62d4e5384eff9613dd92ef318504fcada75b371ce827a0cba19f46/globalmount","volume_capability":{"AccessTy
-pe":{"Mount":{}},"access_mode":{"mode":3}},"volume_context":{"fluid_path":"/runtime-mnt/eac/default/eac-demo/eac-fuse","mount
-_type":"alifuse.aliyun-alinas-eac","runtime_name":"eac-demo","runtime_namespace":"default"},"volume_id":"default-efc-demo"}
+pe":{"Mount":{}},"access_mode":{"mode":3}},"volume_context":{"fluid_path":"/runtime-mnt/efc/default/efc-demo/efc-fuse","mount
+_type":"alifuse.aliyun-alinas-eac","runtime_name":"efc-demo","runtime_namespace":"default"},"volume_id":"default-efc-demo"}
 I0210 17:50:36.916793    5193 nodeserver.go:270] NodeStageVolume: Starting NodeStage with VolumeId: default-efc-demo, and Vol
-umeContext: map[fluid_path:/runtime-mnt/eac/default/eac-demo/eac-fuse mount_type:alifuse.aliyun-alinas-eac runtime_name:eac-d
+umeContext: map[fluid_path:/runtime-mnt/efc/default/efc-demo/efc-fuse mount_type:alifuse.aliyun-alinas-eac runtime_name:eaf-d
 emo runtime_namespace:default]
 ```
 

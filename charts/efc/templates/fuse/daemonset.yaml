@@ -7,7 +7,7 @@ metadata:
     chart: {{ template "efc.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
-    role: eac-fuse
+    role: efc-fuse
   ownerReferences:
   {{- if .Values.owner.enabled }}
   - apiVersion: {{ .Values.owner.apiVersion }}
@@ -26,7 +26,7 @@ spec:
       chart: {{ template "efc.chart" . }}
       release: {{ .Release.Name }}
       heritage: {{ .Release.Service }}
-      role: eac-fuse
+      role: efc-fuse
   template:
     metadata:
       annotations:
@@ -41,7 +41,7 @@ spec:
         chart: {{ template "efc.chart" . }}
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
-        role: eac-fuse
+        role: efc-fuse
         {{- if .Values.fuse.labels }}
         {{- range $key, $val := .Values.fuse.labels }}
         {{ $key | quote }}: {{ $val | quote }}
@@ -67,7 +67,7 @@ spec:
 {{ toYaml .Values.tolerations | indent 8 }}
       {{- end }}
       containers:
-        - name: eac-fuse
+        - name: efc-fuse
           image: {{ .Values.fuse.image }}:{{ .Values.fuse.imageTag }}
           imagePullPolicy: {{ .Values.fuse.imagePullPolicy }}
           {{- if .Values.fuse.resources  }}
@@ -78,7 +78,7 @@ spec:
           args:
             - "fuse"
             - {{ .Values.fuse.mountPoint | quote }}
-            - "/eac/eac-fuse"
+            - "/efc/efc-fuse"
             - {{ .Values.fuse.option | quote }}
           readinessProbe:
             exec:
@@ -100,24 +100,24 @@ spec:
           lifecycle:
             preStop:
               exec:
-                command: ["sh", "-c", "/entrypoint.sh stop_fuse /eac/eac-fuse"]
+                command: ["sh", "-c", "/entrypoint.sh stop_fuse /efc/efc-fuse"]
           volumeMounts:
-            - name: eac-fuse-mount
-              mountPath: /eac
+            - name: efc-fuse-mount
+              mountPath: /efc
               mountPropagation: Bidirectional
             - name: efc-worker-endpoints
-              mountPath: /etc/eac
+              mountPath: /etc/efc
             {{- if .Values.fuse.tieredstore }}
 {{- include "efc.tieredstoreVolumeMounts" .Values.fuse }}
             {{- end }}
-            - name: eac-sock
+            - name: efc-sock
               mountPath: /var/run/eac
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       volumes:
-        - name: eac-fuse-mount
+        - name: efc-fuse-mount
           hostPath:
             path: {{ .Values.fuse.hostMountPath }}
             type: DirectoryOrCreate
@@ -131,7 +131,7 @@ spec:
           hostPath:
             path: /etc/os-release
             type: FileOrCreate
-        - name: eac-sock
+        - name: efc-sock
           hostPath:
-            path: /runtime-mnt/eac-sock
+            path: /runtime-mnt/efc-sock
             type: Directory

@@ -190,7 +190,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
 								"app":              "efc",
-								"role":             "eac-worker",
+								"role":             "efc-worker",
 								"fluid.io/dataset": "big-data-spark",
 							},
 						},
@@ -210,7 +210,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 							}},
 							Labels: map[string]string{
 								"app":              "efc",
-								"role":             "eac-worker",
+								"role":             "efc-worker",
 								"fluid.io/dataset": "big-data-spark",
 							},
 						},
@@ -253,7 +253,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
 								"app":              "efc",
-								"role":             "eac-worker",
+								"role":             "efc-worker",
 								"fluid.io/dataset": "big-data-hbase",
 							},
 						},
@@ -273,7 +273,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 							}},
 							Labels: map[string]string{
 								"app":              "efc",
-								"role":             "eac-worker",
+								"role":             "efc-worker",
 								"fluid.io/dataset": "big-data-hbase",
 							},
 						},
@@ -323,7 +323,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
 								"app":              "efc",
-								"role":             "eac-worker",
+								"role":             "efc-worker",
 								"fluid.io/dataset": "big-data-hbase-a",
 							},
 						},
@@ -336,7 +336,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 							Namespace: "big-data",
 							Labels: map[string]string{
 								"app":              "efc",
-								"role":             "eac-worker",
+								"role":             "efc-worker",
 								"fluid.io/dataset": "big-data-hbase-a",
 							},
 						},

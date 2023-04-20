@@ -101,11 +101,11 @@ runtime:
     init:
       image: registry.cn-zhangjiakou.aliyuncs.com/nascache/init-alifuse:v0.1.0-196d2b1
     master:
-      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/eac-master:v0.1.0-196d2b1
+      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-master:v0.1.0-196d2b1
     worker:
-      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/eac-worker:v0.1.0-196d2b1
+      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-worker:v0.1.0-196d2b1
     fuse:
-      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/eac-fuse:v0.1.0-196d2b1
+      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-fuse:v0.1.0-196d2b1
 
 webhook:
   enabled: true
