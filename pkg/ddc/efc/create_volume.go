@@ -61,8 +61,8 @@ func (e *EFCEngine) createFusePersistentVolume() (err error) {
 	if err != nil {
 		return err
 	}
-	// e.g. /runtime-mnt/eac-sock
-	sessMgrWorkDir := filepath.Join(mountRoot, "eac-sock")
+	// e.g. /runtime-mnt/efc-sock
+	sessMgrWorkDir := filepath.Join(mountRoot, "efc-sock")
 
 	return e.createPersistentVolumeForRuntime(runtimeInfo, e.getMountPath(), common.EFCMountType, sessMgrWorkDir)
 }

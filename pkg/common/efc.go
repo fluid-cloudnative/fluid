@@ -36,13 +36,13 @@ const (
 
 	EFCInitFuseImageEnv = "EFC_INIT_FUSE_IMAGE_ENV"
 
-	DefaultEFCMasterImage = "registry.cn-zhangjiakou.aliyuncs.com/nascache/eac-master:update"
+	DefaultEFCMasterImage = "registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-master:latest"
 
-	DefaultEFCFuseImage = "registry.cn-zhangjiakou.aliyuncs.com/nascache/eac-fuse:update"
+	DefaultEFCFuseImage = "registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-fuse:latest"
 
-	DefaultEFCWorkerImage = "registry.cn-zhangjiakou.aliyuncs.com/nascache/eac-worker:update"
+	DefaultEFCWorkerImage = "registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-worker:latest"
 
-	DefaultEFCInitFuseImage = "registry.cn-zhangjiakou.aliyuncs.com/nascache/init-alifuse:update"
+	DefaultEFCInitFuseImage = "registry.cn-zhangjiakou.aliyuncs.com/nascache/init-alifuse:latest"
 )
 
 // Constants for EFC SessMgr
@@ -57,7 +57,7 @@ const (
 
 	EFCSessMgrUpdateStrategyEnv = "EFC_SESSMGR_UPDATE_STRATEGY_ENV"
 
-	DefaultEFCSessMgrImage = "registry.cn-zhangjiakou.aliyuncs.com/nascache/eac-fuse:update"
+	DefaultEFCSessMgrImage = "registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-fuse:latest"
 
 	SessMgrSockFile = "sessmgrd.sock"
 

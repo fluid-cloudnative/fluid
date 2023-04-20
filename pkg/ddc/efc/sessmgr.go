@@ -172,11 +172,11 @@ func (s *SessMgrInitializer) deploySessMgr(ctx context.Context, config config) e
 						},
 						Volumes: []corev1.Volume{
 							corev1.Volume{
-								Name: "eac-sock",
+								Name: "efc-sock",
 								VolumeSource: corev1.VolumeSource{
 									HostPath: &corev1.HostPathVolumeSource{
 										// TODO: /runtime-mnt to be configurable
-										Path: "/runtime-mnt/eac-sock",
+										Path: "/runtime-mnt/efc-sock",
 										Type: &efcSockVolumeType,
 									},
 								},
@@ -231,7 +231,7 @@ func (s *SessMgrInitializer) deploySessMgr(ctx context.Context, config config) e
 								VolumeMounts: []corev1.VolumeMount{
 									corev1.VolumeMount{
 										MountPath: "/var/run/eac",
-										Name:      "eac-sock",
+										Name:      "efc-sock",
 									},
 								},
 							},

@@ -8,7 +8,7 @@ metadata:
     chart: {{ template "efc.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
-    role: eac-master
+    role: efc-master
   ownerReferences:
   {{- if .Values.owner.enabled }}
   - apiVersion: {{ .Values.owner.apiVersion }}
@@ -22,7 +22,7 @@ spec:
   selector:
     matchLabels:
       app: {{ template "efc.name" . }}
-      role: eac-master
+      role: efc-master
       name: {{ template "efc.fullname" . }}-master
   replicas: {{ if .Values.master.enabled -}} {{ $.Values.master.count }} {{ else -}} 0 {{ end }}
   serviceName: {{ template "efc.fullname" . }}-master
@@ -41,7 +41,7 @@ spec:
         chart: {{ template "efc.chart" . }}
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
-        role: eac-master
+        role: efc-master
         {{- if .Values.master.labels }}
         {{- range $key, $val := .Values.master.labels }}
         {{ $key | quote }}: {{ $val | quote }}
@@ -82,7 +82,7 @@ spec:
             - name: host-os
               mountPath: /etc/host-os-release
       containers:
-        - name: eac-master
+        - name: efc-master
           image: {{ .Values.master.image }}:{{ .Values.master.imageTag }}
           imagePullPolicy: {{ .Values.master.imagePullPolicy }}
           {{- if .Values.master.resources  }}
@@ -93,7 +93,7 @@ spec:
           args:
             - "master"
             - {{ .Values.master.mountPoint | quote }}
-            - "/eac/eac-master"
+            - "/efc/efc-master"
             - {{ .Values.master.option | quote }}
           livenessProbe:
             exec:
@@ -108,16 +108,16 @@ spec:
           lifecycle:
             preStop:
               exec:
-                command: ["sh", "-c", "/entrypoint.sh stop_master /eac/eac-master"]
+                command: ["sh", "-c", "/entrypoint.sh stop_master /efc/efc-master"]
           volumeMounts:
             - name: efc-worker-endpoints
-              mountPath: /etc/eac
+              mountPath: /etc/efc
             {{- if .Values.master.tieredstore }}
 {{- include "efc.tieredstoreVolumeMounts" .Values.master }}
             {{- end }}
             - name: localtime
               mountPath: /etc/localtime
-            - name: eac-sock
+            - name: efc-sock
               mountPath: /var/run/eac
         - name: efc-sessmgr
           image: {{ .Values.master.image }}:{{ .Values.master.imageTag }}
@@ -134,7 +134,7 @@ spec:
           volumeMounts:
             - name: localtime
               mountPath: /etc/localtime
-            - name: eac-sock
+            - name: efc-sock
               mountPath: /var/run/eac
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -155,5 +155,5 @@ spec:
           hostPath:
             path: /etc/os-release
             type: FileOrCreate
-        - name: eac-sock
+        - name: efc-sock
           emptyDir: {}
