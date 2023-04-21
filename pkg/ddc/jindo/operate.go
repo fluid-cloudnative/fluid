@@ -25,6 +25,12 @@ import (
 )
 
 func (e *JindoEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, object client.Object, operation dataoperation.OperationInterface) (valueFileName string, err error) {
+	operationType := operation.GetOperationType()
+
+	if operationType == dataoperation.DataLoad {
+		valueFileName, err = e.generateDataLoadValueFile(ctx, object)
+		return valueFileName, err
+	}
 
 	return "", errors.NewNotSupported(
 		schema.GroupResource{

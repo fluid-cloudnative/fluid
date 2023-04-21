@@ -19,6 +19,7 @@ package jindofsx
 import (
 	"fmt"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 
 	v1 "k8s.io/api/core/v1"
@@ -51,7 +52,7 @@ func (e *JindoFSxEngine) CreateDataLoadJob(ctx cruntime.ReconcileRequestContext,
 	// 2. install the helm chart if not exists
 	if !existed {
 		log.Info("DataLoad job helm chart not installed yet, will install")
-		valueFileName, err := e.generateDataLoadValueFile(ctx, targetDataload)
+		valueFileName, err := e.generateDataLoadValueFile(ctx, &targetDataload)
 		if err != nil {
 			log.Error(err, "failed to generate dataload chart's value file")
 			return err
@@ -70,7 +71,13 @@ func (e *JindoFSxEngine) CreateDataLoadJob(ctx cruntime.ReconcileRequestContext,
 
 // generateDataLoadValueFile builds a DataLoadValue by extracted specifications from the given DataLoad, and
 // marshals the DataLoadValue to a temporary yaml file where stores values that'll be used by fluid dataloader helm chart
-func (e *JindoFSxEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestContext, dataload datav1alpha1.DataLoad) (valueFileName string, err error) {
+func (e *JindoFSxEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestContext, object client.Object) (valueFileName string, err error) {
+	dataload, ok := object.(*datav1alpha1.DataLoad)
+	if !ok {
+		err = fmt.Errorf("object %v is not a DataLoad", object)
+		return "", err
+	}
+
 	targetDataset, err := utils.GetDataset(r.Client, dataload.Spec.Dataset.Name, dataload.Spec.Dataset.Namespace)
 	if err != nil {
 		return "", err
@@ -125,7 +132,7 @@ func (e *JindoFSxEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCo
 	return valueFile.Name(), nil
 }
 
-func (e *JindoFSxEngine) genDataLoadValue(image string, runtime *datav1alpha1.JindoRuntime, targetDataset *datav1alpha1.Dataset, dataload datav1alpha1.DataLoad) *cdataload.DataLoadValue {
+func (e *JindoFSxEngine) genDataLoadValue(image string, runtime *datav1alpha1.JindoRuntime, targetDataset *datav1alpha1.Dataset, dataload *datav1alpha1.DataLoad) *cdataload.DataLoadValue {
 	hadoopConfig := runtime.Spec.HadoopConfig
 	loadMemorydata := false
 	if len(runtime.Spec.TieredStore.Levels) > 0 && runtime.Spec.TieredStore.Levels[0].MediumType == "MEM" {
