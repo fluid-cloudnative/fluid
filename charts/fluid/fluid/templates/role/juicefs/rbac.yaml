@@ -82,12 +82,7 @@ rules:
     resources:
     - secrets
     verbs:
-    - list
-    - watch
     - get
-    - create
-    - delete
-    - update
   - apiGroups:
     - ""
     resources:
