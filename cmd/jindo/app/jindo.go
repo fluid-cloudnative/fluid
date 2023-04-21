@@ -106,7 +106,7 @@ func handle() {
 		LeaderElectionNamespace: leaderElectionNamespace,
 		LeaderElectionID:        "jindo.data.fluid.io",
 		Port:                    9443,
-		NewClient: jindoctl.NewCacheClientBypassSecrets,
+		NewClient:               jindoctl.NewCacheClientBypassSecrets,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start jindoruntime manager")

@@ -102,7 +102,7 @@ func handle() {
 		LeaderElectionNamespace: leaderElectionNamespace,
 		LeaderElectionID:        "alluxio.data.fluid.io",
 		Port:                    9443,
-		NewClient: alluxioctl.NewCacheClientBypassSecrets,
+		NewClient:               alluxioctl.NewCacheClientBypassSecrets,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start alluxioruntime manager")

@@ -105,7 +105,7 @@ func handle() {
 		LeaderElectionID:        "juicefs.data.fluid.io",
 		Port:                    9443,
 		NewCache:                juicefsctl.NewCache(scheme),
-		NewClient: juicefsctl.NewCacheClientBypassSecrets,
+		NewClient:               juicefsctl.NewCacheClientBypassSecrets,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start juicefsruntime manager")
