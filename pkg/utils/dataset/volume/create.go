@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -151,6 +152,7 @@ func CreatePersistentVolumeForRuntime(client client.Client,
 			return err
 		}
 
+		// Poll the PV's status until it enters an "Available" phase. The polling process timeouts after 1 second and retries every 200 milliseconds.
 		timeoutCtx, cancelFn := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancelFn()
 		pollErr := wait.PollImmediateUntilWithContext(timeoutCtx, 200*time.Millisecond, func(ctx context.Context) (done bool, err error) {
@@ -159,7 +161,7 @@ func CreatePersistentVolumeForRuntime(client client.Client,
 				if utils.IgnoreNotFound(pvErr) == nil {
 					log.Info("The persistent volume not found, waiting for cache to sync up", "pv", pvName)
 				} else {
-					log.Info("Failed to get the persistetn volume", "pv", pvName, "pvErr", pvErr)
+					log.Error(errors.Wrap(pvErr, "failed to get persistent volume"), "pv", pvName)
 				}
 				// Ignore pvErr to retry
 				return false, nil
@@ -173,7 +175,7 @@ func CreatePersistentVolumeForRuntime(client client.Client,
 			return false, nil
 		})
 		if pollErr != nil {
-			log.Error(pollErr, "Got error when polling PV's status", "pv", pvName)
+			log.Error(pollErr, "got error when polling PV's status", "pv", pvName)
 		}
 	} else {
 		log.Info("The persistent volume is created", "name", pvName)
