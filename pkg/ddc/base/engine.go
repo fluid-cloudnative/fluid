@@ -48,9 +48,11 @@ type Engine interface {
 	Sync(ctx cruntime.ReconcileRequestContext) error
 
 	// Dataloader
+	// @Deprecated use DataOperator instead.
 	Dataloader
 
 	// Datamigrater
+	// @Deprecated use DataOperator instead.
 	Datamigrater
 
 	// DataOperator is a common interface for Data Operations like DataBackup/DataLoad/DataMigrate etc.

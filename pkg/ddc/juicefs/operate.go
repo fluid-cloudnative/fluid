@@ -39,6 +39,11 @@ func (j *JuiceFSEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestC
 		return valueFileName, err
 	}
 
+	if operationType == dataoperation.DataLoad {
+		valueFileName, err = j.generateDataLoadValueFile(ctx, object)
+		return valueFileName, err
+	}
+
 	return "", errors.NewNotSupported(
 		schema.GroupResource{
 			Group:    object.GetObjectKind().GroupVersionKind().Group,
