@@ -2,6 +2,7 @@ package efc
 
 import (
 	"context"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"os"
 	"reflect"
 
@@ -236,6 +237,7 @@ func (s *SessMgrInitializer) deploySessMgr(ctx context.Context, config config) e
 								},
 							},
 						},
+						ImagePullSecrets: docker.GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey),
 					},
 				},
 			},

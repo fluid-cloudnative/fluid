@@ -82,6 +82,16 @@ spec:
           - name: EFC_SESSMGR_IMAGE_ENV
             value: {{ .Values.runtime.efc.fuse.image | quote }}
           {{- end }}
+          {{- if .Values.image.imagePullSecrets }}
+          - name: IMAGE_PULL_SECRETS
+            {{- $secretList := list }}
+            {{- range .Values.image.imagePullSecrets }}
+              {{- range $name,$v := . }}
+                {{- $secretList = append $secretList $v }}
+              {{- end }}
+            {{- end }}
+            value: {{ join "," $secretList | quote }}
+          {{- end }}
         ports:
         - containerPort: 8080
           name: metrics
