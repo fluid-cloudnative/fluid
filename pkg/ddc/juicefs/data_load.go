@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 
 	v1 "k8s.io/api/core/v1"
@@ -52,7 +53,7 @@ func (j *JuiceFSEngine) CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, 
 	// 2. install the helm chart if not exists
 	if !existed {
 		log.Info("DataLoad job helm chart not installed yet, will install")
-		valueFileName, err := j.generateDataLoadValueFile(ctx, targetDataload)
+		valueFileName, err := j.generateDataLoadValueFile(ctx, &targetDataload)
 		if err != nil {
 			log.Error(err, "failed to generate dataload chart's value file")
 			return err
@@ -71,7 +72,13 @@ func (j *JuiceFSEngine) CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, 
 
 // generateDataLoadValueFile builds a DataLoadValue by extracted specifications from the given DataLoad, and
 // marshals the DataLoadValue to a temporary yaml file where stores values that'll be used by fluid dataloader helm chart
-func (j *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestContext, dataload datav1alpha1.DataLoad) (valueFileName string, err error) {
+func (j *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestContext, object client.Object) (valueFileName string, err error) {
+	dataload, ok := object.(*datav1alpha1.DataLoad)
+	if !ok {
+		err = fmt.Errorf("object %v is not a DataLoad", object)
+		return "", err
+	}
+
 	targetDataset, err := utils.GetDataset(r.Client, dataload.Spec.Dataset.Name, dataload.Spec.Dataset.Namespace)
 	if err != nil {
 		return "", err
@@ -128,7 +135,7 @@ func (j *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 	return valueFile.Name(), nil
 }
 
-func (j *JuiceFSEngine) genDataLoadValue(image string, cacheinfo map[string]string, pods []v1.Pod, targetDataset *datav1alpha1.Dataset, dataload datav1alpha1.DataLoad) *cdataload.DataLoadValue {
+func (j *JuiceFSEngine) genDataLoadValue(image string, cacheinfo map[string]string, pods []v1.Pod, targetDataset *datav1alpha1.Dataset, dataload *datav1alpha1.DataLoad) *cdataload.DataLoadValue {
 	imagePullSecrets := docker.GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey)
 
 	dataloadInfo := cdataload.DataLoadInfo{
