@@ -140,12 +140,10 @@ type cacheStates struct {
 }
 
 type MountInfo struct {
-	MountPoint      string
-	ServiceAddr     string
-	FileSystemId    string
-	DirPath         string
-	AccessKeyID     string
-	AccessKeySecret string
+	MountPoint   string
+	ServiceAddr  string
+	FileSystemId string
+	DirPath      string
 }
 
 func (value *EFC) getTiredStoreLevel0Path() (path string) {
