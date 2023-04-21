@@ -93,6 +93,8 @@ spec:
         - name: QUERY_UFS_TOTAL
           value: {{ .Values.runtime.jindo.queryUfsTotal | quote }}
         {{- end }}
+        - name: HELM_DRIVER
+          value: configmap
         ports:
           - containerPort: 8080
             name: metrics
