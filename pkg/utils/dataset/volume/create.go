@@ -18,11 +18,14 @@ package volume
 
 import (
 	"context"
+	"time"
 
 	"github.com/go-logr/logr"
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -148,6 +151,28 @@ func CreatePersistentVolumeForRuntime(client client.Client,
 		if err != nil {
 			return err
 		}
+
+		timeoutCtx, cancelFn := context.WithTimeout(context.Background(), 1*time.Second)
+		defer cancelFn()
+		wait.PollImmediateUntilWithContext(timeoutCtx, 200*time.Millisecond, func(ctx context.Context) (done bool, err error) {
+			pvCreated, pvErr := kubeclient.GetPersistentVolume(client, pvName)
+			if pvErr != nil {
+				if utils.IgnoreNotFound(pvErr) == nil {
+					log.Info("The persistent volume not found, waiting for cache to sync up", "pv", pvName)
+				} else {
+					log.Info("Failed to get the persistetn volume", "pv", pvName, "pvErr", pvErr)
+				}
+				// Ignore pvErr to retry
+				return false, nil
+			}
+
+			if pvCreated.Status.Phase == corev1.VolumeAvailable {
+				log.Info("Persistent volume already entered phase Available", "pv", pvName)
+				return true, nil
+			}
+
+			return false, nil
+		})
 	} else {
 		log.Info("The persistent volume is created", "name", pvName)
 	}
