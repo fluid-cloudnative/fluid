@@ -22,7 +22,7 @@ const (
 
 	EFCChart = EFCRuntime
 
-	EFCMountType = "alifuse.aliyun-alinas-eac"
+	EFCMountType = "alifuse.aliyun-alinas-efc"
 
 	EFCRuntimeResourceFinalizerName = "efc-runtime-controller-finalizer"
 
