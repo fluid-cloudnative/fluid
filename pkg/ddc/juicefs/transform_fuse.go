@@ -63,7 +63,10 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 	j.genFormatCmd(value, runtime.Spec.Configs)
 
 	// transform quota cmd
-	j.genQuotaCmd(value, mount)
+	err = j.genQuotaCmd(value, mount)
+	if err != nil {
+		return err
+	}
 
 	// transform mount cmd & stat cmd
 	err = j.genMount(value, runtime, option)
