@@ -17,11 +17,11 @@ limitations under the License.
 package juicefs
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 
@@ -446,14 +446,14 @@ func (j *JuiceFSEngine) genQuotaCmd(value *JuiceFS, mount datav1alpha1.Mount) er
 		if k == "quota" {
 			qs, err := j.getQuota(v)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "invalid quota %s", v)
 			}
 			if value.Fuse.SubPath == "" {
 				return fmt.Errorf("subPath must be set when quota is enabled")
 			}
 			ceVersion, eeVersion, err := ParseImageTag(value.Fuse.ImageTag)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "invalid image tag %s", value.Fuse.ImageTag)
 			}
 			if value.Edition == CommunityEdition {
 				// ce
@@ -461,7 +461,7 @@ func (j *JuiceFSEngine) genQuotaCmd(value *JuiceFS, mount datav1alpha1.Mount) er
 					return fmt.Errorf("quota is not supported in juicefs-ce version %s", value.Fuse.ImageTag)
 				}
 				// juicefs quota set ${metaurl} --path ${path} --capacity ${capacity}
-				value.Configs.QuotaCmd = fmt.Sprintf("/usr/local/bin/juicefs quota set %s --path %s --capacity %d", value.Source, value.Fuse.SubPath, qs)
+				value.Configs.QuotaCmd = fmt.Sprintf("%s quota set %s --path %s --capacity %d", common.JuiceCeCliPath, value.Source, value.Fuse.SubPath, qs)
 				return nil
 			}
 			// ee
@@ -469,7 +469,7 @@ func (j *JuiceFSEngine) genQuotaCmd(value *JuiceFS, mount datav1alpha1.Mount) er
 				return fmt.Errorf("quota is not supported in juicefs-ee version %s", value.Fuse.ImageTag)
 			}
 			// juicefs quota set ${metaurl} --path ${path} --capacity ${capacity}
-			cli := "/usr/bin/juicefs"
+			cli := common.JuiceCliPath
 			value.Configs.QuotaCmd = fmt.Sprintf("%s quota set %s --path %s --capacity %d", cli, value.Source, value.Fuse.SubPath, qs)
 			return nil
 		}

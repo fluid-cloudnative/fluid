@@ -314,7 +314,7 @@ func parseVersion(version string) (*ClientVersion, error) {
 	}
 	re := regexp.MustCompile(`^v?(\d+)\.(\d+)\.(\d+)(?:-(.+))?$`)
 	matches := re.FindStringSubmatch(strings.TrimSpace(version))
-	if matches == nil {
+	if matches == nil || len(matches) < 4 {
 		return nil, fmt.Errorf("invalid version string: %s", version)
 	}
 	major, err := strconv.Atoi(matches[1])
@@ -329,11 +329,16 @@ func parseVersion(version string) (*ClientVersion, error) {
 	if err != nil {
 		return nil, fmt.Errorf("invalid patch version: %s", matches[3])
 	}
+	var tag string
+	if len(matches) > 4 {
+		tag = matches[4]
+	}
+
 	return &ClientVersion{
 		Major: major,
 		Minor: minor,
 		Patch: patch,
-		Tag:   matches[4],
+		Tag:   tag,
 	}, nil
 }
 
