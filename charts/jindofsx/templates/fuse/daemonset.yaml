@@ -122,6 +122,12 @@ spec:
             value: {{ .Values.runtimeIdentity.namespace }}
           - name: FLUID_RUNTIME_NAME
             value: {{ .Values.runtimeIdentity.name }}
+          {{- if .Values.fuse.env }}
+          {{- range $name, $val := .Values.fuse.env }}
+          - name: {{ $name }}
+            value: {{ $val | quote }}
+          {{- end }}
+          {{- end }}
           securityContext:
             privileged: true
             capabilities:
