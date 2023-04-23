@@ -20,8 +20,6 @@ import (
 	"context"
 	"time"
 
-	"sigs.k8s.io/controller-runtime/pkg/cache"
-	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	"sync"
@@ -29,9 +27,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/go-logr/logr"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -118,10 +114,4 @@ func (r *RuntimeReconciler) SetupWithManager(mgr ctrl.Manager, options controlle
 
 func (r *RuntimeReconciler) ControllerName() string {
 	return controllerName
-}
-
-// NewCacheClientBypassSecrets creates a client querying kubernetes resources with cache(informers) except for Secrets.
-// Secret is an exception because of trading performance for security(less rbac verbs on Secrets).
-func NewCacheClientBypassSecrets(cache cache.Cache, config *rest.Config, options client.Options, uncachedObjects ...client.Object) (client.Client, error) {
-	return cluster.DefaultNewClient(cache, config, options, &corev1.Secret{})
 }

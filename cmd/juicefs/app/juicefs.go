@@ -29,6 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	"github.com/fluid-cloudnative/fluid/pkg/controllers"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 
@@ -105,7 +106,7 @@ func handle() {
 		LeaderElectionID:        "juicefs.data.fluid.io",
 		Port:                    9443,
 		NewCache:                juicefsctl.NewCache(scheme),
-		NewClient:               juicefsctl.NewCacheClientBypassSecrets,
+		NewClient:               controllers.NewCacheClientBypassSecrets,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start juicefsruntime manager")

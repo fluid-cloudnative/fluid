@@ -19,6 +19,7 @@ package app
 import (
 	"os"
 
+	"github.com/fluid-cloudnative/fluid/pkg/controllers"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindofsx"
 
 	"github.com/fluid-cloudnative/fluid"
@@ -106,7 +107,7 @@ func handle() {
 		LeaderElectionNamespace: leaderElectionNamespace,
 		LeaderElectionID:        "jindo.data.fluid.io",
 		Port:                    9443,
-		NewClient:               jindoctl.NewCacheClientBypassSecrets,
+		NewClient:               controllers.NewCacheClientBypassSecrets,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start jindoruntime manager")

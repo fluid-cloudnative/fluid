@@ -22,6 +22,7 @@ import (
 
 	"github.com/fluid-cloudnative/fluid"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/controllers"
 	alluxioctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -102,7 +103,7 @@ func handle() {
 		LeaderElectionNamespace: leaderElectionNamespace,
 		LeaderElectionID:        "alluxio.data.fluid.io",
 		Port:                    9443,
-		NewClient:               alluxioctl.NewCacheClientBypassSecrets,
+		NewClient:               controllers.NewCacheClientBypassSecrets,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start alluxioruntime manager")

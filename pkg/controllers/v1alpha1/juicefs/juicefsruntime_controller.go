@@ -23,11 +23,9 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl/watch"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
-	"sigs.k8s.io/controller-runtime/pkg/cluster"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/controllers"
@@ -37,7 +35,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -147,10 +144,4 @@ func NewCache(scheme *runtime.Scheme) cache.NewCacheFunc {
 			})},
 		},
 	})
-}
-
-// NewCacheClientBypassSecrets creates a client querying kubernetes resources with cache(informers) except for Secrets.
-// Secret is an exception because of trading performance for security(less rbac verbs on Secrets).
-func NewCacheClientBypassSecrets(cache cache.Cache, config *rest.Config, options client.Options, uncachedObjects ...client.Object) (client.Client, error) {
-	return cluster.DefaultNewClient(cache, config, options, &corev1.Secret{})
 }
