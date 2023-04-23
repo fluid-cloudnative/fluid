@@ -131,6 +131,12 @@ spec:
           - name: STORAGE_DATA_PATH
             value: {{ .Values.worker.dataPath }}
           {{- end }}
+          {{- if .Values.worker.env }}
+          {{- range $name, $val := .Values.worker.env }}
+          - name: {{ $name }}
+            value: {{ $val | quote }}
+          {{- end }}
+          {{- end }}
           ports:
           - containerPort: {{ .Values.worker.ports.rpc }}
             name: rpc

@@ -73,6 +73,7 @@ type Master struct {
 	Labels              map[string]string `yaml:"labels,omitempty"`
 	Annotations         map[string]string `yaml:"annotations,omitempty"`
 	ServiceCount        int               `yaml:"svccount"`
+	Env                 map[string]string `yaml:"env,omitempty"`
 }
 
 type Worker struct {
@@ -86,6 +87,7 @@ type Worker struct {
 	Labels      map[string]string `yaml:"labels,omitempty"`
 	Annotations map[string]string `yaml:"annotations,omitempty"`
 	Path        string            `yaml:"dataPath"`
+	Env         map[string]string `yaml:"env,omitempty"`
 }
 
 type Ports struct {
@@ -107,6 +109,7 @@ type Fuse struct {
 	Resources      Resources         `yaml:"resources,omitempty"`
 	MountPath      string            `yaml:"mountPath,omitempty"`
 	Mode           string            `yaml:"mode,omitempty"`
+	Env            map[string]string `yaml:"env,omitempty"`
 }
 
 type Mounts struct {

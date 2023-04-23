@@ -827,3 +827,87 @@ func TestTransformLogConfig(t *testing.T) {
 		}
 	}
 }
+
+func TestJindoFSxEngine_transformEnvVariables(t *testing.T) {
+	type args struct {
+		runtime *datav1alpha1.JindoRuntime
+		value   *Jindo
+	}
+	tests := []struct {
+		name             string
+		args             args
+		expectMasterEnvs map[string]string
+		expectWorkerEnvs map[string]string
+		expectFuseEnvs   map[string]string
+	}{
+		{
+			name: "no_env_variable",
+			args: args{
+				runtime: &datav1alpha1.JindoRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-no-env",
+						Namespace: "default",
+					},
+					Spec: datav1alpha1.JindoRuntimeSpec{},
+				},
+				value: &Jindo{},
+			},
+			expectMasterEnvs: nil,
+			expectWorkerEnvs: nil,
+			expectFuseEnvs:   nil,
+		},
+		{
+			name: "all_env_variable_set",
+			args: args{
+				runtime: &datav1alpha1.JindoRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-all-env-set",
+						Namespace: "default",
+					},
+					Spec: datav1alpha1.JindoRuntimeSpec{
+						Master: datav1alpha1.JindoCompTemplateSpec{
+							Env: map[string]string{
+								"test-master": "foo",
+							},
+						},
+						Worker: datav1alpha1.JindoCompTemplateSpec{
+							Env: map[string]string{
+								"test-worker": "bar",
+							},
+						},
+						Fuse: datav1alpha1.JindoFuseSpec{
+							Env: map[string]string{
+								"test-fuse": "test",
+							},
+						},
+					},
+				},
+				value: &Jindo{},
+			},
+			expectMasterEnvs: map[string]string{"test-master": "foo"},
+			expectWorkerEnvs: map[string]string{"test-worker": "bar"},
+			expectFuseEnvs:   map[string]string{"test-fuse": "test"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := &JindoFSxEngine{
+				name:      tt.args.runtime.Name,
+				namespace: tt.args.runtime.Namespace,
+				Log:       fake.NullLogger(),
+			}
+			e.transformEnvVariables(tt.args.runtime, tt.args.value)
+			if !reflect.DeepEqual(tt.args.value.Master.Env, tt.expectMasterEnvs) {
+				t.Fatalf("testcase %s failed: failed to transform env variable for master, expect: %v, got %v", tt.name, tt.args.value.Master.Env, tt.expectMasterEnvs)
+			}
+
+			if !reflect.DeepEqual(tt.args.value.Worker.Env, tt.expectWorkerEnvs) {
+				t.Fatalf("testcase %s failed: failed to transform env variable for worker, expect: %v, got %v", tt.name, tt.args.value.Worker.Env, tt.expectWorkerEnvs)
+			}
+
+			if !reflect.DeepEqual(tt.args.value.Fuse.Env, tt.expectFuseEnvs) {
+				t.Fatalf("testcase %s failed: failed to transform env variable for fuse, expect: %v, got %v", tt.name, tt.args.value.Fuse.Env, tt.expectFuseEnvs)
+			}
+		})
+	}
+}
