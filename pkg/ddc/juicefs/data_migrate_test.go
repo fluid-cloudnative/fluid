@@ -269,7 +269,7 @@ func TestJuiceFSEngine_generateDataMigrateValueFile(t *testing.T) {
 			Client:    client,
 			Log:       fake.NullLogger(),
 		}
-		fileName, err := engine.generateDataMigrateValueFile(context, test.dataMigrate)
+		fileName, err := engine.generateDataMigrateValueFile(context, &test.dataMigrate)
 		if err != nil {
 			t.Errorf("fail to generate the datamigrate value file: %v", err)
 		}
