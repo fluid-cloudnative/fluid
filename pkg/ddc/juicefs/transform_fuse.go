@@ -19,8 +19,6 @@ package juicefs
 import (
 	"errors"
 	"fmt"
-	"math"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -433,9 +431,6 @@ func (j *JuiceFSEngine) getQuota(v string) (int64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("invalid quota %s: %v", v, err)
 	}
-	if q.Value() > math.MaxInt64 {
-		return 0, fmt.Errorf("quota %s is too large", v)
-	}
 	qs := q.Value() / 1024 / 1024 / 1024
 	if qs <= 0 {
 		return 0, fmt.Errorf("quota %s is too small, at least 1GiB for quota", v)
@@ -500,57 +495,4 @@ func ParseImageTag(imageTag string) (*ClientVersion, *ClientVersion, error) {
 		return nil, nil, err
 	}
 	return ceVersion, eeVersion, nil
-}
-
-func parseVersion(version string) (*ClientVersion, error) {
-	re := regexp.MustCompile(`^v?(\d+)\.(\d+)\.(\d+)(?:-(.+))?$`)
-	matches := re.FindStringSubmatch(strings.TrimSpace(version))
-	if matches == nil {
-		return nil, fmt.Errorf("invalid version string: %s", version)
-	}
-	major, err := strconv.Atoi(matches[1])
-	if err != nil {
-		return nil, fmt.Errorf("invalid major version: %s", matches[1])
-	}
-	minor, err := strconv.Atoi(matches[2])
-	if err != nil {
-		return nil, fmt.Errorf("invalid minor version: %s", matches[2])
-	}
-	patch, err := strconv.Atoi(matches[3])
-	if err != nil {
-		return nil, fmt.Errorf("invalid patch version: %s", matches[3])
-	}
-	return &ClientVersion{
-		Major: major,
-		Minor: minor,
-		Patch: patch,
-		Tag:   matches[4],
-	}, nil
-}
-
-type ClientVersion struct {
-	Major, Minor, Patch int
-	Tag                 string
-}
-
-func (v *ClientVersion) LessThan(other *ClientVersion) bool {
-	if v.Tag == common.NightlyTag {
-		return false
-	}
-	if v.Major < other.Major {
-		return true
-	}
-	if v.Major > other.Major {
-		return false
-	}
-	if v.Minor < other.Minor {
-		return true
-	}
-	if v.Minor > other.Minor {
-		return false
-	}
-	if v.Patch < other.Patch {
-		return true
-	}
-	return false
 }
