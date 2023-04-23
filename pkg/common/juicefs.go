@@ -34,6 +34,8 @@ const (
 
 	DefaultJuiceFSMigrateImage = "juicedata/juicefs-fuse:nightly"
 
+	NightlyTag = "nightly"
+
 	JuiceFSCeMountPath = "/bin/mount.juicefs"
 	JuiceFSMountPath   = "/sbin/mount.juicefs"
 	JuiceCeCliPath     = "/usr/local/bin/juicefs"

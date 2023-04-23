@@ -19,6 +19,7 @@ package juicefs
 import (
 	"errors"
 	"fmt"
+	"math"
 	"regexp"
 	"strconv"
 	"strings"
@@ -114,6 +115,7 @@ func (j *JuiceFSEngine) transformFuseNodeSelector(runtime *datav1alpha1.JuiceFSR
 	value.Fuse.NodeSelector[j.getFuseLabelName()] = "true"
 }
 
+// genValue: generate the value of juicefs
 func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *datav1alpha1.Level, value *JuiceFS,
 	SharedOptions map[string]string, SharedEncryptOptions []datav1alpha1.EncryptOption) (map[string]string, error) {
 	value.Configs.Name = mount.Name
@@ -271,6 +273,7 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 	return options, nil
 }
 
+// genMount: generate mount args
 func (j *JuiceFSEngine) genMount(value *JuiceFS, runtime *datav1alpha1.JuiceFSRuntime, optionMap map[string]string) (err error) {
 	var mountArgs, mountArgsWorker []string
 	workerOptionMap := make(map[string]string)
@@ -357,6 +360,7 @@ func (j *JuiceFSEngine) genMount(value *JuiceFS, runtime *datav1alpha1.JuiceFSRu
 	return nil
 }
 
+// genOption: generate mount option as `a=b` format, and remove quota option
 func genOption(optionMap map[string]string) []string {
 	options := []string{}
 	for k, v := range optionMap {
@@ -423,10 +427,14 @@ func (j *JuiceFSEngine) genFormatCmd(value *JuiceFS, config *[]string) {
 	value.Configs.FormatCmd = strings.Join(cmd, " ")
 }
 
+// getQuota: get quota from string
 func (j *JuiceFSEngine) getQuota(v string) (int64, error) {
 	q, err := resource.ParseQuantity(v)
 	if err != nil {
 		return 0, fmt.Errorf("invalid quota %s: %v", v, err)
+	}
+	if q.Value() > math.MaxInt64 {
+		return 0, fmt.Errorf("quota %s is too large", v)
 	}
 	qs := q.Value() / 1024 / 1024 / 1024
 	if qs <= 0 {
@@ -436,6 +444,7 @@ func (j *JuiceFSEngine) getQuota(v string) (int64, error) {
 	return qs, nil
 }
 
+// genQuotaCmd: generate command for set quota of subpath
 func (j *JuiceFSEngine) genQuotaCmd(value *JuiceFS, mount datav1alpha1.Mount) error {
 	options := mount.Options
 	for k, v := range options {
@@ -474,8 +483,8 @@ func (j *JuiceFSEngine) genQuotaCmd(value *JuiceFS, mount datav1alpha1.Mount) er
 }
 
 func ParseImageTag(imageTag string) (*ClientVersion, *ClientVersion, error) {
-	if imageTag == "nightly" {
-		return &ClientVersion{0, 0, 0, "nightly"}, &ClientVersion{0, 0, 0, "nightly"}, nil
+	if imageTag == common.NightlyTag {
+		return &ClientVersion{0, 0, 0, common.NightlyTag}, &ClientVersion{0, 0, 0, common.NightlyTag}, nil
 	}
 	versions := strings.Split(imageTag, "-")
 	if len(versions) < 2 {
@@ -525,7 +534,7 @@ type ClientVersion struct {
 }
 
 func (v *ClientVersion) LessThan(other *ClientVersion) bool {
-	if v.Tag == "nightly" {
+	if v.Tag == common.NightlyTag {
 		return false
 	}
 	if v.Major < other.Major {
