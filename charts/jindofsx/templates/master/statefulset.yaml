@@ -127,6 +127,12 @@ spec:
           - name: RUN_AS_USER
             value: {{ .Values.fuse.runAs }}
           {{- end }}
+          {{- if .Values.master.env }}
+          {{- range $name, $val := .Values.master.env }}
+          - name: {{ $name }}
+            value: {{ $val | quote }}
+          {{- end }}
+          {{- end }}
           ports:
           - containerPort: {{ .Values.master.ports.rpc }}
             name: rpc
