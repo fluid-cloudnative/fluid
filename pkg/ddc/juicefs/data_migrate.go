@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"path"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -146,11 +147,11 @@ func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequest
 	dataMigrateInfo.Options["timeout"] = timeout
 
 	// 5. set from & to
-	migrateFrom, err := j.genDataUrl(dataMigrate.Spec.From, &dataMigrateInfo)
+	migrateFrom, err := j.genDataUrl(dataMigrate.Spec.From, targetDataset, &dataMigrateInfo)
 	if err != nil {
 		return "", err
 	}
-	migrateTo, err := j.genDataUrl(dataMigrate.Spec.To, &dataMigrateInfo)
+	migrateTo, err := j.genDataUrl(dataMigrate.Spec.To, targetDataset, &dataMigrateInfo)
 	if err != nil {
 		return "", err
 	}
@@ -180,7 +181,7 @@ func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequest
 	return valueFile.Name(), nil
 }
 
-func (j *JuiceFSEngine) genDataUrl(data datav1alpha1.DataToMigrate, info *cdatamigrate.DataMigrateInfo) (dataUrl string, err error) {
+func (j *JuiceFSEngine) genDataUrl(data datav1alpha1.DataToMigrate, targetDataset *datav1alpha1.Dataset, info *cdatamigrate.DataMigrateInfo) (dataUrl string, err error) {
 	if data.DataSet != nil {
 		fsInfo, err := GetFSInfoFromConfigMap(j.Client, data.DataSet.Name, data.DataSet.Namespace)
 		if err != nil {
@@ -202,8 +203,19 @@ func (j *JuiceFSEngine) genDataUrl(data datav1alpha1.DataToMigrate, info *cdatam
 				return "", err
 			}
 			u.Path = "/"
+			mountPoint := targetDataset.Spec.Mounts[0].MountPoint
+			subpath, err := ParseSubPathFromMountPoint(mountPoint)
+			if err != nil {
+				return "", err
+			}
+			if subpath != "/" {
+				u.Path = subpath
+			}
 			if data.DataSet.Path != "" {
-				u.Path = data.DataSet.Path
+				u.Path = path.Join(u.Path, data.DataSet.Path)
+				if strings.HasSuffix(data.DataSet.Path, "/") {
+					u.Path = u.Path + "/"
+				}
 			}
 			dataUrl = u.String()
 		} else {

@@ -94,14 +94,17 @@ func TestJuiceFSEngine_CreateDataMigrateJob(t *testing.T) {
 			},
 		},
 	}
-	datasetInputs := []v1alpha1.Dataset{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-dataset",
-				Namespace: "fluid",
-			},
+	datasetInputs := []v1alpha1.Dataset{{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-dataset",
+			Namespace: "fluid",
 		},
-	}
+		Spec: v1alpha1.DatasetSpec{
+			Mounts: []v1alpha1.Mount{{
+				MountPoint: "juicefs:///",
+			}},
+		},
+	}}
 	podListInputs := []corev1.PodList{{
 		Items: []corev1.Pod{{
 			ObjectMeta: metav1.ObjectMeta{
@@ -183,7 +186,11 @@ func TestJuiceFSEngine_generateDataMigrateValueFile(t *testing.T) {
 				Name:      "test-dataset",
 				Namespace: "fluid",
 			},
-			Spec: v1alpha1.DatasetSpec{},
+			Spec: v1alpha1.DatasetSpec{
+				Mounts: []v1alpha1.Mount{{
+					MountPoint: "juicefs:///",
+				}},
+			},
 		},
 	}
 
@@ -274,8 +281,9 @@ func TestJuiceFSEngine_generateDataMigrateValueFile(t *testing.T) {
 
 func TestJuiceFSEngine_genDataUrl_PVC(t *testing.T) {
 	type args struct {
-		data v1alpha1.DataToMigrate
-		info *cdatamigrate.DataMigrateInfo
+		data          v1alpha1.DataToMigrate
+		targetDataset *v1alpha1.Dataset
+		info          *cdatamigrate.DataMigrateInfo
 	}
 
 	tests := []struct {
@@ -389,7 +397,7 @@ func TestJuiceFSEngine_genDataUrl_PVC(t *testing.T) {
 				Client: fake.NewFakeClient(),
 				Log:    fake.NullLogger(),
 			}
-			gotDataUrl, err := j.genDataUrl(tt.args.data, tt.args.info)
+			gotDataUrl, err := j.genDataUrl(tt.args.data, tt.args.targetDataset, tt.args.info)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("genDataUrl() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -429,8 +437,9 @@ func TestJuiceFSEngine_genDataUrl(t *testing.T) {
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
 	type args struct {
-		data v1alpha1.DataToMigrate
-		info *cdatamigrate.DataMigrateInfo
+		data          v1alpha1.DataToMigrate
+		targetDataset *v1alpha1.Dataset
+		info          *cdatamigrate.DataMigrateInfo
 	}
 	tests := []struct {
 		name        string
@@ -561,6 +570,11 @@ func TestJuiceFSEngine_genDataUrl(t *testing.T) {
 						Path:      "/subpath/",
 					},
 				},
+				targetDataset: &v1alpha1.Dataset{
+					Spec: v1alpha1.DatasetSpec{
+						Mounts: []v1alpha1.Mount{{MountPoint: "juicefs:///"}},
+					},
+				},
 				info: &cdatamigrate.DataMigrateInfo{
 					EncryptOptions: []v1alpha1.EncryptOption{},
 					Options:        map[string]string{},
@@ -576,6 +590,11 @@ func TestJuiceFSEngine_genDataUrl(t *testing.T) {
 					DataSet: &v1alpha1.DatasetToMigrate{
 						Name:      "test",
 						Namespace: "default",
+					},
+				},
+				targetDataset: &v1alpha1.Dataset{
+					Spec: v1alpha1.DatasetSpec{
+						Mounts: []v1alpha1.Mount{{MountPoint: "juicefs:///"}},
 					},
 				},
 				info: &cdatamigrate.DataMigrateInfo{
@@ -596,12 +615,62 @@ func TestJuiceFSEngine_genDataUrl(t *testing.T) {
 						Path:      "/subpath",
 					},
 				},
+				targetDataset: &v1alpha1.Dataset{
+					Spec: v1alpha1.DatasetSpec{
+						Mounts: []v1alpha1.Mount{{MountPoint: "juicefs:///"}},
+					},
+				},
 				info: &cdatamigrate.DataMigrateInfo{
 					EncryptOptions: []v1alpha1.EncryptOption{},
 					Options:        map[string]string{},
 				},
 			},
 			wantDataUrl: "jfs://FLUID_METAURL/subpath",
+			wantErr:     false,
+		},
+		{
+			name: "test-dataset-subpath-file2",
+			args: args{
+				data: v1alpha1.DataToMigrate{
+					DataSet: &v1alpha1.DatasetToMigrate{
+						Name:      "test",
+						Namespace: "default",
+						Path:      "/subpath",
+					},
+				},
+				targetDataset: &v1alpha1.Dataset{
+					Spec: v1alpha1.DatasetSpec{
+						Mounts: []v1alpha1.Mount{{MountPoint: "juicefs:///demo"}},
+					},
+				},
+				info: &cdatamigrate.DataMigrateInfo{
+					EncryptOptions: []v1alpha1.EncryptOption{},
+					Options:        map[string]string{},
+				},
+			},
+			wantDataUrl: "jfs://FLUID_METAURL/demo/subpath",
+			wantErr:     false,
+		},
+		{
+			name: "test-dataset-subpath-file3",
+			args: args{
+				data: v1alpha1.DataToMigrate{
+					DataSet: &v1alpha1.DatasetToMigrate{
+						Name:      "test",
+						Namespace: "default",
+					},
+				},
+				targetDataset: &v1alpha1.Dataset{
+					Spec: v1alpha1.DatasetSpec{
+						Mounts: []v1alpha1.Mount{{MountPoint: "juicefs:///demo"}},
+					},
+				},
+				info: &cdatamigrate.DataMigrateInfo{
+					EncryptOptions: []v1alpha1.EncryptOption{},
+					Options:        map[string]string{},
+				},
+			},
+			wantDataUrl: "jfs://FLUID_METAURL/demo",
 			wantErr:     false,
 		},
 	}
@@ -611,7 +680,7 @@ func TestJuiceFSEngine_genDataUrl(t *testing.T) {
 				Client: client,
 				Log:    fake.NullLogger(),
 			}
-			gotDataUrl, err := j.genDataUrl(tt.args.data, tt.args.info)
+			gotDataUrl, err := j.genDataUrl(tt.args.data, tt.args.targetDataset, tt.args.info)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("genDataUrl() error = %v, wantErr %v", err, tt.wantErr)
 				return
