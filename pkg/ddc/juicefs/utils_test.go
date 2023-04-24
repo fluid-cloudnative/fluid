@@ -1029,3 +1029,77 @@ func TestGetMetricsPort(t *testing.T) {
 		})
 	}
 }
+
+func Test_parseVersion(t *testing.T) {
+	type args struct {
+		version string
+	}
+	var tests = []struct {
+		name    string
+		args    args
+		want    *ClientVersion
+		wantErr bool
+	}{
+		{
+			name: "test1",
+			args: args{
+				version: "v1.0.0",
+			},
+			want: &ClientVersion{
+				Major: 1,
+				Minor: 0,
+				Patch: 0,
+				Tag:   "",
+			},
+			wantErr: false,
+		},
+		{
+			name: "test2",
+			args: args{
+				version: "nightly",
+			},
+			want: &ClientVersion{
+				Tag: "nightly",
+			},
+			wantErr: false,
+		},
+		{
+			name: "test3",
+			args: args{
+				version: "4.9.0",
+			},
+			want: &ClientVersion{
+				Major: 4,
+				Minor: 9,
+				Patch: 0,
+				Tag:   "",
+			},
+			wantErr: false,
+		},
+		{
+			name: "test4",
+			args: args{
+				version: "1.0.0-rc1",
+			},
+			want: &ClientVersion{
+				Major: 1,
+				Minor: 0,
+				Patch: 0,
+				Tag:   "rc1",
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := parseVersion(tt.args.version)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("parseVersion() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("parseVersion() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

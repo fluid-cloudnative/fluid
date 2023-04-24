@@ -175,9 +175,14 @@ metadata:
 data:
   script.sh: |
     #!/bin/bash
+    set -e
 
     {{- if .Values.configs.formatCmd }}
     {{ .Values.configs.formatCmd }}
+    {{- end }}
+
+    {{- if .Values.configs.quotaCmd }}
+    {{ .Values.configs.quotaCmd }}
     {{- end }}
 
     {{ .Values.fuse.command }}
