@@ -17,12 +17,13 @@ limitations under the License.
 package juicefs
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -59,6 +60,12 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 
 	// transform format cmd
 	j.genFormatCmd(value, runtime.Spec.Configs)
+
+	// transform quota cmd
+	err = j.genQuotaCmd(value, mount)
+	if err != nil {
+		return err
+	}
 
 	// transform mount cmd & stat cmd
 	err = j.genMount(value, runtime, option)
@@ -106,6 +113,7 @@ func (j *JuiceFSEngine) transformFuseNodeSelector(runtime *datav1alpha1.JuiceFSR
 	value.Fuse.NodeSelector[j.getFuseLabelName()] = "true"
 }
 
+// genValue: generate the value of juicefs
 func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *datav1alpha1.Level, value *JuiceFS,
 	SharedOptions map[string]string, SharedEncryptOptions []datav1alpha1.EncryptOption) (map[string]string, error) {
 	value.Configs.Name = mount.Name
@@ -263,6 +271,7 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 	return options, nil
 }
 
+// genMount: generate mount args
 func (j *JuiceFSEngine) genMount(value *JuiceFS, runtime *datav1alpha1.JuiceFSRuntime, optionMap map[string]string) (err error) {
 	var mountArgs, mountArgsWorker []string
 	workerOptionMap := make(map[string]string)
@@ -349,9 +358,13 @@ func (j *JuiceFSEngine) genMount(value *JuiceFS, runtime *datav1alpha1.JuiceFSRu
 	return nil
 }
 
+// genOption: generate mount option as `a=b` format, and remove quota option
 func genOption(optionMap map[string]string) []string {
 	options := []string{}
 	for k, v := range optionMap {
+		if k == "quota" {
+			continue
+		}
 		if v != "" {
 			k = fmt.Sprintf("%s=%s", k, v)
 		}
@@ -410,4 +423,76 @@ func (j *JuiceFSEngine) genFormatCmd(value *JuiceFS, config *[]string) {
 	args = append(args, value.Source)
 	cmd := append([]string{common.JuiceCliPath, "auth"}, args...)
 	value.Configs.FormatCmd = strings.Join(cmd, " ")
+}
+
+// getQuota: get quota from string
+func (j *JuiceFSEngine) getQuota(v string) (int64, error) {
+	q, err := resource.ParseQuantity(v)
+	if err != nil {
+		return 0, fmt.Errorf("invalid quota %s: %v", v, err)
+	}
+	qs := q.Value() / 1024 / 1024 / 1024
+	if qs <= 0 {
+		return 0, fmt.Errorf("quota %s is too small, at least 1GiB for quota", v)
+	}
+
+	return qs, nil
+}
+
+// genQuotaCmd: generate command for set quota of subpath
+func (j *JuiceFSEngine) genQuotaCmd(value *JuiceFS, mount datav1alpha1.Mount) error {
+	options := mount.Options
+	for k, v := range options {
+		if k == "quota" {
+			qs, err := j.getQuota(v)
+			if err != nil {
+				return errors.Wrapf(err, "invalid quota %s", v)
+			}
+			if value.Fuse.SubPath == "" {
+				return fmt.Errorf("subPath must be set when quota is enabled")
+			}
+			ceVersion, eeVersion, err := ParseImageTag(value.Fuse.ImageTag)
+			if err != nil {
+				return errors.Wrapf(err, "invalid image tag %s", value.Fuse.ImageTag)
+			}
+			if value.Edition == CommunityEdition {
+				// ce
+				if ceVersion.LessThan(&ClientVersion{1, 1, 0, ""}) {
+					return fmt.Errorf("quota is not supported in juicefs-ce version %s", value.Fuse.ImageTag)
+				}
+				// juicefs quota set ${metaurl} --path ${path} --capacity ${capacity}
+				value.Configs.QuotaCmd = fmt.Sprintf("%s quota set %s --path %s --capacity %d", common.JuiceCeCliPath, value.Source, value.Fuse.SubPath, qs)
+				return nil
+			}
+			// ee
+			if eeVersion.LessThan(&ClientVersion{4, 9, 2, ""}) {
+				return fmt.Errorf("quota is not supported in juicefs-ee version %s", value.Fuse.ImageTag)
+			}
+			// juicefs quota set ${metaurl} --path ${path} --capacity ${capacity}
+			cli := common.JuiceCliPath
+			value.Configs.QuotaCmd = fmt.Sprintf("%s quota set %s --path %s --capacity %d", cli, value.Source, value.Fuse.SubPath, qs)
+			return nil
+		}
+	}
+	return nil
+}
+
+func ParseImageTag(imageTag string) (*ClientVersion, *ClientVersion, error) {
+	if imageTag == common.NightlyTag {
+		return &ClientVersion{0, 0, 0, common.NightlyTag}, &ClientVersion{0, 0, 0, common.NightlyTag}, nil
+	}
+	versions := strings.Split(imageTag, "-")
+	if len(versions) < 2 {
+		return nil, nil, fmt.Errorf("can not parse version from image tag: %s", imageTag)
+	}
+
+	ceVersion, err := parseVersion(versions[0])
+	if err != nil {
+		return nil, nil, err
+	}
+	eeVersion, err := parseVersion(versions[1])
+	if err != nil {
+		return nil, nil, err
+	}
+	return ceVersion, eeVersion, nil
 }

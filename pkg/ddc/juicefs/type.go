@@ -56,6 +56,7 @@ type Configs struct {
 	TokenSecretKey     string `json:"tokenSecretKey,omitempty"`
 	Storage            string `json:"storage,omitempty"`
 	FormatCmd          string `json:"formatCmd,omitempty"`
+	QuotaCmd           string `json:"quotaCmd,omitempty"`
 }
 
 type Worker struct {

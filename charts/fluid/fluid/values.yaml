@@ -86,7 +86,7 @@ runtime:
     controller:
       image: fluidcloudnative/juicefsruntime-controller:v0.9.0-d4c2188
     fuse:
-      image: juicedata/juicefs-fuse:v1.0.0-4.8.0
+      image: juicedata/juicefs-fuse:v1.0.4-4.9.2
   thin:
     replicas: 1
     enabled: false

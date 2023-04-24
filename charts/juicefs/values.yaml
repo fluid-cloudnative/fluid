@@ -43,7 +43,6 @@ worker:
   statCmd: "stat -c %i /mnt/jfs"
   podManagementPolicy: Parallel
   hostNetwork: false
-  metricsPort: 9567
   resources:
     requests:
 #      cpu: "0.5"
@@ -71,12 +70,12 @@ configs:
   tokenSecret: ""
   tokenSecretKey: ""
   formatCmd : ""
+  quotaCmd: ""
 
 ## FUSE ##
 
 fuse:
   hostNetwork: false
-  metricsPort: 9567
   subPath: ""
   criticalPod: false
   enabled: true

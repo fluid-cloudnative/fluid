@@ -28,11 +28,13 @@ const (
 
 	JuiceFSFuseImageEnv = "JUICEFS_FUSE_IMAGE_ENV"
 
-	DefaultJuiceFSFuseImage = "juicedata/juicefs-fuse:v1.0.0"
+	DefaultJuiceFSFuseImage = "juicedata/juicefs-fuse:v1.0.4-4.9.2"
 
-	DefaultJuiceFSRuntimeImage = "juicedata/juicefs-fuse:v1.0.0"
+	DefaultJuiceFSRuntimeImage = "juicedata/juicefs-fuse:v1.0.4-4.9.2"
 
 	DefaultJuiceFSMigrateImage = "juicedata/juicefs-fuse:nightly"
+
+	NightlyTag = "nightly"
 
 	JuiceFSCeMountPath = "/bin/mount.juicefs"
 	JuiceFSMountPath   = "/sbin/mount.juicefs"

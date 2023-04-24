@@ -18,17 +18,16 @@ package juicefs
 
 import (
 	"encoding/base64"
+	"reflect"
 	"testing"
 
 	"github.com/go-logr/logr"
-
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-
-	"k8s.io/apimachinery/pkg/api/resource"
-
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 
@@ -821,4 +820,330 @@ func isSliceEqual(got, want []string) bool {
 		}
 	}
 	return len(diff) == 0
+}
+
+func TestJuiceFSEngine_getQuota(t *testing.T) {
+	type args struct {
+		v string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    int64
+		wantErr bool
+	}{
+		{
+			name: "test-1Gi",
+			args: args{
+				v: "1Gi",
+			},
+			want:    1,
+			wantErr: false,
+		},
+		{
+			name: "test-10Gi",
+			args: args{
+				v: "10Gi",
+			},
+			want:    10,
+			wantErr: false,
+		},
+		{
+			name: "test-1Mi",
+			args: args{
+				v: "1Mi",
+			},
+			want:    0,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			j := &JuiceFSEngine{}
+			got, err := j.getQuota(tt.args.v)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("getQuota() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("getQuota() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestParseImageTag(t *testing.T) {
+	type args struct {
+		imageTag string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *ClientVersion
+		want1   *ClientVersion
+		wantErr bool
+	}{
+		{
+			name: "test1",
+			args: args{
+				imageTag: "v1.0.4-4.9.0",
+			},
+			want: &ClientVersion{
+				Major: 1,
+				Minor: 0,
+				Patch: 4,
+				Tag:   "",
+			},
+			want1: &ClientVersion{
+				Major: 4,
+				Minor: 9,
+				Patch: 0,
+				Tag:   "",
+			},
+			wantErr: false,
+		},
+		{
+			name: "test2",
+			args: args{
+				imageTag: "nightly",
+			},
+			want: &ClientVersion{
+				Major: 0,
+				Minor: 0,
+				Patch: 0,
+				Tag:   "nightly",
+			},
+			want1: &ClientVersion{
+				Major: 0,
+				Minor: 0,
+				Patch: 0,
+				Tag:   "nightly",
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1, err := ParseImageTag(tt.args.imageTag)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ParseImageTag() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ParseImageTag() got = %v, want %v", got, tt.want)
+			}
+			if !reflect.DeepEqual(got1, tt.want1) {
+				t.Errorf("ParseImageTag() got1 = %v, want %v", got1, tt.want1)
+			}
+		})
+	}
+}
+
+func TestClientVersion_LessThan(t *testing.T) {
+	type fields struct {
+		Major int
+		Minor int
+		Patch int
+		Tag   string
+	}
+	type args struct {
+		other *ClientVersion
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   bool
+	}{
+		{
+			name: "less",
+			fields: fields{
+				Major: 1,
+				Minor: 0,
+				Patch: 0,
+				Tag:   "",
+			},
+			args: args{
+				other: &ClientVersion{
+					Major: 1,
+					Minor: 0,
+					Patch: 1,
+					Tag:   "",
+				},
+			},
+			want: true,
+		},
+		{
+			name: "more",
+			fields: fields{
+				Major: 1,
+				Minor: 0,
+				Patch: 0,
+				Tag:   "",
+			},
+			args: args{
+				other: &ClientVersion{
+					Major: 0,
+					Minor: 1,
+					Patch: 0,
+					Tag:   "",
+				},
+			},
+			want: false,
+		},
+		{
+			name: "nightly",
+			fields: fields{
+				Tag: "nightly",
+			},
+			args: args{
+				other: &ClientVersion{
+					Major: 1,
+					Minor: 0,
+					Patch: 0,
+					Tag:   "",
+				},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			v := &ClientVersion{
+				Major: tt.fields.Major,
+				Minor: tt.fields.Minor,
+				Patch: tt.fields.Patch,
+				Tag:   tt.fields.Tag,
+			}
+			if got := v.LessThan(tt.args.other); got != tt.want {
+				t.Errorf("LessThan() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestJuiceFSEngine_genQuotaCmd(t *testing.T) {
+	type args struct {
+		value *JuiceFS
+		mount datav1alpha1.Mount
+	}
+	tests := []struct {
+		name         string
+		args         args
+		wantErr      bool
+		wantQuotaCmd string
+	}{
+		{
+			name: "test-ce",
+			args: args{
+				value: &JuiceFS{
+					Edition: CommunityEdition,
+					Configs: Configs{},
+					Source:  "redis://127.0.0.1:6379",
+					Fuse: Fuse{
+						ImageTag: "v1.1.4-4.9.2",
+						SubPath:  "/demo",
+					},
+				},
+				mount: datav1alpha1.Mount{
+					Options: map[string]string{
+						"quota": "1Gi",
+					},
+				},
+			},
+			wantErr:      false,
+			wantQuotaCmd: "/usr/local/bin/juicefs quota set redis://127.0.0.1:6379 --path /demo --capacity 1",
+		},
+		{
+			name: "test-ee",
+			args: args{
+				value: &JuiceFS{
+					Edition: EnterpriseEdition,
+					Configs: Configs{},
+					Source:  "test",
+					Fuse: Fuse{
+						ImageTag: "v1.1.4-4.9.2",
+						SubPath:  "/demo",
+					},
+				},
+				mount: datav1alpha1.Mount{
+					Options: map[string]string{
+						"quota": "1Gi",
+					},
+				},
+			},
+			wantErr:      false,
+			wantQuotaCmd: "/usr/bin/juicefs quota set test --path /demo --capacity 1",
+		},
+		{
+			name: "test-ce-err",
+			args: args{
+				value: &JuiceFS{
+					Edition: CommunityEdition,
+					Configs: Configs{},
+					Source:  "test",
+					Fuse: Fuse{
+						ImageTag: "v1.0.4-4.9.1",
+						SubPath:  "/demo",
+					},
+				},
+				mount: datav1alpha1.Mount{
+					Options: map[string]string{
+						"quota": "1Gi",
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "test-ee-err",
+			args: args{
+				value: &JuiceFS{
+					Edition: EnterpriseEdition,
+					Configs: Configs{},
+					Source:  "test",
+					Fuse: Fuse{
+						ImageTag: "v1.1.4-4.9.1",
+						SubPath:  "/demo",
+					},
+				},
+				mount: datav1alpha1.Mount{
+					Options: map[string]string{
+						"quota": "1Gi",
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "test-no-subpath",
+			args: args{
+				value: &JuiceFS{
+					Edition: CommunityEdition,
+					Configs: Configs{},
+					Source:  "test",
+					Fuse: Fuse{
+						ImageTag: "v1.1.4-4.9.2",
+					},
+				},
+				mount: datav1alpha1.Mount{
+					Options: map[string]string{
+						"quota": "1Gi",
+					},
+				},
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			j := &JuiceFSEngine{}
+			if err := j.genQuotaCmd(tt.args.value, tt.args.mount); (err != nil) != tt.wantErr {
+				t.Errorf("genQuotaCmd() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if tt.wantQuotaCmd != tt.args.value.Configs.QuotaCmd {
+				t.Errorf("genQuotaCmd() got cmd = %v, want %v", tt.args.value.Configs.QuotaCmd, tt.wantQuotaCmd)
+			}
+		})
+	}
 }

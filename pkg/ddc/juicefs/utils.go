@@ -305,3 +305,66 @@ func GetMetricsPort(options map[string]string) (int, error) {
 
 	return int(port), nil
 }
+
+func parseVersion(version string) (*ClientVersion, error) {
+	if version == common.NightlyTag {
+		return &ClientVersion{
+			Tag: common.NightlyTag,
+		}, nil
+	}
+	re := regexp.MustCompile(`^v?(\d+)\.(\d+)\.(\d+)(?:-(.+))?$`)
+	matches := re.FindStringSubmatch(strings.TrimSpace(version))
+	if matches == nil || len(matches) < 4 {
+		return nil, fmt.Errorf("invalid version string: %s", version)
+	}
+	major, err := strconv.Atoi(matches[1])
+	if err != nil {
+		return nil, fmt.Errorf("invalid major version: %s", matches[1])
+	}
+	minor, err := strconv.Atoi(matches[2])
+	if err != nil {
+		return nil, fmt.Errorf("invalid minor version: %s", matches[2])
+	}
+	patch, err := strconv.Atoi(matches[3])
+	if err != nil {
+		return nil, fmt.Errorf("invalid patch version: %s", matches[3])
+	}
+	var tag string
+	if len(matches) > 4 {
+		tag = matches[4]
+	}
+
+	return &ClientVersion{
+		Major: major,
+		Minor: minor,
+		Patch: patch,
+		Tag:   tag,
+	}, nil
+}
+
+type ClientVersion struct {
+	Major, Minor, Patch int
+	Tag                 string
+}
+
+func (v *ClientVersion) LessThan(other *ClientVersion) bool {
+	if v.Tag == common.NightlyTag {
+		return false
+	}
+	if v.Major < other.Major {
+		return true
+	}
+	if v.Major > other.Major {
+		return false
+	}
+	if v.Minor < other.Minor {
+		return true
+	}
+	if v.Minor > other.Minor {
+		return false
+	}
+	if v.Patch < other.Patch {
+		return true
+	}
+	return false
+}
