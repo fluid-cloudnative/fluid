@@ -122,7 +122,7 @@ func (e *EFCEngine) transformMasters(runtime *datav1alpha1.EFCRuntime,
 	}
 
 	// options
-	err = e.transformMasterOptions(runtime, value)
+	err = e.transformMasterOptions(runtime, value, &mountInfo)
 	if err != nil {
 		return
 	}
@@ -224,7 +224,7 @@ func (e *EFCEngine) transformFuse(runtime *datav1alpha1.EFCRuntime,
 	}
 
 	// options
-	err = e.transformFuseOptions(runtime, value)
+	err = e.transformFuseOptions(runtime, value, &mountInfo)
 	if err != nil {
 		return
 	}

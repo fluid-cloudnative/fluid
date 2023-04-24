@@ -31,8 +31,12 @@ var (
 )
 
 func (e *EFCEngine) transformMasterOptions(runtime *datav1alpha1.EFCRuntime,
-	value *EFC) (err error) {
+	value *EFC, info *MountInfo) (err error) {
 	var options []string
+
+	if info.MountPointPrefix == CpfsMountPointPrefix {
+		options = append(options, "protocol=nfs3")
+	}
 
 	options = append(options, fmt.Sprintf("client_owner=%s-%s-master", e.namespace, e.name))
 	options = append(options, fmt.Sprintf("assign_uuid=%s-%s-master", e.namespace, e.name))
@@ -46,8 +50,12 @@ func (e *EFCEngine) transformMasterOptions(runtime *datav1alpha1.EFCRuntime,
 }
 
 func (e *EFCEngine) transformFuseOptions(runtime *datav1alpha1.EFCRuntime,
-	value *EFC) (err error) {
+	value *EFC, info *MountInfo) (err error) {
 	var options []string
+
+	if info.MountPointPrefix == CpfsMountPointPrefix {
+		options = append(options, "protocol=nfs3")
+	}
 
 	if !runtime.Spec.Worker.Disabled {
 		options = append(options, "g_tier_EnableClusterCache=true")

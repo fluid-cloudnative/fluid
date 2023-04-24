@@ -47,13 +47,13 @@ metadata:
   name: mydemo
 spec:
   mounts:
-    - mountPoint: "efc://nas-mount-point-address:/sub/path"
+    - mountPoint: "nfs://nas-mount-point-address:/sub/path"
 EOF
 ```
 
 其中：
 
-- `mountPoint`：指的是 EFC 的子目录，是用户在 NAS 文件系统中存储数据的目录，以 `efc://` 开头；如 `efc://nas-mount-point-address:/sub/path` 为 `nas-mount-point-address` 文件系统的 `/sub/path` 子目录。
+- `mountPoint`：指的是 EFC 的子目录，是用户在 NAS 文件系统中存储数据的目录，以 `nfs://` 开头；如 `nfs://nas-mount-point-address:/sub/path` 为 `nas-mount-point-address` 文件系统的 `/sub/path` 子目录。
 
 **创建 `Dataset` 资源对象**
 ```shell

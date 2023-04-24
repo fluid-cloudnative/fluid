@@ -632,7 +632,7 @@ func TestEFCEngine_getWorkerRunningPods(t *testing.T) {
 	}
 }
 
-func TestEFCEngine_getMountInfoAndSecret(t *testing.T) {
+func TestEFCEngine_getMountInfoAndSecret1(t *testing.T) {
 	dataSetInputs := []*datav1alpha1.Dataset{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -642,7 +642,7 @@ func TestEFCEngine_getMountInfoAndSecret(t *testing.T) {
 			Spec: datav1alpha1.DatasetSpec{
 				Mounts: []datav1alpha1.Mount{
 					{
-						MountPoint: "efc://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
+						MountPoint: "nfs://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
 						EncryptOptions: []datav1alpha1.EncryptOption{
 							{
 								Name: "efc.nas.accessKeyId",
@@ -675,7 +675,7 @@ func TestEFCEngine_getMountInfoAndSecret(t *testing.T) {
 			Spec: datav1alpha1.DatasetSpec{
 				Mounts: []datav1alpha1.Mount{
 					{
-						MountPoint: "efc://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
+						MountPoint: "nfs://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
 					},
 				},
 			},
@@ -688,7 +688,7 @@ func TestEFCEngine_getMountInfoAndSecret(t *testing.T) {
 			Spec: datav1alpha1.DatasetSpec{
 				Mounts: []datav1alpha1.Mount{
 					{
-						MountPoint: "efc://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
+						MountPoint: "nfs://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
 						EncryptOptions: []datav1alpha1.EncryptOption{
 							{
 								Name: AccessKeyIDName,
@@ -739,37 +739,205 @@ func TestEFCEngine_getMountInfoAndSecret(t *testing.T) {
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, objs...)
 
 	tests := []struct {
-		Name            string
-		Namespace       string
-		WantErr         bool
-		MountPoint      string
-		ServiceAddr     string
-		FileSystemId    string
-		DirPath         string
-		AccessKeyID     string
-		AccessKeySecret string
+		Name             string
+		Namespace        string
+		WantErr          bool
+		MountPoint       string
+		MountPointPrefix string
+		ServiceAddr      string
+		FileSystemId     string
+		DirPath          string
+		AccessKeyID      string
+		AccessKeySecret  string
 	}{
 		{
-			Name:            "check",
-			Namespace:       "fluid",
-			WantErr:         false,
-			MountPoint:      "volume-uuid.region.nas.aliyuncs.com:/test-fluid-3/",
-			ServiceAddr:     "region",
-			FileSystemId:    "volume",
-			DirPath:         "/test-fluid-3/",
-			AccessKeyID:     "123",
-			AccessKeySecret: "321",
+			Name:             "check",
+			Namespace:        "fluid",
+			WantErr:          false,
+			MountPoint:       "volume-uuid.region.nas.aliyuncs.com:/test-fluid-3/",
+			MountPointPrefix: "nfs://",
+			ServiceAddr:      "region",
+			FileSystemId:     "volume",
+			DirPath:          "/test-fluid-3/",
+			AccessKeyID:      "123",
+			AccessKeySecret:  "321",
 		},
 		{
-			Name:            "nocheck",
-			Namespace:       "fluid",
-			WantErr:         false,
-			MountPoint:      "volume-uuid.region.nas.aliyuncs.com:/test-fluid-3/",
-			ServiceAddr:     "region",
-			FileSystemId:    "volume",
-			DirPath:         "/test-fluid-3/",
-			AccessKeyID:     "",
-			AccessKeySecret: "",
+			Name:             "nocheck",
+			Namespace:        "fluid",
+			WantErr:          false,
+			MountPoint:       "volume-uuid.region.nas.aliyuncs.com:/test-fluid-3/",
+			MountPointPrefix: "nfs://",
+			ServiceAddr:      "region",
+			FileSystemId:     "volume",
+			DirPath:          "/test-fluid-3/",
+			AccessKeyID:      "",
+			AccessKeySecret:  "",
+		},
+		{
+			Name:      "errorcheck",
+			Namespace: "fluid",
+			WantErr:   true,
+		},
+	}
+
+	for _, te := range tests {
+		e := newEFCEngine(fakeClient, te.Name, te.Namespace)
+		info, err := e.getMountInfo()
+		if (err != nil) != te.WantErr {
+			t.Errorf("fail to exec func")
+		}
+		if err != nil {
+			continue
+		}
+		if info.MountPoint != te.MountPoint || info.ServiceAddr != te.ServiceAddr || info.FileSystemId != te.FileSystemId || info.DirPath != te.DirPath || info.AccessKeyID != te.AccessKeyID || info.AccessKeySecret != te.AccessKeySecret {
+			t.Errorf("fail to exec func")
+		}
+
+	}
+}
+
+func TestEFCEngine_getMountInfoAndSecret2(t *testing.T) {
+	dataSetInputs := []*datav1alpha1.Dataset{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "check",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{
+					{
+						MountPoint: "cpfs://cpfs-059az-059az.cn-region.cpfs.aliyuncs.com:/share",
+						EncryptOptions: []datav1alpha1.EncryptOption{
+							{
+								Name: "efc.nas.accessKeyId",
+								ValueFrom: datav1alpha1.EncryptOptionSource{
+									SecretKeyRef: datav1alpha1.SecretKeySelector{
+										Name: "mysecret",
+										Key:  "efc.nas.accessKeyId",
+									},
+								},
+							},
+							{
+								Name: "efc.nas.accessKeySecret",
+								ValueFrom: datav1alpha1.EncryptOptionSource{
+									SecretKeyRef: datav1alpha1.SecretKeySelector{
+										Name: "mysecret",
+										Key:  "efc.nas.accessKeySecret",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "nocheck",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{
+					{
+						MountPoint: "cpfs://cpfs-059az-059az.cn-region.cpfs.aliyuncs.com:/share/test-fluid-3",
+					},
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "errorcheck",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{
+					{
+						MountPoint: "cpfs://cpfs-059az-059az.cn-region.cpfs.aliyuncs.com:/share/test-fluid-3",
+						EncryptOptions: []datav1alpha1.EncryptOption{
+							{
+								Name: AccessKeyIDName,
+								ValueFrom: datav1alpha1.EncryptOptionSource{
+									SecretKeyRef: datav1alpha1.SecretKeySelector{
+										Name: "check-none",
+										Key:  "id",
+									},
+								},
+							},
+							{
+								Name: AccessKeySecretName,
+								ValueFrom: datav1alpha1.EncryptOptionSource{
+									SecretKeyRef: datav1alpha1.SecretKeySelector{
+										Name: "check",
+										Key:  "secret",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	secretInputs := []corev1.Secret{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "mysecret",
+				Namespace: "fluid",
+			},
+			Data: map[string][]byte{
+				"efc.nas.accessKeyId":     []byte("123"),
+				"efc.nas.accessKeySecret": []byte("321"),
+			},
+		},
+	}
+
+	objs := []runtime.Object{}
+	for _, d := range dataSetInputs {
+		objs = append(objs, d.DeepCopy())
+	}
+	for _, s := range secretInputs {
+		objs = append(objs, s.DeepCopy())
+	}
+
+	fakeClient := fake.NewFakeClientWithScheme(testScheme, objs...)
+
+	tests := []struct {
+		Name             string
+		Namespace        string
+		WantErr          bool
+		MountPoint       string
+		MountPointPrefix string
+		ServiceAddr      string
+		FileSystemId     string
+		DirPath          string
+		AccessKeyID      string
+		AccessKeySecret  string
+	}{
+		{
+			Name:             "check",
+			Namespace:        "fluid",
+			WantErr:          false,
+			MountPoint:       "cpfs-059az-059az.cn-region.cpfs.aliyuncs.com:/share/",
+			MountPointPrefix: "cpfs://",
+			ServiceAddr:      "cn-region",
+			FileSystemId:     "cpfs-059az-059az",
+			DirPath:          "/",
+			AccessKeyID:      "123",
+			AccessKeySecret:  "321",
+		},
+		{
+			Name:             "nocheck",
+			Namespace:        "fluid",
+			WantErr:          false,
+			MountPoint:       "cpfs-059az-059az.cn-region.cpfs.aliyuncs.com:/share/test-fluid-3/",
+			MountPointPrefix: "cpfs://",
+			ServiceAddr:      "cn-region",
+			FileSystemId:     "cpfs-059az-059az",
+			DirPath:          "/test-fluid-3/",
+			AccessKeyID:      "",
+			AccessKeySecret:  "",
 		},
 		{
 			Name:      "errorcheck",

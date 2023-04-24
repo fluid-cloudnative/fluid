@@ -26,7 +26,7 @@ package efc
 //			Spec: datav1alpha1.DatasetSpec{
 //				Mounts: []datav1alpha1.Mount{
 //					{
-//						MountPoint: "efc://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
+//						MountPoint: "nfs://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
 //						EncryptOptions: []datav1alpha1.EncryptOption{
 //							{
 //								Name: AccessKeyIDName,
@@ -59,7 +59,7 @@ package efc
 //			Spec: datav1alpha1.DatasetSpec{
 //				Mounts: []datav1alpha1.Mount{
 //					{
-//						MountPoint: "efc://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
+//						MountPoint: "nfs://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
 //					},
 //				},
 //			},
@@ -125,7 +125,7 @@ package efc
 //			Spec: datav1alpha1.DatasetSpec{
 //				Mounts: []datav1alpha1.Mount{
 //					{
-//						MountPoint: "efc://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
+//						MountPoint: "nfs://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
 //						EncryptOptions: []datav1alpha1.EncryptOption{
 //							{
 //								Name: AccessKeyIDName,
@@ -158,7 +158,7 @@ package efc
 //			Spec: datav1alpha1.DatasetSpec{
 //				Mounts: []datav1alpha1.Mount{
 //					{
-//						MountPoint: "efc://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
+//						MountPoint: "nfs://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
 //					},
 //				},
 //			},
@@ -241,7 +241,7 @@ package efc
 //			Spec: datav1alpha1.DatasetSpec{
 //				Mounts: []datav1alpha1.Mount{
 //					{
-//						MountPoint: "efc://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
+//						MountPoint: "nfs://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
 //						EncryptOptions: []datav1alpha1.EncryptOption{
 //							{
 //								Name: AccessKeyIDName,
@@ -274,7 +274,7 @@ package efc
 //			Spec: datav1alpha1.DatasetSpec{
 //				Mounts: []datav1alpha1.Mount{
 //					{
-//						MountPoint: "efc://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
+//						MountPoint: "nfs://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
 //					},
 //				},
 //			},

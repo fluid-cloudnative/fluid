@@ -37,12 +37,25 @@ func TestTransformMasterOptions(t *testing.T) {
 		name:      "test",
 		namespace: "fluid",
 	}
-	err := engine.transformMasterOptions(runtime, value)
-	if err != nil {
-		t.Errorf("unexpected err %v", err)
+
+	{
+		err := engine.transformMasterOptions(runtime, value, &MountInfo{MountPointPrefix: NasMountPointPrefix})
+		if err != nil {
+			t.Errorf("unexpected err %v", err)
+		}
+		if value.Master.Options != "client_owner=fluid-test-master,assign_uuid=fluid-test-master,a=b" {
+			t.Errorf("unexpected option %v", value.Master.Options)
+		}
 	}
-	if value.Master.Options != "client_owner=fluid-test-master,assign_uuid=fluid-test-master,a=b" {
-		t.Errorf("unexpected option %v", value.Master.Options)
+
+	{
+		err := engine.transformMasterOptions(runtime, value, &MountInfo{MountPointPrefix: CpfsMountPointPrefix})
+		if err != nil {
+			t.Errorf("unexpected err %v", err)
+		}
+		if value.Master.Options != "protocol=nfs3,client_owner=fluid-test-master,assign_uuid=fluid-test-master,a=b" {
+			t.Errorf("unexpected option %v", value.Master.Options)
+		}
 	}
 }
 
@@ -64,21 +77,47 @@ func TestTransformFuseOptions(t *testing.T) {
 		name:      "test",
 		namespace: "fluid",
 	}
-	err := engine.transformFuseOptions(runtime, value)
-	if err != nil {
-		t.Errorf("unexpected err %v", err)
-	}
-	if value.Fuse.Options != "g_tier_EnableClusterCache=true,g_tier_EnableClusterCachePrefetch=true,assign_uuid=fluid-test-fuse,a=b" {
-		t.Errorf("unexpected option %v", value.Fuse.Options)
+
+	{
+		err := engine.transformFuseOptions(runtime, value, &MountInfo{MountPointPrefix: NasMountPointPrefix})
+		if err != nil {
+			t.Errorf("unexpected err %v", err)
+		}
+		if value.Fuse.Options != "g_tier_EnableClusterCache=true,g_tier_EnableClusterCachePrefetch=true,assign_uuid=fluid-test-fuse,a=b" {
+			t.Errorf("unexpected option %v", value.Fuse.Options)
+		}
 	}
 
-	runtime.Spec.Worker.Disabled = true
-	err = engine.transformFuseOptions(runtime, value)
-	if err != nil {
-		t.Errorf("unexpected err %v", err)
+	{
+		err := engine.transformFuseOptions(runtime, value, &MountInfo{MountPointPrefix: CpfsMountPointPrefix})
+		if err != nil {
+			t.Errorf("unexpected err %v", err)
+		}
+		if value.Fuse.Options != "protocol=nfs3,g_tier_EnableClusterCache=true,g_tier_EnableClusterCachePrefetch=true,assign_uuid=fluid-test-fuse,a=b" {
+			t.Errorf("unexpected option %v", value.Fuse.Options)
+		}
 	}
-	if value.Fuse.Options != "assign_uuid=fluid-test-fuse,a=b" {
-		t.Errorf("unexpected option %v", value.Fuse.Options)
+
+	{
+		runtime.Spec.Worker.Disabled = true
+		err := engine.transformFuseOptions(runtime, value, &MountInfo{MountPointPrefix: NasMountPointPrefix})
+		if err != nil {
+			t.Errorf("unexpected err %v", err)
+		}
+		if value.Fuse.Options != "assign_uuid=fluid-test-fuse,a=b" {
+			t.Errorf("unexpected option %v", value.Fuse.Options)
+		}
+	}
+
+	{
+		runtime.Spec.Worker.Disabled = true
+		err := engine.transformFuseOptions(runtime, value, &MountInfo{MountPointPrefix: CpfsMountPointPrefix})
+		if err != nil {
+			t.Errorf("unexpected err %v", err)
+		}
+		if value.Fuse.Options != "protocol=nfs3,assign_uuid=fluid-test-fuse,a=b" {
+			t.Errorf("unexpected option %v", value.Fuse.Options)
+		}
 	}
 }
 
