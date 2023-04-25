@@ -86,7 +86,7 @@ spec:
             {{- end }}
             - name: localtime
               mountPath: /etc/localtime
-      {{- with .Values.imagePullSecrets }}
+      {{- with .Values.worker.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}

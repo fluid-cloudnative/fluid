@@ -112,7 +112,7 @@ spec:
             {{- end }}
             - name: efc-sock
               mountPath: /var/run/efc
-      {{- with .Values.imagePullSecrets }}
+      {{- with .Values.fuse.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}

@@ -136,7 +136,7 @@ spec:
               mountPath: /etc/localtime
             - name: efc-sock
               mountPath: /var/run/efc
-      {{- with .Values.imagePullSecrets }}
+      {{- with .Values.master.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
