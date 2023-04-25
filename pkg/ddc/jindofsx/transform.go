@@ -820,9 +820,16 @@ func (e *JindoFSxEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime, da
 	} else {
 		fuseArgs = append(fuseArgs, "-okernel_cache")
 		if readOnly {
+			fuseArgs = append(fuseArgs, "-okernel_cache")
 			fuseArgs = append(fuseArgs, "-oro")
 			fuseArgs = append(fuseArgs, "-oattr_timeout=7200")
 			fuseArgs = append(fuseArgs, "-oentry_timeout=7200")
+			fuseArgs = append(fuseArgs, "-onegative_timeout=7200")
+		} else {
+			fuseArgs = append(fuseArgs, "-oauto_cache")
+			fuseArgs = append(fuseArgs, "-oattr_timeout=0")
+			fuseArgs = append(fuseArgs, "-oentry_timeout=0")
+			fuseArgs = append(fuseArgs, "-onegative_timeout=0")
 		}
 	}
 	if runtime.Spec.Master.Disabled && runtime.Spec.Worker.Disabled {
