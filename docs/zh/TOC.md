@@ -51,6 +51,14 @@
   - [机器学习](samples/machinelearning.md)
 + 更多Runtime实现
   - [使用 JindoRuntime](https://github.com/aliyun/alibabacloud-jindodata/blob/master/docs/user/3.x/jindo_fluid/jindo_fluid_overview.md)
+  - [使用 JuiceFSRuntime](https://github.com/juicedata/juicefs)
+    - [JuiceFS 开源环境搭建步骤](samples/juicefs/juicefs_setup.md)
+    - [如何在 Fluid 中使用 JuiceFS](samples/juicefs/juicefs_runtime.md)
+    - [JuiceFSRuntime Worker 的配置](samples/juicefs/juicefs_worker.md)
+    - [JuiceFSRuntime Dataset 的配置](samples/juicefs/juicefs_dataset.md)
+    - [JuiceFSRuntime 缓存配置](samples/juicefs/juicefs_cache_dir.md)
+    - [JuiceFSRuntime 加速数据访问](samples/juicefs/juicefs_data_accelerate.md)
+    - [JuiceFSRuntime 数据迁移](samples/juicefs/juicefs_data_migrate.md)
 + 运维指南
   - [运行时监控](operation/monitoring.md)
   - [JVM性能分析](dev/profiling.md)
