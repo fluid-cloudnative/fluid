@@ -818,7 +818,6 @@ func (e *JindoFSxEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime, da
 	if len(runtime.Spec.Fuse.Args) > 0 {
 		fuseArgs = runtime.Spec.Fuse.Args
 	} else {
-		fuseArgs = append(fuseArgs, "-okernel_cache")
 		if readOnly {
 			fuseArgs = append(fuseArgs, "-okernel_cache")
 			fuseArgs = append(fuseArgs, "-oro")
