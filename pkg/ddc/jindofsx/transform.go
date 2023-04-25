@@ -159,11 +159,11 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	e.transformNetworkMode(runtime, value)
 	e.transformFuseNodeSelector(runtime, value)
 	e.transformSecret(runtime, value)
-	e.transformToken(runtime, value)
 	err = e.transformMaster(runtime, metaPath, value, dataset)
 	if err != nil {
 		return
 	}
+	e.transformToken(runtime, value)
 	e.transformWorker(runtime, dataPath, userQuotas, value)
 	e.transformFuse(runtime, value)
 	e.transformInitPortCheck(value)
@@ -265,6 +265,7 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 			}
 		}
 		// TODO support cos storage
+		mountType := "oss"
 		if strings.HasPrefix(mount.MountPoint, "oss://") {
 			var re = regexp.MustCompile(`(oss://(.*?))(/)`)
 			rm := re.FindStringSubmatch(mount.MountPoint)
@@ -274,12 +275,6 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 				return
 			}
 			bucketName := rm[2]
-			if mount.Options["fs.oss.accessKeyId"] != "" {
-				propertiesFileStore["jindofsx.oss.bucket."+bucketName+".accessKeyId"] = mount.Options["fs.oss.accessKeyId"]
-			}
-			if mount.Options["fs.oss.accessKeySecret"] != "" {
-				propertiesFileStore["jindofsx.oss.bucket."+bucketName+".accessKeySecret"] = mount.Options["fs.oss.accessKeySecret"]
-			}
 			if mount.Options["fs.oss.endpoint"] == "" {
 				err = fmt.Errorf("oss endpoint can not be null, please check <fs.oss.accessKeySecret> option")
 				e.Log.Error(err, "oss endpoint can not be null")
@@ -293,12 +288,7 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 
 		// support s3
 		if strings.HasPrefix(mount.MountPoint, "s3://") {
-			if mount.Options["fs.s3.accessKeyId"] != "" {
-				propertiesFileStore["jindofsx.s3.accessKeyId"] = mount.Options["fs.s3.accessKeyId"]
-			}
-			if mount.Options["fs.s3.accessKeySecret"] != "" {
-				propertiesFileStore["jindofsx.s3.accessKeySecret"] = mount.Options["fs.s3.accessKeySecret"]
-			}
+			mountType = "s3"
 			if mount.Options["fs.s3.endpoint"] != "" {
 				propertiesFileStore["jindofsx.s3.endpoint"] = mount.Options["fs.s3.endpoint"]
 			}
@@ -309,12 +299,7 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 
 		// support cos
 		if strings.HasPrefix(mount.MountPoint, "cos://") {
-			if mount.Options["fs.cos.accessKeyId"] != "" {
-				propertiesFileStore["jindofsx.cos.accessKeyId"] = mount.Options["fs.cos.accessKeyId"]
-			}
-			if mount.Options["fs.cos.accessKeySecret"] != "" {
-				propertiesFileStore["jindofsx.cos.accessKeySecret"] = mount.Options["fs.cos.accessKeySecret"]
-			}
+			mountType = "cos"
 			if mount.Options["fs.cos.endpoint"] != "" {
 				propertiesFileStore["jindofsx.cos.endpoint"] = mount.Options["fs.cos.endpoint"]
 			}
@@ -322,12 +307,7 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 
 		// support obs
 		if strings.HasPrefix(mount.MountPoint, "obs://") {
-			if mount.Options["fs.obs.accessKeyId"] != "" {
-				propertiesFileStore["jindofsx.obs.accessKeyId"] = mount.Options["fs.obs.accessKeyId"]
-			}
-			if mount.Options["fs.obs.accessKeySecret"] != "" {
-				propertiesFileStore["jindofsx.obs.accessKeySecret"] = mount.Options["fs.obs.accessKeySecret"]
-			}
+			mountType = "obs"
 			if mount.Options["fs.obs.endpoint"] != "" {
 				propertiesFileStore["jindofsx.obs.endpoint"] = mount.Options["fs.obs.endpoint"]
 			}
@@ -335,6 +315,7 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 
 		// support HDFS HA
 		if strings.HasPrefix(mount.MountPoint, "hdfs://") {
+			mountType = "hdfs"
 			for key, value := range mount.Options {
 				propertiesFileStore[strings.Replace(key, "fs", "jindofsx", 1)] = value
 			}
@@ -344,44 +325,24 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 		for _, encryptOption := range mount.EncryptOptions {
 			key := encryptOption.Name
 			secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
-			secret, err := kubeclient.GetSecret(e.Client, secretKeyRef.Name, e.namespace)
+			_, err := kubeclient.GetSecret(e.Client, secretKeyRef.Name, e.namespace)
 			if err != nil {
-				e.Log.Info("can't get the secret")
+				e.Log.Info("can't get the input secret from dataset", secretKeyRef.Name)
 				break
 			}
-			value := secret.Data[secretKeyRef.Key]
-			if err != nil {
-				e.Log.Info("decode value failed")
+			value.Secret = secretKeyRef.Name
+			if key == "fs."+mountType+".accessKeyId" {
+				value.SecretKey = key
+				e.Log.Info("Get %s From %s!", key, secretKeyRef.Name)
 			}
-			if key == "fs.oss.accessKeyId" {
-				propertiesFileStore["jindofsx.oss.accessKeyId"] = string(value)
+			if key == "fs."+mountType+".accessKeySecret" {
+				value.SecretValue = key
+				e.Log.Info("Get %s From %s!", key, secretKeyRef.Name)
 			}
-			if key == "fs.oss.accessKeySecret" {
-				propertiesFileStore["jindofsx.oss.accessKeySecret"] = string(value)
-			}
-			if key == "fs.s3.accessKeyId" {
-				propertiesFileStore["jindofsx.s3.accessKeyId"] = string(value)
-			}
-			if key == "fs.s3.accessKeySecret" {
-				propertiesFileStore["jindofsx.s3.accessKeySecret"] = string(value)
-			}
-			if key == "fs.cos.accessKeyId" {
-				propertiesFileStore["jindofsx.cos.accessKeyId"] = string(value)
-			}
-			if key == "fs.cos.accessKeySecret" {
-				propertiesFileStore["jindofsx.cos.accessKeySecret"] = string(value)
-			}
-			if key == "fs.obs.accessKeyId" {
-				propertiesFileStore["jindofsx.obs.accessKeyId"] = string(value)
-			}
-			if key == "fs.obs.accessKeySecret" {
-				propertiesFileStore["jindofsx.obs.accessKeySecret"] = string(value)
-			}
-			e.Log.Info("Get Credential From Secret Successfully")
 		}
+		value.MountType = mountType
 	}
 	value.Master.FileStoreProperties = propertiesFileStore
-
 	return nil
 }
 
@@ -678,11 +639,11 @@ func (e *JindoFSxEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, value
 		properties["fs.jindofsx.ram.cache.enable"] = "false"
 	}
 	// set secret
-	if len(runtime.Spec.Secret) != 0 {
-		properties["fs.oss.credentials.provider"] = "com.aliyun.jindodata.oss.auth.CustomCredentialsProvider"
-		properties["aliyun.oss.provider.url"] = "secrets:///token/"
-		properties["fs.oss.provider.endpoint"] = "secrets:///token/"
-		properties["fs.oss.provider.format"] = "JSON"
+	if len(value.Secret) != 0 {
+		properties["fs."+value.MountType+".credentials.provider"] = "com.aliyun.jindodata.oss.auth.CustomCredentialsProvider"
+		properties["aliyun."+value.MountType+".provider.url"] = "secrets:///token/"
+		properties["fs."+value.MountType+".provider.endpoint"] = "secrets:///token/"
+		properties["fs."+value.MountType+".provider.format"] = "JSON"
 	}
 
 	if len(runtime.Spec.Fuse.Properties) > 0 {
@@ -841,7 +802,7 @@ func (e *JindoFSxEngine) getSmartDataConfigs(runtime *datav1alpha1.JindoRuntime)
 	// Apply defaults
 	config := smartdataConfig{
 		image:           "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata",
-		imageTag:        "4.5.2",
+		imageTag:        "4.6.7",
 		imagePullPolicy: "Always",
 		dnsServer:       "1.1.1.1",
 	}
@@ -879,7 +840,7 @@ func (e *JindoFSxEngine) getSmartDataConfigs(runtime *datav1alpha1.JindoRuntime)
 func (e *JindoFSxEngine) parseFuseImage(runtime *datav1alpha1.JindoRuntime) (image, tag, imagePullPolicy string) {
 	// Apply defaults
 	image = "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse"
-	tag = "4.5.2"
+	tag = "4.6.7"
 	imagePullPolicy = "Always"
 
 	// Override with global-scoped configs
@@ -911,14 +872,17 @@ func (e *JindoFSxEngine) parseFuseImage(runtime *datav1alpha1.JindoRuntime) (ima
 func (e *JindoFSxEngine) transformSecret(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
 	if len(runtime.Spec.Secret) != 0 {
 		value.Secret = runtime.Spec.Secret
+		value.UseStsToken = true
+	} else {
+		value.UseStsToken = false
 	}
 }
 
 func (e *JindoFSxEngine) transformToken(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
 	properties := map[string]string{}
-	if len(runtime.Spec.Secret) != 0 {
+	if len(value.Secret) != 0 {
 		properties["default.credential.provider"] = "secrets:///token/"
-		properties["jindofsx.oss.provider.endpoint"] = "secrets:///token/"
+		properties["jindofsx."+value.MountType+".provider.endpoint"] = "secrets:///token/"
 	} else {
 		properties["default.credential.provider"] = "none"
 	}

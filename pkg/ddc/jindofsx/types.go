@@ -49,6 +49,10 @@ type Jindo struct {
 	RuntimeIdentity     common.RuntimeIdentity `yaml:"runtimeIdentity"`
 	ClusterDomain       string                 `yaml:"clusterDomain,omitempty"`
 	UFSVolumes          []UFSVolume            `yaml:"ufsVolumes,omitempty"`
+	SecretKey           string                 `yaml:"secretKey,omitempty"`
+	SecretValue         string                 `yaml:"secretValue,omitempty"`
+	UseStsToken         bool                   `yaml:"UseStsToken"`
+	MountType           string                 `yaml:"mountType,omitempty"`
 }
 
 type HadoopConfig struct {
