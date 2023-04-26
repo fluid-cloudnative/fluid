@@ -17,8 +17,6 @@ limitations under the License.
 package juicefs
 
 import (
-	"fmt"
-	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 	"github.com/fluid-cloudnative/fluid/pkg/errors"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -29,13 +27,14 @@ import (
 func (j *JuiceFSEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, object client.Object,
 	operation dataoperation.OperationInterface) (valueFileName string, err error) {
 	operationType := operation.GetOperationType()
-	dataMigrate, ok := object.(*v1alpha1.DataMigrate)
-	if !ok {
-		return "", fmt.Errorf("object %v is not a DataMigrate", object)
-	}
 
 	if operationType == dataoperation.DataMigrate {
-		valueFileName, err = j.generateDataMigrateValueFile(ctx, *dataMigrate)
+		valueFileName, err = j.generateDataMigrateValueFile(ctx, object)
+		return valueFileName, err
+	}
+
+	if operationType == dataoperation.DataLoad {
+		valueFileName, err = j.generateDataLoadValueFile(ctx, object)
 		return valueFileName, err
 	}
 

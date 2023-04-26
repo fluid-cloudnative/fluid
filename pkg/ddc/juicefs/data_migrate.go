@@ -21,6 +21,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -52,7 +53,7 @@ func (j *JuiceFSEngine) CreateDataMigrateJob(ctx cruntime.ReconcileRequestContex
 	// 2. install the helm chart if not exists
 	if !existed {
 		log.Info("DataMigrate job helm chart not installed yet, will install")
-		valueFileName, err := j.generateDataMigrateValueFile(ctx, targetDataMigrate)
+		valueFileName, err := j.generateDataMigrateValueFile(ctx, &targetDataMigrate)
 		if err != nil {
 			log.Error(err, "failed to generate dataload chart's value file")
 			return err
@@ -69,9 +70,14 @@ func (j *JuiceFSEngine) CreateDataMigrateJob(ctx cruntime.ReconcileRequestContex
 	return err
 }
 
-func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequestContext, dataMigrate datav1alpha1.DataMigrate) (valueFileName string, err error) {
+func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequestContext, object client.Object) (valueFileName string, err error) {
+	dataMigrate, ok := object.(*datav1alpha1.DataMigrate)
+	if !ok {
+		return "", fmt.Errorf("object %v is not a DataMigrate", object)
+	}
+
 	// 1. get the target dataset
-	targetDataset, err := utils.GetTargetDatasetOfMigrate(r.Client, dataMigrate)
+	targetDataset, err := utils.GetTargetDatasetOfMigrate(r.Client, *dataMigrate)
 	if err != nil {
 		return "", err
 	}

@@ -39,7 +39,7 @@ func (e *AlluxioEngine) generateDataBackupValueFile(ctx cruntime.ReconcileReques
 
 	databackup, ok := object.(*datav1alpha1.DataBackup)
 	if !ok {
-		err = fmt.Errorf("object %v is not a DataLoad", object)
+		err = fmt.Errorf("object %v is not a DataBackup", object)
 		return "", err
 	}
 

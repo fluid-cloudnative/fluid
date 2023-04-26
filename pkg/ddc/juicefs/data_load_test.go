@@ -377,7 +377,7 @@ func TestJuiceFSEngine_GenerateDataLoadValueFileWithRuntimeHDD(t *testing.T) {
 			Client:    client,
 			Log:       fake.NullLogger(),
 		}
-		if fileName, err := engine.generateDataLoadValueFile(context, test.dataLoad); err != nil || !strings.Contains(fileName, test.expectFileName) {
+		if fileName, err := engine.generateDataLoadValueFile(context, &test.dataLoad); err != nil || !strings.Contains(fileName, test.expectFileName) {
 			t.Errorf("fail to generate the dataload value file: %v", err)
 		}
 	}
@@ -504,7 +504,7 @@ func TestJuiceFSEngine_GenerateDataLoadValueFileWithRuntime(t *testing.T) {
 			Client:    client,
 			Log:       fake.NullLogger(),
 		}
-		if fileName, err := engine.generateDataLoadValueFile(context, test.dataLoad); err != nil || !strings.Contains(fileName, test.expectFileName) {
+		if fileName, err := engine.generateDataLoadValueFile(context, &test.dataLoad); err != nil || !strings.Contains(fileName, test.expectFileName) {
 			t.Errorf("fail to generate the dataload value file: %v", err)
 		}
 	}
@@ -1179,7 +1179,7 @@ func TestJuiceFSEngine_genDataLoadValue(t *testing.T) {
 			name:      item.runtimeName,
 			Log:       fake.NullLogger(),
 		}
-		got := engine.genDataLoadValue(item.image, item.cacheInfo, item.pods, item.targetDataset, *item.dataload)
+		got := engine.genDataLoadValue(item.image, item.cacheInfo, item.pods, item.targetDataset, item.dataload)
 		if !reflect.DeepEqual(got, item.want) {
 			t.Errorf("case %s, got %v,want:%v", k, got, item.want)
 		}

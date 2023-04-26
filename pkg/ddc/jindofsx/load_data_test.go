@@ -280,7 +280,7 @@ func TestGenerateDataLoadValueFile(t *testing.T) {
 
 	for _, test := range testCases {
 		engine := JindoFSxEngine{}
-		if fileName, _ := engine.generateDataLoadValueFile(context, test.dataLoad); !strings.Contains(fileName, test.expectFileName) {
+		if fileName, _ := engine.generateDataLoadValueFile(context, &test.dataLoad); !strings.Contains(fileName, test.expectFileName) {
 			t.Errorf("fail to generate the dataload value file")
 		}
 	}
@@ -665,7 +665,7 @@ func Test_genDataLoadValue(t *testing.T) {
 		Log:       fake.NullLogger(),
 	}
 	for k, item := range testCases {
-		got := engine.genDataLoadValue(item.image, item.runtime, item.targetDataset, *item.dataload)
+		got := engine.genDataLoadValue(item.image, item.runtime, item.targetDataset, item.dataload)
 		if !reflect.DeepEqual(got, item.want) {
 			t.Errorf("case %s, got %v,want:%v", k, got, item.want)
 		}
@@ -765,7 +765,7 @@ func TestGenerateDataLoadValueFileWithRuntimeHDD(t *testing.T) {
 
 	for _, test := range testCases {
 		engine := JindoFSxEngine{}
-		if fileName, _ := engine.generateDataLoadValueFile(context, test.dataLoad); !strings.Contains(fileName, test.expectFileName) {
+		if fileName, _ := engine.generateDataLoadValueFile(context, &test.dataLoad); !strings.Contains(fileName, test.expectFileName) {
 			t.Errorf("fail to generate the dataload value file")
 		}
 	}
