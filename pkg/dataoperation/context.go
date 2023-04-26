@@ -25,6 +25,7 @@ import (
 type OperationType string
 
 const (
+	DataLoad    OperationType = "DataLoad"
 	DataBackup  OperationType = "DataBackup"
 	DataMigrate OperationType = "DataMigrate"
 )

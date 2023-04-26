@@ -32,6 +32,11 @@ func (e *GooseFSEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestC
 		return valueFileName, err
 	}
 
+	if operateType == dataoperation.DataLoad {
+		valueFileName, err = e.generateDataLoadValueFile(ctx, object)
+		return valueFileName, err
+	}
+
 	return "", errors.NewNotSupported(
 		schema.GroupResource{
 			Group:    object.GetObjectKind().GroupVersionKind().Group,
