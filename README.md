@@ -62,7 +62,7 @@ English | [简体中文](./README-zh_CN.md)
 
 **Dataset**: A Dataset is a set of data logically related that can be used by computing engines, such as Spark for big data analytics and TensorFlow for AI applications. Intelligently leveraging data often creates core industry values. Managing Datasets may require features in different dimensions, such as security, version management and data acceleration. We hope to start with data acceleration to support the management of datasets. 
 
-**Runtime**: The Runtime enforces dataset security, provides version management, and enables data acceleration.
+**Runtime**: The Runtime enforces dataset isolation/share, provides version management, and enables data acceleration by defining a set of interfaces to handle DataSets throughout their lifecycle, allowing for the implementation of management and acceleration functionalities behind these interfaces.
 
 ## Prerequisites
 
