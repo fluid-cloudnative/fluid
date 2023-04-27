@@ -40,9 +40,9 @@ English | [简体中文](./README-zh_CN.md)
 
 - __Dataset Abstraction__
 
-  	Implement the unified abstraction for datasets from multiple storage sources, with observability features to help users evaluate the need for scaling the cache system.
+  	Implements the unified abstraction for datasets from multiple storage sources, with observability features to help users evaluate the need for scaling the cache system.
 
-- __Scalable Data Engine__
+- __Scalable Cache Runtime__
 
   	Offers a unified access interface for data operations with different runtimes, enabling access to third-party storage systems.
 
@@ -52,7 +52,7 @@ English | [简体中文](./README-zh_CN.md)
 
 - __Elasticity and Scheduling__
 
-  	By combining data caching technology with elastic scaling, portability, observability, and data affinity scheduling capabilities, Fluid enhances data access performance.
+  	Enhances data access performance by combining data caching technology with elastic scaling, portability, observability, and data affinity-scheduling capabilities.
 
 - __Runtime Platform Agnostic__
 
@@ -60,9 +60,9 @@ English | [简体中文](./README-zh_CN.md)
 
 ## Key Concepts
 
-**Dataset**: A DataSet is a set of data logically related that can be used by computing engines, such as Spark for big data analytics and TensorFlow for AI applications. Intelligently leveraging data often creates core industry values. Managing DataSets may require features in different dimensions, such as security, version management and data acceleration. We hope to start with data acceleration to support the management of datasets. 
+**Dataset**: A Dataset is a set of data logically related that can be used by computing engines, such as Spark for big data analytics and TensorFlow for AI applications. Intelligently leveraging data often creates core industry values. Managing Datasets may require features in different dimensions, such as security, version management and data acceleration. We hope to start with data acceleration to support the management of datasets. 
 
-**Runtime**: The execution engine that enforces dataset security, provides version management and data acceleration capabilities. The Runtime defines a set of interfaces to manage DataSets in their life cycle, so the management and acceleration of datasets can be implemented behind these interfaces.
+**Runtime**: The Runtime enforces dataset isolation/share, provides version management, and enables data acceleration by defining a set of interfaces to handle DataSets throughout their lifecycle, allowing for the implementation of management and acceleration functionalities behind these interfaces.
 
 ## Prerequisites
 
