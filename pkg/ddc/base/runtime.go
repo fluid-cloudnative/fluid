@@ -175,8 +175,16 @@ type RuntimeInfoOption func(info *RuntimeInfo)
 
 func GetMetadataListFromAnnotation(accessor metav1.ObjectMetaAccessor) (ret []datav1alpha1.Metadata) {
 	annotations := accessor.GetObjectMeta().GetAnnotations()
+	if annotations == nil {
+		return
+	}
 	m := annotations["data.fluid.io/metadataList"]
-	_ = json.Unmarshal([]byte(m), &ret)
+	if m == "" {
+		return
+	}
+	if err := json.Unmarshal([]byte(m), &ret); err != nil {
+		// TODO: add log
+	}
 	return
 }
 
