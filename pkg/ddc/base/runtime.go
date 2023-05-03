@@ -22,6 +22,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/jindo"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 
@@ -182,8 +183,10 @@ func GetMetadataListFromAnnotation(accessor metav1.ObjectMetaAccessor) (ret []da
 	if m == "" {
 		return
 	}
-	_ = json.Unmarshal([]byte(m), &ret)
-	// TODO: add log while err happened in json.Unmarshal
+	if err := json.Unmarshal([]byte(m), &ret); err != nil {
+		log := ctrl.Log.WithName("base")
+		log.V(5).Error(err, "failed to unmarshal metadataList from annotations", "data.fluid.io/metadataList", m)
+	}
 	return
 }
 
