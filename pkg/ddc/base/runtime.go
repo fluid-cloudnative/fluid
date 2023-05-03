@@ -182,9 +182,8 @@ func GetMetadataListFromAnnotation(accessor metav1.ObjectMetaAccessor) (ret []da
 	if m == "" {
 		return
 	}
-	if err := json.Unmarshal([]byte(m), &ret); err != nil {
-		// TODO: add log
-	}
+	_ = json.Unmarshal([]byte(m), &ret)
+	// TODO: add log while err happened in json.Unmarshal
 	return
 }
 
