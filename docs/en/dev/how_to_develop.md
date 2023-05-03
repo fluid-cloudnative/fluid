@@ -192,35 +192,132 @@ $ make test
 
 > **NOTE:** When running unit tests on a non-linux system such as macOS, if testing failed and says `exec format error`, you may need to check whether `GOOS` is consistent with your actual OS.
 
-### Debug
+### Running Fluid Controller Components Locally
+The Fluid controller component supports local operation or debugging. The Fluid controller components include Dataset Controller, various runtime controllers, and Application Controller. Before running the controller component locally, it is necessary to configure kubeconfig in advance in the local environment (configured through the `KUBECONFIG` environment variable or through the `$HOME/.kube/config` file) and be able to access a Kubernetes cluster normally.
 
-You can debug your program in multiple ways, here is just a brief guide for how to debug with `go-delve`
+> The Fluid CSI plugin cannot run locally to interact with the Kubernetes cluster. To run such components, it is necessary to first perform image construction, manually replace the corresponding image address of `charts/fluid/fluid/values.yaml`, and then deploy it to the Kubernetes cluster.
 
-**Prerequisites**
+The runtime controller depends on [`heml`](https://helm.sh/). And related Helm Charts to function properly. Therefore, before running the Runtime Controller, execute the following command to configure the environment:
 
-Make sure you have `go-delve` installed. See [go-delve installation guide](https://github.com/go-delve/delve/tree/master/Documentation/installation) for more information
-
-**Debug locally**
-```shell
-# build & debug in one line
-$ dlv debug <fluid-path>/cmd/controller/main.go
-
-# debug binary
-$ make manager
-$ dlv exec bin/manager
+1. Create a soft link for the helm command locally
+```
+$ ln -s $(which helm) /usr/local/bin/ddc-helm
 ```
 
-**Debug remotely**
+2. Create a soft link directory for related Charts locally
+```
+$ ln -s $GOPATH/src/github.com/fluid-cloudnative/fluid/charts $HOME/charts
+```
+
+3. Taking the Alluxio Runtime Controller as an example, run the component locally using the following command：
+```
+# Configure environment variable parameters related to AlluxioRuntime
+$ export ALLUXIO_RUNTIME_IMAGE_ENV="alluxio/alluxio-dev:2.9.0"
+$ export ALLUXIO_FUSE_IMAGE_ENV="alluxio/alluxio-dev:2.9.0
+$ export DEFAULT_INIT_IMAGE_ENV="fluidcloudnative/init-users:v0.8.0-5bb4677"
+$ export MOUNT_ROOT="/runtime-mnt"
+$ export HOME="$HOME"
+
+# Open the development debugging mode, open leader-election, and start alluxioruntime-controller
+$ ./bin/alluxioruntime-controller start --development=true --enable-leader-election
+```
+
+### Debugging Fluid Components
+
+The Fluid controller component supports local operation or debugging. The Fluid controller components include Dataset Controller, various runtime controllers, and Application Controller. Before running the controller component locally, it is necessary to configure kubeconfig in advance in the local environment (configured through the `KUBECONFIG` environment variable or through the `$HOME/.kube/config` file) and be able to access a Kubernetes cluster normally.
+
+> The Fluid CSI plugin cannot run locally to interact with the Kubernetes cluster. To run such components, it is necessary to first perform image construction, manually replace the corresponding image address of `charts/fluid/fluid/values.yaml`, and then deploy it to the Kubernetes cluster.
+
+#### Debugging with Local Command Line
+
+Ensure that go help is installed in the environment, and refer to the [go installation manual](https://github.com/go-delve/delve/tree/master/Documentation/installation) for the specific installation process
+
+```shell
+$ dlv debug cmd/alluxio/main.go
+```
+
+#### Debugging with VSCode Locally
+If VSCode is used as the development environment, the [Go plugin](https://marketplace.visualstudio.com/items?itemName=golang.go) of VSCode can be directly installed and conduct local debugging.
+
+##### Debugging Controller Components
+Taking debugging the Alluxio Runtime Controller as an example, the Go code debugging task is defined in `./.vscode/launch.json` as follows:
+
+```json
+{
+    "version": "0.2.0",
+    "configurations": [
+       {
+            "name": "Alluxio Runtime Controller",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "cmd/alluxio/main.go",
+            "args": ["start", "--development=true", "--enable-leader-election"],
+            "env": {
+                "KUBECONFIG": "<path>/<to>/<kubeconfig>",
+                "ALLUXIO_RUNTIME_IMAGE_ENV": "alluxio/alluxio-dev:2.9.0",
+                "ALLUXIO_FUSE_IMAGE_ENV": "alluxio/alluxio-dev:2.9.0",
+                "DEFAULT_INIT_IMAGE_ENV": "fluidcloudnative/init-users:v0.8.0-5bb4677",
+                "MOUNT_ROOT": "/runtime-mnt",
+                "HOME": "<HOME_PATH>"
+            }
+        },
+    ]
+}
+```
+##### Debugging WebHook Components
+Proxy access to WebHook in the cluster to the local machine:
+
+```shell
+# 1. Install kt-connect（https://github.com/alibaba/kt-connect）
+$ curl -OL https://github.com/alibaba/kt-connect/releases/download/v0.3.7/ktctl_0.3.7_Linux_x86_64.tar.gz
+$ tar zxf ktctl_0.3.7_Linux_x86_64.tar.gz
+$ mv ktctl /usr/local/bin/ktctl
+$ ktctl --version
+
+# 2. Proxy access to WebHook in the cluster to the local machine
+$ ktctl exchange fluid-pod-admission-webhook  --kubeconfig <path>/<to>/<kubeconfig> --namespace fluid-system --expose 9443 
+```
+Set the debug task in `./.vscode/launch.json`:
+```json
+{
+    "version": "0.2.0",
+    "configurations": [
+       {
+            "name": "Fluid Webhook",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "cmd/webhook/main.go",
+            "args": ["start", "--development=true", "--full-go-profile=false", "--pprof-addr=:6060"],
+            "env": {
+                "TIME_TRACK_DEBUG": "true",
+                "MY_POD_NAMESPACE": "fluid-system"
+            }
+        },
+    ]
+}
+```
+
+
+#### Remote Debugging
+For components such as Fluid Webhook and Fluid CSI plugins, remote debugging is usually the more commonly used method. Please ensure that go help is correctly installed on both the local machine and component images.
+
 
 On remote host:
-```shell
-$ dlv debug --headless --listen ":12345" --log --api-version=2 cmd/controller/main.go
-```
-The command above will make `go-delve` start a debug service and listen for port 12345.
 
-On local host, connect to the debug service:
 ```shell
-$ dlv connect "<remote-address>:12345" --api-version=2
+$ dlv debug --headless --listen ":12345" --log --api-version=2 cmd/alluxio/main.go
+```
+
+
+This will cause the remote host's debugging program to listen to the specified port (e.g. 12345)
+
+
+On local machine:
+
+```shell
+$ dlv connect "<remote-addr>:12345" --api-version=2
 ```
 
 > Note: To debug remotely, make sure the specified port is not occupied and the firewall has been properly configured.
