@@ -111,8 +111,8 @@ spec:
 {{- include "efc.tieredstoreVolumeMounts" .Values.fuse }}
             {{- end }}
             - name: efc-sock
-              mountPath: /var/run/eac
-      {{- with .Values.imagePullSecrets }}
+              mountPath: /var/run/efc
+      {{- with .Values.fuse.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
