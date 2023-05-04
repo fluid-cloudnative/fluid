@@ -52,7 +52,7 @@ fuse:
   imageTag: update
   imagePullPolicy: Always
   option: g_tier_EnableClusterCache=true,g_unas_InodeAttrExpireTimeoutSec=100,g_unas_InodeEntryExpireTimeoutSec=100,assign_uuid=test-efc-helm-fuse
-  mountPoint: efc://nas-mount-point
+  mountPoint: nfs://nas-mount-point
   # efc will mount mountPoint on /efc/efc-fuse in container which will be shared at hostMountPath/efc-fuse on host
   hostMountPath: /test-mnt/efc-mnt/charts
   tieredstore:
@@ -83,7 +83,7 @@ master:
   imageTag: update
   imagePullPolicy: Always
   option: g_tier_EnableClusterCache=true,g_unas_InodeAttrExpireTimeoutSec=100,g_unas_InodeEntryExpireTimeoutSec=100,assign_uuid=test-efc-helm-master
-  mountPoint: efc://nas-mount-point
+  mountPoint: nfs://nas-mount-point
   tieredstore:
     levels:
       - level: 0

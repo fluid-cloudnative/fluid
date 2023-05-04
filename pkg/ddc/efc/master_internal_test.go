@@ -99,7 +99,7 @@ func TestSetupMasterInternal(t *testing.T) {
 			Spec: datav1alpha1.DatasetSpec{
 				Mounts: []datav1alpha1.Mount{
 					{
-						MountPoint: "efc://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
+						MountPoint: "nfs://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
 					},
 				},
 			},
@@ -227,7 +227,7 @@ func TestGenerateEFCValueFile(t *testing.T) {
 			Spec: datav1alpha1.DatasetSpec{
 				Mounts: []datav1alpha1.Mount{
 					{
-						MountPoint: "efc://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
+						MountPoint: "nfs://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
 					},
 				},
 			},

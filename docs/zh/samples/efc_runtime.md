@@ -26,13 +26,6 @@ fluidapp-controller-78c7ccd7fd-blw6w     1/1     Running   0          81s
 
 确保 `efcruntime-controller`、`dataset-controller`、`fluid-webhook` 的 pod 以及若干 `csi-nodeplugin` pod 正常运行。
 
-## 新建工作环境
-
-```shell
-$ mkdir <any-path>/efc
-$ cd <any-path>/efc
-```
-
 ## 运行示例
 
 在使用 EFC 之前，您需要拥有一个[通用型 NAS](https://www.aliyun.com/product/nas?spm=5176.19720258.J_3207526240.80.e93976f4Ps3XxX)，以及一个和 NAS 处在同一 [VPC](https://www.aliyun.com/product/vpc?spm=5176.59209.J_3207526240.35.253f76b9hZAU4x) 的 [ACK](https://www.aliyun.com/product/kubernetes?spm=5176.7937172.J_3207526240.54.7f51751avPxHwi) 集群，并确保集群节点操作系统使用 Alibaba Cloud Linux 2.1903。
@@ -47,13 +40,13 @@ metadata:
   name: mydemo
 spec:
   mounts:
-    - mountPoint: "efc://nas-mount-point-address:/sub/path"
+    - mountPoint: "nfs://nas-mount-point-address:/sub/path"
 EOF
 ```
 
 其中：
 
-- `mountPoint`：指的是 EFC 的子目录，是用户在 NAS 文件系统中存储数据的目录，以 `efc://` 开头；如 `efc://nas-mount-point-address:/sub/path` 为 `nas-mount-point-address` 文件系统的 `/sub/path` 子目录。
+- `mountPoint`：指的是 EFC 的子目录，是用户在 NAS 文件系统中存储数据的目录，以 `nfs://` 开头；如 `nfs://nas-mount-point-address:/sub/path`，`/sub/path` 为 `nas-mount-point-address` 文件系统的子目录。
 
 **创建 `Dataset` 资源对象**
 ```shell
@@ -88,8 +81,6 @@ spec:
         quota: 2Gi
   fuse:
     properties:
-      g_unas_InodeAttrExpireTimeoutSec: "100"
-      g_unas_InodeEntryExpireTimeoutSec: "100"
 EOF
 ```
 

@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -172,34 +173,50 @@ func (e *EFCEngine) getMountInfo() (info MountInfo, err error) {
 	if len(dataset.Spec.Mounts) == 0 {
 		return info, fmt.Errorf("empty mount point for EFCRuntime name:%s, namespace:%s", e.name, e.namespace)
 	}
+
 	mount := dataset.Spec.Mounts[0]
+	mount.MountPoint = strings.TrimSpace(mount.MountPoint)
 	if !strings.HasSuffix(mount.MountPoint, "/") {
 		mount.MountPoint = mount.MountPoint + "/"
 	}
 
-	if !strings.HasPrefix(mount.MountPoint, MountPointPrefix) {
-		return info, fmt.Errorf("invalid mountpoint prefix for EFCRuntime name:%s, namespace:%s, mountpoint:%s", e.name, e.namespace, mount.MountPoint)
+	if strings.HasPrefix(mount.MountPoint, NasMountPointPrefix) {
+		reg, err := regexp.Compile(`^(nfs://)([a-z0-9-]+)\.([a-z0-9-]+)\.nas\.aliyuncs\.com:`)
+		if err != nil {
+			return info, fmt.Errorf("error regexp nas mount point for EFCRuntime name:%s, namespace:%s, mountpoint:%s", e.name, e.namespace, mount.MountPoint)
+		}
+
+		result := reg.FindAllStringSubmatch(mount.MountPoint, -1)
+		if len(result) == 0 || len(result[0]) != 4 {
+			return info, fmt.Errorf("error nas mount point format for EFCRuntime name:%s, namespace:%s, mountpoint:%s", e.name, e.namespace, mount.MountPoint)
+		}
+
+		info.MountPoint = strings.TrimPrefix(mount.MountPoint, NasMountPointPrefix)
+		info.MountPointPrefix = result[0][1]
+		info.FileSystemId = strings.Split(result[0][2], "-")[0]
+		info.ServiceAddr = result[0][3]
+		info.DirPath = strings.TrimPrefix(mount.MountPoint, result[0][0])
+	} else if strings.HasPrefix(mount.MountPoint, CpfsMountPointPrefix) {
+		reg, err := regexp.Compile(`^(cpfs://)([a-z0-9-]+)\.([a-z0-9-]+)\.cpfs\.aliyuncs\.com:/share`)
+		if err != nil {
+			return info, fmt.Errorf("error regexp cpfs mount point for EFCRuntime name:%s, namespace:%s, mountpoint:%s", e.name, e.namespace, mount.MountPoint)
+		}
+
+		result := reg.FindAllStringSubmatch(mount.MountPoint, -1)
+		if len(result) == 0 || len(result[0]) != 4 {
+			return info, fmt.Errorf("error cpfs mount point format for EFCRuntime name:%s, namespace:%s, mountpoint:%s", e.name, e.namespace, mount.MountPoint)
+		}
+
+		info.MountPoint = strings.TrimPrefix(mount.MountPoint, CpfsMountPointPrefix)
+		info.MountPointPrefix = result[0][1]
+		info.FileSystemId = result[0][2]
+		info.ServiceAddr = result[0][3]
+		info.DirPath = strings.TrimPrefix(mount.MountPoint, result[0][0])
 	} else {
-		info.MountPoint = strings.TrimPrefix(mount.MountPoint, MountPointPrefix)
+		return info, fmt.Errorf("invalid mountpoint format for EFCRuntime name:%s, namespace:%s, mountpoint:%s", e.name, e.namespace, mount.MountPoint)
 	}
 
-	if len(strings.Split(info.MountPoint, ".")) < 2 {
-		return info, fmt.Errorf("fail to parse serviceaddr for EFCRuntime name:%s, namespace:%s, mountpoint:%s", e.name, e.namespace, mount.MountPoint)
-	} else {
-		info.ServiceAddr = strings.Split(info.MountPoint, ".")[1]
-	}
-
-	if len(strings.Split(info.MountPoint, "-")) < 1 {
-		return info, fmt.Errorf("fail to parse filesystemid for EFCRuntime name:%s, namespace:%s, mountpoint:%s", e.name, e.namespace, mount.MountPoint)
-	} else {
-		info.FileSystemId = strings.Split(info.MountPoint, "-")[0]
-	}
-
-	if len(strings.Split(info.MountPoint, "nas.aliyuncs.com:")) < 2 {
-		return info, fmt.Errorf("fail to parse dirpath for EFCRuntime name:%s, namespace:%s, mountpoint:%s", e.name, e.namespace, mount.MountPoint)
-	} else {
-		info.DirPath = strings.Split(info.MountPoint, "nas.aliyuncs.com:")[1]
-	}
+	e.Log.Info("EFCRuntime MountInfo", "mountPoint", info.MountPoint, "mountPointPrefix", info.MountPointPrefix, "ServiceAddr", info.ServiceAddr, "FileSystemId", info.FileSystemId, "DirPath", info.DirPath)
 
 	return info, nil
 }

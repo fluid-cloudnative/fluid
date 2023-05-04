@@ -17,13 +17,14 @@
 package efc
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	"strings"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 )
 
-func (e *EFCEngine) parseMasterImage(image string, tag string, imagePullPolicy string) (string, string, string) {
+func (e *EFCEngine) parseMasterImage(image string, tag string, imagePullPolicy string, imagePullSecrets []corev1.LocalObjectReference) (string, string, string, []corev1.LocalObjectReference) {
 	if len(imagePullPolicy) == 0 {
 		imagePullPolicy = common.DefaultImagePullPolicy
 	}
@@ -52,10 +53,15 @@ func (e *EFCEngine) parseMasterImage(image string, tag string, imagePullPolicy s
 		}
 	}
 
-	return image, tag, imagePullPolicy
+	if len(imagePullSecrets) == 0 {
+		// if the environment variable is not set, it is still an empty slice
+		imagePullSecrets = docker.GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey)
+	}
+
+	return image, tag, imagePullPolicy, imagePullSecrets
 }
 
-func (e *EFCEngine) parseWorkerImage(image string, tag string, imagePullPolicy string) (string, string, string) {
+func (e *EFCEngine) parseWorkerImage(image string, tag string, imagePullPolicy string, imagePullSecrets []corev1.LocalObjectReference) (string, string, string, []corev1.LocalObjectReference) {
 	if len(imagePullPolicy) == 0 {
 		imagePullPolicy = common.DefaultImagePullPolicy
 	}
@@ -84,10 +90,15 @@ func (e *EFCEngine) parseWorkerImage(image string, tag string, imagePullPolicy s
 		}
 	}
 
-	return image, tag, imagePullPolicy
+	if len(imagePullSecrets) == 0 {
+		// if the environment variable is not set, it is still an empty slice
+		imagePullSecrets = docker.GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey)
+	}
+
+	return image, tag, imagePullPolicy, imagePullSecrets
 }
 
-func (e *EFCEngine) parseFuseImage(image string, tag string, imagePullPolicy string) (string, string, string) {
+func (e *EFCEngine) parseFuseImage(image string, tag string, imagePullPolicy string, imagePullSecrets []corev1.LocalObjectReference) (string, string, string, []corev1.LocalObjectReference) {
 	if len(imagePullPolicy) == 0 {
 		imagePullPolicy = common.DefaultImagePullPolicy
 	}
@@ -116,10 +127,15 @@ func (e *EFCEngine) parseFuseImage(image string, tag string, imagePullPolicy str
 		}
 	}
 
-	return image, tag, imagePullPolicy
+	if len(imagePullSecrets) == 0 {
+		// if the environment variable is not set, it is still an empty slice
+		imagePullSecrets = docker.GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey)
+	}
+
+	return image, tag, imagePullPolicy, imagePullSecrets
 }
 
-func (e *EFCEngine) parseInitFuseImage(image string, tag string, imagePullPolicy string) (string, string, string) {
+func (e *EFCEngine) parseInitFuseImage(image string, tag string, imagePullPolicy string, imagePullSecrets []corev1.LocalObjectReference) (string, string, string, []corev1.LocalObjectReference) {
 	if len(imagePullPolicy) == 0 {
 		imagePullPolicy = common.DefaultImagePullPolicy
 	}
@@ -148,5 +164,10 @@ func (e *EFCEngine) parseInitFuseImage(image string, tag string, imagePullPolicy
 		}
 	}
 
-	return image, tag, imagePullPolicy
+	if len(imagePullSecrets) == 0 {
+		// if the environment variable is not set, it is still an empty slice
+		imagePullSecrets = docker.GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey)
+	}
+
+	return image, tag, imagePullPolicy, imagePullSecrets
 }

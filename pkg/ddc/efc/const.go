@@ -28,5 +28,7 @@ const (
 
 	WorkerEndpointsDataName = "efc-worker-endpoints.json"
 
-	MountPointPrefix = "efc://"
+	NasMountPointPrefix = "nfs://"
+
+	CpfsMountPointPrefix = "cpfs://"
 )

@@ -2,6 +2,7 @@ package efc
 
 import (
 	"context"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"os"
 	"reflect"
 
@@ -230,12 +231,13 @@ func (s *SessMgrInitializer) deploySessMgr(ctx context.Context, config config) e
 								},
 								VolumeMounts: []corev1.VolumeMount{
 									corev1.VolumeMount{
-										MountPath: "/var/run/eac",
+										MountPath: "/var/run/efc",
 										Name:      "efc-sock",
 									},
 								},
 							},
 						},
+						ImagePullSecrets: docker.GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey),
 					},
 				},
 			},

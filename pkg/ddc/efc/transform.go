@@ -18,7 +18,6 @@ package efc
 
 import (
 	"fmt"
-
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -91,11 +90,14 @@ func (e *EFCEngine) transformMasters(runtime *datav1alpha1.EFCRuntime,
 	value.Master.Enabled = runtime.MasterEnabled()
 	value.Master.HostNetwork = datav1alpha1.IsHostNetwork(runtime.Spec.Master.NetworkMode)
 
+	// TODO: support imagePullSecrets by EFCRuntime
+	imagePullSecrets := []corev1.LocalObjectReference{}
+
 	// image
 	image := runtime.Spec.Master.Version.Image
 	tag := runtime.Spec.Master.Version.ImageTag
 	imagePullPolicy := runtime.Spec.Master.Version.ImagePullPolicy
-	value.Master.Image, value.Master.ImageTag, value.Master.ImagePullPolicy = e.parseMasterImage(image, tag, imagePullPolicy)
+	value.Master.Image, value.Master.ImageTag, value.Master.ImagePullPolicy, value.Master.ImagePullSecrets = e.parseMasterImage(image, tag, imagePullPolicy, imagePullSecrets)
 
 	// node selector
 	value.Master.NodeSelector = map[string]string{}
@@ -122,7 +124,7 @@ func (e *EFCEngine) transformMasters(runtime *datav1alpha1.EFCRuntime,
 	}
 
 	// options
-	err = e.transformMasterOptions(runtime, value)
+	err = e.transformMasterOptions(runtime, value, &mountInfo)
 	if err != nil {
 		return
 	}
@@ -137,11 +139,14 @@ func (e *EFCEngine) transformWorkers(runtime *datav1alpha1.EFCRuntime,
 	value.Worker.Enabled = runtime.Enabled()
 	value.Worker.HostNetwork = datav1alpha1.IsHostNetwork(runtime.Spec.Worker.NetworkMode)
 
+	// TODO: support imagePullSecrets by EFCRuntime
+	imagePullSecrets := []corev1.LocalObjectReference{}
+
 	// image
 	image := runtime.Spec.Worker.Version.Image
 	tag := runtime.Spec.Worker.Version.ImageTag
 	imagePullPolicy := runtime.Spec.Worker.Version.ImagePullPolicy
-	value.Worker.Image, value.Worker.ImageTag, value.Worker.ImagePullPolicy = e.parseWorkerImage(image, tag, imagePullPolicy)
+	value.Worker.Image, value.Worker.ImageTag, value.Worker.ImagePullPolicy, value.Worker.ImagePullSecrets = e.parseWorkerImage(image, tag, imagePullPolicy, imagePullSecrets)
 
 	// node selector
 	value.Worker.NodeSelector = map[string]string{}
@@ -191,11 +196,14 @@ func (e *EFCEngine) transformFuse(runtime *datav1alpha1.EFCRuntime,
 	value.Fuse.HostNetwork = datav1alpha1.IsHostNetwork(runtime.Spec.Fuse.NetworkMode)
 	value.Fuse.CriticalPod = common.CriticalFusePodEnabled()
 
+	// TODO: support imagePullSecrets by EFCRuntime
+	imagePullSecrets := []corev1.LocalObjectReference{}
+
 	// image
 	image := runtime.Spec.Fuse.Version.Image
 	tag := runtime.Spec.Fuse.Version.ImageTag
 	imagePullPolicy := runtime.Spec.Fuse.Version.ImagePullPolicy
-	value.Fuse.Image, value.Fuse.ImageTag, value.Fuse.ImagePullPolicy = e.parseFuseImage(image, tag, imagePullPolicy)
+	value.Fuse.Image, value.Fuse.ImageTag, value.Fuse.ImagePullPolicy, value.Fuse.ImagePullSecrets = e.parseFuseImage(image, tag, imagePullPolicy, imagePullSecrets)
 
 	// node selector
 	value.Fuse.NodeSelector = map[string]string{}
@@ -224,7 +232,7 @@ func (e *EFCEngine) transformFuse(runtime *datav1alpha1.EFCRuntime,
 	}
 
 	// options
-	err = e.transformFuseOptions(runtime, value)
+	err = e.transformFuseOptions(runtime, value, &mountInfo)
 	if err != nil {
 		return
 	}
@@ -236,10 +244,13 @@ func (e *EFCEngine) transformInitFuse(runtime *datav1alpha1.EFCRuntime,
 	value *EFC) (err error) {
 	value.InitFuse = InitFuse{}
 
+	// TODO: support imagePullSecrets by EFCRuntime
+	imagePullSecrets := []corev1.LocalObjectReference{}
+
 	image := runtime.Spec.InitFuse.Version.Image
 	tag := runtime.Spec.InitFuse.Version.ImageTag
 	imagePullPolicy := runtime.Spec.InitFuse.Version.ImagePullPolicy
-	value.InitFuse.Image, value.InitFuse.ImageTag, value.InitFuse.ImagePullPolicy = e.parseInitFuseImage(image, tag, imagePullPolicy)
+	value.InitFuse.Image, value.InitFuse.ImageTag, value.InitFuse.ImagePullPolicy, value.InitFuse.ImagePullSecrets = e.parseInitFuseImage(image, tag, imagePullPolicy, imagePullSecrets)
 
 	return nil
 }

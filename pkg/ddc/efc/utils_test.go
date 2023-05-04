@@ -42,7 +42,7 @@ fullnameOverride: efcdemo
 placement: Exclusive
 master:
   image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-fuse
-  imageTag: update
+  imageTag: latest
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
   mountPoint: 123456-abcd.cn-zhangjiakou.nas.aliyuncs.com:/test-fluid-3/
@@ -58,7 +58,7 @@ master:
       path: /dev/shm
 worker:
   image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-worker
-  imageTag: update
+  imageTag: latest
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
   port:
@@ -79,7 +79,7 @@ worker:
       quota: 2GB
 fuse:
   image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-fuse
-  imageTag: update
+  imageTag: latest
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
   mountPoint: 123456-abcd.cn-zhangjiakou.nas.aliyuncs.com:/test-fluid-3/
@@ -99,7 +99,7 @@ fuse:
   criticalPod: true
 initFuse:
   image: registry.cn-zhangjiakou.aliyuncs.com/nascache/init-alifuse
-  imageTag: update
+  imageTag: latest
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
 osAdvise:
@@ -632,7 +632,7 @@ func TestEFCEngine_getWorkerRunningPods(t *testing.T) {
 	}
 }
 
-func TestEFCEngine_getMountInfoAndSecret(t *testing.T) {
+func TestEFCEngine_getMountInfoAndSecret1(t *testing.T) {
 	dataSetInputs := []*datav1alpha1.Dataset{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -642,7 +642,7 @@ func TestEFCEngine_getMountInfoAndSecret(t *testing.T) {
 			Spec: datav1alpha1.DatasetSpec{
 				Mounts: []datav1alpha1.Mount{
 					{
-						MountPoint: "efc://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
+						MountPoint: "nfs://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
 					},
 				},
 			},
@@ -655,7 +655,7 @@ func TestEFCEngine_getMountInfoAndSecret(t *testing.T) {
 			Spec: datav1alpha1.DatasetSpec{
 				Mounts: []datav1alpha1.Mount{
 					{
-						MountPoint: "efc://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
+						MountPoint: "nfs://volume-uuid.region.nas.aliyuncs.com:/test-fluid-3",
 					},
 				},
 			},
@@ -670,31 +670,34 @@ func TestEFCEngine_getMountInfoAndSecret(t *testing.T) {
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, objs...)
 
 	tests := []struct {
-		Name         string
-		Namespace    string
-		WantErr      bool
-		MountPoint   string
-		ServiceAddr  string
-		FileSystemId string
-		DirPath      string
+		Name             string
+		Namespace        string
+		WantErr          bool
+		MountPoint       string
+		MountPointPrefix string
+		ServiceAddr      string
+		FileSystemId     string
+		DirPath          string
 	}{
 		{
-			Name:         "check",
-			Namespace:    "fluid",
-			WantErr:      false,
-			MountPoint:   "volume-uuid.region.nas.aliyuncs.com:/test-fluid-3/",
-			ServiceAddr:  "region",
-			FileSystemId: "volume",
-			DirPath:      "/test-fluid-3/",
+			Name:             "check",
+			Namespace:        "fluid",
+			WantErr:          false,
+			MountPoint:       "volume-uuid.region.nas.aliyuncs.com:/test-fluid-3/",
+			MountPointPrefix: "nfs://",
+			ServiceAddr:      "region",
+			FileSystemId:     "volume",
+			DirPath:          "/test-fluid-3/",
 		},
 		{
-			Name:         "nocheck",
-			Namespace:    "fluid",
-			WantErr:      false,
-			MountPoint:   "volume-uuid.region.nas.aliyuncs.com:/test-fluid-3/",
-			ServiceAddr:  "region",
-			FileSystemId: "volume",
-			DirPath:      "/test-fluid-3/",
+			Name:             "nocheck",
+			Namespace:        "fluid",
+			WantErr:          false,
+			MountPoint:       "volume-uuid.region.nas.aliyuncs.com:/test-fluid-3/",
+			MountPointPrefix: "nfs://",
+			ServiceAddr:      "region",
+			FileSystemId:     "volume",
+			DirPath:          "/test-fluid-3/",
 		},
 		{
 			Name:      "errorcheck",
@@ -715,6 +718,94 @@ func TestEFCEngine_getMountInfoAndSecret(t *testing.T) {
 		if info.MountPoint != te.MountPoint || info.ServiceAddr != te.ServiceAddr || info.FileSystemId != te.FileSystemId || info.DirPath != te.DirPath {
 			t.Fatalf("fail to exec func for %s", te.Name)
 		}
+	}
+}
 
+func TestEFCEngine_getMountInfoAndSecret2(t *testing.T) {
+	dataSetInputs := []*datav1alpha1.Dataset{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "check",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{
+					{
+						MountPoint: "cpfs://cpfs-059az-059az.cn-region.cpfs.aliyuncs.com:/share",
+					},
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "nocheck",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{
+					{
+						MountPoint: "cpfs://cpfs-059az-059az.cn-region.cpfs.aliyuncs.com:/share/test-fluid-3",
+					},
+				},
+			},
+		},
+	}
+
+	objs := []runtime.Object{}
+	for _, d := range dataSetInputs {
+		objs = append(objs, d.DeepCopy())
+	}
+
+	fakeClient := fake.NewFakeClientWithScheme(testScheme, objs...)
+
+	tests := []struct {
+		Name             string
+		Namespace        string
+		WantErr          bool
+		MountPoint       string
+		MountPointPrefix string
+		ServiceAddr      string
+		FileSystemId     string
+		DirPath          string
+	}{
+		{
+			Name:             "check",
+			Namespace:        "fluid",
+			WantErr:          false,
+			MountPoint:       "cpfs-059az-059az.cn-region.cpfs.aliyuncs.com:/share/",
+			MountPointPrefix: "cpfs://",
+			ServiceAddr:      "cn-region",
+			FileSystemId:     "cpfs-059az-059az",
+			DirPath:          "/",
+		},
+		{
+			Name:             "nocheck",
+			Namespace:        "fluid",
+			WantErr:          false,
+			MountPoint:       "cpfs-059az-059az.cn-region.cpfs.aliyuncs.com:/share/test-fluid-3/",
+			MountPointPrefix: "cpfs://",
+			ServiceAddr:      "cn-region",
+			FileSystemId:     "cpfs-059az-059az",
+			DirPath:          "/test-fluid-3/",
+		},
+		{
+			Name:      "errorcheck",
+			Namespace: "fluid",
+			WantErr:   true,
+		},
+	}
+
+	for _, te := range tests {
+		e := newEFCEngine(fakeClient, te.Name, te.Namespace)
+		info, err := e.getMountInfo()
+		if (err != nil) != te.WantErr {
+			t.Fatalf("fail to exec func for %s", te.Name)
+		}
+		if err != nil {
+			continue
+		}
+		if info.MountPoint != te.MountPoint || info.ServiceAddr != te.ServiceAddr || info.FileSystemId != te.FileSystemId || info.DirPath != te.DirPath {
+			t.Fatalf("fail to exec func for %s", te.Name)
+		}
 	}
 }

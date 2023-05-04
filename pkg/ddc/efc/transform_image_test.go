@@ -17,41 +17,42 @@ limitations under the License.
 package efc
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	"testing"
 )
 
 func TestParseMasterImage(t *testing.T) {
 	engine := &EFCEngine{}
-	image, tag, imagePullPolicy := engine.parseMasterImage("", "", "")
+	image, tag, imagePullPolicy, ref := engine.parseMasterImage("", "", "", []corev1.LocalObjectReference{})
 	if image != "registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-master" ||
-		tag != "latest" || imagePullPolicy != "IfNotPresent" {
+		tag != "latest" || imagePullPolicy != "IfNotPresent" || len(ref) != 0 {
 		t.Errorf("unexpected err")
 	}
 }
 
 func TestParseFuseImage(t *testing.T) {
 	engine := &EFCEngine{}
-	image, tag, imagePullPolicy := engine.parseFuseImage("", "", "")
+	image, tag, imagePullPolicy, ref := engine.parseFuseImage("", "", "", []corev1.LocalObjectReference{})
 	if image != "registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-fuse" ||
-		tag != "latest" || imagePullPolicy != "IfNotPresent" {
+		tag != "latest" || imagePullPolicy != "IfNotPresent" || len(ref) != 0 {
 		t.Errorf("unexpected err")
 	}
 }
 
 func TestParseWorkerImage(t *testing.T) {
 	engine := &EFCEngine{}
-	image, tag, imagePullPolicy := engine.parseWorkerImage("", "", "")
+	image, tag, imagePullPolicy, ref := engine.parseWorkerImage("", "", "", []corev1.LocalObjectReference{})
 	if image != "registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-worker" ||
-		tag != "latest" || imagePullPolicy != "IfNotPresent" {
+		tag != "latest" || imagePullPolicy != "IfNotPresent" || len(ref) != 0 {
 		t.Errorf("unexpected err")
 	}
 }
 
 func TestParseInitFuseImage(t *testing.T) {
 	engine := &EFCEngine{}
-	image, tag, imagePullPolicy := engine.parseInitFuseImage("", "", "")
+	image, tag, imagePullPolicy, ref := engine.parseInitFuseImage("", "", "", []corev1.LocalObjectReference{})
 	if image != "registry.cn-zhangjiakou.aliyuncs.com/nascache/init-alifuse" ||
-		tag != "latest" || imagePullPolicy != "IfNotPresent" {
+		tag != "latest" || imagePullPolicy != "IfNotPresent" || len(ref) != 0 {
 		t.Errorf("unexpected err")
 	}
 }
