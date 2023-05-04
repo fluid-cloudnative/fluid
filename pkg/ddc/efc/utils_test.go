@@ -42,7 +42,7 @@ fullnameOverride: efcdemo
 placement: Exclusive
 master:
   image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-fuse
-  imageTag: update
+  imageTag: latest
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
   mountPoint: 123456-abcd.cn-zhangjiakou.nas.aliyuncs.com:/test-fluid-3/
@@ -58,7 +58,7 @@ master:
       path: /dev/shm
 worker:
   image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-worker
-  imageTag: update
+  imageTag: latest
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
   port:
@@ -79,7 +79,7 @@ worker:
       quota: 2GB
 fuse:
   image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-fuse
-  imageTag: update
+  imageTag: latest
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
   mountPoint: 123456-abcd.cn-zhangjiakou.nas.aliyuncs.com:/test-fluid-3/
@@ -99,7 +99,7 @@ fuse:
   criticalPod: true
 initFuse:
   image: registry.cn-zhangjiakou.aliyuncs.com/nascache/init-alifuse
-  imageTag: update
+  imageTag: latest
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
 osAdvise:
