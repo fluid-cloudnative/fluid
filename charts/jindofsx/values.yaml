@@ -35,6 +35,7 @@ master:
   dnsServer: ""
   labels: {}
   annotations: {}
+  env: {}
   replicaCount: 1
   properties:
     namespace.rpc.port: 8101
@@ -48,6 +49,7 @@ worker:
   labels: {}
   annotations: {}
   nodeSelector: {}
+  env: {}
   replicaCount: 0
   podManagementPolicy: Parallel
   properties:
@@ -57,6 +59,7 @@ fuse:
   criticalPod: false
   labels: {}
   annotations: {}
+  env: {}
   updateStrategy:
     type: OnDelete
   properties:

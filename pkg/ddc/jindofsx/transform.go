@@ -171,6 +171,7 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	if err != nil {
 		return
 	}
+	e.transformEnvVariables(runtime, value)
 	e.transformPlacementMode(dataset, value)
 	e.transformRunAsUser(runtime, value)
 	e.transformTolerations(dataset, runtime, value)
@@ -817,11 +818,17 @@ func (e *JindoFSxEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime, da
 	if len(runtime.Spec.Fuse.Args) > 0 {
 		fuseArgs = runtime.Spec.Fuse.Args
 	} else {
-		fuseArgs = append(fuseArgs, "-okernel_cache")
 		if readOnly {
+			fuseArgs = append(fuseArgs, "-okernel_cache")
 			fuseArgs = append(fuseArgs, "-oro")
 			fuseArgs = append(fuseArgs, "-oattr_timeout=7200")
 			fuseArgs = append(fuseArgs, "-oentry_timeout=7200")
+			fuseArgs = append(fuseArgs, "-onegative_timeout=7200")
+		} else {
+			fuseArgs = append(fuseArgs, "-oauto_cache")
+			fuseArgs = append(fuseArgs, "-oattr_timeout=0")
+			fuseArgs = append(fuseArgs, "-oentry_timeout=0")
+			fuseArgs = append(fuseArgs, "-onegative_timeout=0")
 		}
 	}
 	if runtime.Spec.Master.Disabled && runtime.Spec.Worker.Disabled {
@@ -1095,6 +1102,20 @@ func (e *JindoFSxEngine) transformDeployMode(runtime *datav1alpha1.JindoRuntime,
 	// to set fuseOnly
 	if runtime.Spec.Master.Disabled && runtime.Spec.Worker.Disabled {
 		value.Fuse.Mode = FuseOnly
+	}
+}
+
+func (e *JindoFSxEngine) transformEnvVariables(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
+	if len(runtime.Spec.Master.Env) > 0 {
+		value.Master.Env = runtime.Spec.Master.Env
+	}
+
+	if len(runtime.Spec.Worker.Env) > 0 {
+		value.Worker.Env = runtime.Spec.Worker.Env
+	}
+
+	if len(runtime.Spec.Fuse.Env) > 0 {
+		value.Fuse.Env = runtime.Spec.Fuse.Env
 	}
 }
 

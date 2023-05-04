@@ -145,8 +145,6 @@ type MountInfo struct {
 	ServiceAddr      string
 	FileSystemId     string
 	DirPath          string
-	AccessKeyID      string
-	AccessKeySecret  string
 }
 
 func (value *EFC) getTiredStoreLevel0Path() (path string) {

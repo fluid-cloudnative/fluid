@@ -25,7 +25,6 @@ import (
 )
 
 func (e *EFCEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, object client.Object, operation dataoperation.OperationInterface) (valueFileName string, err error) {
-
 	return "", errors.NewNotSupported(
 		schema.GroupResource{
 			Group:    object.GetObjectKind().GroupVersionKind().Group,

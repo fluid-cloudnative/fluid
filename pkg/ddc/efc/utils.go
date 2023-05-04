@@ -216,44 +216,7 @@ func (e *EFCEngine) getMountInfo() (info MountInfo, err error) {
 		return info, fmt.Errorf("invalid mountpoint format for EFCRuntime name:%s, namespace:%s, mountpoint:%s", e.name, e.namespace, mount.MountPoint)
 	}
 
-	info.AccessKeyID, info.AccessKeySecret, err = e.getEFCSecret(mount)
-	if err != nil {
-		return info, err
-	}
-
 	e.Log.Info("EFCRuntime MountInfo", "mountPoint", info.MountPoint, "mountPointPrefix", info.MountPointPrefix, "ServiceAddr", info.ServiceAddr, "FileSystemId", info.FileSystemId, "DirPath", info.DirPath)
+  
 	return info, nil
-}
-
-func (e *EFCEngine) getEFCSecret(mount datav1alpha1.Mount) (accessKeyID string, accessKeySecret string, err error) {
-	for _, encryptOption := range mount.EncryptOptions {
-		var result *string
-		switch encryptOption.Name {
-		case AccessKeyIDName:
-			result = &accessKeyID
-		case AccessKeySecretName:
-			result = &accessKeySecret
-		default:
-			continue
-		}
-
-		secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
-		secret, err := kubeclient.GetSecret(e.Client, secretKeyRef.Name, e.namespace)
-		if err != nil {
-			e.Log.Info("can't get the secret",
-				"namespace", e.namespace,
-				"name", e.name,
-				"secretName", secretKeyRef.Name)
-			return "", "", err
-		}
-
-		value, ok := secret.Data[secretKeyRef.Key]
-		if !ok {
-			err = fmt.Errorf("can't get %s from secret %s namespace %s", secretKeyRef.Key, secretKeyRef.Name, e.namespace)
-			return "", "", err
-		}
-		*result = string(value)
-	}
-
-	return
 }
