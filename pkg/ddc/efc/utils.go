@@ -217,6 +217,6 @@ func (e *EFCEngine) getMountInfo() (info MountInfo, err error) {
 	}
 
 	e.Log.Info("EFCRuntime MountInfo", "mountPoint", info.MountPoint, "mountPointPrefix", info.MountPointPrefix, "ServiceAddr", info.ServiceAddr, "FileSystemId", info.FileSystemId, "DirPath", info.DirPath)
-  
+
 	return info, nil
 }

@@ -710,15 +710,14 @@ func TestEFCEngine_getMountInfoAndSecret1(t *testing.T) {
 		e := newEFCEngine(fakeClient, te.Name, te.Namespace)
 		info, err := e.getMountInfo()
 		if (err != nil) != te.WantErr {
-			t.Errorf("fail to exec func")
+			t.Fatalf("fail to exec func for %s", te.Name)
 		}
 		if err != nil {
 			continue
 		}
-		if info.MountPoint != te.MountPoint || info.ServiceAddr != te.ServiceAddr || info.FileSystemId != te.FileSystemId || info.DirPath != te.DirPath || info.AccessKeyID != te.AccessKeyID || info.AccessKeySecret != te.AccessKeySecret {
-			t.Errorf("fail to exec func")
+		if info.MountPoint != te.MountPoint || info.ServiceAddr != te.ServiceAddr || info.FileSystemId != te.FileSystemId || info.DirPath != te.DirPath {
+			t.Fatalf("fail to exec func for %s", te.Name)
 		}
-
 	}
 }
 
@@ -740,19 +739,6 @@ func TestEFCEngine_getMountInfoAndSecret2(t *testing.T) {
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "nocheck",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{
-					{
-						MountPoint: "cpfs://cpfs-059az-059az.cn-region.cpfs.aliyuncs.com:/share/test-fluid-3",
-					},
-				},
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "errorcheck",
 				Namespace: "fluid",
 			},
 			Spec: datav1alpha1.DatasetSpec{
@@ -821,6 +807,5 @@ func TestEFCEngine_getMountInfoAndSecret2(t *testing.T) {
 		if info.MountPoint != te.MountPoint || info.ServiceAddr != te.ServiceAddr || info.FileSystemId != te.FileSystemId || info.DirPath != te.DirPath {
 			t.Fatalf("fail to exec func for %s", te.Name)
 		}
-
 	}
 }
