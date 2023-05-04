@@ -181,7 +181,7 @@ func (e *EFCEngine) getMountInfo() (info MountInfo, err error) {
 	}
 
 	if strings.HasPrefix(mount.MountPoint, NasMountPointPrefix) {
-		reg, err := regexp.Compile(`^(nfs://)([a-z0-9-]+).([a-z0-9-]+).nas.aliyuncs.com:`)
+		reg, err := regexp.Compile(`^(nfs://)([a-z0-9-]+)\.([a-z0-9-]+)\.nas\.aliyuncs\.com:`)
 		if err != nil {
 			return info, fmt.Errorf("error regexp nas mount point for EFCRuntime name:%s, namespace:%s, mountpoint:%s", e.name, e.namespace, mount.MountPoint)
 		}
@@ -197,7 +197,7 @@ func (e *EFCEngine) getMountInfo() (info MountInfo, err error) {
 		info.ServiceAddr = result[0][3]
 		info.DirPath = strings.TrimPrefix(mount.MountPoint, result[0][0])
 	} else if strings.HasPrefix(mount.MountPoint, CpfsMountPointPrefix) {
-		reg, err := regexp.Compile(`^(cpfs://)([a-z0-9-]+).([a-z0-9-]+).cpfs.aliyuncs.com:/share`)
+		reg, err := regexp.Compile(`^(cpfs://)([a-z0-9-]+)\.([a-z0-9-]+)\.cpfs\.aliyuncs\.com:/share`)
 		if err != nil {
 			return info, fmt.Errorf("error regexp cpfs mount point for EFCRuntime name:%s, namespace:%s, mountpoint:%s", e.name, e.namespace, mount.MountPoint)
 		}
