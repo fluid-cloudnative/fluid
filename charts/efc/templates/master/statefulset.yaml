@@ -94,7 +94,7 @@ spec:
             - {{ .Values.master.option | quote }}
           livenessProbe:
             exec:
-              command: ["sh", "-c", "ps -ef | grep \"tail -f\" | grep -v grep"]
+              command: ["sh", "-c", "ps -ef | grep master.py | grep -v grep"]
             failureThreshold: 3
             initialDelaySeconds: 5
             periodSeconds: 1
