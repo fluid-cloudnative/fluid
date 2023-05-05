@@ -94,7 +94,7 @@ spec:
             - {{ .Values.master.option | quote }}
           livenessProbe:
             exec:
-              command: ["sh", "-c", "cat /proc/mounts | grep {{ .Values.master.mountPoint }}"]
+              command: ["sh", "-c", "ps -ef | grep \"tail -f\" | grep -v grep"]
             failureThreshold: 3
             initialDelaySeconds: 5
             periodSeconds: 1
