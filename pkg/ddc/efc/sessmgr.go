@@ -203,7 +203,7 @@ func (s *SessMgrInitializer) deploySessMgr(ctx context.Context, config config) e
 									"none",
 								},
 								SecurityContext: &corev1.SecurityContext{
-									Privileged: utilpointer.Bool(true),
+									Privileged: utilpointer.Bool(false),
 								},
 							},
 						},
@@ -214,7 +214,7 @@ func (s *SessMgrInitializer) deploySessMgr(ctx context.Context, config config) e
 								Image:   config.SessMgrImage,
 								Args:    []string{"sessmgr"},
 								SecurityContext: &corev1.SecurityContext{
-									Privileged: utilpointer.BoolPtr(true),
+									Privileged: utilpointer.BoolPtr(false),
 								},
 								Lifecycle: &corev1.Lifecycle{
 									PreStop: &corev1.LifecycleHandler{

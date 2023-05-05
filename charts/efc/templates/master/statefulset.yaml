@@ -77,7 +77,7 @@ spec:
             - {{ .Values.osAdvise.enabled | quote }}
             - {{ .Values.osAdvise.osVersion | quote }}
           securityContext:
-            privileged: true
+            privileged: false
       containers:
         - name: efc-master
           image: {{ .Values.master.image }}:{{ .Values.master.imageTag }}
@@ -101,7 +101,7 @@ spec:
             successThreshold: 1
             timeoutSeconds: 1
           securityContext:
-            privileged: true
+            privileged: false
           lifecycle:
             preStop:
               exec:
@@ -121,7 +121,7 @@ spec:
           args:
             - "sessmgr"
           securityContext:
-            privileged: true
+            privileged: false
           lifecycle:
             preStop:
               exec:
