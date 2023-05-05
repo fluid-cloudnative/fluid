@@ -306,10 +306,6 @@ type AlluxioRuntimeSpec struct {
 	// RuntimeManagement defines policies when managing the runtime
 	// +optional
 	RuntimeManagement RuntimeManagement `json:"management,omitempty"`
-
-	// MetadataList defines labels and annotations that will be propagated to resources created by runtime
-	// +optional
-	MetadataList []Metadata `json:"metadataList,omitempty"`
 }
 
 // +kubebuilder:object:root=true

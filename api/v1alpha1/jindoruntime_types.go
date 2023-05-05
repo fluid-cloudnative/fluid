@@ -202,10 +202,6 @@ type JindoRuntimeSpec struct {
 	// CleanCachePolicy defines cleanCache Policy
 	// +optional
 	CleanCachePolicy CleanCachePolicy `json:"cleanCachePolicy,omitempty"`
-
-	// MetadataList defines labels and annotations that will be propagated to resources created by runtime
-	// +optional
-	MetadataList []Metadata `json:"metadataList,omitempty"`
 }
 
 // +kubebuilder:object:root=true

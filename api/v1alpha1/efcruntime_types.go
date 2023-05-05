@@ -159,10 +159,6 @@ type EFCRuntimeSpec struct {
 	// PodMetadata defines labels and annotations that will be propagated to all EFC's pods
 	// +optional
 	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
-
-	// MetadataList defines labels and annotations that will be propagated to resources created by runtime
-	// +optional
-	MetadataList []Metadata `json:"metadataList,omitempty"`
 }
 
 // +kubebuilder:object:root=true

@@ -30,7 +30,7 @@ func (e *GooseFSEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 			return e.runtimeInfo, err
 		}
 
-		e.runtimeInfo, err = base.BuildRuntimeInfo(e.name, e.namespace, e.runtimeType, runtime.Spec.TieredStore)
+		e.runtimeInfo, err = base.BuildRuntimeInfo(e.name, e.namespace, e.runtimeType, runtime.Spec.TieredStore, base.WithMetadataList(base.GetMetadataListFromAnnotation(runtime)))
 		if err != nil {
 			return e.runtimeInfo, err
 		}

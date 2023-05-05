@@ -30,7 +30,7 @@ func (j *JuiceFSEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 			return j.runtimeInfo, err
 		}
 
-		j.runtimeInfo, err = base.BuildRuntimeInfo(j.name, j.namespace, j.runtimeType, runtime.Spec.TieredStore)
+		j.runtimeInfo, err = base.BuildRuntimeInfo(j.name, j.namespace, j.runtimeType, runtime.Spec.TieredStore, base.WithMetadataList(base.GetMetadataListFromAnnotation(runtime)))
 		if err != nil {
 			return j.runtimeInfo, err
 		}
