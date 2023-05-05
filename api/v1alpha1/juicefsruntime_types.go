@@ -79,10 +79,6 @@ type JuiceFSRuntimeSpec struct {
 	// CleanCachePolicy defines cleanCache Policy
 	// +optional
 	CleanCachePolicy CleanCachePolicy `json:"cleanCachePolicy,omitempty"`
-
-	// MetadataList defines labels and annotations that will be propagated to resources created by runtime
-	// +optional
-	MetadataList []Metadata `json:"metadataList,omitempty"`
 }
 
 // JuiceFSCompTemplateSpec is a description of the JuiceFS components

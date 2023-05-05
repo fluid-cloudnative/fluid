@@ -17,9 +17,12 @@ limitations under the License.
 package base
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/jindo"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 
@@ -170,6 +173,22 @@ func BuildRuntimeInfo(name string,
 }
 
 type RuntimeInfoOption func(info *RuntimeInfo)
+
+func GetMetadataListFromAnnotation(accessor metav1.ObjectMetaAccessor) (ret []datav1alpha1.Metadata) {
+	annotations := accessor.GetObjectMeta().GetAnnotations()
+	if annotations == nil {
+		return
+	}
+	m := annotations["data.fluid.io/metadataList"]
+	if m == "" {
+		return
+	}
+	if err := json.Unmarshal([]byte(m), &ret); err != nil {
+		log := ctrl.Log.WithName("base")
+		log.V(5).Error(err, "failed to unmarshal metadataList from annotations", "data.fluid.io/metadataList", m)
+	}
+	return
+}
 
 func WithMetadataList(metadataList []datav1alpha1.Metadata) RuntimeInfoOption {
 	return func(info *RuntimeInfo) {
@@ -341,7 +360,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.AlluxioRuntime, datav1alpha1.TieredStore{}, WithMetadataList(alluxioRuntime.Spec.MetadataList))
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.AlluxioRuntime, datav1alpha1.TieredStore{}, WithMetadataList(GetMetadataListFromAnnotation(alluxioRuntime)))
 		if err != nil {
 			return runtimeInfo, err
 		}
@@ -352,7 +371,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.JindoRuntime, datav1alpha1.TieredStore{}, WithMetadataList(jindoRuntime.Spec.MetadataList))
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.JindoRuntime, datav1alpha1.TieredStore{}, WithMetadataList(GetMetadataListFromAnnotation(jindoRuntime)))
 		if err != nil {
 			return runtimeInfo, err
 		}
@@ -363,7 +382,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.GooseFSRuntime, datav1alpha1.TieredStore{}, WithMetadataList(goosefsRuntime.Spec.MetadataList))
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.GooseFSRuntime, datav1alpha1.TieredStore{}, WithMetadataList(GetMetadataListFromAnnotation(goosefsRuntime)))
 		if err != nil {
 			return runtimeInfo, err
 		}
@@ -374,7 +393,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.JuiceFSRuntime, datav1alpha1.TieredStore{}, WithMetadataList(juicefsRuntime.Spec.MetadataList))
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.JuiceFSRuntime, datav1alpha1.TieredStore{}, WithMetadataList(GetMetadataListFromAnnotation(juicefsRuntime)))
 		if err != nil {
 			return runtimeInfo, err
 		}
@@ -385,7 +404,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.ThinRuntime, datav1alpha1.TieredStore{}, WithMetadataList(thinRuntime.Spec.MetadataList))
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.ThinRuntime, datav1alpha1.TieredStore{}, WithMetadataList(GetMetadataListFromAnnotation(thinRuntime)))
 		if err != nil {
 			return runtimeInfo, err
 		}
@@ -397,7 +416,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.EFCRuntime, datav1alpha1.TieredStore{}, WithMetadataList(efcRuntime.Spec.MetadataList))
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.EFCRuntime, datav1alpha1.TieredStore{}, WithMetadataList(GetMetadataListFromAnnotation(efcRuntime)))
 		if err != nil {
 			return runtimeInfo, err
 		}

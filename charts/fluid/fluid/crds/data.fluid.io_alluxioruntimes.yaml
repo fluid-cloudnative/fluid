@@ -910,37 +910,6 @@ spec:
                       type: object
                     type: array
                 type: object
-              metadataList:
-                description: MetadataList defines labels and annotations that will
-                  be propagated to resources created by runtime
-                items:
-                  description: Metadata defines subgroup properties of metav1.ObjectMeta
-                  properties:
-                    annotations:
-                      additionalProperties:
-                        type: string
-                      description: Annotations are annotations of pod specification
-                      type: object
-                    labels:
-                      additionalProperties:
-                        type: string
-                      description: Labels are labels of pod specification
-                      type: object
-                    selector:
-                      description: GroupKind specifies a Group and a Kind, but does
-                        not force a version.  This is useful for identifying concepts
-                        during lookup stages without having partially valid types
-                      properties:
-                        group:
-                          type: string
-                        kind:
-                          type: string
-                      required:
-                      - group
-                      - kind
-                      type: object
-                  type: object
-                type: array
               podMetadata:
                 description: PodMetadata defines labels and annotations that will
                   be propagated to Alluxio's pods

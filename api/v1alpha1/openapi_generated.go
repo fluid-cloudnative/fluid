@@ -696,25 +696,11 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioRuntimeSpec(ref common.R
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeManagement"),
 						},
 					},
-					"metadataList": {
-						SchemaProps: spec.SchemaProps{
-							Description: "MetadataList defines labels and annotations that will be propagated to resources created by runtime",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Metadata"),
-									},
-								},
-							},
-						},
-					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Data", "github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Metadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeManagement", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec", "k8s.io/api/core/v1.Volume"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Data", "github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeManagement", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec", "k8s.io/api/core/v1.Volume"},
 	}
 }
 
@@ -2303,25 +2289,11 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_EFCRuntimeSpec(ref common.Refer
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
 						},
 					},
-					"metadataList": {
-						SchemaProps: spec.SchemaProps{
-							Description: "MetadataList defines labels and annotations that will be propagated to resources created by runtime",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Metadata"),
-									},
-								},
-							},
-						},
-					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy", "github.com/fluid-cloudnative/fluid/api/v1alpha1.EFCCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.EFCFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.InitFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Metadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.OSAdvise", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy", "github.com/fluid-cloudnative/fluid/api/v1alpha1.EFCCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.EFCFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.InitFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.OSAdvise", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore"},
 	}
 }
 
@@ -2931,25 +2903,11 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSRuntimeSpec(ref common.R
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy"),
 						},
 					},
-					"metadataList": {
-						SchemaProps: spec.SchemaProps{
-							Description: "MetadataList defines labels and annotations that will be propagated to resources created by runtime",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Metadata"),
-									},
-								},
-							},
-						},
-					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Data", "github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Metadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Data", "github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec"},
 	}
 }
 
@@ -3614,25 +3572,11 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JindoRuntimeSpec(ref common.Ref
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy"),
 						},
 					},
-					"metadataList": {
-						SchemaProps: spec.SchemaProps{
-							Description: "MetadataList defines labels and annotations that will be propagated to resources created by runtime",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Metadata"),
-									},
-								},
-							},
-						},
-					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy", "github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Metadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy", "github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec"},
 	}
 }
 
@@ -4089,25 +4033,11 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSRuntimeSpec(ref common.R
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy"),
 						},
 					},
-					"metadataList": {
-						SchemaProps: spec.SchemaProps{
-							Description: "MetadataList defines labels and annotations that will be propagated to resources created by runtime",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Metadata"),
-									},
-								},
-							},
-						},
-					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy", "github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Metadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec", "k8s.io/api/core/v1.Volume"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy", "github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec", "k8s.io/api/core/v1.Volume"},
 	}
 }
 
@@ -5574,25 +5504,11 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeSpec(ref common.Refe
 							},
 						},
 					},
-					"metadataList": {
-						SchemaProps: spec.SchemaProps{
-							Description: "MetadataList defines labels and annotations that will be propagated to resources created by runtime",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Metadata"),
-									},
-								},
-							},
-						},
-					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.Metadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "k8s.io/api/core/v1.Volume"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "k8s.io/api/core/v1.Volume"},
 	}
 }
 
