@@ -83,10 +83,7 @@ rules:
     verbs:
     - create
     - delete
-    - list
-    - watch
     - get
-    - update
   - apiGroups:
     - ""
     resources:
