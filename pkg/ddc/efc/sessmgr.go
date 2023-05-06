@@ -118,7 +118,6 @@ func (s *SessMgrInitializer) deploySessMgr(ctx context.Context, config config) e
 	// Create or update daemonset
 	if !dsExists {
 		efcSockVolumeType := corev1.HostPathDirectoryOrCreate
-		hostOSVolumeType := corev1.HostPathFileOrCreate
 
 		dsToCreate := &appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
