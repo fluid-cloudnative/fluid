@@ -84,8 +84,6 @@ spec:
             {{- if .Values.worker.tieredstore }}
 {{- include "efc.tieredstoreVolumeMounts" .Values.worker }}
             {{- end }}
-            - name: localtime
-              mountPath: /etc/localtime
       {{- with .Values.worker.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -94,7 +92,3 @@ spec:
         {{- if .Values.worker.tieredstore }}
 {{- include "efc.tieredstoreVolumes" .Values.worker }}
         {{- end }}
-        - name: localtime
-          hostPath:
-            path: /etc/localtime
-            type: ''
