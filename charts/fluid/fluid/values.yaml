@@ -99,13 +99,13 @@ runtime:
       image: fluidcloudnative/efcruntime-controller:v0.9.0-bacf3c2
       imagePullPolicy: Always
     init:
-      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/init-alifuse:v1.2.2-6c69425
+      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/init-alifuse:v1.2.2-19dcee9
     master:
-      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-master:v1.2.2-6c69425
+      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-master:v1.2.2-19dcee9
     worker:
-      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-worker:v1.2.2-6c69425
+      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-worker:v1.2.2-19dcee9
     fuse:
-      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-fuse:v1.2.2-6c69425
+      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-fuse:v1.2.2-19dcee9
 
 webhook:
   enabled: true

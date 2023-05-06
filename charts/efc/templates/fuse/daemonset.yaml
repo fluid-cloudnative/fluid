@@ -127,10 +127,6 @@ spec:
         {{- if .Values.fuse.tieredstore }}
 {{- include "efc.tieredstoreVolumes" .Values.fuse }}
         {{- end }}
-        - name: host-os
-          hostPath:
-            path: /etc/os-release
-            type: FileOrCreate
         - name: efc-sock
           hostPath:
             path: /runtime-mnt/efc-sock

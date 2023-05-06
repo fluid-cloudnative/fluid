@@ -77,10 +77,7 @@ spec:
             - {{ .Values.osAdvise.enabled | quote }}
             - {{ .Values.osAdvise.osVersion | quote }}
           securityContext:
-            privileged: true
-          volumeMounts:
-            - name: host-os
-              mountPath: /etc/host-os-release
+            privileged: false
       containers:
         - name: efc-master
           image: {{ .Values.master.image }}:{{ .Values.master.imageTag }}
@@ -97,14 +94,14 @@ spec:
             - {{ .Values.master.option | quote }}
           livenessProbe:
             exec:
-              command: ["sh", "-c", "cat /proc/mounts | grep {{ .Values.master.mountPoint }}"]
+              command: ["sh", "-c", "ps -ef | grep master.py | grep -v grep"]
             failureThreshold: 3
             initialDelaySeconds: 5
             periodSeconds: 1
             successThreshold: 1
             timeoutSeconds: 1
           securityContext:
-            privileged: true
+            privileged: false
           lifecycle:
             preStop:
               exec:
@@ -115,8 +112,6 @@ spec:
             {{- if .Values.master.tieredstore }}
 {{- include "efc.tieredstoreVolumeMounts" .Values.master }}
             {{- end }}
-            - name: localtime
-              mountPath: /etc/localtime
             - name: efc-sock
               mountPath: /var/run/efc
         - name: efc-sessmgr
@@ -126,14 +121,12 @@ spec:
           args:
             - "sessmgr"
           securityContext:
-            privileged: true
+            privileged: false
           lifecycle:
             preStop:
               exec:
                 command: [ "sh", "-c", "/entrypoint.sh stop_sessmgr" ]
           volumeMounts:
-            - name: localtime
-              mountPath: /etc/localtime
             - name: efc-sock
               mountPath: /var/run/efc
       {{- with .Values.master.imagePullSecrets }}
@@ -147,13 +140,5 @@ spec:
         {{- if .Values.master.tieredstore }}
 {{- include "efc.tieredstoreVolumes" .Values.master }}
         {{- end }}
-        - name: localtime
-          hostPath:
-            path: /etc/localtime
-            type: ''
-        - name: host-os
-          hostPath:
-            path: /etc/os-release
-            type: FileOrCreate
         - name: efc-sock
           emptyDir: {}

@@ -118,7 +118,6 @@ func (s *SessMgrInitializer) deploySessMgr(ctx context.Context, config config) e
 	// Create or update daemonset
 	if !dsExists {
 		efcSockVolumeType := corev1.HostPathDirectoryOrCreate
-		hostOSVolumeType := corev1.HostPathFileOrCreate
 
 		dsToCreate := &appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
@@ -182,15 +181,6 @@ func (s *SessMgrInitializer) deploySessMgr(ctx context.Context, config config) e
 									},
 								},
 							},
-							corev1.Volume{
-								Name: "host-os",
-								VolumeSource: corev1.VolumeSource{
-									HostPath: &corev1.HostPathVolumeSource{
-										Path: "/etc/os-release",
-										Type: &hostOSVolumeType,
-									},
-								},
-							},
 						},
 						InitContainers: []corev1.Container{
 							corev1.Container{
@@ -203,13 +193,7 @@ func (s *SessMgrInitializer) deploySessMgr(ctx context.Context, config config) e
 									"none",
 								},
 								SecurityContext: &corev1.SecurityContext{
-									Privileged: utilpointer.Bool(true),
-								},
-								VolumeMounts: []corev1.VolumeMount{
-									{
-										MountPath: "/etc/host-os-release",
-										Name:      "host-os",
-									},
+									Privileged: utilpointer.Bool(false),
 								},
 							},
 						},
@@ -220,7 +204,7 @@ func (s *SessMgrInitializer) deploySessMgr(ctx context.Context, config config) e
 								Image:   config.SessMgrImage,
 								Args:    []string{"sessmgr"},
 								SecurityContext: &corev1.SecurityContext{
-									Privileged: utilpointer.BoolPtr(true),
+									Privileged: utilpointer.BoolPtr(false),
 								},
 								Lifecycle: &corev1.Lifecycle{
 									PreStop: &corev1.LifecycleHandler{
