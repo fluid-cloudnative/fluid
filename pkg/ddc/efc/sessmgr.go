@@ -182,15 +182,6 @@ func (s *SessMgrInitializer) deploySessMgr(ctx context.Context, config config) e
 									},
 								},
 							},
-							corev1.Volume{
-								Name: "host-os",
-								VolumeSource: corev1.VolumeSource{
-									HostPath: &corev1.HostPathVolumeSource{
-										Path: "/etc/os-release",
-										Type: &hostOSVolumeType,
-									},
-								},
-							},
 						},
 						InitContainers: []corev1.Container{
 							corev1.Container{
