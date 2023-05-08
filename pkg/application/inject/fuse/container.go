@@ -161,9 +161,10 @@ func (s *Injector) changeForInitFuse(runtimeInfo base.RuntimeInfoInterface, temp
 
 func checkShellCommand(filesStr string) error {
 	files := strings.Split(filesStr, ",")
+	compile, _ := regexp.Compile(`\A[\w\s\\\/\.\-]+\z`)
 
 	for _, file := range files {
-		if matched, _ := regexp.MatchString(`\A[\w\s\\\/\.\-]+\z`, file); !matched {
+		if matched := compile.MatchString(file); !matched {
 			return errors.New("Annotations <dataset>.init.fluid.io may contain shell command! " + filesStr)
 		}
 	}
