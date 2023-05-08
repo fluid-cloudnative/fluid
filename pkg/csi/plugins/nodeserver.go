@@ -17,6 +17,7 @@ limitations under the License.
 package plugins
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -31,9 +32,11 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/utils/mount"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -52,10 +55,11 @@ const (
 type nodeServer struct {
 	nodeId string
 	*csicommon.DefaultNodeServer
-	client    client.Client
-	apiReader client.Reader
-	mutex     sync.Mutex
-	node      *v1.Node
+	client               client.Client
+	apiReader            client.Reader
+	nodeAuthorizedClient *kubernetes.Clientset
+	mutex                sync.Mutex
+	node                 *v1.Node
 }
 
 func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
@@ -267,7 +271,8 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 		return nil, errors.Wrapf(err, "NodeUnstageVolume: can't get node %s", ns.nodeId)
 	}
 
-	_, err = utils.ChangeNodeLabelWithPatchMode(ns.client, node, labelsToModify)
+	// _, err = utils.ChangeNodeLabelWithPatchMode(ns.client, node, labelsToModify)
+	err = ns.patchNodeWithLabel(node, labelsToModify)
 	if err != nil {
 		glog.Errorf("NodeUnstageVolume: error when patching labels on node %s: %v", ns.nodeId, err)
 		return nil, errors.Wrapf(err, "NodeUnstageVolume: error when patching labels on node %s", ns.nodeId)
@@ -315,7 +320,8 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 		return nil, errors.Wrapf(err, "NodeStageVolume: can't get node %s", ns.nodeId)
 	}
 
-	_, err = utils.ChangeNodeLabelWithPatchMode(ns.client, node, labelsToModify)
+	// _, err = utils.ChangeNodeLabelWithPatchMode(ns.client, node, labelsToModify)
+	err = ns.patchNodeWithLabel(node, labelsToModify)
 	if err != nil {
 		glog.Errorf("NodeStageVolume: error when patching labels on node %s: %v", ns.nodeId, err)
 		return nil, errors.Wrapf(err, "NodeStageVolume: error when patching labels on node %s", ns.nodeId)
@@ -373,12 +379,56 @@ func (ns *nodeServer) getNode() (node *v1.Node, err error) {
 		}
 	}
 
-	if node, err = kubeclient.GetNode(ns.apiReader, ns.nodeId); err != nil {
+	if node, err = ns.nodeAuthorizedClient.CoreV1().Nodes().Get(context.TODO(), ns.nodeId, metav1.GetOptions{}); err != nil {
 		return nil, err
 	}
+
+	// if node, err = kubeclient.GetNode(ns.apiReader, ns.nodeId); err != nil {
+	// return nil, err
+	// }
+
 	glog.V(1).Infof("Got node %s from api server", node.Name)
 	ns.node = node
 	return ns.node, nil
+}
+
+func (ns *nodeServer) patchNodeWithLabel(node *v1.Node, labelsToModify common.LabelsToModify) error {
+	labels := labelsToModify.GetLabels()
+	labelValuePair := map[string]interface{}{}
+
+	for _, labelToModify := range labels {
+		operationType := labelToModify.GetOperationType()
+		labelToModifyKey := labelToModify.GetLabelKey()
+		labelToModifyValue := labelToModify.GetLabelValue()
+
+		switch operationType {
+		case common.AddLabel, common.UpdateLabel:
+			labelValuePair[labelToModifyKey] = labelToModifyValue
+		case common.DeleteLabel:
+			labelValuePair[labelToModifyKey] = nil
+		default:
+			err := fmt.Errorf("fail to update the label due to the wrong operation: %s", operationType)
+			return err
+		}
+	}
+
+	metadata := map[string]interface{}{
+		"metadata": map[string]interface{}{
+			"labels": labelValuePair,
+		},
+	}
+
+	patchByteData, err := json.Marshal(metadata)
+	if err != nil {
+		return err
+	}
+
+	_, err = ns.nodeAuthorizedClient.CoreV1().Nodes().Patch(context.TODO(), node.Name, types.StrategicMergePatchType, patchByteData, metav1.PatchOptions{})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func checkMountInUse(volumeName string) (bool, error) {
@@ -454,7 +504,8 @@ func (ns *nodeServer) prepareSessMgr(workDir string) error {
 		return errors.Wrapf(err, "can't get node %s", ns.nodeId)
 	}
 
-	_, err = utils.ChangeNodeLabelWithPatchMode(ns.client, node, labelsToModify)
+	// _, err = utils.ChangeNodeLabelWithPatchMode(ns.client, node, labelsToModify)
+	err = ns.patchNodeWithLabel(node, labelsToModify)
 	if err != nil {
 		return errors.Wrapf(err, "error when patching labels on node %s", ns.nodeId)
 	}

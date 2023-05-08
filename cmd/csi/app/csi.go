@@ -39,12 +39,13 @@ import (
 )
 
 var (
-	endpoint    string
-	nodeID      string
-	metricsAddr string
-	pprofAddr   string
-	pruneFs     []string
-	prunePath   string
+	endpoint              string
+	nodeID                string
+	metricsAddr           string
+	pprofAddr             string
+	pruneFs               []string
+	prunePath             string
+	kubeletKubeConfigPath string
 )
 
 var scheme = runtime.NewScheme()
@@ -81,6 +82,7 @@ func init() {
 	startCmd.Flags().StringVarP(&prunePath, "prune-path", "", "/runtime-mnt", "Prune path to add in /etc/updatedb.conf")
 	startCmd.Flags().StringVarP(&metricsAddr, "metrics-addr", "", ":8080", "The address the metrics endpoint binds to.")
 	startCmd.Flags().StringVarP(&pprofAddr, "pprof-addr", "", "", "The address for pprof to use while exporting profiling results")
+	startCmd.Flags().StringVarP(&kubeletKubeConfigPath, "kubelet-kube-config", "", "/etc/kubernetes/kubelet.conf", "The file path to kubelet kube config")
 	utilfeature.DefaultMutableFeatureGate.AddFlag(startCmd.Flags())
 	startCmd.Flags().AddGoFlagSet(flag.CommandLine)
 }
@@ -109,10 +111,11 @@ func handle() {
 	}
 
 	config := config.Config{
-		NodeId:    nodeID,
-		Endpoint:  endpoint,
-		PruneFs:   pruneFs,
-		PrunePath: prunePath,
+		NodeId:            nodeID,
+		Endpoint:          endpoint,
+		PruneFs:           pruneFs,
+		PrunePath:         prunePath,
+		KubeletConfigPath: kubeletKubeConfigPath,
 	}
 
 	if err = csi.SetupWithManager(mgr, config); err != nil {

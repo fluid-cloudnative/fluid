@@ -104,8 +104,16 @@ spec:
           - name: fluid-src-dir
             mountPath: {{ .Values.runtime.mountRoot | quote }}
             mountPropagation: "Bidirectional"
-          - name: host-etc-dir
-            mountPath: /host-etc
+          - name: kubelet-kube-config
+            mountPath: /etc/kubernetes/kubelet.conf
+            readOnly: true
+          - name: kubelet-cert-dir
+            mountPath: {{ .Values.csi.kubelet.certDir | quote }}
+            readOnly: true
+          - name: updatedb-conf
+            mountPath: /host-etc/updatedb.conf
+          - name: updatedb-conf-bak
+            mountPath: /host-etc/updatedb.conf.bak
       volumes:
         - name: kubelet-dir
           hostPath:
@@ -124,6 +132,18 @@ spec:
             type: DirectoryOrCreate
           name: fluid-src-dir
         - hostPath:
-            path: /etc
+            path: {{ .Values.csi.kubelet.kubeConfigFile | quote }}
+            type: File
+          name: kubelet-kube-config
+        - hostPath:
+            path: {{ .Values.csi.kubelet.certDir | quote }}
             type: Directory
-          name: host-etc-dir
+          name: kubelet-cert-dir
+        - hostPath:
+            path: /etc/updatedb.conf
+            type: FileOrCreate
+          name: updatedb-conf
+        - hostPath:
+            path: /etc/updatedb.conf.backup
+            type: FileOrCreate
+          name: updatedb-conf-bak

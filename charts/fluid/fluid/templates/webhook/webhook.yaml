@@ -16,6 +16,8 @@ spec:
       labels:
         control-plane: fluid-webhook
     spec:
+      tolerations:
+        - operator: Exists
       {{- with .Values.image.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
