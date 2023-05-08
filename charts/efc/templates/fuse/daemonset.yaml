@@ -89,7 +89,7 @@ spec:
               value: {{ .Values.runtimeIdentity.name | quote }}
           readinessProbe:
             exec:
-              command: ["sh", "-c", "cat /proc/mounts | grep {{ .Values.fuse.mountPoint }}"]
+              command: ["sh", "-c", "cat /proc/mounts | grep fuse.aliyun-alinas-efc"]
             failureThreshold: 3
             initialDelaySeconds: 5
             periodSeconds: 1
