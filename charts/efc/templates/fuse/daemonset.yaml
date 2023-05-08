@@ -80,9 +80,16 @@ spec:
             - {{ .Values.fuse.mountPoint | quote }}
             - "/efc/efc-fuse"
             - {{ .Values.fuse.option | quote }}
+          env:
+            - name: FLUID_RUNTIME_TYPE
+              value: "efc"
+            - name: FLUID_RUNTIME_NS
+              value: {{ .Values.runtimeIdentity.namespace | quote }}
+            - name: FLUID_RUNTIME_NAME
+              value: {{ .Values.runtimeIdentity.name | quote }}
           readinessProbe:
             exec:
-              command: ["sh", "-c", "cat /proc/mounts | grep {{ .Values.fuse.mountPoint }}"]
+              command: ["sh", "-c", "cat /proc/mounts | grep fuse.aliyun-alinas-efc"]
             failureThreshold: 3
             initialDelaySeconds: 5
             periodSeconds: 1
