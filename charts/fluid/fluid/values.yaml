@@ -4,7 +4,7 @@
 
 workdir: /tmp
 crdUpgrade:
-  image: fluidcloudnative/fluid-crd-upgrader:v0.8.5-00f609e
+  image: fluidcloudnative/fluid-crd-upgrader:v0.8.6-2131f34
 
 image:
   imagePullSecrets: []
@@ -12,7 +12,7 @@ image:
 dataset:
   replicas: 1
   controller:
-    image: fluidcloudnative/dataset-controller:v0.8.5-00f609e
+    image: fluidcloudnative/dataset-controller:v0.8.6-2131f34
 
 csi:
   featureGates: "FuseRecovery=false"
@@ -21,8 +21,10 @@ csi:
   registrar:
     image: registry.aliyuncs.com/acs/csi-node-driver-registrar:v2.3.0-038aeb6-aliyun
   plugins:
-    image: fluidcloudnative/fluid-csi:v0.8.5-00f609e
+    image: fluidcloudnative/fluid-csi:v0.8.6-2131f34
   kubelet:
+    kubeConfigFile: /etc/kubernetes/kubelet.conf
+    certDir: /var/lib/kubelet/pki
     rootDir: /var/lib/kubelet
   pruneFs: fuse.alluxio-fuse,fuse.jindofs-fuse,fuse.juicefs,fuse.goosefs-fuse,ossfs
 
@@ -37,9 +39,9 @@ runtime:
     portAllocatePolicy: random
     enabled: false
     init:
-      image: fluidcloudnative/init-users:v0.8.5-00f609e
+      image: fluidcloudnative/init-users:v0.8.6-2131f34
     controller:
-      image: fluidcloudnative/alluxioruntime-controller:v0.8.5-00f609e
+      image: fluidcloudnative/alluxioruntime-controller:v0.8.6-2131f34
     runtime:
       # image: fluidcloudnative/alluxio:release-2.7.3-SNAPSHOT-a7154f1
       image: fluidcloudnative/alluxio:release-2.8.1-SNAPSHOT-0433ade
@@ -59,11 +61,11 @@ runtime:
     fuse:
       image: registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:4.5.1
     controller:
-      image: fluidcloudnative/jindoruntime-controller:v0.8.5-00f609e
+      image: fluidcloudnative/jindoruntime-controller:v0.8.6-2131f34
     init:
       portCheck:
         enabled: false
-      image: fluidcloudnative/init-users:v0.8.5-00f609e
+      image: fluidcloudnative/init-users:v0.8.6-2131f34
   goosefs:
     replicas: 1
     runtimeWorkers: 3
@@ -71,9 +73,9 @@ runtime:
     portAllocatePolicy: random
     enabled: false
     init:
-      image: fluidcloudnative/init-users:v0.8.5-00f609e
+      image: fluidcloudnative/init-users:v0.8.6-2131f34
     controller:
-      image: fluidcloudnative/goosefsruntime-controller:v0.8.5-00f609e
+      image: fluidcloudnative/goosefsruntime-controller:v0.8.6-2131f34
     runtime:
       image: ccr.ccs.tencentyun.com/qcloud/goosefs:v1.2.0
     fuse:
@@ -82,13 +84,13 @@ runtime:
     replicas: 1
     enabled: false
     controller:
-      image: fluidcloudnative/juicefsruntime-controller:v0.8.5-00f609e
+      image: fluidcloudnative/juicefsruntime-controller:v0.8.6-2131f34
     fuse:
       image: juicedata/juicefs-fuse:v1.0.0-4.8.0
 
 webhook:
   enabled: true
-  image: fluidcloudnative/fluid-webhook:v0.8.5-00f609e
+  image: fluidcloudnative/fluid-webhook:v0.8.6-2131f34
   replicas: 1
   reinvocationPolicy: Never
 
@@ -96,4 +98,4 @@ fluidapp:
   enabled: true
   replicas: 1
   controller:
-    image: fluidcloudnative/application-controller:v0.8.5-00f609e
+    image: fluidcloudnative/application-controller:v0.8.6-2131f34

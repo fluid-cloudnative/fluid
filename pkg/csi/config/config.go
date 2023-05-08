@@ -17,8 +17,9 @@ limitations under the License.
 package config
 
 type Config struct {
-	NodeId    string
-	Endpoint  string
-	PruneFs   []string
-	PrunePath string
+	NodeId            string
+	Endpoint          string
+	PruneFs           []string
+	PrunePath         string
+	KubeletConfigPath string
 }
