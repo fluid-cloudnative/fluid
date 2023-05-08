@@ -99,3 +99,24 @@ func (s *Injector) randomizeNewVolumeName(origName string, existingNames []strin
 
 	return newVolumeName, nil
 }
+
+// addInitEmptyVolume add the emptyDir volume used in init phase instead of dataset PVC
+func (s *Injector) addInitEmptyVolume(pod common.FluidObject, dsName string) (err error) {
+	volumes, err := pod.GetVolumes()
+
+	if err != nil {
+		return err
+	}
+
+	initVolume := corev1.Volume{
+		Name: common.InitPrefix + dsName,
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	}
+
+	volumes = append(volumes, initVolume)
+	err = pod.SetVolumes(volumes)
+
+	return err
+}
