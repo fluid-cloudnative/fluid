@@ -49,7 +49,7 @@ func (s *Injector) checkAndOverrideInitPVC(dsName2SourceFiles map[string]string,
 		return err
 	}
 
-	if initContainers == nil || len(initContainers) == 0 {
+	if len(initContainers) == 0 {
 		return nil
 	}
 	volumes, err := pod.GetVolumes()
