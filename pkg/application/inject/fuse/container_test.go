@@ -96,12 +96,27 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
 					},
+					Annotations: map[string]string{
+						"duplicate.init.fluid.io": "/test.txt",
+					},
 				},
 				Spec: corev1.PodSpec{
 					InitContainers: []corev1.Container{
 						{
 							Image: "duplicate-pvc-name",
 							Name:  "duplicate-pvc-name",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "duplicate",
+									MountPath: "/data",
+								},
+							},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Image: "test",
+							Name:  "test",
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "duplicate",
@@ -202,6 +217,9 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 						common.InjectFuseSidecar: common.True,
 						common.InjectSidecarDone: common.True,
 					},
+					Annotations: map[string]string{
+						"duplicate.init.fluid.io": "/test.txt",
+					},
 				},
 				Spec: corev1.PodSpec{
 					InitContainers: []corev1.Container{
@@ -211,8 +229,12 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 							// 	"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
 							// },
 							// Command: []string{"/entrypoint.sh"},
-							Args:    []string{"2s"},
-							Command: []string{"sleep"},
+							// Args:    []string{"2s"},
+							// Command: []string{"sleep"},
+							Args: []string{
+								"nohup /entrypoint.sh -oroot_ns=jindo -okernel_cache -oattr_timeout=9000 -oentry_timeout=9000 & time /check-mount.sh /jfs jindo  >> /proc/1/fd/1; /fluid-copy-script.sh /jfs/jindo-fuse /init-duplicate /test.txt; umount /jfs/jindo-fuse",
+							},
+							Command: []string{"/bin/bash", "-c"},
 							Image:   "duplicate-pvc-name",
 							SecurityContext: &corev1.SecurityContext{
 								Privileged: &bTrue,
@@ -233,10 +255,79 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
 								},
+								{
+									Name:      "init-duplicate",
+									ReadOnly:  false,
+									MountPath: "/init-duplicate",
+								},
+								{
+									Name:      "fluid-copy-script-0",
+									ReadOnly:  true,
+									MountPath: "/fluid-copy-script.sh",
+									SubPath:   "fluid-copy-script.sh",
+								},
 							},
-						}, {
+						},
+						{
 							Image: "duplicate-pvc-name",
 							Name:  "duplicate-pvc-name",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "init-duplicate",
+									MountPath: "/data",
+								},
+								{
+									Name:      "check-fluid-mount-ready",
+									ReadOnly:  true,
+									MountPath: "/check-fluid-mount-ready.sh",
+									SubPath:   "check-fluid-mount-ready.sh",
+								},
+							},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name: common.FuseContainerName + "-0",
+							Args: []string{
+								"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
+							},
+							Command: []string{"/entrypoint.sh"},
+							Image:   "duplicate-pvc-name",
+							SecurityContext: &corev1.SecurityContext{
+								Privileged: &bTrue,
+							}, VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "duplicate-0",
+									MountPath: "/mnt/disk1",
+								}, {
+									Name:      "fuse-device-0",
+									MountPath: "/dev/fuse",
+								}, {
+									Name:      "jindofs-fuse-mount-0",
+									MountPath: "/jfs",
+								}, {
+									Name:      "check-mount-0",
+									ReadOnly:  true,
+									MountPath: "/check-mount.sh",
+									SubPath:   "check-mount.sh",
+								},
+							}, Lifecycle: &corev1.Lifecycle{
+								PostStart: &corev1.LifecycleHandler{
+									Exec: &corev1.ExecAction{
+										Command: []string{
+											// "/check-mount.sh",
+											// "/jfs",
+											// "jindo",
+											"bash",
+											"-c",
+											"time /check-mount.sh /jfs jindo  >> /proc/1/fd/1",
+										},
+									},
+								},
+							},
+						}, {
+							Image: "test",
+							Name:  "test",
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:             "duplicate",
@@ -307,6 +398,21 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 									DefaultMode: utilpointer.Int32Ptr(mode),
 								},
 							},
+						}, {
+							Name: "init-duplicate",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						}, {
+							Name: "fluid-copy-script-0",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "fluid-copy-script",
+									},
+									DefaultMode: utilpointer.Int32Ptr(mode),
+								},
+							},
 						},
 					},
 				},
@@ -327,6 +433,9 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
+					},
+					Annotations: map[string]string{
+						"dataset1.init.fluid.io": "/test.txt",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -469,17 +578,18 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 						common.InjectFuseSidecar: common.True,
 						common.InjectSidecarDone: common.True,
 					},
+					Annotations: map[string]string{
+						"dataset1.init.fluid.io": "/test.txt",
+					},
 				},
 				Spec: corev1.PodSpec{
 					InitContainers: []corev1.Container{
 						{
 							Name: common.InitFuseContainerName + "-0",
-							// Args: []string{
-							// 	"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
-							// },
-							// Command: []string{"/entrypoint.sh"},
-							Args:    []string{"2s"},
-							Command: []string{"sleep"},
+							Args: []string{
+								"nohup /entrypoint.sh -oroot_ns=jindo -okernel_cache -oattr_timeout=9000 -oentry_timeout=9000 & time /check-mount.sh /jfs jindo  >> /proc/1/fd/1; /fluid-copy-script.sh /jfs/jindo-fuse /init-dataset1 /test.txt; umount /jfs/jindo-fuse",
+							},
+							Command: []string{"/bin/bash", "-c"},
 							Image:   "test",
 							SecurityContext: &corev1.SecurityContext{
 								Privileged: &bTrue,
@@ -499,15 +609,25 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
 								},
+								{
+									Name:      "init-dataset1",
+									ReadOnly:  false,
+									MountPath: "/init-dataset1",
+								},
+								{
+									Name:      "fluid-copy-script-0",
+									ReadOnly:  true,
+									MountPath: "/fluid-copy-script.sh",
+									SubPath:   "fluid-copy-script.sh",
+								},
 							},
 						}, {
 							Image: "test",
 							Name:  "test",
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:             "dataset",
-									MountPath:        "/data",
-									MountPropagation: &mountPropagationHostToContainer,
+									Name:      "init-dataset1",
+									MountPath: "/data",
 								},
 								{
 									Name:      "check-fluid-mount-ready",
@@ -548,9 +668,6 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 								PostStart: &corev1.LifecycleHandler{
 									Exec: &corev1.ExecAction{
 										Command: []string{
-											// "/check-mount.sh",
-											// "/jfs",
-											// "jindo",
 											"bash",
 											"-c",
 											"time /check-mount.sh /jfs jindo  >> /proc/1/fd/1",
@@ -629,6 +746,21 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 									DefaultMode: utilpointer.Int32Ptr(mode),
 								},
 							},
+						}, {
+							Name: "init-dataset1",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						}, {
+							Name: "fluid-copy-script-0",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "fluid-copy-script",
+									},
+									DefaultMode: utilpointer.Int32Ptr(mode),
+								},
+							},
 						},
 					},
 				},
@@ -673,6 +805,9 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
+					},
+					Annotations: map[string]string{
+						"customizedenv.init.fluid.io": "/test.txt",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -798,6 +933,9 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 						common.InjectFuseSidecar: common.True,
 						common.InjectSidecarDone: common.True,
 					},
+					Annotations: map[string]string{
+						"customizedenv.init.fluid.io": "/test.txt",
+					},
 				},
 				Spec: corev1.PodSpec{
 					InitContainers: []corev1.Container{
@@ -807,8 +945,10 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 							// 	"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
 							// },
 							// Command: []string{"/entrypoint.sh"},
-							Args:    []string{"2s"},
-							Command: []string{"sleep"},
+							Args: []string{
+								"nohup /entrypoint.sh -oroot_ns=jindo -okernel_cache -oattr_timeout=9000 -oentry_timeout=9000 & time /check-mount.sh /jfs/jindofs-fuse jindo  >> /proc/1/fd/1; /fluid-copy-script.sh /jfs/jindofs-fuse /init-customizedenv /test.txt; umount /jfs/jindofs-fuse",
+							},
+							Command: []string{"/bin/bash", "-c"},
 							Image:   "customizedenv-pvc-name",
 							Env: []corev1.EnvVar{
 								{
@@ -834,15 +974,25 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
 								},
+								{
+									Name:      "init-customizedenv",
+									ReadOnly:  false,
+									MountPath: "/init-customizedenv",
+								},
+								{
+									Name:      "fluid-copy-script-0",
+									ReadOnly:  true,
+									MountPath: "/fluid-copy-script.sh",
+									SubPath:   "fluid-copy-script.sh",
+								},
 							},
 						}, {
 							Image: "customizedenv-pvc-name",
 							Name:  "customizedenv-pvc-name",
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:             "customizedenv",
-									MountPath:        "/data",
-									MountPropagation: &mountPropagationHostToContainer,
+									Name:      "init-customizedenv",
+									MountPath: "/data",
 								},
 								{
 									Name:      "check-fluid-mount-ready",
@@ -973,6 +1123,21 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 									DefaultMode: utilpointer.Int32Ptr(mode),
 								},
 							},
+						}, {
+							Name: "init-customizedenv",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						}, {
+							Name: "fluid-copy-script-0",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "fluid-copy-script",
+									},
+									DefaultMode: utilpointer.Int32Ptr(mode),
+								},
+							},
 						},
 					},
 				},
@@ -1048,7 +1213,6 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 
 		gotInitContainerMap := makeContainerMap(gotInitContainers)
 		wantInitContainerMap := makeContainerMap(wantInitContainers)
-
 		if len(gotInitContainerMap) != len(wantInitContainerMap) {
 			t.Errorf("testcase %s failed, want Initcontainers length %d, Got Initcontainers length  %d", testcase.name, len(gotInitContainerMap), len(wantInitContainerMap))
 		}
