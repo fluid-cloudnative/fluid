@@ -17,6 +17,10 @@ limitations under the License.
 package fuse
 
 import (
+	"errors"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -36,4 +40,54 @@ func mutateVolumeMounts(containers []corev1.Container, datasetVolumeNames []stri
 	}
 
 	return containers, needInjection
+}
+
+// checkAndOverrideInitPVC checks if the dataset PVC used in init phase has been specified and overrides them by emptyDir
+func (s *Injector) checkAndOverrideInitPVC(dsName2SourceFiles map[string]string, runtimeInfos map[string]base.RuntimeInfoInterface, pod common.FluidObject) (err error) {
+	initContainers, err := pod.GetInitContainers()
+	if err != nil {
+		return err
+	}
+
+	if initContainers == nil || len(initContainers) == 0 {
+		return nil
+	}
+	volumes, err := pod.GetVolumes()
+	if err != nil {
+		return err
+	}
+
+	volumes2pvcName := map[string]string{}
+	for _, volume := range volumes {
+		if volume.PersistentVolumeClaim != nil {
+			pvcNmae := volume.PersistentVolumeClaim.ClaimName
+			if _, isExist := runtimeInfos[pvcNmae]; isExist {
+				volumes2pvcName[volume.Name] = pvcNmae
+			}
+		}
+	}
+
+	for _, container := range initContainers {
+		for index, volume := range container.VolumeMounts {
+			volumeName := volume.Name
+			path := volume.MountPath
+			pvcName, isDatasetPVC := volumes2pvcName[volumeName]
+			_, isSpecified := dsName2SourceFiles[pvcName]
+
+			// the PVC is dataset PVC used in init phase, but not specified
+			if isDatasetPVC && !isSpecified {
+				return errors.New(volumeName + " used in init phase, but not specified!")
+			}
+			if isDatasetPVC && isSpecified {
+				container.VolumeMounts[index] = corev1.VolumeMount{
+					Name:      common.InitPrefix + pvcName,
+					MountPath: path,
+				}
+			}
+		}
+	}
+
+	err = pod.SetInitContainers(initContainers)
+
+	return err
 }
