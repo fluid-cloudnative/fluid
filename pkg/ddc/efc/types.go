@@ -35,6 +35,7 @@ type EFC struct {
 	OSAdvise         OSAdvise               `yaml:"osAdvise"`
 	Tolerations      []v1.Toleration        `yaml:"tolerations,omitempty"`
 	Owner            *common.OwnerReference `yaml:"owner,omitempty"`
+	RuntimeIdentity  common.RuntimeIdentity `yaml:"runtimeIdentity,omitempty"`
 }
 
 type OSAdvise struct {

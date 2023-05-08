@@ -39,6 +39,10 @@ func (e *EFCEngine) transform(runtime *datav1alpha1.EFCRuntime) (value *EFC, err
 	value = &EFC{
 		// Set ownerReference to all EFCRuntime resources
 		Owner: transfromer.GenerateOwnerReferenceFromObject(runtime),
+		RuntimeIdentity: common.RuntimeIdentity{
+			Namespace: runtime.Namespace,
+			Name:      runtime.Name,
+		},
 	}
 
 	value.FullnameOverride = e.name

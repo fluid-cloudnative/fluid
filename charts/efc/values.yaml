@@ -105,3 +105,7 @@ placement: Inclusive
 
 owner:
   enabled: false
+
+runtimeIdentity:
+  namespace: default
+  name: test-efc
