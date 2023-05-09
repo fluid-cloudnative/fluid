@@ -92,7 +92,8 @@ webhook:
   enabled: true
   image: fluidcloudnative/fluid-webhook:v0.8.6-2131f34
   replicas: 1
-  reinvocationPolicy: Never
+  timeoutSeconds: 15
+  reinvocationPolicy: IfNeeded
 
 fluidapp:
   enabled: true
