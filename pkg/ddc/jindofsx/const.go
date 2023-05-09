@@ -63,4 +63,6 @@ const (
 	defaultMetaSize = "30Gi"
 
 	QueryUfsTotal = "QUERY_UFS_TOTAL"
+
+	IMAGE_TAG_SUPPORT_AK_FILE = "4.6.7"
 )
