@@ -193,7 +193,7 @@ func (s *SessMgrInitializer) deploySessMgr(ctx context.Context, config config) e
 									"none",
 								},
 								SecurityContext: &corev1.SecurityContext{
-									Privileged: utilpointer.Bool(false),
+									Privileged: utilpointer.Bool(true),
 								},
 							},
 						},
