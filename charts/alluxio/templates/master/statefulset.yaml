@@ -246,6 +246,9 @@ spec:
             {{- range .Values.ufsVolumes }}
           - mountPath: {{ .containerPath }}
             name: {{ .name }}
+            {{- if .subPath }}
+            subPath: {{ .subPath }}
+            {{- end }}
             {{- end }}
           {{- end }}
           {{- if .Values.metastore }}
@@ -340,6 +343,9 @@ spec:
             {{- range .Values.ufsVolumes }}
           - mountPath: {{ .containerPath }}
             name: {{ .name }}
+            {{- if .subPath }}
+            subPath: {{ .subPath }}
+            {{- end }}
             {{- end }}
           {{- end }}
           {{- if .Values.mounts }}
