@@ -19,73 +19,23 @@ package databackup
 import (
 	"context"
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
-	"github.com/fluid-cloudnative/fluid/pkg/runtime"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"strings"
+	"time"
+
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
-	"time"
+
+	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
+	"github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdatabackup "github.com/fluid-cloudnative/fluid/pkg/databackup"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
-
-// UpdateStatusByHelmStatus update the operation status according to helm job status
-func (r *DataBackupReconciler) UpdateStatusByHelmStatus(ctx runtime.ReconcileRequestContext, object client.Object, opStatus *v1alpha1.OperationStatus) (err error) {
-	// 1. gdt pod name
-	backupPodName := utils.GetDataBackupPodName(object.GetName())
-	backupPod, err := kubeclient.GetPodByName(ctx.Client, backupPodName, object.GetNamespace())
-	if err != nil {
-		ctx.Log.Error(err, "Failed to get databackup-pod")
-		return
-	}
-
-	// 2. only update status if finished
-	if !kubeclient.IsFinishedPod(backupPod) {
-		return
-	}
-
-	var finishTime time.Time
-	if len(backupPod.Status.Conditions) != 0 {
-		finishTime = backupPod.Status.Conditions[0].LastTransitionTime.Time
-	} else {
-		// fail to get finishTime, use current time as default
-		finishTime = time.Now()
-	}
-	opStatus.Duration = utils.CalculateDuration(object.GetCreationTimestamp().Time, finishTime)
-
-	if kubeclient.IsSucceededPod(backupPod) {
-		opStatus.Phase = common.PhaseComplete
-		opStatus.Conditions = []v1alpha1.Condition{
-			{
-				Type:               common.Complete,
-				Status:             v1.ConditionTrue,
-				Reason:             "BackupSuccessful",
-				Message:            "Backup Pod exec successfully and finish",
-				LastProbeTime:      metav1.NewTime(time.Now()),
-				LastTransitionTime: metav1.NewTime(finishTime),
-			},
-		}
-	} else if kubeclient.IsFailedPod(backupPod) {
-		opStatus.Phase = common.PhaseFailed
-		opStatus.Conditions = []v1alpha1.Condition{
-			{
-				Type:               common.Failed,
-				Status:             v1.ConditionTrue,
-				Reason:             "BackupFailed",
-				Message:            "Backup Pod exec failed and exit",
-				LastProbeTime:      metav1.NewTime(time.Now()),
-				LastTransitionTime: metav1.NewTime(finishTime),
-			},
-		}
-	}
-	return
-}
 
 func (r *DataBackupReconciler) GetChartsDirectory() string {
 	return utils.GetChartsDirectory() + "/" + cdatabackup.DatabackupChart
@@ -173,4 +123,8 @@ func (r *DataBackupReconciler) UpdateOperationApiStatus(object client.Object, op
 	var dataBackupCpy = dataBackup.DeepCopy()
 	dataBackupCpy.Status = *opStatus.DeepCopy()
 	return r.Status().Update(context.Background(), dataBackupCpy)
+}
+
+func (r *DataBackupReconciler) GetStatusHandler(object client.Object) dataoperation.StatusHandler {
+	return &OnceHandler{}
 }

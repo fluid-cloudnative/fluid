@@ -23,10 +23,17 @@ import (
 )
 
 type DataMigrateValue struct {
+	Name            string          `json:"name"`
 	DataMigrateInfo DataMigrateInfo `json:"datamigrate"`
 }
 
 type DataMigrateInfo struct {
+	// Policy for migrate, including None, Once, Cron, OnEvent
+	Policy string `json:"policy"`
+
+	// Schedule The schedule in Cron format, only set when policy is cron, see https://en.wikipedia.org/wiki/Cron.
+	Schedule string `json:"schedule,omitempty"`
+
 	// BackoffLimit specifies the upper limit times when the DataMigrate job fails
 	BackoffLimit int32 `json:"backoffLimit,omitempty"`
 

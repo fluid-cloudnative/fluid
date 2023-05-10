@@ -1,0 +1,184 @@
+/*
+  Copyright 2023 The Fluid Authors.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
+
+package datamigrate
+
+import (
+	"fmt"
+
+	"github.com/go-logr/logr"
+	batchv1 "k8s.io/api/batch/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
+	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
+)
+
+type OnceStatusHandler struct {
+	client.Client
+	Log logr.Logger
+}
+
+var _ dataoperation.StatusHandler = &OnceStatusHandler{}
+
+type CronStatusHandler struct {
+	client.Client
+	Log logr.Logger
+}
+
+var _ dataoperation.StatusHandler = &CronStatusHandler{}
+
+type OnEventStatusHandler struct {
+	client.Client
+	Log logr.Logger
+}
+
+var _ dataoperation.StatusHandler = &OnEventStatusHandler{}
+
+func (m *OnceStatusHandler) UpdateStatusByHelmStatus(ctx cruntime.ReconcileRequestContext, object client.Object, opStatus *datav1alpha1.OperationStatus) error {
+	// 1. Check running status of the DataMigrate job
+	releaseName := utils.GetDataMigrateReleaseName(object.GetName())
+	jobName := utils.GetDataMigrateJobName(releaseName)
+	job, err := utils.GetDataMigrateJob(m.Client, jobName, object.GetNamespace())
+
+	if err != nil {
+		// helm release found but job missing, delete the helm release and requeue
+		if utils.IgnoreNotFound(err) == nil {
+			ctx.Log.Info("Related Job missing, will delete helm chart and retry", "namespace", ctx.Namespace, "jobName", jobName)
+			if err = helm.DeleteReleaseIfExists(releaseName, ctx.Namespace); err != nil {
+				m.Log.Error(err, "can't delete DataMigrate release", "namespace", ctx.Namespace, "releaseName", releaseName)
+				return err
+			}
+			return err
+		}
+		// other error
+		ctx.Log.Error(err, "can't get DataMigrate job", "namespace", ctx.Namespace, "jobName", jobName)
+		return err
+	}
+
+	if len(job.Status.Conditions) != 0 {
+		if job.Status.Conditions[0].Type == batchv1.JobFailed ||
+			job.Status.Conditions[0].Type == batchv1.JobComplete {
+			jobCondition := job.Status.Conditions[0]
+			// job either failed or complete, update DataMigrate's phase status
+			opStatus.Conditions = []datav1alpha1.Condition{
+				{
+					Type:               common.ConditionType(jobCondition.Type),
+					Status:             jobCondition.Status,
+					Reason:             jobCondition.Reason,
+					Message:            jobCondition.Message,
+					LastProbeTime:      jobCondition.LastProbeTime,
+					LastTransitionTime: jobCondition.LastTransitionTime,
+				},
+			}
+			if jobCondition.Type == batchv1.JobFailed {
+				opStatus.Phase = common.PhaseFailed
+			} else {
+				opStatus.Phase = common.PhaseComplete
+			}
+			opStatus.Duration = utils.CalculateDuration(object.GetCreationTimestamp().Time, jobCondition.LastTransitionTime.Time)
+			return nil
+		}
+	}
+
+	ctx.Log.V(1).Info("DataMigrate job still running", "namespace", ctx.Namespace, "jobName", jobName)
+	return nil
+}
+
+func (c *CronStatusHandler) UpdateStatusByHelmStatus(ctx cruntime.ReconcileRequestContext, object client.Object, opStatus *datav1alpha1.OperationStatus) error {
+	// 1. Check running status of the DataMigrate job
+	releaseName := utils.GetDataMigrateReleaseName(object.GetName())
+	cronjobName := utils.GetDataMigrateJobName(releaseName)
+	cronjob, err := utils.GetDataMigrateCronjob(c.Client, cronjobName, object.GetNamespace())
+
+	if err != nil {
+		// helm release found but cronjob missing, delete the helm release and requeue
+		if utils.IgnoreNotFound(err) == nil {
+			ctx.Log.Info("Related Cronjob missing, will delete helm chart and retry", "namespace", ctx.Namespace, "cronjobName", cronjobName)
+			if err = helm.DeleteReleaseIfExists(releaseName, ctx.Namespace); err != nil {
+				c.Log.Error(err, "can't delete DataMigrate release", "namespace", ctx.Namespace, "releaseName", releaseName)
+				return err
+			}
+			return err
+		}
+		// other error
+		ctx.Log.Error(err, "can't get DataMigrate cronjob", "namespace", ctx.Namespace, "cronjobName", cronjobName)
+		return err
+	}
+
+	jobs, err := utils.ListDataMigrateJobByCronjob(c.Client, cronjob)
+	if err != nil {
+		ctx.Log.Error(err, "can't list DataMigrate job by cronjob", "namespace", ctx.Namespace, "cronjobName", cronjobName)
+		return err
+	}
+
+	// get the newest job
+	var currentJob *batchv1.Job
+	for _, job := range jobs {
+		if job.CreationTimestamp == *cronjob.Status.LastScheduleTime {
+			currentJob = &job
+			break
+		}
+	}
+	if currentJob == nil {
+		err = fmt.Errorf("can't get newest job by cronjob")
+		ctx.Log.Error(err, "namespace", ctx.Namespace, "cronjobName", cronjobName)
+		return err
+	}
+
+	if len(currentJob.Status.Conditions) != 0 {
+		if currentJob.Status.Conditions[0].Type == batchv1.JobFailed ||
+			currentJob.Status.Conditions[0].Type == batchv1.JobComplete {
+			jobCondition := currentJob.Status.Conditions[0]
+			// job either failed or complete, update DataMigrate's phase status
+			opStatus.Conditions = []datav1alpha1.Condition{
+				{
+					Type:               common.ConditionType(jobCondition.Type),
+					Status:             jobCondition.Status,
+					Reason:             jobCondition.Reason,
+					Message:            jobCondition.Message,
+					LastProbeTime:      jobCondition.LastProbeTime,
+					LastTransitionTime: jobCondition.LastTransitionTime,
+				},
+			}
+			if jobCondition.Type == batchv1.JobFailed {
+				opStatus.Phase = common.PhaseFailed
+			} else {
+				opStatus.Phase = common.PhaseComplete
+			}
+			opStatus.Duration = utils.CalculateDuration(object.GetCreationTimestamp().Time, jobCondition.LastTransitionTime.Time)
+			return nil
+		}
+	}
+
+	ctx.Log.V(1).Info("DataMigrate job still running", "namespace", ctx.Namespace, "cronjobName", cronjobName)
+	if opStatus.Phase == common.PhaseComplete {
+		// if datamigrate was complete, but now job is running, set datamigrate pending first
+		// dataset will be locked only when datamigrate pending
+		opStatus.Phase = common.PhasePending
+		opStatus.Duration = "-"
+	}
+	return nil
+}
+
+func (o *OnEventStatusHandler) UpdateStatusByHelmStatus(ctx cruntime.ReconcileRequestContext, object client.Object, opStatus *datav1alpha1.OperationStatus) error {
+	//TODO implement me
+	return nil
+}

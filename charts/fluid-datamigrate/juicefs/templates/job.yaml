@@ -1,3 +1,4 @@
+{{- if or (eq .Values.datamigrate.policy "none") (eq .Values.datamigrate.policy "once") }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -97,3 +98,4 @@ spec:
       {{- with .Values.datamigrate.nativeVolumes }}
         {{ toYaml . | nindent 8 }}
       {{- end }}
+{{- end }}
