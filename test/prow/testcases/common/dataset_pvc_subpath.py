@@ -56,6 +56,7 @@ def main():
         base_name, "https://mirrors.bit.edu.cn/apache/zookeeper/stable/")
     base_dataset = fluidapi.Dataset(base_name)
     base_dataset.add_mount(base_mount.dump())
+    base_dataset.set_placement("Shared")
     base_runtime = fluidapi.assemble_runtime("alluxio-webufs").set_namespaced_name(namespace, base_name)
 
     name = "pvc-subpath"
@@ -65,6 +66,7 @@ def main():
     dataset = fluidapi.Dataset("pvc-subpath")
     dataset.set_namespaced_name(namespace, name)
     dataset.add_mount(mount.dump())
+    dataset.set_placement("Shared")
 
     runtime = fluidapi.Runtime("AlluxioRuntime", name)
     runtime.set_replicas(1)
