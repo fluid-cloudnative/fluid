@@ -70,7 +70,6 @@ func (s *Injector) checkAndOverrideInitPVC(dsName2SourceFiles map[string]string,
 	for _, container := range initContainers {
 		for index, volume := range container.VolumeMounts {
 			volumeName := volume.Name
-			path := volume.MountPath
 			pvcName, isDatasetPVC := volumes2pvcName[volumeName]
 			_, isSpecified := dsName2SourceFiles[pvcName]
 
@@ -79,10 +78,7 @@ func (s *Injector) checkAndOverrideInitPVC(dsName2SourceFiles map[string]string,
 				return errors.New(volumeName + " used in init phase, but not specified!")
 			}
 			if isDatasetPVC && isSpecified {
-				container.VolumeMounts[index] = corev1.VolumeMount{
-					Name:      common.InitPrefix + pvcName,
-					MountPath: path,
-				}
+				container.VolumeMounts[index].Name = common.InitPrefix + pvcName
 			}
 		}
 	}
@@ -90,4 +86,22 @@ func (s *Injector) checkAndOverrideInitPVC(dsName2SourceFiles map[string]string,
 	err = pod.SetInitContainers(initContainers)
 
 	return err
+}
+
+// overrideVolumeMountName override the volumeMount name mapping key to value of volumeNamesConflict
+func (s *Injector) overrideVolumeMountName(containers []corev1.Container, volumeNamesConflict map[string]string) (newContainers []corev1.Container) {
+	if len(containers) == 0 {
+		return newContainers
+	}
+
+	for _, container := range containers {
+		volumeMounts := container.VolumeMounts
+		for index, volumeMount := range volumeMounts {
+			if newName, exist := volumeNamesConflict[volumeMount.Name]; exist {
+				container.VolumeMounts[index].Name = newName
+			}
+		}
+		newContainers = append(newContainers, container)
+	}
+	return newContainers
 }
