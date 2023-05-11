@@ -22,6 +22,7 @@ import (
 
 const (
 	DefaultInitImage = "registry.cn-hangzhou.aliyuncs.com/fluid/init-users:v0.3.0-1467caa"
+	InitEnvName      = "FLUID_PREFETCH_URI"
 )
 
 // The InitContainer to init the users for other Containers
