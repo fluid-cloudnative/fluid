@@ -169,8 +169,18 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 			return out, err
 		}
 
+		initContainers, err := pod.GetInitContainers()
+		if err != nil {
+			s.log.Error(err, "failed to get initContainers of pod", "fluid application name", objectMeta.Name)
+			return out, err
+		}
+
 		// get the map of dataset name to files needed to copy
-		ds2SourceFiles := s.generateInitDatasetMap(objectMeta.Annotations)
+		ds2SourceFiles, err := s.generateInitDatasetMap(initContainers, runtimeInfos)
+		if err != nil {
+			s.log.Error(err, "failed to analysis the env in init container", "fluid application name", objectMeta.Name)
+			return out, err
+		}
 
 		// check if all the dataset PVC used in init phase has been specified and override them with emptyDir
 		if err := s.checkAndOverrideInitPVC(ds2SourceFiles, runtimeInfos, pod); err != nil {
@@ -307,13 +317,7 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 	filesToCopy, isUsedInInit := ds2File[pvcName]
 	// 5.a check if this pvc is used in init phase
 	if isUsedInInit {
-
-		// 5.b add emptyDir used in init phase to volumes
-		if err := s.addInitEmptyVolume(pod, pvcName); err != nil {
-			return err
-		}
-
-		// 5.c change fuse template for init container()
+		// 5.b change fuse template for init container()
 		if err := s.changeForInitFuse(runtimeInfo, template, pvcName, filesToCopy); err != nil {
 			return err
 		}
@@ -333,11 +337,14 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 			return err
 		}
 
-		// 5.d inject the fuse container to init phase
 		initContainers, err := pod.GetInitContainers()
 		if err != nil {
 			return err
 		}
+		// 5.c override the volume mount name(added emptyDir name)
+		initContainers = s.overrideVolumeMountName(initContainers, volumeNamesConflict)
+
+		// 5.d inject the fuse container to init phase
 		initContainerNameToInject := common.InitFuseContainerName + containerNameSuffix
 		initContainers = injectFuseContainerToFirst(initContainers, initContainerNameToInject, template, volumeNamesConflict)
 
