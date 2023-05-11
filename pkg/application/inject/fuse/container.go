@@ -110,6 +110,12 @@ func (s *Injector) changeForInitFuse(runtimeInfo base.RuntimeInfoInterface, temp
 				},
 			},
 		},
+		{
+			Name: common.InitPrefix + pvcName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
 	}
 
 	if err := runtimeInfo.GetOrCreateCopyConfigMap(); err != nil {
@@ -172,16 +178,56 @@ func checkShellCommand(filesStr string) error {
 }
 
 // generateInitDatasetMap generates the map (dataset name to files needed to use in init phase)
-func (s *Injector) generateInitDatasetMap(annotations map[string]string) (dsName2SourceFiles map[string]string) {
-	if annotations == nil {
-		return
-	}
+func (s *Injector) generateInitDatasetMap(initContainers []corev1.Container, runtimeInfo map[string]base.RuntimeInfoInterface) (dsName2SourceFiles map[string]string, err error) {
 	dsName2SourceFiles = map[string]string{}
-	for key, value := range annotations {
-		if strings.HasSuffix(key, common.AnnotationSuffix) {
-			datasetName := strings.ReplaceAll(key, common.AnnotationSuffix, "")
-			dsName2SourceFiles[datasetName] = value
+
+	if len(initContainers) == 0 {
+		return dsName2SourceFiles, nil
+	}
+
+	for _, initContainer := range initContainers {
+
+		if len(initContainer.Env) > 0 {
+			for _, env := range initContainer.Env {
+
+				if env.Name == common.InitEnvName {
+					value := env.Value
+
+					if err := updateInitDatasetMap(dsName2SourceFiles, value, runtimeInfo); err != nil {
+						return dsName2SourceFiles, err
+					}
+				}
+			}
 		}
 	}
-	return dsName2SourceFiles
+	return dsName2SourceFiles, nil
+}
+
+func updateInitDatasetMap(dsName2SourceFiles map[string]string, envValue string, runtimeInfo map[string]base.RuntimeInfoInterface) error {
+	values := strings.Split(envValue, ",")
+	re := regexp.MustCompile(`pvc://([^/]+)/(.+)`)
+
+	for _, value := range values {
+		match := re.FindStringSubmatch(strings.TrimSpace(value))
+
+		if len(match) == 3 {
+			dataset := match[1]
+			dataPath := "/" + match[2]
+
+			if _, exist := runtimeInfo[dataset]; !exist {
+				// this dataset don not be found in volumes
+				return errors.New("Dataset: " + dataset + " don not be found in volumes!")
+			}
+
+			if value, exist := dsName2SourceFiles[dataset]; exist {
+				dsName2SourceFiles[dataset] = value + "," + dataPath
+			} else {
+				dsName2SourceFiles[dataset] = dataPath
+			}
+		} else {
+			return errors.New("ENV value: " + envValue + " fail to match the required format(pvc://${DATASET_NAME}/${PATH_TO_DATA}). ")
+		}
+	}
+
+	return nil
 }
