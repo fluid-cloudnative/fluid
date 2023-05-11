@@ -96,15 +96,18 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
 					},
-					Annotations: map[string]string{
-						"duplicate.init.fluid.io": "/test.txt",
-					},
 				},
 				Spec: corev1.PodSpec{
 					InitContainers: []corev1.Container{
 						{
 							Image: "duplicate-pvc-name",
 							Name:  "duplicate-pvc-name",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "FLUID_PREFETCH_URI",
+									Value: "pvc://duplicate/test.txt",
+								},
+							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "duplicate",
@@ -217,9 +220,6 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 						common.InjectFuseSidecar: common.True,
 						common.InjectSidecarDone: common.True,
 					},
-					Annotations: map[string]string{
-						"duplicate.init.fluid.io": "/test.txt",
-					},
 				},
 				Spec: corev1.PodSpec{
 					InitContainers: []corev1.Container{
@@ -256,7 +256,7 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 									SubPath:   "check-mount.sh",
 								},
 								{
-									Name:      "init-duplicate",
+									Name:      "init-duplicate-0",
 									ReadOnly:  false,
 									MountPath: "/init-duplicate",
 								},
@@ -271,9 +271,15 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 						{
 							Image: "duplicate-pvc-name",
 							Name:  "duplicate-pvc-name",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "FLUID_PREFETCH_URI",
+									Value: "pvc://duplicate/test.txt",
+								},
+							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "init-duplicate",
+									Name:      "init-duplicate-0",
 									MountPath: "/data",
 								},
 								{
@@ -399,7 +405,7 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 								},
 							},
 						}, {
-							Name: "init-duplicate",
+							Name: "init-duplicate-0",
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{},
 							},
@@ -434,15 +440,18 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
 					},
-					Annotations: map[string]string{
-						"dataset1.init.fluid.io": "/test.txt",
-					},
 				},
 				Spec: corev1.PodSpec{
 					InitContainers: []corev1.Container{
 						{
 							Image: "test",
 							Name:  "test",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "FLUID_PREFETCH_URI",
+									Value: "pvc://dataset1/test.txt",
+								},
+							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "dataset",
@@ -578,9 +587,6 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 						common.InjectFuseSidecar: common.True,
 						common.InjectSidecarDone: common.True,
 					},
-					Annotations: map[string]string{
-						"dataset1.init.fluid.io": "/test.txt",
-					},
 				},
 				Spec: corev1.PodSpec{
 					InitContainers: []corev1.Container{
@@ -610,7 +616,7 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 									SubPath:   "check-mount.sh",
 								},
 								{
-									Name:      "init-dataset1",
+									Name:      "init-dataset1-0",
 									ReadOnly:  false,
 									MountPath: "/init-dataset1",
 								},
@@ -624,9 +630,15 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 						}, {
 							Image: "test",
 							Name:  "test",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "FLUID_PREFETCH_URI",
+									Value: "pvc://dataset1/test.txt",
+								},
+							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "init-dataset1",
+									Name:      "init-dataset1-0",
 									MountPath: "/data",
 								},
 								{
@@ -747,7 +759,7 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 								},
 							},
 						}, {
-							Name: "init-dataset1",
+							Name: "init-dataset1-0",
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{},
 							},
@@ -806,15 +818,18 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
 					},
-					Annotations: map[string]string{
-						"customizedenv.init.fluid.io": "/test.txt",
-					},
 				},
 				Spec: corev1.PodSpec{
 					InitContainers: []corev1.Container{
 						{
 							Image: "customizedenv-pvc-name",
 							Name:  "customizedenv-pvc-name",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "FLUID_PREFETCH_URI",
+									Value: "pvc://customizedenv/test.txt",
+								},
+							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "customizedenv",
@@ -933,9 +948,6 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 						common.InjectFuseSidecar: common.True,
 						common.InjectSidecarDone: common.True,
 					},
-					Annotations: map[string]string{
-						"customizedenv.init.fluid.io": "/test.txt",
-					},
 				},
 				Spec: corev1.PodSpec{
 					InitContainers: []corev1.Container{
@@ -975,7 +987,7 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 									SubPath:   "check-mount.sh",
 								},
 								{
-									Name:      "init-customizedenv",
+									Name:      "init-customizedenv-0",
 									ReadOnly:  false,
 									MountPath: "/init-customizedenv",
 								},
@@ -989,9 +1001,15 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 						}, {
 							Image: "customizedenv-pvc-name",
 							Name:  "customizedenv-pvc-name",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "FLUID_PREFETCH_URI",
+									Value: "pvc://customizedenv/test.txt",
+								},
+							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "init-customizedenv",
+									Name:      "init-customizedenv-0",
 									MountPath: "/data",
 								},
 								{
@@ -1124,7 +1142,7 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 								},
 							},
 						}, {
-							Name: "init-customizedenv",
+							Name: "init-customizedenv-0",
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{},
 							},
