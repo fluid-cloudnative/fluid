@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	versionutil "github.com/fluid-cloudnative/fluid/pkg/utils/version"
 	"os"
 	"reflect"
 	"regexp"
@@ -105,6 +106,7 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	smartdataConfig := e.getSmartDataConfigs(runtime)
 	smartdataTag := smartdataConfig.imageTag
 	jindoFuseImage, fuseTag, fuseImagePullPolicy := e.parseFuseImage(runtime)
+	newVersionSupport := e.checkVersionSupportAkFile(runtime, smartdataTag, fuseTag)
 
 	var mediumType = common.Memory
 	var volumeType = common.VolumeTypeHostPath
@@ -160,7 +162,7 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	e.transformNetworkMode(runtime, value)
 	e.transformFuseNodeSelector(runtime, value)
 	e.transformSecret(runtime, value)
-	err = e.transformMaster(runtime, metaPath, value, dataset, smartdataTag, fuseTag)
+	err = e.transformMaster(runtime, metaPath, value, dataset, newVersionSupport)
 	if err != nil {
 		return
 	}
@@ -188,7 +190,7 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	return value, err
 }
 
-func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPath string, value *Jindo, dataset *datav1alpha1.Dataset, smartdataTag string, fuseTag string) (err error) {
+func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPath string, value *Jindo, dataset *datav1alpha1.Dataset, newVersionSupport bool) (err error) {
 	properties := map[string]string{
 		"namespace.cluster.id":                      "local",
 		"namespace.oss.copy.size":                   "1073741824",
@@ -265,7 +267,7 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 				continue
 			}
 		}
-		// TODO support cos storage
+
 		mountType := "oss"
 		if strings.HasPrefix(mount.MountPoint, "oss://") {
 			var re = regexp.MustCompile(`(oss://(.*?))(/)`)
@@ -346,12 +348,11 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 			}
 		}
 
-		fuseOnly := runtime.Spec.Master.Disabled && runtime.Spec.Worker.Disabled
 		// to check whether encryptOptions exist
 		for _, encryptOption := range mount.EncryptOptions {
 			key := encryptOption.Name
 			secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
-			if (fuseOnly && strings.Compare(fuseTag, IMAGE_TAG_SUPPORT_AK_FILE) >= 0) || (strings.Compare(smartdataTag, IMAGE_TAG_SUPPORT_AK_FILE) >= 0 && strings.Compare(fuseTag, IMAGE_TAG_SUPPORT_AK_FILE) >= 0) {
+			if newVersionSupport {
 				value.Secret = secretKeyRef.Name
 				if key == "fs."+mountType+".accessKeyId" {
 					value.SecretKey = key
@@ -1132,4 +1133,16 @@ func (e *JindoFSxEngine) getMediumTypeFromVolumeSource(defaultMediumType string,
 	}
 
 	return mediumType
+}
+
+func (e *JindoFSxEngine) checkVersionSupportAkFile(runtime *datav1alpha1.JindoRuntime, smartdataTag string, fuseTag string) bool {
+	fuseOnly := runtime.Spec.Master.Disabled && runtime.Spec.Worker.Disabled
+	compareSmartdata, _ := versionutil.Compare(smartdataTag, IMAGE_TAG_SUPPORT_AK_FILE)
+	newSmartdataVersion := compareSmartdata >= 0
+	compareFuse, _ := versionutil.Compare(fuseTag, IMAGE_TAG_SUPPORT_AK_FILE)
+	newFuseVersion := compareFuse >= 0
+	if (fuseOnly && newFuseVersion) || (newSmartdataVersion && newFuseVersion) {
+		return true
+	}
+	return false
 }

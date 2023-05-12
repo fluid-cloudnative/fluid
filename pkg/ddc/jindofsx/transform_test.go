@@ -911,3 +911,78 @@ func TestJindoFSxEngine_transformEnvVariables(t *testing.T) {
 		})
 	}
 }
+
+func TestCheckVersionSupportAkFile(t *testing.T) {
+	var tests = []struct {
+		runtime      *datav1alpha1.JindoRuntime
+		dataset      *datav1alpha1.Dataset
+		smartdataTag string
+		fuseTag      string
+		expect       bool
+	}{
+		{&datav1alpha1.JindoRuntime{
+			Spec: datav1alpha1.JindoRuntimeSpec{},
+		}, &datav1alpha1.Dataset{
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{{
+					MountPoint: "local:///mnt/test",
+					Name:       "test",
+					Path:       "/",
+				}},
+			}}, "4.5.2", "4.5.2", false},
+		{&datav1alpha1.JindoRuntime{
+			Spec: datav1alpha1.JindoRuntimeSpec{},
+		}, &datav1alpha1.Dataset{
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{{
+					MountPoint: "local:///mnt/test",
+					Name:       "test",
+					Path:       "/",
+				}},
+			}}, "4.5.2", "4.6.7", false},
+		{&datav1alpha1.JindoRuntime{
+			Spec: datav1alpha1.JindoRuntimeSpec{},
+		}, &datav1alpha1.Dataset{
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{{
+					MountPoint: "local:///mnt/test",
+					Name:       "test",
+					Path:       "/",
+				}},
+			}}, "4.6.7", "4.6.7", true},
+		{&datav1alpha1.JindoRuntime{
+			Spec: datav1alpha1.JindoRuntimeSpec{},
+		}, &datav1alpha1.Dataset{
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{{
+					MountPoint: "local:///mnt/test",
+					Name:       "test",
+					Path:       "/",
+				}},
+			}}, "5.0.0", "5.0.0", true},
+		{&datav1alpha1.JindoRuntime{
+			Spec: datav1alpha1.JindoRuntimeSpec{
+				Master: datav1alpha1.JindoCompTemplateSpec{
+					Disabled: true,
+				},
+				Worker: datav1alpha1.JindoCompTemplateSpec{
+					Disabled: true,
+				},
+			},
+		}, &datav1alpha1.Dataset{
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{{
+					MountPoint: "local:///mnt/test",
+					Name:       "test",
+					Path:       "/",
+				}},
+			}}, "4.5.2", "4.6.7", true},
+	}
+	for _, test := range tests {
+		engine := &JindoFSxEngine{Log: fake.NullLogger()}
+		result := engine.checkVersionSupportAkFile(test.runtime, test.smartdataTag, test.fuseTag)
+		if result != test.expect {
+			t.Errorf("expected value %v, but got %v", test.expect, result)
+		}
+	}
+}
