@@ -114,9 +114,8 @@ spec:
               mountPropagation: Bidirectional
             - name: efc-worker-endpoints
               mountPath: /etc/efc
-            {{- if .Values.fuse.tieredstore }}
-{{- include "efc.tieredstoreVolumeMounts" .Values.fuse }}
-            {{- end }}
+            - name: efc-shm
+              mountPath: /dev/shm
             - name: efc-sock
               mountPath: /var/run/efc
       {{- with .Values.fuse.imagePullSecrets }}
@@ -131,9 +130,9 @@ spec:
         - name: efc-worker-endpoints
           configMap:
             name: {{ template "efc.fullname" . }}-worker-endpoints
-        {{- if .Values.fuse.tieredstore }}
-{{- include "efc.tieredstoreVolumes" .Values.fuse }}
-        {{- end }}
+        - name: efc-shm
+          emptyDir:
+            medium: Memory
         - name: efc-sock
           hostPath:
             path: /runtime-mnt/efc-sock
