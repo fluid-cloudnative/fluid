@@ -912,7 +912,7 @@ func TestJindoFSxEngine_transformEnvVariables(t *testing.T) {
 	}
 }
 
-func TestCheckVersionSupportAkFile(t *testing.T) {
+func TestCheckIfSupportSecretMount(t *testing.T) {
 	var tests = []struct {
 		runtime      *datav1alpha1.JindoRuntime
 		dataset      *datav1alpha1.Dataset
@@ -980,7 +980,7 @@ func TestCheckVersionSupportAkFile(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &JindoFSxEngine{Log: fake.NullLogger()}
-		result := engine.checkVersionSupportAkFile(test.runtime, test.smartdataTag, test.fuseTag)
+		result := engine.checkIfSupportSecretMount(test.runtime, test.smartdataTag, test.fuseTag)
 		if result != test.expect {
 			t.Errorf("expected value %v, but got %v", test.expect, result)
 		}

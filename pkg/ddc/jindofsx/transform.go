@@ -106,7 +106,7 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	smartdataConfig := e.getSmartDataConfigs(runtime)
 	smartdataTag := smartdataConfig.imageTag
 	jindoFuseImage, fuseTag, fuseImagePullPolicy := e.parseFuseImage(runtime)
-	newVersionSupport := e.checkVersionSupportAkFile(runtime, smartdataTag, fuseTag)
+	secretMountSupport := e.checkIfSupportSecretMount(runtime, smartdataTag, fuseTag)
 
 	var mediumType = common.Memory
 	var volumeType = common.VolumeTypeHostPath
@@ -162,7 +162,7 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	e.transformNetworkMode(runtime, value)
 	e.transformFuseNodeSelector(runtime, value)
 	e.transformSecret(runtime, value)
-	err = e.transformMaster(runtime, metaPath, value, dataset, newVersionSupport)
+	err = e.transformMaster(runtime, metaPath, value, dataset, secretMountSupport)
 	if err != nil {
 		return
 	}
@@ -190,7 +190,7 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	return value, err
 }
 
-func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPath string, value *Jindo, dataset *datav1alpha1.Dataset, newVersionSupport bool) (err error) {
+func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPath string, value *Jindo, dataset *datav1alpha1.Dataset, secretMountSupport bool) (err error) {
 	properties := map[string]string{
 		"namespace.cluster.id":                      "local",
 		"namespace.oss.copy.size":                   "1073741824",
@@ -352,7 +352,7 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 		for _, encryptOption := range mount.EncryptOptions {
 			key := encryptOption.Name
 			secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
-			if newVersionSupport {
+			if secretMountSupport {
 				value.Secret = secretKeyRef.Name
 				if key == "fs."+mountType+".accessKeyId" {
 					value.SecretKey = key
@@ -1135,7 +1135,7 @@ func (e *JindoFSxEngine) getMediumTypeFromVolumeSource(defaultMediumType string,
 	return mediumType
 }
 
-func (e *JindoFSxEngine) checkVersionSupportAkFile(runtime *datav1alpha1.JindoRuntime, smartdataTag string, fuseTag string) bool {
+func (e *JindoFSxEngine) checkIfSupportSecretMount(runtime *datav1alpha1.JindoRuntime, smartdataTag string, fuseTag string) bool {
 	fuseOnly := runtime.Spec.Master.Disabled && runtime.Spec.Worker.Disabled
 	compareSmartdata, _ := versionutil.Compare(smartdataTag, IMAGE_TAG_SUPPORT_AK_FILE)
 	newSmartdataVersion := compareSmartdata >= 0
