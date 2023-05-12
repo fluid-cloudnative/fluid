@@ -58,9 +58,9 @@ runtime:
     engine: jindofsx
     queryUfsTotal: true
     smartdata:
-      image: registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:4.5.2
+      image: registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:4.6.7
     fuse:
-      image: registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:4.5.2
+      image: registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:4.6.7
     controller:
       image: fluidcloudnative/jindoruntime-controller:v0.9.0-c2bee26
     init:

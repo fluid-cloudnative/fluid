@@ -82,5 +82,7 @@ Add pvc storage type support
 Add `sidecar.istio.io/inject` to components annotation
 
 0.8.19
-
 Add env variables to components
+
+0.8.20
+Add support ak with secret file

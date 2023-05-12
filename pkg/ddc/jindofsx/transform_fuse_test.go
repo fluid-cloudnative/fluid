@@ -66,7 +66,7 @@ func TestTransformFuseWithSecret(t *testing.T) {
 					MountPoint: "local:///mnt/test",
 					Name:       "test",
 				}},
-			}}, &Jindo{}, "JSON"},
+			}}, &Jindo{MountType: "oss", Secret: "test"}, "JSON"},
 	}
 	for _, test := range tests {
 		engine := &JindoFSxEngine{Log: fake.NullLogger()}
@@ -188,7 +188,7 @@ func TestParseFuseImage(t *testing.T) {
 					}},
 				}},
 			jindoValue:            &Jindo{},
-			expect:                "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:4.5.2",
+			expect:                "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:4.6.7",
 			expectImagePullPolicy: "Always",
 		},
 		{

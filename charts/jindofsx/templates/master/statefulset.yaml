@@ -161,9 +161,19 @@ spec:
               subPath: hdfs-site.xml
           {{- end }}
           {{- end }}
-          {{- if .Values.secret }}
+          {{- if and .Values.secret .Values.UseStsToken }}
             - name: jindofs-secret-token
               mountPath: /token
+              readOnly: true
+          {{- end }}
+          {{- if .Values.secret }}
+            - name: jindofs-secret-token
+              mountPath: /token/AccessKeyId
+              subPath: {{ .Values.secretKey }}
+              readOnly: true
+            - name: jindofs-secret-token
+              mountPath: /token/AccessKeySecret
+              subPath: {{ .Values.secretValue }}
               readOnly: true
           {{- end }}
           {{- if .Values.ufsVolumes }}
