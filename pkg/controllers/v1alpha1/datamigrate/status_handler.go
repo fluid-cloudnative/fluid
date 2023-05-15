@@ -166,8 +166,8 @@ func (c *CronStatusHandler) UpdateStatusByHelmStatus(ctx cruntime.ReconcileReque
 	}
 
 	ctx.Log.V(1).Info("DataMigrate job still running", "namespace", ctx.Namespace, "cronjobName", cronjobName)
-	if opStatus.Phase == common.PhaseComplete {
-		// if datamigrate was complete, but now job is running, set datamigrate pending first
+	if opStatus.Phase == common.PhaseComplete || opStatus.Phase == common.PhaseFailed {
+		// if datamigrate was complete or failed, but now job is running, set datamigrate pending first
 		// dataset will be locked only when datamigrate pending
 		opStatus.Phase = common.PhasePending
 		opStatus.Duration = "-"

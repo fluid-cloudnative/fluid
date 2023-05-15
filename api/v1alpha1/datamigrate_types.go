@@ -48,6 +48,8 @@ type DataMigrateSpec struct {
 	// +optional
 	Options map[string]string `json:"options,omitempty"`
 
+	//+kubebuilder:default:=Once
+	//+kubebuilder:validation:Enum=Once;Cron;OnEvent
 	// policy for migrate, including None, Once, Cron, OnEvent
 	// +optional
 	Policy Policy `json:"policy,omitempty"`

@@ -17,7 +17,7 @@ datamigrate:
   # Required
   # Default: once
   # Description: policy of data migrate
-  policy:
+  policy: ""
 
   # Optional
   # Description: schedule for cron policy

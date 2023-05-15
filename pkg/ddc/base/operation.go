@@ -167,15 +167,35 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 	opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileComplete")
 
-	// todo when cron, need to check if excuting
-	// 1. check and update data operation's status by helm status
+	// 1. Update the infos field if complete
+	if opStatus.Infos == nil {
+		opStatus.Infos = map[string]string{}
+	}
+	// different data operation may set different key-value
+	err := operation.UpdateStatusInfoForCompleted(object, opStatus.Infos)
+	if err != nil {
+		return utils.RequeueIfError(err)
+	}
+
+	if err = operation.UpdateOperationApiStatus(object, opStatus); err != nil {
+		log.Error(err, fmt.Sprintf("failed to update the %s status", operation.GetOperationType()))
+		return utils.RequeueIfError(err)
+	}
+
+	// 2. release lock on target dataset if complete
+	err = ReleaseTargetDataset(ctx, object, operation)
+	if err != nil {
+		return utils.RequeueIfError(err)
+	}
+
+	// 3. check and update data operation's status by helm status
 	statusHandler := operation.GetStatusHandler(object)
 	if statusHandler == nil {
 		err := fmt.Errorf("fail to get status handler")
 		log.Error(err, "status handler is nil")
 		return utils.RequeueIfError(err)
 	}
-	err := statusHandler.UpdateStatusByHelmStatus(ctx, object, opStatus)
+	err = statusHandler.UpdateStatusByHelmStatus(ctx, object, opStatus)
 	if err != nil {
 		log.Error(err, "failed to update status")
 		return utils.RequeueIfError(err)
@@ -189,27 +209,6 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 		return utils.RequeueImmediately()
 	}
 
-	// 2. Update the infos field if complete
-	if opStatus.Infos == nil {
-		opStatus.Infos = map[string]string{}
-	}
-	// different data operation may set different key-value
-	err = operation.UpdateStatusInfoForCompleted(object, opStatus.Infos)
-	if err != nil {
-		return utils.RequeueIfError(err)
-	}
-
-	if err = operation.UpdateOperationApiStatus(object, opStatus); err != nil {
-		log.Error(err, fmt.Sprintf("failed to update the %s status", operation.GetOperationType()))
-		return utils.RequeueIfError(err)
-	}
-
-	// 3. release lock on target dataset if complete
-	err = ReleaseTargetDataset(ctx, object, operation)
-	if err != nil {
-		return utils.RequeueIfError(err)
-	}
-
 	// 4. record and no requeue
 	log.Info(fmt.Sprintf("%s success, no need to requeue", operation.GetOperationType()))
 	ctx.Recorder.Eventf(object, v1.EventTypeNormal, common.DataOperationSucceed,
@@ -221,15 +220,20 @@ func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, o
 	opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileFailed")
 
-	// todo when cron, need to check if excuting
-	// 1. check and update data operation's status by helm status
+	// 1. release lock on target dataset
+	err := ReleaseTargetDataset(ctx, object, operation)
+	if err != nil {
+		return utils.RequeueIfError(err)
+	}
+
+	// 2. check and update data operation's status by helm status
 	statusHandler := operation.GetStatusHandler(object)
 	if statusHandler == nil {
 		err := fmt.Errorf("fail to get status handler")
 		log.Error(err, "status handler is nil")
 		return utils.RequeueIfError(err)
 	}
-	err := statusHandler.UpdateStatusByHelmStatus(ctx, object, opStatus)
+	err = statusHandler.UpdateStatusByHelmStatus(ctx, object, opStatus)
 	if err != nil {
 		log.Error(err, "failed to update status")
 		return utils.RequeueIfError(err)
@@ -241,12 +245,6 @@ func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, o
 		}
 		// return immediately if not complete
 		return utils.RequeueImmediately()
-	}
-
-	// 1. release lock on target dataset
-	err = ReleaseTargetDataset(ctx, object, operation)
-	if err != nil {
-		return utils.RequeueIfError(err)
 	}
 
 	// 2. record and no requeue
