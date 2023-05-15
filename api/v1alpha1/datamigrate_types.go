@@ -81,10 +81,7 @@ type DataMigrateSpec struct {
 type Policy string
 
 const (
-	// None default policy is Once
-	None Policy = "None"
-
-	// Once run data migrate once
+	// Once run data migrate once, default policy is Once
 	Once Policy = "Once"
 
 	// Cron run data migrate by cron

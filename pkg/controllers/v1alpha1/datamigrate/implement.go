@@ -103,7 +103,6 @@ func (r *DataMigrateReconciler) GetStatusHandler(obj client.Object) dataoperatio
 	policy := dataMigrate.Spec.Policy
 
 	switch policy {
-	case datav1alpha1.None:
 	case datav1alpha1.Once:
 		return &OnceStatusHandler{Client: r.Client, Log: r.Log}
 	case datav1alpha1.Cron:
@@ -113,5 +112,4 @@ func (r *DataMigrateReconciler) GetStatusHandler(obj client.Object) dataoperatio
 	default:
 		return nil
 	}
-	return nil
 }

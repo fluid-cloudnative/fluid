@@ -968,7 +968,7 @@ spec:
                 type: object
               policy:
                 default: Once
-                description: policy for migrate, including None, Once, Cron, OnEvent
+                description: policy for migrate, including Once, Cron, OnEvent
                 enum:
                 - Once
                 - Cron
