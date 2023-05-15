@@ -1,4 +1,4 @@
-{{- if eq .Values.datamigrate.policy "cron" }}
+{{- if eq (lower .Values.datamigrate.policy) "cron" }}
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -9,8 +9,17 @@ metadata:
     app: juicefs
     targetDataset: {{ required "targetDataset should be set" .Values.datamigrate.targetDataset }}
     datamigrate: {{ .Values.name }}
+  ownerReferences:
+  {{- if .Values.owner.enabled }}
+    - apiVersion: {{ .Values.owner.apiVersion }}
+      blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+      controller: {{ .Values.owner.controller }}
+      kind: {{ .Values.owner.kind }}
+      name: {{ .Values.owner.name }}
+      uid: {{ .Values.owner.uid }}
+  {{- end }}
 spec:
-  schedule: {{ .Values.datamigrate.schedule }}
+  schedule: "{{ .Values.datamigrate.schedule }}"
   jobTemplate:
     spec:
       backoffLimit: {{ .Values.datamigrate.backoffLimit | default "3" }}
@@ -30,6 +39,7 @@ spec:
             release: {{ .Release.Name }}
             role: datamigrate-pod
             app: juicefs
+            cronjob: {{ printf "%s-migrate" .Release.Name }}
             targetDataset: {{ required "targetDataset should be set" .Values.datamigrate.targetDataset }}
           {{- if .Values.datamigrate.labels }}
           {{- range $key, $val := .Values.datamigrate.labels }}

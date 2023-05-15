@@ -20,11 +20,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
 type DataMigrateValue struct {
-	Name            string          `json:"name"`
-	DataMigrateInfo DataMigrateInfo `json:"datamigrate"`
+	Name            string                 `json:"name"`
+	Owner           *common.OwnerReference `json:"owner,omitempty"`
+	DataMigrateInfo DataMigrateInfo        `json:"datamigrate"`
 }
 
 type DataMigrateInfo struct {

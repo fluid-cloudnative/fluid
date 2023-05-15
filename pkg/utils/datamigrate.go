@@ -73,7 +73,7 @@ func GetDataMigrateCronjob(client client.Client, name, namespace string) (*batch
 
 // ListDataMigrateJobByCronjob gets the DataMigrate job by cronjob given its name and namespace
 func ListDataMigrateJobByCronjob(c client.Client, cronjob *batchv1.CronJob) ([]batchv1.Job, error) {
-	jobLabelSelector, err := labels.Parse(fmt.Sprintf("controller-uid=%s", cronjob.UID))
+	jobLabelSelector, err := labels.Parse(fmt.Sprintf("cronjob=%s", cronjob.Name))
 	if err != nil {
 		return nil, err
 	}

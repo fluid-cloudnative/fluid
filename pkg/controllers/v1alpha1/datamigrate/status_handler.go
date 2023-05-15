@@ -17,8 +17,6 @@
 package datamigrate
 
 import (
-	"fmt"
-
 	"github.com/go-logr/logr"
 	batchv1 "k8s.io/api/batch/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -138,9 +136,8 @@ func (c *CronStatusHandler) UpdateStatusByHelmStatus(ctx cruntime.ReconcileReque
 		}
 	}
 	if currentJob == nil {
-		err = fmt.Errorf("can't get newest job by cronjob")
-		ctx.Log.Error(err, "namespace", ctx.Namespace, "cronjobName", cronjobName)
-		return err
+		ctx.Log.Info("can't get newest job by cronjob, skip", "namespace", ctx.Namespace, "cronjobName", cronjobName)
+		return nil
 	}
 
 	if len(currentJob.Status.Conditions) != 0 {

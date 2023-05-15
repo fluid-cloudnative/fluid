@@ -75,20 +75,8 @@ func (r *DataMigrateReconciler) Reconcile(context context.Context, req ctrl.Requ
 		},
 		DataOpFinalizerName: cdatamigrate.DataMigrateFinalizer,
 	}
-	migrateName := req.Name
-
-	// 1. check of object inqueue is cronjob
-	cronjob, err := utils.GetDataMigrateCronjob(r.Client, req.Name, req.Namespace)
-	if err != nil && utils.IgnoreNotFound(err) != nil {
-		ctx.Log.Info("failed to get cronjob")
-		return utils.RequeueIfError(errors.Wrap(err, "failed to get cronjob info"))
-	}
-	if cronjob != nil && cronjob.Labels[common.LabelDataMigrate] != "" {
-		migrateName = cronjob.Labels[common.LabelDataMigrate]
-	}
-
-	// 2. Get DataMigrate object
-	targetDataMigrate, err := utils.GetDataMigrate(r.Client, migrateName, req.Namespace)
+	// 1. Get DataMigrate object
+	targetDataMigrate, err := utils.GetDataMigrate(r.Client, req.Name, req.Namespace)
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
 			ctx.Log.Info("DataMigrate not found")
@@ -108,7 +96,8 @@ func (r *DataMigrateReconciler) Reconcile(context context.Context, req ctrl.Requ
 func (r *DataMigrateReconciler) SetupWithManager(mgr ctrl.Manager, options controller.Options) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		WithOptions(options).
-		For(&datav1alpha1.DataMigrate{}).For(&batchv1.CronJob{}).
+		For(&datav1alpha1.DataMigrate{}).
+		Owns(&batchv1.CronJob{}).
 		Complete(r)
 }
 

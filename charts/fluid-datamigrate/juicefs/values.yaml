@@ -4,6 +4,15 @@
 
 name:
 
+owner:
+  enabled: false
+  name: ""
+  kind: ""
+  uid: ""
+  apiVersion: ""
+  blockOwnerDeletion: false
+  controller: false
+
 datamigrate:
   # Required
   # Default: once

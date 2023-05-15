@@ -36,6 +36,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
 )
 
 func (j *JuiceFSEngine) CreateDataMigrateJob(ctx cruntime.ReconcileRequestContext, targetDataMigrate datav1alpha1.DataMigrate) (err error) {
@@ -172,6 +173,7 @@ func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequest
 		Name:            dataMigrate.Name,
 		DataMigrateInfo: dataMigrateInfo,
 	}
+	dataMigrateValue.Owner = transfromer.GenerateOwnerReferenceFromObject(dataMigrate)
 
 	// 6. create the value file
 	data, err := yaml.Marshal(dataMigrateValue)
