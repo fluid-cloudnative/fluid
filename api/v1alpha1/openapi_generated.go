@@ -1347,7 +1347,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateSpec(ref common.Refe
 					},
 					"policy": {
 						SchemaProps: spec.SchemaProps{
-							Description: "policy for migrate, including None, Once, Cron, OnEvent",
+							Description: "policy for migrate, including Once, Cron, OnEvent",
 							Type:        []string{"string"},
 							Format:      "",
 						},
