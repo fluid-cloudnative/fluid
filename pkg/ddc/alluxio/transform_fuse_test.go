@@ -42,7 +42,7 @@ func TestTransformFuseWithNoArgs(t *testing.T) {
 					MountPoint: "local:///mnt/test",
 					Name:       "test",
 				}},
-			}}, &Alluxio{}, []string{"fuse", "--fuse-opts=kernel_cache,rw,max_read=131072,allow_other"}, true},
+			}}, &Alluxio{}, []string{"fuse", "--fuse-opts=kernel_cache,rw,allow_other"}, true},
 		{&datav1alpha1.AlluxioRuntime{
 			Spec: datav1alpha1.AlluxioRuntimeSpec{
 				Fuse: datav1alpha1.AlluxioFuseSpec{
@@ -59,7 +59,7 @@ func TestTransformFuseWithNoArgs(t *testing.T) {
 					MountPoint: "local:///mnt/test",
 					Name:       "test",
 				}},
-			}}, &Alluxio{}, []string{"fuse", "--fuse-opts=kernel_cache,rw,max_read=131072,allow_other", "/alluxio/default/test/alluxio-fuse", "/"}, false},
+			}}, &Alluxio{}, []string{"fuse", "--fuse-opts=kernel_cache,rw,allow_other", "/alluxio/default/test/alluxio-fuse", "/"}, false},
 	}
 	for _, test := range tests {
 		engine := &AlluxioEngine{

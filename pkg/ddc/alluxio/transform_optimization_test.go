@@ -290,7 +290,7 @@ func TestOptimizeDefaultForFuseNoValue(t *testing.T) {
 			"-XX:+UseG1GC",
 			"-XX:MaxDirectMemorySize=32g",
 			"-XX:+UnlockExperimentalVMOptions"},
-			[]string{"fuse", "--fuse-opts=kernel_cache,rw,max_read=131072", "/mnt/runtime", "/"},
+			[]string{"fuse", "--fuse-opts=kernel_cache,rw", "/mnt/runtime", "/"},
 			false},
 		{&datav1alpha1.AlluxioRuntime{
 			Spec: datav1alpha1.AlluxioRuntimeSpec{},
@@ -304,7 +304,7 @@ func TestOptimizeDefaultForFuseNoValue(t *testing.T) {
 			"-XX:+UseG1GC",
 			"-XX:MaxDirectMemorySize=32g",
 			"-XX:+UnlockExperimentalVMOptions"},
-			[]string{"fuse", "--fuse-opts=kernel_cache,rw,max_read=131072"},
+			[]string{"fuse", "--fuse-opts=kernel_cache,rw"},
 			true},
 	}
 	for _, test := range tests {
