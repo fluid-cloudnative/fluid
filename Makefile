@@ -82,7 +82,8 @@ DOCKER_PUSH += docker-push-goosefsruntime-controller
 DOCKER_PUSH += docker-push-juicefsruntime-controller
 DOCKER_PUSH += docker-push-thinruntime-controller
 DOCKER_PUSH += docker-push-efcruntime-controller
-DOCKER_PUSH += docker-push-init-users
+# Not need to push init-users image by default
+# DOCKER_PUSH += docker-push-init-users
 DOCKER_PUSH += docker-push-crd-upgrader
 
 # Buildx and push docker images
@@ -227,7 +228,7 @@ docker-build-loader:
 	docker build --no-cache charts/fluid-dataloader/docker/loader -t ${LOADER_IMG}
 
 docker-build-init-users:
-	docker build --no-cache charts/alluxio/docker/init-users -t ${INIT_USERS_IMG}:${GIT_VERSION}
+	docker build --no-cache charts/alluxio/docker/init-users -t ${INIT_USERS_IMG}:${VERSION}
 
 docker-build-webhook:
 	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.webhook -t ${WEBHOOK_IMG}:${GIT_VERSION}
@@ -267,7 +268,7 @@ docker-push-loader: docker-build-loader
 	docker push ${LOADER_IMG}
 
 docker-push-init-users: docker-build-init-users
-	docker push ${INIT_USERS_IMG}:${GIT_VERSION}
+	docker push ${INIT_USERS_IMG}:${VERSION}
 
 docker-push-webhook: docker-build-webhook
 	docker push ${WEBHOOK_IMG}:${GIT_VERSION}
@@ -304,7 +305,7 @@ docker-buildx-push-csi: generate fmt vet
 	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.csi -t ${CSI_IMG}:${GIT_VERSION}
 
 docker-buildx-push-init-users:
-	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache charts/alluxio/docker/init-users -t ${INIT_USERS_IMG}:${GIT_VERSION}
+	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache charts/alluxio/docker/init-users -t ${INIT_USERS_IMG}:${VERSION}
 
 docker-buildx-push-webhook:
 	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.webhook -t ${WEBHOOK_IMG}:${GIT_VERSION}
