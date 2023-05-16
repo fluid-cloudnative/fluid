@@ -37,6 +37,7 @@ func (e *AlluxioEngine) optimizeDefaultProperties(runtime *datav1alpha1.AlluxioR
 	}
 
 	setDefaultProperties(runtime, value, "alluxio.fuse.jnifuse.enabled", "true")
+	setDefaultProperties(runtime, value, "alluxio.fuse.jnifuse.libfuse.version", "3")
 	setDefaultProperties(runtime, value, "alluxio.master.metastore", "ROCKS")
 	setDefaultProperties(runtime, value, "alluxio.web.ui.enabled", "false")
 	setDefaultProperties(runtime, value, "alluxio.user.update.file.accesstime.disabled", "true")
@@ -243,10 +244,17 @@ func (e *AlluxioEngine) optimizeDefaultFuse(runtime *datav1alpha1.AlluxioRuntime
 	if len(runtime.Spec.Fuse.Args) > 0 {
 		value.Fuse.Args = runtime.Spec.Fuse.Args
 	} else {
+		readOnlyFuseOpts := "--fuse-opts=kernel_cache,ro,attr_timeout=7200,entry_timeout=7200"
+		readWriteFuseOpts := "--fuse-opts=kernel_cache,rw"
+		libfuseVersion, found := runtime.Spec.Properties["alluxio.fuse.jnifuse.libfuse.version"]
+		if found && libfuseVersion == "2" {
+			readOnlyFuseOpts = "--fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty"
+			readWriteFuseOpts = "--fuse-opts=kernel_cache,rw,max_read=131072"
+		}
 		if readOnly {
-			value.Fuse.Args = []string{"fuse", "--fuse-opts=kernel_cache,ro,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty"}
+			value.Fuse.Args = []string{"fuse", readOnlyFuseOpts}
 		} else {
-			value.Fuse.Args = []string{"fuse", "--fuse-opts=kernel_cache,rw,max_read=131072"}
+			value.Fuse.Args = []string{"fuse", readWriteFuseOpts}
 		}
 	}
 
