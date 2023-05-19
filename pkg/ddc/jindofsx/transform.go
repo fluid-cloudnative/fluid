@@ -829,6 +829,7 @@ func (e *JindoFSxEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime, da
 			fuseArgs = append(fuseArgs, "-oentry_timeout=0")
 			fuseArgs = append(fuseArgs, "-onegative_timeout=0")
 		}
+		fuseArgs = append(fuseArgs, "-ometrics_port=0")
 	}
 	if runtime.Spec.Master.Disabled && runtime.Spec.Worker.Disabled {
 		fuseArgs = append(fuseArgs, "-ouri="+dataset.Spec.Mounts[0].MountPoint)
