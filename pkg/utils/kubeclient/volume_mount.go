@@ -102,16 +102,6 @@ func GetFuseMountInContainer(mountType string, container corev1.Container) (volu
 	for _, vm := range container.VolumeMounts {
 		if vm.Name == volumeMountName {
 			volumeMount = vm
-			// If it's JindoRuntime, should consider the env FLUID_FUSE_MOUNTPOINT
-			// if vm.Name == common.JindoFuseMountVolumeName {
-			if len(container.Env) > 0 {
-				for _, env := range container.Env {
-					if env.Name == common.FuseMountEnv {
-						volumeMount.MountPath = env.Value
-					}
-				}
-			}
-			// }
 			return
 		}
 	}
