@@ -122,7 +122,7 @@ type DatasetSpec struct {
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:UniqueItems=false
 	// +required
-	Mounts []Mount `json:"mounts,omitempty"`
+	Mounts []Mount `json:"mounts"`
 
 	// The owner of the dataset
 	// +optional
