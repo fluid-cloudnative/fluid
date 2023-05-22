@@ -118,66 +118,14 @@ test: generate fmt vet
 unit-test: generate fmt vet
 	GO111MODULE=${GO_MODULE} go list ./... | grep -v controller | grep -v e2etest | xargs go test ${CI_TEST_FLAGS} ${LOCAL_FLAGS}
 
-# Build binary
+# Make code, artifacts, dependencies, and CRDs fresh.
+pre-setup: generate fmt vet update-crd gen-openapi
 
-build: ${BINARY_BUILD}
+# Generate code
+generate: controller-gen
+	GO111MODULE=${GO_MODULE} $(CONTROLLER_GEN) object:headerFile=./hack/boilerplate.go.txt paths="./..."
 
-csi-build: generate fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/fluid-csi -ldflags '${LDFLAGS}' cmd/csi/main.go
-
-dataset-controller-build: generate gen-openapi fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/dataset-controller -ldflags '${LDFLAGS}' cmd/dataset/main.go
-
-alluxioruntime-controller-build: generate gen-openapi fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/alluxioruntime-controller -ldflags '${LDFLAGS}' cmd/alluxio/main.go
-
-jindoruntime-controller-build: generate gen-openapi fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/jindoruntime-controller -ldflags '${LDFLAGS}' cmd/jindo/main.go
-
-goosefsruntime-controller-build: generate gen-openapi fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/goosefsruntime-controller -ldflags '${LDFLAGS}' cmd/goosefs/main.go
-
-juicefsruntime-controller-build: generate gen-openapi fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/juicefsruntime-controller -ldflags '-s -w ${LDFLAGS}' cmd/juicefs/main.go
-
-thinruntime-controller-build: generate gen-openapi fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/thinruntime-controller -ldflags '-s -w ${LDFLAGS}' cmd/thin/main.go
-
-efcruntime-controller-build: generate gen-openapi fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/efcruntime-controller -ldflags '${LDFLAGS}' cmd/efc/main.go
-
-webhook-build: generate fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/fluid-webhook -ldflags '${LDFLAGS}' cmd/webhook/main.go
-
-application-controller-build: generate fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/fluidapp-controller -ldflags '${LDFLAGS}' cmd/fluidapp/main.go
-
-# Debug against the configured Kubernetes cluster in ~/.kube/config, add debug
-debug: generate fmt vet manifests
-	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  dlv debug --headless --listen ":12345" --log --api-version=2 cmd/controller/main.go
-
-# Debug against the configured Kubernetes cluster in ~/.kube/config, add debug
-debug-csi: generate fmt vet manifests
-	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  dlv debug --headless --listen ":12346" --log --api-version=2 cmd/csi/main.go -- --nodeid=cn-hongkong.172.31.136.194 --endpoint=unix://var/lib/kubelet/csi-plugins/fuse.csi.fluid.io/csi.sock
-
-# Run against the configured Kubernetes cluster in ~/.kube/config
-run: generate fmt vet manifests
-	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go run cmd/controller/main.go
-
-# Install CRDs into a cluster
-install: manifests
-	kustomize build config/crd | kubectl apply -f -
-
-# Deploy controller in the configured Kubernetes cluster in ~/.kube/config
-deploy: manifests
-	cd config/manager && kustomize edit set image controller=${IMG}
-	kustomize build config/default | kubectl apply -f -
-
-# Generate manifests e.g. CRD, RBAC etc.
-manifests: controller-gen
-	GO111MODULE=${GO_MODULE} $(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
-
-# Run go fmt against codecsi-node-driver-registrar
+# Run go fmt against code
 fmt:
 	GO111MODULE=${GO_MODULE} go fmt ./...
 
@@ -185,47 +133,83 @@ fmt:
 vet:
 	GO111MODULE=${GO_MODULE} go list ./... | grep -v "vendor" | xargs go vet
 
-# Generate code
-generate: controller-gen
-	GO111MODULE=${GO_MODULE} $(CONTROLLER_GEN) object:headerFile=./hack/boilerplate.go.txt paths="./..."
-
-# Update fluid helm chart
+# Update fluid crds
 update-crd: manifests
 	cp config/crd/bases/* charts/fluid/fluid/crds
+
+gen-openapi:
+	./hack/gen-openapi.sh
+
+# Generate manifests e.g. CRD, RBAC etc.
+manifests: controller-gen
+	GO111MODULE=${GO_MODULE} $(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+
+gen-sdk:
+	./hack/sdk/gen-sdk.sh
 
 update-api-doc:
 	bash tools/api-doc-gen/generate_api_doc.sh && mv tools/api-doc-gen/api_doc.md docs/zh/dev/api_doc.md && cp docs/zh/dev/api_doc.md docs/en/dev/api_doc.md
 
+# Build binary
+build: pre-setup ${BINARY_BUILD}
+
+csi-build:
+	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/fluid-csi -ldflags '${LDFLAGS}' cmd/csi/main.go
+
+dataset-controller-build:
+	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/dataset-controller -ldflags '${LDFLAGS}' cmd/dataset/main.go
+
+alluxioruntime-controller-build:
+	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/alluxioruntime-controller -ldflags '${LDFLAGS}' cmd/alluxio/main.go
+
+jindoruntime-controller-build:
+	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/jindoruntime-controller -ldflags '${LDFLAGS}' cmd/jindo/main.go
+
+goosefsruntime-controller-build:
+	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/goosefsruntime-controller -ldflags '${LDFLAGS}' cmd/goosefs/main.go
+
+juicefsruntime-controller-build:
+	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/juicefsruntime-controller -ldflags '-s -w ${LDFLAGS}' cmd/juicefs/main.go
+
+thinruntime-controller-build:
+	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/thinruntime-controller -ldflags '-s -w ${LDFLAGS}' cmd/thin/main.go
+
+efcruntime-controller-build:
+	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/efcruntime-controller -ldflags '${LDFLAGS}' cmd/efc/main.go
+
+webhook-build:
+	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/fluid-webhook -ldflags '${LDFLAGS}' cmd/webhook/main.go
+
+application-controller-build:
+	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/fluidapp-controller -ldflags '${LDFLAGS}' cmd/fluidapp/main.go
+
 # Build the docker image
-docker-build-dataset-controller: generate gen-openapi fmt vet
+docker-build-dataset-controller:
 	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.dataset -t ${DATASET_CONTROLLER_IMG}:${GIT_VERSION}
 
-docker-build-application-controller: generate fmt vet
+docker-build-application-controller:
 	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.application -t ${APPLICATION_CONTROLLER_IMG}:${GIT_VERSION}
 
-docker-build-alluxioruntime-controller: generate gen-openapi fmt vet
+docker-build-alluxioruntime-controller:
 	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.alluxioruntime -t ${ALLUXIORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
-docker-build-jindoruntime-controller: generate gen-openapi fmt vet
+docker-build-jindoruntime-controller:
 	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.jindoruntime -t ${JINDORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
-docker-build-goosefsruntime-controller: generate gen-openapi fmt vet
+docker-build-goosefsruntime-controller:
 	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.goosefsruntime -t ${GOOSEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
-docker-build-juicefsruntime-controller: generate gen-openapi fmt vet juicefsruntime-controller-build
+docker-build-juicefsruntime-controller:
 	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.juicefsruntime -t ${JUICEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
-docker-build-thinruntime-controller: generate gen-openapi fmt vet thinruntime-controller-build
+docker-build-thinruntime-controller:
 	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.thinruntime -t ${THINRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
-docker-build-efcruntime-controller: generate gen-openapi fmt vet
+docker-build-efcruntime-controller:
 	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.efcruntime -t ${EFCRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
-docker-build-csi: generate fmt vet
+docker-build-csi:
 	docker build --no-cache . -f docker/Dockerfile.csi -t ${CSI_IMG}:${GIT_VERSION}
-
-docker-build-loader:
-	docker build --no-cache charts/fluid-dataloader/docker/loader -t ${LOADER_IMG}
 
 docker-build-init-users:
 	docker build --no-cache charts/alluxio/docker/init-users -t ${INIT_USERS_IMG}:${VERSION}
@@ -277,28 +261,28 @@ docker-push-crd-upgrader: docker-build-crd-upgrader
 	docker push ${CRD_UPGRADER_IMG}:${GIT_VERSION}
 
 # Buildx and push the docker image
-docker-buildx-push-dataset-controller: generate gen-openapi fmt vet
+docker-buildx-push-dataset-controller:
 	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.dataset -t ${DATASET_CONTROLLER_IMG}:${GIT_VERSION}
 
-docker-buildx-push-application-controller: generate fmt vet
+docker-buildx-push-application-controller:
 	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.application -t ${APPLICATION_CONTROLLER_IMG}:${GIT_VERSION}
 
-docker-buildx-push-alluxioruntime-controller: generate gen-openapi fmt vet
+docker-buildx-push-alluxioruntime-controller:
 	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.alluxioruntime -t ${ALLUXIORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
-docker-buildx-push-jindoruntime-controller: generate gen-openapi fmt vet
+docker-buildx-push-jindoruntime-controller:
 	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.jindoruntime -t ${JINDORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
-docker-buildx-push-goosefsruntime-controller: generate gen-openapi fmt vet
+docker-buildx-push-goosefsruntime-controller:
 	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.goosefsruntime -t ${GOOSEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
-docker-buildx-push-juicefsruntime-controller: generate gen-openapi fmt vet juicefsruntime-controller-build
+docker-buildx-push-juicefsruntime-controller:
 	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.juicefsruntime -t ${JUICEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
-docker-buildx-push-thinruntime-controller: generate gen-openapi fmt vet thinruntime-controller-build
+docker-buildx-push-thinruntime-controller:
 	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.thinruntime -t ${THINRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
-docker-buildx-push-efcruntime-controller: generate gen-openapi fmt vet
+docker-buildx-push-efcruntime-controller:
 	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.efcruntime -t ${EFCRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-buildx-push-csi: generate fmt vet
@@ -313,15 +297,10 @@ docker-buildx-push-webhook:
 docker-buildx-push-crd-upgrader:
 	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.crds -t ${CRD_UPGRADER_IMG}:${GIT_VERSION}
 
-docker-build-all: ${DOCKER_BUILD}
-docker-push-all: ${DOCKER_PUSH}
-docker-buildx-all-push: ${DOCKER_BUILDX_PUSH}
+docker-build-all: pre-setup ${DOCKER_BUILD}
+docker-push-all: pre-setup ${DOCKER_PUSH}
+docker-buildx-all-push: pre-setup ${DOCKER_BUILDX_PUSH}
 
-gen-sdk:
-	./hack/sdk/gen-sdk.sh
-
-gen-openapi:
-	./hack/gen-openapi.sh
 
 # find or download controller-gen
 # download controller-gen if necessary
