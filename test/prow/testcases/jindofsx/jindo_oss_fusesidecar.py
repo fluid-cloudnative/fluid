@@ -1,14 +1,15 @@
 """
-TestCase: Access OSS data after cache warmup
+TestCase: Privileged serverless pod access data via serverful cache runtime
 DDC Engine: Jindofsx
 Steps:
 1. create Dataset & Runtime
 2. check if dataset is bound
-3. check if persistentVolumeClaim & PV is created
+3. check if PVC & PV is created
 4. submit DataLoad CR
 5. wait until DataLoad completes
-6. check if dataset cached usage equals to ufs total file size (i.e. Fully cached)
-7. clean up
+6. submit data read job running with privileged Fuse sidecar
+7. wait until data read job completes
+8. clean up
 """
 
 import os
@@ -34,7 +35,7 @@ def main():
     name = "demo-dataset"
     namespace = "default"
 
-    dataload_name ="demo-dataset-warmup"
+    dataload_name = "demo-dataset-warmup"
 
     dataset = fluidapi.assemble_dataset("jindo-oss").set_namespaced_name(namespace, name)
     runtime = fluidapi.assemble_runtime("jindo-oss").set_namespaced_name(namespace, name)
@@ -42,7 +43,7 @@ def main():
         .set_target_dataset(name, namespace) \
         .set_load_metadata(True)
 
-    flow = TestFlow("JindoFS - Access OSS data")
+    flow = TestFlow("JindoFS - Access OSS data with Serverless Pod")
 
     flow.append_step(
         SimpleStep(
@@ -78,7 +79,7 @@ def main():
         SimpleStep(
             step_name="create dataload",
             forth_fn=funcs.create_dataload_fn(dataload.dump()),
-            back_fn=dummy_back,    # DataLoad should have ownerReference of Dataset
+            back_fn=dummy_back,  # DataLoad should have ownerReference of Dataset
         )
     )
 
@@ -99,7 +100,7 @@ def main():
     flow.append_step(
         SimpleStep(
             step_name="create data read job",
-            forth_fn=funcs.create_job_fn(script="time cp -r /data/ /tmp-data && [[ ! -z $(ls -l /tmp-data) ]]", dataset_name=name, namespace=namespace),
+            forth_fn=funcs.create_job_fn(script="time cp -r /data/ /tmp-data && [[ ! -z $(ls -l /tmp-data) ]]", dataset_name=name, namespace=namespace, serverless=True),
             back_fn=funcs.delete_job_fn()
         )
     )
@@ -116,7 +117,6 @@ def main():
     except Exception as e:
         print(e)
         exit(1)
-
 
 
 if __name__ == '__main__':

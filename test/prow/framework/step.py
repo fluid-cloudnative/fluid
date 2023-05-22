@@ -54,7 +54,7 @@ class SimpleStep():
 
 
 class StatusCheckStep(SimpleStep):
-    def __init__(self, step_name, forth_fn, back_fn=dummy_back, timeout=120, interval=1):
+    def __init__(self, step_name, forth_fn, back_fn=dummy_back, timeout=300, interval=1):
         super().__init__(step_name, check(forth_fn, timeout, interval), back_fn)
 
 
