@@ -67,6 +67,8 @@ def checkFuseRecovered(dataset_name, namespace="default"):
         items = api.list_namespaced_event(namespace=namespace).items
         fuseRecoveryUids = set()
         for item in items:
+            if item.message is None:
+                continue
             if item.message.__contains__("Fuse recover"):
                 fuseRecoveryUids.add(item.involved_object.uid)
         return fuseRecoveryUids
