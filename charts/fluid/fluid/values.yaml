@@ -4,7 +4,7 @@
 
 workdir: /tmp
 crdUpgrade:
-  image: fluidcloudnative/fluid-crd-upgrader:v0.9.0-0f7d87c
+  image: fluidcloudnative/fluid-crd-upgrader:v0.9.0-37e17c6
 
 ##  if unspecified, will use built-in variable `.Release.Namespace`.
 namespace: fluid-system
@@ -15,7 +15,7 @@ image:
 dataset:
   replicas: 1
   controller:
-    image: fluidcloudnative/dataset-controller:v0.9.0-0f7d87c
+    image: fluidcloudnative/dataset-controller:v0.9.0-37e17c6
 
 csi:
   featureGates: "FuseRecovery=false"
@@ -24,7 +24,7 @@ csi:
   registrar:
     image: fluidcloudnative/csi-node-driver-registrar:v2.3.0
   plugins:
-    image: fluidcloudnative/fluid-csi:v0.9.0-0f7d87c
+    image: fluidcloudnative/fluid-csi:v0.9.0-37e17c6
   kubelet:
     kubeConfigFile: /etc/kubernetes/kubelet.conf
     certDir: /var/lib/kubelet/pki
@@ -44,7 +44,7 @@ runtime:
     init:
       image: fluidcloudnative/init-users:v0.9.0
     controller:
-      image: fluidcloudnative/alluxioruntime-controller:v0.9.0-0f7d87c
+      image: fluidcloudnative/alluxioruntime-controller:v0.9.0-37e17c6
     runtime:
       image: alluxio/alluxio-dev:2.9.0
     fuse:
@@ -62,7 +62,7 @@ runtime:
     fuse:
       image: registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:4.6.7
     controller:
-      image: fluidcloudnative/jindoruntime-controller:v0.9.0-0f7d87c
+      image: fluidcloudnative/jindoruntime-controller:v0.9.0-37e17c6
     init:
       portCheck:
         enabled: false
@@ -76,7 +76,7 @@ runtime:
     init:
       image: fluidcloudnative/init-users:v0.9.0
     controller:
-      image: fluidcloudnative/goosefsruntime-controller:v0.9.0-0f7d87c
+      image: fluidcloudnative/goosefsruntime-controller:v0.9.0-37e17c6
     runtime:
       image: ccr.ccs.tencentyun.com/qcloud/goosefs:v1.2.0
     fuse:
@@ -86,19 +86,19 @@ runtime:
     enabled: false
     runtimeWorkers: 3
     controller:
-      image: fluidcloudnative/juicefsruntime-controller:v0.9.0-0f7d87c
+      image: fluidcloudnative/juicefsruntime-controller:v0.9.0-37e17c6
     fuse:
       image: juicedata/juicefs-fuse:v1.0.4-4.9.2
   thin:
     replicas: 1
     enabled: false
     controller:
-      image: fluidcloudnative/thinruntime-controller:v0.9.0-0f7d87c
+      image: fluidcloudnative/thinruntime-controller:v0.9.0-37e17c6
   efc:
     replicas: 1
     enabled: false
     controller:
-      image: fluidcloudnative/efcruntime-controller:v0.9.0-0f7d87c
+      image: fluidcloudnative/efcruntime-controller:v0.9.0-37e17c6
       imagePullPolicy: Always
     init:
       image: registry.cn-zhangjiakou.aliyuncs.com/nascache/init-alifuse:v1.2.2-19dcee9
@@ -111,7 +111,7 @@ runtime:
 
 webhook:
   enabled: true
-  image: fluidcloudnative/fluid-webhook:v0.9.0-0f7d87c
+  image: fluidcloudnative/fluid-webhook:v0.9.0-37e17c6
   replicas: 1
   timeoutSeconds: 15
   reinvocationPolicy: IfNeeded
@@ -120,4 +120,4 @@ fluidapp:
   enabled: true
   replicas: 1
   controller:
-    image: fluidcloudnative/application-controller:v0.9.0-0f7d87c
+    image: fluidcloudnative/application-controller:v0.9.0-37e17c6
