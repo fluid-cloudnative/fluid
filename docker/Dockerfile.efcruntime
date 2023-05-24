@@ -8,7 +8,7 @@ RUN make efcruntime-controller-build && \
     cp bin/efcruntime-controller /go/bin/efcruntime-controller
 
 # Debug
-RUN go install github.com/go-delve/delve/cmd/dlv@v1.8.2
+#RUN go install github.com/go-delve/delve/cmd/dlv@v1.8.2
 
 FROM alpine:3.17
 RUN apk add --update curl tzdata iproute2 bash libc6-compat vim &&  \
@@ -29,7 +29,7 @@ RUN curl -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-rel
 ADD charts/ /charts
 
 COPY --from=builder /go/bin/efcruntime-controller /usr/local/bin/efcruntime-controller
-COPY --from=builder /go/bin/dlv /usr/local/bin/dlv
+#COPY --from=builder /go/bin/dlv /usr/local/bin/dlv
 RUN chmod -R u+x /usr/local/bin/
 
 CMD ["efcruntime-controller", "start"]
