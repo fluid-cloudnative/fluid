@@ -103,7 +103,7 @@ spec:
             - name: CACHE_LIST_REPLICA
               value: {{ $val | quote }}
             {{- end }}
-            {{- if eq $key "cacheThread" }}
+            {{- if eq $key "threadNum" }}
             - name: CACHE_LIST_THREAD
               value: {{ $val | quote }}
             {{- end }}
