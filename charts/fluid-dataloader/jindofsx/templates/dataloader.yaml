@@ -65,7 +65,7 @@ spec:
       containers:
         - name: dataloader
           image: {{ required "Dataloader image should be set" .Values.dataloader.image }}
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: ALWAYS
           command: ["/bin/sh", "-c"]
           args: ["/scripts/jindo_env_init.sh && /scripts/jindo_dataload.sh"]
           {{- $targetPaths := "" }}
@@ -103,7 +103,7 @@ spec:
             - name: CACHE_LIST_REPLICA
               value: {{ $val | quote }}
             {{- end }}
-            {{- if eq $key "cacheListThread" }}
+            {{- if eq $key "cacheThread" }}
             - name: CACHE_LIST_THREAD
               value: {{ $val | quote }}
             {{- end }}
@@ -122,6 +122,14 @@ spec:
             {{- if eq $key "url" }}
             - name: CACHE_LIST_URL
               value: {{ $val | quote }}
+            {{- end }}
+            {{- if eq $key "filter" }}
+            - name: CACHE_FILTER
+              value: {{ $val | quote }}
+            {{- end }}
+            {{- if eq $key "dryrun" }}
+            - name: DRY_RUN_ENABLE
+              value: {{ default false $val | quote }}
             {{- end }}
             {{- if eq $key "cacheListLocationEnable" }}
             - name: Enable_CACHE_LIST_LOCATION

@@ -78,19 +78,31 @@ data:
         else
             echo -e "--- disable loadMemorydata"
         fi
-
-        if [[ $enbaleCacheListLocation == 'false' ]]; then
-            cmd="$cmd -s -R -replica $replica $default$path"
-            echo -e "execute cmd $cmd"
-            time $cmd
+    
+        if [[ $enableDryrun == 'true' ]]; then
+            echo -e "--- enable dryrun"
+            cmd="$cmd -dryrun"
+            echo -e "now cmd $cmd"
         else
+            echo -e "--- disable dryrun"
+        fi
+
+        if [[ $enbaleCacheListLocation == 'true' ]]; then
             echo -e "--- begin download ossutil"
             apt-get install wget -y
             wget http://gosspublic.alicdn.com/ossutil/1.7.5/ossutil64
             chmod 755 ossutil64
             ./ossutil64 -e $cacheListEndpoint -i $cacheListAccessKeyId -k $cacheListAccessKeySecret cp $cacheListUrl /cachelist.txt
             echo -e "--- enable File List"
-            cmd="$cmd -R -replica $cacheListReplica -cachelist /cachelist.txt -thread $cacheListThread $default/"
+            cmd="$cmd -R -replica $cacheListReplica -cachelist /cachelist.txt -thread $cacheListThread -dryrun $enableDryrun $default/"
+            echo -e "execute cmd $cmd"
+            time $cmd
+        elif [[ $enableFilter == 'true' ]]; then
+            cmd="$cmd -s -R -replica $replica -filter $cacheFilter -thread $cacheListThread $default$path"
+            echo -e "execute cmd $cmd"
+            time $cmd
+        else
+            cmd="$cmd -s -R -replica $replica $default$path"
             echo -e "execute cmd $cmd"
             time $cmd
         fi
@@ -111,6 +123,9 @@ data:
         cacheListAccessKeySecret=$CACHE_LIST_ACCESSKEYSECRET
         cacheListEndpoint=$CACHE_LIST_ENDPOINT
         cacheListUrl=$CACHE_LIST_URL
+        cacheFilter=$CACHE_FILTER
+        enableFilter=false
+        enableDryrun=$DRY_RUN_ENABLE
         #judge whether to use locaion list
         if [[ -z "$cacheListAccessKeyId" ]] || [[ -z "$cacheListAccessKeySecret" ]] || [[ -z "$cacheListEndpoint" ]] || [[ -z "$cacheListUrl" ]]; then
             enbaleCacheListLocation=false
@@ -126,6 +141,12 @@ data:
             cacheListThread=10
         else
             echo -e "cacheListThread $cacheListThread"
+        fi
+        if [[ -z "$cacheFilter" ]]; then
+            enableFilter=false
+        else
+            enableFilter=true
+            echo -e "enableFilter $enableFilter"
         fi
         dafault="jindo://"
         paths="$DATA_PATH"
