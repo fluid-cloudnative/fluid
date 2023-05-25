@@ -841,7 +841,7 @@ func (e *JindoFSxEngine) getSmartDataConfigs(runtime *datav1alpha1.JindoRuntime)
 	// Apply defaults
 	config := smartdataConfig{
 		image:           "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata",
-		imageTag:        "4.6.7",
+		imageTag:        "4.6.8",
 		imagePullPolicy: "Always",
 		dnsServer:       "1.1.1.1",
 	}
@@ -879,7 +879,7 @@ func (e *JindoFSxEngine) getSmartDataConfigs(runtime *datav1alpha1.JindoRuntime)
 func (e *JindoFSxEngine) parseFuseImage(runtime *datav1alpha1.JindoRuntime) (image, tag, imagePullPolicy string) {
 	// Apply defaults
 	image = "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse"
-	tag = "4.6.7"
+	tag = "4.6.8"
 	imagePullPolicy = "Always"
 
 	// Override with global-scoped configs
