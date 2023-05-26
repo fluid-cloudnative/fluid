@@ -45,6 +45,11 @@ ConditionPathIsMountPoint="$1"
 MountType="$2"
 SubPath="$3"
 
+# grep /dev/fuse if the mountType equals to jindo
+if [[ "$MountType" == "jindo" ]]; then
+  MountType=/dev/fuse
+fi
+
 count=0
 # while ! mount | grep alluxio | grep  $ConditionPathIsMountPoint | grep -v grep
 while ! cat /proc/self/mountinfo | grep $ConditionPathIsMountPoint | grep $MountType
