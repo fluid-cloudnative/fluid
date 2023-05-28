@@ -1,0 +1,115 @@
+0924:
+
+Version: https://github.com/cheyang/alluxio/commit/c8a46e3203d08cdb2d9ca81b0c684fdf30057923
+Branch: https://github.com/cheyang/alluxio/commits/branch-2.3-fuse-non-root-optimize
+
+0926:
+Version: https://github.com/cheyang/alluxio/commit/e0feba36cba1b57a3a9a0b893f7a477556e4955c
+Branch: https://github.com/cheyang/alluxio/commits/branch-2.3-fuse-pod-for-non-root
+
+1024:
+Version: https://github.com/Alluxio/alluxio/commit/75a8e27b30141a44f9378cbbed1bc04dbbfbbe0e
+Branch: https://github.com/Alluxio/alluxio/commits/branch-2.3-fuse
+
+1030:
+Version: https://github.com/Alluxio/alluxio/commit/c5128a866be2ea29c38ada30de4c0b819d617516
+Branch: https://github.com/Alluxio/alluxio/commits/branch-2.3-fuse
+
+1103:
+Version: https://github.com/Alluxio/alluxio/commit/9291b5f6115fc6a25b42d81ccdc34ac7eeea2632
+Branch: https://github.com/Alluxio/alluxio/commits/branch-2.3-fuse
+
+1106:
+Version: https://github.com/Alluxio/alluxio/commit/42a0cf7df85be3225d226a36b37908d04e8cb595
+Branch: https://github.com/Alluxio/alluxio/commits/branch-2.3-fuse
+
+1109:
+Version: https://github.com/Alluxio/alluxio/commit/238b7eb3ec58270aabf7004ac01cc89e6034b93e
+Branch: https://github.com/Alluxio/alluxio/commits/branch-2.3-fuse
+
+
+1117:
+Version: https://github.com/Alluxio/alluxio/commit/2c412267e0e749ced63262d53043cf753cc11927
+Branch: https://github.com/Alluxio/alluxio/commits/branch-2.3-fuse
+
+1129:
+Version: https://github.com/Alluxio/alluxio/commit/985b84c2907e75ceee1985b3953bf9087645e693
+Branch: https://github.com/Alluxio/alluxio/commits/branch-2.3-fuse
+
+
+1223:
+
+Version: https://github.com/Alluxio/alluxio/commit/9833d5f0841ef03fc9bb572fe4dccdd73bb98175
+Branch: https://github.com/Alluxio/alluxio
+
+
+20210203:
+
+Version: https://github.com/Alluxio/alluxio/commit/f4676d33a99a1ccf858be22a2fb64eadb5f0bd79
+Branch: https://github.com/Alluxio/alluxio/commits/release-2.4.1-2
+
+20210210:
+
+Version: https://github.com/Alluxio/alluxio/commit/f4676d33a99a1ccf858be22a2fb64eadb5f0bd79
+Branch: https://github.com/Alluxio/alluxio/commits/release-2.4.1-2
+
+
+20210217:
+
+Version: https://github.com/Alluxio/alluxio/commit/bfff8c6881e5cb045fd1d84c59acba26078bb4d9
+Branch: https://github.com/Alluxio/alluxio/commits/release-2.4.1-2
+
+20210324:
+
+Version: https://github.com/Alluxio/alluxio/commit/cb60e05b5e5f938dbae084fa2f8d719d6b23a9a7
+Branch: https://github.com/alluxio/alluxio/tree/release-2.5.0-1
+
+20210417:
+
+release-2.5.0-2-SNAPSHOT-52ad95c
+
+Version: https://github.com/Alluxio/alluxio/commit/52ad95ca6b6af5c19a73a48f01a15db9d81ea38c
+Branch: https://github.com/alluxio/alluxio/tree/release-2.5.0-2
+
+20211123:
+
+release-2.7.0-SNAPSHOT-c058736
+
+Version: https://github.com/Alluxio/alluxio/commit/c05873681a824c8e056b71e3b97cb3706ed63c91
+Branch: https://github.com/Alluxio/alluxio/commits/release-2.7.0
+
+20211230:
+
+release-2.7.2-SNAPSHOT-5e6f20c
+
+Version: https://github.com/Alluxio/alluxio/commit/5e6f20c99f7a9dcec390775c319adfd7a7ec791d
+Branch: https://github.com/Alluxio/alluxio/tree/release-2.7.2
+
+20220103:
+
+release-2.7.2-SNAPSHOT-3714f2b
+
+Version: https://github.com/Alluxio/alluxio/commit/3714f2b990c021fd17b22ccbc12e71e0dcdfca77
+Branch: https://github.com/Alluxio/alluxio/tree/release-2.7.2
+
+20220506:
+
+release-2.7.3-SNAPSHOT-a7154f1
+
+Version: https://github.com/Alluxio/alluxio/commit/a7154f19de408de1395c2c4985e0ed9809e6c3c1
+Branch: https://github.com/Alluxio/alluxio/tree/release-2.7.3
+
+
+20220510:
+
+release-2.8.1-SNAPSHOT-0433ade
+
+Version: https://github.com/Alluxio/alluxio/commit/0433aded47b69a9bc34bdf7676cb3224a1ddb2a1
+Branch: https://github.com/Alluxio/alluxio/tree/release-2.8.0
+
+20221202:
+
+alluxio/alluxio-dev:2.9.0
+
+Version: https://github.com/Alluxio/alluxio/commit/9b78c5b16f855bf22744e8fcad584f47322da9ce
+Branch: https://github.com/Alluxio/alluxio/tree/release-2.9.0
