@@ -1,0 +1,14 @@
+{{ if .Values.webhook.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: fluid-pod-admission-webhook
+  namespace: {{ include "fluid.namespace" . }}
+spec:
+  ports:
+    - name: https-rest
+      port: 9443
+      targetPort: 9443
+  selector:
+    control-plane: fluid-webhook
+{{- end }}
