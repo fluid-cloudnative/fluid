@@ -10,7 +10,7 @@ RUN make juicefsruntime-controller-build && \
 # Debug
 #RUN go install github.com/go-delve/delve/cmd/dlv@v1.8.2
 
-FROM alpine:3.17
+FROM alpine:3.18
 RUN apk add --update curl tzdata iproute2 bash libc6-compat vim &&  \
  	rm -rf /var/cache/apk/* && \
  	cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
