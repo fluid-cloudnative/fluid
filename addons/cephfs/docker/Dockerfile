@@ -1,5 +1,5 @@
-FROM alpine@sha256:124c7d2707904eea7431fffe91522a01e5a861a624ee31d03372cc1d138a3126
-# use alpine:3.17
+FROM alpine@sha256:02bb6f428431fbc2809c5d1b41eab5a68350194fb508869a33cb1af4444c9b11
+# use alpine:3.18
 
 RUN mkdir /etc/ceph
 RUN apk add ceph ceph-fuse python3
