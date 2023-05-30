@@ -128,7 +128,7 @@ func TestParseSmartDataImage(t *testing.T) {
 					}},
 				}},
 			jindoValue:            &Jindo{},
-			expect:                "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:4.6.7",
+			expect:                "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:4.6.8",
 			expectImagePullPolicy: "Always",
 			expectDnsServer:       "1.1.1.1",
 		},
@@ -939,7 +939,7 @@ func TestCheckIfSupportSecretMount(t *testing.T) {
 					Name:       "test",
 					Path:       "/",
 				}},
-			}}, "4.5.2", "4.6.7", false},
+			}}, "4.5.2", "4.6.8", false},
 		{&datav1alpha1.JindoRuntime{
 			Spec: datav1alpha1.JindoRuntimeSpec{},
 		}, &datav1alpha1.Dataset{
@@ -949,7 +949,7 @@ func TestCheckIfSupportSecretMount(t *testing.T) {
 					Name:       "test",
 					Path:       "/",
 				}},
-			}}, "4.6.7", "4.6.7", true},
+			}}, "4.6.8", "4.6.8", true},
 		{&datav1alpha1.JindoRuntime{
 			Spec: datav1alpha1.JindoRuntimeSpec{},
 		}, &datav1alpha1.Dataset{
@@ -976,7 +976,7 @@ func TestCheckIfSupportSecretMount(t *testing.T) {
 					Name:       "test",
 					Path:       "/",
 				}},
-			}}, "4.5.2", "4.6.7", true},
+			}}, "4.5.2", "4.6.8", true},
 	}
 	for _, test := range tests {
 		engine := &JindoFSxEngine{Log: fake.NullLogger()}
