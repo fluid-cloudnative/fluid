@@ -1138,9 +1138,9 @@ func (e *JindoFSxEngine) getMediumTypeFromVolumeSource(defaultMediumType string,
 
 func (e *JindoFSxEngine) checkIfSupportSecretMount(runtime *datav1alpha1.JindoRuntime, smartdataTag string, fuseTag string) bool {
 	fuseOnly := runtime.Spec.Master.Disabled && runtime.Spec.Worker.Disabled
-	compareSmartdata, _ := versionutil.Compare(smartdataTag, IMAGE_TAG_SUPPORT_AK_FILE)
+	compareSmartdata, _ := versionutil.Compare(smartdataTag, imageTagSupportAKFile)
 	newSmartdataVersion := compareSmartdata >= 0
-	compareFuse, _ := versionutil.Compare(fuseTag, IMAGE_TAG_SUPPORT_AK_FILE)
+	compareFuse, _ := versionutil.Compare(fuseTag, imageTagSupportAKFile)
 	newFuseVersion := compareFuse >= 0
 	if (fuseOnly && newFuseVersion) || (newSmartdataVersion && newFuseVersion) {
 		return true

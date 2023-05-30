@@ -88,13 +88,16 @@ data:
         fi
 
         if [[ $enbaleCacheListLocation == 'true' ]]; then
-            echo -e "--- begin download ossutil"
-            apt-get install wget -y
-            wget http://gosspublic.alicdn.com/ossutil/1.7.5/ossutil64
-            chmod 755 ossutil64
+            if [[ -e "ossutil64" ]]; then
+                echo "Found ossutil64 executable file under /"
+            else
+                echo -e "--- begin download ossutil"
+                apt-get update && apt-get install wget -y
+                wget http://gosspublic.alicdn.com/ossutil/1.7.5/ossutil64 && chmod 755 ossutil64
+            fi
             ./ossutil64 -e $cacheListEndpoint -i $cacheListAccessKeyId -k $cacheListAccessKeySecret cp $cacheListUrl /cachelist.txt
             echo -e "--- enable File List"
-            cmd="$cmd -R -replica $cacheListReplica -cachelist /cachelist.txt -thread $cacheListThread -dryrun $enableDryrun $default/"
+            cmd="$cmd -R -replica $cacheListReplica -cachelist /cachelist.txt -thread $cacheListThread $default/"
             echo -e "execute cmd $cmd"
             time $cmd
         elif [[ $enableFilter == 'true' ]]; then
