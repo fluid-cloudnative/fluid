@@ -52,7 +52,7 @@ const (
 
 	jindoFuseMountpath = "/jfs/jindofs-fuse"
 
-	defaultJindofsxRuntimeImage = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:4.6.7"
+	defaultJindofsxRuntimeImage = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:4.6.8"
 
 	engineType = "jindofsx"
 
@@ -64,5 +64,5 @@ const (
 
 	QueryUfsTotal = "QUERY_UFS_TOTAL"
 
-	IMAGE_TAG_SUPPORT_AK_FILE = "4.6.7"
+	imageTagSupportAKFile = "4.6.8"
 )
