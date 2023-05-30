@@ -23,7 +23,6 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -34,10 +33,7 @@ import (
 )
 
 func GetDataOperationKey(object client.Object) string {
-	return types.NamespacedName{
-		Name:      object.GetName(),
-		Namespace: object.GetNamespace(),
-	}.String()
+	return object.GetName()
 }
 
 // SetDataOperationInTargetDataset set status of target dataset to mark the data operation being performed.
@@ -56,6 +52,8 @@ func SetDataOperationInTargetDataset(ctx cruntime.ReconcileRequestContext, objec
 		return fmt.Errorf("bounded accelerate runtime not ready")
 	}
 
+	operationTypeName := string(operation.GetOperationType())
+
 	// set current data operation in target dataset
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		dataset, err := utils.GetDataset(ctx.Client, targetDataset.Name, targetDataset.Namespace)
@@ -63,8 +61,11 @@ func SetDataOperationInTargetDataset(ctx cruntime.ReconcileRequestContext, objec
 			return err
 		}
 
+		dataOpKey := GetDataOperationKey(object)
+
 		// set current data operation in the target dataset
 		datasetToUpdate := dataset.DeepCopy()
+		datasetToUpdate.SetDataOperationInProgress(operationTypeName, dataOpKey)
 		// different operation may set other fields
 		operation.SetTargetDatasetStatusInProgress(datasetToUpdate)
 
@@ -87,6 +88,7 @@ func ReleaseTargetDataset(ctx cruntime.ReconcileRequestContext, object client.Ob
 	operation dataoperation.OperationInterface) error {
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		dataset, err := operation.GetTargetDataset(object)
+		operationTypeName := string(operation.GetOperationType())
 		if err != nil {
 			if utils.IgnoreNotFound(err) == nil {
 				statusError := err.(*apierrors.StatusError)
@@ -96,13 +98,18 @@ func ReleaseTargetDataset(ctx cruntime.ReconcileRequestContext, object client.Ob
 			// other error
 			return err
 		}
-		datasetToUpdate := dataset.DeepCopy()
+		dataOpKey := GetDataOperationKey(object)
 
-		// different operation may set other fields
-		operation.RemoveTargetDatasetStatusInProgress(datasetToUpdate)
-		if !reflect.DeepEqual(datasetToUpdate.Status, dataset.Status) {
-			if err = ctx.Client.Status().Update(context.TODO(), datasetToUpdate); err != nil {
-				return err
+		datasetToUpdate := dataset.DeepCopy()
+		dataOpRef := datasetToUpdate.RemoveDataOperationInProgress(operationTypeName, dataOpKey)
+
+		if dataOpRef == "" {
+			// different operation may set other fields
+			operation.RemoveTargetDatasetStatusInProgress(datasetToUpdate)
+			if !reflect.DeepEqual(datasetToUpdate.Status, dataset.Status) {
+				if err = ctx.Client.Status().Update(context.TODO(), datasetToUpdate); err != nil {
+					return err
+				}
 			}
 		}
 		return nil
