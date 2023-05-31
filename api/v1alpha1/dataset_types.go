@@ -359,6 +359,9 @@ func (dataset *Dataset) SetDataOperationInProgress(operationType string, name st
 
 // RemoveDataOperationInProgress release Dataset for operation
 func (dataset *Dataset) RemoveDataOperationInProgress(operationType, name string) string {
+	if dataset.Status.OperationRef == nil {
+		return ""
+	}
 	dataOpKeys := strings.Split(dataset.Status.OperationRef[operationType], ",")
 	if len(dataOpKeys) == 1 && dataOpKeys[0] == name {
 		delete(dataset.Status.OperationRef, operationType)

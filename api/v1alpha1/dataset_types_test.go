@@ -69,6 +69,17 @@ func TestDataset_RemoveDataOperationInProgress(t *testing.T) {
 			},
 			want: "test2",
 		},
+		{
+			name: "test3",
+			fields: fields{
+				Status: DatasetStatus{},
+			},
+			args: args{
+				operationType: "DataLoad",
+				name:          "test1",
+			},
+			want: "",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
