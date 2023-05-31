@@ -19,12 +19,14 @@ package datamigrate
 import (
 	"context"
 	"fmt"
-	cdatamigrate "github.com/fluid-cloudnative/fluid/pkg/datamigrate"
-	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
+	"time"
+
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"time"
+
+	cdatamigrate "github.com/fluid-cloudnative/fluid/pkg/datamigrate"
+	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 
 	batchv1 "k8s.io/api/batch/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -146,5 +148,10 @@ func (r *DataMigrateReconciler) SetTargetDatasetStatusInProgress(dataset *datav1
 }
 
 func (r *DataMigrateReconciler) RemoveTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
+	// check if there are any other datamigrate of dataset
+
+	// if yes, keep dataset status to Migrating
+
+	// if not, set dataset status to Bound
 	dataset.Status.Phase = datav1alpha1.BoundDatasetPhase
 }
