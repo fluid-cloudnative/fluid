@@ -13,11 +13,11 @@ RUN make csi-build && \
 # RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=off go build -gcflags="all=-N -l" -a -o /go/bin/fluid-csi cmd/csi/*.go
 
 # Debug
-RUN go install github.com/go-delve/delve/cmd/dlv@v1.8.2
+#RUN go install github.com/go-delve/delve/cmd/dlv@v1.8.2
 
 # Use distroless as minimal base image to package the csi binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM alpine:3.17
+FROM alpine:3.18
 RUN apk add --update curl tzdata iproute2 bash libc6-compat vim &&  \
  	rm -rf /var/cache/apk/* && \
  	cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
@@ -25,7 +25,7 @@ RUN apk add --update curl tzdata iproute2 bash libc6-compat vim &&  \
 
 WORKDIR /
 COPY --from=builder /go/bin/fluid-csi /usr/local/bin/fluid-csi
-COPY --from=builder /go/bin/dlv /usr/local/bin/dlv
+#COPY --from=builder /go/bin/dlv /usr/local/bin/dlv
 ADD csi/shell/check_mount.sh /usr/local/bin/check_mount.sh
 ADD csi/shell/entrypoint.sh /usr/local/bin/entrypoint.sh
 ADD csi/shell/check_bind_mounts.sh /usr/local/bin/check_bind_mounts.sh

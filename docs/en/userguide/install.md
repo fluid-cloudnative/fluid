@@ -27,12 +27,20 @@ Create namespace:
 $ kubectl create ns fluid-system
 ```
 
+Add Fluid repository to Helm repos and keep it up-to-date
+
+```shell
+$ helm repo add fluid https://fluid-cloudnative.github.io/charts
+$ helm repo update
+```
+
+
 Install Fluid with:
 
 ```shell
-$ helm install fluid fluid.tgz
+$ helm install fluid fluid/fluid
 NAME: fluid
-LAST DEPLOYED: Fri Sep  2 19:03:56 2022
+LAST DEPLOYED: Wed May 24 18:17:16 2023
 NAMESPACE: default
 STATUS: deployed
 REVISION: 1
@@ -44,7 +52,7 @@ TEST SUITE: None
 > The general format of the `helm install` command is like: `helm install <RELEASE_NAME> <SOURCE>`. In the above command,  the first `fluid` means the release name, and the second  `fluid` specified the path to the helm chart, i.e. the directory just unpacked.
 
 
-### Upgrade Fluid to the latest version(v0.8) with Helm
+### Upgrade Fluid to the latest version with Helm
 
 If you have installed an older version of Fluid before, you can use Helm to upgrade it.
 Before upgrading, it is recommended to ensure that all components in the AlluxioRuntime resource object have been started completely, which is similar to the following state:
@@ -61,7 +69,7 @@ hbase-worker-rznd5   2/2     Running   0          9h
 
 upgrade fluid：
 ```shell
-$ helm upgrade fluid fluid/
+$ helm upgrade fluid fluid/fluid
 Release "fluid" has been upgraded. Happy Helming!
 NAME: fluid
 LAST DEPLOYED: Fri Sep  2 18:54:18 2022
@@ -73,7 +81,7 @@ TEST SUITE: None
 
 > For Kubernetes version lower than v1.17(included), please use `helm install --set runtime.criticalFusePod=false fluid fluid.tgz`
 
-> We recommend you to update Fluid v0.8 from v0.7. If you have an older version, our suggestion is to reinstall it to ensure everything works fine.
+> We recommend you to update Fluid latest version from v0.7. If you have an older version, our suggestion is to reinstall it to ensure everything works fine.
 
 ### Check Status of Component
 
@@ -81,26 +89,31 @@ TEST SUITE: None
 
 ```shell
 $ kubectl get crd | grep data.fluid.io
-alluxioruntimes.data.fluid.io                          2022-06-28T02:43:52Z
-databackups.data.fluid.io                              2022-06-28T02:43:52Z
-dataloads.data.fluid.io                                2022-06-28T02:43:52Z
-datasets.data.fluid.io                                 2022-06-28T02:43:52Z
-goosefsruntimes.data.fluid.io                          2022-06-28T02:43:52Z
-jindoruntimes.data.fluid.io                            2022-06-28T02:43:52Z
-juicefsruntimes.data.fluid.io                          2022-06-28T02:43:52Z
+alluxioruntimes.data.fluid.io                          2023-05-24T10:14:47Z
+databackups.data.fluid.io                              2023-05-24T10:14:47Z
+dataloads.data.fluid.io                                2023-05-24T10:14:47Z
+datamigrates.data.fluid.io                             2023-05-24T10:28:11Z
+datasets.data.fluid.io                                 2023-05-24T10:14:47Z
+efcruntimes.data.fluid.io                              2023-05-24T10:28:12Z
+goosefsruntimes.data.fluid.io                          2023-05-24T10:14:47Z
+jindoruntimes.data.fluid.io                            2023-05-24T10:14:48Z
+juicefsruntimes.data.fluid.io                          2023-05-24T10:14:48Z
+thinruntimeprofiles.data.fluid.io                      2023-05-24T10:28:16Z
+thinruntimes.data.fluid.io                             2023-05-24T10:28:16Z
 ```
 
 **Check the status of pods:**
 
 ```shell
 $ kubectl get pod -n fluid-system
-NAME                                        READY   STATUS      RESTARTS   AGE
-csi-nodeplugin-fluid-g6ggh                  2/2     Running     0          6m53s
-csi-nodeplugin-fluid-tnj5r                  2/2     Running     0          5m50s
-dataset-controller-5f56cc4f97-2lfqt         1/1     Running     0          6m54s
-fluid-crds-upgrade-0.8.0-aa7fdca--1-gtpt9   0/1     Completed   0          7m23s
-fluid-webhook-7d8c586f59-mxkwz              1/1     Running     0          6m54s
-fluidapp-controller-86f5bfc4c5-ct25p        1/1     Running     0          6m54s
+NAME                                     READY   STATUS      RESTARTS   AGE
+csi-nodeplugin-fluid-2scs9               2/2     Running     0          50s
+csi-nodeplugin-fluid-7vflb               2/2     Running     0          20s
+csi-nodeplugin-fluid-f9xfv               2/2     Running     0          33s
+dataset-controller-686d9d9cd6-gk6m6      1/1     Running     0          50s
+fluid-crds-upgrade-0.9.0-37e17c6-fp4mm   0/1     Completed   0          74s
+fluid-webhook-5bc9dfb9d8-hdvhk           1/1     Running     0          50s
+fluidapp-controller-6d4cbdcd88-z7l4c     1/1     Running     0          50s
 ```
 
 If the Pod status is as shown above, then Fluid is installed on your Kubernetes cluster successfully!

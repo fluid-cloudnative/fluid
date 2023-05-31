@@ -80,9 +80,16 @@ spec:
             - {{ .Values.fuse.mountPoint | quote }}
             - "/efc/efc-fuse"
             - {{ .Values.fuse.option | quote }}
+          env:
+            - name: FLUID_RUNTIME_TYPE
+              value: "efc"
+            - name: FLUID_RUNTIME_NS
+              value: {{ .Values.runtimeIdentity.namespace | quote }}
+            - name: FLUID_RUNTIME_NAME
+              value: {{ .Values.runtimeIdentity.name | quote }}
           readinessProbe:
             exec:
-              command: ["sh", "-c", "cat /proc/mounts | grep {{ .Values.fuse.mountPoint }}"]
+              command: ["sh", "-c", "cat /proc/mounts | grep fuse.aliyun-alinas-efc"]
             failureThreshold: 3
             initialDelaySeconds: 5
             periodSeconds: 1
@@ -107,9 +114,8 @@ spec:
               mountPropagation: Bidirectional
             - name: efc-worker-endpoints
               mountPath: /etc/efc
-            {{- if .Values.fuse.tieredstore }}
-{{- include "efc.tieredstoreVolumeMounts" .Values.fuse }}
-            {{- end }}
+            - name: efc-shm
+              mountPath: /dev/shm
             - name: efc-sock
               mountPath: /var/run/efc
       {{- with .Values.fuse.imagePullSecrets }}
@@ -124,9 +130,9 @@ spec:
         - name: efc-worker-endpoints
           configMap:
             name: {{ template "efc.fullname" . }}-worker-endpoints
-        {{- if .Values.fuse.tieredstore }}
-{{- include "efc.tieredstoreVolumes" .Values.fuse }}
-        {{- end }}
+        - name: efc-shm
+          emptyDir:
+            medium: Memory
         - name: efc-sock
           hostPath:
             path: /runtime-mnt/efc-sock

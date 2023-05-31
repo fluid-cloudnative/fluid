@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	versionutil "github.com/fluid-cloudnative/fluid/pkg/utils/version"
 	"os"
 	"reflect"
 	"regexp"
@@ -103,7 +104,9 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	userQuotas := strings.Join(userSetQuota, ",") // 1g or 1g,2g
 
 	smartdataConfig := e.getSmartDataConfigs(runtime)
+	smartdataTag := smartdataConfig.imageTag
 	jindoFuseImage, fuseTag, fuseImagePullPolicy := e.parseFuseImage(runtime)
+	secretMountSupport := e.checkIfSupportSecretMount(runtime, smartdataTag, fuseTag)
 
 	var mediumType = common.Memory
 	var volumeType = common.VolumeTypeHostPath
@@ -159,11 +162,11 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	e.transformNetworkMode(runtime, value)
 	e.transformFuseNodeSelector(runtime, value)
 	e.transformSecret(runtime, value)
-	e.transformToken(runtime, value)
-	err = e.transformMaster(runtime, metaPath, value, dataset)
+	err = e.transformMaster(runtime, metaPath, value, dataset, secretMountSupport)
 	if err != nil {
 		return
 	}
+	e.transformToken(runtime, value)
 	e.transformWorker(runtime, dataPath, userQuotas, value)
 	e.transformFuse(runtime, value)
 	e.transformInitPortCheck(value)
@@ -187,7 +190,7 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	return value, err
 }
 
-func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPath string, value *Jindo, dataset *datav1alpha1.Dataset) (err error) {
+func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPath string, value *Jindo, dataset *datav1alpha1.Dataset, secretMountSupport bool) (err error) {
 	properties := map[string]string{
 		"namespace.cluster.id":                      "local",
 		"namespace.oss.copy.size":                   "1073741824",
@@ -264,7 +267,8 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 				continue
 			}
 		}
-		// TODO support cos storage
+
+		mountType := "oss"
 		if strings.HasPrefix(mount.MountPoint, "oss://") {
 			var re = regexp.MustCompile(`(oss://(.*?))(/)`)
 			rm := re.FindStringSubmatch(mount.MountPoint)
@@ -293,6 +297,7 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 
 		// support s3
 		if strings.HasPrefix(mount.MountPoint, "s3://") {
+			mountType = "s3"
 			if mount.Options["fs.s3.accessKeyId"] != "" {
 				propertiesFileStore["jindofsx.s3.accessKeyId"] = mount.Options["fs.s3.accessKeyId"]
 			}
@@ -309,6 +314,7 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 
 		// support cos
 		if strings.HasPrefix(mount.MountPoint, "cos://") {
+			mountType = "cos"
 			if mount.Options["fs.cos.accessKeyId"] != "" {
 				propertiesFileStore["jindofsx.cos.accessKeyId"] = mount.Options["fs.cos.accessKeyId"]
 			}
@@ -322,6 +328,7 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 
 		// support obs
 		if strings.HasPrefix(mount.MountPoint, "obs://") {
+			mountType = "obs"
 			if mount.Options["fs.obs.accessKeyId"] != "" {
 				propertiesFileStore["jindofsx.obs.accessKeyId"] = mount.Options["fs.obs.accessKeyId"]
 			}
@@ -335,6 +342,7 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 
 		// support HDFS HA
 		if strings.HasPrefix(mount.MountPoint, "hdfs://") {
+			mountType = "hdfs"
 			for key, value := range mount.Options {
 				propertiesFileStore[strings.Replace(key, "fs", "jindofsx", 1)] = value
 			}
@@ -344,44 +352,35 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 		for _, encryptOption := range mount.EncryptOptions {
 			key := encryptOption.Name
 			secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
-			secret, err := kubeclient.GetSecret(e.Client, secretKeyRef.Name, e.namespace)
-			if err != nil {
-				e.Log.Info("can't get the secret")
-				break
+			if secretMountSupport {
+				value.Secret = secretKeyRef.Name
+				if key == "fs."+mountType+".accessKeyId" {
+					value.SecretKey = key
+					e.Log.Info("Get %s From %s!", key, secretKeyRef.Name)
+				}
+				if key == "fs."+mountType+".accessKeySecret" {
+					value.SecretValue = key
+					e.Log.Info("Get %s From %s!", key, secretKeyRef.Name)
+				}
+			} else {
+				secret, err := kubeclient.GetSecret(e.Client, secretKeyRef.Name, e.namespace)
+				if err != nil {
+					e.Log.Info("can't get the input secret from dataset", secretKeyRef.Name)
+					break
+				}
+				value := secret.Data[secretKeyRef.Key]
+				if key == "fs."+mountType+".accessKeyId" {
+					propertiesFileStore["jindofsx."+mountType+".accessKeyId"] = string(value)
+				}
+				if key == "fs."+mountType+".accessKeySecret" {
+					propertiesFileStore["jindofsx."+mountType+".accessKeySecret"] = string(value)
+				}
+				e.Log.Info("Get Credential From Secret Successfully")
 			}
-			value := secret.Data[secretKeyRef.Key]
-			if err != nil {
-				e.Log.Info("decode value failed")
-			}
-			if key == "fs.oss.accessKeyId" {
-				propertiesFileStore["jindofsx.oss.accessKeyId"] = string(value)
-			}
-			if key == "fs.oss.accessKeySecret" {
-				propertiesFileStore["jindofsx.oss.accessKeySecret"] = string(value)
-			}
-			if key == "fs.s3.accessKeyId" {
-				propertiesFileStore["jindofsx.s3.accessKeyId"] = string(value)
-			}
-			if key == "fs.s3.accessKeySecret" {
-				propertiesFileStore["jindofsx.s3.accessKeySecret"] = string(value)
-			}
-			if key == "fs.cos.accessKeyId" {
-				propertiesFileStore["jindofsx.cos.accessKeyId"] = string(value)
-			}
-			if key == "fs.cos.accessKeySecret" {
-				propertiesFileStore["jindofsx.cos.accessKeySecret"] = string(value)
-			}
-			if key == "fs.obs.accessKeyId" {
-				propertiesFileStore["jindofsx.obs.accessKeyId"] = string(value)
-			}
-			if key == "fs.obs.accessKeySecret" {
-				propertiesFileStore["jindofsx.obs.accessKeySecret"] = string(value)
-			}
-			e.Log.Info("Get Credential From Secret Successfully")
 		}
+		value.MountType = mountType
 	}
 	value.Master.FileStoreProperties = propertiesFileStore
-
 	return nil
 }
 
@@ -678,11 +677,11 @@ func (e *JindoFSxEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, value
 		properties["fs.jindofsx.ram.cache.enable"] = "false"
 	}
 	// set secret
-	if len(runtime.Spec.Secret) != 0 {
-		properties["fs.oss.credentials.provider"] = "com.aliyun.jindodata.oss.auth.CustomCredentialsProvider"
-		properties["aliyun.oss.provider.url"] = "secrets:///token/"
-		properties["fs.oss.provider.endpoint"] = "secrets:///token/"
-		properties["fs.oss.provider.format"] = "JSON"
+	if len(value.Secret) != 0 {
+		properties["fs."+value.MountType+".credentials.provider"] = "com.aliyun.jindodata.oss.auth.CustomCredentialsProvider"
+		properties["aliyun."+value.MountType+".provider.url"] = "secrets:///token/"
+		properties["fs."+value.MountType+".provider.endpoint"] = "secrets:///token/"
+		properties["fs."+value.MountType+".provider.format"] = "JSON"
 	}
 
 	if len(runtime.Spec.Fuse.Properties) > 0 {
@@ -830,6 +829,7 @@ func (e *JindoFSxEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime, da
 			fuseArgs = append(fuseArgs, "-oentry_timeout=0")
 			fuseArgs = append(fuseArgs, "-onegative_timeout=0")
 		}
+		fuseArgs = append(fuseArgs, "-ometrics_port=0")
 	}
 	if runtime.Spec.Master.Disabled && runtime.Spec.Worker.Disabled {
 		fuseArgs = append(fuseArgs, "-ouri="+dataset.Spec.Mounts[0].MountPoint)
@@ -841,7 +841,7 @@ func (e *JindoFSxEngine) getSmartDataConfigs(runtime *datav1alpha1.JindoRuntime)
 	// Apply defaults
 	config := smartdataConfig{
 		image:           "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata",
-		imageTag:        "4.5.2",
+		imageTag:        "4.6.8",
 		imagePullPolicy: "Always",
 		dnsServer:       "1.1.1.1",
 	}
@@ -879,7 +879,7 @@ func (e *JindoFSxEngine) getSmartDataConfigs(runtime *datav1alpha1.JindoRuntime)
 func (e *JindoFSxEngine) parseFuseImage(runtime *datav1alpha1.JindoRuntime) (image, tag, imagePullPolicy string) {
 	// Apply defaults
 	image = "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse"
-	tag = "4.5.2"
+	tag = "4.6.8"
 	imagePullPolicy = "Always"
 
 	// Override with global-scoped configs
@@ -911,14 +911,17 @@ func (e *JindoFSxEngine) parseFuseImage(runtime *datav1alpha1.JindoRuntime) (ima
 func (e *JindoFSxEngine) transformSecret(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
 	if len(runtime.Spec.Secret) != 0 {
 		value.Secret = runtime.Spec.Secret
+		value.UseStsToken = true
+	} else {
+		value.UseStsToken = false
 	}
 }
 
 func (e *JindoFSxEngine) transformToken(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
 	properties := map[string]string{}
-	if len(runtime.Spec.Secret) != 0 {
+	if len(value.Secret) != 0 {
 		properties["default.credential.provider"] = "secrets:///token/"
-		properties["jindofsx.oss.provider.endpoint"] = "secrets:///token/"
+		properties["jindofsx."+value.MountType+".provider.endpoint"] = "secrets:///token/"
 	} else {
 		properties["default.credential.provider"] = "none"
 	}
@@ -1131,4 +1134,16 @@ func (e *JindoFSxEngine) getMediumTypeFromVolumeSource(defaultMediumType string,
 	}
 
 	return mediumType
+}
+
+func (e *JindoFSxEngine) checkIfSupportSecretMount(runtime *datav1alpha1.JindoRuntime, smartdataTag string, fuseTag string) bool {
+	fuseOnly := runtime.Spec.Master.Disabled && runtime.Spec.Worker.Disabled
+	compareSmartdata, _ := versionutil.Compare(smartdataTag, imageTagSupportAKFile)
+	newSmartdataVersion := compareSmartdata >= 0
+	compareFuse, _ := versionutil.Compare(fuseTag, imageTagSupportAKFile)
+	newFuseVersion := compareFuse >= 0
+	if (fuseOnly && newFuseVersion) || (newSmartdataVersion && newFuseVersion) {
+		return true
+	}
+	return false
 }

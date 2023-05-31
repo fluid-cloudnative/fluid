@@ -10,18 +10,18 @@ RUN make goosefsruntime-controller-build && \
 # Debug
 RUN go install github.com/go-delve/delve/cmd/dlv@v1.8.2
 
-FROM alpine:3.17
+FROM alpine:3.18
 RUN apk add --update curl tzdata iproute2 bash libc6-compat vim &&  \
  	rm -rf /var/cache/apk/* && \
  	cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
  	echo "Asia/Shanghai" >  /etc/timezone
 
 ARG TARGETARCH
-RUN curl -o helm-v3.0.3-linux-${TARGETARCH}.tar.gz https://get.helm.sh/helm-v3.0.3-linux-${TARGETARCH}.tar.gz && \
-    tar -xvf helm-v3.0.3-linux-${TARGETARCH}.tar.gz && \
+RUN curl -o helm-v3.11.3-linux-${TARGETARCH}.tar.gz https://get.helm.sh/helm-v3.11.3-linux-${TARGETARCH}.tar.gz && \
+    tar -xvf helm-v3.11.3-linux-${TARGETARCH}.tar.gz && \
     mv linux-${TARGETARCH}/helm /usr/local/bin/ddc-helm && \
     chmod u+x /usr/local/bin/ddc-helm && \
-    rm -f helm-v3.0.3-linux-${TARGETARCH}.tar.gz
+    rm -f helm-v3.11.3-linux-${TARGETARCH}.tar.gz
 
 ENV K8S_VERSION v1.14.8
 RUN curl -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/${TARGETARCH}/kubectl && chmod +x /usr/local/bin/kubectl

@@ -1,0 +1,149 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: dataset-controller
+rules:
+  - apiGroups:
+    - ""
+    resources:
+    - persistentvolumes
+    - persistentvolumeclaims
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - ""
+    resources:
+    - namespaces
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+      - batch
+    resources:
+      - jobs
+      - jobs/status
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - delete
+      - update
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - pods/exec
+    verbs:
+      - create
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - list
+      - watch
+      - get
+      - create
+      - delete
+      - update
+  - apiGroups:
+      - data.fluid.io
+    resources:
+      - datamigrates
+      - datamigrates/status
+      - dataloads
+      - dataloads/status
+      - databackups
+      - databackups/status
+      - datasets
+      - datasets/status
+      - alluxioruntimes
+      - alluxioruntimes/status
+      - jindoruntimes
+      - jindoruntimes/status
+      - goosefsruntimes
+      - goosefsruntimes/status
+      - juicefsruntimes
+      - juicefsruntimes/status
+      - thinruntimes
+      - thinruntimes/status
+      - efcruntimes
+      - efcruntimes/status
+    verbs:
+      - '*'
+  - apiGroups:
+      - apps
+    resources:
+      - daemonsets
+      - statefulsets
+      - daemonsets/status
+      - statefulsets/status
+    verbs:
+      - '*'
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+      - deployments/scale
+      - deployments/status
+    verbs:
+      - 'get'
+      - 'list'
+      - 'watch'
+      - 'update'
+      - 'patch'
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - '*'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: dataset-clusterrolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: dataset-controller
+subjects:
+  - kind: ServiceAccount
+    name: dataset-controller
+    namespace: {{ include "fluid.namespace" . }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dataset-controller
+  namespace: {{ include "fluid.namespace" . }}

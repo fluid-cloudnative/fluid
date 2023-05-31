@@ -55,6 +55,13 @@ jobs:
           make update-crd
           git status --porcelain
           if [ -z "`git status --porcelain`" ]; then echo "CRD validation passed."; else echo "CRD validation failed. Please use 'make update-crd' to keep CRDs latest"; exit 1; fi
+      
+      - name: OpenAPI validation check
+        run: |
+          make gen-openapi
+          echo $(git status --porcelain | grep generated)
+          if [ -z "$(git status --porcelain | grep generated)" ]; then echo "openapi validation passed."; else echo "openapi validation failed. Please use 'make gen-openapi' to update openapi"; exit 1; fi
+
 
       - name: Project lint
         run: |
@@ -94,6 +101,4 @@ jobs:
       run: |
         make build
         make test
-        echo $(git status --porcelain | grep generated)
-        if [ -z "$(git status --porcelain | grep generated)" ]; then echo "openapi validation passed."; else echo "openapi validation failed. Please use 'make build' to update openapi"; exit 1; fi
         bash <(curl -s https://codecov.io/bash)

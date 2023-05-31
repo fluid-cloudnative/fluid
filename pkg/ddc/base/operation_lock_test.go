@@ -17,9 +17,11 @@ limitations under the License.
 package base
 
 import (
-	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"testing"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
 
 func TestGetDataBackupRef(t *testing.T) {
@@ -39,7 +41,7 @@ func TestGetDataBackupRef(t *testing.T) {
 					Spec:       v1alpha1.DataBackupSpec{},
 				},
 			},
-			want: "default/test",
+			want: "test",
 		},
 	}
 	for _, tt := range tests {

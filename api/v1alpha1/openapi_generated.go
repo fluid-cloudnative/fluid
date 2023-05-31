@@ -1747,6 +1747,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetSpec(ref common.Referenc
 						},
 					},
 				},
+				Required: []string{"mounts"},
 			},
 		},
 		Dependencies: []string{

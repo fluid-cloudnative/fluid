@@ -19,27 +19,24 @@ package base
 import (
 	"context"
 	"fmt"
+	"reflect"
+
+	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/client-go/util/retry"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	v1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/util/retry"
-	"reflect"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func GetDataOperationKey(object client.Object) string {
-	return types.NamespacedName{
-		Name:      object.GetName(),
-		Namespace: object.GetNamespace(),
-	}.String()
+	return object.GetName()
 }
 
-// SetDataOperationInTargetDataset return err if current data operation can not be operated on target dataset,
-// if can, set target dataset OperationRef field to mark the data operation being performed.
+// SetDataOperationInTargetDataset set status of target dataset to mark the data operation being performed.
 func SetDataOperationInTargetDataset(ctx cruntime.ReconcileRequestContext, object client.Object,
 	operation dataoperation.OperationInterface, engine Engine) error {
 	targetDataset := ctx.Dataset
@@ -64,24 +61,7 @@ func SetDataOperationInTargetDataset(ctx cruntime.ReconcileRequestContext, objec
 			return err
 		}
 
-		conflictingDataOpKey := dataset.GetDataOperationInProgress(operationTypeName)
 		dataOpKey := GetDataOperationKey(object)
-
-		// If the target dataset is already doing this operation, return nil
-		if dataOpKey == conflictingDataOpKey {
-			return nil
-		}
-
-		// other same type data operation already in target dataset, return error and requeue
-		if len(conflictingDataOpKey) != 0 && conflictingDataOpKey != dataOpKey {
-			ctx.Log.Info(fmt.Sprintf("Found other %s that is in Executing phase, will backoff", operationTypeName), "other", conflictingDataOpKey)
-			ctx.Recorder.Eventf(object, v1.EventTypeNormal, common.DataOperationCollision,
-				"Found other %s(%s) that is in Executing phase, will backoff",
-				operationTypeName, conflictingDataOpKey)
-			return fmt.Errorf("found other %s that is in Executing phase, will backoff", operationTypeName)
-		}
-
-		ctx.Log.Info("No conflicts detected, try to lock the target dataset")
 
 		// set current data operation in the target dataset
 		datasetToUpdate := dataset.DeepCopy()
@@ -106,9 +86,9 @@ func SetDataOperationInTargetDataset(ctx cruntime.ReconcileRequestContext, objec
 // ReleaseTargetDataset release target dataset OperationRef field which marks the data operation being performed.
 func ReleaseTargetDataset(ctx cruntime.ReconcileRequestContext, object client.Object,
 	operation dataoperation.OperationInterface) error {
-	operationTypeName := string(operation.GetOperationType())
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		dataset, err := operation.GetTargetDataset(object)
+		operationTypeName := string(operation.GetOperationType())
 		if err != nil {
 			if utils.IgnoreNotFound(err) == nil {
 				statusError := err.(*apierrors.StatusError)
@@ -118,20 +98,18 @@ func ReleaseTargetDataset(ctx cruntime.ReconcileRequestContext, object client.Ob
 			// other error
 			return err
 		}
-		currentDataOpKey := dataset.GetDataOperationInProgress(operationTypeName)
+		dataOpKey := GetDataOperationKey(object)
 
-		if currentDataOpKey != GetDataOperationKey(object) {
-			ctx.Log.Info("Found Ref inconsistent with the reconciling DataBack, won't release this lock, ignore it", "Operation", operationTypeName, "ref", currentDataOpKey)
-			return nil
-		}
 		datasetToUpdate := dataset.DeepCopy()
-		datasetToUpdate.RemoveDataOperationInProgress(operationTypeName)
+		dataOpRef := datasetToUpdate.RemoveDataOperationInProgress(operationTypeName, dataOpKey)
 
-		// different operation may set other fields
-		operation.RemoveTargetDatasetStatusInProgress(datasetToUpdate)
-		if !reflect.DeepEqual(datasetToUpdate.Status, dataset.Status) {
-			if err = ctx.Client.Status().Update(context.TODO(), datasetToUpdate); err != nil {
-				return err
+		if dataOpRef == "" {
+			// different operation may set other fields
+			operation.RemoveTargetDatasetStatusInProgress(datasetToUpdate)
+			if !reflect.DeepEqual(datasetToUpdate.Status, dataset.Status) {
+				if err = ctx.Client.Status().Update(context.TODO(), datasetToUpdate); err != nil {
+					return err
+				}
 			}
 		}
 		return nil

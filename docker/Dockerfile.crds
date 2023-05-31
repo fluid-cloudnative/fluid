@@ -1,4 +1,4 @@
-FROM alpine:3.17
+FROM alpine:3.18
 
 COPY ./charts/fluid/fluid/crds /fluid/crds
 COPY ./tools/crd-upgrade/upgrade-crds.sh /fluid/upgrade-crds.sh

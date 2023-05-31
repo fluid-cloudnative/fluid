@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"strings"
+
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -122,7 +124,7 @@ type DatasetSpec struct {
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:UniqueItems=false
 	// +required
-	Mounts []Mount `json:"mounts,omitempty"`
+	Mounts []Mount `json:"mounts"`
 
 	// The owner of the dataset
 	// +optional
@@ -346,13 +348,31 @@ func (dataset *Dataset) GetDataOperationInProgress(operationType string) string 
 // SetDataOperationInProgress set the data operation running on this dataset,
 func (dataset *Dataset) SetDataOperationInProgress(operationType string, name string) {
 	if dataset.Status.OperationRef == nil {
-		dataset.Status.OperationRef = map[string]string{}
+		dataset.Status.OperationRef = map[string]string{
+			operationType: name,
+		}
+		return
 	}
 
-	dataset.Status.OperationRef[operationType] = name
+	dataset.Status.OperationRef[operationType] = dataset.Status.OperationRef[operationType] + "," + name
 }
 
 // RemoveDataOperationInProgress release Dataset for operation
-func (dataset *Dataset) RemoveDataOperationInProgress(operationType string) {
-	delete(dataset.Status.OperationRef, operationType)
+func (dataset *Dataset) RemoveDataOperationInProgress(operationType, name string) string {
+	if dataset.Status.OperationRef == nil {
+		return ""
+	}
+	dataOpKeys := strings.Split(dataset.Status.OperationRef[operationType], ",")
+	if len(dataOpKeys) == 1 && dataOpKeys[0] == name {
+		delete(dataset.Status.OperationRef, operationType)
+		return ""
+	}
+	for i, key := range dataOpKeys {
+		if key == name {
+			dataOpKeys = append(dataOpKeys[:i], dataOpKeys[i+1:]...)
+			break
+		}
+	}
+	dataset.Status.OperationRef[operationType] = strings.Join(dataOpKeys, ",")
+	return dataset.Status.OperationRef[operationType]
 }

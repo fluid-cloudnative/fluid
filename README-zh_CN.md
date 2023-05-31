@@ -14,6 +14,7 @@
 
 |![更新](static/bell-outline-badge.svg) 最新进展：|
 |------------------|
+|May. 26th, 2023. Fluid v0.9.0  **发布**! 添加thinRuntime以简化与第三方存储系统的集成，跨命名空间访问数据，支持子数据集，新的数据操作，如数据迁移，分布式文件系统的本地加速系统EFCRuntime等等。详情参见 [CHANGELOG](CHANGELOG.md)。|
 |Sep. 03th, 2022. Fluid v0.8.0  **发布**! 提供一系列新功能，包括基于Fluid边车支持的Serverlesss作业生命周期管理，按需启动Runtime controller，自动化CRD更新, 严格的pod与数据集节点的调度机制， JuicefsRuntime的Arm64支持, Alluxio Runtime的GCS支持等等，详情参见 [CHANGELOG](CHANGELOG.md)。|
 |Mar. 16th, 2021. Fluid v0.5.0 **发布**! 提供一系列新功能，包括提供数据集缓存的在线弹性扩缩容，元数据备份与恢复，Fuse全局模式部署等，详情参见 [CHANGELOG](CHANGELOG.md)。|
 |Nov. 6th, 2020. Fluid v0.4.0 **发布**! 提供一系列新功能和修复上一版本的遗留问题，包括提供主动的数据预热，详情参见 [CHANGELOG](CHANGELOG.md)。|

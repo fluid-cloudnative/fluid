@@ -99,7 +99,7 @@ def main():
     flow.append_step(
         SimpleStep(
             step_name="create data read job",
-            forth_fn=funcs.create_job_fn(script="time cp -r /data/ /tmp-data", dataset_name=name, namespace=namespace),
+            forth_fn=funcs.create_job_fn(script="time cp -r /data/ /tmp-data && [[ ! -z \"$(ls /tmp-data)\" ]]", dataset_name=name, namespace=namespace),
             back_fn=funcs.delete_job_fn()
         )
     )

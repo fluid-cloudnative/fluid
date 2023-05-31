@@ -28,12 +28,19 @@
 $ kubectl create ns fluid-system
 ```
 
+为您本地Helm仓库添加并且更新“fluid”源到最新版本
+
+```shell
+$ helm repo add fluid https://fluid-cloudnative.github.io/charts
+$ helm repo update
+```
+
 安装Fluid：
 
 ```shell
-$ helm install fluid fluid.tgz
+$ helm install fluid fluid/fluid
 NAME: fluid
-LAST DEPLOYED: Fri Sep  2 19:03:56 2022
+LAST DEPLOYED: Wed May 24 18:17:16 2023
 NAMESPACE: default
 STATUS: deployed
 REVISION: 1
@@ -44,7 +51,7 @@ TEST SUITE: None
 
 > `helm install`命令的一般格式是`helm install <RELEASE_NAME> <SOURCE>`，在上面的命令中，第一个`fluid`指定了安装的release名字，这可以自行更改，第二个`fluid.tgz`指定了helm chart所在路径。
 
-### 使用Helm将Fluid更新到最新版本(v0.8)
+### 使用Helm将Fluid更新到最新版本
 
 如果您此前已经安装过旧版本的Fluid，可以使用Helm进行更新。
 更新前，建议确保各Runtime资源对象中的各个组件已经顺利启动完成，也就是类似以下状态：
@@ -61,10 +68,10 @@ hbase-worker-rznd5   2/2     Running   0          9h
 
 更新：
 ```shell
-$ helm upgrade fluid fluid/
+$ helm upgrade fluid fluid/fluid
 Release "fluid" has been upgraded. Happy Helming!
 NAME: fluid
-LAST DEPLOYED: Fri Sep  2 18:54:18 2022
+LAST DEPLOYED: Wed May 24 18:27:54 2023
 NAMESPACE: default
 STATUS: deployed
 REVISION: 2
@@ -73,7 +80,7 @@ TEST SUITE: None
 
 > 对于Kubernetes v1.17及以下环境，请使用`helm upgrade --set runtime.criticalFusePod=false fluid fluid/`
 
-> 建议您从v0.7升级到最新版本v0.8。如果您安装的是更旧版本的Fluid，建议重新进行安装。
+> 建议您从v0.7升级到最新版本。如果您安装的是更旧版本的Fluid，建议重新进行安装。
 
 ### 检查各组件状态
 
@@ -81,26 +88,31 @@ TEST SUITE: None
 
 ```shell
 $ kubectl get crd | grep data.fluid.io
-alluxioruntimes.data.fluid.io                          2022-06-28T02:43:52Z
-databackups.data.fluid.io                              2022-06-28T02:43:52Z
-dataloads.data.fluid.io                                2022-06-28T02:43:52Z
-datasets.data.fluid.io                                 2022-06-28T02:43:52Z
-goosefsruntimes.data.fluid.io                          2022-06-28T02:43:52Z
-jindoruntimes.data.fluid.io                            2022-06-28T02:43:52Z
-juicefsruntimes.data.fluid.io                          2022-06-28T02:43:52Z
+alluxioruntimes.data.fluid.io                          2023-05-24T10:14:47Z
+databackups.data.fluid.io                              2023-05-24T10:14:47Z
+dataloads.data.fluid.io                                2023-05-24T10:14:47Z
+datamigrates.data.fluid.io                             2023-05-24T10:28:11Z
+datasets.data.fluid.io                                 2023-05-24T10:14:47Z
+efcruntimes.data.fluid.io                              2023-05-24T10:28:12Z
+goosefsruntimes.data.fluid.io                          2023-05-24T10:14:47Z
+jindoruntimes.data.fluid.io                            2023-05-24T10:14:48Z
+juicefsruntimes.data.fluid.io                          2023-05-24T10:14:48Z
+thinruntimeprofiles.data.fluid.io                      2023-05-24T10:28:16Z
+thinruntimes.data.fluid.io                             2023-05-24T10:28:16Z
 ```
 
 **查看各Pod的状态:**
 
 ```shell
 $ kubectl get pod -n fluid-system
-NAME                                        READY   STATUS      RESTARTS   AGE
-csi-nodeplugin-fluid-g6ggh                  2/2     Running     0          6m53s
-csi-nodeplugin-fluid-tnj5r                  2/2     Running     0          5m50s
-dataset-controller-5f56cc4f97-2lfqt         1/1     Running     0          6m54s
-fluid-crds-upgrade-0.8.0-aa7fdca--1-gtpt9   0/1     Completed   0          7m23s
-fluid-webhook-7d8c586f59-mxkwz              1/1     Running     0          6m54s
-fluidapp-controller-86f5bfc4c5-ct25p        1/1     Running     0          6m54s
+NAME                                     READY   STATUS      RESTARTS   AGE
+csi-nodeplugin-fluid-2scs9               2/2     Running     0          50s
+csi-nodeplugin-fluid-7vflb               2/2     Running     0          20s
+csi-nodeplugin-fluid-f9xfv               2/2     Running     0          33s
+dataset-controller-686d9d9cd6-gk6m6      1/1     Running     0          50s
+fluid-crds-upgrade-0.9.0-37e17c6-fp4mm   0/1     Completed   0          74s
+fluid-webhook-5bc9dfb9d8-hdvhk           1/1     Running     0          50s
+fluidapp-controller-6d4cbdcd88-z7l4c     1/1     Running     0          50s
 ```
 
 如果Pod状态如上所示，那么Fluid就可以正常使用了！

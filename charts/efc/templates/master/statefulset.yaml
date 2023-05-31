@@ -67,17 +67,6 @@ spec:
       {{- if .Values.master.affinity }}
 {{ toYaml .Values.master.affinity | indent 8  }}
       {{- end }}
-      initContainers:
-        - name: init-fuse
-          image: {{ .Values.initFuse.image }}:{{ .Values.initFuse.imageTag }}
-          imagePullPolicy: {{ .Values.initFuse.imagePullPolicy }}
-          command: [ "/entrypoint.sh" ]
-          args:
-            - "init_fuse"
-            - {{ .Values.osAdvise.enabled | quote }}
-            - {{ .Values.osAdvise.osVersion | quote }}
-          securityContext:
-            privileged: false
       containers:
         - name: efc-master
           image: {{ .Values.master.image }}:{{ .Values.master.imageTag }}
@@ -112,21 +101,6 @@ spec:
             {{- if .Values.master.tieredstore }}
 {{- include "efc.tieredstoreVolumeMounts" .Values.master }}
             {{- end }}
-            - name: efc-sock
-              mountPath: /var/run/efc
-        - name: efc-sessmgr
-          image: {{ .Values.master.image }}:{{ .Values.master.imageTag }}
-          imagePullPolicy: {{ .Values.master.imagePullPolicy }}
-          command: [ "/entrypoint.sh" ]
-          args:
-            - "sessmgr"
-          securityContext:
-            privileged: false
-          lifecycle:
-            preStop:
-              exec:
-                command: [ "sh", "-c", "/entrypoint.sh stop_sessmgr" ]
-          volumeMounts:
             - name: efc-sock
               mountPath: /var/run/efc
       {{- with .Values.master.imagePullSecrets }}

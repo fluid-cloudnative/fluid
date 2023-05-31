@@ -868,7 +868,7 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 											// "jindo",
 											"bash",
 											"-c",
-											"time /check-mount.sh /jfs/jindofs-fuse jindo  >> /proc/1/fd/1",
+											"time /check-mount.sh /jfs jindo  >> /proc/1/fd/1",
 										},
 									},
 								},

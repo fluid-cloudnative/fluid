@@ -43,7 +43,7 @@ func TestTransformToken(t *testing.T) {
 					MountPoint: "local:///mnt/test",
 					Name:       "test",
 				}},
-			}}, &Jindo{}, "secrets:///token/"},
+			}}, &Jindo{Secret: "test"}, "secrets:///token/"},
 	}
 	for _, test := range tests {
 		engine := &JindoFSxEngine{Log: fake.NullLogger()}
