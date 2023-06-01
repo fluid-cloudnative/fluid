@@ -50,7 +50,6 @@ func (e *AlluxioEngine) optimizeDefaultProperties(runtime *datav1alpha1.AlluxioR
 	setDefaultProperties(runtime, value, "alluxio.user.block.worker.client.pool.min", "512")
 	setDefaultProperties(runtime, value, "alluxio.fuse.debug.enabled", "false")
 	setDefaultProperties(runtime, value, "alluxio.web.ui.enabled", "false")
-	setDefaultProperties(runtime, value, "alluxio.user.file.writetype.default", "MUST_CACHE")
 	setDefaultProperties(runtime, value, "alluxio.user.ufs.block.read.location.policy", "alluxio.client.block.policy.LocalFirstPolicy")
 	setDefaultProperties(runtime, value, "alluxio.user.block.write.location.policy.class", "alluxio.client.block.policy.LocalFirstAvoidEvictionPolicy")
 	setDefaultProperties(runtime, value, "alluxio.worker.allocator.class", "alluxio.worker.block.allocator.MaxFreeAllocator")
