@@ -139,6 +139,21 @@ func TestDataset_SetDataOperationInProgress(t *testing.T) {
 			},
 			want: "test1,test2",
 		},
+		{
+			name: "test3",
+			fields: fields{
+				Status: DatasetStatus{
+					OperationRef: map[string]string{
+						"DataLoad": "test1",
+					},
+				},
+			},
+			args: args{
+				operationType: "DataMigrate",
+				name:          "test",
+			},
+			want: "test",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
