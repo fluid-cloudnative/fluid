@@ -347,10 +347,14 @@ func (dataset *Dataset) GetDataOperationInProgress(operationType string) string 
 
 // SetDataOperationInProgress set the data operation running on this dataset,
 func (dataset *Dataset) SetDataOperationInProgress(operationType string, name string) {
-	if dataset.Status.OperationRef == nil || dataset.Status.OperationRef[operationType] == "" {
+	if dataset.Status.OperationRef == nil {
 		dataset.Status.OperationRef = map[string]string{
 			operationType: name,
 		}
+		return
+	}
+	if dataset.Status.OperationRef[operationType] == "" {
+		dataset.Status.OperationRef[operationType] = name
 		return
 	}
 
