@@ -57,6 +57,6 @@ type OperationInterface interface {
 }
 
 type StatusHandler interface {
-	// UpdateStatusByHelmStatus update the operation status according to helm chart status
-	UpdateStatusByHelmStatus(ctx runtime.ReconcileRequestContext, object client.Object, opStatus *datav1alpha1.OperationStatus) error
+	// GetOperationStatus get operation status according to helm chart status
+	GetOperationStatus(ctx runtime.ReconcileRequestContext, object client.Object, opStatus *datav1alpha1.OperationStatus) (result *datav1alpha1.OperationStatus, err error)
 }

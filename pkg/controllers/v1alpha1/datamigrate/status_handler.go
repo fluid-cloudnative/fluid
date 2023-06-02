@@ -50,7 +50,8 @@ type OnEventStatusHandler struct {
 
 var _ dataoperation.StatusHandler = &OnEventStatusHandler{}
 
-func (m *OnceStatusHandler) UpdateStatusByHelmStatus(ctx cruntime.ReconcileRequestContext, object client.Object, opStatus *datav1alpha1.OperationStatus) error {
+func (m *OnceStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestContext, object client.Object, opStatus *datav1alpha1.OperationStatus) (result *datav1alpha1.OperationStatus, err error) {
+	result = opStatus.DeepCopy()
 	// 1. Check running status of the DataMigrate job
 	releaseName := utils.GetDataMigrateReleaseName(object.GetName())
 	jobName := utils.GetDataMigrateJobName(releaseName)
@@ -62,13 +63,13 @@ func (m *OnceStatusHandler) UpdateStatusByHelmStatus(ctx cruntime.ReconcileReque
 			ctx.Log.Info("Related Job missing, will delete helm chart and retry", "namespace", ctx.Namespace, "jobName", jobName)
 			if err = helm.DeleteReleaseIfExists(releaseName, ctx.Namespace); err != nil {
 				m.Log.Error(err, "can't delete DataMigrate release", "namespace", ctx.Namespace, "releaseName", releaseName)
-				return err
+				return
 			}
-			return err
+			return
 		}
 		// other error
 		ctx.Log.Error(err, "can't get DataMigrate job", "namespace", ctx.Namespace, "jobName", jobName)
-		return err
+		return
 	}
 
 	if len(job.Status.Conditions) != 0 {
@@ -76,7 +77,7 @@ func (m *OnceStatusHandler) UpdateStatusByHelmStatus(ctx cruntime.ReconcileReque
 			job.Status.Conditions[0].Type == batchv1.JobComplete {
 			jobCondition := job.Status.Conditions[0]
 			// job either failed or complete, update DataMigrate's phase status
-			opStatus.Conditions = []datav1alpha1.Condition{
+			result.Conditions = []datav1alpha1.Condition{
 				{
 					Type:               common.ConditionType(jobCondition.Type),
 					Status:             jobCondition.Status,
@@ -87,20 +88,21 @@ func (m *OnceStatusHandler) UpdateStatusByHelmStatus(ctx cruntime.ReconcileReque
 				},
 			}
 			if jobCondition.Type == batchv1.JobFailed {
-				opStatus.Phase = common.PhaseFailed
+				result.Phase = common.PhaseFailed
 			} else {
-				opStatus.Phase = common.PhaseComplete
+				result.Phase = common.PhaseComplete
 			}
-			opStatus.Duration = utils.CalculateDuration(object.GetCreationTimestamp().Time, jobCondition.LastTransitionTime.Time)
-			return nil
+			result.Duration = utils.CalculateDuration(object.GetCreationTimestamp().Time, jobCondition.LastTransitionTime.Time)
+			return
 		}
 	}
 
 	ctx.Log.V(1).Info("DataMigrate job still running", "namespace", ctx.Namespace, "jobName", jobName)
-	return nil
+	return
 }
 
-func (c *CronStatusHandler) UpdateStatusByHelmStatus(ctx cruntime.ReconcileRequestContext, object client.Object, opStatus *datav1alpha1.OperationStatus) error {
+func (c *CronStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestContext, object client.Object, opStatus *datav1alpha1.OperationStatus) (result *datav1alpha1.OperationStatus, err error) {
+	result = opStatus.DeepCopy()
 	// 1. Check running status of the DataMigrate job
 	releaseName := utils.GetDataMigrateReleaseName(object.GetName())
 	cronjobName := utils.GetDataMigrateJobName(releaseName)
@@ -112,32 +114,32 @@ func (c *CronStatusHandler) UpdateStatusByHelmStatus(ctx cruntime.ReconcileReque
 			ctx.Log.Info("Related Cronjob missing, will delete helm chart and retry", "namespace", ctx.Namespace, "cronjobName", cronjobName)
 			if err = helm.DeleteReleaseIfExists(releaseName, ctx.Namespace); err != nil {
 				c.Log.Error(err, "can't delete DataMigrate release", "namespace", ctx.Namespace, "releaseName", releaseName)
-				return err
+				return
 			}
-			return err
+			return
 		}
 		// other error
 		ctx.Log.Error(err, "can't get DataMigrate cronjob", "namespace", ctx.Namespace, "cronjobName", cronjobName)
-		return err
+		return
 	}
 
 	jobs, err := utils.ListDataMigrateJobByCronjob(c.Client, cronjob)
 	if err != nil {
 		ctx.Log.Error(err, "can't list DataMigrate job by cronjob", "namespace", ctx.Namespace, "cronjobName", cronjobName)
-		return err
+		return
 	}
 
 	// get the newest job
 	var currentJob *batchv1.Job
 	for _, job := range jobs {
-		if job.CreationTimestamp == *cronjob.Status.LastScheduleTime {
+		if job.CreationTimestamp == *cronjob.Status.LastScheduleTime || job.CreationTimestamp.After(cronjob.Status.LastScheduleTime.Time) {
 			currentJob = &job
 			break
 		}
 	}
 	if currentJob == nil {
 		ctx.Log.Info("can't get newest job by cronjob, skip", "namespace", ctx.Namespace, "cronjobName", cronjobName)
-		return nil
+		return
 	}
 
 	if len(currentJob.Status.Conditions) != 0 {
@@ -145,7 +147,7 @@ func (c *CronStatusHandler) UpdateStatusByHelmStatus(ctx cruntime.ReconcileReque
 			currentJob.Status.Conditions[0].Type == batchv1.JobComplete {
 			jobCondition := currentJob.Status.Conditions[0]
 			// job either failed or complete, update DataMigrate's phase status
-			opStatus.Conditions = []datav1alpha1.Condition{
+			result.Conditions = []datav1alpha1.Condition{
 				{
 					Type:               common.ConditionType(jobCondition.Type),
 					Status:             jobCondition.Status,
@@ -156,12 +158,12 @@ func (c *CronStatusHandler) UpdateStatusByHelmStatus(ctx cruntime.ReconcileReque
 				},
 			}
 			if jobCondition.Type == batchv1.JobFailed {
-				opStatus.Phase = common.PhaseFailed
+				result.Phase = common.PhaseFailed
 			} else {
-				opStatus.Phase = common.PhaseComplete
+				result.Phase = common.PhaseComplete
 			}
-			opStatus.Duration = utils.CalculateDuration(object.GetCreationTimestamp().Time, jobCondition.LastTransitionTime.Time)
-			return nil
+			result.Duration = utils.CalculateDuration(object.GetCreationTimestamp().Time, jobCondition.LastTransitionTime.Time)
+			return
 		}
 	}
 
@@ -169,13 +171,13 @@ func (c *CronStatusHandler) UpdateStatusByHelmStatus(ctx cruntime.ReconcileReque
 	if opStatus.Phase == common.PhaseComplete || opStatus.Phase == common.PhaseFailed {
 		// if datamigrate was complete or failed, but now job is running, set datamigrate pending first
 		// dataset will be locked only when datamigrate pending
-		opStatus.Phase = common.PhasePending
-		opStatus.Duration = "-"
+		result.Phase = common.PhasePending
+		result.Duration = "-"
 	}
-	return nil
+	return
 }
 
-func (o *OnEventStatusHandler) UpdateStatusByHelmStatus(ctx cruntime.ReconcileRequestContext, object client.Object, opStatus *datav1alpha1.OperationStatus) error {
+func (o *OnEventStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestContext, object client.Object, opStatus *datav1alpha1.OperationStatus) (result *datav1alpha1.OperationStatus, err error) {
 	//TODO implement me
-	return nil
+	return nil, nil
 }

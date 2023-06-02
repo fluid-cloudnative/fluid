@@ -37,7 +37,8 @@ type OnceHandler struct {
 var _ dataoperation.StatusHandler = &OnceHandler{}
 
 // UpdateStatusByHelmStatus update the operation status according to helm job status
-func (o *OnceHandler) UpdateStatusByHelmStatus(ctx runtime.ReconcileRequestContext, object client.Object, opStatus *v1alpha1.OperationStatus) (err error) {
+func (o *OnceHandler) GetOperationStatus(ctx runtime.ReconcileRequestContext, object client.Object, opStatus *v1alpha1.OperationStatus) (result *v1alpha1.OperationStatus, err error) {
+	result = opStatus.DeepCopy()
 	// 1. gdt pod name
 	backupPodName := utils.GetDataBackupPodName(object.GetName())
 	backupPod, err := kubeclient.GetPodByName(ctx.Client, backupPodName, object.GetNamespace())
@@ -58,11 +59,11 @@ func (o *OnceHandler) UpdateStatusByHelmStatus(ctx runtime.ReconcileRequestConte
 		// fail to get finishTime, use current time as default
 		finishTime = time.Now()
 	}
-	opStatus.Duration = utils.CalculateDuration(object.GetCreationTimestamp().Time, finishTime)
+	result.Duration = utils.CalculateDuration(object.GetCreationTimestamp().Time, finishTime)
 
 	if kubeclient.IsSucceededPod(backupPod) {
-		opStatus.Phase = common.PhaseComplete
-		opStatus.Conditions = []v1alpha1.Condition{
+		result.Phase = common.PhaseComplete
+		result.Conditions = []v1alpha1.Condition{
 			{
 				Type:               common.Complete,
 				Status:             v1.ConditionTrue,
@@ -73,8 +74,8 @@ func (o *OnceHandler) UpdateStatusByHelmStatus(ctx runtime.ReconcileRequestConte
 			},
 		}
 	} else if kubeclient.IsFailedPod(backupPod) {
-		opStatus.Phase = common.PhaseFailed
-		opStatus.Conditions = []v1alpha1.Condition{
+		result.Phase = common.PhaseFailed
+		result.Conditions = []v1alpha1.Condition{
 			{
 				Type:               common.Failed,
 				Status:             v1.ConditionTrue,

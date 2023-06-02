@@ -149,7 +149,7 @@ func (t *TemplateEngine) reconcileExecuting(ctx cruntime.ReconcileRequestContext
 		log.Error(err, "status handler is nil")
 		return utils.RequeueIfError(err)
 	}
-	err = statusHandler.UpdateStatusByHelmStatus(ctx, object, opStatus)
+	opStatus, err = statusHandler.GetOperationStatus(ctx, object, opStatus)
 	if err != nil {
 		log.Error(err, "failed to update status")
 		return utils.RequeueIfError(err)
@@ -195,7 +195,7 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 		log.Error(err, "status handler is nil")
 		return utils.RequeueIfError(err)
 	}
-	err = statusHandler.UpdateStatusByHelmStatus(ctx, object, opStatus)
+	opStatus, err = statusHandler.GetOperationStatus(ctx, object, opStatus)
 	if err != nil {
 		log.Error(err, "failed to update status")
 		return utils.RequeueIfError(err)
@@ -233,7 +233,7 @@ func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, o
 		log.Error(err, "status handler is nil")
 		return utils.RequeueIfError(err)
 	}
-	err = statusHandler.UpdateStatusByHelmStatus(ctx, object, opStatus)
+	opStatus, err = statusHandler.GetOperationStatus(ctx, object, opStatus)
 	if err != nil {
 		log.Error(err, "failed to update status")
 		return utils.RequeueIfError(err)

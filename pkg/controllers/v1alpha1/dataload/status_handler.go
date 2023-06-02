@@ -34,7 +34,8 @@ type OnceHandler struct {
 
 var _ dataoperation.StatusHandler = &OnceHandler{}
 
-func (r *OnceHandler) UpdateStatusByHelmStatus(ctx cruntime.ReconcileRequestContext, object client.Object, opStatus *datav1alpha1.OperationStatus) error {
+func (r *OnceHandler) GetOperationStatus(ctx cruntime.ReconcileRequestContext, object client.Object, opStatus *datav1alpha1.OperationStatus) (result *datav1alpha1.OperationStatus, err error) {
+	result = opStatus.DeepCopy()
 	// 2. Check running status of the DataLoad job
 	releaseName := utils.GetDataLoadReleaseName(object.GetName())
 	jobName := utils.GetDataLoadJobName(releaseName)
@@ -47,12 +48,12 @@ func (r *OnceHandler) UpdateStatusByHelmStatus(ctx cruntime.ReconcileRequestCont
 			ctx.Log.Info("Related Job missing, will delete helm chart and retry", "namespace", ctx.Namespace, "jobName", jobName)
 			if err = helm.DeleteReleaseIfExists(releaseName, ctx.Namespace); err != nil {
 				ctx.Log.Error(err, "can't delete dataload release", "namespace", ctx.Namespace, "releaseName", releaseName)
-				return err
+				return
 			}
 		}
 		// other error
 		ctx.Log.Error(err, "can't get dataload job", "namespace", ctx.Namespace, "jobName", jobName)
-		return err
+		return
 	}
 
 	if len(job.Status.Conditions) != 0 {
@@ -61,7 +62,7 @@ func (r *OnceHandler) UpdateStatusByHelmStatus(ctx cruntime.ReconcileRequestCont
 			// job either failed or complete, update DataLoad's phase status
 			jobCondition := job.Status.Conditions[0]
 
-			opStatus.Conditions = []datav1alpha1.Condition{
+			result.Conditions = []datav1alpha1.Condition{
 				{
 					Type:               common.ConditionType(jobCondition.Type),
 					Status:             jobCondition.Status,
@@ -72,15 +73,15 @@ func (r *OnceHandler) UpdateStatusByHelmStatus(ctx cruntime.ReconcileRequestCont
 				},
 			}
 			if jobCondition.Type == batchv1.JobFailed {
-				opStatus.Phase = common.PhaseFailed
+				result.Phase = common.PhaseFailed
 			} else {
-				opStatus.Phase = common.PhaseComplete
+				result.Phase = common.PhaseComplete
 			}
-			opStatus.Duration = utils.CalculateDuration(object.GetCreationTimestamp().Time, jobCondition.LastTransitionTime.Time)
+			result.Duration = utils.CalculateDuration(object.GetCreationTimestamp().Time, jobCondition.LastTransitionTime.Time)
 
-			return nil
+			return
 		}
 	}
 	ctx.Log.V(1).Info("DataLoad job still running", "namespace", ctx.Namespace, "jobName", jobName)
-	return nil
+	return
 }
