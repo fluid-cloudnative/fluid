@@ -20,13 +20,22 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
 type DataMigrateValue struct {
-	DataMigrateInfo DataMigrateInfo `json:"datamigrate"`
+	Name            string                 `json:"name"`
+	Owner           *common.OwnerReference `json:"owner,omitempty"`
+	DataMigrateInfo DataMigrateInfo        `json:"datamigrate"`
 }
 
 type DataMigrateInfo struct {
+	// Policy for migrate, including None, Once, Cron, OnEvent
+	Policy string `json:"policy"`
+
+	// Schedule The schedule in Cron format, only set when policy is cron, see https://en.wikipedia.org/wiki/Cron.
+	Schedule string `json:"schedule,omitempty"`
+
 	// BackoffLimit specifies the upper limit times when the DataMigrate job fails
 	BackoffLimit int32 `json:"backoffLimit,omitempty"`
 

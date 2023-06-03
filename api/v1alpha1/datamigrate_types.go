@@ -48,7 +48,9 @@ type DataMigrateSpec struct {
 	// +optional
 	Options map[string]string `json:"options,omitempty"`
 
-	// policy for migrate, including None, Once, Cron, OnEvent
+	//+kubebuilder:default:=Once
+	//+kubebuilder:validation:Enum=Once;Cron;OnEvent
+	// policy for migrate, including Once, Cron, OnEvent
 	// +optional
 	Policy Policy `json:"policy,omitempty"`
 
@@ -79,10 +81,7 @@ type DataMigrateSpec struct {
 type Policy string
 
 const (
-	// None default policy is Once
-	None Policy = "None"
-
-	// Once run data migrate once
+	// Once run data migrate once, default policy is Once
 	Once Policy = "Once"
 
 	// Cron run data migrate by cron

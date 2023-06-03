@@ -1,0 +1,115 @@
+{{- if eq (lower .Values.datamigrate.policy) "cron" }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ printf "%s-migrate" .Release.Name }}
+  labels:
+    release: {{ .Release.Name }}
+    role: datamigrate-cronjob
+    app: juicefs
+    targetDataset: {{ required "targetDataset should be set" .Values.datamigrate.targetDataset }}
+    datamigrate: {{ .Values.name }}
+  ownerReferences:
+  {{- if .Values.owner.enabled }}
+    - apiVersion: {{ .Values.owner.apiVersion }}
+      blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+      controller: {{ .Values.owner.controller }}
+      kind: {{ .Values.owner.kind }}
+      name: {{ .Values.owner.name }}
+      uid: {{ .Values.owner.uid }}
+  {{- end }}
+spec:
+  schedule: "{{ .Values.datamigrate.schedule }}"
+  jobTemplate:
+    spec:
+      backoffLimit: {{ .Values.datamigrate.backoffLimit | default "3" }}
+      completions: 1
+      parallelism: 1
+      template:
+        metadata:
+          name: {{ printf "%s-migrate" .Release.Name }}
+          annotations:
+            sidecar.istio.io/inject: "false"
+          {{- if .Values.datamigrate.annotations }}
+          {{- range $key, $val := .Values.datamigrate.annotations }}
+            {{ $key | quote }}: {{ $val | quote }}
+          {{- end }}
+          {{- end }}
+          labels:
+            release: {{ .Release.Name }}
+            role: datamigrate-pod
+            app: juicefs
+            cronjob: {{ printf "%s-migrate" .Release.Name }}
+            targetDataset: {{ required "targetDataset should be set" .Values.datamigrate.targetDataset }}
+          {{- if .Values.datamigrate.labels }}
+          {{- range $key, $val := .Values.datamigrate.labels }}
+            {{ $key | quote }}: {{ $val | quote }}
+          {{- end }}
+          {{- end }}
+        spec:
+          restartPolicy: Never
+          {{- with .Values.datamigrate.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
+          {{- if .Values.datamigrate.schedulerName }}
+          schedulerName: {{ .Values.datamigrate.schedulerName }}
+          {{- end }}
+          {{- with .Values.datamigrate.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
+          {{- with .Values.datamigrate.affinity }}
+          affinity:
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
+          {{- with .Values.datamigrate.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
+          containers:
+            - name: datamigrate
+              image: {{ required "DataMigrate image should be set" .Values.datamigrate.image }}
+              imagePullPolicy: IfNotPresent
+              command: [ "/bin/sh", "-c" ]
+              args: [ "/scripts/juicefs_datamigrate.sh" ]
+              env:
+                {{- range $key, $val := .Values.datamigrate.options }}
+                {{- if eq $key "timeout" }}
+                - name: TIMEOUT
+                  value: {{ $val | quote }}
+                {{- end }}
+                {{- if eq $key "edition" }}
+                - name: EDITION
+                  value: {{ $val | quote }}
+                {{- end }}
+                {{- if eq $key "option" }}
+                - name: OPTION
+                  value: {{ $val | quote }}
+                {{- end }}
+                {{- end }}
+                {{- range .Values.datamigrate.encryptOptions }}
+                - name: {{ .name }}
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .valueFrom.secretKeyRef.name }}
+                      key: {{ .valueFrom.secretKeyRef.key }}
+                {{- end }}
+              volumeMounts:
+                - mountPath: /scripts
+                  name: data-migrate-script
+                {{- with .Values.datamigrate.nativeVolumeMounts }}
+                {{ toYaml . | nindent 12 }}
+                {{- end }}
+          volumes:
+            - name: data-migrate-script
+              configMap:
+                name: {{ printf "%s-script" .Release.Name }}
+                items:
+                  - key: datamigrate.sh
+                    path: juicefs_datamigrate.sh
+                    mode: 365
+          {{- with .Values.datamigrate.nativeVolumes }}
+            {{ toYaml . | nindent 8 }}
+          {{- end }}
+{{- end }}

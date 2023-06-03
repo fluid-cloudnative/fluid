@@ -17,10 +17,11 @@ limitations under the License.
 package dataoperation
 
 import (
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/runtime"
 )
 
 // OperationInterface the interface of data operation crd
@@ -46,12 +47,16 @@ type OperationInterface interface {
 	// UpdateStatusInfoForCompleted update the status infos field for phase completed, the parameter infos is not nil
 	UpdateStatusInfoForCompleted(object client.Object, infos map[string]string) error
 
-	// UpdateStatusByHelmStatus update the operation status according to helm job status
-	UpdateStatusByHelmStatus(ctx runtime.ReconcileRequestContext, object client.Object, opStatus *datav1alpha1.OperationStatus) error
-
 	// SetTargetDatasetStatusInProgress set the dataset status for certain field when data operation executing.
 	SetTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset)
 
 	// RemoveTargetDatasetStatusInProgress remove the dataset status for certain field when data operation finished.
 	RemoveTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset)
+
+	GetStatusHandler(object client.Object) StatusHandler
+}
+
+type StatusHandler interface {
+	// GetOperationStatus get operation status according to helm chart status
+	GetOperationStatus(ctx runtime.ReconcileRequestContext, object client.Object, opStatus *datav1alpha1.OperationStatus) (result *datav1alpha1.OperationStatus, err error)
 }

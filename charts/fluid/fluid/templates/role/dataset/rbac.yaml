@@ -26,6 +26,8 @@ rules:
     resources:
       - jobs
       - jobs/status
+      - cronjobs
+      - cronjobs/status
     verbs:
       - get
       - list

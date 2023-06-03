@@ -18,12 +18,7 @@ package dataload
 
 import (
 	"context"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/controllers"
-	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
-	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
-	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
+
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -31,6 +26,13 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/controllers"
+	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
+	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
+	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
@@ -42,6 +44,8 @@ type DataLoadReconciler struct {
 	Scheme *runtime.Scheme
 	*controllers.OperationReconciler
 }
+
+var _ dataoperation.OperationInterface = &DataLoadReconciler{}
 
 // NewDataLoadReconciler returns a DataLoadReconciler
 func NewDataLoadReconciler(client client.Client,
