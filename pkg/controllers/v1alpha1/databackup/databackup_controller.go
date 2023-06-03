@@ -18,13 +18,7 @@ package databackup
 
 import (
 	"context"
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/controllers"
-	cdatabackup "github.com/fluid-cloudnative/fluid/pkg/databackup"
-	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
-	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
+
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -32,6 +26,14 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/controllers"
+	cdatabackup "github.com/fluid-cloudnative/fluid/pkg/databackup"
+	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
+	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 const controllerName string = "DataBackupController"
@@ -41,6 +43,8 @@ type DataBackupReconciler struct {
 	Scheme *runtime.Scheme
 	*controllers.OperationReconciler
 }
+
+var _ dataoperation.OperationInterface = &DataBackupReconciler{}
 
 // NewDataBackupReconciler returns a DataBackupReconciler
 func NewDataBackupReconciler(client client.Client,

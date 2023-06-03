@@ -28,14 +28,12 @@ import (
 	cdatamigrate "github.com/fluid-cloudnative/fluid/pkg/datamigrate"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 
-	batchv1 "k8s.io/api/batch/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 )
 
 func (r *DataMigrateReconciler) GetTargetDataset(object client.Object) (*datav1alpha1.Dataset, error) {
@@ -92,66 +90,26 @@ func (r *DataMigrateReconciler) UpdateStatusInfoForCompleted(object client.Objec
 	return nil
 }
 
-func (r *DataMigrateReconciler) UpdateStatusByHelmStatus(ctx cruntime.ReconcileRequestContext,
-	object client.Object, opStatus *datav1alpha1.OperationStatus) error {
-	// 1. Check running status of the DataMigrate job
-	releaseName := utils.GetDataMigrateReleaseName(object.GetName())
-	jobName := utils.GetDataMigrateJobName(releaseName)
-	job, err := utils.GetDataMigrateJob(r.Client, jobName, object.GetNamespace())
-
-	if err != nil {
-		// helm release found but job missing, delete the helm release and requeue
-		if utils.IgnoreNotFound(err) == nil {
-			ctx.Log.Info("Related Job missing, will delete helm chart and retry", "namespace", ctx.Namespace, "jobName", jobName)
-			if err = helm.DeleteReleaseIfExists(releaseName, ctx.Namespace); err != nil {
-				r.Log.Error(err, "can't delete DataMigrate release", "namespace", ctx.Namespace, "releaseName", releaseName)
-				return err
-			}
-			return err
-		}
-		// other error
-		ctx.Log.Error(err, "can't get DataMigrate job", "namespace", ctx.Namespace, "jobName", jobName)
-		return err
-	}
-
-	if len(job.Status.Conditions) != 0 {
-		if job.Status.Conditions[0].Type == batchv1.JobFailed ||
-			job.Status.Conditions[0].Type == batchv1.JobComplete {
-			jobCondition := job.Status.Conditions[0]
-			// job either failed or complete, update DataMigrate's phase status
-			opStatus.Conditions = []datav1alpha1.Condition{
-				{
-					Type:               common.ConditionType(jobCondition.Type),
-					Status:             jobCondition.Status,
-					Reason:             jobCondition.Reason,
-					Message:            jobCondition.Message,
-					LastProbeTime:      jobCondition.LastProbeTime,
-					LastTransitionTime: jobCondition.LastTransitionTime,
-				},
-			}
-			if jobCondition.Type == batchv1.JobFailed {
-				opStatus.Phase = common.PhaseFailed
-			} else {
-				opStatus.Phase = common.PhaseComplete
-			}
-			opStatus.Duration = utils.CalculateDuration(object.GetCreationTimestamp().Time, jobCondition.LastTransitionTime.Time)
-			return nil
-		}
-	}
-
-	ctx.Log.V(1).Info("DataMigrate job still running", "namespace", ctx.Namespace, "jobName", jobName)
-	return nil
-}
-
 func (r *DataMigrateReconciler) SetTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
 	dataset.Status.Phase = datav1alpha1.DataMigrating
 }
 
 func (r *DataMigrateReconciler) RemoveTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
-	// check if there are any other datamigrate of dataset
-
-	// if yes, keep dataset status to Migrating
-
-	// if not, set dataset status to Bound
 	dataset.Status.Phase = datav1alpha1.BoundDatasetPhase
+}
+
+func (r *DataMigrateReconciler) GetStatusHandler(obj client.Object) dataoperation.StatusHandler {
+	dataMigrate := obj.(*datav1alpha1.DataMigrate)
+	policy := dataMigrate.Spec.Policy
+
+	switch policy {
+	case datav1alpha1.Once:
+		return &OnceStatusHandler{Client: r.Client, Log: r.Log}
+	case datav1alpha1.Cron:
+		return &CronStatusHandler{Client: r.Client, Log: r.Log}
+	case datav1alpha1.OnEvent:
+		return &OnEventStatusHandler{Client: r.Client, Log: r.Log}
+	default:
+		return nil
+	}
 }

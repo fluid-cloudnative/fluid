@@ -19,7 +19,9 @@ package utils
 import (
 	"context"
 	"fmt"
+
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/labels"
 
 	batchv1 "k8s.io/api/batch/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -56,12 +58,41 @@ func GetDataMigrateJob(client client.Client, name, namespace string) (*batchv1.J
 	return &job, nil
 }
 
+// GetDataMigrateCronjob gets the DataMigrate cronjob given its name and namespace
+func GetDataMigrateCronjob(client client.Client, name, namespace string) (*batchv1.CronJob, error) {
+	key := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	var cronjob batchv1.CronJob
+	if err := client.Get(context.TODO(), key, &cronjob); err != nil {
+		return nil, err
+	}
+	return &cronjob, nil
+}
+
+// ListDataMigrateJobByCronjob gets the DataMigrate job by cronjob given its name and namespace
+func ListDataMigrateJobByCronjob(c client.Client, cronjob *batchv1.CronJob) ([]batchv1.Job, error) {
+	jobLabelSelector, err := labels.Parse(fmt.Sprintf("cronjob=%s", cronjob.Name))
+	if err != nil {
+		return nil, err
+	}
+	var jobList batchv1.JobList
+	if err := c.List(context.TODO(), &jobList, &client.ListOptions{
+		LabelSelector: jobLabelSelector,
+		Namespace:     cronjob.Namespace,
+	}); err != nil {
+		return nil, err
+	}
+	return jobList.Items, nil
+}
+
 // GetDataMigrateReleaseName returns DataMigrate helm release's name given the DataMigrate's name
 func GetDataMigrateReleaseName(name string) string {
 	return fmt.Sprintf("%s-migrate", name)
 }
 
-// GetDataMigrateJobName returns DataMigrate job's name given the DataMigrate helm release's name
+// GetDataMigrateJobName returns DataMigrate job(or cronjob)'s name given the DataMigrate helm release's name
 func GetDataMigrateJobName(releaseName string) string {
 	return fmt.Sprintf("%s-migrate", releaseName)
 }

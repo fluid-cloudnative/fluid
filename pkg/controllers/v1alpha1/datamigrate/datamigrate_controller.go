@@ -18,15 +18,18 @@ package datamigrate
 
 import (
 	"context"
-	"github.com/fluid-cloudnative/fluid/pkg/controllers"
-	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
+
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
+	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+
+	"github.com/fluid-cloudnative/fluid/pkg/controllers"
+	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -42,6 +45,8 @@ type DataMigrateReconciler struct {
 	Scheme *runtime.Scheme
 	*controllers.OperationReconciler
 }
+
+var _ dataoperation.OperationInterface = &DataMigrateReconciler{}
 
 // NewDataMigrateReconciler returns a DataMigrateReconciler
 func NewDataMigrateReconciler(client client.Client,
@@ -92,6 +97,7 @@ func (r *DataMigrateReconciler) SetupWithManager(mgr ctrl.Manager, options contr
 	return ctrl.NewControllerManagedBy(mgr).
 		WithOptions(options).
 		For(&datav1alpha1.DataMigrate{}).
+		Owns(&batchv1.CronJob{}).
 		Complete(r)
 }
 

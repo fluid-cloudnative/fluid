@@ -16,16 +16,18 @@ package base
 
 import (
 	"fmt"
+	"time"
+
+	v1 "k8s.io/api/core/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	v1 "k8s.io/api/core/v1"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 func (t *TemplateEngine) Operate(ctx cruntime.ReconcileRequestContext, object client.Object, opStatus *datav1alpha1.OperationStatus,
@@ -56,7 +58,7 @@ func (t *TemplateEngine) Operate(ctx cruntime.ReconcileRequestContext, object cl
 	case common.PhaseComplete:
 		return t.reconcileComplete(ctx, object, opStatus, operation)
 	case common.PhaseFailed:
-		return t.reconcileFailed(ctx, object, operation)
+		return t.reconcileFailed(ctx, object, opStatus, operation)
 	default:
 		ctx.Log.Error(fmt.Errorf("unknown phase"), "won't reconcile it", "phase", opStatus.Phase)
 		return utils.NoRequeue()
@@ -141,7 +143,13 @@ func (t *TemplateEngine) reconcileExecuting(ctx cruntime.ReconcileRequestContext
 	}
 
 	// 2. update data operation's status by helm status
-	err = operation.UpdateStatusByHelmStatus(ctx, object, opStatus)
+	statusHandler := operation.GetStatusHandler(object)
+	if statusHandler == nil {
+		err = fmt.Errorf("fail to get status handler")
+		log.Error(err, "status handler is nil")
+		return utils.RequeueIfError(err)
+	}
+	opStatus, err = statusHandler.GetOperationStatus(ctx, object, opStatus)
 	if err != nil {
 		log.Error(err, "failed to update status")
 		return utils.RequeueIfError(err)
@@ -159,7 +167,7 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 	opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileComplete")
 
-	// 1. Update the infos field
+	// 1. Update the infos field if complete
 	if opStatus.Infos == nil {
 		opStatus.Infos = map[string]string{}
 	}
@@ -169,31 +177,74 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 		return utils.RequeueIfError(err)
 	}
 
-	if err := operation.UpdateOperationApiStatus(object, opStatus); err != nil {
+	if err = operation.UpdateOperationApiStatus(object, opStatus); err != nil {
 		log.Error(err, fmt.Sprintf("failed to update the %s status", operation.GetOperationType()))
 		return utils.RequeueIfError(err)
 	}
 
-	// 2. release lock on target dataset
+	// 2. release lock on target dataset if complete
 	err = ReleaseTargetDataset(ctx, object, operation)
 	if err != nil {
 		return utils.RequeueIfError(err)
 	}
 
-	// 3. record and no requeue
+	// 3. check and update data operation's status by helm status
+	statusHandler := operation.GetStatusHandler(object)
+	if statusHandler == nil {
+		err := fmt.Errorf("fail to get status handler")
+		log.Error(err, "status handler is nil")
+		return utils.RequeueIfError(err)
+	}
+	opStatus, err = statusHandler.GetOperationStatus(ctx, object, opStatus)
+	if err != nil {
+		log.Error(err, "failed to update status")
+		return utils.RequeueIfError(err)
+	}
+	if opStatus.Phase != common.PhaseComplete {
+		if err = operation.UpdateOperationApiStatus(object, opStatus); err != nil {
+			log.Error(err, fmt.Sprintf("failed to update the %s status", operation.GetOperationType()))
+			return utils.RequeueIfError(err)
+		}
+		// return immediately if not complete
+		return utils.RequeueImmediately()
+	}
+
+	// 4. record and no requeue
 	log.Info(fmt.Sprintf("%s success, no need to requeue", operation.GetOperationType()))
 	ctx.Recorder.Eventf(object, v1.EventTypeNormal, common.DataOperationSucceed,
 		"%s %s succeeded", operation.GetOperationType(), object.GetName())
 	return utils.NoRequeue()
 }
 
-func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, object client.Object, operation dataoperation.OperationInterface) (ctrl.Result, error) {
+func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, object client.Object,
+	opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileFailed")
 
 	// 1. release lock on target dataset
 	err := ReleaseTargetDataset(ctx, object, operation)
 	if err != nil {
 		return utils.RequeueIfError(err)
+	}
+
+	// 2. check and update data operation's status by helm status
+	statusHandler := operation.GetStatusHandler(object)
+	if statusHandler == nil {
+		err := fmt.Errorf("fail to get status handler")
+		log.Error(err, "status handler is nil")
+		return utils.RequeueIfError(err)
+	}
+	opStatus, err = statusHandler.GetOperationStatus(ctx, object, opStatus)
+	if err != nil {
+		log.Error(err, "failed to update status")
+		return utils.RequeueIfError(err)
+	}
+	if opStatus.Phase != common.PhaseFailed {
+		if err = operation.UpdateOperationApiStatus(object, opStatus); err != nil {
+			log.Error(err, fmt.Sprintf("failed to update the %s status", operation.GetOperationType()))
+			return utils.RequeueIfError(err)
+		}
+		// return immediately if not complete
+		return utils.RequeueImmediately()
 	}
 
 	// 2. record and no requeue

@@ -21,8 +21,9 @@ import (
 	"net/url"
 	"os"
 	"path"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"
@@ -35,6 +36,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
 )
 
 func (j *JuiceFSEngine) CreateDataMigrateJob(ctx cruntime.ReconcileRequestContext, targetDataMigrate datav1alpha1.DataMigrate) (err error) {
@@ -65,7 +67,7 @@ func (j *JuiceFSEngine) CreateDataMigrateJob(ctx cruntime.ReconcileRequestContex
 			return err
 		}
 		log.Info("DataLoad job helm chart successfully installed", "namespace", targetDataMigrate.Namespace, "releaseName", releaseName)
-		ctx.Recorder.Eventf(&targetDataMigrate, corev1.EventTypeNormal, common.DataLoadJobStarted, "The DataMigrate job %s started", jobName)
+		ctx.Recorder.Eventf(&targetDataMigrate, corev1.EventTypeNormal, common.DataLoadJobStarted, "The DataMigrate job(or cronjob) %s started", jobName)
 	}
 	return err
 }
@@ -117,6 +119,8 @@ func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequest
 		Labels:           dataMigrate.Spec.PodMetadata.Labels,
 		Annotations:      dataMigrate.Spec.PodMetadata.Annotations,
 		ImagePullSecrets: imagePullSecrets,
+		Policy:           string(dataMigrate.Spec.Policy),
+		Schedule:         dataMigrate.Spec.Schedule,
 	}
 
 	if dataMigrate.Spec.Affinity != nil {
@@ -166,8 +170,10 @@ func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequest
 
 	j.Log.Info("dataMigrateInfo", "info", dataMigrateInfo)
 	dataMigrateValue := cdatamigrate.DataMigrateValue{
+		Name:            dataMigrate.Name,
 		DataMigrateInfo: dataMigrateInfo,
 	}
+	dataMigrateValue.Owner = transfromer.GenerateOwnerReferenceFromObject(dataMigrate)
 
 	// 6. create the value file
 	data, err := yaml.Marshal(dataMigrateValue)

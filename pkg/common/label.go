@@ -45,6 +45,8 @@ const (
 	LabelAnnotationDatasetReferringNameSpace = LabelAnnotationDataset + ".referring-namespace"
 
 	RuntimeControllerReplicas = "controller.runtime." + LabelAnnotationPrefix + "replicas"
+
+	LabelDataMigrate = "datamigrate"
 )
 
 var (

@@ -1,3 +1,4 @@
+{{- if or (eq (lower .Values.datamigrate.policy) "none") (eq (lower .Values.datamigrate.policy) "once") }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -7,6 +8,15 @@ metadata:
     role: datamigrate-job
     app: juicefs
     targetDataset: {{ required "targetDataset should be set" .Values.datamigrate.targetDataset }}
+  ownerReferences:
+  {{- if .Values.owner.enabled }}
+    - apiVersion: {{ .Values.owner.apiVersion }}
+      blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+      controller: {{ .Values.owner.controller }}
+      kind: {{ .Values.owner.kind }}
+      name: {{ .Values.owner.name }}
+      uid: {{ .Values.owner.uid }}
+  {{- end }}
 spec:
   backoffLimit: {{ .Values.datamigrate.backoffLimit | default "3" }}
   completions: 1
@@ -97,3 +107,4 @@ spec:
       {{- with .Values.datamigrate.nativeVolumes }}
         {{ toYaml . | nindent 8 }}
       {{- end }}
+{{- end }}
