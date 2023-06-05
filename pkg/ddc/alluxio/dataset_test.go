@@ -89,15 +89,6 @@ func TestUpdateCacheOfDataset(t *testing.T) {
 			CacheStates: map[common.CacheStateName]string{
 				common.Cached: "true",
 			},
-			Runtimes: []datav1alpha1.Runtime{
-				{
-					Name:           "hbase",
-					Namespace:      "fluid",
-					Category:       common.AccelerateCategory,
-					Type:           common.AlluxioRuntime,
-					MasterReplicas: 1,
-				},
-			},
 		},
 	}
 
@@ -184,6 +175,15 @@ func TestUpdateDatasetStatus(t *testing.T) {
 					HCFSStatus: &datav1alpha1.HCFSStatus{
 						Endpoint:                    "test Endpoint",
 						UnderlayerFileSystemVersion: "Underlayer HCFS Compatible Version",
+					},
+					Runtimes: []datav1alpha1.Runtime{
+						{
+							Name:           "hbase",
+							Namespace:      "fluid",
+							Category:       common.AccelerateCategory,
+							Type:           common.AlluxioRuntime,
+							MasterReplicas: 1,
+						},
 					},
 				},
 			},
