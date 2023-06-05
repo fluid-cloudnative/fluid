@@ -49,16 +49,6 @@ func (e *AlluxioEngine) UpdateCacheOfDataset() (err error) {
 		datasetToUpdate.Status.CacheStates = runtime.Status.CacheStates
 		// datasetToUpdate.Status.CacheStates =
 
-		if len(datasetToUpdate.Status.Runtimes) == 0 {
-			datasetToUpdate.Status.Runtimes = []datav1alpha1.Runtime{}
-		}
-
-		datasetToUpdate.Status.Runtimes = utils.AddRuntimesIfNotExist(datasetToUpdate.Status.Runtimes, utils.NewRuntime(e.name,
-			e.namespace,
-			common.AccelerateCategory,
-			common.AlluxioRuntime,
-			e.runtime.Spec.Master.Replicas))
-
 		e.Log.Info("the dataset status", "status", datasetToUpdate.Status)
 
 		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
@@ -103,9 +93,22 @@ func (e *AlluxioEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (er
 		if phase != dataset.Status.Phase {
 			switch phase {
 			case datav1alpha1.BoundDatasetPhase:
+				// Stores dataset mount info
 				if len(datasetToUpdate.Status.Mounts) == 0 {
 					datasetToUpdate.Status.Mounts = datasetToUpdate.Spec.Mounts
 				}
+
+				if len(datasetToUpdate.Status.Runtimes) == 0 {
+					datasetToUpdate.Status.Runtimes = []datav1alpha1.Runtime{}
+				}
+
+				// Stores binding relation between dataset and runtime
+				datasetToUpdate.Status.Runtimes = utils.AddRuntimesIfNotExist(datasetToUpdate.Status.Runtimes, utils.NewRuntime(e.name,
+					e.namespace,
+					common.AccelerateCategory,
+					common.AlluxioRuntime,
+					e.runtime.Spec.Master.Replicas))
+
 				cond = utils.NewDatasetCondition(datav1alpha1.DatasetReady, datav1alpha1.DatasetReadyReason,
 					"The ddc runtime is ready.",
 					corev1.ConditionTrue)
