@@ -161,6 +161,7 @@ const (
 	NamespaceFluidSystem            = "fluid-system"
 	EnvImagePullSecretsKey          = "IMAGE_PULL_SECRETS"
 
-	PodRoleType = "role"
-	DataloadPod = "dataload-pod"
+	PodRoleType        = "role"
+	DataloadPod        = "dataload-pod"
+	DataMigrateCronJob = "datamigrate-cronjob"
 )

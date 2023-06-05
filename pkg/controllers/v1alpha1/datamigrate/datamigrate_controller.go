@@ -22,9 +22,11 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	batchv1 "k8s.io/api/batch/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
@@ -103,4 +105,15 @@ func (r *DataMigrateReconciler) SetupWithManager(mgr ctrl.Manager, options contr
 
 func (r *DataMigrateReconciler) ControllerName() string {
 	return controllerName
+}
+
+func NewCache(scheme *runtime.Scheme) cache.NewCacheFunc {
+	return cache.BuilderWithOptions(cache.Options{
+		Scheme: scheme,
+		SelectorsByObject: cache.SelectorsByObject{
+			&batchv1.CronJob{}: {Label: labels.SelectorFromSet(labels.Set{
+				common.PodRoleType: common.DataMigrateCronJob,
+			})},
+		},
+	})
 }

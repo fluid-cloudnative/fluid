@@ -100,6 +100,7 @@ func handle() {
 		LeaderElectionNamespace: leaderElectionNamespace,
 		LeaderElectionID:        "dataset.data.fluid.io",
 		Port:                    9443,
+		NewCache:                datamigratectl.NewCache(scheme),
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start dataset manager")
