@@ -98,11 +98,11 @@ func (e *AlluxioEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (er
 					datasetToUpdate.Status.Mounts = datasetToUpdate.Spec.Mounts
 				}
 
+				// Stores binding relation between dataset and runtime
 				if len(datasetToUpdate.Status.Runtimes) == 0 {
 					datasetToUpdate.Status.Runtimes = []datav1alpha1.Runtime{}
 				}
 
-				// Stores binding relation between dataset and runtime
 				datasetToUpdate.Status.Runtimes = utils.AddRuntimesIfNotExist(datasetToUpdate.Status.Runtimes, utils.NewRuntime(e.name,
 					e.namespace,
 					common.AccelerateCategory,
