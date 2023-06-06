@@ -48,6 +48,17 @@ func (e *JindoFSxEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (e
 		if phase != dataset.Status.Phase {
 			switch phase {
 			case datav1alpha1.BoundDatasetPhase:
+				// Stores binding relation between dataset and runtime
+				if len(datasetToUpdate.Status.Runtimes) == 0 {
+					datasetToUpdate.Status.Runtimes = []datav1alpha1.Runtime{}
+				}
+
+				datasetToUpdate.Status.Runtimes = utils.AddRuntimesIfNotExist(datasetToUpdate.Status.Runtimes, utils.NewRuntime(e.name,
+					e.namespace,
+					common.AccelerateCategory,
+					common.JindoRuntime,
+					e.runtime.Spec.Master.Replicas))
+
 				cond = utils.NewDatasetCondition(datav1alpha1.DatasetReady, datav1alpha1.DatasetReadyReason,
 					"The ddc runtime is ready.",
 					corev1.ConditionTrue)
@@ -105,16 +116,6 @@ func (e *JindoFSxEngine) UpdateCacheOfDataset() (err error) {
 
 		datasetToUpdate.Status.CacheStates = runtime.Status.CacheStates
 		// datasetToUpdate.Status.CacheStates =
-
-		if len(datasetToUpdate.Status.Runtimes) == 0 {
-			datasetToUpdate.Status.Runtimes = []datav1alpha1.Runtime{}
-		}
-
-		datasetToUpdate.Status.Runtimes = utils.AddRuntimesIfNotExist(datasetToUpdate.Status.Runtimes, utils.NewRuntime(e.name,
-			e.namespace,
-			common.AccelerateCategory,
-			common.JindoRuntime,
-			e.runtime.Spec.Master.Replicas))
 
 		e.Log.Info("the dataset status", "status", datasetToUpdate.Status)
 

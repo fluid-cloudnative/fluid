@@ -49,9 +49,22 @@ func (j *JuiceFSEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (er
 
 		switch phase {
 		case datav1alpha1.BoundDatasetPhase:
+			// Stores dataset mount info
 			if len(datasetToUpdate.Status.Mounts) == 0 {
 				datasetToUpdate.Status.Mounts = datasetToUpdate.Spec.Mounts
 			}
+
+			// Stores binding relation between dataset and runtime
+			if len(datasetToUpdate.Status.Runtimes) == 0 {
+				datasetToUpdate.Status.Runtimes = []datav1alpha1.Runtime{}
+			}
+
+			datasetToUpdate.Status.Runtimes = utils.AddRuntimesIfNotExist(datasetToUpdate.Status.Runtimes, utils.NewRuntime(j.name,
+				j.namespace,
+				common.AccelerateCategory,
+				common.JuiceFSRuntime,
+				j.runtime.Spec.Replicas))
+
 			cond = utils.NewDatasetCondition(datav1alpha1.DatasetReady, datav1alpha1.DatasetReadyReason,
 				"The ddc runtime is ready.",
 				corev1.ConditionTrue)
@@ -107,16 +120,6 @@ func (j *JuiceFSEngine) UpdateCacheOfDataset() (err error) {
 		datasetToUpdate := dataset.DeepCopy()
 
 		datasetToUpdate.Status.CacheStates = runtime.Status.CacheStates
-
-		if len(datasetToUpdate.Status.Runtimes) == 0 {
-			datasetToUpdate.Status.Runtimes = []datav1alpha1.Runtime{}
-		}
-
-		datasetToUpdate.Status.Runtimes = utils.AddRuntimesIfNotExist(datasetToUpdate.Status.Runtimes, utils.NewRuntime(j.name,
-			j.namespace,
-			common.AccelerateCategory,
-			common.JuiceFSRuntime,
-			j.runtime.Spec.Replicas))
 
 		j.Log.Info("the dataset status", "status", datasetToUpdate.Status)
 

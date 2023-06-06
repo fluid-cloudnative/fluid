@@ -87,15 +87,6 @@ func TestUpdateCacheOfDataset(t *testing.T) {
 			CacheStates: map[common.CacheStateName]string{
 				common.Cached: "true",
 			},
-			Runtimes: []datav1alpha1.Runtime{
-				{
-					Name:           "hbase",
-					Namespace:      "fluid",
-					Category:       common.AccelerateCategory,
-					Type:           common.ThinRuntime,
-					MasterReplicas: 1,
-				},
-			},
 		},
 	}
 
