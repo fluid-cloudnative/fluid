@@ -163,4 +163,7 @@ const (
 
 	PodRoleType = "role"
 	DataloadPod = "dataload-pod"
+
+	JobPolicy  = "fluid.io/jobPolicy"
+	CronPolicy = "cron"
 )

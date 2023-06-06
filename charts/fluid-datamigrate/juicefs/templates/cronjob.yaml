@@ -9,6 +9,7 @@ metadata:
     app: juicefs
     targetDataset: {{ required "targetDataset should be set" .Values.datamigrate.targetDataset }}
     datamigrate: {{ .Values.name }}
+    fluid.io/jobPolicy: cron
   ownerReferences:
   {{- if .Values.owner.enabled }}
     - apiVersion: {{ .Values.owner.apiVersion }}
