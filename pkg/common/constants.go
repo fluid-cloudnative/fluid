@@ -161,7 +161,9 @@ const (
 	NamespaceFluidSystem            = "fluid-system"
 	EnvImagePullSecretsKey          = "IMAGE_PULL_SECRETS"
 
-	PodRoleType        = "role"
-	DataloadPod        = "dataload-pod"
-	DataMigrateCronJob = "datamigrate-cronjob"
+	PodRoleType = "role"
+	DataloadPod = "dataload-pod"
+
+	JobPolicy  = "fluid.io/jobPolicy"
+	CronPolicy = "cron"
 )

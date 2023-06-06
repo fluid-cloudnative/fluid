@@ -112,7 +112,7 @@ func NewCache(scheme *runtime.Scheme) cache.NewCacheFunc {
 		Scheme: scheme,
 		SelectorsByObject: cache.SelectorsByObject{
 			&batchv1.CronJob{}: {Label: labels.SelectorFromSet(labels.Set{
-				common.PodRoleType: common.DataMigrateCronJob,
+				common.JobPolicy: common.CronPolicy,
 			})},
 		},
 	})
