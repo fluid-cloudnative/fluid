@@ -23,15 +23,19 @@ import (
 	"github.com/spf13/cobra"
 	zapOpt "go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	batchv1 "k8s.io/api/batch/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/fluid-cloudnative/fluid"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	databackupctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/databackup"
 	dataloadctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/dataload"
 	datamigratectl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/datamigrate"
@@ -100,7 +104,7 @@ func handle() {
 		LeaderElectionNamespace: leaderElectionNamespace,
 		LeaderElectionID:        "dataset.data.fluid.io",
 		Port:                    9443,
-		NewCache:                datamigratectl.NewCache(scheme),
+		NewCache:                NewCache(scheme),
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start dataset manager")
@@ -154,4 +158,15 @@ func handle() {
 		setupLog.Error(err, "problem running dataset-controller")
 		os.Exit(1)
 	}
+}
+
+func NewCache(scheme *runtime.Scheme) cache.NewCacheFunc {
+	return cache.BuilderWithOptions(cache.Options{
+		Scheme: scheme,
+		SelectorsByObject: cache.SelectorsByObject{
+			&batchv1.CronJob{}: {Label: labels.SelectorFromSet(labels.Set{
+				common.JobPolicy: common.CronPolicy,
+			})},
+		},
+	})
 }
