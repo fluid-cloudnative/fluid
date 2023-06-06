@@ -63,7 +63,7 @@ func InstallRelease(name string, namespace string, valueFile string, chartName s
 
 	if err != nil {
 		log.Error(err, "failed to execute InstallRelease() command", "command", cmd.String())
-		err = fmt.Errorf("failed to install kubernetes resources of %s", chartName)
+		err = fmt.Errorf("failed to install kubernetes resources of %s: %s", chartName, string(out))
 
 		rollbackErr := DeleteReleaseIfExists(name, namespace)
 		if rollbackErr != nil {
