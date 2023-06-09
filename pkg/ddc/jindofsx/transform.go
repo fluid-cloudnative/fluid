@@ -245,12 +245,23 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 			if len(value.UFSVolumes) == 0 {
 				value.UFSVolumes = []UFSVolume{}
 			}
-			ufsVolumesName := strings.TrimPrefix(mount.MountPoint, common.VolumeScheme.String())
-			ufsVolumesPath := utils.UFSPathBuilder{}.GenLocalStoragePath(mount)
-			value.UFSVolumes = append(value.UFSVolumes, UFSVolume{
-				Name:          ufsVolumesName,
-				ContainerPath: ufsVolumesPath,
-			})
+			// Split MountPoint into PVC name and subpath (if it contains a subpath)
+			parts := strings.SplitN(strings.TrimPrefix(mount.MountPoint, common.VolumeScheme.String()), "/", 2)
+
+			if len(parts) > 1 {
+				// MountPoint contains subpath
+				value.UFSVolumes = append(value.UFSVolumes, UFSVolume{
+					Name:          parts[0],
+					SubPath:       parts[1],
+					ContainerPath: utils.UFSPathBuilder{}.GenLocalStoragePath(mount),
+				})
+			} else {
+				// MountPoint does not contain subpath
+				value.UFSVolumes = append(value.UFSVolumes, UFSVolume{
+					Name:          parts[0],
+					ContainerPath: utils.UFSPathBuilder{}.GenLocalStoragePath(mount),
+				})
+			}
 		} else {
 			if !strings.HasSuffix(mount.MountPoint, "/") {
 				mount.MountPoint = mount.MountPoint + "/"

@@ -592,6 +592,33 @@ func TestJindoFSxEngine_transform(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "pvc-subpath",
+			fields: fields{
+				name:      "test",
+				namespace: "default",
+				runtime: &datav1alpha1.JindoRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "default",
+					},
+					Spec: datav1alpha1.JindoRuntimeSpec{},
+				},
+				dataset: &datav1alpha1.Dataset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "default",
+					},
+					Spec: datav1alpha1.DatasetSpec{
+						Mounts: []datav1alpha1.Mount{
+							{
+								MountPoint: "pvc://data/subpath",
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
