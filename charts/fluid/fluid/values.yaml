@@ -4,6 +4,7 @@
 
 workdir: /tmp
 crdUpgrade:
+  enabled: true
   image: fluidcloudnative/fluid-crd-upgrader:v1.0.0-457c8f9
 
 ##  if unspecified, will use built-in variable `.Release.Namespace`.

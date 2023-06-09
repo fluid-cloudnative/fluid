@@ -1,3 +1,4 @@
+{{ if .Values.crdUpgrade.enabled -}}
 ---
 apiVersion: batch/v1
 kind: Job
@@ -57,3 +58,4 @@ metadata:
     "helm.sh/hook": pre-upgrade
     "helm.sh/hook-weight": "-5"
     "helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation
+{{- end }}
