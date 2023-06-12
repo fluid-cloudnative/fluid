@@ -24,6 +24,7 @@ import (
 	zapOpt "go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	batchv1 "k8s.io/api/batch/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -43,6 +44,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/compatibility"
 )
 
 var (
@@ -161,12 +163,20 @@ func handle() {
 }
 
 func NewCache(scheme *runtime.Scheme) cache.NewCacheFunc {
+	selectors := make(cache.SelectorsByObject, 1)
+
+	if compatibility.IsBatchV1CronJobSupported() {
+		selectors[&batchv1.CronJob{}] = cache.ObjectSelector{Label: labels.SelectorFromSet(labels.Set{
+			common.JobPolicy: common.CronPolicy,
+		})}
+	} else {
+		selectors[&batchv1beta1.CronJob{}] = cache.ObjectSelector{Label: labels.SelectorFromSet(labels.Set{
+			common.JobPolicy: common.CronPolicy,
+		})}
+	}
+
 	return cache.BuilderWithOptions(cache.Options{
-		Scheme: scheme,
-		SelectorsByObject: cache.SelectorsByObject{
-			&batchv1.CronJob{}: {Label: labels.SelectorFromSet(labels.Set{
-				common.JobPolicy: common.CronPolicy,
-			})},
-		},
+		Scheme:            scheme,
+		SelectorsByObject: selectors,
 	})
 }
