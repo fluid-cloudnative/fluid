@@ -22,6 +22,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	batchv1 "k8s.io/api/batch/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -30,6 +31,7 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/controllers"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/compatibility"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -94,11 +96,19 @@ func (r *DataMigrateReconciler) Reconcile(context context.Context, req ctrl.Requ
 
 // SetupWithManager sets up the controller with the given controller manager
 func (r *DataMigrateReconciler) SetupWithManager(mgr ctrl.Manager, options controller.Options) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		WithOptions(options).
-		For(&datav1alpha1.DataMigrate{}).
-		Owns(&batchv1.CronJob{}).
-		Complete(r)
+	if compatibility.IsBatchV1CronJobSupported() {
+		return ctrl.NewControllerManagedBy(mgr).
+			WithOptions(options).
+			For(&datav1alpha1.DataMigrate{}).
+			Owns(&batchv1.CronJob{}).
+			Complete(r)
+	} else {
+		return ctrl.NewControllerManagedBy(mgr).
+			WithOptions(options).
+			For(&datav1alpha1.DataMigrate{}).
+			Owns(&batchv1beta1.CronJob{}).
+			Complete(r)
+	}
 }
 
 func (r *DataMigrateReconciler) ControllerName() string {
