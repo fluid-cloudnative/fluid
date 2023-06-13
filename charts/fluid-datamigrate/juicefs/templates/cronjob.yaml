@@ -1,5 +1,5 @@
 {{- if eq (lower .Values.datamigrate.policy) "cron" }}
-apiVersion: {{ ternary "batch/v1" "batch/v1beta1" (semverCompare ">=1.22.0-0" .Capabilities.KubeVersion.Version)}}
+apiVersion: {{ ternary "batch/v1" "batch/v1beta1" (.Capabilities.APIVersions.Has "batch/v1/CronJob") }}
 kind: CronJob
 metadata:
   name: {{ printf "%s-migrate" .Release.Name }}
