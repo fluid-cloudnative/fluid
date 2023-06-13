@@ -57,3 +57,4 @@
 * Fix components rbacs and set Fluid CSI Plugin with node-authorized kube-client
 
 ### 1.0.0
+* Fix CSI Plugin loop mount bug
