@@ -29,7 +29,7 @@ func (lock *VolumeLocks) TryAcquire(volumeID string) bool {
 	return true
 }
 
-// ReleaseVolumeLock releases lock in volume level
+// Release releases lock in volume level
 func (lock *VolumeLocks) Release(volumeID string) {
 	lock.mutex.Lock()
 	defer lock.mutex.Unlock()
