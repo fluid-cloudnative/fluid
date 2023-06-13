@@ -167,6 +167,16 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
 	targetPath := req.GetTargetPath()
 
+	// check path existence
+	_, err := os.Stat(targetPath)
+	if err != nil {
+		return nil, errors.Wrapf(err, "NodeUnpublishVolume: stat targetPath %s error %v", targetPath, err)
+	}
+
+	// The lock is to avoid race condition
+	ns.mutex.Lock()
+	defer ns.mutex.Unlock()
+
 	// targetPath may be mount bind many times when mount point recovered.
 	// umount until it's not mounted.
 	mounter := mount.New("")
@@ -191,7 +201,7 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 		}
 	}
 
-	err := mount.CleanupMountPoint(req.GetTargetPath(), mount.New(""), false)
+	err = mount.CleanupMountPoint(req.GetTargetPath(), mount.New(""), false)
 	if err != nil {
 		glog.V(3).Infoln(err)
 	} else {
