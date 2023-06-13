@@ -106,6 +106,7 @@ spec:
             mountPropagation: "Bidirectional"
           - name: kubelet-kube-config
             mountPath: /etc/kubernetes/kubelet.conf
+            mountPropagation: "HostToContainer"
             readOnly: true
           # Check subdirectory to avoid looping bind mounts
           {{- $kubeletRootDir := ternary ( .Values.csi.kubelet.rootDir ) ( print .Values.csi.kubelet.rootDir "/" ) ( hasSuffix "/" .Values.csi.kubelet.rootDir ) }}
