@@ -111,7 +111,7 @@ all: build
 
 # Run tests
 test: generate fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go list ./... | grep -v controller | grep -v e2etest | xargs go test ${CI_TEST_FLAGS} ${LOCAL_FLAGS}
+	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go list ./... | grep -v controller | grep -v e2etest | FLUID_UNIT_TEST=true xargs go test ${CI_TEST_FLAGS} ${LOCAL_FLAGS}
 
 # used in CI and simply ignore controller tests which need k8s now.
 # maybe incompatible if more end to end tests are added.
