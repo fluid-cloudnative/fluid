@@ -58,29 +58,16 @@ func GetDataMigrateJob(client client.Client, name, namespace string) (*batchv1.J
 	return &job, nil
 }
 
-// GetDataMigrateCronjob gets the DataMigrate cronjob given its name and namespace
-func GetDataMigrateCronjob(client client.Client, name, namespace string) (*batchv1.CronJob, error) {
-	key := types.NamespacedName{
-		Namespace: namespace,
-		Name:      name,
-	}
-	var cronjob batchv1.CronJob
-	if err := client.Get(context.TODO(), key, &cronjob); err != nil {
-		return nil, err
-	}
-	return &cronjob, nil
-}
-
 // ListDataMigrateJobByCronjob gets the DataMigrate job by cronjob given its name and namespace
-func ListDataMigrateJobByCronjob(c client.Client, cronjob *batchv1.CronJob) ([]batchv1.Job, error) {
-	jobLabelSelector, err := labels.Parse(fmt.Sprintf("cronjob=%s", cronjob.Name))
+func ListDataMigrateJobByCronjob(c client.Client, cronjobNamespacedName types.NamespacedName) ([]batchv1.Job, error) {
+	jobLabelSelector, err := labels.Parse(fmt.Sprintf("cronjob=%s", cronjobNamespacedName.Name))
 	if err != nil {
 		return nil, err
 	}
 	var jobList batchv1.JobList
 	if err := c.List(context.TODO(), &jobList, &client.ListOptions{
 		LabelSelector: jobLabelSelector,
-		Namespace:     cronjob.Namespace,
+		Namespace:     cronjobNamespacedName.Namespace,
 	}); err != nil {
 		return nil, err
 	}

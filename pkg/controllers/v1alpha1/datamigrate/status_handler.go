@@ -19,6 +19,7 @@ package datamigrate
 import (
 	"github.com/go-logr/logr"
 	batchv1 "k8s.io/api/batch/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -27,6 +28,7 @@ import (
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
 type OnceStatusHandler struct {
@@ -106,7 +108,7 @@ func (c *CronStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestCont
 	// 1. Check running status of the DataMigrate job
 	releaseName := utils.GetDataMigrateReleaseName(object.GetName())
 	cronjobName := utils.GetDataMigrateJobName(releaseName)
-	cronjob, err := utils.GetDataMigrateCronjob(c.Client, cronjobName, object.GetNamespace())
+	cronjobStatus, err := kubeclient.GetCronJobStatus(c.Client, types.NamespacedName{Namespace: object.GetNamespace(), Name: cronjobName})
 
 	if err != nil {
 		// helm release found but cronjob missing, delete the helm release and requeue
@@ -123,7 +125,7 @@ func (c *CronStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestCont
 		return
 	}
 
-	jobs, err := utils.ListDataMigrateJobByCronjob(c.Client, cronjob)
+	jobs, err := utils.ListDataMigrateJobByCronjob(c.Client, types.NamespacedName{Namespace: object.GetNamespace(), Name: cronjobName})
 	if err != nil {
 		ctx.Log.Error(err, "can't list DataMigrate job by cronjob", "namespace", ctx.Namespace, "cronjobName", cronjobName)
 		return
@@ -132,7 +134,7 @@ func (c *CronStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestCont
 	// get the newest job
 	var currentJob *batchv1.Job
 	for _, job := range jobs {
-		if job.CreationTimestamp == *cronjob.Status.LastScheduleTime || job.CreationTimestamp.After(cronjob.Status.LastScheduleTime.Time) {
+		if job.CreationTimestamp == *cronjobStatus.LastScheduleTime || job.CreationTimestamp.After(cronjobStatus.LastScheduleTime.Time) {
 			currentJob = &job
 			break
 		}
