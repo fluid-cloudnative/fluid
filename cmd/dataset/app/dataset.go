@@ -70,6 +70,8 @@ var datasetCmd = &cobra.Command{
 }
 
 func init() {
+	compatibility.DiscoverBatchAPICompatibility()
+
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = datav1alpha1.AddToScheme(scheme)
 
@@ -83,7 +85,6 @@ func init() {
 
 func handle() {
 	fluid.LogVersion()
-	compatibility.DiscoverBatchAPICompatibility()
 
 	ctrl.SetLogger(zap.New(func(o *zap.Options) {
 		o.Development = development
