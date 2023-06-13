@@ -92,6 +92,7 @@ func (d *driver) newNodeServer() *nodeServer {
 		client:               d.client,
 		apiReader:            d.apiReader,
 		nodeAuthorizedClient: d.nodeAuthorizedClient,
+		locks:                utils.NewVolumeLocks(),
 	}
 }
 

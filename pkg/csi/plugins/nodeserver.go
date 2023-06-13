@@ -23,7 +23,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"sync"
 	"syscall"
 	"time"
 
@@ -58,7 +57,7 @@ type nodeServer struct {
 	client               client.Client
 	apiReader            client.Reader
 	nodeAuthorizedClient *kubernetes.Clientset
-	mutex                sync.Mutex
+	locks                *utils.VolumeLocks
 	node                 *v1.Node
 }
 
@@ -66,6 +65,12 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 
 	glog.Infof("NodePublishVolumeRequest is %v", req)
 	targetPath := req.GetTargetPath()
+
+	// The lock is to avoid race condition
+	if lock := ns.locks.TryAcquire(targetPath); !lock {
+		return nil, errors.Wrapf(errors.Errorf("NodePublishVolume already exists"), "NodePublishVolume on targetPath %s already exists", targetPath)
+	}
+	defer ns.locks.Release(targetPath)
 
 	isMount, err := utils.IsMounted(targetPath)
 	if err != nil {
@@ -169,13 +174,20 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 
 	// check path existence
 	_, err := os.Stat(targetPath)
+	// No need to unmount non-existing targetPath
+	if os.IsNotExist(err) {
+		glog.V(4).Infof("NodeUnpublishVolume: targetPath %s does not exist", targetPath)
+		return &csi.NodeUnpublishVolumeResponse{}, nil
+	}
 	if err != nil {
 		return nil, errors.Wrapf(err, "NodeUnpublishVolume: stat targetPath %s error %v", targetPath, err)
 	}
 
 	// The lock is to avoid race condition
-	ns.mutex.Lock()
-	defer ns.mutex.Unlock()
+	if lock := ns.locks.TryAcquire(targetPath); !lock {
+		return nil, errors.Wrapf(errors.Errorf("NodeUnplishVolume already exists"), "NodeUnpublishVolume on targetPath %s already exists", targetPath)
+	}
+	defer ns.locks.Release(targetPath)
 
 	// targetPath may be mount bind many times when mount point recovered.
 	// umount until it's not mounted.
@@ -213,21 +225,24 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 
 func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstageVolumeRequest) (*csi.NodeUnstageVolumeResponse, error) {
 	// The lock is to ensure CSI plugin labels the node in correct order
-	ns.mutex.Lock()
-	defer ns.mutex.Unlock()
+	volumeId := req.GetVolumeId()
+	if lock := ns.locks.TryAcquire(volumeId); !lock {
+		return nil, errors.Wrapf(errors.Errorf("NodeUnstageVolume already exists"), "NodeUnstageVolume on volumeId %s already exists", volumeId)
+	}
+	defer ns.locks.Release(volumeId)
 
 	// 1. get runtime namespace and name
 	// A nil volumeContext is passed because unlike csi.NodeStageVolumeRequest, csi.NodeUnstageVolumeRequest has
 	// no volume context attribute.
-	namespace, name, err := ns.getRuntimeNamespacedName(nil, req.GetVolumeId())
+	namespace, name, err := ns.getRuntimeNamespacedName(nil, volumeId)
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
 			// For cases like the related persistent volume has been deleted, ignore it and return success
-			glog.Warningf("NodeUnstageVolume: volume %s not found, maybe it's already cleaned up, ignore it", req.GetVolumeId())
+			glog.Warningf("NodeUnstageVolume: volume %s not found, maybe it's already cleaned up, ignore it", volumeId)
 			return &csi.NodeUnstageVolumeResponse{}, nil
 		}
-		glog.Errorf("NodeUnstageVolume: can't get runtime namespace and name given (volumeContext: nil, volumeId: %s): %v", req.GetVolumeId(), err)
-		return nil, errors.Wrapf(err, "NodeUnstageVolume: can't get namespace and name by volume id %s", req.GetVolumeId())
+		glog.Errorf("NodeUnstageVolume: can't get runtime namespace and name given (volumeContext: nil, volumeId: %s): %v", volumeId, err)
+		return nil, errors.Wrapf(err, "NodeUnstageVolume: can't get namespace and name by volume id %s", volumeId)
 	}
 
 	// 2. Check fuse clean policy. If clean policy is set to OnRuntimeDeleted, there is no
@@ -259,7 +274,7 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 	}
 
 	// 3. check if the path is mounted
-	inUse, err := checkMountInUse(req.GetVolumeId())
+	inUse, err := checkMountInUse(volumeId)
 	if err != nil {
 		return nil, errors.Wrap(err, "NodeUnstageVolume: can't check mount in use")
 	}
@@ -293,9 +308,12 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 
 func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {
 	// The lock is to ensure CSI plugin labels the node in correct order
-	ns.mutex.Lock()
-	defer ns.mutex.Unlock()
-	glog.Infof("NodeStageVolume: Starting NodeStage with VolumeId: %s, and VolumeContext: %v", req.GetVolumeId(), req.VolumeContext)
+	volumeId := req.GetVolumeId()
+	if lock := ns.locks.TryAcquire(volumeId); !lock {
+		return nil, errors.Wrapf(errors.Errorf("NodeStageVolume already exists"), "NodeStageVolume on volumeId %s already exists", volumeId)
+	}
+	defer ns.locks.Release(volumeId)
+	glog.Infof("NodeStageVolume: Starting NodeStage with VolumeId: %s, and VolumeContext: %v", volumeId, req.VolumeContext)
 
 	// 1. Start SessMgr Pod and wait for ready if FUSE pod requires SessMgr
 	sessMgrWorkDir := req.GetVolumeContext()[common.VolumeAttrEFCSessMgrWorkDir]
@@ -313,10 +331,10 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	}
 
 	// 3. get runtime namespace and name
-	namespace, name, err := ns.getRuntimeNamespacedName(req.GetVolumeContext(), req.GetVolumeId())
+	namespace, name, err := ns.getRuntimeNamespacedName(req.GetVolumeContext(), volumeId)
 	if err != nil {
 		glog.Errorf("NodeStageVolume: can't get runtime namespace and name given (volumeContext: %v, volumeId: %s): %v", req.GetVolumeContext(), req.GetVolumeId(), err)
-		return nil, errors.Wrapf(err, "NodeStageVolume: can't get namespace and name by volume id %s", req.GetVolumeId())
+		return nil, errors.Wrapf(err, "NodeStageVolume: can't get namespace and name by volume id %s", volumeId)
 	}
 
 	// 4. Label node to launch FUSE Pod
@@ -337,7 +355,7 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 		return nil, errors.Wrapf(err, "NodeStageVolume: error when patching labels on node %s", ns.nodeId)
 	}
 
-	glog.Infof("NodeStageVolume: NodeStage succeded with VolumeId: %s, and added NodeLabel: %s", req.GetVolumeId(), fuseLabelKey)
+	glog.Infof("NodeStageVolume: NodeStage succeded with VolumeId: %s, and added NodeLabel: %s", volumeId, fuseLabelKey)
 	return &csi.NodeStageVolumeResponse{}, nil
 }
 
