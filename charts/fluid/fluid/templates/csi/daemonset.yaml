@@ -107,9 +107,13 @@ spec:
           - name: kubelet-kube-config
             mountPath: /etc/kubernetes/kubelet.conf
             readOnly: true
+          # Check subdirectory to avoid looping bind mounts
+          {{- $kubeletRootDir := ternary ( .Values.csi.kubelet.rootDir ) ( print .Values.csi.kubelet.rootDir "/" ) ( hasSuffix "/" .Values.csi.kubelet.rootDir ) }}
+          {{- if not ( hasPrefix $kubeletRootDir .Values.csi.kubelet.certDir ) }}
           - name: kubelet-cert-dir
             mountPath: {{ .Values.csi.kubelet.certDir | quote }}
             readOnly: true
+          {{- end }}
           - name: updatedb-conf
             mountPath: /host-etc/updatedb.conf
           - name: updatedb-conf-bak
@@ -117,8 +121,14 @@ spec:
       volumes:
         - name: kubelet-dir
           hostPath:
-            path: {{ .Values.csi.kubelet.rootDir }}
+            path: {{ .Values.csi.kubelet.rootDir | quote }}
             type: Directory
+        {{- if not ( hasPrefix $kubeletRootDir .Values.csi.kubelet.certDir ) }}
+        - name: kubelet-cert-dir
+          hostPath:
+            path: {{ .Values.csi.kubelet.certDir | quote }}
+            type: Directory
+        {{- end }}
         - name: plugin-dir
           hostPath:
             path: {{ .Values.csi.kubelet.rootDir }}/plugins/csi-fluid-plugin
@@ -135,10 +145,6 @@ spec:
             path: {{ .Values.csi.kubelet.kubeConfigFile | quote }}
             type: File
           name: kubelet-kube-config
-        - hostPath:
-            path: {{ .Values.csi.kubelet.certDir | quote }}
-            type: Directory
-          name: kubelet-cert-dir
         - hostPath:
             path: /etc/updatedb.conf
             type: FileOrCreate
