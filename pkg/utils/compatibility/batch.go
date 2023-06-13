@@ -26,7 +26,8 @@ import (
 
 var batchV1CronJobCompatible = false
 
-func init() {
+// DiscoverBatchAPICompatibility discovers compatibility of the batch API group in the cluster and set in batchV1CronJobCompatible variable.
+func DiscoverBatchAPICompatibility() {
 	restConfig := ctrl.GetConfigOrDie()
 
 	discoveryClient := discovery.NewDiscoveryClientForConfigOrDie(restConfig)

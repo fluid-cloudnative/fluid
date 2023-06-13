@@ -83,6 +83,7 @@ func init() {
 
 func handle() {
 	fluid.LogVersion()
+	compatibility.DiscoverBatchAPICompatibility()
 
 	ctrl.SetLogger(zap.New(func(o *zap.Options) {
 		o.Development = development
