@@ -353,7 +353,7 @@ func (dataset *Dataset) SetDataOperationInProgress(operationType string, name st
 		}
 		return
 	}
-	if dataset.Status.OperationRef[operationType] == "" {
+	if dataset.Status.OperationRef[operationType] == "" || strings.Contains(dataset.Status.OperationRef[operationType], name) {
 		dataset.Status.OperationRef[operationType] = name
 		return
 	}
