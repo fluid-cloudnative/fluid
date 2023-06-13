@@ -1,5 +1,5 @@
 {{- if eq (lower .Values.datamigrate.policy) "cron" }}
-apiVersion: batch/v1
+apiVersion: {{ ternary "batch/v1" "batch/v1beta1" (.Capabilities.APIVersions.Has "batch/v1/CronJob") }}
 kind: CronJob
 metadata:
   name: {{ printf "%s-migrate" .Release.Name }}
@@ -100,7 +100,7 @@ spec:
                 - mountPath: /scripts
                   name: data-migrate-script
                 {{- with .Values.datamigrate.nativeVolumeMounts }}
-                {{ toYaml . | nindent 12 }}
+                {{ toYaml . | nindent 16 }}
                 {{- end }}
           volumes:
             - name: data-migrate-script
@@ -111,6 +111,6 @@ spec:
                     path: juicefs_datamigrate.sh
                     mode: 365
           {{- with .Values.datamigrate.nativeVolumes }}
-            {{ toYaml . | nindent 8 }}
+            {{ toYaml . | nindent 12 }}
           {{- end }}
 {{- end }}
