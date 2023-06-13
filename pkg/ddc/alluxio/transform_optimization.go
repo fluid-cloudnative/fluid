@@ -66,7 +66,11 @@ func (e *AlluxioEngine) optimizeDefaultProperties(runtime *datav1alpha1.AlluxioR
 	setDefaultProperties(runtime, value, "alluxio.user.file.passive.cache.enabled", "false")
 	setDefaultProperties(runtime, value, "alluxio.user.block.avoid.eviction.policy.reserved.size.bytes", "2GB")
 	setDefaultProperties(runtime, value, "alluxio.master.journal.folder", "/journal")
-	setDefaultProperties(runtime, value, "alluxio.master.journal.type", "UFS")
+	if value.Master.Replicas > 1 {
+		setDefaultProperties(runtime, value, "alluxio.master.journal.type", "EMBEDDED")
+	} else {
+		setDefaultProperties(runtime, value, "alluxio.master.journal.type", "UFS")
+	}
 	setDefaultProperties(runtime, value, "alluxio.user.block.master.client.pool.gc.threshold", "10min")
 	setDefaultProperties(runtime, value, "alluxio.user.file.master.client.threads", "1024")
 	setDefaultProperties(runtime, value, "alluxio.user.block.master.client.threads", "1024")
