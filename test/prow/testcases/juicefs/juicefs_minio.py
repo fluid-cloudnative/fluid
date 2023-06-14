@@ -238,7 +238,7 @@ def check_cron_datamigrate(datamigrate_name, dataset_name, namespace="default"):
 
         datamigrate_status = resource["status"]["phase"]
         dataset_status = dataset["status"]["phase"]
-        opRef = dataset["status"]["operationRef"]
+        opRef = dataset["status"].get("operationRef", {})
         if datamigrate_status == "Failed":
             print("Datamigrate {} is failed".format(datamigrate_name))
             return False
@@ -249,11 +249,14 @@ def check_cron_datamigrate(datamigrate_name, dataset_name, namespace="default"):
             if opRef is not None and opRef["DataMigrate"] != "":
                 print("Datamigrate {} is complete but dataset opRef {} is not None".format(datamigrate_name, opRef))
                 return False
-        if datamigrate_status == "Running":
+        if datamigrate_status == "Executing":
             if dataset_status != "DataMigrating":
                 print("Datamigrate {} is running but dataset status {}".format(datamigrate_name, dataset_status))
                 return False
-            if opRef is None or opRef["DataMigrate"] != datamigrate_name:
+            if opRef is None:
+                print("Datamigrate {} is running but dataset opRef None".format(datamigrate_name))
+                return False
+            if opRef.get("DataMigrate") != datamigrate_name:
                 print("Datamigrate {} is running but dataset opRef {}".format(datamigrate_name, opRef))
                 return False
         time.sleep(1)
@@ -593,7 +596,7 @@ def main():
     try:
         flow.run()
     except Exception as e:
-        print(e)
+        print("error: ", e)
         exit(1)
 
     print("> Post-Check: Cache cleaned up?")
