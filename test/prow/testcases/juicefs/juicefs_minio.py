@@ -146,7 +146,7 @@ def create_redis_secret(namespace="default"):
         "apiVersion": "v1",
         "kind": "Secret",
         "metadata": {"name": SECRET_NAME},
-        "stringData": {"metaurl": "redis://redis:6379/0", "accesskey": "minioadmin", "secretkey": "minioadmin"}
+        "stringData": {"metaurl": "redis://redis:6379/4", "accesskey": "minioadmin", "secretkey": "minioadmin"}
     }
 
     api.create_namespaced_secret(namespace=namespace, body=jfs_secret)
@@ -185,23 +185,99 @@ def create_datamigrate(datamigrate_name, dataset_name, namespace="default"):
     print("Create datamigrate {}".format(datamigrate_name))
 
 
-def check_datamigrate_complete(datamigrate_name, namespace="default"):
+def create_cron_datamigrate(datamigrate_name, dataset_name, namespace="default"):
+    api = client.CustomObjectsApi()
+    my_datamigrate = {
+        "apiVersion": "data.fluid.io/v1alpha1",
+        "kind": "DataMigrate",
+        "metadata": {"name": datamigrate_name, "namespace": namespace},
+        "spec": {
+            "image": "registry.cn-hangzhou.aliyuncs.com/juicefs/juicefs-fuse",
+            "policy": "Cron",
+            "schedule": "* * * * *",
+            "imageTag": "nightly",
+            "to": {"dataset": {"name": dataset_name, "namespace": namespace}},
+            "from": {"externalStorage": {
+                "uri": "minio://%s:9000/minio/test/" % NODE_IP,
+                "encryptOptions": [
+                    {"name": "access-key", "valueFrom": {"secretKeyRef": {"name": SECRET_NAME, "key": "accesskey"}}},
+                    {"name": "secret-key", "valueFrom": {"secretKeyRef": {"name": SECRET_NAME, "key": "secretkey"}}},
+                ]
+            }}
+        },
+    }
+
+    api.create_namespaced_custom_object(
+        group="data.fluid.io",
+        version="v1alpha1",
+        namespace="default",
+        plural="datamigrates",
+        body=my_datamigrate,
+    )
+    print("Create datamigrate {}".format(datamigrate_name))
+
+
+def check_cron_datamigrate(datamigrate_name, dataset_name, namespace="default"):
     api = client.CustomObjectsApi()
 
-    resource = api.get_namespaced_custom_object(
+    for i in range(0, 60):
+        resource = api.get_namespaced_custom_object(
             group="data.fluid.io",
             version="v1alpha1",
             name=datamigrate_name,
             namespace=namespace,
             plural="datamigrates"
         )
+        dataset = api.get_namespaced_custom_object(
+            group="data.fluid.io",
+            version="v1alpha1",
+            name=dataset_name,
+            namespace=namespace,
+            plural="datasets"
+        )
+
+        datamigrate_status = resource["status"]["phase"]
+        dataset_status = dataset["status"]["phase"]
+        opRef = dataset["status"]["operationRef"]
+        if datamigrate_status == "Failed":
+            print("Datamigrate {} is failed".format(datamigrate_name))
+            return False
+        if datamigrate_status == "Complete":
+            if dataset_status != "Bound":
+                print("Datamigrate {} is complete but dataset status {}".format(datamigrate_name, dataset_status))
+                return False
+            if opRef is not None and opRef["DataMigrate"] != "":
+                print("Datamigrate {} is complete but dataset opRef {} is not None".format(datamigrate_name, opRef))
+                return False
+        if datamigrate_status == "Running":
+            if dataset_status != "DataMigrating":
+                print("Datamigrate {} is running but dataset status {}".format(datamigrate_name, dataset_status))
+                return False
+            if opRef is None or opRef["DataMigrate"] != datamigrate_name:
+                print("Datamigrate {} is running but dataset opRef {}".format(datamigrate_name, opRef))
+                return False
+        time.sleep(1)
+
+    return True
+
+
+def check_datamigrate_complete(datamigrate_name, namespace="default"):
+    api = client.CustomObjectsApi()
+
+    resource = api.get_namespaced_custom_object(
+        group="data.fluid.io",
+        version="v1alpha1",
+        name=datamigrate_name,
+        namespace=namespace,
+        plural="datamigrates"
+    )
 
     if "status" in resource:
         if "phase" in resource["status"]:
             if resource["status"]["phase"] == "Complete":
                 print("Datamigrate {} is complete.".format(datamigrate_name))
                 return True
-    
+
     return False
 
 
@@ -218,7 +294,7 @@ def get_worker_node_fn(dataset_name, namespace="default"):
             if e.status == 404:
                 return False
             raise e
-    
+
     return funcs.check(check_internal, retries=60, interval=1)
 
 
@@ -363,12 +439,13 @@ def clean_up_secret(namespace="default"):
 
 def main():
     if os.getenv("KUBERNETES_SERVICE_HOST") is None:
-       config.load_kube_config()
+        config.load_kube_config()
     else:
-       config.load_incluster_config()
+        config.load_incluster_config()
 
     name = "jfsdemo"
     datamigrate_name = "jfsdemo"
+    cron_datamigrate_name = "cron-jfsdemo"
     dataload_name = "jfsdemo-warmup"
     namespace = "default"
     test_write_job = "demo-write"
@@ -381,7 +458,6 @@ def main():
         .set_namespaced_name(namespace, name)
     dataload = fluidapi.DataLoad(name=dataload_name, namespace=namespace) \
         .set_target_dataset(name, namespace)
-
 
     flow = TestFlow("JuiceFS - Access Minio data")
 
@@ -422,7 +498,7 @@ def main():
             forth_fn=funcs.check_volume_resource_ready_fn(name, namespace)
         )
     )
-    
+
     flow.append_step(
         SimpleStep(
             step_name="get juicefs worker node info",
@@ -434,7 +510,9 @@ def main():
     flow.append_step(
         SimpleStep(
             step_name="create data write job",
-            forth_fn=funcs.create_job_fn(script="dd if=/dev/zero of=/data/allzero.file bs=100M count=10 && sha256sum /data/allzero.file", dataset_name=name, name=test_write_job, namespace=namespace),
+            forth_fn=funcs.create_job_fn(
+                script="dd if=/dev/zero of=/data/allzero.file bs=100M count=10 && sha256sum /data/allzero.file",
+                dataset_name=name, name=test_write_job, namespace=namespace),
             back_fn=funcs.delete_job_fn(name=test_write_job, namespace=namespace)
         )
     )
@@ -464,7 +542,8 @@ def main():
     flow.append_step(
         SimpleStep(
             step_name="create data read job",
-            forth_fn=funcs.create_job_fn(script="time sha256sum /data/allzero.file && rm /data/allzero.file", dataset_name=name, name=test_read_job, namespace=namespace),
+            forth_fn=funcs.create_job_fn(script="time sha256sum /data/allzero.file && rm /data/allzero.file",
+                                         dataset_name=name, name=test_read_job, namespace=namespace),
             back_fn=funcs.delete_job_fn(name=test_read_job, namespace=namespace)
         )
     )
@@ -479,7 +558,8 @@ def main():
     flow.append_step(
         SimpleStep(
             step_name="create DataMigrate job",
-            forth_fn=currying_fn(create_datamigrate, datamigrate_name=datamigrate_name, dataset_name=name, namespace=namespace),
+            forth_fn=currying_fn(create_datamigrate, datamigrate_name=datamigrate_name, dataset_name=name,
+                                 namespace=namespace),
             back_fn=dummy_back
             # No need to clean up DataMigrate because of its ownerReference
             # back_fn=currying_fn(clean_up_datamigrate, datamigrate_name=datamigrate_name, namespace=namespace)
@@ -493,16 +573,32 @@ def main():
         )
     )
 
+    flow.append_step(
+        SimpleStep(
+            step_name="create cron DataMigrate job",
+            forth_fn=currying_fn(create_cron_datamigrate, datamigrate_name=cron_datamigrate_name, dataset_name=name,
+                                 namespace=namespace),
+            back_fn=dummy_back
+        )
+    )
+
+    flow.append_step(
+        StatusCheckStep(
+            step_name="check if cron DataMigrate status correct",
+            forth_fn=currying_fn(check_cron_datamigrate, datamigrate_name=cron_datamigrate_name,
+                                 dataset_name=name, namespace=namespace)
+        )
+    )
+
     try:
         flow.run()
     except Exception as e:
         print(e)
         exit(1)
 
-    
     print("> Post-Check: Cache cleaned up?")
     try:
-        assert(NODE_NAME != "")
+        assert (NODE_NAME != "")
         create_check_cache_job(job_name=check_cache_job, node_name=NODE_NAME, namespace=namespace)
         if not check_data_job_status(check_cache_job, namespace=namespace):
             raise Exception("> FAIL: Job {} in normal mode failed.".format("checkcache"))
