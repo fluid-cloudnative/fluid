@@ -68,7 +68,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 
 	// The lock is to avoid race condition
 	if lock := ns.locks.TryAcquire(targetPath); !lock {
-		return nil, errors.Wrapf(errors.Errorf("NodePublishVolume already exists"), "NodePublishVolume on targetPath %s already exists", targetPath)
+		return nil, status.Errorf(codes.Aborted, "NodePublishVolume operation on targetPath %s already exists", targetPath)
 	}
 	defer ns.locks.Release(targetPath)
 
@@ -185,7 +185,7 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 
 	// The lock is to avoid race condition
 	if lock := ns.locks.TryAcquire(targetPath); !lock {
-		return nil, errors.Wrapf(errors.Errorf("NodeUnplishVolume already exists"), "NodeUnpublishVolume on targetPath %s already exists", targetPath)
+		return nil, status.Errorf(codes.Aborted, "NodeUnpublishVolume operation on targetPath %s already exists", targetPath)
 	}
 	defer ns.locks.Release(targetPath)
 
@@ -227,7 +227,7 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 	// The lock is to ensure CSI plugin labels the node in correct order
 	volumeId := req.GetVolumeId()
 	if lock := ns.locks.TryAcquire(volumeId); !lock {
-		return nil, errors.Wrapf(errors.Errorf("NodeUnstageVolume already exists"), "NodeUnstageVolume on volumeId %s already exists", volumeId)
+		return nil, status.Errorf(codes.Aborted, "NodeUnstageVolume operation on volumeId %s already exists", volumeId)
 	}
 	defer ns.locks.Release(volumeId)
 
@@ -310,7 +310,7 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	// The lock is to ensure CSI plugin labels the node in correct order
 	volumeId := req.GetVolumeId()
 	if lock := ns.locks.TryAcquire(volumeId); !lock {
-		return nil, errors.Wrapf(errors.Errorf("NodeStageVolume already exists"), "NodeStageVolume on volumeId %s already exists", volumeId)
+		return nil, status.Errorf(codes.Aborted, "NodeStageVolume operation on volumeId %s already exists", volumeId)
 	}
 	defer ns.locks.Release(volumeId)
 	glog.Infof("NodeStageVolume: Starting NodeStage with VolumeId: %s, and VolumeContext: %v", volumeId, req.VolumeContext)
