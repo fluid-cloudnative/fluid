@@ -65,6 +65,10 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 
 	glog.Infof("NodePublishVolumeRequest is %v", req)
 	targetPath := req.GetTargetPath()
+	// check targetpath validity
+	if len(targetPath) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "NodePublishVolume operation requires targetPath but is not provided")
+	}
 
 	// The lock is to avoid race condition
 	if lock := ns.locks.TryAcquire(targetPath); !lock {
@@ -171,12 +175,16 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 
 func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
 	targetPath := req.GetTargetPath()
+	// check targetpath validity
+	if len(targetPath) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "NodeUnpublishVolume operation requires targetPath but is not provided")
+	}
 
 	// check path existence
 	_, err := os.Stat(targetPath)
 	// No need to unmount non-existing targetPath
 	if os.IsNotExist(err) {
-		glog.V(4).Infof("NodeUnpublishVolume: targetPath %s does not exist", targetPath)
+		glog.V(3).Infof("NodeUnpublishVolume: targetPath %s has been cleaned up, so it doesn't need to be unmounted", targetPath)
 		return &csi.NodeUnpublishVolumeResponse{}, nil
 	}
 	if err != nil {
@@ -224,8 +232,12 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 }
 
 func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstageVolumeRequest) (*csi.NodeUnstageVolumeResponse, error) {
-	// The lock is to ensure CSI plugin labels the node in correct order
 	volumeId := req.GetVolumeId()
+	if len(volumeId) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "NodeUnstageVolume operation requires volumeId but is not provided")
+	}
+
+	// The lock is to ensure CSI plugin labels the node in correct order
 	if lock := ns.locks.TryAcquire(volumeId); !lock {
 		return nil, status.Errorf(codes.Aborted, "NodeUnstageVolume operation on volumeId %s already exists", volumeId)
 	}
@@ -307,8 +319,12 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 }
 
 func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {
-	// The lock is to ensure CSI plugin labels the node in correct order
 	volumeId := req.GetVolumeId()
+	if len(volumeId) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "NodeStageVolume operation requires volumeId but is not provided")
+	}
+
+	// The lock is to ensure CSI plugin labels the node in correct order
 	if lock := ns.locks.TryAcquire(volumeId); !lock {
 		return nil, status.Errorf(codes.Aborted, "NodeStageVolume operation on volumeId %s already exists", volumeId)
 	}
