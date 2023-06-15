@@ -146,7 +146,7 @@ def create_redis_secret(namespace="default"):
         "apiVersion": "v1",
         "kind": "Secret",
         "metadata": {"name": SECRET_NAME},
-        "stringData": {"metaurl": "redis://redis:6379/4", "accesskey": "minioadmin", "secretkey": "minioadmin"}
+        "stringData": {"metaurl": "redis://redis:6379/0", "accesskey": "minioadmin", "secretkey": "minioadmin"}
     }
 
     api.create_namespaced_secret(namespace=namespace, body=jfs_secret)
