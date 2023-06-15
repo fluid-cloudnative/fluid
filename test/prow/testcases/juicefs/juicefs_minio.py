@@ -146,7 +146,7 @@ def create_redis_secret(namespace="default"):
         "apiVersion": "v1",
         "kind": "Secret",
         "metadata": {"name": SECRET_NAME},
-        "stringData": {"metaurl": "redis://redis:6379/0", "accesskey": "minioadmin", "secretkey": "minioadmin"}
+        "stringData": {"metaurl": "redis://redis:6379/4", "accesskey": "minioadmin", "secretkey": "minioadmin"}
     }
 
     api.create_namespaced_secret(namespace=namespace, body=jfs_secret)
@@ -256,7 +256,7 @@ def check_cron_datamigrate(datamigrate_name, dataset_name, namespace="default"):
             if opRef is None:
                 print("Datamigrate {} is running but dataset opRef None".format(datamigrate_name))
                 return False
-            if opRef.get("DataMigrate") != datamigrate_name:
+            if opRef.get("DataMigrate", "") != datamigrate_name:
                 print("Datamigrate {} is running but dataset opRef {}".format(datamigrate_name, opRef))
                 return False
         time.sleep(1)
