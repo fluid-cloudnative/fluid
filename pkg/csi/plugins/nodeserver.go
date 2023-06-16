@@ -180,6 +180,12 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 		return nil, status.Error(codes.InvalidArgument, "NodeUnpublishVolume operation requires targetPath but is not provided")
 	}
 
+	// The lock is to avoid race condition
+	if lock := ns.locks.TryAcquire(targetPath); !lock {
+		return nil, status.Errorf(codes.Aborted, "NodeUnpublishVolume operation on targetPath %s already exists", targetPath)
+	}
+	defer ns.locks.Release(targetPath)
+
 	// check path existence
 	_, err := os.Stat(targetPath)
 	// No need to unmount non-existing targetPath
@@ -190,12 +196,6 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 	if err != nil {
 		return nil, errors.Wrapf(err, "NodeUnpublishVolume: stat targetPath %s error %v", targetPath, err)
 	}
-
-	// The lock is to avoid race condition
-	if lock := ns.locks.TryAcquire(targetPath); !lock {
-		return nil, status.Errorf(codes.Aborted, "NodeUnpublishVolume operation on targetPath %s already exists", targetPath)
-	}
-	defer ns.locks.Release(targetPath)
 
 	// targetPath may be mount bind many times when mount point recovered.
 	// umount until it's not mounted.
