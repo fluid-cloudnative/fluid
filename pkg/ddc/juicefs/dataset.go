@@ -78,7 +78,9 @@ func (j *JuiceFSEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (er
 				corev1.ConditionFalse)
 		}
 
-		datasetToUpdate.Status.Phase = phase
+		if datasetToUpdate.Status.Phase != datav1alpha1.DataMigrating {
+			datasetToUpdate.Status.Phase = phase
+		}
 		datasetToUpdate.Status.Conditions = utils.UpdateDatasetCondition(datasetToUpdate.Status.Conditions,
 			cond)
 

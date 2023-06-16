@@ -357,6 +357,12 @@ func (dataset *Dataset) SetDataOperationInProgress(operationType string, name st
 		dataset.Status.OperationRef[operationType] = name
 		return
 	}
+	opRefs := strings.Split(dataset.Status.OperationRef[operationType], ",")
+	for _, opRef := range opRefs {
+		if opRef == name {
+			return
+		}
+	}
 
 	dataset.Status.OperationRef[operationType] = dataset.Status.OperationRef[operationType] + "," + name
 }
