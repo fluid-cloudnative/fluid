@@ -106,10 +106,10 @@ func ReleaseTargetDataset(ctx cruntime.ReconcileRequestContext, object client.Ob
 		if dataOpRef == "" {
 			// different operation may set other fields
 			operation.RemoveTargetDatasetStatusInProgress(datasetToUpdate)
-			if !reflect.DeepEqual(datasetToUpdate.Status, dataset.Status) {
-				if err = ctx.Client.Status().Update(context.TODO(), datasetToUpdate); err != nil {
-					return err
-				}
+		}
+		if !reflect.DeepEqual(datasetToUpdate.Status, dataset.Status) {
+			if err = ctx.Client.Status().Update(context.TODO(), datasetToUpdate); err != nil {
+				return err
 			}
 		}
 		return nil
