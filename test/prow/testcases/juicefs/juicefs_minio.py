@@ -246,7 +246,7 @@ def check_cron_datamigrate(datamigrate_name, dataset_name, namespace="default"):
             if dataset_status != "Bound":
                 print("Datamigrate {} is complete but dataset status {}".format(datamigrate_name, dataset_status))
                 return False
-            if opRef is not None and opRef["DataMigrate"] != "":
+            if opRef is not None and opRef.get("DataMigrate", "") != "":
                 print("Datamigrate {} is complete but dataset opRef {} is not None".format(datamigrate_name, opRef))
                 return False
         if datamigrate_status == "Executing":
