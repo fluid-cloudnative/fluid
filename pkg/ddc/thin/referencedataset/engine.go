@@ -216,9 +216,9 @@ func (e *ReferenceDatasetEngine) Shutdown() (err error) {
 func (e *ReferenceDatasetEngine) checkDatasetMountSupport() error {
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
-		// if not found dataset, it indicates the runtime is deleting, pass checkDatasetMountSupport
+		// not found dataset error indicates the runtime is deleting, pass checkDatasetMountSupport
 		if utils.IgnoreNotFound(err) == nil {
-			e.Log.Info("Not found dataset, runtime is deleting")
+			e.Log.Info("The dataset is not found, pass checkDatasetMountSupport because runtime is deleting")
 			return nil
 		} else {
 			return err
