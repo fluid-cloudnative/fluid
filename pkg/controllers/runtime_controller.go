@@ -87,17 +87,17 @@ func (r *RuntimeReconciler) ReconcileInternal(ctx cruntime.ReconcileRequestConte
 		return utils.RequeueIfError(errors.Wrap(err, "Failed to create"))
 	}
 
-	// 2.Get or create the engine
+	// 2.Get the ObjectMeta of runtime
+	objectMeta, err := r.implement.GetRuntimeObjectMeta(ctx)
+	if err != nil {
+		return utils.RequeueIfError(err)
+	}
+
+	// 3.Get or create the engine
 	engine, err := r.implement.GetOrCreateEngine(ctx)
 	if err != nil {
 		r.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Process Runtime error %v", err)
 		return utils.RequeueIfError(errors.Wrap(err, "Failed to create"))
-	}
-
-	// 3.Get the ObjectMeta of runtime
-	objectMeta, err := r.implement.GetRuntimeObjectMeta(ctx)
-	if err != nil {
-		return utils.RequeueIfError(err)
 	}
 
 	// 4.Get the dataset
@@ -347,7 +347,7 @@ func (r *RuntimeReconciler) GetDataset(ctx cruntime.ReconcileRequestContext) (*d
 }
 
 func (r *RuntimeReconciler) CheckIfReferenceDatasetIsSupported(ctx cruntime.ReconcileRequestContext) (bool, string) {
-	mounted := base.GetMountedDatasetNamespacedName(ctx.Dataset)
+	mounted := base.GetMountedDatasetNamespacedName(ctx.Dataset.Spec.Mounts)
 
 	if len(mounted) > 0 && ctx.RuntimeType != common.ThinRuntime {
 		return false, "dataset mounting another dataset can only use thin runtime"

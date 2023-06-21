@@ -33,6 +33,11 @@ func (e *ReferenceDatasetEngine) getMountedDatasetRuntimeStatus() (status *datav
 		return status, err
 	}
 
+	// if mountedRuntimeInfo is nil and no err, the runtime is deleting.
+	if mountedRuntimeInfo == nil {
+		return nil, nil
+	}
+
 	return base.GetRuntimeStatus(e.Client, mountedRuntimeInfo.GetRuntimeType(),
 		mountedRuntimeInfo.GetName(), mountedRuntimeInfo.GetNamespace())
 }
@@ -91,20 +96,39 @@ func (e *ReferenceDatasetEngine) getRuntimeInfo() (base.RuntimeInfoInterface, er
 	e.Log.Info("Setup with dataset done", "exclusive", e.runtimeInfo.IsExclusive())
 
 	return e.runtimeInfo, nil
-
 }
 
+// getMountedRuntimeInfo get mountedRuntimeInfo from dataset.
+// If could not get dataset, getMountedRuntimeInfo try to get mountedRuntimeInfo from runtime status.
+// And if dataset is deleted and no status.mounts, it returns nil, nil to continue runtimeDeletion.
 func (e *ReferenceDatasetEngine) getMountedRuntimeInfo() (base.RuntimeInfoInterface, error) {
 	if e.mountedRuntimeInfo != nil {
 		return e.mountedRuntimeInfo, nil
 	}
 
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+	// if err is not found, try to get mountedRuntimeInfo from runtime status, don't return here.
+	if err != nil && utils.IgnoreNotFound(err) != nil {
+		return e.mountedRuntimeInfo, err
+	}
+
+	runtime, err := e.getRuntime()
 	if err != nil {
 		return e.mountedRuntimeInfo, err
 	}
 
-	mountedNameSpacedNames := base.GetMountedDatasetNamespacedName(dataset)
+	var mountedNameSpacedNames []types.NamespacedName
+	if dataset != nil {
+		// get mountedRuntimeInfo from dataset first
+		mountedNameSpacedNames = base.GetMountedDatasetNamespacedName(dataset.Spec.Mounts)
+	} else if runtime.Status.Mounts != nil && len(runtime.Status.Mounts) != 0 {
+		// then try to get mountedRuntimeInfo from runtime status
+		mountedNameSpacedNames = base.GetMountedDatasetNamespacedName(runtime.Status.Mounts)
+	} else {
+		// The dataset is not found and no status.mounts, in this case, the runtime is deleting, return nil, nil
+		e.Log.Info("The dataset is deleted and no runtime.Status.Mounts, in this case, the runtime is deleting, return nil, nil")
+		return nil, nil
+	}
 	if len(mountedNameSpacedNames) != 1 {
 		return e.mountedRuntimeInfo, fmt.Errorf("ThinEngine with no profile name can only handle dataset only mounting one dataset")
 	}

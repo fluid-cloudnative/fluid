@@ -116,11 +116,19 @@ func Precheck(client client.Client, key types.NamespacedName) (found bool, err e
 // CheckReferenceDatasetRuntime judge if this runtime is used for handling dataset mounting another dataset.
 func CheckReferenceDatasetRuntime(client client.Client, runtime *datav1alpha1.ThinRuntime) (bool, error) {
 	dataset, err := utils.GetDataset(client, runtime.Name, runtime.Namespace)
-	if err != nil {
+	if err != nil && utils.IgnoreNotFound(err) != nil {
+		// if err is not found, try to GetMountedDatasetNamespacedName from runtime.status.mounts, don't return here.
 		return false, err
 	}
 
-	mounted := base.GetMountedDatasetNamespacedName(dataset)
+	var mounted []types.NamespacedName
+	if dataset != nil {
+		// getMountedDataset from dataset first
+		mounted = base.GetMountedDatasetNamespacedName(dataset.Spec.Mounts)
+	} else if runtime.Status.Mounts != nil && len(runtime.Status.Mounts) != 0 {
+		// then try to getMountedDataset from runtime
+		mounted = base.GetMountedDatasetNamespacedName(runtime.Status.Mounts)
+	}
 	// not mount other datasets
 	if len(mounted) == 0 {
 		return false, nil

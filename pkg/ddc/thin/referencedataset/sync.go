@@ -95,9 +95,13 @@ func (e *ReferenceDatasetEngine) Sync(ctx cruntime.ReconcileRequestContext) (err
 	if err != nil {
 		return err
 	}
-	// status copy, include cacheStates, conditions, selector, valueFile, current*, desired*, fuse*, master*, worker* ...
-	// TODO: Are there some fields should not copy?
-	runtimeToUpdate.Status = *mountedRuntimeStatus.DeepCopy()
+	if mountedRuntimeStatus != nil {
+		// status copy, include cacheStates, conditions, selector, valueFile, current*, desired*, fuse*, master*, worker* ...
+		// TODO: Are there some fields should not copy?
+		runtimeToUpdate.Status = *mountedRuntimeStatus.DeepCopy()
+	}
+	// update status.mounts to dataset mounts
+	runtimeToUpdate.Status.Mounts = virtualDatasetToUpdate.Spec.Mounts
 
 	if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
 		err = e.Client.Status().Update(context.TODO(), runtimeToUpdate)

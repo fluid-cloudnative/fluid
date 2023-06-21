@@ -19,6 +19,8 @@ package referencedataset
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
@@ -26,7 +28,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"time"
 
 	"github.com/go-logr/logr"
 	"k8s.io/client-go/util/retry"
@@ -131,7 +132,7 @@ func (e *ReferenceDatasetEngine) Setup(ctx cruntime.ReconcileRequestContext) (re
 	// 1. get the physical datasets according the virtual dataset
 	dataset := ctx.Dataset
 
-	physicalNameSpacedNames := base.GetMountedDatasetNamespacedName(dataset)
+	physicalNameSpacedNames := base.GetMountedDatasetNamespacedName(dataset.Spec.Mounts)
 	if len(physicalNameSpacedNames) != 1 {
 		return false, fmt.Errorf("ThinEngine can only handle dataset only mounting one dataset")
 	}
@@ -193,17 +194,20 @@ func (e *ReferenceDatasetEngine) Shutdown() (err error) {
 	if err != nil {
 		return err
 	}
-	mountedDataset, err := utils.GetDataset(e.Client, mountedRuntimeInfo.GetName(), mountedRuntimeInfo.GetNamespace())
-	if err != nil {
-		return err
-	}
 
-	if utils.ContainsString(mountedDataset.Status.DatasetRef, datasetRefName) {
-		newDataset := mountedDataset.DeepCopy()
-		newDataset.Status.DatasetRef = utils.RemoveString(newDataset.Status.DatasetRef, datasetRefName)
-		err := e.Client.Status().Update(context.TODO(), newDataset)
+	if mountedRuntimeInfo != nil {
+		mountedDataset, err := utils.GetDataset(e.Client, mountedRuntimeInfo.GetName(), mountedRuntimeInfo.GetNamespace())
 		if err != nil {
 			return err
+		}
+
+		if utils.ContainsString(mountedDataset.Status.DatasetRef, datasetRefName) {
+			newDataset := mountedDataset.DeepCopy()
+			newDataset.Status.DatasetRef = utils.RemoveString(newDataset.Status.DatasetRef, datasetRefName)
+			err := e.Client.Status().Update(context.TODO(), newDataset)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return
@@ -212,10 +216,16 @@ func (e *ReferenceDatasetEngine) Shutdown() (err error) {
 func (e *ReferenceDatasetEngine) checkDatasetMountSupport() error {
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
-		return err
+		// if not found dataset, it indicates the runtime is deleting, pass checkDatasetMountSupport
+		if utils.IgnoreNotFound(err) == nil {
+			e.Log.Info("Not found dataset, runtime is deleting")
+			return nil
+		} else {
+			return err
+		}
 	}
 
-	mountedNamespacedName := base.GetMountedDatasetNamespacedName(dataset)
+	mountedNamespacedName := base.GetMountedDatasetNamespacedName(dataset.Spec.Mounts)
 	mountedSize := len(mountedNamespacedName)
 
 	// currently only support dataset mounting only one dataset
@@ -234,7 +244,7 @@ func (e *ReferenceDatasetEngine) checkDatasetMountSupport() error {
 	}
 
 	// currently not support mounted dataset mounting another dataset
-	if len(base.GetMountedDatasetNamespacedName(mountedDataset)) != 0 {
+	if len(base.GetMountedDatasetNamespacedName(mountedDataset.Spec.Mounts)) != 0 {
 		return fmt.Errorf("ThinRuntime with no profile name can only handle dataset only mounting one dataset")
 	}
 
