@@ -120,10 +120,10 @@ func (e *ReferenceDatasetEngine) getMountedRuntimeInfo() (base.RuntimeInfoInterf
 	var mountedNameSpacedNames []types.NamespacedName
 	if dataset != nil {
 		// get mountedRuntimeInfo from dataset first
-		mountedNameSpacedNames = base.GetMountedDatasetNamespacedName(dataset.Spec.Mounts)
+		mountedNameSpacedNames = base.GetPhysicalDatasetFromMounts(dataset.Spec.Mounts)
 	} else if runtime.Status.Mounts != nil && len(runtime.Status.Mounts) != 0 {
 		// then try to get mountedRuntimeInfo from runtime status
-		mountedNameSpacedNames = base.GetMountedDatasetNamespacedName(runtime.Status.Mounts)
+		mountedNameSpacedNames = base.GetPhysicalDatasetFromMounts(runtime.Status.Mounts)
 	} else {
 		// The dataset is not found and no status.mounts, in this case, the runtime is deleting, return nil, nil
 		e.Log.Info("The dataset is deleted and no runtime.Status.Mounts, in this case, the runtime is deleting, return nil, nil")

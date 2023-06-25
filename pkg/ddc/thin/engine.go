@@ -118,7 +118,7 @@ func CheckReferenceDatasetRuntime(client client.Client, runtime *datav1alpha1.Th
 	dataset, err := utils.GetDataset(client, runtime.Name, runtime.Namespace)
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil && runtime.Status.Mounts != nil && len(runtime.Status.Mounts) != 0 {
-			// dataset not found, but can GetMountedDatasetNamespacedName from runtime
+			// dataset not found, but can GetPhysicalDatasetFromMounts from runtime
 		} else {
 			return false, err
 		}
@@ -127,10 +127,10 @@ func CheckReferenceDatasetRuntime(client client.Client, runtime *datav1alpha1.Th
 	var mounted []types.NamespacedName
 	if dataset != nil {
 		// getMountedDataset from dataset first
-		mounted = base.GetMountedDatasetNamespacedName(dataset.Spec.Mounts)
+		mounted = base.GetPhysicalDatasetFromMounts(dataset.Spec.Mounts)
 	} else if runtime.Status.Mounts != nil && len(runtime.Status.Mounts) != 0 {
 		// then try to getMountedDataset from runtime
-		mounted = base.GetMountedDatasetNamespacedName(runtime.Status.Mounts)
+		mounted = base.GetPhysicalDatasetFromMounts(runtime.Status.Mounts)
 	}
 	// not mount other datasets
 	if len(mounted) == 0 {

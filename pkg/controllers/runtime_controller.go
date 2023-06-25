@@ -347,7 +347,7 @@ func (r *RuntimeReconciler) GetDataset(ctx cruntime.ReconcileRequestContext) (*d
 }
 
 func (r *RuntimeReconciler) CheckIfReferenceDatasetIsSupported(ctx cruntime.ReconcileRequestContext) (bool, string) {
-	mounted := base.GetMountedDatasetNamespacedName(ctx.Dataset.Spec.Mounts)
+	mounted := base.GetPhysicalDatasetFromMounts(ctx.Dataset.Spec.Mounts)
 
 	if len(mounted) > 0 && ctx.RuntimeType != common.ThinRuntime {
 		return false, "dataset mounting another dataset can only use thin runtime"

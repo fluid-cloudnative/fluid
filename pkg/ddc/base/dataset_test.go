@@ -79,7 +79,7 @@ func TestGetMountedDatasetNamespacedName(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		if got := GetMountedDatasetNamespacedName(tt.virtualDataset.Spec.Mounts); len(got) != tt.want {
+		if got := GetPhysicalDatasetFromMounts(tt.virtualDataset.Spec.Mounts); len(got) != tt.want {
 			t.Errorf("GetMountedDatasetNamespacedName() len = %v, want %v", got, tt.want)
 		}
 	}

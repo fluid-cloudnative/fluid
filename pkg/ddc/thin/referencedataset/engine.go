@@ -132,7 +132,7 @@ func (e *ReferenceDatasetEngine) Setup(ctx cruntime.ReconcileRequestContext) (re
 	// 1. get the physical datasets according the virtual dataset
 	dataset := ctx.Dataset
 
-	physicalNameSpacedNames := base.GetMountedDatasetNamespacedName(dataset.Spec.Mounts)
+	physicalNameSpacedNames := base.GetPhysicalDatasetFromMounts(dataset.Spec.Mounts)
 	if len(physicalNameSpacedNames) != 1 {
 		return false, fmt.Errorf("ThinEngine can only handle dataset only mounting one dataset")
 	}
@@ -225,7 +225,7 @@ func (e *ReferenceDatasetEngine) checkDatasetMountSupport() error {
 		}
 	}
 
-	mountedNamespacedName := base.GetMountedDatasetNamespacedName(dataset.Spec.Mounts)
+	mountedNamespacedName := base.GetPhysicalDatasetFromMounts(dataset.Spec.Mounts)
 	mountedSize := len(mountedNamespacedName)
 
 	// currently only support dataset mounting only one dataset
@@ -244,7 +244,7 @@ func (e *ReferenceDatasetEngine) checkDatasetMountSupport() error {
 	}
 
 	// currently not support mounted dataset mounting another dataset
-	if len(base.GetMountedDatasetNamespacedName(mountedDataset.Spec.Mounts)) != 0 {
+	if len(base.GetPhysicalDatasetFromMounts(mountedDataset.Spec.Mounts)) != 0 {
 		return fmt.Errorf("ThinRuntime with no profile name can only handle dataset only mounting one dataset")
 	}
 
