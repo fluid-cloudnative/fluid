@@ -24,7 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestGetMountedDatasetNamespacedName(t *testing.T) {
+func TestGetPhysicalDatasetFromMounts(t *testing.T) {
 	tests := []struct {
 		virtualDataset *datav1alpha1.Dataset
 		want           int
@@ -80,7 +80,7 @@ func TestGetMountedDatasetNamespacedName(t *testing.T) {
 	}
 	for _, tt := range tests {
 		if got := GetPhysicalDatasetFromMounts(tt.virtualDataset.Spec.Mounts); len(got) != tt.want {
-			t.Errorf("GetMountedDatasetNamespacedName() len = %v, want %v", got, tt.want)
+			t.Errorf("GetPhysicalDatasetFromMounts() len = %v, want %v", got, tt.want)
 		}
 	}
 }
