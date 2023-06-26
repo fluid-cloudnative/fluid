@@ -61,7 +61,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 		return nil, fmt.Errorf("engine %s is failed due to type conversion", ctx.Name)
 	}
 
-	isRef, err := CheckReferenceDatasetRuntime(ctx.Client, runtime)
+	isRef, err := CheckReferenceDatasetRuntime(ctx, runtime)
 	if err != nil {
 		return nil, err
 	}
@@ -114,8 +114,8 @@ func Precheck(client client.Client, key types.NamespacedName) (found bool, err e
 }
 
 // CheckReferenceDatasetRuntime judge if this runtime is used for handling dataset mounting another dataset.
-func CheckReferenceDatasetRuntime(client client.Client, runtime *datav1alpha1.ThinRuntime) (bool, error) {
-	dataset, err := utils.GetDataset(client, runtime.Name, runtime.Namespace)
+func CheckReferenceDatasetRuntime(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.ThinRuntime) (bool, error) {
+	dataset, err := utils.GetDataset(ctx.Client, runtime.Name, runtime.Namespace)
 	if err != nil && utils.IgnoreNotFound(err) != nil {
 		// ignore dataset not found err and try to get mounted dataset from runtime
 		return false, err
@@ -124,9 +124,11 @@ func CheckReferenceDatasetRuntime(client client.Client, runtime *datav1alpha1.Th
 	var mounted []types.NamespacedName
 	if dataset != nil {
 		// getMountedDataset from dataset first
+		ctx.Log.V(1).Info("Get physical dataset from virtual dataset mounts")
 		mounted = base.GetPhysicalDatasetFromMounts(dataset.Spec.Mounts)
 	} else if runtime.Status.Mounts != nil && len(runtime.Status.Mounts) != 0 {
 		// then try to getMountedDataset from runtime
+		ctx.Log.V(1).Info("Virtual dataset not found, try to get physical dataset from runtime mounts")
 		mounted = base.GetPhysicalDatasetFromMounts(runtime.Status.Mounts)
 	}
 	// not mount other datasets
