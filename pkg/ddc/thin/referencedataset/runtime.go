@@ -100,16 +100,9 @@ func (e *ReferenceDatasetEngine) getRuntimeInfo() (base.RuntimeInfoInterface, er
 
 // getMountedRuntimeInfo get mountedRuntimeInfo from dataset.
 // If could not get dataset, getMountedRuntimeInfo try to get mountedRuntimeInfo from runtime status.
-// And if dataset is deleted and no status.mounts, it returns nil, nil to continue runtimeDeletion.
 func (e *ReferenceDatasetEngine) getMountedRuntimeInfo() (base.RuntimeInfoInterface, error) {
 	if e.mountedRuntimeInfo != nil {
 		return e.mountedRuntimeInfo, nil
-	}
-
-	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
-	// if err is not found, try to get mountedRuntimeInfo from runtime status, don't return here.
-	if err != nil && utils.IgnoreNotFound(err) != nil {
-		return e.mountedRuntimeInfo, err
 	}
 
 	runtime, err := e.getRuntime()
@@ -117,20 +110,26 @@ func (e *ReferenceDatasetEngine) getMountedRuntimeInfo() (base.RuntimeInfoInterf
 		return e.mountedRuntimeInfo, err
 	}
 
+	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+	if err != nil && utils.IgnoreNotFound(err) != nil {
+		// return if it is not a not-found error
+		return e.mountedRuntimeInfo, err
+	}
+
 	var mountedNameSpacedNames []types.NamespacedName
 	if dataset != nil {
 		// get mountedRuntimeInfo from dataset first
 		mountedNameSpacedNames = base.GetPhysicalDatasetFromMounts(dataset.Spec.Mounts)
-	} else if runtime.Status.Mounts != nil && len(runtime.Status.Mounts) != 0 {
+	} else if len(runtime.Status.Mounts) != 0 {
 		// then try to get mountedRuntimeInfo from runtime status
 		mountedNameSpacedNames = base.GetPhysicalDatasetFromMounts(runtime.Status.Mounts)
 	} else {
-		// The dataset is not found and no status.mounts, in this case, the runtime is deleting, return nil, nil
-		e.Log.Info("The dataset is deleted and no runtime.Status.Mounts, in this case, the runtime is deleting, return nil, nil")
-		return nil, nil
+		// err can only be not-found error
+		return e.mountedRuntimeInfo, err
 	}
+
 	if len(mountedNameSpacedNames) != 1 {
-		return e.mountedRuntimeInfo, fmt.Errorf("ThinEngine with no profile name can only handle dataset only mounting one dataset")
+		return e.mountedRuntimeInfo, fmt.Errorf("ThinEngine with no profile name can only handle dataset only mounting one dataset but get %v", len(mountedNameSpacedNames))
 	}
 	namespacedName := mountedNameSpacedNames[0]
 

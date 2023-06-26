@@ -122,7 +122,10 @@ func BuildReferenceDatasetThinEngine(id string, ctx cruntime.ReconcileRequestCon
 	// get the mountedRuntimeInfo
 	_, err = engine.getMountedRuntimeInfo()
 	if err != nil {
-		return nil, fmt.Errorf("engine %s failed to get mounted dataset's runtime info", ctx.Name)
+		// return err if the runtime is running or error is not not-found
+		if utils.IgnoreNotFound(err) != nil || ctx.Runtime.GetDeletionTimestamp().IsZero() {
+			return nil, fmt.Errorf("engine %s failed to get mounted dataset's runtime info", ctx.Name)
+		}
 	}
 
 	return engine, err
@@ -191,7 +194,7 @@ func (e *ReferenceDatasetEngine) Shutdown() (err error) {
 	datasetRefName := base.GetDatasetRefName(e.name, e.namespace)
 
 	mountedRuntimeInfo, err := e.getMountedRuntimeInfo()
-	if err != nil {
+	if err != nil && utils.IgnoreNotFound(err) != nil {
 		return err
 	}
 

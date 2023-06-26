@@ -117,7 +117,7 @@ func Precheck(client client.Client, key types.NamespacedName) (found bool, err e
 func CheckReferenceDatasetRuntime(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.ThinRuntime) (bool, error) {
 	dataset, err := utils.GetDataset(ctx.Client, runtime.Name, runtime.Namespace)
 	if err != nil && utils.IgnoreNotFound(err) != nil {
-		// ignore dataset not found err and try to get mounted dataset from runtime
+		// return if it is not a not-found error
 		return false, err
 	}
 
@@ -126,8 +126,8 @@ func CheckReferenceDatasetRuntime(ctx cruntime.ReconcileRequestContext, runtime 
 		// getMountedDataset from dataset first
 		ctx.Log.V(1).Info("Get physical dataset from virtual dataset mounts")
 		mounted = base.GetPhysicalDatasetFromMounts(dataset.Spec.Mounts)
-	} else if runtime.Status.Mounts != nil && len(runtime.Status.Mounts) != 0 {
-		// then try to getMountedDataset from runtime
+	} else if len(runtime.Status.Mounts) != 0 {
+		// Virtual dataset not found, try to getMountedDataset from runtime
 		ctx.Log.V(1).Info("Virtual dataset not found, try to get physical dataset from runtime mounts")
 		mounted = base.GetPhysicalDatasetFromMounts(runtime.Status.Mounts)
 	}
