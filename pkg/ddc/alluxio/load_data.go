@@ -18,6 +18,7 @@ package alluxio
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
@@ -142,6 +143,8 @@ func (e *AlluxioEngine) genDataLoadValue(image string, targetDataset *datav1alph
 		Labels:           dataload.Spec.PodMetadata.Labels,
 		Annotations:      dataload.Spec.PodMetadata.Annotations,
 		ImagePullSecrets: imagePullSecrets,
+		Policy:           string(dataload.Spec.Policy),
+		Schedule:         dataload.Spec.Schedule,
 	}
 
 	// pod affinity
@@ -180,7 +183,11 @@ func (e *AlluxioEngine) genDataLoadValue(image string, targetDataset *datav1alph
 		})
 	}
 	dataloadInfo.TargetPaths = targetPaths
-	dataLoadValue := &cdataload.DataLoadValue{DataLoadInfo: dataloadInfo}
+	dataLoadValue := &cdataload.DataLoadValue{
+		Name:         dataload.Name,
+		DataLoadInfo: dataloadInfo,
+		Owner:        transfromer.GenerateOwnerReferenceFromObject(dataload),
+	}
 
 	return dataLoadValue
 }

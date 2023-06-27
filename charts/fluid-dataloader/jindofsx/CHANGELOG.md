@@ -1,3 +1,7 @@
+
+### 0.10.0
+- Support cron dataload
+
 ### 0.6.0
 - Support for setting affinity,tolerations,nodeSelector,schedulerName
 ### 0.5.0

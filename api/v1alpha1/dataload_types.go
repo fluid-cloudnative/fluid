@@ -16,6 +16,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"fmt"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -75,6 +76,16 @@ type DataLoadSpec struct {
 	// +optional
 	// SchedulerName sets the scheduler to be used for DataLoad pod
 	SchedulerName string `json:"schedulerName,omitempty"`
+
+	//+kubebuilder:default:=Once
+	//+kubebuilder:validation:Enum=Once;Cron;OnEvent
+	// including Once, Cron, OnEvent
+	// +optional
+	Policy Policy `json:"policy,omitempty"`
+
+	// The schedule in Cron format, only set when policy is cron, see https://en.wikipedia.org/wiki/Cron.
+	// +optional
+	Schedule string `json:"schedule,omitempty"`
 }
 
 // +kubebuilder:printcolumn:name="Dataset",type="string",JSONPath=`.spec.dataset.name`

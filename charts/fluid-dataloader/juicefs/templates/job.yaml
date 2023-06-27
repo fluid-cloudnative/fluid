@@ -10,6 +10,7 @@
   {{/*  {{- else -}}*/}}
   {{/*    {{- printf "Illegal release name. Should be like <dataset-name>-load-<suffix-length-5>. Current name: %s" .Release.Name | fail -}}*/}}
   {{/*  {{- end }}*/}}
+{{- if or (eq (lower .Values.dataloader.policy) "none") (eq (lower .Values.dataloader.policy) "once") }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -17,9 +18,19 @@ metadata:
   labels:
     release: {{ .Release.Name }}
     role: dataload-job
+    app: juicefs
     targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
+  ownerReferences:
+  {{- if .Values.owner.enabled }}
+    - apiVersion: {{ .Values.owner.apiVersion }}
+      blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+      controller: {{ .Values.owner.controller }}
+      kind: {{ .Values.owner.kind }}
+      name: {{ .Values.owner.name }}
+      uid: {{ .Values.owner.uid }}
+  {{- end }}
 spec:
-  backoffLimit: 1
+  backoffLimit: {{ .Values.dataloader.backoffLimit | default "3" }}
   completions: 1
   parallelism: 1
   template:
@@ -35,6 +46,7 @@ spec:
       labels:
         release: {{ .Release.Name }}
         role: dataload-pod
+        app: juicefs
         targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
       {{- if .Values.dataloader.labels }}
       {{- range $key, $val := .Values.dataloader.labels }}
@@ -58,6 +70,11 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       restartPolicy: Never
+      {{- range $key, $val := .Values.dataloader.options }}
+      {{- if eq $key "runtimeName" }}
+      serviceAccountName: {{ printf "%s-loader" $val | quote }}
+      {{- end }}
+      {{- end }}
       {{- with .Values.dataloader.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -67,116 +84,65 @@ spec:
           image: {{ required "Dataloader image should be set" .Values.dataloader.image }}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh", "-c"]
-          args: ["/scripts/jindo_env_init.sh && /scripts/jindo_dataload.sh"]
+          args: ["/scripts/juicefs_dataload.sh"]
           {{- $targetPaths := "" }}
           {{- range .Values.dataloader.targetPaths }}
-          {{- $targetPaths = cat $targetPaths (required "Path must be set" .path) ":" }}
+          {{- $targetPaths = cat $targetPaths (required "Path must be set" .path) "" }}
           {{- end }}
-          {{- $targetPaths = $targetPaths | nospace | trimSuffix ":" }}
+          {{- $targetPaths = $targetPaths | trim }}
 
           {{- $pathReplicas := ""}}
           {{- range .Values.dataloader.targetPaths }}
           {{- $pathReplicas = cat $pathReplicas ( default 1 .replicas ) ":"}}
           {{- end }}
           {{- $pathReplicas = $pathReplicas | nospace | trimSuffix ":"}}
+
           env:
             - name: STORAGE_ADDRESS
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
-            - name: NEED_LOAD_METADATA
-              value: {{ default false .Values.dataloader.loadMetadata | quote }}
             {{- range $key, $val := .Values.dataloader.options }}
-            {{- if eq $key "loadMemorydata" }}
-            - name: LOAD_MEMORY_DATA
-              value: {{ default false $val | quote }}
-            {{- end }}
-            {{- if eq $key "atomicCache" }}
-            - name: ENABLE_ATOMIC_CACHE
-              value: {{ default false $val | quote }}
-            {{- end }}
-            {{- if eq $key "loadMetadataOnly" }}
-            - name: LOAD_METADATA_ONLY
-              value: {{ default false $val | quote }}
-            {{- end }}
-            {{- if eq $key "cacheListReplica" }}
-            - name: CACHE_LIST_REPLICA
+            {{- if eq $key "cachedir" }}
+            - name: CACHEDIR
               value: {{ $val | quote }}
             {{- end }}
-            {{- if eq $key "threadNum" }}
-            - name: CACHE_LIST_THREAD
+            {{- if eq $key "mountpath" }}
+            - name: MOUNTPATH
               value: {{ $val | quote }}
             {{- end }}
-            {{- if eq $key "accessKeyId" }}
-            - name: CACHE_LIST_ACCESSKEYID
+            {{- if eq $key "podNames" }}
+            - name: POD_NAMES
               value: {{ $val | quote }}
             {{- end }}
-            {{- if eq $key "accessKeySecret" }}
-            - name: CACHE_LIST_ACCESSKEYSECRET
+            {{- if eq $key "timeout" }}
+            - name: TIMEOUT
               value: {{ $val | quote }}
             {{- end }}
-            {{- if eq $key "endpoint" }}
-            - name: CACHE_LIST_ENDPOINT
+            {{- if eq $key "edition" }}
+            - name: EDITION
               value: {{ $val | quote }}
-            {{- end }}
-            {{- if eq $key "url" }}
-            - name: CACHE_LIST_URL
-              value: {{ $val | quote }}
-            {{- end }}
-            {{- if eq $key "filter" }}
-            - name: CACHE_FILTER
-              value: {{ $val | quote }}
-            {{- end }}
-            {{- if eq $key "dryrun" }}
-            - name: DRY_RUN_ENABLE
-              value: {{ default false $val | quote }}
-            {{- end }}
-            {{- if eq $key "cacheListLocationEnable" }}
-            - name: Enable_CACHE_LIST_LOCATION
-              value: {{ default false $val | quote }}
             {{- end }}
             {{- end }}
             - name: DATA_PATH
               value: {{ $targetPaths | quote }}
             - name: PATH_REPLICAS
               value: {{ $pathReplicas | quote }}
+            - name: POD_NAMESPACE
+              value: {{ .Release.Namespace | quote }}
           envFrom:
             - configMapRef:
-                name: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}-jindofs-client-config
+                name: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}-juicefs-values
           volumeMounts:
-            - name: bigboot-config
-              mountPath: /jindosdk.cfg
-              subPath: jindosdk.cfg
-            - name: bigboot-config
-              mountPath: /hdfs-3.2.1/etc/hadoop/core-site.xml
-              subPath: core-site.xml
-            {{- range $key, $val := .Values.dataloader.options }}
-            {{- if eq $key "hdfsConfig" }}
-            - name: hdfs-confs
-              mountPath: /hdfs-site.xml
-              subPath: hdfs-site.xml
-            {{- end }}
-            {{- end }}
             - mountPath: /scripts
               name: data-load-script
       volumes:
-        - name: bigboot-config
-          configMap:
-            name: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}-jindofs-config
-        {{- range $key, $val := .Values.dataloader.options }}
-        {{- if eq $key "hdfsConfig" }}
-        - name: hdfs-confs
-          configMap:
-            name: {{ $val }}
-        {{- end }}
-        {{- end }}
         - name: data-load-script
           configMap:
             name: {{ printf "%s-data-load-script" .Release.Name }}
             items:
-              - key: dataloader.jindo.init
-                path: jindo_env_init.sh
-                mode: 365
               - key: dataloader.distributedLoad
-                path: jindo_dataload.sh
+                path: juicefs_dataload.sh
                 mode: 365
+
+{{- end }}
