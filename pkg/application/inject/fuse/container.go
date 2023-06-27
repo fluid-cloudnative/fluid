@@ -70,10 +70,10 @@ func collectAllContainerNames(pod common.FluidObject) ([]string, error) {
 	return allContainerNames, nil
 }
 
-// changeForInitFuse change the original fuse template for init fuse
-func (s *Injector) changeForInitFuse(runtimeInfo base.RuntimeInfoInterface, template *common.FuseInjectionTemplate, pvcName, files string) error {
+// changeInitContainerWithPVC change the original fuse template for init fuse
+func (s *Injector) changeInitContainerWithPVC(runtimeInfo base.RuntimeInfoInterface, template *common.FuseInjectionTemplate, pvcName, files string) error {
 	// 1. check if the files string contain shell command
-	if err := checkShellCommand(files); err != nil {
+	if err := validateFilePath(files); err != nil {
 		return err
 	}
 
@@ -122,42 +122,8 @@ func (s *Injector) changeForInitFuse(runtimeInfo base.RuntimeInfoInterface, temp
 		return err
 	}
 
-	// 5. get and set the shell command
-	var mountShell, mountArgs, checkShell, copyShell, umountShell, dsMountPoint string
-
-	if len(fuseContainer.Command) > 1 {
-		mountShell = fuseContainer.Command[len(fuseContainer.Command)-1]
-	} else {
-		mountShell = fuseContainer.Command[0]
-	}
-
-	for _, line := range fuseContainer.Args {
-		mountArgs = mountArgs + " " + line
-	}
-
-	mountShell = "nohup " + mountShell + mountArgs + " & "
-
-	lifycycle := fuseContainer.Lifecycle
-
-	// PostStart is fixed: bash -c time /check-mount.sh <mount-path> <type>  >> /proc/1/fd/1
-	checkShell = lifycycle.PostStart.Exec.Command[2]
-	lifycycle.PreStop.ProtoMessage()
-
-	dsMountPoint = strings.Split(checkShell, " ")[2]
-
-	if !strings.HasSuffix(dsMountPoint, "-fuse") {
-		dsMountPoint += "/" + runtimeInfo.GetRuntimeType() + "-fuse"
-	}
-
-	copyShell = "; " + initcopy.CopyScriptPath + " " + dsMountPoint + " " + mountPath + " " + files
-
-	umountShell = "; umount " + dsMountPoint
-
-	fuseContainer.Command = []string{"/bin/bash", "-c"}
-	fuseContainer.Args = []string{mountShell + checkShell + copyShell + umountShell}
-
-	fuseContainer.Lifecycle = nil
-	fuseContainer.ReadinessProbe = nil
+	// 5. set the shell command
+	setCommandForInitFuse(&fuseContainer, runtimeInfo.GetRuntimeType(), mountPath, files)
 
 	// 6. set the fuse container
 	template.FuseContainer = fuseContainer
@@ -165,16 +131,58 @@ func (s *Injector) changeForInitFuse(runtimeInfo base.RuntimeInfoInterface, temp
 	return nil
 }
 
-func checkShellCommand(filesStr string) error {
+// validateFilePath verify if the file name/dir name format is correct,
+func validateFilePath(filesStr string) error {
 	files := strings.Split(filesStr, ",")
+
+	// such as: sample.doc, test\sample-1.pdf
 	compile, _ := regexp.Compile(`\A[\w\s\\\/\.\-]+\z`)
 
 	for _, file := range files {
 		if matched := compile.MatchString(file); !matched {
-			return errors.New("Annotations <dataset>.init.fluid.io may contain shell command! " + filesStr)
+			return errors.New("Annotations <dataset>.init.fluid.io: " + filesStr + " is not a valid file path!")
 		}
 	}
 	return nil
+}
+
+// setCommandForInitFuse set the command for init fuse container
+func setCommandForInitFuse(fuseContainer *corev1.Container, runtimeType, mountPath, files string) {
+	var mountCommand, mountArgs, checkCommand, copyCommand, umountCommand, fuseMountPoint string
+
+	if len(fuseContainer.Command) > 1 {
+		mountCommand = fuseContainer.Command[len(fuseContainer.Command)-1]
+	} else {
+		mountCommand = fuseContainer.Command[0]
+	}
+
+	mountArgs = strings.Join(fuseContainer.Args, " ")
+
+	// nohup /entrypoint.sh fuse --fuse-opts=kernel_cache... /runtime-mnt/alluxio/default/fuse-test/alluxio-fuse /  &
+	mountCommand = "nohup " + mountCommand + " " + mountArgs + " & "
+
+	lifycycle := fuseContainer.Lifecycle
+
+	// time /check-mount.sh /runtime-mnt/alluxio/default/fuse-test fuse.alluxio-fuse  >> /proc/1/fd/1
+	checkCommand = lifycycle.PostStart.Exec.Command[2]
+
+	fuseMountPoint = strings.Split(checkCommand, " ")[2]
+
+	if !strings.HasSuffix(fuseMountPoint, "-fuse") {
+		fuseMountPoint += "/" + runtimeType + "-fuse"
+	}
+
+	// ; /fluid-copy-script.sh /runtime-mnt/alluxio/default/fuse-test/alluxio-fuse /init-fuse-test model.joblib
+	copyCommand = "; " + initcopy.CopyScriptPath + " " + fuseMountPoint + " " + mountPath + " " + files
+
+	// ; umount /runtime-mnt/alluxio/default/fuse-test/alluxio-fuse
+	umountCommand = "; umount " + fuseMountPoint
+
+	fuseContainer.Command = []string{"/bin/bash", "-c"}
+	fuseContainer.Args = []string{mountCommand + checkCommand + copyCommand + umountCommand}
+
+	fuseContainer.Lifecycle = nil
+	fuseContainer.ReadinessProbe = nil
 }
 
 // generateInitDatasetMap generates the map (dataset name to files needed to use in init phase)

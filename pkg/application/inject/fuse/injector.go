@@ -318,7 +318,7 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 	// 5.a check if this pvc is used in init phase
 	if isUsedInInit {
 		// 5.b change fuse template for init container()
-		if err := s.changeForInitFuse(runtimeInfo, template, pvcName, filesToCopy); err != nil {
+		if err := s.changeInitContainerWithPVC(runtimeInfo, template, pvcName, filesToCopy); err != nil {
 			return err
 		}
 
