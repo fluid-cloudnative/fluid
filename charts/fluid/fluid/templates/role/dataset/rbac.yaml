@@ -72,12 +72,7 @@ rules:
     resources:
       - secrets
     verbs:
-      - list
-      - watch
       - get
-      - create
-      - delete
-      - update
   - apiGroups:
       - data.fluid.io
     resources:

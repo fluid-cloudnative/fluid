@@ -19,6 +19,7 @@ package app
 import (
 	"os"
 
+	"github.com/fluid-cloudnative/fluid/pkg/controllers"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/thin"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -98,6 +99,7 @@ func handle() {
 		LeaderElectionID:        "thin.data.fluid.io",
 		Port:                    9443,
 		NewCache:                thinctl.NewCache(scheme),
+		NewClient:               controllers.NewCacheClientBypassSecrets,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start thinruntime manager")
