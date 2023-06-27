@@ -19,6 +19,7 @@ package app
 import (
 	"os"
 
+	"github.com/fluid-cloudnative/fluid/pkg/controllers"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/efc"
 	"k8s.io/apimachinery/pkg/util/net"
@@ -101,6 +102,7 @@ func handle() {
 		LeaderElectionNamespace: leaderElectionNamespace,
 		LeaderElectionID:        "efc.data.fluid.io",
 		Port:                    9443,
+		NewClient:               controllers.NewCacheClientBypassSecrets,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start efcruntime manager")

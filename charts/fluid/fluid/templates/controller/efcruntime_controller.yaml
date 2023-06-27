@@ -82,6 +82,8 @@ spec:
           - name: EFC_SESSMGR_IMAGE_ENV
             value: {{ .Values.runtime.efc.fuse.image | quote }}
           {{- end }}
+          - name: HELM_DRIVER
+            value: configmap
           {{- if .Values.image.imagePullSecrets }}
           - name: IMAGE_PULL_SECRETS
             {{- $secretList := list }}

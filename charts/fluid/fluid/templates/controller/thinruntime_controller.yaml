@@ -59,6 +59,8 @@ spec:
             - name: FLUID_SYNC_RETRY_DURATION
               value: {{ .Values.runtime.syncRetryDuration | quote }}
             {{- end }}
+            - name: HELM_DRIVER
+              value: configmap
           ports:
             - containerPort: 8080
               name: metrics
