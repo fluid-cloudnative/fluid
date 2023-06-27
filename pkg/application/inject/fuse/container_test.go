@@ -958,7 +958,7 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 							// },
 							// Command: []string{"/entrypoint.sh"},
 							Args: []string{
-								"nohup /entrypoint.sh -oroot_ns=jindo -okernel_cache -oattr_timeout=9000 -oentry_timeout=9000 & time /check-mount.sh /jfs/jindofs-fuse jindo  >> /proc/1/fd/1; /fluid-copy-script.sh /jfs/jindofs-fuse /init-customizedenv /test.txt; umount /jfs/jindofs-fuse",
+								"nohup /entrypoint.sh -oroot_ns=jindo -okernel_cache -oattr_timeout=9000 -oentry_timeout=9000 & time /check-mount.sh /jfs jindo  >> /proc/1/fd/1; /fluid-copy-script.sh /jfs/jindo-fuse /init-customizedenv /test.txt; umount /jfs/jindo-fuse",
 							},
 							Command: []string{"/bin/bash", "-c"},
 							Image:   "customizedenv-pvc-name",
