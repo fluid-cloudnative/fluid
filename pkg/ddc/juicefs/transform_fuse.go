@@ -28,7 +28,6 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
 func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, dataset *datav1alpha1.Dataset, value *JuiceFS) (err error) {
@@ -150,24 +149,12 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 	for _, encryptOption := range SharedEncryptOptions {
 		key := encryptOption.Name
 		secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
-		secret, err := kubeclient.GetSecret(j.Client, secretKeyRef.Name, j.namespace)
-		if err != nil {
-			j.Log.Info("can't get the secret",
-				"namespace", j.namespace,
-				"name", j.name,
-				"secretName", secretKeyRef.Name)
-			return nil, err
-		}
 
 		switch key {
 		case JuiceMetaUrl:
 			source = "${METAURL}"
 			value.Configs.MetaUrlSecret = secretKeyRef.Name
 			value.Configs.MetaUrlSecretKey = secretKeyRef.Key
-			_, ok := secret.Data[secretKeyRef.Key]
-			if !ok {
-				return nil, fmt.Errorf("can't get metaurl from secret %s", secret.Name)
-			}
 			value.Edition = CommunityEdition
 		case JuiceAccessKey:
 			value.Configs.AccessKeySecret = secretKeyRef.Name
@@ -184,24 +171,12 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 	for _, encryptOption := range mount.EncryptOptions {
 		key := encryptOption.Name
 		secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
-		secret, err := kubeclient.GetSecret(j.Client, secretKeyRef.Name, j.namespace)
-		if err != nil {
-			j.Log.Info("can't get the secret",
-				"namespace", j.namespace,
-				"name", j.name,
-				"secretName", secretKeyRef.Name)
-			return nil, err
-		}
 
 		switch key {
 		case JuiceMetaUrl:
 			source = "${METAURL}"
 			value.Configs.MetaUrlSecret = secretKeyRef.Name
 			value.Configs.MetaUrlSecretKey = secretKeyRef.Key
-			_, ok := secret.Data[secretKeyRef.Key]
-			if !ok {
-				return nil, fmt.Errorf("can't get metaurl from secret %s", secret.Name)
-			}
 			value.Edition = CommunityEdition
 		case JuiceAccessKey:
 			value.Configs.AccessKeySecret = secretKeyRef.Name
