@@ -21,8 +21,9 @@ import (
 	"net/url"
 	"os"
 	"path"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"
@@ -34,7 +35,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
 func (j *JuiceFSEngine) CreateDataMigrateJob(ctx cruntime.ReconcileRequestContext, targetDataMigrate datav1alpha1.DataMigrate) (err error) {
@@ -327,15 +327,6 @@ func (j *JuiceFSEngine) genDataUrl(data datav1alpha1.DataToMigrate, targetDatase
 				case "token":
 					token = "${EXTERNAL_TOKEN}"
 					keyName = "EXTERNAL_TOKEN"
-				}
-				secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
-				_, err := kubeclient.GetSecret(j.Client, secretKeyRef.Name, j.namespace)
-				if err != nil {
-					j.Log.Info("can't get the secret",
-						"namespace", j.namespace,
-						"name", j.name,
-						"secretName", secretKeyRef.Name)
-					return "", err
 				}
 				info.EncryptOptions = append(info.EncryptOptions, datav1alpha1.EncryptOption{
 					Name:      keyName,

@@ -141,16 +141,6 @@ func (j *JuiceFSEngine) GetRunningPodsOfStatefulSet(stsName string, namespace st
 	return pods, nil
 }
 
-func (j *JuiceFSEngine) getSecret(name string, namespace string) (fuse *corev1.Secret, err error) {
-	fuse = &corev1.Secret{}
-	err = j.Client.Get(context.TODO(), types.NamespacedName{
-		Namespace: namespace,
-		Name:      name,
-	}, fuse)
-
-	return fuse, err
-}
-
 func (j *JuiceFSEngine) parseRuntimeImage(image string, tag string, imagePullPolicy string) (string, string, string) {
 	if len(imagePullPolicy) == 0 {
 		imagePullPolicy = common.DefaultImagePullPolicy
