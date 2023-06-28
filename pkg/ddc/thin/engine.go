@@ -121,18 +121,18 @@ func CheckReferenceDatasetRuntime(ctx cruntime.ReconcileRequestContext, runtime 
 		return false, err
 	}
 
-	var mounted []types.NamespacedName
+	var physicalDataset []types.NamespacedName
 	if dataset != nil {
-		// getMountedDataset from dataset first
+		// get physicalDataset from dataset first
 		ctx.Log.V(1).Info("Get physical dataset from virtual dataset mounts")
-		mounted = base.GetPhysicalDatasetFromMounts(dataset.Spec.Mounts)
+		physicalDataset = base.GetPhysicalDatasetFromMounts(dataset.Spec.Mounts)
 	} else if len(runtime.Status.Mounts) != 0 {
-		// Virtual dataset not found, try to getMountedDataset from runtime
+		// Virtual dataset not found, try to get physicalDataset from runtime
 		ctx.Log.V(1).Info("Virtual dataset not found, try to get physical dataset from runtime mounts")
-		mounted = base.GetPhysicalDatasetFromMounts(runtime.Status.Mounts)
+		physicalDataset = base.GetPhysicalDatasetFromMounts(runtime.Status.Mounts)
 	}
 	// not mount other datasets
-	if len(mounted) == 0 {
+	if len(physicalDataset) == 0 {
 		return false, nil
 	}
 

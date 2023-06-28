@@ -47,7 +47,7 @@ func GetPhysicalDatasetFromMounts(mounts []datav1alpha1.Mount) []types.Namespace
 	return physicalNameSpacedName
 }
 
-func GetMountedDatasetSubPath(virtualDataset *datav1alpha1.Dataset) []string {
+func GetPhysicalDatasetSubPath(virtualDataset *datav1alpha1.Dataset) []string {
 	var paths []string
 	for _, mount := range virtualDataset.Spec.Mounts {
 		if common.IsFluidRefSchema(mount.MountPoint) {

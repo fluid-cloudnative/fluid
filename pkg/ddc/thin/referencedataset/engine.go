@@ -46,7 +46,9 @@ const (
 // Use compiler to check if the struct implements all the interface
 var _ base.Engine = (*ReferenceDatasetEngine)(nil)
 
-// ReferenceDatasetEngine is used for handling datasets mounting another dataset
+// ReferenceDatasetEngine is used for handling datasets mounting another dataset.
+// We use `virtual` dataset/runtime to represent the reference dataset/runtime itself,
+// and use `physical` dataset/runtime to represent the dataset/runtime is mounted by virtual dataset.
 type ReferenceDatasetEngine struct {
 	Id string
 	client.Client
@@ -61,8 +63,8 @@ type ReferenceDatasetEngine struct {
 	runtimeType string
 	// use getRuntimeInfo instead of directly use this field
 	runtimeInfo base.RuntimeInfoInterface
-	// mounted dataset corresponding runtimeInfo,  use getMountedRuntimeInfo instead of directly use this field
-	mountedRuntimeInfo base.RuntimeInfoInterface
+	// physical dataset corresponding runtimeInfo, use getPhysicalRuntimeInfo instead of directly use this field.
+	physicalRuntimeInfo base.RuntimeInfoInterface
 }
 
 func (e *ReferenceDatasetEngine) Operate(ctx cruntime.ReconcileRequestContext, object client.Object, opStatus *v1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
@@ -119,12 +121,12 @@ func BuildReferenceDatasetThinEngine(id string, ctx cruntime.ReconcileRequestCon
 	engine.timeOfLastSync = time.Now().Add(-engine.syncRetryDuration)
 	engine.Log.Info("Set the syncRetryDuration", "syncRetryDuration", engine.syncRetryDuration)
 
-	// get the mountedRuntimeInfo
-	_, err = engine.getMountedRuntimeInfo()
+	// get the physicalRuntimeInfo
+	_, err = engine.getPhysicalRuntimeInfo()
 	if err != nil {
 		// return err if the runtime is running or error is not not-found
 		if utils.IgnoreNotFound(err) != nil || ctx.Runtime.GetDeletionTimestamp().IsZero() {
-			return nil, fmt.Errorf("engine %s failed to get mounted dataset's runtime info", ctx.Name)
+			return nil, fmt.Errorf("engine %s failed to get physical dataset's runtime info", ctx.Name)
 		}
 	}
 
@@ -135,28 +137,28 @@ func (e *ReferenceDatasetEngine) Setup(ctx cruntime.ReconcileRequestContext) (re
 	// 1. get the physical datasets according the virtual dataset
 	dataset := ctx.Dataset
 
-	physicalNameSpacedNames := base.GetPhysicalDatasetFromMounts(dataset.Spec.Mounts)
-	if len(physicalNameSpacedNames) != 1 {
+	physicalDatasetNameSpacedNames := base.GetPhysicalDatasetFromMounts(dataset.Spec.Mounts)
+	if len(physicalDatasetNameSpacedNames) != 1 {
 		return false, fmt.Errorf("ThinEngine can only handle dataset only mounting one dataset")
 	}
-	namespacedName := physicalNameSpacedNames[0]
+	namespacedName := physicalDatasetNameSpacedNames[0]
 
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		mountedDataset, err := utils.GetDataset(ctx.Client, namespacedName.Name, namespacedName.Namespace)
+		physicalDataset, err := utils.GetDataset(ctx.Client, namespacedName.Name, namespacedName.Namespace)
 		if err != nil {
 			return err
 		}
 
 		// 2. get runtime according to dataset status runtimes field
-		runtimes := mountedDataset.Status.Runtimes
+		runtimes := physicalDataset.Status.Runtimes
 		if len(runtimes) == 0 {
 			return fmt.Errorf("mounting dataset is not bound to a runtime yet")
 		}
 
-		// 3. add this dataset to mounted dataset DatasetRef field
+		// 3. add this dataset to physical dataset DatasetRef field
 		datasetRefName := base.GetDatasetRefName(dataset.Name, dataset.Namespace)
-		if !utils.ContainsString(mountedDataset.Status.DatasetRef, datasetRefName) {
-			newDataset := mountedDataset.DeepCopy()
+		if !utils.ContainsString(physicalDataset.Status.DatasetRef, datasetRefName) {
+			newDataset := physicalDataset.DeepCopy()
 			newDataset.Status.DatasetRef = append(newDataset.Status.DatasetRef, datasetRefName)
 			err := e.Client.Status().Update(context.TODO(), newDataset)
 			if err != nil {
@@ -170,7 +172,7 @@ func (e *ReferenceDatasetEngine) Setup(ctx cruntime.ReconcileRequestContext) (re
 	}
 
 	// config map is for the fuse sidecar container
-	runtimeInfo, err := e.getMountedRuntimeInfo()
+	runtimeInfo, err := e.getPhysicalRuntimeInfo()
 	if err != nil {
 		return false, err
 	}
@@ -190,22 +192,22 @@ func (e *ReferenceDatasetEngine) Setup(ctx cruntime.ReconcileRequestContext) (re
 
 // Shutdown and clean up the engine
 func (e *ReferenceDatasetEngine) Shutdown() (err error) {
-	// 1. delete this dataset to mounted dataset DatasetRef field
+	// 1. delete this dataset in physical dataset DatasetRef field
 	datasetRefName := base.GetDatasetRefName(e.name, e.namespace)
 
-	mountedRuntimeInfo, err := e.getMountedRuntimeInfo()
+	physicalRuntimeInfo, err := e.getPhysicalRuntimeInfo()
 	if err != nil && utils.IgnoreNotFound(err) != nil {
 		return err
 	}
 
-	if mountedRuntimeInfo != nil {
-		mountedDataset, err := utils.GetDataset(e.Client, mountedRuntimeInfo.GetName(), mountedRuntimeInfo.GetNamespace())
+	if physicalRuntimeInfo != nil {
+		physicalDataset, err := utils.GetDataset(e.Client, physicalRuntimeInfo.GetName(), physicalRuntimeInfo.GetNamespace())
 		if err != nil {
 			return err
 		}
 
-		if utils.ContainsString(mountedDataset.Status.DatasetRef, datasetRefName) {
-			newDataset := mountedDataset.DeepCopy()
+		if utils.ContainsString(physicalDataset.Status.DatasetRef, datasetRefName) {
+			newDataset := physicalDataset.DeepCopy()
 			newDataset.Status.DatasetRef = utils.RemoveString(newDataset.Status.DatasetRef, datasetRefName)
 			err := e.Client.Status().Update(context.TODO(), newDataset)
 			if err != nil {
@@ -228,26 +230,26 @@ func (e *ReferenceDatasetEngine) checkDatasetMountSupport() error {
 		}
 	}
 
-	mountedNamespacedName := base.GetPhysicalDatasetFromMounts(dataset.Spec.Mounts)
-	mountedSize := len(mountedNamespacedName)
+	physicalDatasetNamespacedName := base.GetPhysicalDatasetFromMounts(dataset.Spec.Mounts)
+	physicalSize := len(physicalDatasetNamespacedName)
 
 	// currently only support dataset mounting only one dataset
-	if mountedSize > 1 || mountedSize == 0 {
+	if physicalSize > 1 || physicalSize == 0 {
 		return fmt.Errorf("ThinRuntime can only handle dataset only mounting one dataset")
 	}
 
 	// currently not support both 'dataset://' and other mount schema in one dataset
-	if len(mountedNamespacedName) != len(dataset.Spec.Mounts) {
+	if len(physicalDatasetNamespacedName) != len(dataset.Spec.Mounts) {
 		return fmt.Errorf("dataset with 'dataset://' mount point can not has other mount format")
 	}
 
-	mountedDataset, err := utils.GetDataset(e.Client, mountedNamespacedName[0].Name, mountedNamespacedName[0].Namespace)
+	physicalDataset, err := utils.GetDataset(e.Client, physicalDatasetNamespacedName[0].Name, physicalDatasetNamespacedName[0].Namespace)
 	if err != nil {
 		return fmt.Errorf("failed to create reference dataset due to %v", err)
 	}
 
-	// currently not support mounted dataset mounting another dataset
-	if len(base.GetPhysicalDatasetFromMounts(mountedDataset.Spec.Mounts)) != 0 {
+	// currently not support physical dataset mounting another dataset
+	if len(base.GetPhysicalDatasetFromMounts(physicalDataset.Spec.Mounts)) != 0 {
 		return fmt.Errorf("ThinRuntime with no profile name can only handle dataset only mounting one dataset")
 	}
 
