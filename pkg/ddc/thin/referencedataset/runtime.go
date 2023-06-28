@@ -18,7 +18,6 @@ package referencedataset
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -27,6 +26,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -124,8 +124,7 @@ func (e *ReferenceDatasetEngine) getPhysicalRuntimeInfo() (base.RuntimeInfoInter
 	} else {
 		// try to get physicalRuntimeInfo from runtime status
 		runtime, err := e.getRuntime()
-		if err != nil && utils.IgnoreNotFound(err) != nil {
-			// return if it is not a not-found error
+		if err != nil {
 			return e.physicalRuntimeInfo, err
 		}
 		if len(runtime.Status.Mounts) != 0 {
@@ -135,8 +134,13 @@ func (e *ReferenceDatasetEngine) getPhysicalRuntimeInfo() (base.RuntimeInfoInter
 
 	if len(physicalNameSpacedNames) == 0 {
 		// dataset is nil and len(runtime.Status.Mounts) is 0, return a not-found error
-		return e.physicalRuntimeInfo, fmt.Errorf("%d: %s: %w", http.StatusNotFound, metav1.StatusReasonNotFound,
-			errors.New("can't get physical runtime info from either dataset or runtime"))
+		return e.physicalRuntimeInfo, &k8serrors.StatusError{
+			ErrStatus: metav1.Status{
+				Reason:  metav1.StatusReasonNotFound,
+				Code:    http.StatusNotFound,
+				Message: "can't get physical runtime info from either dataset or runtime",
+			},
+		}
 	}
 	if len(physicalNameSpacedNames) > 1 {
 		return e.physicalRuntimeInfo, fmt.Errorf("ThinEngine with no profile name can only handle dataset only mounting one dataset but get %v", len(physicalNameSpacedNames))
