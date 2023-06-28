@@ -18,7 +18,11 @@ package referencedataset
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -26,20 +30,20 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-// getMountedDatasetRuntimeStatus get the runtime status of the mounted dataset
-func (e *ReferenceDatasetEngine) getMountedDatasetRuntimeStatus() (status *datav1alpha1.RuntimeStatus, err error) {
-	mountedRuntimeInfo, err := e.getMountedRuntimeInfo()
+// getPhysicalDatasetRuntimeStatus get the runtime status of the physical dataset
+func (e *ReferenceDatasetEngine) getPhysicalDatasetRuntimeStatus() (status *datav1alpha1.RuntimeStatus, err error) {
+	physicalRuntimeInfo, err := e.getPhysicalRuntimeInfo()
 	if err != nil {
 		return status, err
 	}
 
-	// if mountedRuntimeInfo is nil and no err, the runtime is deleting.
-	if mountedRuntimeInfo == nil {
+	// if physicalRuntimeInfo is nil and no err, the runtime is deleting.
+	if physicalRuntimeInfo == nil {
 		return nil, nil
 	}
 
-	return base.GetRuntimeStatus(e.Client, mountedRuntimeInfo.GetRuntimeType(),
-		mountedRuntimeInfo.GetName(), mountedRuntimeInfo.GetNamespace())
+	return base.GetRuntimeStatus(e.Client, physicalRuntimeInfo.GetRuntimeType(),
+		physicalRuntimeInfo.GetName(), physicalRuntimeInfo.GetNamespace())
 }
 
 // getRuntime get the current runtime
@@ -98,47 +102,53 @@ func (e *ReferenceDatasetEngine) getRuntimeInfo() (base.RuntimeInfoInterface, er
 	return e.runtimeInfo, nil
 }
 
-// getMountedRuntimeInfo get mountedRuntimeInfo from dataset.
-// If could not get dataset, getMountedRuntimeInfo try to get mountedRuntimeInfo from runtime status.
-func (e *ReferenceDatasetEngine) getMountedRuntimeInfo() (base.RuntimeInfoInterface, error) {
-	if e.mountedRuntimeInfo != nil {
-		return e.mountedRuntimeInfo, nil
+// getPhysicalRuntimeInfo get physicalRuntimeInfo from dataset.
+// If could not get dataset, getPhysicalRuntimeInfo try to get physicalRuntimeInfo from runtime status.
+func (e *ReferenceDatasetEngine) getPhysicalRuntimeInfo() (base.RuntimeInfoInterface, error) {
+	// If already have physicalRuntimeInfo, return it directly
+	if e.physicalRuntimeInfo != nil {
+		return e.physicalRuntimeInfo, nil
 	}
 
-	runtime, err := e.getRuntime()
-	if err != nil {
-		return e.mountedRuntimeInfo, err
-	}
+	var physicalNameSpacedNames []types.NamespacedName
 
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil && utils.IgnoreNotFound(err) != nil {
 		// return if it is not a not-found error
-		return e.mountedRuntimeInfo, err
+		return e.physicalRuntimeInfo, err
 	}
 
-	var mountedNameSpacedNames []types.NamespacedName
 	if dataset != nil {
-		// get mountedRuntimeInfo from dataset first
-		mountedNameSpacedNames = base.GetPhysicalDatasetFromMounts(dataset.Spec.Mounts)
-	} else if len(runtime.Status.Mounts) != 0 {
-		// then try to get mountedRuntimeInfo from runtime status
-		mountedNameSpacedNames = base.GetPhysicalDatasetFromMounts(runtime.Status.Mounts)
+		// get physicalRuntimeInfo from dataset
+		physicalNameSpacedNames = base.GetPhysicalDatasetFromMounts(dataset.Spec.Mounts)
 	} else {
-		// err can only be not-found error
-		return e.mountedRuntimeInfo, err
+		// try to get physicalRuntimeInfo from runtime status
+		runtime, err := e.getRuntime()
+		if err != nil && utils.IgnoreNotFound(err) != nil {
+			// return if it is not a not-found error
+			return e.physicalRuntimeInfo, err
+		}
+		if len(runtime.Status.Mounts) != 0 {
+			physicalNameSpacedNames = base.GetPhysicalDatasetFromMounts(runtime.Status.Mounts)
+		}
 	}
 
-	if len(mountedNameSpacedNames) != 1 {
-		return e.mountedRuntimeInfo, fmt.Errorf("ThinEngine with no profile name can only handle dataset only mounting one dataset but get %v", len(mountedNameSpacedNames))
+	if len(physicalNameSpacedNames) == 0 {
+		// dataset is nil and len(runtime.Status.Mounts) is 0, return a not-found error
+		return e.physicalRuntimeInfo, fmt.Errorf("%d: %s: %w", http.StatusNotFound, metav1.StatusReasonNotFound,
+			errors.New("can't get physical runtime info from either dataset or runtime"))
 	}
-	namespacedName := mountedNameSpacedNames[0]
+	if len(physicalNameSpacedNames) > 1 {
+		return e.physicalRuntimeInfo, fmt.Errorf("ThinEngine with no profile name can only handle dataset only mounting one dataset but get %v", len(physicalNameSpacedNames))
+	}
+	namespacedName := physicalNameSpacedNames[0]
 
-	mountedRuntimeInfo, err := base.GetRuntimeInfo(e.Client, namespacedName.Name, namespacedName.Namespace)
+	physicalRuntimeInfo, err := base.GetRuntimeInfo(e.Client, namespacedName.Name, namespacedName.Namespace)
 	if err != nil {
-		return e.mountedRuntimeInfo, err
+		return e.physicalRuntimeInfo, err
 	}
 
-	e.mountedRuntimeInfo = mountedRuntimeInfo
+	e.physicalRuntimeInfo = physicalRuntimeInfo
 
-	return e.mountedRuntimeInfo, nil
+	return e.physicalRuntimeInfo, nil
 }
