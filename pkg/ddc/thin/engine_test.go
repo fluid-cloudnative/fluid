@@ -305,7 +305,7 @@ func TestCheckReferenceDatasetRuntime(t *testing.T) {
 				},
 			},
 			want:    false,
-			wantErr: false,
+			wantErr: true,
 		},
 		{
 			name: "dataset-not-exist-but-get-physical-dataset-from-runtime",

@@ -115,26 +115,25 @@ func Precheck(client client.Client, key types.NamespacedName) (found bool, err e
 
 // CheckReferenceDatasetRuntime judge if this runtime is used for handling dataset mounting another dataset.
 func CheckReferenceDatasetRuntime(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.ThinRuntime) (bool, error) {
+	if len(runtime.Status.Mounts) != 0 {
+		// get physical dataset from runtime mounts
+		ctx.Log.V(1).Info("Get physical dataset from runtime mounts")
+		physicalDataset := base.GetPhysicalDatasetFromMounts(runtime.Status.Mounts)
+		if len(physicalDataset) != 0 {
+			return true, nil
+		}
+	}
+
 	dataset, err := utils.GetDataset(ctx.Client, runtime.Name, runtime.Namespace)
-	if err != nil && utils.IgnoreNotFound(err) != nil {
-		// return if it is not a not-found error
+	if err != nil {
 		return false, err
 	}
-
-	var physicalDataset []types.NamespacedName
-	if dataset != nil {
-		// get physicalDataset from dataset first
-		ctx.Log.V(1).Info("Get physical dataset from virtual dataset mounts")
-		physicalDataset = base.GetPhysicalDatasetFromMounts(dataset.Spec.Mounts)
-	} else if len(runtime.Status.Mounts) != 0 {
-		// Virtual dataset not found, try to get physicalDataset from runtime
-		ctx.Log.V(1).Info("Virtual dataset not found, try to get physical dataset from runtime mounts")
-		physicalDataset = base.GetPhysicalDatasetFromMounts(runtime.Status.Mounts)
-	}
-	// not mount other datasets
-	if len(physicalDataset) == 0 {
-		return false, nil
+	// get physicalDataset from dataset
+	ctx.Log.V(1).Info("Get physical dataset from virtual dataset mounts")
+	physicalDataset := base.GetPhysicalDatasetFromMounts(dataset.Spec.Mounts)
+	if len(physicalDataset) != 0 {
+		return true, nil
 	}
 
-	return true, nil
+	return false, nil
 }
