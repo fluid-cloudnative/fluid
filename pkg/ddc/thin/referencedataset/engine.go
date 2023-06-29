@@ -215,7 +215,7 @@ func (e *ReferenceDatasetEngine) Shutdown() (err error) {
 			}
 		}
 	} else {
-		e.Log.Info("physicalRuntimeInfo is not found, can't update physical dataset datasetRef")
+		e.Log.Info("physicalRuntimeInfo is not found, can't update physical dataset datasetRef", "name", e.name, "namespace", e.namespace)
 	}
 	return
 }
