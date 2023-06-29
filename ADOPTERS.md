@@ -39,4 +39,5 @@ The companies/organizations are listed in alphabetical order grouped by the phas
 | [coScene](https://www.coscene.cn) | [@juchaosong](https://github.com/juchaosong) | Test | Data Platform on k8s |
 | [pvmed](https://www.pvmedtech.com/) | [@huozhuoliang](huozhuoliang@pvmedtech.com) | Testing | AI training platform|
 | [DPTechnology](https://www.dp.tech/) | [@liyangbing](liyb@dp.tech) | Staging | AI Platform on k8s|
+| [Megvii](https://megvii.com/) | [@huangweixiao](huangweixiao@megvii.com) | Testing | AI Platform on k8s|
 
