@@ -203,11 +203,40 @@ func (r *DatasetReconciler) reconcileDatasetDeletion(ctx reconcileRequestContext
 
 	// 2. if there are datasets mounted this dataset, then requeue
 	if ctx.Dataset.Status.DatasetRef != nil && len(ctx.Dataset.Status.DatasetRef) > 0 {
-		ctx.Log.Error(err, "Failed to delete dataset because there are datasets mounted to it", "DatasetDeleteError", ctx,
-			"MountedDataset", ctx.Dataset.Status.DatasetRef)
-		r.Recorder.Eventf(&ctx.Dataset, v1.EventTypeWarning, common.ErrorDeleteDataset,
-			"Failed to delete dataset because there are datasets %s mounted to it", ctx.Dataset.Status.DatasetRef)
-		return utils.RequeueAfterInterval(10 * time.Second)
+		// check reference dataset existence
+		var datasetRefUptoDate []string
+		for _, datasetRefName := range ctx.Dataset.Status.DatasetRef {
+			namespacedname := strings.Split(datasetRefName, "/")
+			dataset, err := utils.GetDataset(r.Client, namespacedname[1], namespacedname[0])
+			if err != nil && utils.IgnoreNotFound(err) != nil {
+				log.Error(err, "Failed to get reference dataset", "DatasetDeleteError", datasetRefName)
+				return utils.RequeueAfterInterval(10 * time.Second)
+			}
+			if dataset != nil {
+				log.V(1).Info("Dataset %s exists", datasetRefName)
+				datasetRefUptoDate = append(datasetRefUptoDate, datasetRefName)
+			}
+		}
+
+		// update dataset if datasetRef change
+		if len(datasetRefUptoDate) != len(ctx.Dataset.Status.DatasetRef) {
+			log.V(1).Info("Update dataset datasetref", "DatasetDeletion", ctx)
+			datasetUpToDate := ctx.Dataset.DeepCopy()
+			datasetUpToDate.Status.DatasetRef = datasetRefUptoDate
+			err := r.Client.Update(context.TODO(), datasetUpToDate)
+			if err != nil {
+				log.Error(err, "DatasetRef has changed but update failed", "DatasetDeleteError", datasetRefUptoDate)
+				return utils.RequeueAfterInterval(10 * time.Second)
+			}
+		}
+
+		if len(datasetRefUptoDate) > 0 {
+			log.Error(err, "Failed to delete dataset because there are datasets mounted to it", "DatasetDeleteError", ctx,
+				"MountedDataset", datasetRefUptoDate)
+			r.Recorder.Eventf(&ctx.Dataset, v1.EventTypeWarning, common.ErrorDeleteDataset,
+				"Failed to delete dataset because there are datasets %s mounted to it", datasetRefUptoDate)
+			return utils.RequeueAfterInterval(10 * time.Second)
+		}
 	}
 
 	// 3. Remove finalizer
