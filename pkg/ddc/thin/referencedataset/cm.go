@@ -32,15 +32,15 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
-func copyFuseDaemonSetForRefDataset(client client.Client, refDataset *datav1alpha1.Dataset, mountedRuntime base.RuntimeInfoInterface) error {
+func copyFuseDaemonSetForRefDataset(client client.Client, refDataset *datav1alpha1.Dataset, physicalRuntimeInfo base.RuntimeInfoInterface) error {
 	var fuseName string
-	switch mountedRuntime.GetRuntimeType() {
+	switch physicalRuntimeInfo.GetRuntimeType() {
 	case common.JindoRuntime:
-		fuseName = mountedRuntime.GetName() + "-" + common.JindoChartName + "-fuse"
+		fuseName = physicalRuntimeInfo.GetName() + "-" + common.JindoChartName + "-fuse"
 	default:
-		fuseName = mountedRuntime.GetName() + "-fuse"
+		fuseName = physicalRuntimeInfo.GetName() + "-fuse"
 	}
-	ds, err := kubeclient.GetDaemonset(client, fuseName, mountedRuntime.GetNamespace())
+	ds, err := kubeclient.GetDaemonset(client, fuseName, physicalRuntimeInfo.GetNamespace())
 	if err != nil {
 		return err
 	}
@@ -71,10 +71,10 @@ func copyFuseDaemonSetForRefDataset(client client.Client, refDataset *datav1alph
 	return nil
 }
 
-func (e *ReferenceDatasetEngine) createConfigMapForRefDataset(client client.Client, refDataset *datav1alpha1.Dataset, mountedRuntime base.RuntimeInfoInterface) error {
-	mountedRuntimeType := mountedRuntime.GetRuntimeType()
-	mountedRuntimeName := mountedRuntime.GetName()
-	mountedRuntimeNamespace := mountedRuntime.GetNamespace()
+func (e *ReferenceDatasetEngine) createConfigMapForRefDataset(client client.Client, refDataset *datav1alpha1.Dataset, physicalRuntimeInfo base.RuntimeInfoInterface) error {
+	physicalRuntimeType := physicalRuntimeInfo.GetRuntimeType()
+	physicalRuntimeName := physicalRuntimeInfo.GetName()
+	physicalRuntimeNamespace := physicalRuntimeInfo.GetNamespace()
 
 	refNameSpace := refDataset.GetNamespace()
 
@@ -92,39 +92,39 @@ func (e *ReferenceDatasetEngine) createConfigMapForRefDataset(client client.Clie
 	// Note: values configmap is not needed for fuse sidecar container.
 
 	// TODO: decoupling the switch-case, too fragile
-	switch mountedRuntimeType {
+	switch physicalRuntimeType {
 	// TODO:  currently the dst configmap name is the same as src configmap name to avoid modify the fuse init container filed,
 	//       but duplicated name error can occurs if the dst namespace has same named runtime.
 	case common.AlluxioRuntime:
-		configMapName := mountedRuntimeName + "-config"
-		err := kubeclient.CopyConfigMap(client, types.NamespacedName{Name: configMapName, Namespace: mountedRuntimeNamespace},
+		configMapName := physicalRuntimeName + "-config"
+		err := kubeclient.CopyConfigMap(client, types.NamespacedName{Name: configMapName, Namespace: physicalRuntimeNamespace},
 			types.NamespacedName{Name: configMapName, Namespace: refNameSpace}, ownerReference)
 		if err != nil {
 			return err
 		}
 	case common.JuiceFSRuntime:
-		fuseScriptConfigMapName := mountedRuntimeName + "-fuse-script"
-		err := kubeclient.CopyConfigMap(client, types.NamespacedName{Name: fuseScriptConfigMapName, Namespace: mountedRuntimeNamespace},
+		fuseScriptConfigMapName := physicalRuntimeName + "-fuse-script"
+		err := kubeclient.CopyConfigMap(client, types.NamespacedName{Name: fuseScriptConfigMapName, Namespace: physicalRuntimeNamespace},
 			types.NamespacedName{Name: fuseScriptConfigMapName, Namespace: refNameSpace}, ownerReference)
 		if err != nil {
 			return err
 		}
 	case common.GooseFSRuntime:
-		configMapName := mountedRuntimeName + "-config"
-		err := kubeclient.CopyConfigMap(client, types.NamespacedName{Name: configMapName, Namespace: mountedRuntimeNamespace},
+		configMapName := physicalRuntimeName + "-config"
+		err := kubeclient.CopyConfigMap(client, types.NamespacedName{Name: configMapName, Namespace: physicalRuntimeNamespace},
 			types.NamespacedName{Name: configMapName, Namespace: refNameSpace}, ownerReference)
 		if err != nil {
 			return err
 		}
 	case common.JindoRuntime:
-		clientConfigMapName := mountedRuntimeName + "-jindofs-client-config"
-		err := kubeclient.CopyConfigMap(client, types.NamespacedName{Name: clientConfigMapName, Namespace: mountedRuntimeNamespace},
+		clientConfigMapName := physicalRuntimeName + "-jindofs-client-config"
+		err := kubeclient.CopyConfigMap(client, types.NamespacedName{Name: clientConfigMapName, Namespace: physicalRuntimeNamespace},
 			types.NamespacedName{Name: clientConfigMapName, Namespace: refNameSpace}, ownerReference)
 		if err != nil {
 			return err
 		}
-		configMapName := mountedRuntimeName + "-jindofs-config"
-		err = kubeclient.CopyConfigMap(client, types.NamespacedName{Name: configMapName, Namespace: mountedRuntimeNamespace},
+		configMapName := physicalRuntimeName + "-jindofs-config"
+		err = kubeclient.CopyConfigMap(client, types.NamespacedName{Name: configMapName, Namespace: physicalRuntimeNamespace},
 			types.NamespacedName{Name: configMapName, Namespace: refNameSpace}, ownerReference)
 		if err != nil {
 			return err
@@ -132,16 +132,16 @@ func (e *ReferenceDatasetEngine) createConfigMapForRefDataset(client client.Clie
 	case common.EFCRuntime:
 		// TODO: EFCRuntime needs worker-endpoint configmap which should be synced timely for ECI mode.
 		// Currently EFCRuntime only supports CSI mode, so do nothing here.
-		e.Log.Info("Skip createConfigMapForRefDataset because the mountedRuntimeType=EFC", "name", e.name, "namespace", e.namespace)
+		e.Log.Info("Skip createConfigMapForRefDataset because the physicalRuntimeType=EFC", "name", e.name, "namespace", e.namespace)
 	case common.ThinRuntime:
-		runtimesetConfigMapName := mountedRuntimeName + "-runtimeset"
-		err := kubeclient.CopyConfigMap(client, types.NamespacedName{Name: runtimesetConfigMapName, Namespace: mountedRuntimeNamespace},
+		runtimesetConfigMapName := physicalRuntimeName + "-runtimeset"
+		err := kubeclient.CopyConfigMap(client, types.NamespacedName{Name: runtimesetConfigMapName, Namespace: physicalRuntimeNamespace},
 			types.NamespacedName{Name: runtimesetConfigMapName, Namespace: refNameSpace}, ownerReference)
 		if err != nil {
 			return err
 		}
 	default:
-		err := fmt.Errorf("fail to get configmap for runtime type: %s", mountedRuntimeType)
+		err := fmt.Errorf("fail to get configmap for runtime type: %s", physicalRuntimeType)
 		return err
 	}
 

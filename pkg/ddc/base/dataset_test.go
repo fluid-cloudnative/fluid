@@ -24,7 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestGetMountedDatasetNamespacedName(t *testing.T) {
+func TestGetPhysicalDatasetFromMounts(t *testing.T) {
 	tests := []struct {
 		virtualDataset *datav1alpha1.Dataset
 		want           int
@@ -79,8 +79,8 @@ func TestGetMountedDatasetNamespacedName(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		if got := GetMountedDatasetNamespacedName(tt.virtualDataset); len(got) != tt.want {
-			t.Errorf("GetMountedDatasetNamespacedName() len = %v, want %v", got, tt.want)
+		if got := GetPhysicalDatasetFromMounts(tt.virtualDataset.Spec.Mounts); len(got) != tt.want {
+			t.Errorf("GetPhysicalDatasetFromMounts() len = %v, want %v", got, tt.want)
 		}
 	}
 }
@@ -191,7 +191,7 @@ func TestCheckReferenceDataset(t *testing.T) {
 	}
 }
 
-func TestGetMountedDatasetSubPath(t *testing.T) {
+func TestGetPhysicalDatasetSubPath(t *testing.T) {
 	type args struct {
 		dataset *datav1alpha1.Dataset
 	}
@@ -260,8 +260,8 @@ func TestGetMountedDatasetSubPath(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := GetMountedDatasetSubPath(tt.args.dataset); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetMountedDatasetSubPath() = %v, want %v", got, tt.want)
+			if got := GetPhysicalDatasetSubPath(tt.args.dataset); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetPhysicalDatasetSubPath() = %v, want %v", got, tt.want)
 			}
 		})
 	}
