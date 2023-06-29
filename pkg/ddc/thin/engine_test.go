@@ -28,7 +28,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestBuild(t *testing.T) {
@@ -239,7 +238,7 @@ func TestCheckReferenceDatasetRuntime(t *testing.T) {
 		name    string
 		dataset *datav1alpha1.Dataset
 		runtime *datav1alpha1.ThinRuntime
-		client  client.Client
+		ctx     cruntime.ReconcileRequestContext
 		want    bool
 		wantErr bool
 	}{
@@ -308,12 +307,46 @@ func TestCheckReferenceDatasetRuntime(t *testing.T) {
 			want:    false,
 			wantErr: true,
 		},
+		{
+			name: "dataset-not-exist-but-get-physical-dataset-from-runtime",
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hbase-no-use",
+					Namespace: "fluid",
+				},
+			},
+			runtime: &datav1alpha1.ThinRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hbase",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.ThinRuntimeSpec{
+					ThinRuntimeProfileName: "1",
+				},
+				Status: datav1alpha1.RuntimeStatus{
+					Mounts: []datav1alpha1.Mount{{
+						MountPoint: "dataset://ns-a/n-a",
+					}},
+				},
+			},
+			want:    true,
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fakeClient := fake.NewFakeClientWithScheme(testScheme, tt.dataset, tt.runtime)
-
-			isRef, err := CheckReferenceDatasetRuntime(fakeClient, tt.runtime)
+			var ctx = cruntime.ReconcileRequestContext{
+				NamespacedName: types.NamespacedName{
+					Name:      "hbase",
+					Namespace: "fluid",
+				},
+				Client:      fakeClient,
+				Log:         fake.NullLogger(),
+				RuntimeType: "thin",
+				Runtime:     tt.runtime,
+			}
+			isRef, err := CheckReferenceDatasetRuntime(ctx, tt.runtime)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("expect has error %t, but get error %v", tt.wantErr, err)

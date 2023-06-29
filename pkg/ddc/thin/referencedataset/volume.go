@@ -39,16 +39,16 @@ func (e *ReferenceDatasetEngine) CreateVolume() (err error) {
 		return err
 	}
 
-	mountedRuntimeInfo, err := e.getMountedRuntimeInfo()
+	physicalRuntimeInfo, err := e.getPhysicalRuntimeInfo()
 	if err != nil {
 		return err
 	}
 
-	accessModes, err := createFusePersistentVolume(e.Client, runtimeInfo, mountedRuntimeInfo, e.Log)
+	accessModes, err := createFusePersistentVolume(e.Client, runtimeInfo, physicalRuntimeInfo, e.Log)
 	if err != nil {
 		return err
 	}
-	return createFusePersistentVolumeClaim(e.Client, runtimeInfo, mountedRuntimeInfo, accessModes)
+	return createFusePersistentVolumeClaim(e.Client, runtimeInfo, physicalRuntimeInfo, accessModes)
 }
 
 func (e *ReferenceDatasetEngine) DeleteVolume() (err error) {
@@ -87,7 +87,7 @@ func createFusePersistentVolume(client client.Client, virtualRuntime base.Runtim
 			return accessModes, err
 		}
 		// set the sub path attribute
-		subPaths := base.GetMountedDatasetSubPath(virtualDataset)
+		subPaths := base.GetPhysicalDatasetSubPath(virtualDataset)
 		if len(subPaths) > 1 {
 			return accessModes, fmt.Errorf("the dataset is not validated, only support dataset mounts which expects 1")
 		}

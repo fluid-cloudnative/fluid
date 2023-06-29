@@ -429,9 +429,9 @@ func TestReferenceDatasetEngine_Shutdown(t *testing.T) {
 			return
 		}
 		updatedDataset := &datav1alpha1.Dataset{}
-		// mountedRuntimeInfo is calculated in Shutdown
+		// physicalRuntimeInfo is calculated in Shutdown
 		err := fakeClient.Get(context.TODO(), types.NamespacedName{
-			Namespace: e.mountedRuntimeInfo.GetNamespace(), Name: e.mountedRuntimeInfo.GetName(),
+			Namespace: e.physicalRuntimeInfo.GetNamespace(), Name: e.physicalRuntimeInfo.GetName(),
 		}, updatedDataset)
 		if err != nil {
 			t.Errorf("Get dataset error %v", err)

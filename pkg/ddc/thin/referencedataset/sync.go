@@ -42,18 +42,18 @@ func (e *ReferenceDatasetEngine) Sync(ctx cruntime.ReconcileRequestContext) (err
 	if err != nil {
 		return err
 	}
-	mountedRuntimeInfo, err := e.getMountedRuntimeInfo()
+	physicalRuntimeInfo, err := e.getPhysicalRuntimeInfo()
 	if err != nil {
 		return err
 	}
-	physicalDataset, err := utils.GetDataset(e.Client, mountedRuntimeInfo.GetName(), mountedRuntimeInfo.GetNamespace())
+	physicalDataset, err := utils.GetDataset(e.Client, physicalRuntimeInfo.GetName(), physicalRuntimeInfo.GetNamespace())
 	if err != nil {
 		return err
 	}
 
 	// 1. update dataset status
 
-	// synchronize status field from mounted dataset except DatasetRef and Runtimes field
+	// synchronize status field from physical dataset except DatasetRef and Runtimes field
 	oldRuntimes := virtualDataset.Status.Runtimes
 	virtualDatasetToUpdate := virtualDataset.DeepCopy()
 	virtualDatasetToUpdate.Status = *physicalDataset.Status.DeepCopy()
@@ -68,7 +68,7 @@ func (e *ReferenceDatasetEngine) Sync(ctx cruntime.ReconcileRequestContext) (err
 		e.namespace,
 		common.AccelerateCategory,
 		common.ThinRuntime,
-		// TODO: should use mounted dataset's runtime Spec.Master.Replicas？
+		// TODO: should use physical dataset's runtime Spec.Master.Replicas？
 		0))
 	if len(newStatusRuntime) != len(virtualDatasetToUpdate.Status.Runtimes) {
 		virtualDatasetToUpdate.Status.Runtimes = newStatusRuntime
@@ -91,13 +91,17 @@ func (e *ReferenceDatasetEngine) Sync(ctx cruntime.ReconcileRequestContext) (err
 	}
 	runtimeToUpdate := runtime.DeepCopy()
 
-	mountedRuntimeStatus, err := e.getMountedDatasetRuntimeStatus()
+	physicalRuntimeStatus, err := e.getPhysicalDatasetRuntimeStatus()
 	if err != nil {
 		return err
 	}
-	// status copy, include cacheStates, conditions, selector, valueFile, current*, desired*, fuse*, master*, worker* ...
-	// TODO: Are there some fields should not copy?
-	runtimeToUpdate.Status = *mountedRuntimeStatus.DeepCopy()
+	if physicalRuntimeStatus != nil {
+		// status copy, include cacheStates, conditions, selector, valueFile, current*, desired*, fuse*, master*, worker* ...
+		// TODO: Are there some fields should not copy?
+		runtimeToUpdate.Status = *physicalRuntimeStatus.DeepCopy()
+	}
+	// update status.mounts to dataset mounts
+	runtimeToUpdate.Status.Mounts = virtualDatasetToUpdate.Spec.Mounts
 
 	if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
 		err = e.Client.Status().Update(context.TODO(), runtimeToUpdate)
