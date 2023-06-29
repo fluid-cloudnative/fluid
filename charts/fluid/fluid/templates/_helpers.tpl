@@ -69,3 +69,27 @@ Create the name of the service account to use
     {{ .Release.Namespace }}
 {{- end -}}
 {{- end -}}
+
+{{- define "fluid.helmDriver" -}}
+{{- if or (eq .Values.helmDriver "configmap") (eq .Values.helmDriver "secret") -}}
+{{ .Values.helmDriver | quote }}
+{{- else -}}
+{{ fail "helmDriver must be either configmap or secret" }}
+{{- end -}}
+{{- end -}}
+
+{{- define "fluid.helmDriver.rbacs" -}}
+{{- if eq .Values.helmDriver "secret" }}
+  - apiGroups:
+    - ""
+    resources:
+    - secrets
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - delete
+{{- end -}}
+{{- end -}}

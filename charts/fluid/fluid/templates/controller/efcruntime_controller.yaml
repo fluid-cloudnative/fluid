@@ -83,7 +83,7 @@ spec:
             value: {{ .Values.runtime.efc.fuse.image | quote }}
           {{- end }}
           - name: HELM_DRIVER
-            value: configmap
+            value: {{ template "fluid.helmDriver" . }}
           {{- if .Values.image.imagePullSecrets }}
           - name: IMAGE_PULL_SECRETS
             {{- $secretList := list }}

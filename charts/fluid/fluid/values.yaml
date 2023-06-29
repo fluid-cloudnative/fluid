@@ -3,6 +3,11 @@
 # Declare variables to be passed into your templates.
 
 workdir: /tmp
+
+# Change the helm backend storage driver used by Fluid's controllers. 
+# For now, only "configmap" and "secret" are supported.
+helmDriver: secret
+
 crdUpgrade:
   enabled: true
   image: fluidcloudnative/fluid-crd-upgrader:v1.0.0-9cdcd1e
