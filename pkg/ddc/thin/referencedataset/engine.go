@@ -214,6 +214,8 @@ func (e *ReferenceDatasetEngine) Shutdown() (err error) {
 				return err
 			}
 		}
+	} else {
+		e.Log.Info("physicalRuntimeInfo is not found, can't update physical dataset datasetRef")
 	}
 	return
 }

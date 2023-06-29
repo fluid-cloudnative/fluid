@@ -191,7 +191,7 @@ func TestCheckReferenceDataset(t *testing.T) {
 	}
 }
 
-func TestGetMountedDatasetSubPath(t *testing.T) {
+func TestGetPhysicalDatasetSubPath(t *testing.T) {
 	type args struct {
 		dataset *datav1alpha1.Dataset
 	}
@@ -261,7 +261,7 @@ func TestGetMountedDatasetSubPath(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := GetPhysicalDatasetSubPath(tt.args.dataset); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetMountedDatasetSubPath() = %v, want %v", got, tt.want)
+				t.Errorf("GetPhysicalDatasetSubPath() = %v, want %v", got, tt.want)
 			}
 		})
 	}
