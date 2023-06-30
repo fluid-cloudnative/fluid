@@ -93,7 +93,7 @@ spec:
             value: {{ join "," $secretList | quote }}
           {{- end }}
           - name: HELM_DRIVER
-            value: configmap
+            value: {{ template "fluid.helmDriver" .}}
         ports:
         - containerPort: 8080
           name: metrics

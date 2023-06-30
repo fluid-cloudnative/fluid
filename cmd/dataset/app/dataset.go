@@ -108,7 +108,7 @@ func handle() {
 		LeaderElectionID:        "dataset.data.fluid.io",
 		Port:                    9443,
 		NewCache:                NewCache(scheme),
-		NewClient:               controllers.NewCacheClientBypassSecrets,
+		NewClient:               controllers.NewFluidControllerClient,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start dataset manager")
