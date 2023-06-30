@@ -16,6 +16,7 @@ package dataset
 
 import (
 	"context"
+	"errors"
 	"reflect"
 	"strings"
 	"time"
@@ -171,7 +172,14 @@ func (r *DatasetReconciler) reconcileDataset(ctx reconcileRequestContext, needRe
 		}
 	}
 
-	// 4. Check if needRequeue
+	// 5. Update datasetRef
+	_, err = r.UpdateDatasetRef(&ctx)
+	if err != nil {
+		ctx.Log.Error(err, "Failed to update datasetRef", "ReconcileDatasetError", ctx)
+		return utils.RequeueIfError(err)
+	}
+
+	// 6. Check if needRequeue
 	if needRequeue {
 		return utils.RequeueAfterInterval(r.ResyncPeriod)
 	}
@@ -211,7 +219,7 @@ func (r *DatasetReconciler) reconcileDatasetDeletion(ctx reconcileRequestContext
 
 	// 3. if there are datasets mounted this dataset, then requeue
 	if len(datasetRefUptoDate) > 0 {
-		log.Error(err, "Failed to delete dataset because there are datasets mounted to it", "DatasetDeleteError", ctx,
+		log.Error(errors.New("DatasetRef is not nil"), "Failed to delete dataset because there are datasets mounted to it", "DatasetDeleteError", ctx,
 			"MountedDataset", datasetRefUptoDate)
 		r.Recorder.Eventf(&ctx.Dataset, v1.EventTypeWarning, common.ErrorDeleteDataset,
 			"Failed to delete dataset because there are datasets %s mounted to it", datasetRefUptoDate)
