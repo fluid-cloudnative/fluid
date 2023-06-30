@@ -72,7 +72,7 @@ spec:
               fieldRef:
                 fieldPath: metadata.namespace
           - name: HELM_DRIVER
-            value: configmap
+            value: {{ template "fluid.helmDriver" .}}
         ports:
         - containerPort: 8080
           name: metrics

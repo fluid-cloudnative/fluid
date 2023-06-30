@@ -102,7 +102,7 @@ func handle() {
 		LeaderElectionNamespace: leaderElectionNamespace,
 		LeaderElectionID:        "efc.data.fluid.io",
 		Port:                    9443,
-		NewClient:               controllers.NewCacheClientBypassSecrets,
+		NewClient:               controllers.NewFluidControllerClient,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start efcruntime manager")

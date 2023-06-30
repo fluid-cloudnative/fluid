@@ -73,6 +73,7 @@ rules:
       - secrets
     verbs:
       - get
+{{- template "fluid.helmDriver.rbacs" . }}
   - apiGroups:
       - data.fluid.io
     resources:

@@ -80,6 +80,7 @@ rules:
     - secrets
     verbs:
     - get
+{{- template "fluid.helmDriver.rbacs" . }}
   - apiGroups:
     - ""
     resources:
