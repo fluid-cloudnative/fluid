@@ -172,14 +172,7 @@ func (r *DatasetReconciler) reconcileDataset(ctx reconcileRequestContext, needRe
 		}
 	}
 
-	// 5. Update datasetRef
-	_, err = r.UpdateDatasetRef(&ctx)
-	if err != nil {
-		ctx.Log.Error(err, "Failed to update datasetRef", "ReconcileDatasetError", ctx)
-		return utils.RequeueIfError(err)
-	}
-
-	// 6. Check if needRequeue
+	// 5. Check if needRequeue
 	if needRequeue {
 		return utils.RequeueAfterInterval(r.ResyncPeriod)
 	}
@@ -210,23 +203,38 @@ func (r *DatasetReconciler) reconcileDatasetDeletion(ctx reconcileRequestContext
 		return utils.RequeueAfterInterval(time.Duration(10 * time.Second))
 	}
 
-	// 2. update datasetRef
-	datasetRefUptoDate, err := r.UpdateDatasetRef(&ctx)
-	if err != nil {
-		ctx.Log.Error(err, "Failed to update datasetRef", "DatasetDeleteError", ctx)
-		return utils.RequeueAfterInterval(time.Duration(10 * time.Second))
+	// 2. if there are datasets mounted this dataset, check reference dataset existence and requeue if there still has reference dataset
+	if len(ctx.Dataset.Status.DatasetRef) > 0 {
+		// 2.1 check reference dataset existence and remove not found dataset
+		datasetRefUpToDate, err := utils.RemoveNotFoundDatasetRef(r.Client, ctx.Dataset, ctx.Log)
+		if err != nil {
+			ctx.Log.Error(err, "Failed to update datasetRef", "DatasetDeleteError", ctx)
+			return utils.RequeueAfterInterval(time.Duration(10 * time.Second))
+		}
+
+		// 2.2 update dataset if datasetRef change
+		if !reflect.DeepEqual(datasetRefUpToDate, ctx.Dataset.Status.DatasetRef) {
+			datasetUpToDate := ctx.Dataset.DeepCopy()
+			datasetUpToDate.Status.DatasetRef = datasetRefUpToDate
+			if err := r.Status().Update(ctx, datasetUpToDate); err != nil {
+				ctx.Log.Error(err, "DatasetRef has changed but update failed", "DatasetDeleteError", datasetUpToDate)
+				return utils.RequeueAfterInterval(time.Duration(10 * time.Second))
+			}
+			ctx.Log.Info("Update dataset datasetRef successfully", "Before", ctx.Dataset.Status.DatasetRef, "After", datasetRefUpToDate)
+			ctx.Dataset = *datasetUpToDate
+		}
+
+		// 2.3 if there are datasets mounted this dataset, then requeue
+		if len(datasetRefUpToDate) > 0 {
+			log.Error(errors.New("DatasetRef is not nil"), "Failed to delete dataset because there are datasets mounted to it", "DatasetDeleteError", ctx,
+				"MountedDataset", datasetRefUpToDate)
+			r.Recorder.Eventf(&ctx.Dataset, v1.EventTypeWarning, common.ErrorDeleteDataset,
+				"Failed to delete dataset because there are datasets %s mounted to it", datasetRefUpToDate)
+			return utils.RequeueAfterInterval(10 * time.Second)
+		}
 	}
 
-	// 3. if there are datasets mounted this dataset, then requeue
-	if len(datasetRefUptoDate) > 0 {
-		log.Error(errors.New("DatasetRef is not nil"), "Failed to delete dataset because there are datasets mounted to it", "DatasetDeleteError", ctx,
-			"MountedDataset", datasetRefUptoDate)
-		r.Recorder.Eventf(&ctx.Dataset, v1.EventTypeWarning, common.ErrorDeleteDataset,
-			"Failed to delete dataset because there are datasets %s mounted to it", datasetRefUptoDate)
-		return utils.RequeueAfterInterval(10 * time.Second)
-	}
-
-	// 4. Remove finalizer
+	// 3. Remove finalizer
 	if !ctx.Dataset.ObjectMeta.GetDeletionTimestamp().IsZero() {
 		ctx.Dataset.ObjectMeta.Finalizers = utils.RemoveString(ctx.Dataset.ObjectMeta.Finalizers, finalizer)
 		if err := r.Update(ctx, &ctx.Dataset); err != nil {
@@ -262,38 +270,4 @@ func (r *DatasetReconciler) SetupWithManager(mgr ctrl.Manager, options controlle
 
 func (r *DatasetReconciler) ControllerName() string {
 	return controllerName
-}
-
-// UpdateDatasetRef checks datasetRef existence and update if some datasetRef not found
-func (r *DatasetReconciler) UpdateDatasetRef(ctx *reconcileRequestContext) ([]string, error) {
-	if len(ctx.Dataset.Status.DatasetRef) == 0 {
-		return nil, nil
-	}
-
-	// check reference dataset existence
-	var datasetRefUptoDate []string
-	for _, datasetRefName := range ctx.Dataset.Status.DatasetRef {
-		namespacedname := strings.Split(datasetRefName, "/")
-		dataset, err := utils.GetDataset(r.Client, namespacedname[1], namespacedname[0])
-		if err != nil && utils.IgnoreNotFound(err) != nil {
-			ctx.Log.Error(err, "Failed to get reference dataset", "DatasetDeleteError", datasetRefName)
-			return ctx.Dataset.Status.DatasetRef, err
-		}
-		if dataset != nil {
-			datasetRefUptoDate = append(datasetRefUptoDate, datasetRefName)
-		}
-	}
-
-	// update dataset if datasetRef change
-	if !reflect.DeepEqual(datasetRefUptoDate, ctx.Dataset.Status.DatasetRef) {
-		datasetUpToDate := ctx.Dataset.DeepCopy()
-		datasetUpToDate.Status.DatasetRef = datasetRefUptoDate
-		if err := r.Status().Update(ctx, datasetUpToDate); err != nil {
-			ctx.Log.Error(err, "DatasetRef has changed but update failed", "DatasetDeleteError", datasetRefUptoDate)
-			return ctx.Dataset.Status.DatasetRef, err
-		}
-		ctx.Dataset = *datasetUpToDate
-		ctx.Log.V(1).Info("Update dataset datasetRef successfully", "Dataset", ctx.Dataset)
-	}
-	return datasetRefUptoDate, nil
 }
