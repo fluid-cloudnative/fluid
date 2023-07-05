@@ -18,6 +18,7 @@ package juicefs
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
 	"os"
 	"path/filepath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -146,6 +147,8 @@ func (j *JuiceFSEngine) genDataLoadValue(image string, cacheinfo map[string]stri
 		Labels:           dataload.Spec.PodMetadata.Labels,
 		Annotations:      dataload.Spec.PodMetadata.Annotations,
 		ImagePullSecrets: imagePullSecrets,
+		Policy:           string(dataload.Spec.Policy),
+		Schedule:         dataload.Spec.Schedule,
 	}
 
 	// pod affinity
@@ -216,7 +219,9 @@ func (j *JuiceFSEngine) genDataLoadValue(image string, cacheinfo map[string]stri
 	dataloadInfo.Options = options
 
 	dataLoadValue := &cdataload.DataLoadValue{
+		Name:         dataload.Name,
 		DataLoadInfo: dataloadInfo,
+		Owner:        transfromer.GenerateOwnerReferenceFromObject(dataload),
 	}
 
 	return dataLoadValue

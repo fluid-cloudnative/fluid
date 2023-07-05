@@ -1169,6 +1169,20 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoadSpec(ref common.Referen
 							Format:      "",
 						},
 					},
+					"policy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "including Once, Cron, OnEvent",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"schedule": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The schedule in Cron format, only set when policy is cron, see https://en.wikipedia.org/wiki/Cron.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},

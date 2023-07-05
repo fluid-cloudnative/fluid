@@ -16,6 +16,7 @@ package goosefs
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
@@ -136,6 +137,8 @@ func (e *GooseFSEngine) genDataLoadValue(image string, targetDataset *datav1alph
 		Image:            image,
 		Options:          dataload.Spec.Options,
 		ImagePullSecrets: imagePullSecrets,
+		Policy:           string(dataload.Spec.Policy),
+		Schedule:         dataload.Spec.Schedule,
 	}
 
 	// pod affinity
@@ -174,7 +177,11 @@ func (e *GooseFSEngine) genDataLoadValue(image string, targetDataset *datav1alph
 		})
 	}
 	dataloadInfo.TargetPaths = targetPaths
-	dataLoadValue := &cdataload.DataLoadValue{DataLoadInfo: dataloadInfo}
+	dataLoadValue := &cdataload.DataLoadValue{
+		Name:         dataload.Name,
+		DataLoadInfo: dataloadInfo,
+		Owner:        transfromer.GenerateOwnerReferenceFromObject(dataload),
+	}
 
 	return dataLoadValue
 }

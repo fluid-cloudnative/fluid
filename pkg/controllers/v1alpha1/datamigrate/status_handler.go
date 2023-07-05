@@ -57,7 +57,7 @@ func (m *OnceStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestCont
 	// 1. Check running status of the DataMigrate job
 	releaseName := utils.GetDataMigrateReleaseName(object.GetName())
 	jobName := utils.GetDataMigrateJobName(releaseName)
-	job, err := utils.GetDataMigrateJob(m.Client, jobName, object.GetNamespace())
+	job, err := utils.GetJob(m.Client, jobName, object.GetNamespace())
 
 	if err != nil {
 		// helm release found but job missing, delete the helm release and requeue
@@ -125,7 +125,7 @@ func (c *CronStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestCont
 		return
 	}
 
-	jobs, err := utils.ListDataMigrateJobByCronjob(c.Client, types.NamespacedName{Namespace: object.GetNamespace(), Name: cronjobName})
+	jobs, err := utils.ListDataOperationJobByCronjob(c.Client, types.NamespacedName{Namespace: object.GetNamespace(), Name: cronjobName})
 	if err != nil {
 		ctx.Log.Error(err, "can't list DataMigrate job by cronjob", "namespace", ctx.Namespace, "cronjobName", cronjobName)
 		return
