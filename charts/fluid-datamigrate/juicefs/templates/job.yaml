@@ -1,4 +1,4 @@
-{{- if or (eq (lower .Values.datamigrate.policy) "none") (eq (lower .Values.datamigrate.policy) "once") }}
+{{- if or (eq (lower .Values.datamigrate.policy) "") (eq (lower .Values.datamigrate.policy) "once") }}
 apiVersion: batch/v1
 kind: Job
 metadata:

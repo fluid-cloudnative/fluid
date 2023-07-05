@@ -57,7 +57,7 @@ func (m *OnceStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestCont
 	// 1. Check running status of the DataMigrate job
 	releaseName := utils.GetDataMigrateReleaseName(object.GetName())
 	jobName := utils.GetDataMigrateJobName(releaseName)
-	job, err := utils.GetJob(m.Client, jobName, object.GetNamespace())
+	job, err := kubeclient.GetJob(m.Client, jobName, object.GetNamespace())
 
 	if err != nil {
 		// helm release found but job missing, delete the helm release and requeue

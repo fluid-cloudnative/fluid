@@ -14,29 +14,24 @@
   limitations under the License.
 */
 
-package utils
+package kubeclient
 
 import (
 	"context"
-	"fmt"
-	batchv1 "k8s.io/api/batch/v1"
-	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// ListDataOperationJobByCronjob gets the DataOperation(i.e. DataMigrate, DataLoad) job by cronjob given its name and namespace
-func ListDataOperationJobByCronjob(c client.Client, cronjobNamespacedName types.NamespacedName) ([]batchv1.Job, error) {
-	jobLabelSelector, err := labels.Parse(fmt.Sprintf("cronjob=%s", cronjobNamespacedName.Name))
-	if err != nil {
+// GetJob gets the job given its name and namespace
+func GetJob(client client.Client, name, namespace string) (*v1.Job, error) {
+	key := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	var job v1.Job
+	if err := client.Get(context.TODO(), key, &job); err != nil {
 		return nil, err
 	}
-	var jobList batchv1.JobList
-	if err := c.List(context.TODO(), &jobList, &client.ListOptions{
-		LabelSelector: jobLabelSelector,
-		Namespace:     cronjobNamespacedName.Namespace,
-	}); err != nil {
-		return nil, err
-	}
-	return jobList.Items, nil
+	return &job, nil
 }
