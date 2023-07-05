@@ -1,0 +1,184 @@
+# .Release.Name will be used to decide which dataset will be preload
+# .Release.Name should be like `<pvc-name>-load`(e.g. hbase-load for a PersistentVolumeClaim named `hbase`)
+# TODO: the length of .Release.Name won't exceed 53(limited by Helm), which means length of `<pvc-name>` can't exceed 48. This might be a problem.
+  {{/*  {{  $datasetName := "" -}}*/}}
+  {{/*  {{- $randomSuffix := "" -}}*/}}
+  {{/*  {{- if regexMatch "^[A-Za-z0-9._-]+-load-[A-Za-z0-9]{5}$" .Release.Name -}}*/}}
+  {{/*    {{- $arr := regexSplit "-load-" .Release.Name -1 -}}*/}}
+  {{/*    {{- $datasetName = first $arr -}}*/}}
+  {{/*    {{- $randomSuffix = last $arr -}}*/}}
+  {{/*  {{- else -}}*/}}
+  {{/*    {{- printf "Illegal release name. Should be like <dataset-name>-load-<suffix-length-5>. Current name: %s" .Release.Name | fail -}}*/}}
+  {{/*  {{- end }}*/}}
+{{- if eq (lower .Values.dataloader.policy) "cron" }}
+apiVersion: {{ ternary "batch/v1" "batch/v1beta1" (.Capabilities.APIVersions.Has "batch/v1/CronJob") }}
+kind: CronJob
+metadata:
+  name: {{ printf "%s-job" .Release.Name }}
+  labels:
+    release: {{ .Release.Name }}
+    role: dataload-job
+    app: jindofs
+    targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
+    dataload: {{ .Values.name }}
+    fluid.io/jobPolicy: cron
+  ownerReferences:
+  {{- if .Values.owner.enabled }}
+    - apiVersion: {{ .Values.owner.apiVersion }}
+      blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+      controller: {{ .Values.owner.controller }}
+      kind: {{ .Values.owner.kind }}
+      name: {{ .Values.owner.name }}
+      uid: {{ .Values.owner.uid }}
+  {{- end }}
+spec:
+  schedule: "{{ .Values.dataloader.schedule }}"
+  jobTemplate:
+    spec:
+      backoffLimit: {{ .Values.dataloader.backoffLimit | default "3" }}
+      completions: 1
+      parallelism: 1
+      template:
+        metadata:
+          name: {{ printf "%s-loader" .Release.Name }}
+          annotations:
+            sidecar.istio.io/inject: "false"
+          labels:
+            release: {{ .Release.Name }}
+            role: dataload-pod
+            app: jindofs
+            cronjob: {{ printf "%s-job" .Release.Name }}
+            targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
+        spec:
+          {{- if .Values.dataloader.schedulerName }}
+          schedulerName: {{ .Values.dataloader.schedulerName }}
+          {{- end }}
+          {{- with .Values.dataloader.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
+          {{- with .Values.dataloader.affinity }}
+          affinity:
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
+          {{- with .Values.dataloader.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
+          restartPolicy: Never
+          {{- with .Values.dataloader.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
+          containers:
+            - name: dataloader
+              image: {{ required "Dataloader image should be set" .Values.dataloader.image }}
+              imagePullPolicy: IfNotPresent
+              command: ["/bin/sh", "-c"]
+              args: ["/scripts/jindo_env_init.sh && /scripts/jindo_dataload.sh"]
+              {{- $targetPaths := "" }}
+              {{- range .Values.dataloader.targetPaths }}
+              {{- $targetPaths = cat $targetPaths (required "Path must be set" .path) ":" }}
+              {{- end }}
+              {{- $targetPaths = $targetPaths | nospace | trimSuffix ":" }}
+
+              {{- $pathReplicas := ""}}
+              {{- range .Values.dataloader.targetPaths }}
+              {{- $pathReplicas = cat $pathReplicas ( default 1 .replicas ) ":"}}
+              {{- end }}
+              {{- $pathReplicas = $pathReplicas | nospace | trimSuffix ":"}}
+              env:
+                - name: STORAGE_ADDRESS
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: status.podIP
+                - name: NEED_LOAD_METADATA
+                  value: {{ default false .Values.dataloader.loadMetadata | quote }}
+                {{- range $key, $val := .Values.dataloader.options }}
+                {{- if eq $key "loadMemorydata" }}
+                - name: LOAD_MEMORY_DATA
+                  value: {{ default false $val | quote }}
+                {{- end }}
+                {{- if eq $key "atomicCache" }}
+                - name: ENABLE_ATOMIC_CACHE
+                  value: {{ default false $val | quote }}
+                {{- end }}
+                {{- if eq $key "loadMetadataOnly" }}
+                - name: LOAD_METADATA_ONLY
+                  value: {{ default false $val | quote }}
+                {{- end }}
+                {{- if eq $key "cacheListReplica" }}
+                - name: CACHE_LIST_REPLICA
+                  value: {{ $val | quote }}
+                {{- end }}
+                {{- if eq $key "cacheListThread" }}
+                - name: CACHE_LIST_THREAD
+                  value: {{ $val | quote }}
+                {{- end }}
+                {{- if eq $key "accessKeyId" }}
+                - name: CACHE_LIST_ACCESSKEYID
+                  value: {{ $val | quote }}
+                {{- end }}
+                {{- if eq $key "accessKeySecret" }}
+                - name: CACHE_LIST_ACCESSKEYSECRET
+                  value: {{ $val | quote }}
+                {{- end }}
+                {{- if eq $key "endpoint" }}
+                - name: CACHE_LIST_ENDPOINT
+                  value: {{ $val | quote }}
+                {{- end }}
+                {{- if eq $key "url" }}
+                - name: CACHE_LIST_URL
+                  value: {{ $val | quote }}
+                {{- end }}
+                {{- if eq $key "cacheListLocationEnable" }}
+                - name: Enable_CACHE_LIST_LOCATION
+                  value: {{ default false $val | quote }}
+                {{- end }}
+                {{- end }}
+                - name: DATA_PATH
+                  value: {{ $targetPaths | quote }}
+                - name: PATH_REPLICAS
+                  value: {{ $pathReplicas | quote }}
+              envFrom:
+                - configMapRef:
+                    name: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}-jindofs-client-config
+              volumeMounts:
+                - name: bigboot-config
+                  mountPath: /bigboot.cfg
+                  subPath: bigboot.cfg
+                - name: bigboot-config
+                  mountPath: /hdfs-3.2.1/etc/hadoop/core-site.xml
+                  subPath: core-site.xml
+                {{- range $key, $val := .Values.dataloader.options }}
+                {{- if eq $key "hdfsConfig" }}
+                - name: hdfs-confs
+                  mountPath: /hdfs-site.xml
+                  subPath: hdfs-site.xml
+                {{- end }}
+                {{- end }}
+                - mountPath: /scripts
+                  name: data-load-script
+          volumes:
+            - name: bigboot-config
+              configMap:
+                name: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}-jindofs-config
+            {{- range $key, $val := .Values.dataloader.options }}
+            {{- if eq $key "hdfsConfig" }}
+            - name: hdfs-confs
+              configMap:
+                name: {{ $val }}
+            {{- end }}
+            {{- end }}
+            - name: data-load-script
+              configMap:
+                name: {{ printf "%s-data-load-script" .Release.Name }}
+                items:
+                  - key: dataloader.jindo.init
+                    path: jindo_env_init.sh
+                    mode: 365
+                  - key: dataloader.distributedLoad
+                    path: jindo_dataload.sh
+                    mode: 365
+
+{{- end }}

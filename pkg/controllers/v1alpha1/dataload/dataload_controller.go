@@ -18,6 +18,7 @@ package dataload
 
 import (
 	"context"
+	batchv1 "k8s.io/api/batch/v1"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -97,6 +98,7 @@ func (r *DataLoadReconciler) SetupWithManager(mgr ctrl.Manager, options controll
 	return ctrl.NewControllerManagedBy(mgr).
 		WithOptions(options).
 		For(&datav1alpha1.DataLoad{}).
+		Owns(&batchv1.CronJob{}).
 		Complete(r)
 }
 

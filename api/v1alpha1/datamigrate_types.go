@@ -78,19 +78,6 @@ type DataMigrateSpec struct {
 	SchedulerName string `json:"schedulerName,omitempty"`
 }
 
-type Policy string
-
-const (
-	// Once run data migrate once, default policy is Once
-	Once Policy = "Once"
-
-	// Cron run data migrate by cron
-	Cron Policy = "Cron"
-
-	// OnEvent run data migrate when event occurs
-	OnEvent Policy = "OnEvent"
-)
-
 type DataToMigrate struct {
 	// dataset to migrate
 	DataSet *DatasetToMigrate `json:"dataset,omitempty"`

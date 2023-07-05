@@ -21,6 +21,19 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type Policy string
+
+const (
+	// Once run data migrate once, default policy is Once
+	Once Policy = "Once"
+
+	// Cron run data migrate by cron
+	Cron Policy = "Cron"
+
+	// OnEvent run data migrate when event occurs
+	OnEvent Policy = "OnEvent"
+)
+
 // InitUsersSpec is a description of the initialize the users for runtime
 type InitUsersSpec struct {
 

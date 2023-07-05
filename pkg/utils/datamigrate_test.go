@@ -110,7 +110,7 @@ func TestGetDataMigrateJob(t *testing.T) {
 	}
 
 	for k, item := range testCases {
-		gotJob, err := GetDataMigrateJob(fakeClient, item.name, item.namespace)
+		gotJob, err := GetJob(fakeClient, item.name, item.namespace)
 		if item.notFound {
 			if err == nil && gotJob != nil {
 				t.Errorf("%s check failure, want get err, but get nil", k)
@@ -144,34 +144,6 @@ func TestGetDataMigrateJobName(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := GetDataMigrateJobName(tt.args.releaseName); got != tt.want {
 				t.Errorf("GetDataMigrateJobName() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestGetDataMigrateRef(t *testing.T) {
-	type args struct {
-		name      string
-		namespace string
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		{
-			name: "test",
-			args: args{
-				name:      "test",
-				namespace: "default",
-			},
-			want: "default/test",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := GetDataMigrateRef(tt.args.name, tt.args.namespace); got != tt.want {
-				t.Errorf("GetDataMigrateRef() = %v, want %v", got, tt.want)
 			}
 		})
 	}

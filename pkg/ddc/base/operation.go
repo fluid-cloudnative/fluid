@@ -102,13 +102,13 @@ func (t *TemplateEngine) reconcilePending(ctx cruntime.ReconcileRequestContext, 
 	opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcilePending")
 
-	// 1. lock the dataset
+	// 1. set current data operation to dataset
 	err := SetDataOperationInTargetDataset(ctx, object, operation, t)
 	if err != nil {
 		return utils.RequeueAfterInterval(20 * time.Second)
 	}
 
-	log.Info("Get lock on target dataset, try to update phase")
+	log.Info("Set data operation on target dataset, try to update phase")
 	opStatus.Phase = common.PhaseExecuting
 	if err = operation.UpdateOperationApiStatus(object, opStatus); err != nil {
 		log.Error(err, fmt.Sprintf("failed to update %s status to Executing, will retry", operation.GetOperationType()))
@@ -182,7 +182,7 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 		return utils.RequeueIfError(err)
 	}
 
-	// 2. release lock on target dataset if complete
+	// 2. remove current data operation on target dataset if complete
 	err = ReleaseTargetDataset(ctx, object, operation)
 	if err != nil {
 		return utils.RequeueIfError(err)
@@ -220,7 +220,7 @@ func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, o
 	opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileFailed")
 
-	// 1. release lock on target dataset
+	// 1. remove current data operation on target dataset
 	err := ReleaseTargetDataset(ctx, object, operation)
 	if err != nil {
 		return utils.RequeueIfError(err)

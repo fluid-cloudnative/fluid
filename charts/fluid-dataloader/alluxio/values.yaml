@@ -2,7 +2,28 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+name:
+
+owner:
+  enabled: false
+  name: ""
+  kind: ""
+  uid: ""
+  apiVersion: ""
+  blockOwnerDeletion: false
+  controller: false
+
+
 dataloader:
+  # Required
+  # Default: once
+  # Description: policy of data load
+  policy: ""
+
+  # Optional
+  # Description: schedule for cron policy
+  schedule:
+
   # Optional
   # Default: 3
   # Description: how many times the prefetch job can fail, i.e. `Job.spec.backoffLimit`

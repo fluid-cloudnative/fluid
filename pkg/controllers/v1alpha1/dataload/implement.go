@@ -115,5 +115,17 @@ func (r *DataLoadReconciler) RemoveTargetDatasetStatusInProgress(dataset *datav1
 }
 
 func (r *DataLoadReconciler) GetStatusHandler(object client.Object) dataoperation.StatusHandler {
-	return &OnceHandler{Client: r.Client}
+	dataLoad := object.(*datav1alpha1.DataLoad)
+	policy := dataLoad.Spec.Policy
+
+	switch policy {
+	case datav1alpha1.Once:
+		return &OnceStatusHandler{Client: r.Client}
+	case datav1alpha1.Cron:
+		return &CronStatusHandler{Client: r.Client}
+	case datav1alpha1.OnEvent:
+		return &OnEventStatusHandler{Client: r.Client}
+	default:
+		return nil
+	}
 }
