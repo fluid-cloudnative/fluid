@@ -100,6 +100,8 @@ runtime:
     enabled: false
     controller:
       image: fluidcloudnative/thinruntime-controller:v1.0.0-41a12f5
+    fuse:
+      configStorage: configmap
   efc:
     replicas: 1
     enabled: false

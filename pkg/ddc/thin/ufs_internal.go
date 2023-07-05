@@ -92,14 +92,14 @@ func (t *ThinEngine) genFuseMountOptions(m datav1alpha1.Mount, SharedOptions map
 		if err != nil {
 			return mOptions, err
 		}
-	
+
 		//gen public encryptOptions
 		mOptions, err = t.genEncryptOptions(m.EncryptOptions, mOptions, m.Name)
 		if err != nil {
 			return mOptions, err
 		}
 	}
-	
+
 	return mOptions, nil
 }
 
