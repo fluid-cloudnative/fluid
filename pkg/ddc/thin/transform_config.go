@@ -31,18 +31,21 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-var fuseConfigStorage = ""
+const (
+	EnvFuseConfigStorage = "THIN_FUSE_CONFIG_STORAGE"
+)
 
-func init() {
-	if envVal, exists := os.LookupEnv("THIN_FUSE_CONFIG_STORAGE"); exists {
-		fuseConfigStorage = envVal
-	} else {
-		// defaults to "configmap"
-		fuseConfigStorage = "configmap"
+func getFuseConfigStorage() string {
+	if envVal, exists := os.LookupEnv(EnvFuseConfigStorage); exists {
+		return envVal
 	}
+	// default value
+	return "configmap"
 }
 
 func (t *ThinEngine) transformFuseConfig(runtime *datav1alpha1.ThinRuntime, dataset *datav1alpha1.Dataset, value *ThinValue) (err error) {
+	fuseConfigStorage := getFuseConfigStorage()
+
 	mounts := []datav1alpha1.Mount{}
 	// todo: support passing flexVolume info
 	pvAttributes := map[string]*corev1.CSIPersistentVolumeSource{}
