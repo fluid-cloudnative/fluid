@@ -220,16 +220,17 @@ func (r *DatasetReconciler) reconcileDatasetDeletion(ctx reconcileRequestContext
 				ctx.Log.Error(err, "DatasetRef has changed but update failed", "DatasetDeleteError", datasetUpToDate)
 				return utils.RequeueAfterInterval(time.Duration(10 * time.Second))
 			}
-			ctx.Log.Info("Update dataset datasetRef successfully", "Before", ctx.Dataset.Status.DatasetRef, "After", datasetRefUpToDate)
-			ctx.Dataset = *datasetUpToDate
+			ctx.Log.V(1).Info("Update dataset datasetRef successfully", "Before", ctx.Dataset.Status.DatasetRef, "After", datasetRefUpToDate)
+			// if dataset has been updated, return to continue next round reconcile
+			return utils.RequeueAfterInterval(10 * time.Second)
 		}
 
 		// 2.3 if there are datasets mounted this dataset, then requeue
-		if len(datasetRefUpToDate) > 0 {
+		if len(ctx.Dataset.Status.DatasetRef) > 0 {
 			log.Error(errors.New("DatasetRef is not nil"), "Failed to delete dataset because there are datasets mounted to it", "DatasetDeleteError", ctx,
-				"MountedDataset", datasetRefUpToDate)
+				"MountedDataset", ctx.Dataset.Status.DatasetRef)
 			r.Recorder.Eventf(&ctx.Dataset, v1.EventTypeWarning, common.ErrorDeleteDataset,
-				"Failed to delete dataset because there are datasets %s mounted to it", datasetRefUpToDate)
+				"Failed to delete dataset because there are datasets %s mounted to it", ctx.Dataset.Status.DatasetRef)
 			return utils.RequeueAfterInterval(10 * time.Second)
 		}
 	}
@@ -241,7 +242,7 @@ func (r *DatasetReconciler) reconcileDatasetDeletion(ctx reconcileRequestContext
 			log.Error(err, "Failed to remove finalizer")
 			return ctrl.Result{}, err
 		}
-		ctx.Log.Info("Finalizer is removed", "dataset", ctx.Dataset)
+		ctx.Log.V(1).Info("Finalizer is removed", "dataset", ctx.Dataset)
 	}
 
 	log.Info("delete the dataset successfully", "dataset", ctx.Dataset)
