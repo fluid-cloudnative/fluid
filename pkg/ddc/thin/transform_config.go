@@ -62,27 +62,11 @@ func (t *ThinEngine) transformFuseConfig(runtime *datav1alpha1.ThinRuntime, data
 			pvMountOptions[pvcName] = mountOptions
 		}
 
-		switch strings.ToLower(fuseConfigStorage) {
-		case "configmap":
-			m.Options, err = t.genFuseMountOptions(m, dataset.Spec.SharedOptions, dataset.Spec.SharedEncryptOptions, false)
-			if err != nil {
-				return errors.Wrap(err, "failed to generate FUSE mount options from dataset mount info")
-			}
-			transformedEncryptOpts := t.transformEncryptOptionsWithSecretVolumes(m, dataset.Spec.SharedEncryptOptions, value)
-			for k, v := range transformedEncryptOpts {
-				m.Options[k] = v
-			}
-			m.EncryptOptions = nil
-		case "secret":
-			m.Options, err = t.genFuseMountOptions(m, dataset.Spec.SharedOptions, dataset.Spec.SharedEncryptOptions, true)
-			if err != nil {
-				return errors.Wrap(err, "failed to generate FUSE mount options from dataset mount info")
-			}
-			m.EncryptOptions = nil
-		default:
-			return fmt.Errorf("FUSE config storage \"%s\" is not supported, valid value: \"configmap\" or \"secret\"", fuseConfigStorage)
+		m.Options, err = t.extractMountOptions(m, dataset, fuseConfigStorage, value)
+		if err != nil {
+			return err
 		}
-
+		m.EncryptOptions = nil
 		mounts = append(mounts, m)
 	}
 
@@ -131,6 +115,29 @@ func (t *ThinEngine) transformEncryptOptionsWithSecretVolumes(m datav1alpha1.Mou
 	}
 
 	return options
+}
+
+func (t *ThinEngine) extractMountOptions(m datav1alpha1.Mount, dataset *datav1alpha1.Dataset, fuseConfigStorage string, value *ThinValue) (options map[string]string, err error) {
+	switch strings.ToLower(fuseConfigStorage) {
+	case "configmap":
+		options, err = t.genFuseMountOptions(m, dataset.Spec.SharedOptions, dataset.Spec.SharedEncryptOptions, false)
+		if err != nil {
+			return options, errors.Wrap(err, "failed to generate FUSE mount options from dataset mount info")
+		}
+		transformedEncryptOpts := t.transformEncryptOptionsWithSecretVolumes(m, dataset.Spec.SharedEncryptOptions, value)
+		for k, v := range transformedEncryptOpts {
+			options[k] = v
+		}
+	case "secret":
+		options, err = t.genFuseMountOptions(m, dataset.Spec.SharedOptions, dataset.Spec.SharedEncryptOptions, true)
+		if err != nil {
+			return options, errors.Wrap(err, "failed to generate FUSE mount options from dataset mount info")
+		}
+	default:
+		return options, fmt.Errorf("FUSE config storage \"%s\" is not supported, valid value: \"configmap\" or \"secret\"", fuseConfigStorage)
+	}
+
+	return options, nil
 }
 
 func (t *ThinEngine) extractVolumeInfo(pvcName string) (csiInfo *corev1.CSIPersistentVolumeSource, mountOptions []string, err error) {
