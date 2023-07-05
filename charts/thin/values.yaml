@@ -71,6 +71,7 @@ fuse:
   readinessProbe:
   hostNetwork: true
   configValue: ""
+  configStorage: "configmap"
   volumes:
   volumeMounts:
   resources:
