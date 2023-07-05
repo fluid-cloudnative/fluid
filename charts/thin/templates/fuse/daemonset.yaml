@@ -134,7 +134,7 @@ spec:
           secret:
             secretName: {{ template "thin.fullname" . }}-fuse-conf
             defaultMode: 0444
-        {{- else if .Values.fuse.configStorage "configmap" }}
+        {{- else if eq .Values.fuse.configStorage "configmap" }}
         - name: thin-conf
           configMap:
             name: {{ template "thin.fullname" . }}-fuse-conf
