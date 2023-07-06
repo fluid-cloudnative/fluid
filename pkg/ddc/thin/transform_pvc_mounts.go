@@ -70,31 +70,25 @@ func (t *ThinEngine) transfromSecretsForPersistentVolumeClaimMounts(dataset *dat
 				case datav1alpha1.NotMountNodePublishSecret:
 					break
 				case datav1alpha1.MountNodePublishSecretIfExists:
-					secret, err := kubeclient.GetSecret(t.Client, secretName, t.namespace)
-					if err != nil {
-						if utils.IgnoreNotFound(err) == nil {
-							return fmt.Errorf("failed to transform pvc secret mount because secret \"%s/%s\" not found", t.namespace, secretName)
-						}
-						return err
-					}
-
 					volumeToAdd := corev1.Volume{
-						Name: secret.Name,
+						Name: secretName,
 						VolumeSource: corev1.VolumeSource{
 							Secret: &corev1.SecretVolumeSource{
-								SecretName: secret.Name,
+								SecretName: secretName,
 							},
 						},
 					}
 					value.Fuse.Volumes = utils.AppendOrOverrideVolume(value.Fuse.Volumes, volumeToAdd)
 
 					volumeMountToAdd := corev1.VolumeMount{
-						Name:      secret.Name,
+						Name:      secretName,
 						ReadOnly:  true,
-						MountPath: fmt.Sprintf("/etc/fluid/secrets/%s", secret.Name),
+						MountPath: fmt.Sprintf("/etc/fluid/secrets/%s", secretName),
 					}
 					value.Fuse.VolumeMounts = utils.AppendOrOverrideVolumeMounts(value.Fuse.VolumeMounts, volumeMountToAdd)
 
+				// CopyNodePublishSecretAndMountIfNotExists is supported but not allowed by default. Users must explicitly define role and rolebinding
+				// for the service account "thinruntime-controller" in namespace "fluid-system".
 				case datav1alpha1.CopyNodePublishSecretAndMountIfNotExists:
 					fromNamespacedName := types.NamespacedName{Namespace: secretNamespace, Name: secretName}
 					toNamespacedName := types.NamespacedName{Namespace: t.namespace, Name: fmt.Sprintf("%s-%s-publish-secret", t.name, t.runtimeType)}

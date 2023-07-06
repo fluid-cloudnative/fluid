@@ -1,0 +1,30 @@
+{{- if eq .Values.fuse.configStorage "configmap"}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "thin.fullname" . }}-fuse-conf
+  labels:
+    app: {{ template "thin.name" . }}
+    chart: {{ template "thin.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    role: thin-fuse
+data:
+  config.json: |
+    {{ .Values.fuse.configValue }}
+{{- else if eq .Values.fuse.configStorage "secret" }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ template "thin.fullname" . }}-fuse-conf
+  labels:
+    app: {{ template "thin.name" . }}
+    chart: {{ template "thin.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    role: thin-fuse
+type: Opaque
+stringData:
+  config.json: |
+    {{ .Values.fuse.configValue }}
+{{- end -}}

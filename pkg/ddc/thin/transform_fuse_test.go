@@ -238,39 +238,18 @@ func TestThinEngine_parseFuseOptions(t1 *testing.T) {
 						"f": "g",
 						"e": "e",
 					},
-					SharedEncryptOptions: []datav1alpha1.EncryptOption{{
-						Name: "h",
-						ValueFrom: datav1alpha1.EncryptOptionSource{
-							SecretKeyRef: datav1alpha1.SecretKeySelector{
-								Name: "sec",
-								Key:  "h",
-							},
-						},
-					}},
 					Mounts: []datav1alpha1.Mount{{
 						Options: map[string]string{
 							"d": "z",
 							"e": "",
 						},
-						EncryptOptions: []datav1alpha1.EncryptOption{{
-							Name: "a",
-							ValueFrom: datav1alpha1.EncryptOptionSource{
-								SecretKeyRef: datav1alpha1.SecretKeySelector{
-									Name: "sec",
-									Key:  "a",
-								},
-							},
-						}},
-					}}}},
+					},
+					}}},
 			},
 			wantOption: map[string]string{
-				"a": "z",
+				"a": "x",
 				"b": "y",
 				"c": "x",
-				"d": "z",
-				"e": "",
-				"f": "g",
-				"h": "i",
 			},
 		},
 	}
@@ -369,6 +348,9 @@ func TestThinEngine_transformFuse(t1 *testing.T) {
 						},
 					},
 				}},
+				Options: map[string]string{
+					"fuse-opt": "foo",
+				},
 				NodeSelector: map[string]string{"b": "c"},
 				VolumeMounts: []corev1.VolumeMount{{
 					Name:      "b",
@@ -450,7 +432,7 @@ func TestThinEngine_transformFuse(t1 *testing.T) {
 				},
 			}, {
 				Name:  common.ThinFuseOptionEnvKey,
-				Value: "a=b,c=d",
+				Value: "fuse-opt=foo",
 			}, {
 				Name:  common.ThinFusePointEnvKey,
 				Value: "/thin/fluid/test/thin-fuse",
@@ -504,7 +486,8 @@ func TestThinEngine_transformFuse(t1 *testing.T) {
 			}},
 			// ConfigValue: "{\"/thin/fluid/test/thin-fuse\":\"a=b\"}",
 			// MountPath:   "/thin/fluid/test/thin-fuse",
-			ConfigValue: "{\"mounts\":[{\"mountPoint\":\"abc\",\"options\":{\"a\":\"b\",\"c\":\"d\"}}],\"targetPath\":\"/thin/fluid/test/thin-fuse\"}",
+			ConfigValue:   "{\"mounts\":[{\"mountPoint\":\"abc\",\"options\":{\"a\":\"b\",\"c\":\"d\"}}],\"targetPath\":\"/thin/fluid/test/thin-fuse\",\"runtimeOptions\":{\"fuse-opt\":\"foo\"}}",
+			ConfigStorage: "configmap",
 		},
 	}
 	value := &ThinValue{}
@@ -670,9 +653,6 @@ func TestThinEngine_transformFuseWithDuplicateOptionKey(t1 *testing.T) {
 					},
 				},
 			}, {
-				Name:  common.ThinFuseOptionEnvKey,
-				Value: "a=b",
-			}, {
 				Name:  common.ThinFusePointEnvKey,
 				Value: "/thin/fluid/test/thin-fuse",
 			}},
@@ -725,7 +705,8 @@ func TestThinEngine_transformFuseWithDuplicateOptionKey(t1 *testing.T) {
 			}},
 			// ConfigValue: "{\"/thin/fluid/test/thin-fuse\":\"a=b\"}",
 			// MountPath:   "/thin/fluid/test/thin-fuse",
-			ConfigValue: "{\"mounts\":[{\"mountPoint\":\"abc\",\"options\":{\"a\":\"b\"}}],\"targetPath\":\"/thin/fluid/test/thin-fuse\"}",
+			ConfigValue:   "{\"mounts\":[{\"mountPoint\":\"abc\",\"options\":{\"a\":\"b\"}}],\"targetPath\":\"/thin/fluid/test/thin-fuse\"}",
+			ConfigStorage: "configmap",
 		},
 	}
 	value := &ThinValue{}

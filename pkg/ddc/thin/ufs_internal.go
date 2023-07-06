@@ -71,7 +71,9 @@ func (t *ThinEngine) usedSpaceInternal() (usedSpace int64, err error) {
 	return
 }
 
-func (t *ThinEngine) genUFSMountOptions(m datav1alpha1.Mount, SharedOptions map[string]string, SharedEncryptOptions []datav1alpha1.EncryptOption) (map[string]string, error) {
+// genFuseMountOptions extracts mount options needed by Thin FUSE from mount info, including options and encrypt options. If extractEncryptOptions is set to false,
+// encrypt options will be skipped and won't be extracted
+func (t *ThinEngine) genFuseMountOptions(m datav1alpha1.Mount, SharedOptions map[string]string, SharedEncryptOptions []datav1alpha1.EncryptOption, extractEncryptOptions bool) (map[string]string, error) {
 
 	// initialize mount options
 	mOptions := map[string]string{}
@@ -84,16 +86,18 @@ func (t *ThinEngine) genUFSMountOptions(m datav1alpha1.Mount, SharedOptions map[
 
 	// if encryptOptions have the same key with options
 	// it will overwrite the corresponding value
-	var err error
-	mOptions, err = t.genEncryptOptions(SharedEncryptOptions, mOptions, m.Name)
-	if err != nil {
-		return mOptions, err
-	}
+	if extractEncryptOptions {
+		var err error
+		mOptions, err = t.genEncryptOptions(SharedEncryptOptions, mOptions, m.Name)
+		if err != nil {
+			return mOptions, err
+		}
 
-	//gen public encryptOptions
-	mOptions, err = t.genEncryptOptions(m.EncryptOptions, mOptions, m.Name)
-	if err != nil {
-		return mOptions, err
+		//gen public encryptOptions
+		mOptions, err = t.genEncryptOptions(m.EncryptOptions, mOptions, m.Name)
+		if err != nil {
+			return mOptions, err
+		}
 	}
 
 	return mOptions, nil
