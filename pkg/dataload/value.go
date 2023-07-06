@@ -17,16 +17,25 @@ limitations under the License.
 package dataload
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	corev1 "k8s.io/api/core/v1"
 )
 
 // DataLoadValue defines the value yaml file used in DataLoad helm chart
 type DataLoadValue struct {
-	DataLoadInfo DataLoadInfo `json:"dataloader"`
+	Name         string                 `json:"name"`
+	Owner        *common.OwnerReference `json:"owner,omitempty"`
+	DataLoadInfo DataLoadInfo           `json:"dataloader"`
 }
 
 // DataLoadInfo defines values used in DataLoad helm chart
 type DataLoadInfo struct {
+	// Policy including None, Once, Cron, OnEvent
+	Policy string `json:"policy"`
+
+	// Schedule The schedule in Cron format, only set when policy is cron, see https://en.wikipedia.org/wiki/Cron.
+	Schedule string `json:"schedule,omitempty"`
+
 	// BackoffLimit specifies the upper limit times when the DataLoad job fails
 	BackoffLimit int32 `json:"backoffLimit,omitempty"`
 

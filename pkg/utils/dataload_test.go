@@ -21,7 +21,6 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -76,52 +75,6 @@ func TestGetDataLoad(t *testing.T) {
 
 }
 
-func TestGetDataLoadJob(t *testing.T) {
-	mockJobName := "fluid-test-job"
-	mockJobNamespace := "default"
-	initJob := &batchv1.Job{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      mockJobName,
-			Namespace: mockJobNamespace,
-		},
-	}
-
-	fakeClient := fake.NewFakeClient(initJob)
-
-	testCases := map[string]struct {
-		name      string
-		namespace string
-		wantName  string
-		notFound  bool
-	}{
-		"test get DataLoad Job case 1": {
-			name:      mockJobName,
-			namespace: mockJobNamespace,
-			wantName:  mockJobName,
-			notFound:  false,
-		},
-		"test get DataLoad Job case 2": {
-			name:      mockJobName + "not-exist",
-			namespace: mockJobNamespace,
-			wantName:  "",
-			notFound:  true,
-		},
-	}
-
-	for k, item := range testCases {
-		gotJob, err := GetDataLoadJob(fakeClient, item.name, item.namespace)
-		if item.notFound {
-			if err == nil && gotJob != nil {
-				t.Errorf("%s check failure, want get err, but get nil", k)
-			}
-		} else {
-			if gotJob.Name != item.wantName {
-				t.Errorf("%s check failure, want DataLoad Job name:%s, got DataLoad Job name:%s", k, item.wantName, gotJob.Name)
-			}
-		}
-	}
-}
-
 func TestGetDataLoadReleaseName(t *testing.T) {
 	type args struct {
 		name string
@@ -150,34 +103,6 @@ func TestGetDataLoadReleaseName(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := GetDataLoadReleaseName(tt.args.name); got != tt.want {
 				t.Errorf("GetDataLoadReleaseName() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestGetDataLoadRef(t *testing.T) {
-	type args struct {
-		name      string
-		namespace string
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		{
-			name: "test1",
-			args: args{
-				name:      "hbase",
-				namespace: "default",
-			},
-			want: "default/hbase",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := GetDataLoadRef(tt.args.name, tt.args.namespace); got != tt.want {
-				t.Errorf("GetDataLoadRef() = %v, want %v", got, tt.want)
 			}
 		})
 	}

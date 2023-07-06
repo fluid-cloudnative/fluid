@@ -20,7 +20,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"testing"
 
-	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
@@ -77,52 +76,6 @@ func TestGetDataMigrate(t *testing.T) {
 	}
 }
 
-func TestGetDataMigrateJob(t *testing.T) {
-	mockJobName := "fluid-test-job"
-	mockJobNamespace := "default"
-	initJob := &batchv1.Job{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      mockJobName,
-			Namespace: mockJobNamespace,
-		},
-	}
-
-	fakeClient := fake.NewFakeClient(initJob)
-
-	testCases := map[string]struct {
-		name      string
-		namespace string
-		wantName  string
-		notFound  bool
-	}{
-		"test get DataMigrate Job case 1": {
-			name:      mockJobName,
-			namespace: mockJobNamespace,
-			wantName:  mockJobName,
-			notFound:  false,
-		},
-		"test get DataMigrate Job case 2": {
-			name:      mockJobName + "not-exist",
-			namespace: mockJobNamespace,
-			wantName:  "",
-			notFound:  true,
-		},
-	}
-
-	for k, item := range testCases {
-		gotJob, err := GetDataMigrateJob(fakeClient, item.name, item.namespace)
-		if item.notFound {
-			if err == nil && gotJob != nil {
-				t.Errorf("%s check failure, want get err, but get nil", k)
-			}
-		} else {
-			if gotJob.Name != item.wantName {
-				t.Errorf("%s check failure, want DataMigrate Job name:%s, got DataMigrate Job name:%s", k, item.wantName, gotJob.Name)
-			}
-		}
-	}
-}
-
 func TestGetDataMigrateJobName(t *testing.T) {
 	type args struct {
 		releaseName string
@@ -144,34 +97,6 @@ func TestGetDataMigrateJobName(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := GetDataMigrateJobName(tt.args.releaseName); got != tt.want {
 				t.Errorf("GetDataMigrateJobName() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestGetDataMigrateRef(t *testing.T) {
-	type args struct {
-		name      string
-		namespace string
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		{
-			name: "test",
-			args: args{
-				name:      "test",
-				namespace: "default",
-			},
-			want: "default/test",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := GetDataMigrateRef(tt.args.name, tt.args.namespace); got != tt.want {
-				t.Errorf("GetDataMigrateRef() = %v, want %v", got, tt.want)
 			}
 		})
 	}

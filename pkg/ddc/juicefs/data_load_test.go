@@ -18,6 +18,7 @@ package juicefs
 
 import (
 	"errors"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -794,6 +795,14 @@ func TestJuiceFSEngine_genDataLoadValue(t *testing.T) {
 				"cache-info-k3": "cache-info-v3",
 			},
 			want: &cdataload.DataLoadValue{
+				Name: "test-dataload",
+				Owner: &common.OwnerReference{
+					APIVersion:         "/",
+					Enabled:            true,
+					Name:               "test-dataload",
+					BlockOwnerDeletion: false,
+					Controller:         true,
+				},
 				DataLoadInfo: cdataload.DataLoadInfo{
 					BackoffLimit:  3,
 					Image:         "fluid:v0.0.1",
@@ -916,6 +925,14 @@ func TestJuiceFSEngine_genDataLoadValue(t *testing.T) {
 				"cache-info-k3": "cache-info-v3",
 			},
 			want: &cdataload.DataLoadValue{
+				Name: "test-dataload",
+				Owner: &common.OwnerReference{
+					APIVersion:         "/",
+					Enabled:            true,
+					Name:               "test-dataload",
+					BlockOwnerDeletion: false,
+					Controller:         true,
+				},
 				DataLoadInfo: cdataload.DataLoadInfo{
 					BackoffLimit:  3,
 					Image:         "fluid:v0.0.1",
@@ -1041,6 +1058,14 @@ func TestJuiceFSEngine_genDataLoadValue(t *testing.T) {
 				"cache-info-k3": "cache-info-v3",
 			},
 			want: &cdataload.DataLoadValue{
+				Name: "test-dataload",
+				Owner: &common.OwnerReference{
+					APIVersion:         "/",
+					Enabled:            true,
+					Name:               "test-dataload",
+					BlockOwnerDeletion: false,
+					Controller:         true,
+				},
 				DataLoadInfo: cdataload.DataLoadInfo{
 					BackoffLimit:  3,
 					Image:         "fluid:v0.0.1",
@@ -1137,6 +1162,14 @@ func TestJuiceFSEngine_genDataLoadValue(t *testing.T) {
 				"cache-info-k3": "cache-info-v3",
 			},
 			want: &cdataload.DataLoadValue{
+				Name: "test-dataload",
+				Owner: &common.OwnerReference{
+					APIVersion:         "/",
+					Enabled:            true,
+					Name:               "test-dataload",
+					BlockOwnerDeletion: false,
+					Controller:         true,
+				},
 				DataLoadInfo: cdataload.DataLoadInfo{
 					BackoffLimit:  3,
 					Image:         "fluid:v0.0.1",

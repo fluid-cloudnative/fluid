@@ -918,6 +918,18 @@ spec:
                     description: Labels are labels of pod specification
                     type: object
                 type: object
+              policy:
+                default: Once
+                description: including Once, Cron, OnEvent
+                enum:
+                - Once
+                - Cron
+                - OnEvent
+                type: string
+              schedule:
+                description: The schedule in Cron format, only set when policy is
+                  cron, see https://en.wikipedia.org/wiki/Cron.
+                type: string
               schedulerName:
                 description: SchedulerName sets the scheduler to be used for DataLoad
                   pod

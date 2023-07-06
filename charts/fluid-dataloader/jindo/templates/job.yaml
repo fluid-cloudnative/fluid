@@ -10,6 +10,7 @@
   {{/*  {{- else -}}*/}}
   {{/*    {{- printf "Illegal release name. Should be like <dataset-name>-load-<suffix-length-5>. Current name: %s" .Release.Name | fail -}}*/}}
   {{/*  {{- end }}*/}}
+{{- if or (eq (lower .Values.dataloader.policy) "") (eq (lower .Values.dataloader.policy) "once") }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -19,6 +20,15 @@ metadata:
     role: dataload-job
     app: jindofs
     targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
+  ownerReferences:
+  {{- if .Values.owner.enabled }}
+    - apiVersion: {{ .Values.owner.apiVersion }}
+      blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+      controller: {{ .Values.owner.controller }}
+      kind: {{ .Values.owner.kind }}
+      name: {{ .Values.owner.name }}
+      uid: {{ .Values.owner.uid }}
+  {{- end }}
 spec:
   backoffLimit: {{ .Values.dataloader.backoffLimit | default "3" }}
   completions: 1
@@ -164,3 +174,5 @@ spec:
               - key: dataloader.distributedLoad
                 path: jindo_dataload.sh
                 mode: 365
+
+{{- end }}

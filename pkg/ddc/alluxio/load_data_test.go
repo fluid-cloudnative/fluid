@@ -18,6 +18,7 @@ package alluxio
 import (
 	"errors"
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -249,6 +250,14 @@ func Test_genDataLoadValue(t *testing.T) {
 				},
 			},
 			want: &cdataload.DataLoadValue{
+				Name: "test-dataload",
+				Owner: &common.OwnerReference{
+					APIVersion:         "/",
+					Enabled:            true,
+					Name:               "test-dataload",
+					BlockOwnerDeletion: false,
+					Controller:         true,
+				},
 				DataLoadInfo: cdataload.DataLoadInfo{
 					BackoffLimit:  3,
 					Image:         "fluid:v0.0.1",
@@ -337,6 +346,14 @@ func Test_genDataLoadValue(t *testing.T) {
 				},
 			},
 			want: &cdataload.DataLoadValue{
+				Name: "test-dataload",
+				Owner: &common.OwnerReference{
+					APIVersion:         "/",
+					Enabled:            true,
+					Name:               "test-dataload",
+					BlockOwnerDeletion: false,
+					Controller:         true,
+				},
 				DataLoadInfo: cdataload.DataLoadInfo{
 					BackoffLimit:  3,
 					Image:         "fluid:v0.0.1",
@@ -428,6 +445,14 @@ func Test_genDataLoadValue(t *testing.T) {
 				},
 			},
 			want: &cdataload.DataLoadValue{
+				Name: "test-dataload",
+				Owner: &common.OwnerReference{
+					APIVersion:         "/",
+					Enabled:            true,
+					Name:               "test-dataload",
+					BlockOwnerDeletion: false,
+					Controller:         true,
+				},
 				DataLoadInfo: cdataload.DataLoadInfo{
 					BackoffLimit:  3,
 					Image:         "fluid:v0.0.1",
@@ -490,6 +515,14 @@ func Test_genDataLoadValue(t *testing.T) {
 				},
 			},
 			want: &cdataload.DataLoadValue{
+				Name: "test-dataload",
+				Owner: &common.OwnerReference{
+					APIVersion:         "/",
+					Enabled:            true,
+					Name:               "test-dataload",
+					BlockOwnerDeletion: false,
+					Controller:         true,
+				},
 				DataLoadInfo: cdataload.DataLoadInfo{
 					BackoffLimit:  3,
 					Image:         "fluid:v0.0.1",

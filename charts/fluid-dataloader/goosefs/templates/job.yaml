@@ -1,6 +1,3 @@
-# .Release.Name will be used to decide which dataset will be preload
-# .Release.Name should be like `<pvc-name>-load`(e.g. hbase-load for a PersistentVolumeClaim named `hbase`)
-# TODO: the length of .Release.Name won't exceed 53(limited by Helm), which means length of `<pvc-name>` can't exceed 48. This might be a problem.
   {{/*  {{  $datasetName := "" -}}*/}}
   {{/*  {{- $randomSuffix := "" -}}*/}}
   {{/*  {{- if regexMatch "^[A-Za-z0-9._-]+-load-[A-Za-z0-9]{5}$" .Release.Name -}}*/}}
@@ -10,6 +7,7 @@
   {{/*  {{- else -}}*/}}
   {{/*    {{- printf "Illegal release name. Should be like <dataset-name>-load-<suffix-length-5>. Current name: %s" .Release.Name | fail -}}*/}}
   {{/*  {{- end }}*/}}
+{{- if or (eq (lower .Values.dataloader.policy) "") (eq (lower .Values.dataloader.policy) "once") }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -17,8 +15,17 @@ metadata:
   labels:
     release: {{ .Release.Name }}
     role: dataload-job
-    app: juicefs
+    app: goosefs
     targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
+  ownerReferences:
+  {{- if .Values.owner.enabled }}
+    - apiVersion: {{ .Values.owner.apiVersion }}
+      blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+      controller: {{ .Values.owner.controller }}
+      kind: {{ .Values.owner.kind }}
+      name: {{ .Values.owner.name }}
+      uid: {{ .Values.owner.uid }}
+  {{- end }}
 spec:
   backoffLimit: {{ .Values.dataloader.backoffLimit | default "3" }}
   completions: 1
@@ -28,27 +35,17 @@ spec:
       name: {{ printf "%s-loader" .Release.Name }}
       annotations:
         sidecar.istio.io/inject: "false"
-      {{- if .Values.dataloader.annotations }}
-      {{- range $key, $val := .Values.dataloader.annotations }}
-        {{ $key | quote }}: {{ $val | quote }}
-      {{- end }}
-      {{- end }}
       labels:
         release: {{ .Release.Name }}
         role: dataload-pod
-        app: juicefs
+        app: goosefs
         targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
-      {{- if .Values.dataloader.labels }}
-      {{- range $key, $val := .Values.dataloader.labels }}
-        {{ $key | quote }}: {{ $val | quote }}
-      {{- end }}
-      {{- end }}
     spec:
       {{- if .Values.dataloader.schedulerName }}
       schedulerName: {{ .Values.dataloader.schedulerName }}
       {{- end }}
       {{- with .Values.dataloader.nodeSelector }}
-      nodeSelector:
+      nodeSelector: 
         {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.dataloader.affinity }}
@@ -60,11 +57,6 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       restartPolicy: Never
-      {{- range $key, $val := .Values.dataloader.options }}
-      {{- if eq $key "runtimeName" }}
-      serviceAccountName: {{ printf "%s-loader" $val | quote }}
-      {{- end }}
-      {{- end }}
       {{- with .Values.dataloader.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -72,65 +64,71 @@ spec:
       containers:
         - name: dataloader
           image: {{ required "Dataloader image should be set" .Values.dataloader.image }}
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: IfNotPresent 
           command: ["/bin/sh", "-c"]
-          args: ["/scripts/juicefs_dataload.sh"]
+          args: ["/scripts/env_init.sh && /scripts/dataload.sh"]
           {{- $targetPaths := "" }}
           {{- range .Values.dataloader.targetPaths }}
-          {{- $targetPaths = cat $targetPaths (required "Path must be set" .path) "" }}
+          {{- $targetPaths = cat $targetPaths (required "Path must be set" .path) ":" }}
           {{- end }}
-          {{- $targetPaths = $targetPaths | trim }}
+          {{- $targetPaths = $targetPaths | nospace | trimSuffix ":" }}
 
           {{- $pathReplicas := ""}}
           {{- range .Values.dataloader.targetPaths }}
           {{- $pathReplicas = cat $pathReplicas ( default 1 .replicas ) ":"}}
           {{- end }}
           {{- $pathReplicas = $pathReplicas | nospace | trimSuffix ":"}}
-
           env:
-            - name: STORAGE_ADDRESS
+            - name: GOOSEFS_CLIENT_HOSTNAME
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
-            {{- range $key, $val := .Values.dataloader.options }}
-            {{- if eq $key "cachedir" }}
-            - name: CACHEDIR
-              value: {{ $val | quote }}
-            {{- end }}
-            {{- if eq $key "mountpath" }}
-            - name: MOUNTPATH
-              value: {{ $val | quote }}
-            {{- end }}
-            {{- if eq $key "podNames" }}
-            - name: POD_NAMES
-              value: {{ $val | quote }}
-            {{- end }}
-            {{- if eq $key "timeout" }}
-            - name: TIMEOUT
-              value: {{ $val | quote }}
-            {{- end }}
-            {{- if eq $key "edition" }}
-            - name: EDITION
-              value: {{ $val | quote }}
-            {{- end }}
-            {{- end }}
+            - name: GOOSEFS_CLIENT_JAVA_OPTS
+              value: " -Dgoosefs.user.hostname=${GOOSEFS_CLIENT_HOSTNAME}"
+            - name: NEED_LOAD_METADATA
+              value: {{ default false .Values.dataloader.loadMetadata | quote }}
             - name: DATA_PATH
               value: {{ $targetPaths | quote }}
             - name: PATH_REPLICAS
               value: {{ $pathReplicas | quote }}
-            - name: POD_NAMESPACE
-              value: {{ .Release.Namespace | quote }}
+            {{- range $key, $val := .Values.dataloader.options }}
+            {{- if eq $key "atomicCache" }}
+            - name: ENABLE_ATOMIC_CACHE
+              value: {{ default false $val | quote }}
+            {{- else if eq $key "expireTime" }}
+            - name: ATOMIC_CACHE_TTL
+              value: {{ default 43200000 $val | quote }}
+            {{- end }}
+            {{- end }}
           envFrom:
             - configMapRef:
-                name: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}-juicefs-values
+                name: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}-config
           volumeMounts:
             - mountPath: /scripts
               name: data-load-script
+              {{- range .Values.dataloader.targetPaths }}
+            {{- if .fluidNative }}
+            - mountPath: {{ .path | trimAll "/" | replace "/" "-" | printf "/data/%s"}}
+              name: {{ .path | trimAll "/" | replace "/" "-" | printf "native-%s"}}
+              {{- end }}
+      {{- end }}
       volumes:
         - name: data-load-script
           configMap:
             name: {{ printf "%s-data-load-script" .Release.Name }}
             items:
-              - key: dataloader.distributedLoad
-                path: juicefs_dataload.sh
+              - key: dataloader.goosefs.init
+                path: env_init.sh
                 mode: 365
+              - key: dataloader.goosefs.distributedLoad
+                path: dataload.sh
+                mode: 365
+          {{- range .Values.dataloader.targetPaths }}
+        {{- if .fluidNative }}
+        - name: {{ .path | trimAll "/" | replace "/" "-" | printf "native-%s"}}
+          hostPath:
+            path: {{ .path }}
+          {{- end }}
+  {{- end }}
+
+{{- end }}

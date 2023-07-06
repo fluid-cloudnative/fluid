@@ -14,36 +14,24 @@
   limitations under the License.
 */
 
-package utils
+package kubeclient
 
 import (
 	"context"
-	"fmt"
-
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// GetDataLoad gets the DataLoad given its name and namespace
-func GetDataLoad(client client.Client, name, namespace string) (*datav1alpha1.DataLoad, error) {
+// GetJob gets the job given its name and namespace
+func GetJob(client client.Client, name, namespace string) (*v1.Job, error) {
 	key := types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
 	}
-	var dataload datav1alpha1.DataLoad
-	if err := client.Get(context.TODO(), key, &dataload); err != nil {
+	var job v1.Job
+	if err := client.Get(context.TODO(), key, &job); err != nil {
 		return nil, err
 	}
-	return &dataload, nil
-}
-
-// GetDataLoadReleaseName returns DataLoad helm release's name given the DataLoad's name
-func GetDataLoadReleaseName(name string) string {
-	return fmt.Sprintf("%s-loader", name)
-}
-
-// GetDataLoadJobName returns DataLoad job's name given the DataLoad helm release's name
-func GetDataLoadJobName(releaseName string) string {
-	return fmt.Sprintf("%s-job", releaseName)
+	return &job, nil
 }

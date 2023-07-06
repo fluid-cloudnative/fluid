@@ -1,0 +1,140 @@
+  {{/*  {{  $datasetName := "" -}}*/}}
+  {{/*  {{- $randomSuffix := "" -}}*/}}
+  {{/*  {{- if regexMatch "^[A-Za-z0-9._-]+-load-[A-Za-z0-9]{5}$" .Release.Name -}}*/}}
+  {{/*    {{- $arr := regexSplit "-load-" .Release.Name -1 -}}*/}}
+  {{/*    {{- $datasetName = first $arr -}}*/}}
+  {{/*    {{- $randomSuffix = last $arr -}}*/}}
+  {{/*  {{- else -}}*/}}
+  {{/*    {{- printf "Illegal release name. Should be like <dataset-name>-load-<suffix-length-5>. Current name: %s" .Release.Name | fail -}}*/}}
+  {{/*  {{- end }}*/}}
+{{- if eq (lower .Values.dataloader.policy) "cron" }}
+apiVersion: {{ ternary "batch/v1" "batch/v1beta1" (.Capabilities.APIVersions.Has "batch/v1/CronJob") }}
+kind: CronJob
+metadata:
+  name: {{ printf "%s-job" .Release.Name }}
+  labels:
+    release: {{ .Release.Name }}
+    role: dataload-cronjob
+    app: goosefs
+    targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
+    dataload: {{ .Values.name }}
+    fluid.io/jobPolicy: cron
+  ownerReferences:
+  {{- if .Values.owner.enabled }}
+    - apiVersion: {{ .Values.owner.apiVersion }}
+      blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+      controller: {{ .Values.owner.controller }}
+      kind: {{ .Values.owner.kind }}
+      name: {{ .Values.owner.name }}
+      uid: {{ .Values.owner.uid }}
+  {{- end }}
+spec:
+  schedule: "{{ .Values.dataloader.schedule }}"
+  jobTemplate:
+    spec:
+      backoffLimit: {{ .Values.dataloader.backoffLimit | default "3" }}
+      completions: 1
+      parallelism: 1
+      template:
+        metadata:
+          name: {{ printf "%s-loader" .Release.Name }}
+          annotations:
+            sidecar.istio.io/inject: "false"
+          labels:
+            release: {{ .Release.Name }}
+            role: dataload-pod
+            app: goosefs
+            cronjob: {{ printf "%s-job" .Release.Name }}
+            targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
+        spec:
+          {{- if .Values.dataloader.schedulerName }}
+          schedulerName: {{ .Values.dataloader.schedulerName }}
+          {{- end }}
+          {{- with .Values.dataloader.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
+          {{- with .Values.dataloader.affinity }}
+          affinity:
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
+          {{- with .Values.dataloader.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
+          restartPolicy: Never
+          {{- with .Values.dataloader.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
+          containers:
+            - name: dataloader
+              image: {{ required "Dataloader image should be set" .Values.dataloader.image }}
+              imagePullPolicy: IfNotPresent
+              command: ["/bin/sh", "-c"]
+              args: ["/scripts/env_init.sh && /scripts/dataload.sh"]
+              {{- $targetPaths := "" }}
+              {{- range .Values.dataloader.targetPaths }}
+              {{- $targetPaths = cat $targetPaths (required "Path must be set" .path) ":" }}
+              {{- end }}
+              {{- $targetPaths = $targetPaths | nospace | trimSuffix ":" }}
+
+              {{- $pathReplicas := ""}}
+              {{- range .Values.dataloader.targetPaths }}
+              {{- $pathReplicas = cat $pathReplicas ( default 1 .replicas ) ":"}}
+              {{- end }}
+              {{- $pathReplicas = $pathReplicas | nospace | trimSuffix ":"}}
+              env:
+                - name: GOOSEFS_CLIENT_HOSTNAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: status.podIP
+                - name: GOOSEFS_CLIENT_JAVA_OPTS
+                  value: " -Dgoosefs.user.hostname=${GOOSEFS_CLIENT_HOSTNAME}"
+                - name: NEED_LOAD_METADATA
+                  value: {{ default false .Values.dataloader.loadMetadata | quote }}
+                - name: DATA_PATH
+                  value: {{ $targetPaths | quote }}
+                - name: PATH_REPLICAS
+                  value: {{ $pathReplicas | quote }}
+                {{- range $key, $val := .Values.dataloader.options }}
+                {{- if eq $key "atomicCache" }}
+                - name: ENABLE_ATOMIC_CACHE
+                  value: {{ default false $val | quote }}
+                {{- else if eq $key "expireTime" }}
+                - name: ATOMIC_CACHE_TTL
+                  value: {{ default 43200000 $val | quote }}
+                {{- end }}
+                {{- end }}
+              envFrom:
+                - configMapRef:
+                    name: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}-config
+              volumeMounts:
+                - mountPath: /scripts
+                  name: data-load-script
+                  {{- range .Values.dataloader.targetPaths }}
+                {{- if .fluidNative }}
+                - mountPath: {{ .path | trimAll "/" | replace "/" "-" | printf "/data/%s"}}
+                  name: {{ .path | trimAll "/" | replace "/" "-" | printf "native-%s"}}
+                  {{- end }}
+          {{- end }}
+          volumes:
+            - name: data-load-script
+              configMap:
+                name: {{ printf "%s-data-load-script" .Release.Name }}
+                items:
+                  - key: dataloader.goosefs.init
+                    path: env_init.sh
+                    mode: 365
+                  - key: dataloader.goosefs.distributedLoad
+                    path: dataload.sh
+                    mode: 365
+              {{- range .Values.dataloader.targetPaths }}
+            {{- if .fluidNative }}
+            - name: {{ .path | trimAll "/" | replace "/" "-" | printf "native-%s"}}
+              hostPath:
+                path: {{ .path }}
+              {{- end }}
+      {{- end }}
+
+{{- end }}

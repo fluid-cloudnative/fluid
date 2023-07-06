@@ -35,7 +35,7 @@ type OperationInterface interface {
 	// GetChartsDirectory get the helm charts directory of data operation
 	GetChartsDirectory() string
 
-	// GetOperationType get the data operation type and also used as a lock key for dataset
+	// GetOperationType get the data operation type
 	GetOperationType() OperationType
 
 	// UpdateOperationApiStatus update the data operation status, object is the data operation crd instance.

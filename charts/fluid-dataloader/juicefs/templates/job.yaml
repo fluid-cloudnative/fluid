@@ -10,6 +10,7 @@
   {{/*  {{- else -}}*/}}
   {{/*    {{- printf "Illegal release name. Should be like <dataset-name>-load-<suffix-length-5>. Current name: %s" .Release.Name | fail -}}*/}}
   {{/*  {{- end }}*/}}
+{{- if or (eq (lower .Values.dataloader.policy) "") (eq (lower .Values.dataloader.policy) "once") }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -17,8 +18,17 @@ metadata:
   labels:
     release: {{ .Release.Name }}
     role: dataload-job
-    app: alluxio
+    app: juicefs
     targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
+  ownerReferences:
+  {{- if .Values.owner.enabled }}
+    - apiVersion: {{ .Values.owner.apiVersion }}
+      blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+      controller: {{ .Values.owner.controller }}
+      kind: {{ .Values.owner.kind }}
+      name: {{ .Values.owner.name }}
+      uid: {{ .Values.owner.uid }}
+  {{- end }}
 spec:
   backoffLimit: {{ .Values.dataloader.backoffLimit | default "3" }}
   completions: 1
@@ -36,7 +46,7 @@ spec:
       labels:
         release: {{ .Release.Name }}
         role: dataload-pod
-        app: alluxio
+        app: juicefs
         targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
       {{- if .Values.dataloader.labels }}
       {{- range $key, $val := .Values.dataloader.labels }}
@@ -48,7 +58,7 @@ spec:
       schedulerName: {{ .Values.dataloader.schedulerName }}
       {{- end }}
       {{- with .Values.dataloader.nodeSelector }}
-      nodeSelector: 
+      nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.dataloader.affinity }}
@@ -60,6 +70,11 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       restartPolicy: Never
+      {{- range $key, $val := .Values.dataloader.options }}
+      {{- if eq $key "runtimeName" }}
+      serviceAccountName: {{ printf "%s-loader" $val | quote }}
+      {{- end }}
+      {{- end }}
       {{- with .Values.dataloader.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -69,34 +84,55 @@ spec:
           image: {{ required "Dataloader image should be set" .Values.dataloader.image }}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh", "-c"]
-          args: ["/scripts/alluxio_env_init.sh && /scripts/alluxio_dataload.sh"]
+          args: ["/scripts/juicefs_dataload.sh"]
           {{- $targetPaths := "" }}
           {{- range .Values.dataloader.targetPaths }}
-          {{- $targetPaths = cat $targetPaths (required "Path must be set" .path) ":" }}
+          {{- $targetPaths = cat $targetPaths (required "Path must be set" .path) "" }}
           {{- end }}
-          {{- $targetPaths = $targetPaths | nospace | trimSuffix ":" }}
+          {{- $targetPaths = $targetPaths | trim }}
 
           {{- $pathReplicas := ""}}
           {{- range .Values.dataloader.targetPaths }}
           {{- $pathReplicas = cat $pathReplicas ( default 1 .replicas ) ":"}}
           {{- end }}
           {{- $pathReplicas = $pathReplicas | nospace | trimSuffix ":"}}
+
           env:
-            - name: ALLUXIO_CLIENT_HOSTNAME
+            - name: STORAGE_ADDRESS
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
-            - name: ALLUXIO_CLIENT_JAVA_OPTS
-              value: " -Dalluxio.user.hostname=${ALLUXIO_CLIENT_HOSTNAME}"
-            - name: NEED_LOAD_METADATA
-              value: {{ default false .Values.dataloader.loadMetadata | quote }}
+            {{- range $key, $val := .Values.dataloader.options }}
+            {{- if eq $key "cachedir" }}
+            - name: CACHEDIR
+              value: {{ $val | quote }}
+            {{- end }}
+            {{- if eq $key "mountpath" }}
+            - name: MOUNTPATH
+              value: {{ $val | quote }}
+            {{- end }}
+            {{- if eq $key "podNames" }}
+            - name: POD_NAMES
+              value: {{ $val | quote }}
+            {{- end }}
+            {{- if eq $key "timeout" }}
+            - name: TIMEOUT
+              value: {{ $val | quote }}
+            {{- end }}
+            {{- if eq $key "edition" }}
+            - name: EDITION
+              value: {{ $val | quote }}
+            {{- end }}
+            {{- end }}
             - name: DATA_PATH
               value: {{ $targetPaths | quote }}
             - name: PATH_REPLICAS
               value: {{ $pathReplicas | quote }}
+            - name: POD_NAMESPACE
+              value: {{ .Release.Namespace | quote }}
           envFrom:
             - configMapRef:
-                name: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}-config
+                name: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}-juicefs-values
           volumeMounts:
             - mountPath: /scripts
               name: data-load-script
@@ -105,10 +141,8 @@ spec:
           configMap:
             name: {{ printf "%s-data-load-script" .Release.Name }}
             items:
-              - key: dataloader.alluxio.init
-                path: alluxio_env_init.sh
-                mode: 365
               - key: dataloader.distributedLoad
-                path: alluxio_dataload.sh
+                path: juicefs_dataload.sh
                 mode: 365
 
+{{- end }}

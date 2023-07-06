@@ -13,3 +13,6 @@
 
 ### 0.9.0
 - Dataload support Affinity,Tolerations,NodeSelector,SchedulerName
+
+### 0.10.0
+- Support cron dataload

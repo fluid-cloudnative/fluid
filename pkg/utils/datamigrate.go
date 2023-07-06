@@ -21,9 +21,6 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/labels"
-
-	batchv1 "k8s.io/api/batch/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -45,35 +42,6 @@ func GetDataMigrate(client client.Client, name, namespace string) (*datav1alpha1
 	return &dataMigrate, nil
 }
 
-// GetDataMigrateJob gets the DataMigrate job given its name and namespace
-func GetDataMigrateJob(client client.Client, name, namespace string) (*batchv1.Job, error) {
-	key := types.NamespacedName{
-		Namespace: namespace,
-		Name:      name,
-	}
-	var job batchv1.Job
-	if err := client.Get(context.TODO(), key, &job); err != nil {
-		return nil, err
-	}
-	return &job, nil
-}
-
-// ListDataMigrateJobByCronjob gets the DataMigrate job by cronjob given its name and namespace
-func ListDataMigrateJobByCronjob(c client.Client, cronjobNamespacedName types.NamespacedName) ([]batchv1.Job, error) {
-	jobLabelSelector, err := labels.Parse(fmt.Sprintf("cronjob=%s", cronjobNamespacedName.Name))
-	if err != nil {
-		return nil, err
-	}
-	var jobList batchv1.JobList
-	if err := c.List(context.TODO(), &jobList, &client.ListOptions{
-		LabelSelector: jobLabelSelector,
-		Namespace:     cronjobNamespacedName.Namespace,
-	}); err != nil {
-		return nil, err
-	}
-	return jobList.Items, nil
-}
-
 // GetDataMigrateReleaseName returns DataMigrate helm release's name given the DataMigrate's name
 func GetDataMigrateReleaseName(name string) string {
 	return fmt.Sprintf("%s-migrate", name)
@@ -82,12 +50,6 @@ func GetDataMigrateReleaseName(name string) string {
 // GetDataMigrateJobName returns DataMigrate job(or cronjob)'s name given the DataMigrate helm release's name
 func GetDataMigrateJobName(releaseName string) string {
 	return fmt.Sprintf("%s-migrate", releaseName)
-}
-
-// GetDataMigrateRef returns the identity of the DataMigrate by combining its namespace and name.
-// The identity is used for identifying current lock holder on the target dataset.
-func GetDataMigrateRef(name, namespace string) string {
-	return fmt.Sprintf("%s/%s", namespace, name)
 }
 
 func GetTargetDatasetOfMigrate(client client.Client, dataMigrate datav1alpha1.DataMigrate) (targetDataset *datav1alpha1.Dataset, err error) {
