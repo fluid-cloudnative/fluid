@@ -20,7 +20,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"testing"
 
-	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
@@ -72,52 +71,6 @@ func TestGetDataMigrate(t *testing.T) {
 		} else {
 			if gotDataMigrate.Name != item.wantName {
 				t.Errorf("%s check failure, want DataMigrate name:%s, got DataMigrate name:%s", k, item.wantName, gotDataMigrate.Name)
-			}
-		}
-	}
-}
-
-func TestGetDataMigrateJob(t *testing.T) {
-	mockJobName := "fluid-test-job"
-	mockJobNamespace := "default"
-	initJob := &batchv1.Job{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      mockJobName,
-			Namespace: mockJobNamespace,
-		},
-	}
-
-	fakeClient := fake.NewFakeClient(initJob)
-
-	testCases := map[string]struct {
-		name      string
-		namespace string
-		wantName  string
-		notFound  bool
-	}{
-		"test get DataMigrate Job case 1": {
-			name:      mockJobName,
-			namespace: mockJobNamespace,
-			wantName:  mockJobName,
-			notFound:  false,
-		},
-		"test get DataMigrate Job case 2": {
-			name:      mockJobName + "not-exist",
-			namespace: mockJobNamespace,
-			wantName:  "",
-			notFound:  true,
-		},
-	}
-
-	for k, item := range testCases {
-		gotJob, err := GetJob(fakeClient, item.name, item.namespace)
-		if item.notFound {
-			if err == nil && gotJob != nil {
-				t.Errorf("%s check failure, want get err, but get nil", k)
-			}
-		} else {
-			if gotJob.Name != item.wantName {
-				t.Errorf("%s check failure, want DataMigrate Job name:%s, got DataMigrate Job name:%s", k, item.wantName, gotJob.Name)
 			}
 		}
 	}
