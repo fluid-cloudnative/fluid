@@ -74,6 +74,7 @@ type Fuse struct {
 	ReadinessProbe  *corev1.Probe          `json:"readinessProbe,omitempty"`
 	CacheDir        string                 `json:"cacheDir,omitempty"`
 	ConfigValue     string                 `json:"configValue"`
+	ConfigStorage   string                 `json:"configStorage"`
 }
 
 type Config struct {

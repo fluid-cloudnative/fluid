@@ -129,10 +129,17 @@ spec:
             path: {{ .Values.fuse.cacheDir }}
             type: DirectoryOrCreate
         {{- end }}
+        {{- if eq .Values.fuse.configStorage "secret"}}
         - name: thin-conf
           secret:
             secretName: {{ template "thin.fullname" . }}-fuse-conf
             defaultMode: 0444
+        {{- else if eq .Values.fuse.configStorage "configmap" }}
+        - name: thin-conf
+          configMap:
+            name: {{ template "thin.fullname" . }}-fuse-conf
+            defaultMode: 0444
+        {{- end }}
         - name: runtime
           configMap:
             name: {{ template "thin.fullname" . }}-runtimeset

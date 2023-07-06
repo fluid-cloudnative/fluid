@@ -19,16 +19,33 @@ package thin
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (t *ThinEngine) transformConfig(runtime *datav1alpha1.ThinRuntime,
-	dataset *datav1alpha1.Dataset, targetPath string) (config Config, err error) {
+const (
+	EnvFuseConfigStorage = "THIN_FUSE_CONFIG_STORAGE"
+)
+
+func getFuseConfigStorage() string {
+	if envVal, exists := os.LookupEnv(EnvFuseConfigStorage); exists {
+		return envVal
+	}
+	// default value
+	return "configmap"
+}
+
+func (t *ThinEngine) transformFuseConfig(runtime *datav1alpha1.ThinRuntime, dataset *datav1alpha1.Dataset, value *ThinValue) (err error) {
+	fuseConfigStorage := getFuseConfigStorage()
+
 	mounts := []datav1alpha1.Mount{}
 	// todo: support passing flexVolume info
 	pvAttributes := map[string]*corev1.CSIPersistentVolumeSource{}
@@ -38,28 +55,89 @@ func (t *ThinEngine) transformConfig(runtime *datav1alpha1.ThinRuntime,
 			pvcName := strings.TrimPrefix(m.MountPoint, common.VolumeScheme.String())
 			csiInfo, mountOptions, err := t.extractVolumeInfo(pvcName)
 			if err != nil {
-				return config, err
+				return errors.Wrapf(err, "failed to extract volume info from PersistentVolumeClaim \"%s\"", pvcName)
 			}
 
 			pvAttributes[pvcName] = csiInfo
 			pvMountOptions[pvcName] = mountOptions
 		}
 
-		m.Options, err = t.genUFSMountOptions(m, dataset.Spec.SharedOptions, dataset.Spec.SharedEncryptOptions)
+		m.Options, err = t.extractMountOptions(m, dataset, fuseConfigStorage, value)
 		if err != nil {
-			return
+			return err
 		}
-		// clean up the EncryptOptions in config.json
 		m.EncryptOptions = nil
 		mounts = append(mounts, m)
 	}
 
+	config := Config{}
 	config.Mounts = mounts
 	config.RuntimeOptions = runtime.Spec.Fuse.Options
-	config.TargetPath = targetPath
+	config.TargetPath = t.getTargetPath()
 	config.PersistentVolumeAttrs = pvAttributes
 	config.PersistentVolumeMountOptions = pvMountOptions
-	return
+
+	var configStr []byte
+	configStr, err = json.Marshal(config)
+	if err != nil {
+		return errors.Wrapf(err, "failed to dump fuse config to json, runtime: \"%s/%s\"", runtime.Namespace, runtime.Name)
+	}
+	value.Fuse.ConfigValue = string(configStr)
+	value.Fuse.ConfigStorage = fuseConfigStorage
+	return nil
+}
+
+func (t *ThinEngine) transformEncryptOptionsWithSecretVolumes(m datav1alpha1.Mount, sharedEncryptOptions []datav1alpha1.EncryptOption, value *ThinValue) (options map[string]string) {
+	options = make(map[string]string)
+	for _, encryptOpt := range append(sharedEncryptOptions, m.EncryptOptions...) {
+		secretName := encryptOpt.ValueFrom.SecretKeyRef.Name
+		secretMountPath := fmt.Sprintf("/etc/fluid/secrets/%s", secretName)
+		volName := fmt.Sprintf("thin-fuseconfig-%s", secretName)
+
+		volumeToAdd := corev1.Volume{
+			Name: volName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: secretName,
+				},
+			},
+		}
+		value.Fuse.Volumes = utils.AppendOrOverrideVolume(value.Fuse.Volumes, volumeToAdd)
+
+		volumeMountToAdd := corev1.VolumeMount{
+			Name:      volName,
+			ReadOnly:  true,
+			MountPath: secretMountPath,
+		}
+
+		value.Fuse.VolumeMounts = utils.AppendOrOverrideVolumeMounts(value.Fuse.VolumeMounts, volumeMountToAdd)
+		options[encryptOpt.Name] = filepath.Join(secretMountPath, encryptOpt.ValueFrom.SecretKeyRef.Key)
+	}
+
+	return options
+}
+
+func (t *ThinEngine) extractMountOptions(m datav1alpha1.Mount, dataset *datav1alpha1.Dataset, fuseConfigStorage string, value *ThinValue) (options map[string]string, err error) {
+	switch strings.ToLower(fuseConfigStorage) {
+	case "configmap":
+		options, err = t.genFuseMountOptions(m, dataset.Spec.SharedOptions, dataset.Spec.SharedEncryptOptions, false)
+		if err != nil {
+			return options, errors.Wrap(err, "failed to generate FUSE mount options from dataset mount info")
+		}
+		transformedEncryptOpts := t.transformEncryptOptionsWithSecretVolumes(m, dataset.Spec.SharedEncryptOptions, value)
+		for k, v := range transformedEncryptOpts {
+			options[k] = v
+		}
+	case "secret":
+		options, err = t.genFuseMountOptions(m, dataset.Spec.SharedOptions, dataset.Spec.SharedEncryptOptions, true)
+		if err != nil {
+			return options, errors.Wrap(err, "failed to generate FUSE mount options from dataset mount info")
+		}
+	default:
+		return options, fmt.Errorf("FUSE config storage \"%s\" is not supported, valid value: \"configmap\" or \"secret\"", fuseConfigStorage)
+	}
+
+	return options, nil
 }
 
 func (t *ThinEngine) extractVolumeInfo(pvcName string) (csiInfo *corev1.CSIPersistentVolumeSource, mountOptions []string, err error) {

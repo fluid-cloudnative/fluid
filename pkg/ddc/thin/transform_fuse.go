@@ -17,7 +17,6 @@
 package thin
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -110,21 +109,11 @@ func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *d
 		})
 	}
 
-	// 12. config
-	// config := make(map[string]string)
-	// config[value.Fuse.TargetPath] = options
-	config, err := t.transformConfig(runtime,
-		dataset,
-		value.Fuse.TargetPath)
+	// 12. fuse config
+	err = t.transformFuseConfig(runtime, dataset, value)
 	if err != nil {
 		return err
 	}
-	var configStr []byte
-	configStr, err = json.Marshal(config)
-	if err != nil {
-		return
-	}
-	value.Fuse.ConfigValue = string(configStr)
 
 	// 13. critical
 	// set critical fuse pod to avoid eviction
@@ -177,16 +166,6 @@ func (t *ThinEngine) parseFuseOptions(runtime *datav1alpha1.ThinRuntime, profile
 	}
 	// option in runtime will cover option in profile
 	for k, v := range runtime.Spec.Fuse.Options {
-		options[k] = v
-	}
-
-	mountOptions, err := t.genUFSMountOptions(dataset.Spec.Mounts[0], dataset.Spec.SharedOptions, dataset.Spec.SharedEncryptOptions)
-	if err != nil {
-		t.Log.Info("Error:", "err", err)
-		return "", err
-	}
-
-	for k, v := range mountOptions {
 		options[k] = v
 	}
 
