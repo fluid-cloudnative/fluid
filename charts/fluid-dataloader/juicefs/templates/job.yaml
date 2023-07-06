@@ -10,7 +10,7 @@
   {{/*  {{- else -}}*/}}
   {{/*    {{- printf "Illegal release name. Should be like <dataset-name>-load-<suffix-length-5>. Current name: %s" .Release.Name | fail -}}*/}}
   {{/*  {{- end }}*/}}
-{{- if or (eq (lower .Values.dataloader.policy) "none") (eq (lower .Values.dataloader.policy) "once") }}
+{{- if or (eq (lower .Values.dataloader.policy) "") (eq (lower .Values.dataloader.policy) "once") }}
 apiVersion: batch/v1
 kind: Job
 metadata:

@@ -53,7 +53,7 @@ func (r *OnceStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestCont
 	jobName := utils.GetDataLoadJobName(releaseName)
 
 	ctx.Log.V(1).Info("DataLoad chart already existed, check its running status")
-	job, err := utils.GetJob(r.Client, jobName, ctx.Namespace)
+	job, err := kubeclient.GetJob(r.Client, jobName, ctx.Namespace)
 	if err != nil {
 		// helm release found but job missing, delete the helm release and requeue
 		if utils.IgnoreNotFound(err) == nil {
