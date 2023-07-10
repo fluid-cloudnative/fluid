@@ -18,7 +18,9 @@ package dataload
 
 import (
 	"context"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/compatibility"
 	batchv1 "k8s.io/api/batch/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -95,11 +97,20 @@ func (r *DataLoadReconciler) Reconcile(context context.Context, req ctrl.Request
 
 // SetupWithManager sets up the controller with the given controller manager
 func (r *DataLoadReconciler) SetupWithManager(mgr ctrl.Manager, options controller.Options) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		WithOptions(options).
-		For(&datav1alpha1.DataLoad{}).
-		Owns(&batchv1.CronJob{}).
-		Complete(r)
+	if compatibility.IsBatchV1CronJobSupported() {
+		return ctrl.NewControllerManagedBy(mgr).
+			WithOptions(options).
+			For(&datav1alpha1.DataLoad{}).
+			Owns(&batchv1.CronJob{}).
+			Complete(r)
+	} else {
+		ctrl.Log.Info("batch/v1 cronjobs cannnot be found in cluster, fallback to watch batch/v1beta1 cronjobs for compatibility")
+		return ctrl.NewControllerManagedBy(mgr).
+			WithOptions(options).
+			For(&datav1alpha1.DataLoad{}).
+			Owns(&batchv1beta1.CronJob{}).
+			Complete(r)
+	}
 }
 
 func (r *DataLoadReconciler) ControllerName() string {
