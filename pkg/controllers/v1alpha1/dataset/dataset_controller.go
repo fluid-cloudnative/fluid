@@ -222,7 +222,7 @@ func (r *DatasetReconciler) reconcileDatasetDeletion(ctx reconcileRequestContext
 			}
 			ctx.Log.V(1).Info("Update dataset datasetRef successfully", "Before", ctx.Dataset.Status.DatasetRef, "After", datasetRefToUpdate)
 			// if dataset has been updated, return to continue next round reconcile
-			return utils.RequeueImmediately()
+			return utils.RequeueAfterInterval(1 * time.Second)
 		}
 
 		// 2.3 if there are datasets mounted this dataset, dataset can not be deleted
