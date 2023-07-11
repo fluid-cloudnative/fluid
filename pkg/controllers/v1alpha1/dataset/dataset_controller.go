@@ -206,27 +206,27 @@ func (r *DatasetReconciler) reconcileDatasetDeletion(ctx reconcileRequestContext
 	// 2. if there are datasets mounted this dataset, check reference dataset existence and requeue if there still has reference dataset
 	if len(ctx.Dataset.Status.DatasetRef) > 0 {
 		// 2.1 check reference dataset existence and remove not found dataset
-		datasetRefUpToDate, err := utils.RemoveNotFoundDatasetRef(r.Client, ctx.Dataset, ctx.Log)
+		datasetRefToUpdate, err := utils.RemoveNotFoundDatasetRef(r.Client, ctx.Dataset, ctx.Log)
 		if err != nil {
 			ctx.Log.Error(err, "Failed to update datasetRef", "DatasetDeleteError", ctx)
 			return utils.RequeueAfterInterval(time.Duration(10 * time.Second))
 		}
 
 		// 2.2 update dataset if datasetRef change
-		if !reflect.DeepEqual(datasetRefUpToDate, ctx.Dataset.Status.DatasetRef) {
-			datasetUpToDate := ctx.Dataset.DeepCopy()
-			datasetUpToDate.Status.DatasetRef = datasetRefUpToDate
-			if err := r.Status().Update(ctx, datasetUpToDate); err != nil {
-				ctx.Log.Error(err, "DatasetRef has changed but update failed", "DatasetDeleteError", datasetUpToDate)
+		if !reflect.DeepEqual(datasetRefToUpdate, ctx.Dataset.Status.DatasetRef) {
+			datasetToUpdate := ctx.Dataset.DeepCopy()
+			datasetToUpdate.Status.DatasetRef = datasetRefToUpdate
+			if err := r.Status().Update(ctx, datasetToUpdate); err != nil {
+				ctx.Log.Error(err, "DatasetRef has changed but update failed", "DatasetDeleteError", datasetToUpdate)
 				return utils.RequeueAfterInterval(time.Duration(10 * time.Second))
 			}
-			ctx.Log.V(1).Info("Update dataset datasetRef successfully", "Before", ctx.Dataset.Status.DatasetRef, "After", datasetRefUpToDate)
+			ctx.Log.V(1).Info("Update dataset datasetRef successfully", "Before", ctx.Dataset.Status.DatasetRef, "After", datasetRefToUpdate)
 			// if dataset has been updated, return to continue next round reconcile
-			return utils.RequeueAfterInterval(10 * time.Second)
+			return utils.RequeueImmediately()
 		}
 
-		// 2.3 if there are datasets mounted this dataset, then requeue
-		if len(ctx.Dataset.Status.DatasetRef) > 0 {
+		// 2.3 if there are datasets mounted this dataset, dataset can not be deleted
+		if len(datasetRefToUpdate) > 0 {
 			log.Error(errors.New("DatasetRef is not nil"), "Failed to delete dataset because there are datasets mounted to it", "DatasetDeleteError", ctx,
 				"MountedDataset", ctx.Dataset.Status.DatasetRef)
 			r.Recorder.Eventf(&ctx.Dataset, v1.EventTypeWarning, common.ErrorDeleteDataset,
