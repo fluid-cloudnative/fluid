@@ -101,8 +101,8 @@ print(rawStr)
 script = """
 #!/bin/sh
 set -ex
-export AWS_ACCESS_KEY_ID=$akId
-export AWS_SECRET_ACCESS_KEY=$akSecret
+export AWS_ACCESS_KEY_ID=`cat $akId`
+export AWS_SECRET_ACCESS_KEY=`cat $akSecret`
 
 mkdir -p $targetPath
 
@@ -128,6 +128,8 @@ with open("mount-minio.sh", "w") as f:
 1. 读取`/etc/fluid/config.json`文件中的json字符串，Fluid会将Fuse客户端挂载所需的参数存储并挂载到Fuse容器的`/etc/fluid/config.json`文件。
 2. 解析json字符串，从中提取Fuse客户端挂载所需的参数。例如，上述示例中的`url`、`bucket`、`minio-access-key`、`minio-access-secret`等参数。
 3. 提取出所需参数后，输出挂载脚本到文件`mount-minio.sh`
+
+| ⚠️注意：从Fluid v1.0版本开始，`dataset.spec.mounts[*].encryptOptions`定义的加密参数，将无法直接从`/etc/fluid/config.json`文件中获取其具体值。`/etc/fluid/config.json`文件中仅会提供各个加密参数具体值的存储路径，因此需要参数解析脚本额外执行文件读取操作（例如：上述示例中的"export AWS_ACCESS_KEY_ID=\`cat $akId\`"）。
 
 接着，使用如下Dockerfile制作镜像，这里我们直接选择包含`goofys`客户端程序的镜像（i.e. `cloudposse/goofys`）作为Dockerfile的基镜像：
 
