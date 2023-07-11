@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -xe
 
-# if KUBELET_ROOTDIR not contains config.yaml, it is not likely a real kubelet rootdir, exit with 1
-if [ ! "$(ls $KUBELET_ROOTDIR/config.yaml)" ] ; then
-  echo "KUBELET_ROOTDIR [$KUBELET_ROOTDIR] is not likely a real kubelet rootdir, please configure csi.kubelet.rootDir in helm charts! "
-  exit 1
+# Check if required subfolders exist in $KUBELET_ROOTDIR folder
+if [ ! -d "$KUBELET_ROOTDIR/pods" ]; then
+    echo "Error: $KUBELET_ROOTDIR does not contain /pods folder, it is not a kubelet rootdir."
+    echo "See https://github.com/fluid-cloudnative/fluid/blob/master/docs/zh/troubleshooting/debug-fuse.md#%E6%AD%A5%E9%AA%A41-1 for more information!"
+    exit 1
 fi
 
 rm -f $KUBELET_ROOTDIR/csi-plugins/fuse.csi.fluid.io/csi.sock
