@@ -284,7 +284,7 @@ func TestCheckReferenceDatasetRuntime(t *testing.T) {
 					ThinRuntimeProfileName: "",
 				},
 			},
-			want:    false,
+			want:    true,
 			wantErr: false,
 		},
 		{
