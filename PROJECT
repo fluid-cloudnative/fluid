@@ -92,4 +92,13 @@ resources:
   kind: DataMigrate
   path: github.com/fluid-cloudnative/fluid/api/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: fluid.io
+  group: data
+  kind: DataProcess
+  path: github.com/fluid-cloudnative/fluid/api/v1alpha1
+  version: v1alpha1
 version: "3"

@@ -47,6 +47,10 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataMigrate":              schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrate(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataMigrateList":          schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateList(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataMigrateSpec":          schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataProcess":              schema_fluid_cloudnative_fluid_api_v1alpha1_DataProcess(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataProcessList":          schema_fluid_cloudnative_fluid_api_v1alpha1_DataProcessList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataProcessSpec":          schema_fluid_cloudnative_fluid_api_v1alpha1_DataProcessSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataProcessStatus":        schema_fluid_cloudnative_fluid_api_v1alpha1_DataProcessStatus(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataRestoreLocation":      schema_fluid_cloudnative_fluid_api_v1alpha1_DataRestoreLocation(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataToMigrate":            schema_fluid_cloudnative_fluid_api_v1alpha1_DataToMigrate(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Dataset":                  schema_fluid_cloudnative_fluid_api_v1alpha1_Dataset(ref),
@@ -1429,6 +1433,133 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateSpec(ref common.Refe
 		},
 		Dependencies: []string{
 			"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataToMigrate", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.Toleration"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_DataProcess(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "DataProcess is the Schema for the dataprocesses API",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.DataProcessSpec"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.DataProcessStatus"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataProcessSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.DataProcessStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_DataProcessList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "DataProcessList contains a list of DataProcess",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.DataProcess"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataProcess", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_DataProcessSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "DataProcessSpec defines the desired state of DataProcess",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"foo": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Foo is an example field of DataProcess. Edit dataprocess_types.go to remove/update",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_DataProcessStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "DataProcessStatus defines the observed state of DataProcess",
+				Type:        []string{"object"},
+			},
+		},
 	}
 }
 
