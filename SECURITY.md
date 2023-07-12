@@ -27,7 +27,7 @@ If you know of a publicly disclosed security vulnerability please IMMEDIATELY em
 
 ### Compensation
 
-We do not provide compensations for reporting vulnerabilities except for eternal gratitude.
+We do not provide compensations for reporting vulnerabilities except for eternal gratitud.
 
 ## Communication
 
