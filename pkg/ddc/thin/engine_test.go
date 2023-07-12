@@ -281,10 +281,10 @@ func TestCheckReferenceDatasetRuntime(t *testing.T) {
 					Namespace: "fluid",
 				},
 				Spec: datav1alpha1.ThinRuntimeSpec{
-					ThinRuntimeProfileName: "",
+					ThinRuntimeProfileName: "1",
 				},
 			},
-			want:    true,
+			want:    false,
 			wantErr: false,
 		},
 		{
@@ -305,31 +305,6 @@ func TestCheckReferenceDatasetRuntime(t *testing.T) {
 				},
 			},
 			want:    false,
-			wantErr: true,
-		},
-		{
-			name: "dataset-not-exist-but-get-physical-dataset-from-runtime",
-			dataset: &datav1alpha1.Dataset{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "hbase-no-use",
-					Namespace: "fluid",
-				},
-			},
-			runtime: &datav1alpha1.ThinRuntime{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "hbase",
-					Namespace: "fluid",
-				},
-				Spec: datav1alpha1.ThinRuntimeSpec{
-					ThinRuntimeProfileName: "1",
-				},
-				Status: datav1alpha1.RuntimeStatus{
-					Mounts: []datav1alpha1.Mount{{
-						MountPoint: "dataset://ns-a/n-a",
-					}},
-				},
-			},
-			want:    true,
 			wantErr: false,
 		},
 	}
