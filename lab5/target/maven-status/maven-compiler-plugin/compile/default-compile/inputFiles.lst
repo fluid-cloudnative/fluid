@@ -1,0 +1,17 @@
+F:\lab6\fluid\lab5\src\main\java\log\parse\ParseMapper.java
+F:\lab6\fluid\lab5\src\main\java\log\parse\ParseDriver.java
+F:\lab6\fluid\lab5\src\main\java\log\visitcount\Visitreduce.java
+F:\lab6\fluid\lab5\src\main\java\log\ipal\Ipalmap.java
+F:\lab6\fluid\lab5\src\main\java\log\visitcount\Visitmain.java
+F:\lab6\fluid\lab5\src\main\java\log\ipal\IpUtil.java
+F:\lab6\fluid\lab5\src\main\java\log\perhourvisit\Hourmap.java
+F:\lab6\fluid\lab5\src\main\java\log\ipal\Ipalreduce.java
+F:\lab6\fluid\lab5\src\main\java\log\ipcount\Ipmain.java
+F:\lab6\fluid\lab5\src\main\java\log\parse\ParseReducer.java
+F:\lab6\fluid\lab5\src\main\java\log\ipcount\Ipcombiner.java
+F:\lab6\fluid\lab5\src\main\java\log\ipcount\Ipmap.java
+F:\lab6\fluid\lab5\src\main\java\log\ipcount\Ipreduce.java
+F:\lab6\fluid\lab5\src\main\java\log\perhourvisit\Hourreduce.java
+F:\lab6\fluid\lab5\src\main\java\log\visitcount\Visitmap.java
+F:\lab6\fluid\lab5\src\main\java\log\ipal\Ipalmain.java
+F:\lab6\fluid\lab5\src\main\java\log\perhourvisit\Hourmain.java
