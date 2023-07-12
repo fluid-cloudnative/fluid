@@ -18,7 +18,6 @@ package v1alpha1
 
 import (
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -155,65 +154,6 @@ type AlluxioFuseSpec struct {
 	// PodMetadata defines labels and annotations that will be propagated to Alluxio's fuse pods
 	// +optional
 	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
-}
-
-// Level describes configurations a tier needs. <br>
-// Refer to <a href="https://docs.alluxio.io/os/user/stable/en/core-services/Caching.html#configuring-tiered-storage">Configuring Tiered Storage</a> for more info
-type Level struct {
-	// Alias string `json:"alias,omitempty"`
-
-	// Medium Type of the tier. One of the three types: `MEM`, `SSD`, `HDD`
-	// +kubebuilder:validation:Enum=MEM;SSD;HDD
-	// +required
-	MediumType common.MediumType `json:"mediumtype"`
-
-	// VolumeType is the volume type of the tier. Should be one of the three types: `hostPath`, `emptyDir` and `volumeTemplate`.
-	// If not set, defaults to hostPath.
-	// +kubebuilder:default=hostPath
-	// +kubebuilder:validation:Enum=hostPath;emptyDir
-	// +optional
-	VolumeType common.VolumeType `json:"volumeType"`
-
-	// VolumeSource is the volume source of the tier. It follows the form of corev1.VolumeSource.
-	// For now, users should only specify VolumeSource when VolumeType is set to emptyDir.
-	VolumeSource VolumeSource `json:"volumeSource,omitempty"`
-
-	// File paths to be used for the tier. Multiple paths are supported.
-	// Multiple paths should be separated with comma. For example: "/mnt/cache1,/mnt/cache2".
-	// +kubebuilder:validation:MinLength=1
-	// +required
-	Path string `json:"path,omitempty"`
-
-	// Quota for the whole tier. (e.g. 100Gi)
-	// Please note that if there're multiple paths used for this tierstore,
-	// the quota will be equally divided into these paths. If you'd like to
-	// set quota for each, path, see QuotaList for more information.
-	// +optional
-	Quota *resource.Quantity `json:"quota,omitempty"`
-
-	// QuotaList are quotas used to set quota on multiple paths. Quotas should be separated with comma.
-	// Quotas in this list will be set to paths with the same order in Path.
-	// For example, with Path defined with "/mnt/cache1,/mnt/cache2" and QuotaList set to "100Gi, 50Gi",
-	// then we get 100GiB cache storage under "/mnt/cache1" and 50GiB under "/mnt/cache2".
-	// Also note that num of quotas must be consistent with the num of paths defined in Path.
-	// +optional
-	// +kubebuilder:validation:Pattern:="^((\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+)))),)+((\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?)$"
-	QuotaList string `json:"quotaList,omitempty"`
-
-	// StorageType common.CacheStoreType `json:"storageType,omitempty"`
-	// float64 is not supported, https://github.com/kubernetes-sigs/controller-tools/issues/245
-
-	// Ratio of high watermark of the tier (e.g. 0.9)
-	High string `json:"high,omitempty"`
-
-	// Ratio of low watermark of the tier (e.g. 0.7)
-	Low string `json:"low,omitempty"`
-}
-
-// TieredStore is a description of the tiered store
-type TieredStore struct {
-	// configurations for multiple tiers
-	Levels []Level `json:"levels,omitempty"`
 }
 
 // Data management strategies
