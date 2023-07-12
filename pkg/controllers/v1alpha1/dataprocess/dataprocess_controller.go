@@ -24,12 +24,16 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/controllers"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
+	cdataprocess "github.com/fluid-cloudnative/fluid/pkg/dataprocess"
+	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 )
 
 const controllerName string = "DataProcessReconciler"
@@ -66,12 +70,32 @@ func NewDataProcessReconciler(client client.Client,
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
-func (r *DataProcessReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+func (r *DataProcessReconciler) Reconcile(context context.Context, req ctrl.Request) (ctrl.Result, error) {
+	ctx := dataoperation.ReconcileRequestContext{
+		ReconcileRequestContext: cruntime.ReconcileRequestContext{
+			Context:  context,
+			Log:      r.Log.WithValues(string(r.GetOperationType()), req.NamespacedName),
+			Recorder: r.Recorder,
+			Client:   r.Client,
+			Category: common.AccelerateCategory,
+		},
+		DataOpFinalizerName: cdataprocess.DataProcessFinalizer,
+	}
 
-	// TODO(user): your logic here
+	dataprocess, err := utils.GetDataProcess(r.Client, req.Name, req.Namespace)
+	if err != nil {
+		if utils.IgnoreNotFound(err) == nil {
+			ctx.Log.Info("DataProcess not found")
+			return utils.NoRequeue()
+		} else {
+			ctx.Log.Error(err, "failed to get DataProcess")
+			return utils.RequeueIfError(errors.Wrap(err, "failed to get DataProcess info"))
+		}
+	}
+	ctx.DataObject = dataprocess
+	ctx.OpStatus = &dataprocess.Status
 
-	return ctrl.Result{}, nil
+	return r.ReconcileInternal(ctx)
 }
 
 // SetupWithManager sets up the controller with the Manager.

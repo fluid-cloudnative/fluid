@@ -50,7 +50,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataProcess":              schema_fluid_cloudnative_fluid_api_v1alpha1_DataProcess(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataProcessList":          schema_fluid_cloudnative_fluid_api_v1alpha1_DataProcessList(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataProcessSpec":          schema_fluid_cloudnative_fluid_api_v1alpha1_DataProcessSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataProcessStatus":        schema_fluid_cloudnative_fluid_api_v1alpha1_DataProcessStatus(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataRestoreLocation":      schema_fluid_cloudnative_fluid_api_v1alpha1_DataRestoreLocation(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataToMigrate":            schema_fluid_cloudnative_fluid_api_v1alpha1_DataToMigrate(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Dataset":                  schema_fluid_cloudnative_fluid_api_v1alpha1_Dataset(ref),
@@ -1472,14 +1471,14 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataProcess(ref common.Referenc
 					"status": {
 						SchemaProps: spec.SchemaProps{
 							Default: map[string]interface{}{},
-							Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.DataProcessStatus"),
+							Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataProcessSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.DataProcessStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataProcessSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -1547,17 +1546,6 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataProcessSpec(ref common.Refe
 						},
 					},
 				},
-			},
-		},
-	}
-}
-
-func schema_fluid_cloudnative_fluid_api_v1alpha1_DataProcessStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "DataProcessStatus defines the observed state of DataProcess",
-				Type:        []string{"object"},
 			},
 		},
 	}

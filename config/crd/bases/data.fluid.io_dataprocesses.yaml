@@ -41,7 +41,58 @@ spec:
                 type: string
             type: object
           status:
-            description: DataProcessStatus defines the observed state of DataProcess
+            description: OperationStatus defines the observed state of operation
+            properties:
+              conditions:
+                description: Conditions consists of transition information on operation's
+                  Phase
+                items:
+                  description: Condition explains the transitions on phase
+                  properties:
+                    lastProbeTime:
+                      description: LastProbeTime describes last time this condition
+                        was updated.
+                      format: date-time
+                      type: string
+                    lastTransitionTime:
+                      description: LastTransitionTime describes last time the condition
+                        transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: Message is a human-readable message indicating
+                        details about the transition
+                      type: string
+                    reason:
+                      description: Reason for the condition's last transition
+                      type: string
+                    status:
+                      description: Status of the condition, one of `True`, `False`
+                        or `Unknown`
+                      type: string
+                    type:
+                      description: Type of condition, either `Complete` or `Failed`
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+              duration:
+                description: Duration tell user how much time was spent to operation
+                type: string
+              infos:
+                additionalProperties:
+                  type: string
+                description: Infos operation customized name-value
+                type: object
+              phase:
+                description: Phase describes current phase of operation
+                type: string
+            required:
+            - conditions
+            - duration
+            - phase
             type: object
         type: object
     served: true

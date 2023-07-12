@@ -31,12 +31,6 @@ type DataProcessSpec struct {
 	Foo string `json:"foo,omitempty"`
 }
 
-// DataProcessStatus defines the observed state of DataProcess
-type DataProcessStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-}
-
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
@@ -45,8 +39,8 @@ type DataProcess struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   DataProcessSpec   `json:"spec,omitempty"`
-	Status DataProcessStatus `json:"status,omitempty"`
+	Spec   DataProcessSpec `json:"spec,omitempty"`
+	Status OperationStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
