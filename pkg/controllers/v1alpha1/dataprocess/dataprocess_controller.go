@@ -1,35 +1,56 @@
 /*
+  Copyright 2023 The Fluid Authors.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+      http://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
 */
 
-package controllers
+package dataprocess
 
 import (
 	"context"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/controllers"
+	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
+	"github.com/go-logr/logr"
 )
+
+const controllerName string = "DataProcessReconciler"
 
 // DataProcessReconciler reconciles a DataProcess object
 type DataProcessReconciler struct {
-	client.Client
 	Scheme *runtime.Scheme
+	*controllers.OperationReconciler
+}
+
+var _ dataoperation.OperationInterface = &DataProcessReconciler{}
+
+func NewDataProcessReconciler(client client.Client,
+	log logr.Logger,
+	scheme *runtime.Scheme,
+	recorder record.EventRecorder) *DataProcessReconciler {
+	r := &DataProcessReconciler{
+		Scheme: scheme,
+	}
+	r.OperationReconciler = controllers.NewDataOperationReconciler(r, client, log, recorder)
+	return r
 }
 
 //+kubebuilder:rbac:groups=data.fluid.io,resources=dataprocesses,verbs=get;list;watch;create;update;patch;delete
@@ -54,8 +75,13 @@ func (r *DataProcessReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *DataProcessReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *DataProcessReconciler) SetupWithManager(mgr ctrl.Manager, options controller.Options) error {
 	return ctrl.NewControllerManagedBy(mgr).
+		WithOptions(options).
 		For(&datav1alpha1.DataProcess{}).
 		Complete(r)
+}
+
+func (r *DataProcessReconciler) ControllerName() string {
+	return controllerName
 }
