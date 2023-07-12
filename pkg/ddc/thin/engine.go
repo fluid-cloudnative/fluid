@@ -115,25 +115,6 @@ func Precheck(client client.Client, key types.NamespacedName) (found bool, err e
 
 // CheckReferenceDatasetRuntime judge if this runtime is used for handling dataset mounting another dataset.
 func CheckReferenceDatasetRuntime(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.ThinRuntime) (bool, error) {
-	if len(runtime.Status.Mounts) != 0 {
-		// get physical dataset from runtime mounts
-		ctx.Log.V(1).Info("Get physical dataset from runtime mounts")
-		physicalDataset := base.GetPhysicalDatasetFromMounts(runtime.Status.Mounts)
-		if len(physicalDataset) != 0 {
-			return true, nil
-		}
-	}
-
-	dataset, err := utils.GetDataset(ctx.Client, runtime.Name, runtime.Namespace)
-	if err != nil {
-		return false, err
-	}
-	// get physicalDataset from dataset
-	ctx.Log.V(1).Info("Get physical dataset from virtual dataset mounts")
-	physicalDataset := base.GetPhysicalDatasetFromMounts(dataset.Spec.Mounts)
-	if len(physicalDataset) != 0 {
-		return true, nil
-	}
-
-	return false, nil
+	// Reference runtime must have empty spec.profileName
+	return len(runtime.Spec.ThinRuntimeProfileName) == 0, nil
 }
