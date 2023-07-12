@@ -17,6 +17,9 @@
 package dataprocess
 
 import (
+	"context"
+	"fmt"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 	"github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -40,12 +43,19 @@ func (r *DataProcessReconciler) GetChartsDirectory() string {
 
 // GetOperationType get the data operation type
 func (r *DataProcessReconciler) GetOperationType() dataoperation.OperationType {
-	panic("not implemented") // TODO: Implement
+	return dataoperation.DataProcess
 }
 
 // UpdateOperationApiStatus update the data operation status, object is the data operation crd instance.
 func (r *DataProcessReconciler) UpdateOperationApiStatus(object client.Object, opStatus *datav1alpha1.OperationStatus) error {
-	panic("not implemented") // TODO: Implement
+	dataProcess, ok := object.(*datav1alpha1.DataProcess)
+	if !ok {
+		return fmt.Errorf("%+v is not a type of DataProcess", object)
+	}
+
+	var dataProcessCpy = dataProcess.DeepCopy()
+	dataProcessCpy.Status = *opStatus.DeepCopy()
+	return r.Status().Update(context.TODO(), dataProcessCpy)
 }
 
 // Validate check the data operation spec is valid or not, if not valid return error with conditions
@@ -55,17 +65,18 @@ func (r *DataProcessReconciler) Validate(ctx runtime.ReconcileRequestContext, ob
 
 // UpdateStatusInfoForCompleted update the status infos field for phase completed, the parameter infos is not nil
 func (r *DataProcessReconciler) UpdateStatusInfoForCompleted(object client.Object, infos map[string]string) error {
-	panic("not implemented") // TODO: Implement
+	// DataProcess does not need to update OperationStatus's Infos field.
+	return nil
 }
 
 // SetTargetDatasetStatusInProgress set the dataset status for certain field when data operation executing.
 func (r *DataProcessReconciler) SetTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
-	panic("not implemented") // TODO: Implement
+	// DataProcess does not need to update Dataset status before execution.
 }
 
 // RemoveTargetDatasetStatusInProgress remove the dataset status for certain field when data operation finished.
 func (r *DataProcessReconciler) RemoveTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
-	panic("not implemented") // TODO: Implement
+	// DataProcess does not need to recover Dataset status after execution.
 }
 
 func (r *DataProcessReconciler) GetStatusHandler(object client.Object) dataoperation.StatusHandler {

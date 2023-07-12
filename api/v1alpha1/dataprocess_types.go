@@ -19,14 +19,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // DataProcessSpec defines the desired state of DataProcess
 type DataProcessSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
+	
 	// Foo is an example field of DataProcess. Edit dataprocess_types.go to remove/update
 	Foo string `json:"foo,omitempty"`
 }
