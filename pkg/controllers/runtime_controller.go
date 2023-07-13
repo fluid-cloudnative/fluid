@@ -262,7 +262,7 @@ func (r *RuntimeReconciler) ReconcileRuntime(engine base.Engine, ctx cruntime.Re
 
 	// 2.Setup the volume
 	err = engine.CreateVolume()
-	if err != nil {
+	if err != nil && utils.IgnoreAlreadyExists(err) != nil {
 		r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to setup volume due to error %v", err)
 		log.Error(err, "Failed to steup the volume")
 		// return utils.RequeueIfError(errors.Wrap(err, "Failed to steup the ddc engine"))
