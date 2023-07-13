@@ -35,10 +35,49 @@ spec:
           spec:
             description: DataProcessSpec defines the desired state of DataProcess
             properties:
-              foo:
-                description: Foo is an example field of DataProcess. Edit dataprocess_types.go
-                  to remove/update
-                type: string
+              dataset:
+                description: TargetDataset defines which dataset will be processed
+                  by DataProcess. Under the hood, the dataset's pvc will be mounted
+                  to the given mountPath of the DataProcess's containers.
+                properties:
+                  mountPath:
+                    description: MountPath defines where the Dataset should be mounted
+                      in DataProcess's containers.
+                    type: string
+                  name:
+                    description: Name defines name of the target dataset
+                    type: string
+                  namespace:
+                    description: Namespace defines namespace of the target dataset
+                    type: string
+                  subPath:
+                    description: SubPath defines subpath of the target dataset to
+                      mount.
+                    type: string
+                required:
+                - mountPath
+                - name
+                type: object
+              processor:
+                description: Processor defines the actual processor for DataProcess.
+                  Processor can be either of a Job or a Shell script.
+                properties:
+                  job:
+                    properties:
+                      image:
+                        type: string
+                      script:
+                        type: string
+                      serviceAccountName:
+                        type: string
+                    required:
+                    - image
+                    - script
+                    type: object
+                type: object
+            required:
+            - dataset
+            - processor
             type: object
           status:
             description: OperationStatus defines the observed state of operation

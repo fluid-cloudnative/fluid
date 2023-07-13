@@ -19,11 +19,43 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// TargetDataset defines which dataset will be processed by DataProcess.
+// Under the hood, the dataset's pvc will be mounted to the given mountPath of the DataProcess's containers.
+type TargetDatasetWithMountPath struct {
+	TargetDataset `json:",inline"`
+
+	// MountPath defines where the Dataset should be mounted in DataProcess's containers.
+	// +required
+	MountPath string `json:"mountPath"`
+
+	// SubPath defines subpath of the target dataset to mount.
+	// +optional
+	SubPath string `json:"subPath,omitempty"`
+}
+
+// Processor defines the actual processor for DataProcess. Processor can be either of a Job or a Shell script.
+type Processor struct {
+	Job *ProcessorJob `json:"job,omitempty"`
+}
+
 // DataProcessSpec defines the desired state of DataProcess
 type DataProcessSpec struct {
-	
-	// Foo is an example field of DataProcess. Edit dataprocess_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// +requried
+	Dataset TargetDatasetWithMountPath `json:"dataset"`
+
+	// +required
+	Processor Processor `json:"processor"`
+}
+
+type ProcessorJob struct {
+	// +required
+	Image string `json:"image"`
+
+	// +required
+	Script string `json:"script"`
+
+	// +optional
+	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 }
 
 //+kubebuilder:object:root=true
