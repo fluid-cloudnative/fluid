@@ -18,12 +18,14 @@ package utils
 
 import (
 	"context"
+	"fmt"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// GetDataProcess gets the DataProcess given its name and namespace
 func GetDataProcess(client client.Client, name, namespace string) (*datav1alpha1.DataProcess, error) {
 	key := types.NamespacedName{
 		Namespace: namespace,
@@ -36,4 +38,9 @@ func GetDataProcess(client client.Client, name, namespace string) (*datav1alpha1
 	}
 
 	return &dataprocess, nil
+}
+
+// GetDataProcessReleaseName returns the helm release name given the DataProcess's name.
+func GetDataProcessReleaseName(name string) string {
+	return fmt.Sprintf("%s-processor", name)
 }

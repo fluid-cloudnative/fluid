@@ -19,26 +19,40 @@ package dataprocess
 import (
 	"context"
 	"fmt"
+	"time"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
+	cdataprocess "github.com/fluid-cloudnative/fluid/pkg/dataprocess"
 	"github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (r *DataProcessReconciler) GetTargetDataset(object client.Object) (*datav1alpha1.Dataset, error) {
-	panic("not implemented") // TODO: Implement
+	dataProcess, ok := object.(*datav1alpha1.DataProcess)
+	if !ok {
+		return nil, fmt.Errorf("object %v is not of type DataProcess", object)
+	}
+
+	return utils.GetDataset(r.Client, dataProcess.Spec.Dataset.Name, dataProcess.Spec.Dataset.Namespace)
 }
 
 // GetReleaseNameSpacedName get the installed helm chart name
 func (r *DataProcessReconciler) GetReleaseNameSpacedName(object client.Object) types.NamespacedName {
-	panic("not implemented") // TODO: Implement
+	return types.NamespacedName{
+		Namespace: object.GetNamespace(),
+		Name:      utils.GetDataProcessReleaseName(object.GetName()),
+	}
 }
 
 // GetChartsDirectory get the helm charts directory of data operation
 func (r *DataProcessReconciler) GetChartsDirectory() string {
-	panic("not implemented") // TODO: Implement
+	return utils.GetChartsDirectory() + "/" + cdataprocess.DataProcessChart
 }
 
 // GetOperationType get the data operation type
@@ -60,7 +74,56 @@ func (r *DataProcessReconciler) UpdateOperationApiStatus(object client.Object, o
 
 // Validate check the data operation spec is valid or not, if not valid return error with conditions
 func (r *DataProcessReconciler) Validate(ctx runtime.ReconcileRequestContext, object client.Object) ([]datav1alpha1.Condition, error) {
-	panic("not implemented") // TODO: Implement
+	dataProcess, ok := object.(*datav1alpha1.DataProcess)
+	if !ok {
+		return []datav1alpha1.Condition{}, fmt.Errorf("object %v is not of type DataProcess", object)
+	}
+
+	if dataProcess.Namespace != dataProcess.Spec.Dataset.Namespace {
+		r.Recorder.Eventf(dataProcess,
+			corev1.EventTypeWarning,
+			common.TargetDatasetNamespaceNotSame,
+			"DataProcess(%s)'s namespace is not same as its spec.dataset",
+			dataProcess.Name,
+		)
+		err := fmt.Errorf("DataProcess(%s/%s)'s namespace is not same as its spec.dataset", dataProcess.Namespace, dataProcess.Name)
+
+		now := time.Now()
+		return []datav1alpha1.Condition{
+			{
+				Type:               common.Failed,
+				Status:             corev1.ConditionTrue,
+				Reason:             common.TargetDatasetNamespaceNotSame,
+				Message:            "DataProcess's namespace is not same as its spec.dataset",
+				LastProbeTime:      metav1.NewTime(now),
+				LastTransitionTime: metav1.NewTime(now),
+			},
+		}, err
+	}
+
+	if dataProcess.Spec.Processor.Job == nil {
+		r.Recorder.Eventf(dataProcess,
+			corev1.EventTypeWarning,
+			common.DataProcessProcessorNotSpecified,
+			"DataProcess(%s)'s processor is missing",
+			dataProcess.Name,
+		)
+		err := fmt.Errorf("DataProcess(%s/%s)'s spec.processor is not specified", dataProcess.Namespace, dataProcess.Name)
+
+		now := time.Now()
+		return []datav1alpha1.Condition{
+			{
+				Type:               common.Failed,
+				Status:             corev1.ConditionTrue,
+				Reason:             common.DataProcessProcessorNotSpecified,
+				Message:            "DataProcess's spec.processor is not specified",
+				LastProbeTime:      metav1.NewTime(now),
+				LastTransitionTime: metav1.NewTime(now),
+			},
+		}, err
+	}
+
+	return nil, nil
 }
 
 // UpdateStatusInfoForCompleted update the status infos field for phase completed, the parameter infos is not nil
