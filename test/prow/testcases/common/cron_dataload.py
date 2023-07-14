@@ -28,35 +28,44 @@ import fluid.step_funcs as funcs
 from framework.testflow import TestFlow
 from framework.step import SimpleStep, StatusCheckStep, dummy_back, currying_fn
 
-def check_untriggered_dataload(dataload_name, start_time, dataload_namespace="default"):
-    localtime = time.localtime(time.time())
-    # if current time is later than cron start time (cur time >= start time, 
-    # expect start time is the beginning of next hour, but cur time is the end of cur hour), 
-    # dataload is already triggered, pass check untriggered dataload
-    if localtime.tm_min >= start_time and not (start_time < 5 and localtime.tm_min > 55):
-        return True
-    
+
+def check_cron_dataload(dataload_name, dataset_name, namespace):
     api = client.CustomObjectsApi()
-    resource = api.get_namespaced_custom_object(
-        group="data.fluid.io",
-        version="v1alpha1",
-        name=dataload_name,
-        namespace=dataload_namespace,
-        plural="dataloads"
-    )
-
-    if "status" in resource:
-        if "phase" in resource["status"]:
-            if resource["status"]["phase"] != "Executing":
-                return False
-
-    pods = client.CoreV1Api().list_namespaced_pod(dataload_namespace)
-    for pod in pods.items:
-        if dataload_name in pod.metadata.name:
+    for i in range(0, 60):
+        dataload = api.get_namespaced_custom_object(
+            group="data.fluid.io",
+            version="v1alpha1",
+            name=dataload_name,
+            namespace=namespace,
+            plural="dataloads"
+        )
+        dataset = api.get_namespaced_custom_object(
+            group="data.fluid.io",
+            version="v1alpha1",
+            name=dataset_name,
+            namespace=namespace,
+            plural="datasets"
+        )
+        
+        dataload_status = dataload["status"]["phase"]
+        opRef = dataset["status"].get("operationRef", {})
+        if dataload_status == "Failed":
+            print("Dataload {} is failed".format(dataload_name))
             return False
+        elif dataload_status == "Complete":
+            if opRef is not None and opRef.get("DataLoad", "") != "":
+                print("DataLoad {} is complete but dataset opRef {} is not None".format(dataload_name, opRef))
+                return False
+        elif dataload_status == "Executing":
+            if opRef is None:
+                print("Datamigrate {} is running but dataset opRef None".format(dataload_name))
+                return False
+            if opRef.get("DataLoad", "") != dataload_name:
+                print("DataLoad {} is running but dataset opRef {}".format(dataload_name, opRef))
+                return False
+        time.sleep(1)
 
     return True
-
 
 def main():
     if os.getenv("KUBERNETES_SERVICE_HOST") is None:
@@ -75,13 +84,10 @@ def main():
         .set_tieredstore(mediumtype="MEM", path="/dev/shm", quota="2Gi")
     
     dataload_name = "jindo-dataload"
-    localtime = time.localtime(time.time())
-    start_time = (localtime.tm_min + 5) % 60
-    # cron dataload will start executing after 5 minutes
     cron_dataload = fluidapi.DataLoad(name=dataload_name, namespace=namespace) \
         .set_target_dataset(name, namespace) \
         .set_load_metadata(True) \
-        .set_cron("{} * * * *".format(start_time))
+        .set_cron("* * * * *")
     
     flow = TestFlow("Common - Test Cron Dataload")
 
@@ -124,10 +130,9 @@ def main():
     )
 
     flow.append_step(
-        SimpleStep(
-            step_name="check untriggered dataload: no job pod is created",
-            forth_fn=currying_fn(check_untriggered_dataload, 
-                                 dataload_name=dataload_name, start_time=start_time),
+        StatusCheckStep(
+            step_name="check if cron dataLoad status correct",
+            forth_fn=currying_fn(check_cron_dataload, dataload_name=dataload_name, dataset_name=name, namespace=namespace),
             back_fn=dummy_back,
         )
     )
@@ -136,7 +141,6 @@ def main():
         StatusCheckStep(
             step_name="check if dataload job completes",
             forth_fn=funcs.check_dataload_job_status_fn(dataload_name, namespace),
-            timeout=600
         )
     )
 
