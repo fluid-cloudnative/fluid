@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-process-script" .Release.Name }}
+  labels:
+    release: {{ .Release.Name }}
+    role: dataprocess-job
+data:
+  dataprocess.sh: |
+    {{ .Values.dataprocess.processJobInfo.script | nindent 4 }}

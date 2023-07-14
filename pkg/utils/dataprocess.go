@@ -44,3 +44,7 @@ func GetDataProcess(client client.Client, name, namespace string) (*datav1alpha1
 func GetDataProcessReleaseName(name string) string {
 	return fmt.Sprintf("%s-processor", name)
 }
+
+func GetDataProcessJobName(releaseName string) string {
+	return fmt.Sprintf("%s-job", releaseName)
+}

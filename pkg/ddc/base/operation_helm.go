@@ -49,7 +49,12 @@ func InstallDataOperationHelmIfNotExist(ctx cruntime.ReconcileRequestContext, ob
 		}
 
 		// for jindofsx, the runtimeType is not the same ?
-		chartName := operation.GetChartsDirectory() + "/" + ctx.RuntimeType
+		var chartName string
+		if operation.GetOperationType() != dataoperation.DataProcess {
+			chartName = operation.GetChartsDirectory() + "/" + ctx.RuntimeType
+		} else {
+			chartName = operation.GetChartsDirectory() + "/" + "common"
+		}
 
 		err = helm.InstallRelease(releaseNamespacedName.Name, releaseNamespacedName.Namespace, valueFileName, chartName)
 		if err != nil {

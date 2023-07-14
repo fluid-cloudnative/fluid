@@ -30,6 +30,9 @@ func (e *JindoFSxEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequest
 	if operationType == dataoperation.DataLoad {
 		valueFileName, err = e.generateDataLoadValueFile(ctx, object)
 		return valueFileName, err
+	} else if operationType == dataoperation.DataProcess {
+		valueFileName, err = e.generateDataProcessValueFile(ctx, object)
+		return valueFileName, err
 	}
 
 	return "", errors.NewNotSupported(
