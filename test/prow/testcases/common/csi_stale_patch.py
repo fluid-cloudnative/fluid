@@ -29,8 +29,6 @@ import fluid.step_funcs as funcs
 from framework.testflow import TestFlow
 from framework.step import SimpleStep, StatusCheckStep, SleepStep, dummy_back, currying_fn
 
-from kubernetes import client, config
-
 
 def getNodes():
     api = client.CoreV1Api()
