@@ -347,7 +347,6 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 		runtimeType string
 	}
 	type args struct {
-		runtime              *datav1alpha1.JuiceFSRuntime
 		mount                datav1alpha1.Mount
 		tiredStoreLevel      *datav1alpha1.Level
 		value                *JuiceFS

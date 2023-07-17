@@ -195,7 +195,6 @@ func (j *JuiceFSEngine) genWorkerMount(value *JuiceFS, workerOptionMap map[strin
 
 	value.Worker.Command = strings.Join(mountArgsWorker, " ")
 	value.Worker.StatCmd = "stat -c %i " + value.Worker.MountPath
-	return
 }
 
 func (j *JuiceFSEngine) transformPlacementMode(dataset *datav1alpha1.Dataset, value *JuiceFS) {
