@@ -16,19 +16,63 @@ limitations under the License.
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+// TargetDataset defines which dataset will be processed by DataProcess.
+// Under the hood, the dataset's pvc will be mounted to the given mountPath of the DataProcess's containers.
+type TargetDatasetWithMountPath struct {
+	TargetDataset `json:",inline"`
+
+	// MountPath defines where the Dataset should be mounted in DataProcess's containers.
+	// +required
+	MountPath string `json:"mountPath"`
+
+	// SubPath defines subpath of the target dataset to mount.
+	// +optional
+	SubPath string `json:"subPath,omitempty"`
+}
+
+// Processor defines the actual processor for DataProcess. Processor can be either of a Job or a Shell script.
+type Processor struct {
+	// Job represents a processor which runs DataProcess as a job.
+	// +optional
+	Job *JobProcessor `json:"job,omitempty"`
+
+	// Shell represents a processor which executes shell script
+	Shell *ShellProcessor `json:"shell,omitempty"`
+}
+
+type JobProcessor struct {
+	// PodTemplate defines Pod specification of the DataProcess job.
+	// +optional
+	PodTemplate *corev1.PodTemplate `json:"podTemplate,omitempty"`
+}
+
+type ShellProcessor struct {
+	// Script specifies a shell script that will be executed in DataProcess.
+	// +requried
+	Script string `json:"script"`
+
+	// Image specifies the container image where the shell script will be executed.
+	// +required
+	Image string `json:"image"`
+
+	// ServiceAccountName defiens the serviceAccountName of the container
+	// +optional
+	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+}
 
 // DataProcessSpec defines the desired state of DataProcess
 type DataProcessSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Dataset specifies the target dataset and its mount path.
+	// +requried
+	Dataset TargetDatasetWithMountPath `json:"dataset"`
 
-	// Foo is an example field of DataProcess. Edit dataprocess_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// Processor specify how to process data.
+	// +required
+	Processor Processor `json:"processor"`
 }
 
 //+kubebuilder:object:root=true
