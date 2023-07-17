@@ -176,3 +176,15 @@ helm install fluid --set runtime.mountRoot=/var/lib/docker/runtime-mnt fluid
 ```
 helm install fluid --set csi.featureGates='FuseRecovery=true' fluid
 ```
+
+3. If your Kubernetes cluster has custom configured kubelet root-dir, please configure KUBELET_ROOTDIR when installing Fluid: 
+```shell
+helm install --set csi.kubelet.rootDir=<kubelet-root-dir> \
+  --set csi.kubelet.certDir=<kubelet-root-dir>/pki fluid fluid.tgz
+```
+
+> You can execute the following command on the Kubernetes node to view the --root-dir parameter configuration:
+> ```
+> ps -ef | grep $(which kubelet) | grep root-dir
+> ```
+> If the above command has no output, the kubelet root path is the default value (/var/lib/kubelet), which is the default value set by Fluid.
