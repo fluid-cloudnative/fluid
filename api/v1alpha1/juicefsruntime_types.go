@@ -142,6 +142,10 @@ type JuiceFSFuseSpec struct {
 	// Resources that will be requested by JuiceFS Fuse.
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
+	// Options mount options that fuse pod will use
+	// +optional
+	Options map[string]string `json:"options,omitempty"`
+
 	// If the fuse client should be deployed in global mode,
 	// otherwise the affinity should be considered
 	// +optional

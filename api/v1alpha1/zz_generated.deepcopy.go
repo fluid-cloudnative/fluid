@@ -1647,6 +1647,13 @@ func (in *JuiceFSFuseSpec) DeepCopyInto(out *JuiceFSFuseSpec) {
 		}
 	}
 	in.Resources.DeepCopyInto(&out.Resources)
+	if in.Options != nil {
+		in, out := &in.Options, &out.Options
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.NodeSelector != nil {
 		in, out := &in.NodeSelector, &out.NodeSelector
 		*out = make(map[string]string, len(*in))

@@ -18,6 +18,7 @@ package juicefs
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -74,7 +75,7 @@ func (j *JuiceFSEngine) transform(runtime *datav1alpha1.JuiceFSRuntime) (value *
 	}
 
 	// transform the workers
-	err = j.transformWorkers(runtime, value)
+	err = j.transformWorkers(runtime, dataset, value)
 	if err != nil {
 		return
 	}
@@ -90,7 +91,7 @@ func (j *JuiceFSEngine) transform(runtime *datav1alpha1.JuiceFSRuntime) (value *
 	return
 }
 
-func (j *JuiceFSEngine) transformWorkers(runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) (err error) {
+func (j *JuiceFSEngine) transformWorkers(runtime *datav1alpha1.JuiceFSRuntime, dataset *datav1alpha1.Dataset, value *JuiceFS) (err error) {
 
 	image := runtime.Spec.JuiceFSVersion.Image
 	imageTag := runtime.Spec.JuiceFSVersion.ImageTag
@@ -106,6 +107,24 @@ func (j *JuiceFSEngine) transformWorkers(runtime *datav1alpha1.JuiceFSRuntime, v
 		value.Worker.NodeSelector = runtime.Spec.Worker.NodeSelector
 	}
 
+	// options
+	mount := dataset.Spec.Mounts[0]
+	var tiredStoreLevel *datav1alpha1.Level
+	if len(runtime.Spec.TieredStore.Levels) != 0 {
+		tiredStoreLevel = &runtime.Spec.TieredStore.Levels[0]
+	}
+	option, err := j.genMountOptions(mount, tiredStoreLevel)
+	if err != nil {
+		return err
+	}
+	for k, v := range runtime.Spec.Worker.Options {
+		option[k] = v
+	}
+
+	// transform mount cmd & stat cmd
+	j.genWorkerMount(value, option)
+
+	// transform resources for worker
 	err = j.transformResourcesForWorker(runtime, value)
 	if err != nil {
 		j.Log.Error(err, "failed to transform resource for worker")
@@ -126,6 +145,56 @@ func (j *JuiceFSEngine) transformWorkers(runtime *datav1alpha1.JuiceFSRuntime, v
 
 	// parse work pod network mode
 	value.Worker.HostNetwork = datav1alpha1.IsHostNetwork(runtime.Spec.Worker.NetworkMode)
+	return
+}
+
+// genMount: generate mount args
+func (j *JuiceFSEngine) genWorkerMount(value *JuiceFS, workerOptionMap map[string]string) {
+	var mountArgsWorker []string
+	if workerOptionMap == nil {
+		workerOptionMap = map[string]string{}
+	}
+	runtimeInfo := j.runtimeInfo
+	if runtimeInfo != nil {
+		accessModes, err := utils.GetAccessModesOfDataset(j.Client, runtimeInfo.GetName(), runtimeInfo.GetNamespace())
+		if err != nil {
+			j.Log.Info("Error:", "err", err)
+		}
+		if len(accessModes) > 0 {
+			for _, mode := range accessModes {
+				if mode == corev1.ReadOnlyMany {
+					workerOptionMap["ro"] = ""
+					break
+				}
+			}
+		}
+	}
+	if value.Edition == CommunityEdition {
+		if _, ok := workerOptionMap["metrics"]; !ok {
+			metricsPort := DefaultMetricsPort
+			if value.Fuse.MetricsPort != nil {
+				metricsPort = *value.Worker.MetricsPort
+			}
+			workerOptionMap["metrics"] = fmt.Sprintf("0.0.0.0:%d", metricsPort)
+		}
+		mountArgsWorker = []string{common.JuiceFSCeMountPath, value.Source, value.Worker.MountPath, "-o", strings.Join(genArgs(workerOptionMap), ",")}
+	} else {
+		workerOptionMap["foreground"] = ""
+
+		// start independent cache cluster, refer to [juicefs cache sharing](https://juicefs.com/docs/cloud/cache/#client_cache_sharing)
+		// fuse and worker use the same cache-group, fuse use no-sharing
+		cacheGroup := fmt.Sprintf("%s-%s", j.namespace, value.FullnameOverride)
+		if _, ok := workerOptionMap["cache-group"]; ok {
+			cacheGroup = workerOptionMap["cache-group"]
+		}
+		workerOptionMap["cache-group"] = cacheGroup
+		delete(workerOptionMap, "no-sharing")
+
+		mountArgsWorker = []string{common.JuiceFSMountPath, value.Source, value.Worker.MountPath, "-o", strings.Join(genArgs(workerOptionMap), ",")}
+	}
+
+	value.Worker.Command = strings.Join(mountArgsWorker, " ")
+	value.Worker.StatCmd = "stat -c %i " + value.Worker.MountPath
 	return
 }
 

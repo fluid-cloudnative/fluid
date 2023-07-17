@@ -20,6 +20,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/net"
@@ -288,6 +289,187 @@ func TestJuiceFSEngine_allocatePorts(t *testing.T) {
 				if *tt.args.value.Fuse.MetricsPort < 14000 || *tt.args.value.Fuse.MetricsPort > 15999 {
 					t.Errorf("allocatePorts() got fuse port = %v, but want in range [14000, 15999]", *tt.args.value.Fuse.MetricsPort)
 				}
+			}
+		})
+	}
+}
+
+func TestJuiceFSEngine_genWorkerMount(t *testing.T) {
+	type fields struct {
+		name      string
+		namespace string
+		Log       logr.Logger
+	}
+	type args struct {
+		value   *JuiceFS
+		runtime *datav1alpha1.JuiceFSRuntime
+	}
+	tests := []struct {
+		name              string
+		fields            fields
+		args              args
+		wantErr           bool
+		wantWorkerCommand string
+		wantWorkerStatCmd string
+	}{
+		{
+			name: "test-community",
+			fields: fields{
+				name:      "test",
+				namespace: "fluid",
+				Log:       fake.NullLogger(),
+			},
+			args: args{
+				value: &JuiceFS{
+					FullnameOverride: "test-community",
+					Edition:          "community",
+					Source:           "redis://127.0.0.1:6379",
+					Configs: Configs{
+						Name:            "test-community",
+						AccessKeySecret: "test",
+						SecretKeySecret: "test",
+						Bucket:          "http://127.0.0.1:9000/minio/test",
+						MetaUrlSecret:   "test",
+						Storage:         "minio",
+					},
+					Worker: Worker{
+						MountPath: "/test-worker",
+					},
+				},
+				runtime: &datav1alpha1.JuiceFSRuntime{},
+			},
+			wantErr:           false,
+			wantWorkerCommand: "/bin/mount.juicefs redis://127.0.0.1:6379 /test-worker -o metrics=0.0.0.0:9567",
+			wantWorkerStatCmd: "stat -c %i /test-worker",
+		},
+		{
+			name: "test-community-options",
+			fields: fields{
+				name:      "test",
+				namespace: "fluid",
+				Log:       fake.NullLogger(),
+			},
+			args: args{
+				value: &JuiceFS{
+					FullnameOverride: "test-community",
+					Edition:          "community",
+					Source:           "redis://127.0.0.1:6379",
+					Configs: Configs{
+						Name:            "test-community",
+						AccessKeySecret: "test",
+						SecretKeySecret: "test",
+						Bucket:          "http://127.0.0.1:9000/minio/test",
+						MetaUrlSecret:   "test",
+						Storage:         "minio",
+					},
+					Fuse: Fuse{
+						SubPath:       "/",
+						MountPath:     "/test",
+						HostMountPath: "/test",
+					},
+					Worker: Worker{
+						MountPath: "/test-worker",
+					},
+				},
+				runtime: &datav1alpha1.JuiceFSRuntime{Spec: datav1alpha1.JuiceFSRuntimeSpec{Worker: datav1alpha1.JuiceFSCompTemplateSpec{
+					Options: map[string]string{"metrics": "127.0.0.1:9567"},
+				}}},
+			},
+			wantErr:           false,
+			wantWorkerCommand: "/bin/mount.juicefs redis://127.0.0.1:6379 /test-worker -o metrics=127.0.0.1:9567",
+			wantWorkerStatCmd: "stat -c %i /test-worker",
+		},
+		{
+			name: "test-enterprise",
+			fields: fields{
+				name:      "test",
+				namespace: "fluid",
+				Log:       fake.NullLogger(),
+			},
+			args: args{
+				value: &JuiceFS{
+					FullnameOverride: "test-enterprise",
+					Edition:          "enterprise",
+					Source:           "test-enterprise",
+					Configs: Configs{
+						Name:            "test-enterprise",
+						AccessKeySecret: "test",
+						SecretKeySecret: "test",
+						Bucket:          "http://127.0.0.1:9000/minio/test",
+						TokenSecret:     "test",
+					},
+					Fuse: Fuse{
+						SubPath:       "/",
+						MountPath:     "/test",
+						HostMountPath: "/test",
+					},
+					Worker: Worker{
+						MountPath: "/test",
+					},
+				},
+				runtime: &datav1alpha1.JuiceFSRuntime{},
+			},
+			wantErr:           false,
+			wantWorkerCommand: "/sbin/mount.juicefs test-enterprise /test -o foreground,cache-group=fluid-test-enterprise",
+			wantWorkerStatCmd: "stat -c %i /test",
+		},
+		{
+			name: "test-enterprise-options",
+			fields: fields{
+				name:      "test",
+				namespace: "fluid",
+				Log:       fake.NullLogger(),
+			},
+			args: args{
+				value: &JuiceFS{
+					FullnameOverride: "test-enterprise",
+					Edition:          "enterprise",
+					Source:           "test-enterprise",
+					Configs: Configs{
+						Name:            "test-enterprise",
+						AccessKeySecret: "test",
+						SecretKeySecret: "test",
+						Bucket:          "http://127.0.0.1:9000/minio/test",
+						TokenSecret:     "test",
+					},
+					Fuse: Fuse{
+						SubPath:       "/",
+						MountPath:     "/test",
+						HostMountPath: "/test",
+					},
+					Worker: Worker{
+						MountPath: "/test",
+					},
+				},
+				runtime: &datav1alpha1.JuiceFSRuntime{Spec: datav1alpha1.JuiceFSRuntimeSpec{Worker: datav1alpha1.JuiceFSCompTemplateSpec{
+					Options: map[string]string{"verbose": "", "cache-group": "test"},
+				}}},
+			},
+			wantErr:           false,
+			wantWorkerCommand: "/sbin/mount.juicefs test-enterprise /test -o verbose,foreground,cache-group=test",
+			wantWorkerStatCmd: "stat -c %i /test",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dataset := &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      tt.fields.name,
+					Namespace: tt.fields.namespace,
+				},
+			}
+			client := fake.NewFakeClientWithScheme(testScheme, dataset)
+			j := &JuiceFSEngine{
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+				Log:       tt.fields.Log,
+				Client:    client,
+			}
+			j.genWorkerMount(tt.args.value, tt.args.runtime.Spec.Worker.Options)
+			if len(tt.args.value.Worker.Command) != len(tt.wantWorkerCommand) ||
+				tt.args.value.Worker.StatCmd != tt.wantWorkerStatCmd {
+				t.Errorf("command got = %v\ncommand want = %v", tt.args.value.Worker.Command, tt.wantWorkerCommand)
+				t.Errorf("stat cmd got = %v\nstat cmd want = %v", tt.args.value.Worker.StatCmd, tt.wantWorkerStatCmd)
 			}
 		})
 	}

@@ -250,6 +250,11 @@ spec:
                       the fuse client to fit on a node, this option only effect when
                       global is enabled
                     type: object
+                  options:
+                    additionalProperties:
+                      type: string
+                    description: Options mount options that fuse pod will use
+                    type: object
                   podMetadata:
                     description: PodMetadata defines labels and annotations that will
                       be propagated to JuiceFs's pods.

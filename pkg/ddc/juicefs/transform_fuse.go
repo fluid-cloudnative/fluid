@@ -52,7 +52,7 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 	if len(runtime.Spec.TieredStore.Levels) != 0 {
 		tiredStoreLevel = &runtime.Spec.TieredStore.Levels[0]
 	}
-	option, err := j.genValue(mount, tiredStoreLevel, value, dataset.Spec.SharedOptions, dataset.Spec.SharedEncryptOptions)
+	err = j.genValue(mount, tiredStoreLevel, value, dataset.Spec.SharedOptions, dataset.Spec.SharedEncryptOptions)
 	if err != nil {
 		return err
 	}
@@ -67,7 +67,14 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 	}
 
 	// transform mount cmd & stat cmd
-	err = j.genMount(value, runtime, option)
+	option, err := j.genMountOptions(mount, tiredStoreLevel)
+	if err != nil {
+		return err
+	}
+	for k, v := range runtime.Spec.Fuse.Options {
+		option[k] = v
+	}
+	err = j.genFuseMount(value, option)
 	if err != nil {
 		return err
 	}
@@ -114,9 +121,8 @@ func (j *JuiceFSEngine) transformFuseNodeSelector(runtime *datav1alpha1.JuiceFSR
 
 // genValue: generate the value of juicefs
 func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *datav1alpha1.Level, value *JuiceFS,
-	SharedOptions map[string]string, SharedEncryptOptions []datav1alpha1.EncryptOption) (map[string]string, error) {
+	SharedOptions map[string]string, SharedEncryptOptions []datav1alpha1.EncryptOption) error {
 	value.Configs.Name = mount.Name
-	options := make(map[string]string)
 	source := ""
 	value.Edition = EnterpriseEdition
 
@@ -128,8 +134,6 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 		case JuiceBucket:
 			value.Configs.Bucket = v
 			continue
-		default:
-			options[k] = v
 		}
 	}
 
@@ -141,8 +145,6 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 		case JuiceBucket:
 			value.Configs.Bucket = v
 			continue
-		default:
-			options[k] = v
 		}
 	}
 
@@ -200,18 +202,48 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 	// transform mountPath & subPath
 	subPath, err := ParseSubPathFromMountPoint(mount.MountPoint)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	value.Fuse.MountPath = j.getMountPoint()
 	value.Worker.MountPath = j.getMountPoint()
 	value.Fuse.HostMountPath = j.getHostMountPoint()
 	if subPath != "/" {
 		value.Fuse.SubPath = subPath
-		options["subdir"] = subPath
 	}
 
 	var storagePath = DefaultCacheDir
 	var volumeType = common.VolumeTypeHostPath
+	if tiredStoreLevel != nil {
+		// juicefs cache-dir use colon (:) to separate multiple paths
+		// community doc: https://juicefs.com/docs/community/command_reference/#juicefs-mount
+		// enterprise doc: https://juicefs.com/docs/cloud/commands_reference#mount
+		// /mnt/disk1/bigboot or /mnt/disk1/bigboot:/mnt/disk2/bigboot
+		storagePath = tiredStoreLevel.Path
+		volumeType = tiredStoreLevel.VolumeType
+	}
+	originPath := strings.Split(storagePath, ":")
+
+	// transform cacheDir
+	value.CacheDirs = make(map[string]cache)
+	for i, v := range originPath {
+		value.CacheDirs[strconv.Itoa(i+1)] = cache{
+			Path: v,
+			Type: string(volumeType),
+		}
+	}
+
+	return nil
+}
+
+func (j *JuiceFSEngine) genMountOptions(mount datav1alpha1.Mount, tiredStoreLevel *datav1alpha1.Level) (options map[string]string, err error) {
+	options = map[string]string{}
+	var subPath string
+	subPath, err = ParseSubPathFromMountPoint(mount.MountPoint)
+	if subPath != "/" {
+		options["subdir"] = subPath
+	}
+
+	var storagePath = DefaultCacheDir
 	if tiredStoreLevel != nil {
 		// juicefs cache-dir use colon (:) to separate multiple paths
 		// community doc: https://juicefs.com/docs/community/command_reference/#juicefs-mount
@@ -229,27 +261,14 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 		if tiredStoreLevel.Low != "" {
 			options["free-space-ratio"] = tiredStoreLevel.Low
 		}
-		volumeType = tiredStoreLevel.VolumeType
 	}
-	originPath := strings.Split(storagePath, ":")
 	options["cache-dir"] = storagePath
-
-	// transform cacheDir
-	value.CacheDirs = make(map[string]cache)
-	for i, v := range originPath {
-		value.CacheDirs[strconv.Itoa(i+1)] = cache{
-			Path: v,
-			Type: string(volumeType),
-		}
-	}
-
-	return options, nil
+	return
 }
 
-// genMount: generate mount args
-func (j *JuiceFSEngine) genMount(value *JuiceFS, runtime *datav1alpha1.JuiceFSRuntime, optionMap map[string]string) (err error) {
-	var mountArgs, mountArgsWorker []string
-	workerOptionMap := make(map[string]string)
+// genFuseMount: generate fuse mount args
+func (j *JuiceFSEngine) genFuseMount(value *JuiceFS, optionMap map[string]string) (err error) {
+	var mountArgs []string
 	if optionMap == nil {
 		optionMap = map[string]string{}
 	}
@@ -270,16 +289,6 @@ func (j *JuiceFSEngine) genMount(value *JuiceFS, runtime *datav1alpha1.JuiceFSRu
 			}
 		}
 	}
-	// gen worker option
-	for k, v := range optionMap {
-		workerOptionMap[k] = v
-	}
-	if runtime != nil {
-		// if runtime.worker option is set, take it
-		for k, v := range runtime.Spec.Worker.Options {
-			workerOptionMap[k] = v
-		}
-	}
 	if value.Edition == CommunityEdition {
 		if readonly {
 			optionMap["attr-cache"] = "7200"
@@ -294,22 +303,13 @@ func (j *JuiceFSEngine) genMount(value *JuiceFS, runtime *datav1alpha1.JuiceFSRu
 			}
 			optionMap["metrics"] = fmt.Sprintf("0.0.0.0:%d", metricsPort)
 		}
-		if _, ok := workerOptionMap["metrics"]; !ok {
-			metricsPort := DefaultMetricsPort
-			if value.Fuse.MetricsPort != nil {
-				metricsPort = *value.Worker.MetricsPort
-			}
-			workerOptionMap["metrics"] = fmt.Sprintf("0.0.0.0:%d", metricsPort)
-		}
-		mountArgs = []string{common.JuiceFSCeMountPath, value.Source, value.Fuse.MountPath, "-o", strings.Join(genOption(optionMap), ",")}
-		mountArgsWorker = []string{common.JuiceFSCeMountPath, value.Source, value.Worker.MountPath, "-o", strings.Join(genOption(workerOptionMap), ",")}
+		mountArgs = []string{common.JuiceFSCeMountPath, value.Source, value.Fuse.MountPath, "-o", strings.Join(genArgs(optionMap), ",")}
 	} else {
 		if readonly {
 			optionMap["attrcacheto"] = "7200"
 			optionMap["entrycacheto"] = "7200"
 		}
 		optionMap["foreground"] = ""
-		workerOptionMap["foreground"] = ""
 
 		// start independent cache cluster, refer to [juicefs cache sharing](https://juicefs.com/docs/cloud/cache/#client_cache_sharing)
 		// fuse and worker use the same cache-group, fuse use no-sharing
@@ -318,28 +318,20 @@ func (j *JuiceFSEngine) genMount(value *JuiceFS, runtime *datav1alpha1.JuiceFSRu
 			cacheGroup = optionMap["cache-group"]
 		}
 		optionMap["cache-group"] = cacheGroup
-		workerOptionMap["cache-group"] = cacheGroup
 		optionMap["no-sharing"] = ""
-		delete(workerOptionMap, "no-sharing")
 
-		mountArgs = []string{common.JuiceFSMountPath, value.Source, value.Fuse.MountPath, "-o", strings.Join(genOption(optionMap), ",")}
-		mountArgsWorker = []string{common.JuiceFSMountPath, value.Source, value.Worker.MountPath, "-o", strings.Join(genOption(workerOptionMap), ",")}
+		mountArgs = []string{common.JuiceFSMountPath, value.Source, value.Fuse.MountPath, "-o", strings.Join(genArgs(optionMap), ",")}
 	}
 
-	value.Worker.Command = strings.Join(mountArgsWorker, " ")
 	value.Fuse.Command = strings.Join(mountArgs, " ")
 	value.Fuse.StatCmd = "stat -c %i " + value.Fuse.MountPath
-	value.Worker.StatCmd = "stat -c %i " + value.Worker.MountPath
 	return nil
 }
 
-// genOption: generate mount option as `a=b` format, and remove quota option
-func genOption(optionMap map[string]string) []string {
+// genArgs: generate mount option as `a=b` format
+func genArgs(optionMap map[string]string) []string {
 	options := []string{}
 	for k, v := range optionMap {
-		if k == "quota" {
-			continue
-		}
 		if v != "" {
 			k = fmt.Sprintf("%s=%s", k, v)
 		}

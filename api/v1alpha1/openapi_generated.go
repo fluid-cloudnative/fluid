@@ -3767,6 +3767,22 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSFuseSpec(ref common.Refe
 							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
 						},
 					},
+					"options": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Options mount options that fuse pod will use",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
 					"global": {
 						SchemaProps: spec.SchemaProps{
 							Description: "If the fuse client should be deployed in global mode, otherwise the affinity should be considered",
