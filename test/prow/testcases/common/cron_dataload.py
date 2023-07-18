@@ -6,12 +6,13 @@ Steps:
 2. check if dataset is bound
 3. check if PVC & PV is created
 4. submit DataLoad CR
-5. check dataload status
-6. wait until DataLoad completes
-7. check dataset cache percentage
-8. create app pod
-9. check app pod is running
-10. clean up
+5. check if cronjob created
+6. check dataload status
+7. wait until DataLoad completes
+8. check dataset cache percentage
+9. create app pod
+10. check app pod is running
+11. clean up
 """
 
 import os
@@ -28,6 +29,25 @@ import fluid.step_funcs as funcs
 from framework.testflow import TestFlow
 from framework.step import SimpleStep, StatusCheckStep, dummy_back, currying_fn
 
+
+def check_cron_job(dataload_name, namespace):
+    api = client.BatchV1Api()
+    cronjob_name = dataload_name+"-loader-job"
+    try:
+        cronjob = api.read_namespaced_cron_job(name=cronjob_name, namespace=namespace)
+    except Exception as e :
+        time.sleep(1)
+        return False
+
+    if "fluid.io/jobPolicy" in cronjob.metadata.labels:
+        if cronjob.metadata.labels["fluid.io/jobPolicy"] != "cron":
+            print("CronJob has no fluid label.")
+            return False
+    if cronjob.spec.schedule != "* * * * *":
+        print("CronJob schedule does not match {}".format(cronjob.spec.schedule))
+        return False
+
+    return True
 
 def check_cron_dataload(dataload_name, dataset_name, namespace):
     api = client.CustomObjectsApi()
@@ -58,7 +78,7 @@ def check_cron_dataload(dataload_name, dataset_name, namespace):
                 return False
         elif dataload_status == "Executing":
             if opRef is None:
-                print("Datamigrate {} is running but dataset opRef None".format(dataload_name))
+                print("Dataload {} is running but dataset opRef None".format(dataload_name))
                 return False
             if opRef.get("DataLoad", "") != dataload_name:
                 print("DataLoad {} is running but dataset opRef {}".format(dataload_name, opRef))
@@ -131,6 +151,14 @@ def main():
 
     flow.append_step(
         StatusCheckStep(
+            step_name="check if cron job has created",
+            forth_fn=currying_fn(check_cron_job, dataload_name=dataload_name, namespace=namespace),
+            back_fn=dummy_back,
+        )
+    )
+
+    flow.append_step(
+        StatusCheckStep(
             step_name="check if cron dataLoad status correct",
             forth_fn=currying_fn(check_cron_dataload, dataload_name=dataload_name, dataset_name=name, namespace=namespace),
             back_fn=dummy_back,
@@ -171,7 +199,8 @@ def main():
     except Exception as e:
         print(e)
         exit(1)
-
+    
+    return 0
 
 if __name__ == '__main__':
     main()
