@@ -27,7 +27,7 @@ import (
 // **************************************************
 
 // Level describes configurations a tier needs. <br>
-// For Alluxio users, refer to <a href="https://docs.alluxio.io/os/user/stable/en/core-services/Caching.html#configuring-tiered-storage">Configuring Tiered Storage</a> for more info
+// Refer to <a href="https://docs.alluxio.io/os/user/stable/en/core-services/Caching.html#configuring-tiered-storage">Configuring Tiered Storage</a> for more info
 type Level struct {
 	// Alias string `json:"alias,omitempty"`
 
