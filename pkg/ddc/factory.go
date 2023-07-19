@@ -19,6 +19,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/efc"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/goosefs"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindocache"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindofsx"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/thin"
@@ -34,13 +35,14 @@ var buildFuncMap map[string]buildFunc
 
 func init() {
 	buildFuncMap = map[string]buildFunc{
-		"alluxio":  alluxio.Build,
-		"jindo":    jindo.Build,
-		"jindofsx": jindofsx.Build,
-		"goosefs":  goosefs.Build,
-		"juicefs":  juicefs.Build,
-		"thin":     thin.Build,
-		"efc":      efc.Build,
+		"alluxio":    alluxio.Build,
+		"jindo":      jindo.Build,
+		"jindofsx":   jindofsx.Build,
+		"goosefs":    goosefs.Build,
+		"juicefs":    juicefs.Build,
+		"thin":       thin.Build,
+		"efc":        efc.Build,
+		"jindocache": jindocache.Build,
 	}
 
 	deploy.SetPrecheckFunc(map[string]deploy.CheckFunc{
