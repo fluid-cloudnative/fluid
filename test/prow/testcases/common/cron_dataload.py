@@ -6,8 +6,8 @@ Steps:
 2. check if dataset is bound
 3. check if PVC & PV is created
 4. submit DataLoad CR
-5. check if cronjob created
-6. check dataload status
+5. check dataload status
+6. check if cronjob created
 7. wait until DataLoad completes
 8. check dataset cache percentage
 9. create app pod
@@ -36,6 +36,7 @@ def check_cron_job(dataload_name, namespace):
     try:
         cronjob = api.read_namespaced_cron_job(name=cronjob_name, namespace=namespace)
     except Exception as e :
+        print(e)
         time.sleep(1)
         return False
 
@@ -151,16 +152,16 @@ def main():
 
     flow.append_step(
         StatusCheckStep(
-            step_name="check if cron job has created",
-            forth_fn=currying_fn(check_cron_job, dataload_name=dataload_name, namespace=namespace),
+            step_name="check if cron dataLoad status correct",
+            forth_fn=currying_fn(check_cron_dataload, dataload_name=dataload_name, dataset_name=name, namespace=namespace),
             back_fn=dummy_back,
         )
     )
 
     flow.append_step(
         StatusCheckStep(
-            step_name="check if cron dataLoad status correct",
-            forth_fn=currying_fn(check_cron_dataload, dataload_name=dataload_name, dataset_name=name, namespace=namespace),
+            step_name="check if cron job has created",
+            forth_fn=currying_fn(check_cron_job, dataload_name=dataload_name, namespace=namespace),
             back_fn=dummy_back,
         )
     )
