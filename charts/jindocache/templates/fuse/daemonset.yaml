@@ -1,0 +1,247 @@
+{{- $notEnableDnsConfig := (eq .Values.master.dnsServer "1.1.1.1") }}
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ template "jindofs.fullname" . }}-fuse
+  labels:
+    app: {{ template "jindofs.name" . }}
+    chart: {{ template "jindofs.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    role: jindofs-fuse
+  ownerReferences:
+  {{- if .Values.owner.enabled }}
+  - apiVersion: {{ .Values.owner.apiVersion }}
+    blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+    controller: {{ .Values.owner.controller }}
+    kind: {{ .Values.owner.kind }}
+    name: {{ .Values.owner.name }}
+    uid: {{ .Values.owner.uid }}
+  {{- end }}
+spec:
+  updateStrategy:
+    type: {{ .Values.fuse.updateStrategy.type }}
+  selector:
+    matchLabels:
+      app: {{ template "jindofs.name" . }}
+      chart: {{ template "jindofs.chart" . }}
+      release: {{ .Release.Name }}
+      heritage: {{ .Release.Service }}
+      role: jindofs-fuse
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+      {{- if .Values.fuse.annotations }}
+      {{- range $key, $val := .Values.fuse.annotations }}
+        {{ $key | quote }}: {{ $val | quote }}
+      {{- end }}
+      {{- end }}
+      labels:
+        app: {{ template "jindofs.name" . }}
+        chart: {{ template "jindofs.chart" . }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+        role: jindofs-fuse
+        {{- if .Values.fuse.labels }}
+        {{- range $key, $val := .Values.fuse.labels }}
+        {{ $key | quote }}: {{ $val | quote }}
+        {{- end }}
+        {{- end }}
+    spec:
+      {{- if .Values.fuse.criticalPod }}
+      priorityClassName: system-node-critical
+      {{- end }}
+      hostNetwork: {{ .Values.useHostNetwork }}
+      hostPID: {{ .Values.useHostPID }}
+      nodeSelector:
+{{- if .Values.fuse.nodeSelector }}
+{{ toYaml .Values.fuse.nodeSelector | trim | indent 8  }}
+{{- else if .Values.nodeSelector }}
+{{ toYaml .Values.nodeSelector | trim | indent 8  }}
+{{- end }}
+      securityContext:
+        runAsUser: {{ .Values.user }}
+        runAsGroup: {{ .Values.group }}
+        fsGroup: {{ .Values.fsGroup }}
+      tolerations:
+        - operator: Exists
+      containers:
+        - name: jindofs-fuse
+          image: {{ .Values.fuseImage }}:{{ .Values.fuseImageTag }}
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/prestop.sh"]
+          imagePullPolicy: {{ .Values.fuseImagePullPolicy }}
+          {{- if .Values.fuse.resources }}
+          resources:
+            limits:
+            {{- if .Values.fuse.resources.limits }}
+            {{- if .Values.fuse.resources.limits.cpu }}
+              cpu: {{ .Values.fuse.resources.limits.cpu }}
+            {{- end }}
+            {{- if .Values.fuse.resources.limits.memory }}
+              memory: {{ .Values.fuse.resources.limits.memory }}
+            {{- end }}
+            {{- end }}
+            requests:
+            {{- if .Values.fuse.resources.requests }}
+            {{- if .Values.fuse.resources.requests.cpu }}
+              cpu: {{ .Values.fuse.resources.requests.cpu }}
+            {{- end }}
+            {{- if .Values.fuse.resources.requests.memory }}
+              memory: {{ .Values.fuse.resources.requests.memory }}
+            {{- end }}
+            {{- end }}
+          {{- end }}
+          command: ["/entrypoint.sh"]
+          {{- if .Values.fuse.args }}
+          args:
+{{ toYaml .Values.fuse.args | indent 12 }}
+          {{- end }}
+          env:
+          - name: CLIENT_NAMESPACE_RPC_ADDRESS
+            value: {{ template "jindofs.fullname" . }}-master-0.{{ .Values.runtimeIdentity.namespace }}:{{ .Values.master.ports.rpc }}
+          {{- if .Values.fuse.runAs }}
+          - name: RUN_AS_USER
+            value: {{ .Values.fuse.runAs }}
+          {{- end }}
+          - name: CLIENT_STORAGE_RPC_HOST
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+          - name: FLUID_FUSE_MOUNTPOINT
+            value: {{ .Values.fuse.mountPath }}
+          - name: FLUID_FUSE_MODE
+            value: {{ .Values.fuse.mode }}
+          - name: FLUID_RUNTIME_TYPE
+            value: "jindofs"
+          - name: FLUID_RUNTIME_NS
+            value: {{ .Values.runtimeIdentity.namespace }}
+          - name: FLUID_RUNTIME_NAME
+            value: {{ .Values.runtimeIdentity.name }}
+          {{- if .Values.fuse.env }}
+          {{- range $name, $val := .Values.fuse.env }}
+          - name: {{ $name }}
+            value: {{ $val | quote }}
+          {{- end }}
+          {{- end }}
+          securityContext:
+            privileged: true
+            capabilities:
+              add:
+                - SYS_ADMIN
+          volumeMounts:
+            - name: jindofs-fuse-device
+              mountPath: /dev/fuse
+            - name: jindofs-fuse-mount
+              mountPath: /jfs
+              mountPropagation: Bidirectional
+            - name: bigboot-config
+              mountPath: /jindocache.cfg
+              subPath: jindocache.cfg
+            - name: bigboot-config
+              mountPath: /hdfs-3.2.1/etc/hadoop/core-site.xml
+              subPath: core-site.xml
+            - name: bigboot-config
+              mountPath: /jindosdk.cfg
+              subPath: jindosdk.cfg
+          {{- range $name, $mount := .Values.mounts.workersAndClients }}
+          {{- if eq $mount.type "hostPath"}}
+            - name: datavolume-{{ $name }}
+              mountPath: "{{ $mount.path }}"
+          {{- end }}
+            {{- end }}
+          {{- if .Values.hadoopConfig }}
+          {{- if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite }}
+            - name: hdfs-confs
+              mountPath: /hdfs-site.xml
+              subPath: hdfs-site.xml
+          {{- end }}
+          {{- end }}
+          {{- if and .Values.secret .Values.UseStsToken }}
+            - name: jindofs-secret-token
+              mountPath: /token
+              readOnly: true
+          {{- end }}
+          {{- if .Values.secret }}
+            - name: jindofs-secret-token
+              mountPath: /token/AccessKeyId
+              subPath: {{ .Values.secretKey }}
+              readOnly: true
+            - name: jindofs-secret-token
+              mountPath: /token/AccessKeySecret
+              subPath: {{ .Values.secretValue }}
+              readOnly: true
+          {{- end }}
+          {{- if .Values.ufsVolumes }}
+          {{- range .Values.ufsVolumes }}
+            - mountPath: {{ .containerPath }}
+              name: {{ .name }}
+              {{- if .subPath }}
+              subPath: {{ .subPath }}
+              {{- end }}
+          {{- end }}
+          {{- end }}
+      restartPolicy: Always
+      {{- if $notEnableDnsConfig }}
+      dnsPolicy: ClusterFirstWithHostNet
+      {{- else }}
+      dnsConfig:
+        nameservers:
+        - {{ .Values.master.dnsServer }}
+        options:
+        - name: ndots
+          value: "5"
+        searches:
+        - {{ .Values.master.namespace }}.svc.cluster.local
+        - svc.cluster.local
+        - cluster.local
+        - tbsite.net
+        - aliyun.com
+      dnsPolicy: None
+      enableServiceLinks: true
+      {{- end }}
+      terminationGracePeriodSeconds: 60
+      volumes:
+        - name: jindofs-fuse-device
+          hostPath:
+            path: /dev/fuse
+            type: CharDevice
+        {{- if .Values.secret }}
+        - name: jindofs-secret-token
+          secret:
+            secretName: {{ .Values.secret }}
+        {{- end }}
+        {{- if .Values.ufsVolumes }}
+        {{- range .Values.ufsVolumes }}
+        - name: {{ .name }}
+          persistentVolumeClaim:
+            claimName: {{ .name }}
+        {{- end }}
+        {{- end }}
+        - name: jindofs-fuse-mount
+          hostPath:
+            path: {{ .Values.fuse.hostPath }}
+            type: DirectoryOrCreate
+          {{- range $name, $mount := .Values.mounts.workersAndClients }}
+          {{- if eq $mount.type "hostPath" }}
+        - hostPath:
+            path:  "{{ $mount.path }}"
+            type: DirectoryOrCreate
+          name: datavolume-{{ $name }}
+          {{- /* todo: support volume template */}}
+          {{- end }}
+          {{- end }}
+        {{- if .Values.hadoopConfig }}
+        {{- if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite }}
+        - name: hdfs-confs
+          configMap:
+            name: {{ .Values.hadoopConfig.configMap }}
+        {{- end }}
+        {{- end }}
+        - name: bigboot-config
+          configMap:
+            name: {{ template "jindofs.fullname" . }}-config

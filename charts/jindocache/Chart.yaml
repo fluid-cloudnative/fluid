@@ -1,0 +1,19 @@
+apiVersion: v1
+appVersion: 5.0.0
+version: 0.8.20
+description: FileSystem on the cloud based on Aliyun Object Storage aimed for data
+  acceleration.
+home: https://help.aliyun.com/document_detail/164207.html
+keywords:
+- jindofs
+- namespace:jindofs
+- releaseName:jindofs
+- category:data
+maintainers:
+- email: kunhui.skh@alibaba-inc.com
+  name: kunhui.skh
+- email: cheyang@163.com
+  name: Yang Che
+- email: frank.wt@alibaba-inc.com
+  name: Yang LI
+name: jindofs

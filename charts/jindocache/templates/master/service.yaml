@@ -1,0 +1,41 @@
+{{- $dot := . }}
+{{ $masterCount := int .Values.master.svccount }}
+{{- $isSingleMaster := eq $masterCount 1 }}
+{{- $isRaftHa := eq $masterCount 3 }}
+{{- range $i := until $masterCount }}
+  {{- $masterName := printf "master-%v" $i }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "jindofs.fullname" $dot }}-{{ $masterName }}
+  labels:
+    app: {{ template "jindofs.name" $dot }}
+    chart: {{ template "jindofs.chart" $dot }}
+    release: {{ $dot.Release.Name }}
+    heritage: {{ $dot.Release.Service }}
+    role: jindofs-master
+  ownerReferences:
+  {{- if $dot.Values.owner.enabled }}
+  - apiVersion: {{ $dot.Values.owner.apiVersion }}
+    blockOwnerDeletion: {{ $dot.Values.owner.blockOwnerDeletion }}
+    controller: {{ $dot.Values.owner.controller }}
+    kind: {{ $dot.Values.owner.kind }}
+    name: {{ $dot.Values.owner.name }}
+    uid: {{ $dot.Values.owner.uid }}
+  {{- end }}
+spec:
+  ports:
+  - port: {{ $dot.Values.master.ports.rpc }}
+    name: rpc
+  {{- if $isRaftHa }}
+  - port: {{ $dot.Values.master.ports.raft }}
+    name: raft
+  {{- end }}
+  clusterIP: None
+  selector:
+    role: jindofs-master
+    app: {{ template "jindofs.name" $dot }}
+    release: {{ $dot.Release.Name }}
+    statefulset.kubernetes.io/pod-name: {{ template "jindofs.fullname" $dot }}-{{ $masterName }}
+---
+{{- end }}
