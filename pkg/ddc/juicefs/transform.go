@@ -120,6 +120,13 @@ func (j *JuiceFSEngine) transformWorkers(runtime *datav1alpha1.JuiceFSRuntime, d
 	for k, v := range runtime.Spec.Worker.Options {
 		option[k] = v
 	}
+	if runtime.Spec.Worker.Options["cache-size"] != "" || runtime.Spec.Worker.Options["cache-dir"] != "" {
+		// cache-size & cache-dir in worker.options will be deprecated in the future
+		// send an event in runtime
+		msg := "cache-size & cache-dir in worker.options will be deprecated in the future, please use tieredStore.levels instead"
+		j.Log.Info(msg)
+		j.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.RuntimeDeprecated, msg)
+	}
 
 	// transform mount cmd & stat cmd
 	j.genWorkerMount(value, option)

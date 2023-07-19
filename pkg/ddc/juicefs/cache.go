@@ -20,9 +20,10 @@ import (
 	"fmt"
 	"strconv"
 
+	v1 "k8s.io/api/core/v1"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	v1 "k8s.io/api/core/v1"
 )
 
 // queryCacheStatus checks the cache status
@@ -34,6 +35,20 @@ func (j *JuiceFSEngine) queryCacheStatus() (states cacheStates, err error) {
 		if e != nil {
 			err = e
 			return
+		}
+		// if cacheSize is overwrited in worker options, deprecated
+		if j.runtime.Spec.Worker.Options["cache-size"] != "" {
+			// cacheSize is in MiB
+			c, e := strconv.Atoi(j.runtime.Spec.Worker.Options["cache-size"])
+			if e != nil {
+				err = e
+				return
+			}
+			cachesize, e = strconv.ParseUint(strconv.Itoa(c*1024*1024), 10, 64)
+			if e != nil {
+				err = e
+				return
+			}
 		}
 		states.cacheCapacity = utils.BytesSize(float64(cachesize * uint64(j.runtime.Spec.Replicas)))
 	}
