@@ -175,6 +175,14 @@ class DataLoad(K8sObject):
 
         return self
 
+    def set_cron(self, schedule):
+        if "spec" not in self.resource:
+            self.resource["spec"] = {}
+
+        self.resource["spec"]["policy"] = "Cron"
+        self.resource["spec"]["schedule"] = schedule
+
+        return self
 
 
 def assemble_dataset(testcase):
