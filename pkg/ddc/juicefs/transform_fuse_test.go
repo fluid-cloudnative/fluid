@@ -262,7 +262,9 @@ func TestTransformFuse(t *testing.T) {
 			name: "test-tiredstore",
 			runtime: &datav1alpha1.JuiceFSRuntime{
 				Spec: datav1alpha1.JuiceFSRuntimeSpec{
-					Fuse: datav1alpha1.JuiceFSFuseSpec{},
+					Fuse: datav1alpha1.JuiceFSFuseSpec{
+						Options: map[string]string{"verbose": ""},
+					},
 					TieredStore: datav1alpha1.TieredStore{
 						Levels: []datav1alpha1.Level{{
 							MediumType: "SSD",
@@ -571,9 +573,6 @@ func TestJuiceFSEngine_genMount(t *testing.T) {
 					},
 				},
 				options: map[string]string{"verbose": ""},
-				runtime: &datav1alpha1.JuiceFSRuntime{Spec: datav1alpha1.JuiceFSRuntimeSpec{Worker: datav1alpha1.JuiceFSCompTemplateSpec{
-					Options: map[string]string{"metrics": "127.0.0.1:9567"},
-				}}},
 			},
 			wantErr:         false,
 			wantFuseCommand: "/bin/mount.juicefs redis://127.0.0.1:6379 /test -o verbose,metrics=0.0.0.0:9567",
@@ -641,9 +640,6 @@ func TestJuiceFSEngine_genMount(t *testing.T) {
 					},
 				},
 				options: map[string]string{"cache-group": "test", "verbose": ""},
-				runtime: &datav1alpha1.JuiceFSRuntime{Spec: datav1alpha1.JuiceFSRuntimeSpec{Worker: datav1alpha1.JuiceFSCompTemplateSpec{
-					Options: map[string]string{"no-sharing": ""},
-				}}},
 			},
 			wantErr:         false,
 			wantFuseCommand: "/sbin/mount.juicefs test-enterprise /test -o verbose,foreground,cache-group=test,no-sharing",

@@ -109,11 +109,11 @@ func (j *JuiceFSEngine) transformWorkers(runtime *datav1alpha1.JuiceFSRuntime, d
 
 	// options
 	mount := dataset.Spec.Mounts[0]
-	var tiredStoreLevel *datav1alpha1.Level
+	var tieredStoreLevel *datav1alpha1.Level
 	if len(runtime.Spec.TieredStore.Levels) != 0 {
-		tiredStoreLevel = &runtime.Spec.TieredStore.Levels[0]
+		tieredStoreLevel = &runtime.Spec.TieredStore.Levels[0]
 	}
-	option, err := j.genMountOptions(mount, tiredStoreLevel)
+	option, err := j.genMountOptions(mount, tieredStoreLevel)
 	if err != nil {
 		return err
 	}
