@@ -499,7 +499,6 @@ func TestJuiceFSEngine_genMount(t *testing.T) {
 	type args struct {
 		value   *JuiceFS
 		options map[string]string
-		runtime *datav1alpha1.JuiceFSRuntime
 	}
 	tests := []struct {
 		name            string
