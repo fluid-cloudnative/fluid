@@ -1,0 +1,173 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-data-load-script" .Release.Name }}
+  labels:
+    release: {{ .Release.Name }}
+    role: dataload-job
+data:
+  dataloader.jindo.init: |
+    #!/usr/bin/env bash
+    set -xe
+    jindo_env_vars=(
+      STORAGE_ADDRESS
+    )
+    function public::jindo::init_conf() {
+      local IFS=$'\n' # split by line instead of space
+      for keyvaluepair in $(env); do
+        # split around the first "="
+        key=$(echo ${keyvaluepair} | cut -d= -f1)
+        value=$(echo ${keyvaluepair} | cut -d= -f2-)
+        if [[ "${jindo_env_vars[*]}" =~ "${key}" ]]; then
+          export ${key}=\"${value}\"
+        fi
+      done
+    }
+    main() {
+      public::jindo::init_conf
+    }
+    main
+  dataloader.distributedLoad: |
+    #!/usr/bin/env bash
+    set -xe
+    
+    function checkPathExistence() {
+        local targetPath=$1
+        local checkPathResult=$(timeout 30s jindo fs -ls jindo://$targetPath |& tail -3)
+        local strUnexistence="No such file or directory"
+        if [[ $checkPathResult =~ $strUnexistence ]];then
+            echo -e "dataLoad failed because some paths not exist."
+            exit 1
+        fi
+    }
+
+    function distributedLoad() {
+        local path=$1
+        local replica=$2
+        local default=$3
+        local cmd="jindocache -load"
+        checkPathExistence "$path"
+        if [[ $needLoadMetadata == 'true' ]]; then
+            echo -e "--- enable metaCache"
+            cmd="$cmd -meta"
+            echo -e "now cmd $cmd"
+        else
+            echo -e "--- disable metaCache"
+        fi
+
+        if [[ $loadMetadataOnly == 'true' ]]; then
+            echo -e "--- disable datacache"
+        else
+           echo -e "--- enable datacache"
+           cmd="$cmd -data"
+           echo -e "now cmd $cmd"
+        fi
+
+        if [[ $atomicCache == 'true' ]]; then
+            echo -e "--- enable atomicCache"
+            cmd="$cmd -atomic"
+            echo -e "now cmd $cmd"
+        else
+            echo -e "--- disable atomicCache"
+        fi
+
+        if [[ $loadMemorydata == 'true' ]]; then
+            echo -e "--- enable loadMemorydata"
+            cmd="$cmd -m"
+            echo -e "now cmd $cmd"
+        else
+            echo -e "--- disable loadMemorydata"
+        fi
+    
+        if [[ $enableDryrun == 'true' ]]; then
+            echo -e "--- enable dryrun"
+            cmd="$cmd -dryrun"
+            echo -e "now cmd $cmd"
+        else
+            echo -e "--- disable dryrun"
+        fi
+
+        if [[ $enbaleCacheListLocation == 'true' ]]; then
+            if [[ -e "ossutil64" ]]; then
+                echo "Found ossutil64 executable file under /"
+            else
+                echo -e "--- begin download ossutil"
+                apt-get update && apt-get install wget -y
+                wget http://gosspublic.alicdn.com/ossutil/1.7.5/ossutil64 && chmod 755 ossutil64
+            fi
+            ./ossutil64 -e $cacheListEndpoint -i $cacheListAccessKeyId -k $cacheListAccessKeySecret cp $cacheListUrl /cachelist.txt
+            echo -e "--- enable File List"
+            cmd="$cmd -R -replica $cacheListReplica -cachelist /cachelist.txt -thread $cacheListThread $default/"
+            echo -e "execute cmd $cmd"
+            time $cmd
+        elif [[ $enableFilter == 'true' ]]; then
+            cmd="$cmd -s -R -replica $replica -filter $cacheFilter -thread $cacheListThread $default$path"
+            echo -e "execute cmd $cmd"
+            time $cmd
+        else
+            cmd="$cmd -s -R -replica $replica $default$path"
+            echo -e "execute cmd $cmd"
+            time $cmd
+        fi
+
+        #echo -e "distributedLoad and sleep start now"
+        #sleep 10m
+    }
+
+    function main() {
+        needLoadMetadata="$NEED_LOAD_METADATA"
+        loadMemorydata="$LOAD_MEMORY_DATA"
+        loadMetadataOnly="$LOAD_METADATA_ONLY"
+        atomicCache="$ENABLE_ATOMIC_CACHE"
+        cacheListReplica=$CACHE_LIST_REPLICA
+        cacheListThread=$CACHE_LIST_THREAD
+        enbaleCacheListLocation=$Enable_CACHE_LIST_LOCATION
+        cacheListAccessKeyId=$CACHE_LIST_ACCESSKEYID
+        cacheListAccessKeySecret=$CACHE_LIST_ACCESSKEYSECRET
+        cacheListEndpoint=$CACHE_LIST_ENDPOINT
+        cacheListUrl=$CACHE_LIST_URL
+        cacheFilter=$CACHE_FILTER
+        enableFilter=false
+        enableDryrun=$DRY_RUN_ENABLE
+        #judge whether to use locaion list
+        if [[ -z "$cacheListAccessKeyId" ]] || [[ -z "$cacheListAccessKeySecret" ]] || [[ -z "$cacheListEndpoint" ]] || [[ -z "$cacheListUrl" ]]; then
+            enbaleCacheListLocation=false
+        else
+            enbaleCacheListLocation=true
+        fi
+        if [[ -z "$cacheListReplica" ]]; then
+            cacheListReplica=1
+        else
+            echo -e "cacheListReplica $cacheListReplica"
+        fi
+        if [[ -z "$cacheListThread" ]]; then
+            cacheListThread=10
+        else
+            echo -e "cacheListThread $cacheListThread"
+        fi
+        if [[ -z "$cacheFilter" ]]; then
+            enableFilter=false
+        else
+            enableFilter=true
+            echo -e "enableFilter $enableFilter"
+        fi
+        dafault="jindo://"
+        paths="$DATA_PATH"
+        paths=(${paths//:/ })
+        replicas="$PATH_REPLICAS"
+        replicas=(${replicas//:/ })
+        for((i=0;i<${#paths[@]};i++)) do
+            local path="${paths[i]}"
+            local replica="${replicas[i]}"
+            echo -e "distributedLoad on $path starts"
+            distributedLoad ${paths[i]} ${replicas[i]} ${dafault}
+            #echo -e "distributedLoad on $path ends"
+        done
+    }
+
+    main "$@"
+
+
+
+
+
