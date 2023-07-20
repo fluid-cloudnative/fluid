@@ -64,5 +64,5 @@ const (
 
 	QueryUfsTotal = "QUERY_UFS_TOTAL"
 
-	imageTagSupportAKFile = "5.0.0"
+	imageTagSupportAKFile = "4.6.8"
 )
