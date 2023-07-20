@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Fluid Authors.
+Copyright 2023 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -38,12 +38,12 @@ func TestTransformFuseWithNoArgs(t *testing.T) {
 					MountPoint: "local:///mnt/test",
 					Name:       "test",
 				}},
-			}}, &Jindo{}, "true"},
+			}}, &Jindo{}, "root"},
 	}
 	for _, test := range tests {
 		engine := &JindoCacheEngine{Log: fake.NullLogger()}
 		engine.transformFuse(test.runtime, test.jindoValue)
-		if test.jindoValue.Fuse.FuseProperties["fs.jindocache.data.cache.enable"] != test.expect {
+		if test.jindoValue.Fuse.FuseProperties["fs.jindocache.request.user"] != test.expect {
 			t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.Fuse.FuseProperties["jfs.cache.data-cache.enable"])
 		}
 	}
