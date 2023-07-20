@@ -51,7 +51,7 @@ spec:
           labels:
             release: {{ .Release.Name }}
             role: dataload-pod
-            app: jondofsx
+            app: jindocache
             cronjob: {{ printf "%s-job" .Release.Name }}
             targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
           {{- if .Values.dataloader.labels }}
