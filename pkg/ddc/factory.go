@@ -38,11 +38,11 @@ func init() {
 		"alluxio":    alluxio.Build,
 		"jindo":      jindo.Build,
 		"jindofsx":   jindofsx.Build,
+		"jindocache": jindocache.Build,
 		"goosefs":    goosefs.Build,
 		"juicefs":    juicefs.Build,
 		"thin":       thin.Build,
 		"efc":        efc.Build,
-		"jindocache": jindocache.Build,
 	}
 
 	deploy.SetPrecheckFunc(map[string]deploy.CheckFunc{
