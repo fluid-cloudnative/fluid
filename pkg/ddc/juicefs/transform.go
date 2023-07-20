@@ -179,7 +179,7 @@ func (j *JuiceFSEngine) genWorkerMount(value *JuiceFS, workerOptionMap map[strin
 	if value.Edition == CommunityEdition {
 		if _, ok := workerOptionMap["metrics"]; !ok {
 			metricsPort := DefaultMetricsPort
-			if value.Fuse.MetricsPort != nil {
+			if value.Worker.MetricsPort != nil {
 				metricsPort = *value.Worker.MetricsPort
 			}
 			workerOptionMap["metrics"] = fmt.Sprintf("0.0.0.0:%d", metricsPort)
@@ -239,13 +239,13 @@ func (j *JuiceFSEngine) allocatePorts(dataset *datav1alpha1.Dataset, runtime *da
 		// enterprise edition do not need metrics port
 		return nil
 	}
-	fuseMetricsPort, err := GetMetricsPort(dataset.Spec.Mounts[0].Options)
+	fuseMetricsPort, err := GetMetricsPort(runtime.Spec.Fuse.Options)
 	if err != nil {
 		return err
 	}
-	workerMetricsPort := DefaultMetricsPort
-	if runtime.Spec.Worker.Options == nil {
-		workerMetricsPort = fuseMetricsPort
+	workerMetricsPort, err := GetMetricsPort(runtime.Spec.Worker.Options)
+	if err != nil {
+		return err
 	}
 
 	// if not use hostnetwork then use default port
