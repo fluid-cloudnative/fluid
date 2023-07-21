@@ -22,6 +22,8 @@ import (
 	"os/exec"
 	"strings"
 	"syscall"
+
+	"github.com/pkg/errors"
 )
 
 // InstallRelease installs the release with cmd: helm install -f values.yaml chart_name, support helm v3
@@ -57,7 +59,13 @@ func InstallRelease(name string, namespace string, valueFile string, chartName s
 
 	if err != nil {
 		log.Error(err, "failed to execute InstallRelease() command", "command", cmd.String())
-		return fmt.Errorf("failed to create engine-related kubernetes resources")
+		err = fmt.Errorf("failed to install kubernetes resources of %s", chartName)
+
+		rollbackErr := DeleteReleaseIfExists(name, namespace)
+		if rollbackErr != nil {
+			log.Error(err, "failed to rollback installed helm release after InstallRelease() failure", "name", name, "namespace", namespace)
+		}
+		return err
 	}
 
 	return nil
@@ -76,14 +84,7 @@ func CheckRelease(name, namespace string) (exist bool, err error) {
 	// 	cmd.Env = append(cmd.Env, fmt.Sprintf("KUBECONFIG=%s", types.KubeConfig))
 	// }
 
-	if err := cmd.Start(); err != nil {
-		// log.Fatalf("cmd.Start: %v", err)
-		// log.Error(err)
-		log.Error(err, "failed to start CheckRelease() command", "command", cmd.String())
-		return exist, err
-	}
-
-	err = cmd.Wait()
+	resultBytes, err := cmd.CombinedOutput()
 	if err != nil {
 		if exiterr, ok := err.(*exec.ExitError); ok {
 			if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
@@ -100,7 +101,27 @@ func CheckRelease(name, namespace string) (exist bool, err error) {
 	} else {
 		waitStatus := cmd.ProcessState.Sys().(syscall.WaitStatus)
 		if waitStatus.ExitStatus() == 0 {
-			exist = true
+			// ####### helm status output ######
+			// NAME: demo-dataset
+			// LAST DEPLOYED: Thu Mar 16 17:08:06 2023
+			// NAMESPACE: default
+			// STATUS: deployed
+			// REVISION: 1
+			// TEST SUITE: None
+			// ####### END #######
+			resultLines := strings.Split(string(resultBytes), "\n")
+			for _, line := range resultLines {
+				if strings.HasPrefix(line, "STATUS: ") {
+					if strings.Replace(line, "STATUS: ", "", 1) == "deployed" {
+						exist = true
+					} else {
+						rollbackErr := DeleteRelease(name, namespace)
+						if rollbackErr != nil {
+							err = errors.Wrapf(rollbackErr, "failed to rollback failed release (namespace: %s, name: %s)", namespace, name)
+						}
+					}
+				}
+			}
 		} else {
 			if waitStatus.ExitStatus() != -1 {
 				return exist, fmt.Errorf("unexpected return code %d when exec helm status %s -n %s",
