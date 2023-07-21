@@ -1,0 +1,103 @@
+{{- $masterCount := int .Values.master.replicaCount }}
+{{- $isSingleMaster := eq $masterCount 1 }}
+{{- $isRaftHa := eq $masterCount 3 }}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    "helm.sh/hook": "pre-install"
+    "helm.sh/hook-delete-policy": before-hook-creation
+  name: {{ template "jindofs.fullname" . }}-config
+  labels:
+    name: {{ template "jindofs.fullname" . }}-config
+    app: {{ template "jindofs.name" . }}
+    chart: {{ template "jindofs.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  ownerReferences:
+  {{- if .Values.owner.enabled }}
+  - apiVersion: {{ .Values.owner.apiVersion }}
+    blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+    controller: {{ .Values.owner.controller }}
+    kind: {{ .Values.owner.kind }}
+    name: {{ .Values.owner.name }}
+    uid: {{ .Values.owner.uid }}
+  {{- end }}
+data:
+  jindocache.cfg: |
+    [jindocache-common]
+    {{- range $key, $val := .Values.logConfig }}
+    {{ $key }} = {{ $val }}
+    {{- end }}
+    {{- range $key, $val := .Values.master.secretProperties }}
+    {{ $key }} = {{ $val }}
+    {{- end }}
+    {{- range $key, $val := .Values.master.fileStoreProperties }}
+    {{ $key }} = {{ $val }}
+    {{- end }}
+
+    [jindocache-server]
+    {{- range $key, $val := .Values.master.properties }}
+    {{ $key }} = {{ $val }}
+    {{- end }}
+  
+    [jindocache-worker]
+    {{- range $key, $val := .Values.worker.properties }}
+    {{ $key }} = {{ $val }}
+    {{- end}}
+    
+    [common]
+    {{- range $key, $val := .Values.fuseLogConfig }}
+    {{ $key }} = {{ $val }}
+    {{- end }}
+    {{- range $key, $val := .Values.master.secretProperties }}
+    {{ $key }} = {{ $val }}
+    {{- end }}
+    
+    [jindocache-client]
+    {{- if $isSingleMaster }}
+    fs.jindocache.namespace.rpc.address = {{ template "jindofs.fullname" . }}-master-0.{{ .Values.runtimeIdentity.namespace }}:{{ .Values.master.ports.rpc }}
+    {{- else if $isRaftHa }}
+    fs.jindocache.namespace.rpc.address = {{ template "jindofs.fullname" . }}-master-0.{{ .Values.runtimeIdentity.namespace }}:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-1.{{ .Values.runtimeIdentity.namespace }}:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-2.{{ .Values.runtimeIdentity.namespace }}:{{ .Values.master.ports.rpc }}
+    {{- end }}
+    {{- range $key, $val := .Values.fuse.properties }}
+    {{ $key }} = {{ $val }}
+    {{- end }}
+    
+
+  cacheset.xml: |
+    <?xml version="1.0" encoding="UTF-8"?>
+    <cachesets>
+       {{- range $name, $cacheset := .Values.master.cachesets }}
+       <cacheset>
+          <name>{{ $cacheset.name }}</name>
+          <path>{{ $cacheset.path }}</path>
+          <cacheStrategy>{{ $cacheset.cacheStrategy }}</cacheStrategy>
+          <metaPolicy>
+             <type>{{ $cacheset.metaPolicy }}</type>
+          </metaPolicy>
+          <readPolicy>{{ $cacheset.readPolicy }}</readPolicy>
+          <writePolicy>{{ $cacheset.writePolicy }}</writePolicy>
+       </cacheset>
+       {{- end }}
+    </cachesets>
+
+  jindosdk.cfg: |
+    [common]
+    {{- range $key, $val := .Values.fuseLogConfig }}
+    {{ $key }} = {{ $val }}
+    {{- end }}
+    {{- range $key, $val := .Values.master.secretProperties }}
+    {{ $key }} = {{ $val }}
+    {{- end }}
+
+    [jindosdk]
+    {{- if $isSingleMaster }}
+    fs.jindocache.namespace.rpc.address = {{ template "jindofs.fullname" . }}-master-0.{{ .Values.runtimeIdentity.namespace }}:{{ .Values.master.ports.rpc }}
+    {{- else if $isRaftHa }}
+    fs.jindocache.namespace.rpc.address = {{ template "jindofs.fullname" . }}-master-0.{{ .Values.runtimeIdentity.namespace }}:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-1.{{ .Values.runtimeIdentity.namespace }}:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-2.{{ .Values.runtimeIdentity.namespace }}:{{ .Values.master.ports.rpc }}
+    {{- end }}
+    {{- range $key, $val := .Values.fuse.properties }}
+    {{ $key }} = {{ $val }}
+    {{- end }}
