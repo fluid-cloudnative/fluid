@@ -49,7 +49,7 @@ func (j *JuiceFSEngine) queryCacheStatus() (states cacheStates, err error) {
 		cachesize = cacheSizeMB * 1024 * 1024
 	}
 	if cachesize != 0 {
-		states.cacheCapacity = utils.BytesSize(float64(cachesize * uint64(j.runtime.Spec.Replicas)))
+		states.cacheCapacity = utils.BytesSize(float64(cachesize * uint64(j.runtime.Status.WorkerNumberReady)))
 	}
 
 	var pods []corev1.Pod

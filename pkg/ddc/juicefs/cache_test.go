@@ -81,6 +81,9 @@ func TestJuiceFSEngine_queryCacheStatus(t *testing.T) {
 							"cache-size": "102400",
 						}},
 					},
+					Status: datav1alpha1.RuntimeStatus{
+						WorkerNumberReady: 1,
+					},
 				},
 			}
 			want := cacheStates{
