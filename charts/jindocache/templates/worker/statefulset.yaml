@@ -1,0 +1,245 @@
+{{- $masterCount := int .Values.master.replicaCount }}
+{{- $isSingleMaster := eq $masterCount 1 }}
+{{- $isRaftHa := eq $masterCount 3 }}
+{{- $notEnableDnsConfig := (eq .Values.master.dnsServer "1.1.1.1") }}
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ template "jindofs.fullname" . }}-worker
+  labels:
+    app: {{ template "jindofs.name" . }}
+    chart: {{ template "jindofs.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    role: jindofs-worker
+    fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
+    fluid.io/dataset-placement: {{ .Values.placement }}
+  ownerReferences:
+  {{- if .Values.owner.enabled }}
+  - apiVersion: {{ .Values.owner.apiVersion }}
+    blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+    controller: {{ .Values.owner.controller }}
+    kind: {{ .Values.owner.kind }}
+    name: {{ .Values.owner.name }}
+    uid: {{ .Values.owner.uid }}
+  {{- end }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "jindofs.name" . }}
+      release: {{ .Release.Name }}
+      role: jindofs-worker
+  serviceName: {{ template "jindofs.fullname" . }}-worker
+  replicas: {{ .Values.worker.replicaCount }}
+  podManagementPolicy: {{ .Values.worker.podManagementPolicy }}
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+      {{- if .Values.worker.annotations }}
+      {{- range $key, $val := .Values.worker.annotations }}
+        {{ $key | quote }}: {{ $val | quote }}
+      {{- end }}
+      {{- end }}
+      labels:
+        app: {{ template "jindofs.name" . }}
+        chart: {{ template "jindofs.chart" . }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+        role: jindofs-worker
+        fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
+        fluid.io/dataset-placement: {{ .Values.placement }}
+        {{- if .Values.worker.labels }}
+        {{- range $key, $val := .Values.worker.labels }}
+        {{ $key | quote }}: {{ $val | quote }}
+        {{- end }}
+        {{- end }}
+    spec:
+      hostNetwork: {{ .Values.useHostNetwork }}
+      securityContext:
+        runAsUser: {{ .Values.user }}
+        runAsGroup: {{ .Values.group }}
+        fsGroup: {{ .Values.fsGroup }}
+      nodeSelector:
+{{- if .Values.worker.nodeSelector }}
+{{ toYaml .Values.worker.nodeSelector | trim | indent 8  }}
+{{- else if .Values.nodeSelector }}
+{{ toYaml .Values.nodeSelector | trim | indent 8  }}
+{{- end }}
+      {{- if .Values.worker.tolerations }}
+      tolerations:
+{{ toYaml .Values.worker.tolerations | indent 8 }}
+      {{- end }}
+      containers:
+        - name: jindofs-worker
+          image: {{ .Values.image }}:{{ .Values.imageTag }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          {{- if .Values.worker.resources }}
+          resources:
+            limits:
+            {{- if .Values.worker.resources.limits }}
+            {{- if .Values.worker.resources.limits.cpu }}
+              cpu: {{ .Values.worker.resources.limits.cpu }}
+            {{- end }}
+            {{- if .Values.worker.resources.limits.memory }}
+              memory: {{ .Values.worker.resources.limits.memory }}
+            {{- end }}
+            {{- end }}
+            requests:
+            {{- if .Values.worker.resources.requests }}
+            {{- if .Values.worker.resources.requests.cpu }}
+              cpu: {{ .Values.worker.resources.requests.cpu }}
+            {{- end }}
+            {{- if .Values.worker.resources.requests.memory }}
+              memory: {{ .Values.worker.resources.requests.memory }}
+            {{- end }}
+            {{- end }}
+          {{- end }}
+          command: ["/entrypoint.sh"]
+          args: ["worker"]
+          env:
+          {{- if $isSingleMaster }}
+          - name: STORAGE_NAMESPACE_RPC_ADDRESS
+            value: {{ template "jindofs.fullname" . }}-master-0.{{ .Values.runtimeIdentity.namespace }}:{{ .Values.master.ports.rpc }}
+          - name: CLIENT_NAMESPACE_RPC_ADDRESS
+            value: {{ template "jindofs.fullname" . }}-master-0.{{ .Values.runtimeIdentity.namespace }}:{{ .Values.master.ports.rpc }}
+          {{- else if $isRaftHa }}
+          - name: STORAGE_NAMESPACE_RPC_ADDRESS
+            value: {{ template "jindofs.fullname" . }}-master-0.{{ .Values.runtimeIdentity.namespace }}:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-1.{{ .Values.runtimeIdentity.namespace }}:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-2.{{ .Values.runtimeIdentity.namespace }}:{{ .Values.master.ports.rpc }}
+          - name: CLIENT_NAMESPACE_RPC_ADDRESS
+            value: {{ template "jindofs.fullname" . }}-master-0.{{ .Values.runtimeIdentity.namespace }}:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-1.{{ .Values.runtimeIdentity.namespace }}:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-2.{{ .Values.runtimeIdentity.namespace }}:{{ .Values.master.ports.rpc }}
+          {{- end }}
+          {{- if .Values.fuse.runAs }}
+          - name: RUN_AS_USER
+            value: {{ .Values.fuse.runAs }}
+          {{- end }}
+          {{- if .Values.useHostNetwork }}
+          - name: STORAGE_ADDRESS
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+          {{- else }}
+          - name: STORAGE_ADDRESS
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: STORAGE_DATA_PATH
+            value: {{ .Values.worker.dataPath }}
+          {{- end }}
+          {{- if .Values.worker.env }}
+          {{- range $name, $val := .Values.worker.env }}
+          - name: {{ $name }}
+            value: {{ $val | quote }}
+          {{- end }}
+          {{- end }}
+          ports:
+          - containerPort: {{ .Values.worker.ports.rpc }}
+            name: rpc
+          volumeMounts:
+            - name: bigboot-config
+              mountPath: /jindocache.cfg
+              subPath: jindocache.cfg
+            - name: bigboot-config
+              mountPath: /hdfs-3.2.1/etc/hadoop/core-site.xml
+              subPath: core-site.xml
+            - name: bigboot-config
+              mountPath: /jindosdk.cfg
+              subPath: jindosdk.cfg
+          {{- range $name, $mount := .Values.mounts.workersAndClients }}
+            - name: datavolume-{{ $name }}
+              mountPath: "{{ $mount.path }}"
+            {{- end }}
+          {{- if .Values.hadoopConfig }}
+          {{- if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite }}
+            - name: hdfs-confs
+              mountPath: /hdfs-site.xml
+              subPath: hdfs-site.xml
+          {{- end }}
+          {{- end }}
+          {{- if and .Values.secret .Values.UseStsToken }}
+            - name: jindofs-secret-token
+              mountPath: /token
+              readOnly: true
+          {{- end }}
+          {{- if .Values.secret }}
+            - name: jindofs-secret-token
+              mountPath: /token/AccessKeyId
+              subPath: {{ .Values.secretKey }}
+              readOnly: true
+            - name: jindofs-secret-token
+              mountPath: /token/AccessKeySecret
+              subPath: {{ .Values.secretValue }}
+              readOnly: true
+          {{- end }}
+          {{- if .Values.ufsVolumes }}
+          {{- range .Values.ufsVolumes }}
+            - mountPath: {{ .containerPath }}
+              name: {{ .name }}
+              {{- if .subPath }}
+              subPath: {{ .subPath }}
+              {{- end }}
+          {{- end }}
+          {{- end }}
+      restartPolicy: Always
+      {{- if $notEnableDnsConfig }}
+      dnsPolicy: {{ .Values.useHostNetwork | ternary "ClusterFirstWithHostNet" "ClusterFirst" }}
+      {{- else }}
+      dnsConfig:
+        nameservers:
+        - {{ .Values.master.dnsServer }}
+        options:
+        - name: ndots
+          value: "5"
+        searches:
+        - {{ .Values.master.namespace }}.svc.cluster.local
+        - svc.cluster.local
+        - cluster.local
+        - tbsite.net
+        - aliyun.com
+      dnsPolicy: None
+      enableServiceLinks: true
+      {{- end }}
+      volumes:
+          {{- range $name, $mount := .Values.mounts.workersAndClients }}
+          {{- if eq $mount.type "hostPath" }}
+        - hostPath:
+            path:  "{{ $mount.path }}"
+            type: DirectoryOrCreate
+          name: datavolume-{{ $name }}
+          {{- else if eq $mount.type "emptyDir" }}
+        - emptyDir:
+            medium: {{ eq $mount.mediumType "MEM" | ternary "Memory" (or (eq $mount.mediumType "SSD") (eq $mount.mediumType "HDD") | ternary "" ($mount.mediumType | quote)) }}
+            {{- if $mount.quota }}
+            sizeLimit: {{ $mount.quota }}
+            {{- end }}
+          name: datavolume-{{ $name }}
+          {{- /* todo: support volume template */}}
+          {{- end }}
+          {{- end }}
+        {{- if .Values.ufsVolumes }}
+        {{- range .Values.ufsVolumes }}
+        - name: {{ .name }}
+          persistentVolumeClaim:
+            claimName: {{ .name }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.hadoopConfig }}
+        {{- if or .Values.hadoopConfig.includeCoreSite .Values.hadoopConfig.includeHdfsSite }}
+        - name: hdfs-confs
+          configMap:
+            name: {{ .Values.hadoopConfig.configMap }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.secret }}
+        - name: jindofs-secret-token
+          secret:
+            secretName: {{ .Values.secret }}
+        {{- end }}
+        - name: bigboot-config
+          configMap:
+            name: {{ template "jindofs.fullname" . }}-config

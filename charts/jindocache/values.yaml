@@ -1,0 +1,91 @@
+# Default values for JindoFS.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+
+image: registry-vpc.__ACK_REGION_ID__.aliyuncs.com/jindo/smartdata
+imageTag: "5.0.0"
+imagePullPolicy: Always
+
+initPortCheck:
+  enabled: false
+  image: registry.cn-hangzhou.aliyuncs.com/fluid/init-users
+  imageTag: v0.3.0-1467caa
+  imagePullPolicy: IfNotPresent
+  portsToCheck: ""
+
+fuseImage: registry-vpc.__ACK_REGION_ID__.aliyuncs.com/jindo/jindo-fuse
+fuseImageTag: "5.0.0"
+fuseImagePullPolicy: "Always"
+
+user: 0
+group: 0
+fsGroup: 0
+
+useHostNetwork: true
+
+labels: {}
+
+properties:
+  logDir: /mnt/disk1/bigboot/log
+
+master:
+  ports:
+    rpc: 8101
+  dnsServer: ""
+  labels: {}
+  annotations: {}
+  env: {}
+  replicaCount: 1
+  properties:
+    namespace.rpc.port: 8101
+    namespace.filelet.cache.size: 100000
+    namespace.blocklet.cache.size: 1000000
+    namespace.backend.type: rocksdb
+
+worker:
+  ports:
+    rpc: 6101
+  labels: {}
+  annotations: {}
+  nodeSelector: {}
+  env: {}
+  replicaCount: 0
+  podManagementPolicy: Parallel
+  properties:
+    storage.rpc.port: 6101
+
+fuse:
+  criticalPod: false
+  labels: {}
+  annotations: {}
+  env: {}
+  updateStrategy:
+    type: OnDelete
+  properties:
+    fs.jindocache.request.user: root,
+
+mounts:
+  master:
+  #  1:
+  #    path: /mnt/disk1
+  #    type: emptyDir
+  #    mediumType: MEM
+  workersAndClients:
+  #  1:
+  #    path: /mnt/disk1
+  #    type: emptyDir
+  #    mediumType: MEM
+  #    quota: 10Gi
+  #  2:
+  #    path: /mnt/disk2
+  #    type: hostPath
+  #    mediumType: SSD
+  #    quota: 5Gi
+
+owner:
+  enabled: false
+
+runtimeIdentity:
+  namespace: default
+  name: xxx

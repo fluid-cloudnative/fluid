@@ -17,6 +17,7 @@ limitations under the License.
 package app
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindocache"
 	"os"
 
 	"github.com/fluid-cloudnative/fluid/pkg/controllers"
@@ -46,6 +47,7 @@ var (
 	// Use compiler to check if the struct implements all the interface
 	_ base.Implement = (*jindo.JindoEngine)(nil)
 	_ base.Implement = (*jindofsx.JindoFSxEngine)(nil)
+	_ base.Implement = (*jindocache.JindoCacheEngine)(nil)
 
 	metricsAddr             string
 	enableLeaderElection    bool

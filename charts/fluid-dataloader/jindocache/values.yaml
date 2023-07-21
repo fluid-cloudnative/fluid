@@ -1,0 +1,103 @@
+# Default values for fluid-dataloader.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+name:
+
+owner:
+  enabled: false
+  name: ""
+  kind: ""
+  uid: ""
+  apiVersion: ""
+  blockOwnerDeletion: false
+  controller: false
+
+dataloader:
+  # Required
+  # Default: once
+  # Description: policy of data load
+  policy: ""
+
+  # Optional
+  # Description: schedule for cron policy
+  schedule:
+
+  # Optional
+  # Default: 3
+  # Description: how many times the prefetch job can fail, i.e. `Job.spec.backoffLimit`
+  backoffLimit: 1
+
+  # Required
+  # Description: the dataset that this DataLoad targets
+  targetDataset: #imagenet
+
+  # Optional
+  # Default: false
+  # Description: should load metadata from UFS when doing data load
+  loadMetadata: false
+
+  # Optional
+  # Default: (path: "/", replicas: 1, fluidNative: false)
+  # Description: which paths should the DataLoad load
+  targetPaths:
+    - path: "/"
+      replicas: 1
+      fluidNative: false
+
+  # Required
+  # Description: the image that the DataLoad job uses
+  image: #<jindo-image>
+
+  # Optional
+  # Description: optional labels on DataLoad pods
+  labels:
+
+  # Optional
+  # Description: optional annotations on DataLoad pods
+  annotations:
+
+  # Optional
+  # Description: optional image pull secrets on DataLoad pods
+  imagePullSecrets: []
+
+  # Optional
+  # Description: optional pod affinity
+  #  affinity:
+  #    nodeAffinity:
+  #      requiredDuringSchedulingIgnoredDuringExecution:
+  #        nodeSelectorTerms:
+  #          - matchExpressions:
+  #              - key: topology.kubernetes.io/zone
+  #                operator: In
+  #                values:
+  #                  - antarctica-east1
+  #                  - antarctica-west1
+  #      preferredDuringSchedulingIgnoredDuringExecution:
+  #        - weight: 1
+  #          preference:
+  #            matchExpressions:
+  #              - key: another-node-label-key
+  #                operator: In
+  #                values:
+  #                  - another-node-label-value
+  affinity: {}
+
+  # Optional
+  # Description: optional pod Tolerations
+  #  tolerations:
+  #    - key: "example-key"
+  #      operator: "Exists"
+  #      effect: "NoSchedule"
+  tolerations: []
+
+  # Optional
+  # Description: optional pod scheduler definition
+  # schedulerName: "scheduler"
+  schedulerName: ""
+
+  # Optional
+  # Description: optional pod node selector
+  # nodeSelector:
+  #  diskType: "ssd"
+  nodeSelector: {}
