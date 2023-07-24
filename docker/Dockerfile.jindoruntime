@@ -25,6 +25,7 @@ RUN curl -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-rel
 
 ADD charts/jindofs /charts/jindofs
 ADD charts/jindofsx /charts/jindofsx
+ADD charts/jindocache /charts/jindocache
 
 COPY --from=builder /go/bin/jindoruntime-controller /usr/local/bin/jindoruntime-controller
 #COPY --from=builder /go/bin/dlv /usr/local/bin/dlv
