@@ -20,25 +20,39 @@ import (
 	"fmt"
 	"strconv"
 
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	v1 "k8s.io/api/core/v1"
 )
 
 // queryCacheStatus checks the cache status
 func (j *JuiceFSEngine) queryCacheStatus() (states cacheStates, err error) {
 	edition := j.GetEdition()
 
+	var cachesize uint64
 	if len(j.runtime.Spec.TieredStore.Levels) != 0 {
-		cachesize, e := strconv.ParseUint(strconv.FormatInt(j.runtime.Spec.TieredStore.Levels[0].Quota.Value(), 10), 10, 64)
-		if e != nil {
-			err = e
+		cachesize, err = strconv.ParseUint(strconv.FormatInt(j.runtime.Spec.TieredStore.Levels[0].Quota.Value(), 10), 10, 64)
+		if err != nil {
 			return
 		}
-		states.cacheCapacity = utils.BytesSize(float64(cachesize * uint64(j.runtime.Spec.Replicas)))
+	}
+	// if cacheSize is overwritten in worker options, deprecated
+	if cacheSizeStr := j.runtime.Spec.Worker.Options["cache-size"]; cacheSizeStr != "" {
+		var cacheSizeMB uint64
+		cacheSizeMB, err = strconv.ParseUint(cacheSizeStr, 10, 64)
+		if err != nil {
+			return
+		}
+
+		// cacheSize is in MiB
+		cachesize = cacheSizeMB * 1024 * 1024
+	}
+	if cachesize != 0 {
+		states.cacheCapacity = utils.BytesSize(float64(cachesize * uint64(j.runtime.Status.WorkerNumberReady)))
 	}
 
-	var pods []v1.Pod
+	var pods []corev1.Pod
 	// enterprise edition use cache of workers which form a cache group, while community edition use cache of fuse pod whose cache if no-sharing
 	containerName := common.JuiceFSWorkerContainer
 	stsName := j.getWorkerName()
@@ -93,7 +107,7 @@ func (j *JuiceFSEngine) queryCacheStatus() (states cacheStates, err error) {
 // get cacheHitRatio & cacheThroughputRatio from fuse pod
 func (j *JuiceFSEngine) getCacheRatio(edition string, states *cacheStates) (err error) {
 	var containerName string
-	var pods []v1.Pod
+	var pods []corev1.Pod
 	if edition == EnterpriseEdition {
 		containerName = common.JuiceFSWorkerContainer
 		stsName := j.getWorkerName()

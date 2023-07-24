@@ -28,7 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -263,7 +262,9 @@ func TestTransformFuse(t *testing.T) {
 			name: "test-tiredstore",
 			runtime: &datav1alpha1.JuiceFSRuntime{
 				Spec: datav1alpha1.JuiceFSRuntimeSpec{
-					Fuse: datav1alpha1.JuiceFSFuseSpec{},
+					Fuse: datav1alpha1.JuiceFSFuseSpec{
+						Options: map[string]string{"verbose": ""},
+					},
 					TieredStore: datav1alpha1.TieredStore{
 						Levels: []datav1alpha1.Level{{
 							MediumType: "SSD",
@@ -481,23 +482,9 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			opt, err := engine.genValue(tt.args.mount, tt.args.tiredStoreLevel, tt.args.value, tt.args.sharedOptions, tt.args.sharedEncryptOptions)
+			err := engine.genValue(tt.args.mount, tt.args.tiredStoreLevel, tt.args.value, tt.args.sharedOptions, tt.args.sharedEncryptOptions)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("genValue() error = %v, wantErr %v", err, tt.wantErr)
-			}
-			if len(opt) != len(tt.wantOptions) {
-				t.Errorf("genValue() got = %v, wantOptions %v", opt, tt.wantOptions)
-			}
-			for k, v := range opt {
-				if v1, ok := tt.wantOptions[k]; !ok {
-					t.Errorf("AlluxioEngine.genUFSMountOptions() should has key: %v", k)
-				} else {
-					if v1 != v {
-						t.Errorf("AlluxioEngine.genUFSMountOptions()  key: %v value: %v, get value: %v", k, v1, v)
-					} else {
-						delete(tt.wantOptions, k)
-					}
-				}
 			}
 		})
 	}
@@ -512,17 +499,14 @@ func TestJuiceFSEngine_genMount(t *testing.T) {
 	type args struct {
 		value   *JuiceFS
 		options map[string]string
-		runtime *datav1alpha1.JuiceFSRuntime
 	}
 	tests := []struct {
-		name              string
-		fields            fields
-		args              args
-		wantErr           bool
-		wantWorkerCommand string
-		wantFuseCommand   string
-		wantFuseStatCmd   string
-		wantWorkerStatCmd string
+		name            string
+		fields          fields
+		args            args
+		wantErr         bool
+		wantFuseCommand string
+		wantFuseStatCmd string
 	}{
 		{
 			name: "test-community",
@@ -554,11 +538,9 @@ func TestJuiceFSEngine_genMount(t *testing.T) {
 					},
 				},
 			},
-			wantErr:           false,
-			wantWorkerCommand: "/bin/mount.juicefs redis://127.0.0.1:6379 /test-worker -o metrics=0.0.0.0:9567",
-			wantFuseCommand:   "/bin/mount.juicefs redis://127.0.0.1:6379 /test -o metrics=0.0.0.0:9567",
-			wantFuseStatCmd:   "stat -c %i /test",
-			wantWorkerStatCmd: "stat -c %i /test-worker",
+			wantErr:         false,
+			wantFuseCommand: "/bin/mount.juicefs redis://127.0.0.1:6379 /test -o metrics=0.0.0.0:9567",
+			wantFuseStatCmd: "stat -c %i /test",
 		},
 		{
 			name: "test-community-options",
@@ -590,15 +572,10 @@ func TestJuiceFSEngine_genMount(t *testing.T) {
 					},
 				},
 				options: map[string]string{"verbose": ""},
-				runtime: &datav1alpha1.JuiceFSRuntime{Spec: datav1alpha1.JuiceFSRuntimeSpec{Worker: datav1alpha1.JuiceFSCompTemplateSpec{
-					Options: map[string]string{"metrics": "127.0.0.1:9567"},
-				}}},
 			},
-			wantErr:           false,
-			wantWorkerCommand: "/bin/mount.juicefs redis://127.0.0.1:6379 /test-worker -o verbose,metrics=127.0.0.1:9567",
-			wantFuseCommand:   "/bin/mount.juicefs redis://127.0.0.1:6379 /test -o verbose,metrics=0.0.0.0:9567",
-			wantFuseStatCmd:   "stat -c %i /test",
-			wantWorkerStatCmd: "stat -c %i /test-worker",
+			wantErr:         false,
+			wantFuseCommand: "/bin/mount.juicefs redis://127.0.0.1:6379 /test -o verbose,metrics=0.0.0.0:9567",
+			wantFuseStatCmd: "stat -c %i /test",
 		},
 		{
 			name: "test-enterprise",
@@ -629,11 +606,9 @@ func TestJuiceFSEngine_genMount(t *testing.T) {
 					},
 				},
 			},
-			wantErr:           false,
-			wantWorkerCommand: "/sbin/mount.juicefs test-enterprise /test -o foreground,cache-group=fluid-test-enterprise",
-			wantFuseCommand:   "/sbin/mount.juicefs test-enterprise /test -o foreground,cache-group=fluid-test-enterprise,no-sharing",
-			wantFuseStatCmd:   "stat -c %i /test",
-			wantWorkerStatCmd: "stat -c %i /test",
+			wantErr:         false,
+			wantFuseCommand: "/sbin/mount.juicefs test-enterprise /test -o foreground,cache-group=fluid-test-enterprise,no-sharing",
+			wantFuseStatCmd: "stat -c %i /test",
 		},
 		{
 			name: "test-enterprise-options",
@@ -664,31 +639,32 @@ func TestJuiceFSEngine_genMount(t *testing.T) {
 					},
 				},
 				options: map[string]string{"cache-group": "test", "verbose": ""},
-				runtime: &datav1alpha1.JuiceFSRuntime{Spec: datav1alpha1.JuiceFSRuntimeSpec{Worker: datav1alpha1.JuiceFSCompTemplateSpec{
-					Options: map[string]string{"no-sharing": ""},
-				}}},
 			},
-			wantErr:           false,
-			wantFuseCommand:   "/sbin/mount.juicefs test-enterprise /test -o verbose,foreground,cache-group=test,no-sharing",
-			wantWorkerCommand: "/sbin/mount.juicefs test-enterprise /test -o verbose,foreground,cache-group=test",
-			wantFuseStatCmd:   "stat -c %i /test",
-			wantWorkerStatCmd: "stat -c %i /test",
+			wantErr:         false,
+			wantFuseCommand: "/sbin/mount.juicefs test-enterprise /test -o verbose,foreground,cache-group=test,no-sharing",
+			wantFuseStatCmd: "stat -c %i /test",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			dataset := &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      tt.fields.name,
+					Namespace: tt.fields.namespace,
+				},
+			}
+			client := fake.NewFakeClientWithScheme(testScheme, dataset)
 			j := &JuiceFSEngine{
 				name:      tt.fields.name,
 				namespace: tt.fields.namespace,
 				Log:       tt.fields.Log,
+				Client:    client,
 			}
-			if err := j.genMount(tt.args.value, tt.args.runtime, tt.args.options); (err != nil) != tt.wantErr {
-				t.Errorf("genMount() error = %v\nwantErr %v", err, tt.wantErr)
+			if err := j.genFuseMount(tt.args.value, tt.args.options); (err != nil) != tt.wantErr {
+				t.Errorf("genMount() \nerror = %v\nwantErr = %v", err, tt.wantErr)
 			}
 			if len(tt.args.value.Fuse.Command) != len(tt.wantFuseCommand) ||
-				tt.args.value.Fuse.StatCmd != tt.wantFuseStatCmd ||
-				tt.args.value.Worker.StatCmd != tt.wantWorkerStatCmd ||
-				len(tt.args.value.Worker.Command) != len(tt.wantWorkerCommand) {
+				tt.args.value.Fuse.StatCmd != tt.wantFuseStatCmd {
 				t.Errorf("genMount() value = %v", tt.args.value)
 			}
 		})
@@ -793,7 +769,7 @@ func Test_genOption(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := genOption(tt.args.optionMap)
+			got := genArgs(tt.args.optionMap)
 			if !isSliceEqual(got, tt.want) {
 				t.Errorf("genOption() = %v, want %v", got, tt.want)
 			}
@@ -820,6 +796,19 @@ func isSliceEqual(got, want []string) bool {
 		}
 	}
 	return len(diff) == 0
+}
+
+func isMapEqual(got, want map[string]string) bool {
+	if len(got) != len(want) {
+		return false
+	}
+
+	for k, v := range got {
+		if want[k] != v {
+			return false
+		}
+	}
+	return true
 }
 
 func TestJuiceFSEngine_getQuota(t *testing.T) {
@@ -1143,6 +1132,54 @@ func TestJuiceFSEngine_genQuotaCmd(t *testing.T) {
 			}
 			if tt.wantQuotaCmd != tt.args.value.Configs.QuotaCmd {
 				t.Errorf("genQuotaCmd() got cmd = %v, want %v", tt.args.value.Configs.QuotaCmd, tt.wantQuotaCmd)
+			}
+		})
+	}
+}
+
+func TestJuiceFSEngine_genMountOptions(t *testing.T) {
+	result := resource.MustParse("20Gi")
+	type args struct {
+		mount           datav1alpha1.Mount
+		tiredStoreLevel *datav1alpha1.Level
+	}
+	tests := []struct {
+		name        string
+		args        args
+		wantOptions map[string]string
+		wantErr     bool
+	}{
+		{
+			name: "test1",
+			args: args{
+				mount: datav1alpha1.Mount{
+					MountPoint: "juicefs:///test",
+				},
+				tiredStoreLevel: &datav1alpha1.Level{
+					MediumType: common.SSD,
+					VolumeType: common.VolumeTypeHostPath,
+					Path:       "/abc",
+					Quota:      &result,
+				},
+			},
+			wantOptions: map[string]string{
+				"subdir":     "/test",
+				"cache-dir":  "/abc",
+				"cache-size": "20480",
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			j := &JuiceFSEngine{}
+			gotOptions, err := j.genMountOptions(tt.args.mount, tt.args.tiredStoreLevel)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("genMountOptions() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !isMapEqual(gotOptions, tt.wantOptions) {
+				t.Errorf("genMountOptions() gotOptions = %v, want %v", gotOptions, tt.wantOptions)
 			}
 		})
 	}

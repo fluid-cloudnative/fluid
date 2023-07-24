@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -40,6 +41,7 @@ type JuiceFSEngine struct {
 	runtimeType string
 	Log         logr.Logger
 	client.Client
+	Recorder record.EventRecorder
 	//When reaching this gracefulShutdownLimits, the system is forced to clean up.
 	gracefulShutdownLimits int32
 	MetadataSyncDoneCh     chan base.MetadataSyncResult
@@ -54,6 +56,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 		name:                   ctx.Name,
 		namespace:              ctx.Namespace,
 		Client:                 ctx.Client,
+		Recorder:               ctx.Recorder,
 		Log:                    ctx.Log,
 		runtimeType:            ctx.RuntimeType,
 		gracefulShutdownLimits: 5,

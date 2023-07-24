@@ -75,10 +75,19 @@ func TestJuiceFSEngine_queryCacheStatus(t *testing.T) {
 						Name:      "test",
 						Namespace: "fluid",
 					},
+					Spec: datav1alpha1.JuiceFSRuntimeSpec{
+						Replicas: 1,
+						Worker: datav1alpha1.JuiceFSCompTemplateSpec{Options: map[string]string{
+							"cache-size": "102400",
+						}},
+					},
+					Status: datav1alpha1.RuntimeStatus{
+						WorkerNumberReady: 1,
+					},
 				},
 			}
 			want := cacheStates{
-				cacheCapacity:        "",
+				cacheCapacity:        "100.00GiB",
 				cached:               "37.96GiB",
 				cachedPercentage:     "0.0%",
 				cacheHitRatio:        "100.0%",
