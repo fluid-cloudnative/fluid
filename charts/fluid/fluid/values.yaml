@@ -20,10 +20,14 @@ image:
 
 dataset:
   replicas: 1
+  tolerations:
+    - operator: Exists
   controller:
     image: fluidcloudnative/dataset-controller:v1.0.0-556a605
 
 csi:
+  tolerations:
+    - operator: Exists
   featureGates: "FuseRecovery=false"
   config:
     hostNetwork: false
@@ -43,6 +47,8 @@ runtime:
   mountRoot: /runtime-mnt
   alluxio:
     replicas: 1
+    tolerations:
+      - operator: Exists
     runtimeWorkers: 3
     portRange: 20000-26000
     portAllocatePolicy: random
@@ -57,6 +63,8 @@ runtime:
       image: alluxio/alluxio-dev:2.9.0
   jindo:
     replicas: 1
+    tolerations:
+      - operator: Exists
     runtimeWorkers: 3
     portRange: 18000-19999
     portAllocatePolicy: random
@@ -75,6 +83,8 @@ runtime:
       image: fluidcloudnative/init-users:v0.9.0
   goosefs:
     replicas: 1
+    tolerations:
+      - operator: Exists
     runtimeWorkers: 3
     portRange: 26000-32000
     portAllocatePolicy: random
@@ -89,6 +99,8 @@ runtime:
       image: ccr.ccs.tencentyun.com/qcloud/goosefs-fuse:v1.2.0
   juicefs:
     replicas: 1
+    tolerations:
+      - operator: Exists
     enabled: false
     runtimeWorkers: 3
     controller:
@@ -97,6 +109,8 @@ runtime:
       image: juicedata/juicefs-fuse:v1.0.4-4.9.2
   thin:
     replicas: 1
+    tolerations:
+      - operator: Exists
     enabled: false
     controller:
       image: fluidcloudnative/thinruntime-controller:v1.0.0-556a605
@@ -104,6 +118,8 @@ runtime:
       configStorage: configmap
   efc:
     replicas: 1
+    tolerations:
+      - operator: Exists
     enabled: false
     controller:
       image: fluidcloudnative/efcruntime-controller:v1.0.0-556a605
@@ -123,9 +139,13 @@ webhook:
   replicas: 1
   timeoutSeconds: 15
   reinvocationPolicy: IfNeeded
+  tolerations:
+    - operator: Exists
 
 fluidapp:
   enabled: true
   replicas: 1
+  tolerations:
+    - operator: Exists
   controller:
     image: fluidcloudnative/application-controller:v1.0.0-556a605
