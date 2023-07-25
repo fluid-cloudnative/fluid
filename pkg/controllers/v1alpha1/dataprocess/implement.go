@@ -17,20 +17,32 @@
 package dataprocess
 
 import (
+	"context"
+	"fmt"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 	"github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (r *DataProcessReconciler) GetTargetDataset(object client.Object) (*datav1alpha1.Dataset, error) {
-	panic("not implemented") // TODO: Implement
+	dataProcess, ok := object.(*datav1alpha1.DataProcess)
+	if !ok {
+		return nil, fmt.Errorf("object %v is not of type DataProcess", object)
+	}
+
+	return utils.GetDataset(r.Client, dataProcess.Spec.Dataset.Name, dataProcess.Spec.Dataset.Namespace)
 }
 
 // GetReleaseNameSpacedName get the installed helm chart name
 func (r *DataProcessReconciler) GetReleaseNameSpacedName(object client.Object) types.NamespacedName {
-	panic("not implemented") // TODO: Implement
+	return types.NamespacedName{
+		Namespace: object.GetNamespace(),
+		Name:      utils.GetDataProcessReleaseName(object.GetName()),
+	}
 }
 
 // GetChartsDirectory get the helm charts directory of data operation
@@ -40,12 +52,19 @@ func (r *DataProcessReconciler) GetChartsDirectory() string {
 
 // GetOperationType get the data operation type
 func (r *DataProcessReconciler) GetOperationType() dataoperation.OperationType {
-	panic("not implemented") // TODO: Implement
+	return dataoperation.DataProcess
 }
 
 // UpdateOperationApiStatus update the data operation status, object is the data operation crd instance.
 func (r *DataProcessReconciler) UpdateOperationApiStatus(object client.Object, opStatus *datav1alpha1.OperationStatus) error {
-	panic("not implemented") // TODO: Implement
+	dataProcess, ok := object.(*datav1alpha1.DataProcess)
+	if !ok {
+		return fmt.Errorf("%+v is not of type DataProcess", object)
+	}
+
+	var dataProcessCopy = dataProcess.DeepCopy()
+	dataProcessCopy.Status = *opStatus.DeepCopy()
+	return r.Status().Update(context.TODO(), dataProcessCopy)
 }
 
 // Validate check the data operation spec is valid or not, if not valid return error with conditions
@@ -55,17 +74,17 @@ func (r *DataProcessReconciler) Validate(ctx runtime.ReconcileRequestContext, ob
 
 // UpdateStatusInfoForCompleted update the status infos field for phase completed, the parameter infos is not nil
 func (r *DataProcessReconciler) UpdateStatusInfoForCompleted(object client.Object, infos map[string]string) error {
-	panic("not implemented") // TODO: Implement
+	return nil
 }
 
 // SetTargetDatasetStatusInProgress set the dataset status for certain field when data operation executing.
 func (r *DataProcessReconciler) SetTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
-	panic("not implemented") // TODO: Implement
+	// DataProcess does not need to update Dataset status before execution.
 }
 
 // RemoveTargetDatasetStatusInProgress remove the dataset status for certain field when data operation finished.
 func (r *DataProcessReconciler) RemoveTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
-	panic("not implemented") // TODO: Implement
+	// DataProcess does not need to recover Dataset status after execution.
 }
 
 func (r *DataProcessReconciler) GetStatusHandler(object client.Object) dataoperation.StatusHandler {
