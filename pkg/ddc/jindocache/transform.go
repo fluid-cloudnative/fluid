@@ -326,6 +326,12 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 			propertiesFileStore["jindocache.oss.bucket."+bucketName+".endpoint"] = mount.Options["fs.oss.endpoint"]
 			if strings.Contains(mount.Options["fs.oss.endpoint"], "dls") {
 				propertiesFileStore["jindocache.oss.bucket."+bucketName+".data.lake.storage.enable"] = "true"
+				if mount.Options["fs.oss.accessKeyId"] != "" {
+					propertiesFileStore["jindocache.oss.bucket."+bucketName+".accessKeyId"] = mount.Options["fs.oss.accessKeyId"]
+				}
+				if mount.Options["fs.oss.accessKeySecret"] != "" {
+					propertiesFileStore["jindocache.oss.bucket."+bucketName+".accessKeySecret"] = mount.Options["fs.oss.accessKeySecret"]
+				}
 			}
 		}
 
