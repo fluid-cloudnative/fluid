@@ -41,6 +41,7 @@ import (
 	databackupctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/databackup"
 	dataloadctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/dataload"
 	datamigratectl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/datamigrate"
+	dataprocessctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/dataprocess"
 	datasetctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/dataset"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -154,6 +155,15 @@ func handle() {
 		mgr.GetEventRecorderFor("DataMigrate"),
 	)).SetupWithManager(mgr, controllerOptions); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "DataMigrate")
+		os.Exit(1)
+	}
+
+	if err = (dataprocessctl.NewDataProcessReconciler(mgr.GetClient(),
+		ctrl.Log.WithName("dataprocessctl").WithName("DataProcess"),
+		mgr.GetScheme(),
+		mgr.GetEventRecorderFor("DataProcess"),
+	)).SetupWithManager(mgr, controllerOptions); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "DataProcess")
 		os.Exit(1)
 	}
 

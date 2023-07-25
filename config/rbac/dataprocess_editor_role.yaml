@@ -1,0 +1,24 @@
+# permissions for end users to edit dataprocesses.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: dataprocess-editor-role
+rules:
+- apiGroups:
+  - data.fluid.io
+  resources:
+  - dataprocesses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - data.fluid.io
+  resources:
+  - dataprocesses/status
+  verbs:
+  - get

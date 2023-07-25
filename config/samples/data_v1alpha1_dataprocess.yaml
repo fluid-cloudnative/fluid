@@ -1,0 +1,6 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: DataProcess
+metadata:
+  name: dataprocess-sample
+spec:
+  # TODO(user): Add fields here
