@@ -97,8 +97,8 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeCondition":           schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeCondition(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeManagement":          schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeManagement(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeStatus":              schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeStatus(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ScriptProcessor":            schema_fluid_cloudnative_fluid_api_v1alpha1_ScriptProcessor(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.SecretKeySelector":          schema_fluid_cloudnative_fluid_api_v1alpha1_SecretKeySelector(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ShellProcessor":             schema_fluid_cloudnative_fluid_api_v1alpha1_ShellProcessor(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.TargetDataset":              schema_fluid_cloudnative_fluid_api_v1alpha1_TargetDataset(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.TargetDatasetWithMountPath": schema_fluid_cloudnative_fluid_api_v1alpha1_TargetDatasetWithMountPath(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.TargetPath":                 schema_fluid_cloudnative_fluid_api_v1alpha1_TargetPath(ref),
@@ -4576,23 +4576,30 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_Processor(ref common.ReferenceC
 				Description: "Processor defines the actual processor for DataProcess. Processor can be either of a Job or a Shell script.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
+					"serviceAccountName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ServiceAccountName defiens the serviceAccountName of the container",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"job": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Job represents a processor which runs DataProcess as a job.",
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.JobProcessor"),
 						},
 					},
-					"shell": {
+					"script": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Shell represents a processor which executes shell script",
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.ShellProcessor"),
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.ScriptProcessor"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.JobProcessor", "github.com/fluid-cloudnative/fluid/api/v1alpha1.ShellProcessor"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.JobProcessor", "github.com/fluid-cloudnative/fluid/api/v1alpha1.ScriptProcessor"},
 	}
 }
 
@@ -4978,6 +4985,113 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeStatus(ref common.Refere
 	}
 }
 
+func schema_fluid_cloudnative_fluid_api_v1alpha1_ScriptProcessor(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"image": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Image (e.g. alluxio/alluxio)",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"imageTag": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Image tag (e.g. 2.3.0-SNAPSHOT)",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"imagePullPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "One of the three policies: `Always`, `IfNotPresent`, `Never`",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"command": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Entrypoint command for ScriptProcessor.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"args": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Arguments to the entrypoint.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"env": {
+						SchemaProps: spec.SchemaProps{
+							Description: "List of environment variables to set in the container.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.EnvVar"),
+									},
+								},
+							},
+						},
+					},
+					"volumeMounts": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Pod volumes to mount into the container's filesystem.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.VolumeMount"),
+									},
+								},
+							},
+						},
+					},
+					"volumes": {
+						SchemaProps: spec.SchemaProps{
+							Description: "List of volumes that can be mounted by containers belonging to the pod.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.Volume"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/api/core/v1.EnvVar", "k8s.io/api/core/v1.Volume", "k8s.io/api/core/v1.VolumeMount"},
+	}
+}
+
 func schema_fluid_cloudnative_fluid_api_v1alpha1_SecretKeySelector(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -4999,42 +5113,6 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_SecretKeySelector(ref common.Re
 						},
 					},
 				},
-			},
-		},
-	}
-}
-
-func schema_fluid_cloudnative_fluid_api_v1alpha1_ShellProcessor(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"script": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Script specifies a shell script that will be executed in DataProcess.",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"image": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Image specifies the container image where the shell script will be executed.",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"serviceAccountName": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ServiceAccountName defiens the serviceAccountName of the container",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-				},
-				Required: []string{"script", "image"},
 			},
 		},
 	}
