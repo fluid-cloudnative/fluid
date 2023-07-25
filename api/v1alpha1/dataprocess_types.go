@@ -36,12 +36,16 @@ type TargetDatasetWithMountPath struct {
 
 // Processor defines the actual processor for DataProcess. Processor can be either of a Job or a Shell script.
 type Processor struct {
+	// ServiceAccountName defiens the serviceAccountName of the container
+	// +optional
+	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+
 	// Job represents a processor which runs DataProcess as a job.
 	// +optional
 	Job *JobProcessor `json:"job,omitempty"`
 
 	// Shell represents a processor which executes shell script
-	Shell *ShellProcessor `json:"shell,omitempty"`
+	Script *ScriptProcessor `json:"script,omitempty"`
 }
 
 type JobProcessor struct {
@@ -50,18 +54,29 @@ type JobProcessor struct {
 	PodTemplate *corev1.PodTemplate `json:"podTemplate,omitempty"`
 }
 
-type ShellProcessor struct {
-	// Script specifies a shell script that will be executed in DataProcess.
-	// +requried
-	Script string `json:"script"`
+type ScriptProcessor struct {
+	// VersionSpec specifies the container's image info.
+	VersionSpec `json:",inline,omitempty"`
 
-	// Image specifies the container image where the shell script will be executed.
-	// +required
-	Image string `json:"image"`
-
-	// ServiceAccountName defiens the serviceAccountName of the container
+	// Entrypoint command for ScriptProcessor.
 	// +optional
-	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+	Command []string `json:"command,omitempty"`
+
+	// Arguments to the entrypoint.
+	// +optional
+	Args []string `json:"args,omitempty"`
+
+	// List of environment variables to set in the container.
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	// Pod volumes to mount into the container's filesystem.
+	// +optional
+	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
+
+	// List of volumes that can be mounted by containers belonging to the pod.
+	// +optional
+	Volumes []corev1.Volume `json:"volumes,omitempty"`
 }
 
 // DataProcessSpec defines the desired state of DataProcess
