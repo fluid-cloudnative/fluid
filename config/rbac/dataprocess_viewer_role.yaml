@@ -1,0 +1,20 @@
+# permissions for end users to view dataprocesses.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: dataprocess-viewer-role
+rules:
+- apiGroups:
+  - data.fluid.io
+  resources:
+  - dataprocesses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - data.fluid.io
+  resources:
+  - dataprocesses/status
+  verbs:
+  - get
