@@ -77,6 +77,8 @@ rules:
       - dataloads/status
       - databackups
       - databackups/status
+      - dataprocesses
+      - dataprocesses/status
       - datasets
       - datasets/status
       - alluxioruntimes
