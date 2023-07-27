@@ -12,6 +12,9 @@ spec:
   completions: 1
   parallelism: 1
   template:
+    {{- if .Values.dataprocess.jobProcessor.podTemplate }}
+{{- toYaml .Values.dataprocess.jobProcessor.podTemplate | nindent 4 }}
+    {{- else if .Values.dataprocess.scriptProcessor }}
     metadata:
       name: {{ printf "%s-process" .Release.Name }}
       annotations:
@@ -25,24 +28,20 @@ spec:
       restartPolicy: Never
       containers:
         - name: dataprocess
-          image: {{ required "DataProcess image should be set" .Values.dataprocess.processJobInfo.image }}
-          imagePullPolicy: IfNotPresent
-          command: ["/bin/sh", "-c"]
-          args: ["/scripts/dataprocess.sh"]
+          image: {{ required "DataProcess image should be set" .Values.dataprocess.scriptProcessor.image }}
+          imagePullPolicy: {{ .Values.dataprocess.scriptProcessor.imagePullPolicy }}
+          {{- if .Values.dataprocess.scriptProcessor.command }}
+          command: {{ .Values.dataprocess.scriptProcessor.command }}
+          {{- end }}
+          {{- if .Values.dataprocess.scriptProcessor.args }}
+          args: {{ .Values.dataprocess.scriptProcessor.args }}
+          {{- end }}
+          {{- if .Values.dataprocess.scriptProcessor.volumeMounts }}
           volumeMounts:
-            - mountPath: /scripts
-              name: data-process-script
-            {{- if .Values.dataprocess.processJobInfo.volumeMounts }}
-            {{ toYaml .Values.dataprocess.processJobInfo.volumeMounts | nindent 12 }}
-            {{- end }}
+            {{- toYaml .Values.dataprocess.scriptProcessor.volumeMounts | nindent 12 }}
+          {{- end }}
+      {{- if .Values.dataprocess.scriptProcessor.volumes }}
       volumes:
-        - name: data-process-script
-          configMap:
-            name: {{ printf "%s-process-script" .Release.Name }}
-            items:
-              - key: dataprocess.sh
-                path: dataprocess.sh
-                mode: 365
-        {{- if .Values.dataprocess.processJobInfo.volumes }}
-        {{ toYaml .Values.dataprocess.processJobInfo.volumes | nindent 8 }}
-        {{- end }}
+        {{- toYaml .Values.dataprocess.scriptProcessor.volumes | nindent 8 }}
+      {{- end }}
+    {{- end }}
