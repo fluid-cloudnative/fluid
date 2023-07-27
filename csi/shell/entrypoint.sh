@@ -7,6 +7,7 @@ check_kubelet_rootdir_subfolder() {
   
   if [ ! -d "$dir" ]; then
     echo "Error: subfolder $dir does not exist, please check whether KUBELET_ROOTDIR $KUBELET_ROOTDIR is configured correctly." 
+    echo "Please see https://github.com/fluid-cloudnative/fluid/blob/master/docs/en/userguide/install.md#advanced-configuration for more information!"
     exit 1
   fi
 }
