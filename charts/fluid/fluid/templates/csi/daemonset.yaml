@@ -19,8 +19,10 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: fluid-csi
+      {{- if .Values.csi.tolerations }}
       tolerations:
-      - operator: Exists
+{{ toYaml .Values.csi.tolerations | indent 6 }}
+      {{- end }}
       #priorityClassName: system-node-critical
       {{- if .Values.csi.config.hostNetwork }}
       hostNetwork: true

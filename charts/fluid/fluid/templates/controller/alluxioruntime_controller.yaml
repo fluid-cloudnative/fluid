@@ -38,8 +38,10 @@ spec:
                 operator: NotIn
                 values:
                 - virtual-kubelet
+      {{- if .Values.runtime.alluxio.tolerations }}
       tolerations:
-      - operator: Exists
+{{ toYaml .Values.runtime.alluxio.tolerations | indent 6}}
+      {{- end }}
       #hostNetwork: true
       containers:
       - image: "{{ .Values.runtime.alluxio.controller.image }}"

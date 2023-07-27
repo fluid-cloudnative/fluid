@@ -38,8 +38,10 @@ spec:
                 operator: NotIn
                 values:
                 - virtual-kubelet
+      {{- if .Values.runtime.efc.tolerations }}
       tolerations:
-      - operator: Exists
+{{ toYaml .Values.runtime.efc.tolerations | indent 6 }}
+      {{- end }}
       #hostNetwork: true
       containers:
       - image: "{{ .Values.runtime.efc.controller.image }}"

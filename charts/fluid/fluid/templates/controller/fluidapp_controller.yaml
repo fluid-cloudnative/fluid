@@ -34,8 +34,10 @@ spec:
                     operator: NotIn
                     values:
                       - virtual-kubelet
+      {{- if .Values.fluidapp.tolerations }}
       tolerations:
-        - operator: Exists
+{{ toYaml .Values.fluidapp.tolerations | indent 6 }}
+      {{- end }}
       #hostNetwork: true
       containers:
       - image: "{{ .Values.fluidapp.controller.image }}"

@@ -16,8 +16,10 @@ spec:
       labels:
         control-plane: fluid-webhook
     spec:
+      {{- if .Values.webhook.tolerations }}
       tolerations:
-        - operator: Exists
+{{ toYaml .Values.webhook.tolerations | indent 8}}
+      {{- end }}
       {{- with .Values.image.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
