@@ -1,6 +1,6 @@
 name: ""
 
-dataprocess:
+dataProcess:
   targetDataset: ""
   scriptProcessor:
     image: ""
