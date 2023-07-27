@@ -58,3 +58,4 @@
 
 ### 1.0.0
 * Fix CSI Plugin loop mount bug
+* Make toleration configurable
