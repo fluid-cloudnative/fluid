@@ -38,8 +38,10 @@ spec:
                 operator: NotIn
                 values:
                 - virtual-kubelet
+      {{- if .Values.runtime.juicefs.tolerations }}
       tolerations:
-      - operator: Exists
+{{ toYaml .Values.runtime.juicefs.tolerations | indent 6 }}
+      {{- end }}
       #hostNetwork: true
       containers:
       - image: "{{ .Values.runtime.juicefs.controller.image }}"

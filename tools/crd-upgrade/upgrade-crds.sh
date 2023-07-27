@@ -9,6 +9,6 @@ do
     kubectl replace -f $crdfile
   else
     echo "$crdshort not founded, applying its crd..."
-    kubectl apply -f $crdfile
+    kubectl apply --server-side -f $crdfile
   fi
 done

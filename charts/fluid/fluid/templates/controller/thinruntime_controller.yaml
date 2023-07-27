@@ -34,8 +34,10 @@ spec:
                     operator: NotIn
                     values:
                       - virtual-kubelet
+      {{- if .Values.runtime.thin.tolerations }}
       tolerations:
-        - operator: Exists
+{{ toYaml .Values.runtime.thin.tolerations | indent 6 }}
+      {{- end }}
       #hostNetwork: true
       containers:
         - image: "{{ .Values.runtime.thin.controller.image }}"

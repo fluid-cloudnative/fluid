@@ -36,8 +36,10 @@ spec:
                 operator: NotIn
                 values:
                 - virtual-kubelet
+      {{- if .Values.dataset.tolerations }}
       tolerations:
-      - operator: Exists
+{{ toYaml .Values.dataset.tolerations | indent 6}}
+      {{- end }}
       #hostNetwork: true
       containers:
       - image: "{{ .Values.dataset.controller.image }}"
