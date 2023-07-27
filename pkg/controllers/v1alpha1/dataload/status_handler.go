@@ -141,6 +141,17 @@ func (c *CronStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestCont
 		return
 	}
 
+	// generate cron conditions
+	if result.CronConditions == nil {
+		result.CronConditions = &datav1alpha1.CronCondition{
+			LastJobName:    currentJob.Name,
+			LastSubmitTime: currentJob.CreationTimestamp,
+		}
+	} else {
+		result.CronConditions.LastJobName = currentJob.Name
+		result.CronConditions.LastSubmitTime = currentJob.CreationTimestamp
+	}
+
 	if len(currentJob.Status.Conditions) != 0 {
 		if currentJob.Status.Conditions[0].Type == batchv1.JobFailed ||
 			currentJob.Status.Conditions[0].Type == batchv1.JobComplete {
@@ -160,6 +171,9 @@ func (c *CronStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestCont
 				result.Phase = common.PhaseFailed
 			} else {
 				result.Phase = common.PhaseComplete
+				if currentJob.Status.CompletionTime != nil && currentJob.Status.CompletionTime.After(result.CronConditions.LastSuccessfulTime.Time) {
+					result.CronConditions.LastSuccessfulTime = *currentJob.Status.CompletionTime
+				}
 			}
 			result.Duration = utils.CalculateDuration(object.GetCreationTimestamp().Time, jobCondition.LastTransitionTime.Time)
 			return

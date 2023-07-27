@@ -1029,6 +1029,23 @@ spec:
                   - type
                   type: object
                 type: array
+              cronConditions:
+                description: CronConditions consists of cron operation's condition
+                properties:
+                  lastJobName:
+                    description: LastJobName describes cron job's last job name
+                    type: string
+                  lastSubmitTime:
+                    description: LastSubmitTime describes cron job's last job submit
+                      time
+                    format: date-time
+                    type: string
+                  lastSuccessfulTime:
+                    description: LastSuccessfulTime describes cron job's last successful
+                      job completion time
+                    format: date-time
+                    type: string
+                type: object
               duration:
                 description: Duration tell user how much time was spent to operation
                 type: string

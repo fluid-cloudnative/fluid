@@ -141,6 +141,9 @@ type OperationStatus struct {
 
 	// Infos operation customized name-value
 	Infos map[string]string `json:"infos,omitempty"`
+
+	// CronConditions consists of cron operation's condition
+	CronConditions *CronCondition `json:"cronConditions,omitempty"`
 }
 
 type RuntimePhase string

@@ -205,6 +205,7 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 			log.Error(err, fmt.Sprintf("failed to update the %s status", operation.GetOperationType()))
 			return utils.RequeueIfError(err)
 		}
+		log.V(1).Info(fmt.Sprintf("Update operation status to %s", opStatus.Phase), "opStatus", opStatus)
 		// return immediately if not complete
 		return utils.RequeueImmediately()
 	}

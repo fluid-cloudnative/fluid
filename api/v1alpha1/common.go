@@ -233,3 +233,12 @@ type Condition struct {
 	// LastTransitionTime describes last time the condition transitioned from one status to another.
 	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
 }
+
+type CronCondition struct {
+	// LastJobName describes cron job's last job name
+	LastJobName string `json:"lastJobName,omitempty"`
+	// LastSubmitTime describes cron job's last job submit time
+	LastSubmitTime metav1.Time `json:"lastSubmitTime,omitempty"`
+	// LastSuccessfulTime describes cron job's last successful job completion time
+	LastSuccessfulTime metav1.Time `json:"lastSuccessfulTime,omitempty"`
+}
