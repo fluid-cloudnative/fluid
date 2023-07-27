@@ -135,6 +135,16 @@ spec:
                   type: string
                 description: Infos operation customized name-value
                 type: object
+              lastSubmitTime:
+                description: LastSubmitTime is the last time the cron operation was
+                  successfully submitted
+                format: date-time
+                type: string
+              lastSuccessfulTime:
+                description: LastSuccessfulTime is the last time the cron operation
+                  successfully completed
+                format: date-time
+                type: string
               phase:
                 description: Phase describes current phase of operation
                 type: string
