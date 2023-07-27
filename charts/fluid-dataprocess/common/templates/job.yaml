@@ -1,0 +1,48 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ printf "%s-job" .Release.Name }}
+  labels:
+    release: {{ .Release.Name }}
+    role: dataprocess-job
+    app: fluid-dataprocess
+    targetDataset: {{ required "targetDataset should be set" .Values.dataprocess.targetDataset }}
+spec:
+  backoffLimit: 3
+  completions: 1
+  parallelism: 1
+  template:
+    metadata:
+      name: {{ printf "%s-process" .Release.Name }}
+      annotations:
+        sidecar.istio.io/inject: "false"
+      labels:
+        release: {{ .Release.Name }}
+        role: dataprocess-pod
+        app: fluid-dataprocess
+        targetDataset: {{ required "targetDataset should be set" .Values.dataprocess.targetDataset }}
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: dataprocess
+          image: {{ required "DataProcess image should be set" .Values.dataprocess.processJobInfo.image }}
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args: ["/scripts/dataprocess.sh"]
+          volumeMounts:
+            - mountPath: /scripts
+              name: data-process-script
+            {{- if .Values.dataprocess.processJobInfo.volumeMounts }}
+            {{ toYaml .Values.dataprocess.processJobInfo.volumeMounts | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: data-process-script
+          configMap:
+            name: {{ printf "%s-process-script" .Release.Name }}
+            items:
+              - key: dataprocess.sh
+                path: dataprocess.sh
+                mode: 365
+        {{- if .Values.dataprocess.processJobInfo.volumes }}
+        {{ toYaml .Values.dataprocess.processJobInfo.volumes | nindent 8 }}
+        {{- end }}
