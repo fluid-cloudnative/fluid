@@ -142,5 +142,6 @@ func (r *DataProcessReconciler) RemoveTargetDatasetStatusInProgress(dataset *dat
 }
 
 func (r *DataProcessReconciler) GetStatusHandler(object client.Object) dataoperation.StatusHandler {
-	panic("not implemented") // TODO: Implement
+	// TODO: Support dataProcess.Spec.Policy
+	return &OnceStatusHandler{Client: r.Client}
 }
