@@ -177,7 +177,7 @@ helm install fluid --set runtime.mountRoot=/var/lib/docker/runtime-mnt fluid
 helm install fluid --set csi.featureGates='FuseRecovery=true' fluid
 ```
 
-3. If your Kubernetes cluster has custom configured kubelet root-dir, please configure KUBELET_ROOTDIR when installing Fluid: 
+3. If your Kubernetes cluster has a custom configured kubelet root directory, please configure the KUBELET_ROOTDIR when installing Fluid with the following command: 
 ```shell
 helm install --set csi.kubelet.rootDir=<kubelet-root-dir> \
   --set csi.kubelet.certDir=<kubelet-root-dir>/pki fluid fluid.tgz
