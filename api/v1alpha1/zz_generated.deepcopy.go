@@ -1998,8 +1998,8 @@ func (in *OperationStatus) DeepCopyInto(out *OperationStatus) {
 			(*out)[key] = val
 		}
 	}
-	if in.LastSubmitTime != nil {
-		in, out := &in.LastSubmitTime, &out.LastSubmitTime
+	if in.LastScheduleTime != nil {
+		in, out := &in.LastScheduleTime, &out.LastScheduleTime
 		*out = (*in).DeepCopy()
 	}
 	if in.LastSuccessfulTime != nil {

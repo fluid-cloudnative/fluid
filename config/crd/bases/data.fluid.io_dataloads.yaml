@@ -1037,9 +1037,9 @@ spec:
                   type: string
                 description: Infos operation customized name-value
                 type: object
-              lastSubmitTime:
-                description: LastSubmitTime is the last time the cron operation was
-                  successfully submitted
+              lastScheduleTime:
+                description: LastScheduleTime is the last time the cron operation
+                  was scheduled
                 format: date-time
                 type: string
               lastSuccessfulTime:

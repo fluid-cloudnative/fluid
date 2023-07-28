@@ -142,8 +142,8 @@ type OperationStatus struct {
 	// Infos operation customized name-value
 	Infos map[string]string `json:"infos,omitempty"`
 
-	// LastSubmitTime is the last time the cron operation was successfully submitted
-	LastSubmitTime *metav1.Time `json:"lastSubmitTime,omitempty"`
+	// LastScheduleTime is the last time the cron operation was scheduled
+	LastScheduleTime *metav1.Time `json:"lastScheduleTime,omitempty"`
 	// LastSuccessfulTime is the last time the cron operation successfully completed
 	LastSuccessfulTime *metav1.Time `json:"lastSuccessfulTime,omitempty"`
 }
