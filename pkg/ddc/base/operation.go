@@ -216,6 +216,7 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 	}
 
 	// 4. record and no requeue
+	// For cron operations, the phase may be updated to pending here, and we only log bellow messages in complete phase
 	if opStatusToUpdate.Phase == common.PhaseComplete {
 		log.Info(fmt.Sprintf("%s success, no need to requeue", operation.GetOperationType()))
 		ctx.Recorder.Eventf(object, v1.EventTypeNormal, common.DataOperationSucceed,
@@ -255,6 +256,7 @@ func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, o
 	}
 
 	// 2. record and no requeue
+	// For cron operations, the phase may be updated to pending here, and we only log bellow messages in failed phase
 	if opStatusToUpdate.Phase == common.PhaseFailed {
 		log.Info(fmt.Sprintf("%s failed, won't requeue", operation.GetOperationType()))
 		ctx.Recorder.Eventf(object, v1.EventTypeWarning, common.DataOperationFailed, "%s %s failed", operation.GetOperationType(), object.GetName())
