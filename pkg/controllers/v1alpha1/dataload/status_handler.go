@@ -122,6 +122,10 @@ func (c *CronStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestCont
 		return
 	}
 
+	// update LastScheduleTime and LastSuccessfulTime
+	result.LastScheduleTime = cronjobStatus.LastScheduleTime
+	result.LastSuccessfulTime = cronjobStatus.LastSuccessfulTime
+
 	jobs, err := utils.ListDataOperationJobByCronjob(c.Client, types.NamespacedName{Namespace: object.GetNamespace(), Name: cronjobName})
 	if err != nil {
 		ctx.Log.Error(err, "can't list DataLoad job by cronjob", "namespace", ctx.Namespace, "cronjobName", cronjobName)
