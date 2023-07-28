@@ -32,7 +32,7 @@ import (
 func (e *JindoFSxEngine) generateDataProcessValueFile(ctx cruntime.ReconcileRequestContext, object client.Object) (valueFileName string, err error) {
 	dataProcess, ok := object.(*datav1alpha1.DataProcess)
 	if !ok {
-		err = fmt.Errorf("object is not of type DataProcess", object)
+		err = fmt.Errorf("object %v is not of type DataProcess", object)
 		return "", err
 	}
 
