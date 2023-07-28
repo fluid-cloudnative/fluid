@@ -24,7 +24,11 @@ import (
 )
 
 func GenDataProcessValue(dataset *datav1alpha1.Dataset, dataProcess *datav1alpha1.DataProcess) *DataProcessValue {
-	value := &DataProcessValue{}
+	value := &DataProcessValue{
+		DataProcessInfo: DataProcessInfo{
+			TargetDataset: dataProcess.Spec.Dataset.Name,
+		},
+	}
 
 	volumes := []corev1.Volume{
 		{
@@ -52,13 +56,13 @@ func GenDataProcessValue(dataset *datav1alpha1.Dataset, dataProcess *datav1alpha
 			podTemplate.Template.Spec.Volumes = append(podTemplate.Template.Spec.Volumes, volumes...)
 
 			if len(podTemplate.Template.Spec.Containers) != 0 {
-				for idx, _ := range podTemplate.Template.Spec.Containers {
+				for idx := range podTemplate.Template.Spec.Containers {
 					podTemplate.Template.Spec.Containers[idx].VolumeMounts = append(podTemplate.Template.Spec.Containers[idx].VolumeMounts, volumeMounts...)
 				}
 			}
 
 			if len(podTemplate.Template.Spec.InitContainers) != 0 {
-				for idx, _ := range podTemplate.Template.Spec.InitContainers {
+				for idx := range podTemplate.Template.Spec.InitContainers {
 					podTemplate.Template.Spec.InitContainers[idx].VolumeMounts = append(podTemplate.Template.Spec.InitContainers[idx].VolumeMounts, volumeMounts...)
 				}
 			}
@@ -75,8 +79,8 @@ func GenDataProcessValue(dataset *datav1alpha1.Dataset, dataProcess *datav1alpha
 			Image:           fmt.Sprintf("%s:%s", dataProcess.Spec.Processor.Script.Image, dataProcess.Spec.Processor.Script.ImageTag),
 			ImagePullPolicy: corev1.PullPolicy(dataProcess.Spec.Processor.Script.ImagePullPolicy),
 			Envs:            dataProcess.Spec.Processor.Script.Env,
-			Volumes:         dataProcess.Spec.Processor.Script.Volumes,
-			VolumeMounts:    dataProcess.Spec.Processor.Script.VolumeMounts,
+			Volumes:         append(dataProcess.Spec.Processor.Script.Volumes, volumes...),
+			VolumeMounts:    append(dataProcess.Spec.Processor.Script.VolumeMounts, volumeMounts...),
 			Command:         dataProcess.Spec.Processor.Script.Command,
 			Args:            dataProcess.Spec.Processor.Script.Args,
 		}
