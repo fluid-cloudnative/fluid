@@ -18,5 +18,7 @@ package dataprocess
 
 const (
 	DataProcessFinalizer = "fluid-dataprocess-controller-finalizer"
-	DataProcessChart = "fluid-dataprocess"
+	DataProcessChart     = "fluid-dataprocess"
+
+	DataProcessScriptProcessorContainerName = "script-processor"
 )

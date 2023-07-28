@@ -79,6 +79,7 @@ func (r *DataProcessReconciler) Validate(ctx runtime.ReconcileRequestContext, ob
 		return []datav1alpha1.Condition{}, fmt.Errorf("object %v is not of type DataProcess", object)
 	}
 
+	// DataProcess's targetDataset must be in the same namespace.
 	if dataProcess.Namespace != dataProcess.Spec.Dataset.Namespace {
 		r.Recorder.Eventf(dataProcess,
 			corev1.EventTypeWarning,
@@ -101,6 +102,7 @@ func (r *DataProcessReconciler) Validate(ctx runtime.ReconcileRequestContext, ob
 		}, err
 	}
 
+	// DataProcess should not have unset processor
 	if dataProcess.Spec.Processor.Job == nil && dataProcess.Spec.Processor.Script == nil {
 		r.Recorder.Eventf(dataProcess,
 			corev1.EventTypeWarning,
@@ -117,6 +119,62 @@ func (r *DataProcessReconciler) Validate(ctx runtime.ReconcileRequestContext, ob
 				Status:             corev1.ConditionTrue,
 				Reason:             common.DataProcessProcessorNotSpecified,
 				Message:            "DataProcess's spec.processor is not specified",
+				LastProbeTime:      metav1.NewTime(now),
+				LastTransitionTime: metav1.NewTime(now),
+			},
+		}, err
+	}
+
+	// DataProcess should only set exactly one processor
+	if dataProcess.Spec.Processor.Job != nil && dataProcess.Spec.Processor.Script != nil {
+		r.Recorder.Eventf(dataProcess,
+			corev1.EventTypeWarning,
+			common.DataProcessMultipleProcessorSpecified,
+			"DataProcess(%s)'s has specified multiple processors, only one processor is allowed",
+			dataProcess.Name,
+		)
+		err := fmt.Errorf("DataProcess(%s/%s) has specified multiple processors", dataProcess.Namespace, dataProcess.Name)
+
+		now := time.Now()
+		return []datav1alpha1.Condition{
+			{
+				Type:               common.Failed,
+				Status:             corev1.ConditionTrue,
+				Reason:             common.DataProcessMultipleProcessorSpecified,
+				Message:            "DataProcess has specified multiple processors",
+				LastProbeTime:      metav1.NewTime(now),
+				LastTransitionTime: metav1.NewTime(now),
+			},
+		}, err
+	}
+
+	// DataProcess should not have conflict volume mountPath with targetDataset's mountPath
+	if ok, conflictVolName, conflictCtrName := r.validateDatasetMountpath(dataProcess); !ok {
+		r.Recorder.Eventf(dataProcess,
+			corev1.EventTypeWarning,
+			common.DataProcessConflictMountPath,
+			"DataProcess(%s) has conflict mountPath (%s) with spec.dataset.mountPath for volume %s mounting on container %s",
+			dataProcess.Name,
+			dataProcess.Spec.Dataset.MountPath,
+			conflictVolName,
+			conflictCtrName,
+		)
+
+		err := fmt.Errorf("DataProcess(%s/%s) has conflict mountPath (%s) with spec.dataset.mountPath for volume %s mounting on container %s",
+			dataProcess.Namespace,
+			dataProcess.Name,
+			dataProcess.Spec.Dataset.MountPath,
+			conflictVolName,
+			conflictCtrName,
+		)
+
+		now := time.Now()
+		return []datav1alpha1.Condition{
+			{
+				Type:               common.Failed,
+				Status:             corev1.ConditionTrue,
+				Reason:             common.DataProcessConflictMountPath,
+				Message:            "DataProcess has conflict volume mount paths",
 				LastProbeTime:      metav1.NewTime(now),
 				LastTransitionTime: metav1.NewTime(now),
 			},
@@ -144,4 +202,28 @@ func (r *DataProcessReconciler) RemoveTargetDatasetStatusInProgress(dataset *dat
 func (r *DataProcessReconciler) GetStatusHandler(object client.Object) dataoperation.StatusHandler {
 	// TODO: Support dataProcess.Spec.Policy
 	return &OnceStatusHandler{Client: r.Client}
+}
+
+func (r *DataProcessReconciler) validateDatasetMountpath(dataProcess *datav1alpha1.DataProcess) (pass bool, conflictVolName string, conflictContainerName string) {
+	datasetMountPath := dataProcess.Spec.Dataset.MountPath
+
+	if dataProcess.Spec.Processor.Job != nil {
+		for _, ctr := range append(dataProcess.Spec.Processor.Job.PodTemplate.Template.Spec.Containers, dataProcess.Spec.Processor.Job.PodTemplate.Template.Spec.InitContainers...) {
+			for _, volMount := range ctr.VolumeMounts {
+				if volMount.MountPath == datasetMountPath {
+					return false, volMount.Name, ctr.Name
+				}
+			}
+		}
+	}
+
+	if dataProcess.Spec.Processor.Script != nil {
+		for _, volMount := range dataProcess.Spec.Processor.Script.VolumeMounts {
+			if volMount.MountPath == datasetMountPath {
+				return false, volMount.MountPath, cdataprocess.DataProcessScriptProcessorContainerName
+			}
+		}
+	}
+
+	return true, "", ""
 }

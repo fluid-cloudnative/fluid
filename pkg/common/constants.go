@@ -84,6 +84,10 @@ const (
 // Events related to DataProcess
 const (
 	DataProcessProcessorNotSpecified = "ProcessorNotSpecified"
+
+	DataProcessMultipleProcessorSpecified = "MultipleProcessorSpecified"
+
+	DataProcessConflictMountPath = "ConflictMountPath"
 )
 
 type CacheStoreType string

@@ -27,7 +27,7 @@ spec:
     spec:
       restartPolicy: Never
       containers:
-        - name: dataprocess
+        - name: script-processor
           image: {{ required "DataProcess image should be set" .Values.dataProcess.scriptProcessor.image }}
           imagePullPolicy: {{ .Values.dataProcess.scriptProcessor.imagePullPolicy }}
           {{- if .Values.dataProcess.scriptProcessor.command }}
