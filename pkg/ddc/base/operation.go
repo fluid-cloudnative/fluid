@@ -16,6 +16,7 @@ package base
 
 import (
 	"fmt"
+	"reflect"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
@@ -80,7 +81,8 @@ func (t *TemplateEngine) reconcileNone(ctx cruntime.ReconcileRequestContext, obj
 		if err = operation.UpdateOperationApiStatus(object, opStatus); err != nil {
 			return utils.RequeueIfError(err)
 		}
-		return utils.RequeueImmediately()
+		// update opreation status would trigger requeue, no need to requeue here
+		return utils.NoRequeue()
 	}
 
 	// 1. update status to pending
@@ -95,7 +97,8 @@ func (t *TemplateEngine) reconcileNone(ctx cruntime.ReconcileRequestContext, obj
 		return utils.RequeueIfError(err)
 	}
 	log.V(1).Info(fmt.Sprintf("Update phase of the %s to Pending successfully", operation.GetOperationType()))
-	return utils.RequeueImmediately()
+	// update opreation status would trigger requeue, no need to requeue here
+	return utils.NoRequeue()
 }
 
 func (t *TemplateEngine) reconcilePending(ctx cruntime.ReconcileRequestContext, object client.Object,
@@ -115,7 +118,8 @@ func (t *TemplateEngine) reconcilePending(ctx cruntime.ReconcileRequestContext, 
 		return utils.RequeueIfError(err)
 	}
 	log.V(1).Info(fmt.Sprintf("update %s status to Executing successfully", operation.GetOperationType()))
-	return utils.RequeueImmediately()
+	// update opreation status would trigger requeue, no need to requeue here
+	return utils.NoRequeue()
 }
 
 func (t *TemplateEngine) reconcileExecuting(ctx cruntime.ReconcileRequestContext, object client.Object,
@@ -137,7 +141,8 @@ func (t *TemplateEngine) reconcileExecuting(ctx cruntime.ReconcileRequestContext
 				return utils.RequeueIfError(err)
 			}
 			// goto failed case
-			return utils.RequeueImmediately()
+			// opreation status updated would trigger requeue, no need to requeue here
+			return utils.NoRequeue()
 		}
 		return utils.RequeueAfterInterval(20 * time.Second)
 	}
@@ -149,17 +154,19 @@ func (t *TemplateEngine) reconcileExecuting(ctx cruntime.ReconcileRequestContext
 		log.Error(err, "status handler is nil")
 		return utils.RequeueIfError(err)
 	}
-	opStatus, err = statusHandler.GetOperationStatus(ctx, object, opStatus)
+	opStatusToUpdate, err := statusHandler.GetOperationStatus(ctx, object, opStatus)
 	if err != nil {
 		log.Error(err, "failed to update status")
 		return utils.RequeueIfError(err)
 	}
-	if err = operation.UpdateOperationApiStatus(object, opStatus); err != nil {
-		log.Error(err, "failed to update api status")
-		return utils.RequeueIfError(err)
+	if !reflect.DeepEqual(opStatus, opStatusToUpdate) {
+		if err = operation.UpdateOperationApiStatus(object, opStatusToUpdate); err != nil {
+			log.Error(err, "failed to update api status")
+			return utils.RequeueIfError(err)
+		}
+		log.V(1).Info(fmt.Sprintf("update operation status to %s successfully", opStatusToUpdate.Phase), "opstatus", opStatusToUpdate)
 	}
 
-	log.V(1).Info(fmt.Sprintf("%s finished and update status successfully", operation.GetOperationType()))
 	return utils.RequeueAfterInterval(20 * time.Second)
 }
 
@@ -195,24 +202,26 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 		log.Error(err, "status handler is nil")
 		return utils.RequeueIfError(err)
 	}
-	opStatus, err = statusHandler.GetOperationStatus(ctx, object, opStatus)
+	opStatusToUpdate, err := statusHandler.GetOperationStatus(ctx, object, opStatus)
 	if err != nil {
 		log.Error(err, "failed to update status")
 		return utils.RequeueIfError(err)
 	}
-	if opStatus.Phase != common.PhaseComplete {
-		if err = operation.UpdateOperationApiStatus(object, opStatus); err != nil {
+	if !reflect.DeepEqual(opStatus, opStatusToUpdate) {
+		if err = operation.UpdateOperationApiStatus(object, opStatusToUpdate); err != nil {
 			log.Error(err, fmt.Sprintf("failed to update the %s status", operation.GetOperationType()))
 			return utils.RequeueIfError(err)
 		}
-		// return immediately if not complete
-		return utils.RequeueImmediately()
+		log.V(1).Info(fmt.Sprintf("update operation status to %s successfully", opStatusToUpdate.Phase), "opstatus", opStatusToUpdate)
 	}
 
 	// 4. record and no requeue
-	log.Info(fmt.Sprintf("%s success, no need to requeue", operation.GetOperationType()))
-	ctx.Recorder.Eventf(object, v1.EventTypeNormal, common.DataOperationSucceed,
-		"%s %s succeeded", operation.GetOperationType(), object.GetName())
+	// For cron operations, the phase may be updated to pending here, and we only log bellow messages in complete phase
+	if opStatusToUpdate.Phase == common.PhaseComplete {
+		log.Info(fmt.Sprintf("%s success, no need to requeue", operation.GetOperationType()))
+		ctx.Recorder.Eventf(object, v1.EventTypeNormal, common.DataOperationSucceed,
+			"%s %s succeeded", operation.GetOperationType(), object.GetName())
+	}
 	return utils.NoRequeue()
 }
 
@@ -233,22 +242,24 @@ func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, o
 		log.Error(err, "status handler is nil")
 		return utils.RequeueIfError(err)
 	}
-	opStatus, err = statusHandler.GetOperationStatus(ctx, object, opStatus)
+	opStatusToUpdate, err := statusHandler.GetOperationStatus(ctx, object, opStatus)
 	if err != nil {
 		log.Error(err, "failed to update status")
 		return utils.RequeueIfError(err)
 	}
-	if opStatus.Phase != common.PhaseFailed {
-		if err = operation.UpdateOperationApiStatus(object, opStatus); err != nil {
+	if !reflect.DeepEqual(opStatus, opStatusToUpdate) {
+		if err = operation.UpdateOperationApiStatus(object, opStatusToUpdate); err != nil {
 			log.Error(err, fmt.Sprintf("failed to update the %s status", operation.GetOperationType()))
 			return utils.RequeueIfError(err)
 		}
-		// return immediately if not complete
-		return utils.RequeueImmediately()
+		log.V(1).Info(fmt.Sprintf("update operation status to %s successfully", opStatusToUpdate.Phase), "opstatus", opStatusToUpdate)
 	}
 
 	// 2. record and no requeue
-	log.Info(fmt.Sprintf("%s failed, won't requeue", operation.GetOperationType()))
-	ctx.Recorder.Eventf(object, v1.EventTypeWarning, common.DataOperationFailed, "%s %s failed", operation.GetOperationType(), object.GetName())
+	// For cron operations, the phase may be updated to pending here, and we only log bellow messages in failed phase
+	if opStatusToUpdate.Phase == common.PhaseFailed {
+		log.Info(fmt.Sprintf("%s failed, won't requeue", operation.GetOperationType()))
+		ctx.Recorder.Eventf(object, v1.EventTypeWarning, common.DataOperationFailed, "%s %s failed", operation.GetOperationType(), object.GetName())
+	}
 	return utils.NoRequeue()
 }
