@@ -15,7 +15,20 @@ spec:
     singular: dataprocess
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.dataset.name
+      name: Dataset
+      type: string
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    - jsonPath: .status.duration
+      name: Duration
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: DataProcess is the Schema for the dataprocesses API

@@ -90,6 +90,10 @@ type DataProcessSpec struct {
 	Processor Processor `json:"processor"`
 }
 
+// +kubebuilder:printcolumn:name="Dataset",type="string",JSONPath=`.spec.dataset.name`
+// +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=`.status.phase`
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=`.metadata.creationTimestamp`
+// +kubebuilder:printcolumn:name="Duration",type="string",JSONPath=`.status.duration`
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
