@@ -27,19 +27,21 @@ import (
 func (e *AlluxioEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, object client.Object, operation dataoperation.OperationInterface) (valueFileName string, err error) {
 	operationType := operation.GetOperationType()
 
-	if operationType == dataoperation.DataBackup {
+	switch operationType {
+	case dataoperation.DataBackup:
 		valueFileName, err = e.generateDataBackupValueFile(ctx, object)
 		return valueFileName, err
-	}
-
-	if operationType == dataoperation.DataLoad {
+	case dataoperation.DataLoad:
 		valueFileName, err = e.generateDataLoadValueFile(ctx, object)
 		return valueFileName, err
+	case dataoperation.DataProcess:
+		valueFileName, err = e.generateDataProcessValueFile(ctx, object)
+		return valueFileName, err
+	default:
+		return "", errors.NewNotSupported(
+			schema.GroupResource{
+				Group:    object.GetObjectKind().GroupVersionKind().Group,
+				Resource: object.GetObjectKind().GroupVersionKind().Kind,
+			}, "AlluxioRuntime")
 	}
-
-	return "", errors.NewNotSupported(
-		schema.GroupResource{
-			Group:    object.GetObjectKind().GroupVersionKind().Group,
-			Resource: object.GetObjectKind().GroupVersionKind().Kind,
-		}, "AlluxioRuntime")
 }
