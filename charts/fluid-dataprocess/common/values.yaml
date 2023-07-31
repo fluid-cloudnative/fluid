@@ -5,6 +5,7 @@ dataProcess:
   scriptProcessor:
     image: ""
     imagePullPolicy: IfNotPresent
+    restartPolicy: Never
     command: []
     args: []
     envs: []

@@ -98,6 +98,7 @@ func (p *ScriptProcessorImpl) TransformDataProcessValues(value *DataProcessValue
 	value.DataProcessInfo.ScriptProcessor = &ScriptProcessor{
 		Image:           fmt.Sprintf("%s:%s", p.ScriptProcessor.Image, p.ScriptProcessor.ImageTag),
 		ImagePullPolicy: corev1.PullPolicy(p.ScriptProcessor.ImagePullPolicy),
+		RestartPolicy:   p.ScriptProcessor.RestartPolicy,
 		Envs:            p.ScriptProcessor.Env,
 		Volumes:         append(p.ScriptProcessor.Volumes, datasetVolumes...),
 		VolumeMounts:    append(p.ScriptProcessor.VolumeMounts, datasetVolumeMounts...),

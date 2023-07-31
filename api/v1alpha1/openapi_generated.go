@@ -5028,6 +5028,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ScriptProcessor(ref common.Refe
 							Format:      "",
 						},
 					},
+					"restartPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RestartPolicy specifies the processor job's restart policy. Only \"Never\", \"OnFailure\" is allowed.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"command": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Entrypoint command for ScriptProcessor.",

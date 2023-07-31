@@ -39,6 +39,8 @@ type ScriptProcessor struct {
 
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 
+	RestartPolicy corev1.RestartPolicy `json:"restartPolicy,omitempty"`
+
 	Command []string `json:"command,omitempty"`
 
 	Args []string `json:"args,omitempty"`

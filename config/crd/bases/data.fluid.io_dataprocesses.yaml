@@ -7599,6 +7599,14 @@ spec:
                       imageTag:
                         description: Image tag (e.g. 2.3.0-SNAPSHOT)
                         type: string
+                      restartPolicy:
+                        default: Never
+                        description: RestartPolicy specifies the processor job's restart
+                          policy. Only "Never", "OnFailure" is allowed.
+                        enum:
+                        - Never
+                        - OnFailure
+                        type: string
                       volumeMounts:
                         description: Pod volumes to mount into the container's filesystem.
                         items:
