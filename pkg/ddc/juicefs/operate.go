@@ -28,19 +28,21 @@ func (j *JuiceFSEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestC
 	operation dataoperation.OperationInterface) (valueFileName string, err error) {
 	operationType := operation.GetOperationType()
 
-	if operationType == dataoperation.DataMigrate {
+	switch operationType {
+	case dataoperation.DataMigrate:
 		valueFileName, err = j.generateDataMigrateValueFile(ctx, object)
 		return valueFileName, err
-	}
-
-	if operationType == dataoperation.DataLoad {
+	case dataoperation.DataLoad:
 		valueFileName, err = j.generateDataLoadValueFile(ctx, object)
 		return valueFileName, err
+	case dataoperation.DataProcess:
+		valueFileName, err = j.generateDataProcessValueFile(ctx, object)
+		return valueFileName, err
+	default:
+		return "", errors.NewNotSupported(
+			schema.GroupResource{
+				Group:    object.GetObjectKind().GroupVersionKind().Group,
+				Resource: object.GetObjectKind().GroupVersionKind().Kind,
+			}, "JuiceFSRuntime")
 	}
-
-	return "", errors.NewNotSupported(
-		schema.GroupResource{
-			Group:    object.GetObjectKind().GroupVersionKind().Group,
-			Resource: object.GetObjectKind().GroupVersionKind().Kind,
-		}, "JuiceFSRuntime")
 }
