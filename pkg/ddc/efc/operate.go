@@ -25,9 +25,17 @@ import (
 )
 
 func (e *EFCEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, object client.Object, operation dataoperation.OperationInterface) (valueFileName string, err error) {
-	return "", errors.NewNotSupported(
-		schema.GroupResource{
-			Group:    object.GetObjectKind().GroupVersionKind().Group,
-			Resource: object.GetObjectKind().GroupVersionKind().Kind,
-		}, "EfcRuntime")
+	operationType := operation.GetOperationType()
+
+	switch operationType {
+	case dataoperation.DataProcess:
+		valueFileName, err = e.genverateDataProcessValueFile(ctx, object)
+		return valueFileName, err
+	default:
+		return "", errors.NewNotSupported(
+			schema.GroupResource{
+				Group:    object.GetObjectKind().GroupVersionKind().Group,
+				Resource: object.GetObjectKind().GroupVersionKind().Kind,
+			}, "EfcRuntime")
+	}
 }
