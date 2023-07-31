@@ -34,16 +34,11 @@ func (e *JindoFSxEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequest
 	case dataoperation.DataProcess:
 		valueFileName, err = e.generateDataProcessValueFile(ctx, object)
 		return valueFileName, err
+	default:
+		return "", errors.NewNotSupported(
+			schema.GroupResource{
+				Group:    object.GetObjectKind().GroupVersionKind().Group,
+				Resource: object.GetObjectKind().GroupVersionKind().Kind,
+			}, "JindoRuntime")
 	}
-
-	if operationType == dataoperation.DataLoad {
-		valueFileName, err = e.generateDataLoadValueFile(ctx, object)
-		return valueFileName, err
-	}
-
-	return "", errors.NewNotSupported(
-		schema.GroupResource{
-			Group:    object.GetObjectKind().GroupVersionKind().Group,
-			Resource: object.GetObjectKind().GroupVersionKind().Kind,
-		}, "JindoRuntime")
 }
