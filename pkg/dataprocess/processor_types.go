@@ -95,13 +95,13 @@ func (p *ScriptProcessorImpl) ValidateDatasetMountPath(datasetMountPath string) 
 }
 
 func (p *ScriptProcessorImpl) TransformDataProcessValues(value *DataProcessValue, datasetVolumes []corev1.Volume, datasetVolumeMounts []corev1.VolumeMount) {
-		value.DataProcessInfo.ScriptProcessor = &ScriptProcessor{
-			Image:           fmt.Sprintf("%s:%s", p.ScriptProcessor.Image, p.ScriptProcessor.ImageTag),
-			ImagePullPolicy: corev1.PullPolicy(p.ScriptProcessor.ImagePullPolicy),
-			Envs:            p.ScriptProcessor.Env,
-			Volumes:         append(p.ScriptProcessor.Volumes, datasetVolumes...),
-			VolumeMounts:    append(p.ScriptProcessor.VolumeMounts, datasetVolumeMounts...),
-			Command:         p.ScriptProcessor.Command,
-			Args:            p.ScriptProcessor.Args,
-		}
+	value.DataProcessInfo.ScriptProcessor = &ScriptProcessor{
+		Image:           fmt.Sprintf("%s:%s", p.ScriptProcessor.Image, p.ScriptProcessor.ImageTag),
+		ImagePullPolicy: corev1.PullPolicy(p.ScriptProcessor.ImagePullPolicy),
+		Envs:            p.ScriptProcessor.Env,
+		Volumes:         append(p.ScriptProcessor.Volumes, datasetVolumes...),
+		VolumeMounts:    append(p.ScriptProcessor.VolumeMounts, datasetVolumeMounts...),
+		Command:         p.ScriptProcessor.Command,
+		Args:            p.ScriptProcessor.Args,
+	}
 }
