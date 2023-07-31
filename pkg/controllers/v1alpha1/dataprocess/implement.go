@@ -24,6 +24,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
+	"github.com/fluid-cloudnative/fluid/pkg/dataprocess"
 	cdataprocess "github.com/fluid-cloudnative/fluid/pkg/dataprocess"
 	"github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -148,8 +149,13 @@ func (r *DataProcessReconciler) Validate(ctx runtime.ReconcileRequestContext, ob
 		}, err
 	}
 
+	processorImpl := dataprocess.GetProcessorImpl(dataProcess)
+	if processorImpl == nil {
+		return []datav1alpha1.Condition{}, fmt.Errorf("Neither jobProcessor or scriptProcessor is set for DataProcess (%s/%s)", dataProcess.Namespace, dataProcess.Name)
+	}
+
 	// DataProcess should not have conflict volume mountPath with targetDataset's mountPath
-	if ok, conflictVolName, conflictCtrName := r.validateDatasetMountpath(dataProcess); !ok {
+	if ok, conflictVolName, conflictCtrName := processorImpl.ValidateDatasetMountPath(dataProcess.Spec.Dataset.MountPath); !ok {
 		r.Recorder.Eventf(dataProcess,
 			corev1.EventTypeWarning,
 			common.DataProcessConflictMountPath,
@@ -202,28 +208,4 @@ func (r *DataProcessReconciler) RemoveTargetDatasetStatusInProgress(dataset *dat
 func (r *DataProcessReconciler) GetStatusHandler(object client.Object) dataoperation.StatusHandler {
 	// TODO: Support dataProcess.Spec.Policy
 	return &OnceStatusHandler{Client: r.Client}
-}
-
-func (r *DataProcessReconciler) validateDatasetMountpath(dataProcess *datav1alpha1.DataProcess) (pass bool, conflictVolName string, conflictContainerName string) {
-	datasetMountPath := dataProcess.Spec.Dataset.MountPath
-
-	if dataProcess.Spec.Processor.Job != nil {
-		for _, ctr := range append(dataProcess.Spec.Processor.Job.PodSpec.Containers, dataProcess.Spec.Processor.Job.PodSpec.InitContainers...) {
-			for _, volMount := range ctr.VolumeMounts {
-				if volMount.MountPath == datasetMountPath {
-					return false, volMount.Name, ctr.Name
-				}
-			}
-		}
-	}
-
-	if dataProcess.Spec.Processor.Script != nil {
-		for _, volMount := range dataProcess.Spec.Processor.Script.VolumeMounts {
-			if volMount.MountPath == datasetMountPath {
-				return false, volMount.MountPath, cdataprocess.DataProcessScriptProcessorContainerName
-			}
-		}
-	}
-
-	return true, "", ""
 }

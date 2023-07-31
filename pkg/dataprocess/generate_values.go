@@ -74,40 +74,9 @@ func GenDataProcessValue(dataset *datav1alpha1.Dataset, dataProcess *datav1alpha
 	}
 
 	value.Name = dataProcess.Name
-	if dataProcess.Spec.Processor.Job != nil {
-		podSpec := dataProcess.Spec.Processor.Job.PodSpec
-		if len(podSpec.Containers) != 0 || len(podSpec.InitContainers) != 0 {
-			podSpec.Volumes = append(podSpec.Volumes, volumes...)
-
-			if len(podSpec.Containers) != 0 {
-				for idx := range podSpec.Containers {
-					podSpec.Containers[idx].VolumeMounts = append(podSpec.Containers[idx].VolumeMounts, volumeMounts...)
-				}
-			}
-
-			if len(podSpec.InitContainers) != 0 {
-				for idx := range podSpec.InitContainers {
-					podSpec.InitContainers[idx].VolumeMounts = append(podSpec.InitContainers[idx].VolumeMounts, volumeMounts...)
-				}
-			}
-		}
-		value.DataProcessInfo.JobProcessor = &JobProcessor{
-			PodSpec: podSpec,
-		}
-		return value
-	}
-
-	if dataProcess.Spec.Processor.Script != nil {
-		value.Name = dataProcess.Name
-		value.DataProcessInfo.ScriptProcessor = &ScriptProcessor{
-			Image:           fmt.Sprintf("%s:%s", dataProcess.Spec.Processor.Script.Image, dataProcess.Spec.Processor.Script.ImageTag),
-			ImagePullPolicy: corev1.PullPolicy(dataProcess.Spec.Processor.Script.ImagePullPolicy),
-			Envs:            dataProcess.Spec.Processor.Script.Env,
-			Volumes:         append(dataProcess.Spec.Processor.Script.Volumes, volumes...),
-			VolumeMounts:    append(dataProcess.Spec.Processor.Script.VolumeMounts, volumeMounts...),
-			Command:         dataProcess.Spec.Processor.Script.Command,
-			Args:            dataProcess.Spec.Processor.Script.Args,
-		}
+	processorImpl := GetProcessorImpl(dataProcess)
+	if processorImpl != nil { // processorImpl should always be non-nil
+		processorImpl.TransformDataProcessValues(value, volumes, volumeMounts)
 		return value
 	}
 
