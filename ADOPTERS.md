@@ -39,7 +39,7 @@ The companies/organizations are listed in alphabetical order grouped by the phas
 | [autelrobotics](https://www.autelrobotics.cn) | [@andyzheung](https://github.com/andyzheung) | Testing | AI platform training data cache and big emr job data process data cache |
 | [coScene](https://www.coscene.cn) | [@juchaosong](https://github.com/juchaosong) | Production | Data Platform on k8s |
 | [pvmed](https://www.pvmedtech.com/) | [@huozhuoliang](huozhuoliang@pvmedtech.com) | Testing | AI training platform|
-| [DPTechnology](https://www.dp.tech/) | [@liyangbing](liyb@dp.tech) | Staging | AI Platform on k8s|
+| [DPTechnology](https://www.dp.tech/) | [@liyangbing](liyb@dp.tech) | Production | AI Platform on k8s|
 | [Megvii](https://megvii.com/) | [@huangweixiao](huangweixiao@megvii.com) | Testing | AI Platform on k8s|
 | [图森未来](https://cn.tusimple.com/) | [@bojian](jian.bo@tusen.ai) | Testing | Elastic Container Orchestration Service on k8s |
 | [得物](https://dewu.com/) | [@wangweidong](wangweidong@shizhuang-inc.com) | Staging | AI Platform(KubeAI) on k8s |
