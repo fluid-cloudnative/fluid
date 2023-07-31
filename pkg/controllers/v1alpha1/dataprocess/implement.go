@@ -24,7 +24,6 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
-	"github.com/fluid-cloudnative/fluid/pkg/dataprocess"
 	cdataprocess "github.com/fluid-cloudnative/fluid/pkg/dataprocess"
 	"github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -149,7 +148,7 @@ func (r *DataProcessReconciler) Validate(ctx runtime.ReconcileRequestContext, ob
 		}, err
 	}
 
-	processorImpl := dataprocess.GetProcessorImpl(dataProcess)
+	processorImpl := cdataprocess.GetProcessorImpl(dataProcess)
 	if processorImpl == nil {
 		return []datav1alpha1.Condition{}, fmt.Errorf("Neither jobProcessor or scriptProcessor is set for DataProcess (%s/%s)", dataProcess.Namespace, dataProcess.Name)
 	}
