@@ -150,7 +150,7 @@ func (r *DataProcessReconciler) Validate(ctx runtime.ReconcileRequestContext, ob
 
 	processorImpl := cdataprocess.GetProcessorImpl(dataProcess)
 	if processorImpl == nil {
-		return []datav1alpha1.Condition{}, fmt.Errorf("Neither jobProcessor or scriptProcessor is set for DataProcess (%s/%s)", dataProcess.Namespace, dataProcess.Name)
+		return []datav1alpha1.Condition{}, fmt.Errorf("neither jobProcessor or scriptProcessor is set for DataProcess (%s/%s)", dataProcess.Namespace, dataProcess.Name)
 	}
 
 	// DataProcess should not have conflict volume mountPath with targetDataset's mountPath
