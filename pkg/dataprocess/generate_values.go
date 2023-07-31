@@ -75,24 +75,24 @@ func GenDataProcessValue(dataset *datav1alpha1.Dataset, dataProcess *datav1alpha
 
 	value.Name = dataProcess.Name
 	if dataProcess.Spec.Processor.Job != nil {
-		podTemplate := dataProcess.Spec.Processor.Job.PodTemplate
-		if len(podTemplate.Template.Spec.Containers) != 0 || len(podTemplate.Template.Spec.InitContainers) != 0 {
-			podTemplate.Template.Spec.Volumes = append(podTemplate.Template.Spec.Volumes, volumes...)
+		podSpec := dataProcess.Spec.Processor.Job.PodSpec
+		if len(podSpec.Containers) != 0 || len(podSpec.InitContainers) != 0 {
+			podSpec.Volumes = append(podSpec.Volumes, volumes...)
 
-			if len(podTemplate.Template.Spec.Containers) != 0 {
-				for idx := range podTemplate.Template.Spec.Containers {
-					podTemplate.Template.Spec.Containers[idx].VolumeMounts = append(podTemplate.Template.Spec.Containers[idx].VolumeMounts, volumeMounts...)
+			if len(podSpec.Containers) != 0 {
+				for idx := range podSpec.Containers {
+					podSpec.Containers[idx].VolumeMounts = append(podSpec.Containers[idx].VolumeMounts, volumeMounts...)
 				}
 			}
 
-			if len(podTemplate.Template.Spec.InitContainers) != 0 {
-				for idx := range podTemplate.Template.Spec.InitContainers {
-					podTemplate.Template.Spec.InitContainers[idx].VolumeMounts = append(podTemplate.Template.Spec.InitContainers[idx].VolumeMounts, volumeMounts...)
+			if len(podSpec.InitContainers) != 0 {
+				for idx := range podSpec.InitContainers {
+					podSpec.InitContainers[idx].VolumeMounts = append(podSpec.InitContainers[idx].VolumeMounts, volumeMounts...)
 				}
 			}
 		}
 		value.DataProcessInfo.JobProcessor = &JobProcessor{
-			PodTemplate: podTemplate,
+			PodSpec: podSpec,
 		}
 		return value
 	}

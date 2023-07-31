@@ -49,9 +49,9 @@ type Processor struct {
 }
 
 type JobProcessor struct {
-	// PodTemplate defines Pod specification of the DataProcess job.
+	// PodSpec defines Pod specification of the DataProcess job.
 	// +optional
-	PodTemplate *corev1.PodTemplate `json:"podTemplate,omitempty"`
+	PodSpec *corev1.PodSpec `json:"podSpec,omitempty"`
 }
 
 type ScriptProcessor struct {

@@ -51,5 +51,5 @@ type ScriptProcessor struct {
 }
 
 type JobProcessor struct {
-	PodTemplate *corev1.PodTemplate `json:"podTemplate,omitempty"`
+	PodSpec *corev1.PodSpec `json:"podSpec,omitempty"`
 }

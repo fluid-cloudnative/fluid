@@ -208,7 +208,7 @@ func (r *DataProcessReconciler) validateDatasetMountpath(dataProcess *datav1alph
 	datasetMountPath := dataProcess.Spec.Dataset.MountPath
 
 	if dataProcess.Spec.Processor.Job != nil {
-		for _, ctr := range append(dataProcess.Spec.Processor.Job.PodTemplate.Template.Spec.Containers, dataProcess.Spec.Processor.Job.PodTemplate.Template.Spec.InitContainers...) {
+		for _, ctr := range append(dataProcess.Spec.Processor.Job.PodSpec.Containers, dataProcess.Spec.Processor.Job.PodSpec.InitContainers...) {
 			for _, volMount := range ctr.VolumeMounts {
 				if volMount.MountPath == datasetMountPath {
 					return false, volMount.Name, ctr.Name
