@@ -18,10 +18,34 @@ package dataprocess
 
 import (
 	"fmt"
+	"os"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/yaml"
 )
+
+func GenDataProcessValueFile(dataset *datav1alpha1.Dataset, dataProcess *datav1alpha1.DataProcess) (valueFileName string, err error) {
+	dataProcessValue := GenDataProcessValue(dataset, dataProcess)
+
+	data, err := yaml.Marshal(dataProcessValue)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to marshal dataProcessValue of DataProcess %s/%s", dataProcess.GetNamespace(), dataProcess.GetName())
+	}
+
+	valueFile, err := os.CreateTemp(os.TempDir(), fmt.Sprintf("%s-%s-process-values.yaml", dataProcess.Namespace, dataProcess.Name))
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to create temp file to store values for DataProcess %s/%s", dataProcess.Namespace, dataProcess.Name)
+	}
+
+	err = os.WriteFile(valueFile.Name(), data, 0o400)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to write temp file %s", valueFile.Name())
+	}
+
+	return valueFile.Name(), nil
+}
 
 func GenDataProcessValue(dataset *datav1alpha1.Dataset, dataProcess *datav1alpha1.DataProcess) *DataProcessValue {
 	value := &DataProcessValue{

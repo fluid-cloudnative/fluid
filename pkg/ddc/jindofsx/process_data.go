@@ -18,7 +18,6 @@ package jindofsx
 
 import (
 	"fmt"
-	"os"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/dataprocess"
@@ -26,7 +25,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/yaml"
 )
 
 func (e *JindoFSxEngine) generateDataProcessValueFile(ctx cruntime.ReconcileRequestContext, object client.Object) (valueFileName string, err error) {
@@ -41,22 +39,5 @@ func (e *JindoFSxEngine) generateDataProcessValueFile(ctx cruntime.ReconcileRequ
 		return "", errors.Wrap(err, "failed to get dataset")
 	}
 
-	dataProcessValue := dataprocess.GenDataProcessValue(targetDataset, dataProcess)
-
-	data, err := yaml.Marshal(dataProcessValue)
-	if err != nil {
-		return "", errors.Wrapf(err, "failed to marshal dataProcessValue of DataProcess %s/%s", object.GetNamespace(), object.GetName())
-	}
-
-	valueFile, err := os.CreateTemp(os.TempDir(), fmt.Sprintf("%s-%s-process-values.yaml", dataProcess.Namespace, dataProcess.Name))
-	if err != nil {
-		return "", errors.Wrapf(err, "failed to create temp file to store values for DataProcess %s/%s", dataProcess.Namespace, dataProcess.Name)
-	}
-
-	err = os.WriteFile(valueFile.Name(), data, 0o400)
-	if err != nil {
-		return "", errors.Wrapf(err, "failed to write temp file %s", valueFile.Name())
-	}
-
-	return valueFile.Name(), nil
+	return dataprocess.GenDataProcessValueFile(targetDataset, dataProcess)
 }
