@@ -3734,17 +3734,17 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JobProcessor(ref common.Referen
 			SchemaProps: spec.SchemaProps{
 				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
-					"podTemplate": {
+					"podSpec": {
 						SchemaProps: spec.SchemaProps{
-							Description: "PodTemplate defines Pod specification of the DataProcess job.",
-							Ref:         ref("k8s.io/api/core/v1.PodTemplate"),
+							Description: "PodSpec defines Pod specification of the DataProcess job.",
+							Ref:         ref("k8s.io/api/core/v1.PodSpec"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.PodTemplate"},
+			"k8s.io/api/core/v1.PodSpec"},
 	}
 }
 
@@ -5036,6 +5036,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ScriptProcessor(ref common.Refe
 					"imagePullPolicy": {
 						SchemaProps: spec.SchemaProps{
 							Description: "One of the three policies: `Always`, `IfNotPresent`, `Never`",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"restartPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RestartPolicy specifies the processor job's restart policy. Only \"Never\", \"OnFailure\" is allowed.",
 							Type:        []string{"string"},
 							Format:      "",
 						},

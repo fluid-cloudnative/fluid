@@ -15,7 +15,7 @@ limitations under the License.
 
 package common
 
-// Reason for Fluid events
+// Fluid events related to datasets/runtimes
 const (
 	ErrorCreateDataset = "ErrorCreateDataset"
 
@@ -27,22 +27,6 @@ const (
 
 	ErrorHelmInstall = "ErrorHelmInstall"
 
-	TargetDatasetNotFound = "TargetDatasetNotFound"
-
-	TargetDatasetNotReady = "TargetDatasetNotReady"
-
-	TargetDatasetNamespaceNotSame = "TargetDatasetNamespaceNotSame"
-
-	DataLoadCollision = "DataLoadCollision"
-
-	RuntimeNotReady = "RuntimeNotReady"
-
-	DataLoadJobStarted = "DataLoadJobStarted"
-
-	DataLoadJobFailed = "DataLoadJobFailed"
-
-	DataLoadJobComplete = "DataLoadJobComplete"
-
 	RuntimeScaleInFailed = "RuntimeScaleInFailed"
 
 	Succeed = "Succeed"
@@ -52,14 +36,15 @@ const (
 	FuseRecoverSucceed = "FuseRecoverSucceed"
 
 	RuntimeDeprecated = "RuntimeDeprecated"
+)
 
-	DataMigrateCollision = "DataMigrateCollision"
+// Events related to all type of Data Operations
+const (
+	TargetDatasetNotFound = "TargetDatasetNotFound"
 
-	DataMigrateJobStarted = "DataMigrateJobStarted"
+	TargetDatasetNotReady = "TargetDatasetNotReady"
 
-	DataMigrateJobFailed = "DataMigrateJobFailed"
-
-	DataMigrateJobComplete = "DataMigrateJobComplete"
+	TargetDatasetNamespaceNotSame = "TargetDatasetNamespaceNotSame"
 
 	DataOperationNotSupport = "DataOperationNotSupport"
 
@@ -70,6 +55,39 @@ const (
 	DataOperationNotValid = "DataOperationNotValid"
 
 	DataOperationCollision = "DataOperationCollision"
+)
+
+// Events related to DataLoad
+const (
+	DataLoadCollision = "DataLoadCollision"
+
+	RuntimeNotReady = "RuntimeNotReady"
+
+	DataLoadJobStarted = "DataLoadJobStarted"
+
+	DataLoadJobFailed = "DataLoadJobFailed"
+
+	DataLoadJobComplete = "DataLoadJobComplete"
+)
+
+// Events related to DataMigrate
+const (
+	DataMigrateCollision = "DataMigrateCollision"
+
+	DataMigrateJobStarted = "DataMigrateJobStarted"
+
+	DataMigrateJobFailed = "DataMigrateJobFailed"
+
+	DataMigrateJobComplete = "DataMigrateJobComplete"
+)
+
+// Events related to DataProcess
+const (
+	DataProcessProcessorNotSpecified = "ProcessorNotSpecified"
+
+	DataProcessMultipleProcessorSpecified = "MultipleProcessorSpecified"
+
+	DataProcessConflictMountPath = "ConflictMountPath"
 )
 
 type CacheStoreType string

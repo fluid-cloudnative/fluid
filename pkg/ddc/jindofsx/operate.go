@@ -27,14 +27,18 @@ import (
 func (e *JindoFSxEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, object client.Object, operation dataoperation.OperationInterface) (valueFileName string, err error) {
 	operationType := operation.GetOperationType()
 
-	if operationType == dataoperation.DataLoad {
+	switch operationType {
+	case dataoperation.DataLoad:
 		valueFileName, err = e.generateDataLoadValueFile(ctx, object)
 		return valueFileName, err
+	case dataoperation.DataProcess:
+		valueFileName, err = e.generateDataProcessValueFile(ctx, object)
+		return valueFileName, err
+	default:
+		return "", errors.NewNotSupported(
+			schema.GroupResource{
+				Group:    object.GetObjectKind().GroupVersionKind().Group,
+				Resource: object.GetObjectKind().GroupVersionKind().Kind,
+			}, "JindoRuntime")
 	}
-
-	return "", errors.NewNotSupported(
-		schema.GroupResource{
-			Group:    object.GetObjectKind().GroupVersionKind().Group,
-			Resource: object.GetObjectKind().GroupVersionKind().Kind,
-		}, "JindoRuntime")
 }

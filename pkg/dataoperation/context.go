@@ -28,6 +28,7 @@ const (
 	DataLoad    OperationType = "DataLoad"
 	DataBackup  OperationType = "DataBackup"
 	DataMigrate OperationType = "DataMigrate"
+	DataProcess OperationType = "DataProcess"
 )
 
 // ReconcileRequestContext loads or applys the configuration state of a service.

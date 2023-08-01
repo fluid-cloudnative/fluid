@@ -1,0 +1,15 @@
+name: ""
+
+dataProcess:
+  targetDataset: ""
+  scriptProcessor:
+    image: ""
+    imagePullPolicy: IfNotPresent
+    restartPolicy: Never
+    command: []
+    args: []
+    envs: []
+    volumes: []
+    volumeMounts: []
+  jobProcessor:
+    podSpec: {}
