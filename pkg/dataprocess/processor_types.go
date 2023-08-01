@@ -87,7 +87,7 @@ type ScriptProcessorImpl struct {
 func (p *ScriptProcessorImpl) ValidateDatasetMountPath(datasetMountPath string) (pass bool, conflictVolName string, conflictContainerName string) {
 	for _, volMount := range p.ScriptProcessor.VolumeMounts {
 		if volMount.MountPath == datasetMountPath {
-			return false, volMount.MountPath, DataProcessScriptProcessorContainerName
+			return false, volMount.Name, DataProcessScriptProcessorContainerName
 		}
 	}
 
