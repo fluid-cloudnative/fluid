@@ -29,7 +29,7 @@ func (e *EFCEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestConte
 
 	switch operationType {
 	case dataoperation.DataProcess:
-		valueFileName, err = e.genverateDataProcessValueFile(ctx, object)
+		valueFileName, err = e.generateDataProcessValueFile(ctx, object)
 		return valueFileName, err
 	default:
 		return "", errors.NewNotSupported(

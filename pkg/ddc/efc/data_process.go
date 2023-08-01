@@ -11,7 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (e *EFCEngine) genverateDataProcessValueFile(ctx cruntime.ReconcileRequestContext, object client.Object) (valueFileName string, err error) {
+func (e *EFCEngine) generateDataProcessValueFile(ctx cruntime.ReconcileRequestContext, object client.Object) (valueFileName string, err error) {
 	dataProcess, ok := object.(*datav1alpha1.DataProcess)
 	if !ok {
 		err = fmt.Errorf("object %v is not of type DataProcess", object)
