@@ -37,7 +37,7 @@ else
 endif
 
 CURRENT_DIR=$(shell pwd)
-VERSION=v0.9.1
+VERSION=v0.9.2
 BUILD_DATE=$(shell date -u +'%Y-%m-%d_%H:%M:%S')
 GIT_COMMIT=$(shell git rev-parse HEAD)
 GIT_TAG=$(shell if [ -z "`git status --porcelain`" ]; then git describe --exact-match --tags HEAD 2>/dev/null; fi)
