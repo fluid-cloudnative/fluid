@@ -49,14 +49,20 @@ type Processor struct {
 }
 
 type JobProcessor struct {
-	// PodTemplate defines Pod specification of the DataProcess job.
+	// PodSpec defines Pod specification of the DataProcess job.
 	// +optional
-	PodTemplate *corev1.PodTemplate `json:"podTemplate,omitempty"`
+	PodSpec *corev1.PodSpec `json:"podSpec,omitempty"`
 }
 
 type ScriptProcessor struct {
 	// VersionSpec specifies the container's image info.
 	VersionSpec `json:",inline,omitempty"`
+
+	// RestartPolicy specifies the processor job's restart policy. Only "Never", "OnFailure" is allowed.
+	// +optional
+	// +kubebuilder:default="Never"
+	// +kubebuilder:validation:Enum=Never;OnFailure
+	RestartPolicy corev1.RestartPolicy `json:"restartPolicy,omitempty"`
 
 	// Entrypoint command for ScriptProcessor.
 	// +optional
@@ -90,6 +96,10 @@ type DataProcessSpec struct {
 	Processor Processor `json:"processor"`
 }
 
+// +kubebuilder:printcolumn:name="Dataset",type="string",JSONPath=`.spec.dataset.name`
+// +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=`.status.phase`
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=`.metadata.creationTimestamp`
+// +kubebuilder:printcolumn:name="Duration",type="string",JSONPath=`.status.duration`
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 

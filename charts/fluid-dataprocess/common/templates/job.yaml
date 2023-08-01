@@ -1,0 +1,53 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ printf "%s-job" .Release.Name }}
+  labels:
+    release: {{ .Release.Name }}
+    role: dataprocess-job
+    app: fluid-dataprocess
+    targetDataset: {{ required "targetDataset should be set" .Values.dataProcess.targetDataset }}
+spec:
+  backoffLimit: 3
+  completions: 1
+  parallelism: 1
+  template:
+    metadata:
+      name: {{ printf "%s-process" .Release.Name }}
+      annotations:
+        sidecar.istio.io/inject: "false"
+      labels:
+        release: {{ .Release.Name }}
+        role: dataprocess-pod
+        app: fluid-dataprocess
+        targetDataset: {{ required "targetDataset should be set" .Values.dataProcess.targetDataset }}
+    spec:
+     {{- if .Values.dataProcess.jobProcessor.podSpec }}
+{{- toYaml .Values.dataProcess.jobProcessor.podSpec | nindent 6 }}
+    {{- else if .Values.dataProcess.scriptProcessor }}
+      restartPolicy: {{ .Values.dataProcess.scriptProcessor.restartPolicy | default "Never" | quote }}
+      containers:
+        - name: script-processor
+          image: {{ required "DataProcess image should be set" .Values.dataProcess.scriptProcessor.image }}
+          imagePullPolicy: {{ .Values.dataProcess.scriptProcessor.imagePullPolicy }}
+          {{- if .Values.dataProcess.scriptProcessor.command }}
+          command: 
+          {{ toYaml .Values.dataProcess.scriptProcessor.command | nindent 10 }}
+          {{- end }}
+          {{- if .Values.dataProcess.scriptProcessor.args }}
+          args:
+          {{ toYaml .Values.dataProcess.scriptProcessor.args | nindent 10 }}
+          {{- end }}
+          {{- if .Values.dataProcess.scriptProcessor.envs }}
+          env:
+          {{ toYaml .Values.dataProcess.scriptProcessor.envs | nindent 10 }}
+          {{- end }}
+          {{- if .Values.dataProcess.scriptProcessor.volumeMounts }}
+          volumeMounts:
+            {{- toYaml .Values.dataProcess.scriptProcessor.volumeMounts | nindent 12 }}
+          {{- end }}
+      {{- if .Values.dataProcess.scriptProcessor.volumes }}
+      volumes:
+        {{- toYaml .Values.dataProcess.scriptProcessor.volumes | nindent 8 }}
+      {{- end }}
+    {{- end }}

@@ -125,6 +125,7 @@ func (o *OperationReconciler) ReconcileInternal(ctx dataoperation.ReconcileReque
 		if utils.IgnoreNotFound(err) == nil {
 			statusError := err.(*apierrors.StatusError)
 			ctx.Log.Info("The dataset is not found", "dataset", statusError.Status().Details.Name)
+			o.Recorder.Eventf(object, v1.EventTypeWarning, common.TargetDatasetNotFound, "Target dataset not found: %v", err)
 			return utils.RequeueAfterInterval(20 * time.Second)
 		} else {
 			ctx.Log.Error(err, "Failed to get the ddc dataset")
