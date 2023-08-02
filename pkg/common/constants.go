@@ -48,6 +48,8 @@ const (
 
 	DataOperationNotSupport = "DataOperationNotSupport"
 
+	DataOperationExecutionFailed = "DataOperationExecutionFailed"
+
 	DataOperationFailed = "DataOperationFailed"
 
 	DataOperationSucceed = "DataOperationSucceed"
