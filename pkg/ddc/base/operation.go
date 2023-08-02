@@ -144,6 +144,7 @@ func (t *TemplateEngine) reconcileExecuting(ctx cruntime.ReconcileRequestContext
 			// opreation status updated would trigger requeue, no need to requeue here
 			return utils.NoRequeue()
 		}
+		ctx.Recorder.Eventf(object, v1.EventTypeWarning, common.DataOperationExecutionFailed, "fail to execute data operation: %v", err)
 		return utils.RequeueAfterInterval(20 * time.Second)
 	}
 
