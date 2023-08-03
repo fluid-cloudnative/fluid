@@ -37,7 +37,7 @@ func (t *TemplateEngine) Operate(ctx cruntime.ReconcileRequestContext, object cl
 
 	// runtime engine override the template engine
 	switch operateType {
-	case dataoperation.DataBackup:
+	case datav1alpha1.DataBackupType:
 		ownImpl, ok := t.Implement.(Databackuper)
 		if ok {
 			targetDataBackup, success := object.(*datav1alpha1.DataBackup)

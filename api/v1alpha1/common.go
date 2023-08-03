@@ -233,3 +233,27 @@ type Condition struct {
 	// LastTransitionTime describes last time the condition transitioned from one status to another.
 	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
 }
+
+type OperationType string
+
+const (
+	DataLoadType    OperationType = "DataLoad"
+	DataBackupType  OperationType = "DataBackup"
+	DataMigrateType OperationType = "DataMigrate"
+	DataProcessType OperationType = "DataProcess"
+)
+
+type OperationRef struct {
+	// OperationType specifies the type of the data operation
+	// +required
+	// +kubebuilder:validation:Enum=DataLoad;DataBackup;DataMigrate;DataProcess
+	OperationType OperationType `json:"operationType"`
+
+	// Name specifies the name of the referred data operation
+	// +required
+	Name string `json:"name"`
+
+	// Namespace specifies the namespace of the referred data operation
+	// +required
+	Namespace string `json:"namespace"`
+}

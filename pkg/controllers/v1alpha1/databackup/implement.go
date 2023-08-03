@@ -31,7 +31,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 
-	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdatabackup "github.com/fluid-cloudnative/fluid/pkg/databackup"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -42,7 +42,7 @@ func (r *DataBackupReconciler) GetChartsDirectory() string {
 }
 
 func (r *DataBackupReconciler) UpdateStatusInfoForCompleted(object client.Object, infos map[string]string) error {
-	dataBackup, ok := object.(*v1alpha1.DataBackup)
+	dataBackup, ok := object.(*datav1alpha1.DataBackup)
 	if !ok {
 		return fmt.Errorf("object %v is not a DataBackup", object)
 	}
@@ -63,16 +63,16 @@ func (r *DataBackupReconciler) UpdateStatusInfoForCompleted(object client.Object
 
 	return nil
 }
-func (r *DataBackupReconciler) Validate(ctx runtime.ReconcileRequestContext, object client.Object) ([]v1alpha1.Condition, error) {
-	dataBackup, ok := object.(*v1alpha1.DataBackup)
+func (r *DataBackupReconciler) Validate(ctx runtime.ReconcileRequestContext, object client.Object) ([]datav1alpha1.Condition, error) {
+	dataBackup, ok := object.(*datav1alpha1.DataBackup)
 	if !ok {
-		return []v1alpha1.Condition{}, fmt.Errorf("object %v is not a DataBackup", object)
+		return []datav1alpha1.Condition{}, fmt.Errorf("object %v is not a DataBackup", object)
 	}
 
 	// 0. check the supported backup path format
 	if !strings.HasPrefix(dataBackup.Spec.BackupPath, common.PathScheme.String()) && !strings.HasPrefix(dataBackup.Spec.BackupPath, common.VolumeScheme.String()) {
 		err := fmt.Errorf("don't support path in this form, path: %s", dataBackup.Spec.BackupPath)
-		return []v1alpha1.Condition{
+		return []datav1alpha1.Condition{
 			{
 				Type:               common.Failed,
 				Status:             v1.ConditionTrue,
@@ -86,18 +86,18 @@ func (r *DataBackupReconciler) Validate(ctx runtime.ReconcileRequestContext, obj
 	return nil, nil
 }
 
-func (r *DataBackupReconciler) SetTargetDatasetStatusInProgress(dataset *v1alpha1.Dataset) {
+func (r *DataBackupReconciler) SetTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
 }
 
-func (r *DataBackupReconciler) RemoveTargetDatasetStatusInProgress(dataset *v1alpha1.Dataset) {
+func (r *DataBackupReconciler) RemoveTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
 }
 
-func (r *DataBackupReconciler) GetOperationType() dataoperation.OperationType {
-	return dataoperation.DataBackup
+func (r *DataBackupReconciler) GetOperationType() datav1alpha1.OperationType {
+	return datav1alpha1.DataBackupType
 }
 
-func (r *DataBackupReconciler) GetTargetDataset(object client.Object) (*v1alpha1.Dataset, error) {
-	typeObject, ok := object.(*v1alpha1.DataBackup)
+func (r *DataBackupReconciler) GetTargetDataset(object client.Object) (*datav1alpha1.Dataset, error) {
+	typeObject, ok := object.(*datav1alpha1.DataBackup)
 	if !ok {
 		return nil, fmt.Errorf("object %v is not a DataBackup", object)
 	}
@@ -115,8 +115,8 @@ func (r *DataBackupReconciler) GetReleaseNameSpacedName(object client.Object) ty
 }
 
 // UpdateOperationStatus update the DataBackup Status
-func (r *DataBackupReconciler) UpdateOperationApiStatus(object client.Object, opStatus *v1alpha1.OperationStatus) error {
-	dataBackup, ok := object.(*v1alpha1.DataBackup)
+func (r *DataBackupReconciler) UpdateOperationApiStatus(object client.Object, opStatus *datav1alpha1.OperationStatus) error {
+	dataBackup, ok := object.(*datav1alpha1.DataBackup)
 	if !ok {
 		return fmt.Errorf("%+v is not a type of DataBackup", object)
 	}
