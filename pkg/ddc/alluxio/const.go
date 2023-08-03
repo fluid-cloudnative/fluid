@@ -17,6 +17,8 @@ limitations under the License.
 package alluxio
 
 const (
+	// NON_NATIVE_MOUNT_DATA_NAME also used in master 'statefulset.yaml' and config 'alluxio-mount.conf.yaml'
+	NON_NATIVE_MOUNT_DATA_NAME = "mount.info"
 
 	// alluxioHome string = "/opt/alluxio"
 

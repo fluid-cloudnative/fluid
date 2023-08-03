@@ -19,7 +19,9 @@ package alluxio
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"reflect"
+	"strings"
 	"time"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -90,7 +92,7 @@ func (e *AlluxioEngine) shouldMountUFS() (should bool, err error) {
 			// No need for a mount point with Fluid native scheme('local://' and 'pvc://') to be mounted
 			continue
 		}
-		alluxioPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
+		alluxioPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount)
 		mounted, err := fileUtils.IsMounted(alluxioPath)
 		if err != nil {
 			should = false
@@ -130,7 +132,7 @@ func (e *AlluxioEngine) FindUnmountedUFS() (unmountedPaths []string, err error) 
 			// No need for a mount point with Fluid native scheme('local://' and 'pvc://') to be mounted
 			continue
 		}
-		alluxioPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
+		alluxioPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount)
 		alluxioPaths = append(alluxioPaths, alluxioPath)
 	}
 
@@ -142,21 +144,61 @@ func (e *AlluxioEngine) FindUnmountedUFS() (unmountedPaths []string, err error) 
 	return fileUtils.FindUnmountedAlluxioPaths(alluxioPaths)
 }
 
-func (e *AlluxioEngine) processUpdatingUFS(ufsToUpdate *utils.UFSToUpdate) (err error) {
+func (e *AlluxioEngine) processUpdatingUFS(ufsToUpdate *utils.UFSToUpdate) (updateReady bool, err error) {
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
-		return err
+		return false, err
 	}
+
+	if IsMountWithConfigMap() {
+		updateReady, err = e.updateUFSWithMountConfigMapScript(dataset)
+		if err != nil {
+			return
+		}
+	} else {
+		updateReady, err = e.updatingUFSWithMountCommand(dataset, ufsToUpdate)
+		if err != nil {
+			return
+		}
+	}
+
+	if updateReady {
+		// need to reset ufsTotal to Calculating so that SyncMetadata will work
+		datasetToUpdate := dataset.DeepCopy()
+		datasetToUpdate.Status.UfsTotal = metadataSyncNotDoneMsg
+		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
+			err = e.Client.Status().Update(context.TODO(), datasetToUpdate)
+			if err != nil {
+				e.Log.Error(err, "fail to update ufsTotal of dataset to Calculating")
+			}
+		}
+
+		err = e.SyncMetadata()
+		if err != nil {
+			// just report this error and ignore it because SyncMetadata isn't on the critical path of Setup
+			e.Log.Error(err, "SyncMetadata", "dataset", e.name)
+			return true, nil
+		}
+
+		// whether having new mount path alluxio
+		if len(ufsToUpdate.ToAdd()) > 0 {
+			e.updateMountTime()
+		}
+	}
+
+	return
+}
+
+func (e *AlluxioEngine) updatingUFSWithMountCommand(dataset *datav1alpha1.Dataset, ufsToUpdate *utils.UFSToUpdate) (updateReady bool, err error) {
 
 	podName, containerName := e.getMasterPodInfo()
 	fileUtils := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
 
 	ready := fileUtils.Ready()
 	if !ready {
-		return fmt.Errorf("the UFS is not ready, namespace:%s,name:%s", e.namespace, e.name)
+		return false, fmt.Errorf("the UFS is not ready, namespace:%s,name:%s", e.namespace, e.name)
 	}
 
-	everMounted := false
 	// Iterate all the mount points, do mount if the mount point is in added array
 	// TODO: not allow to edit FluidNativeScheme MountPoint
 	for _, mount := range dataset.Spec.Mounts {
@@ -164,7 +206,7 @@ func (e *AlluxioEngine) processUpdatingUFS(ufsToUpdate *utils.UFSToUpdate) (err 
 			continue
 		}
 
-		alluxioPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
+		alluxioPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount)
 		if len(ufsToUpdate.ToAdd()) > 0 && utils.ContainsString(ufsToUpdate.ToAdd(), alluxioPath) {
 			mountOptions := map[string]string{}
 			for key, value := range dataset.Spec.SharedOptions {
@@ -179,20 +221,18 @@ func (e *AlluxioEngine) processUpdatingUFS(ufsToUpdate *utils.UFSToUpdate) (err 
 			// If encryptOptions have the same key with options, it will overwrite the corresponding value
 			mountOptions, err = e.genEncryptOptions(dataset.Spec.SharedEncryptOptions, mountOptions, mount.Name)
 			if err != nil {
-				return err
+				return false, err
 			}
 
 			mountOptions, err = e.genEncryptOptions(mount.EncryptOptions, mountOptions, mount.Name)
 			if err != nil {
-				return err
+				return false, err
 			}
 
 			err = fileUtils.Mount(alluxioPath, mount.MountPoint, mountOptions, mount.ReadOnly, mount.Shared)
 			if err != nil {
-				return err
+				return false, err
 			}
-
-			everMounted = true
 		}
 	}
 
@@ -201,32 +241,69 @@ func (e *AlluxioEngine) processUpdatingUFS(ufsToUpdate *utils.UFSToUpdate) (err 
 		for _, mountRemove := range ufsToUpdate.ToRemove() {
 			err = fileUtils.UnMount(mountRemove)
 			if err != nil {
-				return err
+				return false, err
 			}
 		}
 	}
-	// need to reset ufsTotal to Calculating so that SyncMetadata will work
-	datasetToUpdate := dataset.DeepCopy()
-	datasetToUpdate.Status.UfsTotal = metadataSyncNotDoneMsg
-	if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
-		err = e.Client.Status().Update(context.TODO(), datasetToUpdate)
+
+	return true, nil
+}
+
+// update alluxio mount using script in configmap
+func (e *AlluxioEngine) updateUFSWithMountConfigMapScript(dataset *datav1alpha1.Dataset) (updateReady bool, err error) {
+	// 1. update non native mount info according the data.Spec.Mounts
+	mountConfigMapName := e.getMountConfigmapName()
+	mountConfigMap, err := kubeclient.GetConfigmapByName(e.Client, mountConfigMapName, e.namespace)
+	if err != nil {
+		return false, err
+	}
+
+	nonNativeMounts, err := e.generateNonNativeMountsInfo(dataset)
+	if err != nil {
+		return false, err
+	}
+
+	newMountConfigMap := mountConfigMap.DeepCopy()
+	newMountConfigMap.Data[NON_NATIVE_MOUNT_DATA_NAME] = strings.Join(nonNativeMounts, "\n") + "\n"
+	if !reflect.DeepEqual(newMountConfigMap, mountConfigMap) {
+		e.Log.Info("update mount path", NON_NATIVE_MOUNT_DATA_NAME, nonNativeMounts)
+		err = kubeclient.UpdateConfigMap(e.Client, newMountConfigMap)
 		if err != nil {
-			e.Log.Error(err, "fail to update ufsTotal of dataset to Calculating")
+			return false, err
 		}
 	}
 
-	err = e.SyncMetadata()
+	// 2. execute mount script to mount and unmount alluxio path according to non native mount info
+	podName, containerName := e.getMasterPodInfo()
+	fileUtils := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
+	err = fileUtils.ExecMountScripts()
 	if err != nil {
-		// just report this error and ignore it because SyncMetadata isn't on the critical path of Setup
-		e.Log.Error(err, "SyncMetadata", "dataset", e.name)
-		return nil
+		return false, errors.Wrapf(err, "execute mount.sh occurs error")
 	}
 
-	if everMounted {
-		e.updateMountTime()
+	// 3. compare alluxio mount paths and dataset mount path to mark updateReady because configmap updating has delay
+	// for alluxio master pods so above executing may not use the newest non native mount info.
+	mountedPaths, err := fileUtils.GetMountedAlluxioPaths()
+	// the root path can not be changed, skip it.
+	mountedPaths = utils.RemoveString(mountedPaths, "/")
+
+	var datasetMountPaths []string
+	for _, mount := range dataset.Spec.Mounts {
+		if common.IsFluidNativeScheme(mount.MountPoint) {
+			continue
+		}
+		m := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount)
+		// skip root path mount
+		if m != "/" {
+			datasetMountPaths = append(datasetMountPaths, m)
+		}
+	}
+	// only ready when alluxio mounted paths is the same as dataset mount paths
+	if len(mountedPaths) == len(datasetMountPaths) && len(utils.SubtractString(datasetMountPaths, mountedPaths)) == 0 {
+		updateReady = true
 	}
 
-	return nil
+	return
 }
 
 // mountUFS() mount all UFSs to Alluxio according to mount points in `dataset.Spec`. If a mount point is Fluid-native, mountUFS() will skip it.
@@ -252,7 +329,7 @@ func (e *AlluxioEngine) mountUFS() (err error) {
 			continue
 		}
 
-		alluxioPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
+		alluxioPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount)
 
 		mounted, err := fileUitls.IsMounted(alluxioPath)
 		e.Log.Info("Check if the alluxio path is mounted.", "alluxioPath", alluxioPath, "mounted", mounted)
@@ -260,7 +337,7 @@ func (e *AlluxioEngine) mountUFS() (err error) {
 			return err
 		}
 
-		mOptions, err := e.genUFSMountOptions(mount, dataset.Spec.SharedOptions, dataset.Spec.SharedEncryptOptions)
+		mOptions, err := e.genUFSMountOptions(mount, dataset.Spec.SharedOptions, dataset.Spec.SharedEncryptOptions, true)
 		if err != nil {
 			return errors.Wrapf(err, "gen ufs mount options by spec mount item failure,mount name:%s", mount.Name)
 		}
@@ -283,7 +360,8 @@ func (e *AlluxioEngine) mountUFS() (err error) {
 }
 
 // alluxio mount options
-func (e *AlluxioEngine) genUFSMountOptions(m datav1alpha1.Mount, SharedOptions map[string]string, SharedEncryptOptions []datav1alpha1.EncryptOption) (map[string]string, error) {
+func (e *AlluxioEngine) genUFSMountOptions(m datav1alpha1.Mount, SharedOptions map[string]string, SharedEncryptOptions []datav1alpha1.EncryptOption,
+	extractEncryptOptions bool) (map[string]string, error) {
 
 	// initialize alluxio mount options
 	mOptions := map[string]string{}
@@ -295,20 +373,28 @@ func (e *AlluxioEngine) genUFSMountOptions(m datav1alpha1.Mount, SharedOptions m
 		mOptions[key] = value
 	}
 
-	// if encryptOptions have the same key with options
-	// it will overwrite the corresponding value
-	var err error
-	mOptions, err = e.genEncryptOptions(SharedEncryptOptions, mOptions, m.Name)
-	if err != nil {
-		return mOptions, err
-	}
+	// if encryptOptions have the same key with options, it will overwrite the corresponding value
+	if extractEncryptOptions {
+		// extract the encrypt options directly
+		var err error
+		mOptions, err = e.genEncryptOptions(SharedEncryptOptions, mOptions, m.Name)
+		if err != nil {
+			return mOptions, err
+		}
 
-	//gen public encryptOptions
-	mOptions, err = e.genEncryptOptions(m.EncryptOptions, mOptions, m.Name)
-	if err != nil {
-		return mOptions, err
+		//gen public encryptOptions
+		mOptions, err = e.genEncryptOptions(m.EncryptOptions, mOptions, m.Name)
+		if err != nil {
+			return mOptions, err
+		}
+	} else {
+		// using mount file
+		for _, encryptOpt := range append(SharedEncryptOptions, m.EncryptOptions...) {
+			secretName := encryptOpt.ValueFrom.SecretKeyRef.Name
+			secretMountPath := fmt.Sprintf("/etc/fluid/secrets/%s", secretName)
+			mOptions[encryptOpt.Name] = filepath.Join(secretMountPath, encryptOpt.ValueFrom.SecretKeyRef.Key)
+		}
 	}
-
 	return mOptions, nil
 }
 

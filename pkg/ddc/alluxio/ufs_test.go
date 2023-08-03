@@ -457,7 +457,7 @@ func TestGenUFSMountOptions(t *testing.T) {
 				Client:             mockClient,
 				MetadataSyncDoneCh: tt.fields.MetadataSyncDoneCh,
 			}
-			getoptions, err := e.genUFSMountOptions(tt.fields.dataset.Spec.Mounts[0], tt.fields.dataset.Spec.SharedOptions, tt.fields.dataset.Spec.SharedEncryptOptions)
+			getoptions, err := e.genUFSMountOptions(tt.fields.dataset.Spec.Mounts[0], tt.fields.dataset.Spec.SharedOptions, tt.fields.dataset.Spec.SharedEncryptOptions, true)
 			if err != nil {
 				t.Errorf("AlluxioEngine.genUFSMountOptions() error = %v", err)
 			}
@@ -597,7 +597,7 @@ func TestGenUFSMountOptionsWithDuplicatedKey(t *testing.T) {
 				Client:             mockClient,
 				MetadataSyncDoneCh: tt.fields.MetadataSyncDoneCh,
 			}
-			_, err := e.genUFSMountOptions(tt.fields.dataset.Spec.Mounts[0], tt.fields.dataset.Spec.SharedOptions, tt.fields.dataset.Spec.SharedEncryptOptions)
+			_, err := e.genUFSMountOptions(tt.fields.dataset.Spec.Mounts[0], tt.fields.dataset.Spec.SharedOptions, tt.fields.dataset.Spec.SharedEncryptOptions, true)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("genUFSMountOptions error = %v, wantErr %v", err, tt.wantErr)
 				return

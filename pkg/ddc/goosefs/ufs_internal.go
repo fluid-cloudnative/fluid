@@ -86,7 +86,7 @@ func (e *GooseFSEngine) shouldMountUFS() (should bool, err error) {
 			// No need for a mount point with Fluid native scheme('local://' and 'pvc://') to be mounted
 			continue
 		}
-		goosefsPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
+		goosefsPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount)
 		mounted, err := fileUtils.IsMounted(goosefsPath)
 		if err != nil {
 			should = false
@@ -126,7 +126,7 @@ func (e *GooseFSEngine) getMounts() (resultInCtx []string, resultHaveMounted []s
 			// No need for a mount point with Fluid native scheme('local://' and 'pvc://') to be mounted
 			continue
 		}
-		goosefsPathInCtx := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
+		goosefsPathInCtx := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount)
 		resultInCtx = append(resultInCtx, goosefsPathInCtx)
 	}
 
@@ -136,7 +136,7 @@ func (e *GooseFSEngine) getMounts() (resultInCtx []string, resultHaveMounted []s
 			// No need for a mount point with Fluid native scheme('local://' and 'pvc://') to be mounted
 			continue
 		}
-		goosefsPathHaveMountted := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Status.Mounts)
+		goosefsPathHaveMountted := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount)
 		resultHaveMounted = append(resultHaveMounted, goosefsPathHaveMountted)
 	}
 
@@ -197,7 +197,7 @@ func (e *GooseFSEngine) processUpdatingUFS(ufsToUpdate *utils.UFSToUpdate) (err 
 			continue
 		}
 
-		goosefsPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
+		goosefsPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount)
 		if len(ufsToUpdate.ToAdd()) > 0 && utils.ContainsString(ufsToUpdate.ToAdd(), goosefsPath) {
 			mountOptions := map[string]string{}
 			for key, value := range dataset.Spec.SharedOptions {
@@ -276,7 +276,7 @@ func (e *GooseFSEngine) mountUFS() (err error) {
 			continue
 		}
 
-		goosefsPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
+		goosefsPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount)
 		mounted, err := fileUitls.IsMounted(goosefsPath)
 		e.Log.Info("Check if the goosefs path is mounted.", "goosefsPath", goosefsPath, "mounted", mounted)
 		if err != nil {

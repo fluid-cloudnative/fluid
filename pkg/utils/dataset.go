@@ -76,7 +76,7 @@ func GetAccessModesOfDataset(client client.Client, name, namespace string) (acce
 func IsTargetPathUnderFluidNativeMounts(targetPath string, dataset datav1alpha1.Dataset) bool {
 	for _, mount := range dataset.Spec.Mounts {
 
-		mPath := UFSPathBuilder{}.GenAlluxioMountPath(mount, dataset.Spec.Mounts)
+		mPath := UFSPathBuilder{}.GenAlluxioMountPath(mount)
 
 		//TODO(xuzhihao): HasPrefix is not enough.
 
@@ -154,14 +154,14 @@ func (u *UFSToUpdate) AnalyzePathsDelta() (specMountPaths, mountedMountPaths []s
 		if common.IsFluidNativeScheme(mount.MountPoint) {
 			continue
 		}
-		m := UFSPathBuilder{}.GenAlluxioMountPath(mount, u.dataset.Spec.Mounts)
+		m := UFSPathBuilder{}.GenAlluxioMountPath(mount)
 		specMountPaths = append(specMountPaths, m)
 	}
 	for _, mount := range u.dataset.Status.Mounts {
 		if common.IsFluidNativeScheme(mount.MountPoint) {
 			continue
 		}
-		m := UFSPathBuilder{}.GenAlluxioMountPath(mount, u.dataset.Status.Mounts)
+		m := UFSPathBuilder{}.GenAlluxioMountPath(mount)
 		mountedMountPaths = append(mountedMountPaths, m)
 	}
 
