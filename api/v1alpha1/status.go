@@ -146,6 +146,8 @@ type OperationStatus struct {
 	LastScheduleTime *metav1.Time `json:"lastScheduleTime,omitempty"`
 	// LastSuccessfulTime is the last time the cron operation successfully completed
 	LastSuccessfulTime *metav1.Time `json:"lastSuccessfulTime,omitempty"`
+	// WaitingStatus stores information about waiting operation.
+	WaitingFor WaitingStatus `json:"waitingFor,omitempty"`
 }
 
 type RuntimePhase string

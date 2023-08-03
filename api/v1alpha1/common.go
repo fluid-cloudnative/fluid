@@ -244,10 +244,10 @@ const (
 )
 
 type OperationRef struct {
-	// OperationType specifies the type of the data operation
+	// OperationKind specifies the type of the data operation
 	// +required
 	// +kubebuilder:validation:Enum=DataLoad;DataBackup;DataMigrate;DataProcess
-	OperationType OperationType `json:"operationType"`
+	OperationKind OperationType `json:"operationKind"`
 
 	// Name specifies the name of the referred data operation
 	// +required
@@ -256,4 +256,9 @@ type OperationRef struct {
 	// Namespace specifies the namespace of the referred data operation
 	// +required
 	Namespace string `json:"namespace"`
+}
+
+type WaitingStatus struct {
+	// OperationComplete indicates if the preceding operation is complete
+	OperationComplete bool `json:"operationComplete,omitempty"`
 }

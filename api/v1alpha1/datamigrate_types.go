@@ -76,6 +76,10 @@ type DataMigrateSpec struct {
 	// +optional
 	// SchedulerName sets the scheduler to be used for DataLoad pod
 	SchedulerName string `json:"schedulerName,omitempty"`
+
+	// Specifies that the preceding operation in a workflow
+	// +optional
+	RunAfter *OperationRef `json:"runAfter,omitempty"`
 }
 
 type DataToMigrate struct {
