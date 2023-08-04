@@ -260,5 +260,5 @@ type OperationRef struct {
 
 type WaitingStatus struct {
 	// OperationComplete indicates if the preceding operation is complete
-	OperationComplete bool `json:"operationComplete,omitempty"`
+	OperationComplete *bool `json:"operationComplete,omitempty"`
 }
