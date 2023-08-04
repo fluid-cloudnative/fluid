@@ -52,13 +52,50 @@ func NewDataFlowReconciler(client client.Client,
 		Log:          log,
 		ResyncPeriod: resyncPeriod,
 	}
+}
 
+type reconcileRequestContext struct {
+	context.Context
+	types.NamespacedName
+	Client   client.Client
+	Log      logr.Logger
+	Recorder record.EventRecorder
+}
+
+var reconcileFuncs = []func(reconcileRequestContext) (bool, error){
+	reconcileDataLoad,
+	reconcileDataMigrate,
+	reconcileDataProcess,
+	reconcileDataBackup,
 }
 
 func (r *DataFlowReconciler) Reconcile(context context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("dataflow request", req.NamespacedName)
-	log.Info("Starting reconcile")
+	log.Info("reconcile starts")
+	defer log.Info("reconcile ends")
 
+	ctx := reconcileRequestContext{
+		Context:        context,
+		NamespacedName: req.NamespacedName,
+		Client:         r.Client,
+		Log:            r.Log,
+		Recorder:       r.Recorder,
+	}
+
+	needRequeue := false
+	for _, reconcileFn := range reconcileFuncs {
+		opNeedRequeue, err := reconcileFn(ctx)
+		if err != nil {
+			return utils.RequeueIfError(err)
+		}
+
+		// requeue if any of the operation needs requeue
+		needRequeue = needRequeue || opNeedRequeue
+	}
+
+	if needRequeue {
+		return utils.RequeueAfterInterval(r.ResyncPeriod)
+	}
 	return utils.NoRequeue()
 }
 

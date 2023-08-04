@@ -59,6 +59,13 @@ const (
 	DataOperationCollision = "DataOperationCollision"
 )
 
+// Events related to dataflow
+const (
+	DataOperationNotFound = "DataOperationNotFound"
+
+	DataOperationWaiting = "DataOperationWaiting"
+)
+
 // Events related to DataLoad
 const (
 	DataLoadCollision = "DataLoadCollision"
