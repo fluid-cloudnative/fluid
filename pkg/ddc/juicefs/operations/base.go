@@ -54,7 +54,7 @@ func (j JuiceFileUtils) LoadMetadataWithoutTimeout(juicefsPath string) (err erro
 	)
 
 	start := time.Now()
-	stdout, stderr, err = j.execWithoutTimeout(command, false)
+	stdout, stderr, err = j.execWithoutTimeout(command)
 	duration := time.Since(start)
 	j.log.Info("Async Load Metadata took times to run", "period", duration)
 	if err != nil {
@@ -74,7 +74,7 @@ func (j JuiceFileUtils) IsExist(juiceSubPath string) (found bool, err error) {
 		stderr  string
 	)
 
-	stdout, stderr, err = j.exec(command, true)
+	stdout, stderr, err = j.exec(command)
 	if err != nil {
 		if strings.Contains(stdout, "No such file or directory") || strings.Contains(stderr, "No such file or directory") {
 			return false, nil
@@ -97,7 +97,7 @@ func (j JuiceFileUtils) Count(juiceSubPath string) (total int64, err error) {
 		utotal  uint64
 	)
 
-	stdout, stderr, err = j.exec(command, false)
+	stdout, stderr, err = j.exec(command)
 	if err != nil {
 		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
 		return
@@ -136,7 +136,7 @@ func (j JuiceFileUtils) GetFileCount(juiceSubPath string) (fileCount int64, err 
 		stderr  string
 	)
 
-	stdout, stderr, err = j.exec(command, false)
+	stdout, stderr, err = j.exec(command)
 	if err != nil {
 		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
 		return
@@ -172,7 +172,7 @@ func (j JuiceFileUtils) Mkdir(juiceSubPath string) (err error) {
 		stderr  string
 	)
 
-	stdout, stderr, err = j.exec(command, true)
+	stdout, stderr, err = j.exec(command)
 	if err != nil {
 		if strings.Contains(stdout, "File exists") {
 			err = nil
@@ -201,7 +201,7 @@ func (j JuiceFileUtils) DeleteCacheDirs(dirs []string) (err error) {
 	)
 	command = append(command, dirs...)
 
-	stdout, stderr, err = j.exec(command, true)
+	stdout, stderr, err = j.exec(command)
 	if err != nil {
 		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
 		return
@@ -223,7 +223,7 @@ func (j JuiceFileUtils) DeleteCacheDir(dir string) (err error) {
 		stderr  string
 	)
 
-	stdout, stderr, err = j.exec(command, true)
+	stdout, stderr, err = j.exec(command)
 	if err != nil {
 		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
 		return
@@ -239,7 +239,7 @@ func (j JuiceFileUtils) GetStatus(source string) (status string, err error) {
 		stderr  string
 	)
 
-	stdout, stderr, err = j.exec(command, true)
+	stdout, stderr, err = j.exec(command)
 	if err != nil {
 		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
 		return
@@ -256,7 +256,7 @@ func (j JuiceFileUtils) GetMetric(juicefsPath string) (metrics string, err error
 		stderr  string
 	)
 
-	stdout, stderr, err = j.exec(command, false)
+	stdout, stderr, err = j.exec(command)
 	if err != nil {
 		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
 		return
@@ -275,7 +275,7 @@ func (j JuiceFileUtils) GetUsedSpace(juicefsPath string) (usedSpace int64, err e
 		stderr  string
 	)
 
-	stdout, stderr, err = j.exec(command, false)
+	stdout, stderr, err = j.exec(command)
 	if err != nil {
 		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
 		return
@@ -299,13 +299,14 @@ func (j JuiceFileUtils) GetUsedSpace(juicefsPath string) (usedSpace int64, err e
 }
 
 // exec with timeout
-func (j JuiceFileUtils) exec(command []string, verbose bool) (stdout string, stderr string, err error) {
+func (j JuiceFileUtils) exec(command []string) (stdout string, stderr string, err error) {
+	j.log.Info("execute begin", "command", command)
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second*1500)
 	ch := make(chan string, 1)
 	defer cancel()
 
 	go func() {
-		stdout, stderr, err = j.execWithoutTimeout(command, verbose)
+		stdout, stderr, err = j.execWithoutTimeout(command)
 		ch <- "done"
 	}()
 
@@ -319,17 +320,14 @@ func (j JuiceFileUtils) exec(command []string, verbose bool) (stdout string, std
 }
 
 // execWithoutTimeout
-func (j JuiceFileUtils) execWithoutTimeout(command []string, verbose bool) (stdout string, stderr string, err error) {
+func (j JuiceFileUtils) execWithoutTimeout(command []string) (stdout string, stderr string, err error) {
 	stdout, stderr, err = kubeclient.ExecCommandInContainer(j.podName, j.container, j.namespace, command)
 	if err != nil {
 		j.log.Info("Stdout", "Command", command, "Stdout", stdout)
 		j.log.Error(err, "Failed", "Command", command, "FailedReason", stderr)
 		return
 	}
-	if verbose {
-		j.log.Info("Stdout", "Command", command, "Stdout", stdout)
-	}
-
+	j.log.V(1).Info("Stdout", "Command", command, "Stdout", stdout)
 	return
 }
 
@@ -372,7 +370,7 @@ func (j JuiceFileUtils) QueryMetaDataInfoIntoFile(key KeyOfMetaDataFile, filenam
 		stdout  string
 		stderr  string
 	)
-	stdout, stderr, err = j.exec(command, false)
+	stdout, stderr, err = j.exec(command)
 	if err != nil {
 		err = fmt.Errorf("execute command %v with  expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
 	} else {
