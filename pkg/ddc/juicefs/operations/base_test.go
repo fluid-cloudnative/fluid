@@ -78,7 +78,7 @@ func TestNewJuiceFSFileUtils(t *testing.T) {
 }
 
 func TestJuiceFileUtils_IsExist(t *testing.T) {
-	mockExec := func(a JuiceFileUtils, p []string, verbose bool) (stdout string, stderr string, e error) {
+	mockExec := func(a JuiceFileUtils, p []string) (stdout string, stderr string, e error) {
 		if strings.Contains(p[1], NotExist) {
 			return "No such file or directory", "", errors.New("No such file or directory")
 		} else if strings.Contains(p[1], OtherErr) {
@@ -122,10 +122,10 @@ func TestJuiceFileUtils_IsExist(t *testing.T) {
 }
 
 func TestJuiceFileUtils_Mkdir(t *testing.T) {
-	ExecCommon := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+	ExecCommon := func(a JuiceFileUtils, command []string) (stdout string, stderr string, err error) {
 		return "juicefs mkdir success", "", nil
 	}
-	ExecErr := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+	ExecErr := func(a JuiceFileUtils, command []string) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
 	wrappedUnhookExec := func() {
@@ -158,10 +158,10 @@ func TestJuiceFileUtils_Mkdir(t *testing.T) {
 }
 
 func TestJuiceFileUtils_exec(t *testing.T) {
-	ExecWithoutTimeoutCommon := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+	ExecWithoutTimeoutCommon := func(a JuiceFileUtils, command []string) (stdout string, stderr string, err error) {
 		return "Type: COUNTER, Value: 6,367,897", "", nil
 	}
-	ExecWithoutTimeoutErr := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+	ExecWithoutTimeoutErr := func(a JuiceFileUtils, command []string) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
 
@@ -177,7 +177,7 @@ func TestJuiceFileUtils_exec(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	a := &JuiceFileUtils{log: fake.NullLogger()}
-	_, _, err = a.exec([]string{"mkdir", "abc"}, false)
+	_, _, err = a.exec([]string{"mkdir", "abc"})
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
@@ -187,7 +187,7 @@ func TestJuiceFileUtils_exec(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	_, _, err = a.exec([]string{"mkdir", "abc"}, true)
+	_, _, err = a.exec([]string{"mkdir", "abc"})
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
@@ -195,10 +195,10 @@ func TestJuiceFileUtils_exec(t *testing.T) {
 }
 
 func TestJuiceFileUtils_GetMetric(t *testing.T) {
-	ExecCommon := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+	ExecCommon := func(a JuiceFileUtils, command []string) (stdout string, stderr string, err error) {
 		return "juicefs metrics success", "", nil
 	}
-	ExecErr := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+	ExecErr := func(a JuiceFileUtils, command []string) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
 	wrappedUnhookExec := func() {
@@ -234,10 +234,10 @@ func TestJuiceFileUtils_GetMetric(t *testing.T) {
 }
 
 func TestJuiceFileUtils_DeleteCacheDirs(t *testing.T) {
-	ExecCommon := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+	ExecCommon := func(a JuiceFileUtils, command []string) (stdout string, stderr string, err error) {
 		return "juicefs rmr success", "", nil
 	}
-	ExecErr := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+	ExecErr := func(a JuiceFileUtils, command []string) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
 	wrappedUnhookExec := func() {
@@ -270,10 +270,10 @@ func TestJuiceFileUtils_DeleteCacheDirs(t *testing.T) {
 }
 
 func TestJuiceFileUtils_DeleteCacheDir(t *testing.T) {
-	ExecCommon := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+	ExecCommon := func(a JuiceFileUtils, command []string) (stdout string, stderr string, err error) {
 		return "juicefs rmr success", "", nil
 	}
-	ExecErr := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+	ExecErr := func(a JuiceFileUtils, command []string) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
 	wrappedUnhookExec := func() {
@@ -308,10 +308,10 @@ func TestJuiceFileUtils_DeleteCacheDir(t *testing.T) {
 }
 
 func TestJuiceFileUtils_GetStatus(t *testing.T) {
-	ExecCommon := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+	ExecCommon := func(a JuiceFileUtils, command []string) (stdout string, stderr string, err error) {
 		return CommonStatus, "", nil
 	}
-	ExecErr := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+	ExecErr := func(a JuiceFileUtils, command []string) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
 	wrappedUnhookExec := func() {
@@ -347,10 +347,10 @@ func TestJuiceFileUtils_GetStatus(t *testing.T) {
 }
 
 func TestJuiceFileUtils_LoadMetadataWithoutTimeout(t *testing.T) {
-	ExecWithoutTimeoutCommon := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+	ExecWithoutTimeoutCommon := func(a JuiceFileUtils, command []string) (stdout string, stderr string, err error) {
 		return "Load juicefs metadata", "", nil
 	}
-	ExecWithoutTimeoutErr := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+	ExecWithoutTimeoutErr := func(a JuiceFileUtils, command []string) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
 	wrappedUnhookExecWithoutTimeout := func() {
@@ -383,10 +383,10 @@ func TestJuiceFileUtils_LoadMetadataWithoutTimeout(t *testing.T) {
 }
 
 func TestJuiceFileUtils_Count(t *testing.T) {
-	ExecWithoutTimeoutCommon := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+	ExecWithoutTimeoutCommon := func(a JuiceFileUtils, command []string) (stdout string, stderr string, err error) {
 		return "6367897   /tmp", "", nil
 	}
-	ExecWithoutTimeoutErr := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+	ExecWithoutTimeoutErr := func(a JuiceFileUtils, command []string) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
 	wrappedUnhookExec := func() {
@@ -422,10 +422,10 @@ func TestJuiceFileUtils_Count(t *testing.T) {
 }
 
 func TestJuiceFileUtils_GetFileCount(t *testing.T) {
-	ExecWithoutTimeoutCommon := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+	ExecWithoutTimeoutCommon := func(a JuiceFileUtils, command []string) (stdout string, stderr string, err error) {
 		return "6367897", "", nil
 	}
-	ExecWithoutTimeoutErr := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+	ExecWithoutTimeoutErr := func(a JuiceFileUtils, command []string) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
 	wrappedUnhookExec := func() {
@@ -461,10 +461,10 @@ func TestJuiceFileUtils_GetFileCount(t *testing.T) {
 }
 
 func TestJuiceFileUtils_GetUsedSpace(t *testing.T) {
-	ExecWithoutTimeoutCommon := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+	ExecWithoutTimeoutCommon := func(a JuiceFileUtils, command []string) (stdout string, stderr string, err error) {
 		return "JuiceFS:test   87687856128  87687856128            0 100% /runtime-mnt/juicefs/kube-system/jfsdemo/juicefs-fuse", "", nil
 	}
-	ExecWithoutTimeoutErr := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+	ExecWithoutTimeoutErr := func(a JuiceFileUtils, command []string) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
 	wrappedUnhookExec := func() {
@@ -499,11 +499,11 @@ func TestJuiceFileUtils_GetUsedSpace(t *testing.T) {
 	wrappedUnhookExec()
 }
 
-func TestAlluxioFileUtils_QueryMetaDataInfoIntoFile(t *testing.T) {
-	ExecCommon := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+func TestJuiceFSFileUtils_QueryMetaDataInfoIntoFile(t *testing.T) {
+	ExecCommon := func(a JuiceFileUtils, command []string) (stdout string, stderr string, err error) {
 		return "JuiceFS  cluster summary", "", nil
 	}
-	ExecErr := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+	ExecErr := func(a JuiceFileUtils, command []string) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
 	wrappedUnhookExec := func() {

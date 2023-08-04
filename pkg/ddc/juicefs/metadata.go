@@ -24,9 +24,7 @@ import (
 
 	"k8s.io/client-go/util/retry"
 
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
@@ -155,37 +153,6 @@ func (j *JuiceFSEngine) syncMetadataInternal() (err error) {
 					j.Log.Info("Recover from sending result to a closed channel", "result", result)
 				}
 				return
-			}
-
-			j.Log.Info("Metadata Sync starts", "dataset namespace", j.namespace, "dataset name", j.name)
-
-			stsName := j.getWorkerName()
-			pods, err := j.GetRunningPodsOfStatefulSet(stsName, j.namespace)
-			if err != nil || len(pods) == 0 {
-				result.UfsTotal = ""
-				result.FileNum = ""
-				result.Done = true
-				if closed := base.SafeSend(resultChan, result); closed {
-					j.Log.Info("Recover from sending result to a closed channel", "result", result)
-				}
-				return
-			}
-			for _, pod := range pods {
-				fileUtils := operations.NewJuiceFileUtils(pod.Name, common.JuiceFSWorkerContainer, j.namespace, j.Log)
-
-				// load metadata
-				// ls -al /runtime-mnt/juicefs/namespace/name/juicefs-fuse/
-				err = fileUtils.LoadMetadataWithoutTimeout(j.getMountPoint())
-				if err != nil {
-					j.Log.Error(err, "LoadMetadata failed when syncing metadata", "name", j.name, "namespace", j.namespace)
-					result.Err = err
-					result.Done = false
-					if closed := base.SafeSend(resultChan, result); closed {
-						j.Log.Info("Recover from sending result to a closed channel", "result", result)
-					}
-					return
-				}
-
 			}
 
 			result.Done = true
