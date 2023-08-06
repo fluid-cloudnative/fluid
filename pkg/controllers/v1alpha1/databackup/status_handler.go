@@ -59,7 +59,7 @@ func (o *OnceHandler) GetOperationStatus(ctx runtime.ReconcileRequestContext, ob
 		// fail to get finishTime, use current time as default
 		finishTime = time.Now()
 	}
-	result.Duration = utils.CalculateDuration(object.GetCreationTimestamp().Time, finishTime)
+	result.Duration = utils.CalculateDuration(backupPod.CreationTimestamp.Time, finishTime)
 
 	if kubeclient.IsSucceededPod(backupPod) {
 		result.Phase = common.PhaseComplete
