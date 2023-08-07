@@ -17,14 +17,15 @@ limitations under the License.
 package jindocache
 
 import (
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
+
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/util/retry"
 )
 
 func (e *JindoCacheEngine) CheckRuntimeHealthy() (err error) {
@@ -68,6 +69,11 @@ func (e *JindoCacheEngine) CheckRuntimeHealthy() (err error) {
 		}
 	}
 
+	// In some conditions we expect not to update dataset as Bound in
+	// health check and let other components to handle it.
+	if e.StopBindDataSetInHealthCheck() {
+		return nil
+	}
 	// 4. Update the dataset as Bounded
 	return e.UpdateDatasetStatus(data.BoundDatasetPhase)
 }

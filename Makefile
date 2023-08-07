@@ -161,13 +161,13 @@ csi-build:
 	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/fluid-csi -ldflags '${LDFLAGS}' cmd/csi/main.go
 
 dataset-controller-build:
-	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/dataset-controller -ldflags '${LDFLAGS}' cmd/dataset/main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/dataset-controller -ldflags '${LDFLAGS}' cmd/dataset/main.go
 
 alluxioruntime-controller-build:
 	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/alluxioruntime-controller -ldflags '${LDFLAGS}' cmd/alluxio/main.go
 
 jindoruntime-controller-build:
-	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/jindoruntime-controller -ldflags '${LDFLAGS}' cmd/jindo/main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/jindoruntime-controller -ldflags '${LDFLAGS}' cmd/jindo/main.go
 
 goosefsruntime-controller-build:
 	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/goosefsruntime-controller -ldflags '${LDFLAGS}' cmd/goosefs/main.go

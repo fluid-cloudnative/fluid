@@ -63,11 +63,11 @@ func (e *JindoFSxEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (e
 					"The ddc runtime is ready.",
 					corev1.ConditionTrue)
 			case datav1alpha1.FailedDatasetPhase:
-				cond = utils.NewDatasetCondition(datav1alpha1.DatasetReady, datav1alpha1.DatasetReadyReason,
+				cond = utils.NewDatasetCondition(datav1alpha1.DatasetNotReady, datav1alpha1.DatasetReadyReason,
 					"The ddc runtime is not ready.",
 					corev1.ConditionFalse)
 			default:
-				cond = utils.NewDatasetCondition(datav1alpha1.DatasetReady, datav1alpha1.DatasetReadyReason,
+				cond = utils.NewDatasetCondition(datav1alpha1.DatasetUpdatingReason, datav1alpha1.DatasetReadyReason,
 					"The ddc runtime is unknown.",
 					corev1.ConditionFalse)
 			}
