@@ -367,7 +367,7 @@ func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime,
 			return err
 		}
 		value.Master.NonNativeMounts = nonNativeMounts
-		value.Master.MountConfigStorage = "configmap"
+		value.Master.MountConfigStorage = ConfigmapStorageName
 		e.transformEncryptOptionsToMasterVolumes(dataset, value)
 	}
 	return

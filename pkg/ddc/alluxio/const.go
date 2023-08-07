@@ -60,4 +60,7 @@ const (
 	// defaultGracefulShutdownLimits is the limit for the system to forcibly clean up.
 	defaultGracefulShutdownLimits       int32 = 3
 	defaultCleanCacheGracePeriodSeconds int32 = 60
+
+	MountConfigStorage   = "ALLUXIO_MOUNT_CONFIG_STORAGE"
+	ConfigmapStorageName = "configmap"
 )

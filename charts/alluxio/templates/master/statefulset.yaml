@@ -174,7 +174,7 @@ spec:
 {{ include "alluxio.master.resources" . | indent 10 }}
           {{- end }}
           {{- if eq .Values.master.mountConfigStorage "configmap"}}
-          command: ["/etc/fluid/scripts/entrypoint_replace_secrets.sh"]
+          command: ["/etc/fluid/scripts/entrypoint.sh"]
           {{ else }}
           command: ["/entrypoint.sh"]
           {{- end }}
@@ -382,12 +382,12 @@ spec:
           configMap:
             name: {{ template "alluxio.fullname" . }}-mount-config
             items:
-              - key: entrypoint.replace.secrets.script
-                path: entrypoint_replace_secrets.sh
-                mode: 0555
+              - key: entrypoint.script
+                path: entrypoint.sh
+                mode: 0550
               - key: mount.script
                 path: mount.sh
-                mode: 0555
+                mode: 0550
               - key: mount.info
                 path: mount.info
                 mode: 0444

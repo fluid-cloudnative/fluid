@@ -24,13 +24,9 @@ import (
 	"os"
 )
 
-const (
-	AlluxioMountConfigStorage = "ALLUXIO_MOUNT_CONFIG_STORAGE"
-)
-
 func IsMountWithConfigMap() bool {
-	if envVal, exists := os.LookupEnv(AlluxioMountConfigStorage); exists {
-		return envVal == "configmap"
+	if envVal, exists := os.LookupEnv(MountConfigStorage); exists {
+		return envVal == ConfigmapStorageName
 	}
 	// default value
 	return true
