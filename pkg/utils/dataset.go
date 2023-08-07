@@ -20,12 +20,13 @@ import (
 	"fmt"
 	"reflect"
 
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
 // GetDataset gets the dataset.
@@ -45,8 +46,11 @@ func GetDataset(client client.Client, name, namespace string) (*datav1alpha1.Dat
 
 // checks the setup is done
 func IsSetupDone(dataset *datav1alpha1.Dataset) (done bool) {
-	index, _ := GetDatasetCondition(dataset.Status.Conditions, datav1alpha1.DatasetReady)
-	if index != -1 {
+	if dataset.Status.Phase != datav1alpha1.BoundDatasetPhase {
+		return false
+	}
+	index, cond := GetDatasetCondition(dataset.Status.Conditions, datav1alpha1.DatasetReady)
+	if index != -1 && cond.Status == corev1.ConditionTrue {
 		// e.Log.V(1).Info("The runtime is already setup.")
 		done = true
 	}
@@ -78,7 +82,7 @@ func IsTargetPathUnderFluidNativeMounts(targetPath string, dataset datav1alpha1.
 
 		mPath := UFSPathBuilder{}.GenAlluxioMountPath(mount)
 
-		//TODO(xuzhihao): HasPrefix is not enough.
+		// TODO(xuzhihao): HasPrefix is not enough.
 
 		// only for native scheme
 		if !common.IsFluidNativeScheme(mount.MountPoint) {
