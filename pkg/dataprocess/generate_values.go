@@ -74,6 +74,9 @@ func GenDataProcessValue(dataset *datav1alpha1.Dataset, dataProcess *datav1alpha
 	}
 
 	value.Name = dataProcess.Name
+	if len(dataProcess.Spec.Processor.ServiceAccountName) != 0 {
+		value.DataProcessInfo.ServiceAccountName = dataProcess.Spec.Processor.ServiceAccountName
+	}
 	processorImpl := GetProcessorImpl(dataProcess)
 	if processorImpl != nil { // processorImpl should always be non-nil
 		processorImpl.TransformDataProcessValues(value, volumes, volumeMounts)

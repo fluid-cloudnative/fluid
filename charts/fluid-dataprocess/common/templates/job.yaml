@@ -22,6 +22,9 @@ spec:
         app: fluid-dataprocess
         targetDataset: {{ required "targetDataset should be set" .Values.dataProcess.targetDataset }}
     spec:
+      {{- if .Values.dataProcess.serviceAccountName }}
+      serviceAccountName: {{ .Values.dataProcess.serviceAccountName | quote }}
+      {{- end }}
      {{- if .Values.dataProcess.jobProcessor.podSpec }}
 {{- toYaml .Values.dataProcess.jobProcessor.podSpec | nindent 6 }}
     {{- else if .Values.dataProcess.scriptProcessor }}

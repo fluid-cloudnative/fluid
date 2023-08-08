@@ -2,6 +2,7 @@ name: ""
 
 dataProcess:
   targetDataset: ""
+  serviceAccountName: ""
   scriptProcessor:
     image: ""
     imagePullPolicy: IfNotPresent
