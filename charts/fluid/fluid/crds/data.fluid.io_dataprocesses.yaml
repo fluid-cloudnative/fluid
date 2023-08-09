@@ -7461,6 +7461,21 @@ spec:
                         - containers
                         type: object
                     type: object
+                  podMetadata:
+                    description: PodMetadata defines labels and annotations on the
+                      processor pod.
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: Annotations are annotations of pod specification
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Labels are labels of pod specification
+                        type: object
+                    type: object
                   script:
                     description: Shell represents a processor which executes shell
                       script

@@ -16,11 +16,17 @@ spec:
       name: {{ printf "%s-process" .Release.Name }}
       annotations:
         sidecar.istio.io/inject: "false"
+        {{- if .Values.dataProcess.annotations }}
+        {{ toYaml .Values.dataProcess.annotations | nindent 8 }}
+        {{- end }}
       labels:
         release: {{ .Release.Name }}
         role: dataprocess-pod
         app: fluid-dataprocess
         targetDataset: {{ required "targetDataset should be set" .Values.dataProcess.targetDataset }}
+        {{- if .Values.dataProcess.labels }}
+        {{ toYaml .Values.dataProcess.labels | nindent 8 }}
+        {{- end }}
     spec:
       {{- if .Values.dataProcess.serviceAccountName }}
       serviceAccountName: {{ .Values.dataProcess.serviceAccountName | quote }}

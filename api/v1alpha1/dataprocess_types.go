@@ -40,6 +40,10 @@ type Processor struct {
 	// +optional
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 
+	// PodMetadata defines labels and annotations on the processor pod.
+	// +optional
+	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
+
 	// Job represents a processor which runs DataProcess as a job.
 	// +optional
 	Job *JobProcessor `json:"job,omitempty"`

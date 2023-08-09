@@ -2,6 +2,8 @@ name: ""
 
 dataProcess:
   targetDataset: ""
+  labels: {}
+  annotations: {}
   serviceAccountName: ""
   scriptProcessor:
     image: ""

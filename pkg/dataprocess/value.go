@@ -31,6 +31,10 @@ type DataProcessInfo struct {
 
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 
+	Labels map[string]string `json:"labels,omitempty"`
+
+	Annotations map[string]string `json:"annotations,omitempty"`
+
 	JobProcessor *JobProcessor `json:"jobProcessor,omitempty"`
 
 	ScriptProcessor *ScriptProcessor `json:"scriptProcessor,omitempty"`
