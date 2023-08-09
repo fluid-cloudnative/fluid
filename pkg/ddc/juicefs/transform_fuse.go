@@ -42,7 +42,7 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 	image := runtime.Spec.Fuse.Image
 	tag := runtime.Spec.Fuse.ImageTag
 	imagePullPolicy := runtime.Spec.Fuse.ImagePullPolicy
-	value.Fuse.Image, value.Fuse.ImageTag, value.Fuse.ImagePullPolicy = j.parseFuseImage(image, tag, imagePullPolicy)
+	value.Fuse.Image, value.Fuse.ImageTag, value.Fuse.ImagePullPolicy = j.parseJuiceFSImage(value.Edition, image, tag, imagePullPolicy)
 
 	// transform envs
 	value.Fuse.Envs = runtime.Spec.Fuse.Env
@@ -124,7 +124,6 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 	SharedOptions map[string]string, SharedEncryptOptions []datav1alpha1.EncryptOption) error {
 	value.Configs.Name = mount.Name
 	source := ""
-	value.Edition = EnterpriseEdition
 
 	for k, v := range SharedOptions {
 		switch k {
@@ -157,7 +156,6 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 			source = "${METAURL}"
 			value.Configs.MetaUrlSecret = secretKeyRef.Name
 			value.Configs.MetaUrlSecretKey = secretKeyRef.Key
-			value.Edition = CommunityEdition
 		case JuiceAccessKey:
 			value.Configs.AccessKeySecret = secretKeyRef.Name
 			value.Configs.AccessKeySecretKey = secretKeyRef.Key
@@ -179,7 +177,6 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 			source = "${METAURL}"
 			value.Configs.MetaUrlSecret = secretKeyRef.Name
 			value.Configs.MetaUrlSecretKey = secretKeyRef.Key
-			value.Edition = CommunityEdition
 		case JuiceAccessKey:
 			value.Configs.AccessKeySecret = secretKeyRef.Name
 			value.Configs.AccessKeySecretKey = secretKeyRef.Key

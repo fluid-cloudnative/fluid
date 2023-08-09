@@ -87,19 +87,28 @@ func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequest
 	// 2. get info
 	imageName, imageTag := dataMigrate.Spec.Image, dataMigrate.Spec.ImageTag
 
+	var defaultJuiceFSImage string
+	if len(imageName) == 0 || len(imageTag) == 0 {
+		defaultJuiceFSImage = common.DefaultCEImage
+		edition := j.GetEdition()
+		if edition == EnterpriseEdition {
+			defaultJuiceFSImage = common.DefaultEEImage
+		}
+	}
+
 	if len(imageName) == 0 {
-		defaultImageInfo := strings.Split(common.DefaultJuiceFSMigrateImage, ":")
+		defaultImageInfo := strings.Split(defaultJuiceFSImage, ":")
 		if len(defaultImageInfo) < 1 {
-			panic("invalid default dataload image!")
+			panic("invalid default datamigrate image!")
 		} else {
 			imageName = defaultImageInfo[0]
 		}
 	}
 
 	if len(imageTag) == 0 {
-		defaultImageInfo := strings.Split(common.DefaultJuiceFSRuntimeImage, ":")
+		defaultImageInfo := strings.Split(defaultJuiceFSImage, ":")
 		if len(defaultImageInfo) < 2 {
-			panic("invalid default dataload image!")
+			panic("invalid default datamigrate image!")
 		} else {
 			imageTag = defaultImageInfo[1]
 		}

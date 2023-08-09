@@ -265,8 +265,9 @@ func TestJuiceFSEngine_getRuntime(t *testing.T) {
 	}
 }
 
-func TestJuiceFSEngine_parseFuseImage(t *testing.T) {
+func TestJuiceFSEngine_parseJuiceFSImage(t *testing.T) {
 	type args struct {
+		edition         string
 		image           string
 		tag             string
 		imagePullPolicy string
@@ -281,39 +282,66 @@ func TestJuiceFSEngine_parseFuseImage(t *testing.T) {
 		{
 			name: "test0",
 			args: args{
-				image:           "juicedata/juicefs-csi-driver",
-				tag:             "v0.10.4",
+				edition:         "community",
+				image:           "juicedata/mount",
+				tag:             "ce-v1.0.4",
 				imagePullPolicy: "IfNotPresent",
 			},
-			want:  "juicedata/juicefs-csi-driver",
-			want1: "v0.10.4",
+			want:  "juicedata/mount",
+			want1: "ce-v1.0.4",
 			want2: "IfNotPresent",
 		},
 		{
 			name: "test1",
 			args: args{
+				edition:         "community",
 				image:           "",
 				tag:             "",
 				imagePullPolicy: "IfNotPresent",
 			},
-			want:  "juicedata/juicefs-csi-driver",
-			want1: "v0.10.5",
+			want:  "juicedata/mount",
+			want1: "ce-v1.1.0-beta2",
+			want2: "IfNotPresent",
+		},
+		{
+			name: "test2",
+			args: args{
+				edition:         "enterprise",
+				image:           "juicedata/mount",
+				tag:             "ee-4.9.15",
+				imagePullPolicy: "IfNotPresent",
+			},
+			want:  "juicedata/mount",
+			want1: "ee-4.9.15",
+			want2: "IfNotPresent",
+		},
+		{
+			name: "test3",
+			args: args{
+				edition:         "enterprise",
+				image:           "",
+				tag:             "",
+				imagePullPolicy: "IfNotPresent",
+			},
+			want:  "juicedata/mount",
+			want1: "ee-4.9.14",
 			want2: "IfNotPresent",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			e := &JuiceFSEngine{}
-			t.Setenv(common.JuiceFSFuseImageEnv, "juicedata/juicefs-csi-driver:v0.10.5")
-			got, got1, got2 := e.parseFuseImage(tt.args.image, tt.args.tag, tt.args.imagePullPolicy)
+			t.Setenv(common.JuiceFSCEImageEnv, "juicedata/mount:ce-v1.1.0-beta2")
+			t.Setenv(common.JuiceFSEEImageEnv, "juicedata/mount:ee-4.9.14")
+			got, got1, got2 := e.parseJuiceFSImage(tt.args.edition, tt.args.image, tt.args.tag, tt.args.imagePullPolicy)
 			if got != tt.want {
-				t.Errorf("JuiceFSEngine.parseFuseImage() got = %v, want %v", got, tt.want)
+				t.Errorf("JuiceFSEngine.parseJuiceFSImage() got = %v, want %v", got, tt.want)
 			}
 			if got1 != tt.want1 {
-				t.Errorf("JuiceFSEngine.parseFuseImage() got1 = %v, want %v", got1, tt.want1)
+				t.Errorf("JuiceFSEngine.parseJuiceFSImage() got1 = %v, want %v", got1, tt.want1)
 			}
 			if got2 != tt.want2 {
-				t.Errorf("JuiceFSEngine.parseFuseImage() got2 = %v, want %v", got2, tt.want2)
+				t.Errorf("JuiceFSEngine.parseJuiceFSImage() got2 = %v, want %v", got2, tt.want2)
 			}
 		})
 	}
@@ -334,116 +362,6 @@ func Test_getMountRoot(t *testing.T) {
 			t.Setenv("MOUNT_ROOT", "/tmp")
 			if gotPath := getMountRoot(); gotPath != tt.wantPath {
 				t.Errorf("getMountRoot() = %v, want %v", gotPath, tt.wantPath)
-			}
-		})
-	}
-}
-
-func TestJuiceFSEngine_parseRuntimeImage(t *testing.T) {
-	t.Setenv(common.JuiceFSFuseImageEnv, "juicedata/juicefs-csi-driver:v0.10.5")
-
-	type args struct {
-		image           string
-		tag             string
-		imagePullPolicy string
-	}
-	tests := []struct {
-		name  string
-		args  args
-		want  string
-		want1 string
-		want2 string
-	}{
-		{
-			name: "test1",
-			args: args{
-				image:           "juicedata/juicefs-csi-driver",
-				tag:             "v0.10.6",
-				imagePullPolicy: "Never",
-			},
-			want:  "juicedata/juicefs-csi-driver",
-			want1: "v0.10.6",
-			want2: "Never",
-		},
-		{
-			name: "test2",
-			args: args{
-				image:           "",
-				tag:             "",
-				imagePullPolicy: "",
-			},
-			want:  "juicedata/juicefs-csi-driver",
-			want1: "v0.10.5",
-			want2: "IfNotPresent",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			j := &JuiceFSEngine{}
-			got, got1, got2 := j.parseRuntimeImage(tt.args.image, tt.args.tag, tt.args.imagePullPolicy)
-			if got != tt.want {
-				t.Errorf("parseRuntimeImage() got = %v, want %v", got, tt.want)
-			}
-			if got1 != tt.want1 {
-				t.Errorf("parseRuntimeImage() got1 = %v, want %v", got1, tt.want1)
-			}
-			if got2 != tt.want2 {
-				t.Errorf("parseRuntimeImage() got2 = %v, want %v", got2, tt.want2)
-			}
-		})
-	}
-}
-
-func TestJuiceFSEngine_parseRuntimeImage1(t *testing.T) {
-	t.Setenv(common.JuiceFSFuseImageEnv, "juicedata/juicefs-csi-driver:v0.10.5")
-
-	type args struct {
-		image           string
-		tag             string
-		imagePullPolicy string
-	}
-	tests := []struct {
-		name  string
-		args  args
-		want  string
-		want1 string
-		want2 string
-	}{
-		{
-			name: "test1",
-			args: args{
-				image:           "juicedata/juicefs-csi-driver",
-				tag:             "v0.10.6",
-				imagePullPolicy: "Never",
-			},
-			want:  "juicedata/juicefs-csi-driver",
-			want1: "v0.10.6",
-			want2: "Never",
-		},
-		{
-			name: "test2",
-			args: args{
-				image:           "",
-				tag:             "",
-				imagePullPolicy: "",
-			},
-			want:  "juicedata/juicefs-csi-driver",
-			want1: "v0.10.5",
-			want2: "IfNotPresent",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			j := &JuiceFSEngine{}
-			got, got1, got2 := j.parseRuntimeImage(tt.args.image, tt.args.tag, tt.args.imagePullPolicy)
-			if got != tt.want {
-				t.Errorf("parseRuntimeImage() got = %v, want %v", got, tt.want)
-			}
-			if got1 != tt.want1 {
-				t.Errorf("parseRuntimeImage() got1 = %v, want %v", got1, tt.want1)
-			}
-			if got2 != tt.want2 {
-				t.Errorf("parseRuntimeImage() got2 = %v, want %v", got2, tt.want2)
 			}
 		})
 	}
