@@ -19,6 +19,7 @@ package alluxio
 import (
 	"context"
 	"fmt"
+	v1 "k8s.io/api/core/v1"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -254,6 +255,14 @@ func (e *AlluxioEngine) updateUFSWithMountConfigMapScript(dataset *datav1alpha1.
 	// 1. update non native mount info according the data.Spec.Mounts
 	mountConfigMapName := e.getMountConfigmapName()
 	mountConfigMap, err := kubeclient.GetConfigmapByName(e.Client, mountConfigMapName, e.namespace)
+	if mountConfigMap == nil {
+		// if configmap not found, considered as old dataset (runtime ClusterRole having secret resource)
+		e.Recorder.Eventf(dataset, v1.EventTypeWarning, common.RuntimeWithSecretNotSupported,
+			"dataset created by runtime without using configmap as mount storage is not support dynamic updates")
+		return false, errors.Wrapf(errors.Errorf("mount configmap %s is not found", mountConfigMapName),
+			"dataset %s may be created by runtime without using configmap as mount storage, "+
+				"which does not support dynamic updating the mounts field.", dataset.GetName())
+	}
 	if err != nil {
 		return false, err
 	}
