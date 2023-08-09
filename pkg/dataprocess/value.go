@@ -29,6 +29,8 @@ type DataProcessValue struct {
 type DataProcessInfo struct {
 	TargetDataset string `json:"targetDataset,omitempty"`
 
+	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+
 	JobProcessor *JobProcessor `json:"jobProcessor,omitempty"`
 
 	ScriptProcessor *ScriptProcessor `json:"scriptProcessor,omitempty"`
