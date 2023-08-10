@@ -415,23 +415,13 @@ func (j *JuiceFSEngine) genQuotaCmd(value *JuiceFS, mount datav1alpha1.Mount) er
 			if value.Fuse.SubPath == "" {
 				return fmt.Errorf("subPath must be set when quota is enabled")
 			}
-			ceVersion, eeVersion, err := ParseImageTag(value.Fuse.ImageTag)
-			if err != nil {
-				return errors.Wrapf(err, "invalid image tag %s", value.Fuse.ImageTag)
-			}
 			if value.Edition == CommunityEdition {
 				// ce
-				if ceVersion.LessThan(&ClientVersion{1, 1, 0, ""}) {
-					return fmt.Errorf("quota is not supported in juicefs-ce version %s", value.Fuse.ImageTag)
-				}
 				// juicefs quota set ${metaurl} --path ${path} --capacity ${capacity}
 				value.Configs.QuotaCmd = fmt.Sprintf("%s quota set %s --path %s --capacity %d", common.JuiceCeCliPath, value.Source, value.Fuse.SubPath, qs)
 				return nil
 			}
 			// ee
-			if eeVersion.LessThan(&ClientVersion{4, 9, 2, ""}) {
-				return fmt.Errorf("quota is not supported in juicefs-ee version %s", value.Fuse.ImageTag)
-			}
 			// juicefs quota set ${metaurl} --path ${path} --capacity ${capacity}
 			cli := common.JuiceCliPath
 			value.Configs.QuotaCmd = fmt.Sprintf("%s quota set %s --path %s --capacity %d", cli, value.Source, value.Fuse.SubPath, qs)
