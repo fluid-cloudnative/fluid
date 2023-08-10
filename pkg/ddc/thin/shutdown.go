@@ -270,7 +270,7 @@ func (t *ThinEngine) cleanUpOrphanedResources() (err error) {
 	}
 
 	if cm != nil {
-		if err = kubeclient.DeleteConfigMap(t.Client, t.name, t.namespace); err != nil && utils.IgnoreNotFound(err) != nil {
+		if err = kubeclient.DeleteConfigMap(t.Client, orphanedConfigMapName, t.namespace); err != nil && utils.IgnoreNotFound(err) != nil {
 			return err
 		}
 		t.Log.Info("Found orphaned configmap, successfully deleted it", "configmap", orphanedConfigMapName)
