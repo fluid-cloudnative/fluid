@@ -233,10 +233,19 @@ func TestThinEngine_destroyMaster(t *testing.T) {
 		}
 	}
 
+	orphanedCm := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "fluid",
+			Name:      "test-runtimeset",
+		},
+	}
+	client := fake.NewFakeClientWithScheme(testScheme, orphanedCm)
+
 	engine := ThinEngine{
 		name:      "test",
 		namespace: "fluid",
 		Log:       fake.NullLogger(),
+		Client:    client,
 		runtime: &datav1alpha1.ThinRuntime{
 			Spec: datav1alpha1.ThinRuntimeSpec{
 				Fuse: datav1alpha1.ThinFuseSpec{},
@@ -268,6 +277,12 @@ func TestThinEngine_destroyMaster(t *testing.T) {
 	err = engine.destroyMaster()
 	if err != nil {
 		t.Errorf("fail to exec check helm release: %v", err)
+	}
+
+	if cm, err := kubeclient.GetConfigmapByName(engine.Client, orphanedCm.Name, orphanedCm.Namespace); err != nil {
+		t.Errorf("fail to delete orphaned resources: %v", err)
+	} else if cm != nil {
+		t.Errorf("orphaned configmap should be cleaned up")
 	}
 
 	// check release error

@@ -9,6 +9,15 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
     role: thin-fuse
+  ownerReferences:
+  {{- if .Values.owner.enabled }}
+    - apiVersion: {{ .Values.owner.apiVersion }}
+      blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+      controller: {{ .Values.owner.controller }}
+      kind: {{ .Values.owner.kind }}
+      name: {{ .Values.owner.name }}
+      uid: {{ .Values.owner.uid }}
+  {{- end }}
 data:
   config.json: |
     {{ .Values.fuse.configValue }}
@@ -23,6 +32,15 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
     role: thin-fuse
+  ownerReferences:
+  {{- if .Values.owner.enabled }}
+    - apiVersion: {{ .Values.owner.apiVersion }}
+      blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+      controller: {{ .Values.owner.controller }}
+      kind: {{ .Values.owner.kind }}
+      name: {{ .Values.owner.name }}
+      uid: {{ .Values.owner.uid }}
+  {{- end }}
 type: Opaque
 stringData:
   config.json: |

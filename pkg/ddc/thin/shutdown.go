@@ -69,7 +69,16 @@ func (t *ThinEngine) destroyMaster() (err error) {
 		if err != nil {
 			return
 		}
+	} else {
+		// When upgrade Fluid to v1.0.0+ from a lower version, there may be some orphaned configmaps when deleting a ThinRuntime if it's created before the upgradation.
+		// Detect such orphaned configmaps and clean them up.
+		err = t.cleanUpOrphanedResources()
+		if err != nil {
+			t.Log.Info("WARNING: failed to delete orphaned resource, some resources may not be cleaned up in the cluster", "err", err)
+			err = nil
+		}
 	}
+
 	return
 }
 
@@ -247,6 +256,23 @@ func (t *ThinEngine) cleanAll() (err error) {
 		if err != nil {
 			return
 		}
+	}
+
+	return nil
+}
+
+func (t *ThinEngine) cleanUpOrphanedResources() (err error) {
+	orphanedConfigMapName := fmt.Sprintf("%s-runtimeset", t.name)
+	cm, err := kubeclient.GetConfigmapByName(t.Client, orphanedConfigMapName, t.namespace)
+	if err != nil {
+		return err
+	}
+
+	if cm != nil {
+		if err = kubeclient.DeleteConfigMap(t.Client, orphanedConfigMapName, t.namespace); err != nil && utils.IgnoreNotFound(err) != nil {
+			return err
+		}
+		t.Log.Info("Found orphaned configmap, successfully deleted it", "configmap", orphanedConfigMapName)
 	}
 
 	return nil
