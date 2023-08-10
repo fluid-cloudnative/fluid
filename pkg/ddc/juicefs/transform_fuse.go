@@ -310,6 +310,8 @@ func (j *JuiceFSEngine) genFuseMount(value *JuiceFS, optionMap map[string]string
 			optionMap["entrycacheto"] = "7200"
 		}
 		optionMap["foreground"] = ""
+		// do not update config again
+		optionMap["no-update"] = ""
 
 		// start independent cache cluster, refer to [juicefs cache sharing](https://juicefs.com/docs/cloud/cache/#client_cache_sharing)
 		// fuse and worker use the same cache-group, fuse use no-sharing

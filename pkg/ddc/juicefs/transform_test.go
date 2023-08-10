@@ -406,7 +406,7 @@ func TestJuiceFSEngine_genWorkerMount(t *testing.T) {
 				runtime: &datav1alpha1.JuiceFSRuntime{},
 			},
 			wantErr:           false,
-			wantWorkerCommand: "/sbin/mount.juicefs test-enterprise /test -o foreground,cache-group=fluid-test-enterprise",
+			wantWorkerCommand: "/sbin/mount.juicefs test-enterprise /test -o foreground,no-update,cache-group=fluid-test-enterprise",
 			wantWorkerStatCmd: "stat -c %i /test",
 		},
 		{
@@ -442,7 +442,7 @@ func TestJuiceFSEngine_genWorkerMount(t *testing.T) {
 				}}},
 			},
 			wantErr:           false,
-			wantWorkerCommand: "/sbin/mount.juicefs test-enterprise /test -o verbose,foreground,cache-group=test",
+			wantWorkerCommand: "/sbin/mount.juicefs test-enterprise /test -o verbose,foreground,no-update,cache-group=test",
 			wantWorkerStatCmd: "stat -c %i /test",
 		},
 	}
