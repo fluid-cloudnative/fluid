@@ -141,7 +141,7 @@ func (j *JuiceFSEngine) GetRunningPodsOfStatefulSet(stsName string, namespace st
 	return pods, nil
 }
 
-func (j *JuiceFSEngine) parseJuiceFSImage(edition, image string, tag string, imagePullPolicy string) (string, string, string) {
+func (j *JuiceFSEngine) parseJuiceFSImage(edition, image string, tag string, imagePullPolicy string) (string, string, string, error) {
 	defaultRuntimeImage := common.DefaultCEImage
 	imageFromEnv := docker.GetImageRepoFromEnv(common.JuiceFSCEImageEnv)
 	imageTagFromEnv := docker.GetImageTagFromEnv(common.JuiceFSCEImageEnv)
@@ -159,7 +159,7 @@ func (j *JuiceFSEngine) parseJuiceFSImage(edition, image string, tag string, ima
 		if len(image) == 0 {
 			runtimeImageInfo := strings.Split(defaultRuntimeImage, ":")
 			if len(runtimeImageInfo) < 1 {
-				panic("invalid default juicefs runtime image!")
+				return "", "", "", fmt.Errorf("invalid default juicefs runtime image")
 			} else {
 				image = runtimeImageInfo[0]
 			}
@@ -171,14 +171,14 @@ func (j *JuiceFSEngine) parseJuiceFSImage(edition, image string, tag string, ima
 		if len(tag) == 0 {
 			runtimeImageInfo := strings.Split(defaultRuntimeImage, ":")
 			if len(runtimeImageInfo) < 2 {
-				panic("invalid default juicefs runtime image!")
+				return "", "", "", fmt.Errorf("invalid default juicefs runtime image")
 			} else {
 				tag = runtimeImageInfo[1]
 			}
 		}
 	}
 
-	return image, tag, imagePullPolicy
+	return image, tag, imagePullPolicy, nil
 }
 
 func (j *JuiceFSEngine) getMountPoint() (mountPath string) {

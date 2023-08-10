@@ -42,7 +42,10 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 	image := runtime.Spec.Fuse.Image
 	tag := runtime.Spec.Fuse.ImageTag
 	imagePullPolicy := runtime.Spec.Fuse.ImagePullPolicy
-	value.Fuse.Image, value.Fuse.ImageTag, value.Fuse.ImagePullPolicy = j.parseJuiceFSImage(value.Edition, image, tag, imagePullPolicy)
+	value.Fuse.Image, value.Fuse.ImageTag, value.Fuse.ImagePullPolicy, err = j.parseJuiceFSImage(value.Edition, image, tag, imagePullPolicy)
+	if err != nil {
+		return
+	}
 
 	// transform envs
 	value.Fuse.Envs = runtime.Spec.Fuse.Env

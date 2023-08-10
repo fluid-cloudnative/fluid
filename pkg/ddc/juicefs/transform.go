@@ -122,7 +122,10 @@ func (j *JuiceFSEngine) transformWorkers(runtime *datav1alpha1.JuiceFSRuntime, d
 
 	value.Worker.Envs = runtime.Spec.Worker.Env
 
-	value.Image, value.ImageTag, value.ImagePullPolicy = j.parseJuiceFSImage(value.Edition, image, imageTag, imagePullPolicy)
+	value.Image, value.ImageTag, value.ImagePullPolicy, err = j.parseJuiceFSImage(value.Edition, image, imageTag, imagePullPolicy)
+	if err != nil {
+		return
+	}
 
 	// nodeSelector
 	value.Worker.NodeSelector = map[string]string{}

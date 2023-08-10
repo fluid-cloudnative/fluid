@@ -273,11 +273,12 @@ func TestJuiceFSEngine_parseJuiceFSImage(t *testing.T) {
 		imagePullPolicy string
 	}
 	tests := []struct {
-		name  string
-		args  args
-		want  string
-		want1 string
-		want2 string
+		name    string
+		args    args
+		want    string
+		want1   string
+		want2   string
+		wantErr bool
 	}{
 		{
 			name: "test0",
@@ -287,9 +288,10 @@ func TestJuiceFSEngine_parseJuiceFSImage(t *testing.T) {
 				tag:             "ce-v1.0.4",
 				imagePullPolicy: "IfNotPresent",
 			},
-			want:  "juicedata/mount",
-			want1: "ce-v1.0.4",
-			want2: "IfNotPresent",
+			want:    "juicedata/mount",
+			want1:   "ce-v1.0.4",
+			want2:   "IfNotPresent",
+			wantErr: false,
 		},
 		{
 			name: "test1",
@@ -299,9 +301,10 @@ func TestJuiceFSEngine_parseJuiceFSImage(t *testing.T) {
 				tag:             "",
 				imagePullPolicy: "IfNotPresent",
 			},
-			want:  "juicedata/mount",
-			want1: "ce-v1.1.0-beta2",
-			want2: "IfNotPresent",
+			want:    "juicedata/mount",
+			want1:   "ce-v1.1.0-beta2",
+			want2:   "IfNotPresent",
+			wantErr: false,
 		},
 		{
 			name: "test2",
@@ -311,9 +314,10 @@ func TestJuiceFSEngine_parseJuiceFSImage(t *testing.T) {
 				tag:             "ee-4.9.15",
 				imagePullPolicy: "IfNotPresent",
 			},
-			want:  "juicedata/mount",
-			want1: "ee-4.9.15",
-			want2: "IfNotPresent",
+			want:    "juicedata/mount",
+			want1:   "ee-4.9.15",
+			want2:   "IfNotPresent",
+			wantErr: false,
 		},
 		{
 			name: "test3",
@@ -323,9 +327,10 @@ func TestJuiceFSEngine_parseJuiceFSImage(t *testing.T) {
 				tag:             "",
 				imagePullPolicy: "IfNotPresent",
 			},
-			want:  "juicedata/mount",
-			want1: "ee-4.9.14",
-			want2: "IfNotPresent",
+			want:    "juicedata/mount",
+			want1:   "ee-4.9.14",
+			want2:   "IfNotPresent",
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
@@ -333,7 +338,11 @@ func TestJuiceFSEngine_parseJuiceFSImage(t *testing.T) {
 			e := &JuiceFSEngine{}
 			t.Setenv(common.JuiceFSCEImageEnv, "juicedata/mount:ce-v1.1.0-beta2")
 			t.Setenv(common.JuiceFSEEImageEnv, "juicedata/mount:ee-4.9.14")
-			got, got1, got2 := e.parseJuiceFSImage(tt.args.edition, tt.args.image, tt.args.tag, tt.args.imagePullPolicy)
+			got, got1, got2, err := e.parseJuiceFSImage(tt.args.edition, tt.args.image, tt.args.tag, tt.args.imagePullPolicy)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("parseJuiceFSImage() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
 			if got != tt.want {
 				t.Errorf("JuiceFSEngine.parseJuiceFSImage() got = %v, want %v", got, tt.want)
 			}
