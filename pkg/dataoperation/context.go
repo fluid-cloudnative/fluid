@@ -22,14 +22,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type OperationType string
+// type OperationType string
 
-const (
-	DataLoad    OperationType = "DataLoad"
-	DataBackup  OperationType = "DataBackup"
-	DataMigrate OperationType = "DataMigrate"
-	DataProcess OperationType = "DataProcess"
-)
+// const (
+// 	DataLoad    OperationType = "DataLoad"
+// 	DataBackup  OperationType = "DataBackup"
+// 	DataMigrate OperationType = "DataMigrate"
+// 	DataProcess OperationType = "DataProcess"
+// )
 
 // ReconcileRequestContext loads or applys the configuration state of a service.
 type ReconcileRequestContext struct {

@@ -65,6 +65,29 @@ spec:
               dataset:
                 description: Dataset defines the target dataset of the DataBackup
                 type: string
+              runAfter:
+                description: Specifies that the preceding operation in a workflow
+                properties:
+                  name:
+                    description: Name specifies the name of the referred data operation
+                    type: string
+                  namespace:
+                    description: Namespace specifies the namespace of the referred
+                      data operation
+                    type: string
+                  operationKind:
+                    description: OperationKind specifies the type of the data operation
+                    enum:
+                    - DataLoad
+                    - DataBackup
+                    - DataMigrate
+                    - DataProcess
+                    type: string
+                required:
+                - name
+                - namespace
+                - operationKind
+                type: object
               runAs:
                 description: Manage the user to run Alluxio DataBackup
                 properties:
@@ -148,6 +171,14 @@ spec:
               phase:
                 description: Phase describes current phase of operation
                 type: string
+              waitingFor:
+                description: WaitingStatus stores information about waiting operation.
+                properties:
+                  operationComplete:
+                    description: OperationComplete indicates if the preceding operation
+                      is complete
+                    type: boolean
+                type: object
             required:
             - conditions
             - duration

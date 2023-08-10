@@ -36,7 +36,7 @@ type OperationInterface interface {
 	GetChartsDirectory() string
 
 	// GetOperationType get the data operation type
-	GetOperationType() OperationType
+	GetOperationType() datav1alpha1.OperationType
 
 	// UpdateOperationApiStatus update the data operation status, object is the data operation crd instance.
 	UpdateOperationApiStatus(object client.Object, opStatus *datav1alpha1.OperationStatus) error

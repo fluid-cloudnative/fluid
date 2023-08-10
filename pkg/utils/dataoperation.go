@@ -19,6 +19,8 @@ package utils
 import (
 	"context"
 	"fmt"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -39,4 +41,75 @@ func ListDataOperationJobByCronjob(c client.Client, cronjobNamespacedName types.
 		return nil, err
 	}
 	return jobList.Items, nil
+}
+
+func GetOperationStatus(obj client.Object) (*datav1alpha1.OperationStatus, error) {
+	if obj == nil {
+		return nil, nil
+	}
+
+	if dataLoad, ok := obj.(*datav1alpha1.DataLoad); ok {
+		return dataLoad.Status.DeepCopy(), nil
+	} else if dataMigrate, ok := obj.(*datav1alpha1.DataMigrate); ok {
+		return dataMigrate.Status.DeepCopy(), nil
+	} else if dataBackup, ok := obj.(*datav1alpha1.DataBackup); ok {
+		return dataBackup.Status.DeepCopy(), nil
+	} else if dataProcess, ok := obj.(*datav1alpha1.DataProcess); ok {
+		return dataProcess.Status.DeepCopy(), nil
+	}
+
+	return nil, fmt.Errorf("obj is not of any data operation type")
+}
+
+func GetPrecedingOperationStatus(client client.Client, opRef *datav1alpha1.OperationRef) (*datav1alpha1.OperationStatus, error) {
+	if opRef == nil {
+		return nil, nil
+	}
+
+	switch opRef.OperationKind {
+	case datav1alpha1.DataBackupType:
+		object, err := GetDataBackup(client, opRef.Name, opRef.Namespace)
+		if err != nil {
+			return nil, err
+		}
+		return &object.Status, nil
+	case datav1alpha1.DataLoadType:
+		object, err := GetDataLoad(client, opRef.Name, opRef.Namespace)
+		if err != nil {
+			return nil, err
+		}
+		return &object.Status, nil
+	case datav1alpha1.DataMigrateType:
+		object, err := GetDataMigrate(client, opRef.Name, opRef.Namespace)
+		if err != nil {
+			return nil, err
+		}
+		return &object.Status, nil
+	case datav1alpha1.DataProcessType:
+		object, err := GetDataProcess(client, opRef.Name, opRef.Namespace)
+		if err != nil {
+			return nil, err
+		}
+		return &object.Status, nil
+	default:
+		return nil, fmt.Errorf("unknown data operation kind")
+	}
+}
+
+func HasPrecedingOperation(obj client.Object) (has bool, err error) {
+	if obj == nil {
+		return false, nil
+	}
+
+	if dataLoad, ok := obj.(*datav1alpha1.DataLoad); ok {
+		return dataLoad.Spec.RunAfter != nil, nil
+	} else if dataMigrate, ok := obj.(*datav1alpha1.DataMigrate); ok {
+		return dataMigrate.Spec.RunAfter != nil, nil
+	} else if dataBackup, ok := obj.(*datav1alpha1.DataBackup); ok {
+		return dataBackup.Spec.RunAfter != nil, nil
+	} else if dataProcess, ok := obj.(*datav1alpha1.DataProcess); ok {
+		return dataProcess.Spec.RunAfter != nil, nil
+	}
+
+	return false, fmt.Errorf("obj is not of any data operation type")
 }

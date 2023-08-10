@@ -17,6 +17,7 @@ limitations under the License.
 package alluxio
 
 import (
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 	"github.com/fluid-cloudnative/fluid/pkg/errors"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -28,13 +29,13 @@ func (e *AlluxioEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestC
 	operationType := operation.GetOperationType()
 
 	switch operationType {
-	case dataoperation.DataBackup:
+	case datav1alpha1.DataBackupType:
 		valueFileName, err = e.generateDataBackupValueFile(ctx, object)
 		return valueFileName, err
-	case dataoperation.DataLoad:
+	case datav1alpha1.DataLoadType:
 		valueFileName, err = e.generateDataLoadValueFile(ctx, object)
 		return valueFileName, err
-	case dataoperation.DataProcess:
+	case datav1alpha1.DataProcessType:
 		valueFileName, err = e.generateDataProcessValueFile(ctx, object)
 		return valueFileName, err
 	default:

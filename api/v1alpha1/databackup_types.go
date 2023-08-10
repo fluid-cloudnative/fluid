@@ -30,6 +30,9 @@ type DataBackupSpec struct {
 	BackupPath string `json:"backupPath,omitempty"`
 	// Manage the user to run Alluxio DataBackup
 	RunAs *User `json:"runAs,omitempty"`
+	// Specifies that the preceding operation in a workflow
+	// +optional
+	RunAfter *OperationRef `json:"runAfter,omitempty"`
 }
 
 // +kubebuilder:printcolumn:name="Dataset",type="string",JSONPath=`.spec.dataset`

@@ -94,6 +94,10 @@ type DataProcessSpec struct {
 	// Processor specify how to process data.
 	// +required
 	Processor Processor `json:"processor"`
+
+	// Specifies that the preceding operation in a workflow
+	// +optional
+	RunAfter *OperationRef `json:"runAfter,omitempty"`
 }
 
 // +kubebuilder:printcolumn:name="Dataset",type="string",JSONPath=`.spec.dataset.name`
