@@ -156,8 +156,17 @@ data:
   script.sh: |
     #!/bin/bash
 
+    if [ {{ .Values.edition }} = community ]; then
+    echo "$(date '+%Y/%m/%d %H:%M:%S').$(printf "%03d" $(($(date '+%N')/1000))) juicefs format start."
     {{- if .Values.configs.formatCmd }}
     {{ .Values.configs.formatCmd }}
     {{- end }}
+    elif [ ! -f /root/.juicefs/{{ .Values.configs.name }}.conf ]; then
+    echo "$(date '+%Y/%m/%d %H:%M:%S').$(printf "%03d" $(($(date '+%N')/1000))) juicefs auth start."
+    {{- if .Values.configs.formatCmd }}
+    {{ .Values.configs.formatCmd }}
+    {{- end }}
+    fi
 
+    echo "$(date '+%Y/%m/%d %H:%M:%S').$(printf "%03d" $(($(date '+%N')/1000))) juicefs mount start."
     {{ .Values.worker.command }}
