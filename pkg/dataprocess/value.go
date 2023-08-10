@@ -49,7 +49,7 @@ type ScriptProcessor struct {
 
 	Command []string `json:"command,omitempty"`
 
-	Args []string `json:"args,omitempty"`
+	Source string `json:"source,omitempty"`
 
 	Envs []corev1.EnvVar `json:"envs,omitempty"`
 

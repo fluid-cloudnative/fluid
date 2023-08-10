@@ -43,20 +43,23 @@ spec:
           command: 
           {{ toYaml .Values.dataProcess.scriptProcessor.command | nindent 10 }}
           {{- end }}
-          {{- if .Values.dataProcess.scriptProcessor.args }}
-          args:
-          {{ toYaml .Values.dataProcess.scriptProcessor.args | nindent 10 }}
-          {{- end }}
+          args: ["/fluid-scripts/preprocess.sh"]
           {{- if .Values.dataProcess.scriptProcessor.envs }}
           env:
           {{ toYaml .Values.dataProcess.scriptProcessor.envs | nindent 10 }}
           {{- end }}
-          {{- if .Values.dataProcess.scriptProcessor.volumeMounts }}
           volumeMounts:
+            - name: script-cm-vol
+              mountPath: /fluid-scripts/preprocess.sh
+              subPath: preprocess.sh
+          {{- if .Values.dataProcess.scriptProcessor.volumeMounts }}
             {{- toYaml .Values.dataProcess.scriptProcessor.volumeMounts | nindent 12 }}
           {{- end }}
-      {{- if .Values.dataProcess.scriptProcessor.volumes }}
       volumes:
+        - name: script-cm-vol
+          configMap:
+            name: {{ .Release.Name }}-scripts
+      {{- if .Values.dataProcess.scriptProcessor.volumes }}
         {{- toYaml .Values.dataProcess.scriptProcessor.volumes | nindent 8 }}
       {{- end }}
     {{- end }}

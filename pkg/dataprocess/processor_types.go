@@ -103,6 +103,6 @@ func (p *ScriptProcessorImpl) TransformDataProcessValues(value *DataProcessValue
 		Volumes:         append(p.ScriptProcessor.Volumes, datasetVolumes...),
 		VolumeMounts:    append(p.ScriptProcessor.VolumeMounts, datasetVolumeMounts...),
 		Command:         p.ScriptProcessor.Command,
-		Args:            p.ScriptProcessor.Args,
+		Source:          p.ScriptProcessor.Source,
 	}
 }

@@ -72,9 +72,9 @@ type ScriptProcessor struct {
 	// +optional
 	Command []string `json:"command,omitempty"`
 
-	// Arguments to the entrypoint.
-	// +optional
-	Args []string `json:"args,omitempty"`
+	// Script source for ScriptProcessor
+	// +required
+	Source string `json:"source"`
 
 	// List of environment variables to set in the container.
 	// +optional

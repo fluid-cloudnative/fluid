@@ -7480,11 +7480,6 @@ spec:
                     description: Shell represents a processor which executes shell
                       script
                     properties:
-                      args:
-                        description: Arguments to the entrypoint.
-                        items:
-                          type: string
-                        type: array
                       command:
                         description: Entrypoint command for ScriptProcessor.
                         items:
@@ -7621,6 +7616,9 @@ spec:
                         enum:
                         - Never
                         - OnFailure
+                        type: string
+                      source:
+                        description: Script source for ScriptProcessor
                         type: string
                       volumeMounts:
                         description: Pod volumes to mount into the container's filesystem.
@@ -9270,6 +9268,8 @@ spec:
                           - name
                           type: object
                         type: array
+                    required:
+                    - source
                     type: object
                   serviceAccountName:
                     description: ServiceAccountName defiens the serviceAccountName

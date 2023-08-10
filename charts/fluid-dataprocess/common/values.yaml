@@ -11,6 +11,7 @@ dataProcess:
     restartPolicy: Never
     command: []
     args: []
+    source: ""
     envs: []
     volumes: []
     volumeMounts: []

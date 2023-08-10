@@ -55,7 +55,7 @@ func TestGenDataProcessValue(t *testing.T) {
 					},
 					RestartPolicy: corev1.RestartPolicyNever,
 					Command:       []string{"bash"},
-					Args:          []string{"-c", "sleep inf"},
+					Source:        "sleep inf",
 					Env: []corev1.EnvVar{
 						{
 							Name:  "TEST_ENV",
@@ -164,7 +164,7 @@ func TestGenDataProcessValue(t *testing.T) {
 						RestartPolicy:   dataProcessScriptProcessor.Spec.Processor.Script.RestartPolicy,
 						Envs:            dataProcessScriptProcessor.Spec.Processor.Script.Env,
 						Command:         dataProcessScriptProcessor.Spec.Processor.Script.Command,
-						Args:            dataProcessScriptProcessor.Spec.Processor.Script.Args,
+						Source:          dataProcessScriptProcessor.Spec.Processor.Script.Source,
 						Volumes:         append(dataProcessScriptProcessor.Spec.Processor.Script.Volumes, corev1.Volume{Name: "fluid-dataset-vol", VolumeSource: corev1.VolumeSource{PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: dataset.Name}}}),
 						VolumeMounts:    append(dataProcessScriptProcessor.Spec.Processor.Script.VolumeMounts, corev1.VolumeMount{Name: "fluid-dataset-vol", MountPath: dataProcessScriptProcessor.Spec.Dataset.MountPath}),
 					},
