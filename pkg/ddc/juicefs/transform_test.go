@@ -241,7 +241,6 @@ func TestJuiceFSEngine_allocatePorts(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	type args struct {
-		dataset *datav1alpha1.Dataset
 		runtime *datav1alpha1.JuiceFSRuntime
 		value   *JuiceFS
 	}
@@ -255,13 +254,10 @@ func TestJuiceFSEngine_allocatePorts(t *testing.T) {
 		{
 			name: "test",
 			args: args{
-				dataset: &datav1alpha1.Dataset{
-					Spec: datav1alpha1.DatasetSpec{
-						Mounts: []datav1alpha1.Mount{{EncryptOptions: []datav1alpha1.EncryptOption{{Name: JuiceMetaUrl}}}},
-					},
-				},
 				runtime: &datav1alpha1.JuiceFSRuntime{},
-				value:   &JuiceFS{},
+				value: &JuiceFS{
+					Edition: CommunityEdition,
+				},
 			},
 			wantErr:               false,
 			wantWorkerMetricsPort: true,
@@ -271,7 +267,7 @@ func TestJuiceFSEngine_allocatePorts(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			j := &JuiceFSEngine{}
-			if err := j.allocatePorts(tt.args.dataset, tt.args.runtime, tt.args.value); (err != nil) != tt.wantErr {
+			if err := j.allocatePorts(tt.args.runtime, tt.args.value); (err != nil) != tt.wantErr {
 				t.Errorf("allocatePorts() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if tt.wantWorkerMetricsPort {
@@ -471,6 +467,76 @@ func TestJuiceFSEngine_genWorkerMount(t *testing.T) {
 				t.Errorf("command got = %v\ncommand want = %v", tt.args.value.Worker.Command, tt.wantWorkerCommand)
 				t.Errorf("stat cmd got = %v\nstat cmd want = %v", tt.args.value.Worker.StatCmd, tt.wantWorkerStatCmd)
 			}
+		})
+	}
+}
+
+func TestJuiceFSEngine_genEdition(t *testing.T) {
+	type args struct {
+		mount                datav1alpha1.Mount
+		value                *JuiceFS
+		SharedEncryptOptions []datav1alpha1.EncryptOption
+	}
+	tests := []struct {
+		name        string
+		args        args
+		wantEdition string
+	}{
+		{
+			name: "test-community-1",
+			args: args{
+				mount: datav1alpha1.Mount{
+					EncryptOptions: []datav1alpha1.EncryptOption{{
+						Name:      JuiceMetaUrl,
+						ValueFrom: datav1alpha1.EncryptOptionSource{},
+					}},
+				},
+				value:                &JuiceFS{},
+				SharedEncryptOptions: nil,
+			},
+			wantEdition: "community",
+		},
+		{
+			name: "test-community-2",
+			args: args{
+				value: &JuiceFS{},
+				SharedEncryptOptions: []datav1alpha1.EncryptOption{{
+					Name:      JuiceMetaUrl,
+					ValueFrom: datav1alpha1.EncryptOptionSource{},
+				}},
+			},
+			wantEdition: "community",
+		},
+		{
+			name: "test-enterprise-1",
+			args: args{
+				mount: datav1alpha1.Mount{
+					EncryptOptions: []datav1alpha1.EncryptOption{{
+						Name:      JuiceToken,
+						ValueFrom: datav1alpha1.EncryptOptionSource{},
+					}},
+				},
+				value:                &JuiceFS{},
+				SharedEncryptOptions: nil,
+			},
+			wantEdition: "enterprise",
+		},
+		{
+			name: "test-enterprise-2",
+			args: args{
+				value: &JuiceFS{},
+				SharedEncryptOptions: []datav1alpha1.EncryptOption{{
+					Name:      JuiceToken,
+					ValueFrom: datav1alpha1.EncryptOptionSource{},
+				}},
+			},
+			wantEdition: "enterprise",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			j := &JuiceFSEngine{}
+			j.genEdition(tt.args.mount, tt.args.value, tt.args.SharedEncryptOptions)
 		})
 	}
 }

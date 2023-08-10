@@ -141,17 +141,25 @@ func (j *JuiceFSEngine) GetRunningPodsOfStatefulSet(stsName string, namespace st
 	return pods, nil
 }
 
-func (j *JuiceFSEngine) parseRuntimeImage(image string, tag string, imagePullPolicy string) (string, string, string) {
+func (j *JuiceFSEngine) parseJuiceFSImage(edition, image string, tag string, imagePullPolicy string) (string, string, string, error) {
+	defaultRuntimeImage := common.DefaultCEImage
+	imageFromEnv := docker.GetImageRepoFromEnv(common.JuiceFSCEImageEnv)
+	imageTagFromEnv := docker.GetImageTagFromEnv(common.JuiceFSCEImageEnv)
+	if edition == EnterpriseEdition {
+		defaultRuntimeImage = common.DefaultEEImage
+		imageFromEnv = docker.GetImageRepoFromEnv(common.JuiceFSEEImageEnv)
+		imageTagFromEnv = docker.GetImageTagFromEnv(common.JuiceFSEEImageEnv)
+	}
 	if len(imagePullPolicy) == 0 {
 		imagePullPolicy = common.DefaultImagePullPolicy
 	}
 
 	if len(image) == 0 {
-		image = docker.GetImageRepoFromEnv(common.JuiceFSFuseImageEnv)
+		image = imageFromEnv
 		if len(image) == 0 {
-			runtimeImageInfo := strings.Split(common.DefaultJuiceFSRuntimeImage, ":")
+			runtimeImageInfo := strings.Split(defaultRuntimeImage, ":")
 			if len(runtimeImageInfo) < 1 {
-				panic("invalid default juicefs runtime image!")
+				return "", "", "", fmt.Errorf("invalid default juicefs runtime image")
 			} else {
 				image = runtimeImageInfo[0]
 			}
@@ -159,50 +167,18 @@ func (j *JuiceFSEngine) parseRuntimeImage(image string, tag string, imagePullPol
 	}
 
 	if len(tag) == 0 {
-		tag = docker.GetImageTagFromEnv(common.JuiceFSFuseImageEnv)
+		tag = imageTagFromEnv
 		if len(tag) == 0 {
-			runtimeImageInfo := strings.Split(common.DefaultJuiceFSRuntimeImage, ":")
+			runtimeImageInfo := strings.Split(defaultRuntimeImage, ":")
 			if len(runtimeImageInfo) < 2 {
-				panic("invalid default juicefs runtime image!")
+				return "", "", "", fmt.Errorf("invalid default juicefs runtime image")
 			} else {
 				tag = runtimeImageInfo[1]
 			}
 		}
 	}
 
-	return image, tag, imagePullPolicy
-}
-
-func (j *JuiceFSEngine) parseFuseImage(image string, tag string, imagePullPolicy string) (string, string, string) {
-	if len(imagePullPolicy) == 0 {
-		imagePullPolicy = common.DefaultImagePullPolicy
-	}
-
-	if len(image) == 0 {
-		image = docker.GetImageRepoFromEnv(common.JuiceFSFuseImageEnv)
-		if len(image) == 0 {
-			fuseImageInfo := strings.Split(common.DefaultJuiceFSFuseImage, ":")
-			if len(fuseImageInfo) < 1 {
-				panic("invalid default juicefs fuse image!")
-			} else {
-				image = fuseImageInfo[0]
-			}
-		}
-	}
-
-	if len(tag) == 0 {
-		tag = docker.GetImageTagFromEnv(common.JuiceFSFuseImageEnv)
-		if len(tag) == 0 {
-			fuseImageInfo := strings.Split(common.DefaultJuiceFSFuseImage, ":")
-			if len(fuseImageInfo) < 2 {
-				panic("invalid default init image!")
-			} else {
-				tag = fuseImageInfo[1]
-			}
-		}
-	}
-
-	return image, tag, imagePullPolicy
+	return image, tag, imagePullPolicy, nil
 }
 
 func (j *JuiceFSEngine) getMountPoint() (mountPath string) {

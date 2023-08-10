@@ -18,11 +18,13 @@ package juicefs
 
 import (
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
 	"os"
 	"path/filepath"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
 
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"
@@ -88,19 +90,30 @@ func (j *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 
 	imageName, imageTag := docker.GetWorkerImage(r.Client, dataload.Spec.Dataset.Name, "juicefs", dataload.Spec.Dataset.Namespace)
 
+	var defaultJuiceFSImage string
+	if len(imageName) == 0 || len(imageTag) == 0 {
+		defaultJuiceFSImage = common.DefaultCEImage
+		edition := j.GetEdition()
+		if edition == EnterpriseEdition {
+			defaultJuiceFSImage = common.DefaultEEImage
+		}
+	}
+
 	if len(imageName) == 0 {
-		defaultImageInfo := strings.Split(common.DefaultJuiceFSRuntimeImage, ":")
+		defaultImageInfo := strings.Split(defaultJuiceFSImage, ":")
 		if len(defaultImageInfo) < 1 {
-			panic("invalid default dataload image!")
+			err = fmt.Errorf("invalid default dataload image")
+			return
 		} else {
 			imageName = defaultImageInfo[0]
 		}
 	}
 
 	if len(imageTag) == 0 {
-		defaultImageInfo := strings.Split(common.DefaultJuiceFSRuntimeImage, ":")
+		defaultImageInfo := strings.Split(defaultJuiceFSImage, ":")
 		if len(defaultImageInfo) < 2 {
-			panic("invalid default dataload image!")
+			err = fmt.Errorf("invalid default dataload image")
+			return
 		} else {
 			imageTag = defaultImageInfo[1]
 		}
