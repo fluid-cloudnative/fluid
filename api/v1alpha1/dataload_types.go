@@ -85,6 +85,10 @@ type DataLoadSpec struct {
 	// The schedule in Cron format, only set when policy is cron, see https://en.wikipedia.org/wiki/Cron.
 	// +optional
 	Schedule string `json:"schedule,omitempty"`
+
+	// Specifies that the preceding operation in a workflow
+	// +optional
+	RunAfter *OperationRef `json:"runAfter,omitempty"`
 }
 
 // +kubebuilder:printcolumn:name="Dataset",type="string",JSONPath=`.spec.dataset.name`

@@ -39,6 +39,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/controllers"
 	databackupctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/databackup"
+	dataflowctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/dataflow"
 	dataloadctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/dataload"
 	datamigratectl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/datamigrate"
 	dataprocessctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/dataprocess"
@@ -164,6 +165,15 @@ func handle() {
 		mgr.GetEventRecorderFor("DataProcess"),
 	)).SetupWithManager(mgr, controllerOptions); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "DataProcess")
+		os.Exit(1)
+	}
+
+	if err = (dataflowctl.NewDataFlowReconciler(mgr.GetClient(),
+		ctrl.Log.WithName("dataflowctl"),
+		mgr.GetEventRecorderFor("DataFlow"),
+		time.Duration(5*time.Second),
+	)).SetupWithManager(mgr, controllerOptions); err != nil {
+		setupLog.Error(err, "unable to create controller")
 		os.Exit(1)
 	}
 

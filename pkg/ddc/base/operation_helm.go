@@ -18,6 +18,8 @@ package base
 
 import (
 	"fmt"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
@@ -49,7 +51,7 @@ func InstallDataOperationHelmIfNotExist(ctx cruntime.ReconcileRequestContext, ob
 		}
 
 		var chartName string
-		if operation.GetOperationType() == dataoperation.DataProcess {
+		if operation.GetOperationType() == datav1alpha1.DataProcessType {
 			// for DataProcess, all engine share the same chart
 			chartName = operation.GetChartsDirectory() + "/" + "common"
 		} else {

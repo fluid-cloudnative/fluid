@@ -17,6 +17,7 @@ limitations under the License.
 package efc
 
 import (
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 	"github.com/fluid-cloudnative/fluid/pkg/errors"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -28,7 +29,7 @@ func (e *EFCEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestConte
 	operationType := operation.GetOperationType()
 
 	switch operationType {
-	case dataoperation.DataProcess:
+	case datav1alpha1.DataProcessType:
 		valueFileName, err = e.generateDataProcessValueFile(ctx, object)
 		return valueFileName, err
 	default:

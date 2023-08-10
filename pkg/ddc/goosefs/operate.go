@@ -17,6 +17,7 @@ limitations under the License.
 package goosefs
 
 import (
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 	"github.com/fluid-cloudnative/fluid/pkg/errors"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -27,12 +28,12 @@ import (
 func (e *GooseFSEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, object client.Object, operation dataoperation.OperationInterface) (valueFileName string, err error) {
 	operateType := operation.GetOperationType()
 
-	if operateType == dataoperation.DataBackup {
+	if operateType == datav1alpha1.DataBackupType {
 		valueFileName, err = e.generateDataBackupValueFile(ctx, object)
 		return valueFileName, err
 	}
 
-	if operateType == dataoperation.DataLoad {
+	if operateType == datav1alpha1.DataLoadType {
 		valueFileName, err = e.generateDataLoadValueFile(ctx, object)
 		return valueFileName, err
 	}

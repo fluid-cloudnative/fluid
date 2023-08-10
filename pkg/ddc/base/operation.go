@@ -20,6 +20,7 @@ import (
 	"time"
 
 	v1 "k8s.io/api/core/v1"
+	utilpointer "k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -37,7 +38,7 @@ func (t *TemplateEngine) Operate(ctx cruntime.ReconcileRequestContext, object cl
 
 	// runtime engine override the template engine
 	switch operateType {
-	case dataoperation.DataBackup:
+	case datav1alpha1.DataBackupType:
 		ownImpl, ok := t.Implement.(Databackuper)
 		if ok {
 			targetDataBackup, success := object.(*datav1alpha1.DataBackup)
@@ -92,6 +93,14 @@ func (t *TemplateEngine) reconcileNone(ctx cruntime.ReconcileRequestContext, obj
 	}
 	opStatus.Duration = "Unfinished"
 	opStatus.Infos = map[string]string{}
+
+	if exists, err := utils.HasPrecedingOperation(object); err != nil {
+		log.Error(err, "failed to check if object has specifies spec.runAfter")
+		return utils.RequeueIfError(err)
+	} else if exists {
+		opStatus.WaitingFor.OperationComplete = utilpointer.Bool(true)
+	}
+
 	if err = operation.UpdateOperationApiStatus(object, opStatus); err != nil {
 		log.Error(err, fmt.Sprintf("failed to update the %s", operation.GetOperationType()))
 		return utils.RequeueIfError(err)
@@ -105,7 +114,13 @@ func (t *TemplateEngine) reconcilePending(ctx cruntime.ReconcileRequestContext, 
 	opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcilePending")
 
-	// 1. set current data operation to dataset
+	// 1. check preceding operation status
+	if opStatus.WaitingFor.OperationComplete != nil && *opStatus.WaitingFor.OperationComplete {
+		// when operationComplete set back to false, a new reconcilation loop will be triggered, so no requeue here.
+		return utils.NoRequeue()
+	}
+
+	// 2. set current data operation to dataset
 	err := SetDataOperationInTargetDataset(ctx, object, operation, t)
 	if err != nil {
 		return utils.RequeueAfterInterval(20 * time.Second)

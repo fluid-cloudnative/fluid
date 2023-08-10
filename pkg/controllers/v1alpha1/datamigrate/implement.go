@@ -52,8 +52,8 @@ func (r *DataMigrateReconciler) GetChartsDirectory() string {
 	return utils.GetChartsDirectory() + "/" + cdatamigrate.DataMigrateChart
 }
 
-func (r *DataMigrateReconciler) GetOperationType() dataoperation.OperationType {
-	return dataoperation.DataMigrate
+func (r *DataMigrateReconciler) GetOperationType() datav1alpha1.OperationType {
+	return datav1alpha1.DataMigrateType
 }
 
 func (r *DataMigrateReconciler) UpdateOperationApiStatus(object client.Object, opStatus *datav1alpha1.OperationStatus) error {
