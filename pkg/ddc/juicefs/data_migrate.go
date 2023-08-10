@@ -109,7 +109,8 @@ func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequest
 	if len(imageTag) == 0 {
 		defaultImageInfo := strings.Split(defaultJuiceFSImage, ":")
 		if len(defaultImageInfo) < 2 {
-			panic("invalid default datamigrate image!")
+			err = fmt.Errorf("invalid default datamigrate image")
+			return
 		} else {
 			imageTag = defaultImageInfo[1]
 		}
