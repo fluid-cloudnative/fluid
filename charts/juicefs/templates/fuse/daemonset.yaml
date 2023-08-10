@@ -177,14 +177,24 @@ data:
     #!/bin/bash
     set -e
 
+    if [ {{ .Values.edition }} = community ]; then
+    echo "$(date '+%Y/%m/%d %H:%M:%S').$(printf "%03d" $(($(date '+%N')/1000))) juicefs format start."
     {{- if .Values.configs.formatCmd }}
     {{ .Values.configs.formatCmd }}
     {{- end }}
+    elif [ ! -f /root/.juicefs/{{ .Values.configs.name }}.conf ]; then
+    echo "$(date '+%Y/%m/%d %H:%M:%S').$(printf "%03d" $(($(date '+%N')/1000))) juicefs auth start."
+    {{- if .Values.configs.formatCmd }}
+    {{ .Values.configs.formatCmd }}
+    {{- end }}
+    fi
 
     {{- if .Values.configs.quotaCmd }}
+    echo "$(date '+%Y/%m/%d %H:%M:%S').$(printf "%03d" $(($(date '+%N')/1000))) juicefs set quota start."
     {{ .Values.configs.quotaCmd }}
     {{- end }}
 
+    echo "$(date '+%Y/%m/%d %H:%M:%S').$(printf "%03d" $(($(date '+%N')/1000))) juicefs mount start."
     {{ .Values.fuse.command }}
 
 {{- end }}
