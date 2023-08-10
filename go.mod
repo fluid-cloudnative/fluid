@@ -61,7 +61,7 @@ require (
 	github.com/docker/go-units v0.5.0
 	github.com/felixge/fgprof v0.9.3
 	github.com/go-logr/logr v1.2.4
-	github.com/golang/glog v1.0.0
+	github.com/golang/glog v1.1.2
 	github.com/golang/mock v1.6.0
 	github.com/kubernetes-csi/drivers v1.0.2
 	github.com/onsi/ginkgo v1.16.5
