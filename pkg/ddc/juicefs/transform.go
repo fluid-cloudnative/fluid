@@ -62,8 +62,11 @@ func (j *JuiceFSEngine) transform(runtime *datav1alpha1.JuiceFSRuntime) (value *
 		Privileged: true,
 	}
 
+	// generate edition
+	j.genEdition(dataset.Spec.Mounts[0], value, dataset.Spec.Mounts[0].EncryptOptions)
+
 	// allocate ports
-	err = j.allocatePorts(dataset, runtime, value)
+	err = j.allocatePorts(runtime, value)
 	if err != nil {
 		return
 	}
@@ -91,6 +94,26 @@ func (j *JuiceFSEngine) transform(runtime *datav1alpha1.JuiceFSRuntime) (value *
 	return
 }
 
+func (j *JuiceFSEngine) genEdition(mount datav1alpha1.Mount, value *JuiceFS, SharedEncryptOptions []datav1alpha1.EncryptOption) {
+	value.Edition = EnterpriseEdition
+
+	for _, encryptOption := range SharedEncryptOptions {
+		key := encryptOption.Name
+
+		if key == JuiceMetaUrl {
+			value.Edition = CommunityEdition
+		}
+	}
+
+	for _, encryptOption := range mount.EncryptOptions {
+		key := encryptOption.Name
+
+		if key == JuiceMetaUrl {
+			value.Edition = CommunityEdition
+		}
+	}
+}
+
 func (j *JuiceFSEngine) transformWorkers(runtime *datav1alpha1.JuiceFSRuntime, dataset *datav1alpha1.Dataset, value *JuiceFS) (err error) {
 
 	image := runtime.Spec.JuiceFSVersion.Image
@@ -99,7 +122,10 @@ func (j *JuiceFSEngine) transformWorkers(runtime *datav1alpha1.JuiceFSRuntime, d
 
 	value.Worker.Envs = runtime.Spec.Worker.Env
 
-	value.Image, value.ImageTag, value.ImagePullPolicy = j.parseRuntimeImage(image, imageTag, imagePullPolicy)
+	value.Image, value.ImageTag, value.ImagePullPolicy, err = j.parseJuiceFSImage(value.Edition, image, imageTag, imagePullPolicy)
+	if err != nil {
+		return
+	}
 
 	// nodeSelector
 	value.Worker.NodeSelector = map[string]string{}
@@ -234,8 +260,8 @@ func (j *JuiceFSEngine) transformPodMetadata(runtime *datav1alpha1.JuiceFSRuntim
 	return nil
 }
 
-func (j *JuiceFSEngine) allocatePorts(dataset *datav1alpha1.Dataset, runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) error {
-	if j.getEdition(dataset.Spec.Mounts[0], dataset.Spec.SharedEncryptOptions) == EnterpriseEdition {
+func (j *JuiceFSEngine) allocatePorts(runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) error {
+	if value.Edition == EnterpriseEdition {
 		// enterprise edition do not need metrics port
 		return nil
 	}
@@ -285,24 +311,4 @@ func (j *JuiceFSEngine) allocatePorts(dataset *datav1alpha1.Dataset, runtime *da
 		value.Fuse.MetricsPort = &allocatedPorts[index]
 	}
 	return nil
-}
-
-func (j *JuiceFSEngine) getEdition(mount datav1alpha1.Mount, SharedEncryptOptions []datav1alpha1.EncryptOption) (edition string) {
-	edition = EnterpriseEdition
-
-	for _, encryptOption := range SharedEncryptOptions {
-		if encryptOption.Name == JuiceMetaUrl {
-			edition = CommunityEdition
-			break
-		}
-	}
-
-	for _, encryptOption := range mount.EncryptOptions {
-		if encryptOption.Name == JuiceMetaUrl {
-			edition = CommunityEdition
-			break
-		}
-	}
-
-	return
 }

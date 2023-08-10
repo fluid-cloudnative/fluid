@@ -54,9 +54,13 @@ spec:
           - --leader-election-namespace={{ include "fluid.namespace" . }}
         command: ["juicefsruntime-controller", "start"]
         env:
-          {{- if .Values.runtime.juicefs.fuse.image }}
-          - name: JUICEFS_FUSE_IMAGE_ENV
-            value: {{ .Values.runtime.juicefs.fuse.image | quote }}
+          {{- if .Values.runtime.juicefs.fuse.ceimage }}
+          - name: JUICEFS_CE_IMAGE_ENV
+            value: {{ .Values.runtime.juicefs.fuse.ceimage | quote }}
+          {{- end }}
+          {{- if .Values.runtime.juicefs.fuse.eeimage }}
+          - name: JUICEFS_EE_IMAGE_ENV
+            value: {{ .Values.runtime.juicefs.fuse.eeimage | quote }}
           {{- end }}
           {{- if .Values.runtime.mountRoot }}
           - name: MOUNT_ROOT

@@ -26,13 +26,11 @@ const (
 
 	JuiceFSChart = JuiceFSRuntime
 
-	JuiceFSFuseImageEnv = "JUICEFS_FUSE_IMAGE_ENV"
+	JuiceFSCEImageEnv = "JUICEFS_CE_IMAGE_ENV"
+	JuiceFSEEImageEnv = "JUICEFS_EE_IMAGE_ENV"
 
-	DefaultJuiceFSFuseImage = "juicedata/juicefs-fuse:v1.0.4-4.9.2"
-
-	DefaultJuiceFSRuntimeImage = "juicedata/juicefs-fuse:v1.0.4-4.9.2"
-
-	DefaultJuiceFSMigrateImage = "juicedata/juicefs-fuse:nightly"
+	DefaultCEImage = "juicedata/juicefs-fuse:ce-v1.1.0-beta2"
+	DefaultEEImage = "juicedata/juicefs-fuse:ee-4.9.14"
 
 	NightlyTag = "nightly"
 

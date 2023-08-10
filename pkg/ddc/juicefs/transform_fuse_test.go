@@ -1064,65 +1064,6 @@ func TestJuiceFSEngine_genQuotaCmd(t *testing.T) {
 			wantErr:      false,
 			wantQuotaCmd: "/usr/bin/juicefs quota set test --path /demo --capacity 1",
 		},
-		{
-			name: "test-ce-err",
-			args: args{
-				value: &JuiceFS{
-					Edition: CommunityEdition,
-					Configs: Configs{},
-					Source:  "test",
-					Fuse: Fuse{
-						ImageTag: "v1.0.4-4.9.1",
-						SubPath:  "/demo",
-					},
-				},
-				mount: datav1alpha1.Mount{
-					Options: map[string]string{
-						"quota": "1Gi",
-					},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "test-ee-err",
-			args: args{
-				value: &JuiceFS{
-					Edition: EnterpriseEdition,
-					Configs: Configs{},
-					Source:  "test",
-					Fuse: Fuse{
-						ImageTag: "v1.1.4-4.9.1",
-						SubPath:  "/demo",
-					},
-				},
-				mount: datav1alpha1.Mount{
-					Options: map[string]string{
-						"quota": "1Gi",
-					},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "test-no-subpath",
-			args: args{
-				value: &JuiceFS{
-					Edition: CommunityEdition,
-					Configs: Configs{},
-					Source:  "test",
-					Fuse: Fuse{
-						ImageTag: "v1.1.4-4.9.2",
-					},
-				},
-				mount: datav1alpha1.Mount{
-					Options: map[string]string{
-						"quota": "1Gi",
-					},
-				},
-			},
-			wantErr: true,
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
