@@ -102,7 +102,8 @@ func (j *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 	if len(imageName) == 0 {
 		defaultImageInfo := strings.Split(defaultJuiceFSImage, ":")
 		if len(defaultImageInfo) < 1 {
-			panic("invalid default dataload image!")
+			err = fmt.Errorf("invalid default dataload image")
+			return
 		} else {
 			imageName = defaultImageInfo[0]
 		}
@@ -111,7 +112,8 @@ func (j *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 	if len(imageTag) == 0 {
 		defaultImageInfo := strings.Split(defaultJuiceFSImage, ":")
 		if len(defaultImageInfo) < 2 {
-			panic("invalid default dataload image!")
+			err = fmt.Errorf("invalid default dataload image")
+			return
 		} else {
 			imageTag = defaultImageInfo[1]
 		}
