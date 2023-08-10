@@ -607,7 +607,7 @@ func TestJuiceFSEngine_genMount(t *testing.T) {
 				},
 			},
 			wantErr:         false,
-			wantFuseCommand: "/sbin/mount.juicefs test-enterprise /test -o foreground,cache-group=fluid-test-enterprise,no-sharing",
+			wantFuseCommand: "/sbin/mount.juicefs test-enterprise /test -o foreground,no-update,cache-group=fluid-test-enterprise,no-sharing",
 			wantFuseStatCmd: "stat -c %i /test",
 		},
 		{
@@ -641,7 +641,7 @@ func TestJuiceFSEngine_genMount(t *testing.T) {
 				options: map[string]string{"cache-group": "test", "verbose": ""},
 			},
 			wantErr:         false,
-			wantFuseCommand: "/sbin/mount.juicefs test-enterprise /test -o verbose,foreground,cache-group=test,no-sharing",
+			wantFuseCommand: "/sbin/mount.juicefs test-enterprise /test -o verbose,foreground,no-update,cache-group=test,no-sharing",
 			wantFuseStatCmd: "stat -c %i /test",
 		},
 	}
