@@ -25,6 +25,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
 	options "sigs.k8s.io/controller-runtime/pkg/client"
@@ -201,8 +202,12 @@ func (j *JuiceFSEngine) GetValuesConfigMap() (cm *corev1.ConfigMap, err error) {
 		Name:      jfsValues,
 		Namespace: j.namespace,
 	}, cm)
+	if apierrs.IsNotFound(err) {
+		err = nil
+		cm = nil
+	}
 
-	return cm, err
+	return
 }
 
 func (j *JuiceFSEngine) GetEdition() (edition string) {
