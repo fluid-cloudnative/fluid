@@ -1,5 +1,14 @@
 name: ""
 
+owner:
+  enabled: false
+  name: ""
+  kind: ""
+  uid: ""
+  apiVersion: ""
+  blockOwnerDeletion: false
+  controller: false
+
 dataProcess:
   targetDataset: ""
   labels: {}

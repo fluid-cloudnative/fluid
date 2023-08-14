@@ -21,6 +21,7 @@ import (
 	"os"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"
@@ -89,6 +90,7 @@ func transformCommonPart(value *DataProcessValue, dataProcess *datav1alpha1.Data
 	value.Name = dataProcess.Name
 	value.DataProcessInfo.Labels = dataProcess.Spec.Processor.PodMetadata.Labels
 	value.DataProcessInfo.Annotations = dataProcess.Spec.Processor.PodMetadata.Annotations
+	value.Owner = transfromer.GenerateOwnerReferenceFromObject(dataProcess)
 	if len(dataProcess.Spec.Processor.ServiceAccountName) != 0 {
 		value.DataProcessInfo.ServiceAccountName = dataProcess.Spec.Processor.ServiceAccountName
 	}

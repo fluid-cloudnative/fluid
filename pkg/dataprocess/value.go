@@ -17,11 +17,14 @@
 package dataprocess
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	corev1 "k8s.io/api/core/v1"
 )
 
 type DataProcessValue struct {
 	Name string `json:"name"`
+
+	Owner *common.OwnerReference `json:"owner,omitempty"`
 
 	DataProcessInfo DataProcessInfo `json:"dataProcess"`
 }
