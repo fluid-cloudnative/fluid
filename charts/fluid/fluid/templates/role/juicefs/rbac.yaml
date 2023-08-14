@@ -106,7 +106,6 @@ rules:
       - list
       - get
       - delete
-      - watch
   - apiGroups:
       - rbac.authorization.k8s.io
     resources:
@@ -117,7 +116,6 @@ rules:
       - list
       - get
       - delete
-      - watch
   - apiGroups:
       - apps
     resources:

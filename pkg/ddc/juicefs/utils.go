@@ -212,7 +212,7 @@ func (j *JuiceFSEngine) GetValuesConfigMap() (cm *corev1.ConfigMap, err error) {
 
 func (j *JuiceFSEngine) GetEdition() (edition string) {
 	cm, err := j.GetValuesConfigMap()
-	if err != nil {
+	if err != nil || cm == nil {
 		return ""
 	}
 

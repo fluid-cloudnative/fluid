@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"testing"
 
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/net"
 
@@ -46,6 +47,7 @@ var (
 func init() {
 	testScheme = runtime.NewScheme()
 	_ = v1.AddToScheme(testScheme)
+	_ = rbacv1.AddToScheme(testScheme)
 	_ = datav1alpha1.AddToScheme(testScheme)
 	_ = appsv1.AddToScheme(testScheme)
 }
