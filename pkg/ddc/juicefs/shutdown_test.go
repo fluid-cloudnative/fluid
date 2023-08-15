@@ -302,9 +302,11 @@ func TestJuiceFSEngine_destroyMaster(t *testing.T) {
 		}
 	}
 
+	fakeClient := fake.NewFakeClientWithScheme(testScheme)
 	engine := JuiceFSEngine{
 		name:      "test",
 		namespace: "fluid",
+		Client:    fakeClient,
 		Log:       fake.NullLogger(),
 		runtime: &datav1alpha1.JuiceFSRuntime{
 			Spec: datav1alpha1.JuiceFSRuntimeSpec{
