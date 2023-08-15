@@ -88,6 +88,10 @@ spec:
           - name: MOUNT_ROOT
             value: {{ .Values.runtime.mountRoot | quote }}
           {{- end }}
+          {{- if .Values.csi.recoverWarningThreshold }}
+          - name: REVOCER_WARNING_THRESHOLD
+            value: {{ .Values.csi.recoverWarningThreshold | quote}}
+          {{- end }}
           - name: ALLOW_PATCH_STALE_NODE
             value: "true"
           - name: KUBELET_ROOTDIR

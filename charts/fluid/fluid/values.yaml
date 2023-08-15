@@ -30,6 +30,7 @@ csi:
     certDir: /var/lib/kubelet/pki
     rootDir: /var/lib/kubelet
   pruneFs: fuse.alluxio-fuse,fuse.jindofs-fuse,fuse.juicefs,fuse.goosefs-fuse,ossfs,alifuse.aliyun-alinas-efc
+  recoverWarningThreshold: 10
 
 runtime:
   criticalFusePod: true
