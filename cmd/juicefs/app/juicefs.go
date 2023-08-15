@@ -22,10 +22,15 @@ import (
 	"github.com/spf13/cobra"
 	zapOpt "go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/net"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
@@ -98,6 +103,12 @@ func handle() {
 
 	utils.NewPprofServer(setupLog, pprofAddr, development)
 
+	NewControllerClient := func(cache cache.Cache, config *rest.Config, options client.Options, uncachedObjects ...client.Object) (client.Client, error) {
+		return controllers.NewFluidControllerClient(cache, config, options,
+			append(uncachedObjects, &rbacv1.RoleBinding{}, &rbacv1.Role{}, &corev1.ServiceAccount{})...,
+		)
+	}
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                  scheme,
 		MetricsBindAddress:      metricsAddr,
@@ -106,7 +117,7 @@ func handle() {
 		LeaderElectionID:        "juicefs.data.fluid.io",
 		Port:                    9443,
 		NewCache:                juicefsctl.NewCache(scheme),
-		NewClient:               controllers.NewFluidControllerClient,
+		NewClient:               NewControllerClient,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start juicefsruntime manager")
