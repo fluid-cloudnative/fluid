@@ -59,7 +59,10 @@ Fluid项目根目录下的`Makefile`文件已经包含了项目开发中的编�
 # 构建Fluid各控制器组件、Fluid Webhook组件和Fluid CSI插件二进制程序
 $ make build
 ```
-
+```shell
+# 如果只想编译一个组件，比如alluxioruntime-controller
+$ make alluxioruntime-controller-build
+```
 构建得到的二进制程序位于Fluid项目`./bin`目录下。
 
 ### Fluid组件镜像构建&推送
