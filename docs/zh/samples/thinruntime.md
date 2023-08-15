@@ -136,7 +136,7 @@ with open("mount-minio.sh", "w") as f:
 ```
 FROM cloudposse/goofys
 
-RUN apk add python3
+RUN apk add python3 bash
 
 COPY ./fluid-config-parse.py /fluid-config-parse.py
 ```
