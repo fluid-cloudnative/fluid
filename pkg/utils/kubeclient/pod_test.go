@@ -8,10 +8,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -25,6 +27,7 @@ var (
 func init() {
 	testScheme = runtime.NewScheme()
 	_ = corev1.AddToScheme(testScheme)
+	_ = rbacv1.AddToScheme(testScheme)
 	_ = appsv1.AddToScheme(testScheme)
 	_ = batchv1.AddToScheme(testScheme)
 }

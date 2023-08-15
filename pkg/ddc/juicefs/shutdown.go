@@ -83,6 +83,13 @@ func (j *JuiceFSEngine) destroyMaster() (err error) {
 		if err != nil {
 			return
 		}
+	} else {
+		// clean residual resources
+		j.Log.Info("delete residual resources")
+		err = j.cleanResidualResources()
+		if err != nil {
+			return
+		}
 	}
 	return
 }
@@ -188,6 +195,10 @@ func (j *JuiceFSEngine) getCacheDirs(runtime *datav1alpha1.JuiceFSRuntime) (cach
 func (j *JuiceFSEngine) getUUID(pod corev1.Pod, containerName string) (uuid string, err error) {
 	cm, err := j.GetValuesConfigMap()
 	if err != nil {
+		return
+	}
+	if cm == nil {
+		j.Log.Info("value configMap not found")
 		return
 	}
 	data := []byte(cm.Data["data"])
@@ -393,4 +404,46 @@ func (j *JuiceFSEngine) cleanAll() (err error) {
 	}
 
 	return nil
+}
+
+func (j *JuiceFSEngine) cleanResidualResources() (err error) {
+	// configmap
+	var (
+		workerConfigmapName = j.name + "-worker-script"
+		fuseConfigmapName   = j.name + "-fuse-script"
+		cms                 = []string{workerConfigmapName, fuseConfigmapName}
+		namespace           = j.namespace
+	)
+	for _, cm := range cms {
+		err = kubeclient.DeleteConfigMap(j.Client, cm, namespace)
+		if err != nil {
+			j.Log.Info("DeleteConfigMap", "err", err, "cm", cm)
+			return
+		}
+	}
+
+	// sa
+	saName := j.name + "-loader"
+	err = kubeclient.DeleteServiceAccount(j.Client, saName, namespace)
+	if err != nil {
+		j.Log.Info("DeleteServiceAccount", "err", err, "sa", saName)
+		return
+	}
+
+	// role
+	roleName := j.name + "-loader"
+	err = kubeclient.DeleteRole(j.Client, roleName, namespace)
+	if err != nil {
+		j.Log.Info("DeleteRole", "err", err, "role", roleName)
+		return
+	}
+
+	// roleBinding
+	roleBindingName := j.name + "-loader"
+	err = kubeclient.DeleteRoleBinding(j.Client, roleBindingName, namespace)
+	if err != nil {
+		j.Log.Info("DeleteRoleBinding", "err", err, "roleBinding", roleBindingName)
+		return
+	}
+	return
 }
