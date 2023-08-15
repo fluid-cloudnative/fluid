@@ -41,11 +41,12 @@ import (
 )
 
 const (
-	defaultKubeletTimeout     = 10
-	defaultFuseRecoveryPeriod = 5 * time.Second
-	serviceAccountTokenFile   = "/var/run/secrets/kubernetes.io/serviceaccount/token"
-	FuseRecoveryPeriod        = "RECOVER_FUSE_PERIOD"
-	RecoverWarningThreshold   = "REVOCER_WARNING_THRESHOLD"
+	defaultKubeletTimeout          = 10
+	defaultFuseRecoveryPeriod      = 5 * time.Second
+	defaultRecoverWarningThreshold = 10
+	serviceAccountTokenFile        = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+	FuseRecoveryPeriod             = "RECOVER_FUSE_PERIOD"
+	RecoverWarningThreshold        = "REVOCER_WARNING_THRESHOLD"
 )
 
 var _ manager.Runnable = &FuseRecover{}
@@ -126,7 +127,7 @@ func NewFuseRecover(kubeClient client.Client, recorder record.EventRecorder, api
 			return nil, errors.Wrap(err, "got error when parsing recover warning threshold")
 		}
 	} else {
-		recoverWarningThreshold = 10
+		recoverWarningThreshold = defaultRecoverWarningThreshold
 	}
 	return &FuseRecover{
 		SafeFormatAndMount: mount.SafeFormatAndMount{
