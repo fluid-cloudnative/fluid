@@ -37,6 +37,11 @@ You can simply get a binary by running:
 # build dataset-controller, alluxioruntime-controller and csi Binary
 $ make build
 ```
+
+```shell
+# if you only want to build alluxioruntime-controller
+$ make alluxioruntime-controller-build
+```
 By default, the binary would be put under `<fluid-path>/bin`.
 
 ### Build Images
