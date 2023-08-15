@@ -63,7 +63,10 @@ $ make alluxioruntime-controller-build
 # 如果只想编译一个组件，比如 alluxioruntime-controller
 $ make build
 ```
-
+```shell
+# 如果只想编译一个组件，比如alluxioruntime-controller
+$ make alluxioruntime-controller-build
+```
 构建得到的二进制程序位于Fluid项目`./bin`目录下。
 
 ### Fluid组件镜像构建&推送
