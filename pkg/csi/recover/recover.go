@@ -217,10 +217,10 @@ func (r *FuseRecover) eventRecord(point mountinfo.MountPoint, eventType, eventRe
 		return
 	}
 	glog.V(4).Infof("record to dataset: %s, namespace: %s", dataset.Name, dataset.Namespace)
-	if eventReason == common.FuseRecoverSucceed {
+	switch eventReason {
+	case common.FuseRecoverSucceed:
 		r.Recorder.Eventf(dataset, eventType, eventReason, "Fuse recover %s succeed", point.MountPath)
-	}
-	if eventReason == common.FuseRecoverFailed {
+	case common.FuseRecoverFailed:
 		r.Recorder.Eventf(dataset, eventType, eventReason, "Fuse recover %s failed", point.MountPath)
 	}
 	// add warning event if point.count is larger than the threshold
