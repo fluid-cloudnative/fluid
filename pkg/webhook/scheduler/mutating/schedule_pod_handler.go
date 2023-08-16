@@ -53,7 +53,7 @@ func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req ad
 	defer utils.TimeTrack(time.Now(), "CreateUpdatePodForSchedulingHandler.Handle",
 		"req.name", req.Name, "req.namespace", req.Namespace)
 
-	if utils.GetBoolValueFormEnv(common.EnvDisableInjection, false) {
+	if utils.GetBoolValueFromEnv(common.EnvDisableInjection, false) {
 		return admission.Allowed("skip mutating the pod because global injection is disabled")
 	}
 

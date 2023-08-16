@@ -43,7 +43,7 @@ import (
 const (
 	defaultKubeletTimeout          = 10
 	defaultFuseRecoveryPeriod      = 5 * time.Second
-	defaultRecoverWarningThreshold = 10
+	defaultRecoverWarningThreshold = 50
 	serviceAccountTokenFile        = "/var/run/secrets/kubernetes.io/serviceaccount/token"
 	FuseRecoveryPeriod             = "RECOVER_FUSE_PERIOD"
 	RecoverWarningThreshold        = "REVOCER_WARNING_THRESHOLD"
@@ -114,19 +114,9 @@ func NewFuseRecover(kubeClient client.Client, recorder record.EventRecorder, api
 		return nil, errors.Wrap(err, "got error when creating kubelet client")
 	}
 
-	recoverFusePeriod := defaultFuseRecoveryPeriod
-	if os.Getenv(FuseRecoveryPeriod) != "" {
-		recoverFusePeriod, err = time.ParseDuration(os.Getenv(FuseRecoveryPeriod))
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to parse time period")
-		}
-	}
-	var recoverWarningThreshold int
-	if os.Getenv(RecoverWarningThreshold) != "" {
-		if recoverWarningThreshold, err = strconv.Atoi(os.Getenv(RecoverWarningThreshold)); err != nil {
-			return nil, errors.Wrap(err, "got error when parsing recover warning threshold")
-		}
-	} else {
+	recoverFusePeriod := utils.GetDurationValueFromEnv(FuseRecoveryPeriod, defaultFuseRecoveryPeriod)
+	recoverWarningThreshold, found := utils.GetIntValueFromEnv(RecoverWarningThreshold)
+	if !found {
 		recoverWarningThreshold = defaultRecoverWarningThreshold
 	}
 	return &FuseRecover{
@@ -171,6 +161,7 @@ func (r FuseRecover) recover() {
 	for _, point := range brokenMounts {
 		glog.V(4).Infof("Get broken mount point: %v", point)
 		// do not umountDuplicate because if app container restart, umount duplicate mount may lead to recover successed but can not access data
+		// please refer to https://github.com/fluid-cloudnative/fluid/issues/3399 for more information
 		// r.umountDuplicate(point)
 		if err := r.recoverBrokenMount(point); err != nil {
 			r.eventRecord(point, corev1.EventTypeWarning, common.FuseRecoverFailed)
@@ -226,7 +217,12 @@ func (r *FuseRecover) eventRecord(point mountinfo.MountPoint, eventType, eventRe
 		return
 	}
 	glog.V(4).Infof("record to dataset: %s, namespace: %s", dataset.Name, dataset.Namespace)
-	r.Recorder.Eventf(dataset, eventType, eventReason, "Fuse recover %s succeed", point.MountPath)
+	if eventReason == common.FuseRecoverSucceed {
+		r.Recorder.Eventf(dataset, eventType, eventReason, "Fuse recover %s succeed", point.MountPath)
+	}
+	if eventReason == common.FuseRecoverFailed {
+		r.Recorder.Eventf(dataset, eventType, eventReason, "Fuse recover %s failed", point.MountPath)
+	}
 	// add warning event if point.count is larger than the threshold
 	if point.Count > r.recoverWarningThreshold {
 		r.Recorder.Eventf(dataset, corev1.EventTypeWarning, "TooManyRecovery", "Mountpoint %s has been mounted %v times", point.MountPath, point.Count)

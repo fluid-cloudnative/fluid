@@ -59,10 +59,10 @@ func (c PersistentVolumeClaimInfoCache) IsBelongToDataset() bool {
 // By default, cache is disabled
 func init() {
 	var (
-		enabled bool = utils.GetBoolValueFormEnv(common.EnvEnableRuntimeInfoCache, false)
+		enabled bool = utils.GetBoolValueFromEnv(common.EnvEnableRuntimeInfoCache, false)
 		found   bool
 	)
-	cacheSize, found = utils.GetIntValueFormEnv(common.EnvRuntimeInfoCacheSize)
+	cacheSize, found = utils.GetIntValueFromEnv(common.EnvRuntimeInfoCacheSize)
 	if !found {
 		cacheSize = defaultCacheSize
 	}
