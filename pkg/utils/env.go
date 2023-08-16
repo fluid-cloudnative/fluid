@@ -40,7 +40,7 @@ func GetDurationValueFromEnv(key string, defaultValue time.Duration) (value time
 	return
 }
 
-func GetBoolValueFormEnv(key string, defaultValue bool) (value bool) {
+func GetBoolValueFromEnv(key string, defaultValue bool) (value bool) {
 	value = defaultValue
 	var err error
 
@@ -57,7 +57,7 @@ func GetBoolValueFormEnv(key string, defaultValue bool) (value bool) {
 	return
 }
 
-func GetIntValueFormEnv(key string) (value int, found bool) {
+func GetIntValueFromEnv(key string) (value int, found bool) {
 
 	str, found := os.LookupEnv(key)
 	// if not set, return the default value

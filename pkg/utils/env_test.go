@@ -26,7 +26,7 @@ func TestGetBoolValueFormEnv(t *testing.T) {
 		testEnvNameNotFound := "envnotfound"
 		expect := false
 
-		got := GetBoolValueFormEnv(testEnvNameNotFound, false)
+		got := GetBoolValueFromEnv(testEnvNameNotFound, false)
 
 		if got != expect {
 			t.Errorf("test failed due to expect %v, but got %v", expect, got)
@@ -38,7 +38,7 @@ func TestGetBoolValueFormEnv(t *testing.T) {
 		t.Setenv(testEnvNameFound, "true")
 		expect := true
 
-		got := GetBoolValueFormEnv(testEnvNameFound, false)
+		got := GetBoolValueFromEnv(testEnvNameFound, false)
 		if got != expect {
 			t.Errorf("test failed due to expect %v, but got %v", expect, got)
 		}
@@ -49,7 +49,7 @@ func TestGetBoolValueFormEnv(t *testing.T) {
 		t.Setenv(testEnvNameFound, "T")
 		expect := true
 
-		got := GetBoolValueFormEnv(testEnvNameFound, false)
+		got := GetBoolValueFromEnv(testEnvNameFound, false)
 		if got != expect {
 			t.Errorf("test failed due to expect %v, but got %v", expect, got)
 		}
@@ -61,7 +61,7 @@ func TestGetIntValueFormEnv(t *testing.T) {
 		testEnvNameNotFound := "envnotfound"
 		expectFound := false
 
-		_, found := GetIntValueFormEnv(testEnvNameNotFound)
+		_, found := GetIntValueFromEnv(testEnvNameNotFound)
 
 		if found != expectFound {
 			t.Errorf("test failed due to expect %v, but got %v", expectFound, found)
@@ -74,7 +74,7 @@ func TestGetIntValueFormEnv(t *testing.T) {
 		expectFound := true
 		expect := 10
 
-		got, found := GetIntValueFormEnv(testEnvNameFound)
+		got, found := GetIntValueFromEnv(testEnvNameFound)
 
 		if found != expectFound {
 			t.Errorf("test failed due to expect %v, but got %v", expectFound, found)
@@ -90,7 +90,7 @@ func TestGetIntValueFormEnv(t *testing.T) {
 		t.Setenv(testEnvNameIllegal, "illegal")
 		expectFound := false
 
-		_, found := GetIntValueFormEnv(testEnvNameIllegal)
+		_, found := GetIntValueFromEnv(testEnvNameIllegal)
 
 		if found != expectFound {
 			t.Errorf("test failed due to expect %v, but got %v", expectFound, found)
