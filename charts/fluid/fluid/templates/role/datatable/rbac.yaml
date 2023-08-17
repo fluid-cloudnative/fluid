@@ -1,0 +1,69 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: datatable-controller
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - persistentvolumeclaims
+      - persistentvolumes
+      - services
+      - endpoints
+      - configmaps
+      - events
+      - namespaces
+      - pods
+      - pods/exec
+      - secrets
+      - nodes
+    verbs:
+      - '*'
+  - apiGroups:
+      - data.fluid.io
+    resources:
+      - alluxiodataloads
+      - alluxioruntimes
+      - datasets
+      - datatables
+      - alluxiodataloads/status
+      - alluxioruntimes/status
+      - datasets/status
+      - datatables/status
+    verbs:
+      - '*'
+  - apiGroups:
+      - apps
+    resources:
+      - daemonsets
+      - statefulsets
+      - daemonsets/status
+      - statefulsets/status
+    verbs:
+      - '*'
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - '*'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: datatable-clusterrolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: datatable-controller
+subjects:
+  - kind: ServiceAccount
+    name: datatable-controller
+    namespace: fluid-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: datatable-controller
+  namespace: fluid-system
