@@ -8,6 +8,6 @@ RUN apk add --update curl tzdata iproute2 bash libc6-compat vim &&  \
  	cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
  	echo "Asia/Shanghai" >  /etc/timezone
 
-ENV K8S_VERSION v1.14.8
+ENV K8S_VERSION v1.24.6
 ARG TARGETARCH
 RUN curl -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/${TARGETARCH}/kubectl && chmod +x /usr/local/bin/kubectl
