@@ -151,6 +151,9 @@ webhook-build: generate fmt vet
 application-controller-build: generate fmt vet
 	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/fluidapp-controller -ldflags '${LDFLAGS}' cmd/fluidapp/main.go
 
+datatable-controller-build: generate fmt vet
+	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/datatable-controller -ldflags '${LDFLAGS}' cmd/datatable/main.go
+
 # Debug against the configured Kubernetes cluster in ~/.kube/config, add debug
 debug: generate fmt vet manifests
 	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  dlv debug --headless --listen ":12345" --log --api-version=2 cmd/controller/main.go
@@ -235,6 +238,9 @@ docker-build-webhook:
 docker-build-crd-upgrader:
 	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.crds -t ${CRD_UPGRADER_IMG}:${GIT_VERSION}
 
+docker-build-datatable:
+	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.datatable -t ${CRD_UPGRADER_IMG}:${GIT_VERSION}
+
 # Push the docker image
 docker-push-dataset-controller: docker-build-dataset-controller
 	docker push ${DATASET_CONTROLLER_IMG}:${GIT_VERSION}
@@ -311,6 +317,9 @@ docker-buildx-push-webhook:
 
 docker-buildx-push-crd-upgrader:
 	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.crds -t ${CRD_UPGRADER_IMG}:${GIT_VERSION}
+
+docker-buildx-push-crd-datatable:
+	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.datatable -t ${CRD_UPGRADER_IMG}:${GIT_VERSION}
 
 docker-build-all: ${DOCKER_BUILD}
 docker-push-all: ${DOCKER_PUSH}
