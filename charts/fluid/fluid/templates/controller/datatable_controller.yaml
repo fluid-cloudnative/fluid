@@ -1,0 +1,56 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: datatable-controller
+  namespace: fluid-system
+  labels:
+    control-plane: datatable-controller
+spec:
+  selector:
+    matchLabels:
+      control-plane: datatable-controller
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        control-plane: datatable-controller
+    spec:
+      serviceAccountName: datatable-controller
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: type
+                operator: NotIn
+                values:
+                - virtual-kubelet
+      tolerations:
+      - operator: Exists
+      #hostNetwork: true
+      containers:
+      - image:  wangmask/datatable:v1.0
+        name: manager
+        command: ["datatable-controller", "start"]
+        args:
+          - --development=false
+          - --pprof-addr=:6060
+          - --enable-leader-election
+        env:
+          {{- if .Values.workdir }}
+          - name: FLUID_WORKDIR
+            value: {{ .Values.workdir | quote }}
+          {{- end }}
+        ports:
+        - containerPort: 8080
+          name: metrics
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 100m
+            memory: 1536Mi
+          requests:
+            cpu: 100m
+            memory: 200Mi
+      terminationGracePeriodSeconds: 10
