@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: presto-coordinator-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: presto-coordinator-service
+  template:
+    metadata:
+      labels:
+        app: presto-coordinator-service
+    spec:
+      containers:
+        - name: presto-coordinator-service
+          image: wangmask/presto-common:v1.0
+          volumeMounts:
+          - name: presto-source
+            mountPath: /opt/presto-common/etc/catalog/
+          ports:
+          - containerPort: 8099
+      volumes:
+      - name: presto-source
+        configMap:
+          name: presto-source

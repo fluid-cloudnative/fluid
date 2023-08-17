@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: presto-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: presto-worker
+  template:
+    metadata:
+      labels:
+        app: presto-worker
+    spec:
+      containers:
+        - name: presto-worker
+          image:  wangmask/presto-common:v1.0
+          volumeMounts:
+          - name: presto-source
+            mountPath: /opt/presto-common/etc/catalog/
+          - name: worker-config
+            mountPath: /opt/presto-worker/etc/
+          ports:
+          - containerPort: 8099
+      volumes:
+      - name: presto-source
+        configMap:
+          name: presto-source
+      - name: worker-config
+        configMap:
+          name: worker-config

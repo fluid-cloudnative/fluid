@@ -1,0 +1,20 @@
+# worker 的 config.properties
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: worker-config 
+data:
+  config.properties: |
+    #实例作为一个coordinator
+    coordinator=false
+    #指定HTTP server的端口
+    http-server.http.port=8099
+    #一个单独的任务使用的最大内存
+    query.max-memory=50GB
+    query.max-memory-per-node=1GB
+    query.max-total-memory-per-node=2GB
+    # experimental.reserved-pool-enabled=false
+    # memory.heap-headroom-per-node=5GB
+    #Presto 通过Discovery 服务来找到集群中所有的节点
+    # presto-coordinator-service是service name, 主要用来找到coordinator
+    discovery.uri=http://presto-coordinator-service:8099
