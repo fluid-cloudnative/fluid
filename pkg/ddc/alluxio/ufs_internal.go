@@ -153,14 +153,12 @@ func (e *AlluxioEngine) processUpdatingUFS(ufsToUpdate *utils.UFSToUpdate) (upda
 
 	if IsMountWithConfigMap() {
 		updateReady, err = e.updateUFSWithMountConfigMapScript(dataset)
-		if err != nil {
-			return
-		}
 	} else {
 		updateReady, err = e.updatingUFSWithMountCommand(dataset, ufsToUpdate)
-		if err != nil {
-			return
-		}
+	}
+
+	if err != nil {
+		return
 	}
 
 	if updateReady {

@@ -17,6 +17,7 @@ limitations under the License.
 package alluxio
 
 import (
+	"fmt"
 	"reflect"
 	"strconv"
 	"testing"
@@ -35,6 +36,13 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+)
+
+var (
+	LocalMount = datav1alpha1.Mount{
+		MountPoint: "local:///mnt/test",
+		Name:       "local",
+	}
 )
 
 func TestTransformFuse(t *testing.T) {
@@ -56,10 +64,9 @@ func TestTransformFuse(t *testing.T) {
 			},
 		}, &datav1alpha1.Dataset{
 			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "local:///mnt/test",
-					Name:       "test",
-				}},
+				Mounts: []datav1alpha1.Mount{
+					LocalMount,
+				},
 				Owner: &datav1alpha1.User{
 					UID: &x,
 					GID: &x,
@@ -991,10 +998,9 @@ func TestTransformFuseProperties(t *testing.T) {
 			Value: &Alluxio{},
 			DataSet: &datav1alpha1.Dataset{
 				Spec: datav1alpha1.DatasetSpec{
-					Mounts: []datav1alpha1.Mount{{
-						MountPoint: "local:///mnt/test",
-						Name:       "test",
-					}},
+					Mounts: []datav1alpha1.Mount{
+						LocalMount,
+					},
 					Owner: &datav1alpha1.User{
 						UID: &x,
 						GID: &x,
@@ -1035,6 +1041,10 @@ func TestTransformFuseProperties(t *testing.T) {
 }
 
 func TestGenerateNonNativeMountsInfo(t *testing.T) {
+	const (
+		SecretName = "ds-secret"
+		SecretKey  = "secret-key"
+	)
 	engine := &AlluxioEngine{Log: fake.NullLogger()}
 	var x int64 = 1000
 	ctrl.SetLogger(zap.New(func(o *zap.Options) {
@@ -1065,16 +1075,13 @@ func TestGenerateNonNativeMountsInfo(t *testing.T) {
 								Name: "passwd",
 								ValueFrom: datav1alpha1.EncryptOptionSource{
 									SecretKeyRef: datav1alpha1.SecretKeySelector{
-										Name: "ds-secret",
-										Key:  "secret-key",
+										Name: SecretName,
+										Key:  SecretKey,
 									},
 								},
 							},
 						},
-					}, {
-						MountPoint: "local:///mnt/test",
-						Name:       "local",
-					}, {
+					}, LocalMount, {
 						MountPoint: "pvc:///mnt/test",
 						Name:       "pvc",
 					}},
@@ -1086,7 +1093,7 @@ func TestGenerateNonNativeMountsInfo(t *testing.T) {
 			},
 			wantValue: []string{
 				"/hbase https://mirrors.bit.edu.cn/apache/hbase --readonly --shared",
-				"/oss oss://oss.com/test --option passwd=/etc/fluid/secrets/ds-secret/secret-key",
+				fmt.Sprintf("/oss oss://oss.com/test --option passwd=/etc/fluid/secrets/%s/%s", SecretName, SecretKey),
 			},
 		},
 	}
@@ -1104,6 +1111,11 @@ func TestGenerateNonNativeMountsInfo(t *testing.T) {
 }
 
 func TestTransformMasterMountConfigMap(t *testing.T) {
+	const (
+		SecretName = "alluxio-secret"
+		SecretKey  = "passwd"
+	)
+
 	engine := &AlluxioEngine{Log: fake.NullLogger()}
 
 	type testCase struct {
@@ -1132,8 +1144,8 @@ func TestTransformMasterMountConfigMap(t *testing.T) {
 									Name: "passwd",
 									ValueFrom: datav1alpha1.EncryptOptionSource{
 										SecretKeyRef: datav1alpha1.SecretKeySelector{
-											Name: "ds-secret",
-											Key:  "secret-key",
+											Name: SecretName,
+											Key:  SecretKey,
 										},
 									},
 								},
@@ -1146,23 +1158,23 @@ func TestTransformMasterMountConfigMap(t *testing.T) {
 				Master: Master{
 					MountConfigStorage: ConfigmapStorageName,
 					NonNativeMounts: []string{
-						"/hbase https://mirrors.bit.edu.cn/apache/hbase --option passwd=/etc/fluid/secrets/ds-secret/secret-key",
+						fmt.Sprintf("/hbase https://mirrors.bit.edu.cn/apache/hbase --option passwd=/etc/fluid/secrets/%s/%s", SecretName, SecretKey),
 					},
 					Volumes: []corev1.Volume{
 						{
-							Name: "alluxio-mount-secret-ds-secret",
+							Name: fmt.Sprintf("alluxio-mount-secret-%s", SecretName),
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{
-									SecretName: "ds-secret",
+									SecretName: SecretName,
 								},
 							},
 						},
 					},
 					VolumeMounts: []corev1.VolumeMount{
 						{
-							Name:      "alluxio-mount-secret-ds-secret",
+							Name:      fmt.Sprintf("alluxio-mount-secret-%s", SecretName),
 							ReadOnly:  true,
-							MountPath: "/etc/fluid/secrets/ds-secret",
+							MountPath: fmt.Sprintf("/etc/fluid/secrets/%s", SecretName),
 						},
 					},
 				},
