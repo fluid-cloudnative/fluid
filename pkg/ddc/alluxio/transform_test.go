@@ -1072,7 +1072,7 @@ func TestGenerateNonNativeMountsInfo(t *testing.T) {
 						Name:       "oss",
 						EncryptOptions: []datav1alpha1.EncryptOption{
 							{
-								Name: "passwd",
+								Name: "secret",
 								ValueFrom: datav1alpha1.EncryptOptionSource{
 									SecretKeyRef: datav1alpha1.SecretKeySelector{
 										Name: SecretName,
@@ -1093,7 +1093,7 @@ func TestGenerateNonNativeMountsInfo(t *testing.T) {
 			},
 			wantValue: []string{
 				"/hbase https://mirrors.bit.edu.cn/apache/hbase --readonly --shared",
-				fmt.Sprintf("/oss oss://oss.com/test --option passwd=/etc/fluid/secrets/%s/%s", SecretName, SecretKey),
+				fmt.Sprintf("/oss oss://oss.com/test --option secret=/etc/fluid/secrets/%s/%s", SecretName, SecretKey),
 			},
 		},
 	}
@@ -1113,7 +1113,7 @@ func TestGenerateNonNativeMountsInfo(t *testing.T) {
 func TestTransformMasterMountConfigMap(t *testing.T) {
 	const (
 		SecretName = "alluxio-secret"
-		SecretKey  = "passwd"
+		SecretKey  = "secret-key"
 	)
 
 	engine := &AlluxioEngine{Log: fake.NullLogger()}
@@ -1141,7 +1141,7 @@ func TestTransformMasterMountConfigMap(t *testing.T) {
 							Name:       "hbase",
 							EncryptOptions: []datav1alpha1.EncryptOption{
 								{
-									Name: "passwd",
+									Name: "secret",
 									ValueFrom: datav1alpha1.EncryptOptionSource{
 										SecretKeyRef: datav1alpha1.SecretKeySelector{
 											Name: SecretName,
@@ -1158,7 +1158,7 @@ func TestTransformMasterMountConfigMap(t *testing.T) {
 				Master: Master{
 					MountConfigStorage: ConfigmapStorageName,
 					NonNativeMounts: []string{
-						fmt.Sprintf("/hbase https://mirrors.bit.edu.cn/apache/hbase --option passwd=/etc/fluid/secrets/%s/%s", SecretName, SecretKey),
+						fmt.Sprintf("/hbase https://mirrors.bit.edu.cn/apache/hbase --option secret=/etc/fluid/secrets/%s/%s", SecretName, SecretKey),
 					},
 					Volumes: []corev1.Volume{
 						{
