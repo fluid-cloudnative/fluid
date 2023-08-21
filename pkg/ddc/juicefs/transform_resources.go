@@ -21,10 +21,11 @@ import (
 	"fmt"
 	"reflect"
 
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/util/retry"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
 func (j *JuiceFSEngine) transformResourcesForFuse(runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) (err error) {
@@ -47,7 +48,7 @@ func (j *JuiceFSEngine) transformResourcesForFuse(runtime *datav1alpha1.JuiceFSR
 	}
 
 	// mem set request
-	if j.hasTieredStore(runtime) && j.getTieredStoreType(runtime) == 0 {
+	if j.hasTieredStore(runtime) && j.getTieredStoreType(runtime) == 0 && runtime.Spec.Fuse.Options["cache-size"] == "" {
 		userQuota := runtime.Spec.TieredStore.Levels[0].Quota
 		if userQuota == nil {
 			return
@@ -114,7 +115,7 @@ func (j *JuiceFSEngine) transformResourcesForWorker(runtime *datav1alpha1.JuiceF
 	}
 
 	// mem set request in enterprise edition
-	if j.hasTieredStore(runtime) && j.getTieredStoreType(runtime) == 0 && value.Edition == EnterpriseEdition {
+	if j.hasTieredStore(runtime) && j.getTieredStoreType(runtime) == 0 && value.Edition == EnterpriseEdition && runtime.Spec.Worker.Options["cache-size"] == "" {
 		userQuota := runtime.Spec.TieredStore.Levels[0].Quota
 		if userQuota == nil {
 			return
