@@ -24,7 +24,7 @@ $ ps -ef | grep $(which kubelet) | grep root-dir
 
 - 如果上述命令找到对应结果，将得到的根路径作为额外参数，传入Helm命令，重新安装Fluid。例如：
 ```
-$ helm install --set csi.kubelet.rootDir=<kubelet-root-dir> fluid fluid-v0.X.0.tgz
+$ helm install --set csi.kubelet.rootDir=<kubelet-root-dir> fluid fluid-v1.X.0.tgz
 ```
 
 - 如果上述命令未找到对应结果，则说明kubelet根路径为默认值（`/var/lib/kubelet`），与Fluid设置的默认值一致，继续按步骤2排查。
