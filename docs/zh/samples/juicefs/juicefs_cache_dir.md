@@ -4,7 +4,7 @@
 
 ## 设置多个路径缓存
 
-缓存路径在 JuiceFSRuntime 中的 tiredstore 设置，worker 和 fuse pod 共享相同的配置。
+缓存路径在 JuiceFSRuntime 中的 tieredstore 设置，worker 和 fuse pod 共享相同的配置。
 
 注意：JuiceFS 支持多路径缓存，不支持多级缓存。
 
@@ -30,9 +30,9 @@ spec:
 - `spec.tiredstore.levels.mediumtype` 为缓存路径的类型，目前支持 `SSD` 和 `MEM`。
 
 
-## 单独设置 worker 的缓存路径
+## fuse 的缓存
 
-默认情况下，worker 和 fuse 的缓存路径都在 `spec.tiredstore.levels.path` 中设置，但是也可以单独设置 worker 的缓存路径。
+默认情况下，worker 和 fuse 的缓存路径都在 `spec.tiredstore.levels` 中设置，但是也可以单独设置 fuse 的缓存。
 
 ```yaml
 apiVersion: data.fluid.io/v1alpha1
@@ -40,18 +40,13 @@ kind: JuiceFSRuntime
 metadata:
   name: jfsdemo
 spec:
-  worker:
+  fuse:
     options:
-      "cache-dir"： "/mnt/cache1:/mnt/cache2"
-  tieredstore:
-    levels:
-      - mediumtype: MEM
-        path: /dev/shm
-        quota: 500Mi
-        low: "0.1"
+      "cache-size": "0"
+      "cache-dir": "/fuse/cache"
 ```
 
 其中：
-- `spec.worker.options` 为 worker 的挂载参数，缓存路径以 `cache-dir` 为 key，以 `:` 分隔的多个路径； 
+- `spec.fuse.options` 为 worker 的挂载参数，缓存路径以 `cache-dir` 为 key，以 `:` 分隔的多个路径；缓存大小以 `cache-size` 为 key，单位为 MiB。
 
-
+若希望设置 fuse pod 不使用缓存，可以设置 `spec.fuse.options.cache-size` 为 `0`。
