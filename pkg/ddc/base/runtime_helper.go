@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"time"
 
+	initcopy "github.com/fluid-cloudnative/fluid/pkg/scripts/init-copy"
 	"github.com/fluid-cloudnative/fluid/pkg/scripts/poststart"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
@@ -215,6 +216,40 @@ func (info *RuntimeInfo) transformTemplateWithUnprivilegedSidecarEnabled(templat
 func (info *RuntimeInfo) transformTemplateWithCacheDirDisabled(template *common.FuseInjectionTemplate) {
 	template.FuseContainer.VolumeMounts = utils.TrimVolumeMounts(template.FuseContainer.VolumeMounts, cacheDirNames)
 	template.VolumesToAdd = utils.TrimVolumes(template.VolumesToAdd, cacheDirNames)
+}
+
+func (info *RuntimeInfo) GetOrCreateCopyConfigMap() error {
+	ns := info.GetNamespace()
+
+	found, err := kubeclient.IsConfigMapExist(info.client, initcopy.CopyConfigMapName, ns)
+	if err != nil {
+		return err
+	}
+
+	gen := initcopy.NewScriptGeneratorForApp(ns)
+
+	dataset, err := utils.GetDataset(info.client, info.name, info.namespace)
+	if err != nil {
+		return err
+	}
+
+	ownerReference := metav1.OwnerReference{
+		APIVersion: dataset.APIVersion,
+		Kind:       dataset.Kind,
+		Name:       dataset.Name,
+		UID:        dataset.UID,
+	}
+
+	if !found {
+		err = info.client.Create(context.TODO(), gen.BuildConfigmap(ownerReference))
+		if err != nil {
+			// If ConfigMap creation succeeds concurrently, continue to mutate
+			if otherErr := utils.IgnoreAlreadyExists(err); otherErr != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func getFuseDeviceResourceName() string {

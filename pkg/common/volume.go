@@ -30,6 +30,8 @@ const (
 	CSIDriver = "fuse.csi.fluid.io"
 
 	Fluid = "fluid"
+
+	InitPrefix = "init-"
 )
 
 var (

@@ -86,6 +86,8 @@ type RuntimeInfoInterface interface {
 	SetClient(client client.Client)
 
 	GetMetadataList() []datav1alpha1.Metadata
+
+	GetOrCreateCopyConfigMap() error
 }
 
 // The real Runtime Info should implement

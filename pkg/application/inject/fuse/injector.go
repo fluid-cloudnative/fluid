@@ -169,13 +169,32 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 			return out, err
 		}
 
+		initContainers, err := pod.GetInitContainers()
+		if err != nil {
+			s.log.Error(err, "failed to get initContainers of pod", "fluid application name", objectMeta.Name)
+			return out, err
+		}
+
+		// get the map of dataset name to files needed to copy
+		ds2SourceFiles, err := s.generateInitDatasetMap(initContainers, runtimeInfos)
+		if err != nil {
+			s.log.Error(err, "failed to analysis the env in init container", "fluid application name", objectMeta.Name)
+			return out, err
+		}
+
+		// check if all the dataset PVC used in init phase has been specified and override them with emptyDir
+		if err := s.checkAndOverrideInitPVC(ds2SourceFiles, runtimeInfos, pod); err != nil {
+			s.log.Error(err, "failed in check if all the dataset PVC used in init phase has been specified")
+			return out, err
+		}
+
 		idx := 0
 		for pvcName, runtimeInfo := range runtimeInfos {
 			s.log.Info("Start mutating pvc in pod spec", "pod name", podName, "pvc name", pvcName)
 			// Append no suffix to fuse container name unless there are multiple ones.
 			containerNameSuffix := fmt.Sprintf("-%d", idx)
 
-			if err = s.injectObject(pod, pvcName, runtimeInfo, containerNameSuffix); err != nil {
+			if err = s.injectObject(pod, pvcName, runtimeInfo, containerNameSuffix, ds2SourceFiles); err != nil {
 				s.log.Error(err, "failed to injectObject()", "pod name", podName, "pvc name", pvcName)
 				return out, err
 			}
@@ -203,10 +222,10 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 // injectObject injects fuse container into a PodSpec given the pvcName and the runtimeInfo. It takes the following steps:
 // 1. Check if it needs injection by checking PodSpec's original information.
 // 2. Generate the fuse container template to inject.
-// 3. Handle mutations on the PodSpec's volumes
-// 4. Handle mutations on the PodSpec's volumeMounts
-// 5. Add the fuse container to the first of the PodSpec's container list
-func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeInfo base.RuntimeInfoInterface, containerNameSuffix string) (err error) {
+// 3. Handle mutations on the PodSpec's volumes and volumeMounts
+// 4. Add fuse container as the first container for containers
+// 5. Add fuse container as the first container for init containers
+func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeInfo base.RuntimeInfoInterface, containerNameSuffix string, ds2File map[string]string) (err error) {
 	// Cannot use objMeta.namespace as the expected namespace because it may be empty and not trustworthy before Kubernetes 1.24.
 	// For more details, see https://github.com/kubernetes/website/issues/30574#issuecomment-974896246
 	pvcNamespace := runtimeInfo.GetNamespace()
@@ -294,27 +313,48 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 		return err
 	}
 
-	// 5. Add sidecar as the first container for initcontainers
-	initContainers, err := pod.GetInitContainers()
-	if err != nil {
-		return err
-	}
-	initContainers, needInjection = mutateVolumeMounts(initContainers, datasetVolumeNames)
+	// 5. Add fuse container as the first container for init containers
+	filesToCopy, isUsedInInit := ds2File[pvcName]
+	// 5.a check if this pvc is used in init phase
+	if isUsedInInit {
+		// 5.b change fuse template for init container()
+		if err := s.changeInitContainerWithPVC(runtimeInfo, template, pvcName, filesToCopy); err != nil {
+			return err
+		}
 
-	if needInjection {
+		volumes, err := pod.GetVolumes()
+		if err != nil {
+			return err
+		}
+
+		volumeNamesConflict, volumes, err := s.appendVolumes(volumes, template.VolumesToAdd, containerNameSuffix)
+		if err != nil {
+			return err
+		}
+
+		err = pod.SetVolumes(volumes)
+		if err != nil {
+			return err
+		}
+
+		initContainers, err := pod.GetInitContainers()
+		if err != nil {
+			return err
+		}
+		// 5.c override the volume mount name(added emptyDir name)
+		initContainers = s.overrideVolumeMountName(initContainers, volumeNamesConflict)
+
+		// 5.d inject the fuse container to init phase
 		initContainerNameToInject := common.InitFuseContainerName + containerNameSuffix
 		initContainers = injectFuseContainerToFirst(initContainers, initContainerNameToInject, template, volumeNamesConflict)
 
-		s.log.V(1).Info("after injection",
-			"pvcName", pvcName,
-			"initContainers", initContainers)
-	}
+		err = pod.SetInitContainers(initContainers)
+		if err != nil {
+			return err
+		}
 
-	err = pod.SetInitContainers(initContainers)
-	if err != nil {
-		return err
+		s.log.V(1).Info("after injection", "pvcName", pvcName, "initContainers", initContainers)
 	}
-
 	return nil
 }
 
