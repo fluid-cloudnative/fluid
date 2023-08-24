@@ -39,7 +39,7 @@ data:
   entrypoint.script: |
     #!/usr/bin/env bash
     export ALLUXIO_JAVA_OPTS=$(echo "$ALLUXIO_JAVA_OPTS" | sed "s|/etc/fluid/secrets\(/[-._a-zA-Z0-9]\+\)\{2\}|\`cat &\`|g" )
-    echo "replace $ALLUXIO_JAVA_OPTS"
+    echo "replace env ALLUXIO_JAVA_OPTS"
     /entrypoint.sh $@
   mount.script: |
     #!/usr/bin/env bash
