@@ -1,0 +1,15 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: ThinRuntimeProfile
+metadata:
+  name: ossfs-profile
+spec:
+  fileSystemType: ossfs
+  fuse:
+    image: registry.cn-beijing.aliyuncs.com/wsl-ns-p/fluid
+    imageTag: ossfs_v11
+    imagePullPolicy: IfNotPresent
+    command:
+    - "/sbin/tini"
+    - "-g"
+    - "--"
+    - "/inotify.sh"

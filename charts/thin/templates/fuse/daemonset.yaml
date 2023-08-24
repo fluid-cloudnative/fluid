@@ -89,6 +89,8 @@ spec:
           {{- end }}
           securityContext:
             privileged: true
+            runAsGroup: 0
+            runAsUser: 0
           lifecycle:
             preStop:
               exec:
@@ -105,8 +107,7 @@ spec:
           - name: thin-fuse-mount
             mountPath: {{ .Values.fuse.targetPath | dir }}
             mountPropagation: Bidirectional
-          - mountPath: /etc/fluid/config.json
-            subPath: config.json
+          - mountPath: /etc/fluid/config
             name: thin-conf
             readOnly: true
           - mountPath: /etc/fluid/runtime.json
@@ -141,6 +142,9 @@ spec:
         - name: thin-conf
           configMap:
             name: {{ template "thin.fullname" . }}-fuse-conf
+            items:
+              - key: config.json
+                path: config.json
             defaultMode: 0444
         {{- end }}
         - name: runtime

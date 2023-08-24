@@ -43,7 +43,7 @@ func getFuseConfigStorage() string {
 	return "configmap"
 }
 
-func (t *ThinEngine) transformFuseConfig(runtime *datav1alpha1.ThinRuntime, dataset *datav1alpha1.Dataset, value *ThinValue) (err error) {
+func (t *ThinEngine) transformFuseConfig(runtime *datav1alpha1.ThinRuntime, dataset *datav1alpha1.Dataset, value *ThinValue) (string, error) {
 	fuseConfigStorage := getFuseConfigStorage()
 
 	mounts := []datav1alpha1.Mount{}
@@ -55,17 +55,18 @@ func (t *ThinEngine) transformFuseConfig(runtime *datav1alpha1.ThinRuntime, data
 			pvcName := strings.TrimPrefix(m.MountPoint, common.VolumeScheme.String())
 			csiInfo, mountOptions, err := t.extractVolumeInfo(pvcName)
 			if err != nil {
-				return errors.Wrapf(err, "failed to extract volume info from PersistentVolumeClaim \"%s\"", pvcName)
+				return "", errors.Wrapf(err, "failed to extract volume info from PersistentVolumeClaim \"%s\"", pvcName)
 			}
 
 			pvAttributes[pvcName] = csiInfo
 			pvMountOptions[pvcName] = mountOptions
 		}
 
-		m.Options, err = t.extractMountOptions(m, dataset, fuseConfigStorage, value)
+		options, err := t.extractMountOptions(m, dataset, fuseConfigStorage, value)
 		if err != nil {
-			return err
+			return "", err
 		}
+		m.Options = options
 		m.EncryptOptions = nil
 		mounts = append(mounts, m)
 	}
@@ -83,13 +84,13 @@ func (t *ThinEngine) transformFuseConfig(runtime *datav1alpha1.ThinRuntime, data
 	}
 
 	var configStr []byte
-	configStr, err = json.Marshal(config)
+	configStr, err := json.Marshal(config)
 	if err != nil {
-		return errors.Wrapf(err, "failed to dump fuse config to json, runtime: \"%s/%s\"", runtime.Namespace, runtime.Name)
+		return "", errors.Wrapf(err, "failed to dump fuse config to json, runtime: \"%s/%s\"", runtime.Namespace, runtime.Name)
 	}
 	value.Fuse.ConfigValue = string(configStr)
 	value.Fuse.ConfigStorage = fuseConfigStorage
-	return nil
+	return string(configStr), nil
 }
 
 func (t *ThinEngine) transformEncryptOptionsWithSecretVolumes(m datav1alpha1.Mount, sharedEncryptOptions []datav1alpha1.EncryptOption, value *ThinValue) (options map[string]string) {
