@@ -187,7 +187,7 @@ spec:
             exec:
               command: ["bash", "-c", "/etc/fluid/scripts/mount.sh >> /proc/1/fd/1 2>&1"]
             initialDelaySeconds: 5
-            failureThreshold: 3
+            failureThreshold: 10
             timeoutSeconds: 15
             periodSeconds: 20
           {{- end }}
