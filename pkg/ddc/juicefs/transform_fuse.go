@@ -141,7 +141,9 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 			value.Configs.Bucket = v
 			continue
 		default:
-			options[k] = v
+			if k != "quota" {
+				options[k] = v
+			}
 		}
 	}
 
@@ -154,7 +156,9 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 			value.Configs.Bucket = v
 			continue
 		default:
-			options[k] = v
+			if k != "quota" {
+				options[k] = v
+			}
 		}
 	}
 
