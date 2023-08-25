@@ -210,6 +210,31 @@ func (j *JuiceFSEngine) GetValuesConfigMap() (cm *corev1.ConfigMap, err error) {
 	return
 }
 
+func (j *JuiceFSEngine) GetConfigMap(name string) (cm *corev1.ConfigMap, err error) {
+	cm = &corev1.ConfigMap{}
+	err = j.Client.Get(context.TODO(), types.NamespacedName{
+		Name:      name,
+		Namespace: j.namespace,
+	}, cm)
+	if apierrs.IsNotFound(err) {
+		err = nil
+		cm = nil
+	}
+
+	return
+}
+
+func (j *JuiceFSEngine) UpdateConfigMap(cm *corev1.ConfigMap) (err error) {
+	cm = &corev1.ConfigMap{}
+	err = j.Client.Update(context.TODO(), cm)
+	if apierrs.IsNotFound(err) {
+		err = nil
+		cm = nil
+	}
+
+	return
+}
+
 func (j *JuiceFSEngine) GetEdition() (edition string) {
 	cm, err := j.GetValuesConfigMap()
 	if err != nil || cm == nil {
@@ -338,4 +363,60 @@ func (v *ClientVersion) LessThan(other *ClientVersion) bool {
 		return true
 	}
 	return false
+}
+
+func (j *JuiceFSEngine) getWorkerCommand() (command string, err error) {
+	cm, err := j.GetConfigMap(j.getWorkerScriptName())
+	if err != nil {
+		return "", err
+	}
+	if cm == nil {
+		j.Log.Info("value configMap not found")
+		return "", nil
+	}
+	data := cm.Data
+	script := data["script.sh"]
+	scripts := strings.Split(script, "\n")
+	j.Log.V(1).Info("get worker script", "script", script)
+
+	// mount command is the last one
+	for i := len(scripts) - 1; i >= 0; i-- {
+		if scripts[i] != "" {
+			return scripts[i], nil
+		}
+	}
+	return "", nil
+}
+
+func (j JuiceFSEngine) updateWorkerScript(command string) error {
+	cm, err := j.GetConfigMap(j.getWorkerScriptName())
+	if err != nil {
+		return err
+	}
+	if cm == nil {
+		j.Log.Info("value configMap not found")
+		return nil
+	}
+	data := cm.Data
+	script := data["script.sh"]
+
+	var newScript string
+	newScript = script
+	newScripts := strings.Split(newScript, "\n")
+	// mount command is the last one, replace it
+	for i := len(newScripts) - 1; i >= 0; i-- {
+		if newScripts[i] != "" {
+			newScripts[i] = command
+			break
+		}
+	}
+
+	newValues := make(map[string]string)
+	newValues["script.sh"] = strings.Join(newScripts, "\n")
+	cm.Data = newValues
+	return j.Client.Update(context.Background(), cm)
+}
+
+func (j *JuiceFSEngine) getWorkerScriptName() string {
+	return fmt.Sprintf("%s-worker-script", j.name)
 }
