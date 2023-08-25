@@ -32,7 +32,7 @@ type UFSPathBuilder struct{}
 // 1. if set dataset.spec.mounts[x].path
 // 2. if only one item use default root path "/"
 // 3. "/" + dataset.spec.mounts[x].name
-func (u UFSPathBuilder) GenAlluxioMountPath(curMount datav1alpha1.Mount, mounts []datav1alpha1.Mount) string {
+func (u UFSPathBuilder) GenAlluxioMountPath(curMount datav1alpha1.Mount) string {
 
 	// if the user defines mount.path, use it
 	if filepath.IsAbs(curMount.Path) {

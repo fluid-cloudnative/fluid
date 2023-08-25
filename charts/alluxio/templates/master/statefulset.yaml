@@ -173,10 +173,23 @@ spec:
           {{- if .Values.master.resources  }}
 {{ include "alluxio.master.resources" . | indent 10 }}
           {{- end }}
+          {{- if eq .Values.master.mountConfigStorage "configmap"}}
+          command: ["/etc/fluid/scripts/entrypoint.sh"]
+          {{ else }}
           command: ["/entrypoint.sh"]
+          {{- end }}
           {{- if .Values.master.args }}
           args:
 {{ toYaml .Values.master.args | trim | indent 12 }}
+          {{- end }}
+          {{- if eq .Values.master.mountConfigStorage "configmap"}}
+          startupProbe:
+            exec:
+              command: ["bash", "-c", "/etc/fluid/scripts/mount.sh >> /proc/1/fd/1 2>&1"]
+            initialDelaySeconds: 5
+            failureThreshold: 10
+            timeoutSeconds: 15
+            periodSeconds: 20
           {{- end }}
           {{- if $isHaEmbedded }}
           env:
@@ -269,6 +282,10 @@ spec:
           {{- if .Values.master.volumeMounts }}
 {{ toYaml .Values.master.volumeMounts | indent 10 }}
           {{- end }}
+          {{- if eq .Values.master.mountConfigStorage "configmap"}}
+          - mountPath: /etc/fluid/scripts
+            name: alluxio-mount-conf
+          {{- end }}
         - name: alluxio-job-master
           image: {{ .Values.image }}:{{ .Values.imageTag }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
@@ -359,6 +376,21 @@ spec:
           {{- end }}
       restartPolicy: Always
       volumes:
+        {{- if eq .Values.master.mountConfigStorage "configmap"}}
+        - name: alluxio-mount-conf
+          configMap:
+            name: {{ template "alluxio.fullname" . }}-mount-config
+            items:
+              - key: entrypoint.script
+                path: entrypoint.sh
+                mode: 0550
+              - key: mount.script
+                path: mount.sh
+                mode: 0550
+              - key: mount.info
+                path: mount.info
+                mode: 0444
+        {{- end }}
         {{ if .Values.master.restore.enabled -}}
         {{- if .Values.master.restore.pvcName }}
         - name: pvc

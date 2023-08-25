@@ -36,6 +36,8 @@ const (
 	FuseRecoverSucceed = "FuseRecoverSucceed"
 
 	RuntimeDeprecated = "RuntimeDeprecated"
+
+	RuntimeWithSecretNotSupported = "RuntimeWithSecretNotSupported"
 )
 
 // Events related to all type of Data Operations

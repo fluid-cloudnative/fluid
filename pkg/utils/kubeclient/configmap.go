@@ -138,3 +138,8 @@ func CopyConfigMap(client client.Client, src types.NamespacedName, dst types.Nam
 	}
 	return nil
 }
+
+func UpdateConfigMap(client client.Client, cm *v1.ConfigMap) error {
+	err := client.Update(context.TODO(), cm)
+	return err
+}

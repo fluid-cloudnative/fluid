@@ -137,6 +137,10 @@ master:
   #   mountPath: /data/configmap/myConfigMapVolume/
   volumes: []
 
+  mountConfigStorage:
+  # mount infos for non native mount points in dataset when mountStorage is "configmap".
+  nonNativeMounts:
+
 jobMaster:
   args:
     - job-master
@@ -448,5 +452,12 @@ runtimeIdentity:
 
 owner:
   enabled: false
+  name: ""
+  kind: ""
+  uid: ""
+  apiVersion: ""
+  blockOwnerDeletion: false
+  controller: false
+
 
 clusterDomain: cluster.local
