@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -53,7 +54,7 @@ type Controller interface {
 	ManagedResource() client.Object
 }
 
-func SetupWatcherWithReconciler(mgr ctrl.Manager, options controller.Options, r Controller) (err error) {
+func SetupWatcherWithReconciler(mgr ctrl.Manager, options controller.Options, r Controller, watchDatasetType string) (err error) {
 	options.Reconciler = r
 	c, err := controller.New(r.ControllerName(), mgr, options)
 	if err != nil {
@@ -95,6 +96,22 @@ func SetupWatcherWithReconciler(mgr ctrl.Manager, options controller.Options, r 
 	})
 	if err != nil {
 		return err
+	}
+
+	if watchDatasetType != "" {
+		datasetEventHandler := &datasetEventHandler{}
+		err = c.Watch(&(source.Kind{Type: &datav1alpha1.Dataset{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       datav1alpha1.Datasetkind,
+				APIVersion: datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version,
+			},
+		}}), &handler.EnqueueRequestForObject{}, predicate.Funcs{
+			UpdateFunc: datasetEventHandler.onUpdateFunc(r, watchDatasetType),
+		})
+		if err != nil {
+			log.Error(err, "Failed to watch Dataset")
+			return err
+		}
 	}
 
 	return

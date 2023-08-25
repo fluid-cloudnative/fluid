@@ -213,7 +213,7 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 		return &csi.NodeUnpublishVolumeResponse{}, nil
 	}
 
-	// if targetPath is a symlink, just remove
+	// if targetPath is a symlink, remove
 	isRemove, err := removeSymlink(targetPath)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "NodeUnpublishVolume: remove symlink error %v", err)
