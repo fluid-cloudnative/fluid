@@ -25,9 +25,9 @@ mount_and_umount() {
     
     mounted=$(cat /proc/self/mountinfo | grep fuse.ossfs | grep ${MOUNT_POINT} | awk '{print $5}')
     
-    # fluid_config_parse.py would generate mount and umount scripts if need
-    echo "mount_and_umount: python /fluid_config_parse.py ${mounted}"
-    python /fluid_config_parse.py ${mounted}
+    # gen_mount_script.py would generate mount and umount scripts if need
+    echo "mount_and_umount: python /gen_mount_script.py ${mounted}"
+    python /gen_mount_script.py ${mounted}
 
     # execute all scripts
     # 错误处理

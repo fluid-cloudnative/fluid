@@ -26,6 +26,10 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
+const (
+	Datasetkind = "Dataset"
+)
+
 // DatasetPhase indicates whether the loading is behaving
 type DatasetPhase string
 
