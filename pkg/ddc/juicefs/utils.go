@@ -225,7 +225,6 @@ func (j *JuiceFSEngine) GetConfigMap(name string) (cm *corev1.ConfigMap, err err
 }
 
 func (j *JuiceFSEngine) UpdateConfigMap(cm *corev1.ConfigMap) (err error) {
-	cm = &corev1.ConfigMap{}
 	err = j.Client.Update(context.TODO(), cm)
 	if apierrs.IsNotFound(err) {
 		err = nil
@@ -400,8 +399,7 @@ func (j JuiceFSEngine) updateWorkerScript(command string) error {
 	data := cm.Data
 	script := data["script.sh"]
 
-	var newScript string
-	newScript = script
+	newScript := script
 	newScripts := strings.Split(newScript, "\n")
 	// mount command is the last one, replace it
 	for i := len(newScripts) - 1; i >= 0; i-- {

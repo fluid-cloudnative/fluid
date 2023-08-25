@@ -33,6 +33,50 @@ import (
 )
 
 func TestJuiceFSxEngine_syncWorkerSpec(t *testing.T) {
+	cms := []corev1.ConfigMap{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "emtpy-worker-script",
+				Namespace: "default",
+			},
+			Data: map[string]string{
+				"script.sh": `#!/bin/bash
+
+    if [ enterprise = community ]; then
+    echo "$(date '+%Y/%m/%d %H:%M:%S').$(printf "%03d" $(($(date '+%N')/1000))) juicefs format start."
+    /usr/bin/juicefs auth --token=${TOKEN} --accesskey=${ACCESS_KEY} --secretkey=${SECRET_KEY} --bucket=http://test4.minio.default.svc.cluster.local:9000 test-fluid-2
+    elif [ ! -f /root/.juicefs/test-fluid-2.conf ]; then
+    echo "$(date '+%Y/%m/%d %H:%M:%S').$(printf "%03d" $(($(date '+%N')/1000))) juicefs auth start."
+    /usr/bin/juicefs auth --token=${TOKEN} --accesskey=${ACCESS_KEY} --secretkey=${SECRET_KEY} --bucket=http://test4.minio.default.svc.cluster.local:9000 test-fluid-2
+    fi
+
+    echo "$(date '+%Y/%m/%d %H:%M:%S').$(printf "%03d" $(($(date '+%N')/1000))) juicefs mount start."
+    /sbin/mount.juicefs test-fluid-2 /runtime-mnt/juicefs/default/jfsdemo-ee/juicefs-fuse -o subdir=/demo,cache-size=2048,free-space-ratio=0.1,cache-dir=/dev/shm,foreground,no-update,cache-group=default-jfsdemo-ee
+`,
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "same-worker-script",
+				Namespace: "default",
+			},
+			Data: map[string]string{
+				"script.sh": `#!/bin/bash
+
+    if [ enterprise = community ]; then
+    echo "$(date '+%Y/%m/%d %H:%M:%S').$(printf "%03d" $(($(date '+%N')/1000))) juicefs format start."
+    /usr/bin/juicefs auth --token=${TOKEN} --accesskey=${ACCESS_KEY} --secretkey=${SECRET_KEY} --bucket=http://test4.minio.default.svc.cluster.local:9000 test-fluid-2
+    elif [ ! -f /root/.juicefs/test-fluid-2.conf ]; then
+    echo "$(date '+%Y/%m/%d %H:%M:%S').$(printf "%03d" $(($(date '+%N')/1000))) juicefs auth start."
+    /usr/bin/juicefs auth --token=${TOKEN} --accesskey=${ACCESS_KEY} --secretkey=${SECRET_KEY} --bucket=http://test4.minio.default.svc.cluster.local:9000 test-fluid-2
+    fi
+
+    echo "$(date '+%Y/%m/%d %H:%M:%S').$(printf "%03d" $(($(date '+%N')/1000))) juicefs mount start."
+    /sbin/mount.juicefs test-fluid-2 /runtime-mnt/juicefs/default/jfsdemo-ee/juicefs-fuse -o subdir=/demo,cache-size=2048,free-space-ratio=0.1,cache-dir=/dev/shm,foreground,no-update,cache-group=default-jfsdemo-ee
+`,
+			},
+		},
+	}
 	res := resource.MustParse("320Gi")
 	type fields struct {
 		runtime   *datav1alpha1.JuiceFSRuntime
@@ -42,6 +86,7 @@ func TestJuiceFSxEngine_syncWorkerSpec(t *testing.T) {
 	type args struct {
 		ctx    cruntime.ReconcileRequestContext
 		worker *appsv1.StatefulSet
+		value  *JuiceFS
 	}
 	tests := []struct {
 		name         string
@@ -62,7 +107,20 @@ func TestJuiceFSxEngine_syncWorkerSpec(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "emtpy-worker",
 						Namespace: "default",
-					}, Spec: appsv1.StatefulSetSpec{},
+					}, Spec: appsv1.StatefulSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{{
+									Name: "juicefs",
+								}},
+							},
+						},
+					},
+				},
+				value: &JuiceFS{
+					Worker: Worker{
+						Command: "/sbin/mount.juicefs test-fluid-2 /runtime-mnt/juicefs/default/jfsdemo-ee/juicefs-fuse -o subdir=/demo,cache-size=2048,free-space-ratio=0.1,cache-dir=/dev/shm,foreground,no-update,cache-group=default-jfsdemo-ee",
+					},
 				},
 			},
 			wantChanged: false,
@@ -79,6 +137,11 @@ func TestJuiceFSxEngine_syncWorkerSpec(t *testing.T) {
 						Name:      "noworker",
 						Namespace: "default",
 					}, Spec: appsv1.StatefulSetSpec{},
+				},
+				value: &JuiceFS{
+					Worker: Worker{
+						Command: "/sbin/mount.juicefs test-fluid-2 /runtime-mnt/juicefs/default/jfsdemo-ee/juicefs-fuse -o subdir=/demo,cache-size=2048,free-space-ratio=0.1,cache-dir=/dev/shm,foreground,no-update,cache-group=default-jfsdemo-ee",
+					},
 				},
 			},
 			wantChanged: false,
@@ -131,12 +194,24 @@ func TestJuiceFSxEngine_syncWorkerSpec(t *testing.T) {
 						},
 					},
 				},
+				value: &JuiceFS{
+					Worker: Worker{
+						Resources: common.Resources{
+							Requests: common.ResourceList{
+								corev1.ResourceCPU:    "100m",
+								corev1.ResourceMemory: "320Gi",
+							},
+						},
+						Command: "/sbin/mount.juicefs test-fluid-2 /runtime-mnt/juicefs/default/jfsdemo-ee/juicefs-fuse -o subdir=/demo,cache-size=2048,free-space-ratio=0.1,cache-dir=/dev/shm,foreground,no-update,cache-group=default-jfsdemo-ee",
+					},
+				},
 			},
 			wantChanged: false,
 			wantErr:     false,
 			wantResource: corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
-					corev1.ResourceCPU: resource.MustParse("100m"),
+					corev1.ResourceCPU:    resource.MustParse("100m"),
+					corev1.ResourceMemory: resource.MustParse("320Gi"),
 				},
 			},
 		},
@@ -155,6 +230,9 @@ func TestJuiceFSxEngine_syncWorkerSpec(t *testing.T) {
 			_ = corev1.AddToScheme(s)
 			runtimeObjs = append(runtimeObjs, tt.fields.runtime)
 			runtimeObjs = append(runtimeObjs, tt.args.worker)
+			for _, cm := range cms {
+				runtimeObjs = append(runtimeObjs, cm.DeepCopy())
+			}
 			client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
 
 			e := &JuiceFSEngine{
@@ -164,10 +242,7 @@ func TestJuiceFSxEngine_syncWorkerSpec(t *testing.T) {
 				Log:       fake.NullLogger(),
 				Client:    client,
 			}
-			value := &JuiceFS{
-				Worker: Worker{},
-			}
-			gotChanged, err := e.syncWorkerSpec(tt.args.ctx, tt.fields.runtime, value)
+			gotChanged, err := e.syncWorkerSpec(tt.args.ctx, tt.fields.runtime, tt.args.value)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Testcase %s JuiceFSEngine.syncWorkerSpec() error = %v, wantErr %v", tt.name, err, tt.wantErr)
 				return

@@ -345,6 +345,9 @@ func (j JuiceFSEngine) isNodeSelectorChanged(crtNodeSelector, runtimeNodeSelecto
 	if crtNodeSelector == nil {
 		crtNodeSelector = map[string]string{}
 	}
+	if runtimeNodeSelector == nil {
+		runtimeNodeSelector = map[string]string{}
+	}
 	if !reflect.DeepEqual(crtNodeSelector, runtimeNodeSelector) {
 		j.Log.Info("The nodeSelector is different.", "current sts", crtNodeSelector, "runtime", runtimeNodeSelector)
 		changed = true
