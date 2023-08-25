@@ -1,0 +1,101 @@
+#
+# The Alluxio Open Foundation licenses this work under the Apache License, version 2.0
+# (the "License"). You may not use this work except in compliance with the License, which is
+# available at www.apache.org/licenses/LICENSE-2.0
+#
+# This software is distributed on an "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied, as more fully set forth in the License.
+#
+# See the NOTICE file distributed with this work for information regarding copyright ownership.
+#
+{{- if eq .Values.master.mountConfigStorage "configmap"}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    "helm.sh/hook": "pre-install"
+    "helm.sh/hook-delete-policy": before-hook-creation
+  name: {{ template "alluxio.fullname" .  }}-mount-config
+  labels:
+    name: {{ template "alluxio.fullname" .  }}-mount-config
+    app: {{ template "alluxio.name" . }}
+    chart: {{ template "alluxio.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  ownerReferences:
+  {{- if .Values.owner.enabled }}
+    - apiVersion: {{ .Values.owner.apiVersion }}
+      blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+      controller: {{ .Values.owner.controller }}
+      kind: {{ .Values.owner.kind }}
+      name: {{ .Values.owner.name }}
+      uid: {{ .Values.owner.uid }}
+  {{- end }}
+data:
+  mount.info: |
+    {{- range $index, $value :=.Values.master.nonNativeMounts }}
+    {{$value}}
+    {{- end}}
+  entrypoint.script: |
+    #!/usr/bin/env bash
+    export ALLUXIO_JAVA_OPTS=$(echo "$ALLUXIO_JAVA_OPTS" | sed "s|/etc/fluid/secrets\(/[-._a-zA-Z0-9]\+\)\{2\}|\`cat &\`|g" )
+    echo "replace env ALLUXIO_JAVA_OPTS"
+    /entrypoint.sh $@
+  mount.script: |
+    #!/usr/bin/env bash
+    # set the -e option, when some command return non zero, the shell will exit, no need to check the executed status.
+    set -xe
+
+    # check alluxio master ready
+    alluxio fsadmin report
+
+    base_path=$(cd `dirname $0`; pwd)
+    # alluxio fs mount output like below:
+    # https://mirrors.bit.edu.cn/apache/spark  on  /spark  (web, ...)
+    # /underFSStorage                          on  /       (local, ...)
+
+    # replace multiple space with single space
+    mounted=$(alluxio fs mount | sed "s/\s\+/ /g")
+
+    # get already mounted path in alluxio, ignore the root path '/'
+    # use grouping command to avoid grep returning non zero, which will cause shell exit.
+    mounted_dst=$(echo "$mounted" | cut -d " " -f 3 | { grep -x -v "/" || true; } )
+
+    # mount.info content like below:
+    # /spark https://mirrors.bit.edu.cn/apache/spark --option k=v --readonly
+    # get all needed mount path, ignore the root path '/', "grep -x" match the line
+    need_mount_dst=$(cat ${base_path}/mount.info | cut -d " " -f 1 | { grep -x -v "/" || true; })
+
+    # unmount, find already mounted in alluxio but not existed in mount.info
+    # -x match the line, -v find the unmatched, -F pattern
+    unmount_dst=$(echo "$mounted_dst" | { grep -x -v -F "$need_mount_dst" || true; })
+
+    for dst in $(echo "$unmount_dst")
+    do
+      if [ "$dst" != "" ]; then
+        alluxio fs unmount $dst
+        echo "unmount $dst status is $?"
+      fi
+    done
+
+    # find mount path existed in mount.info but not mounted in alluxio
+    mount_dst=$(echo "$need_mount_dst" | { grep -x -v -F "$mounted_dst" || true; })
+
+    # mount
+    # read will ignore the last line having no '\n', add content nonempty judgement.
+    while read line || [[ -n ${line} ]]
+    do
+     # mount.info content like below:
+     # /spark https://mirrors.bit.edu.cn/apache/spark --option k=v --readonly
+     alluxioPath=$(echo "$line" | cut -d " " -f 1)
+
+     match=$(echo "$mount_dst" | { grep -x "$alluxioPath" || true; })
+     # the alluxioPath is not mounted in alluxio
+     if [ "$match" != "" ]; then
+       # replace the pattern like /etc/fluid/secrets/name/key with `cat /etc/fluid/secrets/name/key`
+       replace=$(echo "$line" | sed "s|/etc/fluid/secrets\(/[-._a-zA-Z0-9]\+\)\{2\}|\`cat &\`|g" )
+       bash -c "alluxio fs mount $replace"
+       echo "mount $alluxioPath status is $?"
+     fi
+    done < ${base_path}/mount.info
+{{- end }}

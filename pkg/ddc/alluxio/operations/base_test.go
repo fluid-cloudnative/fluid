@@ -898,3 +898,40 @@ func TestAlluxioFileUtils_MasterPodName(t *testing.T) {
 	}
 	wrappedUnhookExec()
 }
+
+func TestAlluxioFileUtils_ExecMountScripts(t *testing.T) {
+	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return strings.Join(command, " "), "", nil
+	}
+	ExecErr := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+		return "", "", errors.New("fail to run the command")
+	}
+
+	wrappedUnhookExec := func() {
+		err := gohook.UnHook(AlluxioFileUtils.exec)
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+
+	err := gohook.Hook(AlluxioFileUtils.exec, ExecErr, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	a := &AlluxioFileUtils{log: fake.NullLogger()}
+	err = a.ExecMountScripts()
+	if err == nil {
+		t.Error("check failure, want err, got nil")
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook(AlluxioFileUtils.exec, ExecCommon, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	err = a.ExecMountScripts()
+	if err != nil {
+		t.Errorf("check failure, want nil, got err: %v", err)
+	}
+	wrappedUnhookExec()
+}

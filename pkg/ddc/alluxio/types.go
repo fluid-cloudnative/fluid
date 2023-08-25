@@ -35,6 +35,8 @@ type Alluxio struct {
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 	JvmOptions   []string          `json:"jvmOptions,omitempty"`
 
+	// Note: the mount secret options may be in here if existing direct mount root path in alluxio
+	// So, alluxio master pod should handle with replacing the secret file path.
 	Properties map[string]string `json:"properties,omitempty"`
 
 	Master Master `json:"master,omitempty"`
@@ -163,6 +165,10 @@ type Master struct {
 	Volumes      []corev1.Volume      `json:"volumes,omitempty"`
 	Labels       map[string]string    `json:"labels,omitempty"`
 	Annotations  map[string]string    `json:"annotations,omitempty"`
+	// config storage to store mount config.
+	MountConfigStorage string `json:"mountConfigStorage,omitempty"`
+	// non native mount infos when using configmap as mount storage.
+	NonNativeMounts []string `json:"nonNativeMounts,omitempty"`
 }
 
 type Restore struct {

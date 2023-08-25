@@ -111,3 +111,7 @@ func (e *AlluxioEngine) generateAlluxioValueFile(runtime *datav1alpha1.AlluxioRu
 func (e *AlluxioEngine) getConfigmapName() string {
 	return e.name + "-" + e.runtimeType + "-values"
 }
+
+func (e *AlluxioEngine) getMountConfigmapName() string {
+	return e.name + "-mount-config"
+}

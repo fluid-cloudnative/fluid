@@ -62,6 +62,7 @@ runtime:
       image: alluxio/alluxio-dev:2.9.0
     fuse:
       image: alluxio/alluxio-dev:2.9.0
+    mountConfigStorage: configmap
   jindo:
     replicas: 1
     tolerations:
