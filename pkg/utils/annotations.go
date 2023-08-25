@@ -68,6 +68,10 @@ func AppContainerPostStartInjectEnabled(infos map[string]string) (match bool) {
 	return enabled(infos, common.InjectAppPostStart)
 }
 
+func SkipSidecarPostStartInject(infos map[string]string) (match bool) {
+	return matchedValue(infos, common.InjectSidecarPostStart, common.False)
+}
+
 func WorkerSidecarEnabled(infos map[string]string) (match bool) {
 	return enabled(infos, common.InjectWorkerSidecar)
 }

@@ -187,6 +187,7 @@ const (
 	InjectWorkerSidecar           = "worker" + injectSidecar       // worker.sidecar.fluid.io/inject
 	InjectSidecarDone             = "done" + injectSidecar         // done.sidecar.fluid.io/inject
 	InjectAppPostStart            = "app.poststart" + inject       // app.poststart.fluid.io/inject
+	InjectSidecarPostStart        = "fuse.sidecar.poststart" + inject // fuse.sidecar.poststart.fluid.io/inject
 
 	injectServerful     = ".serverful" + inject
 	InjectServerfulFuse = "fuse" + injectServerful
