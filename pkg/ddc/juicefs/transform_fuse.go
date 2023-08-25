@@ -55,7 +55,7 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 	if len(runtime.Spec.TieredStore.Levels) != 0 {
 		tiredStoreLevel = &runtime.Spec.TieredStore.Levels[0]
 	}
-	err = j.genValue(mount, tiredStoreLevel, value, dataset.Spec.SharedOptions, dataset.Spec.SharedEncryptOptions)
+	optionsFromDataset, err := j.genValue(mount, tiredStoreLevel, value, dataset.Spec.SharedOptions, dataset.Spec.SharedEncryptOptions)
 	if err != nil {
 		return err
 	}
@@ -70,14 +70,17 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 	}
 
 	// transform mount cmd & stat cmd
-	option, err := j.genMountOptions(mount, tiredStoreLevel)
+	options, err := j.genMountOptions(mount, tiredStoreLevel)
 	if err != nil {
 		return err
 	}
+
+	// Keep mount options in dataset still work, but it can be overwrited by fuse speicifed option
+	options = utils.UnionMapsWithOverride(optionsFromDataset, options)
 	for k, v := range runtime.Spec.Fuse.Options {
-		option[k] = v
+		options[k] = v
 	}
-	err = j.genFuseMount(value, option)
+	err = j.genFuseMount(value, options)
 	if err != nil {
 		return err
 	}
@@ -124,7 +127,8 @@ func (j *JuiceFSEngine) transformFuseNodeSelector(runtime *datav1alpha1.JuiceFSR
 
 // genValue: generate the value of juicefs
 func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *datav1alpha1.Level, value *JuiceFS,
-	SharedOptions map[string]string, SharedEncryptOptions []datav1alpha1.EncryptOption) error {
+	SharedOptions map[string]string, SharedEncryptOptions []datav1alpha1.EncryptOption) (map[string]string, error) {
+	options := make(map[string]string)
 	value.Configs.Name = mount.Name
 	source := ""
 
@@ -136,6 +140,8 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 		case JuiceBucket:
 			value.Configs.Bucket = v
 			continue
+		default:
+			options[k] = v
 		}
 	}
 
@@ -147,6 +153,8 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 		case JuiceBucket:
 			value.Configs.Bucket = v
 			continue
+		default:
+			options[k] = v
 		}
 	}
 
@@ -202,13 +210,14 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 	// transform mountPath & subPath
 	subPath, err := ParseSubPathFromMountPoint(mount.MountPoint)
 	if err != nil {
-		return err
+		return options, err
 	}
 	value.Fuse.MountPath = j.getMountPoint()
 	value.Worker.MountPath = j.getMountPoint()
 	value.Fuse.HostMountPath = j.getHostMountPoint()
 	if subPath != "/" {
 		value.Fuse.SubPath = subPath
+		// options["subdir"] = subPath
 	}
 
 	var storagePath = DefaultCacheDir
@@ -232,7 +241,7 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 		}
 	}
 
-	return nil
+	return options, nil
 }
 
 func (j *JuiceFSEngine) genMountOptions(mount datav1alpha1.Mount, tiredStoreLevel *datav1alpha1.Level) (options map[string]string, err error) {
