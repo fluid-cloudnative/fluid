@@ -93,43 +93,6 @@ func TestWorkerSidecarEnabled(t *testing.T) {
 	}
 }
 
-func TestFuseSidecarEnabled(t *testing.T) {
-	type testCase struct {
-		name        string
-		annotations map[string]string
-		expect      bool
-	}
-
-	testcases := []testCase{
-		{
-			name: "enable_fuse",
-			annotations: map[string]string{
-				common.InjectFuseSidecar: "true",
-			},
-			expect: true,
-		}, {
-			name: "disable_fuse",
-			annotations: map[string]string{
-				common.InjectFuseSidecar: "false",
-			},
-			expect: false,
-		}, {
-			name: "no_fuse",
-			annotations: map[string]string{
-				"test": "false",
-			},
-			expect: false,
-		},
-	}
-
-	for _, testcase := range testcases {
-		got := FuseSidecarEnabled(testcase.annotations)
-		if got != testcase.expect {
-			t.Errorf("The testcase %s's failed due to expect %v but got %v", testcase.name, testcase.expect, got)
-		}
-	}
-}
-
 func TestFuseSidecarVirtualFuseDeviceEnabled(t *testing.T) {
 	type testCase struct {
 		name        string
@@ -384,7 +347,7 @@ func TestServerlessPlatformMatched(t *testing.T) {
 				ServerlessPlatformKey = tt.envs.ServerlessPlatformKey
 				ServerlessPlatformVal = tt.envs.ServerlessPlatformVal
 			}
-			if gotMatch := ServerlessPlatformMatched(tt.infos); gotMatch != tt.wantMatch {
+			if gotMatch := serverlessPlatformMatched(tt.infos); gotMatch != tt.wantMatch {
 				t.Errorf("ServerlessPlatformMatched() = %v, want %v", gotMatch, tt.wantMatch)
 			}
 		})

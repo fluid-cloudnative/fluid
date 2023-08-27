@@ -64,91 +64,45 @@ func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, pvcNamespace
 		return template, err
 	}
 
-	// Note: get the pvc corresponding dataset
-	dataset, err := utils.GetDataset(info.client, info.name, info.namespace)
-	if err != nil {
-		return template, err
-	}
-
-	ownerReference := metav1.OwnerReference{
-		APIVersion: dataset.APIVersion,
-		Kind:       dataset.Kind,
-		Name:       dataset.Name,
-		UID:        dataset.UID,
-	}
-
 	if len(ds.Spec.Template.Spec.Containers) <= 0 {
 		return template, fmt.Errorf("the length of containers of fuse daemonset \"%s/%s\" should not be 0", ds.Namespace, ds.Name)
 	}
 
 	// 1. set the pvc name
 	template = &common.FuseInjectionTemplate{
-		PVCName: pvcName,
+		PVCName:       pvcName,
+		FuseContainer: ds.Spec.Template.Spec.Containers[0],
+		// only add volumes that the Fuse container needs
+		VolumesToAdd: utils.FilterVolumesByVolumeMounts(ds.Spec.Template.Spec.Volumes, ds.Spec.Template.Spec.Containers[0].VolumeMounts),
 	}
-	template.FuseContainer = ds.Spec.Template.Spec.Containers[0]
-	// only add volumes that the Fuse container needs
-	template.VolumesToAdd = utils.FilterVolumesByVolumeMounts(ds.Spec.Template.Spec.Volumes, ds.Spec.Template.Spec.Containers[0].VolumeMounts)
 
+	// 2. Inject cache dir to enable short-circuit read if needed
 	if !option.EnableCacheDir {
 		info.transformTemplateWithCacheDirDisabled(template)
 	}
 
-	// 2. setup fuse sidecar container when enabling unprivileged sidecar
+	// 3. Transform fuse sidecar container when injecting an unprivileged sidecar
 	if option.EnableUnprivilegedSidecar {
 		info.transformTemplateWithUnprivilegedSidecarEnabled(template)
 	}
 
-	// 3. set the fuse container name
+	// 4. set the fuse container name
 	template.FuseContainer.Name = common.FuseContainerName
-
-	// template.VolumesToAdd = ds.Spec.Template.Spec.Volumes
-	// 4. inject the post start script for fuse container, if configmap doesn't exist, try to create it.
-	// Post start script varies according to privileged or unprivileged sidecar.
 
 	// get the pv attribute, mountPath is with prefix "/runtime-mnt/..."
 	mountPath, mountType, subPath, err := kubeclient.GetMountInfoFromVolumeClaim(info.client, info.name, info.namespace)
 	if err != nil {
-		return
-	}
-
-	// the mountPathInContainer is the parent dir of fuse mount path in the container
-	mountPathInContainer := ""
-	if !option.EnableUnprivilegedSidecar {
-		volumeMountInContainer, err := kubeclient.GetFuseMountInContainer(mountType, template.FuseContainer)
-		if err != nil {
-			return template, err
-		}
-		mountPathInContainer = volumeMountInContainer.MountPath
-	}
-
-	// Fluid assumes pvc name is the same as runtime's name
-	gen := poststart.NewGenerator(types.NamespacedName{
-		Name:      info.name,
-		Namespace: info.namespace,
-	}, mountPathInContainer, mountType, subPath, option)
-	cm := gen.BuildConfigmap(ownerReference)
-	found, err := kubeclient.IsConfigMapExist(info.client, cm.Name, cm.Namespace)
-	if err != nil {
 		return template, err
 	}
 
-	if !found {
-		err = info.client.Create(context.TODO(), cm)
-		if err != nil {
-			// If ConfigMap creation succeeds concurrently, continue to mutate
-			if otherErr := utils.IgnoreAlreadyExists(err); otherErr != nil {
-				return template, err
-			}
+	// 5. Inject FUSE sidecar post start script, script varies according to privileged or unprivileged sidecar.
+	if !option.SkipSidecarPostStartInject {
+		if err := info.injectFuseContainerPostStartScript(template, mountType, subPath, option); err != nil {
+			return template, err
 		}
 	}
 
-	template.FuseContainer.VolumeMounts = append(template.FuseContainer.VolumeMounts, gen.GetVolumeMount())
-	if template.FuseContainer.Lifecycle == nil {
-		template.FuseContainer.Lifecycle = &corev1.Lifecycle{}
-	}
-	template.FuseContainer.Lifecycle.PostStart = gen.GetPostStartCommand()
-
-	// 5. create a volume with pvcName with mountPath in pv, and add it to VolumesToUpdate
+	// 6. Update PVC Volume to HostPath
 	if subPath != "" {
 		mountPath = mountPath + "/" + subPath
 	}
@@ -162,7 +116,6 @@ func (info *RuntimeInfo) GetTemplateToInjectForFuse(pvcName string, pvcNamespace
 			},
 		},
 	}
-	template.VolumesToAdd = append(template.VolumesToAdd, gen.GetVolume())
 
 	return
 }
@@ -215,6 +168,63 @@ func (info *RuntimeInfo) transformTemplateWithUnprivilegedSidecarEnabled(templat
 func (info *RuntimeInfo) transformTemplateWithCacheDirDisabled(template *common.FuseInjectionTemplate) {
 	template.FuseContainer.VolumeMounts = utils.TrimVolumeMounts(template.FuseContainer.VolumeMounts, cacheDirNames)
 	template.VolumesToAdd = utils.TrimVolumes(template.VolumesToAdd, cacheDirNames)
+}
+
+func (info *RuntimeInfo) injectFuseContainerPostStartScript(template *common.FuseInjectionTemplate, mountType string, subPath string, option common.FuseSidecarInjectOption) error {
+	// 4. inject the post start script for fuse container, if configmap doesn't exist, try to create it.
+	// Post start script varies according to privileged or unprivileged sidecar.
+
+	dataset, err := utils.GetDataset(info.client, info.name, info.namespace)
+	if err != nil {
+		return err
+	}
+
+	ownerReference := metav1.OwnerReference{
+		APIVersion: dataset.APIVersion,
+		Kind:       dataset.Kind,
+		Name:       dataset.Name,
+		UID:        dataset.UID,
+	}
+
+	// the mountPathInContainer is the parent dir of fuse mount path in the container
+	mountPathInContainer := ""
+	if !option.EnableUnprivilegedSidecar {
+		volumeMountInContainer, err := kubeclient.GetFuseMountInContainer(mountType, template.FuseContainer)
+		if err != nil {
+			return err
+		}
+		mountPathInContainer = volumeMountInContainer.MountPath
+	}
+
+	// Fluid assumes pvc name is the same with runtime's name
+	gen := poststart.NewGenerator(types.NamespacedName{
+		Name:      info.name,
+		Namespace: info.namespace,
+	}, mountPathInContainer, mountType, subPath, option)
+	cm := gen.BuildConfigmap(ownerReference)
+	found, err := kubeclient.IsConfigMapExist(info.client, cm.Name, cm.Namespace)
+	if err != nil {
+		return err
+	}
+
+	if !found {
+		err = info.client.Create(context.TODO(), cm)
+		if err != nil {
+			// If ConfigMap creation succeeds concurrently, continue to mutate
+			if otherErr := utils.IgnoreAlreadyExists(err); otherErr != nil {
+				return err
+			}
+		}
+	}
+
+	template.FuseContainer.VolumeMounts = append(template.FuseContainer.VolumeMounts, gen.GetVolumeMount())
+	if template.FuseContainer.Lifecycle == nil {
+		template.FuseContainer.Lifecycle = &corev1.Lifecycle{}
+	}
+	template.FuseContainer.Lifecycle.PostStart = gen.GetPostStartCommand()
+	template.VolumesToAdd = append(template.VolumesToAdd, gen.GetVolume())
+
+	return nil
 }
 
 func getFuseDeviceResourceName() string {

@@ -44,32 +44,32 @@ func init() {
 	}
 }
 
+// ServerfulFuseEnabled decides if FUSE CSI related optimization should be injected, e.g. HostToContainer mountPropagation for FUSE Recovery feature.
 func ServerfulFuseEnabled(infos map[string]string) (match bool) {
 	return enabled(infos, common.InjectServerfulFuse)
 }
 
-func ServerlessPlatformMatched(infos map[string]string) (match bool) {
-	if len(ServerlessPlatformKey) == 0 || len(ServerlessPlatformVal) == 0 {
-		return
-	}
-
-	return matchedValue(infos, ServerlessPlatformKey, ServerlessPlatformVal)
-}
-
+// ServerlessEnabled decides if fuse sidecar should be injected, whether privileged or unprivileged
+// - serverlessPlatform implies injecting unprivileged fuse sidecar
+// - serverless.fluid.io/inject=true implies injecting (privileged/unprivileged) fuse sidecar,
+// - [deprecated] fuse.sidecar.fluid.io/inject=true is the deprecated version of serverless.fluid.io/inject=true
 func ServerlessEnabled(infos map[string]string) (match bool) {
-	return ServerlessPlatformMatched(infos) || enabled(infos, common.InjectServerless) || enabled(infos, common.InjectFuseSidecar)
+	return serverlessPlatformMatched(infos) || enabled(infos, common.InjectServerless) || enabled(infos, common.InjectFuseSidecar)
 }
 
-func FuseSidecarEnabled(infos map[string]string) (match bool) {
-	return enabled(infos, common.InjectFuseSidecar)
-}
-
+// FuseSidecarUnprivileged decides if the injected fuse sidecar should be unprivileged, only used when fuse sidecar should be injected
+// - serverlessPlatform implies injecting unprivileged fuse sidecar
+// - serverless.fluid.io/inject=true + unprivileged.sidecar.fluid.io/inject=true implies injecting unprivileged fuse sidecar,
 func FuseSidecarUnprivileged(infos map[string]string) (match bool) {
-	return ServerlessPlatformMatched(infos) || (ServerlessEnabled(infos) && enabled(infos, common.InjectUnprivilegedFuseSidecar))
+	return serverlessPlatformMatched(infos) || (ServerlessEnabled(infos) && enabled(infos, common.InjectUnprivilegedFuseSidecar))
 }
 
 func AppContainerPostStartInjectEnabled(infos map[string]string) (match bool) {
 	return enabled(infos, common.InjectAppPostStart)
+}
+
+func SkipSidecarPostStartInject(infos map[string]string) (match bool) {
+	return matchedValue(infos, common.InjectSidecarPostStart, common.False)
 }
 
 func WorkerSidecarEnabled(infos map[string]string) (match bool) {
@@ -88,16 +88,20 @@ func AppControllerDisabled(info map[string]string) (match bool) {
 	return matchedKey(info, disableApplicationController)
 }
 
-func enabled(infos map[string]string, name string) (match bool) {
-	for key, value := range infos {
-		if key == name && value == common.True {
-			match = true
-			break
-		}
+func serverlessPlatformMatched(infos map[string]string) (match bool) {
+	if len(ServerlessPlatformKey) == 0 || len(ServerlessPlatformVal) == 0 {
+		return
 	}
-	return
+
+	return matchedValue(infos, ServerlessPlatformKey, ServerlessPlatformVal)
 }
 
+// enabled checks if the given name has a value of "true"
+func enabled(infos map[string]string, name string) (match bool) {
+	return matchedValue(infos, name, common.True)
+}
+
+// matchedValue checks if the given name has the expected value
 func matchedValue(infos map[string]string, name string, val string) (match bool) {
 	for key, value := range infos {
 		if key == name && value == val {
@@ -108,6 +112,7 @@ func matchedValue(infos map[string]string, name string, val string) (match bool)
 	return
 }
 
+// matchedKey checks if the given name exists
 func matchedKey(infos map[string]string, name string) (match bool) {
 	for key := range infos {
 		if key == name {

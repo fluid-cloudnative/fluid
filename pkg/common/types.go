@@ -158,8 +158,9 @@ type FuseInjectionTemplate struct {
 
 // FuseSidecarInjectOption are options for webhook to inject fuse sidecar containers
 type FuseSidecarInjectOption struct {
-	EnableCacheDir            bool
-	EnableUnprivilegedSidecar bool
+	EnableCacheDir             bool
+	EnableUnprivilegedSidecar  bool
+	SkipSidecarPostStartInject bool
 }
 
 func (f FuseSidecarInjectOption) String() string {
