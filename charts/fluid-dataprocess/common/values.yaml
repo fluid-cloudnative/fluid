@@ -1,7 +1,18 @@
 name: ""
 
+owner:
+  enabled: false
+  name: ""
+  kind: ""
+  uid: ""
+  apiVersion: ""
+  blockOwnerDeletion: false
+  controller: false
+
 dataProcess:
   targetDataset: ""
+  labels: {}
+  annotations: {}
   serviceAccountName: ""
   scriptProcessor:
     image: ""
@@ -9,6 +20,7 @@ dataProcess:
     restartPolicy: Never
     command: []
     args: []
+    source: ""
     envs: []
     volumes: []
     volumeMounts: []

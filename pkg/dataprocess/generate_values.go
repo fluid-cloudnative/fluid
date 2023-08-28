@@ -21,6 +21,7 @@ import (
 	"os"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"
@@ -73,10 +74,8 @@ func GenDataProcessValue(dataset *datav1alpha1.Dataset, dataProcess *datav1alpha
 		},
 	}
 
-	value.Name = dataProcess.Name
-	if len(dataProcess.Spec.Processor.ServiceAccountName) != 0 {
-		value.DataProcessInfo.ServiceAccountName = dataProcess.Spec.Processor.ServiceAccountName
-	}
+	transformCommonPart(value, dataProcess)
+
 	processorImpl := GetProcessorImpl(dataProcess)
 	if processorImpl != nil { // processorImpl should always be non-nil
 		processorImpl.TransformDataProcessValues(value, volumes, volumeMounts)
@@ -85,4 +84,14 @@ func GenDataProcessValue(dataset *datav1alpha1.Dataset, dataProcess *datav1alpha
 
 	// unreachable code
 	return nil
+}
+
+func transformCommonPart(value *DataProcessValue, dataProcess *datav1alpha1.DataProcess) {
+	value.Name = dataProcess.Name
+	value.DataProcessInfo.Labels = dataProcess.Spec.Processor.PodMetadata.Labels
+	value.DataProcessInfo.Annotations = dataProcess.Spec.Processor.PodMetadata.Annotations
+	value.Owner = transfromer.GenerateOwnerReferenceFromObject(dataProcess)
+	if len(dataProcess.Spec.Processor.ServiceAccountName) != 0 {
+		value.DataProcessInfo.ServiceAccountName = dataProcess.Spec.Processor.ServiceAccountName
+	}
 }

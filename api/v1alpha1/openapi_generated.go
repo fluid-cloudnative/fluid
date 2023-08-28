@@ -4681,6 +4681,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_Processor(ref common.ReferenceC
 							Format:      "",
 						},
 					},
+					"podMetadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodMetadata defines labels and annotations on the processor pod.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
+						},
+					},
 					"job": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Job represents a processor which runs DataProcess as a job.",
@@ -4697,7 +4704,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_Processor(ref common.ReferenceC
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.JobProcessor", "github.com/fluid-cloudnative/fluid/api/v1alpha1.ScriptProcessor"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.JobProcessor", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.ScriptProcessor"},
 	}
 }
 
@@ -5132,19 +5139,12 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ScriptProcessor(ref common.Refe
 							},
 						},
 					},
-					"args": {
+					"source": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Arguments to the entrypoint.",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: "",
-										Type:    []string{"string"},
-										Format:  "",
-									},
-								},
-							},
+							Description: "Script source for ScriptProcessor",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 					"env": {
@@ -5190,6 +5190,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ScriptProcessor(ref common.Refe
 						},
 					},
 				},
+				Required: []string{"source"},
 			},
 		},
 		Dependencies: []string{

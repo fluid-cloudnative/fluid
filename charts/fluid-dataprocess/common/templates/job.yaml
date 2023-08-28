@@ -7,6 +7,15 @@ metadata:
     role: dataprocess-job
     app: fluid-dataprocess
     targetDataset: {{ required "targetDataset should be set" .Values.dataProcess.targetDataset }}
+  ownerReferences:
+  {{- if .Values.owner.enabled }}
+    - apiVersion: {{ .Values.owner.apiVersion }}
+      blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+      controller: {{ .Values.owner.controller }}
+      kind: {{ .Values.owner.kind }}
+      name: {{ .Values.owner.name }}
+      uid: {{ .Values.owner.uid }}
+  {{- end }}
 spec:
   backoffLimit: 3
   completions: 1
@@ -16,11 +25,17 @@ spec:
       name: {{ printf "%s-process" .Release.Name }}
       annotations:
         sidecar.istio.io/inject: "false"
+        {{- if .Values.dataProcess.annotations }}
+        {{ toYaml .Values.dataProcess.annotations | nindent 8 }}
+        {{- end }}
       labels:
         release: {{ .Release.Name }}
         role: dataprocess-pod
         app: fluid-dataprocess
         targetDataset: {{ required "targetDataset should be set" .Values.dataProcess.targetDataset }}
+        {{- if .Values.dataProcess.labels }}
+        {{ toYaml .Values.dataProcess.labels | nindent 8 }}
+        {{- end }}
     spec:
       {{- if .Values.dataProcess.serviceAccountName }}
       serviceAccountName: {{ .Values.dataProcess.serviceAccountName | quote }}
@@ -37,20 +52,23 @@ spec:
           command: 
           {{ toYaml .Values.dataProcess.scriptProcessor.command | nindent 10 }}
           {{- end }}
-          {{- if .Values.dataProcess.scriptProcessor.args }}
-          args:
-          {{ toYaml .Values.dataProcess.scriptProcessor.args | nindent 10 }}
-          {{- end }}
+          args: ["/fluid-scripts/preprocess.sh"]
           {{- if .Values.dataProcess.scriptProcessor.envs }}
           env:
           {{ toYaml .Values.dataProcess.scriptProcessor.envs | nindent 10 }}
           {{- end }}
-          {{- if .Values.dataProcess.scriptProcessor.volumeMounts }}
           volumeMounts:
+            - name: script-cm-vol
+              mountPath: /fluid-scripts/preprocess.sh
+              subPath: preprocess.sh
+          {{- if .Values.dataProcess.scriptProcessor.volumeMounts }}
             {{- toYaml .Values.dataProcess.scriptProcessor.volumeMounts | nindent 12 }}
           {{- end }}
-      {{- if .Values.dataProcess.scriptProcessor.volumes }}
       volumes:
+        - name: script-cm-vol
+          configMap:
+            name: {{ .Release.Name }}-scripts
+      {{- if .Values.dataProcess.scriptProcessor.volumes }}
         {{- toYaml .Values.dataProcess.scriptProcessor.volumes | nindent 8 }}
       {{- end }}
     {{- end }}
