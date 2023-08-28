@@ -84,6 +84,9 @@ func TestGenDataProcessValue(t *testing.T) {
 		},
 	}
 
+	dataProcessScriptProcessorWithoutMountPath := dataProcessScriptProcessor.DeepCopy()
+	dataProcessScriptProcessorWithoutMountPath.Spec.Dataset.MountPath = ""
+
 	dataProcessJobProcessor := &datav1alpha1.DataProcess{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "demo-process",
@@ -113,6 +116,9 @@ func TestGenDataProcessValue(t *testing.T) {
 		},
 	}
 
+	dataProcessJobProcessorWithoutMountPath := dataProcessJobProcessor.DeepCopy()
+	dataProcessJobProcessorWithoutMountPath.Spec.Dataset.MountPath = ""
+
 	modifiedPodSpec := &corev1.PodSpec{
 		RestartPolicy: corev1.RestartPolicyOnFailure,
 		Containers: []corev1.Container{
@@ -138,6 +144,9 @@ func TestGenDataProcessValue(t *testing.T) {
 			},
 		},
 	}
+	modifiedPodSpecWithoutDatasetVol := modifiedPodSpec.DeepCopy()
+	modifiedPodSpecWithoutDatasetVol.Volumes = []corev1.Volume{}
+	modifiedPodSpecWithoutDatasetVol.Containers[0].VolumeMounts = []corev1.VolumeMount{}
 
 	type args struct {
 		dataset     *datav1alpha1.Dataset
@@ -187,6 +196,49 @@ func TestGenDataProcessValue(t *testing.T) {
 					ScriptProcessor: nil,
 					JobProcessor: &JobProcessor{
 						PodSpec: modifiedPodSpec,
+					},
+				},
+			},
+		},
+		{
+			name: "TestScriptProcessorWithoutMountPath",
+			args: args{
+				dataset:     dataset,
+				dataProcess: dataProcessScriptProcessorWithoutMountPath,
+			},
+			want: &DataProcessValue{
+				Name:  dataProcessScriptProcessor.Name,
+				Owner: transfromer.GenerateOwnerReferenceFromObject(dataProcessScriptProcessor),
+				DataProcessInfo: DataProcessInfo{
+					TargetDataset: dataset.Name,
+					JobProcessor:  nil,
+					ScriptProcessor: &ScriptProcessor{
+						Image:           "test-image:latest",
+						ImagePullPolicy: "IfNotPresent",
+						RestartPolicy:   dataProcessScriptProcessor.Spec.Processor.Script.RestartPolicy,
+						Envs:            dataProcessScriptProcessor.Spec.Processor.Script.Env,
+						Command:         dataProcessScriptProcessor.Spec.Processor.Script.Command,
+						Source:          dataProcessScriptProcessor.Spec.Processor.Script.Source,
+						Volumes:         dataProcessScriptProcessor.Spec.Processor.Script.Volumes,
+						VolumeMounts:    dataProcessScriptProcessor.Spec.Processor.Script.VolumeMounts,
+					},
+				},
+			},
+		},
+		{
+			name: "TestJobProcessorWithoutMountPath",
+			args: args{
+				dataset:     dataset,
+				dataProcess: dataProcessJobProcessorWithoutMountPath,
+			},
+			want: &DataProcessValue{
+				Name:  dataProcessJobProcessor.Name,
+				Owner: transfromer.GenerateOwnerReferenceFromObject(dataProcessJobProcessor),
+				DataProcessInfo: DataProcessInfo{
+					TargetDataset:   dataset.Name,
+					ScriptProcessor: nil,
+					JobProcessor: &JobProcessor{
+						PodSpec: modifiedPodSpecWithoutDatasetVol,
 					},
 				},
 			},

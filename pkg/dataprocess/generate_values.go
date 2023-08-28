@@ -55,23 +55,27 @@ func GenDataProcessValue(dataset *datav1alpha1.Dataset, dataProcess *datav1alpha
 		},
 	}
 
-	volumes := []corev1.Volume{
-		{
-			Name: "fluid-dataset-vol",
-			VolumeSource: corev1.VolumeSource{
-				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-					ClaimName: dataset.Name,
+	var volumes []corev1.Volume
+	var volumeMounts []corev1.VolumeMount
+	if len(dataProcess.Spec.Dataset.MountPath) != 0 {
+		volumes = []corev1.Volume{
+			{
+				Name: "fluid-dataset-vol",
+				VolumeSource: corev1.VolumeSource{
+					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+						ClaimName: dataset.Name,
+					},
 				},
 			},
-		},
-	}
+		}
 
-	volumeMounts := []corev1.VolumeMount{
-		{
-			Name:      "fluid-dataset-vol",
-			MountPath: dataProcess.Spec.Dataset.MountPath,
-			SubPath:   dataProcess.Spec.Dataset.SubPath,
-		},
+		volumeMounts = []corev1.VolumeMount{
+			{
+				Name:      "fluid-dataset-vol",
+				MountPath: dataProcess.Spec.Dataset.MountPath,
+				SubPath:   dataProcess.Spec.Dataset.SubPath,
+			},
+		}
 	}
 
 	transformCommonPart(value, dataProcess)
