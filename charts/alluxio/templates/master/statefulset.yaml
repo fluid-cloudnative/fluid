@@ -191,12 +191,12 @@ spec:
             failureThreshold: 10
             timeoutSeconds: 15
             periodSeconds: 20
-          {{- end }}
-          {{ else }}
+          {{- else }}
           lifecycle:
             postStart:
               exec:
-                command: ["bash", "-c", "while true; do /etc/fluid/scripts/mount.sh; if [ $? -ne 0 ];then sleep 20; else break; done" ]
+                command: ["bash", "-c", "while true; do /etc/fluid/scripts/mount.sh >> /proc/1/fd/1 2>&1; if [ $? -ne 0 ];then sleep 20; else break; fi; done" ]
+          {{- end }}
           {{- end }}
           {{- if $isHaEmbedded }}
           env:
