@@ -17,11 +17,14 @@
 package dataprocess
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	corev1 "k8s.io/api/core/v1"
 )
 
 type DataProcessValue struct {
 	Name string `json:"name"`
+
+	Owner *common.OwnerReference `json:"owner,omitempty"`
 
 	DataProcessInfo DataProcessInfo `json:"dataProcess"`
 }
@@ -30,6 +33,10 @@ type DataProcessInfo struct {
 	TargetDataset string `json:"targetDataset,omitempty"`
 
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+
+	Labels map[string]string `json:"labels,omitempty"`
+
+	Annotations map[string]string `json:"annotations,omitempty"`
 
 	JobProcessor *JobProcessor `json:"jobProcessor,omitempty"`
 
@@ -45,7 +52,7 @@ type ScriptProcessor struct {
 
 	Command []string `json:"command,omitempty"`
 
-	Args []string `json:"args,omitempty"`
+	Source string `json:"source,omitempty"`
 
 	Envs []corev1.EnvVar `json:"envs,omitempty"`
 

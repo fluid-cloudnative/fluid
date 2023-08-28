@@ -40,6 +40,10 @@ type Processor struct {
 	// +optional
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 
+	// PodMetadata defines labels and annotations on the processor pod.
+	// +optional
+	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
+
 	// Job represents a processor which runs DataProcess as a job.
 	// +optional
 	Job *JobProcessor `json:"job,omitempty"`
@@ -68,9 +72,9 @@ type ScriptProcessor struct {
 	// +optional
 	Command []string `json:"command,omitempty"`
 
-	// Arguments to the entrypoint.
-	// +optional
-	Args []string `json:"args,omitempty"`
+	// Script source for ScriptProcessor
+	// +required
+	Source string `json:"source"`
 
 	// List of environment variables to set in the container.
 	// +optional

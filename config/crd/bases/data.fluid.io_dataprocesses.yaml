@@ -7461,15 +7461,25 @@ spec:
                         - containers
                         type: object
                     type: object
+                  podMetadata:
+                    description: PodMetadata defines labels and annotations on the
+                      processor pod.
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: Annotations are annotations of pod specification
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Labels are labels of pod specification
+                        type: object
+                    type: object
                   script:
                     description: Shell represents a processor which executes shell
                       script
                     properties:
-                      args:
-                        description: Arguments to the entrypoint.
-                        items:
-                          type: string
-                        type: array
                       command:
                         description: Entrypoint command for ScriptProcessor.
                         items:
@@ -7606,6 +7616,9 @@ spec:
                         enum:
                         - Never
                         - OnFailure
+                        type: string
+                      source:
+                        description: Script source for ScriptProcessor
                         type: string
                       volumeMounts:
                         description: Pod volumes to mount into the container's filesystem.
@@ -9255,6 +9268,8 @@ spec:
                           - name
                           type: object
                         type: array
+                    required:
+                    - source
                     type: object
                   serviceAccountName:
                     description: ServiceAccountName defiens the serviceAccountName
