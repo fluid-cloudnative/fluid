@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -154,7 +155,8 @@ func TestGenDataProcessValue(t *testing.T) {
 				dataProcess: dataProcessScriptProcessor,
 			},
 			want: &DataProcessValue{
-				Name: dataProcessScriptProcessor.Name,
+				Name:  dataProcessScriptProcessor.Name,
+				Owner: transfromer.GenerateOwnerReferenceFromObject(dataProcessScriptProcessor),
 				DataProcessInfo: DataProcessInfo{
 					TargetDataset: dataset.Name,
 					JobProcessor:  nil,
@@ -178,7 +180,8 @@ func TestGenDataProcessValue(t *testing.T) {
 				dataProcess: dataProcessJobProcessor,
 			},
 			want: &DataProcessValue{
-				Name: dataProcessJobProcessor.Name,
+				Name:  dataProcessJobProcessor.Name,
+				Owner: transfromer.GenerateOwnerReferenceFromObject(dataProcessJobProcessor),
 				DataProcessInfo: DataProcessInfo{
 					TargetDataset:   dataset.Name,
 					ScriptProcessor: nil,
