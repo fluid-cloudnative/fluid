@@ -145,8 +145,8 @@ func TestGenDataProcessValue(t *testing.T) {
 		},
 	}
 	modifiedPodSpecWithoutDatasetVol := modifiedPodSpec.DeepCopy()
-	modifiedPodSpecWithoutDatasetVol.Volumes = []corev1.Volume{}
-	modifiedPodSpecWithoutDatasetVol.Containers[0].VolumeMounts = []corev1.VolumeMount{}
+	modifiedPodSpecWithoutDatasetVol.Volumes = nil
+	modifiedPodSpecWithoutDatasetVol.Containers[0].VolumeMounts = nil
 
 	type args struct {
 		dataset     *datav1alpha1.Dataset
@@ -208,7 +208,7 @@ func TestGenDataProcessValue(t *testing.T) {
 			},
 			want: &DataProcessValue{
 				Name:  dataProcessScriptProcessor.Name,
-				Owner: transfromer.GenerateOwnerReferenceFromObject(dataProcessScriptProcessor),
+				Owner: transfromer.GenerateOwnerReferenceFromObject(dataProcessScriptProcessorWithoutMountPath),
 				DataProcessInfo: DataProcessInfo{
 					TargetDataset: dataset.Name,
 					JobProcessor:  nil,
@@ -233,7 +233,7 @@ func TestGenDataProcessValue(t *testing.T) {
 			},
 			want: &DataProcessValue{
 				Name:  dataProcessJobProcessor.Name,
-				Owner: transfromer.GenerateOwnerReferenceFromObject(dataProcessJobProcessor),
+				Owner: transfromer.GenerateOwnerReferenceFromObject(dataProcessJobProcessorWithoutMountPath),
 				DataProcessInfo: DataProcessInfo{
 					TargetDataset:   dataset.Name,
 					ScriptProcessor: nil,
