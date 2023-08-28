@@ -5,8 +5,8 @@ metadata:
 spec:
   fileSystemType: ossfs
   fuse:
-    image: registry.cn-beijing.aliyuncs.com/wsl-ns-p/fluid
-    imageTag: ossfs_v11
+    image: fluidcloudnative/ossfs
+    imageTag: v1.0
     imagePullPolicy: IfNotPresent
     command:
     - "/sbin/tini"

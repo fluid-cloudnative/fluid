@@ -15,7 +15,7 @@ RUN apk --update add fuse curl libxml2 openssl libstdc++ libgcc python3 inotify-
 ENV OSSFS_VERSION v1.91.1
 COPY --from=builder /usr/bin/ossfs /usr/bin/ossfs
 
-ADD gen_mount_script.py /
+ADD mount_and_umount.py /
 ADD inotify.sh /
 ADD umount.sh /
 RUN chmod u+x /inotify.sh /umount.sh

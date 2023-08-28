@@ -32,8 +32,8 @@ func (handler *datasetEventHandler) onUpdateFunc(r Controller, datasetType strin
 			log.Info("dataset.onUpdateFunc Skip", "object", e.ObjectNew)
 			return needUpdate
 		}
-		if datasetNew.Status.Runtimes[0].Type != datasetType {
-			log.V(1).Info("dataset.onUpdateFunc Skip due to it's runtime type not match", "datasetType", datasetType)
+		if len(datasetNew.Status.Runtimes) > 0 && datasetNew.Status.Runtimes[0].Type != datasetType {
+			log.V(1).Info("dataset.onUpdateFunc Skip due to runtime type not match", "wantType", datasetType, "datasetType", datasetNew.Status.Runtimes[0].Type)
 			return needUpdate
 		}
 
