@@ -18,6 +18,9 @@ package alluxio
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"path/filepath"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -52,6 +55,38 @@ func (e *AlluxioEngine) transformMasterVolumes(runtime *datav1alpha1.AlluxioRunt
 	}
 
 	return err
+}
+
+func (e *AlluxioEngine) transformEncryptOptionsToMasterVolumes(dataset *datav1alpha1.Dataset, value *Alluxio) (options map[string]string) {
+	for _, m := range dataset.Spec.Mounts {
+		if common.IsFluidNativeScheme(m.MountPoint) {
+			continue
+		}
+		options = make(map[string]string)
+		for _, encryptOpt := range append(dataset.Spec.SharedEncryptOptions, m.EncryptOptions...) {
+			secretName := encryptOpt.ValueFrom.SecretKeyRef.Name
+			secretMountPath := fmt.Sprintf("/etc/fluid/secrets/%s", secretName)
+
+			volName := fmt.Sprintf("alluxio-mount-secret-%s", secretName)
+			volumeToAdd := corev1.Volume{
+				Name: volName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: secretName,
+					},
+				},
+			}
+			value.Master.Volumes = utils.AppendOrOverrideVolume(value.Master.Volumes, volumeToAdd)
+			volumeMountToAdd := corev1.VolumeMount{
+				Name:      volName,
+				ReadOnly:  true,
+				MountPath: secretMountPath,
+			}
+			value.Master.VolumeMounts = utils.AppendOrOverrideVolumeMounts(value.Master.VolumeMounts, volumeMountToAdd)
+			options[encryptOpt.Name] = filepath.Join(secretMountPath, encryptOpt.ValueFrom.SecretKeyRef.Key)
+		}
+	}
+	return options
 }
 
 // transform worker volumes

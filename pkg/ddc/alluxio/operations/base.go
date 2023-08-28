@@ -297,7 +297,7 @@ func (a AlluxioFileUtils) IsMounted(alluxioPath string) (mounted bool, err error
 	return mounted, err
 }
 
-func (a AlluxioFileUtils) FindUnmountedAlluxioPaths(alluxioPaths []string) ([]string, error) {
+func (a AlluxioFileUtils) GetMountedAlluxioPaths() ([]string, error) {
 	var (
 		command = []string{"alluxio", "fs", "mount"}
 		stdout  string
@@ -314,6 +314,15 @@ func (a AlluxioFileUtils) FindUnmountedAlluxioPaths(alluxioPaths []string) ([]st
 	for _, line := range results {
 		fields := strings.Fields(line)
 		mountedPaths = append(mountedPaths, fields[2])
+	}
+
+	return mountedPaths, err
+}
+
+func (a AlluxioFileUtils) FindUnmountedAlluxioPaths(alluxioPaths []string) ([]string, error) {
+	mountedPaths, err := a.GetMountedAlluxioPaths()
+	if err != nil {
+		return []string{}, err
 	}
 
 	return utils.SubtractString(alluxioPaths, mountedPaths), err
@@ -540,4 +549,15 @@ func (a AlluxioFileUtils) MasterPodName() (masterPodName string, err error) {
 	address := strings.Split(data[2], ":")[0]
 
 	return address, nil
+}
+
+func (a AlluxioFileUtils) ExecMountScripts() error {
+	// Note: this script is mounted in master/statefulset.yaml
+	command := []string{"/etc/fluid/scripts/mount.sh"}
+	stdout, stderr, err := a.exec(command, true)
+	if err != nil {
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		return err
+	}
+	return nil
 }

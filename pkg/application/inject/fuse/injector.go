@@ -242,8 +242,9 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 	}
 
 	option := common.FuseSidecarInjectOption{
-		EnableCacheDir:            utils.InjectCacheDirEnabled(metaObj.Labels),
-		EnableUnprivilegedSidecar: utils.FuseSidecarUnprivileged(metaObj.Labels),
+		EnableCacheDir:             utils.InjectCacheDirEnabled(metaObj.Labels),
+		EnableUnprivilegedSidecar:  utils.FuseSidecarUnprivileged(metaObj.Labels),
+		SkipSidecarPostStartInject: utils.SkipSidecarPostStartInject(metaObj.Labels),
 	}
 
 	template, exist := cache.GetFuseTemplateByKey(pvcKey, option)

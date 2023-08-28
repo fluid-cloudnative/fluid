@@ -36,6 +36,8 @@ const (
 	FuseRecoverSucceed = "FuseRecoverSucceed"
 
 	RuntimeDeprecated = "RuntimeDeprecated"
+
+	RuntimeWithSecretNotSupported = "RuntimeWithSecretNotSupported"
 )
 
 // Events related to all type of Data Operations
@@ -163,34 +165,39 @@ const (
 )
 
 const (
-	RootDirPath                   = "/"
-	DefaultImagePullPolicy        = "IfNotPresent"
-	MyPodNamespace                = "MY_POD_NAMESPACE"
-	True                          = "true"
-	False                         = "false"
+	RootDirPath            = "/"
+	DefaultImagePullPolicy = "IfNotPresent"
+	MyPodNamespace         = "MY_POD_NAMESPACE"
+	True                   = "true"
+	False                  = "false"
+	App                    = "app"
+	JobPolicy              = "fluid.io/jobPolicy"
+	CronPolicy             = "cron"
+	PodRoleType            = "role"
+	DataloadPod            = "dataload-pod"
+	NamespaceFluidSystem   = "fluid-system"
+)
+
+const (
 	inject                        = ".fluid.io/inject"
 	injectSidecar                 = ".sidecar" + inject
-	InjectServerless              = "serverless" + inject
-	InjectFuseSidecar             = "fuse" + injectSidecar
-	InjectUnprivilegedFuseSidecar = "unprivileged" + injectSidecar
-	InjectCacheDir                = "cachedir" + injectSidecar
-	InjectWorkerSidecar           = "worker" + injectSidecar
-	InjectSidecarDone             = "done" + injectSidecar
-	App                           = "app"
-	InjectAppPostStart            = "app.poststart" + inject
+	InjectServerless              = "serverless" + inject          // serverless.fluid.io/inject
+	InjectUnprivilegedFuseSidecar = "unprivileged" + injectSidecar // unprivileged.sidecar.fluid.io/inject
+	InjectCacheDir                = "cachedir" + injectSidecar     // cachedir.sidecar.fluid.io/inject
+	InjectWorkerSidecar           = "worker" + injectSidecar       // worker.sidecar.fluid.io/inject
+	InjectSidecarDone             = "done" + injectSidecar         // done.sidecar.fluid.io/inject
+	InjectAppPostStart            = "app.poststart" + inject       // app.poststart.fluid.io/inject
+	InjectSidecarPostStart        = "fuse.sidecar.poststart" + inject // fuse.sidecar.poststart.fluid.io/inject
 
 	injectServerful     = ".serverful" + inject
 	InjectServerfulFuse = "fuse" + injectServerful
 
+	InjectFuseSidecar = "fuse" + injectSidecar // [Deprecated] fuse.sidecar.fluid.io/inject
+)
+
+const (
 	EnvServerlessPlatformKey        = "KEY_SERVERLESS_PLATFORM"
 	EnvServerlessPlatformVal        = "VALUE_SERVERLESS_PLATFORM"
 	EnvDisableApplicationController = "KEY_DISABLE_APP_CONTROLLER"
-	NamespaceFluidSystem            = "fluid-system"
 	EnvImagePullSecretsKey          = "IMAGE_PULL_SECRETS"
-
-	PodRoleType = "role"
-	DataloadPod = "dataload-pod"
-
-	JobPolicy  = "fluid.io/jobPolicy"
-	CronPolicy = "cron"
 )

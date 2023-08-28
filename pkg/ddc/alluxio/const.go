@@ -17,6 +17,8 @@ limitations under the License.
 package alluxio
 
 const (
+	// NON_NATIVE_MOUNT_DATA_NAME also used in master 'statefulset.yaml' and config 'alluxio-mount.conf.yaml'
+	NON_NATIVE_MOUNT_DATA_NAME = "mount.info"
 
 	// alluxioHome string = "/opt/alluxio"
 
@@ -58,4 +60,7 @@ const (
 	// defaultGracefulShutdownLimits is the limit for the system to forcibly clean up.
 	defaultGracefulShutdownLimits       int32 = 3
 	defaultCleanCacheGracePeriodSeconds int32 = 60
+
+	MountConfigStorage   = "ALLUXIO_MOUNT_CONFIG_STORAGE"
+	ConfigmapStorageName = "configmap"
 )

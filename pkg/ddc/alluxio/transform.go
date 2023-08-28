@@ -163,7 +163,8 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 	uRootPath, m := utils.UFSPathBuilder{}.GenAlluxioUFSRootPath(dataset.Spec.Mounts)
 	// attach mount options when direct mount ufs endpoint
 	if m != nil {
-		if mOptions, err := e.genUFSMountOptions(*m, dataset.Spec.SharedOptions, dataset.Spec.SharedEncryptOptions); err != nil {
+		extractEncryptOption := !IsMountWithConfigMap()
+		if mOptions, err := e.genUFSMountOptions(*m, dataset.Spec.SharedOptions, dataset.Spec.SharedEncryptOptions, extractEncryptOption); err != nil {
 			return err
 		} else {
 			for k, v := range mOptions {
@@ -356,6 +357,19 @@ func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime,
 	if err != nil {
 		e.Log.Error(err, "failed to transform volumes for master")
 	}
+
+	if IsMountWithConfigMap() {
+		e.Log.Info("use configmap to generate mount info")
+		// transform mount secret options
+		nonNativeMounts, err := e.generateNonNativeMountsInfo(dataset)
+		if err != nil {
+			e.Log.Error(err, "generate non native mount info occurs error")
+			return err
+		}
+		value.Master.NonNativeMounts = nonNativeMounts
+		value.Master.MountConfigStorage = ConfigmapStorageName
+		e.transformEncryptOptionsToMasterVolumes(dataset, value)
+	}
 	return
 }
 
@@ -527,6 +541,43 @@ func (e *AlluxioEngine) transformShortCircuit(runtimeInfo base.RuntimeInfoInterf
 	if !enableShortCircuit {
 		value.Properties["alluxio.user.short.circuit.enabled"] = "false"
 	}
+}
+
+func (e *AlluxioEngine) generateNonNativeMountsInfo(dataset *datav1alpha1.Dataset) ([]string, error) {
+	var nonNativeMounts []string
+	for _, mount := range dataset.Spec.Mounts {
+		if common.IsFluidNativeScheme(mount.MountPoint) {
+			continue
+		}
+
+		mOptions, err := e.genUFSMountOptions(mount, dataset.Spec.SharedOptions, dataset.Spec.SharedEncryptOptions, false)
+		if err != nil {
+			return nil, err
+		}
+
+		alluxioPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount)
+
+		var mountArgs []string
+
+		// ensure the first two element is the alluxio mount point and ufs path, used in mount.sh
+		mountArgs = append(mountArgs, alluxioPath, mount.MountPoint)
+
+		if mount.ReadOnly {
+			mountArgs = append(mountArgs, "--readonly")
+		}
+
+		if mount.Shared {
+			mountArgs = append(mountArgs, "--shared")
+		}
+
+		for k, v := range mOptions {
+			mountArgs = append(mountArgs, "--option", fmt.Sprintf("%s=%s", k, v))
+		}
+
+		// use space as seperator as it will append to `alluxio fs mount` directly.
+		nonNativeMounts = append(nonNativeMounts, strings.Join(mountArgs, " "))
+	}
+	return nonNativeMounts, nil
 }
 
 func (e *AlluxioEngine) getMediumTypeFromVolumeSource(defaultMediumType string, level base.Level) string {

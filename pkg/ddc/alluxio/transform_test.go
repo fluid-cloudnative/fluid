@@ -17,6 +17,7 @@ limitations under the License.
 package alluxio
 
 import (
+	"fmt"
 	"reflect"
 	"strconv"
 	"testing"
@@ -35,6 +36,13 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+)
+
+var (
+	LocalMount = datav1alpha1.Mount{
+		MountPoint: "local:///mnt/test",
+		Name:       "local",
+	}
 )
 
 func TestTransformFuse(t *testing.T) {
@@ -56,10 +64,9 @@ func TestTransformFuse(t *testing.T) {
 			},
 		}, &datav1alpha1.Dataset{
 			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "local:///mnt/test",
-					Name:       "test",
-				}},
+				Mounts: []datav1alpha1.Mount{
+					LocalMount,
+				},
 				Owner: &datav1alpha1.User{
 					UID: &x,
 					GID: &x,
@@ -991,10 +998,9 @@ func TestTransformFuseProperties(t *testing.T) {
 			Value: &Alluxio{},
 			DataSet: &datav1alpha1.Dataset{
 				Spec: datav1alpha1.DatasetSpec{
-					Mounts: []datav1alpha1.Mount{{
-						MountPoint: "local:///mnt/test",
-						Name:       "test",
-					}},
+					Mounts: []datav1alpha1.Mount{
+						LocalMount,
+					},
 					Owner: &datav1alpha1.User{
 						UID: &x,
 						GID: &x,
@@ -1030,6 +1036,172 @@ func TestTransformFuseProperties(t *testing.T) {
 			} else {
 				t.Fatalf("test name: %s. expect %s in value,but not in ", tt.Name, k)
 			}
+		}
+	}
+}
+
+func TestGenerateNonNativeMountsInfo(t *testing.T) {
+	const (
+		SecretName = "ds-secret"
+		SecretKey  = "secret-key"
+	)
+	engine := &AlluxioEngine{Log: fake.NullLogger()}
+	var x int64 = 1000
+	ctrl.SetLogger(zap.New(func(o *zap.Options) {
+		o.Development = true
+	}))
+
+	type testCase struct {
+		Name      string
+		DataSet   *datav1alpha1.Dataset
+		wantValue []string
+	}
+
+	testCases := []testCase{
+		{
+			Name: "generate non native mount infos",
+			DataSet: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{{
+						MountPoint: "https://mirrors.bit.edu.cn/apache/hbase",
+						Name:       "hbase",
+						Shared:     true,
+						ReadOnly:   true,
+					}, {
+						MountPoint: "oss://oss.com/test",
+						Name:       "oss",
+						EncryptOptions: []datav1alpha1.EncryptOption{
+							{
+								Name: "secret",
+								ValueFrom: datav1alpha1.EncryptOptionSource{
+									SecretKeyRef: datav1alpha1.SecretKeySelector{
+										Name: SecretName,
+										Key:  SecretKey,
+									},
+								},
+							},
+						},
+					}, LocalMount, {
+						MountPoint: "pvc:///mnt/test",
+						Name:       "pvc",
+					}},
+					Owner: &datav1alpha1.User{
+						UID: &x,
+						GID: &x,
+					},
+				},
+			},
+			wantValue: []string{
+				"/hbase https://mirrors.bit.edu.cn/apache/hbase --readonly --shared",
+				fmt.Sprintf("/oss oss://oss.com/test --option secret=/etc/fluid/secrets/%s/%s", SecretName, SecretKey),
+			},
+		},
+	}
+
+	for _, tt := range testCases {
+		engine.Log = ctrl.Log
+		mounts, err := engine.generateNonNativeMountsInfo(tt.DataSet)
+		if err != nil {
+			t.Fatalf("test name: %s. Expect err = nil, but got err = %v", tt.Name, err)
+		}
+		if !reflect.DeepEqual(mounts, tt.wantValue) {
+			t.Fatalf("test name: %s. expect %v, get %v", tt.Name, tt.wantValue, mounts)
+		}
+	}
+}
+
+func TestTransformMasterMountConfigMap(t *testing.T) {
+	const (
+		SecretName = "alluxio-secret"
+		SecretKey  = "secret-key"
+	)
+
+	engine := &AlluxioEngine{Log: fake.NullLogger()}
+
+	type testCase struct {
+		Name      string
+		Runtime   *datav1alpha1.AlluxioRuntime
+		Value     *Alluxio
+		DataSet   *datav1alpha1.Dataset
+		wantValue *Alluxio
+	}
+
+	testCases := []testCase{
+		{
+			Name: "use mount config map",
+			Runtime: &datav1alpha1.AlluxioRuntime{
+				Spec: datav1alpha1.AlluxioRuntimeSpec{},
+			},
+			Value: &Alluxio{},
+			DataSet: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							MountPoint: "https://mirrors.bit.edu.cn/apache/hbase",
+							Name:       "hbase",
+							EncryptOptions: []datav1alpha1.EncryptOption{
+								{
+									Name: "secret",
+									ValueFrom: datav1alpha1.EncryptOptionSource{
+										SecretKeyRef: datav1alpha1.SecretKeySelector{
+											Name: SecretName,
+											Key:  SecretKey,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantValue: &Alluxio{
+				Master: Master{
+					MountConfigStorage: ConfigmapStorageName,
+					NonNativeMounts: []string{
+						fmt.Sprintf("/hbase https://mirrors.bit.edu.cn/apache/hbase --option secret=/etc/fluid/secrets/%s/%s", SecretName, SecretKey),
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: fmt.Sprintf("alluxio-mount-secret-%s", SecretName),
+							VolumeSource: corev1.VolumeSource{
+								Secret: &corev1.SecretVolumeSource{
+									SecretName: SecretName,
+								},
+							},
+						},
+					},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      fmt.Sprintf("alluxio-mount-secret-%s", SecretName),
+							ReadOnly:  true,
+							MountPath: fmt.Sprintf("/etc/fluid/secrets/%s", SecretName),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range testCases {
+		err := engine.transformMasters(tt.Runtime, tt.DataSet, tt.Value)
+		if err != nil {
+			t.Fatalf("test name: %s. Expect err = nil, but got err = %v", tt.Name, err)
+		}
+		if tt.Value.Master.MountConfigStorage != tt.wantValue.Master.MountConfigStorage {
+			t.Fatalf("test name: %s. expect %s got %s", tt.Name,
+				tt.wantValue.Master.MountConfigStorage, tt.Value.Master.MountConfigStorage)
+		}
+		if !reflect.DeepEqual(tt.Value.Master.NonNativeMounts, tt.wantValue.Master.NonNativeMounts) {
+			t.Fatalf("test name: %s. expect %s got %s", tt.Name,
+				tt.wantValue.Master.NonNativeMounts, tt.Value.Master.NonNativeMounts)
+		}
+		if !reflect.DeepEqual(tt.Value.Master.VolumeMounts, tt.wantValue.Master.VolumeMounts) {
+			t.Fatalf("test name: %s. expect %v got %v", tt.Name,
+				tt.wantValue.Master.VolumeMounts, tt.Value.Master.VolumeMounts)
+		}
+		if !reflect.DeepEqual(tt.Value.Master.Volumes, tt.wantValue.Master.Volumes) {
+			t.Fatalf("test name: %s. expect %v got %v", tt.Name,
+				tt.wantValue.Master.Volumes, tt.Value.Master.Volumes)
 		}
 	}
 }
