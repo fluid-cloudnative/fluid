@@ -218,6 +218,7 @@ func (j *JuiceFSEngine) GetConfigMap(name string) (cm *corev1.ConfigMap, err err
 	}, cm)
 	if apierrs.IsNotFound(err) {
 		err = nil
+		cm = nil
 	}
 
 	return
@@ -227,7 +228,6 @@ func (j *JuiceFSEngine) UpdateConfigMap(cm *corev1.ConfigMap) (err error) {
 	err = j.Client.Update(context.TODO(), cm)
 	if apierrs.IsNotFound(err) {
 		err = nil
-		cm = nil
 	}
 
 	return
