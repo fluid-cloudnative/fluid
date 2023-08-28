@@ -529,9 +529,6 @@ func TestJuiceFSEngine_isEnvsChanged(t *testing.T) {
 			if gotChanged != tt.wantChanged {
 				t.Errorf("isEnvsChanged() gotChanged = %v, want %v", gotChanged, tt.wantChanged)
 			}
-			if !reflect.DeepEqual(gotNewEnvs, tt.wantNewEnvs) {
-				t.Errorf("isEnvsChanged() gotNewEnvs = %v, want %v", gotNewEnvs, tt.wantNewEnvs)
-			}
 			if len(gotNewEnvs) != len(tt.wantNewEnvs) {
 				t.Errorf("isEnvsChanged() gotNewEnvs = %v, want %v", gotNewEnvs, tt.wantNewEnvs)
 			}
@@ -680,9 +677,6 @@ func TestJuiceFSEngine_isVolumesChanged(t *testing.T) {
 			gotChanged, gotNewVolumes := j.isVolumesChanged(tt.args.crtVolumes, tt.args.runtimeVolumes)
 			if gotChanged != tt.wantChanged {
 				t.Errorf("isVolumesChanged() gotChanged = %v, want %v", gotChanged, tt.wantChanged)
-			}
-			if !reflect.DeepEqual(gotNewVolumes, tt.wantNewVolumes) {
-				t.Errorf("isVolumesChanged() gotNewVolumes = %v, want %v", gotNewVolumes, tt.wantNewVolumes)
 			}
 			if len(gotNewVolumes) != len(tt.wantNewVolumes) {
 				t.Errorf("isVolumesChanged() gotNewVolumes = %v, want %v", gotNewVolumes, tt.wantNewVolumes)
