@@ -24,6 +24,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
+	"k8s.io/utils/pointer"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
@@ -86,12 +87,6 @@ func (j *JuiceFSEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, run
 			changed = true
 		}
 
-		// networkMode
-		if hostNetworkChanged, newNetwork := j.isHostNetworkChanged(workersToUpdate.Spec.Template.Spec.HostNetwork, value.Worker.HostNetwork); hostNetworkChanged {
-			workersToUpdate.Spec.Template.Spec.HostNetwork = newNetwork
-			changed = true
-		}
-
 		// volumes
 		if volumeChanged, newVolumes := j.isVolumesChanged(workersToUpdate.Spec.Template.Spec.Volumes, value.Worker.Volumes); volumeChanged {
 			workersToUpdate.Spec.Template.Spec.Volumes = newVolumes
@@ -136,6 +131,16 @@ func (j *JuiceFSEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, run
 				workersToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts = newVolumeMounts
 				changed = true
 			}
+
+			// image
+			runtimeImage := value.Image
+			if value.ImageTag != "" {
+				runtimeImage = runtimeImage + ":" + value.ImageTag
+			}
+			if imageChanged, newImage := j.isImageChanged(workersToUpdate.Spec.Template.Spec.Containers[0].Image, runtimeImage); imageChanged {
+				workersToUpdate.Spec.Template.Spec.Containers[0].Image = newImage
+				changed = true
+			}
 		}
 
 		if cmChanged {
@@ -146,18 +151,26 @@ func (j *JuiceFSEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, run
 				return err
 			}
 			if !changed {
-				// if worker sts not changed, delete worker pod to reload the script
-				pods, err := j.GetRunningPodsOfStatefulSet(j.getWorkerName(), j.namespace)
+				// if worker sts not changed, scale in & out worker pod to reload the script
+				replica := workersToUpdate.Spec.Replicas
+				j.Log.Info("scale in worker", "sts", workersToUpdate.Name)
+				workersToUpdate.Spec.Replicas = pointer.Int32Ptr(0)
+				err = j.Client.Update(context.TODO(), workersToUpdate)
+				if err != nil {
+					j.Log.Error(err, "Failed to update the sts spec")
+					return err
+				}
+
+				j.Log.Info("scale out worker", "sts", workersToUpdate.Name, "replica", replica)
+				workerNow, err := ctrl.GetWorkersAsStatefulset(j.Client, types.NamespacedName{Namespace: j.namespace, Name: j.getWorkerName()})
 				if err != nil {
 					return err
 				}
-				j.Log.Info("delete worker pods", "pods", len(pods))
-				for _, pod := range pods {
-					err = j.Client.Delete(context.TODO(), &pod)
-					if err != nil {
-						j.Log.Info("Failed to delete the worker pod", "pod", pod.Name, "error", err)
-						return err
-					}
+				workerNow.Spec.Replicas = replica
+				err = j.Client.Update(context.TODO(), workerNow)
+				if err != nil {
+					j.Log.Error(err, "Failed to update the sts spec")
+					return err
 				}
 			}
 		} else {
@@ -308,7 +321,6 @@ func (j JuiceFSEngine) isVolumesChanged(crtVolumes, runtimeVolumes []corev1.Volu
 }
 
 func (j JuiceFSEngine) isLabelsChanged(crtLabels, runtimeLabels map[string]string) (changed bool, newLabels map[string]string) {
-	j.Log.Info("labels", "current sts", crtLabels, "runtime", runtimeLabels)
 	newLabels = crtLabels
 	for k, v := range runtimeLabels {
 		if crtv, ok := crtLabels[k]; !ok || crtv != v {
@@ -332,12 +344,12 @@ func (j JuiceFSEngine) isAnnotationsChanged(crtAnnotations, runtimeAnnotations m
 	return
 }
 
-func (j JuiceFSEngine) isHostNetworkChanged(crtHostNetwork, runtimeHostNetwork bool) (changed bool, newHostNetwork bool) {
-	if crtHostNetwork != runtimeHostNetwork {
-		j.Log.Info("The hostNetwork is different.", "current sts", crtHostNetwork, "runtime", runtimeHostNetwork)
+func (j JuiceFSEngine) isImageChanged(crtImage, runtimeImage string) (changed bool, newImage string) {
+	if crtImage != runtimeImage {
+		j.Log.Info("The image is different.", "current sts", crtImage, "runtime", runtimeImage)
 		changed = true
 	}
-	newHostNetwork = runtimeHostNetwork
+	newImage = runtimeImage
 	return
 }
 

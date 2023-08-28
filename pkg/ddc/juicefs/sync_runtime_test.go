@@ -697,34 +697,34 @@ func TestJuiceFSEngine_isVolumesChanged(t *testing.T) {
 	}
 }
 
-func TestJuiceFSEngine_isHostNetworkChanged(t *testing.T) {
+func TestJuiceFSEngine_isImageChanged(t *testing.T) {
 	type args struct {
-		crtHostNetwork     bool
-		runtimeHostNetwork bool
+		crtImage     string
+		runtimeImage string
 	}
 	tests := []struct {
-		name               string
-		args               args
-		wantChanged        bool
-		wantNewHostNetwork bool
+		name        string
+		args        args
+		wantChanged bool
+		wantImage   string
 	}{
 		{
 			name: "test-false",
 			args: args{
-				crtHostNetwork:     false,
-				runtimeHostNetwork: false,
+				crtImage:     "juicedata/juicefs-fuse:ee-4.9.6",
+				runtimeImage: "juicedata/juicefs-fuse:ee-4.9.6",
 			},
-			wantChanged:        false,
-			wantNewHostNetwork: false,
+			wantChanged: false,
+			wantImage:   "juicedata/juicefs-fuse:ee-4.9.6",
 		},
 		{
 			name: "test-true",
 			args: args{
-				crtHostNetwork:     false,
-				runtimeHostNetwork: true,
+				crtImage:     "juicedata/juicefs-fuse:ee-4.9.6",
+				runtimeImage: "juicedata/juicefs-fuse:ee-4.9.10",
 			},
-			wantChanged:        true,
-			wantNewHostNetwork: true,
+			wantChanged: true,
+			wantImage:   "juicedata/juicefs-fuse:ee-4.9.10",
 		},
 	}
 	for _, tt := range tests {
@@ -732,12 +732,12 @@ func TestJuiceFSEngine_isHostNetworkChanged(t *testing.T) {
 			j := JuiceFSEngine{
 				Log: fake.NullLogger(),
 			}
-			gotChanged, gotNewHostNetwork := j.isHostNetworkChanged(tt.args.crtHostNetwork, tt.args.runtimeHostNetwork)
+			gotChanged, gotNewImage := j.isImageChanged(tt.args.crtImage, tt.args.runtimeImage)
 			if gotChanged != tt.wantChanged {
-				t.Errorf("isHostNetworkChanged() gotChanged = %v, want %v", gotChanged, tt.wantChanged)
+				t.Errorf("isImageChanged() gotChanged = %v, want %v", gotChanged, tt.wantChanged)
 			}
-			if gotNewHostNetwork != tt.wantNewHostNetwork {
-				t.Errorf("isHostNetworkChanged() gotNewHostNetwork = %v, want %v", gotNewHostNetwork, tt.wantNewHostNetwork)
+			if gotNewImage != tt.wantImage {
+				t.Errorf("isImageChanged() gotNewHostNetwork = %v, want %v", gotNewImage, tt.wantImage)
 			}
 		})
 	}
