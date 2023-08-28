@@ -181,12 +181,12 @@ const (
 const (
 	inject                        = ".fluid.io/inject"
 	injectSidecar                 = ".sidecar" + inject
-	InjectServerless              = "serverless" + inject          // serverless.fluid.io/inject
-	InjectUnprivilegedFuseSidecar = "unprivileged" + injectSidecar // unprivileged.sidecar.fluid.io/inject
-	InjectCacheDir                = "cachedir" + injectSidecar     // cachedir.sidecar.fluid.io/inject
-	InjectWorkerSidecar           = "worker" + injectSidecar       // worker.sidecar.fluid.io/inject
-	InjectSidecarDone             = "done" + injectSidecar         // done.sidecar.fluid.io/inject
-	InjectAppPostStart            = "app.poststart" + inject       // app.poststart.fluid.io/inject
+	InjectServerless              = "serverless" + inject             // serverless.fluid.io/inject
+	InjectUnprivilegedFuseSidecar = "unprivileged" + injectSidecar    // unprivileged.sidecar.fluid.io/inject
+	InjectCacheDir                = "cachedir" + injectSidecar        // cachedir.sidecar.fluid.io/inject
+	InjectWorkerSidecar           = "worker" + injectSidecar          // worker.sidecar.fluid.io/inject
+	InjectSidecarDone             = "done" + injectSidecar            // done.sidecar.fluid.io/inject
+	InjectAppPostStart            = "app.poststart" + inject          // app.poststart.fluid.io/inject
 	InjectSidecarPostStart        = "fuse.sidecar.poststart" + inject // fuse.sidecar.poststart.fluid.io/inject
 
 	injectServerful     = ".serverful" + inject

@@ -1031,3 +1031,76 @@ echo "$(date '+%Y/%m/%d %H:%M:%S').$(printf "%03d" $(($(date '+%N')/1000))) juic
 		})
 	}
 }
+
+func TestJuiceFSEngine_updateWorkerScript(t *testing.T) {
+	cm := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-worker-script",
+			Namespace: "fluid",
+		},
+		Data: map[string]string{
+			"script.sh": `#!/bin/bash
+
+if [ enterprise = community ]; then
+echo "$(date '+%Y/%m/%d %H:%M:%S').$(printf "%03d" $(($(date '+%N')/1000))) juicefs format start."
+/usr/bin/juicefs auth --token=${TOKEN} --accesskey=${ACCESS_KEY} --secretkey=${SECRET_KEY} --bucket=http://test4.minio.default.svc.cluster.local:9000 test-fluid-2
+elif [ ! -f /root/.juicefs/test-fluid-2.conf ]; then
+echo "$(date '+%Y/%m/%d %H:%M:%S').$(printf "%03d" $(($(date '+%N')/1000))) juicefs auth start."
+/usr/bin/juicefs auth --token=${TOKEN} --accesskey=${ACCESS_KEY} --secretkey=${SECRET_KEY} --bucket=http://test4.minio.default.svc.cluster.local:9000 test-fluid-2
+fi
+
+echo "$(date '+%Y/%m/%d %H:%M:%S').$(printf "%03d" $(($(date '+%N')/1000))) juicefs mount start."
+/sbin/mount.juicefs test-fluid-2 /runtime-mnt/juicefs/default/jfsdemo-ee/juicefs-fuse -o subdir=/demo,cache-size=2048,free-space-ratio=0.1,cache-dir=/dev/shm,foreground,no-update,cache-group=default-jfsdemo-ee
+`,
+		},
+	}
+	testObjs := []runtime.Object{}
+	testObjs = append(testObjs, cm)
+
+	fakeClient := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+	tests := []struct {
+		name        string
+		runtimeName string
+		command     string
+		wantCommand string
+		wantErr     bool
+	}{
+		{
+			name:        "test-normal",
+			runtimeName: "test",
+			command:     "echo abc",
+			wantCommand: "echo abc",
+			wantErr:     false,
+		},
+		{
+			name:        "test-not-found",
+			runtimeName: "test1",
+			command:     "",
+			wantCommand: "",
+			wantErr:     false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			j := JuiceFSEngine{
+				name:      tt.runtimeName,
+				namespace: "fluid",
+				Client:    fakeClient,
+				Log:       fake.NullLogger(),
+			}
+			err := j.updateWorkerScript(tt.command)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("updateWorkerScript() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			gotCommand, err := j.getWorkerCommand()
+			if err != nil {
+				t.Errorf("updateWorkerScript get configmap command error = %v", err)
+				return
+			}
+			if gotCommand != tt.command {
+				t.Errorf("updateWorkerScript() gotCommand = %v, want %v", gotCommand, tt.command)
+			}
+		})
+	}
+}
