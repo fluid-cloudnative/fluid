@@ -502,3 +502,81 @@ func TestCleanUpFuse(t *testing.T) {
 
 	}
 }
+
+func TestGetFusePods(t *testing.T) {
+	fusePod := corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "fuse-pod",
+			Namespace: "default",
+			Labels: map[string]string{
+				"release": "test",
+				"role":    "thin-fuse",
+			},
+		},
+	}
+
+	pod := corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "pod",
+			Namespace: "default",
+			Labels: map[string]string{
+				"release": "test-release",
+			},
+		},
+	}
+
+	testcases := []struct {
+		name    string
+		pods    []corev1.Pod
+		podNums int
+		wantErr bool
+	}{
+		{
+			name: "have fuse pod",
+			pods: []corev1.Pod{
+				pod,
+				fusePod,
+			},
+			podNums: 1,
+			wantErr: false,
+		},
+		{
+			name: "have no fuse pod",
+			pods: []corev1.Pod{
+				pod,
+			},
+			podNums: 0,
+			wantErr: false,
+		},
+	}
+	for _, test := range testcases {
+		testPods := []runtime.Object{}
+		for _, podInput := range test.pods {
+			testPods = append(testPods, podInput.DeepCopy())
+		}
+
+		fakeClient := fake.NewFakeClientWithScheme(testScheme, testPods...)
+
+		runtimeInfo, err := base.BuildRuntimeInfo(
+			"test",
+			"default",
+			"thin",
+			datav1alpha1.TieredStore{},
+		)
+		if err != nil {
+			t.Errorf("build runtime info error %v", err)
+		}
+		h := &Helper{
+			runtimeInfo: runtimeInfo,
+			client:      fakeClient,
+			log:         fake.NullLogger(),
+		}
+		pods, err := h.GetFusePods()
+		if (err != nil) != test.wantErr {
+			t.Errorf("failed to get fuse pods with err %v", err)
+		}
+		if len(pods) != int(test.podNums) {
+			t.Errorf("Get wrong fuse pods, want %v, get %v", test.podNums, len(pods))
+		}
+	}
+}

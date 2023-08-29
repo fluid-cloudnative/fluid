@@ -17,9 +17,14 @@
 package thin
 
 import (
+	"context"
+	"fmt"
 	"reflect"
+	"strconv"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
@@ -57,10 +62,19 @@ func (t ThinEngine) ShouldUpdateUFS() (ufsToUpdate *utils.UFSToUpdate) {
 	}
 
 	// 2. update fuse-conf configmap
-	err = t.updateFuseConfigOnChange(t.runtime, dataset)
+	update, err := t.updateFuseConfigOnChange(t.runtime, dataset)
 	if err != nil {
 		t.Log.Error(err, "Failed to update fuse config")
 		return
+	}
+
+	// 3. update fuse pod to sync configmap
+	if update {
+		err := t.updateFusePod()
+		if err != nil {
+			t.Log.Error(err, "Failed to update fuse pod")
+			return
+		}
 	}
 	return
 }
@@ -69,27 +83,27 @@ func (t ThinEngine) UpdateOnUFSChange(ufsToUpdate *utils.UFSToUpdate) (ready boo
 	return true, nil
 }
 
-func (t ThinEngine) updateFuseConfigOnChange(runtime *datav1alpha1.ThinRuntime, dataset *datav1alpha1.Dataset) error {
+func (t ThinEngine) updateFuseConfigOnChange(runtime *datav1alpha1.ThinRuntime, dataset *datav1alpha1.Dataset) (update bool, err error) {
 	fuseConfigStorage := getFuseConfigStorage()
 	if fuseConfigStorage != "configmap" {
 		t.Log.Info("no need to update fuse config", "fuseConfigStorage", fuseConfigStorage)
-		return nil
+		return update, nil
 	}
 
 	fuseConfigMapName := t.getFuseConfigMapName()
 	fuseConfigMap, err := kubeclient.GetConfigmapByName(t.Client, fuseConfigMapName, t.namespace)
 	if err != nil {
-		return err
+		return update, err
 	}
 	if fuseConfigMap == nil {
 		// fuse configmap not found
 		t.Log.Info("Fuse configmap not found", "fuseConfigMapName", fuseConfigMapName)
-		return nil
+		return update, nil
 	}
 
 	configStr, err := t.transformFuseConfig(runtime, dataset, &ThinValue{})
 	if err != nil {
-		return err
+		return update, nil
 	}
 
 	fuseConfigMapToUpdate := fuseConfigMap.DeepCopy()
@@ -98,12 +112,52 @@ func (t ThinEngine) updateFuseConfigOnChange(runtime *datav1alpha1.ThinRuntime, 
 		t.Log.Info("Update fuse config", "fuse config", configStr)
 		err = kubeclient.UpdateConfigMap(t.Client, fuseConfigMapToUpdate)
 		if err != nil {
-			return err
+			return update, err
 		}
+		update = true
 	}
-	return nil
+	return update, nil
 }
 
 func (t ThinEngine) getFuseConfigMapName() string {
 	return t.name + "-fuse-conf"
+}
+
+// Updating the fuse pod is to let kubelet run syncPod and update the configmap content
+func (t ThinEngine) updateFusePod() (err error) {
+	// get fuse pod
+	h := ctrl.BuildHelper(t.runtimeInfo, t.Client, t.Log)
+	pods, err := h.GetFusePods()
+	if err != nil {
+		t.Log.Error(err, "Failed to get fuse pods")
+		return
+	}
+	if len(pods) == 0 {
+		return nil
+	}
+	// update pod annotation
+	annotation := common.LabelAnnotationFusePrefix + "update-fuse-config"
+	for _, pod := range pods {
+		podToUpdate := pod.DeepCopy()
+		annotations := podToUpdate.GetAnnotations()
+		if val, ok := annotations[annotation]; ok {
+			// if annotation has existed, add val
+			count, err := strconv.Atoi(val)
+			if err != nil {
+				t.Log.Error(err, "Fuse pod has invalid annotation")
+				return err
+			}
+			annotations[annotation] = strconv.Itoa(count + 1)
+		} else {
+			// if annotation not exist ,set val to 1
+			annotations[annotation] = "1"
+		}
+		podToUpdate.SetAnnotations(annotations)
+
+		err := t.Client.Update(context.TODO(), podToUpdate)
+		if err != nil {
+			t.Log.Error(err, fmt.Sprintf("Fuse pod %s update failed", podToUpdate.GetName()))
+		}
+	}
+	return
 }
