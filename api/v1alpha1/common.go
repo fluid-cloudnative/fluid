@@ -257,9 +257,9 @@ type OperationRef struct {
 	// +required
 	Name string `json:"name"`
 
-	// Namespace specifies the namespace of the referent operation
-	// +required
-	Namespace string `json:"namespace"`
+	// Namespace specifies the namespace of the referent operation.
+	// +optional
+	Namespace string `json:"namespace,omitempty"`
 }
 
 type WaitingStatus struct {

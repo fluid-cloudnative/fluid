@@ -61,32 +61,32 @@ func GetOperationStatus(obj client.Object) (*datav1alpha1.OperationStatus, error
 	return nil, fmt.Errorf("obj is not of any data operation type")
 }
 
-func GetPrecedingOperationStatus(client client.Client, opRef *datav1alpha1.OperationRef) (*datav1alpha1.OperationStatus, error) {
+func GetPrecedingOperationStatus(client client.Client, opRef *datav1alpha1.OperationRef, opRefNamespace string) (*datav1alpha1.OperationStatus, error) {
 	if opRef == nil {
 		return nil, nil
 	}
 
 	switch opRef.Kind {
 	case string(datav1alpha1.DataBackupType):
-		object, err := GetDataBackup(client, opRef.Name, opRef.Namespace)
+		object, err := GetDataBackup(client, opRef.Name, opRefNamespace)
 		if err != nil {
 			return nil, err
 		}
 		return &object.Status, nil
 	case string(datav1alpha1.DataLoadType):
-		object, err := GetDataLoad(client, opRef.Name, opRef.Namespace)
+		object, err := GetDataLoad(client, opRef.Name, opRefNamespace)
 		if err != nil {
 			return nil, err
 		}
 		return &object.Status, nil
 	case string(datav1alpha1.DataMigrateType):
-		object, err := GetDataMigrate(client, opRef.Name, opRef.Namespace)
+		object, err := GetDataMigrate(client, opRef.Name, opRefNamespace)
 		if err != nil {
 			return nil, err
 		}
 		return &object.Status, nil
 	case string(datav1alpha1.DataProcessType):
-		object, err := GetDataProcess(client, opRef.Name, opRef.Namespace)
+		object, err := GetDataProcess(client, opRef.Name, opRefNamespace)
 		if err != nil {
 			return nil, err
 		}
