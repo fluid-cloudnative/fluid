@@ -979,6 +979,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataBackupSpec(ref common.Refer
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationRef"),
 						},
 					},
+					"ttlSecondsAfterFinished": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TTLSecondsAfterFinished is the time second to clean up data operations after finished or failed",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
 				},
 			},
 		},
@@ -1202,6 +1209,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoadSpec(ref common.Referen
 						SchemaProps: spec.SchemaProps{
 							Description: "Specifies that the preceding operation in a workflow",
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationRef"),
+						},
+					},
+					"ttlSecondsAfterFinished": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TTLSecondsAfterFinished is the time second to clean up data operations after finished or failed",
+							Type:        []string{"integer"},
+							Format:      "int32",
 						},
 					},
 				},
@@ -1450,6 +1464,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateSpec(ref common.Refe
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationRef"),
 						},
 					},
+					"ttlSecondsAfterFinished": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TTLSecondsAfterFinished is the time second to clean up data operations after finished or failed",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
 				},
 				Required: []string{"from", "to"},
 			},
@@ -1580,6 +1601,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataProcessSpec(ref common.Refe
 						SchemaProps: spec.SchemaProps{
 							Description: "Specifies that the preceding operation in a workflow",
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationRef"),
+						},
+					},
+					"ttlSecondsAfterFinished": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TTLSecondsAfterFinished is the time second to clean up data operations after finished or failed",
+							Type:        []string{"integer"},
+							Format:      "int32",
 						},
 					},
 				},

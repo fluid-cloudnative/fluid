@@ -238,6 +238,19 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 		ctx.Recorder.Eventf(object, v1.EventTypeNormal, common.DataOperationSucceed,
 			"%s %s succeeded", operation.GetOperationType(), object.GetName())
 	}
+
+	// 5. clean up data operation
+	if len(opStatusToUpdate.Conditions) > 0 {
+		completionTime := opStatusToUpdate.Conditions[0].LastProbeTime
+		remaining, err := operation.CleanUp(object, completionTime)
+		if err != nil {
+			log.Error(err, fmt.Sprintf("Failed to clean up the %s", operation.GetOperationType()))
+		}
+		if remaining > 0 {
+			log.V(1).Info(fmt.Sprintf("Remaining %v seconds to clean up the %s", remaining, operation.GetOperationType()))
+			return utils.RequeueAfterInterval(time.Duration(remaining) * time.Second)
+		}
+	}
 	return utils.NoRequeue()
 }
 

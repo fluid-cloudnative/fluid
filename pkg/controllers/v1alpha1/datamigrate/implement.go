@@ -113,3 +113,34 @@ func (r *DataMigrateReconciler) GetStatusHandler(obj client.Object) dataoperatio
 		return nil
 	}
 }
+
+func (r *DataMigrateReconciler) CleanUp(object client.Object, completionTime metav1.Time) (int32, error) {
+	var remaining int32
+	dataMigrate, ok := object.(*datav1alpha1.DataMigrate)
+	if !ok {
+		return remaining, fmt.Errorf("object %v is not a DataMigrate", object)
+	}
+
+	if dataMigrate.Spec.Policy == common.CronPolicy {
+		// do not clean up cron data operation
+		return remaining, nil
+	}
+
+	ttl := dataMigrate.Spec.TTLSecondsAfterFinished
+	if ttl == nil {
+		return remaining, nil
+	}
+
+	curTime := time.Now()
+	cleanUpTime := completionTime.Add(time.Duration(*ttl) * time.Second)
+	r.Log.V(1).Info("clean up dataload", "completionTime", completionTime, "curTime", metav1.NewTime(curTime), "ttl", ttl)
+	// if it arrives the clean up time and datamigrate has no deletionTimeStamp
+	if curTime.After(cleanUpTime) && dataMigrate.GetDeletionTimestamp().IsZero() {
+		err := r.Delete(context.TODO(), dataMigrate)
+		return remaining, err
+	}
+	if cleanUpTime.After(curTime) {
+		remaining = int32(cleanUpTime.Sub(curTime).Seconds() + 1)
+	}
+	return remaining, nil
+}
