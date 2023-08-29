@@ -183,6 +183,7 @@ spec:
 {{ toYaml .Values.master.args | trim | indent 12 }}
           {{- end }}
           {{- if eq .Values.master.mountConfigStorage "configmap"}}
+          {{- if semverCompare ">=1.18.0-0" .Capabilities.KubeVersion.Version }}
           startupProbe:
             exec:
               command: ["bash", "-c", "/etc/fluid/scripts/mount.sh >> /proc/1/fd/1 2>&1"]
@@ -190,6 +191,12 @@ spec:
             failureThreshold: 10
             timeoutSeconds: 15
             periodSeconds: 20
+          {{- else }}
+          lifecycle:
+            postStart:
+              exec:
+                command: ["bash", "-c", "while true; do /etc/fluid/scripts/mount.sh >> /proc/1/fd/1 2>&1; if [ $? -ne 0 ];then sleep 20; else break; fi; done" ]
+          {{- end }}
           {{- end }}
           {{- if $isHaEmbedded }}
           env:
