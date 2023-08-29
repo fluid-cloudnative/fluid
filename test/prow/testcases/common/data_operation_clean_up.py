@@ -1,5 +1,5 @@
 """
-TestCase: Cron Dataload Verification
+TestCase: CleanUp Data Operation Verification
 DDC Engine: Alluxio
 Steps:
 1. create Dataset & Runtime
@@ -7,12 +7,9 @@ Steps:
 3. check if PVC & PV is created
 4. submit DataLoad CR
 5. check dataload status
-6. check if cronjob created
-7. wait until DataLoad completes
-8. check dataset cache percentage
-9. create app pod
-10. check app pod is running
-11. clean up
+6. wait until DataLoad completes
+7. wait Dataload to clean up
+8. clean up
 """
 
 import os
@@ -30,25 +27,24 @@ from framework.testflow import TestFlow
 from framework.step import SimpleStep, StatusCheckStep, dummy_back, currying_fn
 
 
-def check_cron_job(dataload_name, namespace):
-    api = client.BatchV1Api()
-    cronjob_name = dataload_name+"-loader-job"
+def wait_clean_up(dataload_name, namespace, ttl):
+    time.sleep(ttl)
+    api = client.CustomObjectsApi()
     try:
-        cronjob = api.read_namespaced_cron_job(name=cronjob_name, namespace=namespace)
+        dataload = api.get_namespaced_custom_object(
+            group="data.fluid.io",
+            version="v1alpha1",
+            name=dataload_name,
+            namespace=namespace,
+            plural="dataloads"
+        )
     except Exception as e :
         print(e)
-        time.sleep(1)
-        return False
+        if e.status == 404:
+            return True
+    
+    return False
 
-    if "fluid.io/jobPolicy" in cronjob.metadata.labels:
-        if cronjob.metadata.labels["fluid.io/jobPolicy"] != "cron":
-            print("CronJob has no fluid label.")
-            return False
-    if cronjob.spec.schedule != "* * * * *":
-        print("CronJob schedule does not match {}".format(cronjob.spec.schedule))
-        return False
-
-    return True
 
 def check_cron_dataload(dataload_name, dataset_name, namespace):
     api = client.CustomObjectsApi()
@@ -108,9 +104,9 @@ def main():
     cron_dataload = fluidapi.DataLoad(name=dataload_name, namespace=namespace) \
         .set_target_dataset(name, namespace) \
         .set_load_metadata(True) \
-        .set_cron("* * * * *")
+        .set_ttlSecondsAfterFinished(10)
     
-    flow = TestFlow("Common - Test Cron Dataload")
+    flow = TestFlow("Common - Test Clean Up Dataoperation")
 
     flow.append_step(
         SimpleStep(
@@ -152,22 +148,6 @@ def main():
 
     flow.append_step(
         StatusCheckStep(
-            step_name="check if cron dataLoad status correct",
-            forth_fn=currying_fn(check_cron_dataload, dataload_name=dataload_name, dataset_name=name, namespace=namespace),
-            back_fn=dummy_back,
-        )
-    )
-
-    flow.append_step(
-        StatusCheckStep(
-            step_name="check if cron job has created",
-            forth_fn=currying_fn(check_cron_job, dataload_name=dataload_name, namespace=namespace),
-            back_fn=dummy_back,
-        )
-    )
-
-    flow.append_step(
-        StatusCheckStep(
             step_name="check if dataload job completes",
             forth_fn=funcs.check_dataload_job_status_fn(dataload_name, namespace),
         )
@@ -175,23 +155,8 @@ def main():
 
     flow.append_step(
         StatusCheckStep(
-            step_name="check if the whole dataset is warmed up",
-            forth_fn=funcs.check_dataset_cached_percentage_fn(name, namespace)
-        )
-    )
-
-    flow.append_step(
-        SimpleStep(
-            step_name="create data read job",
-            forth_fn=funcs.create_pod_fn(dataset_name=name, name="nginx-test"), 
-            back_fn=funcs.delete_pod_fn(name="nginx-test")
-        )
-    )
-
-    flow.append_step(
-        StatusCheckStep(
-            step_name="check_pod_running",
-            forth_fn=funcs.check_pod_running_fn(name="nginx-test")
+            step_name="wait dataload to clean up",
+            forth_fn=currying_fn(wait_clean_up, dataload_name=dataload_name, namespace=namespace, ttl=10)
         )
     )
 

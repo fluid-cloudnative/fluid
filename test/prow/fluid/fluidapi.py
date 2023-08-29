@@ -183,7 +183,13 @@ class DataLoad(K8sObject):
         self.resource["spec"]["schedule"] = schedule
 
         return self
-
+    
+    def set_ttlSecondsAfterFinished(self, ttl):
+        if "spec" not in self.resource:
+            self.resource["spec"] = {}
+        
+        self.resource["spec"]["ttlSecondsAfterFinished"] = ttl
+        return self
 
 def assemble_dataset(testcase):
     if testcase == "alluxio-webufs":
