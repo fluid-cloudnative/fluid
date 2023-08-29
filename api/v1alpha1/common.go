@@ -244,16 +244,20 @@ const (
 )
 
 type OperationRef struct {
-	// OperationKind specifies the type of the data operation
+	// API version of the referent operation
+	// +optional
+	APIVersion string `json:"apiVersion,omitempty"`
+
+	// Kind specifies the type of the referent operation
 	// +required
 	// +kubebuilder:validation:Enum=DataLoad;DataBackup;DataMigrate;DataProcess
-	OperationKind OperationType `json:"operationKind"`
+	Kind string `json:"kind"`
 
-	// Name specifies the name of the referred data operation
+	// Name specifies the name of the referent operation
 	// +required
 	Name string `json:"name"`
 
-	// Namespace specifies the namespace of the referred data operation
+	// Namespace specifies the namespace of the referent operation
 	// +required
 	Namespace string `json:"namespace"`
 }

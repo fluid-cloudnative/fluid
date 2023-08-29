@@ -66,33 +66,34 @@ func GetPrecedingOperationStatus(client client.Client, opRef *datav1alpha1.Opera
 		return nil, nil
 	}
 
-	switch opRef.OperationKind {
-	case datav1alpha1.DataBackupType:
+	switch opRef.Kind {
+	case string(datav1alpha1.DataBackupType):
 		object, err := GetDataBackup(client, opRef.Name, opRef.Namespace)
 		if err != nil {
 			return nil, err
 		}
 		return &object.Status, nil
-	case datav1alpha1.DataLoadType:
+	case string(datav1alpha1.DataLoadType):
 		object, err := GetDataLoad(client, opRef.Name, opRef.Namespace)
 		if err != nil {
 			return nil, err
 		}
 		return &object.Status, nil
-	case datav1alpha1.DataMigrateType:
+	case string(datav1alpha1.DataMigrateType):
 		object, err := GetDataMigrate(client, opRef.Name, opRef.Namespace)
 		if err != nil {
 			return nil, err
 		}
 		return &object.Status, nil
-	case datav1alpha1.DataProcessType:
+	case string(datav1alpha1.DataProcessType):
 		object, err := GetDataProcess(client, opRef.Name, opRef.Namespace)
 		if err != nil {
 			return nil, err
 		}
 		return &object.Status, nil
 	default:
-		return nil, fmt.Errorf("unknown data operation kind")
+		// TODO: Support non-builtin Kind
+		return nil, fmt.Errorf("kind %v is currently not supported for runAfter", opRef.Kind)
 	}
 }
 
