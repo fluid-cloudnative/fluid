@@ -409,9 +409,9 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 			},
 			wantErr: false,
 			wantOptions: map[string]string{
-				"a":          "b",
-				"cache-dir":  "/dev",
-				"cache-size": "9",
+				"a": "b",
+				// "cache-dir":  "/dev",
+				// "cache-size": "9",
 			},
 		},
 		{
@@ -474,17 +474,31 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 			},
 			wantErr: false,
 			wantOptions: map[string]string{
-				"a":         "c",
-				"subdir":    "/test",
-				"cache-dir": "/dev",
+				"a": "c",
+				// "subdir":    "/test",
+				// "cache-dir": "/dev",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := engine.genValue(tt.args.mount, tt.args.tiredStoreLevel, tt.args.value, tt.args.sharedOptions, tt.args.sharedEncryptOptions)
+			opt, err := engine.genValue(tt.args.mount, tt.args.tiredStoreLevel, tt.args.value, tt.args.sharedOptions, tt.args.sharedEncryptOptions)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("genValue() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("testcase %s: genValue() error = %v, wantErr %v", tt.name, err, tt.wantErr)
+			}
+			if len(opt) != len(tt.wantOptions) {
+				t.Errorf("testcase %s: genValue() got = %v, wantOptions %v", tt.name, opt, tt.wantOptions)
+			}
+			for k, v := range opt {
+				if v1, ok := tt.wantOptions[k]; !ok {
+					t.Errorf("testcase %s: JuicefsEngine.genValue() should has key: %v", tt.name, k)
+				} else {
+					if v1 != v {
+						t.Errorf("testcase %s: JuicefsEngine.genValue()  key: %v value: %v, get value: %v", tt.name, k, v1, v)
+					} else {
+						delete(tt.wantOptions, k)
+					}
+				}
 			}
 		})
 	}
