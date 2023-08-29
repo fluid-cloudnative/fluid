@@ -143,13 +143,19 @@ func reconcileOperationDataFlow(ctx reconcileRequestContext,
 	runAfter *datav1alpha1.OperationRef,
 	opStatus datav1alpha1.OperationStatus,
 	updateStatusFn func() error) (needRequeue bool, err error) {
-	precedingOpStatus, err := utils.GetPrecedingOperationStatus(ctx.Client, runAfter)
+
+	opRefNamespace := ctx.Namespace
+	if len(runAfter.Namespace) != 0 {
+		opRefNamespace = runAfter.Namespace
+	}
+
+	precedingOpStatus, err := utils.GetPrecedingOperationStatus(ctx.Client, runAfter, opRefNamespace)
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
 			// preceding operation not found
 			ctx.Recorder.Eventf(object, corev1.EventTypeWarning, common.DataOperationNotFound, "Preceding operation %s \"%s/%s\" not found",
-				runAfter.OperationKind,
-				runAfter.Namespace,
+				runAfter.Kind,
+				opRefNamespace,
 				runAfter.Name)
 			return true, nil
 		}
@@ -158,8 +164,8 @@ func reconcileOperationDataFlow(ctx reconcileRequestContext,
 
 	if precedingOpStatus != nil && precedingOpStatus.Phase != common.PhaseComplete {
 		ctx.Recorder.Eventf(object, corev1.EventTypeNormal, common.DataOperationWaiting, "Waiting for operation %s \"%s/%s\" to complete",
-			runAfter.OperationKind,
-			runAfter.Namespace,
+			runAfter.Kind,
+			opRefNamespace,
 			runAfter.Name)
 		return true, nil
 	}
