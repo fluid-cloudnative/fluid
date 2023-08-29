@@ -210,29 +210,6 @@ func (j *JuiceFSEngine) GetValuesConfigMap() (cm *corev1.ConfigMap, err error) {
 	return
 }
 
-func (j *JuiceFSEngine) GetConfigMap(name string) (cm *corev1.ConfigMap, err error) {
-	cm = &corev1.ConfigMap{}
-	err = j.Client.Get(context.TODO(), types.NamespacedName{
-		Name:      name,
-		Namespace: j.namespace,
-	}, cm)
-	if apierrs.IsNotFound(err) {
-		err = nil
-		cm = nil
-	}
-
-	return
-}
-
-func (j *JuiceFSEngine) UpdateConfigMap(cm *corev1.ConfigMap) (err error) {
-	err = j.Client.Update(context.TODO(), cm)
-	if apierrs.IsNotFound(err) {
-		err = nil
-	}
-
-	return
-}
-
 func (j *JuiceFSEngine) GetEdition() (edition string) {
 	cm, err := j.GetValuesConfigMap()
 	if err != nil || cm == nil {
@@ -364,7 +341,7 @@ func (v *ClientVersion) LessThan(other *ClientVersion) bool {
 }
 
 func (j *JuiceFSEngine) getWorkerCommand() (command string, err error) {
-	cm, err := j.GetConfigMap(j.getWorkerScriptName())
+	cm, err := kubeclient.GetConfigmapByName(j.Client, j.getWorkerScriptName(), j.namespace)
 	if err != nil {
 		return "", err
 	}
@@ -387,7 +364,7 @@ func (j *JuiceFSEngine) getWorkerCommand() (command string, err error) {
 }
 
 func (j JuiceFSEngine) updateWorkerScript(command string) error {
-	cm, err := j.GetConfigMap(j.getWorkerScriptName())
+	cm, err := kubeclient.GetConfigmapByName(j.Client, j.getWorkerScriptName(), j.namespace)
 	if err != nil {
 		return err
 	}

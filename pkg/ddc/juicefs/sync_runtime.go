@@ -71,7 +71,7 @@ func (j *JuiceFSEngine) SyncRuntime(ctx cruntime.ReconcileRequestContext) (chang
 
 func (j *JuiceFSEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) (changed bool, err error) {
 	j.Log.V(1).Info("syncWorkerSpec")
-	var cmChanged bool
+	var cmdChanged bool
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		workers, err := ctrl.GetWorkersAsStatefulset(j.Client,
 			types.NamespacedName{Namespace: j.namespace, Name: j.getWorkerName()})
@@ -111,7 +111,7 @@ func (j *JuiceFSEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, run
 			j.Log.Error(err, "Failed to get worker command")
 			return err
 		}
-		cmChanged, _ = j.isCommandChanged(workerCommand, value.Worker.Command)
+		cmdChanged, _ = j.isCommandChanged(workerCommand, value.Worker.Command)
 
 		if len(workersToUpdate.Spec.Template.Spec.Containers) == 1 {
 			// resource
@@ -143,7 +143,7 @@ func (j *JuiceFSEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, run
 			}
 		}
 
-		if cmChanged {
+		if cmdChanged {
 			j.Log.Info("The worker config is updated")
 			err = j.updateWorkerScript(value.Worker.Command)
 			if err != nil {
@@ -180,7 +180,7 @@ func (j *JuiceFSEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, run
 			j.Log.V(1).Info("The worker is not changed")
 		}
 
-		changed = changed || cmChanged
+		changed = changed || cmdChanged
 
 		return err
 	})
