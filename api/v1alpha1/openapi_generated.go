@@ -4510,9 +4510,16 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_OperationRef(ref common.Referen
 			SchemaProps: spec.SchemaProps{
 				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
-					"operationKind": {
+					"apiVersion": {
 						SchemaProps: spec.SchemaProps{
-							Description: "OperationKind specifies the type of the data operation",
+							Description: "API version of the referent operation",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind specifies the type of the referent operation",
 							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
@@ -4520,7 +4527,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_OperationRef(ref common.Referen
 					},
 					"name": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Name specifies the name of the referred data operation",
+							Description: "Name specifies the name of the referent operation",
 							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
@@ -4528,14 +4535,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_OperationRef(ref common.Referen
 					},
 					"namespace": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Namespace specifies the namespace of the referred data operation",
-							Default:     "",
+							Description: "Namespace specifies the namespace of the referent operation.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
 				},
-				Required: []string{"operationKind", "name", "namespace"},
+				Required: []string{"kind", "name"},
 			},
 		},
 	}
