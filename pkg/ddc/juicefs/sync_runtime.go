@@ -20,11 +20,11 @@ import (
 	"context"
 	"reflect"
 	"strings"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
-	"k8s.io/utils/pointer"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
@@ -151,23 +151,10 @@ func (j *JuiceFSEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, run
 				return err
 			}
 			if !changed {
-				// if worker sts not changed, scale in & out worker pod to reload the script
-				replica := workersToUpdate.Spec.Replicas
-				j.Log.Info("scale in worker", "sts", workersToUpdate.Name)
-				workersToUpdate.Spec.Replicas = pointer.Int32Ptr(0)
+				// if worker sts not changed, rollout worker sts to reload the script
+				j.Log.Info("rollout restart worker", "sts", workersToUpdate.Name)
+				workersToUpdate.Spec.Template.ObjectMeta.Annotations["kubectl.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
 				err = j.Client.Update(context.TODO(), workersToUpdate)
-				if err != nil {
-					j.Log.Error(err, "Failed to update the sts spec")
-					return err
-				}
-
-				j.Log.Info("scale out worker", "sts", workersToUpdate.Name, "replica", replica)
-				workerNow, err := ctrl.GetWorkersAsStatefulset(j.Client, types.NamespacedName{Namespace: j.namespace, Name: j.getWorkerName()})
-				if err != nil {
-					return err
-				}
-				workerNow.Spec.Replicas = replica
-				err = j.Client.Update(context.TODO(), workerNow)
 				if err != nil {
 					j.Log.Error(err, "Failed to update the sts spec")
 					return err
