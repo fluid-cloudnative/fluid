@@ -19,7 +19,10 @@ package juicefs
 import (
 	"context"
 	"reflect"
+	"strings"
+	"time"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 
@@ -38,8 +41,14 @@ func (j *JuiceFSEngine) SyncRuntime(ctx cruntime.ReconcileRequestContext) (chang
 		return changed, err
 	}
 
+	var value *JuiceFS
+	value, err = j.transform(runtime)
+	if err != nil {
+		return
+	}
+
 	// 1. sync workers
-	workerChanged, err := j.syncWorkerSpec(ctx, runtime)
+	workerChanged, err := j.syncWorkerSpec(ctx, runtime, value)
 	if err != nil {
 		return
 	}
@@ -49,7 +58,7 @@ func (j *JuiceFSEngine) SyncRuntime(ctx cruntime.ReconcileRequestContext) (chang
 	}
 
 	// 2. sync fuse
-	fuseChanged, err := j.syncFuseSpec(ctx, runtime)
+	fuseChanged, err := j.syncFuseSpec(ctx, runtime, value)
 	if err != nil {
 		return
 	}
@@ -60,8 +69,9 @@ func (j *JuiceFSEngine) SyncRuntime(ctx cruntime.ReconcileRequestContext) (chang
 	return
 }
 
-func (j *JuiceFSEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.JuiceFSRuntime) (changed bool, err error) {
+func (j *JuiceFSEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) (changed bool, err error) {
 	j.Log.V(1).Info("syncWorkerSpec")
+	var cmdChanged bool
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		workers, err := ctrl.GetWorkersAsStatefulset(j.Client,
 			types.NamespacedName{Namespace: j.namespace, Name: j.getWorkerName()})
@@ -70,31 +80,100 @@ func (j *JuiceFSEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, run
 		}
 
 		workersToUpdate := workers.DeepCopy()
+
+		// nodeSelector
+		if nodeSelectorChanged, newSelector := j.isNodeSelectorChanged(workersToUpdate.Spec.Template.Spec.NodeSelector, value.Worker.NodeSelector); nodeSelectorChanged {
+			workersToUpdate.Spec.Template.Spec.NodeSelector = newSelector
+			changed = true
+		}
+
+		// volumes
+		if volumeChanged, newVolumes := j.isVolumesChanged(workersToUpdate.Spec.Template.Spec.Volumes, value.Worker.Volumes); volumeChanged {
+			workersToUpdate.Spec.Template.Spec.Volumes = newVolumes
+			changed = true
+		}
+
+		// labels
+		if labelChanged, newLabels := j.isLabelsChanged(workersToUpdate.Spec.Template.ObjectMeta.Labels, value.Worker.Labels); labelChanged {
+			workersToUpdate.Spec.Template.ObjectMeta.Labels = newLabels
+			changed = true
+		}
+
+		// annotations
+		if annoChanged, newAnnos := j.isAnnotationsChanged(workersToUpdate.Spec.Template.ObjectMeta.Annotations, value.Worker.Annotations); annoChanged {
+			workersToUpdate.Spec.Template.ObjectMeta.Annotations = newAnnos
+			changed = true
+		}
+
+		// options -> configmap
+		workerCommand, err := j.getWorkerCommand()
+		if err != nil || workerCommand == "" {
+			j.Log.Error(err, "Failed to get worker command")
+			return err
+		}
+		cmdChanged, _ = j.isCommandChanged(workerCommand, value.Worker.Command)
+
 		if len(workersToUpdate.Spec.Template.Spec.Containers) == 1 {
-			workerResources := runtime.Spec.Worker.Resources
-			if !utils.ResourceRequirementsEqual(workersToUpdate.Spec.Template.Spec.Containers[0].Resources, workerResources) {
-				j.Log.Info("The resource requirement is different.", "worker sts", workersToUpdate.Spec.Template.Spec.Containers[0].Resources, "runtime", workerResources)
-				workersToUpdate.Spec.Template.Spec.Containers[0].Resources = workerResources
+			// resource
+			if resourcesChanged, newResources := j.isResourcesChanged(workersToUpdate.Spec.Template.Spec.Containers[0].Resources, runtime.Spec.Worker.Resources); resourcesChanged {
+				workersToUpdate.Spec.Template.Spec.Containers[0].Resources = newResources
 				changed = true
-			} else {
-				j.Log.V(1).Info("The resource requirement of workers is the same, skip")
 			}
 
-			if changed {
-				if reflect.DeepEqual(workers, workersToUpdate) {
-					changed = false
-					j.Log.V(1).Info("The resource requirement of worker is not changed, skip")
-					return nil
-				}
-				j.Log.Info("The resource requirement of worker is updated")
-
-				err = j.Client.Update(context.TODO(), workersToUpdate)
-				if err != nil {
-					j.Log.Error(err, "Failed to update the sts spec")
-				}
-			} else {
-				j.Log.V(1).Info("The resource requirement of worker is not set, skip")
+			// env
+			if envChanged, newEnvs := j.isEnvsChanged(workersToUpdate.Spec.Template.Spec.Containers[0].Env, value.Worker.Envs); envChanged {
+				workersToUpdate.Spec.Template.Spec.Containers[0].Env = newEnvs
+				changed = true
 			}
+
+			// volumeMounts
+			if volumeMountChanged, newVolumeMounts := j.isVolumeMountsChanged(workersToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts, value.Worker.VolumeMounts); volumeMountChanged {
+				workersToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts = newVolumeMounts
+				changed = true
+			}
+
+			// image
+			runtimeImage := value.Image
+			if value.ImageTag != "" {
+				runtimeImage = runtimeImage + ":" + value.ImageTag
+			}
+			if imageChanged, newImage := j.isImageChanged(workersToUpdate.Spec.Template.Spec.Containers[0].Image, runtimeImage); imageChanged {
+				workersToUpdate.Spec.Template.Spec.Containers[0].Image = newImage
+				changed = true
+			}
+		}
+
+		if cmdChanged {
+			j.Log.Info("The worker config is updated")
+			err = j.updateWorkerScript(value.Worker.Command)
+			if err != nil {
+				j.Log.Error(err, "Failed to update the sts config")
+				return err
+			}
+			if !changed {
+				// if worker sts not changed, rollout worker sts to reload the script
+				j.Log.Info("rollout restart worker", "sts", workersToUpdate.Name)
+				workersToUpdate.Spec.Template.ObjectMeta.Annotations["kubectl.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
+				changed = true
+			}
+		} else {
+			j.Log.V(1).Info("The worker config is not changed")
+		}
+
+		if changed {
+			if reflect.DeepEqual(workers, workersToUpdate) {
+				changed = false
+				j.Log.V(1).Info("The worker is not changed, skip")
+				return nil
+			}
+			j.Log.Info("The worker is updated")
+
+			err = j.Client.Update(context.TODO(), workersToUpdate)
+			if err != nil {
+				j.Log.Error(err, "Failed to update the sts spec")
+			}
+		} else {
+			j.Log.V(1).Info("The worker is not changed")
 		}
 
 		return err
@@ -108,7 +187,7 @@ func (j *JuiceFSEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, run
 	return
 }
 
-func (j *JuiceFSEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.JuiceFSRuntime) (changed bool, err error) {
+func (j *JuiceFSEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) (changed bool, err error) {
 	j.Log.V(1).Info("syncFuseSpec")
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		fuses, err := kubeclient.GetDaemonset(j.Client, j.getFuseDaemonsetName(), j.namespace)
@@ -150,5 +229,157 @@ func (j *JuiceFSEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runti
 		j.Log.Info("Warning: the current runtime is created by runtime controller before v0.7.0, update specs are not supported. To support these features, please create a new dataset", "details", err)
 		return false, nil
 	}
+	return
+}
+
+func (j *JuiceFSEngine) isVolumeMountsChanged(crtVolumeMounts, runtimeVolumeMounts []corev1.VolumeMount) (changed bool, newVolumeMounts []corev1.VolumeMount) {
+	mounts := make(map[string]corev1.VolumeMount)
+	for _, mount := range crtVolumeMounts {
+		mounts[mount.Name] = mount
+	}
+	for _, mount := range runtimeVolumeMounts {
+		if m, ok := mounts[mount.Name]; !ok || !reflect.DeepEqual(m, mount) {
+			j.Log.Info("The volumeMounts is different.", "current sts", crtVolumeMounts, "runtime", runtimeVolumeMounts)
+			mounts[mount.Name] = mount
+			changed = true
+		}
+	}
+	vms := []corev1.VolumeMount{}
+	for _, mount := range mounts {
+		vms = append(vms, mount)
+	}
+	newVolumeMounts = vms
+	return
+}
+
+func (j JuiceFSEngine) isEnvsChanged(crtEnvs, runtimeEnvs []corev1.EnvVar) (changed bool, newEnvs []corev1.EnvVar) {
+	envMap := make(map[string]string)
+	for _, env := range crtEnvs {
+		envMap[env.Name] = env.Value
+	}
+	for _, env := range runtimeEnvs {
+		if envMap[env.Name] != env.Value {
+			j.Log.Info("The env is different.", "current sts", crtEnvs, "runtime", runtimeEnvs)
+			envMap[env.Name] = env.Value
+			changed = true
+		}
+	}
+	envs := []corev1.EnvVar{}
+	for name, env := range envMap {
+		envs = append(envs, corev1.EnvVar{Name: name, Value: env})
+	}
+	newEnvs = envs
+	return
+}
+
+func (j JuiceFSEngine) isResourcesChanged(crtResources, runtimeResources corev1.ResourceRequirements) (changed bool, newResources corev1.ResourceRequirements) {
+	if !utils.ResourceRequirementsEqual(crtResources, runtimeResources) {
+		j.Log.Info("The resource requirement is different.", "current sts", crtResources, "runtime", runtimeResources)
+		changed = true
+	}
+	newResources = runtimeResources
+	return
+}
+
+func (j JuiceFSEngine) isVolumesChanged(crtVolumes, runtimeVolumes []corev1.Volume) (changed bool, newVolumes []corev1.Volume) {
+	volumes := make(map[string]corev1.Volume)
+	for _, mount := range crtVolumes {
+		volumes[mount.Name] = mount
+	}
+	for _, volume := range runtimeVolumes {
+		if m, ok := volumes[volume.Name]; !ok || !reflect.DeepEqual(m, volume) {
+			j.Log.Info("The volumes is different.", "current sts", crtVolumes, "runtime", runtimeVolumes)
+			volumes[volume.Name] = volume
+			changed = true
+		}
+	}
+	vs := []corev1.Volume{}
+	for _, volume := range volumes {
+		vs = append(vs, volume)
+	}
+	newVolumes = vs
+	return
+}
+
+func (j JuiceFSEngine) isLabelsChanged(crtLabels, runtimeLabels map[string]string) (changed bool, newLabels map[string]string) {
+	newLabels = crtLabels
+	for k, v := range runtimeLabels {
+		if crtv, ok := crtLabels[k]; !ok || crtv != v {
+			j.Log.Info("The labels is different.", "current sts", crtLabels, "runtime", runtimeLabels)
+			newLabels[k] = v
+			changed = true
+		}
+	}
+	return
+}
+
+func (j JuiceFSEngine) isAnnotationsChanged(crtAnnotations, runtimeAnnotations map[string]string) (changed bool, newAnnotations map[string]string) {
+	newAnnotations = crtAnnotations
+	for k, v := range runtimeAnnotations {
+		if crtv, ok := crtAnnotations[k]; !ok || crtv != v {
+			j.Log.Info("The annotations is different.", "current sts", crtAnnotations, "runtime", runtimeAnnotations)
+			newAnnotations[k] = v
+			changed = true
+		}
+	}
+	return
+}
+
+func (j JuiceFSEngine) isImageChanged(crtImage, runtimeImage string) (changed bool, newImage string) {
+	if crtImage != runtimeImage {
+		j.Log.Info("The image is different.", "current sts", crtImage, "runtime", runtimeImage)
+		changed = true
+	}
+	newImage = runtimeImage
+	return
+}
+
+func (j JuiceFSEngine) isNodeSelectorChanged(crtNodeSelector, runtimeNodeSelector map[string]string) (changed bool, newNodeSelector map[string]string) {
+	if crtNodeSelector == nil {
+		crtNodeSelector = map[string]string{}
+	}
+	if runtimeNodeSelector == nil {
+		runtimeNodeSelector = map[string]string{}
+	}
+	if !reflect.DeepEqual(crtNodeSelector, runtimeNodeSelector) {
+		j.Log.Info("The nodeSelector is different.", "current sts", crtNodeSelector, "runtime", runtimeNodeSelector)
+		changed = true
+	}
+	newNodeSelector = runtimeNodeSelector
+	return
+}
+
+func (j JuiceFSEngine) isCommandChanged(crtCommand, runtimeCommand string) (changed bool, newCommand string) {
+	getOption := func(command string) map[string]string {
+		commands := strings.Split(command, "-o")
+		if len(commands) == 1 {
+			return map[string]string{}
+		}
+		options := strings.Split(commands[1], ",")
+		optionMap := make(map[string]string)
+		for _, option := range options {
+			// ignore metrics option, because it may be different when using hostNetwork
+			if strings.Contains(option, "metrics") {
+				continue
+			}
+			o := strings.TrimSpace(option)
+			os := strings.Split(o, "=")
+			if len(os) == 1 {
+				optionMap[o] = ""
+			} else {
+				optionMap[os[0]] = os[1]
+			}
+		}
+		return optionMap
+	}
+	workerOption := getOption(crtCommand)
+	runtimeOption := getOption(runtimeCommand)
+	for k, v := range runtimeOption {
+		if wv, ok := workerOption[k]; !ok || wv != v {
+			j.Log.Info("The command is different.", "current sts", crtCommand, "runtime", runtimeCommand)
+			changed = true
+		}
+	}
+	newCommand = runtimeCommand
 	return
 }
