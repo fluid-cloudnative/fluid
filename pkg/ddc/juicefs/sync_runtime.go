@@ -154,11 +154,7 @@ func (j *JuiceFSEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, run
 				// if worker sts not changed, rollout worker sts to reload the script
 				j.Log.Info("rollout restart worker", "sts", workersToUpdate.Name)
 				workersToUpdate.Spec.Template.ObjectMeta.Annotations["kubectl.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
-				err = j.Client.Update(context.TODO(), workersToUpdate)
-				if err != nil {
-					j.Log.Error(err, "Failed to update the sts spec")
-					return err
-				}
+				changed = true
 			}
 		} else {
 			j.Log.V(1).Info("The worker config is not changed")
@@ -179,8 +175,6 @@ func (j *JuiceFSEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, run
 		} else {
 			j.Log.V(1).Info("The worker is not changed")
 		}
-
-		changed = changed || cmdChanged
 
 		return err
 	})
