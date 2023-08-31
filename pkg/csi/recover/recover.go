@@ -165,6 +165,7 @@ func (r FuseRecover) recover() {
 		// please refer to https://github.com/fluid-cloudnative/fluid/issues/3399 for more information
 		if point.Count > r.recoverWarningThreshold {
 			glog.Warningf("Mountpoint %s has been mounted %v times, exceeding the recovery warning threshold %v, umount duplicate mountpoint to avoid large mountinfo file. If app pod has been restarted, the data access connection may be broken", point.MountPath, point.Count, r.recoverWarningThreshold)
+			r.eventRecord(point, corev1.EventTypeWarning, common.FuseUmountDuplicate)
 			r.umountDuplicate(point)
 		}
 		if err := r.recoverBrokenMount(point); err != nil {
@@ -226,5 +227,7 @@ func (r *FuseRecover) eventRecord(point mountinfo.MountPoint, eventType, eventRe
 		r.Recorder.Eventf(dataset, eventType, eventReason, "Fuse recover %s succeed", point.MountPath)
 	case common.FuseRecoverFailed:
 		r.Recorder.Eventf(dataset, eventType, eventReason, "Fuse recover %s failed", point.MountPath)
+	case common.FuseUmountDuplicate:
+		r.Recorder.Eventf(dataset, eventType, eventReason, "Mountpoint %s has been mounted %v times, umount duplicate mountpoint to avoid large mountinfo file. Data access may be broken if app pod has restarted", point.MountPath, point.Count)
 	}
 }
