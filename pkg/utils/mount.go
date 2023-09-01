@@ -34,8 +34,7 @@ const MountRoot string = "MOUNT_ROOT"
 
 // GetMountRoot gets the value of the env variable named MOUNT_ROOT
 func GetMountRoot() (string, error) {
-	// mountRoot := os.Getenv(MountRoot)
-	mountRoot := "/runtime-mnt"
+	mountRoot := os.Getenv(MountRoot)
 
 	if err := validation.IsValidMountRoot(mountRoot); err != nil {
 		return mountRoot, err

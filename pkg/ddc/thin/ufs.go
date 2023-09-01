@@ -24,7 +24,6 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
@@ -119,15 +118,10 @@ func (t ThinEngine) updateFuseConfigOnChange(runtime *datav1alpha1.ThinRuntime, 
 	return update, nil
 }
 
-func (t ThinEngine) getFuseConfigMapName() string {
-	return t.name + "-fuse-conf"
-}
-
 // Updating the fuse pod is to let kubelet run syncPod and update the configmap content
 func (t ThinEngine) updateFusePod() (err error) {
 	// get fuse pod
-	h := ctrl.BuildHelper(t.runtimeInfo, t.Client, t.Log)
-	pods, err := h.GetFusePods()
+	pods, err := t.GetRunningPodsOfDaemonset(t.getFuseDaemonsetName(), t.namespace)
 	if err != nil {
 		t.Log.Error(err, "Failed to get fuse pods")
 		return
