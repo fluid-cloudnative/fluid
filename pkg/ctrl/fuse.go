@@ -181,22 +181,6 @@ func (e *Helper) GetFuseNodes() (nodes []corev1.Node, err error) {
 	return
 }
 
-func (e *Helper) GetFusePods() (pods []corev1.Pod, err error) {
-	podList := &corev1.PodList{}
-	releaseName := e.runtimeInfo.GetName()
-	fuseLabelSelector, err := labels.Parse(fmt.Sprintf("release=%s, role=thin-fuse", releaseName))
-	if err != nil {
-		return
-	}
-
-	err = e.client.List(context.TODO(), podList, &client.ListOptions{
-		LabelSelector: fuseLabelSelector,
-	})
-
-	pods = podList.Items
-	return
-}
-
 // GetIpAddressesOfFuse gets Ipaddresses from the Fuse Node
 func (e *Helper) GetIpAddressesOfFuse() (ipAddresses []string, err error) {
 	nodes, err := e.GetFuseNodes()
