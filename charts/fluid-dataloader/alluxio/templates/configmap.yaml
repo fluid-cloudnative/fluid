@@ -52,13 +52,26 @@ data:
         fi
     }
 
+    function needPreLoadMetadata() {
+      local alluxioVersion=$(alluxio version)
+      test "$(echo "$alluxioVersion 2.8.0" | tr " " "\n" | sort -rV | head -n 1)" == "$alluxioVersion"
+    }
+
     function distributedLoad() {
         local path=$1
         local replica=$2
         checkPathExistence "$path"
         alluxio fs setReplication --max $replica -R $path
         if [[ $needLoadMetadata == 'true' ]]; then
-            time alluxio fs distributedLoad -Dalluxio.user.file.metadata.sync.interval=0 --replication $replica $path
+            # For Alluxio above 2.8.0, distributedLoad with -Dalluxio.user.file.metadata.sync.interval=0 cannot load new added file.
+            # Related issue: https://github.com/Alluxio/alluxio/issues/17827
+            # Use ls with -Dalluxio.user.file.metadata.sync.interval=0 instead
+            if needPreLoadMetadata; then
+                time alluxio fs ls -Dalluxio.user.file.metadata.sync.interval=0 -R $path
+                time alluxio fs distributedLoad --replication $replica $path
+            else
+                time alluxio fs distributedLoad -Dalluxio.user.file.metadata.sync.interval=0 --replication $replica $path
+            fi
         else
             time alluxio fs distributedLoad --replication $replica $path
         fi
