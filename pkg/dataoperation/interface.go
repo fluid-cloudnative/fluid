@@ -22,7 +22,6 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/runtime"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // OperationInterface the interface of data operation crd
@@ -55,9 +54,6 @@ type OperationInterface interface {
 	RemoveTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset)
 
 	GetStatusHandler(object client.Object) StatusHandler
-
-	// GetCleanUpTime get the time to clean up data operation according to ttlSecondsAfterFinished
-	CleanUp(object client.Object, completionTime metav1.Time) (int32, error)
 }
 
 type StatusHandler interface {

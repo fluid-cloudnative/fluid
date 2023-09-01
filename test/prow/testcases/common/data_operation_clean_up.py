@@ -104,7 +104,7 @@ def main():
     cron_dataload = fluidapi.DataLoad(name=dataload_name, namespace=namespace) \
         .set_target_dataset(name, namespace) \
         .set_load_metadata(True) \
-        .set_ttlSecondsAfterFinished(10)
+        .set_ttlSecondsAfterFinished(20)
     
     flow = TestFlow("Common - Test Clean Up Dataoperation")
 
