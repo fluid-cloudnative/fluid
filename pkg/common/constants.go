@@ -51,6 +51,8 @@ const (
 
 	FuseRecoverSucceed = "FuseRecoverSucceed"
 
+	FuseUmountDuplicate = "UnmountDuplicateMountpoint"
+
 	RuntimeDeprecated = "RuntimeDeprecated"
 
 	DataMigrateCollision = "DataMigrateCollision"

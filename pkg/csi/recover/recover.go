@@ -160,9 +160,14 @@ func (r FuseRecover) recover() {
 
 	for _, point := range brokenMounts {
 		glog.V(4).Infof("Get broken mount point: %v", point)
-		// do not umountDuplicate because if app container restart, umount duplicate mount may lead to recover successed but can not access data
+		// if app container restart, umount duplicate mount may lead to recover successed but can not access data
+		// so we only umountDuplicate when it has mounted more than the recoverWarningThreshold
 		// please refer to https://github.com/fluid-cloudnative/fluid/issues/3399 for more information
-		// r.umountDuplicate(point)
+		if point.Count > r.recoverWarningThreshold {
+			glog.Warningf("Mountpoint %s has been mounted %v times, exceeding the recoveryWarningThreshold %v, unmount duplicate mountpoint to avoid large /proc/self/mountinfo file, this may potential make data access connection broken", point.MountPath, point.Count, r.recoverWarningThreshold)
+			r.eventRecord(point, corev1.EventTypeWarning, common.FuseUmountDuplicate)
+			r.umountDuplicate(point)
+		}
 		if err := r.recoverBrokenMount(point); err != nil {
 			r.eventRecord(point, corev1.EventTypeWarning, common.FuseRecoverFailed)
 			continue
@@ -222,10 +227,7 @@ func (r *FuseRecover) eventRecord(point mountinfo.MountPoint, eventType, eventRe
 		r.Recorder.Eventf(dataset, eventType, eventReason, "Fuse recover %s succeed", point.MountPath)
 	case common.FuseRecoverFailed:
 		r.Recorder.Eventf(dataset, eventType, eventReason, "Fuse recover %s failed", point.MountPath)
-	}
-	// add warning event if point.count is larger than the threshold
-	if point.Count > r.recoverWarningThreshold {
-		r.Recorder.Eventf(dataset, corev1.EventTypeWarning, "TooManyRecovery", "Mountpoint %s has been mounted %v times", point.MountPath, point.Count)
-		glog.Warningf("TooManyRecovery: Mountpoint %s has been mounted %v times", point.MountPath, point.Count)
+	case common.FuseUmountDuplicate:
+		r.Recorder.Eventf(dataset, eventType, eventReason, "Mountpoint %s has been mounted %v times, unmount duplicate mountpoint to avoid large /proc/self/mountinfo file, this may potential make data access connection broken", point.MountPath, point.Count)
 	}
 }
