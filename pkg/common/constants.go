@@ -35,6 +35,8 @@ const (
 
 	FuseRecoverSucceed = "FuseRecoverSucceed"
 
+	FuseUmountDuplicate = "UnmountDuplicateMountpoint"
+
 	RuntimeDeprecated = "RuntimeDeprecated"
 
 	RuntimeWithSecretNotSupported = "RuntimeWithSecretNotSupported"
