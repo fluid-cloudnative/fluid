@@ -59,6 +59,10 @@ func (t ThinEngine) ShouldUpdateUFS() (ufsToUpdate *utils.UFSToUpdate) {
 		t.Log.Error(err, "Failed to get the dataset")
 		return
 	}
+	if dataset == nil {
+		t.Log.Info("Dataset not found", "Dataset name", t.name, "Dataset namespace", t.namespace)
+		return
+	}
 
 	// 2. update fuse-conf configmap
 	update, err := t.updateFuseConfigOnChange(t.runtime, dataset)
