@@ -113,17 +113,6 @@ spec:
             value: {{ .Values.runtimeIdentity.namespace }}
           - name: FLUID_RUNTIME_NAME
             value: {{ .Values.runtimeIdentity.name }}
-          readinessProbe:
-            exec:
-              command:
-                - sh
-                - -c
-                - 'if [ x$({{ .Values.fuse.statCmd }}) = x1 ]; then exit 0; else exit 1; fi '
-            failureThreshold: 3
-            initialDelaySeconds: 1
-            periodSeconds: 1
-            successThreshold: 1
-            timeoutSeconds: 1
           ports:
           {{- if .Values.fuse.metricsPort }}
           - containerPort: {{ .Values.fuse.metricsPort }}
