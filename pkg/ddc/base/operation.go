@@ -190,6 +190,15 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 	opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileComplete")
 
+	// 0. clean up if ttl after finished expired
+	if clean, err := CleanUpIfArriveTTL(object, ctx.Client, opStatus, operation.GetOperationType()); err != nil {
+		log.Error(err, "failed to clean up data operation")
+		return utils.RequeueIfError(err)
+	} else if clean {
+		log.V(1).Info("Data operation has been clean up")
+		return utils.NoRequeue()
+	}
+
 	// 1. Update the infos field if complete
 	if opStatus.Infos == nil {
 		opStatus.Infos = map[string]string{}
@@ -239,14 +248,15 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 			"%s %s succeeded", operation.GetOperationType(), object.GetName())
 	}
 
-	// 5. clean up data operation if arrives ttlSecondsAfterFinished
-	remaining, err := CleanUpIfArriveTTL(object, t.Client, opStatusToUpdate, operation.GetOperationType())
+	// 5. Requeue if data operation set ttl after finished and has not expired
+	remaining, err := GetRemainingTimeToCleanUp(object, opStatusToUpdate, operation.GetOperationType())
 	if err != nil {
-		log.Error(err, fmt.Sprintf("Failed to clean up the %s", operation.GetOperationType()))
+		log.Error(err, fmt.Sprintf("Failed to get remaining time to clean up for operation %s", operation.GetOperationType()))
+		return utils.RequeueIfError(err)
 	}
-	if remaining > 0 {
-		log.V(1).Info(fmt.Sprintf("Remaining %v seconds to clean up the %s", remaining, operation.GetOperationType()))
-		return utils.RequeueAfterInterval(time.Duration(remaining) * time.Second)
+	if remaining != nil && *remaining > 0 {
+		log.V(1).Info("get remaining time to clean up data operation", "remaining time", remaining)
+		return utils.RequeueAfterInterval(*remaining)
 	}
 
 	return utils.NoRequeue()

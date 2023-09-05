@@ -9,31 +9,51 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func CleanUpIfArriveTTL(object client.Object, client client.Client, opStatus *datav1alpha1.OperationStatus, operateType datav1alpha1.OperationType) (int32, error) {
-	var remaining int32
+// CleanUpIfArriveTTL delete the data operation if ttlAfterFinished expired
+func CleanUpIfArriveTTL(object client.Object, client client.Client, opStatus *datav1alpha1.OperationStatus, operateType datav1alpha1.OperationType) (bool, error) {
+	if !object.GetDeletionTimestamp().IsZero() {
+		return false, nil
+	}
+
+	remaining, err := GetRemainingTimeToCleanUp(object, opStatus, operateType)
+	if err != nil {
+		return false, err
+	}
+	if remaining == nil {
+		return false, nil
+	}
+
+	if *remaining < 0 {
+		if err := client.Delete(context.TODO(), object); err != nil {
+			return false, err
+		}
+		// data operation has been deleted successfully
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func GetRemainingTimeToCleanUp(object client.Object, opStatus *datav1alpha1.OperationStatus, operateType datav1alpha1.OperationType) (*time.Duration, error) {
 	if len(opStatus.Conditions) == 0 {
-		// data operation has no completion time, can not clean up
-		return remaining, nil
+		// data operation has no completion time
+		return nil, nil
 	}
 
 	ttl, err := GetTTL(object, operateType)
-	if err != nil || ttl == nil {
-		return remaining, err
+	if err != nil {
+		return nil, err
+	}
+	if ttl == nil {
+		return nil, nil
 	}
 
 	curTime := time.Now()
 	completionTime := opStatus.Conditions[0].LastProbeTime
-	cleanUpTime := completionTime.Add(time.Duration(*ttl) * time.Second)
-	// if it arrives the clean up time
-	if curTime.After(cleanUpTime) {
-		err := client.Delete(context.TODO(), object)
-		return remaining, err
-	}
-	// calculate remaining time to clean up
-	if cleanUpTime.After(curTime) {
-		remaining = int32(cleanUpTime.Sub(curTime).Seconds() + 1)
-	}
-	return remaining, nil
+	expireTime := completionTime.Add(time.Duration(*ttl) * time.Second)
+	// calculate remainint time to clean up data operation
+	remaining := expireTime.Sub(curTime)
+	return &remaining, nil
 }
 
 func GetTTL(object client.Object, operateType datav1alpha1.OperationType) (ttl *int32, err error) {
