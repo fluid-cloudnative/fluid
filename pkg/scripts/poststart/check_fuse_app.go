@@ -53,14 +53,19 @@ fi
 for idx in "${!mountPaths[@]}"; do
 	mp=${mountPaths[$idx]}
     mt=${mountTypes[$idx]}
+	fstype="$mt"
+	if [[ $mt == "jindo" ]]; then
+	  fstype="fuse"
+	fi
 	count=0
-	while ! cat /proc/self/mountinfo | grep $mp | grep $mt
+	# Check fstype (9th item in /proc/self/mountinfo)
+	while ! cat /proc/self/mountinfo | grep $mp | awk '{print $9}' | grep $fstype
 	do
-    	sleep 3
+    	sleep 1
     	count=¬expr $count + 1¬
     	if test $count -eq 10
     	then
-    	    echo "timed out!"
+    	    echo "fail to check mount point $mp with runtimeType $mt: timed out for 10 seconds"
     	    exit 1
     	fi
 	done
