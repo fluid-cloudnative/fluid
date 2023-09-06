@@ -145,6 +145,10 @@ func CreatePersistentVolumeForRuntime(client client.Client,
 			}
 			pv.Labels = utils.UnionMapsWithOverride(pv.Labels, metadataList[i].Labels)
 			pv.Annotations = utils.UnionMapsWithOverride(pv.Annotations, metadataList[i].Annotations)
+			// if pv labels has common.LabelNodePublishMothod and it's value is symlink, add to volumeAttributes
+			if v, ok := metadataList[i].Labels[common.LabelNodePublishMothod]; ok && v == common.NodePublishMethodSymlink {
+				pv.Spec.PersistentVolumeSource.CSI.VolumeAttributes[common.NodePublishMethod] = v
+			}
 		}
 
 		err = client.Create(context.TODO(), pv)
