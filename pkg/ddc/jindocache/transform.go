@@ -260,6 +260,15 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 		// only support WRITE_AROUND
 		writePolicy := "WRITE_AROUND"
 
+		if mount.Options["writePolicy"] == "WRITE_THROUGH" || mount.Options["writePolicy"] == "CACHE_ONLY" {
+			writePolicy = mount.Options["metaPolicy"]
+		}
+		if writePolicy == "CACHE_ONLY" && metaPolicy != "ONCE" {
+			err = fmt.Errorf("incorrect writePolicy %s with metaPolicy %s ", writePolicy, metaPolicy)
+			e.Log.Error(err, "writePolicy CACHE_ONLY should use metaPolicy ONCE")
+			return
+		}
+
 		cacheset := CacheSet{}
 		cacheset.Name = cachesetName
 		cacheset.Path = cachesetPath
