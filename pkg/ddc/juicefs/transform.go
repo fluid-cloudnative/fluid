@@ -187,21 +187,6 @@ func (j *JuiceFSEngine) genWorkerMount(value *JuiceFS, workerOptionMap map[strin
 	if workerOptionMap == nil {
 		workerOptionMap = map[string]string{}
 	}
-	runtimeInfo := j.runtimeInfo
-	if runtimeInfo != nil {
-		accessModes, err := utils.GetAccessModesOfDataset(j.Client, runtimeInfo.GetName(), runtimeInfo.GetNamespace())
-		if err != nil {
-			j.Log.Info("Error:", "err", err)
-		}
-		if len(accessModes) > 0 {
-			for _, mode := range accessModes {
-				if mode == corev1.ReadOnlyMany {
-					workerOptionMap["ro"] = ""
-					break
-				}
-			}
-		}
-	}
 	if value.Edition == CommunityEdition {
 		if _, ok := workerOptionMap["metrics"]; !ok {
 			metricsPort := DefaultMetricsPort
