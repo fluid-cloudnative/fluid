@@ -496,13 +496,18 @@ func (e *JindoCacheEngine) transformMasterResources(runtime *datav1alpha1.JindoR
 		}
 	}
 
+	limitMemEnable := false
+	if os.Getenv("USE_DEFAULT_MEM_LIMIT") == "true" {
+		limitMemEnable = true
+	}
+
 	// set memory request for the larger
 	if e.hasTieredStore(runtime) && e.getTieredStoreType(runtime) == 0 {
 		quotaString := strings.TrimRight(userQuotas, "g")
 		needUpdated := false
 		if quotaString != "" {
 			i, _ := strconv.Atoi(quotaString)
-			if i > defaultMemLimit {
+			if limitMemEnable && i > defaultMemLimit {
 				// value.Master.Resources.Requests.Memory = defaultMetaSize
 				defaultMetaSizeQuantity := resource.MustParse(defaultMetaSize)
 				if runtime.Spec.Master.Resources.Requests == nil ||

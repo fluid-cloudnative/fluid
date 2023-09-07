@@ -17,6 +17,7 @@ limitations under the License.
 package jindofsx
 
 import (
+	"os"
 	"reflect"
 	"testing"
 
@@ -399,6 +400,7 @@ func TestTransformAllocatePorts(t *testing.T) {
 // }
 
 func TestJindoFSxEngine_transformMasterResources(t *testing.T) {
+	os.Setenv("USE_DEFAULT_MEM_LIMIT", "true")
 	type fields struct {
 		name      string
 		namespace string
