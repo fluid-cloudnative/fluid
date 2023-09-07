@@ -400,7 +400,7 @@ func TestTransformAllocatePorts(t *testing.T) {
 // }
 
 func TestJindoCacheEngine_transformMasterResources(t *testing.T) {
-	os.Setenv("default.memLimit.enable", "true")
+	os.Setenv("USE_DEFAULT_MEM_LIMIT", "true")
 	type fields struct {
 		name      string
 		namespace string

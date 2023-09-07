@@ -483,7 +483,7 @@ func (e *JindoFSxEngine) transformMasterResources(runtime *datav1alpha1.JindoRun
 	}
 
 	limitMemEnable := false
-	if os.Getenv("default.memLimit.enable") == "true" {
+	if os.Getenv("USE_DEFAULT_MEM_LIMIT") == "true" {
 		limitMemEnable = true
 	}
 	// set memory request for the larger

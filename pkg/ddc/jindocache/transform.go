@@ -497,7 +497,7 @@ func (e *JindoCacheEngine) transformMasterResources(runtime *datav1alpha1.JindoR
 	}
 
 	limitMemEnable := false
-	if os.Getenv("default.memLimit.enable") == "true" {
+	if os.Getenv("USE_DEFAULT_MEM_LIMIT") == "true" {
 		limitMemEnable = true
 	}
 
