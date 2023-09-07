@@ -25,6 +25,15 @@ class K8sObject():
         self.resource["metadata"]["name"] = name
 
         return self
+    
+    def set_annotation(self, key, value):
+        if "metadata" not in self.resource:
+            self.resource["metadata"] = {}
+        
+        if "annotations" not in self.resource["metadata"]:
+            self.resource["metadata"]["annotations"] = {}
+        
+        self.resource["metadata"]["annotations"][key] = value
 
     def dump(self):
         return self.resource
