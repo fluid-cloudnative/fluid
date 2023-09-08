@@ -591,14 +591,6 @@ func (ns *nodeServer) prepareSessMgr(workDir string) error {
 	return nil
 }
 
-func removeSymlink(targetPath string) (*csi.NodeUnpublishVolumeResponse, error) {
-	glog.Infof("remove symlink targetPath %v", targetPath)
-	if err := os.Remove(targetPath); err != nil && !os.IsNotExist(err) {
-		return nil, status.Errorf(codes.Internal, "NodeUnpublishVolume: remove symlink %v error %v", targetPath, err)
-	}
-	return &csi.NodeUnpublishVolumeResponse{}, nil
-}
-
 // useSymlink for nodePublishVolume if enviroment varible has been set or pv has attribute
 func useSymlink(req *csi.NodePublishVolumeRequest) bool {
 	return os.Getenv("NODEPUBLISH_METHOD") == common.NodePublishMethodSymlink || req.GetVolumeContext()[common.NodePublishMethod] == common.NodePublishMethodSymlink

@@ -35,3 +35,20 @@ func CreateSymlink(targetPath, mountPath string) error {
 	glog.Infof("Creating symlink %s link to %s successfully", targetPath, mountPath)
 	return nil
 }
+
+func RemoveSymlink(targetPath string) (bool, error) {
+	f, err := os.Lstat(targetPath)
+	if err != nil {
+		return false, fmt.Errorf("lstat targetPath %s error %v", targetPath, err)
+	}
+	// remove if targetPath is a symlink
+	if f.Mode()&os.ModeSymlink != 0 {
+		glog.Infof("%v is a symlink", targetPath)
+		if err := os.Remove(targetPath); err != nil && !os.IsNotExist(err) {
+			return false, fmt.Errorf("failed to remove symlink targetPath %s, error %v", targetPath, err)
+		}
+		// return true if and only if remove symlink successfully
+		return true, nil
+	}
+	return false, nil
+}

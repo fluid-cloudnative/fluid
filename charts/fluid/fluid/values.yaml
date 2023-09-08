@@ -41,8 +41,9 @@ csi:
     rootDir: /var/lib/kubelet
   pruneFs: fuse.alluxio-fuse,fuse.jindofs-fuse,fuse.juicefs,fuse.goosefs-fuse,ossfs,alifuse.aliyun-alinas-efc
   recoverWarningThreshold: 50
-  # default method is "bind-mount", "symlink" is also support
-  nodePublishMethod: bind-mount
+  # default method is "bindMount", "symlink" is also support
+  # Notice: if use nodePublishMethod symlink, fuse recovery is not support
+  nodePublishMethod: bindMount
 
 runtime:
   criticalFusePod: true
