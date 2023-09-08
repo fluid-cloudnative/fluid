@@ -70,7 +70,7 @@ require (
 	github.com/prometheus/client_golang v1.15.1
 	github.com/smartystreets/goconvey v1.7.2
 	github.com/spf13/cobra v1.7.0
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.4
 	go.uber.org/zap v1.24.0
 	golang.org/x/net v0.10.0
 	google.golang.org/grpc v1.40.0
