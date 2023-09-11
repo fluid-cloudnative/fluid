@@ -188,29 +188,26 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 	}
 	defer ns.locks.Release(targetPath)
 
-	// check path existence
-	_, err := os.Stat(targetPath)
-	// No need to unmount non-existing targetPath
-	if os.IsNotExist(err) {
-		glog.V(3).Infof("NodeUnpublishVolume: targetPath %s has been cleaned up, so it doesn't need to be unmounted", targetPath)
-		return &csi.NodeUnpublishVolumeResponse{}, nil
-	}
-	if err != nil && !errors.Is(err, syscall.ENOTCONN) {
-		// if error is "transport endpoint is not connected", ingore and do umount
-		return nil, errors.Wrapf(err, "NodeUnpublishVolume: stat targetPath %s error %v", targetPath, err)
-	}
-
 	// targetPath may be bind mount many times when mount point recovered.
 	// umount until it's not mounted.
 	mounter := mount.New("")
 	for {
 		notMount, err := mounter.IsLikelyNotMountPoint(targetPath)
-		if err != nil {
-			glog.V(3).Infoln(err)
-			if corrupted := mount.IsCorruptedMnt(err); !corrupted {
-				return nil, errors.Wrapf(err, "NodeUnpublishVolume: stat targetPath %s error %v", targetPath, err)
-			}
+		if os.IsNotExist(err) {
+			glog.V(3).Infof("NodeUnpublishVolume: targetPath %s has been cleaned up, so it doesn't need to be unmounted", targetPath)
+			break
 		}
+		if err != nil {
+			if !mount.IsCorruptedMnt(err) {
+				// stat targetPath with unexpected error
+				glog.Errorf("NodeUnpublishVolume: stat targetPath %s with error: %v", targetPath, err)
+				return nil, errors.Wrapf(err, "NodeUnpublishVolume: stat targetPath %s", targetPath)
+			}
+			// targetPath is corrupted
+			glog.V(3).Infof("NodeUnpublishVolume: detected corrupted mountpoint on path %s with error %v", targetPath, err)
+			err = nil
+		}
+
 		if notMount {
 			glog.V(3).Infof("umount:%s success", targetPath)
 			break
@@ -218,15 +215,20 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 
 		glog.V(3).Infof("umount:%s", targetPath)
 		err = mounter.Unmount(targetPath)
+		if os.IsNotExist(err) {
+			glog.V(3).Infof("NodeUnpublishVolume: targetPath %s has been cleaned up when umounting it", targetPath)
+			break
+		}
 		if err != nil {
-			glog.V(3).Infoln(err)
-			return nil, errors.Wrapf(err, "NodeUnpublishVolume: umount targetPath %s error %v", targetPath, err)
+			glog.Errorf("NodeUnpublishVolume: umount targetPath %s with error: %v", targetPath, err)
+			return nil, errors.Wrapf(err, "NodeUnpublishVolume: umount targetPath %s", targetPath)
 		}
 	}
 
-	err = mount.CleanupMountPoint(req.GetTargetPath(), mount.New(""), false)
+	err := mount.CleanupMountPoint(targetPath, mounter, false)
 	if err != nil {
-		glog.V(3).Infoln(err)
+		glog.Errorf("NodeUnpublishVolume: failed when cleanupMountPoint on path %s: %v", targetPath, err)
+		return nil, errors.Wrapf(err, "NodeUnpublishVolume: failed when cleanupMountPoint on path %s", targetPath)
 	} else {
 		glog.V(4).Infof("Succeed in umounting  %s", targetPath)
 	}
