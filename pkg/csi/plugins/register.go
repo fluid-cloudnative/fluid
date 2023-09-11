@@ -29,7 +29,7 @@ func Register(mgr manager.Manager, cfg config.Config) error {
 		return err
 	}
 
-	csiDriver := NewDriver(cfg.NodeId, cfg.Endpoint, mgr.GetClient(), mgr.GetAPIReader(), client)
+	csiDriver := NewDriver(cfg.NodeId, cfg.Endpoint, mgr.GetClient(), mgr.GetAPIReader(), client, cfg.VolumeLocks)
 
 	if err := mgr.Add(csiDriver); err != nil {
 		return err

@@ -30,6 +30,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/csi"
 	"github.com/fluid-cloudnative/fluid/pkg/csi/config"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	utilfeature "github.com/fluid-cloudnative/fluid/pkg/utils/feature"
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
@@ -116,6 +117,7 @@ func handle() {
 		PruneFs:           pruneFs,
 		PrunePath:         prunePath,
 		KubeletConfigPath: kubeletKubeConfigPath,
+		VolumeLocks:       utils.NewVolumeLocks(),
 	}
 
 	if err = csi.SetupWithManager(mgr, config); err != nil {

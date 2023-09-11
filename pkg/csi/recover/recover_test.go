@@ -293,10 +293,12 @@ func TestNewFuseRecover(t *testing.T) {
 		kubeClient        client.Client
 		recorder          record.EventRecorder
 		recoverFusePeriod string
+		locks             *utils.VolumeLocks
 	}
 
 	fakeClient := fake.NewFakeClient()
 	fakeRecorder := record.NewFakeRecorder(1)
+	volumeLocks := utils.NewVolumeLocks()
 
 	tests := []struct {
 		name    string
@@ -310,6 +312,7 @@ func TestNewFuseRecover(t *testing.T) {
 				kubeClient:        fakeClient,
 				recorder:          fakeRecorder,
 				recoverFusePeriod: "5s",
+				locks:             volumeLocks,
 			},
 			want: &FuseRecover{
 				SafeFormatAndMount: mount.SafeFormatAndMount{
@@ -321,6 +324,7 @@ func TestNewFuseRecover(t *testing.T) {
 				Recorder:                fakeRecorder,
 				recoverFusePeriod:       defaultFuseRecoveryPeriod,
 				recoverWarningThreshold: defaultRecoverWarningThreshold,
+				locks:                   volumeLocks,
 			},
 			wantErr: false,
 		},
@@ -330,7 +334,7 @@ func TestNewFuseRecover(t *testing.T) {
 			t.Setenv(utils.MountRoot, "/runtime-mnt")
 			t.Setenv(FuseRecoveryPeriod, tt.args.recoverFusePeriod)
 
-			got, err := NewFuseRecover(tt.args.kubeClient, tt.args.recorder, tt.args.kubeClient)
+			got, err := NewFuseRecover(tt.args.kubeClient, tt.args.recorder, tt.args.kubeClient, tt.args.locks)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewFuseRecover() error = %v, wantErr %v", err, tt.wantErr)
 				return

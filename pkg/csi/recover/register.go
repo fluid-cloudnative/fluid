@@ -25,7 +25,7 @@ import (
 
 // Register initializes the fuse recover and registers it to the controller manager.
 func Register(mgr manager.Manager, config config.Config) error {
-	fuseRecover, err := NewFuseRecover(mgr.GetClient(), mgr.GetEventRecorderFor("FuseRecover"), mgr.GetAPIReader())
+	fuseRecover, err := NewFuseRecover(mgr.GetClient(), mgr.GetEventRecorderFor("FuseRecover"), mgr.GetAPIReader(), config.VolumeLocks)
 	if err != nil {
 		return err
 	}
