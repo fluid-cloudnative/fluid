@@ -82,7 +82,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 			if err := os.MkdirAll(targetPath, 0750); err != nil {
 				return nil, status.Error(codes.Internal, err.Error())
 			} else {
-				glog.Infof("MkdirAll successful. %v", targetPath)
+				glog.Infof("NodePublishVolume: MkdirAll successful on %v", targetPath)
 			}
 			//isMount = true
 		} else {
@@ -91,21 +91,20 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	}
 
 	if isMount {
-		glog.Infof("It's already mounted to %v", targetPath)
+		glog.Infof("NodePublishVolume: already mounted to %v, do nothing", targetPath)
 		return &csi.NodePublishVolumeResponse{}, nil
-	} else {
-		glog.Infof("Try to mount to %v", targetPath)
 	}
 
+	glog.Infof("NodePublishVolume: start mounting staging path to %v", targetPath)
 	// 0. check if read only
 	readOnly := false
 	if req.GetVolumeCapability() == nil {
-		glog.Infoln("Volume Capability is nil")
+		glog.Infoln("NodePublishVolume: found volume capability is nil")
 	} else {
 		mode := req.GetVolumeCapability().GetAccessMode().GetMode()
 		if mode == csi.VolumeCapability_AccessMode_MULTI_NODE_READER_ONLY {
 			readOnly = true
-			glog.Infof("Set the mount option readonly=%v", readOnly)
+			glog.Infof("NodePublishVolume: set the mount option readonly=%v", readOnly)
 		}
 	}
 
@@ -155,7 +154,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	}
 	command := exec.Command("mount", args...)
 
-	glog.V(4).Infoln(command)
+	glog.V(3).Infof("NodePublishVolume: exec command %v", command)
 	stdoutStderr, err := command.CombinedOutput()
 	glog.V(4).Infoln(string(stdoutStderr))
 	if err != nil {
@@ -167,7 +166,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		}
 		return nil, status.Error(codes.Internal, err.Error())
 	} else {
-		glog.V(4).Infof("Succeed in binding %s to %s", mountPath, targetPath)
+		glog.V(3).Infof("NodePublishVolume: succeed in binding %s to %s", mountPath, targetPath)
 	}
 
 	return &csi.NodePublishVolumeResponse{}, nil
@@ -201,7 +200,7 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 			if !mount.IsCorruptedMnt(err) {
 				// stat targetPath with unexpected error
 				glog.Errorf("NodeUnpublishVolume: stat targetPath %s with error: %v", targetPath, err)
-				return nil, errors.Wrapf(err, "NodeUnpublishVolume: stat targetPath %s", targetPath)
+				return nil, status.Errorf(codes.Internal, "NodeUnpublishVolume: stat targetPath %s: %v", targetPath, err)
 			}
 			// targetPath is corrupted
 			glog.V(3).Infof("NodeUnpublishVolume: detected corrupted mountpoint on path %s with error %v", targetPath, err)
@@ -209,11 +208,11 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 		}
 
 		if notMount {
-			glog.V(3).Infof("umount:%s success", targetPath)
+			glog.V(3).Infof("NodeUnpublishVolume: umount %s success", targetPath)
 			break
 		}
 
-		glog.V(3).Infof("umount:%s", targetPath)
+		glog.V(3).Infof("NodeUnpublishVolume: exec umount %s", targetPath)
 		err = mounter.Unmount(targetPath)
 		if os.IsNotExist(err) {
 			glog.V(3).Infof("NodeUnpublishVolume: targetPath %s has been cleaned up when umounting it", targetPath)
@@ -221,16 +220,16 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 		}
 		if err != nil {
 			glog.Errorf("NodeUnpublishVolume: umount targetPath %s with error: %v", targetPath, err)
-			return nil, errors.Wrapf(err, "NodeUnpublishVolume: umount targetPath %s", targetPath)
+			return nil, status.Errorf(codes.Internal, "NodeUnpublishVolume: umount targetPath %s: %v", targetPath, err)
 		}
 	}
 
 	err := mount.CleanupMountPoint(targetPath, mounter, false)
 	if err != nil {
 		glog.Errorf("NodeUnpublishVolume: failed when cleanupMountPoint on path %s: %v", targetPath, err)
-		return nil, errors.Wrapf(err, "NodeUnpublishVolume: failed when cleanupMountPoint on path %s", targetPath)
+		return nil, status.Errorf(codes.Internal, "NodeUnpublishVolume: failed when cleanupMountPoint on path %s: %v", targetPath, err)
 	} else {
-		glog.V(4).Infof("Succeed in umounting  %s", targetPath)
+		glog.V(4).Infof("NodeUnpublishVolume: succeed in umounting  %s", targetPath)
 	}
 
 	return &csi.NodeUnpublishVolumeResponse{}, nil
@@ -276,14 +275,14 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 
 	var shouldCleanFuse bool
 	cleanPolicy := runtimeInfo.GetFuseCleanPolicy()
-	glog.Infof("Using %s clean policy for runtime %s in namespace %s", cleanPolicy, runtimeInfo.GetName(), runtimeInfo.GetNamespace())
+	glog.Infof("NodeUnstageVolume: Using %s clean policy for runtime %s in namespace %s", cleanPolicy, runtimeInfo.GetName(), runtimeInfo.GetNamespace())
 	switch cleanPolicy {
 	case v1alpha1.OnDemandCleanPolicy:
 		shouldCleanFuse = true
 	case v1alpha1.OnRuntimeDeletedCleanPolicy:
 		shouldCleanFuse = false
 	default:
-		return nil, errors.Errorf("Unknown Fuse clean policy: %s", cleanPolicy)
+		return nil, errors.Errorf("NodeUnstageVolume: unknown Fuse clean policy: %s", cleanPolicy)
 	}
 
 	if !shouldCleanFuse {
@@ -348,7 +347,7 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	// 2. clean up broken mount point
 	fluidPath := req.GetVolumeContext()[common.VolumeAttrFluidPath]
 	if ignoredErr := cleanUpBrokenMountPoint(fluidPath); ignoredErr != nil {
-		glog.Warningf("Ignoring error when cleaning up broken mount point %v: %v", fluidPath, ignoredErr)
+		glog.Warningf("NodeStageVolume: Ignoring error when cleaning up broken mount point %v: %v", fluidPath, ignoredErr)
 	}
 
 	// 3. get runtime namespace and name
