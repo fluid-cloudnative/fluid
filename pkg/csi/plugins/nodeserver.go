@@ -193,7 +193,8 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 		glog.V(3).Infof("NodeUnpublishVolume: targetPath %s has been cleaned up, so it doesn't need to be unmounted", targetPath)
 		return &csi.NodeUnpublishVolumeResponse{}, nil
 	}
-	if err != nil {
+	if err != nil && !errors.Is(err, syscall.ENOTCONN) {
+		// if error is "transport endpoint is not connected", ingore and do umount
 		return nil, errors.Wrapf(err, "NodeUnpublishVolume: stat targetPath %s error %v", targetPath, err)
 	}
 
