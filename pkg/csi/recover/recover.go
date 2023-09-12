@@ -170,11 +170,13 @@ func (r *FuseRecover) recover() {
 		should, err := r.shouldRecover(point.MountPath)
 		if err != nil {
 			glog.Warningf("FuseRecovery: found path %s which is unable to recover due to error %v, skip it", point.MountPath, err)
+			r.locks.Release(point.MountPath)
 			continue
 		}
 
 		if !should {
 			glog.V(3).Infof("FuseRecovery: path %s has already been cleaned up, skip recovering it", point.MountPath)
+			r.locks.Release(point.MountPath)
 			continue
 		}
 
@@ -189,6 +191,7 @@ func (r *FuseRecover) recover() {
 		}
 		if err := r.recoverBrokenMount(point); err != nil {
 			r.eventRecord(point, corev1.EventTypeWarning, common.FuseRecoverFailed)
+			r.locks.Release(point.MountPath)
 			continue
 		}
 		r.eventRecord(point, corev1.EventTypeNormal, common.FuseRecoverSucceed)
