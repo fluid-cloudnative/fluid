@@ -44,11 +44,13 @@ type driver struct {
 	nodeAuthorizedClient *kubernetes.Clientset
 	csiDriver            *csicommon.CSIDriver
 	nodeId, endpoint     string
+
+	locks *utils.VolumeLocks
 }
 
 var _ manager.Runnable = &driver{}
 
-func NewDriver(nodeID, endpoint string, client client.Client, apiReader client.Reader, nodeAuthorizedClient *kubernetes.Clientset) *driver {
+func NewDriver(nodeID, endpoint string, client client.Client, apiReader client.Reader, nodeAuthorizedClient *kubernetes.Clientset, locks *utils.VolumeLocks) *driver {
 	glog.Infof("Driver: %v version: %v", driverName, version)
 
 	proto, addr := utils.SplitSchemaAddr(endpoint)
@@ -76,6 +78,7 @@ func NewDriver(nodeID, endpoint string, client client.Client, apiReader client.R
 		client:               client,
 		nodeAuthorizedClient: nodeAuthorizedClient,
 		apiReader:            apiReader,
+		locks:                locks,
 	}
 }
 
@@ -92,7 +95,7 @@ func (d *driver) newNodeServer() *nodeServer {
 		client:               d.client,
 		apiReader:            d.apiReader,
 		nodeAuthorizedClient: d.nodeAuthorizedClient,
-		locks:                utils.NewVolumeLocks(),
+		locks:                d.locks,
 	}
 }
 
