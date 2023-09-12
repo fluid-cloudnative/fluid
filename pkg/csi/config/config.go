@@ -16,6 +16,13 @@ limitations under the License.
 
 package config
 
+import "github.com/fluid-cloudnative/fluid/pkg/utils"
+
+type RunningContext struct {
+	Config
+	VolumeLocks *utils.VolumeLocks
+}
+
 type Config struct {
 	NodeId            string
 	Endpoint          string

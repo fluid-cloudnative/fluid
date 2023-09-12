@@ -28,7 +28,7 @@ import (
 
 type registrationFuncs struct {
 	enabled  func() bool
-	register func(mgr manager.Manager, cfg config.Config) error
+	register func(mgr manager.Manager, ctx config.RunningContext) error
 }
 
 var registraions map[string]registrationFuncs
@@ -42,11 +42,11 @@ func init() {
 }
 
 // SetupWithManager registers all the enabled components defined in registrations to the controller manager.
-func SetupWithManager(mgr manager.Manager, cfg config.Config) error {
+func SetupWithManager(mgr manager.Manager, ctx config.RunningContext) error {
 	for rName, r := range registraions {
 		if r.enabled() {
 			glog.Infof("Registering %s to controller manager", rName)
-			if err := r.register(mgr, cfg); err != nil {
+			if err := r.register(mgr, ctx); err != nil {
 				glog.Errorf("Got error when registering %s, error: %v", rName, err)
 				return err
 			}
