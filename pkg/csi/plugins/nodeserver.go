@@ -201,10 +201,10 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 				// stat targetPath with unexpected error
 				glog.Errorf("NodeUnpublishVolume: stat targetPath %s with error: %v", targetPath, err)
 				return nil, status.Errorf(codes.Internal, "NodeUnpublishVolume: stat targetPath %s: %v", targetPath, err)
+			} else {
+				// targetPath is corrupted
+				glog.V(3).Infof("NodeUnpublishVolume: detected corrupted mountpoint on path %s with error %v", targetPath, err)
 			}
-			// targetPath is corrupted
-			glog.V(3).Infof("NodeUnpublishVolume: detected corrupted mountpoint on path %s with error %v", targetPath, err)
-			err = nil
 		}
 
 		if notMount {

@@ -97,6 +97,7 @@ func TestRecover_run(t *testing.T) {
 				ApiReader:         fakeClient,
 				Recorder:          record.NewFakeRecorder(1),
 				recoverFusePeriod: testfuseRecoverPeriod,
+				locks:             utils.NewVolumeLocks(),
 			}
 
 			patch1 := ApplyMethod(reflect.TypeOf(fakeMounter), "Mount", func(_ *mount.FakeMounter, source string, target string, _ string, _ []string) error {
@@ -121,6 +122,11 @@ func TestRecover_run(t *testing.T) {
 				return "default", "jfsdemo", nil
 			})
 			defer patch3.Reset()
+
+			patch4 := ApplyPrivateMethod(r, "shouldRecover", func(mountPath string) (bool, error) {
+				return true, nil
+			})
+			defer patch4.Reset()
 
 			r.runOnce()
 
