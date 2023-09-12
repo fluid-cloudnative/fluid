@@ -162,40 +162,7 @@ func (r *FuseRecover) recover() {
 	}
 
 	for _, point := range brokenMounts {
-		if lock := r.locks.TryAcquire(point.MountPath); !lock {
-			glog.V(4).Infof("FuseRecovery: fail to acquire lock on path %s, skip recovering it", point.MountPath)
-			continue
-		}
-
-		should, err := r.shouldRecover(point.MountPath)
-		if err != nil {
-			glog.Warningf("FuseRecovery: found path %s which is unable to recover due to error %v, skip it", point.MountPath, err)
-			r.locks.Release(point.MountPath)
-			continue
-		}
-
-		if !should {
-			glog.V(3).Infof("FuseRecovery: path %s has already been cleaned up, skip recovering it", point.MountPath)
-			r.locks.Release(point.MountPath)
-			continue
-		}
-
-		glog.V(3).Infof("FuseRecovery: recovering broken mount point: %v", point)
-		// if app container restart, umount duplicate mount may lead to recover successed but can not access data
-		// so we only umountDuplicate when it has mounted more than the recoverWarningThreshold
-		// please refer to https://github.com/fluid-cloudnative/fluid/issues/3399 for more information
-		if point.Count > r.recoverWarningThreshold {
-			glog.Warningf("FuseRecovery: Mountpoint %s has been mounted %v times, exceeding the recoveryWarningThreshold %v, unmount duplicate mountpoint to avoid large /proc/self/mountinfo file, this may potentially make data access connection broken", point.MountPath, point.Count, r.recoverWarningThreshold)
-			r.eventRecord(point, corev1.EventTypeWarning, common.FuseUmountDuplicate)
-			r.umountDuplicate(point)
-		}
-		if err := r.recoverBrokenMount(point); err != nil {
-			r.eventRecord(point, corev1.EventTypeWarning, common.FuseRecoverFailed)
-			r.locks.Release(point.MountPath)
-			continue
-		}
-		r.eventRecord(point, corev1.EventTypeNormal, common.FuseRecoverSucceed)
-		r.locks.Release(point.MountPath)
+		r.doRecover(point)
 	}
 }
 
@@ -267,4 +234,38 @@ func (r *FuseRecover) shouldRecover(mountPath string) (should bool, err error) {
 	}
 
 	return true, nil
+}
+
+func (r *FuseRecover) doRecover(point mountinfo.MountPoint) {
+	if lock := r.locks.TryAcquire(point.MountPath); !lock {
+		glog.V(4).Infof("FuseRecovery: fail to acquire lock on path %s, skip recovering it", point.MountPath)
+		return
+	}
+	defer r.locks.Release(point.MountPath)
+
+	should, err := r.shouldRecover(point.MountPath)
+	if err != nil {
+		glog.Warningf("FuseRecovery: found path %s which is unable to recover due to error %v, skip it", point.MountPath, err)
+		return
+	}
+
+	if !should {
+		glog.V(3).Infof("FuseRecovery: path %s has already been cleaned up, skip recovering it", point.MountPath)
+		return
+	}
+
+	glog.V(3).Infof("FuseRecovery: recovering broken mount point: %v", point)
+	// if app container restart, umount duplicate mount may lead to recover successed but can not access data
+	// so we only umountDuplicate when it has mounted more than the recoverWarningThreshold
+	// please refer to https://github.com/fluid-cloudnative/fluid/issues/3399 for more information
+	if point.Count > r.recoverWarningThreshold {
+		glog.Warningf("FuseRecovery: Mountpoint %s has been mounted %v times, exceeding the recoveryWarningThreshold %v, unmount duplicate mountpoint to avoid large /proc/self/mountinfo file, this may potentially make data access connection broken", point.MountPath, point.Count, r.recoverWarningThreshold)
+		r.eventRecord(point, corev1.EventTypeWarning, common.FuseUmountDuplicate)
+		r.umountDuplicate(point)
+	}
+	if err := r.recoverBrokenMount(point); err != nil {
+		r.eventRecord(point, corev1.EventTypeWarning, common.FuseRecoverFailed)
+		return
+	}
+	r.eventRecord(point, corev1.EventTypeNormal, common.FuseRecoverSucceed)
 }
