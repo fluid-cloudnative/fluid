@@ -1,7 +1,6 @@
 package base
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -9,31 +8,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// CleanUpIfArriveTTL delete the data operation if ttlAfterFinished expired
-func CleanUpIfArriveTTL(object client.Object, client client.Client, opStatus *datav1alpha1.OperationStatus, operateType datav1alpha1.OperationType) (bool, error) {
-	if !object.GetDeletionTimestamp().IsZero() {
-		return false, nil
-	}
-
-	remaining, err := GetRemainingTimeToCleanUp(object, opStatus, operateType)
-	if err != nil {
-		return false, err
-	}
-	if remaining == nil {
-		return false, nil
-	}
-
-	if *remaining < 0 {
-		if err := client.Delete(context.TODO(), object); err != nil {
-			return false, err
-		}
-		// data operation has been deleted successfully
-		return true, nil
-	}
-
-	return false, nil
-}
-
+// GetRemainingTimeToCleanUp return not nil remaining time if data operation has completion time and set ttlAfterFinished
 func GetRemainingTimeToCleanUp(object client.Object, opStatus *datav1alpha1.OperationStatus, operateType datav1alpha1.OperationType) (*time.Duration, error) {
 	if len(opStatus.Conditions) == 0 {
 		// data operation has no completion time
@@ -45,6 +20,7 @@ func GetRemainingTimeToCleanUp(object client.Object, opStatus *datav1alpha1.Oper
 		return nil, err
 	}
 	if ttl == nil {
+		// if data operation does not set ttlAfterFinished, return nil
 		return nil, nil
 	}
 

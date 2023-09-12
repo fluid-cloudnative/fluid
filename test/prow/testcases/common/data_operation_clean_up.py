@@ -156,7 +156,7 @@ def main():
     flow.append_step(
         StatusCheckStep(
             step_name="wait dataload to clean up",
-            forth_fn=currying_fn(wait_clean_up, dataload_name=dataload_name, namespace=namespace, ttl=10)
+            forth_fn=currying_fn(wait_clean_up, dataload_name=dataload_name, namespace=namespace, ttl=20)
         )
     )
 
