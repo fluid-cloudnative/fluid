@@ -12,7 +12,7 @@ import (
 )
 
 // Register update the host /etc/updatedb.conf
-func Register(_ manager.Manager, cfg config.Config) error {
+func Register(_ manager.Manager, ctx config.RunningContext) error {
 	content, err := os.ReadFile(updatedbConfPath)
 	if os.IsNotExist(err) {
 		glog.Info("/etc/updatedb.conf not exist, skip updating")
@@ -21,7 +21,7 @@ func Register(_ manager.Manager, cfg config.Config) error {
 	if err != nil {
 		return err
 	}
-	newconfig, err := updateConfig(string(content), cfg.PruneFs, []string{cfg.PrunePath})
+	newconfig, err := updateConfig(string(content), ctx.PruneFs, []string{ctx.PrunePath})
 	if err != nil {
 		glog.Warningf("failed to update updatedb.conf %s ", err)
 		return nil
