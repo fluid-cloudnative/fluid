@@ -111,16 +111,17 @@ func handle() {
 		panic(fmt.Sprintf("csi: unable to create controller manager due to error %v", err))
 	}
 
-	config := config.Config{
-		NodeId:            nodeID,
-		Endpoint:          endpoint,
-		PruneFs:           pruneFs,
-		PrunePath:         prunePath,
-		KubeletConfigPath: kubeletKubeConfigPath,
-		VolumeLocks:       utils.NewVolumeLocks(),
+	runningContext := config.RunningContext{
+		Config: config.Config{
+			NodeId:            nodeID,
+			Endpoint:          endpoint,
+			PruneFs:           pruneFs,
+			PrunePath:         prunePath,
+			KubeletConfigPath: kubeletKubeConfigPath,
+		},
+		VolumeLocks: utils.NewVolumeLocks(),
 	}
-
-	if err = csi.SetupWithManager(mgr, config); err != nil {
+	if err = csi.SetupWithManager(mgr, runningContext); err != nil {
 		panic(fmt.Sprintf("unable to set up manager due to error %v", err))
 	}
 
