@@ -41,10 +41,12 @@ import (
 )
 
 const (
-	defaultKubeletTimeout     = 10
-	defaultFuseRecoveryPeriod = 5 * time.Second
-	serviceAccountTokenFile   = "/var/run/secrets/kubernetes.io/serviceaccount/token"
-	FuseRecoveryPeriod        = "RECOVER_FUSE_PERIOD"
+	defaultKubeletTimeout          = 10
+	defaultFuseRecoveryPeriod      = 5 * time.Second
+	defaultRecoverWarningThreshold = 50
+	serviceAccountTokenFile        = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+	FuseRecoveryPeriod             = "RECOVER_FUSE_PERIOD"
+	RecoverWarningThreshold        = "REVOCER_WARNING_THRESHOLD"
 )
 
 var _ manager.Runnable = &FuseRecover{}
@@ -56,7 +58,8 @@ type FuseRecover struct {
 	// KubeletClient *kubelet.KubeletClient
 	Recorder record.EventRecorder
 
-	recoverFusePeriod time.Duration
+	recoverFusePeriod       time.Duration
+	recoverWarningThreshold int
 }
 
 func initializeKubeletClient() (*kubelet.KubeletClient, error) {
@@ -111,22 +114,21 @@ func NewFuseRecover(kubeClient client.Client, recorder record.EventRecorder, api
 		return nil, errors.Wrap(err, "got error when creating kubelet client")
 	}
 
-	recoverFusePeriod := defaultFuseRecoveryPeriod
-	if os.Getenv(FuseRecoveryPeriod) != "" {
-		recoverFusePeriod, err = time.ParseDuration(os.Getenv(FuseRecoveryPeriod))
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to parse time period")
-		}
+	recoverFusePeriod := utils.GetDurationValueFromEnv(FuseRecoveryPeriod, defaultFuseRecoveryPeriod)
+	recoverWarningThreshold, found := utils.GetIntValueFromEnv(RecoverWarningThreshold)
+	if !found {
+		recoverWarningThreshold = defaultRecoverWarningThreshold
 	}
 	return &FuseRecover{
 		SafeFormatAndMount: mount.SafeFormatAndMount{
 			Interface: mount.New(""),
 			Exec:      k8sexec.New(),
 		},
-		KubeClient:        kubeClient,
-		ApiReader:         apiReader,
-		Recorder:          recorder,
-		recoverFusePeriod: recoverFusePeriod,
+		KubeClient:              kubeClient,
+		ApiReader:               apiReader,
+		Recorder:                recorder,
+		recoverFusePeriod:       recoverFusePeriod,
+		recoverWarningThreshold: recoverWarningThreshold,
 	}, nil
 }
 
@@ -158,7 +160,14 @@ func (r FuseRecover) recover() {
 
 	for _, point := range brokenMounts {
 		glog.V(4).Infof("Get broken mount point: %v", point)
-		r.umountDuplicate(point)
+		// if app container restart, umount duplicate mount may lead to recover successed but can not access data
+		// so we only umountDuplicate when it has mounted more than the recoverWarningThreshold
+		// please refer to https://github.com/fluid-cloudnative/fluid/issues/3399 for more information
+		if point.Count > r.recoverWarningThreshold {
+			glog.Warningf("Mountpoint %s has been mounted %v times, exceeding the recoveryWarningThreshold %v, unmount duplicate mountpoint to avoid large /proc/self/mountinfo file, this may potential make data access connection broken", point.MountPath, point.Count, r.recoverWarningThreshold)
+			r.eventRecord(point, corev1.EventTypeWarning, common.FuseUmountDuplicate)
+			r.umountDuplicate(point)
+		}
 		if err := r.recoverBrokenMount(point); err != nil {
 			r.eventRecord(point, corev1.EventTypeWarning, common.FuseRecoverFailed)
 			continue
@@ -213,5 +222,12 @@ func (r *FuseRecover) eventRecord(point mountinfo.MountPoint, eventType, eventRe
 		return
 	}
 	glog.V(4).Infof("record to dataset: %s, namespace: %s", dataset.Name, dataset.Namespace)
-	r.Recorder.Eventf(dataset, eventType, eventReason, "Fuse recover %s succeed", point.MountPath)
+	switch eventReason {
+	case common.FuseRecoverSucceed:
+		r.Recorder.Eventf(dataset, eventType, eventReason, "Fuse recover %s succeed", point.MountPath)
+	case common.FuseRecoverFailed:
+		r.Recorder.Eventf(dataset, eventType, eventReason, "Fuse recover %s failed", point.MountPath)
+	case common.FuseUmountDuplicate:
+		r.Recorder.Eventf(dataset, eventType, eventReason, "Mountpoint %s has been mounted %v times, unmount duplicate mountpoint to avoid large /proc/self/mountinfo file, this may potential make data access connection broken", point.MountPath, point.Count)
+	}
 }

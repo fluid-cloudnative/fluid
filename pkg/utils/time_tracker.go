@@ -35,8 +35,8 @@ var (
 
 func init() {
 	timeLog = ctrl.Log.WithName("utils.time")
-	enableTimeTrack = GetBoolValueFormEnv(common.EnvTimeTrack, false)
-	enableTimeTrackDebug = GetBoolValueFormEnv(common.EnvTimeTrackDebug, false)
+	enableTimeTrack = GetBoolValueFromEnv(common.EnvTimeTrack, false)
+	enableTimeTrackDebug = GetBoolValueFromEnv(common.EnvTimeTrackDebug, false)
 }
 
 // TimeTrack tracks the time cost for some process with some optional information.
