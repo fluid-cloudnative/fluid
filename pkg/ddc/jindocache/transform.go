@@ -190,6 +190,22 @@ func (e *JindoCacheEngine) transform(runtime *datav1alpha1.JindoRuntime) (value 
 	return value, err
 }
 
+func (e *JindoCacheEngine) handleWritePolicy(options map[string]string, metaPolicy string) (writePolicy string, err error) {
+	writeType := WriteAround
+
+	if options["writePolicy"] == WriteThrough || options["writePolicy"] == CacheOnly {
+		writeType = options["writePolicy"]
+	}
+
+	if writeType == CacheOnly && metaPolicy != "ONCE" {
+		err := fmt.Errorf("incorrect writePolicy %s with metaPolicy %s ", writePolicy, metaPolicy)
+		e.Log.Error(err, "writePolicy CACHE_ONLY should use metaPolicy ONCE")
+		return writeType, err
+	}
+
+	return writeType, nil
+}
+
 func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPath string, value *Jindo, dataset *datav1alpha1.Dataset, secretMountSupport bool) (err error) {
 	properties := map[string]string{
 		"namespace.cluster.id":                      "local",
@@ -258,17 +274,10 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 		// only support CACHE_ASIDE
 		readPolicy := "CACHE_ASIDE"
 		// only support WRITE_AROUND
-		writePolicy := "WRITE_AROUND"
-
-		if mount.Options["writePolicy"] == "WRITE_THROUGH" || mount.Options["writePolicy"] == "CACHE_ONLY" {
-			writePolicy = mount.Options["metaPolicy"]
+		writePolicy, err := e.handleWritePolicy(mount.Options, metaPolicy)
+		if err != nil {
+			return err
 		}
-		if writePolicy == "CACHE_ONLY" && metaPolicy != "ONCE" {
-			err = fmt.Errorf("incorrect writePolicy %s with metaPolicy %s ", writePolicy, metaPolicy)
-			e.Log.Error(err, "writePolicy CACHE_ONLY should use metaPolicy ONCE")
-			return
-		}
-
 		cacheset := CacheSet{}
 		cacheset.Name = cachesetName
 		cacheset.Path = cachesetPath
@@ -324,13 +333,13 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 			if len(rm) < 3 {
 				err = fmt.Errorf("incorrect oss mountPoint with %v, please check your path is dir or file ", mount.MountPoint)
 				e.Log.Error(err, "mount.MountPoint", mount.MountPoint)
-				return
+				return err
 			}
 			bucketName := rm[2]
 			if mount.Options["fs.oss.endpoint"] == "" {
 				err = fmt.Errorf("oss endpoint can not be null, please check <fs.oss.accessKeySecret> option")
 				e.Log.Error(err, "oss endpoint can not be null")
-				return
+				return err
 			}
 			propertiesFileStore["jindocache.oss.bucket."+bucketName+".endpoint"] = mount.Options["fs.oss.endpoint"]
 			if strings.Contains(mount.Options["fs.oss.endpoint"], "dls") {
