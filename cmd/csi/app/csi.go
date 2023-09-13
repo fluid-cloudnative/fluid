@@ -30,6 +30,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/csi"
 	"github.com/fluid-cloudnative/fluid/pkg/csi/config"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	utilfeature "github.com/fluid-cloudnative/fluid/pkg/utils/feature"
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
@@ -110,15 +111,17 @@ func handle() {
 		panic(fmt.Sprintf("csi: unable to create controller manager due to error %v", err))
 	}
 
-	config := config.Config{
-		NodeId:            nodeID,
-		Endpoint:          endpoint,
-		PruneFs:           pruneFs,
-		PrunePath:         prunePath,
-		KubeletConfigPath: kubeletKubeConfigPath,
+	runningContext := config.RunningContext{
+		Config: config.Config{
+			NodeId:            nodeID,
+			Endpoint:          endpoint,
+			PruneFs:           pruneFs,
+			PrunePath:         prunePath,
+			KubeletConfigPath: kubeletKubeConfigPath,
+		},
+		VolumeLocks: utils.NewVolumeLocks(),
 	}
-
-	if err = csi.SetupWithManager(mgr, config); err != nil {
+	if err = csi.SetupWithManager(mgr, runningContext); err != nil {
 		panic(fmt.Sprintf("unable to set up manager due to error %v", err))
 	}
 
