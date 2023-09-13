@@ -273,7 +273,6 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 		}
 		// only support CACHE_ASIDE
 		readPolicy := "CACHE_ASIDE"
-
 		writePolicy, err := e.handleWritePolicy(mount.Options, metaPolicy)
 		if err != nil {
 			return err
