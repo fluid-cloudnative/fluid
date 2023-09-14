@@ -65,4 +65,9 @@ const (
 	QueryUfsTotal = "QUERY_UFS_TOTAL"
 
 	imageTagSupportAKFile = "4.6.8"
+
+	// Write Policy
+	WriteAround  = "WRITE_AROUND"
+	WriteThrough = "WRITE_THROUGH"
+	CacheOnly    = "CACHE_ONLY"
 )
