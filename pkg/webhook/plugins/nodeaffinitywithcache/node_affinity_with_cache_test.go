@@ -17,6 +17,9 @@ limitations under the License.
 package nodeaffinitywithcache
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	v1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"reflect"
 	"testing"
 
@@ -45,7 +48,7 @@ func TestGetPreferredSchedulingTermWithGlobalMode(t *testing.T) {
 
 	// Test case 1: Global fuse with selector enable
 	runtimeInfo.SetupFuseDeployMode(true, map[string]string{"test1": "test1"})
-	term, _ := getPreferredSchedulingTerm(runtimeInfo)
+	term, _ := getPreferredSchedulingTerm(runtimeInfo, 100)
 
 	expectTerm := corev1.PreferredSchedulingTerm{
 		Weight: 100,
@@ -66,14 +69,14 @@ func TestGetPreferredSchedulingTermWithGlobalMode(t *testing.T) {
 
 	// Test case 2: Global fuse with selector disable
 	runtimeInfo.SetupFuseDeployMode(true, map[string]string{})
-	term, _ = getPreferredSchedulingTerm(runtimeInfo)
+	term, _ = getPreferredSchedulingTerm(runtimeInfo, 100)
 
 	if !reflect.DeepEqual(*term, expectTerm) {
 		t.Errorf("getPreferredSchedulingTerm failure, want:%v, got:%v", expectTerm, term)
 	}
 
 	// Test case 3: runtime Info is nil to handle the error path
-	_, err = getPreferredSchedulingTerm(nil)
+	_, err = getPreferredSchedulingTerm(nil, 100)
 	if err == nil {
 		t.Errorf("getPreferredSchedulingTerm failure, want:%v, got:%v", nil, err)
 	}
@@ -225,5 +228,60 @@ func TestMutateBothRequiredAndPrefer(t *testing.T) {
 
 	if len(runtimeInfos) != 2 {
 		t.Errorf("mutate should not modify the parameter runtimeInfo")
+	}
+}
+
+func TestTieredLocality(t *testing.T) {
+	tieredConfigMap := &corev1.ConfigMap{
+		Data: map[string]string{
+			"tieredLocality": "",
+		},
+	}
+
+	schema := runtime.NewScheme()
+	_ = v1.AddToScheme(schema)
+	client := fake.NewFakeClientWithScheme(schema, tieredConfigMap)
+
+	runtimeInfo, _ := base.BuildRuntimeInfo("test10-ds", "fluid", "alluxio", datav1alpha1.TieredStore{})
+	// set global true to enable prefer
+	runtimeInfo.SetupFuseDeployMode(true, map[string]string{})
+
+	type args struct {
+		plugin       *NodeAffinityWithCache
+		pod          *corev1.Pod
+		runtimeInfos map[string]base.RuntimeInfoInterface
+	}
+
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			args: args{
+				plugin: NewPlugin(client),
+				pod: &corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "test",
+						Labels: map[string]string{
+							"fluid.io/dataset.test10-ds.sched": "required",
+							"fluid.io/dataset.no_exist.sched":  "required",
+						},
+					},
+				},
+				runtimeInfos: map[string]base.RuntimeInfoInterface{
+					"test10-ds":           runtimeInfo,
+					"prefer_dataset_name": runtimeInfo,
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := tt.args.plugin.Mutate(tt.args.pod, tt.args.runtimeInfos)
+			if err != nil {
+				t.Errorf("should not have error")
+			}
+		})
 	}
 }

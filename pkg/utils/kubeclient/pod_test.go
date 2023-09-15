@@ -458,3 +458,99 @@ func TestIsRunningAndReady(t *testing.T) {
 		})
 	}
 }
+
+func TestAppendNodeSelectorToNodeAffinity(t *testing.T) {
+	type args struct {
+		nodeSelector map[string]string
+		nodeAffinity *corev1.NodeAffinity
+	}
+	tests := []struct {
+		name string
+		args args
+		want *corev1.NodeAffinity
+	}{
+		{
+			name: "nil",
+			args: args{},
+			want: nil,
+		},
+		{
+			name: "no exist node affinity",
+			args: args{
+				nodeSelector: map[string]string{
+					"a": "b",
+				},
+			},
+			want: &corev1.NodeAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+					NodeSelectorTerms: []corev1.NodeSelectorTerm{
+						{
+							MatchExpressions: []corev1.NodeSelectorRequirement{
+								{
+									Key:      "a",
+									Operator: corev1.NodeSelectorOpIn,
+									Values:   []string{"b"},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "exist node affinity",
+			args: args{
+				nodeSelector: map[string]string{
+					"a": "b",
+				},
+				nodeAffinity: &corev1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+						NodeSelectorTerms: []corev1.NodeSelectorTerm{
+							{
+								MatchExpressions: []corev1.NodeSelectorRequirement{
+									{
+										Key:      "c",
+										Operator: corev1.NodeSelectorOpIn,
+										Values:   []string{"d"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &corev1.NodeAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+					NodeSelectorTerms: []corev1.NodeSelectorTerm{
+						{
+							MatchExpressions: []corev1.NodeSelectorRequirement{
+								{
+									Key:      "c",
+									Operator: corev1.NodeSelectorOpIn,
+									Values:   []string{"d"},
+								},
+							},
+						},
+						{
+							MatchExpressions: []corev1.NodeSelectorRequirement{
+								{
+									Key:      "a",
+									Operator: corev1.NodeSelectorOpIn,
+									Values:   []string{"b"},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			AppendNodeSelectorToNodeAffinity(tt.args.nodeSelector, tt.args.nodeAffinity)
+			if !reflect.DeepEqual(tt.args.nodeAffinity, tt.want) {
+				t.Errorf("testcase %v IsFailedPod() = %v, want %v", tt.name, tt.args.nodeAffinity, tt.want)
+			}
+		})
+	}
+}

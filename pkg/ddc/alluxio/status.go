@@ -58,6 +58,10 @@ func (e *AlluxioEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		return ready, err
 	}
 
+	// transform NodeSelector to WorkerNodeAffinity for simplify.
+	workerNodeAffinity := workers.Spec.Template.Spec.Affinity.NodeAffinity.DeepCopy()
+	workerNodeAffinity = kubeclient.AppendNodeSelectorToNodeAffinity(workers.Spec.Template.Spec.NodeSelector, workerNodeAffinity)
+
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		runtime, err := e.getRuntime()
 		if err != nil {
@@ -75,6 +79,9 @@ func (e *AlluxioEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		if len(runtime.Status.CacheStates) == 0 {
 			runtimeToUpdate.Status.CacheStates = map[common.CacheStateName]string{}
 		}
+
+		// set node affinity
+		runtimeToUpdate.Status.WorkerNodeAffinity = workerNodeAffinity
 
 		runtimeToUpdate.Status.CacheStates[common.CacheCapacity] = states.cacheCapacity
 		runtimeToUpdate.Status.CacheStates[common.CachedPercentage] = states.cachedPercentage

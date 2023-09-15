@@ -109,3 +109,30 @@ func GetIpAddressesOfPods(client client.Client, pods []corev1.Pod) (ipAddresses 
 
 	return GetIpAddressesOfNodes(nodes), err
 }
+
+func AppendNodeSelectorToNodeAffinity(nodeSelector map[string]string, nodeAffinity *corev1.NodeAffinity) *corev1.NodeAffinity {
+	if nodeAffinity == nil {
+		nodeAffinity = &corev1.NodeAffinity{}
+	}
+
+	if nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution == nil {
+		nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution = &corev1.NodeSelector{
+			NodeSelectorTerms: []corev1.NodeSelectorTerm{},
+		}
+	}
+
+	for key, value := range nodeSelector {
+		term := corev1.NodeSelectorTerm{
+			MatchExpressions: []corev1.NodeSelectorRequirement{
+				{
+					Key:      key,
+					Operator: corev1.NodeSelectorOpIn,
+					Values:   []string{value},
+				},
+			},
+		}
+		nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms =
+			append(nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, term)
+	}
+	return nodeAffinity
+}

@@ -1829,7 +1829,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetSpec(ref common.Referenc
 					},
 					"nodeAffinity": {
 						SchemaProps: spec.SchemaProps{
-							Description: "NodeAffinity defines constraints that limit what nodes this dataset can be cached to. This field influences the scheduling of pods that use the cached dataset.",
+							Description: "WorkerNodeAffinity defines constraints that limit what nodes this dataset can be cached to. This field influences the scheduling of pods that use the cached dataset.",
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheableNodeAffinity"),
 						},
 					},

@@ -18,6 +18,9 @@ package nodeaffinitywithcache
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/pkg/errors"
+	"gopkg.in/yaml.v2"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -35,6 +38,7 @@ import (
 */
 
 const Name = "NodeAffinityWithCache"
+const NodeLocalityLabel = "fluid.io/node"
 
 var (
 	log logr.Logger
@@ -66,18 +70,132 @@ func (p *NodeAffinityWithCache) Mutate(pod *corev1.Pod, runtimeInfos map[string]
 		return
 	}
 
+	// get required and preferred affinity for runtime
 	requireRuntimes, preferredRuntimes := getRequiredAndPreferredSchedulingRuntimes(pod, runtimeInfos)
 
+	// inject required
 	err = injectRequiredSchedulingTerms(pod, requireRuntimes)
 	if err != nil {
 		return shouldStop, err
 	}
 
-	err = injectPreferredSchedulingTerm(pod, preferredRuntimes)
+	// inject preferred
+	tieredLocality, err := p.getTieredLocality()
 	if err != nil {
-		return shouldStop, err
+		log.Info("get tiered locality config error, skip inject related affinity", "error", err)
+		return
 	}
 
+	preferredLocality := tieredLocality.getPreferredAsMap()
+	for _, runtimeInfo := range preferredRuntimes {
+		// get runtime worker node affinity
+		status, err := base.GetRuntimeStatus(p.client, runtimeInfo.GetRuntimeType(), runtimeInfo.GetName(), runtimeInfo.GetNamespace())
+		if err != nil {
+			return shouldStop, err
+		}
+		preferredSchedulingTerms, err := p.getTiredLocalityPreferredSchedulingTerm(runtimeInfo, status.WorkerNodeAffinity, preferredLocality)
+		if err != nil {
+			return shouldStop, err
+		}
+		if preferredSchedulingTerms != nil {
+			utils.InjectPreferredSchedulingTerms(preferredSchedulingTerms, pod)
+		}
+	}
+	return
+}
+
+func (p *NodeAffinityWithCache) getTiredLocalityPreferredSchedulingTerm(runtimeInfo base.RuntimeInfoInterface,
+	affinity *corev1.NodeAffinity, preferredLocality map[string]int32) (preferredSchedulingTerms []corev1.PreferredSchedulingTerm, err error) {
+	// fluid.io/node locality
+	nodeLocalityWeight := preferredLocality[NodeLocalityLabel]
+	nodePreferredSchedulingTerm, err := getPreferredSchedulingTerm(runtimeInfo, nodeLocalityWeight)
+	if err != nil {
+		return nil, err
+	}
+	preferredSchedulingTerms = append(preferredSchedulingTerms, *nodePreferredSchedulingTerm)
+
+	// customized locality
+	if affinity == nil {
+		return
+	}
+	if affinity.RequiredDuringSchedulingIgnoredDuringExecution == nil && affinity.PreferredDuringSchedulingIgnoredDuringExecution == nil {
+		return
+	}
+
+	termsFromRequired := getPreferredSchedulingTermsFromRequired(affinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, preferredLocality)
+	preferredSchedulingTerms = append(preferredSchedulingTerms, termsFromRequired...)
+
+	termsFromPreferred := getPreferredSchedulingTermsFromPreferred(affinity.PreferredDuringSchedulingIgnoredDuringExecution, preferredLocality)
+	preferredSchedulingTerms = append(preferredSchedulingTerms, termsFromPreferred...)
+
+	return
+}
+
+func (p *NodeAffinityWithCache) getTieredLocality() (*TieredLocality, error) {
+	cm, err := kubeclient.GetConfigmapByName(p.client, "configmap-name", "configmap-namespace")
+	if err != nil {
+		return nil, err
+	}
+	tieredLocality := TieredLocality{}
+	err = yaml.Unmarshal([]byte(cm.Data["tieredLocality"]), &tieredLocality)
+	if err != nil {
+		return nil, errors.Wrap(err, "tiered locality content in configmap is not yaml format.")
+	}
+	return &tieredLocality, nil
+
+}
+
+func getPreferredSchedulingTermsFromPreferred(preferredTerms []corev1.PreferredSchedulingTerm, tiredLabels map[string]int32) (resultSchedulingTerms []corev1.PreferredSchedulingTerm) {
+	if preferredTerms == nil {
+		return
+	}
+
+	for _, term := range preferredTerms {
+		for _, matchExpression := range term.Preference.MatchExpressions {
+			if weight, ok := tiredLabels[matchExpression.Key]; ok {
+				localityTerm := corev1.PreferredSchedulingTerm{
+					Weight: weight,
+					Preference: corev1.NodeSelectorTerm{
+						MatchExpressions: []corev1.NodeSelectorRequirement{
+							{
+								Key:      matchExpression.Key,
+								Operator: matchExpression.Operator,
+								Values:   matchExpression.Values,
+							},
+						},
+					},
+				}
+				resultSchedulingTerms = append(resultSchedulingTerms, localityTerm)
+			}
+		}
+	}
+	return resultSchedulingTerms
+}
+
+func getPreferredSchedulingTermsFromRequired(workerRequiredTerms []corev1.NodeSelectorTerm, tiredLabels map[string]int32) (preferredSchedulingTerms []corev1.PreferredSchedulingTerm) {
+	if workerRequiredTerms == nil {
+		return
+	}
+	for _, term := range workerRequiredTerms {
+		for _, matchExpression := range term.MatchExpressions {
+			// label represents tired locality
+			if weight, ok := tiredLabels[matchExpression.Key]; ok {
+				localityTerm := corev1.PreferredSchedulingTerm{
+					Weight: weight,
+					Preference: corev1.NodeSelectorTerm{
+						MatchExpressions: []corev1.NodeSelectorRequirement{
+							{
+								Key:      matchExpression.Key,
+								Operator: matchExpression.Operator,
+								Values:   matchExpression.Values,
+							},
+						},
+					},
+				}
+				preferredSchedulingTerms = append(preferredSchedulingTerms, localityTerm)
+			}
+		}
+	}
 	return
 }
 
@@ -134,22 +252,6 @@ func injectRequiredSchedulingTerms(pod *corev1.Pod, runtimeInfos map[string]base
 	return nil
 }
 
-func injectPreferredSchedulingTerm(pod *corev1.Pod, runtimeInfos map[string]base.RuntimeInfoInterface) error {
-	var preferredSchedulingTerms []corev1.PreferredSchedulingTerm
-	for _, runtimeInfo := range runtimeInfos {
-		preferredSchedulingTerm, err := getPreferredSchedulingTerm(runtimeInfo)
-		if err != nil {
-			return err
-		}
-		if preferredSchedulingTerm != nil {
-			preferredSchedulingTerms = append(preferredSchedulingTerms, *preferredSchedulingTerm)
-		}
-	}
-	utils.InjectPreferredSchedulingTerms(preferredSchedulingTerms, pod)
-
-	return nil
-}
-
 func getRequiredSchedulingTerms(runtimeInfo base.RuntimeInfoInterface) (requiredSchedulingTerm *corev1.NodeSelectorTerm, err error) {
 	requiredSchedulingTerm = nil
 	if runtimeInfo == nil {
@@ -169,7 +271,7 @@ func getRequiredSchedulingTerms(runtimeInfo base.RuntimeInfoInterface) (required
 	return
 }
 
-func getPreferredSchedulingTerm(runtimeInfo base.RuntimeInfoInterface) (preferredSchedulingTerm *corev1.PreferredSchedulingTerm, err error) {
+func getPreferredSchedulingTerm(runtimeInfo base.RuntimeInfoInterface, weight int32) (preferredSchedulingTerm *corev1.PreferredSchedulingTerm, err error) {
 	preferredSchedulingTerm = nil
 
 	if runtimeInfo == nil {
@@ -180,7 +282,7 @@ func getPreferredSchedulingTerm(runtimeInfo base.RuntimeInfoInterface) (preferre
 	isGlobalMode, _ := runtimeInfo.GetFuseDeployMode()
 	if isGlobalMode {
 		preferredSchedulingTerm = &corev1.PreferredSchedulingTerm{
-			Weight: 100,
+			Weight: weight,
 			Preference: corev1.NodeSelectorTerm{
 				MatchExpressions: []corev1.NodeSelectorRequirement{
 					{
