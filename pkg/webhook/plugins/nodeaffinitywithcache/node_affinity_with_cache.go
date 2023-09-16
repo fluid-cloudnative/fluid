@@ -88,10 +88,36 @@ func (p *NodeAffinityWithCache) Mutate(pod *corev1.Pod, runtimeInfos map[string]
 	}
 
 	// inject Preferred
+	err = p.injectPreferredSchedulingTerms(pod, preferredRuntimes)
+	if err != nil {
+		return shouldStop, err
+	}
+
+	return
+}
+
+func (p *NodeAffinityWithCache) getTieredLocality() (*TieredLocality, error) {
+	cm, err := kubeclient.GetConfigmapByName(p.client, common.TieredLocalityConfigMapName, fluidNameSpace)
+	if err != nil {
+		return nil, err
+	}
+	if cm == nil {
+		return nil, errors.New("tiered locality config map is not exist")
+	}
+	tieredLocality := TieredLocality{}
+	err = yaml.Unmarshal([]byte(cm.Data[common.TieredLocalityDataNameInConfigMap]), &tieredLocality)
+	if err != nil {
+		return nil, errors.Wrap(err, "tiered locality content in configmap is not yaml format.")
+	}
+	return &tieredLocality, nil
+
+}
+
+func (p *NodeAffinityWithCache) injectPreferredSchedulingTerms(pod *corev1.Pod, preferredRuntimes map[string]base.RuntimeInfoInterface) error {
 	tieredLocality, err := p.getTieredLocality()
 	if err != nil {
-		log.Info("get tiered locality config error, skip inject related affinity", "error", err)
-		return
+		log.Error(err, "get tiered locality config error")
+		return err
 	}
 
 	preferredLocality := tieredLocality.getPreferredAsMap()
@@ -104,21 +130,21 @@ func (p *NodeAffinityWithCache) Mutate(pod *corev1.Pod, runtimeInfos map[string]
 		// get runtime worker node affinity
 		status, err := base.GetRuntimeStatus(p.client, runtimeInfo.GetRuntimeType(), runtimeInfo.GetName(), runtimeInfo.GetNamespace())
 		if err != nil {
-			return shouldStop, err
+			return err
 		}
-		preferredSchedulingTerms, err := p.getTiredLocalityPreferredSchedulingTerm(runtimeInfo, status.WorkerNodeAffinity, preferredLocality)
+		preferredSchedulingTerms, err := getTiredLocalityPreferredSchedulingTerm(runtimeInfo, status.WorkerNodeAffinity, preferredLocality)
 		if err != nil {
-			return shouldStop, err
+			return err
 		}
 		if preferredSchedulingTerms != nil {
 			// if pod already defined same label affinity, do not inject
 			utils.InjectPreferredSchedulingTermsIfNotExist(preferredSchedulingTerms, pod)
 		}
 	}
-	return
+	return err
 }
 
-func (p *NodeAffinityWithCache) getTiredLocalityPreferredSchedulingTerm(runtimeInfo base.RuntimeInfoInterface,
+func getTiredLocalityPreferredSchedulingTerm(runtimeInfo base.RuntimeInfoInterface,
 	affinity *corev1.NodeAffinity, preferredLocality map[string]int32) (preferredSchedulingTerms []corev1.PreferredSchedulingTerm, err error) {
 	// fluid.io/node locality
 	nodeLocalityWeight, existed := preferredLocality[NodeLocalityLabel]
@@ -145,23 +171,6 @@ func (p *NodeAffinityWithCache) getTiredLocalityPreferredSchedulingTerm(runtimeI
 	preferredSchedulingTerms = append(preferredSchedulingTerms, termsFromPreferred...)
 
 	return
-}
-
-func (p *NodeAffinityWithCache) getTieredLocality() (*TieredLocality, error) {
-	cm, err := kubeclient.GetConfigmapByName(p.client, common.TieredLocalityConfigMapName, fluidNameSpace)
-	if err != nil {
-		return nil, err
-	}
-	if cm == nil {
-		return nil, errors.New("tiered locality config map is not exist")
-	}
-	tieredLocality := TieredLocality{}
-	err = yaml.Unmarshal([]byte(cm.Data[common.TieredLocalityDataNameInConfigMap]), &tieredLocality)
-	if err != nil {
-		return nil, errors.Wrap(err, "tiered locality content in configmap is not yaml format.")
-	}
-	return &tieredLocality, nil
-
 }
 
 func getPreferredSchedulingTermsFromPreferred(preferredTerms []corev1.PreferredSchedulingTerm, tiredLabels map[string]int32) (resultSchedulingTerms []corev1.PreferredSchedulingTerm) {
@@ -224,7 +233,7 @@ func getRequiredAndPreferredSchedulingRuntimes(pod *corev1.Pod, runtimeInfos map
 		}
 	}
 
-	// get the Preferred and required runtime
+	// get the preferred and required runtime
 	preferredRuntimes = map[string]base.RuntimeInfoInterface{}
 	requiredRuntimes = map[string]base.RuntimeInfoInterface{}
 
@@ -234,7 +243,7 @@ func getRequiredAndPreferredSchedulingRuntimes(pod *corev1.Pod, runtimeInfos map
 	}
 
 	for name := range boundDataSetNames {
-		// labeled dataset has no runtime(maybe wrong Name), logging info instead of return error
+		// labeled dataset has no runtime(maybe wrong name), logging info instead of return error
 		runtimeInfo, ok := runtimeInfos[name]
 		if !ok {
 			log.V(1).Info("labeled dataset has no runtime")

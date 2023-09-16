@@ -129,7 +129,7 @@ type RuntimeStatus struct {
 	// MountPoints represents the mount points specified in the bounded dataset
 	Mounts []Mount `json:"mounts,omitempty"`
 
-	// WorkerNodeAffinity represents the worker node affinity
+	// WorkerNodeAffinity represents the runtime worker pods node affinity including node selector
 	WorkerNodeAffinity *corev1.NodeAffinity `json:"workNodeAffinity,omitempty"`
 }
 

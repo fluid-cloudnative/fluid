@@ -46,6 +46,8 @@ func (t *ThinEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		return ready, err
 	}
 
+	var workerNodeAffinity = kubeclient.MergeNodeSelectorAndNodeAffinity(workers.Spec.Template.Spec.NodeSelector, workers.Spec.Template.Spec.Affinity)
+
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		runtime, err := t.getRuntime()
 		if err != nil {
@@ -62,6 +64,9 @@ func (t *ThinEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		if len(runtime.Status.CacheStates) == 0 {
 			runtimeToUpdate.Status.CacheStates = map[common.CacheStateName]string{}
 		}
+
+		// set node affinity
+		runtimeToUpdate.Status.WorkerNodeAffinity = workerNodeAffinity
 
 		runtimeToUpdate.Status.CacheStates[common.CacheCapacity] = "N/A"
 		runtimeToUpdate.Status.CacheStates[common.CachedPercentage] = "N/A"

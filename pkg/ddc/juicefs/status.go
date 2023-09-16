@@ -45,6 +45,8 @@ func (j *JuiceFSEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		return ready, err
 	}
 
+	var workerNodeAffinity = kubeclient.MergeNodeSelectorAndNodeAffinity(workers.Spec.Template.Spec.NodeSelector, workers.Spec.Template.Spec.Affinity)
+
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		runtime, err := j.getRuntime()
 		if err != nil {
@@ -66,6 +68,9 @@ func (j *JuiceFSEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		if len(runtime.Status.CacheStates) == 0 {
 			runtimeToUpdate.Status.CacheStates = map[common.CacheStateName]string{}
 		}
+
+		// set node affinity
+		runtimeToUpdate.Status.WorkerNodeAffinity = workerNodeAffinity
 
 		runtimeToUpdate.Status.CacheStates[common.CacheCapacity] = states.cacheCapacity
 		runtimeToUpdate.Status.CacheStates[common.CachedPercentage] = states.cachedPercentage

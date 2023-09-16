@@ -17,6 +17,10 @@ limitations under the License.
 package plugins
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"math/rand"
 	"testing"
 	"time"
@@ -32,9 +36,32 @@ import (
 func TestPods(t *testing.T) {
 	rand.Seed(time.Now().UnixNano())
 
+	tieredLocalityConfigMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      common.TieredLocalityConfigMapName,
+			Namespace: common.NamespaceFluidSystem,
+		},
+		Data: map[string]string{
+			"tieredLocality": "" +
+				"preferred:\n" +
+				"  # fluid existed node affinity, the name can not be modified.\n" +
+				"  - name: fluid.io/node\n" +
+				"    weight: 100\n",
+		},
+	}
+	jindoRuntime := &datav1alpha1.JindoRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "hbase",
+			Namespace: "default",
+		},
+	}
+
+	schema := runtime.NewScheme()
+	_ = corev1.AddToScheme(schema)
+	_ = datav1alpha1.AddToScheme(schema)
 	var (
 		pod               corev1.Pod
-		c                 client.Client
+		c                 = fake.NewFakeClientWithScheme(schema, tieredLocalityConfigMap, jindoRuntime)
 		plugin            MutatingHandler
 		pluginName        string
 		lenNodePrefer     int

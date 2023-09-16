@@ -1829,7 +1829,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetSpec(ref common.Referenc
 					},
 					"nodeAffinity": {
 						SchemaProps: spec.SchemaProps{
-							Description: "WorkerNodeAffinity defines constraints that limit what nodes this dataset can be cached to. This field influences the scheduling of pods that use the cached dataset.",
+							Description: "NodeAffinity defines constraints that limit what nodes this dataset can be cached to. This field influences the scheduling of pods that use the cached dataset.",
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheableNodeAffinity"),
 						},
 					},
@@ -5087,12 +5087,18 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeStatus(ref common.Refere
 							},
 						},
 					},
+					"workNodeAffinity": {
+						SchemaProps: spec.SchemaProps{
+							Description: "WorkerNodeAffinity represents the runtime worker pods node affinity including node selector",
+							Ref:         ref("k8s.io/api/core/v1.NodeAffinity"),
+						},
+					},
 				},
 				Required: []string{"valueFile", "masterPhase", "workerPhase", "desiredWorkerNumberScheduled", "currentWorkerNumberScheduled", "workerNumberReady", "desiredMasterNumberScheduled", "currentMasterNumberScheduled", "masterNumberReady", "fusePhase", "currentFuseNumberScheduled", "desiredFuseNumberScheduled", "fuseNumberReady"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.APIGatewayStatus", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeCondition", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.APIGatewayStatus", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeCondition", "k8s.io/api/core/v1.NodeAffinity", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
