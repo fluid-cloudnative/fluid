@@ -10,7 +10,7 @@ helmDriver: configmap
 
 crdUpgrade:
   enabled: true
-  image: fluidcloudnative/fluid-crd-upgrader:v1.0.0-b402b33
+  image: fluidcloudnative/fluid-crd-upgrader:v1.0.0-c2624ac
 
 ##  if unspecified, will use built-in variable `.Release.Namespace`.
 namespace: fluid-system
