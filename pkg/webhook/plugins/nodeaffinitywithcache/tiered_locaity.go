@@ -17,18 +17,18 @@ limitations under the License.
 package nodeaffinitywithcache
 
 type Preferred struct {
-	name   string `yaml:"name"`
-	weight int32  `yaml:"weight"`
+	Name   string `yaml:"name"`
+	Weight int32  `yaml:"weight"`
 }
 
 type TieredLocality struct {
-	preferred []Preferred `yaml:"preferred,omitempty"`
+	Preferred []Preferred `yaml:"preferred"`
 }
 
 func (t *TieredLocality) getPreferredAsMap() map[string]int32 {
 	localityMap := map[string]int32{}
-	for _, preferred := range t.preferred {
-		localityMap[preferred.name] = preferred.weight
+	for _, preferred := range t.Preferred {
+		localityMap[preferred.Name] = preferred.Weight
 	}
 	return localityMap
 }

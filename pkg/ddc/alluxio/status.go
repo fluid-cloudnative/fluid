@@ -58,9 +58,7 @@ func (e *AlluxioEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		return ready, err
 	}
 
-	// transform NodeSelector to WorkerNodeAffinity for simplify.
-	workerNodeAffinity := workers.Spec.Template.Spec.Affinity.NodeAffinity.DeepCopy()
-	workerNodeAffinity = kubeclient.AppendNodeSelectorToNodeAffinity(workers.Spec.Template.Spec.NodeSelector, workerNodeAffinity)
+	var workerNodeAffinity = kubeclient.MergeNodeSelectorAndNodeAffinity(workers.Spec.Template.Spec.NodeSelector, workers.Spec.Template.Spec.Affinity)
 
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		runtime, err := e.getRuntime()

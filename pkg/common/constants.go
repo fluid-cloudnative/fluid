@@ -181,6 +181,12 @@ const (
 )
 
 const (
+	// TieredLocalityConfigMapName defines the config map name for tiered locality, should be consistent with `tiered-conf.yaml`
+	TieredLocalityConfigMapName       = "tiered-locality-config"
+	TieredLocalityDataNameInConfigMap = "tieredLocality"
+)
+
+const (
 	inject                        = ".fluid.io/inject"
 	injectSidecar                 = ".sidecar" + inject
 	InjectServerless              = "serverless" + inject             // serverless.fluid.io/inject

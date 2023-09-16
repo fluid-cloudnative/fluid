@@ -110,15 +110,19 @@ func GetIpAddressesOfPods(client client.Client, pods []corev1.Pod) (ipAddresses 
 	return GetIpAddressesOfNodes(nodes), err
 }
 
-func AppendNodeSelectorToNodeAffinity(nodeSelector map[string]string, nodeAffinity *corev1.NodeAffinity) *corev1.NodeAffinity {
+func MergeNodeSelectorAndNodeAffinity(nodeSelector map[string]string, podAffinity *corev1.Affinity) (nodeAffinity *corev1.NodeAffinity) {
+	if podAffinity != nil && podAffinity.NodeAffinity != nil {
+		nodeAffinity = podAffinity.NodeAffinity.DeepCopy()
+	}
+
 	if nodeAffinity == nil {
-		nodeAffinity = &corev1.NodeAffinity{}
+		nodeAffinity = &corev1.NodeAffinity{
+			RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{},
+		}
 	}
 
 	if nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution == nil {
-		nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution = &corev1.NodeSelector{
-			NodeSelectorTerms: []corev1.NodeSelectorTerm{},
-		}
+		nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution = &corev1.NodeSelector{}
 	}
 
 	for key, value := range nodeSelector {
@@ -134,5 +138,5 @@ func AppendNodeSelectorToNodeAffinity(nodeSelector map[string]string, nodeAffini
 		nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms =
 			append(nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, term)
 	}
-	return nodeAffinity
+	return
 }
