@@ -483,8 +483,7 @@ func TestGenUFSMountOptions(t *testing.T) {
 
 func TestGenUFSMountOptionsMultiTimes(t *testing.T) {
 	type fields struct {
-		dataset               datav1alpha1.Dataset
-		extractEncryptOptions bool
+		dataset datav1alpha1.Dataset
 	}
 	tests := []struct {
 		name       string
@@ -535,7 +534,6 @@ func TestGenUFSMountOptionsMultiTimes(t *testing.T) {
 						},
 					},
 				},
-				extractEncryptOptions: true,
 			},
 			wantValue1: map[string]string{
 				"alluxio.underfs.s3.endpoint":            "http://10.10.10.10:32000",
@@ -570,13 +568,11 @@ func TestGenUFSMountOptionsMultiTimes(t *testing.T) {
 				tt.fields.dataset.Spec.Mounts[0],
 				tt.fields.dataset.Spec.SharedOptions,
 				tt.fields.dataset.Spec.SharedEncryptOptions,
-				tt.fields.extractEncryptOptions,
 			)
 			gotValue2, err2 := e.genUFSMountOptions(
 				tt.fields.dataset.Spec.Mounts[1],
 				tt.fields.dataset.Spec.SharedOptions,
 				tt.fields.dataset.Spec.SharedEncryptOptions,
-				tt.fields.extractEncryptOptions,
 			)
 			if ((err1 != nil) != tt.wantErr) || ((err2 != nil) != tt.wantErr) {
 				t.Errorf("Call AlluxioEngine.genUFSMountOptions() twice, first error = %v, second error = %v", err1, err2)
