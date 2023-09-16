@@ -35,6 +35,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilpointer "k8s.io/utils/pointer"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func mockExecCommandInContainerForTotalStorageBytes() (stdout string, stderr string, err error) {
@@ -475,6 +476,143 @@ func TestGenUFSMountOptions(t *testing.T) {
 
 			if len(tt.wantOptions) > 0 {
 				t.Errorf("AlluxioEngine.genUFSMountOptions() not equal, wantOptions: %v", tt.wantOptions)
+			}
+		})
+	}
+}
+
+func TestGenUFSMountOptionsMultiTimes(t *testing.T) {
+	type fields struct {
+		dataset               datav1alpha1.Dataset
+		extractEncryptOptions bool
+	}
+	tests := []struct {
+		name       string
+		fields     fields
+		wantErr    bool
+		wantValue1 map[string]string
+		wantValue2 map[string]string
+	}{
+		{
+			name: "genUFSMountTwiceWithSharedOptions",
+			fields: fields{
+				dataset: datav1alpha1.Dataset{
+					Spec: datav1alpha1.DatasetSpec{
+						Mounts: []datav1alpha1.Mount{
+							{
+								MountPoint: "s3://test1",
+								Name:       "test1",
+							},
+							{
+								MountPoint: "s3://test2",
+								Name:       "test2",
+							},
+						},
+						SharedOptions: map[string]string{
+							"alluxio.underfs.s3.endpoint":            "http://10.10.10.10:32000",
+							"alluxio.underfs.s3.disable.dns.buckets": "true",
+							"alluxio.underfs.s3.inherit.acl":         "false",
+						},
+						SharedEncryptOptions: []datav1alpha1.EncryptOption{
+							{
+								Name: "aws.accessKeyId",
+								ValueFrom: datav1alpha1.EncryptOptionSource{
+									SecretKeyRef: datav1alpha1.SecretKeySelector{
+										Name: "minio",
+										Key:  "accessKeyId",
+									},
+								},
+							},
+							{
+								Name: "aws.secretKey",
+								ValueFrom: datav1alpha1.EncryptOptionSource{
+									SecretKeyRef: datav1alpha1.SecretKeySelector{
+										Name: "minio",
+										Key:  "secretKey",
+									},
+								},
+							},
+						},
+					},
+				},
+				extractEncryptOptions: true,
+			},
+			wantValue1: map[string]string{
+				"alluxio.underfs.s3.endpoint":            "http://10.10.10.10:32000",
+				"alluxio.underfs.s3.disable.dns.buckets": "true",
+				"alluxio.underfs.s3.inherit.acl":         "false",
+				"aws.accessKeyId":                        "minioadmin",
+				"aws.secretKey":                          "minioadmin",
+			},
+			wantValue2: map[string]string{
+				"alluxio.underfs.s3.endpoint":            "http://10.10.10.10:32000",
+				"alluxio.underfs.s3.disable.dns.buckets": "true",
+				"alluxio.underfs.s3.inherit.acl":         "false",
+				"aws.accessKeyId":                        "minioadmin",
+				"aws.secretKey":                          "minioadmin",
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := &AlluxioEngine{}
+			patch := ApplyFunc(kubeclient.GetSecret, func(client client.Client, name, namespace string) (*corev1.Secret, error) {
+				return &corev1.Secret{
+					Data: map[string][]byte{
+						"accessKeyId": []byte("minioadmin"),
+						"secretKey":   []byte("minioadmin"),
+					},
+				}, nil
+			})
+			defer patch.Reset()
+			gotValue1, err1 := e.genUFSMountOptions(
+				tt.fields.dataset.Spec.Mounts[0],
+				tt.fields.dataset.Spec.SharedOptions,
+				tt.fields.dataset.Spec.SharedEncryptOptions,
+				tt.fields.extractEncryptOptions,
+			)
+			gotValue2, err2 := e.genUFSMountOptions(
+				tt.fields.dataset.Spec.Mounts[1],
+				tt.fields.dataset.Spec.SharedOptions,
+				tt.fields.dataset.Spec.SharedEncryptOptions,
+				tt.fields.extractEncryptOptions,
+			)
+			if ((err1 != nil) != tt.wantErr) || ((err2 != nil) != tt.wantErr) {
+				t.Errorf("Call AlluxioEngine.genUFSMountOptions() twice, first error = %v, second error = %v", err1, err2)
+				return
+			}
+
+			for k, v := range gotValue1 {
+				if v1, ok := tt.wantValue1[k]; !ok {
+					t.Errorf("Call AlluxioEngine.genUFSMountOptions() firstly, shouldn't have key: %v", k)
+				} else {
+					if v1 != v {
+						t.Errorf("Call AlluxioEngine.genUFSMountOptions() firstly, key: %v value: %v, get value: %v", k, v1, v)
+					} else {
+						delete(tt.wantValue1, k)
+					}
+				}
+			}
+
+			if len(tt.wantValue1) > 0 {
+				t.Errorf("Call AlluxioEngine.genUFSMountOptions() firstly, number of options not equal, wantOptions: %v", tt.wantValue1)
+			}
+
+			for k, v := range gotValue2 {
+				if v1, ok := tt.wantValue2[k]; !ok {
+					t.Errorf("Call AlluxioEngine.genUFSMountOptions() secondly, shouldn't have key: %v", k)
+				} else {
+					if v1 != v {
+						t.Errorf("Call AlluxioEngine.genUFSMountOptions() secondly, key: %v value: %v, get value: %v", k, v1, v)
+					} else {
+						delete(tt.wantValue2, k)
+					}
+				}
+			}
+
+			if len(tt.wantValue2) > 0 {
+				t.Errorf("Call AlluxioEngine.genUFSMountOptions() secondly, number of options not equal, wantOptions: %v", tt.wantValue1)
 			}
 		})
 	}
