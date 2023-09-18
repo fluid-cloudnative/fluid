@@ -287,8 +287,8 @@ func (e *AlluxioEngine) genUFSMountOptions(m datav1alpha1.Mount, SharedOptions m
 
 	// initialize alluxio mount options
 	mOptions := map[string]string{}
-	if len(SharedOptions) > 0 {
-		mOptions = SharedOptions
+	for k, v := range SharedOptions {
+		mOptions[k] = v
 	}
 
 	for key, value := range m.Options {
