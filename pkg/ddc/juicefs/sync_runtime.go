@@ -253,20 +253,20 @@ func (j *JuiceFSEngine) isVolumeMountsChanged(crtVolumeMounts, runtimeVolumeMoun
 }
 
 func (j JuiceFSEngine) isEnvsChanged(crtEnvs, runtimeEnvs []corev1.EnvVar) (changed bool, newEnvs []corev1.EnvVar) {
-	envMap := make(map[string]string)
+	envMap := make(map[string]corev1.EnvVar)
 	for _, env := range crtEnvs {
-		envMap[env.Name] = env.Value
+		envMap[env.Name] = env
 	}
 	for _, env := range runtimeEnvs {
-		if envMap[env.Name] != env.Value {
+		if envMap[env.Name].Value != env.Value || !reflect.DeepEqual(envMap[env.Name].ValueFrom, env.ValueFrom) {
 			j.Log.Info("The env is different.", "current sts", crtEnvs, "runtime", runtimeEnvs)
-			envMap[env.Name] = env.Value
+			envMap[env.Name] = env
 			changed = true
 		}
 	}
 	envs := []corev1.EnvVar{}
-	for name, env := range envMap {
-		envs = append(envs, corev1.EnvVar{Name: name, Value: env})
+	for _, env := range envMap {
+		envs = append(envs, env)
 	}
 	newEnvs = envs
 	return
