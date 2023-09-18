@@ -258,7 +258,7 @@ func (j JuiceFSEngine) isEnvsChanged(crtEnvs, runtimeEnvs []corev1.EnvVar) (chan
 		envMap[env.Name] = env
 	}
 	for _, env := range runtimeEnvs {
-		if envMap[env.Name].Value != env.Value || reflect.DeepEqual(envMap[env.Name].ValueFrom, env.ValueFrom) {
+		if envMap[env.Name].Value != env.Value || !reflect.DeepEqual(envMap[env.Name].ValueFrom, env.ValueFrom) {
 			j.Log.Info("The env is different.", "current sts", crtEnvs, "runtime", runtimeEnvs)
 			envMap[env.Name] = env
 			changed = true
