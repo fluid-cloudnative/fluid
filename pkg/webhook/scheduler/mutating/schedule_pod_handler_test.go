@@ -1121,7 +1121,9 @@ func TestAddScheduleInfoToPodWithReferencedDataset(t *testing.T) {
 				"preferred:\n" +
 				"  # fluid existed node affinity, the name can not be modified.\n" +
 				"  - name: fluid.io/node\n" +
-				"    weight: 100\n",
+				"    weight: 100\n" +
+				"required:\n" +
+				"  - fluid.io/node\n",
 		},
 	}
 

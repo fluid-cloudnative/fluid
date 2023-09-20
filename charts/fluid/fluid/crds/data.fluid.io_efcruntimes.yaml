@@ -2108,191 +2108,9 @@ spec:
                     description: Endpoint for accessing
                     type: string
                 type: object
-              cacheStates:
-                additionalProperties:
-                  type: string
-                description: CacheStatus represents the total resources of the dataset.
-                type: object
-              conditions:
-                description: Represents the latest available observations of a ddc
-                  runtime's current state.
-                items:
-                  description: Condition describes the state of the cache at a certain
-                    point.
-                  properties:
-                    lastProbeTime:
-                      description: The last time this condition was updated.
-                      format: date-time
-                      type: string
-                    lastTransitionTime:
-                      description: Last time the condition transitioned from one status
-                        to another.
-                      format: date-time
-                      type: string
-                    message:
-                      description: A human readable message indicating details about
-                        the transition.
-                      type: string
-                    reason:
-                      description: The reason for the condition's last transition.
-                      type: string
-                    status:
-                      description: Status of the condition, one of True, False, Unknown.
-                      type: string
-                    type:
-                      description: Type of cache condition.
-                      type: string
-                  required:
-                  - status
-                  - type
-                  type: object
-                type: array
-              currentFuseNumberScheduled:
-                description: The total number of nodes that can be running the runtime
-                  Fuse pod (including nodes correctly running the runtime Fuse pod).
-                format: int32
-                type: integer
-              currentMasterNumberScheduled:
-                description: The total number of nodes that should be running the
-                  runtime pod (including nodes correctly running the runtime master
-                  pod).
-                format: int32
-                type: integer
-              currentWorkerNumberScheduled:
-                description: The total number of nodes that can be running the runtime
-                  worker pod (including nodes correctly running the runtime worker
-                  pod).
-                format: int32
-                type: integer
-              desiredFuseNumberScheduled:
-                description: The total number of nodes that should be running the
-                  runtime Fuse pod (including nodes correctly running the runtime
-                  Fuse pod).
-                format: int32
-                type: integer
-              desiredMasterNumberScheduled:
-                description: The total number of nodes that should be running the
-                  runtime pod (including nodes correctly running the runtime master
-                  pod).
-                format: int32
-                type: integer
-              desiredWorkerNumberScheduled:
-                description: The total number of nodes that should be running the
-                  runtime worker pod (including nodes correctly running the runtime
-                  worker pod).
-                format: int32
-                type: integer
-              fuseNumberAvailable:
-                description: The number of nodes that should be running the runtime
-                  Fuse pod and have one or more of the runtime Fuse pod running and
-                  available (ready for at least spec.minReadySeconds)
-                format: int32
-                type: integer
-              fuseNumberReady:
-                description: The number of nodes that should be running the runtime
-                  Fuse pod and have one or more of the runtime Fuse pod running and
-                  ready.
-                format: int32
-                type: integer
-              fuseNumberUnavailable:
-                description: The number of nodes that should be running the runtime
-                  fuse pod and have none of the runtime fuse pod running and available
-                  (ready for at least spec.minReadySeconds)
-                format: int32
-                type: integer
-              fusePhase:
-                description: FusePhase is the Fuse running phase
-                type: string
-              fuseReason:
-                description: Reason for the condition's last transition.
-                type: string
-              masterNumberReady:
-                description: The number of nodes that should be running the runtime
-                  worker pod and have zero or more of the runtime master pod running
-                  and ready.
-                format: int32
-                type: integer
-              masterPhase:
-                description: MasterPhase is the master running phase
-                type: string
-              masterReason:
-                description: Reason for Master's condition transition
-                type: string
-              mountTime:
-                description: MountTime represents time last mount happened if Mounttime
-                  is earlier than master starting time, remount will be required
-                format: date-time
-                type: string
-              mounts:
-                description: MountPoints represents the mount points specified in
-                  the bounded dataset
-                items:
-                  description: Mount describes a mounting. <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/ufs/S3.html">Alluxio
-                    Storage Integrations</a> for more info
-                  properties:
-                    encryptOptions:
-                      description: The secret information
-                      items:
-                        properties:
-                          name:
-                            description: The name of encryptOption
-                            type: string
-                          valueFrom:
-                            description: The valueFrom of encryptOption
-                            properties:
-                              secretKeyRef:
-                                description: The encryptInfo obtained from secret
-                                properties:
-                                  key:
-                                    description: The required key in the secret
-                                    type: string
-                                  name:
-                                    description: The name of required secret
-                                    type: string
-                                type: object
-                            type: object
-                        type: object
-                      type: array
-                    mountPoint:
-                      description: MountPoint is the mount point of source.
-                      minLength: 5
-                      type: string
-                    name:
-                      description: The name of mount
-                      minLength: 0
-                      type: string
-                    options:
-                      additionalProperties:
-                        type: string
-                      description: The Mount Options. <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Mount
-                        Options</a>.  <br> The option has Prefix 'fs.' And you can
-                        Learn more from <a href="https://docs.alluxio.io/os/user/stable/en/ufs/S3.html">The
-                        Storage Integrations</a>
-                      type: object
-                    path:
-                      description: The path of mount, if not set will be /{Name}
-                      type: string
-                    readOnly:
-                      description: 'Optional: Defaults to false (read-write).'
-                      type: boolean
-                    shared:
-                      description: 'Optional: Defaults to false (shared).'
-                      type: boolean
-                  type: object
-                type: array
-              selector:
-                description: Selector is used for auto-scaling
-                type: string
-              setupDuration:
-                description: Duration tell user how much time was spent to setup the
-                  runtime
-                type: string
-              valueFile:
-                description: config map used to set configurations
-                type: string
-              workNodeAffinity:
-                description: WorkerNodeAffinity represents the runtime worker pods
-                  node affinity including node selector
+              cacheAffinity:
+                description: CacheAffinity represents the runtime worker pods node
+                  affinity including node selector
                 properties:
                   preferredDuringSchedulingIgnoredDuringExecution:
                     description: The scheduler will prefer to schedule pods to nodes
@@ -2484,6 +2302,188 @@ spec:
                     - nodeSelectorTerms
                     type: object
                 type: object
+              cacheStates:
+                additionalProperties:
+                  type: string
+                description: CacheStatus represents the total resources of the dataset.
+                type: object
+              conditions:
+                description: Represents the latest available observations of a ddc
+                  runtime's current state.
+                items:
+                  description: Condition describes the state of the cache at a certain
+                    point.
+                  properties:
+                    lastProbeTime:
+                      description: The last time this condition was updated.
+                      format: date-time
+                      type: string
+                    lastTransitionTime:
+                      description: Last time the condition transitioned from one status
+                        to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A human readable message indicating details about
+                        the transition.
+                      type: string
+                    reason:
+                      description: The reason for the condition's last transition.
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: Type of cache condition.
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+              currentFuseNumberScheduled:
+                description: The total number of nodes that can be running the runtime
+                  Fuse pod (including nodes correctly running the runtime Fuse pod).
+                format: int32
+                type: integer
+              currentMasterNumberScheduled:
+                description: The total number of nodes that should be running the
+                  runtime pod (including nodes correctly running the runtime master
+                  pod).
+                format: int32
+                type: integer
+              currentWorkerNumberScheduled:
+                description: The total number of nodes that can be running the runtime
+                  worker pod (including nodes correctly running the runtime worker
+                  pod).
+                format: int32
+                type: integer
+              desiredFuseNumberScheduled:
+                description: The total number of nodes that should be running the
+                  runtime Fuse pod (including nodes correctly running the runtime
+                  Fuse pod).
+                format: int32
+                type: integer
+              desiredMasterNumberScheduled:
+                description: The total number of nodes that should be running the
+                  runtime pod (including nodes correctly running the runtime master
+                  pod).
+                format: int32
+                type: integer
+              desiredWorkerNumberScheduled:
+                description: The total number of nodes that should be running the
+                  runtime worker pod (including nodes correctly running the runtime
+                  worker pod).
+                format: int32
+                type: integer
+              fuseNumberAvailable:
+                description: The number of nodes that should be running the runtime
+                  Fuse pod and have one or more of the runtime Fuse pod running and
+                  available (ready for at least spec.minReadySeconds)
+                format: int32
+                type: integer
+              fuseNumberReady:
+                description: The number of nodes that should be running the runtime
+                  Fuse pod and have one or more of the runtime Fuse pod running and
+                  ready.
+                format: int32
+                type: integer
+              fuseNumberUnavailable:
+                description: The number of nodes that should be running the runtime
+                  fuse pod and have none of the runtime fuse pod running and available
+                  (ready for at least spec.minReadySeconds)
+                format: int32
+                type: integer
+              fusePhase:
+                description: FusePhase is the Fuse running phase
+                type: string
+              fuseReason:
+                description: Reason for the condition's last transition.
+                type: string
+              masterNumberReady:
+                description: The number of nodes that should be running the runtime
+                  worker pod and have zero or more of the runtime master pod running
+                  and ready.
+                format: int32
+                type: integer
+              masterPhase:
+                description: MasterPhase is the master running phase
+                type: string
+              masterReason:
+                description: Reason for Master's condition transition
+                type: string
+              mountTime:
+                description: MountTime represents time last mount happened if Mounttime
+                  is earlier than master starting time, remount will be required
+                format: date-time
+                type: string
+              mounts:
+                description: MountPoints represents the mount points specified in
+                  the bounded dataset
+                items:
+                  description: Mount describes a mounting. <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/ufs/S3.html">Alluxio
+                    Storage Integrations</a> for more info
+                  properties:
+                    encryptOptions:
+                      description: The secret information
+                      items:
+                        properties:
+                          name:
+                            description: The name of encryptOption
+                            type: string
+                          valueFrom:
+                            description: The valueFrom of encryptOption
+                            properties:
+                              secretKeyRef:
+                                description: The encryptInfo obtained from secret
+                                properties:
+                                  key:
+                                    description: The required key in the secret
+                                    type: string
+                                  name:
+                                    description: The name of required secret
+                                    type: string
+                                type: object
+                            type: object
+                        type: object
+                      type: array
+                    mountPoint:
+                      description: MountPoint is the mount point of source.
+                      minLength: 5
+                      type: string
+                    name:
+                      description: The name of mount
+                      minLength: 0
+                      type: string
+                    options:
+                      additionalProperties:
+                        type: string
+                      description: The Mount Options. <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Mount
+                        Options</a>.  <br> The option has Prefix 'fs.' And you can
+                        Learn more from <a href="https://docs.alluxio.io/os/user/stable/en/ufs/S3.html">The
+                        Storage Integrations</a>
+                      type: object
+                    path:
+                      description: The path of mount, if not set will be /{Name}
+                      type: string
+                    readOnly:
+                      description: 'Optional: Defaults to false (read-write).'
+                      type: boolean
+                    shared:
+                      description: 'Optional: Defaults to false (shared).'
+                      type: boolean
+                  type: object
+                type: array
+              selector:
+                description: Selector is used for auto-scaling
+                type: string
+              setupDuration:
+                description: Duration tell user how much time was spent to setup the
+                  runtime
+                type: string
+              valueFile:
+                description: config map used to set configurations
+                type: string
               workerNumberAvailable:
                 description: The number of nodes that should be running the runtime
                   worker pod and have one or more of the runtime worker pod running

@@ -609,6 +609,11 @@ func TestMergeNodeSelectorAndNodeAffinity(t *testing.T) {
 									Operator: corev1.NodeSelectorOpIn,
 									Values:   []string{"d"},
 								},
+								{
+									Key:      "a",
+									Operator: corev1.NodeSelectorOpIn,
+									Values:   []string{"b"},
+								},
 							},
 						},
 						{
@@ -618,10 +623,6 @@ func TestMergeNodeSelectorAndNodeAffinity(t *testing.T) {
 									Operator: corev1.NodeSelectorOpIn,
 									Values:   []string{"f"},
 								},
-							},
-						},
-						{
-							MatchExpressions: []corev1.NodeSelectorRequirement{
 								{
 									Key:      "a",
 									Operator: corev1.NodeSelectorOpIn,

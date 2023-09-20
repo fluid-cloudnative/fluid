@@ -155,6 +155,9 @@ webhook:
       # runtime worker's zone label name, can be changed according to k8s environment.
       - name: topology.kubernetes.io/zone
         weight: 10
+    # when 
+    required:
+      - name: fluid.io/node
 
 fluidapp:
   enabled: true

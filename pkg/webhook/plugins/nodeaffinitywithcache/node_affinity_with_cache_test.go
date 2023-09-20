@@ -31,6 +31,7 @@ import (
 )
 
 var (
+	// default tiered locality to be compatible with fluid 0.9 logic
 	tieredLocalityConfigMap = &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      common.TieredLocalityConfigMapName,
@@ -41,7 +42,9 @@ var (
 				"preferred:\n" +
 				"  # fluid existed node affinity, the name can not be modified.\n" +
 				"  - name: fluid.io/node\n" +
-				"    weight: 100\n",
+				"    weight: 100\n" +
+				"required:\n" +
+				"  - fluid.io/node\n",
 		},
 	}
 	alluxioRuntime = &datav1alpha1.AlluxioRuntime{
@@ -70,7 +73,7 @@ func TestGetPreferredSchedulingTermWithGlobalMode(t *testing.T) {
 
 	// Test case 1: Global fuse with selector enable
 	runtimeInfo.SetupFuseDeployMode(true, map[string]string{"test1": "test1"})
-	term, _ := getPreferredSchedulingTerm(runtimeInfo, 100)
+	term := getPreferredSchedulingTerm(runtimeInfo, 100)
 
 	expectTerm := corev1.PreferredSchedulingTerm{
 		Weight: 100,
@@ -91,16 +94,10 @@ func TestGetPreferredSchedulingTermWithGlobalMode(t *testing.T) {
 
 	// Test case 2: Global fuse with selector disable
 	runtimeInfo.SetupFuseDeployMode(true, map[string]string{})
-	term, _ = getPreferredSchedulingTerm(runtimeInfo, 100)
+	term = getPreferredSchedulingTerm(runtimeInfo, 100)
 
 	if !reflect.DeepEqual(*term, expectTerm) {
 		t.Errorf("getPreferredSchedulingTerm failure, want:%v, got:%v", expectTerm, term)
-	}
-
-	// Test case 3: runtime Info is nil to handle the error path
-	_, err = getPreferredSchedulingTerm(nil, 100)
-	if err == nil {
-		t.Errorf("getPreferredSchedulingTerm failure, want:%v, got:%v", nil, err)
 	}
 }
 
@@ -140,10 +137,10 @@ func TestMutateOnlyRequired(t *testing.T) {
 	// reset injected scheduling terms
 	schedPod.Spec = corev1.PodSpec{}
 
-	// labeled dataset exist with nil value, return err
+	// labeled dataset exist with nil value, not inject
 	_, err = plugin.Mutate(schedPod, map[string]base.RuntimeInfoInterface{"test10-ds": nil})
-	if err == nil {
-		t.Errorf("expect error is not nil")
+	if err != nil {
+		t.Errorf("expect error is nil")
 	}
 	// reset injected scheduling terms
 	schedPod.Spec = corev1.PodSpec{}
@@ -282,7 +279,9 @@ func TestTieredLocality(t *testing.T) {
 				"    weight: 50\n" +
 				"  # runtime worker's zone label name, can be changed according to k8s environment.\n" +
 				"  - name: topology.kubernetes.io/zone\n" +
-				"    weight: 10\n",
+				"    weight: 10\n" +
+				"required:\n" +
+				"  - fluid.io/node\n",
 		},
 	}
 
@@ -292,7 +291,7 @@ func TestTieredLocality(t *testing.T) {
 			Namespace: "fluid-test",
 		},
 		Status: datav1alpha1.RuntimeStatus{
-			WorkerNodeAffinity: &corev1.NodeAffinity{
+			CacheAffinity: &corev1.NodeAffinity{
 				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
 					NodeSelectorTerms: []corev1.NodeSelectorTerm{
 						{
@@ -302,14 +301,6 @@ func TestTieredLocality(t *testing.T) {
 									Operator: corev1.NodeSelectorOpIn,
 									Values:   []string{"rack-a"},
 								},
-							},
-						},
-					},
-				},
-				PreferredDuringSchedulingIgnoredDuringExecution: []corev1.PreferredSchedulingTerm{
-					{
-						Preference: corev1.NodeSelectorTerm{
-							MatchExpressions: []corev1.NodeSelectorRequirement{
 								{
 									Key:      "topology.kubernetes.io/zone",
 									Operator: corev1.NodeSelectorOpIn,
@@ -512,30 +503,6 @@ func TestTieredLocality(t *testing.T) {
 													Key:      "topology.kubernetes.io/rack",
 													Operator: corev1.NodeSelectorOpIn,
 													Values:   []string{"rack-a"},
-												},
-											},
-										},
-									},
-									{
-										Weight: 100,
-										Preference: corev1.NodeSelectorTerm{
-											MatchExpressions: []corev1.NodeSelectorRequirement{
-												{
-													Key:      runtimeInfo.GetCommonLabelName(),
-													Operator: corev1.NodeSelectorOpIn,
-													Values:   []string{"true"},
-												},
-											},
-										},
-									},
-									{
-										Weight: 10,
-										Preference: corev1.NodeSelectorTerm{
-											MatchExpressions: []corev1.NodeSelectorRequirement{
-												{
-													Key:      "topology.kubernetes.io/zone",
-													Operator: corev1.NodeSelectorOpIn,
-													Values:   []string{"zone-a"},
 												},
 											},
 										},

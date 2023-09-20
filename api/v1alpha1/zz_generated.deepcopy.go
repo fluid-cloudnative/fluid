@@ -2191,8 +2191,8 @@ func (in *RuntimeStatus) DeepCopyInto(out *RuntimeStatus) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-	if in.WorkerNodeAffinity != nil {
-		in, out := &in.WorkerNodeAffinity, &out.WorkerNodeAffinity
+	if in.CacheAffinity != nil {
+		in, out := &in.CacheAffinity, &out.CacheAffinity
 		*out = new(v1.NodeAffinity)
 		(*in).DeepCopyInto(*out)
 	}

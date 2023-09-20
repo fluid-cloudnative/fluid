@@ -16,6 +16,10 @@ limitations under the License.
 
 package nodeaffinitywithcache
 
+import (
+	corev1 "k8s.io/api/core/v1"
+)
+
 type Preferred struct {
 	Name   string `yaml:"name"`
 	Weight int32  `yaml:"weight"`
@@ -23,6 +27,7 @@ type Preferred struct {
 
 type TieredLocality struct {
 	Preferred []Preferred `yaml:"preferred"`
+	Required  []string    `yaml:"required"`
 }
 
 func (t *TieredLocality) getPreferredAsMap() map[string]int32 {
@@ -31,4 +36,43 @@ func (t *TieredLocality) getPreferredAsMap() map[string]int32 {
 		localityMap[preferred.Name] = preferred.Weight
 	}
 	return localityMap
+}
+
+func (t *TieredLocality) getTieredLocalityNames() (names map[string]bool) {
+	names = map[string]bool{}
+	for _, preferred := range t.Preferred {
+		names[preferred.Name] = true
+	}
+	for _, required := range t.Required {
+		names[required] = true
+	}
+	return
+}
+
+func (t *TieredLocality) hasRepeatedLocality(pod *corev1.Pod) bool {
+	localityKeys := t.getTieredLocalityNames()
+
+	if pod.Spec.Affinity == nil || pod.Spec.Affinity.NodeAffinity == nil {
+		return false
+	}
+
+	for _, term := range pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution {
+		for _, expression := range term.Preference.MatchExpressions {
+			if _, ok := localityKeys[expression.Key]; ok {
+				return true
+			}
+		}
+	}
+
+	if pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution == nil {
+		return false
+	}
+	for _, terms := range pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms {
+		for _, expression := range terms.MatchExpressions {
+			if _, ok := localityKeys[expression.Key]; ok {
+				return true
+			}
+		}
+	}
+	return false
 }

@@ -66,7 +66,7 @@ func (t *ThinEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		}
 
 		// set node affinity
-		runtimeToUpdate.Status.WorkerNodeAffinity = workerNodeAffinity
+		runtimeToUpdate.Status.CacheAffinity = workerNodeAffinity
 
 		runtimeToUpdate.Status.CacheStates[common.CacheCapacity] = "N/A"
 		runtimeToUpdate.Status.CacheStates[common.CachedPercentage] = "N/A"

@@ -78,20 +78,34 @@ func (p *NodeAffinityWithCache) Mutate(pod *corev1.Pod, runtimeInfos map[string]
 		return
 	}
 
-	// get required and Preferred affinity for runtime
+	tieredLocality, err := p.getTieredLocality()
+	if err != nil {
+		log.Error(err, "get tiered locality config error")
+		return shouldStop, err
+	}
+
+	// app pod contains locality affinity, not inject.
+	if tieredLocality.hasRepeatedLocality(pod) {
+		log.Info("Warning: pdd already has locality affinity, skip injecting cache affinity.")
+		return
+	}
+
+	// get required and preferred affinity for runtime
 	requireRuntimes, preferredRuntimes := getRequiredAndPreferredSchedulingRuntimes(pod, runtimeInfos)
 
 	// inject required
-	err = injectRequiredSchedulingTerms(pod, requireRuntimes)
+	nodeSelectorTerms, err := p.getTieredLocalityNodeSelectorTerms(requireRuntimes, tieredLocality.Required)
 	if err != nil {
 		return shouldStop, err
 	}
+	utils.InjectNodeSelectorTerms(nodeSelectorTerms, pod)
 
-	// inject Preferred
-	err = p.injectPreferredSchedulingTerms(pod, preferredRuntimes)
+	// inject preferred
+	preferredSchedulingTerms, err := p.getTieredLocalityPreferredSchedulingTerms(preferredRuntimes, tieredLocality.getPreferredAsMap())
 	if err != nil {
 		return shouldStop, err
 	}
+	utils.InjectPreferredSchedulingTerms(preferredSchedulingTerms, pod)
 
 	return
 }
@@ -113,110 +127,67 @@ func (p *NodeAffinityWithCache) getTieredLocality() (*TieredLocality, error) {
 
 }
 
-func (p *NodeAffinityWithCache) injectPreferredSchedulingTerms(pod *corev1.Pod, preferredRuntimes map[string]base.RuntimeInfoInterface) error {
-	tieredLocality, err := p.getTieredLocality()
-	if err != nil {
-		log.Error(err, "get tiered locality config error")
-		return err
-	}
-
-	preferredLocality := tieredLocality.getPreferredAsMap()
+func (p *NodeAffinityWithCache) getTieredLocalityPreferredSchedulingTerms(preferredRuntimes map[string]base.RuntimeInfoInterface,
+	preferredLocality map[string]int32) (preferredSchedulingTerms []corev1.PreferredSchedulingTerm, err error) {
 	for name, runtimeInfo := range preferredRuntimes {
 		if runtimeInfo == nil {
-			log.Info("pvc has no runtime, skip inject affinity", "Name", name)
+			log.Info("Warning: pvc has no runtime, skip inject affinity", "Name", name)
 			continue
 		}
 
 		// get runtime worker node affinity
 		status, err := base.GetRuntimeStatus(p.client, runtimeInfo.GetRuntimeType(), runtimeInfo.GetName(), runtimeInfo.GetNamespace())
 		if err != nil {
-			return err
+			return preferredSchedulingTerms, err
 		}
-		preferredSchedulingTerms, err := getTiredLocalityPreferredSchedulingTerm(runtimeInfo, status.WorkerNodeAffinity, preferredLocality)
-		if err != nil {
-			return err
-		}
-		if preferredSchedulingTerms != nil {
-			// if pod already defined same label affinity, do not inject
-			utils.InjectPreferredSchedulingTermsIfNotExist(preferredSchedulingTerms, pod)
-		}
-	}
-	return err
-}
 
-func getTiredLocalityPreferredSchedulingTerm(runtimeInfo base.RuntimeInfoInterface,
-	affinity *corev1.NodeAffinity, preferredLocality map[string]int32) (preferredSchedulingTerms []corev1.PreferredSchedulingTerm, err error) {
-	// fluid.io/node locality
-	nodeLocalityWeight, existed := preferredLocality[NodeLocalityLabel]
-	if existed {
-		nodePreferredSchedulingTerm, err := getPreferredSchedulingTerm(runtimeInfo, nodeLocalityWeight)
-		if err != nil {
-			return nil, err
-		}
-		if nodePreferredSchedulingTerm != nil {
-			preferredSchedulingTerms = append(preferredSchedulingTerms, *nodePreferredSchedulingTerm)
-		}
-	}
-	// customized locality
-	if affinity == nil {
-		return
-	}
-
-	if affinity.RequiredDuringSchedulingIgnoredDuringExecution != nil {
-		termsFromRequired := getPreferredSchedulingTermsFromRequired(affinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, preferredLocality)
-		preferredSchedulingTerms = append(preferredSchedulingTerms, termsFromRequired...)
-	}
-
-	termsFromPreferred := getPreferredSchedulingTermsFromPreferred(affinity.PreferredDuringSchedulingIgnoredDuringExecution, preferredLocality)
-	preferredSchedulingTerms = append(preferredSchedulingTerms, termsFromPreferred...)
-
-	return
-}
-
-func getPreferredSchedulingTermsFromPreferred(preferredTerms []corev1.PreferredSchedulingTerm, tiredLabels map[string]int32) (resultSchedulingTerms []corev1.PreferredSchedulingTerm) {
-	for _, term := range preferredTerms {
-		for _, matchExpression := range term.Preference.MatchExpressions {
-			if weight, ok := tiredLabels[matchExpression.Key]; ok {
-				localityTerm := corev1.PreferredSchedulingTerm{
-					Weight: weight,
-					Preference: corev1.NodeSelectorTerm{
-						MatchExpressions: []corev1.NodeSelectorRequirement{
-							{
-								Key:      matchExpression.Key,
-								Operator: matchExpression.Operator,
-								Values:   matchExpression.Values,
-							},
-						},
-					},
-				}
-				resultSchedulingTerms = append(resultSchedulingTerms, localityTerm)
+		// fluid.io/node locality
+		nodeLocalityWeight, existed := preferredLocality[NodeLocalityLabel]
+		if existed {
+			nodePreferredSchedulingTerm := getPreferredSchedulingTerm(runtimeInfo, nodeLocalityWeight)
+			if nodePreferredSchedulingTerm != nil {
+				preferredSchedulingTerms = append(preferredSchedulingTerms, *nodePreferredSchedulingTerm)
 			}
+		}
+		// customized locality
+		affinity := status.CacheAffinity
+		if affinity != nil && affinity.RequiredDuringSchedulingIgnoredDuringExecution != nil {
+			terms := getPreferredSchedulingTermsFromRequired(affinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, preferredLocality)
+			preferredSchedulingTerms = append(preferredSchedulingTerms, terms...)
 		}
 	}
 	return
 }
 
-func getPreferredSchedulingTermsFromRequired(nodeSelectorTerms []corev1.NodeSelectorTerm, tiredLabels map[string]int32) (preferredSchedulingTerms []corev1.PreferredSchedulingTerm) {
-	for _, term := range nodeSelectorTerms {
-		for _, matchExpression := range term.MatchExpressions {
-			// label represents tired locality
-			if weight, ok := tiredLabels[matchExpression.Key]; ok {
-				localityTerm := corev1.PreferredSchedulingTerm{
-					Weight: weight,
-					Preference: corev1.NodeSelectorTerm{
-						MatchExpressions: []corev1.NodeSelectorRequirement{
-							{
-								Key:      matchExpression.Key,
-								Operator: matchExpression.Operator,
-								Values:   matchExpression.Values,
-							},
-						},
-					},
-				}
-				preferredSchedulingTerms = append(preferredSchedulingTerms, localityTerm)
-			}
+func (p *NodeAffinityWithCache) getTieredLocalityNodeSelectorTerms(runtimeInfos map[string]base.RuntimeInfoInterface,
+	requireLocalityNames []string) (requiredSchedulingTerms []corev1.NodeSelectorTerm, err error) {
+
+	for name, runtimeInfo := range runtimeInfos {
+		if runtimeInfo == nil {
+			log.Info("Warning: pvc has no runtime, skip inject affinity", "Name", name)
+			continue
+		}
+
+		// get runtime worker node affinity
+		status, err := base.GetRuntimeStatus(p.client, runtimeInfo.GetRuntimeType(), runtimeInfo.GetName(), runtimeInfo.GetNamespace())
+		if err != nil {
+			return requiredSchedulingTerms, err
+		}
+
+		// fluid.io/node locality
+		if utils.ContainsString(requireLocalityNames, NodeLocalityLabel) {
+			requiredSchedulingTerms = append(requiredSchedulingTerms, getRequiredSchedulingTerms(runtimeInfo))
+		}
+
+		// customized locality
+		affinity := status.CacheAffinity
+		// only RequiredDuringSchedulingIgnoredDuringExecution, not considering PreferredDuringSchedulingIgnoredDuringExecution
+		if affinity != nil && affinity.RequiredDuringSchedulingIgnoredDuringExecution != nil {
+			terms := getNodeSelectorTermsFromRequired(affinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, requireLocalityNames)
+			requiredSchedulingTerms = append(requiredSchedulingTerms, terms...)
 		}
 	}
+
 	return
 }
 
@@ -257,30 +228,29 @@ func getRequiredAndPreferredSchedulingRuntimes(pod *corev1.Pod, runtimeInfos map
 	return
 }
 
-func injectRequiredSchedulingTerms(pod *corev1.Pod, runtimeInfos map[string]base.RuntimeInfoInterface) error {
-	requiredSchedulingTerms := []corev1.NodeSelectorTerm{}
-	for _, runtimeInfo := range runtimeInfos {
-		requiredSchedulingTerm, err := getRequiredSchedulingTerms(runtimeInfo)
-		if err != nil {
-			return err
-		}
-		if requiredSchedulingTerms != nil {
-			requiredSchedulingTerms = append(requiredSchedulingTerms, *requiredSchedulingTerm)
+func getNodeSelectorTermsFromRequired(nodeSelectorTerms []corev1.NodeSelectorTerm, requireLocalityNames []string) (resultTerms []corev1.NodeSelectorTerm) {
+	for _, term := range nodeSelectorTerms {
+		for _, matchExpression := range term.MatchExpressions {
+			// Key represents tiered locality name
+			if utils.ContainsString(requireLocalityNames, matchExpression.Key) {
+				localityTerm := corev1.NodeSelectorTerm{
+					MatchExpressions: []corev1.NodeSelectorRequirement{
+						{
+							Key:      matchExpression.Key,
+							Operator: matchExpression.Operator,
+							Values:   matchExpression.Values,
+						},
+					},
+				}
+				resultTerms = append(resultTerms, localityTerm)
+			}
 		}
 	}
-	utils.InjectNodeSelectorTerms(requiredSchedulingTerms, pod)
-
-	return nil
+	return
 }
 
-func getRequiredSchedulingTerms(runtimeInfo base.RuntimeInfoInterface) (requiredSchedulingTerm *corev1.NodeSelectorTerm, err error) {
-	requiredSchedulingTerm = nil
-	if runtimeInfo == nil {
-		err = fmt.Errorf("RuntimeInfo is nil")
-		return
-	}
-
-	requiredSchedulingTerm = &corev1.NodeSelectorTerm{
+func getRequiredSchedulingTerms(runtimeInfo base.RuntimeInfoInterface) (requiredSchedulingTerm corev1.NodeSelectorTerm) {
+	requiredSchedulingTerm = corev1.NodeSelectorTerm{
 		MatchExpressions: []corev1.NodeSelectorRequirement{
 			{
 				Key:      runtimeInfo.GetCommonLabelName(),
@@ -292,15 +262,33 @@ func getRequiredSchedulingTerms(runtimeInfo base.RuntimeInfoInterface) (required
 	return
 }
 
-func getPreferredSchedulingTerm(runtimeInfo base.RuntimeInfoInterface, weight int32) (preferredSchedulingTerm *corev1.PreferredSchedulingTerm, err error) {
-	preferredSchedulingTerm = nil
-
-	if runtimeInfo == nil {
-		err = fmt.Errorf("RuntimeInfo is nil")
-		return
+func getPreferredSchedulingTermsFromRequired(nodeSelectorTerms []corev1.NodeSelectorTerm, tiredLabels map[string]int32) (preferredSchedulingTerms []corev1.PreferredSchedulingTerm) {
+	for _, term := range nodeSelectorTerms {
+		for _, matchExpression := range term.MatchExpressions {
+			// Key represents tiered locality name
+			if weight, ok := tiredLabels[matchExpression.Key]; ok {
+				localityTerm := corev1.PreferredSchedulingTerm{
+					Weight: weight,
+					Preference: corev1.NodeSelectorTerm{
+						MatchExpressions: []corev1.NodeSelectorRequirement{
+							{
+								Key:      matchExpression.Key,
+								Operator: matchExpression.Operator,
+								Values:   matchExpression.Values,
+							},
+						},
+					},
+				}
+				preferredSchedulingTerms = append(preferredSchedulingTerms, localityTerm)
+			}
+		}
 	}
+	return
+}
 
+func getPreferredSchedulingTerm(runtimeInfo base.RuntimeInfoInterface, weight int32) (preferredSchedulingTerm *corev1.PreferredSchedulingTerm) {
 	isGlobalMode, _ := runtimeInfo.GetFuseDeployMode()
+	// since fluid 0.7, always true
 	if isGlobalMode {
 		preferredSchedulingTerm = &corev1.PreferredSchedulingTerm{
 			Weight: weight,

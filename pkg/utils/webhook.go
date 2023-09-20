@@ -41,56 +41,6 @@ func InjectPreferredSchedulingTerms(preferredSchedulingTerms []corev1.PreferredS
 	}
 }
 
-// InjectPreferredSchedulingTermsIfNotExist inject the preferredSchedulingTerms into a pod if not exist
-func InjectPreferredSchedulingTermsIfNotExist(preferredSchedulingTerms []corev1.PreferredSchedulingTerm, pod *corev1.Pod) {
-	if len(preferredSchedulingTerms) == 0 {
-		return
-	}
-
-	if pod.Spec.Affinity == nil {
-		pod.Spec.Affinity = &corev1.Affinity{}
-	}
-
-	if pod.Spec.Affinity.NodeAffinity == nil {
-		pod.Spec.Affinity.NodeAffinity = &corev1.NodeAffinity{}
-	}
-
-	if len(pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution) == 0 {
-		pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution = preferredSchedulingTerms
-	} else {
-		pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution =
-			appendSchedulingTermsIfNotExist(pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution,
-				preferredSchedulingTerms)
-	}
-}
-
-func appendSchedulingTermsIfNotExist(podTerms []corev1.PreferredSchedulingTerm, appendingTerms []corev1.PreferredSchedulingTerm) []corev1.PreferredSchedulingTerm {
-	// record match expression keys defined in podTerms
-	var keys = map[string]bool{}
-
-	for _, podTerm := range podTerms {
-		for _, matchExpression := range podTerm.Preference.MatchExpressions {
-			keys[matchExpression.Key] = true
-		}
-	}
-
-	for _, term := range appendingTerms {
-		var exist = false
-		// if key already defined in podTerms, not override; else append it.
-		for _, matchExpression := range term.Preference.MatchExpressions {
-			exist = keys[matchExpression.Key]
-			if exist {
-				break
-			}
-		}
-		if !exist {
-			podTerms = append(podTerms, term)
-		}
-	}
-
-	return podTerms
-}
-
 // InjectRequiredSchedulingTerms inject the NodeSelectorTerms into a pod
 func InjectNodeSelectorTerms(requiredSchedulingTerms []corev1.NodeSelectorTerm, pod *corev1.Pod) {
 	if len(requiredSchedulingTerms) == 0 {
@@ -113,7 +63,8 @@ func InjectNodeSelectorTerms(requiredSchedulingTerms []corev1.NodeSelectorTerm, 
 		pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms = requiredSchedulingTerms
 	} else {
 		for i := 0; i < len(requiredSchedulingTerms); i++ {
-			pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions = append(pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions, requiredSchedulingTerms[i].MatchExpressions...)
+			pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions =
+				append(pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions, requiredSchedulingTerms[i].MatchExpressions...)
 		}
 	}
 

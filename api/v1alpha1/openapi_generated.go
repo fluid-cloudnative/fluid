@@ -5089,7 +5089,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeStatus(ref common.Refere
 					},
 					"workNodeAffinity": {
 						SchemaProps: spec.SchemaProps{
-							Description: "WorkerNodeAffinity represents the runtime worker pods node affinity including node selector",
+							Description: "CacheAffinity represents the runtime worker pods node affinity including node selector",
 							Ref:         ref("k8s.io/api/core/v1.NodeAffinity"),
 						},
 					},

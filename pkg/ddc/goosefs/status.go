@@ -76,7 +76,7 @@ func (e *GooseFSEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		}
 
 		// set node affinity
-		runtimeToUpdate.Status.WorkerNodeAffinity = workerNodeAffinity
+		runtimeToUpdate.Status.CacheAffinity = workerNodeAffinity
 
 		runtimeToUpdate.Status.CacheStates[common.CacheCapacity] = states.cacheCapacity
 		runtimeToUpdate.Status.CacheStates[common.CachedPercentage] = states.cachedPercentage

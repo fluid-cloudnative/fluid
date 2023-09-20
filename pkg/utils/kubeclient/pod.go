@@ -125,18 +125,30 @@ func MergeNodeSelectorAndNodeAffinity(nodeSelector map[string]string, podAffinit
 		nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution = &corev1.NodeSelector{}
 	}
 
+	var expressions []corev1.NodeSelectorRequirement
 	for key, value := range nodeSelector {
-		term := corev1.NodeSelectorTerm{
-			MatchExpressions: []corev1.NodeSelectorRequirement{
-				{
-					Key:      key,
-					Operator: corev1.NodeSelectorOpIn,
-					Values:   []string{value},
-				},
+		expressions = append(expressions,
+			corev1.NodeSelectorRequirement{
+				Key:      key,
+				Operator: corev1.NodeSelectorOpIn,
+				Values:   []string{value},
 			},
+		)
+	}
+	// inject to MatchExpressions for And relation.
+	if len(expressions) > 0 {
+		if len(nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) == 0 {
+			nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms = []corev1.NodeSelectorTerm{
+				{
+					MatchExpressions: expressions,
+				},
+			}
+		} else {
+			for idx := range nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms {
+				nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[idx].MatchExpressions =
+					append(nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[idx].MatchExpressions, expressions...)
+			}
 		}
-		nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms =
-			append(nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, term)
 	}
 	return
 }
