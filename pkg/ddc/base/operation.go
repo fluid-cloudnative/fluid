@@ -192,20 +192,23 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 	log := ctx.Log.WithName("reconcileComplete")
 
 	// 0. clean up if ttl after finished expired
-	remaining, err := GetRemainingTimeToCleanUp(object, opStatus, operation.GetOperationType())
-	if err != nil {
-		log.Error(err, fmt.Sprintf("Failed to get remaining time to clean up for operation %s", operation.GetOperationType()))
-		return utils.RequeueIfError(err)
-	}
-	// if remaining time to clean up is not nil and less than 0, clean up data operation
-	if remaining != nil && *remaining <= 0 {
-		if err = ctx.Client.Delete(context.TODO(), object); err != nil {
-			log.Error(err, "Failed to clean up data operation %s", operation.GetOperationType())
+	var remaining *time.Duration
+	if utils.NeedCleanUp(object, opStatus, operation.GetOperationType()) {
+		remaining, err := utils.Timeleft(object, opStatus, operation.GetOperationType())
+		if err != nil {
+			log.Error(err, fmt.Sprintf("Failed to get remaining time to clean up for operation %s", operation.GetOperationType()))
 			return utils.RequeueIfError(err)
 		}
-		// data operation has been deleted and no need to continue
-		log.Info("Data operation has been clean up")
-		return utils.NoRequeue()
+		// if remaining time to clean up is not nil and less than 0, clean up data operation
+		if remaining != nil && *remaining <= 0 {
+			if err = ctx.Client.Delete(context.TODO(), object); err != nil {
+				log.Error(err, "Failed to clean up data operation %s", operation.GetOperationType())
+				return utils.RequeueIfError(err)
+			}
+			// data operation has been deleted and no need to continue
+			log.Info("Data operation has been clean up")
+			return utils.NoRequeue()
+		}
 	}
 
 	// 1. Update the infos field if complete
@@ -213,7 +216,7 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 		opStatus.Infos = map[string]string{}
 	}
 	// different data operation may set different key-value
-	err = operation.UpdateStatusInfoForCompleted(object, opStatus.Infos)
+	err := operation.UpdateStatusInfoForCompleted(object, opStatus.Infos)
 	if err != nil {
 		return utils.RequeueIfError(err)
 	}
@@ -271,24 +274,27 @@ func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, o
 	log := ctx.Log.WithName("reconcileFailed")
 
 	// 0. clean up if ttl after finished expired
-	remaining, err := GetRemainingTimeToCleanUp(object, opStatus, operation.GetOperationType())
-	if err != nil {
-		log.Error(err, fmt.Sprintf("Failed to get remaining time to clean up for operation %s", operation.GetOperationType()))
-		return utils.RequeueIfError(err)
-	}
-	// if remaining time to clean up is not nil and less than 0, clean up data operation
-	if remaining != nil && *remaining <= 0 {
-		if err = ctx.Client.Delete(context.TODO(), object); err != nil {
-			log.Error(err, "Failed to clean up data operation %s", operation.GetOperationType())
+	var remaining *time.Duration
+	if utils.NeedCleanUp(object, opStatus, operation.GetOperationType()) {
+		remaining, err := utils.Timeleft(object, opStatus, operation.GetOperationType())
+		if err != nil {
+			log.Error(err, fmt.Sprintf("Failed to get remaining time to clean up for operation %s", operation.GetOperationType()))
 			return utils.RequeueIfError(err)
 		}
-		// data operation has been deleted and no need to continue
-		log.Info("Data operation has been clean up")
-		return utils.NoRequeue()
+		// if remaining time to clean up is not nil and less than 0, clean up data operation
+		if remaining != nil && *remaining <= 0 {
+			if err = ctx.Client.Delete(context.TODO(), object); err != nil {
+				log.Error(err, "Failed to clean up data operation %s", operation.GetOperationType())
+				return utils.RequeueIfError(err)
+			}
+			// data operation has been deleted and no need to continue
+			log.Info("Data operation has been clean up")
+			return utils.NoRequeue()
+		}
 	}
 
 	// 1. remove current data operation on target dataset
-	err = ReleaseTargetDataset(ctx, object, operation)
+	err := ReleaseTargetDataset(ctx, object, operation)
 	if err != nil {
 		return utils.RequeueIfError(err)
 	}
