@@ -101,7 +101,7 @@ def main():
         .set_tieredstore(mediumtype="MEM", path="/dev/shm", quota="2Gi")
     
     dataload_name = "test-dataload"
-    cron_dataload = fluidapi.DataLoad(name=dataload_name, namespace=namespace) \
+    datalaod = fluidapi.DataLoad(name=dataload_name, namespace=namespace) \
         .set_target_dataset(name, namespace) \
         .set_load_metadata(True) \
         .set_ttlSecondsAfterFinished(20)
@@ -141,7 +141,7 @@ def main():
     flow.append_step(
         SimpleStep(
             step_name="create dataload",
-            forth_fn=funcs.create_dataload_fn(cron_dataload.dump()),
+            forth_fn=funcs.create_dataload_fn(datalaod.dump()),
             back_fn=dummy_back,  # DataLoad should have ownerReference of Dataset
         )
     )

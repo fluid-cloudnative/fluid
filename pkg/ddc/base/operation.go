@@ -201,7 +201,7 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 		}
 		// if remaining time to clean up is not nil and less than 0, clean up data operation
 		if remaining != nil && *remaining <= 0 {
-			if err = ctx.Client.Delete(context.TODO(), object); err != nil {
+			if err = ctx.Client.Delete(context.TODO(), object); err != nil && utils.IgnoreNotFound(err) != nil {
 				log.Error(err, "Failed to clean up data operation %s", operation.GetOperationType())
 				return utils.RequeueIfError(err)
 			}
@@ -255,7 +255,6 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 	// 4. record and no requeue
 	// For cron operations, the phase may be updated to pending here, and we only log bellow messages in complete phase
 	if opStatusToUpdate.Phase == common.PhaseComplete {
-		log.Info(fmt.Sprintf("%s success, no need to requeue", operation.GetOperationType()))
 		ctx.Recorder.Eventf(object, v1.EventTypeNormal, common.DataOperationSucceed,
 			"%s %s succeeded", operation.GetOperationType(), object.GetName())
 	}
@@ -283,7 +282,7 @@ func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, o
 		}
 		// if remaining time to clean up is not nil and less than 0, clean up data operation
 		if remaining != nil && *remaining <= 0 {
-			if err = ctx.Client.Delete(context.TODO(), object); err != nil {
+			if err = ctx.Client.Delete(context.TODO(), object); err != nil && utils.IgnoreNotFound(err) != nil {
 				log.Error(err, "Failed to clean up data operation %s", operation.GetOperationType())
 				return utils.RequeueIfError(err)
 			}
@@ -322,7 +321,6 @@ func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, o
 	// 2. record and no requeue
 	// For cron operations, the phase may be updated to pending here, and we only log bellow messages in failed phase
 	if opStatusToUpdate.Phase == common.PhaseFailed {
-		log.Info(fmt.Sprintf("%s failed, won't requeue", operation.GetOperationType()))
 		ctx.Recorder.Eventf(object, v1.EventTypeWarning, common.DataOperationFailed, "%s %s failed", operation.GetOperationType(), object.GetName())
 	}
 
