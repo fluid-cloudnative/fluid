@@ -472,14 +472,18 @@ func TestMergeNodeSelectorAndNodeAffinity(t *testing.T) {
 		{
 			name: "pod affinity nil",
 			args: args{},
-			want: &corev1.NodeAffinity{RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{}},
+			want: &corev1.NodeAffinity{RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+				NodeSelectorTerms: []corev1.NodeSelectorTerm{},
+			}},
 		},
 		{
 			name: "node affinity in pod nil",
 			args: args{
 				podAffinity: &corev1.Affinity{},
 			},
-			want: &corev1.NodeAffinity{RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{}},
+			want: &corev1.NodeAffinity{RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+				NodeSelectorTerms: []corev1.NodeSelectorTerm{},
+			}},
 		},
 		{
 			name: "node affinity in pod is empty",
@@ -488,7 +492,9 @@ func TestMergeNodeSelectorAndNodeAffinity(t *testing.T) {
 					NodeAffinity: &corev1.NodeAffinity{},
 				},
 			},
-			want: &corev1.NodeAffinity{RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{}},
+			want: &corev1.NodeAffinity{RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+				NodeSelectorTerms: []corev1.NodeSelectorTerm{},
+			}},
 		},
 		{
 			name: "no exist node affinity",

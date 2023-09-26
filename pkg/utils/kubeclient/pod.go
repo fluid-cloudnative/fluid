@@ -115,14 +115,22 @@ func MergeNodeSelectorAndNodeAffinity(nodeSelector map[string]string, podAffinit
 		nodeAffinity = podAffinity.NodeAffinity.DeepCopy()
 	}
 
+	// no node affinity
 	if nodeAffinity == nil {
 		nodeAffinity = &corev1.NodeAffinity{
-			RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{},
+			RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+				// required field, can not be omitted
+				NodeSelectorTerms: []corev1.NodeSelectorTerm{},
+			},
 		}
 	}
 
+	// has preferred affinity, but no required affinity
 	if nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution == nil {
-		nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution = &corev1.NodeSelector{}
+		nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution = &corev1.NodeSelector{
+			// required field, can not be omitted
+			NodeSelectorTerms: []corev1.NodeSelectorTerm{},
+		}
 	}
 
 	var expressions []corev1.NodeSelectorRequirement
