@@ -194,7 +194,8 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 	// 0. clean up if ttl after finished expired
 	var remaining *time.Duration
 	if utils.NeedCleanUp(object, opStatus, operation.GetOperationType()) {
-		remaining, err := utils.Timeleft(object, opStatus, operation.GetOperationType())
+		var err error
+		remaining, err = utils.Timeleft(object, opStatus, operation.GetOperationType())
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to get remaining time to clean up for operation %s", operation.GetOperationType()))
 			return utils.RequeueIfError(err)
@@ -275,7 +276,8 @@ func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, o
 	// 0. clean up if ttl after finished expired
 	var remaining *time.Duration
 	if utils.NeedCleanUp(object, opStatus, operation.GetOperationType()) {
-		remaining, err := utils.Timeleft(object, opStatus, operation.GetOperationType())
+		var err error
+		remaining, err = utils.Timeleft(object, opStatus, operation.GetOperationType())
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to get remaining time to clean up for operation %s", operation.GetOperationType()))
 			return utils.RequeueIfError(err)
