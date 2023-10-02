@@ -30,6 +30,10 @@ const (
 	CSIDriver = "fuse.csi.fluid.io"
 
 	Fluid = "fluid"
+
+	NodePublishMethod = "node_publish_method"
+
+	NodePublishMethodSymlink = "symlink"
 )
 
 var (

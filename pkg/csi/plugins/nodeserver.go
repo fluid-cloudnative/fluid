@@ -142,6 +142,15 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
+	// use symlink
+	if useSymlink(req) {
+		if err := utils.CreateSymlink(targetPath, mountPath); err != nil {
+			return nil, err
+		}
+		return &csi.NodePublishVolumeResponse{}, nil
+	}
+
+	// default use bind mount
 	args := []string{"--bind"}
 	// if len(mountOptions) > 0 {
 	// 	args = append(args, "-o", strings.Join(mountOptions, ","))
@@ -187,6 +196,17 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 	}
 	defer ns.locks.Release(targetPath)
 
+	// try to remove if targetPath is a symlink
+	symlinkRemove, err := utils.RemoveSymlink(targetPath)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "NodeUnpublishVolume: remove symlink error %v", err)
+	}
+	if symlinkRemove {
+		// targetPath is a symlink and has been remove successfully
+		glog.V(3).Infof("Remove symlink targetPath %s successfully", targetPath)
+		return &csi.NodeUnpublishVolumeResponse{}, nil
+	}
+
 	// targetPath may be bind mount many times when mount point recovered.
 	// umount until it's not mounted.
 	mounter := mount.New("")
@@ -224,7 +244,7 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 		}
 	}
 
-	err := mount.CleanupMountPoint(targetPath, mounter, false)
+	err = mount.CleanupMountPoint(targetPath, mounter, false)
 	if err != nil {
 		glog.Errorf("NodeUnpublishVolume: failed when cleanupMountPoint on path %s: %v", targetPath, err)
 		return nil, status.Errorf(codes.Internal, "NodeUnpublishVolume: failed when cleanupMountPoint on path %s: %v", targetPath, err)
@@ -580,4 +600,9 @@ func (ns *nodeServer) prepareSessMgr(workDir string) error {
 	}
 
 	return nil
+}
+
+// useSymlink for nodePublishVolume if enviroment varible has been set or pv has attribute
+func useSymlink(req *csi.NodePublishVolumeRequest) bool {
+	return os.Getenv("NODEPUBLISH_METHOD") == common.NodePublishMethodSymlink || req.GetVolumeContext()[common.NodePublishMethod] == common.NodePublishMethodSymlink
 }

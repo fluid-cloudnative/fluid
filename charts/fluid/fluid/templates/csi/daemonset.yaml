@@ -100,6 +100,8 @@ spec:
             value: {{ .Values.csi.kubelet.rootDir }}
           - name: CSI_ENDPOINT
             value: unix://{{ .Values.csi.kubelet.rootDir }}/csi-plugins/fuse.csi.fluid.io/csi.sock
+          - name: NODEPUBLISH_METHOD
+            value: {{ .Values.csi.nodePublishMethod }}
         imagePullPolicy: "IfNotPresent"
         volumeMounts:
           - name: plugin-dir
