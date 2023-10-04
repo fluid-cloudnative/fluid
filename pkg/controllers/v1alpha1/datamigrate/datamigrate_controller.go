@@ -48,7 +48,7 @@ type DataMigrateReconciler struct {
 	*controllers.OperationReconciler
 }
 
-var _ dataoperation.OperationInterface = &DataMigrateReconciler{}
+var _ dataoperation.OperationReconcilerInterface = &DataMigrateReconciler{}
 
 // NewDataMigrateReconciler returns a DataMigrateReconciler
 func NewDataMigrateReconciler(client client.Client,

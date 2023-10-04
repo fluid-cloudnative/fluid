@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (e *GooseFSEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, object client.Object, operation dataoperation.OperationInterface) (valueFileName string, err error) {
+func (e *GooseFSEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, object client.Object, operation dataoperation.OperationReconcilerInterface) (valueFileName string, err error) {
 	operateType := operation.GetOperationType()
 
 	if operateType == datav1alpha1.DataBackupType {

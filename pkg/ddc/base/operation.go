@@ -35,7 +35,7 @@ import (
 )
 
 func (t *TemplateEngine) Operate(ctx cruntime.ReconcileRequestContext, object client.Object, opStatus *datav1alpha1.OperationStatus,
-	operation dataoperation.OperationInterface) (ctrl.Result, error) {
+	operation dataoperation.OperationReconcilerInterface) (ctrl.Result, error) {
 	operateType := operation.GetOperationType()
 
 	// runtime engine override the template engine
@@ -70,7 +70,7 @@ func (t *TemplateEngine) Operate(ctx cruntime.ReconcileRequestContext, object cl
 }
 
 func (t *TemplateEngine) reconcileNone(ctx cruntime.ReconcileRequestContext, object client.Object,
-	opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
+	opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationReconcilerInterface) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileNone")
 
 	// 0. check the object spec valid or not
@@ -113,7 +113,7 @@ func (t *TemplateEngine) reconcileNone(ctx cruntime.ReconcileRequestContext, obj
 }
 
 func (t *TemplateEngine) reconcilePending(ctx cruntime.ReconcileRequestContext, object client.Object,
-	opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
+	opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationReconcilerInterface) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcilePending")
 
 	// 1. check preceding operation status
@@ -140,7 +140,7 @@ func (t *TemplateEngine) reconcilePending(ctx cruntime.ReconcileRequestContext, 
 }
 
 func (t *TemplateEngine) reconcileExecuting(ctx cruntime.ReconcileRequestContext, object client.Object,
-	opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
+	opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationReconcilerInterface) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileExecuting")
 
 	// 1. Install the helm chart if not exists
@@ -189,7 +189,7 @@ func (t *TemplateEngine) reconcileExecuting(ctx cruntime.ReconcileRequestContext
 }
 
 func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext, object client.Object,
-	opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
+	opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationReconcilerInterface) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileComplete")
 
 	// 0. clean up if ttl after finished expired
@@ -264,7 +264,7 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 }
 
 // processTTL processes the operations that need to be cleaned up based on the TTL.
-func (t *TemplateEngine) processTTL(object client.Object, opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface, log logr.Logger, ctx cruntime.ReconcileRequestContext) (ttl *time.Duration, err error) {
+func (t *TemplateEngine) processTTL(object client.Object, opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationReconcilerInterface, log logr.Logger, ctx cruntime.ReconcileRequestContext) (ttl *time.Duration, err error) {
 	// Get the remaining time to clean up for the operation.
 	ttl, err = utils.Timeleft(object, opStatus, operation.GetOperationType())
 	if err != nil {
@@ -284,7 +284,7 @@ func (t *TemplateEngine) processTTL(object client.Object, opStatus *datav1alpha1
 }
 
 func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, object client.Object,
-	opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
+	opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationReconcilerInterface) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileFailed")
 
 	// 0. clean up if ttl after finished expired

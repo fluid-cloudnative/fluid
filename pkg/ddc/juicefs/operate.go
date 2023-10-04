@@ -26,7 +26,7 @@ import (
 )
 
 func (j *JuiceFSEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, object client.Object,
-	operation dataoperation.OperationInterface) (valueFileName string, err error) {
+	operation dataoperation.OperationReconcilerInterface) (valueFileName string, err error) {
 	operationType := operation.GetOperationType()
 
 	switch operationType {
