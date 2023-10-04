@@ -44,7 +44,7 @@ type DataBackupReconciler struct {
 	*controllers.OperationReconciler
 }
 
-var _ dataoperation.OperationInterface = &DataBackupReconciler{}
+var _ dataoperation.OperationReconcilerInterface = &DataBackupReconciler{}
 
 // NewDataBackupReconciler returns a DataBackupReconciler
 func NewDataBackupReconciler(client client.Client,
