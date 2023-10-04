@@ -1015,6 +1015,11 @@ spec:
                       type: string
                   type: object
                 type: array
+              ttlSecondsAfterFinished:
+                description: TTLSecondsAfterFinished is the time second to clean up
+                  data operations after finished or failed
+                format: int32
+                type: integer
             type: object
           status:
             description: OperationStatus defines the observed state of operation

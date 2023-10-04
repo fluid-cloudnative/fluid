@@ -9301,6 +9301,11 @@ spec:
                 - kind
                 - name
                 type: object
+              ttlSecondsAfterFinished:
+                description: TTLSecondsAfterFinished is the time second to clean up
+                  data operations after finished or failed
+                format: int32
+                type: integer
             required:
             - dataset
             - processor

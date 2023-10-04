@@ -102,6 +102,10 @@ type DataProcessSpec struct {
 	// Specifies that the preceding operation in a workflow
 	// +optional
 	RunAfter *OperationRef `json:"runAfter,omitempty"`
+
+	// TTLSecondsAfterFinished is the time second to clean up data operations after finished or failed
+	// +optional
+	TTLSecondsAfterFinished *int32 `json:"ttlSecondsAfterFinished,omitempty"`
 }
 
 // +kubebuilder:printcolumn:name="Dataset",type="string",JSONPath=`.spec.dataset.name`

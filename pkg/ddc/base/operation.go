@@ -15,6 +15,7 @@ limitations under the License.
 package base
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"time"
@@ -190,6 +191,27 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 	opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileComplete")
 
+	// 0. clean up if ttl after finished expired
+	var remaining *time.Duration
+	if utils.NeedCleanUp(object, opStatus, operation.GetOperationType()) {
+		var err error
+		remaining, err = utils.Timeleft(object, opStatus, operation.GetOperationType())
+		if err != nil {
+			log.Error(err, fmt.Sprintf("Failed to get remaining time to clean up for operation %s", operation.GetOperationType()))
+			return utils.RequeueIfError(err)
+		}
+		// if remaining time to clean up is not nil and less than 0, clean up data operation
+		if remaining != nil && *remaining <= 0 {
+			if err = ctx.Client.Delete(context.TODO(), object); err != nil && utils.IgnoreNotFound(err) != nil {
+				log.Error(err, "Failed to clean up data operation %s", operation.GetOperationType())
+				return utils.RequeueIfError(err)
+			}
+			// data operation has been deleted and no need to continue
+			log.Info("Data operation has been clean up")
+			return utils.NoRequeue()
+		}
+	}
+
 	// 1. Update the infos field if complete
 	if opStatus.Infos == nil {
 		opStatus.Infos = map[string]string{}
@@ -234,16 +256,43 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 	// 4. record and no requeue
 	// For cron operations, the phase may be updated to pending here, and we only log bellow messages in complete phase
 	if opStatusToUpdate.Phase == common.PhaseComplete {
-		log.Info(fmt.Sprintf("%s success, no need to requeue", operation.GetOperationType()))
 		ctx.Recorder.Eventf(object, v1.EventTypeNormal, common.DataOperationSucceed,
 			"%s %s succeeded", operation.GetOperationType(), object.GetName())
 	}
+
+	// 5. Requeue if data operation set ttl after finished and has not expired
+	if remaining != nil && *remaining > 0 {
+		log.V(1).Info("requeue after remaining time to clean up data operation", "remaining time", remaining)
+		return utils.RequeueAfterInterval(*remaining)
+	}
+
 	return utils.NoRequeue()
 }
 
 func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, object client.Object,
 	opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileFailed")
+
+	// 0. clean up if ttl after finished expired
+	var remaining *time.Duration
+	if utils.NeedCleanUp(object, opStatus, operation.GetOperationType()) {
+		var err error
+		remaining, err = utils.Timeleft(object, opStatus, operation.GetOperationType())
+		if err != nil {
+			log.Error(err, fmt.Sprintf("Failed to get remaining time to clean up for operation %s", operation.GetOperationType()))
+			return utils.RequeueIfError(err)
+		}
+		// if remaining time to clean up is not nil and less than 0, clean up data operation
+		if remaining != nil && *remaining <= 0 {
+			if err = ctx.Client.Delete(context.TODO(), object); err != nil && utils.IgnoreNotFound(err) != nil {
+				log.Error(err, "Failed to clean up data operation %s", operation.GetOperationType())
+				return utils.RequeueIfError(err)
+			}
+			// data operation has been deleted and no need to continue
+			log.Info("Data operation has been clean up")
+			return utils.NoRequeue()
+		}
+	}
 
 	// 1. remove current data operation on target dataset
 	err := ReleaseTargetDataset(ctx, object, operation)
@@ -274,8 +323,13 @@ func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, o
 	// 2. record and no requeue
 	// For cron operations, the phase may be updated to pending here, and we only log bellow messages in failed phase
 	if opStatusToUpdate.Phase == common.PhaseFailed {
-		log.Info(fmt.Sprintf("%s failed, won't requeue", operation.GetOperationType()))
 		ctx.Recorder.Eventf(object, v1.EventTypeWarning, common.DataOperationFailed, "%s %s failed", operation.GetOperationType(), object.GetName())
+	}
+
+	// 3. Requeue if data operation set ttl after finished and has not expired
+	if remaining != nil && *remaining > 0 {
+		log.V(1).Info("get remaining time to clean up data operation", "remaining time", remaining)
+		return utils.RequeueAfterInterval(*remaining)
 	}
 	return utils.NoRequeue()
 }
