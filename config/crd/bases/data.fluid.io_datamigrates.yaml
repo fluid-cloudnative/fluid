@@ -1105,6 +1105,11 @@ spec:
                       type: string
                   type: object
                 type: array
+              ttlSecondsAfterFinished:
+                description: TTLSecondsAfterFinished is the time second to clean up
+                  data operations after finished or failed
+                format: int32
+                type: integer
             required:
             - from
             - to

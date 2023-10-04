@@ -19,8 +19,10 @@ package utils
 import (
 	"context"
 	"fmt"
+	"time"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -113,4 +115,81 @@ func HasPrecedingOperation(obj client.Object) (has bool, err error) {
 	}
 
 	return false, fmt.Errorf("obj is not of any data operation type")
+}
+
+func NeedCleanUp(object client.Object, opStatus *datav1alpha1.OperationStatus, operateType datav1alpha1.OperationType) bool {
+	if len(opStatus.Conditions) == 0 {
+		// data operation has no completion time, no need to clean up
+		return false
+	}
+	ttl, err := GetTTL(object, operateType)
+	if err != nil {
+		return false
+	}
+	return ttl != nil
+}
+
+// Timeleft return not nil remaining time if data operation has completion time and set ttlAfterFinished
+func Timeleft(object client.Object, opStatus *datav1alpha1.OperationStatus, operateType datav1alpha1.OperationType) (*time.Duration, error) {
+	if len(opStatus.Conditions) == 0 {
+		// data operation has no completion time
+		return nil, nil
+	}
+	if opStatus.Conditions[0].Type != common.Complete && opStatus.Conditions[0].Type != common.Failed {
+		// only clean up complete or failed data operation
+		return nil, nil
+	}
+
+	ttl, err := GetTTL(object, operateType)
+	if err != nil {
+		return nil, err
+	}
+	if ttl == nil {
+		// if data operation does not set ttlAfterFinished, return nil
+		return nil, nil
+	}
+
+	curTime := time.Now()
+	completionTime := opStatus.Conditions[0].LastProbeTime
+	expireTime := completionTime.Add(time.Duration(*ttl) * time.Second)
+	// calculate remainint time to clean up data operation
+	remaining := expireTime.Sub(curTime)
+	return &remaining, nil
+}
+
+func GetTTL(object client.Object, operateType datav1alpha1.OperationType) (ttl *int32, err error) {
+	switch operateType {
+	case datav1alpha1.DataBackupType:
+		dataBackup, ok := object.(*datav1alpha1.DataBackup)
+		if !ok {
+			return ttl, fmt.Errorf("object %v is not a DataBackup", object)
+		}
+		ttl = dataBackup.Spec.TTLSecondsAfterFinished
+	case datav1alpha1.DataLoadType:
+		dataLoad, ok := object.(*datav1alpha1.DataLoad)
+		if !ok {
+			return ttl, fmt.Errorf("object %v is not a DataLoad", object)
+		}
+		if dataLoad.Spec.Policy == datav1alpha1.Cron {
+			// do not clean up cron data operation
+			return ttl, nil
+		}
+		ttl = dataLoad.Spec.TTLSecondsAfterFinished
+	case datav1alpha1.DataMigrateType:
+		dataMigrate, ok := object.(*datav1alpha1.DataMigrate)
+		if !ok {
+			return ttl, fmt.Errorf("object %v is not a DataMigrate", object)
+		}
+		if dataMigrate.Spec.Policy == datav1alpha1.Cron {
+			return ttl, nil
+		}
+		ttl = dataMigrate.Spec.TTLSecondsAfterFinished
+	case datav1alpha1.DataProcessType:
+		dataProcess, ok := object.(*datav1alpha1.DataProcess)
+		if !ok {
+			return ttl, fmt.Errorf("object %v is not a DataProcess", object)
+		}
+		ttl = dataProcess.Spec.TTLSecondsAfterFinished
+	}
+	return ttl, nil
 }
