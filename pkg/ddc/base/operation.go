@@ -20,6 +20,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/go-logr/logr"
 	v1 "k8s.io/api/core/v1"
 	utilpointer "k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -192,22 +193,15 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 	log := ctx.Log.WithName("reconcileComplete")
 
 	// 0. clean up if ttl after finished expired
-	var remaining *time.Duration
+	var ttl *time.Duration
 	if utils.NeedCleanUp(object, opStatus, operation.GetOperationType()) {
 		var err error
-		remaining, err = utils.Timeleft(object, opStatus, operation.GetOperationType())
+		ttl, err = t.processTTL(object, opStatus, operation, log, ctx)
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to get remaining time to clean up for operation %s", operation.GetOperationType()))
 			return utils.RequeueIfError(err)
-		}
-		// if remaining time to clean up is not nil and less than 0, clean up data operation
-		if remaining != nil && *remaining <= 0 {
-			if err = ctx.Client.Delete(context.TODO(), object); err != nil && utils.IgnoreNotFound(err) != nil {
-				log.Error(err, "Failed to clean up data operation %s", operation.GetOperationType())
-				return utils.RequeueIfError(err)
-			}
-			// data operation has been deleted and no need to continue
-			log.Info("Data operation has been clean up")
+			//
+		} else if ttl != nil && *ttl <= 0 {
 			return utils.NoRequeue()
 		}
 	}
@@ -261,12 +255,32 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 	}
 
 	// 5. Requeue if data operation set ttl after finished and has not expired
-	if remaining != nil && *remaining > 0 {
-		log.V(1).Info("requeue after remaining time to clean up data operation", "remaining time", remaining)
-		return utils.RequeueAfterInterval(*remaining)
+	if ttl != nil && *ttl > 0 {
+		log.V(1).Info("requeue after remaining time to clean up data operation", "timeToLive", ttl)
+		return utils.RequeueAfterInterval(*ttl)
 	}
 
 	return utils.NoRequeue()
+}
+
+// processTTL processes the operations that need to be cleaned up based on the TTL.
+func (t *TemplateEngine) processTTL(object client.Object, opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface, log logr.Logger, ctx cruntime.ReconcileRequestContext) (ttl *time.Duration, err error) {
+	// Get the remaining time to clean up for the operation.
+	ttl, err = utils.Timeleft(object, opStatus, operation.GetOperationType())
+	if err != nil {
+		log.Error(err, fmt.Sprintf("Failed to get remaining time to clean up for operation %s", operation.GetOperationType()))
+		return
+	}
+
+	// If the remaining time is not nil and less than or equal to 0, clean up the data operation.
+	if ttl != nil && *ttl <= 0 {
+		if err = ctx.Client.Delete(context.TODO(), object); err != nil && utils.IgnoreNotFound(err) != nil {
+			log.Error(err, "Failed to clean up data operation %s", operation.GetOperationType())
+			return
+		}
+		log.Info("Data operation has been clean up")
+	}
+	return
 }
 
 func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, object client.Object,
@@ -274,22 +288,15 @@ func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, o
 	log := ctx.Log.WithName("reconcileFailed")
 
 	// 0. clean up if ttl after finished expired
-	var remaining *time.Duration
+	var ttl *time.Duration
 	if utils.NeedCleanUp(object, opStatus, operation.GetOperationType()) {
 		var err error
-		remaining, err = utils.Timeleft(object, opStatus, operation.GetOperationType())
+		ttl, err = t.processTTL(object, opStatus, operation, log, ctx)
 		if err != nil {
 			log.Error(err, fmt.Sprintf("Failed to get remaining time to clean up for operation %s", operation.GetOperationType()))
 			return utils.RequeueIfError(err)
-		}
-		// if remaining time to clean up is not nil and less than 0, clean up data operation
-		if remaining != nil && *remaining <= 0 {
-			if err = ctx.Client.Delete(context.TODO(), object); err != nil && utils.IgnoreNotFound(err) != nil {
-				log.Error(err, "Failed to clean up data operation %s", operation.GetOperationType())
-				return utils.RequeueIfError(err)
-			}
-			// data operation has been deleted and no need to continue
-			log.Info("Data operation has been clean up")
+			//
+		} else if ttl != nil && *ttl <= 0 {
 			return utils.NoRequeue()
 		}
 	}
@@ -327,9 +334,9 @@ func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, o
 	}
 
 	// 3. Requeue if data operation set ttl after finished and has not expired
-	if remaining != nil && *remaining > 0 {
-		log.V(1).Info("get remaining time to clean up data operation", "remaining time", remaining)
-		return utils.RequeueAfterInterval(*remaining)
+	if ttl != nil && *ttl > 0 {
+		log.V(1).Info("get remaining time to clean up data operation", "timeToLive", ttl)
+		return utils.RequeueAfterInterval(*ttl)
 	}
 	return utils.NoRequeue()
 }
