@@ -208,3 +208,15 @@ func (r *DataProcessReconciler) GetStatusHandler(object client.Object) dataopera
 	// TODO: Support dataProcess.Spec.Policy
 	return &OnceStatusHandler{Client: r.Client}
 }
+
+// GetTTL implements dataoperation.OperationReconcilerInterface.
+func (*DataProcessReconciler) GetTTL(object client.Object) (ttl *int32, err error) {
+	dataProcess, ok := object.(*datav1alpha1.DataProcess)
+	if !ok {
+		err = fmt.Errorf("%+v is not a type of DataProcess", object)
+		return
+	}
+
+	ttl = dataProcess.Spec.TTLSecondsAfterFinished
+	return
+}

@@ -54,6 +54,9 @@ type OperationReconcilerInterface interface {
 	RemoveTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset)
 
 	GetStatusHandler(object client.Object) StatusHandler
+
+	// GetTTL gets timeToLive
+	GetTTL(object client.Object) (ttl *int32, err error)
 }
 
 type StatusHandler interface {
