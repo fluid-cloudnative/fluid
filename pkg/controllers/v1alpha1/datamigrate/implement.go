@@ -113,3 +113,25 @@ func (r *DataMigrateReconciler) GetStatusHandler(obj client.Object) dataoperatio
 		return nil
 	}
 }
+
+// GetTTL implements dataoperation.OperationReconcilerInterface.
+func (*DataMigrateReconciler) GetTTL(object client.Object) (ttl *int32, err error) {
+	dataMigrate, ok := object.(*datav1alpha1.DataMigrate)
+	if !ok {
+		err = fmt.Errorf("%+v is not a type of DataMigrate", object)
+		return
+	}
+
+	policy := dataMigrate.Spec.Policy
+	switch policy {
+	case datav1alpha1.Once:
+		ttl = dataMigrate.Spec.TTLSecondsAfterFinished
+	case datav1alpha1.Cron, datav1alpha1.OnEvent:
+		// For Cron and OnEvent policies, no TTL is provided
+		ttl = nil
+	default:
+		err = fmt.Errorf("unknown policy type: %s", policy)
+	}
+
+	return
+}
