@@ -34,6 +34,8 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
+const cleanupErrorMsg = "Failed to get remaining time to clean up for operation %s"
+
 func (t *TemplateEngine) Operate(ctx cruntime.ReconcileRequestContext, object client.Object, opStatus *datav1alpha1.OperationStatus,
 	operation dataoperation.OperationReconcilerInterface) (ctrl.Result, error) {
 	operateType := operation.GetOperationType()
@@ -198,7 +200,7 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 		var err error
 		ttl, err = t.processTTL(object, opStatus, operation, log, ctx)
 		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to get remaining time to clean up for operation %s", operation.GetOperationType()))
+			log.Error(err, fmt.Sprintf(cleanupErrorMsg, operation.GetOperationType()))
 			return utils.RequeueIfError(err)
 			//
 		} else if ttl != nil && *ttl <= 0 {
@@ -268,7 +270,7 @@ func (t *TemplateEngine) processTTL(object client.Object, opStatus *datav1alpha1
 	// Get the remaining time to clean up for the operation.
 	ttl, err = utils.Timeleft(object, opStatus, operation.GetOperationType())
 	if err != nil {
-		log.Error(err, fmt.Sprintf("Failed to get remaining time to clean up for operation %s", operation.GetOperationType()))
+		log.Error(err, fmt.Sprintf(cleanupErrorMsg, operation.GetOperationType()))
 		return
 	}
 
@@ -293,7 +295,7 @@ func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, o
 		var err error
 		ttl, err = t.processTTL(object, opStatus, operation, log, ctx)
 		if err != nil {
-			log.Error(err, fmt.Sprintf("Failed to get remaining time to clean up for operation %s", operation.GetOperationType()))
+			log.Error(err, fmt.Sprintf(cleanupErrorMsg, operation.GetOperationType()))
 			return utils.RequeueIfError(err)
 			//
 		} else if ttl != nil && *ttl <= 0 {
