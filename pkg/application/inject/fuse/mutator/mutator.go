@@ -8,16 +8,19 @@ import (
 )
 
 type FluidObjectMutator interface {
-	Mutate() error
+	Mutate() (*MutatingPodSpecs, error)
 }
 
+// MutatingContext describes all the information required for mutating the specs
 type MutatingContext struct {
+	// info required for the mutation
 	pvcName     string
 	runtimeInfo base.RuntimeInfoInterface
 	template    *common.FuseInjectionTemplate
 	options     common.FuseSidecarInjectOption
 	nameSuffix  string
 
+	// stateful variables shared across the mutation
 	appendedVolumeNames         map[string]string
 	datasetUsedInContainers     bool
 	datasetUsedInInitContainers bool
@@ -25,6 +28,7 @@ type MutatingContext struct {
 	specs *MutatingPodSpecs
 }
 
+// MutatingPodSpecs stores all the mutable properties for a FluidObject like a Pod.
 type MutatingPodSpecs struct {
 	Volumes        []corev1.Volume
 	VolumeMounts   []corev1.VolumeMount

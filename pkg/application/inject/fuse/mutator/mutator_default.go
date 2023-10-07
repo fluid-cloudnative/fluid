@@ -23,35 +23,35 @@ type DefaultMutator struct {
 
 var _ FluidObjectMutator = &DefaultMutator{}
 
-func (mutator *DefaultMutator) Mutate() error {
+func (mutator *DefaultMutator) Mutate() (*MutatingPodSpecs, error) {
 	// 1. prepare platform-specific resources
 	if err := mutator.prepareResources(); err != nil {
-		return err
+		return nil, err
 	}
 
 	// 2. mutate & append volumes
 	if err := mutator.mutateDatasetVolume(); err != nil {
-		return err
+		return nil, err
 	}
 
 	// 3. append volumes required by fuse sidecar container
 	if err := mutator.appendFuseSidecarVolumes(); err != nil {
-		return err
+		return nil, err
 	}
 
 	if mutator.datasetUsedInContainers {
 		if err := mutator.prependFuseContainer(false /* asInit */); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	if mutator.datasetUsedInInitContainers {
 		if err := mutator.prependFuseContainer(true /* asInit */); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	return mutator.specs, nil
 }
 
 func (mutator *DefaultMutator) prepareResources() error {
