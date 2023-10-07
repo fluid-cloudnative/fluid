@@ -23,6 +23,14 @@ type DefaultMutator struct {
 
 var _ FluidObjectMutator = &DefaultMutator{}
 
+func NewDefaultMutator(ctx MutatingContext, client client.Client, log logr.Logger) FluidObjectMutator {
+	return &DefaultMutator{
+		MutatingContext: ctx,
+		client:          client,
+		log:             log,
+	}
+}
+
 func (mutator *DefaultMutator) Mutate() (*MutatingPodSpecs, error) {
 	// 1. prepare platform-specific resources
 	if err := mutator.prepareResources(); err != nil {
