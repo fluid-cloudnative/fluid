@@ -27,6 +27,7 @@ import (
 
 func TestTimeleft(t *testing.T) {
 	ttl := int32(10)
+	condtionTime := v1.NewTime(time.Now())
 	testcase := []struct {
 		name              string
 		dataload          datav1alpha1.DataLoad
@@ -43,8 +44,9 @@ func TestTimeleft(t *testing.T) {
 				Status: datav1alpha1.OperationStatus{
 					Conditions: []datav1alpha1.Condition{
 						{
-							Type:          common.Complete,
-							LastProbeTime: v1.NewTime(time.Now()),
+							Type:               common.Complete,
+							LastProbeTime:      condtionTime,
+							LastTransitionTime: condtionTime,
 						},
 					},
 				},

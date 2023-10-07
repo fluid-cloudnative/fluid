@@ -26,7 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func InstallDataOperationHelmIfNotExist(ctx cruntime.ReconcileRequestContext, object client.Object, operation dataoperation.OperationInterface,
+func InstallDataOperationHelmIfNotExist(ctx cruntime.ReconcileRequestContext, object client.Object, operation dataoperation.OperationReconcilerInterface,
 	yamlGenerator DataOperatorYamlGenerator) (err error) {
 	log := ctx.Log.WithName("InstallDataOperationHelmIfNotExist")
 

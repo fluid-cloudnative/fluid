@@ -24,8 +24,8 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/runtime"
 )
 
-// OperationInterface the interface of data operation crd
-type OperationInterface interface {
+// OperationReconcilerInterface the interface of data operation crd
+type OperationReconcilerInterface interface {
 	// GetTargetDataset get the target dataset of the data operation
 	GetTargetDataset(object client.Object) (*datav1alpha1.Dataset, error)
 

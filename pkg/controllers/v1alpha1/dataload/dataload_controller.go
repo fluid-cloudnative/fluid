@@ -18,6 +18,7 @@ package dataload
 
 import (
 	"context"
+
 	"github.com/fluid-cloudnative/fluid/pkg/utils/compatibility"
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -48,7 +49,7 @@ type DataLoadReconciler struct {
 	*controllers.OperationReconciler
 }
 
-var _ dataoperation.OperationInterface = &DataLoadReconciler{}
+var _ dataoperation.OperationReconcilerInterface = &DataLoadReconciler{}
 
 // NewDataLoadReconciler returns a DataLoadReconciler
 func NewDataLoadReconciler(client client.Client,

@@ -150,7 +150,8 @@ func Timeleft(object client.Object, opStatus *datav1alpha1.OperationStatus, oper
 	}
 
 	curTime := time.Now()
-	completionTime := opStatus.Conditions[0].LastProbeTime
+	// completionTime := opStatus.Conditions[0].LastProbeTime
+	completionTime := opStatus.Conditions[0].LastTransitionTime
 	expireTime := completionTime.Add(time.Duration(*ttl) * time.Second)
 	// calculate remainint time to clean up data operation
 	remaining := expireTime.Sub(curTime)
