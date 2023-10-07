@@ -51,11 +51,11 @@ type OperationReconciler struct {
 	mutex *sync.Mutex
 
 	// Real implement
-	implement dataoperation.OperationInterface
+	implement dataoperation.OperationReconcilerInterface
 }
 
 // NewDataOperationReconciler creates the default OperationReconciler
-func NewDataOperationReconciler(operationInterface dataoperation.OperationInterface, client client.Client,
+func NewDataOperationReconciler(operationReconcilerInterface dataoperation.OperationReconcilerInterface, client client.Client,
 	log logr.Logger, recorder record.EventRecorder) *OperationReconciler {
 
 	r := &OperationReconciler{
@@ -64,7 +64,7 @@ func NewDataOperationReconciler(operationInterface dataoperation.OperationInterf
 		Log:       log,
 		mutex:     &sync.Mutex{},
 		engines:   map[string]base.Engine{},
-		implement: operationInterface,
+		implement: operationReconcilerInterface,
 	}
 	return r
 }

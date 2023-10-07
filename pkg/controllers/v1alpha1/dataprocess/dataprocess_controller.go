@@ -44,7 +44,7 @@ type DataProcessReconciler struct {
 	*controllers.OperationReconciler
 }
 
-var _ dataoperation.OperationInterface = &DataProcessReconciler{}
+var _ dataoperation.OperationReconcilerInterface = &DataProcessReconciler{}
 
 func NewDataProcessReconciler(client client.Client,
 	log logr.Logger,
