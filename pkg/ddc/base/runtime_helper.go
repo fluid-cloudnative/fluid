@@ -24,6 +24,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/scripts/poststart"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -50,6 +51,42 @@ var (
 
 func init() {
 	fuseDeviceResourceName = utils.GetStringValueFromEnv(common.EnvFuseDeviceResourceName, common.DefaultFuseDeviceResourceName)
+}
+
+func (info *RuntimeInfo) GetFuseContainerTemplate() (template *common.FuseInjectionTemplate, err error) {
+	if utils.IsTimeTrackerDebugEnabled() {
+		defer utils.TimeTrack(time.Now(), "RuntimeInfo.GetFuseContainerTemplate",
+			"runtime.name", info.name, "runtime.namespace", info.namespace)
+	}
+
+	ds, err := info.getFuseDaemonset()
+	if err != nil {
+		return template, err
+	}
+
+	if len(ds.Spec.Template.Spec.Containers) <= 0 {
+		return template, fmt.Errorf("the length of containers of fuse daemonset \"%s/%s\" should not be 0", ds.Namespace, ds.Name)
+	}
+
+	template = &common.FuseInjectionTemplate{
+		FuseContainer: ds.Spec.Template.Spec.Containers[0],
+		VolumesToAdd:  utils.FilterVolumesByVolumeMounts(ds.Spec.Template.Spec.Volumes, ds.Spec.Template.Spec.Containers[0].VolumeMounts),
+	}
+
+	template.FuseContainer.Name = common.FuseContainerName
+
+	mountPath, mountType, subPath, err := kubeclient.GetMountInfoFromVolumeClaim(info.client, info.name, info.namespace)
+	if err != nil {
+		return template, errors.Wrapf(err, "failed get mount info from PVC \"%s/%s\"", info.namespace, info.name)
+	}
+
+	template.FuseMountInfo = common.FuseMountInfo{
+		MountPath: mountPath,
+		FsType:    mountType,
+		SubPath:   subPath,
+	}
+
+	return template, nil
 }
 
 // GetTemplateToInjectForFuse gets template for fuse injection
