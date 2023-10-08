@@ -44,4 +44,5 @@ The companies/organizations are listed in alphabetical order grouped by the phas
 | [图森未来](https://cn.tusimple.com/) | [@bojian](jian.bo@tusen.ai) | Testing | Elastic Container Orchestration Service on k8s |
 | [得物](https://dewu.com/) | [@wangweidong](wangweidong@shizhuang-inc.com) | Staging | AI Platform(KubeAI) on k8s |
 | [KubeDL](https://kubedl.io/) | [@SimonCqk](cqk0100@gmail.com) | Production | AI Training/Big Data/Stream Media Platforms In Aicheng Technology At Large Scale |
+| [liblibai](https://liblib.ai) | [@zxj](zxj861216@163.com) | Production | AI Platform on k8s |
 
