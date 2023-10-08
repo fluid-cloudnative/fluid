@@ -24,23 +24,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// overrideDatasetVolumes overrides any PersistentVolumeClaim volume that possesses a claimName equals to datasetPvcName with newDatasetVolume.
-// it returns the affected volumes' name and the volumes after overriding.
-func (s *Injector) overrideDatasetVolumes(volumes []corev1.Volume, datasetPvcName string, newDatasetVolume corev1.Volume) ([]string, []corev1.Volume) {
-	var datasetVolumeNames []string
-
-	for i, volume := range volumes {
-		if volume.PersistentVolumeClaim != nil && volume.PersistentVolumeClaim.ClaimName == datasetPvcName {
-			name := volume.Name
-			volumes[i] = newDatasetVolume
-			volumes[i].Name = name
-			datasetVolumeNames = append(datasetVolumeNames, name)
-		}
-	}
-
-	return datasetVolumeNames, volumes
-}
-
 // appendVolumes adds new volumes from volumesToAdd into existing volumes. It also resolve volume name conflicts when appending volumes.
 // The func returns conflict names with mappings from old name to new name and the appended volumes.
 func (s *Injector) appendVolumes(volumes []corev1.Volume, volumesToAdd []corev1.Volume, nameSuffix string) (volumeNamesConflict map[string]string, retVolumes []corev1.Volume, err error) {

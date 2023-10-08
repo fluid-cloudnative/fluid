@@ -23,7 +23,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/webhook/cache"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/applications/defaultapp"
 	podapp "github.com/fluid-cloudnative/fluid/pkg/utils/applications/pod"
@@ -34,7 +33,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	unstructuredtype "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -209,24 +207,12 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeInfo base.RuntimeInfoInterface, containerNameSuffix string) (err error) {
 	// Cannot use objMeta.namespace as the expected namespace because it may be empty and not trustworthy before Kubernetes 1.24.
 	// For more details, see https://github.com/kubernetes/website/issues/30574#issuecomment-974896246
-	pvcNamespace := runtimeInfo.GetNamespace()
-	var (
-		pvcKey   = types.NamespacedName{Namespace: pvcNamespace, Name: pvcName}
-		template *common.FuseInjectionTemplate
-	)
-
-	// 1 skip if the pod does not mount any Fluid PVCs.
-	volumeMounts, err := pod.GetVolumeMounts()
+	specsToMutate, err := collectFluidObjectSpecs(pod)
 	if err != nil {
 		return err
 	}
 
-	volumes, err := pod.GetVolumes()
-	if err != nil {
-		return err
-	}
-
-	mountedPvc := kubeclient.PVCNames(volumeMounts, volumes)
+	mountedPvc := kubeclient.PVCNames(specsToMutate.VolumeMounts, specsToMutate.Volumes)
 	found := utils.ContainsString(mountedPvc, pvcName)
 	if !found {
 		s.log.Info("Not able to find the fluid pvc in pod spec, skip",
@@ -235,84 +221,48 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 		return nil
 	}
 
-	// 2. generate fuse container template for injection.
-	metaObj, err := pod.GetMetaObject()
-	if err != nil {
-		return err
-	}
-
 	option := common.FuseSidecarInjectOption{
-		EnableCacheDir:             utils.InjectCacheDirEnabled(metaObj.Labels),
-		EnableUnprivilegedSidecar:  utils.FuseSidecarUnprivileged(metaObj.Labels),
-		SkipSidecarPostStartInject: utils.SkipSidecarPostStartInject(metaObj.Labels),
+		EnableCacheDir:             utils.InjectCacheDirEnabled(specsToMutate.MetaObj.Labels),
+		EnableUnprivilegedSidecar:  utils.FuseSidecarUnprivileged(specsToMutate.MetaObj.Labels),
+		SkipSidecarPostStartInject: utils.SkipSidecarPostStartInject(specsToMutate.MetaObj.Labels),
 	}
 
-	template, exist := cache.GetFuseTemplateByKey(pvcKey, option)
-	if !exist {
-		template, err = runtimeInfo.GetTemplateToInjectForFuse(pvcName, pvcNamespace, option)
-		if err != nil {
-			return err
-		}
-		cache.AddFuseTemplateByKey(pvcKey, option, template)
-	}
+	// template, exist := cache.GetFuseTemplateByKey(pvcKey, option)
+	// if !exist {
+	// 	template, err = runtimeInfo.GetTemplateToInjectForFuse(pvcName, pvcNamespace, option)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	cache.AddFuseTemplateByKey(pvcKey, option, template)
+	// }
 
-	// 3. mutate volumes
-	// 3.a Override existing dataset volumes from PVC to hostPath
-	datasetVolumeNames, volumes := s.overrideDatasetVolumes(volumes, pvcName, template.VolumesToUpdate[0])
-
-	// 3.b append new volumes
-	volumeNamesConflict, volumes, err := s.appendVolumes(volumes, template.VolumesToAdd, containerNameSuffix)
+	// TODO: support cache for faster path to get fuse container template.
+	template, err := runtimeInfo.GetFuseContainerTemplate()
 	if err != nil {
 		return err
 	}
 
-	err = pod.SetVolumes(volumes)
+	mutator := &Mutator{
+		pvcName:     pvcName,
+		template:    template,
+		options:     option,
+		runtimeInfo: runtimeInfo,
+		nameSuffix:  containerNameSuffix,
+		client:      s.client,
+		log:         s.log,
+		Specs:       specsToMutate,
+	}
+
+	if err := mutator.PrepareMutation(); err != nil {
+		return err
+	}
+
+	mutatedSpecs, err := mutator.MutateAndReturn()
 	if err != nil {
 		return err
 	}
 
-	// 4. Add sidecar as the first container for containers
-	containers, err := pod.GetContainers()
-	if err != nil {
-		return err
-	}
-
-	// 4.a Set mount propagation to existing containers
-	// 4.b Add app postStart script to check fuse mount point(i.e. volumeMount.Path) ready
-	containers, needInjection := mutateVolumeMounts(containers, datasetVolumeNames)
-	// 4.c Add fuse container to First
-	if needInjection {
-		containerNameToInject := common.FuseContainerName + containerNameSuffix
-		containers = injectFuseContainerToFirst(containers, containerNameToInject, template, volumeNamesConflict)
-
-		s.log.V(1).Info("after injection",
-			"pvcName", pvcName,
-			"containers", containers)
-	}
-
-	err = pod.SetContainers(containers)
-	if err != nil {
-		return err
-	}
-
-	// 5. Add sidecar as the first container for initcontainers
-	initContainers, err := pod.GetInitContainers()
-	if err != nil {
-		return err
-	}
-	initContainers, needInjection = mutateVolumeMounts(initContainers, datasetVolumeNames)
-
-	if needInjection {
-		initContainerNameToInject := common.InitFuseContainerName + containerNameSuffix
-		initContainers = injectFuseContainerToFirst(initContainers, initContainerNameToInject, template, volumeNamesConflict)
-
-		s.log.V(1).Info("after injection",
-			"pvcName", pvcName,
-			"initContainers", initContainers)
-	}
-
-	err = pod.SetInitContainers(initContainers)
-	if err != nil {
+	if err := applyFluidObjectSpecs(pod, mutatedSpecs); err != nil {
 		return err
 	}
 

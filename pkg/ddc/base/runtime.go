@@ -83,6 +83,8 @@ type RuntimeInfoInterface interface {
 
 	GetTemplateToInjectForFuse(pvcName string, pvcNamespace string, option common.FuseSidecarInjectOption) (*common.FuseInjectionTemplate, error)
 
+	GetFuseContainerTemplate() (template *common.FuseInjectionTemplate, err error)
+
 	SetClient(client client.Client)
 
 	GetMetadataList() []datav1alpha1.Metadata
