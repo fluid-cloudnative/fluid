@@ -95,3 +95,6 @@ Add support for pvc subpath feature
 
 0.9.0
 Add JindoCache Engine
+
+0.9.1
+Fix JindoCache Engine sts token volume mount bug

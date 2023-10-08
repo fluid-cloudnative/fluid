@@ -92,3 +92,6 @@ Add support dataload with filter
 
 0.8.23
 Add support for pvc subpath feature
+
+0.8.24
+Fix jindofsx engine sts token volume mount bug
