@@ -20,10 +20,10 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/fluid-cloudnative/fluid/pkg/application/inject/fuse/mutator"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/webhook/cache"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/applications/defaultapp"
 	podapp "github.com/fluid-cloudnative/fluid/pkg/utils/applications/pod"
@@ -34,7 +34,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	unstructuredtype "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -209,11 +208,6 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeInfo base.RuntimeInfoInterface, containerNameSuffix string) (err error) {
 	// Cannot use objMeta.namespace as the expected namespace because it may be empty and not trustworthy before Kubernetes 1.24.
 	// For more details, see https://github.com/kubernetes/website/issues/30574#issuecomment-974896246
-	pvcNamespace := runtimeInfo.GetNamespace()
-	var (
-		pvcKey   = types.NamespacedName{Namespace: pvcNamespace, Name: pvcName}
-		template *common.FuseInjectionTemplate
-	)
 
 	// 1 skip if the pod does not mount any Fluid PVCs.
 	volumeMounts, err := pod.GetVolumeMounts()
@@ -247,74 +241,58 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 		SkipSidecarPostStartInject: utils.SkipSidecarPostStartInject(metaObj.Labels),
 	}
 
-	template, exist := cache.GetFuseTemplateByKey(pvcKey, option)
-	if !exist {
-		template, err = runtimeInfo.GetTemplateToInjectForFuse(pvcName, pvcNamespace, option)
-		if err != nil {
-			return err
-		}
-		cache.AddFuseTemplateByKey(pvcKey, option, template)
-	}
-
-	// 3. mutate volumes
-	// 3.a Override existing dataset volumes from PVC to hostPath
-	datasetVolumeNames, volumes := s.overrideDatasetVolumes(volumes, pvcName, template.VolumesToUpdate[0])
-
-	// 3.b append new volumes
-	volumeNamesConflict, volumes, err := s.appendVolumes(volumes, template.VolumesToAdd, containerNameSuffix)
+	// template, exist := cache.GetFuseTemplateByKey(pvcKey, option)
+	// if !exist {
+	// 	template, err = runtimeInfo.GetTemplateToInjectForFuse(pvcName, pvcNamespace, option)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	cache.AddFuseTemplateByKey(pvcKey, option, template)
+	// }
+	template, err := runtimeInfo.GetFuseContainerTemplate()
 	if err != nil {
 		return err
 	}
 
-	err = pod.SetVolumes(volumes)
-	if err != nil {
-		return err
-	}
-
-	// 4. Add sidecar as the first container for containers
 	containers, err := pod.GetContainers()
 	if err != nil {
 		return err
 	}
 
-	// 4.a Set mount propagation to existing containers
-	// 4.b Add app postStart script to check fuse mount point(i.e. volumeMount.Path) ready
-	containers, needInjection := mutateVolumeMounts(containers, datasetVolumeNames)
-	// 4.c Add fuse container to First
-	if needInjection {
-		containerNameToInject := common.FuseContainerName + containerNameSuffix
-		containers = injectFuseContainerToFirst(containers, containerNameToInject, template, volumeNamesConflict)
-
-		s.log.V(1).Info("after injection",
-			"pvcName", pvcName,
-			"containers", containers)
-	}
-
-	err = pod.SetContainers(containers)
-	if err != nil {
-		return err
-	}
-
-	// 5. Add sidecar as the first container for initcontainers
 	initContainers, err := pod.GetInitContainers()
 	if err != nil {
 		return err
 	}
-	initContainers, needInjection = mutateVolumeMounts(initContainers, datasetVolumeNames)
 
-	if needInjection {
-		initContainerNameToInject := common.InitFuseContainerName + containerNameSuffix
-		initContainers = injectFuseContainerToFirst(initContainers, initContainerNameToInject, template, volumeNamesConflict)
-
-		s.log.V(1).Info("after injection",
-			"pvcName", pvcName,
-			"initContainers", initContainers)
+	mutatingCtx := mutator.MutatingContext{
+		PvcName:     pvcName,
+		RuntimeInfo: runtimeInfo,
+		Template:    template,
+		Options:     option,
+		NameSuffix:  containerNameSuffix,
+		Specs: &mutator.MutatingPodSpecs{
+			Volumes:        volumes,
+			VolumeMounts:   volumeMounts,
+			MetaObj:        metaObj,
+			Containers:     containers,
+			InitContainers: initContainers,
+		},
 	}
 
-	err = pod.SetInitContainers(initContainers)
+	mutator, err := mutator.BuildMutator(mutatingCtx, s.client, s.log, getServerlessPlatform(metaObj))
 	if err != nil {
 		return err
 	}
+
+	specs, err := mutator.Mutate()
+	if err != nil {
+		return err
+	}
+
+	pod.SetMetaObject(specs.MetaObj)
+	pod.SetContainers(specs.Containers)
+	pod.SetInitContainers(specs.InitContainers)
+	pod.SetVolumes(specs.Volumes)
 
 	return nil
 }
@@ -374,4 +352,24 @@ func (s *Injector) labelInjectionDone(pod common.FluidObject) error {
 	}
 
 	return nil
+}
+
+func getServerlessPlatform(metaObj metav1.ObjectMeta) string {
+	if platform, ok := metaObj.Labels[utils.ServerlessPlatformKey]; ok {
+		if len(platform) != 0 {
+			return platform
+		} else {
+			return ""
+		}
+	}
+
+	if utils.ServerlessEnabled(metaObj.Labels) {
+		return string(mutator.PlatformDefault)
+	}
+
+	if utils.FuseSidecarUnprivileged(metaObj.Labels) {
+		return string(mutator.PlatformUnprivileged)
+	}
+
+	return ""
 }
