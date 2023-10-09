@@ -7,15 +7,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func BuildMockOperationReconcilerInterface(operationType datav1alpha1.OperationType) (operation OperationReconcilerInterface) {
+func BuildMockOperationReconcilerInterface(operationType datav1alpha1.OperationType, ttlSecondsAfterFinished *int32) (operation OperationReconcilerInterface) {
 
 	return &mockOperationReconciler{
-		operationType: operationType,
+		operationType:           operationType,
+		TTLSecondsAfterFinished: ttlSecondsAfterFinished,
 	}
 }
 
 type mockOperationReconciler struct {
-	operationType datav1alpha1.OperationType
+	operationType           datav1alpha1.OperationType
+	TTLSecondsAfterFinished *int32
 }
 
 // GetChartsDirectory implements OperationReconcilerInterface.
@@ -39,12 +41,12 @@ func (mockOperationReconciler) GetStatusHandler(object client.Object) StatusHand
 }
 
 // GetTTL implements OperationReconcilerInterface.
-func (mockOperationReconciler) GetTTL(object client.Object) (ttl *int32, err error) {
-	panic("unimplemented")
+func (m mockOperationReconciler) GetTTL(object client.Object) (ttl *int32, err error) {
+	return m.TTLSecondsAfterFinished, nil
 }
 
 // GetTargetDataset implements OperationReconcilerInterface.
-func (mockOperationReconciler) GetTargetDataset(object client.Object) (*datav1alpha1.Dataset, error) {
+func (m mockOperationReconciler) GetTargetDataset(object client.Object) (*datav1alpha1.Dataset, error) {
 	panic("unimplemented")
 }
 

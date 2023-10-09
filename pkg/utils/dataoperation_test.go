@@ -55,7 +55,7 @@ func TestTimeleft(t *testing.T) {
 				},
 			},
 			// operation:         dataoperation.BuildMockOperationReconcilerInterface(datav1alpha1.DataLoadType),
-			operation:      dataoperation.BuildMockOperationReconcilerInterface(datav1alpha1.DataLoadType),
+			operation:      dataoperation.BuildMockOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
 			validRemaining: true,
 			wantErr:        false,
 		},
@@ -71,7 +71,7 @@ func TestTimeleft(t *testing.T) {
 					},
 				},
 			},
-			operation: dataoperation.BuildMockOperationReconcilerInterface(datav1alpha1.DataLoadType),
+			operation: dataoperation.BuildMockOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
 
 			validRemaining: false,
 			wantErr:        false,
@@ -81,7 +81,7 @@ func TestTimeleft(t *testing.T) {
 			dataload: datav1alpha1.DataLoad{
 				Status: datav1alpha1.OperationStatus{},
 			},
-			operation: dataoperation.BuildMockOperationReconcilerInterface(datav1alpha1.DataLoadType),
+			operation: dataoperation.BuildMockOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
 
 			validRemaining: false,
 			wantErr:        false,
@@ -101,7 +101,7 @@ func TestTimeleft(t *testing.T) {
 					},
 				},
 			},
-			operation: dataoperation.BuildMockOperationReconcilerInterface(datav1alpha1.DataLoadType),
+			operation: dataoperation.BuildMockOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
 
 			validRemaining: false,
 			wantErr:        false,
@@ -135,14 +135,14 @@ func TestGetTTL(t *testing.T) {
 					TTLSecondsAfterFinished: &ttl,
 				},
 			},
-			operation: dataoperation.BuildMockOperationReconcilerInterface(datav1alpha1.DataLoadType),
+			operation: dataoperation.BuildMockOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
 			ttl:       &ttl,
 			wantErr:   false,
 		},
 		{
 			name:      "no ttl",
 			dataload:  datav1alpha1.DataLoad{},
-			operation: dataoperation.BuildMockOperationReconcilerInterface(datav1alpha1.DataLoadType),
+			operation: dataoperation.BuildMockOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
 			ttl:       nil,
 			wantErr:   false,
 		},
