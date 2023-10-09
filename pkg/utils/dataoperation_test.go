@@ -189,6 +189,7 @@ func TestNeedCleanUp(t *testing.T) {
 					},
 				},
 			},
+			operation:   dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
 			needCleanUp: true,
 		},
 		{
@@ -199,6 +200,7 @@ func TestNeedCleanUp(t *testing.T) {
 				},
 				Status: datav1alpha1.OperationStatus{},
 			},
+			operation:   dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
 			needCleanUp: false,
 		},
 		{
@@ -214,13 +216,14 @@ func TestNeedCleanUp(t *testing.T) {
 					},
 				},
 			},
+			operation:   dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataLoadType, nil),
 			needCleanUp: false,
 		},
 	}
 	for _, test := range testcase {
 		needCleanUp := NeedCleanUp(&test.dataload, &test.dataload.Status, test.operation)
 		if needCleanUp != test.needCleanUp {
-			t.Errorf("NeedCleanUp want %v, get %v", test.needCleanUp, needCleanUp)
+			t.Errorf("Testcase %s:NeedCleanUp want %v, get %v", test.name, test.needCleanUp, needCleanUp)
 		}
 	}
 }
