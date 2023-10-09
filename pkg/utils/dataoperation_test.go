@@ -54,8 +54,8 @@ func TestTimeleft(t *testing.T) {
 					},
 				},
 			},
-			// operation:         dataoperation.BuildMockOperationReconcilerInterface(datav1alpha1.DataLoadType),
-			operation:      dataoperation.BuildMockOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
+			// operation:         dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataLoadType),
+			operation:      dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
 			validRemaining: true,
 			wantErr:        false,
 		},
@@ -71,7 +71,7 @@ func TestTimeleft(t *testing.T) {
 					},
 				},
 			},
-			operation: dataoperation.BuildMockOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
+			operation: dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
 
 			validRemaining: false,
 			wantErr:        false,
@@ -81,7 +81,7 @@ func TestTimeleft(t *testing.T) {
 			dataload: datav1alpha1.DataLoad{
 				Status: datav1alpha1.OperationStatus{},
 			},
-			operation: dataoperation.BuildMockOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
+			operation: dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
 
 			validRemaining: false,
 			wantErr:        false,
@@ -101,7 +101,7 @@ func TestTimeleft(t *testing.T) {
 					},
 				},
 			},
-			operation: dataoperation.BuildMockOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
+			operation: dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
 
 			validRemaining: false,
 			wantErr:        false,
@@ -135,14 +135,14 @@ func TestGetTTL(t *testing.T) {
 					TTLSecondsAfterFinished: &ttl,
 				},
 			},
-			operation: dataoperation.BuildMockOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
+			operation: dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
 			ttl:       &ttl,
 			wantErr:   false,
 		},
 		{
 			name:      "no ttl",
 			dataload:  datav1alpha1.DataLoad{},
-			operation: dataoperation.BuildMockOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
+			operation: dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataLoadType, nil),
 			ttl:       nil,
 			wantErr:   false,
 		},
@@ -150,6 +150,7 @@ func TestGetTTL(t *testing.T) {
 			name:              "wrong data operation type",
 			dataload:          datav1alpha1.DataLoad{},
 			dataoperationType: datav1alpha1.DataMigrateType,
+			operation:         dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataMigrateType, nil),
 			ttl:               nil,
 			wantErr:           true,
 		},
@@ -157,10 +158,10 @@ func TestGetTTL(t *testing.T) {
 	for _, test := range testcase {
 		ttl, err := GetTTL(&test.dataload, test.operation)
 		if ttl != test.ttl {
-			t.Errorf("Get wrong ttl value, want %v, get %v", test.ttl, ttl)
+			t.Errorf("Testcase %s: Get wrong ttl value, want %v, get %v", test.name, test.ttl, ttl)
 		}
 		if test.wantErr != (err != nil) {
-			t.Errorf("GetTTL want error %v, get error %v", test.wantErr, err)
+			t.Errorf("Testcase %s: GetTTL want error %v, get error %v", test.name, test.wantErr, err)
 		}
 	}
 }
