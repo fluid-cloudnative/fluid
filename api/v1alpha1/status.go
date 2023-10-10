@@ -128,6 +128,9 @@ type RuntimeStatus struct {
 
 	// MountPoints represents the mount points specified in the bounded dataset
 	Mounts []Mount `json:"mounts,omitempty"`
+
+	// CacheAffinity represents the runtime worker pods node affinity including node selector
+	CacheAffinity *corev1.NodeAffinity `json:"cacheAffinity,omitempty"`
 }
 
 // OperationStatus defines the observed state of operation

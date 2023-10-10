@@ -5115,12 +5115,18 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeStatus(ref common.Refere
 							},
 						},
 					},
+					"cacheAffinity": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CacheAffinity represents the runtime worker pods node affinity including node selector",
+							Ref:         ref("k8s.io/api/core/v1.NodeAffinity"),
+						},
+					},
 				},
 				Required: []string{"valueFile", "masterPhase", "workerPhase", "desiredWorkerNumberScheduled", "currentWorkerNumberScheduled", "workerNumberReady", "desiredMasterNumberScheduled", "currentMasterNumberScheduled", "masterNumberReady", "fusePhase", "currentFuseNumberScheduled", "desiredFuseNumberScheduled", "fuseNumberReady"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.APIGatewayStatus", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeCondition", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.APIGatewayStatus", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeCondition", "k8s.io/api/core/v1.NodeAffinity", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
