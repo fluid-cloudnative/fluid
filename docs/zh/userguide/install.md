@@ -189,3 +189,11 @@ helm install --set csi.kubelet.rootDir=<kubelet-root-dir> \
 > ps -ef | grep $(which kubelet) | grep root-dir
 > ```
 > 如果上述命令未找到对应结果，则说明kubelet根路径为默认值（/var/lib/kubelet），与Fluid设置的默认值一致。
+
+4. 如果您使用[Sealer](http://sealer.cool)安装Kubernetes集群，Sealer默认会使用`apiserver.cluster.local`作为API Server的地址，并将其写入`kubelet.conf`文件中，同时利用节点本地的`hosts`文件来查找该地址对应的IP地址，这会导致Fluid CSI Plugin无法找到API Server的IP地址。您可以使用如下命令将Fluid CSI Plugin设置为使用hostNetwork:
+```shell
+# 安装
+helm install fluid --set csi.config.hostNetwork=true fluid/fluid
+# 升级
+helm upgrade fluid --set csi.config.hostNetwork=true fluid/fluid
+```
