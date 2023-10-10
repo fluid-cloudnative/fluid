@@ -109,3 +109,54 @@ func GetIpAddressesOfPods(client client.Client, pods []corev1.Pod) (ipAddresses 
 
 	return GetIpAddressesOfNodes(nodes), err
 }
+
+func MergeNodeSelectorAndNodeAffinity(nodeSelector map[string]string, podAffinity *corev1.Affinity) (nodeAffinity *corev1.NodeAffinity) {
+	if podAffinity != nil && podAffinity.NodeAffinity != nil {
+		nodeAffinity = podAffinity.NodeAffinity.DeepCopy()
+	}
+
+	// no node affinity
+	if nodeAffinity == nil {
+		nodeAffinity = &corev1.NodeAffinity{
+			RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+				// required field, can not be omitted
+				NodeSelectorTerms: []corev1.NodeSelectorTerm{},
+			},
+		}
+	}
+
+	// has preferred affinity, but no required affinity
+	if nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution == nil {
+		nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution = &corev1.NodeSelector{
+			// required field, can not be omitted
+			NodeSelectorTerms: []corev1.NodeSelectorTerm{},
+		}
+	}
+
+	var expressions []corev1.NodeSelectorRequirement
+	for key, value := range nodeSelector {
+		expressions = append(expressions,
+			corev1.NodeSelectorRequirement{
+				Key:      key,
+				Operator: corev1.NodeSelectorOpIn,
+				Values:   []string{value},
+			},
+		)
+	}
+	// inject to MatchExpressions for And relation.
+	if len(expressions) > 0 {
+		if len(nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) == 0 {
+			nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms = []corev1.NodeSelectorTerm{
+				{
+					MatchExpressions: expressions,
+				},
+			}
+		} else {
+			for idx := range nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms {
+				nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[idx].MatchExpressions =
+					append(nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[idx].MatchExpressions, expressions...)
+			}
+		}
+	}
+	return
+}

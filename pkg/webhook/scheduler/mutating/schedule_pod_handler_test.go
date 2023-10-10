@@ -1111,6 +1111,21 @@ func TestAddScheduleInfoToPodWithReferencedDataset(t *testing.T) {
 			ihjectCacheAffinity: true,
 		},
 	}
+	tieredLocalityConfigMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      common.TieredLocalityConfigMapName,
+			Namespace: common.NamespaceFluidSystem,
+		},
+		Data: map[string]string{
+			"tieredLocality": "" +
+				"preferred:\n" +
+				"  # fluid existed node affinity, the name can not be modified.\n" +
+				"  - name: fluid.io/node\n" +
+				"    weight: 100\n" +
+				"required:\n" +
+				"  - fluid.io/node\n",
+		},
+	}
 
 	s := runtime.NewScheme()
 	_ = corev1.AddToScheme(s)
@@ -1119,7 +1134,7 @@ func TestAddScheduleInfoToPodWithReferencedDataset(t *testing.T) {
 	for _, testcase := range testcases {
 		objs := []runtime.Object{}
 		objs = append(objs, testcase.fuse, testcase.pv, testcase.pvc, testcase.dataset,
-			testcase.refDataset, testcase.refPv, testcase.refPvc)
+			testcase.refDataset, testcase.refPv, testcase.refPvc, tieredLocalityConfigMap)
 
 		runtime := &datav1alpha1.JindoRuntime{
 			ObjectMeta: metav1.ObjectMeta{
