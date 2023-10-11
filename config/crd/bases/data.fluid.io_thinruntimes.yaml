@@ -651,16 +651,17 @@ spec:
                         mediumtype:
                           description: 'Medium Type of the tier. One of the three
                             types: `MEM`, `SSD`, `HDD`'
-                          enum:
-                          - MEM
-                          - SSD
-                          - HDD
                           type: string
                         path:
                           description: 'File paths to be used for the tier. Multiple
                             paths are supported. Multiple paths should be separated
                             with comma. For example: "/mnt/cache1,/mnt/cache2".'
-                          minLength: 1
+                          type: string
+                        pvc:
+                          description: PersistentVolumeClaim represents where the
+                            cache data will be persisted The Path filed can be filled
+                            with the data path actually provisioned from the PVC automatically
+                            after the PersistentVolumeClaim is Bound
                           type: string
                         quota:
                           anyOf:
@@ -2292,8 +2293,6 @@ spec:
                           - hostPath
                           - emptyDir
                           type: string
-                      required:
-                      - mediumtype
                       type: object
                     type: array
                 type: object

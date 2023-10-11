@@ -17,10 +17,12 @@ limitations under the License.
 package handler
 
 import (
+	alluxiomutating "github.com/fluid-cloudnative/fluid/pkg/webhook/runtime/alluxio/mutating"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/scheduler/mutating"
 )
 
 func init() {
 	addHandlers(mutating.HandlerMap)
+	addHandlers(alluxiomutating.HandlerMap)
 	// addHandlers(validating.HandlerMap)
 }

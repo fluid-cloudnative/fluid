@@ -17,7 +17,7 @@ LOADER_IMG ?= ${IMG_REPO}/fluid-dataloader
 INIT_USERS_IMG ?= ${IMG_REPO}/init-users
 WEBHOOK_IMG ?= ${IMG_REPO}/fluid-webhook
 CRD_UPGRADER_IMG?= ${IMG_REPO}/fluid-crd-upgrader
-GO_MODULE ?= off
+GO_MODULE ?= on
 GC_FLAGS ?= -gcflags="all=-N -l"
 ARCH ?= amd64
 

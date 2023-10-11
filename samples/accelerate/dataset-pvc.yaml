@@ -1,0 +1,22 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: Dataset
+metadata:
+  name: hbase
+spec:
+  mounts:
+    - mountPoint: https://mirrors.bit.edu.cn/apache/hbase/stable/
+      name: hbase
+      path: /
+---
+apiVersion: data.fluid.io/v1alpha1
+kind: AlluxioRuntime
+metadata:
+  name: hbase
+spec:
+  replicas: 2
+  tieredstore:
+    levels:
+      - pvc: <pvc_namespace>/<pvc_name>
+        quota: 2Gi
+        high: "0.95"
+        low: "0.7"

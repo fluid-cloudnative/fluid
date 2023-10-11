@@ -32,9 +32,7 @@ type Level struct {
 	// Alias string `json:"alias,omitempty"`
 
 	// Medium Type of the tier. One of the three types: `MEM`, `SSD`, `HDD`
-	// +kubebuilder:validation:Enum=MEM;SSD;HDD
-	// +required
-	MediumType common.MediumType `json:"mediumtype"`
+	MediumType common.MediumType `json:"mediumtype,omitempty"`
 
 	// VolumeType is the volume type of the tier. Should be one of the three types: `hostPath`, `emptyDir` and `volumeTemplate`.
 	// If not set, defaults to hostPath.
@@ -49,9 +47,12 @@ type Level struct {
 
 	// File paths to be used for the tier. Multiple paths are supported.
 	// Multiple paths should be separated with comma. For example: "/mnt/cache1,/mnt/cache2".
-	// +kubebuilder:validation:MinLength=1
-	// +required
 	Path string `json:"path,omitempty"`
+
+	// PersistentVolumeClaim represents where the cache data will be persisted
+	// The Path filed can be filled with the data path actually provisioned from the PVC automatically
+	// after the PersistentVolumeClaim is Bound
+	PersistentVolumeClaim string `json:"pvc,omitempty"`
 
 	// Quota for the whole tier. (e.g. 100Gi)
 	// Please note that if there're multiple paths used for this tierstore,
