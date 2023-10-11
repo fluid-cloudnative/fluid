@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/fluid-cloudnative/fluid/pkg/application/inject/fuse/mutator"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -207,7 +208,7 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeInfo base.RuntimeInfoInterface, containerNameSuffix string) (err error) {
 	// Cannot use objMeta.namespace as the expected namespace because it may be empty and not trustworthy before Kubernetes 1.24.
 	// For more details, see https://github.com/kubernetes/website/issues/30574#issuecomment-974896246
-	specsToMutate, err := collectFluidObjectSpecs(pod)
+	specsToMutate, err := mutator.CollectFluidObjectSpecs(pod)
 	if err != nil {
 		return err
 	}
@@ -242,27 +243,37 @@ func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeI
 		return err
 	}
 
-	mutator := &Mutator{
-		pvcName:     pvcName,
-		template:    template,
-		options:     option,
-		runtimeInfo: runtimeInfo,
-		nameSuffix:  containerNameSuffix,
-		client:      s.client,
-		log:         s.log,
+	mutatorBuildOpts := mutator.MutatorBuildOpts{
+		PvcName:     pvcName,
+		Template:    template,
+		Options:     option,
+		RuntimeInfo: runtimeInfo,
+		NameSuffix:  containerNameSuffix,
+		Client:      s.client,
+		Log:         s.log,
 		Specs:       specsToMutate,
 	}
 
-	if err := mutator.PrepareMutation(); err != nil {
-		return err
+	platform := s.getServerlessPlatformFromMeta(specsToMutate.MetaObj)
+	if len(platform) == 0 {
+		return fmt.Errorf("can't find any supported platform-specific mutator in pod's metadata")
 	}
 
-	mutatedSpecs, err := mutator.MutateAndReturn()
+	mtt, err := mutator.BuildMutator(mutatorBuildOpts, platform)
 	if err != nil {
 		return err
 	}
 
-	if err := applyFluidObjectSpecs(pod, mutatedSpecs); err != nil {
+	if err := mtt.PrepareMutation(); err != nil {
+		return err
+	}
+
+	mutatedSpecs, err := mtt.Mutate()
+	if err != nil {
+		return err
+	}
+
+	if err := mutator.ApplyFluidObjectSpecs(pod, mutatedSpecs); err != nil {
 		return err
 	}
 
@@ -324,4 +335,8 @@ func (s *Injector) labelInjectionDone(pod common.FluidObject) error {
 	}
 
 	return nil
+}
+
+func (s *Injector) getServerlessPlatformFromMeta(metaObj metav1.ObjectMeta) string {
+	return utils.GetServerlessPlatfrom(metaObj.Labels)
 }
