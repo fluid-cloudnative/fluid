@@ -49,10 +49,11 @@ func (t *TieredLocality) getTieredLocalityNames() (names map[string]bool) {
 	return
 }
 
+// hasRepeatedLocality whether pod specified the same label as tiered locality
 func (t *TieredLocality) hasRepeatedLocality(pod *corev1.Pod) bool {
 	localityKeys := t.getTieredLocalityNames()
 
-	if pod.Spec.Affinity == nil || pod.Spec.Affinity.NodeAffinity == nil {
+	if pod.Spec.Affinity == nil && pod.Spec.Affinity.NodeAffinity == nil && pod.Spec.NodeSelector == nil {
 		return false
 	}
 
@@ -72,6 +73,12 @@ func (t *TieredLocality) hasRepeatedLocality(pod *corev1.Pod) bool {
 			if _, ok := localityKeys[expression.Key]; ok {
 				return true
 			}
+		}
+	}
+
+	for name := range pod.Spec.NodeSelector {
+		if _, ok := localityKeys[name]; ok {
+			return true
 		}
 	}
 	return false
