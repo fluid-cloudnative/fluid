@@ -155,6 +155,7 @@ func (t ThinEngine) updateFusePod() (err error) {
 		err := t.Client.Update(context.TODO(), podToUpdate)
 		if err != nil {
 			t.Log.Error(err, fmt.Sprintf("Fuse pod %s update failed", podToUpdate.GetName()))
+			return err
 		}
 	}
 	return

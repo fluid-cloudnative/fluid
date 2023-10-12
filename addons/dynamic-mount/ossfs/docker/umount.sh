@@ -6,6 +6,6 @@ for folder in ${MOUNT_POINT}/*; do
     if [ -d "$folder" ]; then
         echo "umount_all: umount ${folder}"
         umount ${folder}
-        rm -rf ${folder}
+        rmdir ${folder}
     fi
 done
