@@ -154,6 +154,14 @@ type FuseInjectionTemplate struct {
 	VolumeMountsToAdd    []corev1.VolumeMount
 	VolumesToUpdate      []corev1.Volume
 	VolumesToAdd         []corev1.Volume
+
+	FuseMountInfo FuseMountInfo
+}
+
+type FuseMountInfo struct {
+	SubPath   string
+	MountPath string
+	FsType    string
 }
 
 // FuseSidecarInjectOption are options for webhook to inject fuse sidecar containers

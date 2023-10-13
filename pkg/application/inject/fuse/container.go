@@ -17,36 +17,8 @@ limitations under the License.
 package fuse
 
 import (
-	"strings"
-
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	corev1 "k8s.io/api/core/v1"
 )
-
-func injectFuseContainerToFirst(containers []corev1.Container, fuseContainerName string,
-	template *common.FuseInjectionTemplate,
-	volumeNamesConflict map[string]string) []corev1.Container {
-	fuseContainer := template.FuseContainer
-	fuseContainer.Name = fuseContainerName
-
-	if strings.HasPrefix(fuseContainerName, common.InitFuseContainerName) {
-		fuseContainer.Lifecycle = nil
-		// TODO(zhihao): for init container, it will inject a customized command
-		fuseContainer.Command = []string{"sleep"}
-		fuseContainer.Args = []string{"2s"}
-	}
-
-	for oldName, newName := range volumeNamesConflict {
-		for i, volumeMount := range fuseContainer.VolumeMounts {
-			if volumeMount.Name == oldName {
-				fuseContainer.VolumeMounts[i].Name = newName
-			}
-		}
-	}
-
-	containers = append([]corev1.Container{fuseContainer}, containers...)
-	return containers
-}
 
 func collectAllContainerNames(pod common.FluidObject) ([]string, error) {
 	var allContainerNames []string
