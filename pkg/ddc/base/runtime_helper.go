@@ -28,25 +28,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
-var fuseDeviceResourceName string
-
-var (
-	// datavolume-, volume-localtime for JindoFS
-	// mem, ssd, hdd for Alluxio and GooseFS
-	// cache-dir for JuiceFS
-	cacheDirNames = []string{"datavolume-", "volume-localtime", "cache-dir", "mem", "ssd", "hdd"}
-
-	// hostpath fuse mount point for Alluxio, JindoFS, GooseFS and JuiceFS
-	hostMountNames = []string{"alluxio-fuse-mount", "jindofs-fuse-mount", "goosefs-fuse-mount", "juicefs-fuse-mount", "thin-fuse-mount", "efc-fuse-mount", "efc-sock"}
-
-	// fuse devices for Alluxio, JindoFS, GooseFS
-	hostFuseDeviceNames = []string{"alluxio-fuse-device", "jindofs-fuse-device", "goosefs-fuse-device", "thin-fuse-device"}
-)
-
-func init() {
-	fuseDeviceResourceName = utils.GetStringValueFromEnv(common.EnvFuseDeviceResourceName, common.DefaultFuseDeviceResourceName)
-}
-
 // GetFuseContainerTemplate collects the fuse container spec from the runtime's fuse daemonSet spec. The function summarizes fuse related information into
 // the template and returns it. The template then can be freely modified according to need of the serverless platform.
 func (info *RuntimeInfo) GetFuseContainerTemplate() (template *common.FuseInjectionTemplate, err error) {
@@ -265,7 +246,3 @@ func (info *RuntimeInfo) getFuseDaemonset() (ds *appsv1.DaemonSet, err error) {
 
 // 	return nil
 // }
-
-func getFuseDeviceResourceName() string {
-	return fuseDeviceResourceName
-}
