@@ -18,19 +18,21 @@ package mountinfo
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"os"
 	"strconv"
 	"strings"
 
 	"github.com/golang/glog"
+	"github.com/pkg/errors"
 )
 
 type Mount struct {
 	Subtree        string
 	MountPath      string
 	FilesystemType string
-	PeerGroup      *int
+	PeerGroups     map[int]bool
 	ReadOnly       bool
 	Count          int
 }
@@ -69,7 +71,14 @@ func parseMountInfoLine(line string) *Mount {
 	// Count the optional fields.  In case new fields are appended later,
 	// don't simply assume that n == len(fields) - 4.
 	n := 6
+	mnt.PeerGroups = map[int]bool{}
 	for fields[n] != "-" {
+		if peerGroupTag, peerGroup, err := peerGroupFromString(fields[n]); err != nil {
+			glog.V(0).Infof("WARNING: fail to parse peer group info from mount point %s's option %s: %v", mnt.MountPath, fields[n], err)
+			continue
+		} else if peerGroupTag == "shared" || peerGroupTag == "master" {
+			mnt.PeerGroups[peerGroup] = true
+		}
 		n++
 		if n >= len(fields) {
 			return nil
@@ -78,13 +87,13 @@ func parseMountInfoLine(line string) *Mount {
 	if n+3 >= len(fields) {
 		return nil
 	}
-	if n > 6 {
-		if shared, peerGroup, err := peerGroupFromString(fields[6]); err != nil {
-			return nil
-		} else if shared {
-			mnt.PeerGroup = &peerGroup
-		}
-	}
+	// if n > 6 {
+	// 	if shared, peerGroup, err := peerGroupFromString(fields[6]); err != nil {
+	// 		return nil
+	// 	} else if shared {
+	// 		mnt.PeerGroup = &peerGroup
+	// 	}
+	// }
 	mnt.FilesystemType = unescapeString(fields[n+1])
 	mnt.Count = 1
 	return mnt
@@ -103,8 +112,8 @@ func readMountInfo(r io.Reader) (map[string]*Mount, error) {
 		}
 
 		// We can only use mountpoints that are directories for fluid.
-		if mnt.PeerGroup == nil {
-			glog.V(6).Infof("ignoring mountpoint %q because it is not shared", mnt.MountPath)
+		if len(mnt.PeerGroups) == 0 {
+			glog.V(6).Infof("ignoring mountpoint %q because it is not rshared or rslave", mnt.MountPath)
 			continue
 		}
 
@@ -154,15 +163,25 @@ func unescapeString(str string) string {
 	return sb.String()
 }
 
-func peerGroupFromString(str string) (shared bool, peerGroup int, err error) {
+func peerGroupFromString(str string) (peerGroupTag string, peerGroup int, err error) {
+	peerGroupTag, peerGroup, err = "", -1, nil
+
 	fields := strings.Split(str, ":")
 	if len(fields) != 2 {
+		err = fmt.Errorf("%s is not a peer group tag", str)
 		return
 	}
+	if fields[0] != "shared" && fields[0] != "master" {
+		err = fmt.Errorf("%s is not a legal peer group tag", fields[0])
+		return
+	}
+	peerGroupTag = fields[0]
+
 	peerGroup, err = strconv.Atoi(fields[1])
 	if err != nil {
+		err = errors.Wrapf(err, "failed to atoi %s", fields[1])
 		return
 	}
-	shared = true
+
 	return
 }
