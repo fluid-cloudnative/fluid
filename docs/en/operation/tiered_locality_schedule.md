@@ -35,11 +35,11 @@ tieredLocality:
     # fluid built-in name, used to schedule pods to the data cached node
     - name: fluid.io/node
       weight: 100
-    # runtime worker's rack label name, can be changed according to k8s environment.
-    - name: topology.kubernetes.io/rack
-      weight: 50
     # runtime worker's zone label name, can be changed according to k8s environment.
     - name: topology.kubernetes.io/zone
+      weight: 50
+    # runtime worker's region label name, can be changed according to k8s environment.
+    - name: topology.kubernetes.io/region
       weight: 10
   required:
     # If Pod is configured with required affinity, then schedule the pod to nodes match the label.
