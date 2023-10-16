@@ -56,7 +56,6 @@ Modify tiered location configuration (content see point 1) in the configMap name
 in the Fluid namespace (default `fluid-system`), the latest configuration will be read for Pod scheduling during the next webhook mutation.
 
 ## 2. Configure the tiered locality information for the Runtime
-可以通过 Dataset 的 nodeAffinity 或者 Runtime 的 NodeSelector 字段配置分层位置信息。
 Tiered location information can be configured through the NodeAffinity field of the Dataset or the NodeSelector field of the Runtime.
 
 The following is the configuration of tiered location information defined in the yaml of the Dataset. 
