@@ -53,25 +53,23 @@ func (t *TieredLocality) getTieredLocalityNames() (names map[string]bool) {
 func (t *TieredLocality) hasRepeatedLocality(pod *corev1.Pod) bool {
 	localityKeys := t.getTieredLocalityNames()
 
-	if pod.Spec.Affinity == nil && pod.Spec.Affinity.NodeAffinity == nil && pod.Spec.NodeSelector == nil {
-		return false
-	}
-
-	for _, term := range pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution {
-		for _, expression := range term.Preference.MatchExpressions {
-			if _, ok := localityKeys[expression.Key]; ok {
-				return true
+	if pod.Spec.Affinity != nil && pod.Spec.Affinity.NodeAffinity != nil {
+		for _, term := range pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution {
+			for _, expression := range term.Preference.MatchExpressions {
+				if _, ok := localityKeys[expression.Key]; ok {
+					return true
+				}
 			}
 		}
-	}
 
-	if pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution == nil {
-		return false
-	}
-	for _, terms := range pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms {
-		for _, expression := range terms.MatchExpressions {
-			if _, ok := localityKeys[expression.Key]; ok {
-				return true
+		if pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution == nil {
+			return false
+		}
+		for _, terms := range pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms {
+			for _, expression := range terms.MatchExpressions {
+				if _, ok := localityKeys[expression.Key]; ok {
+					return true
+				}
 			}
 		}
 	}

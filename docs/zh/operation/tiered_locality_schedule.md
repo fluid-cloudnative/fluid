@@ -1,3 +1,4 @@
+
 # 示例 - 基于Runtime分层位置信息的应用Pod调度
 
 在[Pod 调度优化](./pod_schedule_optimization.md)中介绍如何将应用Pod调度到具有数据缓存能力的节点。
@@ -21,7 +22,7 @@ Fluid 支持配置 K8s 集群中的分层位置信息，在Fluid 的 Helm Chart 
 
 ## 1. Fluid 配置分层位置信息
 
-1） 在安装 Fluid 前配置
+1) 在安装 Fluid 前配置
 
 在 Helm Charts 的 `tiered-conf.yaml` 文件中定义分层位置的配置
 - fluid.io/node 是 fluid 内置的亲和性，用于调度到数据缓存的节点
@@ -46,7 +47,7 @@ tieredLocality:
 然后按照[Fluid 安装](../userguide/install.md) 安装 Fluid，安装好之后，在 Fluid namespace（默认fluid-system） 中存在
 `tiered-locality-config` 的 ConfigMap，保存分层的位置信息配置。
 
-2） 已经存在的 Fluid 集群，修改分层位置信息
+2) 已经存在的 Fluid 集群，修改分层位置信息
 对 Fluid namespace（默认fluid-system） 中存在`tiered-locality-config` 的 ConfigMap 进行修改，
 添加相关的分层位置信息配置（见第一点），配置完成后，再下一次 webhook mutation 时会读取最新的配置进行Pod调度。
 
@@ -88,6 +89,7 @@ kind: Pod
 metadata:
   name: nginx-1
   labels:
+    # enable Fluid's scheduling optimization for the pod
     fuse.serverful.fluid.io/inject: "true"
 spec:
   containers:
@@ -103,7 +105,6 @@ spec:
 EOF
 $ kubectl create -f nginx-1.yaml
 ```
-示例中`metadata.labels`中新增`fuse.serverful.fluid.io/inject=true`以对该Pod开启Fluid的调度优化功能。
 
 **查看Pod**
 
@@ -139,7 +140,9 @@ spec:
 
 该亲和性会达到以下效果：
 - 如果数据缓存节点（具有`fluid.io/s-default-hbase`标签的节点）可调度，则将 Pod 调度到该节点；
-- 如果数据缓存节点不可调度，则第一优先调度到同一个zone（“zone-a"）的节点，其次优先调度到到同一个region（”region-a")的节点。
+- 如果数据缓存节点不可调度，则优先调度到同一个zone（“zone-a"）的节点；
+- 如果同一个zone的节点也不可调度，则优先调度到到同一个region（”region-a")的节点。
+- 上述都不满足，调度到集群中其它可调度的节点；
 
 ### 3.2 强制亲和性调度
 

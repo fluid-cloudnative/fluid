@@ -25,39 +25,42 @@ Note that if your cluster has been previously configured with other allowed cont
 
 ## 1. Configure Tiered Locality in Fluid
 
-1）Configure before installing Fluid
+1) Configure before installing Fluid
 
-在 Helm Charts 的 `tiered-conf.yaml` 文件中定义分层位置的配置
-- fluid.io/node 是 fluid 内置的亲和性，用于调度到数据缓存的节点
+Define the tiered locality configuration in the 'tiered conf.yaml' file of Helm Charts as below.
+- fluid.io/node is the built-in name of Fluid, used to schedule pods to the data cached node
 ```yaml
 tieredLocality:
   preferred:
-    # fluid 内置的亲和性，用于调度到数据缓存的节点，名称不可修改
+    # fluid built-in name, used to schedule pods to the data cached node
     - name: fluid.io/node
       weight: 100
-    # zone 的 label 名称
-    - name: topology.kubernetes.io/zone
+    # runtime worker's rack label name, can be changed according to k8s environment.
+    - name: topology.kubernetes.io/rack
       weight: 50
-    # region 的 label 名称
-    - name: topology.kubernetes.io/region
+    # runtime worker's zone label name, can be changed according to k8s environment.
+    - name: topology.kubernetes.io/zone
       weight: 10
   required:
-    # 如果Pod 配置 强制亲和性，则强制亲和性匹配 zone
-    # 配置多个，采用 And 语义
+    # If Pod is configured with required affinity, then schedule the pod to nodes match the label.
+    # Multiple names is the And relation.
     - topology.kubernetes.io/zone
 ```
 
-然后按照[Fluid 安装](../userguide/install.md) 安装 Fluid，安装好之后，在 Fluid namespace（默认fluid-system） 中存在
-`tiered-locality-config` 的 ConfigMap，保存分层的位置信息配置。
+Install Fluid following the document [Installation](../userguide/install.md). After installation, a configmap
+named `tiered-locality-config` storing above configuration will exist in Fluid namespace(default `fluid-system`).
 
-2） 已经存在的 Fluid 集群，修改分层位置信息
-对 Fluid namespace（默认fluid-system） 中存在`tiered-locality-config` 的 ConfigMap 进行修改，
-添加相关的分层位置信息配置（见第一点），配置完成后，再下一次 webhook mutation 时会读取最新的配置进行Pod调度。
+2) Modify tiered locality configuration in the existing Fluid cluster
 
-## 2. Runtime 配置相应的分层信息
+Modify tiered location configuration (content see point 1) in the configMap named 'tiered local configuration' 
+in the Fluid namespace (default `fluid-system`), the latest configuration will be read for Pod scheduling during the next webhook mutation.
+
+## 2. Configure the tiered locality information for the Runtime
 可以通过 Dataset 的 nodeAffinity 或者 Runtime 的 NodeSelector 字段配置分层位置信息。
+Tiered location information can be configured through the NodeAffinity field of the Dataset or the NodeSelector field of the Runtime.
 
-下面是通过 Dataset 的 nodeAffinity 配置分层位置信息，此时 Runtime 的 Worker 会部署在符合条件的节点上。
+The following is the configuration of tiered location information defined in the yaml of the Dataset. 
+And the workers of the Runtime will be deployed on nodes matching these labels.
 ```yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: Dataset
@@ -81,10 +84,10 @@ spec:
               - region-a
 ```
 
-## 3. 应用 Pod 的调度
+## 3. Application Pod Scheduling
 
-### 3.1 优先亲和性调度
-**创建Pod**
+### 3.1 Preferred Affinity Scheduling
+**Creating the Pod**
 ```shell
 $ cat<<EOF >nginx-1.yaml
 apiVersion: v1
@@ -92,6 +95,7 @@ kind: Pod
 metadata:
   name: nginx-1
   labels:
+    # enable Fluid's scheduling optimization for the pod
     fuse.serverful.fluid.io/inject: "true"
 spec:
   containers:
@@ -107,11 +111,10 @@ spec:
 EOF
 $ kubectl create -f nginx-1.yaml
 ```
-示例中`metadata.labels`中新增`fuse.serverful.fluid.io/inject=true`以对该Pod开启Fluid的调度优化功能。
 
-**查看Pod**
+**Check the Pod**
 
-查看Pod的yaml文件，发现被注入了如下亲和性约束信息：
+Checking the yaml file of Pod, shows that the following affinity constraint information has been injected:
 
 ```yaml
 spec:
@@ -141,20 +144,23 @@ spec:
           weight: 10         
 ```
 
-该亲和性会达到以下效果：
-- 如果数据缓存节点（具有`fluid.io/s-default-hbase`标签的节点）可调度，则将 Pod 调度到该节点；
-- 如果数据缓存节点不可调度，则第一优先调度到同一个zone（“zone-a"）的节点，其次优先调度到到同一个region（”region-a")的节点。
+These affinity will achieve the following effects:：
+- If the data cached node (a node with the label 'fluid.io/s-default-hbase') is schedulable, schedule Pod to that node;
+- If the data cached node is un-schedulable, prefer to schedule pod to nodes in the same zone ("zone-a");
+- If the same zone nodes are un-schedulable, prefer to schedule pod to nodes in the same region ("region-a");
+- All of the above are not met, schedule to other schedulable nodes in the cluster.
 
-### 3.2 强制亲和性调度
 
-如果应用pod 指定强制指定数据集调度时
+### 3.2 Required Affinity Scheduling
+
+If sets pod with required dataset scheduling as below :
 ```yaml
 apiVersion: v1
 kind: Pod
 metadata:
   name: nginx-1
   labels:
-    # 强制调度到 hbase dataset
+    # required dataset scheduling
     fluid.io/dataset.hbase.sched: required
     fuse.serverful.fluid.io/inject: "true"
 spec:
@@ -169,7 +175,7 @@ spec:
       persistentVolumeClaim:
         claimName: hbase
 ```
-pod 会被注入 required 节点亲和性，如下所示，强制调度到 "topology.kubernetes.io/zone" 为 "zone-a" 的节点
+Pod will be injected with required node affinity, as shown below, forcing scheduling to nodes with value "zone-a" for label "topology.kubernetes.io/zone"  .
 ```yaml
 spec:
   affinity:
@@ -183,7 +189,8 @@ spec:
                 - "zone-a"
 ```
 
-### 3.3 注意事项
+### 3.3 Note
 
-1. 如果应用 Pod 指定分层位置信息的亲和性（包括`spec.affinity` 和 `spec.nodeselector`），则 webhook 不会注入相关的位置亲和性，以用户的配置为准:
-2. 分层位置信息的亲和性调度是全局性的配置，针对所有的Dataset 生效，不支持不同的Dataset的不同的亲和性配置；
+1. If the application Pod specifies the affinity about tiered locality information (defined in 'spec.affinity' or 'spec.nodeselector'), webhook will
+not inject the relevant location affinity, and the user's configuration will be kept:
+2. The affinity scheduling of tiered location is a global configuration that takes effect for all datasets and does not support different affinity configurations for different datasets;
