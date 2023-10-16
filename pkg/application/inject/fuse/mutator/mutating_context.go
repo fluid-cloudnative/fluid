@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package fuse
+package mutator
 
 import (
 	"fmt"
@@ -33,7 +33,7 @@ type MutatingPodSpecs struct {
 	MetaObj        metav1.ObjectMeta
 }
 
-func collectFluidObjectSpecs(pod common.FluidObject) (*MutatingPodSpecs, error) {
+func CollectFluidObjectSpecs(pod common.FluidObject) (*MutatingPodSpecs, error) {
 	volumes, err := pod.GetVolumes()
 	if err != nil {
 		return nil, err
@@ -68,7 +68,7 @@ func collectFluidObjectSpecs(pod common.FluidObject) (*MutatingPodSpecs, error) 
 	}, nil
 }
 
-func applyFluidObjectSpecs(pod common.FluidObject, specs *MutatingPodSpecs) error {
+func ApplyFluidObjectSpecs(pod common.FluidObject, specs *MutatingPodSpecs) error {
 	if err := pod.SetVolumes(specs.Volumes); err != nil {
 		return err
 	}
