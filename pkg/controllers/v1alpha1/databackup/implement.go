@@ -128,3 +128,14 @@ func (r *DataBackupReconciler) UpdateOperationApiStatus(object client.Object, op
 func (r *DataBackupReconciler) GetStatusHandler(object client.Object) dataoperation.StatusHandler {
 	return &OnceHandler{}
 }
+
+// GetTTL implements dataoperation.OperationReconcilerInterface.
+func (*DataBackupReconciler) GetTTL(object client.Object) (ttl *int32, err error) {
+	dataBackup, ok := object.(*datav1alpha1.DataBackup)
+	if !ok {
+		err = fmt.Errorf("%+v is not a type of DataBackup", object)
+		return
+	}
+	ttl = dataBackup.Spec.TTLSecondsAfterFinished
+	return
+}

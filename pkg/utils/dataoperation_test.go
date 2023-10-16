@@ -23,17 +23,20 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 )
 
 func TestTimeleft(t *testing.T) {
 	ttl := int32(10)
 	condtionTime := v1.NewTime(time.Now())
 	testcase := []struct {
-		name              string
-		dataload          datav1alpha1.DataLoad
-		dataoperationType datav1alpha1.OperationType
-		validRemaining    bool
-		wantErr           bool
+		name     string
+		dataload datav1alpha1.DataLoad
+		// dataoperationType datav1alpha1.OperationType
+		operation      dataoperation.OperationReconcilerInterface
+		validRemaining bool
+		wantErr        bool
 	}{
 		{
 			name: "get remaining time successfully",
@@ -51,9 +54,10 @@ func TestTimeleft(t *testing.T) {
 					},
 				},
 			},
-			dataoperationType: datav1alpha1.DataLoadType,
-			validRemaining:    true,
-			wantErr:           false,
+			// operation:         dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataLoadType),
+			operation:      dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
+			validRemaining: true,
+			wantErr:        false,
 		},
 		{
 			name: "not set ttl",
@@ -67,18 +71,20 @@ func TestTimeleft(t *testing.T) {
 					},
 				},
 			},
-			dataoperationType: datav1alpha1.DataLoadType,
-			validRemaining:    false,
-			wantErr:           false,
+			operation: dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
+
+			validRemaining: false,
+			wantErr:        false,
 		},
 		{
 			name: "data operation not completion",
 			dataload: datav1alpha1.DataLoad{
 				Status: datav1alpha1.OperationStatus{},
 			},
-			dataoperationType: datav1alpha1.DataLoadType,
-			validRemaining:    false,
-			wantErr:           false,
+			operation: dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
+
+			validRemaining: false,
+			wantErr:        false,
 		},
 		{
 			name: "get remaining time < 0",
@@ -95,13 +101,14 @@ func TestTimeleft(t *testing.T) {
 					},
 				},
 			},
-			dataoperationType: datav1alpha1.DataLoadType,
-			validRemaining:    false,
-			wantErr:           false,
+			operation: dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
+
+			validRemaining: false,
+			wantErr:        false,
 		},
 	}
 	for _, test := range testcase {
-		remaining, err := Timeleft(&test.dataload, &test.dataload.Status, test.dataoperationType)
+		remaining, err := Timeleft(&test.dataload, &test.dataload.Status, test.operation)
 		if test.validRemaining != (remaining != nil && *remaining > 0) {
 			t.Errorf("GetRemaining want validRemaining %v, get remaining %v", test.validRemaining, remaining)
 		}
@@ -117,6 +124,7 @@ func TestGetTTL(t *testing.T) {
 		name              string
 		dataload          datav1alpha1.DataLoad
 		dataoperationType datav1alpha1.OperationType
+		operation         dataoperation.OperationReconcilerInterface
 		ttl               *int32
 		wantErr           bool
 	}{
@@ -127,32 +135,33 @@ func TestGetTTL(t *testing.T) {
 					TTLSecondsAfterFinished: &ttl,
 				},
 			},
-			dataoperationType: datav1alpha1.DataLoadType,
-			ttl:               &ttl,
-			wantErr:           false,
+			operation: dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
+			ttl:       &ttl,
+			wantErr:   false,
 		},
 		{
-			name:              "no ttl",
-			dataload:          datav1alpha1.DataLoad{},
-			dataoperationType: datav1alpha1.DataLoadType,
-			ttl:               nil,
-			wantErr:           false,
+			name:      "no ttl",
+			dataload:  datav1alpha1.DataLoad{},
+			operation: dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataLoadType, nil),
+			ttl:       nil,
+			wantErr:   false,
 		},
 		{
 			name:              "wrong data operation type",
 			dataload:          datav1alpha1.DataLoad{},
 			dataoperationType: datav1alpha1.DataMigrateType,
+			operation:         dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataMigrateType, nil),
 			ttl:               nil,
 			wantErr:           true,
 		},
 	}
 	for _, test := range testcase {
-		ttl, err := GetTTL(&test.dataload, test.dataoperationType)
+		ttl, err := GetTTL(&test.dataload, test.operation)
 		if ttl != test.ttl {
-			t.Errorf("Get wrong ttl value, want %v, get %v", test.ttl, ttl)
+			t.Errorf("Testcase %s: Get wrong ttl value, want %v, get %v", test.name, test.ttl, ttl)
 		}
 		if test.wantErr != (err != nil) {
-			t.Errorf("GetTTL want error %v, get error %v", test.wantErr, err)
+			t.Errorf("Testcase %s: GetTTL want error %v, get error %v", test.name, test.wantErr, err)
 		}
 	}
 }
@@ -162,6 +171,7 @@ func TestNeedCleanUp(t *testing.T) {
 	testcase := []struct {
 		name        string
 		dataload    datav1alpha1.DataLoad
+		operation   dataoperation.OperationReconcilerInterface
 		needCleanUp bool
 	}{
 		{
@@ -179,6 +189,7 @@ func TestNeedCleanUp(t *testing.T) {
 					},
 				},
 			},
+			operation:   dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
 			needCleanUp: true,
 		},
 		{
@@ -189,6 +200,7 @@ func TestNeedCleanUp(t *testing.T) {
 				},
 				Status: datav1alpha1.OperationStatus{},
 			},
+			operation:   dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
 			needCleanUp: false,
 		},
 		{
@@ -204,13 +216,14 @@ func TestNeedCleanUp(t *testing.T) {
 					},
 				},
 			},
+			operation:   dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataLoadType, nil),
 			needCleanUp: false,
 		},
 	}
 	for _, test := range testcase {
-		needCleanUp := NeedCleanUp(&test.dataload, &test.dataload.Status, datav1alpha1.DataLoadType)
+		needCleanUp := NeedCleanUp(&test.dataload, &test.dataload.Status, test.operation)
 		if needCleanUp != test.needCleanUp {
-			t.Errorf("NeedCleanUp want %v, get %v", test.needCleanUp, needCleanUp)
+			t.Errorf("Testcase %s:NeedCleanUp want %v, get %v", test.name, test.needCleanUp, needCleanUp)
 		}
 	}
 }
