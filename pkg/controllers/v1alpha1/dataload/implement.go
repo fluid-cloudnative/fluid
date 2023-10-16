@@ -129,3 +129,25 @@ func (r *DataLoadReconciler) GetStatusHandler(object client.Object) dataoperatio
 		return nil
 	}
 }
+
+// GetTTL implements dataoperation.OperationReconcilerInterface.
+func (*DataLoadReconciler) GetTTL(object client.Object) (ttl *int32, err error) {
+	dataLoad, ok := object.(*datav1alpha1.DataLoad)
+	if !ok {
+		err = fmt.Errorf("%+v is not a type of DataBackup", object)
+		return
+	}
+
+	policy := dataLoad.Spec.Policy
+	switch policy {
+	case datav1alpha1.Once:
+		ttl = dataLoad.Spec.TTLSecondsAfterFinished
+	case datav1alpha1.Cron, datav1alpha1.OnEvent:
+		// For Cron and OnEvent policies, no TTL is provided
+		ttl = nil
+	default:
+		err = fmt.Errorf("unknown policy type: %s", policy)
+	}
+
+	return
+}

@@ -196,7 +196,7 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 
 	// 0. clean up if ttl after finished expired
 	var ttl *time.Duration
-	if utils.NeedCleanUp(object, opStatus, operation.GetOperationType()) {
+	if utils.NeedCleanUp(object, opStatus, operation) {
 		var err error
 		ttl, err = t.processTTL(object, opStatus, operation, log, ctx)
 		if err != nil {
@@ -268,7 +268,7 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 // processTTL processes the operations that need to be cleaned up based on the TTL.
 func (t *TemplateEngine) processTTL(object client.Object, opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationReconcilerInterface, log logr.Logger, ctx cruntime.ReconcileRequestContext) (ttl *time.Duration, err error) {
 	// Get the remaining time to clean up for the operation.
-	ttl, err = utils.Timeleft(object, opStatus, operation.GetOperationType())
+	ttl, err = utils.Timeleft(object, opStatus, operation)
 	if err != nil {
 		log.Error(err, fmt.Sprintf(cleanupErrorMsg, operation.GetOperationType()))
 		return
@@ -291,7 +291,7 @@ func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, o
 
 	// 0. clean up if ttl after finished expired
 	var ttl *time.Duration
-	if utils.NeedCleanUp(object, opStatus, operation.GetOperationType()) {
+	if utils.NeedCleanUp(object, opStatus, operation) {
 		var err error
 		ttl, err = t.processTTL(object, opStatus, operation, log, ctx)
 		if err != nil {
