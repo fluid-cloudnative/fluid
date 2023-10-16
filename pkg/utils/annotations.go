@@ -44,9 +44,54 @@ func init() {
 	}
 }
 
+//
+// ---- Util functions to control pod's mutation behaviors using CSI
+//
+
 // ServerfulFuseEnabled decides if FUSE CSI related optimization should be injected, e.g. HostToContainer mountPropagation for FUSE Recovery feature.
 func ServerfulFuseEnabled(infos map[string]string) (match bool) {
 	return enabled(infos, common.InjectServerfulFuse)
+}
+
+//
+// ---- Util functions to control pod's fuse sidecar mutation behaviors ----
+//
+
+func InjectCacheDirEnabled(infos map[string]string) (match bool) {
+	return enabled(infos, common.InjectCacheDir)
+}
+
+func SkipSidecarPostStartInject(infos map[string]string) (match bool) {
+	return matchedValue(infos, common.InjectSidecarPostStart, common.False)
+}
+
+func AppContainerPostStartInjectEnabled(infos map[string]string) (match bool) {
+	return enabled(infos, common.InjectAppPostStart)
+}
+
+//
+// ---- Utils functions to decide serverless platform ----
+//
+const (
+	PlatformDefault      = "Default"
+	PlatformUnprivileged = "Unprivileged"
+)
+
+func GetServerlessPlatfrom(infos map[string]string) (platform string) {
+	if matchedKey(infos, ServerlessPlatformKey) {
+		return infos[ServerlessPlatformKey]
+	}
+
+	if enabled(infos, common.InjectServerless) || enabled(infos, common.InjectFuseSidecar) {
+		if enabled(infos, common.InjectUnprivilegedFuseSidecar) {
+			return PlatformUnprivileged
+		} else {
+			return PlatformDefault
+		}
+	}
+
+	// default to an empty platform, meaning no platform is found
+	return ""
 }
 
 // ServerlessEnabled decides if fuse sidecar should be injected, whether privileged or unprivileged
@@ -64,24 +109,8 @@ func FuseSidecarUnprivileged(infos map[string]string) (match bool) {
 	return serverlessPlatformMatched(infos) || (ServerlessEnabled(infos) && enabled(infos, common.InjectUnprivilegedFuseSidecar))
 }
 
-func AppContainerPostStartInjectEnabled(infos map[string]string) (match bool) {
-	return enabled(infos, common.InjectAppPostStart)
-}
-
-func SkipSidecarPostStartInject(infos map[string]string) (match bool) {
-	return matchedValue(infos, common.InjectSidecarPostStart, common.False)
-}
-
-func WorkerSidecarEnabled(infos map[string]string) (match bool) {
-	return enabled(infos, common.InjectWorkerSidecar)
-}
-
 func InjectSidecarDone(infos map[string]string) (match bool) {
 	return enabled(infos, common.InjectSidecarDone)
-}
-
-func InjectCacheDirEnabled(infos map[string]string) (match bool) {
-	return enabled(infos, common.InjectCacheDir)
 }
 
 func AppControllerDisabled(info map[string]string) (match bool) {
@@ -89,11 +118,11 @@ func AppControllerDisabled(info map[string]string) (match bool) {
 }
 
 func serverlessPlatformMatched(infos map[string]string) (match bool) {
-	if len(ServerlessPlatformKey) == 0 || len(ServerlessPlatformVal) == 0 {
+	if len(ServerlessPlatformKey) == 0 {
 		return
 	}
 
-	return matchedValue(infos, ServerlessPlatformKey, ServerlessPlatformVal)
+	return matchedKey(infos, ServerlessPlatformKey)
 }
 
 // enabled checks if the given name has a value of "true"

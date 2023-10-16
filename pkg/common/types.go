@@ -159,9 +159,10 @@ type FuseInjectionTemplate struct {
 }
 
 type FuseMountInfo struct {
-	SubPath   string
-	MountPath string
-	FsType    string
+	SubPath            string
+	HostMountPath      string
+	ContainerMountPath string
+	FsType             string
 }
 
 // FuseSidecarInjectOption are options for webhook to inject fuse sidecar containers

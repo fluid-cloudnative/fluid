@@ -14,15 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package fuse
+package mutator
 
 import (
 	"context"
 	"fmt"
 
+	"github.com/fluid-cloudnative/fluid/pkg/application/inject/fuse/poststart"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"github.com/fluid-cloudnative/fluid/pkg/scripts/poststart"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
@@ -52,8 +52,8 @@ func init() {
 	fuseDeviceResourceName = utils.GetStringValueFromEnv(common.EnvFuseDeviceResourceName, common.DefaultFuseDeviceResourceName)
 }
 
-// TODO: Mutator will be rewritten with polymorphism withe platform-specific mutation logic
-type Mutator struct {
+// TODO: DefaultMutator will be rewritten with polymorphism withe platform-specific mutation logic
+type DefaultMutator struct {
 	pvcName     string
 	template    *common.FuseInjectionTemplate
 	options     common.FuseSidecarInjectOption
@@ -67,15 +67,27 @@ type Mutator struct {
 	ctx   mutatingContext
 }
 
+func NewDefaultMutator(opts MutatorBuildOpts) Mutator {
+	return &DefaultMutator{
+		pvcName:     opts.PvcName,
+		template:    opts.Template,
+		options:     opts.Options,
+		runtimeInfo: opts.RuntimeInfo,
+		nameSuffix:  opts.NameSuffix,
+		client:      opts.Client,
+		log:         opts.Log,
+		Specs:       opts.Specs,
+		ctx:         mutatingContext{},
+	}
+}
+
+var _ Mutator = &DefaultMutator{}
+
 // prepareMutation makes preparations for the later mutation. For example, the preparations may include dependent
 // resources creation(e.g. post start script) and fuse container template modifications.
-func (mutator *Mutator) PrepareMutation() error {
+func (mutator *DefaultMutator) PrepareMutation() error {
 	if !mutator.options.EnableCacheDir {
 		mutator.transformTemplateWithCacheDirDisabled()
-	}
-
-	if mutator.options.EnableUnprivilegedSidecar {
-		mutator.transformTemplateWithUnprivilegedSidecarEnabled()
 	}
 
 	if !mutator.options.SkipSidecarPostStartInject {
@@ -87,7 +99,7 @@ func (mutator *Mutator) PrepareMutation() error {
 	return nil
 }
 
-func (mutator *Mutator) MutateAndReturn() (*MutatingPodSpecs, error) {
+func (mutator *DefaultMutator) Mutate() (*MutatingPodSpecs, error) {
 	if err := mutator.mutateDatasetVolumes(); err != nil {
 		return nil, err
 	}
@@ -121,10 +133,10 @@ func (mutator *Mutator) MutateAndReturn() (*MutatingPodSpecs, error) {
 	return mutator.Specs, nil
 }
 
-func (mutator *Mutator) mutateDatasetVolumes() error {
+func (mutator *DefaultMutator) mutateDatasetVolumes() error {
 	volumes := mutator.Specs.Volumes
 
-	mountPath := mutator.template.FuseMountInfo.MountPath
+	mountPath := mutator.template.FuseMountInfo.HostMountPath
 	if mutator.template.FuseMountInfo.SubPath != "" {
 		mountPath = mountPath + "/" + mutator.template.FuseMountInfo.SubPath
 	}
@@ -173,7 +185,7 @@ func (mutator *Mutator) mutateDatasetVolumes() error {
 	return nil
 }
 
-func (mutator *Mutator) appendFuseContainerVolumes() (err error) {
+func (mutator *DefaultMutator) appendFuseContainerVolumes() (err error) {
 	// collect all volumes' names
 	var (
 		volumeNames  = []string{}
@@ -217,7 +229,7 @@ func (mutator *Mutator) appendFuseContainerVolumes() (err error) {
 	return nil
 }
 
-func (mutator *Mutator) prependFuseContainer(asInit bool) error {
+func (mutator *DefaultMutator) prependFuseContainer(asInit bool) error {
 	fuseContainer := mutator.template.FuseContainer
 	if !asInit {
 		fuseContainer.Name = common.FuseContainerName + mutator.nameSuffix
@@ -251,7 +263,7 @@ func (mutator *Mutator) prependFuseContainer(asInit bool) error {
 	return nil
 }
 
-func (mutator *Mutator) prepareFuseContainerPostStartScript() error {
+func (mutator *DefaultMutator) prepareFuseContainerPostStartScript() error {
 	// 4. inject the post start script for fuse container, if configmap doesn't exist, try to create it.
 	// Post start script varies according to privileged or unprivileged sidecar.
 	var (
@@ -273,23 +285,12 @@ func (mutator *Mutator) prepareFuseContainerPostStartScript() error {
 		UID:        dataset.UID,
 	}
 
-	// the mountPathInContainer is the parent dir of fuse mount path in the container
-	mountPathInContainer := ""
-	if !mutator.options.EnableUnprivilegedSidecar {
-		volumeMountInContainer, err := kubeclient.GetFuseMountInContainer(template.FuseMountInfo.FsType, template.FuseContainer)
-		if err != nil {
-			return err
-		}
-		mountPathInContainer = volumeMountInContainer.MountPath
-	}
-
 	// Fluid assumes pvc name is the same with runtime's name
-	gen := poststart.NewGenerator(types.NamespacedName{
-		Name:      datasetName,
-		Namespace: datasetNamespace,
-	}, mountPathInContainer, template.FuseMountInfo.FsType, template.FuseMountInfo.SubPath, mutator.options)
-	cm := gen.BuildConfigmap(ownerReference)
-	found, err := kubeclient.IsConfigMapExist(mutator.client, cm.Name, cm.Namespace)
+	gen := poststart.NewDefaultPostStartScriptGenerator()
+	cmKey := gen.GetConfigMapKeyByOwner(types.NamespacedName{Namespace: datasetNamespace, Name: datasetName}, template.FuseMountInfo.FsType)
+	cm := gen.BuildConfigMap(ownerReference, cmKey)
+
+	found, err := kubeclient.IsConfigMapExist(mutator.client, cmKey.Name, cmKey.Namespace)
 	if err != nil {
 		return err
 	}
@@ -308,13 +309,13 @@ func (mutator *Mutator) prepareFuseContainerPostStartScript() error {
 	if template.FuseContainer.Lifecycle == nil {
 		template.FuseContainer.Lifecycle = &corev1.Lifecycle{}
 	}
-	template.FuseContainer.Lifecycle.PostStart = gen.GetPostStartCommand()
-	template.VolumesToAdd = append(template.VolumesToAdd, gen.GetVolume())
+	template.FuseContainer.Lifecycle.PostStart = gen.GetPostStartCommand(template.FuseMountInfo.ContainerMountPath, template.FuseMountInfo.FsType, template.FuseMountInfo.SubPath)
+	template.VolumesToAdd = append(template.VolumesToAdd, gen.GetVolume(cmKey))
 
 	return nil
 }
 
-func (mutator *Mutator) transformTemplateWithUnprivilegedSidecarEnabled() {
+func (mutator *DefaultMutator) transformTemplateWithUnprivilegedSidecarEnabled() {
 	// remove the fuse related volumes if using virtual fuse device
 	template := mutator.template
 	template.FuseContainer.VolumeMounts = utils.TrimVolumeMounts(template.FuseContainer.VolumeMounts, hostMountNames)
@@ -344,7 +345,7 @@ func (mutator *Mutator) transformTemplateWithUnprivilegedSidecarEnabled() {
 	}
 }
 
-func (mutator *Mutator) transformTemplateWithCacheDirDisabled() {
+func (mutator *DefaultMutator) transformTemplateWithCacheDirDisabled() {
 	template := mutator.template
 	template.FuseContainer.VolumeMounts = utils.TrimVolumeMounts(template.FuseContainer.VolumeMounts, cacheDirNames)
 	template.VolumesToAdd = utils.TrimVolumes(template.VolumesToAdd, cacheDirNames)
