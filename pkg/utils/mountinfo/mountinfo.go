@@ -72,18 +72,18 @@ func parseMountInfoLine(line string) *Mount {
 	// don't simply assume that n == len(fields) - 4.
 	n := 6
 	mnt.PeerGroups = map[int]bool{}
-	for fields[n] != "-" {
+	for ; n < len(fields) && fields[n] != "-"; n++ {
 		if peerGroupTag, peerGroup, err := peerGroupFromString(fields[n]); err != nil {
 			glog.V(0).Infof("WARNING: fail to parse peer group info from mount point %s's option %s: %v", mnt.MountPath, fields[n], err)
-			continue
+			return nil
 		} else if peerGroupTag == "shared" || peerGroupTag == "master" {
 			mnt.PeerGroups[peerGroup] = true
 		}
-		n++
-		if n >= len(fields) {
-			return nil
-		}
 	}
+	if n >= len(fields) {
+		return nil
+	}
+
 	if n+3 >= len(fields) {
 		return nil
 	}
