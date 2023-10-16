@@ -144,6 +144,20 @@ func Test_parseMountInfoLine(t *testing.T) {
 			},
 		},
 		{
+			name: "multiple peer group",
+			args: args{
+				line: "1764 1620 0:388 / /runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse ro,relatime shared:475 master:478 - fuse.juicefs JuiceFS:minio ro,user_id=0,group_id=0,default_permissions,allow_other",
+			},
+			want: &Mount{
+				Subtree:        "/",
+				MountPath:      "/runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse",
+				FilesystemType: "fuse.juicefs",
+				PeerGroups:     map[int]bool{475: true, 478: true},
+				ReadOnly:       true,
+				Count:          1,
+			},
+		},
+		{
 			name: "peer group err",
 			args: args{
 				line: "1764 1620 0:388 / /runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse ro,relatime shared:abc - fuse.juicefs JuiceFS:minio ro,user_id=0,group_id=0,default_permissions,allow_other",
