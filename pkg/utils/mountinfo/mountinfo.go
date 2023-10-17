@@ -164,7 +164,7 @@ func unescapeString(str string) string {
 }
 
 func peerGroupFromString(str string) (peerGroupTag string, peerGroup int, err error) {
-	peerGroupTag, peerGroup, err = "", -1, nil
+	peerGroupTag, peerGroup = "", -1
 
 	fields := strings.Split(str, ":")
 	if len(fields) != 2 {
