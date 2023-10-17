@@ -40,6 +40,7 @@
   - [使用内存加速和SSD加速配置](samples/accelerate_data_by_mem_or_ssd.md)
   - [AlluxioRuntime分层存储配置](samples/tieredstore_config.md)
   - [通过Webhook机制优化Pod调度](operation/pod_schedule_optimization.md)
+  - [基于Runtime分层位置信息的应用Pod调度](operation/tiered_locality_schedule.md)
   - [如何开启 FUSE 自动恢复能力](samples/fuse_recover.md)
   - [面向 ARM 架构的使用](samples/arm64.md)
   - [设置 FUSE 清理策略](samples/fuse_clean_policy.md)

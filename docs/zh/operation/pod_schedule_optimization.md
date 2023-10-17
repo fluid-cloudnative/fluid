@@ -96,6 +96,13 @@ spec:
   containers:
     - name: nginx-1
       image: nginx
+      volumeMounts:
+        - mountPath: /data
+          name: hbase-vol
+  volumes:
+    - name: hbase-vol
+      persistentVolumeClaim:
+        claimName: hbase
 EOF
 $ kubectl create -f nginx-1.yaml
 ```
