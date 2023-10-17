@@ -152,12 +152,12 @@ webhook:
       # fluid existed node affinity, the name can not be modified.
       - name: fluid.io/node
         weight: 100
-      # runtime worker's rack label name, can be changed according to k8s environment.
-      - name: topology.kubernetes.io/rack
-        weight: 50
       # runtime worker's zone label name, can be changed according to k8s environment.
       - name: topology.kubernetes.io/zone
-        weight: 10
+        weight: 50
+      # runtime worker's region label name, can be changed according to k8s environment.
+      - name: topology.kubernetes.io/region
+        weight: 20
     # used when app pod with label fluid.io/dataset.{dataset name}.sched set true
     required:
       - fluid.io/node
