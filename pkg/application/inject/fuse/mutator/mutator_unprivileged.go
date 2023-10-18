@@ -4,8 +4,10 @@ import (
 	"context"
 
 	"github.com/fluid-cloudnative/fluid/pkg/application/inject/fuse/poststart"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -21,20 +23,59 @@ var _ Mutator = &UnprivilegedMutator{}
 func NewUnprivilegedMutator(opts MutatorBuildOpts) Mutator {
 	return &UnprivilegedMutator{
 		DefaultMutator: DefaultMutator{
-			pvcName:     opts.PvcName,
-			template:    opts.Template,
-			options:     opts.Options,
-			runtimeInfo: opts.RuntimeInfo,
-			nameSuffix:  opts.NameSuffix,
-			client:      opts.Client,
-			log:         opts.Log,
-			Specs:       opts.Specs,
-			ctx:         mutatingContext{},
+			options: opts.Options,
+			client:  opts.Client,
+			log:     opts.Log,
+			Specs:   opts.Specs,
 		},
 	}
 }
 
-func (mutator *UnprivilegedMutator) PrepareMutation() error {
+func (mutator *UnprivilegedMutator) MutateWithRuntimeInfo(pvcName string, runtimeInfo base.RuntimeInfoInterface, nameSuffix string) error {
+	template, err := runtimeInfo.GetFuseContainerTemplate()
+	if err != nil {
+		return errors.Wrapf(err, "failed to get fuse container template for runtime \"%s/%s\"", runtimeInfo.GetNamespace(), runtimeInfo.GetName())
+	}
+
+	helper := unprivilegedMutatorHelper{
+		defaultMutatorHelper: defaultMutatorHelper{
+			pvcName:     pvcName,
+			template:    template,
+			options:     mutator.options,
+			runtimeInfo: runtimeInfo,
+			nameSuffix:  nameSuffix,
+			client:      mutator.client,
+			log:         mutator.log,
+			Specs:       mutator.Specs,
+			ctx:         mutatingContext{},
+		},
+	}
+
+	if err := helper.PrepareMutation(); err != nil {
+		return errors.Wrapf(err, "failed to prepare mutation for runtime \"%s/%s\"", runtimeInfo.GetNamespace(), runtimeInfo.GetName())
+	}
+
+	_, err = helper.Mutate()
+	if err != nil {
+		return errors.Wrapf(err, "failed to mutate for runtime \"%s/%s\"", runtimeInfo.GetNamespace(), runtimeInfo.GetName())
+	}
+
+	return nil
+}
+
+func (mutator *UnprivilegedMutator) PostMutate() error {
+	return mutator.DefaultMutator.PostMutate()
+}
+
+func (mutator *UnprivilegedMutator) GetMutatedPodSpecs() *MutatingPodSpecs {
+	return mutator.DefaultMutator.GetMutatedPodSpecs()
+}
+
+type unprivilegedMutatorHelper struct {
+	defaultMutatorHelper
+}
+
+func (mutator *unprivilegedMutatorHelper) PrepareMutation() error {
 	if !mutator.options.EnableCacheDir {
 		mutator.transformTemplateWithCacheDirDisabled()
 	}
@@ -50,11 +91,11 @@ func (mutator *UnprivilegedMutator) PrepareMutation() error {
 	return nil
 }
 
-func (mutator *UnprivilegedMutator) Mutate() (*MutatingPodSpecs, error) {
-	return mutator.DefaultMutator.Mutate()
+func (mutator *unprivilegedMutatorHelper) Mutate() (*MutatingPodSpecs, error) {
+	return mutator.defaultMutatorHelper.Mutate()
 }
 
-func (mutator *UnprivilegedMutator) prepareFuseContainerPostStartScript() error {
+func (mutator *unprivilegedMutatorHelper) prepareFuseContainerPostStartScript() error {
 	// 4. inject the post start script for fuse container, if configmap doesn't exist, try to create it.
 	// Post start script varies according to privileged or unprivileged sidecar.
 	var (

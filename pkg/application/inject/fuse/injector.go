@@ -28,7 +28,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/applications/defaultapp"
 	podapp "github.com/fluid-cloudnative/fluid/pkg/utils/applications/pod"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/applications/unstructured"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -141,16 +140,15 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 	}
 
 	for _, pod := range pods {
-		podObjMeta, err := pod.GetMetaObject()
+		podSpecs, err := mutator.CollectFluidObjectSpecs(pod)
 		if err != nil {
-			s.log.Error(err, "failed to getMetaObject of pod", "fluid application name", objectMeta.Name)
-			return out, err
+			s.log.Error(err, "failed to collect fluid object specs from a pod", "fluid application name", objectMeta.Name)
 		}
 
 		// Pod may have either Name or GenerateName set, take it as podName for log messages
-		podName := podObjMeta.Name
+		podName := podSpecs.MetaObj.Name
 		if len(podName) == 0 {
-			podName = podObjMeta.GenerateName
+			podName = podSpecs.MetaObj.GenerateName
 		}
 
 		shouldInject, err := s.shouldInject(pod)
@@ -163,7 +161,28 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 			continue
 		}
 
-		if err = s.injectCheckMountReadyScript(pod, runtimeInfos); err != nil {
+		platform := s.getServerlessPlatformFromMeta(podSpecs.MetaObj)
+		if len(platform) == 0 {
+			return out, fmt.Errorf("can't find any supported platform-specific mutator in pod's metadata")
+		}
+
+		mutatorBuildOpts := mutator.MutatorBuildOpts{
+			Client: s.client,
+			Log:    s.log,
+			Specs:  podSpecs,
+			Options: common.FuseSidecarInjectOption{
+				EnableCacheDir:             utils.InjectCacheDirEnabled(podSpecs.MetaObj.Labels),
+				EnableUnprivilegedSidecar:  utils.FuseSidecarUnprivileged(podSpecs.MetaObj.Labels),
+				SkipSidecarPostStartInject: utils.SkipSidecarPostStartInject(podSpecs.MetaObj.Labels),
+			},
+		}
+
+		mtt, err := mutator.BuildMutator(mutatorBuildOpts, platform)
+		if err != nil {
+			return out, err
+		}
+
+		if err = s.injectCheckMountReadyScript(podSpecs, runtimeInfos); err != nil {
 			s.log.Error(err, "failed to injectCheckMountReadyScript()", "pod name", podName)
 			return out, err
 		}
@@ -174,12 +193,22 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 			// Append no suffix to fuse container name unless there are multiple ones.
 			containerNameSuffix := fmt.Sprintf("-%d", idx)
 
-			if err = s.injectObject(pod, pvcName, runtimeInfo, containerNameSuffix); err != nil {
-				s.log.Error(err, "failed to injectObject()", "pod name", podName, "pvc name", pvcName)
+			if err = mtt.MutateWithRuntimeInfo(pvcName, runtimeInfo, containerNameSuffix); err != nil {
+				s.log.Error(err, "failed to mutate pod for the pvc", "pod name", podName, "pvc name", pvcName)
 				return out, err
 			}
 
 			idx++
+		}
+
+		if err = mtt.PostMutate(); err != nil {
+			s.log.Error(err, "failed to execute PostMutate() for the pod", "pod name", podName)
+			return out, err
+		}
+
+		if err = mutator.ApplyFluidObjectSpecs(pod, mtt.GetMutatedPodSpecs()); err != nil {
+			s.log.Error(err, "error when applying mutated specs to pod", "pod name", podName)
+			return out, err
 		}
 
 		if err = s.labelInjectionDone(pod); err != nil {
@@ -205,80 +234,80 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 // 3. Handle mutations on the PodSpec's volumes
 // 4. Handle mutations on the PodSpec's volumeMounts
 // 5. Add the fuse container to the first of the PodSpec's container list
-func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeInfo base.RuntimeInfoInterface, containerNameSuffix string) (err error) {
-	// Cannot use objMeta.namespace as the expected namespace because it may be empty and not trustworthy before Kubernetes 1.24.
-	// For more details, see https://github.com/kubernetes/website/issues/30574#issuecomment-974896246
-	specsToMutate, err := mutator.CollectFluidObjectSpecs(pod)
-	if err != nil {
-		return err
-	}
+// func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeInfo base.RuntimeInfoInterface, containerNameSuffix string) (err error) {
+// 	// Cannot use objMeta.namespace as the expected namespace because it may be empty and not trustworthy before Kubernetes 1.24.
+// 	// For more details, see https://github.com/kubernetes/website/issues/30574#issuecomment-974896246
+// 	specsToMutate, err := mutator.CollectFluidObjectSpecs(pod)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	mountedPvc := kubeclient.PVCNames(specsToMutate.VolumeMounts, specsToMutate.Volumes)
-	found := utils.ContainsString(mountedPvc, pvcName)
-	if !found {
-		s.log.Info("Not able to find the fluid pvc in pod spec, skip",
-			"pvc", pvcName,
-			"mounted pvcs", mountedPvc)
-		return nil
-	}
+// 	mountedPvc := kubeclient.PVCNames(specsToMutate.VolumeMounts, specsToMutate.Volumes)
+// 	found := utils.ContainsString(mountedPvc, pvcName)
+// 	if !found {
+// 		s.log.Info("Not able to find the fluid pvc in pod spec, skip",
+// 			"pvc", pvcName,
+// 			"mounted pvcs", mountedPvc)
+// 		return nil
+// 	}
 
-	option := common.FuseSidecarInjectOption{
-		EnableCacheDir:             utils.InjectCacheDirEnabled(specsToMutate.MetaObj.Labels),
-		EnableUnprivilegedSidecar:  utils.FuseSidecarUnprivileged(specsToMutate.MetaObj.Labels),
-		SkipSidecarPostStartInject: utils.SkipSidecarPostStartInject(specsToMutate.MetaObj.Labels),
-	}
+// 	option := common.FuseSidecarInjectOption{
+// 		EnableCacheDir:             utils.InjectCacheDirEnabled(specsToMutate.MetaObj.Labels),
+// 		EnableUnprivilegedSidecar:  utils.FuseSidecarUnprivileged(specsToMutate.MetaObj.Labels),
+// 		SkipSidecarPostStartInject: utils.SkipSidecarPostStartInject(specsToMutate.MetaObj.Labels),
+// 	}
 
-	// template, exist := cache.GetFuseTemplateByKey(pvcKey, option)
-	// if !exist {
-	// 	template, err = runtimeInfo.GetTemplateToInjectForFuse(pvcName, pvcNamespace, option)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	cache.AddFuseTemplateByKey(pvcKey, option, template)
-	// }
+// 	// template, exist := cache.GetFuseTemplateByKey(pvcKey, option)
+// 	// if !exist {
+// 	// 	template, err = runtimeInfo.GetTemplateToInjectForFuse(pvcName, pvcNamespace, option)
+// 	// 	if err != nil {
+// 	// 		return err
+// 	// 	}
+// 	// 	cache.AddFuseTemplateByKey(pvcKey, option, template)
+// 	// }
 
-	// TODO: support cache for faster path to get fuse container template.
-	template, err := runtimeInfo.GetFuseContainerTemplate()
-	if err != nil {
-		return err
-	}
+// 	// TODO: support cache for faster path to get fuse container template.
+// 	template, err := runtimeInfo.GetFuseContainerTemplate()
+// 	if err != nil {
+// 		return err
+// 	}
 
-	mutatorBuildOpts := mutator.MutatorBuildOpts{
-		PvcName:     pvcName,
-		Template:    template,
-		Options:     option,
-		RuntimeInfo: runtimeInfo,
-		NameSuffix:  containerNameSuffix,
-		Client:      s.client,
-		Log:         s.log,
-		Specs:       specsToMutate,
-	}
+// 	mutatorBuildOpts := mutator.MutatorBuildOpts{
+// 		PvcName:     pvcName,
+// 		Template:    template,
+// 		Options:     option,
+// 		RuntimeInfo: runtimeInfo,
+// 		NameSuffix:  containerNameSuffix,
+// 		Client:      s.client,
+// 		Log:         s.log,
+// 		Specs:       specsToMutate,
+// 	}
 
-	platform := s.getServerlessPlatformFromMeta(specsToMutate.MetaObj)
-	if len(platform) == 0 {
-		return fmt.Errorf("can't find any supported platform-specific mutator in pod's metadata")
-	}
+// 	// platform := s.getServerlessPlatformFromMeta(specsToMutate.MetaObj)
+// 	// if len(platform) == 0 {
+// 	// 	return fmt.Errorf("can't find any supported platform-specific mutator in pod's metadata")
+// 	// }
 
-	mtt, err := mutator.BuildMutator(mutatorBuildOpts, platform)
-	if err != nil {
-		return err
-	}
+// 	// mtt, err := mutator.BuildMutator(mutatorBuildOpts, platform)
+// 	// if err != nil {
+// 	// 	return err
+// 	// }
 
-	if err := mtt.PrepareMutation(); err != nil {
-		return err
-	}
+// 	if err := mtt.PrepareMutation(); err != nil {
+// 		return err
+// 	}
 
-	mutatedSpecs, err := mtt.Mutate()
-	if err != nil {
-		return err
-	}
+// 	mutatedSpecs, err := mtt.Mutate()
+// 	if err != nil {
+// 		return err
+// 	}
 
-	if err := mutator.ApplyFluidObjectSpecs(pod, mutatedSpecs); err != nil {
-		return err
-	}
+// 	if err := mutator.ApplyFluidObjectSpecs(pod, mutatedSpecs); err != nil {
+// 		return err
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 // Inject delegates inject() to do all the mutations
 func (s *Injector) Inject(in runtime.Object, runtimeInfos map[string]base.RuntimeInfoInterface) (out runtime.Object, err error) {
