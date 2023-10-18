@@ -54,3 +54,19 @@ func UnionMapsWithOverride(map1 map[string]string, map2 map[string]string) map[s
 
 	return retMap
 }
+
+// IntersectIntegerSets returns the intersection of integer set 1 and set 2.
+func IntersectIntegerSets(map1 map[int]bool, map2 map[int]bool) map[int]bool {
+	ret := map[int]bool{}
+	if len(map1) == 0 || len(map2) == 0 {
+		return ret
+	}
+
+	for elem := range map1 {
+		if _, exists := map2[elem]; exists {
+			ret[elem] = true
+		}
+	}
+
+	return ret
+}
