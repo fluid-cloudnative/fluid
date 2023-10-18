@@ -26,6 +26,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -54,6 +55,62 @@ func init() {
 
 // TODO: DefaultMutator will be rewritten with polymorphism withe platform-specific mutation logic
 type DefaultMutator struct {
+	options common.FuseSidecarInjectOption
+	client  client.Client
+	log     logr.Logger
+	Specs   *MutatingPodSpecs
+}
+
+func NewDefaultMutator(opts MutatorBuildOpts) Mutator {
+	return &DefaultMutator{
+		options: opts.Options,
+		client:  opts.Client,
+		log:     opts.Log,
+		Specs:   opts.Specs,
+	}
+}
+
+var _ Mutator = &DefaultMutator{}
+
+func (mutator *DefaultMutator) MutateWithRuntimeInfo(pvcName string, runtimeInfo base.RuntimeInfoInterface, nameSuffix string) error {
+	template, err := runtimeInfo.GetFuseContainerTemplate()
+	if err != nil {
+		return errors.Wrapf(err, "failed to get fuse container template for runtime \"%s/%s\"", runtimeInfo.GetNamespace(), runtimeInfo.GetName())
+	}
+
+	helper := defaultMutatorHelper{
+		pvcName:     pvcName,
+		template:    template,
+		options:     mutator.options,
+		runtimeInfo: runtimeInfo,
+		nameSuffix:  nameSuffix,
+		client:      mutator.client,
+		log:         mutator.log,
+		Specs:       mutator.Specs,
+		ctx:         mutatingContext{},
+	}
+
+	if err := helper.PrepareMutation(); err != nil {
+		return errors.Wrapf(err, "failed to prepare mutation for runtime \"%s/%s\"", runtimeInfo.GetNamespace(), runtimeInfo.GetName())
+	}
+
+	_, err = helper.Mutate()
+	if err != nil {
+		return errors.Wrapf(err, "failed to mutate for runtime \"%s/%s\"", runtimeInfo.GetNamespace(), runtimeInfo.GetName())
+	}
+
+	return nil
+}
+
+func (mutator *DefaultMutator) GetMutatedPodSpecs() *MutatingPodSpecs {
+	return mutator.Specs
+}
+
+func (mutator *DefaultMutator) PostMutate() error {
+	return nil
+}
+
+type defaultMutatorHelper struct {
 	pvcName     string
 	template    *common.FuseInjectionTemplate
 	options     common.FuseSidecarInjectOption
@@ -67,25 +124,9 @@ type DefaultMutator struct {
 	ctx   mutatingContext
 }
 
-func NewDefaultMutator(opts MutatorBuildOpts) Mutator {
-	return &DefaultMutator{
-		pvcName:     opts.PvcName,
-		template:    opts.Template,
-		options:     opts.Options,
-		runtimeInfo: opts.RuntimeInfo,
-		nameSuffix:  opts.NameSuffix,
-		client:      opts.Client,
-		log:         opts.Log,
-		Specs:       opts.Specs,
-		ctx:         mutatingContext{},
-	}
-}
-
-var _ Mutator = &DefaultMutator{}
-
-// prepareMutation makes preparations for the later mutation. For example, the preparations may include dependent
+// PrepareMutation makes preparations for the later mutation. For example, the preparations may include dependent
 // resources creation(e.g. post start script) and fuse container template modifications.
-func (mutator *DefaultMutator) PrepareMutation() error {
+func (mutator *defaultMutatorHelper) PrepareMutation() error {
 	if !mutator.options.EnableCacheDir {
 		mutator.transformTemplateWithCacheDirDisabled()
 	}
@@ -99,46 +140,50 @@ func (mutator *DefaultMutator) PrepareMutation() error {
 	return nil
 }
 
-func (mutator *DefaultMutator) Mutate() (*MutatingPodSpecs, error) {
-	if err := mutator.mutateDatasetVolumes(); err != nil {
+// Mutate mutates PodSpec given the pvcName and the runtimeInfo. It takes the following steps:
+// 1. Handle mutations on the PodSpec's volumes
+// 2. Handle mutations on the PodSpec's volumeMounts
+// 3. Add the fuse container to the first of the PodSpec's container list
+func (helper *defaultMutatorHelper) Mutate() (*MutatingPodSpecs, error) {
+	if err := helper.mutateDatasetVolumes(); err != nil {
 		return nil, err
 	}
 
-	if err := mutator.appendFuseContainerVolumes(); err != nil {
+	if err := helper.appendFuseContainerVolumes(); err != nil {
 		return nil, err
 	}
 
-	used, err := mutator.ctx.GetDatsetUsedInContainers()
+	used, err := helper.ctx.GetDatsetUsedInContainers()
 	if err != nil {
 		return nil, err
 	}
 
 	if used {
-		if err := mutator.prependFuseContainer(false /* asInit */); err != nil {
+		if err := helper.prependFuseContainer(false /* asInit */); err != nil {
 			return nil, err
 		}
 	}
 
-	used, err = mutator.ctx.GetDatasetUsedInInitContainers()
+	used, err = helper.ctx.GetDatasetUsedInInitContainers()
 	if err != nil {
 		return nil, err
 	}
 
 	if used {
-		if err := mutator.prependFuseContainer(true /* asInit */); err != nil {
+		if err := helper.prependFuseContainer(true /* asInit */); err != nil {
 			return nil, err
 		}
 	}
 
-	return mutator.Specs, nil
+	return helper.Specs, nil
 }
 
-func (mutator *DefaultMutator) mutateDatasetVolumes() error {
-	volumes := mutator.Specs.Volumes
+func (helper *defaultMutatorHelper) mutateDatasetVolumes() error {
+	volumes := helper.Specs.Volumes
 
-	mountPath := mutator.template.FuseMountInfo.HostMountPath
-	if mutator.template.FuseMountInfo.SubPath != "" {
-		mountPath = mountPath + "/" + mutator.template.FuseMountInfo.SubPath
+	mountPath := helper.template.FuseMountInfo.HostMountPath
+	if helper.template.FuseMountInfo.SubPath != "" {
+		mountPath = mountPath + "/" + helper.template.FuseMountInfo.SubPath
 	}
 
 	mutatedDatasetVolume := corev1.Volume{
@@ -152,7 +197,7 @@ func (mutator *DefaultMutator) mutateDatasetVolumes() error {
 
 	var overriddenVolumeNames []string
 	for i, volume := range volumes {
-		if volume.PersistentVolumeClaim != nil && volume.PersistentVolumeClaim.ClaimName == mutator.pvcName {
+		if volume.PersistentVolumeClaim != nil && volume.PersistentVolumeClaim.ClaimName == helper.pvcName {
 			name := volume.Name
 			volumes[i] = mutatedDatasetVolume
 			volumes[i].Name = name
@@ -162,22 +207,22 @@ func (mutator *DefaultMutator) mutateDatasetVolumes() error {
 
 	mountPropagationHostToContainer := corev1.MountPropagationHostToContainer
 
-	mutator.ctx.SetDatasetUsedInContainers(false)
-	for _, container := range mutator.Specs.Containers {
+	helper.ctx.SetDatasetUsedInContainers(false)
+	for _, container := range helper.Specs.Containers {
 		for i, volumeMount := range container.VolumeMounts {
 			if utils.ContainsString(overriddenVolumeNames, volumeMount.Name) {
 				container.VolumeMounts[i].MountPropagation = &mountPropagationHostToContainer
-				mutator.ctx.SetDatasetUsedInContainers(true)
+				helper.ctx.SetDatasetUsedInContainers(true)
 			}
 		}
 	}
 
-	mutator.ctx.SetDatasetUsedInInitContainers(false)
-	for _, container := range mutator.Specs.InitContainers {
+	helper.ctx.SetDatasetUsedInInitContainers(false)
+	for _, container := range helper.Specs.InitContainers {
 		for i, volumeMount := range container.VolumeMounts {
 			if utils.ContainsString(overriddenVolumeNames, volumeMount.Name) {
 				container.VolumeMounts[i].MountPropagation = &mountPropagationHostToContainer
-				mutator.ctx.SetDatasetUsedInInitContainers(true)
+				helper.ctx.SetDatasetUsedInInitContainers(true)
 			}
 		}
 	}
@@ -185,24 +230,24 @@ func (mutator *DefaultMutator) mutateDatasetVolumes() error {
 	return nil
 }
 
-func (mutator *DefaultMutator) appendFuseContainerVolumes() (err error) {
+func (helper *defaultMutatorHelper) appendFuseContainerVolumes() (err error) {
 	// collect all volumes' names
 	var (
 		volumeNames  = []string{}
-		volumesToAdd = mutator.template.VolumesToAdd
-		nameSuffix   = mutator.nameSuffix
+		volumesToAdd = helper.template.VolumesToAdd
+		nameSuffix   = helper.nameSuffix
 	)
-	for _, volume := range mutator.Specs.Volumes {
+	for _, volume := range helper.Specs.Volumes {
 		volumeNames = append(volumeNames, volume.Name)
 	}
 
 	// Append volumes
-	ctxAppenedVolumeNames, err := mutator.ctx.GetAppendedVolumeNames()
+	ctxAppenedVolumeNames, err := helper.ctx.GetAppendedVolumeNames()
 	if err != nil {
 		return err
 	}
 	if len(volumesToAdd) > 0 {
-		mutator.log.V(1).Info("Before append volume", "original", mutator.Specs.Volumes)
+		helper.log.V(1).Info("Before append volume", "original", helper.Specs.Volumes)
 		// volumes = append(volumes, template.VolumesToAdd...)
 		for _, volumeToAdd := range volumesToAdd {
 			// nameSuffix would be like: "-0", "-1", "-2", "-3", ...
@@ -216,25 +261,25 @@ func (mutator *DefaultMutator) appendFuseContainerVolumes() (err error) {
 			}
 			volumeToAdd.Name = newVolumeName
 			volumeNames = append(volumeNames, newVolumeName)
-			mutator.Specs.Volumes = append(mutator.Specs.Volumes, volumeToAdd)
+			helper.Specs.Volumes = append(helper.Specs.Volumes, volumeToAdd)
 			if oldVolumeName != newVolumeName {
 				ctxAppenedVolumeNames[oldVolumeName] = newVolumeName
 			}
 		}
 
-		mutator.log.V(1).Info("After append volume", "original", mutator.Specs.Volumes)
+		helper.log.V(1).Info("After append volume", "original", helper.Specs.Volumes)
 	}
-	mutator.ctx.SetAppendedVolumeNames(ctxAppenedVolumeNames)
+	helper.ctx.SetAppendedVolumeNames(ctxAppenedVolumeNames)
 
 	return nil
 }
 
-func (mutator *DefaultMutator) prependFuseContainer(asInit bool) error {
-	fuseContainer := mutator.template.FuseContainer
+func (helper *defaultMutatorHelper) prependFuseContainer(asInit bool) error {
+	fuseContainer := helper.template.FuseContainer
 	if !asInit {
-		fuseContainer.Name = common.FuseContainerName + mutator.nameSuffix
+		fuseContainer.Name = common.FuseContainerName + helper.nameSuffix
 	} else {
-		fuseContainer.Name = common.InitFuseContainerName + mutator.nameSuffix
+		fuseContainer.Name = common.InitFuseContainerName + helper.nameSuffix
 	}
 
 	if asInit {
@@ -243,7 +288,7 @@ func (mutator *DefaultMutator) prependFuseContainer(asInit bool) error {
 		fuseContainer.Args = []string{"2s"}
 	}
 
-	ctxAppenedVolumeNames, err := mutator.ctx.GetAppendedVolumeNames()
+	ctxAppenedVolumeNames, err := helper.ctx.GetAppendedVolumeNames()
 	if err != nil {
 		return err
 	}
@@ -256,24 +301,24 @@ func (mutator *DefaultMutator) prependFuseContainer(asInit bool) error {
 	}
 
 	if !asInit {
-		mutator.Specs.Containers = append([]corev1.Container{fuseContainer}, mutator.Specs.Containers...)
+		helper.Specs.Containers = append([]corev1.Container{fuseContainer}, helper.Specs.Containers...)
 	} else {
-		mutator.Specs.InitContainers = append([]corev1.Container{fuseContainer}, mutator.Specs.InitContainers...)
+		helper.Specs.InitContainers = append([]corev1.Container{fuseContainer}, helper.Specs.InitContainers...)
 	}
 	return nil
 }
 
-func (mutator *DefaultMutator) prepareFuseContainerPostStartScript() error {
+func (helper *defaultMutatorHelper) prepareFuseContainerPostStartScript() error {
 	// 4. inject the post start script for fuse container, if configmap doesn't exist, try to create it.
 	// Post start script varies according to privileged or unprivileged sidecar.
 	var (
-		info             = mutator.runtimeInfo
-		template         = mutator.template
+		info             = helper.runtimeInfo
+		template         = helper.template
 		datasetName      = info.GetName()
 		datasetNamespace = info.GetNamespace()
 	)
 
-	dataset, err := utils.GetDataset(mutator.client, datasetName, datasetNamespace)
+	dataset, err := utils.GetDataset(helper.client, datasetName, datasetNamespace)
 	if err != nil {
 		return err
 	}
@@ -290,13 +335,13 @@ func (mutator *DefaultMutator) prepareFuseContainerPostStartScript() error {
 	cmKey := gen.GetConfigMapKeyByOwner(types.NamespacedName{Namespace: datasetNamespace, Name: datasetName}, template.FuseMountInfo.FsType)
 	cm := gen.BuildConfigMap(ownerReference, cmKey)
 
-	found, err := kubeclient.IsConfigMapExist(mutator.client, cmKey.Name, cmKey.Namespace)
+	found, err := kubeclient.IsConfigMapExist(helper.client, cmKey.Name, cmKey.Namespace)
 	if err != nil {
 		return err
 	}
 
 	if !found {
-		err = mutator.client.Create(context.TODO(), cm)
+		err = helper.client.Create(context.TODO(), cm)
 		if err != nil {
 			// If ConfigMap creation succeeds concurrently, continue to mutate
 			if otherErr := utils.IgnoreAlreadyExists(err); otherErr != nil {
@@ -315,9 +360,9 @@ func (mutator *DefaultMutator) prepareFuseContainerPostStartScript() error {
 	return nil
 }
 
-func (mutator *DefaultMutator) transformTemplateWithUnprivilegedSidecarEnabled() {
+func (helper *defaultMutatorHelper) transformTemplateWithUnprivilegedSidecarEnabled() {
 	// remove the fuse related volumes if using virtual fuse device
-	template := mutator.template
+	template := helper.template
 	template.FuseContainer.VolumeMounts = utils.TrimVolumeMounts(template.FuseContainer.VolumeMounts, hostMountNames)
 	template.VolumesToAdd = utils.TrimVolumes(template.VolumesToAdd, hostMountNames)
 
@@ -345,8 +390,8 @@ func (mutator *DefaultMutator) transformTemplateWithUnprivilegedSidecarEnabled()
 	}
 }
 
-func (mutator *DefaultMutator) transformTemplateWithCacheDirDisabled() {
-	template := mutator.template
+func (helper *defaultMutatorHelper) transformTemplateWithCacheDirDisabled() {
+	template := helper.template
 	template.FuseContainer.VolumeMounts = utils.TrimVolumeMounts(template.FuseContainer.VolumeMounts, cacheDirNames)
 	template.VolumesToAdd = utils.TrimVolumes(template.VolumesToAdd, cacheDirNames)
 }

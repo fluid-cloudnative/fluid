@@ -21,19 +21,16 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/fluid-cloudnative/fluid/pkg/application/inject/fuse/mutator"
 	"github.com/fluid-cloudnative/fluid/pkg/application/inject/fuse/poststart"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (s *Injector) injectCheckMountReadyScript(pod common.FluidObject, runtimeInfos map[string]base.RuntimeInfoInterface) error {
-	objMeta, err := pod.GetMetaObject()
-	if err != nil {
-		return err
-	}
+func (s *Injector) injectCheckMountReadyScript(podSpecs *mutator.MutatingPodSpecs, runtimeInfos map[string]base.RuntimeInfoInterface) error {
+	objMeta := podSpecs.MetaObj
 
 	var namespace string
 	if len(runtimeInfos) == 0 {
@@ -60,10 +57,7 @@ func (s *Injector) injectCheckMountReadyScript(pod common.FluidObject, runtimeIn
 		return err
 	}
 
-	volumes, err := pod.GetVolumes()
-	if err != nil {
-		return err
-	}
+	volumes := podSpecs.Volumes
 	volumeToAdd := appScriptGenerator.GetVolume()
 	conflictNames, volumes, err := s.appendVolumes(volumes, []corev1.Volume{volumeToAdd}, "")
 	if err != nil {
@@ -71,11 +65,7 @@ func (s *Injector) injectCheckMountReadyScript(pod common.FluidObject, runtimeIn
 	}
 
 	s.log.V(1).Info("before inject CheckMountReadyScript volume mount to containers", "pod namespace", namespace, "pod name", podName)
-	containers, err := pod.GetContainers()
-	if err != nil {
-		return err
-	}
-
+	containers := podSpecs.Containers
 	for ci := range containers {
 		pathToRuntimeTypeMap := collectDatasetVolumeMountInfo(containers[ci].VolumeMounts, volumes, runtimeInfos)
 		if len(pathToRuntimeTypeMap) == 0 {
@@ -101,18 +91,10 @@ func (s *Injector) injectCheckMountReadyScript(pod common.FluidObject, runtimeIn
 			}
 		}
 	}
-
-	err = pod.SetContainers(containers)
-	if err != nil {
-		return err
-	}
+	podSpecs.Containers = containers
 
 	s.log.V(1).Info("before inject CheckMountReadyScript volume mount to initContainers", "pod namespace", namespace, "pod name", podName)
-	initContainers, err := pod.GetInitContainers()
-	if err != nil {
-		return err
-	}
-
+	initContainers := podSpecs.InitContainers
 	for ci := range initContainers {
 		pathToRuntimeTypeMap := collectDatasetVolumeMountInfo(initContainers[ci].VolumeMounts, volumes, runtimeInfos)
 		if len(pathToRuntimeTypeMap) == 0 {
@@ -139,15 +121,8 @@ func (s *Injector) injectCheckMountReadyScript(pod common.FluidObject, runtimeIn
 		}
 	}
 
-	err = pod.SetInitContainers(initContainers)
-	if err != nil {
-		return err
-	}
-
-	err = pod.SetVolumes(volumes)
-	if err != nil {
-		return err
-	}
+	podSpecs.InitContainers = initContainers
+	podSpecs.Volumes = volumes
 
 	return nil
 }

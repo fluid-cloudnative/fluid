@@ -12,22 +12,18 @@ import (
 
 // Mutator is the fuse sidecar mutator for platform-specific mutation logic.
 type Mutator interface {
-	PrepareMutation() error
+	MutateWithRuntimeInfo(pvcName string, runtimeInfo base.RuntimeInfoInterface, nameSuffix string) error
 
-	Mutate() (*MutatingPodSpecs, error)
+	PostMutate() error
+
+	GetMutatedPodSpecs() *MutatingPodSpecs
 }
 
 type MutatorBuildOpts struct {
-	PvcName     string
-	Template    *common.FuseInjectionTemplate
-	Options     common.FuseSidecarInjectOption
-	RuntimeInfo base.RuntimeInfoInterface
-	NameSuffix  string
-
-	Client client.Client
-	Log    logr.Logger
-
-	Specs *MutatingPodSpecs
+	Options common.FuseSidecarInjectOption
+	Client  client.Client
+	Log     logr.Logger
+	Specs   *MutatingPodSpecs
 }
 
 var mutatorBuildFn map[string]func(MutatorBuildOpts) Mutator = map[string]func(MutatorBuildOpts) Mutator{
