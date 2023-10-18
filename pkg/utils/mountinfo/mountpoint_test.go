@@ -24,27 +24,27 @@ import (
 )
 
 var (
-	peerGroup1      = 475
-	peerGroup2      = 476
+	peerGroup1      = map[int]bool{475: true}
+	peerGroup2      = map[int]bool{476: true}
 	mockGlobalMount = &Mount{
 		Subtree:        "/",
 		MountPath:      "/runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse",
 		FilesystemType: "fuse.juicefs",
-		PeerGroup:      &peerGroup2,
+		PeerGroups:     peerGroup2,
 		ReadOnly:       false,
 	}
 	mockBindMount = &Mount{
 		Subtree:        "/",
 		MountPath:      "/var/lib/kubelet/pods/1140aa96-18c2-4896-a14f-7e3965a51406/volumes/kubernetes.io~csi/default-jfsdemo/mount",
 		FilesystemType: "fuse.juicefs",
-		PeerGroup:      &peerGroup1,
+		PeerGroups:     peerGroup1,
 		ReadOnly:       false,
 	}
 	mockBindSubPathMount = &Mount{
 		Subtree:        "/",
 		MountPath:      "/var/lib/kubelet/pods/6fe8418f-3f78-4adb-9e02-416d8601c1b6/volume-subpaths/default-jfsdemo/demo/0",
 		FilesystemType: "fuse.juicefs",
-		PeerGroup:      &peerGroup1,
+		PeerGroups:     peerGroup1,
 		ReadOnly:       false,
 	}
 	mockMountPoints = map[string]*Mount{
@@ -80,7 +80,7 @@ func Test_getBindMounts(t *testing.T) {
 						Subtree:        "/",
 						MountPath:      "kubernetes.io~csi/mount",
 						FilesystemType: "ext4",
-						PeerGroup:      nil,
+						PeerGroups:     nil,
 						ReadOnly:       false,
 						Count:          0,
 					},
@@ -96,7 +96,7 @@ func Test_getBindMounts(t *testing.T) {
 						Subtree:        "/",
 						MountPath:      "/volume-subpaths/test",
 						FilesystemType: "ext4",
-						PeerGroup:      nil,
+						PeerGroups:     nil,
 						ReadOnly:       false,
 						Count:          0,
 					},
@@ -203,7 +203,7 @@ func Test_getGlobalMounts(t *testing.T) {
 						Subtree:        "/",
 						MountPath:      "/runtime-mnt/test",
 						FilesystemType: "fuse.juicefs",
-						PeerGroup:      &peerGroup2,
+						PeerGroups:     peerGroup2,
 						ReadOnly:       false,
 					},
 				},

@@ -46,7 +46,7 @@ func TestLoadMountInfoBasic(t *testing.T) {
 	if mnt.FilesystemType != "ext4" {
 		t.Error("Wrong filesystem type")
 	}
-	if *mnt.PeerGroup != 1 {
+	if len(mnt.PeerGroups) != 1 || mnt.PeerGroups[1] != true {
 		t.Error("Wrong peer group")
 	}
 	if mnt.Subtree != "/" {
@@ -90,7 +90,8 @@ func TestLoadMountInfoMultiMount(t *testing.T) {
 	if mnt.FilesystemType != "ext4" {
 		t.Error("Wrong filesystem type")
 	}
-	if *mnt.PeerGroup != 2 {
+	expectPeerGroup := 2
+	if len(mnt.PeerGroups) != 1 || mnt.PeerGroups[expectPeerGroup] != true {
 		t.Error("Wrong peer group")
 	}
 	if mnt.Subtree != "/" {
@@ -105,7 +106,7 @@ func TestLoadMountInfoMultiMount(t *testing.T) {
 }
 
 func Test_parseMountInfoLine(t *testing.T) {
-	peerGroup := 475
+	peerGroup := map[int]bool{475: true}
 	type args struct {
 		line string
 	}
@@ -123,7 +124,7 @@ func Test_parseMountInfoLine(t *testing.T) {
 				Subtree:        "/",
 				MountPath:      "/runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse",
 				FilesystemType: "fuse.juicefs",
-				PeerGroup:      &peerGroup,
+				PeerGroups:     peerGroup,
 				ReadOnly:       true,
 				Count:          1,
 			},
@@ -137,7 +138,21 @@ func Test_parseMountInfoLine(t *testing.T) {
 				Subtree:        "/",
 				MountPath:      "/runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse",
 				FilesystemType: "fuse.juicefs",
-				PeerGroup:      nil,
+				PeerGroups:     map[int]bool{},
+				ReadOnly:       true,
+				Count:          1,
+			},
+		},
+		{
+			name: "multiple peer group",
+			args: args{
+				line: "1764 1620 0:388 / /runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse ro,relatime shared:475 master:478 - fuse.juicefs JuiceFS:minio ro,user_id=0,group_id=0,default_permissions,allow_other",
+			},
+			want: &Mount{
+				Subtree:        "/",
+				MountPath:      "/runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse",
+				FilesystemType: "fuse.juicefs",
+				PeerGroups:     map[int]bool{475: true, 478: true},
 				ReadOnly:       true,
 				Count:          1,
 			},
@@ -178,52 +193,52 @@ func Test_peerGroupFromString(t *testing.T) {
 		str string
 	}
 	tests := []struct {
-		name    string
-		args    args
-		want    bool
-		want1   int
-		wantErr bool
+		name      string
+		args      args
+		wantPgTag string
+		wantPg    int
+		wantErr   bool
 	}{
 		{
 			name: "test-shared",
 			args: args{
 				str: "shared:475",
 			},
-			want:    true,
-			want1:   475,
-			wantErr: false,
+			wantPgTag: "shared",
+			wantPg:    475,
+			wantErr:   false,
 		},
 		{
 			name: "test-master",
 			args: args{
 				str: "master:475",
 			},
-			want:    true,
-			want1:   475,
-			wantErr: false,
+			wantPgTag: "master",
+			wantPg:    475,
+			wantErr:   false,
 		},
 		{
 			name: "test-unbindable",
 			args: args{
 				str: "unbindable",
 			},
-			want:    false,
-			want1:   0,
-			wantErr: false,
+			wantPgTag: "",
+			wantPg:    -1,
+			wantErr:   true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, err := peerGroupFromString(tt.args.str)
+			pgTag, pg, err := peerGroupFromString(tt.args.str)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("peerGroupFromString() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if got != tt.want {
-				t.Errorf("peerGroupFromString() got = %v, want %v", got, tt.want)
+			if pgTag != tt.wantPgTag {
+				t.Errorf("peerGroupFromString() got = %v, want %v", pgTag, tt.wantPgTag)
 			}
-			if got1 != tt.want1 {
-				t.Errorf("peerGroupFromString() got1 = %v, want %v", got1, tt.want1)
+			if pg != tt.wantPg {
+				t.Errorf("peerGroupFromString() got1 = %v, want %v", pg, tt.wantPg)
 			}
 		})
 	}

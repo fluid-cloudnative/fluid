@@ -155,3 +155,55 @@ func TestUnionMapsWithOverride(t *testing.T) {
 		})
 	}
 }
+
+func TestIntersectIntegerSets(t *testing.T) {
+	type args struct {
+		map1 map[int]bool
+		map2 map[int]bool
+	}
+	tests := []struct {
+		name string
+		args args
+		want map[int]bool
+	}{
+		{
+			name: "empty_map1",
+			args: args{
+				map1: map[int]bool{},
+				map2: map[int]bool{100: true, 101: true},
+			},
+			want: map[int]bool{},
+		},
+		{
+			name: "empty_map2",
+			args: args{
+				map1: map[int]bool{100: true, 101: true},
+				map2: map[int]bool{},
+			},
+			want: map[int]bool{},
+		},
+		{
+			name: "empty_intersection",
+			args: args{
+				map1: map[int]bool{100: true, 101: true},
+				map2: map[int]bool{102: true},
+			},
+			want: map[int]bool{},
+		},
+		{
+			name: "basic_intersection",
+			args: args{
+				map1: map[int]bool{100: true, 42: true, 101: true},
+				map2: map[int]bool{100: true, 101: true, 102: true},
+			},
+			want: map[int]bool{100: true, 101: true},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IntersectIntegerSets(tt.args.map1, tt.args.map2); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("IntersectIntegerSets() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

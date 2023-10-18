@@ -111,7 +111,7 @@ spec:
             mountPropagation: "Bidirectional"
           - name: fluid-src-dir
             mountPath: {{ .Values.runtime.mountRoot | quote }}
-            mountPropagation: "Bidirectional"
+            mountPropagation: "HostToContainer"
           - name: kubelet-kube-config
             mountPath: /etc/kubernetes/kubelet.conf
             mountPropagation: "HostToContainer"
