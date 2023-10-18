@@ -81,10 +81,13 @@ func parseMountInfoLine(line string) *Mount {
 		}
 	}
 	if n >= len(fields) {
+		glog.V(0).Infof("WARNING: invalid mount info line with no separator: %s", line)
 		return nil
 	}
 
+	// n now equals to the index of the separator("-") in the mount info line
 	if n+3 >= len(fields) {
+		glog.V(0).Infof("WARNING: invalid mount info line without enough fields: %s", line)
 		return nil
 	}
 	// if n > 6 {
