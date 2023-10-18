@@ -66,9 +66,10 @@ func (s *Injector) InjectPod(in *corev1.Pod, runtimeInfos map[string]base.Runtim
 
 // inject takes the following steps to inject fuse container:
 // 1. Determine the type of the input runtime.Object and wrap it as a FluidApplication which contains one or more PodSpecs.
-// 2. For each PodSpec in the FluidApplication, and for each runtimeInfo involved, inject the PodSpec according to the runtimeInfo(i.e. func `injectObject()`)
-// 3. Add injection done label to the PodSpec, indicating mutation is done for the PodSpec.
-// 4. When all the PodSpecs are mutated, return the modified runtime.Object
+// 2. For each PodSpec in the FluidApplication, and for each runtimeInfo involved, inject the PodSpec according to the runtimeInfo and the serverless platform (i.e. func `MutateWithRuntimeInfo()`)
+// 3. Pod-level mutation according to the serverless platform (i.e. func `PostMutate()`)
+// 4. Add injection done label to the PodSpec, indicating mutation is done for the PodSpec.
+// 5. When all the PodSpecs are mutated, return the modified runtime.Object
 func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.RuntimeInfoInterface) (out runtime.Object, err error) {
 	out = in.DeepCopyObject()
 
@@ -227,87 +228,6 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 	out = application.GetObject()
 	return out, nil
 }
-
-// injectObject injects fuse container into a PodSpec given the pvcName and the runtimeInfo. It takes the following steps:
-// 1. Check if it needs injection by checking PodSpec's original information.
-// 2. Generate the fuse container template to inject.
-// 3. Handle mutations on the PodSpec's volumes
-// 4. Handle mutations on the PodSpec's volumeMounts
-// 5. Add the fuse container to the first of the PodSpec's container list
-// func (s *Injector) injectObject(pod common.FluidObject, pvcName string, runtimeInfo base.RuntimeInfoInterface, containerNameSuffix string) (err error) {
-// 	// Cannot use objMeta.namespace as the expected namespace because it may be empty and not trustworthy before Kubernetes 1.24.
-// 	// For more details, see https://github.com/kubernetes/website/issues/30574#issuecomment-974896246
-// 	specsToMutate, err := mutator.CollectFluidObjectSpecs(pod)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	mountedPvc := kubeclient.PVCNames(specsToMutate.VolumeMounts, specsToMutate.Volumes)
-// 	found := utils.ContainsString(mountedPvc, pvcName)
-// 	if !found {
-// 		s.log.Info("Not able to find the fluid pvc in pod spec, skip",
-// 			"pvc", pvcName,
-// 			"mounted pvcs", mountedPvc)
-// 		return nil
-// 	}
-
-// 	option := common.FuseSidecarInjectOption{
-// 		EnableCacheDir:             utils.InjectCacheDirEnabled(specsToMutate.MetaObj.Labels),
-// 		EnableUnprivilegedSidecar:  utils.FuseSidecarUnprivileged(specsToMutate.MetaObj.Labels),
-// 		SkipSidecarPostStartInject: utils.SkipSidecarPostStartInject(specsToMutate.MetaObj.Labels),
-// 	}
-
-// 	// template, exist := cache.GetFuseTemplateByKey(pvcKey, option)
-// 	// if !exist {
-// 	// 	template, err = runtimeInfo.GetTemplateToInjectForFuse(pvcName, pvcNamespace, option)
-// 	// 	if err != nil {
-// 	// 		return err
-// 	// 	}
-// 	// 	cache.AddFuseTemplateByKey(pvcKey, option, template)
-// 	// }
-
-// 	// TODO: support cache for faster path to get fuse container template.
-// 	template, err := runtimeInfo.GetFuseContainerTemplate()
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	mutatorBuildOpts := mutator.MutatorBuildOpts{
-// 		PvcName:     pvcName,
-// 		Template:    template,
-// 		Options:     option,
-// 		RuntimeInfo: runtimeInfo,
-// 		NameSuffix:  containerNameSuffix,
-// 		Client:      s.client,
-// 		Log:         s.log,
-// 		Specs:       specsToMutate,
-// 	}
-
-// 	// platform := s.getServerlessPlatformFromMeta(specsToMutate.MetaObj)
-// 	// if len(platform) == 0 {
-// 	// 	return fmt.Errorf("can't find any supported platform-specific mutator in pod's metadata")
-// 	// }
-
-// 	// mtt, err := mutator.BuildMutator(mutatorBuildOpts, platform)
-// 	// if err != nil {
-// 	// 	return err
-// 	// }
-
-// 	if err := mtt.PrepareMutation(); err != nil {
-// 		return err
-// 	}
-
-// 	mutatedSpecs, err := mtt.Mutate()
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	if err := mutator.ApplyFluidObjectSpecs(pod, mutatedSpecs); err != nil {
-// 		return err
-// 	}
-
-// 	return nil
-// }
 
 // Inject delegates inject() to do all the mutations
 func (s *Injector) Inject(in runtime.Object, runtimeInfos map[string]base.RuntimeInfoInterface) (out runtime.Object, err error) {

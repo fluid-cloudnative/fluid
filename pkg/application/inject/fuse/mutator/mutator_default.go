@@ -140,6 +140,10 @@ func (mutator *defaultMutatorHelper) PrepareMutation() error {
 	return nil
 }
 
+// Mutate mutates PodSpec given the pvcName and the runtimeInfo. It takes the following steps:
+// 1. Handle mutations on the PodSpec's volumes
+// 2. Handle mutations on the PodSpec's volumeMounts
+// 3. Add the fuse container to the first of the PodSpec's container list
 func (helper *defaultMutatorHelper) Mutate() (*MutatingPodSpecs, error) {
 	if err := helper.mutateDatasetVolumes(); err != nil {
 		return nil, err
