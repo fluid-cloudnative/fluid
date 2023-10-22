@@ -2,11 +2,11 @@ package dataoperation
 
 import (
 	"fmt"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func BuildMockDataloadOperationReconcilerInterface(expectType datav1alpha1.OperationType, ttlSecondsAfterFinished *int32) (operation OperationReconcilerInterface) {
@@ -22,6 +22,10 @@ type mockDataloadOperationReconciler struct {
 	TTLSecondsAfterFinished *int32
 }
 
+func (m mockDataloadOperationReconciler) GetObject() client.Object {
+	return nil
+}
+
 // GetChartsDirectory implements OperationReconcilerInterface.
 func (mockDataloadOperationReconciler) GetChartsDirectory() string {
 	panic("unimplemented")
@@ -33,17 +37,17 @@ func (m mockDataloadOperationReconciler) GetOperationType() datav1alpha1.Operati
 }
 
 // GetReleaseNameSpacedName implements OperationReconcilerInterface.
-func (mockDataloadOperationReconciler) GetReleaseNameSpacedName(object client.Object) types.NamespacedName {
+func (mockDataloadOperationReconciler) GetReleaseNameSpacedName() types.NamespacedName {
 	panic("unimplemented")
 }
 
 // GetStatusHandler implements OperationReconcilerInterface.
-func (mockDataloadOperationReconciler) GetStatusHandler(object client.Object) StatusHandler {
+func (mockDataloadOperationReconciler) GetStatusHandler() StatusHandler {
 	panic("unimplemented")
 }
 
 // GetTTL implements OperationReconcilerInterface.
-func (m mockDataloadOperationReconciler) GetTTL(object client.Object) (ttl *int32, err error) {
+func (m mockDataloadOperationReconciler) GetTTL() (ttl *int32, err error) {
 	if m.expectType != datav1alpha1.DataLoadType {
 		err = fmt.Errorf("the dataoperation type is %s, not DataloadType", m.expectType)
 	}
@@ -51,7 +55,7 @@ func (m mockDataloadOperationReconciler) GetTTL(object client.Object) (ttl *int3
 }
 
 // GetTargetDataset implements OperationReconcilerInterface.
-func (m mockDataloadOperationReconciler) GetTargetDataset(object client.Object) (*datav1alpha1.Dataset, error) {
+func (m mockDataloadOperationReconciler) GetTargetDataset() (*datav1alpha1.Dataset, error) {
 	panic("unimplemented")
 }
 
@@ -66,16 +70,16 @@ func (mockDataloadOperationReconciler) SetTargetDatasetStatusInProgress(dataset 
 }
 
 // UpdateOperationApiStatus implements OperationReconcilerInterface.
-func (mockDataloadOperationReconciler) UpdateOperationApiStatus(object client.Object, opStatus *datav1alpha1.OperationStatus) error {
+func (mockDataloadOperationReconciler) UpdateOperationApiStatus(opStatus *datav1alpha1.OperationStatus) error {
 	panic("unimplemented")
 }
 
 // UpdateStatusInfoForCompleted implements OperationReconcilerInterface.
-func (mockDataloadOperationReconciler) UpdateStatusInfoForCompleted(object client.Object, infos map[string]string) error {
+func (mockDataloadOperationReconciler) UpdateStatusInfoForCompleted(infos map[string]string) error {
 	panic("unimplemented")
 }
 
 // Validate implements OperationReconcilerInterface.
-func (mockDataloadOperationReconciler) Validate(ctx runtime.ReconcileRequestContext, object client.Object) ([]datav1alpha1.Condition, error) {
+func (mockDataloadOperationReconciler) Validate(ctx runtime.ReconcileRequestContext) ([]datav1alpha1.Condition, error) {
 	panic("unimplemented")
 }

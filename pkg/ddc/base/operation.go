@@ -76,14 +76,14 @@ func (t *TemplateEngine) reconcileNone(ctx cruntime.ReconcileRequestContext, obj
 	log := ctx.Log.WithName("reconcileNone")
 
 	// 0. check the object spec valid or not
-	conditions, err := operation.Validate(ctx, object)
+	conditions, err := operation.Validate(ctx)
 	if err != nil {
 		log.Error(err, "validate failed", "operationName", object.GetName(), "namespace", object.GetNamespace())
 		ctx.Recorder.Event(object, v1.EventTypeWarning, common.DataOperationNotValid, err.Error())
 
 		opStatus.Conditions = conditions
 		opStatus.Phase = common.PhaseFailed
-		if err = operation.UpdateOperationApiStatus(object, opStatus); err != nil {
+		if err = operation.UpdateOperationApiStatus(opStatus); err != nil {
 			return utils.RequeueIfError(err)
 		}
 		// update opreation status would trigger requeue, no need to requeue here
@@ -105,7 +105,7 @@ func (t *TemplateEngine) reconcileNone(ctx cruntime.ReconcileRequestContext, obj
 		opStatus.WaitingFor.OperationComplete = utilpointer.Bool(true)
 	}
 
-	if err = operation.UpdateOperationApiStatus(object, opStatus); err != nil {
+	if err = operation.UpdateOperationApiStatus(opStatus); err != nil {
 		log.Error(err, fmt.Sprintf("failed to update the %s", operation.GetOperationType()))
 		return utils.RequeueIfError(err)
 	}
@@ -132,7 +132,7 @@ func (t *TemplateEngine) reconcilePending(ctx cruntime.ReconcileRequestContext, 
 
 	log.Info("Set data operation on target dataset, try to update phase")
 	opStatus.Phase = common.PhaseExecuting
-	if err = operation.UpdateOperationApiStatus(object, opStatus); err != nil {
+	if err = operation.UpdateOperationApiStatus(opStatus); err != nil {
 		log.Error(err, fmt.Sprintf("failed to update %s status to Executing, will retry", operation.GetOperationType()))
 		return utils.RequeueIfError(err)
 	}
@@ -155,7 +155,7 @@ func (t *TemplateEngine) reconcileExecuting(ctx cruntime.ReconcileRequestContext
 				"RuntimeType %s not support %s", ctx.RuntimeType, operation.GetOperationType())
 
 			opStatus.Phase = common.PhaseFailed
-			if err = operation.UpdateOperationApiStatus(object, opStatus); err != nil {
+			if err = operation.UpdateOperationApiStatus(opStatus); err != nil {
 				log.Error(err, "failed to update api status")
 				return utils.RequeueIfError(err)
 			}
@@ -168,7 +168,7 @@ func (t *TemplateEngine) reconcileExecuting(ctx cruntime.ReconcileRequestContext
 	}
 
 	// 2. update data operation's status by helm status
-	statusHandler := operation.GetStatusHandler(object)
+	statusHandler := operation.GetStatusHandler()
 	if statusHandler == nil {
 		err = fmt.Errorf("fail to get status handler")
 		log.Error(err, "status handler is nil")
@@ -180,7 +180,7 @@ func (t *TemplateEngine) reconcileExecuting(ctx cruntime.ReconcileRequestContext
 		return utils.RequeueIfError(err)
 	}
 	if !reflect.DeepEqual(opStatus, opStatusToUpdate) {
-		if err = operation.UpdateOperationApiStatus(object, opStatusToUpdate); err != nil {
+		if err = operation.UpdateOperationApiStatus(opStatusToUpdate); err != nil {
 			log.Error(err, "failed to update api status")
 			return utils.RequeueIfError(err)
 		}
@@ -196,7 +196,7 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 
 	// 0. clean up if ttl after finished expired
 	var ttl *time.Duration
-	if utils.NeedCleanUp(object, opStatus, operation) {
+	if utils.NeedCleanUp(opStatus, operation) {
 		var err error
 		ttl, err = t.processTTL(object, opStatus, operation, log, ctx)
 		if err != nil {
@@ -213,12 +213,12 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 		opStatus.Infos = map[string]string{}
 	}
 	// different data operation may set different key-value
-	err := operation.UpdateStatusInfoForCompleted(object, opStatus.Infos)
+	err := operation.UpdateStatusInfoForCompleted(opStatus.Infos)
 	if err != nil {
 		return utils.RequeueIfError(err)
 	}
 
-	if err = operation.UpdateOperationApiStatus(object, opStatus); err != nil {
+	if err = operation.UpdateOperationApiStatus(opStatus); err != nil {
 		log.Error(err, fmt.Sprintf("failed to update the %s status", operation.GetOperationType()))
 		return utils.RequeueIfError(err)
 	}
@@ -230,7 +230,7 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 	}
 
 	// 3. check and update data operation's status by helm status
-	statusHandler := operation.GetStatusHandler(object)
+	statusHandler := operation.GetStatusHandler()
 	if statusHandler == nil {
 		err := fmt.Errorf("fail to get status handler")
 		log.Error(err, "status handler is nil")
@@ -242,7 +242,7 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 		return utils.RequeueIfError(err)
 	}
 	if !reflect.DeepEqual(opStatus, opStatusToUpdate) {
-		if err = operation.UpdateOperationApiStatus(object, opStatusToUpdate); err != nil {
+		if err = operation.UpdateOperationApiStatus(opStatusToUpdate); err != nil {
 			log.Error(err, fmt.Sprintf("failed to update the %s status", operation.GetOperationType()))
 			return utils.RequeueIfError(err)
 		}
@@ -268,7 +268,7 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 // processTTL processes the operations that need to be cleaned up based on the TTL.
 func (t *TemplateEngine) processTTL(object client.Object, opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationReconcilerInterface, log logr.Logger, ctx cruntime.ReconcileRequestContext) (ttl *time.Duration, err error) {
 	// Get the remaining time to clean up for the operation.
-	ttl, err = utils.Timeleft(object, opStatus, operation)
+	ttl, err = utils.Timeleft(opStatus, operation)
 	if err != nil {
 		log.Error(err, fmt.Sprintf(cleanupErrorMsg, operation.GetOperationType()))
 		return
@@ -291,7 +291,7 @@ func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, o
 
 	// 0. clean up if ttl after finished expired
 	var ttl *time.Duration
-	if utils.NeedCleanUp(object, opStatus, operation) {
+	if utils.NeedCleanUp(opStatus, operation) {
 		var err error
 		ttl, err = t.processTTL(object, opStatus, operation, log, ctx)
 		if err != nil {
@@ -310,7 +310,7 @@ func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, o
 	}
 
 	// 2. check and update data operation's status by helm status
-	statusHandler := operation.GetStatusHandler(object)
+	statusHandler := operation.GetStatusHandler()
 	if statusHandler == nil {
 		err := fmt.Errorf("fail to get status handler")
 		log.Error(err, "status handler is nil")
@@ -322,7 +322,7 @@ func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, o
 		return utils.RequeueIfError(err)
 	}
 	if !reflect.DeepEqual(opStatus, opStatusToUpdate) {
-		if err = operation.UpdateOperationApiStatus(object, opStatusToUpdate); err != nil {
+		if err = operation.UpdateOperationApiStatus(opStatusToUpdate); err != nil {
 			log.Error(err, fmt.Sprintf("failed to update the %s status", operation.GetOperationType()))
 			return utils.RequeueIfError(err)
 		}

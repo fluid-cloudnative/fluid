@@ -19,6 +19,8 @@ package dataprocess
 import (
 	"context"
 	"fmt"
+	"github.com/go-logr/logr"
+	"k8s.io/client-go/tools/record"
 	"time"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -33,51 +35,54 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (r *DataProcessReconciler) GetTargetDataset(object client.Object) (*datav1alpha1.Dataset, error) {
-	dataProcess, ok := object.(*datav1alpha1.DataProcess)
-	if !ok {
-		return nil, fmt.Errorf("object %v is not of type DataProcess", object)
-	}
+type dataProcessReconciler struct {
+	client.Client
+	Log      logr.Logger
+	Recorder record.EventRecorder
+
+	dataProcess *datav1alpha1.DataProcess
+}
+
+var _ dataoperation.OperationReconcilerInterface = &dataProcessReconciler{}
+
+func (r *dataProcessReconciler) GetObject() client.Object {
+	return r.dataProcess
+}
+
+func (r *dataProcessReconciler) GetTargetDataset() (*datav1alpha1.Dataset, error) {
+	dataProcess := r.dataProcess
 
 	return utils.GetDataset(r.Client, dataProcess.Spec.Dataset.Name, dataProcess.Spec.Dataset.Namespace)
 }
 
 // GetReleaseNameSpacedName get the installed helm chart name
-func (r *DataProcessReconciler) GetReleaseNameSpacedName(object client.Object) types.NamespacedName {
+func (r *dataProcessReconciler) GetReleaseNameSpacedName() types.NamespacedName {
 	return types.NamespacedName{
-		Namespace: object.GetNamespace(),
-		Name:      utils.GetDataProcessReleaseName(object.GetName()),
+		Namespace: r.dataProcess.GetNamespace(),
+		Name:      utils.GetDataProcessReleaseName(r.dataProcess.GetName()),
 	}
 }
 
 // GetChartsDirectory get the helm charts directory of data operation
-func (r *DataProcessReconciler) GetChartsDirectory() string {
+func (r *dataProcessReconciler) GetChartsDirectory() string {
 	return utils.GetChartsDirectory() + "/" + cdataprocess.DataProcessChart
 }
 
 // GetOperationType get the data operation type
-func (r *DataProcessReconciler) GetOperationType() datav1alpha1.OperationType {
+func (r *dataProcessReconciler) GetOperationType() datav1alpha1.OperationType {
 	return datav1alpha1.DataProcessType
 }
 
 // UpdateOperationApiStatus update the data operation status, object is the data operation crd instance.
-func (r *DataProcessReconciler) UpdateOperationApiStatus(object client.Object, opStatus *datav1alpha1.OperationStatus) error {
-	dataProcess, ok := object.(*datav1alpha1.DataProcess)
-	if !ok {
-		return fmt.Errorf("%+v is not of type DataProcess", object)
-	}
-
-	var dataProcessCopy = dataProcess.DeepCopy()
+func (r *dataProcessReconciler) UpdateOperationApiStatus(opStatus *datav1alpha1.OperationStatus) error {
+	var dataProcessCopy = r.dataProcess.DeepCopy()
 	dataProcessCopy.Status = *opStatus.DeepCopy()
 	return r.Status().Update(context.TODO(), dataProcessCopy)
 }
 
 // Validate check the data operation spec is valid or not, if not valid return error with conditions
-func (r *DataProcessReconciler) Validate(ctx runtime.ReconcileRequestContext, object client.Object) ([]datav1alpha1.Condition, error) {
-	dataProcess, ok := object.(*datav1alpha1.DataProcess)
-	if !ok {
-		return []datav1alpha1.Condition{}, fmt.Errorf("object %v is not of type DataProcess", object)
-	}
+func (r *dataProcessReconciler) Validate(ctx runtime.ReconcileRequestContext) ([]datav1alpha1.Condition, error) {
+	dataProcess := r.dataProcess
 
 	// DataProcess's targetDataset must be in the same namespace.
 	if dataProcess.Namespace != dataProcess.Spec.Dataset.Namespace {
@@ -190,33 +195,28 @@ func (r *DataProcessReconciler) Validate(ctx runtime.ReconcileRequestContext, ob
 }
 
 // UpdateStatusInfoForCompleted update the status infos field for phase completed, the parameter infos is not nil
-func (r *DataProcessReconciler) UpdateStatusInfoForCompleted(object client.Object, infos map[string]string) error {
+func (r *dataProcessReconciler) UpdateStatusInfoForCompleted(infos map[string]string) error {
 	return nil
 }
 
 // SetTargetDatasetStatusInProgress set the dataset status for certain field when data operation executing.
-func (r *DataProcessReconciler) SetTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
+func (r *dataProcessReconciler) SetTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
 	// DataProcess does not need to update Dataset status before execution.
 }
 
 // RemoveTargetDatasetStatusInProgress remove the dataset status for certain field when data operation finished.
-func (r *DataProcessReconciler) RemoveTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
+func (r *dataProcessReconciler) RemoveTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
 	// DataProcess does not need to recover Dataset status after execution.
 }
 
-func (r *DataProcessReconciler) GetStatusHandler(object client.Object) dataoperation.StatusHandler {
+func (r *dataProcessReconciler) GetStatusHandler() dataoperation.StatusHandler {
 	// TODO: Support dataProcess.Spec.Policy
 	return &OnceStatusHandler{Client: r.Client}
 }
 
 // GetTTL implements dataoperation.OperationReconcilerInterface.
-func (*DataProcessReconciler) GetTTL(object client.Object) (ttl *int32, err error) {
-	dataProcess, ok := object.(*datav1alpha1.DataProcess)
-	if !ok {
-		err = fmt.Errorf("%+v is not a type of DataProcess", object)
-		return
-	}
+func (r *dataProcessReconciler) GetTTL() (ttl *int32, err error) {
 
-	ttl = dataProcess.Spec.TTLSecondsAfterFinished
+	ttl = r.dataProcess.Spec.TTLSecondsAfterFinished
 	return
 }

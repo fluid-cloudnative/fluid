@@ -24,13 +24,19 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/runtime"
 )
 
+type OperationReconcilerInterfaceBuilder interface {
+	Build(object client.Object) (OperationReconcilerInterface, error)
+}
+
 // OperationReconcilerInterface the interface of data operation crd
 type OperationReconcilerInterface interface {
+	GetObject() client.Object
+
 	// GetTargetDataset get the target dataset of the data operation
-	GetTargetDataset(object client.Object) (*datav1alpha1.Dataset, error)
+	GetTargetDataset() (*datav1alpha1.Dataset, error)
 
 	// GetReleaseNameSpacedName get the installed helm chart name
-	GetReleaseNameSpacedName(object client.Object) types.NamespacedName
+	GetReleaseNameSpacedName() types.NamespacedName
 
 	// GetChartsDirectory get the helm charts directory of data operation
 	GetChartsDirectory() string
@@ -39,13 +45,13 @@ type OperationReconcilerInterface interface {
 	GetOperationType() datav1alpha1.OperationType
 
 	// UpdateOperationApiStatus update the data operation status, object is the data operation crd instance.
-	UpdateOperationApiStatus(object client.Object, opStatus *datav1alpha1.OperationStatus) error
+	UpdateOperationApiStatus(opStatus *datav1alpha1.OperationStatus) error
 
 	// Validate check the data operation spec is valid or not, if not valid return error with conditions
-	Validate(ctx runtime.ReconcileRequestContext, object client.Object) ([]datav1alpha1.Condition, error)
+	Validate(ctx runtime.ReconcileRequestContext) ([]datav1alpha1.Condition, error)
 
 	// UpdateStatusInfoForCompleted update the status infos field for phase completed, the parameter infos is not nil
-	UpdateStatusInfoForCompleted(object client.Object, infos map[string]string) error
+	UpdateStatusInfoForCompleted(infos map[string]string) error
 
 	// SetTargetDatasetStatusInProgress set the dataset status for certain field when data operation executing.
 	SetTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset)
@@ -53,10 +59,10 @@ type OperationReconcilerInterface interface {
 	// RemoveTargetDatasetStatusInProgress remove the dataset status for certain field when data operation finished.
 	RemoveTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset)
 
-	GetStatusHandler(object client.Object) StatusHandler
+	GetStatusHandler() StatusHandler
 
 	// GetTTL gets timeToLive
-	GetTTL(object client.Object) (ttl *int32, err error)
+	GetTTL() (ttl *int32, err error)
 }
 
 type StatusHandler interface {

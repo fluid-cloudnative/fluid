@@ -31,7 +31,7 @@ func InstallDataOperationHelmIfNotExist(ctx cruntime.ReconcileRequestContext, ob
 	log := ctx.Log.WithName("InstallDataOperationHelmIfNotExist")
 
 	operationTypeName := string(operation.GetOperationType())
-	releaseNamespacedName := operation.GetReleaseNameSpacedName(object)
+	releaseNamespacedName := operation.GetReleaseNameSpacedName()
 	var existed bool
 	existed, err = helm.CheckRelease(releaseNamespacedName.Name, releaseNamespacedName.Namespace)
 	if err != nil {

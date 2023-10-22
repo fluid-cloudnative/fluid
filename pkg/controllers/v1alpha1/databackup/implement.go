@@ -19,6 +19,8 @@ package databackup
 import (
 	"context"
 	"fmt"
+	"github.com/go-logr/logr"
+	"k8s.io/client-go/tools/record"
 	"strings"
 	"time"
 
@@ -37,21 +39,32 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
-func (r *DataBackupReconciler) GetChartsDirectory() string {
+type dataBackupReconciler struct {
+	client.Client
+	Log      logr.Logger
+	Recorder record.EventRecorder
+
+	dataBackup *datav1alpha1.DataBackup
+}
+
+var _ dataoperation.OperationReconcilerInterface = &dataBackupReconciler{}
+
+func (r *dataBackupReconciler) GetObject() client.Object {
+	return r.dataBackup
+}
+
+func (r *dataBackupReconciler) GetChartsDirectory() string {
 	return utils.GetChartsDirectory() + "/" + cdatabackup.DatabackupChart
 }
 
-func (r *DataBackupReconciler) UpdateStatusInfoForCompleted(object client.Object, infos map[string]string) error {
-	dataBackup, ok := object.(*datav1alpha1.DataBackup)
-	if !ok {
-		return fmt.Errorf("object %v is not a DataBackup", object)
-	}
+func (r *dataBackupReconciler) UpdateStatusInfoForCompleted(infos map[string]string) error {
+	dataBackup := r.dataBackup
 
 	infos[cdatabackup.BackupLocationPath] = dataBackup.Spec.BackupPath
 
 	if strings.HasPrefix(dataBackup.Spec.BackupPath, common.PathScheme.String()) {
-		podName := object.GetName() + "-pod"
-		backupPod, err := kubeclient.GetPodByName(r.Client, podName, object.GetNamespace())
+		podName := dataBackup.GetName() + "-pod"
+		backupPod, err := kubeclient.GetPodByName(r.Client, podName, dataBackup.GetNamespace())
 		if err != nil {
 			r.Log.Error(err, "Failed to get backup pod")
 			return fmt.Errorf("failed to get backup pod")
@@ -63,11 +76,9 @@ func (r *DataBackupReconciler) UpdateStatusInfoForCompleted(object client.Object
 
 	return nil
 }
-func (r *DataBackupReconciler) Validate(ctx runtime.ReconcileRequestContext, object client.Object) ([]datav1alpha1.Condition, error) {
-	dataBackup, ok := object.(*datav1alpha1.DataBackup)
-	if !ok {
-		return []datav1alpha1.Condition{}, fmt.Errorf("object %v is not a DataBackup", object)
-	}
+
+func (r *dataBackupReconciler) Validate(ctx runtime.ReconcileRequestContext) ([]datav1alpha1.Condition, error) {
+	dataBackup := r.dataBackup
 
 	// 0. check the supported backup path format
 	if !strings.HasPrefix(dataBackup.Spec.BackupPath, common.PathScheme.String()) && !strings.HasPrefix(dataBackup.Spec.BackupPath, common.VolumeScheme.String()) {
@@ -86,56 +97,40 @@ func (r *DataBackupReconciler) Validate(ctx runtime.ReconcileRequestContext, obj
 	return nil, nil
 }
 
-func (r *DataBackupReconciler) SetTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
+func (r *dataBackupReconciler) SetTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
 }
 
-func (r *DataBackupReconciler) RemoveTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
+func (r *dataBackupReconciler) RemoveTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
 }
 
-func (r *DataBackupReconciler) GetOperationType() datav1alpha1.OperationType {
+func (r *dataBackupReconciler) GetOperationType() datav1alpha1.OperationType {
 	return datav1alpha1.DataBackupType
 }
 
-func (r *DataBackupReconciler) GetTargetDataset(object client.Object) (*datav1alpha1.Dataset, error) {
-	typeObject, ok := object.(*datav1alpha1.DataBackup)
-	if !ok {
-		return nil, fmt.Errorf("object %v is not a DataBackup", object)
-	}
-
-	targetDataBackup := *typeObject
-
-	return utils.GetDataset(r.Client, targetDataBackup.Spec.Dataset, targetDataBackup.Namespace)
+func (r *dataBackupReconciler) GetTargetDataset() (*datav1alpha1.Dataset, error) {
+	return utils.GetDataset(r.Client, r.dataBackup.Spec.Dataset, r.dataBackup.Namespace)
 }
 
-func (r *DataBackupReconciler) GetReleaseNameSpacedName(object client.Object) types.NamespacedName {
+func (r *dataBackupReconciler) GetReleaseNameSpacedName() types.NamespacedName {
 	return types.NamespacedName{
-		Namespace: object.GetNamespace(),
-		Name:      utils.GetDataBackupReleaseName(object.GetName()),
+		Namespace: r.dataBackup.GetNamespace(),
+		Name:      utils.GetDataBackupReleaseName(r.dataBackup.GetName()),
 	}
 }
 
-// UpdateOperationStatus update the DataBackup Status
-func (r *DataBackupReconciler) UpdateOperationApiStatus(object client.Object, opStatus *datav1alpha1.OperationStatus) error {
-	dataBackup, ok := object.(*datav1alpha1.DataBackup)
-	if !ok {
-		return fmt.Errorf("%+v is not a type of DataBackup", object)
-	}
-	var dataBackupCpy = dataBackup.DeepCopy()
+// UpdateOperationApiStatus update the DataBackup Status
+func (r *dataBackupReconciler) UpdateOperationApiStatus(opStatus *datav1alpha1.OperationStatus) error {
+	var dataBackupCpy = r.dataBackup.DeepCopy()
 	dataBackupCpy.Status = *opStatus.DeepCopy()
 	return r.Status().Update(context.Background(), dataBackupCpy)
 }
 
-func (r *DataBackupReconciler) GetStatusHandler(object client.Object) dataoperation.StatusHandler {
+func (r *dataBackupReconciler) GetStatusHandler() dataoperation.StatusHandler {
 	return &OnceHandler{}
 }
 
 // GetTTL implements dataoperation.OperationReconcilerInterface.
-func (*DataBackupReconciler) GetTTL(object client.Object) (ttl *int32, err error) {
-	dataBackup, ok := object.(*datav1alpha1.DataBackup)
-	if !ok {
-		err = fmt.Errorf("%+v is not a type of DataBackup", object)
-		return
-	}
-	ttl = dataBackup.Spec.TTLSecondsAfterFinished
+func (r *dataBackupReconciler) GetTTL() (ttl *int32, err error) {
+	ttl = r.dataBackup.Spec.TTLSecondsAfterFinished
 	return
 }

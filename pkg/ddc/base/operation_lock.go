@@ -87,7 +87,7 @@ func SetDataOperationInTargetDataset(ctx cruntime.ReconcileRequestContext, objec
 func ReleaseTargetDataset(ctx cruntime.ReconcileRequestContext, object client.Object,
 	operation dataoperation.OperationReconcilerInterface) error {
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		dataset, err := operation.GetTargetDataset(object)
+		dataset, err := operation.GetTargetDataset()
 		operationTypeName := string(operation.GetOperationType())
 		if err != nil {
 			if utils.IgnoreNotFound(err) == nil {

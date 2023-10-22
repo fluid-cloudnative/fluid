@@ -108,7 +108,7 @@ func TestTimeleft(t *testing.T) {
 		},
 	}
 	for _, test := range testcase {
-		remaining, err := Timeleft(&test.dataload, &test.dataload.Status, test.operation)
+		remaining, err := Timeleft(&test.dataload.Status, test.operation)
 		if test.validRemaining != (remaining != nil && *remaining > 0) {
 			t.Errorf("GetRemaining want validRemaining %v, get remaining %v", test.validRemaining, remaining)
 		}
@@ -156,7 +156,7 @@ func TestGetTTL(t *testing.T) {
 		},
 	}
 	for _, test := range testcase {
-		ttl, err := GetTTL(&test.dataload, test.operation)
+		ttl, err := test.operation.GetTTL()
 		if ttl != test.ttl {
 			t.Errorf("Testcase %s: Get wrong ttl value, want %v, get %v", test.name, test.ttl, ttl)
 		}
@@ -221,7 +221,7 @@ func TestNeedCleanUp(t *testing.T) {
 		},
 	}
 	for _, test := range testcase {
-		needCleanUp := NeedCleanUp(&test.dataload, &test.dataload.Status, test.operation)
+		needCleanUp := NeedCleanUp(&test.dataload.Status, test.operation)
 		if needCleanUp != test.needCleanUp {
 			t.Errorf("Testcase %s:NeedCleanUp want %v, get %v", test.name, test.needCleanUp, needCleanUp)
 		}

@@ -18,6 +18,7 @@ package databackup
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -44,7 +45,7 @@ type DataBackupReconciler struct {
 	*controllers.OperationReconciler
 }
 
-var _ dataoperation.OperationReconcilerInterface = &DataBackupReconciler{}
+var _ dataoperation.OperationReconcilerInterfaceBuilder = &DataBackupReconciler{}
 
 // NewDataBackupReconciler returns a DataBackupReconciler
 func NewDataBackupReconciler(client client.Client,
@@ -58,15 +59,30 @@ func NewDataBackupReconciler(client client.Client,
 	return r
 }
 
+func (r *DataBackupReconciler) Build(object client.Object) (dataoperation.OperationReconcilerInterface, error) {
+	dataBackup, ok := object.(*datav1alpha1.DataBackup)
+	if !ok {
+		return nil, fmt.Errorf("object %v is not a DataBackup", object)
+	}
+
+	return &dataBackupReconciler{
+		Client:     r.Client,
+		Log:        r.Log,
+		Recorder:   r.Recorder,
+		dataBackup: dataBackup,
+	}, nil
+}
+
 // +kubebuilder:rbac:groups=data.fluid.io,resources=databackups,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=data.fluid.io,resources=databackups/status,verbs=get;update;patch
 // Reconcile reconciles the DataBackup object
 func (r *DataBackupReconciler) Reconcile(context context.Context, req ctrl.Request) (ctrl.Result, error) {
+
 	ctx := dataoperation.ReconcileRequestContext{
 		// used for create engine
 		ReconcileRequestContext: cruntime.ReconcileRequestContext{
 			Context:  context,
-			Log:      r.Log.WithValues(string(r.GetOperationType()), req.NamespacedName),
+			Log:      r.Log.WithValues("DataBackup", req.NamespacedName),
 			Recorder: r.Recorder,
 			Client:   r.Client,
 			Category: common.AccelerateCategory,

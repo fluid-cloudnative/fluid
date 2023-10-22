@@ -50,31 +50,32 @@ type OperationReconciler struct {
 	// mutex lock for engines
 	mutex *sync.Mutex
 
-	// Real implement
-	implement dataoperation.OperationReconcilerInterface
+	// Real implementBuilder
+	implementBuilder dataoperation.OperationReconcilerInterfaceBuilder
 }
 
 // NewDataOperationReconciler creates the default OperationReconciler
-func NewDataOperationReconciler(operationReconcilerInterface dataoperation.OperationReconcilerInterface, client client.Client,
+func NewDataOperationReconciler(operationReconcilerInterface dataoperation.OperationReconcilerInterfaceBuilder, client client.Client,
 	log logr.Logger, recorder record.EventRecorder) *OperationReconciler {
 
 	r := &OperationReconciler{
-		Client:    client,
-		Recorder:  recorder,
-		Log:       log,
-		mutex:     &sync.Mutex{},
-		engines:   map[string]base.Engine{},
-		implement: operationReconcilerInterface,
+		Client:           client,
+		Recorder:         recorder,
+		Log:              log,
+		mutex:            &sync.Mutex{},
+		engines:          map[string]base.Engine{},
+		implementBuilder: operationReconcilerInterface,
 	}
 	return r
 }
 
 // ReconcileDeletion reconciles the deletion of the DataBackup
-func (o *OperationReconciler) ReconcileDeletion(ctx dataoperation.ReconcileRequestContext, object client.Object) (ctrl.Result, error) {
+func (o *OperationReconciler) ReconcileDeletion(ctx dataoperation.ReconcileRequestContext, object client.Object,
+	implement dataoperation.OperationReconcilerInterface) (ctrl.Result, error) {
 	log := ctx.Log.WithName("ReconcileDeletion")
 
 	// 1. Delete helm release if exists
-	namespacedName := o.implement.GetReleaseNameSpacedName(object)
+	namespacedName := implement.GetReleaseNameSpacedName()
 	err := helm.DeleteReleaseIfExists(namespacedName.Name, namespacedName.Namespace)
 	if err != nil {
 		log.Error(err, "can't delete release", "releaseName", namespacedName.Name)
@@ -82,7 +83,7 @@ func (o *OperationReconciler) ReconcileDeletion(ctx dataoperation.ReconcileReque
 	}
 
 	// 2. Release lock on target dataset if necessary
-	err = base.ReleaseTargetDataset(ctx.ReconcileRequestContext, object, o.implement)
+	err = base.ReleaseTargetDataset(ctx.ReconcileRequestContext, object, implement)
 	// ignore the not found error, as dataset can be deleted first, then the data operation will be deleted by owner reference.
 	if utils.IgnoreNotFound(err) != nil {
 		log.Error(err, "can't release lock on target dataset")
@@ -114,13 +115,20 @@ func (o *OperationReconciler) ReconcileDeletion(ctx dataoperation.ReconcileReque
 func (o *OperationReconciler) ReconcileInternal(ctx dataoperation.ReconcileRequestContext) (ctrl.Result, error) {
 	var object = ctx.DataObject
 
+	implement, err := o.implementBuilder.Build(object)
+
+	if err != nil {
+		ctx.Log.Error(err, "build operation reconcile object failed")
+		return utils.RequeueIfError(err)
+	}
+
 	// 1. Reconcile deletion of the object if necessary
 	if !object.GetDeletionTimestamp().IsZero() {
-		return o.ReconcileDeletion(ctx, object)
+		return o.ReconcileDeletion(ctx, object, implement)
 	}
 
 	// 2. set target dataset
-	targetDataset, err := o.implement.GetTargetDataset(object)
+	targetDataset, err := implement.GetTargetDataset()
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
 			statusError := err.(*apierrors.StatusError)
@@ -168,7 +176,7 @@ func (o *OperationReconciler) ReconcileInternal(ctx dataoperation.ReconcileReque
 	// 5. create or get engine
 	engine, err := o.GetOrCreateEngine(ctx)
 	if err != nil {
-		o.Recorder.Eventf(object, v1.EventTypeWarning, common.ErrorProcessDatasetReason, "Process %s error %v", o.implement.GetOperationType(), err)
+		o.Recorder.Eventf(object, v1.EventTypeWarning, common.ErrorProcessDatasetReason, "Process %s error %v", implement.GetOperationType(), err)
 		return utils.RequeueIfError(errors.Wrap(err, "Failed to create or get engine"))
 	}
 
@@ -183,7 +191,7 @@ func (o *OperationReconciler) ReconcileInternal(ctx dataoperation.ReconcileReque
 	}
 
 	// 8. do the data operation
-	return engine.Operate(ctx.ReconcileRequestContext, object, ctx.OpStatus, o.implement)
+	return engine.Operate(ctx.ReconcileRequestContext, object, ctx.OpStatus, implement)
 }
 
 // GetOrCreateEngine gets the Engine
