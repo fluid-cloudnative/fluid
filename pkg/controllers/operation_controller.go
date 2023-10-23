@@ -93,7 +93,7 @@ func (o *OperationReconciler) ReconcileDeletion(ctx dataoperation.ReconcileReque
 	// 3. delete engine
 	o.RemoveEngine(ctx)
 
-	object := implement.GetObject()
+	object := implement.GetReconciledObject()
 	// 4. remove finalizer
 	if !object.GetDeletionTimestamp().IsZero() {
 		objectMeta, err := utils.GetObjectMeta(object)

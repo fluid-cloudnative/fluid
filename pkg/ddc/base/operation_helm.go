@@ -28,7 +28,6 @@ import (
 func InstallDataOperationHelmIfNotExist(ctx cruntime.ReconcileRequestContext, operation dataoperation.OperationReconcilerInterface,
 	yamlGenerator DataOperatorYamlGenerator) (err error) {
 	log := ctx.Log.WithName("InstallDataOperationHelmIfNotExist")
-	object := operation.GetObject()
 
 	operationTypeName := string(operation.GetOperationType())
 	releaseNamespacedName := operation.GetReleaseNameSpacedName()
@@ -44,7 +43,7 @@ func InstallDataOperationHelmIfNotExist(ctx cruntime.ReconcileRequestContext, op
 	if !existed {
 		log.Info(fmt.Sprintf("%s job helm chart not installed yet, will install", operationTypeName))
 		var valueFileName string
-		valueFileName, err = yamlGenerator.GetDataOperationValueFile(ctx, object, operation)
+		valueFileName, err = yamlGenerator.GetDataOperationValueFile(ctx, operation)
 		if err != nil {
 			log.Error(err, "failed to generate chart's value file")
 			return err

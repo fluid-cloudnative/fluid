@@ -22,12 +22,11 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/errors"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (j *JuiceFSEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, object client.Object,
-	operation dataoperation.OperationReconcilerInterface) (valueFileName string, err error) {
+func (j *JuiceFSEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, operation dataoperation.OperationReconcilerInterface) (valueFileName string, err error) {
 	operationType := operation.GetOperationType()
+	object := operation.GetReconciledObject()
 
 	switch operationType {
 	case datav1alpha1.DataMigrateType:

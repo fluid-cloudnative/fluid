@@ -22,11 +22,11 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/errors"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (e *GooseFSEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, object client.Object, operation dataoperation.OperationReconcilerInterface) (valueFileName string, err error) {
+func (e *GooseFSEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, operation dataoperation.OperationReconcilerInterface) (valueFileName string, err error) {
 	operateType := operation.GetOperationType()
+	object := operation.GetReconciledObject()
 
 	if operateType == datav1alpha1.DataBackupType {
 		valueFileName, err = e.generateDataBackupValueFile(ctx, object)

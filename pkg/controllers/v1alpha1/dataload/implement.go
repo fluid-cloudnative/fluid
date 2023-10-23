@@ -48,7 +48,7 @@ type dataLoadReconciler struct {
 
 var _ dataoperation.OperationReconcilerInterface = &dataLoadReconciler{}
 
-func (r *dataLoadReconciler) GetObject() client.Object {
+func (r *dataLoadReconciler) GetReconciledObject() client.Object {
 	return r.dataLoad
 }
 

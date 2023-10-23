@@ -26,7 +26,7 @@ func (m mockDataloadOperationReconciler) HasPrecedingOperation() bool {
 	panic("unimplemented")
 }
 
-func (m mockDataloadOperationReconciler) GetObject() client.Object {
+func (m mockDataloadOperationReconciler) GetReconciledObject() client.Object {
 	panic("unimplemented")
 }
 

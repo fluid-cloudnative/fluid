@@ -50,7 +50,7 @@ type dataBackupReconciler struct {
 
 var _ dataoperation.OperationReconcilerInterface = &dataBackupReconciler{}
 
-func (r *dataBackupReconciler) GetObject() client.Object {
+func (r *dataBackupReconciler) GetReconciledObject() client.Object {
 	return r.dataBackup
 }
 

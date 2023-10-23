@@ -68,7 +68,7 @@ type ReferenceDatasetEngine struct {
 }
 
 func (e *ReferenceDatasetEngine) Operate(ctx cruntime.ReconcileRequestContext, opStatus *v1alpha1.OperationStatus, operation dataoperation.OperationReconcilerInterface) (ctrl.Result, error) {
-	object := operation.GetObject()
+	object := operation.GetReconciledObject()
 	// reference thin engine not support data operation
 	err := errors.NewNotSupported(
 		schema.GroupResource{

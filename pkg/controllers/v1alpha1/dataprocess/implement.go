@@ -45,7 +45,7 @@ type dataProcessReconciler struct {
 
 var _ dataoperation.OperationReconcilerInterface = &dataProcessReconciler{}
 
-func (r *dataProcessReconciler) GetObject() client.Object {
+func (r *dataProcessReconciler) GetReconciledObject() client.Object {
 	return r.dataProcess
 }
 

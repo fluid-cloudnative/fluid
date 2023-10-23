@@ -32,7 +32,7 @@ type OperationReconcilerInterfaceBuilder interface {
 type OperationReconcilerInterface interface {
 	HasPrecedingOperation() bool
 
-	GetObject() client.Object
+	GetReconciledObject() client.Object
 
 	// GetTargetDataset get the target dataset of the data operation, implementor should return the newest target dataset.
 	GetTargetDataset() (*datav1alpha1.Dataset, error)

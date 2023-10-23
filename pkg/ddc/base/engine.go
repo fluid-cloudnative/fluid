@@ -22,7 +22,6 @@ import (
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // Engine interface defines the interfaces that should be implemented
@@ -66,7 +65,7 @@ type DataOperator interface {
 
 // DataOperatorYamlGenerator is the implementation of DataOperator interface for runtime engine
 type DataOperatorYamlGenerator interface {
-	GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, object client.Object, operation dataoperation.OperationReconcilerInterface) (valueFileName string, err error)
+	GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, operation dataoperation.OperationReconcilerInterface) (valueFileName string, err error)
 }
 
 type Dataloader interface {

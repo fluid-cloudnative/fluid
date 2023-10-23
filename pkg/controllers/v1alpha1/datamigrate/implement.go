@@ -48,7 +48,7 @@ type dataMigrateReconciler struct {
 
 var _ dataoperation.OperationReconcilerInterface = &dataMigrateReconciler{}
 
-func (r *dataMigrateReconciler) GetObject() client.Object {
+func (r *dataMigrateReconciler) GetReconciledObject() client.Object {
 	return r.dataMigrate
 }
 
