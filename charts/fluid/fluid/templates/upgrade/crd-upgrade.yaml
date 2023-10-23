@@ -10,8 +10,8 @@ metadata:
     "helm.sh/hook-weight": "-4"
     "helm.sh/hook-delete-policy": before-hook-creation
 spec:
-{{- if .Values.crdUpgrade.ttl }}
-  ttlSecondsAfterFinished: {{ .Values.crdUpgrade.ttl }}
+{{- if .Values.crdUpgrade.ttlSecondsAfterFinished }}
+  ttlSecondsAfterFinished: {{ .Values.crdUpgrade.ttlSecondsAfterFinished }}
 {{- end }}
   template:
     spec:

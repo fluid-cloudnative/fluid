@@ -11,7 +11,7 @@ helmDriver: configmap
 crdUpgrade:
   enabled: true
   # This sets the time-to-live (TTL) for crd-upgrade jobs. Default is 259200 seconds (3 days).
-  ttl: 259200 
+  ttlSecondsAfterFinished: 259200 
   image: fluidcloudnative/fluid-crd-upgrader:v1.0.0-985f833
 
 ##  if unspecified, will use built-in variable `.Release.Namespace`.
