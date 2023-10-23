@@ -30,9 +30,11 @@ type OperationReconcilerInterfaceBuilder interface {
 
 // OperationReconcilerInterface the interface of data operation crd
 type OperationReconcilerInterface interface {
+	HasPrecedingOperation() bool
+
 	GetObject() client.Object
 
-	// GetTargetDataset get the target dataset of the data operation
+	// GetTargetDataset get the target dataset of the data operation, implementor should return the newest target dataset.
 	GetTargetDataset() (*datav1alpha1.Dataset, error)
 
 	// GetReleaseNameSpacedName get the installed helm chart name
@@ -67,5 +69,5 @@ type OperationReconcilerInterface interface {
 
 type StatusHandler interface {
 	// GetOperationStatus get operation status according to helm chart status
-	GetOperationStatus(ctx runtime.ReconcileRequestContext, object client.Object, opStatus *datav1alpha1.OperationStatus) (result *datav1alpha1.OperationStatus, err error)
+	GetOperationStatus(ctx runtime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus) (result *datav1alpha1.OperationStatus, err error)
 }

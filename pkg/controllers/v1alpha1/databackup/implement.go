@@ -44,6 +44,7 @@ type dataBackupReconciler struct {
 	Log      logr.Logger
 	Recorder record.EventRecorder
 
+	// object for reconciler
 	dataBackup *datav1alpha1.DataBackup
 }
 
@@ -55,6 +56,10 @@ func (r *dataBackupReconciler) GetObject() client.Object {
 
 func (r *dataBackupReconciler) GetChartsDirectory() string {
 	return utils.GetChartsDirectory() + "/" + cdatabackup.DatabackupChart
+}
+
+func (r *dataBackupReconciler) HasPrecedingOperation() bool {
+	return r.dataBackup.Spec.RunAfter != nil
 }
 
 func (r *dataBackupReconciler) UpdateStatusInfoForCompleted(infos map[string]string) error {

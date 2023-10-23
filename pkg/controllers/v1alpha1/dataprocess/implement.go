@@ -49,6 +49,10 @@ func (r *dataProcessReconciler) GetObject() client.Object {
 	return r.dataProcess
 }
 
+func (r *dataProcessReconciler) HasPrecedingOperation() bool {
+	return r.dataProcess.Spec.RunAfter != nil
+}
+
 func (r *dataProcessReconciler) GetTargetDataset() (*datav1alpha1.Dataset, error) {
 	dataProcess := r.dataProcess
 
@@ -211,7 +215,7 @@ func (r *dataProcessReconciler) RemoveTargetDatasetStatusInProgress(dataset *dat
 
 func (r *dataProcessReconciler) GetStatusHandler() dataoperation.StatusHandler {
 	// TODO: Support dataProcess.Spec.Policy
-	return &OnceStatusHandler{Client: r.Client}
+	return &OnceStatusHandler{Client: r.Client, dataProcess: r.dataProcess}
 }
 
 // GetTTL implements dataoperation.OperationReconcilerInterface.

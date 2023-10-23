@@ -70,7 +70,7 @@ func NewDataOperationReconciler(operationReconcilerInterface dataoperation.Opera
 }
 
 // ReconcileDeletion reconciles the deletion of the DataBackup
-func (o *OperationReconciler) ReconcileDeletion(ctx dataoperation.ReconcileRequestContext, object client.Object,
+func (o *OperationReconciler) ReconcileDeletion(ctx dataoperation.ReconcileRequestContext,
 	implement dataoperation.OperationReconcilerInterface) (ctrl.Result, error) {
 	log := ctx.Log.WithName("ReconcileDeletion")
 
@@ -83,7 +83,7 @@ func (o *OperationReconciler) ReconcileDeletion(ctx dataoperation.ReconcileReque
 	}
 
 	// 2. Release lock on target dataset if necessary
-	err = base.ReleaseTargetDataset(ctx.ReconcileRequestContext, object, implement)
+	err = base.ReleaseTargetDataset(ctx.ReconcileRequestContext, implement)
 	// ignore the not found error, as dataset can be deleted first, then the data operation will be deleted by owner reference.
 	if utils.IgnoreNotFound(err) != nil {
 		log.Error(err, "can't release lock on target dataset")
@@ -93,6 +93,7 @@ func (o *OperationReconciler) ReconcileDeletion(ctx dataoperation.ReconcileReque
 	// 3. delete engine
 	o.RemoveEngine(ctx)
 
+	object := implement.GetObject()
 	// 4. remove finalizer
 	if !object.GetDeletionTimestamp().IsZero() {
 		objectMeta, err := utils.GetObjectMeta(object)
@@ -114,7 +115,6 @@ func (o *OperationReconciler) ReconcileDeletion(ctx dataoperation.ReconcileReque
 
 func (o *OperationReconciler) ReconcileInternal(ctx dataoperation.ReconcileRequestContext) (ctrl.Result, error) {
 	var object = ctx.DataObject
-
 	implement, err := o.implementBuilder.Build(object)
 
 	if err != nil {
@@ -124,7 +124,7 @@ func (o *OperationReconciler) ReconcileInternal(ctx dataoperation.ReconcileReque
 
 	// 1. Reconcile deletion of the object if necessary
 	if !object.GetDeletionTimestamp().IsZero() {
-		return o.ReconcileDeletion(ctx, object, implement)
+		return o.ReconcileDeletion(ctx, implement)
 	}
 
 	// 2. set target dataset
@@ -191,7 +191,7 @@ func (o *OperationReconciler) ReconcileInternal(ctx dataoperation.ReconcileReque
 	}
 
 	// 8. do the data operation
-	return engine.Operate(ctx.ReconcileRequestContext, object, ctx.OpStatus, implement)
+	return engine.Operate(ctx.ReconcileRequestContext, ctx.OpStatus, implement)
 }
 
 // GetOrCreateEngine gets the Engine

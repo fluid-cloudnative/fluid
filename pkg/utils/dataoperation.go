@@ -101,24 +101,6 @@ func GetPrecedingOperationStatus(client client.Client, opRef *datav1alpha1.Opera
 	}
 }
 
-func HasPrecedingOperation(obj client.Object) (has bool, err error) {
-	if obj == nil {
-		return false, nil
-	}
-
-	if dataLoad, ok := obj.(*datav1alpha1.DataLoad); ok {
-		return dataLoad.Spec.RunAfter != nil, nil
-	} else if dataMigrate, ok := obj.(*datav1alpha1.DataMigrate); ok {
-		return dataMigrate.Spec.RunAfter != nil, nil
-	} else if dataBackup, ok := obj.(*datav1alpha1.DataBackup); ok {
-		return dataBackup.Spec.RunAfter != nil, nil
-	} else if dataProcess, ok := obj.(*datav1alpha1.DataProcess); ok {
-		return dataProcess.Spec.RunAfter != nil, nil
-	}
-
-	return false, fmt.Errorf("obj is not of any data operation type")
-}
-
 func NeedCleanUp(opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationReconcilerInterface) bool {
 	if len(opStatus.Conditions) == 0 {
 		// data operation has no completion time, no need to clean up

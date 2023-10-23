@@ -22,8 +22,12 @@ type mockDataloadOperationReconciler struct {
 	TTLSecondsAfterFinished *int32
 }
 
+func (m mockDataloadOperationReconciler) HasPrecedingOperation() bool {
+	panic("unimplemented")
+}
+
 func (m mockDataloadOperationReconciler) GetObject() client.Object {
-	return nil
+	panic("unimplemented")
 }
 
 // GetChartsDirectory implements OperationReconcilerInterface.

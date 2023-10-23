@@ -37,9 +37,9 @@ func GetDataOperationKey(object client.Object) string {
 }
 
 // SetDataOperationInTargetDataset set status of target dataset to mark the data operation being performed.
-func SetDataOperationInTargetDataset(ctx cruntime.ReconcileRequestContext, object client.Object,
-	operation dataoperation.OperationReconcilerInterface, engine Engine) error {
+func SetDataOperationInTargetDataset(ctx cruntime.ReconcileRequestContext, operation dataoperation.OperationReconcilerInterface, engine Engine) error {
 	targetDataset := ctx.Dataset
+	object := operation.GetObject()
 
 	// check if the bounded runtime is ready
 	ready := engine.CheckRuntimeReady()
@@ -53,6 +53,7 @@ func SetDataOperationInTargetDataset(ctx cruntime.ReconcileRequestContext, objec
 	}
 
 	operationTypeName := string(operation.GetOperationType())
+	dataOpKey := GetDataOperationKey(object)
 
 	// set current data operation in target dataset
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
@@ -60,8 +61,6 @@ func SetDataOperationInTargetDataset(ctx cruntime.ReconcileRequestContext, objec
 		if err != nil {
 			return err
 		}
-
-		dataOpKey := GetDataOperationKey(object)
 
 		// set current data operation in the target dataset
 		datasetToUpdate := dataset.DeepCopy()
@@ -84,11 +83,13 @@ func SetDataOperationInTargetDataset(ctx cruntime.ReconcileRequestContext, objec
 }
 
 // ReleaseTargetDataset release target dataset OperationRef field which marks the data operation being performed.
-func ReleaseTargetDataset(ctx cruntime.ReconcileRequestContext, object client.Object,
-	operation dataoperation.OperationReconcilerInterface) error {
+func ReleaseTargetDataset(ctx cruntime.ReconcileRequestContext, operation dataoperation.OperationReconcilerInterface) error {
+
+	dataOpKey := GetDataOperationKey(operation.GetObject())
+	operationTypeName := string(operation.GetOperationType())
+
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		dataset, err := operation.GetTargetDataset()
-		operationTypeName := string(operation.GetOperationType())
 		if err != nil {
 			if utils.IgnoreNotFound(err) == nil {
 				statusError := err.(*apierrors.StatusError)
@@ -98,7 +99,6 @@ func ReleaseTargetDataset(ctx cruntime.ReconcileRequestContext, object client.Ob
 			// other error
 			return err
 		}
-		dataOpKey := GetDataOperationKey(object)
 
 		datasetToUpdate := dataset.DeepCopy()
 		dataOpRef := datasetToUpdate.RemoveDataOperationInProgress(operationTypeName, dataOpKey)

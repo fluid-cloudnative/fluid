@@ -23,12 +23,12 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func InstallDataOperationHelmIfNotExist(ctx cruntime.ReconcileRequestContext, object client.Object, operation dataoperation.OperationReconcilerInterface,
+func InstallDataOperationHelmIfNotExist(ctx cruntime.ReconcileRequestContext, operation dataoperation.OperationReconcilerInterface,
 	yamlGenerator DataOperatorYamlGenerator) (err error) {
 	log := ctx.Log.WithName("InstallDataOperationHelmIfNotExist")
+	object := operation.GetObject()
 
 	operationTypeName := string(operation.GetOperationType())
 	releaseNamespacedName := operation.GetReleaseNameSpacedName()

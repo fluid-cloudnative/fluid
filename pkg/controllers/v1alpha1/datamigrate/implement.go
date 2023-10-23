@@ -52,6 +52,10 @@ func (r *dataMigrateReconciler) GetObject() client.Object {
 	return r.dataMigrate
 }
 
+func (r *dataMigrateReconciler) HasPrecedingOperation() bool {
+	return r.dataMigrate.Spec.RunAfter != nil
+}
+
 func (r *dataMigrateReconciler) GetTargetDataset() (*datav1alpha1.Dataset, error) {
 	return utils.GetTargetDatasetOfMigrate(r.Client, r.dataMigrate)
 }
@@ -115,11 +119,11 @@ func (r *dataMigrateReconciler) GetStatusHandler() dataoperation.StatusHandler {
 
 	switch policy {
 	case datav1alpha1.Once:
-		return &OnceStatusHandler{Client: r.Client, Log: r.Log}
+		return &OnceStatusHandler{Client: r.Client, Log: r.Log, dataMigrate: r.dataMigrate}
 	case datav1alpha1.Cron:
-		return &CronStatusHandler{Client: r.Client, Log: r.Log}
+		return &CronStatusHandler{Client: r.Client, Log: r.Log, dataMigrate: r.dataMigrate}
 	case datav1alpha1.OnEvent:
-		return &OnEventStatusHandler{Client: r.Client, Log: r.Log}
+		return &OnEventStatusHandler{Client: r.Client, Log: r.Log, dataMigrate: r.dataMigrate}
 	default:
 		return nil
 	}

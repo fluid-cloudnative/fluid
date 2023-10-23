@@ -52,6 +52,10 @@ func (r *dataLoadReconciler) GetObject() client.Object {
 	return r.dataLoad
 }
 
+func (r *dataLoadReconciler) HasPrecedingOperation() bool {
+	return r.dataLoad.Spec.RunAfter != nil
+}
+
 func (r *dataLoadReconciler) GetTargetDataset() (*datav1alpha1.Dataset, error) {
 	return utils.GetDataset(r.Client, r.dataLoad.Spec.Dataset.Name, r.dataLoad.Spec.Dataset.Namespace)
 }
@@ -121,11 +125,11 @@ func (r *dataLoadReconciler) GetStatusHandler() dataoperation.StatusHandler {
 
 	switch policy {
 	case datav1alpha1.Once:
-		return &OnceStatusHandler{Client: r.Client}
+		return &OnceStatusHandler{Client: r.Client, dataLoad: r.dataLoad}
 	case datav1alpha1.Cron:
-		return &CronStatusHandler{Client: r.Client}
+		return &CronStatusHandler{Client: r.Client, dataLoad: r.dataLoad}
 	case datav1alpha1.OnEvent:
-		return &OnEventStatusHandler{Client: r.Client}
+		return &OnEventStatusHandler{Client: r.Client, dataLoad: r.dataLoad}
 	default:
 		return nil
 	}

@@ -32,24 +32,27 @@ import (
 
 type OnceStatusHandler struct {
 	client.Client
+	dataLoad *datav1alpha1.DataLoad
 }
 
 var _ dataoperation.StatusHandler = &OnceStatusHandler{}
 
 type CronStatusHandler struct {
 	client.Client
+	dataLoad *datav1alpha1.DataLoad
 }
 
 var _ dataoperation.StatusHandler = &CronStatusHandler{}
 
 type OnEventStatusHandler struct {
 	client.Client
+	dataLoad *datav1alpha1.DataLoad
 }
 
-func (r *OnceStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestContext, object client.Object, opStatus *datav1alpha1.OperationStatus) (result *datav1alpha1.OperationStatus, err error) {
+func (r *OnceStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus) (result *datav1alpha1.OperationStatus, err error) {
 	result = opStatus.DeepCopy()
 	// 2. Check running status of the DataLoad job
-	releaseName := utils.GetDataLoadReleaseName(object.GetName())
+	releaseName := utils.GetDataLoadReleaseName(r.dataLoad.GetName())
 	jobName := utils.GetDataLoadJobName(releaseName)
 
 	ctx.Log.V(1).Info("DataLoad chart already existed, check its running status")
@@ -98,14 +101,14 @@ func (r *OnceStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestCont
 	return
 }
 
-func (c *CronStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestContext, object client.Object, opStatus *datav1alpha1.OperationStatus) (result *datav1alpha1.OperationStatus, err error) {
+func (c *CronStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus) (result *datav1alpha1.OperationStatus, err error) {
 	result = opStatus.DeepCopy()
 
 	// 1. Check running status of the DataLoad job
-	releaseName := utils.GetDataLoadReleaseName(object.GetName())
+	releaseName := utils.GetDataLoadReleaseName(c.dataLoad.GetName())
 	cronjobName := utils.GetDataLoadJobName(releaseName)
 
-	cronjobStatus, err := kubeclient.GetCronJobStatus(c.Client, types.NamespacedName{Namespace: object.GetNamespace(), Name: cronjobName})
+	cronjobStatus, err := kubeclient.GetCronJobStatus(c.Client, types.NamespacedName{Namespace: c.dataLoad.GetNamespace(), Name: cronjobName})
 
 	if err != nil {
 		// helm release found but cronjob missing, delete the helm release and requeue
@@ -126,7 +129,7 @@ func (c *CronStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestCont
 	result.LastScheduleTime = cronjobStatus.LastScheduleTime
 	result.LastSuccessfulTime = cronjobStatus.LastSuccessfulTime
 
-	jobs, err := utils.ListDataOperationJobByCronjob(c.Client, types.NamespacedName{Namespace: object.GetNamespace(), Name: cronjobName})
+	jobs, err := utils.ListDataOperationJobByCronjob(c.Client, types.NamespacedName{Namespace: c.dataLoad.GetNamespace(), Name: cronjobName})
 	if err != nil {
 		ctx.Log.Error(err, "can't list DataLoad job by cronjob", "namespace", ctx.Namespace, "cronjobName", cronjobName)
 		return
@@ -180,7 +183,7 @@ func (c *CronStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestCont
 	return
 }
 
-func (o *OnEventStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestContext, object client.Object, opStatus *datav1alpha1.OperationStatus) (result *datav1alpha1.OperationStatus, err error) {
+func (o *OnEventStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus) (result *datav1alpha1.OperationStatus, err error) {
 	//TODO implement me
 	return nil, nil
 }

@@ -49,9 +49,9 @@ func (m *MockEngine) MigrateData(ctx runtime.ReconcileRequestContext, targetData
 	return ret0
 }
 
-func (m *MockEngine) Operate(ctx runtime.ReconcileRequestContext, object client.Object, opStatus *v1alpha1.OperationStatus, operation dataoperation.OperationReconcilerInterface) (ctrl.Result, error) {
+func (m *MockEngine) Operate(ctx runtime.ReconcileRequestContext, opStatus *v1alpha1.OperationStatus, operation dataoperation.OperationReconcilerInterface) (ctrl.Result, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Operate", ctx, object, opStatus, operation)
+	ret := m.ctrl.Call(m, "Operate", ctx, opStatus, operation)
 	ret0, _ := ret[0].(ctrl.Result)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1

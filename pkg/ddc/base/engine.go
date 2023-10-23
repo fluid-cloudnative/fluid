@@ -61,7 +61,7 @@ type Engine interface {
 
 // DataOperator is a common interface of TemplateEngine for Data Operations like DataBackup/DataLoad/DataMigrate etc.
 type DataOperator interface {
-	Operate(ctx cruntime.ReconcileRequestContext, object client.Object, opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationReconcilerInterface) (ctrl.Result, error)
+	Operate(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationReconcilerInterface) (ctrl.Result, error)
 }
 
 // DataOperatorYamlGenerator is the implementation of DataOperator interface for runtime engine
