@@ -10,7 +10,9 @@ metadata:
     "helm.sh/hook-weight": "-4"
     "helm.sh/hook-delete-policy": before-hook-creation
 spec:
-  ttlSecondsAfterFinished: 259200 # 3 days
+{{- if .Values.crdUpgrade.ttl }}
+  ttlSecondsAfterFinished: {{ .Values.crdUpgrade.ttl }}
+{{- end }}
   template:
     spec:
       serviceAccountName: fluid-crds-upgrade
