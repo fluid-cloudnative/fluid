@@ -24,15 +24,17 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/runtime"
 )
 
-type OperationReconcilerInterfaceBuilder interface {
-	Build(object client.Object) (OperationReconcilerInterface, error)
+type OperationInterfaceBuilder interface {
+	Build(object client.Object) (OperationInterface, error)
 }
 
-// OperationReconcilerInterface the interface of data operation crd
-type OperationReconcilerInterface interface {
+// OperationInterface the interface of data operation crd
+type OperationInterface interface {
+	// HasPrecedingOperation check if current data operation depends on another data operation
 	HasPrecedingOperation() bool
 
-	GetReconciledObject() client.Object
+	// GetOperationObject get the data operation object
+	GetOperationObject() client.Object
 
 	// GetTargetDataset get the target dataset of the data operation, implementor should return the newest target dataset.
 	GetTargetDataset() (*datav1alpha1.Dataset, error)

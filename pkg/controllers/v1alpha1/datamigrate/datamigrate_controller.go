@@ -49,7 +49,7 @@ type DataMigrateReconciler struct {
 	*controllers.OperationReconciler
 }
 
-var _ dataoperation.OperationReconcilerInterfaceBuilder = &DataMigrateReconciler{}
+var _ dataoperation.OperationInterfaceBuilder = &DataMigrateReconciler{}
 
 // NewDataMigrateReconciler returns a DataMigrateReconciler
 func NewDataMigrateReconciler(client client.Client,
@@ -63,13 +63,13 @@ func NewDataMigrateReconciler(client client.Client,
 	return r
 }
 
-func (r *DataMigrateReconciler) Build(object client.Object) (dataoperation.OperationReconcilerInterface, error) {
+func (r *DataMigrateReconciler) Build(object client.Object) (dataoperation.OperationInterface, error) {
 	dataMigrate, ok := object.(*datav1alpha1.DataMigrate)
 	if !ok {
 		return nil, fmt.Errorf("object %v is not a DataMigrate", object)
 	}
 
-	return &dataMigrateReconciler{
+	return &dataMigrateOperation{
 		Client:      r.Client,
 		Log:         r.Log,
 		Recorder:    r.Recorder,

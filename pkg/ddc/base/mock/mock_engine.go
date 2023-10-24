@@ -47,7 +47,7 @@ func (m *MockEngine) MigrateData(ctx runtime.ReconcileRequestContext, targetData
 	return ret0
 }
 
-func (m *MockEngine) Operate(ctx runtime.ReconcileRequestContext, opStatus *v1alpha1.OperationStatus, operation dataoperation.OperationReconcilerInterface) (ctrl.Result, error) {
+func (m *MockEngine) Operate(ctx runtime.ReconcileRequestContext, opStatus *v1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Operate", ctx, opStatus, operation)
 	ret0, _ := ret[0].(ctrl.Result)
@@ -406,7 +406,7 @@ func (mr *MockImplementMockRecorder) CheckWorkersReady() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckWorkersReady", reflect.TypeOf((*MockImplement)(nil).CheckWorkersReady))
 }
 
-func (m *MockImplement) GetDataOperationValueFile(ctx runtime.ReconcileRequestContext, operation dataoperation.OperationReconcilerInterface) (valueFileName string, err error) {
+func (m *MockImplement) GetDataOperationValueFile(ctx runtime.ReconcileRequestContext, operation dataoperation.OperationInterface) (valueFileName string, err error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetDataOperationValueFile", ctx, operation)
 	ret0, _ := ret[0].(string)

@@ -24,9 +24,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func (e *EFCEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, operation dataoperation.OperationReconcilerInterface) (valueFileName string, err error) {
+func (e *EFCEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, operation dataoperation.OperationInterface) (valueFileName string, err error) {
 	operationType := operation.GetOperationType()
-	object := operation.GetReconciledObject()
+	object := operation.GetOperationObject()
 
 	switch operationType {
 	case datav1alpha1.DataProcessType:

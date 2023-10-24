@@ -25,7 +25,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 )
 
-func InstallDataOperationHelmIfNotExist(ctx cruntime.ReconcileRequestContext, operation dataoperation.OperationReconcilerInterface,
+func InstallDataOperationHelmIfNotExist(ctx cruntime.ReconcileRequestContext, operation dataoperation.OperationInterface,
 	yamlGenerator DataOperatorYamlGenerator) (err error) {
 	log := ctx.Log.WithName("InstallDataOperationHelmIfNotExist")
 

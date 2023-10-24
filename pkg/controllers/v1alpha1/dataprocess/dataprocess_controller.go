@@ -45,15 +45,15 @@ type DataProcessReconciler struct {
 	*controllers.OperationReconciler
 }
 
-var _ dataoperation.OperationReconcilerInterfaceBuilder = &DataProcessReconciler{}
+var _ dataoperation.OperationInterfaceBuilder = &DataProcessReconciler{}
 
-func (r *DataProcessReconciler) Build(object client.Object) (dataoperation.OperationReconcilerInterface, error) {
+func (r *DataProcessReconciler) Build(object client.Object) (dataoperation.OperationInterface, error) {
 	dataProcess, ok := object.(*datav1alpha1.DataProcess)
 	if !ok {
 		return nil, fmt.Errorf("object %v is not a DataProcess", object)
 	}
 
-	return &dataProcessReconciler{
+	return &dataProcessOperation{
 		Client:      r.Client,
 		Log:         r.Log,
 		Recorder:    r.Recorder,

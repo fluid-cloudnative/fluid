@@ -34,7 +34,7 @@ func TestTimeleft(t *testing.T) {
 		name     string
 		dataload datav1alpha1.DataLoad
 		// dataoperationType datav1alpha1.OperationType
-		operation      dataoperation.OperationReconcilerInterface
+		operation      dataoperation.OperationInterface
 		validRemaining bool
 		wantErr        bool
 	}{
@@ -124,7 +124,7 @@ func TestGetTTL(t *testing.T) {
 		name              string
 		dataload          datav1alpha1.DataLoad
 		dataoperationType datav1alpha1.OperationType
-		operation         dataoperation.OperationReconcilerInterface
+		operation         dataoperation.OperationInterface
 		ttl               *int32
 		wantErr           bool
 	}{
@@ -171,7 +171,7 @@ func TestNeedCleanUp(t *testing.T) {
 	testcase := []struct {
 		name        string
 		dataload    datav1alpha1.DataLoad
-		operation   dataoperation.OperationReconcilerInterface
+		operation   dataoperation.OperationInterface
 		needCleanUp bool
 	}{
 		{

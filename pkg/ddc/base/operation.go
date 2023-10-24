@@ -35,9 +35,9 @@ import (
 const cleanupErrorMsg = "Failed to get remaining time to clean up for operation %s"
 
 func (t *TemplateEngine) Operate(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus,
-	operation dataoperation.OperationReconcilerInterface) (ctrl.Result, error) {
+	operation dataoperation.OperationInterface) (ctrl.Result, error) {
 	operateType := operation.GetOperationType()
-	object := operation.GetReconciledObject()
+	object := operation.GetOperationObject()
 
 	// runtime engine override the template engine
 	switch operateType {
@@ -71,13 +71,13 @@ func (t *TemplateEngine) Operate(ctx cruntime.ReconcileRequestContext, opStatus 
 }
 
 func (t *TemplateEngine) reconcileNone(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus,
-	operation dataoperation.OperationReconcilerInterface) (ctrl.Result, error) {
+	operation dataoperation.OperationInterface) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileNone")
 
 	// 0. check the object spec valid or not
 	conditions, err := operation.Validate(ctx)
 	if err != nil {
-		object := operation.GetReconciledObject()
+		object := operation.GetOperationObject()
 		log.Error(err, "validate failed", "operationName", object.GetName(), "namespace", object.GetNamespace())
 		ctx.Recorder.Event(object, v1.EventTypeWarning, common.DataOperationNotValid, err.Error())
 
@@ -112,7 +112,7 @@ func (t *TemplateEngine) reconcileNone(ctx cruntime.ReconcileRequestContext, opS
 }
 
 func (t *TemplateEngine) reconcilePending(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus,
-	operation dataoperation.OperationReconcilerInterface) (ctrl.Result, error) {
+	operation dataoperation.OperationInterface) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcilePending")
 
 	// 1. check preceding operation status
@@ -139,13 +139,13 @@ func (t *TemplateEngine) reconcilePending(ctx cruntime.ReconcileRequestContext, 
 }
 
 func (t *TemplateEngine) reconcileExecuting(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus,
-	operation dataoperation.OperationReconcilerInterface) (ctrl.Result, error) {
+	operation dataoperation.OperationInterface) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileExecuting")
 
 	// 1. Install the helm chart if not exists
 	err := InstallDataOperationHelmIfNotExist(ctx, operation, t.Implement)
 	if err != nil {
-		object := operation.GetReconciledObject()
+		object := operation.GetOperationObject()
 		// runtime does not support current data operation, set status to failed
 		if fluiderrs.IsNotSupported(err) {
 			log.Error(err, "not support current data operation, set status to failed")
@@ -189,7 +189,7 @@ func (t *TemplateEngine) reconcileExecuting(ctx cruntime.ReconcileRequestContext
 }
 
 func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus,
-	operation dataoperation.OperationReconcilerInterface) (ctrl.Result, error) {
+	operation dataoperation.OperationInterface) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileComplete")
 
 	// 0. clean up if ttl after finished expired
@@ -249,7 +249,7 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 	// 4. record and no requeue
 	// For cron operations, the phase may be updated to pending here, and we only log bellow messages in complete phase
 	if opStatusToUpdate.Phase == common.PhaseComplete {
-		object := operation.GetReconciledObject()
+		object := operation.GetOperationObject()
 		ctx.Recorder.Eventf(object, v1.EventTypeNormal, common.DataOperationSucceed,
 			"%s %s succeeded", operation.GetOperationType(), object.GetName())
 	}
@@ -264,7 +264,7 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 }
 
 // processTTL processes the operations that need to be cleaned up based on the TTL.
-func (t *TemplateEngine) processTTL(opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationReconcilerInterface, log logr.Logger, ctx cruntime.ReconcileRequestContext) (ttl *time.Duration, err error) {
+func (t *TemplateEngine) processTTL(opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface, log logr.Logger, ctx cruntime.ReconcileRequestContext) (ttl *time.Duration, err error) {
 	// Get the remaining time to clean up for the operation.
 	ttl, err = utils.Timeleft(opStatus, operation)
 	if err != nil {
@@ -274,7 +274,7 @@ func (t *TemplateEngine) processTTL(opStatus *datav1alpha1.OperationStatus, oper
 
 	// If the remaining time is not nil and less than or equal to 0, clean up the data operation.
 	if ttl != nil && *ttl <= 0 {
-		if err = ctx.Client.Delete(context.TODO(), operation.GetReconciledObject()); err != nil && utils.IgnoreNotFound(err) != nil {
+		if err = ctx.Client.Delete(context.TODO(), operation.GetOperationObject()); err != nil && utils.IgnoreNotFound(err) != nil {
 			log.Error(err, "Failed to clean up data operation %s", operation.GetOperationType())
 			return
 		}
@@ -283,7 +283,7 @@ func (t *TemplateEngine) processTTL(opStatus *datav1alpha1.OperationStatus, oper
 	return
 }
 
-func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationReconcilerInterface) (ctrl.Result, error) {
+func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileFailed")
 
 	// 0. clean up if ttl after finished expired
@@ -329,7 +329,7 @@ func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, o
 	// 2. record and no requeue
 	// For cron operations, the phase may be updated to pending here, and we only log bellow messages in failed phase
 	if opStatusToUpdate.Phase == common.PhaseFailed {
-		object := operation.GetReconciledObject()
+		object := operation.GetOperationObject()
 		ctx.Recorder.Eventf(object, v1.EventTypeWarning, common.DataOperationFailed, "%s %s failed", operation.GetOperationType(), object.GetName())
 	}
 

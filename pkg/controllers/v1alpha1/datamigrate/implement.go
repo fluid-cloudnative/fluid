@@ -38,7 +38,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
-type dataMigrateReconciler struct {
+type dataMigrateOperation struct {
 	client.Client
 	Log      logr.Logger
 	Recorder record.EventRecorder
@@ -46,21 +46,21 @@ type dataMigrateReconciler struct {
 	dataMigrate *datav1alpha1.DataMigrate
 }
 
-var _ dataoperation.OperationReconcilerInterface = &dataMigrateReconciler{}
+var _ dataoperation.OperationInterface = &dataMigrateOperation{}
 
-func (r *dataMigrateReconciler) GetReconciledObject() client.Object {
+func (r *dataMigrateOperation) GetOperationObject() client.Object {
 	return r.dataMigrate
 }
 
-func (r *dataMigrateReconciler) HasPrecedingOperation() bool {
+func (r *dataMigrateOperation) HasPrecedingOperation() bool {
 	return r.dataMigrate.Spec.RunAfter != nil
 }
 
-func (r *dataMigrateReconciler) GetTargetDataset() (*datav1alpha1.Dataset, error) {
+func (r *dataMigrateOperation) GetTargetDataset() (*datav1alpha1.Dataset, error) {
 	return utils.GetTargetDatasetOfMigrate(r.Client, r.dataMigrate)
 }
 
-func (r *dataMigrateReconciler) GetReleaseNameSpacedName() types.NamespacedName {
+func (r *dataMigrateOperation) GetReleaseNameSpacedName() types.NamespacedName {
 	releaseName := utils.GetDataMigrateReleaseName(r.dataMigrate.GetName())
 	return types.NamespacedName{
 		Namespace: r.dataMigrate.GetNamespace(),
@@ -68,21 +68,21 @@ func (r *dataMigrateReconciler) GetReleaseNameSpacedName() types.NamespacedName 
 	}
 }
 
-func (r *dataMigrateReconciler) GetChartsDirectory() string {
+func (r *dataMigrateOperation) GetChartsDirectory() string {
 	return utils.GetChartsDirectory() + "/" + cdatamigrate.DataMigrateChart
 }
 
-func (r *dataMigrateReconciler) GetOperationType() datav1alpha1.OperationType {
+func (r *dataMigrateOperation) GetOperationType() datav1alpha1.OperationType {
 	return datav1alpha1.DataMigrateType
 }
 
-func (r *dataMigrateReconciler) UpdateOperationApiStatus(opStatus *datav1alpha1.OperationStatus) error {
+func (r *dataMigrateOperation) UpdateOperationApiStatus(opStatus *datav1alpha1.OperationStatus) error {
 	var dataMigrateCpy = r.dataMigrate.DeepCopy()
 	dataMigrateCpy.Status = *opStatus.DeepCopy()
 	return r.Status().Update(context.Background(), dataMigrateCpy)
 }
 
-func (r *dataMigrateReconciler) Validate(ctx cruntime.ReconcileRequestContext) ([]datav1alpha1.Condition, error) {
+func (r *dataMigrateOperation) Validate(ctx cruntime.ReconcileRequestContext) ([]datav1alpha1.Condition, error) {
 	targetDataSet := ctx.Dataset
 
 	if r.dataMigrate.GetNamespace() != targetDataSet.Namespace {
@@ -101,20 +101,20 @@ func (r *dataMigrateReconciler) Validate(ctx cruntime.ReconcileRequestContext) (
 	return nil, nil
 }
 
-func (r *dataMigrateReconciler) UpdateStatusInfoForCompleted(infos map[string]string) error {
+func (r *dataMigrateOperation) UpdateStatusInfoForCompleted(infos map[string]string) error {
 	// DataMigrate does not need to update OperationStatus's Infos field.
 	return nil
 }
 
-func (r *dataMigrateReconciler) SetTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
+func (r *dataMigrateOperation) SetTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
 	dataset.Status.Phase = datav1alpha1.DataMigrating
 }
 
-func (r *dataMigrateReconciler) RemoveTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
+func (r *dataMigrateOperation) RemoveTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
 	dataset.Status.Phase = datav1alpha1.BoundDatasetPhase
 }
 
-func (r *dataMigrateReconciler) GetStatusHandler() dataoperation.StatusHandler {
+func (r *dataMigrateOperation) GetStatusHandler() dataoperation.StatusHandler {
 	policy := r.dataMigrate.Spec.Policy
 
 	switch policy {
@@ -129,8 +129,8 @@ func (r *dataMigrateReconciler) GetStatusHandler() dataoperation.StatusHandler {
 	}
 }
 
-// GetTTL implements dataoperation.OperationReconcilerInterface.
-func (r *dataMigrateReconciler) GetTTL() (ttl *int32, err error) {
+// GetTTL implements dataoperation.OperationInterface.
+func (r *dataMigrateOperation) GetTTL() (ttl *int32, err error) {
 	dataMigrate := r.dataMigrate
 
 	policy := dataMigrate.Spec.Policy

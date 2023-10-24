@@ -24,9 +24,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func (e *JindoEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, operation dataoperation.OperationReconcilerInterface) (valueFileName string, err error) {
+func (e *JindoEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, operation dataoperation.OperationInterface) (valueFileName string, err error) {
 	operationType := operation.GetOperationType()
-	object := operation.GetReconciledObject()
+	object := operation.GetOperationObject()
 
 	if operationType == datav1alpha1.DataLoadType {
 		valueFileName, err = e.generateDataLoadValueFile(ctx, object)

@@ -101,7 +101,7 @@ func GetPrecedingOperationStatus(client client.Client, opRef *datav1alpha1.Opera
 	}
 }
 
-func NeedCleanUp(opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationReconcilerInterface) bool {
+func NeedCleanUp(opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface) bool {
 	if len(opStatus.Conditions) == 0 {
 		// data operation has no completion time, no need to clean up
 		return false
@@ -114,7 +114,7 @@ func NeedCleanUp(opStatus *datav1alpha1.OperationStatus, operation dataoperation
 }
 
 // Timeleft return not nil remaining time if data operation has completion time and set ttlAfterFinished
-func Timeleft(opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationReconcilerInterface) (*time.Duration, error) {
+func Timeleft(opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface) (*time.Duration, error) {
 	if len(opStatus.Conditions) == 0 {
 		// data operation has no completion time
 		return nil, nil

@@ -51,11 +51,11 @@ type OperationReconciler struct {
 	mutex *sync.Mutex
 
 	// Real implementBuilder
-	implementBuilder dataoperation.OperationReconcilerInterfaceBuilder
+	implementBuilder dataoperation.OperationInterfaceBuilder
 }
 
 // NewDataOperationReconciler creates the default OperationReconciler
-func NewDataOperationReconciler(operationReconcilerInterface dataoperation.OperationReconcilerInterfaceBuilder, client client.Client,
+func NewDataOperationReconciler(operationReconcilerInterface dataoperation.OperationInterfaceBuilder, client client.Client,
 	log logr.Logger, recorder record.EventRecorder) *OperationReconciler {
 
 	r := &OperationReconciler{
@@ -71,7 +71,7 @@ func NewDataOperationReconciler(operationReconcilerInterface dataoperation.Opera
 
 // ReconcileDeletion reconciles the deletion of the DataBackup
 func (o *OperationReconciler) ReconcileDeletion(ctx dataoperation.ReconcileRequestContext,
-	implement dataoperation.OperationReconcilerInterface) (ctrl.Result, error) {
+	implement dataoperation.OperationInterface) (ctrl.Result, error) {
 	log := ctx.Log.WithName("ReconcileDeletion")
 
 	// 1. Delete helm release if exists
@@ -93,7 +93,7 @@ func (o *OperationReconciler) ReconcileDeletion(ctx dataoperation.ReconcileReque
 	// 3. delete engine
 	o.RemoveEngine(ctx)
 
-	object := implement.GetReconciledObject()
+	object := implement.GetOperationObject()
 	// 4. remove finalizer
 	if !object.GetDeletionTimestamp().IsZero() {
 		objectMeta, err := utils.GetObjectMeta(object)

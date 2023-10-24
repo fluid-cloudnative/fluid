@@ -37,9 +37,9 @@ func GetDataOperationKey(object client.Object) string {
 }
 
 // SetDataOperationInTargetDataset set status of target dataset to mark the data operation being performed.
-func SetDataOperationInTargetDataset(ctx cruntime.ReconcileRequestContext, operation dataoperation.OperationReconcilerInterface, engine Engine) error {
+func SetDataOperationInTargetDataset(ctx cruntime.ReconcileRequestContext, operation dataoperation.OperationInterface, engine Engine) error {
 	targetDataset := ctx.Dataset
-	object := operation.GetReconciledObject()
+	object := operation.GetOperationObject()
 
 	// check if the bounded runtime is ready
 	ready := engine.CheckRuntimeReady()
@@ -83,9 +83,9 @@ func SetDataOperationInTargetDataset(ctx cruntime.ReconcileRequestContext, opera
 }
 
 // ReleaseTargetDataset release target dataset OperationRef field which marks the data operation being performed.
-func ReleaseTargetDataset(ctx cruntime.ReconcileRequestContext, operation dataoperation.OperationReconcilerInterface) error {
+func ReleaseTargetDataset(ctx cruntime.ReconcileRequestContext, operation dataoperation.OperationInterface) error {
 
-	dataOpKey := GetDataOperationKey(operation.GetReconciledObject())
+	dataOpKey := GetDataOperationKey(operation.GetOperationObject())
 	operationTypeName := string(operation.GetOperationType())
 
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {

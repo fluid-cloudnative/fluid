@@ -38,7 +38,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
-type dataLoadReconciler struct {
+type dataLoadOperation struct {
 	client.Client
 	Log      logr.Logger
 	Recorder record.EventRecorder
@@ -46,42 +46,42 @@ type dataLoadReconciler struct {
 	dataLoad *datav1alpha1.DataLoad
 }
 
-var _ dataoperation.OperationReconcilerInterface = &dataLoadReconciler{}
+var _ dataoperation.OperationInterface = &dataLoadOperation{}
 
-func (r *dataLoadReconciler) GetReconciledObject() client.Object {
+func (r *dataLoadOperation) GetOperationObject() client.Object {
 	return r.dataLoad
 }
 
-func (r *dataLoadReconciler) HasPrecedingOperation() bool {
+func (r *dataLoadOperation) HasPrecedingOperation() bool {
 	return r.dataLoad.Spec.RunAfter != nil
 }
 
-func (r *dataLoadReconciler) GetTargetDataset() (*datav1alpha1.Dataset, error) {
+func (r *dataLoadOperation) GetTargetDataset() (*datav1alpha1.Dataset, error) {
 	return utils.GetDataset(r.Client, r.dataLoad.Spec.Dataset.Name, r.dataLoad.Spec.Dataset.Namespace)
 }
 
-func (r *dataLoadReconciler) GetReleaseNameSpacedName() types.NamespacedName {
+func (r *dataLoadOperation) GetReleaseNameSpacedName() types.NamespacedName {
 	return types.NamespacedName{
 		Namespace: r.dataLoad.GetNamespace(),
 		Name:      utils.GetDataLoadReleaseName(r.dataLoad.GetName()),
 	}
 }
 
-func (r *dataLoadReconciler) GetChartsDirectory() string {
+func (r *dataLoadOperation) GetChartsDirectory() string {
 	return utils.GetChartsDirectory() + "/" + cdataload.DataloadChart
 }
 
-func (r *dataLoadReconciler) GetOperationType() datav1alpha1.OperationType {
+func (r *dataLoadOperation) GetOperationType() datav1alpha1.OperationType {
 	return datav1alpha1.DataLoadType
 }
 
-func (r *dataLoadReconciler) UpdateOperationApiStatus(opStatus *datav1alpha1.OperationStatus) error {
+func (r *dataLoadOperation) UpdateOperationApiStatus(opStatus *datav1alpha1.OperationStatus) error {
 	var dataLoadCpy = r.dataLoad.DeepCopy()
 	dataLoadCpy.Status = *opStatus.DeepCopy()
 	return r.Status().Update(context.Background(), dataLoadCpy)
 }
 
-func (r *dataLoadReconciler) Validate(ctx cruntime.ReconcileRequestContext) ([]datav1alpha1.Condition, error) {
+func (r *dataLoadOperation) Validate(ctx cruntime.ReconcileRequestContext) ([]datav1alpha1.Condition, error) {
 	dataLoad := r.dataLoad
 
 	// 1. Check dataLoad namespace and dataset namespace need to be same
@@ -107,20 +107,20 @@ func (r *dataLoadReconciler) Validate(ctx cruntime.ReconcileRequestContext) ([]d
 	return nil, nil
 }
 
-func (r *dataLoadReconciler) UpdateStatusInfoForCompleted(infos map[string]string) error {
+func (r *dataLoadOperation) UpdateStatusInfoForCompleted(infos map[string]string) error {
 	// DataLoad does not need to update OperationStatus's Infos field.
 	return nil
 }
 
-func (r *dataLoadReconciler) SetTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
+func (r *dataLoadOperation) SetTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
 	// DataLoad does not need to update Dataset other field except for DataOperationRef.
 }
 
-func (r *dataLoadReconciler) RemoveTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
+func (r *dataLoadOperation) RemoveTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
 	// DataLoad does not need to update Dataset other field except for DataOperationRef.
 }
 
-func (r *dataLoadReconciler) GetStatusHandler() dataoperation.StatusHandler {
+func (r *dataLoadOperation) GetStatusHandler() dataoperation.StatusHandler {
 	policy := r.dataLoad.Spec.Policy
 
 	switch policy {
@@ -135,8 +135,8 @@ func (r *dataLoadReconciler) GetStatusHandler() dataoperation.StatusHandler {
 	}
 }
 
-// GetTTL implements dataoperation.OperationReconcilerInterface.
-func (r *dataLoadReconciler) GetTTL() (ttl *int32, err error) {
+// GetTTL implements dataoperation.OperationInterface.
+func (r *dataLoadOperation) GetTTL() (ttl *int32, err error) {
 	dataLoad := r.dataLoad
 
 	policy := dataLoad.Spec.Policy

@@ -50,7 +50,7 @@ type DataLoadReconciler struct {
 	*controllers.OperationReconciler
 }
 
-var _ dataoperation.OperationReconcilerInterfaceBuilder = &DataLoadReconciler{}
+var _ dataoperation.OperationInterfaceBuilder = &DataLoadReconciler{}
 
 // NewDataLoadReconciler returns a DataLoadReconciler
 func NewDataLoadReconciler(client client.Client,
@@ -64,13 +64,13 @@ func NewDataLoadReconciler(client client.Client,
 	return r
 }
 
-func (r *DataLoadReconciler) Build(object client.Object) (dataoperation.OperationReconcilerInterface, error) {
+func (r *DataLoadReconciler) Build(object client.Object) (dataoperation.OperationInterface, error) {
 	dataLoad, ok := object.(*datav1alpha1.DataLoad)
 	if !ok {
 		return nil, fmt.Errorf("object %v is not a DataLoad", object)
 	}
 
-	return &dataLoadReconciler{
+	return &dataLoadOperation{
 		Client:   r.Client,
 		Log:      r.Log,
 		Recorder: r.Recorder,

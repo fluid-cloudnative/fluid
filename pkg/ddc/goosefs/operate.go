@@ -24,9 +24,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func (e *GooseFSEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, operation dataoperation.OperationReconcilerInterface) (valueFileName string, err error) {
+func (e *GooseFSEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, operation dataoperation.OperationInterface) (valueFileName string, err error) {
 	operateType := operation.GetOperationType()
-	object := operation.GetReconciledObject()
+	object := operation.GetOperationObject()
 
 	if operateType == datav1alpha1.DataBackupType {
 		valueFileName, err = e.generateDataBackupValueFile(ctx, object)

@@ -39,7 +39,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
-type dataBackupReconciler struct {
+type dataBackupOperation struct {
 	client.Client
 	Log      logr.Logger
 	Recorder record.EventRecorder
@@ -48,21 +48,21 @@ type dataBackupReconciler struct {
 	dataBackup *datav1alpha1.DataBackup
 }
 
-var _ dataoperation.OperationReconcilerInterface = &dataBackupReconciler{}
+var _ dataoperation.OperationInterface = &dataBackupOperation{}
 
-func (r *dataBackupReconciler) GetReconciledObject() client.Object {
+func (r *dataBackupOperation) GetOperationObject() client.Object {
 	return r.dataBackup
 }
 
-func (r *dataBackupReconciler) GetChartsDirectory() string {
+func (r *dataBackupOperation) GetChartsDirectory() string {
 	return utils.GetChartsDirectory() + "/" + cdatabackup.DatabackupChart
 }
 
-func (r *dataBackupReconciler) HasPrecedingOperation() bool {
+func (r *dataBackupOperation) HasPrecedingOperation() bool {
 	return r.dataBackup.Spec.RunAfter != nil
 }
 
-func (r *dataBackupReconciler) UpdateStatusInfoForCompleted(infos map[string]string) error {
+func (r *dataBackupOperation) UpdateStatusInfoForCompleted(infos map[string]string) error {
 	dataBackup := r.dataBackup
 
 	infos[cdatabackup.BackupLocationPath] = dataBackup.Spec.BackupPath
@@ -82,7 +82,7 @@ func (r *dataBackupReconciler) UpdateStatusInfoForCompleted(infos map[string]str
 	return nil
 }
 
-func (r *dataBackupReconciler) Validate(ctx runtime.ReconcileRequestContext) ([]datav1alpha1.Condition, error) {
+func (r *dataBackupOperation) Validate(ctx runtime.ReconcileRequestContext) ([]datav1alpha1.Condition, error) {
 	dataBackup := r.dataBackup
 
 	// 0. check the supported backup path format
@@ -102,21 +102,21 @@ func (r *dataBackupReconciler) Validate(ctx runtime.ReconcileRequestContext) ([]
 	return nil, nil
 }
 
-func (r *dataBackupReconciler) SetTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
+func (r *dataBackupOperation) SetTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
 }
 
-func (r *dataBackupReconciler) RemoveTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
+func (r *dataBackupOperation) RemoveTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
 }
 
-func (r *dataBackupReconciler) GetOperationType() datav1alpha1.OperationType {
+func (r *dataBackupOperation) GetOperationType() datav1alpha1.OperationType {
 	return datav1alpha1.DataBackupType
 }
 
-func (r *dataBackupReconciler) GetTargetDataset() (*datav1alpha1.Dataset, error) {
+func (r *dataBackupOperation) GetTargetDataset() (*datav1alpha1.Dataset, error) {
 	return utils.GetDataset(r.Client, r.dataBackup.Spec.Dataset, r.dataBackup.Namespace)
 }
 
-func (r *dataBackupReconciler) GetReleaseNameSpacedName() types.NamespacedName {
+func (r *dataBackupOperation) GetReleaseNameSpacedName() types.NamespacedName {
 	return types.NamespacedName{
 		Namespace: r.dataBackup.GetNamespace(),
 		Name:      utils.GetDataBackupReleaseName(r.dataBackup.GetName()),
@@ -124,18 +124,18 @@ func (r *dataBackupReconciler) GetReleaseNameSpacedName() types.NamespacedName {
 }
 
 // UpdateOperationApiStatus update the DataBackup Status
-func (r *dataBackupReconciler) UpdateOperationApiStatus(opStatus *datav1alpha1.OperationStatus) error {
+func (r *dataBackupOperation) UpdateOperationApiStatus(opStatus *datav1alpha1.OperationStatus) error {
 	var dataBackupCpy = r.dataBackup.DeepCopy()
 	dataBackupCpy.Status = *opStatus.DeepCopy()
 	return r.Status().Update(context.Background(), dataBackupCpy)
 }
 
-func (r *dataBackupReconciler) GetStatusHandler() dataoperation.StatusHandler {
+func (r *dataBackupOperation) GetStatusHandler() dataoperation.StatusHandler {
 	return &OnceHandler{}
 }
 
-// GetTTL implements dataoperation.OperationReconcilerInterface.
-func (r *dataBackupReconciler) GetTTL() (ttl *int32, err error) {
+// GetTTL implements dataoperation.OperationInterface.
+func (r *dataBackupOperation) GetTTL() (ttl *int32, err error) {
 	ttl = r.dataBackup.Spec.TTLSecondsAfterFinished
 	return
 }
