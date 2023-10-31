@@ -116,6 +116,9 @@ func (j *JuiceFSEngine) transformWorkerCacheVolumes(runtime *datav1alpha1.JuiceF
 			v.VolumeSource = corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			}
+			if cache.VolumeSource != nil && cache.VolumeSource.EmptyDir != nil {
+				v.VolumeSource = cache.VolumeSource.VolumeSource
+			}
 			// todo: support volume template
 		}
 		value.Worker.Volumes = append(value.Worker.Volumes, v)
@@ -188,6 +191,9 @@ func (j *JuiceFSEngine) transformFuseCacheVolumes(runtime *datav1alpha1.JuiceFSR
 		case string(common.VolumeTypeEmptyDir):
 			v.VolumeSource = corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			}
+			if cache.VolumeSource != nil && cache.VolumeSource.EmptyDir != nil {
+				v.VolumeSource = cache.VolumeSource.VolumeSource
 			}
 			// todo: support volume template
 		}
