@@ -55,7 +55,12 @@ def is_fuse_mount(mnt_point):
     return bool(output)
     
 
-def mount_ossfs(bucket_path, mnt_point, ossfs_options):
+def mount_ossfs(bucket, bucket_path, target_path, path, ossfs_options):
+    """
+    execute oss mount command: ossfs <bucket>:/<bucket_path> <target_path>/<path>
+    such as: ossfs oss-bucket:/hbase /runtime-mnt/thin/default/thin-demo/thin-fuse/hbase
+    """
+    mnt_point = os.path.join(target_path, path)
     if not os.path.exists(mnt_point):
         # create dirs is not exist
         os.makedirs(mnt_point)
@@ -63,11 +68,13 @@ def mount_ossfs(bucket_path, mnt_point, ossfs_options):
         # if mnt_point is fuse mountpoint, pass mount
         print(f"{mnt_point} is a fuse mount, skip mount")
         return
+    if bucket_path is not None:
+        bucket += ":/"+bucket_path
     retry_count = 3
     while retry_count:
         try:
-            print("mount_ossfs: ossfs", bucket_path, mnt_point, ossfs_options)
-            subprocess.check_call(['ossfs', bucket_path, mnt_point] + ossfs_options.split())
+            print("mount_ossfs: ossfs", bucket, mnt_point, ossfs_options)
+            subprocess.check_call(['ossfs', bucket, mnt_point] + ossfs_options.split())
             return
         except subprocess.CalledProcessError as e:
             print(f"Failed to mount, error: {e}")
@@ -105,6 +112,12 @@ def umount_ossfs(mnt_point):
     except OSError as e:
         print(f"Failed to remove {mnt_point}, error: {e}")
 
+def get_path(mount):
+    path = mount.get("path")
+    if path is None:
+        path = mount["name"]
+    return path.lstrip("/").rstrip("/")
+
 if __name__=="__main__":
     rawStr = ""
     with open("/etc/fluid/config/config.json", "r") as f:
@@ -113,6 +126,7 @@ if __name__=="__main__":
     print(rawStr[0])
 
     obj = json.loads(rawStr[0])
+    targetPath = obj["targetPath"]
 
     if len(sys.argv) > 1:
         mounted_path = sys.argv[1:]
@@ -120,31 +134,40 @@ if __name__=="__main__":
         mounted_path = []
     mounted = []
     for p in mounted_path:
-        if not p.startswith("/"):
+        if not p.startswith(targetPath):
             continue
-        mounted.append(p.split("/")[-1])
-    target_mounted = [mount["name"] for mount in obj["mounts"]]
+        p = p[len(targetPath):]
+        mounted.append(p.lstrip("/").rstrip("/"))
+    
+    target_mounted = []
+    for mount in obj["mounts"]:
+        path = get_path(mount)
+        target_mounted.append(path)
 
     need_mount = list(set(target_mounted).difference(set(mounted)))
     need_unmount = list(set(mounted).difference(set(target_mounted)))
     print(f"need mount: {need_mount}, need umount: {need_unmount}")
 
     for mount in obj["mounts"]:
-        if mount["name"] not in need_mount:
+        path = get_path(mount)
+        if path not in need_mount:
             continue
-        bucket = mount["mountPoint"].lstrip("oss://")
-        bucket_path = bucket
-        path = mount.get("path")
-        if path is not None:
-            bucket_path += ":/"+path if not path.startswith("/") else ":"+path
-        options = "-ourl={}".format(mount["options"]["url"])
+
+        # mount["mountPoint"] should be like: oss://bucket/bucket_path/.../...
+        bucket = mount["mountPoint"].lstrip("oss://").rstrip("/")
+        bucket_path = None
+        bucket_parts = bucket.split("/", 1)
+        bucket = bucket_parts[0]
+        if len(bucket_parts) > 1:
+            bucket_path = bucket_parts[1]
+
+        options = "-oro -ourl={}".format(mount["options"]["url"])
         # parse more options here
         if mount["options"].get("allow_other") is not None:
             options += " -oallow_other"
-        target_path = os.path.join(obj["targetPath"], mount["name"])
         secret(bucket, mount["options"]["oss-access-key"], mount["options"]["oss-access-secret"])
-        mount_ossfs(bucket_path, target_path, options)
+        mount_ossfs(bucket, bucket_path, targetPath, path, options)
 
-    for name in need_unmount:
-        target_path = os.path.join(obj["targetPath"], name)
-        umount_ossfs(target_path)
+    for path in need_unmount:
+        target = os.path.join(targetPath, path)
+        umount_ossfs(target)
