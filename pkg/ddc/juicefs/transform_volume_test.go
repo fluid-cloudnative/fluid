@@ -446,7 +446,7 @@ func TestJuiceFSEngine_transformWorkerCacheVolumes(t *testing.T) {
 						"1": {
 							Path: "/cache",
 							Type: string(common.VolumeTypeEmptyDir),
-							VolumeSource: &datav1alpha1.VolumeSource{corev1.VolumeSource{
+							VolumeSource: &datav1alpha1.VolumeSource{VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									Medium: corev1.StorageMediumMemory,
 								},
@@ -612,7 +612,7 @@ func TestJuiceFSEngine_transformFuseCacheVolumes(t *testing.T) {
 						"1": {
 							Path: "/cache",
 							Type: string(common.VolumeTypeEmptyDir),
-							VolumeSource: &datav1alpha1.VolumeSource{corev1.VolumeSource{
+							VolumeSource: &datav1alpha1.VolumeSource{VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									Medium: corev1.StorageMediumMemory,
 								},
