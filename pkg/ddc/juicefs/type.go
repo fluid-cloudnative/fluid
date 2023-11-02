@@ -19,6 +19,7 @@ package juicefs
 import (
 	corev1 "k8s.io/api/core/v1"
 
+	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
@@ -104,8 +105,9 @@ type Fuse struct {
 }
 
 type cache struct {
-	Path string `json:"path,omitempty"`
-	Type string `json:"type,omitempty"`
+	Path         string                 `json:"path,omitempty"`
+	Type         string                 `json:"type,omitempty"`
+	VolumeSource *v1alpha1.VolumeSource `json:"volumeSource,omitempty"`
 }
 
 type cacheStates struct {
