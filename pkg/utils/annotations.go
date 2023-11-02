@@ -69,9 +69,7 @@ func AppContainerPostStartInjectEnabled(infos map[string]string) (match bool) {
 	return enabled(infos, common.InjectAppPostStart)
 }
 
-//
 // ---- Utils functions to decide serverless platform ----
-//
 const (
 	PlatformDefault      = "Default"
 	PlatformUnprivileged = "Unprivileged"

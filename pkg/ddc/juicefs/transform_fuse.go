@@ -226,6 +226,7 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 
 	var storagePath = DefaultCacheDir
 	var volumeType = common.VolumeTypeHostPath
+	var volumeSource datav1alpha1.VolumeSource
 	if tiredStoreLevel != nil {
 		// juicefs cache-dir use colon (:) to separate multiple paths
 		// community doc: https://juicefs.com/docs/community/command_reference/#juicefs-mount
@@ -233,6 +234,7 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 		// /mnt/disk1/bigboot or /mnt/disk1/bigboot:/mnt/disk2/bigboot
 		storagePath = tiredStoreLevel.Path
 		volumeType = tiredStoreLevel.VolumeType
+		volumeSource = tiredStoreLevel.VolumeSource
 	}
 	originPath := strings.Split(storagePath, ":")
 
@@ -240,8 +242,9 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 	value.CacheDirs = make(map[string]cache)
 	for i, v := range originPath {
 		value.CacheDirs[strconv.Itoa(i+1)] = cache{
-			Path: v,
-			Type: string(volumeType),
+			Path:         v,
+			Type:         string(volumeType),
+			VolumeSource: &volumeSource,
 		}
 	}
 

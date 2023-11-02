@@ -116,6 +116,9 @@ func (j *JuiceFSEngine) transformWorkerCacheVolumes(runtime *datav1alpha1.JuiceF
 			v.VolumeSource = corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			}
+			if cache.VolumeSource != nil && cache.VolumeSource.EmptyDir != nil {
+				v.VolumeSource = cache.VolumeSource.VolumeSource
+			}
 			// todo: support volume template
 		}
 		value.Worker.Volumes = append(value.Worker.Volumes, v)
@@ -157,8 +160,29 @@ func (j *JuiceFSEngine) transformFuseVolumes(runtime *datav1alpha1.JuiceFSRuntim
 // transform fuse cache volumes
 // after genValue & genMount function
 func (j *JuiceFSEngine) transformFuseCacheVolumes(runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) (err error) {
-	caches := value.CacheDirs
+	cacheDir := ""
 
+	// if cache-dir is set in fuse option, it will override the cache-dir of worker in runtime
+	fuseOptions := runtime.Spec.Fuse.Options
+	for k, v := range fuseOptions {
+		if k == "cache-dir" {
+			cacheDir = v
+			break
+		}
+	}
+
+	caches := value.CacheDirs
+	index := len(caches)
+	if cacheDir != "" {
+		originPath := strings.Split(cacheDir, ":")
+		for i, p := range originPath {
+			var volumeType = common.VolumeTypeHostPath
+			caches[strconv.Itoa(index+i+1)] = cache{
+				Path: p,
+				Type: string(volumeType),
+			}
+		}
+	}
 	// set volumes & volumeMounts for cache
 	volumeMap := map[string]corev1.VolumeMount{}
 	for _, v := range runtime.Spec.Fuse.VolumeMounts {
@@ -188,6 +212,9 @@ func (j *JuiceFSEngine) transformFuseCacheVolumes(runtime *datav1alpha1.JuiceFSR
 		case string(common.VolumeTypeEmptyDir):
 			v.VolumeSource = corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			}
+			if cache.VolumeSource != nil && cache.VolumeSource.EmptyDir != nil {
+				v.VolumeSource = cache.VolumeSource.VolumeSource
 			}
 			// todo: support volume template
 		}
