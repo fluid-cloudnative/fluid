@@ -60,7 +60,7 @@ require (
 	github.com/container-storage-interface/spec v1.7.0
 	github.com/docker/go-units v0.5.0
 	github.com/felixge/fgprof v0.9.3
-	github.com/go-logr/logr v1.2.4
+	github.com/go-logr/logr v1.3.0
 	github.com/golang/glog v1.0.0
 	github.com/golang/mock v1.6.0
 	github.com/kubernetes-csi/drivers v1.0.2
@@ -81,7 +81,7 @@ require (
 	k8s.io/client-go v0.23.0
 	k8s.io/component-base v0.23.0
 	k8s.io/component-helpers v0.23.0
-	k8s.io/klog/v2 v2.30.0
+	k8s.io/klog/v2 v2.110.1
 	k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65
 	k8s.io/kubernetes v1.23.0
 	k8s.io/utils v0.0.0-20210930125809-cb0fa318a74b
