@@ -18,6 +18,7 @@ package dataload
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/compatibility"
 	batchv1 "k8s.io/api/batch/v1"
@@ -49,7 +50,7 @@ type DataLoadReconciler struct {
 	*controllers.OperationReconciler
 }
 
-var _ dataoperation.OperationReconcilerInterface = &DataLoadReconciler{}
+var _ dataoperation.OperationInterfaceBuilder = &DataLoadReconciler{}
 
 // NewDataLoadReconciler returns a DataLoadReconciler
 func NewDataLoadReconciler(client client.Client,
@@ -63,6 +64,20 @@ func NewDataLoadReconciler(client client.Client,
 	return r
 }
 
+func (r *DataLoadReconciler) Build(object client.Object) (dataoperation.OperationInterface, error) {
+	dataLoad, ok := object.(*datav1alpha1.DataLoad)
+	if !ok {
+		return nil, fmt.Errorf("object %v is not a DataLoad", object)
+	}
+
+	return &dataLoadOperation{
+		Client:   r.Client,
+		Log:      r.Log,
+		Recorder: r.Recorder,
+		dataLoad: dataLoad,
+	}, nil
+}
+
 // +kubebuilder:rbac:groups=data.fluid.io,resources=dataloads,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=data.fluid.io,resources=dataloads/status,verbs=get;update;patch
 // Reconcile reconciles the DataLoad object
@@ -71,7 +86,7 @@ func (r *DataLoadReconciler) Reconcile(context context.Context, req ctrl.Request
 		// used for create engine
 		ReconcileRequestContext: cruntime.ReconcileRequestContext{
 			Context:  context,
-			Log:      r.Log.WithValues(string(r.GetOperationType()), req.NamespacedName),
+			Log:      r.Log.WithValues("DataLoad", req.NamespacedName),
 			Recorder: r.Recorder,
 			Client:   r.Client,
 			Category: common.AccelerateCategory,

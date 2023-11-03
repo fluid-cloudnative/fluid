@@ -23,15 +23,14 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func InstallDataOperationHelmIfNotExist(ctx cruntime.ReconcileRequestContext, object client.Object, operation dataoperation.OperationReconcilerInterface,
+func InstallDataOperationHelmIfNotExist(ctx cruntime.ReconcileRequestContext, operation dataoperation.OperationInterface,
 	yamlGenerator DataOperatorYamlGenerator) (err error) {
 	log := ctx.Log.WithName("InstallDataOperationHelmIfNotExist")
 
 	operationTypeName := string(operation.GetOperationType())
-	releaseNamespacedName := operation.GetReleaseNameSpacedName(object)
+	releaseNamespacedName := operation.GetReleaseNameSpacedName()
 	var existed bool
 	existed, err = helm.CheckRelease(releaseNamespacedName.Name, releaseNamespacedName.Namespace)
 	if err != nil {
@@ -44,7 +43,7 @@ func InstallDataOperationHelmIfNotExist(ctx cruntime.ReconcileRequestContext, ob
 	if !existed {
 		log.Info(fmt.Sprintf("%s job helm chart not installed yet, will install", operationTypeName))
 		var valueFileName string
-		valueFileName, err = yamlGenerator.GetDataOperationValueFile(ctx, object, operation)
+		valueFileName, err = yamlGenerator.GetDataOperationValueFile(ctx, operation)
 		if err != nil {
 			log.Error(err, "failed to generate chart's value file")
 			return err

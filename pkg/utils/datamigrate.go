@@ -52,7 +52,7 @@ func GetDataMigrateJobName(releaseName string) string {
 	return fmt.Sprintf("%s-migrate", releaseName)
 }
 
-func GetTargetDatasetOfMigrate(client client.Client, dataMigrate datav1alpha1.DataMigrate) (targetDataset *datav1alpha1.Dataset, err error) {
+func GetTargetDatasetOfMigrate(client client.Client, dataMigrate *datav1alpha1.DataMigrate) (targetDataset *datav1alpha1.Dataset, err error) {
 	var fromDataset, toDataset *datav1alpha1.Dataset
 	var boundedRuntimeType = ""
 	if dataMigrate.Spec.To.DataSet != nil && dataMigrate.Spec.To.DataSet.Name != "" {

@@ -23,11 +23,9 @@ package base
 import (
 	dataoperation "github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/golang/mock/gomock"
 	reflect "reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/golang/mock/gomock"
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -49,9 +47,9 @@ func (m *MockEngine) MigrateData(ctx runtime.ReconcileRequestContext, targetData
 	return ret0
 }
 
-func (m *MockEngine) Operate(ctx runtime.ReconcileRequestContext, object client.Object, opStatus *v1alpha1.OperationStatus, operation dataoperation.OperationReconcilerInterface) (ctrl.Result, error) {
+func (m *MockEngine) Operate(ctx runtime.ReconcileRequestContext, opStatus *v1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Operate", ctx, object, opStatus, operation)
+	ret := m.ctrl.Call(m, "Operate", ctx, opStatus, operation)
 	ret0, _ := ret[0].(ctrl.Result)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -408,9 +406,9 @@ func (mr *MockImplementMockRecorder) CheckWorkersReady() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckWorkersReady", reflect.TypeOf((*MockImplement)(nil).CheckWorkersReady))
 }
 
-func (m *MockImplement) GetDataOperationValueFile(ctx runtime.ReconcileRequestContext, object client.Object, operation dataoperation.OperationReconcilerInterface) (valueFileName string, err error) {
+func (m *MockImplement) GetDataOperationValueFile(ctx runtime.ReconcileRequestContext, operation dataoperation.OperationInterface) (valueFileName string, err error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetDataOperationValueFile", ctx, object, operation)
+	ret := m.ctrl.Call(m, "GetDataOperationValueFile", ctx, operation)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1

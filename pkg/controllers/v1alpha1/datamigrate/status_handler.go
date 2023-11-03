@@ -33,27 +33,31 @@ import (
 
 type OnceStatusHandler struct {
 	client.Client
-	Log logr.Logger
+	Log         logr.Logger
+	dataMigrate *datav1alpha1.DataMigrate
 }
 
 var _ dataoperation.StatusHandler = &OnceStatusHandler{}
 
 type CronStatusHandler struct {
 	client.Client
-	Log logr.Logger
+	Log         logr.Logger
+	dataMigrate *datav1alpha1.DataMigrate
 }
 
 var _ dataoperation.StatusHandler = &CronStatusHandler{}
 
 type OnEventStatusHandler struct {
 	client.Client
-	Log logr.Logger
+	Log         logr.Logger
+	dataMigrate *datav1alpha1.DataMigrate
 }
 
 var _ dataoperation.StatusHandler = &OnEventStatusHandler{}
 
-func (m *OnceStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestContext, object client.Object, opStatus *datav1alpha1.OperationStatus) (result *datav1alpha1.OperationStatus, err error) {
+func (m *OnceStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus) (result *datav1alpha1.OperationStatus, err error) {
 	result = opStatus.DeepCopy()
+	object := m.dataMigrate
 	// 1. Check running status of the DataMigrate job
 	releaseName := utils.GetDataMigrateReleaseName(object.GetName())
 	jobName := utils.GetDataMigrateJobName(releaseName)
@@ -103,8 +107,9 @@ func (m *OnceStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestCont
 	return
 }
 
-func (c *CronStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestContext, object client.Object, opStatus *datav1alpha1.OperationStatus) (result *datav1alpha1.OperationStatus, err error) {
+func (c *CronStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus) (result *datav1alpha1.OperationStatus, err error) {
 	result = opStatus.DeepCopy()
+	object := c.dataMigrate
 	// 1. Check running status of the DataMigrate job
 	releaseName := utils.GetDataMigrateReleaseName(object.GetName())
 	cronjobName := utils.GetDataMigrateJobName(releaseName)
@@ -183,7 +188,7 @@ func (c *CronStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestCont
 	return
 }
 
-func (o *OnEventStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestContext, object client.Object, opStatus *datav1alpha1.OperationStatus) (result *datav1alpha1.OperationStatus, err error) {
+func (o *OnEventStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus) (result *datav1alpha1.OperationStatus, err error) {
 	//TODO implement me
 	return nil, nil
 }

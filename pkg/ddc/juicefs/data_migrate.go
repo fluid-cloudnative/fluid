@@ -78,7 +78,7 @@ func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequest
 	}
 
 	// 1. get the target dataset
-	targetDataset, err := utils.GetTargetDatasetOfMigrate(r.Client, *dataMigrate)
+	targetDataset, err := utils.GetTargetDatasetOfMigrate(r.Client, dataMigrate)
 	if err != nil {
 		return "", err
 	}

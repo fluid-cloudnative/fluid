@@ -156,7 +156,7 @@ func TestGetTargetDatasetOfMigrate(t *testing.T) {
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, runtimeObjs...)
 
 	type args struct {
-		dataMigrate datav1alpha1.DataMigrate
+		dataMigrate *datav1alpha1.DataMigrate
 	}
 	tests := []struct {
 		name        string
@@ -167,7 +167,7 @@ func TestGetTargetDatasetOfMigrate(t *testing.T) {
 		{
 			name: "test-from",
 			args: args{
-				dataMigrate: datav1alpha1.DataMigrate{
+				dataMigrate: &datav1alpha1.DataMigrate{
 					Spec: datav1alpha1.DataMigrateSpec{
 						From: datav1alpha1.DataToMigrate{
 							DataSet: &datav1alpha1.DatasetToMigrate{
@@ -189,7 +189,7 @@ func TestGetTargetDatasetOfMigrate(t *testing.T) {
 		{
 			name: "test-to",
 			args: args{
-				dataMigrate: datav1alpha1.DataMigrate{
+				dataMigrate: &datav1alpha1.DataMigrate{
 					Spec: datav1alpha1.DataMigrateSpec{
 						To: datav1alpha1.DataToMigrate{
 							DataSet: &datav1alpha1.DatasetToMigrate{
@@ -211,7 +211,7 @@ func TestGetTargetDatasetOfMigrate(t *testing.T) {
 		{
 			name: "test-not-exist",
 			args: args{
-				dataMigrate: datav1alpha1.DataMigrate{
+				dataMigrate: &datav1alpha1.DataMigrate{
 					Spec: datav1alpha1.DataMigrateSpec{
 						To: datav1alpha1.DataToMigrate{
 							DataSet: &datav1alpha1.DatasetToMigrate{
@@ -228,7 +228,7 @@ func TestGetTargetDatasetOfMigrate(t *testing.T) {
 		{
 			name: "test-to-type",
 			args: args{
-				dataMigrate: datav1alpha1.DataMigrate{
+				dataMigrate: &datav1alpha1.DataMigrate{
 					Spec: datav1alpha1.DataMigrateSpec{
 						To: datav1alpha1.DataToMigrate{
 							DataSet: &datav1alpha1.DatasetToMigrate{
@@ -251,7 +251,7 @@ func TestGetTargetDatasetOfMigrate(t *testing.T) {
 		{
 			name: "test-wrong-type",
 			args: args{
-				dataMigrate: datav1alpha1.DataMigrate{
+				dataMigrate: &datav1alpha1.DataMigrate{
 					Spec: datav1alpha1.DataMigrateSpec{
 						To: datav1alpha1.DataToMigrate{
 							DataSet: &datav1alpha1.DatasetToMigrate{

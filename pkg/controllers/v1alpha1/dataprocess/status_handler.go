@@ -30,13 +30,15 @@ import (
 
 type OnceStatusHandler struct {
 	client.Client
+	dataProcess *datav1alpha1.DataProcess
 }
 
 var _ dataoperation.StatusHandler = &OnceStatusHandler{}
 
 // GetOperationStatus get operation status according to helm chart status
-func (handler *OnceStatusHandler) GetOperationStatus(ctx runtime.ReconcileRequestContext, object client.Object, opStatus *datav1alpha1.OperationStatus) (result *datav1alpha1.OperationStatus, err error) {
+func (handler *OnceStatusHandler) GetOperationStatus(ctx runtime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus) (result *datav1alpha1.OperationStatus, err error) {
 	result = opStatus.DeepCopy()
+	object := handler.dataProcess
 
 	releaseName := utils.GetDataProcessReleaseName(object.GetName())
 	jobName := utils.GetDataProcessJobName(releaseName)

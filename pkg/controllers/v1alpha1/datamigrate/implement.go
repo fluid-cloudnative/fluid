@@ -19,6 +19,8 @@ package datamigrate
 import (
 	"context"
 	"fmt"
+	"github.com/go-logr/logr"
+	"k8s.io/client-go/tools/record"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
@@ -36,41 +38,55 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
-func (r *DataMigrateReconciler) GetTargetDataset(object client.Object) (*datav1alpha1.Dataset, error) {
-	return utils.GetTargetDatasetOfMigrate(r.Client, *object.(*datav1alpha1.DataMigrate))
+type dataMigrateOperation struct {
+	client.Client
+	Log      logr.Logger
+	Recorder record.EventRecorder
+
+	dataMigrate *datav1alpha1.DataMigrate
 }
 
-func (r *DataMigrateReconciler) GetReleaseNameSpacedName(object client.Object) types.NamespacedName {
-	releaseName := utils.GetDataMigrateReleaseName(object.GetName())
+var _ dataoperation.OperationInterface = &dataMigrateOperation{}
+
+func (r *dataMigrateOperation) GetOperationObject() client.Object {
+	return r.dataMigrate
+}
+
+func (r *dataMigrateOperation) HasPrecedingOperation() bool {
+	return r.dataMigrate.Spec.RunAfter != nil
+}
+
+func (r *dataMigrateOperation) GetTargetDataset() (*datav1alpha1.Dataset, error) {
+	return utils.GetTargetDatasetOfMigrate(r.Client, r.dataMigrate)
+}
+
+func (r *dataMigrateOperation) GetReleaseNameSpacedName() types.NamespacedName {
+	releaseName := utils.GetDataMigrateReleaseName(r.dataMigrate.GetName())
 	return types.NamespacedName{
-		Namespace: object.GetNamespace(),
+		Namespace: r.dataMigrate.GetNamespace(),
 		Name:      releaseName,
 	}
 }
 
-func (r *DataMigrateReconciler) GetChartsDirectory() string {
+func (r *dataMigrateOperation) GetChartsDirectory() string {
 	return utils.GetChartsDirectory() + "/" + cdatamigrate.DataMigrateChart
 }
 
-func (r *DataMigrateReconciler) GetOperationType() datav1alpha1.OperationType {
+func (r *dataMigrateOperation) GetOperationType() datav1alpha1.OperationType {
 	return datav1alpha1.DataMigrateType
 }
 
-func (r *DataMigrateReconciler) UpdateOperationApiStatus(object client.Object, opStatus *datav1alpha1.OperationStatus) error {
-	dataMigrate, ok := object.(*datav1alpha1.DataMigrate)
-	if !ok {
-		return fmt.Errorf("%+v is not a type of DataMigrate", object)
-	}
-	var dataMigrateCpy = dataMigrate.DeepCopy()
+func (r *dataMigrateOperation) UpdateOperationApiStatus(opStatus *datav1alpha1.OperationStatus) error {
+	var dataMigrateCpy = r.dataMigrate.DeepCopy()
 	dataMigrateCpy.Status = *opStatus.DeepCopy()
 	return r.Status().Update(context.Background(), dataMigrateCpy)
 }
 
-func (r *DataMigrateReconciler) Validate(ctx cruntime.ReconcileRequestContext, object client.Object) ([]datav1alpha1.Condition, error) {
+func (r *dataMigrateOperation) Validate(ctx cruntime.ReconcileRequestContext) ([]datav1alpha1.Condition, error) {
 	targetDataSet := ctx.Dataset
 
-	if object.GetNamespace() != targetDataSet.Namespace {
-		err := fmt.Errorf("DataMigrate(%s) namespace is not same as dataset", object.GetName())
+	if r.dataMigrate.GetNamespace() != targetDataSet.Namespace {
+		err := fmt.Errorf("DataMigrate(%s) namespace is not same as dataset", r.dataMigrate.GetName())
 		return []datav1alpha1.Condition{
 			{
 				Type:               common.Failed,
@@ -85,42 +101,37 @@ func (r *DataMigrateReconciler) Validate(ctx cruntime.ReconcileRequestContext, o
 	return nil, nil
 }
 
-func (r *DataMigrateReconciler) UpdateStatusInfoForCompleted(object client.Object, infos map[string]string) error {
+func (r *dataMigrateOperation) UpdateStatusInfoForCompleted(infos map[string]string) error {
 	// DataMigrate does not need to update OperationStatus's Infos field.
 	return nil
 }
 
-func (r *DataMigrateReconciler) SetTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
+func (r *dataMigrateOperation) SetTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
 	dataset.Status.Phase = datav1alpha1.DataMigrating
 }
 
-func (r *DataMigrateReconciler) RemoveTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
+func (r *dataMigrateOperation) RemoveTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
 	dataset.Status.Phase = datav1alpha1.BoundDatasetPhase
 }
 
-func (r *DataMigrateReconciler) GetStatusHandler(obj client.Object) dataoperation.StatusHandler {
-	dataMigrate := obj.(*datav1alpha1.DataMigrate)
-	policy := dataMigrate.Spec.Policy
+func (r *dataMigrateOperation) GetStatusHandler() dataoperation.StatusHandler {
+	policy := r.dataMigrate.Spec.Policy
 
 	switch policy {
 	case datav1alpha1.Once:
-		return &OnceStatusHandler{Client: r.Client, Log: r.Log}
+		return &OnceStatusHandler{Client: r.Client, Log: r.Log, dataMigrate: r.dataMigrate}
 	case datav1alpha1.Cron:
-		return &CronStatusHandler{Client: r.Client, Log: r.Log}
+		return &CronStatusHandler{Client: r.Client, Log: r.Log, dataMigrate: r.dataMigrate}
 	case datav1alpha1.OnEvent:
-		return &OnEventStatusHandler{Client: r.Client, Log: r.Log}
+		return &OnEventStatusHandler{Client: r.Client, Log: r.Log, dataMigrate: r.dataMigrate}
 	default:
 		return nil
 	}
 }
 
-// GetTTL implements dataoperation.OperationReconcilerInterface.
-func (*DataMigrateReconciler) GetTTL(object client.Object) (ttl *int32, err error) {
-	dataMigrate, ok := object.(*datav1alpha1.DataMigrate)
-	if !ok {
-		err = fmt.Errorf("%+v is not a type of DataMigrate", object)
-		return
-	}
+// GetTTL implements dataoperation.OperationInterface.
+func (r *dataMigrateOperation) GetTTL() (ttl *int32, err error) {
+	dataMigrate := r.dataMigrate
 
 	policy := dataMigrate.Spec.Policy
 	switch policy {
