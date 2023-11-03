@@ -95,7 +95,7 @@ func TestOnceGetOperationStatus(t *testing.T) {
 
 	for _, testcase := range testcases {
 		client := fake.NewFakeClientWithScheme(testScheme, &mockDataMigrate, &testcase.job)
-		onceStatusHandler := &OnceStatusHandler{Client: client}
+		onceStatusHandler := &OnceStatusHandler{Client: client, dataMigrate: &mockDataMigrate}
 		ctx := cruntime.ReconcileRequestContext{
 			NamespacedName: types.NamespacedName{
 				Namespace: "default",
@@ -103,7 +103,7 @@ func TestOnceGetOperationStatus(t *testing.T) {
 			},
 			Log: fake.NullLogger(),
 		}
-		opStatus, err := onceStatusHandler.GetOperationStatus(ctx, &mockDataMigrate, &mockDataMigrate.Status)
+		opStatus, err := onceStatusHandler.GetOperationStatus(ctx, &mockDataMigrate.Status)
 		if err != nil {
 			t.Errorf("fail to GetOperationStatus with error %v", err)
 		}
@@ -200,9 +200,9 @@ func TestCronGetOperationStatus(t *testing.T) {
 
 	for _, testcase := range testcases {
 		client := fake.NewFakeClientWithScheme(testScheme, &mockCronDataMigrate, &mockCronJob, &testcase.job)
-		cronStatusHandler := &CronStatusHandler{Client: client}
+		cronStatusHandler := &CronStatusHandler{Client: client, dataMigrate: &mockCronDataMigrate}
 		ctx := cruntime.ReconcileRequestContext{Log: fake.NullLogger()}
-		opStatus, err := cronStatusHandler.GetOperationStatus(ctx, &mockCronDataMigrate, &mockCronDataMigrate.Status)
+		opStatus, err := cronStatusHandler.GetOperationStatus(ctx, &mockCronDataMigrate.Status)
 		if err != nil {
 			t.Errorf("fail to GetOperationStatus with error %v", err)
 		}

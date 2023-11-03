@@ -18,6 +18,7 @@ package dataprocess
 
 import (
 	"context"
+	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
@@ -44,7 +45,21 @@ type DataProcessReconciler struct {
 	*controllers.OperationReconciler
 }
 
-var _ dataoperation.OperationReconcilerInterface = &DataProcessReconciler{}
+var _ dataoperation.OperationInterfaceBuilder = &DataProcessReconciler{}
+
+func (r *DataProcessReconciler) Build(object client.Object) (dataoperation.OperationInterface, error) {
+	dataProcess, ok := object.(*datav1alpha1.DataProcess)
+	if !ok {
+		return nil, fmt.Errorf("object %v is not a DataProcess", object)
+	}
+
+	return &dataProcessOperation{
+		Client:      r.Client,
+		Log:         r.Log,
+		Recorder:    r.Recorder,
+		dataProcess: dataProcess,
+	}, nil
+}
 
 func NewDataProcessReconciler(client client.Client,
 	log logr.Logger,
@@ -74,7 +89,7 @@ func (r *DataProcessReconciler) Reconcile(context context.Context, req ctrl.Requ
 	ctx := dataoperation.ReconcileRequestContext{
 		ReconcileRequestContext: cruntime.ReconcileRequestContext{
 			Context:  context,
-			Log:      r.Log.WithValues(string(r.GetOperationType()), req.NamespacedName),
+			Log:      r.Log.WithValues("DataProcess", req.NamespacedName),
 			Recorder: r.Recorder,
 			Client:   r.Client,
 			Category: common.AccelerateCategory,

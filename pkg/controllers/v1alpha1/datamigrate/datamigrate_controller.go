@@ -18,6 +18,7 @@ package datamigrate
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -48,7 +49,7 @@ type DataMigrateReconciler struct {
 	*controllers.OperationReconciler
 }
 
-var _ dataoperation.OperationReconcilerInterface = &DataMigrateReconciler{}
+var _ dataoperation.OperationInterfaceBuilder = &DataMigrateReconciler{}
 
 // NewDataMigrateReconciler returns a DataMigrateReconciler
 func NewDataMigrateReconciler(client client.Client,
@@ -62,6 +63,20 @@ func NewDataMigrateReconciler(client client.Client,
 	return r
 }
 
+func (r *DataMigrateReconciler) Build(object client.Object) (dataoperation.OperationInterface, error) {
+	dataMigrate, ok := object.(*datav1alpha1.DataMigrate)
+	if !ok {
+		return nil, fmt.Errorf("object %v is not a DataMigrate", object)
+	}
+
+	return &dataMigrateOperation{
+		Client:      r.Client,
+		Log:         r.Log,
+		Recorder:    r.Recorder,
+		dataMigrate: dataMigrate,
+	}, nil
+}
+
 // +kubebuilder:rbac:groups=data.fluid.io,resources=datamigrates,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=data.fluid.io,resources=datamigrates/status,verbs=get;update;patch
 // Reconcile reconciles the DataMigrate object
@@ -70,7 +85,7 @@ func (r *DataMigrateReconciler) Reconcile(context context.Context, req ctrl.Requ
 		// used for create engine
 		ReconcileRequestContext: cruntime.ReconcileRequestContext{
 			Context:  context,
-			Log:      r.Log.WithValues(string(r.GetOperationType()), req.NamespacedName),
+			Log:      r.Log.WithValues("DataMigrate", req.NamespacedName),
 			Recorder: r.Recorder,
 			Client:   r.Client,
 			Category: common.AccelerateCategory,

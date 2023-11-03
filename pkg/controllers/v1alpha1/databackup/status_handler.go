@@ -19,26 +19,26 @@ package databackup
 import (
 	"time"
 
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 	"github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type OnceHandler struct {
+	dataBackup *v1alpha1.DataBackup
 }
 
 var _ dataoperation.StatusHandler = &OnceHandler{}
 
 // UpdateStatusByHelmStatus update the operation status according to helm job status
-func (o *OnceHandler) GetOperationStatus(ctx runtime.ReconcileRequestContext, object client.Object, opStatus *v1alpha1.OperationStatus) (result *v1alpha1.OperationStatus, err error) {
+func (o *OnceHandler) GetOperationStatus(ctx runtime.ReconcileRequestContext, opStatus *v1alpha1.OperationStatus) (result *v1alpha1.OperationStatus, err error) {
 	result = opStatus.DeepCopy()
+	object := o.dataBackup
 	// 1. gdt pod name
 	backupPodName := utils.GetDataBackupPodName(object.GetName())
 	backupPod, err := kubeclient.GetPodByName(ctx.Client, backupPodName, object.GetNamespace())

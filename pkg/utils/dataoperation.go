@@ -101,30 +101,12 @@ func GetPrecedingOperationStatus(client client.Client, opRef *datav1alpha1.Opera
 	}
 }
 
-func HasPrecedingOperation(obj client.Object) (has bool, err error) {
-	if obj == nil {
-		return false, nil
-	}
-
-	if dataLoad, ok := obj.(*datav1alpha1.DataLoad); ok {
-		return dataLoad.Spec.RunAfter != nil, nil
-	} else if dataMigrate, ok := obj.(*datav1alpha1.DataMigrate); ok {
-		return dataMigrate.Spec.RunAfter != nil, nil
-	} else if dataBackup, ok := obj.(*datav1alpha1.DataBackup); ok {
-		return dataBackup.Spec.RunAfter != nil, nil
-	} else if dataProcess, ok := obj.(*datav1alpha1.DataProcess); ok {
-		return dataProcess.Spec.RunAfter != nil, nil
-	}
-
-	return false, fmt.Errorf("obj is not of any data operation type")
-}
-
-func NeedCleanUp(object client.Object, opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationReconcilerInterface) bool {
+func NeedCleanUp(opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface) bool {
 	if len(opStatus.Conditions) == 0 {
 		// data operation has no completion time, no need to clean up
 		return false
 	}
-	ttl, err := GetTTL(object, operation)
+	ttl, err := operation.GetTTL()
 	if err != nil {
 		return false
 	}
@@ -132,7 +114,7 @@ func NeedCleanUp(object client.Object, opStatus *datav1alpha1.OperationStatus, o
 }
 
 // Timeleft return not nil remaining time if data operation has completion time and set ttlAfterFinished
-func Timeleft(object client.Object, opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationReconcilerInterface) (*time.Duration, error) {
+func Timeleft(opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface) (*time.Duration, error) {
 	if len(opStatus.Conditions) == 0 {
 		// data operation has no completion time
 		return nil, nil
@@ -142,7 +124,7 @@ func Timeleft(object client.Object, opStatus *datav1alpha1.OperationStatus, oper
 		return nil, nil
 	}
 
-	ttl, err := GetTTL(object, operation)
+	ttl, err := operation.GetTTL()
 	if err != nil {
 		return nil, err
 	}
@@ -158,8 +140,4 @@ func Timeleft(object client.Object, opStatus *datav1alpha1.OperationStatus, oper
 	// calculate remainint time to clean up data operation
 	remaining := expireTime.Sub(curTime)
 	return &remaining, nil
-}
-
-func GetTTL(object client.Object, operation dataoperation.OperationReconcilerInterface) (ttl *int32, err error) {
-	return operation.GetTTL(object)
 }
