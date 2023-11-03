@@ -6,5 +6,9 @@ metadata:
   namespace: {{ include "fluid.namespace" . }}
 data:
   tieredLocality: |
+{{- if .Values.webhook.updateTieredLocality }}
 {{ toYaml .Values.webhook.tieredLocality | indent 4 }}
+{{- else }}
+{{ (lookup "v1" "ConfigMap" (include "fluid.namespace" .)  "tiered-locality-config").data.tieredLocality }}
+{{- end}}
 {{- end }}

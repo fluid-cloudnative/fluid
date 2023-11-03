@@ -149,6 +149,8 @@ webhook:
   reinvocationPolicy: IfNeeded
   tolerations:
     - operator: Exists
+
+  updateTieredLocality: true
   tieredLocality:
     preferred:
       # fluid existed node affinity, the name can not be modified.
