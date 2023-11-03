@@ -103,8 +103,8 @@ github.com/googleapis/gnostic/compiler
 github.com/googleapis/gnostic/extensions
 github.com/googleapis/gnostic/jsonschema
 github.com/googleapis/gnostic/openapiv2
-# github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00
-## explicit
+# github.com/gopherjs/gopherjs v1.17.2
+## explicit; go 1.17
 github.com/gopherjs/gopherjs/js
 # github.com/imdario/mergo v0.3.12
 ## explicit; go 1.13
@@ -213,14 +213,14 @@ github.com/prometheus/procfs/internal/fs
 github.com/prometheus/procfs/internal/util
 # github.com/rogpeppe/go-internal v1.10.0
 ## explicit; go 1.19
-# github.com/smartystreets/assertions v1.2.0
-## explicit; go 1.13
-github.com/smartystreets/assertions
-github.com/smartystreets/assertions/internal/go-diff/diffmatchpatch
-github.com/smartystreets/assertions/internal/go-render/render
-github.com/smartystreets/assertions/internal/oglematchers
-# github.com/smartystreets/goconvey v1.7.2
-## explicit; go 1.16
+# github.com/smarty/assertions v1.15.0
+## explicit; go 1.18
+github.com/smarty/assertions
+github.com/smarty/assertions/internal/go-diff/diffmatchpatch
+github.com/smarty/assertions/internal/go-render/render
+github.com/smarty/assertions/internal/oglematchers
+# github.com/smartystreets/goconvey v1.8.1
+## explicit; go 1.18
 github.com/smartystreets/goconvey/convey
 github.com/smartystreets/goconvey/convey/gotest
 github.com/smartystreets/goconvey/convey/reporting
