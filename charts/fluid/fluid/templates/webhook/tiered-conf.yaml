@@ -9,6 +9,6 @@ data:
 {{- if .Values.webhook.updateTieredLocality }}
 {{ toYaml .Values.webhook.tieredLocality | indent 4 }}
 {{- else }}
-{{ (lookup "v1" "ConfigMap" (include "fluid.namespace" .)  "tiered-locality-config").data.tieredLocality }}
+{{ (lookup "v1" "ConfigMap" (include "fluid.namespace" .)  "tiered-locality-config").data.tieredLocality | indent 4 }}
 {{- end}}
 {{- end }}
