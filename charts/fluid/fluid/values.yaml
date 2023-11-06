@@ -149,6 +149,8 @@ webhook:
   reinvocationPolicy: IfNeeded
   tolerations:
     - operator: Exists
+  # if configmap `tiered-locality-config` exists and not want to replace the content, set this to false.
+  forceReplaceTieredLocality: false
   tieredLocality:
     preferred:
       # fluid existed node affinity, the name can not be modified.
