@@ -12,7 +12,7 @@ crdUpgrade:
   enabled: true
   # This sets the time-to-live (TTL) for crd-upgrade jobs. Default is 259200 seconds (3 days).
   ttlSecondsAfterFinished: 259200 
-  image: fluidcloudnative/fluid-crd-upgrader:v1.0.0-b388ae0
+  image: fluidcloudnative/fluid-crd-upgrader:v1.0.0-70b8c3b
 
 ##  if unspecified, will use built-in variable `.Release.Namespace`.
 namespace: fluid-system
@@ -25,7 +25,7 @@ dataset:
   tolerations:
     - operator: Exists
   controller:
-    image: fluidcloudnative/dataset-controller:v1.0.0-b388ae0
+    image: fluidcloudnative/dataset-controller:v1.0.0-70b8c3b
 
 csi:
   tolerations:
@@ -36,7 +36,7 @@ csi:
   registrar:
     image: fluidcloudnative/csi-node-driver-registrar:v2.3.0
   plugins:
-    image: fluidcloudnative/fluid-csi:v1.0.0-b388ae0
+    image: fluidcloudnative/fluid-csi:v1.0.0-70b8c3b
   kubelet:
     kubeConfigFile: /etc/kubernetes/kubelet.conf
     certDir: /var/lib/kubelet/pki
@@ -62,7 +62,7 @@ runtime:
     init:
       image: fluidcloudnative/init-users:v0.9.0
     controller:
-      image: fluidcloudnative/alluxioruntime-controller:v1.0.0-b388ae0
+      image: fluidcloudnative/alluxioruntime-controller:v1.0.0-70b8c3b
     runtime:
       image: alluxio/alluxio-dev:2.9.0
     fuse:
@@ -83,7 +83,7 @@ runtime:
     fuse:
       image: registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:4.6.8
     controller:
-      image: fluidcloudnative/jindoruntime-controller:v1.0.0-b388ae0
+      image: fluidcloudnative/jindoruntime-controller:v1.0.0-70b8c3b
     init:
       portCheck:
         enabled: false
@@ -99,7 +99,7 @@ runtime:
     init:
       image: fluidcloudnative/init-users:v0.9.0
     controller:
-      image: fluidcloudnative/goosefsruntime-controller:v1.0.0-b388ae0
+      image: fluidcloudnative/goosefsruntime-controller:v1.0.0-70b8c3b
     runtime:
       image: ccr.ccs.tencentyun.com/qcloud/goosefs:v1.2.0
     fuse:
@@ -111,7 +111,7 @@ runtime:
     enabled: false
     runtimeWorkers: 3
     controller:
-      image: fluidcloudnative/juicefsruntime-controller:v1.0.0-b388ae0
+      image: fluidcloudnative/juicefsruntime-controller:v1.0.0-70b8c3b
     fuse:
       ceimage: juicedata/juicefs-fuse:ce-v1.1.0-rc1
       eeimage: juicedata/juicefs-fuse:ee-4.9.16
@@ -121,7 +121,7 @@ runtime:
       - operator: Exists
     enabled: false
     controller:
-      image: fluidcloudnative/thinruntime-controller:v1.0.0-b388ae0
+      image: fluidcloudnative/thinruntime-controller:v1.0.0-70b8c3b
     fuse:
       configStorage: configmap
   efc:
@@ -130,7 +130,7 @@ runtime:
       - operator: Exists
     enabled: false
     controller:
-      image: fluidcloudnative/efcruntime-controller:v1.0.0-b388ae0
+      image: fluidcloudnative/efcruntime-controller:v1.0.0-70b8c3b
       imagePullPolicy: Always
     init:
       image: registry.cn-zhangjiakou.aliyuncs.com/nascache/init-alifuse:v1.2.2-19dcee9
@@ -143,7 +143,7 @@ runtime:
 
 webhook:
   enabled: true
-  image: fluidcloudnative/fluid-webhook:v1.0.0-b388ae0
+  image: fluidcloudnative/fluid-webhook:v1.0.0-70b8c3b
   replicas: 1
   timeoutSeconds: 15
   reinvocationPolicy: IfNeeded
@@ -172,4 +172,4 @@ fluidapp:
   tolerations:
     - operator: Exists
   controller:
-    image: fluidcloudnative/application-controller:v1.0.0-b388ae0
+    image: fluidcloudnative/application-controller:v1.0.0-70b8c3b
