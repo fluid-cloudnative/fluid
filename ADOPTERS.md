@@ -45,4 +45,5 @@ The companies/organizations are listed in alphabetical order grouped by the phas
 | [得物](https://dewu.com/) | [@wangweidong](wangweidong@shizhuang-inc.com) | Staging | AI Platform(KubeAI) on k8s |
 | [KubeDL](https://kubedl.io/) | [@SimonCqk](cqk0100@gmail.com) | Production | AI Training/Big Data/Stream Media Platforms In Aicheng Technology At Large Scale |
 | [liblibai](https://liblib.ai) | [@zxj](zxj861216@163.com) | Production | AIGC Platform on k8s |
+| [HappyElements](https://www.happyelements.com) | [@Luckyboys](https://github.com/Luckyboys) | Production | AIGC Platform on k8s |
 
