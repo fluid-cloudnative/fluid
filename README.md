@@ -31,7 +31,7 @@ English | [简体中文](./README-zh_CN.md)
 | Sep. 03th, 2022. Fluid v0.8.0 is **RELEASED**! It provides various new features, such as Lifecycle management of Serverless Job with fluid sidecar support, Enable runtime controller on demand, Automatic CRD upgrader, Restrict pod scheduling to dataset cache nodes, Arm64 support with JuicefsRuntime, GCS support for Alluxio Runtime, and so on. Please check the [CHANGELOG](CHANGELOG.md) for details. |
 | Mar. 02th, 2022. Fluid v0.7.0 is **RELEASED**! It provides various new features, such as Fuse sidecar auto injection for all the runtimes (suitable for serverless environment), Fuse auto recovery and upgrade, lazy fuse mount mode, support JuiceFS cache runtime and so on. Please check the [CHANGELOG](CHANGELOG.md) for details. |
 | Aug. 11th, 2021. Fluid v0.6.0 is **RELEASED**! It provides various new features, such as dataset cache autoscaling and cronscaling, dataset cache aware Pod scheduling, HA support for cache Runtime. Please check the [CHANGELOG](CHANGELOG.md) for details. |
-| Apr. 27th, 2021. Fluid accpeted by **CNCF**! Fluid project was [accepted as an official CNCF Sandbox Project](https://lists.cncf.io/g/cncf-toc/message/5822) by CNCF Technical Oversight Committee (TOC) with a majority vote after the review process. New beginning for Fluid! . |
+| Apr. 27th, 2021. Fluid accepted by **CNCF**! Fluid project was [accepted as an official CNCF Sandbox Project](https://lists.cncf.io/g/cncf-toc/message/5822) by CNCF Technical Oversight Committee (TOC) with a majority vote after the review process. New beginning for Fluid! . |
 
 <div align="center">
     <img src="static/architecture.png" title="architecture" height="60%" width="60%" alt="">
