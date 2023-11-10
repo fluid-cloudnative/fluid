@@ -78,6 +78,8 @@ type Master struct {
 	Annotations         map[string]string `yaml:"annotations,omitempty"`
 	ServiceCount        int               `yaml:"svccount"`
 	Env                 map[string]string `yaml:"env,omitempty"`
+	VolumeMounts        []v1.VolumeMount  `yaml:"volumeMounts,omitempty"`
+	Volumes             []v1.Volume       `yaml:"volumes,omitempty"`
 }
 
 type Worker struct {

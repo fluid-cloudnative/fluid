@@ -166,6 +166,10 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	if err != nil {
 		return
 	}
+	err = e.transformMasterVolumes(runtime, value)
+	if err != nil {
+		return
+	}
 	e.transformToken(runtime, value)
 	e.transformWorker(runtime, dataPath, userQuotas, value)
 	e.transformFuse(runtime, value)
@@ -218,6 +222,11 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 	// combine properties together
 	if len(runtime.Spec.Master.Properties) > 0 {
 		for k, v := range runtime.Spec.Master.Properties {
+			if k == "namespace.meta-dir" && runtime.Spec.Master.Replicas == 3 {
+				err = fmt.Errorf("Not support set namespace.meta-dir with %v with replicas = 3", v)
+				e.Log.Error(err, "namespace.meta-dir", v)
+				return
+			}
 			properties[k] = v
 		}
 	}
@@ -1161,4 +1170,35 @@ func (e *JindoFSxEngine) checkIfSupportSecretMount(runtime *datav1alpha1.JindoRu
 		return true
 	}
 	return false
+}
+
+// transform master volumes
+func (e *JindoFSxEngine) transformMasterVolumes(runtime *datav1alpha1.JindoRuntime, value *Jindo) (err error) {
+	if len(runtime.Spec.Master.VolumeMounts) > 0 {
+		for _, volumeMount := range runtime.Spec.Master.VolumeMounts {
+			var volume *corev1.Volume
+			for _, v := range runtime.Spec.Volumes {
+				if v.Name == volumeMount.Name {
+					volume = &v
+					break
+				}
+			}
+
+			if volume == nil {
+				return fmt.Errorf("failed to find the volume for volumeMount %s", volumeMount.Name)
+			}
+
+			if len(value.Master.VolumeMounts) == 0 {
+				value.Master.VolumeMounts = []corev1.VolumeMount{}
+			}
+			value.Master.VolumeMounts = append(value.Master.VolumeMounts, volumeMount)
+
+			if len(value.Master.Volumes) == 0 {
+				value.Master.Volumes = []corev1.Volume{}
+			}
+			value.Master.Volumes = append(value.Master.Volumes, *volume)
+		}
+	}
+
+	return err
 }

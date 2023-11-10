@@ -186,6 +186,9 @@ spec:
               {{- end }}
           {{- end }}
           {{- end }}
+          {{- if .Values.master.volumeMounts }}
+          {{ toYaml .Values.master.volumeMounts | indent 10 }}
+          {{- end }}
       restartPolicy: Always
       {{- if $notEnableDnsConfig }}
       dnsPolicy: {{ .Values.useHostNetwork | ternary "ClusterFirstWithHostNet" "ClusterFirst" }}
@@ -240,3 +243,6 @@ spec:
         - name: bigboot-config
           configMap:
             name: {{ template "jindofs.fullname" . }}-config
+        {{- if .Values.master.volumes }}
+        {{ toYaml .Values.master.volumes | indent 8 }}
+        {{- end }}

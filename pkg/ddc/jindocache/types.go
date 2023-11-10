@@ -79,6 +79,8 @@ type Master struct {
 	ServiceCount        int                  `yaml:"svccount"`
 	Env                 map[string]string    `yaml:"env,omitempty"`
 	CacheSets           map[string]*CacheSet `yaml:"cachesets,omitempty"`
+	VolumeMounts        []v1.VolumeMount     `yaml:"volumeMounts,omitempty"`
+	Volumes             []v1.Volume          `yaml:"volumes,omitempty"`
 }
 
 type Worker struct {
