@@ -223,7 +223,7 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 	if len(runtime.Spec.Master.Properties) > 0 {
 		for k, v := range runtime.Spec.Master.Properties {
 			if k == "namespace.meta-dir" && runtime.Spec.Master.Replicas == 3 {
-				err = fmt.Errorf("Not Support Set NamespaceMetaDir With %v And Replicas = 3", v)
+				err = fmt.Errorf("not support set namespace.meta.dir with %v and replicas = 3", v)
 				e.Log.Error(err, "namespace.meta-dir", v)
 				return
 			}
