@@ -239,7 +239,7 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 	if len(runtime.Spec.Master.Properties) > 0 {
 		for k, v := range runtime.Spec.Master.Properties {
 			if k == "namespace.meta-dir" && runtime.Spec.Master.Replicas == 3 {
-				err = fmt.Errorf("Not support set namespace.meta-dir with %v with replicas = 3", v)
+				err = fmt.Errorf("Not Support Set NamespaceMetaDir With %v And Replicas = 3", v)
 				e.Log.Error(err, "namespace.meta-dir", v)
 				return
 			}
@@ -895,7 +895,7 @@ func (e *JindoCacheEngine) getSmartDataConfigs(runtime *datav1alpha1.JindoRuntim
 	// Apply defaults
 	config := smartdataConfig{
 		image:           "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata",
-		imageTag:        "5.0.0",
+		imageTag:        "6.1.1",
 		imagePullPolicy: "Always",
 		dnsServer:       "1.1.1.1",
 	}
@@ -933,7 +933,7 @@ func (e *JindoCacheEngine) getSmartDataConfigs(runtime *datav1alpha1.JindoRuntim
 func (e *JindoCacheEngine) parseFuseImage(runtime *datav1alpha1.JindoRuntime) (image, tag, imagePullPolicy string) {
 	// Apply defaults
 	image = "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse"
-	tag = "5.0.0"
+	tag = "6.1.1"
 	imagePullPolicy = "Always"
 
 	// Override with global-scoped configs

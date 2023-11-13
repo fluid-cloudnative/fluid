@@ -100,4 +100,4 @@ Add JindoCache Engine
 Fix JindoCache Engine sts token volume mount bug
 
 1.0.0
-Fix support master volume and set namespace meta dir
+Support master volume and set namespace meta dir

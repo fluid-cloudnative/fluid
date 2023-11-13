@@ -988,7 +988,7 @@ func TestCheckIfSupportSecretMount(t *testing.T) {
 					Name:       "test",
 					Path:       "/",
 				}},
-			}}, "5.0.0", "5.0.0", true},
+			}}, "6.1.1", "6.1.1", true},
 		{&datav1alpha1.JindoRuntime{
 			Spec: datav1alpha1.JindoRuntimeSpec{
 				Master: datav1alpha1.JindoCompTemplateSpec{

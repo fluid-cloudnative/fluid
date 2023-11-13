@@ -97,4 +97,4 @@ Add support for pvc subpath feature
 Fix jindofsx engine sts token volume mount bug
 
 1.0.0
-Fix support master volume and set namespace meta dir
+Support master volume and set namespace meta dir
