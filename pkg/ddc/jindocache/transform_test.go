@@ -1214,7 +1214,10 @@ func TestTransformMasterVolume(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &JindoCacheEngine{Log: fake.NullLogger()}
-		engine.transformMasterVolumes(test.runtime, test.jindoValue)
+		err := engine.transformMasterVolumes(test.runtime, test.jindoValue)
+		if err != nil {
+			println(err)
+		}
 		if len(test.jindoValue.Master.VolumeMounts) != test.expect {
 			t.Errorf("expected value %v, but got %v", test.expect, len(test.jindoValue.Master.VolumeMounts))
 		}
