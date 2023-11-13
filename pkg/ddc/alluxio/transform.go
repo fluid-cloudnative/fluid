@@ -312,6 +312,14 @@ func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime,
 		value.Master.NodeSelector = nodeSelector
 	}
 
+	// Add pod affinity to master pod
+	if runtime.Spec.Master.RuntimePodAffinity.PodAffinity != nil {
+		value.Master.Affinity.PodAffinity = runtime.Spec.Master.RuntimePodAffinity.PodAffinity
+	}
+	if runtime.Spec.Master.RuntimePodAffinity.PodAntiAffinity != nil {
+		value.Master.Affinity.PodAntiAffinity = runtime.Spec.Master.RuntimePodAffinity.PodAntiAffinity
+	}
+
 	// // check the run as
 	// if runtime.Spec.RunAs != nil {
 	// 	value.Master.Env["ALLUXIO_USERNAME"] = alluxioUser
@@ -418,6 +426,14 @@ func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, v
 	err = e.transformWorkerVolumes(runtime, value)
 	if err != nil {
 		e.Log.Error(err, "failed to transform volumes for worker")
+	}
+
+	// Add pod affinity to worker pods
+	if runtime.Spec.Worker.RuntimePodAffinity.PodAffinity != nil {
+		value.Worker.Affinity.PodAffinity = runtime.Spec.Worker.RuntimePodAffinity.PodAffinity
+	}
+	if runtime.Spec.Worker.RuntimePodAffinity.PodAntiAffinity != nil {
+		value.Worker.Affinity.PodAntiAffinity = runtime.Spec.Worker.RuntimePodAffinity.PodAntiAffinity
 	}
 
 	return

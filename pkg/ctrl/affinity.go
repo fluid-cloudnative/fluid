@@ -69,109 +69,114 @@ func (e *Helper) BuildWorkersAffinity(workers *appsv1.StatefulSet) (workersToUpd
 
 	if workersToUpdate.Spec.Template.Spec.Affinity == nil {
 		workersToUpdate.Spec.Template.Spec.Affinity = &corev1.Affinity{}
-		dataset, err := utils.GetDataset(e.client, name, namespace)
-		if err != nil {
-			return workersToUpdate, err
-		}
-		// 1. Set pod anti affinity(required) for same dataset (Current using port conflict for scheduling, no need to do)
+	}
+	dataset, err := utils.GetDataset(e.client, name, namespace)
+	if err != nil {
+		return workersToUpdate, err
+	}
+	// 1. Set pod anti affinity(required) for same dataset (Current using port conflict for scheduling, no need to do)
 
-		// 2. Set pod anti affinity for the different dataset
-		if dataset.IsExclusiveMode() {
-			workersToUpdate.Spec.Template.Spec.Affinity.PodAntiAffinity = &corev1.PodAntiAffinity{
-				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
-					{
-						LabelSelector: &metav1.LabelSelector{
-							MatchExpressions: []metav1.LabelSelectorRequirement{
-								{
-									Key:      "fluid.io/dataset",
-									Operator: metav1.LabelSelectorOpExists,
-								},
-							},
-						},
-						TopologyKey: "kubernetes.io/hostname",
-					},
-				},
-			}
-		} else {
-			workersToUpdate.Spec.Template.Spec.Affinity.PodAntiAffinity = &corev1.PodAntiAffinity{
-				PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
-					{
-						// The default weight is 50
-						Weight: 50,
-						PodAffinityTerm: corev1.PodAffinityTerm{
-							LabelSelector: &metav1.LabelSelector{
-								MatchExpressions: []metav1.LabelSelectorRequirement{
-									{
-										Key:      "fluid.io/dataset",
-										Operator: metav1.LabelSelectorOpExists,
-									},
-								},
-							},
-							TopologyKey: "kubernetes.io/hostname",
+	// 2. Set pod anti affinity for the different dataset
+	podAntiAffinityToUpdate := workersToUpdate.Spec.Template.Spec.Affinity.PodAntiAffinity
+	if podAntiAffinityToUpdate == nil {
+		workersToUpdate.Spec.Template.Spec.Affinity.PodAntiAffinity = &corev1.PodAntiAffinity{}
+		podAntiAffinityToUpdate = workersToUpdate.Spec.Template.Spec.Affinity.PodAntiAffinity
+	}
+	if podAntiAffinityToUpdate.RequiredDuringSchedulingIgnoredDuringExecution == nil {
+		podAntiAffinityToUpdate.RequiredDuringSchedulingIgnoredDuringExecution = []corev1.PodAffinityTerm{}
+	}
+	if podAntiAffinityToUpdate.PreferredDuringSchedulingIgnoredDuringExecution == nil {
+		podAntiAffinityToUpdate.PreferredDuringSchedulingIgnoredDuringExecution = []corev1.WeightedPodAffinityTerm{}
+	}
+	if dataset.IsExclusiveMode() {
+		podAntiAffinityToUpdate.RequiredDuringSchedulingIgnoredDuringExecution = append(
+			podAntiAffinityToUpdate.RequiredDuringSchedulingIgnoredDuringExecution, corev1.PodAffinityTerm{
+				LabelSelector: &metav1.LabelSelector{
+					MatchExpressions: []metav1.LabelSelectorRequirement{
+						{
+							Key:      "fluid.io/dataset",
+							Operator: metav1.LabelSelectorOpExists,
 						},
 					},
 				},
-				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
-					{
-						LabelSelector: &metav1.LabelSelector{
-							MatchExpressions: []metav1.LabelSelectorRequirement{
-								{
-									Key:      "fluid.io/dataset-placement",
-									Operator: metav1.LabelSelectorOpIn,
-									Values:   []string{string(datav1alpha1.ExclusiveMode)},
-								},
-							},
-						},
-						TopologyKey: "kubernetes.io/hostname",
-					},
-				},
-			}
-
-			// TODO: remove this when EFC is ready for spread-first scheduling policy
-			// Currently EFC prefers binpack-first scheduling policy to spread-first scheduling policy. Set PreferredDuringSchedulingIgnoredDuringExecution to empty
-			// to avoid using spread-first scheduling policy
-			if e.runtimeInfo.GetRuntimeType() == common.EFCRuntime {
-				workersToUpdate.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution = []corev1.WeightedPodAffinityTerm{}
-			}
-		}
-
-		// 3. Prefer to locate on the node which already has fuse on it
-		if workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity == nil {
-			workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity = &corev1.NodeAffinity{}
-		}
-
-		if len(workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution) == 0 {
-			workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution = []corev1.PreferredSchedulingTerm{}
-		}
-
-		workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution =
-			append(workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution,
-				corev1.PreferredSchedulingTerm{
-					Weight: 100,
-					Preference: corev1.NodeSelectorTerm{
-						MatchExpressions: []corev1.NodeSelectorRequirement{
+				TopologyKey: "kubernetes.io/hostname",
+			},
+		)
+	} else {
+		podAntiAffinityToUpdate.PreferredDuringSchedulingIgnoredDuringExecution = append(
+			podAntiAffinityToUpdate.PreferredDuringSchedulingIgnoredDuringExecution, corev1.WeightedPodAffinityTerm{
+				// The default weight is 50
+				Weight: 50,
+				PodAffinityTerm: corev1.PodAffinityTerm{
+					LabelSelector: &metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{
 							{
-								Key:      e.runtimeInfo.GetFuseLabelName(),
-								Operator: corev1.NodeSelectorOpIn,
-								Values:   []string{"true"},
+								Key:      "fluid.io/dataset",
+								Operator: metav1.LabelSelectorOpExists,
 							},
 						},
 					},
-				})
-
-		// 3. set node affinity if possible
-		if dataset.Spec.NodeAffinity != nil {
-			if dataset.Spec.NodeAffinity.Required != nil {
-				workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution =
-					dataset.Spec.NodeAffinity.Required
-			}
+					TopologyKey: "kubernetes.io/hostname",
+				},
+			},
+		)
+		podAntiAffinityToUpdate.RequiredDuringSchedulingIgnoredDuringExecution = append(
+			podAntiAffinityToUpdate.RequiredDuringSchedulingIgnoredDuringExecution, corev1.PodAffinityTerm{
+				LabelSelector: &metav1.LabelSelector{
+					MatchExpressions: []metav1.LabelSelectorRequirement{
+						{
+							Key:      "fluid.io/dataset-placement",
+							Operator: metav1.LabelSelectorOpIn,
+							Values:   []string{string(datav1alpha1.ExclusiveMode)},
+						},
+					},
+				},
+				TopologyKey: "kubernetes.io/hostname",
+			},
+		)
+		// TODO: remove this when EFC is ready for spread-first scheduling policy
+		// Currently EFC prefers binpack-first scheduling policy to spread-first scheduling policy. Set PreferredDuringSchedulingIgnoredDuringExecution to empty
+		// to avoid using spread-first scheduling policy
+		if e.runtimeInfo.GetRuntimeType() == common.EFCRuntime {
+			workersToUpdate.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution = []corev1.WeightedPodAffinityTerm{}
 		}
+	}
 
-		err = e.client.Update(context.TODO(), workersToUpdate)
-		if err != nil {
-			return workersToUpdate, err
+	// 3. Prefer to locate on the node which already has fuse on it
+	if workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity == nil {
+		workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity = &corev1.NodeAffinity{}
+	}
+
+	if len(workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution) == 0 {
+		workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution = []corev1.PreferredSchedulingTerm{}
+	}
+
+	workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution =
+		append(workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution,
+			corev1.PreferredSchedulingTerm{
+				Weight: 100,
+				Preference: corev1.NodeSelectorTerm{
+					MatchExpressions: []corev1.NodeSelectorRequirement{
+						{
+							Key:      e.runtimeInfo.GetFuseLabelName(),
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"true"},
+						},
+					},
+				},
+			})
+
+	// 3. set node affinity if possible
+	if dataset.Spec.NodeAffinity != nil {
+		if dataset.Spec.NodeAffinity.Required != nil {
+			workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution =
+				dataset.Spec.NodeAffinity.Required
 		}
+	}
 
+	err = e.client.Update(context.TODO(), workersToUpdate)
+	if err != nil {
+		return workersToUpdate, err
 	}
 
 	return

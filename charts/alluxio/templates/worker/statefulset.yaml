@@ -87,6 +87,10 @@ spec:
       tolerations:
 {{ toYaml .Values.tolerations | indent 8 }}
       {{- end }}
+      affinity:
+      {{- if .Values.worker.affinity }}
+{{ toYaml .Values.worker.affinity | indent 8  }}
+      {{- end }}
       initContainers:
         {{ if .Values.initUsers.enabled -}}
         - name: init-users
