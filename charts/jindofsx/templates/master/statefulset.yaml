@@ -187,8 +187,8 @@ spec:
           {{- end }}
           {{- end }}
           {{- if .Values.master.volumeMounts }}
-          {{ toYaml .Values.master.volumeMounts | indent 10 }}
-          {{- end } }
+          {{ toYaml .Values.master.volumeMounts | nindent 12 }}
+          {{- end }}
       restartPolicy: Always
       {{- if $notEnableDnsConfig }}
       dnsPolicy: {{ .Values.useHostNetwork | ternary "ClusterFirstWithHostNet" "ClusterFirst" }}
@@ -241,7 +241,7 @@ spec:
             secretName: {{ .Values.secret }}
         {{- end }}
         {{- if .Values.master.volumes }}
-{{ toYaml .Values.master.volumes | trim | indent 8 }}
+{{ toYaml .Values.master.volumes | indent 8 }}
         {{- end }}
         - name: bigboot-config
           configMap:

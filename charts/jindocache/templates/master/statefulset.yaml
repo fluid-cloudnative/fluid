@@ -187,7 +187,7 @@ spec:
           {{- end }}
           {{- end }}
           {{- if .Values.master.volumeMounts }}
-          {{ toYaml .Values.master.volumeMounts | indent 10 }}
+          {{ toYaml .Values.master.volumeMounts | nindent 12 }}
           {{- end }}
       restartPolicy: Always
       {{- if $notEnableDnsConfig }}
@@ -240,9 +240,9 @@ spec:
           secret:
             secretName: {{ .Values.secret }}
         {{- end }}
+        {{- if .Values.master.volumes }}
+{{ toYaml .Values.master.volumes | indent 8 }}
+        {{- end }}
         - name: bigboot-config
           configMap:
             name: {{ template "jindofs.fullname" . }}-config
-        {{- if .Values.master.volumes }}
-        {{ toYaml .Values.master.volumes | indent 8 }}
-        {{- end }}
