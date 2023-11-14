@@ -140,6 +140,9 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 		case JuiceBucket:
 			value.Configs.Bucket = v
 			continue
+		case JuiceBucket2:
+			value.Configs.Bucket2 = v
+			continue
 		default:
 			if k != "quota" {
 				options[k] = v
@@ -177,6 +180,12 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 		case JuiceSecretKey:
 			value.Configs.SecretKeySecret = secretKeyRef.Name
 			value.Configs.SecretKeySecretKey = secretKeyRef.Key
+		case JuiceAccess2Key:
+			value.Configs.AccessKey2Secret = secretKeyRef.Name
+			value.Configs.AccessKey2SecretKey = secretKeyRef.Key
+		case JuiceSecret2Key:
+			value.Configs.SecretKey2Secret = secretKeyRef.Name
+			value.Configs.SecretKey2SecretKey = secretKeyRef.Key
 		case JuiceToken:
 			value.Configs.TokenSecret = secretKeyRef.Name
 			value.Configs.TokenSecretKey = secretKeyRef.Key
@@ -198,6 +207,12 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 		case JuiceSecretKey:
 			value.Configs.SecretKeySecret = secretKeyRef.Name
 			value.Configs.SecretKeySecretKey = secretKeyRef.Key
+		case JuiceAccess2Key:
+			value.Configs.AccessKey2Secret = secretKeyRef.Name
+			value.Configs.AccessKey2SecretKey = secretKeyRef.Key
+		case JuiceSecret2Key:
+			value.Configs.SecretKey2Secret = secretKeyRef.Name
+			value.Configs.SecretKey2SecretKey = secretKeyRef.Key
 		case JuiceToken:
 			value.Configs.TokenSecret = secretKeyRef.Name
 			value.Configs.TokenSecretKey = secretKeyRef.Key
@@ -402,8 +417,17 @@ func (j *JuiceFSEngine) genFormatCmd(value *JuiceFS, config *[]string) {
 	if value.Configs.SecretKeySecret != "" {
 		args = append(args, "--secretkey=${SECRET_KEY}")
 	}
+	if value.Configs.AccessKey2Secret != "" {
+		args = append(args, "--access-key2=${ACCESS_KEY2}")
+	}
+	if value.Configs.SecretKey2Secret != "" {
+		args = append(args, "--secret-key2=${SECRET_KEY2}")
+	}
 	if value.Configs.Bucket != "" {
 		args = append(args, fmt.Sprintf("--bucket=%s", value.Configs.Bucket))
+	}
+	if value.Configs.Bucket2 != "" {
+		args = append(args, fmt.Sprintf("--bucket2=%s", value.Configs.Bucket2))
 	}
 	args = append(args, value.Source)
 	cmd := append([]string{common.JuiceCliPath, "auth"}, args...)

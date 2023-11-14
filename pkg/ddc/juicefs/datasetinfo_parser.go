@@ -82,6 +82,10 @@ func parseFSInfoFromConfigMap(configMap *v1.ConfigMap) (info map[string]string, 
 		info[AccessKeySecretKey] = value.Configs.AccessKeySecretKey
 		info[SecretKeySecret] = value.Configs.SecretKeySecret
 		info[SecretKeySecretKey] = value.Configs.SecretKeySecretKey
+		info[AccessKey2Secret] = value.Configs.AccessKeySecret
+		info[AccessKey2SecretKey] = value.Configs.AccessKeySecretKey
+		info[SecretKey2Secret] = value.Configs.SecretKeySecret
+		info[SecretKey2SecretKey] = value.Configs.SecretKeySecretKey
 		info[FormatCmd] = value.Configs.FormatCmd
 		info[Name] = value.Configs.Name
 		info[Edition] = value.Edition
