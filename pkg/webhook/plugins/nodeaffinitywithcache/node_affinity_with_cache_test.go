@@ -17,8 +17,8 @@ limitations under the License.
 package nodeaffinitywithcache
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/api"
 	"k8s.io/apimachinery/pkg/runtime"
 	"reflect"
 	"testing"
@@ -32,19 +32,15 @@ import (
 
 var (
 	// default tiered locality to be compatible with fluid 0.9 logic
-	tieredLocalityConfigMap = &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      common.TieredLocalityConfigMapName,
-			Namespace: fluidNameSpace,
+	tieredLocality = &TieredLocality{
+		Preferred: []Preferred{
+			{
+				Name:   "fluid.io/node",
+				Weight: 100,
+			},
 		},
-		Data: map[string]string{
-			"tieredLocality": "" +
-				"preferred:\n" +
-				"  # fluid existed node affinity, the name can not be modified.\n" +
-				"  - name: fluid.io/node\n" +
-				"    weight: 100\n" +
-				"required:\n" +
-				"  - fluid.io/node\n",
+		Required: []string{
+			"fluid.io/node",
 		},
 	}
 	alluxioRuntime = &datav1alpha1.AlluxioRuntime{
@@ -59,7 +55,7 @@ func TestPlugin(t *testing.T) {
 	var (
 		client client.Client
 	)
-	plugin := NewPlugin(client)
+	plugin := NewPlugin(client, nil)
 	if plugin.GetName() != Name {
 		t.Errorf("GetName expect %v, got %v", Name, plugin.GetName())
 	}
@@ -106,11 +102,11 @@ func TestMutateOnlyRequired(t *testing.T) {
 	_ = datav1alpha1.AddToScheme(schema)
 	_ = corev1.AddToScheme(schema)
 	var (
-		client   = fake.NewFakeClientWithScheme(schema, tieredLocalityConfigMap, alluxioRuntime)
+		client   = fake.NewFakeClientWithScheme(schema, alluxioRuntime)
 		schedPod *corev1.Pod
 	)
 
-	plugin := NewPlugin(client)
+	plugin := NewPlugin(client, tieredLocality)
 	runtimeInfo, err := base.BuildRuntimeInfo(alluxioRuntime.Name, alluxioRuntime.Namespace, "alluxio", datav1alpha1.TieredStore{})
 	// enable Preferred scheduling
 	runtimeInfo.SetupFuseDeployMode(true, map[string]string{})
@@ -166,11 +162,11 @@ func TestMutateOnlyPrefer(t *testing.T) {
 	_ = datav1alpha1.AddToScheme(schema)
 	_ = corev1.AddToScheme(schema)
 	var (
-		client = fake.NewFakeClientWithScheme(schema, tieredLocalityConfigMap, alluxioRuntime)
+		client = fake.NewFakeClientWithScheme(schema, alluxioRuntime)
 		pod    *corev1.Pod
 	)
 
-	plugin := NewPlugin(client)
+	plugin := NewPlugin(client, tieredLocality)
 	if plugin.GetName() != Name {
 		t.Errorf("GetName expect %v, got %v", Name, plugin.GetName())
 	}
@@ -216,11 +212,11 @@ func TestMutateBothRequiredAndPrefer(t *testing.T) {
 	_ = datav1alpha1.AddToScheme(schema)
 	_ = corev1.AddToScheme(schema)
 	var (
-		client   = fake.NewFakeClientWithScheme(schema, tieredLocalityConfigMap, alluxioRuntime)
+		client   = fake.NewFakeClientWithScheme(schema, alluxioRuntime)
 		schedPod *corev1.Pod
 	)
 
-	plugin := NewPlugin(client)
+	plugin := NewPlugin(client, tieredLocality)
 	runtimeInfo, err := base.BuildRuntimeInfo(alluxioRuntime.Name, alluxioRuntime.Namespace, "alluxio", datav1alpha1.TieredStore{})
 	// set global true to enable prefer
 	runtimeInfo.SetupFuseDeployMode(true, map[string]string{})
@@ -263,25 +259,23 @@ func TestMutateBothRequiredAndPrefer(t *testing.T) {
 }
 
 func TestTieredLocality(t *testing.T) {
-	customizedTieredLocalityConfigMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      common.TieredLocalityConfigMapName,
-			Namespace: fluidNameSpace,
+	customizedTieredLocality := &TieredLocality{
+		Preferred: []Preferred{
+			{
+				Name:   "fluid.io/node",
+				Weight: 100,
+			},
+			{
+				Name:   "topology.kubernetes.io/rack",
+				Weight: 50,
+			},
+			{
+				Name:   "topology.kubernetes.io/zone",
+				Weight: 10,
+			},
 		},
-		Data: map[string]string{
-			common.TieredLocalityDataNameInConfigMap: "" +
-				"preferred:\n" +
-				"  # fluid existed node affinity, the name can not be modified.\n" +
-				"  - name: fluid.io/node\n" +
-				"    weight: 100\n" +
-				"  # runtime worker's rack label name, can be changed according to k8s environment.\n" +
-				"  - name: topology.kubernetes.io/rack\n" +
-				"    weight: 50\n" +
-				"  # runtime worker's zone label name, can be changed according to k8s environment.\n" +
-				"  - name: topology.kubernetes.io/zone\n" +
-				"    weight: 10\n" +
-				"required:\n" +
-				"  - fluid.io/node\n",
+		Required: []string{
+			"fluid.io/node",
 		},
 	}
 
@@ -316,14 +310,14 @@ func TestTieredLocality(t *testing.T) {
 	schema := runtime.NewScheme()
 	_ = corev1.AddToScheme(schema)
 	_ = datav1alpha1.AddToScheme(schema)
-	client := fake.NewFakeClientWithScheme(schema, customizedTieredLocalityConfigMap, alluxioRuntime)
+	client := fake.NewFakeClientWithScheme(schema, alluxioRuntime)
 
 	runtimeInfo, _ := base.BuildRuntimeInfo(alluxioRuntime.Name, alluxioRuntime.Namespace, "alluxio", datav1alpha1.TieredStore{})
 	// set global true to enable prefer
 	runtimeInfo.SetupFuseDeployMode(true, map[string]string{})
 
 	type args struct {
-		plugin       *NodeAffinityWithCache
+		plugin       api.MutatingHandler
 		pod          *corev1.Pod
 		runtimeInfos map[string]base.RuntimeInfoInterface
 	}
@@ -339,7 +333,7 @@ func TestTieredLocality(t *testing.T) {
 		{
 			name: "tiered locality with dataset sched",
 			args: args{
-				plugin: NewPlugin(client),
+				plugin: NewPlugin(client, customizedTieredLocality),
 				pod: &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
@@ -387,7 +381,7 @@ func TestTieredLocality(t *testing.T) {
 		{
 			name: "tiered locality",
 			args: args{
-				plugin: NewPlugin(client),
+				plugin: NewPlugin(client, customizedTieredLocality),
 				pod: &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
@@ -454,7 +448,7 @@ func TestTieredLocality(t *testing.T) {
 		{
 			name: "pod customized tiered locality",
 			args: args{
-				plugin: NewPlugin(client),
+				plugin: NewPlugin(client, customizedTieredLocality),
 				pod: &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",

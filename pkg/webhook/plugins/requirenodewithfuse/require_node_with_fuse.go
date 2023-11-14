@@ -18,6 +18,7 @@ package requirenodewithfuse
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/api"
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -37,7 +38,7 @@ type RequireNodeWithFuse struct {
 	name   string
 }
 
-func NewPlugin(c client.Client) *RequireNodeWithFuse {
+func NewPlugin(c client.Client, args interface{}) api.MutatingHandler {
 	return &RequireNodeWithFuse{
 		client: c,
 		name:   Name,

@@ -19,6 +19,7 @@ package plugins
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/api"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"math/rand"
@@ -36,17 +37,15 @@ import (
 func TestPods(t *testing.T) {
 	rand.Seed(time.Now().UnixNano())
 
-	tieredLocalityConfigMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      common.TieredLocalityConfigMapName,
-			Namespace: common.NamespaceFluidSystem,
+	tieredLocality := &nodeaffinitywithcache.TieredLocality{
+		Preferred: []nodeaffinitywithcache.Preferred{
+			{
+				Name:   "fluid.io/node",
+				Weight: 100,
+			},
 		},
-		Data: map[string]string{
-			"tieredLocality": "" +
-				"preferred:\n" +
-				"  # fluid existed node affinity, the name can not be modified.\n" +
-				"  - name: fluid.io/node\n" +
-				"    weight: 100\n",
+		Required: []string{
+			"fluid.io/node",
 		},
 	}
 	jindoRuntime := &datav1alpha1.JindoRuntime{
@@ -61,8 +60,8 @@ func TestPods(t *testing.T) {
 	_ = datav1alpha1.AddToScheme(schema)
 	var (
 		pod               corev1.Pod
-		c                 = fake.NewFakeClientWithScheme(schema, tieredLocalityConfigMap, jindoRuntime)
-		plugin            MutatingHandler
+		c                 = fake.NewFakeClientWithScheme(schema, jindoRuntime)
+		plugin            api.MutatingHandler
 		pluginName        string
 		lenNodePrefer     int
 		lenNodeRequire    int
@@ -111,7 +110,7 @@ func TestPods(t *testing.T) {
 		}
 
 		// test of plugin preferNodesWithoutCache
-		plugin = prefernodeswithoutcache.NewPlugin(c)
+		plugin = prefernodeswithoutcache.NewPlugin(c, nil)
 		pluginName = plugin.GetName()
 		_, err = plugin.Mutate(&pod, runtimeInfos)
 		if err != nil {
@@ -158,7 +157,7 @@ func TestPods(t *testing.T) {
 		}
 
 		// test of plugin preferNodesWithCache
-		plugin = nodeaffinitywithcache.NewPlugin(c)
+		plugin = nodeaffinitywithcache.NewPlugin(c, tieredLocality)
 		pluginName = plugin.GetName()
 		_, err = plugin.Mutate(&pod, nilRuntimeInfos)
 		if err != nil {
@@ -212,17 +211,87 @@ func TestRegistry(t *testing.T) {
 		client client.Client
 	)
 
-	plugins := Registry(client)
-	if len(plugins.GetPodWithDatasetHandler()) != 3 {
-		t.Errorf("expect GetPodWithDatasetHandler len=3, got %v", plugins.GetPodWithDatasetHandler())
+	configmap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      common.PluginProfileConfigMapName,
+			Namespace: fluidNameSpace,
+		},
+		Data: map[string]string{
+			common.PluginProfileKeyName: `
+plugins:
+  # serverful 场景下的插件
+  serverful:
+    withDataset:
+    - RequireNodeWithFuse
+    - NodeAffinityWithCache
+    - MountPropagationInjector
+    withoutDataset:
+    - PreferNodesWithoutCache
+  # serverless 场景下的插件
+  serverless:
+    withDataset:
+    - FuseSidecar
+    withoutDataset:
+    - PreferNodesWithoutCache
+  # 插件配置
+pluginConfig:
+  - name: NodeAffinityWithCache
+    # 插件配置的参数
+    args:
+      preferred:
+      # fluid existed node affinity, the name can not be modified.
+      - name: fluid.io/node
+        weight: 100
+      # runtime worker's zone label name, can be changed according to k8s environment.
+      - name: topology.kubernetes.io/zone
+        weight: 50
+      # runtime worker's region label name, can be changed according to k8s environment.
+      - name: topology.kubernetes.io/region
+        weight: 10
+      required:
+      # 默认强制亲和性使用 node 匹配
+      - fluid.io/node
+`,
+		},
+	}
+
+	schema := runtime.NewScheme()
+	_ = corev1.AddToScheme(schema)
+	_ = datav1alpha1.AddToScheme(schema)
+	client = fake.NewFakeClientWithScheme(schema, configmap)
+
+	RegisterMutatingHandlers(client)
+
+	plugins := GetRegistryHandler()
+
+	podWithDatasetHandler := plugins.GetPodWithDatasetHandler()
+	if len(podWithDatasetHandler) != 3 {
+		t.Errorf("expect GetPodWithDatasetHandler len=3, got %v", len(plugins.GetPodWithDatasetHandler()))
+	} else {
+		if podWithDatasetHandler[0].GetName() != "RequireNodeWithFuse" ||
+			podWithDatasetHandler[1].GetName() != "NodeAffinityWithCache" ||
+			podWithDatasetHandler[2].GetName() != "MountPropagationInjector" {
+			t.Errorf("expect GetPodWithDatasetHandler is [RequireNodeWithFuse, NodeAffinityWithCache, MountPropagationInjector], got [%s, %s, %s]",
+				podWithDatasetHandler[0].GetName(), podWithDatasetHandler[1].GetName(), podWithDatasetHandler[2].GetName())
+		} else {
+			// Test args
+			nodeAffinityWithCache := podWithDatasetHandler[1].(*nodeaffinitywithcache.NodeAffinityWithCache)
+			locality := nodeAffinityWithCache.GetTieredLocality()
+			if len(locality.Preferred) != 3 || len(locality.Required) != 1 {
+				t.Errorf("NodeAffinityWithCache handler's args format is wrong, get %v", locality)
+			}
+		}
 	}
 
 	if len(plugins.GetPodWithoutDatasetHandler()) != 1 {
-		t.Errorf("expect GetPodWithoutDatasetHandler len=1 got %v", plugins.GetPodWithoutDatasetHandler())
+		t.Errorf("expect GetPodWithoutDatasetHandler len=1 got %v", len(plugins.GetPodWithoutDatasetHandler()))
 	}
 
-	if len(plugins.GetServerlessPodHandler()) != 1 {
-		t.Errorf("expect GetServerlessPodHandler len=1 got %v", plugins.GetServerlessPodHandler())
+	if len(plugins.GetServerlessPodWithDatasetHandler()) != 1 {
+		t.Errorf("expect GetServerlessPodWithDatasetHandler len=1 got %v", len(plugins.GetServerlessPodWithDatasetHandler()))
 	}
 
+	if len(plugins.GetServerlessPodWithoutDatasetHandler()) != 1 {
+		t.Errorf("expect GetServerlessPodWithoutDatasetHandler len=1 got %v", len(plugins.GetServerlessPodWithDatasetHandler()))
+	}
 }

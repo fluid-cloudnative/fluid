@@ -17,6 +17,7 @@ limitations under the License.
 package fusesidecar
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/api"
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/application/inject"
@@ -40,7 +41,7 @@ type FuseSidecar struct {
 	name   string
 }
 
-func NewPlugin(c client.Client) *FuseSidecar {
+func NewPlugin(c client.Client, args interface{}) api.MutatingHandler {
 	return &FuseSidecar{
 		client: c,
 		name:   Name,

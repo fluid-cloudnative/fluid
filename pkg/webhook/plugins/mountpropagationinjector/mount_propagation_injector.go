@@ -18,6 +18,7 @@ package mountpropagationinjector
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/api"
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -38,7 +39,7 @@ type MountPropagationInjector struct {
 	name   string
 }
 
-func NewPlugin(c client.Client) *MountPropagationInjector {
+func NewPlugin(c client.Client, args interface{}) api.MutatingHandler {
 	return &MountPropagationInjector{
 		client: c,
 		name:   Name,

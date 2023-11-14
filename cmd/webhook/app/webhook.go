@@ -17,6 +17,7 @@ package app
 
 import (
 	"flag"
+	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -154,6 +155,10 @@ func handle() {
 
 	// register admission handlers
 	handler.Register(mgr, mgr.GetClient(), setupLog)
+
+	// register pod mutating handlers
+	plugins.RegisterMutatingHandlers(mgr.GetClient())
+
 	setupLog.Info("Register Handler")
 
 	setupLog.Info("starting webhook-manager")

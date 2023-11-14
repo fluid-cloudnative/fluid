@@ -149,22 +149,42 @@ webhook:
   reinvocationPolicy: IfNeeded
   tolerations:
     - operator: Exists
-  # if configmap `tiered-locality-config` exists and not want to replace the content, set this to false.
-  forceReplaceTieredLocality: false
-  tieredLocality:
-    preferred:
-      # fluid existed node affinity, the name can not be modified.
-      - name: fluid.io/node
-        weight: 100
-      # runtime worker's zone label name, can be changed according to k8s environment.
-      - name: topology.kubernetes.io/zone
-        weight: 50
-      # runtime worker's region label name, can be changed according to k8s environment.
-      - name: topology.kubernetes.io/region
-        weight: 20
-    # used when app pod with label fluid.io/dataset.{dataset name}.sched set true
-    required:
-      - fluid.io/node
+  # if configmap `webhook-plugins` exists and not want to replace the content, set this to false.
+  forceReplacePluginsProfile: false
+  pluginsProfile:
+    plugins:
+      # serverful 场景下的插件
+      serverful:
+        withDataset:
+          - RequireNodeWithFuse
+          - NodeAffinityWithCache
+          - MountPropagationInjector
+        withoutDataset:
+          - PreferNodesWithoutCache
+      # serverless 场景下的插件
+      serverless:
+        withDataset:
+          - FuseSidecar
+        withoutDataset:
+          - PreferNodesWithoutCache
+      # 插件配置
+    pluginConfig:
+      - name: NodeAffinityWithCache
+        # 插件配置的参数
+        args:
+          preferred:
+            # fluid existed node affinity, the name can not be modified.
+            - name: fluid.io/node
+              weight: 100
+            # runtime worker's zone label name, can be changed according to k8s environment.
+            - name: topology.kubernetes.io/zone
+              weight: 50
+            # runtime worker's region label name, can be changed according to k8s environment.
+            - name: topology.kubernetes.io/region
+              weight: 20
+          # used when app pod with label fluid.io/dataset.{dataset name}.sched set true
+          required:
+            - fluid.io/node
 
 fluidapp:
   enabled: true

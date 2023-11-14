@@ -19,6 +19,7 @@ package mutating
 import (
 	"context"
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins"
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -31,6 +32,40 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+)
+
+var (
+	pluginsProfileConfigMap = &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      common.PluginProfileConfigMapName,
+			Namespace: common.NamespaceFluidSystem,
+		},
+		Data: map[string]string{
+			common.PluginProfileKeyName: `
+plugins:
+  serverful:
+    withDataset:
+    - RequireNodeWithFuse
+    - NodeAffinityWithCache
+    - MountPropagationInjector
+    withoutDataset:
+    - PreferNodesWithoutCache
+  serverless:
+    withDataset:
+    - FuseSidecar
+    withoutDataset:
+    - PreferNodesWithoutCache
+pluginConfig:
+  - name: NodeAffinityWithCache
+    args:
+      preferred:
+      - name: fluid.io/node
+        weight: 100
+      required:
+      - fluid.io/node
+`,
+		},
+	}
 )
 
 func TestAddScheduleInfoToPod(t *testing.T) {
@@ -607,9 +642,10 @@ func TestAddScheduleInfoToPod(t *testing.T) {
 			Namespace: "big-data",
 		},
 	}
-	objs = append(objs, runtime)
+	objs = append(objs, runtime, pluginsProfileConfigMap)
 
 	fakeClient := fake.NewFakeClientWithScheme(s, objs...)
+	plugins.RegisterMutatingHandlers(fakeClient)
 
 	for _, testcase := range testcases {
 		handler := &CreateUpdatePodForSchedulingHandler{
@@ -691,9 +727,11 @@ func TestHandle(t *testing.T) {
 		},
 	}
 
-	objs := []runtime.Object{}
+	objs := []runtime.Object{pluginsProfileConfigMap}
 	s := runtime.NewScheme()
+	_ = corev1.AddToScheme(s)
 	fakeClient := fake.NewFakeClientWithScheme(s, objs...)
+	plugins.RegisterMutatingHandlers(fakeClient)
 
 	for _, test := range tests {
 		handler := &CreateUpdatePodForSchedulingHandler{
@@ -1111,21 +1149,6 @@ func TestAddScheduleInfoToPodWithReferencedDataset(t *testing.T) {
 			ihjectCacheAffinity: true,
 		},
 	}
-	tieredLocalityConfigMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      common.TieredLocalityConfigMapName,
-			Namespace: common.NamespaceFluidSystem,
-		},
-		Data: map[string]string{
-			"tieredLocality": "" +
-				"preferred:\n" +
-				"  # fluid existed node affinity, the name can not be modified.\n" +
-				"  - name: fluid.io/node\n" +
-				"    weight: 100\n" +
-				"required:\n" +
-				"  - fluid.io/node\n",
-		},
-	}
 
 	s := runtime.NewScheme()
 	_ = corev1.AddToScheme(s)
@@ -1134,7 +1157,7 @@ func TestAddScheduleInfoToPodWithReferencedDataset(t *testing.T) {
 	for _, testcase := range testcases {
 		objs := []runtime.Object{}
 		objs = append(objs, testcase.fuse, testcase.pv, testcase.pvc, testcase.dataset,
-			testcase.refDataset, testcase.refPv, testcase.refPvc, tieredLocalityConfigMap)
+			testcase.refDataset, testcase.refPv, testcase.refPvc, pluginsProfileConfigMap)
 
 		runtime := &datav1alpha1.JindoRuntime{
 			ObjectMeta: metav1.ObjectMeta{
@@ -1151,6 +1174,7 @@ func TestAddScheduleInfoToPodWithReferencedDataset(t *testing.T) {
 		objs = append(objs, runtime, refRuntime)
 
 		fakeClient := fake.NewFakeClientWithScheme(s, objs...)
+		plugins.RegisterMutatingHandlers(fakeClient)
 
 		handler := &CreateUpdatePodForSchedulingHandler{
 			Client: fakeClient,

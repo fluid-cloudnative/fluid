@@ -32,7 +32,7 @@ func TestMutate(t *testing.T) {
 		pod    *corev1.Pod
 	)
 
-	plugin := NewPlugin(client)
+	plugin := NewPlugin(client, nil)
 	if plugin.GetName() != Name {
 		t.Errorf("GetName expect %v, got %v", Name, plugin.GetName())
 	}

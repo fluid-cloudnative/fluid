@@ -17,17 +17,14 @@ limitations under the License.
 package nodeaffinitywithcache
 
 import (
-	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	"github.com/pkg/errors"
-	"gopkg.in/yaml.v2"
-
+	"errors"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/api"
 	"github.com/go-logr/logr"
+	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -41,31 +38,34 @@ const Name = "NodeAffinityWithCache"
 const NodeLocalityLabel = "fluid.io/node"
 
 var (
-	log            logr.Logger
-	fluidNameSpace = common.NamespaceFluidSystem
+	log logr.Logger
 )
 
-func init() {
-	log = ctrl.Log.WithName(Name)
-	nameSpace, err := utils.GetEnvByKey(common.MyPodNamespace)
-	if err != nil || nameSpace == "" {
-		log.Info(fmt.Sprintf("can not get non-empty fluid system namespace from env, use %s", common.NamespaceFluidSystem))
-	} else {
-		fluidNameSpace = nameSpace
-	}
-
-}
-
 type NodeAffinityWithCache struct {
-	client client.Client
-	name   string
+	client         client.Client
+	name           string
+	tieredLocality *TieredLocality
 }
 
-func NewPlugin(c client.Client) *NodeAffinityWithCache {
-	return &NodeAffinityWithCache{
-		client: c,
-		name:   Name,
+func NewPlugin(c client.Client, args interface{}) api.MutatingHandler {
+	var tieredLocality TieredLocality
+	out, err := yaml.Marshal(args)
+	if err == nil {
+		err = yaml.Unmarshal(out, &tieredLocality)
 	}
+	if err != nil {
+		log.Error(err, "the args type is the TieredLocality format", "args", args)
+	}
+
+	return &NodeAffinityWithCache{
+		client:         c,
+		name:           Name,
+		tieredLocality: &tieredLocality,
+	}
+}
+
+func (p *NodeAffinityWithCache) GetTieredLocality() *TieredLocality {
+	return p.tieredLocality
 }
 
 func (p *NodeAffinityWithCache) GetName() string {
@@ -78,10 +78,10 @@ func (p *NodeAffinityWithCache) Mutate(pod *corev1.Pod, runtimeInfos map[string]
 		return
 	}
 
-	tieredLocality, err := p.getTieredLocality()
-	if err != nil {
-		log.Error(err, "get tiered locality config error")
-		return shouldStop, err
+	tieredLocality := p.tieredLocality
+	if tieredLocality == nil {
+		log.Error(errors.New("the plugin tiered locality config may has wrong format"), "skip mutating for plugin", "name", Name)
+		return
 	}
 
 	// app pod contains locality affinity, not inject.
@@ -108,23 +108,6 @@ func (p *NodeAffinityWithCache) Mutate(pod *corev1.Pod, runtimeInfos map[string]
 	utils.InjectPreferredSchedulingTerms(preferredSchedulingTerms, pod)
 
 	return
-}
-
-func (p *NodeAffinityWithCache) getTieredLocality() (*TieredLocality, error) {
-	cm, err := kubeclient.GetConfigmapByName(p.client, common.TieredLocalityConfigMapName, fluidNameSpace)
-	if err != nil {
-		return nil, err
-	}
-	if cm == nil {
-		return nil, errors.New("tiered locality config map is not exist")
-	}
-	tieredLocality := TieredLocality{}
-	err = yaml.Unmarshal([]byte(cm.Data[common.TieredLocalityDataNameInConfigMap]), &tieredLocality)
-	if err != nil {
-		return nil, errors.Wrap(err, "tiered locality content in configmap is not yaml format.")
-	}
-	return &tieredLocality, nil
-
 }
 
 func (p *NodeAffinityWithCache) getTieredLocalityPreferredSchedulingTerms(preferredRuntimes map[string]base.RuntimeInfoInterface,
