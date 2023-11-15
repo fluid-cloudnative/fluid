@@ -363,6 +363,29 @@ func (j *JuiceFSEngine) getWorkerCommand() (command string, err error) {
 	return "", nil
 }
 
+func (j *JuiceFSEngine) getFuseCommand() (command string, err error) {
+	cm, err := kubeclient.GetConfigmapByName(j.Client, j.getFuseScriptName(), j.namespace)
+	if err != nil {
+		return "", err
+	}
+	if cm == nil {
+		j.Log.Info("value configMap not found")
+		return "", nil
+	}
+	data := cm.Data
+	script := data["script.sh"]
+	scripts := strings.Split(script, "\n")
+	j.Log.V(1).Info("get fuse script", "script", script)
+
+	// mount command is the last one
+	for i := len(scripts) - 1; i >= 0; i-- {
+		if scripts[i] != "" {
+			return scripts[i], nil
+		}
+	}
+	return "", nil
+}
+
 func (j JuiceFSEngine) updateWorkerScript(command string) error {
 	cm, err := kubeclient.GetConfigmapByName(j.Client, j.getWorkerScriptName(), j.namespace)
 	if err != nil {
@@ -391,6 +414,38 @@ func (j JuiceFSEngine) updateWorkerScript(command string) error {
 	return j.Client.Update(context.Background(), cm)
 }
 
+func (j JuiceFSEngine) updateFuseScript(command string) error {
+	cm, err := kubeclient.GetConfigmapByName(j.Client, j.getFuseScriptName(), j.namespace)
+	if err != nil {
+		return err
+	}
+	if cm == nil {
+		j.Log.Info("value configMap not found")
+		return nil
+	}
+	data := cm.Data
+	script := data["script.sh"]
+
+	newScript := script
+	newScripts := strings.Split(newScript, "\n")
+	// mount command is the last one, replace it
+	for i := len(newScripts) - 1; i >= 0; i-- {
+		if newScripts[i] != "" {
+			newScripts[i] = command
+			break
+		}
+	}
+
+	newValues := make(map[string]string)
+	newValues["script.sh"] = strings.Join(newScripts, "\n")
+	cm.Data = newValues
+	return j.Client.Update(context.Background(), cm)
+}
+
 func (j *JuiceFSEngine) getWorkerScriptName() string {
 	return fmt.Sprintf("%s-worker-script", j.name)
+}
+
+func (j *JuiceFSEngine) getFuseScriptName() string {
+	return fmt.Sprintf("%s-fuse-script", j.name)
 }
