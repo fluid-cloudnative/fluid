@@ -189,6 +189,7 @@ func (j *JuiceFSEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, run
 
 func (j *JuiceFSEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) (changed bool, err error) {
 	j.Log.V(1).Info("syncFuseSpec")
+	var cmdChanged bool
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		fuses, err := kubeclient.GetDaemonset(j.Client, j.getFuseDaemonsetName(), j.namespace)
 		if err != nil {
@@ -196,30 +197,94 @@ func (j *JuiceFSEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runti
 		}
 
 		fusesToUpdate := fuses.DeepCopy()
+
+		// nodeSelector
+		if nodeSelectorChanged, newSelector := j.isNodeSelectorChanged(fusesToUpdate.Spec.Template.Spec.NodeSelector, value.Fuse.NodeSelector); nodeSelectorChanged {
+			fusesToUpdate.Spec.Template.Spec.NodeSelector = newSelector
+			changed = true
+		}
+
+		// volumes
+		if volumeChanged, newVolumes := j.isVolumesChanged(fusesToUpdate.Spec.Template.Spec.Volumes, value.Fuse.Volumes); volumeChanged {
+			fusesToUpdate.Spec.Template.Spec.Volumes = newVolumes
+			changed = true
+		}
+
+		// labels
+		if labelChanged, newLabels := j.isLabelsChanged(fusesToUpdate.Spec.Template.ObjectMeta.Labels, value.Fuse.Labels); labelChanged {
+			fusesToUpdate.Spec.Template.ObjectMeta.Labels = newLabels
+			changed = true
+		}
+
+		// annotations
+		if annoChanged, newAnnos := j.isAnnotationsChanged(fusesToUpdate.Spec.Template.ObjectMeta.Annotations, value.Fuse.Annotations); annoChanged {
+			fusesToUpdate.Spec.Template.ObjectMeta.Annotations = newAnnos
+			changed = true
+		}
+
+		// options -> configmap
+		fuseCommand, err := j.getFuseCommand()
+		if err != nil || fuseCommand == "" {
+			j.Log.Error(err, "Failed to get fuse command")
+			return err
+		}
+		cmdChanged, _ = j.isCommandChanged(fuseCommand, value.Fuse.Command)
+
 		if len(fusesToUpdate.Spec.Template.Spec.Containers) == 1 {
-			fuseResource := runtime.Spec.Fuse.Resources
-			if !utils.ResourceRequirementsEqual(fusesToUpdate.Spec.Template.Spec.Containers[0].Resources, fuseResource) {
-				j.Log.Info("The resource requirement is different.", "fuse ds", fuses.Spec.Template.Spec.Containers[0].Resources, "runtime", fuseResource)
-				fusesToUpdate.Spec.Template.Spec.Containers[0].Resources = fuseResource
+			// resource
+			if resourcesChanged, newResources := j.isResourcesChanged(fusesToUpdate.Spec.Template.Spec.Containers[0].Resources, runtime.Spec.Fuse.Resources); resourcesChanged {
+				fusesToUpdate.Spec.Template.Spec.Containers[0].Resources = newResources
 				changed = true
-			} else {
-				j.Log.V(1).Info("The resource requirement of fuse is the same, skip")
 			}
 
-			if changed {
-				if reflect.DeepEqual(fuses, fusesToUpdate) {
-					changed = false
-					j.Log.V(1).Info("The resource requirement of fuse is not changed, skip")
-					return nil
-				}
-				j.Log.Info("The resource requirement of fuse is updated")
-				err = j.Client.Update(context.TODO(), fusesToUpdate)
-				if err != nil {
-					j.Log.Error(err, "Failed to update the sts spec")
-				}
-			} else {
-				j.Log.V(1).Info("The resource requirement of fuse is not set, skip")
+			// env
+			if envChanged, newEnvs := j.isEnvsChanged(fusesToUpdate.Spec.Template.Spec.Containers[0].Env, value.Fuse.Envs); envChanged {
+				fusesToUpdate.Spec.Template.Spec.Containers[0].Env = newEnvs
+				changed = true
 			}
+
+			// volumeMounts
+			if volumeMountChanged, newVolumeMounts := j.isVolumeMountsChanged(fusesToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts, value.Fuse.VolumeMounts); volumeMountChanged {
+				fusesToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts = newVolumeMounts
+				changed = true
+			}
+
+			// image
+			fuseImage := value.Fuse.Image
+			if value.ImageTag != "" {
+				fuseImage = fuseImage + ":" + value.Fuse.ImageTag
+			}
+			if imageChanged, newImage := j.isImageChanged(fusesToUpdate.Spec.Template.Spec.Containers[0].Image, fuseImage); imageChanged {
+				fusesToUpdate.Spec.Template.Spec.Containers[0].Image = newImage
+				changed = true
+			}
+		}
+
+		if cmdChanged {
+			j.Log.Info("The fuse config is updated")
+			err = j.updateFuseScript(value.Fuse.Command)
+			if err != nil {
+				j.Log.Error(err, "Failed to update the ds config")
+				return err
+			}
+		} else {
+			j.Log.V(1).Info("The fuse config is not changed")
+		}
+
+		if changed {
+			if reflect.DeepEqual(fuses, fusesToUpdate) {
+				changed = false
+				j.Log.V(1).Info("The fuse is not changed, skip")
+				return nil
+			}
+			j.Log.Info("The fuse is updated")
+
+			err = j.Client.Update(context.TODO(), fusesToUpdate)
+			if err != nil {
+				j.Log.Error(err, "Failed to update the ds spec")
+			}
+		} else {
+			j.Log.V(1).Info("The fuse is not changed")
 		}
 
 		return err
