@@ -24,7 +24,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubectl"
-	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 )
 
 func (e *JindoEngine) setupMasterInernal() (err error) {
