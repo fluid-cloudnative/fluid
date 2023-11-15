@@ -106,7 +106,7 @@ func GetRegistryHandler() api.RegistryHandler {
 
 	plgs := &Handlers{}
 
-	pluginConfig := make(map[string]interface{}, len(profile.PluginConfig))
+	pluginConfig := make(map[string]string, len(profile.PluginConfig))
 	for i := range profile.PluginConfig {
 		name := profile.PluginConfig[i].Name
 		if _, ok := pluginConfig[name]; ok {

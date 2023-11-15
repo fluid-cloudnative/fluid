@@ -41,7 +41,7 @@ type FuseSidecar struct {
 	name   string
 }
 
-func NewPlugin(c client.Client, args interface{}) api.MutatingHandler {
+func NewPlugin(c client.Client, args string) api.MutatingHandler {
 	return &FuseSidecar{
 		client: c,
 		name:   Name,

@@ -39,6 +39,6 @@ type Serverless struct {
 type PluginConfig struct {
 	// Name defines the name of plugin being configured
 	Name string `yaml:"name"`
-	// Args defines the arguments passed to the plugins at the time of initialization. Args can have arbitrary structure.
-	Args interface{} `yaml:"args,omitempty"`
+	// Args defines the arguments(yaml format) passed to the plugins at the time of initialization.
+	Args string `yaml:"args,omitempty"`
 }

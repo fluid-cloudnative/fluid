@@ -47,12 +47,9 @@ type NodeAffinityWithCache struct {
 	tieredLocality *TieredLocality
 }
 
-func NewPlugin(c client.Client, args interface{}) api.MutatingHandler {
+func NewPlugin(c client.Client, args string) api.MutatingHandler {
 	var tieredLocality TieredLocality
-	out, err := yaml.Marshal(args)
-	if err == nil {
-		err = yaml.Unmarshal(out, &tieredLocality)
-	}
+	err := yaml.Unmarshal([]byte(args), &tieredLocality)
 	if err != nil {
 		log.Error(err, "the args type is the TieredLocality format", "args", args)
 	}

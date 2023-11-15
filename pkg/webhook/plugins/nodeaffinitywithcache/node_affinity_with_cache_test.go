@@ -32,17 +32,13 @@ import (
 
 var (
 	// default tiered locality to be compatible with fluid 0.9 logic
-	tieredLocality = &TieredLocality{
-		Preferred: []Preferred{
-			{
-				Name:   "fluid.io/node",
-				Weight: 100,
-			},
-		},
-		Required: []string{
-			"fluid.io/node",
-		},
-	}
+	tieredLocality = `
+preferred:
+- name: fluid.io/node
+  weight: 100
+required:
+- fluid.io/node
+`
 	alluxioRuntime = &datav1alpha1.AlluxioRuntime{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "alluxio-runtime",
@@ -55,7 +51,7 @@ func TestPlugin(t *testing.T) {
 	var (
 		client client.Client
 	)
-	plugin := NewPlugin(client, nil)
+	plugin := NewPlugin(client, "")
 	if plugin.GetName() != Name {
 		t.Errorf("GetName expect %v, got %v", Name, plugin.GetName())
 	}
@@ -259,25 +255,17 @@ func TestMutateBothRequiredAndPrefer(t *testing.T) {
 }
 
 func TestTieredLocality(t *testing.T) {
-	customizedTieredLocality := &TieredLocality{
-		Preferred: []Preferred{
-			{
-				Name:   "fluid.io/node",
-				Weight: 100,
-			},
-			{
-				Name:   "topology.kubernetes.io/rack",
-				Weight: 50,
-			},
-			{
-				Name:   "topology.kubernetes.io/zone",
-				Weight: 10,
-			},
-		},
-		Required: []string{
-			"fluid.io/node",
-		},
-	}
+	customizedTieredLocality := `
+preferred:
+- name: fluid.io/node
+  weight: 100
+- name: topology.kubernetes.io/rack
+  weight: 50
+- name: topology.kubernetes.io/zone
+  weight: 10
+required:
+- fluid.io/node
+`
 
 	alluxioRuntime = &datav1alpha1.AlluxioRuntime{
 		ObjectMeta: metav1.ObjectMeta{

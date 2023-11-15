@@ -57,7 +57,7 @@ plugins:
     - PreferNodesWithoutCache
 pluginConfig:
   - name: NodeAffinityWithCache
-    args:
+    args: |
       preferred:
       - name: fluid.io/node
         weight: 100

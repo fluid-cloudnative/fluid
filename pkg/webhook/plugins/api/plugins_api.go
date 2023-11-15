@@ -43,7 +43,7 @@ type RegistryHandler interface {
 }
 
 // HandlerFactory is a function that builds a MutatingHandler.
-type HandlerFactory = func(client client.Client, args interface{}) MutatingHandler
+type HandlerFactory = func(client client.Client, args string) MutatingHandler
 
 type Registry map[string]HandlerFactory
 

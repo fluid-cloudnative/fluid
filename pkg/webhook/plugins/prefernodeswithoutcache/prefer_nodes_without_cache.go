@@ -38,7 +38,7 @@ type PreferNodesWithoutCache struct {
 	name   string
 }
 
-func NewPlugin(c client.Client, args interface{}) api.MutatingHandler {
+func NewPlugin(c client.Client, args string) api.MutatingHandler {
 	return &PreferNodesWithoutCache{
 		client: c,
 		name:   Name,

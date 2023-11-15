@@ -37,17 +37,13 @@ import (
 func TestPods(t *testing.T) {
 	rand.Seed(time.Now().UnixNano())
 
-	tieredLocality := &nodeaffinitywithcache.TieredLocality{
-		Preferred: []nodeaffinitywithcache.Preferred{
-			{
-				Name:   "fluid.io/node",
-				Weight: 100,
-			},
-		},
-		Required: []string{
-			"fluid.io/node",
-		},
-	}
+	tieredLocality := `
+preferred:
+- name: fluid.io/node
+  weight: 100
+required:
+- fluid.io/node
+`
 	jindoRuntime := &datav1alpha1.JindoRuntime{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "hbase",
@@ -110,7 +106,7 @@ func TestPods(t *testing.T) {
 		}
 
 		// test of plugin preferNodesWithoutCache
-		plugin = prefernodeswithoutcache.NewPlugin(c, nil)
+		plugin = prefernodeswithoutcache.NewPlugin(c, "")
 		pluginName = plugin.GetName()
 		_, err = plugin.Mutate(&pod, runtimeInfos)
 		if err != nil {
@@ -237,7 +233,7 @@ plugins:
 pluginConfig:
   - name: NodeAffinityWithCache
     # 插件配置的参数
-    args:
+    args: |
       preferred:
       # fluid existed node affinity, the name can not be modified.
       - name: fluid.io/node
