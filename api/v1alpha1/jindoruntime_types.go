@@ -72,6 +72,10 @@ type JindoCompTemplateSpec struct {
 	// If disable JindoFS master or worker
 	// +optional
 	Disabled bool `json:"disabled,omitempty"`
+
+	// VolumeMounts specifies the volumes listed in ".spec.volumes" to mount into the jindo runtime component's filesystem.
+	// +optional
+	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
 }
 
 // JindoFuseSpec is a description of the Jindo Fuse
@@ -202,6 +206,10 @@ type JindoRuntimeSpec struct {
 	// CleanCachePolicy defines cleanCache Policy
 	// +optional
 	CleanCachePolicy CleanCachePolicy `json:"cleanCachePolicy,omitempty"`
+
+	// Volumes is the list of Kubernetes volumes that can be mounted by the jindo runtime components and/or fuses.
+	// +optional
+	Volumes []corev1.Volume `json:"volumes,omitempty"`
 }
 
 // +kubebuilder:object:root=true

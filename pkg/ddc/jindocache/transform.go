@@ -166,6 +166,10 @@ func (e *JindoCacheEngine) transform(runtime *datav1alpha1.JindoRuntime) (value 
 	if err != nil {
 		return
 	}
+	err = e.transformMasterVolumes(runtime, value)
+	if err != nil {
+		return
+	}
 	e.transformToken(runtime, value)
 	e.transformWorker(runtime, dataPath, userQuotas, value)
 	e.transformFuse(runtime, value)
@@ -234,6 +238,13 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 	// combine properties together
 	if len(runtime.Spec.Master.Properties) > 0 {
 		for k, v := range runtime.Spec.Master.Properties {
+			// user define master volume eg: pvc to persist metadata, they can use namespace.meta-dir to define, but can't used under 3 master
+			// because master will shared the same path to save data
+			if k == "namespace.meta-dir" && runtime.Spec.Master.Replicas == 3 {
+				err = fmt.Errorf("not support set namespace.meta.dir with %v and replicas = 3", v)
+				e.Log.Error(err, "namespace.meta-dir", v)
+				return
+			}
 			properties[k] = v
 		}
 	}
@@ -886,7 +897,7 @@ func (e *JindoCacheEngine) getSmartDataConfigs(runtime *datav1alpha1.JindoRuntim
 	// Apply defaults
 	config := smartdataConfig{
 		image:           "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata",
-		imageTag:        "5.0.0",
+		imageTag:        "6.1.1",
 		imagePullPolicy: "Always",
 		dnsServer:       "1.1.1.1",
 	}
@@ -924,7 +935,7 @@ func (e *JindoCacheEngine) getSmartDataConfigs(runtime *datav1alpha1.JindoRuntim
 func (e *JindoCacheEngine) parseFuseImage(runtime *datav1alpha1.JindoRuntime) (image, tag, imagePullPolicy string) {
 	// Apply defaults
 	image = "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse"
-	tag = "5.0.0"
+	tag = "6.1.1"
 	imagePullPolicy = "Always"
 
 	// Override with global-scoped configs
@@ -1191,4 +1202,35 @@ func (e *JindoCacheEngine) checkIfSupportSecretMount(runtime *datav1alpha1.Jindo
 		return true
 	}
 	return false
+}
+
+// transform master volumes
+func (e *JindoCacheEngine) transformMasterVolumes(runtime *datav1alpha1.JindoRuntime, value *Jindo) (err error) {
+	if len(runtime.Spec.Master.VolumeMounts) > 0 {
+		for _, volumeMount := range runtime.Spec.Master.VolumeMounts {
+			var volume *corev1.Volume
+			for _, v := range runtime.Spec.Volumes {
+				if v.Name == volumeMount.Name {
+					volume = &v
+					break
+				}
+			}
+
+			if volume == nil {
+				return fmt.Errorf("failed to find the volume for volumeMount %s", volumeMount.Name)
+			}
+
+			if len(value.Master.VolumeMounts) == 0 {
+				value.Master.VolumeMounts = []corev1.VolumeMount{}
+			}
+			value.Master.VolumeMounts = append(value.Master.VolumeMounts, volumeMount)
+
+			if len(value.Master.Volumes) == 0 {
+				value.Master.Volumes = []corev1.Volume{}
+			}
+			value.Master.Volumes = append(value.Master.Volumes, *volume)
+		}
+	}
+
+	return err
 }
