@@ -4,7 +4,7 @@
 
 
 image: registry-vpc.__ACK_REGION_ID__.aliyuncs.com/jindo/smartdata
-imageTag: "5.0.0"
+imageTag: "6.1.1"
 imagePullPolicy: Always
 
 initPortCheck:
@@ -15,7 +15,7 @@ initPortCheck:
   portsToCheck: ""
 
 fuseImage: registry-vpc.__ACK_REGION_ID__.aliyuncs.com/jindo/jindo-fuse
-fuseImageTag: "5.0.0"
+fuseImageTag: "6.1.1"
 fuseImagePullPolicy: "Always"
 
 user: 0

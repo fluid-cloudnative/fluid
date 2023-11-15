@@ -988,7 +988,7 @@ func TestCheckIfSupportSecretMount(t *testing.T) {
 					Name:       "test",
 					Path:       "/",
 				}},
-			}}, "5.0.0", "5.0.0", true},
+			}}, "6.1.1", "6.1.1", true},
 		{&datav1alpha1.JindoRuntime{
 			Spec: datav1alpha1.JindoRuntimeSpec{
 				Master: datav1alpha1.JindoCompTemplateSpec{
@@ -1012,6 +1012,68 @@ func TestCheckIfSupportSecretMount(t *testing.T) {
 		result := engine.checkIfSupportSecretMount(test.runtime, test.smartdataTag, test.fuseTag)
 		if result != test.expect {
 			t.Errorf("expected value %v, but got %v", test.expect, result)
+		}
+	}
+}
+
+func TestTransformMasterVolume(t *testing.T) {
+	var tests = []struct {
+		runtime    *datav1alpha1.JindoRuntime
+		dataset    *datav1alpha1.Dataset
+		jindoValue *Jindo
+		expect     int
+	}{
+		{&datav1alpha1.JindoRuntime{
+			Spec: datav1alpha1.JindoRuntimeSpec{
+				Master: datav1alpha1.JindoCompTemplateSpec{
+					VolumeMounts: []corev1.VolumeMount{{
+						Name:      "nas",
+						MountPath: "test",
+						SubPath:   "/test",
+					}},
+				},
+				Volumes: []corev1.Volume{{
+					Name: "nas",
+				}},
+			},
+		}, &datav1alpha1.Dataset{
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{{
+					MountPoint: "local:///mnt/test",
+					Name:       "test",
+					Path:       "/",
+				}},
+			}}, &Jindo{}, 1},
+		{&datav1alpha1.JindoRuntime{
+			Spec: datav1alpha1.JindoRuntimeSpec{
+				Master: datav1alpha1.JindoCompTemplateSpec{
+					VolumeMounts: []corev1.VolumeMount{{
+						Name:      "nas",
+						MountPath: "test",
+						SubPath:   "/test",
+					}},
+				},
+				Volumes: []corev1.Volume{{
+					Name: "nas-test",
+				}},
+			},
+		}, &datav1alpha1.Dataset{
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{{
+					MountPoint: "local:///mnt/test",
+					Name:       "test",
+					Path:       "/",
+				}},
+			}}, &Jindo{}, 0},
+	}
+	for _, test := range tests {
+		engine := &JindoFSxEngine{Log: fake.NullLogger()}
+		err := engine.transformMasterVolumes(test.runtime, test.jindoValue)
+		if err != nil {
+			println(err)
+		}
+		if len(test.jindoValue.Master.VolumeMounts) != test.expect {
+			t.Errorf("expected value %v, but got %v", test.expect, len(test.jindoValue.Master.VolumeMounts))
 		}
 	}
 }
