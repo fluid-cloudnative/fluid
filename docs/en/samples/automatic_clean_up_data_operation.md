@@ -1,6 +1,6 @@
 # Demo - Automatic Cleanup Data Operation
 
-## 背景介绍
+## Background
 
 Fluid's universal data operations describe operations such as data prefetch, data migration, elastic scaling, cache cleaning, metadata backup, and recovery.
 Similar to the Kubernetes Job's automatic cleaning mechanism, we also provides automatic cleanup data operation, utilizing the Time-to-Live (TTL) mechanism to limit the lifecycle of data operations that have finished execution. This document will briefly demonstrate the utilization of these features.

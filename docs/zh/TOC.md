@@ -26,6 +26,7 @@
   + 操作
     - [数据预加载](samples/data_warmup.md)
     - [Cache Runtime手动扩缩容](samples/dataset_scaling.md)
+    - [数据操作自动清理](samples/automatic_clean_up_data_operation.md)
   + 安全
     - [使用参数加密](samples/use_encryptoptions.md)
     - [以non-root用户身份使用](samples/nonroot_access.md)

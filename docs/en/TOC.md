@@ -21,6 +21,7 @@
   + Operation
     - [Data Preloading](samples/data_warmup.md)
     - [Cache Runtime Manually Scaling](samples/dataset_scaling.md)
+    - [Automatic Cleanup Data Operation](samples/automatic_clean_up_data_operation.md)
   + Security
     - [Encrypted options for Dataset](samples/use_encryptoptions.md)
     - [Using Fluid to access non-root user's data](samples/nonroot_access.md)
