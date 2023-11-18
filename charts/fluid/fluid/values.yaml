@@ -171,7 +171,7 @@ webhook:
     pluginConfig:
       - name: NodeAffinityWithCache
         # 插件配置的参数
-        args:
+        args: |
           preferred:
             # fluid existed node affinity, the name can not be modified.
             - name: fluid.io/node

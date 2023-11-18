@@ -22,9 +22,9 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/api"
-	"github.com/go-logr/logr"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -38,7 +38,7 @@ const Name = "NodeAffinityWithCache"
 const NodeLocalityLabel = "fluid.io/node"
 
 var (
-	log logr.Logger
+	log = ctrl.Log.WithName(Name)
 )
 
 type NodeAffinityWithCache struct {
@@ -48,16 +48,17 @@ type NodeAffinityWithCache struct {
 }
 
 func NewPlugin(c client.Client, args string) api.MutatingHandler {
-	var tieredLocality TieredLocality
-	err := yaml.Unmarshal([]byte(args), &tieredLocality)
+	var tieredLocality = &TieredLocality{}
+	err := yaml.Unmarshal([]byte(args), tieredLocality)
 	if err != nil {
-		log.Error(err, "the args type is the TieredLocality format", "args", args)
+		log.Error(err, "the args type is not the TieredLocality format", "args", args)
+		tieredLocality = nil
 	}
 
 	return &NodeAffinityWithCache{
 		client:         c,
 		name:           Name,
-		tieredLocality: &tieredLocality,
+		tieredLocality: tieredLocality,
 	}
 }
 

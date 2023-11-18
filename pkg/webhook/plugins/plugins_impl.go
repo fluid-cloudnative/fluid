@@ -39,8 +39,6 @@ var (
 	registry = api.Registry{}
 	cclient  client.Client
 
-	handlers = &Handlers{}
-
 	fluidNameSpace = common.NamespaceFluidSystem
 )
 
@@ -104,7 +102,7 @@ func GetRegistryHandler() api.RegistryHandler {
 		return &Handlers{}
 	}
 
-	plgs := &Handlers{}
+	handlers := &Handlers{}
 
 	pluginConfig := make(map[string]string, len(profile.PluginConfig))
 	for i := range profile.PluginConfig {
@@ -117,24 +115,24 @@ func GetRegistryHandler() api.RegistryHandler {
 
 	for _, name := range profile.Plugins.Serverful.WithDataset {
 		if factory, ok := registry[name]; ok {
-			plgs.podWithDatasetHandler = append(plgs.podWithDatasetHandler, factory(cclient, pluginConfig[name]))
+			handlers.podWithDatasetHandler = append(handlers.podWithDatasetHandler, factory(cclient, pluginConfig[name]))
 		}
 	}
 	for _, name := range profile.Plugins.Serverful.WithoutDataset {
 		if factory, ok := registry[name]; ok {
-			plgs.podWithoutDatasetHandler = append(plgs.podWithoutDatasetHandler, factory(cclient, pluginConfig[name]))
+			handlers.podWithoutDatasetHandler = append(handlers.podWithoutDatasetHandler, factory(cclient, pluginConfig[name]))
 		}
 	}
 	for _, name := range profile.Plugins.Serverless.WithDataset {
 		if factory, ok := registry[name]; ok {
-			plgs.serverlessPodWithDatasetHandler = append(plgs.serverlessPodWithDatasetHandler, factory(cclient, pluginConfig[name]))
+			handlers.serverlessPodWithDatasetHandler = append(handlers.serverlessPodWithDatasetHandler, factory(cclient, pluginConfig[name]))
 		}
 	}
 	for _, name := range profile.Plugins.Serverless.WithoutDataset {
 		if factory, ok := registry[name]; ok {
-			plgs.serverlessPodWithoutDatasetHandler = append(plgs.serverlessPodWithoutDatasetHandler, factory(cclient, pluginConfig[name]))
+			handlers.serverlessPodWithoutDatasetHandler = append(handlers.serverlessPodWithoutDatasetHandler, factory(cclient, pluginConfig[name]))
 		}
 	}
 
-	return plgs
+	return handlers
 }
