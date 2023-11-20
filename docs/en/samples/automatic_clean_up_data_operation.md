@@ -3,11 +3,12 @@
 ## Background
 
 Fluid's universal data operations describe operations such as data prefetch, data migration, elastic scaling, cache cleaning, metadata backup, and recovery.
-Similar to the Kubernetes Job's automatic cleaning mechanism, we also provides automatic cleanup data operation, utilizing the Time-to-Live (TTL) mechanism to limit the lifecycle of data operations that have finished execution. This document will briefly demonstrate the utilization of these features.
+Similar to the Kubernetes Job's automatic cleaning mechanism, Fluid also provides automatic cleanup data operation, leveraging the Time-to-Live (TTL) mechanism to limit the lifecycle of data operations that have finished execution. This document will briefly demonstrate the utilization of these features.
 
 
 ## Prerequisites
-Before everything we are going to do, please refer to [Installation Guide](../userguide/install.md) to install Fluid on your Kubernetes Cluster, and make sure all the components used by Fluid are ready like this:
+Before we start, please refer to [Installation Guide](../userguide/install.md) to install Fluid on your Kubernetes Cluster.
+**Make sure that all the components required by Fluid are set up correctly like this**: 
 ```shell
 $ kubectl get pod -n fluid-system
 alluxioruntime-controller-5b64fdbbb-84pc6   1/1     Running   0          8h
@@ -108,5 +109,5 @@ Error from server (NotFound): dataloads.data.fluid.io "hbase-dataload" not found
 It can be seen that 300s after the execution of `hbase-dataload` is completed, the dataload will be automatically cleaned.
 
 
-## Warning: Time skew
-Because the TTL-after-finished controller (Fluid dataset-controller) uses timestamps stored in the Data Operation to determine whether the TTL has expired or not, this feature is sensitive to time skew in your cluster, which may cause the control plane to clean up Job objects at the wrong time. Please be aware of this risk when setting a non-zero TTL.
+## Caution: Time skew
+Because the TTL-after-finished controller (Fluid dataset-controller) uses timestamps stored in the Data Operation to determine whether the TTL has expired or not, this feature is sensitive to time skew in your cluster, which might lead to premature or delayed cleanup of Job objects. **Be cautious when setting a non-zero TTL**. 
