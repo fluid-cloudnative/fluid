@@ -116,9 +116,9 @@ s
 ```
 由于清理策略设置的是`OnDemand`，删除应用Pod后，FUSE Pod不再被其使用，故FUSE Pod被清理。
 
-**将cleanPolicy修改为OnDemandDeleted**
+**将cleanPolicy修改为OnRuntimeDeleted**
 
-将`AlluxioRuntime`的cleanPolicy修改为`OnDemandDeleted`
+将`AlluxioRuntime`的cleanPolicy修改为`OnRuntimeDeleted`
 ```shell
 $ cat dataset.yaml
 ...
@@ -136,7 +136,7 @@ spec:
         high: "0.95"
         low: "0.7"
   fuse:
-    cleanPolicy: OnDemandDeleted
+    cleanPolicy: OnRuntimeDeleted
 $ kubectl apply -f dataset.yaml
 ```
 
@@ -164,7 +164,7 @@ hbase-master-0     2/2     Running   0          13m
 hbase-worker-0     2/2     Running   0          13m
 hbase-worker-1     2/2     Running   0          12m
 ```
-由于`cleanPolicy`被设置为`OnDemandDeleted`，删除应用Pod后，我们发现FUSE Pod并没有被清理。
+由于`cleanPolicy`被设置为`OnRuntimeDeleted`，删除应用Pod后，我们发现FUSE Pod并没有被清理。
 
 **删除AlluxioRuntime**
 ```shell

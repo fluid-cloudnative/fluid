@@ -114,9 +114,9 @@ hbase-worker-1   2/2     Running   0          4m30s
 ```
 Note that the FUSE clean policy is set to `OnDemand`. After the application Pod is deleted, the FUSE Pod is no longer used by it, so the FUSE Pod is cleaned.
 
-**Set `cleanPolicy` to  `OnDemandDeleted`**
+**Set `cleanPolicy` to  `OnRuntimeDeleted`**
 
-Set the property `cleanPolicy` of `AlluxioRuntime` to `OnDemandDeleted`
+Set the property `cleanPolicy` of `AlluxioRuntime` to `OnRuntimeDeleted`
 ```shell
 $ cat dataset.yaml
 ...
@@ -134,7 +134,7 @@ spec:
         high: "0.95"
         low: "0.7"
   fuse:
-    cleanPolicy: OnDemandDeleted
+    cleanPolicy: OnRuntimeDeleted
 $ kubectl apply -f dataset.yaml
 ```
 
@@ -162,7 +162,7 @@ hbase-master-0     2/2     Running   0          13m
 hbase-worker-0     2/2     Running   0          13m
 hbase-worker-1     2/2     Running   0          12m
 ```
-Since `cleanPolicy` was set to `OnDemandDeleted`, after deleting the application pod, we found that the FUSE pod was not cleaned.
+Since `cleanPolicy` was set to `OnRuntimeDeleted`, after deleting the application pod, we found that the FUSE pod was not cleaned.
 
 **Delete `AlluxioRuntime`**
 ```shell
