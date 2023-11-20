@@ -661,6 +661,7 @@ func (e *JindoFSxEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, value
 		"fs.jindofsx.meta.cache.enable":      "true",
 		"fs.jindofsx.tmp.data.dir":           "/tmp",
 		"fs.jindofsx.client.metrics.enable":  "true",
+		"fs.jindofsx.rpc.timeout":            "30000", // brpc timeout 30s avoid client hang
 		"fs.oss.download.queue.size":         "16",
 		"fs.oss.download.thread.concurrency": "32",
 		"fs.s3.download.queue.size":          "16",
