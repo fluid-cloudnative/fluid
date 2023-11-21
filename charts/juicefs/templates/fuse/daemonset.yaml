@@ -115,6 +115,7 @@ spec:
                 key: {{ .secretkey }}
           {{- end }}
           {{- end }}
+          {{- end }}
           {{- if .Values.configs.tokenSecret }}
           - name: TOKEN
             valueFrom:
