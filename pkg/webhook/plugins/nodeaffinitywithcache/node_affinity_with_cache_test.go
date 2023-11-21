@@ -496,6 +496,31 @@ required:
 				},
 			},
 		},
+		{
+			name: "no configmap",
+			args: args{
+				plugin: NewPlugin(client, ""),
+				pod: &corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "test",
+					},
+					Spec: corev1.PodSpec{},
+				},
+				runtimeInfos: map[string]base.RuntimeInfoInterface{
+					alluxioRuntime.Name: runtimeInfo,
+				},
+			},
+			wanted: wanted{
+				pod: &corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "test",
+					},
+					Spec: corev1.PodSpec{},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
