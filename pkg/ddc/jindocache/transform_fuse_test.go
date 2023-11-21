@@ -188,7 +188,7 @@ func TestParseFuseImage(t *testing.T) {
 					}},
 				}},
 			jindoValue:            &Jindo{},
-			expect:                "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:5.0.0",
+			expect:                "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:6.1.1",
 			expectImagePullPolicy: "Always",
 		},
 		{

@@ -16,7 +16,7 @@ Fluid is responsible for converting distributed caching systems (such as Alluxio
 
 
 <div align="center">
-  <img src="../../../static/concepts/perspective_cn.png" title="perspective" height="60%" width="60%" alt="">
+  <img src="../../../static/concepts/perspective_en.png" title="perspective" height="60%" width="60%" alt="">
 </div>
 
 
