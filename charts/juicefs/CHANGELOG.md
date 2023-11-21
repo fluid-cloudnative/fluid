@@ -53,3 +53,6 @@
 
 0.2.14
 - Support subpath quota
+
+0.2.15
+- Support mirror buckets
