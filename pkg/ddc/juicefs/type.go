@@ -44,25 +44,29 @@ type JuiceFS struct {
 	RuntimeIdentity common.RuntimeIdentity `json:"runtimeIdentity,omitempty"`
 }
 
+type Bucket struct {
+	Name          string `json:"name"`
+	AccessKey     string `json:"accessKey"`
+	AccessKeyName string `json:"accessKeyName"`
+	SecretKey     string `json:"secretKey"`
+	SecretKeyName string `json:"secretKeyName"`
+}
+
 type Configs struct {
-	Name                string `json:"name"`
-	AccessKeySecret     string `json:"accesskeySecret,omitempty"`
-	AccessKeySecretKey  string `json:"accesskeySecretKey,omitempty"`
-	SecretKeySecret     string `json:"secretkeySecret,omitempty"`
-	SecretKeySecretKey  string `json:"secretkeySecretKey,omitempty"`
-	AccessKey2Secret    string `json:"accesskey2Secret,omitempty"`
-	AccessKey2SecretKey string `json:"accesskey2SecretKey,omitempty"`
-	SecretKey2Secret    string `json:"secretkey2Secret,omitempty"`
-	SecretKey2SecretKey string `json:"secretkey2SecretKey,omitempty"`
-	Bucket              string `json:"bucket,omitempty"`
-	Bucket2             string `json:"bucket2,omitempty"`
-	MetaUrlSecret       string `json:"metaurlSecret,omitempty"`
-	MetaUrlSecretKey    string `json:"metaurlSecretKey,omitempty"`
-	TokenSecret         string `json:"tokenSecret,omitempty"`
-	TokenSecretKey      string `json:"tokenSecretKey,omitempty"`
-	Storage             string `json:"storage,omitempty"`
-	FormatCmd           string `json:"formatCmd,omitempty"`
-	QuotaCmd            string `json:"quotaCmd,omitempty"`
+	Name               string   `json:"name"`
+	AccessKeySecret    string   `json:"accesskeySecret,omitempty"`
+	AccessKeySecretKey string   `json:"accesskeySecretKey,omitempty"`
+	SecretKeySecret    string   `json:"secretkeySecret,omitempty"`
+	SecretKeySecretKey string   `json:"secretkeySecretKey,omitempty"`
+	Bucket             string   `json:"bucket,omitempty"`
+	MirrorBuckets      []Bucket `json:"mirrorBuckets,omitempty"`
+	MetaUrlSecret      string   `json:"metaurlSecret,omitempty"`
+	MetaUrlSecretKey   string   `json:"metaurlSecretKey,omitempty"`
+	TokenSecret        string   `json:"tokenSecret,omitempty"`
+	TokenSecretKey     string   `json:"tokenSecretKey,omitempty"`
+	Storage            string   `json:"storage,omitempty"`
+	FormatCmd          string   `json:"formatCmd,omitempty"`
+	QuotaCmd           string   `json:"quotaCmd,omitempty"`
 }
 
 type Worker struct {

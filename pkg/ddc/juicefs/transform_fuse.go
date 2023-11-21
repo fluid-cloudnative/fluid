@@ -63,6 +63,12 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 	// transform format cmd
 	j.genFormatCmd(value, runtime.Spec.Configs)
 
+	// validate mirror buckets if needed
+	err = validateMirrorbuckets(value)
+	if err != nil {
+		return err
+	}
+
 	// transform quota cmd
 	err = j.genQuotaCmd(value, mount)
 	if err != nil {
@@ -138,11 +144,11 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 			value.Configs.Storage = v
 			continue
 		case JuiceBucket:
-			value.Configs.Bucket = v
+			value.Configs.Bucket, value.Configs.MirrorBuckets = parseBuckets(v)
 			continue
-		case JuiceBucket2:
-			value.Configs.Bucket2 = v
-			continue
+		// case JuiceBucket2:
+		// 	value.Configs.Bucket2 = v
+		// 	continue
 		default:
 			if k != "quota" {
 				options[k] = v
@@ -180,16 +186,36 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 		case JuiceSecretKey:
 			value.Configs.SecretKeySecret = secretKeyRef.Name
 			value.Configs.SecretKeySecretKey = secretKeyRef.Key
-		case JuiceAccess2Key:
-			value.Configs.AccessKey2Secret = secretKeyRef.Name
-			value.Configs.AccessKey2SecretKey = secretKeyRef.Key
-		case JuiceSecret2Key:
-			value.Configs.SecretKey2Secret = secretKeyRef.Name
-			value.Configs.SecretKey2SecretKey = secretKeyRef.Key
+		// case JuiceAccess2Key:
+		// 	value.Configs.AccessKey2Secret = secretKeyRef.Name
+		// 	value.Configs.AccessKey2SecretKey = secretKeyRef.Key
+		// case JuiceSecret2Key:
+		// 	value.Configs.SecretKey2Secret = secretKeyRef.Name
+		// 	value.Configs.SecretKey2SecretKey = secretKeyRef.Key
 		case JuiceToken:
 			value.Configs.TokenSecret = secretKeyRef.Name
 			value.Configs.TokenSecretKey = secretKeyRef.Key
+		default:
+			if len(value.Configs.MirrorBuckets) > 0 {
+				for index, mirrorBucket := range value.Configs.MirrorBuckets {
+					prefix := mirrorBucket.Name
+					if strings.HasPrefix(key, prefix) {
+						removePrefixKey := strings.TrimPrefix(key, prefix)
+						switch removePrefixKey {
+						case JuiceAccessKey:
+							// value.Configs.AccessKeySecret = secretKeyRef.Name
+							// value.Configs.AccessKeySecretKey = secretKeyRef.Key
+							value.Configs.MirrorBuckets[index].AccessKey = secretKeyRef.Key
+							value.Configs.MirrorBuckets[index].AccessKeyName = secretKeyRef.Name
+						case JuiceSecretKey:
+							value.Configs.MirrorBuckets[index].SecretKey = secretKeyRef.Key
+							value.Configs.MirrorBuckets[index].SecretKeyName = secretKeyRef.Name
+						}
+					}
+				}
+			}
 		}
+
 	}
 
 	for _, encryptOption := range mount.EncryptOptions {
@@ -207,16 +233,34 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 		case JuiceSecretKey:
 			value.Configs.SecretKeySecret = secretKeyRef.Name
 			value.Configs.SecretKeySecretKey = secretKeyRef.Key
-		case JuiceAccess2Key:
-			value.Configs.AccessKey2Secret = secretKeyRef.Name
-			value.Configs.AccessKey2SecretKey = secretKeyRef.Key
-		case JuiceSecret2Key:
-			value.Configs.SecretKey2Secret = secretKeyRef.Name
-			value.Configs.SecretKey2SecretKey = secretKeyRef.Key
+		// case JuiceAccess2Key:
+		// 	value.Configs.AccessKey2Secret = secretKeyRef.Name
+		// 	value.Configs.AccessKey2SecretKey = secretKeyRef.Key
+		// case JuiceSecret2Key:
+		// 	value.Configs.SecretKey2Secret = secretKeyRef.Name
+		// 	value.Configs.SecretKey2SecretKey = secretKeyRef.Key
 		case JuiceToken:
 			value.Configs.TokenSecret = secretKeyRef.Name
 			value.Configs.TokenSecretKey = secretKeyRef.Key
+		default:
+			if len(value.Configs.MirrorBuckets) > 0 {
+				for index, mirrorBucket := range value.Configs.MirrorBuckets {
+					prefix := mirrorBucket.Name
+					if strings.HasPrefix(key, prefix) {
+						removePrefixKey := strings.TrimPrefix(key, prefix)
+						switch removePrefixKey {
+						case JuiceAccessKey:
+							value.Configs.MirrorBuckets[index].AccessKey = secretKeyRef.Key
+							value.Configs.MirrorBuckets[index].AccessKeyName = secretKeyRef.Name
+						case JuiceSecretKey:
+							value.Configs.MirrorBuckets[index].SecretKey = secretKeyRef.Key
+							value.Configs.MirrorBuckets[index].SecretKeyName = secretKeyRef.Name
+						}
+					}
+				}
+			}
 		}
+
 	}
 
 	if source == "" {
@@ -414,21 +458,25 @@ func (j *JuiceFSEngine) genFormatCmd(value *JuiceFS, config *[]string) {
 	if value.Configs.AccessKeySecret != "" {
 		args = append(args, "--accesskey=${ACCESS_KEY}")
 	}
+	if len(value.Configs.MirrorBuckets) > 0 {
+		if value.Configs.MirrorBuckets[0].AccessKey != "" {
+			args = append(args, "--access-key2=${ACCESS_KEY2}")
+		}
+		if value.Configs.MirrorBuckets[0].SecretKey != "" {
+			args = append(args, "--secret-key2=${SECRET_KEY2}")
+		}
+		if value.Configs.MirrorBuckets[0].Name != "" {
+			args = append(args, fmt.Sprintf("--bucket2=%s", value.Configs.MirrorBuckets[0].Name))
+		}
+	}
 	if value.Configs.SecretKeySecret != "" {
 		args = append(args, "--secretkey=${SECRET_KEY}")
 	}
-	if value.Configs.AccessKey2Secret != "" {
-		args = append(args, "--access-key2=${ACCESS_KEY2}")
-	}
-	if value.Configs.SecretKey2Secret != "" {
-		args = append(args, "--secret-key2=${SECRET_KEY2}")
-	}
+
 	if value.Configs.Bucket != "" {
 		args = append(args, fmt.Sprintf("--bucket=%s", value.Configs.Bucket))
 	}
-	if value.Configs.Bucket2 != "" {
-		args = append(args, fmt.Sprintf("--bucket2=%s", value.Configs.Bucket2))
-	}
+
 	args = append(args, value.Source)
 	cmd := append([]string{common.JuiceCliPath, "auth"}, args...)
 	value.Configs.FormatCmd = strings.Join(cmd, " ")

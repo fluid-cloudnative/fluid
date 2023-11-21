@@ -100,19 +100,20 @@ spec:
                 name: {{ .Values.configs.secretkeySecret }}
                 key: {{ .Values.configs.secretkeySecretKey }}
           {{- end }}
-          {{- if .Values.configs.accesskey2Secret }}
+          {{- if .Values.configs.MirrorBuckets }}
+          {{- if and .Values.configs.MirrorBuckets (gt (len .Values.configs.MirrorBuckets) 0) }}
+          {{- with index .Values.configs.MirrorBuckets 0 }}
           - name: ACCESS_KEY2
             valueFrom:
               secretKeyRef:
-                name: {{ .Values.configs.accesskey2Secret }}
-                key: {{ .Values.configs.accesskey2SecretKey }}
-          {{- end }}
-          {{- if .Values.configs.secretkey2Secret }}
+                name: {{ .accesskeyName }}
+                key: {{ .accesskey }}
           - name: SECRET_KEY2
             valueFrom:
               secretKeyRef:
-                name: {{ .Values.configs.secretkey2Secret }}
-                key: {{ .Values.configs.secretkey2SecretKey }}
+                name: {{ .secretkeyName }}
+                key: {{ .secretkey }}
+          {{- end }}
           {{- end }}
           {{- if .Values.configs.tokenSecret }}
           - name: TOKEN

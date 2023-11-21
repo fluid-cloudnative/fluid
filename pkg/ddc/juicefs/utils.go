@@ -394,3 +394,49 @@ func (j JuiceFSEngine) updateWorkerScript(command string) error {
 func (j *JuiceFSEngine) getWorkerScriptName() string {
 	return fmt.Sprintf("%s-worker-script", j.name)
 }
+
+func (j *JuiceFSEngine) getFuseScriptName() string {
+	return fmt.Sprintf("%s-fuse-script", j.name)
+}
+
+func parseBuckets(url string) (bucketName string, mirrorBuckets []Bucket) {
+	// Split the input string by comma
+	items := strings.Split(url, ",")
+	// If there are are items in the list, assign the first one as
+	// bucketName and create a Bucket for each name in the slice for
+	// mirrorBuckets.
+	if len(items) > 0 {
+		bucketName = items[0]
+		for _, mirrorBucket := range items[1:] {
+			mirrorBuckets = append(mirrorBuckets, Bucket{Name: mirrorBucket})
+		}
+	}
+	return bucketName, mirrorBuckets
+}
+
+func validateMirrorbuckets(value *JuiceFS) error {
+	switch len(value.Configs.MirrorBuckets) {
+	case 0:
+		return nil
+	case 1:
+		bucket := value.Configs.MirrorBuckets[0]
+		if bucket.Name == "" {
+			return fmt.Errorf("mirror bucket name is not set")
+		}
+		if bucket.AccessKey == "" {
+			return fmt.Errorf("mirror bucket accessKey is not set")
+		}
+		if bucket.AccessKeyName == "" {
+			return fmt.Errorf("mirror bucket accessKeyName is not set")
+		}
+		if bucket.SecretKey == "" {
+			return fmt.Errorf("mirror bucket SecretKey is not set")
+		}
+		if bucket.SecretKeyName == "" {
+			return fmt.Errorf("mirror bucket SecretKeyName is not set")
+		}
+	default:
+		return fmt.Errorf("not support mirror buckets with more than 1 item")
+	}
+	return nil
+}

@@ -22,18 +22,15 @@ import (
 	"testing"
 
 	. "github.com/agiledragon/gomonkey/v2"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
 func TestJuiceFSEngine_getDaemonset(t *testing.T) {
@@ -1100,6 +1097,122 @@ echo "$(date '+%Y/%m/%d %H:%M:%S').$(printf "%03d" $(($(date '+%N')/1000))) juic
 			}
 			if gotCommand != tt.command {
 				t.Errorf("updateWorkerScript() gotCommand = %v, want %v", gotCommand, tt.command)
+			}
+		})
+	}
+}
+
+func TestParseBuckets(t *testing.T) {
+	type args struct {
+		url string
+	}
+	tests := []struct {
+		name              string
+		args              args
+		wantBucketName    string
+		wantMirrorBuckets []Bucket
+	}{
+		{
+			name: "test1",
+			args: args{
+				url: "bucket1,bucket2,bucket3",
+			},
+			wantBucketName: "bucket1",
+			wantMirrorBuckets: []Bucket{
+				{Name: "bucket2"},
+				{Name: "bucket3"},
+			},
+		},
+		{
+			name: "test2",
+			args: args{
+				url: "bucket",
+			},
+			wantBucketName:    "bucket",
+			wantMirrorBuckets: []Bucket{},
+		},
+		{
+			name: "test3",
+			args: args{
+				url: "bucket1,bucket2",
+			},
+			wantBucketName: "bucket1",
+			wantMirrorBuckets: []Bucket{
+				{Name: "bucket2"},
+			},
+		},
+		{
+			name: "test4",
+			args: args{
+				url: "",
+			},
+			wantBucketName:    "",
+			wantMirrorBuckets: []Bucket{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotBucketName, gotMirrorBuckets := parseBuckets(tt.args.url)
+			if gotBucketName != tt.wantBucketName {
+				t.Errorf("parseBuckets() bucketName = %v, want %v", gotBucketName, tt.wantBucketName)
+			}
+			if !reflect.DeepEqual(gotMirrorBuckets, tt.wantMirrorBuckets) {
+				t.Errorf("parseBuckets() mirrorBuckets = %v, want %v", gotMirrorBuckets, tt.wantMirrorBuckets)
+			}
+		})
+	}
+}
+
+func TestValidateMirrorbuckets(t *testing.T) {
+	type args struct {
+		value *JuiceFS
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+
+		// No mirror buckets
+		{
+			name:    "Test no mirrorBuckets",
+			args:    args{value: &JuiceFS{Configs: Configs{MirrorBuckets: nil}}},
+			wantErr: false,
+		},
+
+		// More than 1 mirror bucket
+		{
+			name:    "Test more than 1 mirrorBucket",
+			args:    args{value: &JuiceFS{Configs: Configs{MirrorBuckets: []Bucket{{}, {}}}}},
+			wantErr: true,
+		},
+
+		// 1 mirror bucket but Name is empty
+		{
+			name:    "Test mirrorBucket Name is empty",
+			args:    args{value: &JuiceFS{Configs: Configs{MirrorBuckets: []Bucket{{AccessKey: "AccessKey", AccessKeyName: "AccessKeyName", SecretKey: "SecretKey", SecretKeyName: "SecretKeyName"}}}}},
+			wantErr: true,
+		},
+
+		// 1 mirror bucket but AccessKey is empty
+		// similar test cases for other bucket attributes AccessKeyName, SecretKey, SecretKeyName
+		{
+			name:    "Test mirrorBucket AccessKey is empty",
+			args:    args{value: &JuiceFS{Configs: Configs{MirrorBuckets: []Bucket{{Name: "BucketName", AccessKeyName: "AccessKeyName", SecretKey: "SecretKey", SecretKeyName: "SecretKeyName"}}}}},
+			wantErr: true,
+		},
+
+		// 1 mirror bucket and all attributes are not empty
+		{
+			name:    "Test mirrorBucket all attributes not empty",
+			args:    args{value: &JuiceFS{Configs: Configs{MirrorBuckets: []Bucket{{Name: "BucketName", AccessKey: "AccessKey", AccessKeyName: "AccessKeyName", SecretKey: "SecretKey", SecretKeyName: "SecretKeyName"}}}}},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := validateMirrorbuckets(tt.args.value); (err != nil) != tt.wantErr {
+				t.Errorf("validateMirrorbuckets() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
