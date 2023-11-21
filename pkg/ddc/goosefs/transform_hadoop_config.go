@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Fluid Authors.
+Copyright 2023 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -37,16 +37,16 @@ func (e *GooseFSEngine) transformHadoopConfig(runtime *datav1alpha1.GooseFSRunti
 		Namespace: runtime.Namespace,
 		Name:      runtime.Spec.HadoopConfig,
 	}
-
+	
 	hadoopConfigMap := &v1.ConfigMap{}
-
+	
 	if err = e.Client.Get(context.TODO(), key, hadoopConfigMap); err != nil {
 		if apierrs.IsNotFound(err) {
 			err = fmt.Errorf("specified hadoopConfig \"%v\" is not found", runtime.Spec.HadoopConfig)
 		}
 		return err
 	}
-
+	
 	var confFiles []string
 	for k := range hadoopConfigMap.Data {
 		switch k {
@@ -58,15 +58,15 @@ func (e *GooseFSEngine) transformHadoopConfig(runtime *datav1alpha1.GooseFSRunti
 			confFiles = append(confFiles, HADOOP_CONF_MOUNT_PATH+"/"+HADOOP_CONF_CORE_SITE_FILENAME)
 		}
 	}
-
+	
 	// Neither hdfs-site.xml nor core-site.xml is found in the configMap
 	if !value.HadoopConfig.IncludeCoreSite && !value.HadoopConfig.IncludeHdfsSite {
 		err = fmt.Errorf("neither \"%v\" nor \"%v\" is found in the specified configMap \"%v\" ", HADOOP_CONF_HDFS_SITE_FILENAME, HADOOP_CONF_CORE_SITE_FILENAME, runtime.Spec.HadoopConfig)
 		return err
 	}
-
+	
 	value.HadoopConfig.ConfigMap = runtime.Spec.HadoopConfig
 	value.Properties["goosefs.underfs.hdfs.configuration"] = strings.Join(confFiles, ":")
-
+	
 	return nil
 }
