@@ -1129,7 +1129,7 @@ func TestParseBuckets(t *testing.T) {
 				url: "bucket",
 			},
 			wantBucketName:    "bucket",
-			wantMirrorBuckets: []Bucket{},
+			wantMirrorBuckets: nil,
 		},
 		{
 			name: "test3",
@@ -1147,7 +1147,7 @@ func TestParseBuckets(t *testing.T) {
 				url: "",
 			},
 			wantBucketName:    "",
-			wantMirrorBuckets: []Bucket{},
+			wantMirrorBuckets: nil,
 		},
 	}
 	for _, tt := range tests {
@@ -1157,6 +1157,9 @@ func TestParseBuckets(t *testing.T) {
 				t.Errorf("parseBuckets() bucketName = %v, want %v", gotBucketName, tt.wantBucketName)
 			}
 			if !reflect.DeepEqual(gotMirrorBuckets, tt.wantMirrorBuckets) {
+				if len(gotMirrorBuckets) == 0 && len(tt.wantMirrorBuckets) == 0 {
+					return
+				}
 				t.Errorf("parseBuckets() mirrorBuckets = %v, want %v", gotMirrorBuckets, tt.wantMirrorBuckets)
 			}
 		})
