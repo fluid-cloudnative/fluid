@@ -1156,10 +1156,10 @@ func TestParseBuckets(t *testing.T) {
 			if gotBucketName != tt.wantBucketName {
 				t.Errorf("parseBuckets() bucketName = %v, want %v", gotBucketName, tt.wantBucketName)
 			}
+			if len(gotMirrorBuckets) == 0 && len(tt.wantMirrorBuckets) == 0 {
+				return
+			}
 			if !reflect.DeepEqual(gotMirrorBuckets, tt.wantMirrorBuckets) {
-				if len(gotMirrorBuckets) == 0 && len(tt.wantMirrorBuckets) == 0 {
-					return
-				}
 				t.Errorf("parseBuckets() mirrorBuckets = %v, want %v", gotMirrorBuckets, tt.wantMirrorBuckets)
 			}
 		})
