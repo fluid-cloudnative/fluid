@@ -1,0 +1,12 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: VineyardRuntime
+metadata:
+  labels:
+    app.kubernetes.io/name: vineyardruntime
+    app.kubernetes.io/instance: vineyardruntime-sample
+    app.kubernetes.io/part-of: fluid
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: fluid
+  name: vineyardruntime-sample
+spec:
+  # TODO(user): Add fields here
