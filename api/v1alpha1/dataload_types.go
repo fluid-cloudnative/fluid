@@ -93,6 +93,10 @@ type DataLoadSpec struct {
 	// TTLSecondsAfterFinished is the time second to clean up data operations after finished or failed
 	// +optional
 	TTLSecondsAfterFinished *int32 `json:"ttlSecondsAfterFinished,omitempty"`
+
+	// Resources that will be requested by the DataLoad job. <br>
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // +kubebuilder:printcolumn:name="Dataset",type="string",JSONPath=`.spec.dataset.name`

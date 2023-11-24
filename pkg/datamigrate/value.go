@@ -83,4 +83,7 @@ type DataMigrateInfo struct {
 
 	// specifies scheduler name
 	SchedulerName string `json:"schedulerName,omitempty"`
+
+	// Resources that will be requested by DataMigrate job.
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }

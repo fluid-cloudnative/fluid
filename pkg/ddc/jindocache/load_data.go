@@ -151,6 +151,7 @@ func (e *JindoCacheEngine) genDataLoadValue(image string, runtime *datav1alpha1.
 		ImagePullSecrets: imagePullSecrets,
 		Policy:           string(dataload.Spec.Policy),
 		Schedule:         dataload.Spec.Schedule,
+		Resources:        dataload.Spec.Resources,
 	}
 
 	// pod affinity

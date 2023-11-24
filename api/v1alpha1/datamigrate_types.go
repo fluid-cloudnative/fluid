@@ -84,6 +84,10 @@ type DataMigrateSpec struct {
 	// TTLSecondsAfterFinished is the time second to clean up data operations after finished or failed
 	// +optional
 	TTLSecondsAfterFinished *int32 `json:"ttlSecondsAfterFinished,omitempty"`
+
+	// Resources that will be requested by the DataMigrate job. <br>
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 type DataToMigrate struct {

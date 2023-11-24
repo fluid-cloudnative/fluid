@@ -87,6 +87,10 @@ type ScriptProcessor struct {
 	// List of volumes that can be mounted by containers belonging to the pod.
 	// +optional
 	Volumes []corev1.Volume `json:"volumes,omitempty"`
+
+	// Resources that will be requested by the DataProcess job. <br>
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // DataProcessSpec defines the desired state of DataProcess
