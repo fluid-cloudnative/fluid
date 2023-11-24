@@ -65,6 +65,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EFCRuntimeSpec":             schema_fluid_cloudnative_fluid_api_v1alpha1_EFCRuntimeSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOption":              schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOption(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOptionSource":        schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOptionSource(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExternalEndpointSpec":       schema_fluid_cloudnative_fluid_api_v1alpha1_ExternalEndpointSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExternalStorage":            schema_fluid_cloudnative_fluid_api_v1alpha1_ExternalStorage(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSCompTemplateSpec":    schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSCompTemplateSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSFuseSpec":            schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSFuseSpec(ref),
@@ -86,6 +87,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSRuntimeList":         schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSRuntimeList(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSRuntimeSpec":         schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSRuntimeSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Level":                      schema_fluid_cloudnative_fluid_api_v1alpha1_Level(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.MasterSpec":                 schema_fluid_cloudnative_fluid_api_v1alpha1_MasterSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Metadata":                   schema_fluid_cloudnative_fluid_api_v1alpha1_Metadata(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.MetadataSyncPolicy":         schema_fluid_cloudnative_fluid_api_v1alpha1_MetadataSyncPolicy(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount":                      schema_fluid_cloudnative_fluid_api_v1alpha1_Mount(ref),
@@ -115,6 +117,11 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore":                schema_fluid_cloudnative_fluid_api_v1alpha1_TieredStore(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.User":                       schema_fluid_cloudnative_fluid_api_v1alpha1_User(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec":                schema_fluid_cloudnative_fluid_api_v1alpha1_VersionSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardCompTemplateSpec":   schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardCompTemplateSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardRuntime":            schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardRuntime(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardRuntimeList":        schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardRuntimeList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardRuntimeSpec":        schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardRuntimeSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardSockSpec":           schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardSockSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VolumeSource":               schema_fluid_cloudnative_fluid_api_v1alpha1_VolumeSource(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.WaitingStatus":              schema_fluid_cloudnative_fluid_api_v1alpha1_WaitingStatus(ref),
 	}
@@ -2548,6 +2555,59 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOptionSource(ref common.
 	}
 }
 
+func schema_fluid_cloudnative_fluid_api_v1alpha1_ExternalEndpointSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ExternalEndpointSpec defines the configurations for external etcd cluster",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"uri": {
+						SchemaProps: spec.SchemaProps{
+							Description: "URI specifies the endpoint of external Etcd cluster E,g. \"etcd-svc.etcd-namespace.svc.cluster.local:2379\" Default is not set and use http protocol to connect to external etcd cluster",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"encryptOptions": {
+						SchemaProps: spec.SchemaProps{
+							Description: "encrypt info for accessing the external etcd cluster",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOption"),
+									},
+								},
+							},
+						},
+					},
+					"options": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Configurable options for External Etcd cluster. Support the following options.\n\n  etcd.prefix: (String) the prefix of etcd key for vineyard objects\n\nDefault value is as follows.\n\n  etcd.prefix: \"/vineyard\"",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOption"},
+	}
+}
+
 func schema_fluid_cloudnative_fluid_api_v1alpha1_ExternalStorage(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -4380,6 +4440,141 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_Level(ref common.ReferenceCallb
 	}
 }
 
+func schema_fluid_cloudnative_fluid_api_v1alpha1_MasterSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "MasterSpec defines the configurations for Vineyard Master component which is also regarded as the Etcd component in Vineyard. For more info about Vineyard, refer to <a href=\"https://v6d.io/\">Vineyard</a>",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"replicas": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The replicas of Vineyard component. If not specified, defaults to 1. For worker, the replicas should not be greater than the number of nodes in the cluster",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"image": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The image of Vineyard component. For Master, the default image is `bitnami/etcd` For Worker, the default image is `vineyardcloudnative/vineyardd` The default container registry is `docker.io`, you can change it by setting the image field",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"imageTag": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The image tag of Vineyard component. For Master, the default image tag is `3.5.10`. For Worker, the default image tag is `latest`.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"imagePullPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The image pull policy of Vineyard component. Default is `IfNotPresent`.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"nodeSelector": {
+						SchemaProps: spec.SchemaProps{
+							Description: "NodeSelector is a selector to choose which nodes to launch the Vineyard component. E,g. {\"disktype\": \"ssd\"}",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"ports": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Ports used by Vineyard component. For Master, the default client port is 2379 and peer port is 2380. For Worker, the default rpc port is 9600.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: 0,
+										Type:    []string{"integer"},
+										Format:  "int32",
+									},
+								},
+							},
+						},
+					},
+					"env": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Environment variables that will be used by Vineyard component. For Master, refer to <a href=\"https://etcd.io/docs/v3.5/op-guide/configuration/\">Etcd Configuration</a> for more info Default is not set.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"options": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Configurable options for Vineyard component. For Master, there is no configurable options. For Worker, support the following options.\n\n  vineyardd.reserve.memory: (Bool) where to reserve memory for vineyardd\n                            If set to true, the memory quota will be counted to the vineyardd rather than the application.\n  etcd.prefix: (String) the prefix of etcd key for vineyard objects\n\n  Default value is as follows.\n\n    vineyardd.reserve.memory: \"true\"\n    etcd.prefix: \"/vineyard\"",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"resources": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Resources contains the resource requirements and limits for the Vineyard component. Default is not set. For Worker, when the options contains vineyardd.reserve.memory=true, the resources.request.memory for worker should be greater than tieredstore.levels[0].quota(aka vineyardd shared memory)",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
+						},
+					},
+					"volumeMounts": {
+						SchemaProps: spec.SchemaProps{
+							Description: "VolumeMounts specifies the volumes listed in \".spec.volumes\" to mount into the vineyard runtime component's filesystem. It is useful for specifying a persistent storage. Default is not set.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.VolumeMount"),
+									},
+								},
+							},
+						},
+					},
+					"endpoint": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ExternalEndpoint defines the configurations for external etcd cluster Default is not set If set, the Vineyard Master component will not be deployed, which means the Vineyard Worker component will use an external Etcd cluster. E,g.\n  endpoint:\n    uri: \"etcd-svc.etcd-namespace.svc.cluster.local:2379\"\n    encryptOptions:\n      - name: access-key\n\t\t   valueFrom:\n          secretKeyRef:\n            name: etcd-secret\n\t\t\t   key: accesskey",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.ExternalEndpointSpec"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExternalEndpointSpec", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.VolumeMount"},
+	}
+}
+
 func schema_fluid_cloudnative_fluid_api_v1alpha1_Metadata(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -6143,6 +6338,344 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_VersionSpec(ref common.Referenc
 				},
 			},
 		},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardCompTemplateSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "VineyardCompTemplateSpec is the common configurations for vineyard components including Master and Worker.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"replicas": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The replicas of Vineyard component. If not specified, defaults to 1. For worker, the replicas should not be greater than the number of nodes in the cluster",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"image": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The image of Vineyard component. For Master, the default image is `bitnami/etcd` For Worker, the default image is `vineyardcloudnative/vineyardd` The default container registry is `docker.io`, you can change it by setting the image field",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"imageTag": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The image tag of Vineyard component. For Master, the default image tag is `3.5.10`. For Worker, the default image tag is `latest`.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"imagePullPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The image pull policy of Vineyard component. Default is `IfNotPresent`.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"nodeSelector": {
+						SchemaProps: spec.SchemaProps{
+							Description: "NodeSelector is a selector to choose which nodes to launch the Vineyard component. E,g. {\"disktype\": \"ssd\"}",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"ports": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Ports used by Vineyard component. For Master, the default client port is 2379 and peer port is 2380. For Worker, the default rpc port is 9600.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: 0,
+										Type:    []string{"integer"},
+										Format:  "int32",
+									},
+								},
+							},
+						},
+					},
+					"env": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Environment variables that will be used by Vineyard component. For Master, refer to <a href=\"https://etcd.io/docs/v3.5/op-guide/configuration/\">Etcd Configuration</a> for more info Default is not set.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"options": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Configurable options for Vineyard component. For Master, there is no configurable options. For Worker, support the following options.\n\n  vineyardd.reserve.memory: (Bool) where to reserve memory for vineyardd\n                            If set to true, the memory quota will be counted to the vineyardd rather than the application.\n  etcd.prefix: (String) the prefix of etcd key for vineyard objects\n\n  Default value is as follows.\n\n    vineyardd.reserve.memory: \"true\"\n    etcd.prefix: \"/vineyard\"",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"resources": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Resources contains the resource requirements and limits for the Vineyard component. Default is not set. For Worker, when the options contains vineyardd.reserve.memory=true, the resources.request.memory for worker should be greater than tieredstore.levels[0].quota(aka vineyardd shared memory)",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
+						},
+					},
+					"volumeMounts": {
+						SchemaProps: spec.SchemaProps{
+							Description: "VolumeMounts specifies the volumes listed in \".spec.volumes\" to mount into the vineyard runtime component's filesystem. It is useful for specifying a persistent storage. Default is not set.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.VolumeMount"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.VolumeMount"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardRuntime(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "VineyardRuntime is the Schema for the vineyardruntimes API",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardRuntimeSpec"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeStatus"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeStatus", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardRuntimeSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardRuntimeList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "VineyardRuntimeList contains a list of VineyardRuntime",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardRuntime"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardRuntime", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardRuntimeSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "VineyardRuntimeSpec defines the desired state of VineyardRuntime",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"master": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Master holds the configurations for Vineyard Master component Represents the Etcd component in Vineyard",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.MasterSpec"),
+						},
+					},
+					"worker": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Worker holds the configurations for Vineyard Worker component Represents the Vineyardd component in Vineyard",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardCompTemplateSpec"),
+						},
+					},
+					"fuse": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Fuse holds the configurations for Vineyard client socket. Note that the \"Fuse\" here is kept just for API consistency, VineyardRuntime mount a socket file instead of a FUSE filesystem to make data cache available. Applications can connect to the vineyard runtime components through IPC or RPC. IPC is the default way to connect to vineyard runtime components, which is more efficient than RPC. If the socket file is not mounted, the connection will fall back to RPC.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardSockSpec"),
+						},
+					},
+					"tieredstore": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Tiered storage used by vineyardd The MediumType can only be `MEM` and `SSD` `MEM` actually represents the shared memory of vineyardd. `SSD` represents the external storage of vineyardd. Default is as follows.\n  tieredstore:\n    levels:\n    - level: 0\n      mediumtype: MEM\n      quota: 4Gi\n\nChoose hostpath as the external storage of vineyardd.\n  tieredstore:\n    levels:\n\t   - level: 0\n      mediumtype: MEM\n      quota: 4Gi\n\t\t high: \"0.8\"\n      low: \"0.3\"\n    - level: 1\n      mediumtype: SSD\n      quota: 10Gi\n      volumeType: Hostpath\n      path: /var/spill-path",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore"),
+						},
+					},
+					"disablePrometheus": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Disable monitoring metrics for Vineyard Runtime Default is false",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"volumes": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Volumes is the list of Kubernetes volumes that can be mounted by the vineyard components (Master and Worker). Default is null.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.Volume"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.MasterSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardSockSpec", "k8s.io/api/core/v1.Volume"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardSockSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "VineyardSockSpec holds the configurations for vineyard client socket",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"image": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Image for Vineyard Fuse Default is `vineyardcloudnative/vineyard-mount-socket`",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"imageTag": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Image Tag for Vineyard Fuse Default is `latest`",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"imagePullPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Image pull policy for Vineyard Fuse Default is `IfNotPresent` Available values are `Always`, `IfNotPresent`, `Never`",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"cleanPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CleanPolicy decides when to clean Vineyard Fuse pods. Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted OnDemand cleans fuse pod once th fuse pod on some node is not needed OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted Defaults to OnRuntimeDeleted",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"resources": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Resources contains the resource requirements and limits for the Vineyard Fuse. Default is not set.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/api/core/v1.ResourceRequirements"},
 	}
 }
 
