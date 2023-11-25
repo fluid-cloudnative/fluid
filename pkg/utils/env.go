@@ -17,9 +17,11 @@ limitations under the License.
 package utils
 
 import (
+	"fmt"
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -83,12 +85,20 @@ func GetStringValueFromEnv(key string, defaultValue string) (value string) {
 	return defaultValue
 }
 
-func IsValidateEnvName(key string) (valid bool, err error) {
+func CheckValidateEnvName(key string) (err error) {
 	if envVarRegex == nil {
 		envVarRegex, err = regexp.Compile("^[a-zA-Z_][a-zA-Z0-9_]*$")
 		if err != nil {
 			return
 		}
 	}
-	return envVarRegex.MatchString(key), nil
+	if !envVarRegex.MatchString(key) {
+		err = fmt.Errorf("%s is not a valid Linux environment variable name", key)
+	}
+	return
+}
+
+// ConvertDashToUnderscore converts all dash "-" characters in a string to underscore "_" characters.
+func ConvertDashToUnderscore(s string) string {
+	return strings.ReplaceAll(s, "-", "_")
 }

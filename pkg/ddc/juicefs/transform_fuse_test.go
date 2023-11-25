@@ -55,8 +55,22 @@ func TestTransformFuse(t *testing.T) {
 			"secret-key": []byte(base64.StdEncoding.EncodeToString([]byte("test"))),
 		},
 	}
+	juicefsSecret3 := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test3",
+			Namespace: "fluid",
+		},
+		Data: map[string][]byte{
+			"access-key":  []byte(base64.StdEncoding.EncodeToString([]byte("test"))),
+			"secret-key":  []byte(base64.StdEncoding.EncodeToString([]byte("test"))),
+			"access-key2": []byte(base64.StdEncoding.EncodeToString([]byte("test2"))),
+			"secret-key2": []byte(base64.StdEncoding.EncodeToString([]byte("test2"))),
+		},
+	}
 	testObjs := []runtime.Object{}
-	testObjs = append(testObjs, (*juicefsSecret1).DeepCopy(), juicefsSecret2.DeepCopy())
+	testObjs = append(testObjs, (*juicefsSecret1).DeepCopy(),
+		juicefsSecret2.DeepCopy(),
+		juicefsSecret3.DeepCopy())
 
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 	engine := JuiceFSEngine{
@@ -293,6 +307,65 @@ func TestTransformFuse(t *testing.T) {
 			juicefsValue: &JuiceFS{},
 			expect:       "",
 			wantErr:      false,
+		}, {
+			name: "test-secret3-right",
+			runtime: &datav1alpha1.JuiceFSRuntime{
+				Spec: datav1alpha1.JuiceFSRuntimeSpec{
+					Fuse: datav1alpha1.JuiceFSFuseSpec{},
+				}},
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{{
+						MountPoint: "juicefs:///mnt/test",
+						Name:       "test1",
+						Options: map[string]string{
+							"storage": "test1",
+							"bucket":  "test1",
+						},
+						EncryptOptions: []datav1alpha1.EncryptOption{
+							{
+								Name: "access-key",
+								ValueFrom: datav1alpha1.EncryptOptionSource{
+									SecretKeyRef: datav1alpha1.SecretKeySelector{
+										Name: "test3",
+										Key:  "access-key",
+									}},
+							}, {
+								Name: "secret-key",
+								ValueFrom: datav1alpha1.EncryptOptionSource{
+									SecretKeyRef: datav1alpha1.SecretKeySelector{
+										Name: "test3",
+										Key:  "secret-key",
+									}},
+							}, {
+								Name: "metaurl",
+								ValueFrom: datav1alpha1.EncryptOptionSource{
+									SecretKeyRef: datav1alpha1.SecretKeySelector{
+										Name: "test3",
+										Key:  "metaurl",
+									}},
+							}, {
+								Name: "secret-key2",
+								ValueFrom: datav1alpha1.EncryptOptionSource{
+									SecretKeyRef: datav1alpha1.SecretKeySelector{
+										Name: "test3",
+										Key:  "secret-key2",
+									}},
+							}, {
+								Name: "access-key2",
+								ValueFrom: datav1alpha1.EncryptOptionSource{
+									SecretKeyRef: datav1alpha1.SecretKeySelector{
+										Name: "test3",
+										Key:  "access-key2",
+									}},
+							}},
+					}},
+				}},
+			juicefsValue: &JuiceFS{
+				Worker: Worker{},
+			},
+			expect:  "",
+			wantErr: false,
 		},
 	}
 	for _, test := range tests {
@@ -326,8 +399,25 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 			"secret-key": []byte(base64.StdEncoding.EncodeToString([]byte("test"))),
 		},
 	}
+	juicefsSecret3 := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-mirror-buckets",
+			Namespace: "fluid",
+		},
+		Data: map[string][]byte{
+			"token":       []byte(base64.StdEncoding.EncodeToString([]byte("test"))),
+			"access-key":  []byte(base64.StdEncoding.EncodeToString([]byte("test"))),
+			"secret-key":  []byte(base64.StdEncoding.EncodeToString([]byte("test"))),
+			"access-key2": []byte(base64.StdEncoding.EncodeToString([]byte("test2"))),
+			"secret-key2": []byte(base64.StdEncoding.EncodeToString([]byte("test2"))),
+		},
+	}
+
 	testObjs := []runtime.Object{}
-	testObjs = append(testObjs, (*juicefsSecret1).DeepCopy(), juicefsSecret2.DeepCopy())
+	testObjs = append(testObjs,
+		juicefsSecret1.DeepCopy(),
+		juicefsSecret2.DeepCopy(),
+		juicefsSecret3.DeepCopy())
 
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 	engine := JuiceFSEngine{
@@ -477,6 +567,82 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 				"a": "c",
 				// "subdir":    "/test",
 				// "cache-dir": "/dev",
+			},
+		}, {
+			name: "test-mirror-buckets",
+			fields: fields{
+				name:        "test-mirror-buckets",
+				namespace:   "fluid",
+				runtimeType: common.JuiceFSRuntime,
+			},
+			args: args{
+				sharedOptions: map[string]string{"a": "b"},
+				sharedEncryptOptions: []datav1alpha1.EncryptOption{{
+					Name: JuiceMetaUrl,
+					ValueFrom: datav1alpha1.EncryptOptionSource{SecretKeyRef: datav1alpha1.SecretKeySelector{
+						Name: "test-mirror-buckets",
+						Key:  "access-key",
+					}}}, {
+					Name: JuiceAccessKey,
+					ValueFrom: datav1alpha1.EncryptOptionSource{SecretKeyRef: datav1alpha1.SecretKeySelector{
+						Name: "test-mirror-buckets",
+						Key:  "secret-key",
+					}}}, {
+					Name: JuiceSecretKey,
+					ValueFrom: datav1alpha1.EncryptOptionSource{SecretKeyRef: datav1alpha1.SecretKeySelector{
+						Name: "test-mirror-buckets",
+						Key:  "metaurl",
+					}}},
+				},
+				mount: datav1alpha1.Mount{
+					MountPoint: "juicefs:///test",
+					Options:    map[string]string{"a": "c"},
+					Name:       "test-mirror-buckets",
+					EncryptOptions: []datav1alpha1.EncryptOption{{
+						Name: JuiceMetaUrl,
+						ValueFrom: datav1alpha1.EncryptOptionSource{SecretKeyRef: datav1alpha1.SecretKeySelector{
+							Name: "test-mirror-buckets",
+							Key:  "metaurl",
+						}}}, {
+						Name: JuiceAccessKey,
+						ValueFrom: datav1alpha1.EncryptOptionSource{SecretKeyRef: datav1alpha1.SecretKeySelector{
+							Name: "test-mirror-buckets",
+							Key:  "access-key",
+						}}}, {
+						Name: JuiceSecretKey,
+						ValueFrom: datav1alpha1.EncryptOptionSource{SecretKeyRef: datav1alpha1.SecretKeySelector{
+							Name: "test-mirror-buckets",
+							Key:  "secret-key",
+						}}}, {
+						Name: "access-key2",
+						ValueFrom: datav1alpha1.EncryptOptionSource{SecretKeyRef: datav1alpha1.SecretKeySelector{
+							Name: "test-mirror-buckets",
+							Key:  "access-key2",
+						}}}, {
+						Name: "secret-key2",
+						ValueFrom: datav1alpha1.EncryptOptionSource{SecretKeyRef: datav1alpha1.SecretKeySelector{
+							Name: "test-mirror-buckets",
+							Key:  "secret-key2",
+						}}},
+					},
+				},
+				tiredStoreLevel: &datav1alpha1.Level{
+					MediumType: "SSD",
+					Path:       "/dev",
+				},
+				value: &JuiceFS{
+					FullnameOverride: "test-mirror-buckets",
+					Fuse:             Fuse{},
+					Worker:           Worker{},
+				},
+			},
+			wantErr: false,
+			wantOptions: map[string]string{
+				"a": "c",
+				// "subdir":    "/test",
+				// "cache-dir": "/dev",
+				"access-key2": "${access_key2}",
+				"secret-key2": "${secret_key2}",
 			},
 		},
 	}

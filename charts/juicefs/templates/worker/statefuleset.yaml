@@ -122,6 +122,15 @@ spec:
                 name: {{ .Values.configs.tokenSecret }}
                 key: {{ .Values.configs.tokenSecretKey }}
           {{- end }}
+          {{- if and .Values.configs.encryptEnvOptions (gt (len .Values.configs.encryptEnvOptions) 0) }}
+            {{- range $encryptEnvOption := .Values.configs.encryptEnvOptions }}
+          - name: {{ $encryptEnvOption.name }}
+            valueFrom:
+              secretKeyRef:
+                name: {{ $encryptEnvOption.secretKeyRefName }}
+                key: {{ $encryptEnvOption.secretKeyRefKey }}
+            {{- end }}
+          {{- end }}
           lifecycle:
             preStop:
               exec:

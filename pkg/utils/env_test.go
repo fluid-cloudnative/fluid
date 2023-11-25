@@ -148,3 +148,26 @@ func TestGetStringValueFromEnv(t *testing.T) {
 		}
 	})
 }
+
+func TestCheckValidateEnvName(t *testing.T) {
+	cases := []struct {
+		in   string
+		want bool
+	}{
+		{"MY_VAR_1", true},
+		{"my_var_1", true},
+		{"my-var-1", false},
+		{"MY-VAR-1", false},
+		{"MyVar1", true},
+		{"1_MY_VAR", false},
+		{"_MY_VAR", true},
+	}
+
+	for _, c := range cases {
+		err := CheckValidateEnvName(c.in)
+		got := (err == nil)
+		if got != c.want {
+			t.Errorf("CheckValidateEnvName(%q) == %v, want %v, error: %v", c.in, got, c.want, err)
+		}
+	}
+}

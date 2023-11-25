@@ -45,24 +45,24 @@ type JuiceFS struct {
 }
 
 type Configs struct {
-	Name               string          `json:"name"`
-	AccessKeySecret    string          `json:"accesskeySecret,omitempty"`
-	AccessKeySecretKey string          `json:"accesskeySecretKey,omitempty"`
-	SecretKeySecret    string          `json:"secretkeySecret,omitempty"`
-	SecretKeySecretKey string          `json:"secretkeySecretKey,omitempty"`
-	Bucket             string          `json:"bucket,omitempty"`
-	MetaUrlSecret      string          `json:"metaurlSecret,omitempty"`
-	MetaUrlSecretKey   string          `json:"metaurlSecretKey,omitempty"`
-	TokenSecret        string          `json:"tokenSecret,omitempty"`
-	TokenSecretKey     string          `json:"tokenSecretKey,omitempty"`
-	Storage            string          `json:"storage,omitempty"`
-	FormatCmd          string          `json:"formatCmd,omitempty"`
-	QuotaCmd           string          `json:"quotaCmd,omitempty"`
-	EncryptOptions     []EncryptOption `json:"encryptOptions,omitempty"`
+	Name               string             `json:"name"`
+	AccessKeySecret    string             `json:"accesskeySecret,omitempty"`
+	AccessKeySecretKey string             `json:"accesskeySecretKey,omitempty"`
+	SecretKeySecret    string             `json:"secretkeySecret,omitempty"`
+	SecretKeySecretKey string             `json:"secretkeySecretKey,omitempty"`
+	Bucket             string             `json:"bucket,omitempty"`
+	MetaUrlSecret      string             `json:"metaurlSecret,omitempty"`
+	MetaUrlSecretKey   string             `json:"metaurlSecretKey,omitempty"`
+	TokenSecret        string             `json:"tokenSecret,omitempty"`
+	TokenSecretKey     string             `json:"tokenSecretKey,omitempty"`
+	Storage            string             `json:"storage,omitempty"`
+	FormatCmd          string             `json:"formatCmd,omitempty"`
+	QuotaCmd           string             `json:"quotaCmd,omitempty"`
+	EncryptEnvOptions  []EncryptEnvOption `json:"encryptEnvOptions,omitempty"`
 }
 
-type EncryptOption struct {
-	Name             string `json:"name"` // option and env name
+type EncryptEnvOption struct {
+	Name             string `json:"name"` // env name
 	SecretKeyRefName string `json:"secretKeyRefName"`
 	SecretKeyRefKey  string `json:"secretKeyRefKey"`
 }

@@ -18,7 +18,6 @@ package juicefs
 
 import (
 	"fmt"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -131,7 +130,7 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 	sharedOptions map[string]string, sharedEncryptOptions []datav1alpha1.EncryptOption) (map[string]string, error) {
 	options := make(map[string]string)
 	value.Configs.Name = mount.Name
-	value.Configs.EncryptOptions = make([]EncryptOption, 0)
+	value.Configs.EncryptEnvOptions = make([]EncryptEnvOption, 0)
 	source := ""
 
 	for k, v := range sharedOptions {
@@ -184,17 +183,15 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 			value.Configs.TokenSecretKey = secretKeyRef.Key
 		default:
 			if key != "quota" {
-				envVarRegex, err := regexp.Compile("^[a-zA-Z_][a-zA-Z0-9_]*$")
+				envName := utils.ConvertDashToUnderscore(key)
+				err := utils.CheckValidateEnvName(envName)
 				if err != nil {
 					return options, err
 				}
-				if !envVarRegex.MatchString(key) {
-					return options, fmt.Errorf("%s is not a valid Linux environment variable name", key)
-				}
-				options[key] = "${" + key + "}"
-				value.Configs.EncryptOptions = append(value.Configs.EncryptOptions,
-					EncryptOption{
-						Name:             key,
+				options[key] = "${" + envName + "}"
+				value.Configs.EncryptEnvOptions = append(value.Configs.EncryptEnvOptions,
+					EncryptEnvOption{
+						Name:             envName,
 						SecretKeyRefName: secretKeyRef.Name,
 						SecretKeyRefKey:  secretKeyRef.Key,
 					})
@@ -222,17 +219,15 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 			value.Configs.TokenSecretKey = secretKeyRef.Key
 		default:
 			if key != "quota" {
-				envVarRegex, err := regexp.Compile("^[a-zA-Z_][a-zA-Z0-9_]*$")
+				envName := utils.ConvertDashToUnderscore(key)
+				err := utils.CheckValidateEnvName(envName)
 				if err != nil {
 					return options, err
 				}
-				if !envVarRegex.MatchString(key) {
-					return options, fmt.Errorf("%s is not a valid Linux environment variable name", key)
-				}
-				options[key] = "${" + key + "}"
-				value.Configs.EncryptOptions = append(value.Configs.EncryptOptions,
-					EncryptOption{
-						Name:             key,
+				options[key] = "${" + envName + "}"
+				value.Configs.EncryptEnvOptions = append(value.Configs.EncryptEnvOptions,
+					EncryptEnvOption{
+						Name:             envName,
 						SecretKeyRefName: secretKeyRef.Name,
 						SecretKeyRefKey:  secretKeyRef.Key,
 					})
