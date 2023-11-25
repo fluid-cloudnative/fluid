@@ -18,6 +18,7 @@ package juicefs
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -127,12 +128,13 @@ func (j *JuiceFSEngine) transformFuseNodeSelector(runtime *datav1alpha1.JuiceFSR
 
 // genValue: generate the value of juicefs
 func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *datav1alpha1.Level, value *JuiceFS,
-	SharedOptions map[string]string, SharedEncryptOptions []datav1alpha1.EncryptOption) (map[string]string, error) {
+	sharedOptions map[string]string, sharedEncryptOptions []datav1alpha1.EncryptOption) (map[string]string, error) {
 	options := make(map[string]string)
 	value.Configs.Name = mount.Name
+	value.Configs.EncryptOptions = make([]EncryptOption, 0)
 	source := ""
 
-	for k, v := range SharedOptions {
+	for k, v := range sharedOptions {
 		switch k {
 		case JuiceStorage:
 			value.Configs.Storage = v
@@ -162,7 +164,7 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 		}
 	}
 
-	for _, encryptOption := range SharedEncryptOptions {
+	for _, encryptOption := range sharedEncryptOptions {
 		key := encryptOption.Name
 		secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
 
@@ -180,6 +182,23 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 		case JuiceToken:
 			value.Configs.TokenSecret = secretKeyRef.Name
 			value.Configs.TokenSecretKey = secretKeyRef.Key
+		default:
+			if key != "quota" {
+				envVarRegex, err := regexp.Compile("^[a-zA-Z_][a-zA-Z0-9_]*$")
+				if err != nil {
+					return options, err
+				}
+				if !envVarRegex.MatchString(key) {
+					return options, fmt.Errorf("%s is not a valid Linux environment variable name", key)
+				}
+				options[key] = "${" + key + "}"
+				value.Configs.EncryptOptions = append(value.Configs.EncryptOptions,
+					EncryptOption{
+						Name:             key,
+						SecretKeyRefName: secretKeyRef.Name,
+						SecretKeyRefKey:  secretKeyRef.Key,
+					})
+			}
 		}
 	}
 
@@ -201,6 +220,23 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 		case JuiceToken:
 			value.Configs.TokenSecret = secretKeyRef.Name
 			value.Configs.TokenSecretKey = secretKeyRef.Key
+		default:
+			if key != "quota" {
+				envVarRegex, err := regexp.Compile("^[a-zA-Z_][a-zA-Z0-9_]*$")
+				if err != nil {
+					return options, err
+				}
+				if !envVarRegex.MatchString(key) {
+					return options, fmt.Errorf("%s is not a valid Linux environment variable name", key)
+				}
+				options[key] = "${" + key + "}"
+				value.Configs.EncryptOptions = append(value.Configs.EncryptOptions,
+					EncryptOption{
+						Name:             key,
+						SecretKeyRefName: secretKeyRef.Name,
+						SecretKeyRefKey:  secretKeyRef.Key,
+					})
+			}
 		}
 	}
 

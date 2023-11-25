@@ -45,19 +45,26 @@ type JuiceFS struct {
 }
 
 type Configs struct {
-	Name               string `json:"name"`
-	AccessKeySecret    string `json:"accesskeySecret,omitempty"`
-	AccessKeySecretKey string `json:"accesskeySecretKey,omitempty"`
-	SecretKeySecret    string `json:"secretkeySecret,omitempty"`
-	SecretKeySecretKey string `json:"secretkeySecretKey,omitempty"`
-	Bucket             string `json:"bucket,omitempty"`
-	MetaUrlSecret      string `json:"metaurlSecret,omitempty"`
-	MetaUrlSecretKey   string `json:"metaurlSecretKey,omitempty"`
-	TokenSecret        string `json:"tokenSecret,omitempty"`
-	TokenSecretKey     string `json:"tokenSecretKey,omitempty"`
-	Storage            string `json:"storage,omitempty"`
-	FormatCmd          string `json:"formatCmd,omitempty"`
-	QuotaCmd           string `json:"quotaCmd,omitempty"`
+	Name               string          `json:"name"`
+	AccessKeySecret    string          `json:"accesskeySecret,omitempty"`
+	AccessKeySecretKey string          `json:"accesskeySecretKey,omitempty"`
+	SecretKeySecret    string          `json:"secretkeySecret,omitempty"`
+	SecretKeySecretKey string          `json:"secretkeySecretKey,omitempty"`
+	Bucket             string          `json:"bucket,omitempty"`
+	MetaUrlSecret      string          `json:"metaurlSecret,omitempty"`
+	MetaUrlSecretKey   string          `json:"metaurlSecretKey,omitempty"`
+	TokenSecret        string          `json:"tokenSecret,omitempty"`
+	TokenSecretKey     string          `json:"tokenSecretKey,omitempty"`
+	Storage            string          `json:"storage,omitempty"`
+	FormatCmd          string          `json:"formatCmd,omitempty"`
+	QuotaCmd           string          `json:"quotaCmd,omitempty"`
+	EncryptOptions     []EncryptOption `json:"encryptOptions,omitempty"`
+}
+
+type EncryptOption struct {
+	Name             string `json:"name"` // option and env name
+	SecretKeyRefName string `json:"secretKeyRefName"`
+	SecretKeyRefKey  string `json:"secretKeyRefKey"`
 }
 
 type Worker struct {
