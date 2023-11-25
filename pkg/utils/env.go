@@ -18,9 +18,12 @@ package utils
 
 import (
 	"os"
+	"regexp"
 	"strconv"
 	"time"
 )
+
+var envVarRegex *regexp.Regexp
 
 func GetDurationValueFromEnv(key string, defaultValue time.Duration) (value time.Duration) {
 	var err error
@@ -78,4 +81,14 @@ func GetStringValueFromEnv(key string, defaultValue string) (value string) {
 	}
 
 	return defaultValue
+}
+
+func IsValidateEnvName(key string) (valid bool, err error) {
+	if envVarRegex == nil {
+		envVarRegex, err = regexp.Compile("^[a-zA-Z_][a-zA-Z0-9_]*$")
+		if err != nil {
+			return
+		}
+	}
+	return envVarRegex.MatchString(key), nil
 }
