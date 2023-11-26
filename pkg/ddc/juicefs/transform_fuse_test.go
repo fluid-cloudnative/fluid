@@ -641,8 +641,8 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 				"a": "c",
 				// "subdir":    "/test",
 				// "cache-dir": "/dev",
-				"access-key2": "${access_key2}",
-				"secret-key2": "${secret_key2}",
+				// "access-key2": "${access_key2}",
+				// "secret-key2": "${secret_key2}",
 			},
 		}, {
 			name: "test-shared-mirror-buckets",
@@ -717,8 +717,8 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 				"a": "c",
 				// "subdir":    "/test",
 				// "cache-dir": "/dev",
-				"access-key2": "${access_key2}",
-				"secret-key2": "${secret_key2}",
+				// "access-key2": "${access_key2}",
+				// "secret-key2": "${secret_key2}",
 			},
 		},
 	}
@@ -983,6 +983,39 @@ func TestJuiceFSEngine_genFormatCmd(t *testing.T) {
 				}, options: map[string]string{},
 			},
 			wantFormatCmd: "/usr/bin/juicefs auth --token=${TOKEN} --accesskey=${ACCESS_KEY} --secretkey=${SECRET_KEY} --bucket=http://127.0.0.1:9000/minio/test test-enterprise",
+		}, {
+			name: "test-mirror-bucket",
+			args: args{
+				value: &JuiceFS{
+					FullnameOverride: "test-mirror-bucket",
+					Edition:          "enterprise",
+					Source:           "test-mirror-bucket",
+					Configs: Configs{
+						Name:            "test-mirror-bucket",
+						AccessKeySecret: "test",
+						SecretKeySecret: "test",
+						Bucket:          "http://127.0.0.1:9000/minio/test",
+						TokenSecret:     "test",
+						EncryptEnvOptions: []EncryptEnvOption{
+							{
+								Name:    "access-key2",
+								EnvName: "access_key2",
+							}, {
+								Name:    "secret-key2",
+								EnvName: "secret_key2",
+							},
+						},
+					},
+					Fuse: Fuse{
+						SubPath:       "/",
+						MountPath:     "/test",
+						HostMountPath: "/test",
+					},
+				}, options: map[string]string{
+					"bucket2": "http://127.0.0.1:9001/minio/test",
+				},
+			},
+			wantFormatCmd: "/usr/bin/juicefs auth --token=${TOKEN} --accesskey=${ACCESS_KEY} --secretkey=${SECRET_KEY} --bucket=http://127.0.0.1:9000/minio/test --bucket2=http://127.0.0.1:9001/minio/test --access-key2=${access_key2} --secret-key2=${secret_key2} test-mirror-bucket",
 		},
 	}
 	for _, tt := range tests {
@@ -994,7 +1027,8 @@ func TestJuiceFSEngine_genFormatCmd(t *testing.T) {
 			}
 			j.genFormatCmd(tt.args.value, j.runtime.Spec.Configs, tt.args.options)
 			if tt.args.value.Configs.FormatCmd != tt.wantFormatCmd {
-				t.Errorf("genMount() value = %v", tt.args.value)
+				// t.Errorf("genMount() value = %v", tt.args.value)
+				t.Errorf("genMount() got = %v, want %v", tt.args.value.Configs.FormatCmd, tt.wantFormatCmd)
 			}
 		})
 	}
