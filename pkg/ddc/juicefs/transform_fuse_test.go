@@ -644,6 +644,82 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 				"access-key2": "${access_key2}",
 				"secret-key2": "${secret_key2}",
 			},
+		}, {
+			name: "test-shared-mirror-buckets",
+			fields: fields{
+				name:        "test-mirror-buckets",
+				namespace:   "fluid",
+				runtimeType: common.JuiceFSRuntime,
+			},
+			args: args{
+				sharedOptions: map[string]string{"a": "b"},
+				sharedEncryptOptions: []datav1alpha1.EncryptOption{{
+					Name: JuiceMetaUrl,
+					ValueFrom: datav1alpha1.EncryptOptionSource{SecretKeyRef: datav1alpha1.SecretKeySelector{
+						Name: "test-mirror-buckets",
+						Key:  "access-key",
+					}}}, {
+					Name: JuiceAccessKey,
+					ValueFrom: datav1alpha1.EncryptOptionSource{SecretKeyRef: datav1alpha1.SecretKeySelector{
+						Name: "test-mirror-buckets",
+						Key:  "secret-key",
+					}}}, {
+					Name: JuiceSecretKey,
+					ValueFrom: datav1alpha1.EncryptOptionSource{SecretKeyRef: datav1alpha1.SecretKeySelector{
+						Name: "test-mirror-buckets",
+						Key:  "metaurl",
+					}}}, {
+					Name: "access-key2",
+					ValueFrom: datav1alpha1.EncryptOptionSource{SecretKeyRef: datav1alpha1.SecretKeySelector{
+						Name: "test-mirror-buckets",
+						Key:  "access-key2",
+					}}}, {
+					Name: "secret-key2",
+					ValueFrom: datav1alpha1.EncryptOptionSource{SecretKeyRef: datav1alpha1.SecretKeySelector{
+						Name: "test-mirror-buckets",
+						Key:  "secret-key2",
+					}}},
+				},
+				mount: datav1alpha1.Mount{
+					MountPoint: "juicefs:///test",
+					Options:    map[string]string{"a": "c"},
+					Name:       "test-mirror-buckets",
+					EncryptOptions: []datav1alpha1.EncryptOption{{
+						Name: JuiceMetaUrl,
+						ValueFrom: datav1alpha1.EncryptOptionSource{SecretKeyRef: datav1alpha1.SecretKeySelector{
+							Name: "test-mirror-buckets",
+							Key:  "metaurl",
+						}}}, {
+						Name: JuiceAccessKey,
+						ValueFrom: datav1alpha1.EncryptOptionSource{SecretKeyRef: datav1alpha1.SecretKeySelector{
+							Name: "test-mirror-buckets",
+							Key:  "access-key",
+						}}}, {
+						Name: JuiceSecretKey,
+						ValueFrom: datav1alpha1.EncryptOptionSource{SecretKeyRef: datav1alpha1.SecretKeySelector{
+							Name: "test-mirror-buckets",
+							Key:  "secret-key",
+						}}},
+					},
+				},
+				tiredStoreLevel: &datav1alpha1.Level{
+					MediumType: "SSD",
+					Path:       "/dev",
+				},
+				value: &JuiceFS{
+					FullnameOverride: "test-mirror-buckets",
+					Fuse:             Fuse{},
+					Worker:           Worker{},
+				},
+			},
+			wantErr: false,
+			wantOptions: map[string]string{
+				"a": "c",
+				// "subdir":    "/test",
+				// "cache-dir": "/dev",
+				"access-key2": "${access_key2}",
+				"secret-key2": "${secret_key2}",
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -853,7 +929,8 @@ func TestJuiceFSEngine_genMount(t *testing.T) {
 
 func TestJuiceFSEngine_genFormatCmd(t *testing.T) {
 	type args struct {
-		value *JuiceFS
+		value   *JuiceFS
+		options map[string]string
 	}
 	tests := []struct {
 		name          string
@@ -880,7 +957,7 @@ func TestJuiceFSEngine_genFormatCmd(t *testing.T) {
 						MountPath:     "/test",
 						HostMountPath: "/test",
 					},
-				},
+				}, options: map[string]string{},
 			},
 			wantFormatCmd: "/usr/local/bin/juicefs format --access-key=${ACCESS_KEY} --secret-key=${SECRET_KEY} --storage=minio --bucket=http://127.0.0.1:9000/minio/test redis://127.0.0.1:6379 test-community",
 		},
@@ -903,7 +980,7 @@ func TestJuiceFSEngine_genFormatCmd(t *testing.T) {
 						MountPath:     "/test",
 						HostMountPath: "/test",
 					},
-				},
+				}, options: map[string]string{},
 			},
 			wantFormatCmd: "/usr/bin/juicefs auth --token=${TOKEN} --accesskey=${ACCESS_KEY} --secretkey=${SECRET_KEY} --bucket=http://127.0.0.1:9000/minio/test test-enterprise",
 		},
@@ -915,7 +992,7 @@ func TestJuiceFSEngine_genFormatCmd(t *testing.T) {
 					Spec: datav1alpha1.JuiceFSRuntimeSpec{},
 				},
 			}
-			j.genFormatCmd(tt.args.value, j.runtime.Spec.Configs)
+			j.genFormatCmd(tt.args.value, j.runtime.Spec.Configs, tt.args.options)
 			if tt.args.value.Configs.FormatCmd != tt.wantFormatCmd {
 				t.Errorf("genMount() value = %v", tt.args.value)
 			}

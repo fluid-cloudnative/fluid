@@ -62,7 +62,8 @@ type Configs struct {
 }
 
 type EncryptEnvOption struct {
-	Name             string `json:"name"` // env name
+	Name             string `json:"name"`    //  name
+	EnvName          string `json:"envName"` //  envName
 	SecretKeyRefName string `json:"secretKeyRefName"`
 	SecretKeyRefKey  string `json:"secretKeyRefKey"`
 }

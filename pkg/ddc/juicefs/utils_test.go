@@ -1104,3 +1104,80 @@ echo "$(date '+%Y/%m/%d %H:%M:%S').$(printf "%03d" $(($(date '+%N')/1000))) juic
 		})
 	}
 }
+
+// TestFilterEncryptEnvOptionsWithKeys runs multiple test cases to ensure filterEncryptEnvOptionsWithKeys function behaves as expected.
+func TestFilterEncryptEnvOptionsWithKeys(t *testing.T) {
+	tests := []struct {
+		name           string
+		opts           []EncryptEnvOption
+		keys           []string
+		expectedResult []EncryptEnvOption
+	}{
+		{
+			name:           "empty options",
+			opts:           []EncryptEnvOption{},
+			keys:           []string{"name1"},
+			expectedResult: []EncryptEnvOption{},
+		},
+		{
+			name:           "single option, no match",
+			opts:           []EncryptEnvOption{{Name: "name1", EnvName: "envName1", SecretKeyRefName: "refName1", SecretKeyRefKey: "refKey1"}},
+			keys:           []string{"non-existent"},
+			expectedResult: []EncryptEnvOption{},
+		},
+		{
+			name:           "single option, matches",
+			opts:           []EncryptEnvOption{{Name: "name1", EnvName: "envName1", SecretKeyRefName: "refName1", SecretKeyRefKey: "refKey1"}},
+			keys:           []string{"name1"},
+			expectedResult: []EncryptEnvOption{{Name: "name1", EnvName: "envName1", SecretKeyRefName: "refName1", SecretKeyRefKey: "refKey1"}},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := filterEncryptEnvOptionsWithKeys(test.opts, test.keys)
+
+			if !reflect.DeepEqual(result, test.expectedResult) {
+				t.Errorf("Expected %v, but got %v", test.expectedResult, result)
+			}
+		})
+	}
+}
+
+func TestFilterOptionsWithKeys(t *testing.T) {
+	tests := []struct {
+		name           string
+		opts           map[string]string
+		keys           []string
+		expectedResult map[string]string
+	}{
+		{
+			name:           "empty map",
+			opts:           map[string]string{},
+			keys:           []string{"name1"},
+			expectedResult: map[string]string{},
+		},
+		{
+			name:           "single option, no match",
+			opts:           map[string]string{"name1": "value1"},
+			keys:           []string{"non-existent"},
+			expectedResult: map[string]string{},
+		},
+		{
+			name:           "single option, matches",
+			opts:           map[string]string{"name1": "value1"},
+			keys:           []string{"name1"},
+			expectedResult: map[string]string{"name1": "value1"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := filterOptionsWithKeys(test.opts, test.keys)
+
+			if !reflect.DeepEqual(result, test.expectedResult) {
+				t.Errorf("Expected %v, but got %v", test.expectedResult, result)
+			}
+		})
+	}
+}

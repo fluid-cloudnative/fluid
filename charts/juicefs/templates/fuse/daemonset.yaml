@@ -109,7 +109,7 @@ spec:
           {{- end }}
           {{- if and .Values.configs.encryptEnvOptions (gt (len .Values.configs.encryptEnvOptions) 0) }}
             {{- range $encryptEnvOption := .Values.configs.encryptEnvOptions }}
-          - name: {{ $encryptEnvOption.name }}
+          - name: {{ $encryptEnvOption.envName }}
             valueFrom:
               secretKeyRef:
                 name: {{ $encryptEnvOption.secretKeyRefName }}
