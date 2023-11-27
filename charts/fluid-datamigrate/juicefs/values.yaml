@@ -87,3 +87,7 @@ datamigrate:
   # Optional
   # Description: tolerations specs for DataMigrate pods
   tolerations: []
+
+  # Optional
+  # Description: optional container resources
+  resources: {}

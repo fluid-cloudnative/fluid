@@ -80,6 +80,10 @@ spec:
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh", "-c"]
           args: ["/scripts/jindo_env_init.sh && /scripts/jindo_dataload.sh"]
+          {{- if .Values.dataloader.resources }}
+          resources:
+          {{- toYaml .Values.dataloader.resources | nindent 12 }}
+          {{- end }}
           {{- $targetPaths := "" }}
           {{- range .Values.dataloader.targetPaths }}
           {{- $targetPaths = cat $targetPaths (required "Path must be set" .path) ":" }}

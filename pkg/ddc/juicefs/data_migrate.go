@@ -131,6 +131,7 @@ func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequest
 		ImagePullSecrets: imagePullSecrets,
 		Policy:           string(dataMigrate.Spec.Policy),
 		Schedule:         dataMigrate.Spec.Schedule,
+		Resources:        dataMigrate.Spec.Resources,
 	}
 
 	if dataMigrate.Spec.Affinity != nil {

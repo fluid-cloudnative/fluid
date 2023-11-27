@@ -145,6 +145,7 @@ func (e *AlluxioEngine) genDataLoadValue(image string, targetDataset *datav1alph
 		ImagePullSecrets: imagePullSecrets,
 		Policy:           string(dataload.Spec.Policy),
 		Schedule:         dataload.Spec.Schedule,
+		Resources:        dataload.Spec.Resources,
 	}
 
 	// pod affinity

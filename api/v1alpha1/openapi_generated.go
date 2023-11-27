@@ -1225,11 +1225,18 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoadSpec(ref common.Referen
 							Format:      "int32",
 						},
 					},
+					"resources": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Resources that will be requested by the DataLoad job. <br>",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationRef", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TargetDataset", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TargetPath", "k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.Toleration"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationRef", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TargetDataset", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TargetPath", "k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.Toleration"},
 	}
 }
 
@@ -1478,12 +1485,19 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateSpec(ref common.Refe
 							Format:      "int32",
 						},
 					},
+					"resources": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Resources that will be requested by the DataMigrate job. <br>",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
+						},
+					},
 				},
 				Required: []string{"from", "to"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataToMigrate", "github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationRef", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.Toleration"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataToMigrate", "github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationRef", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.Toleration"},
 	}
 }
 
@@ -5452,12 +5466,19 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ScriptProcessor(ref common.Refe
 							},
 						},
 					},
+					"resources": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Resources that will be requested by the DataProcess job. <br>",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
+						},
+					},
 				},
 				Required: []string{"source"},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.EnvVar", "k8s.io/api/core/v1.Volume", "k8s.io/api/core/v1.VolumeMount"},
+			"k8s.io/api/core/v1.EnvVar", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.Volume", "k8s.io/api/core/v1.VolumeMount"},
 	}
 }
 

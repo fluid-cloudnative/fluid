@@ -86,6 +86,10 @@ spec:
               imagePullPolicy: IfNotPresent
               command: ["/bin/sh", "-c"]
               args: ["/scripts/alluxio_env_init.sh && /scripts/alluxio_dataload.sh"]
+              {{- if .Values.dataloader.resources }}
+              resources:
+              {{- toYaml .Values.dataloader.resources | nindent 16}}
+              {{- end }}
               {{- $targetPaths := "" }}
               {{- range .Values.dataloader.targetPaths }}
               {{- $targetPaths = cat $targetPaths (required "Path must be set" .path) ":" }}

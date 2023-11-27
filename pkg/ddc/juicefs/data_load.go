@@ -162,6 +162,7 @@ func (j *JuiceFSEngine) genDataLoadValue(image string, cacheinfo map[string]stri
 		ImagePullSecrets: imagePullSecrets,
 		Policy:           string(dataload.Spec.Policy),
 		Schedule:         dataload.Spec.Schedule,
+		Resources:        dataload.Spec.Resources,
 	}
 
 	// pod affinity

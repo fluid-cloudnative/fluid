@@ -31,7 +31,7 @@ from framework.step import SimpleStep, StatusCheckStep, dummy_back, currying_fn
 
 
 def check_cron_job(dataload_name, namespace):
-    api = client.BatchV1Api()
+    api = client.BatchV1beta1Api()
     cronjob_name = dataload_name+"-loader-job"
     try:
         cronjob = api.read_namespaced_cron_job(name=cronjob_name, namespace=namespace)
