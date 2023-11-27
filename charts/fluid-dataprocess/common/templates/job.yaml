@@ -53,9 +53,11 @@ spec:
           {{ toYaml .Values.dataProcess.scriptProcessor.command | nindent 10 }}
           {{- end }}
           args: ["/fluid-scripts/preprocess.sh"]
-          {{- if .Values.dataProcess.scriptProcessor.envs }}
+          {{- if .Values.dataProcess.scriptProcessor.resources}}
           resources:
           {{- toYaml .Values.dataProcess.scriptProcessor.resources | nindent 12}}
+          {{- end }}
+          {{- if .Values.dataProcess.scriptProcessor.envs }} 
           env:
           {{ toYaml .Values.dataProcess.scriptProcessor.envs | nindent 10 }}
           {{- end }}

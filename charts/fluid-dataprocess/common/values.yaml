@@ -24,8 +24,6 @@ dataProcess:
     envs: []
     volumes: []
     volumeMounts: []
-    resources:
-      requests: {}
-      limits: {}
+    resources: {}
   jobProcessor:
     podSpec: {}
