@@ -68,8 +68,10 @@ spec:
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh", "-c"]
           args: ["/scripts/juicefs_datamigrate.sh"]
+          {{- if .Values.datamigrate.resources }}
           resources:
           {{- toYaml .Values.datamigrate.resources | nindent 12}}
+          {{- end }}
           env:
             {{- range $key, $val := .Values.datamigrate.options }}
             {{- if eq $key "timeout" }}
