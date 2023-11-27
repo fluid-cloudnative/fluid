@@ -85,6 +85,10 @@ spec:
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh", "-c"]
           args: ["/scripts/juicefs_dataload.sh"]
+          {{- if .Values.dataloader.resources }}
+          resources:
+          {{- toYaml .Values.dataloader.resources | nindent 12}}
+          {{- end }}
           {{- $targetPaths := "" }}
           {{- range .Values.dataloader.targetPaths }}
           {{- $targetPaths = cat $targetPaths (required "Path must be set" .path) "" }}
@@ -96,10 +100,6 @@ spec:
           {{- $pathReplicas = cat $pathReplicas ( default 1 .replicas ) ":"}}
           {{- end }}
           {{- $pathReplicas = $pathReplicas | nospace | trimSuffix ":"}}
-          {{- if .Values.dataloader.resources }}
-          resources:
-          {{- toYaml .Values.dataloader.resources | nindent 12}}
-          {{- end }}
           env:
             - name: STORAGE_ADDRESS
               valueFrom:
