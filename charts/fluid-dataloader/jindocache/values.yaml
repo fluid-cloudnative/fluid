@@ -104,6 +104,4 @@ dataloader:
 
   # Optional
   # Description: optional container resources
-  resources:
-    requests: {}
-    limits: {}
+  resources: {}

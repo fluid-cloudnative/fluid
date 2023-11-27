@@ -97,8 +97,10 @@ spec:
               {{- $pathReplicas = cat $pathReplicas ( default 1 .replicas ) ":"}}
               {{- end }}
               {{- $pathReplicas = $pathReplicas | nospace | trimSuffix ":"}}
+              {{- if .Values.dataloader.resources }}
               resources:
               {{- toYaml .Values.dataloader.resources | nindent 16}}
+              {{- end }}
               env:
                 - name: ALLUXIO_CLIENT_HOSTNAME
                   valueFrom:
