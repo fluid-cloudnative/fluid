@@ -61,10 +61,10 @@ func TestTransformFuse(t *testing.T) {
 			Namespace: "fluid",
 		},
 		Data: map[string][]byte{
-			"access-key":  []byte(base64.StdEncoding.EncodeToString([]byte("test"))),
-			"secret-key":  []byte(base64.StdEncoding.EncodeToString([]byte("test"))),
-			"access-key2": []byte(base64.StdEncoding.EncodeToString([]byte("test2"))),
-			"secret-key2": []byte(base64.StdEncoding.EncodeToString([]byte("test2"))),
+			"access-key": []byte(base64.StdEncoding.EncodeToString([]byte("test"))),
+			"secret-key": []byte(base64.StdEncoding.EncodeToString([]byte("test"))),
+			AccessKey2:   []byte(base64.StdEncoding.EncodeToString([]byte("test2"))),
+			SecretKey2:   []byte(base64.StdEncoding.EncodeToString([]byte("test2"))),
 		},
 	}
 	testObjs := []runtime.Object{}
@@ -345,18 +345,18 @@ func TestTransformFuse(t *testing.T) {
 										Key:  "metaurl",
 									}},
 							}, {
-								Name: "secret-key2",
+								Name: SecretKey2,
 								ValueFrom: datav1alpha1.EncryptOptionSource{
 									SecretKeyRef: datav1alpha1.SecretKeySelector{
 										Name: "test3",
-										Key:  "secret-key2",
+										Key:  SecretKey2,
 									}},
 							}, {
-								Name: "access-key2",
+								Name: AccessKey2,
 								ValueFrom: datav1alpha1.EncryptOptionSource{
 									SecretKeyRef: datav1alpha1.SecretKeySelector{
 										Name: "test3",
-										Key:  "access-key2",
+										Key:  AccessKey2,
 									}},
 							}},
 					}},
@@ -405,11 +405,11 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 			Namespace: "fluid",
 		},
 		Data: map[string][]byte{
-			"token":       []byte(base64.StdEncoding.EncodeToString([]byte("test"))),
-			"access-key":  []byte(base64.StdEncoding.EncodeToString([]byte("test"))),
-			"secret-key":  []byte(base64.StdEncoding.EncodeToString([]byte("test"))),
-			"access-key2": []byte(base64.StdEncoding.EncodeToString([]byte("test2"))),
-			"secret-key2": []byte(base64.StdEncoding.EncodeToString([]byte("test2"))),
+			"token":      []byte(base64.StdEncoding.EncodeToString([]byte("test"))),
+			"access-key": []byte(base64.StdEncoding.EncodeToString([]byte("test"))),
+			"secret-key": []byte(base64.StdEncoding.EncodeToString([]byte("test"))),
+			AccessKey2:   []byte(base64.StdEncoding.EncodeToString([]byte("test2"))),
+			SecretKey2:   []byte(base64.StdEncoding.EncodeToString([]byte("test2"))),
 		},
 	}
 
@@ -614,15 +614,15 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 							Name: "test-mirror-buckets",
 							Key:  "secret-key",
 						}}}, {
-						Name: "access-key2",
+						Name: AccessKey2,
 						ValueFrom: datav1alpha1.EncryptOptionSource{SecretKeyRef: datav1alpha1.SecretKeySelector{
 							Name: "test-mirror-buckets",
-							Key:  "access-key2",
+							Key:  AccessKey2,
 						}}}, {
-						Name: "secret-key2",
+						Name: SecretKey2,
 						ValueFrom: datav1alpha1.EncryptOptionSource{SecretKeyRef: datav1alpha1.SecretKeySelector{
 							Name: "test-mirror-buckets",
-							Key:  "secret-key2",
+							Key:  SecretKey2,
 						}}},
 					},
 				},
@@ -641,8 +641,8 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 				"a": "c",
 				// "subdir":    "/test",
 				// "cache-dir": "/dev",
-				// "access-key2": "${access_key2}",
-				// "secret-key2": "${secret_key2}",
+				// AccessKey2: "${access_key2}",
+				// SecretKey2: "${secret_key2}",
 			},
 		}, {
 			name: "test-shared-mirror-buckets",
@@ -669,15 +669,15 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 						Name: "test-mirror-buckets",
 						Key:  "metaurl",
 					}}}, {
-					Name: "access-key2",
+					Name: AccessKey2,
 					ValueFrom: datav1alpha1.EncryptOptionSource{SecretKeyRef: datav1alpha1.SecretKeySelector{
 						Name: "test-mirror-buckets",
-						Key:  "access-key2",
+						Key:  AccessKey2,
 					}}}, {
-					Name: "secret-key2",
+					Name: SecretKey2,
 					ValueFrom: datav1alpha1.EncryptOptionSource{SecretKeyRef: datav1alpha1.SecretKeySelector{
 						Name: "test-mirror-buckets",
-						Key:  "secret-key2",
+						Key:  SecretKey2,
 					}}},
 				},
 				mount: datav1alpha1.Mount{
@@ -717,8 +717,8 @@ func TestJuiceFSEngine_genValue(t *testing.T) {
 				"a": "c",
 				// "subdir":    "/test",
 				// "cache-dir": "/dev",
-				// "access-key2": "${access_key2}",
-				// "secret-key2": "${secret_key2}",
+				// AccessKey2: "${access_key2}",
+				// SecretKey2: "${secret_key2}",
 			},
 		},
 	}
@@ -998,10 +998,10 @@ func TestJuiceFSEngine_genFormatCmd(t *testing.T) {
 						TokenSecret:     "test",
 						EncryptEnvOptions: []EncryptEnvOption{
 							{
-								Name:    "access-key2",
+								Name:    AccessKey2,
 								EnvName: "access_key2",
 							}, {
-								Name:    "secret-key2",
+								Name:    SecretKey2,
 								EnvName: "secret_key2",
 							},
 						},
@@ -1012,7 +1012,7 @@ func TestJuiceFSEngine_genFormatCmd(t *testing.T) {
 						HostMountPath: "/test",
 					},
 				}, options: map[string]string{
-					"bucket2": "http://127.0.0.1:9001/minio/test",
+					JuiceBucket2: "http://127.0.0.1:9001/minio/test",
 				},
 			},
 			wantFormatCmd: "/usr/bin/juicefs auth --token=${TOKEN} --accesskey=${ACCESS_KEY} --secretkey=${SECRET_KEY} --bucket=http://127.0.0.1:9000/minio/test --bucket2=http://127.0.0.1:9001/minio/test --access-key2=${access_key2} --secret-key2=${secret_key2} test-mirror-bucket",

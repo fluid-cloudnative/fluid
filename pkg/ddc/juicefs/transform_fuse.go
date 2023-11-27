@@ -397,7 +397,7 @@ func (j *JuiceFSEngine) genFormatCmd(value *JuiceFS, config *[]string, options m
 		// allow Options for CommunityEdition
 		ceAllowOptions []string = []string{}
 		// allow Options for CommunityEdition
-		eeAllowOptions []string = []string{"bucket2", "access-key2", "secret-key2"}
+		eeAllowOptions []string = []string{JuiceBucket2, AccessKey2, SecretKey2}
 	)
 	args := make([]string, 0)
 	if config != nil {
