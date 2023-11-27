@@ -101,3 +101,7 @@ dataloader:
   # nodeSelector:
   #  diskType: "ssd"
   nodeSelector: {}
+
+  # Optional
+  # Description: optional container resources
+  resources: {}

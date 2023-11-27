@@ -59,6 +59,8 @@ type ScriptProcessor struct {
 	Volumes []corev1.Volume `json:"volumes,omitempty"`
 
 	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
+
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 type JobProcessor struct {

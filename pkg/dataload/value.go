@@ -74,6 +74,9 @@ type DataLoadInfo struct {
 
 	// scheduler name
 	SchedulerName string `json:"schedulerName,omitempty"`
+
+	// Resources that will be requested by DataLoad job.
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 type TargetPath struct {
