@@ -1137,6 +1137,10 @@ func TestFilterEncryptEnvOptionsWithKeys(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			result := filterEncryptEnvOptionsWithKeys(test.opts, test.keys)
 
+			if len(result) == 0 && len(test.expectedResult) == 0 {
+				return
+			}
+
 			if !reflect.DeepEqual(result, test.expectedResult) {
 				t.Errorf("Expected %v, but got %v", test.expectedResult, result)
 			}
@@ -1174,6 +1178,10 @@ func TestFilterOptionsWithKeys(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result := filterOptionsWithKeys(test.opts, test.keys)
+
+			if len(result) == 0 && len(test.expectedResult) == 0 {
+				return
+			}
 
 			if !reflect.DeepEqual(result, test.expectedResult) {
 				t.Errorf("Expected %v, but got %v", test.expectedResult, result)
