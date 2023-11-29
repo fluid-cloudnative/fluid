@@ -54,7 +54,7 @@ func init() {
 	}
 }
 
-func RegisterMutatingHandlers(client client.Client) {
+func RegisterMutatingHandlers(client client.Client) error {
 	// ignore the register error
 	_ = registry.Register(prefernodeswithoutcache.Name, prefernodeswithoutcache.NewPlugin)
 	_ = registry.Register(mountpropagationinjector.Name, mountpropagationinjector.NewPlugin)
@@ -62,27 +62,28 @@ func RegisterMutatingHandlers(client client.Client) {
 	_ = registry.Register(nodeaffinitywithcache.Name, nodeaffinitywithcache.NewPlugin)
 	_ = registry.Register(fusesidecar.Name, fusesidecar.NewPlugin)
 
-	// get the handlers through tbe config
+	// get the handlers through the config
 	cm, err := kubeclient.GetConfigmapByName(client, common.PluginProfileConfigMapName, fluidNameSpace)
 
 	// if has error, return empy handlers to avoid nil panic
 	if err != nil {
 		log.Error(err, "get plugins config map error")
 		cacheHandlers = &Handlers{}
-		return
+		return err
 	}
 	if cm == nil {
-		log.Error(errors.New("plugins config map not exist"), "skip mutating")
+		err = errors.New("plugins config map not exist")
 		cacheHandlers = &Handlers{}
-		return
+		return err
 	}
 
 	cacheHandlers, err = newHandler(client, cm)
 	if err != nil {
-		log.Error(err, "plugins config map format is wrong, skip mutating")
 		cacheHandlers = &Handlers{}
+		return err
 	}
 
+	return nil
 }
 
 type Handlers struct {
@@ -129,26 +130,41 @@ func newHandler(client client.Client, cm *corev1.ConfigMap) (handlers *Handlers,
 		pluginConfig[name] = profile.PluginConfig[i].Args
 	}
 
+	var podWithDatasetHandlerNames []string
 	for _, name := range profile.Plugins.Serverful.WithDataset {
 		if factory, ok := registry[name]; ok {
+			podWithDatasetHandlerNames = append(podWithDatasetHandlerNames, name)
 			handlers.podWithDatasetHandler = append(handlers.podWithDatasetHandler, factory(client, pluginConfig[name]))
 		}
 	}
+	log.Info("register podWithDatasetHandler", "names", podWithDatasetHandlerNames)
+
+	var podWithoutDatasetHandlerNames []string
 	for _, name := range profile.Plugins.Serverful.WithoutDataset {
 		if factory, ok := registry[name]; ok {
+			podWithoutDatasetHandlerNames = append(podWithoutDatasetHandlerNames, name)
 			handlers.podWithoutDatasetHandler = append(handlers.podWithoutDatasetHandler, factory(client, pluginConfig[name]))
 		}
 	}
+	log.Info("register podWithoutDatasetHandler", "names", podWithoutDatasetHandlerNames)
+
+	var serverlessPodWithDatasetHandlerNames []string
 	for _, name := range profile.Plugins.Serverless.WithDataset {
 		if factory, ok := registry[name]; ok {
+			serverlessPodWithDatasetHandlerNames = append(serverlessPodWithDatasetHandlerNames, name)
 			handlers.serverlessPodWithDatasetHandler = append(handlers.serverlessPodWithDatasetHandler, factory(client, pluginConfig[name]))
 		}
 	}
+	log.Info("register serverlessPodWithDatasetHandler", "names", serverlessPodWithDatasetHandlerNames)
+
+	var serverlessPodWithoutDatasetHandlerNames []string
 	for _, name := range profile.Plugins.Serverless.WithoutDataset {
 		if factory, ok := registry[name]; ok {
+			serverlessPodWithoutDatasetHandlerNames = append(serverlessPodWithoutDatasetHandlerNames, name)
 			handlers.serverlessPodWithoutDatasetHandler = append(handlers.serverlessPodWithoutDatasetHandler, factory(client, pluginConfig[name]))
 		}
 	}
+	log.Info("register serverlessPodWithoutDatasetHandler", "names", serverlessPodWithoutDatasetHandlerNames)
 
 	return handlers, nil
 }

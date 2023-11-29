@@ -153,7 +153,7 @@ webhook:
   forceReplacePluginsProfile: false
   pluginsProfile:
     plugins:
-      # serverful 场景下的插件
+      # serverful webhook plugins
       serverful:
         withDataset:
           - RequireNodeWithFuse
@@ -161,16 +161,15 @@ webhook:
           - MountPropagationInjector
         withoutDataset:
           - PreferNodesWithoutCache
-      # serverless 场景下的插件
+      # serverless webhook plugins
       serverless:
         withDataset:
           - FuseSidecar
         withoutDataset:
           - PreferNodesWithoutCache
-      # 插件配置
     pluginConfig:
       - name: NodeAffinityWithCache
-        # 插件配置的参数
+        # plugin args is a serialized yaml string.
         args: |
           preferred:
             # fluid existed node affinity, the name can not be modified.

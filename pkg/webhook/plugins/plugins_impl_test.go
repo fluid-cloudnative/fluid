@@ -228,7 +228,6 @@ func TestGetRegistryHandler(t *testing.T) {
 				Data: map[string]string{
 					common.PluginProfileKeyName: `
 plugins:
-  # serverful 场景下的插件
   serverful:
     withDataset:
     - RequireNodeWithFuse
@@ -236,16 +235,13 @@ plugins:
     - MountPropagationInjector
     withoutDataset:
     - PreferNodesWithoutCache
-  # serverless 场景下的插件
   serverless:
     withDataset:
     - FuseSidecar
     withoutDataset:
     - PreferNodesWithoutCache
-  # 插件配置
 pluginConfig:
   - name: NodeAffinityWithCache
-    # 插件配置的参数
     args: |
       preferred:
       # fluid existed node affinity, the name can not be modified.
@@ -258,7 +254,6 @@ pluginConfig:
       - name: topology.kubernetes.io/region
         weight: 10
       required:
-      # 默认强制亲和性使用 node 匹配
       - fluid.io/node
 `,
 				},
@@ -309,7 +304,7 @@ pluginConfig:
 			} else {
 				clientWithScheme = fake.NewFakeClientWithScheme(schema)
 			}
-			RegisterMutatingHandlers(clientWithScheme)
+			_ = RegisterMutatingHandlers(clientWithScheme)
 			plugins := GetRegistryHandler()
 			got := want{
 				podWithoutDatasetHandlerSize:           len(plugins.GetPodWithoutDatasetHandler()),
