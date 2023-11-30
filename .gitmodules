@@ -1,0 +1,6 @@
+[submodule "sdk/python"]
+	path = sdk/python
+	url = https://github.com/fluid-cloudnative/fluid-client-python.git
+[submodule "sdk/java"]
+	path = sdk/java
+	url = https://github.com/fluid-cloudnative/fluid-client-java.git
