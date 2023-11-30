@@ -41,6 +41,10 @@
             "default": ""
           }
         },
+        "networkMode": {
+          "description": "Whether to use hostnetwork or not",
+          "type": "string"
+        },
         "nodeSelector": {
           "description": "NodeSelector is a selector which must be true for the master to fit on a node",
           "type": "object",
@@ -48,6 +52,11 @@
             "type": "string",
             "default": ""
           }
+        },
+        "podMetadata": {
+          "description": "PodMetadata defines labels and annotations that will be propagated to Alluxio's pods",
+          "default": {},
+          "$ref": "#/definitions/.PodMetadata"
         },
         "ports": {
           "description": "Ports used by Alluxio(e.g. rpc: 19998 for master)",
@@ -75,6 +84,14 @@
           "description": "Resources that will be requested by the Alluxio component. \u003cbr\u003e \u003cbr\u003e Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources already allocated to the pod.",
           "default": {},
           "$ref": "#/definitions/v1.ResourceRequirements"
+        },
+        "volumeMounts": {
+          "description": "VolumeMounts specifies the volumes listed in \".spec.volumes\" to mount into the alluxio runtime component's filesystem.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.VolumeMount"
+          }
         }
       }
     },
@@ -91,7 +108,7 @@
           }
         },
         "cleanPolicy": {
-          "description": "CleanPolicy decides when to clean Alluxio Fuse pods. Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted OnDemand cleans fuse pod once th fuse pod on some node is not needed OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted Defaults to OnRuntimeDeleted",
+          "description": "CleanPolicy decides when to clean Alluxio Fuse pods. Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted OnDemand cleans fuse pod once the fuse pod on some node is not needed OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted Defaults to OnRuntimeDeleted",
           "type": "string"
         },
         "env": {
@@ -126,6 +143,10 @@
             "default": ""
           }
         },
+        "networkMode": {
+          "description": "Whether to use hostnetwork or not",
+          "type": "string"
+        },
         "nodeSelector": {
           "description": "NodeSelector is a selector which must be true for the fuse client to fit on a node, this option only effect when global is enabled",
           "type": "object",
@@ -133,6 +154,11 @@
             "type": "string",
             "default": ""
           }
+        },
+        "podMetadata": {
+          "description": "PodMetadata defines labels and annotations that will be propagated to Alluxio's fuse pods",
+          "default": {},
+          "$ref": "#/definitions/.PodMetadata"
         },
         "properties": {
           "description": "Configurable properties for Alluxio System. \u003cbr\u003e Refer to \u003ca href=\"https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html\"\u003eAlluxio Configuration Properties\u003c/a\u003e for more info",
@@ -146,6 +172,14 @@
           "description": "Resources that will be requested by Alluxio Fuse. \u003cbr\u003e \u003cbr\u003e Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources already allocated to the pod.",
           "default": {},
           "$ref": "#/definitions/v1.ResourceRequirements"
+        },
+        "volumeMounts": {
+          "description": "VolumeMounts specifies the volumes listed in \".spec.volumes\" to mount into the alluxio runtime component's filesystem.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.VolumeMount"
+          }
         }
       }
     },
@@ -258,10 +292,20 @@
             "default": ""
           }
         },
+        "management": {
+          "description": "RuntimeManagement defines policies when managing the runtime",
+          "default": {},
+          "$ref": "#/definitions/.RuntimeManagement"
+        },
         "master": {
           "description": "The component spec of Alluxio master",
           "default": {},
           "$ref": "#/definitions/.AlluxioCompTemplateSpec"
+        },
+        "podMetadata": {
+          "description": "PodMetadata defines labels and annotations that will be propagated to Alluxio's pods",
+          "default": {},
+          "$ref": "#/definitions/.PodMetadata"
         },
         "properties": {
           "description": "Configurable properties for Alluxio system. \u003cbr\u003e Refer to \u003ca href=\"https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html\"\u003eAlluxio Configuration Properties\u003c/a\u003e for more info",
@@ -285,24 +329,18 @@
           "default": {},
           "$ref": "#/definitions/.TieredStore"
         },
+        "volumes": {
+          "description": "Volumes is the list of Kubernetes volumes that can be mounted by the alluxio runtime components and/or fuses.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.Volume"
+          }
+        },
         "worker": {
           "description": "The component spec of Alluxio worker",
           "default": {},
           "$ref": "#/definitions/.AlluxioCompTemplateSpec"
-        }
-      }
-    },
-    ".BackupLocation": {
-      "description": "BackupLocation describes the final backup location of DataBackup",
-      "type": "object",
-      "properties": {
-        "nodeName": {
-          "description": "NodeName describes the nodeName of backup if Path is in the form of local://subpath",
-          "type": "string"
-        },
-        "path": {
-          "description": "Path describes the path of backup, in the form of local:///absolutePath or pvc://\u003cpvcName\u003e/subpath",
-          "type": "string"
         }
       }
     },
@@ -313,6 +351,22 @@
         "required": {
           "description": "Required specifies hard node constraints that must be met.",
           "$ref": "#/definitions/v1.NodeSelector"
+        }
+      }
+    },
+    ".CleanCachePolicy": {
+      "description": "CleanCachePolicy defines policies when cleaning cache",
+      "type": "object",
+      "properties": {
+        "gracePeriodSeconds": {
+          "description": "Optional duration in seconds the cache needs to clean gracefully. May be decreased in delete runtime request. Value must be non-negative integer. The value zero indicates clean immediately via the timeout command (no opportunity to shut down). If this value is nil, the default grace period will be used instead. The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with timeout command. Set this value longer than the expected cleanup time for your process.",
+          "type": "integer",
+          "format": "int32"
+        },
+        "maxRetryAttempts": {
+          "description": "Optional max retry Attempts when cleanCache function returns an error after execution, runtime attempts to run it three more times by default. With Maximum Retry Attempts, you can customize the maximum number of retries. This gives you the option to continue processing retries.",
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
@@ -393,7 +447,7 @@
         },
         "status": {
           "default": {},
-          "$ref": "#/definitions/.DataBackupStatus"
+          "$ref": "#/definitions/.OperationStatus"
         }
       }
     },
@@ -437,43 +491,18 @@
           "description": "Dataset defines the target dataset of the DataBackup",
           "type": "string"
         },
+        "runAfter": {
+          "description": "Specifies that the preceding operation in a workflow",
+          "$ref": "#/definitions/.OperationRef"
+        },
         "runAs": {
           "description": "Manage the user to run Alluxio DataBackup",
           "$ref": "#/definitions/.User"
-        }
-      }
-    },
-    ".DataBackupStatus": {
-      "description": "DataBackupStatus defines the observed state of DataBackup",
-      "type": "object",
-      "required": [
-        "phase",
-        "duration",
-        "conditions"
-      ],
-      "properties": {
-        "backupLocation": {
-          "description": "BackupLocation tell user the location to save data of the DataBackup",
-          "default": {},
-          "$ref": "#/definitions/.BackupLocation"
         },
-        "conditions": {
-          "description": "Conditions consists of transition information on DataBackup's Phase",
-          "type": "array",
-          "items": {
-            "default": {},
-            "$ref": "#/definitions/.Condition"
-          }
-        },
-        "duration": {
-          "description": "Duration tell user how much time was spent to backup",
-          "type": "string",
-          "default": ""
-        },
-        "phase": {
-          "description": "Phase describes current phase of DataBackup",
-          "type": "string",
-          "default": ""
+        "ttlSecondsAfterFinished": {
+          "description": "TTLSecondsAfterFinished is the time second to clean up data operations after finished or failed",
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
@@ -499,7 +528,7 @@
         },
         "status": {
           "default": {},
-          "$ref": "#/definitions/.DataLoadStatus"
+          "$ref": "#/definitions/.OperationStatus"
         }
       }
     },
@@ -535,6 +564,10 @@
       "description": "DataLoadSpec defines the desired state of DataLoad",
       "type": "object",
       "properties": {
+        "affinity": {
+          "description": "Affinity defines affinity for DataLoad pod",
+          "$ref": "#/definitions/v1.Affinity"
+        },
         "dataset": {
           "description": "Dataset defines the target dataset of the DataLoad",
           "default": {},
@@ -544,6 +577,14 @@
           "description": "LoadMetadata specifies if the dataload job should load metadata",
           "type": "boolean"
         },
+        "nodeSelector": {
+          "description": "NodeSelector defiens node selector for DataLoad pod",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
         "options": {
           "description": "Options specifies the extra dataload properties for runtime",
           "type": "object",
@@ -552,6 +593,32 @@
             "default": ""
           }
         },
+        "podMetadata": {
+          "description": "PodMetadata defines labels and annotations that will be propagated to DataLoad pods",
+          "default": {},
+          "$ref": "#/definitions/.PodMetadata"
+        },
+        "policy": {
+          "description": "including Once, Cron, OnEvent",
+          "type": "string"
+        },
+        "resources": {
+          "description": "Resources that will be requested by the DataLoad job. \u003cbr\u003e",
+          "default": {},
+          "$ref": "#/definitions/v1.ResourceRequirements"
+        },
+        "runAfter": {
+          "description": "Specifies that the preceding operation in a workflow",
+          "$ref": "#/definitions/.OperationRef"
+        },
+        "schedule": {
+          "description": "The schedule in Cron format, only set when policy is cron, see https://en.wikipedia.org/wiki/Cron.",
+          "type": "string"
+        },
+        "schedulerName": {
+          "description": "SchedulerName sets the scheduler to be used for DataLoad pod",
+          "type": "string"
+        },
         "target": {
           "description": "Target defines target paths that needs to be loaded",
           "type": "array",
@@ -559,35 +626,255 @@
             "default": {},
             "$ref": "#/definitions/.TargetPath"
           }
-        }
-      }
-    },
-    ".DataLoadStatus": {
-      "description": "DataLoadStatus defines the observed state of DataLoad",
-      "type": "object",
-      "required": [
-        "phase",
-        "conditions",
-        "duration"
-      ],
-      "properties": {
-        "conditions": {
-          "description": "Conditions consists of transition information on DataLoad's Phase",
+        },
+        "tolerations": {
+          "description": "Tolerations defines tolerations for DataLoad pod",
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/.Condition"
+            "$ref": "#/definitions/v1.Toleration"
           }
         },
-        "duration": {
-          "description": "Duration tell user how much time was spent to load the data",
-          "type": "string",
-          "default": ""
+        "ttlSecondsAfterFinished": {
+          "description": "TTLSecondsAfterFinished is the time second to clean up data operations after finished or failed",
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    ".DataMigrate": {
+      "description": "DataMigrate is the Schema for the datamigrates API",
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+          "type": "string"
         },
-        "phase": {
-          "description": "Phase describes current phase of DataLoad",
-          "type": "string",
-          "default": ""
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "metadata": {
+          "default": {},
+          "$ref": "#/definitions/v1.ObjectMeta"
+        },
+        "spec": {
+          "default": {},
+          "$ref": "#/definitions/.DataMigrateSpec"
+        },
+        "status": {
+          "default": {},
+          "$ref": "#/definitions/.OperationStatus"
+        }
+      }
+    },
+    ".DataMigrateList": {
+      "description": "DataMigrateList contains a list of DataMigrate",
+      "type": "object",
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/.DataMigrate"
+          }
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "metadata": {
+          "default": {},
+          "$ref": "#/definitions/v1.ListMeta"
+        }
+      }
+    },
+    ".DataMigrateSpec": {
+      "description": "DataMigrateSpec defines the desired state of DataMigrate",
+      "type": "object",
+      "required": [
+        "from",
+        "to"
+      ],
+      "properties": {
+        "affinity": {
+          "description": "Affinity defines affinity for DataLoad pod",
+          "$ref": "#/definitions/v1.Affinity"
+        },
+        "block": {
+          "description": "if dataMigrate blocked dataset usage, default is false",
+          "type": "boolean"
+        },
+        "from": {
+          "description": "data to migrate source, including dataset and external storage",
+          "default": {},
+          "$ref": "#/definitions/.DataToMigrate"
+        },
+        "image": {
+          "description": "Image (e.g. alluxio/alluxio)",
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "One of the three policies: `Always`, `IfNotPresent`, `Never`",
+          "type": "string"
+        },
+        "imageTag": {
+          "description": "Image tag (e.g. 2.3.0-SNAPSHOT)",
+          "type": "string"
+        },
+        "nodeSelector": {
+          "description": "NodeSelector defiens node selector for DataLoad pod",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "options": {
+          "description": "options for migrate, different for each runtime",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "podMetadata": {
+          "description": "PodMetadata defines labels and annotations that will be propagated to DataLoad pods",
+          "default": {},
+          "$ref": "#/definitions/.PodMetadata"
+        },
+        "policy": {
+          "description": "policy for migrate, including Once, Cron, OnEvent",
+          "type": "string"
+        },
+        "resources": {
+          "description": "Resources that will be requested by the DataMigrate job. \u003cbr\u003e",
+          "default": {},
+          "$ref": "#/definitions/v1.ResourceRequirements"
+        },
+        "runAfter": {
+          "description": "Specifies that the preceding operation in a workflow",
+          "$ref": "#/definitions/.OperationRef"
+        },
+        "runtimeType": {
+          "description": "using which runtime to migrate data; if none, take dataset runtime as default",
+          "type": "string"
+        },
+        "schedule": {
+          "description": "The schedule in Cron format, only set when policy is cron, see https://en.wikipedia.org/wiki/Cron.",
+          "type": "string"
+        },
+        "schedulerName": {
+          "description": "SchedulerName sets the scheduler to be used for DataLoad pod",
+          "type": "string"
+        },
+        "to": {
+          "description": "data to migrate destination, including dataset and external storage",
+          "default": {},
+          "$ref": "#/definitions/.DataToMigrate"
+        },
+        "tolerations": {
+          "description": "Tolerations defines tolerations for DataLoad pod",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.Toleration"
+          }
+        },
+        "ttlSecondsAfterFinished": {
+          "description": "TTLSecondsAfterFinished is the time second to clean up data operations after finished or failed",
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    ".DataProcess": {
+      "description": "DataProcess is the Schema for the dataprocesses API",
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+          "type": "string"
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "metadata": {
+          "default": {},
+          "$ref": "#/definitions/v1.ObjectMeta"
+        },
+        "spec": {
+          "default": {},
+          "$ref": "#/definitions/.DataProcessSpec"
+        },
+        "status": {
+          "default": {},
+          "$ref": "#/definitions/.OperationStatus"
+        }
+      }
+    },
+    ".DataProcessList": {
+      "description": "DataProcessList contains a list of DataProcess",
+      "type": "object",
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/.DataProcess"
+          }
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "metadata": {
+          "default": {},
+          "$ref": "#/definitions/v1.ListMeta"
+        }
+      }
+    },
+    ".DataProcessSpec": {
+      "description": "DataProcessSpec defines the desired state of DataProcess",
+      "type": "object",
+      "required": [
+        "dataset",
+        "processor"
+      ],
+      "properties": {
+        "dataset": {
+          "description": "Dataset specifies the target dataset and its mount path.",
+          "default": {},
+          "$ref": "#/definitions/.TargetDatasetWithMountPath"
+        },
+        "processor": {
+          "description": "Processor specify how to process data.",
+          "default": {},
+          "$ref": "#/definitions/.Processor"
+        },
+        "runAfter": {
+          "description": "Specifies that the preceding operation in a workflow",
+          "$ref": "#/definitions/.OperationRef"
+        },
+        "ttlSecondsAfterFinished": {
+          "description": "TTLSecondsAfterFinished is the time second to clean up data operations after finished or failed",
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
@@ -602,6 +889,19 @@
         "path": {
           "description": "Path describes the path of restore, in the form of  local://subpath or pvc://\u003cpvcName\u003e/subpath",
           "type": "string"
+        }
+      }
+    },
+    ".DataToMigrate": {
+      "type": "object",
+      "properties": {
+        "dataset": {
+          "description": "dataset to migrate",
+          "$ref": "#/definitions/.DatasetToMigrate"
+        },
+        "externalStorage": {
+          "description": "external storage for data migrate",
+          "$ref": "#/definitions/.ExternalStorage"
         }
       }
     },
@@ -700,6 +1000,9 @@
     ".DatasetSpec": {
       "description": "DatasetSpec defines the desired state of Dataset",
       "type": "object",
+      "required": [
+        "mounts"
+      ],
       "properties": {
         "accessModes": {
           "description": "AccessModes contains all ways the volume backing the PVC can be mounted",
@@ -741,6 +1044,22 @@
             "$ref": "#/definitions/.Runtime"
           }
         },
+        "sharedEncryptOptions": {
+          "description": "SharedEncryptOptions is the encryptOption to all mount",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/.EncryptOption"
+          }
+        },
+        "sharedOptions": {
+          "description": "SharedOptions is the options to all mount",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
         "tolerations": {
           "description": "If specified, the pod's tolerations.",
           "type": "array",
@@ -775,12 +1094,20 @@
           }
         },
         "dataBackupRef": {
-          "description": "DataBackupRef specifies the running Backup job that targets this Dataset. This is mainly used as a lock to prevent concurrent DataBackup jobs.",
+          "description": "DataBackupRef specifies the running Backup job that targets this Dataset. This is mainly used as a lock to prevent concurrent DataBackup jobs. Deprecated, use OperationRef instead",
           "type": "string"
         },
         "dataLoadRef": {
-          "description": "DataLoadRef specifies the running DataLoad job that targets this Dataset. This is mainly used as a lock to prevent concurrent DataLoad jobs.",
+          "description": "DataLoadRef specifies the running DataLoad job that targets this Dataset. This is mainly used as a lock to prevent concurrent DataLoad jobs. Deprecated, use OperationRef instead",
           "type": "string"
+        },
+        "datasetRef": {
+          "description": "DatasetRef specifies the datasets namespaced name mounting this Dataset.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          }
         },
         "fileNum": {
           "description": "FileNum represents the file numbers of the dataset",
@@ -798,6 +1125,14 @@
             "$ref": "#/definitions/.Mount"
           }
         },
+        "operationRef": {
+          "description": "OperationRef specifies the Operation that targets this Dataset. This is mainly used as a lock to prevent concurrent same Operation jobs.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
         "phase": {
           "description": "Dataset Phase. One of the four phases: `Pending`, `Bound`, `NotBound` and `Failed`",
           "type": "string"
@@ -813,6 +1148,238 @@
         "ufsTotal": {
           "description": "Total in GB of dataset in the cluster",
           "type": "string"
+        }
+      }
+    },
+    ".DatasetToMigrate": {
+      "type": "object",
+      "required": [
+        "name",
+        "namespace"
+      ],
+      "properties": {
+        "name": {
+          "description": "name of dataset",
+          "type": "string",
+          "default": ""
+        },
+        "namespace": {
+          "description": "namespace of dataset",
+          "type": "string",
+          "default": ""
+        },
+        "path": {
+          "description": "path to migrate",
+          "type": "string"
+        }
+      }
+    },
+    ".EFCCompTemplateSpec": {
+      "description": "EFCCompTemplateSpec is a description of the EFC components",
+      "type": "object",
+      "properties": {
+        "disabled": {
+          "description": "Enabled or Disabled for the components. Default enable.",
+          "type": "boolean"
+        },
+        "networkMode": {
+          "description": "Whether to use host network or not.",
+          "type": "string"
+        },
+        "nodeSelector": {
+          "description": "NodeSelector is a selector which must be true for the component to fit on a node.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "podMetadata": {
+          "description": "PodMetadata defines labels and annotations that will be propagated to EFC's master and worker pods",
+          "default": {},
+          "$ref": "#/definitions/.PodMetadata"
+        },
+        "ports": {
+          "description": "Ports used by EFC(e.g. rpc: 19998 for master).",
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int32",
+            "default": 0
+          }
+        },
+        "properties": {
+          "description": "Configurable properties for the EFC component.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "replicas": {
+          "description": "Replicas is the desired number of replicas of the given template. If unspecified, defaults to 1. replicas is the min replicas of dataset in the cluster",
+          "type": "integer",
+          "format": "int32"
+        },
+        "resources": {
+          "description": "Resources that will be requested by the EFC component. \u003cbr\u003e \u003cbr\u003e Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources already allocated to the pod.",
+          "default": {},
+          "$ref": "#/definitions/v1.ResourceRequirements"
+        },
+        "version": {
+          "description": "The version information that instructs fluid to orchestrate a particular version of EFC Comp",
+          "default": {},
+          "$ref": "#/definitions/.VersionSpec"
+        }
+      }
+    },
+    ".EFCFuseSpec": {
+      "description": "EFCFuseSpec is a description of the EFC Fuse",
+      "type": "object",
+      "properties": {
+        "cleanPolicy": {
+          "description": "CleanPolicy decides when to clean EFC Fuse pods. Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted OnDemand cleans fuse pod once th fuse pod on some node is not needed OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted Defaults to OnRuntimeDeleted",
+          "type": "string"
+        },
+        "networkMode": {
+          "description": "Whether to use hostnetwork or not",
+          "type": "string"
+        },
+        "nodeSelector": {
+          "description": "NodeSelector is a selector which must be true for the fuse client to fit on a node, this option only effect when global is enabled",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "podMetadata": {
+          "description": "PodMetadata defines labels and annotations that will be propagated to EFC's fuse pods",
+          "default": {},
+          "$ref": "#/definitions/.PodMetadata"
+        },
+        "properties": {
+          "description": "Configurable properties for EFC fuse",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "resources": {
+          "description": "Resources that will be requested by EFC Fuse. \u003cbr\u003e \u003cbr\u003e Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources already allocated to the pod.",
+          "default": {},
+          "$ref": "#/definitions/v1.ResourceRequirements"
+        },
+        "version": {
+          "description": "The version information that instructs fluid to orchestrate a particular version of EFC Fuse",
+          "default": {},
+          "$ref": "#/definitions/.VersionSpec"
+        }
+      }
+    },
+    ".EFCRuntime": {
+      "description": "EFCRuntime is the Schema for the efcruntimes API",
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+          "type": "string"
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "metadata": {
+          "default": {},
+          "$ref": "#/definitions/v1.ObjectMeta"
+        },
+        "spec": {
+          "default": {},
+          "$ref": "#/definitions/.EFCRuntimeSpec"
+        },
+        "status": {
+          "default": {},
+          "$ref": "#/definitions/.RuntimeStatus"
+        }
+      }
+    },
+    ".EFCRuntimeList": {
+      "description": "EFCRuntimeList contains a list of EFCRuntime",
+      "type": "object",
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/.EFCRuntime"
+          }
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "metadata": {
+          "default": {},
+          "$ref": "#/definitions/v1.ListMeta"
+        }
+      }
+    },
+    ".EFCRuntimeSpec": {
+      "description": "EFCRuntimeSpec defines the desired state of EFCRuntime",
+      "type": "object",
+      "properties": {
+        "cleanCachePolicy": {
+          "description": "CleanCachePolicy defines cleanCache Policy",
+          "default": {},
+          "$ref": "#/definitions/.CleanCachePolicy"
+        },
+        "fuse": {
+          "description": "The component spec of EFC Fuse",
+          "default": {},
+          "$ref": "#/definitions/.EFCFuseSpec"
+        },
+        "initFuse": {
+          "description": "The spec of init alifuse",
+          "default": {},
+          "$ref": "#/definitions/.InitFuseSpec"
+        },
+        "master": {
+          "description": "The component spec of EFC master",
+          "default": {},
+          "$ref": "#/definitions/.EFCCompTemplateSpec"
+        },
+        "osAdvise": {
+          "description": "Operating system optimization for EFC",
+          "default": {},
+          "$ref": "#/definitions/.OSAdvise"
+        },
+        "podMetadata": {
+          "description": "PodMetadata defines labels and annotations that will be propagated to all EFC's pods",
+          "default": {},
+          "$ref": "#/definitions/.PodMetadata"
+        },
+        "replicas": {
+          "description": "The replicas of the worker, need to be specified",
+          "type": "integer",
+          "format": "int32"
+        },
+        "tieredstore": {
+          "description": "Tiered storage used by EFC worker",
+          "default": {},
+          "$ref": "#/definitions/.TieredStore"
+        },
+        "worker": {
+          "description": "The component spec of EFC worker",
+          "default": {},
+          "$ref": "#/definitions/.EFCCompTemplateSpec"
         }
       }
     },
@@ -837,6 +1404,54 @@
           "description": "The encryptInfo obtained from secret",
           "default": {},
           "$ref": "#/definitions/.SecretKeySelector"
+        }
+      }
+    },
+    ".ExternalEndpointSpec": {
+      "description": "ExternalEndpointSpec defines the configurations for external etcd cluster",
+      "type": "object",
+      "properties": {
+        "encryptOptions": {
+          "description": "encrypt info for accessing the external etcd cluster",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/.EncryptOption"
+          }
+        },
+        "options": {
+          "description": "Configurable options for External Etcd cluster. Support the following options.\n\n  etcd.prefix: (String) the prefix of etcd key for vineyard objects\n\nDefault value is as follows.\n\n  etcd.prefix: \"/vineyard\"",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "uri": {
+          "description": "URI specifies the endpoint of external Etcd cluster E,g. \"etcd-svc.etcd-namespace.svc.cluster.local:2379\" Default is not set and use http protocol to connect to external etcd cluster",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    ".ExternalStorage": {
+      "type": "object",
+      "required": [
+        "uri"
+      ],
+      "properties": {
+        "encryptOptions": {
+          "description": "encrypt info for external storage",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/.EncryptOption"
+          }
+        },
+        "uri": {
+          "description": "type of external storage, including s3, oss, gcs, ceph, nfs, pvc, etc. (related to runtime)",
+          "type": "string",
+          "default": ""
         }
       }
     },
@@ -1051,6 +1666,11 @@
           "default": {},
           "$ref": "#/definitions/.GooseFSCompTemplateSpec"
         },
+        "cleanCachePolicy": {
+          "description": "CleanCachePolicy defines cleanCache Policy",
+          "default": {},
+          "$ref": "#/definitions/.CleanCachePolicy"
+        },
         "data": {
           "description": "Management strategies for the dataset to which the runtime is bound",
           "default": {},
@@ -1145,6 +1765,17 @@
         }
       }
     },
+    ".InitFuseSpec": {
+      "description": "InitFuseSpec is a description of initialize the fuse kernel module for runtime",
+      "type": "object",
+      "properties": {
+        "version": {
+          "description": "The version information that instructs fluid to orchestrate a particular version of Alifuse",
+          "default": {},
+          "$ref": "#/definitions/.VersionSpec"
+        }
+      }
+    },
     ".InitUsersSpec": {
       "description": "InitUsersSpec is a description of the initialize the users for runtime",
       "type": "object",
@@ -1180,6 +1811,10 @@
       "description": "JindoCompTemplateSpec is a description of the Jindo commponents",
       "type": "object",
       "properties": {
+        "disabled": {
+          "description": "If disable JindoFS master or worker",
+          "type": "boolean"
+        },
         "env": {
           "description": "Environment variables that will be used by Jindo component. \u003cbr\u003e",
           "type": "object",
@@ -1189,7 +1824,7 @@
           }
         },
         "labels": {
-          "description": "Labels will be added on all the JindoFS Master or Worker pods. Any label already existed will be overriden",
+          "description": "Labels will be added on JindoFS Master or Worker pods. DEPRECATED: This is a deprecated field. Please use PodMetadata instead. Note: this field is set to be exclusive with PodMetadata.Labels",
           "type": "object",
           "additionalProperties": {
             "type": "string",
@@ -1203,6 +1838,11 @@
             "type": "string",
             "default": ""
           }
+        },
+        "podMetadata": {
+          "description": "PodMetadata defines labels and annotations that will be propagated to Jindo's pods",
+          "default": {},
+          "$ref": "#/definitions/.PodMetadata"
         },
         "ports": {
           "type": "object",
@@ -1237,6 +1877,14 @@
             "default": {},
             "$ref": "#/definitions/v1.Toleration"
           }
+        },
+        "volumeMounts": {
+          "description": "VolumeMounts specifies the volumes listed in \".spec.volumes\" to mount into the jindo runtime component's filesystem.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.VolumeMount"
+          }
         }
       }
     },
@@ -1255,6 +1903,10 @@
         "cleanPolicy": {
           "description": "CleanPolicy decides when to clean JindoFS Fuse pods. Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted OnDemand cleans fuse pod once th fuse pod on some node is not needed OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted Defaults to OnRuntimeDeleted",
           "type": "string"
+        },
+        "disabled": {
+          "description": "If disable JindoFS fuse",
+          "type": "boolean"
         },
         "env": {
           "description": "Environment variables that will be used by Jindo Fuse",
@@ -1281,7 +1933,14 @@
           "type": "string"
         },
         "labels": {
-          "description": "Labels will be added on all the JindoFS Fuse pods. Any label already existed will be overriden",
+          "description": "Labels will be added on all the JindoFS pods. DEPRECATED: this is a deprecated field. Please use PodMetadata.Labels instead. Note: this field is set to be exclusive with PodMetadata.Labels",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "logConfig": {
           "type": "object",
           "additionalProperties": {
             "type": "string",
@@ -1295,6 +1954,11 @@
             "type": "string",
             "default": ""
           }
+        },
+        "podMetadata": {
+          "description": "PodMetadata defines labels and annotations that will be propagated to Jindo's fuse pods",
+          "default": {},
+          "$ref": "#/definitions/.PodMetadata"
         },
         "properties": {
           "description": "Configurable properties for Jindo System. \u003cbr\u003e",
@@ -1377,6 +2041,11 @@
       "description": "JindoRuntimeSpec defines the desired state of JindoRuntime",
       "type": "object",
       "properties": {
+        "cleanCachePolicy": {
+          "description": "CleanCachePolicy defines cleanCache Policy",
+          "default": {},
+          "$ref": "#/definitions/.CleanCachePolicy"
+        },
         "fuse": {
           "description": "The component spec of Jindo Fuse",
           "default": {},
@@ -1392,7 +2061,7 @@
           "$ref": "#/definitions/.VersionSpec"
         },
         "labels": {
-          "description": "Labels will be added on all the JindoFS pods.",
+          "description": "Labels will be added on all the JindoFS pods. DEPRECATED: this is a deprecated field. Please use PodMetadata.Labels instead. Note: this field is set to be exclusive with PodMetadata.Labels",
           "type": "object",
           "additionalProperties": {
             "type": "string",
@@ -1414,6 +2083,11 @@
         "networkmode": {
           "description": "Whether to use hostnetwork or not",
           "type": "string"
+        },
+        "podMetadata": {
+          "description": "PodMetadata defines labels and annotations that will be propagated to all Jindo's fuse pods",
+          "default": {},
+          "$ref": "#/definitions/.PodMetadata"
         },
         "properties": {
           "description": "Configurable properties for Jindo system. \u003cbr\u003e",
@@ -1443,10 +2117,27 @@
         "user": {
           "type": "string"
         },
+        "volumes": {
+          "description": "Volumes is the list of Kubernetes volumes that can be mounted by the jindo runtime components and/or fuses.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.Volume"
+          }
+        },
         "worker": {
           "description": "The component spec of Jindo worker",
           "default": {},
           "$ref": "#/definitions/.JindoCompTemplateSpec"
+        }
+      }
+    },
+    ".JobProcessor": {
+      "type": "object",
+      "properties": {
+        "podSpec": {
+          "description": "PodSpec defines Pod specification of the DataProcess job.",
+          "$ref": "#/definitions/v1.PodSpec"
         }
       }
     },
@@ -1466,6 +2157,10 @@
             "$ref": "#/definitions/v1.EnvVar"
           }
         },
+        "networkMode": {
+          "description": "Whether to use hostnetwork or not",
+          "type": "string"
+        },
         "nodeSelector": {
           "description": "NodeSelector is a selector",
           "type": "object",
@@ -1473,6 +2168,19 @@
             "type": "string",
             "default": ""
           }
+        },
+        "options": {
+          "description": "Options",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "podMetadata": {
+          "description": "PodMetadata defines labels and annotations that will be propagated to JuiceFs's pods.",
+          "default": {},
+          "$ref": "#/definitions/.PodMetadata"
         },
         "ports": {
           "description": "Ports used by JuiceFS",
@@ -1491,6 +2199,14 @@
           "description": "Resources that will be requested by the JuiceFS component.",
           "default": {},
           "$ref": "#/definitions/v1.ResourceRequirements"
+        },
+        "volumeMounts": {
+          "description": "VolumeMounts specifies the volumes listed in \".spec.volumes\" to mount into runtime component's filesystem.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.VolumeMount"
+          }
         }
       }
     },
@@ -1525,6 +2241,10 @@
           "description": "Image for JuiceFS fuse",
           "type": "string"
         },
+        "networkMode": {
+          "description": "Whether to use hostnetwork or not",
+          "type": "string"
+        },
         "nodeSelector": {
           "description": "NodeSelector is a selector which must be true for the fuse client to fit on a node, this option only effect when global is enabled",
           "type": "object",
@@ -1533,10 +2253,31 @@
             "default": ""
           }
         },
+        "options": {
+          "description": "Options mount options that fuse pod will use",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "podMetadata": {
+          "description": "PodMetadata defines labels and annotations that will be propagated to JuiceFs's pods.",
+          "default": {},
+          "$ref": "#/definitions/.PodMetadata"
+        },
         "resources": {
           "description": "Resources that will be requested by JuiceFS Fuse.",
           "default": {},
           "$ref": "#/definitions/v1.ResourceRequirements"
+        },
+        "volumeMounts": {
+          "description": "VolumeMounts specifies the volumes listed in \".spec.volumes\" to mount into runtime component's filesystem.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.VolumeMount"
+          }
         }
       }
     },
@@ -1598,6 +2339,19 @@
       "description": "JuiceFSRuntimeSpec defines the desired state of JuiceFSRuntime",
       "type": "object",
       "properties": {
+        "cleanCachePolicy": {
+          "description": "CleanCachePolicy defines cleanCache Policy",
+          "default": {},
+          "$ref": "#/definitions/.CleanCachePolicy"
+        },
+        "configs": {
+          "description": "Configs of JuiceFS",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          }
+        },
         "disablePrometheus": {
           "description": "Disable monitoring for JuiceFS Runtime Prometheus is enabled by default",
           "type": "boolean"
@@ -1627,6 +2381,11 @@
           "default": {},
           "$ref": "#/definitions/.JuiceFSCompTemplateSpec"
         },
+        "podMetadata": {
+          "description": "PodMetadata defines labels and annotations that will be propagated to JuiceFs's pods.",
+          "default": {},
+          "$ref": "#/definitions/.PodMetadata"
+        },
         "replicas": {
           "description": "The replicas of the worker, need to be specified",
           "type": "integer",
@@ -1640,6 +2399,14 @@
           "description": "Tiered storage used by JuiceFS",
           "default": {},
           "$ref": "#/definitions/.TieredStore"
+        },
+        "volumes": {
+          "description": "Volumes is the list of Kubernetes volumes that can be mounted by the alluxio runtime components and/or fuses.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.Volume"
+          }
         },
         "worker": {
           "description": "The component spec of JuiceFS worker",
@@ -1679,6 +2446,126 @@
         "quotaList": {
           "description": "QuotaList are quotas used to set quota on multiple paths. Quotas should be separated with comma. Quotas in this list will be set to paths with the same order in Path. For example, with Path defined with \"/mnt/cache1,/mnt/cache2\" and QuotaList set to \"100Gi, 50Gi\", then we get 100GiB cache storage under \"/mnt/cache1\" and 50GiB under \"/mnt/cache2\". Also note that num of quotas must be consistent with the num of paths defined in Path.",
           "type": "string"
+        },
+        "volumeSource": {
+          "description": "VolumeSource is the volume source of the tier. It follows the form of corev1.VolumeSource. For now, users should only specify VolumeSource when VolumeType is set to emptyDir.",
+          "default": {},
+          "$ref": "#/definitions/.VolumeSource"
+        },
+        "volumeType": {
+          "description": "VolumeType is the volume type of the tier. Should be one of the three types: `hostPath`, `emptyDir` and `volumeTemplate`. If not set, defaults to hostPath.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    ".MasterSpec": {
+      "description": "MasterSpec defines the configurations for Vineyard Master component which is also regarded as the Etcd component in Vineyard. For more info about Vineyard, refer to \u003ca href=\"https://v6d.io/\"\u003eVineyard\u003c/a\u003e",
+      "type": "object",
+      "properties": {
+        "endpoint": {
+          "description": "ExternalEndpoint defines the configurations for external etcd cluster Default is not set If set, the Vineyard Master component will not be deployed, which means the Vineyard Worker component will use an external Etcd cluster. E,g.\n  endpoint:\n    uri: \"etcd-svc.etcd-namespace.svc.cluster.local:2379\"\n    encryptOptions:\n      - name: access-key\n\t\t   valueFrom:\n          secretKeyRef:\n            name: etcd-secret\n\t\t\t   key: accesskey",
+          "default": {},
+          "$ref": "#/definitions/.ExternalEndpointSpec"
+        },
+        "env": {
+          "description": "Environment variables that will be used by Vineyard component. For Master, refer to \u003ca href=\"https://etcd.io/docs/v3.5/op-guide/configuration/\"\u003eEtcd Configuration\u003c/a\u003e for more info Default is not set.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "image": {
+          "description": "The image of Vineyard component. For Master, the default image is `bitnami/etcd` For Worker, the default image is `vineyardcloudnative/vineyardd` The default container registry is `docker.io`, you can change it by setting the image field",
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "The image pull policy of Vineyard component. Default is `IfNotPresent`.",
+          "type": "string"
+        },
+        "imageTag": {
+          "description": "The image tag of Vineyard component. For Master, the default image tag is `3.5.10`. For Worker, the default image tag is `latest`.",
+          "type": "string"
+        },
+        "nodeSelector": {
+          "description": "NodeSelector is a selector to choose which nodes to launch the Vineyard component. E,g. {\"disktype\": \"ssd\"}",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "options": {
+          "description": "Configurable options for Vineyard component. For Master, there is no configurable options. For Worker, support the following options.\n\n  vineyardd.reserve.memory: (Bool) where to reserve memory for vineyardd\n                            If set to true, the memory quota will be counted to the vineyardd rather than the application.\n  etcd.prefix: (String) the prefix of etcd key for vineyard objects\n\n  Default value is as follows.\n\n    vineyardd.reserve.memory: \"true\"\n    etcd.prefix: \"/vineyard\"",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "ports": {
+          "description": "Ports used by Vineyard component. For Master, the default client port is 2379 and peer port is 2380. For Worker, the default rpc port is 9600.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int32",
+            "default": 0
+          }
+        },
+        "replicas": {
+          "description": "The replicas of Vineyard component. If not specified, defaults to 1. For worker, the replicas should not be greater than the number of nodes in the cluster",
+          "type": "integer",
+          "format": "int32"
+        },
+        "resources": {
+          "description": "Resources contains the resource requirements and limits for the Vineyard component. Default is not set. For Worker, when the options contains vineyardd.reserve.memory=true, the resources.request.memory for worker should be greater than tieredstore.levels[0].quota(aka vineyardd shared memory)",
+          "default": {},
+          "$ref": "#/definitions/v1.ResourceRequirements"
+        },
+        "volumeMounts": {
+          "description": "VolumeMounts specifies the volumes listed in \".spec.volumes\" to mount into the vineyard runtime component's filesystem. It is useful for specifying a persistent storage. Default is not set.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.VolumeMount"
+          }
+        }
+      }
+    },
+    ".Metadata": {
+      "description": "Metadata defines subgroup properties of metav1.ObjectMeta",
+      "type": "object",
+      "properties": {
+        "annotations": {
+          "description": "Annotations are annotations of pod specification",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "labels": {
+          "description": "Labels are labels of pod specification",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "selector": {
+          "default": {},
+          "$ref": "#/definitions/v1.GroupKind"
+        }
+      }
+    },
+    ".MetadataSyncPolicy": {
+      "description": "MetadataSyncPolicy defines policies when syncing metadata",
+      "type": "object",
+      "properties": {
+        "autoSync": {
+          "description": "AutoSync enables automatic metadata sync when setting up a runtime. If not set, it defaults to true.",
+          "type": "boolean"
         }
       }
     },
@@ -1721,6 +2608,142 @@
         "shared": {
           "description": "Optional: Defaults to false (shared).",
           "type": "boolean"
+        }
+      }
+    },
+    ".OSAdvise": {
+      "description": "OSAdvise is a description of choices to have optimization on specific operating system",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "description": "Enable operating system optimization not enabled by default.",
+          "type": "boolean"
+        },
+        "osVersion": {
+          "description": "Specific operating system version that can have optimization.",
+          "type": "string"
+        }
+      }
+    },
+    ".OperationRef": {
+      "type": "object",
+      "required": [
+        "kind",
+        "name"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "API version of the referent operation",
+          "type": "string"
+        },
+        "kind": {
+          "description": "Kind specifies the type of the referent operation",
+          "type": "string",
+          "default": ""
+        },
+        "name": {
+          "description": "Name specifies the name of the referent operation",
+          "type": "string",
+          "default": ""
+        },
+        "namespace": {
+          "description": "Namespace specifies the namespace of the referent operation.",
+          "type": "string"
+        }
+      }
+    },
+    ".OperationStatus": {
+      "description": "OperationStatus defines the observed state of operation",
+      "type": "object",
+      "required": [
+        "phase",
+        "duration",
+        "conditions"
+      ],
+      "properties": {
+        "conditions": {
+          "description": "Conditions consists of transition information on operation's Phase",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/.Condition"
+          }
+        },
+        "duration": {
+          "description": "Duration tell user how much time was spent to operation",
+          "type": "string",
+          "default": ""
+        },
+        "infos": {
+          "description": "Infos operation customized name-value",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "lastScheduleTime": {
+          "description": "LastScheduleTime is the last time the cron operation was scheduled",
+          "$ref": "#/definitions/v1.Time"
+        },
+        "lastSuccessfulTime": {
+          "description": "LastSuccessfulTime is the last time the cron operation successfully completed",
+          "$ref": "#/definitions/v1.Time"
+        },
+        "phase": {
+          "description": "Phase describes current phase of operation",
+          "type": "string",
+          "default": ""
+        },
+        "waitingFor": {
+          "description": "WaitingStatus stores information about waiting operation.",
+          "default": {},
+          "$ref": "#/definitions/.WaitingStatus"
+        }
+      }
+    },
+    ".PodMetadata": {
+      "description": "PodMetadata defines subgroup properties of metav1.ObjectMeta",
+      "type": "object",
+      "properties": {
+        "annotations": {
+          "description": "Annotations are annotations of pod specification",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "labels": {
+          "description": "Labels are labels of pod specification",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        }
+      }
+    },
+    ".Processor": {
+      "description": "Processor defines the actual processor for DataProcess. Processor can be either of a Job or a Shell script.",
+      "type": "object",
+      "properties": {
+        "job": {
+          "description": "Job represents a processor which runs DataProcess as a job.",
+          "$ref": "#/definitions/.JobProcessor"
+        },
+        "podMetadata": {
+          "description": "PodMetadata defines labels and annotations on the processor pod.",
+          "default": {},
+          "$ref": "#/definitions/.PodMetadata"
+        },
+        "script": {
+          "description": "Shell represents a processor which executes shell script",
+          "$ref": "#/definitions/.ScriptProcessor"
+        },
+        "serviceAccountName": {
+          "description": "ServiceAccountName defiens the serviceAccountName of the container",
+          "type": "string"
         }
       }
     },
@@ -1789,6 +2812,22 @@
         }
       }
     },
+    ".RuntimeManagement": {
+      "description": "RuntimeManagement defines suggestions for runtime controllers to manage the runtime",
+      "type": "object",
+      "properties": {
+        "cleanCachePolicy": {
+          "description": "CleanCachePolicy defines the policy of cleaning cache when shutting down the runtime",
+          "default": {},
+          "$ref": "#/definitions/.CleanCachePolicy"
+        },
+        "metadataSyncPolicy": {
+          "description": "MetadataSyncPolicy defines the policy of syncing metadata when setting up the runtime. If not set,",
+          "default": {},
+          "$ref": "#/definitions/.MetadataSyncPolicy"
+        }
+      }
+    },
     ".RuntimeStatus": {
       "description": "RuntimeStatus defines the observed state of Runtime",
       "type": "object",
@@ -1811,6 +2850,10 @@
         "apiGateway": {
           "description": "APIGatewayStatus represents rest api gateway status",
           "$ref": "#/definitions/.APIGatewayStatus"
+        },
+        "cacheAffinity": {
+          "description": "CacheAffinity represents the runtime worker pods node affinity including node selector",
+          "$ref": "#/definitions/v1.NodeAffinity"
         },
         "cacheStates": {
           "description": "CacheStatus represents the total resources of the dataset.",
@@ -1910,6 +2953,14 @@
           "description": "MountTime represents time last mount happened if Mounttime is earlier than master starting time, remount will be required",
           "$ref": "#/definitions/v1.Time"
         },
+        "mounts": {
+          "description": "MountPoints represents the mount points specified in the bounded dataset",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/.Mount"
+          }
+        },
         "selector": {
           "description": "Selector is used for auto-scaling",
           "type": "string"
@@ -1950,6 +3001,72 @@
         }
       }
     },
+    ".ScriptProcessor": {
+      "type": "object",
+      "required": [
+        "source"
+      ],
+      "properties": {
+        "command": {
+          "description": "Entrypoint command for ScriptProcessor.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "env": {
+          "description": "List of environment variables to set in the container.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.EnvVar"
+          }
+        },
+        "image": {
+          "description": "Image (e.g. alluxio/alluxio)",
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "One of the three policies: `Always`, `IfNotPresent`, `Never`",
+          "type": "string"
+        },
+        "imageTag": {
+          "description": "Image tag (e.g. 2.3.0-SNAPSHOT)",
+          "type": "string"
+        },
+        "resources": {
+          "description": "Resources that will be requested by the DataProcess job. \u003cbr\u003e",
+          "default": {},
+          "$ref": "#/definitions/v1.ResourceRequirements"
+        },
+        "restartPolicy": {
+          "description": "RestartPolicy specifies the processor job's restart policy. Only \"Never\", \"OnFailure\" is allowed.",
+          "type": "string"
+        },
+        "source": {
+          "description": "Script source for ScriptProcessor",
+          "type": "string",
+          "default": ""
+        },
+        "volumeMounts": {
+          "description": "Pod volumes to mount into the container's filesystem.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.VolumeMount"
+          }
+        },
+        "volumes": {
+          "description": "List of volumes that can be mounted by containers belonging to the pod.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.Volume"
+          }
+        }
+      }
+    },
     ".SecretKeySelector": {
       "type": "object",
       "properties": {
@@ -1981,6 +3098,34 @@
         }
       }
     },
+    ".TargetDatasetWithMountPath": {
+      "description": "TargetDataset defines which dataset will be processed by DataProcess. Under the hood, the dataset's pvc will be mounted to the given mountPath of the DataProcess's containers.",
+      "type": "object",
+      "required": [
+        "name",
+        "mountPath"
+      ],
+      "properties": {
+        "mountPath": {
+          "description": "MountPath defines where the Dataset should be mounted in DataProcess's containers.",
+          "type": "string",
+          "default": ""
+        },
+        "name": {
+          "description": "Name defines name of the target dataset",
+          "type": "string",
+          "default": ""
+        },
+        "namespace": {
+          "description": "Namespace defines namespace of the target dataset",
+          "type": "string"
+        },
+        "subPath": {
+          "description": "SubPath defines subpath of the target dataset to mount.",
+          "type": "string"
+        }
+      }
+    },
     ".TargetPath": {
       "description": "TargetPath defines the target path of the DataLoad",
       "type": "object",
@@ -1997,6 +3142,370 @@
           "description": "Replicas defines how many replicas will be loaded",
           "type": "integer",
           "format": "int32"
+        }
+      }
+    },
+    ".ThinCompTemplateSpec": {
+      "description": "ThinCompTemplateSpec is a description of the thinRuntime components",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "description": "Enabled or Disabled for the components.",
+          "type": "boolean"
+        },
+        "env": {
+          "description": "Environment variables that will be used by thinRuntime component.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.EnvVar"
+          }
+        },
+        "image": {
+          "description": "Image for thinRuntime fuse",
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "One of the three policies: `Always`, `IfNotPresent`, `Never`",
+          "type": "string"
+        },
+        "imageTag": {
+          "description": "Image for thinRuntime fuse",
+          "type": "string"
+        },
+        "livenessProbe": {
+          "description": "livenessProbe of thin fuse pod",
+          "$ref": "#/definitions/v1.Probe"
+        },
+        "networkMode": {
+          "description": "Whether to use hostnetwork or not",
+          "type": "string"
+        },
+        "nodeSelector": {
+          "description": "NodeSelector is a selector",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "ports": {
+          "description": "Ports used thinRuntime",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.ContainerPort"
+          }
+        },
+        "readinessProbe": {
+          "description": "readinessProbe of thin fuse pod",
+          "$ref": "#/definitions/v1.Probe"
+        },
+        "replicas": {
+          "description": "Replicas is the desired number of replicas of the given template. If unspecified, defaults to 1. replicas is the min replicas of dataset in the cluster",
+          "type": "integer",
+          "format": "int32"
+        },
+        "resources": {
+          "description": "Resources that will be requested by thinRuntime component.",
+          "default": {},
+          "$ref": "#/definitions/v1.ResourceRequirements"
+        },
+        "volumeMounts": {
+          "description": "VolumeMounts specifies the volumes listed in \".spec.volumes\" to mount into runtime component's filesystem.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.VolumeMount"
+          }
+        }
+      }
+    },
+    ".ThinFuseSpec": {
+      "type": "object",
+      "properties": {
+        "args": {
+          "description": "Arguments that will be passed to thinRuntime Fuse",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "cleanPolicy": {
+          "description": "CleanPolicy decides when to clean thinRuntime Fuse pods. Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted OnDemand cleans fuse pod once the fuse pod on some node is not needed OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted Defaults to OnDemand",
+          "type": "string"
+        },
+        "command": {
+          "description": "Command that will be passed to thinRuntime Fuse",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "env": {
+          "description": "Environment variables that will be used by thinRuntime Fuse",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.EnvVar"
+          }
+        },
+        "image": {
+          "description": "Image for thinRuntime fuse",
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "One of the three policies: `Always`, `IfNotPresent`, `Never`",
+          "type": "string"
+        },
+        "imageTag": {
+          "description": "Image for thinRuntime fuse",
+          "type": "string"
+        },
+        "livenessProbe": {
+          "description": "livenessProbe of thin fuse pod",
+          "$ref": "#/definitions/v1.Probe"
+        },
+        "networkMode": {
+          "description": "Whether to use hostnetwork or not",
+          "type": "string"
+        },
+        "nodeSelector": {
+          "description": "NodeSelector is a selector which must be true for the fuse client to fit on a node, this option only effect when global is enabled",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "options": {
+          "description": "Options configurable options of FUSE client, performance parameters usually. will be merged with Dataset.spec.mounts.options into fuse pod.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "ports": {
+          "description": "Ports used thinRuntime",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.ContainerPort"
+          }
+        },
+        "readinessProbe": {
+          "description": "readinessProbe of thin fuse pod",
+          "$ref": "#/definitions/v1.Probe"
+        },
+        "resources": {
+          "description": "Resources that will be requested by thinRuntime Fuse.",
+          "default": {},
+          "$ref": "#/definitions/v1.ResourceRequirements"
+        },
+        "volumeMounts": {
+          "description": "VolumeMounts specifies the volumes listed in \".spec.volumes\" to mount into the thinruntime component's filesystem.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.VolumeMount"
+          }
+        }
+      }
+    },
+    ".ThinRuntime": {
+      "description": "ThinRuntime is the Schema for the thinruntimes API",
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+          "type": "string"
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "metadata": {
+          "default": {},
+          "$ref": "#/definitions/v1.ObjectMeta"
+        },
+        "spec": {
+          "default": {},
+          "$ref": "#/definitions/.ThinRuntimeSpec"
+        },
+        "status": {
+          "default": {},
+          "$ref": "#/definitions/.RuntimeStatus"
+        }
+      }
+    },
+    ".ThinRuntimeList": {
+      "description": "ThinRuntimeList contains a list of ThinRuntime",
+      "type": "object",
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/.ThinRuntime"
+          }
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "metadata": {
+          "default": {},
+          "$ref": "#/definitions/v1.ListMeta"
+        }
+      }
+    },
+    ".ThinRuntimeProfile": {
+      "description": "ThinRuntimeProfile is the Schema for the ThinRuntimeProfiles API",
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+          "type": "string"
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "metadata": {
+          "default": {},
+          "$ref": "#/definitions/v1.ObjectMeta"
+        },
+        "spec": {
+          "default": {},
+          "$ref": "#/definitions/.ThinRuntimeProfileSpec"
+        },
+        "status": {
+          "default": {},
+          "$ref": "#/definitions/.ThinRuntimeProfileStatus"
+        }
+      }
+    },
+    ".ThinRuntimeProfileList": {
+      "description": "ThinRuntimeProfileList contains a list of ThinRuntimeProfile",
+      "type": "object",
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/.ThinRuntimeProfile"
+          }
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "metadata": {
+          "default": {},
+          "$ref": "#/definitions/v1.ListMeta"
+        }
+      }
+    },
+    ".ThinRuntimeProfileSpec": {
+      "description": "ThinRuntimeProfileSpec defines the desired state of ThinRuntimeProfile",
+      "type": "object",
+      "required": [
+        "fileSystemType"
+      ],
+      "properties": {
+        "fileSystemType": {
+          "description": "file system of thinRuntime",
+          "type": "string",
+          "default": ""
+        },
+        "fuse": {
+          "description": "The component spec of thinRuntime",
+          "default": {},
+          "$ref": "#/definitions/.ThinFuseSpec"
+        },
+        "nodePublishSecretPolicy": {
+          "description": "NodePublishSecretPolicy describes the policy to decide which to do with node publish secret when mounting an existing persistent volume.",
+          "type": "string"
+        },
+        "volumes": {
+          "description": "Volumes is the list of Kubernetes volumes that can be mounted by runtime components and/or fuses.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.Volume"
+          }
+        },
+        "worker": {
+          "description": "The component spec of worker",
+          "default": {},
+          "$ref": "#/definitions/.ThinCompTemplateSpec"
+        }
+      }
+    },
+    ".ThinRuntimeProfileStatus": {
+      "description": "ThinRuntimeProfileStatus defines the observed state of ThinRuntimeProfile",
+      "type": "object"
+    },
+    ".ThinRuntimeSpec": {
+      "description": "ThinRuntimeSpec defines the desired state of ThinRuntime",
+      "type": "object",
+      "properties": {
+        "disablePrometheus": {
+          "description": "Disable monitoring for Runtime Prometheus is enabled by default",
+          "type": "boolean"
+        },
+        "fuse": {
+          "description": "The component spec of thinRuntime",
+          "default": {},
+          "$ref": "#/definitions/.ThinFuseSpec"
+        },
+        "profileName": {
+          "description": "The specific runtime profile name, empty value is used for handling datasets which mount another dataset",
+          "type": "string"
+        },
+        "replicas": {
+          "description": "The replicas of the worker, need to be specified",
+          "type": "integer",
+          "format": "int32"
+        },
+        "runAs": {
+          "description": "Manage the user to run Runtime",
+          "$ref": "#/definitions/.User"
+        },
+        "tieredstore": {
+          "description": "Tiered storage",
+          "default": {},
+          "$ref": "#/definitions/.TieredStore"
+        },
+        "volumes": {
+          "description": "Volumes is the list of Kubernetes volumes that can be mounted by runtime components and/or fuses.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.Volume"
+          }
+        },
+        "worker": {
+          "description": "The component spec of worker",
+          "default": {},
+          "$ref": "#/definitions/.ThinCompTemplateSpec"
         }
       }
     },
@@ -2061,6 +3570,325 @@
         "imageTag": {
           "description": "Image tag (e.g. 2.3.0-SNAPSHOT)",
           "type": "string"
+        }
+      }
+    },
+    ".VineyardCompTemplateSpec": {
+      "description": "VineyardCompTemplateSpec is the common configurations for vineyard components including Master and Worker.",
+      "type": "object",
+      "properties": {
+        "env": {
+          "description": "Environment variables that will be used by Vineyard component. For Master, refer to \u003ca href=\"https://etcd.io/docs/v3.5/op-guide/configuration/\"\u003eEtcd Configuration\u003c/a\u003e for more info Default is not set.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "image": {
+          "description": "The image of Vineyard component. For Master, the default image is `bitnami/etcd` For Worker, the default image is `vineyardcloudnative/vineyardd` The default container registry is `docker.io`, you can change it by setting the image field",
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "The image pull policy of Vineyard component. Default is `IfNotPresent`.",
+          "type": "string"
+        },
+        "imageTag": {
+          "description": "The image tag of Vineyard component. For Master, the default image tag is `3.5.10`. For Worker, the default image tag is `latest`.",
+          "type": "string"
+        },
+        "nodeSelector": {
+          "description": "NodeSelector is a selector to choose which nodes to launch the Vineyard component. E,g. {\"disktype\": \"ssd\"}",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "options": {
+          "description": "Configurable options for Vineyard component. For Master, there is no configurable options. For Worker, support the following options.\n\n  vineyardd.reserve.memory: (Bool) where to reserve memory for vineyardd\n                            If set to true, the memory quota will be counted to the vineyardd rather than the application.\n  etcd.prefix: (String) the prefix of etcd key for vineyard objects\n\n  Default value is as follows.\n\n    vineyardd.reserve.memory: \"true\"\n    etcd.prefix: \"/vineyard\"",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "ports": {
+          "description": "Ports used by Vineyard component. For Master, the default client port is 2379 and peer port is 2380. For Worker, the default rpc port is 9600.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int32",
+            "default": 0
+          }
+        },
+        "replicas": {
+          "description": "The replicas of Vineyard component. If not specified, defaults to 1. For worker, the replicas should not be greater than the number of nodes in the cluster",
+          "type": "integer",
+          "format": "int32"
+        },
+        "resources": {
+          "description": "Resources contains the resource requirements and limits for the Vineyard component. Default is not set. For Worker, when the options contains vineyardd.reserve.memory=true, the resources.request.memory for worker should be greater than tieredstore.levels[0].quota(aka vineyardd shared memory)",
+          "default": {},
+          "$ref": "#/definitions/v1.ResourceRequirements"
+        },
+        "volumeMounts": {
+          "description": "VolumeMounts specifies the volumes listed in \".spec.volumes\" to mount into the vineyard runtime component's filesystem. It is useful for specifying a persistent storage. Default is not set.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.VolumeMount"
+          }
+        }
+      }
+    },
+    ".VineyardRuntime": {
+      "description": "VineyardRuntime is the Schema for the vineyardruntimes API",
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+          "type": "string"
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "metadata": {
+          "default": {},
+          "$ref": "#/definitions/v1.ObjectMeta"
+        },
+        "spec": {
+          "default": {},
+          "$ref": "#/definitions/.VineyardRuntimeSpec"
+        },
+        "status": {
+          "default": {},
+          "$ref": "#/definitions/.RuntimeStatus"
+        }
+      }
+    },
+    ".VineyardRuntimeList": {
+      "description": "VineyardRuntimeList contains a list of VineyardRuntime",
+      "type": "object",
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/.VineyardRuntime"
+          }
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "metadata": {
+          "default": {},
+          "$ref": "#/definitions/v1.ListMeta"
+        }
+      }
+    },
+    ".VineyardRuntimeSpec": {
+      "description": "VineyardRuntimeSpec defines the desired state of VineyardRuntime",
+      "type": "object",
+      "properties": {
+        "disablePrometheus": {
+          "description": "Disable monitoring metrics for Vineyard Runtime Default is false",
+          "type": "boolean"
+        },
+        "fuse": {
+          "description": "Fuse holds the configurations for Vineyard client socket. Note that the \"Fuse\" here is kept just for API consistency, VineyardRuntime mount a socket file instead of a FUSE filesystem to make data cache available. Applications can connect to the vineyard runtime components through IPC or RPC. IPC is the default way to connect to vineyard runtime components, which is more efficient than RPC. If the socket file is not mounted, the connection will fall back to RPC.",
+          "default": {},
+          "$ref": "#/definitions/.VineyardSockSpec"
+        },
+        "master": {
+          "description": "Master holds the configurations for Vineyard Master component Represents the Etcd component in Vineyard",
+          "default": {},
+          "$ref": "#/definitions/.MasterSpec"
+        },
+        "tieredstore": {
+          "description": "Tiered storage used by vineyardd The MediumType can only be `MEM` and `SSD` `MEM` actually represents the shared memory of vineyardd. `SSD` represents the external storage of vineyardd. Default is as follows.\n  tieredstore:\n    levels:\n    - level: 0\n      mediumtype: MEM\n      quota: 4Gi\n\nChoose hostpath as the external storage of vineyardd.\n  tieredstore:\n    levels:\n\t   - level: 0\n      mediumtype: MEM\n      quota: 4Gi\n\t\t high: \"0.8\"\n      low: \"0.3\"\n    - level: 1\n      mediumtype: SSD\n      quota: 10Gi\n      volumeType: Hostpath\n      path: /var/spill-path",
+          "default": {},
+          "$ref": "#/definitions/.TieredStore"
+        },
+        "volumes": {
+          "description": "Volumes is the list of Kubernetes volumes that can be mounted by the vineyard components (Master and Worker). Default is null.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.Volume"
+          }
+        },
+        "worker": {
+          "description": "Worker holds the configurations for Vineyard Worker component Represents the Vineyardd component in Vineyard",
+          "default": {},
+          "$ref": "#/definitions/.VineyardCompTemplateSpec"
+        }
+      }
+    },
+    ".VineyardSockSpec": {
+      "description": "VineyardSockSpec holds the configurations for vineyard client socket",
+      "type": "object",
+      "properties": {
+        "cleanPolicy": {
+          "description": "CleanPolicy decides when to clean Vineyard Fuse pods. Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted OnDemand cleans fuse pod once th fuse pod on some node is not needed OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted Defaults to OnRuntimeDeleted",
+          "type": "string"
+        },
+        "image": {
+          "description": "Image for Vineyard Fuse Default is `vineyardcloudnative/vineyard-mount-socket`",
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "Image pull policy for Vineyard Fuse Default is `IfNotPresent` Available values are `Always`, `IfNotPresent`, `Never`",
+          "type": "string"
+        },
+        "imageTag": {
+          "description": "Image Tag for Vineyard Fuse Default is `latest`",
+          "type": "string"
+        },
+        "resources": {
+          "description": "Resources contains the resource requirements and limits for the Vineyard Fuse. Default is not set.",
+          "default": {},
+          "$ref": "#/definitions/v1.ResourceRequirements"
+        }
+      }
+    },
+    ".VolumeSource": {
+      "description": "VolumeSource defines volume source and volume claim template.",
+      "type": "object",
+      "properties": {
+        "awsElasticBlockStore": {
+          "description": "AWSElasticBlockStore represents an AWS Disk resource that is attached to a kubelet's host machine and then exposed to the pod. More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore",
+          "$ref": "#/definitions/v1.AWSElasticBlockStoreVolumeSource"
+        },
+        "azureDisk": {
+          "description": "AzureDisk represents an Azure Data Disk mount on the host and bind mount to the pod.",
+          "$ref": "#/definitions/v1.AzureDiskVolumeSource"
+        },
+        "azureFile": {
+          "description": "AzureFile represents an Azure File Service mount on the host and bind mount to the pod.",
+          "$ref": "#/definitions/v1.AzureFileVolumeSource"
+        },
+        "cephfs": {
+          "description": "CephFS represents a Ceph FS mount on the host that shares a pod's lifetime",
+          "$ref": "#/definitions/v1.CephFSVolumeSource"
+        },
+        "cinder": {
+          "description": "Cinder represents a cinder volume attached and mounted on kubelets host machine. More info: https://examples.k8s.io/mysql-cinder-pd/README.md",
+          "$ref": "#/definitions/v1.CinderVolumeSource"
+        },
+        "configMap": {
+          "description": "ConfigMap represents a configMap that should populate this volume",
+          "$ref": "#/definitions/v1.ConfigMapVolumeSource"
+        },
+        "csi": {
+          "description": "CSI (Container Storage Interface) represents ephemeral storage that is handled by certain external CSI drivers (Beta feature).",
+          "$ref": "#/definitions/v1.CSIVolumeSource"
+        },
+        "downwardAPI": {
+          "description": "DownwardAPI represents downward API about the pod that should populate this volume",
+          "$ref": "#/definitions/v1.DownwardAPIVolumeSource"
+        },
+        "emptyDir": {
+          "description": "EmptyDir represents a temporary directory that shares a pod's lifetime. More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir",
+          "$ref": "#/definitions/v1.EmptyDirVolumeSource"
+        },
+        "ephemeral": {
+          "description": "Ephemeral represents a volume that is handled by a cluster storage driver. The volume's lifecycle is tied to the pod that defines it - it will be created before the pod starts, and deleted when the pod is removed.\n\nUse this if: a) the volume is only needed while the pod runs, b) features of normal volumes like restoring from snapshot or capacity\n   tracking are needed,\nc) the storage driver is specified through a storage class, and d) the storage driver supports dynamic volume provisioning through\n   a PersistentVolumeClaim (see EphemeralVolumeSource for more\n   information on the connection between this volume type\n   and PersistentVolumeClaim).\n\nUse PersistentVolumeClaim or one of the vendor-specific APIs for volumes that persist for longer than the lifecycle of an individual pod.\n\nUse CSI for light-weight local ephemeral volumes if the CSI driver is meant to be used that way - see the documentation of the driver for more information.\n\nA pod can use both types of ephemeral volumes and persistent volumes at the same time.",
+          "$ref": "#/definitions/v1.EphemeralVolumeSource"
+        },
+        "fc": {
+          "description": "FC represents a Fibre Channel resource that is attached to a kubelet's host machine and then exposed to the pod.",
+          "$ref": "#/definitions/v1.FCVolumeSource"
+        },
+        "flexVolume": {
+          "description": "FlexVolume represents a generic volume resource that is provisioned/attached using an exec based plugin.",
+          "$ref": "#/definitions/v1.FlexVolumeSource"
+        },
+        "flocker": {
+          "description": "Flocker represents a Flocker volume attached to a kubelet's host machine. This depends on the Flocker control service being running",
+          "$ref": "#/definitions/v1.FlockerVolumeSource"
+        },
+        "gcePersistentDisk": {
+          "description": "GCEPersistentDisk represents a GCE Disk resource that is attached to a kubelet's host machine and then exposed to the pod. More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk",
+          "$ref": "#/definitions/v1.GCEPersistentDiskVolumeSource"
+        },
+        "gitRepo": {
+          "description": "GitRepo represents a git repository at a particular revision. DEPRECATED: GitRepo is deprecated. To provision a container with a git repo, mount an EmptyDir into an InitContainer that clones the repo using git, then mount the EmptyDir into the Pod's container.",
+          "$ref": "#/definitions/v1.GitRepoVolumeSource"
+        },
+        "glusterfs": {
+          "description": "Glusterfs represents a Glusterfs mount on the host that shares a pod's lifetime. More info: https://examples.k8s.io/volumes/glusterfs/README.md",
+          "$ref": "#/definitions/v1.GlusterfsVolumeSource"
+        },
+        "hostPath": {
+          "description": "HostPath represents a pre-existing file or directory on the host machine that is directly exposed to the container. This is generally used for system agents or other privileged things that are allowed to see the host machine. Most containers will NOT need this. More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath",
+          "$ref": "#/definitions/v1.HostPathVolumeSource"
+        },
+        "iscsi": {
+          "description": "ISCSI represents an ISCSI Disk resource that is attached to a kubelet's host machine and then exposed to the pod. More info: https://examples.k8s.io/volumes/iscsi/README.md",
+          "$ref": "#/definitions/v1.ISCSIVolumeSource"
+        },
+        "nfs": {
+          "description": "NFS represents an NFS mount on the host that shares a pod's lifetime More info: https://kubernetes.io/docs/concepts/storage/volumes#nfs",
+          "$ref": "#/definitions/v1.NFSVolumeSource"
+        },
+        "persistentVolumeClaim": {
+          "description": "PersistentVolumeClaimVolumeSource represents a reference to a PersistentVolumeClaim in the same namespace. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims",
+          "$ref": "#/definitions/v1.PersistentVolumeClaimVolumeSource"
+        },
+        "photonPersistentDisk": {
+          "description": "PhotonPersistentDisk represents a PhotonController persistent disk attached and mounted on kubelets host machine",
+          "$ref": "#/definitions/v1.PhotonPersistentDiskVolumeSource"
+        },
+        "portworxVolume": {
+          "description": "PortworxVolume represents a portworx volume attached and mounted on kubelets host machine",
+          "$ref": "#/definitions/v1.PortworxVolumeSource"
+        },
+        "projected": {
+          "description": "Items for all in one resources secrets, configmaps, and downward API",
+          "$ref": "#/definitions/v1.ProjectedVolumeSource"
+        },
+        "quobyte": {
+          "description": "Quobyte represents a Quobyte mount on the host that shares a pod's lifetime",
+          "$ref": "#/definitions/v1.QuobyteVolumeSource"
+        },
+        "rbd": {
+          "description": "RBD represents a Rados Block Device mount on the host that shares a pod's lifetime. More info: https://examples.k8s.io/volumes/rbd/README.md",
+          "$ref": "#/definitions/v1.RBDVolumeSource"
+        },
+        "scaleIO": {
+          "description": "ScaleIO represents a ScaleIO persistent volume attached and mounted on Kubernetes nodes.",
+          "$ref": "#/definitions/v1.ScaleIOVolumeSource"
+        },
+        "secret": {
+          "description": "Secret represents a secret that should populate this volume. More info: https://kubernetes.io/docs/concepts/storage/volumes#secret",
+          "$ref": "#/definitions/v1.SecretVolumeSource"
+        },
+        "storageos": {
+          "description": "StorageOS represents a StorageOS volume attached and mounted on Kubernetes nodes.",
+          "$ref": "#/definitions/v1.StorageOSVolumeSource"
+        },
+        "vsphereVolume": {
+          "description": "VsphereVolume represents a vSphere volume attached and mounted on kubelets host machine",
+          "$ref": "#/definitions/v1.VsphereVirtualDiskVolumeSource"
+        }
+      }
+    },
+    ".WaitingStatus": {
+      "type": "object",
+      "properties": {
+        "operationComplete": {
+          "description": "OperationComplete indicates if the preceding operation is complete",
+          "type": "boolean"
         }
       }
     }

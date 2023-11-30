@@ -19,10 +19,9 @@ set -o nounset
 set -o pipefail
 
 SWAGGER_CODEGEN_JAR="hack/sdk/swagger-codegen-cli.jar"
-SWAGGER_CODEGEN_JAR_URL="https://repo1.maven.org/maven2/io/swagger/codegen/v3/swagger-codegen-cli/3.0.41/swagger-codegen-cli-3.0.41.jar"
+SWAGGER_CODEGEN_JAR_URL="https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/4.3.1/openapi-generator-cli-4.3.1.jar"
 SWAGGER_CODEGEN_CONF="hack/sdk/swagger_config.json"
 SWAGGER_CODEGEN_FILE="api/v1alpha1/swagger.json"
-SDK_OUTPUT_PATH="sdk/python"
 PYTHON_SDK_OUTPUT_PATH="sdk/python"
 JAVA_SDK_OUTPUT_PATH="sdk/java"
 
@@ -48,7 +47,7 @@ else
         exit 1
     fi
     for i in {1..3}; do
-        if curl -fLsS "${SWAGGER_CODEGEN_JAR_URL}" -o "${SWAGGER_CODEGEN_JAR}"; then
+        if wget -O "${SWAGGER_CODEGEN_JAR}" "${SWAGGER_CODEGEN_JAR_URL}"; then
             break
         elif [ "$i" -eq 3 ]; then
             echo "Failed to download ${SWAGGER_CODEGEN_JAR} after 3 attempts." >&2
@@ -64,12 +63,14 @@ echo "Generating swagger file ..."
 go run hack/sdk/main.go 0.1 > ${SWAGGER_CODEGEN_FILE}
 
 echo "Generating python SDK for Fluid ..."
-java -jar ${SWAGGER_CODEGEN_JAR} generate -i ${SWAGGER_CODEGEN_FILE} -l python -o ${PYTHON_SDK_OUTPUT_PATH} -c ${SWAGGER_CODEGEN_CONF} --model-package com.github.fluid-cloudnative.fluid
+java -jar ${SWAGGER_CODEGEN_JAR} generate -i ${SWAGGER_CODEGEN_FILE} -g python -o ${PYTHON_SDK_OUTPUT_PATH} -c ${SWAGGER_CODEGEN_CONF} --model-package models
+# Revert files that are diverged from the generated files
+pushd . && cd ${PYTHON_SDK_OUTPUT_PATH} && git checkout setup.py && git checkout requirements.txt && git checkout README.md && popd
 
 echo "Fluid Python SDK is generated successfully to folder ${PYTHON_SDK_OUTPUT_PATH}/."
 
 echo "Generating java SDK for Fluid ..."
-java -jar ${SWAGGER_CODEGEN_JAR} generate -i ${SWAGGER_CODEGEN_FILE} -l java -o ${JAVA_SDK_OUTPUT_PATH} -c ${SWAGGER_CODEGEN_CONF} --model-package com.github.fluid-cloudnative.fluid
+java -jar ${SWAGGER_CODEGEN_JAR} generate -i ${SWAGGER_CODEGEN_FILE} -g java -o ${JAVA_SDK_OUTPUT_PATH} -c ${SWAGGER_CODEGEN_CONF} --model-package models
 
 echo "Fluid Java SDK is generated successfully to folder ${JAVA_SDK_OUTPUT_PATH}/."
 
