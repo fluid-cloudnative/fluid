@@ -1,6 +1,6 @@
 {
-    "packageName" : "Fluid",
-    "projectName" : "Fluid",
+    "packageName" : "fluid",
+    "projectName" : "fluid",
     "packageVersion": "0.1",
     "importMappings": {
         "V1Container": "from kubernetes.client import V1Container",
