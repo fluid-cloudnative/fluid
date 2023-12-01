@@ -19,7 +19,7 @@ thinruntime-controller-7dcbf5f45-xsf4p          1/1     Running   0          8h
 ## CSI机制跨Namespace共享数据集缓存
 ###  1. 创建Dataset和缓存Runtime
 
-在默认名空间下，创建`phy` Dataset和AlluxioRuntime
+在 default 命名空间下，创建`phy` Dataset和AlluxioRuntime
 ```shell
 $ cat<<EOF >ds.yaml
 apiVersion: data.fluid.io/v1alpha1
@@ -50,7 +50,7 @@ $ kubectl create -f ds.yaml
 ```
 
 ### 2. 创建引用的Dataset和Runtime
-在 ref 名空间下，创建：
+在 ref 命名空间下，创建：
 - 引用的数据集`refdemo`，其mountPoint格式为`dataset://${origin-dataset-namespace}/${origin-dataset-name}`；
 
 注：
@@ -72,7 +72,7 @@ $ kubectl create -f ds-ref.yaml -n ref
 
 ### 创建Pod并查看数据
 
-在 default 名空间下，创建Pod
+在 default 命名空间下，创建Pod
 
 ```shell
 $ cat<<EOF >app.yaml
@@ -97,7 +97,7 @@ $ kubectl create -f app.yaml
 ```
 
 
-在 ref 名空间下，创建Pod：
+在 ref 命名空间下，创建Pod：
 
 ```shell
 $ cat<<EOF >app-ref.yaml
@@ -127,14 +127,14 @@ $ kubectl get pods -n ref -o wide
 NAME         READY   STATUS    RESTARTS   AGE   IP              NODE      NOMINATED NODE   READINESS GATES
 nginx        1/1     Running   0          11m   10.233.109.66   work02    <none>           <none>
 
-# 查看pod内的数据路径，spark 是 default名空间 phy Dataset的路径
+# 查看pod内的数据路径，spark 是 default命名空间下名为 `phy` 的 Dataset 的路径
 $ kubectl exec nginx -n ref -it -- ls /data_spark
 spark
 ```
 
 查看 default 空间下的pod信息：
 - 只存在一个AlluxioRuntime集群，即缓存只有一份；
-- 因为 ref 名空间下的 nginx pod 调度在node133上，因此多了一个`phy-fuse-nmf88`；
+- 因为 ref 命名空间下的 nginx pod 调度在node133上，因此多了一个`phy-fuse-nmf88`；
 ```shell
 $ kubectl get pods -o wide
 NAME             READY   STATUS    RESTARTS   AGE     IP              NODE      NOMINATED NODE   READINESS GATES
