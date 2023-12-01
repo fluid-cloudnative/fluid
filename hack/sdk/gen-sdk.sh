@@ -65,7 +65,14 @@ go run hack/sdk/main.go 0.1 > ${SWAGGER_CODEGEN_FILE}
 echo "Generating python SDK for Fluid ..."
 java -jar ${SWAGGER_CODEGEN_JAR} generate -i ${SWAGGER_CODEGEN_FILE} -g python -o ${PYTHON_SDK_OUTPUT_PATH} -c ${SWAGGER_CODEGEN_CONF} --model-package models
 # Revert files that are diverged from the generated files
-pushd . && cd ${PYTHON_SDK_OUTPUT_PATH} && git checkout setup.py && git checkout requirements.txt && git checkout README.md && popd
+pushd . && \
+    cd ${PYTHON_SDK_OUTPUT_PATH} && \
+    git checkout setup.py && \
+    git checkout requirements.txt && \
+    git checkout README.md && \
+    git checkout fluid/__init__.py && \
+    git checkout .gitignore && \
+    popd
 
 echo "Fluid Python SDK is generated successfully to folder ${PYTHON_SDK_OUTPUT_PATH}/."
 
