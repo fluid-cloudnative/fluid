@@ -38,11 +38,11 @@ type PreferNodesWithoutCache struct {
 	name   string
 }
 
-func NewPlugin(c client.Client, args string) api.MutatingHandler {
+func NewPlugin(c client.Client, args string) (api.MutatingHandler, error) {
 	return &PreferNodesWithoutCache{
 		client: c,
 		name:   Name,
-	}
+	}, nil
 }
 
 func (p *PreferNodesWithoutCache) GetName() string {

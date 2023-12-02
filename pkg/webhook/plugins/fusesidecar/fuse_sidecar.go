@@ -41,11 +41,11 @@ type FuseSidecar struct {
 	name   string
 }
 
-func NewPlugin(c client.Client, args string) api.MutatingHandler {
+func NewPlugin(c client.Client, args string) (api.MutatingHandler, error) {
 	return &FuseSidecar{
 		client: c,
 		name:   Name,
-	}
+	}, nil
 }
 
 func (p *FuseSidecar) GetName() string {

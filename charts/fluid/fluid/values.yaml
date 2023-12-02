@@ -164,6 +164,8 @@ webhook:
       # serverless webhook plugins
       serverless:
         withDataset:
+          - RequireNodeWithFuse
+          - NodeAffinityWithCache
           - FuseSidecar
         withoutDataset:
           - PreferNodesWithoutCache

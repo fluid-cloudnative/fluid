@@ -18,7 +18,6 @@ package nodeaffinitywithcache
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/api"
 	"k8s.io/apimachinery/pkg/runtime"
 	"reflect"
 	"testing"
@@ -51,7 +50,10 @@ func TestPlugin(t *testing.T) {
 	var (
 		client client.Client
 	)
-	plugin := NewPlugin(client, "")
+	plugin, err := NewPlugin(client, "")
+	if err != nil {
+		t.Error("new plugin occurs error", err)
+	}
 	if plugin.GetName() != Name {
 		t.Errorf("GetName expect %v, got %v", Name, plugin.GetName())
 	}
@@ -102,7 +104,10 @@ func TestMutateOnlyRequired(t *testing.T) {
 		schedPod *corev1.Pod
 	)
 
-	plugin := NewPlugin(client, tieredLocality)
+	plugin, err := NewPlugin(client, tieredLocality)
+	if err != nil {
+		t.Error("new plugin occurs error", err)
+	}
 	runtimeInfo, err := base.BuildRuntimeInfo(alluxioRuntime.Name, alluxioRuntime.Namespace, "alluxio", datav1alpha1.TieredStore{})
 	// enable Preferred scheduling
 	runtimeInfo.SetupFuseDeployMode(true, map[string]string{})
@@ -162,7 +167,7 @@ func TestMutateOnlyPrefer(t *testing.T) {
 		pod    *corev1.Pod
 	)
 
-	plugin := NewPlugin(client, tieredLocality)
+	plugin, err := NewPlugin(client, tieredLocality)
 	if plugin.GetName() != Name {
 		t.Errorf("GetName expect %v, got %v", Name, plugin.GetName())
 	}
@@ -212,7 +217,7 @@ func TestMutateBothRequiredAndPrefer(t *testing.T) {
 		schedPod *corev1.Pod
 	)
 
-	plugin := NewPlugin(client, tieredLocality)
+	plugin, err := NewPlugin(client, tieredLocality)
 	runtimeInfo, err := base.BuildRuntimeInfo(alluxioRuntime.Name, alluxioRuntime.Namespace, "alluxio", datav1alpha1.TieredStore{})
 	// set global true to enable prefer
 	runtimeInfo.SetupFuseDeployMode(true, map[string]string{})
@@ -305,12 +310,13 @@ required:
 	runtimeInfo.SetupFuseDeployMode(true, map[string]string{})
 
 	type args struct {
-		plugin       api.MutatingHandler
+		pluginArg    string
 		pod          *corev1.Pod
 		runtimeInfos map[string]base.RuntimeInfoInterface
 	}
 	type wanted struct {
-		pod *corev1.Pod
+		pod            *corev1.Pod
+		newPluginError bool
 	}
 
 	var tests = []struct {
@@ -321,7 +327,7 @@ required:
 		{
 			name: "tiered locality with dataset sched",
 			args: args{
-				plugin: NewPlugin(client, customizedTieredLocality),
+				pluginArg: customizedTieredLocality,
 				pod: &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
@@ -336,6 +342,7 @@ required:
 				},
 			},
 			wanted: wanted{
+				newPluginError: false,
 				pod: &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
@@ -369,7 +376,7 @@ required:
 		{
 			name: "tiered locality",
 			args: args{
-				plugin: NewPlugin(client, customizedTieredLocality),
+				pluginArg: customizedTieredLocality,
 				pod: &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
@@ -381,6 +388,7 @@ required:
 				},
 			},
 			wanted: wanted{
+				newPluginError: false,
 				pod: &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
@@ -436,7 +444,7 @@ required:
 		{
 			name: "pod customized tiered locality",
 			args: args{
-				plugin: NewPlugin(client, customizedTieredLocality),
+				pluginArg: customizedTieredLocality,
 				pod: &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
@@ -468,6 +476,7 @@ required:
 				},
 			},
 			wanted: wanted{
+				newPluginError: false,
 				pod: &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
@@ -497,9 +506,9 @@ required:
 			},
 		},
 		{
-			name: "no configmap",
+			name: "empty args",
 			args: args{
-				plugin: NewPlugin(client, ""),
+				pluginArg: "",
 				pod: &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
@@ -512,6 +521,33 @@ required:
 				},
 			},
 			wanted: wanted{
+				newPluginError: false,
+				pod: &corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "test",
+					},
+					Spec: corev1.PodSpec{},
+				},
+			},
+		},
+		{
+			name: "wrong args",
+			args: args{
+				pluginArg: "wrong format",
+				pod: &corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "test",
+					},
+					Spec: corev1.PodSpec{},
+				},
+				runtimeInfos: map[string]base.RuntimeInfoInterface{
+					alluxioRuntime.Name: runtimeInfo,
+				},
+			},
+			wanted: wanted{
+				newPluginError: true,
 				pod: &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
@@ -524,7 +560,15 @@ required:
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := tt.args.plugin.Mutate(tt.args.pod, tt.args.runtimeInfos)
+			plugin, err := NewPlugin(client, tt.args.pluginArg)
+			if (err != nil) != tt.wanted.newPluginError {
+				t.Errorf("new plugin error = %v, wantErr %v", err, tt.wanted.newPluginError)
+			}
+			if plugin == nil {
+				return
+			}
+
+			_, err = plugin.Mutate(tt.args.pod, tt.args.runtimeInfos)
 			if err != nil {
 				t.Errorf("get err %v", err)
 			}

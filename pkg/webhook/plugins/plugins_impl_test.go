@@ -107,7 +107,10 @@ required:
 		}
 
 		// test of plugin preferNodesWithoutCache
-		plugin = prefernodeswithoutcache.NewPlugin(c, "")
+		plugin, err = prefernodeswithoutcache.NewPlugin(c, "")
+		if err != nil {
+			t.Error("new plugin occurs error", err)
+		}
 		pluginName = plugin.GetName()
 		_, err = plugin.Mutate(&pod, runtimeInfos)
 		if err != nil {
@@ -154,7 +157,10 @@ required:
 		}
 
 		// test of plugin preferNodesWithCache
-		plugin = nodeaffinitywithcache.NewPlugin(c, tieredLocality)
+		plugin, err = nodeaffinitywithcache.NewPlugin(c, tieredLocality)
+		if err != nil {
+			t.Error("new plugin occurs error", err)
+		}
 		pluginName = plugin.GetName()
 		_, err = plugin.Mutate(&pod, nilRuntimeInfos)
 		if err != nil {
@@ -214,9 +220,10 @@ func TestGetRegistryHandler(t *testing.T) {
 	}
 
 	tests := []struct {
-		name      string
-		want      want
-		configmap *corev1.ConfigMap
+		name         string
+		want         want
+		newPluginErr bool
+		configmap    *corev1.ConfigMap
 	}{
 		{
 			name: "existing correct configmap",
@@ -258,6 +265,7 @@ pluginConfig:
 `,
 				},
 			},
+
 			want: want{
 				podWithDatasetHandlerNames: []string{
 					"RequireNodeWithFuse", "NodeAffinityWithCache", "MountPropagationInjector",
@@ -285,11 +293,58 @@ pluginConfig:
 				serverlessPodWithDatasetHandlerSize:    1,
 				serverlessPodWithoutDatasetHandlerSize: 1,
 			},
+			newPluginErr: false,
 		},
 		{
-			name:      "not exist configmap",
-			configmap: nil,
-			want:      want{},
+			name: "existing wrong configmap",
+			configmap: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      common.PluginProfileConfigMapName,
+					Namespace: fluidNameSpace,
+				},
+				Data: map[string]string{
+					common.PluginProfileKeyName: `
+plugins:
+  serverful:
+    withDataset:
+    - NotExistPlugin
+    - RequireNodeWithFuse
+    - NodeAffinityWithCache
+    - MountPropagationInjector
+    withoutDataset:
+    - PreferNodesWithoutCache
+  serverless:
+    withDataset:
+    - FuseSidecar
+    withoutDataset:
+    - PreferNodesWithoutCache
+pluginConfig:
+  - name: NodeAffinityWithCache
+    args: |
+      preferred:
+      # fluid existed node affinity, the name can not be modified.
+      - name: fluid.io/node
+        weight: 100
+      # runtime worker's zone label name, can be changed according to k8s environment.
+      - name: topology.kubernetes.io/zone
+        weight: 50
+      # runtime worker's region label name, can be changed according to k8s environment.
+      - name: topology.kubernetes.io/region
+        weight: 10
+      required:
+      - fluid.io/node
+`,
+				},
+			},
+
+			want:         want{},
+			newPluginErr: true,
+		},
+		{
+			name:         "not exist configmap",
+			configmap:    nil,
+			want:         want{},
+			newPluginErr: true,
 		},
 	}
 
@@ -304,7 +359,14 @@ pluginConfig:
 			} else {
 				clientWithScheme = fake.NewFakeClientWithScheme(schema)
 			}
-			_ = RegisterMutatingHandlers(clientWithScheme)
+			err := RegisterMutatingHandlers(clientWithScheme)
+			if tt.newPluginErr {
+				if err == nil {
+					t.Error("new plugin should has error but got nil")
+				}
+				return
+			}
+
 			plugins := GetRegistryHandler()
 			got := want{
 				podWithoutDatasetHandlerSize:           len(plugins.GetPodWithoutDatasetHandler()),

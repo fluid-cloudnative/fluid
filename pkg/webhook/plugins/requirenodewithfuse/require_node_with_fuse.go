@@ -38,11 +38,11 @@ type RequireNodeWithFuse struct {
 	name   string
 }
 
-func NewPlugin(c client.Client, args string) api.MutatingHandler {
+func NewPlugin(c client.Client, args string) (api.MutatingHandler, error) {
 	return &RequireNodeWithFuse{
 		client: c,
 		name:   Name,
-	}
+	}, nil
 }
 
 func (p *RequireNodeWithFuse) GetName() string {

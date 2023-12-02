@@ -39,11 +39,11 @@ type MountPropagationInjector struct {
 	name   string
 }
 
-func NewPlugin(c client.Client, args string) api.MutatingHandler {
+func NewPlugin(c client.Client, args string) (api.MutatingHandler, error) {
 	return &MountPropagationInjector{
 		client: c,
 		name:   Name,
-	}
+	}, nil
 }
 
 func (p *MountPropagationInjector) GetName() string {
