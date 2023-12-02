@@ -171,3 +171,26 @@ func TestCheckValidateEnvName(t *testing.T) {
 		}
 	}
 }
+
+func TestConvertDashToUnderscore(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{name: "Single dash", input: "hello-world", expected: "hello_world"},
+		{name: "Multiple dashes", input: "hello-world-again", expected: "hello_world_again"},
+		{name: "No dash", input: "helloworld", expected: "helloworld"},
+		{name: "Empty string", input: "", expected: ""},
+		{name: "Only dashes", input: "---", expected: "___"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual := ConvertDashToUnderscore(tt.input)
+			if actual != tt.expected {
+				t.Errorf("expected %s, got %s", tt.expected, actual)
+			}
+		})
+	}
+}
