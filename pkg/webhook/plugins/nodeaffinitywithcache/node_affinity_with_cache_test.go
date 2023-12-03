@@ -167,7 +167,7 @@ func TestMutateOnlyPrefer(t *testing.T) {
 		pod    *corev1.Pod
 	)
 
-	plugin, err := NewPlugin(client, tieredLocality)
+	plugin, _ := NewPlugin(client, tieredLocality)
 	if plugin.GetName() != Name {
 		t.Errorf("GetName expect %v, got %v", Name, plugin.GetName())
 	}
@@ -217,7 +217,7 @@ func TestMutateBothRequiredAndPrefer(t *testing.T) {
 		schedPod *corev1.Pod
 	)
 
-	plugin, err := NewPlugin(client, tieredLocality)
+	plugin, _ := NewPlugin(client, tieredLocality)
 	runtimeInfo, err := base.BuildRuntimeInfo(alluxioRuntime.Name, alluxioRuntime.Namespace, "alluxio", datav1alpha1.TieredStore{})
 	// set global true to enable prefer
 	runtimeInfo.SetupFuseDeployMode(true, map[string]string{})

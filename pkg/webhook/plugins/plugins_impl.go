@@ -71,7 +71,7 @@ func RegisterMutatingHandlers(client client.Client) error {
 		return err
 	}
 	if cm == nil {
-		err = errors.New(fmt.Sprintf("plugins config map [%s] does not exist", common.PluginProfileConfigMapName))
+		err = fmt.Errorf("plugins config map [%s] does not exist", common.PluginProfileConfigMapName)
 		return err
 	}
 
@@ -162,7 +162,7 @@ func newHandlerForType(client client.Client, pluginNames []string, pluginConfig 
 	for _, name := range pluginNames {
 		factory, ok := registry[name]
 		if !ok {
-			err := errors.New(fmt.Sprintf("unknown plugin name [%s]", name))
+			err := fmt.Errorf("unknown plugin name [%s]", name)
 			log.Error(err, "plugin not exist", "pluginName", name)
 			return nil, err
 		}
