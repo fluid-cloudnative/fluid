@@ -17,7 +17,6 @@ limitations under the License.
 package nodeaffinitywithcache
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"reflect"
@@ -32,21 +31,13 @@ import (
 
 var (
 	// default tiered locality to be compatible with fluid 0.9 logic
-	tieredLocalityConfigMap = &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      common.TieredLocalityConfigMapName,
-			Namespace: fluidNameSpace,
-		},
-		Data: map[string]string{
-			"tieredLocality": "" +
-				"preferred:\n" +
-				"  # fluid existed node affinity, the name can not be modified.\n" +
-				"  - name: fluid.io/node\n" +
-				"    weight: 100\n" +
-				"required:\n" +
-				"  - fluid.io/node\n",
-		},
-	}
+	tieredLocality = `
+preferred:
+- name: fluid.io/node
+  weight: 100
+required:
+- fluid.io/node
+`
 	alluxioRuntime = &datav1alpha1.AlluxioRuntime{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "alluxio-runtime",
@@ -59,7 +50,10 @@ func TestPlugin(t *testing.T) {
 	var (
 		client client.Client
 	)
-	plugin := NewPlugin(client)
+	plugin, err := NewPlugin(client, "")
+	if err != nil {
+		t.Error("new plugin occurs error", err)
+	}
 	if plugin.GetName() != Name {
 		t.Errorf("GetName expect %v, got %v", Name, plugin.GetName())
 	}
@@ -106,11 +100,14 @@ func TestMutateOnlyRequired(t *testing.T) {
 	_ = datav1alpha1.AddToScheme(schema)
 	_ = corev1.AddToScheme(schema)
 	var (
-		client   = fake.NewFakeClientWithScheme(schema, tieredLocalityConfigMap, alluxioRuntime)
+		client   = fake.NewFakeClientWithScheme(schema, alluxioRuntime)
 		schedPod *corev1.Pod
 	)
 
-	plugin := NewPlugin(client)
+	plugin, err := NewPlugin(client, tieredLocality)
+	if err != nil {
+		t.Error("new plugin occurs error", err)
+	}
 	runtimeInfo, err := base.BuildRuntimeInfo(alluxioRuntime.Name, alluxioRuntime.Namespace, "alluxio", datav1alpha1.TieredStore{})
 	// enable Preferred scheduling
 	runtimeInfo.SetupFuseDeployMode(true, map[string]string{})
@@ -166,11 +163,11 @@ func TestMutateOnlyPrefer(t *testing.T) {
 	_ = datav1alpha1.AddToScheme(schema)
 	_ = corev1.AddToScheme(schema)
 	var (
-		client = fake.NewFakeClientWithScheme(schema, tieredLocalityConfigMap, alluxioRuntime)
+		client = fake.NewFakeClientWithScheme(schema, alluxioRuntime)
 		pod    *corev1.Pod
 	)
 
-	plugin := NewPlugin(client)
+	plugin, _ := NewPlugin(client, tieredLocality)
 	if plugin.GetName() != Name {
 		t.Errorf("GetName expect %v, got %v", Name, plugin.GetName())
 	}
@@ -216,11 +213,11 @@ func TestMutateBothRequiredAndPrefer(t *testing.T) {
 	_ = datav1alpha1.AddToScheme(schema)
 	_ = corev1.AddToScheme(schema)
 	var (
-		client   = fake.NewFakeClientWithScheme(schema, tieredLocalityConfigMap, alluxioRuntime)
+		client   = fake.NewFakeClientWithScheme(schema, alluxioRuntime)
 		schedPod *corev1.Pod
 	)
 
-	plugin := NewPlugin(client)
+	plugin, _ := NewPlugin(client, tieredLocality)
 	runtimeInfo, err := base.BuildRuntimeInfo(alluxioRuntime.Name, alluxioRuntime.Namespace, "alluxio", datav1alpha1.TieredStore{})
 	// set global true to enable prefer
 	runtimeInfo.SetupFuseDeployMode(true, map[string]string{})
@@ -263,27 +260,17 @@ func TestMutateBothRequiredAndPrefer(t *testing.T) {
 }
 
 func TestTieredLocality(t *testing.T) {
-	customizedTieredLocalityConfigMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      common.TieredLocalityConfigMapName,
-			Namespace: fluidNameSpace,
-		},
-		Data: map[string]string{
-			common.TieredLocalityDataNameInConfigMap: "" +
-				"preferred:\n" +
-				"  # fluid existed node affinity, the name can not be modified.\n" +
-				"  - name: fluid.io/node\n" +
-				"    weight: 100\n" +
-				"  # runtime worker's rack label name, can be changed according to k8s environment.\n" +
-				"  - name: topology.kubernetes.io/rack\n" +
-				"    weight: 50\n" +
-				"  # runtime worker's zone label name, can be changed according to k8s environment.\n" +
-				"  - name: topology.kubernetes.io/zone\n" +
-				"    weight: 10\n" +
-				"required:\n" +
-				"  - fluid.io/node\n",
-		},
-	}
+	customizedTieredLocality := `
+preferred:
+- name: fluid.io/node
+  weight: 100
+- name: topology.kubernetes.io/rack
+  weight: 50
+- name: topology.kubernetes.io/zone
+  weight: 10
+required:
+- fluid.io/node
+`
 
 	alluxioRuntime = &datav1alpha1.AlluxioRuntime{
 		ObjectMeta: metav1.ObjectMeta{
@@ -316,19 +303,20 @@ func TestTieredLocality(t *testing.T) {
 	schema := runtime.NewScheme()
 	_ = corev1.AddToScheme(schema)
 	_ = datav1alpha1.AddToScheme(schema)
-	client := fake.NewFakeClientWithScheme(schema, customizedTieredLocalityConfigMap, alluxioRuntime)
+	client := fake.NewFakeClientWithScheme(schema, alluxioRuntime)
 
 	runtimeInfo, _ := base.BuildRuntimeInfo(alluxioRuntime.Name, alluxioRuntime.Namespace, "alluxio", datav1alpha1.TieredStore{})
 	// set global true to enable prefer
 	runtimeInfo.SetupFuseDeployMode(true, map[string]string{})
 
 	type args struct {
-		plugin       *NodeAffinityWithCache
+		pluginArg    string
 		pod          *corev1.Pod
 		runtimeInfos map[string]base.RuntimeInfoInterface
 	}
 	type wanted struct {
-		pod *corev1.Pod
+		pod            *corev1.Pod
+		newPluginError bool
 	}
 
 	var tests = []struct {
@@ -339,7 +327,7 @@ func TestTieredLocality(t *testing.T) {
 		{
 			name: "tiered locality with dataset sched",
 			args: args{
-				plugin: NewPlugin(client),
+				pluginArg: customizedTieredLocality,
 				pod: &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
@@ -354,6 +342,7 @@ func TestTieredLocality(t *testing.T) {
 				},
 			},
 			wanted: wanted{
+				newPluginError: false,
 				pod: &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
@@ -387,7 +376,7 @@ func TestTieredLocality(t *testing.T) {
 		{
 			name: "tiered locality",
 			args: args{
-				plugin: NewPlugin(client),
+				pluginArg: customizedTieredLocality,
 				pod: &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
@@ -399,6 +388,7 @@ func TestTieredLocality(t *testing.T) {
 				},
 			},
 			wanted: wanted{
+				newPluginError: false,
 				pod: &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
@@ -454,7 +444,7 @@ func TestTieredLocality(t *testing.T) {
 		{
 			name: "pod customized tiered locality",
 			args: args{
-				plugin: NewPlugin(client),
+				pluginArg: customizedTieredLocality,
 				pod: &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
@@ -486,6 +476,7 @@ func TestTieredLocality(t *testing.T) {
 				},
 			},
 			wanted: wanted{
+				newPluginError: false,
 				pod: &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
@@ -514,10 +505,70 @@ func TestTieredLocality(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "empty args",
+			args: args{
+				pluginArg: "",
+				pod: &corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "test",
+					},
+					Spec: corev1.PodSpec{},
+				},
+				runtimeInfos: map[string]base.RuntimeInfoInterface{
+					alluxioRuntime.Name: runtimeInfo,
+				},
+			},
+			wanted: wanted{
+				newPluginError: false,
+				pod: &corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "test",
+					},
+					Spec: corev1.PodSpec{},
+				},
+			},
+		},
+		{
+			name: "wrong args",
+			args: args{
+				pluginArg: "wrong format",
+				pod: &corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "test",
+					},
+					Spec: corev1.PodSpec{},
+				},
+				runtimeInfos: map[string]base.RuntimeInfoInterface{
+					alluxioRuntime.Name: runtimeInfo,
+				},
+			},
+			wanted: wanted{
+				newPluginError: true,
+				pod: &corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "test",
+					},
+					Spec: corev1.PodSpec{},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := tt.args.plugin.Mutate(tt.args.pod, tt.args.runtimeInfos)
+			plugin, err := NewPlugin(client, tt.args.pluginArg)
+			if (err != nil) != tt.wanted.newPluginError {
+				t.Errorf("new plugin error = %v, wantErr %v", err, tt.wanted.newPluginError)
+			}
+			if plugin == nil {
+				return
+			}
+
+			_, err = plugin.Mutate(tt.args.pod, tt.args.runtimeInfos)
 			if err != nil {
 				t.Errorf("get err %v", err)
 			}
