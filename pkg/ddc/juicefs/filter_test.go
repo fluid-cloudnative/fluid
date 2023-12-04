@@ -140,3 +140,48 @@ func TestBuildFormatCmdFilterForEnterpriseEditionAndFilterEncryptEnvOptions(t *t
 		})
 	}
 }
+
+func Test_buildFormatCmdFilterForCommunityEdition(t *testing.T) {
+	var mockOptions = map[string]string{
+		"JuiceBucket2":     "value",
+		"DisallowedOption": "value",
+	}
+
+	// Define test cases
+	testCases := []struct {
+		name           string
+		input          map[string]string
+		expectedOutput map[string]string
+	}{
+		{
+			name:           "Test with empty options",
+			input:          map[string]string{},
+			expectedOutput: map[string]string{},
+		},
+		{
+			name:  "Test with all allowed options",
+			input: mockOptions,
+			expectedOutput: map[string]string{"JuiceBucket2": "value",
+				"DisallowedOption": "value"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Create filter object
+			filter := buildFormatCmdFilterForCommunityEdition()
+
+			// Use filter to filter options
+			output := filter.filterOption(tc.input)
+
+			if len(output) == 0 && len(tc.expectedOutput) == 0 {
+				return
+			}
+
+			// Check if the filter result is as expected
+			if !reflect.DeepEqual(output, tc.expectedOutput) {
+				t.Errorf("filterOption() = %v, want %v", output, tc.expectedOutput)
+			}
+		})
+	}
+}
