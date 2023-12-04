@@ -394,10 +394,11 @@ func genArgs(optionMap map[string]string) []string {
 func (j *JuiceFSEngine) genFormatCmd(value *JuiceFS, config *[]string, options map[string]string) {
 
 	var (
-		// allow Options for CommunityEdition
-		ceAllowOptions []string = []string{}
-		// allow Options for CommunityEdition
-		eeAllowOptions []string = []string{JuiceBucket2, AccessKey2, SecretKey2}
+		// ceFilter for CommunityEdition
+		ceFilter = buildFormatCmdFilterForCommunityEdition()
+		// eeFilter for EnterpriseEdition
+		eeFilter = buildFormatCmdFilterForEnterpriseEdition()
+		// eeAllowOptions []string = []string{JuiceBucket2, AccessKey2, SecretKey2}
 	)
 	args := make([]string, 0)
 	if config != nil {
@@ -425,12 +426,11 @@ func (j *JuiceFSEngine) genFormatCmd(value *JuiceFS, config *[]string, options m
 		if value.Configs.Bucket != "" {
 			args = append(args, fmt.Sprintf("--bucket=%s", value.Configs.Bucket))
 		}
-		formatOpts := includeOptionsWithKeys(options, ceAllowOptions)
+		formatOpts := ceFilter.filterOption(options)
 		for k, v := range formatOpts {
 			args = append(args, fmt.Sprintf("--%s=%s", k, v))
 		}
-		encryptOptions := includeEncryptEnvOptionsWithKeys(value.Configs.EncryptEnvOptions,
-			ceAllowOptions)
+		encryptOptions := ceFilter.filterEncryptEnvOptions(value.Configs.EncryptEnvOptions)
 		for _, v := range encryptOptions {
 			args = append(args, fmt.Sprintf("--%s=${%s}", v.Name, v.EnvName))
 		}
@@ -454,12 +454,11 @@ func (j *JuiceFSEngine) genFormatCmd(value *JuiceFS, config *[]string, options m
 	if value.Configs.Bucket != "" {
 		args = append(args, fmt.Sprintf("--bucket=%s", value.Configs.Bucket))
 	}
-	formatOpts := includeOptionsWithKeys(options, eeAllowOptions)
+	formatOpts := eeFilter.filterOption(options)
 	for k, v := range formatOpts {
 		args = append(args, fmt.Sprintf("--%s=%s", k, v))
 	}
-	encryptOptions := includeEncryptEnvOptionsWithKeys(value.Configs.EncryptEnvOptions,
-		eeAllowOptions)
+	encryptOptions := eeFilter.filterEncryptEnvOptions(value.Configs.EncryptEnvOptions)
 	for _, v := range encryptOptions {
 		args = append(args, fmt.Sprintf("--%s=${%s}", v.Name, v.EnvName))
 	}
