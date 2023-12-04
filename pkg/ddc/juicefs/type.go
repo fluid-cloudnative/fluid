@@ -117,7 +117,6 @@ type cacheStates struct {
 	cacheHitRatio        string
 	cacheThroughputRatio string
 }
-
 type fuseMetrics struct {
 	blockCacheBytes     int64
 	blockCacheHits      int64
