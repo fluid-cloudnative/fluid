@@ -321,6 +321,9 @@ func (j *JuiceFSEngine) genFuseMount(value *JuiceFS, optionMap map[string]string
 	if optionMap == nil {
 		optionMap = map[string]string{}
 	}
+	// filter the optionMap with expected and unexpected keys
+	filter := buildFuseMountCmdFilter()
+	optionMap = filter.filterOption(optionMap)
 	readonly := false
 	runtimeInfo := j.runtimeInfo
 	if runtimeInfo != nil {

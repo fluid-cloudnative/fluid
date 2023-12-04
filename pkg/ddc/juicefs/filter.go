@@ -19,6 +19,40 @@ type formatCmdFilter struct {
 	abstractFilter
 }
 
+// buildFormatCmdFilterForCommunityEdition builds a command filter for the community edition
+func buildFormatCmdFilterForEnterpriseEdition() filter {
+	f := formatCmdFilter{}
+	f.allowOptionKey = []string{JuiceBucket2}
+	f.allowEncryptEnvOptionKey = []string{AccessKey2, SecretKey2}
+	return f
+}
+
+// buildFormatCmdFilterForCommunityEdition builds a command filter for the community edition
+func buildFormatCmdFilterForCommunityEdition() filter {
+	return formatCmdFilter{}
+}
+
+// fuseMountFilter is a struct for filtering fuse mount command options. It embeds abstractFilter
+type fuseMountCmdFilter struct {
+	abstractFilter
+}
+
+// // buildFuseMountCmdFilterForCommunityEdition builds a command filter for the community edition
+// func buildFuseMountCmdFilterForEnterpriseEdition() filter {
+// 	return buildFuseMountCmdFilter()
+// }
+
+// // buildFuseMountCmdFilterForCommunityEdition builds a command filter for the community edition
+// func buildFuseMountCmdFilterForCommunityEdition() filter {
+// 	return buildFuseMountCmdFilter()
+// }
+
+func buildFuseMountCmdFilter() filter {
+	f := fuseMountCmdFilter{}
+	f.disallowOptionKey = []string{JuiceBucket2}
+	return f
+}
+
 // filterOption implements the filtering of options. It creates a new options map that includes all allowed keys, and then excludes any disallowed keys
 func (f abstractFilter) filterOption(options map[string]string) (result map[string]string) {
 	// If allowed option keys are initialized, create a result map that includes only these
@@ -47,20 +81,6 @@ func (f abstractFilter) filterEncryptEnvOptions(encriptOptions []EncryptEnvOptio
 	}
 
 	return
-}
-
-// buildFormatCmdFilterForCommunityEdition builds a command filter for the community edition
-func buildFormatCmdFilterForEnterpriseEdition() filter {
-	f := formatCmdFilter{}
-	f.allowOptionKey = []string{JuiceBucket2}
-	f.allowEncryptEnvOptionKey = []string{AccessKey2, SecretKey2}
-	return f
-}
-
-// buildFormatCmdFilterForCommunityEdition builds a command filter for the community edition
-func buildFormatCmdFilterForCommunityEdition() filter {
-	f := formatCmdFilter{}
-	return f
 }
 
 // includeEncryptEnvOptionsWithKeys is a function that filters the provided
