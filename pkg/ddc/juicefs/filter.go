@@ -1,10 +1,12 @@
 package juicefs
 
+// filter is an interface for filtering options
 type filter interface {
 	filterOption(options map[string]string) (result map[string]string)
 	filterEncryptEnvOptions(encriptOptions []EncryptEnvOption) (result []EncryptEnvOption)
 }
 
+// abstractFilter is a concrete filter type. It has fields for allowed and disallowed option keys
 type abstractFilter struct {
 	allowOptionKey              []string
 	allowEncryptEnvOptionKey    []string
@@ -12,15 +14,19 @@ type abstractFilter struct {
 	disallowEncryptEnvOptionKey []string
 }
 
+// formatCmdFilter is a struct for filtering format command options. It embeds abstractFilter
 type formatCmdFilter struct {
 	abstractFilter
 }
 
+// filterOption implements the filtering of options. It creates a new options map that includes all allowed keys, and then excludes any disallowed keys
 func (f abstractFilter) filterOption(options map[string]string) (result map[string]string) {
+	// If allowed option keys are initialized, create a result map that includes only these
 	if f.allowOptionKey != nil {
 		result = includeOptionsWithKeys(options, f.allowOptionKey)
 	}
 
+	// If disallowed option keys are initialized, exclude these from the result map
 	if f.disallowOptionKey != nil {
 		result = excludeOptionsWithKeys(result, f.disallowOptionKey)
 	}
@@ -28,11 +34,14 @@ func (f abstractFilter) filterOption(options map[string]string) (result map[stri
 	return
 }
 
+// filterEncryptEnvOptions implements the filtering of encrypted environment options. It creates a new options slice that includes all allowed keys, and then excludes any disallowed keys
 func (f abstractFilter) filterEncryptEnvOptions(encriptOptions []EncryptEnvOption) (result []EncryptEnvOption) {
+	// If allowed option keys are initialized, create a result slice that includes only these
 	if f.allowEncryptEnvOptionKey != nil {
 		result = includeEncryptEnvOptionsWithKeys(encriptOptions, f.allowEncryptEnvOptionKey)
 	}
 
+	// If disallowed option keys are initialized, exclude these from the result slice
 	if f.disallowEncryptEnvOptionKey != nil {
 		result = excludeEncryptEnvOptionsWithKeys(result, f.disallowEncryptEnvOptionKey)
 	}
