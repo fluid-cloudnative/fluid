@@ -899,6 +899,39 @@ func TestJuiceFSEngine_genMount(t *testing.T) {
 			wantErr:         false,
 			wantFuseCommand: "/sbin/mount.juicefs test-enterprise /test -o verbose,foreground,no-update,cache-group=test,no-sharing",
 			wantFuseStatCmd: "stat -c %i /test",
+		}, {
+			name: "test-enterprise-options-with-bucket2",
+			fields: fields{
+				name:      "test",
+				namespace: "fluid",
+				Log:       fake.NullLogger(),
+			},
+			args: args{
+				value: &JuiceFS{
+					FullnameOverride: "test-enterprise",
+					Edition:          "enterprise",
+					Source:           "test-enterprise",
+					Configs: Configs{
+						Name:            "test-enterprise",
+						AccessKeySecret: "test",
+						SecretKeySecret: "test",
+						Bucket:          "http://127.0.0.1:9000/minio/test",
+						TokenSecret:     "test",
+					},
+					Fuse: Fuse{
+						SubPath:       "/",
+						MountPath:     "/test",
+						HostMountPath: "/test",
+					},
+					Worker: Worker{
+						MountPath: "/test",
+					},
+				},
+				options: map[string]string{"cache-group": "test", "verbose": "", JuiceBucket2: "bucket2"},
+			},
+			wantErr:         false,
+			wantFuseCommand: "/sbin/mount.juicefs test-enterprise /test -o verbose,foreground,no-update,cache-group=test,no-sharing",
+			wantFuseStatCmd: "stat -c %i /test",
 		},
 	}
 	for _, tt := range tests {
