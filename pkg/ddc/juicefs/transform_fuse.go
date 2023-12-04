@@ -425,11 +425,11 @@ func (j *JuiceFSEngine) genFormatCmd(value *JuiceFS, config *[]string, options m
 		if value.Configs.Bucket != "" {
 			args = append(args, fmt.Sprintf("--bucket=%s", value.Configs.Bucket))
 		}
-		formatOpts := filterOptionsWithKeys(options, ceAllowOptions)
+		formatOpts := includeOptionsWithKeys(options, ceAllowOptions)
 		for k, v := range formatOpts {
 			args = append(args, fmt.Sprintf("--%s=%s", k, v))
 		}
-		encryptOptions := filterEncryptEnvOptionsWithKeys(value.Configs.EncryptEnvOptions,
+		encryptOptions := includeEncryptEnvOptionsWithKeys(value.Configs.EncryptEnvOptions,
 			ceAllowOptions)
 		for _, v := range encryptOptions {
 			args = append(args, fmt.Sprintf("--%s=${%s}", v.Name, v.EnvName))
@@ -454,11 +454,11 @@ func (j *JuiceFSEngine) genFormatCmd(value *JuiceFS, config *[]string, options m
 	if value.Configs.Bucket != "" {
 		args = append(args, fmt.Sprintf("--bucket=%s", value.Configs.Bucket))
 	}
-	formatOpts := filterOptionsWithKeys(options, eeAllowOptions)
+	formatOpts := includeOptionsWithKeys(options, eeAllowOptions)
 	for k, v := range formatOpts {
 		args = append(args, fmt.Sprintf("--%s=%s", k, v))
 	}
-	encryptOptions := filterEncryptEnvOptionsWithKeys(value.Configs.EncryptEnvOptions,
+	encryptOptions := includeEncryptEnvOptionsWithKeys(value.Configs.EncryptEnvOptions,
 		eeAllowOptions)
 	for _, v := range encryptOptions {
 		args = append(args, fmt.Sprintf("--%s=${%s}", v.Name, v.EnvName))

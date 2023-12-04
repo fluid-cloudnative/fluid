@@ -1105,8 +1105,8 @@ echo "$(date '+%Y/%m/%d %H:%M:%S').$(printf "%03d" $(($(date '+%N')/1000))) juic
 	}
 }
 
-// TestFilterEncryptEnvOptionsWithKeys runs multiple test cases to ensure filterEncryptEnvOptionsWithKeys function behaves as expected.
-func TestFilterEncryptEnvOptionsWithKeys(t *testing.T) {
+// TestincludeEncryptEnvOptionsWithKeys runs multiple test cases to ensure includeEncryptEnvOptionsWithKeys function behaves as expected.
+func TestIncludeEncryptEnvOptionsWithKeys(t *testing.T) {
 	tests := []struct {
 		name           string
 		opts           []EncryptEnvOption
@@ -1135,7 +1135,7 @@ func TestFilterEncryptEnvOptionsWithKeys(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := filterEncryptEnvOptionsWithKeys(test.opts, test.keys)
+			result := includeEncryptEnvOptionsWithKeys(test.opts, test.keys)
 
 			if len(result) == 0 && len(test.expectedResult) == 0 {
 				return
@@ -1148,7 +1148,7 @@ func TestFilterEncryptEnvOptionsWithKeys(t *testing.T) {
 	}
 }
 
-func TestFilterOptionsWithKeys(t *testing.T) {
+func TestIncludeOptionsWithKeys(t *testing.T) {
 	tests := []struct {
 		name           string
 		opts           map[string]string
@@ -1177,7 +1177,7 @@ func TestFilterOptionsWithKeys(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := filterOptionsWithKeys(test.opts, test.keys)
+			result := includeOptionsWithKeys(test.opts, test.keys)
 
 			if len(result) == 0 && len(test.expectedResult) == 0 {
 				return
