@@ -49,6 +49,7 @@ func (f abstractFilter) filterEncryptEnvOptions(encriptOptions []EncryptEnvOptio
 	return
 }
 
+// buildFormatCmdFilterForCommunityEdition builds a command filter for the community edition
 func buildFormatCmdFilterForEnterpriseEdition() filter {
 	f := formatCmdFilter{}
 	f.allowOptionKey = []string{JuiceBucket2}
@@ -56,6 +57,7 @@ func buildFormatCmdFilterForEnterpriseEdition() filter {
 	return f
 }
 
+// buildFormatCmdFilterForCommunityEdition builds a command filter for the community edition
 func buildFormatCmdFilterForCommunityEdition() filter {
 	f := formatCmdFilter{}
 	return f

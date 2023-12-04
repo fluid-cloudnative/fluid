@@ -3,6 +3,8 @@ package juicefs
 import (
 	"reflect"
 	"testing"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 // TestincludeEncryptEnvOptionsWithKeys runs multiple test cases to ensure includeEncryptEnvOptionsWithKeys function behaves as expected.
@@ -85,6 +87,55 @@ func TestIncludeOptionsWithKeys(t *testing.T) {
 
 			if !reflect.DeepEqual(result, test.expectedResult) {
 				t.Errorf("Expected %v, but got %v", test.expectedResult, result)
+			}
+		})
+	}
+}
+
+func TestBuildFormatCmdFilterForEnterpriseEditionAndFilterEncryptEnvOptions(t *testing.T) {
+	var mockEncryptEnvOptions = []EncryptEnvOption{
+		{Name: AccessKey2, EnvName: utils.ConvertDashToUnderscore(AccessKey2), SecretKeyRefName: "ref1", SecretKeyRefKey: "key1"},
+		{Name: SecretKey2, EnvName: utils.ConvertDashToUnderscore(SecretKey2), SecretKeyRefName: "ref2", SecretKeyRefKey: "key2"},
+		{Name: "DisallowedEnvOption", EnvName: "env3", SecretKeyRefName: "ref3", SecretKeyRefKey: "key3"},
+	}
+
+	testcases := []struct {
+		name       string
+		givenOpts  []EncryptEnvOption
+		expectOpts []EncryptEnvOption
+	}{
+		{
+			"Test with empty options",
+			[]EncryptEnvOption{},
+			[]EncryptEnvOption{},
+		},
+		{
+			"Test with all allowed options",
+			mockEncryptEnvOptions,
+			mockEncryptEnvOptions[:2], // expect the first two options
+		},
+		{
+			"Test with duplicate options",
+			[]EncryptEnvOption{mockEncryptEnvOptions[0], mockEncryptEnvOptions[0]},
+			[]EncryptEnvOption{mockEncryptEnvOptions[0]},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Create a filter using the buildFormatCmdFilterForEnterpriseEdition function
+			filter := buildFormatCmdFilterForEnterpriseEdition()
+
+			// Use the created filter to filter the encrypted environment options
+			result := filter.filterEncryptEnvOptions(tc.givenOpts)
+
+			if len(result) == 0 && len(tc.expectOpts) == 0 {
+				return
+			}
+
+			// Check if the filter result is as expected
+			if !reflect.DeepEqual(result, tc.expectOpts) {
+				t.Errorf("filterEncryptEnvOptions() = %v, want %v", result, tc.expectOpts)
 			}
 		})
 	}
