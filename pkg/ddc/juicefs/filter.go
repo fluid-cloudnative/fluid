@@ -55,9 +55,11 @@ func buildFuseMountCmdFilter() filter {
 
 // filterOption implements the filtering of options. It creates a new options map that includes all allowed keys, and then excludes any disallowed keys
 func (f abstractFilter) filterOption(options map[string]string) (result map[string]string) {
+	result = options
+
 	// If allowed option keys are initialized, create a result map that includes only these
 	if f.allowOptionKey != nil {
-		result = includeOptionsWithKeys(options, f.allowOptionKey)
+		result = includeOptionsWithKeys(result, f.allowOptionKey)
 	}
 
 	// If disallowed option keys are initialized, exclude these from the result map
@@ -70,9 +72,11 @@ func (f abstractFilter) filterOption(options map[string]string) (result map[stri
 
 // filterEncryptEnvOptions implements the filtering of encrypted environment options. It creates a new options slice that includes all allowed keys, and then excludes any disallowed keys
 func (f abstractFilter) filterEncryptEnvOptions(encriptOptions []EncryptEnvOption) (result []EncryptEnvOption) {
+	result = encriptOptions
+
 	// If allowed option keys are initialized, create a result slice that includes only these
 	if f.allowEncryptEnvOptionKey != nil {
-		result = includeEncryptEnvOptionsWithKeys(encriptOptions, f.allowEncryptEnvOptionKey)
+		result = includeEncryptEnvOptionsWithKeys(result, f.allowEncryptEnvOptionKey)
 	}
 
 	// If disallowed option keys are initialized, exclude these from the result slice
