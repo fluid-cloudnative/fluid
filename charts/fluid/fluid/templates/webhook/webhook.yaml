@@ -58,4 +58,11 @@ spec:
           - containerPort: 8080
             name: metrics
             protocol: TCP
+        volumeMounts:
+          - mountPath: /etc/fluid/configmap/webhook_plugins
+            name: webhook-plugins
+      volumes:
+        - name: webhook-plugins
+          configMap:
+            name: webhook-plugins
 {{- end }}

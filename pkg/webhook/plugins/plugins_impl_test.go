@@ -17,12 +17,13 @@ limitations under the License.
 package plugins
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/agiledragon/gomonkey/v2"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/api"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"math/rand"
+	"os"
 	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
@@ -220,20 +221,14 @@ func TestGetRegistryHandler(t *testing.T) {
 	}
 
 	tests := []struct {
-		name         string
-		want         want
-		newPluginErr bool
-		configmap    *corev1.ConfigMap
+		name          string
+		want          want
+		newPluginErr  bool
+		pluginProfile string
 	}{
 		{
 			name: "existing correct configmap",
-			configmap: &corev1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      common.PluginProfileConfigMapName,
-					Namespace: fluidNameSpace,
-				},
-				Data: map[string]string{
-					common.PluginProfileKeyName: `
+			pluginProfile: `
 plugins:
   serverful:
     withDataset:
@@ -263,9 +258,6 @@ pluginConfig:
       required:
       - fluid.io/node
 `,
-				},
-			},
-
 			want: want{
 				podWithDatasetHandlerNames: []string{
 					"RequireNodeWithFuse", "NodeAffinityWithCache", "MountPropagationInjector",
@@ -297,13 +289,7 @@ pluginConfig:
 		},
 		{
 			name: "existing wrong configmap",
-			configmap: &corev1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      common.PluginProfileConfigMapName,
-					Namespace: fluidNameSpace,
-				},
-				Data: map[string]string{
-					common.PluginProfileKeyName: `
+			pluginProfile: `
 plugins:
   serverful:
     withDataset:
@@ -334,15 +320,6 @@ pluginConfig:
       required:
       - fluid.io/node
 `,
-				},
-			},
-
-			want:         want{},
-			newPluginErr: true,
-		},
-		{
-			name:         "not exist configmap",
-			configmap:    nil,
 			want:         want{},
 			newPluginErr: true,
 		},
@@ -354,16 +331,21 @@ pluginConfig:
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var clientWithScheme client.Client
-			if tt.configmap != nil {
-				clientWithScheme = fake.NewFakeClientWithScheme(schema, tt.configmap)
-			} else {
-				clientWithScheme = fake.NewFakeClientWithScheme(schema)
+
+			pluginProfile := tt.pluginProfile
+			mockReadFile := func(content string) ([]byte, error) {
+				return []byte(pluginProfile), nil
 			}
-			err := RegisterMutatingHandlers(clientWithScheme, clientWithScheme)
+			patch := gomonkey.ApplyFunc(os.ReadFile, mockReadFile)
+			defer patch.Reset()
+
+			err := RegisterMutatingHandlers(clientWithScheme)
+
+			if (err != nil) != tt.newPluginErr {
+				t.Errorf("new plugin error = %v, wantErr %v", err, tt.newPluginErr)
+			}
+
 			if tt.newPluginErr {
-				if err == nil {
-					t.Error("new plugin should has error but got nil")
-				}
 				return
 			}
 
