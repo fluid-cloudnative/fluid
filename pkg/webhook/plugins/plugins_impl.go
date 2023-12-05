@@ -54,7 +54,7 @@ func init() {
 	}
 }
 
-func RegisterMutatingHandlers(client client.Client) error {
+func RegisterMutatingHandlers(client client.Client, schemaClient client.Client) error {
 	// ignore the register error
 	_ = registry.Register(prefernodeswithoutcache.Name, prefernodeswithoutcache.NewPlugin)
 	_ = registry.Register(mountpropagationinjector.Name, mountpropagationinjector.NewPlugin)
@@ -75,7 +75,7 @@ func RegisterMutatingHandlers(client client.Client) error {
 		return err
 	}
 
-	cacheHandlers, err = newHandler(client, cm)
+	cacheHandlers, err = newHandler(schemaClient, cm)
 	if err != nil {
 		return err
 	}

@@ -359,7 +359,7 @@ pluginConfig:
 			} else {
 				clientWithScheme = fake.NewFakeClientWithScheme(schema)
 			}
-			err := RegisterMutatingHandlers(clientWithScheme)
+			err := RegisterMutatingHandlers(clientWithScheme, clientWithScheme)
 			if tt.newPluginErr {
 				if err == nil {
 					t.Error("new plugin should has error but got nil")

@@ -810,7 +810,7 @@ func TestAddScheduleInfoToPod(t *testing.T) {
 		objs = append(objs, testcase.fuse, testcase.pv, testcase.pvc, testcase.dataset, testcase.runtime)
 		objs = append(objs, pluginsProfileConfigMap)
 		fakeClient := fake.NewFakeClientWithScheme(s, objs...)
-		_ = plugins.RegisterMutatingHandlers(fakeClient)
+		_ = plugins.RegisterMutatingHandlers(fakeClient, fakeClient)
 
 		handler := &CreateUpdatePodForSchedulingHandler{
 			Client: fakeClient,
@@ -895,7 +895,7 @@ func TestHandle(t *testing.T) {
 	s := runtime.NewScheme()
 	_ = corev1.AddToScheme(s)
 	fakeClient := fake.NewFakeClientWithScheme(s, objs...)
-	_ = plugins.RegisterMutatingHandlers(fakeClient)
+	_ = plugins.RegisterMutatingHandlers(fakeClient, fakeClient)
 
 	for _, test := range tests {
 		handler := &CreateUpdatePodForSchedulingHandler{
@@ -1338,7 +1338,7 @@ func TestAddScheduleInfoToPodWithReferencedDataset(t *testing.T) {
 		objs = append(objs, runtime, refRuntime)
 
 		fakeClient := fake.NewFakeClientWithScheme(s, objs...)
-		_ = plugins.RegisterMutatingHandlers(fakeClient)
+		_ = plugins.RegisterMutatingHandlers(fakeClient, fakeClient)
 
 		handler := &CreateUpdatePodForSchedulingHandler{
 			Client: fakeClient,
