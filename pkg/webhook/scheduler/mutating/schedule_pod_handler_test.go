@@ -125,21 +125,21 @@ func TestAddScheduleInfoToPod(t *testing.T) {
 					},
 				},
 			}, pv: &corev1.PersistentVolume{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "big-data-noexist",
-			},
-			Spec: corev1.PersistentVolumeSpec{
-				PersistentVolumeSource: corev1.PersistentVolumeSource{
-					CSI: &corev1.CSIPersistentVolumeSource{
-						Driver: "fuse.csi.fluid.io",
-						VolumeAttributes: map[string]string{
-							common.VolumeAttrFluidPath: "/runtime-mnt/jindo/big-data/noexist/jindofs-fuse",
-							common.VolumeAttrMountType: common.JindoRuntime,
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "big-data-noexist",
+				},
+				Spec: corev1.PersistentVolumeSpec{
+					PersistentVolumeSource: corev1.PersistentVolumeSource{
+						CSI: &corev1.CSIPersistentVolumeSource{
+							Driver: "fuse.csi.fluid.io",
+							VolumeAttributes: map[string]string{
+								common.VolumeAttrFluidPath: "/runtime-mnt/jindo/big-data/noexist/jindofs-fuse",
+								common.VolumeAttrMountType: common.JindoRuntime,
+							},
 						},
 					},
 				},
 			},
-		},
 			pvc: &corev1.PersistentVolumeClaim{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
@@ -811,7 +811,7 @@ func TestAddScheduleInfoToPod(t *testing.T) {
 		objs = append(objs, testcase.fuse, testcase.pv, testcase.pvc, testcase.dataset, testcase.runtime)
 
 		fakeClient := fake.NewFakeClientWithScheme(s, objs...)
-		_ = plugins.RegisterMutatingHandlers(fakeClient, fakeClient)
+		_ = plugins.RegisterMutatingHandlers(fakeClient)
 
 		handler := &CreateUpdatePodForSchedulingHandler{
 			Client: fakeClient,
@@ -1352,7 +1352,7 @@ func TestAddScheduleInfoToPodWithReferencedDataset(t *testing.T) {
 		objs = append(objs, runtime, refRuntime)
 
 		fakeClient := fake.NewFakeClientWithScheme(s, objs...)
-		_ = plugins.RegisterMutatingHandlers(fakeClient, fakeClient)
+		_ = plugins.RegisterMutatingHandlers(fakeClient)
 
 		handler := &CreateUpdatePodForSchedulingHandler{
 			Client: fakeClient,
