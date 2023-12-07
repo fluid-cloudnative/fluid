@@ -148,3 +148,49 @@ func TestGetStringValueFromEnv(t *testing.T) {
 		}
 	})
 }
+
+func TestCheckValidateEnvName(t *testing.T) {
+	cases := []struct {
+		in   string
+		want bool
+	}{
+		{"MY_VAR_1", true},
+		{"my_var_1", true},
+		{"my-var-1", false},
+		{"MY-VAR-1", false},
+		{"MyVar1", true},
+		{"1_MY_VAR", false},
+		{"_MY_VAR", true},
+	}
+
+	for _, c := range cases {
+		err := CheckValidateEnvName(c.in)
+		got := (err == nil)
+		if got != c.want {
+			t.Errorf("CheckValidateEnvName(%q) == %v, want %v, error: %v", c.in, got, c.want, err)
+		}
+	}
+}
+
+func TestConvertDashToUnderscore(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{name: "Single dash", input: "hello-world", expected: "hello_world"},
+		{name: "Multiple dashes", input: "hello-world-again", expected: "hello_world_again"},
+		{name: "No dash", input: "helloworld", expected: "helloworld"},
+		{name: "Empty string", input: "", expected: ""},
+		{name: "Only dashes", input: "---", expected: "___"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual := ConvertDashToUnderscore(tt.input)
+			if actual != tt.expected {
+				t.Errorf("expected %s, got %s", tt.expected, actual)
+			}
+		})
+	}
+}

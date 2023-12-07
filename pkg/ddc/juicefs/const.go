@@ -41,6 +41,7 @@ const (
 
 	JuiceStorage   = "storage"
 	JuiceBucket    = "bucket"
+	JuiceBucket2   = "bucket2"
 	JuiceMetaUrl   = "metaurl"
 	JuiceAccessKey = "access-key"
 	JuiceSecretKey = "secret-key"
@@ -56,6 +57,8 @@ const (
 	AccessKeySecretKey        = "accesskeySecretKey"
 	SecretKeySecret           = "secretkeySecret"
 	SecretKeySecretKey        = "secretkeySecretKey"
+	AccessKey2                = "access-key2"
+	SecretKey2                = "secret-key2"
 	FormatCmd                 = "formatCmd"
 	Name                      = "name"
 	DefaultDataLoadTimeout    = "30m"

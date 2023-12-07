@@ -20,6 +20,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins"
+	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/api"
 	"net/http"
 	"time"
 
@@ -28,7 +30,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/cache"
-	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -120,9 +121,9 @@ func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.P
 		return err
 	}
 
-	// get plugins Registry and get the need plugins list from it
-	pluginsRegistry := plugins.Registry(a.Client)
-	var pluginsList []plugins.MutatingHandler
+	// get plugins registry and get the need plugins list from it
+	pluginsRegistry := plugins.GetRegistryHandler()
+	var pluginsList []api.MutatingHandler
 	// if the serverlessEnabled, it will raise the errors
 	if len(errPVCs) > 0 && utils.ServerlessEnabled(pod.GetLabels()) {
 		info := fmt.Sprintf("the pod %s in namespace %s is configured with (%s or %s) but without dataset enabling, and with errors %v",
@@ -139,7 +140,11 @@ func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.P
 	// handle the pods interact with fluid
 	switch {
 	case utils.ServerlessEnabled(pod.GetLabels()):
-		pluginsList = pluginsRegistry.GetServerlessPodHandler()
+		if len(runtimeInfos) == 0 {
+			pluginsList = pluginsRegistry.GetServerlessPodWithoutDatasetHandler()
+		} else {
+			pluginsList = pluginsRegistry.GetServerlessPodWithDatasetHandler()
+		}
 	case utils.ServerfulFuseEnabled(pod.GetLabels()):
 		if len(runtimeInfos) == 0 {
 			pluginsList = pluginsRegistry.GetPodWithoutDatasetHandler()

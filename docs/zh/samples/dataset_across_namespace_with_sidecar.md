@@ -19,7 +19,7 @@ thinruntime-controller-7dcbf5f45-xsf4p          1/1     Running   0          8h
 ## Sidecar机制跨Namespace共享数据集缓存
 ###  1. 创建Dataset和缓存Runtime
 
-在默认名空间下，创建`phy` Dataset和AlluxioRuntime
+在 `default` 命名空间下，创建`phy` Dataset和AlluxioRuntime
 ```shell
 $ cat<<EOF >ds.yaml
 apiVersion: data.fluid.io/v1alpha1
@@ -50,7 +50,7 @@ $ kubectl create -f ds.yaml
 ```
 
 ### 2. 创建引用的Dataset和Runtime
-在 ref 名空间下，创建：
+在 ref 命名空间下，创建：
 - 引用的数据集`refdemo`，其mountPoint格式为`dataset://${origin-dataset-namespace}/${origin-dataset-name}`；
 
 注：
@@ -73,7 +73,7 @@ $ kubectl create -f ds-ref.yaml -n ref
 
 ### 创建Pod并查看数据
 
-在 ref 名空间下，创建Pod：
+在 ref 命名空间下，创建Pod：
 需要开启serverless注入，设置pod标签`serverless.fluid.io/inject=true`
 ```shell
 $ cat<<EOF >app-ref.yaml
@@ -115,7 +115,7 @@ $ kubectl get pods -n ref -o wide
 NAME         READY   STATUS    RESTARTS   AGE   IP              NODE      NOMINATED NODE   READINESS GATES
 nginx        1/1     Running   0          11m   10.233.109.66   work02    <none>           <none>
 
-# 查看pod内的数据路径，spark 是 default名空间 phy Dataset的路径
+# 查看pod内的数据路径，spark 是 default命名空间 phy Dataset的路径
 $ kubectl exec nginx -c nginx -n ref -it -- ls /data_spark
 spark
 ```
@@ -134,14 +134,14 @@ spec:
 
 ### 已知问题
 
-对于Fuse Sidecar场景，在引用的名空间(`ref`)下会创建一些ConfigMap
+对于Fuse Sidecar场景，在引用的命名空间(`ref`)下会创建一些ConfigMap
 ```shell
 NAME                                    DATA   AGE
 check-fluid-mount-ready                 1      6d14h
 phy-config                              7      6d15h
 refdemo-fuse.alluxio-fuse-check-mount   1      6d14h
 ```
-- `check-fluid-mount-ready` 是该名空间下所有Dataset共享的；
+- `check-fluid-mount-ready` 是该命名空间下所有Dataset共享的；
 - `refdemo-fuse.alluxio-fuse-check-mount`是根据Dataset名和Runtime类型生成的；
-- `phy-config`是AlluxioRuntime的Fuse Container所需的ConfigMap，因此从`default`名空间拷贝至`ref`名空间下；
-  - **如果之前`ref`名空间下存在使用AlluxioRuntime的名为`phy`的Dataset，那么`refdemo`Dataset的使用会出错；**
+- `phy-config`是AlluxioRuntime的Fuse Container所需的ConfigMap，因此从`default`命名空间拷贝至`ref`命名空间下；
+  - **如果之前`ref`命名空间下存在使用AlluxioRuntime的名为`phy`的Dataset，那么`refdemo`Dataset的使用会出错；**
