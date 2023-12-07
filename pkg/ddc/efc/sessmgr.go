@@ -2,9 +2,10 @@ package efc
 
 import (
 	"context"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"os"
 	"reflect"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -171,7 +172,7 @@ func (s *SessMgrInitializer) deploySessMgr(ctx context.Context, config config) e
 							},
 						},
 						Volumes: []corev1.Volume{
-							corev1.Volume{
+							{
 								Name: "efc-sock",
 								VolumeSource: corev1.VolumeSource{
 									HostPath: &corev1.HostPathVolumeSource{
@@ -183,7 +184,7 @@ func (s *SessMgrInitializer) deploySessMgr(ctx context.Context, config config) e
 							},
 						},
 						InitContainers: []corev1.Container{
-							corev1.Container{
+							{
 								Name:    "init-fuse",
 								Image:   config.InitFuseImage,
 								Command: []string{"/entrypoint.sh"},
@@ -198,7 +199,7 @@ func (s *SessMgrInitializer) deploySessMgr(ctx context.Context, config config) e
 							},
 						},
 						Containers: []corev1.Container{
-							corev1.Container{
+							{
 								Name:    "sessmgr",
 								Command: []string{"/entrypoint.sh"},
 								Image:   config.SessMgrImage,
@@ -214,7 +215,7 @@ func (s *SessMgrInitializer) deploySessMgr(ctx context.Context, config config) e
 									},
 								},
 								VolumeMounts: []corev1.VolumeMount{
-									corev1.VolumeMount{
+									{
 										MountPath: "/var/run/efc",
 										Name:      "efc-sock",
 									},
