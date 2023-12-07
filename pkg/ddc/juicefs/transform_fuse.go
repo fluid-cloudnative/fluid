@@ -61,7 +61,7 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 	}
 
 	// transform format cmd
-	j.genFormatCmd(value, runtime.Spec.Configs)
+	j.genFormatCmd(value, runtime.Spec.Configs, optionsFromDataset)
 
 	// transform quota cmd
 	err = j.genQuotaCmd(value, mount)
@@ -127,12 +127,13 @@ func (j *JuiceFSEngine) transformFuseNodeSelector(runtime *datav1alpha1.JuiceFSR
 
 // genValue: generate the value of juicefs
 func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *datav1alpha1.Level, value *JuiceFS,
-	SharedOptions map[string]string, SharedEncryptOptions []datav1alpha1.EncryptOption) (map[string]string, error) {
+	sharedOptions map[string]string, sharedEncryptOptions []datav1alpha1.EncryptOption) (map[string]string, error) {
 	options := make(map[string]string)
 	value.Configs.Name = mount.Name
+	value.Configs.EncryptEnvOptions = make([]EncryptEnvOption, 0)
 	source := ""
 
-	for k, v := range SharedOptions {
+	for k, v := range sharedOptions {
 		switch k {
 		case JuiceStorage:
 			value.Configs.Storage = v
@@ -162,7 +163,7 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 		}
 	}
 
-	for _, encryptOption := range SharedEncryptOptions {
+	for _, encryptOption := range sharedEncryptOptions {
 		key := encryptOption.Name
 		secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
 
@@ -180,6 +181,22 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 		case JuiceToken:
 			value.Configs.TokenSecret = secretKeyRef.Name
 			value.Configs.TokenSecretKey = secretKeyRef.Key
+		default:
+			if key != "quota" {
+				envName := utils.ConvertDashToUnderscore(key)
+				err := utils.CheckValidateEnvName(envName)
+				if err != nil {
+					return options, err
+				}
+				// options[key] = "${" + envName + "}"
+				value.Configs.EncryptEnvOptions = append(value.Configs.EncryptEnvOptions,
+					EncryptEnvOption{
+						Name:             key,
+						EnvName:          envName,
+						SecretKeyRefName: secretKeyRef.Name,
+						SecretKeyRefKey:  secretKeyRef.Key,
+					})
+			}
 		}
 	}
 
@@ -201,6 +218,22 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 		case JuiceToken:
 			value.Configs.TokenSecret = secretKeyRef.Name
 			value.Configs.TokenSecretKey = secretKeyRef.Key
+		default:
+			if key != "quota" {
+				envName := utils.ConvertDashToUnderscore(key)
+				err := utils.CheckValidateEnvName(envName)
+				if err != nil {
+					return options, err
+				}
+				// options[key] = "${" + envName + "}"
+				value.Configs.EncryptEnvOptions = append(value.Configs.EncryptEnvOptions,
+					EncryptEnvOption{
+						Name:             key,
+						EnvName:          envName,
+						SecretKeyRefName: secretKeyRef.Name,
+						SecretKeyRefKey:  secretKeyRef.Key,
+					})
+			}
 		}
 	}
 
@@ -288,6 +321,9 @@ func (j *JuiceFSEngine) genFuseMount(value *JuiceFS, optionMap map[string]string
 	if optionMap == nil {
 		optionMap = map[string]string{}
 	}
+	// filter the optionMap with expected and unexpected keys
+	filter := buildFuseMountCmdFilter()
+	optionMap = filter.filterOption(optionMap)
 	readonly := false
 	runtimeInfo := j.runtimeInfo
 	if runtimeInfo != nil {
@@ -358,7 +394,15 @@ func genArgs(optionMap map[string]string) []string {
 	return options
 }
 
-func (j *JuiceFSEngine) genFormatCmd(value *JuiceFS, config *[]string) {
+func (j *JuiceFSEngine) genFormatCmd(value *JuiceFS, config *[]string, options map[string]string) {
+
+	var (
+		// ceFilter for CommunityEdition
+		ceFilter = buildFormatCmdFilterForCommunityEdition()
+		// eeFilter for EnterpriseEdition
+		eeFilter = buildFormatCmdFilterForEnterpriseEdition()
+		// eeAllowOptions []string = []string{JuiceBucket2, AccessKey2, SecretKey2}
+	)
 	args := make([]string, 0)
 	if config != nil {
 		for _, option := range *config {
@@ -385,6 +429,14 @@ func (j *JuiceFSEngine) genFormatCmd(value *JuiceFS, config *[]string) {
 		if value.Configs.Bucket != "" {
 			args = append(args, fmt.Sprintf("--bucket=%s", value.Configs.Bucket))
 		}
+		formatOpts := ceFilter.filterOption(options)
+		for k, v := range formatOpts {
+			args = append(args, fmt.Sprintf("--%s=%s", k, v))
+		}
+		encryptOptions := ceFilter.filterEncryptEnvOptions(value.Configs.EncryptEnvOptions)
+		for _, v := range encryptOptions {
+			args = append(args, fmt.Sprintf("--%s=${%s}", v.Name, v.EnvName))
+		}
 		args = append(args, value.Source, value.Configs.Name)
 		cmd := append([]string{common.JuiceCeCliPath, "format"}, args...)
 		value.Configs.FormatCmd = strings.Join(cmd, " ")
@@ -404,6 +456,14 @@ func (j *JuiceFSEngine) genFormatCmd(value *JuiceFS, config *[]string) {
 	}
 	if value.Configs.Bucket != "" {
 		args = append(args, fmt.Sprintf("--bucket=%s", value.Configs.Bucket))
+	}
+	formatOpts := eeFilter.filterOption(options)
+	for k, v := range formatOpts {
+		args = append(args, fmt.Sprintf("--%s=%s", k, v))
+	}
+	encryptOptions := eeFilter.filterEncryptEnvOptions(value.Configs.EncryptEnvOptions)
+	for _, v := range encryptOptions {
+		args = append(args, fmt.Sprintf("--%s=${%s}", v.Name, v.EnvName))
 	}
 	args = append(args, value.Source)
 	cmd := append([]string{common.JuiceCliPath, "auth"}, args...)
