@@ -28,7 +28,7 @@ const (
 
 	CertSecretName = "fluid-webhook-certs"
 
-	WebhookPluginFilePath = "/etc/fluid/configmap/webhook_plugins/pluginsProfile"
+	WebhookPluginFilePath = "/etc/fluid/plugins.profile"
 )
 
 // AdmissionHandler wrappers admission.Handler, but adding client-go capablities

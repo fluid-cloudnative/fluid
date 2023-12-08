@@ -50,7 +50,7 @@ def main():
     runtime = fluidapi.assemble_runtime("alluxio-webufs") \
         .set_namespaced_name(namespace, name) \
     
-    flow = TestFlow("Common - Test FUSE Recover")
+    flow = TestFlow("Common - Test Pod Affinity Mutation")
 
     flow.append_step(
         SimpleStep(
