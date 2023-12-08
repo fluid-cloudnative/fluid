@@ -35,8 +35,8 @@ spec:
     metadata:
       annotations:
         sidecar.istio.io/inject: "false"
-      {{- if .Values.worker.annotations }}
-      {{- range $key, $val := .Values.worker.annotations }}
+      {{- if .Values.master.annotations }}
+      {{- range $key, $val := .Values.master.annotations }}
         {{ $key | quote }}: {{ $val | quote }}
       {{- end }}
       {{- end }}
