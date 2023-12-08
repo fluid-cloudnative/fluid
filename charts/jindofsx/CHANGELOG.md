@@ -98,3 +98,6 @@ Fix jindofsx engine sts token volume mount bug
 
 1.0.0
 Support master volume and set namespace meta dir
+
+1.0.1
+Fix worker's annotations for pod spec overwrites master's annotations
