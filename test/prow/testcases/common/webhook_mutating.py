@@ -28,7 +28,7 @@ def check_pod_affinity_fn(name, namespace):
     def check():
         api = client.CoreV1Api()
         affinity = api.read_namespaced_pod(name, namespace).spec.affinity
-        if len(affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution) != 0:
+        if len(affinity.node_affinity.preferred_during_scheduling_ignored_during_execution) != 0:
             return True
         return False
 
