@@ -6,7 +6,7 @@ with cached data.
 However, in some cases, if the data cached nodes cannot be scheduled with the application Pod, the Pod will be scheduled
 to a node closer to the data cached nodes, such as on the same zone, its read and write performance will be better than in different zones.
 
-Fluid supports configuring tiered locality information in K8s clusters, which can be found in the 'tiered conf.yaml' 
+Fluid supports configuring tiered locality information in K8s clusters, which is stored in the configmap named 'webhook-plugins' in fluid system namespace. 
 file of Fluid's Helm Chart.
 
 The following is a specific example, assuming that the K8s cluster has locality information for zones and regions, achieving the following goals:
@@ -27,33 +27,35 @@ Note that if your cluster has been previously configured with other allowed cont
 
 1) Configure before installing Fluid
 
-Define the tiered locality configuration in the 'tiered conf.yaml' file of Helm Charts as below.
+Define the tiered locality configuration in the Helm Charts values.yaml like below.
 - fluid.io/node is the built-in name of Fluid, used to schedule pods to the data cached node
 ```yaml
-tieredLocality:
-  preferred:
-    # fluid built-in name, used to schedule pods to the data cached node
-    - name: fluid.io/node
-      weight: 100
-    # runtime worker's zone label name, can be changed according to k8s environment.
-    - name: topology.kubernetes.io/zone
-      weight: 50
-    # runtime worker's region label name, can be changed according to k8s environment.
-    - name: topology.kubernetes.io/region
-      weight: 10
-  required:
-    # If Pod is configured with required affinity, then schedule the pod to nodes match the label.
-    # Multiple names is the And relation.
-    - topology.kubernetes.io/zone
+pluginConfig:
+  - name: NodeAffinityWithCache
+    args: |
+      preferred:
+        # fluid built-in name, used to schedule pods to the data cached node
+        - name: fluid.io/node
+          weight: 100
+        # runtime worker's zone label name, can be changed according to k8s environment.
+        - name: topology.kubernetes.io/zone
+          weight: 50
+        # runtime worker's region label name, can be changed according to k8s environment.
+        - name: topology.kubernetes.io/region
+          weight: 10
+      required:
+        # If Pod is configured with required affinity, then schedule the pod to nodes match the label.
+        # Multiple names is the And relation.
+        - topology.kubernetes.io/zone
 ```
 
 Install Fluid following the document [Installation](../userguide/install.md). After installation, a configmap
-named `tiered-locality-config` storing above configuration will exist in Fluid namespace(default `fluid-system`).
+named `webhook-plugins` storing above configuration will exist in Fluid namespace(default `fluid-system`).
 
 2) Modify tiered locality configuration in the existing Fluid cluster
 
-Modify tiered location configuration (content see point 1) in the configMap named 'tiered local configuration' 
-in the Fluid namespace (default `fluid-system`), the latest configuration will be read for Pod scheduling during the next webhook mutation.
+Modify tiered location configuration (content see point 1) in the configMap named 'webhook-plugins' 
+in the Fluid namespace (default `fluid-system`), the new configuration only takes affect when the fluid-webhook pod restarts.
 
 ## 2. Configure the tiered locality information for the Runtime
 Tiered location information can be configured through the NodeAffinity field of the Dataset or the NodeSelector field of the Runtime.
