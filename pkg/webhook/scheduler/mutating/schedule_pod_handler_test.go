@@ -19,7 +19,9 @@ package mutating
 import (
 	"context"
 	"fmt"
+	"github.com/agiledragon/gomonkey/v2"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins"
+	"os"
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -35,13 +37,7 @@ import (
 )
 
 var (
-	pluginsProfileConfigMap = &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      common.PluginProfileConfigMapName,
-			Namespace: common.NamespaceFluidSystem,
-		},
-		Data: map[string]string{
-			common.PluginProfileKeyName: `
+	pluginsProfile = `
 plugins:
   serverful:
     withDataset:
@@ -63,9 +59,7 @@ pluginConfig:
         weight: 100
       required:
       - fluid.io/node
-`,
-		},
-	}
+`
 )
 
 func TestAddScheduleInfoToPod(t *testing.T) {
@@ -805,12 +799,19 @@ func TestAddScheduleInfoToPod(t *testing.T) {
 	_ = corev1.AddToScheme(s)
 	_ = datav1alpha1.AddToScheme(s)
 	_ = appsv1.AddToScheme(s)
+
+	mockReadFile := func(content string) ([]byte, error) {
+		return []byte(pluginsProfile), nil
+	}
+	patch := gomonkey.ApplyFunc(os.ReadFile, mockReadFile)
+	defer patch.Reset()
+
 	for _, testcase := range testcases {
 		objs := []runtime.Object{}
 		objs = append(objs, testcase.fuse, testcase.pv, testcase.pvc, testcase.dataset, testcase.runtime)
-		objs = append(objs, pluginsProfileConfigMap)
+
 		fakeClient := fake.NewFakeClientWithScheme(s, objs...)
-		_ = plugins.RegisterMutatingHandlers(fakeClient, fakeClient)
+		_ = plugins.RegisterMutatingHandlers(fakeClient)
 
 		handler := &CreateUpdatePodForSchedulingHandler{
 			Client: fakeClient,
@@ -891,11 +892,17 @@ func TestHandle(t *testing.T) {
 		},
 	}
 
-	objs := []runtime.Object{pluginsProfileConfigMap}
 	s := runtime.NewScheme()
 	_ = corev1.AddToScheme(s)
-	fakeClient := fake.NewFakeClientWithScheme(s, objs...)
-	_ = plugins.RegisterMutatingHandlers(fakeClient, fakeClient)
+	fakeClient := fake.NewFakeClientWithScheme(s)
+
+	mockReadFile := func(content string) ([]byte, error) {
+		return []byte(pluginsProfile), nil
+	}
+	patch := gomonkey.ApplyFunc(os.ReadFile, mockReadFile)
+	defer patch.Reset()
+
+	_ = plugins.RegisterMutatingHandlers(fakeClient)
 
 	for _, test := range tests {
 		handler := &CreateUpdatePodForSchedulingHandler{
@@ -1318,10 +1325,17 @@ func TestAddScheduleInfoToPodWithReferencedDataset(t *testing.T) {
 	_ = corev1.AddToScheme(s)
 	_ = datav1alpha1.AddToScheme(s)
 	_ = appsv1.AddToScheme(s)
+
+	mockReadFile := func(content string) ([]byte, error) {
+		return []byte(pluginsProfile), nil
+	}
+	patch := gomonkey.ApplyFunc(os.ReadFile, mockReadFile)
+	defer patch.Reset()
+
 	for _, testcase := range testcases {
 		objs := []runtime.Object{}
 		objs = append(objs, testcase.fuse, testcase.pv, testcase.pvc, testcase.dataset,
-			testcase.refDataset, testcase.refPv, testcase.refPvc, pluginsProfileConfigMap)
+			testcase.refDataset, testcase.refPv, testcase.refPvc)
 
 		runtime := &datav1alpha1.JindoRuntime{
 			ObjectMeta: metav1.ObjectMeta{
@@ -1338,7 +1352,7 @@ func TestAddScheduleInfoToPodWithReferencedDataset(t *testing.T) {
 		objs = append(objs, runtime, refRuntime)
 
 		fakeClient := fake.NewFakeClientWithScheme(s, objs...)
-		_ = plugins.RegisterMutatingHandlers(fakeClient, fakeClient)
+		_ = plugins.RegisterMutatingHandlers(fakeClient)
 
 		handler := &CreateUpdatePodForSchedulingHandler{
 			Client: fakeClient,

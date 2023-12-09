@@ -157,7 +157,7 @@ func handle() {
 	handler.Register(mgr, mgr.GetClient(), setupLog)
 
 	// register pod mutating handlers
-	err = plugins.RegisterMutatingHandlers(client, mgr.GetClient())
+	err = plugins.RegisterMutatingHandlers(mgr.GetClient())
 	if err != nil {
 		setupLog.Error(err, "get the register plugins from configmap occurs error")
 		os.Exit(1)

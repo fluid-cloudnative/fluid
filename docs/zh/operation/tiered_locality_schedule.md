@@ -5,7 +5,7 @@
 但是在有些情况下，如果数据缓存的节点无法调度应用Pod，那么将Pod调度到离数据缓存节点比较近的节点，例如在同一个
 zone中，其读写性能会比在不同的zone中要好。
 
-Fluid 支持配置 K8s 集群中的分层位置信息，在Fluid 的 Helm Chart 中的`tiered-conf.yaml` 中
+Fluid 支持配置 K8s 集群中的分层位置信息，存储在Fluid 系统命名空间的 `webhook-plugins` 的configmap 中。
 
 以下是具体的示例，假设 K8s 集群具有 zone 和 region 的位置信息，达到以下目标：
 - 应用 Pod 未配置强制亲和调度时，优先调度到数据缓存的节点，如果不满足其次优先调度到同一个 zone，再其次调度到同一个 region；
@@ -24,32 +24,34 @@ Fluid 支持配置 K8s 集群中的分层位置信息，在Fluid 的 Helm Chart 
 
 1) 在安装 Fluid 前配置
 
-在 Helm Charts 的 `tiered-conf.yaml` 文件中定义分层位置的配置
+在 Helm Charts values 的 pluginsProfile 定义中，配置`NodeAffinityWithCache` 插件的参数：
 - fluid.io/node 是 fluid 内置的亲和性，用于调度到数据缓存的节点
 ```yaml
-tieredLocality:
-  preferred:
-    # fluid 内置的亲和性，用于调度到数据缓存的节点，名称不可修改
-    - name: fluid.io/node
-      weight: 100
-    # zone 的 label 名称
-    - name: topology.kubernetes.io/zone
-      weight: 50
-    # region 的 label 名称
-    - name: topology.kubernetes.io/region
-      weight: 10
-  required:
-    # 如果Pod 配置 强制亲和性，则强制亲和性匹配 zone
-    # 配置多个，采用 And 语义
-    - topology.kubernetes.io/zone
+pluginConfig:
+  - name: NodeAffinityWithCache
+    args: |
+      preferred:
+        # fluid 内置的亲和性，用于调度到数据缓存的节点，名称不可修改
+        - name: fluid.io/node
+          weight: 100
+        # zone 的 label 名称
+        - name: topology.kubernetes.io/zone
+          weight: 50
+        # region 的 label 名称
+        - name: topology.kubernetes.io/region
+          weight: 10
+      required:
+        # 如果Pod 配置 强制亲和性，则强制亲和性匹配 zone
+        # 配置多个，采用 And 语义
+        - topology.kubernetes.io/zone
 ```
 
 然后按照[Fluid 安装](../userguide/install.md) 安装 Fluid，安装好之后，在 Fluid namespace（默认fluid-system） 中存在
-`tiered-locality-config` 的 ConfigMap，保存分层的位置信息配置。
+`webhook-plugins` 的 ConfigMap，保存分层的位置信息配置。
 
 2) 已经存在的 Fluid 集群，修改分层位置信息
-对 Fluid namespace（默认fluid-system） 中存在`tiered-locality-config` 的 ConfigMap 进行修改，
-添加相关的分层位置信息配置（见第一点），配置完成后，再下一次 webhook mutation 时会读取最新的配置进行Pod调度。
+对 Fluid namespace（默认fluid-system） 中存在`webhook-plugins` 的 ConfigMap 进行修改，
+添加相关的分层位置信息配置（见第一点），配置完成后，需要重新启动fluid-webhook pod才能生效。
 
 ## 2. Runtime 配置相应的分层信息
 可以通过 Dataset 的 nodeAffinity 或者 Runtime 的 NodeSelector 字段配置分层位置信息。
