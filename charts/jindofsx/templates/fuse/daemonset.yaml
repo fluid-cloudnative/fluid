@@ -64,7 +64,6 @@ spec:
       securityContext:
         runAsUser: {{ .Values.user }}
         runAsGroup: {{ .Values.group }}
-        fsGroup: {{ .Values.fsGroup }}
       tolerations:
         - operator: Exists
       containers:
