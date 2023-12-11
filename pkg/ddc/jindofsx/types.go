@@ -153,4 +153,5 @@ type UFSVolume struct {
 	Name          string `json:"name"`
 	SubPath       string `json:"subPath,omitempty"`
 	ContainerPath string `json:"containerPath"`
+	ReadOnly      bool   `json:"readOnly"`
 }
