@@ -30,7 +30,6 @@ type Jindo struct {
 	FuseImagePullPolicy string                 `json:"fuseImagePullPolicy"`
 	User                int                    `json:"user"`
 	Group               int                    `json:"group"`
-	FsGroup             int                    `json:"fsGroup"`
 	UseHostNetwork      bool                   `json:"useHostNetwork"`
 	UseHostPID          bool                   `json:"useHostPID"`
 	Properties          map[string]string      `json:"properties"`

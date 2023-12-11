@@ -125,7 +125,6 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 		FuseImagePullPolicy: fuseImagePullPolicy,
 		User:                0,
 		Group:               0,
-		FsGroup:             0,
 		UseHostNetwork:      true,
 		UseHostPID:          true,
 		Properties:          e.transformPriority(metaPath),
