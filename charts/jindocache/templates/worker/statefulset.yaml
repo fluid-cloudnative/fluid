@@ -180,6 +180,7 @@ spec:
           {{- range .Values.ufsVolumes }}
             - mountPath: {{ .containerPath }}
               name: {{ .name }}
+              readOnly: {{ .readOnly }}
               {{- if .subPath }}
               subPath: {{ .subPath }}
               {{- end }}
