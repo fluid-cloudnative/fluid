@@ -18,6 +18,10 @@ package alluxio
 
 import (
 	"fmt"
+	"os"
+	"strconv"
+	"strings"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdatabackup "github.com/fluid-cloudnative/fluid/pkg/databackup"
@@ -26,10 +30,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"gopkg.in/yaml.v2"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
-	"strings"
 )
 
 // generateDataBackupValueFile builds a DataBackupValueFile by extracted specifications from the given DataBackup, and
@@ -146,7 +147,7 @@ func (e *AlluxioEngine) generateDataBackupValueFile(ctx cruntime.ReconcileReques
 	if runAs != nil {
 		dataBackupValue.UserInfo.User = int(*runAs.UID)
 		dataBackupValue.UserInfo.Group = int(*runAs.GID)
-		dataBackupValue.UserInfo.FSGroup = 0
+		// dataBackupValue.UserInfo.FSGroup = 0
 		dataBackupValue.InitUsers = common.InitUsers{
 			Enabled:  true,
 			EnvUsers: utils.GetInitUserEnv(runAs),
