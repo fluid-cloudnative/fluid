@@ -125,7 +125,6 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 		FuseImagePullPolicy: fuseImagePullPolicy,
 		User:                0,
 		Group:               0,
-		FsGroup:             0,
 		UseHostNetwork:      true,
 		UseHostPID:          true,
 		Properties:          e.transformPriority(metaPath),
@@ -256,6 +255,15 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 			if len(value.UFSVolumes) == 0 {
 				value.UFSVolumes = []UFSVolume{}
 			}
+
+			// Default to mount ufs volumes in read-only mode. Mount in read-write mode only when
+			// the dataset is set to ReadWriteMany explicitly.
+			ufsVolumeReadOnly := true
+			accessModes := dataset.Spec.AccessModes
+			if len(accessModes) == 1 && accessModes[0] == corev1.ReadWriteMany {
+				ufsVolumeReadOnly = false
+			}
+
 			// Split MountPoint into PVC name and subpath (if it contains a subpath)
 			parts := strings.SplitN(strings.TrimPrefix(mount.MountPoint, common.VolumeScheme.String()), "/", 2)
 
@@ -265,12 +273,14 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 					Name:          parts[0],
 					SubPath:       parts[1],
 					ContainerPath: utils.UFSPathBuilder{}.GenLocalStoragePath(mount),
+					ReadOnly:      ufsVolumeReadOnly,
 				})
 			} else {
 				// MountPoint does not contain subpath
 				value.UFSVolumes = append(value.UFSVolumes, UFSVolume{
 					Name:          parts[0],
 					ContainerPath: utils.UFSPathBuilder{}.GenLocalStoragePath(mount),
+					ReadOnly:      ufsVolumeReadOnly,
 				})
 			}
 		} else {
