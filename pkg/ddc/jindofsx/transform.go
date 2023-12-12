@@ -20,13 +20,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	versionutil "github.com/fluid-cloudnative/fluid/pkg/utils/version"
 	"os"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	versionutil "github.com/fluid-cloudnative/fluid/pkg/utils/version"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -125,7 +126,6 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 		FuseImagePullPolicy: fuseImagePullPolicy,
 		User:                0,
 		Group:               0,
-		FsGroup:             0,
 		UseHostNetwork:      true,
 		UseHostPID:          true,
 		Properties:          e.transformPriority(metaPath),
@@ -245,11 +245,21 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 			if len(value.UFSVolumes) == 0 {
 				value.UFSVolumes = []UFSVolume{}
 			}
+
+			// Default to mount ufs volumes in read-only mode. Mount in read-write mode only when
+			// the dataset is set to ReadWriteMany explicitly.
+			ufsVolumeReadOnly := true
+			accessModes := dataset.Spec.AccessModes
+			if len(accessModes) == 1 && accessModes[0] == corev1.ReadWriteMany {
+				ufsVolumeReadOnly = false
+			}
+
 			ufsVolumesName := strings.TrimPrefix(mount.MountPoint, common.VolumeScheme.String())
 			ufsVolumesPath := utils.UFSPathBuilder{}.GenLocalStoragePath(mount)
 			value.UFSVolumes = append(value.UFSVolumes, UFSVolume{
 				Name:          ufsVolumesName,
 				ContainerPath: ufsVolumesPath,
+				ReadOnly:      ufsVolumeReadOnly,
 			})
 		} else {
 			if !strings.HasSuffix(mount.MountPoint, "/") {
