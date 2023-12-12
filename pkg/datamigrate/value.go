@@ -86,4 +86,10 @@ type DataMigrateInfo struct {
 
 	// Resources that will be requested by DataMigrate job.
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// Parallelism defines the parallel tasks.
+	Parallelism int32 `json:"parallelism,omitempty"`
+
+	// SSHConfig defines the ssh config for parallel task pods
+	SSHConfig *common.SSHConfig `json:"sshConfig,omitempty"`
 }

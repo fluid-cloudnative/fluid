@@ -1,0 +1,29 @@
+{{- if or (eq (lower .Values.datamigrate.policy) "") (eq (lower .Values.datamigrate.policy) "once") }}
+{{- if gt (.Values.datamigrate.parallelism | int) 1 }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-ssh" .Release.Name }}
+  labels:
+    release: {{ .Release.Name }}
+    role: datamigrate-job
+  ownerReferences:
+  {{- if .Values.owner.enabled }}
+    - apiVersion: {{ .Values.owner.apiVersion }}
+      blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+      controller: {{ .Values.owner.controller }}
+      kind: {{ .Values.owner.kind }}
+      name: {{ .Values.owner.name }}
+      uid: {{ .Values.owner.uid }}
+  {{- end }}
+data:
+  PRIVATE_KEY: |
+{{.Values.datamigrate.sshConfig.privateKey | indent 4}}
+  PUBLIC_KEY: |
+{{.Values.datamigrate.sshConfig.publicKey | indent 4}}
+  AUTHORIZED_KEYS: |
+{{.Values.datamigrate.sshConfig.authorizedKeys | indent 4}}
+  CONFIG: |
+{{.Values.datamigrate.sshConfig.config | indent 4}}
+{{- end }}
+{{- end }}

@@ -91,3 +91,11 @@ datamigrate:
   # Optional
   # Description: optional container resources
   resources: {}
+
+  # Optional
+  # Description: optional parallel task numbers
+  parallelism: 1
+
+  # Optional
+  # Description: ssh config for parallel task pods
+  sshConfig:

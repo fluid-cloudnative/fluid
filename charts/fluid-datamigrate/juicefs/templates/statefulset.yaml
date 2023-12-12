@@ -1,0 +1,54 @@
+{{- if gt (.Values.datamigrate.parallelism | int) 1 }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ printf "%s-workers" .Release.Name }}
+  labels:
+    release: {{ .Release.Name }}
+    role: datamigrate-job
+  ownerReferences:
+  {{- if .Values.owner.enabled }}
+    - apiVersion: {{ .Values.owner.apiVersion }}
+      blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+      controller: {{ .Values.owner.controller }}
+      kind: {{ .Values.owner.kind }}
+      name: {{ .Values.owner.name }}
+      uid: {{ .Values.owner.uid }}
+  {{- end }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ printf "%s-workers" .Release.Name }}
+  # match the service name
+  serviceName: {{ printf "%s-svc" .Release.Name }}
+  replicas: {{ .Values.datamigrate.parallelism }}
+  podManagementPolicy: Parallel
+  template:
+    metadata:
+      labels:
+        app: {{ printf "%s-workers" .Release.Name }}
+    spec:
+      containers:
+        - name: worker
+          image: 172.16.2.132:30002/toolbox/ssh-server:v1.0
+          command: ["/usr/sbin/sshd", "-D"]
+          volumeMounts:
+            - name: data-migrate-ssh
+              mountPath: /root/.ssh
+              # use subpath to avoid soft link
+              subPath: .ssh
+      volumes:
+        - name: data-migrate-ssh
+          configMap:
+            name: {{ printf "%s-ssh" .Release.Name }}
+            defaultMode: 0600
+            items:
+              - key: PRIVATE_KEY
+                path: .ssh/id_rsa
+              - key: PUBLIC_KEY
+                path: .ssh/id_rsa.pub
+              - key: AUTHORIZED_KEYS
+                path: .ssh/authorized_keys
+              - key: CONFIG
+                path: .ssh/config
+{{- end }}

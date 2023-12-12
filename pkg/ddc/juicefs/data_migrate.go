@@ -132,6 +132,18 @@ func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequest
 		Policy:           string(dataMigrate.Spec.Policy),
 		Schedule:         dataMigrate.Spec.Schedule,
 		Resources:        dataMigrate.Spec.Resources,
+		Parallelism:      dataMigrate.Spec.Parallelism,
+	}
+	// generate ssh config for parallel tasks when using parallel tasks
+	if dataMigrateInfo.Parallelism > 1 {
+		releaseName := utils.GetDataMigrateReleaseName(dataMigrate.Name)
+		dataMigrateInfo.SSHConfig, err = utils.GenerateSSHConfig(releaseName, dataMigrateInfo.Parallelism)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		// default parallelism is 1
+		dataMigrateInfo.Parallelism = 1
 	}
 
 	if dataMigrate.Spec.Affinity != nil {

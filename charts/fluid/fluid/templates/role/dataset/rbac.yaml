@@ -49,6 +49,14 @@ rules:
   - apiGroups:
       - ""
     resources:
+      - services
+    verbs:
+      - create
+      - get
+      - delete
+  - apiGroups:
+      - ""
+    resources:
       - pods
     verbs:
       - get
