@@ -20,7 +20,6 @@ fuseImagePullPolicy: "Always"
 
 user: 0
 group: 0
-fsGroup: 0
 
 useHostNetwork: true
 
