@@ -147,6 +147,7 @@ func (e *AlluxioEngine) generateDataBackupValueFile(ctx cruntime.ReconcileReques
 	if runAs != nil {
 		dataBackupValue.UserInfo.User = int(*runAs.UID)
 		dataBackupValue.UserInfo.Group = int(*runAs.GID)
+		// avoid setting FSGroup with root group
 		// dataBackupValue.UserInfo.FSGroup = 0
 		dataBackupValue.InitUsers = common.InitUsers{
 			Enabled:  true,

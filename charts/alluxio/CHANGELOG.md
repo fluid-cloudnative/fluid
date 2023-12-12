@@ -252,4 +252,4 @@
 - Add `sidecar.istio.io/inject` to components annotation
 
 0.9.13
-- Remove `fsgroup` to avoid changing owner group of directory
+- Remove `fsGroup` to avoid changing owner group of directory
