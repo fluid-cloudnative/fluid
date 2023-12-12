@@ -257,11 +257,17 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 			}
 
 			// Default to mount ufs volumes in read-only mode. Mount in read-write mode only when
-			// the dataset is set to ReadWriteMany explicitly.
-			ufsVolumeReadOnly := true
+			// the dataset's accessMode is set explicitly.
+			ufsVolumeReadOnly := false
 			accessModes := dataset.Spec.AccessModes
-			if len(accessModes) == 1 && accessModes[0] == corev1.ReadWriteMany {
-				ufsVolumeReadOnly = false
+			if len(accessModes) == 0 {
+				ufsVolumeReadOnly = true
+			} else {
+				for _, mode := range accessModes {
+					if mode == corev1.ReadOnlyMany {
+						ufsVolumeReadOnly = true
+					}
+				}
 			}
 
 			// Split MountPoint into PVC name and subpath (if it contains a subpath)
