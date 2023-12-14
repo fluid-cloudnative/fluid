@@ -129,11 +129,6 @@ master:
   #   mountPath: /data/secrets/mySecretVolume/
   # - name: myConfigMapVolume
   #   mountPath: /data/configmap/myConfigMapVolume/
-  # volumeMounts:
-  # - name: mySecretVolume
-  #   mountPath: /data/secrets/mySecretVolume/
-  # - name: myConfigMapVolume
-  #   mountPath: /data/configmap/myConfigMapVolume/
   volumes: []
 
   mountConfigStorage:

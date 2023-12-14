@@ -2600,7 +2600,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ExternalEndpointSpec(ref common
 					},
 					"options": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Configurable options for External Etcd cluster. Support the following options.\n\n  etcd.prefix: (String) the prefix of etcd key for vineyard objects\n\nDefault value is as follows.\n\n  etcd.prefix: \"/vineyard\"",
+							Description: "Configurable options for External Etcd cluster.",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
 								Allows: true,
@@ -4539,7 +4539,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_MasterSpec(ref common.Reference
 					},
 					"options": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Configurable options for Vineyard component. For Master, there is no configurable options. For Worker, support the following options.\n\n  vineyardd.reserve.memory: (Bool) where to reserve memory for vineyardd\n                            If set to true, the memory quota will be counted to the vineyardd rather than the application.\n  etcd.prefix: (String) the prefix of etcd key for vineyard objects\n\n  Default value is as follows.\n\n    vineyardd.reserve.memory: \"true\"\n    etcd.prefix: \"/vineyard\"",
+							Description: "Configurable options for Vineyard component. For Master, there is no configurable options. For Worker, support the following options.\n\n  vineyardd.reserve.memory: (Bool) where to reserve memory for vineyardd\n                            If set to true, the memory quota will be counted to the vineyardd rather than the application.\n  etcd.prefix: (String) the prefix of etcd key for vineyard objects\n  wait.etcd.timeout: (String) the timeout period before waiting the etcd to be ready, in seconds\n\n  Default value is as follows.\n\n    vineyardd.reserve.memory: \"true\"\n    etcd.prefix: \"/vineyard\"\n    wait.etcd.timeout: \"120\"",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
 								Allows: true,
@@ -6447,7 +6447,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardCompTemplateSpec(ref co
 					},
 					"options": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Configurable options for Vineyard component. For Master, there is no configurable options. For Worker, support the following options.\n\n  vineyardd.reserve.memory: (Bool) where to reserve memory for vineyardd\n                            If set to true, the memory quota will be counted to the vineyardd rather than the application.\n  etcd.prefix: (String) the prefix of etcd key for vineyard objects\n\n  Default value is as follows.\n\n    vineyardd.reserve.memory: \"true\"\n    etcd.prefix: \"/vineyard\"",
+							Description: "Configurable options for Vineyard component. For Master, there is no configurable options. For Worker, support the following options.\n\n  vineyardd.reserve.memory: (Bool) where to reserve memory for vineyardd\n                            If set to true, the memory quota will be counted to the vineyardd rather than the application.\n  etcd.prefix: (String) the prefix of etcd key for vineyard objects\n  wait.etcd.timeout: (String) the timeout period before waiting the etcd to be ready, in seconds\n\n  Default value is as follows.\n\n    vineyardd.reserve.memory: \"true\"\n    etcd.prefix: \"/vineyard\"\n    wait.etcd.timeout: \"120\"",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
 								Allows: true,
@@ -6494,7 +6494,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardRuntime(ref common.Refe
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "VineyardRuntime is the Schema for the vineyardruntimes API",
+				Description: "VineyardRuntime is the Schema for the VineyardRuntimes API",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
