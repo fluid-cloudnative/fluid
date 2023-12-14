@@ -179,13 +179,7 @@ spec:
           {{- range .Values.ufsVolumes }}
             - mountPath: {{ .containerPath }}
               name: {{ .name }}
-<<<<<<< HEAD
-=======
               readOnly: {{ .readOnly }}
-              {{- if .subPath }}
-              subPath: {{ .subPath }}
-              {{- end }}
->>>>>>> f61c3d3aa... enhance: remove jindoruntime's fsGroup (#3632)
           {{- end }}
           {{- end }}
       restartPolicy: Always
