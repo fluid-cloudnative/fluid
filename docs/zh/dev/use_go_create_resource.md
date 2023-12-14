@@ -166,7 +166,7 @@ func main() {
 		},
 		Spec: v1alpha1.AlluxioRuntimeSpec{
 			Replicas: 1,
-			Tieredstore: v1alpha1.Tieredstore{
+			TieredStore: v1alpha1.TieredStore{
 				Levels: []v1alpha1.Level{
 					{
 						MediumType: "MEM",
