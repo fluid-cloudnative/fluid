@@ -1,0 +1,10 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: ThinRuntimeProfile
+metadata:
+  name: glusterfs
+spec:
+  fileSystemType: fuse.glusterfs
+  fuse:
+    image: fluidcloudnative/glusterfs
+    imageTag: v0.1
+    imagePullPolicy: IfNotPresent
