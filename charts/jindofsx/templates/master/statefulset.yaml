@@ -67,7 +67,6 @@ spec:
       securityContext:
         runAsUser: {{ .Values.user }}
         runAsGroup: {{ .Values.group }}
-        fsGroup: {{ .Values.fsGroup }}
       initContainers:
         {{ if .Values.initPortCheck.enabled -}}
         - name: init-port-check
@@ -180,6 +179,7 @@ spec:
           {{- range .Values.ufsVolumes }}
             - mountPath: {{ .containerPath }}
               name: {{ .name }}
+              readOnly: {{ .readOnly }}
           {{- end }}
           {{- end }}
       restartPolicy: Always

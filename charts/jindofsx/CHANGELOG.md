@@ -86,3 +86,7 @@ Add env variables to components
 
 0.8.20
 Add support ak with secret file
+
+0.8.20.1
+Delete runtime's fsGroup
+Mount ufs volumes according to dataset's accessModes

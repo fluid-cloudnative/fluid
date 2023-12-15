@@ -30,7 +30,6 @@ type Jindo struct {
 	FuseImagePullPolicy string                 `yaml:"fuseImagePullPolicy"`
 	User                int                    `yaml:"user"`
 	Group               int                    `yaml:"group"`
-	FsGroup             int                    `yaml:"fsGroup"`
 	UseHostNetwork      bool                   `yaml:"useHostNetwork"`
 	UseHostPID          bool                   `yaml:"useHostPID"`
 	Properties          map[string]string      `yaml:"properties"`
@@ -151,4 +150,5 @@ type cacheStates struct {
 type UFSVolume struct {
 	Name          string `yaml:"name"`
 	ContainerPath string `yaml:"containerPath"`
+	ReadOnly      bool   `json:"readOnly"`
 }

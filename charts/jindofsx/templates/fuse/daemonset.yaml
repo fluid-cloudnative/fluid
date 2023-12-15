@@ -64,7 +64,6 @@ spec:
       securityContext:
         runAsUser: {{ .Values.user }}
         runAsGroup: {{ .Values.group }}
-        fsGroup: {{ .Values.fsGroup }}
       tolerations:
         - operator: Exists
       containers:
@@ -180,6 +179,7 @@ spec:
           {{- range .Values.ufsVolumes }}
             - mountPath: {{ .containerPath }}
               name: {{ .name }}
+              readOnly: {{ .readOnly }}
           {{- end }}
           {{- end }}
       restartPolicy: Always
