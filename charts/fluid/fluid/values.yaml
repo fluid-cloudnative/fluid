@@ -164,11 +164,8 @@ webhook:
       # serverless webhook plugins
       serverless:
         withDataset:
-          - RequireNodeWithFuse
-          - NodeAffinityWithCache
           - FuseSidecar
-        withoutDataset:
-          - PreferNodesWithoutCache
+        withoutDataset: []
     pluginConfig:
       - name: NodeAffinityWithCache
         # plugin args is a serialized yaml string.
