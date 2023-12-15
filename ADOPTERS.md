@@ -46,4 +46,5 @@ The companies/organizations are listed in alphabetical order grouped by the phas
 | [KubeDL](https://kubedl.io/) | [@SimonCqk](cqk0100@gmail.com) | Production | AI Training/Big Data/Stream Media Platforms In Aicheng Technology At Large Scale |
 | [liblibai](https://liblib.ai) | [@zxj](zxj861216@163.com) | Production | AIGC Platform on k8s |
 | [HappyElements](https://www.happyelements.com) | [@Luckyboys](https://github.com/Luckyboys) | Production | AIGC Platform on k8s |
+| [JoinQuant](https://www.joinquant.com/) | [@David-Xiang](https://github.com/David-Xiang) | Production | AI Platform on k8s |
 
