@@ -1424,20 +1424,20 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateSpec(ref common.Refe
 					},
 					"podMetadata": {
 						SchemaProps: spec.SchemaProps{
-							Description: "PodMetadata defines labels and annotations that will be propagated to DataLoad pods",
+							Description: "PodMetadata defines labels and annotations that will be propagated to DataMigrate pods",
 							Default:     map[string]interface{}{},
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
 						},
 					},
 					"affinity": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Affinity defines affinity for DataLoad pod",
+							Description: "Affinity defines affinity for DataMigrate pod",
 							Ref:         ref("k8s.io/api/core/v1.Affinity"),
 						},
 					},
 					"tolerations": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Tolerations defines tolerations for DataLoad pod",
+							Description: "Tolerations defines tolerations for DataMigrate pod",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -1451,7 +1451,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateSpec(ref common.Refe
 					},
 					"nodeSelector": {
 						SchemaProps: spec.SchemaProps{
-							Description: "NodeSelector defiens node selector for DataLoad pod",
+							Description: "NodeSelector defiens node selector for DataMigrate pod",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
 								Allows: true,
@@ -1467,7 +1467,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateSpec(ref common.Refe
 					},
 					"schedulerName": {
 						SchemaProps: spec.SchemaProps{
-							Description: "SchedulerName sets the scheduler to be used for DataLoad pod",
+							Description: "SchedulerName sets the scheduler to be used for DataMigrate pod",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -1490,6 +1490,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateSpec(ref common.Refe
 							Description: "Resources that will be requested by the DataMigrate job. <br>",
 							Default:     map[string]interface{}{},
 							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
+						},
+					},
+					"parallelism": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Parallelism defines the parallelism tasks",
+							Type:        []string{"integer"},
+							Format:      "int32",
 						},
 					},
 				},

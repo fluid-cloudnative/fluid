@@ -30,13 +30,24 @@ spec:
     spec:
       containers:
         - name: worker
-          image: 172.16.2.132:30002/toolbox/ssh-server:v1.0
+          # juice fs with openssh server
+          image: {{ required "DataMigrate image should be set" .Values.datamigrate.image }}
+          imagePullPolicy: IfNotPresent
           command: ["/usr/sbin/sshd", "-D"]
+          env:
+            {{- range .Values.datamigrate.encryptOptions }}
+            - name: {{ .name }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .valueFrom.secretKeyRef.name }}
+                  key: {{ .valueFrom.secretKeyRef.key }}
+            {{- end }}
           volumeMounts:
             - name: data-migrate-ssh
               mountPath: /root/.ssh
               # use subpath to avoid soft link
               subPath: .ssh
+
       volumes:
         - name: data-migrate-ssh
           configMap:

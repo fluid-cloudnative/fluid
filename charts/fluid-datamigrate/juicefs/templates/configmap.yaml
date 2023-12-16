@@ -13,16 +13,26 @@ data:
     function main() {
       echo "juicefs datamigrate job start..."
 
-      if [ $EDITION == 'community' ]
+      # handle parallel migrations
+      if [ $PARALLELISM -gt 1 ]
       then
-        timeout $TIMEOUT /usr/local/bin/juicefs sync {{ .Values.datamigrate.migrateFrom }} {{ .Values.datamigrate.migrateTo }} $OPTION
+        workers=$(grep "Host " /root/.ssh/config  | cut -d " " -f 2  | tr '\n' ',')
+        workers=${workers%?}
+        echo "distribute data migrate using $workers"
+
+        timeout $TIMEOUT /usr/local/bin/juicefs --worker ${workers} sync {{ .Values.datamigrate.migrateFrom }} {{ .Values.datamigrate.migrateTo }} $OPTION
       else
-        {{- range $key, $val := .Values.datamigrate.options }}
-        {{- if eq $key "formatCmd" }}
-        {{ $val }}
-        {{- end }}
-        {{- end }}
-        timeout $TIMEOUT /usr/bin/juicefs sync {{ .Values.datamigrate.migrateFrom }} {{ .Values.datamigrate.migrateTo }} $OPTION
+        if [ $EDITION == 'community' ]
+        then
+          timeout $TIMEOUT /usr/local/bin/juicefs sync {{ .Values.datamigrate.migrateFrom }} {{ .Values.datamigrate.migrateTo }} $OPTION
+        else
+          {{- range $key, $val := .Values.datamigrate.options }}
+          {{- if eq $key "formatCmd" }}
+          {{ $val }}
+          {{- end }}
+          {{- end }}
+          timeout $TIMEOUT /usr/bin/juicefs sync {{ .Values.datamigrate.migrateFrom }} {{ .Values.datamigrate.migrateTo }} $OPTION
+        fi
       fi
       echo "juicefs datamigrate job end."
     }

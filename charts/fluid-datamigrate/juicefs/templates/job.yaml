@@ -64,16 +64,18 @@ spec:
       {{- end }}
       containers:
         - name: datamigrate
+          # juice fs with openssh client
           image: {{ required "DataMigrate image should be set" .Values.datamigrate.image }}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh", "-c"]
           args: ["/scripts/juicefs_datamigrate.sh"]
-          # TODO: support parallelism greater than 1
           {{- if .Values.datamigrate.resources }}
           resources:
           {{- toYaml .Values.datamigrate.resources | nindent 12}}
           {{- end }}
           env:
+            - name: PARALLELISM
+              value: {{ .Values.datamigrate.parallelism | quote}}
             {{- range $key, $val := .Values.datamigrate.options }}
             {{- if eq $key "timeout" }}
             - name: TIMEOUT
