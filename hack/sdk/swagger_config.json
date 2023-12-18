@@ -9,5 +9,9 @@
         "V1ResourceRequirements": "from kubernetes.client import V1ResourceRequirements",
         "V1JobCondition": "from kubernetes.client import V1JobCondition",
         "V1PodTemplateSpec": "from kubernetes.client import V1PodTemplateSpec"
+    },
+    "typeMappings": {
+        "V1Time": "datetime",
+        "Quantity": "str"
     }
 }
