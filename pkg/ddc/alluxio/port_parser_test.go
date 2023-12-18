@@ -34,7 +34,6 @@ imageTag: release-2.5.0-2-SNAPSHOT-52ad95c
 imagePullPolicy: IfNotPresent
 user: 0
 group: 0
-fsGroup: 0
 properties:
   alluxio.fuse.cached.paths.max: "1000000"
   alluxio.fuse.debug.enabled: "false"

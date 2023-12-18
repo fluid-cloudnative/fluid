@@ -13,8 +13,6 @@ spec:
   imagePullSecrets:
     {{- toYaml . | nindent 4 }}
   {{- end }}
-  securityContext:
-    fsGroup: {{ .Values.fsGroup }}
   {{ if .Values.initUsers.enabled -}}
   initContainers:
     - name: init-users

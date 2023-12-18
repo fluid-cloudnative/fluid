@@ -57,4 +57,3 @@ initUsers:
 # Security Context
 user: 1000
 group: 1000
-fsGroup: 1000
