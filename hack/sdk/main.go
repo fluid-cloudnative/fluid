@@ -73,6 +73,7 @@ func swaggify(name string) string {
 	name = strings.Replace(name, "k8s.io/kubernetes/pkg/controller/", "", -1)
 	name = strings.Replace(name, "k8s.io/client-go/listers/core/", "", -1)
 	name = strings.Replace(name, "k8s.io/client-go/util/workqueue", "", -1)
+	name = strings.Replace(name, "k8s.io/apimachinery/pkg/api/resource", "", -1)
 	name = strings.Replace(name, "/", ".", -1)
 	return name
 }
