@@ -142,9 +142,9 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 	value.Image, value.ImageTag, value.ImagePullPolicy, value.ImagePullSecrets = e.parseRuntimeImage(image, imageTag, imagePullPolicy, imagePullSecrets)
 
 	value.UserInfo = common.UserInfo{
-		User:    0,
-		FSGroup: 0,
-		Group:   0,
+		User: 0,
+		// FSGroup: 0,
+		Group: 0,
 	}
 
 	// transform init users
