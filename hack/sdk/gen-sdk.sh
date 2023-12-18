@@ -24,6 +24,7 @@ SWAGGER_CODEGEN_CONF="hack/sdk/swagger_config.json"
 SWAGGER_CODEGEN_FILE="api/v1alpha1/swagger.json"
 PYTHON_SDK_OUTPUT_PATH="sdk/python"
 JAVA_SDK_OUTPUT_PATH="sdk/java"
+POST_GEN_SDK_SCRIPT="hack/sdk/post-gen.py"
 
 if [ -z "${GOPATH:-}" ]; then
     export GOPATH=$(go env GOPATH)
@@ -73,6 +74,8 @@ pushd . && \
     git checkout fluid/__init__.py && \
     git checkout .gitignore && \
     popd
+
+python3 ${POST_GEN_SDK_SCRIPT} --python-sdk-path=${PYTHON_SDK_OUTPUT_PATH}
 
 echo "Fluid Python SDK is generated successfully to folder ${PYTHON_SDK_OUTPUT_PATH}/."
 
