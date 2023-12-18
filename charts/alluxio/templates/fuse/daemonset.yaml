@@ -84,8 +84,6 @@ spec:
       {{- end }}
       tolerations:
         - operator: Exists
-      securityContext:
-        fsGroup: {{ .Values.fuse.fsGroup }}
       initContainers:
         {{ if .Values.initUsers.enabled -}}
         - name: init-fuse
