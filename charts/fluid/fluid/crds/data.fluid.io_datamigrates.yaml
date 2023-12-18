@@ -952,6 +952,7 @@ spec:
                 description: options for migrate, different for each runtime
                 type: object
               parallelism:
+                default: 1
                 description: Parallelism defines the parallelism tasks
                 format: int32
                 type: integer

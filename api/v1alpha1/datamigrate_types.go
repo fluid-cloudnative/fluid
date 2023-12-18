@@ -91,6 +91,7 @@ type DataMigrateSpec struct {
 
 	// Parallelism defines the parallelism tasks
 	// +optional
+	// +kubebuilder:default:=1
 	Parallelism int32 `json:"parallelism,omitempty"`
 }
 
