@@ -75,8 +75,6 @@ spec:
       hostNetwork: {{ $hostNetwork }}
       dnsPolicy: ClusterFirstWithHostNet
       {{- end }}
-      securityContext:
-        fsGroup: {{ .Values.fsGroup }}
       nodeSelector:
       {{- if .Values.worker.nodeSelector }}
 {{ toYaml .Values.worker.nodeSelector | trim | indent 8  }}
