@@ -21,9 +21,9 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 
+	"github.com/fluid-cloudnative/fluid/pkg/utils/validation"
 	"github.com/golang/glog"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/mount"
@@ -35,8 +35,8 @@ const MountRoot string = "MOUNT_ROOT"
 func GetMountRoot() (string, error) {
 	mountRoot := os.Getenv(MountRoot)
 
-	if !filepath.IsAbs(mountRoot) {
-		return mountRoot, fmt.Errorf("the the value of the env variable named MOUNT_ROOT is illegal")
+	if err := validation.IsValidMountRoot(mountRoot); err != nil {
+		return mountRoot, err
 	}
 	return mountRoot, nil
 }
