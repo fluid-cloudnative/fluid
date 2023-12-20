@@ -19,6 +19,7 @@ package alluxio
 import (
 	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
@@ -82,7 +83,25 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 			}
 		}
 		e.Log.Info("mountUFS")
+	} else {
+		// for multiple master, can not use startup probe/post start, mount in the controller.
+		runtime, err := e.getRuntime()
+		if err != nil {
+			return err
+		}
+		replicas := runtime.Spec.Master.Replicas
+		if replicas > 1 {
+			// Mount UFS (Synchronous Operation)
+			podName, containerName := e.getMasterPodInfo()
+			fileUtils := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
+			err = fileUtils.ExecMountScripts()
+			if err != nil {
+				return err
+			}
+		}
+		e.Log.Info("mountUFS for ha master")
 	}
+
 	err = e.SyncMetadata()
 	if err != nil {
 		// just report this error and ignore it because SyncMetadata isn't on the critical path of Setup
