@@ -98,8 +98,8 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 			if err != nil {
 				return err
 			}
+			e.Log.Info("mountUFS for ha master")
 		}
-		e.Log.Info("mountUFS for ha master")
 	}
 
 	err = e.SyncMetadata()
