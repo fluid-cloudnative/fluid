@@ -3643,7 +3643,7 @@
       }
     },
     ".VineyardRuntime": {
-      "description": "VineyardRuntime is the Schema for the vineyardruntimes API",
+      "description": "VineyardRuntime is the Schema for the VineyardRuntimes API",
       "type": "object",
       "properties": {
         "apiVersion": {

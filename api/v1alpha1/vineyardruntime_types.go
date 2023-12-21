@@ -244,7 +244,7 @@ type VineyardRuntimeSpec struct {
 // +kubebuilder:printcolumn:name="API Gateway",type="string",JSONPath=`.status.apiGateway.endpoint`,priority=10
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=`.metadata.creationTimestamp`,priority=0
 // +kubebuilder:resource:scope=Namespaced
-// +kubebuilder:resource:categories={fluid},shortName=vineyard
+// +kubebuilder:resource:categories={fluid},shortName=v6d
 // +genclient
 
 // VineyardRuntime is the Schema for the VineyardRuntimes API

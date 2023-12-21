@@ -15,7 +15,7 @@ spec:
     listKind: VineyardRuntimeList
     plural: vineyardruntimes
     shortNames:
-    - vineyard
+    - v6d
     singular: vineyardruntime
   scope: Namespaced
   versions:
