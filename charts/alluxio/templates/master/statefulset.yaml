@@ -180,7 +180,8 @@ spec:
           args:
 {{ toYaml .Values.master.args | trim | indent 12 }}
           {{- end }}
-          {{- if eq .Values.master.mountConfigStorage "configmap"}}
+          # Ha Master mode will connect to each other to get ready, so can not use probe, use controller to mount.
+          {{- if and (eq .Values.master.mountConfigStorage "configmap") ($isSingleMaster) }}
           {{- if semverCompare ">=1.18.0-0" .Capabilities.KubeVersion.Version }}
           startupProbe:
             exec:
