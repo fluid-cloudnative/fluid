@@ -9,16 +9,61 @@ metadata:
 spec:
   group: data.fluid.io
   names:
+    categories:
+    - fluid
     kind: VineyardRuntime
     listKind: VineyardRuntimeList
     plural: vineyardruntimes
+    shortNames:
+    - v6d
     singular: vineyardruntime
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.masterNumberReady
+      name: Ready Masters
+      priority: 10
+      type: integer
+    - jsonPath: .status.desiredMasterNumberScheduled
+      name: Desired Masters
+      priority: 10
+      type: integer
+    - jsonPath: .status.masterPhase
+      name: Master Phase
+      type: string
+    - jsonPath: .status.workerNumberReady
+      name: Ready Workers
+      priority: 10
+      type: integer
+    - jsonPath: .status.desiredWorkerNumberScheduled
+      name: Desired Workers
+      priority: 10
+      type: integer
+    - jsonPath: .status.workerPhase
+      name: Worker Phase
+      type: string
+    - jsonPath: .status.fuseNumberReady
+      name: Ready Fuses
+      priority: 10
+      type: integer
+    - jsonPath: .status.desiredFuseNumberScheduled
+      name: Desired Fuses
+      priority: 10
+      type: integer
+    - jsonPath: .status.fusePhase
+      name: Fuse Phase
+      type: string
+    - jsonPath: .status.apiGateway.endpoint
+      name: API Gateway
+      priority: 10
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: VineyardRuntime is the Schema for the vineyardruntimes API
+        description: VineyardRuntime is the Schema for the VineyardRuntimes API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -133,10 +178,7 @@ spec:
                       options:
                         additionalProperties:
                           type: string
-                        description: "Configurable options for External Etcd cluster.
-                          Support the following options. \n etcd.prefix: (String)
-                          the prefix of etcd key for vineyard objects \n Default value
-                          is as follows. \n etcd.prefix: \"/vineyard\""
+                        description: Configurable options for External Etcd cluster.
                         type: object
                       uri:
                         description: URI specifies the endpoint of external Etcd cluster
@@ -182,8 +224,10 @@ spec:
                       to reserve memory for vineyardd If set to true, the memory quota
                       will be counted to the vineyardd rather than the application.
                       etcd.prefix: (String) the prefix of etcd key for vineyard objects
-                      \n Default value is as follows. \n vineyardd.reserve.memory:
-                      \"true\" etcd.prefix: \"/vineyard\""
+                      wait.etcd.timeout: (String) the timeout period before waiting
+                      the etcd to be ready, in seconds \n Default value is as follows.
+                      \n vineyardd.reserve.memory: \"true\" etcd.prefix: \"/vineyard\"
+                      wait.etcd.timeout: \"120\""
                     type: object
                   ports:
                     additionalProperties:
@@ -3462,8 +3506,10 @@ spec:
                       to reserve memory for vineyardd If set to true, the memory quota
                       will be counted to the vineyardd rather than the application.
                       etcd.prefix: (String) the prefix of etcd key for vineyard objects
-                      \n Default value is as follows. \n vineyardd.reserve.memory:
-                      \"true\" etcd.prefix: \"/vineyard\""
+                      wait.etcd.timeout: (String) the timeout period before waiting
+                      the etcd to be ready, in seconds \n Default value is as follows.
+                      \n vineyardd.reserve.memory: \"true\" etcd.prefix: \"/vineyard\"
+                      wait.etcd.timeout: \"120\""
                     type: object
                   ports:
                     additionalProperties:
@@ -3983,6 +4029,10 @@ spec:
     served: true
     storage: true
     subresources:
+      scale:
+        labelSelectorPath: .status.selector
+        specReplicasPath: .spec.replicas
+        statusReplicasPath: .status.currentWorkerNumberScheduled
       status: {}
 status:
   acceptedNames:

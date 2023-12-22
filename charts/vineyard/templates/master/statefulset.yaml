@@ -1,0 +1,126 @@
+#  Copyright 2023 The Fluid Authors.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+{{- $replicas := int .Values.master.replicas }}
+{{- $clientPort := int .Values.master.ports.client }}
+{{- $peerPort := int .Values.master.ports.peer }}
+{{- $name := include "vineyard.name" . }}
+{{- $fullName := include "vineyard.fullname" . }}
+{{- $etcdFullname := (printf "%s-%s" $fullName "master") }}
+{{- $chart := include "vineyard.chart" . }}
+{{- $releaseNamespace := .Release.Namespace }}
+{{- $etcdServiceName := (printf "%s-%s" $fullName "master-svc") }}
+
+{{- if not .Values.master.externalEndpoint }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $fullName }}-master
+  labels:
+    app: {{ $name }}
+    chart: {{ $chart }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    role: vineyard-master
+  {{- if .Values.owner.enabled }}
+  ownerReferences:
+  - apiVersion: {{ .Values.owner.apiVersion }}
+    blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+    controller: {{ .Values.owner.controller }}
+    kind: {{ .Values.owner.kind }}
+    name: {{ .Values.owner.name }}
+    uid: {{ .Values.owner.uid }}
+  {{- end }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ $name }}
+      chart: {{ $chart }}
+      release: {{ .Release.Name }}
+      role: vineyard-master
+  serviceName: {{ $fullName }}-master-svc
+  replicas: {{ $replicas }}
+  podManagementPolicy: Parallel
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+      labels:
+        app: {{ $name }}
+        chart: {{ $chart }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+        role: vineyard-master
+    spec:
+      {{- if .Values.master.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.master.nodeSelector | trim | indent 8  }}
+      {{- end }}
+      containers:
+        - name: vineyard-master
+          image: {{ .Values.master.image }}:{{ .Values.master.imageTag }}
+          imagePullPolicy: {{ .Values.master.imagePullPolicy }}
+          securityContext:
+            runAsUser: 1001
+            runAsNonRoot: true
+            privileged: false
+          command:
+            - etcd
+            - --name=$(POD_NAME)
+            - --initial-advertise-peer-urls=http://$(POD_NAME).{{ $etcdServiceName }}.{{ .Release.Namespace }}.svc.cluster.local:{{ $peerPort }}
+            - --listen-peer-urls=http://0.0.0.0:{{ $peerPort }}
+            - --advertise-client-urls=http://$(POD_NAME).{{ $etcdServiceName }}.{{ .Release.Namespace }}.svc.cluster.local:{{ $clientPort }}
+            - --listen-client-urls=http://0.0.0.0:{{ $clientPort }}
+            - --initial-cluster-token=my-etcd-cluster
+            - --initial-cluster-state=new
+            {{- $initialCluster := list }}
+            {{- range $e, $i := until $replicas }}
+            {{- $initialCluster = append $initialCluster (printf "%s-%d=http://%s-%d.%s.%s.svc.cluster.local:%d" $etcdFullname $i $etcdFullname $i $etcdServiceName $releaseNamespace $peerPort) }}
+            {{- end }}
+            - --initial-cluster={{ join "," $initialCluster }}
+            - --data-dir=/etcd-data
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            {{- range $key, $value := .Values.master.env }}
+            - name: "{{ $key }}"
+              value: "{{ $value }}"
+            {{- end }}
+          {{- if .Values.master.resources  }}
+{{ include "vineyard.master.resources" . | indent 10 }}
+          {{- end }}
+          ports:
+            - name: client
+              containerPort: {{ $clientPort }}
+              protocol: TCP
+            - name: peer
+              containerPort: {{ $peerPort }}
+              protocol: TCP
+          volumeMounts:
+          {{- if not .Values.master.volumeMounts }}
+          - name: etcd-data
+            mountPath: /etcd-data
+          {{- else }}
+{{ toYaml .Values.master.volumeMounts | indent 10 }}
+          {{- end }}
+      volumes:
+      {{- if not .Values.volumes }}
+      - name: etcd-data
+        emptyDir: {}
+      {{- else }}
+{{ toYaml .Values.volumes | indent 6 }}
+      {{- end }}
+{{- end }}
