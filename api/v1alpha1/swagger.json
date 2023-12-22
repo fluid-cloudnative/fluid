@@ -1420,7 +1420,7 @@
           }
         },
         "options": {
-          "description": "Configurable options for External Etcd cluster. Support the following options.\n\n  etcd.prefix: (String) the prefix of etcd key for vineyard objects\n\nDefault value is as follows.\n\n  etcd.prefix: \"/vineyard\"",
+          "description": "Configurable options for External Etcd cluster.",
           "type": "object",
           "additionalProperties": {
             "type": "string",
@@ -2497,7 +2497,7 @@
           }
         },
         "options": {
-          "description": "Configurable options for Vineyard component. For Master, there is no configurable options. For Worker, support the following options.\n\n  vineyardd.reserve.memory: (Bool) where to reserve memory for vineyardd\n                            If set to true, the memory quota will be counted to the vineyardd rather than the application.\n  etcd.prefix: (String) the prefix of etcd key for vineyard objects\n\n  Default value is as follows.\n\n    vineyardd.reserve.memory: \"true\"\n    etcd.prefix: \"/vineyard\"",
+          "description": "Configurable options for Vineyard component. For Master, there is no configurable options. For Worker, support the following options.\n\n  vineyardd.reserve.memory: (Bool) where to reserve memory for vineyardd\n                            If set to true, the memory quota will be counted to the vineyardd rather than the application.\n  etcd.prefix: (String) the prefix of etcd key for vineyard objects\n  wait.etcd.timeout: (String) the timeout period before waiting the etcd to be ready, in seconds\n\n  Default value is as follows.\n\n    vineyardd.reserve.memory: \"true\"\n    etcd.prefix: \"/vineyard\"\n    wait.etcd.timeout: \"120\"",
           "type": "object",
           "additionalProperties": {
             "type": "string",
@@ -3606,7 +3606,7 @@
           }
         },
         "options": {
-          "description": "Configurable options for Vineyard component. For Master, there is no configurable options. For Worker, support the following options.\n\n  vineyardd.reserve.memory: (Bool) where to reserve memory for vineyardd\n                            If set to true, the memory quota will be counted to the vineyardd rather than the application.\n  etcd.prefix: (String) the prefix of etcd key for vineyard objects\n\n  Default value is as follows.\n\n    vineyardd.reserve.memory: \"true\"\n    etcd.prefix: \"/vineyard\"",
+          "description": "Configurable options for Vineyard component. For Master, there is no configurable options. For Worker, support the following options.\n\n  vineyardd.reserve.memory: (Bool) where to reserve memory for vineyardd\n                            If set to true, the memory quota will be counted to the vineyardd rather than the application.\n  etcd.prefix: (String) the prefix of etcd key for vineyard objects\n  wait.etcd.timeout: (String) the timeout period before waiting the etcd to be ready, in seconds\n\n  Default value is as follows.\n\n    vineyardd.reserve.memory: \"true\"\n    etcd.prefix: \"/vineyard\"\n    wait.etcd.timeout: \"120\"",
           "type": "object",
           "additionalProperties": {
             "type": "string",
@@ -3643,7 +3643,7 @@
       }
     },
     ".VineyardRuntime": {
-      "description": "VineyardRuntime is the Schema for the vineyardruntimes API",
+      "description": "VineyardRuntime is the Schema for the VineyardRuntimes API",
       "type": "object",
       "properties": {
         "apiVersion": {

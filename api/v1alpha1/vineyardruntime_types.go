@@ -71,12 +71,14 @@ type VineyardCompTemplateSpec struct {
 	//   vineyardd.reserve.memory: (Bool) where to reserve memory for vineyardd
 	//                             If set to true, the memory quota will be counted to the vineyardd rather than the application.
 	//   etcd.prefix: (String) the prefix of etcd key for vineyard objects
+	//   wait.etcd.timeout: (String) the timeout period before waiting the etcd to be ready, in seconds
 	//
 	//
 	//   Default value is as follows.
 	//
 	//     vineyardd.reserve.memory: "true"
 	//     etcd.prefix: "/vineyard"
+	//     wait.etcd.timeout: "120"
 	//
 	// +optional
 	Options map[string]string `json:"options,omitempty"`
@@ -108,14 +110,6 @@ type ExternalEndpointSpec struct {
 	EncryptOptions []EncryptOption `json:"encryptOptions,omitempty"`
 
 	// Configurable options for External Etcd cluster.
-	// Support the following options.
-	//
-	//   etcd.prefix: (String) the prefix of etcd key for vineyard objects
-	//
-	// Default value is as follows.
-	//
-	//   etcd.prefix: "/vineyard"
-	//
 	// +optional
 	Options map[string]string `json:"options,omitempty"`
 }
@@ -235,10 +229,25 @@ type VineyardRuntimeSpec struct {
 	Volumes []corev1.Volume `json:"volumes,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.currentWorkerNumberScheduled,selectorpath=.status.selector
+// +kubebuilder:printcolumn:name="Ready Masters",type="integer",JSONPath=`.status.masterNumberReady`,priority=10
+// +kubebuilder:printcolumn:name="Desired Masters",type="integer",JSONPath=`.status.desiredMasterNumberScheduled`,priority=10
+// +kubebuilder:printcolumn:name="Master Phase",type="string",JSONPath=`.status.masterPhase`,priority=0
+// +kubebuilder:printcolumn:name="Ready Workers",type="integer",JSONPath=`.status.workerNumberReady`,priority=10
+// +kubebuilder:printcolumn:name="Desired Workers",type="integer",JSONPath=`.status.desiredWorkerNumberScheduled`,priority=10
+// +kubebuilder:printcolumn:name="Worker Phase",type="string",JSONPath=`.status.workerPhase`,priority=0
+// +kubebuilder:printcolumn:name="Ready Fuses",type="integer",JSONPath=`.status.fuseNumberReady`,priority=10
+// +kubebuilder:printcolumn:name="Desired Fuses",type="integer",JSONPath=`.status.desiredFuseNumberScheduled`,priority=10
+// +kubebuilder:printcolumn:name="Fuse Phase",type="string",JSONPath=`.status.fusePhase`,priority=0
+// +kubebuilder:printcolumn:name="API Gateway",type="string",JSONPath=`.status.apiGateway.endpoint`,priority=10
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=`.metadata.creationTimestamp`,priority=0
+// +kubebuilder:resource:scope=Namespaced
+// +kubebuilder:resource:categories={fluid},shortName=v6d
+// +genclient
 
-// VineyardRuntime is the Schema for the vineyardruntimes API
+// VineyardRuntime is the Schema for the VineyardRuntimes API
 type VineyardRuntime struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -247,7 +256,8 @@ type VineyardRuntime struct {
 	Status RuntimeStatus       `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
+// +kubebuilder:resource:scope=Namespaced
 
 // VineyardRuntimeList contains a list of VineyardRuntime
 type VineyardRuntimeList struct {
