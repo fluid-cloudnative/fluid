@@ -161,8 +161,8 @@ spec:
                 name: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}-jindofs-client-config
           volumeMounts:
             - name: bigboot-config
-              mountPath: /jindosdk.cfg
-              subPath: jindosdk.cfg
+              mountPath: /jindocache.cfg
+              subPath: jindocache.cfg
             - name: bigboot-config
               mountPath: /hdfs-3.2.1/etc/hadoop/core-site.xml
               subPath: core-site.xml
