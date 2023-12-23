@@ -48,6 +48,7 @@ spec:
       name: {{ $fullName }}-master
   serviceName: {{ $fullName }}-master
   replicas: {{ $masterCount }}
+  podManagementPolicy: {{ .Values.master.podManagementPolicy }}
   template:
     metadata:
       annotations:
