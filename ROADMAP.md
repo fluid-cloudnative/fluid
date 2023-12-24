@@ -1,21 +1,21 @@
 # Fluid Roadmap
-## 2021
-### Optimize Data Access Acceleration
-Objective: "Speedup data access for diversified scenarios on cloud"
-* Support dataset metadata backup and restore （for small files）
-* Support more cache runtimes (eg. Vineyard) for diversified data types
-* Optimize cache runtime for the running apps on-the-fly
+## 2022
 
-### Refine Data/App Scheduling
-Objective: "Make cache runtime and application scheduling intelligent"
-* Flexible scale in/out capability of cache runtimes (HPA)
-* Workload-specific data cache orchestration
-* Intelligent Data Prefetch based on Workload Scheduling History 
+### Make Fluid CSI Plugin ready for production:
 
-### Improve User Experience
-Objective: "Enable operation and maintenance of Fluid with less cost"
-* Data Abstraction: More data abstraction types for different computing frameworks
-* Observability: Enhance observability for cache runtimes
-* More Operations: Enhance Dataset Operation (Pin/Load/Free..)
-* Data Management: Dataset Cache Garbage Collection in Kubernetes
+- Introduce on-demand start-up mechanism for FUSE Pod: This reduces resource usage of cache engines in large-scale scenarios.
+- Implement automatic recovery feature for Fuse mount points: This reduces the impact of Fuse process crashes on applications, improving system stability.
+
+### Enable Fluid to Run Anywhere & Everywhere::
+
+- Support Fluid FUSE client with both sidecar and CSI plugin mode with the configuration: Provides the flexibility for the deployment of Fluid.
+- Support Job Terminator for the sidecar mode: This enhances the control over job execution.
+- Support arm64 architecture: This broadens the platform compatibility of Fluid.
+- Make Fluid's components compatible for different environments: Suppports not only native environments but also edge computing, Serverless Kubernetes, and multi-cluster Kubernetes setups.
+
+### Expand Support for More Cache Runtimes:
+
+- Add JuiceFS/JindoFS support: Expands the versatility of the Fluid framework to handle more types of runtimes and storage types.
+
+
 
