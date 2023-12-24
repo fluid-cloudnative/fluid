@@ -74,6 +74,10 @@ spec:
           {{- toYaml .Values.datamigrate.resources | nindent 12}}
           {{- end }}
           env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
             - name: PARALLELISM
               value: {{ .Values.datamigrate.parallelism | quote}}
             {{- range $key, $val := .Values.datamigrate.options }}

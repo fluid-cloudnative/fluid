@@ -10,17 +10,45 @@ data:
     #!/bin/bash
     set -e
 
+    function check_ssh() {
+      # +e to prevent quit when ssh failed
+      set +e
+      for host in "$@"; do
+        gotStatus="-1"
+        wantStatus="0"
+        while [ $gotStatus -ne $wantStatus ]
+        do
+          ssh $host ls . > /dev/null 2>&1
+          gotStatus=$?
+          if [ $gotStatus -ne $wantStatus ]; then
+            echo "$(date '+%Y/%m/%d %H:%M:%S') Failed to ssh pod $host, retrying in 1 second..."
+            sleep 1
+          fi
+        done
+        echo "Successfully ssh pod: $host"
+      done
+      set -e
+    }
+
     function main() {
       echo "juicefs datamigrate job start..."
 
       # handle parallel migrations
       if [ $PARALLELISM -gt 1 ]
       then
-        workers=$(grep "Host " /root/.ssh/config  | cut -d " " -f 2  | tr '\n' ',')
+        # format like
+        #Host data-migrate-migrate-workers-0
+        #  HostName data-migrate-migrate-workers-0.data-migrate-migrate-svc
+        #Host data-migrate-migrate-workers-1
+        #  HostName data-migrate-migrate-workers-1.data-migrate-migrate-svc
+        workers=$(grep "Host " /root/.ssh/config  | cut -d " " -f 2)
+        check_ssh ${workers}
+
+        workers=$(echo "$workers" | tr '\n' ',')
         workers=${workers%?}
         echo "distribute data migrate using $workers"
 
-        timeout $TIMEOUT /usr/local/bin/juicefs --worker ${workers} sync {{ .Values.datamigrate.migrateFrom }} {{ .Values.datamigrate.migrateTo }} $OPTION
+        timeout $TIMEOUT /usr/local/bin/juicefs sync --worker ${workers} --manager-addr ${POD_IP} {{ .Values.datamigrate.migrateFrom }} {{ .Values.datamigrate.migrateTo }} $OPTION
       else
         if [ $EDITION == 'community' ]
         then

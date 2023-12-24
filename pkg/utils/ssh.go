@@ -66,6 +66,8 @@ func generateHostsConfig(releaseName string, parallelism int32) string {
 		// Service Name is ${jobName}-svc, keep consistent with helm yaml.
 		subdomain := fmt.Sprintf("%s-svc", releaseName)
 
+		// Note: this format will be parsed to get the $host.$domain for ping.
+		// grep "Host " config | cut -d " " -f 2
 		config += "Host " + hostName + "\n"
 		config += "  HostName " + hostName + "." + subdomain + "\n"
 	}
