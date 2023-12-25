@@ -52,7 +52,7 @@ const (
 
 	jindoFuseMountpath = "/jfs/jindofs-fuse"
 
-	defaultJindofsxRuntimeImage = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:6.1.1"
+	defaultJindofsxRuntimeImage = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:6.2.0"
 
 	engineType = "jindocache"
 

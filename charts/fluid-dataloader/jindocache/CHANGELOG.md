@@ -1,3 +1,5 @@
+### 0.10.1
+- support force load data option
 
 ### 0.10.0
 - Support cron dataload
@@ -18,7 +20,7 @@
 ### 0.2.0
 - Support JindoFSx
 
-### 0.1.0
+### 0.2.0
 
 - Support parallel prefetch job
 - Support configurations by setting values
