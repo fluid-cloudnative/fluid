@@ -1107,3 +1107,25 @@ echo "$(date '+%Y/%m/%d %H:%M:%S').$(printf "%03d" $(($(date '+%N')/1000))) juic
 		})
 	}
 }
+
+func TestEscapeBashStr(t *testing.T) {
+	cases := [][]string{
+		{"abc", "abc"},
+		{"test-volume", "test-volume"},
+		{"http://minio.kube-system:9000/minio/dynamic-ce", "http://minio.kube-system:9000/minio/dynamic-ce"},
+		{"$(cat /proc/self/status | grep CapEff > /test.txt)", "$'$(cat /proc/self/status | grep CapEff > /test.txt)'"},
+		{"hel`cat /proc/self/status`lo", "$'hel`cat /proc/self/status`lo'"},
+		{"'h'el`cat /proc/self/status`lo", "$'\\'h\\'el`cat /proc/self/status`lo'"},
+		{"\\'h\\'el`cat /proc/self/status`lo", "$'\\'h\\'el`cat /proc/self/status`lo'"},
+		{"$'h'el`cat /proc/self/status`lo", "$'$\\'h\\'el`cat /proc/self/status`lo'"},
+		{"hel\\`cat /proc/self/status`lo", "$'hel\\\\`cat /proc/self/status`lo'"},
+		{"hel\\\\`cat /proc/self/status`lo", "$'hel\\\\`cat /proc/self/status`lo'"},
+		{"hel\\'`cat /proc/self/status`lo", "$'hel\\'`cat /proc/self/status`lo'"},
+	}
+	for _, c := range cases {
+		escaped := escapeBashStr(c[0])
+		if escaped != c[1] {
+			t.Errorf("escapeBashVar(%s) = %s, want %s", c[0], escaped, c[1])
+		}
+	}
+}

@@ -449,3 +449,44 @@ func (j *JuiceFSEngine) getWorkerScriptName() string {
 func (j *JuiceFSEngine) getFuseScriptName() string {
 	return fmt.Sprintf("%s-fuse-script", j.name)
 }
+
+// According to https://www.gnu.org/software/bash/manual/html_node/ANSI_002dC-Quoting.html#ANSI_002dC-Quoting
+// a -> a
+// a b -> a b
+// $a -> $'$a'
+// $'a' -> $'$\'$a'\'
+func escapeBashStr(s string) string {
+	if !containsOne(s, []rune{'$', '`', '&', ';', '>', '|', '(', ')'}) {
+		return s
+	}
+	s = strings.ReplaceAll(s, `\`, `\\`)
+	s = strings.ReplaceAll(s, `'`, `\'`)
+	if strings.Contains(s, `\\`) {
+		s = strings.ReplaceAll(s, `\\\\`, `\\`)
+		s = strings.ReplaceAll(s, `\\\'`, `\'`)
+		s = strings.ReplaceAll(s, `\\"`, `\"`)
+		s = strings.ReplaceAll(s, `\\a`, `\a`)
+		s = strings.ReplaceAll(s, `\\b`, `\b`)
+		s = strings.ReplaceAll(s, `\\e`, `\e`)
+		s = strings.ReplaceAll(s, `\\E`, `\E`)
+		s = strings.ReplaceAll(s, `\\n`, `\n`)
+		s = strings.ReplaceAll(s, `\\r`, `\r`)
+		s = strings.ReplaceAll(s, `\\t`, `\t`)
+		s = strings.ReplaceAll(s, `\\v`, `\v`)
+		s = strings.ReplaceAll(s, `\\?`, `\?`)
+	}
+	return fmt.Sprintf(`$'%s'`, s)
+}
+
+func containsOne(target string, chars []rune) bool {
+	charMap := make(map[rune]bool, len(chars))
+	for _, c := range chars {
+		charMap[c] = true
+	}
+	for _, s := range target {
+		if charMap[s] {
+			return true
+		}
+	}
+	return false
+}
