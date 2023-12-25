@@ -108,6 +108,7 @@ master:
     rpc: 19998
     web: 19999
   hostPID: true
+  podManagementPolicy: Parallel
   hostNetwork: false
   # dnsPolicy will be ClusterFirstWithHostNet if hostNetwork: true
   # and ClusterFirst if hostNetwork: false
