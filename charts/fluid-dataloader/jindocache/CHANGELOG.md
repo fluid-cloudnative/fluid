@@ -1,3 +1,5 @@
+### 0.10.1
+- support force load data option
 
 ### 0.10.0
 - Support cron dataload
