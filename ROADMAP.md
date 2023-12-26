@@ -1,5 +1,4 @@
 # Fluid Roadmap
-
 ## 2023
 
 ### Extend Storage Capabilities & Flexibility:
