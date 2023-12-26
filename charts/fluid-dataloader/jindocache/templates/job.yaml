@@ -147,6 +147,10 @@ spec:
             - name: DRY_RUN_ENABLE
               value: {{ default false $val | quote }}
             {{- end }}
+            {{- if eq $key "forceload" }}
+            - name: FORCE_LOAD_ENABLE
+              value: {{ default false $val | quote }}
+            {{- end }}
             {{- if eq $key "cacheListLocationEnable" }}
             - name: Enable_CACHE_LIST_LOCATION
               value: {{ default false $val | quote }}
