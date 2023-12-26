@@ -20,11 +20,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/fs"
-	"path/filepath"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -112,16 +109,25 @@ func (j JuiceFileUtils) Count(juiceSubPath string) (total int64, err error) {
 }
 
 // file count of the JuiceFS Filesystem (except folder)
+// equal to `ls -lR %s |grep ^- |wc -l`
 func (j JuiceFileUtils) GetFileCount(juiceSubPath string) (fileCount int64, err error) {
-	err = filepath.WalkDir(juiceSubPath, func(path string, d fs.DirEntry, e error) error {
-		if e != nil {
-			return e
-		}
-		if d != nil && d.Type().IsRegular() {
+	var (
+		command = []string{"ls", "-lR", juiceSubPath}
+		stdout  string
+		stderr  string
+	)
+
+	stdout, stderr, err = j.exec(command)
+	if err != nil {
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		return
+	}
+	lines := strings.Split(stdout, "\n")
+	for _, line := range lines {
+		if strings.HasPrefix(line, "-") {
 			fileCount++
 		}
-		return nil
-	})
+	}
 	return
 }
 
@@ -227,15 +233,41 @@ func (j JuiceFileUtils) GetMetric(juicefsPath string) (metrics string, err error
 }
 
 // GetUsedSpace Get used space in byte
+// equal to `df --block-size=1 | grep juicefsPath`
 func (j JuiceFileUtils) GetUsedSpace(juicefsPath string) (usedSpace int64, err error) {
-	fs := syscall.Statfs_t{}
-	err = syscall.Statfs(juicefsPath, &fs)
+	var (
+		command = []string{"df", "--block-size=1"}
+		stdout  string
+		stderr  string
+	)
+
+	stdout, stderr, err = j.exec(command)
+	if err != nil {
+		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		return
+	}
+
+	var str string
+	lines := strings.Split(stdout, "\n")
+	for _, line := range lines {
+		if strings.Contains(line, juicefsPath) {
+			str = line
+			break
+		}
+	}
+	// [<Filesystem>       <Size>  <Used> <Avail> <Use>% <Mounted on>]
+	data := strings.Fields(str)
+	if len(data) != 6 {
+		err = fmt.Errorf("failed to parse %s in GetUsedSpace method", data)
+		return
+	}
+
+	usedSpace, err = strconv.ParseInt(data[2], 10, 64)
 	if err != nil {
 		return
 	}
-	all := fs.Blocks * uint64(fs.Bsize)
-	free := fs.Bfree * uint64(fs.Bsize)
-	return int64(all - free), nil
+
+	return usedSpace, err
 }
 
 // exec with timeout
