@@ -82,6 +82,7 @@ func (t ThinEngine) SetupMaster() (err error) {
 		// Init selector for worker
 		runtimeToUpdate.Status.Selector = t.getWorkerSelectors()
 		runtimeToUpdate.Status.DesiredWorkerNumberScheduled = replicas
+		runtimeToUpdate.Status.ValueFileConfigmap = t.getConfigmapName()
 
 		if len(runtimeToUpdate.Status.Conditions) == 0 {
 			runtimeToUpdate.Status.Conditions = []datav1alpha1.RuntimeCondition{}

@@ -109,6 +109,7 @@ func (t *ThinEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 			statusMountsToUpdate = append(statusMountsToUpdate, *optionExcludedMount)
 		}
 		runtimeToUpdate.Status.Mounts = statusMountsToUpdate
+		runtimeToUpdate.Status.ValueFileConfigmap = t.getConfigmapName()
 
 		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
 			err = t.Client.Status().Update(context.TODO(), runtimeToUpdate)
