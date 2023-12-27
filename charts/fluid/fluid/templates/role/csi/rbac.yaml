@@ -19,6 +19,7 @@ rules:
       - thinruntimes
       - efcruntimes
       - datasets
+      - vineyardruntimes
       - alluxioruntimes/status
       - jindoruntimes/status
       - goosefsruntimes/status
@@ -26,6 +27,7 @@ rules:
       - thinruntimes/status
       - efcruntimes/status
       - datasets/status
+      - vineyardruntimes/status
     verbs: ["get", "list", "watch"]
   - apiGroups: [""]
     resources: ["persistentvolumes"]
