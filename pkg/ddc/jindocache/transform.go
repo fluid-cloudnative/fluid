@@ -273,6 +273,9 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 		cachesetPath := mount.MountPoint
 		cacheStrategy := "DISTRIBUTED"
 		metaPolicy := "ALWAYS"
+		readCacheReplica := 1
+		writeCacheReplica := 1
+
 		if mount.Options["cacheStrategy"] == "DHT" && mount.Options["metaPolicy"] == "ONCE" {
 			cacheStrategy = mount.Options["cacheStrategy"]
 			metaPolicy = mount.Options["metaPolicy"]
@@ -281,7 +284,31 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 		if mount.Options["metaPolicy"] == "ONCE" {
 			metaPolicy = mount.Options["metaPolicy"]
 		}
-		// only support CACHE_ASIDE
+
+		if mount.Options["readCacheReplica"] != "" {
+			readCacheReplicaStr := mount.Options["readCacheReplica"]
+			if num, error := strconv.Atoi(readCacheReplicaStr); error == nil {
+				e.Log.Info(readCacheReplicaStr, " is a valid read cache replica number")
+				readCacheReplica = num
+			} else {
+				error = fmt.Errorf("Options readCacheReplica " + readCacheReplicaStr + " is not a valid number")
+				e.Log.Error(error, "readCacheReplica", readCacheReplicaStr)
+				return error
+			}
+		}
+
+		if mount.Options["writeCacheReplica"] != "" {
+			writeCacheReplicaStr := mount.Options["writeCacheReplica"]
+			if num, error := strconv.Atoi(writeCacheReplicaStr); error == nil {
+				e.Log.Info(writeCacheReplicaStr, " is a valid write cache replica number")
+				writeCacheReplica = num
+			} else {
+				error = fmt.Errorf("Options writeCacheReplica " + writeCacheReplicaStr + " is not a valid number")
+				e.Log.Error(error, "writeCacheReplica", writeCacheReplicaStr)
+				return error
+			}
+		}
+
 		readPolicy := "CACHE_ASIDE"
 		writePolicy, err := e.handleWritePolicy(mount.Options, metaPolicy)
 		if err != nil {
@@ -294,6 +321,8 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 		cacheset.MetaPolicy = metaPolicy
 		cacheset.ReadPolicy = readPolicy
 		cacheset.WritePolicy = writePolicy
+		cacheset.ReadCacheReplica = readCacheReplica
+		cacheset.WriteCacheReplica = writeCacheReplica
 		cachesetsValue[cachesetName] = &cacheset
 
 		// support nas storage

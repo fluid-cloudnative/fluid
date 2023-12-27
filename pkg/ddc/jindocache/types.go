@@ -158,10 +158,12 @@ type UFSVolume struct {
 }
 
 type CacheSet struct {
-	Name          string `json:"name"`
-	Path          string `json:"path,omitempty"`
-	CacheStrategy string `json:"cacheStrategy"`
-	MetaPolicy    string `json:"metaPolicy"`
-	ReadPolicy    string `json:"readPolicy"`
-	WritePolicy   string `json:"writePolicy"`
+	Name              string `json:"name"`
+	Path              string `json:"path,omitempty"`
+	CacheStrategy     string `json:"cacheStrategy"`
+	MetaPolicy        string `json:"metaPolicy"`
+	ReadPolicy        string `json:"readPolicy"`
+	WritePolicy       string `json:"writePolicy"`
+	ReadCacheReplica  int    `json:"readCacheReplica"`
+	WriteCacheReplica int    `json:"writeCacheReplica"`
 }
