@@ -140,6 +140,14 @@ runtime:
       image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-worker:v1.2.2-19dcee9
     fuse:
       image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-fuse:v1.2.2-19dcee9
+  vineyard:
+    replicas: 1
+    tolerations:
+      - operator: Exists
+    enabled: false
+    controller:
+      image: fluidcloudnative/vineyardruntime-controller:v1.0.0-edc69cf
+      imagePullPolicy: Always
 
 webhook:
   enabled: true
