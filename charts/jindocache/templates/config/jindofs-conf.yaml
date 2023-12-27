@@ -78,7 +78,9 @@ data:
              <type>{{ $cacheset.metaPolicy }}</type>
           </metaPolicy>
           <readPolicy>{{ $cacheset.readPolicy }}</readPolicy>
+          <readCacheReplica>{{ $cacheset.readCacheReplica }}</readCacheReplica>
           <writePolicy>{{ $cacheset.writePolicy }}</writePolicy>
+          <writeCacheReplica>{{ $cacheset.writeCacheReplica }}</writeCacheReplica>
        </cacheset>
        {{- end }}
     </cachesets>

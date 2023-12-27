@@ -1223,3 +1223,150 @@ func TestTransformMasterVolume(t *testing.T) {
 		}
 	}
 }
+
+func TestJindoCacheEngine_transformCacheSet(t *testing.T) {
+	type fields struct {
+		runtime   *datav1alpha1.JindoRuntime
+		name      string
+		namespace string
+		dataset   *datav1alpha1.Dataset
+	}
+	type args struct {
+		runtime *datav1alpha1.JindoRuntime
+	}
+	tests := []struct {
+		name      string
+		fields    fields
+		args      args
+		wantValue *Jindo
+		wantErr   bool
+	}{
+		{
+			name: "test1",
+			fields: fields{
+				name:      "test",
+				namespace: "default",
+				runtime: &datav1alpha1.JindoRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "default",
+					},
+					Spec: datav1alpha1.JindoRuntimeSpec{},
+				},
+				dataset: &datav1alpha1.Dataset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "default",
+					},
+					Spec: datav1alpha1.DatasetSpec{
+						Mounts: []datav1alpha1.Mount{
+							{
+								MountPoint: "pvc://data",
+								Options: map[string]string{
+									"readCacheReplica":  "1",
+									"writeCacheReplica": "1",
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "test2",
+			fields: fields{
+				name:      "test",
+				namespace: "default",
+				runtime: &datav1alpha1.JindoRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "default",
+					},
+					Spec: datav1alpha1.JindoRuntimeSpec{},
+				},
+				dataset: &datav1alpha1.Dataset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "default",
+					},
+					Spec: datav1alpha1.DatasetSpec{
+						Mounts: []datav1alpha1.Mount{
+							{
+								MountPoint: "pvc://data/subpath",
+								Options: map[string]string{
+									"readCacheReplica":  "xx",
+									"writeCacheReplica": "1",
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "test3",
+			fields: fields{
+				name:      "test",
+				namespace: "default",
+				runtime: &datav1alpha1.JindoRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "default",
+					},
+					Spec: datav1alpha1.JindoRuntimeSpec{},
+				},
+				dataset: &datav1alpha1.Dataset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "default",
+					},
+					Spec: datav1alpha1.DatasetSpec{
+						Mounts: []datav1alpha1.Mount{
+							{
+								MountPoint: "pvc://data/subpath",
+								Options: map[string]string{
+									"readCacheReplica":  "1",
+									"writeCacheReplica": "yy",
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			runtimeObjs := []runtime.Object{}
+			runtimeObjs = append(runtimeObjs, tt.fields.runtime.DeepCopy())
+			runtimeObjs = append(runtimeObjs, tt.fields.dataset.DeepCopy())
+			s := runtime.NewScheme()
+			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
+			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.dataset)
+			s.AddKnownTypes(datav1alpha1.GroupVersion, &datav1alpha1.DatasetList{})
+			_ = corev1.AddToScheme(s)
+			client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+			e := &JindoCacheEngine{
+				runtime:   tt.fields.runtime,
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+				Client:    client,
+				Log:       fake.NullLogger(),
+			}
+			tt.args.runtime = tt.fields.runtime
+			err := portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
+			if err != nil {
+				t.Fatalf("failed to set up runtime port allocator due to %v", err)
+			}
+			_, err = e.transform(tt.args.runtime)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("JindoCacheEngine.transform() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+		})
+	}
+}
