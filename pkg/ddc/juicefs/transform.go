@@ -28,6 +28,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/security"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
 )
 
@@ -205,9 +206,9 @@ func (j *JuiceFSEngine) genWorkerMount(value *JuiceFS, workerOptionMap map[strin
 		mountArgsWorker = []string{
 			common.JuiceFSCeMountPath,
 			value.Source,
-			escapeBashStr(value.Worker.MountPath),
+			security.EscapeBashStr(value.Worker.MountPath),
 			"-o",
-			escapeBashStr(strings.Join(genArgs(workerOptionMap), ",")),
+			security.EscapeBashStr(strings.Join(genArgs(workerOptionMap), ",")),
 		}
 	} else {
 		workerOptionMap["foreground"] = ""
@@ -216,7 +217,7 @@ func (j *JuiceFSEngine) genWorkerMount(value *JuiceFS, workerOptionMap map[strin
 
 		// start independent cache cluster, refer to [juicefs cache sharing](https://juicefs.com/docs/cloud/cache/#client_cache_sharing)
 		// fuse and worker use the same cache-group, fuse use no-sharing
-		cacheGroup := fmt.Sprintf("%s-%s", j.namespace, escapeBashStr(value.FullnameOverride))
+		cacheGroup := fmt.Sprintf("%s-%s", j.namespace, security.EscapeBashStr(value.FullnameOverride))
 		if _, ok := workerOptionMap["cache-group"]; ok {
 			cacheGroup = workerOptionMap["cache-group"]
 		}
@@ -226,14 +227,14 @@ func (j *JuiceFSEngine) genWorkerMount(value *JuiceFS, workerOptionMap map[strin
 		mountArgsWorker = []string{
 			common.JuiceFSMountPath,
 			value.Source,
-			escapeBashStr(value.Worker.MountPath),
+			security.EscapeBashStr(value.Worker.MountPath),
 			"-o",
-			escapeBashStr(strings.Join(genArgs(workerOptionMap), ",")),
+			security.EscapeBashStr(strings.Join(genArgs(workerOptionMap), ",")),
 		}
 	}
 
 	value.Worker.Command = strings.Join(mountArgsWorker, " ")
-	value.Worker.StatCmd = "stat -c %i " + escapeBashStr(value.Worker.MountPath)
+	value.Worker.StatCmd = "stat -c %i " + security.EscapeBashStr(value.Worker.MountPath)
 }
 
 func (j *JuiceFSEngine) transformPlacementMode(dataset *datav1alpha1.Dataset, value *JuiceFS) {
