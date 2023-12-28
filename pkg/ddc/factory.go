@@ -62,8 +62,8 @@ func init() {
 // CreateEngine chooses one engine implementation according to `ctx.EngineImpl` and builds a concrete engine.
 func CreateEngine(id string, ctx cruntime.ReconcileRequestContext) (engine base.Engine, err error) {
 
-	if buildeFunc, found := buildFuncMap[ctx.RuntimeType]; found {
-		engine, err = buildeFunc(id, ctx)
+	if buildFunc, found := buildFuncMap[ctx.EngineImpl]; found {
+		engine, err = buildFunc(id, ctx)
 	} else {
 		err = fmt.Errorf("failed to build the engine due to the type %s is not found", ctx.RuntimeType)
 	}

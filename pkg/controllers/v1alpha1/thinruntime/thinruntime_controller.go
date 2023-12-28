@@ -25,7 +25,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/controllers"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl/watch"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -116,7 +115,11 @@ func (r *ThinRuntimeReconciler) Reconcile(context context.Context, req ctrl.Requ
 		}
 	}
 	ctx.Runtime = runtime
-	ctx.EngineImpl = ddc.InferEngineImpl(runtime.Status, common.ThinEngineImpl)
+	// ThinRuntime cannot use ddc.InferEngineImpl because ReferenceDatasetEngine inherits valueFile property
+	// from its physical runtime.
+	// TODO: We should determine whether ReferenceDatasetEngine is an engineImpl of ThinRuntime.
+	ctx.EngineImpl = common.ThinEngineImpl
+
 	ctx.Log.V(1).Info("process the runtime", "runtime", ctx.Runtime)
 
 	// reconcile the implement
