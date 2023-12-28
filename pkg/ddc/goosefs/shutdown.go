@@ -150,7 +150,7 @@ func (e *GooseFSEngine) cleanupCache() (err error) {
 }
 
 func (e *GooseFSEngine) releasePorts() (err error) {
-	var valueConfigMapName = e.getConfigmapName()
+	var valueConfigMapName = e.getHelmValuesConfigMapName()
 
 	allocator, err := portallocator.GetRuntimePortAllocator()
 	if err != nil {
@@ -187,7 +187,7 @@ func (e *GooseFSEngine) cleanAll() (err error) {
 	e.Log.Info("clean up fuse count", "n", count)
 
 	var (
-		valueConfigmapName = e.name + "-" + e.runtimeType + "-values"
+		valueConfigmapName = e.getHelmValuesConfigMapName()
 		configmapName      = e.name + "-config"
 		namespace          = e.namespace
 	)
