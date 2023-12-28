@@ -211,7 +211,7 @@ func TestDestroyWorker(t *testing.T) {
 func TestCleanConfigmap(t *testing.T) {
 
 	namespace := "default"
-	runtimeType := "jindo"
+	engineImpl := "jindo"
 
 	configMapInputs := []*v1.ConfigMap{
 		{
@@ -266,11 +266,11 @@ func TestCleanConfigmap(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			engine := &JindoFSxEngine{
-				Log:         fake.NullLogger(),
-				name:        tt.args.name,
-				namespace:   tt.args.namespace,
-				runtimeType: runtimeType,
-				Client:      client}
+				Log:        fake.NullLogger(),
+				name:       tt.args.name,
+				namespace:  tt.args.namespace,
+				engineImpl: engineImpl,
+				Client:     client}
 			err := engine.cleanConfigMap()
 			if err != nil {
 				t.Errorf("fail to clean configmap due to %v", err)

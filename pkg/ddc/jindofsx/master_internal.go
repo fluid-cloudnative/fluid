@@ -50,7 +50,7 @@ func (e *JindoFSxEngine) setupMasterInernal() (err error) {
 func (e *JindoFSxEngine) generateJindoValueFile() (valueFileName string, err error) {
 	// why need to delete configmap e.name+"-jindofs-config" ? Or it should be
 	// err = kubeclient.DeleteConfigMap(e.Client, e.name+"-jindofs-config", e.namespace)
-	err = kubeclient.DeleteConfigMap(e.Client, e.getConfigmapName(), e.namespace)
+	err = kubeclient.DeleteConfigMap(e.Client, e.getHelmValuesConfigMapName(), e.namespace)
 	if err != nil {
 		e.Log.Error(err, "Failed to clean value files")
 	}
@@ -62,7 +62,7 @@ func (e *JindoFSxEngine) generateJindoValueFile() (valueFileName string, err err
 	if err != nil {
 		return
 	}
-	valueFile, err := os.CreateTemp(os.TempDir(), fmt.Sprintf("%s-%s-values.yaml", e.name, e.runtimeType))
+	valueFile, err := os.CreateTemp(os.TempDir(), fmt.Sprintf("%s-%s-values.yaml", e.name, e.engineImpl))
 	if err != nil {
 		e.Log.Error(err, "failed to create value file", "valueFile", valueFile.Name())
 		return valueFileName, err
@@ -75,13 +75,13 @@ func (e *JindoFSxEngine) generateJindoValueFile() (valueFileName string, err err
 		return
 	}
 
-	err = kubectl.CreateConfigMapFromFile(e.getConfigmapName(), "data", valueFileName, e.namespace)
+	err = kubectl.CreateConfigMapFromFile(e.getHelmValuesConfigMapName(), "data", valueFileName, e.namespace)
 	if err != nil {
 		return
 	}
 	return valueFileName, err
 }
 
-func (e *JindoFSxEngine) getConfigmapName() string {
-	return e.name + "-" + e.runtimeType + "-values"
+func (e *JindoFSxEngine) getHelmValuesConfigMapName() string {
+	return e.name + "-" + e.engineImpl + "-values"
 }
