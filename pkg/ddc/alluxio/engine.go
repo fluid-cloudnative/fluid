@@ -54,13 +54,13 @@ type AlluxioEngine struct {
 // Build function builds the Alluxio Engine
 func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error) {
 	engine := &AlluxioEngine{
-		name:       ctx.Name,
-		namespace:  ctx.Namespace,
-		Client:     ctx.Client,
-		Recorder:   ctx.Recorder,
-		Log:        ctx.Log,
+		name:        ctx.Name,
+		namespace:   ctx.Namespace,
+		Client:      ctx.Client,
+		Recorder:    ctx.Recorder,
+		Log:         ctx.Log,
 		runtimeType: ctx.RuntimeType,
-		engineImpl: ctx.EngineImpl,
+		engineImpl:  ctx.EngineImpl,
 		// defaultGracefulShutdownLimits:       5,
 		// defaultCleanCacheGracePeriodSeconds: 60,
 		retryShutdown:      0,

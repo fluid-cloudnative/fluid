@@ -40,7 +40,7 @@ type GooseFSEngine struct {
 	name        string
 	namespace   string
 	runtimeType string
-	engineImpl string
+	engineImpl  string
 	Log         logr.Logger
 	client.Client
 	// gracefulShutdownLimits is the limit for the system to forcibly clean up.
@@ -64,7 +64,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 		Recorder:               ctx.Recorder,
 		Log:                    ctx.Log,
 		runtimeType:            ctx.RuntimeType,
-		engineImpl: ctx.EngineImpl,
+		engineImpl:             ctx.EngineImpl,
 		gracefulShutdownLimits: 5,
 		retryShutdown:          0,
 		MetadataSyncDoneCh:     nil,
