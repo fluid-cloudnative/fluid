@@ -195,7 +195,7 @@ func (j *JuiceFSEngine) getHostMountPoint() (mountPath string) {
 }
 
 func (j *JuiceFSEngine) GetValuesConfigMap() (cm *corev1.ConfigMap, err error) {
-	jfsValues := j.getConfigmapName()
+	jfsValues := j.getHelmValuesConfigMapName()
 
 	cm = &corev1.ConfigMap{}
 	err = j.Client.Get(context.TODO(), types.NamespacedName{

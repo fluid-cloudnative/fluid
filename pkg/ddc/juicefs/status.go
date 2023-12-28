@@ -108,7 +108,7 @@ func (j *JuiceFSEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 			runtimeToUpdate.Status.SetupDuration = utils.CalculateDuration(runtimeToUpdate.CreationTimestamp.Time, time.Now())
 		}
 
-		runtimeToUpdate.Status.ValueFileConfigmap = j.getConfigmapName()
+		runtimeToUpdate.Status.ValueFileConfigmap = j.getHelmValuesConfigMapName()
 
 		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
 			err = j.Client.Status().Update(context.TODO(), runtimeToUpdate)
