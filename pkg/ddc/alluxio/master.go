@@ -162,7 +162,7 @@ func (e *AlluxioEngine) SetupMaster() (err error) {
 		runtimeToUpdate.Status.Selector = e.getWorkerSelectors()
 
 		runtimeToUpdate.Status.DesiredMasterNumberScheduled = replicas
-		runtimeToUpdate.Status.ValueFileConfigmap = e.getConfigmapName()
+		runtimeToUpdate.Status.ValueFileConfigmap = e.getHelmValuesConfigMapName()
 
 		if len(runtimeToUpdate.Status.Conditions) == 0 {
 			runtimeToUpdate.Status.Conditions = []datav1alpha1.RuntimeCondition{}
