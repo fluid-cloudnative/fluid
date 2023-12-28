@@ -260,11 +260,11 @@ func TestGenerateJindoValueFile(t *testing.T) {
 
 func TestGetConfigmapName(t *testing.T) {
 	engine := JindoEngine{
-		name:        "hbase",
-		runtimeType: "Jindo",
+		name:       "hbase",
+		engineImpl: "jindo",
 	}
-	expectedResult := "hbase-Jindo-values"
-	if engine.getConfigmapName() != expectedResult {
+	expectedResult := "hbase-jindo-values"
+	if engine.getHelmValuesConfigmapName() != expectedResult {
 		t.Errorf("fail to get the configmap name")
 	}
 }

@@ -133,7 +133,7 @@ func (e *JindoEngine) cleanAll() (err error) {
 // {dataset name}-jindo-values, {dataset name}-jindofs-client-config, {dataset name}-jindofs-config
 func (e *JindoEngine) cleanConfigMap() (err error) {
 	var (
-		valueConfigmapName  = e.name + "-" + e.runtimeType + "-values"
+		valueConfigmapName  = e.getHelmValuesConfigmapName()
 		configmapName       = e.name + "-" + runtimeFSType + "-config"
 		clientConfigmapName = e.name + "-" + runtimeFSType + "-client-config"
 		namespace           = e.namespace
