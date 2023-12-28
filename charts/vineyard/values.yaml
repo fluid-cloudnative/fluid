@@ -53,6 +53,7 @@ worker:
   #   "disktype": "ssd"
   ports:
     rpc: 9600
+    exporter: 9144
   env: {}
   options:
     # where to reserve memory for vineyardd

@@ -54,7 +54,7 @@ type VineyardCompTemplateSpec struct {
 
 	// Ports used by Vineyard component.
 	// For Master, the default client port is 2379 and peer port is 2380.
-	// For Worker, the default rpc port is 9600.
+	// For Worker, the default rpc port is 9600 and the default exporter port is 9144.
 	// +optional
 	Ports map[string]int `json:"ports,omitempty"`
 
@@ -268,4 +268,13 @@ type VineyardRuntimeList struct {
 
 func init() {
 	SchemeBuilder.Register(&VineyardRuntime{}, &VineyardRuntimeList{})
+}
+
+// Replicas gets the replicas of runtime worker
+func (runtime *VineyardRuntime) Replicas() int32 {
+	return runtime.Spec.Worker.Replicas
+}
+
+func (runtime *VineyardRuntime) GetStatus() *RuntimeStatus {
+	return &runtime.Status
 }

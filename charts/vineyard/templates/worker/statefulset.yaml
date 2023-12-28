@@ -91,6 +91,9 @@ spec:
             - --spill_upper_rate
             - "{{ include "vineyard.spill.upperRate" . }}"
             {{- end }}
+            - --metrics
+            - --log_dir
+            - /var/log/vineyard
           env:
           - name: VINEYARDD_NAME
             value: {{ template "vineyard.fullname" . }}-vineyardd
@@ -150,9 +153,21 @@ spec:
           volumeMounts:
           - name: vineyard-socket-volume
             mountPath: /var/run/vineyard
+          - name: log
+            mountPath: /var/log/vineyard
           {{- if eq (include "vineyard.checkTieredStore" .) "true" }}
 {{- include "vineyard.worker.tieredstoreVolumeMounts" . }}
           {{- end }}
+        - name: metrics
+          image: vineyardcloudnative/vineyardd-grok-exporter
+          imagePullPolicy: {{ .Values.worker.imagePullPolicy }}
+          ports:
+          - name: exporter
+            containerPort: {{ int .Values.worker.ports.exporter }}
+            protocol: TCP
+          volumeMounts:
+          - name: log
+            mountPath: /var/log/vineyard
       volumes:
       {{- if eq (include "vineyard.checkTieredStore" .) "true" }}
 {{- include "vineyard.worker.tieredstoreVolume" . }}
@@ -161,6 +176,8 @@ spec:
         hostPath:
           path: /runtime-mnt/vineyard/{{ .Release.Namespace }}/{{ $fullName }}
           type: DirectoryOrCreate
+      - name: log
+        emptyDir: {}
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

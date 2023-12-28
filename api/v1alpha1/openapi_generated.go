@@ -4507,7 +4507,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_MasterSpec(ref common.Reference
 					},
 					"ports": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Ports used by Vineyard component. For Master, the default client port is 2379 and peer port is 2380. For Worker, the default rpc port is 9600.",
+							Description: "Ports used by Vineyard component. For Master, the default client port is 2379 and peer port is 2380. For Worker, the default rpc port is 9600 and the default exporter port is 9144.",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
 								Allows: true,
@@ -6415,7 +6415,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardCompTemplateSpec(ref co
 					},
 					"ports": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Ports used by Vineyard component. For Master, the default client port is 2379 and peer port is 2380. For Worker, the default rpc port is 9600.",
+							Description: "Ports used by Vineyard component. For Master, the default client port is 2379 and peer port is 2380. For Worker, the default rpc port is 9600 and the default exporter port is 9144.",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
 								Allows: true,

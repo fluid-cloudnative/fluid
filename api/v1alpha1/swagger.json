@@ -2505,7 +2505,7 @@
           }
         },
         "ports": {
-          "description": "Ports used by Vineyard component. For Master, the default client port is 2379 and peer port is 2380. For Worker, the default rpc port is 9600.",
+          "description": "Ports used by Vineyard component. For Master, the default client port is 2379 and peer port is 2380. For Worker, the default rpc port is 9600 and the default exporter port is 9144.",
           "type": "object",
           "additionalProperties": {
             "type": "integer",
@@ -3614,7 +3614,7 @@
           }
         },
         "ports": {
-          "description": "Ports used by Vineyard component. For Master, the default client port is 2379 and peer port is 2380. For Worker, the default rpc port is 9600.",
+          "description": "Ports used by Vineyard component. For Master, the default client port is 2379 and peer port is 2380. For Worker, the default rpc port is 9600 and the default exporter port is 9144.",
           "type": "object",
           "additionalProperties": {
             "type": "integer",
