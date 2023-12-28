@@ -16,7 +16,7 @@ limitations under the License.
 
 package common
 
-// Runtime for Alluxio
+// Runtime for GooseFS
 const (
 	GooseFSRuntime = "goosefs"
 
@@ -26,6 +26,11 @@ const (
 
 	GooseFSChart = GooseFSRuntime
 
+	GooseFSEngineImpl = GooseFSRuntime
+)
+
+// Constants for GooseFS images
+const (
 	GooseFSRuntimeImageEnv = "GOOSEFS_RUNTIME_IMAGE_ENV"
 
 	GooseFSFuseImageEnv = "GOOSEFS_FUSE_IMAGE_ENV"

@@ -13,6 +13,10 @@ limitations under the License.
 package ddc
 
 import (
+	"strings"
+
+	fluidv1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/controllers/deploy"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -35,14 +39,14 @@ var buildFuncMap map[string]buildFunc
 
 func init() {
 	buildFuncMap = map[string]buildFunc{
-		"alluxio":    alluxio.Build,
-		"jindo":      jindo.Build,
-		"jindofsx":   jindofsx.Build,
-		"jindocache": jindocache.Build,
-		"goosefs":    goosefs.Build,
-		"juicefs":    juicefs.Build,
-		"thin":       thin.Build,
-		"efc":        efc.Build,
+		common.AlluxioEngineImpl:    alluxio.Build,
+		common.JindoFSEngineImpl:    jindo.Build,
+		common.JindoFSxEngineImpl:   jindofsx.Build,
+		common.JindoCacheEngineImpl: jindocache.Build,
+		common.GooseFSEngineImpl:    goosefs.Build,
+		common.JuiceFSEngineImpl:    juicefs.Build,
+		common.ThinEngineImpl:       thin.Build,
+		common.EFCEngineImpl:        efc.Build,
 	}
 
 	deploy.SetPrecheckFunc(map[string]deploy.CheckFunc{
@@ -55,9 +59,7 @@ func init() {
 	})
 }
 
-/**
-* Build Engine from config
- */
+// CreateEngine chooses one engine implementation according to `ctx.EngineImpl` and builds a concrete engine.
 func CreateEngine(id string, ctx cruntime.ReconcileRequestContext) (engine base.Engine, err error) {
 
 	if buildeFunc, found := buildFuncMap[ctx.RuntimeType]; found {
@@ -69,10 +71,30 @@ func CreateEngine(id string, ctx cruntime.ReconcileRequestContext) (engine base.
 	return
 }
 
-/**
-* GenerateEngineID generates Engine ID
- */
+// GenerateEngineID generates an Engine ID
 func GenerateEngineID(namespacedName types.NamespacedName) string {
 	return fmt.Sprintf("%s-%s",
 		namespacedName.Namespace, namespacedName.Name)
+}
+
+// InferEngineImpl infers which engineImpl should be use for a given runtime.
+// For a new runtime which has not been set up, returns the default engineImpl.
+// NOTE: for backward compatibility, the func checks runtimeStatus.ValueFileConfigmap to identify
+// the engine implementation for a running Runtime.
+// TODO: This could change in the future by checking runtimeStatus.engineImpl instead.
+func InferEngineImpl(runtimeStatus fluidv1alpha1.RuntimeStatus, defaultImpl string) string {
+	if len(runtimeStatus.ValueFileConfigmap) == 0 {
+		return defaultImpl
+	}
+
+	// e.g. <dataset_name>-<engine_impl>-values, <dataset_name> may contain "-"
+	parts := strings.Split(runtimeStatus.ValueFileConfigmap, "-")
+	if len(parts) >= 3 {
+		engineImpl := parts[len(parts)-2]
+		if _, exists := buildFuncMap[engineImpl]; exists {
+			return engineImpl
+		}
+	}
+
+	return defaultImpl
 }

@@ -18,14 +18,12 @@ package juicefs
 
 import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 )
 
 const (
-	runtimeType                  = common.JuiceFSRuntime
 	runtimeResourceFinalizerName = "juicefs-runtime-controller-finalizer"
 )
 

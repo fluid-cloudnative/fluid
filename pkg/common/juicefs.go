@@ -26,6 +26,15 @@ const (
 
 	JuiceFSChart = JuiceFSRuntime
 
+	JuiceFSFuseContainer = "juicefs-fuse"
+
+	JuiceFSWorkerContainer = "juicefs-worker"
+
+	JuiceFSEngineImpl = JuiceFSRuntime
+)
+
+// Constants for JuiceFS images
+const (
 	JuiceFSCEImageEnv = "JUICEFS_CE_IMAGE_ENV"
 	JuiceFSEEImageEnv = "JUICEFS_EE_IMAGE_ENV"
 
@@ -33,15 +42,13 @@ const (
 	DefaultEEImage = "juicedata/juicefs-fuse:ee-4.9.14"
 
 	NightlyTag = "nightly"
+)
 
-	JuiceFSCeMountPath = "/bin/mount.juicefs"
-	JuiceFSMountPath   = "/sbin/mount.juicefs"
-	JuiceCeCliPath     = "/usr/local/bin/juicefs"
-	JuiceCliPath       = "/usr/bin/juicefs"
-
-	JuiceFSFuseContainer = "juicefs-fuse"
-
-	JuiceFSWorkerContainer = "juicefs-worker"
-
+// Constants for JuiceFS path conventions
+const (
+	JuiceFSCeMountPath     = "/bin/mount.juicefs"
+	JuiceFSMountPath       = "/sbin/mount.juicefs"
+	JuiceCeCliPath         = "/usr/local/bin/juicefs"
+	JuiceCliPath           = "/usr/bin/juicefs"
 	JuiceFSDefaultCacheDir = "/var/jfsCache"
 )
