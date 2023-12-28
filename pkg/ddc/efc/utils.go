@@ -133,8 +133,8 @@ func (e *EFCEngine) getWorkerRunningPods() (pods []v1.Pod, err error) {
 	return pods, nil
 }
 
-func (e *EFCEngine) getConfigmapName() string {
-	return e.name + "-" + e.runtimeType + "-values"
+func (e *EFCEngine) getHelmValuesConfigMapName() string {
+	return e.name + "-" + e.engineImpl + "-values"
 }
 
 func (e *EFCEngine) getWorkersEndpointsConfigmapName() string {
