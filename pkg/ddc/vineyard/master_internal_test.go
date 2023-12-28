@@ -21,6 +21,7 @@ import (
 
 	"github.com/brahma-adshonor/gohook"
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
@@ -72,10 +73,21 @@ func TestSetupMasterInternal(t *testing.T) {
 		}
 	}
 
+	quota := resource.MustParse("1Gi")
 	vineyardruntime := &datav1alpha1.VineyardRuntime{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "hbase",
 			Namespace: "fluid",
+		},
+		Spec: datav1alpha1.VineyardRuntimeSpec{
+			TieredStore: datav1alpha1.TieredStore{
+				Levels: []datav1alpha1.Level{
+					{
+						MediumType: "MEM",
+						Quota:      &quota,
+					},
+				},
+			},
 		},
 	}
 	testObjs := []runtime.Object{}
@@ -193,10 +205,21 @@ func TestGenerateVineyardValueFile(t *testing.T) {
 		}
 	}
 
+	quota := resource.MustParse("1Gi")
 	vineyardruntime := &datav1alpha1.VineyardRuntime{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "hbase",
 			Namespace: "fluid",
+		},
+		Spec: datav1alpha1.VineyardRuntimeSpec{
+			TieredStore: datav1alpha1.TieredStore{
+				Levels: []datav1alpha1.Level{
+					{
+						MediumType: "MEM",
+						Quota:      &quota,
+					},
+				},
+			},
 		},
 	}
 	testObjs := []runtime.Object{}
@@ -215,7 +238,6 @@ func TestGenerateVineyardValueFile(t *testing.T) {
 	}
 
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-
 	engine := VineyardEngine{
 		name:      "hbase",
 		namespace: "fluid",

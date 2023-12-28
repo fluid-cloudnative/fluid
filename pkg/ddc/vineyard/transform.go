@@ -43,6 +43,7 @@ func (e *VineyardEngine) transform(runtime *datav1alpha1.VineyardRuntime) (value
 	}
 	value.FullnameOverride = e.name
 
+	value.TieredStore = e.transformTieredStore(runtime)
 	err = e.transformMasters(runtime, dataset, value)
 	if err != nil {
 		return
@@ -54,7 +55,6 @@ func (e *VineyardEngine) transform(runtime *datav1alpha1.VineyardRuntime) (value
 	}
 
 	e.transformFuse(runtime, value)
-	value.TieredStore = e.transformTieredStore(runtime)
 	return value, nil
 }
 
