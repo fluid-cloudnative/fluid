@@ -148,3 +148,17 @@ func GetThinRuntimeProfile(client client.Client, name string) (*data.ThinRuntime
 
 	return &runtimeProfile, nil
 }
+
+// GetVineyardRuntime gets Vineyard Runtime object with the given name and namespace
+func GetVineyardRuntime(client client.Client, name, namespace string) (*data.VineyardRuntime, error) {
+	key := types.NamespacedName{
+		Name:      name,
+		Namespace: namespace,
+	}
+	var vineyardRuntime data.VineyardRuntime
+	if err := client.Get(context.TODO(), key, &vineyardRuntime); err != nil {
+		return nil, err
+	}
+
+	return &vineyardRuntime, nil
+}
