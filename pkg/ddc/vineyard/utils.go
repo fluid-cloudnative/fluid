@@ -115,12 +115,6 @@ func (e *VineyardEngine) getMountPoint() (mountPath string) {
 	return fmt.Sprintf("%s/%s/%s/vineyard-fuse", mountRoot, e.namespace, e.name)
 }
 
-func (e *VineyardEngine) getTargetPath() (targetPath string) {
-	mountRoot := getMountRoot()
-	e.Log.Info("mountRoot", "path", mountRoot)
-	return fmt.Sprintf("%s/%s/%s/vineyard-fuse", mountRoot, e.namespace, e.name)
-}
-
 // getMountRoot returns the default path, if it's not set
 func getMountRoot() (path string) {
 	path, err := utils.GetMountRoot()

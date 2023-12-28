@@ -43,7 +43,6 @@ type VineyardEngine struct {
 	gracefulShutdownLimits int32
 	MetadataSyncDoneCh     chan base.MetadataSyncResult
 	retryShutdown          int32
-	initImage              string
 	Recorder               record.EventRecorder
 	*ctrl.Helper
 }

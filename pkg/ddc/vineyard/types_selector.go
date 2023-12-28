@@ -16,10 +16,6 @@ limitations under the License.
 
 package vineyard
 
-import (
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-)
-
 // NodeSelectorRequirement is a selector that contains values, a key, and an operator
 // that relates the key and values.
 type NodeSelectorRequirement struct {
@@ -66,40 +62,4 @@ type NodeAffinity struct {
 	// may or may not try to eventually evict the pod from its node.
 	// +optional
 	RequiredDuringSchedulingIgnoredDuringExecution *NodeSelector `json:"requiredDuringSchedulingIgnoredDuringExecution"`
-}
-
-func translateCacheToNodeAffinity(dataAffinity *datav1alpha1.CacheableNodeAffinity) (nodeAffinity *NodeAffinity) {
-	nodeAffinity = nil
-	if dataAffinity == nil || dataAffinity.Required == nil {
-		return
-	}
-
-	nodeAffinity = &NodeAffinity{
-		RequiredDuringSchedulingIgnoredDuringExecution: &NodeSelector{
-			NodeSelectorTerms: []NodeSelectorTerm{},
-		},
-	}
-
-	for _, srcTerm := range dataAffinity.Required.NodeSelectorTerms {
-		dstTerm := NodeSelectorTerm{
-			MatchExpressions: []NodeSelectorRequirement{},
-		}
-
-		for _, srcMatch := range srcTerm.MatchExpressions {
-
-			dstMatch := NodeSelectorRequirement{
-				Key:      srcMatch.Key,
-				Operator: string(srcMatch.Operator),
-				Values:   srcMatch.Values,
-			}
-
-			dstTerm.MatchExpressions = append(dstTerm.MatchExpressions, dstMatch)
-		}
-		nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms = append(nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms,
-			dstTerm)
-
-	}
-
-	return
-
 }

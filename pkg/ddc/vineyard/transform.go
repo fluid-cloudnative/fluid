@@ -157,7 +157,6 @@ func (e *VineyardEngine) transformFuse(runtime *datav1alpha1.VineyardRuntime, va
 
 	value.Fuse.TargetPath = e.getMountPoint()
 	e.transformResourcesForFuse(runtime, value)
-	return
 }
 
 func (e *VineyardEngine) transformMasterSelector(runtime *datav1alpha1.VineyardRuntime) map[string]string {

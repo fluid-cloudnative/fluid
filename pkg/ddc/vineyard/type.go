@@ -22,7 +22,6 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 )
 
 // The value yaml file
@@ -32,9 +31,8 @@ type Vineyard struct {
 	common.ImageInfo `json:",inline"`
 	common.UserInfo  `json:",inline"`
 
-	runtimeInfo base.RuntimeInfoInterface
-	Master      `json:"master,omitempty"`
-	Worker      `json:"worker,omitempty"`
+	Master `json:"master,omitempty"`
+	Worker `json:"worker,omitempty"`
 
 	Owner *common.OwnerReference `json:"owner,omitempty"`
 
