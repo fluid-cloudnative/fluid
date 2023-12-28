@@ -66,7 +66,7 @@ func (t *ThinEngine) setupMasterInternal() (err error) {
 
 func (t *ThinEngine) generateThinValueFile(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinRuntimeProfile) (valueFileName string, err error) {
 	//0. Check if the configmap exists
-	err = kubeclient.DeleteConfigMap(t.Client, t.getConfigmapName(), t.namespace)
+	err = kubeclient.DeleteConfigMap(t.Client, t.getHelmValuesConfigMapName(), t.namespace)
 	if err != nil {
 		t.Log.Error(err, "Failed to clean value files")
 		return
@@ -88,7 +88,7 @@ func (t *ThinEngine) generateThinValueFile(runtime *datav1alpha1.ThinRuntime, pr
 	}
 
 	//2. Get the template value file
-	valueFile, err := os.CreateTemp(os.TempDir(), fmt.Sprintf("%s-%s-values.yaml", t.name, t.runtimeType))
+	valueFile, err := os.CreateTemp(os.TempDir(), fmt.Sprintf("%s-%s-values.yaml", t.name, t.engineImpl))
 	if err != nil {
 		t.Log.Error(err, "failed to create value file", "valueFile", valueFile.Name())
 		return valueFileName, err
@@ -103,7 +103,7 @@ func (t *ThinEngine) generateThinValueFile(runtime *datav1alpha1.ThinRuntime, pr
 	}
 
 	//3. Save the configfile into configmap
-	err = kubectl.CreateConfigMapFromFile(t.getConfigmapName(), "data", valueFileName, t.namespace)
+	err = kubectl.CreateConfigMapFromFile(t.getHelmValuesConfigMapName(), "data", valueFileName, t.namespace)
 	if err != nil {
 		return
 	}
@@ -111,6 +111,6 @@ func (t *ThinEngine) generateThinValueFile(runtime *datav1alpha1.ThinRuntime, pr
 	return valueFileName, err
 }
 
-func (t *ThinEngine) getConfigmapName() string {
-	return fmt.Sprintf("%s-%s-values", t.name, t.runtimeType)
+func (t *ThinEngine) getHelmValuesConfigMapName() string {
+	return fmt.Sprintf("%s-%s-values", t.name, t.engineImpl)
 }
