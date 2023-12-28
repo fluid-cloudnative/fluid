@@ -47,7 +47,6 @@ func TestVineyardFileUtils_ReportSummary(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not hook http.Get: %v", err)
 	}
-	defer gohook.UnHook(http.Get)
 
 	podNamePrefix := "vineyard"
 	port := int32(8080)
@@ -57,9 +56,13 @@ func TestVineyardFileUtils_ReportSummary(t *testing.T) {
 
 	vineyard := NewVineyardFileUtils(podNamePrefix, port, replicas, namespace, mockLogger)
 	got, err := vineyard.ReportSummary()
-
 	expected := []string{"metric for pod 1", "metric for pod 2"}
 	if err != nil || !reflect.DeepEqual(got, expected) {
 		t.Errorf("VineyardFileUtils.ReportSummary() got = %v, want %v, err = %v", got, expected, err)
+	}
+
+	err = gohook.UnHook(http.Get)
+	if err != nil {
+		t.Fatalf("could not unhook http.Get: %v", err)
 	}
 }

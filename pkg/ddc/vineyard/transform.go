@@ -129,7 +129,9 @@ func (e *VineyardEngine) transformWorkers(runtime *datav1alpha1.VineyardRuntime,
 		value.Worker.NodeSelector = map[string]string{}
 	}
 
-	e.transformResourcesForWorker(runtime, value)
+	if err := e.transformResourcesForWorker(runtime, value); err != nil {
+		return err
+	}
 
 	ports := e.transformWorkerPorts(runtime)
 	if len(ports) != 0 {
