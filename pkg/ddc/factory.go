@@ -65,7 +65,7 @@ func CreateEngine(id string, ctx cruntime.ReconcileRequestContext) (engine base.
 	if buildFunc, found := buildFuncMap[ctx.EngineImpl]; found {
 		engine, err = buildFunc(id, ctx)
 	} else {
-		err = fmt.Errorf("failed to build the engine due to the type %s is not found", ctx.RuntimeType)
+		err = fmt.Errorf("failed to build the engine due to the engineImpl %s is not found", ctx.EngineImpl)
 	}
 
 	return
