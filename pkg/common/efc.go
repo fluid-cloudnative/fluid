@@ -28,6 +28,11 @@ const (
 
 	EFCRuntimeControllerName = "EFCRuntimeController"
 
+	EFCEngineImpl = EFCRuntime
+)
+
+// Constants for EFC Images
+const (
 	EFCMasterImageEnv = "EFC_MASTER_IMAGE_ENV"
 
 	EFCFuseImageEnv = "EFC_FUSE_IMAGE_ENV"

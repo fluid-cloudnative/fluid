@@ -451,12 +451,12 @@ func TestGetConfigmapName(t *testing.T) {
 
 		name: "hbase",
 
-		runtimeType: "goosefs",
+		engineImpl: "goosefs",
 	}
 
 	expectedResult := "hbase-goosefs-values"
 
-	if engine.getConfigmapName() != expectedResult {
+	if engine.getHelmValuesConfigMapName() != expectedResult {
 
 		t.Errorf("fail to get the configmap name")
 

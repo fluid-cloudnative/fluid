@@ -19,12 +19,12 @@ package base
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
+
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/jindo"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -475,26 +475,4 @@ func GetRuntimeStatus(client client.Client, runtimeType, name, namespace string)
 		err = fmt.Errorf("fail to get runtimeInfo for runtime type: %s", runtimeType)
 		return nil, err
 	}
-}
-
-func GetRuntimeAndType(client client.Client, boundedRuntime *datav1alpha1.Runtime) (runtime client.Object, runtimeType string, err error) {
-	runtimeType = boundedRuntime.Type
-
-	// support all runtime
-	switch runtimeType {
-	case common.AlluxioRuntime:
-		runtime, err = utils.GetAlluxioRuntime(client, boundedRuntime.Name, boundedRuntime.Namespace)
-	case common.JindoRuntime:
-		runtime, err = utils.GetJindoRuntime(client, boundedRuntime.Name, boundedRuntime.Namespace)
-		runtimeType = jindo.GetRuntimeType()
-	case common.GooseFSRuntime:
-		runtime, err = utils.GetGooseFSRuntime(client, boundedRuntime.Name, boundedRuntime.Namespace)
-	case common.JuiceFSRuntime:
-		runtime, err = utils.GetJuiceFSRuntime(client, boundedRuntime.Name, boundedRuntime.Namespace)
-	case common.EFCRuntime:
-		runtime, err = utils.GetEFCRuntime(client, boundedRuntime.Name, boundedRuntime.Namespace)
-	case common.ThinRuntime:
-		runtime, err = utils.GetThinRuntime(client, boundedRuntime.Name, boundedRuntime.Namespace)
-	}
-	return
 }

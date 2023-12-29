@@ -29,7 +29,9 @@ func (e *JindoCacheEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		if err != nil {
 			return e.runtimeInfo, err
 		}
-		e.runtimeInfo, err = base.BuildRuntimeInfo(e.name, e.namespace, e.runtimeType, runtime.Spec.TieredStore, base.WithMetadataList(base.GetMetadataListFromAnnotation(runtime)))
+		// TODO: For now hack runtimeType with engineImpl for backward compatibility. Fix this
+		// when refactoring runtimeInfo.
+		e.runtimeInfo, err = base.BuildRuntimeInfo(e.name, e.namespace, e.engineImpl, runtime.Spec.TieredStore, base.WithMetadataList(base.GetMetadataListFromAnnotation(runtime)))
 		if err != nil {
 			return e.runtimeInfo, err
 		}

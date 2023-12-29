@@ -34,8 +34,8 @@ const (
 	defaultJindoCacheRuntimeImage = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:6.2.0"
 )
 
-// GetRuntimeType gets the runtime type for Jindo
-func GetRuntimeType() (engine string) {
+// GetDefaultEngineImpl gets the runtime type for Jindo
+func GetDefaultEngineImpl() (engine string) {
 	engine = jindofsxEngine
 	if env := os.Getenv(engineTypeFromEnv); env == jindoEngine || env == jindocacheEngine {
 		engine = env
@@ -45,11 +45,11 @@ func GetRuntimeType() (engine string) {
 
 // GetRuntimeImage gets the runtime of Jindo
 func GetRuntimeImage() (image string) {
-	if GetRuntimeType() == jindofsxEngine {
+	if GetDefaultEngineImpl() == jindofsxEngine {
 		image = defaultJindofsxRuntimeImage
-	} else if GetRuntimeType() == jindoEngine {
+	} else if GetDefaultEngineImpl() == jindoEngine {
 		image = defaultJindofsRuntimeImage
-	} else if GetRuntimeType() == jindocacheEngine {
+	} else if GetDefaultEngineImpl() == jindocacheEngine {
 		image = defaultJindoCacheRuntimeImage
 	}
 	return

@@ -136,7 +136,10 @@ func handle() {
 	}
 	setupLog.Info("port range parsed", "port range", pr.String())
 
-	err = portallocator.SetupRuntimePortAllocator(mgr.GetClient(), pr, portAllocatePolicy, jindo.GetReservedPorts)
+	// Register with jindofsx.GetReservedPorts func by default. The function will only be called when users explicitly setting portAllocatePolicy to "bitmap", which
+	// is a DEPRECATED port allocation policy that will be removed in the future. When using "bitmap", Fluid may allocate some used ports but have low possibility
+	// affecting runtime's deployment.
+	err = portallocator.SetupRuntimePortAllocator(mgr.GetClient(), pr, portAllocatePolicy, jindofsx.GetReservedPorts)
 	if err != nil {
 		setupLog.Error(err, "failed to setup runtime port allocator")
 		os.Exit(1)
