@@ -29,4 +29,6 @@ const (
 	ThinFusePointEnvKey  = "MOUNT_POINT"
 
 	ThinMountType = "thin-fuse-mount"
+
+	ThinEngineImpl = ThinRuntime
 )

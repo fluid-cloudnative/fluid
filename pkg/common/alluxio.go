@@ -8,6 +8,11 @@ const (
 
 	AlluxioChart = AlluxioRuntime
 
+	AlluxioEngineImpl = AlluxioRuntime
+)
+
+// Constants for Alluxio Images
+const (
 	DefaultInitImageEnv = "DEFAULT_INIT_IMAGE_ENV"
 
 	AlluxioRuntimeImageEnv = "ALLUXIO_RUNTIME_IMAGE_ENV"

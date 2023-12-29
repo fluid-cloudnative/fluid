@@ -54,7 +54,7 @@ func InstallDataOperationHelmIfNotExist(ctx cruntime.ReconcileRequestContext, op
 			// for DataProcess, all engine share the same chart
 			chartName = operation.GetChartsDirectory() + "/" + "common"
 		} else {
-			chartName = operation.GetChartsDirectory() + "/" + ctx.RuntimeType
+			chartName = operation.GetChartsDirectory() + "/" + ctx.EngineImpl
 		}
 
 		err = helm.InstallRelease(releaseNamespacedName.Name, releaseNamespacedName.Namespace, valueFileName, chartName)

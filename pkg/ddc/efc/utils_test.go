@@ -144,13 +144,13 @@ func Test_parsePortsFromConfigMap(t *testing.T) {
 	runtimeObjs = append(runtimeObjs, configMap)
 	mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
 	e := &EFCEngine{
-		name:        "hbase",
-		namespace:   "fluid",
-		Client:      mockClient,
-		runtimeType: common.EFCRuntime,
-		Log:         ctrl.Log.WithName("hbase"),
+		name:       "hbase",
+		namespace:  "fluid",
+		Client:     mockClient,
+		engineImpl: common.EFCEngineImpl,
+		Log:        ctrl.Log.WithName("hbase"),
 	}
-	configMap, err := kubeclient.GetConfigmapByName(mockClient, e.getConfigmapName(), e.namespace)
+	configMap, err := kubeclient.GetConfigmapByName(mockClient, e.getHelmValuesConfigMapName(), e.namespace)
 	if err != nil {
 		t.Errorf("fail to exec")
 	}
@@ -184,13 +184,13 @@ func Test_parseCacheDirFromConfigMap(t *testing.T) {
 	runtimeObjs = append(runtimeObjs, configMap)
 	mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
 	e := &EFCEngine{
-		name:        "hbase",
-		namespace:   "fluid",
-		Client:      mockClient,
-		runtimeType: common.EFCRuntime,
-		Log:         ctrl.Log.WithName("hbase"),
+		name:       "hbase",
+		namespace:  "fluid",
+		Client:     mockClient,
+		engineImpl: common.EFCEngineImpl,
+		Log:        ctrl.Log.WithName("hbase"),
 	}
-	configMap, err := kubeclient.GetConfigmapByName(mockClient, e.getConfigmapName(), e.namespace)
+	configMap, err := kubeclient.GetConfigmapByName(mockClient, e.getHelmValuesConfigMapName(), e.namespace)
 	if err != nil {
 		t.Errorf("fail to exec")
 	}

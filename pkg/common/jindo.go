@@ -16,7 +16,7 @@ limitations under the License.
 
 package common
 
-// Runtime for JindoFS
+// Runtime for Jindo
 const (
 	JindoRuntime = "jindo"
 
@@ -24,11 +24,20 @@ const (
 
 	JindoMountType = "fuse.jindofs-fuse"
 
-	JindoSmartDataImageEnv = "JINDO_SMARTDATA_IMAGE_ENV"
-
-	JindoFuseImageEnv = "JINDO_FUSE_IMAGE_ENV"
-
 	JindoDnsServer = "JINDO_DNS_SERVER_ENV"
 
 	JindoFuseMountVolumeName = "jindofs-fuse-mount"
+
+	JindoFSEngineImpl = "jindo"
+
+	JindoFSxEngineImpl = "jindofsx"
+
+	JindoCacheEngineImpl = "jindocache"
+)
+
+// Constants for Jindo Images
+const (
+	JindoSmartDataImageEnv = "JINDO_SMARTDATA_IMAGE_ENV"
+
+	JindoFuseImageEnv = "JINDO_FUSE_IMAGE_ENV"
 )

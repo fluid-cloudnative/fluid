@@ -244,7 +244,7 @@ func (t *ThinEngine) cleanAll() (err error) {
 	t.Log.Info("clean up fuse count", "n", count)
 
 	var (
-		valueConfigmapName = t.name + "-" + t.runtimeType + "-values"
+		valueConfigmapName = t.getHelmValuesConfigMapName()
 		configmapName      = t.name + "-config"
 		namespace          = t.namespace
 	)

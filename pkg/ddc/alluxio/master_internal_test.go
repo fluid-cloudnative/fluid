@@ -270,11 +270,11 @@ func TestGenerateAlluxioValueFile(t *testing.T) {
 
 func TestGetConfigmapName(t *testing.T) {
 	engine := AlluxioEngine{
-		name:        "hbase",
-		runtimeType: "alluxio",
+		name:       "hbase",
+		engineImpl: "alluxio",
 	}
 	expectedResult := "hbase-alluxio-values"
-	if engine.getConfigmapName() != expectedResult {
+	if engine.getHelmValuesConfigMapName() != expectedResult {
 		t.Errorf("fail to get the configmap name")
 	}
 }

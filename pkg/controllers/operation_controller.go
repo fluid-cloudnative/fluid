@@ -17,6 +17,7 @@
 package controllers
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -37,6 +38,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
+	jindoutils "github.com/fluid-cloudnative/fluid/pkg/utils/jindo"
 )
 
 // OperationReconciler is the default implementation
@@ -158,8 +160,10 @@ func (o *OperationReconciler) ReconcileInternal(ctx dataoperation.ReconcileReque
 			"Bounded accelerate runtime not ready")
 		return utils.RequeueAfterInterval(20 * time.Second)
 	}
-	// create engine will use the ctx.Runtime field
-	ctx.Runtime, ctx.RuntimeType, err = base.GetRuntimeAndType(o.Client, boundedRuntime)
+
+	// GetOrCreateEngine() will use the ctx.EngineImpl field to choose which engine to build
+	ctx.RuntimeType = boundedRuntime.Type
+	ctx.Runtime, ctx.EngineImpl, err = o.getRuntimeObjectAndEngineImpl(boundedRuntime.Type, boundedRuntime.Name, boundedRuntime.Namespace)
 
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
@@ -262,4 +266,53 @@ func (o *OperationReconciler) addOwnerAndRequeue(ctx dataoperation.ReconcileRequ
 	}
 
 	return utils.RequeueImmediately()
+}
+
+// getRuntimeObjectAndEngineImpl firstly gets a runtime object given its name, namespace and runtimeType, and then infer its engine implementation
+// from the retrieved runtime object.
+// TODO: Maybe the function can be separated into two sub-function and make them globally accessible.
+func (o *OperationReconciler) getRuntimeObjectAndEngineImpl(runtimeType, name, namespace string) (obj client.Object, engineImpl string, err error) {
+	// support all runtime
+	var runtime base.RuntimeInterface
+	switch runtimeType {
+	case common.AlluxioRuntime:
+		runtime, err = utils.GetAlluxioRuntime(o.Client, name, namespace)
+	case common.JindoRuntime:
+		runtime, err = utils.GetJindoRuntime(o.Client, name, namespace)
+	case common.GooseFSRuntime:
+		runtime, err = utils.GetGooseFSRuntime(o.Client, name, namespace)
+	case common.JuiceFSRuntime:
+		runtime, err = utils.GetJuiceFSRuntime(o.Client, name, namespace)
+	case common.EFCRuntime:
+		runtime, err = utils.GetEFCRuntime(o.Client, name, namespace)
+	case common.ThinRuntime:
+		runtime, err = utils.GetThinRuntime(o.Client, name, namespace)
+	}
+
+	if err != nil {
+		return
+	}
+
+	if runtimeType == common.ThinRuntime {
+		// ThinRuntime cannot use ddc.InferEngineImpl because ReferenceDatasetEngine inherits valueFile property
+		// from its physical runtime.
+		// TODO: We should determine whether ReferenceDatasetEngine is an engineImpl of ThinRuntime.
+		return runtime, common.ThinEngineImpl, nil
+	}
+
+	switch runtimeType {
+	case common.AlluxioRuntime:
+		return runtime, ddc.InferEngineImpl(*runtime.GetStatus(), common.AlluxioEngineImpl), nil
+	case common.JindoRuntime:
+		return runtime, ddc.InferEngineImpl(*runtime.GetStatus(), jindoutils.GetDefaultEngineImpl()), nil
+	case common.GooseFSRuntime:
+		return runtime, ddc.InferEngineImpl(*runtime.GetStatus(), common.GooseFSEngineImpl), nil
+	case common.JuiceFSRuntime:
+		return runtime, ddc.InferEngineImpl(*runtime.GetStatus(), common.JuiceFSEngineImpl), nil
+	case common.EFCRuntime:
+		return runtime, ddc.InferEngineImpl(*runtime.GetStatus(), common.EFCEngineImpl), nil
+	}
+
+	err = fmt.Errorf("runtimeType %s is not supported", runtimeType)
+	return
 }

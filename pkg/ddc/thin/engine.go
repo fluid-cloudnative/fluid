@@ -41,6 +41,7 @@ type ThinEngine struct {
 	name           string
 	namespace      string
 	runtimeType    string
+	engineImpl     string
 	Log            logr.Logger
 	client.Client
 	//When reaching this gracefulShutdownLimits, the system is forced to clean up.
@@ -81,6 +82,7 @@ func buildThinEngine(id string, ctx cruntime.ReconcileRequestContext) (base.Engi
 		Client:                 ctx.Client,
 		Log:                    ctx.Log,
 		runtimeType:            ctx.RuntimeType,
+		engineImpl:             ctx.EngineImpl,
 		gracefulShutdownLimits: 5,
 		retryShutdown:          0,
 		MetadataSyncDoneCh:     nil,

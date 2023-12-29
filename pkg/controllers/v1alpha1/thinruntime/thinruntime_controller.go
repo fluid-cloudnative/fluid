@@ -96,7 +96,7 @@ func (r *ThinRuntimeReconciler) Reconcile(context context.Context, req ctrl.Requ
 		NamespacedName: req.NamespacedName,
 		Recorder:       r.Recorder,
 		Category:       common.AccelerateCategory,
-		RuntimeType:    runtimeType,
+		RuntimeType:    common.ThinRuntime,
 		Client:         r.Client,
 		FinalizerName:  runtimeResourceFinalizerName,
 	}
@@ -115,6 +115,11 @@ func (r *ThinRuntimeReconciler) Reconcile(context context.Context, req ctrl.Requ
 		}
 	}
 	ctx.Runtime = runtime
+	// ThinRuntime cannot use ddc.InferEngineImpl because ReferenceDatasetEngine inherits valueFile property
+	// from its physical runtime.
+	// TODO: We should determine whether ReferenceDatasetEngine is an engineImpl of ThinRuntime.
+	ctx.EngineImpl = common.ThinEngineImpl
+
 	ctx.Log.V(1).Info("process the runtime", "runtime", ctx.Runtime)
 
 	// reconcile the implement

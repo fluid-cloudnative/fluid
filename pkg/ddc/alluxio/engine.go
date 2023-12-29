@@ -38,6 +38,7 @@ type AlluxioEngine struct {
 	name        string
 	namespace   string
 	runtimeType string
+	engineImpl  string
 	Log         logr.Logger
 	client.Client
 	retryShutdown      int32
@@ -59,6 +60,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 		Recorder:    ctx.Recorder,
 		Log:         ctx.Log,
 		runtimeType: ctx.RuntimeType,
+		engineImpl:  ctx.EngineImpl,
 		// defaultGracefulShutdownLimits:       5,
 		// defaultCleanCacheGracePeriodSeconds: 60,
 		retryShutdown:      0,
