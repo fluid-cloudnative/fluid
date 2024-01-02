@@ -48,6 +48,7 @@ func init() {
 		common.JuiceFSEngineImpl:    juicefs.Build,
 		common.ThinEngineImpl:       thin.Build,
 		common.EFCEngineImpl:        efc.Build,
+		common.VineyardEngineImpl:   vineyard.Build,
 	}
 
 	deploy.SetPrecheckFunc(map[string]deploy.CheckFunc{
