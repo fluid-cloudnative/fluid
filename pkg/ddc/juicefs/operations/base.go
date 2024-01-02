@@ -28,6 +28,7 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/cmdguard"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/security"
 )
 
 type JuiceFileUtils struct {
@@ -109,26 +110,41 @@ func (j JuiceFileUtils) Count(juiceSubPath string) (total int64, err error) {
 }
 
 // file count of the JuiceFS Filesystem (except folder)
-// equal to `ls -lR %s |grep ^- |wc -l`
+// use "ls -lR  xxx|grep "^-"| wc -l"
 func (j JuiceFileUtils) GetFileCount(juiceSubPath string) (fileCount int64, err error) {
 	var (
-		command = []string{"ls", "-lR", juiceSubPath}
+		//strs    = "du -ah juiceSubPath |grep ^- |wc -l "
+		strs    = fmt.Sprintf("ls -lR %s |grep ^- |wc -l ", security.EscapeBashStr(juiceSubPath))
+		command = []string{"bash", "-c", strs}
 		stdout  string
 		stderr  string
 	)
-
 	stdout, stderr, err = j.exec(command)
 	if err != nil {
 		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
 		return
 	}
-	lines := strings.Split(stdout, "\n")
-	for _, line := range lines {
-		if strings.HasPrefix(line, "-") {
-			fileCount++
-		}
+
+	// eg: Master.FilesCompleted  (Type: COUNTER, Value: 6,367,897)
+	str := strings.Split(stdout, "\n")
+
+	if len(str) != 1 {
+		err = fmt.Errorf("failed to parse %s in Count method", str)
+		return
 	}
-	return
+
+	data := strings.Fields(str[0])
+	if len(data) != 1 {
+		err = fmt.Errorf("failed to parse %s in Count method", data)
+		return
+	}
+
+	fileCount, err = strconv.ParseInt(data[0], 10, 64)
+	if err != nil {
+		return
+	}
+
+	return fileCount, nil
 }
 
 // Mkdir mkdir in juicefs container
