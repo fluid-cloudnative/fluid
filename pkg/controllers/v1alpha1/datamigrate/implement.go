@@ -146,3 +146,7 @@ func (r *dataMigrateOperation) GetTTL() (ttl *int32, err error) {
 
 	return
 }
+
+func (r *dataMigrateOperation) GetParallelTaskNumber() int32 {
+	return r.dataMigrate.Spec.Parallelism
+}

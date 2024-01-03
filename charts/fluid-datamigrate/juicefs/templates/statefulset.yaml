@@ -47,7 +47,19 @@ spec:
               mountPath: /root/.ssh
               # use subpath to avoid soft link
               subPath: .ssh
-
+      affinity:
+        # prefer to use different nodes to maximize bandwidth
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - {{ printf "%s-workers" .Release.Name }}
+                topologyKey: kubernetes.io/hostname
+              weight: 100
       volumes:
         - name: data-migrate-ssh
           configMap:

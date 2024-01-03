@@ -78,8 +78,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
+            - name: WORKERS_READY_TIMEOUT
+              value: {{ .Values.datamigrate.workersReadyTimeout | quote }}
             - name: PARALLELISM
-              value: {{ .Values.datamigrate.parallelism | quote}}
+              value: {{ .Values.datamigrate.parallelism | quote }}
             {{- range $key, $val := .Values.datamigrate.options }}
             {{- if eq $key "timeout" }}
             - name: TIMEOUT
@@ -135,6 +137,9 @@ spec:
             items:
               - key: datamigrate.sh
                 path: juicefs_datamigrate.sh
+                mode: 365
+              - key: check_ssh.sh
+                path: check_ssh.sh
                 mode: 365
       {{- with .Values.datamigrate.nativeVolumes }}
         {{ toYaml . | nindent 8 }}

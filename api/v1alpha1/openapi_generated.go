@@ -1499,6 +1499,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateSpec(ref common.Refe
 							Format:      "int32",
 						},
 					},
+					"workers_ready_timeout": {
+						SchemaProps: spec.SchemaProps{
+							Description: "WorkersReadyTimeout defines timeout before parallel workers ready",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
 				},
 				Required: []string{"from", "to"},
 			},

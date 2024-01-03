@@ -90,6 +90,8 @@ type DataMigrateInfo struct {
 	// Parallelism defines the parallel tasks.
 	Parallelism int32 `json:"parallelism,omitempty"`
 
+	WorkersReadyTimeout int32 `json:"workers_ready_timeout,omitempty"`
+
 	// SSHConfig defines the ssh config for parallel task pods
 	SSHConfig *common.SSHConfig `json:"sshConfig,omitempty"`
 }

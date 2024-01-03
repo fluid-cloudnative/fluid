@@ -62,7 +62,7 @@ func generateHostsConfig(releaseName string, parallelism int32) string {
 
 	for i := 0; i < int(parallelism); i++ {
 		// Host name format is ${releaseName}-workers-${completionIndex}
-		hostName := fmt.Sprintf("%s-workers-%d", releaseName, i)
+		hostName := fmt.Sprintf("%s-%d", GetParallelOperationWorkersName(releaseName), i)
 		// Service Name is ${jobName}-svc, keep consistent with helm yaml.
 		subdomain := fmt.Sprintf("%s-svc", releaseName)
 

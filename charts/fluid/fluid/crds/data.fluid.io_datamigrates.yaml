@@ -955,6 +955,7 @@ spec:
                 default: 1
                 description: Parallelism defines the parallelism tasks
                 format: int32
+                minimum: 1
                 type: integer
               podMetadata:
                 description: PodMetadata defines labels and annotations that will
@@ -1140,6 +1141,12 @@ spec:
               ttlSecondsAfterFinished:
                 description: TTLSecondsAfterFinished is the time second to clean up
                   data operations after finished or failed
+                format: int32
+                type: integer
+              workers_ready_timeout:
+                default: 15
+                description: WorkersReadyTimeout defines timeout before parallel workers
+                  ready
                 format: int32
                 type: integer
             required:

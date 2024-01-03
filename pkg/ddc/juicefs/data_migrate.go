@@ -121,18 +121,19 @@ func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequest
 
 	// 3. init dataMigrateInfo
 	dataMigrateInfo := cdatamigrate.DataMigrateInfo{
-		BackoffLimit:     3,
-		TargetDataset:    targetDataset.Name,
-		EncryptOptions:   []datav1alpha1.EncryptOption{},
-		Image:            image,
-		Options:          map[string]string{},
-		Labels:           dataMigrate.Spec.PodMetadata.Labels,
-		Annotations:      dataMigrate.Spec.PodMetadata.Annotations,
-		ImagePullSecrets: imagePullSecrets,
-		Policy:           string(dataMigrate.Spec.Policy),
-		Schedule:         dataMigrate.Spec.Schedule,
-		Resources:        dataMigrate.Spec.Resources,
-		Parallelism:      dataMigrate.Spec.Parallelism,
+		BackoffLimit:        3,
+		TargetDataset:       targetDataset.Name,
+		EncryptOptions:      []datav1alpha1.EncryptOption{},
+		Image:               image,
+		Options:             map[string]string{},
+		Labels:              dataMigrate.Spec.PodMetadata.Labels,
+		Annotations:         dataMigrate.Spec.PodMetadata.Annotations,
+		ImagePullSecrets:    imagePullSecrets,
+		Policy:              string(dataMigrate.Spec.Policy),
+		Schedule:            dataMigrate.Spec.Schedule,
+		Resources:           dataMigrate.Spec.Resources,
+		Parallelism:         dataMigrate.Spec.Parallelism,
+		WorkersReadyTimeout: dataMigrate.Spec.WorkersReadyTimeout,
 	}
 	// generate ssh config for parallel tasks when using parallel tasks
 	if dataMigrateInfo.Parallelism > 1 {

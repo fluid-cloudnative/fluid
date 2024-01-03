@@ -92,7 +92,13 @@ type DataMigrateSpec struct {
 	// Parallelism defines the parallelism tasks
 	// +optional
 	// +kubebuilder:default:=1
+	// +kubebuilder:validation:Minimum=1
 	Parallelism int32 `json:"parallelism,omitempty"`
+
+	// WorkersReadyTimeout defines timeout before parallel workers ready
+	// +optional
+	// +kubebuilder:default:=15
+	WorkersReadyTimeout int32 `json:"workers_ready_timeout,omitempty"`
 }
 
 type DataToMigrate struct {
