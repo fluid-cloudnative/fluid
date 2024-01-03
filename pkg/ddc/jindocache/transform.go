@@ -486,7 +486,7 @@ func (e *JindoCacheEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, d
 
 	properties := map[string]string{
 		"storage.cluster.id":                   "local",
-		"storage.compaction.enable":            "true",
+		"storage.compaction.enable":            "false",
 		"storage.compaction.period.minute":     "2",
 		"storage.maintainence.period.minute":   "2",
 		"storage.compaction.threshold":         "16",
