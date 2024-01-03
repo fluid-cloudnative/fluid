@@ -1,0 +1,9 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: CacheFSRuntime
+metadata:
+  name: cachefsruntime-sample
+spec:
+  replicas: 1
+  fuse:
+    image: kangaroo.registry.cn-hangzhou.cr.aliyuncs.com/storage/cachefs
+    image_tag: 1.0.5-2.1

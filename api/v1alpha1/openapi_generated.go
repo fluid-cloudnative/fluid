@@ -34,6 +34,12 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioRuntime":             schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioRuntime(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioRuntimeList":         schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioRuntimeList(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioRuntimeSpec":         schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioRuntimeSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheFSCompSpec":            schema_fluid_cloudnative_fluid_api_v1alpha1_CacheFSCompSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheFSFuseSpec":            schema_fluid_cloudnative_fluid_api_v1alpha1_CacheFSFuseSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheFSMasterSpec":          schema_fluid_cloudnative_fluid_api_v1alpha1_CacheFSMasterSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheFSRuntime":             schema_fluid_cloudnative_fluid_api_v1alpha1_CacheFSRuntime(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheFSRuntimeList":         schema_fluid_cloudnative_fluid_api_v1alpha1_CacheFSRuntimeList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheFSRuntimeSpec":         schema_fluid_cloudnative_fluid_api_v1alpha1_CacheFSRuntimeSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheableNodeAffinity":      schema_fluid_cloudnative_fluid_api_v1alpha1_CacheableNodeAffinity(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy":           schema_fluid_cloudnative_fluid_api_v1alpha1_CleanCachePolicy(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Condition":                  schema_fluid_cloudnative_fluid_api_v1alpha1_Condition(ref),
@@ -65,6 +71,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EFCRuntimeSpec":             schema_fluid_cloudnative_fluid_api_v1alpha1_EFCRuntimeSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOption":              schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOption(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOptionSource":        schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOptionSource(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EndpointSpec":               schema_fluid_cloudnative_fluid_api_v1alpha1_EndpointSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExternalEndpointSpec":       schema_fluid_cloudnative_fluid_api_v1alpha1_ExternalEndpointSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExternalStorage":            schema_fluid_cloudnative_fluid_api_v1alpha1_ExternalStorage(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSCompTemplateSpec":    schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSCompTemplateSpec(ref),
@@ -717,6 +724,559 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioRuntimeSpec(ref common.R
 		},
 		Dependencies: []string{
 			"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Data", "github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeManagement", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec", "k8s.io/api/core/v1.Volume"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheFSCompSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CacheFSCompSpec is a description of the CacheFS components",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"ports": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Ports used by CacheFS",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.ContainerPort"),
+									},
+								},
+							},
+						},
+					},
+					"resources": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Resources that will be requested by the CacheFS component.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
+						},
+					},
+					"options": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Options",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"env": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Environment variables that will be used by CacheFS component.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.EnvVar"),
+									},
+								},
+							},
+						},
+					},
+					"nodeSelector": {
+						SchemaProps: spec.SchemaProps{
+							Description: "NodeSelector is a selector",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"volumeMounts": {
+						SchemaProps: spec.SchemaProps{
+							Description: "VolumeMounts specifies the volumes listed in \".spec.volumes\" to mount into runtime component's filesystem.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.VolumeMount"),
+									},
+								},
+							},
+						},
+					},
+					"podMetadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodMetadata defines labels and annotations that will be propagated to CacheFS's pods.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
+						},
+					},
+					"networkMode": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Whether to use hostnetwork or not",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "k8s.io/api/core/v1.ContainerPort", "k8s.io/api/core/v1.EnvVar", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.VolumeMount"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheFSFuseSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"image": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Image for CacheFS fuse",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"imageTag": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Image for CacheFS fuse",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"imagePullPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "One of the three policies: `Always`, `IfNotPresent`, `Never`",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"env": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Environment variables that will be used by CacheFS Fuse",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.EnvVar"),
+									},
+								},
+							},
+						},
+					},
+					"resources": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Resources that will be requested by CacheFS Fuse.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
+						},
+					},
+					"options": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Options mount options that fuse pod will use",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"nodeSelector": {
+						SchemaProps: spec.SchemaProps{
+							Description: "NodeSelector is a selector which must be true for the fuse client to fit on a node, this option only effect when global is enabled",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"volumeMounts": {
+						SchemaProps: spec.SchemaProps{
+							Description: "VolumeMounts specifies the volumes listed in \".spec.volumes\" to mount into runtime component's filesystem.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.VolumeMount"),
+									},
+								},
+							},
+						},
+					},
+					"cleanPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CleanPolicy decides when to clean Cachefs Fuse pods. Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted OnDemand cleans fuse pod once the fuse pod on some node is not needed OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted Defaults to OnRuntimeDeleted",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"podMetadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodMetadata defines labels and annotations that will be propagated to CacheFS's pods.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
+						},
+					},
+					"networkMode": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Whether to use hostnetwork or not",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "k8s.io/api/core/v1.EnvVar", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.VolumeMount"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheFSMasterSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CacheFSMasterSpec defines the configurations for CacheFS Master, which is a redis server.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"image": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Image for CacheFS master",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"imageTag": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Image for CacheFS master",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"imagePullPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "One of the three policies: `Always`, `IfNotPresent`, `Never`",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"env": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Environment variables that will be used by CacheFS master",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.EnvVar"),
+									},
+								},
+							},
+						},
+					},
+					"resources": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Resources that will be requested by CacheFS master.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
+						},
+					},
+					"options": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Options master instance will use, all valid redis options except `protected-mode` will be accepted. e.g. master:\n  options:\n    maxmemory: \"1gb\"\n    port: 6379\n    loglevel: notice",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"nodeSelector": {
+						SchemaProps: spec.SchemaProps{
+							Description: "NodeSelector is a selector which must be true for the master to fit on a node,",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"volumeMounts": {
+						SchemaProps: spec.SchemaProps{
+							Description: "VolumeMounts specifies the volumes listed in \".spec.volumes\" to mount into master's filesystem.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.VolumeMount"),
+									},
+								},
+							},
+						},
+					},
+					"podMetadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodMetadata defines labels and annotations that will be propagated to CacheFS's master.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
+						},
+					},
+					"networkMode": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Whether to use hostnetwork or not",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"endpoint": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ExternalEndpoint defines the configurations for external master instance, e.g. external redis hosted on Aliyun. Default is not set. If set, the CacheFS Master component will not be deployed, and the external master instance will be used. E,g.\n  endpoint:\n    metaurl: \"redis://instance-name.redis.rds.aliyuncs.com:6379/1\"\nOr\n  endpoint:\n    encryptOptions:\n    - name: metaurl\n      valueFrom:\n        secretKeyRef:\n          name: cfs-secret\n          key: metaurl",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.EndpointSpec"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.EndpointSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "k8s.io/api/core/v1.EnvVar", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.VolumeMount"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheFSRuntime(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CacheFSRuntime is the Schema for the cachefsruntimes API",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheFSRuntimeSpec"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeStatus"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheFSRuntimeSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheFSRuntimeList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CacheFSRuntimeList contains a list of CacheFSRuntime",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheFSRuntime"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheFSRuntime", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheFSRuntimeSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CacheFSRuntimeSpec defines the desired state of CacheFSRuntime",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"cachefsVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The version information that instructs fluid to orchestrate a particular version of CacheFS.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec"),
+						},
+					},
+					"master": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The spec of CacheFS master, used as CacheFS meta engine like redis.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheFSMasterSpec"),
+						},
+					},
+					"worker": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The component spec of CacheFS worker",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheFSCompSpec"),
+						},
+					},
+					"fuse": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Desired state for CacheFS Fuse",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheFSFuseSpec"),
+						},
+					},
+					"tieredstore": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Tiered storage used by CacheFS",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore"),
+						},
+					},
+					"configs": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Configs of CacheFS, options for cachefs format sub-command",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"replicas": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The replicas of the worker, need to be specified",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"runAs": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Manage the user to run Cachefs Runtime",
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.User"),
+						},
+					},
+					"volumes": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Volumes is the list of Kubernetes volumes that can be mounted by the cachefs runtime components and/or fuses.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.Volume"),
+									},
+								},
+							},
+						},
+					},
+					"podMetadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodMetadata defines labels and annotations that will be propagated to CacheFs's pods.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheFSCompSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheFSFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheFSMasterSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec", "k8s.io/api/core/v1.Volume"},
 	}
 }
 
@@ -2568,6 +3128,42 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOptionSource(ref common.
 		},
 		Dependencies: []string{
 			"github.com/fluid-cloudnative/fluid/api/v1alpha1.SecretKeySelector"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_EndpointSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "EndpointSpec defines the configurations for external etcd cluster",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"metaUrl": {
+						SchemaProps: spec.SchemaProps{
+							Description: "MetaUrl specifies the endpoint of external master instance e,g. \"redis://host:6379/1\"",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"encryptOptions": {
+						SchemaProps: spec.SchemaProps{
+							Description: "encrypted info for accessing the external master instance, only accept \"metaurl\" option name and this will override `MetaUrl` above, if both are specified.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOption"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOption"},
 	}
 }
 

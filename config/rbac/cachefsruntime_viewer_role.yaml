@@ -1,0 +1,20 @@
+# permissions for end users to view cachefsruntimes.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cachefsruntime-viewer-role
+rules:
+- apiGroups:
+  - data.fluid.io
+  resources:
+  - cachefsruntimes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - data.fluid.io
+  resources:
+  - cachefsruntimes/status
+  verbs:
+  - get
