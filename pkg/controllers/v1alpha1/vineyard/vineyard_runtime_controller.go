@@ -32,6 +32,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/controllers"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -95,6 +96,7 @@ func (r *RuntimeReconciler) Reconcile(context context.Context, req ctrl.Request)
 		}
 	}
 	ctx.Runtime = runtime
+	ctx.EngineImpl = ddc.InferEngineImpl(runtime.Status, common.VineyardEngineImpl)
 	ctx.Log.V(1).Info("process the runtime", "runtime", ctx.Runtime)
 
 	// reconcile the implement

@@ -14,7 +14,7 @@ master:
     #      name: etcd-secret
     #      key: accesskey
     # options:
-  replicas: 1
+  replicas: 3
   image: bitnami/etcd
   imageTag: 3.5.10
   imagePullPolicy: IfNotPresent

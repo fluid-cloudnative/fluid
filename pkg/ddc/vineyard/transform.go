@@ -241,6 +241,7 @@ func (e *VineyardEngine) transformTieredStore(runtime *datav1alpha1.VineyardRunt
 				})
 			} else {
 				tieredStore.Levels = append(tieredStore.Levels, Level{
+					Level:        1,
 					MediumType:   level.MediumType,
 					VolumeType:   level.VolumeType,
 					VolumeSource: level.VolumeSource,

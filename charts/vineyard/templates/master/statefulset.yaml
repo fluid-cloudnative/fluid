@@ -17,9 +17,7 @@
 {{- $peerPort := int .Values.master.ports.peer }}
 {{- $name := include "vineyard.name" . }}
 {{- $fullName := include "vineyard.fullname" . }}
-{{- $etcdFullname := (printf "%s-%s" $fullName "master") }}
 {{- $chart := include "vineyard.chart" . }}
-{{- $releaseNamespace := .Release.Namespace }}
 {{- $etcdServiceName := (printf "%s-%s" $fullName "master-svc") }}
 
 {{- if not .Values.master.externalEndpoint }}
@@ -82,13 +80,9 @@ spec:
             - --listen-peer-urls=http://0.0.0.0:{{ $peerPort }}
             - --advertise-client-urls=http://$(POD_NAME).{{ $etcdServiceName }}.{{ .Release.Namespace }}.svc.cluster.local:{{ $clientPort }}
             - --listen-client-urls=http://0.0.0.0:{{ $clientPort }}
-            - --initial-cluster-token=my-etcd-cluster
+            - --initial-cluster-token={{ .Release.Name }}
             - --initial-cluster-state=new
-            {{- $initialCluster := list }}
-            {{- range $e, $i := until $replicas }}
-            {{- $initialCluster = append $initialCluster (printf "%s-%d=http://%s-%d.%s.%s.svc.cluster.local:%d" $etcdFullname $i $etcdFullname $i $etcdServiceName $releaseNamespace $peerPort) }}
-            {{- end }}
-            - --initial-cluster={{ join "," $initialCluster }}
+            - --initial-cluster={{ include "vineyard.etcdEndpoints" (dict "Values" .Values "Release" .Release "portType" "peer") }}
             - --data-dir=/etcd-data
           env:
             - name: POD_NAME

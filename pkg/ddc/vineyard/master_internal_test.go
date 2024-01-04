@@ -275,8 +275,8 @@ func TestGenerateVineyardValueFile(t *testing.T) {
 
 func TestGetConfigmapName(t *testing.T) {
 	engine := VineyardEngine{
-		name:        "hbase",
-		runtimeType: "vineyard",
+		name:       "hbase",
+		engineImpl: "vineyard",
 	}
 	expectedResult := "hbase-vineyard-values"
 	if engine.getConfigmapName() != expectedResult {

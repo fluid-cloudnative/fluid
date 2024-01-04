@@ -80,7 +80,7 @@ func (e *VineyardEngine) generateVineyardValueFile(runtime *datav1alpha1.Vineyar
 	}
 
 	//2. Get the template value file
-	valueFile, err := os.CreateTemp(os.TempDir(), fmt.Sprintf("%s-%s-values.yaml", e.name, e.runtimeType))
+	valueFile, err := os.CreateTemp(os.TempDir(), fmt.Sprintf("%s-%s-values.yaml", e.name, e.engineImpl))
 	if err != nil {
 		e.Log.Error(err, "failed to create value file", "valueFile", valueFile.Name())
 		return valueFileName, err
@@ -104,5 +104,5 @@ func (e *VineyardEngine) generateVineyardValueFile(runtime *datav1alpha1.Vineyar
 }
 
 func (e *VineyardEngine) getConfigmapName() string {
-	return e.name + "-" + e.runtimeType + "-values"
+	return e.name + "-" + e.engineImpl + "-values"
 }
