@@ -175,12 +175,12 @@ Generate etcd endpoints for peer or client
   {{- if eq $portType "peer" }}
     {{- $port = int .Values.master.ports.peer }}
     {{- range $e, $i := until $replicas }}
-      {{- $etcdEndpoint = append $etcdEndpoint (printf "%s-%d=http://%s-%d.%s.%s.svc.cluster.local:%d" $etcdFullname $i $etcdFullname $i $etcdServiceName $releaseNamespace $port) }}
+      {{- $etcdEndpoint = append $etcdEndpoint (printf "%s-%d=http://%s-%d.%s.%s:%d" $etcdFullname $i $etcdFullname $i $etcdServiceName $releaseNamespace $port) }}
     {{- end }}
   {{- else if eq $portType "client" }}
     {{- $port = int .Values.master.ports.client }}
     {{- range $e, $i := until $replicas }}
-      {{- $etcdEndpoint = append $etcdEndpoint (printf "http://%s-%d.%s.%s.svc.cluster.local:%d" $etcdFullname $i $etcdServiceName $releaseNamespace $port) }}
+      {{- $etcdEndpoint = append $etcdEndpoint (printf "http://%s-%d.%s.%s:%d" $etcdFullname $i $etcdServiceName $releaseNamespace $port) }}
     {{- end }}
   {{- end }}
   {{- join "," $etcdEndpoint }}

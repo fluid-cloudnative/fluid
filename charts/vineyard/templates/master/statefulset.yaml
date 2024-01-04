@@ -76,9 +76,9 @@ spec:
           command:
             - etcd
             - --name=$(POD_NAME)
-            - --initial-advertise-peer-urls=http://$(POD_NAME).{{ $etcdServiceName }}.{{ .Release.Namespace }}.svc.cluster.local:{{ $peerPort }}
+            - --initial-advertise-peer-urls=http://$(POD_NAME).{{ $etcdServiceName }}.{{ .Release.Namespace }}:{{ $peerPort }}
             - --listen-peer-urls=http://0.0.0.0:{{ $peerPort }}
-            - --advertise-client-urls=http://$(POD_NAME).{{ $etcdServiceName }}.{{ .Release.Namespace }}.svc.cluster.local:{{ $clientPort }}
+            - --advertise-client-urls=http://$(POD_NAME).{{ $etcdServiceName }}.{{ .Release.Namespace }}:{{ $clientPort }}
             - --listen-client-urls=http://0.0.0.0:{{ $clientPort }}
             - --initial-cluster-token={{ .Release.Name }}
             - --initial-cluster-state=new

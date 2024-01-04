@@ -40,6 +40,6 @@ metadata:
 data:
   {{- $rpcEndpoints := list }}
   {{- range $e, $i := until $replicas }}
-  {{- $rpcEndpoints = append $rpcEndpoints (printf "%s-worker-%d.%s-worker-svc.%s.svc.cluster.local:%d" $fullName $i $fullName $namespace $rpcPort) }}
+  {{- $rpcEndpoints = append $rpcEndpoints (printf "%s-worker-%d.%s-worker-svc.%s:%d" $fullName $i $fullName $namespace $rpcPort) }}
   {{- end }}
   VINEYARD_RPC_ENDPOINT: {{ join "," $rpcEndpoints }}
