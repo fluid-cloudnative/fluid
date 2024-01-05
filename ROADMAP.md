@@ -1,6 +1,5 @@
 # Fluid Roadmap
-## 2024
-
+## 2024  
 ### Objective: Achieve orchestration of data operations and Kubernetes job scheduling systems
 
 - Support temporality through Kueue
