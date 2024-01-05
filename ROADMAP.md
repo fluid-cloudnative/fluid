@@ -1,4 +1,4 @@
-# Fluid Roadmap
+# Roadmap
 ## 2024
 
 ## Objective: Achieve orchestration of data operations and Kubernetes job scheduling systems
@@ -40,3 +40,7 @@
   - Improve test coverage
 - Enhance observability
   - Provide monitoring and alerts for Datasets
+- Enhance the quality of documentation
+  - Organize the documentation so users can navigate it easily and find the information
+  - Maintain consistency in language, style, and formatting throughout the documentation
+
