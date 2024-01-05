@@ -1,20 +1,54 @@
 # Fluid Roadmap
-## 2023
 
-### Extend Storage Capabilities & Flexibility:
+## Fluid 2024 Roadmap
 
-- Better support for third-party storage via ThinRuntime
-- Add new storage plugins for S3, CubeFS, GlusterFS and so on
-- Native support for distributed storage like NAS via some runtime system
+### Objective: Achieve orchestration of data operations and Kubernetes job scheduling systems
 
-### Improved Dataset Management and Operations:
+- Support temporality through Kueue
+   - Once data migration is completed, run data preheating, triggering the running of machine learning tasks (such as tfjob, mpiJob, pytorchJob, sparkJob)
+   - After computation is completed, data migration and cache cleaning can be carried out
+- Choose data access methods based on the scheduling results of the Kubernetes scheduler (default scheduler, Volcano, YuniKorn)
+   - If scheduled to ordinary nodes with shared operating system kernels, adaptively use csi plugin mode
+   - If scheduled to Kata container nodes with independent operating system kernels, you can use the sidecar mode adaptively and support scalable modifications by cloud vendors
 
-- Cross-namespace data sharing 
-- Sub-datasets for increased management flexibility.
-- Support for new data operations including data migration and processing.
+### Objective: Simplify the work of operation and maintenance and AI developers through Python SDK
 
-### Code Quality & Security Improvements for Produciton Ready:
+- Support basic data operation
+- Combine with Hugging face and Pytorch to support transparent data acceleration through pre-reading and multi-stream reading
+- Support defining automated data flow operations
 
-- Focusing on code quality, refining usability details, and reducing the barriers to entry.
-- Prioritizing security optimizations through permission tightening.
-- Making Serverless scenarios production-ready and support for big data workloads.
+### Objective: Further deeply integrate the machine learning ecosystem to simplify the user experience
+
+- Integrate with Kubeflow Pipelines to accelerate datasets in the pipeline
+- Integrate with Fairing for model development and deployment in the notebook environment
+- Integrate with KServe to facilitate model deployment
+
+### Objective: Continuous security enhancement
+
+- Minimum container permission (remove the privileged permission of FUSE Pod)
+- Minimum rbac permission
+- Minimal container image installation
+- Continuously provide best practice documentation
+
+### Objective: Simplicity and reliability, friendlier to users and developers
+
+- Simplify deployment
+  - Merge Dataset/Runtime controllers into one binary package
+- Simplify usage
+  - Support Runtimeless, Dataset as the single API entry for users to use Fluid
+
+ ### Objective: Enhance code quality & security improvements & documentation for produciton ready:
+
+ - Improve code quality
+  - Reduce repetitive code
+  - Improve test coverage
+- Security hardening
+  - Minimize the permissions of controller's RBAC
+  - Regularly review and update the permissions when new runtime is introduced
+- Enhance observability
+  - Provide monitoring and alerts for Datasets
+- Enhance the quality of documentation
+  - Organize the documentation so users can navigate it easily and find the information
+  - Provide more practical examples and tutorials can significantly improve the user's comprehension and learning process.
+  - Maintain consistency in language, style, and formatting throughout the documentation
+
