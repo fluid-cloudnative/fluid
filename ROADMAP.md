@@ -36,12 +36,19 @@
   - Merge Dataset/Runtime controllers into one binary package
 - Simplify usage
   - Support Runtimeless, Dataset as the single API entry for users to use Fluid
-- Improve code quality
+
+ ### Objective: Enhance code quality & security improvements & documentation for produciton ready:
+
+ - Improve code quality
   - Reduce repetitive code
   - Improve test coverage
+- Security hardening
+  - Minimize the permissions of controller's RBAC
+  - Regularly review and update the permissions when new runtime is introduced
 - Enhance observability
   - Provide monitoring and alerts for Datasets
 - Enhance the quality of documentation
   - Organize the documentation so users can navigate it easily and find the information
   - Provide more practical examples and tutorials can significantly improve the user's comprehension and learning process.
   - Maintain consistency in language, style, and formatting throughout the documentation
+
