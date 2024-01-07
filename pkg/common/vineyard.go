@@ -27,7 +27,7 @@ const (
 
 	DefaultVineyardWorkerImage = "vineyardcloudnative/vineyardd:latest"
 
-	DefultVineyardFuseImage = "vineyardcloudnative/mount-vineyard-socket:latest"
+	DefultVineyardFuseImage = "vineyardcloudnative/vineyard-fluid-mount:latest"
 
 	VineyardEngineImpl = VineyardRuntime
 )

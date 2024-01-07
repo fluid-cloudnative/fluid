@@ -19,7 +19,6 @@ import (
 	"time"
 
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -55,7 +54,7 @@ func (e *VineyardEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		return ready, err
 	}
 
-	var workerNodeAffinity = kubeclient.MergeNodeSelectorAndNodeAffinity(workers.Spec.Template.Spec.NodeSelector, workers.Spec.Template.Spec.Affinity)
+	//var workerNodeAffinity = kubeclient.MergeNodeSelectorAndNodeAffinity(workers.Spec.Template.Spec.NodeSelector, workers.Spec.Template.Spec.Affinity)
 
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		runtime, err := e.getRuntime()
@@ -65,6 +64,7 @@ func (e *VineyardEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 
 		runtimeToUpdate := runtime.DeepCopy()
 
+		/* TODO:(caoye) query the cache status from vineyard metrics exporter
 		states, err := e.queryCacheStatus(runtime)
 		if err != nil {
 			return err
@@ -81,7 +81,7 @@ func (e *VineyardEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		runtimeToUpdate.Status.CacheStates[common.CacheCapacity] = states.cacheCapacity
 		runtimeToUpdate.Status.CacheStates[common.CachedPercentage] = states.cachedPercentage
 		runtimeToUpdate.Status.CacheStates[common.Cached] = states.cached
-
+		*/
 		runtimeToUpdate.Status.CurrentMasterNumberScheduled = int32(master.Status.Replicas)
 		runtimeToUpdate.Status.MasterNumberReady = int32(master.Status.ReadyReplicas)
 

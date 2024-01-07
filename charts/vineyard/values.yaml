@@ -93,10 +93,10 @@ tieredstore:
 
 volumes: []
 
-disabledPrometheus: false
+disablePrometheus: true
 
 fuse:
-  image: vineyardcloudnative/mount-vineyard-socket
+  image: vineyardcloudnative/vineyard-fluid-mount
   imageTag: latest
   imagePullPolicy: IfNotPresent
   targetPath: ""

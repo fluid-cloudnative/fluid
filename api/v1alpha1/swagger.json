@@ -3743,7 +3743,7 @@
           "type": "string"
         },
         "image": {
-          "description": "Image for Vineyard Fuse Default is `vineyardcloudnative/vineyard-mount-socket`",
+          "description": "Image for Vineyard Fuse Default is `vineyardcloudnative/vineyard-fluid-mount`",
           "type": "string"
         },
         "imagePullPolicy": {

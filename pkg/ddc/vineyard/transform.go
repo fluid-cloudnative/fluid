@@ -52,6 +52,9 @@ func (e *VineyardEngine) transform(runtime *datav1alpha1.VineyardRuntime) (value
 	}
 
 	e.transformFuse(runtime, value)
+
+	// TODO:(caoye) implement the metrics exporter
+	value.DisablePrometheus = true
 	return value, nil
 }
 

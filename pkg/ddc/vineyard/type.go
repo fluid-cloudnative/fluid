@@ -37,7 +37,8 @@ type Vineyard struct {
 
 	TieredStore TieredStore `json:"tieredstore,omitempty"`
 
-	Volumes []corev1.Volume `json:"volumes,omitempty"`
+	DisablePrometheus bool            `json:"disablePrometheus,omitempty"`
+	Volumes           []corev1.Volume `json:"volumes,omitempty"`
 }
 
 type Endpoint struct {

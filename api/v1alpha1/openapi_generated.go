@@ -6659,7 +6659,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardSockSpec(ref common.Ref
 				Properties: map[string]spec.Schema{
 					"image": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Image for Vineyard Fuse Default is `vineyardcloudnative/vineyard-mount-socket`",
+							Description: "Image for Vineyard Fuse Default is `vineyardcloudnative/vineyard-fluid-mount`",
 							Type:        []string{"string"},
 							Format:      "",
 						},
