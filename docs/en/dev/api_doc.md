@@ -10066,7 +10066,7 @@ string
 <td>
 <em>(Optional)</em>
 <p>Image for Vineyard Fuse
-Default is <code>vineyardcloudnative/vineyard-fluid-mount</code></p>
+Default is <code>vineyardcloudnative/vineyard-fluid-fuse</code></p>
 </td>
 </tr>
 <tr>

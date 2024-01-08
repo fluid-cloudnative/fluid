@@ -506,7 +506,7 @@ func TestParseFuseImage(t *testing.T) {
 			tag:             "",
 			imagePullPolicy: "",
 			engine:          &VineyardEngine{},
-			wantImage:       "vineyardcloudnative/vineyard-fluid-mount",
+			wantImage:       "vineyardcloudnative/vineyard-fluid-fuse",
 			wantTag:         "latest",
 			wantPolicy:      "IfNotPresent",
 		},

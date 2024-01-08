@@ -142,7 +142,7 @@ type MasterSpec struct {
 // VineyardSockSpec holds the configurations for vineyard client socket
 type VineyardSockSpec struct {
 	// Image for Vineyard Fuse
-	// Default is `vineyardcloudnative/vineyard-fluid-mount`
+	// Default is `vineyardcloudnative/vineyard-fluid-fuse`
 	// +optional
 	Image string `json:"image,omitempty"`
 

@@ -96,7 +96,7 @@ volumes: []
 disablePrometheus: true
 
 fuse:
-  image: vineyardcloudnative/vineyard-fluid-mount
+  image: vineyardcloudnative/vineyard-fluid-fuse
   imageTag: latest
   imagePullPolicy: IfNotPresent
   targetPath: ""
