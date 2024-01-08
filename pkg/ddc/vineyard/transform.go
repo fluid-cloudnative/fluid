@@ -20,7 +20,6 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
-	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func (e *VineyardEngine) transform(runtime *datav1alpha1.VineyardRuntime) (value *Vineyard, err error) {
@@ -40,7 +39,11 @@ func (e *VineyardEngine) transform(runtime *datav1alpha1.VineyardRuntime) (value
 	}
 	value.FullnameOverride = e.name
 
-	value.TieredStore = e.transformTieredStore(runtime)
+	value.TieredStore, err = e.transformTieredStore(runtime)
+	if err != nil {
+		return
+	}
+
 	err = e.transformMasters(runtime, dataset, value)
 	if err != nil {
 		return
@@ -223,39 +226,32 @@ func (e *VineyardEngine) transformFuseNodeSelector(runtime *datav1alpha1.Vineyar
 	return nodeSelector
 }
 
-func (e *VineyardEngine) transformTieredStore(runtime *datav1alpha1.VineyardRuntime) TieredStore {
-	quota := resource.MustParse("4Gi")
-	tieredStore := TieredStore{
-		Levels: []Level{
-			{
-				MediumType: "MEM",
-				Level:      0,
-				Quota:      &quota,
-			},
-		},
+func (e *VineyardEngine) transformTieredStore(runtime *datav1alpha1.VineyardRuntime) (TieredStore, error) {
+	if len(runtime.Spec.TieredStore.Levels) == 0 {
+		return TieredStore{}, fmt.Errorf("the tieredstore is empty")
 	}
-	if len(runtime.Spec.TieredStore.Levels) != 0 {
-		tieredStore = TieredStore{}
-		for _, level := range runtime.Spec.TieredStore.Levels {
-			if level.MediumType == "MEM" {
-				tieredStore.Levels = append(tieredStore.Levels, Level{
-					MediumType: level.MediumType,
-					Quota:      level.Quota,
-				})
-			} else {
-				tieredStore.Levels = append(tieredStore.Levels, Level{
-					Level:        1,
-					MediumType:   level.MediumType,
-					VolumeType:   level.VolumeType,
-					VolumeSource: level.VolumeSource,
-					Path:         level.Path,
-					Quota:        level.Quota,
-					QuotaList:    level.QuotaList,
-					High:         level.High,
-					Low:          level.Low,
-				})
-			}
+
+	tieredStore := TieredStore{}
+	for _, level := range runtime.Spec.TieredStore.Levels {
+		if level.MediumType == "MEM" {
+			tieredStore.Levels = append(tieredStore.Levels, Level{
+				MediumType: level.MediumType,
+				Quota:      level.Quota,
+			})
+		} else {
+			tieredStore.Levels = append(tieredStore.Levels, Level{
+				Level:        1,
+				MediumType:   level.MediumType,
+				VolumeType:   level.VolumeType,
+				VolumeSource: level.VolumeSource,
+				Path:         level.Path,
+				Quota:        level.Quota,
+				QuotaList:    level.QuotaList,
+				High:         level.High,
+				Low:          level.Low,
+			})
 		}
 	}
-	return tieredStore
+
+	return tieredStore, nil
 }

@@ -519,9 +519,15 @@ func TestTransformTieredStore(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			engine := &VineyardEngine{}
-			actual := engine.transformTieredStore(tt.runtime)
-			if !reflect.DeepEqual(actual, tt.expected) {
-				t.Errorf("%s: expected %v, got %v", tt.name, tt.expected, actual)
+			actual, err := engine.transformTieredStore(tt.runtime)
+			if tt.name == "Notieredstore" {
+				if err == nil {
+					t.Errorf("expected error, get nil")
+				}
+			} else {
+				if !reflect.DeepEqual(actual, tt.expected) {
+					t.Errorf("%s: expected %v, got %v", tt.name, tt.expected, actual)
+				}
 			}
 		})
 	}
