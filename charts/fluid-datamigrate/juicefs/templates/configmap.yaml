@@ -35,16 +35,21 @@ data:
       parallel_options=""
       if [ $PARALLELISM -gt 1 ]
       then
-        # format like
-        #Host data-migrate-migrate-workers-0
-        #  HostName data-migrate-migrate-workers-0.data-migrate-migrate-svc
-        #Host data-migrate-migrate-workers-1
-        #  HostName data-migrate-migrate-workers-1.data-migrate-migrate-svc
-        workers=$(grep "Host " /root/.ssh/config  | cut -d " " -f 2)
-        timeout ${WORKERS_READY_TIMEOUT} ${scripts_dir}/check_ssh.sh ${workers}
+        # the /root/.ssh is read only, so change the /etc/ssh/ssh_config.
+        # This can also be set when build image in the dockerfile.
+        sed -i "s/[ #]\(.*StrictHostKeyChecking \).*/ \1no/g" /etc/ssh/ssh_config
+        echo "    UserKnownHostsFile /dev/null" >> /etc/ssh/ssh_config
 
-        workers=$(echo "$workers" | tr '\n' ',')
-        workers=${workers%?}
+        # WORKER_NAME is "%s-workers-{}.%s-svc" where %s is the helm release name
+        workers=()
+        size=`expr $PARALLELISM - 1`
+        for num in $(seq 0 $size)
+        do
+          workers[$num]=$(echo $WORKER_NAME_FORMAT | sed "s/{}/$num/g")
+        done
+        timeout ${WORKERS_READY_TIMEOUT} ${scripts_dir}/check_ssh.sh ${workers[@]}
+
+        workers=$(echo "${workers[@]}" | tr ' ' ',')
 
         parallel_options="--worker ${workers} --manager-addr ${POD_IP}"
         echo "distribute data migrate using options: $parallel_options"

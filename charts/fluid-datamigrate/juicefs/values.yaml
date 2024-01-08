@@ -103,3 +103,5 @@ datamigrate:
   # Optional
   # Description: ssh config for parallel task pods
   sshConfig:
+
+  sshSecretName:

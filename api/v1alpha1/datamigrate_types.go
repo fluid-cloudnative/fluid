@@ -95,6 +95,10 @@ type DataMigrateSpec struct {
 	// +kubebuilder:validation:Minimum=1
 	Parallelism int32 `json:"parallelism,omitempty"`
 
+	// SSHSecretName defines the secret name used for ssh. It must be set when Parallelism is greater than 1.
+	// +optional
+	SSHSecretName string `json:"sshSecretName,omitempty"`
+
 	// WorkersReadyTimeout defines timeout before parallel workers ready
 	// +optional
 	// +kubebuilder:default:=15

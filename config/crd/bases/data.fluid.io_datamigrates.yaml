@@ -1044,6 +1044,10 @@ spec:
                 description: SchedulerName sets the scheduler to be used for DataMigrate
                   pod
                 type: string
+              sshSecretName:
+                description: SSHSecretName defines the secret name used for ssh. It
+                  must be set when Parallelism is greater than 1.
+                type: string
               to:
                 description: data to migrate destination, including dataset and external
                   storage

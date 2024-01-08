@@ -92,6 +92,5 @@ type DataMigrateInfo struct {
 
 	WorkersReadyTimeout int32 `json:"workers_ready_timeout,omitempty"`
 
-	// SSHConfig defines the ssh config for parallel task pods
-	SSHConfig *common.SSHConfig `json:"sshConfig,omitempty"`
+	SSHSecretName string `json:"sshSecretName,omitempty"`
 }

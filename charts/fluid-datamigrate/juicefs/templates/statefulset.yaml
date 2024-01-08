@@ -43,9 +43,10 @@ spec:
                   key: {{ .valueFrom.secretKeyRef.key }}
             {{- end }}
           volumeMounts:
-            - name: data-migrate-ssh
-              mountPath: /root/.ssh
-              # use subpath to avoid soft link
+            - mountPath: /root/.ssh
+              name: data-migrate-ssh
+              # use subpath to avoid permissions check problem because the launcher will ssh to workers.
+              # Or user can set 'StrictModes no' in /etc/ssh/sshd_config file to avoid permission check when build the image in dockerfile.
               subPath: .ssh
       affinity:
         # prefer to use different nodes to maximize bandwidth
@@ -62,16 +63,14 @@ spec:
               weight: 100
       volumes:
         - name: data-migrate-ssh
-          configMap:
-            name: {{ printf "%s-ssh" .Release.Name }}
+          secret:
+            secretName: {{.Values.datamigrate.sshSecretName }}
             defaultMode: 0600
             items:
-              - key: PRIVATE_KEY
+              - key: ssh-privatekey
                 path: .ssh/id_rsa
-              - key: PUBLIC_KEY
+              - key: ssh-publickey
                 path: .ssh/id_rsa.pub
-              - key: AUTHORIZED_KEYS
+              - key: ssh-publickey
                 path: .ssh/authorized_keys
-              - key: CONFIG
-                path: .ssh/config
 {{- end }}

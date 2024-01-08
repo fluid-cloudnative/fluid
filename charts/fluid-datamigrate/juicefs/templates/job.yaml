@@ -82,6 +82,8 @@ spec:
               value: {{ .Values.datamigrate.workersReadyTimeout | quote }}
             - name: PARALLELISM
               value: {{ .Values.datamigrate.parallelism | quote }}
+            - name: WORKER_NAME_FORMAT
+              value: {{ printf "%s-workers-{}.%s-svc" .Release.Name .Release.Name }}
             {{- range $key, $val := .Values.datamigrate.options }}
             {{- if eq $key "timeout" }}
             - name: TIMEOUT
@@ -112,24 +114,20 @@ spec:
             {{- if gt (.Values.datamigrate.parallelism | int) 1 }}
             - mountPath: /root/.ssh
               name: data-migrate-ssh
-              # use subpath to avoid soft link
-              subPath: .ssh
             {{- end }}
       volumes:
         {{- if gt (.Values.datamigrate.parallelism | int) 1 }}
         - name: data-migrate-ssh
-          configMap:
-            name: {{ printf "%s-ssh" .Release.Name }}
+          secret:
+            secretName: {{.Values.datamigrate.sshSecretName }}
             defaultMode: 0600
             items:
-              - key: PRIVATE_KEY
-                path: .ssh/id_rsa
-              - key: PUBLIC_KEY
-                path: .ssh/id_rsa.pub
-              - key: AUTHORIZED_KEYS
-                path: .ssh/authorized_keys
-              - key: CONFIG
-                path: .ssh/config
+              - key: ssh-privatekey
+                path: id_rsa
+              - key: ssh-publickey
+                path: id_rsa.pub
+              - key: ssh-publickey
+                path: authorized_keys
         {{- end }}
         - name: data-migrate-script
           configMap:
