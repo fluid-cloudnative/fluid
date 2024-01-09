@@ -50,7 +50,7 @@ type Level struct {
 	// File paths to be used for the tier. Multiple paths are supported.
 	// Multiple paths should be separated with comma. For example: "/mnt/cache1,/mnt/cache2".
 	// +kubebuilder:validation:MinLength=1
-	// +required
+	// +optional
 	Path string `json:"path,omitempty"`
 
 	// Quota for the whole tier. (e.g. 100Gi)

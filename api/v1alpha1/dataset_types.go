@@ -49,7 +49,7 @@ const (
 type SecretKeySelector struct {
 	// The name of required secret
 	// +required
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 
 	// The required key in the secret
 	// +optional
@@ -64,7 +64,7 @@ type EncryptOptionSource struct {
 type EncryptOption struct {
 	// The name of encryptOption
 	// +required
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 
 	// The valueFrom of encryptOption
 	// +optional
@@ -77,7 +77,7 @@ type Mount struct {
 	// MountPoint is the mount point of source.
 	// +kubebuilder:validation:MinLength=5
 	// +required
-	MountPoint string `json:"mountPoint,omitempty"`
+	MountPoint string `json:"mountPoint"`
 
 	// The Mount Options. <br>
 	// Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Mount Options</a>.  <br>

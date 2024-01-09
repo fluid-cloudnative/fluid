@@ -2529,6 +2529,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOption(ref common.Refere
 					"name": {
 						SchemaProps: spec.SchemaProps{
 							Description: "The name of encryptOption",
+							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -2541,6 +2542,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOption(ref common.Refere
 						},
 					},
 				},
+				Required: []string{"name"},
 			},
 		},
 		Dependencies: []string{
@@ -4672,6 +4674,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_Mount(ref common.ReferenceCallb
 					"mountPoint": {
 						SchemaProps: spec.SchemaProps{
 							Description: "MountPoint is the mount point of source.",
+							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -4735,6 +4738,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_Mount(ref common.ReferenceCallb
 						},
 					},
 				},
+				Required: []string{"mountPoint"},
 			},
 		},
 		Dependencies: []string{
@@ -5491,6 +5495,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_SecretKeySelector(ref common.Re
 					"name": {
 						SchemaProps: spec.SchemaProps{
 							Description: "The name of required secret",
+							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -5503,6 +5508,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_SecretKeySelector(ref common.Re
 						},
 					},
 				},
+				Required: []string{"name"},
 			},
 		},
 	}

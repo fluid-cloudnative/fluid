@@ -919,8 +919,12 @@ spec:
                                     name:
                                       description: The name of required secret
                                       type: string
+                                  required:
+                                  - name
                                   type: object
                               type: object
+                          required:
+                          - name
                           type: object
                         type: array
                       uri:
@@ -1080,8 +1084,12 @@ spec:
                                     name:
                                       description: The name of required secret
                                       type: string
+                                  required:
+                                  - name
                                   type: object
                               type: object
+                          required:
+                          - name
                           type: object
                         type: array
                       uri:
