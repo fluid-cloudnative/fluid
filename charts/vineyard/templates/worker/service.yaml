@@ -48,3 +48,7 @@ spec:
       port: {{ int .Values.worker.ports.rpc }}
       targetPort: {{ int .Values.worker.ports.rpc }}
       protocol: TCP
+    - name: metrics
+      port: {{ int .Values.worker.ports.exporter }}
+      targetPort: {{ int .Values.worker.ports.exporter }}
+      protocol: TCP

@@ -53,6 +53,7 @@ worker:
   #   "disktype": "ssd"
   ports:
     rpc: 9600
+    exporter: 9144
   env: {}
   options:
     # where to reserve memory for vineyardd
@@ -92,10 +93,10 @@ tieredstore:
 
 volumes: []
 
-disabledPrometheus: false
+disablePrometheus: true
 
 fuse:
-  image: vineyardcloudnative/mount-vineyard-socket
+  image: vineyardcloudnative/vineyard-fluid-fuse
   imageTag: latest
   imagePullPolicy: IfNotPresent
   targetPath: ""

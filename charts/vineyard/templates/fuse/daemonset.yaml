@@ -65,19 +65,19 @@ spec:
           securityContext:
             privileged: true
           env:
-          - name: MOUNT_NAMESPACE
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.namespace
+          - name: MOUNT_DIR
+            value: {{ .Values.fuse.targetPath | dir }}
+          - name: FUSE_DIR
+            value: {{ .Values.fuse.targetPath }}
+          - name: RPC_CONF_DIR
+            value: {{ .Values.fuse.targetPath }}/rpc-conf
           - name: PRESTOP_MARKER
             value: /tmp/prestop-marker
-          - name: VINEYARD_FULL_NAME
-            value: {{ $fullName }}
           lifecycle:
             preStop:
               exec:
                 {{/* umount the configmap volume manually to avoid the error of "possibly malicious path detecte" */}}
-                command: ["sh", "-c", "touch /tmp/prestop-marker && umount {{ .Values.fuse.targetPath }} && umount /runtime-mnt/vineyard/{{ .Release.Namespace }}/{{ $fullName }}/vineyard-fuse/rpc-conf"]
+                command: ["sh", "-c", "touch /tmp/prestop-marker && umount {{ .Values.fuse.targetPath }} && umount {{ .Values.fuse.targetPath }}/rpc-conf"]
           {{- if .Values.master.resources  }}
 {{ include "vineyard.master.resources" . | indent 10 }}
           {{- end }}
@@ -86,7 +86,7 @@ spec:
             mountPath: {{ .Values.fuse.targetPath | dir }}
             mountPropagation: Bidirectional
           - name: vineyard-rpc-conf
-            mountPath: /runtime-mnt/vineyard/{{ .Release.Namespace }}/{{ $fullName }}/vineyard-fuse/rpc-conf
+            mountPath: {{ .Values.fuse.targetPath }}/rpc-conf
       restartPolicy: Always
       volumes:
         - name: vineyard-fuse-mount
