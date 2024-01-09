@@ -422,6 +422,19 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		}
 		runtimeInfo.SetupFuseDeployMode(true, efcRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(efcRuntime.Spec.Fuse.CleanPolicy)
+	case common.VineyardRuntime:
+		vineyardRuntime, err := utils.GetVineyardRuntime(client, name, namespace)
+		if err != nil {
+			fmt.Println("Get vineyard runtime error")
+			return runtimeInfo, err
+		}
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.VineyardRuntime, datav1alpha1.TieredStore{}, WithMetadataList(GetMetadataListFromAnnotation(vineyardRuntime)))
+		if err != nil {
+			fmt.Println("Build vineyard runtime error")
+			return runtimeInfo, err
+		}
+		runtimeInfo.SetupFuseDeployMode(common.VineyardFuseIsGlobal, common.VineyardFuseNodeSelector)
+		runtimeInfo.SetupFuseCleanPolicy(vineyardRuntime.Spec.Fuse.CleanPolicy)
 	default:
 		err = fmt.Errorf("fail to get runtimeInfo for runtime type: %s", runtimeType)
 		return
@@ -467,6 +480,12 @@ func GetRuntimeStatus(client client.Client, runtimeType, name, namespace string)
 		return &runtime.Status, nil
 	case common.ThinRuntime:
 		runtime, err := utils.GetThinRuntime(client, name, namespace)
+		if err != nil {
+			return status, err
+		}
+		return &runtime.Status, nil
+	case common.VineyardRuntime:
+		runtime, err := utils.GetVineyardRuntime(client, name, namespace)
 		if err != nil {
 			return status, err
 		}

@@ -146,7 +146,7 @@ runtime:
       - operator: Exists
     enabled: false
     controller:
-      image: fluidcloudnative/vineyardruntime-controller:v1.0.0-edc69cf
+      image: fluidcloudnative/vineyardruntime-controller:v1.0.0-7221cf3
       imagePullPolicy: Always
 
 webhook:

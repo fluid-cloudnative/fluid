@@ -159,6 +159,33 @@ resources:
     {{- end }}
 {{- end -}}
 
+
+{{/*
+Generate etcd endpoints for peer or client
+*/}}
+{{- define "vineyard.etcdEndpoints" -}}
+  {{- $replicas := int .Values.master.replicas }}
+  {{- $fullName := include "vineyard.fullname" . }}
+  {{- $etcdFullname := (printf "%s-%s" $fullName "master") }}
+  {{- $releaseNamespace := .Release.Namespace }}
+  {{- $etcdServiceName := (printf "%s-%s" $fullName "master-svc") }}
+  {{- $etcdEndpoint := list }}
+  {{- $portType := .portType }}
+  {{- $port := 0 }}
+  {{- if eq $portType "peer" }}
+    {{- $port = int .Values.master.ports.peer }}
+    {{- range $e, $i := until $replicas }}
+      {{- $etcdEndpoint = append $etcdEndpoint (printf "%s-%d=http://%s-%d.%s.%s:%d" $etcdFullname $i $etcdFullname $i $etcdServiceName $releaseNamespace $port) }}
+    {{- end }}
+  {{- else if eq $portType "client" }}
+    {{- $port = int .Values.master.ports.client }}
+    {{- range $e, $i := until $replicas }}
+      {{- $etcdEndpoint = append $etcdEndpoint (printf "http://%s-%d.%s.%s:%d" $etcdFullname $i $etcdServiceName $releaseNamespace $port) }}
+    {{- end }}
+  {{- end }}
+  {{- join "," $etcdEndpoint }}
+{{- end }}
+
 {{/*
 Get the master endpoint.
 */}}
@@ -166,19 +193,7 @@ Get the master endpoint.
     {{- if .Values.worker.externalEndpoint -}}
         {{- printf "http://%s" .Values.worker.externalEndpoint.uri }}
     {{- else -}}
-      {{- $replicas := int .Values.master.replicas }}
-      {{- $clientPort := int .Values.master.ports.client }}
-      {{- $name := include "vineyard.name" . }}
-      {{- $fullName := include "vineyard.fullname" . }}
-      {{- $etcdFullname := (printf "%s-%s" $fullName "master") }}
-      {{- $chart := include "vineyard.chart" . }}
-      {{- $releaseNamespace := .Release.Namespace }}
-      {{- $etcdServiceName := (printf "%s-%s" $fullName "master-svc") }}
-      {{- $etcdEndpoint := list }}
-      {{- range $e, $i := until $replicas }}
-      {{- $etcdEndpoint = append $etcdEndpoint (printf "http://%s-%d.%s.%s.svc.cluster.local:%d" $etcdFullname $i $etcdServiceName $releaseNamespace $clientPort) }}
-      {{- end }}
-      {{- join "," $etcdEndpoint }}
+      {{ include "vineyard.etcdEndpoints" (dict "Values" .Values "Release" .Release "portType" "client") }}
     {{- end -}}
 {{- end -}}
 
@@ -296,6 +311,7 @@ Get spill volume from tieredstore.
       {{- else }}
       - name: {{ $mediumName }}
         emptyDir:
+          medium: {{ eq .type "MEM" | ternary "Memory" "" }}
           {{- if .quota }}
           {{- /* quota should be transformed to match resource.Quantity. e.g. 20GB -> 20Gi */}}
           sizeLimit: {{ .quota | replace "B" "i" }}

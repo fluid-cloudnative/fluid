@@ -177,3 +177,23 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - data.fluid.io
+  resources:
+  - vineyardruntimes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - data.fluid.io
+  resources:
+  - vineyardruntimes/status
+  verbs:
+  - get
+  - patch
+  - update
