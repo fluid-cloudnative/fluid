@@ -179,7 +179,10 @@ webhook:
         # plugin args is a serialized yaml string.
         args: |
           preferred:
-            # fluid existed node affinity, the name can not be modified.
+            # fluid.io/fuse is a fluid built-in affinity, prefer to schedule pods to nodes with runtime fuse pods.
+            # - name: fluid.io/fuse
+            #   weight: 100
+            # fluid.io/node is a fluid built-in affinity, prefer to schedule pods to nodes with runtime worker pods.
             - name: fluid.io/node
               weight: 100
             # runtime worker's zone label name, can be changed according to k8s environment.

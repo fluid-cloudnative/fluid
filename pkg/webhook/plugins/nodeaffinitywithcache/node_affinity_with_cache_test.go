@@ -67,7 +67,7 @@ func TestGetPreferredSchedulingTermWithGlobalMode(t *testing.T) {
 
 	// Test case 1: Global fuse with selector enable
 	runtimeInfo.SetupFuseDeployMode(true, map[string]string{"test1": "test1"})
-	term := getPreferredSchedulingTerm(runtimeInfo, 100)
+	term := getPreferredSchedulingTerm(100, runtimeInfo.GetCommonLabelName())
 
 	expectTerm := corev1.PreferredSchedulingTerm{
 		Weight: 100,
@@ -88,7 +88,7 @@ func TestGetPreferredSchedulingTermWithGlobalMode(t *testing.T) {
 
 	// Test case 2: Global fuse with selector disable
 	runtimeInfo.SetupFuseDeployMode(true, map[string]string{})
-	term = getPreferredSchedulingTerm(runtimeInfo, 100)
+	term = getPreferredSchedulingTerm(100, runtimeInfo.GetCommonLabelName())
 
 	if !reflect.DeepEqual(*term, expectTerm) {
 		t.Errorf("getPreferredSchedulingTerm failure, want:%v, got:%v", expectTerm, term)
@@ -262,6 +262,8 @@ func TestMutateBothRequiredAndPrefer(t *testing.T) {
 func TestTieredLocality(t *testing.T) {
 	customizedTieredLocality := `
 preferred:
+- name: fluid.io/fuse
+  weight: 100
 - name: fluid.io/node
   weight: 100
 - name: topology.kubernetes.io/rack
@@ -404,6 +406,18 @@ required:
 											MatchExpressions: []corev1.NodeSelectorRequirement{
 												{
 													Key:      runtimeInfo.GetCommonLabelName(),
+													Operator: corev1.NodeSelectorOpIn,
+													Values:   []string{"true"},
+												},
+											},
+										},
+									},
+									{
+										Weight: 100,
+										Preference: corev1.NodeSelectorTerm{
+											MatchExpressions: []corev1.NodeSelectorRequirement{
+												{
+													Key:      runtimeInfo.GetFuseLabelName(),
 													Operator: corev1.NodeSelectorOpIn,
 													Values:   []string{"true"},
 												},

@@ -35,7 +35,12 @@ import (
 */
 
 const Name = "NodeAffinityWithCache"
+
+// NodeLocalityLabel prefer to schedule pods to nodes with runtime worker pods.
 const NodeLocalityLabel = "fluid.io/node"
+
+// FuseLocalityLabel prefer to schedule pods to nodes with runtime fuse pods
+const FuseLocalityLabel = "fluid.io/fuse"
 
 var (
 	log = ctrl.Log.WithName(Name)
@@ -123,13 +128,18 @@ func (p *NodeAffinityWithCache) getTieredLocalityPreferredSchedulingTerms(prefer
 		}
 
 		// fluid.io/node locality
-		nodeLocalityWeight, existed := preferredLocality[NodeLocalityLabel]
+		weight, existed := preferredLocality[NodeLocalityLabel]
 		if existed {
-			nodePreferredSchedulingTerm := getPreferredSchedulingTerm(runtimeInfo, nodeLocalityWeight)
-			if nodePreferredSchedulingTerm != nil {
-				preferredSchedulingTerms = append(preferredSchedulingTerms, *nodePreferredSchedulingTerm)
-			}
+			nodePreferredSchedulingTerm := getPreferredSchedulingTerm(weight, runtimeInfo.GetCommonLabelName())
+			preferredSchedulingTerms = append(preferredSchedulingTerms, *nodePreferredSchedulingTerm)
 		}
+		// fluid.io/fuse locality
+		weight, existed = preferredLocality[FuseLocalityLabel]
+		if existed {
+			nodePreferredSchedulingTerm := getPreferredSchedulingTerm(weight, runtimeInfo.GetFuseLabelName())
+			preferredSchedulingTerms = append(preferredSchedulingTerms, *nodePreferredSchedulingTerm)
+		}
+
 		// customized locality
 		affinity := status.CacheAffinity
 		if affinity != nil && affinity.RequiredDuringSchedulingIgnoredDuringExecution != nil {
@@ -157,7 +167,11 @@ func (p *NodeAffinityWithCache) getTieredLocalityNodeSelectorTerms(runtimeInfos 
 
 		// fluid.io/node locality
 		if utils.ContainsString(requireLocalityNames, NodeLocalityLabel) {
-			requiredSchedulingTerms = append(requiredSchedulingTerms, getRequiredSchedulingTerms(runtimeInfo))
+			requiredSchedulingTerms = append(requiredSchedulingTerms, getRequiredSchedulingTerms(runtimeInfo.GetCommonLabelName()))
+		}
+		// fluid.io/fuse locality
+		if utils.ContainsString(requireLocalityNames, FuseLocalityLabel) {
+			requiredSchedulingTerms = append(requiredSchedulingTerms, getRequiredSchedulingTerms(runtimeInfo.GetFuseLabelName()))
 		}
 
 		// customized locality
@@ -230,11 +244,11 @@ func getNodeSelectorTermsFromRequired(nodeSelectorTerms []corev1.NodeSelectorTer
 	return
 }
 
-func getRequiredSchedulingTerms(runtimeInfo base.RuntimeInfoInterface) (requiredSchedulingTerm corev1.NodeSelectorTerm) {
+func getRequiredSchedulingTerms(key string) (requiredSchedulingTerm corev1.NodeSelectorTerm) {
 	requiredSchedulingTerm = corev1.NodeSelectorTerm{
 		MatchExpressions: []corev1.NodeSelectorRequirement{
 			{
-				Key:      runtimeInfo.GetCommonLabelName(),
+				Key:      key,
 				Operator: corev1.NodeSelectorOpIn,
 				Values:   []string{"true"},
 			},
@@ -267,22 +281,18 @@ func getPreferredSchedulingTermsFromRequired(nodeSelectorTerms []corev1.NodeSele
 	return
 }
 
-func getPreferredSchedulingTerm(runtimeInfo base.RuntimeInfoInterface, weight int32) (preferredSchedulingTerm *corev1.PreferredSchedulingTerm) {
-	isGlobalMode, _ := runtimeInfo.GetFuseDeployMode()
-	// since fluid 0.7, always true
-	if isGlobalMode {
-		preferredSchedulingTerm = &corev1.PreferredSchedulingTerm{
-			Weight: weight,
-			Preference: corev1.NodeSelectorTerm{
-				MatchExpressions: []corev1.NodeSelectorRequirement{
-					{
-						Key:      runtimeInfo.GetCommonLabelName(),
-						Operator: corev1.NodeSelectorOpIn,
-						Values:   []string{"true"},
-					},
+func getPreferredSchedulingTerm(weight int32, key string) (preferredSchedulingTerm *corev1.PreferredSchedulingTerm) {
+	preferredSchedulingTerm = &corev1.PreferredSchedulingTerm{
+		Weight: weight,
+		Preference: corev1.NodeSelectorTerm{
+			MatchExpressions: []corev1.NodeSelectorRequirement{
+				{
+					Key:      key,
+					Operator: corev1.NodeSelectorOpIn,
+					Values:   []string{"true"},
 				},
 			},
-		}
+		},
 	}
 
 	return
