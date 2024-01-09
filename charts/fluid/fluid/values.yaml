@@ -133,20 +133,20 @@ runtime:
       image: fluidcloudnative/efcruntime-controller:v1.0.0-d489193
       imagePullPolicy: Always
     init:
-      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/init-alifuse:v1.2.2-19dcee9
+      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/init-alifuse:v1.0.0-f913136
     master:
-      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-master:v1.2.2-19dcee9
+      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-master:v1.0.0-f913136
     worker:
-      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-worker:v1.2.2-19dcee9
+      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-worker:v1.0.0-f913136
     fuse:
-      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-fuse:v1.2.2-19dcee9
+      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-fuse:v1.0.0-f913136
   vineyard:
     replicas: 1
     tolerations:
       - operator: Exists
     enabled: false
     controller:
-      image: fluidcloudnative/vineyardruntime-controller:v1.0.0-7221cf3
+      image: fluidcloudnative/vineyardruntime-controller:v1.0.0-f913136
       imagePullPolicy: Always
 
 webhook:
