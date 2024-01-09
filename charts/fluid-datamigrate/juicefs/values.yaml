@@ -100,8 +100,4 @@ datamigrate:
   # Description: timeout before parallel workers ready
   workersReadyTimeout: 15
 
-  # Optional
-  # Description: ssh config for parallel task pods
-  sshConfig:
-
   sshSecretName:
