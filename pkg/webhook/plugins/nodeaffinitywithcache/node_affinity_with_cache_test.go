@@ -82,7 +82,7 @@ func TestGetPreferredSchedulingTermWithGlobalMode(t *testing.T) {
 		},
 	}
 
-	if !reflect.DeepEqual(*term, expectTerm) {
+	if !reflect.DeepEqual(term, expectTerm) {
 		t.Errorf("getPreferredSchedulingTerm failure, want:%v, got:%v", expectTerm, term)
 	}
 
@@ -90,7 +90,7 @@ func TestGetPreferredSchedulingTermWithGlobalMode(t *testing.T) {
 	runtimeInfo.SetupFuseDeployMode(true, map[string]string{})
 	term = getPreferredSchedulingTerm(100, runtimeInfo.GetCommonLabelName())
 
-	if !reflect.DeepEqual(*term, expectTerm) {
+	if !reflect.DeepEqual(term, expectTerm) {
 		t.Errorf("getPreferredSchedulingTerm failure, want:%v, got:%v", expectTerm, term)
 	}
 }

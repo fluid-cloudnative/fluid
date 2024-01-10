@@ -36,11 +36,31 @@ import (
 
 const Name = "NodeAffinityWithCache"
 
-// NodeLocalityLabel prefer to schedule pods to nodes with runtime worker pods.
-const NodeLocalityLabel = "fluid.io/node"
+// fluid build affinity struct
+type builtInAffinity struct {
+	// affinity name, i.e. fluid.io/node
+	name string
+	// the label extractor based on RuntimeInfoInterface
+	labelExtractor func(runtimeInterface base.RuntimeInfoInterface) string
+}
 
-// FuseLocalityLabel prefer to schedule pods to nodes with runtime fuse pods
-const FuseLocalityLabel = "fluid.io/fuse"
+// use struct not map to avoid the disorder of map traversal, resulting in test case occasional failure.
+var fluidBuiltInAffinities = []builtInAffinity{
+	{
+		// NodeLocalityLabel prefer to schedule pods to nodes with runtime worker pods.
+		name: "fluid.io/node",
+		labelExtractor: func(runtimeInterface base.RuntimeInfoInterface) string {
+			return runtimeInterface.GetCommonLabelName()
+		},
+	},
+	{
+		// FuseLocalityLabel prefer to schedule pods to nodes with runtime fuse pods.
+		name: "fluid.io/fuse",
+		labelExtractor: func(runtimeInterface base.RuntimeInfoInterface) string {
+			return runtimeInterface.GetFuseLabelName()
+		},
+	},
+}
 
 var (
 	log = ctrl.Log.WithName(Name)
@@ -127,23 +147,18 @@ func (p *NodeAffinityWithCache) getTieredLocalityPreferredSchedulingTerms(prefer
 			return preferredSchedulingTerms, err
 		}
 
-		// fluid.io/node locality
-		weight, existed := preferredLocality[NodeLocalityLabel]
-		if existed {
-			nodePreferredSchedulingTerm := getPreferredSchedulingTerm(weight, runtimeInfo.GetCommonLabelName())
-			preferredSchedulingTerms = append(preferredSchedulingTerms, *nodePreferredSchedulingTerm)
-		}
-		// fluid.io/fuse locality
-		weight, existed = preferredLocality[FuseLocalityLabel]
-		if existed {
-			nodePreferredSchedulingTerm := getPreferredSchedulingTerm(weight, runtimeInfo.GetFuseLabelName())
-			preferredSchedulingTerms = append(preferredSchedulingTerms, *nodePreferredSchedulingTerm)
+		// fluid builtin locality
+		for _, affinity := range fluidBuiltInAffinities {
+			weight, existed := preferredLocality[affinity.name]
+			if existed {
+				preferredSchedulingTerms = append(preferredSchedulingTerms, getPreferredSchedulingTerm(weight, affinity.labelExtractor(runtimeInfo)))
+			}
 		}
 
 		// customized locality
-		affinity := status.CacheAffinity
-		if affinity != nil && affinity.RequiredDuringSchedulingIgnoredDuringExecution != nil {
-			terms := getPreferredSchedulingTermsFromRequired(affinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, preferredLocality)
+		statusAffinity := status.CacheAffinity
+		if statusAffinity != nil && statusAffinity.RequiredDuringSchedulingIgnoredDuringExecution != nil {
+			terms := getPreferredSchedulingTermsFromRequired(statusAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, preferredLocality)
 			preferredSchedulingTerms = append(preferredSchedulingTerms, terms...)
 		}
 	}
@@ -165,20 +180,18 @@ func (p *NodeAffinityWithCache) getTieredLocalityNodeSelectorTerms(runtimeInfos 
 			return requiredSchedulingTerms, err
 		}
 
-		// fluid.io/node locality
-		if utils.ContainsString(requireLocalityNames, NodeLocalityLabel) {
-			requiredSchedulingTerms = append(requiredSchedulingTerms, getRequiredSchedulingTerms(runtimeInfo.GetCommonLabelName()))
-		}
-		// fluid.io/fuse locality
-		if utils.ContainsString(requireLocalityNames, FuseLocalityLabel) {
-			requiredSchedulingTerms = append(requiredSchedulingTerms, getRequiredSchedulingTerms(runtimeInfo.GetFuseLabelName()))
+		// fluid builtin locality
+		for _, affinity := range fluidBuiltInAffinities {
+			if utils.ContainsString(requireLocalityNames, affinity.name) {
+				requiredSchedulingTerms = append(requiredSchedulingTerms, getRequiredSchedulingTerms(affinity.labelExtractor(runtimeInfo)))
+			}
 		}
 
 		// customized locality
-		affinity := status.CacheAffinity
+		cacheAffinity := status.CacheAffinity
 		// only RequiredDuringSchedulingIgnoredDuringExecution, not considering PreferredDuringSchedulingIgnoredDuringExecution
-		if affinity != nil && affinity.RequiredDuringSchedulingIgnoredDuringExecution != nil {
-			terms := getNodeSelectorTermsFromRequired(affinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, requireLocalityNames)
+		if cacheAffinity != nil && cacheAffinity.RequiredDuringSchedulingIgnoredDuringExecution != nil {
+			terms := getNodeSelectorTermsFromRequired(cacheAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, requireLocalityNames)
 			requiredSchedulingTerms = append(requiredSchedulingTerms, terms...)
 		}
 	}
@@ -281,8 +294,8 @@ func getPreferredSchedulingTermsFromRequired(nodeSelectorTerms []corev1.NodeSele
 	return
 }
 
-func getPreferredSchedulingTerm(weight int32, key string) (preferredSchedulingTerm *corev1.PreferredSchedulingTerm) {
-	preferredSchedulingTerm = &corev1.PreferredSchedulingTerm{
+func getPreferredSchedulingTerm(weight int32, key string) (preferredSchedulingTerm corev1.PreferredSchedulingTerm) {
+	preferredSchedulingTerm = corev1.PreferredSchedulingTerm{
 		Weight: weight,
 		Preference: corev1.NodeSelectorTerm{
 			MatchExpressions: []corev1.NodeSelectorRequirement{
