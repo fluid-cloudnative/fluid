@@ -21,6 +21,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/go-logr/logr"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -103,7 +104,10 @@ func kubectl(args []string) ([]byte, error) {
 
 	// return syscall.Exec(cmd, args, env)
 	// 2. execute the command
-	cmd := exec.Command(binary, args...)
+	cmd, err := utils.SimpleCommand(binary, args...)
+	if err != nil {
+		return nil, err
+	}
 	// cmd.Env = env
 	return cmd.CombinedOutput()
 }
