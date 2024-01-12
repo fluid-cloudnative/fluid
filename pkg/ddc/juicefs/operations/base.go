@@ -94,7 +94,7 @@ func (j JuiceFileUtils) Count(juiceSubPath string) (total int64, err error) {
 		command = []string{"du", "-sb", juiceSubPath}
 		stdout  string
 		stderr  string
-		utotal  uint64
+		utotal  int64
 	)
 
 	stdout, stderr, err = j.exec(command)
@@ -117,12 +117,16 @@ func (j JuiceFileUtils) Count(juiceSubPath string) (total int64, err error) {
 		return
 	}
 
-	utotal, err = strconv.ParseUint(data[0], 10, 64)
+	utotal, err = strconv.ParseInt(data[0], 10, 64)
 	if err != nil {
 		return
 	}
+	if utotal < 0 {
+		err = fmt.Errorf("the return value of Count method is negative")
+		return
+	}
 
-	return int64(utotal), err
+	return utotal, err
 }
 
 // file count of the JuiceFS Filesystem (except folder)
