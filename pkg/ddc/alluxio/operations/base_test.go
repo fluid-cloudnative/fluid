@@ -35,6 +35,7 @@ const (
 	OTHER_ERR      = "other-err"
 	FINE           = "fine"
 	EXEC_ERR       = "exec-err"
+	NEGATIVE_RES   = "negative-res"
 	TOO_MANY_LINES = "too many lines"
 	DATA_NUM       = "data nums not match"
 	PARSE_ERR      = "parse err"
@@ -626,6 +627,8 @@ func TestAlluxioFileUtils_Count(t *testing.T) {
 
 		if strings.Contains(p4[3], EXEC_ERR) {
 			return "does not exist", "", errors.New("exec-error")
+		} else if strings.Contains(p4[3], NEGATIVE_RES) {
+			return "12324\t45463\t-9223372036854775808", "", nil
 		} else if strings.Contains(p4[3], TOO_MANY_LINES) {
 			return "1\n2\n3\n4\n", "1\n2\n3\n4\n", nil
 		} else if strings.Contains(p4[3], DATA_NUM) {
@@ -654,6 +657,7 @@ func TestAlluxioFileUtils_Count(t *testing.T) {
 		noErr            bool
 	}{
 		{EXEC_ERR, 0, 0, 0, false},
+		{NEGATIVE_RES, 0, 0, 0, false},
 		{TOO_MANY_LINES, 0, 0, 0, false},
 		{DATA_NUM, 0, 0, 0, false},
 		{PARSE_ERR, 0, 0, 0, false},
