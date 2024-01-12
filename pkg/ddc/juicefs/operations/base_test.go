@@ -389,6 +389,9 @@ func TestJuiceFileUtils_Count(t *testing.T) {
 	ExecWithoutTimeoutErr := func(a JuiceFileUtils, command []string) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
+	ExecWithoutTimeoutNegative := func(a JuiceFileUtils, command []string) (stdout string, stderr string, err error) {
+		return "-9223372036854775808   /tmp", "", nil
+	}
 	wrappedUnhookExec := func() {
 		err := gohook.UnHook(JuiceFileUtils.execWithoutTimeout)
 		if err != nil {
@@ -401,6 +404,16 @@ func TestJuiceFileUtils_Count(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	a := &JuiceFileUtils{log: fake.NullLogger()}
+	_, err = a.Count("/tmp")
+	if err == nil {
+		t.Error("check failure, want err, got nil")
+	}
+	wrappedUnhookExec()
+
+	err = gohook.Hook(JuiceFileUtils.execWithoutTimeout, ExecWithoutTimeoutNegative, nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
 	_, err = a.Count("/tmp")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
