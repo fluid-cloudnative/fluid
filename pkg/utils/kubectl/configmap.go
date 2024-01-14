@@ -63,22 +63,24 @@ func SaveConfigMapToFile(name string, key string, namespace string) (fileName st
 		log.Error(err, "failed to create tmp file", "tmpFile", file.Name())
 		return fileName, err
 	}
+	defer file.Close() // delete the file after function returns
 	fileName = file.Name()
 
-	args := []string{binary, "get", "configmap", name,
+	args := []string{"get", "configmap", name,
 		"--namespace", namespace,
-		fmt.Sprintf("-o=jsonpath='{.data.%s}'", key),
-		">", fileName}
+		fmt.Sprintf("-o=jsonpath='{.data.%s}'", key)}
 
 	log.V(1).Info("exec", "cmd", strings.Join(args, " "))
 
-	cmd := exec.Command("bash", "-c", strings.Join(args, " "))
+	cmd := exec.Command(binary, args...)
 	// env := os.Environ()
 	// if types.KubeConfig != "" {
 	// 	env = append(env, fmt.Sprintf("KUBECONFIG=%s", types.KubeConfig))
 	// }
-	out, err := cmd.Output()
-	fmt.Printf("%s", string(out))
+	// set the output of the command to our file
+	cmd.Stdout = file
+	err = cmd.Run()
+	// fmt.Printf("%s", string(out))
 
 	if err != nil {
 		return fileName, fmt.Errorf("failed to execute %s, %v with %v", "kubectl", args, err)
