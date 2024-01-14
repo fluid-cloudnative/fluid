@@ -21,15 +21,15 @@ import (
 	"strings"
 )
 
-// AllowedCommands is a global map contains all allowed command prefixes
+// AllowedCommands is a global map that contains all allowed command prefixes.
 var AllowedCommands = map[string]bool{
-	"grep":  true,
-	"wc -l": true,
+	"grep":  false, // false means partial match
+	"wc -l": true,  // true means full match (wc -l is exactly the allowed command)
 	// Add more commands as you see fit
 }
 
 // ValidateShellPipeString function checks whether the input command string is safe to execute.
-// It checks whether all parts of a pipeline command starts with any command prefixes defined in AllowedCommands
+// It checks whether all parts of a pipeline command start with any command prefixes defined in AllowedCommands
 // It also checks for any illegal sequences that may lead to command injection attack.
 func ValidateShellPipeString(command string) error {
 	// Define illegal sequences that may lead to command injection attack
@@ -44,8 +44,13 @@ func ValidateShellPipeString(command string) error {
 
 		// Check whether command starts with any allowed command prefix
 		validCmd := false
-		for cmdPrefix := range AllowedCommands {
-			if strings.HasPrefix(cmd, cmdPrefix) {
+		for cmdPrefix, exactMatch := range AllowedCommands {
+			if exactMatch {
+				if cmd == cmdPrefix {
+					validCmd = true
+					break
+				}
+			} else if strings.HasPrefix(cmd, cmdPrefix) {
 				validCmd = true
 				break
 			}
