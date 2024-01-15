@@ -1,3 +1,11 @@
+package utils
+
+import (
+	"os/exec"
+	"reflect"
+	"testing"
+)
+
 /*
 Copyright 2024 The Fluid Authors.
 
@@ -14,10 +22,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package utils
-
-import "testing"
-
 func TestValidateShellPipeString(t *testing.T) {
 	type args struct {
 		command string
@@ -27,16 +31,47 @@ func TestValidateShellPipeString(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		// Add test cases.
-		{name: "valid command with grep", args: args{command: "kubectl get pods | grep Running"}, wantErr: false},
-		{name: "valid command with wc -l", args: args{command: "echo hello | wc -l"}, wantErr: false},
-		{name: "invalid command", args: args{command: "rm -rf /"}, wantErr: true},
-		{name: "illegal sequence in command", args: args{command: "kubectl get pods | grep Running; rm -rf /"}, wantErr: true},
+		{name: "valid command with grep", args: args{command: "echo hello world | grep hello"}, wantErr: false},
+		{name: "valid command with wc -l", args: args{command: "echo hello world | wc -l"}, wantErr: false},
+		{name: "invalid command with xyz", args: args{command: "echo hello world | xyz"}, wantErr: true},
+		{name: "illegal sequence in command with &", args: args{command: "echo hello world & rm -rf /"}, wantErr: true},
+		{name: "illegal sequence in command with ;", args: args{command: "ls ; rm -rf /"}, wantErr: true},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := ValidateShellPipeString(tt.args.command); (err != nil) != tt.wantErr {
 				t.Errorf("ValidateShellPipeString() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestSafePipeCommand(t *testing.T) {
+	type args struct {
+		name string
+		arg  []string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantCmd *exec.Cmd
+		wantErr bool
+	}{
+		{name: "valid simple command", args: args{name: "bash", arg: []string{"-c", "ls"}}, wantCmd: exec.Command("bash", "-c", "ls"), wantErr: false},
+		{name: "unsafe shell command", args: args{name: "zsh", arg: []string{"-c", "ls"}}, wantCmd: nil, wantErr: true},
+		{name: "valid piped command", args: args{name: "bash", arg: []string{"-c", "ls | grep something"}}, wantCmd: exec.Command("bash", "-c", "ls | grep something"), wantErr: false},
+		{name: "invalid piped command", args: args{name: "bash", arg: []string{"-c", "ls | random-command"}}, wantCmd: nil, wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotCmd, err := SafePipeCommand(tt.args.name, tt.args.arg...)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("SafePipeCommand() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotCmd, tt.wantCmd) {
+				t.Errorf("SafePipeCommand() = %v, want %v", gotCmd, tt.wantCmd)
 			}
 		})
 	}

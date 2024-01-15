@@ -18,6 +18,7 @@ package utils
 
 import (
 	"fmt"
+	"os/exec"
 	"strings"
 )
 
@@ -26,6 +27,32 @@ var AllowedCommands = map[string]bool{
 	"grep":  false, // false means partial match
 	"wc -l": true,  // true means full match (wc -l is exactly the allowed command)
 	// Add more commands as you see fit
+}
+
+func SafePipeCommand(name string, arg ...string) (cmd *exec.Cmd, err error) {
+	// Make sure the shell command is allowed
+	var AllowedShellCommands = map[string]bool{
+		"bash -c": true,
+		"sh -c":   true,
+	}
+	// We assume -c always directly follows the shell command
+	shellCommand := strings.Join(strings.Fields(name+" "+arg[0]), " ")
+	if _, ok := AllowedShellCommands[shellCommand]; !ok {
+		return nil, fmt.Errorf("unsafe shell command: %s", shellCommand)
+	}
+
+	// validate each pipeline command
+	// Normalize pipelineCommand to avoid consecutive spaces
+	pipelineCommand := strings.Join(strings.Fields(strings.Join(arg[1:], " ")), " ")
+	for _, command := range strings.Split(pipelineCommand, "|") {
+		command = strings.TrimSpace(command)
+		if err := ValidateShellPipeString(command); err != nil {
+			return nil, err
+		}
+	}
+
+	// All validations pass, execute the command
+	return exec.Command(name, arg...), nil
 }
 
 // ValidateShellPipeString function checks whether the input command string is safe to execute.
