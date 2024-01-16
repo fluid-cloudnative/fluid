@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-
 package utils
 
 import (
@@ -23,16 +22,6 @@ import (
 	units "github.com/docker/go-units"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
-
-
-
-
-
-
-
-
-
-
 
 // TransformQuantityToAlluxioUnit transform a given input quantity to another one
 // that can be recognized by Alluxio. This is necessary because Alluxio takes decimal byte units(e.g. KB, MB, GB, etc.)
