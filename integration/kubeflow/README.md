@@ -1,5 +1,5 @@
 # Demo - Using FLuid in Kubeflow Pipelines v2
-This is a simple that wraps Fluid'operations as KFP v2 components to complete the processes of dataset creation, runtime creation, and cache preheating to accelerate model training(a cnn model for [Fashion MNIST](https://pjreddie.com/projects/mnist-in-csv/)).
+This is a demo that wraps Fluid'operations as KFP v2 components to complete the processes of dataset creation, runtime creation, and cache preheating to accelerate model training (a simple CNN model for [Fashion MNIST](https://www.kaggle.com/datasets/zalando-research/fashionmnist)).
 
 ## Prerequisites
 
@@ -11,9 +11,9 @@ This is a simple that wraps Fluid'operations as KFP v2 components to complete th
 Please refer to the [Fluid installation guide](https://github.com/fluid-cloudnative/fluid/blob/master/docs/zh/userguide/install.md) and [KFP v2 installation guide](https://www.kubeflow.org/docs/components/pipelines/v2/installation/quickstart/) to complete the installation of Fluid and KFP v2.
 
 ### Dataset
-- [Fashion MNIST](https://pjreddie.com/projects/mnist-in-csv/)
+- [Fashion MNIST](https://www.kaggle.com/datasets/zalando-research/fashionmnist)
 
-For the convenience of demonstration, we upload the dataset to the Amazon S3 and deploy the [s3-secret.yaml](./s3-secret.yaml) to provide the access key.
+You should upload `fashion-mnist_train.csv` and `fashion-mnist_test.csv` to your Amazon S3 (or any S3-compatible storage, such as [MinIO](https://min.io/)) and deploy the [s3-secret.yaml](./s3-secret.yaml) to provide the access key.
 
 ### RBAC
 Because KFP components require access or modification permissions to Fluid resources, it is necessary to deploy [rbac.yaml](./rbac.yaml) in advance to grant permissions.
@@ -30,7 +30,7 @@ The simple pipeline provides the following parameters:
 - mount_point: str
 - mount_s3_endpoint: str
 - mount_s3_region: str
-- namespace: str
+- namespace: str (For now, this value should be the namespace in which you deploy your KFP)
 
 If you want to run the sample, you can upload the [train-cnn-for-fashion-mnist-pipline.yaml](./pipline-yaml/train-cnn-for-fashion-mnist-pipline.yaml) to your pipeline dashboard UI and fill in these parameters.
 
