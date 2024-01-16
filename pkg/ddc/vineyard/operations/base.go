@@ -15,8 +15,10 @@ package operations
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
+	"regexp"
+	"time"
 
 	"github.com/go-logr/logr"
 )
@@ -39,21 +41,42 @@ func NewVineyardFileUtils(podNamePrefix string, port int32, replicas int32, name
 	}
 }
 
+func validateResourceName(name string) error {
+	validNameRegex := `^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
+	matched, err := regexp.MatchString(validNameRegex, name)
+	if err != nil {
+		return fmt.Errorf("failed to validate name: %v", err)
+	}
+	if !matched {
+		return fmt.Errorf("invalid Kubernetes naming: %s", name)
+	}
+	return nil
+}
+
 // Get summary info of the Vineyard Engine
 func (a VineyardFileUtils) ReportSummary() (summary []string, err error) {
 	var resp *http.Response
 	var body []byte
+	if err := validateResourceName(a.podNamePrefix); err != nil {
+		return nil, err
+	}
+	if err := validateResourceName(a.namespace); err != nil {
+		return nil, err
+	}
+	client := &http.Client{
+		Timeout: 20 * time.Second,
+	}
 	for i := int32(0); i < a.replicas; i++ {
 		url := fmt.Sprintf("http://%s-%d.%s-svc.%s.svc.cluster.local:%d/metrics", a.podNamePrefix, i, a.podNamePrefix, a.namespace, a.port)
 
-		resp, err = http.Get(url)
+		resp, err = client.Get(url)
 		if err != nil {
 			err = fmt.Errorf("failed to get metrics from %s, error: %v", url, err)
 			return summary, err
 		}
 		defer resp.Body.Close()
 
-		body, err = ioutil.ReadAll(resp.Body)
+		body, err = io.ReadAll(resp.Body)
 		if err != nil {
 			err = fmt.Errorf("failed to read response body from %s, error: %v", url, err)
 			return
