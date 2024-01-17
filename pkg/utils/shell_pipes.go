@@ -79,6 +79,7 @@ func ValidateShellPipeString(command string) error {
 		"alluxio": false,
 		"goosefs": false,
 		"kubectl": false,
+		"helm":    false,
 	}
 
 	// AllowedPipeCommands is a map that contains all allowed pipe command prefixes.
