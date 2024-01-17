@@ -49,7 +49,7 @@ func TestValidateShellPipeString(t *testing.T) {
 	}
 }
 
-func TestSafePipeCommand(t *testing.T) {
+func TestPipeCommand(t *testing.T) {
 	type args struct {
 		name string
 		arg  []string
@@ -67,16 +67,16 @@ func TestSafePipeCommand(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotCmd, err := SafePipeCommand(tt.args.name, tt.args.arg...)
+			gotCmd, err := PipeCommand(tt.args.name, tt.args.arg...)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("SafePipeCommand() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("PipeCommand() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if gotCmd != nil && !reflect.DeepEqual(gotCmd.Path, tt.wantCmd.Path) {
-				t.Errorf("SafePipeCommand() = %v, want %v", gotCmd, tt.wantCmd)
+				t.Errorf("PipeCommand() = %v, want %v", gotCmd, tt.wantCmd)
 			}
 			if gotCmd != nil && !reflect.DeepEqual(gotCmd.Args, tt.wantCmd.Args) {
-				t.Errorf("SafePipeCommand() = %v, want %v", gotCmd, tt.wantCmd)
+				t.Errorf("PipeCommand() = %v, want %v", gotCmd, tt.wantCmd)
 			}
 		})
 	}

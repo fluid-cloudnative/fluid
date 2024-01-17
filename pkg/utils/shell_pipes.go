@@ -22,7 +22,7 @@ import (
 	"strings"
 )
 
-func SafePipeCommand(name string, arg ...string) (cmd *exec.Cmd, err error) {
+func PipeCommand(name string, arg ...string) (cmd *exec.Cmd, err error) {
 	// Make sure the shell command is allowed
 	var AllowedShellCommands = map[string]bool{
 		"bash -c": true,
@@ -46,6 +46,10 @@ func SafePipeCommand(name string, arg ...string) (cmd *exec.Cmd, err error) {
 
 	// All validations pass, execute the command
 	return exec.Command(name, arg...), nil
+}
+
+func ValidatePipeCommandSlice(command []string) (err error) {
+	return
 }
 
 // ValidateShellPipeString function checks whether the input command string is safe to execute.
