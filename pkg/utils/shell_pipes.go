@@ -51,9 +51,9 @@ func ValidateCommandSlice(shellCommandSlice []string) (err error) {
 
 	if isPossiblePipeCommand {
 		err = ValidatePipeCommandSlice(shellCommandSlice)
-	} else {
-		// Todo: need handle no PossiblePipeCommand
-	}
+	} // else {
+	// 	// Todo: need handle no PossiblePipeCommand
+	// }
 	return
 }
 
