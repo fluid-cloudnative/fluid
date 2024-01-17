@@ -37,6 +37,26 @@ func PipeCommand(name string, arg ...string) (cmd *exec.Cmd, err error) {
 	return exec.Command(name, arg...), nil
 }
 
+// ValidateCommandSlice takes in a slice of shell commands and returns an error if any are invalid.
+// The function looks specifically for pipe commands (i.e., commands that contain a '|').
+// If a pipe command is found in the slice, ValidatePipeCommandSlice is called for further validation.
+func ValidateCommandSlice(shellCommandSlice []string) (err error) {
+	isPossiblePipeCommand := false
+
+	for _, command := range shellCommandSlice {
+		if strings.Contains(command, "|") {
+			isPossiblePipeCommand = true
+		}
+	}
+
+	if isPossiblePipeCommand {
+		err = ValidatePipeCommandSlice(shellCommandSlice)
+	} else {
+		// Todo: need handle no PossiblePipeCommand
+	}
+	return
+}
+
 func ValidatePipeCommandSlice(shellCommandSlice []string) (err error) {
 	// Make sure the shell command is allowed
 	var AllowedShellCommands = map[string]bool{

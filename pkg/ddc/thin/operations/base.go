@@ -157,7 +157,7 @@ func (t ThinFileUtils) exec(command []string, verbose bool) (stdout string, stde
 // execWithoutTimeout
 func (t ThinFileUtils) execWithoutTimeout(command []string, verbose bool) (stdout string, stderr string, err error) {
 	// validate the pipe command with white list
-	err = utils.ValidatePipeCommandSlice(command)
+	err = utils.ValidateCommandSlice(command)
 	if err != nil {
 		return
 	}

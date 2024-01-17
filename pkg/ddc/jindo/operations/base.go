@@ -67,7 +67,7 @@ func (a JindoFileUtils) exec(command []string, verbose bool) (stdout string, std
 
 // execWithoutTimeout
 func (a JindoFileUtils) execWithoutTimeout(command []string, verbose bool) (stdout string, stderr string, err error) {
-	err = utils.ValidatePipeCommandSlice(command)
+	err = utils.ValidateCommandSlice(command)
 	if err != nil {
 		return
 	}

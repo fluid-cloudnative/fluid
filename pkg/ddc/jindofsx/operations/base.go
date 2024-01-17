@@ -88,7 +88,7 @@ func (a JindoFileUtils) execWithTimeOut(command []string, verbose bool, second i
 
 // execWithoutTimeout
 func (a JindoFileUtils) execWithoutTimeout(command []string, verbose bool) (stdout string, stderr string, err error) {
-	err = utils.ValidatePipeCommandSlice(command)
+	err = utils.ValidateCommandSlice(command)
 	if err != nil {
 		return
 	}

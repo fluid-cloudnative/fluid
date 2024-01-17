@@ -97,7 +97,10 @@ func TestGetHCFSStatus(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	engine := newGooseFSEngineHCFS(fakeClient, "hbase", "fluid")
-	out, _ := engine.GetHCFSStatus()
+	out, err := engine.GetHCFSStatus()
+	if err != nil {
+		t.Fatal(err.Error())
+	}
 	wrappedUnhook()
 	status := &v1alpha1.HCFSStatus{
 		Endpoint:                    "goosefs://hbase-master-0.fluid:2333",

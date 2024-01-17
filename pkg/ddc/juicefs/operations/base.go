@@ -327,7 +327,7 @@ func (j JuiceFileUtils) exec(command []string) (stdout string, stderr string, er
 // execWithoutTimeout
 func (j JuiceFileUtils) execWithoutTimeout(command []string) (stdout string, stderr string, err error) {
 	// validate the pipe command with white list
-	err = utils.ValidatePipeCommandSlice(command)
+	err = utils.ValidateCommandSlice(command)
 	if err != nil {
 		return
 	}

@@ -515,7 +515,7 @@ func (a AlluxioFileUtils) exec(command []string, verbose bool) (stdout string, s
 
 // execWithoutTimeout
 func (a AlluxioFileUtils) execWithoutTimeout(command []string, verbose bool) (stdout string, stderr string, err error) {
-	err = utils.ValidatePipeCommandSlice(command)
+	err = utils.ValidateCommandSlice(command)
 	if err != nil {
 		return
 	}
