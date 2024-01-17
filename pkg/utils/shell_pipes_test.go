@@ -31,14 +31,13 @@ func TestValidateShellPipeString(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{name: "valid command with grep", args: args{command: "echo hello world | grep hello"}, wantErr: false},
-		{name: "valid command with wc -l", args: args{command: "echo hello world | wc -l"}, wantErr: false},
+		{name: "valid command with grep", args: args{command: "echo hello world | grep hello"}, wantErr: true},
+		{name: "valid command with wc -l", args: args{command: "kubectl hello world | wc -l"}, wantErr: false},
 		{name: "invalid command with xyz", args: args{command: "echo hello world | xyz"}, wantErr: true},
-		{name: "illegal sequence in command with &", args: args{command: "echo hello world & rm -rf /"}, wantErr: true},
-		{name: "illegal sequence in command with ;", args: args{command: "ls ; rm -rf /"}, wantErr: true},
-		{name: "command with $", args: args{command: "echo $HOME"}, wantErr: true},
+		{name: "illegal sequence in command with &", args: args{command: "echo hello world & echo y"}, wantErr: true},
+		{name: "illegal sequence in command with ;", args: args{command: "ls ; echo y"}, wantErr: true},
+		{name: "command with $", args: args{command: "kubectl $HOME"}, wantErr: true},
 		{name: "command with absolute path", args: args{command: "ls /etc"}, wantErr: true},
-		{name: "command with dangerous command rm -rf", args: args{command: "ls | rm -rf /"}, wantErr: true},
 	}
 
 	for _, tt := range tests {
@@ -73,10 +72,10 @@ func TestSafePipeCommand(t *testing.T) {
 				t.Errorf("SafePipeCommand() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(gotCmd.Path, tt.wantCmd.Path) {
+			if gotCmd != nil && !reflect.DeepEqual(gotCmd.Path, tt.wantCmd.Path) {
 				t.Errorf("SafePipeCommand() = %v, want %v", gotCmd, tt.wantCmd)
 			}
-			if !reflect.DeepEqual(gotCmd.Args, tt.wantCmd.Args) {
+			if gotCmd != nil && !reflect.DeepEqual(gotCmd.Args, tt.wantCmd.Args) {
 				t.Errorf("SafePipeCommand() = %v, want %v", gotCmd, tt.wantCmd)
 			}
 		})

@@ -22,13 +22,6 @@ import (
 	"strings"
 )
 
-// AllowedPipeCommands is a global map that contains all allowed command prefixes.
-var AllowedPipeCommands = map[string]bool{
-	"grep":  false, // false means partial match
-	"wc -l": true,  // true means full match (wc -l is exactly the allowed command)
-	// Add more commands as you see fit
-}
-
 func SafePipeCommand(name string, arg ...string) (cmd *exec.Cmd, err error) {
 	// Make sure the shell command is allowed
 	var AllowedShellCommands = map[string]bool{
@@ -64,6 +57,23 @@ func ValidateShellPipeString(command string) error {
 	// Separate parts of pipeline command
 	pipelineCommands := strings.Split(command, "|")
 
+	// AllowedCommands is a global map that contains all allowed command prefixes.
+	var AllowedCommands = map[string]bool{
+		"ls -lR":  false,
+		"df":      false,
+		"mount":   false,
+		"alluxio": false,
+		"goosefs": false,
+		"kubectl": false,
+	}
+
+	// AllowedPipeCommands is a map that contains all allowed pipe command prefixes.
+	var allowedPipeCommands = map[string]bool{
+		"grep":  false, // false means partial match
+		"wc -l": true,  // true means full match (wc -l is exactly the allowed command)
+		// Add more commands as you see fit
+	}
+
 	// Check each part of pipeline command
 	for i, cmd := range pipelineCommands {
 		// Make it case-insensitive
@@ -73,19 +83,14 @@ func ValidateShellPipeString(command string) error {
 
 		if i > 0 {
 			// Check whether command starts with any allowed command prefix
-			validCmd := false
-			for cmdPrefix, exactMatch := range AllowedPipeCommands {
-				if exactMatch {
-					if cmd == cmdPrefix {
-						validCmd = true
-						break
-					}
-				} else if strings.HasPrefix(cmd, cmdPrefix) {
-					validCmd = true
-					break
-				}
-			}
+			validCmd := isValidCommand(cmd, allowedPipeCommands)
 
+			// If none of the allowed command prefix is found, throw error
+			if !validCmd {
+				return fmt.Errorf("full pipeline command not supported: part %d contains unsupported command '%s'", i+1, cmd)
+			}
+		} else {
+			validCmd := isValidCommand(cmd, AllowedCommands)
 			// If none of the allowed command prefix is found, throw error
 			if !validCmd {
 				return fmt.Errorf("full pipeline command not supported: part %d contains unsupported command '%s'", i+1, cmd)
@@ -102,4 +107,16 @@ func ValidateShellPipeString(command string) error {
 
 	// If no error found, return nil
 	return nil
+}
+
+// Defining a function to check if the command is valid
+func isValidCommand(cmd string, allowedCommands map[string]bool) bool {
+	for cmdPrefix, exactMatch := range allowedCommands {
+		if exactMatch && cmd == cmdPrefix {
+			return true
+		} else if !exactMatch && strings.HasPrefix(cmd, cmdPrefix) {
+			return true
+		}
+	}
+	return false
 }
