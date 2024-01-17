@@ -132,7 +132,11 @@ func GetChartVersion(chart string) (version string, err error) {
 		"|", "grep", "version:"}
 	log.V(1).Info("Exec bash -c", "args", args)
 
-	cmd := exec.Command("bash", "-c", strings.Join(args, " "))
+	// cmd := exec.Command("bash", "-c", strings.Join(args, " "))
+	cmd, err := utils.PipeCommand("bash", "-c", strings.Join(args, " "))
+	if err != nil {
+		return "", err
+	}
 	out, err := cmd.Output()
 	if err != nil {
 		return "", err

@@ -26,6 +26,7 @@ import (
 
 	"github.com/go-logr/logr"
 
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
@@ -304,6 +305,11 @@ func (j JuiceFileUtils) GetUsedSpace(juicefsPath string) (usedSpace int64, err e
 
 // exec with timeout
 func (j JuiceFileUtils) exec(command []string) (stdout string, stderr string, err error) {
+	// validate the pipe command with white list
+	err = utils.ValidatePipeCommandSlice(command)
+	if err != nil {
+		return
+	}
 
 	j.log.Info("execute begin", "command", command)
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second*1500)
