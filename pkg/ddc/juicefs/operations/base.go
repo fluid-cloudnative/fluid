@@ -305,12 +305,6 @@ func (j JuiceFileUtils) GetUsedSpace(juicefsPath string) (usedSpace int64, err e
 
 // exec with timeout
 func (j JuiceFileUtils) exec(command []string) (stdout string, stderr string, err error) {
-	// validate the pipe command with white list
-	err = utils.ValidatePipeCommandSlice(command)
-	if err != nil {
-		return
-	}
-
 	j.log.Info("execute begin", "command", command)
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second*1500)
 	ch := make(chan string, 1)
@@ -332,6 +326,12 @@ func (j JuiceFileUtils) exec(command []string) (stdout string, stderr string, er
 
 // execWithoutTimeout
 func (j JuiceFileUtils) execWithoutTimeout(command []string) (stdout string, stderr string, err error) {
+	// validate the pipe command with white list
+	err = utils.ValidatePipeCommandSlice(command)
+	if err != nil {
+		return
+	}
+
 	stdout, stderr, err = kubeclient.ExecCommandInContainer(j.podName, j.container, j.namespace, command)
 	if err != nil {
 		j.log.Info("Stdout", "Command", command, "Stdout", stdout)

@@ -481,11 +481,6 @@ func (a GooseFSFileUtils) MasterPodName() (masterPodName string, err error) {
 
 // exec with timeout
 func (a GooseFSFileUtils) exec(command []string, verbose bool) (stdout string, stderr string, err error) {
-	err = utils.ValidatePipeCommandSlice(command)
-	if err != nil {
-		return
-	}
-
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second*1500)
 	ch := make(chan string, 1)
 	defer cancel()

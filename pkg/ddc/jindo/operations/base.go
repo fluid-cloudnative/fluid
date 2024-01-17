@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
 )
@@ -66,6 +67,11 @@ func (a JindoFileUtils) exec(command []string, verbose bool) (stdout string, std
 
 // execWithoutTimeout
 func (a JindoFileUtils) execWithoutTimeout(command []string, verbose bool) (stdout string, stderr string, err error) {
+	err = utils.ValidatePipeCommandSlice(command)
+	if err != nil {
+		return
+	}
+
 	stdout, stderr, err = kubeclient.ExecCommandInContainer(a.podName, a.container, a.namespace, command)
 	if err != nil {
 		a.log.Info("Stdout", "Command", command, "Stdout", stdout)
