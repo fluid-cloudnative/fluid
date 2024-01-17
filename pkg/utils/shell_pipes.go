@@ -23,32 +23,42 @@ import (
 )
 
 func PipeCommand(name string, arg ...string) (cmd *exec.Cmd, err error) {
+	// prepare the slice for ValidatePipeCommandSlice
+	var commands []string
+	commands = append(commands, name)
+	commands = append(commands, arg...)
+
+	// validate commands
+	err = ValidatePipeCommandSlice(commands)
+	if err != nil {
+		return nil, err
+	}
+
+	return exec.Command(name, arg...), nil
+}
+
+func ValidatePipeCommandSlice(shellCommandSlice []string) (err error) {
 	// Make sure the shell command is allowed
 	var AllowedShellCommands = map[string]bool{
 		"bash -c": true,
 		"sh -c":   true,
 	}
+
+	// check if shellCommandSlice has enough arguments
+	if len(shellCommandSlice) < 3 {
+		return fmt.Errorf("insufficient arguments. Expected at least 3, received %d", len(shellCommandSlice))
+	}
 	// We assume -c always directly follows the shell command
-	shellCommand := strings.Join(strings.Fields(name+" "+arg[0]), " ")
+	shellCommand := strings.Join(strings.Fields(shellCommandSlice[0]+" "+shellCommandSlice[1]), " ")
 	if _, ok := AllowedShellCommands[shellCommand]; !ok {
-		return nil, fmt.Errorf("unsafe shell command: %s", shellCommand)
+		return fmt.Errorf("unknown shell command: %s", shellCommand)
 	}
 
-	// validate each pipeline command
-	// Normalize pipelineCommand to avoid consecutive spaces
-	pipelineCommand := strings.Join(strings.Fields(strings.Join(arg[1:], " ")), " ")
-	for _, command := range strings.Split(pipelineCommand, "|") {
-		command = strings.TrimSpace(command)
+	for _, command := range shellCommandSlice[2:] {
 		if err := ValidateShellPipeString(command); err != nil {
-			return nil, err
+			return err
 		}
 	}
-
-	// All validations pass, execute the command
-	return exec.Command(name, arg...), nil
-}
-
-func ValidatePipeCommandSlice(command []string) (err error) {
 	return
 }
 
@@ -63,7 +73,7 @@ func ValidateShellPipeString(command string) error {
 
 	// AllowedCommands is a global map that contains all allowed command prefixes.
 	var AllowedCommands = map[string]bool{
-		"ls -lR":  false,
+		"ls":      false,
 		"df":      false,
 		"mount":   false,
 		"alluxio": false,
@@ -80,7 +90,6 @@ func ValidateShellPipeString(command string) error {
 
 	// Check each part of pipeline command
 	for i, cmd := range pipelineCommands {
-		// Make it case-insensitive
 		cmd = strings.Join(
 			strings.Fields(
 				strings.TrimSpace(cmd)), " ")
@@ -91,13 +100,13 @@ func ValidateShellPipeString(command string) error {
 
 			// If none of the allowed command prefix is found, throw error
 			if !validCmd {
-				return fmt.Errorf("full pipeline command not supported: part %d contains unsupported command '%s'", i+1, cmd)
+				return fmt.Errorf("full pipeline command not supported: part %d contains unsupported command '%s', the whole command %s", i+1, cmd, command)
 			}
 		} else {
 			validCmd := isValidCommand(cmd, AllowedCommands)
 			// If none of the allowed command prefix is found, throw error
 			if !validCmd {
-				return fmt.Errorf("full pipeline command not supported: part %d contains unsupported command '%s'", i+1, cmd)
+				return fmt.Errorf("full pipeline command not supported: part %d contains unsupported command '%s', the whole command %s", i+1, cmd, command)
 			}
 		}
 

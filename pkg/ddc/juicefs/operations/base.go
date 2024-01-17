@@ -304,6 +304,7 @@ func (j JuiceFileUtils) GetUsedSpace(juicefsPath string) (usedSpace int64, err e
 
 // exec with timeout
 func (j JuiceFileUtils) exec(command []string) (stdout string, stderr string, err error) {
+
 	j.log.Info("execute begin", "command", command)
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second*1500)
 	ch := make(chan string, 1)
