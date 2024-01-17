@@ -36,6 +36,9 @@ func TestValidateShellPipeString(t *testing.T) {
 		{name: "invalid command with xyz", args: args{command: "echo hello world | xyz"}, wantErr: true},
 		{name: "illegal sequence in command with &", args: args{command: "echo hello world & rm -rf /"}, wantErr: true},
 		{name: "illegal sequence in command with ;", args: args{command: "ls ; rm -rf /"}, wantErr: true},
+		{name: "command with $", args: args{command: "echo $HOME"}, wantErr: true},
+		{name: "command with absolute path", args: args{command: "ls /etc"}, wantErr: true},
+		{name: "command with dangerous command rm -rf", args: args{command: "ls | rm -rf /"}, wantErr: true},
 	}
 
 	for _, tt := range tests {
@@ -70,7 +73,10 @@ func TestSafePipeCommand(t *testing.T) {
 				t.Errorf("SafePipeCommand() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(gotCmd, tt.wantCmd) {
+			if !reflect.DeepEqual(gotCmd.Path, tt.wantCmd.Path) {
+				t.Errorf("SafePipeCommand() = %v, want %v", gotCmd, tt.wantCmd)
+			}
+			if !reflect.DeepEqual(gotCmd.Args, tt.wantCmd.Args) {
 				t.Errorf("SafePipeCommand() = %v, want %v", gotCmd, tt.wantCmd)
 			}
 		})
