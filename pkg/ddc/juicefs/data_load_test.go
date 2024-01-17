@@ -18,12 +18,13 @@ package juicefs
 
 import (
 	"errors"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 
 	"github.com/brahma-adshonor/gohook"
 	appsv1 "k8s.io/api/apps/v1"
@@ -621,7 +622,7 @@ func TestJuiceFSEngine_CheckExistenceOfPath(t *testing.T) {
 	}
 	notExist, err = engine.CheckExistenceOfPath(targetDataload)
 	if !(err == nil && notExist == false) {
-		t.Errorf("fail to exec the function")
+		t.Errorf("fail to exec the function due to %v", err)
 	}
 	wrappedUnhook()
 }
