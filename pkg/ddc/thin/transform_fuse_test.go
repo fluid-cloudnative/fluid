@@ -706,7 +706,7 @@ func TestThinEngine_transformFuseWithDuplicateOptionKey(t1 *testing.T) {
 			}},
 			// ConfigValue: "{\"/thin/fluid/test/thin-fuse\":\"a=b\"}",
 			// MountPath:   "/thin/fluid/test/thin-fuse",
-			ConfigValue:   "{\"mounts\":[{\"mountPoint\":\"abc\",\"options\":{\"a\":\"b\"}}],\"targetPath\":\"/thin/fluid/test/thin-fuse\"}",
+			ConfigValue:   "{\"mounts\":[{\"mountPoint\":\"abc\",\"options\":{\"a\":\"b\"}}],\"targetPath\":\"/thin/fluid/test/thin-fuse\",\"accessModes\":[\"ReadOnlyMany\"]}",
 			ConfigStorage: "configmap",
 		},
 	}
