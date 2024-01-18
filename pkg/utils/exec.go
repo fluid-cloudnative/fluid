@@ -36,7 +36,8 @@ var allowPathlist = map[string]bool{
 }
 
 // illegalChars to check
-var illegalChars = []string{"&", "|", ";", "$", "'", "`", "(", ")", ">>"}
+// var illegalChars = []string{"&", "|", ";", "$", "'", "`", "(", ")", ">>"}
+var illegalChars = []rune{'&', '|', ';', '$', '\'', '`', '(', ')', '>'}
 
 // buildPathList is a function that builds a map of paths for the given pathList.
 func buildPathList(pathList map[string]bool) (targetPath map[string]bool) {
@@ -75,8 +76,8 @@ func SimpleCommand(name string, arg ...string) (cmd *exec.Cmd, err error) {
 func checkCommandArgs(arg ...string) (err error) {
 	for _, value := range arg {
 		for _, illegalChar := range illegalChars {
-			if strings.Contains(value, illegalChar) {
-				return fmt.Errorf("args %s has illegal access with illegalChar %s", value, illegalChar)
+			if strings.ContainsRune(value, illegalChar) {
+				return fmt.Errorf("args %s has illegal access with illegalChar %c", value, illegalChar)
 			}
 		}
 	}

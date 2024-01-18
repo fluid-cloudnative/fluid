@@ -52,7 +52,7 @@ func TestCheckCommandArgs(t *testing.T) {
 			args: args{
 				arg: []string{"echo test > /dev/null"},
 			},
-			wantErr: false,
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
