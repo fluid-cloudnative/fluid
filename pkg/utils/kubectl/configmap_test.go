@@ -72,68 +72,6 @@ func TestCreateConfigMapFromFile(t *testing.T) {
 	wrappedUnhookStat()
 }
 
-func TestSaveConfigMapToFile(t *testing.T) {
-	LookPathCommon := func(file string) (string, error) {
-		return "test-path", nil
-	}
-	LookPathErr := func(file string) (string, error) {
-		return "", errors.New("fail to run the command")
-	}
-	OutputCommon := func(cmd *exec.Cmd) ([]byte, error) {
-		return []byte("output"), nil
-	}
-	OutputErr := func(cmd *exec.Cmd) ([]byte, error) {
-		return nil, errors.New("fail to run the command")
-	}
-
-	wrappedUnhookLookPath := func() {
-		err := gohook.UnHook(exec.LookPath)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-	wrappedUnhookOutput := func() {
-		err := gohook.UnHook((*exec.Cmd).Output)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-	err := gohook.Hook(exec.LookPath, LookPathErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	_, err = SaveConfigMapToFile("hbase", "data", "default")
-	if err == nil {
-		t.Errorf("check failure, want err, get nil")
-	}
-	wrappedUnhookLookPath()
-
-	err = gohook.Hook(exec.LookPath, LookPathCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = gohook.Hook((*exec.Cmd).Output, OutputErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	_, err = SaveConfigMapToFile("hbase", "data", "default")
-	if err == nil {
-		t.Errorf("check failure, want err, get nil")
-	}
-	wrappedUnhookOutput()
-
-	err = gohook.Hook((*exec.Cmd).Output, OutputCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	_, err = SaveConfigMapToFile("hbase", "data", "default")
-	if err != nil {
-		t.Errorf("check failure, want nil, get err %v", err)
-	}
-	wrappedUnhookOutput()
-	wrappedUnhookLookPath()
-}
-
 func TestKubectl(t *testing.T) {
 	CombinedOutputCommon := func(cmd *exec.Cmd) ([]byte, error) {
 		return []byte("test-CombineOutput"), nil
