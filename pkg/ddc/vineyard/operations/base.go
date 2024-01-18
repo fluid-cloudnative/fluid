@@ -16,11 +16,14 @@ package operations
 import (
 	"fmt"
 	"io"
+	"net"
 	"net/http"
-	"regexp"
+	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/util/validation"
 )
 
 type VineyardFileUtils struct {
@@ -42,13 +45,8 @@ func NewVineyardFileUtils(podNamePrefix string, port int32, replicas int32, name
 }
 
 func validateResourceName(name string) error {
-	validNameRegex := `^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
-	matched, err := regexp.MatchString(validNameRegex, name)
-	if err != nil {
-		return fmt.Errorf("failed to validate name: %v", err)
-	}
-	if !matched {
-		return fmt.Errorf("invalid Kubernetes naming: %s", name)
+	if errs := validation.IsDNS1035Label(name); len(errs) > 0 {
+		return fmt.Errorf("invalid DNS-1035 label: %s", name)
 	}
 	return nil
 }
@@ -67,18 +65,23 @@ func (a VineyardFileUtils) ReportSummary() (summary []string, err error) {
 		Timeout: 20 * time.Second,
 	}
 	for i := int32(0); i < a.replicas; i++ {
-		url := fmt.Sprintf("http://%s-%d.%s-svc.%s.svc.cluster.local:%d/metrics", a.podNamePrefix, i, a.podNamePrefix, a.namespace, a.port)
+		u := url.URL{
+			Scheme: "http",
+			Host: net.JoinHostPort(fmt.Sprintf("%s-%d.%s-svc.%s.svc", a.podNamePrefix, i,
+				a.podNamePrefix, a.namespace), strconv.Itoa(int(a.port))),
+			Path: "/metrics",
+		}
 
-		resp, err = client.Get(url)
+		resp, err = client.Get(u.String())
 		if err != nil {
-			err = fmt.Errorf("failed to get metrics from %s, error: %v", url, err)
+			err = fmt.Errorf("failed to get metrics from %s, error: %v", u.String(), err)
 			return summary, err
 		}
 		defer resp.Body.Close()
 
 		body, err = io.ReadAll(resp.Body)
 		if err != nil {
-			err = fmt.Errorf("failed to read response body from %s, error: %v", url, err)
+			err = fmt.Errorf("failed to read response body from %s, error: %v", u.String(), err)
 			return
 		}
 

@@ -31,13 +31,13 @@ func TestVineyardFileUtils_ReportSummary(t *testing.T) {
 	}
 	patch := ApplyMethod(reflect.TypeOf(client), "Get",
 		func(_ *http.Client, url string) (resp *http.Response, err error) {
-			if url == "http://vineyard-0.vineyard-svc.default.svc.cluster.local:8080/metrics" {
+			if url == "http://vineyard-0.vineyard-svc.default.svc:8080/metrics" {
 				return &http.Response{
 					StatusCode: http.StatusOK,
 					Body:       ioutil.NopCloser(bytes.NewBufferString("metric for pod 1")),
 				}, nil
 			}
-			if url == "http://vineyard-1.vineyard-svc.default.svc.cluster.local:8080/metrics" {
+			if url == "http://vineyard-1.vineyard-svc.default.svc:8080/metrics" {
 				return &http.Response{
 					StatusCode: http.StatusOK,
 					Body:       ioutil.NopCloser(bytes.NewBufferString("metric for pod 2")),
