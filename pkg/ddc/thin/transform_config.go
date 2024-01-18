@@ -76,6 +76,7 @@ func (t *ThinEngine) transformFuseConfig(runtime *datav1alpha1.ThinRuntime, data
 	config.TargetPath = t.getTargetPath()
 	config.PersistentVolumeAttrs = pvAttributes
 	config.PersistentVolumeMountOptions = pvMountOptions
+	config.AccessModes = dataset.Spec.AccessModes
 
 	var configStr []byte
 	configStr, err = json.Marshal(config)

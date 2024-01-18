@@ -394,6 +394,7 @@ func TestThinEngine_transformFuse(t1 *testing.T) {
 			SharedOptions: map[string]string{
 				"c": "d",
 			},
+			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteMany},
 			Mounts: []datav1alpha1.Mount{{
 				MountPoint: "abc",
 				Options:    map[string]string{"a": "b"},
@@ -486,7 +487,7 @@ func TestThinEngine_transformFuse(t1 *testing.T) {
 			}},
 			// ConfigValue: "{\"/thin/fluid/test/thin-fuse\":\"a=b\"}",
 			// MountPath:   "/thin/fluid/test/thin-fuse",
-			ConfigValue:   "{\"mounts\":[{\"mountPoint\":\"abc\",\"options\":{\"a\":\"b\",\"c\":\"d\"}}],\"targetPath\":\"/thin/fluid/test/thin-fuse\",\"runtimeOptions\":{\"fuse-opt\":\"foo\"}}",
+			ConfigValue:   "{\"mounts\":[{\"mountPoint\":\"abc\",\"options\":{\"a\":\"b\",\"c\":\"d\"}}],\"targetPath\":\"/thin/fluid/test/thin-fuse\",\"runtimeOptions\":{\"fuse-opt\":\"foo\"},\"accessModes\":[\"ReadWriteMany\"]}",
 			ConfigStorage: "configmap",
 		},
 	}
