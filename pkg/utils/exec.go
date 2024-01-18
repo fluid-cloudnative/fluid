@@ -19,8 +19,13 @@ package utils
 import (
 	"fmt"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
+
+func init() {
+	allowPathlist = buildPathList(allowPathlist)
+}
 
 // allowPathlist of safe commands
 var allowPathlist = map[string]bool{
@@ -32,6 +37,24 @@ var allowPathlist = map[string]bool{
 
 // illegalChars to check
 var illegalChars = []string{"&", "|", ";", "$", "'", "`", "(", ")", ">>"}
+
+// buildPathList is a function that builds a map of paths for the given pathList.
+func buildPathList(pathList map[string]bool) (targetPath map[string]bool) {
+	targetPath = make(map[string]bool)
+	for name, enabled := range pathList {
+		if filepath.Base(name) == name {
+			path, err := exec.LookPath(name)
+			if err != nil {
+				log.Info("Failed to find path %s due to %v", path, err)
+
+			} else {
+				targetPath[path] = enabled
+			}
+		}
+		targetPath[name] = enabled
+	}
+	return
+}
 
 // SimpleCommand checks the args before creating *exec.Cmd
 func SimpleCommand(name string, arg ...string) (cmd *exec.Cmd, err error) {

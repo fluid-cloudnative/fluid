@@ -17,9 +17,12 @@ limitations under the License.
 package utils
 
 import (
+	"fmt"
 	"os/exec"
 	"reflect"
 	"testing"
+
+	"github.com/brahma-adshonor/gohook"
 )
 
 func TestCheckCommandArgs(t *testing.T) {
@@ -123,6 +126,63 @@ func TestSimpleCommand(t *testing.T) {
 			if !reflect.DeepEqual(tt.wantCmd.Path, cmd.Path) {
 				t.Errorf("SimpleCommand() = %v, want %v", tt.args.arg, cmd.Args)
 			}
+		})
+	}
+}
+
+func Test_buildPathList(t *testing.T) {
+	type args struct {
+		pathList map[string]bool
+	}
+	tests := []struct {
+		name             string
+		args             args
+		mockLookpathFunc func(file string) (string, error)
+		want             map[string]bool
+	}{
+		{
+			name: "Test with command 'kubectl'",
+			args: args{
+				pathList: map[string]bool{"kubectl": true},
+			},
+			mockLookpathFunc: func(file string) (string, error) {
+				return "/path/to/" + file, nil // Mocked path
+			},
+			want: map[string]bool{"kubectl": true, "/path/to/kubectl": true}, // assuming '/path/to/kubectl' is the path of the 'kubectl' command
+		},
+		{
+			name: "Test with nonexistent command",
+			args: args{
+				pathList: map[string]bool{"nonexistent": true},
+			}, mockLookpathFunc: func(file string) (string, error) {
+				return "", fmt.Errorf("Failed to find path")
+			},
+			want: map[string]bool{"nonexistent": true}, // as 'nonexistent' command does not exist, so the result should be same as initial
+		},
+		{
+			name: "Test with full path command",
+			args: args{
+				pathList: map[string]bool{"/usr/local/bin/kubectl": true},
+			},
+			mockLookpathFunc: func(file string) (string, error) {
+				return "/path/to/" + file, nil // Mocked path
+			},
+			want: map[string]bool{"/usr/local/bin/kubectl": true}, // since '/usr/local/bin/kubectl' command already has full path, so the result should be same as initial
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := gohook.Hook(exec.LookPath, tt.mockLookpathFunc, nil)
+			if err != nil {
+				t.Fatalf("failed to hook function: %v", err)
+			}
+			got := buildPathList(tt.args.pathList)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("buildPathList() = %v, want %v", got, tt.want)
+			}
+			_ = gohook.UnHook(tt.mockLookpathFunc)
+
 		})
 	}
 }
