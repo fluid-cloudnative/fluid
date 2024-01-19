@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package utils
+package security
 
 import (
 	"fmt"
@@ -64,7 +64,7 @@ func TestCheckCommandArgs(t *testing.T) {
 	}
 }
 
-func TestSimpleCommand(t *testing.T) {
+func TestCommand(t *testing.T) {
 	type args struct {
 		name string
 		arg  []string
@@ -76,15 +76,12 @@ func TestSimpleCommand(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "Allow path list",
+			name: "Allowed path list",
 			args: args{
 				name: "kubectl",
-				arg:  []string{"Hello", "World"},
+				arg:  []string{"create", "configmap"},
 			},
-			wantCmd: &exec.Cmd{
-				Path: "echo",
-				Args: []string{"Hello", "World"},
-			},
+			wantCmd: exec.Command("kubectl", "create", "configmap"),
 			wantErr: false,
 		}, {
 			name: "Valid command arguments",
@@ -92,10 +89,7 @@ func TestSimpleCommand(t *testing.T) {
 				name: "echo",
 				arg:  []string{"Hello", "World"},
 			},
-			wantCmd: &exec.Cmd{
-				Path: "echo",
-				Args: []string{"Hello", "World"},
-			},
+			wantCmd: exec.Command("echo", "Hello", "World"),
 			wantErr: false,
 		},
 		{
@@ -107,25 +101,84 @@ func TestSimpleCommand(t *testing.T) {
 			wantCmd: nil,
 			wantErr: true,
 		},
+		{
+			name: "Valid shell command",
+			args: args{
+				name: "bash",
+				arg:  []string{"-c", "echo hello world"},
+			},
+			wantCmd: exec.Command("bash", "-c", "echo hello world"),
+			wantErr: false,
+		},
+		{
+			name: "Invalid shell command",
+			args: args{
+				name: "sh",
+				arg:  []string{"/entrypoint.sh"},
+			},
+			wantCmd: nil,
+			wantErr: true,
+		},
+		{
+			name: "Valid shell pipeline command",
+			args: args{
+				name: "sh",
+				arg:  []string{"-c", "ls -lh | grep -c test"},
+			},
+			wantCmd: exec.Command("sh", "-c", "ls -lh | grep -c test"),
+			wantErr: false,
+		},
+		{
+			name: "Invalid shell pipeline command (invalid pipelined command)",
+			args: args{
+				name: "bash",
+				arg:  []string{"-c", "du -sh ./ | xargs echo"},
+			},
+			wantCmd: nil,
+			wantErr: true,
+		},
+		{
+			name: "Invalid shell pipeline command (invalid first command)",
+			args: args{
+				name: "bash",
+				arg:  []string{"-c", "echo hello | grep hello"},
+			},
+			wantCmd: nil,
+			wantErr: true,
+		},
+		{
+			name: "Invalid shell pipeline command (illegal sequence)",
+			args: args{
+				name: "bash",
+				arg:  []string{"-c", "ls -lh $(cat myfile) | grep hello"},
+			},
+			wantCmd: nil,
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cmd, err := SimpleCommand(tt.args.name, tt.args.arg...)
+			cmd, err := Command(tt.args.name, tt.args.arg...)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("SimpleCommand() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Command() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if err != nil {
 				return
 			}
-			tt.wantCmd = exec.Command(tt.args.name, tt.args.arg...)
-			if !reflect.DeepEqual(tt.wantCmd.Args, cmd.Args) {
-				t.Errorf("SimpleCommand() = %v, want %v", tt.args.arg, cmd.Args)
+
+			if !reflect.DeepEqual(tt.wantCmd, cmd) {
+				t.Errorf("Command() = %v, want %v", cmd, tt.wantCmd)
 			}
-			if !reflect.DeepEqual(tt.wantCmd.Path, cmd.Path) {
-				t.Errorf("SimpleCommand() = %v, want %v", tt.args.arg, cmd.Args)
-			}
+
+			// tt.wantCmd = exec.Command(tt.args.name, tt.args.arg...)
+			// if !reflect.DeepEqual(tt.wantCmd.Args, cmd.Args) {
+			// 	t.Errorf("SimpleCommand() = %v, want %v", tt.args.arg, cmd.Args)
+			// }
+			// if !reflect.DeepEqual(tt.wantCmd.Path, cmd.Path) {
+			// 	t.Errorf("SimpleCommand() = %v, want %v", tt.args.arg, cmd.Args)
+			// }
 		})
 	}
 }
@@ -183,6 +236,35 @@ func Test_buildPathList(t *testing.T) {
 			}
 			_ = gohook.UnHook(tt.mockLookpathFunc)
 
+		})
+	}
+}
+
+func TestValidateCommandSlice(t *testing.T) {
+	type args struct {
+		commandSlice []string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{name: "allowed path list", args: args{[]string{"kubectl", "create", "foobar"}}, wantErr: false},
+		{name: "valid command args", args: args{[]string{"echo", "hello"}}, wantErr: false},
+		{name: "invalid command args", args: args{[]string{"echo", "$MYENV"}}, wantErr: true},
+		{name: "valid shell command", args: args{[]string{"sh", "-c", "echo test"}}, wantErr: false},
+		{name: "invalid shell command", args: args{[]string{"sh", "-c", "echo $MYENV"}}, wantErr: true},
+		{name: "invalid shell command", args: args{[]string{"sh", "myscript.sh"}}, wantErr: true},
+		{name: "valid shell piped command", args: args{[]string{"bash", "-c", "ls -lh ./ | wc -l"}}, wantErr: false},
+		{name: "invalid shell piped command(invalid pipe command)", args: args{[]string{"bash", "-c", "ls -lh ./ | xargs echo"}}, wantErr: true},
+		{name: "invalid shell piped command(invalid first command)", args: args{[]string{"bash", "-c", "echo foobar | grep foo"}}, wantErr: true},
+		{name: "invalid shell piped command(illegal sequence)", args: args{[]string{"bash", "-c", "du -sh ./ | grep $(foo) | wc -l"}}, wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := ValidateCommandSlice(tt.args.commandSlice); (err != nil) != tt.wantErr {
+				t.Errorf("ValidateCommandSlice() error = %v, wantErr %v", err, tt.wantErr)
+			}
 		})
 	}
 }

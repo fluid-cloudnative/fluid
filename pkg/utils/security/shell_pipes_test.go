@@ -1,4 +1,4 @@
-package utils
+package security
 
 import (
 	"os/exec"
@@ -42,14 +42,14 @@ func TestValidateShellPipeString(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := ValidateShellPipeString(tt.args.command); (err != nil) != tt.wantErr {
+			if err := validateShellPipeString(tt.args.command); (err != nil) != tt.wantErr {
 				t.Errorf("Testcase '%s' ValidateShellPipeString() error = %v, wantErr %v", tt.name, err, tt.wantErr)
 			}
 		})
 	}
 }
 
-func TestPipeCommand(t *testing.T) {
+func TestShellCommand(t *testing.T) {
 	type args struct {
 		name string
 		arg  []string
@@ -68,7 +68,7 @@ func TestPipeCommand(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotCmd, err := PipeCommand(tt.args.name, tt.args.arg...)
+			gotCmd, err := ShellCommand(tt.args.name, tt.args.arg...)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Testcase '%s': PipeCommand()  error = %v, wantErr %v", tt.name, err, tt.wantErr)
 				return
@@ -83,44 +83,44 @@ func TestPipeCommand(t *testing.T) {
 	}
 }
 
-func TestValidatePipeCommandSlice(t *testing.T) {
-	type args struct {
-		shellCommandSlice []string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{name: "valid bash command", args: args{shellCommandSlice: []string{"bash", "-c", "ls"}}, wantErr: false},
-		{name: "valid sh command", args: args{shellCommandSlice: []string{"sh", "-c", "ls"}}, wantErr: false},
-		{name: "unknown shell command", args: args{shellCommandSlice: []string{"zsh", "-c", "ls"}}, wantErr: true},
-		{name: "invalid bash command", args: args{shellCommandSlice: []string{"bash", "-c", "wrong_command"}}, wantErr: true},
-		{name: "insufficient arguments", args: args{shellCommandSlice: []string{"bash", "-c"}}, wantErr: true},
-		{name: "empty command slice", args: args{shellCommandSlice: []string{}}, wantErr: true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := ValidatePipeCommandSlice(tt.args.shellCommandSlice); (err != nil) != tt.wantErr {
-				t.Errorf("Testcase '%s': ValidatePipeCommandSlice() error = %v, wantErr %v", tt.name, err, tt.wantErr)
-			}
-		})
-	}
-}
+// func TestValidateCommandSlice(t *testing.T) {
+// 	type args struct {
+// 		shellCommandSlice []string
+// 	}
+// 	tests := []struct {
+// 		name    string
+// 		args    args
+// 		wantErr bool
+// 	}{
+// 		{name: "valid bash command", args: args{shellCommandSlice: []string{"bash", "-c", "ls"}}, wantErr: false},
+// 		{name: "valid sh command", args: args{shellCommandSlice: []string{"sh", "-c", "ls"}}, wantErr: false},
+// 		{name: "unknown shell command", args: args{shellCommandSlice: []string{"zsh", "-c", "ls"}}, wantErr: true},
+// 		{name: "invalid bash command", args: args{shellCommandSlice: []string{"bash", "-c", "wrong_command"}}, wantErr: true},
+// 		{name: "insufficient arguments", args: args{shellCommandSlice: []string{"bash", "-c"}}, wantErr: true},
+// 		{name: "empty command slice", args: args{shellCommandSlice: []string{}}, wantErr: true},
+// 	}
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			if err := ValidateShellCommandSlice(tt.args.shellCommandSlice); (err != nil) != tt.wantErr {
+// 				t.Errorf("Testcase '%s': ValidatePipeCommandSlice() error = %v, wantErr %v", tt.name, err, tt.wantErr)
+// 			}
+// 		})
+// 	}
+// }
 
 func TestIsValidCommand(t *testing.T) {
 	type args struct {
 		cmd             string
-		allowedCommands map[string]bool
+		allowedCommands map[string]CommandValidater
 	}
 	tests := []struct {
 		name string
 		args args
 		want bool
 	}{
-		{name: "valid bash command", args: args{cmd: "bash", allowedCommands: map[string]bool{"bash": true}}, want: true},
-		{name: "valid sh command", args: args{cmd: "sh", allowedCommands: map[string]bool{"bash": true, "sh": true}}, want: true},
-		{name: "invalid zsh command", args: args{cmd: "zsh", allowedCommands: map[string]bool{"bash": true}}, want: false},
+		{name: "valid bash command", args: args{cmd: "bash", allowedCommands: map[string]CommandValidater{"bash": ExactMatch}}, want: true},
+		{name: "valid sh command", args: args{cmd: "sh", allowedCommands: map[string]CommandValidater{"bash": ExactMatch, "sh": ExactMatch}}, want: true},
+		{name: "invalid zsh command", args: args{cmd: "zsh", allowedCommands: map[string]CommandValidater{"bash": ExactMatch}}, want: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
