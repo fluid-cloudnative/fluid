@@ -109,7 +109,7 @@ func TestGenerateHelmTemplate(t *testing.T) {
 
 func TestGetChartVersion(t *testing.T) {
 	LookPathCommon := func(file string) (string, error) {
-		return "test-path", nil
+		return "helm", nil
 	}
 	LookPathErr := func(file string) (string, error) {
 		return "", errors.New("fail to run the command")
@@ -190,10 +190,10 @@ func TestGetChartVersion(t *testing.T) {
 	}
 	version, err := GetChartVersion("fluid:v0.6.0")
 	if err != nil {
-		t.Errorf("fail to exec the function")
+		t.Errorf("fail to exec the function due to %v", err)
 	}
 	if version != "v0.6.0" {
-		t.Errorf("fail to get the version of the helm")
+		t.Errorf("fail to get the version of the helm due to %v", err)
 	}
 	wrappedUnhookOutput()
 	wrappedUnhookStat()
