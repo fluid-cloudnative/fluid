@@ -102,6 +102,12 @@ func TestInstallRelease(t *testing.T) {
 	}
 	wrappedUnhookCombinedOutput()
 
+	badValue := "test$bad"
+	err = InstallRelease("fluid", badValue, "testValueFile", "/chart/fluid")
+	if err == nil {
+		t.Errorf("fail to catch the error of %s", badValue)
+	}
+
 	err = gohook.Hook((*exec.Cmd).CombinedOutput, CombinedOutputCommon, nil)
 	if err != nil {
 		t.Fatal(err.Error())
@@ -175,6 +181,12 @@ func TestCheckRelease(t *testing.T) {
 	}
 	wrappedUnhookStart()
 
+	badValue := "test$bad"
+	_, err = CheckRelease("fluid", badValue)
+	if err == nil {
+		t.Errorf("fail to catch the error of %s", badValue)
+	}
+
 	err = gohook.Hook((*exec.Cmd).Start, StartCommon, nil)
 	if err != nil {
 		t.Fatal(err.Error())
@@ -242,6 +254,12 @@ func TestDeleteRelease(t *testing.T) {
 		t.Errorf("fail to catch the error")
 	}
 	wrappedUnhookOutput()
+	// test check illegal arguements
+	badValue := "test$bad"
+	err = DeleteRelease("fluid", badValue)
+	if err == nil {
+		t.Errorf("fail to catch the error of %s", badValue)
+	}
 
 	err = gohook.Hook((*exec.Cmd).Output, OutputCommon, nil)
 	if err != nil {
@@ -319,6 +337,11 @@ func TestListReleases(t *testing.T) {
 	}
 	wrappedUnhookOutput()
 	wrappedUnhookLookPath()
+
+	_, err = ListReleases("def$ault")
+	if err == nil {
+		t.Errorf("fail to catch the error")
+	}
 }
 
 func TestListReleaseMap(t *testing.T) {
@@ -385,6 +408,11 @@ func TestListReleaseMap(t *testing.T) {
 	}
 	wrappedUnhookOutput()
 	wrappedUnhookLookPath()
+
+	_, err = ListReleaseMap("def$ault")
+	if err == nil {
+		t.Errorf("fail to catch the error")
+	}
 }
 
 func TestListAllReleasesWithDetail(t *testing.T) {
@@ -451,6 +479,11 @@ func TestListAllReleasesWithDetail(t *testing.T) {
 	}
 	wrappedUnhookOutput()
 	wrappedUnhookLookPath()
+
+	_, err = ListAllReleasesWithDetail("def$ault")
+	if err == nil {
+		t.Errorf("fail to catch the error")
+	}
 }
 
 func TestDeleteReleaseIfExists(t *testing.T) {

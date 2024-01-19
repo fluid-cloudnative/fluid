@@ -161,7 +161,10 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	} else {
 		args = append(args, mountPath, targetPath)
 	}
-	command := exec.Command("mount", args...)
+	command, err := utils.SimpleCommand("mount", args...)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
 
 	glog.V(3).Infof("NodePublishVolume: exec command %v", command)
 	stdoutStderr, err := command.CombinedOutput()
@@ -508,7 +511,10 @@ func checkMountInUse(volumeName string) (bool, error) {
 
 	// TODO: refer to https://github.com/kubernetes-sigs/alibaba-cloud-csi-driver/blob/4fcb743220371de82d556ab0b67b08440b04a218/pkg/oss/utils.go#L72
 	// for a better implementation
-	command := exec.Command("/usr/local/bin/check_bind_mounts.sh", volumeName)
+	command, err := utils.SimpleCommand("/usr/local/bin/check_bind_mounts.sh", volumeName)
+	if err != nil {
+		return inUse, err
+	}
 	glog.Infoln(command)
 
 	stdoutStderr, err := command.CombinedOutput()
