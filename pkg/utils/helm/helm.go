@@ -26,6 +26,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/security"
 )
 
 var log logr.Logger
@@ -57,7 +58,7 @@ func GenerateValueFile(values interface{}) (valueFileName string, err error) {
 // GetChartVersion checks the chart version by given the chart directory
 // helm inspect chart /charts/tf-horovod
 func GetChartVersion(chart string) (version string, err error) {
-	binary, err := exec.LookPath(helmCmd[0])
+	_, err = exec.LookPath(helmCmd[0])
 	if err != nil {
 		return "", err
 	}
@@ -70,12 +71,13 @@ func GetChartVersion(chart string) (version string, err error) {
 	// }
 
 	// 2. prepare the arguments
-	args := []string{binary, "inspect", "chart", chart,
+	args := []string{helmCmd[0], "inspect", "chart", chart,
 		"|", "grep", "version:"}
 	log.V(1).Info("Exec bash -c", "args", args)
 
 	// cmd := exec.Command("bash", "-c", strings.Join(args, " "))
-	cmd, err := utils.PipeCommand("bash", "-c", strings.Join(args, " "))
+	// TODO: This should be simplified to a no-bash version
+	cmd, err := security.ShellCommand("bash", "-c", strings.Join(args, " "))
 	if err != nil {
 		return "", err
 	}

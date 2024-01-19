@@ -336,12 +336,12 @@ func TestListReleases(t *testing.T) {
 		t.Errorf("fail to exec the function ListRelease")
 	}
 	wrappedUnhookOutput()
-	wrappedUnhookLookPath()
 
 	_, err = ListReleases("def$ault")
 	if err == nil {
 		t.Errorf("fail to catch the error")
 	}
+	wrappedUnhookLookPath()
 }
 
 func TestListReleaseMap(t *testing.T) {
@@ -407,12 +407,12 @@ func TestListReleaseMap(t *testing.T) {
 		t.Errorf("fail to split the strout")
 	}
 	wrappedUnhookOutput()
-	wrappedUnhookLookPath()
 
 	_, err = ListReleaseMap("def$ault")
 	if err == nil {
 		t.Errorf("fail to catch the error")
 	}
+	wrappedUnhookLookPath()
 }
 
 func TestListAllReleasesWithDetail(t *testing.T) {
@@ -478,12 +478,12 @@ func TestListAllReleasesWithDetail(t *testing.T) {
 		t.Errorf("fail to split the strout")
 	}
 	wrappedUnhookOutput()
-	wrappedUnhookLookPath()
 
 	_, err = ListAllReleasesWithDetail("def$ault")
 	if err == nil {
 		t.Errorf("fail to catch the error")
 	}
+	wrappedUnhookLookPath()
 }
 
 func TestDeleteReleaseIfExists(t *testing.T) {

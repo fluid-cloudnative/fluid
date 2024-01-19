@@ -169,7 +169,7 @@ func TestCommand(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(tt.wantCmd, cmd) {
-				t.Errorf("Command() = %v, want %v", cmd, tt.wantCmd)
+				t.Fatalf("Command() = %v, want %v", cmd, tt.wantCmd)
 			}
 
 			// tt.wantCmd = exec.Command(tt.args.name, tt.args.arg...)

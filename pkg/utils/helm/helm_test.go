@@ -19,7 +19,7 @@ func TestGenerateValueFile(t *testing.T) {
 
 func TestGetChartVersion(t *testing.T) {
 	LookPathCommon := func(file string) (string, error) {
-		return "helm", nil
+		return "ddc-helm", nil
 	}
 	LookPathErr := func(file string) (string, error) {
 		return "", errors.New("fail to run the command")
