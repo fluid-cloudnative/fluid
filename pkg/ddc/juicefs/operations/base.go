@@ -26,6 +26,7 @@ import (
 
 	"github.com/go-logr/logr"
 
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
@@ -325,6 +326,12 @@ func (j JuiceFileUtils) exec(command []string) (stdout string, stderr string, er
 
 // execWithoutTimeout
 func (j JuiceFileUtils) execWithoutTimeout(command []string) (stdout string, stderr string, err error) {
+	// validate the pipe command with white list
+	err = utils.ValidateCommandSlice(command)
+	if err != nil {
+		return
+	}
+
 	stdout, stderr, err = kubeclient.ExecCommandInContainer(j.podName, j.container, j.namespace, command)
 	if err != nil {
 		j.log.Info("Stdout", "Command", command, "Stdout", stdout)
