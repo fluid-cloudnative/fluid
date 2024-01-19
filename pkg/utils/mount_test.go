@@ -101,6 +101,10 @@ func TestCheckMountReady(t *testing.T) {
 			err := CheckMountReadyAndSubPathExist("", "test", "")
 			So(err, ShouldNotBeNil)
 		})
+		Convey("illegal subpath", func() {
+			err := CheckMountReadyAndSubPathExist("/test", "test", "$(echo)")
+			So(err, ShouldNotBeNil)
+		})
 	})
 }
 
