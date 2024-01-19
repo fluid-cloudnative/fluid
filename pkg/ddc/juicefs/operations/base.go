@@ -26,8 +26,8 @@ import (
 
 	"github.com/go-logr/logr"
 
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	securityutils "github.com/fluid-cloudnative/fluid/pkg/utils/security"
 )
 
 type JuiceFileUtils struct {
@@ -327,7 +327,7 @@ func (j JuiceFileUtils) exec(command []string) (stdout string, stderr string, er
 // execWithoutTimeout
 func (j JuiceFileUtils) execWithoutTimeout(command []string) (stdout string, stderr string, err error) {
 	// validate the pipe command with white list
-	err = utils.ValidateCommandSlice(command)
+	err = securityutils.ValidateCommandSlice(command)
 	if err != nil {
 		return
 	}

@@ -26,7 +26,7 @@ import (
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	securityutil "github.com/fluid-cloudnative/fluid/pkg/utils/security"
+	securityutils "github.com/fluid-cloudnative/fluid/pkg/utils/security"
 	"github.com/go-logr/logr"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -505,7 +505,7 @@ func (a AlluxioFileUtils) exec(command []string, verbose bool) (stdout string, s
 
 	select {
 	case <-ch:
-		a.log.Info("execute in time", "command", securityutil.FilterCommand(command))
+		a.log.Info("execute in time", "command", securityutils.FilterCommand(command))
 	case <-ctx.Done():
 		err = fmt.Errorf("timeout when executing %v", command)
 	}
@@ -515,7 +515,8 @@ func (a AlluxioFileUtils) exec(command []string, verbose bool) (stdout string, s
 
 // execWithoutTimeout
 func (a AlluxioFileUtils) execWithoutTimeout(command []string, verbose bool) (stdout string, stderr string, err error) {
-	err = utils.ValidateCommandSlice(command)
+	err = securityutils.ValidateCommandSlice(command)
+
 	if err != nil {
 		return
 	}

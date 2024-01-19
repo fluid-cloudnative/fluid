@@ -26,6 +26,7 @@ import (
 	"syscall"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/security"
 	"github.com/pkg/errors"
 )
 
@@ -55,7 +56,7 @@ func InstallRelease(name string, namespace string, valueFile string, chartName s
 
 	// return syscall.Exec(cmd, args, env)
 	// 5. execute the command
-	cmd, err := utils.SimpleCommand(binary, args...)
+	cmd, err := security.Command(binary, args...)
 	if err != nil {
 		return err
 	}
@@ -85,7 +86,7 @@ func CheckRelease(name, namespace string) (exist bool, err error) {
 		return exist, err
 	}
 
-	cmd, err := utils.SimpleCommand(helmCmd[0], "status", name, "-n", namespace)
+	cmd, err := security.Command(helmCmd[0], "status", name, "-n", namespace)
 	if err != nil {
 		return exist, err
 	}
@@ -153,7 +154,7 @@ func DeleteRelease(name, namespace string) error {
 	}
 
 	args := []string{"uninstall", name, "-n", namespace}
-	cmd, err := utils.SimpleCommand(binary, args...)
+	cmd, err := security.Command(binary, args...)
 	if err != nil {
 		return err
 	}
@@ -180,7 +181,7 @@ func ListReleases(namespace string) (releases []string, err error) {
 		return releases, err
 	}
 
-	cmd, err := utils.SimpleCommand(helmCmd[0], "list", "-q", "-n", namespace)
+	cmd, err := security.Command(helmCmd[0], "list", "-q", "-n", namespace)
 	if err != nil {
 		return releases, err
 	}
@@ -203,7 +204,7 @@ func ListReleaseMap(namespace string) (releaseMap map[string]string, err error) 
 		return releaseMap, err
 	}
 
-	cmd, err := utils.SimpleCommand(helmCmd[0], "list", "-n", namespace)
+	cmd, err := security.Command(helmCmd[0], "list", "-n", namespace)
 	if err != nil {
 		return releaseMap, err
 	}
@@ -240,7 +241,7 @@ func ListAllReleasesWithDetail(namespace string) (releaseMap map[string][]string
 		return releaseMap, err
 	}
 
-	cmd, err := utils.SimpleCommand(helmCmd[0], "list", "--all", "-n", namespace)
+	cmd, err := security.Command(helmCmd[0], "list", "--all", "-n", namespace)
 	if err != nil {
 		return releaseMap, err
 	}

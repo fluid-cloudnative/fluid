@@ -25,8 +25,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	securityutils "github.com/fluid-cloudnative/fluid/pkg/utils/security"
 	"github.com/go-logr/logr"
 )
 
@@ -502,7 +502,7 @@ func (a GooseFSFileUtils) exec(command []string, verbose bool) (stdout string, s
 
 // execWithoutTimeout
 func (a GooseFSFileUtils) execWithoutTimeout(command []string, verbose bool) (stdout string, stderr string, err error) {
-	err = utils.ValidateCommandSlice(command)
+	err = securityutils.ValidateCommandSlice(command)
 	if err != nil {
 		return
 	}

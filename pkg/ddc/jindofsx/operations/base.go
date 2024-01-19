@@ -22,8 +22,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	securityutils "github.com/fluid-cloudnative/fluid/pkg/utils/security"
 	"github.com/go-logr/logr"
 )
 
@@ -88,7 +88,7 @@ func (a JindoFileUtils) execWithTimeOut(command []string, verbose bool, second i
 
 // execWithoutTimeout
 func (a JindoFileUtils) execWithoutTimeout(command []string, verbose bool) (stdout string, stderr string, err error) {
-	err = utils.ValidateCommandSlice(command)
+	err = securityutils.ValidateCommandSlice(command)
 	if err != nil {
 		return
 	}

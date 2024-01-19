@@ -23,8 +23,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	securityutils "github.com/fluid-cloudnative/fluid/pkg/utils/security"
 	"github.com/go-logr/logr"
 )
 
@@ -157,7 +157,7 @@ func (t ThinFileUtils) exec(command []string, verbose bool) (stdout string, stde
 // execWithoutTimeout
 func (t ThinFileUtils) execWithoutTimeout(command []string, verbose bool) (stdout string, stderr string, err error) {
 	// validate the pipe command with white list
-	err = utils.ValidateCommandSlice(command)
+	err = securityutils.ValidateCommandSlice(command)
 	if err != nil {
 		return
 	}
