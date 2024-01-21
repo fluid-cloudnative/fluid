@@ -1,0 +1,75 @@
+# PIPELINE DEFINITION
+# Name: cleanup-preheat-operation
+# Inputs:
+#    dataset_name: str
+#    namespace: str
+components:
+  comp-cleanup-preheat-operation:
+    executorLabel: exec-cleanup-preheat-operation
+    inputDefinitions:
+      parameters:
+        dataset_name:
+          parameterType: STRING
+        namespace:
+          parameterType: STRING
+deploymentSpec:
+  executors:
+    exec-cleanup-preheat-operation:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - cleanup_preheat_operation
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.4.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'git+https://github.com/fluid-cloudnative/fluid-client-python.git'\
+          \ && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef cleanup_preheat_operation(dataset_name: str, namespace: str):\n\
+          \    import logging\n    from fluid import FluidClient\n\n    fluid_client\
+          \ = FluidClient()\n    fluid_client.delete_data_operation(name=\"%s-loader\"\
+          \ % dataset_name, data_op_type=\"dataload\", namespace=namespace)\n    logging.info(\"\
+          Cleanup preheat dataset operation successfully!\")\n\n"
+        image: python:3.7
+pipelineInfo:
+  name: cleanup-preheat-operation
+root:
+  dag:
+    tasks:
+      cleanup-preheat-operation:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-cleanup-preheat-operation
+        inputs:
+          parameters:
+            dataset_name:
+              componentInputParameter: dataset_name
+            namespace:
+              componentInputParameter: namespace
+        taskInfo:
+          name: cleanup-preheat-operation
+  inputDefinitions:
+    parameters:
+      dataset_name:
+        parameterType: STRING
+      namespace:
+        parameterType: STRING
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.4.0
