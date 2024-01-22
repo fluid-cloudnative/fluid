@@ -84,6 +84,8 @@ spec:
               value: {{ .Values.datamigrate.parallelism | quote }}
             - name: WORKER_NAME_FORMAT
               value: {{ printf "%s-workers-{}.%s-svc" .Release.Name .Release.Name }}
+            - name: TARGET_SSH_PORT
+              value: "{{ .Values.datamigrate.sshPort }}"
             {{- range $key, $val := .Values.datamigrate.options }}
             {{- if eq $key "timeout" }}
             - name: TIMEOUT

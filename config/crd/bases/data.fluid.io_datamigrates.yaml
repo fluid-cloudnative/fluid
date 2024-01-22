@@ -1044,6 +1044,11 @@ spec:
                 description: SchedulerName sets the scheduler to be used for DataMigrate
                   pod
                 type: string
+              sshPort:
+                default: 22
+                description: SSHPort defines the workers ssh port
+                format: int32
+                type: integer
               sshSecretName:
                 description: SSHSecretName defines the secret name used for ssh. It
                   must be set when Parallelism is greater than 1.
@@ -1147,8 +1152,8 @@ spec:
                   data operations after finished or failed
                 format: int32
                 type: integer
-              workers_ready_timeout:
-                default: 15
+              workersReadyTimeoutSeconds:
+                default: 30
                 description: WorkersReadyTimeout defines timeout before parallel workers
                   ready
                 format: int32

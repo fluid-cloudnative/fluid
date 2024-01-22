@@ -100,4 +100,9 @@ datamigrate:
   # Description: timeout before parallel workers ready
   workersReadyTimeout: 15
 
+  # Required when parallelism > 1
+  # Description: ssh secret name, have two keys ssh-privatekey, ssh-publickey
   sshSecretName:
+
+  # Description: ssh port
+  sshPort: 22

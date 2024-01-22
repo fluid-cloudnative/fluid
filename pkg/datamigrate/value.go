@@ -93,4 +93,6 @@ type DataMigrateInfo struct {
 	WorkersReadyTimeout int32 `json:"workers_ready_timeout,omitempty"`
 
 	SSHSecretName string `json:"sshSecretName,omitempty"`
+
+	SSHPort int32 `json:"sshPort,omitempty"`
 }

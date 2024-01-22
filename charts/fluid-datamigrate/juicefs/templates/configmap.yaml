@@ -9,12 +9,13 @@ data:
   check_ssh.sh: |
     #!/bin/bash
     # usage: check_ssh.sh worker01 work02
+    # note: can not add set -x as ssh may fail
     for host in "$@"; do
       gotStatus="-1"
       wantStatus="0"
       while [ $gotStatus -ne $wantStatus ]
       do
-        ssh $host ls . > /dev/null 2>&1
+        ssh -o ConnectTimeout=2 -v $host exit
         gotStatus=$?
         if [ $gotStatus -ne $wantStatus ]; then
           echo "$(date '+%Y/%m/%d %H:%M:%S') Failed to ssh pod $host, retrying in 1 second..."
@@ -23,6 +24,11 @@ data:
       done
       echo "Successfully ssh pod: $host"
     done
+  ssh.readiness: |
+    #!/bin/bash
+    set -xev
+    # the image does not set 'StrictHostKeyChecking' in the /etc/ssh/ssh_config, set here manually.
+    ssh -p $TARGET_SSH_PORT -o StrictHostKeyChecking=no localhost ls
   datamigrate.sh: |
     #!/bin/bash
     set -e
@@ -38,6 +44,7 @@ data:
         # the /root/.ssh is read only, so change the /etc/ssh/ssh_config.
         # This can also be set when build image in the dockerfile.
         sed -i "s/[ #]\(.*StrictHostKeyChecking \).*/ \1no/g" /etc/ssh/ssh_config
+        sed -i "s/[ #]\(.*Port \).*/ \1 $TARGET_SSH_PORT /g" /etc/ssh/ssh_config
         echo "    UserKnownHostsFile /dev/null" >> /etc/ssh/ssh_config
 
         # WORKER_NAME is "%s-workers-{}.%s-svc" where %s is the helm release name

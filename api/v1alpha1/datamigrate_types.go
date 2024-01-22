@@ -99,10 +99,15 @@ type DataMigrateSpec struct {
 	// +optional
 	SSHSecretName string `json:"sshSecretName,omitempty"`
 
+	// SSHPort defines the workers ssh port
+	// +optional
+	// +kubebuilder:default:=22
+	SSHPort int32 `json:"sshPort,omitempty"`
+
 	// WorkersReadyTimeout defines timeout before parallel workers ready
 	// +optional
-	// +kubebuilder:default:=15
-	WorkersReadyTimeout int32 `json:"workers_ready_timeout,omitempty"`
+	// +kubebuilder:default:=30
+	WorkersReadyTimeout int32 `json:"workersReadyTimeoutSeconds,omitempty"`
 }
 
 type DataToMigrate struct {

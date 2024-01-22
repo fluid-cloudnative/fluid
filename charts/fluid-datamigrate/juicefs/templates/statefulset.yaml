@@ -33,8 +33,16 @@ spec:
           # juice fs with openssh server
           image: {{ required "DataMigrate image should be set" .Values.datamigrate.image }}
           imagePullPolicy: IfNotPresent
-          command: ["/usr/sbin/sshd", "-D"]
+          command: [ "/usr/sbin/sshd", "-D" , "-p", "{{ .Values.datamigrate.sshPort }}"]
+          readinessProbe:
+            exec:
+              command:
+                - /etc/fluid/scripts/check.sh
+          ports:
+            - containerPort: {{ .Values.datamigrate.sshPort }}
           env:
+            - name: TARGET_SSH_PORT
+              value: "{{ .Values.datamigrate.sshPort }}"
             {{- range .Values.datamigrate.encryptOptions }}
             - name: {{ .name }}
               valueFrom:
@@ -48,6 +56,8 @@ spec:
               # use subpath to avoid permissions check problem because the launcher will ssh to workers.
               # Or user can set 'StrictModes no' in /etc/ssh/sshd_config file to avoid permission check when build the image in dockerfile.
               subPath: .ssh
+            - mountPath: /etc/fluid/scripts
+              name: data-migrate-script
       affinity:
         # prefer to use different nodes to maximize bandwidth
         podAntiAffinity:
@@ -73,4 +83,11 @@ spec:
                 path: .ssh/id_rsa.pub
               - key: ssh-publickey
                 path: .ssh/authorized_keys
+        - name: data-migrate-script
+          configMap:
+            name: {{ printf "%s-script" .Release.Name }}
+            items:
+              - key: ssh.readiness
+                path: check.sh
+                mode: 365
 {{- end }}

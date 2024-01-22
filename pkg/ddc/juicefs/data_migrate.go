@@ -138,6 +138,7 @@ func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequest
 	// generate ssh config for parallel tasks when using parallel tasks
 	if dataMigrateInfo.Parallelism > 1 {
 		dataMigrateInfo.SSHSecretName = dataMigrate.Spec.SSHSecretName
+		dataMigrateInfo.SSHPort = dataMigrate.Spec.SSHPort
 	} else {
 		// default parallelism is 1
 		dataMigrateInfo.Parallelism = 1
