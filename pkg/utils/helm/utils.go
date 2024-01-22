@@ -27,8 +27,18 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/cmdguard"
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
+
+var log logr.Logger
+
+func init() {
+	log = ctrl.Log.WithName("helm")
+}
+
+var helmCmd = []string{"ddc-helm"}
 
 // InstallRelease installs the release with cmd: helm install -f values.yaml chart_name, support helm v3
 func InstallRelease(name string, namespace string, valueFile string, chartName string) error {
