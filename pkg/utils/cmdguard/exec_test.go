@@ -161,7 +161,7 @@ func TestCommand(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cmd, err := Command(tt.args.name, tt.args.arg...)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("Command() error = %v, wantErr %v", err, tt.wantErr)
+				t.Fatalf("Command() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if err != nil {
