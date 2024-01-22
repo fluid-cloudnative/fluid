@@ -287,6 +287,8 @@ func (o *OperationReconciler) getRuntimeObjectAndEngineImpl(runtimeType, name, n
 		runtime, err = utils.GetEFCRuntime(o.Client, name, namespace)
 	case common.ThinRuntime:
 		runtime, err = utils.GetThinRuntime(o.Client, name, namespace)
+	case common.VineyardRuntime:
+		runtime, err = utils.GetVineyardRuntime(o.Client, name, namespace)
 	}
 
 	if err != nil {
@@ -311,6 +313,8 @@ func (o *OperationReconciler) getRuntimeObjectAndEngineImpl(runtimeType, name, n
 		return runtime, ddc.InferEngineImpl(*runtime.GetStatus(), common.JuiceFSEngineImpl), nil
 	case common.EFCRuntime:
 		return runtime, ddc.InferEngineImpl(*runtime.GetStatus(), common.EFCEngineImpl), nil
+	case common.VineyardRuntime:
+		return runtime, ddc.InferEngineImpl(*runtime.GetStatus(), common.VineyardEngineImpl), nil
 	}
 
 	err = fmt.Errorf("runtimeType %s is not supported", runtimeType)
