@@ -126,10 +126,6 @@ spec:
             items:
               - key: ssh-privatekey
                 path: id_rsa
-              - key: ssh-publickey
-                path: id_rsa.pub
-              - key: ssh-publickey
-                path: authorized_keys
         {{- end }}
         - name: data-migrate-script
           configMap:

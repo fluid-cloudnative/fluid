@@ -1506,7 +1506,14 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateSpec(ref common.Refe
 							Format:      "",
 						},
 					},
-					"workers_ready_timeout": {
+					"sshPort": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SSHPort defines the workers ssh port",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"workersReadyTimeoutSeconds": {
 						SchemaProps: spec.SchemaProps{
 							Description: "WorkersReadyTimeout defines timeout before parallel workers ready",
 							Type:        []string{"integer"},
