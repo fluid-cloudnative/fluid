@@ -83,31 +83,6 @@ func TestShellCommand(t *testing.T) {
 	}
 }
 
-// func TestValidateCommandSlice(t *testing.T) {
-// 	type args struct {
-// 		shellCommandSlice []string
-// 	}
-// 	tests := []struct {
-// 		name    string
-// 		args    args
-// 		wantErr bool
-// 	}{
-// 		{name: "valid bash command", args: args{shellCommandSlice: []string{"bash", "-c", "ls"}}, wantErr: false},
-// 		{name: "valid sh command", args: args{shellCommandSlice: []string{"sh", "-c", "ls"}}, wantErr: false},
-// 		{name: "unknown shell command", args: args{shellCommandSlice: []string{"zsh", "-c", "ls"}}, wantErr: true},
-// 		{name: "invalid bash command", args: args{shellCommandSlice: []string{"bash", "-c", "wrong_command"}}, wantErr: true},
-// 		{name: "insufficient arguments", args: args{shellCommandSlice: []string{"bash", "-c"}}, wantErr: true},
-// 		{name: "empty command slice", args: args{shellCommandSlice: []string{}}, wantErr: true},
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			if err := ValidateShellCommandSlice(tt.args.shellCommandSlice); (err != nil) != tt.wantErr {
-// 				t.Errorf("Testcase '%s': ValidatePipeCommandSlice() error = %v, wantErr %v", tt.name, err, tt.wantErr)
-// 			}
-// 		})
-// 	}
-// }
-
 func TestIsValidCommand(t *testing.T) {
 	type args struct {
 		cmd             string
@@ -126,6 +101,102 @@ func TestIsValidCommand(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := isValidCommand(tt.args.cmd, tt.args.allowedCommands); got != tt.want {
 				t.Errorf("Testcase '%s': isValidCommand() = %v, want %v", tt.name, got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_splitShellCommand(t *testing.T) {
+	type args struct {
+		shellCommandSlice []string
+	}
+	tests := []struct {
+		name              string
+		args              args
+		wantShellCommand  string
+		wantPipedCommands string
+		wantErr           bool
+	}{
+		{
+			name:              "valid shell command",
+			args:              args{shellCommandSlice: []string{" bash ", "  -c", "echo foobar | grep foo"}},
+			wantShellCommand:  "bash -c",
+			wantPipedCommands: "echo foobar | grep foo",
+			wantErr:           false,
+		},
+		{
+			name:              "empty shell command",
+			args:              args{shellCommandSlice: []string{}},
+			wantShellCommand:  "",
+			wantPipedCommands: "",
+			wantErr:           true,
+		},
+		{
+			name:              "invalid command without shell",
+			args:              args{shellCommandSlice: []string{"echo foobar | grep foo"}},
+			wantShellCommand:  "",
+			wantPipedCommands: "",
+			wantErr:           true,
+		},
+		{
+			name:              "valid command without shell",
+			args:              args{shellCommandSlice: []string{"test", "hello", "--help"}},
+			wantShellCommand:  "test hello",
+			wantPipedCommands: "--help",
+			wantErr:           false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotShellCommand, gotPipedCommands, err := splitShellCommand(tt.args.shellCommandSlice)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("splitShellCommand() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotShellCommand != tt.wantShellCommand {
+				t.Errorf("splitShellCommand() gotShellCommand = %v, want %v", gotShellCommand, tt.wantShellCommand)
+			}
+			if gotPipedCommands != tt.wantPipedCommands {
+				t.Errorf("splitShellCommand() gotPipedCommands = %v, want %v", gotPipedCommands, tt.wantPipedCommands)
+			}
+		})
+	}
+}
+
+func Test_validateShellCommand(t *testing.T) {
+	type args struct {
+		shellCommand string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name:    "bash shell",
+			args:    args{shellCommand: "bash -c"},
+			wantErr: false,
+		},
+		{
+			name:    "sh shell",
+			args:    args{shellCommand: "sh -c"},
+			wantErr: false,
+		},
+		{
+			name:    "zsh shell(invalid)",
+			args:    args{shellCommand: "zsh -c"},
+			wantErr: true,
+		},
+		{
+			name:    "bash command",
+			args:    args{shellCommand: "bash -s"},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := validateShellCommand(tt.args.shellCommand); (err != nil) != tt.wantErr {
+				t.Errorf("validateShellCommand() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
