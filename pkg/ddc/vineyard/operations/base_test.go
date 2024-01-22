@@ -19,32 +19,33 @@ import (
 	"net/http"
 	"reflect"
 	"testing"
+	"time"
 
-	"github.com/brahma-adshonor/gohook"
+	. "github.com/agiledragon/gomonkey/v2"
 	"github.com/go-logr/logr"
 )
 
-func mockHttpGet(url string) (*http.Response, error) {
-	if url == "http://vineyard-0.vineyard-svc.default.svc.cluster.local:8080/metrics" {
-		return &http.Response{
-			StatusCode: http.StatusOK,
-			Body:       ioutil.NopCloser(bytes.NewBufferString("metric for pod 1")),
-		}, nil
-	}
-	if url == "http://vineyard-1.vineyard-svc.default.svc.cluster.local:8080/metrics" {
-		return &http.Response{
-			StatusCode: http.StatusOK,
-			Body:       ioutil.NopCloser(bytes.NewBufferString("metric for pod 2")),
-		}, nil
-	}
-	return nil, nil
-}
-
 func TestVineyardFileUtils_ReportSummary(t *testing.T) {
-	err := gohook.Hook(http.Get, mockHttpGet, nil)
-	if err != nil {
-		t.Fatalf("could not hook http.Get: %v", err)
+	client := &http.Client{
+		Timeout: 20 * time.Second,
 	}
+	patch := ApplyMethod(reflect.TypeOf(client), "Get",
+		func(_ *http.Client, url string) (resp *http.Response, err error) {
+			if url == "http://vineyard-0.vineyard-svc.default.svc:8080/metrics" {
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Body:       ioutil.NopCloser(bytes.NewBufferString("metric for pod 1")),
+				}, nil
+			}
+			if url == "http://vineyard-1.vineyard-svc.default.svc:8080/metrics" {
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Body:       ioutil.NopCloser(bytes.NewBufferString("metric for pod 2")),
+				}, nil
+			}
+			return nil, nil
+		})
+	defer patch.Reset()
 
 	podNamePrefix := "vineyard"
 	port := int32(8080)
@@ -59,8 +60,11 @@ func TestVineyardFileUtils_ReportSummary(t *testing.T) {
 		t.Errorf("VineyardFileUtils.ReportSummary() got = %v, want %v, err = %v", got, expected, err)
 	}
 
-	err = gohook.UnHook(http.Get)
-	if err != nil {
-		t.Fatalf("could not unhook http.Get: %v", err)
+	// test the potenial risk args
+	podNamePrefix = "curl -d @/etc/passwd 127.0.0.1 -o-"
+	vineyard = NewVineyardFileUtils(podNamePrefix, port, replicas, namespace, mockLogger)
+	_, err = vineyard.ReportSummary()
+	if err == nil {
+		t.Errorf("Expect error, get nil. as the string %s can't pass the regex validation. err = %v", podNamePrefix, err)
 	}
 }
