@@ -322,6 +322,11 @@ spec:
                       type: object
                     type: array
                 type: object
+              replicas:
+                description: The replicas of the worker, need to be specified If worker.replicas
+                  and the field are both specified, the field will be respected
+                format: int32
+                type: integer
               tieredstore:
                 description: "Tiered storage used by vineyardd The MediumType can
                   only be `MEM` and `SSD` `MEM` actually represents the shared memory

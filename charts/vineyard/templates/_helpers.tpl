@@ -168,7 +168,7 @@ Generate etcd endpoints for peer or client
   {{- $fullName := include "vineyard.fullname" . }}
   {{- $etcdFullname := (printf "%s-%s" $fullName "master") }}
   {{- $releaseNamespace := .Release.Namespace }}
-  {{- $etcdServiceName := (printf "%s-%s" $fullName "master-svc") }}
+  {{- $etcdServiceName := (printf "%s-%s" $fullName "master") }}
   {{- $etcdEndpoint := list }}
   {{- $portType := .portType }}
   {{- $port := 0 }}

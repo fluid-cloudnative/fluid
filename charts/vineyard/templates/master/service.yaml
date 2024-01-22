@@ -22,13 +22,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ $fullName }}-master-svc
+  name: {{ $fullName }}-master
   labels:
     app: {{ $name }}
     chart: {{ $chart }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
-    role: vineyard-master-svc
+    role: vineyard-master
   {{- if .Values.owner.enabled }}
   ownerReferences:
   - apiVersion: {{ .Values.owner.apiVersion }}

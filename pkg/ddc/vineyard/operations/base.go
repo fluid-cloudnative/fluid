@@ -67,7 +67,7 @@ func (a VineyardFileUtils) ReportSummary() (summary []string, err error) {
 	for i := int32(0); i < a.replicas; i++ {
 		u := url.URL{
 			Scheme: "http",
-			Host: net.JoinHostPort(fmt.Sprintf("%s-%d.%s-svc.%s.svc", a.podNamePrefix, i,
+			Host: net.JoinHostPort(fmt.Sprintf("%s-%d.%s.%s.svc", a.podNamePrefix, i,
 				a.podNamePrefix, a.namespace), strconv.Itoa(int(a.port))),
 			Path: "/metrics",
 		}
