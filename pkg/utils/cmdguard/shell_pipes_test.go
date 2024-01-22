@@ -1,4 +1,4 @@
-package security
+package cmdguard
 
 import (
 	"os/exec"

@@ -25,6 +25,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fluid-cloudnative/fluid/pkg/utils/cmdguard"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	securityutils "github.com/fluid-cloudnative/fluid/pkg/utils/security"
 	"github.com/go-logr/logr"
@@ -515,7 +516,7 @@ func (a AlluxioFileUtils) exec(command []string, verbose bool) (stdout string, s
 
 // execWithoutTimeout
 func (a AlluxioFileUtils) execWithoutTimeout(command []string, verbose bool) (stdout string, stderr string, err error) {
-	err = securityutils.ValidateCommandSlice(command)
+	err = cmdguard.ValidateCommandSlice(command)
 
 	if err != nil {
 		return

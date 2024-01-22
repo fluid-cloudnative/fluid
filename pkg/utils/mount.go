@@ -23,7 +23,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/fluid-cloudnative/fluid/pkg/utils/security"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/cmdguard"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/validation"
 	"github.com/golang/glog"
 	corev1 "k8s.io/api/core/v1"
@@ -48,7 +48,7 @@ func CheckMountReadyAndSubPathExist(fluidPath string, mountType string, subPath 
 		return errors.New("target is not specified for checking the mount")
 	}
 	args := []string{fluidPath, mountType, subPath}
-	command, err := security.Command("/usr/local/bin/check_mount.sh", args...)
+	command, err := cmdguard.Command("/usr/local/bin/check_mount.sh", args...)
 	if err != nil {
 		return
 	}

@@ -26,7 +26,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/security"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/cmdguard"
 )
 
 var log logr.Logger
@@ -77,7 +77,7 @@ func GetChartVersion(chart string) (version string, err error) {
 
 	// cmd := exec.Command("bash", "-c", strings.Join(args, " "))
 	// TODO: This should be simplified to a no-bash version
-	cmd, err := security.ShellCommand("bash", "-c", strings.Join(args, " "))
+	cmd, err := cmdguard.ShellCommand("bash", "-c", strings.Join(args, " "))
 	if err != nil {
 		return "", err
 	}

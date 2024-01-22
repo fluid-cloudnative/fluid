@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/cmdguard"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	securityutils "github.com/fluid-cloudnative/fluid/pkg/utils/security"
 	"github.com/go-logr/logr"
@@ -67,7 +68,7 @@ func (a EFCFileUtils) exec(command []string, verbose bool) (stdout string, stder
 
 // execWithoutTimeout
 func (a EFCFileUtils) execWithoutTimeout(command []string, verbose bool) (stdout string, stderr string, err error) {
-	err = securityutils.ValidateCommandSlice(command)
+	err = cmdguard.ValidateCommandSlice(command)
 	if err != nil {
 		return
 	}

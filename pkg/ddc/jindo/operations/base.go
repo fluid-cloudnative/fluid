@@ -22,8 +22,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fluid-cloudnative/fluid/pkg/utils/cmdguard"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	securityutils "github.com/fluid-cloudnative/fluid/pkg/utils/security"
 	"github.com/go-logr/logr"
 )
 
@@ -67,7 +67,7 @@ func (a JindoFileUtils) exec(command []string, verbose bool) (stdout string, std
 
 // execWithoutTimeout
 func (a JindoFileUtils) execWithoutTimeout(command []string, verbose bool) (stdout string, stderr string, err error) {
-	err = securityutils.ValidateCommandSlice(command)
+	err = cmdguard.ValidateCommandSlice(command)
 	if err != nil {
 		return
 	}
