@@ -58,7 +58,7 @@ var allowedPipedCommands = map[string]CommandValidater{
 // Define illegal sequences that may lead to command injection attack
 var illegalSequences = []string{"&", ";", "$", "'", "`", "(", ")", "||", ">>"}
 
-var allowedEnvs = []string{
+var allowedExpressions = []string{
 	"${METAURL}", // JuiceFS community's metaurl
 }
 
@@ -175,7 +175,7 @@ func isValidCommand(cmd string, allowedCommands map[string]CommandValidater) boo
 
 func checkIllegalSequence(script string) error {
 	scriptToCheck := script
-	for _, allowedEnv := range allowedEnvs {
+	for _, allowedEnv := range allowedExpressions {
 		scriptToCheck = strings.ReplaceAll(scriptToCheck, allowedEnv, "ALLOWED_ENV")
 	}
 
