@@ -57,6 +57,7 @@ spec:
       {{- if .Values.worker.hostNetwork }}
       hostNetwork: {{ $hostNetwork }}
       dnsPolicy: ClusterFirstWithHostNet
+      enableServiceLinks: false
       {{- end }}
       nodeSelector:
       {{- if .Values.worker.nodeSelector }}
