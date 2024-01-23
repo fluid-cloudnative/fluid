@@ -203,7 +203,7 @@ spec:
         - tbsite.net
         - aliyun.com
       dnsPolicy: None
-      enableServiceLinks: true
+      enableServiceLinks: false
       {{- end }}
       volumes:
           {{- range $name, $mount := .Values.mounts.workersAndClients }}
