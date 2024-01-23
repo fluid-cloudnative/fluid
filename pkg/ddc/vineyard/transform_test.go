@@ -136,10 +136,12 @@ func TestTransformWorker(t *testing.T) {
 		runtime   *datav1alpha1.VineyardRuntime
 		wantValue *Vineyard
 	}{
-		"test image, imageTag and pullPolicy": {
+		"test replicas, image, imageTag and pullPolicy": {
 			runtime: &datav1alpha1.VineyardRuntime{
 				Spec: datav1alpha1.VineyardRuntimeSpec{
+					Replicas: 3,
 					Worker: datav1alpha1.VineyardCompTemplateSpec{
+						Replicas:        2,
 						Image:           "test-image",
 						ImageTag:        "test-tag",
 						ImagePullPolicy: "IfNotPresent",
@@ -161,6 +163,13 @@ func TestTransformWorker(t *testing.T) {
 		gotValue := &Vineyard{}
 		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "vineyard", v.runtime.Spec.TieredStore)
 		if err := engine.transformWorkers(v.runtime, gotValue); err == nil {
+			if gotValue.Worker.Replicas != v.wantValue.Worker.Replicas {
+				t.Errorf("check %s failure, got:%d,want:%d",
+					k,
+					gotValue.Worker.Replicas,
+					v.wantValue.Worker.Replicas,
+				)
+			}
 			if gotValue.Worker.Image != v.wantValue.Worker.Image {
 				t.Errorf("check %s failure, got:%s,want:%s",
 					k,

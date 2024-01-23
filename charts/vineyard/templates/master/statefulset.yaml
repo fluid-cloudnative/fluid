@@ -18,7 +18,7 @@
 {{- $name := include "vineyard.name" . }}
 {{- $fullName := include "vineyard.fullname" . }}
 {{- $chart := include "vineyard.chart" . }}
-{{- $etcdServiceName := (printf "%s-%s" $fullName "master-svc") }}
+{{- $etcdServiceName := (printf "%s-%s" $fullName "master") }}
 
 {{- if not .Values.master.externalEndpoint }}
 apiVersion: apps/v1
@@ -47,7 +47,7 @@ spec:
       chart: {{ $chart }}
       release: {{ .Release.Name }}
       role: vineyard-master
-  serviceName: {{ $fullName }}-master-svc
+  serviceName: {{ $fullName }}-master
   replicas: {{ $replicas }}
   podManagementPolicy: Parallel
   template:

@@ -22,6 +22,8 @@ Resource Types:
 <a href="#data.fluid.io/v1alpha1.JindoRuntime">JindoRuntime</a>
 </li><li>
 <a href="#data.fluid.io/v1alpha1.JuiceFSRuntime">JuiceFSRuntime</a>
+</li><li>
+<a href="#data.fluid.io/v1alpha1.VineyardRuntime">VineyardRuntime</a>
 </li></ul>
 <h3 id="data.fluid.io/v1alpha1.AlluxioRuntime">AlluxioRuntime
 </h3>
@@ -2156,7 +2158,7 @@ TieredStore
 <td>
 <code>configs</code></br>
 <em>
-[]string
+string
 </em>
 </td>
 <td>
@@ -2240,6 +2242,204 @@ CleanCachePolicy
 <td>
 <em>(Optional)</em>
 <p>CleanCachePolicy defines cleanCache Policy</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.RuntimeStatus">
+RuntimeStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.VineyardRuntime">VineyardRuntime
+</h3>
+<p>
+<p>VineyardRuntime is the Schema for the VineyardRuntimes API</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>apiVersion</code></br>
+string</td>
+<td>
+<code>
+data.fluid.io/v1alpha1
+</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>kind</code></br>
+string
+</td>
+<td><code>VineyardRuntime</code></td>
+</tr>
+<tr>
+<td>
+<code>metadata</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.VineyardRuntimeSpec">
+VineyardRuntimeSpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>master</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.MasterSpec">
+MasterSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Master holds the configurations for Vineyard Master component
+Represents the Etcd component in Vineyard</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>worker</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.VineyardCompTemplateSpec">
+VineyardCompTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Worker holds the configurations for Vineyard Worker component
+Represents the Vineyardd component in Vineyard</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>replicas</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+<p>The replicas of the worker, need to be specified
+If worker.replicas and the field are both specified, the field will be respected</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>fuse</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.VineyardSockSpec">
+VineyardSockSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Fuse holds the configurations for Vineyard client socket.
+Note that the &ldquo;Fuse&rdquo; here is kept just for API consistency, VineyardRuntime mount a socket file instead of a FUSE filesystem to make data cache available.
+Applications can connect to the vineyard runtime components through IPC or RPC.
+IPC is the default way to connect to vineyard runtime components, which is more efficient than RPC.
+If the socket file is not mounted, the connection will fall back to RPC.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>tieredstore</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.TieredStore">
+TieredStore
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Tiered storage used by vineyardd
+The MediumType can only be <code>MEM</code> and <code>SSD</code>
+<code>MEM</code> actually represents the shared memory of vineyardd.
+<code>SSD</code> represents the external storage of vineyardd.
+Default is as follows.
+tieredstore:
+levels:
+- level: 0
+mediumtype: MEM
+quota: 4Gi</p>
+<p>Choose hostpath as the external storage of vineyardd.
+tieredstore:
+levels:
+- level: 0
+mediumtype: MEM
+quota: 4Gi
+high: &ldquo;0.8&rdquo;
+low: &ldquo;0.3&rdquo;
+- level: 1
+mediumtype: SSD
+quota: 10Gi
+volumeType: Hostpath
+path: /var/spill-path</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>disablePrometheus</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Disable monitoring metrics for Vineyard Runtime
+Default is false</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>volumes</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core">
+[]Kubernetes core/v1.Volume
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Volumes is the list of Kubernetes volumes that can be mounted by the vineyard components (Master and Worker).
+Default is null.</p>
 </td>
 </tr>
 </table>
@@ -4913,11 +5113,7 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Configurable options for External Etcd cluster.
-Support the following options.</p>
-<p>etcd.prefix: (String) the prefix of etcd key for vineyard objects</p>
-<p>Default value is as follows.</p>
-<p>etcd.prefix: &ldquo;/vineyard&rdquo;</p>
+<p>Configurable options for External Etcd cluster.</p>
 </td>
 </tr>
 </tbody>
@@ -6763,7 +6959,7 @@ TieredStore
 <td>
 <code>configs</code></br>
 <em>
-[]string
+string
 </em>
 </td>
 <td>
@@ -6915,6 +7111,7 @@ string
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>File paths to be used for the tier. Multiple paths are supported.
 Multiple paths should be separated with comma. For example: &ldquo;/mnt/cache1,/mnt/cache2&rdquo;.</p>
 </td>
@@ -7838,8 +8035,8 @@ MetadataSyncPolicy
 <a href="#data.fluid.io/v1alpha1.GooseFSRuntime">GooseFSRuntime</a>, 
 <a href="#data.fluid.io/v1alpha1.JindoRuntime">JindoRuntime</a>, 
 <a href="#data.fluid.io/v1alpha1.JuiceFSRuntime">JuiceFSRuntime</a>, 
-<a href="#data.fluid.io/v1alpha1.ThinRuntime">ThinRuntime</a>, 
-<a href="#data.fluid.io/v1alpha1.VineyardRuntime">VineyardRuntime</a>)
+<a href="#data.fluid.io/v1alpha1.VineyardRuntime">VineyardRuntime</a>, 
+<a href="#data.fluid.io/v1alpha1.ThinRuntime">ThinRuntime</a>)
 </p>
 <p>
 <p>RuntimeStatus defines the observed state of Runtime</p>
@@ -9666,7 +9863,7 @@ map[string]int
 <em>(Optional)</em>
 <p>Ports used by Vineyard component.
 For Master, the default client port is 2379 and peer port is 2380.
-For Worker, the default rpc port is 9600.</p>
+For Worker, the default rpc port is 9600 and the default exporter port is 9144.</p>
 </td>
 </tr>
 <tr>
@@ -9697,10 +9894,12 @@ For Master, there is no configurable options.
 For Worker, support the following options.</p>
 <p>vineyardd.reserve.memory: (Bool) where to reserve memory for vineyardd
 If set to true, the memory quota will be counted to the vineyardd rather than the application.
-etcd.prefix: (String) the prefix of etcd key for vineyard objects</p>
+etcd.prefix: (String) the prefix of etcd key for vineyard objects
+wait.etcd.timeout: (String) the timeout period before waiting the etcd to be ready, in seconds</p>
 <p>Default value is as follows.</p>
 <pre><code>vineyardd.reserve.memory: &quot;true&quot;
 etcd.prefix: &quot;/vineyard&quot;
+wait.etcd.timeout: &quot;120&quot;
 </code></pre>
 </td>
 </tr>
@@ -9735,175 +9934,6 @@ the resources.request.memory for worker should be greater than tieredstore.level
 <p>VolumeMounts specifies the volumes listed in &ldquo;.spec.volumes&rdquo; to mount into the vineyard runtime component&rsquo;s filesystem.
 It is useful for specifying a persistent storage.
 Default is not set.</p>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="data.fluid.io/v1alpha1.VineyardRuntime">VineyardRuntime
-</h3>
-<p>
-<p>VineyardRuntime is the Schema for the vineyardruntimes API</p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>metadata</code></br>
-<em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#objectmeta-v1-meta">
-Kubernetes meta/v1.ObjectMeta
-</a>
-</em>
-</td>
-<td>
-Refer to the Kubernetes API documentation for the fields of the
-<code>metadata</code> field.
-</td>
-</tr>
-<tr>
-<td>
-<code>spec</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.VineyardRuntimeSpec">
-VineyardRuntimeSpec
-</a>
-</em>
-</td>
-<td>
-<br/>
-<br/>
-<table>
-<tr>
-<td>
-<code>master</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.MasterSpec">
-MasterSpec
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Master holds the configurations for Vineyard Master component
-Represents the Etcd component in Vineyard</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>worker</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.VineyardCompTemplateSpec">
-VineyardCompTemplateSpec
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Worker holds the configurations for Vineyard Worker component
-Represents the Vineyardd component in Vineyard</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>fuse</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.VineyardSockSpec">
-VineyardSockSpec
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Fuse holds the configurations for Vineyard client socket.
-Note that the &ldquo;Fuse&rdquo; here is kept just for API consistency, VineyardRuntime mount a socket file instead of a FUSE filesystem to make data cache available.
-Applications can connect to the vineyard runtime components through IPC or RPC.
-IPC is the default way to connect to vineyard runtime components, which is more efficient than RPC.
-If the socket file is not mounted, the connection will fall back to RPC.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>tieredstore</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.TieredStore">
-TieredStore
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Tiered storage used by vineyardd
-The MediumType can only be <code>MEM</code> and <code>SSD</code>
-<code>MEM</code> actually represents the shared memory of vineyardd.
-<code>SSD</code> represents the external storage of vineyardd.
-Default is as follows.
-tieredstore:
-levels:
-- level: 0
-mediumtype: MEM
-quota: 4Gi</p>
-<p>Choose hostpath as the external storage of vineyardd.
-tieredstore:
-levels:
-- level: 0
-mediumtype: MEM
-quota: 4Gi
-high: &ldquo;0.8&rdquo;
-low: &ldquo;0.3&rdquo;
-- level: 1
-mediumtype: SSD
-quota: 10Gi
-volumeType: Hostpath
-path: /var/spill-path</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>disablePrometheus</code></br>
-<em>
-bool
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Disable monitoring metrics for Vineyard Runtime
-Default is false</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>volumes</code></br>
-<em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core">
-[]Kubernetes core/v1.Volume
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Volumes is the list of Kubernetes volumes that can be mounted by the vineyard components (Master and Worker).
-Default is null.</p>
-</td>
-</tr>
-</table>
-</td>
-</tr>
-<tr>
-<td>
-<code>status</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.RuntimeStatus">
-RuntimeStatus
-</a>
-</em>
-</td>
-<td>
 </td>
 </tr>
 </tbody>
@@ -9953,6 +9983,18 @@ VineyardCompTemplateSpec
 <em>(Optional)</em>
 <p>Worker holds the configurations for Vineyard Worker component
 Represents the Vineyardd component in Vineyard</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>replicas</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+<p>The replicas of the worker, need to be specified
+If worker.replicas and the field are both specified, the field will be respected</p>
 </td>
 </tr>
 <tr>
@@ -10197,5 +10239,5 @@ bool
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>6aa1163</code>.
+on git commit <code>c7cfb1888</code>.
 </em></p>

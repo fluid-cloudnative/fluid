@@ -183,6 +183,10 @@ type VineyardRuntimeSpec struct {
 	// +optional
 	Worker VineyardCompTemplateSpec `json:"worker,omitempty"`
 
+	// The replicas of the worker, need to be specified
+	// If worker.replicas and the field are both specified, the field will be respected
+	Replicas int32 `json:"replicas,omitempty"`
+
 	// Fuse holds the configurations for Vineyard client socket.
 	// Note that the "Fuse" here is kept just for API consistency, VineyardRuntime mount a socket file instead of a FUSE filesystem to make data cache available.
 	// Applications can connect to the vineyard runtime components through IPC or RPC.
@@ -272,7 +276,7 @@ func init() {
 
 // Replicas gets the replicas of runtime worker
 func (runtime *VineyardRuntime) Replicas() int32 {
-	return runtime.Spec.Worker.Replicas
+	return runtime.Spec.Replicas
 }
 
 func (runtime *VineyardRuntime) GetStatus() *RuntimeStatus {
