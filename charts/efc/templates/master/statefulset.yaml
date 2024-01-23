@@ -52,6 +52,7 @@ spec:
       {{- if .Values.master.hostNetwork }}
       hostNetwork: {{ .Values.master.hostNetwork }}
       dnsPolicy: ClusterFirstWithHostNet
+      enableServiceLinks: false
       {{- end }}
       nodeSelector:
       {{- if .Values.master.nodeSelector }}
