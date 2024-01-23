@@ -71,6 +71,7 @@ func (e *VineyardEngine) transformMasters(runtime *datav1alpha1.VineyardRuntime,
 	} else {
 		value.Master.Replicas = runtime.Spec.Master.Replicas
 	}
+
 	image := runtime.Spec.Master.Image
 	imageTag := runtime.Spec.Master.ImageTag
 	imagePullPolicy := runtime.Spec.Master.ImagePullPolicy
@@ -109,11 +110,9 @@ func (e *VineyardEngine) transformMasters(runtime *datav1alpha1.VineyardRuntime,
 
 func (e *VineyardEngine) transformWorkers(runtime *datav1alpha1.VineyardRuntime, value *Vineyard) (err error) {
 	value.Worker = Worker{}
-	if runtime.Spec.Worker.Replicas == 0 {
-		value.Worker.Replicas = 1
-	} else {
-		value.Worker.Replicas = runtime.Spec.Worker.Replicas
-	}
+	// respect the replicas of runtime if the replicas of worker and runtime are both specified
+	value.Worker.Replicas = runtime.Spec.Replicas
+
 	image := runtime.Spec.Worker.Image
 	imageTag := runtime.Spec.Worker.ImageTag
 	imagePullPolicy := runtime.Spec.Worker.ImagePullPolicy

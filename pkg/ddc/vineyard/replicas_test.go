@@ -103,9 +103,7 @@ func TestSyncReplicas(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: datav1alpha1.VineyardRuntimeSpec{
-				Worker: datav1alpha1.VineyardCompTemplateSpec{
-					Replicas: 3, // 2
-				},
+				Replicas: 3,
 			},
 			Status: datav1alpha1.RuntimeStatus{
 				CurrentWorkerNumberScheduled: 2,
@@ -128,9 +126,7 @@ func TestSyncReplicas(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: datav1alpha1.VineyardRuntimeSpec{
-				Worker: datav1alpha1.VineyardCompTemplateSpec{
-					Replicas: 2,
-				},
+				Replicas: 2,
 			},
 			Status: datav1alpha1.RuntimeStatus{
 				CurrentWorkerNumberScheduled: 3,
@@ -153,9 +149,7 @@ func TestSyncReplicas(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: datav1alpha1.VineyardRuntimeSpec{
-				Worker: datav1alpha1.VineyardCompTemplateSpec{
-					Replicas: 2,
-				},
+				Replicas: 2,
 			},
 			Status: datav1alpha1.RuntimeStatus{
 				CurrentWorkerNumberScheduled: 2,

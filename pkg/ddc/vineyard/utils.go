@@ -88,10 +88,8 @@ func (e *VineyardEngine) getWorkerPodExporterPort() (port int32) {
 }
 
 func (e *VineyardEngine) getWorkerReplicas() (replicas int32) {
-	replicas = e.runtime.Spec.Worker.Replicas
-	if replicas == 0 {
-		replicas = 1
-	}
+	replicas = e.runtime.Spec.Replicas
+
 	return
 }
 

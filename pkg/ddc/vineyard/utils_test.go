@@ -377,9 +377,7 @@ func TestGetWorkerReplicas(t *testing.T) {
 			engine: &VineyardEngine{
 				runtime: &datav1alpha1.VineyardRuntime{
 					Spec: datav1alpha1.VineyardRuntimeSpec{
-						Worker: datav1alpha1.VineyardCompTemplateSpec{
-							Replicas: 3,
-						},
+						Replicas: 3,
 					},
 				},
 			},

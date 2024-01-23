@@ -6613,6 +6613,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardRuntimeSpec(ref common.
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardCompTemplateSpec"),
 						},
 					},
+					"replicas": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The replicas of the worker, need to be specified If worker.replicas and the field are both specified, the field will be respected",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
 					"fuse": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Fuse holds the configurations for Vineyard client socket. Note that the \"Fuse\" here is kept just for API consistency, VineyardRuntime mount a socket file instead of a FUSE filesystem to make data cache available. Applications can connect to the vineyard runtime components through IPC or RPC. IPC is the default way to connect to vineyard runtime components, which is more efficient than RPC. If the socket file is not mounted, the connection will fall back to RPC.",

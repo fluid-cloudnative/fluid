@@ -14,11 +14,26 @@ limitations under the License.
 package vineyard
 
 import (
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
+	"github.com/fluid-cloudnative/fluid/pkg/errors"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 func (e *VineyardEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, operation dataoperation.OperationInterface) (valueFileName string, err error) {
-	// TODO:(caoye) implement me
-	return "", nil
+	operationType := operation.GetOperationType()
+	object := operation.GetOperationObject()
+
+	switch operationType {
+	case datav1alpha1.DataProcessType:
+		valueFileName, err = e.generateDataProcessValueFile(ctx, object)
+		return valueFileName, err
+	default:
+		return "", errors.NewNotSupported(
+			schema.GroupResource{
+				Group:    object.GetObjectKind().GroupVersionKind().Group,
+				Resource: object.GetObjectKind().GroupVersionKind().Kind,
+			}, "VineyardRuntime")
+	}
 }

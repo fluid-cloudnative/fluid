@@ -97,9 +97,7 @@ func TestSetupWorkers(t *testing.T) {
 						Namespace: "big-data",
 					},
 					Spec: datav1alpha1.VineyardRuntimeSpec{
-						Worker: datav1alpha1.VineyardCompTemplateSpec{
-							Replicas: 1,
-						},
+						Replicas: 1,
 					},
 				},
 				runtimeInfo: runtimeInfoSpark,
@@ -135,9 +133,7 @@ func TestSetupWorkers(t *testing.T) {
 						Namespace: "big-data",
 					},
 					Spec: datav1alpha1.VineyardRuntimeSpec{
-						Worker: datav1alpha1.VineyardCompTemplateSpec{
-							Replicas: 1,
-						},
+						Replicas: 1,
 					},
 				},
 				runtimeInfo: runtimeInfoHadoop,
@@ -167,9 +163,7 @@ func TestSetupWorkers(t *testing.T) {
 						Namespace: "big-data",
 					},
 					Spec: datav1alpha1.VineyardRuntimeSpec{
-						Worker: datav1alpha1.VineyardCompTemplateSpec{
-							Replicas: 1,
-						},
+						Replicas: 1,
 					},
 				},
 				runtimeInfo: runtimeInfoHadoop,
@@ -387,9 +381,7 @@ func TestCheckWorkersReady(t *testing.T) {
 						Namespace: "big-data",
 					},
 					Spec: datav1alpha1.VineyardRuntimeSpec{
-						Worker: datav1alpha1.VineyardCompTemplateSpec{
-							Replicas: 1,
-						},
+						Replicas: 1,
 					},
 				},
 				worker: &appsv1.StatefulSet{
@@ -427,9 +419,7 @@ func TestCheckWorkersReady(t *testing.T) {
 						Namespace: "big-data",
 					},
 					Spec: datav1alpha1.VineyardRuntimeSpec{
-						Worker: datav1alpha1.VineyardCompTemplateSpec{
-							Replicas: 1,
-						},
+						Replicas: 1,
 					},
 				},
 				worker: &appsv1.StatefulSet{
@@ -466,9 +456,7 @@ func TestCheckWorkersReady(t *testing.T) {
 						Namespace: "big-data",
 					},
 					Spec: datav1alpha1.VineyardRuntimeSpec{
-						Worker: datav1alpha1.VineyardCompTemplateSpec{
-							Replicas: 1,
-						},
+						Replicas: 1,
 					},
 				},
 				worker: &appsv1.StatefulSet{
