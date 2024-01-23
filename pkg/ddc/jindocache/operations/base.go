@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fluid-cloudnative/fluid/pkg/utils/cmdguard"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
 )
@@ -87,6 +88,11 @@ func (a JindoFileUtils) execWithTimeOut(command []string, verbose bool, second i
 
 // execWithoutTimeout
 func (a JindoFileUtils) execWithoutTimeout(command []string, verbose bool) (stdout string, stderr string, err error) {
+	err = cmdguard.ValidateCommandSlice(command)
+	if err != nil {
+		return
+	}
+
 	stdout, stderr, err = kubeclient.ExecCommandInContainer(a.podName, a.container, a.namespace, command)
 	if err != nil {
 		a.log.Info("Stdout", "Command", command, "Stdout", stdout)
