@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"errors"
 	"os"
+	"os/exec"
 	"os/user"
 	"runtime"
 	"strings"
@@ -53,10 +54,9 @@ func homeUnix() (home string, err error) {
 
 	// If that fails, try the shell
 	var stdout bytes.Buffer
-	cmd, err := SimpleCommand("sh", "-c", "eval echo ~$USER")
-	if err != nil {
-		return
-	}
+	// cmd, err := security.Command("sh", "-c", "eval echo ~$USER")
+	cmd := exec.Command("sh", "-c", "eval echo ~$USER")
+
 	cmd.Stdout = &stdout
 	err = cmd.Run()
 	if err != nil {

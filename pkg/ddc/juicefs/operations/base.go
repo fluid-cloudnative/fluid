@@ -26,7 +26,7 @@ import (
 
 	"github.com/go-logr/logr"
 
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/cmdguard"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
@@ -239,7 +239,7 @@ func (j JuiceFileUtils) DeleteCacheDir(dir string) (err error) {
 // GetStatus get status of volume
 func (j JuiceFileUtils) GetStatus(source string) (status string, err error) {
 	var (
-		command = []string{"/bin/sh", "-c", fmt.Sprintf("juicefs status %s", source)}
+		command = []string{"sh", "-c", fmt.Sprintf("juicefs status %s", source)}
 		stdout  string
 		stderr  string
 	)
@@ -327,7 +327,7 @@ func (j JuiceFileUtils) exec(command []string) (stdout string, stderr string, er
 // execWithoutTimeout
 func (j JuiceFileUtils) execWithoutTimeout(command []string) (stdout string, stderr string, err error) {
 	// validate the pipe command with white list
-	err = utils.ValidateCommandSlice(command)
+	err = cmdguard.ValidateCommandSlice(command)
 	if err != nil {
 		return
 	}

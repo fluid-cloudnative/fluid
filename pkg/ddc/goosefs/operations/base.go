@@ -25,7 +25,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/cmdguard"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
 )
@@ -502,7 +502,7 @@ func (a GooseFSFileUtils) exec(command []string, verbose bool) (stdout string, s
 
 // execWithoutTimeout
 func (a GooseFSFileUtils) execWithoutTimeout(command []string, verbose bool) (stdout string, stderr string, err error) {
-	err = utils.ValidateCommandSlice(command)
+	err = cmdguard.ValidateCommandSlice(command)
 	if err != nil {
 		return
 	}

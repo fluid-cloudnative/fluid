@@ -14,30 +14,41 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package utils
+package cmdguard
 
 import (
 	"fmt"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/go-logr/logr"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func init() {
-	allowPathlist = buildPathList(allowPathlist)
-}
+var log logr.Logger
 
-// allowPathlist of safe commands
-var allowPathlist = map[string]bool{
+// allowedPathList is a whitelist of safe commands
+var allowedPathList = map[string]bool{
 	// "helm":    true,
 	"kubectl":  true,
 	"ddc-helm": true,
 	// add other commands as needed
 }
 
+var shellCommandList = map[string]bool{
+	"bash": true,
+	"sh":   true,
+}
+
 // illegalChars to check
-// var illegalChars = []string{"&", "|", ";", "$", "'", "`", "(", ")", ">>"}
 var illegalChars = []rune{'&', '|', ';', '$', '\'', '`', '(', ')', '>'}
+
+func init() {
+	allowedPathList = buildPathList(allowedPathList)
+	shellCommandList = buildPathList(shellCommandList)
+	log = ctrl.Log.WithName("utils.security")
+}
 
 // buildPathList is a function that builds a map of paths for the given pathList.
 func buildPathList(pathList map[string]bool) (targetPath map[string]bool) {
@@ -47,7 +58,6 @@ func buildPathList(pathList map[string]bool) (targetPath map[string]bool) {
 			path, err := exec.LookPath(name)
 			if err != nil {
 				log.Info("Failed to find path %s due to %v", path, err)
-
 			} else {
 				targetPath[path] = enabled
 			}
@@ -57,19 +67,37 @@ func buildPathList(pathList map[string]bool) (targetPath map[string]bool) {
 	return
 }
 
-// SimpleCommand checks the args before creating *exec.Cmd
-func SimpleCommand(name string, arg ...string) (cmd *exec.Cmd, err error) {
-	if allowPathlist[name] {
-		cmd = exec.Command(name, arg...)
-	} else {
-		err = checkCommandArgs(arg...)
-		if err != nil {
-			return
-		}
-		cmd = exec.Command(name, arg...)
+// Command checks the args before creating *exec.Cmd
+func Command(name string, arg ...string) (cmd *exec.Cmd, err error) {
+	commandSlice := append([]string{name}, arg...)
+
+	if err = ValidateCommandSlice(commandSlice); err != nil {
+		return
 	}
 
-	return
+	return exec.Command(name, arg...), nil
+}
+
+// ValidateCommandSlice validates all the commands in the commandSlice.
+// - For command in allowedPathList, it passes validation without further checks.
+// - For a possible shell command, it calls ValidateShellCommandSlice() for detailed checks.
+// - For any other command, it checks all the command args to ensure no illegal chars exists.
+func ValidateCommandSlice(commandSlice []string) (err error) {
+	if len(commandSlice) == 0 {
+		return nil
+	}
+
+	mainCmd := commandSlice[0]
+	if allowedPathList[mainCmd] {
+		return nil
+	}
+
+	if shellCommandList[mainCmd] {
+		return ValidateShellCommandSlice(commandSlice)
+	}
+
+	// For any other mainCmd, check illegal chars in command args
+	return checkCommandArgs(commandSlice[1:]...)
 }
 
 // CheckCommandArgs is check string is valid in args
