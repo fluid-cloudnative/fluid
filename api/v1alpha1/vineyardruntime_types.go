@@ -276,7 +276,7 @@ func init() {
 
 // Replicas gets the replicas of runtime worker
 func (runtime *VineyardRuntime) Replicas() int32 {
-	return runtime.Spec.Worker.Replicas
+	return runtime.Spec.Replicas
 }
 
 func (runtime *VineyardRuntime) GetStatus() *RuntimeStatus {
