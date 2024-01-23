@@ -239,7 +239,7 @@ func (j JuiceFileUtils) DeleteCacheDir(dir string) (err error) {
 // GetStatus get status of volume
 func (j JuiceFileUtils) GetStatus(source string) (status string, err error) {
 	var (
-		command = []string{"/bin/sh", "-c", fmt.Sprintf("juicefs status %s", source)}
+		command = []string{"sh", "-c", fmt.Sprintf("juicefs status %s", source)}
 		stdout  string
 		stderr  string
 	)

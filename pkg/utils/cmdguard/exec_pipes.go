@@ -58,6 +58,10 @@ var allowedPipedCommands = map[string]CommandValidater{
 // Define illegal sequences that may lead to command injection attack
 var illegalSequences = []string{"&", ";", "$", "'", "`", "(", ")", "||", ">>"}
 
+var allowedEnvs = []string{
+	"${METAURL}", // JuiceFS community's metaurl
+}
+
 // ShellCommand is a safe wrapper of exec.Command that checks potential risks in the command.
 // It requires the command follows the format like ["bash", "-c", "<shell script>"] and each part
 // of the command must be valid. If no shell command is needed, use security.Command instead.
@@ -91,11 +95,8 @@ func ValidateShellCommandSlice(shellCommandSlice []string) (err error) {
 			return errors.Wrapf(err, "failed to validate shell script [%s]", shellScript)
 		}
 	} else {
-		// TODO: Simply check illegal sequence for now. Better filtered with a allowed list in future.
-		for _, illegalSeq := range illegalSequences {
-			if strings.Contains(shellScript, illegalSeq) {
-				return fmt.Errorf("unsafe shell script %s, illegal sequence detected: %s", shellScript, illegalSeq)
-			}
+		if err := checkIllegalSequence(shellScript); err != nil {
+			return errors.Wrap(err, "failed to pass illegal sequence check")
 		}
 	}
 
@@ -152,11 +153,8 @@ func validateShellPipeString(pipedCommandStr string) error {
 			}
 		}
 
-		// Check for illegal sequences in command
-		for _, illegalSeq := range illegalSequences {
-			if strings.Contains(cmd, illegalSeq) {
-				return fmt.Errorf("unsafe pipeline command %s, illegal sequence detected: %s in part %d: '%s'", pipedCommandStr, illegalSeq, i+1, cmd)
-			}
+		if err := checkIllegalSequence(cmd); err != nil {
+			return errors.Wrap(err, "failed to pass illegal sequence check")
 		}
 	}
 
@@ -173,4 +171,20 @@ func isValidCommand(cmd string, allowedCommands map[string]CommandValidater) boo
 	}
 
 	return false
+}
+
+func checkIllegalSequence(script string) error {
+	scriptToCheck := script
+	for _, allowedEnv := range allowedEnvs {
+		scriptToCheck = strings.ReplaceAll(scriptToCheck, allowedEnv, "ALLOWED_ENV")
+	}
+
+	// TODO: Simply check illegal sequence for now. Better filtered with a allowed list in future.
+	for _, illegalSeq := range illegalSequences {
+		if strings.Contains(scriptToCheck, illegalSeq) {
+			return fmt.Errorf("unsafe shell script %s, illegal sequence detected: %s", script, illegalSeq)
+		}
+	}
+
+	return nil
 }
