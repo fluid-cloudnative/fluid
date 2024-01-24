@@ -53,6 +53,7 @@ spec:
       hostNetwork: {{ .Values.master.hostNetwork }}
       dnsPolicy: ClusterFirstWithHostNet
       {{- end }}
+      enableServiceLinks: false
       nodeSelector:
       {{- if .Values.master.nodeSelector }}
 {{ toYaml .Values.master.nodeSelector | trim | indent 8  }}
