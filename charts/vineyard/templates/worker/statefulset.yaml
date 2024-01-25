@@ -64,6 +64,7 @@ spec:
       nodeSelector:
 {{ toYaml .Values.worker.nodeSelector | trim | indent 8  }}
       {{- end }}
+      enableServiceLinks: false
       containers:
         - name: vineyard-worker
           image: {{ .Values.worker.image }}:{{ .Values.worker.imageTag }}
