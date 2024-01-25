@@ -65,6 +65,7 @@ spec:
       nodeSelector:
 {{ toYaml .Values.master.nodeSelector | trim | indent 8  }}
       {{- end }}
+      enableServiceLinks: false
       containers:
         - name: vineyard-master
           image: {{ .Values.master.image }}:{{ .Values.master.imageTag }}
