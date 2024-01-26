@@ -61,6 +61,8 @@ const (
 	DataOperationNotValid = "DataOperationNotValid"
 
 	DataOperationCollision = "DataOperationCollision"
+
+	TargetSSHSecretNameNotSet = "TargetSSHSecretNameNotSet"
 )
 
 // Events related to dataflow

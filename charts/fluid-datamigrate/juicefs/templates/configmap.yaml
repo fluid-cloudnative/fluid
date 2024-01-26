@@ -47,18 +47,21 @@ data:
         sed -i "s/[ #]\(.*Port \).*/ \1 $TARGET_SSH_PORT /g" /etc/ssh/ssh_config
         echo "    UserKnownHostsFile /dev/null" >> /etc/ssh/ssh_config
 
-        # WORKER_NAME is "%s-workers-{}.%s-svc" where %s is the helm release name
+        # start sshd
+        /usr/sbin/sshd -p $TARGET_SSH_PORT
+
+        # get all workers, and the launcher(localhost) is also a worker.
+        # WORKER_NAME is "%s-workers-{}.%s-workers" where %s is the helm release name
         workers=()
-        size=`expr $PARALLELISM - 1`
-        for num in $(seq 0 $size)
+        for num in $(seq 0 `expr $PARALLELISM - 2`)
         do
           workers[$num]=$(echo $WORKER_NAME_FORMAT | sed "s/{}/$num/g")
         done
-        timeout ${WORKERS_READY_TIMEOUT} ${scripts_dir}/check_ssh.sh ${workers[@]}
+        timeout ${SSH_READY_TIMEOUT} ${scripts_dir}/check_ssh.sh ${workers[@]}
 
         workers=$(echo "${workers[@]}" | tr ' ' ',')
 
-        parallel_options="--worker ${workers} --manager-addr ${POD_IP}"
+        parallel_options="--worker localhost,${workers} --manager-addr ${POD_IP}"
         echo "distribute data migrate using options: $parallel_options"
       fi
 

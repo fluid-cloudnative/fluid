@@ -85,18 +85,21 @@ func (r *dataMigrateOperation) UpdateOperationApiStatus(opStatus *datav1alpha1.O
 func (r *dataMigrateOperation) Validate(ctx cruntime.ReconcileRequestContext) ([]datav1alpha1.Condition, error) {
 	targetDataSet := ctx.Dataset
 
-	if r.dataMigrate.Spec.Parallelism > 1 && len(r.dataMigrate.Spec.SSHSecretName) == 0 {
-		err := fmt.Errorf("DataMigrate(%s) with parallel tasks does not set the SSHSecretName", r.dataMigrate.GetName())
-		return []datav1alpha1.Condition{
-			{
-				Type:               common.Failed,
-				Status:             v1.ConditionTrue,
-				Reason:             common.TargetDatasetNamespaceNotSame,
-				Message:            "the SSHSecretName field is not set",
-				LastProbeTime:      metav1.NewTime(time.Now()),
-				LastTransitionTime: metav1.NewTime(time.Now()),
-			},
-		}, err
+	// parallel data migration must specify the ssh secret name
+	if r.dataMigrate.Spec.Parallelism > 1 {
+		if r.dataMigrate.Spec.ParallelOptions == nil || len(r.dataMigrate.Spec.ParallelOptions[cdatamigrate.SSHSecretName]) == 0 {
+			err := fmt.Errorf("DataMigrate(%s) with parallel tasks does not set the SSHSecretName", r.dataMigrate.GetName())
+			return []datav1alpha1.Condition{
+				{
+					Type:               common.Failed,
+					Status:             v1.ConditionTrue,
+					Reason:             common.TargetSSHSecretNameNotSet,
+					Message:            "the sshSecretName key is not set in the parallelOptions",
+					LastProbeTime:      metav1.NewTime(time.Now()),
+					LastTransitionTime: metav1.NewTime(time.Now()),
+				},
+			}, err
+		}
 	}
 
 	if r.dataMigrate.GetNamespace() != targetDataSet.Namespace {

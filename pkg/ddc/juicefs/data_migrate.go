@@ -21,6 +21,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -121,27 +122,23 @@ func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequest
 
 	// 3. init dataMigrateInfo
 	dataMigrateInfo := cdatamigrate.DataMigrateInfo{
-		BackoffLimit:        3,
-		TargetDataset:       targetDataset.Name,
-		EncryptOptions:      []datav1alpha1.EncryptOption{},
-		Image:               image,
-		Options:             map[string]string{},
-		Labels:              dataMigrate.Spec.PodMetadata.Labels,
-		Annotations:         dataMigrate.Spec.PodMetadata.Annotations,
-		ImagePullSecrets:    imagePullSecrets,
-		Policy:              string(dataMigrate.Spec.Policy),
-		Schedule:            dataMigrate.Spec.Schedule,
-		Resources:           dataMigrate.Spec.Resources,
-		Parallelism:         dataMigrate.Spec.Parallelism,
-		WorkersReadyTimeout: dataMigrate.Spec.WorkersReadyTimeout,
+		BackoffLimit:     3,
+		TargetDataset:    targetDataset.Name,
+		EncryptOptions:   []datav1alpha1.EncryptOption{},
+		Image:            image,
+		Options:          map[string]string{},
+		Labels:           dataMigrate.Spec.PodMetadata.Labels,
+		Annotations:      dataMigrate.Spec.PodMetadata.Annotations,
+		ImagePullSecrets: imagePullSecrets,
+		Policy:           string(dataMigrate.Spec.Policy),
+		Schedule:         dataMigrate.Spec.Schedule,
+		Resources:        dataMigrate.Spec.Resources,
+		Parallelism:      dataMigrate.Spec.Parallelism,
 	}
+
 	// generate ssh config for parallel tasks when using parallel tasks
 	if dataMigrateInfo.Parallelism > 1 {
-		dataMigrateInfo.SSHSecretName = dataMigrate.Spec.SSHSecretName
-		dataMigrateInfo.SSHPort = dataMigrate.Spec.SSHPort
-	} else {
-		// default parallelism is 1
-		dataMigrateInfo.Parallelism = 1
+		j.setParallelMigrateOptions(&dataMigrateInfo, dataMigrate)
 	}
 
 	if dataMigrate.Spec.Affinity != nil {
@@ -212,6 +209,33 @@ func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequest
 		return
 	}
 	return valueFile.Name(), nil
+}
+
+func (j *JuiceFSEngine) setParallelMigrateOptions(dataMigrateInfo *cdatamigrate.DataMigrateInfo, dataMigrate *datav1alpha1.DataMigrate) {
+	var err error
+	dataMigrateInfo.ParallelOptions = cdatamigrate.ParallelOptions{
+		SSHPort:                cdatamigrate.DefaultSSHPort,
+		SSHReadyTimeoutSeconds: cdatamigrate.DefaultSSHReadyTimeoutSeconds,
+		SSHSecretName:          dataMigrate.Spec.ParallelOptions[cdatamigrate.SSHSecretName],
+	}
+
+	sshPort, exist := dataMigrate.Spec.ParallelOptions[cdatamigrate.SSHPort]
+	if exist {
+		dataMigrateInfo.ParallelOptions.SSHPort, err = strconv.Atoi(sshPort)
+		if err != nil {
+			j.Log.Info("sshReadyTimeoutSeconds in the parallelOptions is not a int, use default value.")
+			dataMigrateInfo.ParallelOptions.SSHPort = cdatamigrate.DefaultSSHPort
+		}
+	}
+
+	sshReadyTimeoutSeconds, exist := dataMigrate.Spec.ParallelOptions[cdatamigrate.SSHReadyTimeoutSeconds]
+	if exist {
+		dataMigrateInfo.ParallelOptions.SSHReadyTimeoutSeconds, err = strconv.Atoi(sshReadyTimeoutSeconds)
+		if err != nil {
+			j.Log.Info("sshReadyTimeoutSeconds in the parallelOptions is not a int, use default value.")
+			dataMigrateInfo.ParallelOptions.SSHReadyTimeoutSeconds = cdatamigrate.DefaultSSHReadyTimeoutSeconds
+		}
+	}
 }
 
 func (j *JuiceFSEngine) genDataUrl(data datav1alpha1.DataToMigrate, targetDataset *datav1alpha1.Dataset, info *cdatamigrate.DataMigrateInfo) (dataUrl string, err error) {

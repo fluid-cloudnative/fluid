@@ -90,9 +90,14 @@ type DataMigrateInfo struct {
 	// Parallelism defines the parallel tasks.
 	Parallelism int32 `json:"parallelism,omitempty"`
 
-	WorkersReadyTimeout int32 `json:"workers_ready_timeout,omitempty"`
+	// ParallelOptions used when Parallelism is greater than 1.
+	ParallelOptions ParallelOptions `json:"parallelOptions,omitempty"`
+}
+
+type ParallelOptions struct {
+	SSHPort int `json:"sshPort,omitempty"`
+
+	SSHReadyTimeoutSeconds int `json:"readyTimeoutSeconds,omitempty"`
 
 	SSHSecretName string `json:"sshSecretName,omitempty"`
-
-	SSHPort int32 `json:"sshPort,omitempty"`
 }

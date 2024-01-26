@@ -951,9 +951,17 @@ spec:
                   type: string
                 description: options for migrate, different for each runtime
                 type: object
+              parallelOptions:
+                additionalProperties:
+                  type: string
+                description: ParallelOptions defines options like ssh port and ssh
+                  secret name when parallelism is greater than 1.
+                type: object
               parallelism:
                 default: 1
-                description: Parallelism defines the parallelism tasks
+                description: Parallelism defines the parallelism tasks numbers for
+                  DataMigrate. If the value is greater than 1, the job acts as a launcher,
+                  and users should define the WorkerSpec.
                 format: int32
                 minimum: 1
                 type: integer
@@ -1043,15 +1051,6 @@ spec:
               schedulerName:
                 description: SchedulerName sets the scheduler to be used for DataMigrate
                   pod
-                type: string
-              sshPort:
-                default: 22
-                description: SSHPort defines the workers ssh port
-                format: int32
-                type: integer
-              sshSecretName:
-                description: SSHSecretName defines the secret name used for ssh. It
-                  must be set when Parallelism is greater than 1.
                 type: string
               to:
                 description: data to migrate destination, including dataset and external
@@ -1150,12 +1149,6 @@ spec:
               ttlSecondsAfterFinished:
                 description: TTLSecondsAfterFinished is the time second to clean up
                   data operations after finished or failed
-                format: int32
-                type: integer
-              workersReadyTimeoutSeconds:
-                default: 30
-                description: WorkersReadyTimeout defines timeout before parallel workers
-                  ready
                 format: int32
                 type: integer
             required:

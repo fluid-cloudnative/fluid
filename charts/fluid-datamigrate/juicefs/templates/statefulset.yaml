@@ -20,8 +20,9 @@ spec:
     matchLabels:
       app: {{ printf "%s-workers" .Release.Name }}
   # match the service name
-  serviceName: {{ printf "%s-svc" .Release.Name }}
-  replicas: {{ .Values.datamigrate.parallelism }}
+  serviceName: {{ printf "%s-workers" .Release.Name }}
+  # the job acts as a worker, so minus 1 here.
+  replicas: {{ sub .Values.datamigrate.parallelism  1 }}
   podManagementPolicy: Parallel
   template:
     metadata:
@@ -33,16 +34,20 @@ spec:
           # juice fs with openssh server
           image: {{ required "DataMigrate image should be set" .Values.datamigrate.image }}
           imagePullPolicy: IfNotPresent
-          command: [ "/usr/sbin/sshd", "-D" , "-p", "{{ .Values.datamigrate.sshPort }}"]
+          command: [ "/usr/sbin/sshd", "-D" , "-p", "{{ .Values.datamigrate.parallelOptions.sshPort }}"]
           readinessProbe:
             exec:
               command:
                 - /etc/fluid/scripts/check.sh
           ports:
-            - containerPort: {{ .Values.datamigrate.sshPort }}
+            - containerPort: {{ .Values.datamigrate.parallelOptions.sshPort }}
+          {{- if .Values.datamigrate.resources }}
+          resources:
+          {{- toYaml .Values.datamigrate.resources | nindent 12}}
+          {{- end }}
           env:
             - name: TARGET_SSH_PORT
-              value: "{{ .Values.datamigrate.sshPort }}"
+              value: "{{ .Values.datamigrate.parallelOptions.sshPort }}"
             {{- range .Values.datamigrate.encryptOptions }}
             - name: {{ .name }}
               valueFrom:
@@ -74,7 +79,7 @@ spec:
       volumes:
         - name: data-migrate-ssh
           secret:
-            secretName: {{.Values.datamigrate.sshSecretName }}
+            secretName: {{.Values.datamigrate.parallelOptions.sshSecretName }}
             defaultMode: 0600
             items:
               - key: ssh-privatekey

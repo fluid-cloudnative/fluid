@@ -74,18 +74,20 @@ spec:
           {{- toYaml .Values.datamigrate.resources | nindent 12}}
           {{- end }}
           env:
+            - name: PARALLELISM
+              value: {{ .Values.datamigrate.parallelism | quote }}
+            {{- if gt (.Values.datamigrate.parallelism | int) 1 }}
             - name: POD_IP
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
-            - name: WORKERS_READY_TIMEOUT
-              value: {{ .Values.datamigrate.workersReadyTimeout | quote }}
-            - name: PARALLELISM
-              value: {{ .Values.datamigrate.parallelism | quote }}
-            - name: WORKER_NAME_FORMAT
-              value: {{ printf "%s-workers-{}.%s-svc" .Release.Name .Release.Name }}
+            - name: SSH_READY_TIMEOUT
+              value: {{ .Values.datamigrate.parallelOptions.sshReadyTimeoutSeconds | quote }}
             - name: TARGET_SSH_PORT
-              value: "{{ .Values.datamigrate.sshPort }}"
+              value: "{{ .Values.datamigrate.parallelOptions.sshPort }}"
+            - name: WORKER_NAME_FORMAT
+              value: {{ printf "%s-workers-{}.%s-workers" .Release.Name .Release.Name }}
+            {{- end }}
             {{- range $key, $val := .Values.datamigrate.options }}
             {{- if eq $key "timeout" }}
             - name: TIMEOUT
@@ -116,16 +118,23 @@ spec:
             {{- if gt (.Values.datamigrate.parallelism | int) 1 }}
             - mountPath: /root/.ssh
               name: data-migrate-ssh
+              # use subpath to avoid permissions check problem because the launcher will ssh to itself.
+              # Or user can set 'StrictModes no' in /etc/ssh/sshd_config file to avoid permission check when build the image in dockerfile.
+              subPath: .ssh
             {{- end }}
       volumes:
         {{- if gt (.Values.datamigrate.parallelism | int) 1 }}
         - name: data-migrate-ssh
           secret:
-            secretName: {{.Values.datamigrate.sshSecretName }}
+            secretName: {{.Values.datamigrate.parallelOptions.sshSecretName }}
             defaultMode: 0600
             items:
               - key: ssh-privatekey
-                path: id_rsa
+                path: .ssh/id_rsa
+              - key: ssh-publickey
+                path: .ssh/id_rsa.pub
+              - key: ssh-publickey
+                path: .ssh/authorized_keys
         {{- end }}
         - name: data-migrate-script
           configMap:

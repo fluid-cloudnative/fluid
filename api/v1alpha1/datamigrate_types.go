@@ -89,25 +89,16 @@ type DataMigrateSpec struct {
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
-	// Parallelism defines the parallelism tasks
+	// Parallelism defines the parallelism tasks numbers for DataMigrate. If the value is greater than 1, the job acts
+	// as a launcher, and users should define the WorkerSpec.
 	// +optional
 	// +kubebuilder:default:=1
 	// +kubebuilder:validation:Minimum=1
 	Parallelism int32 `json:"parallelism,omitempty"`
 
-	// SSHSecretName defines the secret name used for ssh. It must be set when Parallelism is greater than 1.
+	// ParallelOptions defines options like ssh port and ssh secret name when parallelism is greater than 1.
 	// +optional
-	SSHSecretName string `json:"sshSecretName,omitempty"`
-
-	// SSHPort defines the workers ssh port
-	// +optional
-	// +kubebuilder:default:=22
-	SSHPort int32 `json:"sshPort,omitempty"`
-
-	// WorkersReadyTimeout defines timeout before parallel workers ready
-	// +optional
-	// +kubebuilder:default:=30
-	WorkersReadyTimeout int32 `json:"workersReadyTimeoutSeconds,omitempty"`
+	ParallelOptions map[string]string `json:"parallelOptions,omitempty"`
 }
 
 type DataToMigrate struct {

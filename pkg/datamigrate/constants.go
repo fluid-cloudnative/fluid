@@ -21,4 +21,11 @@ const (
 
 	DataMigrateFinalizer = "fluid-datamigrate-controller-finalizer"
 	DataMigrateChart     = "fluid-datamigrate"
+
+	SSHSecretName          = "sshSecretName"
+	SSHPort                = "sshPort"
+	SSHReadyTimeoutSeconds = "sshReadyTimeoutSeconds"
+
+	DefaultSSHReadyTimeoutSeconds = 180
+	DefaultSSHPort                = 22
 )

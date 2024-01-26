@@ -1494,30 +1494,25 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateSpec(ref common.Refe
 					},
 					"parallelism": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Parallelism defines the parallelism tasks",
+							Description: "Parallelism defines the parallelism tasks numbers for DataMigrate. If the value is greater than 1, the job acts as a launcher, and users should define the WorkerSpec.",
 							Type:        []string{"integer"},
 							Format:      "int32",
 						},
 					},
-					"sshSecretName": {
+					"parallelOptions": {
 						SchemaProps: spec.SchemaProps{
-							Description: "SSHSecretName defines the secret name used for ssh. It must be set when Parallelism is greater than 1.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"sshPort": {
-						SchemaProps: spec.SchemaProps{
-							Description: "SSHPort defines the workers ssh port",
-							Type:        []string{"integer"},
-							Format:      "int32",
-						},
-					},
-					"workersReadyTimeoutSeconds": {
-						SchemaProps: spec.SchemaProps{
-							Description: "WorkersReadyTimeout defines timeout before parallel workers ready",
-							Type:        []string{"integer"},
-							Format:      "int32",
+							Description: "ParallelOptions defines options like ssh port and ssh secret name when parallelism is greater than 1.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
 						},
 					},
 				},
