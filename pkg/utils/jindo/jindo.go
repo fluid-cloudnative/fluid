@@ -16,16 +16,14 @@ limitations under the License.
 
 package jindo
 
-import "os"
+import (
+	"os"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+)
 
 const (
 	engineTypeFromEnv = "JINDO_ENGINE_TYPE"
-
-	jindoEngine = "jindo"
-
-	jindofsxEngine = "jindofsx"
-
-	jindocacheEngine = "jindocache"
 
 	defaultJindofsxRuntimeImage = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:4.6.8"
 
@@ -36,8 +34,8 @@ const (
 
 // GetDefaultEngineImpl gets the runtime type for Jindo
 func GetDefaultEngineImpl() (engine string) {
-	engine = jindofsxEngine
-	if env := os.Getenv(engineTypeFromEnv); env == jindoEngine || env == jindocacheEngine {
+	engine = common.JindoCacheEngineImpl
+	if env := os.Getenv(engineTypeFromEnv); env == common.JindoFSEngineImpl || env == common.JindoFSxEngineImpl {
 		engine = env
 	}
 	return
@@ -45,11 +43,11 @@ func GetDefaultEngineImpl() (engine string) {
 
 // GetRuntimeImage gets the runtime of Jindo
 func GetRuntimeImage() (image string) {
-	if GetDefaultEngineImpl() == jindofsxEngine {
+	if GetDefaultEngineImpl() == common.JindoFSxEngineImpl {
 		image = defaultJindofsxRuntimeImage
-	} else if GetDefaultEngineImpl() == jindoEngine {
+	} else if GetDefaultEngineImpl() == common.JindoFSEngineImpl {
 		image = defaultJindofsRuntimeImage
-	} else if GetDefaultEngineImpl() == jindocacheEngine {
+	} else if GetDefaultEngineImpl() == common.JindoCacheEngineImpl {
 		image = defaultJindoCacheRuntimeImage
 	}
 	return
