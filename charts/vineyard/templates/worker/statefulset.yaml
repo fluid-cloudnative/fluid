@@ -1,0 +1,199 @@
+#  Copyright 2023 The Fluid Authors.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+{{- $name := include "vineyard.name" . }}
+{{- $fullName := include "vineyard.fullname" . }}
+{{- $chart := include "vineyard.chart" . }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $fullName }}-worker
+  labels:
+    app: {{ $name }}
+    chart: {{ $chart }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    role: vineyard-worker
+    fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
+    app.kubernetes.io/instance: {{ .Release.Namespace }}-{{ $fullName }}-worker
+  {{- if .Values.owner.enabled }}
+  ownerReferences:
+  - apiVersion: {{ .Values.owner.apiVersion }}
+    blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+    controller: {{ .Values.owner.controller }}
+    kind: {{ .Values.owner.kind }}
+    name: {{ .Values.owner.name }}
+    uid: {{ .Values.owner.uid }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.worker.replicas }}
+  serviceName: {{ $fullName }}-worker
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app: {{ $name }}
+      chart: {{ $chart }}
+      release: {{ .Release.Name }}
+      role: vineyard-worker
+      app.kubernetes.io/instance: {{ .Release.Namespace }}-{{ $fullName }}-worker
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+      labels:
+        app: {{ $name }}
+        chart: {{ $chart }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+        role: vineyard-worker
+        fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
+        app.kubernetes.io/instance: {{ .Release.Namespace }}-{{ $fullName }}-worker
+    spec:
+      {{- if .Values.worker.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.worker.nodeSelector | trim | indent 8  }}
+      {{- end }}
+      enableServiceLinks: false
+      containers:
+        - name: vineyard-worker
+          image: {{ .Values.worker.image }}:{{ .Values.worker.imageTag }}
+          imagePullPolicy: {{ .Values.worker.imagePullPolicy }}
+          command:
+            - /usr/local/bin/vineyardd
+            - --socket
+            - /var/run/vineyard/vineyard.sock
+            - --size
+            - "{{ include "vineyard.worker.size" . }}"
+            {{- if eq (toString (index .Values.worker.options "vineyardd.reserve.memory")) "true" }}
+            - --reserve_memory
+            {{- end }}
+            - --meta_timeout
+            - "{{ default "120" (index .Values.worker.options "wait.etcd.timeout") }}"
+            - --etcd_prefix
+            - "{{ default "/vineyard" (index .Values.worker.options "etcd.prefix") }}"
+            - --etcd_endpoint
+            - "{{ include "vineyard.master.endpoint" . }}"
+            {{- if eq (include "vineyard.checkTieredStore" .) "true" }}
+            - --spill_path
+            - "{{ include "vineyard.spill.path" . }}"
+            - --spill_lower_rate
+            - "{{ include "vineyard.spill.lowerRate" . }}"
+            - --spill_upper_rate
+            - "{{ include "vineyard.spill.upperRate" . }}"
+            {{- end }}
+            {{- if not .Values.disablePrometheus }}
+            - --metrics
+            - --log_dir
+            - /var/log/vineyard
+            {{- end }}
+          env:
+          - name: VINEYARDD_NAME
+            value: {{ template "vineyard.fullname" . }}-vineyardd
+          - name: VINEYARDD_NAMESPACE
+            value: {{ .Release.Namespace }}
+          - name: MY_NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: MY_POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: MY_POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: MY_UID
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.uid
+          - name: MY_POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: MY_HOST_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: USER
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          {{- range $key, $value := .Values.worker.env }}
+          - name: "{{ $key }}"
+            value: "{{ $value }}"
+          {{- end }}
+          {{- if .Values.worker.resources  }}
+{{ include "vineyard.worker.resources" . | indent 10 }}
+          {{- end }}
+          ports:
+            - name: rpc
+              containerPort: {{ int .Values.worker.ports.rpc }}
+              protocol: TCP
+          livenessProbe:
+            tcpSocket:
+              port: {{ int .Values.worker.ports.rpc }}
+            periodSeconds: 60
+          readinessProbe:
+            exec:
+              command:
+              - ls
+              - /var/run/vineyard/vineyard.sock
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 10
+          volumeMounts:
+          - name: vineyard-socket-volume
+            mountPath: /var/run/vineyard
+          {{- if not .Values.disablePrometheus }}
+          - name: log
+            mountPath: /var/log/vineyard
+          {{- end }}
+          {{- if eq (include "vineyard.checkTieredStore" .) "true" }}
+{{- include "vineyard.worker.tieredstoreVolumeMounts" . }}
+          {{- end }}
+        {{- if not .Values.disablePrometheus }}
+        - name: metrics
+          image: vineyardcloudnative/vineyardd-grok-exporter
+          imagePullPolicy: {{ .Values.worker.imagePullPolicy }}
+          ports:
+          - name: exporter
+            containerPort: {{ int .Values.worker.ports.exporter }}
+            protocol: TCP
+          volumeMounts:
+          - name: log
+            mountPath: /var/log/vineyard
+          {{- end }}
+      volumes:
+      {{- if eq (include "vineyard.checkTieredStore" .) "true" }}
+{{- include "vineyard.worker.tieredstoreVolume" . }}
+      {{- end }}
+      - name: vineyard-socket-volume
+        hostPath:
+          path: /runtime-mnt/vineyard/{{ .Release.Namespace }}/{{ $fullName }}
+          type: DirectoryOrCreate
+      {{- if not .Values.disablePrometheus }}
+      - name: log
+        emptyDir: {}
+      {{- end }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app.kubernetes.io/instance
+                    operator: In
+                    values:
+                     - {{ .Release.Namespace }}-{{ $fullName }}-worker
+              topologyKey: "kubernetes.io/hostname"

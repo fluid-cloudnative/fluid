@@ -35,6 +35,7 @@ type EFCEngine struct {
 	name        string
 	namespace   string
 	runtimeType string
+	engineImpl  string
 	runtimeInfo base.RuntimeInfoInterface
 	UnitTest    bool
 	Log         logr.Logger
@@ -53,6 +54,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 		Client:                 ctx.Client,
 		Log:                    ctx.Log,
 		runtimeType:            ctx.RuntimeType,
+		engineImpl:             ctx.EngineImpl,
 		gracefulShutdownLimits: 5,
 		retryShutdown:          0,
 	}

@@ -147,6 +147,10 @@ spec:
             - name: DRY_RUN_ENABLE
               value: {{ default false $val | quote }}
             {{- end }}
+            {{- if eq $key "forceload" }}
+            - name: FORCE_LOAD_ENABLE
+              value: {{ default false $val | quote }}
+            {{- end }}
             {{- if eq $key "cacheListLocationEnable" }}
             - name: Enable_CACHE_LIST_LOCATION
               value: {{ default false $val | quote }}
@@ -161,8 +165,8 @@ spec:
                 name: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}-jindofs-client-config
           volumeMounts:
             - name: bigboot-config
-              mountPath: /jindosdk.cfg
-              subPath: jindosdk.cfg
+              mountPath: /jindocache.cfg
+              subPath: jindocache.cfg
             - name: bigboot-config
               mountPath: /hdfs-3.2.1/etc/hadoop/core-site.xml
               subPath: core-site.xml

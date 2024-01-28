@@ -64,7 +64,7 @@ func TestMountRootWithoutEnvSet(t *testing.T) {
 			t.Errorf("Expected error happened, but no error")
 		}
 
-		if err.Error() != "the the value of the env variable named MOUNT_ROOT is illegal" {
+		if err.Error() != "invalid mount root path '': the mount root path is empty" {
 			t.Errorf("Get unexpected error %v", err)
 		}
 
@@ -99,6 +99,10 @@ func TestCheckMountReady(t *testing.T) {
 		})
 		Convey("fluidPath nil", func() {
 			err := CheckMountReadyAndSubPathExist("", "test", "")
+			So(err, ShouldNotBeNil)
+		})
+		Convey("illegal subpath", func() {
+			err := CheckMountReadyAndSubPathExist("/test", "test", "$(echo)")
 			So(err, ShouldNotBeNil)
 		})
 	})

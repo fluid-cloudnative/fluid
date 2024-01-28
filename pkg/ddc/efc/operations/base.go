@@ -23,8 +23,9 @@ import (
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/cmdguard"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	securityutil "github.com/fluid-cloudnative/fluid/pkg/utils/security"
+	securityutils "github.com/fluid-cloudnative/fluid/pkg/utils/security"
 	"github.com/go-logr/logr"
 )
 
@@ -57,7 +58,7 @@ func (a EFCFileUtils) exec(command []string, verbose bool) (stdout string, stder
 
 	select {
 	case <-ch:
-		a.log.Info("execute in time", "command", securityutil.FilterCommand(command))
+		a.log.Info("execute in time", "command", securityutils.FilterCommand(command))
 	case <-ctx.Done():
 		err = fmt.Errorf("timeout when executing %v", command)
 	}
@@ -67,6 +68,11 @@ func (a EFCFileUtils) exec(command []string, verbose bool) (stdout string, stder
 
 // execWithoutTimeout
 func (a EFCFileUtils) execWithoutTimeout(command []string, verbose bool) (stdout string, stderr string, err error) {
+	err = cmdguard.ValidateCommandSlice(command)
+	if err != nil {
+		return
+	}
+
 	stdout, stderr, err = kubeclient.ExecCommandInContainer(a.podName, a.container, a.namespace, command)
 	if err != nil {
 		a.log.Info("Stdout", "Command", command, "Stdout", stdout)

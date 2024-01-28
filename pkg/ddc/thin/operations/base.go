@@ -23,6 +23,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fluid-cloudnative/fluid/pkg/utils/cmdguard"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
 )
@@ -155,6 +156,12 @@ func (t ThinFileUtils) exec(command []string, verbose bool) (stdout string, stde
 
 // execWithoutTimeout
 func (t ThinFileUtils) execWithoutTimeout(command []string, verbose bool) (stdout string, stderr string, err error) {
+	// validate the pipe command with white list
+	err = cmdguard.ValidateCommandSlice(command)
+	if err != nil {
+		return
+	}
+
 	stdout, stderr, err = kubeclient.ExecCommandInContainer(t.podName, t.container, t.namespace, command)
 	if err != nil {
 		t.log.Info("Stdout", "Command", command, "Stdout", stdout)

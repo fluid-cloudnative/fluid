@@ -21,6 +21,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/fluid-cloudnative/fluid/pkg/utils/cmdguard"
 	"github.com/go-logr/logr"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -51,41 +52,6 @@ func CreateConfigMapFromFile(name string, key, fileName string, namespace string
 	return
 }
 
-// SaveConfigMapToFile saves the key of configMap into a file
-func SaveConfigMapToFile(name string, key string, namespace string) (fileName string, err error) {
-	binary, err := exec.LookPath(kubectlCmd[0])
-	if err != nil {
-		return "", err
-	}
-
-	file, err := os.CreateTemp(os.TempDir(), name)
-	if err != nil {
-		log.Error(err, "failed to create tmp file", "tmpFile", file.Name())
-		return fileName, err
-	}
-	fileName = file.Name()
-
-	args := []string{binary, "get", "configmap", name,
-		"--namespace", namespace,
-		fmt.Sprintf("-o=jsonpath='{.data.%s}'", key),
-		">", fileName}
-
-	log.V(1).Info("exec", "cmd", strings.Join(args, " "))
-
-	cmd := exec.Command("bash", "-c", strings.Join(args, " "))
-	// env := os.Environ()
-	// if types.KubeConfig != "" {
-	// 	env = append(env, fmt.Sprintf("KUBECONFIG=%s", types.KubeConfig))
-	// }
-	out, err := cmd.Output()
-	fmt.Printf("%s", string(out))
-
-	if err != nil {
-		return fileName, fmt.Errorf("failed to execute %s, %v with %v", "kubectl", args, err)
-	}
-	return fileName, err
-}
-
 // kubectl executes command with arguments (string array)
 func kubectl(args []string) ([]byte, error) {
 	binary, err := exec.LookPath(kubectlCmd[0])
@@ -103,7 +69,10 @@ func kubectl(args []string) ([]byte, error) {
 
 	// return syscall.Exec(cmd, args, env)
 	// 2. execute the command
-	cmd := exec.Command(binary, args...)
+	cmd, err := cmdguard.Command(binary, args...)
+	if err != nil {
+		return nil, err
+	}
 	// cmd.Env = env
 	return cmd.CombinedOutput()
 }

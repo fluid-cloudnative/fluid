@@ -60,7 +60,6 @@ spec:
       securityContext:
         runAsUser: {{ .Values.user }}
         runAsGroup: {{ .Values.group }}
-        fsGroup: {{ .Values.fsGroup }}
       nodeSelector:
 {{- if .Values.worker.nodeSelector }}
 {{ toYaml .Values.worker.nodeSelector | trim | indent 8  }}
@@ -181,6 +180,7 @@ spec:
           {{- range .Values.ufsVolumes }}
             - mountPath: {{ .containerPath }}
               name: {{ .name }}
+              readOnly: {{ .readOnly }}
               {{- if .subPath }}
               subPath: {{ .subPath }}
               {{- end }}
@@ -203,7 +203,7 @@ spec:
         - tbsite.net
         - aliyun.com
       dnsPolicy: None
-      enableServiceLinks: true
+      enableServiceLinks: false
       {{- end }}
       volumes:
           {{- range $name, $mount := .Values.mounts.workersAndClients }}

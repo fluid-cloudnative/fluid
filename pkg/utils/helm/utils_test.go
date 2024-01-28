@@ -102,6 +102,12 @@ func TestInstallRelease(t *testing.T) {
 	}
 	wrappedUnhookCombinedOutput()
 
+	badValue := "test$bad"
+	err = InstallRelease("fluid", badValue, "testValueFile", "/chart/fluid")
+	if err == nil {
+		t.Errorf("fail to catch the error of %s", badValue)
+	}
+
 	err = gohook.Hook((*exec.Cmd).CombinedOutput, CombinedOutputCommon, nil)
 	if err != nil {
 		t.Fatal(err.Error())
@@ -175,6 +181,12 @@ func TestCheckRelease(t *testing.T) {
 	}
 	wrappedUnhookStart()
 
+	badValue := "test$bad"
+	_, err = CheckRelease("fluid", badValue)
+	if err == nil {
+		t.Errorf("fail to catch the error of %s", badValue)
+	}
+
 	err = gohook.Hook((*exec.Cmd).Start, StartCommon, nil)
 	if err != nil {
 		t.Fatal(err.Error())
@@ -242,6 +254,12 @@ func TestDeleteRelease(t *testing.T) {
 		t.Errorf("fail to catch the error")
 	}
 	wrappedUnhookOutput()
+	// test check illegal arguements
+	badValue := "test$bad"
+	err = DeleteRelease("fluid", badValue)
+	if err == nil {
+		t.Errorf("fail to catch the error of %s", badValue)
+	}
 
 	err = gohook.Hook((*exec.Cmd).Output, OutputCommon, nil)
 	if err != nil {
@@ -318,6 +336,11 @@ func TestListReleases(t *testing.T) {
 		t.Errorf("fail to exec the function ListRelease")
 	}
 	wrappedUnhookOutput()
+
+	_, err = ListReleases("def$ault")
+	if err == nil {
+		t.Errorf("fail to catch the error")
+	}
 	wrappedUnhookLookPath()
 }
 
@@ -384,6 +407,11 @@ func TestListReleaseMap(t *testing.T) {
 		t.Errorf("fail to split the strout")
 	}
 	wrappedUnhookOutput()
+
+	_, err = ListReleaseMap("def$ault")
+	if err == nil {
+		t.Errorf("fail to catch the error")
+	}
 	wrappedUnhookLookPath()
 }
 
@@ -450,6 +478,11 @@ func TestListAllReleasesWithDetail(t *testing.T) {
 		t.Errorf("fail to split the strout")
 	}
 	wrappedUnhookOutput()
+
+	_, err = ListAllReleasesWithDetail("def$ault")
+	if err == nil {
+		t.Errorf("fail to catch the error")
+	}
 	wrappedUnhookLookPath()
 }
 

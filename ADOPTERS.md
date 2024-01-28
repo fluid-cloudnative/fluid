@@ -35,7 +35,7 @@ The companies/organizations are listed in alphabetical order grouped by the phas
 | [HUYA](https://www.huya.com)  | [@BobLiu20](liubofang@huya.com) | Production | AI Platform on k8s |
 | [OPPO](https://www.oppo.com) | [@laibruce](laiyanhui@oppo.com) | Production | Data acceleration |
 | [CloudView](https://cloudview.mobi) | [@kastland](kastland@126.com) | Production | AI Platform on k8s |
-| [Inceptio](https://www.inceptio.ai) | [@shajingcheng](shajingcheng@126.com) | Staging | Bigdata Platform on k8s |
+| [Inceptio](https://www.inceptio.ai) | [@willwu](wusnong@163.com) | Production | Bigdata Platform and Autonomous Driving Simulation Platform |
 | [autelrobotics](https://www.autelrobotics.cn) | [@andyzheung](https://github.com/andyzheung) | Testing | AI platform training data cache and big emr job data process data cache |
 | [coScene](https://www.coscene.cn) | [@juchaosong](https://github.com/juchaosong) | Production | Data Platform on k8s |
 | [pvmed](https://www.pvmedtech.com/) | [@huozhuoliang](huozhuoliang@pvmedtech.com) | Testing | AI training platform|
@@ -46,4 +46,5 @@ The companies/organizations are listed in alphabetical order grouped by the phas
 | [KubeDL](https://kubedl.io/) | [@SimonCqk](cqk0100@gmail.com) | Production | AI Training/Big Data/Stream Media Platforms In Aicheng Technology At Large Scale |
 | [liblibai](https://liblib.ai) | [@zxj](zxj861216@163.com) | Production | AIGC Platform on k8s |
 | [HappyElements](https://www.happyelements.com) | [@Luckyboys](https://github.com/Luckyboys) | Production | AIGC Platform on k8s |
+| [JoinQuant](https://www.joinquant.com/) | [@David-Xiang](https://github.com/David-Xiang) | Production | AI Platform on k8s |
 

@@ -1,0 +1,112 @@
+# This is the default configuration file for Vineyard helm chart.  
+
+fullnameOverride: vineyard
+
+master:
+  # the external endpoint of master
+  # if set, the Vineyard Master component will not be deployed, which means the Vineyard Worker component will use an external Etcd cluster.
+  externalEndpoint:
+    #uri: "etcd-svc.etcd-namespace.svc.cluster.local:2379"
+    #encryptOptions:
+    #- name: access-key
+    #  valueFrom:
+    #    secretKeyRef:
+    #      name: etcd-secret
+    #      key: accesskey
+    # options:
+  replicas: 1
+  image: bitnami/etcd
+  imageTag: 3.5.10
+  imagePullPolicy: IfNotPresent
+  nodeSelector: {}
+  # Exmaple:
+  #   "disktype": "ssd"
+  ports:
+    client: 2379
+    peer: 2380
+  env:
+    # All environment variables are defined in the doc https://etcd.io/docs/v3.5/op-guide/configuration/
+    # Example:
+    # ETCD_HEARTBEAT_INTERVAL: 100
+  options: {}
+  resources:
+    limits:
+    # cpu: "2"
+    # memory: "4G"
+    requests:
+    # cpu: "1"
+    # memory: "1G"
+  volumeMounts: []
+  # volumeMounts:
+  # - name: mySecretVolume
+  #   mountPath: /data/secrets/mySecretVolume/
+  # - name: myConfigMapVolume
+  #   mountPath: /data/configmap/myConfigMapVolume/
+
+worker:
+  replicas: 1
+  image: vineyardcloudnative/vineyardd
+  imageTag: latest
+  imagePullPolicy: IfNotPresent
+  nodeSelector: {}
+  # Exmaple:
+  #   "disktype": "ssd"
+  ports:
+    rpc: 9600
+    exporter: 9144
+  env: {}
+  options:
+    # where to reserve memory for vineyardd
+    # If set to true, the memory quota will be counted to the vineyardd rather than the application.
+    vineyardd.reserve.memory: "true"
+    # the prefix of etcd key for vineyard objects
+    etcd.prefix: "/vineyard"
+    # the timeout period before waiting the etcd to be ready, in seconds
+    wait.etcd.timeout: "120"
+  resources:
+    limits:
+    # cpu: "2"
+    # memory: "4G"
+    requests:
+    # cpu: "2"
+    # If set, make sure the memory is larger than the tieredstore.levels[0].quota(MEM)
+    # memory: "4G"
+  volumeMounts: []
+  # volumeMounts:
+  # - name: mySecretVolume
+  #   mountPath: /data/secrets/mySecretVolume/
+  # - name: myConfigMapVolume
+  #   mountPath: /data/configmap/myConfigMapVolume/
+
+tieredstore:
+  levels:
+  - level: 0
+    mediumtype: MEM
+    quota: 4Gi
+    # high: "0.8"
+    # low: "0.3"
+  # - level: 1
+  #   mediumtype: SSD
+  #   quota: 10Gi
+  #   type: hostPath
+  #   path: /var/spill-path
+
+volumes: []
+
+disablePrometheus: true
+
+fuse:
+  image: vineyardcloudnative/vineyard-fluid-fuse
+  imageTag: latest
+  imagePullPolicy: IfNotPresent
+  targetPath: ""
+  nodeSelector: {}
+
+owner:
+  enabled: false
+  name: ""
+  kind: ""
+  uid: ""
+  apiVersion: ""
+  blockOwnerDeletion: false
+  controller: false

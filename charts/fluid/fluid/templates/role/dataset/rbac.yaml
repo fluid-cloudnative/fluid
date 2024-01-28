@@ -93,6 +93,8 @@ rules:
       - thinruntimes/status
       - efcruntimes
       - efcruntimes/status
+      - vineyardruntimes
+      - vineyardruntimes/status
     verbs:
       - '*'
   - apiGroups:

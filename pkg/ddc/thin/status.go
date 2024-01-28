@@ -1,5 +1,5 @@
 /*
-  Copyright 2022 The Fluid Authors.
+  Copyright 2023 The Fluid Authors.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -109,6 +109,7 @@ func (t *ThinEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 			statusMountsToUpdate = append(statusMountsToUpdate, *optionExcludedMount)
 		}
 		runtimeToUpdate.Status.Mounts = statusMountsToUpdate
+		runtimeToUpdate.Status.ValueFileConfigmap = t.getHelmValuesConfigMapName()
 
 		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
 			err = t.Client.Status().Update(context.TODO(), runtimeToUpdate)

@@ -564,6 +564,7 @@ func TestJuiceFSEngine_getValuesConfigMap(t *testing.T) {
 	type fields struct {
 		runtime     *datav1alpha1.JuiceFSRuntime
 		runtimeType string
+		engineImpl  string
 		name        string
 		namespace   string
 		Client      client.Client
@@ -586,6 +587,7 @@ func TestJuiceFSEngine_getValuesConfigMap(t *testing.T) {
 				name:        "test",
 				namespace:   "default",
 				runtimeType: "juicefs",
+				engineImpl:  "juicefs",
 			},
 			wantCm: &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
@@ -611,6 +613,7 @@ func TestJuiceFSEngine_getValuesConfigMap(t *testing.T) {
 			e := &JuiceFSEngine{
 				runtime:     tt.fields.runtime,
 				runtimeType: tt.fields.runtimeType,
+				engineImpl:  tt.fields.engineImpl,
 				name:        tt.fields.name,
 				namespace:   tt.fields.namespace,
 				Client:      mockClient,

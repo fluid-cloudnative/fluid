@@ -95,7 +95,7 @@ func (j *JuiceFSEngine) destroyMaster() (err error) {
 }
 
 func (j *JuiceFSEngine) releasePorts() (err error) {
-	var valueConfigMapName = j.getConfigmapName()
+	var valueConfigMapName = j.getHelmValuesConfigMapName()
 
 	allocator, err := portallocator.GetRuntimePortAllocator()
 	if err != nil {
@@ -389,7 +389,7 @@ func (j *JuiceFSEngine) cleanAll() (err error) {
 	j.Log.Info("clean up fuse count", "n", count)
 
 	var (
-		valueConfigmapName = j.name + "-" + j.runtimeType + "-values"
+		valueConfigmapName = j.getHelmValuesConfigMapName()
 		configmapName      = j.name + "-config"
 		namespace          = j.namespace
 	)

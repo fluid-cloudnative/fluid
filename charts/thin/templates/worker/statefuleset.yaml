@@ -42,6 +42,7 @@ spec:
         fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
         fluid.io/dataset-placement: {{ .Values.placement }}
     spec:
+
       nodeSelector:
       {{- if .Values.worker.nodeSelector }}
 {{ toYaml .Values.worker.nodeSelector | trim | indent 8  }}
@@ -53,6 +54,7 @@ spec:
 {{ toYaml .Values.tolerations | indent 8 }}
       {{- end }}
       hostNetwork: {{ .Values.worker.hostNetwork }}
+      enableServiceLinks: false
       containers:
         - name: thin-worker
           {{- if .Values.worker.imageTag }}

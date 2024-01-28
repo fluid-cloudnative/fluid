@@ -12,6 +12,7 @@ GOOSEFSRUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/goosefsruntime-controller
 JUICEFSRUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/juicefsruntime-controller
 THINRUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/thinruntime-controller
 EFCRUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/efcruntime-controller
+VINEYARDRUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/vineyardruntime-controller
 CSI_IMG ?= ${IMG_REPO}/fluid-csi
 LOADER_IMG ?= ${IMG_REPO}/fluid-dataloader
 INIT_USERS_IMG ?= ${IMG_REPO}/init-users
@@ -54,6 +55,7 @@ BINARY_BUILD += jindoruntime-controller-build
 BINARY_BUILD += juicefsruntime-controller-build
 BINARY_BUILD += thinruntime-controller-build
 BINARY_BUILD += efcruntime-controller-build
+BINARY_BUILD += vineyardruntime-controller-build
 BINARY_BUILD += csi-build
 BINARY_BUILD += webhook-build
 
@@ -68,6 +70,7 @@ DOCKER_BUILD += docker-build-webhook
 DOCKER_BUILD += docker-build-juicefsruntime-controller
 DOCKER_BUILD += docker-build-thinruntime-controller
 DOCKER_BUILD += docker-build-efcruntime-controller
+DOCKER_BUILD += docker-build-vineyardruntime-controller
 DOCKER_BUILD += docker-build-init-users
 DOCKER_BUILD += docker-build-crd-upgrader
 
@@ -82,6 +85,7 @@ DOCKER_PUSH += docker-push-goosefsruntime-controller
 DOCKER_PUSH += docker-push-juicefsruntime-controller
 DOCKER_PUSH += docker-push-thinruntime-controller
 DOCKER_PUSH += docker-push-efcruntime-controller
+DOCKER_PUSH += docker-push-vineyardruntime-controller
 # Not need to push init-users image by default
 # DOCKER_PUSH += docker-push-init-users
 DOCKER_PUSH += docker-push-crd-upgrader
@@ -174,6 +178,9 @@ juicefsruntime-controller-build:
 thinruntime-controller-build:
 	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/thinruntime-controller -ldflags '-s -w ${LDFLAGS}' cmd/thin/main.go
 
+vineyardruntime-controller-build:
+	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/vineyardruntime-controller -ldflags '-s -w ${LDFLAGS}' cmd/vineyard/main.go
+
 efcruntime-controller-build:
 	CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o bin/efcruntime-controller -ldflags '${LDFLAGS}' cmd/efc/main.go
 
@@ -207,6 +214,9 @@ docker-build-thinruntime-controller:
 
 docker-build-efcruntime-controller:
 	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.efcruntime -t ${EFCRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+
+docker-build-vineyardruntime-controller:
+	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.vineyardruntime -t ${VINEYARDRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-build-csi:
 	docker build --no-cache . -f docker/Dockerfile.csi -t ${CSI_IMG}:${GIT_VERSION}
@@ -244,6 +254,9 @@ docker-push-thinruntime-controller: docker-build-thinruntime-controller
 
 docker-push-efcruntime-controller: docker-build-efcruntime-controller
 	docker push ${EFCRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+
+docker-push-vineyardruntime-controller: docker-build-vineyardruntime-controller
+	docker push ${VINEYARDRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-push-csi: docker-build-csi
 	docker push ${CSI_IMG}:${GIT_VERSION}
@@ -284,6 +297,9 @@ docker-buildx-push-thinruntime-controller:
 
 docker-buildx-push-efcruntime-controller:
 	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.efcruntime -t ${EFCRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+
+docker-buildx-push-vineyardruntime-controller:
+	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.vineyardruntime -t ${VINAYARDRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-buildx-push-csi: generate fmt vet
 	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.csi -t ${CSI_IMG}:${GIT_VERSION}

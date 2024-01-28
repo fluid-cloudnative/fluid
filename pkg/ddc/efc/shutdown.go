@@ -75,7 +75,7 @@ func (e *EFCEngine) cleanupCache() (err error) {
 	}
 	e.Log.Info("get runtime info", "runtime", runtime)
 
-	configMapName := e.getConfigmapName()
+	configMapName := e.getHelmValuesConfigMapName()
 	configMap, err := kubeclient.GetConfigmapByName(e.Client, configMapName, runtime.Namespace)
 	if err != nil {
 		return errors.Wrap(err, "GetConfigMapByName fail when cleanupCache")
@@ -121,7 +121,7 @@ func (e *EFCEngine) cleanupCache() (err error) {
 }
 
 func (e *EFCEngine) releasePorts() (err error) {
-	var valueConfigMapName = e.getConfigmapName()
+	var valueConfigMapName = e.getHelmValuesConfigMapName()
 
 	allocator, err := portallocator.GetRuntimePortAllocator()
 	if err != nil {
@@ -174,7 +174,7 @@ func (e *EFCEngine) cleanAll() (err error) {
 	e.Log.Info("clean up fuse count", "n", count)
 
 	var (
-		valueConfigmapName = e.getConfigmapName()
+		valueConfigmapName = e.getHelmValuesConfigMapName()
 		namespace          = e.namespace
 	)
 

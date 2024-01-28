@@ -1,0 +1,519 @@
+# PIPELINE DEFINITION
+# Name: train-cnn-for-fashion-mnist
+# Inputs:
+#    batch_size: int
+#    dataset_name: str
+#    epochs: int
+#    learning_rate: float
+#    mount_point: str
+#    mount_s3_endpoint: str
+#    mount_s3_region: str
+#    namespace: str
+components:
+  comp-cleanup-dataset-and-alluxio-runtime:
+    executorLabel: exec-cleanup-dataset-and-alluxio-runtime
+    inputDefinitions:
+      parameters:
+        dataset_name:
+          parameterType: STRING
+        namespace:
+          parameterType: STRING
+  comp-cleanup-preheat-operation:
+    executorLabel: exec-cleanup-preheat-operation
+    inputDefinitions:
+      parameters:
+        dataset_name:
+          parameterType: STRING
+        namespace:
+          parameterType: STRING
+  comp-create-alluxio-runtime:
+    executorLabel: exec-create-alluxio-runtime
+    inputDefinitions:
+      parameters:
+        dataset_name:
+          parameterType: STRING
+        namespace:
+          parameterType: STRING
+  comp-create-s3-dataset:
+    executorLabel: exec-create-s3-dataset
+    inputDefinitions:
+      parameters:
+        dataset_name:
+          parameterType: STRING
+        mount_point:
+          parameterType: STRING
+        mount_s3_endpoint:
+          parameterType: STRING
+        mount_s3_region:
+          parameterType: STRING
+        namespace:
+          parameterType: STRING
+  comp-preheat-dataset:
+    executorLabel: exec-preheat-dataset
+    inputDefinitions:
+      parameters:
+        dataset_name:
+          parameterType: STRING
+        namespace:
+          parameterType: STRING
+  comp-train-simple-cnn:
+    executorLabel: exec-train-simple-cnn
+    inputDefinitions:
+      parameters:
+        batch_size:
+          parameterType: NUMBER_INTEGER
+        data_root_path:
+          parameterType: STRING
+        dataset_name:
+          parameterType: STRING
+        epochs:
+          parameterType: NUMBER_INTEGER
+        learning_rate:
+          parameterType: NUMBER_DOUBLE
+deploymentSpec:
+  executors:
+    exec-cleanup-dataset-and-alluxio-runtime:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - cleanup_dataset_and_alluxio_runtime
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.4.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'git+https://github.com/fluid-cloudnative/fluid-client-python.git'\
+          \ && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef cleanup_dataset_and_alluxio_runtime(dataset_name: str, namespace:\
+          \ str):\n    import logging\n    from fluid import FluidClient\n\n    fluid_client\
+          \ = FluidClient()\n    fluid_client.delete_runtime(name=dataset_name, namespace=namespace,\
+          \ runtime_type=\"alluxio\", wait_until_cleaned_up=True)\n    fluid_client.delete_dataset(name=dataset_name,\
+          \ namespace=namespace, wait_until_cleaned_up=True)\n\n    logging.info(f\"\
+          Cleanup Dataset and AlluxioRuntime \\\"{namespace}/{dataset_name}\\\" successfully!\"\
+          )\n\n"
+        image: python:3.7
+    exec-cleanup-preheat-operation:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - cleanup_preheat_operation
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.4.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'git+https://github.com/fluid-cloudnative/fluid-client-python.git'\
+          \ && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef cleanup_preheat_operation(dataset_name: str, namespace: str):\n\
+          \    import logging\n    from fluid import FluidClient\n\n    fluid_client\
+          \ = FluidClient()\n    fluid_client.delete_data_operation(name=\"%s-loader\"\
+          \ % dataset_name, data_op_type=\"dataload\", namespace=namespace)\n    logging.info(\"\
+          Cleanup preheat dataset operation successfully!\")\n\n"
+        image: python:3.7
+    exec-create-alluxio-runtime:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - create_alluxio_runtime
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.4.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'git+https://github.com/fluid-cloudnative/fluid-client-python.git'\
+          \ && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef create_alluxio_runtime(dataset_name: str, namespace: str):\n\
+          \    import logging\n    from fluid import AlluxioRuntime, AlluxioRuntimeSpec,\
+          \ models, FluidClient\n    from kubernetes import client as k8s_client\n\
+          \n    fluid_client = FluidClient()\n\n    FLUID_GROUP = \"data.fluid.io\"\
+          \n    FLUID_VERSION = \"v1alpha1\"\n\n    replicas = 1\n\n    # This is\
+          \ the simplest configuration for AlluxioRuntime, you can change the AlluxioRuntime\
+          \ according to your needs\n    alluxio_runtime = AlluxioRuntime(\n     \
+          \   api_version=\"%s/%s\" % (FLUID_GROUP, FLUID_VERSION),\n        kind=\"\
+          AlluxioRuntime\",\n        metadata=k8s_client.V1ObjectMeta(\n         \
+          \   name=dataset_name,\n            namespace=namespace\n        ),\n  \
+          \      spec=AlluxioRuntimeSpec(\n            replicas=replicas,\n      \
+          \      tieredstore=models.TieredStore([models.Level('0.95', '0.7', 'MEM',\
+          \ '/dev/shm', '2Gi', volume_type=None)])\n        )\n    )\n\n    fluid_client.create_runtime(alluxio_runtime)\n\
+          \n\n    logging.info(f\"Runtime \\\"{alluxio_runtime.metadata.namespace}/{alluxio_runtime.metadata.name}\\\
+          \" created successfully\")\n\n"
+        image: python:3.7
+    exec-create-s3-dataset:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - create_s3_dataset
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.4.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'git+https://github.com/fluid-cloudnative/fluid-client-python.git'\
+          \ && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef create_s3_dataset(dataset_name: str, namespace: str, mount_point:\
+          \ str, mount_s3_endpoint: str, mount_s3_region: str):\n    import logging\n\
+          \    import fluid\n    from kubernetes import client\n    fluid_client =\
+          \ fluid.FluidClient()\n\n    FLUID_GROUP = \"data.fluid.io\"\n    FLUID_VERSION\
+          \ = \"v1alpha1\"\n\n    # This is an sample which use some pre-defined options.\n\
+          \    # Users can change these code customily\n    dataset = fluid.Dataset(\n\
+          \        api_version=\"%s/%s\" % (FLUID_GROUP, FLUID_VERSION),\n       \
+          \ kind=\"Dataset\",\n        metadata=client.V1ObjectMeta(\n           \
+          \ name=dataset_name,\n            namespace=namespace\n        ),\n    \
+          \    spec=fluid.DatasetSpec(\n            mounts=[\n                fluid.Mount(\n\
+          \                    mount_point=mount_point,\n                    name=dataset_name,\n\
+          \                    options={\n                        \"alluxio.underfs.s3.endpoint\"\
+          : mount_s3_endpoint,\n                        \"alluxio.underfs.s3.endpoint.region\"\
+          : mount_s3_region,\n                        \"alluxio.underfs.s3.disable.dns.buckets\"\
+          : \"true\",\n                        \"alluxio.underfs.s3.disable.inherit.acl\"\
+          : \"false\"\n                    },\n                    encrypt_options=[\n\
+          \                        {\n                            \"name\": \"aws.accessKeyId\"\
+          ,\n                            \"valueFrom\": {\n                      \
+          \        \"secretKeyRef\": {\n                                \"name\":\
+          \ \"s3-secret\",\n                                \"key\": \"aws.accessKeyId\"\
+          \n                              }\n                            }\n     \
+          \                   },\n                        {\n                    \
+          \        \"name\": \"aws.secretKey\",\n                            \"valueFrom\"\
+          : {\n                              \"secretKeyRef\": {\n               \
+          \                 \"name\": \"s3-secret\",\n                           \
+          \     \"key\": \"aws.secretKey\"\n                              }\n    \
+          \                        }\n                        }\n                \
+          \    ]\n                )\n            ]\n        )\n    )\n\n    fluid_client.create_dataset(dataset)\n\
+          \n    logging.info(f\"Dataset \\\"{dataset.metadata.namespace}/{dataset.metadata.name}\\\
+          \" created successfully\")\n\n"
+        image: python:3.7
+    exec-preheat-dataset:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - preheat_dataset
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.4.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'git+https://github.com/fluid-cloudnative/fluid-client-python.git'\
+          \ && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef preheat_dataset(dataset_name: str, namespace: str):\n    import\
+          \ logging\n    from fluid import DataLoad, DataLoadSpec, FluidClient\n \
+          \   from kubernetes import client as k8s_client\n\n    fluid_client = FluidClient()\n\
+          \n    FLUID_GROUP = \"data.fluid.io\"\n    FLUID_VERSION = \"v1alpha1\"\n\
+          \n    dataload = DataLoad(\n        api_version=\"%s/%s\" % (FLUID_GROUP,\
+          \ FLUID_VERSION),\n        kind=\"DataLoad\",\n        metadata=k8s_client.V1ObjectMeta(\n\
+          \            name=\"%s-loader\" % dataset_name,\n            namespace=namespace\n\
+          \        ),\n        spec=DataLoadSpec(\n            dataset={\n       \
+          \         \"name\": dataset_name,\n                \"namespace\": namespace\n\
+          \            }\n        )\n    )\n\n    fluid_client.create_data_operation(data_op=dataload,\
+          \ wait=True)\n\n    logging.info(f\"Load Dataset \\\"{namespace}/{dataset_name}\\\
+          \"  successfully\")\n\n"
+        image: python:3.7
+    exec-train-simple-cnn:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - train_simple_cnn
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.4.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'pandas' &&\
+          \ \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef train_simple_cnn(dataset_name: str, data_root_path: str, batch_size:\
+          \ int, epochs: int, learning_rate: float):\n    import logging\n\n    logging.info(\"\
+          Training a simple CNN...\")\n\n    import os\n    import pandas as pd\n\
+          \    import torch\n    import torch.nn as nn\n    import torch.optim as\
+          \ optim\n    import torch.nn.init as init\n    from torchvision import transforms\n\
+          \    from torch.utils.data import DataLoader, Dataset, random_split   \n\
+          \n    dataset_path = os.path.join(data_root_path, dataset_name)\n    logging.info(\"\
+          Dataset file location: \" + dataset_path)\n\n    # Check Dataset Path\n\
+          \    logging.info(\"Check dataset\")\n    for dirname, _, filenames in os.walk(dataset_path):\n\
+          \        for filename in filenames:\n            logging.info(os.path.join(dirname,\
+          \ filename))\n\n    # Prepare Data\n    logging.info(\"Start load dataset...\"\
+          )\n    train_data=pd.read_csv(f\"{dataset_path}/fashion-mnist_train.csv\"\
+          )\n    test_data=pd.read_csv(f\"{dataset_path}/fashion-mnist_test.csv\"\
+          )\n    logging.info(\"Load dataset successfully!\")\n\n    class CustomDataset(Dataset):\n\
+          \n        def __init__(self,dataframe,transform=None):\n            self.dataframe=dataframe\n\
+          \            self.transform=transform\n\n\n        def __len__(self):\n\n\
+          \            return len(self.dataframe)\n\n        def __getitem__(self,idx):\n\
+          \            label = self.dataframe.iloc[idx, 0]\n            image_data\
+          \ = self.dataframe.iloc[idx, 1:].values.astype('uint8').reshape((28, 28,\
+          \ 1))\n\n            if(self.transform):\n                image=self.transform(image_data)\n\
+          \n            return image,label\n\n    transform = transforms.Compose([transforms.ToTensor()])\n\
+          \n    train_dataset=CustomDataset(train_data,transform=transform)\n    test_dataset=CustomDataset(test_data,\
+          \ transform=transform)\n\n    train_size=int(0.8*len(train_dataset))\n \
+          \   valid_size=len(train_dataset)-train_size\n\n    train_dataset,valid_dataset=random_split(train_dataset,[train_size,valid_size])\n\
+          \    train_loader=DataLoader(train_dataset,batch_size=batch_size,shuffle=True)\n\
+          \    valid_loader=DataLoader(valid_dataset,batch_size=batch_size)\n    test_loader=DataLoader(test_dataset,batch_size=batch_size)\n\
+          \n    # Build a simple CNN\n    class CNN(nn.Module):\n\n        def __init__(self,num_classes):\n\
+          \            super(CNN, self).__init__()\n            self.feature = nn.Sequential(\n\
+          \                nn.Conv2d(1,24,kernel_size=3,padding=1),\n            \
+          \    nn.ReLU(inplace=True),\n                nn.MaxPool2d(kernel_size=2),\n\
+          \                nn.Conv2d(24,128,kernel_size=3,padding=1),\n          \
+          \      nn.ReLU(inplace=True),\n                nn.MaxPool2d(kernel_size=2)\n\
+          \            )\n            self.classifier = nn.Sequential(\n         \
+          \       nn.Linear(128*7*7,48),\n                nn.ReLU(inplace=True),\n\
+          \                nn.Linear(48,num_classes)\n            )\n\n        def\
+          \ forward(self,x):\n            x = self.feature(x)\n            x = x.view(x.size(0),-1)\n\
+          \            x = self.classifier(x)\n            return x \n\n    # Train\
+          \ this CNN\n    def train(model,train_loader,optimizer,criterion, device):\n\
+          \        model.train()\n        train_loss=0\n        correct=0\n      \
+          \  total=0\n\n        for images,labels in train_loader:\n            images,labels\
+          \ =images.to(device),labels.to(device)\n\n            optimizer.zero_grad()\n\
+          \            outputs=model(images)\n            loss=criterion(outputs,labels)\n\
+          \            loss.backward()\n            optimizer.step()\n\n         \
+          \   train_loss+=loss.item()\n            _,predicted=outputs.max(1)\n  \
+          \          total+=labels.size(0)\n            correct+=predicted.eq(labels).sum().item()\n\
+          \n        train_accuracy=100*correct/total\n        train_loss/=len(train_loader)\n\
+          \        return train_loss,train_accuracy\n\n    def validate(model,valid_loader,criterion,device):\n\
+          \        model.eval()\n        val_loss=0\n        correct=0\n        total=0\n\
+          \n        with torch.no_grad():\n            for images,labels in valid_loader:\n\
+          \                images,labels=images.to(device),labels.to(device)\n\n \
+          \               outputs=model(images)\n                loss=criterion(outputs,labels)\n\
+          \n                val_loss+=loss.item()\n                _,predicted=outputs.max(1)\n\
+          \                total+=labels.size(0)\n                correct+=predicted.eq(labels).sum().item()\n\
+          \n            val_accuracy = 100.0 * correct / total\n            val_loss\
+          \ /= len(valid_loader)\n        return val_loss, val_accuracy\n\n    def\
+          \ test(model, test_loader, device):\n        model.eval()\n        correct=0\n\
+          \        total=0\n\n        with torch.no_grad():\n            for images,labels\
+          \ in test_loader:\n                images,labels=images.to(device),labels.to(device)\n\
+          \n                outputs=model(images)\n                _,predicted=outputs.max(1)\n\
+          \                total+=labels.size(0)\n                correct+=predicted.eq(labels).sum().item()\n\
+          \n            test_accuracy = 100.0 * correct / total\n\n        return\
+          \ test_accuracy\n\n    device = torch.device(\"cuda\" if torch.cuda.is_available()\
+          \ else \"cpu\")\n    cnn = CNN(10).to(device)\n\n    criterion = nn.CrossEntropyLoss()\n\
+          \    optimizer = optim.Adam(cnn.parameters(),lr=learning_rate)\n\n    train_accuracy=[]\n\
+          \    validation_accuracy=[]\n    train_losses=[]\n    validation_losses=[]\n\
+          \n    logging.info(\"Begin training...\")\n    for epoch in range(epochs):\n\
+          \        train_loss, train_acc = train(cnn, train_loader, optimizer, criterion,\
+          \ device)\n        val_loss, val_acc = validate(cnn, valid_loader, criterion,\
+          \ device)\n\n        train_accuracy.append(train_acc)\n        validation_accuracy.append(val_acc)\n\
+          \        train_losses.append(train_loss)\n        validation_losses.append(val_loss)\n\
+          \n\n        logging.info(f\"Epoch {epoch+1}/{epochs}: Train Loss: {train_loss:.4f},\
+          \ Validation Loss: {val_loss:.4f} Train Accuracy: {train_acc:.2f}%, Validation\
+          \ Accuracy: {val_acc:.2f}%\")\n\n    logging.info(\"Test the CNN...\")\n\
+          \    test_acc = test(cnn, test_loader, device)\n    logging.info(f\"Final\
+          \ Test Accuracy: {test_acc:.2f}%\")\n\n"
+        image: bitnami/pytorch:2.1.2
+pipelineInfo:
+  name: train-cnn-for-fashion-mnist
+root:
+  dag:
+    tasks:
+      cleanup-dataset-and-alluxio-runtime:
+        cachingOptions: {}
+        componentRef:
+          name: comp-cleanup-dataset-and-alluxio-runtime
+        dependentTasks:
+        - train-simple-cnn
+        inputs:
+          parameters:
+            dataset_name:
+              componentInputParameter: dataset_name
+            namespace:
+              componentInputParameter: namespace
+        taskInfo:
+          name: cleanup-dataset-and-alluxio-runtime
+        triggerPolicy:
+          strategy: ALL_UPSTREAM_TASKS_COMPLETED
+      cleanup-preheat-operation:
+        cachingOptions: {}
+        componentRef:
+          name: comp-cleanup-preheat-operation
+        dependentTasks:
+        - train-simple-cnn
+        inputs:
+          parameters:
+            dataset_name:
+              componentInputParameter: dataset_name
+            namespace:
+              componentInputParameter: namespace
+        taskInfo:
+          name: cleanup-preheat-operation
+        triggerPolicy:
+          strategy: ALL_UPSTREAM_TASKS_COMPLETED
+      create-alluxio-runtime:
+        cachingOptions: {}
+        componentRef:
+          name: comp-create-alluxio-runtime
+        dependentTasks:
+        - create-s3-dataset
+        inputs:
+          parameters:
+            dataset_name:
+              componentInputParameter: dataset_name
+            namespace:
+              componentInputParameter: namespace
+        taskInfo:
+          name: create-alluxio-runtime
+      create-s3-dataset:
+        cachingOptions: {}
+        componentRef:
+          name: comp-create-s3-dataset
+        inputs:
+          parameters:
+            dataset_name:
+              componentInputParameter: dataset_name
+            mount_point:
+              componentInputParameter: mount_point
+            mount_s3_endpoint:
+              componentInputParameter: mount_s3_endpoint
+            mount_s3_region:
+              componentInputParameter: mount_s3_region
+            namespace:
+              componentInputParameter: namespace
+        taskInfo:
+          name: create-s3-dataset
+      preheat-dataset:
+        cachingOptions: {}
+        componentRef:
+          name: comp-preheat-dataset
+        dependentTasks:
+        - create-alluxio-runtime
+        inputs:
+          parameters:
+            dataset_name:
+              componentInputParameter: dataset_name
+            namespace:
+              componentInputParameter: namespace
+        taskInfo:
+          name: preheat-dataset
+      train-simple-cnn:
+        cachingOptions: {}
+        componentRef:
+          name: comp-train-simple-cnn
+        dependentTasks:
+        - preheat-dataset
+        inputs:
+          parameters:
+            batch_size:
+              componentInputParameter: batch_size
+            data_root_path:
+              runtimeValue:
+                constant: /datasets
+            dataset_name:
+              componentInputParameter: dataset_name
+            epochs:
+              componentInputParameter: epochs
+            learning_rate:
+              componentInputParameter: learning_rate
+        taskInfo:
+          name: train-simple-cnn
+  inputDefinitions:
+    parameters:
+      batch_size:
+        parameterType: NUMBER_INTEGER
+      dataset_name:
+        parameterType: STRING
+      epochs:
+        parameterType: NUMBER_INTEGER
+      learning_rate:
+        parameterType: NUMBER_DOUBLE
+      mount_point:
+        parameterType: STRING
+      mount_s3_endpoint:
+        parameterType: STRING
+      mount_s3_region:
+        parameterType: STRING
+      namespace:
+        parameterType: STRING
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.4.0
+---
+platforms:
+  kubernetes:
+    deploymentSpec:
+      executors:
+        exec-train-simple-cnn:
+          pvcMount:
+          - componentInputParameter: dataset_name
+            mountPath: /datasets

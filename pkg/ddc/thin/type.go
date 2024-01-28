@@ -83,6 +83,7 @@ type Config struct {
 	RuntimeOptions               map[string]string                            `json:"runtimeOptions,omitempty"`
 	PersistentVolumeAttrs        map[string]*corev1.CSIPersistentVolumeSource `json:"persistentVolumeAttrs,omitempty"`
 	PersistentVolumeMountOptions map[string][]string                          `json:"persistentVolumeMountOptions,omitempty"`
+	AccessModes                  []corev1.PersistentVolumeAccessMode          `json:"accessModes,omitempty"`
 }
 
 // RuntimeSetConfig is with the info of the workers and fuses

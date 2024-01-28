@@ -86,6 +86,14 @@ data:
         else
             echo -e "--- disable dryrun"
         fi
+    
+        if [[ $enableForceload == 'true' ]]; then
+            echo -e "--- enable forceload"
+            cmd="$cmd -f"
+            echo -e "now cmd $cmd"
+        else
+            echo -e "--- disable forceload"
+        fi
 
         if [[ $enbaleCacheListLocation == 'true' ]]; then
             if [[ -e "ossutil64" ]]; then
@@ -129,6 +137,7 @@ data:
         cacheFilter=$CACHE_FILTER
         enableFilter=false
         enableDryrun=$DRY_RUN_ENABLE
+        enableForceload=$FORCE_LOAD_ENABLE
         #judge whether to use locaion list
         if [[ -z "$cacheListAccessKeyId" ]] || [[ -z "$cacheListAccessKeySecret" ]] || [[ -z "$cacheListEndpoint" ]] || [[ -z "$cacheListUrl" ]]; then
             enbaleCacheListLocation=false

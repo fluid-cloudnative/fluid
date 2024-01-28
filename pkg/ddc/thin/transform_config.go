@@ -76,6 +76,11 @@ func (t *ThinEngine) transformFuseConfig(runtime *datav1alpha1.ThinRuntime, data
 	config.TargetPath = t.getTargetPath()
 	config.PersistentVolumeAttrs = pvAttributes
 	config.PersistentVolumeMountOptions = pvMountOptions
+	config.AccessModes = dataset.Spec.AccessModes
+
+	if len(config.AccessModes) == 0 {
+		config.AccessModes = []corev1.PersistentVolumeAccessMode{corev1.ReadOnlyMany}
+	}
 
 	var configStr []byte
 	configStr, err = json.Marshal(config)

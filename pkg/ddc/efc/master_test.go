@@ -269,7 +269,7 @@ func TestSetupMaster(t *testing.T) {
 	}{
 		{
 			engine:                engines[0],
-			expectedConfigMapName: engines[0].getConfigmapName(),
+			expectedConfigMapName: engines[0].getHelmValuesConfigMapName(),
 			expectedSelector:      engines[0].getWorkerSelectors(),
 		},
 	}

@@ -125,7 +125,6 @@ func (e *JindoCacheEngine) transform(runtime *datav1alpha1.JindoRuntime) (value 
 		FuseImagePullPolicy: fuseImagePullPolicy,
 		User:                0,
 		Group:               0,
-		FsGroup:             0,
 		UseHostNetwork:      true,
 		UseHostPID:          true,
 		Properties:          e.transformPriority(metaPath),
@@ -274,6 +273,9 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 		cachesetPath := mount.MountPoint
 		cacheStrategy := "DISTRIBUTED"
 		metaPolicy := "ALWAYS"
+		readCacheReplica := 1
+		writeCacheReplica := 1
+
 		if mount.Options["cacheStrategy"] == "DHT" && mount.Options["metaPolicy"] == "ONCE" {
 			cacheStrategy = mount.Options["cacheStrategy"]
 			metaPolicy = mount.Options["metaPolicy"]
@@ -282,7 +284,31 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 		if mount.Options["metaPolicy"] == "ONCE" {
 			metaPolicy = mount.Options["metaPolicy"]
 		}
-		// only support CACHE_ASIDE
+
+		if mount.Options["readCacheReplica"] != "" {
+			readCacheReplicaStr := mount.Options["readCacheReplica"]
+			if num, error := strconv.Atoi(readCacheReplicaStr); error == nil {
+				e.Log.Info(readCacheReplicaStr, " is a valid read cache replica number")
+				readCacheReplica = num
+			} else {
+				error = fmt.Errorf("Options readCacheReplica " + readCacheReplicaStr + " is not a valid number")
+				e.Log.Error(error, "readCacheReplica", readCacheReplicaStr)
+				return error
+			}
+		}
+
+		if mount.Options["writeCacheReplica"] != "" {
+			writeCacheReplicaStr := mount.Options["writeCacheReplica"]
+			if num, error := strconv.Atoi(writeCacheReplicaStr); error == nil {
+				e.Log.Info(writeCacheReplicaStr, " is a valid write cache replica number")
+				writeCacheReplica = num
+			} else {
+				error = fmt.Errorf("Options writeCacheReplica " + writeCacheReplicaStr + " is not a valid number")
+				e.Log.Error(error, "writeCacheReplica", writeCacheReplicaStr)
+				return error
+			}
+		}
+
 		readPolicy := "CACHE_ASIDE"
 		writePolicy, err := e.handleWritePolicy(mount.Options, metaPolicy)
 		if err != nil {
@@ -295,6 +321,8 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 		cacheset.MetaPolicy = metaPolicy
 		cacheset.ReadPolicy = readPolicy
 		cacheset.WritePolicy = writePolicy
+		cacheset.ReadCacheReplica = readCacheReplica
+		cacheset.WriteCacheReplica = writeCacheReplica
 		cachesetsValue[cachesetName] = &cacheset
 
 		// support nas storage
@@ -302,6 +330,21 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 			if len(value.UFSVolumes) == 0 {
 				value.UFSVolumes = []UFSVolume{}
 			}
+
+			// Default to mount ufs volumes in read-only mode. Mount in read-write mode only when
+			// the dataset's accessMode is set explicitly.
+			ufsVolumeReadOnly := false
+			accessModes := dataset.Spec.AccessModes
+			if len(accessModes) == 0 {
+				ufsVolumeReadOnly = true
+			} else {
+				for _, mode := range accessModes {
+					if mode == corev1.ReadOnlyMany {
+						ufsVolumeReadOnly = true
+					}
+				}
+			}
+
 			// Split MountPoint into PVC name and subpath (if it contains a subpath)
 			parts := strings.SplitN(strings.TrimPrefix(mount.MountPoint, common.VolumeScheme.String()), "/", 2)
 
@@ -311,12 +354,14 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 					Name:          parts[0],
 					SubPath:       parts[1],
 					ContainerPath: utils.UFSPathBuilder{}.GenLocalStoragePath(mount),
+					ReadOnly:      ufsVolumeReadOnly,
 				})
 			} else {
 				// MountPoint does not contain subpath
 				value.UFSVolumes = append(value.UFSVolumes, UFSVolume{
 					Name:          parts[0],
 					ContainerPath: utils.UFSPathBuilder{}.GenLocalStoragePath(mount),
+					ReadOnly:      ufsVolumeReadOnly,
 				})
 			}
 		} else {
@@ -441,7 +486,7 @@ func (e *JindoCacheEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, d
 
 	properties := map[string]string{
 		"storage.cluster.id":                   "local",
-		"storage.compaction.enable":            "true",
+		"storage.compaction.enable":            "false",
 		"storage.compaction.period.minute":     "2",
 		"storage.maintainence.period.minute":   "2",
 		"storage.compaction.threshold":         "16",
@@ -898,7 +943,7 @@ func (e *JindoCacheEngine) getSmartDataConfigs(runtime *datav1alpha1.JindoRuntim
 	// Apply defaults
 	config := smartdataConfig{
 		image:           "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata",
-		imageTag:        "6.1.1",
+		imageTag:        "6.2.0",
 		imagePullPolicy: "Always",
 		dnsServer:       "1.1.1.1",
 	}
@@ -936,7 +981,7 @@ func (e *JindoCacheEngine) getSmartDataConfigs(runtime *datav1alpha1.JindoRuntim
 func (e *JindoCacheEngine) parseFuseImage(runtime *datav1alpha1.JindoRuntime) (image, tag, imagePullPolicy string) {
 	// Apply defaults
 	image = "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse"
-	tag = "6.1.1"
+	tag = "6.2.0"
 	imagePullPolicy = "Always"
 
 	// Override with global-scoped configs

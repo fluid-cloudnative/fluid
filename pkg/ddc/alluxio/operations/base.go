@@ -25,8 +25,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fluid-cloudnative/fluid/pkg/utils/cmdguard"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	securityutil "github.com/fluid-cloudnative/fluid/pkg/utils/security"
+	securityutils "github.com/fluid-cloudnative/fluid/pkg/utils/security"
 	"github.com/go-logr/logr"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -389,7 +390,7 @@ func (a AlluxioFileUtils) Count(alluxioPath string) (fileCount int64, folderCoun
 		command                          = []string{"alluxio", "fs", "count", alluxioPath}
 		stdout                           string
 		stderr                           string
-		ufileCount, ufolderCount, utotal uint64
+		ufileCount, ufolderCount, utotal int64
 	)
 
 	stdout, stderr, err = a.execWithoutTimeout(command, false)
@@ -412,22 +413,27 @@ func (a AlluxioFileUtils) Count(alluxioPath string) (fileCount int64, folderCoun
 		return
 	}
 
-	ufileCount, err = strconv.ParseUint(data[0], 10, 64)
+	ufileCount, err = strconv.ParseInt(data[0], 10, 64)
 	if err != nil {
 		return
 	}
 
-	ufolderCount, err = strconv.ParseUint(data[1], 10, 64)
+	ufolderCount, err = strconv.ParseInt(data[1], 10, 64)
 	if err != nil {
 		return
 	}
 
-	utotal, err = strconv.ParseUint(data[2], 10, 64)
+	utotal, err = strconv.ParseInt(data[2], 10, 64)
 	if err != nil {
 		return
 	}
 
-	return int64(ufileCount), int64(ufolderCount), int64(utotal), err
+	if ufileCount < 0 || ufolderCount < 0 || utotal < 0 {
+		err = fmt.Errorf("the return value of Count method is negative")
+		return
+	}
+
+	return ufileCount, ufolderCount, utotal, err
 }
 
 // file count of the Alluxio Filesystem (except folder)
@@ -500,7 +506,7 @@ func (a AlluxioFileUtils) exec(command []string, verbose bool) (stdout string, s
 
 	select {
 	case <-ch:
-		a.log.Info("execute in time", "command", securityutil.FilterCommand(command))
+		a.log.Info("execute in time", "command", securityutils.FilterCommand(command))
 	case <-ctx.Done():
 		err = fmt.Errorf("timeout when executing %v", command)
 	}
@@ -510,6 +516,12 @@ func (a AlluxioFileUtils) exec(command []string, verbose bool) (stdout string, s
 
 // execWithoutTimeout
 func (a AlluxioFileUtils) execWithoutTimeout(command []string, verbose bool) (stdout string, stderr string, err error) {
+	err = cmdguard.ValidateCommandSlice(command)
+
+	if err != nil {
+		return
+	}
+
 	stdout, stderr, err = kubeclient.ExecCommandInContainer(a.podName, a.container, a.namespace, command)
 	if err != nil {
 		a.log.Info("Stdout", "Command", command, "Stdout", stdout)

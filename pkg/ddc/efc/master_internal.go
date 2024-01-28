@@ -63,7 +63,7 @@ func (e *EFCEngine) setupMasterInternal() (err error) {
 func (e *EFCEngine) generateEFCValueFile(runtime *datav1alpha1.EFCRuntime) (valueFileName string, err error) {
 
 	//0. Check if the configmap exists
-	err = kubeclient.DeleteConfigMap(e.Client, e.getConfigmapName(), e.namespace)
+	err = kubeclient.DeleteConfigMap(e.Client, e.getHelmValuesConfigMapName(), e.namespace)
 	if err != nil {
 		e.Log.Error(err, "Failed to clean value files")
 		return
@@ -83,7 +83,7 @@ func (e *EFCEngine) generateEFCValueFile(runtime *datav1alpha1.EFCRuntime) (valu
 	}
 
 	//2. Get the template value file
-	valueFile, err := os.CreateTemp(os.TempDir(), fmt.Sprintf("%s-%s-values.yaml", e.name, e.runtimeType))
+	valueFile, err := os.CreateTemp(os.TempDir(), fmt.Sprintf("%s-%s-values.yaml", e.name, e.engineImpl))
 	if err != nil {
 		e.Log.Error(err, "failed to create value file", "valueFile", valueFile.Name())
 		return valueFileName, err
@@ -98,7 +98,7 @@ func (e *EFCEngine) generateEFCValueFile(runtime *datav1alpha1.EFCRuntime) (valu
 	}
 
 	//3. Save the configfile into configmap
-	err = kubectl.CreateConfigMapFromFile(e.getConfigmapName(), "data", valueFileName, e.namespace)
+	err = kubectl.CreateConfigMapFromFile(e.getHelmValuesConfigMapName(), "data", valueFileName, e.namespace)
 	if err != nil {
 		return
 	}

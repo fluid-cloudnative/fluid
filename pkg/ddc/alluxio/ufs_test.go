@@ -250,7 +250,65 @@ func TestPrepareUFS(t *testing.T) {
 		{
 			name: "test",
 			fields: fields{
-				runtime: &datav1alpha1.AlluxioRuntime{},
+				runtime: &datav1alpha1.AlluxioRuntime{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "spark",
+						Namespace: "default",
+					},
+				},
+				master: &appsv1.StatefulSet{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "hbase-master",
+						Namespace: "fluid",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: utilpointer.Int32(2),
+					},
+					Status: appsv1.StatefulSetStatus{
+						Replicas:      3,
+						ReadyReplicas: 2,
+					},
+				},
+				dataset: &datav1alpha1.Dataset{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "spark",
+						Namespace: "default",
+					},
+					Spec: datav1alpha1.DatasetSpec{
+						Mounts: []datav1alpha1.Mount{
+							{
+								MountPoint: "cosn://imagenet-1234567/",
+							},
+						},
+						DataRestoreLocation: &datav1alpha1.DataRestoreLocation{
+							Path:     "local:///tmp/restore",
+							NodeName: "192.168.0.1",
+						},
+					},
+					Status: datav1alpha1.DatasetStatus{
+						UfsTotal: "",
+					},
+				},
+				name:      "spark",
+				namespace: "default",
+				Log:       fake.NullLogger(),
+			},
+			wantErr: false,
+		},
+		{
+			name: "ha master",
+			fields: fields{
+				runtime: &datav1alpha1.AlluxioRuntime{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "spark",
+						Namespace: "default",
+					},
+					Spec: datav1alpha1.AlluxioRuntimeSpec{
+						Master: datav1alpha1.AlluxioCompTemplateSpec{
+							Replicas: 3,
+						},
+					},
+				},
 				master: &appsv1.StatefulSet{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      "hbase-master",
@@ -320,6 +378,11 @@ func TestPrepareUFS(t *testing.T) {
 				return "10000", nil
 			})
 			defer patch4.Reset()
+
+			patch5 := ApplyMethod(reflect.TypeOf(afsUtils), "ExecMountScripts", func(_ operations.AlluxioFileUtils) error {
+				return nil
+			})
+			defer patch5.Reset()
 
 			e := &AlluxioEngine{
 				runtime:            tt.fields.runtime,

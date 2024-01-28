@@ -12,7 +12,7 @@ crdUpgrade:
   enabled: true
   # This sets the time-to-live (TTL) for crd-upgrade jobs. Default is 259200 seconds (3 days).
   ttlSecondsAfterFinished: 259200 
-  image: fluidcloudnative/fluid-crd-upgrader:v1.0.0-8abc63f
+  image: fluidcloudnative/fluid-crd-upgrader:v1.0.0-d4c82f1
 
 ##  if unspecified, will use built-in variable `.Release.Namespace`.
 namespace: fluid-system
@@ -25,7 +25,7 @@ dataset:
   tolerations:
     - operator: Exists
   controller:
-    image: fluidcloudnative/dataset-controller:v1.0.0-8abc63f
+    image: fluidcloudnative/dataset-controller:v1.0.0-d4c82f1
 
 csi:
   tolerations:
@@ -36,7 +36,7 @@ csi:
   registrar:
     image: fluidcloudnative/csi-node-driver-registrar:v2.3.0
   plugins:
-    image: fluidcloudnative/fluid-csi:v1.0.0-8abc63f
+    image: fluidcloudnative/fluid-csi:v1.0.0-d4c82f1
   kubelet:
     kubeConfigFile: /etc/kubernetes/kubelet.conf
     certDir: /var/lib/kubelet/pki
@@ -62,7 +62,7 @@ runtime:
     init:
       image: fluidcloudnative/init-users:v0.9.0
     controller:
-      image: fluidcloudnative/alluxioruntime-controller:v1.0.0-8abc63f
+      image: fluidcloudnative/alluxioruntime-controller:v1.0.0-d4c82f1
     runtime:
       image: alluxio/alluxio-dev:2.9.0
     fuse:
@@ -83,7 +83,7 @@ runtime:
     fuse:
       image: registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:4.6.8
     controller:
-      image: fluidcloudnative/jindoruntime-controller:v1.0.0-8abc63f
+      image: fluidcloudnative/jindoruntime-controller:v1.0.0-d4c82f1
     init:
       portCheck:
         enabled: false
@@ -99,7 +99,7 @@ runtime:
     init:
       image: fluidcloudnative/init-users:v0.9.0
     controller:
-      image: fluidcloudnative/goosefsruntime-controller:v1.0.0-8abc63f
+      image: fluidcloudnative/goosefsruntime-controller:v1.0.0-d4c82f1
     runtime:
       image: ccr.ccs.tencentyun.com/qcloud/goosefs:v1.2.0
     fuse:
@@ -111,7 +111,7 @@ runtime:
     enabled: false
     runtimeWorkers: 3
     controller:
-      image: fluidcloudnative/juicefsruntime-controller:v1.0.0-8abc63f
+      image: fluidcloudnative/juicefsruntime-controller:v1.0.0-d4c82f1
     fuse:
       ceimage: juicedata/juicefs-fuse:ce-v1.1.0-rc1
       eeimage: juicedata/juicefs-fuse:ee-4.9.16
@@ -121,7 +121,7 @@ runtime:
       - operator: Exists
     enabled: false
     controller:
-      image: fluidcloudnative/thinruntime-controller:v1.0.0-8abc63f
+      image: fluidcloudnative/thinruntime-controller:v1.0.0-d4c82f1
     fuse:
       configStorage: configmap
   efc:
@@ -130,7 +130,7 @@ runtime:
       - operator: Exists
     enabled: false
     controller:
-      image: fluidcloudnative/efcruntime-controller:v1.0.0-8abc63f
+      image: fluidcloudnative/efcruntime-controller:v1.0.0-d4c82f1
       imagePullPolicy: Always
     init:
       image: registry.cn-zhangjiakou.aliyuncs.com/nascache/init-alifuse:v1.2.2-19dcee9
@@ -140,10 +140,18 @@ runtime:
       image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-worker:v1.2.2-19dcee9
     fuse:
       image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-fuse:v1.2.2-19dcee9
+  vineyard:
+    replicas: 1
+    tolerations:
+      - operator: Exists
+    enabled: false
+    controller:
+      image: fluidcloudnative/vineyardruntime-controller:v1.0.0-d4c82f1
+      imagePullPolicy: Always
 
 webhook:
   enabled: true
-  image: fluidcloudnative/fluid-webhook:v1.0.0-8abc63f
+  image: fluidcloudnative/fluid-webhook:v1.0.0-d4c82f1
   replicas: 1
   timeoutSeconds: 15
   reinvocationPolicy: IfNeeded
@@ -164,17 +172,17 @@ webhook:
       # serverless webhook plugins
       serverless:
         withDataset:
-          - RequireNodeWithFuse
-          - NodeAffinityWithCache
           - FuseSidecar
-        withoutDataset:
-          - PreferNodesWithoutCache
+        withoutDataset: []
     pluginConfig:
       - name: NodeAffinityWithCache
         # plugin args is a serialized yaml string.
         args: |
           preferred:
-            # fluid existed node affinity, the name can not be modified.
+            # fluid.io/fuse is a fluid built-in affinity, prefer to schedule pods to nodes with runtime fuse pods.
+            # - name: fluid.io/fuse
+            #   weight: 100
+            # fluid.io/node is a fluid built-in affinity, prefer to schedule pods to nodes with runtime worker pods.
             - name: fluid.io/node
               weight: 100
             # runtime worker's zone label name, can be changed according to k8s environment.
@@ -193,4 +201,4 @@ fluidapp:
   tolerations:
     - operator: Exists
   controller:
-    image: fluidcloudnative/application-controller:v1.0.0-8abc63f
+    image: fluidcloudnative/application-controller:v1.0.0-d4c82f1

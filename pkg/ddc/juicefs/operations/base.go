@@ -26,6 +26,7 @@ import (
 
 	"github.com/go-logr/logr"
 
+	"github.com/fluid-cloudnative/fluid/pkg/utils/cmdguard"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
@@ -94,7 +95,7 @@ func (j JuiceFileUtils) Count(juiceSubPath string) (total int64, err error) {
 		command = []string{"du", "-sb", juiceSubPath}
 		stdout  string
 		stderr  string
-		utotal  uint64
+		utotal  int64
 	)
 
 	stdout, stderr, err = j.exec(command)
@@ -117,12 +118,16 @@ func (j JuiceFileUtils) Count(juiceSubPath string) (total int64, err error) {
 		return
 	}
 
-	utotal, err = strconv.ParseUint(data[0], 10, 64)
+	utotal, err = strconv.ParseInt(data[0], 10, 64)
 	if err != nil {
 		return
 	}
+	if utotal < 0 {
+		err = fmt.Errorf("the return value of Count method is negative")
+		return
+	}
 
-	return int64(utotal), err
+	return utotal, err
 }
 
 // file count of the JuiceFS Filesystem (except folder)
@@ -234,7 +239,7 @@ func (j JuiceFileUtils) DeleteCacheDir(dir string) (err error) {
 // GetStatus get status of volume
 func (j JuiceFileUtils) GetStatus(source string) (status string, err error) {
 	var (
-		command = []string{"/bin/sh", "-c", fmt.Sprintf("juicefs status %s", source)}
+		command = []string{"sh", "-c", fmt.Sprintf("juicefs status %s", source)}
 		stdout  string
 		stderr  string
 	)
@@ -321,6 +326,12 @@ func (j JuiceFileUtils) exec(command []string) (stdout string, stderr string, er
 
 // execWithoutTimeout
 func (j JuiceFileUtils) execWithoutTimeout(command []string) (stdout string, stderr string, err error) {
+	// validate the pipe command with white list
+	err = cmdguard.ValidateCommandSlice(command)
+	if err != nil {
+		return
+	}
+
 	stdout, stderr, err = kubeclient.ExecCommandInContainer(j.podName, j.container, j.namespace, command)
 	if err != nil {
 		j.log.Info("Stdout", "Command", command, "Stdout", stdout)

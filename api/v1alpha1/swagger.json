@@ -1385,10 +1385,14 @@
     },
     ".EncryptOption": {
       "type": "object",
+      "required": [
+        "name"
+      ],
       "properties": {
         "name": {
           "description": "The name of encryptOption",
-          "type": "string"
+          "type": "string",
+          "default": ""
         },
         "valueFrom": {
           "description": "The valueFrom of encryptOption",
@@ -1420,7 +1424,7 @@
           }
         },
         "options": {
-          "description": "Configurable options for External Etcd cluster. Support the following options.\n\n  etcd.prefix: (String) the prefix of etcd key for vineyard objects\n\nDefault value is as follows.\n\n  etcd.prefix: \"/vineyard\"",
+          "description": "Configurable options for External Etcd cluster.",
           "type": "object",
           "additionalProperties": {
             "type": "string",
@@ -2441,7 +2445,7 @@
         },
         "quota": {
           "description": "Quota for the whole tier. (e.g. 100Gi) Please note that if there're multiple paths used for this tierstore, the quota will be equally divided into these paths. If you'd like to set quota for each, path, see QuotaList for more information.",
-          "$ref": "#/definitions/k8s.io.apimachinery.pkg.api.resource.Quantity"
+          "$ref": "#/definitions/.Quantity"
         },
         "quotaList": {
           "description": "QuotaList are quotas used to set quota on multiple paths. Quotas should be separated with comma. Quotas in this list will be set to paths with the same order in Path. For example, with Path defined with \"/mnt/cache1,/mnt/cache2\" and QuotaList set to \"100Gi, 50Gi\", then we get 100GiB cache storage under \"/mnt/cache1\" and 50GiB under \"/mnt/cache2\". Also note that num of quotas must be consistent with the num of paths defined in Path.",
@@ -2497,7 +2501,7 @@
           }
         },
         "options": {
-          "description": "Configurable options for Vineyard component. For Master, there is no configurable options. For Worker, support the following options.\n\n  vineyardd.reserve.memory: (Bool) where to reserve memory for vineyardd\n                            If set to true, the memory quota will be counted to the vineyardd rather than the application.\n  etcd.prefix: (String) the prefix of etcd key for vineyard objects\n\n  Default value is as follows.\n\n    vineyardd.reserve.memory: \"true\"\n    etcd.prefix: \"/vineyard\"",
+          "description": "Configurable options for Vineyard component. For Master, there is no configurable options. For Worker, support the following options.\n\n  vineyardd.reserve.memory: (Bool) where to reserve memory for vineyardd\n                            If set to true, the memory quota will be counted to the vineyardd rather than the application.\n  etcd.prefix: (String) the prefix of etcd key for vineyard objects\n  wait.etcd.timeout: (String) the timeout period before waiting the etcd to be ready, in seconds\n\n  Default value is as follows.\n\n    vineyardd.reserve.memory: \"true\"\n    etcd.prefix: \"/vineyard\"\n    wait.etcd.timeout: \"120\"",
           "type": "object",
           "additionalProperties": {
             "type": "string",
@@ -2505,7 +2509,7 @@
           }
         },
         "ports": {
-          "description": "Ports used by Vineyard component. For Master, the default client port is 2379 and peer port is 2380. For Worker, the default rpc port is 9600.",
+          "description": "Ports used by Vineyard component. For Master, the default client port is 2379 and peer port is 2380. For Worker, the default rpc port is 9600 and the default exporter port is 9144.",
           "type": "object",
           "additionalProperties": {
             "type": "integer",
@@ -2572,6 +2576,9 @@
     ".Mount": {
       "description": "Mount describes a mounting. \u003cbr\u003e Refer to \u003ca href=\"https://docs.alluxio.io/os/user/stable/en/ufs/S3.html\"\u003eAlluxio Storage Integrations\u003c/a\u003e for more info",
       "type": "object",
+      "required": [
+        "mountPoint"
+      ],
       "properties": {
         "encryptOptions": {
           "description": "The secret information",
@@ -2583,7 +2590,8 @@
         },
         "mountPoint": {
           "description": "MountPoint is the mount point of source.",
-          "type": "string"
+          "type": "string",
+          "default": ""
         },
         "name": {
           "description": "The name of mount",
@@ -3069,6 +3077,9 @@
     },
     ".SecretKeySelector": {
       "type": "object",
+      "required": [
+        "name"
+      ],
       "properties": {
         "key": {
           "description": "The required key in the secret",
@@ -3076,7 +3087,8 @@
         },
         "name": {
           "description": "The name of required secret",
-          "type": "string"
+          "type": "string",
+          "default": ""
         }
       }
     },
@@ -3606,7 +3618,7 @@
           }
         },
         "options": {
-          "description": "Configurable options for Vineyard component. For Master, there is no configurable options. For Worker, support the following options.\n\n  vineyardd.reserve.memory: (Bool) where to reserve memory for vineyardd\n                            If set to true, the memory quota will be counted to the vineyardd rather than the application.\n  etcd.prefix: (String) the prefix of etcd key for vineyard objects\n\n  Default value is as follows.\n\n    vineyardd.reserve.memory: \"true\"\n    etcd.prefix: \"/vineyard\"",
+          "description": "Configurable options for Vineyard component. For Master, there is no configurable options. For Worker, support the following options.\n\n  vineyardd.reserve.memory: (Bool) where to reserve memory for vineyardd\n                            If set to true, the memory quota will be counted to the vineyardd rather than the application.\n  etcd.prefix: (String) the prefix of etcd key for vineyard objects\n  wait.etcd.timeout: (String) the timeout period before waiting the etcd to be ready, in seconds\n\n  Default value is as follows.\n\n    vineyardd.reserve.memory: \"true\"\n    etcd.prefix: \"/vineyard\"\n    wait.etcd.timeout: \"120\"",
           "type": "object",
           "additionalProperties": {
             "type": "string",
@@ -3614,7 +3626,7 @@
           }
         },
         "ports": {
-          "description": "Ports used by Vineyard component. For Master, the default client port is 2379 and peer port is 2380. For Worker, the default rpc port is 9600.",
+          "description": "Ports used by Vineyard component. For Master, the default client port is 2379 and peer port is 2380. For Worker, the default rpc port is 9600 and the default exporter port is 9144.",
           "type": "object",
           "additionalProperties": {
             "type": "integer",
@@ -3643,7 +3655,7 @@
       }
     },
     ".VineyardRuntime": {
-      "description": "VineyardRuntime is the Schema for the vineyardruntimes API",
+      "description": "VineyardRuntime is the Schema for the VineyardRuntimes API",
       "type": "object",
       "properties": {
         "apiVersion": {
@@ -3714,6 +3726,11 @@
           "default": {},
           "$ref": "#/definitions/.MasterSpec"
         },
+        "replicas": {
+          "description": "The replicas of the worker, need to be specified If worker.replicas and the field are both specified, the field will be respected",
+          "type": "integer",
+          "format": "int32"
+        },
         "tieredstore": {
           "description": "Tiered storage used by vineyardd The MediumType can only be `MEM` and `SSD` `MEM` actually represents the shared memory of vineyardd. `SSD` represents the external storage of vineyardd. Default is as follows.\n  tieredstore:\n    levels:\n    - level: 0\n      mediumtype: MEM\n      quota: 4Gi\n\nChoose hostpath as the external storage of vineyardd.\n  tieredstore:\n    levels:\n\t   - level: 0\n      mediumtype: MEM\n      quota: 4Gi\n\t\t high: \"0.8\"\n      low: \"0.3\"\n    - level: 1\n      mediumtype: SSD\n      quota: 10Gi\n      volumeType: Hostpath\n      path: /var/spill-path",
           "default": {},
@@ -3743,7 +3760,7 @@
           "type": "string"
         },
         "image": {
-          "description": "Image for Vineyard Fuse Default is `vineyardcloudnative/vineyard-mount-socket`",
+          "description": "Image for Vineyard Fuse Default is `vineyardcloudnative/vineyard-fluid-fuse`",
           "type": "string"
         },
         "imagePullPolicy": {

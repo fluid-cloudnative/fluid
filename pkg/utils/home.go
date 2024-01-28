@@ -45,26 +45,31 @@ func Home() (string, error) {
 	return homeUnix()
 }
 
-func homeUnix() (string, error) {
+func homeUnix() (home string, err error) {
 	// First prefer the HOME environmental variable
-	if home := os.Getenv("HOME"); home != "" {
+	home = os.Getenv("HOME")
+	if home != "" {
 		return home, nil
 	}
 
 	// If that fails, try the shell
 	var stdout bytes.Buffer
+	// cmd, err := security.Command("sh", "-c", "eval echo ~$USER")
 	cmd := exec.Command("sh", "-c", "eval echo ~$USER")
+
 	cmd.Stdout = &stdout
-	if err := cmd.Run(); err != nil {
-		return "", err
+	err = cmd.Run()
+	if err != nil {
+		return
 	}
 
-	result := strings.TrimSpace(stdout.String())
-	if result == "" {
-		return "", errors.New("blank output when reading home directory")
+	home = strings.TrimSpace(stdout.String())
+	if home == "" {
+		err = errors.New("blank output when reading home directory")
+		return
 	}
 
-	return result, nil
+	return
 }
 
 func homeWindows() (string, error) {

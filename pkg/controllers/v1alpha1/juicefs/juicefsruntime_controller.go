@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl/watch"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -95,7 +96,7 @@ func (r *JuiceFSRuntimeReconciler) Reconcile(context context.Context, req ctrl.R
 		NamespacedName: req.NamespacedName,
 		Recorder:       r.Recorder,
 		Category:       common.AccelerateCategory,
-		RuntimeType:    runtimeType,
+		RuntimeType:    common.JuiceFSRuntime,
 		Client:         r.Client,
 		FinalizerName:  runtimeResourceFinalizerName,
 	}
@@ -114,6 +115,7 @@ func (r *JuiceFSRuntimeReconciler) Reconcile(context context.Context, req ctrl.R
 		}
 	}
 	ctx.Runtime = runtime
+	ctx.EngineImpl = ddc.InferEngineImpl(runtime.Status, common.JuiceFSEngineImpl)
 	ctx.Log.V(1).Info("process the runtime", "runtime", ctx.Runtime)
 
 	// reconcile the implement

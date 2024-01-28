@@ -1,0 +1,99 @@
+#  Copyright 2023 The Fluid Authors.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+{{- $name := include "vineyard.name" . }}
+{{- $fullName := include "vineyard.fullname" . }}
+{{- $chart := include "vineyard.chart" . }}
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ $fullName }}-fuse
+  labels:
+    app: {{ $name }}
+    chart: {{ $chart }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    role: vineyard-fuse
+  {{- if .Values.owner.enabled }}
+  ownerReferences:
+    - apiVersion: {{ .Values.owner.apiVersion }}
+      blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+      controller: {{ .Values.owner.controller }}
+      kind: {{ .Values.owner.kind }}
+      name: {{ .Values.owner.name }}
+      uid: {{ .Values.owner.uid }}
+  {{- end }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ $name }}
+      chart: {{ $chart }}
+      release: {{ .Release.Name }}
+      role: vineyard-fuse
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+      labels:
+        app: {{ $name }}
+        chart: {{ $chart }}
+        release: {{ .Release.Name }}
+        role: vineyard-fuse
+    spec:
+      tolerations:
+      - operator: Exists
+      nodeSelector:
+      {{- if .Values.fuse.nodeSelector }}
+{{ toYaml .Values.fuse.nodeSelector | trim | indent 8  }}
+      {{- end }}
+      enableServiceLinks: false
+      containers:
+        - name: vineyard-fuse
+          image: {{ .Values.fuse.image }}:{{ .Values.fuse.imageTag }}
+          imagePullPolicy: {{ .Values.fuse.imagePullPolicy }}
+          securityContext:
+            privileged: true
+          env:
+          - name: MOUNT_DIR
+            value: {{ .Values.fuse.targetPath | dir }}
+          - name: FUSE_DIR
+            value: {{ .Values.fuse.targetPath }}
+          - name: RPC_CONF_DIR
+            value: {{ .Values.fuse.targetPath }}/rpc-conf
+          - name: PRESTOP_MARKER
+            value: /tmp/prestop-marker
+          lifecycle:
+            preStop:
+              exec:
+                {{/* umount the configmap volume manually to avoid the error of "possibly malicious path detecte" */}}
+                command: ["sh", "-c", "touch /tmp/prestop-marker && umount {{ .Values.fuse.targetPath }} && umount {{ .Values.fuse.targetPath }}/rpc-conf"]
+          {{- if .Values.master.resources  }}
+{{ include "vineyard.master.resources" . | indent 10 }}
+          {{- end }}
+          volumeMounts:
+          - name: vineyard-fuse-mount
+            mountPath: {{ .Values.fuse.targetPath | dir }}
+            mountPropagation: Bidirectional
+          - name: vineyard-rpc-conf
+            mountPath: {{ .Values.fuse.targetPath }}/rpc-conf
+      restartPolicy: Always
+      volumes:
+        - name: vineyard-fuse-mount
+          hostPath:
+            path: {{ .Values.fuse.targetPath | dir }}
+            type: DirectoryOrCreate
+        - name: vineyard-rpc-conf
+          configMap:
+            name: {{ $fullName }}-rpc-conf

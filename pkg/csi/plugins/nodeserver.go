@@ -30,6 +30,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/cmdguard"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
@@ -161,7 +162,10 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	} else {
 		args = append(args, mountPath, targetPath)
 	}
-	command := exec.Command("mount", args...)
+	command, err := cmdguard.Command("mount", args...)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
 
 	glog.V(3).Infof("NodePublishVolume: exec command %v", command)
 	stdoutStderr, err := command.CombinedOutput()
@@ -508,7 +512,10 @@ func checkMountInUse(volumeName string) (bool, error) {
 
 	// TODO: refer to https://github.com/kubernetes-sigs/alibaba-cloud-csi-driver/blob/4fcb743220371de82d556ab0b67b08440b04a218/pkg/oss/utils.go#L72
 	// for a better implementation
-	command := exec.Command("/usr/local/bin/check_bind_mounts.sh", volumeName)
+	command, err := cmdguard.Command("/usr/local/bin/check_bind_mounts.sh", volumeName)
+	if err != nil {
+		return inUse, err
+	}
 	glog.Infoln(command)
 
 	stdoutStderr, err := command.CombinedOutput()

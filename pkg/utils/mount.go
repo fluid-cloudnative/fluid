@@ -21,9 +21,10 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 
+	"github.com/fluid-cloudnative/fluid/pkg/utils/cmdguard"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/validation"
 	"github.com/golang/glog"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/mount"
@@ -35,19 +36,22 @@ const MountRoot string = "MOUNT_ROOT"
 func GetMountRoot() (string, error) {
 	mountRoot := os.Getenv(MountRoot)
 
-	if !filepath.IsAbs(mountRoot) {
-		return mountRoot, fmt.Errorf("the the value of the env variable named MOUNT_ROOT is illegal")
+	if err := validation.IsValidMountRoot(mountRoot); err != nil {
+		return mountRoot, err
 	}
 	return mountRoot, nil
 }
 
-func CheckMountReadyAndSubPathExist(fluidPath string, mountType string, subPath string) error {
+func CheckMountReadyAndSubPathExist(fluidPath string, mountType string, subPath string) (err error) {
 	glog.Infof("Try to check if the mount target %s is ready", fluidPath)
 	if fluidPath == "" {
 		return errors.New("target is not specified for checking the mount")
 	}
 	args := []string{fluidPath, mountType, subPath}
-	command := exec.Command("/usr/local/bin/check_mount.sh", args...)
+	command, err := cmdguard.Command("/usr/local/bin/check_mount.sh", args...)
+	if err != nil {
+		return
+	}
 	glog.Infoln(command)
 	stdoutStderr, err := command.CombinedOutput()
 	glog.Infoln(string(stdoutStderr))

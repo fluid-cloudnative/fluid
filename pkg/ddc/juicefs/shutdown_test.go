@@ -555,6 +555,7 @@ func TestJuiceFSEngine_getUUID_community(t *testing.T) {
 		name:        "test",
 		namespace:   "fluid",
 		runtimeType: "juicefs",
+		engineImpl:  "juicefs",
 		Log:         fake.NullLogger(),
 		Client:      client,
 	}
@@ -597,6 +598,7 @@ func TestJuiceFSEngine_getUUID_enterprise(t *testing.T) {
 		name:        "test",
 		namespace:   "fluid",
 		runtimeType: "juicefs",
+		engineImpl:  "juicefs",
 		Log:         fake.NullLogger(),
 		Client:      client,
 	}

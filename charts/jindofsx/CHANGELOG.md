@@ -101,3 +101,7 @@ Support master volume and set namespace meta dir
 
 1.0.1
 Fix worker's annotations for pod spec overwrites master's annotations
+
+1.0.2
+Delete runtime's fsGroup
+Mount ufs volumes according to dataset's accessModes

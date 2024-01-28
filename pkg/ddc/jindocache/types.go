@@ -30,7 +30,6 @@ type Jindo struct {
 	FuseImagePullPolicy string                 `json:"fuseImagePullPolicy"`
 	User                int                    `json:"user"`
 	Group               int                    `json:"group"`
-	FsGroup             int                    `json:"fsGroup"`
 	UseHostNetwork      bool                   `json:"useHostNetwork"`
 	UseHostPID          bool                   `json:"useHostPID"`
 	Properties          map[string]string      `json:"properties"`
@@ -155,13 +154,16 @@ type UFSVolume struct {
 	Name          string `json:"name"`
 	SubPath       string `json:"subPath,omitempty"`
 	ContainerPath string `json:"containerPath"`
+	ReadOnly      bool   `json:"readOnly"`
 }
 
 type CacheSet struct {
-	Name          string `json:"name"`
-	Path          string `json:"path,omitempty"`
-	CacheStrategy string `json:"cacheStrategy"`
-	MetaPolicy    string `json:"metaPolicy"`
-	ReadPolicy    string `json:"readPolicy"`
-	WritePolicy   string `json:"writePolicy"`
+	Name              string `json:"name"`
+	Path              string `json:"path,omitempty"`
+	CacheStrategy     string `json:"cacheStrategy"`
+	MetaPolicy        string `json:"metaPolicy"`
+	ReadPolicy        string `json:"readPolicy"`
+	WritePolicy       string `json:"writePolicy"`
+	ReadCacheReplica  int    `json:"readCacheReplica"`
+	WriteCacheReplica int    `json:"writeCacheReplica"`
 }
