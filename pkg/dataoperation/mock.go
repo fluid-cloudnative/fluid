@@ -58,6 +58,10 @@ func (m mockDataloadOperationReconciler) GetTTL() (ttl *int32, err error) {
 	return m.TTLSecondsAfterFinished, err
 }
 
+func (r *mockDataloadOperationReconciler) GetParallelTaskNumber() int32 {
+	return 1
+}
+
 // GetTargetDataset implements OperationInterface.
 func (m mockDataloadOperationReconciler) GetTargetDataset() (*datav1alpha1.Dataset, error) {
 	panic("unimplemented")

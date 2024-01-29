@@ -227,3 +227,29 @@ func TestNeedCleanUp(t *testing.T) {
 		}
 	}
 }
+
+func TestGetParallelOperationWorkersName(t *testing.T) {
+	type args struct {
+		releaseName string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "test",
+			args: args{
+				releaseName: "datamigrate",
+			},
+			want: "datamigrate-workers",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetParallelOperationWorkersName(tt.args.releaseName); got != tt.want {
+				t.Errorf("GetParallelOperationWorkersName() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

@@ -153,15 +153,15 @@ def create_redis_secret(namespace="default"):
     print("Created secret {}".format(SECRET_NAME))
 
 
-def create_datamigrate(datamigrate_name, dataset_name, namespace="default"):
+def create_datamigrate(datamigrate_name, dataset_name, parallelism=1, namespace="default"):
     api = client.CustomObjectsApi()
     my_datamigrate = {
         "apiVersion": "data.fluid.io/v1alpha1",
         "kind": "DataMigrate",
         "metadata": {"name": datamigrate_name, "namespace": namespace},
         "spec": {
-            "image": "registry.cn-hangzhou.aliyuncs.com/juicefs/juicefs-fuse",
-            "imageTag": "nightly",
+            "image": "juicedata/juicefs-fuse",
+            "imageTag": "ce-nightly",
             "from": {
                 "dataset": {"name": dataset_name, "namespace": namespace}
             },
@@ -171,7 +171,8 @@ def create_datamigrate(datamigrate_name, dataset_name, namespace="default"):
                     {"name": "access-key", "valueFrom": {"secretKeyRef": {"name": SECRET_NAME, "key": "accesskey"}}},
                     {"name": "secret-key", "valueFrom": {"secretKeyRef": {"name": SECRET_NAME, "key": "secretkey"}}},
                 ]
-            }}
+            }},
+            "parallelism": parallelism,
         },
     }
 
@@ -448,6 +449,7 @@ def main():
 
     name = "jfsdemo"
     datamigrate_name = "jfsdemo"
+    parallel_datamigrate_name = "parallel-jfsdemo"
     cron_datamigrate_name = "cron-jfsdemo"
     dataload_name = "jfsdemo-warmup"
     namespace = "default"
@@ -568,11 +570,28 @@ def main():
             # back_fn=currying_fn(clean_up_datamigrate, datamigrate_name=datamigrate_name, namespace=namespace)
         )
     )
-
     flow.append_step(
         StatusCheckStep(
             step_name="check if DataMigrate succeeds",
             forth_fn=currying_fn(check_datamigrate_complete, datamigrate_name=datamigrate_name, namespace=namespace)
+        )
+    )
+
+    flow.append_step(
+        SimpleStep(
+            step_name="create Parallel DataMigrate job",
+            forth_fn=currying_fn(create_datamigrate, datamigrate_name=parallel_datamigrate_name, dataset_name=name,
+                                 parallelism=2, namespace=namespace),
+            back_fn=dummy_back
+            # No need to clean up DataMigrate because of its ownerReference
+            # back_fn=currying_fn(clean_up_datamigrate, datamigrate_name=datamigrate_name, namespace=namespace)
+        )
+    )
+
+    flow.append_step(
+        StatusCheckStep(
+            step_name="check if Parallel DataMigrate succeeds",
+            forth_fn=currying_fn(check_datamigrate_complete, datamigrate_name=parallel_datamigrate_name, namespace=namespace)
         )
     )
 
@@ -615,7 +634,8 @@ def main():
 
     print("> Post-Check: Data Migrate deleted?")
     try:
-        check_datamigrate_clean_up(datamigrate_name, name)
+        check_datamigrate_clean_up(datamigrate_name, namespace)
+        check_datamigrate_clean_up(parallel_datamigrate_name, namespace)
     except Exception as e:
         print(e)
         exit(1)

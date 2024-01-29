@@ -224,3 +224,7 @@ func (r *dataProcessOperation) GetTTL() (ttl *int32, err error) {
 	ttl = r.dataProcess.Spec.TTLSecondsAfterFinished
 	return
 }
+
+func (r *dataProcessOperation) GetParallelTaskNumber() int32 {
+	return 1
+}

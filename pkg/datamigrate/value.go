@@ -86,4 +86,18 @@ type DataMigrateInfo struct {
 
 	// Resources that will be requested by DataMigrate job.
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// Parallelism defines the parallel tasks.
+	Parallelism int32 `json:"parallelism,omitempty"`
+
+	// ParallelOptions used when Parallelism is greater than 1.
+	ParallelOptions ParallelOptions `json:"parallelOptions,omitempty"`
+}
+
+type ParallelOptions struct {
+	SSHPort int `json:"sshPort,omitempty"`
+
+	SSHReadyTimeoutSeconds int `json:"readyTimeoutSeconds,omitempty"`
+
+	SSHSecretName string `json:"sshSecretName,omitempty"`
 }
