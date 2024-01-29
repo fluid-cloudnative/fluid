@@ -18,16 +18,10 @@ package utils
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/pkg/errors"
-	_ "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/discovery"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -167,24 +161,4 @@ func GetVineyardRuntime(client client.Client, name, namespace string) (*datav1al
 	}
 
 	return &vineyardRuntime, nil
-}
-
-func DiscoverFluidRuntimes() (enabledRuntimeResources []string) {
-	restConfig := ctrl.GetConfigOrDie()
-	discoveryClient := discovery.NewDiscoveryClientForConfigOrDie(restConfig)
-
-	fluidGroupVersion := fmt.Sprintf("%s/%s", datav1alpha1.Group, datav1alpha1.Version)
-	resources, err := discoveryClient.ServerResourcesForGroupVersion(fluidGroupVersion)
-	if err != nil {
-		panic(errors.Wrapf(err, "failed to discover installed fluid runtime CRDs under %s", fluidGroupVersion))
-	}
-
-	for _, res := range resources.APIResources {
-		lowerResName := strings.ToLower(res.SingularName)
-		if strings.HasSuffix(lowerResName, "runtime") {
-			enabledRuntimeResources = append(enabledRuntimeResources, lowerResName)
-		}
-	}
-
-	return enabledRuntimeResources
 }

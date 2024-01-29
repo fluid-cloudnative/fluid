@@ -20,9 +20,9 @@ package deploy
 import (
 	"context"
 	"fmt"
-	"log"
 	"reflect"
 	"strconv"
+	"strings"
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/efc"
@@ -63,22 +63,16 @@ func init() {
 		"vineyardruntime-controller": vineyard.Precheck,
 	}
 
-	enabledRuntimes := utils.DiscoverFluidRuntimes()
-	if len(enabledRuntimes) == 0 {
-		panic("Cannot find any installed Fluid runtime CRDs, please re-install Fluid helm chart or install Fluid CRDs manually.")
-	}
-	// Avoid using other log library here because log may not be ready
-	log.Printf("Discovered the following Fluid runtime CRDs: %v, enable these runtimes only", enabledRuntimes)
-	precheckFuncs = filterOutDisabledRuntimes(precheckFuncs, enabledRuntimes)
-	SetPrecheckFunc(precheckFuncs)
+	SetPrecheckFunc(filterOutDisabledRuntimes(precheckFuncs))
 }
 
-func filterOutDisabledRuntimes(checks map[string]CheckFunc, enabledRuntimes []string) (filteredChecks map[string]CheckFunc) {
+func filterOutDisabledRuntimes(checks map[string]CheckFunc) (filteredChecks map[string]CheckFunc) {
 	filteredChecks = map[string]CheckFunc{}
-	for _, runtimeRes := range enabledRuntimes {
-		controllerName := fmt.Sprintf("%s-controller", runtimeRes)
-		if checkFunc, exists := checks[controllerName]; exists {
-			filteredChecks[controllerName] = checkFunc
+
+	for controllerName, checkFn := range checks {
+		resourceName := strings.TrimSuffix(controllerName, "-controller")
+		if utils.ResourceEnabled(resourceName) {
+			filteredChecks[controllerName] = checkFn
 		}
 	}
 

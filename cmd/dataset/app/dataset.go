@@ -121,6 +121,7 @@ func handle() {
 		MaxConcurrentReconciles: maxConcurrentReconciles,
 	}
 
+	setupLog.Info("Registering Dataset reconciler to Fluid controller manager.")
 	if err = (&datasetctl.DatasetReconciler{
 		Client:       mgr.GetClient(),
 		Log:          ctrl.Log.WithName("datasetctl").WithName("Dataset"),
@@ -132,49 +133,64 @@ func handle() {
 		os.Exit(1)
 	}
 
-	if err = (dataloadctl.NewDataLoadReconciler(mgr.GetClient(),
-		ctrl.Log.WithName("dataloadctl").WithName("DataLoad"),
-		mgr.GetScheme(),
-		mgr.GetEventRecorderFor("DataLoad"),
-	)).SetupWithManager(mgr, controllerOptions); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "DataLoad")
-		os.Exit(1)
+	if utils.ResourceEnabled("dataload") {
+		setupLog.Info("Registering DataLoad reconciler to Fluid controller manager.")
+		if err = (dataloadctl.NewDataLoadReconciler(mgr.GetClient(),
+			ctrl.Log.WithName("dataloadctl").WithName("DataLoad"),
+			mgr.GetScheme(),
+			mgr.GetEventRecorderFor("DataLoad"),
+		)).SetupWithManager(mgr, controllerOptions); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "DataLoad")
+			os.Exit(1)
+		}
 	}
 
-	if err = (databackupctl.NewDataBackupReconciler(mgr.GetClient(),
-		ctrl.Log.WithName("databackupctl").WithName("DataBackup"),
-		mgr.GetScheme(),
-		mgr.GetEventRecorderFor("DataBackup"),
-	)).SetupWithManager(mgr, controllerOptions); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "DataBackup")
-		os.Exit(1)
+	if utils.ResourceEnabled("databackup") {
+		setupLog.Info("Registering DataBackup reconciler to Fluid controller manager.")
+		if err = (databackupctl.NewDataBackupReconciler(mgr.GetClient(),
+			ctrl.Log.WithName("databackupctl").WithName("DataBackup"),
+			mgr.GetScheme(),
+			mgr.GetEventRecorderFor("DataBackup"),
+		)).SetupWithManager(mgr, controllerOptions); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "DataBackup")
+			os.Exit(1)
+		}
 	}
 
-	if err = (datamigratectl.NewDataMigrateReconciler(mgr.GetClient(),
-		ctrl.Log.WithName("datamigratectl").WithName("DataMigrate"),
-		mgr.GetScheme(),
-		mgr.GetEventRecorderFor("DataMigrate"),
-	)).SetupWithManager(mgr, controllerOptions); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "DataMigrate")
-		os.Exit(1)
+	if utils.ResourceEnabled("datamigrate") {
+		setupLog.Info("Registering DataMigrate reconciler to Fluid controller manager.")
+		if err = (datamigratectl.NewDataMigrateReconciler(mgr.GetClient(),
+			ctrl.Log.WithName("datamigratectl").WithName("DataMigrate"),
+			mgr.GetScheme(),
+			mgr.GetEventRecorderFor("DataMigrate"),
+		)).SetupWithManager(mgr, controllerOptions); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "DataMigrate")
+			os.Exit(1)
+		}
 	}
 
-	if err = (dataprocessctl.NewDataProcessReconciler(mgr.GetClient(),
-		ctrl.Log.WithName("dataprocessctl").WithName("DataProcess"),
-		mgr.GetScheme(),
-		mgr.GetEventRecorderFor("DataProcess"),
-	)).SetupWithManager(mgr, controllerOptions); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "DataProcess")
-		os.Exit(1)
+	if utils.ResourceEnabled("dataprocess") {
+		setupLog.Info("Registering DataProcess reconciler to Fluid controller manager.")
+		if err = (dataprocessctl.NewDataProcessReconciler(mgr.GetClient(),
+			ctrl.Log.WithName("dataprocessctl").WithName("DataProcess"),
+			mgr.GetScheme(),
+			mgr.GetEventRecorderFor("DataProcess"),
+		)).SetupWithManager(mgr, controllerOptions); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "DataProcess")
+			os.Exit(1)
+		}
 	}
 
-	if err = (dataflowctl.NewDataFlowReconciler(mgr.GetClient(),
-		ctrl.Log.WithName("dataflowctl"),
-		mgr.GetEventRecorderFor("DataFlow"),
-		time.Duration(5*time.Second),
-	)).SetupWithManager(mgr, controllerOptions); err != nil {
-		setupLog.Error(err, "unable to create controller")
-		os.Exit(1)
+	if dataflowctl.DataFlowEnabled() {
+		setupLog.Info("Registering DataFlow reconciler to Fluid controller manager.")
+		if err = (dataflowctl.NewDataFlowReconciler(mgr.GetClient(),
+			ctrl.Log.WithName("dataflowctl"),
+			mgr.GetEventRecorderFor("DataFlow"),
+			time.Duration(5*time.Second),
+		)).SetupWithManager(mgr, controllerOptions); err != nil {
+			setupLog.Error(err, "unable to create controller")
+			os.Exit(1)
+		}
 	}
 
 	setupLog.Info("starting dataset-controller")
