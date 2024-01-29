@@ -20,10 +20,19 @@ package deploy
 import (
 	"context"
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/pkg/errors"
 	"reflect"
 	"strconv"
+
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/efc"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/goosefs"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindofsx"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/thin"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/vineyard"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/golang/glog"
+	"github.com/pkg/errors"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/go-logr/logr"
@@ -41,6 +50,38 @@ var precheckFuncs map[string]CheckFunc
 
 func SetPrecheckFunc(checks map[string]CheckFunc) {
 	precheckFuncs = checks
+}
+
+func init() {
+	precheckFuncs := map[string]CheckFunc{
+		"alluxioruntime-controller":  alluxio.Precheck,
+		"jindoruntime-controller":    jindofsx.Precheck,
+		"juicefsruntime-controller":  juicefs.Precheck,
+		"goosefsruntime-controller":  goosefs.Precheck,
+		"thinruntime-controller":     thin.Precheck,
+		"efcruntime-controller":      efc.Precheck,
+		"vineyardruntime-controller": vineyard.Precheck,
+	}
+
+	enabledRuntimes := utils.DiscoverFluidRuntimes()
+	if len(enabledRuntimes) == 0 {
+		panic("Cannot find any installed Fluid runtime CRDs, please re-install Fluid helm chart or install Fluid CRDs manually.")
+	}
+	glog.Infof("Discovered the following Fluid runtime CRDs: %v, enable these runtimes only", enabledRuntimes)
+	precheckFuncs = filterOutDisabledRuntimes(precheckFuncs, enabledRuntimes)
+	SetPrecheckFunc(precheckFuncs)
+}
+
+func filterOutDisabledRuntimes(checks map[string]CheckFunc, enabledRuntimes []string) (filteredChecks map[string]CheckFunc) {
+	filteredChecks = map[string]CheckFunc{}
+	for _, runtimeRes := range enabledRuntimes {
+		controllerName := fmt.Sprintf("%s-controller", runtimeRes)
+		if checkFunc, exists := checks[controllerName]; exists {
+			filteredChecks[controllerName] = checkFunc
+		}
+	}
+
+	return filteredChecks
 }
 
 func ScaleoutRuntimeContollerOnDemand(c client.Client, datasetKey types.NamespacedName, log logr.Logger) (
