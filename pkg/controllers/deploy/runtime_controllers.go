@@ -20,6 +20,7 @@ package deploy
 import (
 	"context"
 	"fmt"
+	"log"
 	"reflect"
 	"strconv"
 
@@ -66,8 +67,8 @@ func init() {
 	if len(enabledRuntimes) == 0 {
 		panic("Cannot find any installed Fluid runtime CRDs, please re-install Fluid helm chart or install Fluid CRDs manually.")
 	}
-	// Avoid using any log library here because log may not be ready
-	fmt.Printf("Discovered the following Fluid runtime CRDs: %v, enable these runtimes only", enabledRuntimes)
+	// Avoid using other log library here because log may not be ready
+	log.Printf("Discovered the following Fluid runtime CRDs: %v, enable these runtimes only", enabledRuntimes)
 	precheckFuncs = filterOutDisabledRuntimes(precheckFuncs, enabledRuntimes)
 	SetPrecheckFunc(precheckFuncs)
 }
