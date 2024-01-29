@@ -23,7 +23,8 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"k8s.io/apimachinery/pkg/api/errors"
+	"github.com/pkg/errors"
+	_ "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -174,9 +175,8 @@ func DiscoverFluidRuntimes() (enabledRuntimeResources []string) {
 
 	fluidGroupVersion := fmt.Sprintf("%s/%s", datav1alpha1.Group, datav1alpha1.Version)
 	resources, err := discoveryClient.ServerResourcesForGroupVersion(fluidGroupVersion)
-	if err != nil && !errors.IsNotFound(err) {
-		log.Error(err, "failed to discover installed fluid runtime CRDs under %s", fluidGroupVersion)
-		panic(err)
+	if err != nil {
+		panic(errors.Wrapf(err, "failed to discover installed fluid runtime CRDs under %s", fluidGroupVersion))
 	}
 
 	for _, res := range resources.APIResources {
