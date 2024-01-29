@@ -76,12 +76,12 @@ runtime:
     portRange: 18000-19999
     portAllocatePolicy: random
     enabled: false
-    engine: jindofsx
+    engine: jindocache
     queryUfsTotal: true
     smartdata:
-      image: registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:4.6.8
+      image: registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:6.2.0
     fuse:
-      image: registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:4.6.8
+      image: registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:6.2.0
     controller:
       image: fluidcloudnative/jindoruntime-controller:v1.0.0-d4c82f1
     init:
