@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/testutil"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/discovery"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -14,13 +15,16 @@ import (
 var enabledFluidResources map[string]bool = nil
 
 func init() {
+	if testutil.IsUnitTest() {
+		return
+	}
 	discoverFluidResourcesInCluster()
 	allEnabledResources := []string{}
 	for resource, _ := range enabledFluidResources {
 		allEnabledResources = append(allEnabledResources, resource)
 	}
 
-	nativelog.Printf("Discovered Fluid CRDs in cluster: %v, enable these CRDs only", allEnabledResources)
+	nativelog.Printf("Discovered Fluid CRDs in cluster: %v, enable related reconcilers only", allEnabledResources)
 }
 
 func discoverFluidResourcesInCluster() {
