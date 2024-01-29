@@ -20,7 +20,7 @@ func init() {
 	}
 	discoverFluidResourcesInCluster()
 	allEnabledResources := []string{}
-	for resource, _ := range enabledFluidResources {
+	for resource := range enabledFluidResources {
 		allEnabledResources = append(allEnabledResources, resource)
 	}
 
