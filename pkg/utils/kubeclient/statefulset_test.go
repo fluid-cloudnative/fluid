@@ -146,16 +146,12 @@ func TestScaleStatefulSet(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := ScaleStatefulSet(client, tt.args.name, tt.args.namespace, 2)
 
-			if tt.hasError {
-				if err == nil {
-					t.Errorf("testcase %v ScaleStatefulSet()  expects there is error, but no error", tt.name)
-				}
+			if (err != nil) != tt.hasError {
+				t.Errorf("testcase ScaleStatefulSet() error = %v, wantErr %v", err, tt.hasError)
+			}
+
+			if err != nil {
 				return
-			} else {
-				if err != nil {
-					t.Errorf("testcase %v ScaleStatefulSet()  expects there is not error, but got error %v", tt.name, err)
-					return
-				}
 			}
 
 			got, err := GetStatefulSet(client, tt.args.name, tt.args.namespace)

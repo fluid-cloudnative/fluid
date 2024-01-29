@@ -29,7 +29,7 @@ const (
 	JuiceFSCEImageEnv = "JUICEFS_CE_IMAGE_ENV"
 	JuiceFSEEImageEnv = "JUICEFS_EE_IMAGE_ENV"
 
-	DefaultCEImage = "juicedata/juicefs-fuse:ce-nightly"
+	DefaultCEImage = "juicedata/juicefs-fuse:ce-v1.1.0-beta2"
 	DefaultEEImage = "juicedata/juicefs-fuse:ee-4.9.14"
 
 	NightlyTag = "nightly"

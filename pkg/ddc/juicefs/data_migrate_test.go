@@ -250,7 +250,7 @@ func TestJuiceFSEngine_generateDataMigrateValueFile(t *testing.T) {
 
 	parallelDataMigrateWithTarget := v1alpha1.DataMigrate{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-datamigrate",
+			Name:      "test-para-datamigrate",
 			Namespace: "fluid",
 		},
 		Spec: v1alpha1.DataMigrateSpec{
@@ -290,7 +290,7 @@ func TestJuiceFSEngine_generateDataMigrateValueFile(t *testing.T) {
 		},
 		{
 			dataMigrate:    parallelDataMigrateWithTarget,
-			expectFileName: filepath.Join(os.TempDir(), "fluid-test-datamigrate-migrate-values.yaml"),
+			expectFileName: filepath.Join(os.TempDir(), "fluid-test-para-datamigrate-migrate-values.yaml"),
 		},
 	}
 
@@ -730,9 +730,10 @@ func TestJuiceFSEngine_setParallelMigrateOptions(t *testing.T) {
 		dataMigrate     *v1alpha1.DataMigrate
 	}
 	tests := []struct {
-		name string
-		args args
-		want cdatamigrate.ParallelOptions
+		name    string
+		args    args
+		want    cdatamigrate.ParallelOptions
+		wanterr bool
 	}{
 		{
 			name: "test-parallel-migrate-options",
@@ -752,6 +753,7 @@ func TestJuiceFSEngine_setParallelMigrateOptions(t *testing.T) {
 				SSHPort:                120,
 				SSHReadyTimeoutSeconds: 20,
 			},
+			wanterr: false,
 		},
 		{
 			name: "test-parallel-migrate-options-default",
@@ -768,6 +770,7 @@ func TestJuiceFSEngine_setParallelMigrateOptions(t *testing.T) {
 				SSHPort:                cdatamigrate.DefaultSSHPort,
 				SSHReadyTimeoutSeconds: cdatamigrate.DefaultSSHReadyTimeoutSeconds,
 			},
+			wanterr: false,
 		},
 		{
 			name: "test-parallel-migrate-options-wrong",
@@ -783,10 +786,8 @@ func TestJuiceFSEngine_setParallelMigrateOptions(t *testing.T) {
 					},
 				},
 			},
-			want: cdatamigrate.ParallelOptions{
-				SSHPort:                cdatamigrate.DefaultSSHPort,
-				SSHReadyTimeoutSeconds: 20,
-			},
+			want:    cdatamigrate.ParallelOptions{},
+			wanterr: true,
 		},
 	}
 	client := fake.NewFakeClientWithScheme(testScheme)
@@ -799,9 +800,13 @@ func TestJuiceFSEngine_setParallelMigrateOptions(t *testing.T) {
 				Client:    client,
 				Log:       fake.NullLogger(),
 			}
-			j.setParallelMigrateOptions(tt.args.dataMigrateInfo, tt.args.dataMigrate)
-			if !reflect.DeepEqual(tt.want, tt.args.dataMigrateInfo.ParallelOptions) {
-				t.Errorf("setParallelMigrateOptions() got = %v, want %v", tt.args.dataMigrateInfo.Options, tt.want)
+			err := j.setParallelMigrateOptions(tt.args.dataMigrateInfo, tt.args.dataMigrate)
+			if (err != nil) != tt.wanterr {
+				t.Errorf("setParallelMigrateOptions() error = %v, wantErr %v", err, tt.wanterr)
+				return
+			}
+			if err == nil && !reflect.DeepEqual(tt.want, tt.args.dataMigrateInfo.ParallelOptions) {
+				t.Errorf("setParallelMigrateOptions() got = %v, want %v", tt.args.dataMigrateInfo.ParallelOptions, tt.want)
 			}
 		})
 	}

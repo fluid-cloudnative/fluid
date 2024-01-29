@@ -18,6 +18,7 @@ package juicefs
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"net/url"
 	"os"
 	"path"
@@ -138,7 +139,10 @@ func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequest
 
 	// generate ssh config for parallel tasks when using parallel tasks
 	if dataMigrateInfo.Parallelism > 1 {
-		j.setParallelMigrateOptions(&dataMigrateInfo, dataMigrate)
+		err = j.setParallelMigrateOptions(&dataMigrateInfo, dataMigrate)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	if dataMigrate.Spec.Affinity != nil {
@@ -211,7 +215,7 @@ func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequest
 	return valueFile.Name(), nil
 }
 
-func (j *JuiceFSEngine) setParallelMigrateOptions(dataMigrateInfo *cdatamigrate.DataMigrateInfo, dataMigrate *datav1alpha1.DataMigrate) {
+func (j *JuiceFSEngine) setParallelMigrateOptions(dataMigrateInfo *cdatamigrate.DataMigrateInfo, dataMigrate *datav1alpha1.DataMigrate) error {
 	var err error
 	dataMigrateInfo.ParallelOptions = cdatamigrate.ParallelOptions{
 		SSHPort:                cdatamigrate.DefaultSSHPort,
@@ -223,8 +227,8 @@ func (j *JuiceFSEngine) setParallelMigrateOptions(dataMigrateInfo *cdatamigrate.
 	if exist {
 		dataMigrateInfo.ParallelOptions.SSHPort, err = strconv.Atoi(sshPort)
 		if err != nil {
-			j.Log.Info("sshReadyTimeoutSeconds in the parallelOptions is not a int, use default value.")
-			dataMigrateInfo.ParallelOptions.SSHPort = cdatamigrate.DefaultSSHPort
+			j.Log.Error(err, "sshPort in the parallelOptions is not a int")
+			return errors.Wrap(err, "sshPort in the parallelOptions is not a int")
 		}
 	}
 
@@ -232,10 +236,11 @@ func (j *JuiceFSEngine) setParallelMigrateOptions(dataMigrateInfo *cdatamigrate.
 	if exist {
 		dataMigrateInfo.ParallelOptions.SSHReadyTimeoutSeconds, err = strconv.Atoi(sshReadyTimeoutSeconds)
 		if err != nil {
-			j.Log.Info("sshReadyTimeoutSeconds in the parallelOptions is not a int, use default value.")
-			dataMigrateInfo.ParallelOptions.SSHReadyTimeoutSeconds = cdatamigrate.DefaultSSHReadyTimeoutSeconds
+			j.Log.Error(err, "sshReadyTimeoutSeconds in the parallelOptions is not a int")
+			return errors.Wrap(err, "sshReadyTimeoutSeconds in the parallelOptions is not a int")
 		}
 	}
+	return nil
 }
 
 func (j *JuiceFSEngine) genDataUrl(data datav1alpha1.DataToMigrate, targetDataset *datav1alpha1.Dataset, info *cdatamigrate.DataMigrateInfo) (dataUrl string, err error) {
