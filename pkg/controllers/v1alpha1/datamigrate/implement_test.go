@@ -26,7 +26,7 @@ import (
 	"testing"
 )
 
-func Test_dataMigrateOperation_Validate(t *testing.T) {
+func TestDataMigrateOperation_Validate(t *testing.T) {
 	type fields struct {
 		Client      client.Client
 		Log         logr.Logger

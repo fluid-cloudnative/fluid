@@ -248,6 +248,34 @@ func TestJuiceFSEngine_generateDataMigrateValueFile(t *testing.T) {
 		},
 	}
 
+	parallelDataMigrateWithTarget := v1alpha1.DataMigrate{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-datamigrate",
+			Namespace: "fluid",
+		},
+		Spec: v1alpha1.DataMigrateSpec{
+			From: v1alpha1.DataToMigrate{
+				DataSet: &v1alpha1.DatasetToMigrate{
+					Name:      "test-dataset",
+					Namespace: "fluid",
+					Path:      "/test/",
+				},
+			},
+			To: v1alpha1.DataToMigrate{
+				ExternalStorage: &v1alpha1.ExternalStorage{
+					URI: "minio://test/test",
+				},
+			},
+			Options: map[string]string{
+				"exclude": "4.png",
+			},
+			Parallelism: 2,
+			ParallelOptions: map[string]string{
+				cdatamigrate.SSHPort: "120",
+			},
+		},
+	}
+
 	var testCases = []struct {
 		dataMigrate    v1alpha1.DataMigrate
 		expectFileName string
@@ -258,6 +286,10 @@ func TestJuiceFSEngine_generateDataMigrateValueFile(t *testing.T) {
 		},
 		{
 			dataMigrate:    dataMigrateWithTarget,
+			expectFileName: filepath.Join(os.TempDir(), "fluid-test-datamigrate-migrate-values.yaml"),
+		},
+		{
+			dataMigrate:    parallelDataMigrateWithTarget,
 			expectFileName: filepath.Join(os.TempDir(), "fluid-test-datamigrate-migrate-values.yaml"),
 		},
 	}
@@ -687,6 +719,89 @@ func TestJuiceFSEngine_genDataUrl(t *testing.T) {
 			}
 			if gotDataUrl != tt.wantDataUrl {
 				t.Errorf("genDataUrl() gotDataUrl = %v, want %v", gotDataUrl, tt.wantDataUrl)
+			}
+		})
+	}
+}
+
+func TestJuiceFSEngine_setParallelMigrateOptions(t *testing.T) {
+	type args struct {
+		dataMigrateInfo *cdatamigrate.DataMigrateInfo
+		dataMigrate     *v1alpha1.DataMigrate
+	}
+	tests := []struct {
+		name string
+		args args
+		want cdatamigrate.ParallelOptions
+	}{
+		{
+			name: "test-parallel-migrate-options",
+			args: args{
+				dataMigrateInfo: &cdatamigrate.DataMigrateInfo{},
+				dataMigrate: &v1alpha1.DataMigrate{
+					Spec: v1alpha1.DataMigrateSpec{
+						Parallelism: 2,
+						ParallelOptions: map[string]string{
+							cdatamigrate.SSHPort:                "120",
+							cdatamigrate.SSHReadyTimeoutSeconds: "20",
+						},
+					},
+				},
+			},
+			want: cdatamigrate.ParallelOptions{
+				SSHPort:                120,
+				SSHReadyTimeoutSeconds: 20,
+			},
+		},
+		{
+			name: "test-parallel-migrate-options-default",
+			args: args{
+				dataMigrateInfo: &cdatamigrate.DataMigrateInfo{},
+				dataMigrate: &v1alpha1.DataMigrate{
+					Spec: v1alpha1.DataMigrateSpec{
+						Parallelism:     2,
+						ParallelOptions: map[string]string{},
+					},
+				},
+			},
+			want: cdatamigrate.ParallelOptions{
+				SSHPort:                cdatamigrate.DefaultSSHPort,
+				SSHReadyTimeoutSeconds: cdatamigrate.DefaultSSHReadyTimeoutSeconds,
+			},
+		},
+		{
+			name: "test-parallel-migrate-options-wrong",
+			args: args{
+				dataMigrateInfo: &cdatamigrate.DataMigrateInfo{},
+				dataMigrate: &v1alpha1.DataMigrate{
+					Spec: v1alpha1.DataMigrateSpec{
+						Parallelism: 2,
+						ParallelOptions: map[string]string{
+							cdatamigrate.SSHPort:                "120SS",
+							cdatamigrate.SSHReadyTimeoutSeconds: "20",
+						},
+					},
+				},
+			},
+			want: cdatamigrate.ParallelOptions{
+				SSHPort:                cdatamigrate.DefaultSSHPort,
+				SSHReadyTimeoutSeconds: 20,
+			},
+		},
+	}
+	client := fake.NewFakeClientWithScheme(testScheme)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			j := &JuiceFSEngine{
+				name:      "juicefs",
+				namespace: "fluid",
+				Client:    client,
+				Log:       fake.NullLogger(),
+			}
+			j.setParallelMigrateOptions(tt.args.dataMigrateInfo, tt.args.dataMigrate)
+			if !reflect.DeepEqual(tt.want, tt.args.dataMigrateInfo.ParallelOptions) {
+				t.Errorf("setParallelMigrateOptions() got = %v, want %v", tt.args.dataMigrateInfo.Options, tt.want)
 			}
 		})
 	}
