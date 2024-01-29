@@ -31,7 +31,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/thin"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/vineyard"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/golang/glog"
 	"github.com/pkg/errors"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -67,7 +66,8 @@ func init() {
 	if len(enabledRuntimes) == 0 {
 		panic("Cannot find any installed Fluid runtime CRDs, please re-install Fluid helm chart or install Fluid CRDs manually.")
 	}
-	glog.Infof("Discovered the following Fluid runtime CRDs: %v, enable these runtimes only", enabledRuntimes)
+	// Avoid using any log library here because log may not be ready
+	fmt.Printf("Discovered the following Fluid runtime CRDs: %v, enable these runtimes only", enabledRuntimes)
 	precheckFuncs = filterOutDisabledRuntimes(precheckFuncs, enabledRuntimes)
 	SetPrecheckFunc(precheckFuncs)
 }
