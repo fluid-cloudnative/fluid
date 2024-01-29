@@ -17,6 +17,7 @@ package base
 import (
 	"context"
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"reflect"
 	"time"
 
@@ -254,6 +255,15 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 			"%s %s succeeded", operation.GetOperationType(), object.GetName())
 	}
 
+	// scale the statefulset replicas to 0 for parallel data operation
+	if operation.GetParallelTaskNumber() > 1 {
+		releaseNameSpacedName := operation.GetReleaseNameSpacedName()
+		err = kubeclient.ScaleStatefulSet(t.Client, utils.GetParallelOperationWorkersName(releaseNameSpacedName.Name), releaseNameSpacedName.Namespace, 0)
+		if err != nil {
+			return utils.RequeueIfError(err)
+		}
+	}
+
 	// 5. Requeue if data operation set ttl after finished and has not expired
 	if ttl != nil && *ttl > 0 {
 		log.V(1).Info("requeue after remaining time to clean up data operation", "timeToLive", ttl)
@@ -331,6 +341,15 @@ func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, o
 	if opStatusToUpdate.Phase == common.PhaseFailed {
 		object := operation.GetOperationObject()
 		ctx.Recorder.Eventf(object, v1.EventTypeWarning, common.DataOperationFailed, "%s %s failed", operation.GetOperationType(), object.GetName())
+	}
+
+	// scale the statefulset replicas to 0 for parallel data operation
+	if operation.GetParallelTaskNumber() > 1 {
+		releaseNameSpacedName := operation.GetReleaseNameSpacedName()
+		err = kubeclient.ScaleStatefulSet(t.Client, utils.GetParallelOperationWorkersName(releaseNameSpacedName.Name), releaseNameSpacedName.Namespace, 0)
+		if err != nil {
+			return utils.RequeueIfError(err)
+		}
 	}
 
 	// 3. Requeue if data operation set ttl after finished and has not expired

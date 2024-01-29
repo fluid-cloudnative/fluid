@@ -18,6 +18,8 @@ package kubeclient
 
 import (
 	"context"
+	"k8s.io/client-go/util/retry"
+	"reflect"
 	"regexp"
 	"strconv"
 
@@ -31,6 +33,26 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
+
+// ScaleStatefulSet scale the statefulset replicas
+func ScaleStatefulSet(client client.Client, name string, namespace string, replicas int32) error {
+	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		workers, err := GetStatefulSet(client, name, namespace)
+		if err != nil {
+			return err
+		}
+		workersToUpdate := workers.DeepCopy()
+		workersToUpdate.Spec.Replicas = &replicas
+		if !reflect.DeepEqual(workers, workersToUpdate) {
+			err = client.Update(context.TODO(), workersToUpdate)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	return err
+}
 
 // GetStatefulset gets the statefulset by name and namespace
 func GetStatefulSet(c client.Client, name string, namespace string) (master *appsv1.StatefulSet, err error) {

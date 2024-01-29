@@ -139,3 +139,7 @@ func (r *dataBackupOperation) GetTTL() (ttl *int32, err error) {
 	ttl = r.dataBackup.Spec.TTLSecondsAfterFinished
 	return
 }
+
+func (r *dataBackupOperation) GetParallelTaskNumber() int32 {
+	return 1
+}

@@ -67,6 +67,9 @@ type OperationInterface interface {
 
 	// GetTTL gets timeToLive
 	GetTTL() (ttl *int32, err error)
+
+	// GetParallelTaskNumber get the parallel tasks for data operations.
+	GetParallelTaskNumber() int32
 }
 
 type StatusHandler interface {

@@ -152,3 +152,7 @@ func (r *dataLoadOperation) GetTTL() (ttl *int32, err error) {
 
 	return
 }
+
+func (r *dataLoadOperation) GetParallelTaskNumber() int32 {
+	return 1
+}

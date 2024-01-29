@@ -50,7 +50,7 @@ spec:
             description: DataMigrateSpec defines the desired state of DataMigrate
             properties:
               affinity:
-                description: Affinity defines affinity for DataLoad pod
+                description: Affinity defines affinity for DataMigrate pod
                 properties:
                   nodeAffinity:
                     description: Describes node affinity scheduling rules for the
@@ -948,16 +948,30 @@ spec:
               nodeSelector:
                 additionalProperties:
                   type: string
-                description: NodeSelector defiens node selector for DataLoad pod
+                description: NodeSelector defiens node selector for DataMigrate pod
                 type: object
               options:
                 additionalProperties:
                   type: string
                 description: options for migrate, different for each runtime
                 type: object
+              parallelOptions:
+                additionalProperties:
+                  type: string
+                description: ParallelOptions defines options like ssh port and ssh
+                  secret name when parallelism is greater than 1.
+                type: object
+              parallelism:
+                default: 1
+                description: Parallelism defines the parallelism tasks numbers for
+                  DataMigrate. If the value is greater than 1, the job acts as a launcher,
+                  and users should define the WorkerSpec.
+                format: int32
+                minimum: 1
+                type: integer
               podMetadata:
                 description: PodMetadata defines labels and annotations that will
-                  be propagated to DataLoad pods
+                  be propagated to DataMigrate pods
                 properties:
                   annotations:
                     additionalProperties:
@@ -1039,7 +1053,7 @@ spec:
                   cron, see https://en.wikipedia.org/wiki/Cron.
                 type: string
               schedulerName:
-                description: SchedulerName sets the scheduler to be used for DataLoad
+                description: SchedulerName sets the scheduler to be used for DataMigrate
                   pod
                 type: string
               to:
@@ -1101,7 +1115,7 @@ spec:
                     type: object
                 type: object
               tolerations:
-                description: Tolerations defines tolerations for DataLoad pod
+                description: Tolerations defines tolerations for DataMigrate pod
                 items:
                   description: The pod this Toleration is attached to tolerates any
                     taint that matches the triple <key,value,effect> using the matching

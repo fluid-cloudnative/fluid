@@ -141,3 +141,8 @@ func Timeleft(opStatus *datav1alpha1.OperationStatus, operation dataoperation.Op
 	remaining := expireTime.Sub(curTime)
 	return &remaining, nil
 }
+
+// GetParallelOperationWorkersName Get the workers statefulset name according the helm release name
+func GetParallelOperationWorkersName(releaseName string) string {
+	return fmt.Sprintf("%s-workers", releaseName)
+}

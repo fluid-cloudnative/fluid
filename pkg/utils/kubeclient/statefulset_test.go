@@ -97,6 +97,74 @@ func TestGetStatefulSet(t *testing.T) {
 	}
 }
 
+func TestScaleStatefulSet(t *testing.T) {
+	namespace := "default"
+	testStsInputs := []*appsv1.StatefulSet{{
+		ObjectMeta: metav1.ObjectMeta{Name: "exist",
+			Namespace: namespace},
+		Spec: appsv1.StatefulSetSpec{},
+	}}
+
+	testStatefulSets := []runtime.Object{}
+
+	for _, sts := range testStsInputs {
+		testStatefulSets = append(testStatefulSets, sts.DeepCopy())
+	}
+
+	client := fake.NewFakeClientWithScheme(testScheme, testStatefulSets...)
+
+	type args struct {
+		name      string
+		namespace string
+	}
+	tests := []struct {
+		name     string
+		args     args
+		want     int32
+		hasError bool
+	}{
+		{
+			name: "statefulset doesn't exist",
+			args: args{
+				name:      "notExist",
+				namespace: namespace,
+			},
+			want:     0,
+			hasError: true,
+		}, {
+			name: "statefulset exists",
+			args: args{
+				name:      "exist",
+				namespace: namespace,
+			},
+			want:     2,
+			hasError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ScaleStatefulSet(client, tt.args.name, tt.args.namespace, 2)
+
+			if (err != nil) != tt.hasError {
+				t.Errorf("testcase ScaleStatefulSet() error = %v, wantErr %v", err, tt.hasError)
+			}
+
+			if err != nil {
+				return
+			}
+
+			got, err := GetStatefulSet(client, tt.args.name, tt.args.namespace)
+			if err != nil {
+				t.Errorf("testcase %v ScaleStatefulSet() expects there is not error, but got error %v", tt.name, err)
+			}
+			if tt.want != *got.Spec.Replicas {
+				t.Errorf("testcase %v GetStatefulSet()  got statefulset name %v, the want name of statefulset is %v", tt.name, got.Name, tt.args.name)
+			}
+		})
+	}
+}
+
 func TestGetPhaseFromStatefulset(t *testing.T) {
 	namespace := "default"
 	tests := []struct {

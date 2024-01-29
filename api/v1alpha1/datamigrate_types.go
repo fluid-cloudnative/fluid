@@ -58,23 +58,23 @@ type DataMigrateSpec struct {
 	// +optional
 	Schedule string `json:"schedule,omitempty"`
 
-	// PodMetadata defines labels and annotations that will be propagated to DataLoad pods
+	// PodMetadata defines labels and annotations that will be propagated to DataMigrate pods
 	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
 
 	// +optional
-	// Affinity defines affinity for DataLoad pod
+	// Affinity defines affinity for DataMigrate pod
 	Affinity *corev1.Affinity `json:"affinity,omitempty"`
 
 	// +optional
-	// Tolerations defines tolerations for DataLoad pod
+	// Tolerations defines tolerations for DataMigrate pod
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 
 	// +optional
-	// NodeSelector defiens node selector for DataLoad pod
+	// NodeSelector defiens node selector for DataMigrate pod
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
 	// +optional
-	// SchedulerName sets the scheduler to be used for DataLoad pod
+	// SchedulerName sets the scheduler to be used for DataMigrate pod
 	SchedulerName string `json:"schedulerName,omitempty"`
 
 	// Specifies that the preceding operation in a workflow
@@ -88,6 +88,17 @@ type DataMigrateSpec struct {
 	// Resources that will be requested by the DataMigrate job. <br>
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// Parallelism defines the parallelism tasks numbers for DataMigrate. If the value is greater than 1, the job acts
+	// as a launcher, and users should define the WorkerSpec.
+	// +optional
+	// +kubebuilder:default:=1
+	// +kubebuilder:validation:Minimum=1
+	Parallelism int32 `json:"parallelism,omitempty"`
+
+	// ParallelOptions defines options like ssh port and ssh secret name when parallelism is greater than 1.
+	// +optional
+	ParallelOptions map[string]string `json:"parallelOptions,omitempty"`
 }
 
 type DataToMigrate struct {
