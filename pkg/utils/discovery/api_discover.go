@@ -40,7 +40,7 @@ func init() {
 
 func discoverFluidResourcesInCluster() {
 	restConfig := ctrl.GetConfigOrDie()
-	discoveryClient := discovery.NewDiscoveryClientForConfigOrDie(restConfig)
+	var discoveryClient discovery.DiscoveryInterface = discovery.NewDiscoveryClientForConfigOrDie(restConfig)
 	fluidGroupVersion := fmt.Sprintf("%s/%s", datav1alpha1.Group, datav1alpha1.Version)
 
 	err := retry.OnError(backOff, func(err error) bool { return true }, func() error {
