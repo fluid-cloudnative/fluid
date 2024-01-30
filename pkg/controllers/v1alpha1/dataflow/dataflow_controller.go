@@ -21,6 +21,7 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/discovery"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -64,7 +65,7 @@ var reconcileKinds = map[string]client.Object{
 func setupWatches(bld *builder.Builder, handler *handler.EnqueueRequestForObject, predicates builder.Predicates) *builder.Builder {
 	toSetup := []client.Object{}
 	for kind, obj := range reconcileKinds {
-		if utils.ResourceEnabled(kind) {
+		if discovery.ResourceEnabled(kind) {
 			toSetup = append(toSetup, obj)
 		}
 	}
@@ -82,7 +83,7 @@ func setupWatches(bld *builder.Builder, handler *handler.EnqueueRequestForObject
 
 func DataFlowEnabled() bool {
 	for kind := range reconcileKinds {
-		if utils.ResourceEnabled(kind) {
+		if discovery.ResourceEnabled(kind) {
 			return true
 		}
 	}

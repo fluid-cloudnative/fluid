@@ -48,6 +48,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/compatibility"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/discovery"
 )
 
 var (
@@ -133,7 +134,7 @@ func handle() {
 		os.Exit(1)
 	}
 
-	if utils.ResourceEnabled("dataload") {
+	if discovery.ResourceEnabled("dataload") {
 		setupLog.Info("Registering DataLoad reconciler to Fluid controller manager.")
 		if err = (dataloadctl.NewDataLoadReconciler(mgr.GetClient(),
 			ctrl.Log.WithName("dataloadctl").WithName("DataLoad"),
@@ -145,7 +146,7 @@ func handle() {
 		}
 	}
 
-	if utils.ResourceEnabled("databackup") {
+	if discovery.ResourceEnabled("databackup") {
 		setupLog.Info("Registering DataBackup reconciler to Fluid controller manager.")
 		if err = (databackupctl.NewDataBackupReconciler(mgr.GetClient(),
 			ctrl.Log.WithName("databackupctl").WithName("DataBackup"),
@@ -157,7 +158,7 @@ func handle() {
 		}
 	}
 
-	if utils.ResourceEnabled("datamigrate") {
+	if discovery.ResourceEnabled("datamigrate") {
 		setupLog.Info("Registering DataMigrate reconciler to Fluid controller manager.")
 		if err = (datamigratectl.NewDataMigrateReconciler(mgr.GetClient(),
 			ctrl.Log.WithName("datamigratectl").WithName("DataMigrate"),
@@ -169,7 +170,7 @@ func handle() {
 		}
 	}
 
-	if utils.ResourceEnabled("dataprocess") {
+	if discovery.ResourceEnabled("dataprocess") {
 		setupLog.Info("Registering DataProcess reconciler to Fluid controller manager.")
 		if err = (dataprocessctl.NewDataProcessReconciler(mgr.GetClient(),
 			ctrl.Log.WithName("dataprocessctl").WithName("DataProcess"),

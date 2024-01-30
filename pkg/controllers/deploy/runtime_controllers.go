@@ -32,6 +32,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/thin"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/vineyard"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/discovery"
 	"github.com/pkg/errors"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -71,7 +72,7 @@ func filterOutDisabledRuntimes(checks map[string]CheckFunc) (filteredChecks map[
 
 	for controllerName, checkFn := range checks {
 		resourceName := strings.TrimSuffix(controllerName, "-controller")
-		if utils.ResourceEnabled(resourceName) {
+		if discovery.ResourceEnabled(resourceName) {
 			filteredChecks[controllerName] = checkFn
 		}
 	}
