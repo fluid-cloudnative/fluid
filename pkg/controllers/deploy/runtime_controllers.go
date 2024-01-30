@@ -48,12 +48,12 @@ type CheckFunc func(client.Client, types.NamespacedName) (bool, error)
 
 var precheckFuncs map[string]CheckFunc
 
-func SetPrecheckFunc(checks map[string]CheckFunc) {
+func setPrecheckFunc(checks map[string]CheckFunc) {
 	precheckFuncs = checks
 }
 
 func init() {
-	precheckFuncs := map[string]CheckFunc{
+	allPrecheckFuncs := map[string]CheckFunc{
 		"alluxioruntime-controller":  alluxio.Precheck,
 		"jindoruntime-controller":    jindofsx.Precheck,
 		"juicefsruntime-controller":  juicefs.Precheck,
@@ -63,7 +63,7 @@ func init() {
 		"vineyardruntime-controller": vineyard.Precheck,
 	}
 
-	SetPrecheckFunc(filterOutDisabledRuntimes(precheckFuncs))
+	setPrecheckFunc(filterOutDisabledRuntimes(allPrecheckFuncs))
 }
 
 func filterOutDisabledRuntimes(checks map[string]CheckFunc) (filteredChecks map[string]CheckFunc) {
