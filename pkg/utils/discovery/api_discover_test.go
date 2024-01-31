@@ -115,32 +115,33 @@ func Test_discoverFluidResourcesInCluster(t *testing.T) {
 }
 
 func TestGetFluidDiscovery(t *testing.T) {
-	globalDiscovery = fluidDiscovery(map[string]bool{
+	want1 := fluidDiscovery(map[string]bool{
 		"foo": true,
 		"bar": true,
 	})
+	patch := gomonkey.ApplyFunc(initDiscovery, func() {
+		globalDiscovery = want1
+	})
+	defer patch.Reset()
 
-	t.Run("non-nil globalDiscovery", func(t *testing.T) {
+	t.Run("first time globalDiscovery", func(t *testing.T) {
 		got := GetFluidDiscovery()
-		if !reflect.DeepEqual(got, globalDiscovery) {
-			t.Errorf("GetFluidDiscovery() = %v, want %v", got, globalDiscovery)
+		if !reflect.DeepEqual(got, want1) {
+			t.Errorf("GetFluidDiscovery() = %v, want %v", got, want1)
 		}
 	})
 
-	globalDiscovery = nil
+	// For the second time, global Discovery will not be rewritten to "want1" as we use once.Do()
+	want2 := fluidDiscovery(map[string]bool{
+		"foo2": true,
+		"bar2": true,
+	})
+	globalDiscovery = want2
 
-	t.Run("nil globalDiscovery", func(t *testing.T) {
-		want := fluidDiscovery(map[string]bool{
-			"foo2": true,
-			"bar2": true,
-		})
-		patch := gomonkey.ApplyFunc(initDiscovery, func() {
-			globalDiscovery = want
-		})
-		defer patch.Reset()
+	t.Run("second time globalDiscovery", func(t *testing.T) {
 
 		got := GetFluidDiscovery()
-		if !reflect.DeepEqual(got, want) {
+		if !reflect.DeepEqual(got, want2) {
 			t.Errorf("GetFluidDiscovery() = %v, want %v", got, globalDiscovery)
 		}
 	})
