@@ -87,6 +87,7 @@ func init() {
 
 func handle() {
 	fluid.LogVersion()
+	discovery.Init()
 
 	ctrl.SetLogger(zap.New(func(o *zap.Options) {
 		o.Development = development

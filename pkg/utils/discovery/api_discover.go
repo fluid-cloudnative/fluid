@@ -7,7 +7,6 @@ import (
 	"time"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/testutil"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/util/retry"
@@ -25,10 +24,9 @@ var backOff = wait.Backoff{
 	Cap:      30 * time.Second,
 }
 
-func init() {
-	if testutil.IsUnitTest() {
-		return
-	}
+// Init initializes the pacakge by discovering all the Fluid CRDs and record them into enabledFluidResources.
+// Further calls of ResourceEnabled checks enabledFluidResources to know if the resource is installed in the cluster.
+func Init() {
 	discoverFluidResourcesInCluster()
 	allEnabledResources := []string{}
 	for resource := range enabledFluidResources {
