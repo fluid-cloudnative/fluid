@@ -215,7 +215,7 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 	// umount until it's not mounted.
 	mounter := mount.New("")
 	for {
-		notMount, err := mounter.IsLikelyNotMountPoint(targetPath)
+		notMount, err := mount.IsNotMountPoint(mounter, targetPath)
 		if os.IsNotExist(err) {
 			glog.V(3).Infof("NodeUnpublishVolume: targetPath %s has been cleaned up, so it doesn't need to be unmounted", targetPath)
 			break
