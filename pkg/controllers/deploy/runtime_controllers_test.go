@@ -172,7 +172,7 @@ func Test_scaleoutDeploymentIfNeeded(t *testing.T) {
 
 	fakeClient := fake.NewFakeClientWithScheme(s, objs...)
 
-	SetPrecheckFunc(map[string]CheckFunc{
+	setPrecheckFunc(map[string]CheckFunc{
 		"alluxioruntime-controller": alluxio.Precheck,
 		"jindoruntime-controller":   jindofsx.Precheck,
 		"juicefsruntime-controller": juicefs.Precheck,

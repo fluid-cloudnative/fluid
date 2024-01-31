@@ -153,7 +153,7 @@ def create_redis_secret(namespace="default"):
     print("Created secret {}".format(SECRET_NAME))
 
 
-def create_datamigrate(datamigrate_name, dataset_name, parallelism=1, namespace="default"):
+def create_datamigrate(datamigrate_name, dataset_name, parallelism=1, namespace="default", parallel_options=None):
     api = client.CustomObjectsApi()
     my_datamigrate = {
         "apiVersion": "data.fluid.io/v1alpha1",
@@ -175,6 +175,9 @@ def create_datamigrate(datamigrate_name, dataset_name, parallelism=1, namespace=
             "parallelism": parallelism,
         },
     }
+
+    if parallel_options and parallelism > 1:
+        my_datamigrate["spec"]["parallelOptions"] = parallel_options
 
     api.create_namespaced_custom_object(
         group="data.fluid.io",
@@ -581,7 +584,7 @@ def main():
         SimpleStep(
             step_name="create Parallel DataMigrate job",
             forth_fn=currying_fn(create_datamigrate, datamigrate_name=parallel_datamigrate_name, dataset_name=name,
-                                 parallelism=2, namespace=namespace),
+                                 parallelism=2, namespace=namespace, parallel_options={"sshSecretName": "migrate-ssh-secret"}),
             back_fn=dummy_back
             # No need to clean up DataMigrate because of its ownerReference
             # back_fn=currying_fn(clean_up_datamigrate, datamigrate_name=datamigrate_name, namespace=namespace)

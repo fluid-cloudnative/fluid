@@ -20,10 +20,20 @@ package deploy
 import (
 	"context"
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/pkg/errors"
 	"reflect"
 	"strconv"
+	"strings"
+
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/efc"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/goosefs"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindofsx"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/thin"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/vineyard"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/discovery"
+	"github.com/pkg/errors"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/go-logr/logr"
@@ -39,8 +49,35 @@ type CheckFunc func(client.Client, types.NamespacedName) (bool, error)
 
 var precheckFuncs map[string]CheckFunc
 
-func SetPrecheckFunc(checks map[string]CheckFunc) {
+func setPrecheckFunc(checks map[string]CheckFunc) {
 	precheckFuncs = checks
+}
+
+func init() {
+	allPrecheckFuncs := map[string]CheckFunc{
+		"alluxioruntime-controller":  alluxio.Precheck,
+		"jindoruntime-controller":    jindofsx.Precheck,
+		"juicefsruntime-controller":  juicefs.Precheck,
+		"goosefsruntime-controller":  goosefs.Precheck,
+		"thinruntime-controller":     thin.Precheck,
+		"efcruntime-controller":      efc.Precheck,
+		"vineyardruntime-controller": vineyard.Precheck,
+	}
+
+	setPrecheckFunc(filterOutDisabledRuntimes(allPrecheckFuncs))
+}
+
+func filterOutDisabledRuntimes(checks map[string]CheckFunc) (filteredChecks map[string]CheckFunc) {
+	filteredChecks = map[string]CheckFunc{}
+
+	for controllerName, checkFn := range checks {
+		resourceName := strings.TrimSuffix(controllerName, "-controller")
+		if discovery.ResourceEnabled(resourceName) {
+			filteredChecks[controllerName] = checkFn
+		}
+	}
+
+	return filteredChecks
 }
 
 func ScaleoutRuntimeContollerOnDemand(c client.Client, datasetKey types.NamespacedName, log logr.Logger) (

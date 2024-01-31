@@ -19,15 +19,15 @@ package utils
 import (
 	"context"
 
-	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // NewRuntimeCondition creates a new Cache condition.
-func NewRuntime(name, namespace string, category common.Category, runtimeType string, replicas int32) data.Runtime {
-	return data.Runtime{
+func NewRuntime(name, namespace string, category common.Category, runtimeType string, replicas int32) datav1alpha1.Runtime {
+	return datav1alpha1.Runtime{
 		Name:      name,
 		Namespace: namespace,
 		Category:  category,
@@ -38,7 +38,7 @@ func NewRuntime(name, namespace string, category common.Category, runtimeType st
 }
 
 // AddRuntimesIfNotExist adds newRuntime to runtimes and return the updated runtime slice
-func AddRuntimesIfNotExist(runtimes []data.Runtime, newRuntime data.Runtime) (updatedRuntimes []data.Runtime) {
+func AddRuntimesIfNotExist(runtimes []datav1alpha1.Runtime, newRuntime datav1alpha1.Runtime) (updatedRuntimes []datav1alpha1.Runtime) {
 	categoryMap := map[common.Category]bool{}
 	for _, runtime := range runtimes {
 		categoryMap[runtime.Category] = true
@@ -55,13 +55,13 @@ func AddRuntimesIfNotExist(runtimes []data.Runtime, newRuntime data.Runtime) (up
 }
 
 // GetAlluxioRuntime gets Alluxio Runtime object with the given name and namespace
-func GetAlluxioRuntime(client client.Client, name, namespace string) (*data.AlluxioRuntime, error) {
+func GetAlluxioRuntime(client client.Client, name, namespace string) (*datav1alpha1.AlluxioRuntime, error) {
 
 	key := types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
 	}
-	var runtime data.AlluxioRuntime
+	var runtime datav1alpha1.AlluxioRuntime
 	if err := client.Get(context.TODO(), key, &runtime); err != nil {
 		return nil, err
 	}
@@ -69,13 +69,13 @@ func GetAlluxioRuntime(client client.Client, name, namespace string) (*data.Allu
 }
 
 // GetJindoRuntime gets Jindo Runtime object with the given name and namespace
-func GetJindoRuntime(client client.Client, name, namespace string) (*data.JindoRuntime, error) {
+func GetJindoRuntime(client client.Client, name, namespace string) (*datav1alpha1.JindoRuntime, error) {
 
 	key := types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
 	}
-	var runtime data.JindoRuntime
+	var runtime datav1alpha1.JindoRuntime
 	if err := client.Get(context.TODO(), key, &runtime); err != nil {
 		return nil, err
 	}
@@ -83,13 +83,13 @@ func GetJindoRuntime(client client.Client, name, namespace string) (*data.JindoR
 }
 
 // GetGooseFSRuntime gets GooseFS Runtime object with the given name and namespace
-func GetGooseFSRuntime(client client.Client, name, namespace string) (*data.GooseFSRuntime, error) {
+func GetGooseFSRuntime(client client.Client, name, namespace string) (*datav1alpha1.GooseFSRuntime, error) {
 
 	key := types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
 	}
-	var runtime data.GooseFSRuntime
+	var runtime datav1alpha1.GooseFSRuntime
 	if err := client.Get(context.TODO(), key, &runtime); err != nil {
 		return nil, err
 	}
@@ -97,25 +97,25 @@ func GetGooseFSRuntime(client client.Client, name, namespace string) (*data.Goos
 }
 
 // GetJuiceFSRuntime gets JuiceFS Runtime object with the given name and namespace
-func GetJuiceFSRuntime(client client.Client, name, namespace string) (*data.JuiceFSRuntime, error) {
+func GetJuiceFSRuntime(client client.Client, name, namespace string) (*datav1alpha1.JuiceFSRuntime, error) {
 
 	key := types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
 	}
-	var runtime data.JuiceFSRuntime
+	var runtime datav1alpha1.JuiceFSRuntime
 	if err := client.Get(context.TODO(), key, &runtime); err != nil {
 		return nil, err
 	}
 	return &runtime, nil
 }
 
-func GetThinRuntime(client client.Client, name, namespace string) (*data.ThinRuntime, error) {
+func GetThinRuntime(client client.Client, name, namespace string) (*datav1alpha1.ThinRuntime, error) {
 	key := types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
 	}
-	var runtime data.ThinRuntime
+	var runtime datav1alpha1.ThinRuntime
 	if err := client.Get(context.TODO(), key, &runtime); err != nil {
 		return nil, err
 	}
@@ -124,24 +124,24 @@ func GetThinRuntime(client client.Client, name, namespace string) (*data.ThinRun
 }
 
 // GetEFCRuntime gets EFC Runtime object with the given name and namespace
-func GetEFCRuntime(client client.Client, name, namespace string) (*data.EFCRuntime, error) {
+func GetEFCRuntime(client client.Client, name, namespace string) (*datav1alpha1.EFCRuntime, error) {
 
 	key := types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
 	}
-	var runtime data.EFCRuntime
+	var runtime datav1alpha1.EFCRuntime
 	if err := client.Get(context.TODO(), key, &runtime); err != nil {
 		return nil, err
 	}
 	return &runtime, nil
 }
 
-func GetThinRuntimeProfile(client client.Client, name string) (*data.ThinRuntimeProfile, error) {
+func GetThinRuntimeProfile(client client.Client, name string) (*datav1alpha1.ThinRuntimeProfile, error) {
 	key := types.NamespacedName{
 		Name: name,
 	}
-	var runtimeProfile data.ThinRuntimeProfile
+	var runtimeProfile datav1alpha1.ThinRuntimeProfile
 	if err := client.Get(context.TODO(), key, &runtimeProfile); err != nil {
 		return nil, err
 	}
@@ -150,12 +150,12 @@ func GetThinRuntimeProfile(client client.Client, name string) (*data.ThinRuntime
 }
 
 // GetVineyardRuntime gets Vineyard Runtime object with the given name and namespace
-func GetVineyardRuntime(client client.Client, name, namespace string) (*data.VineyardRuntime, error) {
+func GetVineyardRuntime(client client.Client, name, namespace string) (*datav1alpha1.VineyardRuntime, error) {
 	key := types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
 	}
-	var vineyardRuntime data.VineyardRuntime
+	var vineyardRuntime datav1alpha1.VineyardRuntime
 	if err := client.Get(context.TODO(), key, &vineyardRuntime); err != nil {
 		return nil, err
 	}
