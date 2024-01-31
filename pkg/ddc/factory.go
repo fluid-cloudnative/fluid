@@ -17,7 +17,6 @@ import (
 
 	fluidv1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/controllers/deploy"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/efc"
@@ -50,16 +49,6 @@ func init() {
 		common.EFCEngineImpl:        efc.Build,
 		common.VineyardEngineImpl:   vineyard.Build,
 	}
-
-	deploy.SetPrecheckFunc(map[string]deploy.CheckFunc{
-		"alluxioruntime-controller":  alluxio.Precheck,
-		"jindoruntime-controller":    jindofsx.Precheck,
-		"juicefsruntime-controller":  juicefs.Precheck,
-		"goosefsruntime-controller":  goosefs.Precheck,
-		"thinruntime-controller":     thin.Precheck,
-		"efcruntime-controller":      efc.Precheck,
-		"vineyardruntime-controller": vineyard.Precheck,
-	})
 }
 
 // CreateEngine chooses one engine implementation according to `ctx.EngineImpl` and builds a concrete engine.

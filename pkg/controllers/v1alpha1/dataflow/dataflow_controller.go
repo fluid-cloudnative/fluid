@@ -21,6 +21,7 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/discovery"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -52,6 +53,42 @@ func NewDataFlowReconciler(client client.Client,
 		Log:          log,
 		ResyncPeriod: resyncPeriod,
 	}
+}
+
+var reconcileKinds = map[string]client.Object{
+	"databackup":  &datav1alpha1.DataBackup{},
+	"dataload":    &datav1alpha1.DataLoad{},
+	"datamigrate": &datav1alpha1.DataMigrate{},
+	"dataprocess": &datav1alpha1.DataProcess{},
+}
+
+func setupWatches(bld *builder.Builder, handler *handler.EnqueueRequestForObject, predicates builder.Predicates) *builder.Builder {
+	toSetup := []client.Object{}
+	for kind, obj := range reconcileKinds {
+		if discovery.ResourceEnabled(kind) {
+			toSetup = append(toSetup, obj)
+		}
+	}
+
+	for i, obj := range toSetup {
+		if i == 0 {
+			bld.For(obj, predicates)
+		} else {
+			bld.Watches(&source.Kind{Type: obj}, handler, predicates)
+		}
+	}
+
+	return bld
+}
+
+func DataFlowEnabled() bool {
+	for kind := range reconcileKinds {
+		if discovery.ResourceEnabled(kind) {
+			return true
+		}
+	}
+
+	return false
 }
 
 type reconcileRequestContext struct {
@@ -124,15 +161,8 @@ func (r *DataFlowReconciler) SetupWithManager(mgr ctrl.Manager, options controll
 		return false
 	}))
 
-	return ctrl.NewControllerManagedBy(mgr).
-		WithOptions(options).
-		// controller is forced to For a kind by controller-runtime
-		For(&datav1alpha1.DataBackup{}, predicates).
-		Watches(&source.Kind{Type: &datav1alpha1.DataLoad{}}, handler, predicates).
-		// Watches(&source.Kind{Type: &datav1alpha1.DataBackup{}}, handler, predicates).
-		Watches(&source.Kind{Type: &datav1alpha1.DataMigrate{}}, handler, predicates).
-		Watches(&source.Kind{Type: &datav1alpha1.DataProcess{}}, handler, predicates).
-		Complete(r)
+	bld := ctrl.NewControllerManagedBy(mgr).WithOptions(options)
+	return setupWatches(bld, handler, predicates).Complete(r)
 }
 
 func (r *DataFlowReconciler) ControllerName() string {
