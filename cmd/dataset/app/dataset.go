@@ -87,7 +87,7 @@ func init() {
 
 func handle() {
 	fluid.LogVersion()
-	discovery.Init()
+	fluidDiscovery := discovery.GetFluidDiscovery()
 
 	ctrl.SetLogger(zap.New(func(o *zap.Options) {
 		o.Development = development
@@ -135,7 +135,7 @@ func handle() {
 		os.Exit(1)
 	}
 
-	if discovery.ResourceEnabled("dataload") {
+	if fluidDiscovery.ResourceEnabled("dataload") {
 		setupLog.Info("Registering DataLoad reconciler to Fluid controller manager.")
 		if err = (dataloadctl.NewDataLoadReconciler(mgr.GetClient(),
 			ctrl.Log.WithName("dataloadctl").WithName("DataLoad"),
@@ -147,7 +147,7 @@ func handle() {
 		}
 	}
 
-	if discovery.ResourceEnabled("databackup") {
+	if fluidDiscovery.ResourceEnabled("databackup") {
 		setupLog.Info("Registering DataBackup reconciler to Fluid controller manager.")
 		if err = (databackupctl.NewDataBackupReconciler(mgr.GetClient(),
 			ctrl.Log.WithName("databackupctl").WithName("DataBackup"),
@@ -159,7 +159,7 @@ func handle() {
 		}
 	}
 
-	if discovery.ResourceEnabled("datamigrate") {
+	if fluidDiscovery.ResourceEnabled("datamigrate") {
 		setupLog.Info("Registering DataMigrate reconciler to Fluid controller manager.")
 		if err = (datamigratectl.NewDataMigrateReconciler(mgr.GetClient(),
 			ctrl.Log.WithName("datamigratectl").WithName("DataMigrate"),
@@ -171,7 +171,7 @@ func handle() {
 		}
 	}
 
-	if discovery.ResourceEnabled("dataprocess") {
+	if fluidDiscovery.ResourceEnabled("dataprocess") {
 		setupLog.Info("Registering DataProcess reconciler to Fluid controller manager.")
 		if err = (dataprocessctl.NewDataProcessReconciler(mgr.GetClient(),
 			ctrl.Log.WithName("dataprocessctl").WithName("DataProcess"),
