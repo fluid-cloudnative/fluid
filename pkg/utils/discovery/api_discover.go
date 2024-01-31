@@ -18,7 +18,7 @@ type fluidDiscovery map[string]bool
 
 var (
 	globalDiscovery fluidDiscovery = nil
-	mutex           *sync.Mutex    = &sync.Mutex{}
+	once            sync.Once
 )
 
 // ResourceEnabled checks the map to determine whether a Fluid resource is installed and enabled in the cluster.
@@ -32,17 +32,9 @@ func (discovery fluidDiscovery) ResourceEnabled(resourceSingularName string) boo
 
 // GetFluidDiscoery returns a global-level singleton of fluidDiscovery.
 func GetFluidDiscovery() fluidDiscovery {
-	if globalDiscovery == nil {
-		// wrap initialization to leverage defer keyword
-		func() {
-			mutex.Lock()
-			defer mutex.Unlock()
-			// double check for possible concurrency issue
-			if globalDiscovery == nil {
-				initDiscovery()
-			}
-		}()
-	}
+	once.Do(func() {
+		initDiscovery() // initDiscovery() fails with os.Exit(1), no need to handle error here.
+	})
 	return globalDiscovery
 }
 
