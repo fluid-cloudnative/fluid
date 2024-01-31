@@ -113,3 +113,35 @@ func Test_discoverFluidResourcesInCluster(t *testing.T) {
 		})
 	}
 }
+
+func TestGetFluidDiscovery(t *testing.T) {
+	globalDiscovery = fluidDiscovery(map[string]bool{
+		"foo": true,
+		"bar": true,
+	})
+
+	t.Run("non-nil globalDiscovery", func(t *testing.T) {
+		got := GetFluidDiscovery()
+		if !reflect.DeepEqual(got, globalDiscovery) {
+			t.Errorf("GetFluidDiscovery() = %v, want %v", got, globalDiscovery)
+		}
+	})
+
+	globalDiscovery = nil
+
+	t.Run("nil globalDiscovery", func(t *testing.T) {
+		want := fluidDiscovery(map[string]bool{
+			"foo2": true,
+			"bar2": true,
+		})
+		patch := gomonkey.ApplyFunc(initDiscovery, func() {
+			globalDiscovery = want
+		})
+		defer patch.Reset()
+
+		got := GetFluidDiscovery()
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("GetFluidDiscovery() = %v, want %v", got, globalDiscovery)
+		}
+	})
+}
