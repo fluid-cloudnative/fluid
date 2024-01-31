@@ -72,7 +72,7 @@ func filterOutDisabledRuntimes(checks map[string]CheckFunc) (filteredChecks map[
 
 	for controllerName, checkFn := range checks {
 		resourceName := strings.TrimSuffix(controllerName, "-controller")
-		if discovery.ResourceEnabled(resourceName) {
+		if discovery.GetFluidDiscovery().ResourceEnabled(resourceName) {
 			filteredChecks[controllerName] = checkFn
 		}
 	}

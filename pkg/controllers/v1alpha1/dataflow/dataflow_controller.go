@@ -65,7 +65,7 @@ var reconcileKinds = map[string]client.Object{
 func setupWatches(bld *builder.Builder, handler *handler.EnqueueRequestForObject, predicates builder.Predicates) *builder.Builder {
 	toSetup := []client.Object{}
 	for kind, obj := range reconcileKinds {
-		if discovery.ResourceEnabled(kind) {
+		if discovery.GetFluidDiscovery().ResourceEnabled(kind) {
 			toSetup = append(toSetup, obj)
 		}
 	}
@@ -83,7 +83,7 @@ func setupWatches(bld *builder.Builder, handler *handler.EnqueueRequestForObject
 
 func DataFlowEnabled() bool {
 	for kind := range reconcileKinds {
-		if discovery.ResourceEnabled(kind) {
+		if discovery.GetFluidDiscovery().ResourceEnabled(kind) {
 			return true
 		}
 	}

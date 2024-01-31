@@ -4,6 +4,7 @@ import (
 	"fmt"
 	nativelog "log"
 	"strings"
+	"sync"
 	"time"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -13,7 +14,37 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-var enabledFluidResources map[string]bool = nil
+type fluidDiscovery map[string]bool
+
+var (
+	globalDiscovery fluidDiscovery = nil
+	mutex           *sync.Mutex    = &sync.Mutex{}
+)
+
+// ResourceEnabled checks the map to determine whether a Fluid resource is installed and enabled in the cluster.
+func (discovery fluidDiscovery) ResourceEnabled(resourceSingularName string) bool {
+	if enabled, exists := discovery[resourceSingularName]; exists && enabled {
+		return true
+	}
+
+	return false
+}
+
+// GetFluidDiscoery returns a global-level singleton of fluidDiscovery.
+func GetFluidDiscovery() fluidDiscovery {
+	if globalDiscovery == nil {
+		// wrap initialization to leverage defer keyword
+		func() {
+			mutex.Lock()
+			defer mutex.Unlock()
+			// double check for possible concurrency issue
+			if globalDiscovery == nil {
+				initDiscovery()
+			}
+		}()
+	}
+	return globalDiscovery
+}
 
 // exponentail backoff with a interval of 0.2s/1s/5s/25s/30s
 var backOff = wait.Backoff{
@@ -24,12 +55,12 @@ var backOff = wait.Backoff{
 	Cap:      30 * time.Second,
 }
 
-// Init initializes the pacakge by discovering all the Fluid CRDs and record them into enabledFluidResources.
-// Further calls of ResourceEnabled checks enabledFluidResources to know if the resource is installed in the cluster.
-func Init() {
+// initDiscovery initializes the pacakge by discovering all the Fluid CRDs and record them into fluidDiscovery.
+// Further calls of ResourceEnabled checks fluidDiscovery to know if the resource is installed in the cluster.
+func initDiscovery() {
 	discoverFluidResourcesInCluster()
 	allEnabledResources := []string{}
-	for resource := range enabledFluidResources {
+	for resource := range globalDiscovery {
 		allEnabledResources = append(allEnabledResources, resource)
 	}
 
@@ -51,10 +82,10 @@ func discoverFluidResourcesInCluster() {
 			return fmt.Errorf("none of Fluid CRDs is found installed in the cluster")
 		}
 
-		enabledFluidResources = make(map[string]bool, len(resources.APIResources))
+		globalDiscovery = make(map[string]bool, len(resources.APIResources))
 		for _, res := range resources.APIResources {
 			lowerResName := strings.ToLower(res.SingularName)
-			enabledFluidResources[lowerResName] = true
+			globalDiscovery[lowerResName] = true
 		}
 
 		return nil
@@ -62,12 +93,4 @@ func discoverFluidResourcesInCluster() {
 	if err != nil {
 		nativelog.Fatalf("failed to discover installed fluid runtime CRDs under %s: %v", fluidGroupVersion, err)
 	}
-}
-
-func ResourceEnabled(resourceSingularName string) bool {
-	if enabled, exists := enabledFluidResources[resourceSingularName]; exists && enabled {
-		return true
-	}
-
-	return false
 }

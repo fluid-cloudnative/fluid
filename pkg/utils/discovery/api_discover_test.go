@@ -12,7 +12,7 @@ import (
 )
 
 func TestResourceEnabled(t *testing.T) {
-	enabledFluidResources = map[string]bool{
+	globalDiscovery = map[string]bool{
 		"dataload":       true,
 		"alluxioruntime": true,
 		"dataset":        true,
@@ -50,7 +50,7 @@ func TestResourceEnabled(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := ResourceEnabled(tt.args.resourceSingularName); got != tt.want {
+			if got := globalDiscovery.ResourceEnabled(tt.args.resourceSingularName); got != tt.want {
 				t.Errorf("ResourceEnabled() = %v, want %v", got, tt.want)
 			}
 		})
@@ -71,7 +71,7 @@ func Test_discoverFluidResourcesInCluster(t *testing.T) {
 	tests := []struct {
 		name          string
 		patchedFunc   func(groupVersion string) (*metav1.APIResourceList, error)
-		wantResources map[string]bool
+		wantResources fluidDiscovery
 	}{
 		{
 			name: "test",
@@ -90,16 +90,16 @@ func Test_discoverFluidResourcesInCluster(t *testing.T) {
 					},
 				}, nil
 			},
-			wantResources: map[string]bool{
+			wantResources: fluidDiscovery(map[string]bool{
 				"dataset":        true,
 				"alluxioruntime": true,
 				"dataload":       true,
-			},
+			}),
 		},
 	}
 	for _, tt := range tests {
 		// clear global-wise enabledFluidResources for following tests
-		enabledFluidResources = map[string]bool{}
+		globalDiscovery = map[string]bool{}
 		t.Run(tt.name, func(t *testing.T) {
 			var fakeClient *discovery.DiscoveryClient
 			patch3 := gomonkey.ApplyMethodFunc(fakeClient, "ServerResourcesForGroupVersion", tt.patchedFunc)
@@ -107,8 +107,8 @@ func Test_discoverFluidResourcesInCluster(t *testing.T) {
 
 			discoverFluidResourcesInCluster()
 
-			if !reflect.DeepEqual(tt.wantResources, enabledFluidResources) {
-				t.Fatalf("failed to discoverFluidResourcesInCluster, got %v, want %v", enabledFluidResources, tt.wantResources)
+			if !reflect.DeepEqual(tt.wantResources, globalDiscovery) {
+				t.Fatalf("failed to discoverFluidResourcesInCluster, got %v, want %v", globalDiscovery, tt.wantResources)
 			}
 		})
 	}
