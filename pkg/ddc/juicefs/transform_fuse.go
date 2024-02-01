@@ -37,7 +37,7 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 	}
 	mount := dataset.Spec.Mounts[0]
 
-	value.Configs.Name = mount.Name
+	value.Configs.Name = security.EscapeBashStr(mount.Name)
 
 	// transform image
 	image := runtime.Spec.Fuse.Image
@@ -130,7 +130,7 @@ func (j *JuiceFSEngine) transformFuseNodeSelector(runtime *datav1alpha1.JuiceFSR
 func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *datav1alpha1.Level, value *JuiceFS,
 	sharedOptions map[string]string, sharedEncryptOptions []datav1alpha1.EncryptOption) (map[string]string, error) {
 	options := make(map[string]string)
-	value.Configs.Name = mount.Name
+	value.Configs.Name = security.EscapeBashStr(mount.Name)
 	value.Configs.EncryptEnvOptions = make([]EncryptEnvOption, 0)
 	source := ""
 
