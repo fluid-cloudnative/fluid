@@ -64,6 +64,7 @@ func (e *EFCEngine) CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, targ
 	return err
 }
 
+// CheckRuntimeReady checks if runtime is ready or not
 func (e *EFCEngine) CheckRuntimeReady() (ready bool) {
 	// 1. check master ready
 	podName, containerName := e.getMasterPodInfo()
