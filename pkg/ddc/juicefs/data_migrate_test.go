@@ -20,6 +20,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"os"
 	"path/filepath"
@@ -846,7 +847,7 @@ func Test_addWorkerPodAntiAffinity(t *testing.T) {
 								PodAffinityTerm: corev1.PodAffinityTerm{
 									LabelSelector: &metav1.LabelSelector{
 										MatchLabels: map[string]string{
-											"app": fmt.Sprintf("%s-workers", utils.GetDataMigrateReleaseName("dataset-migrate")),
+											dataoperation.OperationLabel: fmt.Sprintf("migrate-%s-%s", "", utils.GetDataMigrateReleaseName("dataset-migrate")),
 										},
 									},
 									TopologyKey: "kubernetes.io/hostname",
@@ -882,7 +883,7 @@ func Test_addWorkerPodAntiAffinity(t *testing.T) {
 								PodAffinityTerm: corev1.PodAffinityTerm{
 									LabelSelector: &metav1.LabelSelector{
 										MatchLabels: map[string]string{
-											"app": fmt.Sprintf("%s-workers", utils.GetDataMigrateReleaseName("dataset-migrate")),
+											dataoperation.OperationLabel: fmt.Sprintf("migrate-%s-%s", "", utils.GetDataMigrateReleaseName("dataset-migrate")),
 										},
 									},
 									TopologyKey: "kubernetes.io/hostname",
@@ -919,7 +920,7 @@ func Test_addWorkerPodAntiAffinity(t *testing.T) {
 								PodAffinityTerm: corev1.PodAffinityTerm{
 									LabelSelector: &metav1.LabelSelector{
 										MatchLabels: map[string]string{
-											"app": fmt.Sprintf("%s-workers", utils.GetDataMigrateReleaseName("dataset-migrate")),
+											dataoperation.OperationLabel: fmt.Sprintf("migrate-%s-%s", "", utils.GetDataMigrateReleaseName("dataset-migrate")),
 										},
 									},
 									TopologyKey: "kubernetes.io/hostname",
@@ -981,7 +982,7 @@ func Test_addWorkerPodAntiAffinity(t *testing.T) {
 								PodAffinityTerm: corev1.PodAffinityTerm{
 									LabelSelector: &metav1.LabelSelector{
 										MatchLabels: map[string]string{
-											"app": fmt.Sprintf("%s-workers", utils.GetDataMigrateReleaseName("dataset-migrate")),
+											dataoperation.OperationLabel: fmt.Sprintf("migrate-%s-%s", "", utils.GetDataMigrateReleaseName("dataset-migrate")),
 										},
 									},
 									TopologyKey: "kubernetes.io/hostname",

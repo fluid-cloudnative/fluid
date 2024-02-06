@@ -18,6 +18,7 @@ package juicefs
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/url"
@@ -221,14 +222,13 @@ func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequest
 
 func addWorkerPodAntiAffinity(dataMigrateInfo *cdatamigrate.DataMigrateInfo, dataMigrate *datav1alpha1.DataMigrate) {
 	releaseName := utils.GetDataMigrateReleaseName(dataMigrate.Name)
-	appValue := fmt.Sprintf("%s-workers", releaseName)
 
 	podAffinityTerm := corev1.WeightedPodAffinityTerm{
 		Weight: 100,
 		PodAffinityTerm: corev1.PodAffinityTerm{
 			LabelSelector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": appValue,
+					dataoperation.OperationLabel: fmt.Sprintf("migrate-%s-%s", dataMigrate.Namespace, releaseName),
 				},
 			},
 			TopologyKey: "kubernetes.io/hostname",

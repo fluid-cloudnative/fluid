@@ -36,7 +36,7 @@ spec:
         role: datamigrate-pod
         app: juicefs
         targetDataset: {{ required "targetDataset should be set" .Values.datamigrate.targetDataset }}
-        parallelRole: {{ printf "%s-launcher" .Release.Name }}
+        fluid.io/operation: migrate-{{ .Release.Namespace }}-{{ .Release.Name }}
       {{- if .Values.datamigrate.labels }}
       {{- range $key, $val := .Values.datamigrate.labels }}
         {{ $key | quote }}: {{ $val | quote }}

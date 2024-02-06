@@ -28,6 +28,7 @@ spec:
     metadata:
       labels:
         app: {{ printf "%s-workers" .Release.Name }}
+        fluid.io/operation: migrate-{{ .Release.Namespace }}-{{ .Release.Name }}
     spec:
       containers:
         - name: worker
@@ -70,19 +71,10 @@ spec:
             - podAffinityTerm:
                 labelSelector:
                   matchExpressions:
-                    - key: app
+                    - key: fluid.io/operation
                       operator: In
                       values:
-                        - {{ printf "%s-workers" .Release.Name }}
-                topologyKey: kubernetes.io/hostname
-              weight: 100
-            - podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                    - key: parallelRole
-                      operator: In
-                      values:
-                        - {{ printf "%s-launcher" .Release.Name }}
+                        - migrate-{{ .Release.Namespace }}-{{ .Release.Name }}
                 topologyKey: kubernetes.io/hostname
               weight: 100
       volumes:
