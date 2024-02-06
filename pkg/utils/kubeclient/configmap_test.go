@@ -16,6 +16,7 @@ limitations under the License.
 package kubeclient
 
 import (
+	"reflect"
 	"testing"
 
 	"k8s.io/apimachinery/pkg/types"
@@ -228,6 +229,50 @@ func TestCopyConfigMap(t *testing.T) {
 				if err != nil {
 					t.Errorf("Get copyied configmap error: %v", err)
 				}
+			}
+		})
+	}
+}
+
+func TestCreateConfigMapExist(t *testing.T) {
+	namespace := "default"
+
+	client := fake.NewFakeClientWithScheme(testScheme)
+
+	type args struct {
+		name      string
+		namespace string
+		key       string
+		data      []byte
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "create configmap",
+			args: args{
+				name:      "cm",
+				namespace: namespace,
+				key:       "data",
+				data:      []byte("this is data."),
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := CreateConfigMap(client, tt.args.name, tt.args.namespace, tt.args.key, tt.args.data)
+			if err != nil {
+				t.Errorf("testcase %v CreateConfigMap() err is %v", tt.name, err)
+			}
+			configmap, err := GetConfigmapByName(client, tt.args.name, tt.args.namespace)
+			if err != nil {
+				t.Errorf("testcase %v GetConfigmapByName()'s err is %v", tt.name, err)
+			}
+			if !reflect.DeepEqual(configmap.Data[tt.args.key], string(tt.args.data)) {
+				t.Errorf("testcase %v CreateConfigMap() configmap data is %v, want %v", tt.name, configmap.Data[tt.args.key], tt.args.data)
 			}
 		})
 	}
