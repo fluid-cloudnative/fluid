@@ -58,6 +58,14 @@ spec:
 - `spec.from(/to).dataset.path`：需要迁移数据的 dataset 的子路径；
 - `spec.options`：juicefs sync 的参数，具体请参考[文档](https://juicefs.com/docs/zh/community/command_reference#juicefs-sync)。
 
+[分布式同步](https://juicefs.com/docs/zh/community/guide/sync#distributed-sync)：在同步大量数据时，单机带宽往往会被占满出现瓶颈，
+针对这种情况，提供多Pod并发同步支持（Pod彼此间具备反亲和性），相关参数如下：
+- `spec.parallelism`：启动用于同步的Worker 的总数量，默认为1；
+- `spec.parallelOptions`：当 spec.parallelism 大于 1时，用于设置并发同步的相关参数，当前支持：
+  - `sshSecretName`: 必选，无默认值，Workers 间的 SSH 免密配置的 Secret 的名称，必须包含`ssh-privatekey`和`ssh-publickey`；
+  - `sshPort`: 可选，默认22，Workers 间的 SSH 端口；
+  - `sshReadyTimeoutSeconds`：可选，默认180，等待所有Workers都准备好SSH连接前的超时时间；
+
 ### 基于 PVC 的 DataMigrate
 
 DataMigrate 还支持以 PVC 的形式作为数据源，需要额外准备需要迁移的 PVC，Fluid 会将已有的 PVC 挂载到执行 DataMigrate 的 Job 中。
