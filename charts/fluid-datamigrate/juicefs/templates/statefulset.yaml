@@ -64,7 +64,7 @@ spec:
             - mountPath: /etc/fluid/scripts
               name: data-migrate-script
       affinity:
-        # prefer to use different nodes to maximize bandwidth
+        # prefer to use different nodes to maximize bandwidth, the launcher is also a worker.
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
             - podAffinityTerm:
@@ -74,6 +74,15 @@ spec:
                       operator: In
                       values:
                         - {{ printf "%s-workers" .Release.Name }}
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: parallelRole
+                      operator: In
+                      values:
+                        - {{ printf "%s-launcher" .Release.Name }}
                 topologyKey: kubernetes.io/hostname
               weight: 100
       volumes:

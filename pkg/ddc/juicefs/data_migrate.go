@@ -19,6 +19,7 @@ package juicefs
 import (
 	"fmt"
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/url"
 	"os"
 	"path"
@@ -137,16 +138,19 @@ func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequest
 		Parallelism:      dataMigrate.Spec.Parallelism,
 	}
 
+	// first set the affinity, below code will add another affinity terms.
+	if dataMigrate.Spec.Affinity != nil {
+		dataMigrateInfo.Affinity = dataMigrate.Spec.Affinity
+	}
+
 	// generate ssh config for parallel tasks when using parallel tasks
 	if dataMigrateInfo.Parallelism > 1 {
 		err = j.setParallelMigrateOptions(&dataMigrateInfo, dataMigrate)
 		if err != nil {
 			return "", err
 		}
-	}
-
-	if dataMigrate.Spec.Affinity != nil {
-		dataMigrateInfo.Affinity = dataMigrate.Spec.Affinity
+		// the launcher prefers to run on different host with the workers
+		addWorkerPodAntiAffinity(&dataMigrateInfo, dataMigrate)
 	}
 
 	if dataMigrate.Spec.NodeSelector != nil {
@@ -213,6 +217,47 @@ func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequest
 		return
 	}
 	return valueFile.Name(), nil
+}
+
+func addWorkerPodAntiAffinity(dataMigrateInfo *cdatamigrate.DataMigrateInfo, dataMigrate *datav1alpha1.DataMigrate) {
+	releaseName := utils.GetDataMigrateReleaseName(dataMigrate.Name)
+	appValue := fmt.Sprintf("%s-workers", releaseName)
+
+	podAffinityTerm := corev1.WeightedPodAffinityTerm{
+		Weight: 100,
+		PodAffinityTerm: corev1.PodAffinityTerm{
+			LabelSelector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"app": appValue,
+				},
+			},
+			TopologyKey: "kubernetes.io/hostname",
+		},
+	}
+
+	// Affinity is nil
+	if dataMigrateInfo.Affinity == nil {
+		dataMigrateInfo.Affinity = &corev1.Affinity{
+			PodAntiAffinity: &corev1.PodAntiAffinity{
+				PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+					podAffinityTerm,
+				},
+			},
+		}
+		return
+	}
+	// Affinity not nil, PodAntiAffinity is nil
+	if dataMigrateInfo.Affinity.PodAntiAffinity == nil {
+		dataMigrateInfo.Affinity.PodAntiAffinity = &corev1.PodAntiAffinity{
+			PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+				podAffinityTerm,
+			},
+		}
+		return
+	}
+	// PodAntiAffinity not nil
+	dataMigrateInfo.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution =
+		append(dataMigrateInfo.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution, podAffinityTerm)
 }
 
 func (j *JuiceFSEngine) setParallelMigrateOptions(dataMigrateInfo *cdatamigrate.DataMigrateInfo, dataMigrate *datav1alpha1.DataMigrate) error {
