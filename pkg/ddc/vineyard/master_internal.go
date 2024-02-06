@@ -22,7 +22,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubectl"
 	"sigs.k8s.io/yaml"
 )
 
@@ -95,7 +94,7 @@ func (e *VineyardEngine) generateVineyardValueFile(runtime *datav1alpha1.Vineyar
 	}
 
 	//3. Save the configfile into configmap
-	err = kubectl.CreateConfigMapFromFile(e.getConfigmapName(), "data", valueFileName, e.namespace)
+	err = kubeclient.CreateConfigMap(e.Client, e.getConfigmapName(), e.namespace, "data", data)
 	if err != nil {
 		return
 	}

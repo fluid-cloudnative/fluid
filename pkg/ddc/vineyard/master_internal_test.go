@@ -25,16 +25,9 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubectl"
 )
 
 func TestSetupMasterInternal(t *testing.T) {
-	mockExecCreateConfigMapFromFileCommon := func(name string, key, fileName string, namespace string) (err error) {
-		return nil
-	}
-	mockExecCreateConfigMapFromFileErr := func(name string, key, fileName string, namespace string) (err error) {
-		return errors.New("fail to exec command")
-	}
 	mockExecCheckReleaseCommonFound := func(name string, namespace string) (exist bool, err error) {
 		return true, nil
 	}
@@ -51,12 +44,6 @@ func TestSetupMasterInternal(t *testing.T) {
 		return errors.New("fail to install dataload chart")
 	}
 
-	wrappedUnhookCreateConfigMapFromFile := func() {
-		err := gohook.UnHook(kubectl.CreateConfigMapFromFile)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 	wrappedUnhookCheckRelease := func() {
 		err := gohook.UnHook(helm.CheckRelease)
 		if err != nil {
@@ -118,20 +105,9 @@ func TestSetupMasterInternal(t *testing.T) {
 			},
 		},
 	}
-	err := gohook.Hook(kubectl.CreateConfigMapFromFile, mockExecCreateConfigMapFromFileErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = engine.setupMasterInternal()
+	err := engine.setupMasterInternal()
 	if err == nil {
 		t.Errorf("fail to catch the error")
-	}
-	wrappedUnhookCreateConfigMapFromFile()
-
-	// create configmap successfully
-	err = gohook.Hook(kubectl.CreateConfigMapFromFile, mockExecCreateConfigMapFromFileCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
 	}
 
 	// check release found
@@ -184,23 +160,9 @@ func TestSetupMasterInternal(t *testing.T) {
 	}
 	wrappedUnhookInstallRelease()
 	wrappedUnhookCheckRelease()
-	wrappedUnhookCreateConfigMapFromFile()
 }
 
 func TestGenerateVineyardValueFile(t *testing.T) {
-	mockExecCreateConfigMapFromFileCommon := func(name string, key, fileName string, namespace string) (err error) {
-		return nil
-	}
-	mockExecCreateConfigMapFromFileErr := func(name string, key, fileName string, namespace string) (err error) {
-		return errors.New("fail to exec command")
-	}
-
-	wrappedUnhookCreateConfigMapFromFile := func() {
-		err := gohook.UnHook(kubectl.CreateConfigMapFromFile)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 
 	quota := resource.MustParse("1Gi")
 	vineyardruntime := &datav1alpha1.VineyardRuntime{
@@ -251,26 +213,10 @@ func TestGenerateVineyardValueFile(t *testing.T) {
 		},
 	}
 
-	err := gohook.Hook(kubectl.CreateConfigMapFromFile, mockExecCreateConfigMapFromFileErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	_, err = engine.generateVineyardValueFile(vineyardruntime)
-	if err == nil {
-		t.Errorf("fail to catch the error")
-	}
-	wrappedUnhookCreateConfigMapFromFile()
-
-	err = gohook.Hook(kubectl.CreateConfigMapFromFile, mockExecCreateConfigMapFromFileCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-
-	_, err = engine.generateVineyardValueFile(vineyardruntime)
+	_, err := engine.generateVineyardValueFile(vineyardruntime)
 	if err != nil {
 		t.Errorf("fail to generateVineyardValueFile %v", err)
 	}
-	wrappedUnhookCreateConfigMapFromFile()
 }
 
 func TestGetConfigmapName(t *testing.T) {
