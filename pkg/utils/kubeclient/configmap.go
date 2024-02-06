@@ -155,7 +155,5 @@ func CreateConfigMap(client client.Client, name string, namespace string, key st
 		},
 	}
 
-	err = client.Create(context.TODO(), configMap)
-
-	return
+	return client.Create(context.TODO(), configMap)
 }
