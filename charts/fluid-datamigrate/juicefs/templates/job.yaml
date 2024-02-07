@@ -8,6 +8,7 @@ metadata:
     role: datamigrate-job
     app: juicefs
     targetDataset: {{ required "targetDataset should be set" .Values.datamigrate.targetDataset }}
+    {{- include "library.fluid.labels" . | nindent 4 }}
   ownerReferences:
   {{- if .Values.owner.enabled }}
     - apiVersion: {{ .Values.owner.apiVersion }}
