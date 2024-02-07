@@ -1,5 +1,5 @@
 apiVersion: v2
 name: library
 description: A library chart consisting commonly used helm templates for Fluid runtimes.
-type: application
+type: library
 version: 0.1.0
