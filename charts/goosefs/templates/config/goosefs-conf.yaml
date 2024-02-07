@@ -159,6 +159,7 @@ metadata:
     chart: {{ $chart }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
+    {{- include "library.fluid.labels" . | nindent 4 }}
 data:
   GOOSEFS_JAVA_OPTS: |-
     {{- /* Format GOOSEFS_JAVA_OPTS list to one line */}}
