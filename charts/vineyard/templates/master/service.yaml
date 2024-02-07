@@ -29,6 +29,7 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
     role: vineyard-master
+    {{- include "library.fluid.labels" . | nindent 4 }}
   {{- if .Values.owner.enabled }}
   ownerReferences:
   - apiVersion: {{ .Values.owner.apiVersion }}
