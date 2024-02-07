@@ -5,6 +5,7 @@ metadata:
   labels:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
+    {{- include "library.fluid.labels" . | nindent 4 }}
   ownerReferences:
   {{- if .Values.owner.enabled }}
     - apiVersion: {{ .Values.owner.apiVersion }}
