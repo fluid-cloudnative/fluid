@@ -2,6 +2,7 @@
 {{ $masterCount := int .Values.master.replicaCount }}
 {{- $isSingleMaster := eq $masterCount 1 }}
 {{- $isRaftHa := eq $masterCount 3 }}
+{{- $labels := include "library.fluid.labels" . }}
 {{- range $i := until $masterCount }}
   {{- $masterName := printf "master-%v" $i }}
 apiVersion: v1
@@ -14,6 +15,7 @@ metadata:
     release: {{ $dot.Release.Name }}
     heritage: {{ $dot.Release.Service }}
     role: jindofs-master
+    {{- $labels | nindent 4 }}
   ownerReferences:
   {{- if $dot.Values.owner.enabled }}
   - apiVersion: {{ $dot.Values.owner.apiVersion }}
