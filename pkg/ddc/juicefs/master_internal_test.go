@@ -25,10 +25,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/net"
 
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubectl"
-
 	"github.com/brahma-adshonor/gohook"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,9 +51,6 @@ func init() {
 }
 
 func TestSetupMasterInternal(t *testing.T) {
-	mockCreateConfigMap := func(name string, key, fileName string, namespace string) (err error) {
-		return nil
-	}
 	mockExecCheckReleaseCommonFound := func(name string, namespace string) (exist bool, err error) {
 		return true, nil
 	}
@@ -70,9 +65,6 @@ func TestSetupMasterInternal(t *testing.T) {
 	}
 	mockExecInstallReleaseErr := func(name string, namespace string, valueFile string, chartName string) error {
 		return errors.New("fail to install dataload chart")
-	}
-	mockExecCreateConfigMapFromFileErr := func(name string, key, fileName string, namespace string) (err error) {
-		return errors.New("fail to exec command")
 	}
 
 	wrappedUnhookCheckRelease := func() {
@@ -147,17 +139,9 @@ func TestSetupMasterInternal(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	err = gohook.Hook(kubectl.CreateConfigMapFromFile, mockExecCreateConfigMapFromFileErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
 
 	// check release found
 	err = gohook.Hook(helm.CheckRelease, mockExecCheckReleaseCommonFound, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = gohook.Hook(kubectl.CreateConfigMapFromFile, mockCreateConfigMap, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -169,10 +153,6 @@ func TestSetupMasterInternal(t *testing.T) {
 
 	// check release error
 	err = gohook.Hook(helm.CheckRelease, mockExecCheckReleaseErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = gohook.Hook(kubectl.CreateConfigMapFromFile, mockCreateConfigMap, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -193,10 +173,6 @@ func TestSetupMasterInternal(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	err = gohook.Hook(kubectl.CreateConfigMapFromFile, mockCreateConfigMap, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
 	err = engine.setupMasterInternal()
 	if err == nil {
 		t.Errorf("fail to catch the error")
@@ -205,10 +181,6 @@ func TestSetupMasterInternal(t *testing.T) {
 
 	// install release successfully
 	err = gohook.Hook(helm.InstallRelease, mockExecInstallReleaseCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = gohook.Hook(kubectl.CreateConfigMapFromFile, mockCreateConfigMap, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -222,18 +194,6 @@ func TestSetupMasterInternal(t *testing.T) {
 }
 
 func TestGenerateJuiceFSValueFile(t *testing.T) {
-	mockCreateConfigMap := func(name string, key, fileName string, namespace string) (err error) {
-		return nil
-	}
-	mockCreateConfigMapErr := func(name string, key, fileName string, namespace string) (err error) {
-		return errors.New("create configMap error")
-	}
-	wrappedUnhookConfigMap := func() {
-		err := gohook.UnHook(kubectl.CreateConfigMapFromFile)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 	juicefsSecret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
@@ -301,23 +261,8 @@ func TestGenerateJuiceFSValueFile(t *testing.T) {
 		},
 	}
 
-	err := gohook.Hook(kubectl.CreateConfigMapFromFile, mockCreateConfigMap, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	_, err = engine.generateJuicefsValueFile(juicefsruntime)
+	_, err := engine.generateJuicefsValueFile(juicefsruntime)
 	if err != nil {
 		t.Errorf("fail to exec the function: %v", err)
 	}
-	wrappedUnhookConfigMap()
-
-	err = gohook.Hook(kubectl.CreateConfigMapFromFile, mockCreateConfigMapErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	_, err = engine.generateJuicefsValueFile(juicefsruntime)
-	if err == nil {
-		t.Error("fail to mock error")
-	}
-	wrappedUnhookConfigMap()
 }

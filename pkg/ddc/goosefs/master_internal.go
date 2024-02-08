@@ -25,7 +25,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubectl"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -100,7 +99,7 @@ func (e *GooseFSEngine) generateGooseFSValueFile(runtime *datav1alpha1.GooseFSRu
 	}
 
 	//3. Save the configfile into configmap
-	err = kubectl.CreateConfigMapFromFile(e.getHelmValuesConfigMapName(), "data", valueFileName, e.namespace)
+	err = kubeclient.CreateConfigMap(e.Client, e.getHelmValuesConfigMapName(), e.namespace, "data", data)
 	if err != nil {
 		return
 	}

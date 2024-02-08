@@ -27,7 +27,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubectl"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -35,12 +34,6 @@ import (
 )
 
 func TestSetupMasterInternal(t *testing.T) {
-	mockExecCreateConfigMapFromFileCommon := func(name string, key, fileName string, namespace string) (err error) {
-		return nil
-	}
-	mockExecCreateConfigMapFromFileErr := func(name string, key, fileName string, namespace string) (err error) {
-		return errors.New("fail to exec command")
-	}
 	mockExecCheckReleaseCommonFound := func(name string, namespace string) (exist bool, err error) {
 		return true, nil
 	}
@@ -57,12 +50,6 @@ func TestSetupMasterInternal(t *testing.T) {
 		return errors.New("fail to install dataload chart")
 	}
 
-	wrappedUnhookCreateConfigMapFromFile := func() {
-		err := gohook.UnHook(kubectl.CreateConfigMapFromFile)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 	wrappedUnhookCheckRelease := func() {
 		err := gohook.UnHook(helm.CheckRelease)
 		if err != nil {
@@ -115,20 +102,9 @@ func TestSetupMasterInternal(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	err = gohook.Hook(kubectl.CreateConfigMapFromFile, mockExecCreateConfigMapFromFileErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
 	err = engine.setupMasterInernal()
 	if err == nil {
 		t.Errorf("fail to catch the error")
-	}
-	wrappedUnhookCreateConfigMapFromFile()
-
-	// create configmap successfully
-	err = gohook.Hook(kubectl.CreateConfigMapFromFile, mockExecCreateConfigMapFromFileCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
 	}
 
 	// check release found
@@ -174,24 +150,9 @@ func TestSetupMasterInternal(t *testing.T) {
 	}
 	_ = engine.setupMasterInernal()
 	wrappedUnhookInstallRelease()
-	wrappedUnhookCreateConfigMapFromFile()
 }
 
 func TestGenerateJindoValueFile(t *testing.T) {
-	mockExecCreateConfigMapFromFileCommon := func(name string, key, fileName string, namespace string) (err error) {
-		return nil
-	}
-	mockExecCreateConfigMapFromFileErr := func(name string, key, fileName string, namespace string) (err error) {
-		return errors.New("fail to exec command")
-	}
-
-	wrappedUnhookCreateConfigMapFromFile := func() {
-		err := gohook.UnHook(kubectl.CreateConfigMapFromFile)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-
 	jindoruntime := &datav1alpha1.JindoRuntime{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "hbase",
@@ -241,21 +202,10 @@ func TestGenerateJindoValueFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	err = gohook.Hook(kubectl.CreateConfigMapFromFile, mockExecCreateConfigMapFromFileErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
 	_, err = engine.generateJindoValueFile()
-	if err == nil {
-		t.Errorf("fail to catch the error")
-	}
-	wrappedUnhookCreateConfigMapFromFile()
-
-	err = gohook.Hook(kubectl.CreateConfigMapFromFile, mockExecCreateConfigMapFromFileCommon, nil)
 	if err != nil {
-		t.Fatal(err.Error())
+		t.Errorf("fail to generate value file, err is %v", err)
 	}
-	wrappedUnhookCreateConfigMapFromFile()
 }
 
 func TestGetConfigmapName(t *testing.T) {

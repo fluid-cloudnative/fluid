@@ -25,8 +25,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubectl"
-
 	"gopkg.in/yaml.v2"
 )
 
@@ -98,7 +96,7 @@ func (e *EFCEngine) generateEFCValueFile(runtime *datav1alpha1.EFCRuntime) (valu
 	}
 
 	//3. Save the configfile into configmap
-	err = kubectl.CreateConfigMapFromFile(e.getHelmValuesConfigMapName(), "data", valueFileName, e.namespace)
+	err = kubeclient.CreateConfigMap(e.Client, e.getHelmValuesConfigMapName(), e.namespace, "data", data)
 	if err != nil {
 		return
 	}

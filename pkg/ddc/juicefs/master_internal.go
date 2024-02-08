@@ -22,13 +22,11 @@ import (
 
 	"sigs.k8s.io/yaml"
 
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubectl"
-
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
 // setup fuse
@@ -100,7 +98,7 @@ func (j *JuiceFSEngine) generateJuicefsValueFile(runtime *datav1alpha1.JuiceFSRu
 	}
 
 	//3. Save the configfile into configmap
-	err = kubectl.CreateConfigMapFromFile(j.getHelmValuesConfigMapName(), "data", valueFileName, j.namespace)
+	err = kubeclient.CreateConfigMap(j.Client, j.getHelmValuesConfigMapName(), j.namespace, "data", data)
 	if err != nil {
 		return
 	}
