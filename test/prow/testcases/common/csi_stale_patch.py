@@ -44,7 +44,7 @@ def createDatasetAndRuntime():
         "kind": "Dataset",
         "metadata": {"name": "hbase", "namespace": NS},
         "spec": {
-            "mounts": [{"mountPoint": "https://mirrors.bit.edu.cn/apache/spark/",
+            "mounts": [{"mountPoint": "https://mirrors.tuna.tsinghua.edu.cn/apache/spark/",
             "name": "hbase"}]
         }
     }

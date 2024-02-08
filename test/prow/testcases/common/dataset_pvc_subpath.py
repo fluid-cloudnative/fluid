@@ -53,7 +53,7 @@ def main():
     base_name = "hbase"
     base_mount = fluidapi.Mount()
     base_mount.set_mount_info(
-        base_name, "https://mirrors.bit.edu.cn/apache/zookeeper/stable/")
+        base_name, "https://mirrors.tuna.tsinghua.edu.cn/apache/zookeeper/stable/")
     base_dataset = fluidapi.Dataset(base_name)
     base_dataset.add_mount(base_mount.dump())
     base_dataset.set_placement("Shared")
