@@ -136,7 +136,7 @@ def main():
     namespace = "default"
 
     mount = fluidapi.Mount()
-    mount.set_mount_info("hadoop", "https://mirrors.bit.edu.cn/apache/hadoop/common/stable/")
+    mount.set_mount_info("hadoop", "https://mirrors.tuna.tsinghua.edu.cn/apache/hadoop/common/stable/")
 
     dataset = fluidapi.assemble_dataset("alluxio-webufs") \
         .set_namespaced_name(namespace, name) \
@@ -186,7 +186,7 @@ def main():
     )
 
     new_mount = fluidapi.Mount()
-    new_mount.set_mount_info("hbase", "https://mirrors.bit.edu.cn/apache/hbase/stable/")
+    new_mount.set_mount_info("hbase", "https://mirrors.tuna.tsinghua.edu.cn/apache/hbase/stable/")
 
 
     new_dataset = fluidapi.assemble_dataset("alluxio-webufs") \
