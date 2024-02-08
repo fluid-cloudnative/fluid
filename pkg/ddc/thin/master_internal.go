@@ -28,7 +28,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubectl"
 )
 
 func (t *ThinEngine) setupMasterInternal() (err error) {
@@ -103,7 +102,7 @@ func (t *ThinEngine) generateThinValueFile(runtime *datav1alpha1.ThinRuntime, pr
 	}
 
 	//3. Save the configfile into configmap
-	err = kubectl.CreateConfigMapFromFile(t.getHelmValuesConfigMapName(), "data", valueFileName, t.namespace)
+	err = kubeclient.CreateConfigMap(t.Client, t.getHelmValuesConfigMapName(), t.namespace, "data", data)
 	if err != nil {
 		return
 	}

@@ -44,7 +44,6 @@ var allowedFirstCommands = map[string]CommandValidater{
 	"mount":    PrefixMatch,
 	"alluxio":  PrefixMatch,
 	"goosefs":  PrefixMatch,
-	"kubectl":  PrefixMatch,
 	"ddc-helm": PrefixMatch,
 }
 

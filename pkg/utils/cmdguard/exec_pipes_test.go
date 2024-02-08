@@ -32,11 +32,12 @@ func TestValidateShellPipeString(t *testing.T) {
 		wantErr bool
 	}{
 		{name: "valid command with grep", args: args{command: "echo hello world | grep hello"}, wantErr: true},
-		{name: "valid command with wc -l", args: args{command: "kubectl hello world | wc -l"}, wantErr: false},
+		{name: "valid command with wc -l", args: args{command: "ls file | wc -l"}, wantErr: false},
 		{name: "invalid command with xyz", args: args{command: "echo hello world | xyz"}, wantErr: true},
+		{name: "invalid command with kubectl", args: args{command: "kubectl hello world | xyz"}, wantErr: true},
 		{name: "illegal sequence in command with &", args: args{command: "echo hello world & echo y"}, wantErr: true},
 		{name: "illegal sequence in command with ;", args: args{command: "ls ; echo y"}, wantErr: true},
-		{name: "command with $", args: args{command: "kubectl $HOME"}, wantErr: true},
+		{name: "command with $", args: args{command: "ls $HOME"}, wantErr: true},
 		{name: "command with absolute path", args: args{command: "ls /etc"}, wantErr: false},
 	}
 

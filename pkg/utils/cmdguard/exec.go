@@ -31,7 +31,7 @@ var log logr.Logger
 // allowedPathList is a whitelist of safe commands
 var allowedPathList = map[string]bool{
 	// "helm":    true,
-	"kubectl":  true,
+	//"kubectl":  true,
 	"ddc-helm": true,
 	// add other commands as needed
 }

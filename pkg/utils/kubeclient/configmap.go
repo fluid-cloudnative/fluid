@@ -143,3 +143,17 @@ func UpdateConfigMap(client client.Client, cm *v1.ConfigMap) error {
 	err := client.Update(context.TODO(), cm)
 	return err
 }
+
+func CreateConfigMap(client client.Client, name string, namespace string, key string, data []byte) (err error) {
+	configMap := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Data: map[string]string{
+			key: string(data),
+		},
+	}
+
+	return client.Create(context.TODO(), configMap)
+}

@@ -27,8 +27,6 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubectl"
-
 	"github.com/pkg/errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,18 +41,6 @@ import (
 )
 
 func TestSetupMasterInternal(t *testing.T) {
-
-	mockExecCreateConfigMapFromFileCommon := func(name string, key, fileName string, namespace string) (err error) {
-
-		return nil
-
-	}
-
-	mockExecCreateConfigMapFromFileErr := func(name string, key, fileName string, namespace string) (err error) {
-
-		return errors.New("fail to exec command")
-
-	}
 
 	mockExecCheckReleaseCommonFound := func(name string, namespace string) (exist bool, err error) {
 
@@ -83,18 +69,6 @@ func TestSetupMasterInternal(t *testing.T) {
 	mockExecInstallReleaseErr := func(name string, namespace string, valueFile string, chartName string) error {
 
 		return errors.New("fail to install dataload chart")
-
-	}
-
-	wrappedUnhookCreateConfigMapFromFile := func() {
-
-		err := gohook.UnHook(kubectl.CreateConfigMapFromFile)
-
-		if err != nil {
-
-			t.Fatal(err.Error())
-
-		}
 
 	}
 
@@ -189,31 +163,11 @@ func TestSetupMasterInternal(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	err = gohook.Hook(kubectl.CreateConfigMapFromFile, mockExecCreateConfigMapFromFileErr, nil)
-
-	if err != nil {
-
-		t.Fatal(err.Error())
-
-	}
-
 	err = engine.setupMasterInternal()
 
 	if err == nil {
 
 		t.Errorf("fail to catch the error")
-
-	}
-
-	wrappedUnhookCreateConfigMapFromFile()
-
-	// create configmap successfully
-
-	err = gohook.Hook(kubectl.CreateConfigMapFromFile, mockExecCreateConfigMapFromFileCommon, nil)
-
-	if err != nil {
-
-		t.Fatal(err.Error())
 
 	}
 
@@ -311,36 +265,9 @@ func TestSetupMasterInternal(t *testing.T) {
 
 	wrappedUnhookCheckRelease()
 
-	wrappedUnhookCreateConfigMapFromFile()
-
 }
 
 func TestGenerateGooseFSValueFile(t *testing.T) {
-
-	mockExecCreateConfigMapFromFileCommon := func(name string, key, fileName string, namespace string) (err error) {
-
-		return nil
-
-	}
-
-	mockExecCreateConfigMapFromFileErr := func(name string, key, fileName string, namespace string) (err error) {
-
-		return errors.New("fail to exec command")
-
-	}
-
-	wrappedUnhookCreateConfigMapFromFile := func() {
-
-		err := gohook.UnHook(kubectl.CreateConfigMapFromFile)
-
-		if err != nil {
-
-			t.Fatal(err.Error())
-
-		}
-
-	}
-
 	allixioruntime := &datav1alpha1.GooseFSRuntime{
 
 		ObjectMeta: metav1.ObjectMeta{
@@ -407,31 +334,6 @@ func TestGenerateGooseFSValueFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	err = gohook.Hook(kubectl.CreateConfigMapFromFile, mockExecCreateConfigMapFromFileErr, nil)
-
-	if err != nil {
-
-		t.Fatal(err.Error())
-
-	}
-
-	_, err = engine.generateGooseFSValueFile(allixioruntime)
-
-	if err == nil {
-
-		t.Errorf("fail to catch the error")
-
-	}
-
-	wrappedUnhookCreateConfigMapFromFile()
-
-	err = gohook.Hook(kubectl.CreateConfigMapFromFile, mockExecCreateConfigMapFromFileCommon, nil)
-
-	if err != nil {
-
-		t.Fatal(err.Error())
-
-	}
 
 	_, err = engine.generateGooseFSValueFile(allixioruntime)
 
@@ -440,8 +342,6 @@ func TestGenerateGooseFSValueFile(t *testing.T) {
 		t.Errorf("fail to exec the function")
 
 	}
-
-	wrappedUnhookCreateConfigMapFromFile()
 
 }
 

@@ -23,7 +23,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubectl"
 	"sigs.k8s.io/yaml"
 )
 
@@ -75,7 +74,7 @@ func (e *JindoFSxEngine) generateJindoValueFile() (valueFileName string, err err
 		return
 	}
 
-	err = kubectl.CreateConfigMapFromFile(e.getHelmValuesConfigMapName(), "data", valueFileName, e.namespace)
+	err = kubeclient.CreateConfigMap(e.Client, e.getHelmValuesConfigMapName(), e.namespace, "data", data)
 	if err != nil {
 		return
 	}
