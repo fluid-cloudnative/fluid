@@ -17,7 +17,7 @@ limitations under the License.
 package juicefs
 
 import (
-	"testing" 
+	"testing"
 
 	ctrlhelper "github.com/fluid-cloudnative/fluid/pkg/ctrl"
 
