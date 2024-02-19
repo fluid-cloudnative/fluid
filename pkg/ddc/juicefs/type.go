@@ -44,6 +44,7 @@ type JuiceFS struct {
 	RuntimeIdentity common.RuntimeIdentity `json:"runtimeIdentity,omitempty"`
 }
 
+// Configs struct describes the config of JuiceFS about the storage, including name, accessKey, bucket, meta url, etc.
 type Configs struct {
 	Name               string             `json:"name"`
 	AccessKeySecret    string             `json:"accesskeySecret,omitempty"`
@@ -68,6 +69,7 @@ type EncryptEnvOption struct {
 	SecretKeyRefKey  string `json:"secretKeyRefKey"`
 }
 
+// Worker struct describes the configuration of JuiceFS worker node, including image, resources, environmental variables, volume mounts, etc.
 type Worker struct {
 	Privileged      bool                 `json:"privileged"`
 	Image           string               `json:"image,omitempty"`
@@ -88,6 +90,7 @@ type Worker struct {
 	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
+// Fuse struct holds the configuration of JuiceFS FUSE (File System in User Space).
 type Fuse struct {
 	Privileged      bool                 `json:"privileged"`
 	Enabled         bool                 `json:"enabled,omitempty"`
@@ -118,6 +121,7 @@ type cache struct {
 	VolumeSource *v1alpha1.VolumeSource `json:"volumeSource,omitempty"`
 }
 
+// cacheStates struct holds various cache states for a JuiceFS filesystem.
 type cacheStates struct {
 	cacheCapacity        string
 	cached               string
@@ -126,6 +130,7 @@ type cacheStates struct {
 	cacheThroughputRatio string
 }
 
+// fuseMetrics struct holds various FUSE (File System in User Space) related metrics for a JuiceFS filesystem.
 type fuseMetrics struct {
 	blockCacheBytes     int64
 	blockCacheHits      int64
