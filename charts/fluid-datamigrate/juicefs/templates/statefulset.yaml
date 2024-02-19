@@ -64,19 +64,10 @@ spec:
               subPath: .ssh
             - mountPath: /etc/fluid/scripts
               name: data-migrate-script
+      {{- with .Values.datamigrate.affinity }}
       affinity:
-        # prefer to use different nodes to maximize bandwidth, the launcher is also a worker.
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                    - key: fluid.io/operation
-                      operator: In
-                      values:
-                        - migrate-{{ .Release.Namespace }}-{{ .Release.Name }}
-                topologyKey: kubernetes.io/hostname
-              weight: 100
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       volumes:
         - name: data-migrate-ssh
           secret:

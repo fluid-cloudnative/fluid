@@ -248,14 +248,9 @@ func addWorkerPodAntiAffinity(dataMigrateInfo *cdatamigrate.DataMigrateInfo, dat
 	}
 	// Affinity not nil, PodAntiAffinity is nil
 	if dataMigrateInfo.Affinity.PodAntiAffinity == nil {
-		dataMigrateInfo.Affinity.PodAntiAffinity = &corev1.PodAntiAffinity{
-			PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
-				podAffinityTerm,
-			},
-		}
-		return
+		dataMigrateInfo.Affinity.PodAntiAffinity = &corev1.PodAntiAffinity{}
 	}
-	// PodAntiAffinity not nil
+
 	dataMigrateInfo.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution =
 		append(dataMigrateInfo.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution, podAffinityTerm)
 }
