@@ -59,6 +59,7 @@ spec:
 {{ toYaml .Values.fuse.nodeSelector | trim | indent 8  }}
       {{- end }}
       enableServiceLinks: false
+      terminationGracePeriodSeconds: 60
       containers:
         - name: vineyard-fuse
           image: {{ .Values.fuse.image }}:{{ .Values.fuse.imageTag }}
@@ -78,7 +79,7 @@ spec:
             preStop:
               exec:
                 {{/* umount the configmap volume manually to avoid the error of "possibly malicious path detecte" */}}
-                command: ["sh", "-c", "touch /tmp/prestop-marker && umount {{ .Values.fuse.targetPath }} && umount {{ .Values.fuse.targetPath }}/rpc-conf"]
+                command: ["sh", "-c", "touch /tmp/prestop-marker && { rm {{ .Values.fuse.targetPath }}/vineyard.sock || true; } && umount {{ .Values.fuse.targetPath }}/rpc-conf"]
           {{- if .Values.master.resources  }}
 {{ include "vineyard.master.resources" . | indent 10 }}
           {{- end }}
