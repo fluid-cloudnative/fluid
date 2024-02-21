@@ -15,6 +15,7 @@ metadata:
     role: jindofs-worker
     fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
     fluid.io/dataset-placement: {{ .Values.placement }}
+    {{- include "library.fluid.labels" . | nindent 4 }}
   ownerReferences:
   {{- if .Values.owner.enabled }}
   - apiVersion: {{ .Values.owner.apiVersion }}

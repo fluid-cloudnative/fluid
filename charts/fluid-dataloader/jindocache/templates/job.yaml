@@ -20,6 +20,7 @@ metadata:
     role: dataload-job
     app: jindocache
     targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
+    {{- include "library.fluid.labels" . | nindent 4 }}
   ownerReferences:
   {{- if .Values.owner.enabled }}
     - apiVersion: {{ .Values.owner.apiVersion }}

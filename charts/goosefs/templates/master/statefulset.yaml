@@ -21,6 +21,7 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
     role: goosefs-master
+    {{- include "library.fluid.labels" . | nindent 4 }}
 spec:
   selector:
     matchLabels:

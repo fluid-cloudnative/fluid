@@ -1,4 +1,4 @@
-apiVersion: v1
+apiVersion: v2
 appVersion: 3.8.0
 version: 0.8.8
 description: FileSystem on the cloud based on Aliyun Object Storage aimed for data
@@ -17,3 +17,8 @@ maintainers:
 - email: frank.wt@alibaba-inc.com
   name: Yang LI
 name: jindofs
+
+dependencies:
+- name: library
+  version: "0.1.0"
+  repository: "file://../library"

@@ -10,7 +10,7 @@
 #
 
 name: alluxio
-apiVersion: v1
+apiVersion: v2
 description: Open source data orchestration for analytics and machine learning in any cloud.
 version: 0.9.13
 home: https://www.alluxio.io/
@@ -27,3 +27,7 @@ maintainers:
   email: sichen.zhao@outlook.com
 - name: Ni Wang
   email: niwangzz@163.com
+dependencies:
+- name: library
+  version: "0.1.0"
+  repository: "file://../library"

@@ -22,6 +22,7 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
     role: alluxio-worker
+    {{- include "library.fluid.labels" . | nindent 4 }} 
 spec:
   volumeMode: Filesystem
   resources:

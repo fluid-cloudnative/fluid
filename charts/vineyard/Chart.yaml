@@ -1,4 +1,4 @@
-apiVersion: v1
+apiVersion: v2
 version: 0.19.3
 description: an In-Memory Data Manager for Data-Intensive Analytics
 home: https://v6d.io/
@@ -14,3 +14,8 @@ maintainers:
 - name: Ye Cao
   email: caoye.cao@alibaba-inc.com
 name: vineyard
+
+dependencies:
+- name: library
+  version: "0.1.0"
+  repository: "file://../library"

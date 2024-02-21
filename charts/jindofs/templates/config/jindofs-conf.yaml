@@ -11,6 +11,7 @@ metadata:
     chart: {{ template "jindofs.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
+    {{- include "library.fluid.labels" . | nindent 4 }}
 data:
   bigboot.cfg: |
     [bigboot]

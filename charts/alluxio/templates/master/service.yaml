@@ -27,6 +27,7 @@
 {{- $fullName := include "alluxio.fullname" . }}
 {{- $chart := include "alluxio.chart" . }}
 {{- $owner := $.Values.owner }}
+{{- $labels := include "library.fluid.labels" . }}
 {{- range $i := until $masterCount }}
   {{- $masterName := printf "master-%v" $i }}
   {{- $masterJavaOpts := printf " -Dalluxio.master.hostname=%v-%v " $fullName $masterName }}
@@ -40,6 +41,7 @@ metadata:
     release: {{ $release.Name }}
     heritage: {{ $release.Service }}
     role: alluxio-master
+    {{- $labels | nindent 4 }}
     {{- if $isMonitored }}
     monitor: {{ $metricsLabel }}
     {{- end }}

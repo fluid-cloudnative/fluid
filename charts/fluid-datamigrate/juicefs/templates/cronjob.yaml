@@ -10,6 +10,7 @@ metadata:
     targetDataset: {{ required "targetDataset should be set" .Values.datamigrate.targetDataset }}
     datamigrate: {{ .Values.name }}
     fluid.io/jobPolicy: cron
+    {{- include "library.fluid.labels" . | nindent 4 }}
   ownerReferences:
   {{- if .Values.owner.enabled }}
     - apiVersion: {{ .Values.owner.apiVersion }}

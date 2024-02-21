@@ -1,4 +1,4 @@
-apiVersion: v1
+apiVersion: v2
 name: efc
 description: A fuse filesystem for NAS with distributed cache.
 version: 0.1.4
@@ -7,3 +7,8 @@ maintainers:
     email: mayingchun.myc@alibaba-inc.com
   - name: Yi Zhan
     email: hanson.yj@alibaba-inc.com
+
+dependencies:
+- name: library
+  version: "0.1.0"
+  repository: "file://../library"

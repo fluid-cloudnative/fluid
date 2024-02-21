@@ -5,6 +5,7 @@ metadata:
   labels:
     release: {{ .Release.Name }}
     role: dataload-job
+    {{- include "library.fluid.labels" . | nindent 4 }}
 data:
   dataloader.jindo.init: |
     #!/usr/bin/env bash
