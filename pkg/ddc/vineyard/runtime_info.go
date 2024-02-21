@@ -26,6 +26,11 @@ func (e *VineyardEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 			return e.runtimeInfo, err
 		}
 
+		// Add the symlink method to the vineyard runtime metadata
+		runtime.ObjectMeta.Annotations = map[string]string{
+			"data.fluid.io/metadataList": `[{"Labels": {"fluid.io/node-puhlish-method": "symlink"}, "selector": { "kind": "PersistentVolume"}}]`,
+		}
+
 		tieredStore := runtime.Spec.TieredStore
 		e.runtimeInfo, err = base.BuildRuntimeInfo(e.name, e.namespace, e.runtimeType, tieredStore, base.WithMetadataList(base.GetMetadataListFromAnnotation(runtime)))
 		if err != nil {
