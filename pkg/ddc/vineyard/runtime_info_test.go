@@ -14,6 +14,7 @@ limitations under the License.
 package vineyard
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -44,17 +45,31 @@ func newVineyardEngineRT(client client.Client, name string, namespace string, wi
 }
 
 func TestGetRuntimeInfo(t *testing.T) {
+	anno := map[string]string{
+		"the-key-should-not-be-changed": "the-value-should-not-be-changed",
+	}
+	addedMeta := []v1alpha1.Metadata{
+		{
+			PodMetadata: v1alpha1.PodMetadata{
+				Labels: map[string]string{"fluid.io/node-puhlish-method": "symlink"},
+			},
+			Selector: metav1.GroupKind{Kind: "PersistentVolume"},
+		},
+	}
+
 	runtimeInputs := []*v1alpha1.VineyardRuntime{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase",
-				Namespace: "fluid",
+				Name:        "hbase",
+				Namespace:   "fluid",
+				Annotations: anno,
 			},
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hadoop",
-				Namespace: "fluid",
+				Name:        "hadoop",
+				Namespace:   "fluid",
+				Annotations: anno,
 			},
 		},
 	}
@@ -150,6 +165,13 @@ func TestGetRuntimeInfo(t *testing.T) {
 		runtimeInfo, err := engine.getRuntimeInfo()
 		isNil := runtimeInfo == nil
 		isErr := err != nil
+		runtime, _ := engine.getRuntime()
+		if !reflect.DeepEqual(runtime.Annotations, anno) {
+			t.Errorf(" want %v, got %v", anno, runtime.Annotations)
+		}
+		if !testCase.withRuntimeInfo && !reflect.DeepEqual(runtimeInfo.GetMetadataList(), addedMeta) {
+			t.Errorf(" want %v, got %v", addedMeta, runtimeInfo.GetMetadataList())
+		}
 		if isNil != testCase.isNil {
 			t.Errorf(" want %t, got %t", testCase.isNil, isNil)
 		}
