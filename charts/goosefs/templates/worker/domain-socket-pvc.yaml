@@ -11,6 +11,7 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
     role: goosefs-worker
+    {{- include "library.fluid.labels" . | nindent 4 }}
 spec:
   volumeMode: Filesystem
   resources:

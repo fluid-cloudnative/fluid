@@ -1,6 +1,11 @@
 name: thin
-apiVersion: v1
+apiVersion: v2
 version: 0.1.4
 appVersion: v1.0.0
 maintainers:
   - name: Fluid
+
+dependencies:
+- name: library
+  version: "0.1.0"
+  repository: "file://../library"

@@ -20,6 +20,7 @@ RUN curl -o helm-v3.11.3-linux-${TARGETARCH}.tar.gz https://get.helm.sh/helm-v3.
     chmod u+x /usr/local/bin/ddc-helm && \
     rm -f helm-v3.11.3-linux-${TARGETARCH}.tar.gz
 
+ADD charts/library /charts/library
 ADD charts/jindofs /charts/jindofs
 ADD charts/jindofsx /charts/jindofsx
 ADD charts/jindocache /charts/jindocache

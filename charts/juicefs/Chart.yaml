@@ -1,5 +1,5 @@
 name: juicefs
-apiVersion: v1
+apiVersion: v2
 description: FileSystem aimed for data analytics and machine learning in any cloud.
 version: 0.2.15
 appVersion: v1.0.0
@@ -9,3 +9,8 @@ maintainers:
   email: weiwei.zhu@juicedata.io
 - name: Dongdong Lv
   email: lvdongdong30@gmail.com
+
+dependencies:
+- name: library
+  version: "0.1.0"
+  repository: "file://../library"

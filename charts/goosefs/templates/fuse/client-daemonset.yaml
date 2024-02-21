@@ -9,6 +9,7 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
     role: goosefs-fuse-client
+    {{- include "library.fluid.labels" . | nindent 4 }}
 spec:
   selector:
     matchLabels:

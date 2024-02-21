@@ -26,7 +26,7 @@ metadata:
     heritage: {{ .Release.Service }}
     role: vineyard-worker
     fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
-    app.kubernetes.io/instance: {{ .Release.Namespace }}-{{ $fullName }}-worker
+    {{- include "library.fluid.labels" . | nindent 4 }}
   {{- if .Values.owner.enabled }}
   ownerReferences:
   - apiVersion: {{ .Values.owner.apiVersion }}

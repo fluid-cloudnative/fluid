@@ -5,6 +5,8 @@ metadata:
   {{- if .Values.dataBackup.namespace }}
   namespace: {{ .Values.dataBackup.namespace }}
   {{- end }}
+  labels:
+    {{- include "library.fluid.labels" . | nindent 4 }}
 spec:
   {{- if .Values.dataBackup.nodeName }}
   nodeName: {{ .Values.dataBackup.nodeName }}

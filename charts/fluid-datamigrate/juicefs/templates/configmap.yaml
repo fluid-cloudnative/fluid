@@ -5,6 +5,7 @@ metadata:
   labels:
     release: {{ .Release.Name }}
     role: datamigrate-job
+    {{- include "library.fluid.labels" . | nindent 4 }}
 data:
   check_ssh.sh: |
     #!/bin/bash

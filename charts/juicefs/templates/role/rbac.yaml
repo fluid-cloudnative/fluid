@@ -4,6 +4,8 @@ kind: Role
 metadata:
   name: {{ printf "%s-loader" .Release.Name }}
   namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "library.fluid.labels" . | nindent 4 }}
   ownerReferences:
   {{- if .Values.owner.enabled }}
   - apiVersion: {{ .Values.owner.apiVersion }}
@@ -29,6 +31,8 @@ kind: RoleBinding
 metadata:
   name: {{ printf "%s-loader" .Release.Name }}
   namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "library.fluid.labels" . | nindent 4 }}
   ownerReferences:
   {{- if .Values.owner.enabled }}
   - apiVersion: {{ .Values.owner.apiVersion }}
@@ -52,6 +56,8 @@ kind: ServiceAccount
 metadata:
   name: {{ printf "%s-loader" .Release.Name }}
   namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "library.fluid.labels" . | nindent 4 }}
   ownerReferences:
   {{- if .Values.owner.enabled }}
   - apiVersion: {{ .Values.owner.apiVersion }}

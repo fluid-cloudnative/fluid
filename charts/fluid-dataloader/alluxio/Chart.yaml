@@ -21,3 +21,8 @@ version: 0.3.0
 # incremented each time you make changes to the application. Versions are not expected to
 # follow Semantic Versioning. They should reflect the version the application is using.
 appVersion: 0.3.0
+
+dependencies:
+- name: library
+  version: "0.1.0"
+  repository: "file://../../library"

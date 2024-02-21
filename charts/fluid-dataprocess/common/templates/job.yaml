@@ -7,6 +7,7 @@ metadata:
     role: dataprocess-job
     app: fluid-dataprocess
     targetDataset: {{ required "targetDataset should be set" .Values.dataProcess.targetDataset }}
+    {{- include "library.fluid.labels" . | nindent 4 }}
   ownerReferences:
   {{- if .Values.owner.enabled }}
     - apiVersion: {{ .Values.owner.apiVersion }}
