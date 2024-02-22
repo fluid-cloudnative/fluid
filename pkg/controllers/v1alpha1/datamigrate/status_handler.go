@@ -155,19 +155,17 @@ func (c *CronStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestCont
 
 	// only parallel tasks will set the field Suspend to true, no need to check the parallel task number > 1.
 	if currentJob.Spec.Suspend != nil && *currentJob.Spec.Suspend {
+		ctx.Log.Info("scale the migrate workers statefulset", "name", utils.GetParallelOperationWorkersName(releaseName))
 		// scale the stateful set, the job acts as a worker.
 		err = kubeclient.ScaleStatefulSet(c.Client, utils.GetParallelOperationWorkersName(releaseName), c.dataMigrate.Namespace, c.dataMigrate.Spec.Parallelism-1)
 		if err != nil {
 			return
 		}
-		ctx.Log.Info("scale sts success", "name", utils.GetParallelOperationWorkersName(releaseName))
-		// set the job suspend field false
+		// set the job suspend field to false
 		jobToUpdate := currentJob.DeepCopy()
 		flag := false
 		jobToUpdate.Spec.Suspend = &flag
 		err = kubeclient.UpdateJob(c.Client, jobToUpdate)
-		// next loop
-		ctx.Log.Info("update job", "name", jobToUpdate.GetName(), "error", err)
 		if err != nil {
 			return
 		}
