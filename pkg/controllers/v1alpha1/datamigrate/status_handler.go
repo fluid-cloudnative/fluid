@@ -153,10 +153,38 @@ func (c *CronStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestCont
 		return
 	}
 
+	// only parallel tasks will set the field Suspend to true, no need to check the parallel task number > 1.
+	if currentJob.Spec.Suspend != nil && *currentJob.Spec.Suspend {
+		// scale the stateful set, the job acts as a worker.
+		err = kubeclient.ScaleStatefulSet(c.Client, utils.GetParallelOperationWorkersName(releaseName), c.dataMigrate.Namespace, c.dataMigrate.Spec.Parallelism-1)
+		if err != nil {
+			return
+		}
+		ctx.Log.Info("scale sts success", "name", utils.GetParallelOperationWorkersName(releaseName))
+		// set the job suspend field false
+		jobToUpdate := currentJob.DeepCopy()
+		flag := false
+		jobToUpdate.Spec.Suspend = &flag
+		err = kubeclient.UpdateJob(c.Client, jobToUpdate)
+		// next loop
+		ctx.Log.Info("update job", "name", jobToUpdate.GetName(), "error", err)
+		if err != nil {
+			return
+		}
+	}
+
 	if len(currentJob.Status.Conditions) != 0 {
-		if currentJob.Status.Conditions[0].Type == batchv1.JobFailed ||
-			currentJob.Status.Conditions[0].Type == batchv1.JobComplete {
-			jobCondition := currentJob.Status.Conditions[0]
+		// find the job final status condition. if job is resumed, the first condition type is 'Suspended'
+		var jobCondition *batchv1.JobCondition
+		for _, condition := range currentJob.Status.Conditions {
+			// job is finished.
+			if condition.Type == batchv1.JobFailed || condition.Type == batchv1.JobComplete {
+				jobCondition = &condition
+				break
+			}
+		}
+
+		if jobCondition != nil {
 			// job either failed or complete, update DataMigrate's phase status
 			result.Conditions = []datav1alpha1.Condition{
 				{
@@ -174,6 +202,8 @@ func (c *CronStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestCont
 				result.Phase = common.PhaseComplete
 			}
 			result.Duration = utils.CalculateDuration(currentJob.CreationTimestamp.Time, jobCondition.LastTransitionTime.Time)
+			// the return statement makes the below code executed in the reconcileCompleted/reconcileFailed.
+			// the status for cron data migrate is the correct status Complete/Failed not Pending/Executing before next job is not started.
 			return
 		}
 	}
