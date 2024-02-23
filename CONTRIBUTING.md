@@ -68,14 +68,14 @@ We assume you've got a Github ID. If then, all you need to do can be summarized 
 
 ### Developer Certificate Of Origin
 
-The [Developer Certificate of Origin (DCO)][dco] is a lightweight way for contributors to certify that they wrote or otherwise have the right to submit the code they are contributing to the project.
+The Developer Certificate of Origin (DCO) is a lightweight way for contributors to certify that they wrote or otherwise have the right to submit the code they are contributing to the project.
 
 Contributors to the Fluid project sign-off that they adhere to these requirements by adding a Signed-off-by line to commit messages.
 
 ```shell
 This is my commit message
 
-Signed-off-by: John Doe <JohnDoe@somewhere.org>
+Signed-off-by: Random J Developer <random@developer.example.org>
 ```
 
 Git even has a -s command line option to append this automatically to your commit message:
