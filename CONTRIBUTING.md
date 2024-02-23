@@ -66,7 +66,6 @@ We assume you've got a Github ID. If then, all you need to do can be summarized 
     ```
     Develop and make any changes on the `<new-branch>`. For more information about developing Fluid, see [developer guide](docs/en/dev/how_to_develop.md)
 
-
 ### Developer Certificate Of Origin
 
 The [Developer Certificate of Origin (DCO)][dco] is a lightweight way for contributors to certify that they wrote or otherwise have the right to submit the code they are contributing to the project.
