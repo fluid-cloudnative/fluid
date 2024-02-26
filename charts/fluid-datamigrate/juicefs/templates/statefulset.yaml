@@ -29,6 +29,7 @@ spec:
     metadata:
       labels:
         app: {{ printf "%s-workers" .Release.Name }}
+        fluid.io/operation: migrate-{{ .Release.Namespace }}-{{ .Release.Name }}
     spec:
       containers:
         - name: worker
@@ -64,19 +65,10 @@ spec:
               subPath: .ssh
             - mountPath: /etc/fluid/scripts
               name: data-migrate-script
+      {{- with .Values.datamigrate.affinity }}
       affinity:
-        # prefer to use different nodes to maximize bandwidth
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                    - key: app
-                      operator: In
-                      values:
-                        - {{ printf "%s-workers" .Release.Name }}
-                topologyKey: kubernetes.io/hostname
-              weight: 100
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       volumes:
         - name: data-migrate-ssh
           secret:
