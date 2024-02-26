@@ -19,6 +19,9 @@ package juicefs
 import (
 	"encoding/base64"
 	"errors"
+	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -807,6 +810,195 @@ func TestJuiceFSEngine_setParallelMigrateOptions(t *testing.T) {
 			}
 			if err == nil && !reflect.DeepEqual(tt.want, tt.args.dataMigrateInfo.ParallelOptions) {
 				t.Errorf("setParallelMigrateOptions() got = %v, want %v", tt.args.dataMigrateInfo.ParallelOptions, tt.want)
+			}
+		})
+	}
+}
+
+func Test_addWorkerPodAntiAffinity(t *testing.T) {
+	type args struct {
+		dataMigrateInfo *cdatamigrate.DataMigrateInfo
+		dataMigrate     *v1alpha1.DataMigrate
+	}
+	tests := []struct {
+		name string
+		args args
+		want *cdatamigrate.DataMigrateInfo
+	}{
+		{
+			name: "no affinity",
+			args: args{
+				dataMigrateInfo: &cdatamigrate.DataMigrateInfo{
+					Affinity: nil,
+				},
+				dataMigrate: &v1alpha1.DataMigrate{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "dataset-migrate",
+					},
+					Spec: v1alpha1.DataMigrateSpec{},
+				},
+			},
+			want: &cdatamigrate.DataMigrateInfo{
+				Affinity: &corev1.Affinity{
+					PodAntiAffinity: &corev1.PodAntiAffinity{
+						PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+							{
+								Weight: 100,
+								PodAffinityTerm: corev1.PodAffinityTerm{
+									LabelSelector: &metav1.LabelSelector{
+										MatchLabels: map[string]string{
+											dataoperation.OperationLabel: fmt.Sprintf("migrate-%s-%s", "", utils.GetDataMigrateReleaseName("dataset-migrate")),
+										},
+									},
+									TopologyKey: "kubernetes.io/hostname",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "no pod anti affinity",
+			args: args{
+				dataMigrateInfo: &cdatamigrate.DataMigrateInfo{
+					Affinity: &corev1.Affinity{
+						PodAffinity: &corev1.PodAffinity{},
+					},
+				},
+				dataMigrate: &v1alpha1.DataMigrate{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "dataset-migrate",
+					},
+					Spec: v1alpha1.DataMigrateSpec{},
+				},
+			},
+			want: &cdatamigrate.DataMigrateInfo{
+				Affinity: &corev1.Affinity{
+					PodAffinity: &corev1.PodAffinity{},
+					PodAntiAffinity: &corev1.PodAntiAffinity{
+						PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+							{
+								Weight: 100,
+								PodAffinityTerm: corev1.PodAffinityTerm{
+									LabelSelector: &metav1.LabelSelector{
+										MatchLabels: map[string]string{
+											dataoperation.OperationLabel: fmt.Sprintf("migrate-%s-%s", "", utils.GetDataMigrateReleaseName("dataset-migrate")),
+										},
+									},
+									TopologyKey: "kubernetes.io/hostname",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "no pod anti PreferredDuringSchedulingIgnoredDuringExecution ",
+			args: args{
+				dataMigrateInfo: &cdatamigrate.DataMigrateInfo{
+					Affinity: &corev1.Affinity{
+						PodAffinity:     &corev1.PodAffinity{},
+						PodAntiAffinity: &corev1.PodAntiAffinity{},
+					},
+				},
+				dataMigrate: &v1alpha1.DataMigrate{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "dataset-migrate",
+					},
+					Spec: v1alpha1.DataMigrateSpec{},
+				},
+			},
+			want: &cdatamigrate.DataMigrateInfo{
+				Affinity: &corev1.Affinity{
+					PodAffinity: &corev1.PodAffinity{},
+					PodAntiAffinity: &corev1.PodAntiAffinity{
+						PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+							{
+								Weight: 100,
+								PodAffinityTerm: corev1.PodAffinityTerm{
+									LabelSelector: &metav1.LabelSelector{
+										MatchLabels: map[string]string{
+											dataoperation.OperationLabel: fmt.Sprintf("migrate-%s-%s", "", utils.GetDataMigrateReleaseName("dataset-migrate")),
+										},
+									},
+									TopologyKey: "kubernetes.io/hostname",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "pod anti PreferredDuringSchedulingIgnoredDuringExecution ",
+			args: args{
+				dataMigrateInfo: &cdatamigrate.DataMigrateInfo{
+					Affinity: &corev1.Affinity{
+						PodAffinity: &corev1.PodAffinity{},
+						PodAntiAffinity: &corev1.PodAntiAffinity{
+							PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+								{
+									Weight: 100,
+									PodAffinityTerm: corev1.PodAffinityTerm{
+										LabelSelector: &metav1.LabelSelector{
+											MatchLabels: map[string]string{
+												"a": "b",
+											},
+										},
+										TopologyKey: "kubernetes.io/hostname",
+									},
+								},
+							},
+						},
+					},
+				},
+				dataMigrate: &v1alpha1.DataMigrate{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "dataset-migrate",
+					},
+					Spec: v1alpha1.DataMigrateSpec{},
+				},
+			},
+			want: &cdatamigrate.DataMigrateInfo{
+				Affinity: &corev1.Affinity{
+					PodAffinity: &corev1.PodAffinity{},
+					PodAntiAffinity: &corev1.PodAntiAffinity{
+						PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+							{
+								Weight: 100,
+								PodAffinityTerm: corev1.PodAffinityTerm{
+									LabelSelector: &metav1.LabelSelector{
+										MatchLabels: map[string]string{
+											"a": "b",
+										},
+									},
+									TopologyKey: "kubernetes.io/hostname",
+								},
+							},
+							{
+								Weight: 100,
+								PodAffinityTerm: corev1.PodAffinityTerm{
+									LabelSelector: &metav1.LabelSelector{
+										MatchLabels: map[string]string{
+											dataoperation.OperationLabel: fmt.Sprintf("migrate-%s-%s", "", utils.GetDataMigrateReleaseName("dataset-migrate")),
+										},
+									},
+									TopologyKey: "kubernetes.io/hostname",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			addWorkerPodAntiAffinity(tt.args.dataMigrateInfo, tt.args.dataMigrate)
+			if !reflect.DeepEqual(tt.args.dataMigrateInfo, tt.want) {
+				t.Errorf("addWorkerPodAntiAffinity() got = %v, want %v", tt.args.dataMigrateInfo, tt.want)
 			}
 		})
 	}
