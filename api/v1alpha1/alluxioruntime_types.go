@@ -78,6 +78,10 @@ type AlluxioCompTemplateSpec struct {
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
+	// RuntimePodAffinity defines the pod affinity policy of Alluxio's pods
+	// +optional
+	RuntimePodAffinity RuntimePodAffinity `json:"runtimePodAffinity,omitempty"`
+
 	// Whether to use hostnetwork or not
 	// +kubebuilder:validation:Enum=HostNetwork;"";ContainerNetwork
 	// +optional
