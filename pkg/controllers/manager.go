@@ -28,10 +28,10 @@ func NewCacheClientBypassSecrets(cache cache.Cache, config *rest.Config, options
 	return cluster.DefaultNewClient(cache, config, options, append(uncachedObjects, &corev1.Secret{})...)
 }
 
-func GetConfigOrDieWithQPSAndBurst(qps int, burst int) *rest.Config {
+func GetConfigOrDieWithQPSAndBurst(qps float32, burst int) *rest.Config {
 	cfg := ctrl.GetConfigOrDie()
 	if qps > 0 {
-		cfg.QPS = float32(qps)
+		cfg.QPS = qps
 	}
 
 	if burst > 0 {

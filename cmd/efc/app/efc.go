@@ -55,8 +55,8 @@ var (
 	pprofAddr               string
 	portRange               string
 
-	restConfigQPS   int
-	restConfigBurst int
+	kubeClientQPS   float32
+	kubeClientBurst int
 )
 
 var startCmd = &cobra.Command{
@@ -78,8 +78,8 @@ func init() {
 	startCmd.Flags().BoolVarP(&development, "development", "", true, "Enable development mode for fluid controller.")
 	startCmd.Flags().BoolVar(&eventDriven, "event-driven", true, "The reconciler's loop strategy. if it's false, it indicates period driven.")
 	startCmd.Flags().StringVar(&portRange, "runtime-node-port-range", "16000-17999", "Set available port range for EFC")
-	startCmd.Flags().IntVarP(&restConfigQPS, "rest-config-qps", "", 20, "QPS of rest config.")       // 20 is the default qps in controller-runtime
-	startCmd.Flags().IntVarP(&restConfigBurst, "rest-config-burst", "", 30, "Burst of rest config.") // 30 is the default burst in controller-runtime
+	startCmd.Flags().Float32VarP(&kubeClientQPS, "kube-api-qps", "", 20, "QPS to use while talking with kubernetes apiserver.")   // 20 is the default qps in controller-runtime
+	startCmd.Flags().IntVarP(&kubeClientBurst, "kube-api-burst", "", 30, "Burst to use while talking with kubernetes apiserver.") // 30 is the default burst in controller-runtime
 }
 
 func handle() {
@@ -100,7 +100,7 @@ func handle() {
 
 	utils.NewPprofServer(setupLog, pprofAddr, development)
 
-	mgr, err := ctrl.NewManager(controllers.GetConfigOrDieWithQPSAndBurst(restConfigQPS, restConfigBurst), ctrl.Options{
+	mgr, err := ctrl.NewManager(controllers.GetConfigOrDieWithQPSAndBurst(kubeClientQPS, kubeClientBurst), ctrl.Options{
 		Scheme:                  scheme,
 		MetricsBindAddress:      metricsAddr,
 		LeaderElection:          enableLeaderElection,

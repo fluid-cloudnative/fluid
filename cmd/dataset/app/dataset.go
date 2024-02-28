@@ -64,8 +64,8 @@ var (
 	pprofAddr               string
 	maxConcurrentReconciles int
 
-	restConfigQPS   int
-	restConfigBurst int
+	kubeClientQPS   float32
+	kubeClientBurst int
 )
 
 var datasetCmd = &cobra.Command{
@@ -86,8 +86,8 @@ func init() {
 	datasetCmd.Flags().BoolVarP(&development, "development", "", true, "Enable development mode for fluid controller.")
 	datasetCmd.Flags().StringVarP(&pprofAddr, "pprof-addr", "", "", "The address for pprof to use while exporting profiling results")
 	datasetCmd.Flags().IntVar(&maxConcurrentReconciles, "reconcile-workers", 3, "Set the number of max concurrent workers for reconciling dataset and dataset operations")
-	datasetCmd.Flags().IntVarP(&restConfigQPS, "rest-config-qps", "", 20, "QPS of rest config.")     // 20 is the default qps in controller-runtime
-	datasetCmd.Flags().IntVarP(&restConfigBurst, "rest-config-burst", "", 30, "Burst of rest config.") // 30 is the default burst in controller-runtime
+	datasetCmd.Flags().Float32VarP(&kubeClientQPS, "kube-api-qps", "", 20, "QPS to use while talking with kubernetes apiserver.")   // 20 is the default qps in controller-runtime
+	datasetCmd.Flags().IntVarP(&kubeClientBurst, "kube-api-burst", "", 30, "Burst to use while talking with kubernetes apiserver.") // 30 is the default burst in controller-runtime
 }
 
 func handle() {
@@ -109,7 +109,7 @@ func handle() {
 
 	utils.NewPprofServer(setupLog, pprofAddr, development)
 
-	mgr, err := ctrl.NewManager(controllers.GetConfigOrDieWithQPSAndBurst(restConfigQPS, restConfigBurst), ctrl.Options{
+	mgr, err := ctrl.NewManager(controllers.GetConfigOrDieWithQPSAndBurst(kubeClientQPS, kubeClientBurst), ctrl.Options{
 		Scheme:                  scheme,
 		MetricsBindAddress:      metricsAddr,
 		LeaderElection:          enableLeaderElection,

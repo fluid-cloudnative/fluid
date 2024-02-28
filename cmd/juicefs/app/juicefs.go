@@ -61,8 +61,8 @@ var (
 	pprofAddr               string
 	portAllocatePolicy      string
 
-	restConfigQPS   int
-	restConfigBurst int
+	kubeClientQPS   float32
+	kubeClientBurst int
 )
 
 var startCmd = &cobra.Command{
@@ -86,8 +86,8 @@ func init() {
 	startCmd.Flags().StringVar(&portRange, "runtime-node-port-range", "14000-15999", "Set available port range for JuiceFS")
 	startCmd.Flags().StringVar(&portAllocatePolicy, "port-allocate-policy", "random", "Set port allocating policy, available choice is bitmap or random(default random).")
 	startCmd.Flags().IntVar(&maxConcurrentReconciles, "runtime-workers", 3, "Set max concurrent workers for JuiceFSRuntime controller")
-	startCmd.Flags().IntVarP(&restConfigQPS, "rest-config-qps", "", 20, "QPS of rest config.")       // 20 is the default qps in controller-runtime
-	startCmd.Flags().IntVarP(&restConfigBurst, "rest-config-burst", "", 30, "Burst of rest config.") // 30 is the default burst in controller-runtime
+	startCmd.Flags().Float32VarP(&kubeClientQPS, "kube-api-qps", "", 20, "QPS to use while talking with kubernetes apiserver.")   // 20 is the default qps in controller-runtime
+	startCmd.Flags().IntVarP(&kubeClientBurst, "kube-api-burst", "", 30, "Burst to use while talking with kubernetes apiserver.") // 30 is the default burst in controller-runtime
 }
 
 func handle() {
@@ -114,7 +114,7 @@ func handle() {
 		)
 	}
 
-	mgr, err := ctrl.NewManager(controllers.GetConfigOrDieWithQPSAndBurst(restConfigQPS, restConfigBurst), ctrl.Options{
+	mgr, err := ctrl.NewManager(controllers.GetConfigOrDieWithQPSAndBurst(kubeClientQPS, kubeClientBurst), ctrl.Options{
 		Scheme:                  scheme,
 		MetricsBindAddress:      metricsAddr,
 		LeaderElection:          enableLeaderElection,
