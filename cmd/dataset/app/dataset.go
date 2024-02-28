@@ -63,6 +63,9 @@ var (
 	development             bool
 	pprofAddr               string
 	maxConcurrentReconciles int
+
+	restConfigQPS   int
+	restConfigBurst int
 )
 
 var datasetCmd = &cobra.Command{
@@ -83,6 +86,8 @@ func init() {
 	datasetCmd.Flags().BoolVarP(&development, "development", "", true, "Enable development mode for fluid controller.")
 	datasetCmd.Flags().StringVarP(&pprofAddr, "pprof-addr", "", "", "The address for pprof to use while exporting profiling results")
 	datasetCmd.Flags().IntVar(&maxConcurrentReconciles, "reconcile-workers", 3, "Set the number of max concurrent workers for reconciling dataset and dataset operations")
+	datasetCmd.Flags().IntVarP(&restConfigQPS, "rest-config-qps", "", 20, "")     // 20 is the default qps in controller-runtime
+	datasetCmd.Flags().IntVarP(&restConfigBurst, "rest-config-burst", "", 30, "") // 30 is the default burst in controller-runtime
 }
 
 func handle() {
@@ -104,7 +109,7 @@ func handle() {
 
 	utils.NewPprofServer(setupLog, pprofAddr, development)
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	mgr, err := ctrl.NewManager(controllers.GetConfigOrDieWithQPSAndBurst(restConfigQPS, restConfigBurst), ctrl.Options{
 		Scheme:                  scheme,
 		MetricsBindAddress:      metricsAddr,
 		LeaderElection:          enableLeaderElection,

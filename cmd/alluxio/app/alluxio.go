@@ -54,6 +54,9 @@ var (
 	maxConcurrentReconciles int
 	pprofAddr               string
 	portAllocatePolicy      string
+
+	restConfigQPS   int
+	restConfigBurst int
 )
 
 var alluxioCmd = &cobra.Command{
@@ -76,6 +79,8 @@ func init() {
 	alluxioCmd.Flags().IntVar(&maxConcurrentReconciles, "runtime-workers", 3, "Set max concurrent workers for AlluxioRuntime controller")
 	alluxioCmd.Flags().StringVarP(&pprofAddr, "pprof-addr", "", "", "The address for pprof to use while exporting profiling results")
 	alluxioCmd.Flags().StringVar(&portAllocatePolicy, "port-allocate-policy", "random", "Set port allocating policy, available choice is bitmap or random(default random).")
+	alluxioCmd.Flags().IntVarP(&restConfigQPS, "rest-config-qps", "", 20, "")     // 20 is the default qps in controller-runtime
+	alluxioCmd.Flags().IntVarP(&restConfigBurst, "rest-config-burst", "", 30, "") // 30 is the default burst in controller-runtime
 }
 
 func handle() {
@@ -96,7 +101,7 @@ func handle() {
 
 	utils.NewPprofServer(setupLog, pprofAddr, development)
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	mgr, err := ctrl.NewManager(controllers.GetConfigOrDieWithQPSAndBurst(restConfigQPS, restConfigBurst), ctrl.Options{
 		Scheme:                  scheme,
 		MetricsBindAddress:      metricsAddr,
 		LeaderElection:          enableLeaderElection,
