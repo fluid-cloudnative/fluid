@@ -38,13 +38,23 @@ func (j *JuiceFSEngine) queryCacheStatus() (states cacheStates, err error) {
 		states.cacheCapacity = utils.BytesSize(float64(cachesize * uint64(j.runtime.Spec.Replicas)))
 	}
 
+	var containerName string
 	var pods []v1.Pod
 	// enterprise edition use cache of workers which form a cache group, while community edition use cache of fuse pod whose cache if no-sharing
-	containerName := common.JuiceFSWorkerContainer
-	stsName := j.getWorkerName()
-	pods, err = j.GetRunningPodsOfStatefulSet(stsName, j.namespace)
-	if err != nil || len(pods) == 0 {
-		return
+	if edition == EnterpriseEdition {
+		containerName = common.JuiceFSWorkerContainer
+		stsName := j.getWorkerName()
+		pods, err = j.GetRunningPodsOfStatefulSet(stsName, j.namespace)
+		if err != nil || len(pods) == 0 {
+			return
+		}
+	} else {
+		containerName = common.JuiceFSFuseContainer
+		dsName := j.getFuseDaemonsetName()
+		pods, err = j.GetRunningPodsOfDaemonset(dsName, j.namespace)
+		if err != nil || len(pods) == 0 {
+			return
+		}
 	}
 
 	podMetrics := []fuseMetrics{}
@@ -86,47 +96,6 @@ func (j *JuiceFSEngine) queryCacheStatus() (states cacheStates, err error) {
 		states.cachedPercentage = "0.0%"
 	}
 
-	err = j.getCacheRatio(edition, &states)
-	return
-}
-
-// get cacheHitRatio & cacheThroughputRatio from fuse pod
-func (j *JuiceFSEngine) getCacheRatio(edition string, states *cacheStates) (err error) {
-	var containerName string
-	var pods []v1.Pod
-	if edition == EnterpriseEdition {
-		containerName = common.JuiceFSWorkerContainer
-		stsName := j.getWorkerName()
-		pods, err = j.GetRunningPodsOfStatefulSet(stsName, j.namespace)
-		if err != nil || len(pods) == 0 {
-			return
-		}
-	} else {
-		containerName = common.JuiceFSFuseContainer
-		dsName := j.getFuseDaemonsetName()
-		pods, err = j.GetRunningPodsOfDaemonset(dsName, j.namespace)
-		if err != nil || len(pods) == 0 {
-			return
-		}
-	}
-
-	podMetrics := []fuseMetrics{}
-	for _, pod := range pods {
-		podMetricStr, err := j.GetPodMetrics(pod.Name, containerName)
-		if err != nil {
-			return err
-		}
-		podMetric := j.parseMetric(podMetricStr, edition)
-		podMetrics = append(podMetrics, podMetric)
-	}
-
-	var totalCacheHits, totalCacheMiss, totalCacheHitThroughput, totalCacheMissThroughput int64
-	for _, p := range podMetrics {
-		totalCacheHits += p.blockCacheHits
-		totalCacheMiss += p.blockCacheMiss
-		totalCacheHitThroughput += p.blockCacheHitsBytes
-		totalCacheMissThroughput += p.blockCacheMissBytes
-	}
 	// cacheHitRatio = total cache hits / (total cache hits + total cache miss)
 	totalCacheCounts := totalCacheHits + totalCacheMiss
 	if totalCacheCounts != 0 {
