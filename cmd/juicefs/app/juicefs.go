@@ -86,8 +86,8 @@ func init() {
 	startCmd.Flags().StringVar(&portRange, "runtime-node-port-range", "14000-15999", "Set available port range for JuiceFS")
 	startCmd.Flags().StringVar(&portAllocatePolicy, "port-allocate-policy", "random", "Set port allocating policy, available choice is bitmap or random(default random).")
 	startCmd.Flags().IntVar(&maxConcurrentReconciles, "runtime-workers", 3, "Set max concurrent workers for JuiceFSRuntime controller")
-	startCmd.Flags().IntVarP(&restConfigQPS, "rest-config-qps", "", 20, "")     // 20 is the default qps in controller-runtime
-	startCmd.Flags().IntVarP(&restConfigBurst, "rest-config-burst", "", 30, "") // 30 is the default burst in controller-runtime
+	startCmd.Flags().IntVarP(&restConfigQPS, "rest-config-qps", "", 20, "QPS of rest config.")       // 20 is the default qps in controller-runtime
+	startCmd.Flags().IntVarP(&restConfigBurst, "rest-config-burst", "", 30, "Burst of rest config.") // 30 is the default burst in controller-runtime
 }
 
 func handle() {
