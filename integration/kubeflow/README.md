@@ -1,4 +1,4 @@
-# Demo - Using FLuid in Kubeflow Pipelines v2
+# Using Fluid in Kubeflow Pipelines v2
 This is a demo that wraps Fluid'operations as KFP v2 components to complete the processes of dataset creation, runtime creation, and cache preheating to accelerate model training (a simple CNN model for [Fashion MNIST](https://www.kaggle.com/datasets/zalando-research/fashionmnist)).
 
 ## Prerequisites
