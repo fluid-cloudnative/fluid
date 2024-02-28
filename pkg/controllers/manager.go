@@ -5,6 +5,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
@@ -25,4 +26,17 @@ func NewFluidControllerClient(cache cache.Cache, config *rest.Config, options cl
 // Secret is an exception for that we aim to trade performance for higher security(e.g. less rbac verbs on Secrets).
 func NewCacheClientBypassSecrets(cache cache.Cache, config *rest.Config, options client.Options, uncachedObjects ...client.Object) (client.Client, error) {
 	return cluster.DefaultNewClient(cache, config, options, append(uncachedObjects, &corev1.Secret{})...)
+}
+
+func GetConfigOrDieWithQPSAndBurst(qps float32, burst int) *rest.Config {
+	cfg := ctrl.GetConfigOrDie()
+	if qps > 0 {
+		cfg.QPS = qps
+	}
+
+	if burst > 0 {
+		cfg.Burst = burst
+	}
+
+	return cfg
 }
