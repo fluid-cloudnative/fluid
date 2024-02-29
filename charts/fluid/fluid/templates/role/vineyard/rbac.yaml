@@ -111,10 +111,19 @@ rules:
       - update
       - patch
       - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: {{ include "fluid.namespace" . }}
+  name: vineyardruntime-controller-lease-role
+rules:
   - apiGroups:
       - coordination.k8s.io
     resources:
       - leases
+    resourceNames:
+      - vineyard.data.fluid.io
     verbs:
       - get
       - list
@@ -132,6 +141,20 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: vineyardruntime-controller
+subjects:
+  - kind: ServiceAccount
+    name: vineyardruntime-controller
+    namespace: {{ include "fluid.namespace" . }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vineyardruntime-rolebinding
+  namespace: {{ include "fluid.namespace" . }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: vineyardruntime-controller-lease-role
 subjects:
   - kind: ServiceAccount
     name: vineyardruntime-controller
