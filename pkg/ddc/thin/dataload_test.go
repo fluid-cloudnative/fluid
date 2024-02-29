@@ -25,7 +25,6 @@ import (
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
@@ -113,40 +112,4 @@ func TestThinEngine_CreateDataLoadJob(t *testing.T) {
 		t.Errorf("fail to exec the function")
 	}
 	wrappedUnhookCheckRelease()
-}
-
-func TestThinEngine_CheckExistenceOfPath(t *testing.T) {
-	mockExecNotExist := func(podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
-		return "does not exist", "", errors.New("other error")
-	}
-	wrappedUnhook := func() {
-		err := gohook.UnHook(kubeclient.ExecCommandInContainer)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-
-	engine := ThinEngine{
-		namespace: "fluid",
-		name:      "test",
-		Log:       fake.NullLogger(),
-	}
-
-	err := gohook.Hook(kubeclient.ExecCommandInContainer, mockExecNotExist, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	targetDataload := datav1alpha1.DataLoad{
-		Spec: datav1alpha1.DataLoadSpec{
-			Target: []datav1alpha1.TargetPath{{
-				Path:     "/tmp",
-				Replicas: 1,
-			}},
-		},
-	}
-	notExist, err := engine.CheckExistenceOfPath(targetDataload)
-	if !(err == nil && notExist == true) {
-		t.Errorf("fail to exec the function")
-	}
-	wrappedUnhook()
 }

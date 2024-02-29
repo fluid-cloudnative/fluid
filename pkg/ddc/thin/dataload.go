@@ -30,8 +30,3 @@ func (t ThinEngine) CheckRuntimeReady() (ready bool) {
 	//TODO implement me
 	return true
 }
-
-func (t ThinEngine) CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (notExist bool, err error) {
-	//TODO implement me
-	return true, nil
-}

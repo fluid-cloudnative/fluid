@@ -28,8 +28,3 @@ func (e *VineyardEngine) CheckRuntimeReady() (ready bool) {
 	// TODO:(caoye) implement me
 	return true
 }
-
-func (e *VineyardEngine) CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (notExist bool, err error) {
-	// TODO:(caoye) implement me
-	return true, nil
-}

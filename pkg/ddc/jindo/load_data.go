@@ -225,18 +225,3 @@ func (e *JindoEngine) CheckRuntimeReady() (ready bool) {
 	}
 	return true
 }
-
-func (e *JindoEngine) CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (notExist bool, err error) {
-	podName, containerName := e.getMasterPodInfo()
-	fileUtils := operations.NewJindoFileUtils(podName, containerName, e.namespace, e.Log)
-	for _, target := range targetDataload.Spec.Target {
-		isExist, err := fileUtils.IsExist(target.Path)
-		if err != nil {
-			return true, err
-		}
-		if !isExist {
-			return true, nil
-		}
-	}
-	return false, nil
-}

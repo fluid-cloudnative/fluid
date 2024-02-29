@@ -38,7 +38,6 @@ import (
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
 var valuesConfigMapData = `
@@ -510,121 +509,6 @@ func TestJuiceFSEngine_GenerateDataLoadValueFileWithRuntime(t *testing.T) {
 			t.Errorf("fail to generate the dataload value file: %v", err)
 		}
 	}
-}
-
-func TestJuiceFSEngine_CheckExistenceOfPath(t *testing.T) {
-	configMap := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-dataset-juicefs-values",
-			Namespace: "fluid",
-		},
-		Data: map[string]string{
-			"data": valuesConfigMapData,
-		},
-	}
-
-	datasetInputs := []datav1alpha1.Dataset{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-dataset",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.DatasetSpec{},
-		},
-	}
-
-	statefulsetInputs := []appsv1.StatefulSet{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "juicefs-worker",
-				Namespace: "fluid",
-			},
-			Spec: appsv1.StatefulSetSpec{
-				Selector: &metav1.LabelSelector{
-					MatchLabels: map[string]string{"a": "b"},
-				},
-			},
-		},
-	}
-	podListInputs := []v1.PodList{{
-		Items: []v1.Pod{{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: "fluid",
-				Labels:    map[string]string{"a": "b"},
-			},
-			Status: v1.PodStatus{
-				Phase: v1.PodRunning,
-				Conditions: []v1.PodCondition{{
-					Type:   v1.PodReady,
-					Status: v1.ConditionTrue,
-				}},
-			},
-		}},
-	}}
-	testObjs := []runtime.Object{}
-	testObjs = append(testObjs, configMap)
-	for _, datasetInput := range datasetInputs {
-		testObjs = append(testObjs, datasetInput.DeepCopy())
-	}
-	for _, statefulsetInput := range statefulsetInputs {
-		testObjs = append(testObjs, statefulsetInput.DeepCopy())
-	}
-	for _, podInput := range podListInputs {
-		testObjs = append(testObjs, podInput.DeepCopy())
-	}
-	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-
-	mockExecNotExist := func(podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
-		return "does not exist", "", errors.New("other error")
-	}
-	mockExec := func(podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
-		return "", "", nil
-	}
-	wrappedUnhook := func() {
-		err := gohook.UnHook(kubeclient.ExecCommandInContainer)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-
-	engine := JuiceFSEngine{
-		namespace: "fluid",
-		Log:       fake.NullLogger(),
-		name:      "juicefs",
-		Client:    client,
-	}
-
-	err := gohook.Hook(kubeclient.ExecCommandInContainer, mockExecNotExist, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	targetDataload := datav1alpha1.DataLoad{
-		Spec: datav1alpha1.DataLoadSpec{
-			Dataset: datav1alpha1.TargetDataset{
-				Name:      "test-dataset",
-				Namespace: "fluid",
-			},
-			Target: []datav1alpha1.TargetPath{
-				{
-					Path:     "/tmp",
-					Replicas: 1,
-				},
-			},
-		},
-	}
-	notExist, err := engine.CheckExistenceOfPath(targetDataload)
-	if !(err != nil && notExist == true) {
-		t.Errorf("fail to exec the function")
-	}
-	err = gohook.Hook(kubeclient.ExecCommandInContainer, mockExec, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	notExist, err = engine.CheckExistenceOfPath(targetDataload)
-	if !(err == nil && notExist == false) {
-		t.Errorf("fail to exec the function due to %v", err)
-	}
-	wrappedUnhook()
 }
 
 func TestJuiceFSEngine_CheckRuntimeReady(t *testing.T) {
