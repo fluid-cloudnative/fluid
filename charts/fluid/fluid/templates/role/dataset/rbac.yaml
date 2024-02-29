@@ -104,7 +104,13 @@ rules:
       - vineyardruntimes
       - vineyardruntimes/status
     verbs:
-      - '*'
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
   - apiGroups:
       - apps
     resources:
@@ -113,7 +119,13 @@ rules:
       - daemonsets/status
       - statefulsets/status
     verbs:
-      - '*'
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
   - apiGroups:
       - apps
     resources:
@@ -131,7 +143,13 @@ rules:
     resources:
       - leases
     verbs:
-      - '*'
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
