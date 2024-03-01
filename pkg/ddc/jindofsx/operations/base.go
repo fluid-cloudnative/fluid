@@ -206,25 +206,3 @@ func (a JindoFileUtils) Ready() (ready bool) {
 
 	return ready
 }
-
-// IsExist checks if the JindoPath exists
-func (a JindoFileUtils) IsExist(jindoPath string) (found bool, err error) {
-	var (
-		command = []string{"hadoop", "fs", "-ls", "jindo://" + jindoPath}
-		stdout  string
-		stderr  string
-	)
-
-	stdout, stderr, err = a.exec(command, true)
-	if err != nil {
-		if strings.Contains(stdout, "No such file or directory") {
-			err = nil
-		} else {
-			err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
-			return
-		}
-	} else {
-		found = true
-	}
-	return
-}

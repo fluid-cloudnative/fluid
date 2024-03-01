@@ -19,7 +19,6 @@ package operations
 import (
 	"errors"
 	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/brahma-adshonor/gohook"
@@ -78,50 +77,6 @@ func TestEFCFileUtils_exec(t *testing.T) {
 	_, _, err = a.exec([]string{"mkdir", "abc"}, true)
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
-	}
-	wrappedUnhookExec()
-}
-
-func TestEFCFileUtils_IsExist(t *testing.T) {
-	mockExec := func(a EFCFileUtils, p []string, verbose bool) (stdout string, stderr string, e error) {
-		if strings.Contains(p[1], NotExist) {
-			return "No such file or directory", "", errors.New("No such file or directory")
-		} else if strings.Contains(p[1], OtherErr) {
-			return "", "", errors.New("other error")
-		} else {
-			return "", "", nil
-		}
-	}
-
-	err := gohook.Hook(EFCFileUtils.exec, mockExec, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(EFCFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-
-	var tests = []struct {
-		in    string
-		out   bool
-		noErr bool
-	}{
-		{NotExist, false, true},
-		{OtherErr, false, false},
-		{FINE, true, true},
-	}
-	for _, test := range tests {
-		found, err := EFCFileUtils{log: fake.NullLogger()}.IsExist(test.in)
-		if found != test.out {
-			t.Errorf("input parameter is %s,expected %t, got %t", test.in, test.out, found)
-		}
-		var noErr bool = (err == nil)
-		if test.noErr != noErr {
-			t.Errorf("input parameter is %s, expected noerr is %t, got %t", test.in, test.noErr, err)
-		}
 	}
 	wrappedUnhookExec()
 }
