@@ -120,11 +120,13 @@ type DataRestoreLocation struct {
 
 // DatasetSpec defines the desired state of Dataset
 type DatasetSpec struct {
-	// Mount Points to be mounted on Alluxio.
+	// Mount Points to be mounted on cache runtime. <br>
+	// This field can be empty because some runtimes don't need to mount external storage (e.g.
+	// <a href="https://v6d.io/">Vineyard</a>).
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:UniqueItems=false
-	// +required
-	Mounts []Mount `json:"mounts"`
+	// +optional
+	Mounts []Mount `json:"mounts,omitempty"`
 
 	// The owner of the dataset
 	// +optional
