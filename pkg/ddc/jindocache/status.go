@@ -33,13 +33,63 @@ import (
 
 // CheckAndUpdateRuntimeStatus checks the related runtime status and updates it.
 func (e *JindoCacheEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
+	defer utils.TimeTrack(time.Now(), "JindoCacheEngine.CheckAndUpdateRuntimeStatus", "name", e.name, "namespace", e.namespace)
+
 	if e.runtime.Spec.Master.Disabled && e.runtime.Spec.Worker.Disabled {
-		ready = true
-		err = nil
-		return
+		return e.syncFuseOnlyModeRuntimeStatus()
 	}
 
-	defer utils.TimeTrack(time.Now(), "JindoCacheEngine.CheckAndUpdateRuntimeStatus", "name", e.name, "namespace", e.namespace)
+	return e.syncCacheModeRuntimeStatus()
+}
+
+func (e *JindoCacheEngine) syncFuseOnlyModeRuntimeStatus() (ready bool, err error) {
+	// This is for backward compatibility. In Fuse-only mode, runtime may not have a proper HelmValuesConfigMap
+	getHelmValuesConfigMapBackCompatFn := func() (cmName string, fnErr error) {
+		cm, fnErr := kubeclient.GetConfigmapByName(e.Client, e.getHelmValuesConfigMapName(), e.namespace)
+		if fnErr != nil {
+			return "", fnErr
+		}
+		if cm != nil {
+			return e.getHelmValuesConfigMapName(), nil
+		}
+		// fallback to use older version of JindoRuntime's engineImpl
+		return e.name + "-" + common.JindoFSxEngineImpl + "-values", nil
+	}
+
+	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		runtime, err := e.getRuntime()
+		if err != nil {
+			return err
+		}
+
+		runtimeToUpdate := runtime.DeepCopy()
+		if runtimeToUpdate.Status.ValueFileConfigmap, err = getHelmValuesConfigMapBackCompatFn(); err != nil {
+			return err
+		}
+		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
+			err = e.Client.Status().Update(context.TODO(), runtimeToUpdate)
+		} else {
+			e.Log.V(1).Info("Do nothing because the runtime status is not changed.")
+		}
+		return err
+	})
+
+	if err != nil {
+		_ = utils.LoggingErrorExceptConflict(e.Log,
+			err,
+			"Failed to update the runtime",
+			types.NamespacedName{
+				Namespace: e.namespace,
+				Name:      e.name,
+			})
+	}
+
+	ready = true
+	err = nil
+	return
+}
+
+func (e *JindoCacheEngine) syncCacheModeRuntimeStatus() (ready bool, err error) {
 	var (
 		masterReady, workerReady bool
 		masterName               string = e.getMasterName()
@@ -122,6 +172,7 @@ func (e *JindoCacheEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error)
 		} else {
 			runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseNotReady
 		}
+		runtimeToUpdate.Status.ValueFileConfigmap = e.getHelmValuesConfigMapName()
 
 		if masterReady && workerReady {
 			ready = true
