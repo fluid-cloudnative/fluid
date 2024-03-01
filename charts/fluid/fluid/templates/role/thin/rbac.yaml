@@ -102,7 +102,13 @@ rules:
       - thinruntimeprofiles/status
       - datasets/status
     verbs:
-      - '*'
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
   - apiGroups:
       - ""
     resources:
@@ -130,13 +136,34 @@ rules:
       - daemonsets/status
       - statefulsets/status
     verbs:
-      - '*'
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: {{ include "fluid.namespace" . }}
+  name: thinruntime-controller-lease-role
+rules:
   - apiGroups:
       - coordination.k8s.io
     resources:
       - leases
+    resourceNames:
+      - thin.data.fluid.io
     verbs:
-      - "*"
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -146,6 +173,20 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: thinruntime-controller
+subjects:
+  - kind: ServiceAccount
+    name: thinruntime-controller
+    namespace: {{ include "fluid.namespace" . }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: thinruntime-rolebinding
+  namespace: {{ include "fluid.namespace" . }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: thinruntime-controller-lease-role
 subjects:
   - kind: ServiceAccount
     name: thinruntime-controller
