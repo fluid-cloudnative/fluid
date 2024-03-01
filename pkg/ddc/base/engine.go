@@ -75,10 +75,6 @@ type Dataloader interface {
 	// CheckRuntimeReady Check if runtime is ready
 	// @Deprecated because it's common for all engine
 	CheckRuntimeReady() (ready bool)
-
-	// CheckExistenceOfPath Check existence of path
-	// @Deprecated as https://github.com/fluid-cloudnative/fluid/pull/2355
-	CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (notExist bool, err error)
 }
 
 type Databackuper interface {
@@ -175,11 +171,6 @@ type Implement interface {
 
 	// SyncRuntime syncs the runtime spec
 	SyncRuntime(ctx cruntime.ReconcileRequestContext) (changed bool, err error)
-
-	// CheckExistenceOfPath Check existence of targetDataload path
-	// useless as https://github.com/fluid-cloudnative/fluid/pull/2355
-	// @Deprecated TODO: remove when DataOperator ready
-	CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (notExist bool, err error)
 
 	// Sync the scheduleInfo to cacheNodes
 	SyncScheduleInfoToCacheNodes() (err error)

@@ -67,28 +67,6 @@ func (j JuiceFileUtils) LoadMetadataWithoutTimeout(juicefsPath string) (err erro
 	return
 }
 
-// IsExist checks if the juicePath exists
-func (j JuiceFileUtils) IsExist(juiceSubPath string) (found bool, err error) {
-	var (
-		command = []string{"ls", juiceSubPath}
-		stdout  string
-		stderr  string
-	)
-
-	stdout, stderr, err = j.exec(command)
-	if err != nil {
-		if strings.Contains(stdout, "No such file or directory") || strings.Contains(stderr, "No such file or directory") {
-			return false, nil
-		} else {
-			err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
-			return false, err
-		}
-	} else {
-		found = true
-	}
-	return
-}
-
 // The count of the JuiceFS Filesystem
 func (j JuiceFileUtils) Count(juiceSubPath string) (total int64, err error) {
 	var (

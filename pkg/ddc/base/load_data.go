@@ -31,8 +31,3 @@ func (t *TemplateEngine) CheckRuntimeReady() (ready bool) {
 	ready = t.Implement.CheckRuntimeReady()
 	return ready
 }
-
-func (t *TemplateEngine) CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (notExist bool, err error) {
-	notExist, err = t.Implement.CheckExistenceOfPath(targetDataload)
-	return notExist, err
-}

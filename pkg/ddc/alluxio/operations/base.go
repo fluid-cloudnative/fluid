@@ -50,29 +50,6 @@ func NewAlluxioFileUtils(podName string, containerName string, namespace string,
 	}
 }
 
-// IsExist checks if the alluxioPath exists
-func (a AlluxioFileUtils) IsExist(alluxioPath string) (found bool, err error) {
-	var (
-		command = []string{"alluxio", "fs", "ls", alluxioPath}
-		stdout  string
-		stderr  string
-	)
-
-	stdout, stderr, err = a.exec(command, true)
-	if err != nil {
-		if strings.Contains(stdout, "does not exist") {
-			err = nil
-		} else {
-			err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
-			return
-		}
-	} else {
-		found = true
-	}
-
-	return
-}
-
 // Get summary info of the Alluxio Engine
 func (a AlluxioFileUtils) ReportSummary() (summary string, err error) {
 	var (

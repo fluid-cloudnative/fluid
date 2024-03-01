@@ -18,7 +18,6 @@ package operations
 import (
 	"errors"
 	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/brahma-adshonor/gohook"
@@ -75,50 +74,6 @@ func TestNewJuiceFSFileUtils(t *testing.T) {
 	if !reflect.DeepEqual(expectedResult, result) {
 		t.Errorf("fail to create the JuiceFSFileUtils, want: %v, got: %v", expectedResult, result)
 	}
-}
-
-func TestJuiceFileUtils_IsExist(t *testing.T) {
-	mockExec := func(a JuiceFileUtils, p []string) (stdout string, stderr string, e error) {
-		if strings.Contains(p[1], NotExist) {
-			return "No such file or directory", "", errors.New("No such file or directory")
-		} else if strings.Contains(p[1], OtherErr) {
-			return "", "", errors.New("other error")
-		} else {
-			return "", "", nil
-		}
-	}
-
-	err := gohook.Hook(JuiceFileUtils.exec, mockExec, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(JuiceFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-
-	var tests = []struct {
-		in    string
-		out   bool
-		noErr bool
-	}{
-		{NotExist, false, true},
-		{OtherErr, false, false},
-		{FINE, true, true},
-	}
-	for _, test := range tests {
-		found, err := JuiceFileUtils{log: fake.NullLogger()}.IsExist(test.in)
-		if found != test.out {
-			t.Errorf("input parameter is %s,expected %t, got %t", test.in, test.out, found)
-		}
-		var noErr bool = (err == nil)
-		if test.noErr != noErr {
-			t.Errorf("input parameter is %s, expected noerr is %t, got %t", test.in, test.noErr, err)
-		}
-	}
-	wrappedUnhookExec()
 }
 
 func TestJuiceFileUtils_Mkdir(t *testing.T) {

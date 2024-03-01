@@ -147,42 +147,6 @@ func TestJindoFileUtils_Ready(t *testing.T) {
 	wrappedUnhookExec()
 }
 
-func TestJindoFileUtils_IsExist(t *testing.T) {
-	ExecCommon := func(a JindoFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
-		return "Test stdout", "", nil
-	}
-	ExecErr := func(a JindoFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
-		return "", "", errors.New("fail to run the command")
-	}
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(JindoFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-
-	err := gohook.Hook(JindoFileUtils.exec, ExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	a := JindoFileUtils{}
-	_, err = a.IsExist("/data")
-	if err == nil {
-		t.Error("check failure, want err, got nil")
-	}
-	wrappedUnhookExec()
-
-	err = gohook.Hook(JindoFileUtils.exec, ExecCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	_, err = a.IsExist("/data")
-	if err != nil {
-		t.Errorf("check failure, want nil, got err: %v", err)
-	}
-	wrappedUnhookExec()
-}
-
 func TestJindoFileUtils_LoadMetadataWithoutTimeout(t *testing.T) {
 	ExecWithoutTimeoutCommon := func(a JindoFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "Test stdout", "", nil

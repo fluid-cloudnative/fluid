@@ -105,11 +105,6 @@ func TestSetupMasterInternal(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	err = engine.setupMasterInternal()
-	if err == nil {
-		t.Errorf("fail to catch the error")
-	}
-
 	// check release found
 	err = gohook.Hook(helm.CheckRelease, mockExecCheckReleaseCommonFound, nil)
 	if err != nil {

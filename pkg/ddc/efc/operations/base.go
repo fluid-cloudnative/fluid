@@ -19,7 +19,6 @@ package operations
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -83,27 +82,6 @@ func (a EFCFileUtils) execWithoutTimeout(command []string, verbose bool) (stdout
 		a.log.Info("Stdout", "Command", command, "Stdout", stdout)
 	}
 
-	return
-}
-
-func (a EFCFileUtils) IsExist(efcSubPath string) (found bool, err error) {
-	var (
-		command = []string{"ls", efcSubPath}
-		stdout  string
-		stderr  string
-	)
-
-	stdout, stderr, err = a.exec(command, true)
-	if err != nil {
-		if strings.Contains(stdout, "No such file or directory") || strings.Contains(stderr, "No such file or directory") {
-			return false, nil
-		} else {
-			err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
-			return false, err
-		}
-	} else {
-		found = true
-	}
 	return
 }
 
