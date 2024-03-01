@@ -17,8 +17,6 @@
 package efc
 
 import (
-	"path/filepath"
-
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
@@ -89,23 +87,6 @@ func (e *EFCEngine) CheckRuntimeReady() (ready bool) {
 		}
 	}
 	return readyCount > 0
-}
-
-func (e *EFCEngine) CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (notExist bool, err error) {
-	podName, containerName := e.getMasterPodInfo()
-	fileUtils := operations.NewEFCFileUtils(podName, containerName, e.namespace, e.Log)
-
-	for _, target := range targetDataload.Spec.Target {
-		targetPath := filepath.Join(MasterMountPath, target.Path)
-		isExist, err := fileUtils.IsExist(targetPath)
-		if err != nil {
-			return true, err
-		}
-		if !isExist {
-			return true, nil
-		}
-	}
-	return false, nil
 }
 
 // generateDataLoadValueFile builds a DataLoadValue by extracted specifications from the given DataLoad, and

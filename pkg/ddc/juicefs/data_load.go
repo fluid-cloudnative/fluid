@@ -19,7 +19,6 @@ package juicefs
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -32,7 +31,6 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
@@ -248,38 +246,4 @@ func (j *JuiceFSEngine) CheckRuntimeReady() (ready bool) {
 		return false
 	}
 	return true
-}
-
-func (j *JuiceFSEngine) CheckExistenceOfPath(targetDataload datav1alpha1.DataLoad) (notExist bool, err error) {
-	// get mount path
-	cacheinfo, err := GetCacheInfoFromConfigmap(j.Client, targetDataload.Spec.Dataset.Name, targetDataload.Spec.Dataset.Namespace)
-	if err != nil {
-		return
-	}
-	mountPath := cacheinfo[MountPath]
-	if mountPath == "" {
-		return true, fmt.Errorf("fail to find mountpath in dataset %s %s", targetDataload.Spec.Dataset.Name, targetDataload.Spec.Dataset.Namespace)
-	}
-
-	// get worker pod
-	stsName := j.getWorkerName()
-	pods, err := j.GetRunningPodsOfStatefulSet(stsName, j.namespace)
-	if err != nil || len(pods) == 0 {
-		return true, err
-	}
-
-	// check path exist
-	pod := pods[0]
-	fileUtils := operations.NewJuiceFileUtils(pod.Name, common.JuiceFSWorkerContainer, j.namespace, j.Log)
-	for _, target := range targetDataload.Spec.Target {
-		targetPath := filepath.Join(mountPath, target.Path)
-		isExist, err := fileUtils.IsExist(targetPath)
-		if err != nil {
-			return true, err
-		}
-		if !isExist {
-			return true, nil
-		}
-	}
-	return false, err
 }

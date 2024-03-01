@@ -207,28 +207,6 @@ func (a JindoFileUtils) Ready() (ready bool) {
 	return ready
 }
 
-// IsExist checks if the JindoPath exists
-func (a JindoFileUtils) IsExist(jindoPath string) (found bool, err error) {
-	var (
-		command = []string{"jindo", "fs", "-ls", "jindo://" + jindoPath}
-		stdout  string
-		stderr  string
-	)
-
-	stdout, stderr, err = a.exec(command, true)
-	if err != nil {
-		if strings.Contains(stdout, "No such file or directory") {
-			err = nil
-		} else {
-			err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
-			return
-		}
-	} else {
-		found = true
-	}
-	return
-}
-
 func (a JindoFileUtils) IsRefreshed() (refreshed bool, err error) {
 	var (
 		command = []string{"jindocache", "-listCacheSet"}

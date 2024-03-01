@@ -223,12 +223,12 @@ var _ = Describe("TemplateEngine", func() {
 		})
 	})
 
-	Describe("CheckExistenceOfPath", func() {
-		It("Should check path exists", func() {
-			impl.EXPECT().CheckExistenceOfPath(fakeDataLoad).Return(false, nil)
-			Expect(t.CheckExistenceOfPath(fakeDataLoad)).Should(Equal(false))
-		})
-	})
+	// Describe("CheckExistenceOfPath", func() {
+	// 	It("Should check path exists", func() {
+	// 		impl.EXPECT().CheckExistenceOfPath(fakeDataLoad).Return(false, nil)
+	// 		Expect(t.CheckExistenceOfPath(fakeDataLoad)).Should(Equal(false))
+	// 	})
+	// })
 })
 
 var (

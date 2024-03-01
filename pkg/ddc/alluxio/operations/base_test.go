@@ -76,53 +76,6 @@ func TestLoadMetaData(t *testing.T) {
 	}
 }
 
-func TestAlluxioFileUtils_IsExist(t *testing.T) {
-
-	mockExec := func(p1, p2, p3 string, p4 []string) (stdout string, stderr string, e error) {
-
-		if strings.Contains(p4[3], NOT_EXIST) {
-			return "does not exist", "", errors.New("does not exist")
-
-		} else if strings.Contains(p4[3], OTHER_ERR) {
-			return "", "", errors.New("other error")
-		} else {
-			return "", "", nil
-		}
-	}
-
-	err := gohook.Hook(kubeclient.ExecCommandInContainer, mockExec, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	wrappedUnhook := func() {
-		err := gohook.UnHook(kubeclient.ExecCommandInContainer)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-	defer wrappedUnhook()
-
-	var tests = []struct {
-		in    string
-		out   bool
-		noErr bool
-	}{
-		{NOT_EXIST, false, true},
-		{OTHER_ERR, false, false},
-		{FINE, true, true},
-	}
-	for _, test := range tests {
-		found, err := AlluxioFileUtils{log: fake.NullLogger()}.IsExist(test.in)
-		if found != test.out {
-			t.Errorf("input parameter is %s,expected %t, got %t", test.in, test.out, found)
-		}
-		var noErr bool = (err == nil)
-		if test.noErr != noErr {
-			t.Errorf("input parameter is %s,expected noerr is %t", test.in, test.noErr)
-		}
-	}
-}
-
 func TestAlluxioFileUtils_Du(t *testing.T) {
 	out1, out2, out3 := 111, 222, "%233"
 	mockExec := func(p1, p2, p3 string, p4 []string) (stdout string, stderr string, e error) {
