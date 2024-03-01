@@ -90,7 +90,9 @@ spec:
                     type: string
                 type: object
               mounts:
-                description: Mount Points to be mounted on Alluxio.
+                description: Mount Points to be mounted on cache runtime. <br> This
+                  field can be empty because some runtimes don't need to mount external
+                  storage (e.g. <a href="https://v6d.io/">Vineyard</a>).
                 items:
                   description: Mount describes a mounting. <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/ufs/S3.html">Alluxio
                     Storage Integrations</a> for more info
@@ -370,8 +372,6 @@ spec:
                       type: string
                   type: object
                 type: array
-            required:
-            - mounts
             type: object
           status:
             description: DatasetStatus defines the observed state of Dataset

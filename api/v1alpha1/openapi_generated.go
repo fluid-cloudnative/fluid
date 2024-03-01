@@ -1881,7 +1881,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetSpec(ref common.Referenc
 				Properties: map[string]spec.Schema{
 					"mounts": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Mount Points to be mounted on Alluxio.",
+							Description: "Mount Points to be mounted on cache runtime. <br> This field can be empty because some runtimes don't need to mount external storage (e.g. <a href=\"https://v6d.io/\">Vineyard</a>).",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -1992,7 +1992,6 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetSpec(ref common.Referenc
 						},
 					},
 				},
-				Required: []string{"mounts"},
 			},
 		},
 		Dependencies: []string{
