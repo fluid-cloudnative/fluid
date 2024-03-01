@@ -33,13 +33,48 @@ import (
 
 // CheckAndUpdateRuntimeStatus checks the related runtime status and updates it.
 func (e *JindoFSxEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
+	defer utils.TimeTrack(time.Now(), "JindoFSxEngine.CheckAndUpdateRuntimeStatus", "name", e.name, "namespace", e.namespace)
+
 	if e.runtime.Spec.Master.Disabled && e.runtime.Spec.Worker.Disabled {
-		ready = true
-		err = nil
-		return
+		return e.syncFuseOnlyModeRuntimeStatus()
 	}
 
-	defer utils.TimeTrack(time.Now(), "JindoFSxEngine.CheckAndUpdateRuntimeStatus", "name", e.name, "namespace", e.namespace)
+	return e.syncCacheModeRuntimeStatus()
+}
+
+func (e *JindoFSxEngine) syncFuseOnlyModeRuntimeStatus() (ready bool, err error) {
+	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		runtime, err := e.getRuntime()
+		if err != nil {
+			return err
+		}
+
+		runtimeToUpdate := runtime.DeepCopy()
+		runtimeToUpdate.Status.ValueFileConfigmap = e.getHelmValuesConfigMapName()
+		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
+			err = e.Client.Status().Update(context.TODO(), runtimeToUpdate)
+		} else {
+			e.Log.V(1).Info("Do nothing because the runtime status is not changed.")
+		}
+		return err
+	})
+
+	if err != nil {
+		_ = utils.LoggingErrorExceptConflict(e.Log,
+			err,
+			"Failed to update the runtime",
+			types.NamespacedName{
+				Namespace: e.namespace,
+				Name:      e.name,
+			})
+	}
+
+	ready = true
+	err = nil
+	return
+}
+
+func (e *JindoFSxEngine) syncCacheModeRuntimeStatus() (ready bool, err error) {
 	var (
 		masterReady, workerReady bool
 		masterName               string = e.getMasterName()
@@ -122,6 +157,7 @@ func (e *JindoFSxEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		} else {
 			runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseNotReady
 		}
+		runtimeToUpdate.Status.ValueFileConfigmap = e.getHelmValuesConfigMapName()
 
 		if masterReady && workerReady {
 			ready = true
@@ -145,6 +181,5 @@ func (e *JindoFSxEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 				Name:      e.name,
 			})
 	}
-
 	return
 }
