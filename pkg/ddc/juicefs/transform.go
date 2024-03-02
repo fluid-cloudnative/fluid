@@ -27,6 +27,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
 )
 
@@ -125,6 +126,12 @@ func (j *JuiceFSEngine) transformWorkers(runtime *datav1alpha1.JuiceFSRuntime, d
 	value.Image, value.ImageTag, value.ImagePullPolicy, err = j.parseJuiceFSImage(value.Edition, image, imageTag, imagePullPolicy)
 	if err != nil {
 		return
+	}
+
+	// add ImagePullSecrets
+	imagePullSecrets := docker.GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey)
+	if len(imagePullSecrets) > 0 {
+		value.ImagePullSecrets = imagePullSecrets
 	}
 
 	// nodeSelector

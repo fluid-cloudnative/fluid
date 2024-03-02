@@ -2,6 +2,11 @@
 fullnameOverride: juicefs
 edition: community
 
+## Common ##
+
+## global image pull secrets
+imagePullSecrets: []
+
 owner:
   enabled: false
   name: ""
