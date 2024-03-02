@@ -126,8 +126,16 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   namespace: {{ include "fluid.namespace" . }}
-  name: jindoruntime-controller-lease-role
+  name: jindoruntime-controller
 rules:
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    resourceNames:
+      - jindo.data.fluid.io
+    verbs:
+      - create
   - apiGroups:
       - coordination.k8s.io
     resources:
@@ -138,7 +146,6 @@ rules:
       - get
       - list
       - watch
-      - create
       - update
       - patch
       - delete
@@ -164,7 +171,7 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: jindoruntime-controller-lease-role
+  name: jindoruntime-controller
 subjects:
   - kind: ServiceAccount
     name: jindoruntime-controller
