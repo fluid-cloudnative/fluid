@@ -158,6 +158,44 @@ func TestServerlessEnabled(t *testing.T) {
 	}
 }
 
+func TestVineyardSidecarEnabled(t *testing.T) {
+	type testCase struct {
+		name        string
+		annotations map[string]string
+		expect      bool
+	}
+
+	testcases := []testCase{
+		{
+			name: "enable_vineyard_sidecar_inject",
+			annotations: map[string]string{
+				common.InjectVineyardSidecar: "true",
+				common.InjectServerless: "true",
+			},
+			expect: false,
+		}, {
+			name: "only_enable_vineyard_sidecar_inject",
+			annotations: map[string]string{
+				common.InjectVineyardSidecar: "true",
+			},
+			expect: false,
+		}, {
+			name: "no_injection",
+			annotations: map[string]string{
+				"test": "false",
+			},
+			expect: false,
+		},
+	}
+
+	for _, testcase := range testcases {
+		got := VineyardSidecarEnabled(testcase.annotations)
+		if got != testcase.expect {
+			t.Errorf("The testcase %s's failed due to expect %v but got %v", testcase.name, testcase.expect, got)
+		}
+	}
+}
+
 func TestInjectionEnabled(t *testing.T) {
 	type testCase struct {
 		name        string
