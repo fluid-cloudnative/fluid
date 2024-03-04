@@ -81,11 +81,9 @@ func GetServerlessPlatfrom(infos map[string]string) (platform string) {
 		return infos[ServerlessPlatformKey]
 	}
 
-	if enabled(infos, common.InjectServerless) || enabled(infos, common.InjectFuseSidecar) || enabled(infos, common.InjectVineyardSidecar) {
+	if enabled(infos, common.InjectServerless) || enabled(infos, common.InjectFuseSidecar) {
 		if enabled(infos, common.InjectUnprivilegedFuseSidecar) {
 			return PlatformUnprivileged
-		} else if enabled(infos, common.InjectVineyardSidecar) {
-			return PlatformVineyard
 		} else {
 			return PlatformDefault
 		}
@@ -108,13 +106,6 @@ func ServerlessEnabled(infos map[string]string) (match bool) {
 // - serverless.fluid.io/inject=true + unprivileged.sidecar.fluid.io/inject=true implies injecting unprivileged fuse sidecar,
 func FuseSidecarUnprivileged(infos map[string]string) (match bool) {
 	return serverlessPlatformMatched(infos) || (ServerlessEnabled(infos) && enabled(infos, common.InjectUnprivilegedFuseSidecar))
-}
-
-// VineyardSidecarEnabled decides if vineyard sidecar should be injected
-// - serverlessPlatform implies injecting vineyard sidecar
-// - serverless.fluid.io/inject=true + vineyard.sidecar.fluid.io/inject=true implies injecting vineyard sidecar,
-func VineyardSidecarEnabled(infos map[string]string) (match bool) {
-	return serverlessPlatformMatched(infos) || (ServerlessEnabled(infos) && enabled(infos, common.InjectVineyardSidecar))
 }
 
 func InjectSidecarDone(infos map[string]string) (match bool) {

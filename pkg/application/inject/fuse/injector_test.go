@@ -1151,8 +1151,7 @@ func TestInjectPod(t *testing.T) {
 					Name:      "app",
 					Namespace: "default",
 					Labels: map[string]string{
-						common.InjectServerless:      common.True,
-						common.InjectVineyardSidecar: common.True,
+						common.InjectServerless: common.True,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -1216,9 +1215,8 @@ func TestInjectPod(t *testing.T) {
 					Name:      "app",
 					Namespace: "default",
 					Labels: map[string]string{
-						common.InjectVineyardSidecar: common.True,
-						common.InjectServerless:      common.True,
-						common.InjectSidecarDone:     common.True,
+						common.InjectServerless:  common.True,
+						common.InjectSidecarDone: common.True,
 					},
 				},
 				Spec: corev1.PodSpec{
