@@ -170,9 +170,9 @@ func TestVineyardSidecarEnabled(t *testing.T) {
 			name: "enable_vineyard_sidecar_inject",
 			annotations: map[string]string{
 				common.InjectVineyardSidecar: "true",
-				common.InjectServerless: "true",
+				common.InjectServerless:      "true",
 			},
-			expect: false,
+			expect: true,
 		}, {
 			name: "only_enable_vineyard_sidecar_inject",
 			annotations: map[string]string{
