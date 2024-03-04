@@ -50,8 +50,14 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   namespace: {{ include "fluid.namespace" . }}
-  name: fluidapp-controller-lease-role
+  name: fluidapp-controller
 rules:
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - create
   - apiGroups:
       - coordination.k8s.io
     resources:
@@ -62,7 +68,6 @@ rules:
       - get
       - list
       - watch
-      - create
       - update
       - patch
       - delete
@@ -83,12 +88,12 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: fluidapp-rolebinding
+  name: fluidapp-controller
   namespace: {{ include "fluid.namespace" . }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: fluidapp-controller-lease-role
+  name: fluidapp-controller
 subjects:
   - kind: ServiceAccount
     name: fluidapp-controller
