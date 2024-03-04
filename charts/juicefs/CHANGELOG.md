@@ -56,7 +56,3 @@
 
 0.2.15
 - Support encryptOptions through envs
-
-0.2.16
-- Support imagePullSecrets
-

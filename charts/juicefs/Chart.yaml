@@ -1,7 +1,7 @@
 name: juicefs
 apiVersion: v2
 description: FileSystem aimed for data analytics and machine learning in any cloud.
-version: 0.2.16
+version: 0.2.15
 appVersion: v1.0.0
 home: https://juicefs.com/
 maintainers:
