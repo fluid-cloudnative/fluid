@@ -43,6 +43,17 @@ spec:
 ```
 
 
+如果你想指定runtime镜像拉取密钥，可以通过编辑你已经创建的对应runtime controller对应的deployment中的环境变量。runtime controller是由Deployment资源创建和管理的，它主要用来管理Kubernetes应用的生命周期，以确保指定数量的应用副本在集群中始终正常运行。
+
+这是一个短小的YAML配置示例，正确配置后deployment将作用于你指定的image pull secret。
+
+```yaml
+- name: IMAGE_PULL_SECRETS
+  value: test-1,test-2
+```
+
+> 在上述YAML文件中， IMAGE_PULL_SECRETS 是环境变量名，test-1,test-2 是你想要指定的镜像拉取密钥，并且以逗号分隔。
+
 
 同时 fluid 也支持 controller 在拉起对应 runtime 服务时, 使用前面配置的镜像拉取密钥   
 controller 会传递密钥到 runtime 的服务中

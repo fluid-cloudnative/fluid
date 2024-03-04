@@ -49,6 +49,20 @@ spec:
 
 fluid also supports passing the image pull secrets through the controller to the runtime service that the controller pulls up
 
+If you want to specify the image pull key for the runtime, you can do so by editing the environment variables in the deployment associated with the runtime controller that you have created.
+
+Here is a brief YAML configuration example. When properly configured, the deployment will apply the image pull secret you specified.
+
+```yaml
+- name: IMAGE_PULL_SECRETS
+  value: test-1,test-2
+```
+
+In the above YAML file, `IMAGE_PULL_SECRETS` is the name of the environment variable, and `test-1,test-2` are the image pull keys you wish to specify, separated by commas.
+
+
+
+
 alluxio runtime master yaml intercepts information
 ```yaml
 apiVersion: apps/v1

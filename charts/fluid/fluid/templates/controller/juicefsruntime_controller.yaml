@@ -54,6 +54,16 @@ spec:
           - --leader-election-namespace={{ include "fluid.namespace" . }}
         command: ["juicefsruntime-controller", "start"]
         env:
+          {{- if .Values.image.imagePullSecrets }}
+          - name: IMAGE_PULL_SECRETS
+            {{- $secretList := list }}
+            {{- range .Values.image.imagePullSecrets }}
+              {{- range $name,$v := . }}
+                {{- $secretList = append $secretList $v }}
+              {{- end }}
+            {{- end }}
+            value: {{ join "," $secretList | quote }}
+          {{- end }}
           {{- if .Values.runtime.juicefs.fuse.ceimage }}
           - name: JUICEFS_CE_IMAGE_ENV
             value: {{ .Values.runtime.juicefs.fuse.ceimage | quote }}
