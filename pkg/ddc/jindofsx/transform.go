@@ -169,7 +169,7 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	if err != nil {
 		return
 	}
-	e.transformToken(runtime, value)
+	e.transformToken(value)
 	e.transformWorker(runtime, dataPath, userQuotas, value)
 	e.transformFuse(runtime, value)
 	e.transformInitPortCheck(value)
@@ -960,7 +960,7 @@ func (e *JindoFSxEngine) transformSecret(runtime *datav1alpha1.JindoRuntime, val
 	}
 }
 
-func (e *JindoFSxEngine) transformToken(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
+func (e *JindoFSxEngine) transformToken(value *Jindo) {
 	properties := map[string]string{}
 	if len(value.Secret) != 0 {
 		properties["default.credential.provider"] = "secrets:///token/"
