@@ -47,7 +47,7 @@ func TestTransformToken(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &JindoCacheEngine{Log: fake.NullLogger()}
-		engine.transformToken(test.runtime, test.jindoValue)
+		engine.transformToken(test.jindoValue)
 		if test.jindoValue.Master.TokenProperties["default.credential.provider"] != test.expect {
 			t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.Master.MasterProperties["default.credential.provider"])
 		}
