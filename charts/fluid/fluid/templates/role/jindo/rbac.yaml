@@ -132,8 +132,6 @@ rules:
       - coordination.k8s.io
     resources:
       - leases
-    resourceNames:
-      - jindo.data.fluid.io
     verbs:
       - create
   - apiGroups:
