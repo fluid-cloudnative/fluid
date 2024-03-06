@@ -7,6 +7,8 @@ Fluid is an open source Kubernetes-native Distributed Dataset Orchestrator and A
 
 More information about the helm chart could be found at [Artifact Hub](https://artifacthub.io/packages/helm/fluid/fluid).
 
+Fluid helm charts and history versions are in the [Fluid Charts](https://github.com/fluid-cloudnative/charts/).
+
 License
 -------
 
