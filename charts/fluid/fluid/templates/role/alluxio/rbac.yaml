@@ -105,7 +105,13 @@ rules:
       - alluxioruntimes/status
       - datasets/status
     verbs:
-      - '*'
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
   - apiGroups:
       - apps
     resources:
@@ -114,13 +120,39 @@ rules:
       - daemonsets/status
       - statefulsets/status
     verbs:
-      - '*'
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: {{ include "fluid.namespace" . }}
+  name: alluxioruntime-controller
+rules:
   - apiGroups:
       - coordination.k8s.io
     resources:
       - leases
     verbs:
-      - '*'
+      - create
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    resourceNames:
+      - alluxio.data.fluid.io
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+      - patch
+      - delete
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -129,6 +161,20 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
+  name: alluxioruntime-controller
+subjects:
+  - kind: ServiceAccount
+    name: alluxioruntime-controller
+    namespace: {{ include "fluid.namespace" . }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: alluxioruntime-controller
+  namespace: {{ include "fluid.namespace" . }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
   name: alluxioruntime-controller
 subjects:
   - kind: ServiceAccount
