@@ -1,9 +1,0 @@
-0924:
-
-Version: https://github.com/cheyang/alluxio/commit/c8a46e3203d08cdb2d9ca81b0c684fdf30057923
-Branch: https://github.com/cheyang/alluxio/commits/branch-2.3-fuse-non-root-optimize
-
-0926:
-Version: https://github.com/cheyang/alluxio/commit/e0feba36cba1b57a3a9a0b893f7a477556e4955c
-Branch: https://github.com/cheyang/alluxio/commits/branch-2.3-fuse-pod-for-non-root
-
