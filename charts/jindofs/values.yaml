@@ -53,7 +53,7 @@ worker:
 fuse:
   criticalPod: false
   labels: {}
-  HostPID: false
+  hostPID: false
   properties:
     client.storage.rpc.port: 6101
     client.oss.retry: 5

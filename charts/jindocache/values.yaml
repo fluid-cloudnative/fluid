@@ -59,7 +59,7 @@ fuse:
   labels: {}
   annotations: {}
   env: {}
-  HostPID: false
+  hostPID: false
   updateStrategy:
     type: OnDelete
   properties:
