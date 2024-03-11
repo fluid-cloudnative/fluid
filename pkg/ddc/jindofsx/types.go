@@ -31,7 +31,6 @@ type Jindo struct {
 	User                int                    `json:"user"`
 	Group               int                    `json:"group"`
 	UseHostNetwork      bool                   `json:"useHostNetwork"`
-	UseHostPID          bool                   `json:"useHostPID"`
 	Properties          map[string]string      `json:"properties"`
 	Master              Master                 `json:"master"`
 	Worker              Worker                 `json:"worker"`
@@ -115,6 +114,7 @@ type Fuse struct {
 	MountPath      string              `json:"mountPath,omitempty"`
 	Mode           string              `json:"mode,omitempty"`
 	Env            map[string]string   `json:"env,omitempty"`
+	HostPID        bool                `json:"hostPID,omitempty"`
 }
 
 type Mounts struct {

@@ -238,6 +238,9 @@ spec:
                     description: If the fuse client should be deployed in global mode,
                       otherwise the affinity should be considered
                     type: boolean
+                  hostPID:
+                    description: Use the host's pid namespace, default false.
+                    type: boolean
                   image:
                     description: Image for GooseFS Fuse(e.g. goosefs/goosefs-fuse)
                     type: string

@@ -104,6 +104,7 @@ type Fuse struct {
 	VolumeMounts    []corev1.VolumeMount `json:"volumeMounts,omitempty"`
 	Volumes         []corev1.Volume      `json:"volumes,omitempty"`
 	HostNetwork     bool                 `json:"hostNetwork,omitempty"`
+	HostPID         bool                 `json:"hostPID,omitempty"`
 	MetricsPort     *int                 `json:"metricsPort,omitempty"`
 
 	SubPath       string            `json:"subPath,omitempty"`

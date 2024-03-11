@@ -445,6 +445,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioFuseSpec(ref common.Refe
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
 						},
 					},
+					"hostPID": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Use the host's pid namespace, default false.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},
@@ -2957,6 +2964,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSFuseSpec(ref common.Refe
 							},
 						},
 					},
+					"hostPID": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Use the host's pid namespace, default false.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},
@@ -3640,6 +3654,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JindoFuseSpec(ref common.Refere
 							},
 						},
 					},
+					"hostPID": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Use the host's pid namespace, default false.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},
@@ -4171,6 +4192,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSFuseSpec(ref common.Refe
 						SchemaProps: spec.SchemaProps{
 							Description: "Whether to use hostnetwork or not",
 							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"hostPID": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Use the host's pid namespace, default false.",
+							Type:        []string{"boolean"},
 							Format:      "",
 						},
 					},
@@ -5934,6 +5962,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ThinFuseSpec(ref common.Referen
 									},
 								},
 							},
+						},
+					},
+					"hostPID": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Use the host's pid namespace, default false.",
+							Type:        []string{"boolean"},
+							Format:      "",
 						},
 					},
 				},

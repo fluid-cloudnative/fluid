@@ -88,6 +88,7 @@ func (e *GooseFSEngine) transformFuse(runtime *datav1alpha1.GooseFSRuntime, data
 
 	value.Fuse.NodeSelector[e.getFuseLabelname()] = "true"
 	value.Fuse.HostNetwork = true
+	value.Fuse.HostPID = runtime.Spec.Fuse.HostPID
 	value.Fuse.Enabled = true
 
 	e.transformResourcesForFuse(runtime, value)

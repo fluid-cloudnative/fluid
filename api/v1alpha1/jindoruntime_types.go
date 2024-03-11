@@ -146,6 +146,10 @@ type JindoFuseSpec struct {
 
 	// +optional
 	LogConfig map[string]string `json:"logConfig,omitempty"`
+
+	// Use the host's pid namespace, default false.
+	// +optional
+	HostPID bool `json:"hostPID,omitempty"`
 }
 
 // JindoRuntimeSpec defines the desired state of JindoRuntime

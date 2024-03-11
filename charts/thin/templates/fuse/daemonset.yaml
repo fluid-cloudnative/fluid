@@ -52,6 +52,7 @@ spec:
       tolerations:
         - operator: Exists
       hostNetwork: {{ .Values.fuse.hostNetwork }}
+      hostPID: {{ .Values.fuse.hostPID }}
       containers:
         - name: thin-fuse
           {{- if .Values.fuse.imageTag }}

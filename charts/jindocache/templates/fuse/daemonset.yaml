@@ -55,7 +55,7 @@ spec:
       priorityClassName: system-node-critical
       {{- end }}
       hostNetwork: {{ .Values.useHostNetwork }}
-      hostPID: {{ .Values.useHostPID }}
+      hostPID: {{ .Values.Fuse.HostPID }}
       nodeSelector:
 {{- if .Values.fuse.nodeSelector }}
 {{ toYaml .Values.fuse.nodeSelector | trim | indent 8  }}

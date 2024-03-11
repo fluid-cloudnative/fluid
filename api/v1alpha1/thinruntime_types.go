@@ -175,6 +175,10 @@ type ThinFuseSpec struct {
 	// VolumeMounts specifies the volumes listed in ".spec.volumes" to mount into the thinruntime component's filesystem.
 	// +optional
 	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
+
+	// Use the host's pid namespace, default false.
+	// +optional
+	HostPID bool `json:"hostPID,omitempty"`
 }
 
 //+kubebuilder:object:root=true

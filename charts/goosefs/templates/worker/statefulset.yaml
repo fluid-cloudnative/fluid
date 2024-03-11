@@ -1,7 +1,6 @@
 {{- $shortCircuitEnabled := .Values.shortCircuit.enabled }}
 {{- $needDomainSocketVolume := and $shortCircuitEnabled (eq .Values.shortCircuit.policy "uuid") }}
 {{- $hostNetwork := .Values.worker.hostNetwork }}
-{{- $hostPID := .Values.worker.hostPID }}
 
 apiVersion: apps/v1
 kind: StatefulSet
@@ -42,7 +41,6 @@ spec:
     spec:
       enableServiceLinks: false
       hostNetwork: {{ $hostNetwork }}
-      hostPID: {{ .Values.worker.hostPID }}
       dnsPolicy: {{ .Values.worker.dnsPolicy | default ($hostNetwork | ternary "ClusterFirstWithHostNet" "ClusterFirst") }}
       securityContext:
         fsGroup: {{ .Values.fsGroup }}

@@ -154,6 +154,10 @@ type AlluxioFuseSpec struct {
 	// PodMetadata defines labels and annotations that will be propagated to Alluxio's fuse pods
 	// +optional
 	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
+
+	// Use the host's pid namespace, default false.
+	// +optional
+	HostPID bool `json:"hostPID,omitempty"`
 }
 
 // Data management strategies

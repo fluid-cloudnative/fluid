@@ -51,7 +51,6 @@ spec:
 {{- end }}
     spec:
       hostNetwork: {{ .Values.useHostNetwork }}
-      hostPID: {{ .Values.useHostPID }}
       nodeSelector:
 {{- if .Values.master.nodeSelector }}
 {{ toYaml .Values.master.nodeSelector | trim | indent 8  }}
