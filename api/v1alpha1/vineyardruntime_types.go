@@ -169,6 +169,10 @@ type VineyardSockSpec struct {
 	// Default is not set.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// Use the host's pid namespace, default false.
+	// +optional
+	HostPID bool `json:"hostPID,omitempty"`
 }
 
 // VineyardRuntimeSpec defines the desired state of VineyardRuntime

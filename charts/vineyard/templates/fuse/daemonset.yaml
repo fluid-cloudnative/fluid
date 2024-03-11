@@ -91,6 +91,7 @@ spec:
           - name: vineyard-rpc-conf
             mountPath: {{ .Values.fuse.targetPath }}/rpc-conf
       restartPolicy: Always
+      hostPID: {{ .Values.fuse.hostPID }}
       volumes:
         - name: vineyard-fuse-mount
           hostPath:

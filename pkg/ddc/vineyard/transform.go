@@ -158,6 +158,7 @@ func (e *VineyardEngine) transformFuse(runtime *datav1alpha1.VineyardRuntime, va
 	value.Fuse.CleanPolicy = runtime.Spec.Fuse.CleanPolicy
 
 	value.Fuse.NodeSelector = e.transformFuseNodeSelector(runtime)
+	value.Fuse.HostPID = runtime.Spec.Fuse.HostPID
 
 	value.Fuse.TargetPath = e.getMountPoint()
 	e.transformResourcesForFuse(runtime, value)

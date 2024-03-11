@@ -101,6 +101,7 @@ fuse:
   imagePullPolicy: IfNotPresent
   targetPath: ""
   nodeSelector: {}
+  hostPID: false
 
 owner:
   enabled: false

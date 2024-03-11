@@ -6762,6 +6762,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardSockSpec(ref common.Ref
 							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
 						},
 					},
+					"hostPID": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Use the host's pid namespace, default false.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},
