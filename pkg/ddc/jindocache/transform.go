@@ -791,7 +791,7 @@ func (e *JindoCacheEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, val
 		}
 	}
 	value.Fuse.FuseProperties = properties
-	value.Fuse.HostPID = runtime.Spec.Fuse.HostPID
+	value.Fuse.HostPID = common.HostPIDEnabled()
 
 	// set critical fuse pod to avoid eviction
 	value.Fuse.CriticalPod = common.CriticalFusePodEnabled()

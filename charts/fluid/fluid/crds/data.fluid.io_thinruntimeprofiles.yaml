@@ -170,9 +170,6 @@ spec:
                       - name
                       type: object
                     type: array
-                  hostPID:
-                    description: Use the host's pid namespace, default false.
-                    type: boolean
                   image:
                     description: Image for thinRuntime fuse
                     type: string

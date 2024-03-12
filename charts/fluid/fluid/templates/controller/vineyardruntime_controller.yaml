@@ -66,6 +66,8 @@ spec:
         {{- end }}
         - name: HELM_DRIVER
           value: {{ template "fluid.helmDriver" . }}
+        - name: HOST_PID
+          value: {{ .Values.runtime.hostPID | quote }}
         ports:
           - containerPort: 8080
             name: metrics

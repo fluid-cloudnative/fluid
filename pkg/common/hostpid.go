@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Fluid Authors.
+Copyright 2024 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,20 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package options
+package common
 
 import (
-	"github.com/go-logr/logr"
-
-	ctrl "sigs.k8s.io/controller-runtime"
+	runtimeOpts "github.com/fluid-cloudnative/fluid/pkg/utils/runtimes/options"
 )
 
-var (
-	log logr.Logger = ctrl.Log.WithName("options")
-)
-
-func init() {
-	setPortCheckOption()
-	setCriticalFusePodOption()
-	setHostPIDOption()
+// HostPIDEnabled check if HostPID is true for runtime fuse pod.
+func HostPIDEnabled() bool {
+	return runtimeOpts.HostPIDEnabled()
 }

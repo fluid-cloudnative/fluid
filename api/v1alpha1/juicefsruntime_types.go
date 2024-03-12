@@ -176,10 +176,6 @@ type JuiceFSFuseSpec struct {
 	// +kubebuilder:validation:Enum=HostNetwork;"";ContainerNetwork
 	// +optional
 	NetworkMode NetworkMode `json:"networkMode,omitempty"`
-
-	// Use the host's pid namespace, default false.
-	// +optional
-	HostPID bool `json:"hostPID,omitempty"`
 }
 
 //+kubebuilder:object:root=true

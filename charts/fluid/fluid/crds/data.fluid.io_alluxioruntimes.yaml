@@ -273,9 +273,6 @@ spec:
                     description: If the fuse client should be deployed in global mode,
                       otherwise the affinity should be considered
                     type: boolean
-                  hostPID:
-                    description: Use the host's pid namespace, default false.
-                    type: boolean
                   image:
                     description: Image for Alluxio Fuse(e.g. alluxio/alluxio-fuse)
                     type: string

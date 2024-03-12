@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Fluid Authors.
+Copyright 2024 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,20 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package options
+package common
 
 import (
-	"github.com/go-logr/logr"
-
-	ctrl "sigs.k8s.io/controller-runtime"
+	"testing"
 )
 
-var (
-	log logr.Logger = ctrl.Log.WithName("options")
-)
+func TestHostPIDEnabled(t *testing.T) {
+	want := false
+	got := HostPIDEnabled()
 
-func init() {
-	setPortCheckOption()
-	setCriticalFusePodOption()
-	setHostPIDOption()
+	if got != want {
+		t.Errorf("want %v, got %v", want, got)
+	}
 }

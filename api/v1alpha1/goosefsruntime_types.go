@@ -124,10 +124,6 @@ type GooseFSFuseSpec struct {
 	// More info: http://kubernetes.io/docs/user-guide/annotations
 	// +optional
 	Annotations map[string]string `json:"annotations,omitempty"`
-
-	// Use the host's pid namespace, default false.
-	// +optional
-	HostPID bool `json:"hostPID,omitempty"`
 }
 
 // GooseFSRuntimeSpec defines the desired state of GooseFSRuntime
