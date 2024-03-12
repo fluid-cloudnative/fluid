@@ -387,8 +387,8 @@ func (r *RuntimeReconciler) ReportDatasetNotReadyCondition(ctx cruntime.Reconcil
 
 // ForgetMetrics deletes related metrics in prometheus metrics to avoid memory inflation
 func (r *RuntimeReconciler) ForgetMetrics(ctx cruntime.ReconcileRequestContext) {
-	metrics.GetRuntimeMetrics(ctx.Runtime.GetObjectKind().GroupVersionKind().Kind, ctx.Namespace, ctx.Name).Forget()
-	metrics.GetDatasetMetrics(ctx.Namespace, ctx.Name).Forget()
+	metrics.GetOrCreateRuntimeMetrics(ctx.Runtime.GetObjectKind().GroupVersionKind().Kind, ctx.Namespace, ctx.Name).Forget()
+	metrics.GetOrCreateDatasetMetrics(ctx.Namespace, ctx.Name).Forget()
 }
 
 // The interface of RuntimeReconciler
