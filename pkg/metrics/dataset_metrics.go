@@ -17,6 +17,8 @@ limitations under the License.
 package metrics
 
 import (
+	"sync"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
@@ -33,7 +35,7 @@ var (
 	}, []string{"dataset"})
 )
 
-var datasetMetricsMap map[string]*datasetMetrics
+var datasetMetricsMap sync.Map // race condition protection for datasetMetricsMap's concurrent writes
 
 type datasetMetrics struct {
 	datasetKey string
@@ -42,18 +44,14 @@ type datasetMetrics struct {
 
 func GetDatasetMetrics(namespace, name string) *datasetMetrics {
 	key := labelKeyFunc(namespace, name)
-
-	if m, exists := datasetMetricsMap[key]; exists {
-		return m
-	}
-
-	ret := &datasetMetrics{
+	m := &datasetMetrics{
 		datasetKey: key,
 		labels:     prometheus.Labels{"dataset": key},
 	}
-	datasetMetricsMap[key] = ret
 
-	return ret
+	ret, _ := datasetMetricsMap.LoadOrStore(key, m)
+
+	return ret.(*datasetMetrics)
 }
 
 func (m *datasetMetrics) SetUFSTotalSize(size float64) {
@@ -68,10 +66,10 @@ func (m *datasetMetrics) Forget() {
 	datasetUFSTotalSize.Delete(m.labels)
 	datasetUFSFileNum.Delete(m.labels)
 
-	delete(datasetMetricsMap, m.datasetKey)
+	datasetMetricsMap.Delete(m.datasetKey)
 }
 
 func init() {
 	metrics.Registry.MustRegister(datasetUFSFileNum, datasetUFSTotalSize)
-	datasetMetricsMap = map[string]*datasetMetrics{}
+	datasetMetricsMap = sync.Map{}
 }

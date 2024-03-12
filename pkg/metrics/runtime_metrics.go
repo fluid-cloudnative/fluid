@@ -18,6 +18,7 @@ package metrics
 
 import (
 	"strings"
+	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
@@ -35,7 +36,7 @@ var (
 	}, []string{"runtime_type", "runtime"})
 )
 
-var runtimeMetricsMap map[string]*runtimeMetrics
+var runtimeMetricsMap sync.Map // race condition protection for runtimeMetricsMap's concurrent writes
 
 // runtimeMetrics holds all the metrics related to a specific kind of runtime.
 type runtimeMetrics struct {
@@ -47,17 +48,14 @@ type runtimeMetrics struct {
 
 func GetRuntimeMetrics(runtimeType, runtimeNamespace, runtimeName string) *runtimeMetrics {
 	key := labelKeyFunc(runtimeNamespace, runtimeName)
-	if m, exists := runtimeMetricsMap[key]; exists {
-		return m
-	}
-
 	m := &runtimeMetrics{
 		runtimeType: runtimeType,
 		runtimeKey:  key,
 		labels:      prometheus.Labels{"runtime_type": strings.ToLower(runtimeType), "runtime": key},
 	}
-	runtimeMetricsMap[key] = m
-	return m
+
+	ret, _ := runtimeMetricsMap.LoadOrStore(key, m)
+	return ret.(*runtimeMetrics)
 }
 
 func (m *runtimeMetrics) SetupErrorInc() {
@@ -72,10 +70,10 @@ func (m *runtimeMetrics) Forget() {
 	runtimeSetupErrorTotal.Delete(m.labels)
 	runtimeHealthCheckErrorTotal.Delete(m.labels)
 
-	delete(runtimeMetricsMap, m.runtimeKey)
+	runtimeMetricsMap.Delete(m.runtimeKey)
 }
 
 func init() {
 	metrics.Registry.MustRegister(runtimeSetupErrorTotal, runtimeHealthCheckErrorTotal)
-	runtimeMetricsMap = map[string]*runtimeMetrics{}
+	runtimeMetricsMap = sync.Map{}
 }
