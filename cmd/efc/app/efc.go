@@ -18,6 +18,7 @@ package app
 
 import (
 	"os"
+	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/controllers"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
@@ -59,6 +60,14 @@ var (
 	kubeClientBurst int
 )
 
+// configuration for controllers' rate limiter
+var (
+	controllerWorkqueueDefaultSyncBackoffStr string
+	controllerWorkqueueMaxSyncBackoffStr     string
+	controllerWorkqueueQPS                   int
+	controllerWorkqueueBurst                 int
+)
+
 var startCmd = &cobra.Command{
 	Use:   "start",
 	Short: "start efcruntime-controller in Kubernetes",
@@ -80,6 +89,10 @@ func init() {
 	startCmd.Flags().StringVar(&portRange, "runtime-node-port-range", "16000-17999", "Set available port range for EFC")
 	startCmd.Flags().Float32VarP(&kubeClientQPS, "kube-api-qps", "", 20, "QPS to use while talking with kubernetes apiserver.")   // 20 is the default qps in controller-runtime
 	startCmd.Flags().IntVarP(&kubeClientBurst, "kube-api-burst", "", 30, "Burst to use while talking with kubernetes apiserver.") // 30 is the default burst in controller-runtime
+	startCmd.Flags().StringVar(&controllerWorkqueueDefaultSyncBackoffStr, "workqueue-default-sync-backoff", "5ms", "base backoff period for failed reconcilation in controller's workqueue")
+	startCmd.Flags().StringVar(&controllerWorkqueueMaxSyncBackoffStr, "workqueue-max-sync-backoff", "1000s", "max backoff period for failed reconcilation in controller's workqueue")
+	startCmd.Flags().IntVar(&controllerWorkqueueQPS, "workqueue-qps", 10, "qps limit value for controller's workqueue")
+	startCmd.Flags().IntVar(&controllerWorkqueueBurst, "workqueue-burst", 100, "burst limit value for controller's workqueue")
 }
 
 func handle() {
@@ -114,8 +127,21 @@ func handle() {
 		os.Exit(1)
 	}
 
+	defaultSyncBackoff, err := time.ParseDuration(controllerWorkqueueDefaultSyncBackoffStr)
+	if err != nil {
+		setupLog.Error(err, "workqueue-default-sync-backoff is not a valid duration, please use string like \"100ms\", \"5s\", \"3m\", ...")
+		os.Exit(1)
+	}
+
+	maxSyncBackoff, err := time.ParseDuration(controllerWorkqueueMaxSyncBackoffStr)
+	if err != nil {
+		setupLog.Error(err, "workqueue-max-sync-backoff is not a valid duration, please use string like \"100ms\", \"5s\", \"3m\", ...)")
+		os.Exit(1)
+	}
+
 	controllerOptions := controller.Options{
 		MaxConcurrentReconciles: maxConcurrentReconciles,
+		RateLimiter:             controllers.NewFluidControllerRateLimiter(defaultSyncBackoff, maxSyncBackoff, controllerWorkqueueQPS, controllerWorkqueueBurst),
 	}
 
 	if err = (efcctl.NewRuntimeReconciler(mgr.GetClient(),
