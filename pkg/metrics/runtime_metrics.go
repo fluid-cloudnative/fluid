@@ -36,7 +36,7 @@ var (
 	}, []string{"runtime_type", "runtime"})
 )
 
-var runtimeMetricsMutex *sync.Mutex // race condition protection for runtimeMetricsMap's concurrent writes
+var runtimeMetricsMutex *sync.RWMutex // race condition protection for runtimeMetricsMap's concurrent writes
 var runtimeMetricsMap map[string]*runtimeMetrics
 
 // runtimeMetrics holds all the metrics related to a specific kind of runtime.
@@ -48,10 +48,10 @@ type runtimeMetrics struct {
 }
 
 func GetRuntimeMetrics(runtimeType, runtimeNamespace, runtimeName string) *runtimeMetrics {
-	runtimeMetricsMutex.Lock()
-	defer runtimeMetricsMutex.Unlock()
-
 	key := labelKeyFunc(runtimeNamespace, runtimeName)
+
+	runtimeMetricsMutex.RLock()
+	defer runtimeMetricsMutex.RUnlock()
 	if m, exists := runtimeMetricsMap[key]; exists {
 		return m
 	}
@@ -61,6 +61,8 @@ func GetRuntimeMetrics(runtimeType, runtimeNamespace, runtimeName string) *runti
 		runtimeKey:  key,
 		labels:      prometheus.Labels{"runtime_type": strings.ToLower(runtimeType), "runtime": key},
 	}
+	runtimeMetricsMutex.Lock()
+	defer runtimeMetricsMutex.Unlock()
 	runtimeMetricsMap[key] = m
 	return m
 }
@@ -86,5 +88,5 @@ func (m *runtimeMetrics) Forget() {
 func init() {
 	metrics.Registry.MustRegister(runtimeSetupErrorTotal, runtimeHealthCheckErrorTotal)
 	runtimeMetricsMap = map[string]*runtimeMetrics{}
-	runtimeMetricsMutex = &sync.Mutex{}
+	runtimeMetricsMutex = &sync.RWMutex{}
 }

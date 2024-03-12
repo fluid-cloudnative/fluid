@@ -35,7 +35,7 @@ var (
 	}, []string{"dataset"})
 )
 
-var datasetMetricsMutex *sync.Mutex // race condition protection for datasetMetricsMap's concurrent writes
+var datasetMetricsMutex *sync.RWMutex // race condition protection for datasetMetricsMap's concurrent writes
 var datasetMetricsMap map[string]*datasetMetrics
 
 type datasetMetrics struct {
@@ -44,11 +44,10 @@ type datasetMetrics struct {
 }
 
 func GetDatasetMetrics(namespace, name string) *datasetMetrics {
-	datasetMetricsMutex.Lock()
-	defer datasetMetricsMutex.Unlock()
-
 	key := labelKeyFunc(namespace, name)
 
+	datasetMetricsMutex.RLock()
+	defer datasetMetricsMutex.RUnlock()
 	if m, exists := datasetMetricsMap[key]; exists {
 		return m
 	}
@@ -57,6 +56,9 @@ func GetDatasetMetrics(namespace, name string) *datasetMetrics {
 		datasetKey: key,
 		labels:     prometheus.Labels{"dataset": key},
 	}
+
+	datasetMetricsMutex.Lock()
+	defer datasetMetricsMutex.Unlock()
 	datasetMetricsMap[key] = ret
 
 	return ret
@@ -83,5 +85,5 @@ func (m *datasetMetrics) Forget() {
 func init() {
 	metrics.Registry.MustRegister(datasetUFSFileNum, datasetUFSTotalSize)
 	datasetMetricsMap = map[string]*datasetMetrics{}
-	datasetMetricsMutex = &sync.Mutex{}
+	datasetMetricsMutex = &sync.RWMutex{}
 }
