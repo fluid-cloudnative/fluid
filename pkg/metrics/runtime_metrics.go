@@ -18,6 +18,7 @@ package metrics
 
 import (
 	"strings"
+	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
@@ -35,6 +36,7 @@ var (
 	}, []string{"runtime_type", "runtime"})
 )
 
+var runtimeMetricsMutex *sync.Mutex // race condition protection for runtimeMetricsMap's concurrent writes
 var runtimeMetricsMap map[string]*runtimeMetrics
 
 // runtimeMetrics holds all the metrics related to a specific kind of runtime.
@@ -46,6 +48,9 @@ type runtimeMetrics struct {
 }
 
 func GetRuntimeMetrics(runtimeType, runtimeNamespace, runtimeName string) *runtimeMetrics {
+	runtimeMetricsMutex.Lock()
+	defer runtimeMetricsMutex.Unlock()
+
 	key := labelKeyFunc(runtimeNamespace, runtimeName)
 	if m, exists := runtimeMetricsMap[key]; exists {
 		return m
@@ -69,6 +74,9 @@ func (m *runtimeMetrics) HealthCheckErrorInc() {
 }
 
 func (m *runtimeMetrics) Forget() {
+	runtimeMetricsMutex.Lock()
+	defer runtimeMetricsMutex.Unlock()
+
 	runtimeSetupErrorTotal.Delete(m.labels)
 	runtimeHealthCheckErrorTotal.Delete(m.labels)
 
@@ -78,4 +86,5 @@ func (m *runtimeMetrics) Forget() {
 func init() {
 	metrics.Registry.MustRegister(runtimeSetupErrorTotal, runtimeHealthCheckErrorTotal)
 	runtimeMetricsMap = map[string]*runtimeMetrics{}
+	runtimeMetricsMutex = &sync.Mutex{}
 }

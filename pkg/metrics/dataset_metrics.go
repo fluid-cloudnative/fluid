@@ -17,6 +17,8 @@ limitations under the License.
 package metrics
 
 import (
+	"sync"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
@@ -33,6 +35,7 @@ var (
 	}, []string{"dataset"})
 )
 
+var datasetMetricsMutex *sync.Mutex // race condition protection for datasetMetricsMap's concurrent writes
 var datasetMetricsMap map[string]*datasetMetrics
 
 type datasetMetrics struct {
@@ -41,6 +44,9 @@ type datasetMetrics struct {
 }
 
 func GetDatasetMetrics(namespace, name string) *datasetMetrics {
+	datasetMetricsMutex.Lock()
+	defer datasetMetricsMutex.Unlock()
+
 	key := labelKeyFunc(namespace, name)
 
 	if m, exists := datasetMetricsMap[key]; exists {
@@ -65,6 +71,9 @@ func (m *datasetMetrics) SetUFSFileNum(num float64) {
 }
 
 func (m *datasetMetrics) Forget() {
+	datasetMetricsMutex.Lock()
+	defer datasetMetricsMutex.Unlock()
+
 	datasetUFSTotalSize.Delete(m.labels)
 	datasetUFSFileNum.Delete(m.labels)
 
@@ -74,4 +83,5 @@ func (m *datasetMetrics) Forget() {
 func init() {
 	metrics.Registry.MustRegister(datasetUFSFileNum, datasetUFSTotalSize)
 	datasetMetricsMap = map[string]*datasetMetrics{}
+	datasetMetricsMutex = &sync.Mutex{}
 }
