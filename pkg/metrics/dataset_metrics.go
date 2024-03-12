@@ -35,8 +35,7 @@ var (
 	}, []string{"dataset"})
 )
 
-var datasetMetricsMutex *sync.RWMutex // race condition protection for datasetMetricsMap's concurrent writes
-var datasetMetricsMap map[string]*datasetMetrics
+var datasetMetricsMap sync.Map // race condition protection for datasetMetricsMap's concurrent writes
 
 type datasetMetrics struct {
 	datasetKey string
@@ -45,23 +44,14 @@ type datasetMetrics struct {
 
 func GetDatasetMetrics(namespace, name string) *datasetMetrics {
 	key := labelKeyFunc(namespace, name)
-
-	datasetMetricsMutex.RLock()
-	defer datasetMetricsMutex.RUnlock()
-	if m, exists := datasetMetricsMap[key]; exists {
-		return m
-	}
-
-	ret := &datasetMetrics{
+	m := &datasetMetrics{
 		datasetKey: key,
 		labels:     prometheus.Labels{"dataset": key},
 	}
 
-	datasetMetricsMutex.Lock()
-	defer datasetMetricsMutex.Unlock()
-	datasetMetricsMap[key] = ret
+	ret, _ := datasetMetricsMap.LoadOrStore(key, m)
 
-	return ret
+	return ret.(*datasetMetrics)
 }
 
 func (m *datasetMetrics) SetUFSTotalSize(size float64) {
@@ -73,17 +63,13 @@ func (m *datasetMetrics) SetUFSFileNum(num float64) {
 }
 
 func (m *datasetMetrics) Forget() {
-	datasetMetricsMutex.Lock()
-	defer datasetMetricsMutex.Unlock()
-
 	datasetUFSTotalSize.Delete(m.labels)
 	datasetUFSFileNum.Delete(m.labels)
 
-	delete(datasetMetricsMap, m.datasetKey)
+	datasetMetricsMap.Delete(m.datasetKey)
 }
 
 func init() {
 	metrics.Registry.MustRegister(datasetUFSFileNum, datasetUFSTotalSize)
-	datasetMetricsMap = map[string]*datasetMetrics{}
-	datasetMetricsMutex = &sync.RWMutex{}
+	datasetMetricsMap = sync.Map{}
 }
