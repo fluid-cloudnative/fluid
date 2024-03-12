@@ -8,7 +8,9 @@ Fluid introduces cache elasticity scaling capabilities through a custom HPA mech
 This document will show you this feature.
 
 ## Prerequisite
-It is recommended to use Kubernetes 1.18 onwards, because before 1.18, HPA is not able to customize the scaling policy, it is hard-coded. After 1.18, users can customize the scale-out and scale-in policies, such as defining the cooling time after a scaling.
+1. It is recommended to use Kubernetes 1.18 onwards, because before 1.18, HPA is not able to customize the scaling policy, it is hard-coded. After 1.18, users can customize the scale-out and scale-in policies, such as defining the cooling time after a scaling.
+
+2. Fluid has been installed. If not, please follow the [installation guide](../userguide/install.md).
 
 
 ## Steps
@@ -19,21 +21,18 @@ It is recommended to use Kubernetes 1.18 onwards, because before 1.18, HPA is no
 $ yum install -y jq
 ```
 
-2. Download and install Fluid latest version
+2. Download the community repo if needed
 
 ```shell
-$ git clone https://github.com/fluid-cloudnative/fluid.git
-$ cd fluid/charts
-$ kubectl create ns fluid-system
-$ helm install fluid fluid
+$ git clone https://github.com/fluid-cloudnative/community.git
 ```
 
 3. Deploy or configure Prometheus
 
-Metrics exposed by AlluxioRuntime's cache engine are collected here by Prometheus. If there is no Prometheus in the cluster:
+Metrics exposed by the cache engine of AlluxioRuntime are collected here by Prometheus. If there is no Prometheus in your cluster, you can use the following example for a quick try. However, this method is not recommended for production use. Please follow the [Installation guide](https://prometheus.io/docs/prometheus/latest/installation/) to set up Prometheus correctly in your production environment.:
 
 ```shell
-$ cd fluid
+$ cd community
 $ kubectl apply -f integration/prometheus/prometheus.yaml
 ```
 

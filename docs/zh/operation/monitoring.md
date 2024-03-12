@@ -14,7 +14,7 @@ Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
 
 #### 1. 部署或配置 Prometheus
 
-如果集群内无 prometheus:
+如果你的集群中没有Prometheus，你可以使用以下示例进行快速尝试。然而，这种方法并不推荐在生产环境中使用。请按照[安装指南](https://prometheus.io/docs/prometheus/latest/installation/)来正确地在你的生产环境中设置Prometheus。
 
 ```shell
 $ cd fluid
