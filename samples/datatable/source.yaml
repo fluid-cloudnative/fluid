@@ -1,0 +1,9 @@
+# presto 的连接源
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: presto-source 
+data:
+  hive.properties: |
+    connector.name=hive-hadoop2
+    hive.metastore.uri=thrift:<hive-url>
