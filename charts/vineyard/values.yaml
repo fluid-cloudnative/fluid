@@ -99,6 +99,7 @@ fuse:
   image: vineyardcloudnative/vineyard-fluid-fuse
   imageTag: latest
   imagePullPolicy: IfNotPresent
+  env: {}
   targetPath: ""
   nodeSelector: {}
 

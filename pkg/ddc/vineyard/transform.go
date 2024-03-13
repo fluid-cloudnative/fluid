@@ -155,6 +155,11 @@ func (e *VineyardEngine) transformFuse(runtime *datav1alpha1.VineyardRuntime, va
 	imagePullPolicy := runtime.Spec.Fuse.ImagePullPolicy
 	value.Fuse.Image, value.Fuse.ImageTag, value.Fuse.ImagePullPolicy = e.parseFuseImage(image, imageTag, imagePullPolicy)
 
+	if len(runtime.Spec.Fuse.Env) > 0 {
+		value.Fuse.Env = runtime.Spec.Fuse.Env
+	} else {
+		value.Fuse.Env = map[string]string{}
+	}
 	value.Fuse.CleanPolicy = runtime.Spec.Fuse.CleanPolicy
 
 	value.Fuse.NodeSelector = e.transformFuseNodeSelector(runtime)

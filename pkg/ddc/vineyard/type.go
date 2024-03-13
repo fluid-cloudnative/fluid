@@ -78,6 +78,7 @@ type Fuse struct {
 	Image           string                       `json:"image,omitempty"`
 	ImageTag        string                       `json:"imageTag,omitempty"`
 	ImagePullPolicy string                       `json:"imagePullPolicy,omitempty"`
+	Env             map[string]string            `json:"env,omitempty"`
 	CleanPolicy     datav1alpha1.FuseCleanPolicy `json:"cleanPolicy,omitempty"`
 	TargetPath      string                       `json:"targetPath,omitempty"`
 	NodeSelector    map[string]string            `json:"nodeSelector,omitempty"`
