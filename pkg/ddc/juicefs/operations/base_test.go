@@ -479,7 +479,7 @@ func TestJuiceFileUtils_GetUsedSpace(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	a := &JuiceFileUtils{log: fake.NullLogger()}
-	_, err = a.GetUsedSpace("/tmp")
+	_, err = a.GetUsedSpace("/runtime-mnt/juicefs/kube-system/jfsdemo/juicefs-fuse")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
@@ -489,7 +489,7 @@ func TestJuiceFileUtils_GetUsedSpace(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	usedSpace, err := a.GetUsedSpace("/tmp")
+	usedSpace, err := a.GetUsedSpace("/runtime-mnt/juicefs/kube-system/jfsdemo/juicefs-fuse")
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
