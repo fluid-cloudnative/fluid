@@ -85,8 +85,6 @@ spec:
           - name: FLUID_SYNC_RETRY_DURATION
             value: {{ .Values.runtime.syncRetryDuration | quote }}
           {{- end }}
-          - name: HOST_PID
-            value: {{ .Values.runtime.hostPID | quote }}
         ports:
         - containerPort: 8080
           name: metrics

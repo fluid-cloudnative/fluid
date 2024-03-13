@@ -96,8 +96,6 @@ spec:
             {{- end }}
             value: {{ join "," $secretList | quote }}
           {{- end }}
-          - name: HOST_PID
-            value: {{ .Values.runtime.hostPID | quote }}
         ports:
         - containerPort: 8080
           name: metrics

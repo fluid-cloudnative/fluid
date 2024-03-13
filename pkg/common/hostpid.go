@@ -17,10 +17,22 @@ limitations under the License.
 package common
 
 import (
-	runtimeOpts "github.com/fluid-cloudnative/fluid/pkg/utils/runtimes/options"
+	"strconv"
 )
 
 // HostPIDEnabled check if HostPID is true for runtime fuse pod.
-func HostPIDEnabled() bool {
-	return runtimeOpts.HostPIDEnabled()
+func HostPIDEnabled(annotations map[string]string) bool {
+	if annotations == nil {
+		return false
+	}
+	value, exist := annotations[RuntimeFuseHostPIDKey]
+	if !exist {
+		return false
+	}
+	enabled, err := strconv.ParseBool(value)
+	// If parse failed, return false
+	if err != nil {
+		return false
+	}
+	return enabled
 }

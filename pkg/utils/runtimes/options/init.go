@@ -29,5 +29,4 @@ var (
 func init() {
 	setPortCheckOption()
 	setCriticalFusePodOption()
-	setHostPIDOption()
 }

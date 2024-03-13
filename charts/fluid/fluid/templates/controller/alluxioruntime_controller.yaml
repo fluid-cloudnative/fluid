@@ -98,8 +98,6 @@ spec:
             value: {{ template "fluid.helmDriver" .}}
           - name: ALLUXIO_MOUNT_CONFIG_STORAGE
             value: {{ .Values.runtime.alluxio.mountConfigStorage }}
-          - name: HOST_PID
-            value: {{ .Values.runtime.hostPID | quote }}
         ports:
         - containerPort: 8080
           name: metrics

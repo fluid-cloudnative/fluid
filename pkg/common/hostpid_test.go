@@ -16,15 +16,55 @@ limitations under the License.
 
 package common
 
-import (
-	"testing"
-)
+import "testing"
 
 func TestHostPIDEnabled(t *testing.T) {
-	want := false
-	got := HostPIDEnabled()
-
-	if got != want {
-		t.Errorf("want %v, got %v", want, got)
+	type args struct {
+		annotations map[string]string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "nil, return false",
+			args: args{
+				annotations: nil,
+			},
+			want: false,
+		},
+		{
+			name: "not exist, return false",
+			args: args{
+				annotations: map[string]string{},
+			},
+			want: false,
+		},
+		{
+			name: "wrong value, return false",
+			args: args{
+				annotations: map[string]string{
+					RuntimeFuseHostPIDKey: "sss",
+				},
+			},
+			want: false,
+		},
+		{
+			name: "exist, return true",
+			args: args{
+				annotations: map[string]string{
+					RuntimeFuseHostPIDKey: "true",
+				},
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := HostPIDEnabled(tt.args.annotations); got != tt.want {
+				t.Errorf("HostPIDEnabled() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

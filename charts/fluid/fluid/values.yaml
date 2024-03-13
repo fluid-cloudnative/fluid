@@ -52,7 +52,6 @@ runtime:
   criticalFusePod: true
   syncRetryDuration: 15s
   mountRoot: /runtime-mnt
-  hostPID: false
   alluxio:
     replicas: 1
     tolerations:
