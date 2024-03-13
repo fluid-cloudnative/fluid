@@ -46,7 +46,7 @@ type runtimeMetrics struct {
 	labels prometheus.Labels
 }
 
-func GetRuntimeMetrics(runtimeType, runtimeNamespace, runtimeName string) *runtimeMetrics {
+func GetOrCreateRuntimeMetrics(runtimeType, runtimeNamespace, runtimeName string) *runtimeMetrics {
 	key := labelKeyFunc(runtimeNamespace, runtimeName)
 	m := &runtimeMetrics{
 		runtimeType: runtimeType,

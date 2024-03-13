@@ -42,7 +42,7 @@ type datasetMetrics struct {
 	labels     prometheus.Labels
 }
 
-func GetDatasetMetrics(namespace, name string) *datasetMetrics {
+func GetOrCreateDatasetMetrics(namespace, name string) *datasetMetrics {
 	key := labelKeyFunc(namespace, name)
 	m := &datasetMetrics{
 		datasetKey: key,

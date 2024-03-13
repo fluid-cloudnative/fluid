@@ -18,6 +18,7 @@ package app
 
 import (
 	"os"
+	"time"
 	// +kubebuilder:scaffold:imports
 
 	"github.com/fluid-cloudnative/fluid"
@@ -59,6 +60,14 @@ var (
 	kubeClientBurst int
 )
 
+// configuration for controllers' rate limiter
+var (
+	controllerWorkqueueDefaultSyncBackoffStr string
+	controllerWorkqueueMaxSyncBackoffStr     string
+	controllerWorkqueueQPS                   int
+	controllerWorkqueueBurst                 int
+)
+
 var alluxioCmd = &cobra.Command{
 	Use:   "start",
 	Short: "start alluxioruntime-controller in Kubernetes",
@@ -81,6 +90,10 @@ func init() {
 	alluxioCmd.Flags().StringVar(&portAllocatePolicy, "port-allocate-policy", "random", "Set port allocating policy, available choice is bitmap or random(default random).")
 	alluxioCmd.Flags().Float32VarP(&kubeClientQPS, "kube-api-qps", "", 20, "QPS to use while talking with kubernetes apiserver.")   // 20 is the default qps in controller-runtime
 	alluxioCmd.Flags().IntVarP(&kubeClientBurst, "kube-api-burst", "", 30, "Burst to use while talking with kubernetes apiserver.") // 30 is the default burst in controller-runtime
+	alluxioCmd.Flags().StringVar(&controllerWorkqueueDefaultSyncBackoffStr, "workqueue-default-sync-backoff", "5ms", "base backoff period for failed reconcilation in controller's workqueue")
+	alluxioCmd.Flags().StringVar(&controllerWorkqueueMaxSyncBackoffStr, "workqueue-max-sync-backoff", "1000s", "max backoff period for failed reconcilation in controller's workqueue")
+	alluxioCmd.Flags().IntVar(&controllerWorkqueueQPS, "workqueue-qps", 10, "qps limit value for controller's workqueue")
+	alluxioCmd.Flags().IntVar(&controllerWorkqueueBurst, "workqueue-burst", 100, "burst limit value for controller's workqueue")
 }
 
 func handle() {
@@ -115,8 +128,21 @@ func handle() {
 		os.Exit(1)
 	}
 
+	defaultSyncBackoff, err := time.ParseDuration(controllerWorkqueueDefaultSyncBackoffStr)
+	if err != nil {
+		setupLog.Error(err, "workqueue-default-sync-backoff is not a valid duration, please use string like \"100ms\", \"5s\", \"3m\", ...")
+		os.Exit(1)
+	}
+
+	maxSyncBackoff, err := time.ParseDuration(controllerWorkqueueMaxSyncBackoffStr)
+	if err != nil {
+		setupLog.Error(err, "workqueue-max-sync-backoff is not a valid duration, please use string like \"100ms\", \"5s\", \"3m\", ...)")
+		os.Exit(1)
+	}
+
 	controllerOptions := controller.Options{
 		MaxConcurrentReconciles: maxConcurrentReconciles,
+		RateLimiter:             controllers.NewFluidControllerRateLimiter(defaultSyncBackoff, maxSyncBackoff, controllerWorkqueueQPS, controllerWorkqueueBurst),
 	}
 
 	if err = (alluxioctl.NewRuntimeReconciler(mgr.GetClient(),

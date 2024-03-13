@@ -83,7 +83,7 @@ func RecordDatasetMetrics(result MetadataSyncResult, datasetNamespace, datasetNa
 
 	if len(result.UfsTotal) != 0 {
 		if ufsTotal, parseErr := utils.FromHumanSize(result.UfsTotal); parseErr == nil {
-			metrics.GetDatasetMetrics(datasetNamespace, datasetName).SetUFSTotalSize(float64(ufsTotal))
+			metrics.GetOrCreateDatasetMetrics(datasetNamespace, datasetName).SetUFSTotalSize(float64(ufsTotal))
 		} else {
 			log.Error(parseErr, "fail to parse result.UfsTotal", "result.UfsTotal", result.UfsTotal)
 		}
@@ -91,7 +91,7 @@ func RecordDatasetMetrics(result MetadataSyncResult, datasetNamespace, datasetNa
 
 	if len(result.FileNum) != 0 {
 		if fileNum, parseErr := strconv.Atoi(result.FileNum); parseErr == nil {
-			metrics.GetDatasetMetrics(datasetNamespace, datasetName).SetUFSFileNum(float64(fileNum))
+			metrics.GetOrCreateDatasetMetrics(datasetNamespace, datasetName).SetUFSFileNum(float64(fileNum))
 		} else {
 			log.Error(parseErr, "fail to atoi result.FileNum", "result.FileNum", result.FileNum)
 		}
