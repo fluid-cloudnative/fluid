@@ -28,6 +28,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/security"
 )
 
 func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, dataset *datav1alpha1.Dataset, value *JuiceFS) (err error) {
@@ -36,7 +37,7 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 	}
 	mount := dataset.Spec.Mounts[0]
 
-	value.Configs.Name = mount.Name
+	value.Configs.Name = security.EscapeBashStr(mount.Name)
 
 	// transform image
 	image := runtime.Spec.Fuse.Image
@@ -129,7 +130,7 @@ func (j *JuiceFSEngine) transformFuseNodeSelector(runtime *datav1alpha1.JuiceFSR
 func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *datav1alpha1.Level, value *JuiceFS,
 	sharedOptions map[string]string, sharedEncryptOptions []datav1alpha1.EncryptOption) (map[string]string, error) {
 	options := make(map[string]string)
-	value.Configs.Name = mount.Name
+	value.Configs.Name = security.EscapeBashStr(mount.Name)
 	value.Configs.EncryptEnvOptions = make([]EncryptEnvOption, 0)
 	source := ""
 
@@ -238,7 +239,7 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 	}
 
 	if source == "" {
-		source = mount.Name
+		source = security.EscapeBashStr(mount.Name)
 	}
 
 	// transform source
@@ -355,7 +356,13 @@ func (j *JuiceFSEngine) genFuseMount(value *JuiceFS, optionMap map[string]string
 			}
 			optionMap["metrics"] = fmt.Sprintf("0.0.0.0:%d", metricsPort)
 		}
-		mountArgs = []string{common.JuiceFSCeMountPath, value.Source, value.Fuse.MountPath, "-o", strings.Join(genArgs(optionMap), ",")}
+		mountArgs = []string{
+			common.JuiceFSCeMountPath,
+			value.Source,
+			security.EscapeBashStr(value.Fuse.MountPath),
+			"-o",
+			security.EscapeBashStr(strings.Join(genArgs(optionMap), ",")),
+		}
 	} else {
 		if readonly {
 			optionMap["attrcacheto"] = "7200"
@@ -374,11 +381,17 @@ func (j *JuiceFSEngine) genFuseMount(value *JuiceFS, optionMap map[string]string
 		optionMap["cache-group"] = cacheGroup
 		optionMap["no-sharing"] = ""
 
-		mountArgs = []string{common.JuiceFSMountPath, value.Source, value.Fuse.MountPath, "-o", strings.Join(genArgs(optionMap), ",")}
+		mountArgs = []string{
+			common.JuiceFSMountPath,
+			value.Source,
+			security.EscapeBashStr(value.Fuse.MountPath),
+			"-o",
+			security.EscapeBashStr(strings.Join(genArgs(optionMap), ",")),
+		}
 	}
 
 	value.Fuse.Command = strings.Join(mountArgs, " ")
-	value.Fuse.StatCmd = "stat -c %i " + value.Fuse.MountPath
+	value.Fuse.StatCmd = "stat -c %i " + security.EscapeBashStr(value.Fuse.MountPath)
 	return nil
 }
 
@@ -408,7 +421,7 @@ func (j *JuiceFSEngine) genFormatCmd(value *JuiceFS, config *[]string, options m
 		for _, option := range *config {
 			o := strings.TrimSpace(option)
 			if o != "" {
-				args = append(args, fmt.Sprintf("--%s", o))
+				args = append(args, fmt.Sprintf("--%s", security.EscapeBashStr(o)))
 			}
 		}
 	}
@@ -424,20 +437,20 @@ func (j *JuiceFSEngine) genFormatCmd(value *JuiceFS, config *[]string, options m
 			args = append(args, "--no-update")
 		}
 		if value.Configs.Storage != "" {
-			args = append(args, fmt.Sprintf("--storage=%s", value.Configs.Storage))
+			args = append(args, fmt.Sprintf("--storage=%s", security.EscapeBashStr(value.Configs.Storage)))
 		}
 		if value.Configs.Bucket != "" {
-			args = append(args, fmt.Sprintf("--bucket=%s", value.Configs.Bucket))
+			args = append(args, fmt.Sprintf("--bucket=%s", security.EscapeBashStr(value.Configs.Bucket)))
 		}
 		formatOpts := ceFilter.filterOption(options)
 		for k, v := range formatOpts {
-			args = append(args, fmt.Sprintf("--%s=%s", k, v))
+			args = append(args, fmt.Sprintf("--%s=%s", security.EscapeBashStr(k), security.EscapeBashStr(v)))
 		}
 		encryptOptions := ceFilter.filterEncryptEnvOptions(value.Configs.EncryptEnvOptions)
 		for _, v := range encryptOptions {
-			args = append(args, fmt.Sprintf("--%s=${%s}", v.Name, v.EnvName))
+			args = append(args, fmt.Sprintf("--%s=${%s}", security.EscapeBashStr(v.Name), v.EnvName))
 		}
-		args = append(args, value.Source, value.Configs.Name)
+		args = append(args, value.Source, security.EscapeBashStr(value.Configs.Name))
 		cmd := append([]string{common.JuiceCeCliPath, "format"}, args...)
 		value.Configs.FormatCmd = strings.Join(cmd, " ")
 		return
@@ -455,15 +468,15 @@ func (j *JuiceFSEngine) genFormatCmd(value *JuiceFS, config *[]string, options m
 		args = append(args, "--secretkey=${SECRET_KEY}")
 	}
 	if value.Configs.Bucket != "" {
-		args = append(args, fmt.Sprintf("--bucket=%s", value.Configs.Bucket))
+		args = append(args, fmt.Sprintf("--bucket=%s", security.EscapeBashStr(value.Configs.Bucket)))
 	}
 	formatOpts := eeFilter.filterOption(options)
 	for k, v := range formatOpts {
-		args = append(args, fmt.Sprintf("--%s=%s", k, v))
+		args = append(args, fmt.Sprintf("--%s=%s", security.EscapeBashStr(k), security.EscapeBashStr(v)))
 	}
 	encryptOptions := eeFilter.filterEncryptEnvOptions(value.Configs.EncryptEnvOptions)
 	for _, v := range encryptOptions {
-		args = append(args, fmt.Sprintf("--%s=${%s}", v.Name, v.EnvName))
+		args = append(args, fmt.Sprintf("--%s=${%s}", security.EscapeBashStr(v.Name), v.EnvName))
 	}
 	args = append(args, value.Source)
 	cmd := append([]string{common.JuiceCliPath, "auth"}, args...)
@@ -499,13 +512,13 @@ func (j *JuiceFSEngine) genQuotaCmd(value *JuiceFS, mount datav1alpha1.Mount) er
 			if value.Edition == CommunityEdition {
 				// ce
 				// juicefs quota set ${metaurl} --path ${path} --capacity ${capacity}
-				value.Configs.QuotaCmd = fmt.Sprintf("%s quota set %s --path %s --capacity %d", common.JuiceCeCliPath, value.Source, value.Fuse.SubPath, qs)
+				value.Configs.QuotaCmd = fmt.Sprintf("%s quota set %s --path %s --capacity %d", common.JuiceCeCliPath, value.Source, security.EscapeBashStr(value.Fuse.SubPath), qs)
 				return nil
 			}
 			// ee
 			// juicefs quota set ${metaurl} --path ${path} --capacity ${capacity}
 			cli := common.JuiceCliPath
-			value.Configs.QuotaCmd = fmt.Sprintf("%s quota set %s --path %s --capacity %d", cli, value.Source, value.Fuse.SubPath, qs)
+			value.Configs.QuotaCmd = fmt.Sprintf("%s quota set %s --path %s --capacity %d", cli, value.Source, security.EscapeBashStr(value.Fuse.SubPath), qs)
 			return nil
 		}
 	}

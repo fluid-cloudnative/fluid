@@ -38,7 +38,7 @@ func mockExecCommandInContainerForTotalFileNums() (stdout string, stderr string,
 }
 
 func mockExecCommandInContainerForUsedStorageBytes() (stdout string, stderr string, err error) {
-	r := `JuiceFS:test 207300683100160  41460043776 207259223056384   1% /data`
+	r := `JuiceFS:test 207300683100160  41460043776 207259223056384   1% /juicefs/juicefs/test/juicefs-fuse`
 	return r, "", nil
 }
 
@@ -46,7 +46,7 @@ func TestTotalStorageBytes(t *testing.T) {
 	statefulSet := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-worker",
-			Namespace: "fluid",
+			Namespace: "juicefs",
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Selector: &metav1.LabelSelector{
@@ -57,7 +57,7 @@ func TestTotalStorageBytes(t *testing.T) {
 	var pod = &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-work-0",
-			Namespace: "fluid",
+			Namespace: "juicefs",
 			Labels:    map[string]string{"a": "b"},
 		},
 		Status: corev1.PodStatus{
@@ -93,11 +93,11 @@ func TestTotalStorageBytes(t *testing.T) {
 			name: "test",
 			fields: fields{
 				name:      "test",
-				namespace: "fluid",
+				namespace: "juicefs",
 				runtime: &datav1alpha1.JuiceFSRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
-						Namespace: "fluid",
+						Namespace: "juicefs",
 					},
 				},
 			},
