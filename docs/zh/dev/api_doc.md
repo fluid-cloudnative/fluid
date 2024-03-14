@@ -906,7 +906,7 @@ PodMetadata
 </em>
 </td>
 <td>
-<p>PodMetadata defines labels and annotations that will be propagated to DataLoad pods</p>
+<p>PodMetadata defines labels and annotations that will be propagated to DataMigrate pods</p>
 </td>
 </tr>
 <tr>
@@ -920,7 +920,7 @@ Kubernetes core/v1.Affinity
 </td>
 <td>
 <em>(Optional)</em>
-<p>Affinity defines affinity for DataLoad pod</p>
+<p>Affinity defines affinity for DataMigrate pod</p>
 </td>
 </tr>
 <tr>
@@ -934,7 +934,7 @@ Kubernetes core/v1.Affinity
 </td>
 <td>
 <em>(Optional)</em>
-<p>Tolerations defines tolerations for DataLoad pod</p>
+<p>Tolerations defines tolerations for DataMigrate pod</p>
 </td>
 </tr>
 <tr>
@@ -946,7 +946,7 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
-<p>NodeSelector defiens node selector for DataLoad pod</p>
+<p>NodeSelector defiens node selector for DataMigrate pod</p>
 </td>
 </tr>
 <tr>
@@ -958,7 +958,7 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>SchedulerName sets the scheduler to be used for DataLoad pod</p>
+<p>SchedulerName sets the scheduler to be used for DataMigrate pod</p>
 </td>
 </tr>
 <tr>
@@ -999,6 +999,31 @@ Kubernetes core/v1.ResourceRequirements
 <td>
 <em>(Optional)</em>
 <p>Resources that will be requested by the DataMigrate job. <br></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>parallelism</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Parallelism defines the parallelism tasks numbers for DataMigrate. If the value is greater than 1, the job acts
+as a launcher, and users should define the WorkerSpec.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>parallelOptions</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ParallelOptions defines options like ssh port and ssh secret name when parallelism is greater than 1.</p>
 </td>
 </tr>
 </table>
@@ -1085,7 +1110,10 @@ DatasetSpec
 </em>
 </td>
 <td>
-<p>Mount Points to be mounted on Alluxio.</p>
+<em>(Optional)</em>
+<p>Mount Points to be mounted on cache runtime. <br>
+This field can be empty because some runtimes don&rsquo;t need to mount external storage (e.g.
+<a href="https://v6d.io/">Vineyard</a>).</p>
 </td>
 </tr>
 <tr>
@@ -3754,7 +3782,7 @@ PodMetadata
 </em>
 </td>
 <td>
-<p>PodMetadata defines labels and annotations that will be propagated to DataLoad pods</p>
+<p>PodMetadata defines labels and annotations that will be propagated to DataMigrate pods</p>
 </td>
 </tr>
 <tr>
@@ -3768,7 +3796,7 @@ Kubernetes core/v1.Affinity
 </td>
 <td>
 <em>(Optional)</em>
-<p>Affinity defines affinity for DataLoad pod</p>
+<p>Affinity defines affinity for DataMigrate pod</p>
 </td>
 </tr>
 <tr>
@@ -3782,7 +3810,7 @@ Kubernetes core/v1.Affinity
 </td>
 <td>
 <em>(Optional)</em>
-<p>Tolerations defines tolerations for DataLoad pod</p>
+<p>Tolerations defines tolerations for DataMigrate pod</p>
 </td>
 </tr>
 <tr>
@@ -3794,7 +3822,7 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
-<p>NodeSelector defiens node selector for DataLoad pod</p>
+<p>NodeSelector defiens node selector for DataMigrate pod</p>
 </td>
 </tr>
 <tr>
@@ -3806,7 +3834,7 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>SchedulerName sets the scheduler to be used for DataLoad pod</p>
+<p>SchedulerName sets the scheduler to be used for DataMigrate pod</p>
 </td>
 </tr>
 <tr>
@@ -3847,6 +3875,31 @@ Kubernetes core/v1.ResourceRequirements
 <td>
 <em>(Optional)</em>
 <p>Resources that will be requested by the DataMigrate job. <br></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>parallelism</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Parallelism defines the parallelism tasks numbers for DataMigrate. If the value is greater than 1, the job acts
+as a launcher, and users should define the WorkerSpec.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>parallelOptions</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ParallelOptions defines options like ssh port and ssh secret name when parallelism is greater than 1.</p>
 </td>
 </tr>
 </tbody>
@@ -4238,7 +4291,10 @@ Kubernetes meta/v1.Time
 </em>
 </td>
 <td>
-<p>Mount Points to be mounted on Alluxio.</p>
+<em>(Optional)</em>
+<p>Mount Points to be mounted on cache runtime. <br>
+This field can be empty because some runtimes don&rsquo;t need to mount external storage (e.g.
+<a href="https://v6d.io/">Vineyard</a>).</p>
 </td>
 </tr>
 <tr>
@@ -10140,6 +10196,19 @@ Available values are <code>Always</code>, <code>IfNotPresent</code>, <code>Never
 </tr>
 <tr>
 <td>
+<code>env</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Environment variables that will be used by Vineyard Fuse.
+Default is not set.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>cleanPolicy</code></br>
 <em>
 <a href="#data.fluid.io/v1alpha1.FuseCleanPolicy">
@@ -10239,5 +10308,5 @@ bool
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>c7cfb1888</code>.
+on git commit <code>b9800030e</code>.
 </em></p>

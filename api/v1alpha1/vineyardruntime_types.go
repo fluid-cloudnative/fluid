@@ -157,6 +157,11 @@ type VineyardSockSpec struct {
 	// +optional
 	ImagePullPolicy string `json:"imagePullPolicy,omitempty"`
 
+	// Environment variables that will be used by Vineyard Fuse.
+	// Default is not set.
+	// +optional
+	Env map[string]string `json:"env,omitempty"`
+
 	// CleanPolicy decides when to clean Vineyard Fuse pods.
 	// Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
 	// OnDemand cleans fuse pod once th fuse pod on some node is not needed

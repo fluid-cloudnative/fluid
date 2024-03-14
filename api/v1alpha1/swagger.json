@@ -705,7 +705,7 @@
       ],
       "properties": {
         "affinity": {
-          "description": "Affinity defines affinity for DataLoad pod",
+          "description": "Affinity defines affinity for DataMigrate pod",
           "$ref": "#/definitions/v1.Affinity"
         },
         "block": {
@@ -730,7 +730,7 @@
           "type": "string"
         },
         "nodeSelector": {
-          "description": "NodeSelector defiens node selector for DataLoad pod",
+          "description": "NodeSelector defiens node selector for DataMigrate pod",
           "type": "object",
           "additionalProperties": {
             "type": "string",
@@ -745,8 +745,21 @@
             "default": ""
           }
         },
+        "parallelOptions": {
+          "description": "ParallelOptions defines options like ssh port and ssh secret name when parallelism is greater than 1.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "parallelism": {
+          "description": "Parallelism defines the parallelism tasks numbers for DataMigrate. If the value is greater than 1, the job acts as a launcher, and users should define the WorkerSpec.",
+          "type": "integer",
+          "format": "int32"
+        },
         "podMetadata": {
-          "description": "PodMetadata defines labels and annotations that will be propagated to DataLoad pods",
+          "description": "PodMetadata defines labels and annotations that will be propagated to DataMigrate pods",
           "default": {},
           "$ref": "#/definitions/.PodMetadata"
         },
@@ -772,7 +785,7 @@
           "type": "string"
         },
         "schedulerName": {
-          "description": "SchedulerName sets the scheduler to be used for DataLoad pod",
+          "description": "SchedulerName sets the scheduler to be used for DataMigrate pod",
           "type": "string"
         },
         "to": {
@@ -781,7 +794,7 @@
           "$ref": "#/definitions/.DataToMigrate"
         },
         "tolerations": {
-          "description": "Tolerations defines tolerations for DataLoad pod",
+          "description": "Tolerations defines tolerations for DataMigrate pod",
           "type": "array",
           "items": {
             "default": {},
@@ -1000,9 +1013,6 @@
     ".DatasetSpec": {
       "description": "DatasetSpec defines the desired state of Dataset",
       "type": "object",
-      "required": [
-        "mounts"
-      ],
       "properties": {
         "accessModes": {
           "description": "AccessModes contains all ways the volume backing the PVC can be mounted",
@@ -1017,7 +1027,7 @@
           "$ref": "#/definitions/.DataRestoreLocation"
         },
         "mounts": {
-          "description": "Mount Points to be mounted on Alluxio.",
+          "description": "Mount Points to be mounted on cache runtime. \u003cbr\u003e This field can be empty because some runtimes don't need to mount external storage (e.g. \u003ca href=\"https://v6d.io/\"\u003eVineyard\u003c/a\u003e).",
           "type": "array",
           "items": {
             "default": {},
@@ -3758,6 +3768,14 @@
         "cleanPolicy": {
           "description": "CleanPolicy decides when to clean Vineyard Fuse pods. Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted OnDemand cleans fuse pod once th fuse pod on some node is not needed OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted Defaults to OnRuntimeDeleted",
           "type": "string"
+        },
+        "env": {
+          "description": "Environment variables that will be used by Vineyard Fuse. Default is not set.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
         },
         "image": {
           "description": "Image for Vineyard Fuse Default is `vineyardcloudnative/vineyard-fluid-fuse`",
