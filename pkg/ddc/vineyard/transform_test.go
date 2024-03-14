@@ -38,9 +38,10 @@ func TestTransformFuse(t *testing.T) {
 	}))
 
 	var tests = []struct {
-		runtime *datav1alpha1.VineyardRuntime
-		value   *Vineyard
-		expect  []string
+		runtime   *datav1alpha1.VineyardRuntime
+		value     *Vineyard
+		expect    []string
+		expectEnv map[string]string
 	}{
 		{&datav1alpha1.VineyardRuntime{
 			Spec: datav1alpha1.VineyardRuntimeSpec{
@@ -48,10 +49,11 @@ func TestTransformFuse(t *testing.T) {
 					Image:           "dummy-fuse-image",
 					ImageTag:        "dummy-tag",
 					ImagePullPolicy: "IfNotPresent",
+					Env:             map[string]string{"TEST_ENV": "true"},
 					CleanPolicy:     "OnRuntimeDeleted",
 				},
 			},
-		}, &Vineyard{}, []string{"dummy-fuse-image", "dummy-tag", "IfNotPresent", "OnRuntimeDeleted"}},
+		}, &Vineyard{}, []string{"dummy-fuse-image", "dummy-tag", "IfNotPresent", "OnRuntimeDeleted"}, map[string]string{"TEST_ENV": "true"}},
 	}
 	for _, test := range tests {
 		engine := &VineyardEngine{}
@@ -70,7 +72,9 @@ func TestTransformFuse(t *testing.T) {
 		if string(test.value.Fuse.CleanPolicy) != test.expect[3] {
 			t.Errorf("Expected Fuse CleanPolicy %s, got %s", test.expect[3], test.value.Fuse.CleanPolicy)
 		}
-
+		if !reflect.DeepEqual(test.value.Fuse.Env, test.expectEnv) {
+			t.Errorf("Expected Fuse Env %v, got %v", test.expectEnv, test.value.Fuse.Env)
+		}
 	}
 }
 
