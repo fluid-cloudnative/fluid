@@ -29,12 +29,8 @@ $ git clone https://github.com/fluid-cloudnative/community.git
 
 3. Deploy or configure Prometheus
 
-Metrics exposed by the cache engine of AlluxioRuntime are collected here by Prometheus. If there is no Prometheus in your cluster, you can use the following example for a quick try. However, this method is not recommended for production use. Please follow the [Installation guide](https://prometheus.io/docs/prometheus/latest/installation/) to set up Prometheus correctly in your production environment.:
+Metrics exposed by the cache engine of AlluxioRuntime are collected here by Prometheus. If there is no Prometheus in your cluster, please follow the [Installation guide](https://prometheus.io/docs/prometheus/latest/installation/) to set up Prometheus correctly in your production environment.:
 
-```shell
-$ cd community
-$ kubectl apply -f integration/prometheus/prometheus.yaml
-```
 
 If you have Prometheus in your cluster, you can write the following configuration to the Prometheus configuration file:
 

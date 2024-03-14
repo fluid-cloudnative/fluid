@@ -36,21 +36,11 @@
 yum install -y jq
 ```
 
-2.下载、安装Fluid最新版
+2.Fluid应该已经被安装了。如果没有，请按照该[文档](../userguide/install.md)进行安装
 
-```
-git clone https://github.com/fluid-cloudnative/fluid.git
-cd fluid/charts
-kubectl create ns fluid-system
-helm install fluid fluid
-```
 
-3.部署或配置 kubernetes-cronhpa-controller
+3.请参考[文档](https://github.com/AliyunContainerService/kubernetes-cronhpa-controller)，部署或配置 kubernetes-cronhpa-controller
 
-```shell
-$ cd -
-$ kubectl apply -f fluid/integration/cronhpa
-```
 
 4.验证kubernetes-cronhpa-controller安装状态
 
