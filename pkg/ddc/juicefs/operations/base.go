@@ -28,6 +28,7 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/cmdguard"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/security"
 )
 
 type JuiceFileUtils struct {
@@ -113,12 +114,11 @@ func (j JuiceFileUtils) Count(juiceSubPath string) (total int64, err error) {
 func (j JuiceFileUtils) GetFileCount(juiceSubPath string) (fileCount int64, err error) {
 	var (
 		//strs    = "du -ah juiceSubPath |grep ^- |wc -l "
-		strs    = fmt.Sprintf("ls -lR %s |grep ^- |wc -l ", juiceSubPath)
+		strs    = fmt.Sprintf("ls -lR %s |grep ^- |wc -l ", security.EscapeBashStr(juiceSubPath))
 		command = []string{"bash", "-c", strs}
 		stdout  string
 		stderr  string
 	)
-
 	stdout, stderr, err = j.exec(command)
 	if err != nil {
 		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
@@ -249,11 +249,10 @@ func (j JuiceFileUtils) GetMetric(juicefsPath string) (metrics string, err error
 }
 
 // GetUsedSpace Get used space in byte
-// use "df --block-size=1 |grep <juicefsPath>'"
+// equal to `df --block-size=1 | grep juicefsPath`
 func (j JuiceFileUtils) GetUsedSpace(juicefsPath string) (usedSpace int64, err error) {
 	var (
-		strs    = fmt.Sprintf(`df --block-size=1 |grep %s`, juicefsPath)
-		command = []string{"bash", "-c", strs}
+		command = []string{"df", "--block-size=1"}
 		stdout  string
 		stderr  string
 	)
@@ -264,9 +263,15 @@ func (j JuiceFileUtils) GetUsedSpace(juicefsPath string) (usedSpace int64, err e
 		return
 	}
 
+	var str string
+	lines := strings.Split(stdout, "\n")
+	for _, line := range lines {
+		if strings.Contains(line, juicefsPath) {
+			str = line
+			break
+		}
+	}
 	// [<Filesystem>       <Size>  <Used> <Avail> <Use>% <Mounted on>]
-	str := strings.TrimSuffix(stdout, "\n")
-
 	data := strings.Fields(str)
 	if len(data) != 6 {
 		err = fmt.Errorf("failed to parse %s in GetUsedSpace method", data)
@@ -354,8 +359,8 @@ func (j JuiceFileUtils) QueryMetaDataInfoIntoFile(key KeyOfMetaDataFile, filenam
 		j.log.Error(errors.New("the key not in  metadatafile"), "key", key)
 	}
 	var (
-		str     = "sed -n '" + line + "' " + filename
-		command = []string{"bash", "-c", str}
+		str     = "'" + line + "' " + filename
+		command = []string{"sed", "-n", str}
 		stdout  string
 		stderr  string
 	)

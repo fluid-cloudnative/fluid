@@ -28,6 +28,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/security"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
 )
 
@@ -202,7 +203,13 @@ func (j *JuiceFSEngine) genWorkerMount(value *JuiceFS, workerOptionMap map[strin
 			}
 			workerOptionMap["metrics"] = fmt.Sprintf("0.0.0.0:%d", metricsPort)
 		}
-		mountArgsWorker = []string{common.JuiceFSCeMountPath, value.Source, value.Worker.MountPath, "-o", strings.Join(genArgs(workerOptionMap), ",")}
+		mountArgsWorker = []string{
+			common.JuiceFSCeMountPath,
+			value.Source,
+			security.EscapeBashStr(value.Worker.MountPath),
+			"-o",
+			security.EscapeBashStr(strings.Join(genArgs(workerOptionMap), ",")),
+		}
 	} else {
 		workerOptionMap["foreground"] = ""
 		// do not update config again
@@ -210,18 +217,24 @@ func (j *JuiceFSEngine) genWorkerMount(value *JuiceFS, workerOptionMap map[strin
 
 		// start independent cache cluster, refer to [juicefs cache sharing](https://juicefs.com/docs/cloud/cache/#client_cache_sharing)
 		// fuse and worker use the same cache-group, fuse use no-sharing
-		cacheGroup := fmt.Sprintf("%s-%s", j.namespace, value.FullnameOverride)
+		cacheGroup := fmt.Sprintf("%s-%s", j.namespace, security.EscapeBashStr(value.FullnameOverride))
 		if _, ok := workerOptionMap["cache-group"]; ok {
 			cacheGroup = workerOptionMap["cache-group"]
 		}
 		workerOptionMap["cache-group"] = cacheGroup
 		delete(workerOptionMap, "no-sharing")
 
-		mountArgsWorker = []string{common.JuiceFSMountPath, value.Source, value.Worker.MountPath, "-o", strings.Join(genArgs(workerOptionMap), ",")}
+		mountArgsWorker = []string{
+			common.JuiceFSMountPath,
+			value.Source,
+			security.EscapeBashStr(value.Worker.MountPath),
+			"-o",
+			security.EscapeBashStr(strings.Join(genArgs(workerOptionMap), ",")),
+		}
 	}
 
 	value.Worker.Command = strings.Join(mountArgsWorker, " ")
-	value.Worker.StatCmd = "stat -c %i " + value.Worker.MountPath
+	value.Worker.StatCmd = "stat -c %i " + security.EscapeBashStr(value.Worker.MountPath)
 }
 
 func (j *JuiceFSEngine) transformPlacementMode(dataset *datav1alpha1.Dataset, value *JuiceFS) {
