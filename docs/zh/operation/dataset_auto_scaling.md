@@ -95,11 +95,8 @@ NAME                       CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
 192.168.1.206   96m          2%     1689Mi          11%
 ```
 
-否则手动执行以下命令
+否则需要手动安装metrics server
 
-```shell
-$ kubectl create -f integration/metrics-server
-```
 
 6. 部署 custom-metrics-api 组件
 
@@ -133,13 +130,11 @@ data:
       metricsQuery: ceil(Cluster_CapacityUsed{<<.LabelMatchers>>}*100/(Cluster_CapacityTotal{<<.LabelMatchers>>}))
 ```
 
-否则手动执行以下命令
+否则可以通过[metrics server helm chart](https://github.com/helm/charts/tree/master/stable/metrics-server)手动安装。
 
 ```shell
-$ kubectl create -f integration/custom-metrics-api/namespace.yaml
 $ kubectl create -f integration/custom-metrics-api
 ```
-
 
 > 注意：因为 custom-metrics-api 对接集群中的 Prometheous 的访问地址，请替换 Prometheous url 为你真正使用的 Prometheous 地址。
 

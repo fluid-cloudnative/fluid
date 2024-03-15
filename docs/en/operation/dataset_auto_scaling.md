@@ -88,11 +88,7 @@ NAME                       CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
 192.168.1.206   96m          2%     1689Mi          11%
 ```
 
-Otherwise, manually execute the following command:
-
-```shell
-$ kubectl create -f integration/metrics-server
-```
+Otherwise, you need to install metrics server from [metrics helm chart repo](https://github.com/helm/charts/tree/master/stable/metrics-server).
 
 6. Deploy custom-metrics-api component
 
@@ -129,7 +125,6 @@ data:
 Otherwise, manually execute the following command:
 
 ```shell
-$ kubectl create -f integration/custom-metrics-api/namespace.yaml
 $ kubectl create -f integration/custom-metrics-api
 ```
 
