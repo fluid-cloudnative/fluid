@@ -51,10 +51,9 @@ $ docker run -d \
   --restart=always \
   --name grafana \
   grafana/grafana
-# In-CLuster deployment
-$ cd fluid
-$ kubectl apply -f integration/prometheus/grafana.yaml 
 ```
+
+You can install grafana in Kubernetes by following [docs](https://github.com/grafana/helm-charts/blob/main/charts/grafana/README.md).
 
 
 ## 3. Configure Grafana

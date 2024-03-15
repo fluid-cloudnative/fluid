@@ -56,11 +56,9 @@ $ docker run -d \
   --restart=always \
   --name grafana \
   grafana/grafana
-# In-CLuster 部署
-$ cd fluid
-$ kubectl apply -f integration/prometheus/grafana.yaml 
 ```
 
+如果在Kubernetes中部署，可以参考[文档](https://github.com/grafana/helm-charts/blob/main/charts/grafana/README.md)。
 
 #### 3. 配置 grafana
 
