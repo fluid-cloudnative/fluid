@@ -96,7 +96,6 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 		Group:           0,
 		FsGroup:         0,
 		UseHostNetwork:  true,
-		UseHostPID:      true,
 		Properties:      e.transformPriority(metaPath),
 		Master: Master{
 			ReplicaCount: e.transformReplicasCount(runtime),
@@ -433,6 +432,7 @@ func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, value *J
 
 	// set critical fuse pod to avoid eviction
 	value.Fuse.CriticalPod = common.CriticalFusePodEnabled()
+	value.Fuse.HostPID = common.HostPIDEnabled(runtime.Annotations)
 
 	return nil
 }

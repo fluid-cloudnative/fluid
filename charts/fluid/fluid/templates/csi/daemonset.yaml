@@ -28,7 +28,7 @@ spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       {{- end }}
-      hostPID: true
+      hostPID: {{ .Values.csi.hostPID }}
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

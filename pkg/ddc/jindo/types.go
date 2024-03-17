@@ -32,7 +32,6 @@ type Jindo struct {
 	Group           int                    `yaml:"group"`
 	FsGroup         int                    `yaml:"fsGroup"`
 	UseHostNetwork  bool                   `yaml:"useHostNetwork"`
-	UseHostPID      bool                   `yaml:"useHostPID"`
 	Properties      map[string]string      `yaml:"properties"`
 	Master          Master                 `yaml:"master"`
 	Worker          Worker                 `yaml:"worker"`
@@ -98,6 +97,7 @@ type Fuse struct {
 	Resources         Resources         `yaml:"resources,omitempty"`
 	MountPath         string            `yaml:"mountPath,omitempty"`
 	VirtualFuseDevice bool              `yaml:"virtualFuseDevice"`
+	HostPID           bool              `json:"hostPID,omitempty"`
 }
 
 type Mounts struct {

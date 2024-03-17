@@ -172,6 +172,7 @@ type Fuse struct {
 	ShortCircuitPolicy string            `yaml:"shortCircuitPolicy,omitempty"`
 	Args               []string          `yaml:"args,omitempty"`
 	HostNetwork        bool              `yaml:"hostNetwork,omitempty"`
+	HostPID            bool              `json:"hostPID,omitempty"`
 	Enabled            bool              `yaml:"enabled,omitempty"`
 	Resources          common.Resources  `yaml:"resources,omitempty"`
 	Global             bool              `yaml:"global,omitempty"`

@@ -48,6 +48,7 @@ worker:
   statCmd: "stat -c %i /mnt/jfs"
   podManagementPolicy: Parallel
   hostNetwork: false
+  hostPID: false
   resources:
     requests:
 #      cpu: "0.5"
@@ -81,6 +82,7 @@ configs:
 
 fuse:
   hostNetwork: false
+  hostPID: false
   subPath: ""
   criticalPod: false
   enabled: true

@@ -126,7 +126,6 @@ func (e *JindoCacheEngine) transform(runtime *datav1alpha1.JindoRuntime) (value 
 		User:                0,
 		Group:               0,
 		UseHostNetwork:      true,
-		UseHostPID:          true,
 		Properties:          e.transformPriority(metaPath),
 		Master: Master{
 			ReplicaCount: e.transformReplicasCount(runtime),
@@ -792,6 +791,7 @@ func (e *JindoCacheEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, val
 		}
 	}
 	value.Fuse.FuseProperties = properties
+	value.Fuse.HostPID = common.HostPIDEnabled(runtime.Annotations)
 
 	// set critical fuse pod to avoid eviction
 	value.Fuse.CriticalPod = common.CriticalFusePodEnabled()

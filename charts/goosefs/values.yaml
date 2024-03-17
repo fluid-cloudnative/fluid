@@ -87,7 +87,6 @@ master:
     embedded: 19200
     rpc: 19998
     web: 19999
-  hostPID: true
   hostNetwork: false
   # dnsPolicy will be ClusterFirstWithHostNet if hostNetwork: true
   # and ClusterFirst if hostNetwork: false
@@ -208,8 +207,6 @@ worker:
   ports:
     rpc: 29999
     web: 30000
-  # hostPID requires escalated privileges
-  hostPID: true
   hostNetwork: false
   # dnsPolicy will be ClusterFirstWithHostNet if hostNetwork: true
   # and ClusterFirst if hostNetwork: false
@@ -331,7 +328,7 @@ fuse:
     - "-XX:MaxDirectMemorySize=2g"
   hostNetwork: true
   # hostPID requires escalated privileges
-  hostPID: true
+  hostPID: false
   dnsPolicy: ClusterFirstWithHostNet
   user: 0
   group: 0
