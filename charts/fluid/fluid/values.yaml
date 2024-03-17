@@ -46,6 +46,7 @@ csi:
   # default method is "bindMount", "symlink" is also support
   # Notice: if use nodePublishMethod symlink, fuse recovery is not support
   nodePublishMethod: bindMount
+  hostPID: false
 
 runtime:
   criticalFusePod: true

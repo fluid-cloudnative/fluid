@@ -113,6 +113,7 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 
 	// parse fuse container network mode
 	value.Fuse.HostNetwork = datav1alpha1.IsHostNetwork(runtime.Spec.Fuse.NetworkMode)
+	value.Fuse.HostPID = common.HostPIDEnabled(runtime.Annotations)
 	return
 }
 

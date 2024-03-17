@@ -57,6 +57,7 @@ worker:
 fuse:
   criticalPod: false
   labels: {}
+  hostPID: false
   annotations: {}
   env: {}
   updateStrategy:

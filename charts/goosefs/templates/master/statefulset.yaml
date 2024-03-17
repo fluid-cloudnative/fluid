@@ -5,7 +5,6 @@
 {{- $isUfsLocal := and (eq .Values.journal.type "UFS") (eq .Values.journal.ufsType "local") }}
 {{- $needJournalVolume := or $isEmbedded $isUfsLocal }}
 {{- $hostNetwork := .Values.master.hostNetwork }}
-{{- $hostPID := .Values.master.hostPID }}
 {{- $name := include "goosefs.name" . }}
 {{- $fullName := include "goosefs.fullname" . }}
 {{- $chart := include "goosefs.chart" . }}
@@ -47,7 +46,6 @@ spec:
     spec:
       enableServiceLinks: false
       hostNetwork: {{ $hostNetwork }}
-      hostPID: {{ .Values.master.hostPID }}
       dnsPolicy: {{ .Values.master.dnsPolicy | default ($hostNetwork | ternary "ClusterFirstWithHostNet" "ClusterFirst") }}
       nodeSelector:
       {{- if .Values.master.nodeSelector }}

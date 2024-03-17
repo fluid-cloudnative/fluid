@@ -70,6 +70,7 @@ fuse:
   livenessProbe:
   readinessProbe:
   hostNetwork: true
+  hostPID: false
   configValue: ""
   configStorage: "configmap"
   volumes:

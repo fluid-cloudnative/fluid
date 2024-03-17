@@ -15,6 +15,7 @@ package vineyard
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"time"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -163,6 +164,7 @@ func (e *VineyardEngine) transformFuse(runtime *datav1alpha1.VineyardRuntime, va
 	value.Fuse.CleanPolicy = runtime.Spec.Fuse.CleanPolicy
 
 	value.Fuse.NodeSelector = e.transformFuseNodeSelector(runtime)
+	value.Fuse.HostPID = common.HostPIDEnabled(runtime.Annotations)
 
 	value.Fuse.TargetPath = e.getMountPoint()
 	e.transformResourcesForFuse(runtime, value)

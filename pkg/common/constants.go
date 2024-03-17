@@ -205,3 +205,7 @@ const (
 	EnvDisableApplicationController = "KEY_DISABLE_APP_CONTROLLER"
 	EnvImagePullSecretsKey          = "IMAGE_PULL_SECRETS"
 )
+
+const (
+	RuntimeFuseHostPIDKey = "runtime.fluid.io/fuse.hostpid"
+)

@@ -102,6 +102,7 @@ fuse:
   env: {}
   targetPath: ""
   nodeSelector: {}
+  hostPID: false
 
 owner:
   enabled: false

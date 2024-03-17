@@ -189,6 +189,7 @@ type Fuse struct {
 	ShortCircuitPolicy string               `json:"shortCircuitPolicy,omitempty"`
 	Args               []string             `json:"args,omitempty"`
 	HostNetwork        bool                 `json:"hostNetwork,omitempty"`
+	HostPID            bool                 `json:"hostPID,omitempty"`
 	Enabled            bool                 `json:"enabled,omitempty"`
 	Resources          common.Resources     `json:"resources,omitempty"`
 	Global             bool                 `json:"global,omitempty"`
