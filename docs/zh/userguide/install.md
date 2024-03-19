@@ -3,8 +3,8 @@
 ## 前提条件
 
 - Git
-- Kubernetes集群（version >= 1.16）, 并且支持CSI功能
-- kubectl（version >= 1.16）
+- Kubernetes集群（version >= 1.18）, 并且支持CSI功能
+- kubectl（version >= 1.18）
 - Helm（version >= 3.5）
 
 接下来的文档假设您已经配置好上述所有环境。

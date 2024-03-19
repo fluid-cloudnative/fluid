@@ -8,7 +8,9 @@ Fluid introduces cache elasticity scaling capabilities through a custom HPA mech
 This document will show you this feature.
 
 ## Prerequisite
-It is recommended to use Kubernetes 1.18 onwards, because before 1.18, HPA is not able to customize the scaling policy, it is hard-coded. After 1.18, users can customize the scale-out and scale-in policies, such as defining the cooling time after a scaling.
+1. It is recommended to use Kubernetes 1.18 onwards, because before 1.18, HPA is not able to customize the scaling policy, it is hard-coded. After 1.18, users can customize the scale-out and scale-in policies, such as defining the cooling time after a scaling.
+
+2. Fluid has been installed. If not, please follow the [installation guide](../userguide/install.md).
 
 
 ## Steps
@@ -19,23 +21,16 @@ It is recommended to use Kubernetes 1.18 onwards, because before 1.18, HPA is no
 $ yum install -y jq
 ```
 
-2. Download and install Fluid latest version
+2. Download the community repo if needed
 
 ```shell
-$ git clone https://github.com/fluid-cloudnative/fluid.git
-$ cd fluid/charts
-$ kubectl create ns fluid-system
-$ helm install fluid fluid
+$ git clone https://github.com/fluid-cloudnative/community.git
 ```
 
 3. Deploy or configure Prometheus
 
-Metrics exposed by AlluxioRuntime's cache engine are collected here by Prometheus. If there is no Prometheus in the cluster:
+Metrics exposed by the cache engine of AlluxioRuntime are collected here by Prometheus. If there is no Prometheus in your cluster, please follow the [Installation guide](https://prometheus.io/docs/prometheus/latest/installation/) to set up Prometheus correctly in your production environment.:
 
-```shell
-$ cd fluid
-$ kubectl apply -f integration/prometheus/prometheus.yaml
-```
 
 If you have Prometheus in your cluster, you can write the following configuration to the Prometheus configuration file:
 
@@ -93,11 +88,7 @@ NAME                       CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
 192.168.1.206   96m          2%     1689Mi          11%
 ```
 
-Otherwise, manually execute the following command:
-
-```shell
-$ kubectl create -f integration/metrics-server
-```
+Otherwise, you need to install metrics server from [metrics helm chart repo](https://github.com/helm/charts/tree/master/stable/metrics-server).
 
 6. Deploy custom-metrics-api component
 
@@ -134,7 +125,6 @@ data:
 Otherwise, manually execute the following command:
 
 ```shell
-$ kubectl create -f integration/custom-metrics-api/namespace.yaml
 $ kubectl create -f integration/custom-metrics-api
 ```
 

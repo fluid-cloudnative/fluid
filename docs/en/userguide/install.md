@@ -3,8 +3,8 @@
 ## Prerequisites
 
 - Git
-- Kubernetes cluster（version >= 1.16）, and support CSI
-- kubectl（version >= 1.16）
+- Kubernetes cluster（version >= 1.18）, and support CSI
+- kubectl（version >= 1.18）
 - [Helm](https://helm.sh/)（version >= 3.5）
 
 The following documents assume that you have installed all the above requirements.
