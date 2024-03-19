@@ -1,11 +1,13 @@
 # Deploy Prometheus and Grafana to monitor Fluid applications
-Note: Prometheus requires In-Cluster deployment
+
+> Note: Prometheus requires In-Cluster deployment.
+
 ## 1. Deploy or configure Prometheus
 
-If there is no Prometheus in the cluster:
+If there is no Prometheus in your cluster, you can use the following example for a quick try. However, this method is not recommended for production use. Please follow the [Installation guide](https://prometheus.io/docs/prometheus/latest/installation/) to set up Prometheus correctly in your production environment.
 
 ```shell
-$ cd fluid
+$ cd community
 $ kubectl apply -f integration/prometheus/prometheus.yaml
 ```
 
@@ -38,7 +40,7 @@ scrape_configs:
       action: replace
 ```
 
-## 2. Deploy Grafana
+## 2. Deploy Grafana in a quick try if you don't have installed.
 
 
 ```shell
@@ -49,10 +51,9 @@ $ docker run -d \
   --restart=always \
   --name grafana \
   grafana/grafana
-# In-CLuster deployment
-$ cd fluid
-$ kubectl apply -f integration/prometheus/grafana.yaml 
 ```
+
+You can install grafana in Kubernetes by following [docs](https://github.com/grafana/helm-charts/blob/main/charts/grafana/README.md).
 
 
 ## 3. Configure Grafana

@@ -4,7 +4,7 @@ This document mainly describes how to deploy Fluid with Helm, and use Fluid to c
 
 ## Requirements  
 
-1. Kubernetes 1.14+
+1. Kubernetes 1.18+
 
     If you don't have a Kubernetes now, we highly recommend you use a cloud Kubernetes service. Usually, with a few steps, you can get your own Kubernetes Cluster. Here's some of the certified cloud Kubernetes services: 
     - [Amazon Elastic Kubernetes Service](https://aws.amazon.com/eks/)
@@ -14,7 +14,7 @@ This document mainly describes how to deploy Fluid with Helm, and use Fluid to c
 
     > Note: While convenient, Minikube is not recommended to deploy Fluid due to its limited functionalities.
 
-2. Kubectl 1.14+
+2. Kubectl 1.18+
 
     Please make sure your kubectl is properly configured to interact with your Kubernetes environment.
 

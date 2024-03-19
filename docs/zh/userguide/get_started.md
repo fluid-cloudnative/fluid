@@ -3,7 +3,7 @@
 
 ## 前置需求
 
-1. Kubernetes cluster >= v1.14
+1. Kubernetes cluster >= v1.18
   
     如果你目前没有满足条件的 Kubernetes 环境, 那么我们推荐你选择官方认证的 Kubernetes 云服务, 通常情况下, 你仅需寥寥几步即可快速获得一个专属的 Kubernetes 环境, 以下列出了部分经过认证的 Kubernetes 云服务:
     - [阿里云容器服务](https://www.aliyun.com/product/kubernetes)
@@ -13,7 +13,7 @@
 
     > 注意: 考虑到 Minikube 功能的局限性,我们不推荐使用 Minikube 进行接下来的步骤
 
-2. Kubectl 1.14+
+2. Kubectl 1.18+
 
     请确保Kubectl已经正确配置使其能够与你的Kubernetes环境进行交互
 
