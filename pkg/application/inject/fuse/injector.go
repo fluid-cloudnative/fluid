@@ -162,9 +162,13 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 			continue
 		}
 
-		platform := s.getServerlessPlatformFromMeta(podSpecs.MetaObj)
+		// check whether the podSpecs is using vineyard runtime
+		platform := s.checkVineyardPlatform(podSpecs, runtimeInfos)
 		if len(platform) == 0 {
-			return out, fmt.Errorf("can't find any supported platform-specific mutator in pod's metadata")
+			platform = s.getServerlessPlatformFromMeta(podSpecs.MetaObj)
+			if len(platform) == 0 {
+				return out, fmt.Errorf("can't find any supported platform-specific mutator in pod's metadata")
+			}
 		}
 
 		mutatorBuildOpts := mutator.MutatorBuildOpts{
@@ -288,4 +292,21 @@ func (s *Injector) labelInjectionDone(pod common.FluidObject) error {
 
 func (s *Injector) getServerlessPlatformFromMeta(metaObj metav1.ObjectMeta) string {
 	return utils.GetServerlessPlatfrom(metaObj.Labels)
+}
+
+// check whether the podSpecs is using vineyard runtime
+func (s *Injector) checkVineyardPlatform(podSpecs *mutator.MutatingPodSpecs, runtimeInfos map[string]base.RuntimeInfoInterface) string {
+	pvcNames := make(map[string]bool)
+	for _, volume := range podSpecs.Volumes {
+		if volume.PersistentVolumeClaim == nil {
+			continue
+		}
+		pvcNames[volume.PersistentVolumeClaim.ClaimName] = true
+	}
+	for pvcName, runtimeInfo := range runtimeInfos {
+		if _, ok := pvcNames[pvcName]; ok && runtimeInfo.GetRuntimeType() == common.VineyardRuntime {
+			return utils.PlatformVineyard
+		}
+	}
+	return ""
 }

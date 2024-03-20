@@ -1138,6 +1138,123 @@ func TestInjectPod(t *testing.T) {
 			},
 			wantErr: nil,
 		},
+		{
+			name: "inject_pod_with_vineyard_runtime",
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "vineyard",
+					Namespace: "default",
+				},
+			},
+			in: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "app",
+					Namespace: "default",
+					Labels: map[string]string{
+						common.InjectServerless: common.True,
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Image: "python:3.10",
+							Name:  "app",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "vineyard-volume",
+									MountPath: "/vineyard",
+								},
+							},
+						},
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: "vineyard-volume",
+							VolumeSource: corev1.VolumeSource{
+								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+									ClaimName: "vineyard",
+								},
+							},
+						},
+					},
+				},
+			},
+			pv: &corev1.PersistentVolume{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "vineyard",
+				},
+				Spec: corev1.PersistentVolumeSpec{
+					PersistentVolumeSource: corev1.PersistentVolumeSource{
+						CSI: &corev1.CSIPersistentVolumeSource{
+							Driver: "fuse.csi.fluid.io",
+							VolumeAttributes: map[string]string{
+								common.VolumeAttrMountType: common.VineyardRuntime,
+							},
+						},
+					},
+				},
+			},
+			pvc: &corev1.PersistentVolumeClaim{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "vineyard",
+					Namespace: "default",
+				}, Spec: corev1.PersistentVolumeClaimSpec{
+					VolumeName: "vineyard",
+				},
+			},
+			infos: map[string]runtimeInfo{
+				"vineyard": {
+					name:        "vineyard",
+					namespace:   "default",
+					runtimeType: common.VineyardRuntime,
+				},
+			},
+			fuse: &appsv1.DaemonSet{},
+			want: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "app",
+					Namespace: "default",
+					Labels: map[string]string{
+						common.InjectServerless:  common.True,
+						common.InjectSidecarDone: common.True,
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Image: "python:3.10",
+							Name:  "app",
+							Env: []corev1.EnvVar{
+								{
+									Name: "VINEYARD_RPC_ENDPOINT",
+									ValueFrom: &corev1.EnvVarSource{
+										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "vineyard-rpc-conf",
+											},
+											Key: "VINEYARD_RPC_ENDPOINT",
+										},
+									},
+								},
+							},
+							VolumeMounts: []corev1.VolumeMount{},
+						},
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: "vineyard-rpc-conf",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "vineyard-rpc-conf",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	objs := []runtime.Object{}
@@ -1148,6 +1265,17 @@ func TestInjectPod(t *testing.T) {
 	for _, testcase := range testcases {
 		objs = append(objs, testcase.fuse, testcase.pv, testcase.pvc, testcase.dataset)
 	}
+
+	cm := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "vineyard-rpc-conf",
+			Namespace: "default",
+		},
+		Data: map[string]string{
+			"VINEYARD_RPC_ENDPOINT": "127.0.0.1",
+		},
+	}
+	objs = append(objs, cm)
 
 	fakeClient := fake.NewFakeClientWithScheme(s, objs...)
 
@@ -1222,7 +1350,7 @@ func TestInjectPod(t *testing.T) {
 						t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
 					}
 
-					t.Errorf("testcase %s failed, want %v, Got  %v", testcase.name, string(want), string(outYaml))
+					t.Errorf("testcase %s failed, want %v, Got %v", testcase.name, string(want), string(outYaml))
 				}
 			} else {
 				t.Errorf("testcase %s failed due to missing the container %s", testcase.name, k)
@@ -1251,7 +1379,7 @@ func TestInjectPod(t *testing.T) {
 						t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
 					}
 
-					t.Errorf("testcase %s failed, want %v, Got  %v", testcase.name, string(want), string(outYaml))
+					t.Errorf("testcase %s failed, want %v, Got %v", testcase.name, string(want), string(outYaml))
 				}
 			} else {
 				t.Errorf("testcase %s failed due to missing the volume %s", testcase.name, k)

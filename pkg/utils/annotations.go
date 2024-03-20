@@ -73,6 +73,7 @@ func AppContainerPostStartInjectEnabled(infos map[string]string) (match bool) {
 const (
 	PlatformDefault      = "Default"
 	PlatformUnprivileged = "Unprivileged"
+	PlatformVineyard     = "Vineyard"
 )
 
 func GetServerlessPlatfrom(infos map[string]string) (platform string) {
