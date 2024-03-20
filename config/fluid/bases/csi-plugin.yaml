@@ -18,7 +18,7 @@ spec:
       - operator: Exists
       #priorityClassName: system-node-critical
       hostNetwork: true
-      hostPID: true
+      hostPID: false
       containers:
         - name: node-driver-registrar
           image: {}
