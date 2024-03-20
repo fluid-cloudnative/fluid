@@ -1,5 +1,5 @@
 apiVersion: v2
-version: 0.19.3
+version: 0.21.5
 description: an In-Memory Data Manager for Data-Intensive Analytics
 home: https://v6d.io/
 keywords:
