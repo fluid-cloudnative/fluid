@@ -25,9 +25,9 @@ const (
 
 	DefaultVineyardMasterImage = "bitnami/etcd:3.5.10"
 
-	DefaultVineyardWorkerImage = "vineyardcloudnative/vineyardd:latest"
+	DefaultVineyardWorkerImage = "vineyardcloudnative/vineyardd:v0.21.5"
 
-	DefultVineyardFuseImage = "vineyardcloudnative/vineyard-fluid-fuse:latest"
+	DefultVineyardFuseImage = "vineyardcloudnative/vineyard-fluid-fuse:v0.21.5"
 
 	VineyardEngineImpl = VineyardRuntime
 )

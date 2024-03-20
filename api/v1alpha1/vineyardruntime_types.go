@@ -38,7 +38,7 @@ type VineyardCompTemplateSpec struct {
 
 	// The image tag of Vineyard component.
 	// For Master, the default image tag is `3.5.10`.
-	// For Worker, the default image tag is `latest`.
+	// For Worker, the default image tag is `v0.21.5`.
 	// +optional
 	ImageTag string `json:"imageTag,omitempty"`
 
@@ -147,7 +147,7 @@ type VineyardSockSpec struct {
 	Image string `json:"image,omitempty"`
 
 	// Image Tag for Vineyard Fuse
-	// Default is `latest`
+	// Default is `v0.21.5`
 	// +optional
 	ImageTag string `json:"imageTag,omitempty"`
 
