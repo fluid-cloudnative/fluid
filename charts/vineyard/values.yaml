@@ -46,7 +46,7 @@ master:
 worker:
   replicas: 1
   image: vineyardcloudnative/vineyardd
-  imageTag: latest
+  imageTag: v0.21.5
   imagePullPolicy: IfNotPresent
   nodeSelector: {}
   # Exmaple:
@@ -97,7 +97,7 @@ disablePrometheus: true
 
 fuse:
   image: vineyardcloudnative/vineyard-fluid-fuse
-  imageTag: latest
+  imageTag: v0.21.5
   imagePullPolicy: IfNotPresent
   env: {}
   targetPath: ""
