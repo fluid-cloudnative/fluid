@@ -463,7 +463,7 @@ func TestParseWorkerImage(t *testing.T) {
 			imagePullPolicy: "",
 			engine:          &VineyardEngine{},
 			wantImage:       "vineyardcloudnative/vineyardd",
-			wantTag:         "latest",
+			wantTag:         "v0.21.5",
 			wantPolicy:      "IfNotPresent",
 		},
 	}
@@ -505,7 +505,7 @@ func TestParseFuseImage(t *testing.T) {
 			imagePullPolicy: "",
 			engine:          &VineyardEngine{},
 			wantImage:       "vineyardcloudnative/vineyard-fluid-fuse",
-			wantTag:         "latest",
+			wantTag:         "v0.21.5",
 			wantPolicy:      "IfNotPresent",
 		},
 	}

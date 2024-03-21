@@ -9879,7 +9879,7 @@ string
 <em>(Optional)</em>
 <p>The image tag of Vineyard component.
 For Master, the default image tag is <code>3.5.10</code>.
-For Worker, the default image tag is <code>latest</code>.</p>
+For Worker, the default image tag is <code>v0.21.5</code>.</p>
 </td>
 </tr>
 <tr>
@@ -10177,7 +10177,7 @@ string
 <td>
 <em>(Optional)</em>
 <p>Image Tag for Vineyard Fuse
-Default is <code>latest</code></p>
+Default is <code>v0.21.5</code></p>
 </td>
 </tr>
 <tr>
@@ -10308,5 +10308,5 @@ bool
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>b9800030e</code>.
+on git commit <code>4ca57673e</code>.
 </em></p>
