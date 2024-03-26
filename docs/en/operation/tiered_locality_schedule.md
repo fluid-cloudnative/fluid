@@ -28,24 +28,26 @@ Note that if your cluster has been previously configured with other allowed cont
 1) Configure before installing Fluid
 
 Define the tiered locality configuration in the Helm Charts values.yaml like below.
-- fluid.io/node is the built-in name of Fluid, used to schedule pods to the data cached node
 ```yaml
 pluginConfig:
   - name: NodeAffinityWithCache
     args: |
       preferred:
-        # fluid built-in name, used to schedule pods to the data cached node
+        # fluid built-in name（default not enabled）, used to schedule pods to the node with existing fuse pod
+        # - name: fluid.io/fuse
+        #   weight: 100
+        # fluid built-in name(default enabled), used to schedule pods to the data cached node
         - name: fluid.io/node
           weight: 100
-        # runtime worker's zone label name, can be changed according to k8s environment.
+        # runtime worker's zone label name(default enabled), can be changed according to k8s environment.
         - name: topology.kubernetes.io/zone
           weight: 50
-        # runtime worker's region label name, can be changed according to k8s environment.
+        # runtime worker's region label name(default enabled), can be changed according to k8s environment.
         - name: topology.kubernetes.io/region
           weight: 10
       required:
         # If Pod is configured with required affinity, then schedule the pod to nodes match the label.
-        # Multiple names is the And relation.
+        # Default value is 'fluid.io/node'. Multiple names is the And relation.
         - topology.kubernetes.io/zone
 ```
 

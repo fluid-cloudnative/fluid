@@ -25,24 +25,26 @@ Fluid 支持配置 K8s 集群中的分层位置信息，存储在Fluid 系统命
 1) 在安装 Fluid 前配置
 
 在 Helm Charts values 的 pluginsProfile 定义中，配置`NodeAffinityWithCache` 插件的参数：
-- fluid.io/node 是 fluid 内置的亲和性，用于调度到数据缓存的节点
 ```yaml
 pluginConfig:
   - name: NodeAffinityWithCache
     args: |
       preferred:
-        # fluid 内置的亲和性，用于调度到数据缓存的节点，名称不可修改
+        # fluid 内置的亲和性（默认不配置），用于调度已经存在fuse pod的节点，名称不可修改
+        # - name: fluid.io/fuse
+        #   weight: 100
+        # fluid 内置的亲和性（默认配置），用于调度到数据缓存的节点，名称不可修改
         - name: fluid.io/node
           weight: 100
-        # zone 的 label 名称
+        # zone 的 label 名称（默认配置），可根据实际环境修改
         - name: topology.kubernetes.io/zone
           weight: 50
-        # region 的 label 名称
+        # region 的 label 名称（默认配置），可根据实际环境修改
         - name: topology.kubernetes.io/region
           weight: 10
       required:
-        # 如果Pod 配置 强制亲和性，则强制亲和性匹配 zone
-        # 配置多个，采用 And 语义
+        # 如果Pod 配置强制亲和性（标签 fluid.io/dataset.{dataset name}.sched 值为 true)，则强制亲和性匹配 node
+        # 默认是 'fluid.io/node'，如果配置多个，采用 And 语义
         - topology.kubernetes.io/zone
 ```
 
