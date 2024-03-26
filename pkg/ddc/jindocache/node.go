@@ -71,25 +71,34 @@ func (e *JindoCacheEngine) SyncScheduleInfoToCacheNodes() (err error) {
 		return err
 	}
 
-	workerSelector, err := labels.Parse(fmt.Sprintf("fluid.io/dataset=%s-%s,app=jindofs,role=jindofs-worker", e.namespace, e.name))
-	if err != nil {
-		return err
-	}
-
-	workerPods, err := kubeclient.GetPodsForStatefulSet(e.Client, workers, workerSelector)
-	if err != nil {
-		return err
-	}
-
-	// find the nodes which should have the runtime label
-	for _, pod := range workerPods {
-		nodeName := pod.Spec.NodeName
-		node := &v1.Node{}
-		if err := e.Get(context.TODO(), types.NamespacedName{Name: nodeName}, node); err != nil {
+	if workers.Status.Replicas > 0 {
+		workerSelector, err := labels.Parse(fmt.Sprintf("fluid.io/dataset=%s-%s,app=jindofs,role=jindofs-worker", e.namespace, e.name))
+		if err != nil {
 			return err
 		}
-		// nodesShouldHaveLabel = append(nodesShouldHaveLabel, node)
-		currentCacheNodenames = append(currentCacheNodenames, nodeName)
+
+		// IMPORTANT: The func is very heavy and may cause temoporary memory issue because it lists all pods in the namespace
+		// and filters which are controlled by the worker statefulset.
+		// TODO: Use `disableDeepCopy` in ListOptions to optimize memory allocation. This require a higher version of controller-runtime.
+		workerPods, err := kubeclient.GetPodsForStatefulSet(e.Client, workers, workerSelector)
+		if err != nil {
+			return err
+		}
+
+		// find the nodes which should have the runtime label
+		for _, pod := range workerPods {
+			nodeName := pod.Spec.NodeName
+			if len(nodeName) == 0 {
+				// filter out pending pods without node name.
+				continue
+			}
+			node := &v1.Node{}
+			if err := e.Get(context.TODO(), types.NamespacedName{Name: nodeName}, node); err != nil {
+				return err
+			}
+			// nodesShouldHaveLabel = append(nodesShouldHaveLabel, node)
+			currentCacheNodenames = append(currentCacheNodenames, nodeName)
+		}
 	}
 
 	// find the nodes which already have the runtime label
