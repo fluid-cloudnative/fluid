@@ -185,6 +185,9 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 						UID:       "uid1",
 					},
 					Spec: appsv1.StatefulSetSpec{},
+					Status: appsv1.StatefulSetStatus{
+						Replicas: 1,
+					},
 				},
 				pods: []*v1.Pod{
 					{
@@ -230,6 +233,9 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 						UID:       "uid2",
 					},
 					Spec: appsv1.StatefulSetSpec{},
+					Status: appsv1.StatefulSetStatus{
+						Replicas: 1,
+					},
 				},
 				pods: []*v1.Pod{
 					{
