@@ -22,8 +22,13 @@ spec:
       app: {{ printf "%s-workers" .Release.Name }}
   # match the service name
   serviceName: {{ printf "%s-workers" .Release.Name }}
+  {{- if eq (lower .Values.datamigrate.policy) "cron" }}
+  # cron job, the replica is 0, the reconciler will scale it.
+  replicas: 0
+  {{- else }}
   # the job acts as a worker, so minus 1 here.
   replicas: {{ sub .Values.datamigrate.parallelism  1 }}
+  {{- end }}
   podManagementPolicy: Parallel
   template:
     metadata:

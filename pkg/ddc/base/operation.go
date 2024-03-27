@@ -253,14 +253,15 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 		object := operation.GetOperationObject()
 		ctx.Recorder.Eventf(object, v1.EventTypeNormal, common.DataOperationSucceed,
 			"%s %s succeeded", operation.GetOperationType(), object.GetName())
-	}
 
-	// scale the statefulset replicas to 0 for parallel data operation
-	if operation.GetParallelTaskNumber() > 1 {
-		releaseNameSpacedName := operation.GetReleaseNameSpacedName()
-		err = kubeclient.ScaleStatefulSet(t.Client, utils.GetParallelOperationWorkersName(releaseNameSpacedName.Name), releaseNameSpacedName.Namespace, 0)
-		if err != nil {
-			return utils.RequeueIfError(err)
+		// scale the statefulset replicas to 0 for parallel data operation
+		// if the status not Complete, there is a new starting job, not scale the statefulset to zero.
+		if operation.GetParallelTaskNumber() > 1 {
+			releaseNameSpacedName := operation.GetReleaseNameSpacedName()
+			err = kubeclient.ScaleStatefulSet(t.Client, utils.GetParallelOperationWorkersName(releaseNameSpacedName.Name), releaseNameSpacedName.Namespace, 0)
+			if err != nil {
+				return utils.RequeueIfError(err)
+			}
 		}
 	}
 
@@ -304,7 +305,6 @@ func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, o
 		if err != nil {
 			log.Error(err, fmt.Sprintf(cleanupErrorMsg, operation.GetOperationType()))
 			return utils.RequeueIfError(err)
-			//
 		} else if ttl != nil && *ttl <= 0 {
 			return utils.NoRequeue()
 		}
@@ -341,14 +341,15 @@ func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, o
 	if opStatusToUpdate.Phase == common.PhaseFailed {
 		object := operation.GetOperationObject()
 		ctx.Recorder.Eventf(object, v1.EventTypeWarning, common.DataOperationFailed, "%s %s failed", operation.GetOperationType(), object.GetName())
-	}
 
-	// scale the statefulset replicas to 0 for parallel data operation
-	if operation.GetParallelTaskNumber() > 1 {
-		releaseNameSpacedName := operation.GetReleaseNameSpacedName()
-		err = kubeclient.ScaleStatefulSet(t.Client, utils.GetParallelOperationWorkersName(releaseNameSpacedName.Name), releaseNameSpacedName.Namespace, 0)
-		if err != nil {
-			return utils.RequeueIfError(err)
+		// scale the statefulset replicas to 0 for parallel data operation
+		// if the status not PhaseFailed, there is a new starting job, not scale the statefulset to zero.
+		if operation.GetParallelTaskNumber() > 1 {
+			releaseNameSpacedName := operation.GetReleaseNameSpacedName()
+			err = kubeclient.ScaleStatefulSet(t.Client, utils.GetParallelOperationWorkersName(releaseNameSpacedName.Name), releaseNameSpacedName.Namespace, 0)
+			if err != nil {
+				return utils.RequeueIfError(err)
+			}
 		}
 	}
 

@@ -88,6 +88,38 @@ spec:
 
 只需要在 uri 中声明 PVC 的名称即可，格式为 `pvc://<pvc-name>/<subpath>`。
 
+### 定时迁移
+
+DataMigrate 可以通过 Cron 表达式支持定时迁移的策略，下面是个参考的示例配置：
+```yaml
+apiVersion: data.fluid.io/v1alpha1
+kind: DataMigrate
+metadata:
+  name: jfs-cron-migrate
+spec:
+  image: registry.cn-hangzhou.aliyuncs.com/juicefs/juicefs-fuse
+  imageTag: nightly
+  policy: Cron
+  # 每10分钟执行一次数据迁移任务
+  schedule: "*/10 * * * *"
+  from:
+    externalStorage:
+      uri: minio://minio.default.svc.cluster.local:9000/test/
+  to:
+    dataset:
+      name: jfsdemo
+      namespace: default
+      path: /dir1
+```
+- `spec.policy`: 配置成 `Cron` 时，表明为定时任务；
+- `spec.schedule`: Cron 表达式，当 `spec.policy` 为 `Cron` 时必须配置该字段；
+
+分布式定时迁移：定时迁移也可以跟分布式迁移结合使用，其原理是通过`SuspendJob`特性实现，因此对K8s版本有要求；
+- k8s 版本小于 1.21，不支持分布式定时迁移；
+- k8s 版本等于 1.21，`SuspendJob` 处于 alpha 阶段，K8s需要显示配置启用`SuspendJob`特性开关才可以使用分布式定时迁移；
+- k8s 版本大于 1.21，`SuspendJob` 特性开关默认启用，支持分布式定时迁移；
+ 
+
 ## DataMigrate 生命周期
 
 DataMigrate 的生命周期如下图所示：
@@ -105,3 +137,4 @@ DataMigrate 的生命周期如下图所示：
 
 1. DataMigrate 执行时，DataSet 状态为 Migrating，表示此时正在迁移数据，不可进行数据更新，否则会有数据不一致的风险。
 2. DataMigrate 执行完，DataSet 状态恢复为 Bound。
+
