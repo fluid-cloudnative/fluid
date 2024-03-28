@@ -111,7 +111,7 @@ func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *d
 	}
 
 	// 12. fuse config
-	err = t.transformFuseConfig(runtime, dataset, value)
+	_, err = t.transformFuseConfig(runtime, dataset, value)
 	if err != nil {
 		return err
 	}

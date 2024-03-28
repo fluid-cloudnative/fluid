@@ -129,3 +129,7 @@ func (t *ThinEngine) getDataSetFileNum() (string, error) {
 	}
 	return strconv.FormatInt(fileCount, 10), err
 }
+
+func (t ThinEngine) getFuseConfigMapName() string {
+	return t.name + "-fuse-conf"
+}

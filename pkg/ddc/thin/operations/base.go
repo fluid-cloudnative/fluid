@@ -85,14 +85,17 @@ func (t ThinFileUtils) GetUsedSpace(path string) (usedSpace int64, err error) {
 	str := strings.TrimSuffix(stdout, "\n")
 
 	data := strings.Fields(str)
-	if len(data) != 6 {
+	if len(data) < 6 || len(data)%6 != 0 {
 		err = fmt.Errorf("failed to parse %s in GetUsedSpace method", data)
 		return
 	}
 
-	usedSpace, err = strconv.ParseInt(data[2], 10, 64)
-	if err != nil {
-		return
+	for i := 0; i < len(data); i += 6 {
+		used, err := strconv.ParseInt(data[2+i], 10, 64)
+		if err != nil {
+			return usedSpace, err
+		}
+		usedSpace += used
 	}
 
 	return usedSpace, err
