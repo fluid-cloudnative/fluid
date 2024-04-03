@@ -8,7 +8,7 @@ Vineyard相比现有方法如本地文件或S3服务, 可以通过利用共享�
 
 ### pipline概述
 
-目前我们使用的pipeline是一个简单的pipeline，它是在虚拟的波士顿房价数据集上训练一个线性回归模型。它包含三个步骤：[数据预处理](./preprocess-data/preprocess-data.y), [模型训练](./train-data/train-data.py), 和 [模型测试](./test-data/test-data.py).
+目前我们使用的pipeline是一个简单的pipeline，它是在虚拟的波士顿房价数据集上训练一个线性回归模型。它包含三个步骤：[数据预处理](../../../../samples/vineyard/preprocess-data/preprocess-data.y), [模型训练](../../../../samples/vineyard/train-data/train-data.py), 和 [模型测试](../../../../samples/vineyard/test-data/test-data.py).
 
 
 ### 准备环境
@@ -89,7 +89,7 @@ EOF
 **注意** 您需要将**NAS路径**挂载到kubernetes节点。在这里，我们将NAS路径挂载到所有kubernetes节点的`/mnt/csi-benchmark`(在`prepare-data.yaml`中显示)路径上。接下来，我们需要通过运行以下命令来准备数据集：
 
 ```shell
-$ kubectl apply -f prepare-data.yaml
+$ kubectl apply -f samples/vineyard/prepare-data.yaml
 ```
 
 数据集将存储在主机路径中。此外，您可能需要等待一段时间以生成数据集，您可以使用以下命令来检查状态：
@@ -101,13 +101,13 @@ $ while ! kubectl logs -l app=prepare-data | grep "preparing data time" >/dev/nu
 在运行pipeline之前，我们需要为pipeline创建一些rbac roles，如下所示。
 
 ```shell
-$ kubectl apply -f rbac.yaml
+$ kubectl apply -f samples/vineyard/rbac.yaml
 ```
 
 之后，您可以通过以下命令运行不使用vineyard的pipeline：
 
 ```shell
-$ argo submit pipeline.yaml -p data_mu
+$ argo submit samples/vineyard/pipeline.yaml -p data_mu
 ltiplier=2000 -p registry="test-registry" 
 Name:                machine-learning-pipeline-z72gm
 Namespace:           default
@@ -169,7 +169,7 @@ $ kubectl delete pod -lcontrol-plane=fluid-webhook -n fluid-system
 接下来，您可以通过以下命令运行使用vineyard的pipeline：
 
 ```shell
-$ argo submit pipeline-with-vineyard.yaml -p data_multiplier=2000 -p registry="test-registry"
+$ argo submit samples/vineyard/pipeline-with-vineyard.yaml -p data_multiplier=2000 -p registry="test-registry"
 Name:                machine-learning-pipeline-with-vineyard-q4tfr
 Namespace:           default
 ServiceAccount:      pipeline-runner
@@ -216,7 +216,7 @@ STEP                                              TEMPLATE                      
 相比原始的kubeflow pipeline，您可以使用以下命令来查看使用Vineyard需要的修改：
 
 ```shell
-$ git diff --no-index --unified=40 pipeline.py pipeline-with-vineyard.py
+$ git diff --no-index --unified=40 samples/vineyard/pipeline.py samples/vineyard/pipeline-with-vineyard.py
 ```
 
 主要的修改如下：
@@ -224,8 +224,8 @@ $ git diff --no-index --unified=40 pipeline.py pipeline-with-vineyard.py
 
 此外，您可以按照以下步骤检查源代码的修改。
 
-- [Save data to vineyard](./preprocess-data/preprocess-data.py#L32-L35).
-- [Load data from vineyard](./train-data/train-data.py#L15-L16).
-- [load data from vineyard](./test-data/test-data.py#L14-L15).
+- [Save data to vineyard](../../../../samples/vineyard/preprocess-data/preprocess-data.py#L32-L35).
+- [Load data from vineyard](../../../../samples/vineyard/train-data/train-data.py#L15-L16).
+- [load data from vineyard](../../../../samples/vineyard/test-data/test-data.py#L14-L15).
 
 其中主要的修改是使用vineyard来加载和保存数据，而不是使用文件。

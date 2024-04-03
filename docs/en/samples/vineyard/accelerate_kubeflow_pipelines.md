@@ -9,7 +9,7 @@ Vineyard can accelerate data sharing by utilizing shared memory compared to exis
 
 ### Overview of the pipeline
 
-The pipeline we use is a simple pipeline that trains a linear regression model on the dummy Boston Housing Dataset. It contains three steps: [preprocess](./preprocess-data/preprocess-data.y), [train](./train-data/train-data.py), and [test](./test-data/test-data.py).
+The pipeline we use is a simple pipeline that trains a linear regression model on the dummy Boston Housing Dataset. It contains three steps: [preprocess](../../../../samples/vineyard/preprocess-data/preprocess-data.y), [train](../../../../samples/vineyard/train-data/train-data.py), and [test](../../../../samples/vineyard/test-data/test-data.py).
 
 
 ### Prepare the environment
@@ -85,7 +85,7 @@ EOF
 
 ### Run the pipeline
 
-Please make sure the `pipeline.yaml` and `pipeline-with-vineyard.yaml` files are the original 
+Please make sure the `samples/vineyard/pipeline.yaml` and `samples/vineyard/pipeline-with-vineyard.yaml` files are the original 
 ones as they have been modified to use the privileged 
 container to clear the page cache. Then you can follow
 the next steps to run the pipeline:
@@ -95,7 +95,7 @@ Here we mount a NAS path to the `/mnt/csi-benchmark`(shown in the `prepare-data.
 Next, we need to prepare the dataset by running the following command:
 
 ```shell
-$ kubectl apply -f prepare-data.yaml
+$ kubectl apply -f samples/vineyard/prepare-data.yaml
 ```
 
 The dataset will be stored in the host path. Also, you may need to wait for a while for the dataset to be generated and you can use the following command to check the status:
@@ -107,7 +107,7 @@ $ while ! kubectl logs -l app=prepare-data | grep "preparing data time" >/dev/nu
 Before running the pipeline, we need to create the role and rolebinding for the pipeline as follows.
 
 ```shell
-$ kubectl apply -f rbac.yaml
+$ kubectl apply -f samples/vineyard/rbac.yaml
 ```
 
 After that, you can run the pipeline via the following command:
@@ -115,7 +115,7 @@ After that, you can run the pipeline via the following command:
 Without vineyard:
 
 ```shell
-$ argo submit pipeline.yaml -p data_mu
+$ argo submit samples/vineyard/pipeline.yaml -p data_mu
 ltiplier=2000 -p registry="test-registry" 
 Name:                machine-learning-pipeline-z72gm
 Namespace:           default
@@ -177,7 +177,7 @@ $ kubectl delete pod -lcontrol-plane=fluid-webhook -n fluid-system
 Then you can run the pipeline with vineyard via the following command:
 
 ```shell
-$ argo submit pipeline-with-vineyard.yaml -p data_multiplier=2000 -p registry="test-registry"
+$ argo submit samples/vineyard/pipeline-with-vineyard.yaml -p data_multiplier=2000 -p registry="test-registry"
 Name:                machine-learning-pipeline-with-vineyard-q4tfr
 Namespace:           default
 ServiceAccount:      pipeline-runner
@@ -224,7 +224,7 @@ From the results, it's evident that the pipeline utilizing vineyard reduces the 
 Compared to the original kubeflow pipeline, we could use the following command to check the differences:
 
 ```shell
-$ git diff --no-index --unified=40 pipeline.py pipeline-with-vineyard.py
+$ git diff --no-index --unified=40 samples/vineyard/pipeline.py samples/vineyard/pipeline-with-vineyard.py
 ```
 
 The main modifications are:
@@ -233,9 +233,9 @@ The main modifications are:
 Also, you can check the modifications of the source code as 
 follows.
 
-- [Save data to vineyard](./preprocess-data/preprocess-data.py#L32-L35).
-- [Load data from vineyard](./train-data/train-data.py#L15-L16).
-- [load data from vineyard](./test-data/test-data.py#L14-L15).
+- [Save data to vineyard](../../../../samples/vineyard/preprocess-data/preprocess-data.py#L32-L35).
+- [Load data from vineyard](../../../../samples/vineyard/train-data/train-data.py#L15-L16).
+- [load data from vineyard](../../../../samples/vineyard/test-data/test-data.py#L14-L15).
 
 The main modification is to use vineyard to load and save data
 rather than using local files.
