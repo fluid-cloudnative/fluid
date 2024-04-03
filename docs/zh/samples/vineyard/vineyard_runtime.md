@@ -8,19 +8,7 @@ Vineyard 是一个开源的内存数据管理系统，旨在提供高性能的�
 
 ## 安装 Fluid
 
-您可以从 [Fluid Releases](https://github.com/fluid-cloudnative/fluid/releases) 下载最新的 Fluid 安装包。参考 [安装文档](../../userguide/install.md) 完成安装。并检查 Fluid 各组件正常运行：
-
-```shell
-$ kubectl get po -n fluid-system
-NAME                                         READY   STATUS              RESTARTS   AGE
-csi-nodeplugin-fluid-56d44                   2/2     Running             0          106s
-csi-nodeplugin-fluid-5l78j                   2/2     Running             0          106s
-csi-nodeplugin-fluid-5mghb                   2/2     Running             0          106s
-dataset-controller-5cd87f8b9b-t7dv2          1/1     Running             0          106s
-fluid-webhook-77d44f5fbc-wttzl               1/1     Running             0          106s
-```
-
-确保 `dataset-controller`、`fluid-webhook` 的 pod 以及若干 `csi-nodeplugin` pod 正常运行。 `vineyard-runtime-controller` 会在使用 VineyardRuntime 的时候动态创建。
+参考 [安装文档](../../userguide/install.md) 完成安装。
 
 ## 创建Vineyard Runtime 及 Dataset
 
