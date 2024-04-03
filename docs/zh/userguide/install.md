@@ -131,11 +131,10 @@ $ kubectl exec dataset-controller-558c5c7785-mtgfh -n fluid-system -- dataset-co
 
 如果版本一致，您将看到如下信息：
 ```
-kubectl exec dataset-controller-5f56cc4f97-2lfqt -n fluid-system -- dataset-controller version
-  BuildDate: 2022-09-01_13:07:33
-  GitCommit: aa7fdca4c4306762280570b7dc0c2a7c649ff785
+  BuildDate: 2024-03-02_07:35:18
+  GitCommit: 50ee8887239f07592ba74af3e14379efc1487c0c
   GitTreeState: clean
-  GoVersion: go1.17.8
+  GoVersion: go1.18.10
   Compiler: gc
   Platform: linux/amd64
 ```
