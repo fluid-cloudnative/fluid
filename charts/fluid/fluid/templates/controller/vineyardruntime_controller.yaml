@@ -60,6 +60,18 @@ spec:
         - name: MOUNT_ROOT
           value: {{ .Values.runtime.mountRoot | quote }}
         {{- end }}
+        {{- if .Values.runtime.vineyard.master.image }}
+        - name: VINEYARD_MASTER_IMAGE_ENV
+          value: {{ .Values.runtime.vineyard.master.image | quote }}
+        {{- end }}
+        {{- if .Values.runtime.vineyard.worker.image }}
+        - name: VINEYARD_WORKER_IMAGE_ENV
+          value: {{ .Values.runtime.vineyard.worker.image | quote }}
+        {{- end }}
+        {{- if .Values.runtime.vineyard.fuse.image }}
+        - name: VINEYARD_FUSE_IMAGE_ENV
+          value: {{ .Values.runtime.vineyard.fuse.image | quote }}
+        {{- end }}
         {{- if .Values.runtime.syncRetryDuration }}
         - name: FLUID_SYNC_RETRY_DURATION
           value: {{ .Values.runtime.syncRetryDuration | quote }}

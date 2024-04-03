@@ -14,7 +14,9 @@ limitations under the License.
 package vineyard
 
 import (
+	"os"
 	"reflect"
+	"strings"
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -37,25 +39,47 @@ func TestTransformFuse(t *testing.T) {
 		o.Development = true
 	}))
 
-	var tests = []struct {
+	var tests = map[string]struct {
 		runtime   *datav1alpha1.VineyardRuntime
 		value     *Vineyard
 		expect    []string
 		expectEnv map[string]string
 	}{
-		{&datav1alpha1.VineyardRuntime{
-			Spec: datav1alpha1.VineyardRuntimeSpec{
-				Fuse: datav1alpha1.VineyardSockSpec{
-					Image:           "dummy-fuse-image",
-					ImageTag:        "dummy-tag",
-					ImagePullPolicy: "IfNotPresent",
-					Env:             map[string]string{"TEST_ENV": "true"},
-					CleanPolicy:     "OnRuntimeDeleted",
+		"test image, imageTag and pullPolicy": {
+			runtime: &datav1alpha1.VineyardRuntime{
+				Spec: datav1alpha1.VineyardRuntimeSpec{
+					Fuse: datav1alpha1.VineyardSockSpec{
+						Image:           "dummy-fuse-image",
+						ImageTag:        "dummy-tag",
+						ImagePullPolicy: "IfNotPresent",
+						Env:             map[string]string{"TEST_ENV": "true"},
+						CleanPolicy:     "OnRuntimeDeleted",
+					},
 				},
 			},
-		}, &Vineyard{}, []string{"dummy-fuse-image", "dummy-tag", "IfNotPresent", "OnRuntimeDeleted"}, map[string]string{"TEST_ENV": "true"}},
+			value:     &Vineyard{},
+			expect:    []string{"dummy-fuse-image", "dummy-tag", "IfNotPresent", "OnRuntimeDeleted"},
+			expectEnv: map[string]string{"TEST_ENV": "true"},
+		},
+		"test image, imageTag and pullPolicy from env": {
+			runtime: &datav1alpha1.VineyardRuntime{
+				Spec: datav1alpha1.VineyardRuntimeSpec{
+					Fuse: datav1alpha1.VineyardSockSpec{
+						ImagePullPolicy: "IfNotPresent",
+						Env:             map[string]string{"TEST_ENV": "true"},
+						CleanPolicy:     "OnRuntimeDeleted",
+					},
+				},
+			},
+			value:     &Vineyard{},
+			expect:    []string{"image-from-env", "image-tag-from-env", "IfNotPresent", "OnRuntimeDeleted"},
+			expectEnv: map[string]string{"TEST_ENV": "true"},
+		},
 	}
-	for _, test := range tests {
+	for k, test := range tests {
+		if strings.Contains(k, "env") {
+			os.Setenv("VINEYARD_FUSE_IMAGE_ENV", "image-from-env:image-tag-from-env")
+		}
 		engine := &VineyardEngine{}
 		engine.Log = ctrl.Log
 		engine.transformFuse(test.runtime, test.value)
@@ -74,6 +98,9 @@ func TestTransformFuse(t *testing.T) {
 		}
 		if !reflect.DeepEqual(test.value.Fuse.Env, test.expectEnv) {
 			t.Errorf("Expected Fuse Env %v, got %v", test.expectEnv, test.value.Fuse.Env)
+		}
+		if strings.Contains(k, "env") {
+			os.Unsetenv("VINEYARD_FUSE_IMAGE_ENV")
 		}
 	}
 }
@@ -103,11 +130,32 @@ func TestTransformMaster(t *testing.T) {
 				},
 			},
 		},
+		"test image, imageTag and pullPolicy from env": {
+			runtime: &datav1alpha1.VineyardRuntime{
+				Spec: datav1alpha1.VineyardRuntimeSpec{
+					Master: datav1alpha1.MasterSpec{
+						VineyardCompTemplateSpec: datav1alpha1.VineyardCompTemplateSpec{
+							ImagePullPolicy: "IfNotPresent",
+						},
+					},
+				},
+			},
+			wantValue: &Vineyard{
+				Master: Master{
+					Image:           "image-from-env",
+					ImageTag:        "image-tag-from-env",
+					ImagePullPolicy: "IfNotPresent",
+				},
+			},
+		},
 	}
 
 	engine := &VineyardEngine{Log: fake.NullLogger()}
 	ds := &datav1alpha1.Dataset{}
 	for k, v := range testCases {
+		if strings.Contains(k, "env") {
+			os.Setenv("VINEYARD_MASTER_IMAGE_ENV", "image-from-env:image-tag-from-env")
+		}
 		gotValue := &Vineyard{}
 		if err := engine.transformMasters(v.runtime, ds, gotValue); err == nil {
 			if gotValue.Master.Image != v.wantValue.Master.Image {
@@ -131,6 +179,9 @@ func TestTransformMaster(t *testing.T) {
 					v.wantValue.Master.ImagePullPolicy,
 				)
 			}
+		}
+		if strings.Contains(k, "env") {
+			os.Unsetenv("VINEYARD_MASTER_IMAGE_ENV")
 		}
 	}
 }
@@ -160,10 +211,33 @@ func TestTransformWorker(t *testing.T) {
 				},
 			},
 		},
+		"test replicas, image, imageTag and pullPolicy from env": {
+			runtime: &datav1alpha1.VineyardRuntime{
+				Spec: datav1alpha1.VineyardRuntimeSpec{
+					Replicas: 3,
+					Worker: datav1alpha1.VineyardCompTemplateSpec{
+						Replicas:        2,
+						Image:           "test-image",
+						ImageTag:        "test-tag",
+						ImagePullPolicy: "IfNotPresent",
+					},
+				},
+			},
+			wantValue: &Vineyard{
+				Worker: Worker{
+					Image:           "image-from-env",
+					ImageTag:        "image-tag-from-env",
+					ImagePullPolicy: "IfNotPresent",
+				},
+			},
+		},
 	}
 
 	engine := &VineyardEngine{Log: fake.NullLogger()}
 	for k, v := range testCases {
+		if strings.Contains(k, "env") {
+			os.Setenv("VINEYARD_WORKER_IMAGE_ENV", "image-from-env:image-tag-from-env")
+		}
 		gotValue := &Vineyard{}
 		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "vineyard", v.runtime.Spec.TieredStore)
 		if err := engine.transformWorkers(v.runtime, gotValue); err == nil {
@@ -195,6 +269,9 @@ func TestTransformWorker(t *testing.T) {
 					v.wantValue.Worker.ImagePullPolicy,
 				)
 			}
+		}
+		if strings.Contains(k, "env") {
+			os.Unsetenv("VINEYARD_WORKER_IMAGE_ENV")
 		}
 	}
 }
