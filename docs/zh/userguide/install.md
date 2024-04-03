@@ -110,7 +110,7 @@ csi-nodeplugin-fluid-2scs9               2/2     Running     0          50s
 csi-nodeplugin-fluid-7vflb               2/2     Running     0          20s
 csi-nodeplugin-fluid-f9xfv               2/2     Running     0          33s
 dataset-controller-686d9d9cd6-gk6m6      1/1     Running     0          50s
-fluid-crds-upgrade-0.9.0-37e17c6-fp4mm   0/1     Completed   0          74s
+fluid-crds-upgrade-1.0.0-37e17c6-fp4mm   0/1     Completed   0          74s
 fluid-webhook-5bc9dfb9d8-hdvhk           1/1     Running     0          50s
 fluidapp-controller-6d4cbdcd88-z7l4c     1/1     Running     0          50s
 ```
@@ -131,11 +131,10 @@ $ kubectl exec dataset-controller-558c5c7785-mtgfh -n fluid-system -- dataset-co
 
 如果版本一致，您将看到如下信息：
 ```
-kubectl exec dataset-controller-5f56cc4f97-2lfqt -n fluid-system -- dataset-controller version
-  BuildDate: 2022-09-01_13:07:33
-  GitCommit: aa7fdca4c4306762280570b7dc0c2a7c649ff785
+  BuildDate: 2024-03-02_07:35:18
+  GitCommit: 50ee8887239f07592ba74af3e14379efc1487c0c
   GitTreeState: clean
-  GoVersion: go1.17.8
+  GoVersion: go1.18.10
   Compiler: gc
   Platform: linux/amd64
 ```
