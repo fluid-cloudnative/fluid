@@ -139,7 +139,10 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 	// TODO: support imagePullSecrets by AlluxioRuntime
 	imagePullSecrets := []corev1.LocalObjectReference{}
 
-	value.Image, value.ImageTag, value.ImagePullPolicy, value.ImagePullSecrets = e.parseRuntimeImage(image, imageTag, imagePullPolicy, imagePullSecrets)
+	value.Image, value.ImageTag, value.ImagePullPolicy, value.ImagePullSecrets, err = e.parseRuntimeImage(image, imageTag, imagePullPolicy, imagePullSecrets)
+	if err != nil {
+		return err
+	}
 
 	value.UserInfo = common.UserInfo{
 		User: 0,

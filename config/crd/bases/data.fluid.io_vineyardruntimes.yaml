@@ -1,9 +1,10 @@
+
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.8.0
+    controller-gen.kubebuilder.io/version: v0.7.0
   creationTimestamp: null
   name: vineyardruntimes.data.fluid.io
 spec:
@@ -149,13 +150,14 @@ spec:
                   Represents the Etcd component in Vineyard
                 properties:
                   endpoint:
-                    description: 'ExternalEndpoint defines the configurations for
+                    description: "ExternalEndpoint defines the configurations for
                       external etcd cluster Default is not set If set, the Vineyard
                       Master component will not be deployed, which means the Vineyard
-                      Worker component will use an external Etcd cluster. E,g. endpoint:
-                      uri: "etcd-svc.etcd-namespace.svc.cluster.local:2379" encryptOptions:
-                      - name: access-key valueFrom: secretKeyRef: name: etcd-secret
-                      key: accesskey'
+                      Worker component will use an external Etcd cluster. E,g.   endpoint:
+                      \    uri: \"etcd-svc.etcd-namespace.svc.cluster.local:2379\"
+                      \    encryptOptions:       - name: access-key \t\t   valueFrom:
+                      \          secretKeyRef:             name: etcd-secret \t\t\t
+                      \  key: accesskey"
                     properties:
                       encryptOptions:
                         description: encrypt info for accessing the external etcd
@@ -230,14 +232,15 @@ spec:
                       type: string
                     description: "Configurable options for Vineyard component. For
                       Master, there is no configurable options. For Worker, support
-                      the following options. \n vineyardd.reserve.memory: (Bool) where
-                      to reserve memory for vineyardd If set to true, the memory quota
-                      will be counted to the vineyardd rather than the application.
-                      etcd.prefix: (String) the prefix of etcd key for vineyard objects
-                      wait.etcd.timeout: (String) the timeout period before waiting
-                      the etcd to be ready, in seconds \n Default value is as follows.
-                      \n vineyardd.reserve.memory: \"true\" etcd.prefix: \"/vineyard\"
-                      wait.etcd.timeout: \"120\""
+                      the following options. \n   vineyardd.reserve.memory: (Bool)
+                      where to reserve memory for vineyardd                             If
+                      set to true, the memory quota will be counted to the vineyardd
+                      rather than the application.   etcd.prefix: (String) the prefix
+                      of etcd key for vineyard objects   wait.etcd.timeout: (String)
+                      the timeout period before waiting the etcd to be ready, in seconds
+                      \n   Default value is as follows. \n     vineyardd.reserve.memory:
+                      \"true\"     etcd.prefix: \"/vineyard\"     wait.etcd.timeout:
+                      \"120\""
                     type: object
                   ports:
                     additionalProperties:
@@ -337,11 +340,12 @@ spec:
                 description: "Tiered storage used by vineyardd The MediumType can
                   only be `MEM` and `SSD` `MEM` actually represents the shared memory
                   of vineyardd. `SSD` represents the external storage of vineyardd.
-                  Default is as follows. tieredstore: levels: - level: 0 mediumtype:
-                  MEM quota: 4Gi \n Choose hostpath as the external storage of vineyardd.
-                  tieredstore: levels: - level: 0 mediumtype: MEM quota: 4Gi high:
-                  \"0.8\" low: \"0.3\" - level: 1 mediumtype: SSD quota: 10Gi volumeType:
-                  Hostpath path: /var/spill-path"
+                  Default is as follows.   tieredstore:     levels:     - level: 0
+                  \      mediumtype: MEM       quota: 4Gi \n Choose hostpath as the
+                  external storage of vineyardd.   tieredstore:     levels: \t   -
+                  level: 0       mediumtype: MEM       quota: 4Gi \t\t high: \"0.8\"
+                  \      low: \"0.3\"     - level: 1       mediumtype: SSD       quota:
+                  10Gi       volumeType: Hostpath       path: /var/spill-path"
                 properties:
                   levels:
                     description: configurations for multiple tiers
@@ -809,12 +813,13 @@ spec:
                                 when the pod is removed. \n Use this if: a) the volume
                                 is only needed while the pod runs, b) features of
                                 normal volumes like restoring from snapshot or capacity
-                                tracking are needed, c) the storage driver is specified
-                                through a storage class, and d) the storage driver
-                                supports dynamic volume provisioning through a PersistentVolumeClaim
-                                (see EphemeralVolumeSource for more information on
-                                the connection between this volume type and PersistentVolumeClaim).
-                                \n Use PersistentVolumeClaim or one of the vendor-specific
+                                \   tracking are needed, c) the storage driver is
+                                specified through a storage class, and d) the storage
+                                driver supports dynamic volume provisioning through
+                                \   a PersistentVolumeClaim (see EphemeralVolumeSource
+                                for more    information on the connection between
+                                this volume type    and PersistentVolumeClaim). \n
+                                Use PersistentVolumeClaim or one of the vendor-specific
                                 APIs for volumes that persist for longer than the
                                 lifecycle of an individual pod. \n Use CSI for light-weight
                                 local ephemeral volumes if the CSI driver is meant
@@ -922,15 +927,14 @@ spec:
                                             are two important differences between
                                             DataSource and DataSourceRef: * While
                                             DataSource only allows two specific types
-                                            of objects, DataSourceRef allows any non-core
-                                            object, as well as PersistentVolumeClaim
+                                            of objects, DataSourceRef   allows any
+                                            non-core object, as well as PersistentVolumeClaim
                                             objects. * While DataSource ignores disallowed
-                                            values (dropping them), DataSourceRef
-                                            preserves all values, and generates an
-                                            error if a disallowed value is specified.
-                                            (Alpha) Using this field requires the
-                                            AnyVolumeDataSource feature gate to be
-                                            enabled.'
+                                            values (dropping them), DataSourceRef   preserves
+                                            all values, and generates an error if
+                                            a disallowed value is   specified. (Alpha)
+                                            Using this field requires the AnyVolumeDataSource
+                                            feature gate to be enabled.'
                                           properties:
                                             apiGroup:
                                               description: APIGroup is the group for
@@ -2395,17 +2399,18 @@ spec:
                         pod starts, and deleted when the pod is removed. \n Use this
                         if: a) the volume is only needed while the pod runs, b) features
                         of normal volumes like restoring from snapshot or capacity
-                        tracking are needed, c) the storage driver is specified through
-                        a storage class, and d) the storage driver supports dynamic
-                        volume provisioning through a PersistentVolumeClaim (see EphemeralVolumeSource
-                        for more information on the connection between this volume
-                        type and PersistentVolumeClaim). \n Use PersistentVolumeClaim
-                        or one of the vendor-specific APIs for volumes that persist
-                        for longer than the lifecycle of an individual pod. \n Use
-                        CSI for light-weight local ephemeral volumes if the CSI driver
-                        is meant to be used that way - see the documentation of the
-                        driver for more information. \n A pod can use both types of
-                        ephemeral volumes and persistent volumes at the same time."
+                        \   tracking are needed, c) the storage driver is specified
+                        through a storage class, and d) the storage driver supports
+                        dynamic volume provisioning through    a PersistentVolumeClaim
+                        (see EphemeralVolumeSource for more    information on the
+                        connection between this volume type    and PersistentVolumeClaim).
+                        \n Use PersistentVolumeClaim or one of the vendor-specific
+                        APIs for volumes that persist for longer than the lifecycle
+                        of an individual pod. \n Use CSI for light-weight local ephemeral
+                        volumes if the CSI driver is meant to be used that way - see
+                        the documentation of the driver for more information. \n A
+                        pod can use both types of ephemeral volumes and persistent
+                        volumes at the same time."
                       properties:
                         volumeClaimTemplate:
                           description: "Will be used to create a stand-alone PVC to
@@ -2493,13 +2498,13 @@ spec:
                                     other is non-empty. There are two important differences
                                     between DataSource and DataSourceRef: * While
                                     DataSource only allows two specific types of objects,
-                                    DataSourceRef allows any non-core object, as well
-                                    as PersistentVolumeClaim objects. * While DataSource
-                                    ignores disallowed values (dropping them), DataSourceRef
-                                    preserves all values, and generates an error if
-                                    a disallowed value is specified. (Alpha) Using
-                                    this field requires the AnyVolumeDataSource feature
-                                    gate to be enabled.'
+                                    DataSourceRef   allows any non-core object, as
+                                    well as PersistentVolumeClaim objects. * While
+                                    DataSource ignores disallowed values (dropping
+                                    them), DataSourceRef   preserves all values, and
+                                    generates an error if a disallowed value is   specified.
+                                    (Alpha) Using this field requires the AnyVolumeDataSource
+                                    feature gate to be enabled.'
                                   properties:
                                     apiGroup:
                                       description: APIGroup is the group for the resource
@@ -3518,14 +3523,15 @@ spec:
                       type: string
                     description: "Configurable options for Vineyard component. For
                       Master, there is no configurable options. For Worker, support
-                      the following options. \n vineyardd.reserve.memory: (Bool) where
-                      to reserve memory for vineyardd If set to true, the memory quota
-                      will be counted to the vineyardd rather than the application.
-                      etcd.prefix: (String) the prefix of etcd key for vineyard objects
-                      wait.etcd.timeout: (String) the timeout period before waiting
-                      the etcd to be ready, in seconds \n Default value is as follows.
-                      \n vineyardd.reserve.memory: \"true\" etcd.prefix: \"/vineyard\"
-                      wait.etcd.timeout: \"120\""
+                      the following options. \n   vineyardd.reserve.memory: (Bool)
+                      where to reserve memory for vineyardd                             If
+                      set to true, the memory quota will be counted to the vineyardd
+                      rather than the application.   etcd.prefix: (String) the prefix
+                      of etcd key for vineyard objects   wait.etcd.timeout: (String)
+                      the timeout period before waiting the etcd to be ready, in seconds
+                      \n   Default value is as follows. \n     vineyardd.reserve.memory:
+                      \"true\"     etcd.prefix: \"/vineyard\"     wait.etcd.timeout:
+                      \"120\""
                     type: object
                   ports:
                     additionalProperties:

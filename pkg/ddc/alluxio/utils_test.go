@@ -832,13 +832,14 @@ func TestParseRuntimeImage(t *testing.T) {
 	type envs map[string]string
 
 	tests := []struct {
-		name  string
-		args  args
-		envs  envs
-		want  string
-		want1 string
-		want2 string
-		want3 []corev1.LocalObjectReference
+		name      string
+		args      args
+		envs      envs
+		want      string
+		want1     string
+		want2     string
+		want3     []corev1.LocalObjectReference
+		wantError error
 	}{
 		{
 			name: "test0",
@@ -851,10 +852,11 @@ func TestParseRuntimeImage(t *testing.T) {
 			envs: map[string]string{
 				common.AlluxioRuntimeImageEnv: "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-2c41226",
 			},
-			want:  "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio",
-			want1: "2.3.0-SNAPSHOT-2c41226",
-			want2: "IfNotPresent",
-			want3: []corev1.LocalObjectReference{{Name: "test"}},
+			want:      "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio",
+			want1:     "2.3.0-SNAPSHOT-2c41226",
+			want2:     "IfNotPresent",
+			want3:     []corev1.LocalObjectReference{{Name: "test"}},
+			wantError: nil,
 		},
 		{
 			name: "test1",
@@ -868,10 +870,11 @@ func TestParseRuntimeImage(t *testing.T) {
 				common.AlluxioRuntimeImageEnv: "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-2c41226",
 				common.EnvImagePullSecretsKey: "secret1,secret2",
 			},
-			want:  "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio",
-			want1: "2.3.0-SNAPSHOT-2c41226",
-			want2: "IfNotPresent",
-			want3: []corev1.LocalObjectReference{{Name: "secret1"}, {Name: "secret2"}},
+			want:      "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio",
+			want1:     "2.3.0-SNAPSHOT-2c41226",
+			want2:     "IfNotPresent",
+			want3:     []corev1.LocalObjectReference{{Name: "secret1"}, {Name: "secret2"}},
+			wantError: nil,
 		},
 		{
 			name: "test2",
@@ -885,10 +888,28 @@ func TestParseRuntimeImage(t *testing.T) {
 				common.AlluxioRuntimeImageEnv: "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio:2.3.0-SNAPSHOT-2c41226",
 				common.EnvImagePullSecretsKey: "secret1,secret2",
 			},
-			want:  "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio",
-			want1: "2.3.0-SNAPSHOT-2c41226",
-			want2: "IfNotPresent",
-			want3: []corev1.LocalObjectReference{{Name: "test"}},
+			want:      "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio",
+			want1:     "2.3.0-SNAPSHOT-2c41226",
+			want2:     "IfNotPresent",
+			want3:     []corev1.LocalObjectReference{{Name: "test"}},
+			wantError: nil,
+		}, {
+			name: "test3",
+			args: args{
+				image:            "",
+				tag:              "",
+				imagePullPolicy:  "IfNotPresent",
+				imagePullSecrets: []corev1.LocalObjectReference{{Name: "test"}},
+			},
+			envs: map[string]string{
+				common.AlluxioRuntimeImageEnv: "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio",
+				common.EnvImagePullSecretsKey: "secret1,secret2",
+			},
+			want:      "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio",
+			want1:     "2.3.0-SNAPSHOT-2c41226",
+			want2:     "IfNotPresent",
+			want3:     []corev1.LocalObjectReference{{Name: "test"}},
+			wantError: nil,
 		},
 	}
 	for _, tt := range tests {
@@ -898,18 +919,21 @@ func TestParseRuntimeImage(t *testing.T) {
 				// mock env
 				t.Setenv(k, v)
 			}
-			got, got1, got2, got3 := e.parseRuntimeImage(tt.args.image, tt.args.tag, tt.args.imagePullPolicy, tt.want3)
+			got, got1, got2, got3, err := e.parseRuntimeImage(tt.args.image, tt.args.tag, tt.args.imagePullPolicy, tt.want3)
+			if err != tt.wantError {
+				t.Errorf("testcase %v AlluxioEngine.parseRuntimeImage() got Error = %v, want Error %v", tt.name, err, tt.wantError)
+			}
 			if got != tt.want {
-				t.Errorf("AlluxioEngine.parseRuntimeImage() got = %v, want %v", got, tt.want)
+				t.Errorf("testcase %v AlluxioEngine.parseRuntimeImage() got = %v, want %v", tt.name, got, tt.want)
 			}
 			if got1 != tt.want1 {
-				t.Errorf("AlluxioEngine.parseRuntimeImage() got1 = %v, want %v", got1, tt.want1)
+				t.Errorf("testcase %v AlluxioEngine.parseRuntimeImage() got1 = %v, want %v", tt.name, got1, tt.want1)
 			}
 			if got2 != tt.want2 {
-				t.Errorf("AlluxioEngine.parseRuntimeImage() got2 = %v, want %v", got2, tt.want2)
+				t.Errorf("testcase %v AlluxioEngine.parseRuntimeImage() got2 = %v, want %v", tt.name, got2, tt.want2)
 			}
 			if !reflect.DeepEqual(got3, tt.want3) {
-				t.Errorf("AlluxioEngine.parseRuntimeImage() imagePullSecrets got3 = %v, want %v", got3, tt.want3)
+				t.Errorf("testcase %v AlluxioEngine.parseRuntimeImage() imagePullSecrets got3 = %v, want %v", tt.name, got3, tt.want3)
 			}
 		})
 	}

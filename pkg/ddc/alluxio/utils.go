@@ -187,7 +187,7 @@ func isPortInUsed(port int, usedPorts []int) bool {
 	return false
 }
 
-func (e *AlluxioEngine) parseRuntimeImage(image string, tag string, imagePullPolicy string, imagePullSecrets []v1.LocalObjectReference) (string, string, string, []v1.LocalObjectReference) {
+func (e *AlluxioEngine) parseRuntimeImage(image string, tag string, imagePullPolicy string, imagePullSecrets []v1.LocalObjectReference) (string, string, string, []v1.LocalObjectReference, error) {
 	if len(imagePullPolicy) == 0 {
 		imagePullPolicy = common.DefaultImagePullPolicy
 	}
@@ -197,7 +197,8 @@ func (e *AlluxioEngine) parseRuntimeImage(image string, tag string, imagePullPol
 		if len(image) == 0 {
 			runtimeImageInfo := strings.Split(common.DefaultAlluxioRuntimeImage, ":")
 			if len(runtimeImageInfo) < 1 {
-				panic("invalid default alluxio runtime image!")
+				// panic("invalid default alluxio runtime image!")
+				return "", "", "", imagePullSecrets, fmt.Errorf("invalid default alluxio runtime image")
 			} else {
 				image = runtimeImageInfo[0]
 			}
@@ -209,7 +210,8 @@ func (e *AlluxioEngine) parseRuntimeImage(image string, tag string, imagePullPol
 		if len(tag) == 0 {
 			runtimeImageInfo := strings.Split(common.DefaultAlluxioRuntimeImage, ":")
 			if len(runtimeImageInfo) < 2 {
-				panic("invalid default alluxio runtime image!")
+				// panic("invalid default alluxio runtime image!")
+				return "", "", "", imagePullSecrets, fmt.Errorf("invalid default alluxio runtime image")
 			} else {
 				tag = runtimeImageInfo[1]
 			}
@@ -221,7 +223,7 @@ func (e *AlluxioEngine) parseRuntimeImage(image string, tag string, imagePullPol
 		imagePullSecrets = docker.GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey)
 	}
 
-	return image, tag, imagePullPolicy, imagePullSecrets
+	return image, tag, imagePullPolicy, imagePullSecrets, nil
 }
 
 func (e *AlluxioEngine) parseFuseImage(image string, tag string, imagePullPolicy string) (string, string, string) {
