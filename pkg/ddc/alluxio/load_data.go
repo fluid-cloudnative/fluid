@@ -18,10 +18,11 @@ package alluxio
 
 import (
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
 	"os"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"
@@ -91,7 +92,7 @@ func (e *AlluxioEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 		if len(imageName) == 0 {
 			defaultImageInfo := strings.Split(common.DefaultAlluxioRuntimeImage, ":")
 			if len(defaultImageInfo) < 1 {
-				panic("invalid default dataload image!")
+				return "", fmt.Errorf("invalid default dataload image")
 			} else {
 				imageName = defaultImageInfo[0]
 			}
@@ -103,7 +104,7 @@ func (e *AlluxioEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 		if len(imageTag) == 0 {
 			defaultImageInfo := strings.Split(common.DefaultAlluxioRuntimeImage, ":")
 			if len(defaultImageInfo) < 2 {
-				panic("invalid default dataload image!")
+				return "", fmt.Errorf("invalid default dataload image")
 			} else {
 				imageTag = defaultImageInfo[1]
 			}

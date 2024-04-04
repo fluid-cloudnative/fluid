@@ -197,7 +197,6 @@ func (e *AlluxioEngine) parseRuntimeImage(image string, tag string, imagePullPol
 		if len(image) == 0 {
 			runtimeImageInfo := strings.Split(common.DefaultAlluxioRuntimeImage, ":")
 			if len(runtimeImageInfo) < 1 {
-				// panic("invalid default alluxio runtime image!")
 				return "", "", "", imagePullSecrets, fmt.Errorf("invalid default alluxio runtime image")
 			} else {
 				image = runtimeImageInfo[0]
@@ -210,7 +209,6 @@ func (e *AlluxioEngine) parseRuntimeImage(image string, tag string, imagePullPol
 		if len(tag) == 0 {
 			runtimeImageInfo := strings.Split(common.DefaultAlluxioRuntimeImage, ":")
 			if len(runtimeImageInfo) < 2 {
-				// panic("invalid default alluxio runtime image!")
 				return "", "", "", imagePullSecrets, fmt.Errorf("invalid default alluxio runtime image")
 			} else {
 				tag = runtimeImageInfo[1]
@@ -236,7 +234,6 @@ func (e *AlluxioEngine) parseFuseImage(image string, tag string, imagePullPolicy
 		if len(image) == 0 {
 			fuseImageInfo := strings.Split(common.DefaultAlluxioFuseImage, ":")
 			if len(fuseImageInfo) < 1 {
-				// panic("invalid default alluxio fuse image!")
 				return image, tag, imagePullPolicy, fmt.Errorf("invalid default alluxio fuse image")
 			} else {
 				image = fuseImageInfo[0]
@@ -249,7 +246,6 @@ func (e *AlluxioEngine) parseFuseImage(image string, tag string, imagePullPolicy
 		if len(tag) == 0 {
 			fuseImageInfo := strings.Split(common.DefaultAlluxioFuseImage, ":")
 			if len(fuseImageInfo) < 2 {
-				// panic("invalid default init image!")
 				return image, tag, imagePullPolicy, fmt.Errorf("invalid default alluxio fuse image")
 			} else {
 				tag = fuseImageInfo[1]
