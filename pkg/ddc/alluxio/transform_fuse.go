@@ -40,7 +40,10 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, data
 	tag := runtime.Spec.Fuse.ImageTag
 	imagePullPolicy := runtime.Spec.Fuse.ImagePullPolicy
 
-	value.Fuse.Image, value.Fuse.ImageTag, value.Fuse.ImagePullPolicy = e.parseFuseImage(image, tag, imagePullPolicy)
+	value.Fuse.Image, value.Fuse.ImageTag, value.Fuse.ImagePullPolicy, err = e.parseFuseImage(image, tag, imagePullPolicy)
+	if err != nil {
+		return err
+	}
 
 	if len(runtime.Spec.Fuse.Properties) > 0 {
 		value.Fuse.Properties = runtime.Spec.Fuse.Properties

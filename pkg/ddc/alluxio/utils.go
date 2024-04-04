@@ -226,7 +226,7 @@ func (e *AlluxioEngine) parseRuntimeImage(image string, tag string, imagePullPol
 	return image, tag, imagePullPolicy, imagePullSecrets, nil
 }
 
-func (e *AlluxioEngine) parseFuseImage(image string, tag string, imagePullPolicy string) (string, string, string) {
+func (e *AlluxioEngine) parseFuseImage(image string, tag string, imagePullPolicy string) (string, string, string, error) {
 	if len(imagePullPolicy) == 0 {
 		imagePullPolicy = common.DefaultImagePullPolicy
 	}
@@ -236,7 +236,8 @@ func (e *AlluxioEngine) parseFuseImage(image string, tag string, imagePullPolicy
 		if len(image) == 0 {
 			fuseImageInfo := strings.Split(common.DefaultAlluxioFuseImage, ":")
 			if len(fuseImageInfo) < 1 {
-				panic("invalid default alluxio fuse image!")
+				// panic("invalid default alluxio fuse image!")
+				return image, tag, imagePullPolicy, fmt.Errorf("invalid default alluxio fuse image")
 			} else {
 				image = fuseImageInfo[0]
 			}
@@ -248,14 +249,15 @@ func (e *AlluxioEngine) parseFuseImage(image string, tag string, imagePullPolicy
 		if len(tag) == 0 {
 			fuseImageInfo := strings.Split(common.DefaultAlluxioFuseImage, ":")
 			if len(fuseImageInfo) < 2 {
-				panic("invalid default init image!")
+				// panic("invalid default init image!")
+				return image, tag, imagePullPolicy, fmt.Errorf("invalid default alluxio fuse image")
 			} else {
 				tag = fuseImageInfo[1]
 			}
 		}
 	}
 
-	return image, tag, imagePullPolicy
+	return image, tag, imagePullPolicy, nil
 }
 
 func (e *AlluxioEngine) GetMetadataInfoFile() string {

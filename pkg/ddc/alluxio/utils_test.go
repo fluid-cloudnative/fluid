@@ -979,7 +979,7 @@ func TestParseFuseImage(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			e := &AlluxioEngine{}
 			t.Setenv(common.AlluxioFuseImageEnv, "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse:2.3.0-SNAPSHOT-2c41226")
-			got, got1, got2 := e.parseFuseImage(tt.args.image, tt.args.tag, tt.args.imagePullPolicy)
+			got, got1, got2, _ := e.parseFuseImage(tt.args.image, tt.args.tag, tt.args.imagePullPolicy)
 			if got != tt.want {
 				t.Errorf("AlluxioEngine.parseFuseImage() got = %v, want %v", got, tt.want)
 			}
