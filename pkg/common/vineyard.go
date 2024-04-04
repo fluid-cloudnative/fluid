@@ -21,6 +21,12 @@ const (
 
 	VineyardChart = VineyardRuntime
 
+	VineyardMasterImageEnv = "VINEYARD_MASTER_IMAGE_ENV"
+
+	VineyardWorkerImageEnv = "VINEYARD_WORKER_IMAGE_ENV"
+
+	VineyardFuseImageEnv = "VINEYARD_FUSE_IMAGE_ENV"
+
 	VineyardFuseIsGlobal = true
 
 	DefaultVineyardMasterImage = "bitnami/etcd:3.5.10"
