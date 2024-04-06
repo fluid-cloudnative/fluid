@@ -96,7 +96,7 @@ type ScriptProcessor struct {
 // DataProcessSpec defines the desired state of DataProcess
 type DataProcessSpec struct {
 	// Dataset specifies the target dataset and its mount path.
-	// +requried
+	// +required
 	Dataset TargetDatasetWithMountPath `json:"dataset"`
 
 	// Processor specify how to process data.
