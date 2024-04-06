@@ -19,7 +19,7 @@ master:
   imageTag: 3.5.10
   imagePullPolicy: IfNotPresent
   nodeSelector: {}
-  # Exmaple:
+  # Example:
   #   "disktype": "ssd"
   ports:
     client: 2379
