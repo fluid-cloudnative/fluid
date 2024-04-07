@@ -36,6 +36,12 @@ const (
 	DefultVineyardFuseImage = "vineyardcloudnative/vineyard-fluid-fuse:v0.21.5"
 
 	VineyardEngineImpl = VineyardRuntime
+
+	VineyardConfigmapSuffix = "-rpc-conf"
+
+	VineyardConfigmapVolumeName = "vineyard-rpc-conf"
+
+	VineyardRPCEndpoint = "VINEYARD_RPC_ENDPOINT"
 )
 
 var (
