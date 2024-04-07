@@ -41,4 +41,9 @@ const (
 	WorkerEtcdPrefix = "etcd.prefix"
 
 	DefaultWorkerEtcdPrefixValue = "/vineyard"
+
+	// the cache size of vineyard fuse
+	FuseCacheSize = "cache-size"
+
+	DefaultFuseCacheSizeValue = "0"
 )

@@ -84,6 +84,7 @@ type Fuse struct {
 	NodeSelector    map[string]string            `json:"nodeSelector,omitempty"`
 	Resources       common.Resources             `json:"resources,omitempty"`
 	HostPID         bool                         `json:"hostPID,omitempty"`
+	Options         map[string]string            `json:"options,omitempty"`
 }
 
 type TieredStore struct {

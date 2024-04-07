@@ -76,6 +76,8 @@ spec:
             value: {{ .Values.fuse.targetPath }}/rpc-conf
           - name: PRESTOP_MARKER
             value: /tmp/prestop-marker
+          - name: CACHE_SIZE
+            value: "{{ default "0" (index .Values.fuse.options "cache-size") }}"
           {{- range $key, $value := .Values.fuse.env }}
           - name: "{{ $key }}"
             value: "{{ $value }}"

@@ -103,6 +103,8 @@ fuse:
   targetPath: ""
   nodeSelector: {}
   hostPID: false
+  options:
+    cache-size: "0"
 
 owner:
   enabled: false

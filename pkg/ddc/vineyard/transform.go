@@ -168,6 +168,10 @@ func (e *VineyardEngine) transformFuse(runtime *datav1alpha1.VineyardRuntime, va
 	value.Fuse.HostPID = common.HostPIDEnabled(runtime.Annotations)
 
 	value.Fuse.TargetPath = e.getMountPoint()
+	options := e.transformFuseOptions(runtime)
+	if len(options) != 0 {
+		value.Fuse.Options = options
+	}
 	e.transformResourcesForFuse(runtime, value)
 }
 
@@ -211,6 +215,18 @@ func (e *VineyardEngine) transformWorkerOptions(runtime *datav1alpha1.VineyardRu
 		options = runtime.Spec.Worker.Options
 	}
 
+	return options
+}
+
+func (e *VineyardEngine) transformFuseOptions(runtime *datav1alpha1.VineyardRuntime) map[string]string {
+	options := map[string]string{
+		FuseCacheSize: DefaultFuseCacheSizeValue,
+	}
+	if len(runtime.Spec.Master.Options) > 0 {
+		for key, value := range runtime.Spec.Master.Options {
+			options[key] = value
+		}
+	}
 	return options
 }
 

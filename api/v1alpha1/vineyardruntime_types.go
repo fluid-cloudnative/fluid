@@ -174,6 +174,18 @@ type VineyardSockSpec struct {
 	// Default is not set.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// Options for Vineyard Fuse
+	// Supported options are as follows.
+	//   cache-size: the size of cache in vineyard fuse, the format could be
+	//               1024M, 1024000, 1G, or 1Gi.
+	//				 Default is "0", which means no cache.
+	// Default is as follows.
+	// fuse:
+	//   options:
+	//     cache-size: "0"
+	// +optional
+	Options map[string]string `json:"options,omitempty"`
 }
 
 // VineyardRuntimeSpec defines the desired state of VineyardRuntime
