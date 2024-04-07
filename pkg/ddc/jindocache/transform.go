@@ -453,7 +453,7 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 			key := encryptOption.Name
 			secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
 			if secretMountSupport {
-				value.Secret = secretKeyRef.Key
+				value.Secret = secretKeyRef.Name
 				if key == "fs."+mountType+".accessKeyId" {
 					value.SecretKey = secretKeyRef.Key
 					e.Log.Info("Get %s From %s!", key, secretKeyRef.Name)
