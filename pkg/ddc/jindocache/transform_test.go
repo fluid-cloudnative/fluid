@@ -1456,5 +1456,8 @@ func TestJindoEngine_transformSecret(t *testing.T) {
 		if test.value.SecretValue != "AccessKeySecret" {
 			t.Errorf("expected value AccessKeyId, but got %v", test.value.SecretKey)
 		}
+		if test.value.Secret != "AccessKeySecret" {
+			t.Errorf("expected value AccessKeyId, but got %v", test.value.SecretKey)
+		}
 	}
 }
