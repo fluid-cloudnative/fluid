@@ -17,6 +17,8 @@
 package databackup
 
 import (
+	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -50,6 +52,14 @@ func (o *OnceHandler) GetOperationStatus(ctx runtime.ReconcileRequestContext, op
 	// 2. only update status if finished
 	if !kubeclient.IsFinishedPod(backupPod) {
 		return
+	}
+	// set the node labels in status when job finished
+	if result.NodeLabels == nil {
+		// generate the node labels
+		result.NodeLabels, err = dataflow.GenerateNodeLabels(ctx.Client, backupPod)
+		if err != nil {
+			return nil, fmt.Errorf("error to generate the node labels: %v", err)
+		}
 	}
 
 	var finishTime time.Time

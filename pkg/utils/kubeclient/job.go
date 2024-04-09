@@ -56,7 +56,7 @@ func GetSucceedPodForJob(c client.Client, job *v1.Job) (*corev1.Pod, error) {
 	})
 
 	for _, pod := range podList.Items {
-		if pod.Status.Phase == corev1.PodSucceeded {
+		if IsSucceededPod(&pod) {
 			return &pod, nil
 		}
 	}

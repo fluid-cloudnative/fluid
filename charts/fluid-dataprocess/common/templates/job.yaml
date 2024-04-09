@@ -71,7 +71,7 @@ spec:
           {{- end }}
       {{- if .Values.dataProcess.scriptProcessor.affinity }}
       affinity:
-        {{ .Values.dataProcess.scriptProcessor.affinity }}
+{{ toYaml .Values.dataProcess.scriptProcessor.affinity | indent 8  }}
       {{- end }}
       volumes:
         - name: script-cm-vol
