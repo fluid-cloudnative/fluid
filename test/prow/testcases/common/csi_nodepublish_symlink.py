@@ -48,7 +48,7 @@ def main():
     dataset = fluidapi.assemble_dataset("alluxio-webufs").set_namespaced_name(namespace, name)
     runtime = fluidapi.assemble_runtime("alluxio-webufs").set_namespaced_name(namespace, name)
 
-    csi_symlink_annotation = "[{\"Labels\": {\"fluid.io/node-puhlish-method\": \"symlink\"}, \"selector\": { \"kind\": \"PersistentVolume\"}}]"
+    csi_symlink_annotation = "[{\"Labels\": {\"fluid.io/node-publish-method\": \"symlink\"}, \"selector\": { \"kind\": \"PersistentVolume\"}}]"
     runtime.set_annotation("data.fluid.io/metadataList", csi_symlink_annotation)
 
     flow = TestFlow("Common - Test CSI NodePublishVolume symlink")

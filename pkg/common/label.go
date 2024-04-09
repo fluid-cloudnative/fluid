@@ -47,7 +47,7 @@ const (
 	RuntimeControllerReplicas = "controller.runtime." + LabelAnnotationPrefix + "replicas"
 
 	// LabelNodePublishMothod is a pv label that indicates the method nodePuhlishVolume use
-	LabelNodePublishMothod = LabelAnnotationPrefix + "node-puhlish-method"
+	LabelNodePublishMothod = LabelAnnotationPrefix + "node-publish-method"
 )
 
 var (

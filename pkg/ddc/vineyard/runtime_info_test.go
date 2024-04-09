@@ -51,7 +51,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 	addedMeta := []v1alpha1.Metadata{
 		{
 			PodMetadata: v1alpha1.PodMetadata{
-				Labels: map[string]string{"fluid.io/node-puhlish-method": "symlink"},
+				Labels: map[string]string{"fluid.io/node-publish-method": "symlink"},
 			},
 			Selector: metav1.GroupKind{Kind: "PersistentVolume"},
 		},
