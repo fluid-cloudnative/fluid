@@ -8,19 +8,7 @@ For more information on how to use Vineyard, see the [Vineyard Quick Start Guide
 
 ## Install Fluid
 
-You can download the latest Fluid installation package from [Fluid Releases](https://github.com/fluid-cloudnative/fluid/releases). Refer to the [Installation Documentation](../../userguide/install.md) to complete the installation. Check that all Fluid components are running properly:
-
-```shell
-$ kubectl get po -n fluid-system
-NAME                                         READY   STATUS              RESTARTS   AGE
-csi-nodeplugin-fluid-56d44                   2/2     Running             0          106s
-csi-nodeplugin-fluid-5l78j                   2/2     Running             0          106s
-csi-nodeplugin-fluid-5mghb                   2/2     Running             0          106s
-dataset-controller-5cd87f8b9b-t7dv2          1/1     Running             0          106s
-fluid-webhook-77d44f5fbc-wttzl               1/1     Running             0          106s
-```
-
-Ensure that the `dataset-controller`, `fluid-webhook` pods, and several `csi-nodeplugin` pods are running properly. The `vineyard-runtime-controller` will be dynamically created when using VineyardRuntime.
+Refer to the [Installation Documentation](../../userguide/install.md) to complete the installation.
 
 ## Create Vineyard Runtime and Dataset
 
@@ -35,7 +23,7 @@ spec:
   tieredstore:
     levels:
     - mediumtype: MEM
-    quota: 20Gi
+      quota: 20Gi
 ---
 apiVersion: data.fluid.io/v1alpha1
 kind: Dataset
