@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prepare-data
+spec:
+  selector:
+    matchLabels:
+      app: prepare-data
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: prepare-data
+    spec:
+      containers:
+      - name: prepare-data
+        image: test-registry/prepare-data
+        imagePullPolicy: IfNotPresent
+        command: ["python3", "/prepare-data.py"]
+        volumeMounts:
+        - mountPath: /data
+          name: data
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: benchmark-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: benchmark-data
+spec:
+  storageClassName: manual
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 30Gi
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: benchmark-data
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 30Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    # mount a nfs volume to the kubernetes nodes
+    path: "/mnt/csi-benchmark"

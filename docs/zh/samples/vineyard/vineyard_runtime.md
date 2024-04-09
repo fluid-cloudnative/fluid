@@ -8,19 +8,7 @@ Vineyard 是一个开源的内存数据管理系统，旨在提供高性能的�
 
 ## 安装 Fluid
 
-您可以从 [Fluid Releases](https://github.com/fluid-cloudnative/fluid/releases) 下载最新的 Fluid 安装包。参考 [安装文档](../../userguide/install.md) 完成安装。并检查 Fluid 各组件正常运行：
-
-```shell
-$ kubectl get po -n fluid-system
-NAME                                         READY   STATUS              RESTARTS   AGE
-csi-nodeplugin-fluid-56d44                   2/2     Running             0          106s
-csi-nodeplugin-fluid-5l78j                   2/2     Running             0          106s
-csi-nodeplugin-fluid-5mghb                   2/2     Running             0          106s
-dataset-controller-5cd87f8b9b-t7dv2          1/1     Running             0          106s
-fluid-webhook-77d44f5fbc-wttzl               1/1     Running             0          106s
-```
-
-确保 `dataset-controller`、`fluid-webhook` 的 pod 以及若干 `csi-nodeplugin` pod 正常运行。 `vineyard-runtime-controller` 会在使用 VineyardRuntime 的时候动态创建。
+参考 [安装文档](../../userguide/install.md) 完成安装。
 
 ## 创建Vineyard Runtime 及 Dataset
 
@@ -72,6 +60,8 @@ vineyard                                                                  Bound 
 
 ## 创建一个应用 Pod 并挂载 Vineyard Dataset
 
+默认情况下，Vineyard Dataset 的挂载路径为 `/var/run/vineyard`。然后您可以通过默认配置连接到 vineyard worker。如果更改挂载路径，需要在连接到 vineyard worker 时指定配置。
+
 ```shell
 $ cat <<EOF | kubectl apply -f -
 apiVersion: v1
@@ -81,12 +71,18 @@ metadata:
 spec:
   containers:
     - name: demo
-      image: nginx
+      image: python:3.10
+      command:
+      - bash
+      - -c
+      - |
+        pip install vineyard;
+        sleep infinity;
       volumeMounts:
-        - mountPath: /data
-          name: demo
+        - mountPath: /var/run/vineyard
+          name: client-config
   volumes:
-    - name: demo
+    - name: client-config
       persistentVolumeClaim:
         claimName: vineyard
 EOF
@@ -105,4 +101,124 @@ demo-app   1/1     Running   0          25s
 ```shell
 $ kubectl get po | grep vineyard-fuse
 vineyard-fuse-9dv4d                    1/1     Running   0               1m20s
+```
+
+检查 vineyard 客户端配置是否已经挂载到应用 Pod：
+
+```shell
+$ kubectl exec demo-app -- ls /data/
+rpc-conf
+vineyard-config.yaml
+```
+
+```shell
+$ kubectl exec demo-app -- cat /data/vineyard-config.yaml
+Vineyard:
+  IPCSocket: vineyard.sock
+  RPCEndpoint: vineyard-worker-0.vineyard-worker.default:9600,vineyard-worker-1.vineyard-worker.default:9600
+```
+
+在应用pod中连接 vineyard worker：
+
+```shell
+$ kubectl exec -it demo-app -- python
+Python 3.10.14 (main, Mar 25 2024, 21:45:25) [GCC 12.2.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import vineyard
+>>> client = vineyard.connect()
+>>> client.status
+{
+    instance_id: 1,
+    deployment: local,
+    memory_usage: 0,
+    memory_limit: 21474836480,
+    deferred_requests: 0,
+    ipc_connections: 0,
+    rpc_connections: 1
+}
+```
+
+## 使用 Vineyard Runtime 在pod之间共享数据
+
+在这个示例中，我们将展示如何在不同的工作负载之间共享数据。假设我们有两个 Pod，一个是生产者，另一个是消费者。
+
+创建生产者 Pod：
+
+```shell
+$ cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: producer
+spec:
+  containers:
+    - name: producer
+      image: python:3.10
+      command:
+      - bash
+      - -c
+      - |
+        pip install vineyard numpy pandas;
+        cat << EOF >> producer.py
+        import vineyard
+        import numpy as np
+        import pandas as pd
+        vineyard.put(pd.DataFrame(np.random.randn(100, 4), columns=list('ABCD')), persist=True, name="test_dataframe")
+        vineyard.put((1, 1.2345, 'xxxxabcd'), persist=True, name="test_basic_data_unit");
+        EOF
+        python producer.py;
+        sleep infinity;
+      volumeMounts:
+        - mountPath: /var/run/vineyard
+          name: client-config
+  volumes:
+    - name: client-config
+      persistentVolumeClaim:
+        claimName: vineyard
+EOF
+```
+
+接下来创建消费者 Pod：
+
+```shell
+$ cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: consumer
+spec:
+  containers:
+    - name: consumer
+      image: python:3.10
+      command:
+      - bash
+      - -c
+      - |
+        pip install vineyard numpy pandas;
+        cat << EOF >> consumer.py
+        import vineyard
+        print(vineyard.get(name="test_dataframe",fetch=True).sum())
+        print(vineyard.get(name="test_basic_data_unit",fetch=True))
+        EOF
+        python consumer.py;
+        sleep infinity;
+      volumeMounts:
+        - mountPath: /var/run/vineyard
+          name: client-config
+  volumes:
+    - name: client-config
+      persistentVolumeClaim:
+        claimName: vineyard
+EOF
+
+检查消费者 Pod 的日志：
+
+```shell
+$  kubectl logs consumer --tail 6
+A    2.260771
+B   -2.690233
+C   -1.523646
+D    7.208424
+dtype: float64
+(1, 1.2345000505447388, 'xxxxabcd')
 ```

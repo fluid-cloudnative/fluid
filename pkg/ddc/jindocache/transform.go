@@ -270,6 +270,10 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 		// to parse cacheset
 		cachesetName := mount.Name
 		cachesetPath := mount.MountPoint
+		if strings.HasPrefix(mount.MountPoint, common.VolumeScheme.String()) {
+			ufsVolumesPath := utils.UFSPathBuilder{}.GenLocalStoragePath(mount)
+			cachesetPath = "local://" + ufsVolumesPath
+		}
 		cacheStrategy := "DISTRIBUTED"
 		metaPolicy := "ALWAYS"
 		readCacheReplica := 1
@@ -451,11 +455,11 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 			if secretMountSupport {
 				value.Secret = secretKeyRef.Name
 				if key == "fs."+mountType+".accessKeyId" {
-					value.SecretKey = key
+					value.SecretKey = secretKeyRef.Key
 					e.Log.Info("Get %s From %s!", key, secretKeyRef.Name)
 				}
 				if key == "fs."+mountType+".accessKeySecret" {
-					value.SecretValue = key
+					value.SecretValue = secretKeyRef.Key
 					e.Log.Info("Get %s From %s!", key, secretKeyRef.Name)
 				}
 			} else {

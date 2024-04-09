@@ -25,6 +25,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 )
 
 // getRuntime gets the vineyard runtime
@@ -128,20 +129,26 @@ func (e *VineyardEngine) parseMasterImage(image string, tag string, imagePullPol
 	}
 
 	if len(image) == 0 {
-		masterImageInfo := strings.Split(common.DefaultVineyardMasterImage, ":")
-		if len(masterImageInfo) < 1 {
-			panic("invalid default vineyard master image!")
-		} else {
-			image = masterImageInfo[0]
+		image = docker.GetImageRepoFromEnv(common.VineyardMasterImageEnv)
+		if len(image) == 0 {
+			masterImageInfo := strings.Split(common.DefaultVineyardMasterImage, ":")
+			if len(masterImageInfo) < 1 {
+				panic("invalid default vineyard master image!")
+			} else {
+				image = masterImageInfo[0]
+			}
 		}
 	}
 
 	if len(tag) == 0 {
-		masterImageInfo := strings.Split(common.DefaultVineyardMasterImage, ":")
-		if len(masterImageInfo) < 2 {
-			panic("invalid default vineyard master image!")
-		} else {
-			tag = masterImageInfo[1]
+		tag = docker.GetImageTagFromEnv(common.VineyardMasterImageEnv)
+		if len(tag) == 0 {
+			masterImageInfo := strings.Split(common.DefaultVineyardMasterImage, ":")
+			if len(masterImageInfo) < 2 {
+				panic("invalid default vineyard master image!")
+			} else {
+				tag = masterImageInfo[1]
+			}
 		}
 	}
 
@@ -154,20 +161,26 @@ func (e *VineyardEngine) parseWorkerImage(image string, tag string, imagePullPol
 	}
 
 	if len(image) == 0 {
-		workerImageInfo := strings.Split(common.DefaultVineyardWorkerImage, ":")
-		if len(workerImageInfo) < 1 {
-			panic("invalid default vineyard worker image!")
-		} else {
-			image = workerImageInfo[0]
+		image = docker.GetImageRepoFromEnv(common.VineyardWorkerImageEnv)
+		if len(image) == 0 {
+			workerImageInfo := strings.Split(common.DefaultVineyardWorkerImage, ":")
+			if len(workerImageInfo) < 1 {
+				panic("invalid default vineyard worker image!")
+			} else {
+				image = workerImageInfo[0]
+			}
 		}
 	}
 
 	if len(tag) == 0 {
-		workerImageInfo := strings.Split(common.DefaultVineyardWorkerImage, ":")
-		if len(workerImageInfo) < 2 {
-			panic("invalid default vineyard worker image!")
-		} else {
-			tag = workerImageInfo[1]
+		tag = docker.GetImageTagFromEnv(common.VineyardWorkerImageEnv)
+		if len(tag) == 0 {
+			workerImageInfo := strings.Split(common.DefaultVineyardWorkerImage, ":")
+			if len(workerImageInfo) < 2 {
+				panic("invalid default vineyard worker image!")
+			} else {
+				tag = workerImageInfo[1]
+			}
 		}
 	}
 
@@ -180,20 +193,26 @@ func (e *VineyardEngine) parseFuseImage(image string, tag string, imagePullPolic
 	}
 
 	if len(image) == 0 {
-		fuseImageInfo := strings.Split(common.DefultVineyardFuseImage, ":")
-		if len(fuseImageInfo) < 1 {
-			panic("invalid default vineyard fuse image!")
-		} else {
-			image = fuseImageInfo[0]
+		image = docker.GetImageRepoFromEnv(common.VineyardFuseImageEnv)
+		if len(image) == 0 {
+			fuseImageInfo := strings.Split(common.DefultVineyardFuseImage, ":")
+			if len(fuseImageInfo) < 1 {
+				panic("invalid default vineyard fuse image!")
+			} else {
+				image = fuseImageInfo[0]
+			}
 		}
 	}
 
 	if len(tag) == 0 {
-		fuseImageInfo := strings.Split(common.DefultVineyardFuseImage, ":")
-		if len(fuseImageInfo) < 2 {
-			panic("invalid default vineyard fuse image!")
-		} else {
-			tag = fuseImageInfo[1]
+		tag = docker.GetImageTagFromEnv(common.VineyardFuseImageEnv)
+		if len(tag) == 0 {
+			fuseImageInfo := strings.Split(common.DefultVineyardFuseImage, ":")
+			if len(fuseImageInfo) < 2 {
+				panic("invalid default vineyard fuse image!")
+			} else {
+				tag = fuseImageInfo[1]
+			}
 		}
 	}
 
