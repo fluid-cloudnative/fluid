@@ -244,6 +244,28 @@ const (
 	DataProcessType OperationType = "DataProcess"
 )
 
+type AffinityPolicy string
+
+const (
+	DefaultAffinityStrategy AffinityPolicy = ""
+	RequireAffinityStrategy AffinityPolicy = "Require"
+	PreferAffinityStrategy  AffinityPolicy = "Prefer"
+)
+
+type AffinityStrategy struct {
+	// Policy one of: "", "Require", "Prefer"
+	// +optional
+	Policy AffinityPolicy `json:"policy,omitempty"`
+
+	Prefer  []Prefer `json:"prefer,omitempty"`
+	Require []string `json:"require,omitempty"`
+}
+
+type Prefer struct {
+	Name   string `json:"name"`
+	Weight int32  `json:"weight"`
+}
+
 type OperationRef struct {
 	// API version of the referent operation
 	// +optional
@@ -261,6 +283,10 @@ type OperationRef struct {
 	// Namespace specifies the namespace of the referent operation.
 	// +optional
 	Namespace string `json:"namespace,omitempty"`
+
+	// Namespace specifies the pod affinity strategy with the referent operation.
+	// +optional
+	AffinityStrategy AffinityStrategy `json:"affinityStrategy,omitempty"`
 }
 
 type WaitingStatus struct {

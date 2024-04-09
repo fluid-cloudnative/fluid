@@ -23,5 +23,5 @@ func (e *EFCEngine) generateDataProcessValueFile(ctx cruntime.ReconcileRequestCo
 		return "", errors.Wrap(err, "failed to get dataset")
 	}
 
-	return dataprocess.GenDataProcessValueFile(targetDataset, dataProcess)
+	return dataprocess.GenDataProcessValueFile(e.Client, targetDataset, dataProcess)
 }

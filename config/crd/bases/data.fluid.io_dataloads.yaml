@@ -956,6 +956,31 @@ spec:
               runAfter:
                 description: Specifies that the preceding operation in a workflow
                 properties:
+                  affinityStrategy:
+                    description: Namespace specifies the pod affinity strategy with
+                      the referent operation.
+                    properties:
+                      policy:
+                        description: 'Policy one of: "", "Require", "Prefer"'
+                        type: string
+                      prefer:
+                        items:
+                          properties:
+                            name:
+                              type: string
+                            weight:
+                              format: int32
+                              type: integer
+                          required:
+                          - name
+                          - weight
+                          type: object
+                        type: array
+                      require:
+                        items:
+                          type: string
+                        type: array
+                    type: object
                   apiVersion:
                     description: API version of the referent operation
                     type: string
@@ -1104,6 +1129,11 @@ spec:
                   successfully completed
                 format: date-time
                 type: string
+              nodeLabels:
+                additionalProperties:
+                  type: string
+                description: NodeLabels defines the node labels for operation pods
+                type: object
               phase:
                 description: Phase describes current phase of operation
                 type: string

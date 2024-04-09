@@ -209,3 +209,9 @@ const (
 const (
 	RuntimeFuseHostPIDKey = "runtime.fluid.io/fuse.hostpid"
 )
+
+const (
+	K8sNodeNameLabelKey = "kubernetes.io/hostname"
+	K8sZoneLabelKey     = "topology.kubernetes.io/zone"
+	K8sRegionLabelKey   = "topology.kubernetes.io/region"
+)

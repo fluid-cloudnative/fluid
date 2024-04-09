@@ -39,5 +39,5 @@ func (t *ThinEngine) generateDataProcessValueFile(ctx cruntime.ReconcileRequestC
 		return "", errors.Wrap(err, "failed to get dataset")
 	}
 
-	return dataprocess.GenDataProcessValueFile(targetDataset, dataProcess)
+	return dataprocess.GenDataProcessValueFile(t.Client, targetDataset, dataProcess)
 }

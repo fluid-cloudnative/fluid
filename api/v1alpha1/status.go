@@ -151,6 +151,9 @@ type OperationStatus struct {
 	LastSuccessfulTime *metav1.Time `json:"lastSuccessfulTime,omitempty"`
 	// WaitingStatus stores information about waiting operation.
 	WaitingFor WaitingStatus `json:"waitingFor,omitempty"`
+
+	// NodeLabels defines the node labels for operation pods
+	NodeLabels map[string]string `json:"nodeLabels,omitempty"`
 }
 
 type RuntimePhase string

@@ -18,7 +18,10 @@ package kubeclient
 
 import (
 	"context"
+	"fmt"
 	"k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -38,4 +41,25 @@ func GetJob(client client.Client, name, namespace string) (*v1.Job, error) {
 
 func UpdateJob(client client.Client, job *v1.Job) error {
 	return client.Update(context.TODO(), job)
+}
+
+// GetSucceedPodForJob get the first finished pod for the job, if no succeed pod, return nil with no error.
+func GetSucceedPodForJob(c client.Client, job *v1.Job) (*corev1.Pod, error) {
+	var podList corev1.PodList
+	selector, err := metav1.LabelSelectorAsSelector(job.Spec.Selector)
+	if err != nil {
+		return nil, fmt.Errorf("error converting Job %s in namespace %s selector: %v", job.Name, job.Namespace, err)
+	}
+	err = c.List(context.TODO(), &podList, &client.ListOptions{
+		Namespace:     job.Namespace,
+		LabelSelector: selector,
+	})
+
+	for _, pod := range podList.Items {
+		if pod.Status.Phase == corev1.PodSucceeded {
+			return &pod, nil
+		}
+	}
+	// no succeed job, return nil with no error.
+	return nil, nil
 }

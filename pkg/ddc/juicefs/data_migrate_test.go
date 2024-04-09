@@ -996,9 +996,9 @@ func Test_addWorkerPodAntiAffinity(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			addWorkerPodAntiAffinity(tt.args.dataMigrateInfo, tt.args.dataMigrate)
+			addWorkerPodPreferredAntiAffinity(tt.args.dataMigrateInfo, tt.args.dataMigrate)
 			if !reflect.DeepEqual(tt.args.dataMigrateInfo, tt.want) {
-				t.Errorf("addWorkerPodAntiAffinity() got = %v, want %v", tt.args.dataMigrateInfo, tt.want)
+				t.Errorf("addWorkerPodPreferredAntiAffinity() got = %v, want %v", tt.args.dataMigrateInfo, tt.want)
 			}
 		})
 	}

@@ -18,6 +18,7 @@ package jindofsx
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -115,7 +116,10 @@ func (e *JindoFSxEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCo
 		return
 	}
 
-	dataLoadValue := e.genDataLoadValue(image, runtime, targetDataset, dataload)
+	dataLoadValue, err := e.genDataLoadValue(image, runtime, targetDataset, dataload)
+	if err != nil {
+		return
+	}
 
 	data, err := yaml.Marshal(dataLoadValue)
 	if err != nil {
@@ -133,7 +137,8 @@ func (e *JindoFSxEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCo
 	return valueFile.Name(), nil
 }
 
-func (e *JindoFSxEngine) genDataLoadValue(image string, runtime *datav1alpha1.JindoRuntime, targetDataset *datav1alpha1.Dataset, dataload *datav1alpha1.DataLoad) *cdataload.DataLoadValue {
+func (e *JindoFSxEngine) genDataLoadValue(image string, runtime *datav1alpha1.JindoRuntime, targetDataset *datav1alpha1.Dataset,
+	dataload *datav1alpha1.DataLoad) (*cdataload.DataLoadValue, error) {
 	hadoopConfig := runtime.Spec.HadoopConfig
 	loadMemorydata := false
 	if len(runtime.Spec.TieredStore.Levels) > 0 && runtime.Spec.TieredStore.Levels[0].MediumType == "MEM" {
@@ -157,6 +162,13 @@ func (e *JindoFSxEngine) genDataLoadValue(image string, runtime *datav1alpha1.Ji
 	// pod affinity
 	if dataload.Spec.Affinity != nil {
 		dataloadInfo.Affinity = dataload.Spec.Affinity
+	}
+
+	// inject the node affinity by previous operation pod.
+	var err error
+	dataloadInfo.Affinity, err = dataflow.InjectAffinityByRunAfterOp(e.Client, dataload.Spec.RunAfter, dataload.Namespace, dataloadInfo.Affinity)
+	if err != nil {
+		return nil, err
 	}
 
 	// node selector
@@ -213,7 +225,7 @@ func (e *JindoFSxEngine) genDataLoadValue(image string, runtime *datav1alpha1.Ji
 		Owner:        transfromer.GenerateOwnerReferenceFromObject(dataload),
 	}
 
-	return dataLoadValue
+	return dataLoadValue, nil
 }
 
 func (e *JindoFSxEngine) CheckRuntimeReady() (ready bool) {
