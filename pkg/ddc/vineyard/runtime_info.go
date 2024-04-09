@@ -29,7 +29,7 @@ func (e *VineyardEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		if runtime.ObjectMeta.Annotations == nil {
 			runtime.ObjectMeta.Annotations = make(map[string]string)
 		}
-		runtime.ObjectMeta.Annotations["data.fluid.io/metadataList"] = `[{"Labels": {"fluid.io/node-puhlish-method": "symlink"}, "selector": { "kind": "PersistentVolume"}}]`
+		runtime.ObjectMeta.Annotations["data.fluid.io/metadataList"] = `[{"Labels": {"fluid.io/node-publish-method": "symlink"}, "selector": { "kind": "PersistentVolume"}}]`
 		tieredStore := runtime.Spec.TieredStore
 		e.runtimeInfo, err = base.BuildRuntimeInfo(e.name, e.namespace, e.runtimeType, tieredStore, base.WithMetadataList(base.GetMetadataListFromAnnotation(runtime)))
 		if err != nil {
