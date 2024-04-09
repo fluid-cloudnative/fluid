@@ -54,6 +54,9 @@ func GetSucceedPodForJob(c client.Client, job *v1.Job) (*corev1.Pod, error) {
 		Namespace:     job.Namespace,
 		LabelSelector: selector,
 	})
+	if err != nil {
+		return nil, fmt.Errorf("error listing pods for Job %s in namespace %s: %v", job.Name, job.Namespace, err)
+	}
 
 	for _, pod := range podList.Items {
 		if IsSucceededPod(&pod) {
