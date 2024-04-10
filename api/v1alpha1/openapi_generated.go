@@ -6743,6 +6743,22 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardSockSpec(ref common.Ref
 							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
 						},
 					},
+					"options": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Options for Vineyard Fuse Supported options are as follows.\n  cache-size: the size of cache in vineyard fuse, the format could be\n              1024M, 1024000, 1G, or 1Gi.\n\t\t\t\t Default is \"0\", which means no cache.\nDefault is as follows. fuse:\n  options:\n    cache-size: \"0\"",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
