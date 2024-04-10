@@ -97,6 +97,10 @@ spec:
             - --log_dir
             - /var/log/vineyard
             {{- end }}
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "rm -f /var/run/vineyard/vineyard-worker.sock"]
           env:
           - name: VINEYARDD_NAME
             value: {{ template "vineyard.fullname" . }}-vineyardd
