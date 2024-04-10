@@ -45,5 +45,7 @@ const (
 	// the cache size of vineyard fuse
 	FuseCacheSize = "cache-size"
 
+	FuseCacheSizeInEnv = "CACHE_SIZE"
+
 	DefaultFuseCacheSizeValue = "0"
 )

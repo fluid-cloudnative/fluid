@@ -78,6 +78,10 @@ spec:
             value: /tmp/prestop-marker
           - name: CACHE_SIZE
             value: "{{ default "0" (index .Values.fuse.options "cache-size") }}"
+          - name: ETCD_ENDPOINT
+            value: "{{ include "vineyard.master.endpoint" . }}"
+          - name: ETCD_PREFIX
+            value: "{{ default "/vineyard" (index .Values.worker.options "etcd.prefix") }}"
           {{- range $key, $value := .Values.fuse.env }}
           - name: "{{ $key }}"
             value: "{{ $value }}"
@@ -86,9 +90,11 @@ spec:
             preStop:
               exec:
                 {{/* umount the configmap volume manually to avoid the error of "possibly malicious path detecte" */}}
-                command: ["sh", "-c", "touch /tmp/prestop-marker && { rm {{ .Values.fuse.targetPath }}/vineyard.sock || true; } && umount {{ .Values.fuse.targetPath }}/rpc-conf"]
-          {{- if .Values.master.resources  }}
-{{ include "vineyard.master.resources" . | indent 10 }}
+                command: ["sh", "-c", "touch /tmp/prestop-marker && rm -f {{ .Values.fuse.targetPath }}/vineyard-local.sock {{ .Values.fuse.targetPath }}/vineyard-worker.sock && umount {{ .Values.fuse.targetPath }}/rpc-conf"]
+          {{- if not (eq (toString (index .Values.fuse.options "cache-size")) "0") }}
+          resources:
+            requests:
+              memory: "{{ (toString (index .Values.fuse.options "cache-size")) }}"
           {{- end }}
           volumeMounts:
           - name: vineyard-fuse-mount

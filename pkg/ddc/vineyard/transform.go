@@ -222,8 +222,8 @@ func (e *VineyardEngine) transformFuseOptions(runtime *datav1alpha1.VineyardRunt
 	options := map[string]string{
 		FuseCacheSize: DefaultFuseCacheSizeValue,
 	}
-	if len(runtime.Spec.Master.Options) > 0 {
-		for key, value := range runtime.Spec.Master.Options {
+	if len(runtime.Spec.Fuse.Options) > 0 {
+		for key, value := range runtime.Spec.Fuse.Options {
 			options[key] = value
 		}
 	}

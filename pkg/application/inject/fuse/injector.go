@@ -23,6 +23,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/application/inject/fuse/mutator"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/vineyard"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/applications/defaultapp"
@@ -305,7 +306,23 @@ func (s *Injector) checkVineyardPlatform(podSpecs *mutator.MutatingPodSpecs, run
 	}
 	for pvcName, runtimeInfo := range runtimeInfos {
 		if _, ok := pvcNames[pvcName]; ok && runtimeInfo.GetRuntimeType() == common.VineyardRuntime {
-			return utils.PlatformVineyard
+			template, err := runtimeInfo.GetFuseContainerTemplate()
+			if err != nil {
+				s.log.Error(err, "failed to get fuse container template for runtime \"%s/%s\"", runtimeInfo.GetNamespace(), runtimeInfo.GetName())
+				return ""
+			}
+			if len(template.FuseContainer.Env) == 0 {
+				return ""
+			}
+			for _, env := range template.FuseContainer.Env {
+				if env.Name == vineyard.FuseCacheSizeInEnv {
+					if env.Value == "0" {
+						return utils.PlatformVineyard
+					} else {
+						return ""
+					}
+				}
+			}
 		}
 	}
 	return ""

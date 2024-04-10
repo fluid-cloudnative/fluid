@@ -470,6 +470,55 @@ func TestTransformWorkerOptions(t *testing.T) {
 	}
 }
 
+func TestTransformFuseOptions(t *testing.T) {
+	tests := []struct {
+		name     string
+		runtime  *datav1alpha1.VineyardRuntime
+		expected map[string]string
+	}{
+		{
+			name: "NoFuseOptions",
+			runtime: &datav1alpha1.VineyardRuntime{
+				Spec: datav1alpha1.VineyardRuntimeSpec{
+					Fuse: datav1alpha1.VineyardSockSpec{
+						Options: map[string]string{},
+					},
+				},
+			},
+			expected: map[string]string{
+				"cache-size": "0",
+			},
+		},
+		{
+			name: "WithFuseOptions",
+			runtime: &datav1alpha1.VineyardRuntime{
+				Spec: datav1alpha1.VineyardRuntimeSpec{
+					Fuse: datav1alpha1.VineyardSockSpec{
+						Options: map[string]string{
+							"cache-size": "10Gi",
+							"dummy-key":  "dummy-value",
+						},
+					},
+				},
+			},
+			expected: map[string]string{
+				"cache-size": "10Gi",
+				"dummy-key":  "dummy-value",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			engine := &VineyardEngine{}
+			actual := engine.transformFuseOptions(tt.runtime)
+			if !reflect.DeepEqual(actual, tt.expected) {
+				t.Errorf("%s: expected %v, got %v", tt.name, tt.expected, actual)
+			}
+		})
+	}
+}
+
 func TestTransformWorkerPorts(t *testing.T) {
 	tests := []struct {
 		name     string

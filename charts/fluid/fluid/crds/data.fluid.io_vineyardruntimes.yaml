@@ -116,6 +116,15 @@ spec:
                   imageTag:
                     description: Image Tag for Vineyard Fuse Default is `v0.21.5`
                     type: string
+                  options:
+                    additionalProperties:
+                      type: string
+                    description: 'Options for Vineyard Fuse Supported options are
+                      as follows. cache-size: the size of cache in vineyard fuse,
+                      the format could be 1024M, 1024000, 1G, or 1Gi. Default is "0",
+                      which means no cache. Default is as follows. fuse: options:
+                      cache-size: "0"'
+                    type: object
                   resources:
                     description: Resources contains the resource requirements and
                       limits for the Vineyard Fuse. Default is not set.
