@@ -18,11 +18,8 @@
 
 *   Enhance CSI Plugin and the FUSE Recovery feature for production usage.
 
-*   From v1.0.0, Fluid controllers drop all the Secret-related privileges to enhance its security.
+*   Fluid drop all the Secret-related privileges to enhance its security.
 
-*   Application pod tiered locality scheduling is supported to optimize affinity between application pod and the data cache.
-
-*   JindoRuntime's default engine implementation migrates from JindoFSx to JindoCache.
 
 ### New Features
 
