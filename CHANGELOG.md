@@ -12,8 +12,6 @@
 
 *   Support Python SDK for data scientists and operators to interact with Fluid control plane.
 
-*   Support new runtimeType: ThinRuntime. It's for the integration of general storage systems into Fluid.
-
 *   A new runtime for sharing in-memory immutable data: VineyardRuntime is supported in Fluid.
 
 *   Security Hardening: Define a more restricted minimum necessary cluster role permissions for Fluid components, including eliminating  all the secret-related  and some create/update/delete privileges.
