@@ -114,9 +114,7 @@ rules:
   - apiGroups:
       - apps
     resources:
-      - daemonsets
       - statefulsets
-      - daemonsets/status
       - statefulsets/status
     verbs:
       - get
