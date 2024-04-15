@@ -16,7 +16,7 @@ from kubernetes.client import *
     with open(model_module_init_py_file, "w") as f:
         for line in lines:
             if line == "# import models into model package\n":
-                # Insert kubernetes models into fluid sdk pacakge
+                # Insert kubernetes models into fluid sdk package
                 f.write(kubernetes_imports)
             f.write(line)
 
