@@ -127,6 +127,15 @@ rules:
   - apiGroups:
       - apps
     resources:
+      - daemonsets
+      - daemonsets/status
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - apps
+    resources:
       - deployments
       - deployments/scale
       - deployments/status
