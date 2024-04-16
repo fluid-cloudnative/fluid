@@ -5,12 +5,6 @@
 Fluid currently commits to supporting the n-1 version minor version of the current major release;
 as well as the last minor version of the previous major release.
 
-Here's an overview:
-
-| Version | Supported           |
-| ------- | ------------------- |
-| 0.8.x   | :white_check_mark: |
-
 ## Reporting a Vulnerability
 
 We strive to ship secure software, but we need the community to help us find security breaches. In case of a confirmed breach, reporters will get full credit and can be keep in the loop, if preferred.
