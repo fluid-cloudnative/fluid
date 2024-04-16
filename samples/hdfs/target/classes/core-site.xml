@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+
+    <property>
+        <name>fs.alluxio.impl</name>
+        <value>alluxio.hadoop.FileSystem</value>
+        <description>The Alluxio FileSystem</description>
+    </property>
+
+</configuration>

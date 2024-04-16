@@ -9,7 +9,7 @@
     <version>1.0-SNAPSHOT</version>
 
     <properties>
-        <java.version>11</java.version>
+        <java.version>1.8</java.version>
         <hadoop.version>3.3.0</hadoop.version>
         <alluxio.version>2.4.1</alluxio.version>
     </properties>
