@@ -31,12 +31,12 @@ English | [简体中文](./README-zh_CN.md)
 
 | ![notification](static/bell-outline-badge.svg) What is NEW!  |
 | ------------------------------------------------------------ |
-| May. 26th, 2023. Fluid v0.9.0 is **RELEASED**! It provides various new features, such as adding thinRuntime to simplify integration with third-party storage systems, access data across namespaces, subDataset support, new data Operation like dataMigrate, native acceleration system EFCRuntime for distributed file systems, and so on. Please check the [CHANGELOG](CHANGELOG.md) for details. |
-| Sep. 03th, 2022. Fluid v0.8.0 is **RELEASED**! It provides various new features, such as Lifecycle management of Serverless Job with fluid sidecar support, Enable runtime controller on demand, Automatic CRD upgrader, Restrict pod scheduling to dataset cache nodes, Arm64 support with JuicefsRuntime, GCS support for Alluxio Runtime, and so on. Please check the [CHANGELOG](CHANGELOG.md) for details. |
-| Mar. 02th, 2022. Fluid v0.7.0 is **RELEASED**! It provides various new features, such as Fuse sidecar auto injection for all the runtimes (suitable for serverless environment), Fuse auto recovery and upgrade, lazy fuse mount mode, support JuiceFS cache runtime and so on. Please check the [CHANGELOG](CHANGELOG.md) for details. |
-| Aug. 11th, 2021. Fluid v0.6.0 is **RELEASED**! It provides various new features, such as dataset cache autoscaling and cronscaling, dataset cache aware Pod scheduling, HA support for cache Runtime. Please check the [CHANGELOG](CHANGELOG.md) for details. |
+| **Latest Release**: Apr. 17th, 2024. Fluid v1.0.0. Please check the [CHANGELOG](CHANGELOG.md) for details. |
+|v0.9.0 Release: May. 26th, 2023. Fluid v0.9.0. Please check the [CHANGELOG](CHANGELOG.md) for details. |
+|v0.8.0 Release: Sep. 03th, 2022. Fluid v0.8.0. Please check the [CHANGELOG](CHANGELOG.md) for details. |
+|v0.7.0 Release: Mar. 02th, 2022. Fluid v0.7.0. Please check the [CHANGELOG](CHANGELOG.md) for details. |
+|v0.6.0 Release:  Aug. 11th, 2021. Fluid v0.6.0. Please check the [CHANGELOG](CHANGELOG.md) for details. |
 | Apr. 27th, 2021. Fluid accepted by **CNCF**! Fluid project was [accepted as an official CNCF Sandbox Project](https://lists.cncf.io/g/cncf-toc/message/5822) by CNCF Technical Oversight Committee (TOC) with a majority vote after the review process. New beginning for Fluid! . |
-
 <div align="center">
     <img src="static/architecture.png" title="architecture" height="60%" width="60%" alt="">
 </div>
