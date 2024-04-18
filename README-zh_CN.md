@@ -14,12 +14,15 @@
 
 |![更新](static/bell-outline-badge.svg) 最新进展：|
 |------------------|
-|**最新发布**：2023年4月17日. Fluid v1.0.0  发布! 相关功能等版本更新内容请详情参见 [CHANGELOG](CHANGELOG.md)。|
-|May. 26th, 2023. Fluid v0.9.0  **发布**! 添加thinRuntime以简化与第三方存储系统的集成，跨命名空间访问数据，支持子数据集，新的数据操作，如数据迁移，分布式文件系统的本地加速系统EFCRuntime等等。详情参见 [CHANGELOG](CHANGELOG.md)。|
-|Sep. 03th, 2022. Fluid v0.8.0  **发布**! 提供一系列新功能，包括基于Fluid边车支持的Serverlesss作业生命周期管理，按需启动Runtime controller，自动化CRD更新, 严格的pod与数据集节点的调度机制， JuicefsRuntime的Arm64支持, Alluxio Runtime的GCS支持等等，详情参见 [CHANGELOG](CHANGELOG.md)。|
-|Mar. 16th, 2021. Fluid v0.5.0 **发布**! 提供一系列新功能，包括提供数据集缓存的在线弹性扩缩容，元数据备份与恢复，Fuse全局模式部署等，详情参见 [CHANGELOG](CHANGELOG.md)。|
-|Nov. 6th, 2020. Fluid v0.4.0 **发布**! 提供一系列新功能和修复上一版本的遗留问题，包括提供主动的数据预热，详情参见 [CHANGELOG](CHANGELOG.md)。|
-|Oct. 1st, 2020. Fluid v0.3.0 **发布**! 提供一系列新功能和修复上一版本的遗留问题，包括对于K8s通用的数据卷加速和主机目录加速，详情参见 [CHANGELOG](CHANGELOG.md)。|
+|**最新版发布**：2024年4月17日, Fluid v1.0.0  发布! 版本更新介绍详情情参见 [CHANGELOG](CHANGELOG.md)。|
+|v0.9.0版发布：2023年5月26日, Fluid v0.9.0  发布! 版本更新介绍详情情参见 [CHANGELOG](CHANGELOG.md)。|
+|v0.8.0版发布：2022年9月3日, Fluid v0.8.0  发布! 版本更新介绍详情情参见 [CHANGELOG](CHANGELOG.md)。|
+|v0.7.0版发布：2022年3月2日, Fluid v0.7.0  发布! 版本更新介绍详情情参见 [CHANGELOG](CHANGELOG.md)。|
+|v0.6.0版发布：2021年8月11日, Fluid v0.6.0  发布! 版本更新介绍详情情参见 [CHANGELOG](CHANGELOG.md)。|
+|v0.5.0版发布：2021年5月16日, Fluid v0.6.0  发布! 版本更新介绍详情情参见 [CHANGELOG](CHANGELOG.md)。|
+|进入CNCF：2021年4月27日, Fluid通过CNCF Technical Oversight Committee (TOC)投票决定被接受进入CNCF，成为[CNCF Sandbox Project](https://lists.cncf.io/g/cncf-toc/message/5822)。|
+|v0.4.0版发布：2020年11月6日, Fluid v0.6.0  发布! 版本更新介绍详情情参见 [CHANGELOG](CHANGELOG.md)。|
+|v0.3.0版发布：2020年10月1日, Fluid v0.6.0  发布! 版本更新介绍详情情参见 [CHANGELOG](CHANGELOG.md)。|
 
 ## 什么是Fluid
 
