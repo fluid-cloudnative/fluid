@@ -8,19 +8,7 @@ For more information on how to use Vineyard, see the [Vineyard Quick Start Guide
 
 ## Install Fluid
 
-You can download the latest Fluid installation package from [Fluid Releases](https://github.com/fluid-cloudnative/fluid/releases). Refer to the [Installation Documentation](../../userguide/install.md) to complete the installation. Check that all Fluid components are running properly:
-
-```shell
-$ kubectl get po -n fluid-system
-NAME                                         READY   STATUS              RESTARTS   AGE
-csi-nodeplugin-fluid-56d44                   2/2     Running             0          106s
-csi-nodeplugin-fluid-5l78j                   2/2     Running             0          106s
-csi-nodeplugin-fluid-5mghb                   2/2     Running             0          106s
-dataset-controller-5cd87f8b9b-t7dv2          1/1     Running             0          106s
-fluid-webhook-77d44f5fbc-wttzl               1/1     Running             0          106s
-```
-
-Ensure that the `dataset-controller`, `fluid-webhook` pods, and several `csi-nodeplugin` pods are running properly. The `vineyard-runtime-controller` will be dynamically created when using VineyardRuntime.
+Refer to the [Installation Documentation](../../userguide/install.md) to complete the installation.
 
 ## Create Vineyard Runtime and Dataset
 
@@ -35,7 +23,7 @@ spec:
   tieredstore:
     levels:
     - mediumtype: MEM
-    quota: 20Gi
+      quota: 20Gi
 ---
 apiVersion: data.fluid.io/v1alpha1
 kind: Dataset
@@ -71,6 +59,9 @@ vineyard                                                                  Bound 
 
 ## Create an Application Pod and Mount the Vineyard Dataset
 
+The default mount path of the Vineyard Dataset is `/var/run/vineyard`. Then you can
+connect to the vineyard worker by the default configurations. If you change the mount path, you need to specify the configurations when connecting to the vineyard worker.
+
 ```shell
 $ cat <<EOF | kubectl apply -f -
 apiVersion: v1
@@ -80,12 +71,18 @@ metadata:
 spec:
   containers:
     - name: demo
-      image: nginx
+      image: python:3.10
+      command:
+      - bash
+      - -c
+      - |
+        pip install vineyard;
+        sleep infinity;
       volumeMounts:
-        - mountPath: /data
-          name: demo
+        - mountPath: /var/run/vineyard
+          name: client-config
   volumes:
-    - name: demo
+    - name: client-config
       persistentVolumeClaim:
         claimName: vineyard
 EOF
@@ -104,4 +101,125 @@ Check the status of Vineyard FUSE:
 ```shell
 $ kubectl get po | grep vineyard-fuse
 vineyard-fuse-9dv4d                    1/1     Running   0               1m20s
+```
+
+Check the vineyard client configurations
+have been mounted to the Pod:
+
+```shell
+$ kubectl exec demo-app -- ls /data/
+rpc-conf
+vineyard-config.yaml
+```
+
+```shell
+$ kubectl exec demo-app -- cat /data/vineyard-config.yaml
+Vineyard:
+  IPCSocket: vineyard.sock
+  RPCEndpoint: vineyard-worker-0.vineyard-worker.default:9600,vineyard-worker-1.vineyard-worker.default:9600
+```
+
+Connect to the vineyard worker:
+
+```shell
+$ kubectl exec -it demo-app -- python
+Python 3.10.14 (main, Mar 25 2024, 21:45:25) [GCC 12.2.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import vineyard
+>>> client = vineyard.connect()
+>>> client.status
+{
+    instance_id: 1,
+    deployment: local,
+    memory_usage: 0,
+    memory_limit: 21474836480,
+    deferred_requests: 0,
+    ipc_connections: 0,
+    rpc_connections: 1
+}
+```
+
+## Data sharing between pods with Vineyard Runtime
+
+In this section, we will show you how to share data between different workloads with Vineyard Runtime. Assume we have two pods, one is a producer and the other is a consumer. 
+
+Create the producer pod:
+
+```shell
+$ cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: producer
+spec:
+  containers:
+    - name: producer
+      image: python:3.10
+      command:
+      - bash
+      - -c
+      - |
+        pip install vineyard numpy pandas;
+        cat << EOF >> producer.py
+        import vineyard
+        import numpy as np
+        import pandas as pd
+        vineyard.put(pd.DataFrame(np.random.randn(100, 4), columns=list('ABCD')), persist=True, name="test_dataframe")
+        vineyard.put((1, 1.2345, 'xxxxabcd'), persist=True, name="test_basic_data_unit");
+        EOF
+        python producer.py;
+        sleep infinity;
+      volumeMounts:
+        - mountPath: /var/run/vineyard
+          name: client-config
+  volumes:
+    - name: client-config
+      persistentVolumeClaim:
+        claimName: vineyard
+EOF
+```
+
+Then create the consumer pod:
+
+```shell
+$ cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: consumer
+spec:
+  containers:
+    - name: consumer
+      image: python:3.10
+      command:
+      - bash
+      - -c
+      - |
+        pip install vineyard numpy pandas;
+        cat << EOF >> consumer.py
+        import vineyard
+        print(vineyard.get(name="test_dataframe",fetch=True).sum())
+        print(vineyard.get(name="test_basic_data_unit",fetch=True))
+        EOF
+        python consumer.py;
+        sleep infinity;
+      volumeMounts:
+        - mountPath: /var/run/vineyard
+          name: client-config
+  volumes:
+    - name: client-config
+      persistentVolumeClaim:
+        claimName: vineyard
+EOF
+
+Check the logs of the consumer pod:
+
+```shell
+$  kubectl logs consumer --tail 6
+A    2.260771
+B   -2.690233
+C   -1.523646
+D    7.208424
+dtype: float64
+(1, 1.2345000505447388, 'xxxxabcd')
 ```

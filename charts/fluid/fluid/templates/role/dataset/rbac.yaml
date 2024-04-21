@@ -114,9 +114,7 @@ rules:
   - apiGroups:
       - apps
     resources:
-      - daemonsets
       - statefulsets
-      - daemonsets/status
       - statefulsets/status
     verbs:
       - get
@@ -126,6 +124,15 @@ rules:
       - update
       - patch
       - delete
+  - apiGroups:
+      - apps
+    resources:
+      - daemonsets
+      - daemonsets/status
+    verbs:
+      - get
+      - list
+      - watch
   - apiGroups:
       - apps
     resources:
