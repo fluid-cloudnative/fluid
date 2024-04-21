@@ -118,7 +118,7 @@ func (t *TemplateEngine) reconcilePending(ctx cruntime.ReconcileRequestContext, 
 
 	// 1. check preceding operation status
 	if opStatus.WaitingFor.OperationComplete != nil && *opStatus.WaitingFor.OperationComplete {
-		// when operationComplete set back to false, a new reconcilation loop will be triggered, so no requeue here.
+		// when operationComplete set back to false, a new reconciliation loop will be triggered, so no requeue here.
 		return utils.NoRequeue()
 	}
 
