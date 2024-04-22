@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -58,6 +59,18 @@ func (e *VineyardEngine) transform(runtime *datav1alpha1.VineyardRuntime) (value
 
 	e.transformFuse(runtime, value)
 
+	e.transformPodMetadata(runtime, value)
+
+	// allocate ports for hostnetwork mode
+	if datav1alpha1.IsHostNetwork(runtime.Spec.Master.NetworkMode) ||
+		datav1alpha1.IsHostNetwork(runtime.Spec.Worker.NetworkMode) {
+		e.Log.Info("allocatePorts for hostnetwork mode")
+		err = e.allocatePorts(value, runtime)
+		if err != nil {
+			return
+		}
+	}
+
 	// TODO:(caoye) implement the metrics exporter
 	value.DisablePrometheus = true
 	return value, nil
@@ -96,6 +109,9 @@ func (e *VineyardEngine) transformMasters(runtime *datav1alpha1.VineyardRuntime,
 	}
 
 	e.transformResourcesForMaster(runtime, value)
+
+	// parse master pod network mode
+	value.Master.HostNetwork = datav1alpha1.IsHostNetwork(runtime.Spec.Worker.NetworkMode)
 
 	ports := e.transformMasterPorts(runtime)
 	if len(ports) != 0 {
@@ -137,6 +153,9 @@ func (e *VineyardEngine) transformWorkers(runtime *datav1alpha1.VineyardRuntime,
 		return err
 	}
 
+	// parse worker pod network mode
+	value.Worker.HostNetwork = datav1alpha1.IsHostNetwork(runtime.Spec.Worker.NetworkMode)
+
 	ports := e.transformWorkerPorts(runtime)
 	if len(ports) != 0 {
 		value.Worker.Ports = ports
@@ -172,6 +191,9 @@ func (e *VineyardEngine) transformFuse(runtime *datav1alpha1.VineyardRuntime, va
 	if len(options) != 0 {
 		value.Fuse.Options = options
 	}
+	// parse fuse pod network mode
+	value.Fuse.HostNetwork = datav1alpha1.IsHostNetwork(runtime.Spec.Fuse.NetworkMode)
+
 	e.transformResourcesForFuse(runtime, value)
 }
 
@@ -277,4 +299,57 @@ func (e *VineyardEngine) transformTieredStore(runtime *datav1alpha1.VineyardRunt
 	}
 
 	return tieredStore, nil
+}
+
+func (e *VineyardEngine) allocatePorts(value *Vineyard, runtime *datav1alpha1.VineyardRuntime) error {
+	expectedMasterPortNum, expectedWorkerPortNum := 0, 0
+	if datav1alpha1.IsHostNetwork(runtime.Spec.Master.NetworkMode) {
+		expectedMasterPortNum = 2
+	}
+	if datav1alpha1.IsHostNetwork(runtime.Spec.Worker.NetworkMode) {
+		expectedWorkerPortNum = 2
+	}
+	expectedPortNum := expectedMasterPortNum + expectedWorkerPortNum
+
+	allocator, err := portallocator.GetRuntimePortAllocator()
+	if err != nil {
+		e.Log.Error(err, "can't get runtime port allocator")
+		return err
+	}
+
+	allocatedPorts, err := allocator.GetAvailablePorts(expectedPortNum)
+	if err != nil {
+		e.Log.Error(err, "can't get available ports", "expected port num", expectedPortNum)
+		return err
+	}
+
+	index := 0
+	if expectedMasterPortNum > 0 {
+		value.Master.Ports[MasterClientName] = allocatedPorts[index]
+		value.Master.Ports[MasterPeerName] = allocatedPorts[index+1]
+		index += 2
+	}
+
+	if expectedWorkerPortNum > 0 {
+		value.Worker.Ports[WorkerRPCName] = allocatedPorts[index]
+		value.Worker.Ports[WorkerExporterName] = allocatedPorts[index+1]
+	}
+
+	return nil
+}
+
+func (e *VineyardEngine) transformPodMetadata(runtime *datav1alpha1.VineyardRuntime, value *Vineyard) (err error) {
+	// transform labels
+	commonLabels := utils.UnionMapsWithOverride(map[string]string{}, runtime.Spec.PodMetadata.Labels)
+	value.Master.Labels = utils.UnionMapsWithOverride(commonLabels, runtime.Spec.Master.PodMetadata.Labels)
+	value.Worker.Labels = utils.UnionMapsWithOverride(commonLabels, runtime.Spec.Worker.PodMetadata.Labels)
+	value.Fuse.Labels = utils.UnionMapsWithOverride(commonLabels, runtime.Spec.Fuse.PodMetadata.Labels)
+
+	// transform annotations
+	commonAnnotations := utils.UnionMapsWithOverride(map[string]string{}, runtime.Spec.PodMetadata.Annotations)
+	value.Master.Annotations = utils.UnionMapsWithOverride(commonAnnotations, runtime.Spec.Master.PodMetadata.Annotations)
+	value.Worker.Annotations = utils.UnionMapsWithOverride(commonAnnotations, runtime.Spec.Worker.PodMetadata.Annotations)
+	value.Fuse.Annotations = utils.UnionMapsWithOverride(commonAnnotations, runtime.Spec.Fuse.PodMetadata.Annotations)
+
+	return nil
 }

@@ -2499,7 +2499,11 @@
           "type": "string"
         },
         "imageTag": {
-          "description": "The image tag of Vineyard component. For Master, the default image tag is `3.5.10`. For Worker, the default image tag is `latest`.",
+          "description": "The image tag of Vineyard component. For Master, the default image tag is `3.5.10`. For Worker, the default image tag is `v0.21.5`.",
+          "type": "string"
+        },
+        "networkMode": {
+          "description": "Whether to use hostnetwork or not Default is HostNetwork",
           "type": "string"
         },
         "nodeSelector": {
@@ -2517,6 +2521,11 @@
             "type": "string",
             "default": ""
           }
+        },
+        "podMetadata": {
+          "description": "PodMetadata defines labels and annotations that will be propagated to Vineyard's pods including Master and Worker. Default is not set.",
+          "default": {},
+          "$ref": "#/definitions/.PodMetadata"
         },
         "ports": {
           "description": "Ports used by Vineyard component. For Master, the default client port is 2379 and peer port is 2380. For Worker, the default rpc port is 9600 and the default exporter port is 9144.",
@@ -3616,7 +3625,11 @@
           "type": "string"
         },
         "imageTag": {
-          "description": "The image tag of Vineyard component. For Master, the default image tag is `3.5.10`. For Worker, the default image tag is `latest`.",
+          "description": "The image tag of Vineyard component. For Master, the default image tag is `3.5.10`. For Worker, the default image tag is `v0.21.5`.",
+          "type": "string"
+        },
+        "networkMode": {
+          "description": "Whether to use hostnetwork or not Default is HostNetwork",
           "type": "string"
         },
         "nodeSelector": {
@@ -3634,6 +3647,11 @@
             "type": "string",
             "default": ""
           }
+        },
+        "podMetadata": {
+          "description": "PodMetadata defines labels and annotations that will be propagated to Vineyard's pods including Master and Worker. Default is not set.",
+          "default": {},
+          "$ref": "#/definitions/.PodMetadata"
         },
         "ports": {
           "description": "Ports used by Vineyard component. For Master, the default client port is 2379 and peer port is 2380. For Worker, the default rpc port is 9600 and the default exporter port is 9144.",
@@ -3736,6 +3754,11 @@
           "default": {},
           "$ref": "#/definitions/.MasterSpec"
         },
+        "podMetadata": {
+          "description": "PodMetadata defines labels and annotations that will be propagated to Vineyard's pods.",
+          "default": {},
+          "$ref": "#/definitions/.PodMetadata"
+        },
         "replicas": {
           "description": "The replicas of the worker, need to be specified If worker.replicas and the field are both specified, the field will be respected",
           "type": "integer",
@@ -3786,8 +3809,25 @@
           "type": "string"
         },
         "imageTag": {
-          "description": "Image Tag for Vineyard Fuse Default is `latest`",
+          "description": "Image Tag for Vineyard Fuse Default is `v0.21.5`",
           "type": "string"
+        },
+        "networkMode": {
+          "description": "Whether to use hostnetwork or not Default is HostNetwork",
+          "type": "string"
+        },
+        "options": {
+          "description": "Options for Vineyard Fuse Supported options are as follows.\n  cache-size: the size of cache in vineyard fuse, the format could be\n              1024M, 1024000, 1G, or 1Gi.\n\t\t\t\t Default is \"0\", which means no cache.\nDefault is as follows. fuse:\n  options:\n    cache-size: \"0\"",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "podMetadata": {
+          "description": "PodMetadata defines labels and annotations that will be propagated to Vineyard's pods.",
+          "default": {},
+          "$ref": "#/definitions/.PodMetadata"
         },
         "resources": {
           "description": "Resources contains the resource requirements and limits for the Vineyard Fuse. Default is not set.",

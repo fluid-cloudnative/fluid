@@ -4598,6 +4598,20 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_MasterSpec(ref common.Reference
 							},
 						},
 					},
+					"podMetadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodMetadata defines labels and annotations that will be propagated to Vineyard's pods including Master and Worker. Default is not set.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
+						},
+					},
+					"networkMode": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Whether to use hostnetwork or not Default is HostNetwork",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"endpoint": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ExternalEndpoint defines the configurations for external etcd cluster Default is not set If set, the Vineyard Master component will not be deployed, which means the Vineyard Worker component will use an external Etcd cluster. E,g.\n  endpoint:\n    uri: \"etcd-svc.etcd-namespace.svc.cluster.local:2379\"\n    encryptOptions:\n      - name: access-key\n\t\t   valueFrom:\n          secretKeyRef:\n            name: etcd-secret\n\t\t\t   key: accesskey",
@@ -4609,7 +4623,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_MasterSpec(ref common.Reference
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExternalEndpointSpec", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.VolumeMount"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExternalEndpointSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.VolumeMount"},
 	}
 }
 
@@ -6510,11 +6524,25 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardCompTemplateSpec(ref co
 							},
 						},
 					},
+					"podMetadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodMetadata defines labels and annotations that will be propagated to Vineyard's pods including Master and Worker. Default is not set.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
+						},
+					},
+					"networkMode": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Whether to use hostnetwork or not Default is HostNetwork",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.VolumeMount"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.VolumeMount"},
 	}
 }
 
@@ -6663,6 +6691,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardRuntimeSpec(ref common.
 							Format:      "",
 						},
 					},
+					"podMetadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodMetadata defines labels and annotations that will be propagated to Vineyard's pods.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
+						},
+					},
 					"volumes": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Volumes is the list of Kubernetes volumes that can be mounted by the vineyard components (Master and Worker). Default is null.",
@@ -6681,7 +6716,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardRuntimeSpec(ref common.
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.MasterSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardSockSpec", "k8s.io/api/core/v1.Volume"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.MasterSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardSockSpec", "k8s.io/api/core/v1.Volume"},
 	}
 }
 
@@ -6759,11 +6794,25 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardSockSpec(ref common.Ref
 							},
 						},
 					},
+					"networkMode": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Whether to use hostnetwork or not Default is HostNetwork",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"podMetadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodMetadata defines labels and annotations that will be propagated to Vineyard's pods.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.ResourceRequirements"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "k8s.io/api/core/v1.ResourceRequirements"},
 	}
 }
 

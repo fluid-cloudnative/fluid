@@ -17,13 +17,18 @@ import (
 	"context"
 	"fmt"
 
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/lifecycle"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/pkg/errors"
+	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -54,6 +59,21 @@ func (e *VineyardEngine) Shutdown() (err error) {
 	err = e.destroyMaster()
 	if err != nil {
 		return
+	}
+
+	runtime, err := e.getRuntime()
+	if err != nil {
+		return err
+	}
+	if datav1alpha1.IsHostNetwork(runtime.Spec.Master.NetworkMode) ||
+		datav1alpha1.IsHostNetwork(runtime.Spec.Worker.NetworkMode) {
+		e.Log.Info("releasePorts for hostnetwork mode")
+		err = e.releasePorts()
+		if err != nil {
+			return
+		}
+	} else {
+		e.Log.Info("skip releasePorts for container network mode")
 	}
 
 	return e.cleanAll()
@@ -201,6 +221,34 @@ func (e *VineyardEngine) cleanupCache() (err error) {
 	//return fmt.Errorf("to make sure if the remaining cache is cleaned up, check again")
 }
 
+func (e *VineyardEngine) releasePorts() (err error) {
+	var valueConfigMapName = e.getHelmValuesConfigMapName()
+
+	allocator, err := portallocator.GetRuntimePortAllocator()
+	if err != nil {
+		return errors.Wrap(err, "GetRuntimePortAllocator when releasePorts")
+	}
+
+	cm, err := kubeclient.GetConfigmapByName(e.Client, valueConfigMapName, e.namespace)
+	if err != nil {
+		return errors.Wrap(err, "GetConfigmapByName when releasePorts")
+	}
+
+	// The value configMap is not found
+	if cm == nil {
+		e.Log.Info("value configMap not found, there might be some unreleased ports", "valueConfigMapName", valueConfigMapName)
+		return nil
+	}
+
+	portsToRelease, err := parsePortsFromConfigMap(cm)
+	if err != nil {
+		return errors.Wrap(err, "parsePortsFromConfigMap when releasePorts")
+	}
+
+	allocator.ReleaseReservedPorts(portsToRelease)
+	return nil
+}
+
 // cleanAll cleans up the all
 func (e *VineyardEngine) cleanAll() (err error) {
 	count, err := e.Helper.CleanUpFuse()
@@ -251,4 +299,36 @@ func (e *VineyardEngine) sortNodesToShutdown(candidateNodes []corev1.Node, fuseG
 	}
 
 	return nodes, nil
+}
+
+// parsePortsFromConfigMap extracts port usage information given a configMap
+func parsePortsFromConfigMap(configMap *v1.ConfigMap) (ports []int, err error) {
+	var value Vineyard
+	if v, ok := configMap.Data["data"]; ok {
+		if err := yaml.Unmarshal([]byte(v), &value); err != nil {
+			return nil, err
+		}
+
+		if value.Master.HostNetwork && value.Master.Ports != nil {
+			clientPort, ok := value.Master.Ports[MasterClientName]
+			if ok {
+				ports = append(ports, clientPort)
+			}
+			peerPort, ok := value.Master.Ports[MasterPeerName]
+			if ok {
+				ports = append(ports, peerPort)
+			}
+		}
+		if value.Worker.HostNetwork && value.Worker.Ports != nil {
+			rpcPort, ok := value.Worker.Ports[WorkerRPCName]
+			if ok {
+				ports = append(ports, rpcPort)
+			}
+			exporterPort, ok := value.Master.Ports[WorkerExporterName]
+			if ok {
+				ports = append(ports, exporterPort)
+			}
+		}
+	}
+	return ports, nil
 }

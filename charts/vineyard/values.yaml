@@ -3,6 +3,15 @@
 fullnameOverride: vineyard
 
 master:
+  # Metadata for Vineyard Master
+  labels:
+  # label1: value1
+  # label2: value2
+
+  annotations:
+  # annotation1: value1
+  # annotation2: value2
+
   # the external endpoint of master
   # if set, the Vineyard Master component will not be deployed, which means the Vineyard Worker component will use an external Etcd cluster.
   externalEndpoint:
@@ -19,6 +28,7 @@ master:
   imageTag: 3.5.10
   imagePullPolicy: IfNotPresent
   nodeSelector: {}
+  hostNetwork: false
   # Exmaple:
   #   "disktype": "ssd"
   ports:
@@ -44,11 +54,21 @@ master:
   #   mountPath: /data/configmap/myConfigMapVolume/
 
 worker:
+  # Metadata for Vineyard Workers
+  labels:
+  # label1: value1
+  # label2: value2
+
+  annotations:
+  # annotation1: value1
+  # annotation2: value2
+
   replicas: 1
   image: vineyardcloudnative/vineyardd
   imageTag: v0.21.5
   imagePullPolicy: IfNotPresent
   nodeSelector: {}
+  hostNetwork: false
   # Exmaple:
   #   "disktype": "ssd"
   ports:
@@ -96,6 +116,16 @@ volumes: []
 disablePrometheus: true
 
 fuse:
+  # Metadata for Vineyard Fuse
+  labels:
+  # label1: value1
+  # label2: value2
+
+  annotations:
+  # annotation1: value1
+  # annotation2: value2
+
+  hostNetwork: false
   image: vineyardcloudnative/vineyard-fluid-fuse
   imageTag: v0.21.5
   imagePullPolicy: IfNotPresent

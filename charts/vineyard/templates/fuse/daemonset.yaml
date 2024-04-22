@@ -47,11 +47,21 @@ spec:
     metadata:
       annotations:
         sidecar.istio.io/inject: "false"
+      {{- if .Values.fuse.annotations }}
+      {{- range $key, $val := .Values.fuse.annotations }}
+        {{ $key | quote }}: {{ $val | quote }}
+      {{- end }}
+      {{- end }}
       labels:
         app: {{ $name }}
         chart: {{ $chart }}
         release: {{ .Release.Name }}
         role: vineyard-fuse
+        {{- if .Values.fuse.labels }}
+        {{- range $key, $val := .Values.fuse.labels }}
+        {{ $key | quote }}: {{ $val | quote }}
+        {{- end }}
+        {{- end }}
     spec:
       tolerations:
       - operator: Exists
@@ -60,6 +70,10 @@ spec:
 {{ toYaml .Values.fuse.nodeSelector | trim | indent 8  }}
       {{- end }}
       enableServiceLinks: false
+      {{- if .Values.fuse.hostNetwork }}
+      hostNetwork: {{ .Values.fuse.hostNetwork }}
+      dnsPolicy: ClusterFirstWithHostNet
+      {{- end }}
       terminationGracePeriodSeconds: 60
       containers:
         - name: vineyard-fuse

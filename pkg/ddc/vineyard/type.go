@@ -49,9 +49,12 @@ type Endpoint struct {
 
 type Master struct {
 	Replicas         int32                `json:"replicas,omitempty"`
+	Labels           map[string]string    `json:"labels,omitempty"`
+	Annotations      map[string]string    `json:"annotations,omitempty"`
 	Image            string               `json:"image,omitempty"`
 	ImageTag         string               `json:"imageTag,omitempty"`
 	ImagePullPolicy  string               `json:"imagePullPolicy,omitempty"`
+	HostNetwork      bool                 `json:"hostNetwork,omitempty"`
 	NodeSelector     map[string]string    `json:"nodeSelector,omitempty"`
 	Ports            map[string]int       `json:"ports,omitempty"`
 	Env              map[string]string    `json:"env,omitempty"`
@@ -63,9 +66,12 @@ type Master struct {
 
 type Worker struct {
 	Replicas        int32                `json:"replicas,omitempty"`
+	Labels          map[string]string    `json:"labels,omitempty"`
+	Annotations     map[string]string    `json:"annotations,omitempty"`
 	Image           string               `json:"image,omitempty"`
 	ImageTag        string               `json:"imageTag,omitempty"`
 	ImagePullPolicy string               `json:"imagePullPolicy,omitempty"`
+	HostNetwork     bool                 `json:"hostNetwork,omitempty"`
 	NodeSelector    map[string]string    `json:"nodeSelector,omitempty"`
 	Ports           map[string]int       `json:"ports,omitempty"`
 	Env             map[string]string    `json:"env,omitempty"`
@@ -75,9 +81,12 @@ type Worker struct {
 }
 
 type Fuse struct {
+	Labels          map[string]string            `json:"labels,omitempty"`
+	Annotations     map[string]string            `json:"annotations,omitempty"`
 	Image           string                       `json:"image,omitempty"`
 	ImageTag        string                       `json:"imageTag,omitempty"`
 	ImagePullPolicy string                       `json:"imagePullPolicy,omitempty"`
+	HostNetwork     bool                         `json:"hostNetwork,omitempty"`
 	Env             map[string]string            `json:"env,omitempty"`
 	CleanPolicy     datav1alpha1.FuseCleanPolicy `json:"cleanPolicy,omitempty"`
 	TargetPath      string                       `json:"targetPath,omitempty"`

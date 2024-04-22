@@ -18,11 +18,13 @@ import (
 	"testing"
 
 	appsv1 "k8s.io/api/apps/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	. "github.com/agiledragon/gomonkey/v2"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
@@ -30,27 +32,19 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/net"
 )
 
 var (
 	testScheme        *runtime.Scheme
 	mockConfigMapData = `master:
 	ports:
-	  rpc: 30399
-	  web: 31203
-  jobMaster:
-	ports:
-	  rpc: 28362
-	  web: 31380
+	  client: 14001
+	  peer: 14002
   worker:
 	ports:
-	  rpc: 31285
-	  web: 31674
-  jobWorker:
-	ports:
-	  rpc: 29476
-	  web: 27403
-	  data: 30918`
+	  rpc: 14003
+	  exporter: 14004`
 )
 
 func init() {
@@ -365,6 +359,72 @@ func TestVineyardEngineDestroyMaster(t *testing.T) {
 
 			if err := e.destroyMaster(); (err != nil) != tt.wantErr {
 				t.Errorf("VineyardEngine.destroyMaster() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestVineyardEngineReleasePorts(t *testing.T) {
+	dummyPorts := func(client client.Client) (ports []int, err error) {
+		return []int{14000, 14001, 14002, 14003}, nil
+	}
+	type fields struct {
+		runtime     *datav1alpha1.VineyardRuntime
+		name        string
+		namespace   string
+		runtimeType string
+		cm          *corev1.ConfigMap
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		{
+			name: "vineyard",
+			fields: fields{
+				name:        "vineyard",
+				namespace:   "fluid",
+				runtimeType: "vineyard",
+				cm: &corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "vineyard-values",
+						Namespace: "fluid",
+					},
+					Data: map[string]string{"data": mockConfigMapData},
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			portRange := "14000-16000"
+			pr, _ := net.ParsePortRange(portRange)
+			testObjs := []runtime.Object{}
+			testObjs = append(testObjs, tt.fields.cm.DeepCopy())
+			client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+
+			e := &VineyardEngine{
+				runtime:   tt.fields.runtime,
+				name:      tt.fields.name,
+				namespace: tt.fields.namespace,
+				Client:    client,
+				Log:       fake.NullLogger(),
+			}
+
+			err := portallocator.SetupRuntimePortAllocator(client, pr, "bitmap", dummyPorts)
+			if err != nil {
+				t.Fatal(err.Error())
+			}
+			allocator, _ := portallocator.GetRuntimePortAllocator()
+			patch1 := ApplyMethod(reflect.TypeOf(allocator), "ReleaseReservedPorts",
+				func(_ *portallocator.RuntimePortAllocator, ports []int) {
+				})
+			defer patch1.Reset()
+
+			if err := e.releasePorts(); (err != nil) != tt.wantErr {
+				t.Errorf("VineyardEngine.releasePorts() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
