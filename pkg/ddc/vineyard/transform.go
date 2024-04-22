@@ -338,7 +338,7 @@ func (e *VineyardEngine) allocatePorts(value *Vineyard, runtime *datav1alpha1.Vi
 	return nil
 }
 
-func (e *VineyardEngine) transformPodMetadata(runtime *datav1alpha1.VineyardRuntime, value *Vineyard) (err error) {
+func (e *VineyardEngine) transformPodMetadata(runtime *datav1alpha1.VineyardRuntime, value *Vineyard) {
 	// transform labels
 	commonLabels := utils.UnionMapsWithOverride(map[string]string{}, runtime.Spec.PodMetadata.Labels)
 	value.Master.Labels = utils.UnionMapsWithOverride(commonLabels, runtime.Spec.Master.PodMetadata.Labels)
@@ -350,6 +350,4 @@ func (e *VineyardEngine) transformPodMetadata(runtime *datav1alpha1.VineyardRunt
 	value.Master.Annotations = utils.UnionMapsWithOverride(commonAnnotations, runtime.Spec.Master.PodMetadata.Annotations)
 	value.Worker.Annotations = utils.UnionMapsWithOverride(commonAnnotations, runtime.Spec.Worker.PodMetadata.Annotations)
 	value.Fuse.Annotations = utils.UnionMapsWithOverride(commonAnnotations, runtime.Spec.Fuse.PodMetadata.Annotations)
-
-	return nil
 }

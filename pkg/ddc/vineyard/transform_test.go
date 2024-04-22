@@ -894,10 +894,7 @@ func TestVineyardEngineTransformPodMetadata(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		err := engine.transformPodMetadata(tt.Runtime, tt.Value)
-		if err != nil {
-			t.Fatalf("test name: %s. Expect err = nil, but got err = %v", tt.Name, err)
-		}
+		engine.transformPodMetadata(tt.Runtime, tt.Value)
 
 		if !reflect.DeepEqual(tt.Value, tt.wantValue) {
 			t.Fatalf("test name: %s. Expect value %v, but got %v", tt.Name, tt.wantValue, tt.Value)

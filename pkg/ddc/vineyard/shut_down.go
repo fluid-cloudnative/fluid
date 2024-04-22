@@ -28,7 +28,6 @@ import (
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -302,7 +301,7 @@ func (e *VineyardEngine) sortNodesToShutdown(candidateNodes []corev1.Node, fuseG
 }
 
 // parsePortsFromConfigMap extracts port usage information given a configMap
-func parsePortsFromConfigMap(configMap *v1.ConfigMap) (ports []int, err error) {
+func parsePortsFromConfigMap(configMap *corev1.ConfigMap) (ports []int, err error) {
 	var value Vineyard
 	if v, ok := configMap.Data["data"]; ok {
 		if err := yaml.Unmarshal([]byte(v), &value); err != nil {
