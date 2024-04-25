@@ -275,9 +275,10 @@ spec:
                     type: object
                   image:
                     description: The image of Vineyard component. For Master, the
-                      default image is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd` For Worker, the default image
-                      is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd` The default container registry
-                      is `docker.io`, you can change it by setting the image field
+                      default image is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd`
+                      For Worker, the default image is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd`
+                      The default container registry is `docker.io`, you can change
+                      it by setting the image field
                     type: string
                   imagePullPolicy:
                     description: The image pull policy of Vineyard component. Default
@@ -285,8 +286,8 @@ spec:
                     type: string
                   imageTag:
                     description: The image tag of Vineyard component. For Master,
-                      the default image tag is `v0.22.1`. For Worker, the default image
-                      tag is `v0.22.1`.
+                      the default image tag is `v0.22.1`. For Worker, the default
+                      image tag is `v0.22.1`.
                     type: string
                   networkMode:
                     description: Whether to use hostnetwork or not Default is HostNetwork
@@ -3798,9 +3799,10 @@ spec:
                     type: object
                   image:
                     description: The image of Vineyard component. For Master, the
-                      default image is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd` For Worker, the default image
-                      is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd` The default container registry
-                      is `docker.io`, you can change it by setting the image field
+                      default image is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd`
+                      For Worker, the default image is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd`
+                      The default container registry is `docker.io`, you can change
+                      it by setting the image field
                     type: string
                   imagePullPolicy:
                     description: The image pull policy of Vineyard component. Default
@@ -3808,8 +3810,8 @@ spec:
                     type: string
                   imageTag:
                     description: The image tag of Vineyard component. For Master,
-                      the default image tag is `v0.22.1`. For Worker, the default image
-                      tag is `v0.22.1`.
+                      the default image tag is `v0.22.1`. For Worker, the default
+                      image tag is `v0.22.1`.
                     type: string
                   networkMode:
                     description: Whether to use hostnetwork or not Default is HostNetwork
