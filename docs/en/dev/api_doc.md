@@ -10196,8 +10196,8 @@ string
 <td>
 <em>(Optional)</em>
 <p>The image of Vineyard component.
-For Master, the default image is <code>bitnami/etcd</code>
-For Worker, the default image is <code>vineyardcloudnative/vineyardd</code>
+For Master, the default image is <code>registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd</code>
+For Worker, the default image is <code>registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd</code>
 The default container registry is <code>docker.io</code>, you can change it by setting the image field</p>
 </td>
 </tr>
@@ -10211,8 +10211,8 @@ string
 <td>
 <em>(Optional)</em>
 <p>The image tag of Vineyard component.
-For Master, the default image tag is <code>3.5.10</code>.
-For Worker, the default image tag is <code>v0.21.5</code>.</p>
+For Master, the default image tag is <code>v0.22.1</code>.
+For Worker, the default image tag is <code>v0.22.1</code>.</p>
 </td>
 </tr>
 <tr>
@@ -10485,7 +10485,94 @@ Default is false</p>
 </tr>
 <tr>
 <td>
-<code>podMetadata</code></br>
+<code>volumes</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core">
+[]Kubernetes core/v1.Volume
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Volumes is the list of Kubernetes volumes that can be mounted by the vineyard components (Master and Worker).
+Default is null.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.VineyardSockSpec">VineyardSockSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.VineyardRuntimeSpec">VineyardRuntimeSpec</a>)
+</p>
+<p>
+<p>VineyardSockSpec holds the configurations for vineyard client socket</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>image</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Image for Vineyard Fuse
+Default is <code>registry.cn-hangzhou.aliyuncs.com/vineyard/vineyard-fluid-fuse</code></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>imageTag</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Image Tag for Vineyard Fuse
+Default is <code>v0.22.1</code></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>imagePullPolicy</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Image pull policy for Vineyard Fuse
+Default is <code>IfNotPresent</code>
+Available values are <code>Always</code>, <code>IfNotPresent</code>, <code>Never</code></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>env</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Environment variables that will be used by Vineyard Fuse.
+Default is not set.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>cleanPolicy</code></br>
 <em>
 <a href="#data.fluid.io/v1alpha1.PodMetadata">
 PodMetadata

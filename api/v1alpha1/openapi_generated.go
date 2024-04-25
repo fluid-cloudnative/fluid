@@ -4516,14 +4516,14 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_MasterSpec(ref common.Reference
 					},
 					"image": {
 						SchemaProps: spec.SchemaProps{
-							Description: "The image of Vineyard component. For Master, the default image is `bitnami/etcd` For Worker, the default image is `vineyardcloudnative/vineyardd` The default container registry is `docker.io`, you can change it by setting the image field",
+							Description: "The image of Vineyard component. For Master, the default image is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd` For Worker, the default image is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd` The default container registry is `docker.io`, you can change it by setting the image field",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
 					"imageTag": {
 						SchemaProps: spec.SchemaProps{
-							Description: "The image tag of Vineyard component. For Master, the default image tag is `3.5.10`. For Worker, the default image tag is `v0.21.5`.",
+							Description: "The image tag of Vineyard component. For Master, the default image tag is `v0.22.1`. For Worker, the default image tag is `v0.22.1`.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -6609,14 +6609,14 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardCompTemplateSpec(ref co
 					},
 					"image": {
 						SchemaProps: spec.SchemaProps{
-							Description: "The image of Vineyard component. For Master, the default image is `bitnami/etcd` For Worker, the default image is `vineyardcloudnative/vineyardd` The default container registry is `docker.io`, you can change it by setting the image field",
+							Description: "The image of Vineyard component. For Master, the default image is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd` For Worker, the default image is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd` The default container registry is `docker.io`, you can change it by setting the image field",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
 					"imageTag": {
 						SchemaProps: spec.SchemaProps{
-							Description: "The image tag of Vineyard component. For Master, the default image tag is `3.5.10`. For Worker, the default image tag is `v0.21.5`.",
+							Description: "The image tag of Vineyard component. For Master, the default image tag is `v0.22.1`. For Worker, the default image tag is `v0.22.1`.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -6905,7 +6905,73 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardRuntimeSpec(ref common.
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.MasterSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardClientSocketSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardCompTemplateSpec", "k8s.io/api/core/v1.Volume"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.MasterSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardSockSpec", "k8s.io/api/core/v1.Volume"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardSockSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "VineyardSockSpec holds the configurations for vineyard client socket",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"image": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Image for Vineyard Fuse Default is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyard-fluid-fuse`",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"imageTag": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Image Tag for Vineyard Fuse Default is `v0.22.1`",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"imagePullPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Image pull policy for Vineyard Fuse Default is `IfNotPresent` Available values are `Always`, `IfNotPresent`, `Never`",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"env": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Environment variables that will be used by Vineyard Fuse. Default is not set.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"cleanPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CleanPolicy decides when to clean Vineyard Fuse pods. Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted OnDemand cleans fuse pod once th fuse pod on some node is not needed OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted Defaults to OnRuntimeDeleted",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"resources": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Resources contains the resource requirements and limits for the Vineyard Fuse. Default is not set.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/api/core/v1.ResourceRequirements"},
 	}
 }
 

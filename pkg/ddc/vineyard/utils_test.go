@@ -420,8 +420,8 @@ func TestParseMasterImage(t *testing.T) {
 			tag:             "",
 			imagePullPolicy: "",
 			engine:          &VineyardEngine{},
-			wantImage:       "bitnami/etcd",
-			wantTag:         "3.5.10",
+			wantImage:       "registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd",
+			wantTag:         "v0.22.1",
 			wantPolicy:      "IfNotPresent",
 		},
 	}
@@ -462,8 +462,8 @@ func TestParseWorkerImage(t *testing.T) {
 			tag:             "",
 			imagePullPolicy: "",
 			engine:          &VineyardEngine{},
-			wantImage:       "vineyardcloudnative/vineyardd",
-			wantTag:         "v0.21.5",
+			wantImage:       "registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd",
+			wantTag:         "v0.22.1",
 			wantPolicy:      "IfNotPresent",
 		},
 	}
@@ -504,8 +504,8 @@ func TestParseFuseImage(t *testing.T) {
 			tag:             "",
 			imagePullPolicy: "",
 			engine:          &VineyardEngine{},
-			wantImage:       "vineyardcloudnative/vineyard-fluid-fuse",
-			wantTag:         "v0.21.5",
+			wantImage:       "registry.cn-hangzhou.aliyuncs.com/vineyard/vineyard-fluid-fuse",
+			wantTag:         "v0.22.1",
 			wantPolicy:      "IfNotPresent",
 		},
 	}

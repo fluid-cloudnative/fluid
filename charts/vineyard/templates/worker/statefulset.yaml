@@ -185,7 +185,7 @@ spec:
           {{- end }}
         {{- if not .Values.disablePrometheus }}
         - name: metrics
-          image: vineyardcloudnative/vineyardd-grok-exporter
+          image: registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd-grok-exporter
           imagePullPolicy: {{ .Values.worker.imagePullPolicy }}
           ports:
           - name: exporter

@@ -106,14 +106,14 @@ spec:
                       Fuse. Default is not set.
                     type: object
                   image:
-                    description: Image for Vineyard Fuse Default is `vineyardcloudnative/vineyard-fluid-fuse`
+                    description: Image for Vineyard Fuse Default is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyard-fluid-fuse`
                     type: string
                   imagePullPolicy:
                     description: Image pull policy for Vineyard Fuse Default is `IfNotPresent`
                       Available values are `Always`, `IfNotPresent`, `Never`
                     type: string
                   imageTag:
-                    description: Image Tag for Vineyard Fuse Default is `v0.21.5`
+                    description: Image Tag for Vineyard Fuse Default is `v0.22.1`
                     type: string
                   networkMode:
                     description: Whether to use hostnetwork or not Default is HostNetwork
@@ -275,8 +275,8 @@ spec:
                     type: object
                   image:
                     description: The image of Vineyard component. For Master, the
-                      default image is `bitnami/etcd` For Worker, the default image
-                      is `vineyardcloudnative/vineyardd` The default container registry
+                      default image is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd` For Worker, the default image
+                      is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd` The default container registry
                       is `docker.io`, you can change it by setting the image field
                     type: string
                   imagePullPolicy:
@@ -285,8 +285,8 @@ spec:
                     type: string
                   imageTag:
                     description: The image tag of Vineyard component. For Master,
-                      the default image tag is `3.5.10`. For Worker, the default image
-                      tag is `v0.21.5`.
+                      the default image tag is `v0.22.1`. For Worker, the default image
+                      tag is `v0.22.1`.
                     type: string
                   networkMode:
                     description: Whether to use hostnetwork or not Default is HostNetwork
@@ -3798,8 +3798,8 @@ spec:
                     type: object
                   image:
                     description: The image of Vineyard component. For Master, the
-                      default image is `bitnami/etcd` For Worker, the default image
-                      is `vineyardcloudnative/vineyardd` The default container registry
+                      default image is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd` For Worker, the default image
+                      is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd` The default container registry
                       is `docker.io`, you can change it by setting the image field
                     type: string
                   imagePullPolicy:
@@ -3808,8 +3808,8 @@ spec:
                     type: string
                   imageTag:
                     description: The image tag of Vineyard component. For Master,
-                      the default image tag is `3.5.10`. For Worker, the default image
-                      tag is `v0.21.5`.
+                      the default image tag is `v0.22.1`. For Worker, the default image
+                      tag is `v0.22.1`.
                     type: string
                   networkMode:
                     description: Whether to use hostnetwork or not Default is HostNetwork
