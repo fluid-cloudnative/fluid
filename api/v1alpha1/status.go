@@ -152,8 +152,8 @@ type OperationStatus struct {
 	// WaitingStatus stores information about waiting operation.
 	WaitingFor WaitingStatus `json:"waitingFor,omitempty"`
 
-	// NodeLabels defines the node labels for operation pods
-	NodeLabels map[string]string `json:"nodeLabels,omitempty"`
+	// NodeAffinity defines the node labels for operation pods
+	NodeAffinity *corev1.NodeAffinity `json:"nodeAffinity,omitempty"`
 }
 
 type RuntimePhase string

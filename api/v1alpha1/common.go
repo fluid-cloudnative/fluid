@@ -244,6 +244,7 @@ const (
 	DataProcessType OperationType = "DataProcess"
 )
 
+// AffinityPolicy the strategy for the affinity between Data Operation Pods.
 type AffinityPolicy string
 
 const (
@@ -261,6 +262,7 @@ type AffinityStrategy struct {
 	Require []string `json:"require,omitempty"`
 }
 
+// Prefer defines the label key and weight for generating a PreferredSchedulingTerm.
 type Prefer struct {
 	Name   string `json:"name"`
 	Weight int32  `json:"weight"`

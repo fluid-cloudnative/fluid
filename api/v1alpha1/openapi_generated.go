@@ -4985,7 +4985,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_OperationStatus(ref common.Refe
 					},
 					"nodeLabels": {
 						SchemaProps: spec.SchemaProps{
-							Description: "NodeLabels defines the node labels for operation pods",
+							Description: "NodeAffinity defines the node labels for operation pods",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
 								Allows: true,

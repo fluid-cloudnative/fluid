@@ -54,9 +54,9 @@ func (o *OnceHandler) GetOperationStatus(ctx runtime.ReconcileRequestContext, op
 		return
 	}
 	// set the node labels in status when job finished
-	if result.NodeLabels == nil {
+	if result.NodeAffinity == nil {
 		// generate the node labels
-		result.NodeLabels, err = dataflow.GenerateNodeLabels(ctx.Client, backupPod)
+		result.NodeAffinity, err = dataflow.GenerateNodeLabels(ctx.Client, backupPod)
 		if err != nil {
 			return nil, fmt.Errorf("error to generate the node labels: %v", err)
 		}

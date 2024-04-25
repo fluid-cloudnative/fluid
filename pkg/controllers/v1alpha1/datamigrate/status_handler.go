@@ -91,7 +91,7 @@ func (m *OnceStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestCont
 	// for parallel migrate, there are multiple pods, so can not set the node labels.
 	if m.dataMigrate.Spec.Parallelism == 1 {
 		// set the node labels in status
-		if result.NodeLabels == nil {
+		if result.NodeAffinity == nil {
 			jobPod, err := kubeclient.GetSucceedPodForJob(m.Client, job)
 			if err != nil {
 				ctx.Log.Error(err, "can't get pod for job", "namespace", ctx.Namespace, "jobName", jobName)
@@ -99,7 +99,7 @@ func (m *OnceStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestCont
 			}
 
 			// generate the node labels
-			result.NodeLabels, err = dataflow.GenerateNodeLabels(m.Client, jobPod)
+			result.NodeAffinity, err = dataflow.GenerateNodeLabels(m.Client, jobPod)
 			if err != nil {
 				return nil, fmt.Errorf("error to generate the node labels: %v", err)
 			}

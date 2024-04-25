@@ -41,18 +41,14 @@ func InjectAffinityByRunAfterOp(c client.Client, runAfter *datav1alpha1.Operatio
 		return currentAffinity, err
 	}
 
-	if len(precedingOpStatus.NodeLabels) == 0 {
-		return currentAffinity, nil
-	}
-
 	// require policy
 	if runAfter.AffinityStrategy.Policy == datav1alpha1.RequireAffinityStrategy {
-		return injectRequiredAffinity(runAfter, precedingOpStatus.NodeLabels, currentAffinity)
+		return injectRequiredAffinity(runAfter, precedingOpStatus.NodeAffinity, currentAffinity)
 	}
 
 	// prefer policy
 	if runAfter.AffinityStrategy.Policy == datav1alpha1.PreferAffinityStrategy {
-		return injectPreferredAffinity(runAfter, precedingOpStatus.NodeLabels, currentAffinity)
+		return injectPreferredAffinity(runAfter, precedingOpStatus.NodeAffinity, currentAffinity)
 	}
 
 	return currentAffinity, fmt.Errorf("unknown policy for affinity strategy: %s", runAfter.AffinityStrategy.Policy)
@@ -88,13 +84,23 @@ func injectPreferredAffinity(runAfter *datav1alpha1.OperationRef, nodeLabels map
 	return utils.InjectPreferredSchedulingTermsToAffinity(preferTerms, currentAffinity), nil
 }
 
-func injectRequiredAffinity(runAfter *datav1alpha1.OperationRef, nodeLabels map[string]string, currentAffinity *v1.Affinity) (*v1.Affinity, error) {
+func injectRequiredAffinity(runAfter *datav1alpha1.OperationRef, prevOpNodeAffinity *v1.NodeAffinity, currentAffinity *v1.Affinity) (*v1.Affinity, error) {
+	if prevOpNodeAffinity == nil || prevOpNodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution == nil ||
+		prevOpNodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms == nil {
+		return currentAffinity, nil
+	}
+
 	var terms []v1.NodeSelectorTerm
 	keys := runAfter.AffinityStrategy.Require
 	if keys == nil {
 		keys = []string{common.K8sNodeNameLabelKey}
 	}
 	for _, key := range keys {
+
+		for match := range prevOpNodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms {
+
+		}
+
 		if value, ok := nodeLabels[key]; ok {
 			terms = append(terms, v1.NodeSelectorTerm{
 				MatchExpressions: []v1.NodeSelectorRequirement{

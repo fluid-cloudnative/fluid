@@ -106,7 +106,7 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 							Namespace: "default",
 						},
 						Status: datav1alpha1.OperationStatus{
-							NodeLabels: map[string]string{
+							NodeAffinity: map[string]string{
 								common.K8sNodeNameLabelKey: "node01",
 							},
 						},
@@ -152,7 +152,7 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 							Namespace: "default",
 						},
 						Status: datav1alpha1.OperationStatus{
-							NodeLabels: map[string]string{
+							NodeAffinity: map[string]string{
 								"k8s.rack": "rack01",
 							},
 						},
@@ -204,7 +204,7 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 							Namespace: "test",
 						},
 						Status: datav1alpha1.OperationStatus{
-							NodeLabels: map[string]string{
+							NodeAffinity: map[string]string{
 								common.K8sNodeNameLabelKey: "node01",
 								common.K8sZoneLabelKey:     "zone01",
 								common.K8sRegionLabelKey:   "region01",

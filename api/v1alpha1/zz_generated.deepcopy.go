@@ -2155,8 +2155,8 @@ func (in *OperationStatus) DeepCopyInto(out *OperationStatus) {
 		*out = (*in).DeepCopy()
 	}
 	in.WaitingFor.DeepCopyInto(&out.WaitingFor)
-	if in.NodeLabels != nil {
-		in, out := &in.NodeLabels, &out.NodeLabels
+	if in.NodeAffinity != nil {
+		in, out := &in.NodeAffinity, &out.NodeAffinity
 		*out = make(map[string]string, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val
