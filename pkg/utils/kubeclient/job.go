@@ -35,3 +35,7 @@ func GetJob(client client.Client, name, namespace string) (*v1.Job, error) {
 	}
 	return &job, nil
 }
+
+func UpdateJob(client client.Client, job *v1.Job) error {
+	return client.Update(context.TODO(), job)
+}
