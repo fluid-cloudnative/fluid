@@ -2457,6 +2457,20 @@ Default is false</p>
 </tr>
 <tr>
 <td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to Vineyard&rsquo;s pods.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>volumes</code></br>
 <em>
 <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core">
@@ -7488,7 +7502,9 @@ bool
 <a href="#data.fluid.io/v1alpha1.JuiceFSCompTemplateSpec">JuiceFSCompTemplateSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JuiceFSFuseSpec">JuiceFSFuseSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.ThinCompTemplateSpec">ThinCompTemplateSpec</a>, 
-<a href="#data.fluid.io/v1alpha1.ThinFuseSpec">ThinFuseSpec</a>)
+<a href="#data.fluid.io/v1alpha1.ThinFuseSpec">ThinFuseSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.VineyardCompTemplateSpec">VineyardCompTemplateSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.VineyardSockSpec">VineyardSockSpec</a>)
 </p>
 <p>
 </p>
@@ -7749,7 +7765,10 @@ WaitingStatus
 <a href="#data.fluid.io/v1alpha1.JuiceFSFuseSpec">JuiceFSFuseSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JuiceFSRuntimeSpec">JuiceFSRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.Metadata">Metadata</a>, 
-<a href="#data.fluid.io/v1alpha1.Processor">Processor</a>)
+<a href="#data.fluid.io/v1alpha1.Processor">Processor</a>, 
+<a href="#data.fluid.io/v1alpha1.VineyardCompTemplateSpec">VineyardCompTemplateSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.VineyardRuntimeSpec">VineyardRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.VineyardSockSpec">VineyardSockSpec</a>)
 </p>
 <p>
 <p>PodMetadata defines subgroup properties of metav1.ObjectMeta</p>
@@ -9992,6 +10011,36 @@ It is useful for specifying a persistent storage.
 Default is not set.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to Vineyard&rsquo;s pods including Master and Worker.
+Default is not set.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>networkMode</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.NetworkMode">
+NetworkMode
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to use hostnetwork or not
+Default is HostNetwork</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.VineyardRuntimeSpec">VineyardRuntimeSpec
@@ -10122,6 +10171,20 @@ Default is false</p>
 </tr>
 <tr>
 <td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to Vineyard&rsquo;s pods.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>volumes</code></br>
 <em>
 <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core">
@@ -10240,6 +10303,35 @@ Kubernetes core/v1.ResourceRequirements
 Default is not set.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>networkMode</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.NetworkMode">
+NetworkMode
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to use hostnetwork or not
+Default is HostNetwork</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to Vineyard&rsquo;s pods.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.VolumeSource">VolumeSource
@@ -10308,5 +10400,5 @@ bool
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>4ca57673e</code>.
+on git commit <code>acb0aec73</code>.
 </em></p>
