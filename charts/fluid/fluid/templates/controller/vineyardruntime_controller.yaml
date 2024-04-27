@@ -48,6 +48,7 @@ spec:
         command: ["vineyardruntime-controller", "start"]
         args:
           - --development=false
+          - --runtime-node-port-range={{ .Values.runtime.vineyard.portRange }}
           - --pprof-addr=:6060
           - --enable-leader-election
           - --leader-election-namespace={{ include "fluid.namespace" . }}

@@ -143,6 +143,7 @@ runtime:
       image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-fuse:v1.2.2-19dcee9
   vineyard:
     replicas: 1
+    portRange: 32000-34000
     tolerations:
       - operator: Exists
     enabled: false

@@ -116,6 +116,28 @@ spec:
                   imageTag:
                     description: Image Tag for Vineyard Fuse Default is `v0.21.5`
                     type: string
+                  networkMode:
+                    description: Whether to use hostnetwork or not Default is HostNetwork
+                    enum:
+                    - HostNetwork
+                    - ""
+                    - ContainerNetwork
+                    type: string
+                  podMetadata:
+                    description: PodMetadata defines labels and annotations that will
+                      be propagated to Vineyard's pods.
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: Annotations are annotations of pod specification
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Labels are labels of pod specification
+                        type: object
+                    type: object
                   resources:
                     description: Resources contains the resource requirements and
                       limits for the Vineyard Fuse. Default is not set.
@@ -219,6 +241,13 @@ spec:
                       the default image tag is `3.5.10`. For Worker, the default image
                       tag is `v0.21.5`.
                     type: string
+                  networkMode:
+                    description: Whether to use hostnetwork or not Default is HostNetwork
+                    enum:
+                    - HostNetwork
+                    - ""
+                    - ContainerNetwork
+                    type: string
                   nodeSelector:
                     additionalProperties:
                       type: string
@@ -238,6 +267,22 @@ spec:
                       the etcd to be ready, in seconds \n Default value is as follows.
                       \n vineyardd.reserve.memory: \"true\" etcd.prefix: \"/vineyard\"
                       wait.etcd.timeout: \"120\""
+                    type: object
+                  podMetadata:
+                    description: PodMetadata defines labels and annotations that will
+                      be propagated to Vineyard's pods including Master and Worker.
+                      Default is not set.
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: Annotations are annotations of pod specification
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Labels are labels of pod specification
+                        type: object
                     type: object
                   ports:
                     additionalProperties:
@@ -327,6 +372,21 @@ spec:
                       - name
                       type: object
                     type: array
+                type: object
+              podMetadata:
+                description: PodMetadata defines labels and annotations that will
+                  be propagated to Vineyard's pods.
+                properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: Annotations are annotations of pod specification
+                    type: object
+                  labels:
+                    additionalProperties:
+                      type: string
+                    description: Labels are labels of pod specification
+                    type: object
                 type: object
               replicas:
                 description: The replicas of the worker, need to be specified If worker.replicas
@@ -3507,6 +3567,13 @@ spec:
                       the default image tag is `3.5.10`. For Worker, the default image
                       tag is `v0.21.5`.
                     type: string
+                  networkMode:
+                    description: Whether to use hostnetwork or not Default is HostNetwork
+                    enum:
+                    - HostNetwork
+                    - ""
+                    - ContainerNetwork
+                    type: string
                   nodeSelector:
                     additionalProperties:
                       type: string
@@ -3526,6 +3593,22 @@ spec:
                       the etcd to be ready, in seconds \n Default value is as follows.
                       \n vineyardd.reserve.memory: \"true\" etcd.prefix: \"/vineyard\"
                       wait.etcd.timeout: \"120\""
+                    type: object
+                  podMetadata:
+                    description: PodMetadata defines labels and annotations that will
+                      be propagated to Vineyard's pods including Master and Worker.
+                      Default is not set.
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: Annotations are annotations of pod specification
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Labels are labels of pod specification
+                        type: object
                     type: object
                   ports:
                     additionalProperties:
