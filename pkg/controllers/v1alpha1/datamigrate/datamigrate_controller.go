@@ -118,7 +118,7 @@ func (r *DataMigrateReconciler) SetupWithManager(mgr ctrl.Manager, options contr
 			Owns(&batchv1.CronJob{}).
 			Complete(r)
 	} else {
-		ctrl.Log.Info("batch/v1 cronjobs cannnot be found in cluster, fallback to watch batch/v1beta1 cronjobs for compatibility")
+		ctrl.Log.Info("batch/v1 cronjobs cannot be found in cluster, fallback to watch batch/v1beta1 cronjobs for compatibility")
 		return ctrl.NewControllerManagedBy(mgr).
 			WithOptions(options).
 			For(&datav1alpha1.DataMigrate{}).
