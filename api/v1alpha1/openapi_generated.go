@@ -120,11 +120,11 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore":                schema_fluid_cloudnative_fluid_api_v1alpha1_TieredStore(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.User":                       schema_fluid_cloudnative_fluid_api_v1alpha1_User(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec":                schema_fluid_cloudnative_fluid_api_v1alpha1_VersionSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardClientSocketSpec":   schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardClientSocketSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardCompTemplateSpec":   schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardCompTemplateSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardRuntime":            schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardRuntime(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardRuntimeList":        schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardRuntimeList(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardRuntimeSpec":        schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardRuntimeSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardSockSpec":           schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardSockSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VolumeSource":               schema_fluid_cloudnative_fluid_api_v1alpha1_VolumeSource(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.WaitingStatus":              schema_fluid_cloudnative_fluid_api_v1alpha1_WaitingStatus(ref),
 	}
@@ -6497,6 +6497,102 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_VersionSpec(ref common.Referenc
 	}
 }
 
+func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardClientSocketSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "VineyardClientSocketSpec holds the configurations for vineyard client socket",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"image": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Image for Vineyard Fuse Default is `vineyardcloudnative/vineyard-fluid-fuse`",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"imageTag": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Image Tag for Vineyard Fuse Default is `v0.21.5`",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"imagePullPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Image pull policy for Vineyard Fuse Default is `IfNotPresent` Available values are `Always`, `IfNotPresent`, `Never`",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"env": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Environment variables that will be used by Vineyard Fuse. Default is not set.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"cleanPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CleanPolicy decides when to clean Vineyard Fuse pods. Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted OnDemand cleans fuse pod once th fuse pod on some node is not needed OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted Defaults to OnRuntimeDeleted",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"resources": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Resources contains the resource requirements and limits for the Vineyard Fuse. Default is not set.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
+						},
+					},
+					"networkMode": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Whether to use hostnetwork or not Default is HostNetwork",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"podMetadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodMetadata defines labels and annotations that will be propagated to Vineyard's pods.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
+						},
+					},
+					"options": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Options for configuring vineyardd parameters. Supported options are as follows.\n  reserve_memory: (Bool) Whether to reserving enough physical memory pages for vineyardd.\n                  Default is true.\n  allocator: (String) The allocator used by vineyardd, could be \"dlmalloc\" or \"mimalloc\".\n             Default is \"dlmalloc\".\n  compression: (Bool) Compress before migration or spilling.\n               Default is true.\n  coredump: (Bool) Enable coredump core dump when been aborted.\n            Default is false.\n  meta_timeout: (Int) Timeout period before waiting the metadata service to be ready, in seconds\n\t\t\t\t   Default is 60.\n  etcd_endpoint: (String) The endpoint of etcd.\n                 Default is same as the etcd endpoint of vineyard worker.\n  etcd_prefix: (String) Metadata path prefix in etcd.\n               Default is \"/vineyard\".\n  size: (String) shared memory size for vineyardd.\n                 1024M, 1024000, 1G, or 1Gi.\n                 Default is \"0\", which means no cache.\n                 When the size is not set to \"0\", it should be greater than the 2048 bytes(2K).\n  spill_path: (String) Path to spill temporary files, if not set, spilling will be disabled.\n              Default is \"\".\n  spill_lower_rate: (Double) The lower rate of memory usage to trigger spilling.\n\t\t\t\t\t   Default is 0.3.\n  spill_upper_rate: (Double) The upper rate of memory usage to stop spilling.\n\t\t\t\t\t   Default is 0.8.\nDefault is as follows. fuse:\n  options:\n    size: \"0\"\n    etcd_endpoint: \"http://{{Name}}-master-0.{{Name}}-master.{{Namespace}}:{{EtcdClientPort}}\"\n\t   etcd_prefix: \"/vineyard\"",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "k8s.io/api/core/v1.ResourceRequirements"},
+	}
+}
+
 func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardCompTemplateSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -6767,7 +6863,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardRuntimeSpec(ref common.
 						SchemaProps: spec.SchemaProps{
 							Description: "Fuse holds the configurations for Vineyard client socket. Note that the \"Fuse\" here is kept just for API consistency, VineyardRuntime mount a socket file instead of a FUSE filesystem to make data cache available. Applications can connect to the vineyard runtime components through IPC or RPC. IPC is the default way to connect to vineyard runtime components, which is more efficient than RPC. If the socket file is not mounted, the connection will fall back to RPC.",
 							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardSockSpec"),
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardClientSocketSpec"),
 						},
 					},
 					"tieredstore": {
@@ -6809,87 +6905,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardRuntimeSpec(ref common.
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.MasterSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardSockSpec", "k8s.io/api/core/v1.Volume"},
-	}
-}
-
-func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardSockSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "VineyardSockSpec holds the configurations for vineyard client socket",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"image": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Image for Vineyard Fuse Default is `vineyardcloudnative/vineyard-fluid-fuse`",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"imageTag": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Image Tag for Vineyard Fuse Default is `v0.21.5`",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"imagePullPolicy": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Image pull policy for Vineyard Fuse Default is `IfNotPresent` Available values are `Always`, `IfNotPresent`, `Never`",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"env": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Environment variables that will be used by Vineyard Fuse. Default is not set.",
-							Type:        []string{"object"},
-							AdditionalProperties: &spec.SchemaOrBool{
-								Allows: true,
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: "",
-										Type:    []string{"string"},
-										Format:  "",
-									},
-								},
-							},
-						},
-					},
-					"cleanPolicy": {
-						SchemaProps: spec.SchemaProps{
-							Description: "CleanPolicy decides when to clean Vineyard Fuse pods. Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted OnDemand cleans fuse pod once th fuse pod on some node is not needed OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted Defaults to OnRuntimeDeleted",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"resources": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Resources contains the resource requirements and limits for the Vineyard Fuse. Default is not set.",
-							Default:     map[string]interface{}{},
-							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
-						},
-					},
-					"networkMode": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Whether to use hostnetwork or not Default is HostNetwork",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"podMetadata": {
-						SchemaProps: spec.SchemaProps{
-							Description: "PodMetadata defines labels and annotations that will be propagated to Vineyard's pods.",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "k8s.io/api/core/v1.ResourceRequirements"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.MasterSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardClientSocketSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardCompTemplateSpec", "k8s.io/api/core/v1.Volume"},
 	}
 }
 

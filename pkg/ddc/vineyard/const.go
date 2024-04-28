@@ -41,4 +41,17 @@ const (
 	WorkerEtcdPrefix = "etcd.prefix"
 
 	DefaultWorkerEtcdPrefixValue = "/vineyard"
+
+	// the size of vineyardd in vineyard-fuse
+	VineyarddSize = "size"
+
+	// the etcd endpoint of vineyardd in vineyard-fuse
+	EtcdEndpoint = "etcd_endpoint"
+
+	// the etcd prefix of vineyardd in vineyard-fuse
+	EtcdPrefix = "etcd_prefix"
+
+	DefaultSize = "0"
+
+	DefaultEtcdPrefix = "/vineyard"
 )

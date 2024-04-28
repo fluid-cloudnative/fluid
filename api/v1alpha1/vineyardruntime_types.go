@@ -151,8 +151,8 @@ type MasterSpec struct {
 	ExternalEndpoint ExternalEndpointSpec `json:"endpoint,omitempty"`
 }
 
-// VineyardSockSpec holds the configurations for vineyard client socket
-type VineyardSockSpec struct {
+// VineyardClientSocketSpec holds the configurations for vineyard client socket
+type VineyardClientSocketSpec struct {
 	// Image for Vineyard Fuse
 	// Default is `vineyardcloudnative/vineyard-fluid-fuse`
 	// +optional
@@ -196,6 +196,42 @@ type VineyardSockSpec struct {
 	// PodMetadata defines labels and annotations that will be propagated to Vineyard's pods.
 	// +optional
 	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
+
+	// Options for configuring vineyardd parameters.
+	// Supported options are as follows.
+	//   reserve_memory: (Bool) Whether to reserving enough physical memory pages for vineyardd.
+	//                   Default is true.
+	//   allocator: (String) The allocator used by vineyardd, could be "dlmalloc" or "mimalloc".
+	//              Default is "dlmalloc".
+	//   compression: (Bool) Compress before migration or spilling.
+	//                Default is true.
+	//   coredump: (Bool) Enable coredump core dump when been aborted.
+	//             Default is false.
+	//   meta_timeout: (Int) Timeout period before waiting the metadata service to be ready, in seconds
+	//				   Default is 60.
+	//   etcd_endpoint: (String) The endpoint of etcd.
+	//                  Default is same as the etcd endpoint of vineyard worker.
+	//   etcd_prefix: (String) Metadata path prefix in etcd.
+	//                Default is "/vineyard".
+	//   size: (String) shared memory size for vineyardd.
+	//                  1024M, 1024000, 1G, or 1Gi.
+	//                  Default is "0", which means no cache.
+	//                  When the size is not set to "0", it should be greater than the 2048 bytes(2K).
+	//   spill_path: (String) Path to spill temporary files, if not set, spilling will be disabled.
+	//               Default is "".
+	//   spill_lower_rate: (Double) The lower rate of memory usage to trigger spilling.
+	//					   Default is 0.3.
+	//   spill_upper_rate: (Double) The upper rate of memory usage to stop spilling.
+	//					   Default is 0.8.
+	// Default is as follows.
+	// fuse:
+	//   options:
+	//     size: "0"
+	//     etcd_endpoint: "http://{{Name}}-master-0.{{Name}}-master.{{Namespace}}:{{EtcdClientPort}}"
+	//	   etcd_prefix: "/vineyard"
+	//
+	// +optional
+	Options map[string]string `json:"options,omitempty"`
 }
 
 // VineyardRuntimeSpec defines the desired state of VineyardRuntime
@@ -220,7 +256,7 @@ type VineyardRuntimeSpec struct {
 	// IPC is the default way to connect to vineyard runtime components, which is more efficient than RPC.
 	// If the socket file is not mounted, the connection will fall back to RPC.
 	// +optional
-	Fuse VineyardSockSpec `json:"fuse,omitempty"`
+	Fuse VineyardClientSocketSpec `json:"fuse,omitempty"`
 
 	// Tiered storage used by vineyardd
 	// The MediumType can only be `MEM` and `SSD`
