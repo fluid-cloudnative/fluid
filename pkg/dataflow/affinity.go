@@ -54,7 +54,7 @@ func InjectAffinityByRunAfterOp(c client.Client, runAfter *datav1alpha1.Operatio
 	return currentAffinity, fmt.Errorf("unknown policy for affinity strategy: %s", runAfter.AffinityStrategy.Policy)
 }
 
-func injectPreferredAffinity(runAfter *datav1alpha1.OperationRef, nodeLabels map[string]string, currentAffinity *v1.Affinity) (*v1.Affinity, error) {
+func injectPreferredAffinity(runAfter *datav1alpha1.OperationRef, prevOpNodeAffinity *v1.NodeAffinity, currentAffinity *v1.Affinity) (*v1.Affinity, error) {
 	var preferTerms []v1.PreferredSchedulingTerm
 	prefer := runAfter.AffinityStrategy.Prefer
 	if prefer == nil {
@@ -65,20 +65,26 @@ func injectPreferredAffinity(runAfter *datav1alpha1.OperationRef, nodeLabels map
 			},
 		}
 	}
+	// currently, only has one element.
+	podNodeSelectorTerm := prevOpNodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0]
+
 	for _, item := range prefer {
-		if value, ok := nodeLabels[item.Name]; ok {
-			preferTerms = append(preferTerms, v1.PreferredSchedulingTerm{
-				Weight: item.Weight,
-				Preference: v1.NodeSelectorTerm{
-					MatchExpressions: []v1.NodeSelectorRequirement{
-						{
-							Key:      item.Name,
-							Operator: v1.NodeSelectorOpIn,
-							Values:   []string{value},
+		key := item.Name
+		for _, expression := range podNodeSelectorTerm.MatchExpressions {
+			if expression.Key == key {
+				preferTerms = append(preferTerms, v1.PreferredSchedulingTerm{
+					Weight: item.Weight,
+					Preference: v1.NodeSelectorTerm{
+						MatchExpressions: []v1.NodeSelectorRequirement{
+							{
+								Key:      expression.Key,
+								Operator: expression.Operator,
+								Values:   expression.Values,
+							},
 						},
 					},
-				},
-			})
+				})
+			}
 		}
 	}
 	return utils.InjectPreferredSchedulingTermsToAffinity(preferTerms, currentAffinity), nil
@@ -90,28 +96,26 @@ func injectRequiredAffinity(runAfter *datav1alpha1.OperationRef, prevOpNodeAffin
 		return currentAffinity, nil
 	}
 
-	var terms []v1.NodeSelectorTerm
+	var matchExpressions []v1.NodeSelectorRequirement
 	keys := runAfter.AffinityStrategy.Require
 	if keys == nil {
 		keys = []string{common.K8sNodeNameLabelKey}
 	}
+	// currently, only has one element.
+	podNodeSelectorTerm := prevOpNodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0]
+
 	for _, key := range keys {
-
-		for match := range prevOpNodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms {
-
-		}
-
-		if value, ok := nodeLabels[key]; ok {
-			terms = append(terms, v1.NodeSelectorTerm{
-				MatchExpressions: []v1.NodeSelectorRequirement{
-					{
-						Key:      key,
-						Operator: v1.NodeSelectorOpIn,
-						Values:   []string{value},
+		for _, expression := range podNodeSelectorTerm.MatchExpressions {
+			if expression.Key == key {
+				matchExpressions = append(matchExpressions,
+					v1.NodeSelectorRequirement{
+						Key:      expression.Key,
+						Operator: expression.Operator,
+						Values:   expression.Values,
 					},
-				},
-			})
+				)
+			}
 		}
 	}
-	return utils.InjectNodeSelectorTermsToAffinity(terms, currentAffinity), nil
+	return utils.InjectNodeSelectorRequirements(matchExpressions, currentAffinity), nil
 }

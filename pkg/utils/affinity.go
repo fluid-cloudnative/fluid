@@ -18,7 +18,8 @@ package utils
 
 import v1 "k8s.io/api/core/v1"
 
-func InjectNodeSelectorTermsToAffinity(terms []v1.NodeSelectorTerm, affinity *v1.Affinity) *v1.Affinity {
+// InjectNodeSelectorRequirements injects(not append) a node selector term to affinity‘s nodeAffinity.
+func InjectNodeSelectorRequirements(matchExpressions []v1.NodeSelectorRequirement, affinity *v1.Affinity) *v1.Affinity {
 	result := affinity
 	if affinity == nil {
 		result = &v1.Affinity{}
@@ -30,8 +31,19 @@ func InjectNodeSelectorTermsToAffinity(terms []v1.NodeSelectorTerm, affinity *v1
 	if result.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution == nil {
 		result.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution = &v1.NodeSelector{}
 	}
-	result.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms =
-		append(result.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, terms...)
+	// no element
+	if result.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms == nil {
+		result.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms = []v1.NodeSelectorTerm{
+			{
+				MatchExpressions: matchExpressions,
+			},
+		}
+		return result
+	}
+	// has element, inject term's match expressions to each element
+	for _, nodeSelectorTerm := range result.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms {
+		nodeSelectorTerm.MatchExpressions = append(nodeSelectorTerm.MatchExpressions, matchExpressions...)
+	}
 
 	return result
 }

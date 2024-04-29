@@ -106,8 +106,20 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 							Namespace: "default",
 						},
 						Status: datav1alpha1.OperationStatus{
-							NodeAffinity: map[string]string{
-								common.K8sNodeNameLabelKey: "node01",
+							NodeAffinity: &v1.NodeAffinity{
+								RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
+									NodeSelectorTerms: []v1.NodeSelectorTerm{
+										{
+											MatchExpressions: []v1.NodeSelectorRequirement{
+												{
+													Key:      common.K8sNodeNameLabelKey,
+													Operator: v1.NodeSelectorOpIn,
+													Values:   []string{"node01"},
+												},
+											},
+										},
+									},
+								},
 							},
 						},
 					},
@@ -152,8 +164,20 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 							Namespace: "default",
 						},
 						Status: datav1alpha1.OperationStatus{
-							NodeAffinity: map[string]string{
-								"k8s.rack": "rack01",
+							NodeAffinity: &v1.NodeAffinity{
+								RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
+									NodeSelectorTerms: []v1.NodeSelectorTerm{
+										{
+											MatchExpressions: []v1.NodeSelectorRequirement{
+												{
+													Key:      "k8s.rack",
+													Operator: v1.NodeSelectorOpIn,
+													Values:   []string{"rack01"},
+												},
+											},
+										},
+									},
+								},
 							},
 						},
 					},
@@ -204,10 +228,30 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 							Namespace: "test",
 						},
 						Status: datav1alpha1.OperationStatus{
-							NodeAffinity: map[string]string{
-								common.K8sNodeNameLabelKey: "node01",
-								common.K8sZoneLabelKey:     "zone01",
-								common.K8sRegionLabelKey:   "region01",
+							NodeAffinity: &v1.NodeAffinity{
+								RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
+									NodeSelectorTerms: []v1.NodeSelectorTerm{
+										{
+											MatchExpressions: []v1.NodeSelectorRequirement{
+												{
+													Key:      common.K8sNodeNameLabelKey,
+													Operator: v1.NodeSelectorOpIn,
+													Values:   []string{"node01"},
+												},
+												{
+													Key:      common.K8sZoneLabelKey,
+													Operator: v1.NodeSelectorOpIn,
+													Values:   []string{"zone01"},
+												},
+												{
+													Key:      common.K8sRegionLabelKey,
+													Operator: v1.NodeSelectorOpIn,
+													Values:   []string{"region01"},
+												},
+											},
+										},
+									},
+								},
 							},
 						},
 					},

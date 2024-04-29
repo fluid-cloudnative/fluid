@@ -25,65 +25,104 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func GenerateNodeLabels(c client.Client, pod *corev1.Pod) (map[string]string, error) {
-	var result = map[string]string{}
+func GenerateNodeLabels(c client.Client, pod *corev1.Pod) (*corev1.NodeAffinity, error) {
 	if pod == nil {
-		return result, nil
+		return nil, nil
 	}
 	nodeName := pod.Spec.NodeName
 	if len(nodeName) == 0 {
-		return result, nil
+		return nil, nil
 	}
-	// node name
-	result[common.K8sNodeNameLabelKey] = nodeName
 
 	var node corev1.Node
 	err := c.Get(context.TODO(), types.NamespacedName{Name: nodeName}, &node)
 	if err != nil {
-		return result, fmt.Errorf("error to get node %s: %v", nodeName, err)
+		return nil, fmt.Errorf("error to get node %s: %v", nodeName, err)
 	}
+
+	// node name
+	nodeAffinity := &corev1.NodeAffinity{
+		RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+			NodeSelectorTerms: []corev1.NodeSelectorTerm{
+				{
+					MatchExpressions: []corev1.NodeSelectorRequirement{
+						{
+							Key:      common.K8sNodeNameLabelKey,
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{nodeName},
+						},
+					},
+				},
+			},
+		},
+	}
+
 	// region
 	region, exist := node.Labels[common.K8sRegionLabelKey]
 	if exist {
-		result[common.K8sRegionLabelKey] = region
+		nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions =
+			append(nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions,
+				corev1.NodeSelectorRequirement{
+					Key:      common.K8sRegionLabelKey,
+					Operator: corev1.NodeSelectorOpIn,
+					Values:   []string{region},
+				})
 	}
 	// zone
 	zone, exist := node.Labels[common.K8sZoneLabelKey]
 	if exist {
-		result[common.K8sZoneLabelKey] = zone
+		nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions =
+			append(nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions,
+				corev1.NodeSelectorRequirement{
+					Key:      common.K8sZoneLabelKey,
+					Operator: corev1.NodeSelectorOpIn,
+					Values:   []string{zone},
+				})
 	}
 
 	// customized labels
 	if pod.Spec.Affinity != nil && pod.Spec.Affinity.NodeAffinity != nil {
-		fillCustomizedNodeLabels(pod.Spec.Affinity.NodeAffinity, result, &node)
+		fillCustomizedNodeAffinity(pod.Spec.Affinity.NodeAffinity, nodeAffinity, &node)
 	}
 
-	return result, nil
+	return nodeAffinity, nil
 }
 
-func fillCustomizedNodeLabels(nodeAffinity *corev1.NodeAffinity, result map[string]string, node *corev1.Node) {
+func fillCustomizedNodeAffinity(podNodeAffinity *corev1.NodeAffinity, dstNodeAffinity *corev1.NodeAffinity, node *corev1.Node) {
 	// prefer
-	for _, term := range nodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution {
+	for _, term := range podNodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution {
 		for _, expression := range term.Preference.MatchExpressions {
-			// use the actually value in the node.
+			// use the actually value in the node. Transform In, NotIn, Exists, DoesNotExist. Gt, and Lt to In.
 			value, exist := node.Labels[expression.Key]
 			if exist {
-				result[expression.Key] = value
+				dstNodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions =
+					append(dstNodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions,
+						corev1.NodeSelectorRequirement{
+							Key:      expression.Key,
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{value},
+						})
 			}
 		}
 	}
 
-	if nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution == nil {
+	if podNodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution == nil {
 		return
 	}
 
 	// require
-	for _, term := range nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms {
+	for _, term := range podNodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms {
 		for _, expression := range term.MatchExpressions {
-			// use the actually value in the node.
+			// use the actually value in the node. Transform In, NotIn, Exists, DoesNotExist. Gt, and Lt to In.
 			value, exist := node.Labels[expression.Key]
 			if exist {
-				result[expression.Key] = value
+				dstNodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions =
+					append(dstNodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions,
+						corev1.NodeSelectorRequirement{
+							Key:      expression.Key,
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{value},
+						})
 			}
 		}
 	}

@@ -152,7 +152,7 @@ type OperationStatus struct {
 	// WaitingStatus stores information about waiting operation.
 	WaitingFor WaitingStatus `json:"waitingFor,omitempty"`
 
-	// NodeAffinity defines the node labels for operation pods
+	// NodeAffinity records the node affinity for operation pods
 	NodeAffinity *corev1.NodeAffinity `json:"nodeAffinity,omitempty"`
 }
 

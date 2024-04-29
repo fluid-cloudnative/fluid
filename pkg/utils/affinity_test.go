@@ -24,20 +24,49 @@ import (
 
 func TestInjectNodeSelectorTermsToAffinity(t *testing.T) {
 	type args struct {
-		terms    []v1.NodeSelectorTerm
-		affinity *v1.Affinity
+		expressions []v1.NodeSelectorRequirement
+		affinity    *v1.Affinity
 	}
 	tests := []struct {
 		name string
 		args args
 		want *v1.Affinity
 	}{
-		// TODO: Add test cases.
+		{
+			name: "test1",
+			args: args{
+				expressions: []v1.NodeSelectorRequirement{
+					{
+						Key:      "test",
+						Operator: v1.NodeSelectorOpIn,
+						Values:   []string{"test"},
+					},
+				},
+				affinity: &v1.Affinity{},
+			},
+			want: &v1.Affinity{
+				NodeAffinity: &v1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
+						NodeSelectorTerms: []v1.NodeSelectorTerm{
+							{
+								MatchExpressions: []v1.NodeSelectorRequirement{
+									{
+										Key:      "test",
+										Operator: v1.NodeSelectorOpIn,
+										Values:   []string{"test"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := InjectNodeSelectorTermsToAffinity(tt.args.terms, tt.args.affinity); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("InjectNodeSelectorTermsToAffinity() = %v, want %v", got, tt.want)
+			if got := InjectNodeSelectorRequirements(tt.args.expressions, tt.args.affinity); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("InjectNodeSelectorRequirements() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -4983,20 +4983,10 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_OperationStatus(ref common.Refe
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.WaitingStatus"),
 						},
 					},
-					"nodeLabels": {
+					"nodeAffinity": {
 						SchemaProps: spec.SchemaProps{
-							Description: "NodeAffinity defines the node labels for operation pods",
-							Type:        []string{"object"},
-							AdditionalProperties: &spec.SchemaOrBool{
-								Allows: true,
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: "",
-										Type:    []string{"string"},
-										Format:  "",
-									},
-								},
-							},
+							Description: "NodeAffinity records the node affinity for operation pods",
+							Ref:         ref("k8s.io/api/core/v1.NodeAffinity"),
 						},
 					},
 				},
@@ -5004,7 +4994,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_OperationStatus(ref common.Refe
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.Condition", "github.com/fluid-cloudnative/fluid/api/v1alpha1.WaitingStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.Condition", "github.com/fluid-cloudnative/fluid/api/v1alpha1.WaitingStatus", "k8s.io/api/core/v1.NodeAffinity", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -5057,7 +5047,8 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_Prefer(ref common.ReferenceCall
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
+				Description: "Prefer defines the label key and weight for generating a PreferredSchedulingTerm.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{

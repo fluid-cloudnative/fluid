@@ -19,7 +19,7 @@ func TestGenerateNodeLabels(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    map[string]string
+		want    *v1.NodeAffinity
 		wantErr bool
 	}{
 		{
@@ -41,10 +41,30 @@ func TestGenerateNodeLabels(t *testing.T) {
 					},
 				},
 			},
-			want: map[string]string{
-				common.K8sNodeNameLabelKey: "node01",
-				common.K8sRegionLabelKey:   "region01",
-				common.K8sZoneLabelKey:     "zone01",
+			want: &v1.NodeAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
+					NodeSelectorTerms: []v1.NodeSelectorTerm{
+						{
+							MatchExpressions: []v1.NodeSelectorRequirement{
+								{
+									Key:      common.K8sNodeNameLabelKey,
+									Operator: v1.NodeSelectorOpIn,
+									Values:   []string{"node01"},
+								},
+								{
+									Key:      common.K8sRegionLabelKey,
+									Operator: v1.NodeSelectorOpIn,
+									Values:   []string{"region01"},
+								},
+								{
+									Key:      common.K8sZoneLabelKey,
+									Operator: v1.NodeSelectorOpIn,
+									Values:   []string{"zone01"},
+								},
+							},
+						},
+					},
+				},
 			},
 			wantErr: false,
 		},
@@ -63,7 +83,7 @@ func TestGenerateNodeLabels(t *testing.T) {
 					},
 				},
 			},
-			want:    map[string]string{},
+			want:    nil,
 			wantErr: false,
 		},
 		{
@@ -112,16 +132,40 @@ func TestGenerateNodeLabels(t *testing.T) {
 							common.K8sNodeNameLabelKey: "node01",
 							common.K8sZoneLabelKey:     "zone01",
 							"k8s.rack":                 "rack01",
-							"k8s.gpu":                  "true",
+							"k8s.gpu":                  "false",
 						},
 					},
 				},
 			},
-			want: map[string]string{
-				common.K8sNodeNameLabelKey: "node01",
-				common.K8sZoneLabelKey:     "zone01",
-				"k8s.rack":                 "rack01",
-				"k8s.gpu":                  "true",
+			want: &v1.NodeAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
+					NodeSelectorTerms: []v1.NodeSelectorTerm{
+						{
+							MatchExpressions: []v1.NodeSelectorRequirement{
+								{
+									Key:      common.K8sNodeNameLabelKey,
+									Operator: v1.NodeSelectorOpIn,
+									Values:   []string{"node01"},
+								},
+								{
+									Key:      common.K8sZoneLabelKey,
+									Operator: v1.NodeSelectorOpIn,
+									Values:   []string{"zone01"},
+								},
+								{
+									Key:      "k8s.gpu",
+									Operator: v1.NodeSelectorOpIn,
+									Values:   []string{"false"},
+								},
+								{
+									Key:      "k8s.rack",
+									Operator: v1.NodeSelectorOpIn,
+									Values:   []string{"rack01"},
+								},
+							},
+						},
+					},
+				},
 			},
 			wantErr: false,
 		},
