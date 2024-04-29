@@ -18,7 +18,7 @@ package jindo
 
 import (
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromers"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
