@@ -126,12 +126,12 @@ spec:
         quota: 1Gi
         high: "0.95"
         low: "0.7"
-  # By default, after v0.5.0, aluxio runtime has Prometheous data turned on, if you need to turn it off you can actively set disablePrometheus: true
+  # By default, after v0.5.0, aluxio runtime has Prometheus data turned on, if you need to turn it off you can actively set disablePrometheus: true
   # disablePrometheus: false  
 EOF
 ```
 
-> Note: Prometheous is turned on by default. If you need to turn off Prometheous, you can set disablePrometheus: true, default is false
+> Note: Prometheus is turned on by default. If you need to turn off Prometheus, you can set disablePrometheus: true, default is false
 
 6. Checking the monitor
 In grafana HOME, you can find the view named Fluid-Prometheus-Grafana-Monitor, as follows:
