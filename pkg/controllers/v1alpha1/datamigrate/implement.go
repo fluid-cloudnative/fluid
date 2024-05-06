@@ -40,6 +40,8 @@ import (
 
 type dataMigrateOperation struct {
 	client.Client
+	// direct access to k8s api-server
+	client.Reader
 	Log      logr.Logger
 	Recorder record.EventRecorder
 

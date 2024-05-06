@@ -40,6 +40,7 @@ import (
 
 type dataLoadOperation struct {
 	client.Client
+	client.Reader
 	Log      logr.Logger
 	Recorder record.EventRecorder
 
@@ -125,7 +126,7 @@ func (r *dataLoadOperation) GetStatusHandler() dataoperation.StatusHandler {
 
 	switch policy {
 	case datav1alpha1.Once:
-		return &OnceStatusHandler{Client: r.Client, dataLoad: r.dataLoad}
+		return &OnceStatusHandler{Client: r.Client, Reader: r.Reader, dataLoad: r.dataLoad}
 	case datav1alpha1.Cron:
 		return &CronStatusHandler{Client: r.Client, dataLoad: r.dataLoad}
 	case datav1alpha1.OnEvent:

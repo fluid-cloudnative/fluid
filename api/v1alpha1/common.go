@@ -258,14 +258,19 @@ type AffinityStrategy struct {
 	// +optional
 	Policy AffinityPolicy `json:"policy,omitempty"`
 
-	Prefer  []Prefer `json:"prefer,omitempty"`
-	Require []string `json:"require,omitempty"`
+	Prefer  []Prefer  `json:"prefer,omitempty"`
+	Require []Require `json:"require,omitempty"`
 }
 
 // Prefer defines the label key and weight for generating a PreferredSchedulingTerm.
 type Prefer struct {
 	Name   string `json:"name"`
 	Weight int32  `json:"weight"`
+}
+
+// Require defines the label key for generating a NodeSelectorTerm.
+type Require struct {
+	Name string `json:"name"`
 }
 
 type OperationRef struct {
@@ -286,7 +291,7 @@ type OperationRef struct {
 	// +optional
 	Namespace string `json:"namespace,omitempty"`
 
-	// Namespace specifies the pod affinity strategy with the referent operation.
+	// AffinityStrategy specifies the pod affinity strategy with the referent operation.
 	// +optional
 	AffinityStrategy AffinityStrategy `json:"affinityStrategy,omitempty"`
 }

@@ -37,6 +37,7 @@ import (
 
 type dataProcessOperation struct {
 	client.Client
+	client.Reader
 	Log      logr.Logger
 	Recorder record.EventRecorder
 

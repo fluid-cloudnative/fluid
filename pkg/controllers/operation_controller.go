@@ -44,6 +44,8 @@ import (
 // OperationReconciler is the default implementation
 type OperationReconciler struct {
 	client.Client
+	// direct access to k8s api-server
+	client.Reader
 	Log      logr.Logger
 	Recorder record.EventRecorder
 
@@ -57,11 +59,12 @@ type OperationReconciler struct {
 }
 
 // NewDataOperationReconciler creates the default OperationReconciler
-func NewDataOperationReconciler(operationReconcilerInterface dataoperation.OperationInterfaceBuilder, client client.Client,
+func NewDataOperationReconciler(operationReconcilerInterface dataoperation.OperationInterfaceBuilder, client client.Client, reader client.Reader,
 	log logr.Logger, recorder record.EventRecorder) *OperationReconciler {
 
 	r := &OperationReconciler{
 		Client:           client,
+		Reader:           reader,
 		Recorder:         recorder,
 		Log:              log,
 		mutex:            &sync.Mutex{},

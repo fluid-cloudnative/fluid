@@ -182,13 +182,13 @@ func TestGenerateNodeLabels(t *testing.T) {
 				c = fake.NewFakeClientWithScheme(testScheme, tt.args.node, tt.args.pod)
 			}
 
-			got, err := GenerateNodeLabels(c, tt.args.pod)
+			got, err := GenerateNodeAffinity(c, tt.args.pod)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GenerateNodeLabels() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GenerateNodeAffinity() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GenerateNodeLabels() got = %v, want %v", got, tt.want)
+				t.Errorf("GenerateNodeAffinity() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

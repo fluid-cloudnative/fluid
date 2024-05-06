@@ -17,15 +17,14 @@ limitations under the License.
 package dataflow
 
 import (
-	"context"
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func GenerateNodeLabels(c client.Client, pod *corev1.Pod) (*corev1.NodeAffinity, error) {
+func GenerateNodeAffinity(reader client.Reader, pod *corev1.Pod) (*corev1.NodeAffinity, error) {
 	if pod == nil {
 		return nil, nil
 	}
@@ -34,8 +33,7 @@ func GenerateNodeLabels(c client.Client, pod *corev1.Pod) (*corev1.NodeAffinity,
 		return nil, nil
 	}
 
-	var node corev1.Node
-	err := c.Get(context.TODO(), types.NamespacedName{Name: nodeName}, &node)
+	node, err := kubeclient.GetNode(reader, nodeName)
 	if err != nil {
 		return nil, fmt.Errorf("error to get node %s: %v", nodeName, err)
 	}
@@ -82,7 +80,7 @@ func GenerateNodeLabels(c client.Client, pod *corev1.Pod) (*corev1.NodeAffinity,
 
 	// customized labels
 	if pod.Spec.Affinity != nil && pod.Spec.Affinity.NodeAffinity != nil {
-		fillCustomizedNodeAffinity(pod.Spec.Affinity.NodeAffinity, nodeAffinity, &node)
+		fillCustomizedNodeAffinity(pod.Spec.Affinity.NodeAffinity, nodeAffinity, node)
 	}
 
 	return nodeAffinity, nil

@@ -1023,8 +1023,8 @@ spec:
                 description: Specifies that the preceding operation in a workflow
                 properties:
                   affinityStrategy:
-                    description: Namespace specifies the pod affinity strategy with
-                      the referent operation.
+                    description: AffinityStrategy specifies the pod affinity strategy
+                      with the referent operation.
                     properties:
                       policy:
                         description: 'Policy one of: "", "Require", "Prefer"'
@@ -1046,7 +1046,14 @@ spec:
                         type: array
                       require:
                         items:
-                          type: string
+                          description: Require defines the label key for generating
+                            a NodeSelectorTerm.
+                          properties:
+                            name:
+                              type: string
+                          required:
+                          - name
+                          type: object
                         type: array
                     type: object
                   apiVersion:

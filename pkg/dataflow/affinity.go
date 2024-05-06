@@ -57,7 +57,7 @@ func InjectAffinityByRunAfterOp(c client.Client, runAfter *datav1alpha1.Operatio
 func injectPreferredAffinity(runAfter *datav1alpha1.OperationRef, prevOpNodeAffinity *v1.NodeAffinity, currentAffinity *v1.Affinity) (*v1.Affinity, error) {
 	var preferTerms []v1.PreferredSchedulingTerm
 	prefer := runAfter.AffinityStrategy.Prefer
-	if prefer == nil {
+	if len(prefer) == 0 {
 		prefer = []datav1alpha1.Prefer{
 			{
 				Name:   common.K8sNodeNameLabelKey,
@@ -65,6 +65,11 @@ func injectPreferredAffinity(runAfter *datav1alpha1.OperationRef, prevOpNodeAffi
 			},
 		}
 	}
+
+	if len(prevOpNodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) == 0 {
+		return currentAffinity, fmt.Errorf("no node selector terms in the preceding operation")
+	}
+
 	// currently, only has one element.
 	podNodeSelectorTerm := prevOpNodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0]
 
@@ -97,16 +102,25 @@ func injectRequiredAffinity(runAfter *datav1alpha1.OperationRef, prevOpNodeAffin
 	}
 
 	var matchExpressions []v1.NodeSelectorRequirement
-	keys := runAfter.AffinityStrategy.Require
-	if keys == nil {
-		keys = []string{common.K8sNodeNameLabelKey}
+	require := runAfter.AffinityStrategy.Require
+	if len(require) == 0 {
+		require = []datav1alpha1.Require{
+			{
+				Name: common.K8sNodeNameLabelKey,
+			},
+		}
 	}
+
+	if len(prevOpNodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) == 0 {
+		return currentAffinity, fmt.Errorf("no node selector terms in the preceding operation")
+	}
+
 	// currently, only has one element.
 	podNodeSelectorTerm := prevOpNodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0]
 
-	for _, key := range keys {
+	for _, item := range require {
 		for _, expression := range podNodeSelectorTerm.MatchExpressions {
-			if expression.Key == key {
+			if expression.Key == item.Name {
 				matchExpressions = append(matchExpressions,
 					v1.NodeSelectorRequirement{
 						Key:      expression.Key,

@@ -153,8 +153,12 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 					Kind: "DataLoad",
 					Name: "test-op",
 					AffinityStrategy: datav1alpha1.AffinityStrategy{
-						Policy:  datav1alpha1.RequireAffinityStrategy,
-						Require: []string{"k8s.rack"},
+						Policy: datav1alpha1.RequireAffinityStrategy,
+						Require: []datav1alpha1.Require{
+							{
+								Name: "k8s.rack",
+							},
+						},
 					},
 				},
 				objects: []runtime.Object{
