@@ -244,8 +244,12 @@ func TestLabelAnnotationPodSchedRegex(t *testing.T) {
 			match:  true,
 			got:    "dsA",
 		},
-		"wrong": {
+		"wrong fluid.io": {
 			target: "fluidaio/dataset.dsA.sched",
+			match:  false,
+		},
+		"wrong prefix": {
+			target: "a.fluid.io/dataset.dsA.sched",
 			match:  false,
 		},
 	}
