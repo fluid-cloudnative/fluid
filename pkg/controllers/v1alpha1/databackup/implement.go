@@ -41,7 +41,6 @@ import (
 
 type dataBackupOperation struct {
 	client.Client
-	client.Reader
 	Log      logr.Logger
 	Recorder record.EventRecorder
 
@@ -132,7 +131,7 @@ func (r *dataBackupOperation) UpdateOperationApiStatus(opStatus *datav1alpha1.Op
 }
 
 func (r *dataBackupOperation) GetStatusHandler() dataoperation.StatusHandler {
-	return &OnceHandler{Client: r.Client, Reader: r.Reader, dataBackup: r.dataBackup}
+	return &OnceHandler{}
 }
 
 // GetTTL implements dataoperation.OperationInterface.

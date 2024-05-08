@@ -52,14 +52,14 @@ type DataMigrateReconciler struct {
 var _ dataoperation.OperationInterfaceBuilder = &DataMigrateReconciler{}
 
 // NewDataMigrateReconciler returns a DataMigrateReconciler
-func NewDataMigrateReconciler(client client.Client, reader client.Reader,
+func NewDataMigrateReconciler(client client.Client,
 	log logr.Logger,
 	scheme *runtime.Scheme,
 	recorder record.EventRecorder) *DataMigrateReconciler {
 	r := &DataMigrateReconciler{
 		Scheme: scheme,
 	}
-	r.OperationReconciler = controllers.NewDataOperationReconciler(r, client, reader, log, recorder)
+	r.OperationReconciler = controllers.NewDataOperationReconciler(r, client, log, recorder)
 	return r
 }
 
@@ -71,7 +71,6 @@ func (r *DataMigrateReconciler) Build(object client.Object) (dataoperation.Opera
 
 	return &dataMigrateOperation{
 		Client:      r.Client,
-		Reader:      r.Reader,
 		Log:         r.Log,
 		Recorder:    r.Recorder,
 		dataMigrate: dataMigrate,

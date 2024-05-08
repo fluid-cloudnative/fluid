@@ -48,14 +48,14 @@ type DataBackupReconciler struct {
 var _ dataoperation.OperationInterfaceBuilder = &DataBackupReconciler{}
 
 // NewDataBackupReconciler returns a DataBackupReconciler
-func NewDataBackupReconciler(client client.Client, reader client.Reader,
+func NewDataBackupReconciler(client client.Client,
 	log logr.Logger,
 	scheme *runtime.Scheme,
 	recorder record.EventRecorder) *DataBackupReconciler {
 	r := &DataBackupReconciler{
 		Scheme: scheme,
 	}
-	r.OperationReconciler = controllers.NewDataOperationReconciler(r, client, reader, log, recorder)
+	r.OperationReconciler = controllers.NewDataOperationReconciler(r, client, log, recorder)
 	return r
 }
 
@@ -67,7 +67,6 @@ func (r *DataBackupReconciler) Build(object client.Object) (dataoperation.Operat
 
 	return &dataBackupOperation{
 		Client:     r.Client,
-		Reader:     r.Reader,
 		Log:        r.Log,
 		Recorder:   r.Recorder,
 		dataBackup: dataBackup,

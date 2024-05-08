@@ -34,7 +34,6 @@ import (
 
 type OnceStatusHandler struct {
 	client.Client
-	client.Reader
 	dataLoad *datav1alpha1.DataLoad
 }
 
@@ -89,8 +88,8 @@ func (r *OnceStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestCont
 			return nil, err
 		}
 
-		// generate the node labels，use Reader not Client as no list-watch permission
-		result.NodeAffinity, err = dataflow.GenerateNodeAffinity(r.Reader, jobPod)
+		// generate the node labels
+		result.NodeAffinity, err = dataflow.GenerateNodeAffinity(r.Client, jobPod)
 		if err != nil {
 			return nil, fmt.Errorf("error to generate the node labels: %v", err)
 		}

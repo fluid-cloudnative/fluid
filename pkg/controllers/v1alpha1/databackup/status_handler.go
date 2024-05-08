@@ -19,7 +19,6 @@ package databackup
 import (
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -33,8 +32,6 @@ import (
 )
 
 type OnceHandler struct {
-	client.Client
-	client.Reader
 	dataBackup *v1alpha1.DataBackup
 }
 
@@ -46,7 +43,7 @@ func (o *OnceHandler) GetOperationStatus(ctx runtime.ReconcileRequestContext, op
 	object := o.dataBackup
 	// 1. gdt pod name
 	backupPodName := utils.GetDataBackupPodName(object.GetName())
-	backupPod, err := kubeclient.GetPodByName(o.Client, backupPodName, object.GetNamespace())
+	backupPod, err := kubeclient.GetPodByName(ctx.Client, backupPodName, object.GetNamespace())
 	if err != nil {
 		ctx.Log.Error(err, "Failed to get databackup-pod")
 		return
@@ -59,7 +56,7 @@ func (o *OnceHandler) GetOperationStatus(ctx runtime.ReconcileRequestContext, op
 	// set the node labels in status when job finished
 	if result.NodeAffinity == nil {
 		// generate the node labels
-		result.NodeAffinity, err = dataflow.GenerateNodeAffinity(o.Reader, backupPod)
+		result.NodeAffinity, err = dataflow.GenerateNodeAffinity(ctx.Client, backupPod)
 		if err != nil {
 			return nil, fmt.Errorf("error to generate the node labels: %v", err)
 		}

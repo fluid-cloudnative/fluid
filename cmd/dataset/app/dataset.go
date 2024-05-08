@@ -168,7 +168,6 @@ func handle() {
 	if fluidDiscovery.ResourceEnabled("dataload") {
 		setupLog.Info("Registering DataLoad reconciler to Fluid controller manager.")
 		if err = (dataloadctl.NewDataLoadReconciler(mgr.GetClient(),
-			mgr.GetAPIReader(),
 			ctrl.Log.WithName("dataloadctl").WithName("DataLoad"),
 			mgr.GetScheme(),
 			mgr.GetEventRecorderFor("DataLoad"),
@@ -181,7 +180,6 @@ func handle() {
 	if fluidDiscovery.ResourceEnabled("databackup") {
 		setupLog.Info("Registering DataBackup reconciler to Fluid controller manager.")
 		if err = (databackupctl.NewDataBackupReconciler(mgr.GetClient(),
-			mgr.GetAPIReader(),
 			ctrl.Log.WithName("databackupctl").WithName("DataBackup"),
 			mgr.GetScheme(),
 			mgr.GetEventRecorderFor("DataBackup"),
@@ -194,7 +192,6 @@ func handle() {
 	if fluidDiscovery.ResourceEnabled("datamigrate") {
 		setupLog.Info("Registering DataMigrate reconciler to Fluid controller manager.")
 		if err = (datamigratectl.NewDataMigrateReconciler(mgr.GetClient(),
-			mgr.GetAPIReader(),
 			ctrl.Log.WithName("datamigratectl").WithName("DataMigrate"),
 			mgr.GetScheme(),
 			mgr.GetEventRecorderFor("DataMigrate"),
@@ -207,7 +204,6 @@ func handle() {
 	if fluidDiscovery.ResourceEnabled("dataprocess") {
 		setupLog.Info("Registering DataProcess reconciler to Fluid controller manager.")
 		if err = (dataprocessctl.NewDataProcessReconciler(mgr.GetClient(),
-			mgr.GetAPIReader(),
 			ctrl.Log.WithName("dataprocessctl").WithName("DataProcess"),
 			mgr.GetScheme(),
 			mgr.GetEventRecorderFor("DataProcess"),

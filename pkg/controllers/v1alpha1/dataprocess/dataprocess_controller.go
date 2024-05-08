@@ -55,21 +55,20 @@ func (r *DataProcessReconciler) Build(object client.Object) (dataoperation.Opera
 
 	return &dataProcessOperation{
 		Client:      r.Client,
-		Reader:      r.Reader,
 		Log:         r.Log,
 		Recorder:    r.Recorder,
 		dataProcess: dataProcess,
 	}, nil
 }
 
-func NewDataProcessReconciler(client client.Client, reader client.Reader,
+func NewDataProcessReconciler(client client.Client,
 	log logr.Logger,
 	scheme *runtime.Scheme,
 	recorder record.EventRecorder) *DataProcessReconciler {
 	r := &DataProcessReconciler{
 		Scheme: scheme,
 	}
-	r.OperationReconciler = controllers.NewDataOperationReconciler(r, client, reader, log, recorder)
+	r.OperationReconciler = controllers.NewDataOperationReconciler(r, client, log, recorder)
 	return r
 }
 

@@ -98,7 +98,7 @@ func TestOnceGetOperationStatus(t *testing.T) {
 
 	for _, testcase := range testcases {
 		client := fake.NewFakeClientWithScheme(testScheme, &mockDataMigrate, &testcase.job)
-		onceStatusHandler := &OnceStatusHandler{Client: client, dataMigrate: &mockDataMigrate, Reader: client}
+		onceStatusHandler := &OnceStatusHandler{Client: client, dataMigrate: &mockDataMigrate}
 		ctx := cruntime.ReconcileRequestContext{
 			NamespacedName: types.NamespacedName{
 				Namespace: "default",

@@ -32,7 +32,6 @@ import (
 
 type OnceStatusHandler struct {
 	client.Client
-	client.Reader
 	dataProcess *datav1alpha1.DataProcess
 }
 
@@ -78,8 +77,8 @@ func (handler *OnceStatusHandler) GetOperationStatus(ctx runtime.ReconcileReques
 			return nil, err
 		}
 
-		// generate the node labels，use Reader not Client as no list-watch permission
-		result.NodeAffinity, err = dataflow.GenerateNodeAffinity(handler.Reader, jobPod)
+		// generate the node labels
+		result.NodeAffinity, err = dataflow.GenerateNodeAffinity(handler.Client, jobPod)
 		if err != nil {
 			return nil, fmt.Errorf("error to generate the node labels: %v", err)
 		}

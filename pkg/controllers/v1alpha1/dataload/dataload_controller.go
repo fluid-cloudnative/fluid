@@ -53,14 +53,14 @@ type DataLoadReconciler struct {
 var _ dataoperation.OperationInterfaceBuilder = &DataLoadReconciler{}
 
 // NewDataLoadReconciler returns a DataLoadReconciler
-func NewDataLoadReconciler(client client.Client, reader client.Reader,
+func NewDataLoadReconciler(client client.Client,
 	log logr.Logger,
 	scheme *runtime.Scheme,
 	recorder record.EventRecorder) *DataLoadReconciler {
 	r := &DataLoadReconciler{
 		Scheme: scheme,
 	}
-	r.OperationReconciler = controllers.NewDataOperationReconciler(r, client, reader, log, recorder)
+	r.OperationReconciler = controllers.NewDataOperationReconciler(r, client, log, recorder)
 	return r
 }
 
@@ -72,7 +72,6 @@ func (r *DataLoadReconciler) Build(object client.Object) (dataoperation.Operatio
 
 	return &dataLoadOperation{
 		Client:   r.Client,
-		Reader:   r.Reader,
 		Log:      r.Log,
 		Recorder: r.Recorder,
 		dataLoad: dataLoad,

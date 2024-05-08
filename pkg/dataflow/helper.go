@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func GenerateNodeAffinity(reader client.Reader, pod *corev1.Pod) (*corev1.NodeAffinity, error) {
+func GenerateNodeAffinity(c client.Client, pod *corev1.Pod) (*corev1.NodeAffinity, error) {
 	if pod == nil {
 		return nil, nil
 	}
@@ -33,7 +33,7 @@ func GenerateNodeAffinity(reader client.Reader, pod *corev1.Pod) (*corev1.NodeAf
 		return nil, nil
 	}
 
-	node, err := kubeclient.GetNode(reader, nodeName)
+	node, err := kubeclient.GetNode(c, nodeName)
 	if err != nil {
 		return nil, fmt.Errorf("error to get node %s: %v", nodeName, err)
 	}
