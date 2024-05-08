@@ -104,15 +104,16 @@ func (t ThinEngine) updateFuseConfigOnChange(runtime *datav1alpha1.ThinRuntime, 
 		return update, nil
 	}
 
-	configStr, err := t.transformFuseConfig(runtime, dataset, &ThinValue{})
+	updatedThinValue := &ThinValue{}
+	err = t.transformFuseConfig(runtime, dataset, updatedThinValue)
 	if err != nil {
 		return update, nil
 	}
 
 	fuseConfigMapToUpdate := fuseConfigMap.DeepCopy()
-	fuseConfigMapToUpdate.Data["config.json"] = configStr
+	fuseConfigMapToUpdate.Data["config.json"] = updatedThinValue.Fuse.ConfigValue
 	if !reflect.DeepEqual(fuseConfigMap, fuseConfigMapToUpdate) {
-		t.Log.Info("Update fuse config", "fuse config", configStr)
+		t.Log.Info("Update fuse config", "fuse config", updatedThinValue.Fuse.ConfigValue)
 		err = kubeclient.UpdateConfigMap(t.Client, fuseConfigMapToUpdate)
 		if err != nil {
 			return update, err
