@@ -482,7 +482,7 @@ func TestThinEngine_updateFuseConfigOnChange(t *testing.T) {
 			Namespace: "default",
 		},
 		Data: map[string]string{
-			"config.json": "{\"mounts\":[{\"mountPoint\":\"https://mirrors.bit.edu.cn/apache/zookeeper/stable/\",\"name\":\"zookeeper\"}],\"targetPath\":\"/thin/default/test/thin-fuse\"}",
+			"config.json": "{\"mounts\":[{\"mountPoint\":\"https://mirrors.bit.edu.cn/apache/zookeeper/stable/\",\"name\":\"zookeeper\"}],\"targetPath\":\"/thin/default/test/thin-fuse\",\"accessModes\":[\"ReadOnlyMany\"]}",
 		},
 	}
 	newDataset := datav1alpha1.Dataset{

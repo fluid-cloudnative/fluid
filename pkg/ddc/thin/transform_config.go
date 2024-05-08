@@ -43,7 +43,7 @@ func getFuseConfigStorage() string {
 	return "configmap"
 }
 
-func (t *ThinEngine) transformFuseConfig(runtime *datav1alpha1.ThinRuntime, dataset *datav1alpha1.Dataset, value *ThinValue) (error) {
+func (t *ThinEngine) transformFuseConfig(runtime *datav1alpha1.ThinRuntime, dataset *datav1alpha1.Dataset, value *ThinValue) error {
 	fuseConfigStorage := getFuseConfigStorage()
 
 	mounts := []datav1alpha1.Mount{}
