@@ -54,7 +54,7 @@ type Controller interface {
 	ManagedResource() client.Object
 }
 
-func SetupWatcherWithReconciler(mgr ctrl.Manager, options controller.Options, r Controller, watchDatasetType string) (err error) {
+func SetupWatcherWithReconciler(mgr ctrl.Manager, options controller.Options, r Controller, boundRuntimeType string) (err error) {
 	options.Reconciler = r
 	c, err := controller.New(r.ControllerName(), mgr, options)
 	if err != nil {
@@ -98,7 +98,8 @@ func SetupWatcherWithReconciler(mgr ctrl.Manager, options controller.Options, r 
 		return err
 	}
 
-	if watchDatasetType != "" {
+	// Watch update events on Datasets that have correlated runtime types.
+	if len(boundRuntimeType) > 0 {
 		datasetEventHandler := &datasetEventHandler{}
 		err = c.Watch(&(source.Kind{Type: &datav1alpha1.Dataset{
 			TypeMeta: metav1.TypeMeta{
@@ -106,7 +107,7 @@ func SetupWatcherWithReconciler(mgr ctrl.Manager, options controller.Options, r 
 				APIVersion: datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version,
 			},
 		}}), &handler.EnqueueRequestForObject{}, predicate.Funcs{
-			UpdateFunc: datasetEventHandler.onUpdateFunc(r, watchDatasetType),
+			UpdateFunc: datasetEventHandler.onUpdateFunc(boundRuntimeType),
 		})
 		if err != nil {
 			log.Error(err, "Failed to watch Dataset")

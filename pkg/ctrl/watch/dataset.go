@@ -24,22 +24,22 @@ import (
 type datasetEventHandler struct {
 }
 
-func (handler *datasetEventHandler) onUpdateFunc(r Controller, datasetType string) func(e event.UpdateEvent) bool {
+func (handler *datasetEventHandler) onUpdateFunc(runtimeType string) func(e event.UpdateEvent) bool {
 	return func(e event.UpdateEvent) (needUpdate bool) {
 		log.V(1).Info("enter datasetEventHandler.onUpdateFunc", "newObj.name", e.ObjectNew.GetName(), "newObj.namespace", e.ObjectNew.GetNamespace())
 		datasetNew, ok := e.ObjectNew.(*datav1alpha1.Dataset)
 		if !ok {
-			log.Info("dataset.onUpdateFunc Skip", "object", e.ObjectNew)
+			log.Info("dataset.onUpdateFunc Skip because ObjectNew is not of type Dataset", "object", e.ObjectNew)
 			return needUpdate
 		}
-		if len(datasetNew.Status.Runtimes) > 0 && datasetNew.Status.Runtimes[0].Type != datasetType {
-			log.V(1).Info("dataset.onUpdateFunc Skip due to runtime type not match", "wantType", datasetType, "datasetType", datasetNew.Status.Runtimes[0].Type)
+		if len(datasetNew.Status.Runtimes) > 0 && datasetNew.Status.Runtimes[0].Type != runtimeType {
+			log.V(1).Info("dataset.onUpdateFunc Skip due to runtime type not match", "wantType", runtimeType, "datasetType", datasetNew.Status.Runtimes[0].Type)
 			return needUpdate
 		}
 
 		datasetOld, ok := e.ObjectOld.(*datav1alpha1.Dataset)
 		if !ok {
-			log.Info("dataset.onUpdateFunc Skip", "object", e.ObjectNew)
+			log.Info("dataset.onUpdateFunc Skip because ObjectOld is not of type Dataset", "object", e.ObjectNew)
 			return needUpdate
 		}
 
