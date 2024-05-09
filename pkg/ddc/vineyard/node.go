@@ -30,24 +30,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
-// AssignNodesToCache finds nodes to place the cache engine
-func (e *VineyardEngine) AssignNodesToCache(desiredNum int32) (currentScheduleNum int32, err error) {
-	runtimeInfo, err := e.getRuntimeInfo()
-	if err != nil {
-		return currentScheduleNum, err
-	}
-
-	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
-	if err != nil {
-		return
-	}
-	e.Log.Info("AssignNodesToCache", "dataset", dataset)
-	return datasetSchedule.AssignDatasetToNodes(runtimeInfo,
-		dataset,
-		e.Client,
-		desiredNum)
-}
-
 // SyncScheduleInfoToCacheNodes syncs schedule info to nodes
 func (e *VineyardEngine) SyncScheduleInfoToCacheNodes() (err error) {
 	defer utils.TimeTrack(time.Now(), "SyncScheduleInfoToCacheNodes", "name", e.name, "namespace", e.namespace)

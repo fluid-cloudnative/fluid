@@ -29,26 +29,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// AssignNodesToCache finds nodes to place the cache engine
-func (e *EFCEngine) AssignNodesToCache(desiredNum int32) (currentScheduleNum int32, err error) {
-	runtimeInfo, err := e.getRuntimeInfo()
-	if err != nil {
-		return currentScheduleNum, err
-	}
-
-	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
-	if err != nil {
-		return
-	}
-
-	e.Log.Info("AssignNodesToCache", "dataset", dataset)
-	return datasetSchedule.AssignDatasetToNodes(runtimeInfo,
-		dataset,
-		e.Client,
-		desiredNum)
-
-}
-
 // SyncScheduleInfoToCacheNodes syncs schedule info to nodes
 func (e *EFCEngine) SyncScheduleInfoToCacheNodes() (err error) {
 	defer utils.TimeTrack(time.Now(), "SyncScheduleInfoToCacheNodes", "name", e.name, "namespace", e.namespace)
