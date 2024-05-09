@@ -54,7 +54,7 @@ type Controller interface {
 	ManagedResource() client.Object
 }
 
-func SetupWatcherWithReconciler(mgr ctrl.Manager, options controller.Options, r Controller, boundRuntimeType string) (err error) {
+func SetupWatcherForReconcilerWithDataset(mgr ctrl.Manager, options controller.Options, r Controller, runtimeType string) (err error) {
 	options.Reconciler = r
 	c, err := controller.New(r.ControllerName(), mgr, options)
 	if err != nil {
@@ -99,7 +99,7 @@ func SetupWatcherWithReconciler(mgr ctrl.Manager, options controller.Options, r 
 	}
 
 	// Watch update events on Datasets that have correlated runtime types.
-	if len(boundRuntimeType) > 0 {
+	if len(runtimeType) > 0 {
 		datasetEventHandler := &datasetEventHandler{}
 		err = c.Watch(&(source.Kind{Type: &datav1alpha1.Dataset{
 			TypeMeta: metav1.TypeMeta{
@@ -107,12 +107,59 @@ func SetupWatcherWithReconciler(mgr ctrl.Manager, options controller.Options, r 
 				APIVersion: datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version,
 			},
 		}}), &handler.EnqueueRequestForObject{}, predicate.Funcs{
-			UpdateFunc: datasetEventHandler.onUpdateFunc(boundRuntimeType),
+			UpdateFunc: datasetEventHandler.onUpdateFunc(runtimeType),
 		})
 		if err != nil {
 			log.Error(err, "Failed to watch Dataset")
 			return err
 		}
+	}
+
+	return
+}
+
+func SetupWatcherForReconciler(mgr ctrl.Manager, options controller.Options, r Controller) (err error) {
+	options.Reconciler = r
+	c, err := controller.New(r.ControllerName(), mgr, options)
+	if err != nil {
+		return err
+	}
+
+	runtimeEventHandler := &runtimeEventHandler{}
+	err = c.Watch(&source.Kind{Type: r.ManagedResource()}, &handler.EnqueueRequestForObject{}, predicate.Funcs{
+		CreateFunc: runtimeEventHandler.onCreateFunc(r),
+		UpdateFunc: runtimeEventHandler.onUpdateFunc(r),
+		DeleteFunc: runtimeEventHandler.onDeleteFunc(r),
+	})
+	if err != nil {
+		log.Error(err, "Failed to watch JindoRuntime")
+		return err
+	}
+
+	statefulsetEventHandler := &statefulsetEventHandler{}
+	err = c.Watch(&source.Kind{Type: &appsv1.StatefulSet{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    r.ManagedResource(),
+	}, predicate.Funcs{
+		CreateFunc: statefulsetEventHandler.onCreateFunc(r),
+		UpdateFunc: statefulsetEventHandler.onUpdateFunc(r),
+		DeleteFunc: statefulsetEventHandler.onDeleteFunc(r),
+	})
+	if err != nil {
+		return err
+	}
+
+	daemonsetEventHandler := &daemonsetEventHandler{}
+	err = c.Watch(&source.Kind{Type: &appsv1.DaemonSet{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    r.ManagedResource(),
+	}, predicate.Funcs{
+		CreateFunc: daemonsetEventHandler.onCreateFunc(r),
+		UpdateFunc: daemonsetEventHandler.onUpdateFunc(r),
+		DeleteFunc: daemonsetEventHandler.onDeleteFunc(r),
+	})
+	if err != nil {
+		return err
 	}
 
 	return

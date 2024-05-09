@@ -105,7 +105,7 @@ func (r *RuntimeReconciler) Reconcile(context context.Context, req ctrl.Request)
 // SetupWithManager sets up the controller with the Manager.
 func (r *RuntimeReconciler) SetupWithManager(mgr ctrl.Manager, options controller.Options, eventDriven bool) error {
 	if eventDriven {
-		return watch.SetupWatcherWithReconciler(mgr, options, r, "")
+		return watch.SetupWatcherForReconciler(mgr, options, r)
 	} else {
 		return ctrl.NewControllerManagedBy(mgr).
 			WithOptions(options).
