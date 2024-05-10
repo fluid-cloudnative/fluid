@@ -18,16 +18,18 @@ package utils
 
 import (
 	"sync"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 type VolumeLocks struct {
-	locks map[string]struct{} // An empty struct uses 0 bytes
+	locks sets.Set[string]
 	mutex sync.Mutex
 }
 
 func NewVolumeLocks() *VolumeLocks {
 	return &VolumeLocks{
-		locks: make(map[string]struct{}),
+		locks: sets.New[string](),
 	}
 }
 
@@ -36,10 +38,10 @@ func NewVolumeLocks() *VolumeLocks {
 func (lock *VolumeLocks) TryAcquire(volumeID string) bool {
 	lock.mutex.Lock()
 	defer lock.mutex.Unlock()
-	if _, ok := lock.locks[volumeID]; ok {
+	if lock.locks.Has(volumeID) {
 		return false
 	}
-	lock.locks[volumeID] = struct{}{}
+	lock.locks.Insert(volumeID)
 	return true
 }
 
@@ -47,5 +49,5 @@ func (lock *VolumeLocks) TryAcquire(volumeID string) bool {
 func (lock *VolumeLocks) Release(volumeID string) {
 	lock.mutex.Lock()
 	defer lock.mutex.Unlock()
-	delete(lock.locks, volumeID) // Delete is a no-op if the key doesn't exist, so it's safe to call it unconditionally
+	lock.locks.Delete(volumeID)
 }
