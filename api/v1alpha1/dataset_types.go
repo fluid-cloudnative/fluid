@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Fluid Authors.
+Copyright 2020 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -24,6 +24,10 @@ import (
 
 	// "github.com/rook/rook/pkg/apis/rook.io/v1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+)
+
+const (
+	Datasetkind = "Dataset"
 )
 
 // DatasetPhase indicates whether the loading is behaving

@@ -33,11 +33,11 @@ func init() {
 }
 
 func TestGetPVCNamesFromPod(t *testing.T) {
-	rand.Seed(time.Now().UnixNano())
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	pod := corev1.Pod{}
 	var pvcNamesWant []string
 	for i := 1; i <= 30; i++ {
-		switch rand.Intn(4) {
+		switch r.Intn(4) {
 		case 0:
 			pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
 				Name: "volume" + strconv.Itoa(i),

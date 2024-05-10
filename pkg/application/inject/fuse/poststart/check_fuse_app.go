@@ -123,7 +123,7 @@ func (a *ScriptGeneratorForApp) GetVolume() (v corev1.Volume) {
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: a.getConfigmapName(),
 				},
-				DefaultMode: utilpointer.Int32Ptr(mode),
+				DefaultMode: utilpointer.Int32(mode),
 			},
 		},
 	}

@@ -200,7 +200,7 @@ func TestEFCEngine_SetupWorkers(t *testing.T) {
 						Namespace: "fluid",
 					},
 					Spec: appsv1.StatefulSetSpec{
-						Replicas: utilpointer.Int32Ptr(1),
+						Replicas: utilpointer.Int32(1),
 					},
 				},
 				runtime: &datav1alpha1.EFCRuntime{
@@ -234,7 +234,7 @@ func TestEFCEngine_SetupWorkers(t *testing.T) {
 						Namespace: "fluid",
 					},
 					Spec: appsv1.StatefulSetSpec{
-						Replicas: utilpointer.Int32Ptr(0),
+						Replicas: utilpointer.Int32(0),
 					},
 				},
 				runtime: &datav1alpha1.EFCRuntime{
@@ -527,7 +527,7 @@ func TestEFCEngine_syncWorkersEndpoints(t *testing.T) {
 								APIVersion: "apps/v1",
 								Name:       "spark-worker",
 								UID:        "uid1",
-								Controller: utilpointer.BoolPtr(true),
+								Controller: utilpointer.Bool(true),
 							}},
 							Labels: map[string]string{
 								"app":              "efc",
@@ -602,7 +602,7 @@ func TestEFCEngine_syncWorkersEndpoints(t *testing.T) {
 								APIVersion: "apps/v1",
 								Name:       "spark-worker",
 								UID:        "uid1",
-								Controller: utilpointer.BoolPtr(true),
+								Controller: utilpointer.Bool(true),
 							}},
 							Labels: map[string]string{
 								"app":              "efc",

@@ -51,6 +51,11 @@ spec:
     metadata:
       annotations:
         sidecar.istio.io/inject: "false"
+      {{- if .Values.worker.annotations }}
+      {{- range $key, $val := .Values.worker.annotations }}
+        {{ $key | quote }}: {{ $val | quote }}
+      {{- end }}
+      {{- end }}
       labels:
         app: {{ $name }}
         chart: {{ $chart }}
@@ -59,12 +64,21 @@ spec:
         role: vineyard-worker
         fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
         app.kubernetes.io/instance: {{ .Release.Namespace }}-{{ $fullName }}-worker
+        {{- if .Values.worker.labels }}
+        {{- range $key, $val := .Values.worker.labels }}
+        {{ $key | quote }}: {{ $val | quote }}
+        {{- end }}
+        {{- end }}
     spec:
       {{- if .Values.worker.nodeSelector }}
       nodeSelector:
 {{ toYaml .Values.worker.nodeSelector | trim | indent 8  }}
       {{- end }}
       enableServiceLinks: false
+      {{- if .Values.worker.hostNetwork }}
+      hostNetwork: {{ .Values.worker.hostNetwork }}
+      dnsPolicy: ClusterFirstWithHostNet
+      {{- end }}
       containers:
         - name: vineyard-worker
           image: {{ .Values.worker.image }}:{{ .Values.worker.imageTag }}

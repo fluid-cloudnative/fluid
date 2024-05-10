@@ -56,7 +56,7 @@ func CreateRuntimeForReferenceDatasetIfNotExist(client client.Client, dataset *d
 					APIVersion: dataset.APIVersion,
 					Name:       dataset.GetName(),
 					UID:        dataset.GetUID(),
-					Controller: utilpointer.BoolPtr(true),
+					Controller: utilpointer.Bool(true),
 				}})
 			if !reflect.DeepEqual(runtimeToUpdate, runtime) {
 				err = client.Update(context.TODO(), runtimeToUpdate)
@@ -77,7 +77,7 @@ func CreateRuntimeForReferenceDatasetIfNotExist(client client.Client, dataset *d
 							APIVersion: dataset.APIVersion,
 							Name:       dataset.GetName(),
 							UID:        dataset.GetUID(),
-							Controller: utilpointer.BoolPtr(true),
+							Controller: utilpointer.Bool(true),
 						},
 					},
 				},

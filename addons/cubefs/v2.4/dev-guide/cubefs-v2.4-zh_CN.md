@@ -29,7 +29,7 @@
 import json
 
 rawStr = ""
-with open("/etc/fluid/config.json", "r") as f:
+with open("/etc/fluid/config/config.json", "r") as f:
     rawStr = f.readlines()
 
 print(rawStr[0])
