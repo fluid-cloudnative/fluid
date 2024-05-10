@@ -52,7 +52,7 @@ func TestThinEngine_CheckAndUpdateRuntimeStatus(t *testing.T) {
 						Namespace: "fluid",
 					},
 					Spec: appsv1.StatefulSetSpec{
-						Replicas: utilpointer.Int32Ptr(1),
+						Replicas: utilpointer.Int32(1),
 					},
 					Status: appsv1.StatefulSetStatus{
 						Replicas:      1,
@@ -65,7 +65,7 @@ func TestThinEngine_CheckAndUpdateRuntimeStatus(t *testing.T) {
 						Namespace: "fluid",
 					},
 					Spec: appsv1.StatefulSetSpec{
-						Replicas: utilpointer.Int32Ptr(1),
+						Replicas: utilpointer.Int32(1),
 					},
 					Status: appsv1.StatefulSetStatus{
 						Replicas:      2,
@@ -78,7 +78,7 @@ func TestThinEngine_CheckAndUpdateRuntimeStatus(t *testing.T) {
 						Namespace: "fluid",
 					},
 					Spec: appsv1.StatefulSetSpec{
-						Replicas: utilpointer.Int32Ptr(1),
+						Replicas: utilpointer.Int32(1),
 					},
 				},
 			}

@@ -129,7 +129,7 @@ func TestCheckMasterHealthy(t *testing.T) {
 				Namespace: "big-data",
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32Ptr(2),
+				Replicas: utilpointer.Int32(2),
 			},
 			Status: appsv1.StatefulSetStatus{
 				ReadyReplicas: 1,
@@ -141,7 +141,7 @@ func TestCheckMasterHealthy(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32Ptr(3),
+				Replicas: utilpointer.Int32(3),
 			},
 			Status: appsv1.StatefulSetStatus{
 				ReadyReplicas: 0,
@@ -153,7 +153,7 @@ func TestCheckMasterHealthy(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32Ptr(3),
+				Replicas: utilpointer.Int32(3),
 			},
 			Status: appsv1.StatefulSetStatus{
 				ReadyReplicas: 1,
@@ -201,7 +201,7 @@ func TestCheckMasterHealthy(t *testing.T) {
 					Namespace: "big-data",
 				},
 				Spec: appsv1.StatefulSetSpec{
-					Replicas: utilpointer.Int32Ptr(2),
+					Replicas: utilpointer.Int32(2),
 				},
 				Status: appsv1.StatefulSetStatus{
 					Replicas:      1,
@@ -222,7 +222,7 @@ func TestCheckMasterHealthy(t *testing.T) {
 					Namespace: "fluid",
 				},
 				Spec: appsv1.StatefulSetSpec{
-					Replicas: utilpointer.Int32Ptr(3),
+					Replicas: utilpointer.Int32(3),
 				},
 				Status: appsv1.StatefulSetStatus{
 					Replicas:      1,
