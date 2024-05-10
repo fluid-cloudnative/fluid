@@ -574,7 +574,7 @@ func (e *AlluxioEngine) generateNonNativeMountsInfo(dataset *datav1alpha1.Datase
 			mountArgs = append(mountArgs, "--option", fmt.Sprintf("%s=%s", k, v))
 		}
 
-		// use space as separator as it will append to `alluxio fs mount` directly.
+		// use space as sepsarator as it will append to `alluxio fs mount` directly.
 		nonNativeMounts = append(nonNativeMounts, strings.Join(mountArgs, " "))
 	}
 	return nonNativeMounts, nil
