@@ -9,7 +9,7 @@ import (
 )
 
 func TestInjectPreferredSchedulingTerms(t *testing.T) {
-	rand.Seed(time.Now().UnixNano())
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	var (
 		pod                         corev1.Pod
@@ -22,13 +22,13 @@ func TestInjectPreferredSchedulingTerms(t *testing.T) {
 		lenPreferredSchedulingTerms int
 	)
 	for i := 0; i < 3; i++ {
-		lenNodePrefer = rand.Intn(3) + 1
-		lenNodeRequire = rand.Intn(3) + 1
-		lenPodPrefer = rand.Intn(3) + 1
-		lenPodAntiPrefer = rand.Intn(3) + 1
-		lenPodRequire = rand.Intn(3) + 1
-		lenPodAntiRequire = rand.Intn(3) + 1
-		lenPreferredSchedulingTerms = rand.Intn(3) + 1
+		lenNodePrefer = r.Intn(3) + 1
+		lenNodeRequire = r.Intn(3) + 1
+		lenPodPrefer = r.Intn(3) + 1
+		lenPodAntiPrefer = r.Intn(3) + 1
+		lenPodRequire = r.Intn(3) + 1
+		lenPodAntiRequire = r.Intn(3) + 1
+		lenPreferredSchedulingTerms = r.Intn(3) + 1
 
 		pod.Spec.Affinity = &corev1.Affinity{
 			NodeAffinity: &corev1.NodeAffinity{
