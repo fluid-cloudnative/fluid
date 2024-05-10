@@ -52,7 +52,7 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 				CurrentReplicas: 1,
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32Ptr(1),
+				Replicas: utilpointer.Int32(1),
 			},
 		},
 	}
@@ -368,7 +368,7 @@ func TestCheckWorkersHealthy(t *testing.T) {
 				CurrentReplicas: 1,
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32Ptr(2),
+				Replicas: utilpointer.Int32(2),
 			},
 		},
 		{
@@ -382,7 +382,7 @@ func TestCheckWorkersHealthy(t *testing.T) {
 				CurrentReplicas: 1,
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32Ptr(1),
+				Replicas: utilpointer.Int32(1),
 			},
 		},
 	}

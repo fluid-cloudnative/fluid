@@ -88,7 +88,7 @@ func TestSetupWorkers(t *testing.T) {
 						Namespace: "big-data",
 					},
 					Spec: appsv1.StatefulSetSpec{
-						Replicas: utilpointer.Int32Ptr(1),
+						Replicas: utilpointer.Int32(1),
 					},
 				},
 				runtime: &datav1alpha1.VineyardRuntime{
@@ -124,7 +124,7 @@ func TestSetupWorkers(t *testing.T) {
 						Namespace: "big-data",
 					},
 					Spec: appsv1.StatefulSetSpec{
-						Replicas: utilpointer.Int32Ptr(1),
+						Replicas: utilpointer.Int32(1),
 					},
 				},
 				runtime: &datav1alpha1.VineyardRuntime{

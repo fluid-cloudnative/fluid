@@ -37,7 +37,7 @@ func TestIsObjectInManaged(t *testing.T) {
 			{
 				Kind:       datav1alpha1.JindoRuntimeKind,
 				APIVersion: datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version,
-				Controller: utilpointer.BoolPtr(true),
+				Controller: utilpointer.Bool(true),
 			},
 		},
 	}}
