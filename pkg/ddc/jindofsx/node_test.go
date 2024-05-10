@@ -92,7 +92,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 								APIVersion: "apps/v1",
 								Name:       "spark-jindofs-worker",
 								UID:        "uid1",
-								Controller: utilpointer.BoolPtr(true),
+								Controller: utilpointer.Bool(true),
 							}},
 							Labels: map[string]string{
 								"app":              "jindofs",
@@ -140,7 +140,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 								APIVersion: "apps/v1",
 								Name:       "hbase-jindofs-worker",
 								UID:        "uid2",
-								Controller: utilpointer.BoolPtr(true),
+								Controller: utilpointer.Bool(true),
 							}},
 							Labels: map[string]string{
 								"app":              "jindofs",
