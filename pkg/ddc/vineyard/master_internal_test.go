@@ -21,13 +21,24 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/net"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 )
 
 func TestSetupMasterInternal(t *testing.T) {
+	pr := net.ParsePortRangeOrDie("14000-15999")
+	dummyPorts := func(client client.Client) (ports []int, err error) {
+		return []int{14000, 14001, 14002, 14003}, nil
+	}
+	err := portallocator.SetupRuntimePortAllocator(nil, pr, "bitmap", dummyPorts)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
 	mockExecCheckReleaseCommonFound := func(name string, namespace string) (exist bool, err error) {
 		return true, nil
 	}
@@ -105,7 +116,7 @@ func TestSetupMasterInternal(t *testing.T) {
 			},
 		},
 	}
-	err := engine.setupMasterInternal()
+	err = engine.setupMasterInternal()
 	if err == nil {
 		t.Errorf("fail to catch the error")
 	}

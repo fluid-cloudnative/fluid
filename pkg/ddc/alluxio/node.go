@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Fluid Authors.
+Copyright 2020 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -32,27 +32,6 @@ import (
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
-
-// AssignNodesToCache finds nodes to place the cache engine
-func (e *AlluxioEngine) AssignNodesToCache(desiredNum int32) (currentScheduleNum int32, err error) {
-
-	runtimeInfo, err := e.getRuntimeInfo()
-	if err != nil {
-		return currentScheduleNum, err
-	}
-
-	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
-	if err != nil {
-		return
-	}
-
-	e.Log.Info("AssignNodesToCache", "dataset", dataset)
-	return datasetSchedule.AssignDatasetToNodes(runtimeInfo,
-		dataset,
-		e.Client,
-		desiredNum)
-
-}
 
 // SyncScheduleInfoToCacheNodes syncs schedule info to nodes
 func (e *AlluxioEngine) SyncScheduleInfoToCacheNodes() (err error) {

@@ -15,7 +15,7 @@ package operations
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"reflect"
 	"testing"
@@ -34,13 +34,13 @@ func TestVineyardFileUtils_ReportSummary(t *testing.T) {
 			if url == "http://vineyard-0.vineyard.default.svc:8080/metrics" {
 				return &http.Response{
 					StatusCode: http.StatusOK,
-					Body:       ioutil.NopCloser(bytes.NewBufferString("metric for pod 1")),
+					Body:       io.NopCloser(bytes.NewBufferString("metric for pod 1")),
 				}, nil
 			}
 			if url == "http://vineyard-1.vineyard.default.svc:8080/metrics" {
 				return &http.Response{
 					StatusCode: http.StatusOK,
-					Body:       ioutil.NopCloser(bytes.NewBufferString("metric for pod 2")),
+					Body:       io.NopCloser(bytes.NewBufferString("metric for pod 2")),
 				}, nil
 			}
 			return nil, nil

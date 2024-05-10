@@ -1,6 +1,6 @@
 /*
 
-Copyright 2023 The Fluid Author.
+Copyright 2021 The Fluid Author.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 				CurrentReplicas: 1,
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32Ptr(1),
+				Replicas: utilpointer.Int32(1),
 			},
 		},
 	}
@@ -371,7 +371,7 @@ func TestCheckWorkersHealthy(t *testing.T) {
 				CurrentReplicas: 1,
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32Ptr(2),
+				Replicas: utilpointer.Int32(2),
 			},
 		},
 		{
@@ -385,7 +385,7 @@ func TestCheckWorkersHealthy(t *testing.T) {
 				CurrentReplicas: 1,
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32Ptr(1),
+				Replicas: utilpointer.Int32(1),
 			},
 		},
 	}

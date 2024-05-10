@@ -21,9 +21,12 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/util/net"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
@@ -620,5 +623,232 @@ func TestTransformTieredStore(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestVineyardEngineAllocatePorts(t *testing.T) {
+	pr := net.ParsePortRangeOrDie("14000-16000")
+	dummyPorts := func(client client.Client) (ports []int, err error) {
+		return []int{14000, 14001, 14002, 14003}, nil
+	}
+	err := portallocator.SetupRuntimePortAllocator(nil, pr, "bitmap", dummyPorts)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	type args struct {
+		runtime *datav1alpha1.VineyardRuntime
+		value   *Vineyard
+	}
+	tests := []struct {
+		name            string
+		args            args
+		wantErr         bool
+		wantMasterPorts map[string]int
+		wantWorkerPorts map[string]int
+	}{
+		{
+			name: "Expect not to allocate ports",
+			args: args{
+				runtime: &datav1alpha1.VineyardRuntime{
+					Spec: datav1alpha1.VineyardRuntimeSpec{
+						Master: datav1alpha1.MasterSpec{
+							VineyardCompTemplateSpec: datav1alpha1.VineyardCompTemplateSpec{
+								NetworkMode: "ContainerNetwork",
+							},
+						},
+						Worker: datav1alpha1.VineyardCompTemplateSpec{
+							NetworkMode: "ContainerNetwork",
+						},
+					},
+				},
+				value: &Vineyard{
+					Master: Master{
+						Ports: map[string]int{
+							MasterClientName: MasterClientPort,
+							MasterPeerName:   MasterPeerPort,
+						},
+					},
+					Worker: Worker{
+						Ports: map[string]int{
+							WorkerRPCName:      WorkerRPCPort,
+							WorkerExporterName: WorkerExporterPort,
+						},
+					},
+				},
+			},
+			wantErr: false,
+			wantMasterPorts: map[string]int{
+				MasterClientName: MasterClientPort,
+				MasterPeerName:   MasterPeerPort,
+			},
+			wantWorkerPorts: map[string]int{
+				WorkerRPCName:      WorkerRPCPort,
+				WorkerExporterName: WorkerExporterPort,
+			},
+		},
+		{
+			name: "Expect to allocate ports",
+			args: args{
+				runtime: &datav1alpha1.VineyardRuntime{
+					Spec: datav1alpha1.VineyardRuntimeSpec{
+						Master: datav1alpha1.MasterSpec{
+							VineyardCompTemplateSpec: datav1alpha1.VineyardCompTemplateSpec{
+								NetworkMode: "HostNetwork",
+							},
+						},
+						Worker: datav1alpha1.VineyardCompTemplateSpec{
+							NetworkMode: "HostNetwork",
+						},
+					},
+				},
+				value: &Vineyard{
+					Master: Master{
+						Ports: map[string]int{
+							MasterClientName: MasterClientPort,
+							MasterPeerName:   MasterPeerPort,
+						},
+					},
+					Worker: Worker{
+						Ports: map[string]int{
+							WorkerRPCName:      WorkerRPCPort,
+							WorkerExporterName: WorkerExporterPort,
+						},
+					},
+				},
+			},
+			wantErr: false,
+			wantMasterPorts: map[string]int{
+				MasterClientName: MasterClientPort,
+				MasterPeerName:   MasterPeerPort,
+			},
+			wantWorkerPorts: map[string]int{
+				WorkerRPCName:      WorkerRPCPort,
+				WorkerExporterName: WorkerExporterPort,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			v := &VineyardEngine{}
+			if err := v.allocatePorts(tt.args.value, tt.args.runtime); (err != nil) != tt.wantErr {
+				t.Errorf("allocatePorts() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if strings.Contains(tt.name, "Expect not to allocate ports") {
+				if !reflect.DeepEqual(tt.wantMasterPorts, tt.args.value.Master.Ports) {
+					t.Errorf("allocatePorts() got master ports = %v, want %v", tt.args.value.Master.Ports, tt.wantMasterPorts)
+				}
+				if !reflect.DeepEqual(tt.wantWorkerPorts, tt.args.value.Worker.Ports) {
+					t.Errorf("allocatePorts() got worker ports = %v, want %v", tt.args.value.Worker.Ports, tt.wantWorkerPorts)
+				}
+			} else {
+				if len(tt.args.value.Master.Ports) != 2 {
+					t.Errorf("allocatePorts() got master ports = %v, want 2", len(tt.args.value.Master.Ports))
+				}
+				if len(tt.args.value.Worker.Ports) != 2 {
+					t.Errorf("allocatePorts() got worker ports = %v, want 2", len(tt.args.value.Worker.Ports))
+				}
+				if tt.args.value.Master.Ports[MasterClientName] < 14000 || tt.args.value.Master.Ports[MasterClientName] > 16000 {
+					t.Errorf("allocatePorts() got master client port = %v, want between 14000 and 16000", tt.args.value.Master.Ports[MasterClientName])
+				}
+				if tt.args.value.Master.Ports[MasterPeerName] < 14000 || tt.args.value.Master.Ports[MasterPeerName] > 16000 {
+					t.Errorf("allocatePorts() got master peer port = %v, want between 14000 and 16000", tt.args.value.Master.Ports[MasterPeerName])
+				}
+				if tt.args.value.Worker.Ports[WorkerRPCName] < 14000 || tt.args.value.Worker.Ports[WorkerRPCName] > 16000 {
+					t.Errorf("allocatePorts() got worker rpc port = %v, want between 14000 and 16000", tt.args.value.Worker.Ports[WorkerRPCName])
+				}
+				if tt.args.value.Worker.Ports[WorkerExporterName] < 14000 || tt.args.value.Worker.Ports[WorkerExporterName] > 16000 {
+					t.Errorf("allocatePorts() got worker exporter port = %v, want between 14000 and 16000", tt.args.value.Worker.Ports[WorkerExporterName])
+				}
+			}
+		})
+	}
+}
+
+func TestVineyardEngineTransformPodMetadata(t *testing.T) {
+	engine := &VineyardEngine{Log: fake.NullLogger()}
+
+	type testCase struct {
+		Name    string
+		Runtime *datav1alpha1.VineyardRuntime
+		Value   *Vineyard
+
+		wantValue *Vineyard
+	}
+
+	testCases := []testCase{
+		{
+			Name: "set_common_labels_and_annotations",
+			Runtime: &datav1alpha1.VineyardRuntime{
+				Spec: datav1alpha1.VineyardRuntimeSpec{
+					PodMetadata: datav1alpha1.PodMetadata{
+						Labels:      map[string]string{"common-key": "common-value"},
+						Annotations: map[string]string{"common-annotation": "val"},
+					},
+				},
+			},
+			Value: &Vineyard{},
+			wantValue: &Vineyard{
+				Master: Master{
+					Labels:      map[string]string{"common-key": "common-value"},
+					Annotations: map[string]string{"common-annotation": "val"},
+				},
+				Worker: Worker{
+					Labels:      map[string]string{"common-key": "common-value"},
+					Annotations: map[string]string{"common-annotation": "val"},
+				},
+				Fuse: Fuse{
+					Labels:      map[string]string{"common-key": "common-value"},
+					Annotations: map[string]string{"common-annotation": "val"},
+				},
+			},
+		},
+		{
+			Name: "set_master_and_workers_labels_and_annotations",
+			Runtime: &datav1alpha1.VineyardRuntime{
+				Spec: datav1alpha1.VineyardRuntimeSpec{
+					PodMetadata: datav1alpha1.PodMetadata{
+						Labels:      map[string]string{"common-key": "common-value"},
+						Annotations: map[string]string{"common-annotation": "val"},
+					},
+					Master: datav1alpha1.MasterSpec{
+						VineyardCompTemplateSpec: datav1alpha1.VineyardCompTemplateSpec{
+							PodMetadata: datav1alpha1.PodMetadata{
+								Labels:      map[string]string{"common-key": "master-value"},
+								Annotations: map[string]string{"common-annotation": "master-val"},
+							},
+						},
+					},
+					Worker: datav1alpha1.VineyardCompTemplateSpec{
+						PodMetadata: datav1alpha1.PodMetadata{
+							Labels:      map[string]string{"common-key": "worker-value"},
+							Annotations: map[string]string{"common-annotation": "worker-val"},
+						},
+					},
+				},
+			},
+			Value: &Vineyard{},
+			wantValue: &Vineyard{
+				Master: Master{
+					Labels:      map[string]string{"common-key": "master-value"},
+					Annotations: map[string]string{"common-annotation": "master-val"},
+				},
+				Worker: Worker{
+					Labels:      map[string]string{"common-key": "worker-value"},
+					Annotations: map[string]string{"common-annotation": "worker-val"},
+				},
+				Fuse: Fuse{
+					Labels:      map[string]string{"common-key": "common-value"},
+					Annotations: map[string]string{"common-annotation": "val"},
+				},
+			},
+		},
+	}
+
+	for _, tt := range testCases {
+		engine.transformPodMetadata(tt.Runtime, tt.Value)
+
+		if !reflect.DeepEqual(tt.Value, tt.wantValue) {
+			t.Fatalf("test name: %s. Expect value %v, but got %v", tt.Name, tt.wantValue, tt.Value)
+		}
 	}
 }

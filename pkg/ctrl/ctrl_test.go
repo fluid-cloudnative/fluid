@@ -58,7 +58,7 @@ func TestCheckWorkerAffinity(t *testing.T) {
 					Namespace: namespace,
 				},
 				Spec: appsv1.StatefulSetSpec{
-					Replicas: utilpointer.Int32Ptr(1),
+					Replicas: utilpointer.Int32(1),
 				},
 			},
 			want: false,
@@ -70,7 +70,7 @@ func TestCheckWorkerAffinity(t *testing.T) {
 					Namespace: namespace,
 				},
 				Spec: appsv1.StatefulSetSpec{
-					Replicas: utilpointer.Int32Ptr(1),
+					Replicas: utilpointer.Int32(1),
 					Template: v1.PodTemplateSpec{
 						Spec: v1.PodSpec{
 							Affinity: &v1.Affinity{}}},
@@ -85,7 +85,7 @@ func TestCheckWorkerAffinity(t *testing.T) {
 					Namespace: namespace,
 				},
 				Spec: appsv1.StatefulSetSpec{
-					Replicas: utilpointer.Int32Ptr(1),
+					Replicas: utilpointer.Int32(1),
 					Template: v1.PodTemplateSpec{
 						Spec: v1.PodSpec{
 							Affinity: &v1.Affinity{
@@ -147,7 +147,7 @@ func TestCheckWorkerAffinity(t *testing.T) {
 					Namespace: namespace,
 				},
 				Spec: appsv1.StatefulSetSpec{
-					Replicas: utilpointer.Int32Ptr(1),
+					Replicas: utilpointer.Int32(1),
 					Template: v1.PodTemplateSpec{
 						Spec: v1.PodSpec{
 							Affinity: &v1.Affinity{
@@ -275,7 +275,7 @@ func TestSetupWorkers(t *testing.T) {
 						Namespace: "big-data",
 					},
 					Spec: appsv1.StatefulSetSpec{
-						Replicas: utilpointer.Int32Ptr(1),
+						Replicas: utilpointer.Int32(1),
 					},
 				},
 				runtime: &datav1alpha1.JindoRuntime{
@@ -312,7 +312,7 @@ func TestSetupWorkers(t *testing.T) {
 						Namespace: "big-data",
 					},
 					Spec: appsv1.StatefulSetSpec{
-						Replicas: utilpointer.Int32Ptr(1),
+						Replicas: utilpointer.Int32(1),
 					},
 				},
 				runtime: &datav1alpha1.JindoRuntime{

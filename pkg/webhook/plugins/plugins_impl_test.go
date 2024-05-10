@@ -17,17 +17,18 @@ limitations under the License.
 package plugins
 
 import (
+	"math/rand"
+	"os"
+	"reflect"
+	"testing"
+	"time"
+
 	"github.com/agiledragon/gomonkey/v2"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/api"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"math/rand"
-	"os"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
-	"time"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -37,7 +38,7 @@ import (
 )
 
 func TestPods(t *testing.T) {
-	rand.Seed(time.Now().UnixNano())
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	tieredLocality := `
 preferred:
@@ -82,12 +83,12 @@ required:
 
 	// test all plugins for 3 turns
 	for i := 0; i < 3; i++ {
-		lenNodePrefer = rand.Intn(3) + 1
-		lenNodeRequire = rand.Intn(3) + 1
-		lenPodPrefer = rand.Intn(3) + 1
-		lenPodAntiPrefer = rand.Intn(3) + 1
-		lenPodRequire = rand.Intn(3) + 1
-		lenPodAntiRequire = rand.Intn(3) + 1
+		lenNodePrefer = r.Intn(3) + 1
+		lenNodeRequire = r.Intn(3) + 1
+		lenPodPrefer = r.Intn(3) + 1
+		lenPodAntiPrefer = r.Intn(3) + 1
+		lenPodRequire = r.Intn(3) + 1
+		lenPodAntiRequire = r.Intn(3) + 1
 
 		// build affinity of pod
 		pod.Spec.Affinity = &corev1.Affinity{

@@ -1,4 +1,5 @@
 /*
+Copyright 2023 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -95,6 +96,17 @@ type VineyardCompTemplateSpec struct {
 	// Default is not set.
 	// +optional
 	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
+
+	// PodMetadata defines labels and annotations that will be propagated to Vineyard's pods including Master and Worker.
+	// Default is not set.
+	// +optional
+	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
+
+	// Whether to use hostnetwork or not
+	// Default is HostNetwork
+	// +kubebuilder:validation:Enum=HostNetwork;"";ContainerNetwork
+	// +optional
+	NetworkMode NetworkMode `json:"networkMode,omitempty"`
 }
 
 // ExternalEndpointSpec defines the configurations for external etcd cluster
@@ -174,6 +186,16 @@ type VineyardSockSpec struct {
 	// Default is not set.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// Whether to use hostnetwork or not
+	// Default is HostNetwork
+	// +kubebuilder:validation:Enum=HostNetwork;"";ContainerNetwork
+	// +optional
+	NetworkMode NetworkMode `json:"networkMode,omitempty"`
+
+	// PodMetadata defines labels and annotations that will be propagated to Vineyard's pods.
+	// +optional
+	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
 }
 
 // VineyardRuntimeSpec defines the desired state of VineyardRuntime
@@ -231,6 +253,10 @@ type VineyardRuntimeSpec struct {
 	// Default is false
 	// +optional
 	DisablePrometheus bool `json:"disablePrometheus,omitempty"`
+
+	// PodMetadata defines labels and annotations that will be propagated to Vineyard's pods.
+	// +optional
+	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
 
 	// Volumes is the list of Kubernetes volumes that can be mounted by the vineyard components (Master and Worker).
 	// Default is null.

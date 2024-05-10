@@ -35,7 +35,7 @@ def write_keyring(pvAttrs: dict):
 
 
 def read_json():
-    with open("/etc/fluid/config.json", "r") as f:
+    with open("/etc/fluid/config/config.json", "r") as f:
         rawStr = f.readlines()
     rawStr = "".join(rawStr)
     obj = json.loads(rawStr)

@@ -37,7 +37,7 @@
 - Simplify usage
   - Support Runtimeless, Dataset as the single API entry for users to use Fluid
 
- ### Objective: Enhance code quality & security improvements & documentation for produciton ready:
+ ### Objective: Enhance code quality & security improvements & documentation for production ready:
 
  - Improve code quality
   - Reduce repetitive code

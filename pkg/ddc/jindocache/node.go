@@ -33,24 +33,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
-func (e *JindoCacheEngine) AssignNodesToCache(desiredNum int32) (currentScheduleNum int32, err error) {
-	runtimeInfo, err := e.getRuntimeInfo()
-	if err != nil {
-		return currentScheduleNum, err
-	}
-
-	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
-	e.Log.Info("AssignNodesToCache", "dataset", dataset)
-	if err != nil {
-		return
-	}
-
-	return datasetSchedule.AssignDatasetToNodes(runtimeInfo,
-		dataset,
-		e.Client,
-		desiredNum)
-}
-
 // SyncScheduleInfoToCacheNodes syncs the cache info of the nodes by labeling the nodes
 // And the Application pod can leverage such info for scheduling
 func (e *JindoCacheEngine) SyncScheduleInfoToCacheNodes() (err error) {
