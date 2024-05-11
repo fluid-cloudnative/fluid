@@ -110,5 +110,5 @@ stringData:
 EOF
 ```
 
-As you can see, the specific contents of `fs.oss.accessKeySecret` and `fs.oss.accessKeyId` are written in Secret, and Dataset reads the corresponding value by looking for the Secret and key accroding to its configuration, instead of reading them in its configuration directly. So the security of some data is guaranteed.
+As you can see, the specific contents of `fs.oss.accessKeySecret` and `fs.oss.accessKeyId` are written in Secret, and Dataset reads the corresponding value by looking for the Secret and key according to its configuration, instead of reading them in its configuration directly. So the security of some data is guaranteed.
 

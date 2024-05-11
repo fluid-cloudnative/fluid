@@ -131,9 +131,6 @@ type Implement interface {
 	// Shutdown and clean up the engine
 	Shutdown() error
 
-	// AssignNodesToCache picks up the nodes for replicas
-	AssignNodesToCache(desiredNum int32) (currentNum int32, err error)
-
 	// CheckRuntimeHealthy checks runtime healthy
 	CheckRuntimeHealthy() (err error)
 

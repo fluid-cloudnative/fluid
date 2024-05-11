@@ -37,7 +37,7 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32Ptr(1),
+				Replicas: utilpointer.Int32(1),
 			},
 			Status: appsv1.StatefulSetStatus{
 				ReadyReplicas: 1,
@@ -69,7 +69,7 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32Ptr(3),
+				Replicas: utilpointer.Int32(3),
 			},
 			Status: appsv1.StatefulSetStatus{
 				Replicas:      3,

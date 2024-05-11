@@ -102,6 +102,10 @@ func (e *VineyardEngine) generateVineyardValueFile(runtime *datav1alpha1.Vineyar
 	return valueFileName, err
 }
 
+func (e *VineyardEngine) getHelmValuesConfigMapName() string {
+	return e.name + "-" + e.engineImpl + "-values"
+}
+
 func (e *VineyardEngine) getConfigmapName() string {
 	return e.name + "-" + e.engineImpl + "-values"
 }

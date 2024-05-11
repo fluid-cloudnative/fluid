@@ -71,7 +71,7 @@ func (e *Helper) CheckWorkersHealthy(recorder record.EventRecorder, runtime base
 		unavailablePodNames []types.NamespacedName
 	)
 
-	if sts.Spec.Replicas == utilpointer.Int32Ptr(0) || sts.Status.ReadyReplicas > 0 {
+	if sts.Spec.Replicas == utilpointer.Int32(0) || sts.Status.ReadyReplicas > 0 {
 		healthy = true
 	}
 

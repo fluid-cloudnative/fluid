@@ -27,6 +27,10 @@ spec:
       backoffLimit: {{ .Values.datamigrate.backoffLimit | default "3" }}
       completions: 1
       parallelism: 1
+      {{- if gt (.Values.datamigrate.parallelism | int) 1 }}
+      # when using parallel tasks, default suspend is true, the reconciler will set it to false after scale the workers statefulset.
+      suspend: true
+      {{- end }}
       template:
         metadata:
           name: {{ printf "%s-migrate" .Release.Name }}
@@ -80,6 +84,20 @@ spec:
               {{- toYaml .Values.datamigrate.resources | nindent 16}}
               {{- end }}
               env:
+                - name: PARALLELISM
+                  value: {{ .Values.datamigrate.parallelism | quote }}
+                {{- if gt (.Values.datamigrate.parallelism | int) 1 }}
+                - name: POD_IP
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: status.podIP
+                - name: SSH_READY_TIMEOUT
+                  value: {{ .Values.datamigrate.parallelOptions.sshReadyTimeoutSeconds | quote }}
+                - name: TARGET_SSH_PORT
+                  value: "{{ .Values.datamigrate.parallelOptions.sshPort }}"
+                - name: WORKER_NAME_FORMAT
+                  value: {{ printf "%s-workers-{}.%s-workers" .Release.Name .Release.Name }}
+                {{- end }}
                 {{- range $key, $val := .Values.datamigrate.options }}
                 {{- if eq $key "timeout" }}
                 - name: TIMEOUT
@@ -107,13 +125,36 @@ spec:
                 {{- with .Values.datamigrate.nativeVolumeMounts }}
                 {{ toYaml . | nindent 16 }}
                 {{- end }}
+                {{- if gt (.Values.datamigrate.parallelism | int) 1 }}
+                - mountPath: /root/.ssh
+                  name: data-migrate-ssh
+                  # use subpath to avoid permissions check problem because the launcher will ssh to itself.
+                  # Or user can set 'StrictModes no' in /etc/ssh/sshd_config file to avoid permission check when build the image in dockerfile.
+                  subPath: .ssh
+                 {{- end }}
           volumes:
+            {{- if gt (.Values.datamigrate.parallelism | int) 1 }}
+            - name: data-migrate-ssh
+              secret:
+                secretName: {{.Values.datamigrate.parallelOptions.sshSecretName }}
+                defaultMode: 0600
+                items:
+                  - key: ssh-privatekey
+                    path: .ssh/id_rsa
+                  - key: ssh-publickey
+                    path: .ssh/id_rsa.pub
+                  - key: ssh-publickey
+                    path: .ssh/authorized_keys
+            {{- end }}
             - name: data-migrate-script
               configMap:
                 name: {{ printf "%s-script" .Release.Name }}
                 items:
                   - key: datamigrate.sh
                     path: juicefs_datamigrate.sh
+                    mode: 365
+                  - key: check_ssh.sh
+                    path: check_ssh.sh
                     mode: 365
           {{- with .Values.datamigrate.nativeVolumes }}
             {{ toYaml . | nindent 12 }}

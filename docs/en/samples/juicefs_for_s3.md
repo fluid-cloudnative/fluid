@@ -1,6 +1,6 @@
 # DEMO - How to sync data of S3 using JuiceFS in Fluid
 
-JuiceFS implements a distributed file system by adopting the architecture that seperates "data" and "metadata" storage.
+JuiceFS implements a distributed file system by adopting the architecture that separates "data" and "metadata" storage.
 When using JuiceFS to store data, the data itself is persisted in object storage (e.g., Amazon S3), and the
 corresponding metadata can be persisted in various databases such as Redis, MySQL, TiKV, etc., based on the scenarios
 and requirements.
