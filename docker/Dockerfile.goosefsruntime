@@ -1,5 +1,5 @@
 # Build the goosefsruntime-controller manager binary
-FROM golang:1.21.8-bullseye AS builder
+FROM golang:1.21.10-bullseye AS builder
 
 WORKDIR /go/src/github.com/fluid-cloudnative/fluid
 COPY . .
