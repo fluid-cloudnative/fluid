@@ -5,7 +5,7 @@ the data in the remote storage system can be pulled to the distributed cache eng
 that is close to the computing node through **data preloading** beofre the application starts. 
 Then the application that consumes the data can enjoy the acceleration effect brought by distributed cache even at the first time.
 
-For the great benefit mentioned above, we provide **DataLoad CRD**. This is a CRD which offers you a clear and easy way to controll data preloading behaviors.
+For the great benefit mentioned above, we provide **DataLoad CRD**. This is a CRD which offers you a clear and easy way to control data preloading behaviors.
 
 This document will introduce you two different ways about how to use DataLoad CRD:
 - [DataLoad Quick Usage](#dataload-quick-usage)
@@ -101,7 +101,7 @@ EOF
 `spec.dataset` specifies the target dataset that needs to be preloaded. In this example, our target is the Dataset named `spark` under the `default` namespace. 
 Feel free to change the configuration above if it doesn't match your actual environment. ** note ** The namespace of your DataLoad must be consistent with the namespace of your dataset.
 
-**By default, it'll preload all the data in the target dataset**. If you'd like to controll the data preloading behaviors in a more find-grained way(e.g. preload data under some specified path only),
+**By default, it'll preload all the data in the target dataset**. If you'd like to control the data preloading behaviors in a more find-grained way(e.g. preload data under some specified path only),
 please refer to [DataLoad Advanced Configurations](#dataload-advanced-configurations)
 
 **Create the DataLoad object**

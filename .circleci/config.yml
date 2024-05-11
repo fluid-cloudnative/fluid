@@ -6,7 +6,7 @@ jobs:
   build:
     docker:
       # specify the version
-      - image: cimg/go:1.18
+      - image: cimg/go:1.21.8
     working_directory: ~/project/src/github.com/fluid-cloudnative/fluid
     environment:
       TEST_FLAGS: '-race -coverprofile=coverage.txt -covermode=atomic'

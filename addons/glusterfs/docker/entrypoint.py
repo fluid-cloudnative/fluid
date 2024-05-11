@@ -2,7 +2,7 @@ import json
 import os
 import subprocess
 
-obj = json.load(open("/etc/fluid/config.json"))
+obj = json.load(open("/etc/fluid/config/config.json"))
 
 mount_point = obj["mounts"][0]["mountPoint"]
 target_path = obj["targetPath"]

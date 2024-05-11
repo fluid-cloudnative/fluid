@@ -129,7 +129,7 @@ func (r *ThinRuntimeReconciler) Reconcile(context context.Context, req ctrl.Requ
 // SetupWithManager sets up the controller with the Manager.
 func (r *ThinRuntimeReconciler) SetupWithManager(mgr ctrl.Manager, options controller.Options, eventDriven bool) error {
 	if eventDriven {
-		return watch.SetupWatcherWithReconciler(mgr, options, r)
+		return watch.SetupWatcherForReconcilerWithDataset(mgr, options, r, common.ThinRuntime)
 	} else {
 		return ctrl.NewControllerManagedBy(mgr).
 			WithOptions(options).

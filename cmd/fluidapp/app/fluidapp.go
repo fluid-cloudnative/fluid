@@ -98,11 +98,11 @@ func handle() {
 
 	controllerOptions := controller.Options{
 		MaxConcurrentReconciles: maxConcurrentReconciles,
-		Log:                     ctrl.Log.WithName("appctrl"),
+		// Log:                     ctrl.Log.WithName("appctrl"),
 	}
 	if err = (fluidapp.NewFluidAppReconciler(
 		mgr.GetClient(),
-		controllerOptions.Log,
+		ctrl.Log.WithName("appctrl"),
 		mgr.GetEventRecorderFor("FluidApp"),
 	)).SetupWithManager(mgr, controllerOptions); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "FluidApp")

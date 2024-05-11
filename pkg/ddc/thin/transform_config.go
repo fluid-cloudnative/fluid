@@ -43,7 +43,7 @@ func getFuseConfigStorage() string {
 	return "configmap"
 }
 
-func (t *ThinEngine) transformFuseConfig(runtime *datav1alpha1.ThinRuntime, dataset *datav1alpha1.Dataset, value *ThinValue) (err error) {
+func (t *ThinEngine) transformFuseConfig(runtime *datav1alpha1.ThinRuntime, dataset *datav1alpha1.Dataset, value *ThinValue) error {
 	fuseConfigStorage := getFuseConfigStorage()
 
 	mounts := []datav1alpha1.Mount{}
@@ -62,10 +62,11 @@ func (t *ThinEngine) transformFuseConfig(runtime *datav1alpha1.ThinRuntime, data
 			pvMountOptions[pvcName] = mountOptions
 		}
 
-		m.Options, err = t.extractMountOptions(m, dataset, fuseConfigStorage, value)
+		options, err := t.extractMountOptions(m, dataset, fuseConfigStorage, value)
 		if err != nil {
 			return err
 		}
+		m.Options = options
 		m.EncryptOptions = nil
 		mounts = append(mounts, m)
 	}
@@ -83,7 +84,7 @@ func (t *ThinEngine) transformFuseConfig(runtime *datav1alpha1.ThinRuntime, data
 	}
 
 	var configStr []byte
-	configStr, err = json.Marshal(config)
+	configStr, err := json.Marshal(config)
 	if err != nil {
 		return errors.Wrapf(err, "failed to dump fuse config to json, runtime: \"%s/%s\"", runtime.Namespace, runtime.Name)
 	}

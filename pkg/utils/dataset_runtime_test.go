@@ -94,7 +94,7 @@ func TestCreateRuntimeForReferenceDatasetIfNotExist(t *testing.T) {
 						// Kind:       "Dataset",
 						// APIVersion: "data.fluid.io/v1alpha1",
 						Name:       "ThinRuntimeExists",
-						Controller: utilpointer.BoolPtr(true),
+						Controller: utilpointer.Bool(true),
 						UID:        "3e108dcc-9aab-4d0b-99dc-9976d5cd6d5a",
 					},
 				},

@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Fluid Authors.
+Copyright 2021 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -125,7 +125,7 @@ func (r *JuiceFSRuntimeReconciler) Reconcile(context context.Context, req ctrl.R
 // SetupWithManager sets up the controller with the Manager.
 func (r *JuiceFSRuntimeReconciler) SetupWithManager(mgr ctrl.Manager, options controller.Options, eventDriven bool) error {
 	if eventDriven {
-		return watch.SetupWatcherWithReconciler(mgr, options, r)
+		return watch.SetupWatcherForReconciler(mgr, options, r)
 	} else {
 		return ctrl.NewControllerManagedBy(mgr).
 			WithOptions(options).

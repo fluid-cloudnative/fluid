@@ -37,7 +37,7 @@ func TestStatefulsetEventHandler_OnCreateFunc(t *testing.T) {
 					{
 						Kind:       datav1alpha1.JindoRuntimeKind,
 						APIVersion: datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version,
-						Controller: utilpointer.BoolPtr(true),
+						Controller: utilpointer.Bool(true),
 					},
 				},
 			},
@@ -80,7 +80,7 @@ func TestStatefulsetEventHandler_OnUpdateFunc(t *testing.T) {
 					{
 						Kind:       datav1alpha1.JindoRuntimeKind,
 						APIVersion: datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version,
-						Controller: utilpointer.BoolPtr(true),
+						Controller: utilpointer.Bool(true),
 					},
 				},
 				ResourceVersion: "123",
@@ -92,7 +92,7 @@ func TestStatefulsetEventHandler_OnUpdateFunc(t *testing.T) {
 					{
 						Kind:       datav1alpha1.JindoRuntimeKind,
 						APIVersion: datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version,
-						Controller: utilpointer.BoolPtr(true),
+						Controller: utilpointer.Bool(true),
 					},
 				},
 				ResourceVersion: "456",
@@ -141,7 +141,7 @@ func TestStatefulsetEventHandler_OnDeleteFunc(t *testing.T) {
 				{
 					Kind:       datav1alpha1.JindoRuntimeKind,
 					APIVersion: datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version,
-					Controller: utilpointer.BoolPtr(true),
+					Controller: utilpointer.Bool(true),
 				},
 			},
 		}},
