@@ -1,5 +1,6 @@
 # Build the dataset-controller manager binary
-FROM golang:1.21.10-bullseye AS builder
+# golang:1.21.10-bullseye
+FROM golang@sha256:9de71b0e347a257cb44b112aeffd7de8133a731f6edb4bd10183a13eaf45d030
 
 WORKDIR /go/src/github.com/fluid-cloudnative/fluid
 COPY . .
@@ -22,6 +23,5 @@ COPY --from=builder /go/bin/fluid-webhook /usr/local/bin/fluid-webhook
 RUN mkdir -p /etc/k8s-webhook-server/certs && \
 	chmod -R u+w /etc/k8s-webhook-server/certs && \ 
 	chmod -R u+x /usr/local/bin/
-
 
 CMD ["fluid-webhook", "start"]
