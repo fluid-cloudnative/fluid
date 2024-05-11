@@ -232,3 +232,37 @@ func TestHitTarget(t *testing.T) {
 	}
 
 }
+
+func TestLabelAnnotationPodSchedRegex(t *testing.T) {
+	testCases := map[string]struct {
+		target string
+		got    string
+		match  bool
+	}{
+		"correct": {
+			target: LabelAnnotationDataset + ".dsA.sched",
+			match:  true,
+			got:    "dsA",
+		},
+		"wrong fluid.io": {
+			target: "fluidaio/dataset.dsA.sched",
+			match:  false,
+		},
+		"wrong prefix": {
+			target: "a.fluid.io/dataset.dsA.sched",
+			match:  false,
+		},
+	}
+
+	for index, item := range testCases {
+		submatch := LabelAnnotationPodSchedRegex.FindStringSubmatch(item.target)
+
+		if !item.match && len(submatch) == 2 {
+			t.Errorf("[%s] check match, want:%t, got:%t", index, item.match, len(submatch) == 2)
+		}
+
+		if len(submatch) == 2 && submatch[1] != item.got {
+			t.Errorf("[%s] check failure, want:%s, got:%s", index, item.got, submatch[1])
+		}
+	}
+}
