@@ -32,7 +32,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/tieredstore"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transformers"
 )
 
 func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *Alluxio, err error) {
@@ -574,7 +574,7 @@ func (e *AlluxioEngine) generateNonNativeMountsInfo(dataset *datav1alpha1.Datase
 			mountArgs = append(mountArgs, "--option", fmt.Sprintf("%s=%s", k, v))
 		}
 
-		// use space as seperator as it will append to `alluxio fs mount` directly.
+		// use space as separator as it will append to `alluxio fs mount` directly.
 		nonNativeMounts = append(nonNativeMounts, strings.Join(mountArgs, " "))
 	}
 	return nonNativeMounts, nil
