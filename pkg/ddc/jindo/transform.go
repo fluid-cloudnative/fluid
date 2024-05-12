@@ -31,7 +31,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromers"
 	corev1 "k8s.io/api/core/v1"
 )
 
