@@ -12,6 +12,7 @@ spec:
       labels:
         app: prepare-data
     spec:
+      automountServiceAccountToken: false
       containers:
       - name: prepare-data
         image: test-registry/prepare-data

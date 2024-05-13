@@ -163,7 +163,8 @@ spec:
         import vineyard
         import numpy as np
         import pandas as pd
-        vineyard.put(pd.DataFrame(np.random.randn(100, 4), columns=list('ABCD')), persist=True, name="test_dataframe")
+        rng = np.random.default_rng(seed=42)
+        vineyard.put(pd.DataFrame(rng.standard_normal((100, 4)), columns=list('ABCD')), persist=True, name="test_dataframe")
         vineyard.put((1, 1.2345, 'xxxxabcd'), persist=True, name="test_basic_data_unit");
         EOF
         python producer.py;
