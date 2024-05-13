@@ -50,6 +50,18 @@ func (t *ThinEngine) shouldSyncMetadata() (should bool, err error) {
 		return should, err
 	}
 
+	runtime, err := utils.GetThinRuntime(t.Client, t.name, t.namespace)
+	if err != nil {
+		should = false
+		return should, err
+	}
+
+	if !runtime.Spec.RuntimeManagement.MetadataSyncPolicy.AutoSyncEnabled() {
+		t.Log.V(1).Info("Skip syncing metadta cause runtime.Spec.RuntimeManagement.MetadataSyncPolicy.AutoSync=false", "runtime name", runtime.Name, "runtime namespace", runtime.Namespace)
+		should = false
+		return should, nil
+	}
+
 	//todo(xuzhihao): option to enable/disable automatic metadata sync
 	//todo: periodical metadata sync
 	if dataset.Status.UfsTotal != "" && dataset.Status.UfsTotal != MetadataSyncNotDoneMsg {

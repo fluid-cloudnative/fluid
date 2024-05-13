@@ -6289,11 +6289,18 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeSpec(ref common.Refe
 							},
 						},
 					},
+					"management": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RuntimeManagement defines policies when managing the runtime",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeManagement"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "k8s.io/api/core/v1.Volume"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeManagement", "github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "k8s.io/api/core/v1.Volume"},
 	}
 }
 
