@@ -69,7 +69,7 @@ type RuntimeInfoInterface interface {
 
 	SetupWithDataset(dataset *datav1alpha1.Dataset)
 
-	GetFuseDeployMode() (global bool, nodeSelector map[string]string)
+	GetFuseDeployMode() (nodeSelector map[string]string)
 
 	GetFuseCleanPolicy() datav1alpha1.FuseCleanPolicy
 
@@ -242,8 +242,7 @@ func (info *RuntimeInfo) SetupFuseDeployMode(global bool, nodeSelector map[strin
 }
 
 // GetFuseDeployMode gets the fuse deploy mode
-func (info *RuntimeInfo) GetFuseDeployMode() (global bool, nodeSelector map[string]string) {
-	global = info.fuse.Global
+func (info *RuntimeInfo) GetFuseDeployMode() (nodeSelector map[string]string) {
 	nodeSelector = info.fuse.NodeSelector
 	return
 }
