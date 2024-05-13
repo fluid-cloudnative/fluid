@@ -86,6 +86,17 @@ type TieredStore struct {
 	Levels []Level `json:"levels,omitempty"`
 }
 
+// RuntimeManagement defines suggestions for runtime controllers to manage the runtime
+type RuntimeManagement struct {
+	// CleanCachePolicy defines the policy of cleaning cache when shutting down the runtime
+	// +optional
+	CleanCachePolicy CleanCachePolicy `json:"cleanCachePolicy,omitempty"`
+
+	// MetadataSyncPolicy defines the policy of syncing metadata when setting up the runtime. If not set,
+	// +optional
+	MetadataSyncPolicy MetadataSyncPolicy `json:"metadataSyncPolicy,omitempty"`
+}
+
 // InitUsersSpec is a description of the initialize the users for runtime
 type InitUsersSpec struct {
 

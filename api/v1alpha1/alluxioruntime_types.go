@@ -167,17 +167,6 @@ type Data struct {
 	Pin bool `json:"pin"`
 }
 
-// RuntimeManagement defines suggestions for runtime controllers to manage the runtime
-type RuntimeManagement struct {
-	// CleanCachePolicy defines the policy of cleaning cache when shutting down the runtime
-	// +optional
-	CleanCachePolicy CleanCachePolicy `json:"cleanCachePolicy,omitempty"`
-
-	// MetadataSyncPolicy defines the policy of syncing metadata when setting up the runtime. If not set,
-	// +optional
-	MetadataSyncPolicy MetadataSyncPolicy `json:"metadataSyncPolicy,omitempty"`
-}
-
 // AlluxioRuntimeSpec defines the desired state of AlluxioRuntime
 type AlluxioRuntimeSpec struct {
 	// The version information that instructs fluid to orchestrate a particular version of Alluxio.
