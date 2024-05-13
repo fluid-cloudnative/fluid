@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Fluid Authors.
+Copyright 2020 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -51,6 +51,7 @@ func TestOptimizeDefaultProperties(t *testing.T) {
 		}
 	}
 }
+
 
 func TestOptimizeDefaultPropertiesAndFuseForHTTP(t *testing.T) {
 	var tests = []struct {
