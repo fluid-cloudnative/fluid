@@ -166,7 +166,7 @@ func TestJuiceFSEngine_SetupWorkers(t *testing.T) {
 	nodeSelector := map[string]string{
 		"node-select": "true",
 	}
-	runtimeInfo.SetupFuseDeployMode(true, nodeSelector)
+	runtimeInfo.SetupFuseDeployMode(nodeSelector)
 
 	type fields struct {
 		replicas    int32

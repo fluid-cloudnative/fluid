@@ -57,7 +57,7 @@ func TestShutdown(t *testing.T) {
 	nodeSelector := map[string]string{
 		"node-select": "true",
 	}
-	runtimeInfoHadoop.SetupFuseDeployMode(true, nodeSelector)
+	runtimeInfoHadoop.SetupFuseDeployMode(nodeSelector)
 
 	var nodeInputs = []*corev1.Node{
 		{

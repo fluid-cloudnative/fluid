@@ -58,7 +58,7 @@ func TestSetupWorkers(t *testing.T) {
 	nodeSelector := map[string]string{
 		"node-select": "true",
 	}
-	runtimeInfoHadoop.SetupFuseDeployMode(true, nodeSelector)
+	runtimeInfoHadoop.SetupFuseDeployMode(nodeSelector)
 
 	type fields struct {
 		replicas         int32

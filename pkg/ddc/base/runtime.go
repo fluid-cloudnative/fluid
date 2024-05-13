@@ -63,7 +63,7 @@ type RuntimeInfoInterface interface {
 
 	IsExclusive() bool
 
-	SetupFuseDeployMode(global bool, nodeSelector map[string]string)
+	SetupFuseDeployMode(nodeSelector map[string]string)
 
 	SetupFuseCleanPolicy(policy datav1alpha1.FuseCleanPolicy)
 
@@ -116,9 +116,6 @@ type RuntimeInfo struct {
 }
 
 type Fuse struct {
-	// fuse is deployed in global mode
-	Global bool
-
 	NodeSelector map[string]string
 
 	// CleanPolicy decides when to clean fuse pods.
@@ -235,9 +232,7 @@ func (info *RuntimeInfo) SetupWithDataset(dataset *datav1alpha1.Dataset) {
 }
 
 // SetupFuseDeployMode setups the fuse deploy mode
-func (info *RuntimeInfo) SetupFuseDeployMode(global bool, nodeSelector map[string]string) {
-	// Since Fluid v0.7.0, global is deprecated.
-	info.fuse.Global = true
+func (info *RuntimeInfo) SetupFuseDeployMode(nodeSelector map[string]string) {
 	info.fuse.NodeSelector = nodeSelector
 }
 
@@ -363,7 +358,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo.SetupFuseDeployMode(alluxioRuntime.Spec.Fuse.Global, alluxioRuntime.Spec.Fuse.NodeSelector)
+		runtimeInfo.SetupFuseDeployMode(alluxioRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(alluxioRuntime.Spec.Fuse.CleanPolicy)
 	case common.JindoRuntime:
 		jindoRuntime, err := utils.GetJindoRuntime(client, name, namespace)
@@ -374,7 +369,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo.SetupFuseDeployMode(jindoRuntime.Spec.Fuse.Global, jindoRuntime.Spec.Fuse.NodeSelector)
+		runtimeInfo.SetupFuseDeployMode(jindoRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(jindoRuntime.Spec.Fuse.CleanPolicy)
 	case common.GooseFSRuntime:
 		goosefsRuntime, err := utils.GetGooseFSRuntime(client, name, namespace)
@@ -385,7 +380,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo.SetupFuseDeployMode(goosefsRuntime.Spec.Fuse.Global, goosefsRuntime.Spec.Fuse.NodeSelector)
+		runtimeInfo.SetupFuseDeployMode(goosefsRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(goosefsRuntime.Spec.Fuse.CleanPolicy)
 	case common.JuiceFSRuntime:
 		juicefsRuntime, err := utils.GetJuiceFSRuntime(client, name, namespace)
@@ -396,7 +391,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo.SetupFuseDeployMode(juicefsRuntime.Spec.Fuse.Global, juicefsRuntime.Spec.Fuse.NodeSelector)
+		runtimeInfo.SetupFuseDeployMode(juicefsRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(juicefsRuntime.Spec.Fuse.CleanPolicy)
 	case common.ThinRuntime:
 		thinRuntime, err := utils.GetThinRuntime(client, name, namespace)
@@ -407,8 +402,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		if err != nil {
 			return runtimeInfo, err
 		}
-		// Fuse global is always set to true
-		runtimeInfo.SetupFuseDeployMode(true, thinRuntime.Spec.Fuse.NodeSelector)
+		runtimeInfo.SetupFuseDeployMode(thinRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(thinRuntime.Spec.Fuse.CleanPolicy)
 	case common.EFCRuntime:
 		efcRuntime, err := utils.GetEFCRuntime(client, name, namespace)
@@ -419,7 +413,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo.SetupFuseDeployMode(true, efcRuntime.Spec.Fuse.NodeSelector)
+		runtimeInfo.SetupFuseDeployMode(efcRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(efcRuntime.Spec.Fuse.CleanPolicy)
 	case common.VineyardRuntime:
 		vineyardRuntime, err := utils.GetVineyardRuntime(client, name, namespace)
@@ -432,7 +426,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 			fmt.Println("Build vineyard runtime error")
 			return runtimeInfo, err
 		}
-		runtimeInfo.SetupFuseDeployMode(common.VineyardFuseIsGlobal, common.VineyardFuseNodeSelector)
+		runtimeInfo.SetupFuseDeployMode(common.VineyardFuseNodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(vineyardRuntime.Spec.Fuse.CleanPolicy)
 	default:
 		err = fmt.Errorf("fail to get runtimeInfo for runtime type: %s", runtimeType)
