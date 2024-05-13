@@ -119,7 +119,7 @@ func CreatePersistentVolumeForRuntime(client client.Client,
 				},
 			}
 		}
-		
+
 		metadataList := runtime.GetMetadataList()
 		for i := range metadataList {
 			if selector := metadataList[i].Selector; selector.Group != corev1.GroupName || selector.Kind != "PersistentVolume" {
