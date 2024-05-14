@@ -137,7 +137,7 @@ func (e *EFCEngine) createPersistentVolumeForRuntime(runtime base.RuntimeInfoInt
 			},
 		}
 
-		nodeSelector := runtime.GetFuseDeployMode()
+		nodeSelector := runtime.GetFuseNodeSelector()
 		e.Log.Info("Enable global mode for fuse in volume")
 		if len(nodeSelector) > 0 {
 			nodeSelectorRequirements := []corev1.NodeSelectorRequirement{}

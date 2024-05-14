@@ -34,7 +34,7 @@ func TestGetRequiredSchedulingTermWithGlobalMode(t *testing.T) {
 	}
 
 	// Test case 1: Global fuse with selector enable
-	runtimeInfo.SetupFuseDeployMode(map[string]string{"test1": "test1"})
+	runtimeInfo.SetFuseNodeSelector(map[string]string{"test1": "test1"})
 	terms, _ := getRequiredSchedulingTerm(runtimeInfo)
 
 	expectTerms := corev1.NodeSelectorTerm{
@@ -52,7 +52,7 @@ func TestGetRequiredSchedulingTermWithGlobalMode(t *testing.T) {
 	}
 
 	// Test case 2: Global fuse with selector disable
-	runtimeInfo.SetupFuseDeployMode(map[string]string{})
+	runtimeInfo.SetFuseNodeSelector(map[string]string{})
 	terms, _ = getRequiredSchedulingTerm(runtimeInfo)
 	expectTerms = corev1.NodeSelectorTerm{MatchExpressions: []corev1.NodeSelectorRequirement{}}
 

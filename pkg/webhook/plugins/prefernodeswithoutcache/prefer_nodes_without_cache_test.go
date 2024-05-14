@@ -35,7 +35,7 @@ func TestGetPreferredSchedulingTermForPodWithoutCacheWithGlobalMode(t *testing.T
 	}
 
 	// Test case 1: Global fuse with selector enable
-	runtimeInfo.SetupFuseDeployMode(map[string]string{"test1": "test1"})
+	runtimeInfo.SetFuseNodeSelector(map[string]string{"test1": "test1"})
 	term := getPreferredSchedulingTermForPodWithoutCache()
 
 	expectTerm := corev1.PreferredSchedulingTerm{
@@ -55,7 +55,7 @@ func TestGetPreferredSchedulingTermForPodWithoutCacheWithGlobalMode(t *testing.T
 	}
 
 	// Test case 2: Global fuse with selector disable
-	runtimeInfo.SetupFuseDeployMode(map[string]string{})
+	runtimeInfo.SetFuseNodeSelector(map[string]string{})
 	term = getPreferredSchedulingTermForPodWithoutCache()
 
 	if !reflect.DeepEqual(term, expectTerm) {
@@ -69,7 +69,7 @@ func TestGetPreferredSchedulingTermForPodWithoutCacheWithDefaultMode(t *testing.
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
 
-	runtimeInfo.SetupFuseDeployMode(map[string]string{})
+	runtimeInfo.SetFuseNodeSelector(map[string]string{})
 	term := getPreferredSchedulingTermForPodWithoutCache()
 
 	expectTerm := corev1.PreferredSchedulingTerm{

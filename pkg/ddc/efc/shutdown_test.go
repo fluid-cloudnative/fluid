@@ -66,7 +66,7 @@ func TestDestroyWorker(t *testing.T) {
 	nodeSelector := map[string]string{
 		"node-select": "true",
 	}
-	runtimeInfoHadoop.SetupFuseDeployMode(nodeSelector)
+	runtimeInfoHadoop.SetFuseNodeSelector(nodeSelector)
 
 	var nodeInputs = []*corev1.Node{
 		{

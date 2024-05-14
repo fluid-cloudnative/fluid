@@ -98,7 +98,7 @@ func CreatePersistentVolumeForRuntime(client client.Client,
 			},
 		}
 
-		nodeSelector := runtime.GetFuseDeployMode()
+		nodeSelector := runtime.GetFuseNodeSelector()
 		log.Info("Enable global mode for fuse in volume")
 		if len(nodeSelector) > 0 {
 			nodeSelectorRequirements := []corev1.NodeSelectorRequirement{}

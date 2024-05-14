@@ -36,7 +36,7 @@ func (e *GooseFSEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		}
 
 		// Setup Fuse Deploy Mode
-		e.runtimeInfo.SetupFuseDeployMode(runtime.Spec.Fuse.NodeSelector)
+		e.runtimeInfo.SetFuseNodeSelector(runtime.Spec.Fuse.NodeSelector)
 
 		if !e.UnitTest {
 			// Check if the runtime is using deprecated labels

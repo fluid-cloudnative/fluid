@@ -36,7 +36,7 @@ func (t *ThinEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		}
 
 		// Setup Fuse Deploy Mode
-		t.runtimeInfo.SetupFuseDeployMode(runtime.Spec.Fuse.NodeSelector)
+		t.runtimeInfo.SetFuseNodeSelector(runtime.Spec.Fuse.NodeSelector)
 
 		if !t.UnitTest {
 			// Check if the runtime is using deprecated naming style for PersistentVolumes

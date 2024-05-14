@@ -25,7 +25,7 @@ func TestCreatePersistentVolumeForRuntime(t *testing.T) {
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
-	runtimeInfoSpark.SetupFuseDeployMode(map[string]string{"test-node": "true"})
+	runtimeInfoSpark.SetFuseNodeSelector(map[string]string{"test-node": "true"})
 
 	// runtimeInfoShare is a runtimeInfo in non global mode with no correspond PV.
 	runtimeInfoHadoop, err := base.BuildRuntimeInfo("hadoop", "fluid", "alluxio", datav1alpha1.TieredStore{})

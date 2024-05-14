@@ -63,13 +63,13 @@ type RuntimeInfoInterface interface {
 
 	IsExclusive() bool
 
-	SetupFuseDeployMode(nodeSelector map[string]string)
+	SetFuseNodeSelector(nodeSelector map[string]string)
 
 	SetupFuseCleanPolicy(policy datav1alpha1.FuseCleanPolicy)
 
 	SetupWithDataset(dataset *datav1alpha1.Dataset)
 
-	GetFuseDeployMode() (nodeSelector map[string]string)
+	GetFuseNodeSelector() (nodeSelector map[string]string)
 
 	GetFuseCleanPolicy() datav1alpha1.FuseCleanPolicy
 
@@ -231,13 +231,13 @@ func (info *RuntimeInfo) SetupWithDataset(dataset *datav1alpha1.Dataset) {
 	info.exclusive = dataset.IsExclusiveMode()
 }
 
-// SetupFuseDeployMode setups the fuse deploy mode
-func (info *RuntimeInfo) SetupFuseDeployMode(nodeSelector map[string]string) {
+// SetFuseNodeSelector setups the fuse deploy mode
+func (info *RuntimeInfo) SetFuseNodeSelector(nodeSelector map[string]string) {
 	info.fuse.NodeSelector = nodeSelector
 }
 
-// GetFuseDeployMode gets the fuse deploy mode
-func (info *RuntimeInfo) GetFuseDeployMode() (nodeSelector map[string]string) {
+// GetFuseNodeSelector gets the fuse deploy mode
+func (info *RuntimeInfo) GetFuseNodeSelector() (nodeSelector map[string]string) {
 	nodeSelector = info.fuse.NodeSelector
 	return
 }
@@ -358,7 +358,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo.SetupFuseDeployMode(alluxioRuntime.Spec.Fuse.NodeSelector)
+		runtimeInfo.SetFuseNodeSelector(alluxioRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(alluxioRuntime.Spec.Fuse.CleanPolicy)
 	case common.JindoRuntime:
 		jindoRuntime, err := utils.GetJindoRuntime(client, name, namespace)
@@ -369,7 +369,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo.SetupFuseDeployMode(jindoRuntime.Spec.Fuse.NodeSelector)
+		runtimeInfo.SetFuseNodeSelector(jindoRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(jindoRuntime.Spec.Fuse.CleanPolicy)
 	case common.GooseFSRuntime:
 		goosefsRuntime, err := utils.GetGooseFSRuntime(client, name, namespace)
@@ -380,7 +380,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo.SetupFuseDeployMode(goosefsRuntime.Spec.Fuse.NodeSelector)
+		runtimeInfo.SetFuseNodeSelector(goosefsRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(goosefsRuntime.Spec.Fuse.CleanPolicy)
 	case common.JuiceFSRuntime:
 		juicefsRuntime, err := utils.GetJuiceFSRuntime(client, name, namespace)
@@ -391,7 +391,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo.SetupFuseDeployMode(juicefsRuntime.Spec.Fuse.NodeSelector)
+		runtimeInfo.SetFuseNodeSelector(juicefsRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(juicefsRuntime.Spec.Fuse.CleanPolicy)
 	case common.ThinRuntime:
 		thinRuntime, err := utils.GetThinRuntime(client, name, namespace)
@@ -402,7 +402,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo.SetupFuseDeployMode(thinRuntime.Spec.Fuse.NodeSelector)
+		runtimeInfo.SetFuseNodeSelector(thinRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(thinRuntime.Spec.Fuse.CleanPolicy)
 	case common.EFCRuntime:
 		efcRuntime, err := utils.GetEFCRuntime(client, name, namespace)
@@ -413,7 +413,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo.SetupFuseDeployMode(efcRuntime.Spec.Fuse.NodeSelector)
+		runtimeInfo.SetFuseNodeSelector(efcRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(efcRuntime.Spec.Fuse.CleanPolicy)
 	case common.VineyardRuntime:
 		vineyardRuntime, err := utils.GetVineyardRuntime(client, name, namespace)
@@ -426,7 +426,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 			fmt.Println("Build vineyard runtime error")
 			return runtimeInfo, err
 		}
-		runtimeInfo.SetupFuseDeployMode(common.VineyardFuseNodeSelector)
+		runtimeInfo.SetFuseNodeSelector(common.VineyardFuseNodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(vineyardRuntime.Spec.Fuse.CleanPolicy)
 	default:
 		err = fmt.Errorf("fail to get runtimeInfo for runtime type: %s", runtimeType)

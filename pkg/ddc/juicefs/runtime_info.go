@@ -36,7 +36,7 @@ func (j *JuiceFSEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		}
 
 		// Setup Fuse Deploy Mode
-		j.runtimeInfo.SetupFuseDeployMode(runtime.Spec.Fuse.NodeSelector)
+		j.runtimeInfo.SetFuseNodeSelector(runtime.Spec.Fuse.NodeSelector)
 
 		if !j.UnitTest {
 			// Check if the runtime is using deprecated labels
