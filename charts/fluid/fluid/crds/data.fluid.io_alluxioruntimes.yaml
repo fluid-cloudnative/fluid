@@ -290,10 +290,6 @@ spec:
                     description: Environment variables that will be used by Alluxio
                       Fuse
                     type: object
-                  global:
-                    description: If the fuse client should be deployed in global mode,
-                      otherwise the affinity should be considered
-                    type: boolean
                   image:
                     description: Image for Alluxio Fuse(e.g. alluxio/alluxio-fuse)
                     type: string

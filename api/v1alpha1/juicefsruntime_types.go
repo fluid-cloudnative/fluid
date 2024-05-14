@@ -147,11 +147,6 @@ type JuiceFSFuseSpec struct {
 	// +optional
 	Options map[string]string `json:"options,omitempty"`
 
-	// If the fuse client should be deployed in global mode,
-	// otherwise the affinity should be considered
-	// +optional
-	Global bool `json:"global,omitempty"`
-
 	// NodeSelector is a selector which must be true for the fuse client to fit on a node,
 	// this option only effect when global is enabled
 	// +optional

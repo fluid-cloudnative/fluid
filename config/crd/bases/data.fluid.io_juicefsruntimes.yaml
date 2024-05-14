@@ -225,10 +225,6 @@ spec:
                       - name
                       type: object
                     type: array
-                  global:
-                    description: If the fuse client should be deployed in global mode,
-                      otherwise the affinity should be considered
-                    type: boolean
                   image:
                     description: Image for JuiceFS fuse
                     type: string
