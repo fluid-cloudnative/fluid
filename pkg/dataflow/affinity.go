@@ -18,6 +18,7 @@ package dataflow
 
 import (
 	"fmt"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -56,9 +57,9 @@ func InjectAffinityByRunAfterOp(c client.Client, runAfter *datav1alpha1.Operatio
 
 func injectPreferredAffinity(runAfter *datav1alpha1.OperationRef, prevOpNodeAffinity *v1.NodeAffinity, currentAffinity *v1.Affinity) (*v1.Affinity, error) {
 	var preferTerms []v1.PreferredSchedulingTerm
-	prefer := runAfter.AffinityStrategy.Prefer
-	if len(prefer) == 0 {
-		prefer = []datav1alpha1.Prefer{
+	prefers := runAfter.AffinityStrategy.Prefers
+	if len(prefers) == 0 {
+		prefers = []datav1alpha1.Prefer{
 			{
 				Name:   common.K8sNodeNameLabelKey,
 				Weight: 100,
@@ -73,7 +74,7 @@ func injectPreferredAffinity(runAfter *datav1alpha1.OperationRef, prevOpNodeAffi
 	// currently, only has one element.
 	podNodeSelectorTerm := prevOpNodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0]
 
-	for _, item := range prefer {
+	for _, item := range prefers {
 		key := item.Name
 		for _, expression := range podNodeSelectorTerm.MatchExpressions {
 			if expression.Key == key {
@@ -102,9 +103,9 @@ func injectRequiredAffinity(runAfter *datav1alpha1.OperationRef, prevOpNodeAffin
 	}
 
 	var matchExpressions []v1.NodeSelectorRequirement
-	require := runAfter.AffinityStrategy.Require
-	if len(require) == 0 {
-		require = []datav1alpha1.Require{
+	requires := runAfter.AffinityStrategy.Requires
+	if len(requires) == 0 {
+		requires = []datav1alpha1.Require{
 			{
 				Name: common.K8sNodeNameLabelKey,
 			},
@@ -118,7 +119,7 @@ func injectRequiredAffinity(runAfter *datav1alpha1.OperationRef, prevOpNodeAffin
 	// currently, only has one element.
 	podNodeSelectorTerm := prevOpNodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0]
 
-	for _, item := range require {
+	for _, item := range requires {
 		for _, expression := range podNodeSelectorTerm.MatchExpressions {
 			if expression.Key == item.Name {
 				matchExpressions = append(matchExpressions,
