@@ -387,13 +387,6 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioFuseSpec(ref common.Refe
 							},
 						},
 					},
-					"global": {
-						SchemaProps: spec.SchemaProps{
-							Description: "If the fuse client should be deployed in global mode, otherwise the affinity should be considered",
-							Type:        []string{"boolean"},
-							Format:      "",
-						},
-					},
 					"nodeSelector": {
 						SchemaProps: spec.SchemaProps{
 							Description: "NodeSelector is a selector which must be true for the fuse client to fit on a node, this option only effect when global is enabled",
@@ -2911,13 +2904,6 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSFuseSpec(ref common.Refe
 							},
 						},
 					},
-					"global": {
-						SchemaProps: spec.SchemaProps{
-							Description: "If the fuse client should be deployed in global mode, otherwise the affinity should be considered",
-							Type:        []string{"boolean"},
-							Format:      "",
-						},
-					},
 					"nodeSelector": {
 						SchemaProps: spec.SchemaProps{
 							Description: "NodeSelector is a selector which must be true for the fuse client to fit on a node, this option only effect when global is enabled",
@@ -3551,13 +3537,6 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JindoFuseSpec(ref common.Refere
 							},
 						},
 					},
-					"global": {
-						SchemaProps: spec.SchemaProps{
-							Description: "If the fuse client should be deployed in global mode, otherwise the affinity should be considered",
-							Type:        []string{"boolean"},
-							Format:      "",
-						},
-					},
 					"nodeSelector": {
 						SchemaProps: spec.SchemaProps{
 							Description: "NodeSelector is a selector which must be true for the fuse client to fit on a node, this option only effect when global is enabled",
@@ -4114,13 +4093,6 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSFuseSpec(ref common.Refe
 									},
 								},
 							},
-						},
-					},
-					"global": {
-						SchemaProps: spec.SchemaProps{
-							Description: "If the fuse client should be deployed in global mode, otherwise the affinity should be considered",
-							Type:        []string{"boolean"},
-							Format:      "",
 						},
 					},
 					"nodeSelector": {
