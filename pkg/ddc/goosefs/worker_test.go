@@ -382,9 +382,7 @@ func TestCheckWorkersReady(t *testing.T) {
 					},
 					Spec: datav1alpha1.GooseFSRuntimeSpec{
 						Replicas: 1,
-						Fuse: datav1alpha1.GooseFSFuseSpec{
-							Global: true,
-						},
+						Fuse:     datav1alpha1.GooseFSFuseSpec{},
 					},
 				},
 				worker: &appsv1.StatefulSet{
@@ -423,9 +421,7 @@ func TestCheckWorkersReady(t *testing.T) {
 					},
 					Spec: datav1alpha1.GooseFSRuntimeSpec{
 						Replicas: 1,
-						Fuse: datav1alpha1.GooseFSFuseSpec{
-							Global: true,
-						},
+						Fuse:     datav1alpha1.GooseFSFuseSpec{},
 					},
 				},
 				worker: &appsv1.StatefulSet{
@@ -463,9 +459,7 @@ func TestCheckWorkersReady(t *testing.T) {
 					},
 					Spec: datav1alpha1.GooseFSRuntimeSpec{
 						Replicas: 1,
-						Fuse: datav1alpha1.GooseFSFuseSpec{
-							Global: true,
-						},
+						Fuse:     datav1alpha1.GooseFSFuseSpec{},
 					},
 				},
 				worker: &appsv1.StatefulSet{

@@ -427,9 +427,7 @@ func TestCheckWorkersReady(t *testing.T) {
 					},
 					Spec: datav1alpha1.JindoRuntimeSpec{
 						Replicas: 1,
-						Fuse: datav1alpha1.JindoFuseSpec{
-							Global: true,
-						},
+						Fuse:     datav1alpha1.JindoFuseSpec{},
 					},
 				},
 				worker: &appsv1.StatefulSet{
@@ -457,9 +455,7 @@ func TestCheckWorkersReady(t *testing.T) {
 					},
 					Spec: datav1alpha1.JindoRuntimeSpec{
 						Replicas: 1,
-						Fuse: datav1alpha1.JindoFuseSpec{
-							Global: true,
-						},
+						Fuse:     datav1alpha1.JindoFuseSpec{},
 					},
 				},
 				worker: &appsv1.StatefulSet{
@@ -487,9 +483,7 @@ func TestCheckWorkersReady(t *testing.T) {
 					},
 					Spec: datav1alpha1.JindoRuntimeSpec{
 						Replicas: 2,
-						Fuse: datav1alpha1.JindoFuseSpec{
-							Global: true,
-						},
+						Fuse:     datav1alpha1.JindoFuseSpec{},
 					},
 				},
 				worker: &appsv1.StatefulSet{
@@ -516,9 +510,7 @@ func TestCheckWorkersReady(t *testing.T) {
 					},
 					Spec: datav1alpha1.JindoRuntimeSpec{
 						Replicas: 2,
-						Fuse: datav1alpha1.JindoFuseSpec{
-							Global: true,
-						},
+						Fuse:     datav1alpha1.JindoFuseSpec{},
 					},
 					Status: datav1alpha1.RuntimeStatus{
 						WorkerPhase: datav1alpha1.RuntimePhasePartialReady,

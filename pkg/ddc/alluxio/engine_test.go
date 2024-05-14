@@ -56,9 +56,7 @@ func TestBuild(t *testing.T) {
 			Master: datav1alpha1.AlluxioCompTemplateSpec{
 				Replicas: 1,
 			},
-			Fuse: datav1alpha1.AlluxioFuseSpec{
-				Global: false,
-			},
+			Fuse: datav1alpha1.AlluxioFuseSpec{},
 		},
 		Status: datav1alpha1.RuntimeStatus{
 			CacheStates: map[common.CacheStateName]string{

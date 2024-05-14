@@ -59,9 +59,7 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 					},
 					Spec: datav1alpha1.JindoRuntimeSpec{
 						Replicas: 1,
-						Fuse: datav1alpha1.JindoFuseSpec{
-							Global: true,
-						},
+						Fuse:     datav1alpha1.JindoFuseSpec{},
 					},
 				},
 				worker: &appsv1.StatefulSet{
@@ -108,9 +106,7 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 					},
 					Spec: datav1alpha1.JindoRuntimeSpec{
 						Replicas: 1,
-						Fuse: datav1alpha1.JindoFuseSpec{
-							Global: true,
-						},
+						Fuse:     datav1alpha1.JindoFuseSpec{},
 					},
 				},
 				worker: &appsv1.StatefulSet{
@@ -153,9 +149,7 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 					},
 					Spec: datav1alpha1.JindoRuntimeSpec{
 						Replicas: 1,
-						Fuse: datav1alpha1.JindoFuseSpec{
-							Global: true,
-						},
+						Fuse:     datav1alpha1.JindoFuseSpec{},
 					},
 				},
 				worker: &appsv1.StatefulSet{
@@ -199,9 +193,7 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 					},
 					Spec: datav1alpha1.JindoRuntimeSpec{
 						Replicas: 1,
-						Fuse: datav1alpha1.JindoFuseSpec{
-							Global: true,
-						},
+						Fuse:     datav1alpha1.JindoFuseSpec{},
 					},
 				},
 				worker: &appsv1.StatefulSet{

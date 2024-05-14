@@ -55,9 +55,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: v1alpha1.AlluxioRuntimeSpec{
-				Fuse: v1alpha1.AlluxioFuseSpec{
-					Global: true,
-				},
+				Fuse: v1alpha1.AlluxioFuseSpec{},
 			},
 		},
 		{
@@ -66,9 +64,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: v1alpha1.AlluxioRuntimeSpec{
-				Fuse: v1alpha1.AlluxioFuseSpec{
-					Global: false,
-				},
+				Fuse: v1alpha1.AlluxioFuseSpec{},
 			},
 		},
 	}
