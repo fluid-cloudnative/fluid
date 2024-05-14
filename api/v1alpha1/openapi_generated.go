@@ -163,7 +163,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_AffinityStrategy(ref common.Ref
 							Format:      "",
 						},
 					},
-					"prefer": {
+					"prefers": {
 						SchemaProps: spec.SchemaProps{
 							Type: []string{"array"},
 							Items: &spec.SchemaOrArray{
@@ -176,7 +176,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_AffinityStrategy(ref common.Ref
 							},
 						},
 					},
-					"require": {
+					"requires": {
 						SchemaProps: spec.SchemaProps{
 							Type: []string{"array"},
 							Items: &spec.SchemaOrArray{
