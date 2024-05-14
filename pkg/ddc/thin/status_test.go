@@ -39,12 +39,6 @@ import (
 func TestThinEngine_CheckAndUpdateRuntimeStatus(t *testing.T) {
 	Convey("Test CheckAndUpdateRuntimeStatus ", t, func() {
 		Convey("CheckAndUpdateRuntimeStatus success", func() {
-			runtimeInfo, err := base.BuildRuntimeInfo("thin", "fluid", "thin", datav1alpha1.TieredStore{})
-			if err != nil {
-				t.Errorf("fail to create the runtimeInfo with error %v", err)
-			}
-			runtimeInfo.SetupFuseDeployMode(false, nil)
-
 			var workerInputs = []appsv1.StatefulSet{
 				{
 					ObjectMeta: metav1.ObjectMeta{

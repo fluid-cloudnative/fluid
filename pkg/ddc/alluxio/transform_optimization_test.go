@@ -52,7 +52,6 @@ func TestOptimizeDefaultProperties(t *testing.T) {
 	}
 }
 
-
 func TestOptimizeDefaultPropertiesAndFuseForHTTP(t *testing.T) {
 	var tests = []struct {
 		runtime      *datav1alpha1.AlluxioRuntime

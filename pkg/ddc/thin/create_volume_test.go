@@ -33,7 +33,6 @@ func TestThinEngine_CreateVolume(t *testing.T) {
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
-	runtimeInfo.SetupFuseDeployMode(false, nil)
 
 	testDatasetInputs := []*datav1alpha1.Dataset{
 		{
@@ -99,7 +98,6 @@ func TestThinEngine_createFusePersistentVolume(t *testing.T) {
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
-	runtimeInfo.SetupFuseDeployMode(false, nil)
 
 	testDatasetInputs := []*datav1alpha1.Dataset{
 		{
@@ -152,7 +150,6 @@ func TestThinEngine_createFusePersistentVolumeClaim(t *testing.T) {
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
-	runtimeInfo.SetupFuseDeployMode(false, nil)
 
 	testDatasetInputs := []*datav1alpha1.Dataset{
 		{

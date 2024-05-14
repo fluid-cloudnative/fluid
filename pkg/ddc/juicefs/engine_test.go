@@ -53,9 +53,7 @@ func TestBuild(t *testing.T) {
 			Namespace: "fluid",
 		},
 		Spec: datav1alpha1.JuiceFSRuntimeSpec{
-			Fuse: datav1alpha1.JuiceFSFuseSpec{
-				Global: false,
-			},
+			Fuse: datav1alpha1.JuiceFSFuseSpec{},
 		},
 		Status: datav1alpha1.RuntimeStatus{
 			CacheStates: map[common.CacheStateName]string{
@@ -70,9 +68,7 @@ func TestBuild(t *testing.T) {
 			Namespace: "fluid",
 		},
 		Spec: datav1alpha1.JuiceFSRuntimeSpec{
-			Fuse: datav1alpha1.JuiceFSFuseSpec{
-				Global: false,
-			},
+			Fuse: datav1alpha1.JuiceFSFuseSpec{},
 		},
 		Status: datav1alpha1.RuntimeStatus{
 			CacheStates: map[common.CacheStateName]string{
