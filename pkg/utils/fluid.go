@@ -24,14 +24,16 @@ import (
 // IsPodManagedByFluid checks if the given Pod is managed by Fluid.
 func IsPodManagedByFluid(pod *corev1.Pod) bool {
 	fluidPodLabels := []string{common.AlluxioRuntime,
+		// For jindo, Data Operation / Runtime pods use jindofs, jindofsx, jindocache as the app label value.
 		common.JindoChartName,
+		common.JindoFSxEngineImpl,
+		common.JindoCacheEngineImpl,
 		common.GooseFSRuntime,
 		common.JuiceFSRuntime,
 		common.ThinRuntime,
 		common.EFCRuntime}
-	if _, ok := pod.Labels[common.PodRoleType]; ok && pod.Labels[common.PodRoleType] == common.DataloadPod {
-		return true
-	}
+
+	// Runtime Pod and DataOperation Pod both have the App label.
 	for _, label := range fluidPodLabels {
 		if pod.Labels[common.App] == label {
 			return true

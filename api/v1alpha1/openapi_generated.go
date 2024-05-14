@@ -29,6 +29,7 @@ import (
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.APIGatewayStatus":           schema_fluid_cloudnative_fluid_api_v1alpha1_APIGatewayStatus(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AffinityStrategy":           schema_fluid_cloudnative_fluid_api_v1alpha1_AffinityStrategy(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioCompTemplateSpec":    schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioCompTemplateSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioFuseSpec":            schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioFuseSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioRuntime":             schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioRuntime(ref),
@@ -95,7 +96,9 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationRef":               schema_fluid_cloudnative_fluid_api_v1alpha1_OperationRef(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationStatus":            schema_fluid_cloudnative_fluid_api_v1alpha1_OperationStatus(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata":                schema_fluid_cloudnative_fluid_api_v1alpha1_PodMetadata(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Prefer":                     schema_fluid_cloudnative_fluid_api_v1alpha1_Prefer(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Processor":                  schema_fluid_cloudnative_fluid_api_v1alpha1_Processor(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Require":                    schema_fluid_cloudnative_fluid_api_v1alpha1_Require(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Runtime":                    schema_fluid_cloudnative_fluid_api_v1alpha1_Runtime(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeCondition":           schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeCondition(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeManagement":          schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeManagement(ref),
@@ -144,6 +147,53 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_APIGatewayStatus(ref common.Ref
 				},
 			},
 		},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_AffinityStrategy(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"policy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Policy one of: \"\", \"Require\", \"Prefer\"",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"prefer": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Prefer"),
+									},
+								},
+							},
+						},
+					},
+					"require": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Require"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.Prefer", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Require"},
 	}
 }
 
@@ -4817,10 +4867,19 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_OperationRef(ref common.Referen
 							Format:      "",
 						},
 					},
+					"affinityStrategy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "AffinityStrategy specifies the pod affinity strategy with the referent operation.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.AffinityStrategy"),
+						},
+					},
 				},
 				Required: []string{"kind", "name"},
 			},
 		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.AffinityStrategy"},
 	}
 }
 
@@ -4896,12 +4955,18 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_OperationStatus(ref common.Refe
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.WaitingStatus"),
 						},
 					},
+					"nodeAffinity": {
+						SchemaProps: spec.SchemaProps{
+							Description: "NodeAffinity records the node affinity for operation pods",
+							Ref:         ref("k8s.io/api/core/v1.NodeAffinity"),
+						},
+					},
 				},
 				Required: []string{"phase", "duration", "conditions"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.Condition", "github.com/fluid-cloudnative/fluid/api/v1alpha1.WaitingStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.Condition", "github.com/fluid-cloudnative/fluid/api/v1alpha1.WaitingStatus", "k8s.io/api/core/v1.NodeAffinity", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -4950,6 +5015,34 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_PodMetadata(ref common.Referenc
 	}
 }
 
+func schema_fluid_cloudnative_fluid_api_v1alpha1_Prefer(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Prefer defines the label key and weight for generating a PreferredSchedulingTerm.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+					"weight": {
+						SchemaProps: spec.SchemaProps{
+							Default: 0,
+							Type:    []string{"integer"},
+							Format:  "int32",
+						},
+					},
+				},
+				Required: []string{"name", "weight"},
+			},
+		},
+	}
+}
+
 func schema_fluid_cloudnative_fluid_api_v1alpha1_Processor(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -4988,6 +5081,27 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_Processor(ref common.ReferenceC
 		},
 		Dependencies: []string{
 			"github.com/fluid-cloudnative/fluid/api/v1alpha1.JobProcessor", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.ScriptProcessor"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_Require(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Require defines the label key for generating a NodeSelectorTerm.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+				},
+				Required: []string{"name"},
+			},
+		},
 	}
 }
 

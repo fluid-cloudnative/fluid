@@ -1097,7 +1097,7 @@ func TestJuiceFSEngine_genDataLoadValue(t *testing.T) {
 			name:      item.runtimeName,
 			Log:       fake.NullLogger(),
 		}
-		got := engine.genDataLoadValue(item.image, item.cacheInfo, item.pods, item.targetDataset, item.dataload)
+		got, _ := engine.genDataLoadValue(item.image, item.cacheInfo, item.pods, item.targetDataset, item.dataload)
 		if !reflect.DeepEqual(got, item.want) {
 			t.Errorf("case %s, got %v,want:%v", k, got, item.want)
 		}

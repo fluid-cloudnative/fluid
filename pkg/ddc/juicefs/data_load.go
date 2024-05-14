@@ -18,6 +18,7 @@ package juicefs
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
 	"os"
 	"strings"
 
@@ -129,7 +130,10 @@ func (j *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 	}
 
 	image := fmt.Sprintf("%s:%s", imageName, imageTag)
-	dataLoadValue := j.genDataLoadValue(image, cacheinfo, pods, targetDataset, dataload)
+	dataLoadValue, err := j.genDataLoadValue(image, cacheinfo, pods, targetDataset, dataload)
+	if err != nil {
+		return
+	}
 	data, err := yaml.Marshal(dataLoadValue)
 	if err != nil {
 		return
@@ -147,7 +151,7 @@ func (j *JuiceFSEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 	return valueFile.Name(), nil
 }
 
-func (j *JuiceFSEngine) genDataLoadValue(image string, cacheinfo map[string]string, pods []v1.Pod, targetDataset *datav1alpha1.Dataset, dataload *datav1alpha1.DataLoad) *cdataload.DataLoadValue {
+func (j *JuiceFSEngine) genDataLoadValue(image string, cacheinfo map[string]string, pods []v1.Pod, targetDataset *datav1alpha1.Dataset, dataload *datav1alpha1.DataLoad) (*cdataload.DataLoadValue, error) {
 	imagePullSecrets := docker.GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey)
 
 	dataloadInfo := cdataload.DataLoadInfo{
@@ -166,6 +170,13 @@ func (j *JuiceFSEngine) genDataLoadValue(image string, cacheinfo map[string]stri
 	// pod affinity
 	if dataload.Spec.Affinity != nil {
 		dataloadInfo.Affinity = dataload.Spec.Affinity
+	}
+
+	// generate the node affinity by previous operation pod.
+	var err error
+	dataloadInfo.Affinity, err = dataflow.InjectAffinityByRunAfterOp(j.Client, dataload.Spec.RunAfter, dataload.Namespace, dataloadInfo.Affinity)
+	if err != nil {
+		return nil, err
 	}
 
 	// node selector
@@ -236,7 +247,7 @@ func (j *JuiceFSEngine) genDataLoadValue(image string, cacheinfo map[string]stri
 		Owner:        transfromer.GenerateOwnerReferenceFromObject(dataload),
 	}
 
-	return dataLoadValue
+	return dataLoadValue, nil
 }
 
 func (j *JuiceFSEngine) CheckRuntimeReady() (ready bool) {

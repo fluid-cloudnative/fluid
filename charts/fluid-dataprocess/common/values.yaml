@@ -25,5 +25,6 @@ dataProcess:
     volumes: []
     volumeMounts: []
     resources: {}
+    affinity: {}
   jobProcessor:
     podSpec: {}
