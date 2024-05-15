@@ -6,7 +6,6 @@ import (
 
 	. "github.com/agiledragon/gomonkey/v2"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	. "github.com/smartystreets/goconvey/convey"
@@ -20,11 +19,6 @@ import (
 func TestJuiceFSEngine_CheckAndUpdateRuntimeStatus(t *testing.T) {
 	Convey("Test CheckAndUpdateRuntimeStatus ", t, func() {
 		Convey("CheckAndUpdateRuntimeStatus success", func() {
-			runtimeInfo, err := base.BuildRuntimeInfo("juicefs", "fluid", "juicefs", datav1alpha1.TieredStore{})
-			if err != nil {
-				t.Errorf("fail to create the runtimeInfo with error %v", err)
-			}
-			runtimeInfo.SetupFuseDeployMode(false, nil)
 			var engine *JuiceFSEngine
 			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfDaemonset",
 				func(_ *JuiceFSEngine, dsName string, namespace string) ([]corev1.Pod, error) {
@@ -51,7 +45,7 @@ func TestJuiceFSEngine_CheckAndUpdateRuntimeStatus(t *testing.T) {
 						Namespace: "fluid",
 					},
 					Spec: appsv1.StatefulSetSpec{
-						Replicas: utilpointer.Int32Ptr(1),
+						Replicas: utilpointer.Int32(1),
 					},
 					Status: appsv1.StatefulSetStatus{
 						Replicas:      1,
@@ -64,7 +58,7 @@ func TestJuiceFSEngine_CheckAndUpdateRuntimeStatus(t *testing.T) {
 						Namespace: "fluid",
 					},
 					Spec: appsv1.StatefulSetSpec{
-						Replicas: utilpointer.Int32Ptr(1),
+						Replicas: utilpointer.Int32(1),
 					},
 					Status: appsv1.StatefulSetStatus{
 						Replicas:      2,
@@ -77,7 +71,7 @@ func TestJuiceFSEngine_CheckAndUpdateRuntimeStatus(t *testing.T) {
 						Namespace: "fluid",
 					},
 					Spec: appsv1.StatefulSetSpec{
-						Replicas: utilpointer.Int32Ptr(1),
+						Replicas: utilpointer.Int32(1),
 					},
 				},
 			}

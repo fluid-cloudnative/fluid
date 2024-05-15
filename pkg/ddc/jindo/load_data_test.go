@@ -697,7 +697,7 @@ func Test_genDataLoadValue(t *testing.T) {
 		Log:       fake.NullLogger(),
 	}
 	for k, item := range testCases {
-		got := engine.genDataLoadValue(item.image, item.runtime, item.targetDataset, item.dataload)
+		got, _ := engine.genDataLoadValue(item.image, item.runtime, item.targetDataset, item.dataload)
 		if !reflect.DeepEqual(got, item.want) {
 			t.Errorf("case %s, got %v,want:%v", k, got, item.want)
 		}

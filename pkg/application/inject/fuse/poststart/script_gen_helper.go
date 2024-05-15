@@ -62,7 +62,7 @@ func (helper *scriptGeneratorHelper) GetVolume(configMapKey types.NamespacedName
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: configMapKey.Name,
 				},
-				DefaultMode: utilpointer.Int32Ptr(mode),
+				DefaultMode: utilpointer.Int32(mode),
 			},
 		},
 	}

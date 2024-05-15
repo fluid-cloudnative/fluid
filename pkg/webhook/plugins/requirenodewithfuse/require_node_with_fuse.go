@@ -89,25 +89,13 @@ func getRequiredSchedulingTerm(runtimeInfo base.RuntimeInfoInterface) (requiredS
 		return
 	}
 
-	isGlobalMode, selectors := runtimeInfo.GetFuseDeployMode()
-	if isGlobalMode {
-		for key, value := range selectors {
-			requiredSchedulingTerm.MatchExpressions = append(requiredSchedulingTerm.MatchExpressions, corev1.NodeSelectorRequirement{
-				Key:      key,
-				Operator: corev1.NodeSelectorOpIn,
-				Values:   []string{value},
-			})
-		}
-	} else {
-		requiredSchedulingTerm = corev1.NodeSelectorTerm{
-			MatchExpressions: []corev1.NodeSelectorRequirement{
-				{
-					Key:      runtimeInfo.GetCommonLabelName(),
-					Operator: corev1.NodeSelectorOpIn,
-					Values:   []string{"true"},
-				},
-			},
-		}
+	selectors := runtimeInfo.GetFuseNodeSelector()
+	for key, value := range selectors {
+		requiredSchedulingTerm.MatchExpressions = append(requiredSchedulingTerm.MatchExpressions, corev1.NodeSelectorRequirement{
+			Key:      key,
+			Operator: corev1.NodeSelectorOpIn,
+			Values:   []string{value},
+		})
 	}
 
 	return

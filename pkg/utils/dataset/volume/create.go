@@ -98,46 +98,28 @@ func CreatePersistentVolumeForRuntime(client client.Client,
 			},
 		}
 
-		global, nodeSelector := runtime.GetFuseDeployMode()
-		if global {
-			log.Info("Enable global mode for fuse in volume")
-			if len(nodeSelector) > 0 {
-				nodeSelectorRequirements := []corev1.NodeSelectorRequirement{}
-				for key, value := range nodeSelector {
-					nodeSelectorRequirements = append(nodeSelectorRequirements, corev1.NodeSelectorRequirement{
-						Key:      key,
-						Operator: corev1.NodeSelectorOpIn,
-						Values:   []string{value},
-					})
-				}
-				pv.Spec.NodeAffinity = &corev1.VolumeNodeAffinity{
-					Required: &corev1.NodeSelector{
-						NodeSelectorTerms: []corev1.NodeSelectorTerm{
-							{
-								MatchExpressions: nodeSelectorRequirements,
-							},
-						},
-					},
-				}
+		nodeSelector := runtime.GetFuseNodeSelector()
+		log.Info("Enable global mode for fuse in volume")
+		if len(nodeSelector) > 0 {
+			nodeSelectorRequirements := []corev1.NodeSelectorRequirement{}
+			for key, value := range nodeSelector {
+				nodeSelectorRequirements = append(nodeSelectorRequirements, corev1.NodeSelectorRequirement{
+					Key:      key,
+					Operator: corev1.NodeSelectorOpIn,
+					Values:   []string{value},
+				})
 			}
-		} else {
-			log.Info("Disable global mode for fuse in volume")
 			pv.Spec.NodeAffinity = &corev1.VolumeNodeAffinity{
 				Required: &corev1.NodeSelector{
 					NodeSelectorTerms: []corev1.NodeSelectorTerm{
 						{
-							MatchExpressions: []corev1.NodeSelectorRequirement{
-								{
-									Key:      runtime.GetCommonLabelName(),
-									Operator: corev1.NodeSelectorOpIn,
-									Values:   []string{"true"},
-								},
-							},
+							MatchExpressions: nodeSelectorRequirements,
 						},
 					},
 				},
 			}
 		}
+
 		metadataList := runtime.GetMetadataList()
 		for i := range metadataList {
 			if selector := metadataList[i].Selector; selector.Group != corev1.GroupName || selector.Kind != "PersistentVolume" {

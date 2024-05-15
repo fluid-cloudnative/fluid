@@ -7,7 +7,7 @@ on:
     branches: [ master, release-* ]
 
 env:
-  GO_VERSION: 1.18
+  GO_VERSION: 1.21
 
 # Declare default permissions as read only.
 permissions: read-all
@@ -39,7 +39,7 @@ jobs:
           path: ${{ env.GOPATH }}/src/github.com/fluid-cloudnative/fluid
 
       - name: Lint golang code
-        uses: golangci/golangci-lint-action@v5
+        uses: golangci/golangci-lint-action@v6
         with:
           version: latest
           args: --timeout 10m --verbose

@@ -35,7 +35,7 @@ func (e *EFCEngine) getRuntimeInfo() (info base.RuntimeInfoInterface, err error)
 		}
 
 		// Setup Fuse Deploy Mode
-		e.runtimeInfo.SetupFuseDeployMode(true, runtime.Spec.Fuse.NodeSelector)
+		e.runtimeInfo.SetFuseNodeSelector(runtime.Spec.Fuse.NodeSelector)
 
 		if !e.UnitTest {
 			e.runtimeInfo.SetDeprecatedNodeLabel(false)

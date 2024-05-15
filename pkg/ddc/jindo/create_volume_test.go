@@ -33,8 +33,6 @@ func TestCreateVolume(t *testing.T) {
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
-	runtimeInfo.SetupFuseDeployMode(false, nil)
-
 	testDatasetInputs := []*datav1alpha1.Dataset{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -96,8 +94,6 @@ func TestCreateFusePersistentVolume(t *testing.T) {
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
-	runtimeInfo.SetupFuseDeployMode(false, nil)
-
 	testDatasetInputs := []*datav1alpha1.Dataset{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -143,8 +139,6 @@ func TestCreateFusePersistentVolumeClaim(t *testing.T) {
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
-	runtimeInfo.SetupFuseDeployMode(false, nil)
-
 	testDatasetInputs := []*datav1alpha1.Dataset{
 		{
 			ObjectMeta: metav1.ObjectMeta{

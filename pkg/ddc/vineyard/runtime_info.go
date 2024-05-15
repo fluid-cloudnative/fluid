@@ -37,7 +37,7 @@ func (e *VineyardEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		}
 
 		// Setup Fuse Deploy Mode
-		e.runtimeInfo.SetupFuseDeployMode(common.VineyardFuseIsGlobal, common.VineyardFuseNodeSelector)
+		e.runtimeInfo.SetFuseNodeSelector(common.VineyardFuseNodeSelector)
 	}
 
 	return e.runtimeInfo, nil

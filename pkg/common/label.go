@@ -51,8 +51,9 @@ const (
 )
 
 var (
-	// fluid cache label for scheduling pod, format: 'fluid.io/dataset.{dataset name}.sched]'
-	LabelAnnotationPodSchedRegex = regexp.MustCompile("^" + LabelAnnotationDataset + "\\.([A-Za-z0-9.-]*)\\.sched$")
+	// LabelAnnotationPodSchedRegex is the fluid cache label for scheduling pod, format: 'fluid.io/dataset.{dataset name}.sched]'
+	// use string literal to meet security check.
+	LabelAnnotationPodSchedRegex = regexp.MustCompile(`^fluid\.io/dataset\.([A-Za-z0-9.-]*)\.sched$`)
 )
 
 type OperationType string

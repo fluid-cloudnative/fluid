@@ -51,9 +51,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: datav1alpha1.JindoRuntimeSpec{
-				Fuse: datav1alpha1.JindoFuseSpec{
-					Global: true,
-				},
+				Fuse: datav1alpha1.JindoFuseSpec{},
 			},
 		},
 		{
@@ -62,9 +60,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: datav1alpha1.JindoRuntimeSpec{
-				Fuse: datav1alpha1.JindoFuseSpec{
-					Global: false,
-				},
+				Fuse: datav1alpha1.JindoFuseSpec{},
 			},
 		},
 	}

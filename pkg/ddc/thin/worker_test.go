@@ -164,7 +164,7 @@ func TestThinEngine_SetupWorkers(t *testing.T) {
 	nodeSelector := map[string]string{
 		"node-select": "true",
 	}
-	runtimeInfo.SetupFuseDeployMode(true, nodeSelector)
+	runtimeInfo.SetFuseNodeSelector(nodeSelector)
 
 	type fields struct {
 		replicas    int32
@@ -197,7 +197,7 @@ func TestThinEngine_SetupWorkers(t *testing.T) {
 						Namespace: "fluid",
 					},
 					Spec: appsv1.StatefulSetSpec{
-						Replicas: utilpointer.Int32Ptr(1),
+						Replicas: utilpointer.Int32(1),
 					},
 				},
 				runtime: &datav1alpha1.ThinRuntime{

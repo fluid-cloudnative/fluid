@@ -115,7 +115,7 @@ func (ctx *mutatingContext) GetDatsetUsedInContainers() (bool, error) {
 }
 
 func (ctx *mutatingContext) SetDatasetUsedInContainers(used bool) {
-	ctx.datasetUsedInContainers = utilpointer.BoolPtr(used)
+	ctx.datasetUsedInContainers = utilpointer.Bool(used)
 }
 
 func (ctx *mutatingContext) GetDatasetUsedInInitContainers() (bool, error) {

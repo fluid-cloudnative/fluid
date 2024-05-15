@@ -18,9 +18,9 @@ package juicefs
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/dataprocess"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	cdataprocess "github.com/fluid-cloudnative/fluid/pkg/dataprocess"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/pkg/errors"
@@ -39,5 +39,5 @@ func (j *JuiceFSEngine) generateDataProcessValueFile(ctx cruntime.ReconcileReque
 		return "", errors.Wrap(err, "failed to get dataset")
 	}
 
-	return cdataprocess.GenDataProcessValueFile(targetDataset, dataProcess)
+	return dataprocess.GenDataProcessValueFile(j.Client, targetDataset, dataProcess)
 }

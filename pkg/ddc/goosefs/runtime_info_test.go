@@ -53,9 +53,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: datav1alpha1.GooseFSRuntimeSpec{
-				Fuse: datav1alpha1.GooseFSFuseSpec{
-					Global: true,
-				},
+				Fuse: datav1alpha1.GooseFSFuseSpec{},
 			},
 		},
 		{
@@ -64,9 +62,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: datav1alpha1.GooseFSRuntimeSpec{
-				Fuse: datav1alpha1.GooseFSFuseSpec{
-					Global: false,
-				},
+				Fuse: datav1alpha1.GooseFSFuseSpec{},
 			},
 		},
 	}

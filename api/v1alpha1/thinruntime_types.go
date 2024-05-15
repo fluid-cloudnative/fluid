@@ -59,6 +59,10 @@ type ThinRuntimeSpec struct {
 	// Volumes is the list of Kubernetes volumes that can be mounted by runtime components and/or fuses.
 	// +optional
 	Volumes []corev1.Volume `json:"volumes,omitempty"`
+
+	// RuntimeManagement defines policies when managing the runtime
+	// +optional
+	RuntimeManagement RuntimeManagement `json:"management,omitempty"`
 }
 
 // ThinCompTemplateSpec is a description of the thinRuntime components

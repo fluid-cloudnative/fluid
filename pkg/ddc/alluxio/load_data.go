@@ -18,6 +18,7 @@ package alluxio
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -112,7 +113,10 @@ func (e *AlluxioEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 
 	image := fmt.Sprintf("%s:%s", imageName, imageTag)
 
-	dataLoadValue := e.genDataLoadValue(image, targetDataset, dataload)
+	dataLoadValue, err := e.genDataLoadValue(image, targetDataset, dataload)
+	if err != nil {
+		return
+	}
 
 	data, err := yaml.Marshal(dataLoadValue)
 	if err != nil {
@@ -130,7 +134,7 @@ func (e *AlluxioEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 	return valueFile.Name(), nil
 }
 
-func (e *AlluxioEngine) genDataLoadValue(image string, targetDataset *datav1alpha1.Dataset, dataload *datav1alpha1.DataLoad) *cdataload.DataLoadValue {
+func (e *AlluxioEngine) genDataLoadValue(image string, targetDataset *datav1alpha1.Dataset, dataload *datav1alpha1.DataLoad) (*cdataload.DataLoadValue, error) {
 	// image pull secrets
 	// if the environment variable is not set, it is still an empty slice
 	imagePullSecrets := docker.GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey)
@@ -151,6 +155,13 @@ func (e *AlluxioEngine) genDataLoadValue(image string, targetDataset *datav1alph
 	// pod affinity
 	if dataload.Spec.Affinity != nil {
 		dataloadInfo.Affinity = dataload.Spec.Affinity
+	}
+
+	// inject the node affinity by previous operation pod.
+	var err error
+	dataloadInfo.Affinity, err = dataflow.InjectAffinityByRunAfterOp(e.Client, dataload.Spec.RunAfter, dataload.Namespace, dataloadInfo.Affinity)
+	if err != nil {
+		return nil, err
 	}
 
 	// node selector
@@ -190,7 +201,7 @@ func (e *AlluxioEngine) genDataLoadValue(image string, targetDataset *datav1alph
 		Owner:        transfromer.GenerateOwnerReferenceFromObject(dataload),
 	}
 
-	return dataLoadValue
+	return dataLoadValue, nil
 }
 
 func (e *AlluxioEngine) CheckRuntimeReady() (ready bool) {

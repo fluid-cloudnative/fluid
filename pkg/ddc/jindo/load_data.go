@@ -18,6 +18,7 @@ package jindo
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/transformers"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -117,7 +118,11 @@ func (e *JindoEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestConte
 		return
 	}
 
-	dataLoadValue := e.genDataLoadValue(image, runtime, targetDataset, dataload)
+	dataLoadValue, err := e.genDataLoadValue(image, runtime, targetDataset, dataload)
+	if err != nil {
+		return
+	}
+
 	data, err := yaml.Marshal(dataLoadValue)
 	if err != nil {
 		return
@@ -134,7 +139,8 @@ func (e *JindoEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestConte
 	return valueFile.Name(), nil
 }
 
-func (e *JindoEngine) genDataLoadValue(image string, runtime *datav1alpha1.JindoRuntime, targetDataset *datav1alpha1.Dataset, dataload *datav1alpha1.DataLoad) *cdataload.DataLoadValue {
+func (e *JindoEngine) genDataLoadValue(image string, runtime *datav1alpha1.JindoRuntime, targetDataset *datav1alpha1.Dataset,
+	dataload *datav1alpha1.DataLoad) (*cdataload.DataLoadValue, error) {
 	imagePullSecrets := docker.GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey)
 
 	hadoopConfig := runtime.Spec.HadoopConfig
@@ -157,6 +163,13 @@ func (e *JindoEngine) genDataLoadValue(image string, runtime *datav1alpha1.Jindo
 	// pod affinity
 	if dataload.Spec.Affinity != nil {
 		dataloadInfo.Affinity = dataload.Spec.Affinity
+	}
+
+	// inject the node affinity by previous operation pod.
+	var err error
+	dataloadInfo.Affinity, err = dataflow.InjectAffinityByRunAfterOp(e.Client, dataload.Spec.RunAfter, dataload.Namespace, dataloadInfo.Affinity)
+	if err != nil {
+		return nil, err
 	}
 
 	// node selector
@@ -212,7 +225,7 @@ func (e *JindoEngine) genDataLoadValue(image string, runtime *datav1alpha1.Jindo
 		DataLoadInfo: dataloadInfo,
 		Owner:        transfromer.GenerateOwnerReferenceFromObject(dataload),
 	}
-	return dataLoadValue
+	return dataLoadValue, nil
 }
 
 func (e *JindoEngine) CheckRuntimeReady() (ready bool) {

@@ -56,9 +56,7 @@ func TestJuiceFSEngine_getRuntimeInfo(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: datav1alpha1.JuiceFSRuntimeSpec{
-				Fuse: datav1alpha1.JuiceFSFuseSpec{
-					Global: true,
-				},
+				Fuse: datav1alpha1.JuiceFSFuseSpec{},
 			},
 		},
 		{
@@ -67,9 +65,7 @@ func TestJuiceFSEngine_getRuntimeInfo(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: datav1alpha1.JuiceFSRuntimeSpec{
-				Fuse: datav1alpha1.JuiceFSFuseSpec{
-					Global: false,
-				},
+				Fuse: datav1alpha1.JuiceFSFuseSpec{},
 			},
 		},
 	}

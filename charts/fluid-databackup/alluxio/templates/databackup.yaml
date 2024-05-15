@@ -89,6 +89,11 @@ spec:
           mountPath: /etc/group
           readOnly: true
         {{- end}}
+  {{- if .Values.dataBackup.affinity }}
+  affinity:
+{{ toYaml .Values.dataBackup.affinity | indent 4 }}
+  {{- end }}
+
   restartPolicy: Never
   volumes:
     {{- if .Values.dataBackup.workdir }}

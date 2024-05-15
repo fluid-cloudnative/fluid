@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Fluid Authors.
+Copyright 2023 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -123,7 +123,7 @@ func (a *ScriptGeneratorForApp) GetVolume() (v corev1.Volume) {
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: a.getConfigmapName(),
 				},
-				DefaultMode: utilpointer.Int32Ptr(mode),
+				DefaultMode: utilpointer.Int32(mode),
 			},
 		},
 	}

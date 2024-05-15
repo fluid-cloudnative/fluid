@@ -45,6 +45,8 @@ dataBackup:
   # Description: optional image pull secrets on DataLoad pods
   imagePullSecrets: []
 
+  affinity:
+
 initUsers:
   enabled: false
   image: registry.cn-hangzhou.aliyuncs.com/fluid/init-users

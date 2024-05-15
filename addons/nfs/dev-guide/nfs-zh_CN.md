@@ -14,7 +14,7 @@ NFS 接入 ThinRuntime 需要构造 NFS-FUSE 客户端，本实例使用 [该项
 import json
 
 rawStr = ""
-with open("/etc/fluid/config.json", "r") as f:
+with open("/etc/fluid/config/config.json", "r") as f:
     rawStr = f.readlines()
 
 rawStr = rawStr[0]

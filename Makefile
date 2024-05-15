@@ -320,6 +320,7 @@ docker-buildx-all-push: pre-setup ${DOCKER_BUILDX_PUSH}
 
 # find or download controller-gen
 # download controller-gen if necessary
+# controller-gen@v0.12.1 comply with k8s.io/api v0.26.x
 controller-gen:
 ifeq (, $(shell which controller-gen))
 	@{ \
@@ -328,7 +329,7 @@ ifeq (, $(shell which controller-gen))
 	cd $$CONTROLLER_GEN_TMP_DIR ;\
 	export GO111MODULE=on ;\
 	go mod init tmp ;\
-	go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0 ;\
+	go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.12.1 ;\
 	rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
 	}
 CONTROLLER_GEN=$(GOBIN)/controller-gen
