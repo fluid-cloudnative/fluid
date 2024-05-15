@@ -154,7 +154,7 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 					Name: "test-op",
 					AffinityStrategy: datav1alpha1.AffinityStrategy{
 						Policy: datav1alpha1.RequireAffinityStrategy,
-						Require: []datav1alpha1.Require{
+						Requires: []datav1alpha1.Require{
 							{
 								Name: "k8s.rack",
 							},
@@ -217,7 +217,7 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 					Namespace: "test",
 					AffinityStrategy: datav1alpha1.AffinityStrategy{
 						Policy: datav1alpha1.PreferAffinityStrategy,
-						Prefer: []datav1alpha1.Prefer{
+						Prefers: []datav1alpha1.Prefer{
 							{
 								Weight: 10,
 								Name:   common.K8sZoneLabelKey,
