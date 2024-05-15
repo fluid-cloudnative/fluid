@@ -2531,6 +2531,71 @@ string
 </tr>
 </tbody>
 </table>
+<h3 id="data.fluid.io/v1alpha1.AffinityPolicy">AffinityPolicy
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.AffinityStrategy">AffinityStrategy</a>)
+</p>
+<p>
+<p>AffinityPolicy the strategy for the affinity between Data Operation Pods.</p>
+</p>
+<h3 id="data.fluid.io/v1alpha1.AffinityStrategy">AffinityStrategy
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.OperationRef">OperationRef</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>policy</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.AffinityPolicy">
+AffinityPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Policy one of: &ldquo;&rdquo;, &ldquo;Require&rdquo;, &ldquo;Prefer&rdquo;</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>prefers</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.Prefer">
+[]Prefer
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>requires</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.Require">
+[]Require
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="data.fluid.io/v1alpha1.AlluxioCompTemplateSpec">AlluxioCompTemplateSpec
 </h3>
 <p>
@@ -2804,19 +2869,6 @@ already allocated to the pod.</p>
 </td>
 <td>
 <p>Arguments that will be passed to Alluxio Fuse</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>global</code></br>
-<em>
-bool
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>If the fuse client should be deployed in global mode,
-otherwise the affinity should be considered</p>
 </td>
 </tr>
 <tr>
@@ -5495,19 +5547,6 @@ already allocated to the pod.</p>
 </tr>
 <tr>
 <td>
-<code>global</code></br>
-<em>
-bool
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>If the fuse client should be deployed in global mode,
-otherwise the affinity should be considered</p>
-</td>
-</tr>
-<tr>
-<td>
 <code>nodeSelector</code></br>
 <em>
 map[string]string
@@ -6215,19 +6254,6 @@ already allocated to the pod.</p>
 </tr>
 <tr>
 <td>
-<code>global</code></br>
-<em>
-bool
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>If the fuse client should be deployed in global mode,
-otherwise the affinity should be considered</p>
-</td>
-</tr>
-<tr>
-<td>
 <code>nodeSelector</code></br>
 <em>
 map[string]string
@@ -6827,19 +6853,6 @@ map[string]string
 <td>
 <em>(Optional)</em>
 <p>Options mount options that fuse pod will use</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>global</code></br>
-<em>
-bool
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>If the fuse client should be deployed in global mode,
-otherwise the affinity should be considered</p>
 </td>
 </tr>
 <tr>
@@ -7625,6 +7638,20 @@ string
 <p>Namespace specifies the namespace of the referent operation.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>affinityStrategy</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.AffinityStrategy">
+AffinityStrategy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>AffinityStrategy specifies the pod affinity strategy with the referent operation.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.OperationStatus">OperationStatus
@@ -7732,6 +7759,19 @@ WaitingStatus
 <p>WaitingStatus stores information about waiting operation.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>nodeAffinity</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#nodeaffinity-v1-core">
+Kubernetes core/v1.NodeAffinity
+</a>
+</em>
+</td>
+<td>
+<p>NodeAffinity records the node affinity for operation pods</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.OperationType">OperationType
@@ -7814,6 +7854,45 @@ map[string]string
 </p>
 <p>
 </p>
+<h3 id="data.fluid.io/v1alpha1.Prefer">Prefer
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.AffinityStrategy">AffinityStrategy</a>)
+</p>
+<p>
+<p>Prefer defines the label key and weight for generating a PreferredSchedulingTerm.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>name</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>weight</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="data.fluid.io/v1alpha1.Processor">Processor
 </h3>
 <p>
@@ -7882,6 +7961,35 @@ ScriptProcessor
 </td>
 <td>
 <p>Shell represents a processor which executes shell script</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.Require">Require
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.AffinityStrategy">AffinityStrategy</a>)
+</p>
+<p>
+<p>Require defines the label key for generating a NodeSelectorTerm.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>name</code></br>
+<em>
+string
+</em>
+</td>
+<td>
 </td>
 </tr>
 </tbody>
@@ -8058,7 +8166,8 @@ Kubernetes meta/v1.Time
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>)
+<a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.ThinRuntimeSpec">ThinRuntimeSpec</a>)
 </p>
 <p>
 <p>RuntimeManagement defines suggestions for runtime controllers to manage the runtime</p>
@@ -9323,6 +9432,20 @@ Prometheus is enabled by default</p>
 <p>Volumes is the list of Kubernetes volumes that can be mounted by runtime components and/or fuses.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>management</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.RuntimeManagement">
+RuntimeManagement
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>RuntimeManagement defines policies when managing the runtime</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -9669,6 +9792,20 @@ Prometheus is enabled by default</p>
 <td>
 <em>(Optional)</em>
 <p>Volumes is the list of Kubernetes volumes that can be mounted by runtime components and/or fuses.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>management</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.RuntimeManagement">
+RuntimeManagement
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>RuntimeManagement defines policies when managing the runtime</p>
 </td>
 </tr>
 </tbody>
@@ -10400,5 +10537,5 @@ bool
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>acb0aec73</code>.
+on git commit <code>f0f1ed0</code>.
 </em></p>
