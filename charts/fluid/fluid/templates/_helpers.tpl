@@ -93,3 +93,21 @@ Create the name of the service account to use
     - delete
 {{- end -}}
 {{- end -}}
+
+
+{{/*
+Check if feature gate DataflowAffinity is enabled in the featureGates.
+*/}}
+{{- define "fluid.dataflowAffinity.enabled" -}}
+{{- $featureGates := splitList "," .Values.dataset.featureGates }}
+{{- $found := false -}}
+{{- range $idx, $featureGate := $featureGates }}
+    {{- $featureGateKV := splitList "=" $featureGate }}
+    {{- $key :=  trim (index $featureGateKV 0) }}
+    {{- $value := trim (index $featureGateKV 1) }}
+    {{- if and (eq $key "DataflowAffinity") (eq $value "true") -}}
+        {{- $found = true -}}
+    {{- end -}}
+{{- end -}}
+{{- $found -}}
+{{- end -}}
