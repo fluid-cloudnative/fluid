@@ -30,7 +30,7 @@ const (
 // defaultFeatureGates consists of all known fluid-specific feature keys.
 // To add a new feature, define a key for it above and add it here.
 var defaultFeatureGates = map[featuregate.Feature]featuregate.FeatureSpec{
-	DataflowAffinity: {Default: false, PreRelease: featuregate.Beta},
+	DataflowAffinity: {Default: false, PreRelease: featuregate.Alpha},
 }
 
 func init() {
