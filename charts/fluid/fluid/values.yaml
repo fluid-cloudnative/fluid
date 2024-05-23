@@ -26,6 +26,7 @@ dataset:
     - operator: Exists
   controller:
     image: fluidcloudnative/dataset-controller:v1.0.1-1be5869
+  featureGates: "DataflowAffinity=false"
 
 csi:
   tolerations:
