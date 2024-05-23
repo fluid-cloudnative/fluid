@@ -45,7 +45,7 @@ jfsdemo   [Calculating]    N/A                       N/A                 Bound  
 
 **Create Job**
 
-To use Fluid in a serverless scenario, you need to add the `serverless.fluid.io/inject: "true"` label to the application pod. as follows:
+To use Fluid in a serverless scenario, you need to add the `serverless.fluid.io/inject: "true"` and `fluid.io/managed-by: fluid` label to the application pod. as follows:
 
 ```yaml
 $ cat<<EOF >sample.yaml
@@ -58,6 +58,7 @@ spec:
     metadata:
       labels:
         serverless.fluid.io/inject: "true"
+        fluid.io/managed-by: fluid
     spec:
       containers:
         - name: demo

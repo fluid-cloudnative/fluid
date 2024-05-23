@@ -26,7 +26,6 @@ dataset:
     - operator: Exists
   controller:
     image: fluidcloudnative/dataset-controller:v1.0.1-3f53ca9
-  featureGates: "DataflowAffinity=false"
 
 csi:
   tolerations:
@@ -204,6 +203,7 @@ webhook:
           required:
             - fluid.io/node
 
+
 fluidapp:
   enabled: true
   replicas: 1
@@ -211,3 +211,4 @@ fluidapp:
     - operator: Exists
   controller:
     image: fluidcloudnative/application-controller:v1.0.1-3f53ca9
+  featureGates: "DataflowAffinity=false"

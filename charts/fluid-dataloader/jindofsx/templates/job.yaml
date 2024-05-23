@@ -49,6 +49,7 @@ spec:
         role: dataload-pod
         app: jindofsx
         targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
+        fluid.io/managed-by: fluid
       {{- if .Values.dataloader.labels }}
       {{- range $key, $val := .Values.dataloader.labels }}
         {{ $key | quote }}: {{ $val | quote }}

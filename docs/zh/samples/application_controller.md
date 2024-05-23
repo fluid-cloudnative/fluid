@@ -39,7 +39,7 @@ jfsdemo   [Calculating]    N/A                       N/A                 Bound  
 
 **创建 Job 资源对象**
 
-在 Serverless 场景使用 Fluid，需要在应用 Pod 中添加 `serverless.fluid.io/inject: "true"` label。如下：
+在 Serverless 场景使用 Fluid，需要在应用 Pod 中添加 `serverless.fluid.io/inject: "true"`和`fluid.io/managed-by: fluid` label。如下：
 
 ```yaml
 $ cat<<EOF >sample.yaml
@@ -52,6 +52,7 @@ spec:
     metadata:
       labels:
         serverless.fluid.io/inject: "true"
+        fluid.io/managed-by: fluid
     spec:
       containers:
         - name: demo

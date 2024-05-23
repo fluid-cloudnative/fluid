@@ -70,7 +70,7 @@ func RequeueImmediately() (ctrl.Result, error) {
 }
 
 // RequeueIfError returns the result of a reconciler invocation and the err
-// The Object will requeue when err is not nil
+// The Object will requeue when err is nil
 func RequeueIfError(err error) (ctrl.Result, error) {
 	return ctrl.Result{}, err
 }

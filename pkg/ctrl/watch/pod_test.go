@@ -79,7 +79,8 @@ func Test_podEventHandler_onUpdateFunc(t *testing.T) {
 				ResourceVersion: "123",
 				Name:            "test",
 				Labels: map[string]string{
-					common.InjectServerless: common.True,
+					common.InjectServerless:  common.True,
+					common.InjectSidecarDone: common.True,
 				},
 			},
 			Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "app"}, {Name: common.FuseContainerName + "-0"}}},
@@ -109,7 +110,8 @@ func Test_podEventHandler_onUpdateFunc(t *testing.T) {
 				ResourceVersion: "456",
 				Name:            "test",
 				Labels: map[string]string{
-					common.InjectServerless: common.True,
+					common.InjectServerless:  common.True,
+					common.InjectSidecarDone: common.True,
 				},
 			},
 			Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "app"}, {Name: common.FuseContainerName + "-0"}}},
@@ -196,7 +198,8 @@ func Test_shouldRequeue(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test",
 						Labels: map[string]string{
-							common.InjectServerless: common.True,
+							common.InjectServerless:  common.True,
+							common.InjectSidecarDone: common.True,
 						},
 					},
 					Spec: corev1.PodSpec{RestartPolicy: corev1.RestartPolicyAlways},
@@ -211,7 +214,8 @@ func Test_shouldRequeue(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test",
 						Labels: map[string]string{
-							common.InjectServerless: common.True,
+							common.InjectServerless:  common.True,
+							common.InjectSidecarDone: common.True,
 						},
 					},
 					Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "app"}}},
@@ -224,8 +228,11 @@ func Test_shouldRequeue(t *testing.T) {
 			args: args{
 				pod: &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:   "test",
-						Labels: map[string]string{common.InjectServerless: common.True},
+						Name: "test",
+						Labels: map[string]string{
+							common.InjectServerless:  common.True,
+							common.InjectSidecarDone: common.True,
+						},
 					},
 					Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "app"}, {Name: common.FuseContainerName + "-0"}}},
 					Status: corev1.PodStatus{ContainerStatuses: []corev1.ContainerStatus{
@@ -255,8 +262,11 @@ func Test_shouldRequeue(t *testing.T) {
 			args: args{
 				pod: &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:   "test",
-						Labels: map[string]string{common.InjectServerless: common.True},
+						Name: "test",
+						Labels: map[string]string{
+							common.InjectServerless:  common.True,
+							common.InjectSidecarDone: common.True,
+						},
 					},
 					Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "app"}, {Name: common.FuseContainerName + "-0"}}},
 					Status: corev1.PodStatus{ContainerStatuses: []corev1.ContainerStatus{
@@ -288,8 +298,11 @@ func Test_shouldRequeue(t *testing.T) {
 			args: args{
 				pod: &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:   "test",
-						Labels: map[string]string{common.InjectServerless: common.True},
+						Name: "test",
+						Labels: map[string]string{
+							common.InjectServerless:  common.True,
+							common.InjectSidecarDone: common.True,
+						},
 					},
 					Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "app"}, {Name: common.FuseContainerName + "-0"}}},
 					Status: corev1.PodStatus{
@@ -322,8 +335,11 @@ func Test_shouldRequeue(t *testing.T) {
 			args: args{
 				pod: &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:   "test",
-						Labels: map[string]string{common.InjectServerless: common.True},
+						Name: "test",
+						Labels: map[string]string{
+							common.InjectServerless:  common.True,
+							common.InjectSidecarDone: common.True,
+						},
 					},
 					Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "app"}, {Name: "app2"}, {Name: common.FuseContainerName + "-0"}}},
 					Status: corev1.PodStatus{
@@ -360,8 +376,11 @@ func Test_shouldRequeue(t *testing.T) {
 			args: args{
 				pod: &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:   "test",
-						Labels: map[string]string{common.InjectServerless: common.True},
+						Name: "test",
+						Labels: map[string]string{
+							common.InjectServerless:  common.True,
+							common.InjectSidecarDone: common.True,
+						},
 					},
 					Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "app"}, {Name: "app2"}, {Name: common.FuseContainerName + "-0"}}},
 					Status: corev1.PodStatus{ContainerStatuses: []corev1.ContainerStatus{
@@ -399,8 +418,11 @@ func Test_shouldRequeue(t *testing.T) {
 			args: args{
 				pod: &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:   "test",
-						Labels: map[string]string{common.InjectServerless: common.True},
+						Name: "test",
+						Labels: map[string]string{
+							common.InjectServerless:  common.True,
+							common.InjectSidecarDone: common.True,
+						},
 					},
 					Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "app"}, {Name: common.FuseContainerName + "-0"}}},
 					Status: corev1.PodStatus{

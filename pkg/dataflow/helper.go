@@ -17,46 +17,49 @@ limitations under the License.
 package dataflow
 
 import (
-	"fmt"
+	"errors"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strings"
 )
 
-func GenerateNodeAffinity(c client.Client, pod *corev1.Pod) (*corev1.NodeAffinity, error) {
-	if pod == nil {
+func GenerateNodeAffinity(job *batchv1.Job) (*corev1.NodeAffinity, error) {
+	if job == nil {
 		return nil, nil
 	}
-	nodeName := pod.Spec.NodeName
-	if len(nodeName) == 0 {
+	// mot inject, i.e. feature gate not enabled or job is a parallel job.
+	if v := job.Annotations[common.AnnotationDataFlowAffinityInject]; v != "true" {
 		return nil, nil
 	}
 
-	node, err := kubeclient.GetNode(c, nodeName)
-	if err != nil {
-		return nil, fmt.Errorf("error to get node %s: %v", nodeName, err)
-	}
+	labels := job.Labels
 
-	// node name
 	nodeAffinity := &corev1.NodeAffinity{
 		RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
 			NodeSelectorTerms: []corev1.NodeSelectorTerm{
 				{
-					MatchExpressions: []corev1.NodeSelectorRequirement{
-						{
-							Key:      common.K8sNodeNameLabelKey,
-							Operator: corev1.NodeSelectorOpIn,
-							Values:   []string{nodeName},
-						},
-					},
+					MatchExpressions: nil,
 				},
 			},
 		},
 	}
+	// node name
+	nodeName, exist := labels[common.K8sNodeNameLabelKey]
+	if !exist {
+		return nil, errors.New("the affinity label is not set, wait for next reconcile")
+	}
+
+	nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions =
+		append(nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions,
+			corev1.NodeSelectorRequirement{
+				Key:      common.K8sNodeNameLabelKey,
+				Operator: corev1.NodeSelectorOpIn,
+				Values:   []string{nodeName},
+			})
 
 	// region
-	region, exist := node.Labels[common.K8sRegionLabelKey]
+	region, exist := labels[common.K8sRegionLabelKey]
 	if exist {
 		nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions =
 			append(nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions,
@@ -67,7 +70,7 @@ func GenerateNodeAffinity(c client.Client, pod *corev1.Pod) (*corev1.NodeAffinit
 				})
 	}
 	// zone
-	zone, exist := node.Labels[common.K8sZoneLabelKey]
+	zone, exist := labels[common.K8sZoneLabelKey]
 	if exist {
 		nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions =
 			append(nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions,
@@ -78,50 +81,17 @@ func GenerateNodeAffinity(c client.Client, pod *corev1.Pod) (*corev1.NodeAffinit
 				})
 	}
 
-	// customized labels
-	if pod.Spec.Affinity != nil && pod.Spec.Affinity.NodeAffinity != nil {
-		fillCustomizedNodeAffinity(pod.Spec.Affinity.NodeAffinity, nodeAffinity, node)
+	// customized labels, start with specific prefix.
+	for key, value := range labels {
+		if strings.HasPrefix(key, common.LabelDataFlowAffinityPrefix) {
+			nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions =
+				append(nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions,
+					corev1.NodeSelectorRequirement{
+						Key:      strings.TrimPrefix(key, common.LabelDataFlowAffinityPrefix),
+						Operator: corev1.NodeSelectorOpIn,
+						Values:   []string{value},
+					})
+		}
 	}
-
 	return nodeAffinity, nil
-}
-
-func fillCustomizedNodeAffinity(podNodeAffinity *corev1.NodeAffinity, dstNodeAffinity *corev1.NodeAffinity, node *corev1.Node) {
-	// prefer
-	for _, term := range podNodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution {
-		for _, expression := range term.Preference.MatchExpressions {
-			// use the actually value in the node. Transform In, NotIn, Exists, DoesNotExist. Gt, and Lt to In.
-			value, exist := node.Labels[expression.Key]
-			if exist {
-				dstNodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions =
-					append(dstNodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions,
-						corev1.NodeSelectorRequirement{
-							Key:      expression.Key,
-							Operator: corev1.NodeSelectorOpIn,
-							Values:   []string{value},
-						})
-			}
-		}
-	}
-
-	if podNodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution == nil {
-		return
-	}
-
-	// require
-	for _, term := range podNodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms {
-		for _, expression := range term.MatchExpressions {
-			// use the actually value in the node. Transform In, NotIn, Exists, DoesNotExist. Gt, and Lt to In.
-			value, exist := node.Labels[expression.Key]
-			if exist {
-				dstNodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions =
-					append(dstNodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions,
-						corev1.NodeSelectorRequirement{
-							Key:      expression.Key,
-							Operator: corev1.NodeSelectorOpIn,
-							Values:   []string{value},
-						})
-			}
-		}
-	}
 }

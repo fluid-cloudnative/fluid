@@ -17,9 +17,9 @@
 package datamigrate
 
 import (
-	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -80,49 +80,38 @@ func (m *OnceStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestCont
 		return
 	}
 
-	isJobFinished := len(job.Status.Conditions) != 0 &&
-		(job.Status.Conditions[0].Type == batchv1.JobFailed || job.Status.Conditions[0].Type == batchv1.JobComplete)
-	if !isJobFinished {
+	finishedJobCondition := kubeclient.GetFinishedJobCondition(job)
+	if finishedJobCondition == nil {
 		ctx.Log.V(1).Info("DataMigrate job still running", "namespace", ctx.Namespace, "jobName", jobName)
 		return
 	}
 
+	isJobSucceed := finishedJobCondition.Type == batchv1.JobComplete
 	// set the node labels in status when job finished
 	// for parallel migrate, there are multiple pods, so can not set the node labels.
-	if m.dataMigrate.Spec.Parallelism == 1 {
-		// set the node labels in status
-		if dataflow.Enabled(dataflow.DataflowAffinity) && result.NodeAffinity == nil {
-			jobPod, err := kubeclient.GetSucceedPodForJob(m.Client, job)
-			if err != nil {
-				ctx.Log.Error(err, "can't get pod for job", "namespace", ctx.Namespace, "jobName", jobName)
-				return nil, err
-			}
-
-			// generate the node labels
-			result.NodeAffinity, err = dataflow.GenerateNodeAffinity(m.Client, jobPod)
-			if err != nil {
-				return nil, fmt.Errorf("error to generate the node labels: %v", err)
-			}
+	if m.dataMigrate.Spec.Parallelism == 1 && result.NodeAffinity == nil && isJobSucceed {
+		// generate the node labels
+		result.NodeAffinity, err = dataflow.GenerateNodeAffinity(job)
+		if err != nil {
+			return nil, errors.Wrap(err, "error to generate the node labels")
 		}
 	}
-	// job either failed or complete, update DataMigrate's phase status
-	jobCondition := job.Status.Conditions[0]
 	result.Conditions = []datav1alpha1.Condition{
 		{
-			Type:               common.ConditionType(jobCondition.Type),
-			Status:             jobCondition.Status,
-			Reason:             jobCondition.Reason,
-			Message:            jobCondition.Message,
-			LastProbeTime:      jobCondition.LastProbeTime,
-			LastTransitionTime: jobCondition.LastTransitionTime,
+			Type:               common.ConditionType(finishedJobCondition.Type),
+			Status:             finishedJobCondition.Status,
+			Reason:             finishedJobCondition.Reason,
+			Message:            finishedJobCondition.Message,
+			LastProbeTime:      finishedJobCondition.LastProbeTime,
+			LastTransitionTime: finishedJobCondition.LastTransitionTime,
 		},
 	}
-	if jobCondition.Type == batchv1.JobFailed {
-		result.Phase = common.PhaseFailed
-	} else {
+	if isJobSucceed {
 		result.Phase = common.PhaseComplete
+	} else {
+		result.Phase = common.PhaseFailed
 	}
-	result.Duration = utils.CalculateDuration(job.CreationTimestamp.Time, jobCondition.LastTransitionTime.Time)
+	result.Duration = utils.CalculateDuration(job.CreationTimestamp.Time, finishedJobCondition.LastTransitionTime.Time)
 	return
 }
 
@@ -190,48 +179,36 @@ func (c *CronStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestCont
 		}
 	}
 
-	if len(currentJob.Status.Conditions) != 0 {
-		// find the job final status condition. if job is resumed, the first condition type is 'Suspended'
-		var jobCondition *batchv1.JobCondition
-		for _, condition := range currentJob.Status.Conditions {
-			// job is finished.
-			if condition.Type == batchv1.JobFailed || condition.Type == batchv1.JobComplete {
-				jobCondition = &condition
-				break
-			}
-		}
+	finishedJobCondition := kubeclient.GetFinishedJobCondition(currentJob)
 
-		if jobCondition != nil {
-			// job either failed or complete, update DataMigrate's phase status
-			result.Conditions = []datav1alpha1.Condition{
-				{
-					Type:               common.ConditionType(jobCondition.Type),
-					Status:             jobCondition.Status,
-					Reason:             jobCondition.Reason,
-					Message:            jobCondition.Message,
-					LastProbeTime:      jobCondition.LastProbeTime,
-					LastTransitionTime: jobCondition.LastTransitionTime,
-				},
-			}
-			if jobCondition.Type == batchv1.JobFailed {
-				result.Phase = common.PhaseFailed
-			} else {
-				result.Phase = common.PhaseComplete
-			}
-			result.Duration = utils.CalculateDuration(currentJob.CreationTimestamp.Time, jobCondition.LastTransitionTime.Time)
-			// the return statement makes the below code executed in the reconcileCompleted/reconcileFailed.
-			// the status for cron data migrate is the correct status Complete/Failed not Pending/Executing before next job is not started.
-			return
+	if finishedJobCondition == nil {
+		ctx.Log.V(1).Info("DataMigrate job still running", "namespace", ctx.Namespace, "cronjobName", cronjobName)
+		// dataoperation is finished, but another job is running, so set the phase to pending first.
+		// the status for cron data migrate is the correct status Complete/Failed not Pending/Executing before next job is not started.
+		if opStatus.Phase == common.PhaseComplete || opStatus.Phase == common.PhaseFailed {
+			result.Phase = common.PhasePending
+			result.Duration = "-"
 		}
+		return
 	}
 
-	ctx.Log.V(1).Info("DataMigrate job still running", "namespace", ctx.Namespace, "cronjobName", cronjobName)
-	if opStatus.Phase == common.PhaseComplete || opStatus.Phase == common.PhaseFailed {
-		// if datamigrate was complete or failed, but now job is running, set datamigrate pending first
-		// dataset will be locked only when datamigrate pending
-		result.Phase = common.PhasePending
-		result.Duration = "-"
+	// job either failed or complete, update DataMigrate's phase status
+	result.Conditions = []datav1alpha1.Condition{
+		{
+			Type:               common.ConditionType(finishedJobCondition.Type),
+			Status:             finishedJobCondition.Status,
+			Reason:             finishedJobCondition.Reason,
+			Message:            finishedJobCondition.Message,
+			LastProbeTime:      finishedJobCondition.LastProbeTime,
+			LastTransitionTime: finishedJobCondition.LastTransitionTime,
+		},
 	}
+	if finishedJobCondition.Type == batchv1.JobFailed {
+		result.Phase = common.PhaseFailed
+	} else {
+		result.Phase = common.PhaseComplete
+	}
+	result.Duration = utils.CalculateDuration(currentJob.CreationTimestamp.Time, finishedJobCondition.LastTransitionTime.Time)
 	return
 }
 

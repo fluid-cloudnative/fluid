@@ -17,9 +17,9 @@
 package dataload
 
 import (
-	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/pkg/errors"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -73,46 +73,39 @@ func (r *OnceStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestCont
 		return
 	}
 
-	isJobFinished := len(job.Status.Conditions) != 0 &&
-		(job.Status.Conditions[0].Type == batchv1.JobFailed || job.Status.Conditions[0].Type == batchv1.JobComplete)
-	if !isJobFinished {
+	finishedJobCondition := kubeclient.GetFinishedJobCondition(job)
+	if finishedJobCondition == nil {
 		ctx.Log.V(1).Info("DataLoad job still running", "namespace", ctx.Namespace, "jobName", jobName)
 		return
 	}
+	isJobSucceed := finishedJobCondition.Type == batchv1.JobComplete
 
-	// set the node labels in status when job finished
-	if dataflow.Enabled(dataflow.DataflowAffinity) && result.NodeAffinity == nil {
-		jobPod, err := kubeclient.GetSucceedPodForJob(r.Client, job)
-		if err != nil {
-			ctx.Log.Error(err, "can't get pod for job", "namespace", ctx.Namespace, "jobName", jobName)
-			return nil, err
-		}
-
+	// set the node labels in status when job succeed
+	if result.NodeAffinity == nil && isJobSucceed {
 		// generate the node labels
-		result.NodeAffinity, err = dataflow.GenerateNodeAffinity(r.Client, jobPod)
+		result.NodeAffinity, err = dataflow.GenerateNodeAffinity(job)
 		if err != nil {
-			return nil, fmt.Errorf("error to generate the node labels: %v", err)
+			return nil, errors.Wrap(err, "error to generate the node labels")
 		}
 	}
 
 	// job either failed or complete, update DataLoad's phase status
-	jobCondition := job.Status.Conditions[0]
 	result.Conditions = []datav1alpha1.Condition{
 		{
-			Type:               common.ConditionType(jobCondition.Type),
-			Status:             jobCondition.Status,
-			Reason:             jobCondition.Reason,
-			Message:            jobCondition.Message,
-			LastProbeTime:      jobCondition.LastProbeTime,
-			LastTransitionTime: jobCondition.LastTransitionTime,
+			Type:               common.ConditionType(finishedJobCondition.Type),
+			Status:             finishedJobCondition.Status,
+			Reason:             finishedJobCondition.Reason,
+			Message:            finishedJobCondition.Message,
+			LastProbeTime:      finishedJobCondition.LastProbeTime,
+			LastTransitionTime: finishedJobCondition.LastTransitionTime,
 		},
 	}
-	if jobCondition.Type == batchv1.JobFailed {
-		result.Phase = common.PhaseFailed
-	} else {
+	if isJobSucceed {
 		result.Phase = common.PhaseComplete
+	} else {
+		result.Phase = common.PhaseFailed
 	}
-	result.Duration = utils.CalculateDuration(job.CreationTimestamp.Time, jobCondition.LastTransitionTime.Time)
+	result.Duration = utils.CalculateDuration(job.CreationTimestamp.Time, finishedJobCondition.LastTransitionTime.Time)
 
 	return
 }
@@ -162,38 +155,35 @@ func (c *CronStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestCont
 		return
 	}
 
-	if len(currentJob.Status.Conditions) != 0 {
-		if currentJob.Status.Conditions[0].Type == batchv1.JobFailed ||
-			currentJob.Status.Conditions[0].Type == batchv1.JobComplete {
-			jobCondition := currentJob.Status.Conditions[0]
-			// job either failed or complete, update dataload's phase status
-			result.Conditions = []datav1alpha1.Condition{
-				{
-					Type:               common.ConditionType(jobCondition.Type),
-					Status:             jobCondition.Status,
-					Reason:             jobCondition.Reason,
-					Message:            jobCondition.Message,
-					LastProbeTime:      jobCondition.LastProbeTime,
-					LastTransitionTime: jobCondition.LastTransitionTime,
-				},
-			}
-			if jobCondition.Type == batchv1.JobFailed {
-				result.Phase = common.PhaseFailed
-			} else {
-				result.Phase = common.PhaseComplete
-			}
-			result.Duration = utils.CalculateDuration(currentJob.CreationTimestamp.Time, jobCondition.LastTransitionTime.Time)
-			return
-		}
-	}
+	finishedJobCondition := kubeclient.GetFinishedJobCondition(currentJob)
 
-	ctx.Log.V(1).Info("DataLoad job still running", "namespace", ctx.Namespace, "cronjobName", cronjobName)
-	if opStatus.Phase == common.PhaseComplete || opStatus.Phase == common.PhaseFailed {
-		// if dataload was complete or failed, but now job is running, set dataload pending first
-		// dataset will be locked only when dataload pending
-		result.Phase = common.PhasePending
-		result.Duration = "-"
+	if finishedJobCondition == nil {
+		ctx.Log.V(1).Info("DataLoad job still running", "namespace", ctx.Namespace, "cronjobName", cronjobName)
+		if opStatus.Phase == common.PhaseComplete || opStatus.Phase == common.PhaseFailed {
+			// if dataload was complete or failed, but now job is running, set dataload pending first
+			// dataset will be locked only when dataload pending
+			result.Phase = common.PhasePending
+			result.Duration = "-"
+		}
+		return
 	}
+	// job either failed or complete, update dataload's phase status
+	result.Conditions = []datav1alpha1.Condition{
+		{
+			Type:               common.ConditionType(finishedJobCondition.Type),
+			Status:             finishedJobCondition.Status,
+			Reason:             finishedJobCondition.Reason,
+			Message:            finishedJobCondition.Message,
+			LastProbeTime:      finishedJobCondition.LastProbeTime,
+			LastTransitionTime: finishedJobCondition.LastTransitionTime,
+		},
+	}
+	if finishedJobCondition.Type == batchv1.JobFailed {
+		result.Phase = common.PhaseFailed
+	} else {
+		result.Phase = common.PhaseComplete
+	}
+	result.Duration = utils.CalculateDuration(currentJob.CreationTimestamp.Time, finishedJobCondition.LastTransitionTime.Time)
 	return
 }
 

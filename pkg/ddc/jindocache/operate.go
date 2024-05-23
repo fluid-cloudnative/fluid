@@ -17,7 +17,6 @@ limitations under the License.
 package jindocache
 
 import (
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 	"github.com/fluid-cloudnative/fluid/pkg/errors"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -28,7 +27,7 @@ func (e *JindoCacheEngine) GetDataOperationValueFile(ctx cruntime.ReconcileReque
 	operationType := operation.GetOperationType()
 	object := operation.GetOperationObject()
 
-	if operationType == datav1alpha1.DataLoadType {
+	if operationType == dataoperation.DataLoadType {
 		valueFileName, err = e.generateDataLoadValueFile(ctx, object)
 		return valueFileName, err
 	}

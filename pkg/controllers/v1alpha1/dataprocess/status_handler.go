@@ -17,7 +17,6 @@
 package dataprocess
 
 import (
-	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
@@ -26,6 +25,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/pkg/errors"
 	batchv1 "k8s.io/api/batch/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -62,25 +62,18 @@ func (handler *OnceStatusHandler) GetOperationStatus(ctx runtime.ReconcileReques
 		return
 	}
 
-	isJobFinished := len(job.Status.Conditions) != 0 &&
-		(job.Status.Conditions[0].Type == batchv1.JobFailed || job.Status.Conditions[0].Type == batchv1.JobComplete)
-	if !isJobFinished {
+	finishedJobCondition := kubeclient.GetFinishedJobCondition(job)
+	if finishedJobCondition == nil {
 		ctx.Log.V(1).Info("DataProcess job still running", "namespace", ctx.Namespace, "jobName", jobName)
 		return
 	}
+	isJobSucceed := finishedJobCondition.Type == batchv1.JobComplete
 
-	// set the node labels in status when job finished
-	if dataflow.Enabled(dataflow.DataflowAffinity) && result.NodeAffinity == nil {
-		jobPod, err := kubeclient.GetSucceedPodForJob(handler.Client, job)
+	// set the node labels in status when job succeed
+	if result.NodeAffinity == nil && isJobSucceed {
+		result.NodeAffinity, err = dataflow.GenerateNodeAffinity(job)
 		if err != nil {
-			ctx.Log.Error(err, "can't get pod for job", "namespace", ctx.Namespace, "jobName", jobName)
-			return nil, err
-		}
-
-		// generate the node labels
-		result.NodeAffinity, err = dataflow.GenerateNodeAffinity(handler.Client, jobPod)
-		if err != nil {
-			return nil, fmt.Errorf("error to generate the node labels: %v", err)
+			return nil, errors.Wrap(err, "error to generate the node labels")
 		}
 	}
 
@@ -98,10 +91,10 @@ func (handler *OnceStatusHandler) GetOperationStatus(ctx runtime.ReconcileReques
 		},
 	}
 
-	if jobCondition.Type == batchv1.JobFailed {
-		result.Phase = common.PhaseFailed
-	} else {
+	if isJobSucceed {
 		result.Phase = common.PhaseComplete
+	} else {
+		result.Phase = common.PhaseFailed
 	}
 	result.Duration = utils.CalculateDuration(job.CreationTimestamp.Time, jobCondition.LastTransitionTime.Time)
 

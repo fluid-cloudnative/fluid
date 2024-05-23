@@ -9,6 +9,8 @@ metadata:
     app: juicefs
     targetDataset: {{ required "targetDataset should be set" .Values.datamigrate.targetDataset }}
     {{- include "library.fluid.labels" . | nindent 4 }}
+    # indicates the parallel task number
+    parallelism: {{ .Values.datamigrate.parallelism | quote }}
   ownerReferences:
   {{- if .Values.owner.enabled }}
     - apiVersion: {{ .Values.owner.apiVersion }}
@@ -38,6 +40,7 @@ spec:
         app: juicefs
         targetDataset: {{ required "targetDataset should be set" .Values.datamigrate.targetDataset }}
         fluid.io/operation: migrate-{{ .Release.Namespace }}-{{ .Release.Name }}
+        fluid.io/managed-by: fluid
       {{- if .Values.datamigrate.labels }}
       {{- range $key, $val := .Values.datamigrate.labels }}
         {{ $key | quote }}: {{ $val | quote }}
