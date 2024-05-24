@@ -37,21 +37,8 @@ const cleanupErrorMsg = "Failed to get remaining time to clean up for operation 
 
 func (t *TemplateEngine) Operate(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus,
 	operation dataoperation.OperationInterface) (ctrl.Result, error) {
-	operateType := operation.GetOperationType()
-	object := operation.GetOperationObject()
 
-	// runtime engine override the template engine
-	switch operateType {
-	case datav1alpha1.DataBackupType:
-		ownImpl, ok := t.Implement.(Databackuper)
-		if ok {
-			targetDataBackup, success := object.(*datav1alpha1.DataBackup)
-			if !success {
-				return utils.RequeueIfError(fmt.Errorf("object %v is not a DataBackup", object))
-			}
-			return ownImpl.BackupData(ctx, *targetDataBackup)
-		}
-	}
+	// we can do customized runtime engine override the template engine, implement if needed.
 
 	// use default template engine
 	switch opStatus.Phase {

@@ -18,49 +18,10 @@ package efc
 
 import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/efc/operations"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
-	v1 "k8s.io/api/core/v1"
 	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
 )
-
-// CreateDataLoadJob creates the job to load data
-func (e *EFCEngine) CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (err error) {
-	log := ctx.Log.WithName("createDataLoadJob")
-
-	// 1. Check if the helm release already exists
-	releaseName := utils.GetDataLoadReleaseName(targetDataload.Name)
-	jobName := utils.GetDataLoadJobName(releaseName)
-	var existed bool
-	existed, err = helm.CheckRelease(releaseName, targetDataload.Namespace)
-	if err != nil {
-		log.Error(err, "failed to check if release exists", "releaseName", releaseName, "namespace", targetDataload.Namespace)
-		return err
-	}
-
-	// 2. install the helm chart if not exists
-	if !existed {
-		log.Info("DataLoad job helm chart not installed yet, will install")
-		valueFileName, err := e.generateDataLoadValueFile(ctx, targetDataload)
-		if err != nil {
-			log.Error(err, "failed to generate dataload chart's value file")
-			return err
-		}
-		chartName := utils.GetChartsDirectory() + "/" + cdataload.DataloadChart + "/" + common.EFCRuntime
-		err = helm.InstallRelease(releaseName, targetDataload.Namespace, valueFileName, chartName)
-		if err != nil {
-			log.Error(err, "failed to install dataload chart")
-			return err
-		}
-		log.Info("DataLoad job helm chart successfully installed", "namespace", targetDataload.Namespace, "releaseName", releaseName)
-		ctx.Recorder.Eventf(&targetDataload, v1.EventTypeNormal, common.DataLoadJobStarted, "The DataLoad job %s started", jobName)
-	}
-	return err
-}
 
 // CheckRuntimeReady checks if runtime is ready or not
 func (e *EFCEngine) CheckRuntimeReady() (ready bool) {

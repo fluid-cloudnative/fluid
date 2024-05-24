@@ -39,42 +39,8 @@ import (
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
 )
-
-func (j *JuiceFSEngine) CreateDataMigrateJob(ctx cruntime.ReconcileRequestContext, targetDataMigrate datav1alpha1.DataMigrate) (err error) {
-	log := ctx.Log.WithName("createDataMigrateJob")
-
-	// 1. Check if the helm release already exists
-	releaseName := utils.GetDataMigrateReleaseName(targetDataMigrate.Name)
-	jobName := utils.GetDataMigrateJobName(releaseName)
-	var existed bool
-	existed, err = helm.CheckRelease(releaseName, targetDataMigrate.Namespace)
-	if err != nil {
-		log.Error(err, "failed to check if release exists", "releaseName", releaseName, "namespace", targetDataMigrate.Namespace)
-		return err
-	}
-
-	// 2. install the helm chart if not exists
-	if !existed {
-		log.Info("DataMigrate job helm chart not installed yet, will install")
-		valueFileName, err := j.generateDataMigrateValueFile(ctx, &targetDataMigrate)
-		if err != nil {
-			log.Error(err, "failed to generate dataload chart's value file")
-			return err
-		}
-		chartName := utils.GetChartsDirectory() + "/" + cdatamigrate.DataMigrateChart + "/" + common.JuiceFSRuntime
-		err = helm.InstallRelease(releaseName, targetDataMigrate.Namespace, valueFileName, chartName)
-		if err != nil {
-			log.Error(err, "failed to install datamigrate chart")
-			return err
-		}
-		log.Info("DataLoad job helm chart successfully installed", "namespace", targetDataMigrate.Namespace, "releaseName", releaseName)
-		ctx.Recorder.Eventf(&targetDataMigrate, corev1.EventTypeNormal, common.DataLoadJobStarted, "The DataMigrate job(or cronjob) %s started", jobName)
-	}
-	return err
-}
 
 func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequestContext, object client.Object) (valueFileName string, err error) {
 	dataMigrate, ok := object.(*datav1alpha1.DataMigrate)

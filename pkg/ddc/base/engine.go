@@ -46,14 +46,6 @@ type Engine interface {
 	// Sync syncs the alluxio runtime
 	Sync(ctx cruntime.ReconcileRequestContext) error
 
-	// Dataloader
-	// @Deprecated use DataOperator instead.
-	Dataloader
-
-	// Datamigrater
-	// @Deprecated use DataOperator instead.
-	Datamigrater
-
 	// DataOperator is a common interface for Data Operations like DataBackup/DataLoad/DataMigrate etc.
 	DataOperator
 }
@@ -66,24 +58,6 @@ type DataOperator interface {
 // DataOperatorYamlGenerator is the implementation of DataOperator interface for runtime engine
 type DataOperatorYamlGenerator interface {
 	GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, operation dataoperation.OperationInterface) (valueFileName string, err error)
-}
-
-type Dataloader interface {
-	// LoadData generate dataload values and install helm chart
-	LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (err error)
-
-	// CheckRuntimeReady Check if runtime is ready
-	// @Deprecated because it's common for all engine
-	CheckRuntimeReady() (ready bool)
-}
-
-type Databackuper interface {
-	BackupData(ctx cruntime.ReconcileRequestContext, targetDataBackup datav1alpha1.DataBackup) (ctrl.Result, error)
-}
-
-type Datamigrater interface {
-	// MigrateData generate datamigrate values and install helm chart
-	MigrateData(ctx cruntime.ReconcileRequestContext, targetDataMigrate datav1alpha1.DataMigrate) (err error)
 }
 
 // Implement is what the real engine should implement if it use the TemplateEngine
@@ -154,14 +128,6 @@ type Implement interface {
 
 	// BindToDataset binds the engine to dataset
 	BindToDataset() (err error)
-
-	// CreateDataLoadJob creates the job to load data
-	// @Deprecated TODO: remove when DataOperator ready
-	CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) error
-
-	// CreateDataMigrateJob creates the job to load data
-	// @Deprecated TODO: remove when DataOperator ready
-	CreateDataMigrateJob(ctx cruntime.ReconcileRequestContext, targetDataMigrate datav1alpha1.DataMigrate) error
 
 	// checks if the runtime is ready
 	CheckRuntimeReady() (ready bool)
