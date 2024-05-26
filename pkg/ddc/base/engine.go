@@ -55,7 +55,7 @@ type DataOperator interface {
 	Operate(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error)
 }
 
-// DataOperatorYamlGenerator is the implementation of DataOperator interface for runtime engine
+// DataOperatorYamlGenerator is the implementation of DataOperator interface for runtime engine using TemplateEngine.
 type DataOperatorYamlGenerator interface {
 	GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, operation dataoperation.OperationInterface) (valueFileName string, err error)
 }
@@ -66,7 +66,7 @@ type Implement interface {
 
 	DataOperatorYamlGenerator
 
-	// ShouldSetupMaster checks if the master ready
+	// CheckMasterReady checks if the master ready
 	CheckMasterReady() (ready bool, err error)
 
 	// CheckWorkersReady checks if the workers ready
@@ -129,13 +129,13 @@ type Implement interface {
 	// BindToDataset binds the engine to dataset
 	BindToDataset() (err error)
 
-	// checks if the runtime is ready
+	// CheckRuntimeReady checks if the runtime is ready
 	CheckRuntimeReady() (ready bool)
 
 	// SyncRuntime syncs the runtime spec
 	SyncRuntime(ctx cruntime.ReconcileRequestContext) (changed bool, err error)
 
-	// Sync the scheduleInfo to cacheNodes
+	// SyncScheduleInfoToCacheNodes Sync the scheduleInfo to cacheNodes
 	SyncScheduleInfoToCacheNodes() (err error)
 }
 
