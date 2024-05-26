@@ -17,9 +17,7 @@
 package efc
 
 import (
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/efc/operations"
-	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
 )
 
@@ -48,11 +46,4 @@ func (e *EFCEngine) CheckRuntimeReady() (ready bool) {
 		}
 	}
 	return readyCount > 0
-}
-
-// generateDataLoadValueFile builds a DataLoadValue by extracted specifications from the given DataLoad, and
-// marshals the DataLoadValue to a temporary yaml file where stores values that'll be used by fluid dataloader helm chart
-func (e *EFCEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestContext, dataload datav1alpha1.DataLoad) (valueFileName string, err error) {
-	// TODO: generate dataload value file
-	return "", nil
 }

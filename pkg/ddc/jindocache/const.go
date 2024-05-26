@@ -54,8 +54,6 @@ const (
 
 	defaultJindofsxRuntimeImage = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:6.2.0"
 
-	engineType = "jindocache"
-
 	FuseOnly = "fuseOnly"
 
 	defaultMemLimit = 100

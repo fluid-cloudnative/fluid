@@ -29,12 +29,6 @@ import (
 	utilpointer "k8s.io/utils/pointer"
 )
 
-func TestEFCEngine_GenerateDataLoadValueFileWithRuntimeHDD(t *testing.T) {
-}
-
-func TestEFCEngine_GenerateDataLoadValueFileWithRuntime(t *testing.T) {
-}
-
 func TestEFCEngine_CheckRuntimeReady(t *testing.T) {
 	type fields struct {
 		name      string
