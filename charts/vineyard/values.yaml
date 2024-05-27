@@ -133,6 +133,8 @@ fuse:
   targetPath: ""
   nodeSelector: {}
   hostPID: false
+  options:
+    size: "0"
 
 owner:
   enabled: false
