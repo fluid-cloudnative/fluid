@@ -19,6 +19,7 @@ package app
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/fluidapp/dataflowaffinity"
+	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
 	utilfeature "github.com/fluid-cloudnative/fluid/pkg/utils/feature"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -116,13 +117,15 @@ func handle() {
 		os.Exit(1)
 	}
 
-	if err = (dataflowaffinity.NewDataOpJobReconciler(
-		mgr.GetClient(),
-		ctrl.Log.WithName("dataopctrl"),
-		mgr.GetEventRecorderFor("DataOpJob"),
-	)).SetupWithManager(mgr, controllerOptions); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "DataOpJob")
-		os.Exit(1)
+	if dataflow.Enabled(dataflow.DataflowAffinity) {
+		if err = (dataflowaffinity.NewDataOpJobReconciler(
+			mgr.GetClient(),
+			ctrl.Log.WithName("dataopctrl"),
+			mgr.GetEventRecorderFor("DataOpJob"),
+		)).SetupWithManager(mgr, controllerOptions); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "DataOpJob")
+			os.Exit(1)
+		}
 	}
 
 	setupLog.Info("starting fluidapp-controller")
@@ -133,7 +136,7 @@ func handle() {
 }
 
 func NewCache(scheme *runtime.Scheme) cache.NewCacheFunc {
-	return cache.BuilderWithOptions(cache.Options{
+	options := cache.Options{
 		Scheme: scheme,
 		SelectorsByObject: cache.SelectorsByObject{
 			&corev1.Pod{}: {
@@ -142,13 +145,16 @@ func NewCache(scheme *runtime.Scheme) cache.NewCacheFunc {
 					common.LabelAnnotationManagedBy: common.Fluid,
 				}),
 			},
-			&batchv1.Job{}: {
-				// watch data operation job
-				Label: labels.SelectorFromSet(labels.Set{
-					// only data operations create job resource and the jobs created by cronjob do not have this label.
-					common.LabelAnnotationManagedBy: common.Fluid,
-				}),
-			},
 		},
-	})
+	}
+	if dataflow.Enabled(dataflow.DataflowAffinity) {
+		options.SelectorsByObject[&batchv1.Job{}] = cache.ObjectSelector{
+			// watch data operation job
+			Label: labels.SelectorFromSet(labels.Set{
+				// only data operations create job resource and the jobs created by cronjob do not have this label.
+				common.LabelAnnotationManagedBy: common.Fluid,
+			}),
+		}
+	}
+	return cache.BuilderWithOptions(options)
 }
