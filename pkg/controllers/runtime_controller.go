@@ -295,7 +295,7 @@ func (r *RuntimeReconciler) AddFinalizerAndRequeue(ctx cruntime.ReconcileRequest
 	prevGeneration := objectMeta.GetGeneration()
 	objectMeta.SetFinalizers(append(objectMeta.GetFinalizers(), finalizerName))
 	if err := r.Update(ctx, ctx.Runtime); err != nil {
-		ctx.Log.Error(err, "Failed to add finalizer", "StatusUpdateError", ctx)
+		ctx.Log.Error(err, "Failed to add finalizer", "Runtime", ctx.Runtime)
 		return utils.RequeueIfError(err)
 	}
 	// controllerutil.AddFinalizer(ctx.Runtime, finalizer)
