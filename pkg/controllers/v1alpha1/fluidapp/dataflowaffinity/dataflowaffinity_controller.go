@@ -156,7 +156,7 @@ func (f *DataOpJobReconciler) injectPodNodeLabelsToJob(job *batchv1.Job) error {
 		fillCustomizedNodeAffinity(pod.Spec.Affinity.NodeAffinity, injectLabels, node)
 	}
 
-	// update job labels
+	// update job labels, reconciled job is selected by labels so the field will not be nil.
 	for k, v := range injectLabels {
 		job.Labels[k] = v
 	}
