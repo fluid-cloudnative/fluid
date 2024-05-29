@@ -22,6 +22,11 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 )
 
+func (t *ThinEngine) CheckRuntimeReady() (ready bool) {
+	//TODO implement me
+	return true
+}
+
 // getRuntimeInfo gets runtime info
 func (t *ThinEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 	if t.runtimeInfo == nil {
