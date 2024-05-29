@@ -98,6 +98,8 @@ spec:
             - "{{ default "/vineyard" (index .Values.worker.options "etcd.prefix") }}"
             - --etcd_endpoint
             - "{{ include "vineyard.master.endpoint" . }}"
+            - --rpc_socket_port
+            - "{{ int .Values.worker.ports.rpc }}"
             {{- if eq (include "vineyard.checkTieredStore" .) "true" }}
             - --spill_path
             - "{{ include "vineyard.spill.path" . }}"
