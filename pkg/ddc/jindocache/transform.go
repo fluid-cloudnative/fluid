@@ -275,7 +275,7 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 			cachesetPath = "local://" + ufsVolumesPath
 		}
 		cacheStrategy := "DISTRIBUTED"
-		metaPolicy := "ALWAYS"
+		metaPolicy := "ONCE"
 		readCacheReplica := 1
 		writeCacheReplica := 1
 
@@ -936,6 +936,7 @@ func (e *JindoCacheEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime, 
 			fuseArgs = append(fuseArgs, "-onegative_timeout=0")
 		}
 		fuseArgs = append(fuseArgs, "-ometrics_port=0")
+		fuseArgs = append(fuseArgs, "-ono_symlink")
 	}
 	if runtime.Spec.Master.Disabled && runtime.Spec.Worker.Disabled {
 		fuseArgs = append(fuseArgs, "-ouri="+dataset.Spec.Mounts[0].MountPoint)
