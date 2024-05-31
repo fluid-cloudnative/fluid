@@ -279,13 +279,18 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 		readCacheReplica := 1
 		writeCacheReplica := 1
 
-		if mount.Options["cacheStrategy"] == "DHT" && mount.Options["metaPolicy"] == "ONCE" {
-			cacheStrategy = mount.Options["cacheStrategy"]
+		if mount.Options["metaPolicy"] == "ALWAYS" {
 			metaPolicy = mount.Options["metaPolicy"]
 		}
 
-		if mount.Options["metaPolicy"] == "ONCE" {
-			metaPolicy = mount.Options["metaPolicy"]
+		if mount.Options["cacheStrategy"] == "DHT" && metaPolicy == "ONCE" {
+			cacheStrategy = mount.Options["cacheStrategy"]
+		}
+
+		if mount.Options["cacheStrategy"] == "DHT" && metaPolicy == "ALWAYS" {
+			err = fmt.Errorf("CacheStrategy DHT must used with metaPolicy ONCE and current metaPolicy is %s", metaPolicy)
+			e.Log.Error(err, "metaPolicy not correct", metaPolicy)
+			return err
 		}
 
 		if mount.Options["readCacheReplica"] != "" {
