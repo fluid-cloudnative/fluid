@@ -4516,7 +4516,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_MasterSpec(ref common.Reference
 					},
 					"image": {
 						SchemaProps: spec.SchemaProps{
-							Description: "The image of Vineyard component. For Master, the default image is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd` For Worker, the default image is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd` The default container registry is `docker.io`, you can change it by setting the image field",
+							Description: "The image of Vineyard component. For Master, the default image is `registry.aliyuncs.com/vineyard/vineyardd` For Worker, the default image is `registry.aliyuncs.com/vineyard/vineyardd` The default container registry is `docker.io`, you can change it by setting the image field",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -6609,7 +6609,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardCompTemplateSpec(ref co
 					},
 					"image": {
 						SchemaProps: spec.SchemaProps{
-							Description: "The image of Vineyard component. For Master, the default image is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd` For Worker, the default image is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd` The default container registry is `docker.io`, you can change it by setting the image field",
+							Description: "The image of Vineyard component. For Master, the default image is `registry.aliyuncs.com/vineyard/vineyardd` For Worker, the default image is `registry.aliyuncs.com/vineyard/vineyardd` The default container registry is `docker.io`, you can change it by setting the image field",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -6918,7 +6918,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardSockSpec(ref common.Ref
 				Properties: map[string]spec.Schema{
 					"image": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Image for Vineyard Fuse Default is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyard-fluid-fuse`",
+							Description: "Image for Vineyard Fuse Default is `registry.aliyuncs.com/vineyard/vineyard-fluid-fuse`",
 							Type:        []string{"string"},
 							Format:      "",
 						},

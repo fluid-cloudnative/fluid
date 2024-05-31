@@ -21,7 +21,7 @@ metadata:
 spec:
   replicas: 2
   master:
-    image: registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd
+    image: registry.aliyuncs.com/vineyard/vineyardd
     imageTag: v0.22.1
   tieredstore:
     levels:

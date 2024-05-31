@@ -10196,8 +10196,8 @@ string
 <td>
 <em>(Optional)</em>
 <p>The image of Vineyard component.
-For Master, the default image is <code>registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd</code>
-For Worker, the default image is <code>registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd</code>
+For Master, the default image is <code>registry.aliyuncs.com/vineyard/vineyardd</code>
+For Worker, the default image is <code>registry.aliyuncs.com/vineyard/vineyardd</code>
 The default container registry is <code>docker.io</code>, you can change it by setting the image field</p>
 </td>
 </tr>
@@ -10527,7 +10527,7 @@ string
 <td>
 <em>(Optional)</em>
 <p>Image for Vineyard Fuse
-Default is <code>registry.cn-hangzhou.aliyuncs.com/vineyard/vineyard-fluid-fuse</code></p>
+Default is <code>registry.aliyuncs.com/vineyard/vineyard-fluid-fuse</code></p>
 </td>
 </tr>
 <tr>

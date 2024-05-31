@@ -106,7 +106,7 @@ spec:
                       Fuse. Default is not set.
                     type: object
                   image:
-                    description: Image for Vineyard Fuse Default is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyard-fluid-fuse`
+                    description: Image for Vineyard Fuse Default is `registry.aliyuncs.com/vineyard/vineyard-fluid-fuse`
                     type: string
                   imagePullPolicy:
                     description: Image pull policy for Vineyard Fuse Default is `IfNotPresent`
@@ -275,8 +275,8 @@ spec:
                     type: object
                   image:
                     description: The image of Vineyard component. For Master, the
-                      default image is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd`
-                      For Worker, the default image is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd`
+                      default image is `registry.aliyuncs.com/vineyard/vineyardd`
+                      For Worker, the default image is `registry.aliyuncs.com/vineyard/vineyardd`
                       The default container registry is `docker.io`, you can change
                       it by setting the image field
                     type: string
@@ -3799,8 +3799,8 @@ spec:
                     type: object
                   image:
                     description: The image of Vineyard component. For Master, the
-                      default image is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd`
-                      For Worker, the default image is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd`
+                      default image is `registry.aliyuncs.com/vineyard/vineyardd`
+                      For Worker, the default image is `registry.aliyuncs.com/vineyard/vineyardd`
                       The default container registry is `docker.io`, you can change
                       it by setting the image field
                     type: string

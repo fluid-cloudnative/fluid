@@ -2491,7 +2491,7 @@
           }
         },
         "image": {
-          "description": "The image of Vineyard component. For Master, the default image is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd` For Worker, the default image is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd` The default container registry is `docker.io`, you can change it by setting the image field",
+          "description": "The image of Vineyard component. For Master, the default image is `registry.aliyuncs.com/vineyard/vineyardd` For Worker, the default image is `registry.aliyuncs.com/vineyard/vineyardd` The default container registry is `docker.io`, you can change it by setting the image field",
           "type": "string"
         },
         "imagePullPolicy": {
@@ -3665,7 +3665,7 @@
           }
         },
         "image": {
-          "description": "The image of Vineyard component. For Master, the default image is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd` For Worker, the default image is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd` The default container registry is `docker.io`, you can change it by setting the image field",
+          "description": "The image of Vineyard component. For Master, the default image is `registry.aliyuncs.com/vineyard/vineyardd` For Worker, the default image is `registry.aliyuncs.com/vineyard/vineyardd` The default container registry is `docker.io`, you can change it by setting the image field",
           "type": "string"
         },
         "imagePullPolicy": {
@@ -3845,7 +3845,7 @@
           }
         },
         "image": {
-          "description": "Image for Vineyard Fuse Default is `registry.cn-hangzhou.aliyuncs.com/vineyard/vineyard-fluid-fuse`",
+          "description": "Image for Vineyard Fuse Default is `registry.aliyuncs.com/vineyard/vineyard-fluid-fuse`",
           "type": "string"
         },
         "imagePullPolicy": {

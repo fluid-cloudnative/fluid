@@ -24,7 +24,7 @@ master:
     #      key: accesskey
     # options:
   replicas: 1
-  image: registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd
+  image: registry.aliyuncs.com/vineyard/vineyardd
   imageTag: v0.22.1
   imagePullPolicy: IfNotPresent
   nodeSelector: {}
@@ -64,7 +64,7 @@ worker:
   # annotation2: value2
 
   replicas: 1
-  image: registry.cn-hangzhou.aliyuncs.com/vineyard/vineyardd
+  image: registry.aliyuncs.com/vineyard/vineyardd
   imageTag: v0.22.1
   imagePullPolicy: IfNotPresent
   nodeSelector: {}
@@ -116,7 +116,7 @@ volumes: []
 disablePrometheus: true
 
 fuse:
-  image: registry.cn-hangzhou.aliyuncs.com/vineyard/vineyard-fluid-fuse
+  image: registry.aliyuncs.com/vineyard/vineyard-fluid-fuse
   imageTag: v0.22.1
   imagePullPolicy: IfNotPresent
   env: {}
