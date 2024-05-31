@@ -10004,7 +10004,7 @@ string
 <td>
 <em>(Optional)</em>
 <p>Image for Vineyard Fuse
-Default is <code>vineyardcloudnative/vineyard-fluid-fuse</code></p>
+Default is <code>registry.aliyuncs.com/vineyard/vineyard-fluid-fuse</code></p>
 </td>
 </tr>
 <tr>
@@ -10017,7 +10017,7 @@ string
 <td>
 <em>(Optional)</em>
 <p>Image Tag for Vineyard Fuse
-Default is <code>v0.21.5</code></p>
+Default is <code>v0.22.1</code></p>
 </td>
 </tr>
 <tr>
@@ -10485,94 +10485,7 @@ Default is false</p>
 </tr>
 <tr>
 <td>
-<code>volumes</code></br>
-<em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core">
-[]Kubernetes core/v1.Volume
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Volumes is the list of Kubernetes volumes that can be mounted by the vineyard components (Master and Worker).
-Default is null.</p>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="data.fluid.io/v1alpha1.VineyardSockSpec">VineyardSockSpec
-</h3>
-<p>
-(<em>Appears on:</em>
-<a href="#data.fluid.io/v1alpha1.VineyardRuntimeSpec">VineyardRuntimeSpec</a>)
-</p>
-<p>
-<p>VineyardSockSpec holds the configurations for vineyard client socket</p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>image</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Image for Vineyard Fuse
-Default is <code>registry.aliyuncs.com/vineyard/vineyard-fluid-fuse</code></p>
-</td>
-</tr>
-<tr>
-<td>
-<code>imageTag</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Image Tag for Vineyard Fuse
-Default is <code>v0.22.1</code></p>
-</td>
-</tr>
-<tr>
-<td>
-<code>imagePullPolicy</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Image pull policy for Vineyard Fuse
-Default is <code>IfNotPresent</code>
-Available values are <code>Always</code>, <code>IfNotPresent</code>, <code>Never</code></p>
-</td>
-</tr>
-<tr>
-<td>
-<code>env</code></br>
-<em>
-map[string]string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Environment variables that will be used by Vineyard Fuse.
-Default is not set.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>cleanPolicy</code></br>
+<code>podMetadata</code></br>
 <em>
 <a href="#data.fluid.io/v1alpha1.PodMetadata">
 PodMetadata
@@ -10667,5 +10580,5 @@ bool
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>f0f1ed0</code>.
+on git commit <code>6baf09911</code>.
 </em></p>
