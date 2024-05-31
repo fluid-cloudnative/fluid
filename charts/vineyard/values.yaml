@@ -116,6 +116,16 @@ volumes: []
 disablePrometheus: true
 
 fuse:
+  # Metadata for Vineyard Fuse
+  labels:
+  # label1: value1
+  # label2: value2
+
+  annotations:
+  # annotation1: value1
+  # annotation2: value2
+
+  hostNetwork: false
   image: registry.aliyuncs.com/vineyard/vineyard-fluid-fuse
   imageTag: v0.22.1
   imagePullPolicy: IfNotPresent
