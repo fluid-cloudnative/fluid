@@ -39,7 +39,7 @@ github.com/felixge/fgprof
 # github.com/fsnotify/fsnotify v1.6.0
 ## explicit; go 1.16
 github.com/fsnotify/fsnotify
-# github.com/go-logr/logr v1.3.0
+# github.com/go-logr/logr v1.4.1
 ## explicit; go 1.18
 github.com/go-logr/logr
 github.com/go-logr/logr/slogr
@@ -98,8 +98,8 @@ github.com/google/go-cmp/cmp/internal/value
 # github.com/google/gofuzz v1.1.0
 ## explicit; go 1.12
 github.com/google/gofuzz
-# github.com/google/pprof v0.0.0-20211214055906-6f57359322fd
-## explicit; go 1.14
+# github.com/google/pprof v0.0.0-20240424215950-a892ee059fd6
+## explicit; go 1.19
 github.com/google/pprof/profile
 # github.com/google/uuid v1.6.0
 ## explicit
@@ -128,7 +128,7 @@ github.com/kubernetes-csi/csi-lib-utils/protosanitizer
 # github.com/kubernetes-csi/drivers v1.0.2
 ## explicit
 github.com/kubernetes-csi/drivers/pkg/csi-common
-# github.com/mailru/easyjson v0.7.6
+# github.com/mailru/easyjson v0.7.7
 ## explicit; go 1.12
 github.com/mailru/easyjson/buffer
 github.com/mailru/easyjson/jlexer
@@ -178,8 +178,8 @@ github.com/onsi/ginkgo/reporters/stenographer
 github.com/onsi/ginkgo/reporters/stenographer/support/go-colorable
 github.com/onsi/ginkgo/reporters/stenographer/support/go-isatty
 github.com/onsi/ginkgo/types
-# github.com/onsi/gomega v1.27.10
-## explicit; go 1.18
+# github.com/onsi/gomega v1.33.1
+## explicit; go 1.20
 github.com/onsi/gomega
 github.com/onsi/gomega/format
 github.com/onsi/gomega/internal
