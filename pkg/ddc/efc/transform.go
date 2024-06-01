@@ -18,10 +18,11 @@ package efc
 
 import (
 	"fmt"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transformer"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -38,7 +39,7 @@ func (e *EFCEngine) transform(runtime *datav1alpha1.EFCRuntime) (value *EFC, err
 
 	value = &EFC{
 		// Set ownerReference to all EFCRuntime resources
-		Owner: transfromer.GenerateOwnerReferenceFromObject(runtime),
+		Owner: transformer.GenerateOwnerReferenceFromObject(runtime),
 		RuntimeIdentity: common.RuntimeIdentity{
 			Namespace: runtime.Namespace,
 			Name:      runtime.Name,

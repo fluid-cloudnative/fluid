@@ -18,11 +18,12 @@ package jindo
 
 import (
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
 	"os"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
+
+	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transformer"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"
@@ -188,7 +189,7 @@ func (e *JindoEngine) genDataLoadValue(image string, runtime *datav1alpha1.Jindo
 	dataLoadValue := &cdataload.DataLoadValue{
 		Name:         dataload.Name,
 		DataLoadInfo: dataloadInfo,
-		Owner:        transfromer.GenerateOwnerReferenceFromObject(dataload),
+		Owner:        transformer.GenerateOwnerReferenceFromObject(dataload),
 	}
 	return dataLoadValue, nil
 }

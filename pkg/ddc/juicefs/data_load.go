@@ -18,13 +18,14 @@ package juicefs
 
 import (
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
 	"os"
 	"strings"
 
+	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transformer"
 
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"
@@ -209,7 +210,7 @@ func (j *JuiceFSEngine) genDataLoadValue(image string, cacheinfo map[string]stri
 	dataLoadValue := &cdataload.DataLoadValue{
 		Name:         dataload.Name,
 		DataLoadInfo: dataloadInfo,
-		Owner:        transfromer.GenerateOwnerReferenceFromObject(dataload),
+		Owner:        transformer.GenerateOwnerReferenceFromObject(dataload),
 	}
 
 	return dataLoadValue, nil
