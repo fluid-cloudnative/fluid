@@ -43,4 +43,5 @@ type DataBackup struct {
 	RuntimeType string `yaml:"runtimeType,omitempty"`
 	// image pull secrets
 	ImagePullSecrets []corev1.LocalObjectReference `yaml:"imagePullSecrets,omitempty"`
+	Affinity         *corev1.Affinity              `yaml:"affinity,omitempty"`
 }

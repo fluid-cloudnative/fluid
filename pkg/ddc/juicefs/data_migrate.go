@@ -18,6 +18,7 @@ package juicefs
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,42 +39,8 @@ import (
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
 )
-
-func (j *JuiceFSEngine) CreateDataMigrateJob(ctx cruntime.ReconcileRequestContext, targetDataMigrate datav1alpha1.DataMigrate) (err error) {
-	log := ctx.Log.WithName("createDataMigrateJob")
-
-	// 1. Check if the helm release already exists
-	releaseName := utils.GetDataMigrateReleaseName(targetDataMigrate.Name)
-	jobName := utils.GetDataMigrateJobName(releaseName)
-	var existed bool
-	existed, err = helm.CheckRelease(releaseName, targetDataMigrate.Namespace)
-	if err != nil {
-		log.Error(err, "failed to check if release exists", "releaseName", releaseName, "namespace", targetDataMigrate.Namespace)
-		return err
-	}
-
-	// 2. install the helm chart if not exists
-	if !existed {
-		log.Info("DataMigrate job helm chart not installed yet, will install")
-		valueFileName, err := j.generateDataMigrateValueFile(ctx, &targetDataMigrate)
-		if err != nil {
-			log.Error(err, "failed to generate dataload chart's value file")
-			return err
-		}
-		chartName := utils.GetChartsDirectory() + "/" + cdatamigrate.DataMigrateChart + "/" + common.JuiceFSRuntime
-		err = helm.InstallRelease(releaseName, targetDataMigrate.Namespace, valueFileName, chartName)
-		if err != nil {
-			log.Error(err, "failed to install datamigrate chart")
-			return err
-		}
-		log.Info("DataLoad job helm chart successfully installed", "namespace", targetDataMigrate.Namespace, "releaseName", releaseName)
-		ctx.Recorder.Eventf(&targetDataMigrate, corev1.EventTypeNormal, common.DataLoadJobStarted, "The DataMigrate job(or cronjob) %s started", jobName)
-	}
-	return err
-}
 
 func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequestContext, object client.Object) (valueFileName string, err error) {
 	dataMigrate, ok := object.(*datav1alpha1.DataMigrate)
@@ -143,7 +110,6 @@ func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequest
 	if dataMigrate.Spec.Affinity != nil {
 		dataMigrateInfo.Affinity = dataMigrate.Spec.Affinity
 	}
-
 	// generate ssh config for parallel tasks when using parallel tasks
 	if dataMigrateInfo.Parallelism > 1 {
 		err = j.setParallelMigrateOptions(&dataMigrateInfo, dataMigrate)
@@ -151,7 +117,13 @@ func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequest
 			return "", err
 		}
 		// the launcher prefers to run on different host with the workers
-		addWorkerPodAntiAffinity(&dataMigrateInfo, dataMigrate)
+		addWorkerPodPreferredAntiAffinity(&dataMigrateInfo, dataMigrate)
+	}
+
+	// inject the node affinity by previous operation pod.
+	dataMigrateInfo.Affinity, err = dataflow.InjectAffinityByRunAfterOp(j.Client, dataMigrate.Spec.RunAfter, dataMigrate.Namespace, dataMigrateInfo.Affinity)
+	if err != nil {
+		return "", err
 	}
 
 	if dataMigrate.Spec.NodeSelector != nil {
@@ -220,7 +192,7 @@ func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequest
 	return valueFile.Name(), nil
 }
 
-func addWorkerPodAntiAffinity(dataMigrateInfo *cdatamigrate.DataMigrateInfo, dataMigrate *datav1alpha1.DataMigrate) {
+func addWorkerPodPreferredAntiAffinity(dataMigrateInfo *cdatamigrate.DataMigrateInfo, dataMigrate *datav1alpha1.DataMigrate) {
 	releaseName := utils.GetDataMigrateReleaseName(dataMigrate.Name)
 
 	podAffinityTerm := corev1.WeightedPodAffinityTerm{
@@ -231,7 +203,7 @@ func addWorkerPodAntiAffinity(dataMigrateInfo *cdatamigrate.DataMigrateInfo, dat
 					dataoperation.OperationLabel: fmt.Sprintf("migrate-%s-%s", dataMigrate.Namespace, releaseName),
 				},
 			},
-			TopologyKey: "kubernetes.io/hostname",
+			TopologyKey: common.K8sNodeNameLabelKey,
 		},
 	}
 

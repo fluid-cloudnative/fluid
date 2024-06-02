@@ -255,10 +255,6 @@ spec:
                     description: Environment variables that will be used by GooseFS
                       Fuse
                     type: object
-                  global:
-                    description: If the fuse client should be deployed in global mode,
-                      otherwise the affinity should be considered
-                    type: boolean
                   image:
                     description: Image for GooseFS Fuse(e.g. goosefs/goosefs-fuse)
                     type: string

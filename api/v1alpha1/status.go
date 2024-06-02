@@ -151,6 +151,9 @@ type OperationStatus struct {
 	LastSuccessfulTime *metav1.Time `json:"lastSuccessfulTime,omitempty"`
 	// WaitingStatus stores information about waiting operation.
 	WaitingFor WaitingStatus `json:"waitingFor,omitempty"`
+
+	// NodeAffinity records the node affinity for operation pods
+	NodeAffinity *corev1.NodeAffinity `json:"nodeAffinity,omitempty"`
 }
 
 type RuntimePhase string

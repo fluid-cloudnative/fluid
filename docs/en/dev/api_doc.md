@@ -2392,8 +2392,8 @@ If worker.replicas and the field are both specified, the field will be respected
 <td>
 <code>fuse</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.VineyardSockSpec">
-VineyardSockSpec
+<a href="#data.fluid.io/v1alpha1.VineyardClientSocketSpec">
+VineyardClientSocketSpec
 </a>
 </em>
 </td>
@@ -2527,6 +2527,71 @@ string
 </td>
 <td>
 <p>Endpoint for accessing</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.AffinityPolicy">AffinityPolicy
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.AffinityStrategy">AffinityStrategy</a>)
+</p>
+<p>
+<p>AffinityPolicy the strategy for the affinity between Data Operation Pods.</p>
+</p>
+<h3 id="data.fluid.io/v1alpha1.AffinityStrategy">AffinityStrategy
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.OperationRef">OperationRef</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>policy</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.AffinityPolicy">
+AffinityPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Policy one of: &ldquo;&rdquo;, &ldquo;Require&rdquo;, &ldquo;Prefer&rdquo;</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>prefers</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.Prefer">
+[]Prefer
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>requires</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.Require">
+[]Require
+</a>
+</em>
+</td>
+<td>
 </td>
 </tr>
 </tbody>
@@ -2804,19 +2869,6 @@ already allocated to the pod.</p>
 </td>
 <td>
 <p>Arguments that will be passed to Alluxio Fuse</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>global</code></br>
-<em>
-bool
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>If the fuse client should be deployed in global mode,
-otherwise the affinity should be considered</p>
 </td>
 </tr>
 <tr>
@@ -5241,7 +5293,7 @@ string
 <a href="#data.fluid.io/v1alpha1.JindoFuseSpec">JindoFuseSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JuiceFSFuseSpec">JuiceFSFuseSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.ThinFuseSpec">ThinFuseSpec</a>, 
-<a href="#data.fluid.io/v1alpha1.VineyardSockSpec">VineyardSockSpec</a>)
+<a href="#data.fluid.io/v1alpha1.VineyardClientSocketSpec">VineyardClientSocketSpec</a>)
 </p>
 <p>
 </p>
@@ -5491,19 +5543,6 @@ already allocated to the pod.</p>
 </td>
 <td>
 <p>Arguments that will be passed to GooseFS Fuse</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>global</code></br>
-<em>
-bool
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>If the fuse client should be deployed in global mode,
-otherwise the affinity should be considered</p>
 </td>
 </tr>
 <tr>
@@ -6215,19 +6254,6 @@ already allocated to the pod.</p>
 </tr>
 <tr>
 <td>
-<code>global</code></br>
-<em>
-bool
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>If the fuse client should be deployed in global mode,
-otherwise the affinity should be considered</p>
-</td>
-</tr>
-<tr>
-<td>
 <code>nodeSelector</code></br>
 <em>
 map[string]string
@@ -6827,19 +6853,6 @@ map[string]string
 <td>
 <em>(Optional)</em>
 <p>Options mount options that fuse pod will use</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>global</code></br>
-<em>
-bool
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>If the fuse client should be deployed in global mode,
-otherwise the affinity should be considered</p>
 </td>
 </tr>
 <tr>
@@ -7503,8 +7516,8 @@ bool
 <a href="#data.fluid.io/v1alpha1.JuiceFSFuseSpec">JuiceFSFuseSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.ThinCompTemplateSpec">ThinCompTemplateSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.ThinFuseSpec">ThinFuseSpec</a>, 
-<a href="#data.fluid.io/v1alpha1.VineyardCompTemplateSpec">VineyardCompTemplateSpec</a>, 
-<a href="#data.fluid.io/v1alpha1.VineyardSockSpec">VineyardSockSpec</a>)
+<a href="#data.fluid.io/v1alpha1.VineyardClientSocketSpec">VineyardClientSocketSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.VineyardCompTemplateSpec">VineyardCompTemplateSpec</a>)
 </p>
 <p>
 </p>
@@ -7625,6 +7638,20 @@ string
 <p>Namespace specifies the namespace of the referent operation.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>affinityStrategy</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.AffinityStrategy">
+AffinityStrategy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>AffinityStrategy specifies the pod affinity strategy with the referent operation.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.OperationStatus">OperationStatus
@@ -7732,6 +7759,19 @@ WaitingStatus
 <p>WaitingStatus stores information about waiting operation.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>nodeAffinity</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#nodeaffinity-v1-core">
+Kubernetes core/v1.NodeAffinity
+</a>
+</em>
+</td>
+<td>
+<p>NodeAffinity records the node affinity for operation pods</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.OperationType">OperationType
@@ -7766,9 +7806,9 @@ WaitingStatus
 <a href="#data.fluid.io/v1alpha1.JuiceFSRuntimeSpec">JuiceFSRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.Metadata">Metadata</a>, 
 <a href="#data.fluid.io/v1alpha1.Processor">Processor</a>, 
+<a href="#data.fluid.io/v1alpha1.VineyardClientSocketSpec">VineyardClientSocketSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.VineyardCompTemplateSpec">VineyardCompTemplateSpec</a>, 
-<a href="#data.fluid.io/v1alpha1.VineyardRuntimeSpec">VineyardRuntimeSpec</a>, 
-<a href="#data.fluid.io/v1alpha1.VineyardSockSpec">VineyardSockSpec</a>)
+<a href="#data.fluid.io/v1alpha1.VineyardRuntimeSpec">VineyardRuntimeSpec</a>)
 </p>
 <p>
 <p>PodMetadata defines subgroup properties of metav1.ObjectMeta</p>
@@ -7814,6 +7854,45 @@ map[string]string
 </p>
 <p>
 </p>
+<h3 id="data.fluid.io/v1alpha1.Prefer">Prefer
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.AffinityStrategy">AffinityStrategy</a>)
+</p>
+<p>
+<p>Prefer defines the label key and weight for generating a PreferredSchedulingTerm.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>name</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>weight</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="data.fluid.io/v1alpha1.Processor">Processor
 </h3>
 <p>
@@ -7882,6 +7961,35 @@ ScriptProcessor
 </td>
 <td>
 <p>Shell represents a processor which executes shell script</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.Require">Require
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.AffinityStrategy">AffinityStrategy</a>)
+</p>
+<p>
+<p>Require defines the label key for generating a NodeSelectorTerm.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>name</code></br>
+<em>
+string
+</em>
+</td>
+<td>
 </td>
 </tr>
 </tbody>
@@ -8058,7 +8166,8 @@ Kubernetes meta/v1.Time
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>)
+<a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.ThinRuntimeSpec">ThinRuntimeSpec</a>)
 </p>
 <p>
 <p>RuntimeManagement defines suggestions for runtime controllers to manage the runtime</p>
@@ -9323,6 +9432,20 @@ Prometheus is enabled by default</p>
 <p>Volumes is the list of Kubernetes volumes that can be mounted by runtime components and/or fuses.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>management</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.RuntimeManagement">
+RuntimeManagement
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>RuntimeManagement defines policies when managing the runtime</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -9671,6 +9794,20 @@ Prometheus is enabled by default</p>
 <p>Volumes is the list of Kubernetes volumes that can be mounted by runtime components and/or fuses.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>management</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.RuntimeManagement">
+RuntimeManagement
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>RuntimeManagement defines policies when managing the runtime</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.TieredStore">TieredStore
@@ -9836,6 +9973,183 @@ string
 </td>
 <td>
 <p>One of the three policies: <code>Always</code>, <code>IfNotPresent</code>, <code>Never</code></p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.VineyardClientSocketSpec">VineyardClientSocketSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.VineyardRuntimeSpec">VineyardRuntimeSpec</a>)
+</p>
+<p>
+<p>VineyardClientSocketSpec holds the configurations for vineyard client socket</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>image</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Image for Vineyard Fuse
+Default is <code>vineyardcloudnative/vineyard-fluid-fuse</code></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>imageTag</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Image Tag for Vineyard Fuse
+Default is <code>v0.21.5</code></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>imagePullPolicy</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Image pull policy for Vineyard Fuse
+Default is <code>IfNotPresent</code>
+Available values are <code>Always</code>, <code>IfNotPresent</code>, <code>Never</code></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>env</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Environment variables that will be used by Vineyard Fuse.
+Default is not set.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>cleanPolicy</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.FuseCleanPolicy">
+FuseCleanPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CleanPolicy decides when to clean Vineyard Fuse pods.
+Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
+OnDemand cleans fuse pod once th fuse pod on some node is not needed
+OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted
+Defaults to OnRuntimeDeleted</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>resources</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core">
+Kubernetes core/v1.ResourceRequirements
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Resources contains the resource requirements and limits for the Vineyard Fuse.
+Default is not set.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>networkMode</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.NetworkMode">
+NetworkMode
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to use hostnetwork or not
+Default is HostNetwork</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to Vineyard&rsquo;s pods.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>options</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Options for configuring vineyardd parameters.
+Supported options are as follows.
+reserve_memory: (Bool) Whether to reserving enough physical memory pages for vineyardd.
+Default is true.
+allocator: (String) The allocator used by vineyardd, could be &ldquo;dlmalloc&rdquo; or &ldquo;mimalloc&rdquo;.
+Default is &ldquo;dlmalloc&rdquo;.
+compression: (Bool) Compress before migration or spilling.
+Default is true.
+coredump: (Bool) Enable coredump core dump when been aborted.
+Default is false.
+meta_timeout: (Int) Timeout period before waiting the metadata service to be ready, in seconds
+Default is 60.
+etcd_endpoint: (String) The endpoint of etcd.
+Default is same as the etcd endpoint of vineyard worker.
+etcd_prefix: (String) Metadata path prefix in etcd.
+Default is &ldquo;/vineyard&rdquo;.
+size: (String) shared memory size for vineyardd.
+1024M, 1024000, 1G, or 1Gi.
+Default is &ldquo;0&rdquo;, which means no cache.
+When the size is not set to &ldquo;0&rdquo;, it should be greater than the 2048 bytes(2K).
+spill_path: (String) Path to spill temporary files, if not set, spilling will be disabled.
+Default is &ldquo;&rdquo;.
+spill_lower_rate: (Double) The lower rate of memory usage to trigger spilling.
+Default is 0.3.
+spill_upper_rate: (Double) The upper rate of memory usage to stop spilling.
+Default is 0.8.
+Default is as follows.
+fuse:
+options:
+size: &ldquo;0&rdquo;
+etcd_endpoint: &ldquo;http://{{Name}}-master-0.{{Name}}-master.{{Namespace}}:{{EtcdClientPort}}&rdquo;
+etcd_prefix: &ldquo;/vineyard&rdquo;</p>
 </td>
 </tr>
 </tbody>
@@ -10106,8 +10420,8 @@ If worker.replicas and the field are both specified, the field will be respected
 <td>
 <code>fuse</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.VineyardSockSpec">
-VineyardSockSpec
+<a href="#data.fluid.io/v1alpha1.VineyardClientSocketSpec">
+VineyardClientSocketSpec
 </a>
 </em>
 </td>
@@ -10200,140 +10514,6 @@ Default is null.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="data.fluid.io/v1alpha1.VineyardSockSpec">VineyardSockSpec
-</h3>
-<p>
-(<em>Appears on:</em>
-<a href="#data.fluid.io/v1alpha1.VineyardRuntimeSpec">VineyardRuntimeSpec</a>)
-</p>
-<p>
-<p>VineyardSockSpec holds the configurations for vineyard client socket</p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>image</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Image for Vineyard Fuse
-Default is <code>vineyardcloudnative/vineyard-fluid-fuse</code></p>
-</td>
-</tr>
-<tr>
-<td>
-<code>imageTag</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Image Tag for Vineyard Fuse
-Default is <code>v0.21.5</code></p>
-</td>
-</tr>
-<tr>
-<td>
-<code>imagePullPolicy</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Image pull policy for Vineyard Fuse
-Default is <code>IfNotPresent</code>
-Available values are <code>Always</code>, <code>IfNotPresent</code>, <code>Never</code></p>
-</td>
-</tr>
-<tr>
-<td>
-<code>env</code></br>
-<em>
-map[string]string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Environment variables that will be used by Vineyard Fuse.
-Default is not set.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>cleanPolicy</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.FuseCleanPolicy">
-FuseCleanPolicy
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>CleanPolicy decides when to clean Vineyard Fuse pods.
-Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
-OnDemand cleans fuse pod once th fuse pod on some node is not needed
-OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted
-Defaults to OnRuntimeDeleted</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>resources</code></br>
-<em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core">
-Kubernetes core/v1.ResourceRequirements
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Resources contains the resource requirements and limits for the Vineyard Fuse.
-Default is not set.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>networkMode</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.NetworkMode">
-NetworkMode
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Whether to use hostnetwork or not
-Default is HostNetwork</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>podMetadata</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.PodMetadata">
-PodMetadata
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>PodMetadata defines labels and annotations that will be propagated to Vineyard&rsquo;s pods.</p>
-</td>
-</tr>
-</tbody>
-</table>
 <h3 id="data.fluid.io/v1alpha1.VolumeSource">VolumeSource
 </h3>
 <p>
@@ -10400,5 +10580,5 @@ bool
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>acb0aec73</code>.
+on git commit <code>f0f1ed0</code>.
 </em></p>

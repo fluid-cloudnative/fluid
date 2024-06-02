@@ -125,11 +125,6 @@ type AlluxioFuseSpec struct {
 	// Arguments that will be passed to Alluxio Fuse
 	Args []string `json:"args,omitempty"`
 
-	// If the fuse client should be deployed in global mode,
-	// otherwise the affinity should be considered
-	// +optional
-	Global bool `json:"global,omitempty"`
-
 	// NodeSelector is a selector which must be true for the fuse client to fit on a node,
 	// this option only effect when global is enabled
 	// +optional
@@ -165,17 +160,6 @@ type Data struct {
 	// Pin the dataset or not. Refer to <a href="https://docs.alluxio.io/os/user/stable/en/operation/User-CLI.html#pin">Alluxio User-CLI pin</a>
 	// +optional
 	Pin bool `json:"pin"`
-}
-
-// RuntimeManagement defines suggestions for runtime controllers to manage the runtime
-type RuntimeManagement struct {
-	// CleanCachePolicy defines the policy of cleaning cache when shutting down the runtime
-	// +optional
-	CleanCachePolicy CleanCachePolicy `json:"cleanCachePolicy,omitempty"`
-
-	// MetadataSyncPolicy defines the policy of syncing metadata when setting up the runtime. If not set,
-	// +optional
-	MetadataSyncPolicy MetadataSyncPolicy `json:"metadataSyncPolicy,omitempty"`
 }
 
 // AlluxioRuntimeSpec defines the desired state of AlluxioRuntime

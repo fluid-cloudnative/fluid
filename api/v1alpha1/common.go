@@ -86,6 +86,17 @@ type TieredStore struct {
 	Levels []Level `json:"levels,omitempty"`
 }
 
+// RuntimeManagement defines suggestions for runtime controllers to manage the runtime
+type RuntimeManagement struct {
+	// CleanCachePolicy defines the policy of cleaning cache when shutting down the runtime
+	// +optional
+	CleanCachePolicy CleanCachePolicy `json:"cleanCachePolicy,omitempty"`
+
+	// MetadataSyncPolicy defines the policy of syncing metadata when setting up the runtime. If not set,
+	// +optional
+	MetadataSyncPolicy MetadataSyncPolicy `json:"metadataSyncPolicy,omitempty"`
+}
+
 // InitUsersSpec is a description of the initialize the users for runtime
 type InitUsersSpec struct {
 
@@ -244,6 +255,35 @@ const (
 	DataProcessType OperationType = "DataProcess"
 )
 
+// AffinityPolicy the strategy for the affinity between Data Operation Pods.
+type AffinityPolicy string
+
+const (
+	DefaultAffinityStrategy AffinityPolicy = ""
+	RequireAffinityStrategy AffinityPolicy = "Require"
+	PreferAffinityStrategy  AffinityPolicy = "Prefer"
+)
+
+type AffinityStrategy struct {
+	// Policy one of: "", "Require", "Prefer"
+	// +optional
+	Policy AffinityPolicy `json:"policy,omitempty"`
+
+	Prefers  []Prefer  `json:"prefers,omitempty"`
+	Requires []Require `json:"requires,omitempty"`
+}
+
+// Prefer defines the label key and weight for generating a PreferredSchedulingTerm.
+type Prefer struct {
+	Name   string `json:"name"`
+	Weight int32  `json:"weight"`
+}
+
+// Require defines the label key for generating a NodeSelectorTerm.
+type Require struct {
+	Name string `json:"name"`
+}
+
 type OperationRef struct {
 	// API version of the referent operation
 	// +optional
@@ -261,6 +301,10 @@ type OperationRef struct {
 	// Namespace specifies the namespace of the referent operation.
 	// +optional
 	Namespace string `json:"namespace,omitempty"`
+
+	// AffinityStrategy specifies the pod affinity strategy with the referent operation.
+	// +optional
+	AffinityStrategy AffinityStrategy `json:"affinityStrategy,omitempty"`
 }
 
 type WaitingStatus struct {

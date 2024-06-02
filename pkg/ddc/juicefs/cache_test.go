@@ -39,7 +39,6 @@ func TestJuiceFSEngine_queryCacheStatus(t *testing.T) {
 			if err != nil {
 				t.Errorf("fail to create the runtimeInfo with error %v", err)
 			}
-			runtimeInfo.SetupFuseDeployMode(false, nil)
 			var engine *JuiceFSEngine
 			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfDaemonset",
 				func(_ *JuiceFSEngine, dsName string, namespace string) ([]corev1.Pod, error) {
@@ -112,7 +111,6 @@ func TestJuiceFSEngine_queryCacheStatus(t *testing.T) {
 			if err != nil {
 				t.Errorf("fail to create the runtimeInfo with error %v", err)
 			}
-			runtimeInfo.SetupFuseDeployMode(false, nil)
 			var engine *JuiceFSEngine
 			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfDaemonset",
 				func(_ *JuiceFSEngine, dsName string, namespace string) ([]corev1.Pod, error) {

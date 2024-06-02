@@ -37,7 +37,7 @@ func (e *JindoFSxEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		}
 
 		// Setup Fuse Deploy Mode
-		e.runtimeInfo.SetupFuseDeployMode(runtime.Spec.Fuse.Global, runtime.Spec.Fuse.NodeSelector)
+		e.runtimeInfo.SetFuseNodeSelector(runtime.Spec.Fuse.NodeSelector)
 
 		// Check if the runtime is using deprecated labels
 		isLabelDeprecated, err := e.HasDeprecatedCommonLabelname()

@@ -39,5 +39,5 @@ func (e *AlluxioEngine) generateDataProcessValueFile(ctx cruntime.ReconcileReque
 		return "", errors.Wrap(err, "failed to get dataset")
 	}
 
-	return dataprocess.GenDataProcessValueFile(targetDataset, dataProcess)
+	return dataprocess.GenDataProcessValueFile(e.Client, targetDataset, dataProcess)
 }

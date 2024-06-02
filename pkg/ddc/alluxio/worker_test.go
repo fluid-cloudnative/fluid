@@ -55,7 +55,7 @@ func TestSetupWorkers(t *testing.T) {
 	nodeSelector := map[string]string{
 		"node-select": "true",
 	}
-	runtimeInfoHadoop.SetupFuseDeployMode(true, nodeSelector)
+	runtimeInfoHadoop.SetFuseNodeSelector(nodeSelector)
 
 	type fields struct {
 		replicas         int32
@@ -385,9 +385,7 @@ func TestCheckWorkersReady(t *testing.T) {
 					},
 					Spec: datav1alpha1.AlluxioRuntimeSpec{
 						Replicas: 1,
-						Fuse: datav1alpha1.AlluxioFuseSpec{
-							Global: true,
-						},
+						Fuse:     datav1alpha1.AlluxioFuseSpec{},
 					},
 				},
 				worker: &appsv1.StatefulSet{
@@ -426,9 +424,7 @@ func TestCheckWorkersReady(t *testing.T) {
 					},
 					Spec: datav1alpha1.AlluxioRuntimeSpec{
 						Replicas: 1,
-						Fuse: datav1alpha1.AlluxioFuseSpec{
-							Global: true,
-						},
+						Fuse:     datav1alpha1.AlluxioFuseSpec{},
 					},
 				},
 				worker: &appsv1.StatefulSet{
@@ -466,9 +462,7 @@ func TestCheckWorkersReady(t *testing.T) {
 					},
 					Spec: datav1alpha1.AlluxioRuntimeSpec{
 						Replicas: 1,
-						Fuse: datav1alpha1.AlluxioFuseSpec{
-							Global: true,
-						},
+						Fuse:     datav1alpha1.AlluxioFuseSpec{},
 					},
 				},
 				worker: &appsv1.StatefulSet{

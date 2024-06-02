@@ -40,7 +40,7 @@ var updateHeaderTblSize = func(e *hpack.Encoder, v uint32) {
 }
 
 type itemNode struct {
-	it   interface{}
+	it   any
 	next *itemNode
 }
 
@@ -49,7 +49,7 @@ type itemList struct {
 	tail *itemNode
 }
 
-func (il *itemList) enqueue(i interface{}) {
+func (il *itemList) enqueue(i any) {
 	n := &itemNode{it: i}
 	if il.tail == nil {
 		il.head, il.tail = n, n
@@ -61,11 +61,11 @@ func (il *itemList) enqueue(i interface{}) {
 
 // peek returns the first item in the list without removing it from the
 // list.
-func (il *itemList) peek() interface{} {
+func (il *itemList) peek() any {
 	return il.head.it
 }
 
-func (il *itemList) dequeue() interface{} {
+func (il *itemList) dequeue() any {
 	if il.head == nil {
 		return nil
 	}
@@ -193,7 +193,7 @@ type goAway struct {
 	code      http2.ErrCode
 	debugData []byte
 	headsUp   bool
-	closeConn error // if set, loopyWriter will exit, resulting in conn closure
+	closeConn error // if set, loopyWriter will exit with this error
 }
 
 func (*goAway) isTransportResponseFrame() bool { return false }
@@ -336,7 +336,7 @@ func (c *controlBuffer) put(it cbItem) error {
 	return err
 }
 
-func (c *controlBuffer) executeAndPut(f func(it interface{}) bool, it cbItem) (bool, error) {
+func (c *controlBuffer) executeAndPut(f func() bool, it cbItem) (bool, error) {
 	var wakeUp bool
 	c.mu.Lock()
 	if c.err != nil {
@@ -344,7 +344,7 @@ func (c *controlBuffer) executeAndPut(f func(it interface{}) bool, it cbItem) (b
 		return false, c.err
 	}
 	if f != nil {
-		if !f(it) { // f wasn't successful
+		if !f() { // f wasn't successful
 			c.mu.Unlock()
 			return false, nil
 		}
@@ -373,7 +373,7 @@ func (c *controlBuffer) executeAndPut(f func(it interface{}) bool, it cbItem) (b
 }
 
 // Note argument f should never be nil.
-func (c *controlBuffer) execute(f func(it interface{}) bool, it interface{}) (bool, error) {
+func (c *controlBuffer) execute(f func(it any) bool, it any) (bool, error) {
 	c.mu.Lock()
 	if c.err != nil {
 		c.mu.Unlock()
@@ -387,7 +387,7 @@ func (c *controlBuffer) execute(f func(it interface{}) bool, it interface{}) (bo
 	return true, nil
 }
 
-func (c *controlBuffer) get(block bool) (interface{}, error) {
+func (c *controlBuffer) get(block bool) (any, error) {
 	for {
 		c.mu.Lock()
 		if c.err != nil {
@@ -495,21 +495,22 @@ type loopyWriter struct {
 	ssGoAwayHandler func(*goAway) (bool, error)
 }
 
-func newLoopyWriter(s side, fr *framer, cbuf *controlBuffer, bdpEst *bdpEstimator, conn net.Conn, logger *grpclog.PrefixLogger) *loopyWriter {
+func newLoopyWriter(s side, fr *framer, cbuf *controlBuffer, bdpEst *bdpEstimator, conn net.Conn, logger *grpclog.PrefixLogger, goAwayHandler func(*goAway) (bool, error)) *loopyWriter {
 	var buf bytes.Buffer
 	l := &loopyWriter{
-		side:          s,
-		cbuf:          cbuf,
-		sendQuota:     defaultWindowSize,
-		oiws:          defaultWindowSize,
-		estdStreams:   make(map[uint32]*outStream),
-		activeStreams: newOutStreamList(),
-		framer:        fr,
-		hBuf:          &buf,
-		hEnc:          hpack.NewEncoder(&buf),
-		bdpEst:        bdpEst,
-		conn:          conn,
-		logger:        logger,
+		side:            s,
+		cbuf:            cbuf,
+		sendQuota:       defaultWindowSize,
+		oiws:            defaultWindowSize,
+		estdStreams:     make(map[uint32]*outStream),
+		activeStreams:   newOutStreamList(),
+		framer:          fr,
+		hBuf:            &buf,
+		hEnc:            hpack.NewEncoder(&buf),
+		bdpEst:          bdpEst,
+		conn:            conn,
+		logger:          logger,
+		ssGoAwayHandler: goAwayHandler,
 	}
 	return l
 }
@@ -535,8 +536,8 @@ const minBatchSize = 1000
 // size is too low to give stream goroutines a chance to fill it up.
 //
 // Upon exiting, if the error causing the exit is not an I/O error, run()
-// flushes and closes the underlying connection.  Otherwise, the connection is
-// left open to allow the I/O error to be encountered by the reader instead.
+// flushes the underlying connection.  The connection is always left open to
+// allow different closing behavior on the client and server.
 func (l *loopyWriter) run() (err error) {
 	defer func() {
 		if l.logger.V(logLevel) {
@@ -544,7 +545,6 @@ func (l *loopyWriter) run() (err error) {
 		}
 		if !isIOError(err) {
 			l.framer.writer.Flush()
-			l.conn.Close()
 		}
 		l.cbuf.finish()
 	}()
@@ -830,7 +830,7 @@ func (l *loopyWriter) goAwayHandler(g *goAway) error {
 	return nil
 }
 
-func (l *loopyWriter) handle(i interface{}) error {
+func (l *loopyWriter) handle(i any) error {
 	switch i := i.(type) {
 	case *incomingWindowUpdate:
 		l.incomingWindowUpdateHandler(i)

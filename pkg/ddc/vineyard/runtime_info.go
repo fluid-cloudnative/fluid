@@ -18,6 +18,11 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 )
 
+func (e *VineyardEngine) CheckRuntimeReady() (ready bool) {
+	//TODO implement me
+	return true
+}
+
 // getRuntimeInfo gets runtime info
 func (e *VineyardEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 	if e.runtimeInfo == nil {
@@ -37,7 +42,7 @@ func (e *VineyardEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		}
 
 		// Setup Fuse Deploy Mode
-		e.runtimeInfo.SetupFuseDeployMode(common.VineyardFuseIsGlobal, common.VineyardFuseNodeSelector)
+		e.runtimeInfo.SetFuseNodeSelector(common.VineyardFuseNodeSelector)
 	}
 
 	return e.runtimeInfo, nil

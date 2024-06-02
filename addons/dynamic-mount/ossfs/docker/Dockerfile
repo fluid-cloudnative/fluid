@@ -1,4 +1,5 @@
-FROM alpine:3.18 AS builder
+# alpine:3.18
+FROM alpine@sha256:11e21d7b981a59554b3f822c49f6e9f57b6068bb74f49c4cd5cc4c663c7e5160 AS builder
 ENV OSSFS_VERSION 1.91.1
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/' /etc/apk/repositories
 RUN apk --update add fuse alpine-sdk automake autoconf libxml2-dev fuse-dev curl-dev pkgconf
@@ -9,7 +10,8 @@ RUN cd ossfs-1.91.1 \
   && make \
   && make install
 
-FROM alpine:3.18
+# alpine:3.18
+FROM alpine@sha256:11e21d7b981a59554b3f822c49f6e9f57b6068bb74f49c4cd5cc4c663c7e5160
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/' /etc/apk/repositories
 RUN apk --update add fuse curl libxml2 openssl libstdc++ libgcc python3 inotify-tools bash coreutils tini && rm -rf /var/cache/apk/* 
 ENV OSSFS_VERSION v1.91.1

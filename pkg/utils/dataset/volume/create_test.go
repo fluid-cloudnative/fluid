@@ -19,21 +19,19 @@ func TestCreatePersistentVolumeForRuntime(t *testing.T) {
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
-	runtimeInfoHbase.SetupFuseDeployMode(true, nil)
 
 	// runtimeInfoExclusive is a runtimeInfo in global mode with no correspond PV.
 	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio", datav1alpha1.TieredStore{})
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
-	runtimeInfoSpark.SetupFuseDeployMode(true, map[string]string{"test-node": "true"})
+	runtimeInfoSpark.SetFuseNodeSelector(map[string]string{"test-node": "true"})
 
 	// runtimeInfoShare is a runtimeInfo in non global mode with no correspond PV.
 	runtimeInfoHadoop, err := base.BuildRuntimeInfo("hadoop", "fluid", "alluxio", datav1alpha1.TieredStore{})
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
-	runtimeInfoHadoop.SetupFuseDeployMode(false, nil)
 
 	testPVInputs := []*v1.PersistentVolume{{
 		ObjectMeta: metav1.ObjectMeta{

@@ -39,18 +39,11 @@ import (
 
 var _ = Describe("TemplateEngine", func() {
 	mockDatasetName := "fluid-data-set"
-	mockDataLoadName := "fluid-data-load"
 	mockNamespace := "default"
 
 	fakeDataset := &datav1alpha1.Dataset{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      mockDatasetName,
-			Namespace: mockNamespace,
-		},
-	}
-	fakeDataLoad := datav1alpha1.DataLoad{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      mockDataLoadName,
 			Namespace: mockNamespace,
 		},
 	}
@@ -206,13 +199,6 @@ var _ = Describe("TemplateEngine", func() {
 		It("Should shutdown successfully", func() {
 			impl.EXPECT().Shutdown().Return(nil).Times(1)
 			Expect(t.Shutdown()).To(BeNil())
-		})
-	})
-
-	Describe("LoadData", func() {
-		It("Should Load data successfully", func() {
-			impl.EXPECT().CreateDataLoadJob(fakeCtx, fakeDataLoad).Return(nil).Times(1)
-			Expect(t.LoadData(fakeCtx, fakeDataLoad)).To(BeNil())
 		})
 	})
 

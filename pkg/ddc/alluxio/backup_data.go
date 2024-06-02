@@ -18,6 +18,7 @@ package alluxio
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
 	"os"
 	"strconv"
 	"strings"
@@ -131,6 +132,12 @@ func (e *AlluxioEngine) generateDataBackupValueFile(ctx cruntime.ReconcileReques
 	}
 	dataBackup.PVCName = pvcName
 	dataBackup.Path = path
+
+	// inject the node affinity by previous operation pod.
+	dataBackup.Affinity, err = dataflow.InjectAffinityByRunAfterOp(e.Client, databackup.Spec.RunAfter, databackup.Namespace, nil)
+	if err != nil {
+		return "", err
+	}
 
 	dataBackupValue := cdatabackup.DataBackupValue{DataBackup: dataBackup}
 

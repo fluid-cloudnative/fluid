@@ -56,9 +56,7 @@ func TestBuild(t *testing.T) {
 			Master: datav1alpha1.GooseFSCompTemplateSpec{
 				Replicas: 1,
 			},
-			Fuse: datav1alpha1.GooseFSFuseSpec{
-				Global: false,
-			},
+			Fuse: datav1alpha1.GooseFSFuseSpec{},
 		},
 		Status: datav1alpha1.RuntimeStatus{
 			CacheStates: map[common.CacheStateName]string{

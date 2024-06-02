@@ -40,13 +40,6 @@ type MockEngine struct {
 	recorder *MockEngineMockRecorder
 }
 
-func (m *MockEngine) MigrateData(ctx runtime.ReconcileRequestContext, targetDataMigrate v1alpha1.DataMigrate) (err error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MigrateData", ctx, targetDataMigrate)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
 func (m *MockEngine) Operate(ctx runtime.ReconcileRequestContext, opStatus *v1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Operate", ctx, opStatus, operation)
@@ -143,20 +136,6 @@ func (mr *MockEngineMockRecorder) ID() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ID", reflect.TypeOf((*MockEngine)(nil).ID))
 }
 
-// LoadData mocks base method.
-func (m *MockEngine) LoadData(ctx runtime.ReconcileRequestContext, targetDataload v1alpha1.DataLoad) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "LoadData", ctx, targetDataload)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// LoadData indicates an expected call of LoadData.
-func (mr *MockEngineMockRecorder) LoadData(ctx, targetDataload interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadData", reflect.TypeOf((*MockEngine)(nil).LoadData), ctx, targetDataload)
-}
-
 // Setup mocks base method.
 func (m *MockEngine) Setup(ctx runtime.ReconcileRequestContext) (bool, error) {
 	m.ctrl.T.Helper()
@@ -250,20 +229,6 @@ func (m *MockDataloader) CheckRuntimeReady() bool {
 func (mr *MockDataloaderMockRecorder) CheckRuntimeReady() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckRuntimeReady", reflect.TypeOf((*MockDataloader)(nil).CheckRuntimeReady))
-}
-
-// LoadData mocks base method.
-func (m *MockDataloader) LoadData(ctx runtime.ReconcileRequestContext, targetDataload v1alpha1.DataLoad) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "LoadData", ctx, targetDataload)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// LoadData indicates an expected call of LoadData.
-func (mr *MockDataloaderMockRecorder) LoadData(ctx, targetDataload interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadData", reflect.TypeOf((*MockDataloader)(nil).LoadData), ctx, targetDataload)
 }
 
 // MockImplement is a mock of implement interface.
@@ -412,27 +377,6 @@ func (m *MockImplement) GetDataOperationValueFile(ctx runtime.ReconcileRequestCo
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
-}
-
-// CreateDataLoadJob mocks base method.
-func (m *MockImplement) CreateDataLoadJob(ctx runtime.ReconcileRequestContext, targetDataload v1alpha1.DataLoad) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateDataLoadJob", ctx, targetDataload)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-func (m *MockImplement) CreateDataMigrateJob(ctx runtime.ReconcileRequestContext, targetDataMigrate v1alpha1.DataMigrate) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateDataMigrateJob", ctx, targetDataMigrate)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CreateDataLoadJob indicates an expected call of CreateDataLoadJob.
-func (mr *MockImplementMockRecorder) CreateDataLoadJob(ctx, targetDataload interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateDataLoadJob", reflect.TypeOf((*MockImplement)(nil).CreateDataLoadJob), ctx, targetDataload)
 }
 
 // CreateVolume mocks base method.

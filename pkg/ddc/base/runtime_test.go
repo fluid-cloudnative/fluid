@@ -597,9 +597,7 @@ func TestCleanPolicy(t *testing.T) {
 				name:        "default_policy_alluxio",
 				namespace:   "default",
 				runtimeType: common.AlluxioRuntime,
-				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
-					Global:      true,
 					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
 				},
 			},
@@ -616,9 +614,7 @@ func TestCleanPolicy(t *testing.T) {
 				name:        "on_demand_policy_alluxio",
 				namespace:   "default",
 				runtimeType: common.AlluxioRuntime,
-				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
-					Global:      true,
 					CleanPolicy: v1alpha1.OnDemandCleanPolicy,
 				},
 			},
@@ -635,9 +631,7 @@ func TestCleanPolicy(t *testing.T) {
 				name:        "on_runtime_deleted_policy_alluxio",
 				namespace:   "default",
 				runtimeType: common.AlluxioRuntime,
-				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
-					Global:      true,
 					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
 				},
 			},
@@ -654,9 +648,7 @@ func TestCleanPolicy(t *testing.T) {
 				name:        "default_policy_jindo",
 				namespace:   "default",
 				runtimeType: common.JindoRuntime,
-				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
-					Global:      true,
 					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
 				},
 			},
@@ -673,9 +665,7 @@ func TestCleanPolicy(t *testing.T) {
 				name:        "on_demand_policy_jindo",
 				namespace:   "default",
 				runtimeType: common.JindoRuntime,
-				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
-					Global:      true,
 					CleanPolicy: v1alpha1.OnDemandCleanPolicy,
 				},
 			},
@@ -692,9 +682,7 @@ func TestCleanPolicy(t *testing.T) {
 				name:        "on_runtime_deleted_policy_jindo",
 				namespace:   "default",
 				runtimeType: common.JindoRuntime,
-				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
-					Global:      true,
 					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
 				},
 			},
@@ -711,9 +699,7 @@ func TestCleanPolicy(t *testing.T) {
 				name:        "default_policy_juicefs",
 				namespace:   "default",
 				runtimeType: common.JuiceFSRuntime,
-				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
-					Global:      true,
 					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
 				},
 			},
@@ -730,9 +716,7 @@ func TestCleanPolicy(t *testing.T) {
 				name:        "on_demand_policy_juicefs",
 				namespace:   "default",
 				runtimeType: common.JuiceFSRuntime,
-				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
-					Global:      true,
 					CleanPolicy: v1alpha1.OnDemandCleanPolicy,
 				},
 			},
@@ -749,9 +733,7 @@ func TestCleanPolicy(t *testing.T) {
 				name:        "on_runtime_deleted_policy_juicefs",
 				namespace:   "default",
 				runtimeType: common.JuiceFSRuntime,
-				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
-					Global:      true,
 					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
 				},
 			},
@@ -768,9 +750,7 @@ func TestCleanPolicy(t *testing.T) {
 				name:        "default_policy_goosefs",
 				namespace:   "default",
 				runtimeType: common.GooseFSRuntime,
-				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
-					Global:      true,
 					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
 				},
 			},
@@ -787,9 +767,7 @@ func TestCleanPolicy(t *testing.T) {
 				name:        "on_demand_policy_goosefs",
 				namespace:   "default",
 				runtimeType: common.GooseFSRuntime,
-				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
-					Global:      true,
 					CleanPolicy: v1alpha1.OnDemandCleanPolicy,
 				},
 			},
@@ -806,9 +784,7 @@ func TestCleanPolicy(t *testing.T) {
 				name:        "on_runtime_deleted_policy_goosefs",
 				namespace:   "default",
 				runtimeType: common.GooseFSRuntime,
-				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
-					Global:      true,
 					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
 				},
 			},
@@ -986,9 +962,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 				name:        "alluxio",
 				namespace:   "default",
 				runtimeType: common.AlluxioRuntime,
-				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
-					Global:      true,
 					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
 				},
 			},
@@ -1005,9 +979,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 				name:        "goosefs",
 				namespace:   "default",
 				runtimeType: common.GooseFSRuntime,
-				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
-					Global:      true,
 					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
 				},
 			},
@@ -1024,9 +996,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 				name:        "goosefs-fake",
 				namespace:   "default",
 				runtimeType: common.GooseFSRuntime,
-				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
-					Global:      true,
 					CleanPolicy: v1alpha1.OnDemandCleanPolicy,
 				},
 			},
@@ -1043,9 +1013,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 				name:        "jindo",
 				namespace:   "default",
 				runtimeType: common.JindoRuntime,
-				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
-					Global:      true,
 					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
 				},
 			},
@@ -1062,9 +1030,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 				name:        "juice",
 				namespace:   "default",
 				runtimeType: common.JuiceFSRuntime,
-				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
-					Global:      true,
 					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
 				},
 			},
@@ -1081,9 +1047,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 				name:        "juice-fake",
 				namespace:   "default",
 				runtimeType: common.JuiceFSRuntime,
-				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
-					Global:      true,
 					CleanPolicy: v1alpha1.OnDemandCleanPolicy,
 				},
 			},
@@ -1100,9 +1064,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 				name:        "efc",
 				namespace:   "default",
 				runtimeType: common.EFCRuntime,
-				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
-					Global:      true,
 					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
 				},
 			},
@@ -1119,9 +1081,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 				name:        "efc-fake",
 				namespace:   "default",
 				runtimeType: common.EFCRuntime,
-				// fuse global is set to true since v0.7.0
 				fuse: Fuse{
-					Global:      true,
 					CleanPolicy: v1alpha1.OnDemandCleanPolicy,
 				},
 			},

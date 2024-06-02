@@ -13,6 +13,16 @@ rules:
     - get
     - list
     - watch
+  {{- if eq (include "fluid.dataflowAffinity.enabled" . ) "true" }}
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - get
+      - list
+      - watch
+  {{- end }}
   - apiGroups:
     - ""
     resources:

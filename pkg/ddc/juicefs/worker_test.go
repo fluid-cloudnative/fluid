@@ -166,7 +166,7 @@ func TestJuiceFSEngine_SetupWorkers(t *testing.T) {
 	nodeSelector := map[string]string{
 		"node-select": "true",
 	}
-	runtimeInfo.SetupFuseDeployMode(true, nodeSelector)
+	runtimeInfo.SetFuseNodeSelector(nodeSelector)
 
 	type fields struct {
 		replicas    int32
@@ -297,9 +297,7 @@ func TestJuiceFSEngine_CheckWorkersReady(t *testing.T) {
 					},
 					Spec: datav1alpha1.JuiceFSRuntimeSpec{
 						Replicas: 1,
-						Fuse: datav1alpha1.JuiceFSFuseSpec{
-							Global: true,
-						},
+						Fuse:     datav1alpha1.JuiceFSFuseSpec{},
 					},
 				},
 				worker: &appsv1.StatefulSet{
@@ -339,9 +337,7 @@ func TestJuiceFSEngine_CheckWorkersReady(t *testing.T) {
 					},
 					Spec: datav1alpha1.JuiceFSRuntimeSpec{
 						Replicas: 1,
-						Fuse: datav1alpha1.JuiceFSFuseSpec{
-							Global: true,
-						},
+						Fuse:     datav1alpha1.JuiceFSFuseSpec{},
 					},
 				},
 				worker: &appsv1.StatefulSet{

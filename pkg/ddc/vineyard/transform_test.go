@@ -51,7 +51,7 @@ func TestTransformFuse(t *testing.T) {
 		"test image, imageTag and pullPolicy": {
 			runtime: &datav1alpha1.VineyardRuntime{
 				Spec: datav1alpha1.VineyardRuntimeSpec{
-					Fuse: datav1alpha1.VineyardSockSpec{
+					Fuse: datav1alpha1.VineyardClientSocketSpec{
 						Image:           "dummy-fuse-image",
 						ImageTag:        "dummy-tag",
 						ImagePullPolicy: "IfNotPresent",
@@ -67,7 +67,7 @@ func TestTransformFuse(t *testing.T) {
 		"test image, imageTag and pullPolicy from env": {
 			runtime: &datav1alpha1.VineyardRuntime{
 				Spec: datav1alpha1.VineyardRuntimeSpec{
-					Fuse: datav1alpha1.VineyardSockSpec{
+					Fuse: datav1alpha1.VineyardClientSocketSpec{
 						ImagePullPolicy: "IfNotPresent",
 						Env:             map[string]string{"TEST_ENV": "true"},
 						CleanPolicy:     "OnRuntimeDeleted",
@@ -466,6 +466,78 @@ func TestTransformWorkerOptions(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			engine := &VineyardEngine{}
 			actual := engine.transformWorkerOptions(tt.runtime)
+			if !reflect.DeepEqual(actual, tt.expected) {
+				t.Errorf("%s: expected %v, got %v", tt.name, tt.expected, actual)
+			}
+		})
+	}
+}
+
+func TestTransformFuseOptions(t *testing.T) {
+	tests := []struct {
+		name     string
+		runtime  *datav1alpha1.VineyardRuntime
+		value    *Vineyard
+		expected map[string]string
+	}{
+		{
+			name: "NoFuseOptions",
+			runtime: &datav1alpha1.VineyardRuntime{
+				Spec: datav1alpha1.VineyardRuntimeSpec{
+					Fuse: datav1alpha1.VineyardClientSocketSpec{
+						Options: map[string]string{},
+					},
+				},
+			},
+			value: &Vineyard{
+				FullnameOverride: "vineyard",
+				Master: Master{
+					Ports: map[string]int{
+						"client": 2379,
+					},
+				},
+			},
+			expected: map[string]string{
+				"size":          "0",
+				"etcd_endpoint": "http://vineyard-master-0.vineyard-master.default:2379",
+				"etcd_prefix":   "/vineyard",
+			},
+		},
+		{
+			name: "WithFuseOptions",
+			runtime: &datav1alpha1.VineyardRuntime{
+				Spec: datav1alpha1.VineyardRuntimeSpec{
+					Fuse: datav1alpha1.VineyardClientSocketSpec{
+						Options: map[string]string{
+							"size":           "10Gi",
+							"etcd_endpoint":  "http://vineyard-master-0.vineyard-master.default:12379",
+							"reserve_memory": "true",
+						},
+					},
+				},
+			},
+			value: &Vineyard{
+				Master: Master{
+					Ports: map[string]int{
+						"client": 12379,
+					},
+				},
+			},
+			expected: map[string]string{
+				"size":           "10Gi",
+				"etcd_endpoint":  "http://vineyard-master-0.vineyard-master.default:12379",
+				"etcd_prefix":    "/vineyard",
+				"reserve_memory": "true",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			engine := &VineyardEngine{
+				namespace: "default",
+			}
+			actual := engine.transformFuseOptions(tt.runtime, tt.value)
 			if !reflect.DeepEqual(actual, tt.expected) {
 				t.Errorf("%s: expected %v, got %v", tt.name, tt.expected, actual)
 			}

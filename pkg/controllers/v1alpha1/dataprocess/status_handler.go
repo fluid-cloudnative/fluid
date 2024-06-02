@@ -17,8 +17,10 @@
 package dataprocess
 
 import (
+	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 	"github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -60,32 +62,48 @@ func (handler *OnceStatusHandler) GetOperationStatus(ctx runtime.ReconcileReques
 		return
 	}
 
-	if len(job.Status.Conditions) != 0 {
-		if job.Status.Conditions[0].Type == batchv1.JobFailed ||
-			job.Status.Conditions[0].Type == batchv1.JobComplete {
-			// job either failed or complete, update DataLoad's phase status
-			jobCondition := job.Status.Conditions[0]
+	isJobFinished := len(job.Status.Conditions) != 0 &&
+		(job.Status.Conditions[0].Type == batchv1.JobFailed || job.Status.Conditions[0].Type == batchv1.JobComplete)
+	if !isJobFinished {
+		ctx.Log.V(1).Info("DataProcess job still running", "namespace", ctx.Namespace, "jobName", jobName)
+		return
+	}
 
-			result.Conditions = []datav1alpha1.Condition{
-				{
-					Type:               common.ConditionType(jobCondition.Type),
-					Status:             jobCondition.Status,
-					Reason:             jobCondition.Reason,
-					Message:            jobCondition.Message,
-					LastProbeTime:      jobCondition.LastProbeTime,
-					LastTransitionTime: jobCondition.LastTransitionTime,
-				},
-			}
-			if jobCondition.Type == batchv1.JobFailed {
-				result.Phase = common.PhaseFailed
-			} else {
-				result.Phase = common.PhaseComplete
-			}
-			result.Duration = utils.CalculateDuration(job.CreationTimestamp.Time, jobCondition.LastTransitionTime.Time)
+	// set the node labels in status when job finished
+	if dataflow.Enabled(dataflow.DataflowAffinity) && result.NodeAffinity == nil {
+		jobPod, err := kubeclient.GetSucceedPodForJob(handler.Client, job)
+		if err != nil {
+			ctx.Log.Error(err, "can't get pod for job", "namespace", ctx.Namespace, "jobName", jobName)
+			return nil, err
+		}
 
-			return
+		// generate the node labels
+		result.NodeAffinity, err = dataflow.GenerateNodeAffinity(handler.Client, jobPod)
+		if err != nil {
+			return nil, fmt.Errorf("error to generate the node labels: %v", err)
 		}
 	}
-	ctx.Log.V(1).Info("DataProcess job still running", "namespace", ctx.Namespace, "jobName", jobName)
+
+	// job either failed or complete, update DataLoad's phase status
+	jobCondition := job.Status.Conditions[0]
+
+	result.Conditions = []datav1alpha1.Condition{
+		{
+			Type:               common.ConditionType(jobCondition.Type),
+			Status:             jobCondition.Status,
+			Reason:             jobCondition.Reason,
+			Message:            jobCondition.Message,
+			LastProbeTime:      jobCondition.LastProbeTime,
+			LastTransitionTime: jobCondition.LastTransitionTime,
+		},
+	}
+
+	if jobCondition.Type == batchv1.JobFailed {
+		result.Phase = common.PhaseFailed
+	} else {
+		result.Phase = common.PhaseComplete
+	}
+	result.Duration = utils.CalculateDuration(job.CreationTimestamp.Time, jobCondition.LastTransitionTime.Time)
+
 	return
 }
