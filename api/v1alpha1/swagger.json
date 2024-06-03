@@ -2491,7 +2491,7 @@
           }
         },
         "image": {
-          "description": "The image of Vineyard component. For Master, the default image is `bitnami/etcd` For Worker, the default image is `vineyardcloudnative/vineyardd` The default container registry is `docker.io`, you can change it by setting the image field",
+          "description": "The image of Vineyard component. For Master, the default image is `registry.aliyuncs.com/vineyard/vineyardd` For Worker, the default image is `registry.aliyuncs.com/vineyard/vineyardd` The default container registry is `docker.io`, you can change it by setting the image field",
           "type": "string"
         },
         "imagePullPolicy": {
@@ -2499,11 +2499,7 @@
           "type": "string"
         },
         "imageTag": {
-          "description": "The image tag of Vineyard component. For Master, the default image tag is `3.5.10`. For Worker, the default image tag is `v0.21.5`.",
-          "type": "string"
-        },
-        "networkMode": {
-          "description": "Whether to use hostnetwork or not Default is HostNetwork",
+          "description": "The image tag of Vineyard component. For Master, the default image tag is `v0.22.1`. For Worker, the default image tag is `v0.22.1`.",
           "type": "string"
         },
         "nodeSelector": {
@@ -3669,7 +3665,7 @@
           }
         },
         "image": {
-          "description": "The image of Vineyard component. For Master, the default image is `bitnami/etcd` For Worker, the default image is `vineyardcloudnative/vineyardd` The default container registry is `docker.io`, you can change it by setting the image field",
+          "description": "The image of Vineyard component. For Master, the default image is `registry.aliyuncs.com/vineyard/vineyardd` For Worker, the default image is `registry.aliyuncs.com/vineyard/vineyardd` The default container registry is `docker.io`, you can change it by setting the image field",
           "type": "string"
         },
         "imagePullPolicy": {
@@ -3677,11 +3673,7 @@
           "type": "string"
         },
         "imageTag": {
-          "description": "The image tag of Vineyard component. For Master, the default image tag is `3.5.10`. For Worker, the default image tag is `v0.21.5`.",
-          "type": "string"
-        },
-        "networkMode": {
-          "description": "Whether to use hostnetwork or not Default is HostNetwork",
+          "description": "The image tag of Vineyard component. For Master, the default image tag is `v0.22.1`. For Worker, the default image tag is `latest`.",
           "type": "string"
         },
         "nodeSelector": {

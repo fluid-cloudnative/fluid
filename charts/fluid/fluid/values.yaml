@@ -152,11 +152,11 @@ runtime:
       image: fluidcloudnative/vineyardruntime-controller:v1.0.1-a7f8904
       imagePullPolicy: Always
     master:
-      image: bitnami/etcd:3.5.10
+      image: registry.aliyuncs.com/vineyard/vineyardd:v0.22.1
     worker:
-      image: vineyardcloudnative/vineyardd:v0.21.5
+      image: registry.aliyuncs.com/vineyard/vineyardd:v0.22.1
     fuse:
-      image: vineyardcloudnative/vineyard-fluid-fuse:v0.21.5
+      image: registry.aliyuncs.com/vineyard/vineyard-fluid-fuse:v0.22.1
 
 webhook:
   enabled: true

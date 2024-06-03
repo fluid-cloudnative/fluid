@@ -4516,14 +4516,14 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_MasterSpec(ref common.Reference
 					},
 					"image": {
 						SchemaProps: spec.SchemaProps{
-							Description: "The image of Vineyard component. For Master, the default image is `bitnami/etcd` For Worker, the default image is `vineyardcloudnative/vineyardd` The default container registry is `docker.io`, you can change it by setting the image field",
+							Description: "The image of Vineyard component. For Master, the default image is `registry.aliyuncs.com/vineyard/vineyardd` For Worker, the default image is `registry.aliyuncs.com/vineyard/vineyardd` The default container registry is `docker.io`, you can change it by setting the image field",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
 					"imageTag": {
 						SchemaProps: spec.SchemaProps{
-							Description: "The image tag of Vineyard component. For Master, the default image tag is `3.5.10`. For Worker, the default image tag is `v0.21.5`.",
+							Description: "The image tag of Vineyard component. For Master, the default image tag is `v0.22.1`. For Worker, the default image tag is `v0.22.1`.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -6506,14 +6506,14 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardClientSocketSpec(ref co
 				Properties: map[string]spec.Schema{
 					"image": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Image for Vineyard Fuse Default is `vineyardcloudnative/vineyard-fluid-fuse`",
+							Description: "Image for Vineyard Fuse Default is `registry.aliyuncs.com/vineyard/vineyard-fluid-fuse`",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
 					"imageTag": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Image Tag for Vineyard Fuse Default is `v0.21.5`",
+							Description: "Image Tag for Vineyard Fuse Default is `v0.22.1`",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -6609,14 +6609,14 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardCompTemplateSpec(ref co
 					},
 					"image": {
 						SchemaProps: spec.SchemaProps{
-							Description: "The image of Vineyard component. For Master, the default image is `bitnami/etcd` For Worker, the default image is `vineyardcloudnative/vineyardd` The default container registry is `docker.io`, you can change it by setting the image field",
+							Description: "The image of Vineyard component. For Master, the default image is `registry.aliyuncs.com/vineyard/vineyardd` For Worker, the default image is `registry.aliyuncs.com/vineyard/vineyardd` The default container registry is `docker.io`, you can change it by setting the image field",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
 					"imageTag": {
 						SchemaProps: spec.SchemaProps{
-							Description: "The image tag of Vineyard component. For Master, the default image tag is `3.5.10`. For Worker, the default image tag is `v0.21.5`.",
+							Description: "The image tag of Vineyard component. For Master, the default image tag is `v0.22.1`. For Worker, the default image tag is `v0.22.1`.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
