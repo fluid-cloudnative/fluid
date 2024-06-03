@@ -31,15 +31,15 @@ type VineyardCompTemplateSpec struct {
 	Replicas int32 `json:"replicas,omitempty"`
 
 	// The image of Vineyard component.
-	// For Master, the default image is `bitnami/etcd`
-	// For Worker, the default image is `vineyardcloudnative/vineyardd`
+	// For Master, the default image is `registry.aliyuncs.com/vineyard/vineyardd`
+	// For Worker, the default image is `registry.aliyuncs.com/vineyard/vineyardd`
 	// The default container registry is `docker.io`, you can change it by setting the image field
 	// +optional
 	Image string `json:"image,omitempty"`
 
 	// The image tag of Vineyard component.
-	// For Master, the default image tag is `3.5.10`.
-	// For Worker, the default image tag is `v0.21.5`.
+	// For Master, the default image tag is `v0.22.1`.
+	// For Worker, the default image tag is `v0.22.1`.
 	// +optional
 	ImageTag string `json:"imageTag,omitempty"`
 
@@ -154,12 +154,12 @@ type MasterSpec struct {
 // VineyardClientSocketSpec holds the configurations for vineyard client socket
 type VineyardClientSocketSpec struct {
 	// Image for Vineyard Fuse
-	// Default is `vineyardcloudnative/vineyard-fluid-fuse`
+	// Default is `registry.aliyuncs.com/vineyard/vineyard-fluid-fuse`
 	// +optional
 	Image string `json:"image,omitempty"`
 
 	// Image Tag for Vineyard Fuse
-	// Default is `v0.21.5`
+	// Default is `v0.22.1`
 	// +optional
 	ImageTag string `json:"imageTag,omitempty"`
 

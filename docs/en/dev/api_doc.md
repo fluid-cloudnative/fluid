@@ -10004,7 +10004,7 @@ string
 <td>
 <em>(Optional)</em>
 <p>Image for Vineyard Fuse
-Default is <code>vineyardcloudnative/vineyard-fluid-fuse</code></p>
+Default is <code>registry.aliyuncs.com/vineyard/vineyard-fluid-fuse</code></p>
 </td>
 </tr>
 <tr>
@@ -10017,7 +10017,7 @@ string
 <td>
 <em>(Optional)</em>
 <p>Image Tag for Vineyard Fuse
-Default is <code>v0.21.5</code></p>
+Default is <code>v0.22.1</code></p>
 </td>
 </tr>
 <tr>
@@ -10196,8 +10196,8 @@ string
 <td>
 <em>(Optional)</em>
 <p>The image of Vineyard component.
-For Master, the default image is <code>bitnami/etcd</code>
-For Worker, the default image is <code>vineyardcloudnative/vineyardd</code>
+For Master, the default image is <code>registry.aliyuncs.com/vineyard/vineyardd</code>
+For Worker, the default image is <code>registry.aliyuncs.com/vineyard/vineyardd</code>
 The default container registry is <code>docker.io</code>, you can change it by setting the image field</p>
 </td>
 </tr>
@@ -10211,8 +10211,8 @@ string
 <td>
 <em>(Optional)</em>
 <p>The image tag of Vineyard component.
-For Master, the default image tag is <code>3.5.10</code>.
-For Worker, the default image tag is <code>v0.21.5</code>.</p>
+For Master, the default image tag is <code>v0.22.1</code>.
+For Worker, the default image tag is <code>v0.22.1</code>.</p>
 </td>
 </tr>
 <tr>
@@ -10580,5 +10580,5 @@ bool
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>f0f1ed0</code>.
+on git commit <code>6baf09911</code>.
 </em></p>
