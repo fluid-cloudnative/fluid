@@ -69,10 +69,11 @@ func AppContainerPostStartInjectEnabled(infos map[string]string) (match bool) {
 	return enabled(infos, common.InjectAppPostStart)
 }
 
-// ---- Utils functions to decide serverless platform ----
+// ---- Utils functions to decide serverless platform or specific runtime ----
 const (
 	PlatformDefault      = "Default"
 	PlatformUnprivileged = "Unprivileged"
+	VineyardRuntime      = "Vineyard"
 )
 
 func GetServerlessPlatfrom(infos map[string]string) (platform string) {

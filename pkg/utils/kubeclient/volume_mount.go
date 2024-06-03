@@ -74,13 +74,15 @@ func pvcNamesFromVolumes(knownVolumeNames []string, volumes []corev1.Volume) (pv
 
 func GetFuseMountInContainer(mountType string, container corev1.Container) (volumeMount corev1.VolumeMount, err error) {
 	kv := map[string]string{
-		common.JindoMountType:   common.JindoChartName,
-		common.JindoRuntime:     common.JindoChartName,
-		common.AlluxioMountType: common.AlluxioChart,
-		common.AlluxioRuntime:   common.AlluxioChart,
-		common.GooseFSMountType: common.GooseFSChart,
-		common.JuiceFSMountType: common.JuiceFSChart,
-		common.JuiceFSRuntime:   common.JuiceFSChart,
+		common.JindoMountType:    common.JindoChartName,
+		common.JindoRuntime:      common.JindoChartName,
+		common.AlluxioMountType:  common.AlluxioChart,
+		common.AlluxioRuntime:    common.AlluxioChart,
+		common.GooseFSMountType:  common.GooseFSChart,
+		common.JuiceFSMountType:  common.JuiceFSChart,
+		common.JuiceFSRuntime:    common.JuiceFSChart,
+		common.VineyardRuntime:   common.VineyardChart,
+		common.VineyardMountType: common.VineyardChart,
 	}
 
 	volumeMountName := ""
@@ -116,6 +118,7 @@ func GetMountPathInContainer(container corev1.Container) (string, error) {
 		common.AlluxioChart:   "alluxio-fuse",
 		common.GooseFSChart:   "goosefs-fuse",
 		common.JuiceFSChart:   "juicefs-fuse",
+		common.VineyardChart:  "vineyard-fuse",
 	}
 	// consider the env FLUID_FUSE_MOUNTPOINT
 	if len(container.Env) > 0 {

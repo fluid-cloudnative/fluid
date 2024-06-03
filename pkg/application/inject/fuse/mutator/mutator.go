@@ -45,6 +45,7 @@ type MutatorBuildOpts struct {
 var mutatorBuildFn map[string]func(MutatorBuildOpts) Mutator = map[string]func(MutatorBuildOpts) Mutator{
 	utils.PlatformDefault:      NewDefaultMutator,
 	utils.PlatformUnprivileged: NewUnprivilegedMutator,
+	utils.VineyardRuntime:      NewVineyardMutator,
 }
 
 func BuildMutator(opts MutatorBuildOpts, platform string) (Mutator, error) {

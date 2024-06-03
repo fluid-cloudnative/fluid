@@ -19,10 +19,12 @@ package fuse
 import (
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/fluid-cloudnative/fluid/pkg/application/inject/fuse/mutator"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/vineyard"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/applications/defaultapp"
@@ -162,9 +164,13 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 			continue
 		}
 
-		platform := s.getServerlessPlatformFromMeta(podSpecs.MetaObj)
+		// check whether the podSpecs is using vineyard runtime
+		platform := s.checkVineyardRuntime(podSpecs, runtimeInfos)
 		if len(platform) == 0 {
-			return out, fmt.Errorf("can't find any supported platform-specific mutator in pod's metadata")
+			platform = s.getServerlessPlatformFromMeta(podSpecs.MetaObj)
+			if len(platform) == 0 {
+				return out, fmt.Errorf("can't find any supported platform-specific mutator in pod's metadata")
+			}
 		}
 
 		mutatorBuildOpts := mutator.MutatorBuildOpts{
@@ -288,4 +294,37 @@ func (s *Injector) labelInjectionDone(pod common.FluidObject) error {
 
 func (s *Injector) getServerlessPlatformFromMeta(metaObj metav1.ObjectMeta) string {
 	return utils.GetServerlessPlatfrom(metaObj.Labels)
+}
+
+// check whether the podSpecs is using vineyard runtime
+func (s *Injector) checkVineyardRuntime(podSpecs *mutator.MutatingPodSpecs, runtimeInfos map[string]base.RuntimeInfoInterface) string {
+	pvcNames := make(map[string]bool)
+	for _, volume := range podSpecs.Volumes {
+		if volume.PersistentVolumeClaim == nil {
+			continue
+		}
+		pvcNames[volume.PersistentVolumeClaim.ClaimName] = true
+	}
+	for pvcName, runtimeInfo := range runtimeInfos {
+		if _, ok := pvcNames[pvcName]; ok && runtimeInfo.GetRuntimeType() == common.VineyardRuntime {
+			template, err := runtimeInfo.GetFuseContainerTemplate()
+			if err != nil {
+				s.log.Error(err, "failed to get fuse container template for runtime \"%s/%s\"", runtimeInfo.GetNamespace(), runtimeInfo.GetName())
+				return ""
+			}
+			if len(template.FuseContainer.Env) == 0 {
+				return ""
+			}
+			for _, env := range template.FuseContainer.Env {
+				if env.Name == strings.ToUpper(vineyard.VineyarddSize) {
+					if env.Value == "0" {
+						return utils.VineyardRuntime
+					} else {
+						return ""
+					}
+				}
+			}
+		}
+	}
+	return ""
 }
