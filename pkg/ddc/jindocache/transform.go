@@ -275,17 +275,28 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 			cachesetPath = "local://" + ufsVolumesPath
 		}
 		cacheStrategy := "DISTRIBUTED"
-		metaPolicy := "ALWAYS"
+		metaPolicy := "ONCE"
 		readCacheReplica := 1
 		writeCacheReplica := 1
 
-		if mount.Options["cacheStrategy"] == "DHT" && mount.Options["metaPolicy"] == "ONCE" {
-			cacheStrategy = mount.Options["cacheStrategy"]
-			metaPolicy = mount.Options["metaPolicy"]
+		if userMetaPolicy, ok := mount.Options["metaPolicy"]; ok {
+			if userMetaPolicy == "ONCE" || userMetaPolicy == "ALWAYS" {
+				metaPolicy = userMetaPolicy
+			} else {
+				err = fmt.Errorf("invalid metaPolicy: %s", userMetaPolicy)
+				e.Log.Error(err, "invalid metaPolicy", metaPolicy)
+				return err
+			}
 		}
 
-		if mount.Options["metaPolicy"] == "ONCE" {
-			metaPolicy = mount.Options["metaPolicy"]
+		if userCacheStrategy := mount.Options["cacheStrategy"]; userCacheStrategy == "DHT" {
+			if metaPolicy == "ONCE" {
+				cacheStrategy = userCacheStrategy
+			} else {
+				err = fmt.Errorf("cacheStrategy DHT must be used with metaPolicy ONCE and current metaPolicy is %s", metaPolicy)
+				e.Log.Error(err, "incorrect metaPolicy", metaPolicy)
+				return err
+			}
 		}
 
 		if mount.Options["readCacheReplica"] != "" {
@@ -294,7 +305,7 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 				e.Log.Info(readCacheReplicaStr, " is a valid read cache replica number")
 				readCacheReplica = num
 			} else {
-				error = fmt.Errorf("Options readCacheReplica " + readCacheReplicaStr + " is not a valid number")
+				error = fmt.Errorf("options readCacheReplica " + readCacheReplicaStr + " is not a valid number")
 				e.Log.Error(error, "readCacheReplica", readCacheReplicaStr)
 				return error
 			}
@@ -936,6 +947,7 @@ func (e *JindoCacheEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime, 
 			fuseArgs = append(fuseArgs, "-onegative_timeout=0")
 		}
 		fuseArgs = append(fuseArgs, "-ometrics_port=0")
+		fuseArgs = append(fuseArgs, "-ono_symlink")
 	}
 	if runtime.Spec.Master.Disabled && runtime.Spec.Worker.Disabled {
 		fuseArgs = append(fuseArgs, "-ouri="+dataset.Spec.Mounts[0].MountPoint)
