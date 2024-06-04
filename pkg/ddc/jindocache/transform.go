@@ -283,8 +283,8 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 			if userMetaPolicy == "ONCE" || userMetaPolicy == "ALWAYS" {
 				metaPolicy = userMetaPolicy
 			} else {
-				err = fmt.Errorf("Invalid metaPolicy: %s", userMetaPolicy)
-				e.Log.Error(err, "Invalid metaPolicy")
+				err = fmt.Errorf("invalid metaPolicy: %s", userMetaPolicy)
+				e.Log.Error(err, "invalid metaPolicy", metaPolicy)
 				return err
 			}
 		}
@@ -293,8 +293,8 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 			if metaPolicy == "ONCE" {
 				cacheStrategy = userCacheStrategy
 			} else {
-				err = fmt.Errorf("CacheStrategy DHT must be used with metaPolicy ONCE and current metaPolicy is %s", metaPolicy)
-				e.Log.Error(err, "Incorrect metaPolicy", metaPolicy)
+				err = fmt.Errorf("cacheStrategy DHT must be used with metaPolicy ONCE and current metaPolicy is %s", metaPolicy)
+				e.Log.Error(err, "incorrect metaPolicy", metaPolicy)
 				return err
 			}
 		}
@@ -305,7 +305,7 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 				e.Log.Info(readCacheReplicaStr, " is a valid read cache replica number")
 				readCacheReplica = num
 			} else {
-				error = fmt.Errorf("Options readCacheReplica " + readCacheReplicaStr + " is not a valid number")
+				error = fmt.Errorf("options readCacheReplica " + readCacheReplicaStr + " is not a valid number")
 				e.Log.Error(error, "readCacheReplica", readCacheReplicaStr)
 				return error
 			}
