@@ -279,18 +279,24 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 		readCacheReplica := 1
 		writeCacheReplica := 1
 
-		if mount.Options["metaPolicy"] == "ALWAYS" {
-			metaPolicy = mount.Options["metaPolicy"]
+		if userMetaPolicy, ok := mount.Options["metaPolicy"]; ok {
+			if userMetaPolicy == "ONCE" || userMetaPolicy == "ALWAYS" {
+				metaPolicy = userMetaPolicy
+			} else {
+				err = fmt.Errorf("Invalid metaPolicy: %s", userMetaPolicy)
+				e.Log.Error(err, "Invalid metaPolicy")
+				return err
+			}
 		}
 
-		if mount.Options["cacheStrategy"] == "DHT" && metaPolicy == "ONCE" {
-			cacheStrategy = mount.Options["cacheStrategy"]
-		}
-
-		if mount.Options["cacheStrategy"] == "DHT" && metaPolicy == "ALWAYS" {
-			err = fmt.Errorf("CacheStrategy DHT must used with metaPolicy ONCE and current metaPolicy is %s", metaPolicy)
-			e.Log.Error(err, "metaPolicy not correct", metaPolicy)
-			return err
+		if userCacheStrategy := mount.Options["cacheStrategy"]; userCacheStrategy == "DHT" {
+			if metaPolicy == "ONCE" {
+				cacheStrategy = userCacheStrategy
+			} else {
+				err = fmt.Errorf("CacheStrategy DHT must be used with metaPolicy ONCE and current metaPolicy is %s", metaPolicy)
+				e.Log.Error(err, "Incorrect metaPolicy", metaPolicy)
+				return err
+			}
 		}
 
 		if mount.Options["readCacheReplica"] != "" {
