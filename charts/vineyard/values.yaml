@@ -25,7 +25,7 @@ master:
     # options:
   replicas: 1
   image: registry.aliyuncs.com/vineyard/vineyardd
-  imageTag: v0.22.1
+  imageTag: v0.22.2
   imagePullPolicy: IfNotPresent
   nodeSelector: {}
   hostNetwork: false
@@ -65,7 +65,7 @@ worker:
 
   replicas: 1
   image: registry.aliyuncs.com/vineyard/vineyardd
-  imageTag: v0.22.1
+  imageTag: v0.22.2
   imagePullPolicy: IfNotPresent
   nodeSelector: {}
   hostNetwork: false
@@ -127,7 +127,7 @@ fuse:
 
   hostNetwork: false
   image: registry.aliyuncs.com/vineyard/vineyard-fluid-fuse
-  imageTag: v0.22.1
+  imageTag: v0.22.2
   imagePullPolicy: IfNotPresent
   env: {}
   targetPath: ""

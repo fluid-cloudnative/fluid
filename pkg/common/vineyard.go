@@ -29,11 +29,11 @@ const (
 
 	VineyardFuseIsGlobal = true
 
-	DefaultVineyardMasterImage = "registry.aliyuncs.com/vineyard/vineyardd:v0.22.1"
+	DefaultVineyardMasterImage = "registry.aliyuncs.com/vineyard/vineyardd:v0.22.2"
 
-	DefaultVineyardWorkerImage = "registry.aliyuncs.com/vineyard/vineyardd:v0.22.1"
+	DefaultVineyardWorkerImage = "registry.aliyuncs.com/vineyard/vineyardd:v0.22.2"
 
-	DefultVineyardFuseImage = "registry.aliyuncs.com/vineyard/vineyard-fluid-fuse:v0.22.1"
+	DefultVineyardFuseImage = "registry.aliyuncs.com/vineyard/vineyard-fluid-fuse:v0.22.2"
 
 	VineyardEngineImpl = VineyardRuntime
 )

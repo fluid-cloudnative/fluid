@@ -4523,7 +4523,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_MasterSpec(ref common.Reference
 					},
 					"imageTag": {
 						SchemaProps: spec.SchemaProps{
-							Description: "The image tag of Vineyard component. For Master, the default image tag is `v0.22.1`. For Worker, the default image tag is `v0.22.1`.",
+							Description: "The image tag of Vineyard component. For Master, the default image tag is `v0.22.2`. For Worker, the default image tag is `v0.22.2`.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -6513,7 +6513,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardClientSocketSpec(ref co
 					},
 					"imageTag": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Image Tag for Vineyard Fuse Default is `v0.22.1`",
+							Description: "Image Tag for Vineyard Fuse Default is `v0.22.2`",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -6616,7 +6616,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardCompTemplateSpec(ref co
 					},
 					"imageTag": {
 						SchemaProps: spec.SchemaProps{
-							Description: "The image tag of Vineyard component. For Master, the default image tag is `v0.22.1`. For Worker, the default image tag is `v0.22.1`.",
+							Description: "The image tag of Vineyard component. For Master, the default image tag is `v0.22.2`. For Worker, the default image tag is `v0.22.2`.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
