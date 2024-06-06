@@ -10017,7 +10017,7 @@ string
 <td>
 <em>(Optional)</em>
 <p>Image Tag for Vineyard Fuse
-Default is <code>v0.22.1</code></p>
+Default is <code>v0.22.2</code></p>
 </td>
 </tr>
 <tr>
@@ -10211,8 +10211,8 @@ string
 <td>
 <em>(Optional)</em>
 <p>The image tag of Vineyard component.
-For Master, the default image tag is <code>v0.22.1</code>.
-For Worker, the default image tag is <code>v0.22.1</code>.</p>
+For Master, the default image tag is <code>v0.22.2</code>.
+For Worker, the default image tag is <code>v0.22.2</code>.</p>
 </td>
 </tr>
 <tr>
