@@ -2499,7 +2499,7 @@
           "type": "string"
         },
         "imageTag": {
-          "description": "The image tag of Vineyard component. For Master, the default image tag is `v0.22.1`. For Worker, the default image tag is `v0.22.1`.",
+          "description": "The image tag of Vineyard component. For Master, the default image tag is `v0.22.2`. For Worker, the default image tag is `v0.22.2`.",
           "type": "string"
         },
         "nodeSelector": {
@@ -3673,7 +3673,7 @@
           "type": "string"
         },
         "imageTag": {
-          "description": "The image tag of Vineyard component. For Master, the default image tag is `v0.22.1`. For Worker, the default image tag is `latest`.",
+          "description": "The image tag of Vineyard component. For Master, the default image tag is `v0.22.2`. For Worker, the default image tag is `latest`.",
           "type": "string"
         },
         "nodeSelector": {

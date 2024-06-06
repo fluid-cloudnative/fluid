@@ -38,8 +38,8 @@ type VineyardCompTemplateSpec struct {
 	Image string `json:"image,omitempty"`
 
 	// The image tag of Vineyard component.
-	// For Master, the default image tag is `v0.22.1`.
-	// For Worker, the default image tag is `v0.22.1`.
+	// For Master, the default image tag is `v0.22.2`.
+	// For Worker, the default image tag is `v0.22.2`.
 	// +optional
 	ImageTag string `json:"imageTag,omitempty"`
 
@@ -159,7 +159,7 @@ type VineyardClientSocketSpec struct {
 	Image string `json:"image,omitempty"`
 
 	// Image Tag for Vineyard Fuse
-	// Default is `v0.22.1`
+	// Default is `v0.22.2`
 	// +optional
 	ImageTag string `json:"imageTag,omitempty"`
 

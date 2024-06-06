@@ -113,7 +113,7 @@ spec:
                       Available values are `Always`, `IfNotPresent`, `Never`
                     type: string
                   imageTag:
-                    description: Image Tag for Vineyard Fuse Default is `v0.22.1`
+                    description: Image Tag for Vineyard Fuse Default is `v0.22.2`
                     type: string
                   networkMode:
                     description: Whether to use hostnetwork or not Default is HostNetwork
@@ -286,8 +286,8 @@ spec:
                     type: string
                   imageTag:
                     description: The image tag of Vineyard component. For Master,
-                      the default image tag is `v0.22.1`. For Worker, the default
-                      image tag is `v0.22.1`.
+                      the default image tag is `v0.22.2`. For Worker, the default
+                      image tag is `v0.22.2`.
                     type: string
                   networkMode:
                     description: Whether to use hostnetwork or not Default is HostNetwork
@@ -3810,8 +3810,8 @@ spec:
                     type: string
                   imageTag:
                     description: The image tag of Vineyard component. For Master,
-                      the default image tag is `v0.22.1`. For Worker, the default
-                      image tag is `v0.22.1`.
+                      the default image tag is `v0.22.2`. For Worker, the default
+                      image tag is `v0.22.2`.
                     type: string
                   networkMode:
                     description: Whether to use hostnetwork or not Default is HostNetwork

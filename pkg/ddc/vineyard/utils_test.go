@@ -421,7 +421,7 @@ func TestParseMasterImage(t *testing.T) {
 			imagePullPolicy: "",
 			engine:          &VineyardEngine{},
 			wantImage:       "registry.aliyuncs.com/vineyard/vineyardd",
-			wantTag:         "v0.22.1",
+			wantTag:         "v0.22.2",
 			wantPolicy:      "IfNotPresent",
 		},
 	}
@@ -463,7 +463,7 @@ func TestParseWorkerImage(t *testing.T) {
 			imagePullPolicy: "",
 			engine:          &VineyardEngine{},
 			wantImage:       "registry.aliyuncs.com/vineyard/vineyardd",
-			wantTag:         "v0.22.1",
+			wantTag:         "v0.22.2",
 			wantPolicy:      "IfNotPresent",
 		},
 	}
@@ -505,7 +505,7 @@ func TestParseFuseImage(t *testing.T) {
 			imagePullPolicy: "",
 			engine:          &VineyardEngine{},
 			wantImage:       "registry.aliyuncs.com/vineyard/vineyard-fluid-fuse",
-			wantTag:         "v0.22.1",
+			wantTag:         "v0.22.2",
 			wantPolicy:      "IfNotPresent",
 		},
 	}

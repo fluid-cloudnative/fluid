@@ -22,7 +22,7 @@ spec:
   replicas: 2
   master:
     image: registry.aliyuncs.com/vineyard/vineyardd
-    imageTag: v0.22.1
+    imageTag: v0.22.2
   tieredstore:
     levels:
     - mediumtype: MEM
