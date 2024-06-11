@@ -1138,6 +1138,441 @@ func TestInjectPod(t *testing.T) {
 			},
 			wantErr: nil,
 		},
+		{
+			name: "inject_pod_with_vineyard_runtime_when_cache_size_is_zero",
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "vineyard",
+					Namespace: "default",
+				},
+			},
+			in: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "app",
+					Namespace: "default",
+					Labels: map[string]string{
+						common.InjectServerless: common.True,
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Image: "python:3.10",
+							Name:  "app",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "vineyard-volume",
+									MountPath: "/vineyard",
+								},
+							},
+						},
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: "vineyard-volume",
+							VolumeSource: corev1.VolumeSource{
+								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+									ClaimName: "vineyard",
+								},
+							},
+						},
+					},
+				},
+			},
+			pv: &corev1.PersistentVolume{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "vineyard",
+				},
+				Spec: corev1.PersistentVolumeSpec{
+					PersistentVolumeSource: corev1.PersistentVolumeSource{
+						CSI: &corev1.CSIPersistentVolumeSource{
+							Driver: "fuse.csi.fluid.io",
+							VolumeAttributes: map[string]string{
+								common.VolumeAttrMountType: common.VineyardRuntime,
+							},
+						},
+					},
+				},
+			},
+			pvc: &corev1.PersistentVolumeClaim{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "vineyard",
+					Namespace: "default",
+				}, Spec: corev1.PersistentVolumeClaimSpec{
+					VolumeName: "vineyard",
+				},
+			},
+			infos: map[string]runtimeInfo{
+				"vineyard": {
+					name:        "vineyard",
+					namespace:   "default",
+					runtimeType: common.VineyardRuntime,
+				},
+			},
+			fuse: &appsv1.DaemonSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "vineyard-fuse",
+					Namespace: "default",
+				},
+				Spec: appsv1.DaemonSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:  "fuse",
+									Image: "test",
+									Env: []corev1.EnvVar{
+										{
+											Name:  "SIZE",
+											Value: "0",
+										},
+									},
+									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      "vineyard-fuse-mount",
+											MountPath: "/runtime-mnt/vineyard/default/vineyard",
+										},
+									},
+								},
+							},
+							Volumes: []corev1.Volume{
+								{
+									Name: "vineyard-fuse-mount",
+									VolumeSource: corev1.VolumeSource{
+										HostPath: &corev1.HostPathVolumeSource{
+											Path: "/runtime-mnt/vineyard/default/vineyard",
+											Type: &hostPathDirectoryOrCreate,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "app",
+					Namespace: "default",
+					Labels: map[string]string{
+						common.InjectServerless:  common.True,
+						common.InjectSidecarDone: common.True,
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Image: "python:3.10",
+							Name:  "app",
+							Env: []corev1.EnvVar{
+								{
+									Name: "VINEYARD_RPC_ENDPOINT",
+									ValueFrom: &corev1.EnvVarSource{
+										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "vineyard-rpc-conf",
+											},
+											Key: "VINEYARD_RPC_ENDPOINT",
+										},
+									},
+								},
+							},
+							VolumeMounts: []corev1.VolumeMount{},
+						},
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: "vineyard-rpc-conf",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "vineyard-rpc-conf",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "inject_pod_with_vineyard_runtime_when_cache_size_is_not_zero",
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "vineyard1",
+					Namespace: "default",
+				},
+			},
+			in: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "app1",
+					Namespace: "default",
+					Labels: map[string]string{
+						common.InjectServerless: common.True,
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Image: "python:3.10",
+							Name:  "app",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "vineyard-volume",
+									MountPath: "/vineyard",
+								},
+							},
+						},
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: "vineyard-volume",
+							VolumeSource: corev1.VolumeSource{
+								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+									ClaimName: "vineyard",
+								},
+							},
+						},
+					},
+				},
+			},
+			pv: &corev1.PersistentVolume{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "vineyard1",
+				},
+				Spec: corev1.PersistentVolumeSpec{
+					PersistentVolumeSource: corev1.PersistentVolumeSource{
+						CSI: &corev1.CSIPersistentVolumeSource{
+							Driver: "fuse.csi.fluid.io",
+							VolumeAttributes: map[string]string{
+								common.VolumeAttrMountType: common.VineyardRuntime,
+								common.VolumeAttrFluidPath: "/runtime-mnt/vineyard/default/vineyard/vineyard-fuse",
+							},
+						},
+					},
+				},
+			},
+			pvc: &corev1.PersistentVolumeClaim{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "vineyard1",
+					Namespace: "default",
+				}, Spec: corev1.PersistentVolumeClaimSpec{
+					VolumeName: "vineyard1",
+				},
+			},
+			infos: map[string]runtimeInfo{
+				"vineyard": {
+					name:        "vineyard1",
+					namespace:   "default",
+					runtimeType: common.VineyardRuntime,
+				},
+			},
+			fuse: &appsv1.DaemonSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "vineyard1-fuse",
+					Namespace: "default",
+				},
+				Spec: appsv1.DaemonSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:  "fuse",
+									Image: "test",
+									Env: []corev1.EnvVar{
+										{
+											Name:  "MOUNT_DIR",
+											Value: "/runtime-mnt/vineyard/default/vineyard",
+										},
+										{
+											Name:  "FUSE_DIR",
+											Value: "/runtime-mnt/vineyard/default/vineyard/vineyard-fuse",
+										},
+										{
+											Name:  "RPC_CONF_DIR",
+											Value: "/runtime-mnt/vineyard/default/vineyard/vineyard-fuse/rpc-conf",
+										},
+										{
+											Name:  "PRESTOP_MARKER",
+											Value: "/tmp/prestop-marker",
+										},
+										{
+											Name:  "SIZE",
+											Value: "10Gi",
+										},
+									},
+									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      "vineyard-fuse-mount",
+											MountPath: "/runtime-mnt/vineyard/default/vineyard",
+										},
+										{
+											Name:      "vineyard-rpc-conf",
+											MountPath: "/runtime-mnt/vineyard/default/vineyard/vineyard-fuse/rpc-conf",
+										},
+									},
+									Lifecycle: &corev1.Lifecycle{
+										PreStop: &corev1.LifecycleHandler{
+											Exec: &corev1.ExecAction{
+												Command: []string{
+													"sh",
+													"-c",
+													"touch /tmp/prestop-marker && { rm /runtime-mnt/vineyard/default/vineyard/vineyard-fuse/vineyard-worker.sock || true; } && umount /runtime-mnt/vineyard/default/vineyard/vineyard-fuse/rpc-conf",
+												},
+											},
+										},
+									},
+								},
+							},
+							Volumes: []corev1.Volume{
+								{
+									Name: "vineyard-fuse-mount",
+									VolumeSource: corev1.VolumeSource{
+										HostPath: &corev1.HostPathVolumeSource{
+											Path: "/runtime-mnt/vineyard/default/vineyard",
+											Type: &hostPathDirectoryOrCreate,
+										},
+									},
+								},
+								{
+									Name: "vineyard-rpc-conf",
+									VolumeSource: corev1.VolumeSource{
+										ConfigMap: &corev1.ConfigMapVolumeSource{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "vineyard-rpc-conf",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "app1",
+					Namespace: "default",
+					Labels: map[string]string{
+						common.InjectServerless:  common.True,
+						common.InjectSidecarDone: common.True,
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  common.FuseContainerName + "-0",
+							Image: "test",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "MOUNT_DIR",
+									Value: "/runtime-mnt/vineyard/default/vineyard",
+								},
+								{
+									Name:  "FUSE_DIR",
+									Value: "/runtime-mnt/vineyard/default/vineyard/vineyard-fuse",
+								},
+								{
+									Name:  "RPC_CONF_DIR",
+									Value: "/runtime-mnt/vineyard/default/vineyard/vineyard-fuse/rpc-conf",
+								},
+								{
+									Name:  "PRESTOP_MARKER",
+									Value: "/tmp/prestop-marker",
+								},
+								{
+									Name:  "SIZE",
+									Value: "10Gi",
+								},
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "vineyard-fuse-mount-0",
+									MountPath: "/runtime-mnt/vineyard/default/vineyard",
+								}, {
+									Name:      "vineyard-rpc-conf-0",
+									MountPath: "/runtime-mnt/vineyard/default/vineyard/vineyard-fuse/rpc-conf",
+								}, {
+									Name:      "check-mount-0",
+									ReadOnly:  true,
+									MountPath: "/check-mount.sh",
+									SubPath:   "check-mount.sh",
+								},
+							}, Lifecycle: &corev1.Lifecycle{
+								PreStop: &corev1.LifecycleHandler{
+									Exec: &corev1.ExecAction{
+										Command: []string{
+											"sh",
+											"-c",
+											"touch /tmp/prestop-marker && { rm /runtime-mnt/vineyard/default/vineyard/vineyard-fuse/vineyard-worker.sock || true; } && umount /runtime-mnt/vineyard/default/vineyard/vineyard-fuse/rpc-conf",
+										},
+									},
+								},
+								PostStart: &corev1.LifecycleHandler{
+									Exec: &corev1.ExecAction{
+										Command: []string{
+											"bash",
+											"-c",
+											"time /check-mount.sh /runtime-mnt/vineyard/default/vineyard vineyard  >> /proc/1/fd/1",
+										},
+									},
+								},
+							},
+						}, {
+							Name:  "app",
+							Image: "python:3.10",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:             "vineyard-volume",
+									MountPath:        "/vineyard",
+									MountPropagation: &mountPropagationHostToContainer,
+								},
+							},
+						},
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: "vineyard-volume",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/runtime-mnt/vineyard/default/vineyard/vineyard-fuse",
+								},
+							},
+						},
+						{
+							Name: "vineyard-fuse-mount-0",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/runtime-mnt/vineyard/default/vineyard",
+									Type: &hostPathDirectoryOrCreate,
+								},
+							},
+						},
+						{
+							Name: "vineyard-rpc-conf-0",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "vineyard-rpc-conf",
+									},
+								},
+							},
+						},
+						{
+							Name: "check-mount-0",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "vineyard1-vineyard-check-mount",
+									},
+									DefaultMode: utilpointer.Int32(mode),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	objs := []runtime.Object{}
@@ -1148,6 +1583,17 @@ func TestInjectPod(t *testing.T) {
 	for _, testcase := range testcases {
 		objs = append(objs, testcase.fuse, testcase.pv, testcase.pvc, testcase.dataset)
 	}
+
+	cm := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "vineyard-rpc-conf",
+			Namespace: "default",
+		},
+		Data: map[string]string{
+			"VINEYARD_RPC_ENDPOINT": "127.0.0.1",
+		},
+	}
+	objs = append(objs, cm)
 
 	fakeClient := fake.NewFakeClientWithScheme(s, objs...)
 
@@ -1222,7 +1668,7 @@ func TestInjectPod(t *testing.T) {
 						t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
 					}
 
-					t.Errorf("testcase %s failed, want %v, Got  %v", testcase.name, string(want), string(outYaml))
+					t.Errorf("testcase %s failed, want %v, Got %v", testcase.name, string(want), string(outYaml))
 				}
 			} else {
 				t.Errorf("testcase %s failed due to missing the container %s", testcase.name, k)
@@ -1251,7 +1697,7 @@ func TestInjectPod(t *testing.T) {
 						t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
 					}
 
-					t.Errorf("testcase %s failed, want %v, Got  %v", testcase.name, string(want), string(outYaml))
+					t.Errorf("testcase %s failed, want %v, Got %v", testcase.name, string(want), string(outYaml))
 				}
 			} else {
 				t.Errorf("testcase %s failed due to missing the volume %s", testcase.name, k)

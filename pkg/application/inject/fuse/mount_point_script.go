@@ -23,6 +23,7 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/application/inject/fuse/mutator"
 	"github.com/fluid-cloudnative/fluid/pkg/application/inject/fuse/poststart"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
@@ -36,6 +37,15 @@ func (s *Injector) injectCheckMountReadyScript(podSpecs *mutator.MutatingPodSpec
 	if len(runtimeInfos) == 0 {
 		// Skip if no need to inject because no dataset pvc is mounted
 		return nil
+	}
+
+	// Skip if there is only vineyard runtime
+	if len(runtimeInfos) == 1 {
+		for _, v := range runtimeInfos {
+			if v.GetRuntimeType() == common.VineyardRuntime {
+				return nil
+			}
+		}
 	}
 
 	// Choose the first runtime info's namespace

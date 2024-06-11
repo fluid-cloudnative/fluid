@@ -117,6 +117,95 @@ Type "help", "copyright", "credits" or "license" for more information.
 }
 ```
 
+### [Serverless Mode] Create an Application Pod and Mount the Vineyard Dataset
+
+Please note that the `serverless.fluid.io/inject` label shoule be set to `true` in the pod metadata when you want to run the application in serverless mode.
+
+```shell
+$ cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo-app
+  labels:
+    serverless.fluid.io/inject: "true"
+spec:
+  containers:
+    - name: demo
+      image: python:3.10
+      command:
+        - /bin/bash
+        - -c
+        - |
+          pip3 install vineyard;
+          sleep infinity
+      volumeMounts:
+        - mountPath: /var/run/vineyard
+          name: client-configuration
+  volumes:
+    - name: client-configuration
+      persistentVolumeClaim:
+        claimName: vineyard
+EOF
+```
+
+Then you can get the application pod with injected vineyard client configuration. Different from the serverful mode, the vineyard client configurations only contain the RPC endpoint of the vineyard workers.
+
+```shell
+$ kubectl get pod demo-app -oyaml
+# here only show the main fields of the pod
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    done.sidecar.fluid.io/inject: "true"
+    serverless.fluid.io/inject: "true"
+  name: demo-app
+  namespace: default
+spec:
+  containers:
+  - command:
+    - /bin/bash
+    - -c
+    - |
+      pip3 install vineyard;
+      sleep infinity
+    env:
+    - name: VINEYARD_RPC_ENDPOINT
+      valueFrom:
+        configMapKeyRef:
+          key: VINEYARD_RPC_ENDPOINT
+          name: vineyard-rpc-conf
+    image: python:3.10
+    imagePullPolicy: IfNotPresent
+    name: demo
+  volumes:
+  - configMap:
+      defaultMode: 420
+      name: vineyard-rpc-conf
+    name: vineyard-rpc-conf
+```
+
+Connect to the vineyard worker in the pod.
+
+```shell
+$  kubectl exec -it demo-app -- python
+Python 3.10.14 (main, Mar 25 2024, 21:45:25) [GCC 12.2.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import vineyard
+>>> client = vineyard.connect()
+>>> client.status
+{
+    instance_id: 0,
+    deployment: local,
+    memory_usage: 0,
+    memory_limit: 21474836480,
+    deferred_requests: 0,
+    ipc_connections: 0,
+    rpc_connections: 1
+}
+```
+
 ## Create Vineyard Runtime and set the fuse cache size to 1Gi
 
 Add the option `size: "1Gi"` to enable the cache of vineyard fuse and set the cache size to 1Gi.
@@ -211,6 +300,175 @@ Type "help", "copyright", "credits" or "license" for more information.
     deployment: local,
     memory_usage: 0,
     memory_limit: 1073741824, # 1Gi, not 20Gi in vineyard worker
+    deferred_requests: 0,
+    ipc_connections: 1,
+    rpc_connections: 0
+}
+```
+
+## [Serverless Mode] Create an Application Pod and Mount the Vineyard Dataset
+
+Add the label `serverless.fluid.io/inject: "true"` to make the pod run in serverless mode.
+
+```shell
+$ cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo-app
+  labels:
+    serverless.fluid.io/inject: "true"
+spec:
+  containers:
+    - name: demo
+      image: python:3.10
+      command:
+        - /bin/bash
+        - -c
+        - |
+          pip3 install vineyard;
+          sleep infinity
+      volumeMounts:
+        - mountPath: /var/run/vineyard
+          name: client-configuration
+  volumes:
+    - name: client-configuration
+      persistentVolumeClaim:
+        claimName: vineyard-with-fuse-cache
+EOF
+```
+
+Different from the situation when the cache size is 0, the vineyard fuse container will be injected into the application pod.
+
+```shell
+$ kubectl get pod demo-app -oyaml
+# here only show the main fields of the pod
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    done.sidecar.fluid.io/inject: "true"
+    serverless.fluid.io/inject: "true"
+  name: demo-app
+  namespace: default
+spec:
+  containers:
+  - env:
+    - name: MOUNT_DIR
+      value: /runtime-mnt/vineyard/default/vineyard-with-fuse-cache
+    - name: FUSE_DIR
+      value: /runtime-mnt/vineyard/default/vineyard-with-fuse-cache/vineyard-fuse
+    - name: RPC_CONF_DIR
+      value: /runtime-mnt/vineyard/default/vineyard-with-fuse-cache/vineyard-fuse/rpc-conf
+    - name: PRESTOP_MARKER
+      value: /tmp/prestop-marker
+    - name: CACHE_SIZE
+      value: 1Gi
+    - name: ETCD_ENDPOINT
+      value: http://vineyard-with-fuse-cache-master-0.vineyard-with-fuse-cache-master.default:2379
+    - name: ETCD_PREFIX
+      value: /vineyard
+    image: vineyardcloudnative/vineyard-fluid-fuse:v0.21.5
+    imagePullPolicy: IfNotPresent
+    lifecycle:
+      postStart:
+        exec:
+          command:
+          - bash
+          - -c
+          - time /check-mount.sh /runtime-mnt/vineyard/default/vineyard-with-fuse-cache
+            vineyard-fuse  >> /proc/1/fd/1
+      preStop:
+        exec:
+          command:
+          - sh
+          - -c
+          - touch /tmp/prestop-marker && rm -f /runtime-mnt/vineyard/default/vineyard-with-fuse-cache/vineyard-fuse/vineyard-local.sock
+            /runtime-mnt/vineyard/default/vineyard-with-fuse-cache/vineyard-fuse/vineyard-worker.sock
+            && umount /runtime-mnt/vineyard/default/vineyard-with-fuse-cache/vineyard-fuse/rpc-conf
+    name: fluid-fuse-0
+    resources:
+      requests:
+        memory: 1Gi
+    securityContext:
+      privileged: true
+    volumeMounts:
+    - mountPath: /runtime-mnt/vineyard/default/vineyard-with-fuse-cache
+      mountPropagation: Bidirectional
+      name: vineyard-fuse-mount-0
+    - mountPath: /runtime-mnt/vineyard/default/vineyard-with-fuse-cache/vineyard-fuse/rpc-conf
+      name: vineyard-rpc-conf-0
+    - mountPath: /check-mount.sh
+      name: check-mount-0
+      readOnly: true
+      subPath: check-mount.sh
+  - command:
+    - /bin/bash
+    - -c
+    - |
+      pip3 install vineyard;
+      sleep infinity
+    image: python:3.10
+    imagePullPolicy: IfNotPresent
+    name: demo
+    volumeMounts:
+    - mountPath: /var/run/vineyard
+      mountPropagation: HostToContainer
+      name: client-configuration
+  volumes:
+  - hostPath:
+      path: /runtime-mnt/vineyard/default/vineyard-with-fuse-cache/vineyard-fuse
+      type: ""
+    name: client-configuration
+  - hostPath:
+      path: /runtime-mnt/vineyard/default/vineyard-with-fuse-cache
+      type: DirectoryOrCreate
+    name: vineyard-fuse-mount-0
+  - configMap:
+      defaultMode: 420
+      name: vineyard-with-fuse-cache-rpc-conf
+    name: vineyard-rpc-conf-0
+  - configMap:
+      defaultMode: 493
+      name: vineyard-with-fuse-cache-vineyard-fuse-check-mount
+    name: check-mount-0
+```
+
+Then we can check the client configurations in the pod, and notice there is
+only one vineyard socket named `vineyard-local.sock` as it doesn't run on the same node as the vineyard worker.
+
+```shell
+$ kubectl exec -it demo-app -c demo -- ls /var/r
+un/vineyard
+rpc-conf  vineyard-config.yaml  vineyard-local.sock
+
+# Check the vineyard client configurations
+$ kubectl exec -it demo-app -c demo -- cat /var/
+run/vineyard/vineyard-config.yaml
+Vineyard:
+  IPCSocket: vineyard-local.sock
+  RPCEndpoint: vineyard-with-fuse-cache-worker-0.vineyard-with-fuse-cache-worker.default:9600,vineyard-with-fuse-cache-worker-1.vineyard-with-fuse-cache-worker.default:9600
+```
+
+Connect to the vineyard in the pod.
+
+```shell
+$ kubectl exec -it demo-app -c demo -- python
+Python 3.10.14 (main, Mar 25 2024, 21:45:25) [GCC 12.2.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import vineyard
+>>> client = vineyard.connect()
+kubectl exec -it demo-app -c demo -- python
+Python 3.10.14 (main, Mar 25 2024, 21:45:25) [GCC 12.2.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import vineyard
+>>> client = vineyard.connect()
+>>> client.status
+{
+    instance_id: 3,
+    deployment: local,
+    memory_usage: 0,
+    memory_limit: 1073741824,
     deferred_requests: 0,
     ipc_connections: 1,
     rpc_connections: 0
