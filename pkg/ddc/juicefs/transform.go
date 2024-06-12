@@ -29,7 +29,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/security"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transformer"
 )
 
 func (j *JuiceFSEngine) transform(runtime *datav1alpha1.JuiceFSRuntime) (value *JuiceFS, err error) {
@@ -52,7 +52,7 @@ func (j *JuiceFSEngine) transform(runtime *datav1alpha1.JuiceFSRuntime) (value *
 	}
 
 	value.FullnameOverride = j.name
-	value.Owner = transfromer.GenerateOwnerReferenceFromObject(runtime)
+	value.Owner = transformer.GenerateOwnerReferenceFromObject(runtime)
 
 	// transform toleration
 	j.transformTolerations(dataset, value)

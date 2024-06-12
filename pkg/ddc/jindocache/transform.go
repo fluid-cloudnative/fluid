@@ -20,13 +20,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	versionutil "github.com/fluid-cloudnative/fluid/pkg/utils/version"
 	"os"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	versionutil "github.com/fluid-cloudnative/fluid/pkg/utils/version"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -36,7 +37,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transformer"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/client-go/util/retry"
@@ -143,7 +144,7 @@ func (e *JindoCacheEngine) transform(runtime *datav1alpha1.JindoRuntime) (value 
 			Master:            e.transformMasterMountPath(metaPath, mediumType, volumeType),
 			WorkersAndClients: e.transformWorkerMountPath(originPath, quotas, e.getMediumTypeFromVolumeSource(string(mediumType), runtime.Spec.TieredStore.Levels), volumeType),
 		},
-		Owner: transfromer.GenerateOwnerReferenceFromObject(runtime),
+		Owner: transformer.GenerateOwnerReferenceFromObject(runtime),
 		RuntimeIdentity: common.RuntimeIdentity{
 			Namespace: e.namespace,
 			Name:      e.name,

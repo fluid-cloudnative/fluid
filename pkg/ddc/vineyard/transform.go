@@ -22,7 +22,7 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transformer"
 )
 
 func (e *VineyardEngine) transform(runtime *datav1alpha1.VineyardRuntime) (value *Vineyard, err error) {
@@ -38,7 +38,7 @@ func (e *VineyardEngine) transform(runtime *datav1alpha1.VineyardRuntime) (value
 	}
 
 	value = &Vineyard{
-		Owner: transfromer.GenerateOwnerReferenceFromObject(runtime),
+		Owner: transformer.GenerateOwnerReferenceFromObject(runtime),
 	}
 	value.FullnameOverride = e.name
 
