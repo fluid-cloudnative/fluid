@@ -29,7 +29,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/go-logr/logr"
 	v1 "k8s.io/api/core/v1"
-	utilpointer "k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -87,7 +87,7 @@ func (t *TemplateEngine) reconcileNone(ctx cruntime.ReconcileRequestContext, opS
 	opStatus.Infos = map[string]string{}
 
 	if operation.HasPrecedingOperation() {
-		opStatus.WaitingFor.OperationComplete = utilpointer.Bool(true)
+		opStatus.WaitingFor.OperationComplete = ptr.To(true)
 	}
 
 	if err = operation.UpdateOperationApiStatus(opStatus); err != nil {

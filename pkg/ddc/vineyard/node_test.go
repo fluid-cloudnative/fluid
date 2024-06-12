@@ -29,7 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	utilpointer "k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func getTestVineyardEngineNode(client client.Client, name string, namespace string, withRunTime bool) *VineyardEngine {
@@ -69,6 +69,10 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 				name:      "spark",
 				namespace: "big-data",
 				worker: &appsv1.StatefulSet{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "StatefulSet",
+						APIVersion: "apps/v1",
+					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "spark-worker",
 						Namespace: "big-data",
@@ -86,7 +90,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 								APIVersion: "apps/v1",
 								Name:       "spark-worker",
 								UID:        "uid1",
-								Controller: utilpointer.Bool(true),
+								Controller: ptr.To(true),
 							}},
 							Labels: map[string]string{
 								"app":              "vineyard",
@@ -114,6 +118,10 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 				name:      "hbase",
 				namespace: "big-data",
 				worker: &appsv1.StatefulSet{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "StatefulSet",
+						APIVersion: "apps/v1",
+					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "hbase-worker",
 						Namespace: "big-data",
@@ -131,7 +139,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 								APIVersion: "apps/v1",
 								Name:       "hbase-worker",
 								UID:        "uid2",
-								Controller: utilpointer.Bool(true),
+								Controller: ptr.To(true),
 							}},
 							Labels: map[string]string{
 								"app":              "vineyard",
@@ -166,6 +174,10 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 				name:      "hbase-a",
 				namespace: "big-data",
 				worker: &appsv1.StatefulSet{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "StatefulSet",
+						APIVersion: "apps/v1",
+					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "hbase-a-worker",
 						Namespace: "big-data",
@@ -211,6 +223,10 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 				name:      "deprecated",
 				namespace: "big-data",
 				worker: &appsv1.StatefulSet{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "StatefulSet",
+						APIVersion: "apps/v1",
+					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "deprecated-worker",
 						Namespace: "big-data",

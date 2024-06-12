@@ -24,7 +24,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	utilpointer "k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func TestGetRuntimeByCategory(t *testing.T) {
@@ -94,7 +94,7 @@ func TestCreateRuntimeForReferenceDatasetIfNotExist(t *testing.T) {
 						// Kind:       "Dataset",
 						// APIVersion: "data.fluid.io/v1alpha1",
 						Name:       "ThinRuntimeExists",
-						Controller: utilpointer.Bool(true),
+						Controller: ptr.To(true),
 						UID:        "3e108dcc-9aab-4d0b-99dc-9976d5cd6d5a",
 					},
 				},

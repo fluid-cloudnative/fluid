@@ -17,6 +17,7 @@ package app
 
 import (
 	"os"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	"github.com/fluid-cloudnative/fluid"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -98,13 +99,15 @@ func handle() {
 
 	utils.NewPprofServer(setupLog, pprofAddr, development)
 
+	// the default webserver port is 9443, no need to set.
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                  scheme,
-		MetricsBindAddress:      metricsAddr,
+		Scheme: scheme,
+		Metrics: metricsserver.Options{
+			BindAddress: metricsAddr,
+		},
 		LeaderElection:          enableLeaderElection,
 		LeaderElectionNamespace: leaderElectionNamespace,
 		LeaderElectionID:        "goosefs.data.fluid.io",
-		Port:                    9443,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start goosefsruntime manager")

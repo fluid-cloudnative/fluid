@@ -31,7 +31,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const controllerName string = "DataFlowReconciler"
@@ -74,7 +73,7 @@ func setupWatches(bld *builder.Builder, handler *handler.EnqueueRequestForObject
 		if i == 0 {
 			bld.For(obj, predicates)
 		} else {
-			bld.Watches(&source.Kind{Type: obj}, handler, predicates)
+			bld.Watches(obj, handler, predicates)
 		}
 	}
 

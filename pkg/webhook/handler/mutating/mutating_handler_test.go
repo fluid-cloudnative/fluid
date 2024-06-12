@@ -825,10 +825,7 @@ func TestMutatePod(t *testing.T) {
 }
 
 func TestHandle(t *testing.T) {
-	decoder, err := admission.NewDecoder(scheme.Scheme)
-	if err != nil {
-		t.Errorf("test failed due to err %v", err)
-	}
+	decoder := admission.NewDecoder(scheme.Scheme)
 
 	type testCase struct {
 		name string
@@ -905,10 +902,8 @@ func TestHandle(t *testing.T) {
 	_ = plugins.RegisterMutatingHandlers(fakeClient)
 
 	for _, test := range tests {
-		handler := &FluidMutatingHandler{
-			decoder: decoder,
-		}
-		handler.Setup(fakeClient)
+		handler := &FluidMutatingHandler{}
+		handler.Setup(fakeClient, decoder)
 
 		resp := handler.Handle(context.TODO(), test.req)
 

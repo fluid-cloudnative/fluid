@@ -23,7 +23,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	utilpointer "k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
@@ -37,7 +37,7 @@ func TestStatefulsetEventHandler_OnCreateFunc(t *testing.T) {
 					{
 						Kind:       datav1alpha1.JindoRuntimeKind,
 						APIVersion: datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version,
-						Controller: utilpointer.Bool(true),
+						Controller: ptr.To(true),
 					},
 				},
 			},
@@ -80,7 +80,7 @@ func TestStatefulsetEventHandler_OnUpdateFunc(t *testing.T) {
 					{
 						Kind:       datav1alpha1.JindoRuntimeKind,
 						APIVersion: datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version,
-						Controller: utilpointer.Bool(true),
+						Controller: ptr.To(true),
 					},
 				},
 				ResourceVersion: "123",
@@ -92,7 +92,7 @@ func TestStatefulsetEventHandler_OnUpdateFunc(t *testing.T) {
 					{
 						Kind:       datav1alpha1.JindoRuntimeKind,
 						APIVersion: datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version,
-						Controller: utilpointer.Bool(true),
+						Controller: ptr.To(true),
 					},
 				},
 				ResourceVersion: "456",
@@ -141,7 +141,7 @@ func TestStatefulsetEventHandler_OnDeleteFunc(t *testing.T) {
 				{
 					Kind:       datav1alpha1.JindoRuntimeKind,
 					APIVersion: datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version,
-					Controller: utilpointer.Bool(true),
+					Controller: ptr.To(true),
 				},
 			},
 		}},

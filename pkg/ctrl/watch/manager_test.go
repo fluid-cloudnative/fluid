@@ -21,7 +21,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	utilpointer "k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
@@ -37,7 +37,7 @@ func TestIsObjectInManaged(t *testing.T) {
 			{
 				Kind:       datav1alpha1.JindoRuntimeKind,
 				APIVersion: datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version,
-				Controller: utilpointer.Bool(true),
+				Controller: ptr.To(true),
 			},
 		},
 	}}

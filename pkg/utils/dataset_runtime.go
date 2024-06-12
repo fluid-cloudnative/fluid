@@ -26,7 +26,7 @@ import (
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	utilpointer "k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func GetRuntimeByCategory(runtimes []datav1alpha1.Runtime, category common.Category) (index int, runtime *datav1alpha1.Runtime) {
@@ -56,7 +56,7 @@ func CreateRuntimeForReferenceDatasetIfNotExist(client client.Client, dataset *d
 					APIVersion: dataset.APIVersion,
 					Name:       dataset.GetName(),
 					UID:        dataset.GetUID(),
-					Controller: utilpointer.Bool(true),
+					Controller: ptr.To(true),
 				}})
 			if !reflect.DeepEqual(runtimeToUpdate, runtime) {
 				err = client.Update(context.TODO(), runtimeToUpdate)
@@ -77,7 +77,7 @@ func CreateRuntimeForReferenceDatasetIfNotExist(client client.Client, dataset *d
 							APIVersion: dataset.APIVersion,
 							Name:       dataset.GetName(),
 							UID:        dataset.GetUID(),
-							Controller: utilpointer.Bool(true),
+							Controller: ptr.To(true),
 						},
 					},
 				},

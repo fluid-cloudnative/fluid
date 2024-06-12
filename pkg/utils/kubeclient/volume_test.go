@@ -493,6 +493,7 @@ func TestShouldRemoveProtectionFinalizer(t *testing.T) {
 			Annotations:       common.ExpectedFluidAnnotations,
 			Namespace:         namespace,
 			DeletionTimestamp: &now,
+			Finalizers:        []string{"another-finalizer"},
 		},
 		Spec: v1.PersistentVolumeClaimSpec{},
 	}}

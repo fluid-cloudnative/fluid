@@ -111,7 +111,9 @@ func TestIsCompletePod(t *testing.T) {
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "pod4",
 			Namespace:         namespace,
-			DeletionTimestamp: &metav1.Time{Time: time.Now()}},
+			DeletionTimestamp: &metav1.Time{Time: time.Now()},
+			Finalizers:        []string{"test.finalizer"},
+		},
 		Spec: corev1.PodSpec{},
 	}}
 
@@ -147,14 +149,16 @@ func TestIsCompletePod(t *testing.T) {
 				namespace: namespace,
 			},
 			want: true,
-		}, {
+		},
+		{
 			name: "Pod is failed",
 			args: args{
 				name:      "pod3",
 				namespace: namespace,
 			},
 			want: true,
-		}, {
+		},
+		{
 			name: "Pod's deletion timestamp not nil",
 			args: args{
 				name:      "pod4",
@@ -222,7 +226,9 @@ func TestGetPodByName(t *testing.T) {
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "pod4",
 			Namespace:         namespace,
-			DeletionTimestamp: &metav1.Time{Time: time.Now()}},
+			DeletionTimestamp: &metav1.Time{Time: time.Now()},
+			Finalizers:        []string{"test.finalizer"},
+		},
 		Spec: corev1.PodSpec{},
 	}}
 

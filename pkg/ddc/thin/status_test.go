@@ -33,7 +33,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	utilpointer "k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func TestThinEngine_CheckAndUpdateRuntimeStatus(t *testing.T) {
@@ -46,7 +46,7 @@ func TestThinEngine_CheckAndUpdateRuntimeStatus(t *testing.T) {
 						Namespace: "fluid",
 					},
 					Spec: appsv1.StatefulSetSpec{
-						Replicas: utilpointer.Int32(1),
+						Replicas: ptr.To[int32](1),
 					},
 					Status: appsv1.StatefulSetStatus{
 						Replicas:      1,
@@ -59,7 +59,7 @@ func TestThinEngine_CheckAndUpdateRuntimeStatus(t *testing.T) {
 						Namespace: "fluid",
 					},
 					Spec: appsv1.StatefulSetSpec{
-						Replicas: utilpointer.Int32(1),
+						Replicas: ptr.To[int32](1),
 					},
 					Status: appsv1.StatefulSetStatus{
 						Replicas:      2,
@@ -72,7 +72,7 @@ func TestThinEngine_CheckAndUpdateRuntimeStatus(t *testing.T) {
 						Namespace: "fluid",
 					},
 					Spec: appsv1.StatefulSetSpec{
-						Replicas: utilpointer.Int32(1),
+						Replicas: ptr.To[int32](1),
 					},
 				},
 			}
@@ -316,7 +316,7 @@ func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
 							APIVersion: "apps/v1",
 							Name:       "spark-worker",
 							UID:        "uid1",
-							Controller: utilpointer.Bool(true),
+							Controller: ptr.To(true),
 						}},
 						Labels: map[string]string{
 							"app":              "thin",
@@ -393,7 +393,7 @@ func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
 								APIVersion: "apps/v1",
 								Name:       "hbase-worker",
 								UID:        "uid2",
-								Controller: utilpointer.Bool(true),
+								Controller: ptr.To(true),
 							}},
 							Labels: map[string]string{
 								"app":              "thin",

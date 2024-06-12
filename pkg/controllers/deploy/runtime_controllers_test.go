@@ -34,7 +34,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	utilpointer "k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func Test_scaleoutDeploymentIfNeeded(t *testing.T) {
@@ -111,14 +111,14 @@ func Test_scaleoutDeploymentIfNeeded(t *testing.T) {
 				Name:      "alluxioruntime-controller",
 				Namespace: common.NamespaceFluidSystem,
 			}, Spec: appsv1.DeploymentSpec{
-				Replicas: utilpointer.Int32(0),
+				Replicas: ptr.To[int32](0),
 			},
 		}, {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "jindoruntime-controller",
 				Namespace: common.NamespaceFluidSystem,
 			}, Spec: appsv1.DeploymentSpec{
-				Replicas: utilpointer.Int32(1),
+				Replicas: ptr.To[int32](1),
 			},
 		}, {
 			ObjectMeta: metav1.ObjectMeta{
@@ -128,7 +128,7 @@ func Test_scaleoutDeploymentIfNeeded(t *testing.T) {
 					common.RuntimeControllerReplicas: "0",
 				},
 			}, Spec: appsv1.DeploymentSpec{
-				Replicas: utilpointer.Int32(0),
+				Replicas: ptr.To[int32](0),
 			},
 		}, {
 			ObjectMeta: metav1.ObjectMeta{
@@ -138,14 +138,14 @@ func Test_scaleoutDeploymentIfNeeded(t *testing.T) {
 					common.RuntimeControllerReplicas: "3",
 				},
 			}, Spec: appsv1.DeploymentSpec{
-				Replicas: utilpointer.Int32(0),
+				Replicas: ptr.To[int32](0),
 			},
 		}, {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "unknown-Controller",
 				Namespace: common.NamespaceFluidSystem,
 			}, Spec: appsv1.DeploymentSpec{
-				Replicas: utilpointer.Int32(0),
+				Replicas: ptr.To[int32](0),
 			},
 		},
 	}
@@ -307,14 +307,14 @@ func TestScaleoutRuntimeContollerOnDemand(t *testing.T) {
 				Name:      "alluxioruntime-controller",
 				Namespace: common.NamespaceFluidSystem,
 			}, Spec: appsv1.DeploymentSpec{
-				Replicas: utilpointer.Int32(0),
+				Replicas: ptr.To[int32](0),
 			},
 		}, {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "jindoruntime-controller",
 				Namespace: common.NamespaceFluidSystem,
 			}, Spec: appsv1.DeploymentSpec{
-				Replicas: utilpointer.Int32(1),
+				Replicas: ptr.To[int32](1),
 			},
 		}, {
 			ObjectMeta: metav1.ObjectMeta{
@@ -324,7 +324,7 @@ func TestScaleoutRuntimeContollerOnDemand(t *testing.T) {
 					common.RuntimeControllerReplicas: "0",
 				},
 			}, Spec: appsv1.DeploymentSpec{
-				Replicas: utilpointer.Int32(0),
+				Replicas: ptr.To[int32](0),
 			},
 		}, {
 			ObjectMeta: metav1.ObjectMeta{
@@ -334,14 +334,14 @@ func TestScaleoutRuntimeContollerOnDemand(t *testing.T) {
 					common.RuntimeControllerReplicas: "3",
 				},
 			}, Spec: appsv1.DeploymentSpec{
-				Replicas: utilpointer.Int32(0),
+				Replicas: ptr.To[int32](0),
 			},
 		}, {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "unknown-Controller",
 				Namespace: common.NamespaceFluidSystem,
 			}, Spec: appsv1.DeploymentSpec{
-				Replicas: utilpointer.Int32(0),
+				Replicas: ptr.To[int32](0),
 			},
 		},
 	}

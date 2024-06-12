@@ -20,7 +20,7 @@ import (
 	"testing"
 
 	ctrlhelper "github.com/fluid-cloudnative/fluid/pkg/ctrl"
-	utilpointer "k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
@@ -199,7 +199,7 @@ func TestJuiceFSEngine_SetupWorkers(t *testing.T) {
 						Namespace: "fluid",
 					},
 					Spec: appsv1.StatefulSetSpec{
-						Replicas: utilpointer.Int32(1),
+						Replicas: ptr.To[int32](1),
 					},
 				},
 				runtime: &datav1alpha1.JuiceFSRuntime{

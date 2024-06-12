@@ -22,7 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	ctrlhelper "github.com/fluid-cloudnative/fluid/pkg/ctrl"
-	utilpointer "k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
@@ -200,7 +200,7 @@ func TestEFCEngine_SetupWorkers(t *testing.T) {
 						Namespace: "fluid",
 					},
 					Spec: appsv1.StatefulSetSpec{
-						Replicas: utilpointer.Int32(1),
+						Replicas: ptr.To[int32](1),
 					},
 				},
 				runtime: &datav1alpha1.EFCRuntime{
@@ -234,7 +234,7 @@ func TestEFCEngine_SetupWorkers(t *testing.T) {
 						Namespace: "fluid",
 					},
 					Spec: appsv1.StatefulSetSpec{
-						Replicas: utilpointer.Int32(0),
+						Replicas: ptr.To[int32](0),
 					},
 				},
 				runtime: &datav1alpha1.EFCRuntime{
@@ -502,6 +502,10 @@ func TestEFCEngine_syncWorkersEndpoints(t *testing.T) {
 				name:      "spark",
 				namespace: "big-data",
 				worker: &appsv1.StatefulSet{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "StatefulSet",
+						APIVersion: "apps/v1",
+					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "spark-worker",
 						Namespace: "big-data",
@@ -527,7 +531,7 @@ func TestEFCEngine_syncWorkersEndpoints(t *testing.T) {
 								APIVersion: "apps/v1",
 								Name:       "spark-worker",
 								UID:        "uid1",
-								Controller: utilpointer.Bool(true),
+								Controller: ptr.To(true),
 							}},
 							Labels: map[string]string{
 								"app":              "efc",
@@ -577,6 +581,10 @@ func TestEFCEngine_syncWorkersEndpoints(t *testing.T) {
 				name:      "spark",
 				namespace: "big-data",
 				worker: &appsv1.StatefulSet{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "StatefulSet",
+						APIVersion: "apps/v1",
+					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "spark-worker",
 						Namespace: "big-data",
@@ -602,7 +610,7 @@ func TestEFCEngine_syncWorkersEndpoints(t *testing.T) {
 								APIVersion: "apps/v1",
 								Name:       "spark-worker",
 								UID:        "uid1",
-								Controller: utilpointer.Bool(true),
+								Controller: ptr.To(true),
 							}},
 							Labels: map[string]string{
 								"app":              "efc",
