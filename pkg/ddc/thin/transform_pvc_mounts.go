@@ -24,14 +24,14 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transformer"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
 func (t *ThinEngine) transfromSecretsForPersistentVolumeClaimMounts(dataset *datav1alpha1.Dataset, policy datav1alpha1.NodePublishSecretPolicy, value *ThinValue) error {
-	owner := transfromer.GenerateOwnerReferenceFromObject(t.runtime)
+	owner := transformer.GenerateOwnerReferenceFromObject(t.runtime)
 	for _, mount := range dataset.Spec.Mounts {
 		if strings.HasPrefix(mount.MountPoint, common.VolumeScheme.String()) {
 			pvcName := strings.TrimPrefix(mount.MountPoint, common.VolumeScheme.String())

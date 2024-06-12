@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transformer"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -165,7 +165,7 @@ func TestGenDataProcessValue(t *testing.T) {
 			},
 			want: &DataProcessValue{
 				Name:  dataProcessScriptProcessor.Name,
-				Owner: transfromer.GenerateOwnerReferenceFromObject(dataProcessScriptProcessor),
+				Owner: transformer.GenerateOwnerReferenceFromObject(dataProcessScriptProcessor),
 				DataProcessInfo: DataProcessInfo{
 					TargetDataset: dataset.Name,
 					JobProcessor:  nil,
@@ -190,7 +190,7 @@ func TestGenDataProcessValue(t *testing.T) {
 			},
 			want: &DataProcessValue{
 				Name:  dataProcessJobProcessor.Name,
-				Owner: transfromer.GenerateOwnerReferenceFromObject(dataProcessJobProcessor),
+				Owner: transformer.GenerateOwnerReferenceFromObject(dataProcessJobProcessor),
 				DataProcessInfo: DataProcessInfo{
 					TargetDataset:   dataset.Name,
 					ScriptProcessor: nil,
@@ -208,7 +208,7 @@ func TestGenDataProcessValue(t *testing.T) {
 			},
 			want: &DataProcessValue{
 				Name:  dataProcessScriptProcessor.Name,
-				Owner: transfromer.GenerateOwnerReferenceFromObject(dataProcessScriptProcessorWithoutMountPath),
+				Owner: transformer.GenerateOwnerReferenceFromObject(dataProcessScriptProcessorWithoutMountPath),
 				DataProcessInfo: DataProcessInfo{
 					TargetDataset: dataset.Name,
 					JobProcessor:  nil,
@@ -233,7 +233,7 @@ func TestGenDataProcessValue(t *testing.T) {
 			},
 			want: &DataProcessValue{
 				Name:  dataProcessJobProcessor.Name,
-				Owner: transfromer.GenerateOwnerReferenceFromObject(dataProcessJobProcessorWithoutMountPath),
+				Owner: transformer.GenerateOwnerReferenceFromObject(dataProcessJobProcessorWithoutMountPath),
 				DataProcessInfo: DataProcessInfo{
 					TargetDataset:   dataset.Name,
 					ScriptProcessor: nil,

@@ -40,7 +40,7 @@ import (
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transformer"
 )
 
 func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequestContext, object client.Object) (valueFileName string, err error) {
@@ -173,7 +173,7 @@ func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequest
 		Name:            dataMigrate.Name,
 		DataMigrateInfo: dataMigrateInfo,
 	}
-	dataMigrateValue.Owner = transfromer.GenerateOwnerReferenceFromObject(dataMigrate)
+	dataMigrateValue.Owner = transformer.GenerateOwnerReferenceFromObject(dataMigrate)
 
 	// 6. create the value file
 	data, err := yaml.Marshal(dataMigrateValue)
