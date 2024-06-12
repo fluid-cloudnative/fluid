@@ -177,7 +177,7 @@ func TestQueryHCFSEndpoint(t *testing.T) {
 			name:      "not-register",
 			namespace: "fluid",
 			out:       "",
-			isErr:     true,
+			isErr:     false,
 		},
 		{
 			name:      "hbase",

@@ -27,7 +27,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	utilpointer "k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func TestCompareOwnerRefMatcheWithExpected(t *testing.T) {
@@ -75,7 +75,7 @@ func TestCompareOwnerRefMatcheWithExpected(t *testing.T) {
 							Kind:       "StatefulSet",
 							APIVersion: "app/v1",
 							UID:        "uid1",
-							Controller: utilpointer.Bool(true),
+							Controller: ptr.To(true),
 						}},
 					},
 					Spec: v1.PodSpec{},
@@ -106,7 +106,7 @@ func TestCompareOwnerRefMatcheWithExpected(t *testing.T) {
 							APIVersion: "app/v1",
 							UID:        "uid2",
 							Name:       "test2",
-							Controller: utilpointer.Bool(true),
+							Controller: ptr.To(true),
 						}},
 					},
 					Spec: v1.PodSpec{},

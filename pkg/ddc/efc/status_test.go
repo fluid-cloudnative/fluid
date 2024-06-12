@@ -24,7 +24,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	utilpointer "k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
@@ -35,7 +35,7 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32(1),
+				Replicas: ptr.To[int32](1),
 			},
 			Status: appsv1.StatefulSetStatus{
 				ReadyReplicas: 1,
@@ -47,7 +47,7 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32(1),
+				Replicas: ptr.To[int32](1),
 			},
 			Status: appsv1.StatefulSetStatus{
 				ReadyReplicas: 0,
@@ -59,7 +59,7 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32(1),
+				Replicas: ptr.To[int32](1),
 			},
 			Status: appsv1.StatefulSetStatus{
 				ReadyReplicas: 1,
@@ -71,7 +71,7 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32(1),
+				Replicas: ptr.To[int32](1),
 			},
 			Status: appsv1.StatefulSetStatus{
 				ReadyReplicas: 1,
@@ -86,7 +86,7 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32(3),
+				Replicas: ptr.To[int32](3),
 			},
 			Status: appsv1.StatefulSetStatus{
 				Replicas:      2,
@@ -99,7 +99,7 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32(3),
+				Replicas: ptr.To[int32](3),
 			},
 			Status: appsv1.StatefulSetStatus{
 				Replicas:      2,
@@ -112,7 +112,7 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32(3),
+				Replicas: ptr.To[int32](3),
 			},
 			Status: appsv1.StatefulSetStatus{
 				Replicas:      2,
@@ -125,7 +125,7 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32(3),
+				Replicas: ptr.To[int32](3),
 			},
 			Status: appsv1.StatefulSetStatus{
 				Replicas:      2,

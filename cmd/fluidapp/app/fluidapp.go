@@ -18,13 +18,16 @@ package app
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+
 	"github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/fluidapp/dataflowaffinity"
 	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
 	utilfeature "github.com/fluid-cloudnative/fluid/pkg/utils/feature"
 	batchv1 "k8s.io/api/batch/v1"
+
 	"k8s.io/apimachinery/pkg/labels"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/fluid-cloudnative/fluid"
 	"github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/fluidapp"
@@ -38,6 +41,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 var (
@@ -91,14 +95,25 @@ func handle() {
 
 	utils.NewPprofServer(setupLog, pprofAddr, development)
 
+	// the default webserver port is 9443, no need to set.
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                  scheme,
-		MetricsBindAddress:      metricsAddr,
+		Scheme: scheme,
+		Metrics: metricsserver.Options{
+			BindAddress: metricsAddr,
+		},
 		LeaderElection:          enableLeaderElection,
 		LeaderElectionNamespace: leaderElectionNamespace,
 		LeaderElectionID:        "fluidapp.data.fluid.io",
-		Port:                    9443,
-		NewCache:                NewCache(scheme),
+		Cache: cache.Options{
+			Scheme: scheme,
+			ByObject: map[client.Object]cache.ByObject{
+				&corev1.Pod{}: {
+					Label: labels.SelectorFromSet(labels.Set{
+						common.InjectSidecarDone: common.True,
+					}),
+				},
+			},
+		},
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start fluid app manager")

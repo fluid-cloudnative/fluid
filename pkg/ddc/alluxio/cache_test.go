@@ -33,7 +33,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	utilpointer "k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func TestQueryCacheStatus(t *testing.T) {
@@ -478,7 +478,7 @@ func TestAlluxioEngine_getGracefulShutdownLimits(t *testing.T) {
 					Spec: datav1alpha1.AlluxioRuntimeSpec{
 						RuntimeManagement: datav1alpha1.RuntimeManagement{
 							CleanCachePolicy: datav1alpha1.CleanCachePolicy{
-								MaxRetryAttempts: utilpointer.Int32(12),
+								MaxRetryAttempts: ptr.To[int32](12),
 							},
 						},
 					},
@@ -499,7 +499,7 @@ func TestAlluxioEngine_getGracefulShutdownLimits(t *testing.T) {
 					Spec: datav1alpha1.AlluxioRuntimeSpec{
 						RuntimeManagement: datav1alpha1.RuntimeManagement{
 							CleanCachePolicy: datav1alpha1.CleanCachePolicy{
-								MaxRetryAttempts: utilpointer.Int32(12),
+								MaxRetryAttempts: ptr.To[int32](12),
 							},
 						},
 					},
@@ -586,7 +586,7 @@ func TestAlluxioEngine_getCleanCacheGracePeriodSeconds(t *testing.T) {
 					Spec: datav1alpha1.AlluxioRuntimeSpec{
 						RuntimeManagement: datav1alpha1.RuntimeManagement{
 							CleanCachePolicy: datav1alpha1.CleanCachePolicy{
-								GracePeriodSeconds: utilpointer.Int32(12),
+								GracePeriodSeconds: ptr.To[int32](12),
 							},
 						},
 					},
@@ -607,7 +607,7 @@ func TestAlluxioEngine_getCleanCacheGracePeriodSeconds(t *testing.T) {
 					Spec: datav1alpha1.AlluxioRuntimeSpec{
 						RuntimeManagement: datav1alpha1.RuntimeManagement{
 							CleanCachePolicy: datav1alpha1.CleanCachePolicy{
-								MaxRetryAttempts: utilpointer.Int32(12),
+								MaxRetryAttempts: ptr.To[int32](12),
 							},
 						},
 					},

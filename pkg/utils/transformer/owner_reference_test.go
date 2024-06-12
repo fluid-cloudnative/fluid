@@ -35,6 +35,10 @@ func TestGenerateOwnerReferenceFromCRD(t *testing.T) {
 		name      string                = "test-dataset"
 		namespace string                = "fluid"
 		dataset   *datav1alpha1.Dataset = &datav1alpha1.Dataset{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Dataset",
+				APIVersion: "data.fluid.io/v1alpha1",
+			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,

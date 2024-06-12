@@ -15,6 +15,7 @@ package app
 
 import (
 	"os"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/controllers"
@@ -111,13 +112,15 @@ func handle() {
 
 	utils.NewPprofServer(setupLog, pprofAddr, development)
 
+	// the default webserver port is 9443, no need to set.
 	mgr, err := ctrl.NewManager(controllers.GetConfigOrDieWithQPSAndBurst(kubeClientQPS, kubeClientBurst), ctrl.Options{
-		Scheme:                  scheme,
-		MetricsBindAddress:      metricsAddr,
+		Scheme: scheme,
+		Metrics: metricsserver.Options{
+			BindAddress: metricsAddr,
+		},
 		LeaderElection:          enableLeaderElection,
 		LeaderElectionNamespace: leaderElectionNamespace,
 		LeaderElectionID:        "vineyard.data.fluid.io",
-		Port:                    9443,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start thinruntime manager")

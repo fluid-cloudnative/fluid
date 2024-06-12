@@ -44,8 +44,9 @@ type FluidMutatingHandler struct {
 	decoder *admission.Decoder
 }
 
-func (a *FluidMutatingHandler) Setup(client client.Client) {
+func (a *FluidMutatingHandler) Setup(client client.Client, decoder *admission.Decoder) {
 	a.Client = client
+	a.decoder = decoder
 }
 
 // Handle is the mutating logic of pod
@@ -111,12 +112,6 @@ func (a *FluidMutatingHandler) Handle(ctx context.Context, req admission.Request
 	resp := admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
 	setupLog.V(1).Info("patch response", "name", pod.GetName(), "namespace", pod.GetNamespace(), "patches", utils.DumpJSON(resp.Patch))
 	return resp
-}
-
-// InjectDecoder injects the decoder.
-func (a *FluidMutatingHandler) InjectDecoder(d *admission.Decoder) error {
-	a.decoder = d
-	return nil
 }
 
 // MutatePod will call all plugins to get total prefer info

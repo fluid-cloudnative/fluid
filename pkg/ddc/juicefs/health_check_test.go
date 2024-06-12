@@ -20,7 +20,7 @@ import (
 	"reflect"
 	"testing"
 
-	utilpointer "k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -50,7 +50,7 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32(1),
+				Replicas: ptr.To[int32](1),
 			},
 			Status: appsv1.StatefulSetStatus{
 				Replicas:        1,

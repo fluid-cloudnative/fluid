@@ -22,7 +22,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	utilpointer "k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 type scriptGeneratorHelper struct {
@@ -62,7 +62,7 @@ func (helper *scriptGeneratorHelper) GetVolume(configMapKey types.NamespacedName
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: configMapKey.Name,
 				},
-				DefaultMode: utilpointer.Int32(mode),
+				DefaultMode: ptr.To(mode),
 			},
 		},
 	}

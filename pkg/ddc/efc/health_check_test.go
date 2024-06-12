@@ -20,7 +20,7 @@ import (
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	utilpointer "k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -81,7 +81,7 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 						Namespace: "big-data",
 					},
 					Spec: appsv1.StatefulSetSpec{
-						Replicas: utilpointer.Int32(1),
+						Replicas: ptr.To[int32](1),
 						Selector: &metav1.LabelSelector{},
 					},
 					Status: appsv1.StatefulSetStatus{
@@ -141,7 +141,7 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 						Namespace: "big-data",
 					},
 					Spec: appsv1.StatefulSetSpec{
-						Replicas: utilpointer.Int32(1),
+						Replicas: ptr.To[int32](1),
 						Selector: &metav1.LabelSelector{},
 					},
 					Status: appsv1.StatefulSetStatus{
@@ -201,7 +201,7 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 						Namespace: "big-data",
 					},
 					Spec: appsv1.StatefulSetSpec{
-						Replicas: utilpointer.Int32(2),
+						Replicas: ptr.To[int32](2),
 						Selector: &metav1.LabelSelector{},
 					},
 					Status: appsv1.StatefulSetStatus{
@@ -261,7 +261,7 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 						Namespace: "big-data",
 					},
 					Spec: appsv1.StatefulSetSpec{
-						Replicas: utilpointer.Int32(2),
+						Replicas: ptr.To[int32](2),
 						Selector: &metav1.LabelSelector{},
 					},
 					Status: appsv1.StatefulSetStatus{
@@ -321,7 +321,7 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 						Namespace: "big-data",
 					},
 					Spec: appsv1.StatefulSetSpec{
-						Replicas: utilpointer.Int32(1),
+						Replicas: ptr.To[int32](1),
 						Selector: &metav1.LabelSelector{},
 					},
 					Status: appsv1.StatefulSetStatus{
@@ -381,7 +381,7 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 						Namespace: "big-data",
 					},
 					Spec: appsv1.StatefulSetSpec{
-						Replicas: utilpointer.Int32(1),
+						Replicas: ptr.To[int32](1),
 						Selector: &metav1.LabelSelector{},
 					},
 					Status: appsv1.StatefulSetStatus{

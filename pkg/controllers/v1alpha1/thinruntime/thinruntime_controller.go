@@ -138,7 +138,7 @@ func (r *ThinRuntimeReconciler) SetupWithManager(mgr ctrl.Manager, options contr
 	}
 }
 
-func NewCache(scheme *runtime.Scheme) cache.NewCacheFunc {
+func NewCache() cache.Options {
 	// For reference dataset, controller cares about fuse daemonsets of other runtime types
 	daemonSetSelector := labels.NewSelector()
 	req, err := labels.NewRequirement(common.App, selection.In, []string{
@@ -154,13 +154,12 @@ func NewCache(scheme *runtime.Scheme) cache.NewCacheFunc {
 	}
 	daemonSetSelector.Add(*req)
 
-	return cache.BuilderWithOptions(cache.Options{
-		Scheme: scheme,
-		SelectorsByObject: cache.SelectorsByObject{
+	return cache.Options{
+		ByObject: map[client.Object]cache.ByObject{
 			&appsv1.StatefulSet{}: {Label: labels.SelectorFromSet(labels.Set{
 				common.App: common.ThinRuntime,
 			})},
 			&appsv1.DaemonSet{}: {Label: daemonSetSelector},
 		},
-	})
+	}
 }

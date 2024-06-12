@@ -21,7 +21,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	utilpointer "k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -123,7 +123,7 @@ func (a *ScriptGeneratorForApp) GetVolume() (v corev1.Volume) {
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: a.getConfigmapName(),
 				},
-				DefaultMode: utilpointer.Int32(mode),
+				DefaultMode: ptr.To(mode),
 			},
 		},
 	}

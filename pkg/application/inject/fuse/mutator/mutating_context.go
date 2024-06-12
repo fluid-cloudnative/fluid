@@ -18,11 +18,11 @@ package mutator
 
 import (
 	"fmt"
+	"k8s.io/utils/ptr"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	utilpointer "k8s.io/utils/pointer"
 )
 
 type MutatingPodSpecs struct {
@@ -115,7 +115,7 @@ func (ctx *mutatingContext) GetDatsetUsedInContainers() (bool, error) {
 }
 
 func (ctx *mutatingContext) SetDatasetUsedInContainers(used bool) {
-	ctx.datasetUsedInContainers = utilpointer.Bool(used)
+	ctx.datasetUsedInContainers = ptr.To(used)
 }
 
 func (ctx *mutatingContext) GetDatasetUsedInInitContainers() (bool, error) {
@@ -127,5 +127,5 @@ func (ctx *mutatingContext) GetDatasetUsedInInitContainers() (bool, error) {
 }
 
 func (ctx *mutatingContext) SetDatasetUsedInInitContainers(used bool) {
-	ctx.datasetUsedInInitContainers = utilpointer.Bool(used)
+	ctx.datasetUsedInInitContainers = ptr.To(used)
 }

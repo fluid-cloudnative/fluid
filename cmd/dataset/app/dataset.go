@@ -18,6 +18,8 @@ package app
 
 import (
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -121,14 +123,16 @@ func handle() {
 
 	utils.NewPprofServer(setupLog, pprofAddr, development)
 
+	// the default webserver port is 9443, no need to set.
 	mgr, err := ctrl.NewManager(controllers.GetConfigOrDieWithQPSAndBurst(kubeClientQPS, kubeClientBurst), ctrl.Options{
-		Scheme:                  scheme,
-		MetricsBindAddress:      metricsAddr,
+		Scheme: scheme,
+		Metrics: metricsserver.Options{
+			BindAddress: metricsAddr,
+		},
 		LeaderElection:          enableLeaderElection,
 		LeaderElectionNamespace: leaderElectionNamespace,
 		LeaderElectionID:        "dataset.data.fluid.io",
-		Port:                    9443,
-		NewCache:                NewCache(scheme),
+		Cache:                   NewCacheOptions(),
 		NewClient:               controllers.NewFluidControllerClient,
 	})
 	if err != nil {
@@ -232,21 +236,22 @@ func handle() {
 	}
 }
 
-func NewCache(scheme *runtime.Scheme) cache.NewCacheFunc {
-	selectors := make(cache.SelectorsByObject, 1)
+func NewCacheOptions() cache.Options {
+	var cronJobKey client.Object
 
 	if compatibility.IsBatchV1CronJobSupported() {
-		selectors[&batchv1.CronJob{}] = cache.ObjectSelector{Label: labels.SelectorFromSet(labels.Set{
-			common.JobPolicy: common.CronPolicy,
-		})}
+		cronJobKey = &batchv1.CronJob{}
 	} else {
-		selectors[&batchv1beta1.CronJob{}] = cache.ObjectSelector{Label: labels.SelectorFromSet(labels.Set{
-			common.JobPolicy: common.CronPolicy,
-		})}
+		cronJobKey = &batchv1beta1.CronJob{}
 	}
 
-	return cache.BuilderWithOptions(cache.Options{
-		Scheme:            scheme,
-		SelectorsByObject: selectors,
-	})
+	return cache.Options{
+		ByObject: map[client.Object]cache.ByObject{
+			cronJobKey: {
+				Label: labels.SelectorFromSet(labels.Set{
+					common.JobPolicy: common.CronPolicy,
+				}),
+			},
+		},
+	}
 }
