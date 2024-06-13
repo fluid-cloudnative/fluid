@@ -1,10 +1,6 @@
-FROM debian:bullseye as builder
-
-RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list
+FROM debian:bullseye@sha256:a165446a88794db4fec31e35e9441433f9552ae048fb1ed26df352d2b537cb96 as builder
 
 RUN apt update && apt install -y build-essential libfuse3-dev pkg-config git python3-pip
-
-RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 
 RUN pip install meson ninja
 
