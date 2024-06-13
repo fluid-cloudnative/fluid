@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Uber Technologies, Inc.
+// Copyright (c) 2017-2023 Uber Technologies, Inc.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,9 +18,42 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package atomic
+//go:build !go1.20
+// +build !go1.20
 
-//go:generate bin/gen-atomicint -name=Int32 -wrapped=int32 -file=int32.go
-//go:generate bin/gen-atomicint -name=Int64 -wrapped=int64 -file=int64.go
-//go:generate bin/gen-atomicint -name=Uint32 -wrapped=uint32 -unsigned -file=uint32.go
-//go:generate bin/gen-atomicint -name=Uint64 -wrapped=uint64 -unsigned -file=uint64.go
+package multierr
+
+import "errors"
+
+// Versions of Go before 1.20 did not support the Unwrap() []error method.
+// This provides a similar behavior by implementing the Is(..) and As(..)
+// methods.
+// See the errors.Join proposal for details:
+// https://github.com/golang/go/issues/53435
+
+// As attempts to find the first error in the error list that matches the type
+// of the value that target points to.
+//
+// This function allows errors.As to traverse the values stored on the
+// multierr error.
+func (merr *multiError) As(target interface{}) bool {
+	for _, err := range merr.Errors() {
+		if errors.As(err, target) {
+			return true
+		}
+	}
+	return false
+}
+
+// Is attempts to match the provided error against errors in the error list.
+//
+// This function allows errors.Is to traverse the values stored on the
+// multierr error.
+func (merr *multiError) Is(target error) bool {
+	for _, err := range merr.Errors() {
+		if errors.Is(err, target) {
+			return true
+		}
+	}
+	return false
+}
