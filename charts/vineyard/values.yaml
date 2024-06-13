@@ -24,8 +24,8 @@ master:
     #      key: accesskey
     # options:
   replicas: 1
-  image: bitnami/etcd
-  imageTag: 3.5.10
+  image: registry.aliyuncs.com/vineyard/vineyardd
+  imageTag: v0.22.2
   imagePullPolicy: IfNotPresent
   nodeSelector: {}
   hostNetwork: false
@@ -64,8 +64,8 @@ worker:
   # annotation2: value2
 
   replicas: 1
-  image: vineyardcloudnative/vineyardd
-  imageTag: v0.21.5
+  image: registry.aliyuncs.com/vineyard/vineyardd
+  imageTag: v0.22.2
   imagePullPolicy: IfNotPresent
   nodeSelector: {}
   hostNetwork: false
@@ -126,13 +126,15 @@ fuse:
   # annotation2: value2
 
   hostNetwork: false
-  image: vineyardcloudnative/vineyard-fluid-fuse
-  imageTag: v0.21.5
+  image: registry.aliyuncs.com/vineyard/vineyard-fluid-fuse
+  imageTag: v0.22.2
   imagePullPolicy: IfNotPresent
   env: {}
   targetPath: ""
   nodeSelector: {}
   hostPID: false
+  options:
+    size: "0"
 
 owner:
   enabled: false

@@ -523,7 +523,7 @@ func TestTransformResourcesForFuseWithValue(t *testing.T) {
 	}{
 		{&datav1alpha1.VineyardRuntime{
 			Spec: datav1alpha1.VineyardRuntimeSpec{
-				Fuse: datav1alpha1.VineyardSockSpec{
+				Fuse: datav1alpha1.VineyardClientSocketSpec{
 					Resources: resources,
 				},
 				TieredStore: datav1alpha1.TieredStore{

@@ -70,7 +70,7 @@ func (handler *OnceStatusHandler) GetOperationStatus(ctx runtime.ReconcileReques
 	}
 
 	// set the node labels in status when job finished
-	if result.NodeAffinity == nil {
+	if dataflow.Enabled(dataflow.DataflowAffinity) && result.NodeAffinity == nil {
 		jobPod, err := kubeclient.GetSucceedPodForJob(handler.Client, job)
 		if err != nil {
 			ctx.Log.Error(err, "can't get pod for job", "namespace", ctx.Namespace, "jobName", jobName)

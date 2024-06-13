@@ -20,13 +20,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	versionutil "github.com/fluid-cloudnative/fluid/pkg/utils/version"
 	"os"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	versionutil "github.com/fluid-cloudnative/fluid/pkg/utils/version"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -36,7 +37,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transformer"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/client-go/util/retry"
@@ -143,7 +144,7 @@ func (e *JindoCacheEngine) transform(runtime *datav1alpha1.JindoRuntime) (value 
 			Master:            e.transformMasterMountPath(metaPath, mediumType, volumeType),
 			WorkersAndClients: e.transformWorkerMountPath(originPath, quotas, e.getMediumTypeFromVolumeSource(string(mediumType), runtime.Spec.TieredStore.Levels), volumeType),
 		},
-		Owner: transfromer.GenerateOwnerReferenceFromObject(runtime),
+		Owner: transformer.GenerateOwnerReferenceFromObject(runtime),
 		RuntimeIdentity: common.RuntimeIdentity{
 			Namespace: e.namespace,
 			Name:      e.name,
@@ -275,17 +276,28 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 			cachesetPath = "local://" + ufsVolumesPath
 		}
 		cacheStrategy := "DISTRIBUTED"
-		metaPolicy := "ALWAYS"
+		metaPolicy := "ONCE"
 		readCacheReplica := 1
 		writeCacheReplica := 1
 
-		if mount.Options["cacheStrategy"] == "DHT" && mount.Options["metaPolicy"] == "ONCE" {
-			cacheStrategy = mount.Options["cacheStrategy"]
-			metaPolicy = mount.Options["metaPolicy"]
+		if userMetaPolicy, ok := mount.Options["metaPolicy"]; ok {
+			if userMetaPolicy == "ONCE" || userMetaPolicy == "ALWAYS" {
+				metaPolicy = userMetaPolicy
+			} else {
+				err = fmt.Errorf("invalid metaPolicy: %s", userMetaPolicy)
+				e.Log.Error(err, "invalid metaPolicy", metaPolicy)
+				return err
+			}
 		}
 
-		if mount.Options["metaPolicy"] == "ONCE" {
-			metaPolicy = mount.Options["metaPolicy"]
+		if userCacheStrategy := mount.Options["cacheStrategy"]; userCacheStrategy == "DHT" {
+			if metaPolicy == "ONCE" {
+				cacheStrategy = userCacheStrategy
+			} else {
+				err = fmt.Errorf("cacheStrategy DHT must be used with metaPolicy ONCE and current metaPolicy is %s", metaPolicy)
+				e.Log.Error(err, "incorrect metaPolicy", metaPolicy)
+				return err
+			}
 		}
 
 		if mount.Options["readCacheReplica"] != "" {
@@ -294,7 +306,7 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 				e.Log.Info(readCacheReplicaStr, " is a valid read cache replica number")
 				readCacheReplica = num
 			} else {
-				error = fmt.Errorf("Options readCacheReplica " + readCacheReplicaStr + " is not a valid number")
+				error = fmt.Errorf("options readCacheReplica " + readCacheReplicaStr + " is not a valid number")
 				e.Log.Error(error, "readCacheReplica", readCacheReplicaStr)
 				return error
 			}
@@ -936,6 +948,7 @@ func (e *JindoCacheEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime, 
 			fuseArgs = append(fuseArgs, "-onegative_timeout=0")
 		}
 		fuseArgs = append(fuseArgs, "-ometrics_port=0")
+		fuseArgs = append(fuseArgs, "-ono_symlink")
 	}
 	if runtime.Spec.Master.Disabled && runtime.Spec.Worker.Disabled {
 		fuseArgs = append(fuseArgs, "-ouri="+dataset.Spec.Mounts[0].MountPoint)
@@ -947,7 +960,7 @@ func (e *JindoCacheEngine) getSmartDataConfigs(runtime *datav1alpha1.JindoRuntim
 	// Apply defaults
 	config := smartdataConfig{
 		image:           "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata",
-		imageTag:        "6.2.0",
+		imageTag:        "6.4.0",
 		imagePullPolicy: "Always",
 		dnsServer:       "1.1.1.1",
 	}
@@ -985,7 +998,7 @@ func (e *JindoCacheEngine) getSmartDataConfigs(runtime *datav1alpha1.JindoRuntim
 func (e *JindoCacheEngine) parseFuseImage(runtime *datav1alpha1.JindoRuntime) (image, tag, imagePullPolicy string) {
 	// Apply defaults
 	image = "registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse"
-	tag = "6.2.0"
+	tag = "6.4.0"
 	imagePullPolicy = "Always"
 
 	// Override with global-scoped configs

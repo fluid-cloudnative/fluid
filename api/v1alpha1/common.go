@@ -269,8 +269,8 @@ type AffinityStrategy struct {
 	// +optional
 	Policy AffinityPolicy `json:"policy,omitempty"`
 
-	Prefer  []Prefer  `json:"prefer,omitempty"`
-	Require []Require `json:"require,omitempty"`
+	Prefers  []Prefer  `json:"prefers,omitempty"`
+	Requires []Require `json:"requires,omitempty"`
 }
 
 // Prefer defines the label key and weight for generating a PreferredSchedulingTerm.

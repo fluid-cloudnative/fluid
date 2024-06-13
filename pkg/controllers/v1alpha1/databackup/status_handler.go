@@ -53,8 +53,9 @@ func (o *OnceHandler) GetOperationStatus(ctx runtime.ReconcileRequestContext, op
 	if !kubeclient.IsFinishedPod(backupPod) {
 		return
 	}
+
 	// set the node labels in status when job finished
-	if result.NodeAffinity == nil {
+	if dataflow.Enabled(dataflow.DataflowAffinity) && result.NodeAffinity == nil {
 		// generate the node labels
 		result.NodeAffinity, err = dataflow.GenerateNodeAffinity(ctx.Client, backupPod)
 		if err != nil {

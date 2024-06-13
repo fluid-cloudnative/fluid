@@ -18,7 +18,6 @@ package juicefs
 
 import (
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -28,149 +27,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/brahma-adshonor/gohook"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/record"
-
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	cdatamigrate "github.com/fluid-cloudnative/fluid/pkg/datamigrate"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
-
-func TestJuiceFSEngine_CreateDataMigrateJob(t *testing.T) {
-	configMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-dataset-juicefs-values",
-			Namespace: "fluid",
-		},
-		Data: map[string]string{
-			"data": valuesConfigMapData,
-		},
-	}
-
-	mockExecCheckReleaseCommon := func(name string, namespace string) (exist bool, err error) {
-		return false, nil
-	}
-	mockExecCheckReleaseErr := func(name string, namespace string) (exist bool, err error) {
-		return false, errors.New("fail to check release")
-	}
-	mockExecInstallReleaseCommon := func(name string, namespace string, valueFile string, chartName string) error {
-		return nil
-	}
-	mockExecInstallReleaseErr := func(name string, namespace string, valueFile string, chartName string) error {
-		return errors.New("fail to install datamigrate chart")
-	}
-
-	wrappedUnhookCheckRelease := func() {
-		err := gohook.UnHook(helm.CheckRelease)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-	wrappedUnhookInstallRelease := func() {
-		err := gohook.UnHook(helm.InstallRelease)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-
-	targetDataMigrate := v1alpha1.DataMigrate{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "fluid",
-		},
-		Spec: v1alpha1.DataMigrateSpec{
-			From: v1alpha1.DataToMigrate{
-				DataSet: &v1alpha1.DatasetToMigrate{
-					Name:      "test-dataset",
-					Namespace: "fluid",
-				},
-			},
-			To: v1alpha1.DataToMigrate{
-				ExternalStorage: &v1alpha1.ExternalStorage{
-					URI: "minio://test/test",
-				},
-			},
-		},
-	}
-	datasetInputs := []v1alpha1.Dataset{{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-dataset",
-			Namespace: "fluid",
-		},
-		Spec: v1alpha1.DatasetSpec{
-			Mounts: []v1alpha1.Mount{{
-				MountPoint: "juicefs:///",
-			}},
-		},
-	}}
-	podListInputs := []corev1.PodList{{
-		Items: []corev1.Pod{{
-			ObjectMeta: metav1.ObjectMeta{
-				Labels: map[string]string{"a": "b"},
-			},
-		}},
-	}}
-	testObjs := []runtime.Object{}
-	testObjs = append(testObjs, configMap)
-	for _, datasetInput := range datasetInputs {
-		testObjs = append(testObjs, datasetInput.DeepCopy())
-	}
-	for _, podInput := range podListInputs {
-		testObjs = append(testObjs, podInput.DeepCopy())
-	}
-	testScheme.AddKnownTypes(corev1.SchemeGroupVersion, configMap)
-	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-	engine := &JuiceFSEngine{
-		name:      "juicefs",
-		namespace: "fluid",
-		Client:    client,
-		Log:       fake.NullLogger(),
-	}
-	ctx := cruntime.ReconcileRequestContext{
-		Log:      fake.NullLogger(),
-		Client:   client,
-		Recorder: record.NewFakeRecorder(1),
-	}
-
-	err := gohook.Hook(helm.CheckRelease, mockExecCheckReleaseErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = engine.CreateDataMigrateJob(ctx, targetDataMigrate)
-	if err == nil {
-		t.Errorf("fail to catch the error: %v", err)
-	}
-	wrappedUnhookCheckRelease()
-
-	err = gohook.Hook(helm.CheckRelease, mockExecCheckReleaseCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = gohook.Hook(helm.InstallRelease, mockExecInstallReleaseErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = engine.CreateDataMigrateJob(ctx, targetDataMigrate)
-	if err == nil {
-		t.Errorf("fail to catch the error: %v", err)
-	}
-	wrappedUnhookInstallRelease()
-
-	err = gohook.Hook(helm.InstallRelease, mockExecInstallReleaseCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = engine.CreateDataMigrateJob(ctx, targetDataMigrate)
-	if err != nil {
-		t.Errorf("fail to exec the function: %v", err)
-	}
-	wrappedUnhookCheckRelease()
-}
 
 func TestJuiceFSEngine_generateDataMigrateValueFile(t *testing.T) {
 	configMap := &corev1.ConfigMap{

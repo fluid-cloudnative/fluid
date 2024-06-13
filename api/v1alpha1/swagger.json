@@ -2491,7 +2491,7 @@
           }
         },
         "image": {
-          "description": "The image of Vineyard component. For Master, the default image is `bitnami/etcd` For Worker, the default image is `vineyardcloudnative/vineyardd` The default container registry is `docker.io`, you can change it by setting the image field",
+          "description": "The image of Vineyard component. For Master, the default image is `registry.aliyuncs.com/vineyard/vineyardd` For Worker, the default image is `registry.aliyuncs.com/vineyard/vineyardd` The default container registry is `docker.io`, you can change it by setting the image field",
           "type": "string"
         },
         "imagePullPolicy": {
@@ -2499,11 +2499,7 @@
           "type": "string"
         },
         "imageTag": {
-          "description": "The image tag of Vineyard component. For Master, the default image tag is `3.5.10`. For Worker, the default image tag is `v0.21.5`.",
-          "type": "string"
-        },
-        "networkMode": {
-          "description": "Whether to use hostnetwork or not Default is HostNetwork",
+          "description": "The image tag of Vineyard component. For Master, the default image tag is `v0.22.2`. For Worker, the default image tag is `v0.22.2`.",
           "type": "string"
         },
         "nodeSelector": {
@@ -3604,6 +3600,58 @@
         }
       }
     },
+    ".VineyardClientSocketSpec": {
+      "description": "VineyardClientSocketSpec holds the configurations for vineyard client socket",
+      "type": "object",
+      "properties": {
+        "cleanPolicy": {
+          "description": "CleanPolicy decides when to clean Vineyard Fuse pods. Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted OnDemand cleans fuse pod once th fuse pod on some node is not needed OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted Defaults to OnRuntimeDeleted",
+          "type": "string"
+        },
+        "env": {
+          "description": "Environment variables that will be used by Vineyard Fuse. Default is not set.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "image": {
+          "description": "Image for Vineyard Fuse Default is `vineyardcloudnative/vineyard-fluid-fuse`",
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "Image pull policy for Vineyard Fuse Default is `IfNotPresent` Available values are `Always`, `IfNotPresent`, `Never`",
+          "type": "string"
+        },
+        "imageTag": {
+          "description": "Image Tag for Vineyard Fuse Default is `v0.21.5`",
+          "type": "string"
+        },
+        "networkMode": {
+          "description": "Whether to use hostnetwork or not Default is HostNetwork",
+          "type": "string"
+        },
+        "options": {
+          "description": "Options for configuring vineyardd parameters. Supported options are as follows.\n  reserve_memory: (Bool) Whether to reserving enough physical memory pages for vineyardd.\n                  Default is true.\n  allocator: (String) The allocator used by vineyardd, could be \"dlmalloc\" or \"mimalloc\".\n             Default is \"dlmalloc\".\n  compression: (Bool) Compress before migration or spilling.\n               Default is true.\n  coredump: (Bool) Enable coredump core dump when been aborted.\n            Default is false.\n  meta_timeout: (Int) Timeout period before waiting the metadata service to be ready, in seconds\n\t\t\t\t   Default is 60.\n  etcd_endpoint: (String) The endpoint of etcd.\n                 Default is same as the etcd endpoint of vineyard worker.\n  etcd_prefix: (String) Metadata path prefix in etcd.\n               Default is \"/vineyard\".\n  size: (String) shared memory size for vineyardd.\n                 1024M, 1024000, 1G, or 1Gi.\n                 Default is \"0\", which means no cache.\n                 When the size is not set to \"0\", it should be greater than the 2048 bytes(2K).\n  spill_path: (String) Path to spill temporary files, if not set, spilling will be disabled.\n              Default is \"\".\n  spill_lower_rate: (Double) The lower rate of memory usage to trigger spilling.\n\t\t\t\t\t   Default is 0.3.\n  spill_upper_rate: (Double) The upper rate of memory usage to stop spilling.\n\t\t\t\t\t   Default is 0.8.\nDefault is as follows. fuse:\n  options:\n    size: \"0\"\n    etcd_endpoint: \"http://{{Name}}-master-0.{{Name}}-master.{{Namespace}}:{{EtcdClientPort}}\"\n\t   etcd_prefix: \"/vineyard\"",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "podMetadata": {
+          "description": "PodMetadata defines labels and annotations that will be propagated to Vineyard's pods.",
+          "default": {},
+          "$ref": "#/definitions/.PodMetadata"
+        },
+        "resources": {
+          "description": "Resources contains the resource requirements and limits for the Vineyard Fuse. Default is not set.",
+          "default": {},
+          "$ref": "#/definitions/v1.ResourceRequirements"
+        }
+      }
+    },
     ".VineyardCompTemplateSpec": {
       "description": "VineyardCompTemplateSpec is the common configurations for vineyard components including Master and Worker.",
       "type": "object",
@@ -3617,7 +3665,7 @@
           }
         },
         "image": {
-          "description": "The image of Vineyard component. For Master, the default image is `bitnami/etcd` For Worker, the default image is `vineyardcloudnative/vineyardd` The default container registry is `docker.io`, you can change it by setting the image field",
+          "description": "The image of Vineyard component. For Master, the default image is `registry.aliyuncs.com/vineyard/vineyardd` For Worker, the default image is `registry.aliyuncs.com/vineyard/vineyardd` The default container registry is `docker.io`, you can change it by setting the image field",
           "type": "string"
         },
         "imagePullPolicy": {
@@ -3625,11 +3673,7 @@
           "type": "string"
         },
         "imageTag": {
-          "description": "The image tag of Vineyard component. For Master, the default image tag is `3.5.10`. For Worker, the default image tag is `v0.21.5`.",
-          "type": "string"
-        },
-        "networkMode": {
-          "description": "Whether to use hostnetwork or not Default is HostNetwork",
+          "description": "The image tag of Vineyard component. For Master, the default image tag is `v0.22.2`. For Worker, the default image tag is `latest`.",
           "type": "string"
         },
         "nodeSelector": {
@@ -3747,7 +3791,7 @@
         "fuse": {
           "description": "Fuse holds the configurations for Vineyard client socket. Note that the \"Fuse\" here is kept just for API consistency, VineyardRuntime mount a socket file instead of a FUSE filesystem to make data cache available. Applications can connect to the vineyard runtime components through IPC or RPC. IPC is the default way to connect to vineyard runtime components, which is more efficient than RPC. If the socket file is not mounted, the connection will fall back to RPC.",
           "default": {},
-          "$ref": "#/definitions/.VineyardSockSpec"
+          "$ref": "#/definitions/.VineyardClientSocketSpec"
         },
         "master": {
           "description": "Master holds the configurations for Vineyard Master component Represents the Etcd component in Vineyard",
@@ -3781,50 +3825,6 @@
           "description": "Worker holds the configurations for Vineyard Worker component Represents the Vineyardd component in Vineyard",
           "default": {},
           "$ref": "#/definitions/.VineyardCompTemplateSpec"
-        }
-      }
-    },
-    ".VineyardSockSpec": {
-      "description": "VineyardSockSpec holds the configurations for vineyard client socket",
-      "type": "object",
-      "properties": {
-        "cleanPolicy": {
-          "description": "CleanPolicy decides when to clean Vineyard Fuse pods. Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted OnDemand cleans fuse pod once th fuse pod on some node is not needed OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted Defaults to OnRuntimeDeleted",
-          "type": "string"
-        },
-        "env": {
-          "description": "Environment variables that will be used by Vineyard Fuse. Default is not set.",
-          "type": "object",
-          "additionalProperties": {
-            "type": "string",
-            "default": ""
-          }
-        },
-        "image": {
-          "description": "Image for Vineyard Fuse Default is `vineyardcloudnative/vineyard-fluid-fuse`",
-          "type": "string"
-        },
-        "imagePullPolicy": {
-          "description": "Image pull policy for Vineyard Fuse Default is `IfNotPresent` Available values are `Always`, `IfNotPresent`, `Never`",
-          "type": "string"
-        },
-        "imageTag": {
-          "description": "Image Tag for Vineyard Fuse Default is `v0.21.5`",
-          "type": "string"
-        },
-        "networkMode": {
-          "description": "Whether to use hostnetwork or not Default is HostNetwork",
-          "type": "string"
-        },
-        "podMetadata": {
-          "description": "PodMetadata defines labels and annotations that will be propagated to Vineyard's pods.",
-          "default": {},
-          "$ref": "#/definitions/.PodMetadata"
-        },
-        "resources": {
-          "description": "Resources contains the resource requirements and limits for the Vineyard Fuse. Default is not set.",
-          "default": {},
-          "$ref": "#/definitions/v1.ResourceRequirements"
         }
       }
     },

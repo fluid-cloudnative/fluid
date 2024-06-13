@@ -17,6 +17,7 @@ limitations under the License.
 package app
 
 import (
+	utilfeature "github.com/fluid-cloudnative/fluid/pkg/utils/feature"
 	"os"
 	"time"
 
@@ -100,6 +101,8 @@ func init() {
 	datasetCmd.Flags().StringVar(&controllerWorkqueueMaxSyncBackoffStr, "workqueue-max-sync-backoff", "1000s", "max backoff period for failed reconciliation in controller's workqueue")
 	datasetCmd.Flags().IntVar(&controllerWorkqueueQPS, "workqueue-qps", 10, "qps limit value for controller's workqueue")
 	datasetCmd.Flags().IntVar(&controllerWorkqueueBurst, "workqueue-burst", 100, "burst limit value for controller's workqueue")
+
+	utilfeature.DefaultMutableFeatureGate.AddFlag(datasetCmd.Flags())
 }
 
 func handle() {
