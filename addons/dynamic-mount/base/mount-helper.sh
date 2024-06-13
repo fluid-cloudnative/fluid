@@ -51,7 +51,7 @@ function mount_fn() {
     fi
 
     # mount-helper.sh should be wrapped in `tini -s -g` so trap will be triggered
-    trap "clean_up $mount_target" SIGTERM
+    trap "clean_up $mount_target" SIGTERM EXIT
     /opt/mount.sh $mount_src $mount_target $fs_type $mount_opt_file
 }
 
