@@ -19,7 +19,6 @@ package jindo
 import (
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/transformers"
 	"os"
 	"strings"
 
