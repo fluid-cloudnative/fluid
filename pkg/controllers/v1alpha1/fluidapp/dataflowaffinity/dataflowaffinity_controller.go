@@ -92,6 +92,9 @@ func (f *DataOpJobReconciler) Reconcile(ctx context.Context, request reconcile.R
 		requestCtx.Log.Info("job should not in queue", "name", request.Name, "namespace", request.Namespace)
 		return utils.NoRequeue()
 	}
+	if job.Annotations == nil {
+		job.Annotations = map[string]string{}
+	}
 
 	// inject dataflow enabled affinity if not exist.
 	if _, ok := job.Annotations[common.AnnotationDataFlowAffinityInject]; !ok {
