@@ -10,14 +10,14 @@ FLUID_CONFIG_FILE = "/etc/fluid/config/config.json"
 SUPERVISORD_SETTING_DIR = "/etc/supervisor/conf.d"
 SUPERVISORD_SETTING_TEMPLATE = """[program:{name}]
 command=tini -s -g -- mount-helper.sh mount {mount_src} {mount_target} {fs_type} {mount_opt_file}
-stdout_logfile=/var/logs/fluid/{name}.out
-stderr_logfile=/var/logs/fluid/{name}.err
+stdout_logfile=/var/log/fluid/{name}.out
+stderr_logfile=/var/log/fluid/{name}.err
 autorestart=true
 startretries=9999"""
 
 def prepare_dirs():
     os.makedirs(SUPERVISORD_SETTING_DIR, exist_ok=True)
-    os.makedirs("/var/logs/fluid", exist_ok=True)
+    os.makedirs("/var/log/fluid", exist_ok=True)
     os.makedirs(FLUID_MOUNT_OPT_DIR, exist_ok=True)
 
 def write_mount_opts(mount_opts, opt_file):
