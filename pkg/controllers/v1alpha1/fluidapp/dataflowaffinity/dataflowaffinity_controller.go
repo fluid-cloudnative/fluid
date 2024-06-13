@@ -80,17 +80,17 @@ func (f *DataOpJobReconciler) Reconcile(ctx context.Context, request reconcile.R
 	job, err := kubeclient.GetJob(f.Client, request.Name, request.Namespace)
 	if err != nil {
 		requestCtx.Log.Error(err, "fetch job error")
-		return reconcile.Result{}, err
+		return utils.RequeueIfError(err)
 	}
 	if job == nil {
 		requestCtx.Log.Info("job not found", "name", request.Name, "namespace", request.Namespace)
-		return reconcile.Result{}, nil
+		return utils.NoRequeue()
 	}
 	requestCtx.job = job
 
 	if !watch.JobShouldInQueue(job) {
 		requestCtx.Log.Info("job should not in queue", "name", request.Name, "namespace", request.Namespace)
-		return reconcile.Result{}, nil
+		return utils.NoRequeue()
 	}
 
 	// inject dataflow enabled affinity if not exist.
@@ -107,11 +107,11 @@ func (f *DataOpJobReconciler) Reconcile(ctx context.Context, request reconcile.R
 		err = f.injectPodNodeLabelsToJob(job)
 		if err != nil {
 			requestCtx.Log.Error(err, "update labels for job failed")
-			return reconcile.Result{}, err
+			return utils.RequeueIfError(err)
 		}
 	}
 
-	return reconcile.Result{}, nil
+	return utils.NoRequeue()
 }
 
 func (f *DataOpJobReconciler) SetupWithManager(mgr ctrl.Manager, options controller.Options) error {
