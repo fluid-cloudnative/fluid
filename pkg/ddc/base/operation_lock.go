@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Fluid Authors.
+Copyright 2023 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -32,12 +32,12 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
-func GetDataOperationKey(object client.Object) string {
+func getDataOperationKey(object client.Object) string {
 	return object.GetName()
 }
 
 // SetDataOperationInTargetDataset set status of target dataset to mark the data operation being performed.
-func SetDataOperationInTargetDataset(ctx cruntime.ReconcileRequestContext, operation dataoperation.OperationInterface, engine Engine) error {
+func SetDataOperationInTargetDataset(ctx cruntime.ReconcileRequestContext, operation dataoperation.OperationInterface, engine *TemplateEngine) error {
 	targetDataset := ctx.Dataset
 	object := operation.GetOperationObject()
 
@@ -53,7 +53,7 @@ func SetDataOperationInTargetDataset(ctx cruntime.ReconcileRequestContext, opera
 	}
 
 	operationTypeName := string(operation.GetOperationType())
-	dataOpKey := GetDataOperationKey(object)
+	dataOpKey := getDataOperationKey(object)
 
 	// set current data operation in target dataset
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
@@ -85,7 +85,7 @@ func SetDataOperationInTargetDataset(ctx cruntime.ReconcileRequestContext, opera
 // ReleaseTargetDataset release target dataset OperationRef field which marks the data operation being performed.
 func ReleaseTargetDataset(ctx cruntime.ReconcileRequestContext, operation dataoperation.OperationInterface) error {
 
-	dataOpKey := GetDataOperationKey(operation.GetOperationObject())
+	dataOpKey := getDataOperationKey(operation.GetOperationObject())
 	operationTypeName := string(operation.GetOperationType())
 
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {

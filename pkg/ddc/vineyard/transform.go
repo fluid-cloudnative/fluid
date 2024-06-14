@@ -22,7 +22,7 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transformer"
 )
 
 func (e *VineyardEngine) transform(runtime *datav1alpha1.VineyardRuntime) (value *Vineyard, err error) {
@@ -38,7 +38,7 @@ func (e *VineyardEngine) transform(runtime *datav1alpha1.VineyardRuntime) (value
 	}
 
 	value = &Vineyard{
-		Owner: transfromer.GenerateOwnerReferenceFromObject(runtime),
+		Owner: transformer.GenerateOwnerReferenceFromObject(runtime),
 	}
 	value.FullnameOverride = e.name
 
@@ -191,6 +191,10 @@ func (e *VineyardEngine) transformFuse(runtime *datav1alpha1.VineyardRuntime, va
 	// parse fuse pod network mode
 	value.Fuse.HostNetwork = datav1alpha1.IsHostNetwork(runtime.Spec.Fuse.NetworkMode)
 
+	options := e.transformFuseOptions(runtime, value)
+	if len(options) != 0 {
+		value.Fuse.Options = options
+	}
 	e.transformResourcesForFuse(runtime, value)
 }
 
@@ -234,6 +238,21 @@ func (e *VineyardEngine) transformWorkerOptions(runtime *datav1alpha1.VineyardRu
 		options = runtime.Spec.Worker.Options
 	}
 
+	return options
+}
+
+func (e *VineyardEngine) transformFuseOptions(runtime *datav1alpha1.VineyardRuntime, value *Vineyard) map[string]string {
+	options := map[string]string{
+		VineyarddSize: DefaultSize,
+		EtcdEndpoint:  fmt.Sprintf("http://%s-master-0.%s-master.%s:%d", value.FullnameOverride, value.FullnameOverride, e.namespace, value.Master.Ports[MasterClientName]),
+		EtcdPrefix:    DefaultEtcdPrefix,
+	}
+
+	if len(runtime.Spec.Fuse.Options) > 0 {
+		for key, value := range runtime.Spec.Fuse.Options {
+			options[key] = value
+		}
+	}
 	return options
 }
 

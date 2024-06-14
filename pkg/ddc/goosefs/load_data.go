@@ -16,11 +16,12 @@ package goosefs
 
 import (
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
 	"os"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
+
+	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transformer"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"
@@ -32,42 +33,7 @@ import (
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 )
-
-// CreateDataLoadJob creates the job to load data
-func (e *GooseFSEngine) CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (err error) {
-	log := ctx.Log.WithName("createDataLoadJob")
-
-	// 1. Check if the helm release already exists
-	releaseName := utils.GetDataLoadReleaseName(targetDataload.Name)
-	jobName := utils.GetDataLoadJobName(releaseName)
-	var existed bool
-	existed, err = helm.CheckRelease(releaseName, targetDataload.Namespace)
-	if err != nil {
-		log.Error(err, "failed to check if release exists", "releaseName", releaseName, "namespace", targetDataload.Namespace)
-		return err
-	}
-
-	// 2. install the helm chart if not exists
-	if !existed {
-		log.Info("DataLoad job helm chart not installed yet, will install")
-		valueFileName, err := e.generateDataLoadValueFile(ctx, &targetDataload)
-		if err != nil {
-			log.Error(err, "failed to generate dataload chart's value file")
-			return err
-		}
-		chartName := utils.GetChartsDirectory() + "/" + cdataload.DataloadChart + "/" + common.GooseFSRuntime
-		err = helm.InstallRelease(releaseName, targetDataload.Namespace, valueFileName, chartName)
-		if err != nil {
-			log.Error(err, "failed to install dataload chart")
-			return err
-		}
-		log.Info("DataLoad job helm chart successfully installed", "namespace", targetDataload.Namespace, "releaseName", releaseName)
-		ctx.Recorder.Eventf(&targetDataload, v1.EventTypeNormal, common.DataLoadJobStarted, "The DataLoad job %s started", jobName)
-	}
-	return err
-}
 
 // generateDataLoadValueFile builds a DataLoadValue by extracted specifications from the given DataLoad, and
 // marshals the DataLoadValue to a temporary yaml file where stores values that'll be used by fluid dataloader helm chart
@@ -191,7 +157,7 @@ func (e *GooseFSEngine) genDataLoadValue(image string, targetDataset *datav1alph
 	dataLoadValue := &cdataload.DataLoadValue{
 		Name:         dataload.Name,
 		DataLoadInfo: dataloadInfo,
-		Owner:        transfromer.GenerateOwnerReferenceFromObject(dataload),
+		Owner:        transformer.GenerateOwnerReferenceFromObject(dataload),
 	}
 
 	return dataLoadValue, nil

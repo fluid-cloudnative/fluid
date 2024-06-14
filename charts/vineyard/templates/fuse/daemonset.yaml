@@ -90,6 +90,10 @@ spec:
             value: {{ .Values.fuse.targetPath }}/rpc-conf
           - name: PRESTOP_MARKER
             value: /tmp/prestop-marker
+          {{- range $key, $value := .Values.fuse.options }}
+          - name: "{{ upper $key }}"
+            value: "{{ $value }}"
+          {{- end }}
           {{- range $key, $value := .Values.fuse.env }}
           - name: "{{ $key }}"
             value: "{{ $value }}"
