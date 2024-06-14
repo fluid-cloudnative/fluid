@@ -19,7 +19,7 @@ package jindocache
 import (
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/transformers"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transformer"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
