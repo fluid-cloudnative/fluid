@@ -72,13 +72,16 @@ func (a *FluidMutatingHandler) Handle(ctx context.Context, req admission.Request
 		return admission.Denied("found invalid pod.metadata.namespace, it must either be empty or equal to request's namespace")
 	}
 
-	var needRevertNamespace bool = false
+	var undoNamespaceOverride bool = false
 	if len(pod.Namespace) == 0 {
+		if len(req.Namespace) == 0 {
+			return admission.Errored(http.StatusInternalServerError, fmt.Errorf("unexepcted error: both pod.metadata.namespace and request's namespace is empty"))
+		}
 		// Override pod.Namespace with req.Namespace in order to pass namespace info to deeper functions.
 		// But we must revert the overriding to avoid a side effect of the mutation.
 		setupLog.Info("detecting empty pod.metadata.namespace, overriding it with request.namespace", "request.namespace", req.Namespace)
 		pod.Namespace = req.Namespace
-		needRevertNamespace = true
+		undoNamespaceOverride = true
 	}
 
 	// check whether should inject
@@ -100,7 +103,7 @@ func (a *FluidMutatingHandler) Handle(ctx context.Context, req admission.Request
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
 
-	if needRevertNamespace {
+	if undoNamespaceOverride {
 		pod.Namespace = ""
 	}
 
