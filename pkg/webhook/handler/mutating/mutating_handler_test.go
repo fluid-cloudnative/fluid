@@ -62,7 +62,7 @@ pluginConfig:
 `
 )
 
-func TestAddScheduleInfoToPod(t *testing.T) {
+func TestMutatePod(t *testing.T) {
 
 	type testCase struct {
 		name    string
@@ -918,7 +918,7 @@ func TestHandle(t *testing.T) {
 	}
 }
 
-func TestAddScheduleInfoToPodWithReferencedDataset(t *testing.T) {
+func TestMutatePodWithReferencedDataset(t *testing.T) {
 
 	type testCase struct {
 		name                string
