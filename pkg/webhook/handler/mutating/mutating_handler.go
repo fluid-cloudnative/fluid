@@ -66,7 +66,7 @@ func (a *FluidMutatingHandler) Handle(ctx context.Context, req admission.Request
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	// Before K8s 1.24, pod.Namespace may not be trustworthy so we deny such request for security issue.
+	// Before K8s 1.24, pod.Namespace may not be trustworthy so we deny invalid requests for security concern.
 	// See related bugfix at https://github.com/kubernetes/kubernetes/pull/94637
 	if len(pod.Namespace) != 0 && pod.Namespace != req.Namespace {
 		return admission.Denied("found invalid pod.metadata.namespace, it must either be empty or equal to request's namespace")
