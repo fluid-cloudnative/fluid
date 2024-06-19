@@ -84,7 +84,6 @@ func (a *FluidMutatingHandler) Handle(ctx context.Context, req admission.Request
 		return admission.Allowed("skip mutating the pod because injection is done")
 	}
 
-	// inject affinity info into pod
 	err = a.MutatePod(pod, namespace)
 	if err != nil {
 		return admission.Errored(http.StatusInternalServerError, err)
