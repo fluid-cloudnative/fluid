@@ -66,11 +66,19 @@ func (a *FluidMutatingHandler) Handle(ctx context.Context, req admission.Request
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	// pod.Namespace may be empty and not trustworthy before K8s 1.24, override it with req.Namespace.
+	// Before K8s 1.24, pod.Namespace may not be trustworthy so we deny such request for security issue.
 	// See related bugfix at https://github.com/kubernetes/kubernetes/pull/94637
-	pod.Namespace = req.Namespace
+	if len(pod.Namespace) != 0 && pod.Namespace != req.Namespace {
+		return admission.Denied("found invalid pod.metadata.namespace, it must either be empty or equal to request's namespace")
+	}
+
+	var needRevertNamespace bool = false
 	if len(pod.Namespace) == 0 {
-		return admission.Errored(http.StatusInternalServerError, fmt.Errorf("found empty pod.metadata.namespace which is invalid"))
+		// Override pod.Namespace with req.Namespace in order to pass namespace info to deeper functions.
+		// But we must revert the overriding to avoid a side effect of the mutation.
+		setupLog.Info("detecting empty pod.metadata.namespace, overriding it with request.namespace", "request.namespace", req.Namespace)
+		pod.Namespace = req.Namespace
+		needRevertNamespace = true
 	}
 
 	// check whether should inject
@@ -90,6 +98,10 @@ func (a *FluidMutatingHandler) Handle(ctx context.Context, req admission.Request
 	err = a.MutatePod(pod)
 	if err != nil {
 		return admission.Errored(http.StatusInternalServerError, err)
+	}
+
+	if needRevertNamespace {
+		pod.Namespace = ""
 	}
 
 	marshaledPod, err := json.Marshal(pod)
