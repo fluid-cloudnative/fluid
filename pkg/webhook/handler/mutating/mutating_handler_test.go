@@ -817,7 +817,7 @@ func TestMutatePod(t *testing.T) {
 			Client: fakeClient,
 		}
 
-		err := handler.MutatePod(testcase.in, testcase.in.Namespace)
+		err := handler.MutatePod(testcase.in)
 		if !((err != nil) == testcase.wantErr) {
 			t.Errorf("testcase %s is failed due to error %v", testcase.name, err)
 		}
@@ -1358,7 +1358,7 @@ func TestMutatePodWithReferencedDataset(t *testing.T) {
 			Client: fakeClient,
 		}
 
-		err := handler.MutatePod(testcase.in, testcase.in.Namespace)
+		err := handler.MutatePod(testcase.in)
 		if testcase.wantErr {
 			if err == nil {
 				t.Errorf("testcase %s want error but get nil", testcase.name)
