@@ -38,19 +38,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// CreateUpdatePodForSchedulingHandler mutates a pod and has implemented admission.DecoderInjector
-type CreateUpdatePodForSchedulingHandler struct {
+// FluidMutatingHandler mutates a pod and has implemented admission.DecoderInjector
+type FluidMutatingHandler struct {
 	Client client.Client
 	// A decoder will be automatically injected
 	decoder *admission.Decoder
 }
 
-func (a *CreateUpdatePodForSchedulingHandler) Setup(client client.Client) {
+func (a *FluidMutatingHandler) Setup(client client.Client) {
 	a.Client = client
 }
 
 // Handle is the mutating logic of pod
-func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
+func (a *FluidMutatingHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
 	defer utils.TimeTrack(time.Now(), "CreateUpdatePodForSchedulingHandler.Handle",
 		"req.name", req.Name, "req.namespace", req.Namespace)
 
@@ -85,7 +85,7 @@ func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req ad
 	}
 
 	// inject affinity info into pod
-	err = a.AddScheduleInfoToPod(pod, namespace)
+	err = a.MutatePod(pod, namespace)
 	if err != nil {
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
@@ -102,13 +102,13 @@ func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req ad
 }
 
 // InjectDecoder injects the decoder.
-func (a *CreateUpdatePodForSchedulingHandler) InjectDecoder(d *admission.Decoder) error {
+func (a *FluidMutatingHandler) InjectDecoder(d *admission.Decoder) error {
 	a.decoder = d
 	return nil
 }
 
-// AddScheduleInfoToPod will call all plugins to get total prefer info
-func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.Pod, namespace string) (err error) {
+// MutatePod will call all plugins to get total prefer info
+func (a *FluidMutatingHandler) MutatePod(pod *corev1.Pod, namespace string) (err error) {
 	if utils.IsTimeTrackerDebugEnabled() {
 		defer utils.TimeTrack(time.Now(), "AddScheduleInfoToPod",
 			"pod.name", pod.GetName(), "pod.namespace", namespace)
@@ -173,7 +173,7 @@ func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.P
 
 }
 
-func (a *CreateUpdatePodForSchedulingHandler) checkIfDatasetPVCs(pvcNames []string,
+func (a *FluidMutatingHandler) checkIfDatasetPVCs(pvcNames []string,
 	namespace string,
 	setupLog logr.Logger) (errPVCs map[string]error,
 	runtimeInfos map[string]base.RuntimeInfoInterface,
