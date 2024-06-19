@@ -66,10 +66,13 @@ func (a *FluidMutatingHandler) Handle(ctx context.Context, req admission.Request
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	namespace := pod.Namespace
-	if len(namespace) == 0 {
-		namespace = req.Namespace
+	// pod.Namespace may be empty and not trustworthy before K8s 1.24, override it with req.Namespace.
+	// See related bugfix at https://github.com/kubernetes/kubernetes/pull/94637
+	pod.Namespace = req.Namespace
+	if len(pod.Namespace) == 0 {
+		return admission.Errored(http.StatusInternalServerError, fmt.Errorf("found empty pod.metadata.namespace which is invalid"))
 	}
+
 	// check whether should inject
 	if common.CheckExpectValue(pod.Labels, common.EnableFluidInjectionFlag, common.False) {
 		setupLog.Info("skip mutating the pod because injection is disabled", "Pod", pod.Name, "Namespace", pod.Namespace)
@@ -84,7 +87,7 @@ func (a *FluidMutatingHandler) Handle(ctx context.Context, req admission.Request
 		return admission.Allowed("skip mutating the pod because injection is done")
 	}
 
-	err = a.MutatePod(pod, namespace)
+	err = a.MutatePod(pod)
 	if err != nil {
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
@@ -96,7 +99,7 @@ func (a *FluidMutatingHandler) Handle(ctx context.Context, req admission.Request
 	}
 
 	resp := admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
-	setupLog.V(1).Info("patch response", "name", pod.GetName(), "namespace", namespace, "patches", utils.DumpJSON(resp.Patch))
+	setupLog.V(1).Info("patch response", "name", pod.GetName(), "namespace", pod.GetNamespace(), "patches", utils.DumpJSON(resp.Patch))
 	return resp
 }
 
@@ -107,15 +110,15 @@ func (a *FluidMutatingHandler) InjectDecoder(d *admission.Decoder) error {
 }
 
 // MutatePod will call all plugins to get total prefer info
-func (a *FluidMutatingHandler) MutatePod(pod *corev1.Pod, namespace string) (err error) {
+func (a *FluidMutatingHandler) MutatePod(pod *corev1.Pod) (err error) {
 	if utils.IsTimeTrackerDebugEnabled() {
 		defer utils.TimeTrack(time.Now(), "AddScheduleInfoToPod",
-			"pod.name", pod.GetName(), "pod.namespace", namespace)
+			"pod.name", pod.GetName(), "pod.namespace", pod.GetNamespace())
 	}
 	var setupLog = ctrl.Log.WithName("AddScheduleInfoToPod")
-	setupLog.V(1).Info("start to add schedule info", "Pod", pod.Name, "Namespace", namespace)
+	setupLog.V(1).Info("start to add schedule info", "Pod", pod.Name, "Namespace", pod.Namespace)
 	pvcNames := kubeclient.GetPVCNamesFromPod(pod)
-	errPVCs, runtimeInfos, err := a.checkIfDatasetPVCs(pvcNames, namespace, setupLog)
+	errPVCs, runtimeInfos, err := a.checkIfDatasetPVCs(pvcNames, pod.Namespace, setupLog)
 	if err != nil {
 		return err
 	}
@@ -127,7 +130,7 @@ func (a *FluidMutatingHandler) MutatePod(pod *corev1.Pod, namespace string) (err
 	if len(errPVCs) > 0 && utils.ServerlessEnabled(pod.GetLabels()) {
 		info := fmt.Sprintf("the pod %s in namespace %s is configured with (%s or %s) but without dataset enabling, and with errors %v",
 			pod.Name,
-			namespace,
+			pod.Namespace,
 			common.InjectServerless,
 			common.InjectFuseSidecar,
 			errPVCs)
