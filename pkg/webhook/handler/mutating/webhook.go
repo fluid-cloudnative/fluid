@@ -25,6 +25,6 @@ import (
 var (
 	// HandlerMap contains admission webhook handlers
 	HandlerMap = map[string]common.AdmissionHandler{
-		common.WebhookSchedulePodPath: &CreateUpdatePodForSchedulingHandler{},
+		common.WebhookSchedulePodPath: &FluidMutatingHandler{},
 	}
 )
