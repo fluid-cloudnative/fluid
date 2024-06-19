@@ -17,8 +17,6 @@ limitations under the License.
 package handler
 
 import (
-	"os"
-
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/handler/mutating"
 	"github.com/go-logr/logr"
@@ -37,7 +35,7 @@ var (
 
 var (
 	// HandlerMap contains all admission webhook handlers.
-	HandlerMap   = map[string]common.AdmissionHandler{}
+	handlerMap   = map[string]common.AdmissionHandler{}
 	handlerGates = map[string]GateFunc{}
 )
 
@@ -50,7 +48,7 @@ func init() {
 func Register(mgr manager.Manager, client client.Client, log logr.Logger) {
 	server := mgr.GetWebhookServer()
 	filterActiveHandlers()
-	for path, handler := range HandlerMap {
+	for path, handler := range handlerMap {
 		handler.Setup(client)
 		server.Register(path, &webhook.Admission{Handler: handler})
 		log.Info("Registered webhook handler", "path", path)
@@ -67,15 +65,16 @@ func addHandlersWithGate(m map[string]common.AdmissionHandler, fn GateFunc) {
 			setupLog.Info("Skip handler with empty path.", "handler", handler)
 			continue
 		}
+		// Ensure path starts with '/', making it absolute.
 		if path[0] != '/' {
 			path = "/" + path
 		}
-		_, found := HandlerMap[path]
+		_, found := handlerMap[path]
 		if found {
 			setupLog.Info("error: conflicting webhook builder path in handler map", "path", path)
-			os.Exit(1)
+			panic("Conflicting webhook path detected")
 		}
-		HandlerMap[path] = handler
+		handlerMap[path] = handler
 		if fn != nil {
 			handlerGates[path] = fn
 		}
@@ -84,7 +83,7 @@ func addHandlersWithGate(m map[string]common.AdmissionHandler, fn GateFunc) {
 
 func filterActiveHandlers() {
 	disablePaths := sets.NewString()
-	for path := range HandlerMap {
+	for path := range handlerMap {
 		if fn, ok := handlerGates[path]; ok {
 			if !fn() {
 				disablePaths.Insert(path)
@@ -92,6 +91,6 @@ func filterActiveHandlers() {
 		}
 	}
 	for _, path := range disablePaths.List() {
-		delete(HandlerMap, path)
+		delete(handlerMap, path)
 	}
 }
