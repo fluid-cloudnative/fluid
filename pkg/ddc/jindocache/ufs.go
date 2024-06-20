@@ -17,6 +17,8 @@ limitations under the License.
 package jindocache
 
 import (
+	"fmt"
+
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindocache/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
@@ -109,4 +111,50 @@ func (e *JindoCacheEngine) ShouldUpdateUFS() (ufsToUpdate *utils.UFSToUpdate) {
 
 func (e *JindoCacheEngine) UpdateOnUFSChange(*utils.UFSToUpdate) (updateReady bool, err error) {
 	return
+}
+
+func (e *JindoCacheEngine) shouldRemountMountpoint() {
+	runtime, err := e.getRuntime()
+	if err != nil {
+		e.Log.Error(err, "failed to execute shouldRemountMountpoint", "runtime", e.name)
+		return
+	}
+
+	masterPodName, masterContainerName := e.getMasterPodInfo()
+	masterPod, err := e.getMasterPod(masterPodName, e.namespace)
+	if err != nil {
+		e.Log.Error(err, "checkIfRemountRequired", "master pod", e.name)
+		return
+	}
+
+	var startedAt *metav1.Time
+	for _, containerStatus := range masterPod.Status.ContainerStatuses {
+		if containerStatus.Name == masterContainerName {
+			if containerStatus.State.Running == nil {
+				e.Log.Error(fmt.Errorf("container is not running"), "checkIfRemountRequired", "master pod", masterPodName)
+				return
+			} else {
+				startedAt = &containerStatus.State.Running.StartedAt
+				break
+			}
+		}
+	}
+
+	// If mounttime is earlier than master container starttime, remount is necessary
+	if startedAt != nil && runtime.Status.MountTime != nil && runtime.Status.MountTime.Before(startedAt) {
+		e.Log.Info("remount on master restart", "jindocache", e.name)
+
+		unmountedPaths, err := e.FindUnmountedUFS()
+		if err != nil {
+			e.Log.Error(err, "Failed in finding unmounted ufs")
+			return
+		}
+
+		if len(unmountedPaths) != 0 {
+			ufsToUpdate.AddMountPaths(unmountedPaths)
+		} else {
+			// if no path can be mounted, set mountTime to be now
+			e.updateMountTime()
+		}
+	}
 }

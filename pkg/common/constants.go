@@ -205,6 +205,10 @@ const (
 	EnvServerlessPlatformVal        = "VALUE_SERVERLESS_PLATFORM"
 	EnvDisableApplicationController = "KEY_DISABLE_APP_CONTROLLER"
 	EnvImagePullSecretsKey          = "IMAGE_PULL_SECRETS"
+
+	// AnnotationLatestMasterStartedTime annotates latest master containers start-at timestamp
+	// to identify master restarted or recreated by accidentally.
+	AnnotationLatestMasterStartedTime = "fluid.io/master-latest-started-at"
 )
 
 const (

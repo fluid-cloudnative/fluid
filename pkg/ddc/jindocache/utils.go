@@ -27,6 +27,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
+	v1 "k8s.io/client-go/applyconfigurations/core/v1"
 )
 
 func (e *JindoCacheEngine) getTieredStoreType(runtime *datav1alpha1.JindoRuntime) int {
@@ -107,6 +108,10 @@ func (e *JindoCacheEngine) getMasterPodInfo() (podName string, containerName str
 	containerName = "jindofs-master"
 
 	return
+}
+
+func (e *JindoCacheEngine) getMasterPod() (*v1.Pod, error) {
+
 }
 
 // return total storage size of Jindo in bytes
