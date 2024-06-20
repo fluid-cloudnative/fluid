@@ -23,30 +23,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func collectAllContainerNames(pod common.FluidObject) ([]string, error) {
-	var allContainerNames []string
-
-	containers, err := pod.GetContainers()
-	if err != nil {
-		return allContainerNames, err
-	}
-
-	for _, c := range containers {
-		allContainerNames = append(allContainerNames, c.Name)
-	}
-
-	initContainers, err := pod.GetInitContainers()
-	if err != nil {
-		return allContainerNames, err
-	}
-
-	for _, c := range initContainers {
-		allContainerNames = append(allContainerNames, c.Name)
-	}
-
-	return allContainerNames, nil
-}
-
 func findInjectedSidecars(pod common.FluidObject) (injectedSidecars []corev1.Container, err error) {
 	containers, err := pod.GetContainers()
 	if err != nil {
