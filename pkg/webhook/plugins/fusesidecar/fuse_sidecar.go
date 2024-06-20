@@ -19,6 +19,7 @@ package fusesidecar
 import (
 	"time"
 
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/api"
 	webhookutils "github.com/fluid-cloudnative/fluid/pkg/webhook/utils"
@@ -80,6 +81,13 @@ func (p *FuseSidecar) Mutate(pod *corev1.Pod, runtimeInfos map[string]base.Runti
 			return shouldStop, errors.Wrapf(err, "failed to collect runtime infos from PVCs %v", pvcNames)
 		}
 	}
-
+	p.labelInjectionDone(pod)
 	return
+}
+
+func (p *FuseSidecar) labelInjectionDone(pod *corev1.Pod) {
+	if pod.ObjectMeta.Labels == nil {
+		pod.ObjectMeta.Labels = map[string]string{}
+	}
+	pod.ObjectMeta.Labels[common.InjectSidecarDone] = common.True
 }
