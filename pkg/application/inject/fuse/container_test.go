@@ -84,7 +84,7 @@ func Test_findInjectedSidecars(t *testing.T) {
 				pod: podObjs2[0],
 			},
 			wantInjectedSidecars: []corev1.Container{
-				corev1.Container{
+				{
 					Name: "fluid-fuse-0",
 				},
 			},

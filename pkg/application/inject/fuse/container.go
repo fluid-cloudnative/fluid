@@ -24,6 +24,7 @@ import (
 )
 
 func findInjectedSidecars(pod common.FluidObject) (injectedSidecars []corev1.Container, err error) {
+	injectedSidecars = make([]corev1.Container, 0)
 	containers, err := pod.GetContainers()
 	if err != nil {
 		return
