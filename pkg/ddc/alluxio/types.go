@@ -138,6 +138,7 @@ type JobWorker struct {
 type Worker struct {
 	JvmOptions   []string             `json:"jvmOptions,omitempty"`
 	Env          map[string]string    `json:"env,omitempty"`
+	Affinity     corev1.Affinity      `json:"affinity,omitempty"`
 	NodeSelector map[string]string    `json:"nodeSelector,omitempty"`
 	Properties   map[string]string    `json:"properties,omitempty"`
 	HostNetwork  bool                 `json:"hostNetwork,omitempty"`
@@ -152,7 +153,7 @@ type Worker struct {
 type Master struct {
 	JvmOptions   []string             `json:"jvmOptions,omitempty"`
 	Env          map[string]string    `json:"env,omitempty"`
-	Affinity     Affinity             `json:"affinity"`
+	Affinity     corev1.Affinity      `json:"affinity"`
 	NodeSelector map[string]string    `json:"nodeSelector,omitempty"`
 	Properties   map[string]string    `json:"properties,omitempty"`
 	Replicas     int32                `json:"replicaCount,omitempty"`
@@ -213,10 +214,6 @@ type Level struct {
 	Quota      string `json:"quota,omitempty"`
 	High       string `json:"high,omitempty"`
 	Low        string `json:"low,omitempty"`
-}
-
-type Affinity struct {
-	NodeAffinity *NodeAffinity `json:"nodeAffinity"`
 }
 
 type cacheHitStates struct {

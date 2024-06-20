@@ -154,6 +154,12 @@ type Metadata struct {
 	Selector metav1.GroupKind `json:"selector,omitempty"`
 }
 
+// RuntimePodAffinity defines the podAffinity and podAntiAffinity of runtime pods.
+type RuntimePodAffinity struct {
+	PodAffinity     *corev1.PodAffinity     `json:"podAffinity,omitempty"`
+	PodAntiAffinity *corev1.PodAntiAffinity `json:"podAntiAffinity,omitempty"`
+}
+
 // PodMetadata defines subgroup properties of metav1.ObjectMeta
 type PodMetadata struct {
 	// Labels are labels of pod specification
