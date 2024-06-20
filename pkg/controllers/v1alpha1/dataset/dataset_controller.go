@@ -18,11 +18,7 @@ import (
 	"context"
 	"errors"
 	"reflect"
-	"strings"
 	"time"
-
-	"k8s.io/apimachinery/pkg/util/validation"
-	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/controllers/deploy"
@@ -41,6 +37,7 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	fluidvalidation "github.com/fluid-cloudnative/fluid/pkg/utils/validation"
 )
 
 const (
@@ -124,9 +121,12 @@ func (r *DatasetReconciler) reconcileDataset(ctx reconcileRequestContext, needRe
 	log := ctx.Log.WithName("reconcileDataset")
 	log.V(1).Info("process the dataset", "dataset", ctx.Dataset)
 
-	// 0. Validate name is prefixed with a number such as "20-hbase".
-	if errs := validation.IsDNS1035Label(ctx.Dataset.ObjectMeta.Name); len(ctx.Dataset.ObjectMeta.Name) > 0 && len(errs) > 0 {
-		err := field.Invalid(field.NewPath("metadata").Child("name"), ctx.Dataset.ObjectMeta.Name, strings.Join(errs, ","))
+	// 0. Validate the dataset.
+	// Users can set this environment variable to 'false' to skip the validation of the mount field in dataset
+	// Default is true
+	if err := fluidvalidation.IsValidDataset(
+		ctx.Dataset, utils.GetBoolValueFromEnv(common.EnvEnableMountValidation, true),
+	); err != nil {
 		ctx.Log.Error(err, "Failed to create dataset", "DatasetCreateError", ctx)
 		r.Recorder.Eventf(&ctx.Dataset, v1.EventTypeWarning, common.ErrorCreateDataset, "Failed to create dataset because err: %v", err)
 		return utils.RequeueIfError(err)
