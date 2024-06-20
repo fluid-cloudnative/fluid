@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/google/go-cmp/cmp"
 	"k8s.io/apimachinery/pkg/api/resource"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -207,7 +208,6 @@ func TestInjectPod(t *testing.T) {
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
-						common.InjectSidecarDone: common.True,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -474,7 +474,6 @@ func TestInjectPod(t *testing.T) {
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
-						common.InjectSidecarDone: common.True,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -744,7 +743,6 @@ func TestInjectPod(t *testing.T) {
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
-						common.InjectSidecarDone: common.True,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -1017,7 +1015,6 @@ func TestInjectPod(t *testing.T) {
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
-						common.InjectSidecarDone: common.True,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -1177,18 +1174,7 @@ func TestInjectPod(t *testing.T) {
 		wantMetaObj := testcase.want.ObjectMeta
 
 		if !reflect.DeepEqual(gotMetaObj, wantMetaObj) {
-
-			want, err := yaml.Marshal(wantMetaObj)
-			if err != nil {
-				t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-			}
-
-			outYaml, err := yaml.Marshal(gotMetaObj)
-			if err != nil {
-				t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-			}
-
-			t.Errorf("testcase %s failed, want %v, Got  %v", testcase.name, string(want), string(outYaml))
+			t.Errorf("testcase %s failed, diff between want and got is: %v", testcase.name, cmp.Diff(gotMetaObj, wantMetaObj))
 		}
 
 		gotContainers := out.Spec.Containers
@@ -1212,17 +1198,7 @@ func TestInjectPod(t *testing.T) {
 		for k, wantContainer := range wantContainerMap {
 			if gotContainer, found := gotContainerMap[k]; found {
 				if !reflect.DeepEqual(wantContainer, gotContainer) {
-					want, err := yaml.Marshal(wantContainers)
-					if err != nil {
-						t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-					}
-
-					outYaml, err := yaml.Marshal(gotContainers)
-					if err != nil {
-						t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-					}
-
-					t.Errorf("testcase %s failed, want %v, Got  %v", testcase.name, string(want), string(outYaml))
+					t.Errorf("testcase %s failed, diff between want and got: %v", testcase.name, cmp.Diff(wantContainer, gotContainer))
 				}
 			} else {
 				t.Errorf("testcase %s failed due to missing the container %s", testcase.name, k)
@@ -1241,37 +1217,12 @@ func TestInjectPod(t *testing.T) {
 		for k, wantVolume := range wantVolumeMap {
 			if gotVolume, found := gotVolumeMap[k]; found {
 				if !reflect.DeepEqual(wantVolume, gotVolume) {
-					want, err := yaml.Marshal(wantVolume)
-					if err != nil {
-						t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-					}
-
-					outYaml, err := yaml.Marshal(gotVolume)
-					if err != nil {
-						t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-					}
-
-					t.Errorf("testcase %s failed, want %v, Got  %v", testcase.name, string(want), string(outYaml))
+					t.Errorf("testcase %s failed, diff between want and got: %v", testcase.name, cmp.Diff(wantVolume, gotVolume))
 				}
 			} else {
 				t.Errorf("testcase %s failed due to missing the volume %s", testcase.name, k)
 			}
 		}
-
-		// if !reflect.DeepEqual(gotVolumeMap, wantVolumeMap) {
-		// 	want, err := yaml.Marshal(wantVolumes)
-		// 	if err != nil {
-		// 		t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-		// 	}
-
-		// 	outYaml, err := yaml.Marshal(gotVolumes)
-		// 	if err != nil {
-		// 		t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-		// 	}
-
-		// 	t.Errorf("testcase %s failed, want %v, Got  %v", testcase.name, string(want), string(outYaml))
-		// }
-
 	}
 }
 
@@ -1298,180 +1249,6 @@ func TestSkipInjectPod(t *testing.T) {
 	bTrue := true
 
 	testcases := []testCase{
-		{
-			name: "inject_pod_with_fuse_sidecar",
-			dataset: &datav1alpha1.Dataset{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "fuse-sidecar",
-					Namespace: "big-data",
-				},
-			},
-			pv: &corev1.PersistentVolume{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "big-data-fuse-sidecar",
-				},
-				Spec: corev1.PersistentVolumeSpec{
-					PersistentVolumeSource: corev1.PersistentVolumeSource{
-						CSI: &corev1.CSIPersistentVolumeSource{
-							Driver: "fuse.csi.fluid.io",
-							VolumeAttributes: map[string]string{
-								common.VolumeAttrFluidPath: "/runtime-mnt/jindo/big-data/fuse-sidecar/jindofs-fuse",
-								common.VolumeAttrMountType: common.JindoRuntime,
-							},
-						},
-					},
-				},
-			},
-			pvc: &corev1.PersistentVolumeClaim{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "fuse-sidecar",
-					Namespace: "big-data",
-				}, Spec: corev1.PersistentVolumeClaimSpec{
-					VolumeName: "big-data-fuse-sidecar",
-				},
-			},
-			in: &corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "fuse-sidecar-pvc-name",
-					Namespace: "big-data",
-					Labels: map[string]string{
-						common.InjectFuseSidecar: common.True,
-					},
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Image: "fuse-sidecar-pvc-name",
-							Name:  common.FuseContainerName,
-						}, {
-							Image: "fuse-sidecar-pvc-name",
-							Name:  "fuse-sidecar-pvc-name",
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "fuse-sidecar",
-									MountPath: "/data",
-								},
-							},
-						},
-					},
-					Volumes: []corev1.Volume{
-						{
-							Name: "fuse-sidecar",
-							VolumeSource: corev1.VolumeSource{
-								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-									ClaimName: "fuse-sidecar",
-									ReadOnly:  true,
-								},
-							},
-						},
-					},
-				},
-			},
-			fuse: &appsv1.DaemonSet{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "fuse-sidecar-jindofs-fuse",
-					Namespace: "big-data",
-				},
-				Spec: appsv1.DaemonSetSpec{
-					Template: corev1.PodTemplateSpec{
-						Spec: corev1.PodSpec{
-							Containers: []corev1.Container{
-								{
-									Name: "fuse",
-									Args: []string{
-										"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000",
-									},
-									Command: []string{"/entrypoint.sh"},
-									Image:   "fuse-sidecar-pvc-name",
-									Env: []corev1.EnvVar{
-										{
-											Name:  "FLUID_FUSE_MOUNTPOINT",
-											Value: "/jfs/jindofs-fuse",
-										},
-									},
-									SecurityContext: &corev1.SecurityContext{
-										Privileged: &bTrue,
-									}, VolumeMounts: []corev1.VolumeMount{
-										{
-											Name:      "fuse-device",
-											MountPath: "/dev/fuse",
-										}, {
-											Name:      "jindofs-fuse-mount",
-											MountPath: "/jfs",
-										},
-									},
-								},
-							},
-							Volumes: []corev1.Volume{
-								{
-									Name: "fuse-device",
-									VolumeSource: corev1.VolumeSource{
-										HostPath: &corev1.HostPathVolumeSource{
-											Path: "/dev/fuse",
-											Type: &hostPathCharDev,
-										},
-									},
-								},
-								{
-									Name: "jindofs-fuse-mount",
-									VolumeSource: corev1.VolumeSource{
-										HostPath: &corev1.HostPathVolumeSource{
-											Path: "/runtime-mnt/jindo/big-data/fuse-sidecar",
-											Type: &hostPathDirectoryOrCreate,
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			want: &corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "fuse-sidecar-pvc-name",
-					Namespace: "big-data",
-					Labels: map[string]string{
-						common.InjectFuseSidecar: common.True,
-					},
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Image: "fuse-sidecar-pvc-name",
-							Name:  common.FuseContainerName,
-						}, {
-							Image: "fuse-sidecar-pvc-name",
-							Name:  "fuse-sidecar-pvc-name",
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "fuse-sidecar",
-									MountPath: "/data",
-								},
-							},
-						},
-					},
-					Volumes: []corev1.Volume{
-						{
-							Name: "fuse-sidecar",
-							VolumeSource: corev1.VolumeSource{
-								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-									ClaimName: "fuse-sidecar",
-									ReadOnly:  true,
-								},
-							},
-						},
-					},
-				},
-			},
-			infos: map[string]runtimeInfo{
-				"fuse-sidecar": {
-					name:        "fuse-sidecar",
-					namespace:   "big-data",
-					runtimeType: common.JindoRuntime,
-				},
-			},
-			wantErr: nil,
-		},
 		{
 			name: "inject_pod_with_injection_done_label",
 			dataset: &datav1alpha1.Dataset{
@@ -1687,18 +1464,7 @@ func TestSkipInjectPod(t *testing.T) {
 		wantMetaObj := testcase.want.ObjectMeta
 
 		if !reflect.DeepEqual(gotMetaObj, wantMetaObj) {
-
-			want, err := yaml.Marshal(wantMetaObj)
-			if err != nil {
-				t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-			}
-
-			outYaml, err := yaml.Marshal(gotMetaObj)
-			if err != nil {
-				t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-			}
-
-			t.Errorf("testcase %s failed, want %v, Got  %v", testcase.name, string(want), string(outYaml))
+			t.Errorf("testcase %s failed, diff between want and got: %v", testcase.name, cmp.Diff(wantMetaObj, gotMetaObj))
 		}
 
 		gotContainers := out.Spec.Containers
@@ -1722,17 +1488,7 @@ func TestSkipInjectPod(t *testing.T) {
 		for k, wantContainer := range wantContainerMap {
 			if gotContainer, found := gotContainerMap[k]; found {
 				if !reflect.DeepEqual(wantContainer, gotContainer) {
-					want, err := yaml.Marshal(wantContainers)
-					if err != nil {
-						t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-					}
-
-					outYaml, err := yaml.Marshal(gotContainers)
-					if err != nil {
-						t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-					}
-
-					t.Errorf("testcase %s failed, want %v, Got  %v", testcase.name, string(want), string(outYaml))
+					t.Errorf("testcase %s failed, diff between want and got: %v", testcase.name, cmp.Diff(wantContainer, gotContainer))
 				}
 			} else {
 				t.Errorf("testcase %s failed due to missing the container %s", testcase.name, k)
@@ -1751,17 +1507,7 @@ func TestSkipInjectPod(t *testing.T) {
 		for k, wantVolume := range wantVolumeMap {
 			if gotVolume, found := gotVolumeMap[k]; found {
 				if !reflect.DeepEqual(wantVolume, gotVolume) {
-					want, err := yaml.Marshal(wantVolume)
-					if err != nil {
-						t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-					}
-
-					outYaml, err := yaml.Marshal(gotVolume)
-					if err != nil {
-						t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-					}
-
-					t.Errorf("testcase %s failed, want %v, Got  %v", testcase.name, string(want), string(outYaml))
+					t.Errorf("testcase %s failed, diff between want and got: %v", testcase.name, cmp.Diff(wantVolume, gotVolume))
 				}
 			} else {
 				t.Errorf("testcase %s failed due to missing the volume %s", testcase.name, k)
@@ -1976,7 +1722,6 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
-						common.InjectSidecarDone: common.True,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -2379,7 +2124,6 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
-						common.InjectSidecarDone: common.True,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -2644,18 +2388,7 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 		wantMetaObj := testcase.want.ObjectMeta
 
 		if !reflect.DeepEqual(gotMetaObj, wantMetaObj) {
-
-			want, err := yaml.Marshal(wantMetaObj)
-			if err != nil {
-				t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-			}
-
-			outYaml, err := yaml.Marshal(gotMetaObj)
-			if err != nil {
-				t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-			}
-
-			t.Errorf("testcase %s failed, want %v, Got  %v", testcase.name, string(want), string(outYaml))
+			t.Errorf("testcase %s failed, diff between wantMetaObj and gotMetaObj: %v", testcase.name, cmp.Diff(wantMetaObj, gotMetaObj))
 		}
 
 		gotContainers := out.Spec.Containers
@@ -2699,17 +2432,7 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 				}
 			} else if gotContainer, found := gotContainerMap[k]; found {
 				if !reflect.DeepEqual(wantContainer, gotContainer) {
-					want, err := yaml.Marshal(wantContainers)
-					if err != nil {
-						t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-					}
-
-					outYaml, err := yaml.Marshal(gotContainers)
-					if err != nil {
-						t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-					}
-
-					t.Errorf("testcase %s failed, want %v, Got  %v", testcase.name, string(want), string(outYaml))
+					t.Errorf("testcase %s failed, diff between wantContainer and gotContainer: %v", testcase.name, cmp.Diff(wantContainer, gotContainer))
 				}
 			} else {
 				t.Errorf("testcase %s failed due to missing the container %s", testcase.name, k)
@@ -2969,7 +2692,6 @@ func TestInjectPodWithDatasetSubPath(t *testing.T) {
 					Namespace: "ref",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
-						common.InjectSidecarDone: common.True,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -3406,7 +3128,6 @@ func TestInjectPodUnprivileged(t *testing.T) {
 					Labels: map[string]string{
 						common.InjectFuseSidecar:             common.True,
 						common.InjectUnprivilegedFuseSidecar: common.True,
-						common.InjectSidecarDone:             common.True,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -3786,7 +3507,6 @@ func TestInjectPodUnprivileged(t *testing.T) {
 					Labels: map[string]string{
 						common.InjectFuseSidecar:             common.True,
 						common.InjectUnprivilegedFuseSidecar: common.True,
-						common.InjectSidecarDone:             common.True,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -4245,7 +3965,6 @@ func TestInjectPodUnprivileged(t *testing.T) {
 					Labels: map[string]string{
 						common.InjectFuseSidecar:             common.True,
 						common.InjectUnprivilegedFuseSidecar: common.True,
-						common.InjectSidecarDone:             common.True,
 						common.InjectAppPostStart:            common.True,
 					},
 				},
@@ -4494,18 +4213,7 @@ func TestInjectPodUnprivileged(t *testing.T) {
 		wantMetaObj := testcase.want.ObjectMeta
 
 		if !reflect.DeepEqual(gotMetaObj, wantMetaObj) {
-
-			want, err := yaml.Marshal(wantMetaObj)
-			if err != nil {
-				t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-			}
-
-			outYaml, err := yaml.Marshal(gotMetaObj)
-			if err != nil {
-				t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-			}
-
-			t.Errorf("testcase %s failed, want %v, Got  %v", testcase.name, string(want), string(outYaml))
+			t.Errorf("testcase %s failed, diff between wantMetaObj and gotMetaObj: %v", testcase.name, cmp.Diff(wantMetaObj, gotMetaObj))
 		}
 
 		gotContainers := out.Spec.Containers

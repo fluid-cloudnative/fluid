@@ -59,5 +59,5 @@ func findInjectedSidecars(pod common.FluidObject) (injectedSidecars []corev1.Con
 		}
 	}
 
-	return 
+	return
 }

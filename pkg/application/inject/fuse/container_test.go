@@ -24,7 +24,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-	"gopkg.in/yaml.v3"
+	"github.com/google/go-cmp/cmp"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -200,7 +200,6 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
-						common.InjectSidecarDone: common.True,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -467,7 +466,6 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
-						common.InjectSidecarDone: common.True,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -796,7 +794,6 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
-						common.InjectSidecarDone: common.True,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -1018,18 +1015,7 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 		wantMetaObj := testcase.want.ObjectMeta
 
 		if !reflect.DeepEqual(gotMetaObj, wantMetaObj) {
-
-			want, err := yaml.Marshal(wantMetaObj)
-			if err != nil {
-				t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-			}
-
-			outYaml, err := yaml.Marshal(gotMetaObj)
-			if err != nil {
-				t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-			}
-
-			t.Errorf("testcase %s failed, want %v, Got  %v", testcase.name, string(want), string(outYaml))
+			t.Errorf("testcase %s failed, diff between want and got: %v", testcase.name, cmp.Diff(wantMetaObj, gotMetaObj))
 		}
 
 		gotContainers := out.Spec.Containers
@@ -1056,17 +1042,7 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 		for k, wantInitContainer := range wantInitContainerMap {
 			if gotInitContainer, found := gotInitContainerMap[k]; found {
 				if !reflect.DeepEqual(wantInitContainer, gotInitContainer) {
-					want, err := yaml.Marshal(wantInitContainers)
-					if err != nil {
-						t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-					}
-
-					outYaml, err := yaml.Marshal(gotInitContainers)
-					if err != nil {
-						t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-					}
-
-					t.Errorf("testcase %s failed, want %v, Got  %v", testcase.name, string(want), string(outYaml))
+					t.Errorf("testcase %s failed, diff between wantInitContainer and gotInitContainer: %v", testcase.name, cmp.Diff(wantInitContainer, gotInitContainer))
 				}
 			} else {
 				t.Errorf("testcase %s failed due to missing the Initcontainer %s", testcase.name, k)
@@ -1083,17 +1059,7 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 		for k, wantContainer := range wantContainerMap {
 			if gotContainer, found := gotContainerMap[k]; found {
 				if !reflect.DeepEqual(wantContainer, gotContainer) {
-					want, err := yaml.Marshal(wantContainers)
-					if err != nil {
-						t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-					}
-
-					outYaml, err := yaml.Marshal(gotContainers)
-					if err != nil {
-						t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-					}
-
-					t.Errorf("testcase %s failed, want %v, Got  %v", testcase.name, string(want), string(outYaml))
+					t.Errorf("testcase %s failed, diff between wantContainer and gotContainer: %v", testcase.name, cmp.Diff(wantContainer, gotContainer))
 				}
 			} else {
 				t.Errorf("testcase %s failed due to missing the container %s", testcase.name, k)
@@ -1112,17 +1078,7 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 		for k, wantVolume := range wantVolumeMap {
 			if gotVolume, found := gotVolumeMap[k]; found {
 				if !reflect.DeepEqual(wantVolume, gotVolume) {
-					want, err := yaml.Marshal(wantVolume)
-					if err != nil {
-						t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-					}
-
-					outYaml, err := yaml.Marshal(gotVolume)
-					if err != nil {
-						t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-					}
-
-					t.Errorf("testcase %s failed, want %v, Got  %v", testcase.name, string(want), string(outYaml))
+					t.Errorf("testcase %s failed, diff between wantVolume and gotVolume: %v", testcase.name, cmp.Diff(wantVolume, gotVolume))
 				}
 			} else {
 				t.Errorf("testcase %s failed due to missing the volume %s", testcase.name, k)
