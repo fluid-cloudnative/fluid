@@ -17,14 +17,20 @@ limitations under the License.
 package fusesidecar
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/api"
 	"time"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/api"
+	webhookutils "github.com/fluid-cloudnative/fluid/pkg/webhook/utils"
+	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 
 	"github.com/fluid-cloudnative/fluid/pkg/application/inject"
 	"github.com/fluid-cloudnative/fluid/pkg/application/inject/fuse"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -39,12 +45,14 @@ const Name string = "FuseSidecar"
 type FuseSidecar struct {
 	client client.Client
 	name   string
+	log    logr.Logger
 }
 
 func NewPlugin(c client.Client, args string) (api.MutatingHandler, error) {
 	return &FuseSidecar{
 		client: c,
 		name:   Name,
+		log:    ctrl.Log.WithName("FuseSidecar"),
 	}, nil
 }
 
@@ -58,15 +66,20 @@ func (p *FuseSidecar) Mutate(pod *corev1.Pod, runtimeInfos map[string]base.Runti
 		defer utils.TimeTrack(time.Now(), "FuseSidecar.Mutate",
 			"pod.name", pod.GetName(), "pvc.namespace", pod.GetNamespace())
 	}
-	if len(runtimeInfos) == 0 {
-		return
+
+	for len(runtimeInfos) > 0 {
+		var injector inject.Injector = fuse.NewInjector(p.client)
+		out, err := injector.InjectPod(pod, runtimeInfos)
+		if err != nil {
+			return shouldStop, errors.Wrapf(err, "failed to inject pod \"%v/%v\" with runtimeInfos", pod.Namespace, pod.Name)
+		}
+		out.DeepCopyInto(pod)
+		pvcNames := kubeclient.GetPVCNamesFromPod(pod)
+		runtimeInfos, err = webhookutils.CollectRuntimeInfosFromPVCs(p.client, pvcNames, pod.Namespace, p.log)
+		if err != nil {
+			return shouldStop, errors.Wrapf(err, "failed to collect runtime infos from PVCs %v", pvcNames)
+		}
 	}
 
-	var injector inject.Injector = fuse.NewInjector(p.client)
-	out, err := injector.InjectPod(pod, runtimeInfos)
-	if err != nil {
-		return shouldStop, err
-	}
-	out.DeepCopyInto(pod)
 	return
 }
