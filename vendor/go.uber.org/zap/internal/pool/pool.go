@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Uber Technologies, Inc.
+// Copyright (c) 2023 Uber Technologies, Inc.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,26 +18,41 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package atomic
+// Package pool provides internal pool utilities.
+package pool
 
-//go:generate bin/gen-atomicwrapper -name=String -type=string -wrapped=Value -file=string.go
+import (
+	"sync"
+)
 
-// String returns the wrapped value.
-func (s *String) String() string {
-	return s.Load()
+// A Pool is a generic wrapper around [sync.Pool] to provide strongly-typed
+// object pooling.
+//
+// Note that SA6002 (ref: https://staticcheck.io/docs/checks/#SA6002) will
+// not be detected, so all internal pool use must take care to only store
+// pointer types.
+type Pool[T any] struct {
+	pool sync.Pool
 }
 
-// MarshalText encodes the wrapped string into a textual form.
-//
-// This makes it encodable as JSON, YAML, XML, and more.
-func (s *String) MarshalText() ([]byte, error) {
-	return []byte(s.Load()), nil
+// New returns a new [Pool] for T, and will use fn to construct new Ts when
+// the pool is empty.
+func New[T any](fn func() T) *Pool[T] {
+	return &Pool[T]{
+		pool: sync.Pool{
+			New: func() any {
+				return fn()
+			},
+		},
+	}
 }
 
-// UnmarshalText decodes text and replaces the wrapped string with it.
-//
-// This makes it decodable from JSON, YAML, XML, and more.
-func (s *String) UnmarshalText(b []byte) error {
-	s.Store(string(b))
-	return nil
+// Get gets a T from the pool, or creates a new one if the pool is empty.
+func (p *Pool[T]) Get() T {
+	return p.pool.Get().(T)
+}
+
+// Put returns x into the pool.
+func (p *Pool[T]) Put(x T) {
+	p.pool.Put(x)
 }

@@ -38,19 +38,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// CreateUpdatePodForSchedulingHandler mutates a pod and has implemented admission.DecoderInjector
-type CreateUpdatePodForSchedulingHandler struct {
+// FluidMutatingHandler mutates a pod and has implemented admission.DecoderInjector
+type FluidMutatingHandler struct {
 	Client client.Client
 	// A decoder will be automatically injected
 	decoder *admission.Decoder
 }
 
-func (a *CreateUpdatePodForSchedulingHandler) Setup(client client.Client) {
+func (a *FluidMutatingHandler) Setup(client client.Client) {
 	a.Client = client
 }
 
 // Handle is the mutating logic of pod
-func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
+func (a *FluidMutatingHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
 	defer utils.TimeTrack(time.Now(), "CreateUpdatePodForSchedulingHandler.Handle",
 		"req.name", req.Name, "req.namespace", req.Namespace)
 
@@ -66,10 +66,24 @@ func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req ad
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	namespace := pod.Namespace
-	if len(namespace) == 0 {
-		namespace = req.Namespace
+	// Before K8s 1.24, pod.Namespace may not be trustworthy so we deny invalid requests for security concern.
+	// See related bugfix at https://github.com/kubernetes/kubernetes/pull/94637
+	if len(pod.Namespace) != 0 && pod.Namespace != req.Namespace {
+		return admission.Denied("found invalid pod.metadata.namespace, it must either be empty or equal to request's namespace")
 	}
+
+	var undoNamespaceOverride bool = false
+	if len(pod.Namespace) == 0 {
+		if len(req.Namespace) == 0 {
+			return admission.Errored(http.StatusInternalServerError, fmt.Errorf("unexepcted error: both pod.metadata.namespace and request's namespace is empty"))
+		}
+		// Override pod.Namespace with req.Namespace in order to pass namespace info to deeper functions.
+		// But we must revert the overriding to avoid a side effect of the mutation.
+		setupLog.Info("detecting empty pod.metadata.namespace, overriding it with request.namespace", "request.namespace", req.Namespace)
+		pod.Namespace = req.Namespace
+		undoNamespaceOverride = true
+	}
+
 	// check whether should inject
 	if common.CheckExpectValue(pod.Labels, common.EnableFluidInjectionFlag, common.False) {
 		setupLog.Info("skip mutating the pod because injection is disabled", "Pod", pod.Name, "Namespace", pod.Namespace)
@@ -84,10 +98,13 @@ func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req ad
 		return admission.Allowed("skip mutating the pod because injection is done")
 	}
 
-	// inject affinity info into pod
-	err = a.AddScheduleInfoToPod(pod, namespace)
+	err = a.MutatePod(pod)
 	if err != nil {
 		return admission.Errored(http.StatusInternalServerError, err)
+	}
+
+	if undoNamespaceOverride {
+		pod.Namespace = ""
 	}
 
 	marshaledPod, err := json.Marshal(pod)
@@ -97,26 +114,26 @@ func (a *CreateUpdatePodForSchedulingHandler) Handle(ctx context.Context, req ad
 	}
 
 	resp := admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
-	setupLog.V(1).Info("patch response", "name", pod.GetName(), "namespace", namespace, "patches", utils.DumpJSON(resp.Patch))
+	setupLog.V(1).Info("patch response", "name", pod.GetName(), "namespace", pod.GetNamespace(), "patches", utils.DumpJSON(resp.Patch))
 	return resp
 }
 
 // InjectDecoder injects the decoder.
-func (a *CreateUpdatePodForSchedulingHandler) InjectDecoder(d *admission.Decoder) error {
+func (a *FluidMutatingHandler) InjectDecoder(d *admission.Decoder) error {
 	a.decoder = d
 	return nil
 }
 
-// AddScheduleInfoToPod will call all plugins to get total prefer info
-func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.Pod, namespace string) (err error) {
+// MutatePod will call all plugins to get total prefer info
+func (a *FluidMutatingHandler) MutatePod(pod *corev1.Pod) (err error) {
 	if utils.IsTimeTrackerDebugEnabled() {
 		defer utils.TimeTrack(time.Now(), "AddScheduleInfoToPod",
-			"pod.name", pod.GetName(), "pod.namespace", namespace)
+			"pod.name", pod.GetName(), "pod.namespace", pod.GetNamespace())
 	}
 	var setupLog = ctrl.Log.WithName("AddScheduleInfoToPod")
-	setupLog.V(1).Info("start to add schedule info", "Pod", pod.Name, "Namespace", namespace)
+	setupLog.V(1).Info("start to add schedule info", "Pod", pod.Name, "Namespace", pod.Namespace)
 	pvcNames := kubeclient.GetPVCNamesFromPod(pod)
-	errPVCs, runtimeInfos, err := a.checkIfDatasetPVCs(pvcNames, namespace, setupLog)
+	errPVCs, runtimeInfos, err := a.checkIfDatasetPVCs(pvcNames, pod.Namespace, setupLog)
 	if err != nil {
 		return err
 	}
@@ -128,7 +145,7 @@ func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.P
 	if len(errPVCs) > 0 && utils.ServerlessEnabled(pod.GetLabels()) {
 		info := fmt.Sprintf("the pod %s in namespace %s is configured with (%s or %s) but without dataset enabling, and with errors %v",
 			pod.Name,
-			namespace,
+			pod.Namespace,
 			common.InjectServerless,
 			common.InjectFuseSidecar,
 			errPVCs)
@@ -173,7 +190,7 @@ func (a *CreateUpdatePodForSchedulingHandler) AddScheduleInfoToPod(pod *corev1.P
 
 }
 
-func (a *CreateUpdatePodForSchedulingHandler) checkIfDatasetPVCs(pvcNames []string,
+func (a *FluidMutatingHandler) checkIfDatasetPVCs(pvcNames []string,
 	namespace string,
 	setupLog logr.Logger) (errPVCs map[string]error,
 	runtimeInfos map[string]base.RuntimeInfoInterface,

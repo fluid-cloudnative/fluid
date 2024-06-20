@@ -4,7 +4,7 @@ RUN apt update && apt install -y build-essential libfuse3-dev pkg-config git pyt
 
 RUN pip install meson ninja
 
-RUN git clone https://github.com/libfuse/libfuse.git
+RUN git clone https://github.com/libfuse/libfuse.git && cd libfuse && git checkout fuse-3.16.2 && cd ..
 
 RUN mkdir -p libfuse/build && cd libfuse/build && meson setup .. && ninja install
 

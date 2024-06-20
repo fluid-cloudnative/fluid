@@ -7,6 +7,7 @@ import (
 	"github.com/golang/glog"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"k8s.io/utils/mount"
 )
 
 func CreateSymlink(targetPath, mountPath string) error {
@@ -39,6 +40,10 @@ func CreateSymlink(targetPath, mountPath string) error {
 func RemoveSymlink(targetPath string) (bool, error) {
 	f, err := os.Lstat(targetPath)
 	if err != nil {
+		if mount.IsCorruptedMnt(err) {
+			glog.V(0).Infof("detected corrupted mountpoint on path %s, skip checking if it's a symlink")
+			return false, nil
+		}
 		return false, fmt.Errorf("lstat targetPath %s error %v", targetPath, err)
 	}
 	// remove if targetPath is a symlink

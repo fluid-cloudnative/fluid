@@ -62,7 +62,7 @@ pluginConfig:
 `
 )
 
-func TestAddScheduleInfoToPod(t *testing.T) {
+func TestMutatePod(t *testing.T) {
 
 	type testCase struct {
 		name    string
@@ -813,11 +813,11 @@ func TestAddScheduleInfoToPod(t *testing.T) {
 		fakeClient := fake.NewFakeClientWithScheme(s, objs...)
 		_ = plugins.RegisterMutatingHandlers(fakeClient)
 
-		handler := &CreateUpdatePodForSchedulingHandler{
+		handler := &FluidMutatingHandler{
 			Client: fakeClient,
 		}
 
-		err := handler.AddScheduleInfoToPod(testcase.in, testcase.in.Namespace)
+		err := handler.MutatePod(testcase.in)
 		if !((err != nil) == testcase.wantErr) {
 			t.Errorf("testcase %s is failed due to error %v", testcase.name, err)
 		}
@@ -905,7 +905,7 @@ func TestHandle(t *testing.T) {
 	_ = plugins.RegisterMutatingHandlers(fakeClient)
 
 	for _, test := range tests {
-		handler := &CreateUpdatePodForSchedulingHandler{
+		handler := &FluidMutatingHandler{
 			decoder: decoder,
 		}
 		handler.Setup(fakeClient)
@@ -918,7 +918,7 @@ func TestHandle(t *testing.T) {
 	}
 }
 
-func TestAddScheduleInfoToPodWithReferencedDataset(t *testing.T) {
+func TestMutatePodWithReferencedDataset(t *testing.T) {
 
 	type testCase struct {
 		name                string
@@ -1354,11 +1354,11 @@ func TestAddScheduleInfoToPodWithReferencedDataset(t *testing.T) {
 		fakeClient := fake.NewFakeClientWithScheme(s, objs...)
 		_ = plugins.RegisterMutatingHandlers(fakeClient)
 
-		handler := &CreateUpdatePodForSchedulingHandler{
+		handler := &FluidMutatingHandler{
 			Client: fakeClient,
 		}
 
-		err := handler.AddScheduleInfoToPod(testcase.in, testcase.in.Namespace)
+		err := handler.MutatePod(testcase.in)
 		if testcase.wantErr {
 			if err == nil {
 				t.Errorf("testcase %s want error but get nil", testcase.name)
