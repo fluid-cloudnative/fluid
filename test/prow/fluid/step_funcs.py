@@ -12,6 +12,7 @@ from framework.exception import TestError
 
 SERVERLESS_KEY="serverless.fluid.io/inject"
 SERVERFUL_KEY="fuse.serverful.fluid.io/inject"
+FLUID_MANAGER_KEY="fluid.io/managed-by"
 
 def create_dataset_fn(dataset):
     def create_dataset():
@@ -213,7 +214,7 @@ def create_job_fn(script, dataset_name, name="fluid-e2e-job-test", namespace="de
         )
 
         if serverless:
-            obj_meta=client.V1ObjectMeta(labels={"app": "dataread", SERVERLESS_KEY: "true"})
+            obj_meta=client.V1ObjectMeta(labels={"app": "dataread", SERVERLESS_KEY: "true", FLUID_MANAGER_KEY: "fluid"})
         else:
             obj_meta=client.V1ObjectMeta(labels={"app": "dataread"})
 
@@ -287,6 +288,7 @@ def create_pod_fn(dataset_name, name="nginx-test", namespace="default", serverle
         labels = {}
         if serverless:
             labels[SERVERLESS_KEY] = "true"
+            labels[FLUID_MANAGER_KEY] = "fluid"
         if serverful:
             labels[SERVERFUL_KEY] = "true"
 
