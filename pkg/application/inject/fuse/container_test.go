@@ -17,7 +17,6 @@ limitations under the License.
 package fuse
 
 import (
-	"k8s.io/utils/ptr"
 	"reflect"
 	"testing"
 
