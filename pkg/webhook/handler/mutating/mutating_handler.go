@@ -20,19 +20,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins"
-	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/api"
 	"net/http"
 	"time"
 
+	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins"
+	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/api"
+	webhookutils "github.com/fluid-cloudnative/fluid/pkg/webhook/utils"
+	"github.com/pkg/errors"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	"github.com/fluid-cloudnative/fluid/pkg/webhook/cache"
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -133,26 +132,15 @@ func (a *FluidMutatingHandler) MutatePod(pod *corev1.Pod) (err error) {
 	var setupLog = ctrl.Log.WithName("AddScheduleInfoToPod")
 	setupLog.V(1).Info("start to add schedule info", "Pod", pod.Name, "Namespace", pod.Namespace)
 	pvcNames := kubeclient.GetPVCNamesFromPod(pod)
-	errPVCs, runtimeInfos, err := a.checkIfDatasetPVCs(pvcNames, pod.Namespace, setupLog)
+	runtimeInfos, err := webhookutils.CollectRuntimeInfosFromPVCs(a.Client, pvcNames, pod.Namespace, setupLog)
 	if err != nil {
-		return err
+		setupLog.Error(err, "failed to collect runtime infos from PVCs", "pvcNames", pvcNames)
+		return errors.Wrapf(err, "failed to collect runtime infos from PVCs %v", pvcNames)
 	}
 
 	// get plugins registry and get the need plugins list from it
 	pluginsRegistry := plugins.GetRegistryHandler()
 	var pluginsList []api.MutatingHandler
-	// if the serverlessEnabled, it will raise the errors
-	if len(errPVCs) > 0 && utils.ServerlessEnabled(pod.GetLabels()) {
-		info := fmt.Sprintf("the pod %s in namespace %s is configured with (%s or %s) but without dataset enabling, and with errors %v",
-			pod.Name,
-			pod.Namespace,
-			common.InjectServerless,
-			common.InjectFuseSidecar,
-			errPVCs)
-		setupLog.Info(info)
-		err = fmt.Errorf("failed with errs %v", errPVCs)
-		return err
-	}
 
 	// handle the pods interact with fluid
 	switch {
@@ -188,76 +176,4 @@ func (a *FluidMutatingHandler) MutatePod(pod *corev1.Pod) (err error) {
 
 	return
 
-}
-
-func (a *FluidMutatingHandler) checkIfDatasetPVCs(pvcNames []string,
-	namespace string,
-	setupLog logr.Logger) (errPVCs map[string]error,
-	runtimeInfos map[string]base.RuntimeInfoInterface,
-	err error) {
-	if utils.IsTimeTrackerDebugEnabled() {
-		defer utils.TimeTrack(time.Now(), "CreateUpdatePodForSchedulingHandler.checkIfDatasetPVCs",
-			"pvc.names", pvcNames, "pvc.namespace", namespace)
-	}
-	errPVCs = map[string]error{}
-	runtimeInfos = map[string]base.RuntimeInfoInterface{}
-	for _, pvcName := range pvcNames {
-		var (
-			isDatasetPVC bool
-			runtimeInfo  base.RuntimeInfoInterface
-		)
-		if cachedInfo, found := cache.GetRuntimeInfoByKey(types.NamespacedName{
-			Name:      pvcName,
-			Namespace: namespace,
-		}); found {
-			isDatasetPVC = cachedInfo.IsBelongToDataset()
-			if isDatasetPVC {
-				runtimeInfos[pvcName] = cachedInfo.GetRuntimeInfo()
-			}
-		} else {
-			pvc, pvcErr := kubeclient.GetPersistentVolumeClaim(a.Client, pvcName, namespace)
-			if pvcErr != nil {
-				setupLog.Error(pvcErr, "unable to check pvc, will ignore it",
-					"pvc",
-					pvcName,
-					"namespace",
-					namespace)
-				errPVCs[pvcName] = pvcErr
-				continue
-			}
-			isDatasetPVC = kubeclient.CheckIfPVCIsDataset(pvc)
-			if isDatasetPVC {
-				// isReferringPVC, referringName, referringNamespace := kubeclient.GetReferringDatasetPVCInfo(pvc)
-				// if isReferringPVC {
-				// 	pvc, err = kubeclient.GetPersistentVolumeClaim(a.Client, referringName, referringNamespace)
-				// 	if err != nil {
-				// 		setupLog.Error(err,
-				// 			"unable to get referring pvc, get failure",
-				// 			"name", referringName,
-				// 			"namespace", referringNamespace)
-				// 		return
-				// 	}
-				// }
-
-				runtimeInfo, err = buildRuntimeInfoInternal(a.Client, pvc, setupLog)
-				// runtimeInfo, err = base.GetRuntimeInfo(a.Client, pvcName, namespace)
-				if err != nil {
-					setupLog.Error(err,
-						"unable to get runtimeInfo, get failure",
-						"runtime",
-						pvcName,
-						"namespace",
-						namespace)
-					return
-				}
-				runtimeInfo.SetDeprecatedNodeLabel(false)
-				runtimeInfos[pvcName] = runtimeInfo
-			}
-			cache.AddRuntimeInfoByKey(types.NamespacedName{
-				Name:      pvcName,
-				Namespace: namespace,
-			}, runtimeInfo, isDatasetPVC)
-		}
-	}
-	return
 }
