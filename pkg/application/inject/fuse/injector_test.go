@@ -4567,7 +4567,7 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 									LocalObjectReference: corev1.LocalObjectReference{
 										Name: "check-fluid-mount-ready",
 									},
-									DefaultMode: utilpointer.Int32(mode),
+									DefaultMode: ptr.To[int32](mode),
 								},
 							},
 						},
@@ -4603,7 +4603,7 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 									LocalObjectReference: corev1.LocalObjectReference{
 										Name: "duplicate-jindo-check-mount",
 									},
-									DefaultMode: utilpointer.Int32(mode),
+									DefaultMode: ptr.To[int32](mode),
 								},
 							},
 						},
@@ -4890,7 +4890,7 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 									LocalObjectReference: corev1.LocalObjectReference{
 										Name: "check-fluid-mount-ready",
 									},
-									DefaultMode: utilpointer.Int32(mode),
+									DefaultMode: ptr.To[int32](mode),
 								},
 							},
 						},
@@ -4924,7 +4924,7 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 									LocalObjectReference: corev1.LocalObjectReference{
 										Name: "dataset1-jindo-check-mount",
 									},
-									DefaultMode: utilpointer.Int32(mode),
+									DefaultMode: ptr.To[int32](mode),
 								},
 							},
 						},
@@ -5231,7 +5231,7 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 									LocalObjectReference: corev1.LocalObjectReference{
 										Name: "check-fluid-mount-ready",
 									},
-									DefaultMode: utilpointer.Int32(mode),
+									DefaultMode: ptr.To[int32](mode),
 								},
 							},
 						},
@@ -5267,7 +5267,7 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 									LocalObjectReference: corev1.LocalObjectReference{
 										Name: "customizedenv-jindo-check-mount",
 									},
-									DefaultMode: utilpointer.Int32(mode),
+									DefaultMode: ptr.To[int32](mode),
 								},
 							},
 						},
