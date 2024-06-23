@@ -49,13 +49,13 @@ We assume you've got a Github ID. If then, all you need to do can be summarized 
 
 3. **Set remote upstream**
     ```shell
+    cd fluid
     git remote add upstream https://github.com/fluid-cloudnative/fluid.git
     git remote set-url --push upstream no-pushing
     ```
 
 4. **Update local working directory**
     ```shell
-    cd fluid
     git fetch upstream
     git checkout master
     git rebase upstream/master
