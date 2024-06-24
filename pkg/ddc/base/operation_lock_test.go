@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Fluid Authors.
+Copyright 2023 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ func TestGetDataBackupRef(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := GetDataOperationKey(tt.args.object); got != tt.want {
+			if got := getDataOperationKey(tt.args.object); got != tt.want {
 				t.Errorf("GetDataBackupRef() = %v, want %v", got, tt.want)
 			}
 		})

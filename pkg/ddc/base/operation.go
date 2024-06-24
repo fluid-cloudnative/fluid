@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Fluid Authors.
+Copyright 2023 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -37,21 +37,8 @@ const cleanupErrorMsg = "Failed to get remaining time to clean up for operation 
 
 func (t *TemplateEngine) Operate(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus,
 	operation dataoperation.OperationInterface) (ctrl.Result, error) {
-	operateType := operation.GetOperationType()
-	object := operation.GetOperationObject()
 
-	// runtime engine override the template engine
-	switch operateType {
-	case datav1alpha1.DataBackupType:
-		ownImpl, ok := t.Implement.(Databackuper)
-		if ok {
-			targetDataBackup, success := object.(*datav1alpha1.DataBackup)
-			if !success {
-				return utils.RequeueIfError(fmt.Errorf("object %v is not a DataBackup", object))
-			}
-			return ownImpl.BackupData(ctx, *targetDataBackup)
-		}
-	}
+	// we can do customized runtime engine override the template engine, implement if needed.
 
 	// use default template engine
 	switch opStatus.Phase {
@@ -118,7 +105,7 @@ func (t *TemplateEngine) reconcilePending(ctx cruntime.ReconcileRequestContext, 
 
 	// 1. check preceding operation status
 	if opStatus.WaitingFor.OperationComplete != nil && *opStatus.WaitingFor.OperationComplete {
-		// when operationComplete set back to false, a new reconcilation loop will be triggered, so no requeue here.
+		// when operationComplete set back to false, a new reconciliation loop will be triggered, so no requeue here.
 		return utils.NoRequeue()
 	}
 

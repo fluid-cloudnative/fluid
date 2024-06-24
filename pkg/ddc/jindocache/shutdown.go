@@ -196,14 +196,7 @@ func (e *JindoCacheEngine) destroyWorkers(expectedWorkers int32) (currentWorkers
 	if expectedWorkers >= 0 {
 		e.Log.Info("Scale in Jindo workers", "expectedWorkers", expectedWorkers)
 		// This is a scale in operation
-		runtimeInfo, err := e.getRuntimeInfo()
-		if err != nil {
-			e.Log.Error(err, "getRuntimeInfo when scaling in")
-			return currentWorkers, err
-		}
-
-		fuseGlobal, _ := runtimeInfo.GetFuseDeployMode()
-		nodes, err = e.sortNodesToShutdown(nodeList.Items, fuseGlobal)
+		nodes, err = e.sortNodesToShutdown(nodeList.Items)
 		if err != nil {
 			return currentWorkers, err
 		}
@@ -269,27 +262,10 @@ func (e *JindoCacheEngine) destroyWorkers(expectedWorkers int32) (currentWorkers
 	return currentWorkers, nil
 }
 
-func (e *JindoCacheEngine) sortNodesToShutdown(candidateNodes []corev1.Node, fuseGlobal bool) (nodes []corev1.Node, err error) {
-	if !fuseGlobal {
-		// If fuses are deployed in non-global mode, workers and fuses will be scaled in together.
-		// It can be dangerous if we scale in nodes where there are pods using the related pvc.
-		// So firstly we filter out such nodes
-		pvcMountNodes, err := kubeclient.GetPvcMountNodes(e.Client, e.name, e.namespace)
-		if err != nil {
-			e.Log.Error(err, "GetPvcMountNodes when scaling in")
-			return nil, err
-		}
-
-		for _, node := range candidateNodes {
-			if _, found := pvcMountNodes[node.Name]; !found {
-				nodes = append(nodes, node)
-			}
-		}
-	} else {
-		// If fuses are deployed in global mode. Scaling in workers has nothing to do with fuses.
-		// All nodes with related label can be candidate nodes.
-		nodes = candidateNodes
-	}
+func (e *JindoCacheEngine) sortNodesToShutdown(candidateNodes []corev1.Node) (nodes []corev1.Node, err error) {
+	// If fuses are deployed in global mode. Scaling in workers has nothing to do with fuses.
+	// All nodes with related label can be candidate nodes.
+	nodes = candidateNodes
 	// TODO support jindo calculate node usedCapacity
 	return nodes, nil
 }

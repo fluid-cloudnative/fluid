@@ -86,7 +86,7 @@ spec:
           command:
             - /usr/local/bin/vineyardd
             - --socket
-            - /var/run/vineyard/vineyard.sock
+            - /var/run/vineyard/vineyard-worker.sock
             - --size
             - "{{ include "vineyard.worker.size" . }}"
             {{- if eq (toString (index .Values.worker.options "vineyardd.reserve.memory")) "true" }}
@@ -98,6 +98,8 @@ spec:
             - "{{ default "/vineyard" (index .Values.worker.options "etcd.prefix") }}"
             - --etcd_endpoint
             - "{{ include "vineyard.master.endpoint" . }}"
+            - --rpc_socket_port
+            - "{{ int .Values.worker.ports.rpc }}"
             {{- if eq (include "vineyard.checkTieredStore" .) "true" }}
             - --spill_path
             - "{{ include "vineyard.spill.path" . }}"
@@ -111,6 +113,10 @@ spec:
             - --log_dir
             - /var/log/vineyard
             {{- end }}
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "rm -f /var/run/vineyard/vineyard-worker.sock"]
           env:
           - name: VINEYARDD_NAME
             value: {{ template "vineyard.fullname" . }}-vineyardd
@@ -163,7 +169,7 @@ spec:
             exec:
               command:
               - ls
-              - /var/run/vineyard/vineyard.sock
+              - /var/run/vineyard/vineyard-worker.sock
             initialDelaySeconds: 15
             periodSeconds: 10
             failureThreshold: 10
@@ -179,7 +185,7 @@ spec:
           {{- end }}
         {{- if not .Values.disablePrometheus }}
         - name: metrics
-          image: vineyardcloudnative/vineyardd-grok-exporter
+          image: registry.aliyuncs.com/vineyard/vineyardd-grok-exporter
           imagePullPolicy: {{ .Values.worker.imagePullPolicy }}
           ports:
           - name: exporter

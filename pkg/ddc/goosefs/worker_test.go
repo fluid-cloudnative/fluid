@@ -55,7 +55,7 @@ func TestSetupWorkers(t *testing.T) {
 	nodeSelector := map[string]string{
 		"node-select": "true",
 	}
-	runtimeInfoHadoop.SetupFuseDeployMode(true, nodeSelector)
+	runtimeInfoHadoop.SetFuseNodeSelector(nodeSelector)
 
 	type fields struct {
 		replicas         int32
@@ -91,7 +91,7 @@ func TestSetupWorkers(t *testing.T) {
 						Namespace: "big-data",
 					},
 					Spec: appsv1.StatefulSetSpec{
-						Replicas: utilpointer.Int32Ptr(1),
+						Replicas: utilpointer.Int32(1),
 					},
 				},
 				runtime: &datav1alpha1.GooseFSRuntime{
@@ -127,7 +127,7 @@ func TestSetupWorkers(t *testing.T) {
 						Namespace: "big-data",
 					},
 					Spec: appsv1.StatefulSetSpec{
-						Replicas: utilpointer.Int32Ptr(1),
+						Replicas: utilpointer.Int32(1),
 					},
 				},
 				runtime: &datav1alpha1.GooseFSRuntime{
@@ -382,9 +382,7 @@ func TestCheckWorkersReady(t *testing.T) {
 					},
 					Spec: datav1alpha1.GooseFSRuntimeSpec{
 						Replicas: 1,
-						Fuse: datav1alpha1.GooseFSFuseSpec{
-							Global: true,
-						},
+						Fuse:     datav1alpha1.GooseFSFuseSpec{},
 					},
 				},
 				worker: &appsv1.StatefulSet{
@@ -423,9 +421,7 @@ func TestCheckWorkersReady(t *testing.T) {
 					},
 					Spec: datav1alpha1.GooseFSRuntimeSpec{
 						Replicas: 1,
-						Fuse: datav1alpha1.GooseFSFuseSpec{
-							Global: true,
-						},
+						Fuse:     datav1alpha1.GooseFSFuseSpec{},
 					},
 				},
 				worker: &appsv1.StatefulSet{
@@ -463,9 +459,7 @@ func TestCheckWorkersReady(t *testing.T) {
 					},
 					Spec: datav1alpha1.GooseFSRuntimeSpec{
 						Replicas: 1,
-						Fuse: datav1alpha1.GooseFSFuseSpec{
-							Global: true,
-						},
+						Fuse:     datav1alpha1.GooseFSFuseSpec{},
 					},
 				},
 				worker: &appsv1.StatefulSet{

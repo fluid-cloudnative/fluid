@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Fluid Author.
+Copyright 2021 The Fluid Author.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -56,9 +56,7 @@ func TestBuild(t *testing.T) {
 			Master: datav1alpha1.AlluxioCompTemplateSpec{
 				Replicas: 1,
 			},
-			Fuse: datav1alpha1.AlluxioFuseSpec{
-				Global: false,
-			},
+			Fuse: datav1alpha1.AlluxioFuseSpec{},
 		},
 		Status: datav1alpha1.RuntimeStatus{
 			CacheStates: map[common.CacheStateName]string{

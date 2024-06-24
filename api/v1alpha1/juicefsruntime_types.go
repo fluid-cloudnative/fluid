@@ -1,5 +1,6 @@
 /*
-Copyright 2022 The Fluid Authors.
+Copyright 2021 The Fluid Authors.
+
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -145,11 +146,6 @@ type JuiceFSFuseSpec struct {
 	// Options mount options that fuse pod will use
 	// +optional
 	Options map[string]string `json:"options,omitempty"`
-
-	// If the fuse client should be deployed in global mode,
-	// otherwise the affinity should be considered
-	// +optional
-	Global bool `json:"global,omitempty"`
 
 	// NodeSelector is a selector which must be true for the fuse client to fit on a node,
 	// this option only effect when global is enabled

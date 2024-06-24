@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Fluid Authors.
+Copyright 2020 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -46,14 +46,6 @@ type Engine interface {
 	// Sync syncs the alluxio runtime
 	Sync(ctx cruntime.ReconcileRequestContext) error
 
-	// Dataloader
-	// @Deprecated use DataOperator instead.
-	Dataloader
-
-	// Datamigrater
-	// @Deprecated use DataOperator instead.
-	Datamigrater
-
 	// DataOperator is a common interface for Data Operations like DataBackup/DataLoad/DataMigrate etc.
 	DataOperator
 }
@@ -63,27 +55,9 @@ type DataOperator interface {
 	Operate(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error)
 }
 
-// DataOperatorYamlGenerator is the implementation of DataOperator interface for runtime engine
+// DataOperatorYamlGenerator is the implementation of DataOperator interface for runtime engine using TemplateEngine.
 type DataOperatorYamlGenerator interface {
 	GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, operation dataoperation.OperationInterface) (valueFileName string, err error)
-}
-
-type Dataloader interface {
-	// LoadData generate dataload values and install helm chart
-	LoadData(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) (err error)
-
-	// CheckRuntimeReady Check if runtime is ready
-	// @Deprecated because it's common for all engine
-	CheckRuntimeReady() (ready bool)
-}
-
-type Databackuper interface {
-	BackupData(ctx cruntime.ReconcileRequestContext, targetDataBackup datav1alpha1.DataBackup) (ctrl.Result, error)
-}
-
-type Datamigrater interface {
-	// MigrateData generate datamigrate values and install helm chart
-	MigrateData(ctx cruntime.ReconcileRequestContext, targetDataMigrate datav1alpha1.DataMigrate) (err error)
 }
 
 // Implement is what the real engine should implement if it use the TemplateEngine
@@ -92,7 +66,7 @@ type Implement interface {
 
 	DataOperatorYamlGenerator
 
-	// ShouldSetupMaster checks if the master ready
+	// CheckMasterReady checks if the master ready
 	CheckMasterReady() (ready bool, err error)
 
 	// CheckWorkersReady checks if the workers ready
@@ -131,9 +105,6 @@ type Implement interface {
 	// Shutdown and clean up the engine
 	Shutdown() error
 
-	// AssignNodesToCache picks up the nodes for replicas
-	AssignNodesToCache(desiredNum int32) (currentNum int32, err error)
-
 	// CheckRuntimeHealthy checks runtime healthy
 	CheckRuntimeHealthy() (err error)
 
@@ -158,21 +129,13 @@ type Implement interface {
 	// BindToDataset binds the engine to dataset
 	BindToDataset() (err error)
 
-	// CreateDataLoadJob creates the job to load data
-	// @Deprecated TODO: remove when DataOperator ready
-	CreateDataLoadJob(ctx cruntime.ReconcileRequestContext, targetDataload datav1alpha1.DataLoad) error
-
-	// CreateDataMigrateJob creates the job to load data
-	// @Deprecated TODO: remove when DataOperator ready
-	CreateDataMigrateJob(ctx cruntime.ReconcileRequestContext, targetDataMigrate datav1alpha1.DataMigrate) error
-
-	// checks if the runtime is ready
+	// CheckRuntimeReady checks if the runtime is ready
 	CheckRuntimeReady() (ready bool)
 
 	// SyncRuntime syncs the runtime spec
 	SyncRuntime(ctx cruntime.ReconcileRequestContext) (changed bool, err error)
 
-	// Sync the scheduleInfo to cacheNodes
+	// SyncScheduleInfoToCacheNodes Sync the scheduleInfo to cacheNodes
 	SyncScheduleInfoToCacheNodes() (err error)
 }
 

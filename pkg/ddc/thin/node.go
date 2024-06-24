@@ -33,24 +33,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (t ThinEngine) AssignNodesToCache(desiredNum int32) (currentNum int32, err error) {
-	runtimeInfo, err := t.getRuntimeInfo()
-	if err != nil {
-		return currentNum, err
-	}
-
-	dataset, err := utils.GetDataset(t.Client, t.name, t.namespace)
-	if err != nil {
-		return
-	}
-
-	t.Log.Info("AssignNodesToCache", "dataset", dataset)
-	return datasetSchedule.AssignDatasetToNodes(runtimeInfo,
-		dataset,
-		t.Client,
-		desiredNum)
-}
-
 func (t ThinEngine) SyncScheduleInfoToCacheNodes() (err error) {
 	err = t.syncScheduleInfoToCacheNodes()
 	if err != nil {

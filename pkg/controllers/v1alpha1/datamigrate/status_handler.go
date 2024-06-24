@@ -17,6 +17,8 @@
 package datamigrate
 
 import (
+	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
 	"github.com/go-logr/logr"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -78,32 +80,49 @@ func (m *OnceStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestCont
 		return
 	}
 
-	if len(job.Status.Conditions) != 0 {
-		if job.Status.Conditions[0].Type == batchv1.JobFailed ||
-			job.Status.Conditions[0].Type == batchv1.JobComplete {
-			jobCondition := job.Status.Conditions[0]
-			// job either failed or complete, update DataMigrate's phase status
-			result.Conditions = []datav1alpha1.Condition{
-				{
-					Type:               common.ConditionType(jobCondition.Type),
-					Status:             jobCondition.Status,
-					Reason:             jobCondition.Reason,
-					Message:            jobCondition.Message,
-					LastProbeTime:      jobCondition.LastProbeTime,
-					LastTransitionTime: jobCondition.LastTransitionTime,
-				},
-			}
-			if jobCondition.Type == batchv1.JobFailed {
-				result.Phase = common.PhaseFailed
-			} else {
-				result.Phase = common.PhaseComplete
-			}
-			result.Duration = utils.CalculateDuration(job.CreationTimestamp.Time, jobCondition.LastTransitionTime.Time)
-			return
-		}
+	isJobFinished := len(job.Status.Conditions) != 0 &&
+		(job.Status.Conditions[0].Type == batchv1.JobFailed || job.Status.Conditions[0].Type == batchv1.JobComplete)
+	if !isJobFinished {
+		ctx.Log.V(1).Info("DataMigrate job still running", "namespace", ctx.Namespace, "jobName", jobName)
+		return
 	}
 
-	ctx.Log.V(1).Info("DataMigrate job still running", "namespace", ctx.Namespace, "jobName", jobName)
+	// set the node labels in status when job finished
+	// for parallel migrate, there are multiple pods, so can not set the node labels.
+	if m.dataMigrate.Spec.Parallelism == 1 {
+		// set the node labels in status
+		if dataflow.Enabled(dataflow.DataflowAffinity) && result.NodeAffinity == nil {
+			jobPod, err := kubeclient.GetSucceedPodForJob(m.Client, job)
+			if err != nil {
+				ctx.Log.Error(err, "can't get pod for job", "namespace", ctx.Namespace, "jobName", jobName)
+				return nil, err
+			}
+
+			// generate the node labels
+			result.NodeAffinity, err = dataflow.GenerateNodeAffinity(m.Client, jobPod)
+			if err != nil {
+				return nil, fmt.Errorf("error to generate the node labels: %v", err)
+			}
+		}
+	}
+	// job either failed or complete, update DataMigrate's phase status
+	jobCondition := job.Status.Conditions[0]
+	result.Conditions = []datav1alpha1.Condition{
+		{
+			Type:               common.ConditionType(jobCondition.Type),
+			Status:             jobCondition.Status,
+			Reason:             jobCondition.Reason,
+			Message:            jobCondition.Message,
+			LastProbeTime:      jobCondition.LastProbeTime,
+			LastTransitionTime: jobCondition.LastTransitionTime,
+		},
+	}
+	if jobCondition.Type == batchv1.JobFailed {
+		result.Phase = common.PhaseFailed
+	} else {
+		result.Phase = common.PhaseComplete
+	}
+	result.Duration = utils.CalculateDuration(job.CreationTimestamp.Time, jobCondition.LastTransitionTime.Time)
 	return
 }
 

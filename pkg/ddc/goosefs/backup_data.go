@@ -21,6 +21,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdatabackup "github.com/fluid-cloudnative/fluid/pkg/databackup"
+	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/goosefs/operations"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -131,6 +132,12 @@ func (e *GooseFSEngine) generateDataBackupValueFile(ctx cruntime.ReconcileReques
 	}
 	dataBackup.PVCName = pvcName
 	dataBackup.Path = path
+
+	// inject the node affinity by previous operation pod.
+	dataBackup.Affinity, err = dataflow.InjectAffinityByRunAfterOp(e.Client, databackup.Spec.RunAfter, databackup.Namespace, nil)
+	if err != nil {
+		return "", err
+	}
 
 	dataBackupValue := cdatabackup.DataBackupValue{DataBackup: dataBackup}
 

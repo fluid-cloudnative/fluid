@@ -22,6 +22,11 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 )
 
+func (t *ThinEngine) CheckRuntimeReady() (ready bool) {
+	//TODO implement me
+	return true
+}
+
 // getRuntimeInfo gets runtime info
 func (t *ThinEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 	if t.runtimeInfo == nil {
@@ -36,7 +41,7 @@ func (t *ThinEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		}
 
 		// Setup Fuse Deploy Mode
-		t.runtimeInfo.SetupFuseDeployMode(true, runtime.Spec.Fuse.NodeSelector)
+		t.runtimeInfo.SetFuseNodeSelector(runtime.Spec.Fuse.NodeSelector)
 
 		if !t.UnitTest {
 			// Check if the runtime is using deprecated naming style for PersistentVolumes

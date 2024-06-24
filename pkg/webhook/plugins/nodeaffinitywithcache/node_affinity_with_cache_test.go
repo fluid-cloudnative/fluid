@@ -66,7 +66,7 @@ func TestGetPreferredSchedulingTermWithGlobalMode(t *testing.T) {
 	}
 
 	// Test case 1: Global fuse with selector enable
-	runtimeInfo.SetupFuseDeployMode(true, map[string]string{"test1": "test1"})
+	runtimeInfo.SetFuseNodeSelector(map[string]string{"test1": "test1"})
 	term := getPreferredSchedulingTerm(100, runtimeInfo.GetCommonLabelName())
 
 	expectTerm := corev1.PreferredSchedulingTerm{
@@ -87,7 +87,7 @@ func TestGetPreferredSchedulingTermWithGlobalMode(t *testing.T) {
 	}
 
 	// Test case 2: Global fuse with selector disable
-	runtimeInfo.SetupFuseDeployMode(true, map[string]string{})
+	runtimeInfo.SetFuseNodeSelector(map[string]string{})
 	term = getPreferredSchedulingTerm(100, runtimeInfo.GetCommonLabelName())
 
 	if !reflect.DeepEqual(term, expectTerm) {
@@ -110,7 +110,7 @@ func TestMutateOnlyRequired(t *testing.T) {
 	}
 	runtimeInfo, err := base.BuildRuntimeInfo(alluxioRuntime.Name, alluxioRuntime.Namespace, "alluxio", datav1alpha1.TieredStore{})
 	// enable Preferred scheduling
-	runtimeInfo.SetupFuseDeployMode(true, map[string]string{})
+	runtimeInfo.SetFuseNodeSelector(map[string]string{})
 
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
@@ -174,7 +174,7 @@ func TestMutateOnlyPrefer(t *testing.T) {
 
 	runtimeInfo, err := base.BuildRuntimeInfo(alluxioRuntime.Name, alluxioRuntime.Namespace, "alluxio", datav1alpha1.TieredStore{})
 	// enable Preferred scheduling
-	runtimeInfo.SetupFuseDeployMode(true, map[string]string{})
+	runtimeInfo.SetFuseNodeSelector(map[string]string{})
 
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
@@ -220,7 +220,7 @@ func TestMutateBothRequiredAndPrefer(t *testing.T) {
 	plugin, _ := NewPlugin(client, tieredLocality)
 	runtimeInfo, err := base.BuildRuntimeInfo(alluxioRuntime.Name, alluxioRuntime.Namespace, "alluxio", datav1alpha1.TieredStore{})
 	// set global true to enable prefer
-	runtimeInfo.SetupFuseDeployMode(true, map[string]string{})
+	runtimeInfo.SetFuseNodeSelector(map[string]string{})
 
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
@@ -309,7 +309,7 @@ required:
 
 	runtimeInfo, _ := base.BuildRuntimeInfo(alluxioRuntime.Name, alluxioRuntime.Namespace, "alluxio", datav1alpha1.TieredStore{})
 	// set global true to enable prefer
-	runtimeInfo.SetupFuseDeployMode(true, map[string]string{})
+	runtimeInfo.SetFuseNodeSelector(map[string]string{})
 
 	type args struct {
 		pluginArg    string

@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Fluid Authors.
+Copyright 2021 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -55,9 +55,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: v1alpha1.AlluxioRuntimeSpec{
-				Fuse: v1alpha1.AlluxioFuseSpec{
-					Global: true,
-				},
+				Fuse: v1alpha1.AlluxioFuseSpec{},
 			},
 		},
 		{
@@ -66,9 +64,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: v1alpha1.AlluxioRuntimeSpec{
-				Fuse: v1alpha1.AlluxioFuseSpec{
-					Global: false,
-				},
+				Fuse: v1alpha1.AlluxioFuseSpec{},
 			},
 		},
 	}

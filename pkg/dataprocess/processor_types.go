@@ -18,7 +18,6 @@ package dataprocess
 
 import (
 	"fmt"
-
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -105,4 +104,5 @@ func (p *ScriptProcessorImpl) TransformDataProcessValues(value *DataProcessValue
 		Command:         p.ScriptProcessor.Command,
 		Source:          p.ScriptProcessor.Source,
 	}
+
 }

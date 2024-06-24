@@ -39,12 +39,6 @@ import (
 func TestThinEngine_CheckAndUpdateRuntimeStatus(t *testing.T) {
 	Convey("Test CheckAndUpdateRuntimeStatus ", t, func() {
 		Convey("CheckAndUpdateRuntimeStatus success", func() {
-			runtimeInfo, err := base.BuildRuntimeInfo("thin", "fluid", "thin", datav1alpha1.TieredStore{})
-			if err != nil {
-				t.Errorf("fail to create the runtimeInfo with error %v", err)
-			}
-			runtimeInfo.SetupFuseDeployMode(false, nil)
-
 			var workerInputs = []appsv1.StatefulSet{
 				{
 					ObjectMeta: metav1.ObjectMeta{
@@ -52,7 +46,7 @@ func TestThinEngine_CheckAndUpdateRuntimeStatus(t *testing.T) {
 						Namespace: "fluid",
 					},
 					Spec: appsv1.StatefulSetSpec{
-						Replicas: utilpointer.Int32Ptr(1),
+						Replicas: utilpointer.Int32(1),
 					},
 					Status: appsv1.StatefulSetStatus{
 						Replicas:      1,
@@ -65,7 +59,7 @@ func TestThinEngine_CheckAndUpdateRuntimeStatus(t *testing.T) {
 						Namespace: "fluid",
 					},
 					Spec: appsv1.StatefulSetSpec{
-						Replicas: utilpointer.Int32Ptr(1),
+						Replicas: utilpointer.Int32(1),
 					},
 					Status: appsv1.StatefulSetStatus{
 						Replicas:      2,
@@ -78,7 +72,7 @@ func TestThinEngine_CheckAndUpdateRuntimeStatus(t *testing.T) {
 						Namespace: "fluid",
 					},
 					Spec: appsv1.StatefulSetSpec{
-						Replicas: utilpointer.Int32Ptr(1),
+						Replicas: utilpointer.Int32(1),
 					},
 				},
 			}
@@ -322,7 +316,7 @@ func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
 							APIVersion: "apps/v1",
 							Name:       "spark-worker",
 							UID:        "uid1",
-							Controller: utilpointer.BoolPtr(true),
+							Controller: utilpointer.Bool(true),
 						}},
 						Labels: map[string]string{
 							"app":              "thin",
@@ -399,7 +393,7 @@ func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
 								APIVersion: "apps/v1",
 								Name:       "hbase-worker",
 								UID:        "uid2",
-								Controller: utilpointer.BoolPtr(true),
+								Controller: utilpointer.Bool(true),
 							}},
 							Labels: map[string]string{
 								"app":              "thin",

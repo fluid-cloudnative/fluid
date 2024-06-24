@@ -27,6 +27,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
 )
 
 func TestShouldSyncMetadata(t *testing.T) {
@@ -49,10 +50,46 @@ func TestShouldSyncMetadata(t *testing.T) {
 				UfsTotal: "",
 			},
 		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "noautosync",
+				Namespace: "fluid",
+			},
+		},
+	}
+	runtimeInputs := []datav1alpha1.ThinRuntime{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase",
+				Namespace: "fluid",
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "spark",
+				Namespace: "fluid",
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "noautosync",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.ThinRuntimeSpec{
+				RuntimeManagement: datav1alpha1.RuntimeManagement{
+					MetadataSyncPolicy: datav1alpha1.MetadataSyncPolicy{
+						AutoSync: pointer.Bool(false),
+					},
+				},
+			},
+		},
 	}
 	testObjs := []runtime.Object{}
-	for _, datasetInput := range datasetInputs {
-		testObjs = append(testObjs, datasetInput.DeepCopy())
+	for _, input := range datasetInputs {
+		testObjs = append(testObjs, input.DeepCopy())
+	}
+	for _, input := range runtimeInputs {
+		testObjs = append(testObjs, input.DeepCopy())
 	}
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
@@ -65,6 +102,12 @@ func TestShouldSyncMetadata(t *testing.T) {
 		},
 		{
 			name:      "spark",
+			namespace: "fluid",
+			Client:    client,
+			Log:       fake.NullLogger(),
+		},
+		{
+			name:      "noautosync",
 			namespace: "fluid",
 			Client:    client,
 			Log:       fake.NullLogger(),
@@ -82,6 +125,10 @@ func TestShouldSyncMetadata(t *testing.T) {
 		{
 			engine:         engines[1],
 			expectedShould: true,
+		},
+		{
+			engine:         engines[2],
+			expectedShould: false,
 		},
 	}
 
@@ -130,9 +177,33 @@ func TestSyncMetadata(t *testing.T) {
 		},
 	}
 
+	runtimeInputs := []datav1alpha1.ThinRuntime{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase",
+				Namespace: "fluid",
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "spark",
+				Namespace: "fluid",
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hadoop",
+				Namespace: "fluid",
+			},
+		},
+	}
+
 	testObjs := []runtime.Object{}
 	for _, datasetInput := range datasetInputs {
 		testObjs = append(testObjs, datasetInput.DeepCopy())
+	}
+	for _, runtimeInput := range runtimeInputs {
+		testObjs = append(testObjs, runtimeInput.DeepCopy())
 	}
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 

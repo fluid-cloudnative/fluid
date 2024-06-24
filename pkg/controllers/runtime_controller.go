@@ -1,4 +1,5 @@
 /*
+Copyright 2020 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -294,12 +295,12 @@ func (r *RuntimeReconciler) AddFinalizerAndRequeue(ctx cruntime.ReconcileRequest
 	prevGeneration := objectMeta.GetGeneration()
 	objectMeta.SetFinalizers(append(objectMeta.GetFinalizers(), finalizerName))
 	if err := r.Update(ctx, ctx.Runtime); err != nil {
-		ctx.Log.Error(err, "Failed to add finalizer", "StatusUpdateError", ctx)
+		ctx.Log.Error(err, "Failed to add finalizer", "Runtime", ctx.Runtime)
 		return utils.RequeueIfError(err)
 	}
 	// controllerutil.AddFinalizer(ctx.Runtime, finalizer)
 	currentGeneration := objectMeta.GetGeneration()
-	ctx.Log.Info("RequeueImmediatelyUnlessGenerationChanged", "prevGeneration", prevGeneration,
+	ctx.Log.V(1).Info("RequeueImmediatelyUnlessGenerationChanged", "prevGeneration", prevGeneration,
 		"currentGeneration", currentGeneration)
 
 	return utils.RequeueImmediatelyUnlessGenerationChanged(prevGeneration, currentGeneration)

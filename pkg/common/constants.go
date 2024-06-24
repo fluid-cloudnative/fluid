@@ -1,4 +1,5 @@
 /*
+Copyright 2020 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -208,4 +209,10 @@ const (
 
 const (
 	RuntimeFuseHostPIDKey = "runtime.fluid.io/fuse.hostpid"
+)
+
+const (
+	K8sNodeNameLabelKey = "kubernetes.io/hostname"
+	K8sZoneLabelKey     = "topology.kubernetes.io/zone"
+	K8sRegionLabelKey   = "topology.kubernetes.io/region"
 )

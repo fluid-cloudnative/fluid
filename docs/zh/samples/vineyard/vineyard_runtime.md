@@ -20,6 +20,9 @@ metadata:
   name: vineyard
 spec:
   replicas: 2
+  master:
+    image: registry.aliyuncs.com/vineyard/vineyardd
+    imageTag: v0.22.2
   tieredstore:
     levels:
     - mediumtype: MEM
@@ -106,13 +109,13 @@ vineyard-fuse-9dv4d                    1/1     Running   0               1m20s
 检查 vineyard 客户端配置是否已经挂载到应用 Pod：
 
 ```shell
-$ kubectl exec demo-app -- ls /data/
+$ kubectl exec demo-app -- ls /var/run/vineyard/
 rpc-conf
 vineyard-config.yaml
 ```
 
 ```shell
-$ kubectl exec demo-app -- cat /data/vineyard-config.yaml
+$ kubectl exec demo-app -- cat /var/run/vineyard/vineyard-config.yaml
 Vineyard:
   IPCSocket: vineyard.sock
   RPCEndpoint: vineyard-worker-0.vineyard-worker.default:9600,vineyard-worker-1.vineyard-worker.default:9600
@@ -163,7 +166,8 @@ spec:
         import vineyard
         import numpy as np
         import pandas as pd
-        vineyard.put(pd.DataFrame(np.random.randn(100, 4), columns=list('ABCD')), persist=True, name="test_dataframe")
+        rng = np.random.default_rng(seed=42)
+        vineyard.put(pd.DataFrame(rng.standard_normal((100, 4)), columns=list('ABCD')), persist=True, name="test_dataframe")
         vineyard.put((1, 1.2345, 'xxxxabcd'), persist=True, name="test_basic_data_unit");
         EOF
         python producer.py;

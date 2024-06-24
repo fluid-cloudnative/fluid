@@ -17,29 +17,24 @@ limitations under the License.
 package fuse
 
 import (
+	"strings"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	corev1 "k8s.io/api/core/v1"
 )
 
-func collectAllContainerNames(pod common.FluidObject) ([]string, error) {
-	var allContainerNames []string
-
+func findInjectedSidecars(pod common.FluidObject) (injectedSidecars []corev1.Container, err error) {
+	injectedSidecars = make([]corev1.Container, 0)
 	containers, err := pod.GetContainers()
 	if err != nil {
-		return allContainerNames, err
+		return
 	}
 
-	for _, c := range containers {
-		allContainerNames = append(allContainerNames, c.Name)
+	for _, ctr := range containers {
+		if strings.HasPrefix(ctr.Name, common.FuseContainerName) {
+			injectedSidecars = append(injectedSidecars, ctr)
+		}
 	}
 
-	initContainers, err := pod.GetInitContainers()
-	if err != nil {
-		return allContainerNames, err
-	}
-
-	for _, c := range initContainers {
-		allContainerNames = append(allContainerNames, c.Name)
-	}
-
-	return allContainerNames, nil
+	return
 }

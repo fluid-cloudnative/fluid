@@ -20,15 +20,37 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/transfromer"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transformer"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"
 )
 
-func GenDataProcessValueFile(dataset *datav1alpha1.Dataset, dataProcess *datav1alpha1.DataProcess) (valueFileName string, err error) {
+func GenDataProcessValueFile(client client.Client, dataset *datav1alpha1.Dataset, dataProcess *datav1alpha1.DataProcess) (valueFileName string, err error) {
 	dataProcessValue := GenDataProcessValue(dataset, dataProcess)
+
+	// generate the node affinity by previous operation pod.
+	if dataProcess.Spec.Processor.Job != nil {
+		affinity, err := dataflow.InjectAffinityByRunAfterOp(client, dataProcess.Spec.RunAfter, dataProcess.Namespace, dataProcess.Spec.Processor.Job.PodSpec.Affinity)
+		if err != nil {
+			return "", errors.Wrapf(err, "failed to inject affinity by runAfterOp")
+		}
+		dataProcessValue.DataProcessInfo.JobProcessor.PodSpec.Affinity = affinity
+	} else {
+		affinity, err := dataflow.InjectAffinityByRunAfterOp(client, dataProcess.Spec.RunAfter, dataProcess.Namespace, nil)
+		if err != nil {
+			return "", errors.Wrapf(err, "failed to inject affinity by runAfterOp")
+		}
+		dataProcessValue.DataProcessInfo.ScriptProcessor.Affinity = affinity
+	}
+
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to generate dataProcessValue of DataProcess %s/%s", dataProcess.GetNamespace(), dataProcess.GetName())
+	}
 
 	data, err := yaml.Marshal(dataProcessValue)
 	if err != nil {
@@ -94,7 +116,7 @@ func transformCommonPart(value *DataProcessValue, dataProcess *datav1alpha1.Data
 	value.Name = dataProcess.Name
 	value.DataProcessInfo.Labels = dataProcess.Spec.Processor.PodMetadata.Labels
 	value.DataProcessInfo.Annotations = dataProcess.Spec.Processor.PodMetadata.Annotations
-	value.Owner = transfromer.GenerateOwnerReferenceFromObject(dataProcess)
+	value.Owner = transformer.GenerateOwnerReferenceFromObject(dataProcess)
 	if len(dataProcess.Spec.Processor.ServiceAccountName) != 0 {
 		value.DataProcessInfo.ServiceAccountName = dataProcess.Spec.Processor.ServiceAccountName
 	}
