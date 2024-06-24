@@ -23,9 +23,15 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	PVCStorageAnnotation   = "pvc.fluid.io/resources.requests.storage"
+	DefaultStorageCapacity = "100Pi"
 )
 
 // GetDataset gets the dataset.
@@ -69,6 +75,30 @@ func GetAccessModesOfDataset(client client.Client, name, namespace string) (acce
 
 	return accessModes, err
 
+}
+
+func GetPVCStorageCapacityOfDataset(client client.Client, name, namespace string) (storageCapacity resource.Quantity, err error) {
+	dataset, err := GetDataset(client, name, namespace)
+	if err != nil {
+		return storageCapacity, fmt.Errorf("failed to get dataset %s/%s: %w", namespace, name, err)
+	}
+	annotations := dataset.GetObjectMeta().GetAnnotations()
+	if annotations == nil {
+		storageCapacity = resource.MustParse(DefaultStorageCapacity)
+		return
+	}
+	size := annotations[PVCStorageAnnotation]
+	if size == "" {
+		storageCapacity = resource.MustParse(DefaultStorageCapacity)
+		return
+	}
+
+	storageCapacity, err = resource.ParseQuantity(size)
+	if err != nil {
+		log.Info("failed to parse storage capacity '%s', using default '%s': %v\n", size, DefaultStorageCapacity, err)
+		return resource.MustParse(DefaultStorageCapacity), nil
+	}
+	return
 }
 
 // IsTargetPathUnderFluidNativeMounts checks if targetPath is a subpath under some given native mount point.

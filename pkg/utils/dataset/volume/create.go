@@ -23,7 +23,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 
@@ -41,6 +40,11 @@ func CreatePersistentVolumeForRuntime(client client.Client,
 	mountType string,
 	log logr.Logger) (err error) {
 	accessModes, err := utils.GetAccessModesOfDataset(client, runtime.GetName(), runtime.GetNamespace())
+	if err != nil {
+		return err
+	}
+
+	storageCapacity, err := utils.GetPVCStorageCapacityOfDataset(client, runtime.GetName(), runtime.GetNamespace())
 	if err != nil {
 		return err
 	}
@@ -65,7 +69,7 @@ func CreatePersistentVolumeForRuntime(client client.Client,
 			Spec: corev1.PersistentVolumeSpec{
 				AccessModes: accessModes,
 				Capacity: corev1.ResourceList{
-					corev1.ResourceName(corev1.ResourceStorage): resource.MustParse("100Pi"),
+					corev1.ResourceName(corev1.ResourceStorage): storageCapacity,
 				},
 				StorageClassName: common.FluidStorageClass,
 				PersistentVolumeSource: corev1.PersistentVolumeSource{
@@ -179,6 +183,11 @@ func CreatePersistentVolumeClaimForRuntime(client client.Client,
 		return err
 	}
 
+	storageCapacity, err := utils.GetPVCStorageCapacityOfDataset(client, runtime.GetName(), runtime.GetNamespace())
+	if err != nil {
+		return err
+	}
+
 	found, err := kubeclient.IsPersistentVolumeClaimExist(client, runtime.GetName(), runtime.GetNamespace(), common.ExpectedFluidAnnotations)
 	if err != nil {
 		return err
@@ -204,7 +213,7 @@ func CreatePersistentVolumeClaimForRuntime(client client.Client,
 				AccessModes:      accessModes,
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
-						corev1.ResourceName(corev1.ResourceStorage): resource.MustParse("100Pi"),
+						corev1.ResourceName(corev1.ResourceStorage): storageCapacity,
 					},
 				},
 			},

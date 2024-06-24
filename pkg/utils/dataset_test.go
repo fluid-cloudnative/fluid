@@ -23,6 +23,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -174,6 +175,71 @@ func TestGetAccessModesOfDataset(t *testing.T) {
 	}
 }
 
+func TestGetPVCStorageCapacityOfDataset(t *testing.T) {
+
+	testCases := map[string]struct {
+		name                string
+		getName             string
+		namespace           string
+		storageCapacity     string
+		wantStorageCapacity resource.Quantity
+		notFound            bool
+	}{
+		"test get dataset PVC storage capacity case 1": {
+			name:                "dataset-1",
+			getName:             "dataset-1",
+			notFound:            false,
+			namespace:           "default",
+			storageCapacity:     "",
+			wantStorageCapacity: resource.MustParse("100Pi"),
+		},
+		"test get dataset PVC storage capacity case 2": {
+			name:                "dataset-1",
+			getName:             "dataset-1",
+			notFound:            false,
+			namespace:           "default",
+			storageCapacity:     "1Gi",
+			wantStorageCapacity: resource.MustParse("1Gi"),
+		},
+		"test get dataset PVC storage capacity case 3": {
+			name:                "dataset-1",
+			getName:             "dataset-1-notexist",
+			notFound:            true,
+			namespace:           "default",
+			storageCapacity:     "",
+			wantStorageCapacity: resource.Quantity{},
+		},
+		"test get dataset PVC storage capacity case 4": {
+			name:                "dataset-1",
+			getName:             "dataset-1",
+			notFound:            false,
+			namespace:           "default",
+			storageCapacity:     "formatError",
+			wantStorageCapacity: resource.MustParse("100Pi"),
+		},
+	}
+
+	for k, item := range testCases {
+		dataset := mockDatasetWithPVCStorageCapacity(item.name, item.namespace, item.storageCapacity)
+		s := runtime.NewScheme()
+		s.AddKnownTypes(datav1alpha1.GroupVersion, dataset)
+
+		fakeClient := fake.NewFakeClientWithScheme(s, dataset)
+
+		gotStorageCapacity, err := GetPVCStorageCapacityOfDataset(fakeClient, item.getName, item.namespace)
+
+		if item.notFound {
+			if err == nil {
+				t.Errorf("%s check failure,want err but got nil", k)
+			}
+		} else {
+			if !reflect.DeepEqual(gotStorageCapacity, item.wantStorageCapacity) {
+				t.Errorf("%s check failure, want:%v,got:%v", k, item.wantStorageCapacity, gotStorageCapacity)
+			}
+		}
+	}
+}
+
 func TestIsTargetPathUnderFluidNativeMounts(t *testing.T) {
 	testCases := map[string]struct {
 		targetPath   string
@@ -310,6 +376,17 @@ func mockDatasetWithAccessModel(name, ns string, accessModel []v1.PersistentVolu
 		},
 		Spec: datav1alpha1.DatasetSpec{
 			AccessModes: accessModel,
+		},
+	}
+	return dataset
+}
+
+func mockDatasetWithPVCStorageCapacity(name, ns, storageCapacity string) *datav1alpha1.Dataset {
+	dataset := &datav1alpha1.Dataset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        name,
+			Namespace:   ns,
+			Annotations: map[string]string{"pvc.fluid.io/resources.requests.storage": storageCapacity},
 		},
 	}
 	return dataset
