@@ -66,3 +66,15 @@ func GetSucceedPodForJob(c client.Client, job *v1.Job) (*corev1.Pod, error) {
 	// no succeed job, return nil with no error.
 	return nil, nil
 }
+
+// GetFinishedJobCondition get the finished(succeed or failed) condition of the job
+func GetFinishedJobCondition(job *v1.Job) *v1.JobCondition {
+	// find the job final status condition. if job is resumed, the first condition type is 'Suspended'
+	for _, condition := range job.Status.Conditions {
+		// job is finished.
+		if condition.Type == v1.JobFailed || condition.Type == v1.JobComplete {
+			return &condition
+		}
+	}
+	return nil
+}

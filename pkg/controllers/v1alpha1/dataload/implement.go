@@ -71,8 +71,8 @@ func (r *dataLoadOperation) GetChartsDirectory() string {
 	return utils.GetChartsDirectory() + "/" + cdataload.DataloadChart
 }
 
-func (r *dataLoadOperation) GetOperationType() datav1alpha1.OperationType {
-	return datav1alpha1.DataLoadType
+func (r *dataLoadOperation) GetOperationType() dataoperation.OperationType {
+	return dataoperation.DataLoadType
 }
 
 func (r *dataLoadOperation) UpdateOperationApiStatus(opStatus *datav1alpha1.OperationStatus) error {

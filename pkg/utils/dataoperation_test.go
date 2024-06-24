@@ -55,7 +55,7 @@ func TestTimeleft(t *testing.T) {
 				},
 			},
 			// operation:         dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataLoadType),
-			operation:      dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
+			operation:      dataoperation.BuildMockDataloadOperationReconcilerInterface(dataoperation.DataLoadType, &ttl),
 			validRemaining: true,
 			wantErr:        false,
 		},
@@ -71,7 +71,7 @@ func TestTimeleft(t *testing.T) {
 					},
 				},
 			},
-			operation: dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
+			operation: dataoperation.BuildMockDataloadOperationReconcilerInterface(dataoperation.DataLoadType, &ttl),
 
 			validRemaining: false,
 			wantErr:        false,
@@ -81,7 +81,7 @@ func TestTimeleft(t *testing.T) {
 			dataload: datav1alpha1.DataLoad{
 				Status: datav1alpha1.OperationStatus{},
 			},
-			operation: dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
+			operation: dataoperation.BuildMockDataloadOperationReconcilerInterface(dataoperation.DataLoadType, &ttl),
 
 			validRemaining: false,
 			wantErr:        false,
@@ -101,7 +101,7 @@ func TestTimeleft(t *testing.T) {
 					},
 				},
 			},
-			operation: dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
+			operation: dataoperation.BuildMockDataloadOperationReconcilerInterface(dataoperation.DataLoadType, &ttl),
 
 			validRemaining: false,
 			wantErr:        false,
@@ -123,7 +123,7 @@ func TestGetTTL(t *testing.T) {
 	testcase := []struct {
 		name              string
 		dataload          datav1alpha1.DataLoad
-		dataoperationType datav1alpha1.OperationType
+		dataoperationType dataoperation.OperationType
 		operation         dataoperation.OperationInterface
 		ttl               *int32
 		wantErr           bool
@@ -135,22 +135,22 @@ func TestGetTTL(t *testing.T) {
 					TTLSecondsAfterFinished: &ttl,
 				},
 			},
-			operation: dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
+			operation: dataoperation.BuildMockDataloadOperationReconcilerInterface(dataoperation.DataLoadType, &ttl),
 			ttl:       &ttl,
 			wantErr:   false,
 		},
 		{
 			name:      "no ttl",
 			dataload:  datav1alpha1.DataLoad{},
-			operation: dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataLoadType, nil),
+			operation: dataoperation.BuildMockDataloadOperationReconcilerInterface(dataoperation.DataLoadType, nil),
 			ttl:       nil,
 			wantErr:   false,
 		},
 		{
 			name:              "wrong data operation type",
 			dataload:          datav1alpha1.DataLoad{},
-			dataoperationType: datav1alpha1.DataMigrateType,
-			operation:         dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataMigrateType, nil),
+			dataoperationType: dataoperation.DataMigrateType,
+			operation:         dataoperation.BuildMockDataloadOperationReconcilerInterface(dataoperation.DataMigrateType, nil),
 			ttl:               nil,
 			wantErr:           true,
 		},
@@ -189,7 +189,7 @@ func TestNeedCleanUp(t *testing.T) {
 					},
 				},
 			},
-			operation:   dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
+			operation:   dataoperation.BuildMockDataloadOperationReconcilerInterface(dataoperation.DataLoadType, &ttl),
 			needCleanUp: true,
 		},
 		{
@@ -200,7 +200,7 @@ func TestNeedCleanUp(t *testing.T) {
 				},
 				Status: datav1alpha1.OperationStatus{},
 			},
-			operation:   dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataLoadType, &ttl),
+			operation:   dataoperation.BuildMockDataloadOperationReconcilerInterface(dataoperation.DataLoadType, &ttl),
 			needCleanUp: false,
 		},
 		{
@@ -216,7 +216,7 @@ func TestNeedCleanUp(t *testing.T) {
 					},
 				},
 			},
-			operation:   dataoperation.BuildMockDataloadOperationReconcilerInterface(datav1alpha1.DataLoadType, nil),
+			operation:   dataoperation.BuildMockDataloadOperationReconcilerInterface(dataoperation.DataLoadType, nil),
 			needCleanUp: false,
 		},
 	}

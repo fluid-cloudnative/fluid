@@ -17,7 +17,6 @@ limitations under the License.
 package jindofsx
 
 import (
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 	"github.com/fluid-cloudnative/fluid/pkg/errors"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -29,10 +28,10 @@ func (e *JindoFSxEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequest
 	object := operation.GetOperationObject()
 
 	switch operationType {
-	case datav1alpha1.DataLoadType:
+	case dataoperation.DataLoadType:
 		valueFileName, err = e.generateDataLoadValueFile(ctx, object)
 		return valueFileName, err
-	case datav1alpha1.DataProcessType:
+	case dataoperation.DataProcessType:
 		valueFileName, err = e.generateDataProcessValueFile(ctx, object)
 		return valueFileName, err
 	default:

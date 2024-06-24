@@ -109,9 +109,15 @@ func ShouldInQueue(pod *corev1.Pod) bool {
 		return false
 	}
 
+	// ignore if not done
+	if !utils.InjectSidecarDone(pod.Labels) {
+		log.Info("Serverless inject not finished.", "labels", pod.Labels)
+		return false
+	}
+
 	// ignore if it claims to ignore
 	if utils.AppControllerDisabled(pod.Labels) {
-		log.Info("Calim to make application controller ignore.", "labels", pod.Labels)
+		log.Info("Claim to make application controller ignore.", "labels", pod.Labels)
 		return false
 	}
 

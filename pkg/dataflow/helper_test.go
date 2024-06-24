@@ -2,19 +2,16 @@ package dataflow
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"reflect"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 )
 
 func TestGenerateNodeLabels(t *testing.T) {
 	type args struct {
-		pod  *v1.Pod
-		node *v1.Node
+		job *batchv1.Job
 	}
 	tests := []struct {
 		name    string
@@ -25,14 +22,12 @@ func TestGenerateNodeLabels(t *testing.T) {
 		{
 			name: "default labels",
 			args: args{
-				pod: &v1.Pod{
-					Spec: v1.PodSpec{
-						NodeName: "node01",
-					},
-				},
-				node: &v1.Node{
+				job: &batchv1.Job{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "node01",
+						Name: "jobtest",
+						Annotations: map[string]string{
+							common.AnnotationDataFlowAffinityInject: "true",
+						},
 						Labels: map[string]string{
 							common.K8sNodeNameLabelKey: "node01",
 							common.K8sRegionLabelKey:   "region01",
@@ -71,17 +66,7 @@ func TestGenerateNodeLabels(t *testing.T) {
 		{
 			name: "nil pod",
 			args: args{
-				pod: nil,
-				node: &v1.Node{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "node01",
-						Labels: map[string]string{
-							common.K8sNodeNameLabelKey: "node01",
-							common.K8sRegionLabelKey:   "region01",
-							common.K8sZoneLabelKey:     "zone01",
-						},
-					},
-				},
+				job: nil,
 			},
 			want:    nil,
 			wantErr: false,
@@ -89,50 +74,17 @@ func TestGenerateNodeLabels(t *testing.T) {
 		{
 			name: "customized labels",
 			args: args{
-				pod: &v1.Pod{
-					Spec: v1.PodSpec{
-						NodeName: "node01",
-						Affinity: &v1.Affinity{
-							NodeAffinity: &v1.NodeAffinity{
-								PreferredDuringSchedulingIgnoredDuringExecution: []v1.PreferredSchedulingTerm{
-									{
-										Preference: v1.NodeSelectorTerm{
-											MatchExpressions: []v1.NodeSelectorRequirement{
-												{
-													Key:      "k8s.gpu",
-													Operator: v1.NodeSelectorOpIn,
-													Values:   []string{"true"},
-												},
-											},
-										},
-										Weight: 10,
-									},
-								},
-								RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
-									NodeSelectorTerms: []v1.NodeSelectorTerm{
-										{
-											MatchExpressions: []v1.NodeSelectorRequirement{
-												{
-													Key:      "k8s.rack",
-													Operator: v1.NodeSelectorOpIn,
-													Values:   []string{"rack01"},
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-				node: &v1.Node{
+				job: &batchv1.Job{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "node01",
+						Name: "jobtest",
+						Annotations: map[string]string{
+							common.AnnotationDataFlowAffinityInject: "true",
+						},
 						Labels: map[string]string{
-							common.K8sNodeNameLabelKey: "node01",
-							common.K8sZoneLabelKey:     "zone01",
-							"k8s.rack":                 "rack01",
-							"k8s.gpu":                  "false",
+							common.AnnotationDataFlowAffinityInject: "true",
+							common.K8sNodeNameLabelKey:              "node01",
+							common.K8sZoneLabelKey:                  "zone01",
+							"fluid.io.k8s.rack":                     "rack01",
 						},
 					},
 				},
@@ -153,11 +105,6 @@ func TestGenerateNodeLabels(t *testing.T) {
 									Values:   []string{"zone01"},
 								},
 								{
-									Key:      "k8s.gpu",
-									Operator: v1.NodeSelectorOpIn,
-									Values:   []string{"false"},
-								},
-								{
 									Key:      "k8s.rack",
 									Operator: v1.NodeSelectorOpIn,
 									Values:   []string{"rack01"},
@@ -170,19 +117,9 @@ func TestGenerateNodeLabels(t *testing.T) {
 			wantErr: false,
 		},
 	}
-	testScheme := runtime.NewScheme()
-	_ = v1.AddToScheme(testScheme)
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var c client.Client
-			if tt.args.pod == nil {
-				c = fake.NewFakeClientWithScheme(testScheme, tt.args.node)
-			} else {
-				c = fake.NewFakeClientWithScheme(testScheme, tt.args.node, tt.args.pod)
-			}
-
-			got, err := GenerateNodeAffinity(c, tt.args.pod)
+			got, err := GenerateNodeAffinity(tt.args.job)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GenerateNodeAffinity() error = %v, wantErr %v", err, tt.wantErr)
 				return

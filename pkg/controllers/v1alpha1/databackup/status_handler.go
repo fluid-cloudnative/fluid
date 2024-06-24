@@ -17,8 +17,6 @@
 package databackup
 
 import (
-	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -54,14 +52,7 @@ func (o *OnceHandler) GetOperationStatus(ctx runtime.ReconcileRequestContext, op
 		return
 	}
 
-	// set the node labels in status when job finished
-	if dataflow.Enabled(dataflow.DataflowAffinity) && result.NodeAffinity == nil {
-		// generate the node labels
-		result.NodeAffinity, err = dataflow.GenerateNodeAffinity(ctx.Client, backupPod)
-		if err != nil {
-			return nil, fmt.Errorf("error to generate the node labels: %v", err)
-		}
-	}
+	// TODO: inject nodeaffinity like other data operations when using job instead of pod
 
 	var finishTime time.Time
 	if len(backupPod.Status.Conditions) != 0 {

@@ -71,25 +71,25 @@ func GetPrecedingOperationStatus(client client.Client, opRef *datav1alpha1.Opera
 	}
 
 	switch opRef.Kind {
-	case string(datav1alpha1.DataBackupType):
+	case string(dataoperation.DataBackupType):
 		object, err := GetDataBackup(client, opRef.Name, opRefNamespace)
 		if err != nil {
 			return nil, err
 		}
 		return &object.Status, nil
-	case string(datav1alpha1.DataLoadType):
+	case string(dataoperation.DataLoadType):
 		object, err := GetDataLoad(client, opRef.Name, opRefNamespace)
 		if err != nil {
 			return nil, err
 		}
 		return &object.Status, nil
-	case string(datav1alpha1.DataMigrateType):
+	case string(dataoperation.DataMigrateType):
 		object, err := GetDataMigrate(client, opRef.Name, opRefNamespace)
 		if err != nil {
 			return nil, err
 		}
 		return &object.Status, nil
-	case string(datav1alpha1.DataProcessType):
+	case string(dataoperation.DataProcessType):
 		object, err := GetDataProcess(client, opRef.Name, opRefNamespace)
 		if err != nil {
 			return nil, err

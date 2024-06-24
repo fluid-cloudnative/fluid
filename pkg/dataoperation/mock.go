@@ -25,7 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func BuildMockDataloadOperationReconcilerInterface(expectType datav1alpha1.OperationType, ttlSecondsAfterFinished *int32) (operation OperationInterface) {
+func BuildMockDataloadOperationReconcilerInterface(expectType OperationType, ttlSecondsAfterFinished *int32) (operation OperationInterface) {
 
 	return &mockDataloadOperationReconciler{
 		expectType:              expectType,
@@ -34,7 +34,7 @@ func BuildMockDataloadOperationReconcilerInterface(expectType datav1alpha1.Opera
 }
 
 type mockDataloadOperationReconciler struct {
-	expectType              datav1alpha1.OperationType
+	expectType              OperationType
 	TTLSecondsAfterFinished *int32
 }
 
@@ -52,8 +52,8 @@ func (mockDataloadOperationReconciler) GetChartsDirectory() string {
 }
 
 // GetOperationType implements OperationInterface.
-func (m mockDataloadOperationReconciler) GetOperationType() datav1alpha1.OperationType {
-	return datav1alpha1.DataLoadType
+func (m mockDataloadOperationReconciler) GetOperationType() OperationType {
+	return DataLoadType
 }
 
 // GetReleaseNameSpacedName implements OperationInterface.
@@ -68,7 +68,7 @@ func (mockDataloadOperationReconciler) GetStatusHandler() StatusHandler {
 
 // GetTTL implements OperationInterface.
 func (m mockDataloadOperationReconciler) GetTTL() (ttl *int32, err error) {
-	if m.expectType != datav1alpha1.DataLoadType {
+	if m.expectType != DataLoadType {
 		err = fmt.Errorf("the dataoperation type is %s, not DataloadType", m.expectType)
 	}
 	return m.TTLSecondsAfterFinished, err

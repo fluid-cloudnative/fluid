@@ -17,5 +17,6 @@
 package dataoperation
 
 const (
+	// OperationLabel is used for pod anti affinity.
 	OperationLabel = "fluid.io/operation"
 )
