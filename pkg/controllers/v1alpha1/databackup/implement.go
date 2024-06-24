@@ -108,8 +108,8 @@ func (r *dataBackupOperation) SetTargetDatasetStatusInProgress(dataset *datav1al
 func (r *dataBackupOperation) RemoveTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
 }
 
-func (r *dataBackupOperation) GetOperationType() datav1alpha1.OperationType {
-	return datav1alpha1.DataBackupType
+func (r *dataBackupOperation) GetOperationType() dataoperation.OperationType {
+	return dataoperation.DataBackupType
 }
 
 func (r *dataBackupOperation) GetTargetDataset() (*datav1alpha1.Dataset, error) {

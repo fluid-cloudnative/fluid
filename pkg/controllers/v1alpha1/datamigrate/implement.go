@@ -72,8 +72,8 @@ func (r *dataMigrateOperation) GetChartsDirectory() string {
 	return utils.GetChartsDirectory() + "/" + cdatamigrate.DataMigrateChart
 }
 
-func (r *dataMigrateOperation) GetOperationType() datav1alpha1.OperationType {
-	return datav1alpha1.DataMigrateType
+func (r *dataMigrateOperation) GetOperationType() dataoperation.OperationType {
+	return dataoperation.DataMigrateType
 }
 
 func (r *dataMigrateOperation) UpdateOperationApiStatus(opStatus *datav1alpha1.OperationStatus) error {

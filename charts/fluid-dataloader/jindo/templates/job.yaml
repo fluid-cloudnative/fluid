@@ -44,6 +44,7 @@ spec:
         role: dataload-pod
         app: jindofs
         targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
+        {{- include "library.fluid.labels" . | nindent 8 }}
     spec:
       {{- if .Values.dataloader.schedulerName }}
       schedulerName: {{ .Values.dataloader.schedulerName }}

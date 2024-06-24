@@ -34,7 +34,7 @@ const (
 	// LabelAnnotationManagedByDeprecated is a deprecated label key for LabelAnnotationManagedBy
 	LabelAnnotationManagedByDeprecated = LabelAnnotationPrefix + "wrapped-by"
 
-	// LabelAnnotationManagedBy indicates a pvc that is managed by Fluid
+	// LabelAnnotationManagedBy indicates a resource(like pvc) that is managed by Fluid
 	LabelAnnotationManagedBy = LabelAnnotationPrefix + "managed-by"
 
 	// fluid adminssion webhook inject flag
@@ -48,6 +48,11 @@ const (
 
 	// LabelNodePublishMothod is a pv label that indicates the method nodePuhlishVolume use
 	LabelNodePublishMothod = LabelAnnotationPrefix + "node-publish-method"
+
+	// AnnotationDataFlowAffinityInject is an annotation representing enabled the dataflow affinity injection
+	AnnotationDataFlowAffinityInject = LabelAnnotationPrefix + "dataflow-affinity.inject"
+	// LabelDataFlowAffinityPrefix is a prefix for customized dataflow affinity label name.
+	LabelDataFlowAffinityPrefix = "fluid.io."
 )
 
 var (

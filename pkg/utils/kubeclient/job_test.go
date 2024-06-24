@@ -20,6 +20,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"reflect"
 	"testing"
 )
 
@@ -66,5 +67,78 @@ func TestGetJob(t *testing.T) {
 				t.Errorf("%s check failure, want DataLoad Job name:%s, got DataLoad Job name:%s", k, item.wantName, gotJob.Name)
 			}
 		}
+	}
+}
+
+func TestGetFinishedJobCondition(t *testing.T) {
+	type args struct {
+		job *batchv1.Job
+	}
+	tests := []struct {
+		name string
+		args args
+		want *batchv1.JobCondition
+	}{
+		{
+			name: "nil conditions",
+			args: args{
+				job: &batchv1.Job{
+					Status: batchv1.JobStatus{
+						Conditions: nil,
+					},
+				},
+			},
+			want: nil,
+		},
+		{
+			name: "JobComplete",
+			args: args{
+				job: &batchv1.Job{
+					Status: batchv1.JobStatus{
+						Conditions: []batchv1.JobCondition{
+							{
+								Type: batchv1.JobSuspended,
+							},
+
+							{
+								Type: batchv1.JobComplete,
+							},
+						},
+					},
+				},
+			},
+			want: &batchv1.JobCondition{
+				Type: batchv1.JobComplete,
+			},
+		},
+
+		{
+			name: "JobFailed",
+			args: args{
+				job: &batchv1.Job{
+					Status: batchv1.JobStatus{
+						Conditions: []batchv1.JobCondition{
+							{
+								Type: batchv1.JobSuspended,
+							},
+
+							{
+								Type: batchv1.JobFailed,
+							},
+						},
+					},
+				},
+			},
+			want: &batchv1.JobCondition{
+				Type: batchv1.JobFailed,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetFinishedJobCondition(tt.args.job); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetFinishedJobCondition() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

@@ -20,7 +20,6 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/feature"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,11 +31,10 @@ import (
 func TestInjectAffinityByRunAfterOp(t *testing.T) {
 
 	type args struct {
-		runAfter                *datav1alpha1.OperationRef
-		opNamespace             string
-		objects                 []runtime.Object
-		currentAffinity         *v1.Affinity
-		dataflowAffinityEnabled bool
+		runAfter        *datav1alpha1.OperationRef
+		opNamespace     string
+		objects         []runtime.Object
+		currentAffinity *v1.Affinity
 	}
 	tests := []struct {
 		name    string
@@ -60,9 +58,8 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 						Status: datav1alpha1.OperationStatus{},
 					},
 				},
-				opNamespace:             "default",
-				currentAffinity:         nil,
-				dataflowAffinityEnabled: true,
+				opNamespace:     "default",
+				currentAffinity: nil,
 			},
 			want:    nil,
 			wantErr: false,
@@ -86,9 +83,8 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 						Status: datav1alpha1.OperationStatus{},
 					},
 				},
-				opNamespace:             "default",
-				currentAffinity:         nil,
-				dataflowAffinityEnabled: true,
+				opNamespace:     "default",
+				currentAffinity: nil,
 			},
 			want:    nil,
 			wantErr: true,
@@ -128,9 +124,8 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 						},
 					},
 				},
-				opNamespace:             "default",
-				currentAffinity:         nil,
-				dataflowAffinityEnabled: true,
+				opNamespace:     "default",
+				currentAffinity: nil,
 			},
 			want: &v1.Affinity{
 				NodeAffinity: &v1.NodeAffinity{
@@ -191,9 +186,8 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 						},
 					},
 				},
-				opNamespace:             "default",
-				currentAffinity:         nil,
-				dataflowAffinityEnabled: true,
+				opNamespace:     "default",
+				currentAffinity: nil,
 			},
 			want: &v1.Affinity{
 				NodeAffinity: &v1.NodeAffinity{
@@ -266,9 +260,8 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 						},
 					},
 				},
-				opNamespace:             "default",
-				currentAffinity:         nil,
-				dataflowAffinityEnabled: true,
+				opNamespace:     "default",
+				currentAffinity: nil,
 			},
 			want: &v1.Affinity{
 				NodeAffinity: &v1.NodeAffinity{
@@ -290,65 +283,6 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 			},
 			wantErr: false,
 		},
-		{
-			name: "not enabled, prefer policy, use zone",
-			args: args{
-				runAfter: &datav1alpha1.OperationRef{
-					Kind:      "DataLoad",
-					Name:      "test-op",
-					Namespace: "test",
-					AffinityStrategy: datav1alpha1.AffinityStrategy{
-						Policy: datav1alpha1.PreferAffinityStrategy,
-						Prefers: []datav1alpha1.Prefer{
-							{
-								Weight: 10,
-								Name:   common.K8sZoneLabelKey,
-							},
-						},
-					},
-				},
-				objects: []runtime.Object{
-					&datav1alpha1.DataLoad{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "test-op",
-							Namespace: "test",
-						},
-						Status: datav1alpha1.OperationStatus{
-							NodeAffinity: &v1.NodeAffinity{
-								RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
-									NodeSelectorTerms: []v1.NodeSelectorTerm{
-										{
-											MatchExpressions: []v1.NodeSelectorRequirement{
-												{
-													Key:      common.K8sNodeNameLabelKey,
-													Operator: v1.NodeSelectorOpIn,
-													Values:   []string{"node01"},
-												},
-												{
-													Key:      common.K8sZoneLabelKey,
-													Operator: v1.NodeSelectorOpIn,
-													Values:   []string{"zone01"},
-												},
-												{
-													Key:      common.K8sRegionLabelKey,
-													Operator: v1.NodeSelectorOpIn,
-													Values:   []string{"region01"},
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-				opNamespace:             "default",
-				currentAffinity:         nil,
-				dataflowAffinityEnabled: false,
-			},
-			want:    nil,
-			wantErr: false,
-		},
 	}
 	testScheme := runtime.NewScheme()
 	_ = v1.AddToScheme(testScheme)
@@ -358,14 +292,6 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := fake.NewFakeClientWithScheme(testScheme, tt.args.objects...)
-
-			err := feature.DefaultMutableFeatureGate.SetFromMap(map[string]bool{
-				string(DataflowAffinity): tt.args.dataflowAffinityEnabled,
-			})
-			if err != nil {
-				t.Errorf("failed to set feature gate: %v", err)
-				return
-			}
 
 			got, err := InjectAffinityByRunAfterOp(c, tt.args.runAfter, tt.args.opNamespace, tt.args.currentAffinity)
 			if (err != nil) != tt.wantErr {

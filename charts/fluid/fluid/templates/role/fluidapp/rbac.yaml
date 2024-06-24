@@ -12,6 +12,25 @@ rules:
       - get
       - watch
       - create
+  {{- if eq (include "fluid.dataflowAffinity.enabled" . ) "true" }}
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - batch
+    resources:
+      - jobs
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+  {{- end }}
   - apiGroups:
       - ""
     resources:

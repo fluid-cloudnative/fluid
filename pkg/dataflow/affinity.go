@@ -28,10 +28,6 @@ import (
 
 // InjectAffinityByRunAfterOp inject the affinity based on preceding operation
 func InjectAffinityByRunAfterOp(c client.Client, runAfter *datav1alpha1.OperationRef, opNamespace string, currentAffinity *v1.Affinity) (*v1.Affinity, error) {
-	if !Enabled(DataflowAffinity) {
-		return currentAffinity, nil
-	}
-
 	// no previous operation or use default affinity strategy, no need to generate node affinity
 	if runAfter == nil || runAfter.AffinityStrategy.Policy == datav1alpha1.DefaultAffinityStrategy {
 		return currentAffinity, nil
@@ -44,6 +40,10 @@ func InjectAffinityByRunAfterOp(c client.Client, runAfter *datav1alpha1.Operatio
 	precedingOpStatus, err := utils.GetPrecedingOperationStatus(c, runAfter, precedingOpNamespace)
 	if err != nil {
 		return currentAffinity, err
+	}
+
+	if precedingOpStatus.NodeAffinity == nil {
+		return currentAffinity, nil
 	}
 
 	// require policy

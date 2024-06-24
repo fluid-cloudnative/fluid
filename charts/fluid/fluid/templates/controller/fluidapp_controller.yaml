@@ -48,6 +48,7 @@ spec:
           - --pprof-addr=:6060
           - --enable-leader-election
           - --leader-election-namespace={{ include "fluid.namespace" . }}
+          - --feature-gates={{ .Values.fluidapp.featureGates }}
         env:
         {{- if .Values.workdir }}
           - name: FLUID_WORKDIR

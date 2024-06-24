@@ -34,6 +34,7 @@ spec:
         role: dataprocess-pod
         app: fluid-dataprocess
         targetDataset: {{ required "targetDataset should be set" .Values.dataProcess.targetDataset }}
+        {{- include "library.fluid.labels" . | nindent 8 }}
         {{- if .Values.dataProcess.labels }}
         {{ toYaml .Values.dataProcess.labels | nindent 8 }}
         {{- end }}
