@@ -63,6 +63,7 @@ require (
 	github.com/go-logr/logr v1.4.1
 	github.com/golang/glog v1.2.1
 	github.com/golang/mock v1.6.0
+	github.com/google/go-cmp v0.6.0
 	github.com/kubernetes-csi/drivers v1.0.2
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.33.1
@@ -81,7 +82,7 @@ require (
 	k8s.io/apimachinery v0.26.15
 	k8s.io/client-go v0.26.15
 	k8s.io/component-base v0.26.15
-	k8s.io/klog/v2 v2.120.1
+	k8s.io/klog/v2 v2.130.1
 	k8s.io/kube-openapi v0.0.0-20221012153701-172d655c2280
 	k8s.io/kubernetes v1.26.15
 	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448
@@ -106,7 +107,6 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
-	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/google/pprof v0.0.0-20240424215950-a892ee059fd6 // indirect
 	github.com/google/uuid v1.6.0 // indirect
