@@ -88,10 +88,6 @@ func (a *FluidMutatingHandler) Handle(ctx context.Context, req admission.Request
 		setupLog.Info("skip mutating the pod because injection is disabled", "Pod", pod.Name, "Namespace", pod.Namespace)
 		return admission.Allowed("skip mutating the pod because injection is disabled")
 	}
-	if utils.IsPodManagedByFluid(pod) {
-		setupLog.Info("skip mutating the pod because it's fluid Pods", "Pod", pod.Name, "Namespace", pod.Namespace)
-		return admission.Allowed("skip mutating the pod because it's fluid Pods")
-	}
 	if common.CheckExpectValue(pod.Labels, common.InjectSidecarDone, common.True) {
 		setupLog.Info("skip mutating the pod because injection is done", "Pod", pod.Name, "Namespace", pod.Namespace)
 		return admission.Allowed("skip mutating the pod because injection is done")
