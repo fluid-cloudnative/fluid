@@ -143,7 +143,7 @@ func (e *JindoCacheEngine) transform(runtime *datav1alpha1.JindoRuntime) (value 
 			Master:            e.transformMasterMountPath(metaPath, mediumType, volumeType),
 			WorkersAndClients: e.transformWorkerMountPath(originPath, quotas, e.getMediumTypeFromVolumeSource(string(mediumType), runtime.Spec.TieredStore.Levels), volumeType),
 		},
-		Owner: transfromer.GenerateOwnerReferenceFromObject(runtime),
+		Owner: transformer.GenerateOwnerReferenceFromObject(runtime),
 		RuntimeIdentity: common.RuntimeIdentity{
 			Namespace: e.namespace,
 			Name:      e.name,
