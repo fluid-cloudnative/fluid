@@ -90,4 +90,5 @@ func (p *FuseSidecar) labelInjectionDone(pod *corev1.Pod) {
 		pod.ObjectMeta.Labels = map[string]string{}
 	}
 	pod.ObjectMeta.Labels[common.InjectSidecarDone] = common.True
+	pod.ObjectMeta.Labels[common.LabelAnnotationManagedBy] = common.Fluid
 }
