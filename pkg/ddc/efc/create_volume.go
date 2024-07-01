@@ -26,7 +26,6 @@ import (
 	volumehelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -82,6 +81,11 @@ func (e *EFCEngine) createPersistentVolumeForRuntime(runtime base.RuntimeInfoInt
 	if err != nil {
 		return err
 	}
+	
+	storageCapacity, err := utils.GetPVCStorageCapacityOfDataset(e.Client, runtime.GetName(), runtime.GetNamespace())
+	if err != nil {
+		return err
+	}
 
 	pvName := runtime.GetPersistentVolumeName()
 
@@ -103,8 +107,9 @@ func (e *EFCEngine) createPersistentVolumeForRuntime(runtime base.RuntimeInfoInt
 			Spec: corev1.PersistentVolumeSpec{
 				AccessModes: accessModes,
 				Capacity: corev1.ResourceList{
-					corev1.ResourceName(corev1.ResourceStorage): resource.MustParse("100Pi"),
+					corev1.ResourceName(corev1.ResourceStorage): storageCapacity,
 				},
+
 				StorageClassName: common.FluidStorageClass,
 				PersistentVolumeSource: corev1.PersistentVolumeSource{
 					CSI: &corev1.CSIPersistentVolumeSource{
