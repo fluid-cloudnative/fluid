@@ -20,9 +20,15 @@ See [Install Docker](https://docs.docker.com/engine/install/) for more informati
 ### Get Source Code
 
 ```shell
-$ mkdir -p $GOPATH/src/github.com/fluid-cloudnative/
-$ cd $GOPATH/src/github.com/fluid-cloudnative
+$ export GOPATH=$(go env GOPATH)
+
+$ mkdir $GOPATH/src/github.com/fluid-cloudnative
+
+$ cd $GOPATH/src/github.com/fluid-cloudnative 
+
 $ git clone https://github.com/fluid-cloudnative/fluid.git
+
+$ cd fluid
 ```
 
 > **NOTE**: In this document, we build, run and debug under non-module environment. 
