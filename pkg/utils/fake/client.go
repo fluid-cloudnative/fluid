@@ -25,7 +25,15 @@ import (
 // NewFakeClientWithScheme is to fix the issue by wrappering it:
 // fake.NewFakeClientWithScheme is deprecated: Please use NewClientBuilder instead.  (staticcheck)
 func NewFakeClientWithScheme(clientScheme *runtime.Scheme, initObjs ...runtime.Object) client.Client {
-	return fake.NewClientBuilder().WithScheme(clientScheme).WithRuntimeObjects(initObjs...).Build()
+	var clientObjs []client.Object
+	for _, obj := range initObjs {
+		clientObj, ok := obj.(client.Object)
+		if ok {
+			clientObjs = append(clientObjs, clientObj)
+		}
+	}
+
+	return fake.NewClientBuilder().WithScheme(clientScheme).WithRuntimeObjects(initObjs...).WithStatusSubresource(clientObjs...).Build()
 }
 
 // NewFakeClient is to fix the issue by wrappering it:

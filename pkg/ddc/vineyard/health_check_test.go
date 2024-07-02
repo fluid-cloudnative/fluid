@@ -26,7 +26,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
-	utilpointer "k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func TestCheckRuntimeHealthy(t *testing.T) {
@@ -52,7 +52,7 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 				CurrentReplicas: 1,
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32(1),
+				Replicas: ptr.To[int32](1),
 			},
 		},
 	}
@@ -368,7 +368,7 @@ func TestCheckWorkersHealthy(t *testing.T) {
 				CurrentReplicas: 1,
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32(2),
+				Replicas: ptr.To[int32](2),
 			},
 		},
 		{
@@ -382,7 +382,7 @@ func TestCheckWorkersHealthy(t *testing.T) {
 				CurrentReplicas: 1,
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32(1),
+				Replicas: ptr.To[int32](1),
 			},
 		},
 	}

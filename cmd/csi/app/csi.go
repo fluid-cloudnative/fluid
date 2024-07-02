@@ -24,6 +24,7 @@ import (
 	"net/http"
 	"net/http/pprof"
 	"os"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"time"
 
 	"github.com/fluid-cloudnative/fluid"
@@ -101,10 +102,12 @@ func handle() {
 		newPprofServer(pprofAddr)
 	}
 
+	// the default webserver port is 9443, no need to set.
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:             scheme,
-		MetricsBindAddress: metricsAddr,
-		Port:               9443,
+		Scheme: scheme,
+		Metrics: metricsserver.Options{
+			BindAddress: metricsAddr,
+		},
 	})
 
 	if err != nil {

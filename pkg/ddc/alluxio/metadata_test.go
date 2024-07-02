@@ -33,7 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
-	utilpointer "k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func TestSyncMetadata(t *testing.T) {
@@ -121,7 +121,7 @@ func TestSyncMetadata(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32(2),
+				Replicas: ptr.To[int32](2),
 			},
 			Status: appsv1.StatefulSetStatus{
 				Replicas:      3,
@@ -134,7 +134,7 @@ func TestSyncMetadata(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32(2),
+				Replicas: ptr.To[int32](2),
 			},
 			Status: appsv1.StatefulSetStatus{
 				Replicas:      3,
@@ -147,7 +147,7 @@ func TestSyncMetadata(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32(2),
+				Replicas: ptr.To[int32](2),
 			},
 			Status: appsv1.StatefulSetStatus{
 				Replicas:      3,
@@ -417,7 +417,7 @@ func TestShouldSyncMetadata(t *testing.T) {
 			Spec: datav1alpha1.AlluxioRuntimeSpec{
 				RuntimeManagement: datav1alpha1.RuntimeManagement{
 					MetadataSyncPolicy: datav1alpha1.MetadataSyncPolicy{
-						AutoSync: utilpointer.Bool(true),
+						AutoSync: ptr.To(true),
 					},
 				},
 			},
@@ -430,7 +430,7 @@ func TestShouldSyncMetadata(t *testing.T) {
 			Spec: datav1alpha1.AlluxioRuntimeSpec{
 				RuntimeManagement: datav1alpha1.RuntimeManagement{
 					MetadataSyncPolicy: datav1alpha1.MetadataSyncPolicy{
-						AutoSync: utilpointer.Bool(false),
+						AutoSync: ptr.To(false),
 					},
 				},
 			},

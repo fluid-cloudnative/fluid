@@ -208,7 +208,7 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 	// loop.
 	pollStartTime := time.Now()
 	for i := 1; ; i++ {
-		if err := wait.Poll(1*time.Second, 30*time.Second, func() (done bool, err error) {
+		if err := wait.PollUntilContextTimeout(context.Background(), 1*time.Second, 30*time.Second, true, func(ctx context.Context) (done bool, err error) {
 			node, err := kubeclient.GetNode(client, nodeName)
 			if err != nil {
 				return false, fmt.Errorf("failed to get node: %w", err)
@@ -218,7 +218,7 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 			break
 		}
 		// if timeout, retry infinitely
-		if err == wait.ErrWaitTimeout {
+		if wait.Interrupted(err) {
 			log.Error(err, fmt.Sprintf("client cache can't catch up with api-server after %v secs", i*30), "nodeName", nodeName)
 			continue
 		}

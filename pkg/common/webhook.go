@@ -35,5 +35,5 @@ const (
 type AdmissionHandler interface {
 	admission.Handler
 
-	Setup(client client.Client)
+	Setup(client client.Client, decoder *admission.Decoder)
 }
