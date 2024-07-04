@@ -2,7 +2,7 @@ matrix:
   include:
     - language: go
       go:
-        - "1.21"
+        - "1.21.10"
       os:
         - linux
       go_import_path: github.com/fluid-cloudnative/fluid
