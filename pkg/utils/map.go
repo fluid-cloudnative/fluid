@@ -70,3 +70,10 @@ func IntersectIntegerSets(map1 map[int]bool, map2 map[int]bool) map[int]bool {
 
 	return ret
 }
+
+// SetValueIfKeyAbsent sets value when key is not found in the map.
+func SetValueIfKeyAbsent(m map[string]string, key string, value string) {
+	if _, found := m[key]; !found {
+		m[key] = value
+	}
+}

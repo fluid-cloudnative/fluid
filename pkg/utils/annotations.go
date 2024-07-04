@@ -108,7 +108,7 @@ func FuseSidecarUnprivileged(infos map[string]string) (match bool) {
 }
 
 // FuseSidecarPrivileged decides if the injected fuse sidecar should be privileged, only used when fuse sidecar should be injected
-// - sidecar is privileged only when setting serverless.fluid.io/inject=true without unprivileged.sidecar.fluid.io/inject=true 
+// - sidecar is privileged only when setting serverless.fluid.io/inject=true without unprivileged.sidecar.fluid.io/inject=true
 func FuseSidecarPrivileged(infos map[string]string) (match bool) {
 	return enabled(infos, common.InjectServerless) && !(enabled(infos, common.InjectUnprivilegedFuseSidecar))
 }
