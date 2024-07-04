@@ -31,6 +31,10 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/security"
 )
 
+func setDefaultOptions(options map[string]string, key string, defaultValue string) {
+	utils.SetValueIfKeyAbsent(options, key, defaultValue)
+}
+
 func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, dataset *datav1alpha1.Dataset, value *JuiceFS) (err error) {
 	if len(dataset.Spec.Mounts) <= 0 {
 		return errors.New("do not assign mount point")
@@ -345,18 +349,17 @@ func (j *JuiceFSEngine) genFuseMount(value *JuiceFS, optionMap map[string]string
 	}
 	if value.Edition == CommunityEdition {
 		if readonly {
-			optionMap["attr-cache"] = "7200"
-			optionMap["entry-cache"] = "7200"
+			setDefaultOptions(optionMap, "attr-cache", "7200")
+			setDefaultOptions(optionMap, "entry-cache", "7200")
 		}
 
 		// set metrics port
-		if _, ok := optionMap["metrics"]; !ok {
-			metricsPort := DefaultMetricsPort
-			if value.Fuse.MetricsPort != nil {
-				metricsPort = *value.Fuse.MetricsPort
-			}
-			optionMap["metrics"] = fmt.Sprintf("0.0.0.0:%d", metricsPort)
+		metricsPort := DefaultMetricsPort
+		if value.Fuse.MetricsPort != nil {
+			metricsPort = *value.Fuse.MetricsPort
 		}
+		setDefaultOptions(optionMap, "metrics", fmt.Sprintf("0.0.0.0:%d", metricsPort))
+
 		mountArgs = []string{
 			common.JuiceFSCeMountPath,
 			value.Source,
@@ -366,21 +369,17 @@ func (j *JuiceFSEngine) genFuseMount(value *JuiceFS, optionMap map[string]string
 		}
 	} else {
 		if readonly {
-			optionMap["attrcacheto"] = "7200"
-			optionMap["entrycacheto"] = "7200"
+			setDefaultOptions(optionMap, "attrcacheto", "7200")
+			setDefaultOptions(optionMap, "entrycacheto", "7200")
 		}
+		// Avoid setDefaultOptions because foreground and no-update are REQUIRED options.
 		optionMap["foreground"] = ""
-		// do not update config again
-		optionMap["no-update"] = ""
+		optionMap["no-update"] = "" // do not update config again
 
-		// start independent cache cluster, refer to [juicefs cache sharing](https://juicefs.com/docs/cloud/cache/#client_cache_sharing)
+		// start independent cache cluster, refer to [juicefs distributed cache](https://juicefs.com/docs/cloud/guide/distributed-cache#architecture)
 		// fuse and worker use the same cache-group, fuse use no-sharing
-		cacheGroup := fmt.Sprintf("%s-%s", j.namespace, value.FullnameOverride)
-		if _, ok := optionMap["cache-group"]; ok {
-			cacheGroup = optionMap["cache-group"]
-		}
-		optionMap["cache-group"] = cacheGroup
-		optionMap["no-sharing"] = ""
+		setDefaultOptions(optionMap, "cache-group", fmt.Sprintf("%s-%s", j.namespace, value.FullnameOverride))
+		setDefaultOptions(optionMap, "no-sharing", "")
 
 		mountArgs = []string{
 			common.JuiceFSMountPath,
