@@ -605,6 +605,7 @@ func useSymlink(req *csi.NodePublishVolumeRequest) bool {
 }
 
 // isLikelyNeedUnmount checks if path is likely a mount point that needs to be unmount.
+// NOTE: isLikelyNeedUnmount relies on the result of mounter.IsLikelyNotMountPoint so it may not properly detect bind mounts in Linux.
 func isLikelyNeedUnmount(mounter mount.Interface, path string) (needUnmount bool, err error) {
 	notMount, err := mounter.IsLikelyNotMountPoint(path)
 	if err != nil {
