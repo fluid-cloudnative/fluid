@@ -215,23 +215,13 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 	// umount until it's not mounted.
 	mounter := mount.New("")
 	for {
-		notMount, err := mounter.IsLikelyNotMountPoint(targetPath)
-		if os.IsNotExist(err) {
-			glog.V(3).Infof("NodeUnpublishVolume: targetPath %s has been cleaned up, so it doesn't need to be unmounted", targetPath)
-			break
-		}
+		needUnmount, err := isLikelyNeedUnmount(mounter, targetPath)
 		if err != nil {
-			if !mount.IsCorruptedMnt(err) {
-				// stat targetPath with unexpected error
-				glog.Errorf("NodeUnpublishVolume: stat targetPath %s with error: %v", targetPath, err)
-				return nil, status.Errorf(codes.Internal, "NodeUnpublishVolume: stat targetPath %s: %v", targetPath, err)
-			} else {
-				// targetPath is corrupted
-				glog.V(3).Infof("NodeUnpublishVolume: detected corrupted mountpoint on path %s with error %v", targetPath, err)
-			}
+			glog.Errorf("NodeUnpublishVolume: fail to check if targetPath %s needs unmount: %v", targetPath, err)
+			return nil, status.Errorf(codes.Internal, "NodeUnpublishVolume: fail to check if targetPath %s needs unmount: %v", targetPath, err)
 		}
 
-		if notMount {
+		if !needUnmount {
 			glog.V(3).Infof("NodeUnpublishVolume: umount %s success", targetPath)
 			break
 		}
@@ -612,4 +602,30 @@ func (ns *nodeServer) prepareSessMgr(workDir string) error {
 // useSymlink for nodePublishVolume if enviroment varible has been set or pv has attribute
 func useSymlink(req *csi.NodePublishVolumeRequest) bool {
 	return os.Getenv("NODEPUBLISH_METHOD") == common.NodePublishMethodSymlink || req.GetVolumeContext()[common.NodePublishMethod] == common.NodePublishMethodSymlink
+}
+
+// isLikelyNeedUnmount checks if path is likely a mount point that needs to be unmount.
+func isLikelyNeedUnmount(mounter mount.Interface, path string) (needUnmount bool, err error) {
+	notMount, err := mounter.IsLikelyNotMountPoint(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			glog.V(3).Infof("NodeUnpublishVolume: targetPath %s has been cleaned up, so it doesn't need to be unmounted", path)
+			return false, nil
+		}
+
+		if mount.IsCorruptedMnt(err) {
+			// A corrupted path needs unmount
+			glog.V(3).Infof("NodeUnpublishVolume: detected corrupted mountpoint on path %s with error %v", path, err)
+			return true, nil
+		}
+
+		// unexpected errors
+		return false, err
+	}
+
+	if !notMount {
+		return true, nil
+	}
+
+	return false, nil
 }
