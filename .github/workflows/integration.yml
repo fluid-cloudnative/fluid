@@ -49,16 +49,17 @@ jobs:
         env:
           IMG_REPO: fluidcloudnative
         run: |
-          ./.github/scripts/build-all-images.sh
+          echo ">>> System disk usage before build fluid images"
+          df -h
+          ./.github/scripts/build-all-images.sh 
 
       - name: Deploy fluid to Kind cluster
         run: |
           ./.github/scripts/deploy-fluid-to-kind.sh
 
-      - name: Check fluid control plane
-        timeout-minutes: 3
+      - name: Fluid basic e2e tests
+        timeout-minutes: 10
         run: |
-          while true; do
-            kubectl describe pod -n fluid-system
-            sleep 10
-          done
+          ./.github/scripts/gha-e2e.sh
+
+          
