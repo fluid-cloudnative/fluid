@@ -118,6 +118,9 @@ func (e *JindoCacheEngine) transform(runtime *datav1alpha1.JindoRuntime) (value 
 	}
 
 	value = &Jindo{
+		// TODO: Handle cases that FullnameOverride is too long (> 63 chars)
+		// TODO: refactor names of jindoruntime and make it aligned with other runtimes
+		FullnameOverride:    fmt.Sprintf("%s-%s", e.name, common.JindoChartName),
 		Image:               smartdataConfig.image,
 		ImageTag:            smartdataConfig.imageTag,
 		ImagePullPolicy:     smartdataConfig.imagePullPolicy,

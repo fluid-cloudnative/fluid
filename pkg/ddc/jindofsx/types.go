@@ -22,6 +22,7 @@ import (
 )
 
 type Jindo struct {
+	FullnameOverride    string                 `json:"fullnameOverride"`
 	Image               string                 `json:"image"`
 	ImageTag            string                 `json:"imageTag"`
 	ImagePullPolicy     string                 `json:"imagePullPolicy"`
