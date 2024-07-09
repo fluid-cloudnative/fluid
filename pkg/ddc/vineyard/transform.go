@@ -40,6 +40,7 @@ func (e *VineyardEngine) transform(runtime *datav1alpha1.VineyardRuntime) (value
 	value = &Vineyard{
 		Owner: transformer.GenerateOwnerReferenceFromObject(runtime),
 	}
+	// TODO: Handle cases that FullnameOverride is too long (> 63 chars)
 	value.FullnameOverride = e.name
 
 	value.TieredStore, err = e.transformTieredStore(runtime)

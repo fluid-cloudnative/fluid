@@ -46,6 +46,7 @@ func (t *ThinEngine) transform(runtime *datav1alpha1.ThinRuntime, profile *datav
 		},
 	}
 
+	// TODO: Handle cases that FullnameOverride is too long (> 63 chars)
 	value.FullnameOverride = t.name
 	value.Owner = transformer.GenerateOwnerReferenceFromObject(runtime)
 	toRuntimeSetConfig, err := t.toRuntimeSetConfig(nil, nil)
