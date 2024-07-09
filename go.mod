@@ -55,7 +55,7 @@ replace k8s.io/sample-cli-plugin => k8s.io/sample-cli-plugin v0.26.15
 replace k8s.io/sample-controller => k8s.io/sample-controller v0.26.15
 
 require (
-	github.com/agiledragon/gomonkey/v2 v2.11.0
+	github.com/agiledragon/gomonkey/v2 v2.12.0
 	github.com/brahma-adshonor/gohook v1.1.9
 	github.com/container-storage-interface/spec v1.7.0
 	github.com/docker/go-units v0.5.0

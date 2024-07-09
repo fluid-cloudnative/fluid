@@ -1,4 +1,4 @@
-# github.com/agiledragon/gomonkey/v2 v2.11.0
+# github.com/agiledragon/gomonkey/v2 v2.12.0
 ## explicit; go 1.14
 github.com/agiledragon/gomonkey/v2
 github.com/agiledragon/gomonkey/v2/creflect
