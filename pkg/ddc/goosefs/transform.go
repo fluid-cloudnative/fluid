@@ -44,6 +44,7 @@ func (e *GooseFSEngine) transform(runtime *datav1alpha1.GooseFSRuntime) (value *
 
 	value = &GooseFS{}
 
+	// TODO: Handle cases that FullnameOverride is too long (> 63 chars)
 	value.FullnameOverride = e.name
 
 	// 1.transform the common part

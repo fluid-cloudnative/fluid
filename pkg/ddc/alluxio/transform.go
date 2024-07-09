@@ -51,6 +51,7 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 		Owner: transformer.GenerateOwnerReferenceFromObject(runtime),
 	}
 
+	// TODO: Handle cases that FullnameOverride is too long (> 63 chars)
 	value.FullnameOverride = e.name
 
 	// 1.transform the common part

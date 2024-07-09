@@ -51,6 +51,7 @@ func (j *JuiceFSEngine) transform(runtime *datav1alpha1.JuiceFSRuntime) (value *
 		},
 	}
 
+	// TODO: Handle cases that FullnameOverride is too long (> 63 chars)
 	value.FullnameOverride = j.name
 	value.Owner = transformer.GenerateOwnerReferenceFromObject(runtime)
 
