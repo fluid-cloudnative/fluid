@@ -108,8 +108,3 @@ Fix worker's annotations for pod spec overwrites master's annotations
 1.0.2
 Delete runtime's fsGroup
 Mount ufs volumes according to dataset's accessModes
-
-1.0.3
-Fix random read cache block error problem with small probability
-Support write cache to different node with one iostream
-Support rdma network
