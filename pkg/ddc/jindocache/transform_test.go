@@ -131,7 +131,7 @@ func TestParseSmartDataImage(t *testing.T) {
 					}},
 				}},
 			jindoValue:            &Jindo{},
-			expect:                "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:6.4.0",
+			expect:                "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:6.2.0",
 			expectImagePullPolicy: "Always",
 			expectDnsServer:       "1.1.1.1",
 		},

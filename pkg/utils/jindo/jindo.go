@@ -29,7 +29,7 @@ const (
 
 	defaultJindofsxRuntimeImage = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:4.6.8"
 
-	defaultJindoCacheRuntimeImage = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:6.4.0"
+	defaultJindoCacheRuntimeImage = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:6.2.0"
 )
 
 // GetDefaultEngineImpl gets the runtime type for Jindo
