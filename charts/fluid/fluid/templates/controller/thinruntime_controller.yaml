@@ -40,7 +40,7 @@ spec:
       {{- end }}
       #hostNetwork: true
       containers:
-        - image: "{{ .Values.runtime.thin.controller.image }}"
+        - image: "{{ .Values.runtime.thin.controller.repo }}/{{ .Values.runtime.thin.controller.image }}:{{ .Values.runtime.thin.controller.tag }}"
           name: manager
           args:
             - --development=false

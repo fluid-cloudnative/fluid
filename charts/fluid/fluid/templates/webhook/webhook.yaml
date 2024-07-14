@@ -26,7 +26,7 @@ spec:
       {{- end }}
       serviceAccountName: fluid-webhook
       containers:
-      - image: {{ .Values.webhook.image | quote }}
+      - image: "{{ .Values.webhook.repo }}/{{ .Values.webhook.image }}:{{ .Values.webhook.tag }}"
         name: manager
         command: ["fluid-webhook", "start"]
         args:

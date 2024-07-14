@@ -43,7 +43,7 @@ spec:
 {{ toYaml .Values.runtime.vineyard.tolerations | indent 6 }}
       {{- end }}
       containers:
-      - image: {{ .Values.runtime.vineyard.controller.image | quote }}
+      - image: "{{ .Values.runtime.vineyard.controller.repo }}/{{ .Values.runtime.vineyard.controller.image }}:{{ .Values.runtime.vineyard.controller.tag }}"
         name: manager
         command: ["vineyardruntime-controller", "start"]
         args:
