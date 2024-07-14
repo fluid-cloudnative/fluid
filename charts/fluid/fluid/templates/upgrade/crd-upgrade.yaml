@@ -18,7 +18,7 @@ spec:
       serviceAccountName: fluid-crds-upgrade
       containers:
         - name: fluid-crds-upgrade
-          image: {{ .Values.crdUpgrade.image }}
+          image: "{{ .Values.crdUpgrade.repo }}/{{ .Values.crdUpgrade.image }}:{{ .Values.crdUpgrade.tag }}"
           command: ["bash", "/fluid/upgrade-crds.sh"]
       restartPolicy: OnFailure
 ---

@@ -40,7 +40,7 @@ spec:
                 - virtual-kubelet
       containers:
       - name: node-driver-registrar
-        image: "{{ .Values.csi.registrar.image }}"
+        image: "{{ .Values.csi.registrar.repo }}/{{ .Values.csi.registrar.image }}:{{ .Values.csi.registrar.tag }}"
         args:
           - --v=5
           - --csi-address={{ .Values.csi.kubelet.rootDir }}/csi-plugins/fuse.csi.fluid.io/csi.sock
@@ -63,7 +63,7 @@ spec:
           capabilities:
             add: ["SYS_ADMIN"]
           allowPrivilegeEscalation: true
-        image: "{{ .Values.csi.plugins.image }}"
+        image: "{{ .Values.csi.plugins.repo }}/{{ .Values.csi.plugins.image }}:{{ .Values.csi.plugins.tag }}"
         command: ["/usr/local/bin/entrypoint.sh"]
         args:
           - "--nodeid=$(NODE_ID)"

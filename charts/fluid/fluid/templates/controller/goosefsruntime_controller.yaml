@@ -44,7 +44,7 @@ spec:
       {{- end }}
       #hostNetwork: true
       containers:
-      - image: "{{ .Values.runtime.goosefs.controller.image }}"
+      - image: "{{ .Values.runtime.goosefs.controller.repo }}/{{ .Values.runtime.goosefs.controller.image }}:{{ .Values.runtime.goosefs.controller.tag }}"
         imagePullPolicy: Always
         name: manager
         command: ["goosefsruntime-controller", "start"]
