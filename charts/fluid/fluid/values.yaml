@@ -8,6 +8,7 @@ workdir: /tmp
 # For now, only "configmap" and "secret" are supported.
 helmDriver: configmap
 
+# Default image repository and tag
 repo: &defaultRepo fluidcloudnative
 tag: &defaultTag v1.0.2-ca7a430
 
@@ -15,7 +16,9 @@ crdUpgrade:
   enabled: true
   # This sets the time-to-live (TTL) for crd-upgrade jobs. Default is 259200 seconds (3 days).
   ttlSecondsAfterFinished: 259200 
-  image: *defaultRepo/fluid-crd-upgrader:*defaultTag
+  repo: *defaultRepo
+  image: fluid-crd-upgrader
+  tag: *defaultTag
 
 ##  if unspecified, will use built-in variable `.Release.Namespace`.
 namespace: fluid-system
@@ -28,7 +31,9 @@ dataset:
   tolerations:
     - operator: Exists
   controller:
-    image: *defaultRepo/dataset-controller:*defaultTag
+    repo: *defaultRepo
+    image: dataset-controller
+    tag: *defaultTag
 
 csi:
   tolerations:
@@ -37,9 +42,13 @@ csi:
   config:
     hostNetwork: false
   registrar:
-    image: *defaultRepo/csi-node-driver-registrar:v2.3.0
+    repo: *defaultRepo
+    image: csi-node-driver-registrar
+    tag: v2.3.0
   plugins:
-    image: *defaultRepo/fluid-csi:*defaultTag
+    repo: *defaultRepo
+    image: fluid-csi
+    tag: v2.3.0
   kubelet:
     kubeConfigFile: /etc/kubernetes/kubelet.conf
     certDir: /var/lib/kubelet/pki
@@ -64,9 +73,13 @@ runtime:
     portAllocatePolicy: random
     enabled: false
     init:
-      image: *defaultRepo/init-users:v0.9.0
+      repo: *defaultRepo
+      image: init-users
+      tag: v0.9.0
     controller:
-      image: *defaultRepo/alluxioruntime-controller:*defaultTag
+      repo: *defaultRepo
+      image: alluxioruntime-controller
+      tag: *defaultTag
     runtime:
       image: alluxio/alluxio-dev:2.9.0
     fuse:
@@ -87,11 +100,14 @@ runtime:
     fuse:
       image: registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:6.2.0
     controller:
-      image: *defaultRepo/jindoruntime-controller:*defaultTag
+      repo: *defaultRepo
+      image: jindoruntime-controller
+      tag: *defaultTag
     init:
       portCheck:
         enabled: false
-      image: *defaultRepo/init-users:v0.9.0
+      repo: *defaultRepo
+      image: init-users:v0.9.0
   goosefs:
     replicas: 1
     tolerations:
@@ -101,9 +117,12 @@ runtime:
     portAllocatePolicy: random
     enabled: false
     init:
-      image: *defaultRepo/init-users:v0.9.0
+      repo: *defaultRepo
+      image: init-users:v0.9.0
     controller:
-      image: *defaultRepo/goosefsruntime-controller:*defaultTag
+      repo: *defaultRepo
+      image: goosefsruntime-controller
+      tag: *defaultTag
     runtime:
       image: ccr.ccs.tencentyun.com/qcloud/goosefs:v1.2.0
     fuse:
@@ -115,7 +134,9 @@ runtime:
     enabled: false
     runtimeWorkers: 3
     controller:
-      image: *defaultRepo/juicefsruntime-controller:*defaultTag
+      repo: *defaultRepo
+      image: juicefsruntime-controller
+      tag: *defaultTag
     fuse:
       ceimage: juicedata/juicefs-fuse:ce-v1.1.0-rc1
       eeimage: juicedata/juicefs-fuse:ee-4.9.16
@@ -125,7 +146,9 @@ runtime:
       - operator: Exists
     enabled: false
     controller:
-      image: *defaultRepo/thinruntime-controller:*defaultTag
+      repo: *defaultRepo
+      image: thinruntime-controller
+      tag: *defaultTag
     fuse:
       configStorage: configmap
   efc:
@@ -134,7 +157,9 @@ runtime:
       - operator: Exists
     enabled: false
     controller:
-      image: *defaultRepo/efcruntime-controller:*defaultTag
+      repo: *defaultRepo
+      image: efcruntime-controller
+      tag: *defaultTag
       imagePullPolicy: Always
     init:
       image: registry.cn-zhangjiakou.aliyuncs.com/nascache/init-alifuse:v1.2.2-19dcee9
@@ -151,7 +176,9 @@ runtime:
       - operator: Exists
     enabled: false
     controller:
-      image: *defaultRepo/vineyardruntime-controller:*defaultTag
+      repo: *defaultRepo
+      image: vineyardruntime-controller
+      tag: *defaultTag
       imagePullPolicy: Always
     master:
       image: registry.aliyuncs.com/vineyard/vineyardd:v0.22.2
@@ -162,7 +189,9 @@ runtime:
 
 webhook:
   enabled: true
-  image: *defaultRepo/fluid-webhook:*defaultTag
+  repo: *defaultRepo
+  image: fluid-webhook
+  tag: *defaultTag
   replicas: 1
   timeoutSeconds: 15
   reinvocationPolicy: IfNeeded
@@ -213,5 +242,7 @@ fluidapp:
   tolerations:
     - operator: Exists
   controller:
-    image: *defaultRepo/application-controller:*defaultTag
+    repo: *defaultRepo
+    image: application-controller
+    tag: *defaultTag
   featureGates: "DataflowAffinity=false"
