@@ -1,9 +1,10 @@
 #!/bin/bash
 
-testname="alluxioruntime basic e2e"
+testname="juicefsruntime basic e2e"
 
-dataset_name="zookeeper"
-job_name="fluid-test"
+dataset_name="jfsdemo"
+write_job_name="write-job"
+read_job_name="read-job"
 
 function syslog() {
     echo ">>> $1"
@@ -15,15 +16,23 @@ function panic() {
     exit 1
 }
 
+function setup_redis() {
+    kubectl create -f test/gha-e2e/juicefs/redis.yaml
+}
+
+function setup_minio() {
+    kubectl create -f test/gha-e2e/juicefs/minio.yaml
+}
+
 function create_dataset() {
-    kubectl create -f test/gha-e2e/alluxio/dataset.yaml
+    kubectl create -f test/gha-e2e/juicefs/dataset.yaml
 
     if [[ -z "$(kubectl get dataset $dataset_name -oname)" ]]; then
-        panic "failed to create dataset"
+        panic "failed to create dataset $dataset_name"
     fi
 
-    if [[ -z "$(kubectl get alluxioruntime $dataset_name -oname)" ]]; then
-        panic "failed to create alluxioruntime"
+    if [[ -z "$(kubectl get juicefsruntime $dataset_name -oname)" ]]; then
+        panic "failed to create juicefsruntime $dataset_name"
     fi
 }
 
@@ -50,14 +59,17 @@ function wait_dataset_bound() {
 }
 
 function create_job() {
-    kubectl create -f test/gha-e2e/alluxio/job.yaml
+    job_file=$1
+    job_name=$2
+    kubectl create -f $job_file
 
     if [[ -z "$(kubectl get job $job_name -oname)" ]]; then
-        panic "failed to create job"
+        panic "failed to create job $job_name"
     fi
 }
 
 function wait_job_completed() {
+    job_name=$1
     while true; do
         succeed=$(kubectl get job $job_name -ojsonpath='{@.status.succeeded}')
         failed=$(kubectl get job $job_name -ojsonpath='{@.status.failed}')
@@ -74,17 +86,24 @@ function wait_job_completed() {
 
 function clean_up() {
     syslog "Cleaning up resources for testcase $testname"
-    kubectl delete -f test/gha-e2e/alluxio/
+    kubectl delete -f test/gha-e2e/juicefs/
 }
 
 function main() {
     syslog "[TESTCASE $testname STARTS AT $(date)]"
+    setup_redis
+    setup_minio
     create_dataset
     trap clean_up EXIT
     wait_dataset_bound
-    create_job
-    wait_job_completed
+    create_job test/gha-e2e/juicefs/write_job.yaml $write_job_name
+    wait_job_completed $write_job_name
+    create_job test/gha-e2e/juicefs/read_job.yaml $read_job_name
+    wait_job_completed $read_job_name
     syslog "[TESTCASE $testname SUCCEEDED AT $(date)]"
 }
 
 main
+
+
+

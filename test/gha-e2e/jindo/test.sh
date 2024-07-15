@@ -1,8 +1,8 @@
 #!/bin/bash
 
-testname="alluxioruntime basic e2e"
+testname="jindoruntime basic e2e"
 
-dataset_name="zookeeper"
+dataset_name="jindo-demo"
 job_name="fluid-test"
 
 function syslog() {
@@ -15,15 +15,23 @@ function panic() {
     exit 1
 }
 
+function setup_minio() {
+    kubectl create -f test/gha-e2e/jindo/minio.yaml
+    minio_pod=$(kubectl get pod -oname | grep minio) 
+    kubectl wait --for=condition=Ready $minio_pod
+
+    kubectl exec -it $minio_pod -- /bin/bash -c 'mc alias set myminio http://127.0.0.1:9000 minioadmin minioadmin && mc mb myminio/mybucket && echo "helloworld" > testfile && mc mv testfile myminio/mybucket/subpath/testfile && mc cat myminio/mybucket/subpath/testfile'
+}
+
 function create_dataset() {
-    kubectl create -f test/gha-e2e/alluxio/dataset.yaml
+    kubectl create -f test/gha-e2e/jindo/dataset.yaml
 
     if [[ -z "$(kubectl get dataset $dataset_name -oname)" ]]; then
-        panic "failed to create dataset"
+        panic "failed to create dataset $dataset_name"
     fi
 
-    if [[ -z "$(kubectl get alluxioruntime $dataset_name -oname)" ]]; then
-        panic "failed to create alluxioruntime"
+    if [[ -z "$(kubectl get jindoruntime $dataset_name -oname)" ]]; then
+        panic "failed to create jindoruntime $dataset_name"
     fi
 }
 
@@ -50,7 +58,7 @@ function wait_dataset_bound() {
 }
 
 function create_job() {
-    kubectl create -f test/gha-e2e/alluxio/job.yaml
+    kubectl create -f test/gha-e2e/jindo/job.yaml
 
     if [[ -z "$(kubectl get job $job_name -oname)" ]]; then
         panic "failed to create job"
@@ -74,11 +82,12 @@ function wait_job_completed() {
 
 function clean_up() {
     syslog "Cleaning up resources for testcase $testname"
-    kubectl delete -f test/gha-e2e/alluxio/
+    kubectl delete -f test/gha-e2e/jindo/
 }
 
 function main() {
     syslog "[TESTCASE $testname STARTS AT $(date)]"
+    setup_minio
     create_dataset
     trap clean_up EXIT
     wait_dataset_bound
@@ -88,3 +97,6 @@ function main() {
 }
 
 main
+
+
+

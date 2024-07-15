@@ -1,0 +1,26 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: write-job
+  namespace: default
+  labels:
+    app: write-job
+spec:
+  template:
+    metadata:
+      name: write-job
+      labels:
+        app: write-job
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: write-job
+        image: busybox
+        command: ['sh', '-c', 'mkdir /data/foo && echo helloworld > /data/foo/bar']
+        volumeMounts:
+        - name: data-vol
+          mountPath: /data
+      volumes:
+      - name: data-vol
+        persistentVolumeClaim:
+          claimName: jfsdemo

@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: access-key
+  namespace: default
+type: Opaque
+stringData:
+  fs.s3.accessKeyId: minioadmin
+  fs.s3.accessKeySecret: minioadmin
+---
+apiVersion: data.fluid.io/v1alpha1
+kind: Dataset
+metadata:
+  name: jindo-demo
+spec:
+  mounts:
+    - mountPoint: s3://mybucket/subpath/
+      options:
+       fs.s3.endpoint: "minio.default.svc.cluster.local:9000"
+       fs.s3.region: "us-east-1"
+      encryptOptions:
+        - name: fs.s3.accessKeyId
+          valueFrom:
+            secretKeyRef:
+              name: access-key
+              key: fs.s3.accessKeyId
+        - name: fs.s3.accessKeySecret
+          valueFrom:
+            secretKeyRef:
+              name: access-key
+              key: fs.s3.accessKeySecret
+      name: minio
+      path: /
+  accessModes:
+    - ReadOnlyMany
+---
+apiVersion: data.fluid.io/v1alpha1
+kind: JindoRuntime
+metadata:
+  name: jindo-demo
+spec:
+  replicas: 1
+  tieredstore:
+    levels:
+      - mediumtype: SSD
+        path: /var/lib/docker/jindo
+        quota: 1Gi
+        high: "0.99"
+        low: "0.95"

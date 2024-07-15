@@ -58,7 +58,7 @@ jobs:
           ./.github/scripts/deploy-fluid-to-kind.sh
 
       - name: Fluid basic e2e tests
-        timeout-minutes: 10
+        timeout-minutes: 30
         run: |
           ./.github/scripts/gha-e2e.sh
 
