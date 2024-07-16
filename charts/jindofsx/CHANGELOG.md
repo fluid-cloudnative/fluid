@@ -105,3 +105,6 @@ Fix worker's annotations for pod spec overwrites master's annotations
 1.0.2
 Delete runtime's fsGroup
 Mount ufs volumes according to dataset's accessModes
+
+1.0.3
+Supporting syncing AK/SK secret key-value pairs
