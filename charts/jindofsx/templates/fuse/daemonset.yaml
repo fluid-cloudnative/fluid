@@ -158,20 +158,7 @@ spec:
           {{- end }}
           {{- end }}
           {{- if .Values.secret }}
-          {{- if .Values.UseStsToken }}
-            - name: jindofs-secret-token
-              mountPath: /token
-              readOnly: true
-          {{- else }}
-            - name: jindofs-secret-token
-              mountPath: /token/AccessKeyId
-              subPath: {{ .Values.secretKey }}
-              readOnly: true
-            - name: jindofs-secret-token
-              mountPath: /token/AccessKeySecret
-              subPath: {{ .Values.secretValue }}
-              readOnly: true
-          {{- end }}
+            {{ include "jindofs.cred.secret.volumeMounts" . | nindent 12 }}
           {{- end }}
           {{- if .Values.ufsVolumes }}
           {{- range .Values.ufsVolumes }}
@@ -209,9 +196,7 @@ spec:
             path: /dev/fuse
             type: CharDevice
         {{- if .Values.secret }}
-        - name: jindofs-secret-token
-          secret:
-            secretName: {{ .Values.secret }}
+        {{ include "jindofs.cred.secret.volumes" . | nindent 8 }}
         {{- end }}
         {{- if .Values.ufsVolumes }}
         {{- range .Values.ufsVolumes }}
