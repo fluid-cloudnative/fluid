@@ -22,7 +22,7 @@ crdUpgrade:
   ttlSecondsAfterFinished: 259200 
   imagePrefix: *defaultImagePrefix
   imageName: fluid-crd-upgrader
-  imageimageTag: *defaultVersion
+  imageTag: *defaultVersion
 
 ##  if unspecified, will use built-in variable `.Release.Namespace`.
 namespace: fluid-system

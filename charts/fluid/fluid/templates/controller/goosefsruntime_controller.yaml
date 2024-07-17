@@ -61,17 +61,17 @@ spec:
           - name: FLUID_WORKDIR
             value: {{ .Values.workdir | quote }}
           {{- end }}
-          {{- if .Values.runtime.goosefs.init.image }}
+          {{- if .Values.runtime.goosefs.init.imageName }}
           - name: DEFAULT_INIT_IMAGE_ENV
-            value: {{ .Values.runtime.goosefs.init.image | quote }}
+            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.goosefs.init.imagePrefix .Values.runtime.goosefs.init.imageName .Values.runtime.goosefs.init.imageTag) }}
           {{- end }}
-          {{- if .Values.runtime.goosefs.runtime.image }}
+          {{- if .Values.runtime.goosefs.runtime.imageName }}
           - name: GOOSEFS_RUNTIME_IMAGE_ENV
-            value: {{ .Values.runtime.goosefs.runtime.image | quote }}
+            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.goosefs.runtime.imagePrefix .Values.runtime.goosefs.runtime.imageName .Values.runtime.goosefs.runtime.imageTag) }}
           {{- end }}
-          {{- if .Values.runtime.goosefs.fuse.image }}
+          {{- if .Values.runtime.goosefs.fuse.imageName }}
           - name: GOOSEFS_FUSE_IMAGE_ENV
-            value: {{ .Values.runtime.goosefs.fuse.image | quote }}
+            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.goosefs.fuse.imagePrefix .Values.runtime.goosefs.fuse.imageName .Values.runtime.goosefs.fuse.imageTag) }}
           {{- end }}
           {{- if .Values.runtime.mountRoot }}
           - name: MOUNT_ROOT
