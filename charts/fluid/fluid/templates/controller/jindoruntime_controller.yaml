@@ -43,7 +43,7 @@ spec:
 {{ toYaml .Values.runtime.jindo.tolerations | indent 6 }}
       {{- end }}
       containers:
-      - image: "{{ .Values.runtime.jindo.controller.repo }}/{{ .Values.runtime.jindo.controller.image }}:{{ .Values.runtime.jindo.controller.tag }}"
+      - image: {{ include "fluid.controlplane.imageTransform" (list .Values.runtime.jindo.controller.repo .Values.runtime.jindo.controller.image .Values.runtime.jindo.controller.tag) }}
         name: manager
         command: ["jindoruntime-controller", "start"]
         args:

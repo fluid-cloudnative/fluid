@@ -44,7 +44,7 @@ spec:
       {{- end }}
       #hostNetwork: true
       containers:
-      - image: "{{ .Values.runtime.juicefs.controller.repo }}/{{ .Values.runtime.juicefs.controller.image }}:{{ .Values.runtime.juicefs.controller.tag }}"
+      - image: {{ include "fluid.controlplane.imageTransform" (list .Values.runtime.juicefs.controller.repo .Values.runtime.juicefs.controller.image .Values.runtime.juicefs.controller.tag) }}
         name: manager
         args:
           - --development=false
