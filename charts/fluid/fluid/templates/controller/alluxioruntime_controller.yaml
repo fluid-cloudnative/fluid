@@ -44,7 +44,7 @@ spec:
       {{- end }}
       #hostNetwork: true
       containers:
-      - image: "{{ .Values.runtime.alluxio.controller.image }}"
+      - image: "{{ .Values.alluxio.controller.repo }}/{{ .Values.alluxio.controller.image }}:{{ .Values.alluxio.controller.tag }}"
         name: manager
         command: ["alluxioruntime-controller", "start"]
         args:

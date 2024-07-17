@@ -94,6 +94,19 @@ Create the name of the service account to use
 {{- end -}}
 {{- end -}}
 
+{{/* assemble images for fluid control-plane images */}}
+{{- define "fluid.controlplane.imageTransform" -}}
+  {{- $repo := index . 0 -}}
+  {{- $image := index . 1 -}}
+  {{- $tag := index . 2 -}}
+
+  {{- /* If any value is empty, return an error message */ -}}
+  {{- if or (empty $repo) (empty $image) (empty $tag) -}}
+    {{- fail "Error: repo, image, and tag must all be defined and non-empty." -}}
+  {{- end -}}
+
+  {{- printf "%s/%s:%s" $repo $image $tag -}}
+{{- end -}}
 
 {{/*
 Check if feature gate DataflowAffinity is enabled in the featureGates.
