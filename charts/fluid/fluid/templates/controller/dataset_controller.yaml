@@ -42,7 +42,7 @@ spec:
       {{- end }}
       #hostNetwork: true
       containers:
-      - image: "{{ .Values.dataset.controller.image }}"
+      - image: {{ include "fluid.controlplane.imageTransform" (list .Values.dataset.controller.imagePrefix .Values.dataset.controller.imageName .Values.dataset.controller.imageTag) }}
         name: manager
         command: ["dataset-controller", "start"]
         args:

@@ -44,7 +44,7 @@ spec:
       {{- end }}
       #hostNetwork: true
       containers:
-      - image: "{{ .Values.runtime.alluxio.controller.image }}"
+      - image: {{ include "fluid.controlplane.imageTransform" (list .Values.runtime.alluxio.controller.imagePrefix .Values.runtime.alluxio.controller.imageName .Values.runtime.alluxio.controller.imageTag) }}
         name: manager
         command: ["alluxioruntime-controller", "start"]
         args:

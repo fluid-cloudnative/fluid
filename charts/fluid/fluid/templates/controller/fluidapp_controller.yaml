@@ -40,7 +40,7 @@ spec:
       {{- end }}
       #hostNetwork: true
       containers:
-      - image: "{{ .Values.fluidapp.controller.image }}"
+      - image: {{ include "fluid.controlplane.imageTransform" (list .Values.fluidapp.controller.imagePrefix .Values.fluidapp.controller.imageName .Values.fluidapp.controller.imageTag) }}
         name: manager
         command: ["fluidapp-controller", "start"]
         args:
