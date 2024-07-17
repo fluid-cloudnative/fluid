@@ -44,7 +44,7 @@ spec:
       {{- end }}
       #hostNetwork: true
       containers:
-      - image: "{{ .Values.runtime.efc.controller.repo }}/{{ .Values.runtime.efc.controller.image }}:{{ .Values.runtime.efc.controller.tag }}"
+      - image: {{ include "fluid.controlplane.imageTransform" (list .Values.runtime.efc.controller.repo .Values.runtime.efc.controller.image .Values.runtime.efc.controller.tag) }}
         imagePullPolicy: {{ .Values.runtime.efc.controller.imagePullPolicy }}
         name: manager
         args:
