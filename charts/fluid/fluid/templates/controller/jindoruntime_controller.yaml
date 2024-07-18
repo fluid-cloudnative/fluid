@@ -43,7 +43,7 @@ spec:
 {{ toYaml .Values.runtime.jindo.tolerations | indent 6 }}
       {{- end }}
       containers:
-      - image: {{ .Values.runtime.jindo.controller.image | quote }}
+      - image: {{ include "fluid.controlplane.imageTransform" (list .Values.runtime.jindo.controller.imagePrefix .Values.runtime.jindo.controller.imageName .Values.runtime.jindo.controller.imageTag) }}
         name: manager
         command: ["jindoruntime-controller", "start"]
         args:
@@ -63,17 +63,17 @@ spec:
         - name: MOUNT_ROOT
           value: {{ .Values.runtime.mountRoot | quote }}
         {{- end }}
-        {{- if .Values.runtime.jindo.smartdata.image }}
+        {{- if .Values.runtime.jindo.smartdata.imageName }}
         - name: JINDO_SMARTDATA_IMAGE_ENV
-          value: {{ .Values.runtime.jindo.smartdata.image | quote }}
+          value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.jindo.smartdata.imagePrefix .Values.runtime.jindo.smartdata.imageName .Values.runtime.jindo.smartdata.imageTag) }}
         {{- end }}
-        {{- if .Values.runtime.jindo.fuse.image }}
+        {{- if .Values.runtime.jindo.fuse.imageName }}
         - name: JINDO_FUSE_IMAGE_ENV
-          value: {{ .Values.runtime.jindo.fuse.image | quote }}
+          value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.jindo.fuse.imagePrefix .Values.runtime.jindo.fuse.imageName .Values.runtime.jindo.fuse.imageTag) }}
         {{- end }}
-        {{- if .Values.runtime.jindo.init.image }}
+        {{- if .Values.runtime.jindo.init.imageName }}
         - name: DEFAULT_INIT_IMAGE_ENV
-          value: {{ .Values.runtime.jindo.init.image | quote }}
+          value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.jindo.init.imagePrefix .Values.runtime.jindo.init.imageName .Values.runtime.jindo.init.imageTag) }}
         {{- end }}
         {{- if .Values.runtime.jindo.init.portCheck }}
         - name: INIT_PORT_CHECK_ENABLED

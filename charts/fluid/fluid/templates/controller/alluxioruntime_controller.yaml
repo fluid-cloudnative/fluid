@@ -44,7 +44,7 @@ spec:
       {{- end }}
       #hostNetwork: true
       containers:
-      - image: "{{ .Values.runtime.alluxio.controller.image }}"
+      - image: {{ include "fluid.controlplane.imageTransform" (list .Values.runtime.alluxio.controller.imagePrefix .Values.runtime.alluxio.controller.imageName .Values.runtime.alluxio.controller.imageTag) }}
         name: manager
         command: ["alluxioruntime-controller", "start"]
         args:
@@ -60,17 +60,17 @@ spec:
           - name: FLUID_WORKDIR
             value: {{ .Values.workdir | quote }}
           {{- end }}
-          {{- if .Values.runtime.alluxio.init.image }}
+          {{- if .Values.runtime.alluxio.init.imageName }}
           - name: DEFAULT_INIT_IMAGE_ENV
-            value: {{ .Values.runtime.alluxio.init.image | quote }}
+            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.alluxio.init.imagePrefix .Values.runtime.alluxio.init.imageName .Values.runtime.alluxio.init.imageTag) }}
           {{- end }}
-          {{- if .Values.runtime.alluxio.runtime.image }}
+          {{- if .Values.runtime.alluxio.runtime.imageName }}
           - name: ALLUXIO_RUNTIME_IMAGE_ENV
-            value: {{ .Values.runtime.alluxio.runtime.image | quote }}
+            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.alluxio.runtime.imagePrefix .Values.runtime.alluxio.runtime.imageName .Values.runtime.alluxio.runtime.imageTag) }}
           {{- end }}
-          {{- if .Values.runtime.alluxio.fuse.image }}
+          {{- if .Values.runtime.alluxio.fuse.imageName }}
           - name: ALLUXIO_FUSE_IMAGE_ENV
-            value: {{ .Values.runtime.alluxio.fuse.image | quote }}
+            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.alluxio.fuse.imagePrefix .Values.runtime.alluxio.fuse.imageName .Values.runtime.alluxio.fuse.imageTag) }}
           {{- end }}
           {{- if .Values.runtime.mountRoot }}
           - name: MOUNT_ROOT

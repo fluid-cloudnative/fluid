@@ -8,24 +8,33 @@ workdir: /tmp
 # For now, only "configmap" and "secret" are supported.
 helmDriver: configmap
 
+image:
+  imagePullSecrets: []
+
+# Default registry, namespace and version tag for images managed by fluid
+imagePrefix: &defaultImagePrefix fluidcloudnative
+# imagePrefix: &defaultImagePrefix registry.aliyuncs.com/fluid
+version: &defaultVersion v1.0.2-ca7a430
+
 crdUpgrade:
   enabled: true
   # This sets the time-to-live (TTL) for crd-upgrade jobs. Default is 259200 seconds (3 days).
   ttlSecondsAfterFinished: 259200 
-  image: fluidcloudnative/fluid-crd-upgrader:v1.0.2-ca7a430
+  imagePrefix: *defaultImagePrefix
+  imageName: fluid-crd-upgrader
+  imageTag: *defaultVersion
 
 ##  if unspecified, will use built-in variable `.Release.Namespace`.
 namespace: fluid-system
-
-image:
-  imagePullSecrets: []
 
 dataset:
   replicas: 1
   tolerations:
     - operator: Exists
   controller:
-    image: fluidcloudnative/dataset-controller:v1.0.2-ca7a430
+    imagePrefix: *defaultImagePrefix
+    imageName: dataset-controller
+    imageTag: *defaultVersion
 
 csi:
   tolerations:
@@ -34,9 +43,13 @@ csi:
   config:
     hostNetwork: false
   registrar:
-    image: fluidcloudnative/csi-node-driver-registrar:v2.3.0
+    imagePrefix: *defaultImagePrefix
+    imageName: csi-node-driver-registrar
+    imageTag: v2.3.0
   plugins:
-    image: fluidcloudnative/fluid-csi:v1.0.2-ca7a430
+    imagePrefix: *defaultImagePrefix
+    imageName: fluid-csi
+    imageTag: *defaultVersion
   kubelet:
     kubeConfigFile: /etc/kubernetes/kubelet.conf
     certDir: /var/lib/kubelet/pki
@@ -61,13 +74,21 @@ runtime:
     portAllocatePolicy: random
     enabled: false
     init:
-      image: fluidcloudnative/init-users:v0.9.0
+      imagePrefix: *defaultImagePrefix
+      imageName: init-users
+      imageTag: v0.9.0
     controller:
-      image: fluidcloudnative/alluxioruntime-controller:v1.0.2-ca7a430
+      imagePrefix: *defaultImagePrefix
+      imageName: alluxioruntime-controller
+      imageTag: *defaultVersion
     runtime:
-      image: alluxio/alluxio-dev:2.9.0
+      imagePrefix: alluxio
+      imageName: alluxio-dev
+      imageTag: 2.9.0
     fuse:
-      image: alluxio/alluxio-dev:2.9.0
+      imagePrefix: alluxio
+      imageName: alluxio-dev
+      imageTag: 2.9.0
     mountConfigStorage: configmap
   jindo:
     replicas: 1
@@ -80,15 +101,23 @@ runtime:
     engine: jindocache
     queryUfsTotal: true
     smartdata:
-      image: registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:6.2.0
+      imagePrefix: registry.cn-shanghai.aliyuncs.com/jindofs
+      imageName: smartdata
+      imageTag: 6.2.0
     fuse:
-      image: registry.cn-shanghai.aliyuncs.com/jindofs/jindo-fuse:6.2.0
+      imagePrefix: registry.cn-shanghai.aliyuncs.com/jindofs
+      imageName: jindo-fuse
+      imageTag: 6.2.0
     controller:
-      image: fluidcloudnative/jindoruntime-controller:v1.0.2-ca7a430
+      imagePrefix: *defaultImagePrefix
+      imageName: jindoruntime-controller
+      imageTag: *defaultVersion
     init:
       portCheck:
         enabled: false
-      image: fluidcloudnative/init-users:v0.9.0
+      imagePrefix: *defaultImagePrefix
+      imageName: init-users
+      imageTag: v0.9.0
   goosefs:
     replicas: 1
     tolerations:
@@ -98,13 +127,21 @@ runtime:
     portAllocatePolicy: random
     enabled: false
     init:
-      image: fluidcloudnative/init-users:v0.9.0
+      imagePrefix: *defaultImagePrefix
+      imageName: init-users
+      imageTag: v0.9.0
     controller:
-      image: fluidcloudnative/goosefsruntime-controller:v1.0.2-ca7a430
+      imagePrefix: *defaultImagePrefix
+      imageName: goosefsruntime-controller
+      imageTag: *defaultVersion
     runtime:
-      image: ccr.ccs.tencentyun.com/qcloud/goosefs:v1.2.0
+      imagePrefix: ccr.ccs.tencentyun.com/qcloud
+      imageName: goosefs
+      imageTag: v1.2.0
     fuse:
-      image: ccr.ccs.tencentyun.com/qcloud/goosefs-fuse:v1.2.0
+      imagePrefix: ccr.ccs.tencentyun.com/qcloud
+      imageName: goosefs-fuse
+      imageTag: v1.2.0
   juicefs:
     replicas: 1
     tolerations:
@@ -112,17 +149,25 @@ runtime:
     enabled: false
     runtimeWorkers: 3
     controller:
-      image: fluidcloudnative/juicefsruntime-controller:v1.0.2-ca7a430
+      imagePrefix: *defaultImagePrefix
+      imageName: juicefsruntime-controller
+      imageTag: *defaultVersion
     fuse:
-      ceimage: juicedata/juicefs-fuse:ce-v1.1.0-rc1
-      eeimage: juicedata/juicefs-fuse:ee-4.9.16
+      ceimagePrefix: juicedata
+      ceimageName: juicefs-fuse
+      ceimageTag: ce-v1.1.0-rc1
+      eeimagePrefix: juicedata
+      eeimageName: juicefs-fuse
+      eeimageTag: ee-4.9.16
   thin:
     replicas: 1
     tolerations:
       - operator: Exists
     enabled: false
     controller:
-      image: fluidcloudnative/thinruntime-controller:v1.0.2-ca7a430
+      imagePrefix: *defaultImagePrefix
+      imageName: thinruntime-controller
+      imageTag: *defaultVersion
     fuse:
       configStorage: configmap
   efc:
@@ -131,16 +176,26 @@ runtime:
       - operator: Exists
     enabled: false
     controller:
-      image: fluidcloudnative/efcruntime-controller:v1.0.2-ca7a430
+      imagePrefix: *defaultImagePrefix
+      imageName: efcruntime-controller
+      imageTag: *defaultVersion
       imagePullPolicy: Always
     init:
-      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/init-alifuse:v1.2.2-19dcee9
+      imagePrefix: registry.cn-zhangjiakou.aliyuncs.com/nascache
+      imageName: init-alifuse
+      imageTag: v1.2.2-19dcee9
     master:
-      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-master:v1.2.2-19dcee9
+      imagePrefix: registry.cn-zhangjiakou.aliyuncs.com/nascache
+      imageName: efc-master
+      imageTag: v1.2.2-19dcee9
     worker:
-      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-worker:v1.2.2-19dcee9
+      imagePrefix: registry.cn-zhangjiakou.aliyuncs.com/nascache
+      imageName: efc-worker
+      imageTag: v1.2.2-19dcee9
     fuse:
-      image: registry.cn-zhangjiakou.aliyuncs.com/nascache/efc-fuse:v1.2.2-19dcee9
+      imagePrefix: registry.cn-zhangjiakou.aliyuncs.com/nascache
+      imageName: efc-fuse
+      imageTag: v1.2.2-19dcee9
   vineyard:
     replicas: 1
     portRange: 32000-34000
@@ -148,18 +203,28 @@ runtime:
       - operator: Exists
     enabled: false
     controller:
-      image: fluidcloudnative/vineyardruntime-controller:v1.0.2-ca7a430
+      imagePrefix: *defaultImagePrefix
+      imageName: vineyardruntime-controller
+      imageTag: *defaultVersion
       imagePullPolicy: Always
     master:
-      image: registry.aliyuncs.com/vineyard/vineyardd:v0.22.2
+      imagePrefix: registry.aliyuncs.com/vineyard
+      imageName: vineyardd
+      imageTag: v0.22.2
     worker:
-      image: registry.aliyuncs.com/vineyard/vineyardd:v0.22.2
+      imagePrefix: registry.aliyuncs.com/vineyard
+      imageName: vineyardd
+      imageTag: v0.22.2
     fuse:
-      image: registry.aliyuncs.com/vineyard/vineyard-fluid-fuse:v0.22.2
+      imagePrefix: registry.aliyuncs.com/vineyard
+      imageName: vineyard-fluid-fuse
+      imageTag: v0.22.2
 
 webhook:
   enabled: true
-  image: fluidcloudnative/fluid-webhook:v1.0.2-ca7a430
+  imagePrefix: *defaultImagePrefix
+  imageName: fluid-webhook
+  imageTag: *defaultVersion
   replicas: 1
   timeoutSeconds: 15
   reinvocationPolicy: IfNeeded
@@ -210,5 +275,7 @@ fluidapp:
   tolerations:
     - operator: Exists
   controller:
-    image: fluidcloudnative/application-controller:v1.0.2-ca7a430
+    imagePrefix: *defaultImagePrefix
+    imageName: application-controller
+    imageTag: *defaultVersion
   featureGates: "DataflowAffinity=false"

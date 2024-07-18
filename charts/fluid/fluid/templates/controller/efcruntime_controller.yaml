@@ -44,7 +44,7 @@ spec:
       {{- end }}
       #hostNetwork: true
       containers:
-      - image: "{{ .Values.runtime.efc.controller.image }}"
+      - image: {{ include "fluid.controlplane.imageTransform" (list .Values.runtime.efc.controller.imagePrefix .Values.runtime.efc.controller.imageName .Values.runtime.efc.controller.imageTag) }}
         imagePullPolicy: {{ .Values.runtime.efc.controller.imagePullPolicy }}
         name: manager
         args:
@@ -66,23 +66,23 @@ spec:
           - name: FLUID_SYNC_RETRY_DURATION
             value: {{ .Values.runtime.syncRetryDuration | quote }}
           {{- end }}
-          {{- if .Values.runtime.efc.init.image }}
+          {{- if .Values.runtime.efc.init.imageName }}
           - name: EFC_INIT_FUSE_IMAGE_ENV
-            value: {{ .Values.runtime.efc.init.image | quote }}
+            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.efc.init.imagePrefix .Values.runtime.efc.init.imageName .Values.runtime.efc.init.imageTag) }}
           {{- end }}
-          {{- if .Values.runtime.efc.master.image }}
+          {{- if .Values.runtime.efc.master.imageName }}
           - name: EFC_MASTER_IMAGE_ENV
-            value: {{ .Values.runtime.efc.master.image | quote }}
+            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.efc.master.imagePrefix .Values.runtime.efc.master.imageName .Values.runtime.efc.master.imageTag) }}
           {{- end }}
-          {{- if .Values.runtime.efc.worker.image }}
+          {{- if .Values.runtime.efc.worker.imageName }}
           - name: EFC_WORKER_IMAGE_ENV
-            value: {{ .Values.runtime.efc.worker.image | quote }}
+            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.efc.worker.imagePrefix .Values.runtime.efc.worker.imageName .Values.runtime.efc.worker.imageTag) }}
           {{- end }}
-          {{- if .Values.runtime.efc.fuse.image }}
+          {{- if .Values.runtime.efc.fuse.imageName }}
           - name: EFC_FUSE_IMAGE_ENV
-            value: {{ .Values.runtime.efc.fuse.image | quote }}
+            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.efc.fuse.imagePrefix .Values.runtime.efc.fuse.imageName .Values.runtime.efc.fuse.imageTag) }}
           - name: EFC_SESSMGR_IMAGE_ENV
-            value: {{ .Values.runtime.efc.fuse.image | quote }}
+            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.efc.fuse.imagePrefix .Values.runtime.efc.fuse.imageName .Values.runtime.efc.fuse.imageTag) }}
           {{- end }}
           - name: HELM_DRIVER
             value: {{ template "fluid.helmDriver" . }}

@@ -94,6 +94,34 @@ Create the name of the service account to use
 {{- end -}}
 {{- end -}}
 
+{{/* assemble images for fluid control-plane images */}}
+{{- define "fluid.controlplane.imageTransform" -}}
+  {{- $imagePrefix := index . 0 -}}
+  {{- $imageName := index . 1 -}}
+  {{- $imageTag := index . 2 -}}
+
+  {{- /* If any value is empty, return an error message */ -}}
+  {{- if or (empty $imagePrefix) (empty $imageName) (empty $imageTag) -}}
+    {{- fail "Error: imagePrefix, imageName, and imageTag must all be defined and non-empty." -}}
+  {{- end -}}
+
+  {{- printf "%s/%s:%s" $imagePrefix $imageName $imageTag -}}
+{{- end -}}
+
+{{/* assemble images for runtime images */}}
+{{- define "fluid.runtime.imageTransform" -}}
+  {{- $imagePrefix := index . 0 -}}
+  {{- $imageName := index . 1 -}}
+  {{- $imageTag := index . 2 -}}
+
+  {{- /* If any value is empty, return an error message */ -}}
+  {{- if or (empty $imagePrefix) (empty $imageName) (empty $imageTag) -}}
+    {{- fail "Error: imagePrefix, imageName, and imageTag must all be defined and non-empty." -}}
+  {{- end -}}
+
+  {{- printf "%s/%s:%s" $imagePrefix $imageName $imageTag -}}
+{{- end -}}
+
 
 {{/*
 Check if feature gate DataflowAffinity is enabled in the featureGates.

@@ -44,7 +44,7 @@ spec:
       {{- end }}
       #hostNetwork: true
       containers:
-      - image: "{{ .Values.runtime.juicefs.controller.image }}"
+      - image: {{ include "fluid.controlplane.imageTransform" (list .Values.runtime.juicefs.controller.imagePrefix .Values.runtime.juicefs.controller.imageName .Values.runtime.juicefs.controller.imageTag) }}
         name: manager
         args:
           - --development=false
@@ -64,13 +64,13 @@ spec:
             {{- end }}
             value: {{ join "," $secretList | quote }}
           {{- end }}
-          {{- if .Values.runtime.juicefs.fuse.ceimage }}
+          {{- if .Values.runtime.juicefs.fuse.ceimageName }}
           - name: JUICEFS_CE_IMAGE_ENV
-            value: {{ .Values.runtime.juicefs.fuse.ceimage | quote }}
+            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.juicefs.fuse.ceimagePrefix .Values.runtime.juicefs.fuse.ceimageName .Values.runtime.juicefs.fuse.ceimageTag) }}
           {{- end }}
-          {{- if .Values.runtime.juicefs.fuse.eeimage }}
+          {{- if .Values.runtime.juicefs.fuse.eeimageName }}
           - name: JUICEFS_EE_IMAGE_ENV
-            value: {{ .Values.runtime.juicefs.fuse.eeimage | quote }}
+            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.juicefs.fuse.eeimagePrefix .Values.runtime.juicefs.fuse.eeimageName .Values.runtime.juicefs.fuse.eeimageTag) }}
           {{- end }}
           {{- if .Values.runtime.mountRoot }}
           - name: MOUNT_ROOT

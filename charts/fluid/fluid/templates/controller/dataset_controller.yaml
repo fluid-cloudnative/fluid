@@ -42,7 +42,7 @@ spec:
       {{- end }}
       #hostNetwork: true
       containers:
-      - image: "{{ .Values.dataset.controller.image }}"
+      - image: {{ include "fluid.controlplane.imageTransform" (list .Values.dataset.controller.imagePrefix .Values.dataset.controller.imageName .Values.dataset.controller.imageTag) }}
         name: manager
         command: ["dataset-controller", "start"]
         args:
@@ -59,9 +59,9 @@ spec:
           - name: JINDO_ENGINE_TYPE
             value: {{ .Values.runtime.jindo.engine | quote }}
           {{- end }}
-          {{- if .Values.runtime.alluxio.runtime.image }}
+          {{- if .Values.runtime.alluxio.runtime.imageName }}
           - name: ALLUXIO_RUNTIME_IMAGE_ENV
-            value: {{ .Values.runtime.alluxio.runtime.image | quote }}
+            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.alluxio.runtime.imagePrefix .Values.runtime.alluxio.runtime.imageName .Values.runtime.alluxio.runtime.imageTag) }}
           {{- end }}
           {{- if .Values.image.imagePullSecrets }}
           - name: IMAGE_PULL_SECRETS
