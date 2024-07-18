@@ -37,6 +37,17 @@ else
     ARCH := amd64
 endif
 
+# Define NO_CACHE variable, default to empty
+# make NO_CACHE=true 
+NO_CACHE ?=
+# Check if NO_CACHE is set, and define DOCKER_NO_CACHE option accordingly
+ifeq (${NO_CACHE},true)
+    DOCKER_NO_CACHE_OPTION = --no-cache
+else
+    DOCKER_NO_CACHE_OPTION =
+endif
+
+
 CURRENT_DIR=$(shell pwd)
 VERSION=v1.0.2
 BUILD_DATE=$(shell date -u +'%Y-%m-%d_%H:%M:%S')
@@ -192,43 +203,43 @@ application-controller-build:
 
 # Build the docker image
 docker-build-dataset-controller:
-	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.dataset -t ${DATASET_CONTROLLER_IMG}:${GIT_VERSION}
+	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.dataset -t ${DATASET_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-build-application-controller:
-	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.application -t ${APPLICATION_CONTROLLER_IMG}:${GIT_VERSION}
+	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.application -t ${APPLICATION_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-build-alluxioruntime-controller:
-	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.alluxioruntime -t ${ALLUXIORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.alluxioruntime -t ${ALLUXIORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-build-jindoruntime-controller:
-	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.jindoruntime -t ${JINDORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.jindoruntime -t ${JINDORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-build-goosefsruntime-controller:
-	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.goosefsruntime -t ${GOOSEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.goosefsruntime -t ${GOOSEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-build-juicefsruntime-controller:
-	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.juicefsruntime -t ${JUICEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.juicefsruntime -t ${JUICEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-build-thinruntime-controller:
-	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.thinruntime -t ${THINRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.thinruntime -t ${THINRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-build-efcruntime-controller:
-	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.efcruntime -t ${EFCRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.efcruntime -t ${EFCRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-build-vineyardruntime-controller:
-	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.vineyardruntime -t ${VINEYARDRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.vineyardruntime -t ${VINEYARDRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-build-csi:
-	docker build --no-cache . -f docker/Dockerfile.csi -t ${CSI_IMG}:${GIT_VERSION}
+	docker build ${DOCKER_NO_CACHE_OPTION} . -f docker/Dockerfile.csi -t ${CSI_IMG}:${GIT_VERSION}
 
 docker-build-init-users:
-	docker build --no-cache charts/alluxio/docker/init-users -t ${INIT_USERS_IMG}:${VERSION}
+	docker build ${DOCKER_NO_CACHE_OPTION} charts/alluxio/docker/init-users -t ${INIT_USERS_IMG}:${VERSION}
 
 docker-build-webhook:
-	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.webhook -t ${WEBHOOK_IMG}:${GIT_VERSION}
+	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.webhook -t ${WEBHOOK_IMG}:${GIT_VERSION}
 
 docker-build-crd-upgrader:
-	docker build --no-cache --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.crds -t ${CRD_UPGRADER_IMG}:${GIT_VERSION}
+	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.crds -t ${CRD_UPGRADER_IMG}:${GIT_VERSION}
 
 # Push the docker image
 docker-push-dataset-controller: docker-build-dataset-controller
@@ -275,43 +286,43 @@ docker-push-crd-upgrader: docker-build-crd-upgrader
 
 # Buildx and push the docker image
 docker-buildx-push-dataset-controller:
-	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.dataset -t ${DATASET_CONTROLLER_IMG}:${GIT_VERSION}
+	docker buildx build --push --platform linux/amd64,linux/arm64 ${DOCKER_NO_CACHE_OPTION} . -f docker/Dockerfile.dataset -t ${DATASET_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-buildx-push-application-controller:
-	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.application -t ${APPLICATION_CONTROLLER_IMG}:${GIT_VERSION}
+	docker buildx build --push --platform linux/amd64,linux/arm64 ${DOCKER_NO_CACHE_OPTION} . -f docker/Dockerfile.application -t ${APPLICATION_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-buildx-push-alluxioruntime-controller:
-	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.alluxioruntime -t ${ALLUXIORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker buildx build --push --platform linux/amd64,linux/arm64 ${DOCKER_NO_CACHE_OPTION} . -f docker/Dockerfile.alluxioruntime -t ${ALLUXIORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-buildx-push-jindoruntime-controller:
-	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.jindoruntime -t ${JINDORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker buildx build --push --platform linux/amd64,linux/arm64 ${DOCKER_NO_CACHE_OPTION} . -f docker/Dockerfile.jindoruntime -t ${JINDORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-buildx-push-goosefsruntime-controller:
-	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.goosefsruntime -t ${GOOSEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker buildx build --push --platform linux/amd64,linux/arm64 ${DOCKER_NO_CACHE_OPTION} . -f docker/Dockerfile.goosefsruntime -t ${GOOSEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-buildx-push-juicefsruntime-controller:
-	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.juicefsruntime -t ${JUICEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker buildx build --push --platform linux/amd64,linux/arm64 ${DOCKER_NO_CACHE_OPTION} . -f docker/Dockerfile.juicefsruntime -t ${JUICEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-buildx-push-thinruntime-controller:
-	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.thinruntime -t ${THINRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker buildx build --push --platform linux/amd64,linux/arm64 ${DOCKER_NO_CACHE_OPTION} . -f docker/Dockerfile.thinruntime -t ${THINRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-buildx-push-efcruntime-controller:
-	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.efcruntime -t ${EFCRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker buildx build --push --platform linux/amd64,linux/arm64 ${DOCKER_NO_CACHE_OPTION} . -f docker/Dockerfile.efcruntime -t ${EFCRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-buildx-push-vineyardruntime-controller:
-	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.vineyardruntime -t ${VINAYARDRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker buildx build --push --platform linux/amd64,linux/arm64 ${DOCKER_NO_CACHE_OPTION} . -f docker/Dockerfile.vineyardruntime -t ${VINAYARDRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 docker-buildx-push-csi: generate fmt vet
-	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.csi -t ${CSI_IMG}:${GIT_VERSION}
+	docker buildx build --push --platform linux/amd64,linux/arm64 ${DOCKER_NO_CACHE_OPTION} . -f docker/Dockerfile.csi -t ${CSI_IMG}:${GIT_VERSION}
 
 docker-buildx-push-init-users:
-	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache charts/alluxio/docker/init-users -t ${INIT_USERS_IMG}:${VERSION}
+	docker buildx build --push --platform linux/amd64,linux/arm64 ${DOCKER_NO_CACHE_OPTION} charts/alluxio/docker/init-users -t ${INIT_USERS_IMG}:${VERSION}
 
 docker-buildx-push-webhook:
-	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.webhook -t ${WEBHOOK_IMG}:${GIT_VERSION}
+	docker buildx build --push --platform linux/amd64,linux/arm64 ${DOCKER_NO_CACHE_OPTION} . -f docker/Dockerfile.webhook -t ${WEBHOOK_IMG}:${GIT_VERSION}
 
 docker-buildx-push-crd-upgrader:
-	docker buildx build --push --platform linux/amd64,linux/arm64 --no-cache . -f docker/Dockerfile.crds -t ${CRD_UPGRADER_IMG}:${GIT_VERSION}
+	docker buildx build --push --platform linux/amd64,linux/arm64 ${DOCKER_NO_CACHE_OPTION} . -f docker/Dockerfile.crds -t ${CRD_UPGRADER_IMG}:${GIT_VERSION}
 
 docker-build-all: pre-setup ${DOCKER_BUILD}
 docker-push-all: pre-setup ${DOCKER_PUSH}
