@@ -4,7 +4,7 @@
 [![codecov](https://codecov.io/gh/fluid-cloudnative/fluid/branch/master/graph/badge.svg)](https://codecov.io/gh/fluid-cloudnative/fluid)
 [![Go Report Card](https://goreportcard.com/badge/github.com/fluid-cloudnative/fluid)](https://goreportcard.com/report/github.com/fluid-cloudnative/fluid)
 [![Artifact HUB](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/fluid)](https://artifacthub.io/packages/helm/fluid/fluid)
-[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/fluid-cloudnative/fluid/badge)](https://api.securityscorecards.dev/projects/github.com/fluid-cloudnative/fluid)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/fluid-cloudnative/fluid/badge)](https://scorecard.dev/viewer/?uri=github.com/fluid-cloudnative/fluid)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/4886/badge)](https://bestpractices.coreinfrastructure.org/projects/4886)
 [![Leaderboard](https://img.shields.io/badge/Fluid-%E6%9F%A5%E7%9C%8B%E8%B4%A1%E7%8C%AE%E6%8E%92%E8%A1%8C%E6%A6%9C-orange)](https://opensource.alibaba.com/contribution_leaderboard/details?projectValue=fluid)
 
