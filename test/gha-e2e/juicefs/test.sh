@@ -86,7 +86,11 @@ function wait_job_completed() {
 
 function clean_up() {
     syslog "Cleaning up resources for testcase $testname"
-    kubectl delete -f test/gha-e2e/juicefs/
+    kubectl delete -f test/gha-e2e/juicefs/read_job.yaml
+    kubectl delete -f test/gha-e2e/juicefs/write_job.yaml 
+    kubectl delete -f test/gha-e2e/juicefs/dataset.yaml 
+    kubectl delete -f test/gha-e2e/juicefs/minio.yaml
+    kubectl delete -f test/gha-e2e/juicefs/redis.yaml
 }
 
 function main() {

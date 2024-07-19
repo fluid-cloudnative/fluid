@@ -44,6 +44,9 @@ spec:
   juicefsVersion:
     image: juicedata/juicefs-fuse
     imageTag: ce-v1.1.1
+  fuse:
+    image: juicedata/juicefs-fuse
+    imageTag: ce-v1.1.1
   replicas: 1
   tieredstore:
     levels:
