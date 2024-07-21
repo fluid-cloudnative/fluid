@@ -3,7 +3,7 @@ set +x
 
 print_usage() {
   echo "Usage:"
-  echo "    ./diagnose-fluid-goosefs.sh COMMAND [OPTIONS]"
+  echo "    ./diagnose-fluid.sh COMMAND [OPTIONS]"
   echo "COMMAND:"
   echo "    help"
   echo "        Display this help message."
@@ -14,6 +14,8 @@ print_usage() {
   echo "        Set the name of runtime."
   echo "    -n, --namespace name"
   echo "        Set the namespace of runtime."
+  echo "    -t, --type name"
+  echo "        Set the type of runtime. Current avaliable type: alluxio, goosefs, jindo, juicefs."
 }
 
 run() {
@@ -36,18 +38,37 @@ pod_status() {
 }
 
 fluid_pod_logs() {
-  core_component "${fluid_namespace}" "manager" "control-plane=goosefsruntime-controller"
+  core_component "${fluid_namespace}" "manager" "control-plane=${runtime_type}runtime-controller"
   core_component "${fluid_namespace}" "manager" "control-plane=dataset-controller"
   core_component "${fluid_namespace}" "plugins" "app=csi-nodeplugin-fluid"
   core_component "${fluid_namespace}" "node-driver-registrar" "app=csi-nodeplugin-fluid"
 }
 
-runtime_pod_logs() {
+alluxioruntime_pod_logs() {
+  core_component "${runtime_namespace}" "alluxio-master" "role=alluxio-master" "release=${runtime_name}"
+  core_component "${runtime_namespace}" "alluxio-job-master" "role=alluxio-master" "release=${runtime_name}"
+  core_component "${runtime_namespace}" "alluxio-worker" "role=alluxio-worker" "release=${runtime_name}"
+  core_component "${runtime_namespace}" "alluxio-job-worker" "role=alluxio-worker" "release=${runtime_name}"
+  core_component "${runtime_namespace}" "alluxio-fuse" "role=alluxio-fuse" "release=${runtime_name}"
+}
+
+goosefsruntime_pod_logs() {
   core_component "${runtime_namespace}" "goosefs-master" "role=goosefs-master" "release=${runtime_name}"
   core_component "${runtime_namespace}" "goosefs-job-master" "role=goosefs-master" "release=${runtime_name}"
   core_component "${runtime_namespace}" "goosefs-worker" "role=goosefs-worker" "release=${runtime_name}"
   core_component "${runtime_namespace}" "goosefs-job-worker" "role=goosefs-worker" "release=${runtime_name}"
   core_component "${runtime_namespace}" "goosefs-fuse" "role=goosefs-fuse" "release=${runtime_name}"
+}
+
+jindoruntime_pod_logs() {
+  core_component "${runtime_namespace}" "jindofs-master" "role=jindofs-master" "release=${runtime_name}"
+  core_component "${runtime_namespace}" "jindofs-worker" "role=jindofs-worker" "release=${runtime_name}"
+  core_component "${runtime_namespace}" "jindofs-fuse" "role=jindofs-fuse" "release=${runtime_name}"
+}
+
+juicefsruntime_pod_logs() {
+  core_component "${runtime_namespace}" "juicefs-worker" "role=juicefs-worker" "release=${runtime_name}"
+  core_component "${runtime_namespace}" "juicefs-fuse" "role=juicefs-fuse" "release=${runtime_name}"
 }
 
 core_component() {
@@ -65,18 +86,14 @@ core_component() {
   mkdir -p "$diagnose_dir/pods-${namespace}"
   pods=$(kubectl get po -n ${namespace} "${constrains}" | awk '{print $1}' | grep -v NAME)
   for po in ${pods}; do
-   if [[ "${namespace}"="${fluid_namesapce}" ]]; then
-      kubectl logs "${po}" -c "$container" -n ${namespace} &>"$diagnose_dir/pods-${namespace}/${po}-${container}.log" 2>&1
-    else
-      kubectl cp "${namespace}/${po}":/opt/goosefs/logs -c "${container}" "$diagnose_dir/pods-${namespace}/${po}-${container}" 2>&1
-    fi
+    kubectl logs "${po}" -c "$container" -n ${namespace} &>"$diagnose_dir/pods-${namespace}/${po}-${container}.log" 2>&1
   done
 }
 
 kubectl_resource() {
   # runtime, dataset, pv and pvc should have the same name
   kubectl describe dataset --namespace ${runtime_namespace} ${runtime_name} &>"${diagnose_dir}/dataset-${runtime_name}.yaml" 2>&1
-  kubectl describe goosefsruntime --namespace ${runtime_namespace} ${name} &>"${diagnose_dir}/goosefsruntime-${runtime_name}.yaml" 2>&1
+  kubectl describe ${runtime_type}runtime --namespace ${runtime_namespace} ${name} &>"${diagnose_dir}/${runtime_type}runtime-${runtime_name}.yaml" 2>&1
   kubectl describe pv ${runtime_namespace}-${runtime_name} &>"${diagnose_dir}/pv-${runtime_name}.yaml" 2>&1
   kubectl describe pvc ${runtime_name} --namespace ${runtime_namespace} &>"${diagnose_dir}/pvc-${runtime_name}.yaml" 2>&1
 }
@@ -87,12 +104,12 @@ archive() {
 }
 
 pd_collect() {
-  echo "Start collecting, runtime-name=${runtime_name}, runtime-namespace=${runtime_namespace}"
+  echo "Start collecting, runtime-type=${runtime_type}, runtime-name=${runtime_name}, runtime-namespace=${runtime_namespace}"
   helm_get "${fluid_name}"
   helm_get "${runtime_name}"
   pod_status "${fluid_namespace}"
   pod_status "${runtime_namespace}"
-  runtime_pod_logs
+  ${runtime_type}runtime_pod_logs
   fluid_pod_logs
   kubectl_resource
   archive
@@ -104,6 +121,7 @@ collect()
   fluid_name=${fluid_name:-"fluid"}
   fluid_namespace=${fluid_namespace:-"fluid-system"}
   runtime_name=${runtime_name:?"the name of runtime must be set"}
+  runtime_type=${runtime_type:?"the type of runtime must be set"}
   runtime_namespace=${runtime_namespace:-"default"}
 
   current_dir=$(pwd)
@@ -139,6 +157,10 @@ main() {
         runtime_namespace=$2
         shift
         ;;
+      -t|--type)
+        runtime_type=$2
+        shift
+        ;;
       *)
         echo  "Error: unsupported option $1" >&2
         print_usage
@@ -147,6 +169,12 @@ main() {
     esac
     shift
   done
+
+  if [[ "${runtime_type}" != "alluxio" ]] && [[ "${runtime_type}" != "goosefs" ]] && [[ "${runtime_type}" != "jindo" ]] && [[ "${runtime_type}" != "juicefs" ]]; then
+    echo "Wrong runtime type."
+    print_usage
+    return
+  fi
 
   case ${action} in
     collect)
