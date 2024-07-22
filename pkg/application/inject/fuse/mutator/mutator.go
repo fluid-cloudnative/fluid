@@ -35,21 +35,22 @@ type Mutator interface {
 	GetMutatedPodSpecs() *MutatingPodSpecs
 }
 
-type MutatorBuildOpts struct {
-	Options common.FuseSidecarInjectOption
-	Client  client.Client
-	Log     logr.Logger
-	Specs   *MutatingPodSpecs
+type MutatorBuildArgs struct {
+	Client    client.Client
+	Log       logr.Logger
+	Specs     *MutatingPodSpecs
+	Options   common.FuseSidecarInjectOption
+	ExtraArgs map[string]string
 }
 
-var mutatorBuildFn map[string]func(MutatorBuildOpts) Mutator = map[string]func(MutatorBuildOpts) Mutator{
+var mutatorBuildFn map[string]func(MutatorBuildArgs) Mutator = map[string]func(MutatorBuildArgs) Mutator{
 	utils.PlatformDefault:      NewDefaultMutator,
 	utils.PlatformUnprivileged: NewUnprivilegedMutator,
 }
 
-func BuildMutator(opts MutatorBuildOpts, platform string) (Mutator, error) {
+func BuildMutator(args MutatorBuildArgs, platform string) (Mutator, error) {
 	if fn, ok := mutatorBuildFn[platform]; ok {
-		return fn(opts), nil
+		return fn(args), nil
 	}
 
 	return nil, fmt.Errorf("fuse sidecar mutator cannot be found for platform %s", platform)
