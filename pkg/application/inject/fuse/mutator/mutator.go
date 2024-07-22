@@ -65,11 +65,11 @@ func BuildMutator(args MutatorBuildArgs, platform string) (Mutator, error) {
 // FindExtraArgsFromMetadata tries to get extra build args for a given mutator from a metaObj.
 // For any platform-specific mutator, its extra args should be key-values and defined in the format of "{platform}.fluid.io/{key}={value}" in metaObj.annotaions.
 func FindExtraArgsFromMetadata(metaObj metav1.ObjectMeta, platform string) (extraArgs map[string]string) {
+	extraArgs = make(map[string]string)
 	if len(metaObj.Annotations) == 0 || len(platform) == 0 {
 		return
 	}
 
-	extraArgs = make(map[string]string)
 	platformPrefix := fmt.Sprintf("%s.%s", platform, common.LabelAnnotationPrefix)
 	for key, value := range metaObj.Annotations {
 		if strings.HasPrefix(key, platformPrefix) {

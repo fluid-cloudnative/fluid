@@ -41,7 +41,7 @@ func TestFindExtraArgsFromMetadata(t *testing.T) {
 				},
 				platform: "myplatform",
 			},
-			wantExtraArgs: nil,
+			wantExtraArgs: make(map[string]string),
 		},
 		{
 			name: "without_extra_args",
@@ -51,7 +51,7 @@ func TestFindExtraArgsFromMetadata(t *testing.T) {
 				},
 				platform: "myplatform",
 			},
-			wantExtraArgs: nil,
+			wantExtraArgs: make(map[string]string),
 		},
 		{
 			name: "with_extra_args",
