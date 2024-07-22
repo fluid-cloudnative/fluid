@@ -1,4 +1,4 @@
-name: integration test
+name: E2E Functionality Check
 on:
   - pull_request
 
@@ -10,7 +10,7 @@ env:
   GO_VERSION: 1.21.10
 
 jobs:
-  integration-test:
+  kind-e2e-test:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

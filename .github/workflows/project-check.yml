@@ -1,4 +1,4 @@
-name: Github Actions
+name: Project Check
 
 on:
   push:
