@@ -14,6 +14,8 @@ print_usage() {
   echo "        Set the name of runtime."
   echo "    -n, --namespace name"
   echo "        Set the namespace of runtime."
+  echo "    --collect-path"
+  echo "        Set which file the information is collected into. (default: $(pwd)/diagnose_fluid_\${timestamp}.tar.gz)"
 }
 
 run() {
@@ -75,8 +77,13 @@ kubectl_resource() {
 }
 
 archive() {
-  tar -zcvf "${current_dir}/diagnose_fluid_${timestamp}.tar.gz" "${diagnose_dir}"
-  echo "please get diagnose_fluid_${timestamp}.tar.gz for diagnostics"
+  tar_filename="${current_dir}/diagnose_fluid_${timestamp}.tar.gz"
+  if [[ ! -z "${collect_path}" ]]; then
+    tar_filename=${collect_path}
+    mkdir -p $(dirname "$tar_filename")
+  fi
+  tar -zcvf "${tar_filename}" "${diagnose_dir}"
+  echo "please get ${tar_filename} for diagnostics"
 }
 
 pd_collect() {
@@ -130,6 +137,10 @@ main() {
         ;;
       -n|--namespace)
         runtime_namespace=$2
+        shift
+        ;;
+      --collect-path)
+        collect_path=$2
         shift
         ;;
       *)

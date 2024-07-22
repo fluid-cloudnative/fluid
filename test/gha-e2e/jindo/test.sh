@@ -44,7 +44,6 @@ function wait_dataset_bound() {
         if [[ $log_interval -eq 3 ]]; then
             log_times=$(expr $log_times + 1)
             syslog "checking dataset.status.phase==Bound (already $(expr $log_times \* $log_interval \* 5)s, last state: $last_state)"
-            kubectl describe pod
             log_interval=0
         fi
 
@@ -80,7 +79,8 @@ function wait_job_completed() {
     syslog "Found succeeded job $job_name"
 }
 
-function clean_up() {
+function dump_env_and_clean_up() {
+    bash tools/diagnose-fluid-jindo.sh collect --name $dataset_name --namespace default --collect-path ./e2e-tmp/testcase-jindo.tgz
     syslog "Cleaning up resources for testcase $testname"
     kubectl delete -f test/gha-e2e/jindo/
 }
@@ -89,7 +89,7 @@ function main() {
     syslog "[TESTCASE $testname STARTS AT $(date)]"
     setup_minio
     create_dataset
-    trap clean_up EXIT
+    trap dump_env_and_clean_up EXIT
     wait_dataset_bound
     create_job
     wait_job_completed
