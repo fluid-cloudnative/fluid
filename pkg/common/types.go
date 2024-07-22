@@ -174,9 +174,10 @@ type FuseSidecarInjectOption struct {
 }
 
 func (f FuseSidecarInjectOption) String() string {
-	return fmt.Sprintf("EnableCacheDir=%v;EnableUnprivilegedSidecar=%v",
+	return fmt.Sprintf("EnableCacheDir=%v;EnableUnprivilegedSidecar=%v;SkipSidecarPostStartInject=%v",
 		f.EnableCacheDir,
-		f.EnableUnprivilegedSidecar)
+		f.EnableUnprivilegedSidecar,
+		f.SkipSidecarPostStartInject)
 }
 
 // The Application which is using Fluid,
