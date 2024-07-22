@@ -1,8 +1,0 @@
-apiVersion: data.fluid.io/v1alpha1
-kind: Dataset
-metadata:
-  name: ant
-spec:
-  mounts:
-    - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/ant/
-      name: ant
