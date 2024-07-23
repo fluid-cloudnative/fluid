@@ -167,7 +167,7 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 			return out, fmt.Errorf("can't find any supported platform-specific mutator in pod's metadata")
 		}
 
-		mutatorBuildOpts := mutator.MutatorBuildOpts{
+		mutatorBuildArgs := mutator.MutatorBuildArgs{
 			Client: s.client,
 			Log:    s.log,
 			Specs:  podSpecs,
@@ -176,9 +176,11 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 				EnableUnprivilegedSidecar:  utils.FuseSidecarUnprivileged(podSpecs.MetaObj.Labels),
 				SkipSidecarPostStartInject: utils.SkipSidecarPostStartInject(podSpecs.MetaObj.Labels),
 			},
+			ExtraArgs: mutator.FindExtraArgsFromMetadata(podSpecs.MetaObj, platform),
 		}
 
-		mtt, err := mutator.BuildMutator(mutatorBuildOpts, platform)
+		s.log.V(1).Info("building mutator with mutatorBuildArgs: %v", mutatorBuildArgs)
+		mtt, err := mutator.BuildMutator(mutatorBuildArgs, platform)
 		if err != nil {
 			return out, err
 		}

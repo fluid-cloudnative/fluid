@@ -61,12 +61,12 @@ type DefaultMutator struct {
 	Specs   *MutatingPodSpecs
 }
 
-func NewDefaultMutator(opts MutatorBuildOpts) Mutator {
+func NewDefaultMutator(args MutatorBuildArgs) Mutator {
 	return &DefaultMutator{
-		options: opts.Options,
-		client:  opts.Client,
-		log:     opts.Log,
-		Specs:   opts.Specs,
+		options: args.Options,
+		client:  args.Client,
+		log:     args.Log,
+		Specs:   args.Specs,
 	}
 }
 

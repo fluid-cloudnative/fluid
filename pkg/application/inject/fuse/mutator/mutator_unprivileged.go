@@ -36,7 +36,7 @@ type UnprivilegedMutator struct {
 
 var _ Mutator = &UnprivilegedMutator{}
 
-func NewUnprivilegedMutator(opts MutatorBuildOpts) Mutator {
+func NewUnprivilegedMutator(opts MutatorBuildArgs) Mutator {
 	return &UnprivilegedMutator{
 		DefaultMutator: DefaultMutator{
 			options: opts.Options,

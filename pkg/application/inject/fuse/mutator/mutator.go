@@ -18,11 +18,13 @@ package mutator
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/go-logr/logr"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -35,22 +37,45 @@ type Mutator interface {
 	GetMutatedPodSpecs() *MutatingPodSpecs
 }
 
-type MutatorBuildOpts struct {
-	Options common.FuseSidecarInjectOption
-	Client  client.Client
-	Log     logr.Logger
-	Specs   *MutatingPodSpecs
+type MutatorBuildArgs struct {
+	Client    client.Client
+	Log       logr.Logger
+	Specs     *MutatingPodSpecs
+	Options   common.FuseSidecarInjectOption
+	ExtraArgs map[string]string
 }
 
-var mutatorBuildFn map[string]func(MutatorBuildOpts) Mutator = map[string]func(MutatorBuildOpts) Mutator{
+func (args MutatorBuildArgs) String() string {
+	return fmt.Sprintf("{options: %v, extraArgs: %v}", args.Options, args.ExtraArgs)
+}
+
+var mutatorBuildFn map[string]func(MutatorBuildArgs) Mutator = map[string]func(MutatorBuildArgs) Mutator{
 	utils.PlatformDefault:      NewDefaultMutator,
 	utils.PlatformUnprivileged: NewUnprivilegedMutator,
 }
 
-func BuildMutator(opts MutatorBuildOpts, platform string) (Mutator, error) {
+func BuildMutator(args MutatorBuildArgs, platform string) (Mutator, error) {
 	if fn, ok := mutatorBuildFn[platform]; ok {
-		return fn(opts), nil
+		return fn(args), nil
 	}
 
 	return nil, fmt.Errorf("fuse sidecar mutator cannot be found for platform %s", platform)
+}
+
+// FindExtraArgsFromMetadata tries to get extra build args for a given mutator from a metaObj.
+// For any platform-specific mutator, its extra args should be key-values and defined in the format of "{platform}.fluid.io/{key}={value}" in metaObj.annotaions.
+func FindExtraArgsFromMetadata(metaObj metav1.ObjectMeta, platform string) (extraArgs map[string]string) {
+	extraArgs = make(map[string]string)
+	if len(metaObj.Annotations) == 0 || len(platform) == 0 {
+		return
+	}
+
+	platformPrefix := fmt.Sprintf("%s.%s", platform, common.LabelAnnotationPrefix)
+	for key, value := range metaObj.Annotations {
+		if strings.HasPrefix(key, platformPrefix) {
+			extraArgs[strings.TrimPrefix(key, platformPrefix)] = value
+		}
+	}
+
+	return
 }
