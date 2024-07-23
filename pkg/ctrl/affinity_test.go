@@ -170,7 +170,8 @@ func TestBuildWorkersAffinity(t *testing.T) {
 					},
 				},
 			},
-		}, {name: "dataset-with-affinity",
+		}, {
+			name: "dataset-with-affinity",
 			fields: fields{
 				dataset: &datav1alpha1.Dataset{
 					ObjectMeta: metav1.ObjectMeta{
