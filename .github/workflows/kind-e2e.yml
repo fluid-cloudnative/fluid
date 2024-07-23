@@ -1,6 +1,15 @@
 name: E2E Functionality Check
 on:
-  - pull_request
+  pull_request:
+    branches: [ master, release-* ]
+    paths-ignore:
+      - 'docs/**'
+      - 'addons/**'
+      - 'sdk/**'
+      - 'static/**'
+
+# Declare default permissions as read only.
+permissions: read-all
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
