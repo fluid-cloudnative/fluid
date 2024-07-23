@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jfs-secret
+stringData:
+  metaurl: redis://redis:6379/0
+  access-key: minioadmin
+  secret-key: minioadmin
+---
+apiVersion: data.fluid.io/v1alpha1
+kind: Dataset
+metadata:
+  name: jfsdemo
+spec:
+  accessModes: ["ReadWriteMany"]
+  mounts:
+    - mountPoint: "juicefs:///"
+      name: minio
+      options:
+        bucket: "http://minio:9000/minio/test"
+        storage: "minio"
+      encryptOptions:
+        - name: metaurl
+          valueFrom:
+            secretKeyRef:
+              name: jfs-secret
+              key: metaurl
+        - name: access-key
+          valueFrom:
+            secretKeyRef:
+              name: jfs-secret
+              key: access-key
+        - name: secret-key
+          valueFrom:
+            secretKeyRef:
+              name: jfs-secret
+              key: secret-key
+---
+apiVersion: data.fluid.io/v1alpha1
+kind: JuiceFSRuntime
+metadata:
+  name: jfsdemo
+spec:
+  juicefsVersion:
+    image: juicedata/juicefs-fuse
+    imageTag: ce-v1.1.1
+  fuse:
+    image: juicedata/juicefs-fuse
+    imageTag: ce-v1.1.1
+  replicas: 1
+  tieredstore:
+    levels:
+      - mediumtype: SSD
+        path: /var/lib/docker/juicefs
+        quota: 1Gi
+        low: "0.01"

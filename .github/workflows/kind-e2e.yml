@@ -1,0 +1,72 @@
+name: E2E Functionality Check
+on:
+  - pull_request
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GO_VERSION: 1.21.10
+
+jobs:
+  kind-e2e-test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        kubernetes-version: ["v1.29.2", "v1.28.7", "v1.26.15", "v1.24.17", "v1.22.17"]
+    env:
+      GOPATH: ${{ github.workspace }}
+      GO111MODULE: auto
+      KIND_CLUSTER: fluid-cluster
+    defaults:
+      run:
+        working-directory: ${{ env.GOPATH }}/src/github.com/fluid-cloudnative/fluid
+
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      
+      - name: Set up Helm
+        uses: azure/setup-helm@v4.2.0
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.GOPATH }}/src/github.com/fluid-cloudnative/fluid
+
+      - name: Create k8s Kind Cluster
+        uses: helm/kind-action@v1.10.0
+        with:
+          node_image: kindest/node:${{ matrix.kubernetes-version }}
+          cluster_name: ${{ env.KIND_CLUSTER }}
+          kubectl_version: ${{ matrix.kubernetes-version }}
+
+      - name: Build fluid docker images
+        env:
+          IMG_REPO: fluidcloudnative
+        run: |
+          echo ">>> System disk usage before build fluid images"
+          df -h
+          ./.github/scripts/build-all-images.sh 
+
+      - name: Deploy fluid to Kind cluster
+        run: |
+          ./.github/scripts/deploy-fluid-to-kind.sh
+
+      - name: Fluid basic e2e tests
+        timeout-minutes: 30
+        run: |
+          ./.github/scripts/gha-e2e.sh
+
+      - name: Dump environment
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: gha-e2e-logs-${{ github.job }}-${{ matrix.kubernetes-version }}
+          path: "src/github.com/fluid-cloudnative/fluid/e2e-tmp/testcase-*.tgz"
+          retention-days: 14
+          

@@ -3,6 +3,7 @@ kind: Job
 metadata:
   name: fluid-test
 spec:
+  backoffLimit: 1
   template:
     spec:
       restartPolicy: Never
@@ -10,11 +11,13 @@ spec:
         - name: busybox
           image: busybox
           command: ["/bin/sh"]
-          args: ["-c", "set -x; cp  /data/ant/RELEASE-NOTES-1.9.15.html ./  "]
+          args:
+          - -c
+          - set -ex; test -n "$(ls /data)" && test "$(cat /data/testfile)" = "helloworld"
           volumeMounts:
             - mountPath: /data
-              name: ant-vol
+              name: fluid-vol
       volumes:
-        - name: ant-vol
+        - name: fluid-vol
           persistentVolumeClaim:
-            claimName: ant
+            claimName: jindo-demo

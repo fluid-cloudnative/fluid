@@ -1,0 +1,22 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: Dataset
+metadata:
+  name: zookeeper
+spec:
+  mounts:
+    - mountPoint: https://downloads.apache.org/zookeeper/stable/
+      name: zookeeper
+---
+apiVersion: data.fluid.io/v1alpha1
+kind: AlluxioRuntime
+metadata:
+  name: zookeeper
+spec:
+  replicas: 1
+  tieredstore:
+    levels:
+      - mediumtype: SSD
+        path: /var/lib/docker/alluxio
+        quota: 1Gi
+        high: "0.95"
+        low: "0.7"
