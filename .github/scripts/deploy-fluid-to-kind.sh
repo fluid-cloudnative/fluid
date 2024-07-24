@@ -11,7 +11,7 @@ function get_image_tag() {
 
 function deploy_fluid() {
     echo "Replacing image tags in values.yaml with $IMAGE_TAG"
-    sed -i -E "s/(image: fluidcloudnative\/.+:)v[0-9]\.[0-9]\.[0-9]-[a-z0-9]+/\1$IMAGE_TAG/" charts/fluid/fluid/values.yaml
+    sed -i -E "s/version: &defaultVersion v[0-9]\.[0-9]\.[0-9]-[a-z0-9]+$/version: \&defaultVersion $IMAGE_TAG" charts/fluid/fluid/values.yaml
     kubectl create ns fluid-system
     helm install --create-namespace fluid charts/fluid/fluid
 }
