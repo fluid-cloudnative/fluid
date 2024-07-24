@@ -597,10 +597,10 @@ func (e *JindoEngine) allocatePorts(value *Jindo) error {
 	// usehostnetwork to choose port from port allocator
 	expectedPortNum := 2
 	if !value.UseHostNetwork {
-		value.Master.Port.Rpc = DEFAULT_MASTER_RPC_PORT
-		value.Worker.Port.Rpc = DEFAULT_WORKER_RPC_PORT
+		value.Master.Port.Rpc = defaultMasterRpcRort
+		value.Worker.Port.Rpc = defaultWorkerRpcRort
 		if value.Master.ReplicaCount == JINDO_HA_MASTERNUM {
-			value.Master.Port.Raft = DEFAULT_RAFT_RPC_PORT
+			value.Master.Port.Raft = defaultRaftRpcRort
 		}
 		return nil
 	}

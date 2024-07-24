@@ -38,9 +38,9 @@ const (
 	JINDO_MASTERNUM_DEFAULT = 1
 	JINDO_HA_MASTERNUM      = 3
 
-	DEFAULT_MASTER_RPC_PORT = 8101
-	DEFAULT_WORKER_RPC_PORT = 6101
-	DEFAULT_RAFT_RPC_PORT   = 8103
+	defaultMasterRpcRort = 8101
+	defaultWorkerRpcRort = 6101
+	defaultRaftRpcRort   = 8103
 
 	workerPodRole = "jindo-worker"
 
