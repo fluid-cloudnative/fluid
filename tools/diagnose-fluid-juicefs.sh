@@ -32,9 +32,14 @@ helm_get() {
   run helm get all -n ${runtime_namespace} "${1}" &>"$diagnose_dir/helm-${1}.yaml"
 }
 
+helm_get_runtime() {
+  run env HELM_DRIVER=configmap helm get all -n ${runtime_namespace} "${1}" &>"$diagnose_dir/helm-${1}.yaml"
+}
+
 pod_status() {
   local namespace=${1:-"default"}
   run kubectl get po -owide -n ${namespace} &>"$diagnose_dir/pods-${namespace}.log"
+  run kubectl get po -oyaml -n ${namespace} &>>"$diagnose_dir/pods-${namespace}.log"
 }
 
 fluid_pod_logs() {
@@ -89,7 +94,7 @@ archive() {
 pd_collect() {
   echo "Start collecting, runtime-name=${runtime_name}, runtime-namespace=${runtime_namespace}"
   helm_get "${fluid_name}"
-  helm_get "${runtime_name}"
+  helm_get_runtime "${runtime_name}"
   pod_status "${fluid_namespace}"
   pod_status "${runtime_namespace}"
   runtime_pod_logs
