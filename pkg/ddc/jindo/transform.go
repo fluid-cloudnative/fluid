@@ -598,9 +598,9 @@ func (e *JindoEngine) allocatePorts(value *Jindo) error {
 	expectedPortNum := 2
 	if !value.UseHostNetwork {
 		value.Master.Port.Rpc = defaultMasterRpcRort
-		value.Worker.Port.Rpc = defaultWorkerRpcRort
+		value.Worker.Port.Rpc = DEFAULT_WORKER_RPC_PORT
 		if value.Master.ReplicaCount == JINDO_HA_MASTERNUM {
-			value.Master.Port.Raft = defaultRaftRpcRort
+			value.Master.Port.Raft = DEFAULT_RAFT_RPC_PORT
 		}
 		return nil
 	}
