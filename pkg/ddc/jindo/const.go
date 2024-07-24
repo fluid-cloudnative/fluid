@@ -21,7 +21,7 @@ const (
 
 	//fluid_PATH = "fluid_path"
 
-	Mount_TYPE = "mount_type"
+	MountType = "mount_type"
 
 	SUMMARY_PREFIX_TOTAL_CAPACITY = "Total Capacity: "
 
