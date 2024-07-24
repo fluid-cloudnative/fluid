@@ -17,7 +17,7 @@ limitations under the License.
 package jindo
 
 const (
-	CSI_DRIVER = "fuse.csi.fluid.io"
+	CsiDriver = "fuse.csi.fluid.io"
 
 	//fluid_PATH = "fluid_path"
 
