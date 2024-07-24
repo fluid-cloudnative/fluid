@@ -17,12 +17,6 @@ limitations under the License.
 package jindo
 
 const (
-	CsiDriver = "fuse.csi.fluid.io"
-
-	//fluid_PATH = "fluid_path"
-
-	MountType = "mount_type"
-
 	SUMMARY_PREFIX_TOTAL_CAPACITY = "Total Capacity: "
 
 	SUMMARY_PREFIX_USED_CAPACITY = "Used Capacity: "
