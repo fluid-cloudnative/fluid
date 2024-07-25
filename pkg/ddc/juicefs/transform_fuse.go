@@ -361,6 +361,7 @@ func (j *JuiceFSEngine) genFuseMount(value *JuiceFS, optionMap map[string]string
 		setDefaultOptions(optionMap, "metrics", fmt.Sprintf("0.0.0.0:%d", metricsPort))
 
 		mountArgs = []string{
+			"exec",
 			common.JuiceFSCeMountPath,
 			value.Source,
 			security.EscapeBashStr(value.Fuse.MountPath),
