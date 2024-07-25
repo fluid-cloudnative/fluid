@@ -250,9 +250,6 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPa
 				break
 			}
 			value := secret.Data[secretKeyRef.Key]
-			if err != nil {
-				e.Log.Info("decode value failed")
-			}
 			if key == "fs."+mode+".accessKeyId" {
 				properties["jfs.namespaces.jindo."+mode+".access.key"] = string(value)
 			}
