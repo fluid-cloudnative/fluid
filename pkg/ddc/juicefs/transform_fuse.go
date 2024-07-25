@@ -382,6 +382,7 @@ func (j *JuiceFSEngine) genFuseMount(value *JuiceFS, optionMap map[string]string
 		setDefaultOptions(optionMap, "no-sharing", "")
 
 		mountArgs = []string{
+			"exec",
 			common.JuiceFSMountPath,
 			value.Source,
 			security.EscapeBashStr(value.Fuse.MountPath),
