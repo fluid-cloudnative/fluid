@@ -335,7 +335,7 @@ func TestJuiceFSEngine_genWorkerMount(t *testing.T) {
 				runtime: &datav1alpha1.JuiceFSRuntime{},
 			},
 			wantErr:           false,
-			wantWorkerCommand: "/bin/mount.juicefs redis://127.0.0.1:6379 /test-worker -o metrics=0.0.0.0:9567",
+			wantWorkerCommand: "exec /bin/mount.juicefs redis://127.0.0.1:6379 /test-worker -o metrics=0.0.0.0:9567",
 			wantWorkerStatCmd: "stat -c %i /test-worker",
 		},
 		{
@@ -372,7 +372,7 @@ func TestJuiceFSEngine_genWorkerMount(t *testing.T) {
 				}}},
 			},
 			wantErr:           false,
-			wantWorkerCommand: "/bin/mount.juicefs redis://127.0.0.1:6379 /test-worker -o metrics=127.0.0.1:9567",
+			wantWorkerCommand: "exec /bin/mount.juicefs redis://127.0.0.1:6379 /test-worker -o metrics=127.0.0.1:9567",
 			wantWorkerStatCmd: "stat -c %i /test-worker",
 		},
 		{
@@ -406,7 +406,7 @@ func TestJuiceFSEngine_genWorkerMount(t *testing.T) {
 				runtime: &datav1alpha1.JuiceFSRuntime{},
 			},
 			wantErr:           false,
-			wantWorkerCommand: "/sbin/mount.juicefs test-enterprise /test -o foreground,no-update,cache-group=fluid-test-enterprise",
+			wantWorkerCommand: "exec /sbin/mount.juicefs test-enterprise /test -o foreground,no-update,cache-group=fluid-test-enterprise",
 			wantWorkerStatCmd: "stat -c %i /test",
 		},
 		{
@@ -442,7 +442,7 @@ func TestJuiceFSEngine_genWorkerMount(t *testing.T) {
 				}}},
 			},
 			wantErr:           false,
-			wantWorkerCommand: "/sbin/mount.juicefs test-enterprise /test -o verbose,foreground,no-update,cache-group=test",
+			wantWorkerCommand: "exec /sbin/mount.juicefs test-enterprise /test -o verbose,foreground,no-update,cache-group=test",
 			wantWorkerStatCmd: "stat -c %i /test",
 		},
 	}
