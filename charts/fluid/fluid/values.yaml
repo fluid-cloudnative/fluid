@@ -154,11 +154,11 @@ runtime:
       imageTag: *defaultVersion
     fuse:
       ceimagePrefix: juicedata
-      ceimageName: juicefs-fuse
-      ceimageTag: ce-v1.1.0-rc1
+      ceimageName: mount
+      ceimageTag: ce-v1.2.0
       eeimagePrefix: juicedata
-      eeimageName: juicefs-fuse
-      eeimageTag: ee-4.9.16
+      eeimageName: mount
+      eeimageTag: ee-5.0.21-317356c
   thin:
     replicas: 1
     tolerations:
