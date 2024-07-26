@@ -795,7 +795,7 @@ func TestJuiceFSEngine_genMount(t *testing.T) {
 				},
 			},
 			wantErr:         false,
-			wantFuseCommand: "/bin/mount.juicefs redis://127.0.0.1:6379 /test -o metrics=0.0.0.0:9567",
+			wantFuseCommand: "exec /bin/mount.juicefs redis://127.0.0.1:6379 /test -o metrics=0.0.0.0:9567",
 			wantFuseStatCmd: "stat -c %i /test",
 		},
 		{
@@ -830,7 +830,7 @@ func TestJuiceFSEngine_genMount(t *testing.T) {
 				options: map[string]string{"verbose": ""},
 			},
 			wantErr:         false,
-			wantFuseCommand: "/bin/mount.juicefs redis://127.0.0.1:6379 /test -o verbose,metrics=0.0.0.0:9567",
+			wantFuseCommand: "exec /bin/mount.juicefs redis://127.0.0.1:6379 /test -o verbose,metrics=0.0.0.0:9567",
 			wantFuseStatCmd: "stat -c %i /test",
 		},
 		{
@@ -863,7 +863,7 @@ func TestJuiceFSEngine_genMount(t *testing.T) {
 				},
 			},
 			wantErr:         false,
-			wantFuseCommand: "/sbin/mount.juicefs test-enterprise /test -o foreground,no-update,cache-group=fluid-test-enterprise,no-sharing",
+			wantFuseCommand: "exec /sbin/mount.juicefs test-enterprise /test -o foreground,no-update,cache-group=fluid-test-enterprise,no-sharing",
 			wantFuseStatCmd: "stat -c %i /test",
 		},
 		{
@@ -897,7 +897,7 @@ func TestJuiceFSEngine_genMount(t *testing.T) {
 				options: map[string]string{"cache-group": "test", "verbose": ""},
 			},
 			wantErr:         false,
-			wantFuseCommand: "/sbin/mount.juicefs test-enterprise /test -o verbose,foreground,no-update,cache-group=test,no-sharing",
+			wantFuseCommand: "exec /sbin/mount.juicefs test-enterprise /test -o verbose,foreground,no-update,cache-group=test,no-sharing",
 			wantFuseStatCmd: "stat -c %i /test",
 		}, {
 			name: "test-enterprise-options-with-bucket2",
@@ -930,7 +930,7 @@ func TestJuiceFSEngine_genMount(t *testing.T) {
 				options: map[string]string{"cache-group": "test", "verbose": "", JuiceBucket2: "bucket2"},
 			},
 			wantErr:         false,
-			wantFuseCommand: "/sbin/mount.juicefs test-enterprise /test -o verbose,foreground,no-update,cache-group=test,no-sharing",
+			wantFuseCommand: "exec /sbin/mount.juicefs test-enterprise /test -o verbose,foreground,no-update,cache-group=test,no-sharing",
 			wantFuseStatCmd: "stat -c %i /test",
 		},
 	}

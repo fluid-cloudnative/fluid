@@ -205,6 +205,7 @@ func (j *JuiceFSEngine) genWorkerMount(value *JuiceFS, workerOptionMap map[strin
 			workerOptionMap["metrics"] = fmt.Sprintf("0.0.0.0:%d", metricsPort)
 		}
 		mountArgsWorker = []string{
+			"exec",
 			common.JuiceFSCeMountPath,
 			value.Source,
 			security.EscapeBashStr(value.Worker.MountPath),
@@ -226,6 +227,7 @@ func (j *JuiceFSEngine) genWorkerMount(value *JuiceFS, workerOptionMap map[strin
 		delete(workerOptionMap, "no-sharing")
 
 		mountArgsWorker = []string{
+			"exec",
 			common.JuiceFSMountPath,
 			value.Source,
 			security.EscapeBashStr(value.Worker.MountPath),
