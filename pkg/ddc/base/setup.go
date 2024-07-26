@@ -69,6 +69,7 @@ func (b *TemplateEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool
 	}
 
 	if shouldCheckUFS {
+		b.Log.V(3).Info("start to prepare ufs", "runtime", ctx.Runtime.GetName())
 		err = b.Implement.PrepareUFS()
 		if err != nil {
 			b.Log.Error(err, "Failed to prepare ufs.")

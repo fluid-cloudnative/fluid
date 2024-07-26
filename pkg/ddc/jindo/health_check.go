@@ -17,17 +17,20 @@ limitations under the License.
 package jindo
 
 import (
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
+
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/util/retry"
 )
 
 func (e *JindoEngine) CheckRuntimeHealthy() (err error) {
+	e.Log.V(1).Info("CheckRuntimeHealthy", "runtime name", e.runtimeInfo.GetName())
+
 	// 1. Check the healthy of the master
 	err = e.checkMasterHealthy()
 	if err != nil {
@@ -61,12 +64,19 @@ func (e *JindoEngine) CheckRuntimeHealthy() (err error) {
 		return
 	}
 
+	// In some conditions we expect not to update dataset as Bound in
+	// health check and let other components to handle it.
+	if e.StopBindDataSetInHealthCheck() {
+		return nil
+	}
+
 	// 4. Update the dataset as Bounded
 	return e.UpdateDatasetStatus(data.BoundDatasetPhase)
 }
 
 // checkMasterHealthy checks the master healthy
 func (e *JindoEngine) checkMasterHealthy() (err error) {
+	e.Log.V(3).Info("checkMasterHealthy", "master name", e.getMasterName())
 	master, err := kubeclient.GetStatefulSet(e.Client, e.getMasterName(), e.namespace)
 	if err != nil {
 		return err

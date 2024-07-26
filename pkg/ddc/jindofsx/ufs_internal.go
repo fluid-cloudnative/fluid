@@ -79,8 +79,8 @@ func (e *JindoFSxEngine) mountUFS() (err error) {
 	// Iterate all the mount points, do mount if the mount point is not Fluid-native(e.g. Hostpath or PVC)
 	for _, mount := range dataset.Spec.Mounts {
 
-		// first to check the path isMounted
 		mounted := false
+		// first to check the path isMounted
 		if strings.HasPrefix(mount.MountPoint, common.VolumeScheme.String()) {
 			ufsVolumesPath := utils.UFSPathBuilder{}.GenLocalStoragePath(mount)
 			mount.MountPoint = "local://" + ufsVolumesPath

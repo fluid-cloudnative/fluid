@@ -18,18 +18,24 @@ package ctrl
 
 import (
 	"context"
+	"reflect"
 	"testing"
+	"time"
 
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	utilpointer "k8s.io/utils/pointer"
+	fakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
 func TestCheckMasterHealthy(t *testing.T) {
@@ -284,5 +290,290 @@ func TestCheckMasterHealthy(t *testing.T) {
 				runtime.Status.MasterPhase)
 		}
 
+	}
+}
+
+func Test_recheckMasterHealthyByEachContainerStartedTime(t *testing.T) {
+	startT1, _ := time.Parse(time.RFC3339, "2023-08-07T20:17:08+08:00")
+	startT2, _ := time.Parse(time.RFC3339, "2023-08-07T20:18:08+08:00")
+
+	testCases := []struct {
+		name        string
+		sts         *appsv1.StatefulSet
+		pods        []*corev1.Pod
+		expectedSts *appsv1.StatefulSet
+		ready       bool
+	}{
+		{
+			name: "check health at first shot",
+			sts: &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "ds-test-master",
+					Namespace: "default",
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Replicas: utilpointer.Int32(1),
+					Selector: &metav1.LabelSelector{MatchLabels: map[string]string{
+						"foo": "bar",
+					}},
+				},
+			},
+			pods: []*corev1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "ds-test-master-0",
+						Namespace: "default",
+						Labels:    map[string]string{"foo": "bar"},
+					},
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{
+							{
+								Name:  "main",
+								Image: "busybox",
+							},
+						},
+					},
+					Status: corev1.PodStatus{
+						Phase: corev1.PodRunning,
+						ContainerStatuses: []corev1.ContainerStatus{
+							{
+								Name: "main",
+								State: corev1.ContainerState{Running: &corev1.ContainerStateRunning{
+									StartedAt: metav1.NewTime(startT1),
+								}},
+							},
+						},
+					},
+				},
+			},
+			expectedSts: &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "ds-test-master",
+					Namespace: "default",
+					Annotations: map[string]string{
+						common.AnnotationLatestMasterStartedTime: startT1.Format(time.RFC3339),
+					},
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Replicas: utilpointer.Int32(1),
+					Selector: &metav1.LabelSelector{MatchLabels: map[string]string{
+						"foo": "bar",
+					}},
+				},
+			},
+			ready: false,
+		},
+		{
+			name: "check health when master recreated",
+			sts: &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "ds-test-master",
+					Namespace: "default",
+					Annotations: map[string]string{
+						common.AnnotationLatestMasterStartedTime: startT1.Format(time.RFC3339),
+					},
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Replicas: utilpointer.Int32(1),
+					Selector: &metav1.LabelSelector{MatchLabels: map[string]string{
+						"foo": "bar",
+					}},
+				},
+			},
+			pods: []*corev1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "ds-test-master-0",
+						Namespace: "default",
+						Labels:    map[string]string{"foo": "bar"},
+					},
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{
+							{
+								Name:  "main",
+								Image: "busybox",
+							},
+						},
+					},
+					Status: corev1.PodStatus{
+						Phase: corev1.PodPending,
+						ContainerStatuses: []corev1.ContainerStatus{
+							{
+								Name:  "main",
+								State: corev1.ContainerState{},
+							},
+						},
+					},
+				},
+			},
+			expectedSts: &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "ds-test-master",
+					Namespace: "default",
+					Annotations: map[string]string{
+						common.AnnotationLatestMasterStartedTime: startT1.Format(time.RFC3339),
+					},
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Replicas: utilpointer.Int32(1),
+					Selector: &metav1.LabelSelector{MatchLabels: map[string]string{
+						"foo": "bar",
+					}},
+				},
+			},
+			ready: false,
+		},
+		{
+			name: "check health when master just started",
+			sts: &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "ds-test-master",
+					Namespace: "default",
+					Annotations: map[string]string{
+						common.AnnotationLatestMasterStartedTime: startT1.Format(time.RFC3339),
+					},
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Replicas: utilpointer.Int32(1),
+					Selector: &metav1.LabelSelector{MatchLabels: map[string]string{
+						"foo": "bar",
+					}},
+				},
+			},
+			pods: []*corev1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "ds-test-master-0",
+						Namespace: "default",
+						Labels:    map[string]string{"foo": "bar"},
+					},
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{
+							{
+								Name:  "main",
+								Image: "busybox",
+							},
+						},
+					},
+					Status: corev1.PodStatus{
+						Phase: corev1.PodRunning,
+						ContainerStatuses: []corev1.ContainerStatus{
+							{
+								Name: "main",
+								State: corev1.ContainerState{Running: &corev1.ContainerStateRunning{
+									StartedAt: metav1.NewTime(startT2),
+								}},
+							},
+						},
+					},
+				},
+			},
+			expectedSts: &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "ds-test-master",
+					Namespace: "default",
+					Annotations: map[string]string{
+						common.AnnotationLatestMasterStartedTime: startT2.Format(time.RFC3339),
+					},
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Replicas: utilpointer.Int32(1),
+					Selector: &metav1.LabelSelector{MatchLabels: map[string]string{
+						"foo": "bar",
+					}},
+				},
+			},
+			ready: true,
+		},
+		{
+			name: "recheck health when master has started before",
+			sts: &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "ds-test-master",
+					Namespace: "default",
+					Annotations: map[string]string{
+						common.AnnotationLatestMasterStartedTime: startT2.Format(time.RFC3339),
+					},
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Replicas: utilpointer.Int32(1),
+					Selector: &metav1.LabelSelector{MatchLabels: map[string]string{
+						"foo": "bar",
+					}},
+				},
+			},
+			pods: []*corev1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "ds-test-master-0",
+						Namespace: "default",
+						Labels:    map[string]string{"foo": "bar"},
+					},
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{
+							{
+								Name:  "main",
+								Image: "busybox",
+							},
+						},
+					},
+					Status: corev1.PodStatus{
+						Phase: corev1.PodRunning,
+						ContainerStatuses: []corev1.ContainerStatus{
+							{
+								Name: "main",
+								State: corev1.ContainerState{Running: &corev1.ContainerStateRunning{
+									StartedAt: metav1.NewTime(startT2),
+								}},
+							},
+						},
+					},
+				},
+			},
+			expectedSts: &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "ds-test-master",
+					Namespace: "default",
+					Annotations: map[string]string{
+						common.AnnotationLatestMasterStartedTime: startT2.Format(time.RFC3339),
+					},
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Replicas: utilpointer.Int32(1),
+					Selector: &metav1.LabelSelector{MatchLabels: map[string]string{
+						"foo": "bar",
+					}},
+				},
+			},
+			ready: true,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			fb := fakeclient.NewClientBuilder().WithScheme(scheme.Scheme)
+			if testCase.sts != nil {
+				fb.WithObjects(testCase.sts)
+			}
+			if len(testCase.pods) > 0 {
+				for pi := range testCase.pods {
+					fb.WithObjects(testCase.pods[pi])
+				}
+			}
+
+			h := Helper{client: fb.Build()}
+			ready, _, err := h.recheckMasterHealthyByEachContainerStartedTime(testCase.sts)
+			if err != nil {
+				t.Error(err)
+			}
+			if ready != testCase.ready {
+				t.Errorf("unexpected ready state, expected: %v, got: %v", testCase.ready, ready)
+			}
+			latestSts := appsv1.StatefulSet{}
+			_ = h.client.Get(context.Background(), types.NamespacedName{Name: testCase.sts.Name, Namespace: testCase.sts.Namespace}, &latestSts)
+			if !reflect.DeepEqual(latestSts.Annotations, testCase.expectedSts.Annotations) {
+				t.Errorf("unexpected updated sts, expected: %+v, got: %+v", testCase.expectedSts.Annotations, latestSts.Annotations)
+			}
+		})
 	}
 }
