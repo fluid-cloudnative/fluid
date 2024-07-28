@@ -115,7 +115,7 @@ func handle() {
 
 	utils.NewPprofServer(setupLog, pprofAddr, development)
 
-	// the default webserver port is 9443, no need to set.
+	// the default webhook server port is 9443, no need to set
 	mgr, err := ctrl.NewManager(controllers.GetConfigOrDieWithQPSAndBurst(kubeClientQPS, kubeClientBurst), ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
