@@ -18,7 +18,6 @@ package app
 
 import (
 	"os"
-	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -34,6 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	"github.com/fluid-cloudnative/fluid/pkg/controllers"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
@@ -135,7 +135,7 @@ func handle() {
 		LeaderElection:          enableLeaderElection,
 		LeaderElectionNamespace: leaderElectionNamespace,
 		LeaderElectionID:        "juicefs.data.fluid.io",
-		Cache:                   juicefsctl.NewCache(),
+		Cache:                   juicefsctl.NewCacheOption(),
 		NewClient:               NewControllerClient,
 	})
 	if err != nil {

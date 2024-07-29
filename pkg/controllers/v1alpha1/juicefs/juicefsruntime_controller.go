@@ -134,7 +134,7 @@ func (r *JuiceFSRuntimeReconciler) SetupWithManager(mgr ctrl.Manager, options co
 	}
 }
 
-func NewCache() cache.Options {
+func NewCacheOption() cache.Options {
 	return cache.Options{
 		ByObject: map[client.Object]cache.ByObject{
 			&appsv1.StatefulSet{}: {Label: labels.SelectorFromSet(labels.Set{
