@@ -136,17 +136,18 @@ type JobWorker struct {
 }
 
 type Worker struct {
-	JvmOptions   []string             `json:"jvmOptions,omitempty"`
-	Env          map[string]string    `json:"env,omitempty"`
-	NodeSelector map[string]string    `json:"nodeSelector,omitempty"`
-	Properties   map[string]string    `json:"properties,omitempty"`
-	HostNetwork  bool                 `json:"hostNetwork,omitempty"`
-	Resources    common.Resources     `json:"resources,omitempty"`
-	Ports        Ports                `json:"ports,omitempty"`
-	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
-	Volumes      []corev1.Volume      `json:"volumes,omitempty"`
-	Labels       map[string]string    `json:"labels,omitempty"`
-	Annotations  map[string]string    `json:"annotations,omitempty"`
+	JvmOptions       []string                      `json:"jvmOptions,omitempty"`
+	Env              map[string]string             `json:"env,omitempty"`
+	NodeSelector     map[string]string             `json:"nodeSelector,omitempty"`
+	Properties       map[string]string             `json:"properties,omitempty"`
+	HostNetwork      bool                          `json:"hostNetwork,omitempty"`
+	Resources        common.Resources              `json:"resources,omitempty"`
+	Ports            Ports                         `json:"ports,omitempty"`
+	VolumeMounts     []corev1.VolumeMount          `json:"volumeMounts,omitempty"`
+	Volumes          []corev1.Volume               `json:"volumes,omitempty"`
+	Labels           map[string]string             `json:"labels,omitempty"`
+	Annotations      map[string]string             `json:"annotations,omitempty"`
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 }
 
 type Master struct {
@@ -168,7 +169,8 @@ type Master struct {
 	// config storage to store mount config.
 	MountConfigStorage string `json:"mountConfigStorage,omitempty"`
 	// non native mount infos when using configmap as mount storage.
-	NonNativeMounts []string `json:"nonNativeMounts,omitempty"`
+	NonNativeMounts  []string                      `json:"nonNativeMounts,omitempty"`
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 }
 
 type Restore struct {
@@ -178,26 +180,27 @@ type Restore struct {
 }
 
 type Fuse struct {
-	Image              string               `json:"image,omitempty"`
-	NodeSelector       map[string]string    `json:"nodeSelector,omitempty"`
-	ImageTag           string               `json:"imageTag,omitempty"`
-	ImagePullPolicy    string               `json:"imagePullPolicy,omitempty"`
-	Properties         map[string]string    `json:"properties,omitempty"`
-	Env                map[string]string    `json:"env,omitempty"`
-	JvmOptions         []string             `json:"jvmOptions,omitempty"`
-	MountPath          string               `json:"mountPath,omitempty"`
-	ShortCircuitPolicy string               `json:"shortCircuitPolicy,omitempty"`
-	Args               []string             `json:"args,omitempty"`
-	HostNetwork        bool                 `json:"hostNetwork,omitempty"`
-	HostPID            bool                 `json:"hostPID,omitempty"`
-	Enabled            bool                 `json:"enabled,omitempty"`
-	Resources          common.Resources     `json:"resources,omitempty"`
-	Global             bool                 `json:"global,omitempty"`
-	CriticalPod        bool                 `json:"criticalPod,omitempty"`
-	VolumeMounts       []corev1.VolumeMount `json:"volumeMounts,omitempty"`
-	Volumes            []corev1.Volume      `json:"volumes,omitempty"`
-	Labels             map[string]string    `json:"labels,omitempty"`
-	Annotations        map[string]string    `json:"annotations,omitempty"`
+	Image              string                        `json:"image,omitempty"`
+	NodeSelector       map[string]string             `json:"nodeSelector,omitempty"`
+	ImageTag           string                        `json:"imageTag,omitempty"`
+	ImagePullPolicy    string                        `json:"imagePullPolicy,omitempty"`
+	ImagePullSecrets   []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+	Properties         map[string]string             `json:"properties,omitempty"`
+	Env                map[string]string             `json:"env,omitempty"`
+	JvmOptions         []string                      `json:"jvmOptions,omitempty"`
+	MountPath          string                        `json:"mountPath,omitempty"`
+	ShortCircuitPolicy string                        `json:"shortCircuitPolicy,omitempty"`
+	Args               []string                      `json:"args,omitempty"`
+	HostNetwork        bool                          `json:"hostNetwork,omitempty"`
+	HostPID            bool                          `json:"hostPID,omitempty"`
+	Enabled            bool                          `json:"enabled,omitempty"`
+	Resources          common.Resources              `json:"resources,omitempty"`
+	Global             bool                          `json:"global,omitempty"`
+	CriticalPod        bool                          `json:"criticalPod,omitempty"`
+	VolumeMounts       []corev1.VolumeMount          `json:"volumeMounts,omitempty"`
+	Volumes            []corev1.Volume               `json:"volumes,omitempty"`
+	Labels             map[string]string             `json:"labels,omitempty"`
+	Annotations        map[string]string             `json:"annotations,omitempty"`
 }
 
 type TieredStore struct {
