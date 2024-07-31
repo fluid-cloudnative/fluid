@@ -37,7 +37,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	utilpointer "k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 // GetWorkersAsStatefulset gets workers as statefulset object. if it returns deprecated errors, it indicates that
@@ -71,7 +71,7 @@ func (e *Helper) CheckWorkersHealthy(recorder record.EventRecorder, runtime base
 		unavailablePodNames []types.NamespacedName
 	)
 
-	if sts.Spec.Replicas == utilpointer.Int32(0) || sts.Status.ReadyReplicas > 0 {
+	if sts.Spec.Replicas == ptr.To[int32](0) || sts.Status.ReadyReplicas > 0 {
 		healthy = true
 	}
 

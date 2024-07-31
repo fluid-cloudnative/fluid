@@ -25,6 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 type GateFunc func() (enabled bool)
@@ -49,7 +50,8 @@ func Register(mgr manager.Manager, client client.Client, log logr.Logger) {
 	server := mgr.GetWebhookServer()
 	filterActiveHandlers()
 	for path, handler := range handlerMap {
-		handler.Setup(client)
+		decoder := admission.NewDecoder(mgr.GetScheme())
+		handler.Setup(client, decoder)
 		server.Register(path, &webhook.Admission{Handler: handler})
 		log.Info("Registered webhook handler", "path", path)
 	}

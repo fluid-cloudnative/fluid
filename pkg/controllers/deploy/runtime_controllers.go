@@ -42,7 +42,7 @@ import (
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	utilpointer "k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 type CheckFunc func(client.Client, types.NamespacedName) (bool, error)
@@ -134,7 +134,7 @@ func scaleoutDeploymentIfNeeded(c client.Client, key types.NamespacedName, log l
 			if replicas <= 1 {
 				replicas = 1
 			}
-			deployToUpdate.Spec.Replicas = utilpointer.Int32(replicas)
+			deployToUpdate.Spec.Replicas = ptr.To(replicas)
 			scale = true
 		} else {
 			log.V(1).Info("No need to scale out runtime controller, skip", "key", key)

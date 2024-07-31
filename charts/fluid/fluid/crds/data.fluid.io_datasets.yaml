@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.12.1
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: datasets.data.fluid.io
 spec:
   group: data.fluid.io
@@ -55,14 +55,19 @@ spec:
         description: Dataset is the Schema for the datasets API
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -89,12 +94,14 @@ spec:
                     type: string
                 type: object
               mounts:
-                description: Mount Points to be mounted on cache runtime. <br> This
-                  field can be empty because some runtimes don't need to mount external
-                  storage (e.g. <a href="https://v6d.io/">Vineyard</a>).
+                description: |-
+                  Mount Points to be mounted on cache runtime. <br>
+                  This field can be empty because some runtimes don't need to mount external storage (e.g.
+                  <a href="https://v6d.io/">Vineyard</a>).
                 items:
-                  description: Mount describes a mounting. <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/ufs/S3.html">Alluxio
-                    Storage Integrations</a> for more info
+                  description: |-
+                    Mount describes a mounting. <br>
+                    Refer to <a href="https://docs.alluxio.io/os/user/stable/en/ufs/S3.html">Alluxio Storage Integrations</a> for more info
                   properties:
                     encryptOptions:
                       description: The secret information
@@ -134,10 +141,11 @@ spec:
                     options:
                       additionalProperties:
                         type: string
-                      description: The Mount Options. <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Mount
-                        Options</a>.  <br> The option has Prefix 'fs.' And you can
-                        Learn more from <a href="https://docs.alluxio.io/os/user/stable/en/ufs/S3.html">The
-                        Storage Integrations</a>
+                      description: |-
+                        The Mount Options. <br>
+                        Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Mount Options</a>.  <br>
+                        The option has Prefix 'fs.' And you can Learn more from
+                        <a href="https://docs.alluxio.io/os/user/stable/en/ufs/S3.html">The Storage Integrations</a>
                       type: object
                     path:
                       description: The path of mount, if not set will be /{Name}
@@ -154,9 +162,9 @@ spec:
                 minItems: 1
                 type: array
               nodeAffinity:
-                description: NodeAffinity defines constraints that limit what nodes
-                  this dataset can be cached to. This field influences the scheduling
-                  of pods that use the cached dataset.
+                description: |-
+                  NodeAffinity defines constraints that limit what nodes this dataset can be cached to.
+                  This field influences the scheduling of pods that use the cached dataset.
                 properties:
                   required:
                     description: Required specifies hard node constraints that must
@@ -166,36 +174,35 @@ spec:
                         description: Required. A list of node selector terms. The
                           terms are ORed.
                         items:
-                          description: A null or empty node selector term matches
-                            no objects. The requirements of them are ANDed. The TopologySelectorTerm
-                            type implements a subset of the NodeSelectorTerm.
+                          description: |-
+                            A null or empty node selector term matches no objects. The requirements of
+                            them are ANDed.
+                            The TopologySelectorTerm type implements a subset of the NodeSelectorTerm.
                           properties:
                             matchExpressions:
                               description: A list of node selector requirements by
                                 node's labels.
                               items:
-                                description: A node selector requirement is a selector
-                                  that contains values, a key, and an operator that
-                                  relates the key and values.
+                                description: |-
+                                  A node selector requirement is a selector that contains values, a key, and an operator
+                                  that relates the key and values.
                                 properties:
                                   key:
                                     description: The label key that the selector applies
                                       to.
                                     type: string
                                   operator:
-                                    description: Represents a key's relationship to
-                                      a set of values. Valid operators are In, NotIn,
-                                      Exists, DoesNotExist. Gt, and Lt.
+                                    description: |-
+                                      Represents a key's relationship to a set of values.
+                                      Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.
                                     type: string
                                   values:
-                                    description: An array of string values. If the
-                                      operator is In or NotIn, the values array must
-                                      be non-empty. If the operator is Exists or DoesNotExist,
-                                      the values array must be empty. If the operator
-                                      is Gt or Lt, the values array must have a single
-                                      element, which will be interpreted as an integer.
-                                      This array is replaced during a strategic merge
-                                      patch.
+                                    description: |-
+                                      An array of string values. If the operator is In or NotIn,
+                                      the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                      the values array must be empty. If the operator is Gt or Lt, the values
+                                      array must have a single element, which will be interpreted as an integer.
+                                      This array is replaced during a strategic merge patch.
                                     items:
                                       type: string
                                     type: array
@@ -208,28 +215,26 @@ spec:
                               description: A list of node selector requirements by
                                 node's fields.
                               items:
-                                description: A node selector requirement is a selector
-                                  that contains values, a key, and an operator that
-                                  relates the key and values.
+                                description: |-
+                                  A node selector requirement is a selector that contains values, a key, and an operator
+                                  that relates the key and values.
                                 properties:
                                   key:
                                     description: The label key that the selector applies
                                       to.
                                     type: string
                                   operator:
-                                    description: Represents a key's relationship to
-                                      a set of values. Valid operators are In, NotIn,
-                                      Exists, DoesNotExist. Gt, and Lt.
+                                    description: |-
+                                      Represents a key's relationship to a set of values.
+                                      Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.
                                     type: string
                                   values:
-                                    description: An array of string values. If the
-                                      operator is In or NotIn, the values array must
-                                      be non-empty. If the operator is Exists or DoesNotExist,
-                                      the values array must be empty. If the operator
-                                      is Gt or Lt, the values array must have a single
-                                      element, which will be interpreted as an integer.
-                                      This array is replaced during a strategic merge
-                                      patch.
+                                    description: |-
+                                      An array of string values. If the operator is In or NotIn,
+                                      the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                      the values array must be empty. If the operator is Gt or Lt, the values
+                                      array must have a single element, which will be interpreted as an integer.
+                                      This array is replaced during a strategic merge patch.
                                     items:
                                       type: string
                                     type: array
@@ -270,9 +275,9 @@ spec:
                 - user
                 type: object
               placement:
-                description: Manage switch for opening Multiple datasets single node
-                  deployment or not TODO(xieydd) In future, evaluate node resources
-                  and runtime resources to decide whether to turn them on
+                description: |-
+                  Manage switch for opening Multiple datasets single node deployment or not
+                  TODO(xieydd) In future, evaluate node resources and runtime resources to decide whether to turn them on
                 enum:
                 - Exclusive
                 - ""
@@ -336,40 +341,39 @@ spec:
               tolerations:
                 description: If specified, the pod's tolerations.
                 items:
-                  description: The pod this Toleration is attached to tolerates any
-                    taint that matches the triple <key,value,effect> using the matching
-                    operator <operator>.
+                  description: |-
+                    The pod this Toleration is attached to tolerates any taint that matches
+                    the triple <key,value,effect> using the matching operator <operator>.
                   properties:
                     effect:
-                      description: Effect indicates the taint effect to match. Empty
-                        means match all taint effects. When specified, allowed values
-                        are NoSchedule, PreferNoSchedule and NoExecute.
+                      description: |-
+                        Effect indicates the taint effect to match. Empty means match all taint effects.
+                        When specified, allowed values are NoSchedule, PreferNoSchedule and NoExecute.
                       type: string
                     key:
-                      description: Key is the taint key that the toleration applies
-                        to. Empty means match all taint keys. If the key is empty,
-                        operator must be Exists; this combination means to match all
-                        values and all keys.
+                      description: |-
+                        Key is the taint key that the toleration applies to. Empty means match all taint keys.
+                        If the key is empty, operator must be Exists; this combination means to match all values and all keys.
                       type: string
                     operator:
-                      description: Operator represents a key's relationship to the
-                        value. Valid operators are Exists and Equal. Defaults to Equal.
-                        Exists is equivalent to wildcard for value, so that a pod
-                        can tolerate all taints of a particular category.
+                      description: |-
+                        Operator represents a key's relationship to the value.
+                        Valid operators are Exists and Equal. Defaults to Equal.
+                        Exists is equivalent to wildcard for value, so that a pod can
+                        tolerate all taints of a particular category.
                       type: string
                     tolerationSeconds:
-                      description: TolerationSeconds represents the period of time
-                        the toleration (which must be of effect NoExecute, otherwise
-                        this field is ignored) tolerates the taint. By default, it
-                        is not set, which means tolerate the taint forever (do not
-                        evict). Zero and negative values will be treated as 0 (evict
-                        immediately) by the system.
+                      description: |-
+                        TolerationSeconds represents the period of time the toleration (which must be
+                        of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
+                        it is not set, which means tolerate the taint forever (do not evict). Zero and
+                        negative values will be treated as 0 (evict immediately) by the system.
                       format: int64
                       type: integer
                     value:
-                      description: Value is the taint value the toleration matches
-                        to. If the operator is Exists, the value should be empty,
-                        otherwise just a regular string.
+                      description: |-
+                        Value is the taint value the toleration matches to.
+                        If the operator is Exists, the value should be empty, otherwise just a regular string.
                       type: string
                   type: object
                 type: array
@@ -416,14 +420,16 @@ spec:
                   type: object
                 type: array
               dataBackupRef:
-                description: DataBackupRef specifies the running Backup job that targets
-                  this Dataset. This is mainly used as a lock to prevent concurrent
-                  DataBackup jobs. Deprecated, use OperationRef instead
+                description: |-
+                  DataBackupRef specifies the running Backup job that targets this Dataset.
+                  This is mainly used as a lock to prevent concurrent DataBackup jobs.
+                  Deprecated, use OperationRef instead
                 type: string
               dataLoadRef:
-                description: DataLoadRef specifies the running DataLoad job that targets
-                  this Dataset. This is mainly used as a lock to prevent concurrent
-                  DataLoad jobs. Deprecated, use OperationRef instead
+                description: |-
+                  DataLoadRef specifies the running DataLoad job that targets this Dataset.
+                  This is mainly used as a lock to prevent concurrent DataLoad jobs.
+                  Deprecated, use OperationRef instead
                 type: string
               datasetRef:
                 description: DatasetRef specifies the datasets namespaced name mounting
@@ -447,8 +453,9 @@ spec:
               mounts:
                 description: the info of mount points have been mounted
                 items:
-                  description: Mount describes a mounting. <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/ufs/S3.html">Alluxio
-                    Storage Integrations</a> for more info
+                  description: |-
+                    Mount describes a mounting. <br>
+                    Refer to <a href="https://docs.alluxio.io/os/user/stable/en/ufs/S3.html">Alluxio Storage Integrations</a> for more info
                   properties:
                     encryptOptions:
                       description: The secret information
@@ -488,10 +495,11 @@ spec:
                     options:
                       additionalProperties:
                         type: string
-                      description: The Mount Options. <br> Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Mount
-                        Options</a>.  <br> The option has Prefix 'fs.' And you can
-                        Learn more from <a href="https://docs.alluxio.io/os/user/stable/en/ufs/S3.html">The
-                        Storage Integrations</a>
+                      description: |-
+                        The Mount Options. <br>
+                        Refer to <a href="https://docs.alluxio.io/os/user/stable/en/reference/Properties-List.html">Mount Options</a>.  <br>
+                        The option has Prefix 'fs.' And you can Learn more from
+                        <a href="https://docs.alluxio.io/os/user/stable/en/ufs/S3.html">The Storage Integrations</a>
                       type: object
                     path:
                       description: The path of mount, if not set will be /{Name}
@@ -509,9 +517,9 @@ spec:
               operationRef:
                 additionalProperties:
                   type: string
-                description: OperationRef specifies the Operation that targets this
-                  Dataset. This is mainly used as a lock to prevent concurrent same
-                  Operation jobs.
+                description: |-
+                  OperationRef specifies the Operation that targets this Dataset.
+                  This is mainly used as a lock to prevent concurrent same Operation jobs.
                 type: object
               phase:
                 description: 'Dataset Phase. One of the four phases: `Pending`, `Bound`,

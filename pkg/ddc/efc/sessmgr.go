@@ -15,7 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
-	utilpointer "k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
@@ -194,7 +194,7 @@ func (s *SessMgrInitializer) deploySessMgr(ctx context.Context, config config) e
 									"none",
 								},
 								SecurityContext: &corev1.SecurityContext{
-									Privileged: utilpointer.Bool(true),
+									Privileged: ptr.To(true),
 								},
 							},
 						},
@@ -205,7 +205,7 @@ func (s *SessMgrInitializer) deploySessMgr(ctx context.Context, config config) e
 								Image:   config.SessMgrImage,
 								Args:    []string{"sessmgr"},
 								SecurityContext: &corev1.SecurityContext{
-									Privileged: utilpointer.Bool(false),
+									Privileged: ptr.To(false),
 								},
 								Lifecycle: &corev1.Lifecycle{
 									PreStop: &corev1.LifecycleHandler{

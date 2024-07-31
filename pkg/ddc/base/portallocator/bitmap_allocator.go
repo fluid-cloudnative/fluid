@@ -36,7 +36,8 @@ func (b *BitMapAllocator) needResetReservedPorts() bool {
 }
 
 func newBitMapAllocator(pr *net.PortRange, log logr.Logger) (BatchAllocatorInterface, error) {
-	alloc, err := portallocator.New(*pr, func(max int, rangeSpec string) (allocator.Interface, error) {
+	// TODO passing offset value.
+	alloc, err := portallocator.New(*pr, func(max int, rangeSpec string, offset int) (allocator.Interface, error) {
 		return allocator.NewAllocationMap(max, rangeSpec), nil
 	})
 

@@ -30,10 +30,10 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	"github.com/fluid-cloudnative/fluid/pkg/controllers"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
@@ -121,20 +121,21 @@ func handle() {
 
 	utils.NewPprofServer(setupLog, pprofAddr, development)
 
-	NewControllerClient := func(cache cache.Cache, config *rest.Config, options client.Options, uncachedObjects ...client.Object) (client.Client, error) {
-		return controllers.NewFluidControllerClient(cache, config, options,
-			append(uncachedObjects, &rbacv1.RoleBinding{}, &rbacv1.Role{}, &corev1.ServiceAccount{})...,
-		)
+	NewControllerClient := func(config *rest.Config, options client.Options) (client.Client, error) {
+		options.Cache.DisableFor = append(options.Cache.DisableFor, &rbacv1.RoleBinding{}, &rbacv1.Role{}, &corev1.ServiceAccount{})
+		return controllers.NewFluidControllerClient(config, options)
 	}
 
+	// the default webhook server port is 9443, no need to set
 	mgr, err := ctrl.NewManager(controllers.GetConfigOrDieWithQPSAndBurst(kubeClientQPS, kubeClientBurst), ctrl.Options{
-		Scheme:                  scheme,
-		MetricsBindAddress:      metricsAddr,
+		Scheme: scheme,
+		Metrics: metricsserver.Options{
+			BindAddress: metricsAddr,
+		},
 		LeaderElection:          enableLeaderElection,
 		LeaderElectionNamespace: leaderElectionNamespace,
 		LeaderElectionID:        "juicefs.data.fluid.io",
-		Port:                    9443,
-		NewCache:                juicefsctl.NewCache(scheme),
+		Cache:                   juicefsctl.NewCacheOption(),
 		NewClient:               NewControllerClient,
 	})
 	if err != nil {

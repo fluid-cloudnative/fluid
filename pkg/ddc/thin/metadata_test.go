@@ -27,7 +27,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func TestShouldSyncMetadata(t *testing.T) {
@@ -78,7 +78,7 @@ func TestShouldSyncMetadata(t *testing.T) {
 			Spec: datav1alpha1.ThinRuntimeSpec{
 				RuntimeManagement: datav1alpha1.RuntimeManagement{
 					MetadataSyncPolicy: datav1alpha1.MetadataSyncPolicy{
-						AutoSync: pointer.Bool(false),
+						AutoSync: ptr.To(false),
 					},
 				},
 			},

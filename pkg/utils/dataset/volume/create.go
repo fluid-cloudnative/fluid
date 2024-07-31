@@ -145,7 +145,7 @@ func CreatePersistentVolumeForRuntime(client client.Client,
 		// Poll the PV's status until it enters an "Available" phase. The polling process timeouts after 1 second and retries every 200 milliseconds.
 		timeoutCtx, cancelFn := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancelFn()
-		pollErr := wait.PollImmediateUntilWithContext(timeoutCtx, 200*time.Millisecond, func(ctx context.Context) (done bool, err error) {
+		pollErr := wait.PollUntilContextCancel(timeoutCtx, 200*time.Millisecond, true, func(ctx context.Context) (done bool, err error) {
 			pvCreated, pvErr := kubeclient.GetPersistentVolume(client, pvName)
 			if pvErr != nil {
 				if utils.IgnoreNotFound(pvErr) == nil {
@@ -211,9 +211,9 @@ func CreatePersistentVolumeClaimForRuntime(client client.Client,
 				},
 				StorageClassName: &common.FluidStorageClass,
 				AccessModes:      accessModes,
-				Resources: corev1.ResourceRequirements{
+				Resources: corev1.VolumeResourceRequirements{
 					Requests: corev1.ResourceList{
-						corev1.ResourceName(corev1.ResourceStorage): storageCapacity,
+						corev1.ResourceStorage: storageCapacity,
 					},
 				},
 			},

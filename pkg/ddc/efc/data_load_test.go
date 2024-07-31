@@ -26,7 +26,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	utilpointer "k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func TestEFCEngine_CheckRuntimeReady(t *testing.T) {
@@ -48,6 +48,10 @@ func TestEFCEngine_CheckRuntimeReady(t *testing.T) {
 				namespace: "fluid",
 			},
 			sts: appsv1.StatefulSet{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "StatefulSet",
+					APIVersion: "apps/v1",
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "efc-test-worker",
 					Namespace: "fluid",
@@ -70,7 +74,7 @@ func TestEFCEngine_CheckRuntimeReady(t *testing.T) {
 							APIVersion: "apps/v1",
 							Name:       "efc-test-worker",
 							UID:        "uid1",
-							Controller: utilpointer.Bool(true),
+							Controller: ptr.To(true),
 						}},
 					},
 					Status: v1.PodStatus{
@@ -113,7 +117,7 @@ func TestEFCEngine_CheckRuntimeReady(t *testing.T) {
 							APIVersion: "apps/v1",
 							Name:       "efc-test-err-worker",
 							UID:        "uid2",
-							Controller: utilpointer.Bool(true),
+							Controller: ptr.To(true),
 						}},
 					},
 					Status: v1.PodStatus{
@@ -156,7 +160,7 @@ func TestEFCEngine_CheckRuntimeReady(t *testing.T) {
 							APIVersion: "apps/v1",
 							Name:       "efc-test-err2-worker",
 							UID:        "uid3",
-							Controller: utilpointer.Bool(true),
+							Controller: ptr.To(true),
 						}},
 					},
 					Status: v1.PodStatus{

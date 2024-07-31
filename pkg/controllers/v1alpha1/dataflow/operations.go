@@ -26,7 +26,7 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/util/retry"
-	utilpointer "k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -50,7 +50,7 @@ func reconcileDataLoad(ctx reconcileRequestContext) (needRequeue bool, err error
 		}
 
 		toUpdate := tmp.DeepCopy()
-		toUpdate.Status.WaitingFor.OperationComplete = utilpointer.Bool(false)
+		toUpdate.Status.WaitingFor.OperationComplete = ptr.To(false)
 		if !reflect.DeepEqual(toUpdate.Status, tmp.Status) {
 			return ctx.Client.Status().Update(context.TODO(), toUpdate)
 		}
@@ -81,7 +81,7 @@ func reconcileDataBackup(ctx reconcileRequestContext) (needRequeue bool, err err
 		}
 
 		toUpdate := tmp.DeepCopy()
-		toUpdate.Status.WaitingFor.OperationComplete = utilpointer.Bool(false)
+		toUpdate.Status.WaitingFor.OperationComplete = ptr.To(false)
 		if !reflect.DeepEqual(toUpdate.Status, tmp.Status) {
 			return ctx.Client.Status().Update(context.TODO(), toUpdate)
 		}
@@ -112,7 +112,7 @@ func reconcileDataMigrate(ctx reconcileRequestContext) (needRequeue bool, err er
 		}
 
 		toUpdate := tmp.DeepCopy()
-		toUpdate.Status.WaitingFor.OperationComplete = utilpointer.Bool(false)
+		toUpdate.Status.WaitingFor.OperationComplete = ptr.To(false)
 		if !reflect.DeepEqual(toUpdate.Status, tmp.Status) {
 			return ctx.Client.Status().Update(context.TODO(), toUpdate)
 		}
@@ -143,7 +143,7 @@ func reconcileDataProcess(ctx reconcileRequestContext) (needRequeue bool, err er
 		}
 
 		toUpdate := tmp.DeepCopy()
-		toUpdate.Status.WaitingFor.OperationComplete = utilpointer.Bool(false)
+		toUpdate.Status.WaitingFor.OperationComplete = ptr.To(false)
 		if !reflect.DeepEqual(toUpdate.Status, tmp.Status) {
 			return ctx.Client.Status().Update(context.TODO(), toUpdate)
 		}

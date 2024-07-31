@@ -32,7 +32,7 @@ func SetupDataOpJobWatcherWithReconciler(mgr ctrl.Manager, options controller.Op
 	}
 
 	jobEventHandler := &opJobEventHandler{}
-	err = c.Watch(&source.Kind{Type: r.ManagedResource()}, &handler.EnqueueRequestForObject{}, predicate.Funcs{
+	err = c.Watch(source.Kind(mgr.GetCache(), r.ManagedResource()), &handler.EnqueueRequestForObject{}, predicate.Funcs{
 		CreateFunc: jobEventHandler.onCreateFunc(r),
 		UpdateFunc: jobEventHandler.onUpdateFunc(r),
 		DeleteFunc: jobEventHandler.onDeleteFunc(r),

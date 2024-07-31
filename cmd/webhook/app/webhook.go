@@ -19,8 +19,6 @@ package app
 import (
 	"flag"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins"
-	"os"
-
 	"github.com/spf13/cobra"
 	zapOpt "go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -28,10 +26,13 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/fluid-cloudnative/fluid"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -112,20 +113,25 @@ func handle() {
 	utils.NewPprofServer(setupLog, pprofAddr, fullGoProfile)
 
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:             scheme,
-		MetricsBindAddress: metricsAddr,
-		Port:               webhookPort,
-		CertDir:            certDir,
-		LeaderElection:     false,
-		LeaderElectionID:   "webhook.data.fluid.io",
-		NewCache: cache.BuilderWithOptions(cache.Options{
-			Scheme: scheme,
-			SelectorsByObject: cache.SelectorsByObject{
+		Scheme: scheme,
+		Metrics: metricsserver.Options{
+			BindAddress: metricsAddr,
+		},
+		WebhookServer: webhook.NewServer(
+			webhook.Options{
+				Port:    webhookPort,
+				CertDir: certDir,
+			},
+		),
+		LeaderElection:   false,
+		LeaderElectionID: "webhook.data.fluid.io",
+		Cache: cache.Options{
+			ByObject: map[client.Object]cache.ByObject{
 				&admissionregistrationv1.MutatingWebhookConfiguration{}: {
 					Field: fields.SelectorFromSet(fields.Set{"metadata.name": common.WebhookName}),
 				},
 			},
-		}),
+		},
 	})
 
 	if err != nil {
