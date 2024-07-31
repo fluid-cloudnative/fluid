@@ -49,6 +49,7 @@
   + 无服务器场景
     - [如何在Knative环境运行](samples/knative.md)
     - [如何保障 Serverless 任务顺利完成](samples/application_controller.md)
+  + [DataFlow中配置数据操作的亲和性](./samples/dataflow_affinity.md)
 + 工作负载
   - [机器学习](samples/machinelearning.md)
 + 更多Runtime实现

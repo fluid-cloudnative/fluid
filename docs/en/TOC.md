@@ -44,6 +44,7 @@
   - [How to enable FUSE auto-recovery](samples/fuse_recover.md)
   - [Using Fluid on ARM64 platform](samples/arm64.md)
   - [Support Image Pull Secrets](samples/image_pull_secrets.md)
+  - [Configuring affinity for data operations in DataFlow](./samples/dataflow_affinity.md)
 + Operation Guide
   - [Runtime monitoring](operation/monitoring.md)
   - [Cache Runtime Auto Scaling](operation/dataset_auto_scaling.md)
