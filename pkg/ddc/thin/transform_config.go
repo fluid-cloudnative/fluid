@@ -46,6 +46,11 @@ func getFuseConfigStorage() string {
 func (t *ThinEngine) transformFuseConfig(runtime *datav1alpha1.ThinRuntime, dataset *datav1alpha1.Dataset, value *ThinValue) error {
 	fuseConfigStorage := getFuseConfigStorage()
 
+	// For cases like dynamic mount where dataset starts without any mount, we still need mounting secret volumes into fuse containers.
+	if len(dataset.Spec.Mounts) == 0 {
+		_ = t.transformEncryptOptionsWithSecretVolumes(datav1alpha1.Mount{}, dataset.Spec.SharedEncryptOptions, value)
+	}
+
 	mounts := []datav1alpha1.Mount{}
 	// todo: support passing flexVolume info
 	pvAttributes := map[string]*corev1.CSIPersistentVolumeSource{}
