@@ -136,6 +136,10 @@ func (mr *MockEngineMockRecorder) ID() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ID", reflect.TypeOf((*MockEngine)(nil).ID))
 }
 
+func (m *MockEngine) Validate(ctx runtime.ReconcileRequestContext) (err error) {
+	return nil
+}
+
 // Setup mocks base method.
 func (m *MockEngine) Setup(ctx runtime.ReconcileRequestContext) (bool, error) {
 	m.ctrl.T.Helper()
@@ -680,6 +684,10 @@ func (m *MockImplement) UsedStorageBytes() (int64, error) {
 func (mr *MockImplementMockRecorder) UsedStorageBytes() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UsedStorageBytes", reflect.TypeOf((*MockImplement)(nil).UsedStorageBytes))
+}
+
+func (m *MockImplement) Validate(ctx runtime.ReconcileRequestContext) (err error) {
+	return nil
 }
 
 // MockUnderFileSystemService is a mock of UnderFileSystemService interface.
