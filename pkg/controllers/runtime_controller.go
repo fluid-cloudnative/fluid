@@ -241,6 +241,12 @@ func (r *RuntimeReconciler) ReconcileRuntime(engine base.Engine, ctx cruntime.Re
 	)
 	log.V(1).Info("process the Runtime", "Runtime", ctx.NamespacedName)
 
+	if err = engine.Validate(ctx); err != nil {
+		r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorValidateSpecFieldsReason, "Validation failed for spec fields of Dataset and Runtime: %v", err)
+		log.Error(err, "Validation failed for spec fields of Dataset and Runtime")
+		return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
+	}
+
 	// 1.Setup the ddc engine, and wait it ready
 	if !utils.IsSetupDone(ctx.Dataset) {
 		ready, err := engine.Setup(ctx)

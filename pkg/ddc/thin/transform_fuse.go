@@ -17,7 +17,6 @@
 package thin
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -86,10 +85,6 @@ func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *d
 
 	// 10. targetPath to mount
 	value.Fuse.TargetPath = t.getTargetPath()
-
-	if len(dataset.Spec.Mounts) <= 0 {
-		return errors.New("do not assign mount point")
-	}
 
 	// 11. env
 	options, err := t.parseFuseOptions(runtime, profile, dataset)

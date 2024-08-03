@@ -88,6 +88,10 @@ func (t *TemplateEngine) Shutdown() error {
 	return t.Implement.Shutdown()
 }
 
+func (t *TemplateEngine) Validate(ctx cruntime.ReconcileRequestContext) (err error) {
+	return t.Implement.Validate(ctx)
+}
+
 func getSyncRetryDuration() (d *time.Duration, err error) {
 	if value, existed := os.LookupEnv(syncRetryDurationEnv); existed {
 		duration, err := time.ParseDuration(value)

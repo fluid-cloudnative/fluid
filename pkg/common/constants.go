@@ -24,6 +24,8 @@ const (
 
 	ErrorDeleteDataset = "ErrorDeleteDataset"
 
+	ErrorValidateSpecFieldsReason = "ErrorValidateSpecFields"
+
 	ErrorProcessRuntimeReason = "ErrorProcessRuntime"
 
 	ErrorHelmInstall = "ErrorHelmInstall"
