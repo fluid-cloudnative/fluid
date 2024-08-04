@@ -153,6 +153,7 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 			Name:      e.name,
 		},
 	}
+	e.transformNetworkMode(runtime, value)
 	err = e.transformHadoopConfig(runtime, value)
 	if err != nil {
 		return
@@ -161,7 +162,6 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	if err != nil {
 		return
 	}
-	e.transformNetworkMode(runtime, value)
 	e.transformFuseNodeSelector(runtime, value)
 	e.transformSecret(runtime, value)
 	err = e.transformMaster(runtime, metaPath, value, dataset, secretMountSupport)
