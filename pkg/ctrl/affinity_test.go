@@ -313,8 +313,7 @@ func TestBuildWorkersAffinityForEFCRuntime(t *testing.T) {
 			},
 			want: &v1.Affinity{
 				PodAntiAffinity: &v1.PodAntiAffinity{
-					// The fake client makes empty slice to nil
-					//PreferredDuringSchedulingIgnoredDuringExecution: []v1.WeightedPodAffinityTerm{},
+					PreferredDuringSchedulingIgnoredDuringExecution: []v1.WeightedPodAffinityTerm{},
 					RequiredDuringSchedulingIgnoredDuringExecution: []v1.PodAffinityTerm{
 						{
 							LabelSelector: &metav1.LabelSelector{
