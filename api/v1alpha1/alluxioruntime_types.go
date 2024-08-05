@@ -89,6 +89,9 @@ type AlluxioCompTemplateSpec struct {
 	// PodMetadata defines labels and annotations that will be propagated to Alluxio's pods
 	// +optional
 	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
+
+	// ImagePullSecrets that will be used to pull images
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 }
 
 // AlluxioFuseSpec is a description of the Alluxio Fuse
@@ -102,6 +105,9 @@ type AlluxioFuseSpec struct {
 
 	// One of the three policies: `Always`, `IfNotPresent`, `Never`
 	ImagePullPolicy string `json:"imagePullPolicy,omitempty"`
+
+	// ImagePullSecrets that will be used to pull images
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 
 	// Options for JVM
 	JvmOptions []string `json:"jvmOptions,omitempty"`
@@ -230,6 +236,10 @@ type AlluxioRuntimeSpec struct {
 	// RuntimeManagement defines policies when managing the runtime
 	// +optional
 	RuntimeManagement RuntimeManagement `json:"management,omitempty"`
+
+	// ImagePullSecrets that will be used to pull images
+	// +optional
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 }
 
 // +kubebuilder:object:root=true

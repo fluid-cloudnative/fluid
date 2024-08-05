@@ -917,9 +917,10 @@ func TestParseRuntimeImage(t *testing.T) {
 
 func TestParseFuseImage(t *testing.T) {
 	type args struct {
-		image           string
-		tag             string
-		imagePullPolicy string
+		image            string
+		tag              string
+		imagePullPolicy  string
+		imagePullSecrets []corev1.LocalObjectReference
 	}
 	tests := []struct {
 		name  string
@@ -927,6 +928,7 @@ func TestParseFuseImage(t *testing.T) {
 		want  string
 		want1 string
 		want2 string
+		want3 []corev1.LocalObjectReference
 	}{
 		{
 			name: "test0",
@@ -950,12 +952,25 @@ func TestParseFuseImage(t *testing.T) {
 			want1: "2.3.0-SNAPSHOT-2c41226",
 			want2: "IfNotPresent",
 		},
+		{
+			name: "test2",
+			args: args{
+				image:            "",
+				tag:              "",
+				imagePullPolicy:  "IfNotPresent",
+				imagePullSecrets: []corev1.LocalObjectReference{{Name: "secret-fuse"}},
+			},
+			want:  "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse",
+			want1: "2.3.0-SNAPSHOT-2c41226",
+			want2: "IfNotPresent",
+			want3: []corev1.LocalObjectReference{{Name: "secret-fuse"}},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			e := &AlluxioEngine{}
 			t.Setenv(common.AlluxioFuseImageEnv, "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse:2.3.0-SNAPSHOT-2c41226")
-			got, got1, got2 := e.parseFuseImage(tt.args.image, tt.args.tag, tt.args.imagePullPolicy)
+			got, got1, got2, got3 := e.parseFuseImage(tt.args.image, tt.args.tag, tt.args.imagePullPolicy, tt.args.imagePullSecrets)
 			if got != tt.want {
 				t.Errorf("AlluxioEngine.parseFuseImage() got = %v, want %v", got, tt.want)
 			}
@@ -964,6 +979,9 @@ func TestParseFuseImage(t *testing.T) {
 			}
 			if got2 != tt.want2 {
 				t.Errorf("AlluxioEngine.parseFuseImage() got2 = %v, want %v", got2, tt.want2)
+			}
+			if len(tt.want3) > 0 && !reflect.DeepEqual(got3, tt.want3) {
+				t.Errorf("AlluxioEngine.parseFuseImage() got3 = %v, want %v", got3, tt.want3)
 			}
 		})
 	}

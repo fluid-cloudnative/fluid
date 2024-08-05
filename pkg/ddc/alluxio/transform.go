@@ -24,8 +24,6 @@ import (
 	"strings"
 	"time"
 
-	corev1 "k8s.io/api/core/v1"
-
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -136,9 +134,7 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 	image := runtime.Spec.AlluxioVersion.Image
 	imageTag := runtime.Spec.AlluxioVersion.ImageTag
 	imagePullPolicy := runtime.Spec.AlluxioVersion.ImagePullPolicy
-
-	// TODO: support imagePullSecrets by AlluxioRuntime
-	imagePullSecrets := []corev1.LocalObjectReference{}
+	imagePullSecrets := runtime.Spec.ImagePullSecrets
 
 	value.Image, value.ImageTag, value.ImagePullPolicy, value.ImagePullSecrets = e.parseRuntimeImage(image, imageTag, imagePullPolicy, imagePullSecrets)
 
@@ -274,6 +270,10 @@ func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime,
 ) (err error) {
 	value.Master = Master{}
 
+	if len(runtime.Spec.Master.ImagePullSecrets) != 0 {
+		value.Master.ImagePullSecrets = runtime.Spec.Master.ImagePullSecrets
+	}
+
 	backupRoot := os.Getenv("FLUID_WORKDIR")
 	if backupRoot == "" {
 		backupRoot = "/tmp"
@@ -378,6 +378,10 @@ func (e *AlluxioEngine) transformMasters(runtime *datav1alpha1.AlluxioRuntime,
 func (e *AlluxioEngine) transformWorkers(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) (err error) {
 	value.Worker = Worker{}
 	e.optimizeDefaultForWorker(runtime, value)
+
+	if len(runtime.Spec.Worker.ImagePullSecrets) != 0 {
+		value.Worker.ImagePullSecrets = runtime.Spec.Worker.ImagePullSecrets
+	}
 
 	if len(runtime.Spec.Worker.NodeSelector) > 0 {
 		value.Worker.NodeSelector = runtime.Spec.Worker.NodeSelector
