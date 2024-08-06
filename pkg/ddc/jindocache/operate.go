@@ -27,14 +27,18 @@ func (e *JindoCacheEngine) GetDataOperationValueFile(ctx cruntime.ReconcileReque
 	operationType := operation.GetOperationType()
 	object := operation.GetOperationObject()
 
-	if operationType == dataoperation.DataLoadType {
+	switch operationType {
+	case dataoperation.DataLoadType:
 		valueFileName, err = e.generateDataLoadValueFile(ctx, object)
 		return valueFileName, err
+	case dataoperation.DataProcessType:
+		valueFileName, err = e.generateDataProcessValueFile(ctx, object)
+		return valueFileName, err
+	default:
+		return "", errors.NewNotSupported(
+			schema.GroupResource{
+				Group:    object.GetObjectKind().GroupVersionKind().Group,
+				Resource: object.GetObjectKind().GroupVersionKind().Kind,
+			}, "JindoRuntime")
 	}
-
-	return "", errors.NewNotSupported(
-		schema.GroupResource{
-			Group:    object.GetObjectKind().GroupVersionKind().Group,
-			Resource: object.GetObjectKind().GroupVersionKind().Kind,
-		}, "JindoRuntime")
 }
