@@ -134,6 +134,21 @@ func TestTransformMaster(t *testing.T) {
 				},
 			},
 		},
+		"test hierarchical imagePullSecrets case1": {
+			runtime: &datav1alpha1.AlluxioRuntime{
+				Spec: datav1alpha1.AlluxioRuntimeSpec{
+					Master: datav1alpha1.AlluxioCompTemplateSpec{
+						ImagePullSecrets: []corev1.LocalObjectReference{{Name: "secret-master"}},
+					},
+				},
+			},
+			wantValue: &Alluxio{
+				Master: Master{
+					ImagePullSecrets: []corev1.LocalObjectReference{{Name: "secret-master"}},
+					HostNetwork:      true,
+				},
+			},
+		},
 	}
 
 	engine := &AlluxioEngine{Log: fake.NullLogger()}
@@ -146,6 +161,15 @@ func TestTransformMaster(t *testing.T) {
 					k,
 					gotValue.Master.HostNetwork,
 					v.wantValue.Master.HostNetwork,
+				)
+			}
+		}
+		if len(v.wantValue.Master.ImagePullSecrets) > 0 {
+			if !reflect.DeepEqual(gotValue.Master.ImagePullSecrets, v.wantValue.Master.ImagePullSecrets) {
+				t.Errorf("check %s failure, got:%v,want:%v",
+					k,
+					gotValue.Master.ImagePullSecrets,
+					v.wantValue.Master.ImagePullSecrets,
 				)
 			}
 		}
@@ -221,6 +245,21 @@ func TestTransformWorkers(t *testing.T) {
 				},
 			},
 		},
+		"test hierarchical imagePullSecrets case1": {
+			runtime: &datav1alpha1.AlluxioRuntime{
+				Spec: datav1alpha1.AlluxioRuntimeSpec{
+					Worker: datav1alpha1.AlluxioCompTemplateSpec{
+						ImagePullSecrets: []corev1.LocalObjectReference{{Name: "secret-worker"}},
+					},
+				},
+			},
+			wantValue: &Alluxio{
+				Worker: Worker{
+					ImagePullSecrets: []corev1.LocalObjectReference{{Name: "secret-worker"}},
+					HostNetwork:      true,
+				},
+			},
+		},
 	}
 
 	engine := &AlluxioEngine{Log: fake.NullLogger()}
@@ -241,6 +280,15 @@ func TestTransformWorkers(t *testing.T) {
 						k,
 						gotValue.Worker.NodeSelector,
 						v.wantValue.Worker.NodeSelector,
+					)
+				}
+			}
+			if len(v.wantValue.Worker.ImagePullSecrets) > 0 {
+				if !reflect.DeepEqual(v.wantValue.Worker.ImagePullSecrets, gotValue.Worker.ImagePullSecrets) {
+					t.Errorf("check %s failure, got:%s,want:%s",
+						k,
+						gotValue.Worker.ImagePullSecrets,
+						v.wantValue.Worker.ImagePullSecrets,
 					)
 				}
 			}

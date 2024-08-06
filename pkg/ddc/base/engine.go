@@ -46,6 +46,9 @@ type Engine interface {
 	// Sync syncs the alluxio runtime
 	Sync(ctx cruntime.ReconcileRequestContext) error
 
+	// Validate checks all spec fields of the Dataset and the Runtime
+	Validate(ctx cruntime.ReconcileRequestContext) (err error)
+
 	// DataOperator is a common interface for Data Operations like DataBackup/DataLoad/DataMigrate etc.
 	DataOperator
 }
@@ -137,6 +140,9 @@ type Implement interface {
 
 	// SyncScheduleInfoToCacheNodes Sync the scheduleInfo to cacheNodes
 	SyncScheduleInfoToCacheNodes() (err error)
+
+	// Validate checks all spec fields of the Dataset and the Runtime
+	Validate(ctx cruntime.ReconcileRequestContext) (err error)
 }
 
 // UnderFileSystemService interface defines the interfaces that should be implemented

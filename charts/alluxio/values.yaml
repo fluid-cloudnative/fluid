@@ -73,6 +73,8 @@ tolerations: []
 ## Master ##
 
 master:
+  imagePullSecrets: []
+
   # Metadata for Alluxio Master Pod(including both master and job master component's label)
   labels:
 #    label1: value1
@@ -216,6 +218,8 @@ apiGateway:
 ## Worker ##
 
 worker:
+  imagePullSecrets: []
+
   # Metadata for Alluxio Worker Pod(including both worker and job worker component's label)
   labels:
 #    label1: value1
@@ -367,6 +371,7 @@ fuse:
   image: alluxio/alluxio-fuse
   imageTag: 2.4.0-SNAPSHOT
   imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
   # Change both to true to deploy FUSE
   enabled: false
   clientEnabled: false

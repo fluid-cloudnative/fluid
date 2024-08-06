@@ -225,7 +225,7 @@ func (e *AlluxioEngine) parseRuntimeImage(image string, tag string, imagePullPol
 	return image, tag, imagePullPolicy, imagePullSecrets
 }
 
-func (e *AlluxioEngine) parseFuseImage(image string, tag string, imagePullPolicy string) (string, string, string) {
+func (e *AlluxioEngine) parseFuseImage(image string, tag string, imagePullPolicy string, imagePullSecrets []v1.LocalObjectReference) (string, string, string, []v1.LocalObjectReference) {
 	if len(imagePullPolicy) == 0 {
 		imagePullPolicy = common.DefaultImagePullPolicy
 	}
@@ -254,7 +254,12 @@ func (e *AlluxioEngine) parseFuseImage(image string, tag string, imagePullPolicy
 		}
 	}
 
-	return image, tag, imagePullPolicy
+	if len(imagePullSecrets) == 0 {
+		// if the environment variable is not set, it is still an empty slice
+		imagePullSecrets = docker.GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey)
+	}
+
+	return image, tag, imagePullPolicy, imagePullSecrets
 }
 
 func (e *AlluxioEngine) GetMetadataInfoFile() string {

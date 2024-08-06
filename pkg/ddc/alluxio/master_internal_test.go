@@ -22,6 +22,7 @@ import (
 
 	"github.com/brahma-adshonor/gohook"
 	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/net"
@@ -163,6 +164,18 @@ func TestGenerateAlluxioValueFile(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "hbase",
 			Namespace: "fluid",
+		},
+		Spec: datav1alpha1.AlluxioRuntimeSpec{
+			ImagePullSecrets: []corev1.LocalObjectReference{{Name: "secret-runtime"}},
+			Master: datav1alpha1.AlluxioCompTemplateSpec{
+				ImagePullSecrets: []corev1.LocalObjectReference{{Name: "secret-master"}},
+			},
+			Worker: datav1alpha1.AlluxioCompTemplateSpec{
+				ImagePullSecrets: []corev1.LocalObjectReference{{Name: "secret-worker"}},
+			},
+			Fuse: datav1alpha1.AlluxioFuseSpec{
+				ImagePullSecrets: []corev1.LocalObjectReference{{Name: "secret-fuse"}},
+			},
 		},
 	}
 	testObjs := []runtime.Object{}
