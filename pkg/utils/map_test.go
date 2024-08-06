@@ -144,7 +144,7 @@ func TestUnionMapsWithOverride(t *testing.T) {
 				map1: nil,
 				map2: nil,
 			},
-			want: nil,
+			want: map[string]string{},
 		},
 	}
 	for _, tt := range tests {

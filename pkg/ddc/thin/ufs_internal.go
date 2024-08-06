@@ -22,6 +22,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/thin/operations"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	securityutil "github.com/fluid-cloudnative/fluid/pkg/utils/security"
 )
@@ -76,13 +77,7 @@ func (t *ThinEngine) usedSpaceInternal() (usedSpace int64, err error) {
 func (t *ThinEngine) genFuseMountOptions(m datav1alpha1.Mount, SharedOptions map[string]string, SharedEncryptOptions []datav1alpha1.EncryptOption, extractEncryptOptions bool) (map[string]string, error) {
 
 	// initialize mount options
-	mOptions := map[string]string{}
-	if len(SharedOptions) > 0 {
-		mOptions = SharedOptions
-	}
-	for key, value := range m.Options {
-		mOptions[key] = value
-	}
+	mOptions := utils.UnionMapsWithOverride(SharedOptions, m.Options)
 
 	// if encryptOptions have the same key with options
 	// it will overwrite the corresponding value
