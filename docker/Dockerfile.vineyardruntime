@@ -16,11 +16,12 @@ RUN apk add --update curl tzdata iproute2 bash libc6-compat vim &&  \
  	echo "Asia/Shanghai" >  /etc/timezone
 
 ARG TARGETARCH
-RUN curl -o helm-v3.11.3-linux-${TARGETARCH}.tar.gz https://get.helm.sh/helm-v3.11.3-linux-${TARGETARCH}.tar.gz && \
-    tar -xvf helm-v3.11.3-linux-${TARGETARCH}.tar.gz && \
+ARG HELM_VERSION
+RUN curl -o ${HELM_VERSION}-linux-${TARGETARCH}.tar.gz https://get.helm.sh/${HELM_VERSION}-linux-${TARGETARCH}.tar.gz && \
+    tar -xvf ${HELM_VERSION}-linux-${TARGETARCH}.tar.gz && \
     mv linux-${TARGETARCH}/helm /usr/local/bin/ddc-helm && \
     chmod u+x /usr/local/bin/ddc-helm && \
-    rm -f helm-v3.11.3-linux-${TARGETARCH}.tar.gz
+    rm -f ${HELM_VERSION}-linux-${TARGETARCH}.tar.gz
 
 ADD charts/ /charts
 
