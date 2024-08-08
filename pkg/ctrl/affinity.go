@@ -17,8 +17,6 @@ limitations under the License.
 package ctrl
 
 import (
-	"context"
-
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -166,12 +164,6 @@ func (e *Helper) BuildWorkersAffinity(workers *appsv1.StatefulSet) (workersToUpd
 					dataset.Spec.NodeAffinity.Required
 			}
 		}
-
-		err = e.client.Update(context.TODO(), workersToUpdate)
-		if err != nil {
-			return workersToUpdate, err
-		}
-
 	}
 
 	return
