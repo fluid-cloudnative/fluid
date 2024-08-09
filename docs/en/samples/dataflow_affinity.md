@@ -31,7 +31,9 @@ The num of "csi-nodeplugin" Pods depends on how many nodes your Kubernetes clust
 
 ## Demo
 
-Example 1: The DataFlow consists of DataLoad A and DataLoad B, and requires B to run on the same node as A.
+### Demo 1:  Location(node/zone/region) Affinity
+
+The DataFlow consists of DataLoad A and DataLoad B, and requires B to run on the same node as A.
 
 ```yaml
 apiVersion: data.fluid.io/v1alpha1
@@ -90,3 +92,71 @@ spec:
 ```
 
 When DataLoad B is running,  you will find the the affinity of its pod including the affinity configuration of the DataLoad A Pod (`kubernetes.io/hostname`), so B will run on the same node as A.
+
+## Demo 2: Customized Label Affinity
+
+The DataFlow consists of DataLoad A and DataLoad B. DataLoad A requires running on GPU nodes through customized label `node.kubernetes.io/instance-type`, while DataLoad B requires running on nodes with the same label value as DataLoad A (GPU nodes).
+
+```yaml
+apiVersion: data.fluid.io/v1alpha1
+kind: Dataset
+metadata:
+  name: phy
+spec:
+  mounts:
+    - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/hbase
+      name: hbase
+    - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/flink
+      name: flink
+---
+apiVersion: data.fluid.io/v1alpha1
+kind: AlluxioRuntime
+metadata:
+  name: phy
+spec:
+  replicas: 1
+  tieredstore:
+    levels:
+      - mediumtype: MEM
+        path: /dev/shm
+        quota: 1Gi
+        high: "0.95"
+        low: "0.7"
+---
+apiVersion: data.fluid.io/v1alpha1
+kind: DataLoad
+metadata:
+  name: loadA
+spec:
+  dataset:
+    name: phy
+    namespace: default
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: node.kubernetes.io/instance-type
+            operator: In
+            values: ["GPU"]
+      
+---
+apiVersion: data.fluid.io/v1alpha1
+kind: DataLoad
+metadata:
+  name: loadB
+spec:
+  dataset:
+    name: phy
+    namespace: default
+  runAfter:
+    kind: DataLoad
+    name: loadA
+    affinityStrategy:
+      policy: Require
+      # Require to run on a node with the same label value as the preceding operation
+      requires: 
+      - name: node.kubernetes.io/instance-type
+```
+
+When running loadB and checking the affinity of its Pod, it can be found that it has been injected with a required affinity value of GPU for `node.kubernetes.io/instance-type`.

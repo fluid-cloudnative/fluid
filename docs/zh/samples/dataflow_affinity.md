@@ -31,7 +31,9 @@ dataset-controller-5b7848dbbb-n44dj         1/1     Running   0          8h
 
 ## 运行示例
 
-示例1：DataFlow  由 DataLoad A, DataLoad B，要求 B 跟 A 运行在同一个 Node 中；
+### 示例1：位置信息（node/zone/region）的亲和性
+
+DataFlow  由 DataLoad A, DataLoad B 构成 ，要求 B 跟 A 运行在同一个 Node 中；
 
 ```yaml
 apiVersion: data.fluid.io/v1alpha1
@@ -90,3 +92,72 @@ spec:
 ```
 
 在loadB 运行的时候，查看其Pod 的亲和性，可以发现被注入 loadA 的 Pod 所在的节点的亲和性配置，因此 B 会在跟 A 同样的节点上运行。
+
+### 示例1：自定义标签的亲和性
+
+DataFlow  由 DataLoad A, DataLoad B 构成，DataLoad A 通过自定义标签`node.kubernetes.io/instance-type`要求运行在 GPU 节点上，DataLoad B要求运行在跟DataLoad A 同样的标签值的节点（即GPU节点)；
+
+```yaml
+apiVersion: data.fluid.io/v1alpha1
+kind: Dataset
+metadata:
+  name: phy
+spec:
+  mounts:
+    - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/hbase
+      name: hbase
+    - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/flink
+      name: flink
+---
+apiVersion: data.fluid.io/v1alpha1
+kind: AlluxioRuntime
+metadata:
+  name: phy
+spec:
+  replicas: 1
+  tieredstore:
+    levels:
+      - mediumtype: MEM
+        path: /dev/shm
+        quota: 1Gi
+        high: "0.95"
+        low: "0.7"
+---
+apiVersion: data.fluid.io/v1alpha1
+kind: DataLoad
+metadata:
+  name: loadA
+spec:
+  dataset:
+    name: phy
+    namespace: default
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: node.kubernetes.io/instance-type
+            operator: In
+            values: ["GPU"]
+      
+---
+apiVersion: data.fluid.io/v1alpha1
+kind: DataLoad
+metadata:
+  name: loadB
+spec:
+  dataset:
+    name: phy
+    namespace: default
+  runAfter:
+    kind: DataLoad
+    name: loadA
+    affinityStrategy:
+      policy: Require
+      # 要求跟前置操作运行在具备同样标签值的节点
+      requires: 
+      - name: node.kubernetes.io/instance-type
+      
+```
+
+在loadB 运行的时候，查看其Pod 的亲和性，可以发现被注入了`node.kubernetes.io/instance-type`值为`GPU`的强制亲和性。
