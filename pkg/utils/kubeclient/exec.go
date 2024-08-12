@@ -29,7 +29,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
@@ -127,7 +126,7 @@ func ExecWithOptions(options ExecOptions) (string, string, error) {
 	}, scheme.ParameterCodec)
 
 	var stdout, stderr bytes.Buffer
-	err = execute("POST", req.URL(), restConfig, options.Stdin, &stdout, &stderr, tty)
+	err = doExecute("POST", req.URL(), restConfig, options.Stdin, &stdout, &stderr, tty)
 
 	if options.PreserveWhitespace {
 		return stdout.String(), stderr.String(), err
@@ -156,17 +155,7 @@ func ExecCommandInContainer(podName string, containerName string, namespace stri
 	return ExecCommandInContainerWithFullOutput(podName, containerName, namespace, cmd)
 }
 
-// ExecCommandInPod finds the first container in the given pod, executes
-// command in that container, and return stdout, stderr and error.
-func ExecCommandInPod(podName string, namespace string, cmd []string) (stdout string, stderr string, err error) {
-	pod, err := clientset.CoreV1().Pods(namespace).Get(context.TODO(), podName, metav1.GetOptions{})
-	if err != nil {
-		return "", "Failed to find the pod", err
-	}
-	return ExecCommandInContainer(podName, pod.Spec.Containers[0].Name, namespace, cmd)
-}
-
-func execute(method string, url *url.URL, config *restclient.Config, stdin io.Reader, stdout, stderr io.Writer, tty bool) error {
+func doExecute(method string, url *url.URL, config *restclient.Config, stdin io.Reader, stdout, stderr io.Writer, tty bool) error {
 	exec, err := remotecommand.NewSPDYExecutor(config, method, url)
 	if err != nil {
 		return err
