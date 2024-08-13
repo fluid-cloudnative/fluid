@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/common/deprecated"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -111,4 +112,67 @@ func PatchLabels(cli client.Client, obj client.Object, labelsToModify common.Lab
 // ChangeNodeLabelWithPatchMode updates the input labels in PATCH mode.
 func ChangeNodeLabelWithPatchMode(cli client.Client, node *v1.Node, labelsToModify common.LabelsToModify) (modifiedLabels []string, err error) {
 	return PatchLabels(cli, node, labelsToModify)
+}
+
+func GetStoragetLabelName(read common.ReadType, storage common.StorageType, isDeprecated bool, runtimeType string, namespace string, name string) string {
+	prefix := common.LabelAnnotationStorageCapacityPrefix
+	if isDeprecated {
+		prefix = deprecated.LabelAnnotationStorageCapacityPrefix
+	}
+	return prefix +
+		string(read) +
+		runtimeType +
+		"-" +
+		string(storage) +
+		namespace +
+		"-" +
+		name
+}
+
+func GetLabelNameForMemory(isDeprecated bool, runtimeType string, namespace string, name string) string {
+	read := common.HumanReadType
+	storage := common.MemoryStorageType
+	if isDeprecated {
+		read = deprecated.HumanReadType
+		storage = deprecated.MemoryStorageType
+	}
+	return GetStoragetLabelName(read, storage, isDeprecated, runtimeType, namespace, name)
+}
+
+func GetLabelNameForDisk(isDeprecated bool, runtimeType string, namespace string, name string) string {
+	read := common.HumanReadType
+	storage := common.DiskStorageType
+	if isDeprecated {
+		read = deprecated.HumanReadType
+		storage = deprecated.DiskStorageType
+	}
+	return GetStoragetLabelName(read, storage, isDeprecated, runtimeType, namespace, name)
+}
+
+func GetLabelNameForTotal(isDeprecated bool, runtimeType string, namespace string, name string) string {
+	read := common.HumanReadType
+	storage := common.TotalStorageType
+	if isDeprecated {
+		read = deprecated.HumanReadType
+		storage = deprecated.TotalStorageType
+	}
+	return GetStoragetLabelName(read, storage, isDeprecated, runtimeType, namespace, name)
+}
+
+func GetCommonLabelName(isDeprecated bool, namespace string, name string) string {
+	prefix := common.LabelAnnotationStorageCapacityPrefix
+	if isDeprecated {
+		prefix = deprecated.LabelAnnotationStorageCapacityPrefix
+	}
+
+	return prefix + namespace + "-" + name
+}
+
+func GetRuntimeLabelName(isDeprecated bool, namespace string, name string) string {
+	prefix := common.LabelAnnotationStorageCapacityPrefix
+	if isDeprecated {
+		prefix = deprecated.LabelAnnotationStorageCapacityPrefix
+	}
+
+	return prefix + namespace + "-" + name
 }

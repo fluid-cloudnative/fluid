@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 func TestGetStoragetLabelName(t *testing.T) {
@@ -48,7 +49,7 @@ func TestGetStoragetLabelName(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		result := test.info.getStoragetLabelName(common.HumanReadType, common.MemoryStorageType)
+		result := utils.GetStoragetLabelName(common.HumanReadType, common.MemoryStorageType, test.info.IsDeprecatedNodeLabel(), test.info.runtimeType, test.info.namespace, test.info.name)
 		if test.expectedResult != result {
 			t.Errorf("check failure, expected %s, get %s", test.expectedResult, result)
 		}
