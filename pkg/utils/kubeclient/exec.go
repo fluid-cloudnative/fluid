@@ -30,6 +30,7 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	securityutils "github.com/fluid-cloudnative/fluid/pkg/utils/security"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -64,6 +65,19 @@ type ExecOptions struct {
 	CaptureStderr bool
 	// If false, whitespace in std{err,out} will be removed.
 	PreserveWhitespace bool
+}
+
+func (opt ExecOptions) String() string {
+	return fmt.Sprintf(
+		"{Command: %v, Namespace: %v, PodName: %v, ContainerName: %v, CaptureStdout: %v, CaptureStderr: %v, PreserveWhitespace: %v}",
+		securityutils.FilterCommand(opt.Command),
+		opt.Namespace,
+		opt.PodName,
+		opt.ContainerName,
+		opt.CaptureStdout,
+		opt.CaptureStderr,
+		opt.PreserveWhitespace,
+	)
 }
 
 func initClient() error {
