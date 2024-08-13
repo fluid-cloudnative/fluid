@@ -16,14 +16,16 @@ limitations under the License.
 package alluxio
 
 import (
+	"context"
 	"errors"
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 
 	"github.com/brahma-adshonor/gohook"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -460,14 +462,14 @@ func Test_genDataLoadValue(t *testing.T) {
 }
 
 func TestCheckRuntimeReady(t *testing.T) {
-	mockExecCommon := func(podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
+	mockExecCommon := func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
 		return "", "", nil
 	}
-	mockExecErr := func(podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
+	mockExecErr := func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
 		return "err", "", errors.New("error")
 	}
 	wrappedUnhook := func() {
-		err := gohook.UnHook(kubeclient.ExecCommandInContainer)
+		err := gohook.UnHook(kubeclient.ExecCommandInContainerWithFullOutput)
 		if err != nil {
 			t.Fatal(err.Error())
 		}
@@ -479,7 +481,7 @@ func TestCheckRuntimeReady(t *testing.T) {
 		Log:       fake.NullLogger(),
 	}
 
-	err := gohook.Hook(kubeclient.ExecCommandInContainer, mockExecCommon, nil)
+	err := gohook.Hook(kubeclient.ExecCommandInContainerWithFullOutput, mockExecCommon, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -489,7 +491,7 @@ func TestCheckRuntimeReady(t *testing.T) {
 	}
 	wrappedUnhook()
 
-	err = gohook.Hook(kubeclient.ExecCommandInContainer, mockExecErr, nil)
+	err = gohook.Hook(kubeclient.ExecCommandInContainerWithFullOutput, mockExecErr, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
