@@ -41,9 +41,6 @@ const (
 )
 
 var (
-	// alluxio ufs root path
-	AlluxioMountPathFormat = RootDirPath + "%s"
-
 	AlluxioLocalStorageRootPath   = "/underFSStorage"
 	AlluxioLocalStoragePathFormat = AlluxioLocalStorageRootPath + "/%s"
 )

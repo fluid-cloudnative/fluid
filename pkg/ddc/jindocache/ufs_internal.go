@@ -86,14 +86,18 @@ func (e *JindoCacheEngine) mountUFS() (err error) {
 			mount.MountPoint = "local://" + ufsVolumesPath
 		}
 		if !mounted {
-			if mount.Path != "" {
-				err = fileUitls.Mount(mount.Path, mount.MountPoint)
-				if err != nil {
-					return err
-				}
-				continue
+			var mountPathInJindo string
+			if len(mount.Path) != 0 {
+				mountPathInJindo = mount.Path
+			} else {
+				mountPathInJindo = fmt.Sprintf("/%s", mount.Name)
 			}
-			err = fileUitls.Mount(mount.Name, mount.MountPoint)
+
+			if !strings.HasPrefix(mountPathInJindo, "/") {
+				mountPathInJindo = fmt.Sprintf("/%s", mountPathInJindo)
+			}
+
+			err = fileUitls.Mount(mountPathInJindo, mount.MountPoint)
 			if err != nil {
 				return err
 			}

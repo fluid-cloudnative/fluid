@@ -106,7 +106,7 @@ func GetPVCStorageCapacityOfDataset(client client.Client, name, namespace string
 func IsTargetPathUnderFluidNativeMounts(targetPath string, dataset datav1alpha1.Dataset) bool {
 	for _, mount := range dataset.Spec.Mounts {
 
-		mPath := UFSPathBuilder{}.GenAlluxioMountPath(mount)
+		mPath := UFSPathBuilder{}.GenUFSPathInUnifiedNamespace(mount)
 
 		//TODO(xuzhihao): HasPrefix is not enough.
 
@@ -184,14 +184,14 @@ func (u *UFSToUpdate) AnalyzePathsDelta() (specMountPaths, mountedMountPaths []s
 		if common.IsFluidNativeScheme(mount.MountPoint) {
 			continue
 		}
-		m := UFSPathBuilder{}.GenAlluxioMountPath(mount)
+		m := UFSPathBuilder{}.GenUFSPathInUnifiedNamespace(mount)
 		specMountPaths = append(specMountPaths, m)
 	}
 	for _, mount := range u.dataset.Status.Mounts {
 		if common.IsFluidNativeScheme(mount.MountPoint) {
 			continue
 		}
-		m := UFSPathBuilder{}.GenAlluxioMountPath(mount)
+		m := UFSPathBuilder{}.GenUFSPathInUnifiedNamespace(mount)
 		mountedMountPaths = append(mountedMountPaths, m)
 	}
 

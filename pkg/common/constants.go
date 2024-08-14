@@ -172,7 +172,6 @@ const (
 )
 
 const (
-	RootDirPath            = "/"
 	DefaultImagePullPolicy = "IfNotPresent"
 	MyPodNamespace         = "MY_POD_NAMESPACE"
 	True                   = "true"
