@@ -23,6 +23,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	securityutils "github.com/fluid-cloudnative/fluid/pkg/utils/security"
 	"github.com/go-logr/logr"
@@ -48,14 +49,12 @@ func NewAlluxioFileUtils(podName string, containerName string, namespace string,
 	}
 }
 
-const defaultTimeout = 1500 * time.Second // 25min
-
 // exec with timeout
 func (a AlluxioFileUtils) exec(command []string, verbose bool) (stdout string, stderr string, err error) {
 	// redact sensitive info in command for printing
 	redactedCommand := securityutils.FilterCommand(command)
 
-	stdout, stderr, err = kubeclient.ExecCommandInContainerWithTimeout(a.podName, a.container, a.namespace, command, defaultTimeout)
+	stdout, stderr, err = kubeclient.ExecCommandInContainerWithTimeout(a.podName, a.container, a.namespace, command, common.FileUtilsExecTimeout)
 	if err != nil {
 		err = errors.Wrapf(err, "error when executing command %v", redactedCommand)
 		return
