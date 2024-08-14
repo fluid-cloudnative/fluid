@@ -46,13 +46,13 @@ func TestJindoFileUtils_exec(t *testing.T) {
 	}
 
 	wrappedUnhookExec := func() {
-		err := gohook.UnHook(JindoFileUtils.execWithoutTimeout)
+		err := gohook.UnHook(JindoFileUtils.exec)
 		if err != nil {
 			t.Fatal(err.Error())
 		}
 	}
 
-	err := gohook.Hook(JindoFileUtils.execWithoutTimeout, ExecWithoutTimeoutErr, nil)
+	err := gohook.Hook(JindoFileUtils.exec, ExecWithoutTimeoutErr, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -63,7 +63,7 @@ func TestJindoFileUtils_exec(t *testing.T) {
 	}
 	wrappedUnhookExec()
 
-	err = gohook.Hook(JindoFileUtils.execWithoutTimeout, ExecWithoutTimeoutCommon, nil)
+	err = gohook.Hook(JindoFileUtils.exec, ExecWithoutTimeoutCommon, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -119,13 +119,13 @@ func TestJindoFileUtils_GetUfsTotalSize(t *testing.T) {
 	}
 
 	wrappedUnhookExec := func() {
-		err := gohook.UnHook(JindoFileUtils.execWithoutTimeout)
+		err := gohook.UnHook(JindoFileUtils.exec)
 		if err != nil {
 			t.Fatal(err.Error())
 		}
 	}
 
-	err := gohook.Hook(JindoFileUtils.execWithoutTimeout, ExecWithoutTimeoutErr, nil)
+	err := gohook.Hook(JindoFileUtils.exec, ExecWithoutTimeoutErr, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -136,7 +136,7 @@ func TestJindoFileUtils_GetUfsTotalSize(t *testing.T) {
 	}
 	wrappedUnhookExec()
 
-	err = gohook.Hook(JindoFileUtils.execWithoutTimeout, ExecWithoutTimeoutCommon, nil)
+	err = gohook.Hook(JindoFileUtils.exec, ExecWithoutTimeoutCommon, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
