@@ -125,10 +125,8 @@ func (e *JindoCacheEngine) TotalJindoStorageBytes() (value int64, err error) {
 
 	ufsSize := int64(0)
 	for _, mount := range dataset.Spec.Mounts {
-		mountPath := "jindo:///"
-		if mount.Path != "/" {
-			mountPath += mount.Name
-		}
+		// e.g. jindo:// + /mybucket -> jindo:///mybucket
+		mountPath := "jindo://" + utils.UFSPathBuilder{}.GenUFSPathInUnifiedNamespace(mount)
 		mountPathSize, err := fileUtils.GetUfsTotalSize(mountPath)
 		e.Log.Info("jindocache storage ufsMount size", "ufsSize", mountPath)
 		if err != nil {
