@@ -73,15 +73,15 @@ func (u UFSPathBuilder) GenAlluxioUFSRootPath(items []datav1alpha1.Mount) (strin
 //	$ alluxio fs mount
 //	/underFSStorage  on  /  (local, capacity=0B, used=-1B, not read-only, not shared, properties={})
 func (u UFSPathBuilder) GetLocalStorageRootDir() string {
-	return common.AlluxioLocalStorageRootPath
+	return common.LocalStorageRootPath
 }
 
 // generate local storage path by mount info
 func (u UFSPathBuilder) GenLocalStoragePath(curMount datav1alpha1.Mount) string {
 
 	if filepath.IsAbs(curMount.Path) {
-		return filepath.Join(common.AlluxioLocalStorageRootPath, curMount.Path)
+		return filepath.Join(common.LocalStorageRootPath, curMount.Path)
 	}
 
-	return filepath.Join(common.AlluxioLocalStorageRootPath, curMount.Name)
+	return filepath.Join(common.LocalStorageRootPath, curMount.Name)
 }
