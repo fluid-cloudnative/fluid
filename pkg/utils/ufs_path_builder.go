@@ -43,18 +43,6 @@ func (u UFSPathBuilder) GenUFSPathInUnifiedNamespace(mount datav1alpha1.Mount) s
 	return fmt.Sprintf(common.UFSMountPathFormat, mount.Name)
 }
 
-// value for alluxio instance configuration :
-//
-//	alluxio.master.mount.table.root.ufs
-//
-// two situations
-//  1. mount local storage root path as alluxio root path
-//     e.g. : alluxio fs mount
-//     /underFSStorage /
-//  2. direct mount ufs endpoint as alluxio root path
-//     e.g. : alluxio fs mount
-//     http://fluid.io/apache/spark/spark-3.0.2 /
-
 // GenAlluxioUFSRootPath determines which mount point should be mounted on the root path of
 // the [unified namespace] in Alluxio engine. Commonly there are two cases:
 //
