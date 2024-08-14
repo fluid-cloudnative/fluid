@@ -19,6 +19,7 @@ package utils
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -40,7 +41,7 @@ func (u UFSPathBuilder) GenUFSPathInUnifiedNamespace(mount datav1alpha1.Mount) s
 		return mount.Path
 	}
 
-	return fmt.Sprintf(common.UFSMountPathFormat, mount.Name)
+	return fmt.Sprintf(common.UFSMountPathFormat, strings.TrimLeft(mount.Name, "/"))
 }
 
 // GenAlluxioUFSRootPath determines which mount point should be mounted on the root path of

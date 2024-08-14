@@ -137,7 +137,7 @@ func (a JindoFileUtils) Mount(mountPathInJindo string, ufsPath string) (err erro
 	stdout, stderr, err = a.exec(command, false)
 	if err != nil {
 		if strings.Contains(stdout, "Mount point already exists") {
-			// check for reconciled mount points
+			// ignore existed mount points
 			err = nil
 			return
 		}
