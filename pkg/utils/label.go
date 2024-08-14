@@ -168,11 +168,10 @@ func GetCommonLabelName(isDeprecated bool, namespace string, name string) string
 	return prefix + namespace + "-" + name
 }
 
-func GetRuntimeLabelName(isDeprecated bool, namespace string, name string) string {
+func GetRuntimeLabelName(isDeprecated bool, runtimeType string, namespace string, name string) string {
 	prefix := common.LabelAnnotationStorageCapacityPrefix
 	if isDeprecated {
 		prefix = deprecated.LabelAnnotationStorageCapacityPrefix
 	}
-
-	return prefix + namespace + "-" + name
+	return prefix + runtimeType + "-" + namespace + "-" + name
 }

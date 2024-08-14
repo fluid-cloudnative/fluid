@@ -37,7 +37,7 @@ func (info *RuntimeInfo) GetCommonLabelName() string {
 }
 
 func (info *RuntimeInfo) GetRuntimeLabelName() string {
-	return utils.GetRuntimeLabelName(info.IsDeprecatedNodeLabel(), info.namespace, info.name)
+	return utils.GetRuntimeLabelName(info.IsDeprecatedNodeLabel(), info.runtimeType, info.namespace, info.name)
 }
 
 // GetDatasetNumLabelname get the label to record how much datasets on a node
