@@ -306,11 +306,11 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 		if mount.Options["readCacheReplica"] != "" {
 			readCacheReplicaStr := mount.Options["readCacheReplica"]
 			if num, error := strconv.Atoi(readCacheReplicaStr); error == nil {
-				e.Log.Info(readCacheReplicaStr, " is a valid read cache replica number")
+				e.Log.V(1).Info("readCacheReplicaStr is a valid read cache replica number", "readCacheReplicaStr", readCacheReplicaStr)
 				readCacheReplica = num
 			} else {
-				error = fmt.Errorf("options readCacheReplica " + readCacheReplicaStr + " is not a valid number")
-				e.Log.Error(error, "readCacheReplica", readCacheReplicaStr)
+				error = fmt.Errorf("options readCacheReplica %s is not a valid number", readCacheReplicaStr)
+				e.Log.Error(error, "readCacheReplicaStr", readCacheReplicaStr)
 				return error
 			}
 		}
@@ -318,11 +318,11 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 		if mount.Options["writeCacheReplica"] != "" {
 			writeCacheReplicaStr := mount.Options["writeCacheReplica"]
 			if num, error := strconv.Atoi(writeCacheReplicaStr); error == nil {
-				e.Log.Info(writeCacheReplicaStr, " is a valid write cache replica number")
+				e.Log.V(1).Info("writeCacheReplicaStr is a valid write cache replica number", "writeCacheReplicaStr", writeCacheReplicaStr)
 				writeCacheReplica = num
 			} else {
-				error = fmt.Errorf("Options writeCacheReplica " + writeCacheReplicaStr + " is not a valid number")
-				e.Log.Error(error, "writeCacheReplica", writeCacheReplicaStr)
+				error = fmt.Errorf("Options writeCacheReplica %s is not a valid number", writeCacheReplicaStr)
+				e.Log.Error(error, "writeCacheReplicaStr", writeCacheReplicaStr)
 				return error
 			}
 		}
