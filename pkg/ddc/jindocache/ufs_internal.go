@@ -46,7 +46,7 @@ func (e *JindoCacheEngine) shouldMountUFS() (should bool, err error) {
 
 	// Check if any of the Mounts has not been mounted in Alluxio
 	for _, mount := range dataset.Spec.Mounts {
-		mounted, err := fileUtils.IsMounted("/" + mount.Name)
+		mounted, err := fileUtils.IsMounted(utils.UFSPathBuilder{}.GenUFSPathInUnifiedNamespace(mount))
 		if err != nil {
 			should = false
 			return should, err
@@ -86,14 +86,8 @@ func (e *JindoCacheEngine) mountUFS() (err error) {
 			mount.MountPoint = "local://" + ufsVolumesPath
 		}
 		if !mounted {
-			if mount.Path != "" {
-				err = fileUitls.Mount(mount.Path, mount.MountPoint)
-				if err != nil {
-					return err
-				}
-				continue
-			}
-			err = fileUitls.Mount(mount.Name, mount.MountPoint)
+			mountPathInJindo := utils.UFSPathBuilder{}.GenUFSPathInUnifiedNamespace(mount)
+			err = fileUitls.Mount(mountPathInJindo, mount.MountPoint)
 			if err != nil {
 				return err
 			}

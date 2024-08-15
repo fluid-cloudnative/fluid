@@ -162,7 +162,7 @@ func newPprofServer(pprofAddr string) {
 			}
 		}()
 
-		if err := pprofServer.ListenAndServe(); !errors.Is(http.ErrServerClosed, err) {
+		if err := pprofServer.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 			glog.Error(err, "Failed to start debug HTTP server")
 			panic(err)
 		}

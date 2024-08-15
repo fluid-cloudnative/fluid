@@ -93,7 +93,7 @@ func (e *AlluxioEngine) shouldMountUFS() (should bool, err error) {
 			// No need for a mount point with Fluid native scheme('local://' and 'pvc://') to be mounted
 			continue
 		}
-		alluxioPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount)
+		alluxioPath := utils.UFSPathBuilder{}.GenUFSPathInUnifiedNamespace(mount)
 		mounted, err := fileUtils.IsMounted(alluxioPath)
 		if err != nil {
 			should = false
@@ -133,7 +133,7 @@ func (e *AlluxioEngine) FindUnmountedUFS() (unmountedPaths []string, err error) 
 			// No need for a mount point with Fluid native scheme('local://' and 'pvc://') to be mounted
 			continue
 		}
-		alluxioPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount)
+		alluxioPath := utils.UFSPathBuilder{}.GenUFSPathInUnifiedNamespace(mount)
 		alluxioPaths = append(alluxioPaths, alluxioPath)
 	}
 
@@ -205,7 +205,7 @@ func (e *AlluxioEngine) updatingUFSWithMountCommand(dataset *datav1alpha1.Datase
 			continue
 		}
 
-		alluxioPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount)
+		alluxioPath := utils.UFSPathBuilder{}.GenUFSPathInUnifiedNamespace(mount)
 		if len(ufsToUpdate.ToAdd()) > 0 && utils.ContainsString(ufsToUpdate.ToAdd(), alluxioPath) {
 			mountOptions := map[string]string{}
 			for key, value := range dataset.Spec.SharedOptions {
@@ -299,7 +299,7 @@ func (e *AlluxioEngine) updateUFSWithMountConfigMapScript(dataset *datav1alpha1.
 		if common.IsFluidNativeScheme(mount.MountPoint) {
 			continue
 		}
-		m := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount)
+		m := utils.UFSPathBuilder{}.GenUFSPathInUnifiedNamespace(mount)
 		// skip root path mount
 		if m != "/" {
 			datasetMountPaths = append(datasetMountPaths, m)
@@ -336,7 +336,7 @@ func (e *AlluxioEngine) mountUFS() (err error) {
 			continue
 		}
 
-		alluxioPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount)
+		alluxioPath := utils.UFSPathBuilder{}.GenUFSPathInUnifiedNamespace(mount)
 
 		mounted, err := fileUitls.IsMounted(alluxioPath)
 		e.Log.Info("Check if the alluxio path is mounted.", "alluxioPath", alluxioPath, "mounted", mounted)

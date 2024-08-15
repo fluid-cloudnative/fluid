@@ -60,7 +60,7 @@ func NewPprofServer(setupLog logr.Logger, pprofAddr string, enableFullGoProfile 
 				}
 			}()
 
-			if err := pprofServer.ListenAndServe(); !errors.Is(http.ErrServerClosed, err) {
+			if err := pprofServer.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 				setupLog.Error(err, "Failed to start debug HTTP server")
 				panic(err)
 			}

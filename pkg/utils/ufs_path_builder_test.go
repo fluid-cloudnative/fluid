@@ -104,7 +104,7 @@ func TestGetAlluxioMountPath(t *testing.T) {
 	}
 
 	for k, item := range testCases {
-		gotPath := UFSPathBuilder{}.GenAlluxioMountPath(item.curMount)
+		gotPath := UFSPathBuilder{}.GenUFSPathInUnifiedNamespace(item.curMount)
 		if gotPath != item.wantPath {
 			t.Errorf("%s check failure, want:%s,got:%s", k, item.wantPath, gotPath)
 		}
