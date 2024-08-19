@@ -309,7 +309,7 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 				e.Log.Info(readCacheReplicaStr, " is a valid read cache replica number")
 				readCacheReplica = num
 			} else {
-				error = fmt.Errorf("options readCacheReplica " + readCacheReplicaStr + " is not a valid number")
+				error = fmt.Errorf("options readCacheReplica %s is not a valid number", readCacheReplicaStr)
 				e.Log.Error(error, "readCacheReplica", readCacheReplicaStr)
 				return error
 			}
@@ -321,7 +321,7 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 				e.Log.Info(writeCacheReplicaStr, " is a valid write cache replica number")
 				writeCacheReplica = num
 			} else {
-				error = fmt.Errorf("Options writeCacheReplica " + writeCacheReplicaStr + " is not a valid number")
+				error = fmt.Errorf("Options writeCacheReplica %s is not a vaild number", writeCacheReplicaStr)
 				e.Log.Error(error, "writeCacheReplica", writeCacheReplicaStr)
 				return error
 			}
