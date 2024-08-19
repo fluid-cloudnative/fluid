@@ -53,13 +53,13 @@ func TestEFCFileUtils_exec(t *testing.T) {
 	}
 
 	wrappedUnhookExec := func() {
-		err := gohook.UnHook(EFCFileUtils.execWithoutTimeout)
+		err := gohook.UnHook(EFCFileUtils.exec)
 		if err != nil {
 			t.Fatal(err.Error())
 		}
 	}
 
-	err := gohook.Hook(EFCFileUtils.execWithoutTimeout, ExecWithoutTimeoutErr, nil)
+	err := gohook.Hook(EFCFileUtils.exec, ExecWithoutTimeoutErr, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -70,7 +70,7 @@ func TestEFCFileUtils_exec(t *testing.T) {
 	}
 	wrappedUnhookExec()
 
-	err = gohook.Hook(EFCFileUtils.execWithoutTimeout, ExecWithoutTimeoutCommon, nil)
+	err = gohook.Hook(EFCFileUtils.exec, ExecWithoutTimeoutCommon, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
