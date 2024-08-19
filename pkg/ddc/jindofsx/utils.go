@@ -125,20 +125,21 @@ func (e *JindoFSxEngine) TotalJindoStorageBytes() (value int64, err error) {
 
 	ufsSize := int64(0)
 	for _, mount := range dataset.Spec.Mounts {
-		mountPath := "jindo:///"
-		if mount.Path != "/" {
-			mountPath += mount.Name
-		}
+		// e.g. jindo:// + /mybucket -> jindo:///mybucket
+		mountPath := "jindo://" + utils.UFSPathBuilder{}.GenUFSPathInUnifiedNamespace(mount)
 		mountPathSize, err := fileUtils.GetUfsTotalSize(mountPath)
-		e.Log.Info("jindofsx storage ufsMount size", "ufsSize", mountPath)
 		if err != nil {
-			e.Log.Error(err, "get total size with path error", mountPath)
+			e.Log.Error(err, "get total size with path error", "mountPath", mountPath)
+			continue
 		}
 		mountSize, err := strconv.ParseInt(mountPathSize, 10, 64)
 		if err != nil {
-			e.Log.Error(err, "ParseInt with mount size failed")
+			e.Log.Error(err, "ParseInt with mount size failed", "mountPathSize", mountPathSize)
+			continue
 		}
+		e.Log.V(1).Info("calculated jindofsx storage ufs size for the mount path", "mountPathSize", utils.BytesSize(float64(mountSize)), "mountPath", mountPath)
 		ufsSize += mountSize
 	}
+	e.Log.Info("calculated total ufs size of jindofsx storage", "total ufs size", utils.BytesSize(float64(ufsSize)))
 	return ufsSize, err
 }

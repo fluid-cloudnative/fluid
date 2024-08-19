@@ -19,6 +19,7 @@ package utils
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -26,54 +27,42 @@ import (
 
 type UFSPathBuilder struct{}
 
-// dataset.spec.mounts mount to alluxio instance strategy:
+// GenUFSPathInUnifiedNamespace generates a path in the cache engine's [unified namespace] for
+// the given mount. It follows the convention defined internally by Fluid:
 //
-// strategy && priority:
-// 1. if set dataset.spec.mounts[x].path
-// 2. if only one item use default root path "/"
-// 3. "/" + dataset.spec.mounts[x].name
-func (u UFSPathBuilder) GenAlluxioMountPath(curMount datav1alpha1.Mount) string {
+// 1. if `dataset.spec.mounts[*].path` is set to a absolute path, pick `path`.
+// 2. otherwise, pick `/{dataset.spec.mounts[*].name}`
+//
+// [unified namespace]: https://docs.alluxio.io/os/user/stable/en/core-services/Unified-Namespace.html
+func (u UFSPathBuilder) GenUFSPathInUnifiedNamespace(mount datav1alpha1.Mount) string {
 
 	// if the user defines mount.path, use it
-	if filepath.IsAbs(curMount.Path) {
-		return curMount.Path
+	if filepath.IsAbs(mount.Path) {
+		return mount.Path
 	}
 
-	return fmt.Sprintf(common.AlluxioMountPathFormat, curMount.Name)
+	return fmt.Sprintf(common.UFSMountPathFormat, strings.TrimLeft(mount.Name, "/"))
 }
 
-// value for alluxio instance configuration :
+// GenAlluxioUFSRootPath determines which mount point should be mounted on the root path of
+// the [unified namespace] in Alluxio engine. Commonly there are two cases:
 //
-//	alluxio.master.mount.table.root.ufs
+//  1. If a `mount` item is the only item defined in `dataset.sepc.mounts[*]` and its ufs path equals to "/", its `mountpoint` should be on the root path.
+//     e.g. alluxio fs mount s3://mybucket /
+//  2. Otherwise, pick `/underFSStorage` as the default root path.
+//     e.g. alluxio fs mount /underFSStorage / && alluxio fs mount s3://mybucket /mybucket
 //
-// two situations
-//  1. mount local storage root path as alluxio root path
-//     e.g. : alluxio fs mount
-//     /underFSStorage /
-//  2. direct mount ufs endpoint as alluxio root path
-//     e.g. : alluxio fs mount
-//     http://fluid.io/apache/spark/spark-3.0.2 /
+// [unified namespace]: https://docs.alluxio.io/os/user/stable/en/core-services/Unified-Namespace.html
 func (u UFSPathBuilder) GenAlluxioUFSRootPath(items []datav1alpha1.Mount) (string, *datav1alpha1.Mount) {
-	// if have multi ufs mount point or empty
-	// use local storage root path by default
-	if len(items) > 1 || len(items) == 0 {
-		return u.GetLocalStorageRootDir(), nil
-	}
-
-	m := items[0]
-
-	// if fluid native scheme : use local storage root path
-	if common.IsFluidNativeScheme(m.MountPoint) {
-		return u.GetLocalStorageRootDir(), nil
-	}
-
-	// only if user define mount.path as "/", work as alluxio.master.mount.table.root.ufs
-	if filepath.IsAbs(m.Path) && len(m.Path) == 1 {
-		return m.MountPoint, &m
+	if len(items) == 1 {
+		m := items[0]
+		// only iff m matches all of the two following conditions (1) m is not a fluid-native mount point; (2) m.Path is "/", it should be the root path in cache UFS.
+		if !common.IsFluidNativeScheme(m.MountPoint) && u.GenUFSPathInUnifiedNamespace(m) == common.RootDirPath {
+			return m.MountPoint, &m
+		}
 	}
 
 	return u.GetLocalStorageRootDir(), nil
-
 }
 
 // this value will be the default value for the alluxio configuration:
@@ -85,15 +74,15 @@ func (u UFSPathBuilder) GenAlluxioUFSRootPath(items []datav1alpha1.Mount) (strin
 //	$ alluxio fs mount
 //	/underFSStorage  on  /  (local, capacity=0B, used=-1B, not read-only, not shared, properties={})
 func (u UFSPathBuilder) GetLocalStorageRootDir() string {
-	return common.AlluxioLocalStorageRootPath
+	return common.LocalStorageRootPath
 }
 
 // generate local storage path by mount info
 func (u UFSPathBuilder) GenLocalStoragePath(curMount datav1alpha1.Mount) string {
 
 	if filepath.IsAbs(curMount.Path) {
-		return filepath.Join(common.AlluxioLocalStorageRootPath, curMount.Path)
+		return filepath.Join(common.LocalStorageRootPath, curMount.Path)
 	}
 
-	return filepath.Join(common.AlluxioLocalStorageRootPath, curMount.Name)
+	return filepath.Join(common.LocalStorageRootPath, curMount.Name)
 }

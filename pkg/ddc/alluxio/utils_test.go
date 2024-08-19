@@ -17,6 +17,7 @@ limitations under the License.
 package alluxio
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"reflect"
@@ -331,7 +332,7 @@ func TestGetDataSetFileNum(t *testing.T) {
 				Log:       tt.fields.Log,
 			}
 
-			patch1 := ApplyFunc(kubeclient.ExecCommandInContainer, func(podName string, containerName string, namespace string, cmd []string) (string, string, error) {
+			patch1 := ApplyFunc(kubeclient.ExecCommandInContainerWithFullOutput, func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
 				stdout, stderr, err := mockExecCommandInContainerForGetFileCount()
 				return stdout, stderr, err
 			})
@@ -1122,7 +1123,7 @@ func TestGetWorkerUsedCapacity(t *testing.T) {
 				Log:       tt.fields.Log,
 			}
 
-			patch1 := ApplyFunc(kubeclient.ExecCommandInContainer, func(podName string, containerName string, namespace string, cmd []string) (string, string, error) {
+			patch1 := ApplyFunc(kubeclient.ExecCommandInContainerWithFullOutput, func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
 				stdout, stderr, err := mockExecCommandInContainerForWorkerUsedCapacity()
 				return stdout, stderr, err
 			})

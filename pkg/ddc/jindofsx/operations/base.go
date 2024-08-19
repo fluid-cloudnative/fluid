@@ -125,23 +125,19 @@ func (a JindoFileUtils) IsMounted(mountPoint string) (mounted bool, err error) {
 	return mounted, err
 }
 
-func (a JindoFileUtils) Mount(mountName string, ufsPath string) (err error) {
+func (a JindoFileUtils) Mount(mountPathInJindo string, ufsPath string) (err error) {
 
 	var (
-		command = []string{"jindo", "admin", "-mount"}
+		command = []string{"jindo", "admin", "-mount", mountPathInJindo, ufsPath}
+		stdout  string
+		stderr  string
 	)
-	// jindo fsxadmin -mount /path oss://xyz/
-	if strings.HasPrefix(mountName, "/") {
-		command = append(command, mountName, ufsPath)
-	} else {
-		command = append(command, "/"+mountName, ufsPath)
-	}
 
-	_, _, _ = a.exec(command, false)
-	/*if err != nil {
+	stdout, stderr, err = a.exec(command, false)
+	if err != nil {
 		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
 		return
-	}*/
+	}
 
 	return nil
 }

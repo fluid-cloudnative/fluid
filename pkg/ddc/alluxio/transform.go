@@ -560,7 +560,7 @@ func (e *AlluxioEngine) generateNonNativeMountsInfo(dataset *datav1alpha1.Datase
 			return nil, err
 		}
 
-		alluxioPath := utils.UFSPathBuilder{}.GenAlluxioMountPath(mount)
+		alluxioPath := utils.UFSPathBuilder{}.GenUFSPathInUnifiedNamespace(mount)
 
 		var mountArgs []string
 

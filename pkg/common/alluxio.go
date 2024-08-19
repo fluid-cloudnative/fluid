@@ -39,11 +39,3 @@ const (
 
 	DefaultAlluxioFuseImage = "registry.cn-huhehaote.aliyuncs.com/alluxio/alluxio-fuse:2.3.0-SNAPSHOT-2c41226"
 )
-
-var (
-	// alluxio ufs root path
-	AlluxioMountPathFormat = RootDirPath + "%s"
-
-	AlluxioLocalStorageRootPath   = "/underFSStorage"
-	AlluxioLocalStoragePathFormat = AlluxioLocalStorageRootPath + "/%s"
-)

@@ -17,7 +17,6 @@ limitations under the License.
 package operations
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -34,11 +33,11 @@ func (a AlluxioFileUtils) SyncLocalDir(path string) (err error) {
 	)
 
 	start := time.Now()
-	stdout, stderr, err = a.execWithoutTimeout(command, false)
+	stdout, stderr, err = a.exec(command, false)
 	duration := time.Since(start)
-	a.log.Info("du -sh", "path", path, "period", duration)
+	a.log.Info("execute du -sh", "path", path, "period", duration)
 	if err != nil {
-		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		a.log.Error(err, "AlluxioFileUtils.SyncLocalDir() failed", "stdout", stdout, "stderr", stderr)
 		return
 	}
 

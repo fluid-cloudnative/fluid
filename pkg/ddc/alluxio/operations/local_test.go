@@ -17,6 +17,7 @@ limitations under the License.
 package operations
 
 import (
+	"context"
 	"testing"
 
 	. "github.com/agiledragon/gomonkey/v2"
@@ -45,7 +46,7 @@ func TestSyncLocalDir(t *testing.T) {
 
 	for _, test := range tests {
 		tools := NewAlluxioFileUtils("", "", "", ctrl.Log)
-		patch1 := ApplyFunc(kubeclient.ExecCommandInContainer, func(podName string, containerName string, namespace string, cmd []string) (string, string, error) {
+		patch1 := ApplyFunc(kubeclient.ExecCommandInContainerWithFullOutput, func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
 			stdout, stderr, err := mockExecCommandInContainerForSyncLocalDir()
 			return stdout, stderr, err
 		})

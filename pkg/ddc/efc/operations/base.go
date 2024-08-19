@@ -17,15 +17,11 @@
 package operations
 
 import (
-	"context"
-	"fmt"
-	"time"
-
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/cmdguard"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	securityutils "github.com/fluid-cloudnative/fluid/pkg/utils/security"
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 )
 
 type EFCFileUtils struct {
@@ -46,40 +42,17 @@ func NewEFCFileUtils(podName string, containerName string, namespace string, log
 
 // exec with timeout
 func (a EFCFileUtils) exec(command []string, verbose bool) (stdout string, stderr string, err error) {
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second*1500)
-	ch := make(chan string, 1)
-	defer cancel()
+	// redact sensitive info in command for printing
+	redactedCommand := securityutils.FilterCommand(command)
 
-	go func() {
-		stdout, stderr, err = a.execWithoutTimeout(command, verbose)
-		ch <- "done"
-	}()
-
-	select {
-	case <-ch:
-		a.log.Info("execute in time", "command", securityutils.FilterCommand(command))
-	case <-ctx.Done():
-		err = fmt.Errorf("timeout when executing %v", command)
-	}
-
-	return
-}
-
-// execWithoutTimeout
-func (a EFCFileUtils) execWithoutTimeout(command []string, verbose bool) (stdout string, stderr string, err error) {
-	err = cmdguard.ValidateCommandSlice(command)
+	stdout, stderr, err = kubeclient.ExecCommandInContainerWithTimeout(a.podName, a.container, a.namespace, command, common.FileUtilsExecTimeout)
 	if err != nil {
+		err = errors.Wrapf(err, "error when executing command %v", redactedCommand)
 		return
 	}
 
-	stdout, stderr, err = kubeclient.ExecCommandInContainer(a.podName, a.container, a.namespace, command)
-	if err != nil {
-		a.log.Info("Stdout", "Command", command, "Stdout", stdout)
-		a.log.Error(err, "Failed", "Command", command, "FailedReason", stderr)
-		return
-	}
 	if verbose {
-		a.log.Info("Stdout", "Command", command, "Stdout", stdout)
+		a.log.Info("Exec command succeeded", "command", redactedCommand, "stdout", stdout, "stderr", stderr)
 	}
 
 	return
@@ -92,9 +65,9 @@ func (a EFCFileUtils) DeleteDir(dir string) (err error) {
 		stderr  string
 	)
 
-	stdout, stderr, err = a.exec(command, true)
+	stdout, stderr, err = a.exec(command, false)
 	if err != nil {
-		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		a.log.Error(err, "EFCFileUtils.DeleteDir() failed", "stdout", stdout, "stderr", stderr)
 		return
 	}
 	return
@@ -103,12 +76,16 @@ func (a EFCFileUtils) DeleteDir(dir string) (err error) {
 func (a EFCFileUtils) Ready() (ready bool) {
 	var (
 		command = []string{"mount", "|", "grep", common.EFCMountType}
+		stdout  string
+		stderr  string
 	)
 
-	_, _, err := a.exec(command, true)
-	if err == nil {
-		ready = true
+	stdout, stderr, err := a.exec(command, true)
+	if err != nil {
+		a.log.Error(err, "EFCFileUtils.Ready() failed", "stdout", stdout, "stderr", stderr)
+		return
 	}
 
-	return ready
+	ready = true
+	return
 }
