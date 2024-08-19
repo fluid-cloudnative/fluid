@@ -17,6 +17,7 @@ limitations under the License.
 package alluxio
 
 import (
+	"context"
 	"reflect"
 	"strings"
 	"testing"
@@ -141,7 +142,7 @@ func TestTotalStorageBytes(t *testing.T) {
 				runtime: tt.fields.runtime,
 				name:    tt.fields.name,
 			}
-			patch1 := ApplyFunc(kubeclient.ExecCommandInContainer, func(podName string, containerName string, namespace string, cmd []string) (string, string, error) {
+			patch1 := ApplyFunc(kubeclient.ExecCommandInContainerWithFullOutput, func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
 				stdout, stderr, err := mockExecCommandInContainerForTotalStorageBytes()
 				return stdout, stderr, err
 			})
@@ -188,7 +189,7 @@ func TestTotalFileNums(t *testing.T) {
 				runtime: tt.fields.runtime,
 				name:    tt.fields.name,
 			}
-			patch1 := ApplyFunc(kubeclient.ExecCommandInContainer, func(podName string, containerName string, namespace string, cmd []string) (string, string, error) {
+			patch1 := ApplyFunc(kubeclient.ExecCommandInContainerWithFullOutput, func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
 				stdout, stderr, err := mockExecCommandInContainerForTotalFileNums()
 				return stdout, stderr, err
 			})

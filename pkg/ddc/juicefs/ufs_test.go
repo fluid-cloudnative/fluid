@@ -16,6 +16,7 @@ limitations under the License.
 package juicefs
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -114,7 +115,7 @@ func TestTotalStorageBytes(t *testing.T) {
 				Client:    fakeClient,
 				Log:       fake.NullLogger(),
 			}
-			patch1 := ApplyFunc(kubeclient.ExecCommandInContainer, func(podName string, containerName string, namespace string, cmd []string) (string, string, error) {
+			patch1 := ApplyFunc(kubeclient.ExecCommandInContainerWithFullOutput, func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
 				stdout, stderr, err := mockExecCommandInContainerForUsedStorageBytes()
 				return stdout, stderr, err
 			})
@@ -202,7 +203,7 @@ func TestTotalFileNums(t *testing.T) {
 				Log:       fake.NullLogger(),
 				Client:    fakeClient,
 			}
-			patch1 := ApplyFunc(kubeclient.ExecCommandInContainer, func(podName string, containerName string, namespace string, cmd []string) (string, string, error) {
+			patch1 := ApplyFunc(kubeclient.ExecCommandInContainerWithFullOutput, func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
 				stdout, stderr, err := mockExecCommandInContainerForTotalFileNums()
 				return stdout, stderr, err
 			})
@@ -437,7 +438,7 @@ func TestJuiceFSEngine_UsedStorageBytes(t *testing.T) {
 				Log:       fake.NullLogger(),
 				Client:    fakeClient,
 			}
-			patch1 := ApplyFunc(kubeclient.ExecCommandInContainer, func(podName string, containerName string, namespace string, cmd []string) (string, string, error) {
+			patch1 := ApplyFunc(kubeclient.ExecCommandInContainerWithFullOutput, func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
 				stdout, stderr, err := mockExecCommandInContainerForUsedStorageBytes()
 				return stdout, stderr, err
 			})

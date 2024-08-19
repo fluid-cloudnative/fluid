@@ -17,6 +17,7 @@ limitations under the License.
 package operations
 
 import (
+	"context"
 	"errors"
 	"strings"
 	"testing"
@@ -27,19 +28,19 @@ import (
 )
 
 func TestAlluxioFileUtils_GetConf(t *testing.T) {
-	mockExec := func(podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
+	mockExec := func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
 		if strings.Contains(cmd[2], OTHER_ERR) {
 			return "", "", errors.New("other error")
 		} else {
 			return "conf", "", nil
 		}
 	}
-	err := gohook.Hook(kubeclient.ExecCommandInContainer, mockExec, nil)
+	err := gohook.Hook(kubeclient.ExecCommandInContainerWithFullOutput, mockExec, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
 	wrappedUnhook := func() {
-		err := gohook.UnHook(kubeclient.ExecCommandInContainer)
+		err := gohook.UnHook(kubeclient.ExecCommandInContainerWithFullOutput)
 		if err != nil {
 			t.Fatal(err.Error())
 		}

@@ -47,13 +47,13 @@ func TestThinFileUtils_LoadMetadataWithoutTimeout(t *testing.T) {
 		return "", "", errors.New("fail to run the command")
 	}
 	wrappedUnhookExecWithoutTimeout := func() {
-		err := gohook.UnHook(ThinFileUtils.execWithoutTimeout)
+		err := gohook.UnHook(ThinFileUtils.exec)
 		if err != nil {
 			t.Fatal(err.Error())
 		}
 	}
 
-	err := gohook.Hook(ThinFileUtils.execWithoutTimeout, ExecWithoutTimeoutErr, nil)
+	err := gohook.Hook(ThinFileUtils.exec, ExecWithoutTimeoutErr, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -64,7 +64,7 @@ func TestThinFileUtils_LoadMetadataWithoutTimeout(t *testing.T) {
 	}
 	wrappedUnhookExecWithoutTimeout()
 
-	err = gohook.Hook(ThinFileUtils.execWithoutTimeout, ExecWithoutTimeoutCommon, nil)
+	err = gohook.Hook(ThinFileUtils.exec, ExecWithoutTimeoutCommon, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -83,13 +83,13 @@ func TestThinFileUtils_GetUsedSpace(t *testing.T) {
 		return "", "", errors.New("fail to run the command")
 	}
 	wrappedUnhookExec := func() {
-		err := gohook.UnHook(ThinFileUtils.execWithoutTimeout)
+		err := gohook.UnHook(ThinFileUtils.exec)
 		if err != nil {
 			t.Fatal(err.Error())
 		}
 	}
 
-	err := gohook.Hook(ThinFileUtils.execWithoutTimeout, ExecWithoutTimeoutErr, nil)
+	err := gohook.Hook(ThinFileUtils.exec, ExecWithoutTimeoutErr, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -100,7 +100,7 @@ func TestThinFileUtils_GetUsedSpace(t *testing.T) {
 	}
 	wrappedUnhookExec()
 
-	err = gohook.Hook(ThinFileUtils.execWithoutTimeout, ExecWithoutTimeoutCommon, nil)
+	err = gohook.Hook(ThinFileUtils.exec, ExecWithoutTimeoutCommon, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -122,13 +122,13 @@ func TestThinFileUtils_GetFileCount(t *testing.T) {
 		return "", "", errors.New("fail to run the command")
 	}
 	wrappedUnhookExec := func() {
-		err := gohook.UnHook(ThinFileUtils.execWithoutTimeout)
+		err := gohook.UnHook(ThinFileUtils.exec)
 		if err != nil {
 			t.Fatal(err.Error())
 		}
 	}
 
-	err := gohook.Hook(ThinFileUtils.execWithoutTimeout, ExecWithoutTimeoutErr, nil)
+	err := gohook.Hook(ThinFileUtils.exec, ExecWithoutTimeoutErr, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -139,7 +139,7 @@ func TestThinFileUtils_GetFileCount(t *testing.T) {
 	}
 	wrappedUnhookExec()
 
-	err = gohook.Hook(ThinFileUtils.execWithoutTimeout, ExecWithoutTimeoutCommon, nil)
+	err = gohook.Hook(ThinFileUtils.exec, ExecWithoutTimeoutCommon, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -162,13 +162,13 @@ func TestThinFileUtils_exec(t *testing.T) {
 	}
 
 	wrappedUnhookExec := func() {
-		err := gohook.UnHook(ThinFileUtils.execWithoutTimeout)
+		err := gohook.UnHook(ThinFileUtils.exec)
 		if err != nil {
 			t.Fatal(err.Error())
 		}
 	}
 
-	err := gohook.Hook(ThinFileUtils.execWithoutTimeout, ExecWithoutTimeoutErr, nil)
+	err := gohook.Hook(ThinFileUtils.exec, ExecWithoutTimeoutErr, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -179,7 +179,7 @@ func TestThinFileUtils_exec(t *testing.T) {
 	}
 	wrappedUnhookExec()
 
-	err = gohook.Hook(ThinFileUtils.execWithoutTimeout, ExecWithoutTimeoutCommon, nil)
+	err = gohook.Hook(ThinFileUtils.exec, ExecWithoutTimeoutCommon, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}

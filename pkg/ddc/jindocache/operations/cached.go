@@ -17,7 +17,6 @@ limitations under the License.
 package operations
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -35,11 +34,11 @@ func (a JindoFileUtils) CleanCache() (err error) {
 	stdout, stderr, err = a.exec(command, false)
 
 	if err != nil {
-		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
 		if utils.IgnoreNotFound(err) == nil {
-			fmt.Printf("Failed to clean cache due to %v", err)
+			a.log.Info("Ignoring not found error when cleaning cache, maybe engine is already teared down", "error", err)
 			return nil
 		}
+		a.log.Error(err, "JindoFileUtils.CleanCache() failed", "stdout", stdout, "stderr", stderr)
 		return
 	} else {
 		time.Sleep(30 * time.Second)

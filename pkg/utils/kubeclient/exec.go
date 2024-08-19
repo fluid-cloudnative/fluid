@@ -19,15 +19,19 @@ package kubeclient
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"net/url"
 	"os"
 	"path"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/cmdguard"
+	securityutils "github.com/fluid-cloudnative/fluid/pkg/utils/security"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -62,6 +66,19 @@ type ExecOptions struct {
 	CaptureStderr bool
 	// If false, whitespace in std{err,out} will be removed.
 	PreserveWhitespace bool
+}
+
+func (opt ExecOptions) String() string {
+	return fmt.Sprintf(
+		"{Command: %v, Namespace: %v, PodName: %v, ContainerName: %v, CaptureStdout: %v, CaptureStderr: %v, PreserveWhitespace: %v}",
+		securityutils.FilterCommand(opt.Command),
+		opt.Namespace,
+		opt.PodName,
+		opt.ContainerName,
+		opt.CaptureStdout,
+		opt.CaptureStderr,
+		opt.PreserveWhitespace,
+	)
 }
 
 func initClient() error {
@@ -100,8 +117,13 @@ func initClient() error {
 // ExecWithOptions executes a command in the specified container,
 // returning stdout, stderr and error. `options` allowed for
 // additional parameters to be passed.
-func ExecWithOptions(options ExecOptions) (string, string, error) {
-	err := initClient()
+func ExecWithOptions(ctx context.Context, options ExecOptions) (string, string, error) {
+	err := cmdguard.ValidateCommandSlice(options.Command)
+	if err != nil {
+		return "", "", err
+	}
+
+	err = initClient()
 	if err != nil {
 		return "", "", err
 	}
@@ -126,7 +148,7 @@ func ExecWithOptions(options ExecOptions) (string, string, error) {
 	}, scheme.ParameterCodec)
 
 	var stdout, stderr bytes.Buffer
-	err = doExecute("POST", req.URL(), restConfig, options.Stdin, &stdout, &stderr, tty)
+	err = doExecute(ctx, "POST", req.URL(), restConfig, options.Stdin, &stdout, &stderr, tty)
 
 	if options.PreserveWhitespace {
 		return stdout.String(), stderr.String(), err
@@ -136,8 +158,8 @@ func ExecWithOptions(options ExecOptions) (string, string, error) {
 
 // ExecCommandInContainerWithFullOutput executes a command in the
 // specified container and return stdout, stderr and error
-func ExecCommandInContainerWithFullOutput(podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, err error) {
-	return ExecWithOptions(ExecOptions{
+func ExecCommandInContainerWithFullOutput(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, err error) {
+	return ExecWithOptions(ctx, ExecOptions{
 		Command:       cmd,
 		Namespace:     namespace,
 		PodName:       podName,
@@ -150,17 +172,38 @@ func ExecCommandInContainerWithFullOutput(podName string, containerName string, 
 	})
 }
 
-// A wrapper function of ExecCommandInContainerWithFullOutput
+// Exec commands in container without any timeout.
 func ExecCommandInContainer(podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, err error) {
-	return ExecCommandInContainerWithFullOutput(podName, containerName, namespace, cmd)
+	return ExecCommandInContainerWithFullOutput(context.Background(), podName, containerName, namespace, cmd)
 }
 
-func doExecute(method string, url *url.URL, config *restclient.Config, stdin io.Reader, stdout, stderr io.Writer, tty bool) error {
+// Exec commands in container with a given timeout.
+func ExecCommandInContainerWithTimeout(podName string, containerName string, namespace string, cmd []string, timeout time.Duration) (stdout string, stderr string, err error) {
+	ctx, cancel := context.WithTimeout(context.TODO(), timeout)
+	ch := make(chan string, 1)
+	defer cancel()
+
+	go func() {
+		stdout, stderr, err = ExecCommandInContainerWithFullOutput(ctx, podName, containerName, namespace, cmd)
+		ch <- "done"
+	}()
+
+	select {
+	case <-ch:
+		// Succeeded in time
+	case <-ctx.Done():
+		err = fmt.Errorf("timed out for %v", timeout)
+	}
+
+	return
+}
+
+func doExecute(ctx context.Context, method string, url *url.URL, config *restclient.Config, stdin io.Reader, stdout, stderr io.Writer, tty bool) error {
 	exec, err := remotecommand.NewSPDYExecutor(config, method, url)
 	if err != nil {
 		return err
 	}
-	return exec.StreamWithContext(context.TODO(),
+	return exec.StreamWithContext(ctx,
 		remotecommand.StreamOptions{
 			Stdin:  stdin,
 			Stdout: stdout,
