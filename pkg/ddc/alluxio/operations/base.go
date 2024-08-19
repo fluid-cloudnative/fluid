@@ -54,11 +54,13 @@ func (a AlluxioFileUtils) exec(command []string, verbose bool) (stdout string, s
 	// redact sensitive info in command for printing
 	redactedCommand := securityutils.FilterCommand(command)
 
+	a.log.V(1).Info("Exec command start", "command", redactedCommand)
 	stdout, stderr, err = kubeclient.ExecCommandInContainerWithTimeout(a.podName, a.container, a.namespace, command, common.FileUtilsExecTimeout)
 	if err != nil {
 		err = errors.Wrapf(err, "error when executing command %v", redactedCommand)
 		return
 	}
+	a.log.V(1).Info("Exec command finished", "command", redactedCommand)
 
 	if verbose {
 		a.log.Info("Exec command succeeded", "command", redactedCommand, "stdout", stdout, "stderr", stderr)

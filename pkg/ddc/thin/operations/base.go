@@ -50,11 +50,13 @@ func (t ThinFileUtils) exec(command []string, verbose bool) (stdout string, stde
 	// redact sensitive info in command for printing
 	redactedCommand := securityutils.FilterCommand(command)
 
+	t.log.V(1).Info("Exec command start", "command", redactedCommand)
 	stdout, stderr, err = kubeclient.ExecCommandInContainerWithTimeout(t.podName, t.container, t.namespace, command, common.FileUtilsExecTimeout)
 	if err != nil {
 		err = errors.Wrapf(err, "error when executing command %v", redactedCommand)
 		return
 	}
+	t.log.V(1).Info("Exec command finished", "command", redactedCommand)
 
 	if verbose {
 		t.log.Info("Exec command succeeded", "command", redactedCommand, "stdout", stdout, "stderr", stderr)
