@@ -30,6 +30,7 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/cmdguard"
 	securityutils "github.com/fluid-cloudnative/fluid/pkg/utils/security"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
@@ -117,7 +118,12 @@ func initClient() error {
 // returning stdout, stderr and error. `options` allowed for
 // additional parameters to be passed.
 func ExecWithOptions(ctx context.Context, options ExecOptions) (string, string, error) {
-	err := initClient()
+	err := cmdguard.ValidateCommandSlice(options.Command)
+	if err != nil {
+		return "", "", err
+	}
+
+	err = initClient()
 	if err != nil {
 		return "", "", err
 	}
