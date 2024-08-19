@@ -17,15 +17,16 @@
 package operations
 
 import (
-	"context"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/fluid-cloudnative/fluid/pkg/utils/cmdguard"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	securityutils "github.com/fluid-cloudnative/fluid/pkg/utils/security"
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 )
 
 type ThinFileUtils struct {
@@ -44,6 +45,24 @@ func NewThinFileUtils(podName string, containerName string, namespace string, lo
 	}
 }
 
+// exec with timeout
+func (t ThinFileUtils) exec(command []string, verbose bool) (stdout string, stderr string, err error) {
+	// redact sensitive info in command for printing
+	redactedCommand := securityutils.FilterCommand(command)
+
+	stdout, stderr, err = kubeclient.ExecCommandInContainerWithTimeout(t.podName, t.container, t.namespace, command, common.FileUtilsExecTimeout)
+	if err != nil {
+		err = errors.Wrapf(err, "error when executing command %v", redactedCommand)
+		return
+	}
+
+	if verbose {
+		t.log.Info("Exec command succeeded", "command", redactedCommand, "stdout", stdout, "stderr", stderr)
+	}
+
+	return
+}
+
 // Load the metadata without timeout
 func (t ThinFileUtils) LoadMetadataWithoutTimeout(path string) (err error) {
 	var (
@@ -53,15 +72,14 @@ func (t ThinFileUtils) LoadMetadataWithoutTimeout(path string) (err error) {
 	)
 
 	start := time.Now()
-	stdout, stderr, err = t.execWithoutTimeout(command, false)
+	stdout, stderr, err = t.exec(command, false)
 	duration := time.Since(start)
 	t.log.Info("Async Load Metadata took times to run", "period", duration)
 	if err != nil {
-		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		t.log.Error(err, "ThinFileUtils.LoadMetadataWithoutTimeout() failed", "stdout", stdout, "stderr", stderr)
 		return
-	} else {
-		t.log.Info("Async Load Metadata finished", "stdout", stdout)
 	}
+	t.log.Info("Async Load Metadata finished")
 	return
 }
 
@@ -77,7 +95,7 @@ func (t ThinFileUtils) GetUsedSpace(path string) (usedSpace int64, err error) {
 
 	stdout, stderr, err = t.exec(command, false)
 	if err != nil {
-		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		t.log.Error(err, "ThinFileUtils.GetUsedSpace() failed", "stdout", stdout, "stderr", stderr)
 		return
 	}
 
@@ -111,7 +129,7 @@ func (t ThinFileUtils) GetFileCount(path string) (fileCount int64, err error) {
 
 	stdout, stderr, err = t.exec(command, false)
 	if err != nil {
-		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
+		t.log.Error(err, "ThinFileUtils.GetFileCount() failed", "stdout", stdout, "stderr", stderr)
 		return
 	}
 
@@ -135,45 +153,4 @@ func (t ThinFileUtils) GetFileCount(path string) (fileCount int64, err error) {
 	}
 
 	return fileCount, nil
-}
-
-// exec with timeout
-func (t ThinFileUtils) exec(command []string, verbose bool) (stdout string, stderr string, err error) {
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second*1500)
-	ch := make(chan string, 1)
-	defer cancel()
-
-	go func() {
-		stdout, stderr, err = t.execWithoutTimeout(command, verbose)
-		ch <- "done"
-	}()
-
-	select {
-	case <-ch:
-		t.log.Info("execute in time", "command", command)
-	case <-ctx.Done():
-		err = fmt.Errorf("timeout when executing %v", command)
-	}
-	return
-}
-
-// execWithoutTimeout
-func (t ThinFileUtils) execWithoutTimeout(command []string, verbose bool) (stdout string, stderr string, err error) {
-	// validate the pipe command with white list
-	err = cmdguard.ValidateCommandSlice(command)
-	if err != nil {
-		return
-	}
-
-	stdout, stderr, err = kubeclient.ExecCommandInContainer(t.podName, t.container, t.namespace, command)
-	if err != nil {
-		t.log.Info("Stdout", "Command", command, "Stdout", stdout)
-		t.log.Error(err, "Failed", "Command", command, "FailedReason", stderr)
-		return
-	}
-	if verbose {
-		t.log.Info("Stdout", "Command", command, "Stdout", stdout)
-	}
-
-	return
 }
