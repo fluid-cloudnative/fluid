@@ -56,6 +56,12 @@ func TestShouldSyncMetadata(t *testing.T) {
 				Namespace: "fluid",
 			},
 		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "autosync",
+				Namespace: "fluid",
+			},
+		},
 	}
 	runtimeInputs := []datav1alpha1.ThinRuntime{
 		{
@@ -79,6 +85,19 @@ func TestShouldSyncMetadata(t *testing.T) {
 				RuntimeManagement: datav1alpha1.RuntimeManagement{
 					MetadataSyncPolicy: datav1alpha1.MetadataSyncPolicy{
 						AutoSync: ptr.To(false),
+					},
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "autosync",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.ThinRuntimeSpec{
+				RuntimeManagement: datav1alpha1.RuntimeManagement{
+					MetadataSyncPolicy: datav1alpha1.MetadataSyncPolicy{
+						AutoSync: ptr.To(true),
 					},
 				},
 			},
@@ -112,6 +131,12 @@ func TestShouldSyncMetadata(t *testing.T) {
 			Client:    client,
 			Log:       fake.NullLogger(),
 		},
+		{
+			name:      "autosync",
+			namespace: "fluid",
+			Client:    client,
+			Log:       fake.NullLogger(),
+		},
 	}
 
 	var testCases = []struct {
@@ -124,11 +149,15 @@ func TestShouldSyncMetadata(t *testing.T) {
 		},
 		{
 			engine:         engines[1],
-			expectedShould: true,
+			expectedShould: false,
 		},
 		{
 			engine:         engines[2],
 			expectedShould: false,
+		},
+		{
+			engine:         engines[3],
+			expectedShould: true,
 		},
 	}
 

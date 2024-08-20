@@ -17,16 +17,22 @@ limitations under the License.
 package jindocache
 
 import (
+	"context"
+	"fmt"
 	"reflect"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
+	"github.com/agiledragon/gomonkey/v2"
 	. "github.com/agiledragon/gomonkey/v2"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -185,6 +191,24 @@ func TestInvokeCleanCache(t *testing.T) {
 				ReadyReplicas: 1,
 			},
 		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase-no-pod-jindofs-master",
+				Namespace: "fluid",
+			},
+			Status: appsv1.StatefulSetStatus{
+				ReadyReplicas: 1,
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase-exec-error-jindofs-master",
+				Namespace: "fluid",
+			},
+			Status: appsv1.StatefulSetStatus{
+				ReadyReplicas: 1,
+			},
+		},
 	}
 	objs := []runtime.Object{}
 	for _, masterInput := range masterInputs {
@@ -192,19 +216,42 @@ func TestInvokeCleanCache(t *testing.T) {
 	}
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, objs...)
 	testCases := []struct {
-		name      string
-		namespace string
-		isErr     bool
+		name        string
+		namespace   string
+		patchExecFn func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (stdout, stderr string, err error)
+		isErr       bool
 	}{
 		{
 			name:      "hadoop",
 			namespace: "fluid",
-			isErr:     false,
+			patchExecFn: func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (stdout, stderr string, err error) {
+				return "", "", nil
+			},
+			isErr: false,
 		},
 		{
 			name:      "hbase",
 			namespace: "fluid",
-			isErr:     true,
+			patchExecFn: func(ctx context.Context, podName, containerName, namespace string, cmd []string) (stdout string, stderr string, err error) {
+				return "cache cleaned up", "", nil
+			},
+			isErr: false,
+		},
+		{
+			name:      "hbase-no-pod",
+			namespace: "fluid",
+			patchExecFn: func(ctx context.Context, podName, containerName, namespace string, cmd []string) (stdout string, stderr string, err error) {
+				return "", "", errors.NewNotFound(schema.GroupResource{Group: "v1", Resource: "pods"}, "pod not found")
+			},
+			isErr: false,
+		},
+		{
+			name:      "hbase-exec-error",
+			namespace: "fluid",
+			patchExecFn: func(ctx context.Context, podName, containerName, namespace string, cmd []string) (stdout string, stderr string, err error) {
+				return "", "", fmt.Errorf("expected exec error")
+			},
+			isErr: true,
 		},
 		{
 			name:      "none",
@@ -219,11 +266,16 @@ func TestInvokeCleanCache(t *testing.T) {
 			name:      testCase.name,
 			Log:       fake.NullLogger(),
 		}
+
+		patch := gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithFullOutput, testCase.patchExecFn)
+
 		err := engine.invokeCleanCache()
 		isErr := err != nil
 		if isErr != testCase.isErr {
 			t.Errorf("test-name:%s want %t, got %t", testCase.name, testCase.isErr, isErr)
 		}
+
+		patch.Reset()
 	}
 }
 
