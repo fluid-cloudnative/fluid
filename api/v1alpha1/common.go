@@ -192,7 +192,6 @@ type CleanCachePolicy struct {
 // MetadataSyncPolicy defines policies when syncing metadata
 type MetadataSyncPolicy struct {
 	// AutoSync enables automatic metadata sync when setting up a runtime. If not set, it defaults to true.
-	// +kubebuilder:default=true
 	// +optional
 	AutoSync *bool `json:"autoSync,omitempty"`
 }

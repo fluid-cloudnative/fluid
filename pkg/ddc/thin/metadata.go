@@ -56,8 +56,10 @@ func (t *ThinEngine) shouldSyncMetadata() (should bool, err error) {
 		return should, err
 	}
 
-	if !runtime.Spec.RuntimeManagement.MetadataSyncPolicy.AutoSyncEnabled() {
-		t.Log.V(1).Info("Skip syncing metadta cause runtime.Spec.RuntimeManagement.MetadataSyncPolicy.AutoSync=false", "runtime name", runtime.Name, "runtime namespace", runtime.Namespace)
+	// Avoid using `!runtime.Spec.RuntimeManagement.MetadataSyncPolicy.AutoSyncEnabled()` because ThinRuntime disables auto-sync by default. The behavior is different
+	// from other runtimes.
+	if runtime.Spec.RuntimeManagement.MetadataSyncPolicy.AutoSync == nil || !*runtime.Spec.RuntimeManagement.MetadataSyncPolicy.AutoSync {
+		t.Log.V(1).Info("Skip syncing metadata because runtime.Spec.RuntimeManagement.MetaadataSyncPolicy.AutoSync==false(default to false if not set)", "runtime name", runtime.Name, "runtime namespace", runtime.Namespace)
 		should = false
 		return should, nil
 	}
