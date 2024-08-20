@@ -32,7 +32,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	"github.com/agiledragon/gomonkey/v2"
 	. "github.com/agiledragon/gomonkey/v2"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -267,7 +266,7 @@ func TestInvokeCleanCache(t *testing.T) {
 			Log:       fake.NullLogger(),
 		}
 
-		patch := gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithFullOutput, testCase.patchExecFn)
+		patch := ApplyFunc(kubeclient.ExecCommandInContainerWithFullOutput, testCase.patchExecFn)
 
 		err := engine.invokeCleanCache()
 		isErr := err != nil
