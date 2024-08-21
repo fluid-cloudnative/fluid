@@ -240,12 +240,14 @@ webhook:
           - RequireNodeWithFuse
           - NodeAffinityWithCache
           - MountPropagationInjector
+          - MountedDatasetInjector
         withoutDataset:
           - PreferNodesWithoutCache
       # serverless webhook plugins
       serverless:
         withDataset:
           - FuseSidecar
+          - MountedDatasetInjector
         withoutDataset: []
     pluginConfig:
       - name: NodeAffinityWithCache
