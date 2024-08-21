@@ -684,7 +684,6 @@ spec:
                       metadata when setting up the runtime. If not set,
                     properties:
                       autoSync:
-                        default: true
                         description: AutoSync enables automatic metadata sync when
                           setting up a runtime. If not set, it defaults to true.
                         type: boolean
