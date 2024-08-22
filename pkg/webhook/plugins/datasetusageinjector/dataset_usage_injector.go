@@ -1,4 +1,4 @@
-package mounteddatasetinjector
+package datasetusageinjector
 
 import (
 	"fmt"
@@ -13,28 +13,28 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const Name = "MountedDatasetInjector"
+const Name = "DatasetUsageInjector"
 
 var (
 	log = ctrl.Log.WithName(Name)
 )
 
-type MountedDatasetInjector struct {
+type DatasetUsageInjector struct {
 	client client.Client
 	name   string
 }
 
-var _ api.MutatingHandler = &MountedDatasetInjector{}
+var _ api.MutatingHandler = &DatasetUsageInjector{}
 
 func NewPlugin(c client.Client, args string) (api.MutatingHandler, error) {
-	return &MountedDatasetInjector{
+	return &DatasetUsageInjector{
 		client: c,
 		name:   Name,
 	}, nil
 }
 
 // TODO: Support cases where fuse sidecars are injected in multi-round. Currently, only dataset names in the first round will be recorded.
-func (injector *MountedDatasetInjector) Mutate(pod *corev1.Pod, runtimeInfos map[string]base.RuntimeInfoInterface) (shouldStop bool, err error) {
+func (injector *DatasetUsageInjector) Mutate(pod *corev1.Pod, runtimeInfos map[string]base.RuntimeInfoInterface) (shouldStop bool, err error) {
 	if len(runtimeInfos) == 0 {
 		return false, nil
 	}
@@ -44,26 +44,26 @@ func (injector *MountedDatasetInjector) Mutate(pod *corev1.Pod, runtimeInfos map
 		podName = pod.GenerateName
 	}
 
-	mountedDatasets := make([]string, 0, len(runtimeInfos))
+	datasetsInUse := make([]string, 0, len(runtimeInfos))
 	for _, runtimeInfo := range runtimeInfos {
-		mountedDatasets = append(mountedDatasets, runtimeInfo.GetName())
+		datasetsInUse = append(datasetsInUse, runtimeInfo.GetName())
 	}
-	slices.Sort(mountedDatasets)
-	log.Info("Injecting mounted dataset annotation to pod",
-		"annotation", fmt.Sprintf("%s=%s", common.LabelAnnotationMountedDatasets, strings.Join(mountedDatasets, ",")),
+	slices.Sort(datasetsInUse)
+	log.Info("Injecting dataset usage annotation to pod",
+		"annotation", fmt.Sprintf("%s=%s", common.LabelAnnotationDatasetsInUse, strings.Join(datasetsInUse, ",")),
 		"pod", fmt.Sprintf("%s/%s", pod.Namespace, podName))
 
 	if len(pod.Annotations) == 0 {
 		pod.Annotations = map[string]string{}
 	}
 
-	if val, exists := pod.Annotations[common.LabelAnnotationMountedDatasets]; !exists || val != strings.Join(mountedDatasets, ",") {
-		pod.Annotations[common.LabelAnnotationMountedDatasets] = strings.Join(mountedDatasets, ",")
+	if val, exists := pod.Annotations[common.LabelAnnotationDatasetsInUse]; !exists || val != strings.Join(datasetsInUse, ",") {
+		pod.Annotations[common.LabelAnnotationDatasetsInUse] = strings.Join(datasetsInUse, ",")
 	}
 
 	return false, nil
 }
 
-func (injector *MountedDatasetInjector) GetName() string {
+func (injector *DatasetUsageInjector) GetName() string {
 	return injector.name
 }

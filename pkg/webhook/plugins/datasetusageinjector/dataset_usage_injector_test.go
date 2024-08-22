@@ -1,4 +1,4 @@
-package mounteddatasetinjector
+package datasetusageinjector
 
 import (
 	"reflect"
@@ -13,7 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-func TestMountedDatasetInjector_Mutate(t *testing.T) {
+func TestDatasetUsageInjector_Mutate(t *testing.T) {
 	runtimeInfo1, err := base.BuildRuntimeInfo("demo-dataset-1", "fluid-test", "", datav1alpha1.TieredStore{})
 	if err != nil {
 		t.Fatalf("build runtime info failed with %v", err)
@@ -51,7 +51,7 @@ func TestMountedDatasetInjector_Mutate(t *testing.T) {
 					Name:      "test",
 					Namespace: "fluid-test",
 					Annotations: map[string]string{
-						common.LabelAnnotationMountedDatasets: "demo-dataset-1",
+						common.LabelAnnotationDatasetsInUse: "demo-dataset-1",
 					},
 				},
 			},
@@ -76,7 +76,7 @@ func TestMountedDatasetInjector_Mutate(t *testing.T) {
 					Name:      "test2",
 					Namespace: "fluid-test",
 					Annotations: map[string]string{
-						common.LabelAnnotationMountedDatasets: "demo-dataset-1,demo-dataset-2",
+						common.LabelAnnotationDatasetsInUse: "demo-dataset-1,demo-dataset-2",
 					},
 				},
 			},

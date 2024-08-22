@@ -54,8 +54,8 @@ const (
 	// LabelDataFlowAffinityPrefix is a prefix for customized dataflow affinity label name.
 	LabelDataFlowAffinityPrefix = "fluid.io."
 
-	// LabelAnnotationMountingDatasets is a label/annotation key indicating which datasets are currently mounted on a pod.
-	LabelAnnotationMountedDatasets = LabelAnnotationPrefix + "mounted-datasets"
+	// LabelAnnotationMountingDatasets is a label/annotation key indicating which datasets are currently being used by a pod.
+	LabelAnnotationDatasetsInUse = LabelAnnotationPrefix + "datasets-in-use"
 )
 
 var (
