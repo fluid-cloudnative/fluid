@@ -59,7 +59,7 @@ string
 <td>
 <code>metadata</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#objectmeta-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
 </a>
 </em>
@@ -291,7 +291,7 @@ of the file as the value.</p>
 <td>
 <code>volumes</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#volume-v1-core">
 []Kubernetes core/v1.Volume
 </a>
 </em>
@@ -327,6 +327,20 @@ RuntimeManagement
 <td>
 <em>(Optional)</em>
 <p>RuntimeManagement defines policies when managing the runtime</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>imagePullSecrets</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#localobjectreference-v1-core">
+[]Kubernetes core/v1.LocalObjectReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ImagePullSecrets that will be used to pull images</p>
 </td>
 </tr>
 </table>
@@ -380,7 +394,7 @@ string
 <td>
 <code>metadata</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#objectmeta-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
 </a>
 </em>
@@ -515,7 +529,7 @@ string
 <td>
 <code>metadata</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#objectmeta-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
 </a>
 </em>
@@ -603,7 +617,7 @@ PodMetadata
 <td>
 <code>affinity</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#affinity-v1-core">
 Kubernetes core/v1.Affinity
 </a>
 </em>
@@ -617,7 +631,7 @@ Kubernetes core/v1.Affinity
 <td>
 <code>tolerations</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#toleration-v1-core">
 []Kubernetes core/v1.Toleration
 </a>
 </em>
@@ -707,7 +721,7 @@ int32
 <td>
 <code>resources</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#resourcerequirements-v1-core">
 Kubernetes core/v1.ResourceRequirements
 </a>
 </em>
@@ -768,7 +782,7 @@ string
 <td>
 <code>metadata</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#objectmeta-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
 </a>
 </em>
@@ -913,7 +927,7 @@ PodMetadata
 <td>
 <code>affinity</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#affinity-v1-core">
 Kubernetes core/v1.Affinity
 </a>
 </em>
@@ -927,7 +941,7 @@ Kubernetes core/v1.Affinity
 <td>
 <code>tolerations</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#toleration-v1-core">
 []Kubernetes core/v1.Toleration
 </a>
 </em>
@@ -991,7 +1005,7 @@ int32
 <td>
 <code>resources</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#resourcerequirements-v1-core">
 Kubernetes core/v1.ResourceRequirements
 </a>
 </em>
@@ -1077,7 +1091,7 @@ string
 <td>
 <code>metadata</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#objectmeta-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
 </a>
 </em>
@@ -1149,7 +1163,7 @@ This field influences the scheduling of pods that use the cached dataset.</p>
 <td>
 <code>tolerations</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#toleration-v1-core">
 []Kubernetes core/v1.Toleration
 </a>
 </em>
@@ -1163,7 +1177,7 @@ This field influences the scheduling of pods that use the cached dataset.</p>
 <td>
 <code>accessModes</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#persistentvolumeaccessmode-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#persistentvolumeaccessmode-v1-core">
 []Kubernetes core/v1.PersistentVolumeAccessMode
 </a>
 </em>
@@ -1292,7 +1306,7 @@ string
 <td>
 <code>metadata</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#objectmeta-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
 </a>
 </em>
@@ -1483,7 +1497,7 @@ string
 <td>
 <code>metadata</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#objectmeta-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
 </a>
 </em>
@@ -1778,7 +1792,7 @@ string
 <td>
 <code>metadata</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#objectmeta-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
 </a>
 </em>
@@ -2007,7 +2021,7 @@ CleanCachePolicy
 <td>
 <code>volumes</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#volume-v1-core">
 []Kubernetes core/v1.Volume
 </a>
 </em>
@@ -2068,7 +2082,7 @@ string
 <td>
 <code>metadata</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#objectmeta-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
 </a>
 </em>
@@ -2234,7 +2248,7 @@ Prometheus is enabled by default</p>
 <td>
 <code>volumes</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#volume-v1-core">
 []Kubernetes core/v1.Volume
 </a>
 </em>
@@ -2323,7 +2337,7 @@ string
 <td>
 <code>metadata</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#objectmeta-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
 </a>
 </em>
@@ -2473,7 +2487,7 @@ PodMetadata
 <td>
 <code>volumes</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#volume-v1-core">
 []Kubernetes core/v1.Volume
 </a>
 </em>
@@ -2667,7 +2681,7 @@ map[string]int
 <td>
 <code>resources</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#resourcerequirements-v1-core">
 Kubernetes core/v1.ResourceRequirements
 </a>
 </em>
@@ -2733,7 +2747,7 @@ NetworkMode
 <td>
 <code>volumeMounts</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#volumemount-v1-core">
 []Kubernetes core/v1.VolumeMount
 </a>
 </em>
@@ -2755,6 +2769,19 @@ PodMetadata
 <td>
 <em>(Optional)</em>
 <p>PodMetadata defines labels and annotations that will be propagated to Alluxio&rsquo;s pods</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>imagePullSecrets</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#localobjectreference-v1-core">
+[]Kubernetes core/v1.LocalObjectReference
+</a>
+</em>
+</td>
+<td>
+<p>ImagePullSecrets that will be used to pull images</p>
 </td>
 </tr>
 </tbody>
@@ -2811,6 +2838,19 @@ string
 </tr>
 <tr>
 <td>
+<code>imagePullSecrets</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#localobjectreference-v1-core">
+[]Kubernetes core/v1.LocalObjectReference
+</a>
+</em>
+</td>
+<td>
+<p>ImagePullSecrets that will be used to pull images</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>jvmOptions</code></br>
 <em>
 []string
@@ -2847,7 +2887,7 @@ map[string]string
 <td>
 <code>resources</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#resourcerequirements-v1-core">
 Kubernetes core/v1.ResourceRequirements
 </a>
 </em>
@@ -2920,7 +2960,7 @@ NetworkMode
 <td>
 <code>volumeMounts</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#volumemount-v1-core">
 []Kubernetes core/v1.VolumeMount
 </a>
 </em>
@@ -3176,7 +3216,7 @@ of the file as the value.</p>
 <td>
 <code>volumes</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#volume-v1-core">
 []Kubernetes core/v1.Volume
 </a>
 </em>
@@ -3214,6 +3254,20 @@ RuntimeManagement
 <p>RuntimeManagement defines policies when managing the runtime</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>imagePullSecrets</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#localobjectreference-v1-core">
+[]Kubernetes core/v1.LocalObjectReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ImagePullSecrets that will be used to pull images</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.CacheableNodeAffinity">CacheableNodeAffinity
@@ -3237,7 +3291,7 @@ RuntimeManagement
 <td>
 <code>required</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#nodeselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#nodeselector-v1-core">
 Kubernetes core/v1.NodeSelector
 </a>
 </em>
@@ -3335,7 +3389,7 @@ common.ConditionType
 <td>
 <code>status</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#conditionstatus-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#conditionstatus-v1-core">
 Kubernetes core/v1.ConditionStatus
 </a>
 </em>
@@ -3370,7 +3424,7 @@ string
 <td>
 <code>lastProbeTime</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#time-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#time-v1-meta">
 Kubernetes meta/v1.Time
 </a>
 </em>
@@ -3383,7 +3437,7 @@ Kubernetes meta/v1.Time
 <td>
 <code>lastTransitionTime</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#time-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#time-v1-meta">
 Kubernetes meta/v1.Time
 </a>
 </em>
@@ -3600,7 +3654,7 @@ PodMetadata
 <td>
 <code>affinity</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#affinity-v1-core">
 Kubernetes core/v1.Affinity
 </a>
 </em>
@@ -3614,7 +3668,7 @@ Kubernetes core/v1.Affinity
 <td>
 <code>tolerations</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#toleration-v1-core">
 []Kubernetes core/v1.Toleration
 </a>
 </em>
@@ -3704,7 +3758,7 @@ int32
 <td>
 <code>resources</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#resourcerequirements-v1-core">
 Kubernetes core/v1.ResourceRequirements
 </a>
 </em>
@@ -3855,7 +3909,7 @@ PodMetadata
 <td>
 <code>affinity</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#affinity-v1-core">
 Kubernetes core/v1.Affinity
 </a>
 </em>
@@ -3869,7 +3923,7 @@ Kubernetes core/v1.Affinity
 <td>
 <code>tolerations</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#toleration-v1-core">
 []Kubernetes core/v1.Toleration
 </a>
 </em>
@@ -3933,7 +3987,7 @@ int32
 <td>
 <code>resources</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#resourcerequirements-v1-core">
 Kubernetes core/v1.ResourceRequirements
 </a>
 </em>
@@ -3987,7 +4041,7 @@ map[string]string
 <td>
 <code>metadata</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#objectmeta-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
 </a>
 </em>
@@ -4271,7 +4325,7 @@ DatasetConditionType
 <td>
 <code>status</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#conditionstatus-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#conditionstatus-v1-core">
 Kubernetes core/v1.ConditionStatus
 </a>
 </em>
@@ -4306,7 +4360,7 @@ string
 <td>
 <code>lastUpdateTime</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#time-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#time-v1-meta">
 Kubernetes meta/v1.Time
 </a>
 </em>
@@ -4319,7 +4373,7 @@ Kubernetes meta/v1.Time
 <td>
 <code>lastTransitionTime</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#time-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#time-v1-meta">
 Kubernetes meta/v1.Time
 </a>
 </em>
@@ -4396,7 +4450,7 @@ This field influences the scheduling of pods that use the cached dataset.</p>
 <td>
 <code>tolerations</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#toleration-v1-core">
 []Kubernetes core/v1.Toleration
 </a>
 </em>
@@ -4410,7 +4464,7 @@ This field influences the scheduling of pods that use the cached dataset.</p>
 <td>
 <code>accessModes</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#persistentvolumeaccessmode-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#persistentvolumeaccessmode-v1-core">
 []Kubernetes core/v1.PersistentVolumeAccessMode
 </a>
 </em>
@@ -4779,7 +4833,7 @@ map[string]int
 <td>
 <code>resources</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#resourcerequirements-v1-core">
 Kubernetes core/v1.ResourceRequirements
 </a>
 </em>
@@ -4893,7 +4947,7 @@ map[string]string
 <td>
 <code>resources</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#resourcerequirements-v1-core">
 Kubernetes core/v1.ResourceRequirements
 </a>
 </em>
@@ -5368,7 +5422,7 @@ map[string]int
 <td>
 <code>resources</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#resourcerequirements-v1-core">
 Kubernetes core/v1.ResourceRequirements
 </a>
 </em>
@@ -5521,7 +5575,7 @@ map[string]string
 <td>
 <code>resources</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#resourcerequirements-v1-core">
 Kubernetes core/v1.ResourceRequirements
 </a>
 </em>
@@ -5973,7 +6027,7 @@ map[string]string
 <td>
 <code>resources</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#resourcerequirements-v1-core">
 Kubernetes core/v1.ResourceRequirements
 </a>
 </em>
@@ -6046,7 +6100,7 @@ map[string]int
 <td>
 <code>resources</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#resourcerequirements-v1-core">
 Kubernetes core/v1.ResourceRequirements
 </a>
 </em>
@@ -6086,7 +6140,7 @@ map[string]string
 <td>
 <code>tolerations</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#toleration-v1-core">
 []Kubernetes core/v1.Toleration
 </a>
 </em>
@@ -6140,7 +6194,7 @@ bool
 <td>
 <code>volumeMounts</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#volumemount-v1-core">
 []Kubernetes core/v1.VolumeMount
 </a>
 </em>
@@ -6228,7 +6282,7 @@ map[string]string
 <td>
 <code>resources</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#resourcerequirements-v1-core">
 Kubernetes core/v1.ResourceRequirements
 </a>
 </em>
@@ -6269,7 +6323,7 @@ this option only effect when global is enabled</p>
 <td>
 <code>tolerations</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#toleration-v1-core">
 []Kubernetes core/v1.Toleration
 </a>
 </em>
@@ -6573,7 +6627,7 @@ CleanCachePolicy
 <td>
 <code>volumes</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#volume-v1-core">
 []Kubernetes core/v1.Volume
 </a>
 </em>
@@ -6605,7 +6659,7 @@ CleanCachePolicy
 <td>
 <code>podSpec</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#podspec-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#podspec-v1-core">
 Kubernetes core/v1.PodSpec
 </a>
 </em>
@@ -6652,7 +6706,7 @@ replicas is the min replicas of dataset in the cluster</p>
 <td>
 <code>ports</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#containerport-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#containerport-v1-core">
 []Kubernetes core/v1.ContainerPort
 </a>
 </em>
@@ -6666,7 +6720,7 @@ replicas is the min replicas of dataset in the cluster</p>
 <td>
 <code>resources</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#resourcerequirements-v1-core">
 Kubernetes core/v1.ResourceRequirements
 </a>
 </em>
@@ -6691,7 +6745,7 @@ map[string]string
 <td>
 <code>env</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#envvar-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#envvar-v1-core">
 []Kubernetes core/v1.EnvVar
 </a>
 </em>
@@ -6728,7 +6782,7 @@ map[string]string
 <td>
 <code>volumeMounts</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#volumemount-v1-core">
 []Kubernetes core/v1.VolumeMount
 </a>
 </em>
@@ -6821,7 +6875,7 @@ string
 <td>
 <code>env</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#envvar-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#envvar-v1-core">
 []Kubernetes core/v1.EnvVar
 </a>
 </em>
@@ -6834,7 +6888,7 @@ string
 <td>
 <code>resources</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#resourcerequirements-v1-core">
 Kubernetes core/v1.ResourceRequirements
 </a>
 </em>
@@ -6872,7 +6926,7 @@ this option only effect when global is enabled</p>
 <td>
 <code>volumeMounts</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#volumemount-v1-core">
 []Kubernetes core/v1.VolumeMount
 </a>
 </em>
@@ -7090,7 +7144,7 @@ Prometheus is enabled by default</p>
 <td>
 <code>volumes</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#volume-v1-core">
 []Kubernetes core/v1.Volume
 </a>
 </em>
@@ -7203,7 +7257,7 @@ Multiple paths should be separated with comma. For example: &ldquo;/mnt/cache1,/
 <td>
 <code>quota</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#quantity-resource-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#quantity-resource-core">
 Kubernetes resource.Quantity
 </a>
 </em>
@@ -7352,7 +7406,7 @@ PodMetadata
 <td>
 <code>selector</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#groupkind-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#groupkind-v1-meta">
 Kubernetes meta/v1.GroupKind
 </a>
 </em>
@@ -7724,7 +7778,7 @@ map[string]string
 <td>
 <code>lastScheduleTime</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#time-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#time-v1-meta">
 Kubernetes meta/v1.Time
 </a>
 </em>
@@ -7737,7 +7791,7 @@ Kubernetes meta/v1.Time
 <td>
 <code>lastSuccessfulTime</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#time-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#time-v1-meta">
 Kubernetes meta/v1.Time
 </a>
 </em>
@@ -7763,7 +7817,7 @@ WaitingStatus
 <td>
 <code>nodeAffinity</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#nodeaffinity-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#nodeaffinity-v1-core">
 Kubernetes core/v1.NodeAffinity
 </a>
 </em>
@@ -7774,10 +7828,6 @@ Kubernetes core/v1.NodeAffinity
 </tr>
 </tbody>
 </table>
-<h3 id="data.fluid.io/v1alpha1.OperationType">OperationType
-(<code>string</code> alias)</p></h3>
-<p>
-</p>
 <h3 id="data.fluid.io/v1alpha1.PlacementMode">PlacementMode
 (<code>string</code> alias)</p></h3>
 <p>
@@ -8103,7 +8153,7 @@ RuntimeConditionType
 <td>
 <code>status</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#conditionstatus-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#conditionstatus-v1-core">
 Kubernetes core/v1.ConditionStatus
 </a>
 </em>
@@ -8138,7 +8188,7 @@ string
 <td>
 <code>lastProbeTime</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#time-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#time-v1-meta">
 Kubernetes meta/v1.Time
 </a>
 </em>
@@ -8151,7 +8201,7 @@ Kubernetes meta/v1.Time
 <td>
 <code>lastTransitionTime</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#time-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#time-v1-meta">
 Kubernetes meta/v1.Time
 </a>
 </em>
@@ -8543,7 +8593,7 @@ APIGatewayStatus
 <td>
 <code>mountTime</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#time-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#time-v1-meta">
 Kubernetes meta/v1.Time
 </a>
 </em>
@@ -8570,7 +8620,7 @@ if Mounttime is earlier than master starting time, remount will be required</p>
 <td>
 <code>cacheAffinity</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#nodeaffinity-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#nodeaffinity-v1-core">
 Kubernetes core/v1.NodeAffinity
 </a>
 </em>
@@ -8617,7 +8667,7 @@ VersionSpec
 <td>
 <code>restartPolicy</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#restartpolicy-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#restartpolicy-v1-core">
 Kubernetes core/v1.RestartPolicy
 </a>
 </em>
@@ -8654,7 +8704,7 @@ string
 <td>
 <code>env</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#envvar-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#envvar-v1-core">
 []Kubernetes core/v1.EnvVar
 </a>
 </em>
@@ -8668,7 +8718,7 @@ string
 <td>
 <code>volumeMounts</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#volumemount-v1-core">
 []Kubernetes core/v1.VolumeMount
 </a>
 </em>
@@ -8682,7 +8732,7 @@ string
 <td>
 <code>volumes</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#volume-v1-core">
 []Kubernetes core/v1.Volume
 </a>
 </em>
@@ -8696,7 +8746,7 @@ string
 <td>
 <code>resources</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#resourcerequirements-v1-core">
 Kubernetes core/v1.ResourceRequirements
 </a>
 </em>
@@ -8959,7 +9009,7 @@ replicas is the min replicas of dataset in the cluster</p>
 <td>
 <code>ports</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#containerport-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#containerport-v1-core">
 []Kubernetes core/v1.ContainerPort
 </a>
 </em>
@@ -8973,7 +9023,7 @@ replicas is the min replicas of dataset in the cluster</p>
 <td>
 <code>resources</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#resourcerequirements-v1-core">
 Kubernetes core/v1.ResourceRequirements
 </a>
 </em>
@@ -8987,7 +9037,7 @@ Kubernetes core/v1.ResourceRequirements
 <td>
 <code>env</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#envvar-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#envvar-v1-core">
 []Kubernetes core/v1.EnvVar
 </a>
 </em>
@@ -9024,7 +9074,7 @@ map[string]string
 <td>
 <code>volumeMounts</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#volumemount-v1-core">
 []Kubernetes core/v1.VolumeMount
 </a>
 </em>
@@ -9038,7 +9088,7 @@ map[string]string
 <td>
 <code>livenessProbe</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#probe-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#probe-v1-core">
 Kubernetes core/v1.Probe
 </a>
 </em>
@@ -9052,7 +9102,7 @@ Kubernetes core/v1.Probe
 <td>
 <code>readinessProbe</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#probe-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#probe-v1-core">
 Kubernetes core/v1.Probe
 </a>
 </em>
@@ -9132,7 +9182,7 @@ string
 <td>
 <code>ports</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#containerport-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#containerport-v1-core">
 []Kubernetes core/v1.ContainerPort
 </a>
 </em>
@@ -9146,7 +9196,7 @@ string
 <td>
 <code>env</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#envvar-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#envvar-v1-core">
 []Kubernetes core/v1.EnvVar
 </a>
 </em>
@@ -9193,7 +9243,7 @@ will be merged with Dataset.spec.mounts.options into fuse pod.</p>
 <td>
 <code>resources</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#resourcerequirements-v1-core">
 Kubernetes core/v1.ResourceRequirements
 </a>
 </em>
@@ -9251,7 +9301,7 @@ NetworkMode
 <td>
 <code>livenessProbe</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#probe-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#probe-v1-core">
 Kubernetes core/v1.Probe
 </a>
 </em>
@@ -9265,7 +9315,7 @@ Kubernetes core/v1.Probe
 <td>
 <code>readinessProbe</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#probe-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#probe-v1-core">
 Kubernetes core/v1.Probe
 </a>
 </em>
@@ -9279,7 +9329,7 @@ Kubernetes core/v1.Probe
 <td>
 <code>volumeMounts</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#volumemount-v1-core">
 []Kubernetes core/v1.VolumeMount
 </a>
 </em>
@@ -9308,7 +9358,7 @@ Kubernetes core/v1.Probe
 <td>
 <code>metadata</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#objectmeta-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
 </a>
 </em>
@@ -9422,7 +9472,7 @@ Prometheus is enabled by default</p>
 <td>
 <code>volumes</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#volume-v1-core">
 []Kubernetes core/v1.Volume
 </a>
 </em>
@@ -9480,7 +9530,7 @@ RuntimeStatus
 <td>
 <code>metadata</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#objectmeta-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
 </a>
 </em>
@@ -9544,7 +9594,7 @@ ThinFuseSpec
 <td>
 <code>volumes</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#volume-v1-core">
 []Kubernetes core/v1.Volume
 </a>
 </em>
@@ -9642,7 +9692,7 @@ ThinFuseSpec
 <td>
 <code>volumes</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#volume-v1-core">
 []Kubernetes core/v1.Volume
 </a>
 </em>
@@ -9784,7 +9834,7 @@ Prometheus is enabled by default</p>
 <td>
 <code>volumes</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#volume-v1-core">
 []Kubernetes core/v1.Volume
 </a>
 </em>
@@ -10069,7 +10119,7 @@ Defaults to OnRuntimeDeleted</p>
 <td>
 <code>resources</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#resourcerequirements-v1-core">
 Kubernetes core/v1.ResourceRequirements
 </a>
 </em>
@@ -10296,7 +10346,7 @@ wait.etcd.timeout: &quot;120&quot;
 <td>
 <code>resources</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#resourcerequirements-v1-core">
 Kubernetes core/v1.ResourceRequirements
 </a>
 </em>
@@ -10313,7 +10363,7 @@ the resources.request.memory for worker should be greater than tieredstore.level
 <td>
 <code>volumeMounts</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#volumemount-v1-core">
 []Kubernetes core/v1.VolumeMount
 </a>
 </em>
@@ -10501,7 +10551,7 @@ PodMetadata
 <td>
 <code>volumes</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#volume-v1-core">
 []Kubernetes core/v1.Volume
 </a>
 </em>
@@ -10535,7 +10585,7 @@ Default is null.</p>
 <td>
 <code>VolumeSource</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumesource-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#volumesource-v1-core">
 Kubernetes core/v1.VolumeSource
 </a>
 </em>
@@ -10580,5 +10630,5 @@ bool
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>6baf09911</code>.
+on git commit <code>b96f0ddc</code>.
 </em></p>
