@@ -28,6 +28,7 @@ function create_dataset() {
 }
 
 function wait_dataset_bound() {
+    deadline=180 # 3 minutes
     last_state=""
     log_interval=0
     log_times=0
@@ -36,6 +37,9 @@ function wait_dataset_bound() {
         if [[ $log_interval -eq 3 ]]; then
             log_times=$(expr $log_times + 1)
             syslog "checking dataset.status.phase==Bound (already $(expr $log_times \* $log_interval \* 5)s, last state: $last_state)"
+            if [[ "$(expr $log_times \* $log_interval \* 5)" -ge "$deadline" ]]; then
+                panic "timeout for ${deadline}s!"
+            fi
             log_interval=0
         fi
 
