@@ -49,16 +49,20 @@ func (injector *DatasetUsageInjector) Mutate(pod *corev1.Pod, runtimeInfos map[s
 		datasetsInUse = append(datasetsInUse, runtimeInfo.GetName())
 	}
 	slices.Sort(datasetsInUse)
+
+	annotationKey := common.LabelAnnotationDatasetsInUse
+	annotationValue := strings.Join(datasetsInUse, ",")
+
 	log.Info("Injecting dataset usage annotation to pod",
-		"annotation", fmt.Sprintf("%s=%s", common.LabelAnnotationDatasetsInUse, strings.Join(datasetsInUse, ",")),
+		"annotation", fmt.Sprintf("%s=%s", annotationKey, annotationValue),
 		"pod", fmt.Sprintf("%s/%s", pod.Namespace, podName))
 
 	if len(pod.Annotations) == 0 {
 		pod.Annotations = map[string]string{}
 	}
 
-	if val, exists := pod.Annotations[common.LabelAnnotationDatasetsInUse]; !exists || val != strings.Join(datasetsInUse, ",") {
-		pod.Annotations[common.LabelAnnotationDatasetsInUse] = strings.Join(datasetsInUse, ",")
+	if val, exists := pod.Annotations[annotationKey]; !exists || val != annotationValue {
+		pod.Annotations[annotationKey] = annotationValue
 	}
 
 	return false, nil
