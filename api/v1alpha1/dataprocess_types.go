@@ -119,6 +119,7 @@ type DataProcessSpec struct {
 // +kubebuilder:printcolumn:name="Duration",type="string",JSONPath=`.status.duration`
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+// +genclient
 
 // DataProcess is the Schema for the dataprocesses API
 type DataProcess struct {

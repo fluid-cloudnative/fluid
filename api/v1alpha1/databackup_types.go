@@ -49,7 +49,6 @@ type DataBackupSpec struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Namespaced
 // +kubebuilder:resource:categories={fluid},shortName=backup
-// +genclient
 
 // DataBackup is the Schema for the backup API
 type DataBackup struct {

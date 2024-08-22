@@ -37,9 +37,7 @@
                 <code>apiVersion</code></br>
                 string</td>
             <td>
-                <code>
-                    {{apiGroup .}}
-                </code>
+                <code>{{apiGroup .}}</code>
             </td>
         </tr>
         <tr>

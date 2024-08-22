@@ -7,11 +7,11 @@ Resource Types:
 <ul><li>
 <a href="#data.fluid.io/v1alpha1.AlluxioRuntime">AlluxioRuntime</a>
 </li><li>
-<a href="#data.fluid.io/v1alpha1.DataBackup">DataBackup</a>
-</li><li>
 <a href="#data.fluid.io/v1alpha1.DataLoad">DataLoad</a>
 </li><li>
 <a href="#data.fluid.io/v1alpha1.DataMigrate">DataMigrate</a>
+</li><li>
+<a href="#data.fluid.io/v1alpha1.DataProcess">DataProcess</a>
 </li><li>
 <a href="#data.fluid.io/v1alpha1.Dataset">Dataset</a>
 </li><li>
@@ -22,6 +22,8 @@ Resource Types:
 <a href="#data.fluid.io/v1alpha1.JindoRuntime">JindoRuntime</a>
 </li><li>
 <a href="#data.fluid.io/v1alpha1.JuiceFSRuntime">JuiceFSRuntime</a>
+</li><li>
+<a href="#data.fluid.io/v1alpha1.ThinRuntime">ThinRuntime</a>
 </li><li>
 <a href="#data.fluid.io/v1alpha1.VineyardRuntime">VineyardRuntime</a>
 </li></ul>
@@ -43,9 +45,7 @@ Resource Types:
 <code>apiVersion</code></br>
 string</td>
 <td>
-<code>
-data.fluid.io/v1alpha1
-</code>
+<code>data.fluid.io/v1alpha1</code>
 </td>
 </tr>
 <tr>
@@ -360,141 +360,6 @@ RuntimeStatus
 </tr>
 </tbody>
 </table>
-<h3 id="data.fluid.io/v1alpha1.DataBackup">DataBackup
-</h3>
-<p>
-<p>DataBackup is the Schema for the backup API</p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>apiVersion</code></br>
-string</td>
-<td>
-<code>
-data.fluid.io/v1alpha1
-</code>
-</td>
-</tr>
-<tr>
-<td>
-<code>kind</code></br>
-string
-</td>
-<td><code>DataBackup</code></td>
-</tr>
-<tr>
-<td>
-<code>metadata</code></br>
-<em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#objectmeta-v1-meta">
-Kubernetes meta/v1.ObjectMeta
-</a>
-</em>
-</td>
-<td>
-Refer to the Kubernetes API documentation for the fields of the
-<code>metadata</code> field.
-</td>
-</tr>
-<tr>
-<td>
-<code>spec</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.DataBackupSpec">
-DataBackupSpec
-</a>
-</em>
-</td>
-<td>
-<br/>
-<br/>
-<table>
-<tr>
-<td>
-<code>dataset</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<p>Dataset defines the target dataset of the DataBackup</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>backupPath</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<p>BackupPath defines the target path to save data of the DataBackup</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>runAs</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.User">
-User
-</a>
-</em>
-</td>
-<td>
-<p>Manage the user to run Alluxio DataBackup</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>runAfter</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.OperationRef">
-OperationRef
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Specifies that the preceding operation in a workflow</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>ttlSecondsAfterFinished</code></br>
-<em>
-int32
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>TTLSecondsAfterFinished is the time second to clean up data operations after finished or failed</p>
-</td>
-</tr>
-</table>
-</td>
-</tr>
-<tr>
-<td>
-<code>status</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.OperationStatus">
-OperationStatus
-</a>
-</em>
-</td>
-<td>
-</td>
-</tr>
-</tbody>
-</table>
 <h3 id="data.fluid.io/v1alpha1.DataLoad">DataLoad
 </h3>
 <p>
@@ -513,9 +378,7 @@ OperationStatus
 <code>apiVersion</code></br>
 string</td>
 <td>
-<code>
-data.fluid.io/v1alpha1
-</code>
+<code>data.fluid.io/v1alpha1</code>
 </td>
 </tr>
 <tr>
@@ -766,9 +629,7 @@ OperationStatus
 <code>apiVersion</code></br>
 string</td>
 <td>
-<code>
-data.fluid.io/v1alpha1
-</code>
+<code>data.fluid.io/v1alpha1</code>
 </td>
 </tr>
 <tr>
@@ -1057,6 +918,130 @@ OperationStatus
 </tr>
 </tbody>
 </table>
+<h3 id="data.fluid.io/v1alpha1.DataProcess">DataProcess
+</h3>
+<p>
+<p>DataProcess is the Schema for the dataprocesses API</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>apiVersion</code></br>
+string</td>
+<td>
+<code>data.fluid.io/v1alpha1</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>kind</code></br>
+string
+</td>
+<td><code>DataProcess</code></td>
+</tr>
+<tr>
+<td>
+<code>metadata</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.DataProcessSpec">
+DataProcessSpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>dataset</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.TargetDatasetWithMountPath">
+TargetDatasetWithMountPath
+</a>
+</em>
+</td>
+<td>
+<p>Dataset specifies the target dataset and its mount path.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>processor</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.Processor">
+Processor
+</a>
+</em>
+</td>
+<td>
+<p>Processor specify how to process data.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>runAfter</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.OperationRef">
+OperationRef
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Specifies that the preceding operation in a workflow</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>ttlSecondsAfterFinished</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>TTLSecondsAfterFinished is the time second to clean up data operations after finished or failed</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.OperationStatus">
+OperationStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="data.fluid.io/v1alpha1.Dataset">Dataset
 </h3>
 <p>
@@ -1075,9 +1060,7 @@ OperationStatus
 <code>apiVersion</code></br>
 string</td>
 <td>
-<code>
-data.fluid.io/v1alpha1
-</code>
+<code>data.fluid.io/v1alpha1</code>
 </td>
 </tr>
 <tr>
@@ -1290,9 +1273,7 @@ DatasetStatus
 <code>apiVersion</code></br>
 string</td>
 <td>
-<code>
-data.fluid.io/v1alpha1
-</code>
+<code>data.fluid.io/v1alpha1</code>
 </td>
 </tr>
 <tr>
@@ -1481,9 +1462,7 @@ RuntimeStatus
 <code>apiVersion</code></br>
 string</td>
 <td>
-<code>
-data.fluid.io/v1alpha1
-</code>
+<code>data.fluid.io/v1alpha1</code>
 </td>
 </tr>
 <tr>
@@ -1776,9 +1755,7 @@ RuntimeStatus
 <code>apiVersion</code></br>
 string</td>
 <td>
-<code>
-data.fluid.io/v1alpha1
-</code>
+<code>data.fluid.io/v1alpha1</code>
 </td>
 </tr>
 <tr>
@@ -2066,9 +2043,7 @@ RuntimeStatus
 <code>apiVersion</code></br>
 string</td>
 <td>
-<code>
-data.fluid.io/v1alpha1
-</code>
+<code>data.fluid.io/v1alpha1</code>
 </td>
 </tr>
 <tr>
@@ -2303,6 +2278,193 @@ RuntimeStatus
 </tr>
 </tbody>
 </table>
+<h3 id="data.fluid.io/v1alpha1.ThinRuntime">ThinRuntime
+</h3>
+<p>
+<p>ThinRuntime is the Schema for the thinruntimes API</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>apiVersion</code></br>
+string</td>
+<td>
+<code>data.fluid.io/v1alpha1</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>kind</code></br>
+string
+</td>
+<td><code>ThinRuntime</code></td>
+</tr>
+<tr>
+<td>
+<code>metadata</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.ThinRuntimeSpec">
+ThinRuntimeSpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>profileName</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>The specific runtime profile name, empty value is used for handling datasets which mount another dataset</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>worker</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.ThinCompTemplateSpec">
+ThinCompTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<p>The component spec of worker</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>fuse</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.ThinFuseSpec">
+ThinFuseSpec
+</a>
+</em>
+</td>
+<td>
+<p>The component spec of thinRuntime</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>tieredstore</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.TieredStore">
+TieredStore
+</a>
+</em>
+</td>
+<td>
+<p>Tiered storage</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>replicas</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+<p>The replicas of the worker, need to be specified</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>runAs</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.User">
+User
+</a>
+</em>
+</td>
+<td>
+<p>Manage the user to run Runtime</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>disablePrometheus</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Disable monitoring for Runtime
+Prometheus is enabled by default</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>volumes</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#volume-v1-core">
+[]Kubernetes core/v1.Volume
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Volumes is the list of Kubernetes volumes that can be mounted by runtime components and/or fuses.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>management</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.RuntimeManagement">
+RuntimeManagement
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>RuntimeManagement defines policies when managing the runtime</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.RuntimeStatus">
+RuntimeStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="data.fluid.io/v1alpha1.VineyardRuntime">VineyardRuntime
 </h3>
 <p>
@@ -2321,9 +2483,7 @@ RuntimeStatus
 <code>apiVersion</code></br>
 string</td>
 <td>
-<code>
-data.fluid.io/v1alpha1
-</code>
+<code>data.fluid.io/v1alpha1</code>
 </td>
 </tr>
 <tr>
@@ -3492,6 +3652,124 @@ bool
 </tr>
 </tbody>
 </table>
+<h3 id="data.fluid.io/v1alpha1.DataBackup">DataBackup
+</h3>
+<p>
+<p>DataBackup is the Schema for the backup API</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>metadata</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.DataBackupSpec">
+DataBackupSpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>dataset</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Dataset defines the target dataset of the DataBackup</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>backupPath</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>BackupPath defines the target path to save data of the DataBackup</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>runAs</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.User">
+User
+</a>
+</em>
+</td>
+<td>
+<p>Manage the user to run Alluxio DataBackup</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>runAfter</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.OperationRef">
+OperationRef
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Specifies that the preceding operation in a workflow</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>ttlSecondsAfterFinished</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>TTLSecondsAfterFinished is the time second to clean up data operations after finished or failed</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.OperationStatus">
+OperationStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="data.fluid.io/v1alpha1.DataBackupSpec">DataBackupSpec
 </h3>
 <p>
@@ -4020,115 +4298,6 @@ map[string]string
 <td>
 <em>(Optional)</em>
 <p>ParallelOptions defines options like ssh port and ssh secret name when parallelism is greater than 1.</p>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="data.fluid.io/v1alpha1.DataProcess">DataProcess
-</h3>
-<p>
-<p>DataProcess is the Schema for the dataprocesses API</p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>metadata</code></br>
-<em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#objectmeta-v1-meta">
-Kubernetes meta/v1.ObjectMeta
-</a>
-</em>
-</td>
-<td>
-Refer to the Kubernetes API documentation for the fields of the
-<code>metadata</code> field.
-</td>
-</tr>
-<tr>
-<td>
-<code>spec</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.DataProcessSpec">
-DataProcessSpec
-</a>
-</em>
-</td>
-<td>
-<br/>
-<br/>
-<table>
-<tr>
-<td>
-<code>dataset</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.TargetDatasetWithMountPath">
-TargetDatasetWithMountPath
-</a>
-</em>
-</td>
-<td>
-<p>Dataset specifies the target dataset and its mount path.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>processor</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.Processor">
-Processor
-</a>
-</em>
-</td>
-<td>
-<p>Processor specify how to process data.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>runAfter</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.OperationRef">
-OperationRef
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Specifies that the preceding operation in a workflow</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>ttlSecondsAfterFinished</code></br>
-<em>
-int32
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>TTLSecondsAfterFinished is the time second to clean up data operations after finished or failed</p>
-</td>
-</tr>
-</table>
-</td>
-</tr>
-<tr>
-<td>
-<code>status</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.OperationStatus">
-OperationStatus
-</a>
-</em>
-</td>
-<td>
 </td>
 </tr>
 </tbody>
@@ -7712,10 +7881,10 @@ AffinityStrategy
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#data.fluid.io/v1alpha1.DataBackup">DataBackup</a>, 
 <a href="#data.fluid.io/v1alpha1.DataLoad">DataLoad</a>, 
 <a href="#data.fluid.io/v1alpha1.DataMigrate">DataMigrate</a>, 
-<a href="#data.fluid.io/v1alpha1.DataProcess">DataProcess</a>)
+<a href="#data.fluid.io/v1alpha1.DataProcess">DataProcess</a>, 
+<a href="#data.fluid.io/v1alpha1.DataBackup">DataBackup</a>)
 </p>
 <p>
 <p>OperationStatus defines the observed state of operation</p>
@@ -8269,8 +8438,8 @@ MetadataSyncPolicy
 <a href="#data.fluid.io/v1alpha1.GooseFSRuntime">GooseFSRuntime</a>, 
 <a href="#data.fluid.io/v1alpha1.JindoRuntime">JindoRuntime</a>, 
 <a href="#data.fluid.io/v1alpha1.JuiceFSRuntime">JuiceFSRuntime</a>, 
-<a href="#data.fluid.io/v1alpha1.VineyardRuntime">VineyardRuntime</a>, 
-<a href="#data.fluid.io/v1alpha1.ThinRuntime">ThinRuntime</a>)
+<a href="#data.fluid.io/v1alpha1.ThinRuntime">ThinRuntime</a>, 
+<a href="#data.fluid.io/v1alpha1.VineyardRuntime">VineyardRuntime</a>)
 </p>
 <p>
 <p>RuntimeStatus defines the observed state of Runtime</p>
@@ -9337,178 +9506,6 @@ Kubernetes core/v1.Probe
 <td>
 <em>(Optional)</em>
 <p>VolumeMounts specifies the volumes listed in &ldquo;.spec.volumes&rdquo; to mount into the thinruntime component&rsquo;s filesystem.</p>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="data.fluid.io/v1alpha1.ThinRuntime">ThinRuntime
-</h3>
-<p>
-<p>ThinRuntime is the Schema for the thinruntimes API</p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>metadata</code></br>
-<em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#objectmeta-v1-meta">
-Kubernetes meta/v1.ObjectMeta
-</a>
-</em>
-</td>
-<td>
-Refer to the Kubernetes API documentation for the fields of the
-<code>metadata</code> field.
-</td>
-</tr>
-<tr>
-<td>
-<code>spec</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.ThinRuntimeSpec">
-ThinRuntimeSpec
-</a>
-</em>
-</td>
-<td>
-<br/>
-<br/>
-<table>
-<tr>
-<td>
-<code>profileName</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<p>The specific runtime profile name, empty value is used for handling datasets which mount another dataset</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>worker</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.ThinCompTemplateSpec">
-ThinCompTemplateSpec
-</a>
-</em>
-</td>
-<td>
-<p>The component spec of worker</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>fuse</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.ThinFuseSpec">
-ThinFuseSpec
-</a>
-</em>
-</td>
-<td>
-<p>The component spec of thinRuntime</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>tieredstore</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.TieredStore">
-TieredStore
-</a>
-</em>
-</td>
-<td>
-<p>Tiered storage</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>replicas</code></br>
-<em>
-int32
-</em>
-</td>
-<td>
-<p>The replicas of the worker, need to be specified</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>runAs</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.User">
-User
-</a>
-</em>
-</td>
-<td>
-<p>Manage the user to run Runtime</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>disablePrometheus</code></br>
-<em>
-bool
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Disable monitoring for Runtime
-Prometheus is enabled by default</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>volumes</code></br>
-<em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#volume-v1-core">
-[]Kubernetes core/v1.Volume
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Volumes is the list of Kubernetes volumes that can be mounted by runtime components and/or fuses.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>management</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.RuntimeManagement">
-RuntimeManagement
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>RuntimeManagement defines policies when managing the runtime</p>
-</td>
-</tr>
-</table>
-</td>
-</tr>
-<tr>
-<td>
-<code>status</code></br>
-<em>
-<a href="#data.fluid.io/v1alpha1.RuntimeStatus">
-RuntimeStatus
-</a>
-</em>
-</td>
-<td>
 </td>
 </tr>
 </tbody>
@@ -10630,5 +10627,5 @@ bool
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>b96f0ddc</code>.
+on git commit <code>e8adb7d8</code>.
 </em></p>
