@@ -20,6 +20,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
+
 func (info *RuntimeInfo) GetLabelNameForMemory() string {
 	return utils.GetLabelNameForMemory(info.IsDeprecatedNodeLabel(), info.runtimeType, info.namespace, info.name)
 }

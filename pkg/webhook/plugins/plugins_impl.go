@@ -19,15 +19,17 @@ package plugins
 import (
 	"errors"
 	"fmt"
+	"os"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/api"
+	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/datasetusageinjector"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/fusesidecar"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/mountpropagationinjector"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/nodeaffinitywithcache"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/prefernodeswithoutcache"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/requirenodewithfuse"
 	"gopkg.in/yaml.v2"
-	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -47,6 +49,7 @@ func RegisterMutatingHandlers(client client.Client) error {
 	_ = registry.Register(requirenodewithfuse.Name, requirenodewithfuse.NewPlugin)
 	_ = registry.Register(nodeaffinitywithcache.Name, nodeaffinitywithcache.NewPlugin)
 	_ = registry.Register(fusesidecar.Name, fusesidecar.NewPlugin)
+	_ = registry.Register(datasetusageinjector.Name, datasetusageinjector.NewPlugin)
 
 	// get the handlers through the config file
 	data, err := os.ReadFile(common.WebhookPluginFilePath)
