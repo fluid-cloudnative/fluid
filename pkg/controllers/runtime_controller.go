@@ -50,6 +50,8 @@ import (
 
 // var _ RuntimeReconcilerInterface = (*RuntimeReconciler)(nil)
 
+var reconcileTimeout = 10 * time.Minute
+
 // RuntimeReconciler is the default implementation
 type RuntimeReconciler struct {
 	client.Client
@@ -74,13 +76,19 @@ func NewRuntimeReconciler(reconciler RuntimeReconcilerInterface, client client.C
 
 // ReconcileInternal handles the logic of reconcile runtime
 func (r *RuntimeReconciler) ReconcileInternal(ctx cruntime.ReconcileRequestContext) (ctrl.Result, error) {
-	// 0.Get the runtime
+
+	// 0. Set context time limit
+	ctxWithTimeout, cancel := context.WithTimeout(ctx.Context, reconcileTimeout)
+	defer cancel()
+	ctx.Context = ctxWithTimeout
+
+	// 1.Get the runtime
 	runtime := ctx.Runtime
 	if runtime == nil {
 		return utils.RequeueIfError(fmt.Errorf("failed to find the runtime"))
 	}
 
-	// 1.Validate name is prefixed with a number such as "20-hbase".
+	// 2.Validate name is prefixed with a number such as "20-hbase".
 	if errs := validation.IsDNS1035Label(runtime.GetName()); len(runtime.GetName()) > 0 && len(errs) > 0 {
 		err := field.Invalid(field.NewPath("metadata").Child("name"), runtime.GetName(), strings.Join(errs, ","))
 		ctx.Log.Error(err, "Failed to validate runtime name")
@@ -88,20 +96,20 @@ func (r *RuntimeReconciler) ReconcileInternal(ctx cruntime.ReconcileRequestConte
 		return utils.RequeueIfError(errors.Wrap(err, "Failed to create"))
 	}
 
-	// 2.Get or create the engine
+	// 3.Get or create the engine
 	engine, err := r.implement.GetOrCreateEngine(ctx)
 	if err != nil {
 		r.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Process Runtime error %v", err)
 		return utils.RequeueIfError(errors.Wrap(err, "Failed to create"))
 	}
 
-	// 3.Get the ObjectMeta of runtime
+	// 4.Get the ObjectMeta of runtime
 	objectMeta, err := r.implement.GetRuntimeObjectMeta(ctx)
 	if err != nil {
 		return utils.RequeueIfError(err)
 	}
 
-	// 4.Get the dataset
+	// 5.Get the dataset
 	dataset, err := r.GetDataset(ctx)
 	if err != nil {
 		// r.Recorder.Eventf(ctx.Dataset, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Process Runtime error %v", err)
@@ -116,7 +124,7 @@ func (r *RuntimeReconciler) ReconcileInternal(ctx cruntime.ReconcileRequestConte
 	}
 	ctx.Dataset = dataset
 
-	// 5.Reconcile delete the runtime
+	// 6.Reconcile delete the runtime
 	// it should be after getting the dataset because need to edit the dataset during deleting
 	if !objectMeta.GetDeletionTimestamp().IsZero() {
 		result, err := r.implement.ReconcileRuntimeDeletion(engine, ctx)
@@ -127,7 +135,7 @@ func (r *RuntimeReconciler) ReconcileInternal(ctx cruntime.ReconcileRequestConte
 	}
 
 	if dataset != nil {
-		// 6.Add the OwnerReference of runtime and requeue
+		// 7.Add the OwnerReference of runtime and requeue
 		if !utils.ContainsOwners(objectMeta.GetOwnerReferences(), dataset) {
 			return r.AddOwnerAndRequeue(ctx, dataset)
 		}
@@ -148,7 +156,7 @@ func (r *RuntimeReconciler) ReconcileInternal(ctx cruntime.ReconcileRequestConte
 			return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
 		}
 
-		// 7. Add Finalizer of runtime and requeue
+		// 8. Add Finalizer of runtime and requeue
 		if !utils.ContainsString(objectMeta.GetFinalizers(), ctx.FinalizerName) {
 			return r.implement.AddFinalizerAndRequeue(ctx, ctx.FinalizerName)
 		} else {
@@ -161,7 +169,7 @@ func (r *RuntimeReconciler) ReconcileInternal(ctx cruntime.ReconcileRequestConte
 		return utils.RequeueAfterInterval(time.Duration(5 * time.Second))
 	}
 
-	// 8.Start to reconcile runtime
+	// 9.Start to reconcile runtime
 	return r.implement.ReconcileRuntime(engine, ctx)
 }
 
