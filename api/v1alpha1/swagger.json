@@ -17,6 +17,29 @@
         }
       }
     },
+    ".AffinityStrategy": {
+      "type": "object",
+      "properties": {
+        "policy": {
+          "description": "Policy one of: \"\", \"Require\", \"Prefer\"",
+          "type": "string"
+        },
+        "prefers": {
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/.Prefer"
+          }
+        },
+        "requires": {
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/.Require"
+          }
+        }
+      }
+    },
     ".AlluxioCompTemplateSpec": {
       "description": "AlluxioCompTemplateSpec is a description of the Alluxio commponents",
       "type": "object",
@@ -31,6 +54,14 @@
           "additionalProperties": {
             "type": "string",
             "default": ""
+          }
+        },
+        "imagePullSecrets": {
+          "description": "ImagePullSecrets that will be used to pull images",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.LocalObjectReference"
           }
         },
         "jvmOptions": {
@@ -119,10 +150,6 @@
             "default": ""
           }
         },
-        "global": {
-          "description": "If the fuse client should be deployed in global mode, otherwise the affinity should be considered",
-          "type": "boolean"
-        },
         "image": {
           "description": "Image for Alluxio Fuse(e.g. alluxio/alluxio-fuse)",
           "type": "string"
@@ -130,6 +157,14 @@
         "imagePullPolicy": {
           "description": "One of the three policies: `Always`, `IfNotPresent`, `Never`",
           "type": "string"
+        },
+        "imagePullSecrets": {
+          "description": "ImagePullSecrets that will be used to pull images",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.LocalObjectReference"
+          }
         },
         "imageTag": {
           "description": "Image Tag for Alluxio Fuse(e.g. 2.3.0-SNAPSHOT)",
@@ -269,6 +304,14 @@
           "description": "Name of the configMap used to support HDFS configurations when using HDFS as Alluxio's UFS. The configMap must be in the same namespace with the AlluxioRuntime. The configMap should contain user-specific HDFS conf files in it. For now, only \"hdfs-site.xml\" and \"core-site.xml\" are supported. It must take the filename of the conf file as the key and content of the file as the value.",
           "type": "string"
         },
+        "imagePullSecrets": {
+          "description": "ImagePullSecrets that will be used to pull images",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.LocalObjectReference"
+          }
+        },
         "initUsers": {
           "description": "The spec of init users",
           "default": {},
@@ -380,12 +423,10 @@
       "properties": {
         "lastProbeTime": {
           "description": "LastProbeTime describes last time this condition was updated.",
-          "default": {},
           "$ref": "#/definitions/v1.Time"
         },
         "lastTransitionTime": {
           "description": "LastTransitionTime describes last time the condition transitioned from one status to another.",
-          "default": {},
           "$ref": "#/definitions/v1.Time"
         },
         "message": {
@@ -954,12 +995,10 @@
       "properties": {
         "lastTransitionTime": {
           "description": "Last time the condition transitioned from one status to another.",
-          "default": {},
           "$ref": "#/definitions/v1.Time"
         },
         "lastUpdateTime": {
           "description": "The last time this condition was updated.",
-          "default": {},
           "$ref": "#/definitions/v1.Time"
         },
         "message": {
@@ -1570,10 +1609,6 @@
             "default": ""
           }
         },
-        "global": {
-          "description": "If the fuse client should be deployed in global mode, otherwise the affinity should be considered",
-          "type": "boolean"
-        },
         "image": {
           "description": "Image for GooseFS Fuse(e.g. goosefs/goosefs-fuse)",
           "type": "string"
@@ -1930,10 +1965,6 @@
             "default": ""
           }
         },
-        "global": {
-          "description": "If the fuse client should be deployed in global mode, otherwise the affinity should be considered",
-          "type": "boolean"
-        },
         "image": {
           "description": "Image for Jindo Fuse(e.g. jindo/jindo-fuse)",
           "type": "string"
@@ -2239,10 +2270,6 @@
             "$ref": "#/definitions/v1.EnvVar"
           }
         },
-        "global": {
-          "description": "If the fuse client should be deployed in global mode, otherwise the affinity should be considered",
-          "type": "boolean"
-        },
         "image": {
           "description": "Image for JuiceFS fuse",
           "type": "string"
@@ -2502,6 +2529,10 @@
           "description": "The image tag of Vineyard component. For Master, the default image tag is `v0.22.2`. For Worker, the default image tag is `v0.22.2`.",
           "type": "string"
         },
+        "networkMode": {
+          "description": "Whether to use hostnetwork or not Default is HostNetwork",
+          "type": "string"
+        },
         "nodeSelector": {
           "description": "NodeSelector is a selector to choose which nodes to launch the Vineyard component. E,g. {\"disktype\": \"ssd\"}",
           "type": "object",
@@ -2655,6 +2686,11 @@
         "name"
       ],
       "properties": {
+        "affinityStrategy": {
+          "description": "AffinityStrategy specifies the pod affinity strategy with the referent operation.",
+          "default": {},
+          "$ref": "#/definitions/.AffinityStrategy"
+        },
         "apiVersion": {
           "description": "API version of the referent operation",
           "type": "string"
@@ -2713,6 +2749,10 @@
           "description": "LastSuccessfulTime is the last time the cron operation successfully completed",
           "$ref": "#/definitions/v1.Time"
         },
+        "nodeAffinity": {
+          "description": "NodeAffinity records the node affinity for operation pods",
+          "$ref": "#/definitions/v1.NodeAffinity"
+        },
         "phase": {
           "description": "Phase describes current phase of operation",
           "type": "string",
@@ -2747,6 +2787,25 @@
         }
       }
     },
+    ".Prefer": {
+      "description": "Prefer defines the label key and weight for generating a PreferredSchedulingTerm.",
+      "type": "object",
+      "required": [
+        "name",
+        "weight"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "default": ""
+        },
+        "weight": {
+          "type": "integer",
+          "format": "int32",
+          "default": 0
+        }
+      }
+    },
     ".Processor": {
       "description": "Processor defines the actual processor for DataProcess. Processor can be either of a Job or a Shell script.",
       "type": "object",
@@ -2767,6 +2826,19 @@
         "serviceAccountName": {
           "description": "ServiceAccountName defiens the serviceAccountName of the container",
           "type": "string"
+        }
+      }
+    },
+    ".Require": {
+      "description": "Require defines the label key for generating a NodeSelectorTerm.",
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "default": ""
         }
       }
     },
@@ -2807,12 +2879,10 @@
       "properties": {
         "lastProbeTime": {
           "description": "The last time this condition was updated.",
-          "default": {},
           "$ref": "#/definitions/v1.Time"
         },
         "lastTransitionTime": {
           "description": "Last time the condition transitioned from one status to another.",
-          "default": {},
           "$ref": "#/definitions/v1.Time"
         },
         "message": {
@@ -3503,6 +3573,11 @@
           "default": {},
           "$ref": "#/definitions/.ThinFuseSpec"
         },
+        "management": {
+          "description": "RuntimeManagement defines policies when managing the runtime",
+          "default": {},
+          "$ref": "#/definitions/.RuntimeManagement"
+        },
         "profileName": {
           "description": "The specific runtime profile name, empty value is used for handling datasets which mount another dataset",
           "type": "string"
@@ -3617,7 +3692,7 @@
           }
         },
         "image": {
-          "description": "Image for Vineyard Fuse Default is `vineyardcloudnative/vineyard-fluid-fuse`",
+          "description": "Image for Vineyard Fuse Default is `registry.aliyuncs.com/vineyard/vineyard-fluid-fuse`",
           "type": "string"
         },
         "imagePullPolicy": {
@@ -3625,7 +3700,7 @@
           "type": "string"
         },
         "imageTag": {
-          "description": "Image Tag for Vineyard Fuse Default is `v0.21.5`",
+          "description": "Image Tag for Vineyard Fuse Default is `v0.22.2`",
           "type": "string"
         },
         "networkMode": {
@@ -3673,7 +3748,11 @@
           "type": "string"
         },
         "imageTag": {
-          "description": "The image tag of Vineyard component. For Master, the default image tag is `v0.22.2`. For Worker, the default image tag is `latest`.",
+          "description": "The image tag of Vineyard component. For Master, the default image tag is `v0.22.2`. For Worker, the default image tag is `v0.22.2`.",
+          "type": "string"
+        },
+        "networkMode": {
+          "description": "Whether to use hostnetwork or not Default is HostNetwork",
           "type": "string"
         },
         "nodeSelector": {
@@ -3833,119 +3912,119 @@
       "type": "object",
       "properties": {
         "awsElasticBlockStore": {
-          "description": "AWSElasticBlockStore represents an AWS Disk resource that is attached to a kubelet's host machine and then exposed to the pod. More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore",
+          "description": "awsElasticBlockStore represents an AWS Disk resource that is attached to a kubelet's host machine and then exposed to the pod. More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore",
           "$ref": "#/definitions/v1.AWSElasticBlockStoreVolumeSource"
         },
         "azureDisk": {
-          "description": "AzureDisk represents an Azure Data Disk mount on the host and bind mount to the pod.",
+          "description": "azureDisk represents an Azure Data Disk mount on the host and bind mount to the pod.",
           "$ref": "#/definitions/v1.AzureDiskVolumeSource"
         },
         "azureFile": {
-          "description": "AzureFile represents an Azure File Service mount on the host and bind mount to the pod.",
+          "description": "azureFile represents an Azure File Service mount on the host and bind mount to the pod.",
           "$ref": "#/definitions/v1.AzureFileVolumeSource"
         },
         "cephfs": {
-          "description": "CephFS represents a Ceph FS mount on the host that shares a pod's lifetime",
+          "description": "cephFS represents a Ceph FS mount on the host that shares a pod's lifetime",
           "$ref": "#/definitions/v1.CephFSVolumeSource"
         },
         "cinder": {
-          "description": "Cinder represents a cinder volume attached and mounted on kubelets host machine. More info: https://examples.k8s.io/mysql-cinder-pd/README.md",
+          "description": "cinder represents a cinder volume attached and mounted on kubelets host machine. More info: https://examples.k8s.io/mysql-cinder-pd/README.md",
           "$ref": "#/definitions/v1.CinderVolumeSource"
         },
         "configMap": {
-          "description": "ConfigMap represents a configMap that should populate this volume",
+          "description": "configMap represents a configMap that should populate this volume",
           "$ref": "#/definitions/v1.ConfigMapVolumeSource"
         },
         "csi": {
-          "description": "CSI (Container Storage Interface) represents ephemeral storage that is handled by certain external CSI drivers (Beta feature).",
+          "description": "csi (Container Storage Interface) represents ephemeral storage that is handled by certain external CSI drivers (Beta feature).",
           "$ref": "#/definitions/v1.CSIVolumeSource"
         },
         "downwardAPI": {
-          "description": "DownwardAPI represents downward API about the pod that should populate this volume",
+          "description": "downwardAPI represents downward API about the pod that should populate this volume",
           "$ref": "#/definitions/v1.DownwardAPIVolumeSource"
         },
         "emptyDir": {
-          "description": "EmptyDir represents a temporary directory that shares a pod's lifetime. More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir",
+          "description": "emptyDir represents a temporary directory that shares a pod's lifetime. More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir",
           "$ref": "#/definitions/v1.EmptyDirVolumeSource"
         },
         "ephemeral": {
-          "description": "Ephemeral represents a volume that is handled by a cluster storage driver. The volume's lifecycle is tied to the pod that defines it - it will be created before the pod starts, and deleted when the pod is removed.\n\nUse this if: a) the volume is only needed while the pod runs, b) features of normal volumes like restoring from snapshot or capacity\n   tracking are needed,\nc) the storage driver is specified through a storage class, and d) the storage driver supports dynamic volume provisioning through\n   a PersistentVolumeClaim (see EphemeralVolumeSource for more\n   information on the connection between this volume type\n   and PersistentVolumeClaim).\n\nUse PersistentVolumeClaim or one of the vendor-specific APIs for volumes that persist for longer than the lifecycle of an individual pod.\n\nUse CSI for light-weight local ephemeral volumes if the CSI driver is meant to be used that way - see the documentation of the driver for more information.\n\nA pod can use both types of ephemeral volumes and persistent volumes at the same time.",
+          "description": "ephemeral represents a volume that is handled by a cluster storage driver. The volume's lifecycle is tied to the pod that defines it - it will be created before the pod starts, and deleted when the pod is removed.\n\nUse this if: a) the volume is only needed while the pod runs, b) features of normal volumes like restoring from snapshot or capacity\n   tracking are needed,\nc) the storage driver is specified through a storage class, and d) the storage driver supports dynamic volume provisioning through\n   a PersistentVolumeClaim (see EphemeralVolumeSource for more\n   information on the connection between this volume type\n   and PersistentVolumeClaim).\n\nUse PersistentVolumeClaim or one of the vendor-specific APIs for volumes that persist for longer than the lifecycle of an individual pod.\n\nUse CSI for light-weight local ephemeral volumes if the CSI driver is meant to be used that way - see the documentation of the driver for more information.\n\nA pod can use both types of ephemeral volumes and persistent volumes at the same time.",
           "$ref": "#/definitions/v1.EphemeralVolumeSource"
         },
         "fc": {
-          "description": "FC represents a Fibre Channel resource that is attached to a kubelet's host machine and then exposed to the pod.",
+          "description": "fc represents a Fibre Channel resource that is attached to a kubelet's host machine and then exposed to the pod.",
           "$ref": "#/definitions/v1.FCVolumeSource"
         },
         "flexVolume": {
-          "description": "FlexVolume represents a generic volume resource that is provisioned/attached using an exec based plugin.",
+          "description": "flexVolume represents a generic volume resource that is provisioned/attached using an exec based plugin.",
           "$ref": "#/definitions/v1.FlexVolumeSource"
         },
         "flocker": {
-          "description": "Flocker represents a Flocker volume attached to a kubelet's host machine. This depends on the Flocker control service being running",
+          "description": "flocker represents a Flocker volume attached to a kubelet's host machine. This depends on the Flocker control service being running",
           "$ref": "#/definitions/v1.FlockerVolumeSource"
         },
         "gcePersistentDisk": {
-          "description": "GCEPersistentDisk represents a GCE Disk resource that is attached to a kubelet's host machine and then exposed to the pod. More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk",
+          "description": "gcePersistentDisk represents a GCE Disk resource that is attached to a kubelet's host machine and then exposed to the pod. More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk",
           "$ref": "#/definitions/v1.GCEPersistentDiskVolumeSource"
         },
         "gitRepo": {
-          "description": "GitRepo represents a git repository at a particular revision. DEPRECATED: GitRepo is deprecated. To provision a container with a git repo, mount an EmptyDir into an InitContainer that clones the repo using git, then mount the EmptyDir into the Pod's container.",
+          "description": "gitRepo represents a git repository at a particular revision. DEPRECATED: GitRepo is deprecated. To provision a container with a git repo, mount an EmptyDir into an InitContainer that clones the repo using git, then mount the EmptyDir into the Pod's container.",
           "$ref": "#/definitions/v1.GitRepoVolumeSource"
         },
         "glusterfs": {
-          "description": "Glusterfs represents a Glusterfs mount on the host that shares a pod's lifetime. More info: https://examples.k8s.io/volumes/glusterfs/README.md",
+          "description": "glusterfs represents a Glusterfs mount on the host that shares a pod's lifetime. More info: https://examples.k8s.io/volumes/glusterfs/README.md",
           "$ref": "#/definitions/v1.GlusterfsVolumeSource"
         },
         "hostPath": {
-          "description": "HostPath represents a pre-existing file or directory on the host machine that is directly exposed to the container. This is generally used for system agents or other privileged things that are allowed to see the host machine. Most containers will NOT need this. More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath",
+          "description": "hostPath represents a pre-existing file or directory on the host machine that is directly exposed to the container. This is generally used for system agents or other privileged things that are allowed to see the host machine. Most containers will NOT need this. More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath",
           "$ref": "#/definitions/v1.HostPathVolumeSource"
         },
         "iscsi": {
-          "description": "ISCSI represents an ISCSI Disk resource that is attached to a kubelet's host machine and then exposed to the pod. More info: https://examples.k8s.io/volumes/iscsi/README.md",
+          "description": "iscsi represents an ISCSI Disk resource that is attached to a kubelet's host machine and then exposed to the pod. More info: https://examples.k8s.io/volumes/iscsi/README.md",
           "$ref": "#/definitions/v1.ISCSIVolumeSource"
         },
         "nfs": {
-          "description": "NFS represents an NFS mount on the host that shares a pod's lifetime More info: https://kubernetes.io/docs/concepts/storage/volumes#nfs",
+          "description": "nfs represents an NFS mount on the host that shares a pod's lifetime More info: https://kubernetes.io/docs/concepts/storage/volumes#nfs",
           "$ref": "#/definitions/v1.NFSVolumeSource"
         },
         "persistentVolumeClaim": {
-          "description": "PersistentVolumeClaimVolumeSource represents a reference to a PersistentVolumeClaim in the same namespace. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims",
+          "description": "persistentVolumeClaimVolumeSource represents a reference to a PersistentVolumeClaim in the same namespace. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims",
           "$ref": "#/definitions/v1.PersistentVolumeClaimVolumeSource"
         },
         "photonPersistentDisk": {
-          "description": "PhotonPersistentDisk represents a PhotonController persistent disk attached and mounted on kubelets host machine",
+          "description": "photonPersistentDisk represents a PhotonController persistent disk attached and mounted on kubelets host machine",
           "$ref": "#/definitions/v1.PhotonPersistentDiskVolumeSource"
         },
         "portworxVolume": {
-          "description": "PortworxVolume represents a portworx volume attached and mounted on kubelets host machine",
+          "description": "portworxVolume represents a portworx volume attached and mounted on kubelets host machine",
           "$ref": "#/definitions/v1.PortworxVolumeSource"
         },
         "projected": {
-          "description": "Items for all in one resources secrets, configmaps, and downward API",
+          "description": "projected items for all in one resources secrets, configmaps, and downward API",
           "$ref": "#/definitions/v1.ProjectedVolumeSource"
         },
         "quobyte": {
-          "description": "Quobyte represents a Quobyte mount on the host that shares a pod's lifetime",
+          "description": "quobyte represents a Quobyte mount on the host that shares a pod's lifetime",
           "$ref": "#/definitions/v1.QuobyteVolumeSource"
         },
         "rbd": {
-          "description": "RBD represents a Rados Block Device mount on the host that shares a pod's lifetime. More info: https://examples.k8s.io/volumes/rbd/README.md",
+          "description": "rbd represents a Rados Block Device mount on the host that shares a pod's lifetime. More info: https://examples.k8s.io/volumes/rbd/README.md",
           "$ref": "#/definitions/v1.RBDVolumeSource"
         },
         "scaleIO": {
-          "description": "ScaleIO represents a ScaleIO persistent volume attached and mounted on Kubernetes nodes.",
+          "description": "scaleIO represents a ScaleIO persistent volume attached and mounted on Kubernetes nodes.",
           "$ref": "#/definitions/v1.ScaleIOVolumeSource"
         },
         "secret": {
-          "description": "Secret represents a secret that should populate this volume. More info: https://kubernetes.io/docs/concepts/storage/volumes#secret",
+          "description": "secret represents a secret that should populate this volume. More info: https://kubernetes.io/docs/concepts/storage/volumes#secret",
           "$ref": "#/definitions/v1.SecretVolumeSource"
         },
         "storageos": {
-          "description": "StorageOS represents a StorageOS volume attached and mounted on Kubernetes nodes.",
+          "description": "storageOS represents a StorageOS volume attached and mounted on Kubernetes nodes.",
           "$ref": "#/definitions/v1.StorageOSVolumeSource"
         },
         "vsphereVolume": {
-          "description": "VsphereVolume represents a vSphere volume attached and mounted on kubelets host machine",
+          "description": "vsphereVolume represents a vSphere volume attached and mounted on kubelets host machine",
           "$ref": "#/definitions/v1.VsphereVirtualDiskVolumeSource"
         }
       }

@@ -183,6 +183,7 @@ type ThinFuseSpec struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+// +genclient
 
 // ThinRuntime is the Schema for the thinruntimes API
 type ThinRuntime struct {
