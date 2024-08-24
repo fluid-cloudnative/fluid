@@ -1,336 +1,167 @@
 package common
 
 import (
-	"context"
 	"fmt"
+	"golang.org/x/net/context"
+	"k8s.io/api/apps/v1"
+	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// 通用接口，处理所有资源的通用操作
+type ResourceHandler interface {
+	Scale(client client.Client, name string, namespace string, replicas int32) error
+	GetPodsForResource(c client.Client, name string, namespace string) ([]v1.Pod, error)
+	GetPhaseFromResource(replicas int32, resource interface{}) (string, error)
+	GetUnavailablePodsForResource(c client.Client, resource interface{}, selector labels.Selector) ([]*v1.Pod, error)
+	GetUnavailablePodNamesForResource(c client.Client, resource interface{}, selector labels.Selector) ([]types.NamespacedName, error)
+}
+
+// 处理 DaemonSet 的接口
+type DaemonSetHandler interface {
+	ResourceHandler
+	GetDaemonSet(c client.Client, name string, namespace string) (*v1.DaemonSet, error)
+}
+
+// 处理 StatefulSet 的接口
+type StatefulSetHandler interface {
+	ResourceHandler
+	GetStatefulSet(c client.Client, name string, namespace string) (*v1.StatefulSet, error)
+	GetPodsForStatefulSet(c client.Client, sts *v1.StatefulSet, selector labels.Selector) ([]v1.Pod, error)
+	IsMemberOfStatefulSet(sts *v1.StatefulSet, pod *v1.Pod) bool
+	GetParentNameAndOrdinal(pod *v1.Pod) (string, int)
+	GetParentName(pod *v1.Pod) string
+}
+
+// 处理 AdvancedStatefulSet 的接口（假设 AdvancedStatefulSet 是 StatefulSet 的扩展）
+type AdvancedStatefulSetHandler interface {
+	StatefulSetHandler
+	// 如果有额外的特性，可以在这里定义
+}
+
+// 组合接口，支持所有资源
 type CacheWorkerSet interface {
-	Get(id string) (interface{}, error)
-	Update(obj interface{}) error
-	Delete(id string) error
+	DaemonSetHandler
+	StatefulSetHandler
+	AdvancedStatefulSetHandler
 }
 
-type StatefulSetCacheWorker struct {
-	client kubernetes.Interface
+// WorkerType 定义 worker 管理类型
+type WorkerType string
+
+const (
+	// 默认的 StatefulSet 类型
+	StatefulSetType WorkerType = "StatefulSet"
+	// DaemonSet 类型
+	DaemonSetType WorkerType = "DaemonSet"
+	// 高级 StatefulSet 类型
+	AdvancedStatefulSetType WorkerType = "AdvancedStatefulSet"
+)
+
+// ScaleConfig 用户输入的缩容配置
+type ScaleConfig struct {
+	WorkerType     WorkerType
+	Replicas       *int32
+	OfflineIndices []int // 仅在 AdvancedStatefulSet 中有效
 }
 
-func NewStatefulSetCacheWorker(client kubernetes.Interface) *StatefulSetCacheWorker {
-	return &StatefulSetCacheWorker{client: client}
+// ResourceManager 负责管理不同类型的 worker 并执行缩容操作
+type ResourceManager struct {
+	client client.Client
+	cache  CacheWorkerSet
 }
 
-func (c *StatefulSetCacheWorker) Get(id string) (interface{}, error) {
-	set, err := c.client.AppsV1().StatefulSets("default").Get(context.TODO(), id, metav1.GetOptions{})
-	return set, err
+// NewResourceManager 创建一个新的 ResourceManager
+func NewResourceManager(client client.Client, cache CacheWorkerSet) *ResourceManager {
+	return &ResourceManager{client: client, cache: cache}
 }
 
-func (c *StatefulSetCacheWorker) Update(obj interface{}) error {
-	set := obj.(*appsv1.StatefulSet)
-	_, err := c.client.AppsV1().StatefulSets(set.Namespace).Update(context.TODO(), set, metav1.UpdateOptions{})
-	return err
-}
-
-func (c *StatefulSetCacheWorker) Delete(id string) error {
-	err := c.client.AppsV1().StatefulSets("default").Delete(context.TODO(), id, metav1.DeleteOptions{})
-	return err
-}
-
-type DaemonSetCacheWorker struct {
-	client kubernetes.Interface
-}
-
-func NewDaemonSetCacheWorker(client kubernetes.Interface) *DaemonSetCacheWorker {
-	return &DaemonSetCacheWorker{client: client}
-}
-
-func (c *DaemonSetCacheWorker) Get(id string) (interface{}, error) {
-	set, err := c.client.AppsV1().DaemonSets("default").Get(context.TODO(), id, metav1.GetOptions{})
-	return set, err
-}
-
-func (c *DaemonSetCacheWorker) Update(obj interface{}) error {
-	set := obj.(*appsv1.DaemonSet)
-	_, err := c.client.AppsV1().DaemonSets(set.Namespace).Update(context.TODO(), set, metav1.UpdateOptions{})
-	return err
-}
-
-func (c *DaemonSetCacheWorker) Delete(id string) error {
-	err := c.client.AppsV1().DaemonSets("default").Delete(context.TODO(), id, metav1.DeleteOptions{})
-	return err
-}
-
-type AdvancedStatefulSetCacheWorker struct {
-	client dynamic.Interface
-}
-
-type AdvancedStatefulSetSpec struct {
-	Replicas         int32                  `json:"replicas"`
-	Template         corev1.PodTemplateSpec `json:"template"`
-	ScaleDownIndices []int                  `json:"scaleDownIndices,omitempty"` // 新增字段
-}
-
-// AdvancedStatefulSetStatus 描述了AdvancedStatefulSet的状态
-type AdvancedStatefulSetStatus struct {
-	// 添加任何你想要追踪的状态字段
-	CurrentReplicas int32 `json:"currentReplicas"`
-}
-
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// AdvancedStatefulSet 是自定义资源的定义
-type AdvancedStatefulSet struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   AdvancedStatefulSetSpec   `json:"spec,omitempty"`
-	Status AdvancedStatefulSetStatus `json:"status,omitempty"`
-}
-
-// SchemeGroupVersion 是此API版本的schema.GroupVersion
-var SchemeGroupVersion = schema.GroupVersion{Group: "yourgroup.example.com", Version: "v1"}
-
-// Resource takes an unqualified resource and returns a Group qualified GroupResource
-func Resource(resource string) schema.GroupResource {
-	return SchemeGroupVersion.WithResource(resource).GroupResource()
-}
-func NewAdvancedStatefulSetCacheWorker(client dynamic.Interface) *AdvancedStatefulSetCacheWorker {
-	return &AdvancedStatefulSetCacheWorker{client: client}
-}
-
-func (c *AdvancedStatefulSetCacheWorker) Get(id string) (interface{}, error) {
-	set, err := c.client.Resource(your_custom_api.Resource()).Namespace("default").Get(context.TODO(), id, metav1.GetOptions{})
-	return set, err
-}
-
-func (c *AdvancedStatefulSetCacheWorker) Update(obj interface{}) error {
-	set := obj.(runtime.Object)
-	_, err := c.client.Resource(your_custom_api.Resource()).Namespace("default").Update(context.TODO(), set, metav1.UpdateOptions{})
-	return err
-}
-
-func (c *AdvancedStatefulSetCacheWorker) Delete(id string) error {
-	err := c.client.Resource(your_custom_api.Resource()).Namespace("default").Delete(context.TODO(), id, metav1.DeleteOptions{})
-	return err
-}
-
-func (c *AdvancedStatefulSetCacheWorker) ScaleDownPods(as *your_custom_api.AdvancedStatefulSet) error {
-	if as.Spec.ScaleDownIndices == nil || len(as.Spec.ScaleDownIndices) == 0 {
-		return fmt.Errorf("no scale down indices provided")
-	}
-
-	// 降低副本数
-	currentReplicas := as.Spec.Replicas
-	for _, index := range as.Spec.ScaleDownIndices {
-		if index < int(currentReplicas) {
-			currentReplicas--
-		}
-	}
-	as.Spec.Replicas = currentReplicas
-
-	// 更新AdvancedStatefulSet
-	_, err := c.client.Resource(your_custom_api.Resource()).Namespace("default").Update(context.TODO(), as, metav1.UpdateOptions{})
+// GetWorkerType 从 StatefulSet 的注解中读取 workerType
+func (rm *ResourceManager) GetWorkerType(ctx context.Context, runtimeName string, namespace string) (WorkerType, error) {
+	// 获取 StatefulSet 对象
+	statefulSet, err := rm.clientset.AppsV1().StatefulSets(namespace).Get(ctx, runtimeName, metav1.GetOptions{})
 	if err != nil {
-		return err
+		return "", fmt.Errorf("failed to get StatefulSet %s in namespace %s: %v", runtimeName, namespace, err)
 	}
 
-	// 删除指定序号的Pods
-	for _, index := range as.Spec.ScaleDownIndices {
-		podName := fmt.Sprintf("%s-%d", as.Name, index)
-		err := c.client.CoreV1().Pods("default").Delete(context.TODO(), podName, metav1.DeleteOptions{})
+	// 从注解中读取 workerType
+	annotations := statefulSet.ObjectMeta.Annotations
+	workerType, exists := annotations["worker-type"]
+	if !exists {
+		// 如果没有找到 worker-type 注解，返回默认值 StatefulSetType
+		return StatefulSetType, nil
+	}
+
+	// 返回 workerType
+	switch workerType {
+	case "StatefulSet":
+		return StatefulSetType, nil
+	// 可以添加其他 worker 类型的处理逻辑
+	default:
+		return "", fmt.Errorf("unknown worker-type value: %s", workerType)
+	}
+}
+
+// ProcessScaleConfig 处理用户输入的缩容配置并执行缩容操作
+func (rm *ResourceManager) ProcessScaleConfig(ctx context.Context, runtimeName string, namespace string, config ScaleConfig) error {
+	workerType, err := rm.GetWorkerType(ctx, runtimeName, namespace)
+	if err != nil {
+		return fmt.Errorf("failed to get worker type: %w", err)
+	}
+
+	var errMsg string
+	switch workerType {
+	case StatefulSetType:
+		if config.Replicas == nil {
+			return fmt.Errorf("replicas must be provided for StatefulSet")
+		}
+		statefulSet, err := rm.cache.GetStatefulSet(rm.client, runtimeName, namespace)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to get StatefulSet: %w", err)
 		}
-	}
-
-	return nil
-}
-
-// 解析scale-down-indices Annotation
-func parseScaleDownIndices(annotations map[string]string) ([]int, error) {
-	indicesStr, ok := annotations["scale-down-indices"]
-	if !ok {
-		return nil, fmt.Errorf("missing scale-down-indices annotation")
-	}
-
-	var indices []int
-	if err := json.Unmarshal([]byte(indicesStr), &indices); err != nil {
-		return nil, fmt.Errorf("failed to parse scale-down-indices: %w", err)
-	}
-	return indices, nil
-}
-
-// 示例：从StatefulSet中读取并解析scaleDownIndices
-func handleStatefulSet(ss *appsv1.StatefulSet) error {
-	indices, err := parseScaleDownIndices(ss.ObjectMeta.Annotations)
-	if err != nil {
-		return err
-	}
-
-	// 使用indices进行相应的操作...
-	// 例如，你可以在这里调用ScaleDownPodsByIndices(indices)
-	return nil
-}
-
-type AdvancedStatefulSetManager struct {
-	StatefulSet *appsv1.StatefulSet
-	Client      kubernetes.Interface
-}
-
-func NewAdvancedStatefulSetManager(client kubernetes.Interface, ss *appsv1.StatefulSet) *AdvancedStatefulSetManager {
-	return &AdvancedStatefulSetManager{
-		StatefulSet: ss,
-		Client:      client,
-	}
-}
-func (asm *AdvancedStatefulSetManager) Get() (*appsv1.StatefulSet, error) {
-	// 实现获取StatefulSet的逻辑
-	return asm.Client.AppsV1().StatefulSets(asm.StatefulSet.Namespace).Get(context.TODO(), asm.StatefulSet.Name, metav1.GetOptions{})
-}
-
-func (asm *AdvancedStatefulSetManager) Update() error {
-	// 实现更新StatefulSet的逻辑
-	_, err := asm.Client.AppsV1().StatefulSets(asm.StatefulSet.Namespace).Update(context.TODO(), asm.StatefulSet, metav1.UpdateOptions{})
-	return err
-}
-
-func (asm *AdvancedStatefulSetManager) Delete() error {
-	// 实现删除StatefulSet的逻辑
-	err := asm.Client.AppsV1().StatefulSets(asm.StatefulSet.Namespace).Delete(context.TODO(), asm.StatefulSet.Name, metav1.DeleteOptions{})
-	return err
-}
-func (asm *AdvancedStatefulSetManager) ScaleDownByIndices(indices []int) error {
-	// 从Annotations中解析scaleDownIndices
-	annotations := asm.StatefulSet.ObjectMeta.Annotations
-	if indices == nil {
-		indices, _ = parseScaleDownIndices(annotations)
-	}
-
-	// 减少副本数
-	currentReplicas := asm.StatefulSet.Spec.Replicas
-	for _, index := range indices {
-		if index < int(*currentReplicas) {
-			*currentReplicas = *currentReplicas - 1
+		if err := rm.cache.Scale(rm.client, runtimeName, namespace, *config.Replicas); err != nil {
+			return fmt.Errorf("failed to scale StatefulSet: %w", err)
 		}
-	}
-
-	// 更新StatefulSet
-	asm.StatefulSet.Spec.Replicas = currentReplicas
-	err := asm.Update()
-	if err != nil {
-		return err
-	}
-
-	// 删除指定序号的Pods
-	for _, index := range indices {
-		podName := fmt.Sprintf("%s-%d", asm.StatefulSet.Name, index)
-		err := asm.Client.CoreV1().Pods(asm.StatefulSet.Namespace).Delete(context.TODO(), podName, metav1.DeleteOptions{})
+	// 添加对应的 DaemonSet 和 AdvancedStatefulSet 处理
+	case DaemonSetType:
+		if config.Replicas == nil {
+			return fmt.Errorf("replicas must be provided for DaemonSet")
+		}
+		daemonSet, err := rm.cache.GetDaemonSet(rm.client, runtimeName, namespace)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to get DaemonSet: %w", err)
 		}
-	}
-
-	return nil
-}
-
-type AdvancedStatefulSetManager struct {
-	StatefulSet *appsv1.StatefulSet
-	Client      kubernetes.Interface
-}
-
-func NewAdvancedStatefulSetManager(client kubernetes.Interface, ss *appsv1.StatefulSet) *AdvancedStatefulSetManager {
-	return &AdvancedStatefulSetManager{
-		StatefulSet: ss,
-		Client:      client,
-	}
-}
-
-// 实现CacheWorkerSet接口的Get方法
-func (asm *AdvancedStatefulSetManager) Get(id string) (interface{}, error) {
-	// 从Kubernetes获取StatefulSet
-	ss, err := asm.Client.AppsV1().StatefulSets(asm.StatefulSet.Namespace).Get(context.TODO(), id, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-	return ss, nil
-}
-
-// 实现CacheWorkerSet接口的Update方法
-func (asm *AdvancedStatefulSetManager) Update(obj interface{}) error {
-	ss := obj.(*appsv1.StatefulSet)
-	_, err := asm.Client.AppsV1().StatefulSets(ss.Namespace).Update(context.TODO(), ss, metav1.UpdateOptions{})
-	return err
-}
-
-// 实现CacheWorkerSet接口的Delete方法
-func (asm *AdvancedStatefulSetManager) Delete(id string) error {
-	err := asm.Client.AppsV1().StatefulSets(asm.StatefulSet.Namespace).Delete(context.TODO(), id, metav1.DeleteOptions{})
-	return err
-}
-
-// 实现CacheWorkerSet接口的ScaleDownByIndices方法
-func (asm *AdvancedStatefulSetManager) ScaleDownByIndices(id string, indices []int) error {
-	// 从Annotations中解析scaleDownIndices
-	annotations := asm.StatefulSet.ObjectMeta.Annotations
-	parsedIndices, err := parseScaleDownIndices(annotations)
-	if err != nil {
-		return err
-	}
-
-	// 合并用户传入的indices和从Annotation中解析出的indices
-	allIndices := append(parsedIndices, indices...)
-	uniqueIndices := unique(allIndices)
-
-	// 执行缩容操作
-	err = asm.scaleDown(uniqueIndices)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// 辅助函数：去重
-func unique(slice []int) []int {
-	keys := make(map[int]bool)
-	list := []int{}
-	for _, entry := range slice {
-		if _, value := keys[entry]; !value {
-			keys[entry] = true
-			list = append(list, entry)
+		if err := rm.cache.Scale(rm.client, runtimeName, namespace, *config.Replicas); err != nil {
+			return fmt.Errorf("failed to scale DaemonSet: %w", err)
 		}
-	}
-	return list
-}
-
-// 辅助函数：执行缩容操作
-func (asm *AdvancedStatefulSetManager) scaleDown(indices []int) error {
-	// 减少副本数
-	currentReplicas := asm.StatefulSet.Spec.Replicas
-	for _, index := range indices {
-		if index < int(*currentReplicas) {
-			*currentReplicas = *currentReplicas - 1
+	case AdvancedStatefulSetType:
+		if len(config.OfflineIndices) == 0 {
+			return fmt.Errorf("offlineIndices must be provided for AdvancedStatefulSet")
 		}
-	}
-
-	// 更新StatefulSet
-	asm.StatefulSet.Spec.Replicas = currentReplicas
-	err := asm.Update()
-	if err != nil {
-		return err
-	}
-
-	// 删除指定序号的Pods
-	for _, index := range indices {
-		podName := fmt.Sprintf("%s-%d", asm.StatefulSet.Name, index)
-		err := asm.Client.CoreV1().Pods(asm.StatefulSet.Namespace).Delete(context.TODO(), podName, metav1.DeleteOptions{})
+		statefulSet, err := rm.cache.GetStatefulSet(rm.client, runtimeName, namespace)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to get StatefulSet: %w", err)
 		}
+		for _, index := range config.OfflineIndices {
+			podName := fmt.Sprintf("%s-%d", statefulSet.Name, index)
+			pod := &v1.Pod{}
+			err = rm.client.Get(ctx, types.NamespacedName{Name: podName, Namespace: namespace}, pod)
+			if err != nil {
+				return fmt.Errorf("failed to get Pod %s: %w", podName, err)
+			}
+			if err := rm.client.Delete(ctx, pod); err != nil {
+				return fmt.Errorf("failed to delete Pod %s: %w", podName, err)
+			}
+		}
+	default:
+		errMsg = "unsupported worker type"
+	}
+
+	if errMsg != "" {
+		return fmt.Errorf(errMsg)
 	}
 
 	return nil
