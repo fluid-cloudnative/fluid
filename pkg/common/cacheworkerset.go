@@ -1,14 +1,16 @@
 package common
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"golang.org/x/net/context"
-	"k8s.io/api/apps/v1"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrl "sigs.k8s.io/controller-runtime"
+	client "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // 通用接口，处理所有资源的通用操作
@@ -74,24 +76,43 @@ type ResourceManager struct {
 	cache  CacheWorkerSet
 }
 
-// NewResourceManager 创建一个新的 ResourceManager
-func NewResourceManager(client client.Client, cache CacheWorkerSet) *ResourceManager {
-	return &ResourceManager{client: client, cache: cache}
+func GetAnnotationKeyOfWorkerType(accessor metav1.ObjectMetaAccessor) (ret string) {
+	annotations := accessor.GetObjectMeta().GetAnnotations()
+	if annotations == nil {
+		return
+	}
+	m := annotations["data.fluid.io/workerType"]
+	if m == "" {
+		return
+	}
+	if err := json.Unmarshal([]byte(m), &ret); err != nil {
+		log := ctrl.Log.WithName("base")
+		log.V(5).Error(err, "failed to unmarshal workerType from annotations", "data.fluid.io/workerType", m)
+	}
+	return
 }
 
 // GetWorkerType 从 StatefulSet 的注解中读取 workerType
-func (rm *ResourceManager) GetWorkerType(ctx context.Context, runtimeName string, namespace string) (WorkerType, error) {
+// 以alluxioRuntime为例
+func (rm *ResourceManager) GetWorkerType(ctx context.Context, namespace []types.NamespacedName) (WorkerType, error) {
 	// 获取 StatefulSet 对象
-	statefulSet, err := rm.clientset.AppsV1().StatefulSets(namespace).Get(ctx, runtimeName, metav1.GetOptions{})
-	if err != nil {
-		return "", fmt.Errorf("failed to get StatefulSet %s in namespace %s: %v", runtimeName, namespace, err)
-	}
 
-	// 从注解中读取 workerType
-	annotations := statefulSet.ObjectMeta.Annotations
-	workerType, exists := annotations["worker-type"]
-	if !exists {
-		// 如果没有找到 worker-type 注解，返回默认值 StatefulSetType
+	dataset, err := utils.GetDataset(rm.client, namespace[0].Name, namespace[0].Namespace)
+	var runtimeType string
+	if len(dataset.Status.Runtimes) != 0 {
+		runtimeType = dataset.Status.Runtimes[0].Type
+	}
+	alluxioRuntime, err := utils.GetAlluxioRuntime(rm.client, namespace[0].Name, namespace[0].Namespace)
+	if err != nil {
+		return "", err
+	}
+	// 使用 GetAnnotationKeyOfWorkerType 函数获取annotation
+	var workerType string
+	workerType = GetAnnotationKeyOfWorkerType(alluxioRuntime) // 这里调用获取 workerType 的函数
+
+	// 处理从注解中获取的 workerType
+	if workerType == "" {
+		// 如果没有找到 metadata，返回默认值 StatefulSetType
 		return StatefulSetType, nil
 	}
 
@@ -105,9 +126,20 @@ func (rm *ResourceManager) GetWorkerType(ctx context.Context, runtimeName string
 	}
 }
 
+// NewResourceManager 创建一个新的 ResourceManager
+func NewResourceManager(client client.Client, cache CacheWorkerSet) *ResourceManager {
+	return &ResourceManager{client: client, cache: cache}
+}
+
+func (rm *ResourceManager) ProcessCacheWorkers(ctx context.Context, runtimeName string, namespace string, config ScaleConfig) error {
+	return nil
+}
+
 // ProcessScaleConfig 处理用户输入的缩容配置并执行缩容操作
-func (rm *ResourceManager) ProcessScaleConfig(ctx context.Context, runtimeName string, namespace string, config ScaleConfig) error {
-	workerType, err := rm.GetWorkerType(ctx, runtimeName, namespace)
+func (rm *ResourceManager) ProcessScaleConfig(ctx context.Context, runtimeName string, Namespace []types.NamespacedName, config ScaleConfig) error {
+	var namespace string
+	namespace = Namespace[0].Namespace
+	workerType, err := rm.GetWorkerType(ctx, Namespace)
 	if err != nil {
 		return fmt.Errorf("failed to get worker type: %w", err)
 	}
