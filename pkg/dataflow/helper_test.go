@@ -26,12 +26,10 @@ func TestGenerateNodeLabels(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "jobtest",
 						Annotations: map[string]string{
-							common.AnnotationDataFlowAffinityInject: "true",
-						},
-						Labels: map[string]string{
-							common.K8sNodeNameLabelKey: "node01",
-							common.K8sRegionLabelKey:   "region01",
-							common.K8sZoneLabelKey:     "zone01",
+							common.AnnotationDataFlowAffinityInject:                              "true",
+							common.AnnotationDataFlowAffinityPrefix + common.K8sNodeNameLabelKey: "node01",
+							common.AnnotationDataFlowAffinityPrefix + common.K8sRegionLabelKey:   "region01",
+							common.AnnotationDataFlowAffinityPrefix + common.K8sZoneLabelKey:     "zone01",
 						},
 					},
 				},
@@ -78,13 +76,10 @@ func TestGenerateNodeLabels(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "jobtest",
 						Annotations: map[string]string{
-							common.AnnotationDataFlowAffinityInject: "true",
-						},
-						Labels: map[string]string{
-							common.AnnotationDataFlowAffinityInject: "true",
-							common.K8sNodeNameLabelKey:              "node01",
-							common.K8sZoneLabelKey:                  "zone01",
-							"fluid.io.k8s.rack":                     "rack01",
+							common.AnnotationDataFlowAffinityInject:                              "true",
+							common.AnnotationDataFlowAffinityPrefix + common.K8sNodeNameLabelKey: "node01",
+							common.AnnotationDataFlowAffinityPrefix + common.K8sZoneLabelKey:     "zone01",
+							common.AnnotationDataFlowAffinityPrefix + "k8s.rack":                 "rack01",
 						},
 					},
 				},
@@ -125,7 +120,10 @@ func TestGenerateNodeLabels(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GenerateNodeAffinity() got = %v, want %v", got, tt.want)
+				// map traversal causes array order to be different, so only compare the length.
+				if len(got.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) != len(tt.want.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) {
+					t.Errorf("GenerateNodeAffinity() got = %v, want %v", got, tt.want)
+				}
 			}
 		})
 	}

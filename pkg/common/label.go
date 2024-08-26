@@ -49,11 +49,14 @@ const (
 	// LabelNodePublishMothod is a pv label that indicates the method nodePuhlishVolume use
 	LabelNodePublishMothod = LabelAnnotationPrefix + "node-publish-method"
 
-	// AnnotationDataFlowAffinityInject is an annotation representing enabled the dataflow affinity injection
+	// AnnotationDataFlowAffinityInject is an annotation representing enabled the dataflow affinity injection, for internal use.
 	AnnotationDataFlowAffinityInject = LabelAnnotationPrefix + "dataflow-affinity.inject"
-	// LabelDataFlowAffinityPrefix is a prefix for customized dataflow affinity label name.
-	LabelDataFlowAffinityPrefix = "fluid.io."
+	// AnnotationDataFlowAffinityPrefix is a prefix for dataflow affinity label name.
+	AnnotationDataFlowAffinityPrefix = "dataflow-affinity.fluid.io."
 
+	// AnnotationDataFlowAffinityLabelsName is an annotation key name for exposed affinity labels for an operation in a dataflow.
+	AnnotationDataFlowAffinityLabelsName = LabelAnnotationPrefix + "affinity.labels"
+	
 	// LabelAnnotationMountingDatasets is a label/annotation key indicating which datasets are currently being used by a pod.
 	LabelAnnotationDatasetsInUse = LabelAnnotationPrefix + "datasets-in-use"
 )

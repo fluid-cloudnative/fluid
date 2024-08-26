@@ -20,19 +20,18 @@ import (
 	"context"
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl/watch"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
 	batchv1 "k8s.io/api/batch/v1"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
-	"github.com/fluid-cloudnative/fluid/pkg/ctrl/watch"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"strings"
 )
 
 const DataOpJobControllerName string = "DataOpJobController"
@@ -140,29 +139,26 @@ func (f *DataOpJobReconciler) injectPodNodeLabelsToJob(job *batchv1.Job) error {
 		return fmt.Errorf("error to get node %s: %v", nodeName, err)
 	}
 
-	injectLabels := map[string]string{}
-	// node
-	injectLabels[common.K8sNodeNameLabelKey] = nodeName
-	// region
-	region, exist := node.Labels[common.K8sRegionLabelKey]
-	if exist {
-		injectLabels[common.K8sRegionLabelKey] = region
-	}
-	// zone
-	zone, exist := node.Labels[common.K8sZoneLabelKey]
-	if exist {
-		injectLabels[common.K8sZoneLabelKey] = zone
+	annotationsToInject := map[string]string{}
+	// default inject node, region and zone label
+	affinityLabels := []string{common.K8sNodeNameLabelKey, common.K8sRegionLabelKey, common.K8sZoneLabelKey}
+	// customized labels to be injected.
+	customizedLabels := pod.Annotations[common.AnnotationDataFlowAffinityLabelsName]
+	if len(customizedLabels) != 0 {
+		affinityLabels = append(affinityLabels, strings.Split(customizedLabels, ",")...)
 	}
 
-	// customized labels
-	if pod.Spec.Affinity != nil && pod.Spec.Affinity.NodeAffinity != nil {
-		fillCustomizedNodeAffinity(pod.Spec.Affinity.NodeAffinity, injectLabels, node)
+	fillCustomizedNodeAffinity(annotationsToInject, node.Labels, affinityLabels)
+	f.Log.Info("injected", "labels", affinityLabels)
+	// update job Annotations.
+	if job.Annotations == nil {
+		job.Annotations = annotationsToInject
+	} else {
+		for k, v := range annotationsToInject {
+			job.Annotations[k] = v
+		}
 	}
 
-	// update job labels, reconciled job is selected by labels so the field will not be nil.
-	for k, v := range injectLabels {
-		job.Labels[k] = v
-	}
 	if err = f.Client.Update(context.TODO(), job); err != nil {
 		return err
 	}
@@ -170,32 +166,11 @@ func (f *DataOpJobReconciler) injectPodNodeLabelsToJob(job *batchv1.Job) error {
 	return nil
 }
 
-func fillCustomizedNodeAffinity(podNodeAffinity *corev1.NodeAffinity, injectLabels map[string]string, node *corev1.Node) {
-	// prefer
-	for _, term := range podNodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution {
-		for _, expression := range term.Preference.MatchExpressions {
-			// use the actually value in the node. Transform In, NotIn, Exists, DoesNotExist. Gt, and Lt to In.
-			value, exist := node.Labels[expression.Key]
-			if exist {
-				// add customized prefix to distinguish
-				injectLabels[common.LabelDataFlowAffinityPrefix+expression.Key] = value
-			}
-		}
-	}
-
-	if podNodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution == nil {
-		return
-	}
-
-	// require
-	for _, term := range podNodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms {
-		for _, expression := range term.MatchExpressions {
-			// use the actually value in the node. Transform In, NotIn, Exists, DoesNotExist. Gt, and Lt to In.
-			value, exist := node.Labels[expression.Key]
-			if exist {
-				// add customized prefix to distinguish
-				injectLabels[common.LabelDataFlowAffinityPrefix+expression.Key] = value
-			}
+func fillCustomizedNodeAffinity(annotationsToInject map[string]string, nodeLabels map[string]string, exposedLabelNames []string) {
+	for _, name := range exposedLabelNames {
+		name = strings.TrimSpace(name)
+		if value, exist := nodeLabels[name]; exist {
+			annotationsToInject[common.AnnotationDataFlowAffinityPrefix+name] = value
 		}
 	}
 }

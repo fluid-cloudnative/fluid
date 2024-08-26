@@ -28,12 +28,12 @@ func GenerateNodeAffinity(job *batchv1.Job) (*corev1.NodeAffinity, error) {
 	if job == nil {
 		return nil, nil
 	}
-	// mot inject, i.e. feature gate not enabled or job is a parallel job.
+	// not inject, i.e. feature gate not enabled or job is a parallel job.
 	if v := job.Annotations[common.AnnotationDataFlowAffinityInject]; v != "true" {
 		return nil, nil
 	}
 
-	labels := job.Labels
+	annotations := job.Annotations
 
 	nodeAffinity := &corev1.NodeAffinity{
 		RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
@@ -44,54 +44,24 @@ func GenerateNodeAffinity(job *batchv1.Job) (*corev1.NodeAffinity, error) {
 			},
 		},
 	}
-	// node name
-	nodeName, exist := labels[common.K8sNodeNameLabelKey]
-	if !exist {
-		return nil, errors.New("the affinity label is not set, wait for next reconcile")
-	}
 
-	nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions =
-		append(nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions,
-			corev1.NodeSelectorRequirement{
-				Key:      common.K8sNodeNameLabelKey,
-				Operator: corev1.NodeSelectorOpIn,
-				Values:   []string{nodeName},
-			})
-
-	// region
-	region, exist := labels[common.K8sRegionLabelKey]
-	if exist {
-		nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions =
-			append(nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions,
-				corev1.NodeSelectorRequirement{
-					Key:      common.K8sRegionLabelKey,
-					Operator: corev1.NodeSelectorOpIn,
-					Values:   []string{region},
-				})
-	}
-	// zone
-	zone, exist := labels[common.K8sZoneLabelKey]
-	if exist {
-		nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions =
-			append(nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions,
-				corev1.NodeSelectorRequirement{
-					Key:      common.K8sZoneLabelKey,
-					Operator: corev1.NodeSelectorOpIn,
-					Values:   []string{zone},
-				})
-	}
-
-	// customized labels, start with specific prefix.
-	for key, value := range labels {
-		if strings.HasPrefix(key, common.LabelDataFlowAffinityPrefix) {
+	// affinity labels with specific prefix.
+	hasInjectedLabels := false
+	for key, value := range annotations {
+		if strings.HasPrefix(key, common.AnnotationDataFlowAffinityPrefix) {
 			nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions =
 				append(nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions,
 					corev1.NodeSelectorRequirement{
-						Key:      strings.TrimPrefix(key, common.LabelDataFlowAffinityPrefix),
+						Key:      strings.TrimPrefix(key, common.AnnotationDataFlowAffinityPrefix),
 						Operator: corev1.NodeSelectorOpIn,
 						Values:   []string{value},
 					})
+			hasInjectedLabels = true
 		}
 	}
+	if !hasInjectedLabels {
+		return nil, errors.New("the affinity label is not set, wait for next reconcile")
+	}
+
 	return nodeAffinity, nil
 }

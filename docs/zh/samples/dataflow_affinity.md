@@ -42,8 +42,6 @@ metadata:
   name: phy
 spec:
   mounts:
-    - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/hbase
-      name: hbase
     - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/flink
       name: flink
 ---
@@ -65,6 +63,9 @@ apiVersion: data.fluid.io/v1alpha1
 kind: DataLoad
 metadata:
   name: loadA
+  annotations:
+    # 内置的标签，可以不显式设置，支持自定义的标签名
+    fluid.io/affinity.labels: "kubernetes.io/hostname,topology.kubernetes.io/zone,topology.kubernetes.io/region"
 spec:
   dataset:
     name: phy
@@ -96,7 +97,7 @@ spec:
 ### 示例1：自定义标签的亲和性
 
 DataFlow  由 DataLoad A, DataLoad B 构成，DataLoad A 通过自定义标签`node.kubernetes.io/instance-type`要求运行在 GPU 节点上，DataLoad B要求运行在跟DataLoad A 同样的标签值的节点（即GPU节点)；
-
+- 如果后续还有 DataLoad C (runAfter B) 需要该标签的亲和性，则 DataLoad B也需要设置 `fluid.io/affinity.labels: "node.kubernetes.io/instance-type"` 的注解；
 ```yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: Dataset
@@ -104,8 +105,6 @@ metadata:
   name: phy
 spec:
   mounts:
-    - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/hbase
-      name: hbase
     - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/flink
       name: flink
 ---
@@ -127,6 +126,9 @@ apiVersion: data.fluid.io/v1alpha1
 kind: DataLoad
 metadata:
   name: loadA
+  annotations:
+    # 自定义的标签名，前置操作必须将标签显示定义在这里，后续的 Data Operation 才可以使用该标签设置亲和性
+    fluid.io/affinity.labels: "node.kubernetes.io/instance-type"
 spec:
   dataset:
     name: phy
