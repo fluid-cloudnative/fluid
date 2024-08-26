@@ -105,9 +105,30 @@ func processAdvancedStatefulSetWorkers(workers []alluxio.Worker) {
 
 //2--------------------2-------------------2-----2--------------------2-------------------2-----2--------------------2-------------------2-----
 
-// Global variable to store scale down pod indices.
-var scaleDown []int
+const (
+	advancedStatefulSetEnabled = false
+)
 
+// ScaleConfig 用户输入的缩容配置
+type ScaleConfig struct {
+	Replicas       *int32
+	OfflineIndices []int // 仅在 AdvancedStatefulSet 中有效
+}
+
+// AdvancedStatefulSetSpec 定义了 StatefulSet 的规范部分
+type AdvancedStatefulSetSpec struct {
+}
+
+type AdvancedStatefulSetStatus struct {
+}
+type AdvancedStatefulSet struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+	Spec              AdvancedStatefulSetSpec   `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
+	Status            AdvancedStatefulSetStatus `json:"status,omitempty" protobuf:"bytes,3,opt,name=status"`
+}
+
+// 第一种方式，直接从worker的Annotations中读取
 // Function to get workers by type.
 func getTypesByWorker(workers []alluxio.Worker, workerType string) []alluxio.Worker {
 	var result []alluxio.Worker
@@ -119,15 +140,36 @@ func getTypesByWorker(workers []alluxio.Worker, workerType string) []alluxio.Wor
 	return result
 }
 
-// Function to process AdvancedStatefulSet workers.
-func processAdvancedStatefulSetWorkersByWorkerAnno(workers []alluxio.Worker) {
+// 该函数根据 scaleDown 列表中的 pod 索引为这些 worker 打上 scaleDown: true 的注解
+func annotateWorkersForScaleDown(workers []alluxio.Worker, scaleDown []int) []alluxio.Worker {
+	// 创建一个映射，用于快速检查需要打上注解的 pod 索引
+	scaleDownSet := make(map[int]struct{})
+	for _, idx := range scaleDown {
+		scaleDownSet[idx] = struct{}{}
+	}
+
+	// 遍历所有 workers，并为需要打上注解的 worker 打上 scaleDown: true 的注解
+	for i, worker := range workers {
+		if _, ok := scaleDownSet[i]; ok {
+			if worker.Annotations == nil {
+				worker.Annotations = make(map[string]string)
+			}
+			worker.Annotations["scaleDown"] = "true"
+			// 更新 worker 列表中的 worker
+			workers[i] = worker
+		}
+	}
+
+	return workers
+}
+
+// 通过worker的标签获取workerType为AdvancedStatefulSet并且要下线的节点
+func processAdvancedStatefulSetWorkersAndGetScaleDownIndicesByWorkerAnno(workers []alluxio.Worker) ScaleConfig {
+	var scaleDown []int
 	for _, worker := range workers {
 		if workerType, ok := worker.Annotations["workerType"]; ok && workerType == "AdvancedStatefulSet" {
 			if scaleDownStr, ok := worker.Annotations["scaleDown"]; ok && scaleDownStr == "true" {
-				// Here, we assume that the pod index is stored in a field or annotation, for simplicity, let's use a placeholder.
-				// Example: worker.Annotations["podIndex"] would be used to retrieve the pod index.
 				if podIndexStr, ok := worker.Annotations["podIndex"]; ok {
-					// Convert podIndexStr to int and add to scaleDown list
 					podIndex, err := strconv.Atoi(podIndexStr)
 					if err == nil {
 						scaleDown = append(scaleDown, podIndex)
@@ -136,28 +178,35 @@ func processAdvancedStatefulSetWorkersByWorkerAnno(workers []alluxio.Worker) {
 			}
 		}
 	}
-}
-
-func main() {
-	// Sample workers data (usually this would come from a source like Kubernetes API)
-	workers := []alluxio.Worker{
-		{Annotations: map[string]string{"workerType": "StatefulSet"}},
-		{Annotations: map[string]string{"workerType": "AdvancedStatefulSet", "scaleDown": "true", "podIndex": "1"}},
-		{Annotations: map[string]string{"workerType": "AdvancedStatefulSet", "scaleDown": "false", "podIndex": "2"}},
-		{Annotations: map[string]string{"workerType": "DaemonSet"}},
+	return ScaleConfig{
+		OfflineIndices: scaleDown,
 	}
-
-	// Get workers by type
-	statefulSetWorkers := getTypesByWorker(workers, "StatefulSet")
-	daemonSetWorkers := getTypesByWorker(workers, "DaemonSet")
-	advancedStatefulSetWorkers := getTypesByWorker(workers, "AdvancedStatefulSet")
-
-	fmt.Printf("StatefulSet Workers: %+v\n", statefulSetWorkers)
-	fmt.Printf("DaemonSet Workers: %+v\n", daemonSetWorkers)
-
-	// Process AdvancedStatefulSet Workers
-	processAdvancedStatefulSetWorkersByWorkerAnno(advancedStatefulSetWorkers)
-
-	fmt.Printf("Scale Down List: %v\n", scaleDown)
 }
+
+// 第二种方式，从statefulset中增加一个metadata字段中读取delete-slots ?
+// apiVersion: apps.pingcap.com/v1alpha1
+// kind: StatefulSet
+// metadata:
+// name: web
+// annotations:
+// delete-slots: '[1]'
+// spec:
+// selector:
+// matchLabels:
+// app: nginx
+// serviceName: "nginx"
+// replicas: 2
+// template:
+// metadata:
+// labels:
+// app: nginx
+// spec:
+// terminationGracePeriodSeconds: 10
+// containers:
+// - name: nginx
+// image: k8s.gcr.io/nginx-slim:0.8
+// ports:
+// - containerPort: 80
+// name: web
+// revisionHistoryLimit: 10
 
