@@ -45,8 +45,7 @@ func (e *EFCEngine) transform(runtime *datav1alpha1.EFCRuntime) (value *EFC, err
 			Name:      runtime.Name,
 		},
 	}
-
-	// TODO: Handle cases that FullnameOverride is too long (> 63 chars)
+	
 	value.FullnameOverride = e.name
 
 	err = e.transformMasters(runtime, dataset, value)
