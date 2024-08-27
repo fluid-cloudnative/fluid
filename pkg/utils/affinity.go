@@ -21,6 +21,11 @@ import v1 "k8s.io/api/core/v1"
 // InjectNodeSelectorRequirements injects(not append) a node selector term to affinity‘s nodeAffinity.
 func InjectNodeSelectorRequirements(matchExpressions []v1.NodeSelectorRequirement, affinity *v1.Affinity) *v1.Affinity {
 	result := affinity
+
+	if len(matchExpressions) == 0 {
+		return result
+	}
+
 	if affinity == nil {
 		result = &v1.Affinity{}
 	}
@@ -50,6 +55,9 @@ func InjectNodeSelectorRequirements(matchExpressions []v1.NodeSelectorRequiremen
 
 func InjectPreferredSchedulingTermsToAffinity(terms []v1.PreferredSchedulingTerm, affinity *v1.Affinity) *v1.Affinity {
 	result := affinity
+	if len(terms) == 0 {
+		return result
+	}
 	if affinity == nil {
 		result = &v1.Affinity{}
 	}

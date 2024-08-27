@@ -65,6 +65,99 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "affinity no exist, prefer",
+			args: args{
+				runAfter: &datav1alpha1.OperationRef{
+					Kind: "DataLoad",
+					Name: "test-op",
+					AffinityStrategy: datav1alpha1.AffinityStrategy{
+						Policy: datav1alpha1.PreferAffinityStrategy,
+						Prefers: []datav1alpha1.Prefer{
+							{
+								Weight: 10,
+								Name:   "not.exist.affinity",
+							},
+						},
+					},
+				},
+				objects: []runtime.Object{
+					&datav1alpha1.DataLoad{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "test-op",
+							Namespace: "default",
+						},
+						Status: datav1alpha1.OperationStatus{
+							NodeAffinity: &v1.NodeAffinity{
+								RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
+									NodeSelectorTerms: []v1.NodeSelectorTerm{
+										{
+											MatchExpressions: []v1.NodeSelectorRequirement{
+												{
+													Key:      common.K8sRegionLabelKey,
+													Operator: v1.NodeSelectorOpIn,
+													Values:   []string{"zone1"},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				opNamespace:     "default",
+				currentAffinity: nil,
+			},
+			want:    nil,
+			wantErr: false,
+		},
+		{
+			name: "affinity no exist, required",
+			args: args{
+				runAfter: &datav1alpha1.OperationRef{
+					Kind: "DataLoad",
+					Name: "test-op",
+					AffinityStrategy: datav1alpha1.AffinityStrategy{
+						Policy: datav1alpha1.RequireAffinityStrategy,
+						Requires: []datav1alpha1.Require{
+							{
+								Name: "not.exist.affinity",
+							},
+						},
+					},
+				},
+				objects: []runtime.Object{
+					&datav1alpha1.DataLoad{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "test-op",
+							Namespace: "default",
+						},
+						Status: datav1alpha1.OperationStatus{
+							NodeAffinity: &v1.NodeAffinity{
+								RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
+									NodeSelectorTerms: []v1.NodeSelectorTerm{
+										{
+											MatchExpressions: []v1.NodeSelectorRequirement{
+												{
+													Key:      common.K8sRegionLabelKey,
+													Operator: v1.NodeSelectorOpIn,
+													Values:   []string{"zone1"},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				opNamespace:     "default",
+				currentAffinity: nil,
+			},
+			want:    nil,
+			wantErr: false,
+		},
+		{
 			name: "no preceding op, error",
 			args: args{
 				runAfter: &datav1alpha1.OperationRef{

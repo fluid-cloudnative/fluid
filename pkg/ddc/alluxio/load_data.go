@@ -111,7 +111,7 @@ func (e *AlluxioEngine) genDataLoadValue(image string, targetDataset *datav1alph
 		LoadMetadata:     dataload.Spec.LoadMetadata,
 		Image:            image,
 		Labels:           dataload.Spec.PodMetadata.Labels,
-		Annotations:      dataload.Spec.PodMetadata.Annotations,
+		Annotations:      dataflow.InjectAffinityAnnotation(dataload.Annotations, dataload.Spec.PodMetadata.Annotations),
 		ImagePullSecrets: imagePullSecrets,
 		Policy:           string(dataload.Spec.Policy),
 		Schedule:         dataload.Spec.Schedule,

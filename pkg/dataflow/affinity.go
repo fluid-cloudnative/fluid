@@ -26,6 +26,22 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// InjectAffinityAnnotation inject the affinity annotation for the pod.
+func InjectAffinityAnnotation(opAnnotation map[string]string, podAnnotation map[string]string) map[string]string {
+	value, exist := opAnnotation[common.AnnotationDataFlowAffinityLabelsName]
+	if !exist {
+		return podAnnotation
+	}
+	// return a copy not the origin map
+	copiedMap := make(map[string]string)
+	for k, v := range podAnnotation {
+		copiedMap[k] = v
+	}
+
+	copiedMap[common.AnnotationDataFlowAffinityLabelsName] = value
+	return copiedMap
+}
+
 // InjectAffinityByRunAfterOp inject the affinity based on preceding operation
 func InjectAffinityByRunAfterOp(c client.Client, runAfter *datav1alpha1.OperationRef, opNamespace string, currentAffinity *v1.Affinity) (*v1.Affinity, error) {
 	// no previous operation or use default affinity strategy, no need to generate node affinity

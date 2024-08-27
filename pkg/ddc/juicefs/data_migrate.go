@@ -99,7 +99,7 @@ func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequest
 		Image:            image,
 		Options:          map[string]string{},
 		Labels:           dataMigrate.Spec.PodMetadata.Labels,
-		Annotations:      dataMigrate.Spec.PodMetadata.Annotations,
+		Annotations:      dataflow.InjectAffinityAnnotation(dataMigrate.Annotations, dataMigrate.Spec.PodMetadata.Annotations),
 		ImagePullSecrets: imagePullSecrets,
 		Policy:           string(dataMigrate.Spec.Policy),
 		Schedule:         dataMigrate.Spec.Schedule,

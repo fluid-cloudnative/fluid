@@ -35,10 +35,10 @@ func TestDataOpJobReconciler_injectPodNodeLabelsToJob(t *testing.T) {
 		node *v1.Node
 	}
 	tests := []struct {
-		name       string
-		args       args
-		wantLabels map[string]string
-		wantErr    bool
+		name            string
+		args            args
+		wantAnnotations map[string]string
+		wantErr         bool
 	}{
 		{
 			name: "job with succeed pods",
@@ -63,6 +63,9 @@ func TestDataOpJobReconciler_injectPodNodeLabelsToJob(t *testing.T) {
 						Name: "test-pod",
 						Labels: map[string]string{
 							"controller-uid": "455afc34-93b1-4e75-a6fa-8e13d2c6ca06",
+						},
+						Annotations: map[string]string{
+							common.AnnotationDataFlowAffinityLabelsName: "k8s.gpu,,",
 						},
 					},
 					Spec: v1.PodSpec{
@@ -101,12 +104,11 @@ func TestDataOpJobReconciler_injectPodNodeLabelsToJob(t *testing.T) {
 					},
 				},
 			},
-			wantLabels: map[string]string{
-				common.LabelAnnotationManagedBy:                common.Fluid,
-				common.K8sNodeNameLabelKey:                     "node01",
-				common.K8sRegionLabelKey:                       "region01",
-				common.K8sZoneLabelKey:                         "zone01",
-				common.LabelDataFlowAffinityPrefix + "k8s.gpu": "true",
+			wantAnnotations: map[string]string{
+				common.AnnotationDataFlowAffinityPrefix + common.K8sNodeNameLabelKey: "node01",
+				common.AnnotationDataFlowAffinityPrefix + common.K8sRegionLabelKey:   "region01",
+				common.AnnotationDataFlowAffinityPrefix + common.K8sZoneLabelKey:     "zone01",
+				common.AnnotationDataFlowAffinityPrefix + "k8s.gpu":                  "true",
 			},
 			wantErr: false,
 		},
@@ -164,8 +166,8 @@ func TestDataOpJobReconciler_injectPodNodeLabelsToJob(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("injectPodNodeLabelsToJob() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if err == nil && !reflect.DeepEqual(tt.args.job.Labels, tt.wantLabels) {
-				t.Errorf("injectPodNodeLabelsToJob() got = %v, want %v", tt.args.job.Labels, tt.wantLabels)
+			if err == nil && !reflect.DeepEqual(tt.args.job.Annotations, tt.wantAnnotations) {
+				t.Errorf("injectPodNodeLabelsToJob() got = %v, want %v", tt.args.job.Labels, tt.wantAnnotations)
 			}
 		})
 	}
