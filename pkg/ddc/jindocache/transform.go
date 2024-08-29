@@ -835,6 +835,7 @@ func (e *JindoCacheEngine) transformLogConfig(runtime *datav1alpha1.JindoRuntime
 		"logger.cleaner.enable": "true",
 		"logger.sync":           "false",
 		"logger.verbose":        "0",
+		"hadoopConf.enable":     "false",
 	}
 
 	if len(runtime.Spec.LogConfig) > 0 {
