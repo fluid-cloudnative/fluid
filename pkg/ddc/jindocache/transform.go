@@ -758,6 +758,7 @@ func (e *JindoCacheEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, val
 		"fs.oss.download.thread.concurrency":  "32",
 		"fs.s3.download.queue.size":           "16",
 		"fs.s3.download.thread.concurrency":   "32",
+		"fs.xengine":                          "jindocache",
 	}
 
 	readOnly := false
