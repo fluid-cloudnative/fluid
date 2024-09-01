@@ -236,10 +236,10 @@ docker-build-init-users:
 	docker build ${DOCKER_NO_CACHE_OPTION} charts/alluxio/docker/init-users -t ${INIT_USERS_IMG}:${VERSION}
 
 docker-build-webhook:
-	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} --build-arg HELM_VERSION=${HELM_VERSION} . -f docker/Dockerfile.webhook -t ${WEBHOOK_IMG}:${GIT_VERSION}
+	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.webhook -t ${WEBHOOK_IMG}:${GIT_VERSION}
 
 docker-build-crd-upgrader:
-	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} --build-arg HELM_VERSION=${HELM_VERSION} . -f docker/Dockerfile.crds -t ${CRD_UPGRADER_IMG}:${GIT_VERSION}
+	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} . -f docker/Dockerfile.crds -t ${CRD_UPGRADER_IMG}:${GIT_VERSION}
 
 # Push the docker image
 docker-push-dataset-controller: docker-build-dataset-controller

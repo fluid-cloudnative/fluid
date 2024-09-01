@@ -118,7 +118,6 @@ func (e *JindoCacheEngine) transform(runtime *datav1alpha1.JindoRuntime) (value 
 	}
 
 	value = &Jindo{
-		// TODO: Handle cases that FullnameOverride is too long (> 63 chars)
 		// TODO: refactor names of jindoruntime and make it aligned with other runtimes
 		FullnameOverride:    fmt.Sprintf("%s-%s", e.name, common.JindoChartName),
 		Image:               smartdataConfig.image,
@@ -759,6 +758,7 @@ func (e *JindoCacheEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, val
 		"fs.oss.download.thread.concurrency":  "32",
 		"fs.s3.download.queue.size":           "16",
 		"fs.s3.download.thread.concurrency":   "32",
+		"fs.xengine":                          "jindocache",
 	}
 
 	readOnly := false
@@ -835,6 +835,7 @@ func (e *JindoCacheEngine) transformLogConfig(runtime *datav1alpha1.JindoRuntime
 		"logger.cleaner.enable": "true",
 		"logger.sync":           "false",
 		"logger.verbose":        "0",
+		"hadoopConf.enable":     "false",
 	}
 
 	if len(runtime.Spec.LogConfig) > 0 {

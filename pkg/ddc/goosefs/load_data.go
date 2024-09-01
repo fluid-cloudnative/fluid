@@ -107,6 +107,8 @@ func (e *GooseFSEngine) genDataLoadValue(image string, targetDataset *datav1alph
 		Image:            image,
 		Options:          dataload.Spec.Options,
 		ImagePullSecrets: imagePullSecrets,
+		Labels:           dataload.Spec.PodMetadata.Labels,
+		Annotations:      dataflow.InjectAffinityAnnotation(dataload.Annotations, dataload.Spec.PodMetadata.Annotations),
 		Policy:           string(dataload.Spec.Policy),
 		Schedule:         dataload.Spec.Schedule,
 	}

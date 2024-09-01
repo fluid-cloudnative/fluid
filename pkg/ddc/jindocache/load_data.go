@@ -118,7 +118,7 @@ func (e *JindoCacheEngine) genDataLoadValue(image string, runtime *datav1alpha1.
 		LoadMetadata:     dataload.Spec.LoadMetadata,
 		Image:            image,
 		Labels:           dataload.Spec.PodMetadata.Labels,
-		Annotations:      dataload.Spec.PodMetadata.Annotations,
+		Annotations:      dataflow.InjectAffinityAnnotation(dataload.Annotations, dataload.Spec.PodMetadata.Annotations),
 		ImagePullSecrets: imagePullSecrets,
 		Policy:           string(dataload.Spec.Policy),
 		Schedule:         dataload.Spec.Schedule,

@@ -42,8 +42,6 @@ metadata:
   name: phy
 spec:
   mounts:
-    - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/hbase
-      name: hbase
     - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/flink
       name: flink
 ---
@@ -65,6 +63,9 @@ apiVersion: data.fluid.io/v1alpha1
 kind: DataLoad
 metadata:
   name: loadA
+  annotations:
+    # Built in tags that do not require explicit settings and support custom label names.
+    fluid.io/affinity.labels: "kubernetes.io/hostname,topology.kubernetes.io/zone,topology.kubernetes.io/region"
 spec:
   dataset:
     name: phy
@@ -97,6 +98,8 @@ When DataLoad B is running,  you will find the the affinity of its pod including
 
 The DataFlow consists of DataLoad A and DataLoad B. DataLoad A requires running on GPU nodes through customized label `node.kubernetes.io/instance-type`, while DataLoad B requires running on nodes with the same label value as DataLoad A (GPU nodes).
 
+- If DataLoad C (runAfter B) requires the affinity of this label, DataLoad B also needs to set the annotation `fluid.io/affinity.labels: node.kubernetes.io/instance-type`
+
 ```yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: Dataset
@@ -104,8 +107,6 @@ metadata:
   name: phy
 spec:
   mounts:
-    - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/hbase
-      name: hbase
     - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/flink
       name: flink
 ---
@@ -127,6 +128,9 @@ apiVersion: data.fluid.io/v1alpha1
 kind: DataLoad
 metadata:
   name: loadA
+  annotations:
+    # The customized label name must be defined here as a prerequisite for subsequent Data Operations to use it to set affinity.
+    fluid.io/affinity.labels: "node.kubernetes.io/instance-type"
 spec:
   dataset:
     name: phy
