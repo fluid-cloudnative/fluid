@@ -51,7 +51,7 @@ func (m *CacheWorkerManagerClass) getStatefulSetStatus(ctx context.Context, key 
 	if err != nil {
 		return nil, err
 	}
-	return &StatefulSetStatus{StatefulSet: statefulSet}, nil
+	return &StatefulSetWorkerStatus{StatefulSet: statefulSet}, nil
 }
 
 func (m *CacheWorkerManagerClass) getAdvancedStatefulSetStatus(ctx context.Context, key types.NamespacedName) (WorkerSetStatus, error) {
@@ -59,7 +59,7 @@ func (m *CacheWorkerManagerClass) getAdvancedStatefulSetStatus(ctx context.Conte
 	if err != nil {
 		return nil, err
 	}
-	return &AdvancedStatefulSetStatus{as: *advancedStatefulSet}, nil
+	return &AdvancedStatefulSetWorkerStatus{AdvancedStatefulSet: advancedStatefulSet}, nil
 }
 
 func (m *CacheWorkerManagerClass) getDaemonSetStatus(ctx context.Context, key types.NamespacedName) (WorkerSetStatus, error) {
@@ -67,7 +67,7 @@ func (m *CacheWorkerManagerClass) getDaemonSetStatus(ctx context.Context, key ty
 	if err != nil {
 		return nil, err
 	}
-	return &DaemonSetStatus{DaemonSet: daemonSet}, nil
+	return &DaemonSetWorkerStatus{DaemonSet: daemonSet}, nil
 }
 
 func (m *CacheWorkerManagerClass) getStatefulSet(ctx context.Context, key types.NamespacedName) (*appsv1.StatefulSet, error) {
@@ -110,31 +110,40 @@ type WorkerSetStatus interface {
 	GetReplicas() int
 	GetSpec() interface{}
 	// 其他状态相关的接口方法
-
-}
-
-// StatefulSetStatus 实现 WorkerSetStatus 接口
-type StatefulSetStatus struct {
-	StatefulSet *appsv1.StatefulSet
-}
-
-func (s *StatefulSetStatus) GetReplicas() int {
-	return int(*s.StatefulSet.Spec.Replicas)
-}
-
-func (s *StatefulSetStatus) GetSpec() interface{} {
-	return s.StatefulSet.Spec
 }
 
 // DaemonSetStatus 实现 WorkerSetStatus 接口
-type DaemonSetStatus struct {
+type DaemonSetWorkerStatus struct {
 	DaemonSet *appsv1.DaemonSet
 }
 
-func (d *DaemonSetStatus) GetReplicas() int {
+// StatefulSetStatus 实现 WorkerSetStatus 接口
+type StatefulSetWorkerStatus struct {
+	StatefulSet *appsv1.StatefulSet
+}
+type AdvancedStatefulSetWorkerStatus struct {
+	AdvancedStatefulSet *AdvancedStatefulSet
+}
+
+func (s *AdvancedStatefulSetWorkerStatus) GetReplicas() int {
+	return int(*s.AdvancedStatefulSet.Spec.Replicas)
+}
+
+func (s *AdvancedStatefulSetWorkerStatus) GetSpec() interface{} {
+	return s.AdvancedStatefulSet.Spec
+}
+func (s *StatefulSetWorkerStatus) GetReplicas() int {
+	return int(*s.StatefulSet.Spec.Replicas)
+}
+
+func (s *StatefulSetWorkerStatus) GetSpec() interface{} {
+	return s.StatefulSet.Spec
+}
+
+func (d *DaemonSetWorkerStatus) GetReplicas() int {
 	return int(d.DaemonSet.Status.DesiredNumberScheduled)
 }
 
-func (d *DaemonSetStatus) GetSpec() interface{} {
+func (d *DaemonSetWorkerStatus) GetSpec() interface{} {
 	return d.DaemonSet.Spec
 }
