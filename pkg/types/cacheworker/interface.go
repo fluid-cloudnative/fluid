@@ -27,23 +27,54 @@ func NewCacheWorkerManagerClass(client client.Client) *CacheWorkerManagerClass {
 	}
 }
 
-func (m *CacheWorkerManagerClass) GetWorker(ctx context.Context, key types.NamespacedName, workerType WorkerType) (WorkerSetStatus, error) {
+type CacheWorkerSet struct {
+	Spec   CacheWorkerSetSpec
+	Status CacheWorkerSetStatus
+}
+
+type CacheWorkerSetSpec struct {
+	Type WorkerType
+	// 其他 spec 字段
+}
+
+type CacheWorkerSetStatus struct {
+	Replicas int
+	// 其他 status 字段
+}
+
+func (m *CacheWorkerManagerClass) GetWorker(ctx context.Context, key types.NamespacedName, workerType WorkerType) (*CacheWorkerSet, error) {
 	// 默认为 StatefulSetType
 	if workerType == "" {
 		workerType = StatefulSetType
 	}
 
+	var workerStatus WorkerSetStatus
+	var err error
+
 	switch workerType {
 	case StatefulSetType:
-		return m.getStatefulSetStatus(ctx, key)
+		workerStatus, err = m.getStatefulSetStatus(ctx, key)
 	case AdvancedStatefulSetType:
-		// 需要实现获取高级 StatefulSet 的逻辑
-		return m.getAdvancedStatefulSetStatus(ctx, key)
+		workerStatus, err = m.getAdvancedStatefulSetStatus(ctx, key)
 	case DaemonSetType:
-		return m.getDaemonSetStatus(ctx, key)
+		workerStatus, err = m.getDaemonSetStatus(ctx, key)
 	default:
 		return nil, fmt.Errorf("unknown worker type: %s", workerType)
 	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &CacheWorkerSet{
+		Spec: CacheWorkerSetSpec{
+			Type: workerType,
+		},
+		Status: CacheWorkerSetStatus{
+			Replicas: workerStatus.GetReplicas(),
+			// 其他 status 字段赋值
+		},
+	}, nil
 }
 
 func (m *CacheWorkerManagerClass) getStatefulSetStatus(ctx context.Context, key types.NamespacedName) (WorkerSetStatus, error) {
@@ -93,12 +124,13 @@ func (m *CacheWorkerManagerClass) getDaemonSet(ctx context.Context, key types.Na
 	}
 	return daemonSet, nil
 }
+
 func (m *CacheWorkerManagerClass) getAdvancedStatefulSet(ctx context.Context, key types.NamespacedName) (*AdvancedStatefulSet, error) {
 	asSet := &AdvancedStatefulSet{}
 	err := m.client.Get(ctx, key, asSet)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			return nil, fmt.Errorf("statefulset %s not found", key.Name)
+			return nil, fmt.Errorf("advanced statefulset %s not found", key.Name)
 		}
 		return nil, err
 	}
@@ -121,6 +153,7 @@ type DaemonSetWorkerStatus struct {
 type StatefulSetWorkerStatus struct {
 	StatefulSet *appsv1.StatefulSet
 }
+
 type AdvancedStatefulSetWorkerStatus struct {
 	AdvancedStatefulSet *AdvancedStatefulSet
 }
@@ -132,6 +165,7 @@ func (s *AdvancedStatefulSetWorkerStatus) GetReplicas() int {
 func (s *AdvancedStatefulSetWorkerStatus) GetSpec() interface{} {
 	return s.AdvancedStatefulSet.Spec
 }
+
 func (s *StatefulSetWorkerStatus) GetReplicas() int {
 	return int(*s.StatefulSet.Spec.Replicas)
 }
