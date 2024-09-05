@@ -3,12 +3,13 @@ package cacheworker
 import (
 	"context"
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// WorkerType defines the type of worker resource
 type WorkerType string
 
 const (
@@ -17,143 +18,137 @@ const (
 	DaemonSetType           WorkerType = "daemonset"
 )
 
+// CacheWorkerManagerClass defines the manager class
 type CacheWorkerManagerClass struct {
 	client client.Client
 }
 
+// NewCacheWorkerManagerClass creates a new CacheWorkerManagerClass
 func NewCacheWorkerManagerClass(client client.Client) *CacheWorkerManagerClass {
 	return &CacheWorkerManagerClass{
 		client: client,
 	}
 }
 
+// CacheWorkerSet defines the worker set
 type CacheWorkerSet struct {
 	Spec   CacheWorkerSetSpec
 	Status CacheWorkerSetStatus
 }
 
+// CacheWorkerSetSpec defines the spec for CacheWorkerSet
 type CacheWorkerSetSpec struct {
 	Type WorkerType
-	// 其他 spec 字段
+	// Other spec fields
 }
 
+// CacheWorkerSetStatus defines the status for CacheWorkerSet
 type CacheWorkerSetStatus struct {
-	Replicas int
-	// 其他 status 字段
+	Replicas   int
+	WorkerType WorkerType
+	// Other status fields
 }
 
-func (m *CacheWorkerManagerClass) GetWorker(ctx context.Context, key types.NamespacedName, workerType WorkerType) (*CacheWorkerSet, error) {
-	// 默认为 StatefulSetType
-	if workerType == "" {
-		workerType = StatefulSetType
-	}
-
+// GetWorker gets the worker based on the provided type
+func GetWorker(client client.Client, key types.NamespacedName) (*CacheWorkerSet, error) {
 	var workerStatus WorkerSetStatus
 	var err error
 
-	switch workerType {
-	case StatefulSetType:
-		workerStatus, err = m.getStatefulSetStatus(ctx, key)
-	case AdvancedStatefulSetType:
-		workerStatus, err = m.getAdvancedStatefulSetStatus(ctx, key)
-	case DaemonSetType:
-		workerStatus, err = m.getDaemonSetStatus(ctx, key)
-	default:
-		return nil, fmt.Errorf("unknown worker type: %s", workerType)
+	// First try to get as StatefulSet
+	workerStatus, err = getStatefulSetStatus(client, key)
+	if err == nil {
+		return &CacheWorkerSet{
+			Spec: CacheWorkerSetSpec{
+				Type: StatefulSetType,
+			},
+			Status: CacheWorkerSetStatus{
+				Replicas:   workerStatus.GetReplicas(),
+				WorkerType: StatefulSetType,
+				// Other status fields
+			},
+		}, nil
 	}
 
-	if err != nil {
-		return nil, err
+	// If StatefulSet is not found, try to get as AdvancedStatefulSet
+	workerStatus, err = getAdvancedStatefulSetStatus(client, key)
+	if err == nil {
+		return &CacheWorkerSet{
+			Spec: CacheWorkerSetSpec{
+				Type: AdvancedStatefulSetType,
+			},
+			Status: CacheWorkerSetStatus{
+				Replicas:   workerStatus.GetReplicas(),
+				WorkerType: AdvancedStatefulSetType,
+				// Other status fields
+			},
+		}, nil
 	}
 
-	return &CacheWorkerSet{
-		Spec: CacheWorkerSetSpec{
-			Type: workerType,
-		},
-		Status: CacheWorkerSetStatus{
-			Replicas: workerStatus.GetReplicas(),
-			// 其他 status 字段赋值
-		},
-	}, nil
+	// If AdvancedStatefulSet is not found, try to get as DaemonSet
+	workerStatus, err = getDaemonSetStatus(client, key)
+	if err == nil {
+		return &CacheWorkerSet{
+			Spec: CacheWorkerSetSpec{
+				Type: DaemonSetType,
+			},
+			Status: CacheWorkerSetStatus{
+				Replicas:   workerStatus.GetReplicas(),
+				WorkerType: DaemonSetType,
+				// Other status fields
+			},
+		}, nil
+	}
+	// If none of the resources are found, return an error
+	return nil, fmt.Errorf("worker not found for key: %s", key.Name)
 }
 
-func (m *CacheWorkerManagerClass) getStatefulSetStatus(ctx context.Context, key types.NamespacedName) (WorkerSetStatus, error) {
-	statefulSet, err := m.getStatefulSet(ctx, key)
+func getStatefulSetStatus(client client.Client, key types.NamespacedName) (WorkerSetStatus, error) {
+	statefulSet := &appsv1.StatefulSet{}
+	statefulSet, err := kubeclient.GetStatefulSet(client, key.Name, key.Namespace)
+	//err := client.Get(context.TODO(), key, statefulSet)
 	if err != nil {
 		return nil, err
 	}
 	return &StatefulSetWorkerStatus{StatefulSet: statefulSet}, nil
 }
 
-func (m *CacheWorkerManagerClass) getAdvancedStatefulSetStatus(ctx context.Context, key types.NamespacedName) (WorkerSetStatus, error) {
-	advancedStatefulSet, err := m.getAdvancedStatefulSet(ctx, key)
+func getAdvancedStatefulSetStatus(client client.Client, key types.NamespacedName) (WorkerSetStatus, error) {
+	advancedStatefulSet := &AdvancedStatefulSet{}
+	err := client.Get(context.TODO(), key, advancedStatefulSet)
 	if err != nil {
 		return nil, err
 	}
 	return &AdvancedStatefulSetWorkerStatus{AdvancedStatefulSet: advancedStatefulSet}, nil
 }
 
-func (m *CacheWorkerManagerClass) getDaemonSetStatus(ctx context.Context, key types.NamespacedName) (WorkerSetStatus, error) {
-	daemonSet, err := m.getDaemonSet(ctx, key)
+func getDaemonSetStatus(client client.Client, key types.NamespacedName) (WorkerSetStatus, error) {
+	daemonSet := &appsv1.DaemonSet{}
+	daemonSet, err := kubeclient.GetDaemonset(client, key.Name, key.Namespace)
+	//err := client.Get(context.TODO(), key, daemonSet)
 	if err != nil {
 		return nil, err
 	}
 	return &DaemonSetWorkerStatus{DaemonSet: daemonSet}, nil
 }
 
-func (m *CacheWorkerManagerClass) getStatefulSet(ctx context.Context, key types.NamespacedName) (*appsv1.StatefulSet, error) {
-	statefulSet := &appsv1.StatefulSet{}
-	err := m.client.Get(ctx, key, statefulSet)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			return nil, fmt.Errorf("statefulset %s not found", key.Name)
-		}
-		return nil, err
-	}
-	return statefulSet, nil
-}
-
-func (m *CacheWorkerManagerClass) getDaemonSet(ctx context.Context, key types.NamespacedName) (*appsv1.DaemonSet, error) {
-	daemonSet := &appsv1.DaemonSet{}
-	err := m.client.Get(ctx, key, daemonSet)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			return nil, fmt.Errorf("daemonset %s not found", key.Name)
-		}
-		return nil, err
-	}
-	return daemonSet, nil
-}
-
-func (m *CacheWorkerManagerClass) getAdvancedStatefulSet(ctx context.Context, key types.NamespacedName) (*AdvancedStatefulSet, error) {
-	asSet := &AdvancedStatefulSet{}
-	err := m.client.Get(ctx, key, asSet)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			return nil, fmt.Errorf("advanced statefulset %s not found", key.Name)
-		}
-		return nil, err
-	}
-	return asSet, nil
-}
-
-// WorkerSetStatus 定义了不同 WorkerManager 的状态接口
+// WorkerSetStatus defines the interface for worker set status
 type WorkerSetStatus interface {
 	GetReplicas() int
 	GetSpec() interface{}
-	// 其他状态相关的接口方法
+	// Other status-related methods
 }
 
-// DaemonSetStatus 实现 WorkerSetStatus 接口
+// DaemonSetWorkerStatus implements WorkerSetStatus for DaemonSets
 type DaemonSetWorkerStatus struct {
 	DaemonSet *appsv1.DaemonSet
 }
 
-// StatefulSetStatus 实现 WorkerSetStatus 接口
+// StatefulSetWorkerStatus implements WorkerSetStatus for StatefulSets
 type StatefulSetWorkerStatus struct {
 	StatefulSet *appsv1.StatefulSet
 }
 
+// AdvancedStatefulSetWorkerStatus implements WorkerSetStatus for AdvancedStatefulSets
 type AdvancedStatefulSetWorkerStatus struct {
 	AdvancedStatefulSet *AdvancedStatefulSet
 }

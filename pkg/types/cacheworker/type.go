@@ -91,7 +91,7 @@ type AdvancedStatefulSetStatus struct {
 }
 
 type scaleInConfig struct {
-	scaleDownIndices []int32
+	//scaleDownIndices []int32
 }
 
 type AdvancedStatefulSetConditionType string
