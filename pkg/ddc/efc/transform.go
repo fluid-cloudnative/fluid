@@ -45,7 +45,7 @@ func (e *EFCEngine) transform(runtime *datav1alpha1.EFCRuntime) (value *EFC, err
 			Name:      runtime.Name,
 		},
 	}
-	
+
 	value.FullnameOverride = e.name
 
 	err = e.transformMasters(runtime, dataset, value)

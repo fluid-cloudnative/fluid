@@ -48,7 +48,7 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 	value = &Alluxio{
 		Owner: transformer.GenerateOwnerReferenceFromObject(runtime),
 	}
-	
+
 	value.FullnameOverride = e.name
 
 	// 1.transform the common part
