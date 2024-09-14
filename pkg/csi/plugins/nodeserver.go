@@ -206,7 +206,7 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 	}
 
 	if !exists {
-		glog.V(0).Infof("NodeUnpublishVolume: succeed because target path %s is not existed.", targetPath)
+		glog.V(0).Infof("NodeUnpublishVolume: succeed because target path %s doesn't exist", targetPath)
 		return &csi.NodeUnpublishVolumeResponse{}, nil
 	}
 
