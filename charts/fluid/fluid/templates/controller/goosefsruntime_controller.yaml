@@ -90,10 +90,5 @@ spec:
           name: metrics
           protocol: TCP
         resources:
-          limits:
-            cpu: 100m
-            memory: 1536Mi
-          requests:
-            cpu: 100m
-            memory: 200Mi
+          {{- include "fluid.controlplane.resources" .Values.runtime.goosefs | nindent 10 }}
       terminationGracePeriodSeconds: 10
