@@ -255,6 +255,9 @@ const (
 )
 
 type AffinityStrategy struct {
+	// Specifies the dependent preceding operation in a workflow. If not set, use the operation referred to by RunAfter.
+	// +optional
+	DependOn *ObjectRef `json:"dependOn,omitempty"`
 	// Policy one of: "", "Require", "Prefer"
 	// +optional
 	Policy AffinityPolicy `json:"policy,omitempty"`
@@ -274,7 +277,7 @@ type Require struct {
 	Name string `json:"name"`
 }
 
-type OperationRef struct {
+type ObjectRef struct {
 	// API version of the referent operation
 	// +optional
 	APIVersion string `json:"apiVersion,omitempty"`
@@ -291,6 +294,10 @@ type OperationRef struct {
 	// Namespace specifies the namespace of the referent operation.
 	// +optional
 	Namespace string `json:"namespace,omitempty"`
+}
+
+type OperationRef struct {
+	ObjectRef `json:",inline"`
 
 	// AffinityStrategy specifies the pod affinity strategy with the referent operation.
 	// +optional

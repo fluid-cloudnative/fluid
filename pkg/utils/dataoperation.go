@@ -65,7 +65,7 @@ func GetOperationStatus(obj client.Object) (*datav1alpha1.OperationStatus, error
 	return nil, fmt.Errorf("obj is not of any data operation type")
 }
 
-func GetPrecedingOperationStatus(client client.Client, opRef *datav1alpha1.OperationRef, opRefNamespace string) (*datav1alpha1.OperationStatus, error) {
+func GetPrecedingOperationStatus(client client.Client, opRef *datav1alpha1.ObjectRef, opRefNamespace string) (*datav1alpha1.OperationStatus, error) {
 	if opRef == nil {
 		return nil, nil
 	}

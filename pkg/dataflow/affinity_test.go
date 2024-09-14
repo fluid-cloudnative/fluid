@@ -46,8 +46,10 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 			name: "default policy",
 			args: args{
 				runAfter: &datav1alpha1.OperationRef{
-					Kind: "DataLoad",
-					Name: "test-op",
+					ObjectRef: datav1alpha1.ObjectRef{
+						Kind: "DataLoad",
+						Name: "test-op",
+					},
 				},
 				objects: []runtime.Object{
 					&datav1alpha1.DataLoad{
@@ -68,8 +70,10 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 			name: "affinity no exist, prefer",
 			args: args{
 				runAfter: &datav1alpha1.OperationRef{
-					Kind: "DataLoad",
-					Name: "test-op",
+					ObjectRef: datav1alpha1.ObjectRef{
+						Kind: "DataLoad",
+						Name: "test-op",
+					},
 					AffinityStrategy: datav1alpha1.AffinityStrategy{
 						Policy: datav1alpha1.PreferAffinityStrategy,
 						Prefers: []datav1alpha1.Prefer{
@@ -115,8 +119,10 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 			name: "affinity no exist, required",
 			args: args{
 				runAfter: &datav1alpha1.OperationRef{
-					Kind: "DataLoad",
-					Name: "test-op",
+					ObjectRef: datav1alpha1.ObjectRef{
+						Kind: "DataLoad",
+						Name: "test-op",
+					},
 					AffinityStrategy: datav1alpha1.AffinityStrategy{
 						Policy: datav1alpha1.RequireAffinityStrategy,
 						Requires: []datav1alpha1.Require{
@@ -161,8 +167,10 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 			name: "no preceding op, error",
 			args: args{
 				runAfter: &datav1alpha1.OperationRef{
-					Kind: "DataLoad",
-					Name: "test-op",
+					ObjectRef: datav1alpha1.ObjectRef{
+						Kind: "DataLoad",
+						Name: "test-op",
+					},
 					AffinityStrategy: datav1alpha1.AffinityStrategy{
 						Policy: datav1alpha1.PreferAffinityStrategy,
 					},
@@ -186,8 +194,10 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 			name: "require policy, use node",
 			args: args{
 				runAfter: &datav1alpha1.OperationRef{
-					Kind: "DataLoad",
-					Name: "test-op",
+					ObjectRef: datav1alpha1.ObjectRef{
+						Kind: "DataLoad",
+						Name: "test-op",
+					},
 					AffinityStrategy: datav1alpha1.AffinityStrategy{
 						Policy: datav1alpha1.RequireAffinityStrategy,
 					},
@@ -243,8 +253,10 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 			name: "require policy, customized",
 			args: args{
 				runAfter: &datav1alpha1.OperationRef{
-					Kind: "DataLoad",
-					Name: "test-op",
+					ObjectRef: datav1alpha1.ObjectRef{
+						Kind: "DataLoad",
+						Name: "test-op",
+					},
 					AffinityStrategy: datav1alpha1.AffinityStrategy{
 						Policy: datav1alpha1.RequireAffinityStrategy,
 						Requires: []datav1alpha1.Require{
@@ -305,9 +317,11 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 			name: "prefer policy, use zone",
 			args: args{
 				runAfter: &datav1alpha1.OperationRef{
-					Kind:      "DataLoad",
-					Name:      "test-op",
-					Namespace: "test",
+					ObjectRef: datav1alpha1.ObjectRef{
+						Kind:      "DataLoad",
+						Name:      "test-op",
+						Namespace: "test",
+					},
 					AffinityStrategy: datav1alpha1.AffinityStrategy{
 						Policy: datav1alpha1.PreferAffinityStrategy,
 						Prefers: []datav1alpha1.Prefer{
