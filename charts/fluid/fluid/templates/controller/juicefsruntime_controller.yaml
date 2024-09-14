@@ -21,7 +21,7 @@ spec:
         control-plane: juicefsruntime-controller
       annotations:
       {{ if gt (.Values.runtime.juicefs.replicas | int) 1 -}}
-         controller.runtime.fluid.io/replicas: {{ .Values.runtime.juicefs.replicas | quote }}
+        controller.runtime.fluid.io/replicas: {{ .Values.runtime.juicefs.replicas | quote }}
       {{- end }}
     spec:
       {{- with .Values.image.imagePullSecrets }}
