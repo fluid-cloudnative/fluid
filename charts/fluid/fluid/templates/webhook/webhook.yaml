@@ -25,6 +25,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: fluid-webhook
+      {{ include "fluid.controlplane.affinity" . | nindent 6}}
       containers:
       - image: {{ include "fluid.controlplane.imageTransform" (list .Values.webhook.imagePrefix .Values.webhook.imageName .Values.webhook.imageTag . ) }}
         name: manager

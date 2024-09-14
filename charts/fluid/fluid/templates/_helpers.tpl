@@ -98,6 +98,18 @@ Create the name of the service account to use
 {{- end -}}
 {{- end -}}
 
+{{- define "fluid.controlplane.affinity" -}}
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: type
+          operator: NotIn
+          values:
+          - virtual-kubelet
+{{- end -}}
+
 {{- define "fluid.namespace" -}}
 {{- if .Values.namespace -}}
     {{ .Values.namespace }}

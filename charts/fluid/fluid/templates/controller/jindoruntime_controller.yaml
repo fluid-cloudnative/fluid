@@ -29,15 +29,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: jindoruntime-controller
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: type
-                operator: NotIn
-                values:
-                - virtual-kubelet
+      {{ include "fluid.controlplane.affinity" . | nindent 6}}
       {{- if .Values.runtime.jindo.tolerations }}
       tolerations:
 {{ toYaml .Values.runtime.jindo.tolerations | indent 6 }}

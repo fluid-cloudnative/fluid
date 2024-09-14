@@ -25,15 +25,7 @@ spec:
       {{- end }}
     spec:
       serviceAccountName: thinruntime-controller
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: type
-                    operator: NotIn
-                    values:
-                      - virtual-kubelet
+      {{ include "fluid.controlplane.affinity" . | nindent 6}}
       {{- if .Values.runtime.thin.tolerations }}
       tolerations:
 {{ toYaml .Values.runtime.thin.tolerations | indent 6 }}
