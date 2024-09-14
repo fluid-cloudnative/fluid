@@ -44,7 +44,7 @@ spec:
       {{- end }}
       #hostNetwork: true
       containers:
-      - image: {{ include "fluid.controlplane.imageTransform" (list .Values.runtime.juicefs.controller.imagePrefix .Values.runtime.juicefs.controller.imageName .Values.runtime.juicefs.controller.imageTag) }}
+      - image: {{ include "fluid.controlplane.imageTransform" (list .Values.runtime.juicefs.controller.imagePrefix .Values.runtime.juicefs.controller.imageName .Values.runtime.juicefs.controller.imageTag . ) }}
         name: manager
         args:
           - --development=false
@@ -66,11 +66,11 @@ spec:
           {{- end }}
           {{- if .Values.runtime.juicefs.fuse.ceimageName }}
           - name: JUICEFS_CE_IMAGE_ENV
-            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.juicefs.fuse.ceimagePrefix .Values.runtime.juicefs.fuse.ceimageName .Values.runtime.juicefs.fuse.ceimageTag) }}
+            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.juicefs.fuse.ceimagePrefix .Values.runtime.juicefs.fuse.ceimageName .Values.runtime.juicefs.fuse.ceimageTag . ) }}
           {{- end }}
           {{- if .Values.runtime.juicefs.fuse.eeimageName }}
           - name: JUICEFS_EE_IMAGE_ENV
-            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.juicefs.fuse.eeimagePrefix .Values.runtime.juicefs.fuse.eeimageName .Values.runtime.juicefs.fuse.eeimageTag) }}
+            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.juicefs.fuse.eeimagePrefix .Values.runtime.juicefs.fuse.eeimageName .Values.runtime.juicefs.fuse.eeimageTag . ) }}
           {{- end }}
           {{- if .Values.runtime.mountRoot }}
           - name: MOUNT_ROOT

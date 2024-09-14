@@ -40,7 +40,7 @@ spec:
       {{- end }}
       #hostNetwork: true
       containers:
-        - image: {{ include "fluid.controlplane.imageTransform" (list .Values.runtime.thin.controller.imagePrefix .Values.runtime.thin.controller.imageName .Values.runtime.thin.controller.imageTag) }}
+        - image: {{ include "fluid.controlplane.imageTransform" (list .Values.runtime.thin.controller.imagePrefix .Values.runtime.thin.controller.imageName .Values.runtime.thin.controller.imageTag . ) }}
           name: manager
           args:
             - --development=false

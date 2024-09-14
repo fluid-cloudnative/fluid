@@ -43,7 +43,7 @@ spec:
 {{ toYaml .Values.runtime.vineyard.tolerations | indent 6 }}
       {{- end }}
       containers:
-      - image: {{ include "fluid.controlplane.imageTransform" (list .Values.runtime.vineyard.controller.imagePrefix .Values.runtime.vineyard.controller.imageName .Values.runtime.vineyard.controller.imageTag) }}
+      - image: {{ include "fluid.controlplane.imageTransform" (list .Values.runtime.vineyard.controller.imagePrefix .Values.runtime.vineyard.controller.imageName .Values.runtime.vineyard.controller.imageTag . ) }}
         name: manager
         command: ["vineyardruntime-controller", "start"]
         args:
@@ -63,15 +63,15 @@ spec:
         {{- end }}
         {{- if .Values.runtime.vineyard.master.imageName }}
         - name: VINEYARD_MASTER_IMAGE_ENV
-          value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.vineyard.master.imagePrefix .Values.runtime.vineyard.master.imageName .Values.runtime.vineyard.master.imageTag) }}
+          value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.vineyard.master.imagePrefix .Values.runtime.vineyard.master.imageName .Values.runtime.vineyard.master.imageTag . ) }}
         {{- end }}
         {{- if .Values.runtime.vineyard.worker.imageName }}
         - name: VINEYARD_WORKER_IMAGE_ENV
-          value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.vineyard.worker.imagePrefix .Values.runtime.vineyard.worker.imageName .Values.runtime.vineyard.worker.imageTag) }}
+          value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.vineyard.worker.imagePrefix .Values.runtime.vineyard.worker.imageName .Values.runtime.vineyard.worker.imageTag . ) }}
         {{- end }}
         {{- if .Values.runtime.vineyard.fuse.imageName }}
         - name: VINEYARD_FUSE_IMAGE_ENV
-          value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.vineyard.fuse.imagePrefix .Values.runtime.vineyard.fuse.imageName .Values.runtime.vineyard.fuse.imageTag) }}
+          value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.vineyard.fuse.imagePrefix .Values.runtime.vineyard.fuse.imageName .Values.runtime.vineyard.fuse.imageTag . ) }}
         {{- end }}
         {{- if .Values.runtime.syncRetryDuration }}
         - name: FLUID_SYNC_RETRY_DURATION
