@@ -29,22 +29,14 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: efcruntime-controller
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: type
-                operator: NotIn
-                values:
-                - virtual-kubelet
+      {{ include "fluid.controlplane.affinity" . | nindent 6}}
       {{- if .Values.runtime.efc.tolerations }}
       tolerations:
 {{ toYaml .Values.runtime.efc.tolerations | indent 6 }}
       {{- end }}
       #hostNetwork: true
       containers:
-      - image: {{ include "fluid.controlplane.imageTransform" (list .Values.runtime.efc.controller.imagePrefix .Values.runtime.efc.controller.imageName .Values.runtime.efc.controller.imageTag) }}
+      - image: {{ include "fluid.controlplane.imageTransform" (list .Values.runtime.efc.controller.imagePrefix .Values.runtime.efc.controller.imageName .Values.runtime.efc.controller.imageTag . ) }}
         imagePullPolicy: {{ .Values.runtime.efc.controller.imagePullPolicy }}
         name: manager
         args:
@@ -68,21 +60,21 @@ spec:
           {{- end }}
           {{- if .Values.runtime.efc.init.imageName }}
           - name: EFC_INIT_FUSE_IMAGE_ENV
-            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.efc.init.imagePrefix .Values.runtime.efc.init.imageName .Values.runtime.efc.init.imageTag) }}
+            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.efc.init.imagePrefix .Values.runtime.efc.init.imageName .Values.runtime.efc.init.imageTag . ) }}
           {{- end }}
           {{- if .Values.runtime.efc.master.imageName }}
           - name: EFC_MASTER_IMAGE_ENV
-            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.efc.master.imagePrefix .Values.runtime.efc.master.imageName .Values.runtime.efc.master.imageTag) }}
+            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.efc.master.imagePrefix .Values.runtime.efc.master.imageName .Values.runtime.efc.master.imageTag . ) }}
           {{- end }}
           {{- if .Values.runtime.efc.worker.imageName }}
           - name: EFC_WORKER_IMAGE_ENV
-            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.efc.worker.imagePrefix .Values.runtime.efc.worker.imageName .Values.runtime.efc.worker.imageTag) }}
+            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.efc.worker.imagePrefix .Values.runtime.efc.worker.imageName .Values.runtime.efc.worker.imageTag . ) }}
           {{- end }}
           {{- if .Values.runtime.efc.fuse.imageName }}
           - name: EFC_FUSE_IMAGE_ENV
-            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.efc.fuse.imagePrefix .Values.runtime.efc.fuse.imageName .Values.runtime.efc.fuse.imageTag) }}
+            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.efc.fuse.imagePrefix .Values.runtime.efc.fuse.imageName .Values.runtime.efc.fuse.imageTag . ) }}
           - name: EFC_SESSMGR_IMAGE_ENV
-            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.efc.fuse.imagePrefix .Values.runtime.efc.fuse.imageName .Values.runtime.efc.fuse.imageTag) }}
+            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.efc.fuse.imagePrefix .Values.runtime.efc.fuse.imageName .Values.runtime.efc.fuse.imageTag . ) }}
           {{- end }}
           - name: HELM_DRIVER
             value: {{ template "fluid.helmDriver" . }}
@@ -101,10 +93,5 @@ spec:
           name: metrics
           protocol: TCP
         resources:
-          limits:
-            cpu: 100m
-            memory: 1536Mi
-          requests:
-            cpu: 100m
-            memory: 200Mi
+          {{- include "fluid.controlplane.resources" .Values.runtime.efc | nindent 10 }}
       terminationGracePeriodSeconds: 10

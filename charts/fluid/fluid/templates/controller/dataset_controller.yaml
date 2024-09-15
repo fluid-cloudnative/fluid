@@ -27,22 +27,14 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: dataset-controller
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: type
-                operator: NotIn
-                values:
-                - virtual-kubelet
+      {{ include "fluid.controlplane.affinity" . | nindent 6}}
       {{- if .Values.dataset.tolerations }}
       tolerations:
 {{ toYaml .Values.dataset.tolerations | indent 6}}
       {{- end }}
       #hostNetwork: true
       containers:
-      - image: {{ include "fluid.controlplane.imageTransform" (list .Values.dataset.controller.imagePrefix .Values.dataset.controller.imageName .Values.dataset.controller.imageTag) }}
+      - image: {{ include "fluid.controlplane.imageTransform" (list .Values.dataset.controller.imagePrefix .Values.dataset.controller.imageName .Values.dataset.controller.imageTag . ) }}
         name: manager
         command: ["dataset-controller", "start"]
         args:
@@ -61,7 +53,7 @@ spec:
           {{- end }}
           {{- if .Values.runtime.alluxio.runtime.imageName }}
           - name: ALLUXIO_RUNTIME_IMAGE_ENV
-            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.alluxio.runtime.imagePrefix .Values.runtime.alluxio.runtime.imageName .Values.runtime.alluxio.runtime.imageTag) }}
+            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.alluxio.runtime.imagePrefix .Values.runtime.alluxio.runtime.imageName .Values.runtime.alluxio.runtime.imageTag . ) }}
           {{- end }}
           {{- if .Values.image.imagePullSecrets }}
           - name: IMAGE_PULL_SECRETS
@@ -84,10 +76,5 @@ spec:
           name: metrics
           protocol: TCP
         resources:
-          limits:
-            cpu: 100m
-            memory: 1536Mi
-          requests:
-            cpu: 100m
-            memory: 200Mi
+          {{- include "fluid.controlplane.resources" .Values.dataset | nindent 10 }}
       terminationGracePeriodSeconds: 10

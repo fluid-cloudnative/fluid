@@ -29,21 +29,13 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: jindoruntime-controller
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: type
-                operator: NotIn
-                values:
-                - virtual-kubelet
+      {{ include "fluid.controlplane.affinity" . | nindent 6}}
       {{- if .Values.runtime.jindo.tolerations }}
       tolerations:
 {{ toYaml .Values.runtime.jindo.tolerations | indent 6 }}
       {{- end }}
       containers:
-      - image: {{ include "fluid.controlplane.imageTransform" (list .Values.runtime.jindo.controller.imagePrefix .Values.runtime.jindo.controller.imageName .Values.runtime.jindo.controller.imageTag) }}
+      - image: {{ include "fluid.controlplane.imageTransform" (list .Values.runtime.jindo.controller.imagePrefix .Values.runtime.jindo.controller.imageName .Values.runtime.jindo.controller.imageTag . ) }}
         name: manager
         command: ["jindoruntime-controller", "start"]
         args:
@@ -65,15 +57,15 @@ spec:
         {{- end }}
         {{- if .Values.runtime.jindo.smartdata.imageName }}
         - name: JINDO_SMARTDATA_IMAGE_ENV
-          value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.jindo.smartdata.imagePrefix .Values.runtime.jindo.smartdata.imageName .Values.runtime.jindo.smartdata.imageTag) }}
+          value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.jindo.smartdata.imagePrefix .Values.runtime.jindo.smartdata.imageName .Values.runtime.jindo.smartdata.imageTag . ) }}
         {{- end }}
         {{- if .Values.runtime.jindo.fuse.imageName }}
         - name: JINDO_FUSE_IMAGE_ENV
-          value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.jindo.fuse.imagePrefix .Values.runtime.jindo.fuse.imageName .Values.runtime.jindo.fuse.imageTag) }}
+          value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.jindo.fuse.imagePrefix .Values.runtime.jindo.fuse.imageName .Values.runtime.jindo.fuse.imageTag . ) }}
         {{- end }}
         {{- if .Values.runtime.jindo.init.imageName }}
         - name: DEFAULT_INIT_IMAGE_ENV
-          value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.jindo.init.imagePrefix .Values.runtime.jindo.init.imageName .Values.runtime.jindo.init.imageTag) }}
+          value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.jindo.init.imagePrefix .Values.runtime.jindo.init.imageName .Values.runtime.jindo.init.imageTag . ) }}
         {{- end }}
         {{- if .Values.runtime.jindo.init.portCheck }}
         - name: INIT_PORT_CHECK_ENABLED
@@ -102,10 +94,5 @@ spec:
             name: metrics
             protocol: TCP
         resources:
-          limits:
-            cpu: 100m
-            memory: 1536Mi
-          requests:
-            cpu: 100m
-            memory: 200Mi
+          {{- include "fluid.controlplane.resources" .Values.runtime.jindo | nindent 10 }}
       terminationGracePeriodSeconds: 10
