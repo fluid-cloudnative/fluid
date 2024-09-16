@@ -21,7 +21,7 @@ spec:
         control-plane: juicefsruntime-controller
       annotations:
       {{ if gt (.Values.runtime.juicefs.replicas | int) 1 -}}
-         controller.runtime.fluid.io/replicas: {{ .Values.runtime.juicefs.replicas | quote }}
+        controller.runtime.fluid.io/replicas: {{ .Values.runtime.juicefs.replicas | quote }}
       {{- end }}
     spec:
       {{- with .Values.image.imagePullSecrets }}
@@ -29,22 +29,14 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: juicefsruntime-controller
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: type
-                operator: NotIn
-                values:
-                - virtual-kubelet
+      {{ include "fluid.controlplane.affinity" . | nindent 6}}
       {{- if .Values.runtime.juicefs.tolerations }}
       tolerations:
 {{ toYaml .Values.runtime.juicefs.tolerations | indent 6 }}
       {{- end }}
       #hostNetwork: true
       containers:
-      - image: {{ include "fluid.controlplane.imageTransform" (list .Values.runtime.juicefs.controller.imagePrefix .Values.runtime.juicefs.controller.imageName .Values.runtime.juicefs.controller.imageTag) }}
+      - image: {{ include "fluid.controlplane.imageTransform" (list .Values.runtime.juicefs.controller.imagePrefix .Values.runtime.juicefs.controller.imageName .Values.runtime.juicefs.controller.imageTag . ) }}
         name: manager
         args:
           - --development=false
@@ -66,11 +58,11 @@ spec:
           {{- end }}
           {{- if .Values.runtime.juicefs.fuse.ceimageName }}
           - name: JUICEFS_CE_IMAGE_ENV
-            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.juicefs.fuse.ceimagePrefix .Values.runtime.juicefs.fuse.ceimageName .Values.runtime.juicefs.fuse.ceimageTag) }}
+            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.juicefs.fuse.ceimagePrefix .Values.runtime.juicefs.fuse.ceimageName .Values.runtime.juicefs.fuse.ceimageTag . ) }}
           {{- end }}
           {{- if .Values.runtime.juicefs.fuse.eeimageName }}
           - name: JUICEFS_EE_IMAGE_ENV
-            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.juicefs.fuse.eeimagePrefix .Values.runtime.juicefs.fuse.eeimageName .Values.runtime.juicefs.fuse.eeimageTag) }}
+            value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.juicefs.fuse.eeimagePrefix .Values.runtime.juicefs.fuse.eeimageName .Values.runtime.juicefs.fuse.eeimageTag . ) }}
           {{- end }}
           {{- if .Values.runtime.mountRoot }}
           - name: MOUNT_ROOT
@@ -91,10 +83,5 @@ spec:
           name: metrics
           protocol: TCP
         resources:
-          limits:
-            cpu: 100m
-            memory: 1536Mi
-          requests:
-            cpu: 100m
-            memory: 200Mi
+          {{- include "fluid.controlplane.resources" .Values.runtime.juicefs | nindent 10 }}
       terminationGracePeriodSeconds: 10

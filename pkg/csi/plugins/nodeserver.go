@@ -200,6 +200,16 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 	}
 	defer ns.locks.Release(targetPath)
 
+	exists, err := mount.PathExists(targetPath)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "NodeUnpublishVolume: failed to check if path %s exists: %v", targetPath, err)
+	}
+
+	if !exists {
+		glog.V(0).Infof("NodeUnpublishVolume: succeed because target path %s doesn't exist", targetPath)
+		return &csi.NodeUnpublishVolumeResponse{}, nil
+	}
+
 	// try to remove if targetPath is a symlink
 	symlinkRemove, err := utils.RemoveSymlink(targetPath)
 	if err != nil {
