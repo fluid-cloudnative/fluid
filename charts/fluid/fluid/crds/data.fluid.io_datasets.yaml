@@ -80,6 +80,9 @@ spec:
                 items:
                   type: string
                 type: array
+              allowEmptyMounts:
+                description: AllowEmptyMounts indicates whether Mounts can be empty
+                type: boolean
               dataRestoreLocation:
                 description: DataRestoreLocation is the location to load data of dataset  been
                   backuped
@@ -159,7 +162,6 @@ spec:
                   required:
                   - mountPoint
                   type: object
-                minItems: 1
                 type: array
               nodeAffinity:
                 description: |-
@@ -378,6 +380,11 @@ spec:
                   type: object
                 type: array
             type: object
+            x-kubernetes-validations:
+            - message: Mounts must have at least one item unless AllowEmptyMounts
+                is true
+              rule: self.allowEmptyMounts == true || (has(self.mounts) && size(self.mounts)
+                >= 1)
           status:
             description: DatasetStatus defines the observed state of Dataset
             properties:
