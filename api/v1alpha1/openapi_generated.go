@@ -93,6 +93,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.MetadataSyncPolicy":         schema_fluid_cloudnative_fluid_api_v1alpha1_MetadataSyncPolicy(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount":                      schema_fluid_cloudnative_fluid_api_v1alpha1_Mount(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.OSAdvise":                   schema_fluid_cloudnative_fluid_api_v1alpha1_OSAdvise(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ObjectRef":                  schema_fluid_cloudnative_fluid_api_v1alpha1_ObjectRef(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationRef":               schema_fluid_cloudnative_fluid_api_v1alpha1_OperationRef(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationStatus":            schema_fluid_cloudnative_fluid_api_v1alpha1_OperationStatus(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata":                schema_fluid_cloudnative_fluid_api_v1alpha1_PodMetadata(ref),
@@ -156,6 +157,12 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_AffinityStrategy(ref common.Ref
 			SchemaProps: spec.SchemaProps{
 				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
+					"dependOn": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Specifies the dependent preceding operation in a workflow. If not set, use the operation referred to by RunAfter.",
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.ObjectRef"),
+						},
+					},
 					"policy": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Policy one of: \"\", \"Require\", \"Prefer\"",
@@ -193,7 +200,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_AffinityStrategy(ref common.Ref
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.Prefer", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Require"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.ObjectRef", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Prefer", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Require"},
 	}
 }
 
@@ -4864,6 +4871,49 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_OSAdvise(ref common.ReferenceCa
 						},
 					},
 				},
+			},
+		},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_ObjectRef(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "API version of the referent operation",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind specifies the type of the referent operation",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name specifies the name of the referent operation",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"namespace": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Namespace specifies the namespace of the referent operation.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"kind", "name"},
 			},
 		},
 	}
