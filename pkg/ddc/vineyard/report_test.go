@@ -25,7 +25,7 @@ func TestParseReportSummary(t *testing.T) {
 		summary []string
 		want    string
 	}{
-		"test ParseReportSummary case 1": {
+		"test parseReportSummary case 1": {
 			summary: mockVineyardReportSummaryForParseReport(),
 			want:    utils.BytesSize(5555),
 		},

@@ -88,7 +88,7 @@ data:
             echo -e "--- disable dryrun"
         fi
     
-        if [[ $enableForceload == 'true' ]]; then
+        if [[ $enableForceLoad == 'true' ]]; then
             echo -e "--- enable forceload"
             cmd="$cmd -f"
             echo -e "now cmd $cmd"
@@ -96,7 +96,7 @@ data:
             echo -e "--- disable forceload"
         fi
 
-        if [[ $enbaleCacheListLocation == 'true' ]]; then
+        if [[ $enableCacheListLocation == 'true' ]]; then
             if [[ -e "ossutil64" ]]; then
                 echo "Found ossutil64 executable file under /"
             else
@@ -130,7 +130,7 @@ data:
         atomicCache="$ENABLE_ATOMIC_CACHE"
         cacheListReplica=$CACHE_LIST_REPLICA
         cacheListThread=$CACHE_LIST_THREAD
-        enbaleCacheListLocation=$Enable_CACHE_LIST_LOCATION
+        enableCacheListLocation=$Enable_CACHE_LIST_LOCATION
         cacheListAccessKeyId=$CACHE_LIST_ACCESSKEYID
         cacheListAccessKeySecret=$CACHE_LIST_ACCESSKEYSECRET
         cacheListEndpoint=$CACHE_LIST_ENDPOINT
@@ -138,12 +138,12 @@ data:
         cacheFilter=$CACHE_FILTER
         enableFilter=false
         enableDryrun=$DRY_RUN_ENABLE
-        enableForceload=$FORCE_LOAD_ENABLE
-        #judge whether to use locaion list
+        enableForceLoad=$FORCE_LOAD_ENABLE
+        #judge whether to use location list
         if [[ -z "$cacheListAccessKeyId" ]] || [[ -z "$cacheListAccessKeySecret" ]] || [[ -z "$cacheListEndpoint" ]] || [[ -z "$cacheListUrl" ]]; then
-            enbaleCacheListLocation=false
+            enableCacheListLocation=false
         else
-            enbaleCacheListLocation=true
+            enableCacheListLocation=true
         fi
         if [[ -z "$cacheListReplica" ]]; then
             cacheListReplica=1
@@ -161,7 +161,7 @@ data:
             enableFilter=true
             echo -e "enableFilter $enableFilter"
         fi
-        dafault="jindo://"
+        default="jindo://"
         paths="$DATA_PATH"
         paths=(${paths//:/ })
         replicas="$PATH_REPLICAS"
@@ -170,7 +170,7 @@ data:
             local path="${paths[i]}"
             local replica="${replicas[i]}"
             echo -e "distributedLoad on $path starts"
-            distributedLoad ${paths[i]} ${replicas[i]} ${dafault}
+            distributedLoad ${paths[i]} ${replicas[i]} ${default}
             #echo -e "distributedLoad on $path ends"
         done
     }

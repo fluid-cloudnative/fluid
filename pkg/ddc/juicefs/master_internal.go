@@ -40,7 +40,7 @@ func (j *JuiceFSEngine) setupMasterInternal() (err error) {
 		return
 	}
 
-	valuefileName, err := j.generateJuicefsValueFile(runtime)
+	valueFileName, err := j.generateJuicefsValueFile(runtime)
 	if err != nil {
 		return
 	}
@@ -55,7 +55,7 @@ func (j *JuiceFSEngine) setupMasterInternal() (err error) {
 		return
 	}
 
-	return helm.InstallRelease(j.name, j.namespace, valuefileName, chartName)
+	return helm.InstallRelease(j.name, j.namespace, valueFileName, chartName)
 }
 
 // generate juicefs struct

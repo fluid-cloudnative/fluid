@@ -40,7 +40,7 @@ func (e *JindoCacheEngine) PrepareUFS() (err error) {
 	if err != nil {
 		return
 	}
-	e.Log.Info("shouldMountUFS", "should", shouldMountUfs)
+	e.Log.Info("ShouldMountUFS", "should", shouldMountUfs)
 
 	if shouldMountUfs {
 		err = e.mountUFS()
@@ -48,14 +48,14 @@ func (e *JindoCacheEngine) PrepareUFS() (err error) {
 			return
 		}
 	}
-	e.Log.Info("mountUFS")
 
 	// 2. Setup cacheset
 	shouldRefresh, err := e.ShouldRefreshCacheSet()
 	if err != nil {
 		return
 	}
-	e.Log.Info("shouldMountUFS", "should", shouldMountUfs)
+	e.Log.Info("ShouldRefresh", "should", shouldRefresh)
+
 	if shouldRefresh {
 		err = e.RefreshCacheSet()
 		if err != nil {
@@ -64,6 +64,7 @@ func (e *JindoCacheEngine) PrepareUFS() (err error) {
 	}
 
 	// 3. SyncMetadata
+	e.Log.Info("SyncMetadata")
 	err = e.SyncMetadata()
 	if err != nil {
 		// just report this error and ignore it because SyncMetadata isn't on the critical path of Setup

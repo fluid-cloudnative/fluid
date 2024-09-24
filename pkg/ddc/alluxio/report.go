@@ -33,7 +33,7 @@ func (e *AlluxioEngine) GetReportSummary() (summary string, err error) {
 }
 
 // parse alluxio report summary to cacheStates
-func (e AlluxioEngine) ParseReportSummary(s string) cacheStates {
+func (e AlluxioEngine) parseReportSummary(s string) cacheStates {
 
 	var states cacheStates
 

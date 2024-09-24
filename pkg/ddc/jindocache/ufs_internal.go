@@ -61,7 +61,7 @@ func (e *JindoCacheEngine) shouldMountUFS() (should bool, err error) {
 	return should, err
 }
 
-// mountUFS() mount all UFSs to Alluxio according to mount points in `dataset.Spec`. If a mount point is Fluid-native, mountUFS() will skip it.
+// mountUFS() mount all UFSs to JindoCache according to mount points in `dataset.Spec`. If a mount point is Fluid-native, mountUFS() will skip it.
 func (e *JindoCacheEngine) mountUFS() (err error) {
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
@@ -69,14 +69,14 @@ func (e *JindoCacheEngine) mountUFS() (err error) {
 	}
 
 	podName, containerName := e.getMasterPodInfo()
-	fileUitls := operations.NewJindoFileUtils(podName, containerName, e.namespace, e.Log)
+	fileUtils := operations.NewJindoFileUtils(podName, containerName, e.namespace, e.Log)
 
-	ready := fileUitls.Ready()
+	ready := fileUtils.Ready()
 	if !ready {
 		return fmt.Errorf("the UFS is not ready")
 	}
 
-	// Iterate all the mount points, do mount if the mount point is not Fluid-native(e.g. Hostpath or PVC)
+	// Iterate all the mount points, do mount if the mount point is not Fluid-native(e.g. HostPath or PVC)
 	for _, mount := range dataset.Spec.Mounts {
 
 		// first to check the path isMounted
@@ -87,7 +87,7 @@ func (e *JindoCacheEngine) mountUFS() (err error) {
 		}
 		if !mounted {
 			mountPathInJindo := utils.UFSPathBuilder{}.GenUFSPathInUnifiedNamespace(mount)
-			err = fileUitls.Mount(mountPathInJindo, mount.MountPoint)
+			err = fileUtils.Mount(mountPathInJindo, mount.MountPoint)
 			if err != nil {
 				return err
 			}
@@ -99,15 +99,15 @@ func (e *JindoCacheEngine) mountUFS() (err error) {
 
 func (e *JindoCacheEngine) ShouldRefreshCacheSet() (shouldRefresh bool, err error) {
 	podName, containerName := e.getMasterPodInfo()
-	fileUitls := operations.NewJindoFileUtils(podName, containerName, e.namespace, e.Log)
+	fileUtils := operations.NewJindoFileUtils(podName, containerName, e.namespace, e.Log)
 
-	ready := fileUitls.Ready()
+	ready := fileUtils.Ready()
 	if !ready {
 		shouldRefresh = false
 		return shouldRefresh, fmt.Errorf("the UFS is not ready")
 	}
 
-	refreshed, err := fileUitls.IsRefreshed()
+	refreshed, err := fileUtils.IsRefreshed()
 	if err != nil {
 		return
 	}

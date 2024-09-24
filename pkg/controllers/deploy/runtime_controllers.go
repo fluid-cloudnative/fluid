@@ -80,7 +80,7 @@ func filterOutDisabledRuntimes(checks map[string]CheckFunc) (filteredChecks map[
 	return filteredChecks
 }
 
-func ScaleoutRuntimeContollerOnDemand(c client.Client, datasetKey types.NamespacedName, log logr.Logger) (
+func ScaleoutRuntimeControllerOnDemand(c client.Client, datasetKey types.NamespacedName, log logr.Logger) (
 	controllerName string, scaleout bool, err error) {
 
 	for myControllerName, checkRuntime := range precheckFuncs {

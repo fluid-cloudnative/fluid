@@ -39,7 +39,7 @@ func (e *AlluxioEngine) setupMasterInternal() (err error) {
 		return
 	}
 
-	valuefileName, err := e.generateAlluxioValueFile(runtime)
+	valueFileName, err := e.generateAlluxioValueFile(runtime)
 	if err != nil {
 		return
 	}
@@ -54,7 +54,7 @@ func (e *AlluxioEngine) setupMasterInternal() (err error) {
 		return
 	}
 
-	return helm.InstallRelease(e.name, e.namespace, valuefileName, chartName)
+	return helm.InstallRelease(e.name, e.namespace, valueFileName, chartName)
 }
 
 // generate alluxio struct

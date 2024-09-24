@@ -369,16 +369,16 @@ func TestScaleoutRuntimeContollerOnDemand(t *testing.T) {
 	fakeClient := fake.NewFakeClientWithScheme(s, objs...)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotControllerName, gotScaleout, err := ScaleoutRuntimeContollerOnDemand(fakeClient, tt.args.key, tt.args.log)
+			gotControllerName, gotScaleout, err := ScaleoutRuntimeControllerOnDemand(fakeClient, tt.args.key, tt.args.log)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("ScaleoutRuntimeContollerOnDemand() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ScaleoutRuntimeControllerOnDemand() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if gotControllerName != tt.wantControllerName {
-				t.Errorf("ScaleoutRuntimeContollerOnDemand() gotControllerName = %v, want %v", gotControllerName, tt.wantControllerName)
+				t.Errorf("ScaleoutRuntimeControllerOnDemand() gotControllerName = %v, want %v", gotControllerName, tt.wantControllerName)
 			}
 			if gotScaleout != tt.wantScaleout {
-				t.Errorf("ScaleoutRuntimeContollerOnDemand() gotScaleout = %v, want %v", gotScaleout, tt.wantScaleout)
+				t.Errorf("ScaleoutRuntimeControllerOnDemand() gotScaleout = %v, want %v", gotScaleout, tt.wantScaleout)
 			}
 
 			if tt.wantControllerName != "" {

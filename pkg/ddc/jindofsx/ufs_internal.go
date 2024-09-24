@@ -61,7 +61,7 @@ func (e *JindoFSxEngine) shouldMountUFS() (should bool, err error) {
 	return should, err
 }
 
-// mountUFS() mount all UFSs to Alluxio according to mount points in `dataset.Spec`. If a mount point is Fluid-native, mountUFS() will skip it.
+// mountUFS() mount all UFSs to JindoFsx according to mount points in `dataset.Spec`. If a mount point is Fluid-native, mountUFS() will skip it.
 func (e *JindoFSxEngine) mountUFS() (err error) {
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
@@ -69,9 +69,9 @@ func (e *JindoFSxEngine) mountUFS() (err error) {
 	}
 
 	podName, containerName := e.getMasterPodInfo()
-	fileUitls := operations.NewJindoFileUtils(podName, containerName, e.namespace, e.Log)
+	fileUtils := operations.NewJindoFileUtils(podName, containerName, e.namespace, e.Log)
 
-	ready := fileUitls.Ready()
+	ready := fileUtils.Ready()
 	if !ready {
 		return fmt.Errorf("the UFS is not ready")
 	}
@@ -87,7 +87,7 @@ func (e *JindoFSxEngine) mountUFS() (err error) {
 		}
 		if !mounted {
 			mountPathInJindo := utils.UFSPathBuilder{}.GenUFSPathInUnifiedNamespace(mount)
-			err = fileUitls.Mount(mountPathInJindo, mount.MountPoint)
+			err = fileUtils.Mount(mountPathInJindo, mount.MountPoint)
 			if err != nil {
 				return err
 			}

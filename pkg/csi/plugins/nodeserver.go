@@ -253,7 +253,7 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 		glog.Errorf("NodeUnpublishVolume: failed when cleanupMountPoint on path %s: %v", targetPath, err)
 		return nil, status.Errorf(codes.Internal, "NodeUnpublishVolume: failed when cleanupMountPoint on path %s: %v", targetPath, err)
 	} else {
-		glog.V(4).Infof("NodeUnpublishVolume: succeed in umounting  %s", targetPath)
+		glog.V(4).Infof("NodeUnpublishVolume: succeed in umounting %s", targetPath)
 	}
 
 	return &csi.NodeUnpublishVolumeResponse{}, nil
@@ -399,7 +399,7 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 		return nil, errors.Wrapf(err, "NodeStageVolume: error when patching labels on node %s", ns.nodeId)
 	}
 
-	glog.Infof("NodeStageVolume: NodeStage succeded with VolumeId: %s, and added NodeLabel: %s", volumeId, fuseLabelKey)
+	glog.Infof("NodeStageVolume: NodeStage succeeded with VolumeId: %s, and added NodeLabel: %s", volumeId, fuseLabelKey)
 	return &csi.NodeStageVolumeResponse{}, nil
 }
 
@@ -522,9 +522,9 @@ func checkMountInUse(volumeName string) (bool, error) {
 	glog.Infoln(string(stdoutStderr))
 
 	if err != nil {
-		if exiterr, ok := err.(*exec.ExitError); ok {
-			if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
-				exitStatus := status.ExitStatus()
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			if waitStatus, ok := exitErr.Sys().(syscall.WaitStatus); ok {
+				exitStatus := waitStatus.ExitStatus()
 				if exitStatus == 1 {
 					// grep not found any mount entry
 					err = nil
@@ -542,7 +542,7 @@ func checkMountInUse(volumeName string) (bool, error) {
 	return inUse, err
 }
 
-// cleanUpBrokenMountPoint stats the given mountPoint and umounts it if it's broken mount point(i.e. Stat with errNo 107[Trasport Endpoint is not Connected]).
+// cleanUpBrokenMountPoint stats the given mountPoint and umounts it if it's broken mount point(i.e. Stat with errNo 107[Transport Endpoint is not Connected]).
 func cleanUpBrokenMountPoint(mountPoint string) error {
 	_, err := os.Stat(mountPoint)
 	if err != nil {
@@ -609,7 +609,7 @@ func (ns *nodeServer) prepareSessMgr(workDir string) error {
 	return nil
 }
 
-// useSymlink for nodePublishVolume if enviroment varible has been set or pv has attribute
+// useSymlink for nodePublishVolume if environment variable has been set or pv has attribute
 func useSymlink(req *csi.NodePublishVolumeRequest) bool {
 	return os.Getenv("NODEPUBLISH_METHOD") == common.NodePublishMethodSymlink || req.GetVolumeContext()[common.NodePublishMethod] == common.NodePublishMethodSymlink
 }

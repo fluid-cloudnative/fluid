@@ -90,7 +90,7 @@ func (e *AlluxioEngine) Shutdown() (err error) {
 	return e.cleanAll()
 }
 
-// destroyMaster Destroies the master
+// destroyMaster Destroys the master
 func (e *AlluxioEngine) destroyMaster() (err error) {
 	var found bool
 	found, err = helm.CheckRelease(e.name, e.namespace)
@@ -283,7 +283,7 @@ func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers in
 		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 			node, err := kubeclient.GetNode(e.Client, nodeName)
 			if err != nil {
-				e.Log.Error(err, "Fail to get node", "nodename", nodeName)
+				e.Log.Error(err, "Fail to get node", "nodeName", nodeName)
 				return err
 			}
 

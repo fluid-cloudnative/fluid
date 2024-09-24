@@ -126,7 +126,7 @@ func (e *AlluxioEngine) ShouldSetupMaster() (should bool, err error) {
 
 // SetupMaster setups the master and updates the status
 // It will print the information in the Debug window according to the Master status
-// It return any cache error encountered
+// It returns any cache error encountered
 func (e *AlluxioEngine) SetupMaster() (err error) {
 	masterName := e.getMasterName()
 

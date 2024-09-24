@@ -45,7 +45,7 @@ func (e *AlluxioEngine) queryCacheStatus() (states cacheStates, err error) {
 	}
 
 	// parse alluxio fsadmin report summary
-	states = e.ParseReportSummary(summary)
+	states = e.parseReportSummary(summary)
 
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
@@ -80,7 +80,7 @@ func (e AlluxioEngine) patchDatasetStatus(dataset *v1alpha1.Dataset, states *cac
 
 }
 
-// getCacheHitStates gets cache hit related info by parsing Alluxio metrics
+// GetCacheHitStates gets cache hit related info by parsing Alluxio metrics
 func (e *AlluxioEngine) GetCacheHitStates() (cacheHitStates cacheHitStates) {
 	// get cache hit states every 1 minute(cacheHitQueryIntervalMin * 20s)
 	cacheHitStates.timestamp = time.Now()
@@ -197,12 +197,12 @@ func (e *AlluxioEngine) invokeCleanCache(path string) (err error) {
 
 	// 2. run clean action
 	podName, containerName := e.getMasterPodInfo()
-	fileUitls := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
+	fileUtils := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
 	cleanCacheGracePeriodSeconds, err := e.getCleanCacheGracePeriodSeconds()
 	if err != nil {
 		return err
 	}
-	return fileUitls.CleanCache(path, cleanCacheGracePeriodSeconds)
+	return fileUtils.CleanCache(path, cleanCacheGracePeriodSeconds)
 
 }
 

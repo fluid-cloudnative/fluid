@@ -95,7 +95,7 @@ func GetPVCStorageCapacityOfDataset(client client.Client, name, namespace string
 
 	storageCapacity, err = resource.ParseQuantity(size)
 	if err != nil {
-		log.Info("failed to parse storage capacity '%s', using default '%s': %v\n", size, DefaultStorageCapacity, err)
+		log.Info(fmt.Sprintf("failed to parse storage capacity '%s', using default '%s': %v\n", size, DefaultStorageCapacity, err))
 		return resource.MustParse(DefaultStorageCapacity), nil
 	}
 	return
