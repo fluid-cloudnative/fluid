@@ -78,8 +78,8 @@ func (r *mockDataloadOperationReconciler) GetParallelTaskNumber() int32 {
 	return 1
 }
 
-// GetTargetDataset implements OperationInterface.
-func (m mockDataloadOperationReconciler) GetTargetDataset() (*datav1alpha1.Dataset, error) {
+// GetTargetDatasetNamespacedName implements OperationInterface.
+func (m mockDataloadOperationReconciler) GetTargetDatasetNamespacedName() (*datav1alpha1.Dataset, error) {
 	panic("unimplemented")
 }
 

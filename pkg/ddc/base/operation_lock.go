@@ -89,7 +89,7 @@ func ReleaseTargetDataset(ctx cruntime.ReconcileRequestContext, operation dataop
 	operationTypeName := string(operation.GetOperationType())
 
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		dataset, err := operation.GetTargetDataset()
+		dataset, err := operation.GetTargetDatasetNamespacedName()
 		if err != nil {
 			if utils.IgnoreNotFound(err) == nil {
 				statusError := err.(*apierrors.StatusError)

@@ -56,7 +56,7 @@ func (r *dataLoadOperation) HasPrecedingOperation() bool {
 	return r.dataLoad.Spec.RunAfter != nil
 }
 
-func (r *dataLoadOperation) GetTargetDataset() (*datav1alpha1.Dataset, error) {
+func (r *dataLoadOperation) GetTargetDatasetNamespacedName() (*datav1alpha1.Dataset, error) {
 	return utils.GetDataset(r.Client, r.dataLoad.Spec.Dataset.Name, r.dataLoad.Spec.Dataset.Namespace)
 }
 

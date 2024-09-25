@@ -56,7 +56,7 @@ func (r *dataMigrateOperation) HasPrecedingOperation() bool {
 	return r.dataMigrate.Spec.RunAfter != nil
 }
 
-func (r *dataMigrateOperation) GetTargetDataset() (*datav1alpha1.Dataset, error) {
+func (r *dataMigrateOperation) GetTargetDatasetNamespacedName() (*datav1alpha1.Dataset, error) {
 	return utils.GetTargetDatasetOfMigrate(r.Client, r.dataMigrate)
 }
 
