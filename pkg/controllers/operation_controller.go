@@ -130,7 +130,7 @@ func (o *OperationReconciler) ReconcileInternal(ctx dataoperation.ReconcileReque
 	}
 
 	// 2. set target dataset
-	targetDataset, err := implement.GetTargetDatasetNamespacedName()
+	targetDataset, err := implement.GetTargetDataset()
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
 			statusError := err.(*apierrors.StatusError)

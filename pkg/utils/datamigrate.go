@@ -53,7 +53,7 @@ func GetDataMigrateJobName(releaseName string) string {
 }
 
 func GetTargetDatasetNamespacedNameOfMigrate(client client.Client, dataMigrate *datav1alpha1.DataMigrate) (namespacedName types.NamespacedName, err error) {
-	if (dataMigrate.Spec.To.DataSet == nil || dataMigrate.Spec.To.DataSet.Name == "") && (dataMigrate.Spec.From.DataSet == nil || dataMigrate.Spec.From.Dataset.Name == "") {
+	if (dataMigrate.Spec.To.DataSet == nil || dataMigrate.Spec.To.DataSet.Name == "") && (dataMigrate.Spec.From.DataSet == nil || dataMigrate.Spec.From.DataSet.Name == "") {
 		err = fmt.Errorf("invalid spec: either %v or %v must be set", field.NewPath("spec").Child("to").Child("dataset"), field.NewPath("spec").Child("from").Child("dataset"))
 		return
 	}
@@ -90,7 +90,7 @@ func GetTargetDatasetNamespacedNameOfMigrate(client client.Client, dataMigrate *
 
 			dataset, innerErr := GetDataset(client, toCheck.Name, namespace)
 			if innerErr != nil {
-				err = errors.Wrapf(innerErr, "failed to get dataset \"%s/%s\" from DataMigrate \"%s/%s\"'s spec (%v)", namespace, toCheck.Name, dataMigrate.Namespace, dataMigrate.Name)
+				err = errors.Wrapf(innerErr, "failed to get dataset \"%s/%s\" from DataMigrate \"%s/%s\"'s spec", namespace, toCheck.Name, dataMigrate.Namespace, dataMigrate.Name)
 				return
 			}
 

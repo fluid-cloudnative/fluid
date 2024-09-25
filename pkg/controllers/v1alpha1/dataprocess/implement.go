@@ -53,7 +53,13 @@ func (r *dataProcessOperation) HasPrecedingOperation() bool {
 	return r.dataProcess.Spec.RunAfter != nil
 }
 
-func (r *dataProcessOperation) GetTargetDatasetNamespacedName() (*datav1alpha1.Dataset, error) {
+func (r *dataProcessOperation) GetPossibleTargetDatasetNamespacedNames() []types.NamespacedName {
+	return []types.NamespacedName{
+		{Namespace: r.dataProcess.Spec.Dataset.Namespace, Name: r.dataProcess.Spec.Dataset.Name},
+	}
+}
+
+func (r *dataProcessOperation) GetTargetDataset() (*datav1alpha1.Dataset, error) {
 	dataProcess := r.dataProcess
 
 	return utils.GetDataset(r.Client, dataProcess.Spec.Dataset.Name, dataProcess.Spec.Dataset.Namespace)
