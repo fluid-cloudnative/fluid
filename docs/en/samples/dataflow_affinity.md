@@ -65,7 +65,7 @@ metadata:
   name: loadA
   annotations:
     # Built in tags that do not require explicit settings and support custom label names.
-    fluid.io/affinity.labels: "kubernetes.io/hostname,topology.kubernetes.io/zone,topology.kubernetes.io/region"
+    data-operation.fluid.io/affinity.labels: "kubernetes.io/hostname,topology.kubernetes.io/zone,topology.kubernetes.io/region"
 spec:
   dataset:
     name: phy
@@ -98,7 +98,7 @@ When DataLoad B is running,  you will find the the affinity of its pod including
 
 The DataFlow consists of DataLoad A and DataLoad B. DataLoad A requires running on GPU nodes through customized label `node.kubernetes.io/instance-type`, while DataLoad B requires running on nodes with the same label value as DataLoad A (GPU nodes).
 
-- If DataLoad C (runAfter B) requires the affinity of this label, DataLoad B also needs to set the annotation `fluid.io/affinity.labels: node.kubernetes.io/instance-type`
+- If DataLoad C (runAfter B) requires the affinity of this label, DataLoad B also needs to set the annotation `data-operation.fluid.io/affinity.labels: node.kubernetes.io/instance-type`
 
 ```yaml
 apiVersion: data.fluid.io/v1alpha1
@@ -130,7 +130,7 @@ metadata:
   name: loadA
   annotations:
     # The customized label name must be defined here as a prerequisite for subsequent Data Operations to use it to set affinity.
-    fluid.io/affinity.labels: "node.kubernetes.io/instance-type"
+    data-operation.fluid.io/affinity.labels: "node.kubernetes.io/instance-type"
 spec:
   dataset:
     name: phy
@@ -164,3 +164,65 @@ spec:
 ```
 
 When running loadB and checking the affinity of its Pod, it can be found that it has been injected with a required affinity value of GPU for `node.kubernetes.io/instance-type`.
+
+
+
+### Demo 3：Dependent on any preceding operations
+
+Fluid supports the affinity specification of data operations in DataFlow, which depends on any preceding operations. Here is an example, step 4 operation uses step 2 operation affinity:
+```mermaid
+graph BT
+	B(（2）DataProcess: Model conversion（GPU node）) --RunAfter--> A(（1）DataProcess: Download Model)
+	C(（3）DataLoad: Warm up Data) --RunAfter--> B
+	D(（4）DataProcess: Asynchronous start model inference service （GPU node）) --RunAfter-->C
+```
+
+The example configuration information for Yaml is as follows:
+
+```yaml
+apiVersion: data.fluid.io/v1alpha1
+kind: DataProcess
+metadata:
+  name: step2-trtllm-convert
+  annotations:
+      # exposed affinity which will be filled in OperationStatus.
+      data-operation.fluid.io/affinity.labels: "node.kubernetes.io/instance-type"
+spec:
+  runAfter:
+    kind: DataProcess
+    name: step1-download-model
+    namespace: default
+  # ... 
+---
+apiVersion: data.fluid.io/v1alpha1
+kind: DataLoad
+metadata:
+  name: step3-warmup-cache
+spec:
+  runAfter:
+    kind: DataProcess
+    name: step2-trtllm-convert
+    namespace: default
+  # ... 
+---
+apiVersion: data.fluid.io/v1alpha1
+kind: DataProcess
+metadata:
+  name: step4-infer-server
+spec:
+  runAfter:
+    kind: DataLoad
+    name: step3-warmup-cache
+    namespace: default
+    affinityStrategy:
+      # get affinity from which data operation
+      dependOn:
+        kind: DataProcess
+        name: step2-trtllm-convert
+        namespace: default
+      policy: Require
+      # Require to run on a node with the same label value as the dependent operation
+      requires: 
+      - name: node.kubernetes.io/instance-type
+```
+

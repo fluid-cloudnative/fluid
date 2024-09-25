@@ -55,7 +55,7 @@ const (
 	AnnotationDataFlowAffinityPrefix = "dataflow-affinity.fluid.io."
 
 	// AnnotationDataFlowAffinityLabelsName is an annotation key name for exposed affinity labels for an operation in a dataflow.
-	AnnotationDataFlowAffinityLabelsName = LabelAnnotationPrefix + "affinity.labels"
+	AnnotationDataFlowAffinityLabelsName = "data-operation.fluid.io/affinity.labels"
 
 	// LabelAnnotationMountingDatasets is a label/annotation key indicating which datasets are currently being used by a pod.
 	LabelAnnotationDatasetsInUse = LabelAnnotationPrefix + "datasets-in-use"
