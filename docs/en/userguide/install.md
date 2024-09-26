@@ -196,3 +196,22 @@ helm install fluid --set csi.config.hostNetwork=true fluid/fluid
 # upgrade
 helm upgrade fluid --set csi.config.hostNetwork=true fluid/fluid
 ```
+
+5. Under the default configuration, Fluid does not set `spec.resources` for the installed Controller Pods. If you are deploying Fluid in a production environment, it is recommended to configure `spec.resources` for each Controller Pod based on your . For how to configure for different Controller Pods, you can refer to the examples in the [`values.yaml`](https://github.com/fluid-cloudnative/fluid/blob/master/charts/fluid/fluid/values.yaml) file. For instance, if you'd like to modify the resource requests and limits for the Dataset Controller Pod, you should first define a custom values file (e.g., my-resource-file.yaml):
+
+```yaml
+dataset:
+  resources:
+    requests:
+      cpu: 500m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+```
+
+Override the default resources with the following command:
+
+```shell
+helm upgrade fluid --install -f my-resource-file.yaml fluid/fluid
+```
