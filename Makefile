@@ -41,7 +41,6 @@ THINRUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/thinruntime-controller
 EFCRUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/efcruntime-controller
 VINEYARDRUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/vineyardruntime-controller
 CSI_IMG ?= ${IMG_REPO}/fluid-csi
-LOADER_IMG ?= ${IMG_REPO}/fluid-dataloader
 INIT_USERS_IMG ?= ${IMG_REPO}/init-users
 WEBHOOK_IMG ?= ${IMG_REPO}/fluid-webhook
 CRD_UPGRADER_IMG ?= ${IMG_REPO}/fluid-crd-upgrader
@@ -104,7 +103,6 @@ DOCKER_BUILD += docker-build-efcruntime-controller
 DOCKER_BUILD += docker-build-vineyardruntime-controller
 DOCKER_BUILD += docker-build-init-users
 DOCKER_BUILD += docker-build-crd-upgrader
-DOCKER_BUILD += docker-build-loader
 
 # Push docker images
 DOCKER_PUSH := docker-push-dataset-controller
@@ -262,9 +260,6 @@ docker-build-webhook:
 docker-build-crd-upgrader:
 	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} . -f ${CRD_UPGRADER_DOCKERFILE} -t ${CRD_UPGRADER_IMG}:${GIT_VERSION}
 
-docker-build-loader:
-	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} . -f ${LOADER_DOCKERFILE} -t ${LOADER_IMG}:${GIT_VERSION}
-
 # Push the docker image
 docker-push-dataset-controller: docker-build-dataset-controller
 	docker push ${DATASET_CONTROLLER_IMG}:${GIT_VERSION}
@@ -295,9 +290,6 @@ docker-push-vineyardruntime-controller: docker-build-vineyardruntime-controller
 
 docker-push-csi: docker-build-csi
 	docker push ${CSI_IMG}:${GIT_VERSION}
-
-docker-push-loader: docker-build-loader
-	docker push ${LOADER_IMG}:${GIT_VERSION}
 
 docker-push-init-users: docker-build-init-users
 	docker push ${INIT_USERS_IMG}:${VERSION}
