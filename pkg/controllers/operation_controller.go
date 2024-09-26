@@ -93,8 +93,8 @@ func (o *OperationReconciler) ReconcileDeletion(ctx dataoperation.ReconcileReque
 	}
 
 	// 3. delete engine
-	// For some data operations(e.g. DataMigrate), we cannot determine which its target dataset is because the dataset may already be deleted (cascading deletion).
-	// To handle such case, get all possible target dataset and delete the corresponding engines.
+	// For some data operations(e.g. DataMigrate), we cannot determine its target dataset because the dataset may already be deleted (cascading deletion).
+	// To handle such case, get all possible namespaced names and delete the corresponding engines.
 	namespacedNames := implement.GetPossibleTargetDatasetNamespacedNames()
 	for _, namespacedName := range namespacedNames {
 		o.RemoveEngine(namespacedName)
