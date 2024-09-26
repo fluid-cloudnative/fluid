@@ -213,17 +213,34 @@ func (e *JindoCacheEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, ru
 				e.Log.V(1).Info("The resource requirement of fuse is the same, skip")
 			}
 
+			metricsEnabled, exists := fusesToUpdate.Spec.Template.ObjectMeta.Annotations["prometheus.fuse.fluid.io/scrape"]
+			if exists && metricsEnabled != "true" {
+				e.Log.V(1).Info("Found user-defined annotation prometheus.fuse.fluid.io/scrape != true, skip syncing.")
+			} else {
+				if !exists {
+					if runtime.Spec.Fuse.Metrics.ScrapeTarget == datav1alpha1.ScrapeTargetAll || runtime.Spec.Fuse.Metrics.ScrapeTarget == datav1alpha1.ScrapeTargetMountPodOnly {
+						fusesToUpdate.Spec.Template.ObjectMeta.Annotations["prometheus.fuse.fluid.io/scrape"] = "true"
+						changed = true
+					}
+				} else if metricsEnabled == "true" {
+					if runtime.Spec.Fuse.Metrics.ScrapeTarget == datav1alpha1.ScrapeTargetNone || runtime.Spec.Fuse.Metrics.ScrapeTarget == datav1alpha1.ScrapeTargetSidecarOnly {
+						delete(fusesToUpdate.Spec.Template.ObjectMeta.Annotations, "prometheus.fuse.fluid.io/scrape")
+						changed = true
+					}
+				}
+			}
+
 			if changed {
 				if reflect.DeepEqual(fuses, fusesToUpdate) {
 					changed = false
 					e.Log.V(1).Info("The resource requirement of fuse is not changed, skip")
 					return nil
 				}
-				e.Log.Info("The resource requirement of fuse is updated")
 				err = e.Client.Update(context.TODO(), fusesToUpdate)
 				if err != nil {
 					e.Log.Error(err, "Failed to update the sts spec")
 				}
+				e.Log.Info("The resource requirement of fuse is updated")
 			} else {
 				e.Log.V(1).Info("The resource requirement of fuse is not set, skip")
 			}
