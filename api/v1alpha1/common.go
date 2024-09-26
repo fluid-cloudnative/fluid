@@ -308,3 +308,17 @@ type WaitingStatus struct {
 	// OperationComplete indicates if the preceding operation is complete
 	OperationComplete *bool `json:"operationComplete,omitempty"`
 }
+
+type ScrapeTarget string
+
+const (
+	ScrapeTargetNone         ScrapeTarget = ""
+	ScrapeTargetAll          ScrapeTarget = "All"
+	ScrapeTargetMountPodOnly ScrapeTarget = "MountPodOnly"
+	ScrapeTargetSidecarOnly  ScrapeTarget = "SidecarOnly"
+)
+
+type Metrics struct {
+	// +kubebuilder:validation:Enum="";All;MountPodOnly;SidecarOnly
+	ScrapeTarget ScrapeTarget `json:"scrapeTarget,omitempty"`
+}

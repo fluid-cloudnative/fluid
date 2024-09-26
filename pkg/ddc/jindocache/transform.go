@@ -18,7 +18,6 @@ package jindocache
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"reflect"
@@ -28,6 +27,7 @@ import (
 	"time"
 
 	versionutil "github.com/fluid-cloudnative/fluid/pkg/utils/version"
+	"github.com/pkg/errors"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -157,7 +157,7 @@ func (e *JindoCacheEngine) transform(runtime *datav1alpha1.JindoRuntime) (value 
 	if err != nil {
 		return
 	}
-	err = e.allocatePorts(value)
+	err = e.allocatePorts(runtime, value)
 	if err != nil {
 		return
 	}
@@ -174,6 +174,10 @@ func (e *JindoCacheEngine) transform(runtime *datav1alpha1.JindoRuntime) (value 
 	e.transformToken(value)
 	e.transformWorker(runtime, dataPath, userQuotas, value)
 	e.transformFuse(runtime, value)
+	err = e.transformFuseMetrics(runtime, value)
+	if err != nil {
+		return
+	}
 	e.transformInitPortCheck(value)
 	err = e.transformPodMetadata(runtime, value)
 	if err != nil {
@@ -816,6 +820,24 @@ func (e *JindoCacheEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, val
 	value.Fuse.CriticalPod = common.CriticalFusePodEnabled()
 }
 
+func (e *JindoCacheEngine) transformFuseMetrics(runtime *datav1alpha1.JindoRuntime, value *Jindo) error {
+	for _, arg := range value.Fuse.Args {
+		// user may explicitly set a metrics port in fuse args
+		if strings.HasPrefix(arg, "-ometrics_port=") {
+			if port, err := strconv.ParseInt(strings.TrimPrefix(arg, "-ometrics_port="), 10, 32); err != nil {
+				return errors.Wrap(err, "failed to parse port from %s transformFuseMetrics()")
+			} else {
+				value.Fuse.MetricsPort = int(port)
+				return nil
+			}
+		}
+	}
+
+	// "-ometrics_port=" is not found in fuse args
+	value.Fuse.Args = append(value.Fuse.Args, fmt.Sprintf("-ometrics_port=%d", value.Fuse.MetricsPort))
+	return nil
+}
+
 func (e *JindoCacheEngine) transformLogConfig(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
 	fsxProperties := map[string]string{
 		"application.report.on":  "true",
@@ -951,7 +973,6 @@ func (e *JindoCacheEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime, 
 			fuseArgs = append(fuseArgs, "-oentry_timeout=0")
 			fuseArgs = append(fuseArgs, "-onegative_timeout=0")
 		}
-		fuseArgs = append(fuseArgs, "-ometrics_port=0")
 		fuseArgs = append(fuseArgs, "-ono_symlink")
 	}
 	if runtime.Spec.Master.Disabled && runtime.Spec.Worker.Disabled {
@@ -1051,22 +1072,28 @@ func (e *JindoCacheEngine) transformToken(value *Jindo) {
 	value.Master.TokenProperties = properties
 }
 
-func (e *JindoCacheEngine) allocatePorts(value *Jindo) error {
+func (e *JindoCacheEngine) allocatePorts(runtime *datav1alpha1.JindoRuntime, value *Jindo) error {
 
 	// if not usehostnetwork then use default port
 	// usehostnetwork to choose port from port allocator
-	expectedPortNum := 2
 	if !value.UseHostNetwork {
 		value.Master.Port.Rpc = DEFAULT_MASTER_RPC_PORT
 		value.Worker.Port.Rpc = DEFAULT_WORKER_RPC_PORT
 		if value.Master.ReplicaCount == JINDO_HA_MASTERNUM {
 			value.Master.Port.Raft = DEFAULT_RAFT_RPC_PORT
 		}
+		if runtime.Spec.Fuse.Metrics.ScrapeTarget != datav1alpha1.ScrapeTargetNone {
+			value.Fuse.MetricsPort = DEFAULT_FUSE_METRICS_PORT
+		}
 		return nil
 	}
 
+	expectedPortNum := 2
 	if value.Master.ReplicaCount == JINDO_HA_MASTERNUM {
-		expectedPortNum = 3
+		expectedPortNum += 1
+	}
+	if runtime.Spec.Fuse.Metrics.ScrapeTarget != datav1alpha1.ScrapeTargetNone {
+		expectedPortNum += 1
 	}
 
 	allocator, err := portallocator.GetRuntimePortAllocator()
@@ -1088,6 +1115,10 @@ func (e *JindoCacheEngine) allocatePorts(value *Jindo) error {
 	if value.Master.ReplicaCount == JINDO_HA_MASTERNUM {
 		index++
 		value.Master.Port.Raft = allocatedPorts[index]
+	}
+	if runtime.Spec.Fuse.Metrics.ScrapeTarget != datav1alpha1.ScrapeTargetNone {
+		index++
+		value.Fuse.MetricsPort = allocatedPorts[index]
 	}
 	return nil
 }
