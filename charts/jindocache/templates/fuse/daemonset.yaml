@@ -129,7 +129,7 @@ spec:
             capabilities:
               add:
                 - SYS_ADMIN
-          {{- if ne .Values.fuse.metricsPort 0 }}
+          {{- if ne (int .Values.fuse.metricsPort) 0 }}
           ports:
             - name: jindo-metrics
               containerPort: {{ .Values.fuse.metricsPort }}
