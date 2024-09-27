@@ -177,9 +177,7 @@ func (helper *defaultMutatorHelper) Mutate() (*MutatingPodSpecs, error) {
 	}
 
 	if helper.runtimeInfo.GetFuseMetricsScrapeTarget() == datav1alpha1.ScrapeTargetAll || helper.runtimeInfo.GetFuseMetricsScrapeTarget() == datav1alpha1.ScrapeTargetSidecarOnly {
-		if _, exists := helper.Specs.MetaObj.Annotations[common.AnnotationPrometheusFuseMetricsScrapeKey]; !exists {
-			helper.Specs.MetaObj.Annotations[common.AnnotationPrometheusFuseMetricsScrapeKey] = "true"
-		}
+		helper.enablePrometheusMetricsScrape()
 	}
 
 	return helper.Specs, nil
@@ -312,6 +310,9 @@ func (helper *defaultMutatorHelper) prependFuseContainer(asInit bool) error {
 	} else {
 		helper.Specs.InitContainers = append([]corev1.Container{fuseContainer}, helper.Specs.InitContainers...)
 	}
+	if helper.Specs.MetaObj.Labels == nil {
+		helper.Specs.MetaObj.Labels = map[string]string{}
+	}
 	containerDatasetMappingLabelKey := common.LabelContainerDatasetMappingKeyPrefix + fuseContainer.Name
 	helper.Specs.MetaObj.Labels[containerDatasetMappingLabelKey] = fmt.Sprintf("%s_%s", helper.runtimeInfo.GetNamespace(), helper.runtimeInfo.GetName())
 	return nil
@@ -403,6 +404,16 @@ func (helper *defaultMutatorHelper) transformTemplateWithCacheDirDisabled() {
 	template := helper.template
 	template.FuseContainer.VolumeMounts = utils.TrimVolumeMounts(template.FuseContainer.VolumeMounts, cacheDirNames)
 	template.VolumesToAdd = utils.TrimVolumes(template.VolumesToAdd, cacheDirNames)
+}
+
+func (helper *defaultMutatorHelper) enablePrometheusMetricsScrape() {
+	if helper.Specs.MetaObj.Annotations == nil {
+		helper.Specs.MetaObj.Annotations = map[string]string{}
+	}
+
+	if _, exists := helper.Specs.MetaObj.Annotations[common.AnnotationPrometheusFuseMetricsScrapeKey]; !exists {
+		helper.Specs.MetaObj.Annotations[common.AnnotationPrometheusFuseMetricsScrapeKey] = "true"
+	}
 }
 
 func randomizeNewVolumeName(origName string, existingNames []string) (string, error) {
