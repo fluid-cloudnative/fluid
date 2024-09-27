@@ -318,7 +318,10 @@ const (
 	ScrapeTargetSidecarOnly  ScrapeTarget = "SidecarOnly"
 )
 
-type Metrics struct {
+type ClientMetrics struct {
+	// Enabled decides whether to expose client metrics.
+	Enabled bool `json:"enabled,omitempty"`
+	// ScrapeTarget decides which fuse component will be scraped by Prometheus.
 	// +kubebuilder:validation:Enum="";All;MountPodOnly;SidecarOnly
 	ScrapeTarget ScrapeTarget `json:"scrapeTarget,omitempty"`
 }

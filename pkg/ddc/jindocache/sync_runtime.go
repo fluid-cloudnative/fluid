@@ -18,9 +18,11 @@ package jindocache
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -213,18 +215,18 @@ func (e *JindoCacheEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, ru
 				e.Log.V(1).Info("The resource requirement of fuse is the same, skip")
 			}
 
-			metricsEnabled, exists := fusesToUpdate.Spec.Template.ObjectMeta.Annotations["prometheus.fuse.fluid.io/scrape"]
-			if exists && metricsEnabled != "true" {
-				e.Log.V(1).Info("Found user-defined annotation prometheus.fuse.fluid.io/scrape != true, skip syncing.")
+			metricsEnabled, exists := fusesToUpdate.Spec.Template.ObjectMeta.Annotations[common.AnnotationPrometheusFuseMetricsScrapeKey]
+			if exists && metricsEnabled != common.True {
+				e.Log.V(1).Info(fmt.Sprintf("Found user-defined annotation %s != %s, skip syncing.", common.AnnotationPrometheusFuseMetricsScrapeKey, common.True))
 			} else {
 				if !exists {
 					if runtime.Spec.Fuse.Metrics.ScrapeTarget == datav1alpha1.ScrapeTargetAll || runtime.Spec.Fuse.Metrics.ScrapeTarget == datav1alpha1.ScrapeTargetMountPodOnly {
-						fusesToUpdate.Spec.Template.ObjectMeta.Annotations["prometheus.fuse.fluid.io/scrape"] = "true"
+						fusesToUpdate.Spec.Template.ObjectMeta.Annotations[common.AnnotationPrometheusFuseMetricsScrapeKey] = common.True
 						changed = true
 					}
-				} else if metricsEnabled == "true" {
+				} else if metricsEnabled == common.True {
 					if runtime.Spec.Fuse.Metrics.ScrapeTarget == datav1alpha1.ScrapeTargetNone || runtime.Spec.Fuse.Metrics.ScrapeTarget == datav1alpha1.ScrapeTargetSidecarOnly {
-						delete(fusesToUpdate.Spec.Template.ObjectMeta.Annotations, "prometheus.fuse.fluid.io/scrape")
+						delete(fusesToUpdate.Spec.Template.ObjectMeta.Annotations, common.AnnotationPrometheusFuseMetricsScrapeKey)
 						changed = true
 					}
 				}

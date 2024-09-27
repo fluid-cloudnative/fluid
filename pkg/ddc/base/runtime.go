@@ -86,6 +86,8 @@ type RuntimeInfoInterface interface {
 	SetClient(client client.Client)
 
 	GetMetadataList() []datav1alpha1.Metadata
+
+	GetFuseMetricsScrapeTarget() datav1alpha1.ScrapeTarget
 }
 
 // The real Runtime Info should implement
@@ -120,6 +122,9 @@ type Fuse struct {
 
 	// CleanPolicy decides when to clean fuse pods.
 	CleanPolicy datav1alpha1.FuseCleanPolicy
+
+	// Metrics
+	MetricsScrapeTarget datav1alpha1.ScrapeTarget
 }
 
 type TieredStoreInfo struct {
@@ -195,6 +200,16 @@ func WithMetadataList(metadataList []datav1alpha1.Metadata) RuntimeInfoOption {
 
 func (info *RuntimeInfo) GetMetadataList() []datav1alpha1.Metadata {
 	return info.metadataList
+}
+
+func WithClientMetrics(clientMetrics datav1alpha1.ClientMetrics) RuntimeInfoOption {
+	return func(info *RuntimeInfo) {
+		info.fuse.MetricsScrapeTarget = clientMetrics.ScrapeTarget
+	}
+}
+
+func (info *RuntimeInfo) GetFuseMetricsScrapeTarget() datav1alpha1.ScrapeTarget {
+	return info.fuse.MetricsScrapeTarget
 }
 
 func (info *RuntimeInfo) GetTieredStoreInfo() TieredStoreInfo {
@@ -365,7 +380,11 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		if err != nil {
 			return runtimeInfo, err
 		}
-		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.JindoRuntime, datav1alpha1.TieredStore{}, WithMetadataList(GetMetadataListFromAnnotation(jindoRuntime)))
+		opts := []RuntimeInfoOption{
+			WithMetadataList(GetMetadataListFromAnnotation(jindoRuntime)),
+			WithClientMetrics(jindoRuntime.Spec.Fuse.Metrics),
+		}
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.JindoRuntime, datav1alpha1.TieredStore{}, opts...)
 		if err != nil {
 			return runtimeInfo, err
 		}

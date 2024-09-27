@@ -21,44 +21,69 @@ import "regexp"
 const (
 	// LabelAnnotationPrefix is the prefix of every labels and annotations added by the controller.
 	LabelAnnotationPrefix = "fluid.io/"
-	// The format is fluid.io/s-{runtime_type}-{data_set_name}, s means storage
+
+	// LabelAnnotationStorageCapacityPrefix is the prefix for the storage annotaion.
+	// i.e. fluid.io/s-{runtime_type}-{data_set_name}, in which s means storage
 	LabelAnnotationStorageCapacityPrefix = LabelAnnotationPrefix + "s-"
+
 	// LabelAnnotationFusePrefix is the prefix for the fuse annotation. The annotation follows
-	// fluid.io/f-{runtime type}-{dataset name}, in which f means fuse
+	// i.e. fluid.io/f-{runtime type}-{dataset name}, in which f means fuse
 	LabelAnnotationFusePrefix = LabelAnnotationPrefix + "f-"
+
 	// The dataset annotation
+	// i.e. fluid.io/dataset
 	LabelAnnotationDataset = LabelAnnotationPrefix + "dataset"
+
 	// LabelAnnotationDatasetNum indicates the number of the dataset in specific node
+	// i.e. fluid.io/dataset-num
 	LabelAnnotationDatasetNum = LabelAnnotationPrefix + "dataset-num"
 
 	// LabelAnnotationManagedByDeprecated is a deprecated label key for LabelAnnotationManagedBy
+	// i.e. fluid.io/wrapped-by
 	LabelAnnotationManagedByDeprecated = LabelAnnotationPrefix + "wrapped-by"
 
 	// LabelAnnotationManagedBy indicates a resource(like pvc) that is managed by Fluid
+	// i.e. fluid.io/managed-by
 	LabelAnnotationManagedBy = LabelAnnotationPrefix + "managed-by"
 
 	// fluid adminssion webhook inject flag
+	// i.e. fluid.io/enable-injection
 	EnableFluidInjectionFlag = LabelAnnotationPrefix + "enable-injection"
 
 	// use two lables for name and namespace
-	LabelAnnotationDatasetReferringName      = LabelAnnotationDataset + ".referring-name"
+	// i.e. fluid.io/dataset.referring-name
+	LabelAnnotationDatasetReferringName = LabelAnnotationDataset + ".referring-name"
+	// i.e. fluid.io/dataset.referring-namespace
 	LabelAnnotationDatasetReferringNameSpace = LabelAnnotationDataset + ".referring-namespace"
 
-	RuntimeControllerReplicas = "controller.runtime." + LabelAnnotationPrefix + "replicas"
-
 	// LabelNodePublishMothod is a pv label that indicates the method nodePuhlishVolume use
+	// i.e. fluid.io/node-publish-method
 	LabelNodePublishMothod = LabelAnnotationPrefix + "node-publish-method"
 
 	// AnnotationDataFlowAffinityInject is an annotation representing enabled the dataflow affinity injection, for internal use.
+	// i.e. fluid.io/dataflow-affinity.inject
 	AnnotationDataFlowAffinityInject = LabelAnnotationPrefix + "dataflow-affinity.inject"
 	// AnnotationDataFlowAffinityPrefix is a prefix for dataflow affinity label name.
+	// i.e. dataflow-affinity.fluid.io.
 	AnnotationDataFlowAffinityPrefix = "dataflow-affinity.fluid.io."
 
 	// AnnotationDataFlowAffinityLabelsName is an annotation key name for exposed affinity labels for an operation in a dataflow.
 	AnnotationDataFlowAffinityLabelsName = "data-operation.fluid.io/affinity.labels"
 
 	// LabelAnnotationMountingDatasets is a label/annotation key indicating which datasets are currently being used by a pod.
+	// i.e. fluid.io/datasets-in-use
 	LabelAnnotationDatasetsInUse = LabelAnnotationPrefix + "datasets-in-use"
+)
+
+const (
+	// i.e. controller.runtime.fluid.io/replicas
+	RuntimeControllerReplicas = "controller.runtime." + LabelAnnotationPrefix + "replicas"
+
+	// i.e. prometheus.fuse.fluid.io/scrape
+	AnnotationPrometheusFuseMetricsScrapeKey = "prometheus.fuse." + LabelAnnotationPrefix + "scrape"
+
+	// i.e. container-dataset-mapping.sidecar.fluid.io/
+	LabelContainerDatasetMappingKeyPrefix = "container-dataset-mapping.sidecar" + LabelAnnotationPrefix
 )
 
 var (

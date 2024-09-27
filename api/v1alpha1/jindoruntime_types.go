@@ -144,7 +144,7 @@ type JindoFuseSpec struct {
 
 	// +optional
 	// Define whether fuse metrics will be enabled.
-	Metrics Metrics `json:"metrics,omitempty"`
+	Metrics ClientMetrics `json:"metrics,omitempty"`
 }
 
 // JindoRuntimeSpec defines the desired state of JindoRuntime

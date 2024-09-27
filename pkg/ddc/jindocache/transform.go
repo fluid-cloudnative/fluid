@@ -821,20 +821,37 @@ func (e *JindoCacheEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, val
 }
 
 func (e *JindoCacheEngine) transformFuseMetrics(runtime *datav1alpha1.JindoRuntime, value *Jindo) error {
+	var userDefinedPort int = -1
 	for _, arg := range value.Fuse.Args {
 		// user may explicitly set a metrics port in fuse args
 		if strings.HasPrefix(arg, "-ometrics_port=") {
 			if port, err := strconv.ParseInt(strings.TrimPrefix(arg, "-ometrics_port="), 10, 32); err != nil {
 				return errors.Wrap(err, "failed to parse port from %s transformFuseMetrics()")
 			} else {
-				value.Fuse.MetricsPort = int(port)
-				return nil
+				userDefinedPort = int(port)
 			}
 		}
 	}
 
-	// "-ometrics_port=" is not found in fuse args
-	value.Fuse.Args = append(value.Fuse.Args, fmt.Sprintf("-ometrics_port=%d", value.Fuse.MetricsPort))
+	if userDefinedPort != -1 {
+		if runtime.Spec.Fuse.Metrics.Enabled {
+			value.Fuse.MetricsPort = userDefinedPort
+		} else {
+			// even though user defines a port, we ignore it because spec.fuse.metrics.enabled = false.
+			value.Fuse.MetricsPort = 0
+		}
+		return nil
+	}
+
+	if runtime.Spec.Fuse.Metrics.Enabled {
+		// auto allocated metrics port
+		value.Fuse.Args = append(value.Fuse.Args, fmt.Sprintf("-ometrics_port=%d", value.Fuse.MetricsPort))
+	} else {
+		// disable metrics
+		value.Fuse.MetricsPort = 0
+		value.Fuse.Args = append(value.Fuse.Args, "-ometrics_port=0")
+	}
+
 	return nil
 }
 
@@ -1082,7 +1099,7 @@ func (e *JindoCacheEngine) allocatePorts(runtime *datav1alpha1.JindoRuntime, val
 		if value.Master.ReplicaCount == JINDO_HA_MASTERNUM {
 			value.Master.Port.Raft = DEFAULT_RAFT_RPC_PORT
 		}
-		if runtime.Spec.Fuse.Metrics.ScrapeTarget != datav1alpha1.ScrapeTargetNone {
+		if runtime.Spec.Fuse.Metrics.Enabled {
 			value.Fuse.MetricsPort = DEFAULT_FUSE_METRICS_PORT
 		}
 		return nil
@@ -1092,7 +1109,7 @@ func (e *JindoCacheEngine) allocatePorts(runtime *datav1alpha1.JindoRuntime, val
 	if value.Master.ReplicaCount == JINDO_HA_MASTERNUM {
 		expectedPortNum += 1
 	}
-	if runtime.Spec.Fuse.Metrics.ScrapeTarget != datav1alpha1.ScrapeTargetNone {
+	if runtime.Spec.Fuse.Metrics.Enabled {
 		expectedPortNum += 1
 	}
 
@@ -1116,7 +1133,7 @@ func (e *JindoCacheEngine) allocatePorts(runtime *datav1alpha1.JindoRuntime, val
 		index++
 		value.Master.Port.Raft = allocatedPorts[index]
 	}
-	if runtime.Spec.Fuse.Metrics.ScrapeTarget != datav1alpha1.ScrapeTargetNone {
+	if runtime.Spec.Fuse.Metrics.Enabled {
 		index++
 		value.Fuse.MetricsPort = allocatedPorts[index]
 	}

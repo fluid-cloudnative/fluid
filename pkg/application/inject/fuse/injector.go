@@ -207,7 +207,7 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 				s.log.Error(err, "failed to mutate pod for the pvc", "pod name", podName, "pvc name", pvcName)
 				return out, err
 			}
-
+			
 			idx++
 		}
 

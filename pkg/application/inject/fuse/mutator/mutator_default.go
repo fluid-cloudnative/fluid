@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/application/inject/fuse/poststart"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -175,6 +176,12 @@ func (helper *defaultMutatorHelper) Mutate() (*MutatingPodSpecs, error) {
 		}
 	}
 
+	if helper.runtimeInfo.GetFuseMetricsScrapeTarget() == datav1alpha1.ScrapeTargetAll || helper.runtimeInfo.GetFuseMetricsScrapeTarget() == datav1alpha1.ScrapeTargetSidecarOnly {
+		if _, exists := helper.Specs.MetaObj.Annotations[common.AnnotationPrometheusFuseMetricsScrapeKey]; !exists {
+			helper.Specs.MetaObj.Annotations[common.AnnotationPrometheusFuseMetricsScrapeKey] = "true"
+		}
+	}
+
 	return helper.Specs, nil
 }
 
@@ -305,6 +312,8 @@ func (helper *defaultMutatorHelper) prependFuseContainer(asInit bool) error {
 	} else {
 		helper.Specs.InitContainers = append([]corev1.Container{fuseContainer}, helper.Specs.InitContainers...)
 	}
+	containerDatasetMappingLabelKey := common.LabelContainerDatasetMappingKeyPrefix + fuseContainer.Name
+	helper.Specs.MetaObj.Labels[containerDatasetMappingLabelKey] = fmt.Sprintf("%s_%s", helper.runtimeInfo.GetNamespace(), helper.runtimeInfo.GetName())
 	return nil
 }
 
