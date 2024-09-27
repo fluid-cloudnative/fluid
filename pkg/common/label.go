@@ -83,7 +83,7 @@ const (
 	AnnotationPrometheusFuseMetricsScrapeKey = "prometheus.fuse." + LabelAnnotationPrefix + "scrape"
 
 	// i.e. container-dataset-mapping.sidecar.fluid.io/
-	LabelContainerDatasetMappingKeyPrefix = "container-dataset-mapping.sidecar" + LabelAnnotationPrefix
+	LabelContainerDatasetMappingKeyPrefix = "container-dataset-mapping.sidecar." + LabelAnnotationPrefix
 )
 
 var (
