@@ -2,8 +2,8 @@
 set -e
 
 function get_image_tag() {
-    version=$(grep "^VERSION=" ./Makefile)
-    version=${version#VERSION=}
+    version=$(grep "^VERSION := " ./Makefile)
+    version=${version#VERSION := }
 
     git_sha=$(git rev-parse --short HEAD || echo "HEAD")
     export IMAGE_TAG=${version}-${git_sha}
