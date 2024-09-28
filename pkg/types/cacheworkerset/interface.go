@@ -3,6 +3,7 @@ package cacheworkerset
 import (
 	"context"
 	"fmt"
+	v12 "github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset/client/v1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -139,7 +140,7 @@ func getStatefulSetStatus(client client.Client, key types.NamespacedName) (Worke
 }
 
 func getAdvancedStatefulSetStatus(client client.Client, key types.NamespacedName) (WorkerSetStatus, error) {
-	advancedStatefulSet := &AdvancedStatefulSet{}
+	advancedStatefulSet := &v12.AdvancedStatefulSet{}
 	err := client.Get(context.TODO(), key, advancedStatefulSet)
 	if err != nil {
 		return nil, err
@@ -176,7 +177,7 @@ type StatefulSetWorkerStatus struct {
 
 // AdvancedStatefulSetWorkerStatus implements WorkerSetStatus for AdvancedStatefulSets
 type AdvancedStatefulSetWorkerStatus struct {
-	AdvancedStatefulSet *AdvancedStatefulSet
+	AdvancedStatefulSet *v12.AdvancedStatefulSet
 }
 
 func (s *AdvancedStatefulSetWorkerStatus) GetReplicas() int {
