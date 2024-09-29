@@ -19,6 +19,7 @@ package mutator
 import (
 	"context"
 
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/application/inject/fuse/poststart"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -91,17 +92,21 @@ type unprivilegedMutatorHelper struct {
 	defaultMutatorHelper
 }
 
-func (mutator *unprivilegedMutatorHelper) PrepareMutation() error {
-	if !mutator.options.EnableCacheDir {
-		mutator.transformTemplateWithCacheDirDisabled()
+func (helper *unprivilegedMutatorHelper) PrepareMutation() error {
+	if !helper.options.EnableCacheDir {
+		helper.transformTemplateWithCacheDirDisabled()
 	}
 
-	mutator.transformTemplateWithUnprivilegedSidecarEnabled()
+	helper.transformTemplateWithUnprivilegedSidecarEnabled()
 
-	if !mutator.options.SkipSidecarPostStartInject {
-		if err := mutator.prepareFuseContainerPostStartScript(); err != nil {
+	if !helper.options.SkipSidecarPostStartInject {
+		if err := helper.prepareFuseContainerPostStartScript(); err != nil {
 			return err
 		}
+	}
+
+	if helper.runtimeInfo.GetFuseMetricsScrapeTarget() == datav1alpha1.ScrapeTargetNone || helper.runtimeInfo.GetFuseMetricsScrapeTarget() == datav1alpha1.ScrapeTargetMountPodOnly {
+		helper.removeFuseMetricsContainerPort()
 	}
 
 	return nil
