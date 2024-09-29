@@ -21,8 +21,8 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -52,64 +52,78 @@ func GetDataMigrateJobName(releaseName string) string {
 	return fmt.Sprintf("%s-migrate", releaseName)
 }
 
+func GetTargetDatasetNamespacedNameOfMigrate(client client.Client, dataMigrate *datav1alpha1.DataMigrate) (namespacedName types.NamespacedName, err error) {
+	if (dataMigrate.Spec.To.DataSet == nil || dataMigrate.Spec.To.DataSet.Name == "") && (dataMigrate.Spec.From.DataSet == nil || dataMigrate.Spec.From.DataSet.Name == "") {
+		err = fmt.Errorf("invalid spec: either %v or %v must be set", field.NewPath("spec").Child("to").Child("dataset"), field.NewPath("spec").Child("from").Child("dataset"))
+		return
+	}
+
+	// if runtimeType is not specified, we will simply use the toDataset as the first choice, and the fromDataset as the second.
+	if dataMigrate.Spec.RuntimeType == "" {
+		var targetDataset *datav1alpha1.DatasetToMigrate
+		if dataMigrate.Spec.To.DataSet != nil && len(dataMigrate.Spec.To.DataSet.Name) > 0 {
+			targetDataset = dataMigrate.Spec.To.DataSet
+		} else {
+			targetDataset = dataMigrate.Spec.From.DataSet
+		}
+
+		var namespace string = targetDataset.Namespace
+		if len(namespace) == 0 {
+			namespace = dataMigrate.Namespace
+		}
+		namespacedName = types.NamespacedName{
+			Namespace: namespace,
+			Name:      targetDataset.Name,
+		}
+		return
+	}
+
+	// when runtimeType is explicitly set, check whether toDataset or fromDataset has the runtimeType
+	datasetsToCheck := []*datav1alpha1.DatasetToMigrate{dataMigrate.Spec.To.DataSet, dataMigrate.Spec.From.DataSet}
+	checkedRuntimeTypes := []string{}
+	for _, toCheck := range datasetsToCheck {
+		if toCheck != nil && len(toCheck.Name) > 0 {
+			var namespace string = toCheck.Namespace
+			if len(namespace) == 0 {
+				namespace = dataMigrate.Namespace
+			}
+
+			dataset, innerErr := GetDataset(client, toCheck.Name, namespace)
+			if innerErr != nil {
+				err = errors.Wrapf(innerErr, "failed to get dataset \"%s/%s\" from DataMigrate \"%s/%s\"'s spec", namespace, toCheck.Name, dataMigrate.Namespace, dataMigrate.Name)
+				return
+			}
+
+			index, boundedRuntime := GetRuntimeByCategory(dataset.Status.Runtimes, common.AccelerateCategory)
+			if index == -1 {
+				err = fmt.Errorf("bounded accelerate runtime not ready for dataset \"%s/%s\"", namespace, toCheck.Name)
+				return
+			}
+
+			if boundedRuntime.Type == dataMigrate.Spec.RuntimeType {
+				namespacedName = types.NamespacedName{
+					Namespace: namespace,
+					Name:      toCheck.Name,
+				}
+				return
+			}
+
+			// boundedRuntime.Type is not matching with dataMigrate.Spec.RuntimeType
+			checkedRuntimeTypes = append(checkedRuntimeTypes, boundedRuntime.Type)
+		}
+	}
+
+	// no bounded dataset with the runtimeType can be found
+	err = fmt.Errorf("invalid spec: the valid runtime type of the dataset is %v, but the specified runtime type in dataMigrate is %s",
+		checkedRuntimeTypes, dataMigrate.Spec.RuntimeType)
+	return
+}
+
 func GetTargetDatasetOfMigrate(client client.Client, dataMigrate *datav1alpha1.DataMigrate) (targetDataset *datav1alpha1.Dataset, err error) {
-	var fromDataset, toDataset *datav1alpha1.Dataset
-	var boundedRuntimeType = ""
-	if dataMigrate.Spec.To.DataSet != nil && dataMigrate.Spec.To.DataSet.Name != "" {
-		toDataset, err = GetDataset(client, dataMigrate.Spec.To.DataSet.Name, dataMigrate.Spec.To.DataSet.Namespace)
-		if err != nil {
-			return
-		}
-
-		// if runtimeType is not specified, we will use the toDataset as the targetDataset
-		if dataMigrate.Spec.RuntimeType == "" {
-			targetDataset = toDataset
-			return
-		}
-
-		// if runtimeType is specified, check if toDataset's accelerate runtime type is the same as the runtimeType
-		index, boundedRuntime := GetRuntimeByCategory(toDataset.Status.Runtimes, common.AccelerateCategory)
-		if index == -1 {
-			err = fmt.Errorf("bounded accelerate runtime not ready")
-			return
-		}
-		if boundedRuntime.Type == dataMigrate.Spec.RuntimeType {
-			targetDataset = toDataset
-			return
-		}
-		boundedRuntimeType = boundedRuntime.Type
-	}
-	if dataMigrate.Spec.From.DataSet != nil && dataMigrate.Spec.From.DataSet.Name != "" {
-		fromDataset, err = GetDataset(client, dataMigrate.Spec.From.DataSet.Name, dataMigrate.Spec.From.DataSet.Namespace)
-		if err != nil {
-			return
-		}
-		// if runtimeType is not specified, we will use the fromDataset as the targetDataset
-		if dataMigrate.Spec.RuntimeType == "" {
-			targetDataset = fromDataset
-			return
-		}
-
-		// if runtimeType is specified, check if fromDataset's accelerate runtime type is the same as the runtimeType
-		index, boundedRuntime := GetRuntimeByCategory(fromDataset.Status.Runtimes, common.AccelerateCategory)
-		if index == -1 {
-			err = fmt.Errorf("bounded accelerate runtime not ready")
-			return
-		}
-		if boundedRuntime.Type == dataMigrate.Spec.RuntimeType {
-			targetDataset = fromDataset
-			return
-		}
-		boundedRuntimeType = boundedRuntime.Type
+	namespacedName, err := GetTargetDatasetNamespacedNameOfMigrate(client, dataMigrate)
+	if err != nil {
+		return
 	}
 
-	// DataMigrate has from/to dataset, but Spec.RuntimeType is different with target dataset' bounded runtime type;
-	if boundedRuntimeType != "" {
-		err = fmt.Errorf("the runtime type of the target dataset is %s, but the runtime type of the dataMigrate is %s",
-			boundedRuntimeType, dataMigrate.Spec.RuntimeType)
-		return nil, errors.Wrap(err, "Unable to get ddc runtime")
-	}
-
-	// DataMigrate has no from/to dataset
-	return nil, apierrors.NewBadRequest("datamigrate should specify from or to dataset")
+	return GetDataset(client, namespacedName.Name, namespacedName.Namespace)
 }

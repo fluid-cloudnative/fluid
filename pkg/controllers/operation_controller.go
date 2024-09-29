@@ -93,7 +93,12 @@ func (o *OperationReconciler) ReconcileDeletion(ctx dataoperation.ReconcileReque
 	}
 
 	// 3. delete engine
-	o.RemoveEngine(ctx)
+	// For some data operations(e.g. DataMigrate), we cannot determine its target dataset because the dataset may already be deleted (cascading deletion).
+	// To handle such case, get all possible namespaced names and delete the corresponding engines.
+	namespacedNames := implement.GetPossibleTargetDatasetNamespacedNames()
+	for _, namespacedName := range namespacedNames {
+		o.RemoveEngine(namespacedName)
+	}
 
 	object := implement.GetOperationObject()
 	// 4. remove finalizer
@@ -220,10 +225,10 @@ func (o *OperationReconciler) GetOrCreateEngine(
 	return engine, err
 }
 
-func (o *OperationReconciler) RemoveEngine(ctx dataoperation.ReconcileRequestContext) {
+func (o *OperationReconciler) RemoveEngine(namespacedName types.NamespacedName) {
 	o.mutex.Lock()
 	defer o.mutex.Unlock()
-	id := ddc.GenerateEngineID(ctx.NamespacedName)
+	id := ddc.GenerateEngineID(namespacedName)
 	delete(o.engines, id)
 }
 
