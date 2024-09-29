@@ -17,6 +17,7 @@ limitations under the License.
 package fuse
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -208,6 +209,7 @@ func TestInjectPod(t *testing.T) {
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s_%s", "big-data", "duplicate"),
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -474,6 +476,7 @@ func TestInjectPod(t *testing.T) {
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s_%s", "big-data", "dataset1"),
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -743,6 +746,7 @@ func TestInjectPod(t *testing.T) {
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s_%s", "big-data", "customizedenv"),
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -1015,6 +1019,7 @@ func TestInjectPod(t *testing.T) {
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s_%s", "big-data", "dataset-conflict"),
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -1722,6 +1727,7 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s_%s", "big-data", "duplicate"),
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -2124,6 +2130,8 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s_%s", "big-data", "dataset1"),
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-1"): fmt.Sprintf("%s_%s", "big-data", "dataset2"),
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -2692,6 +2700,7 @@ func TestInjectPodWithDatasetSubPath(t *testing.T) {
 					Namespace: "ref",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s_%s", "ref", "subpath"),
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -2851,18 +2860,7 @@ func TestInjectPodWithDatasetSubPath(t *testing.T) {
 		wantMetaObj := testcase.want.ObjectMeta
 
 		if !reflect.DeepEqual(gotMetaObj, wantMetaObj) {
-
-			want, err := yaml.Marshal(wantMetaObj)
-			if err != nil {
-				t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-			}
-
-			outYaml, err := yaml.Marshal(gotMetaObj)
-			if err != nil {
-				t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-			}
-
-			t.Errorf("testcase %s failed, want %v, Got  %v", testcase.name, string(want), string(outYaml))
+			t.Errorf("testcase %s failed, diff between wantMetaObj and gotMetaObj: %v", testcase.name, cmp.Diff(wantMetaObj, gotMetaObj))
 		}
 
 		gotContainers := out.Spec.Containers
@@ -2886,17 +2884,7 @@ func TestInjectPodWithDatasetSubPath(t *testing.T) {
 		for k, wantContainer := range wantContainerMap {
 			if gotContainer, found := gotContainerMap[k]; found {
 				if !reflect.DeepEqual(wantContainer, gotContainer) {
-					want, err := yaml.Marshal(wantContainers)
-					if err != nil {
-						t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-					}
-
-					outYaml, err := yaml.Marshal(gotContainers)
-					if err != nil {
-						t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-					}
-
-					t.Errorf("testcase %s failed, want %v, Got  %v", testcase.name, string(want), string(outYaml))
+					t.Errorf("testcase %s failed, diff between wantContainer and gotContainer: %v", testcase.name, cmp.Diff(wantContainer, gotContainer))
 				}
 			} else {
 				t.Errorf("testcase %s failed due to missing the container %s", testcase.name, k)
@@ -2915,37 +2903,12 @@ func TestInjectPodWithDatasetSubPath(t *testing.T) {
 		for k, wantVolume := range wantVolumeMap {
 			if gotVolume, found := gotVolumeMap[k]; found {
 				if !reflect.DeepEqual(wantVolume, gotVolume) {
-					want, err := yaml.Marshal(wantVolume)
-					if err != nil {
-						t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-					}
-
-					outYaml, err := yaml.Marshal(gotVolume)
-					if err != nil {
-						t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-					}
-
-					t.Errorf("testcase %s failed, want %v, Got  %v", testcase.name, string(want), string(outYaml))
+					t.Errorf("testcase %s failed, diff between wantVolume and gotVolume: %v", testcase.name, cmp.Diff(wantVolume, gotVolume))
 				}
 			} else {
 				t.Errorf("testcase %s failed due to missing the volume %s", testcase.name, k)
 			}
 		}
-
-		// if !reflect.DeepEqual(gotVolumeMap, wantVolumeMap) {
-		// 	want, err := yaml.Marshal(wantVolumes)
-		// 	if err != nil {
-		// 		t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-		// 	}
-
-		// 	outYaml, err := yaml.Marshal(gotVolumes)
-		// 	if err != nil {
-		// 		t.Errorf("testcase %s failed,  due to %v", testcase.name, err)
-		// 	}
-
-		// 	t.Errorf("testcase %s failed, want %v, Got  %v", testcase.name, string(want), string(outYaml))
-		// }
-
 	}
 }
 
@@ -3128,6 +3091,7 @@ func TestInjectPodUnprivileged(t *testing.T) {
 					Labels: map[string]string{
 						common.InjectFuseSidecar:             common.True,
 						common.InjectUnprivilegedFuseSidecar: common.True,
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s_%s", "big-data", "dataset"),
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -3507,6 +3471,8 @@ func TestInjectPodUnprivileged(t *testing.T) {
 					Labels: map[string]string{
 						common.InjectFuseSidecar:             common.True,
 						common.InjectUnprivilegedFuseSidecar: common.True,
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s_%s", "big-data", "dataset1"),
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-1"): fmt.Sprintf("%s_%s", "big-data", "dataset2"),
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -3966,6 +3932,8 @@ func TestInjectPodUnprivileged(t *testing.T) {
 						common.InjectFuseSidecar:             common.True,
 						common.InjectUnprivilegedFuseSidecar: common.True,
 						common.InjectAppPostStart:            common.True,
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s_%s", "big-data", "dataset-a"),
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-1"): fmt.Sprintf("%s_%s", "big-data", "dataset-b"),
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -4500,6 +4468,7 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "init-fluid-fuse-0"): fmt.Sprintf("%s_%s", "big-data", "duplicate"),
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -4766,6 +4735,8 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"):      fmt.Sprintf("%s_%s", "big-data", "dataset1"),
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "init-fluid-fuse-0"): fmt.Sprintf("%s_%s", "big-data", "dataset1"),
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -5094,6 +5065,8 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"):      fmt.Sprintf("%s_%s", "big-data", "customizedenv"),
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "init-fluid-fuse-0"): fmt.Sprintf("%s_%s", "big-data", "customizedenv"),
 					},
 				},
 				Spec: corev1.PodSpec{
