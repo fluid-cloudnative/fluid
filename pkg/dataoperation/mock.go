@@ -83,6 +83,11 @@ func (m mockDataloadOperationReconciler) GetTargetDataset() (*datav1alpha1.Datas
 	panic("unimplemented")
 }
 
+// GetTargetDataset implements OperationInterface.
+func (m mockDataloadOperationReconciler) GetPossibleTargetDatasetNamespacedNames() []types.NamespacedName {
+	panic("unimplemented")
+}
+
 // RemoveTargetDatasetStatusInProgress implements OperationInterface.
 func (mockDataloadOperationReconciler) RemoveTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
 	panic("unimplemented")
