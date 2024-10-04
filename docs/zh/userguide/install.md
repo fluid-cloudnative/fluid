@@ -196,3 +196,21 @@ helm install fluid --set csi.config.hostNetwork=true fluid/fluid
 # 升级
 helm upgrade fluid --set csi.config.hostNetwork=true fluid/fluid
 ```
+
+5. 默认配置下，Fluid未对安装的控制器（Controller）组件Pod设置`spec.resources`，如果在生产环境中部署并使用Fluid，推荐根据业务规模对各个控制器组件Pod的`spec.resources`进行设置，不同控制器组件资源配置的字段可参考[values.yaml](https://github.com/fluid-cloudnative/fluid/blob/master/charts/fluid/fluid/values.yaml)文件中的示例。例如，如果需要修改Dataset控制器Pod的资源请求和限制，首先定义以下自定义values文件(e.g. `my-resource-file.yaml`)：
+```yaml
+dataset:
+  resources:
+    requests:
+      cpu: 500m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+```
+
+执行以下命令，使用自定义values文件覆盖Fluid Helm Chart中的默认配置：
+
+```shell
+helm upgrade fluid --install -f my-resource-file.yaml fluid/fluid
+```

@@ -56,6 +56,22 @@ func (r *dataMigrateOperation) HasPrecedingOperation() bool {
 	return r.dataMigrate.Spec.RunAfter != nil
 }
 
+func (r *dataMigrateOperation) GetPossibleTargetDatasetNamespacedNames() []types.NamespacedName {
+	ret := []types.NamespacedName{}
+	datasetsToCheck := []*datav1alpha1.DatasetToMigrate{r.dataMigrate.Spec.To.DataSet, r.dataMigrate.Spec.From.DataSet}
+	for _, toCheck := range datasetsToCheck {
+		if toCheck != nil && len(toCheck.Name) > 0 {
+			var namespace string = toCheck.Namespace
+			if len(namespace) == 0 {
+				namespace = r.dataMigrate.Namespace
+			}
+			ret = append(ret, types.NamespacedName{Namespace: namespace, Name: toCheck.Name})
+		}
+	}
+
+	return ret
+}
+
 func (r *dataMigrateOperation) GetTargetDataset() (*datav1alpha1.Dataset, error) {
 	return utils.GetTargetDatasetOfMigrate(r.Client, r.dataMigrate)
 }

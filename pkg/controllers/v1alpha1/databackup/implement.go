@@ -112,6 +112,12 @@ func (r *dataBackupOperation) GetOperationType() dataoperation.OperationType {
 	return dataoperation.DataBackupType
 }
 
+func (r *dataBackupOperation) GetPossibleTargetDatasetNamespacedNames() []types.NamespacedName {
+	return []types.NamespacedName{
+		{Namespace: r.dataBackup.Namespace, Name: r.dataBackup.Name},
+	}
+}
+
 func (r *dataBackupOperation) GetTargetDataset() (*datav1alpha1.Dataset, error) {
 	return utils.GetDataset(r.Client, r.dataBackup.Spec.Dataset, r.dataBackup.Namespace)
 }
