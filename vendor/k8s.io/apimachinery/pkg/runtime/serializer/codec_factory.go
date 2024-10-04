@@ -17,7 +17,8 @@ limitations under the License.
 package serializer
 
 import (
-	"mime"
+	"io"
+"mime"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -128,6 +129,16 @@ type CodecFactory struct {
 	accepts   []runtime.SerializerInfo
 
 	legacySerializer runtime.Serializer
+}
+
+func (f CodecFactory) Encode(obj runtime.Object, w io.Writer) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (f CodecFactory) Identifier() runtime.Identifier {
+	//TODO implement me
+	panic("implement me")
 }
 
 // CodecFactoryOptions holds the options for configuring CodecFactory behavior

@@ -7,20 +7,21 @@ import (
 	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/controllers"
-	helper "github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset/apis"
-	apps "github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset/client/v1"
+	apis "github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset/asts/apis"
 	"github.com/go-logr/logr"
-	"hash/fnv"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
+
 	"k8s.io/client-go/kubernetes/scheme"
+	clientsetappsv1 "k8s.io/client-go/kubernetes/typed/apps/v1"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/util/retry"
 	"k8s.io/klog/v2"
 	"math"
 	"regexp"
@@ -31,15 +32,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sort"
 	"strconv"
+	"strings"
 )
 
 // StatefulSetReconciler reconciles a StatefulSet object.
 type StatefulSetReconciler struct {
 	Scheme *runtime.Scheme
 	*controllers.OperationReconciler
-	client.Client
-	Log      logr.Logger
-	Recorder record.EventRecorder
+	client     client.Client
+	Log        logr.Logger
+	PodControl AdvancedStatefulPodControl
+	Recorder   record.EventRecorder
 }
 
 // Reconcile is the main reconciliation loop for StatefulSet.
@@ -50,7 +53,7 @@ func (r *StatefulSetReconciler) Reconcile(ctx context.Context, req reconcile.Req
 	//if err != nil {
 	//	return reconcile.Result{}, err
 	//}
-	set := &apps.AdvancedStatefulSet{}
+	set := &apis.AdvancedStatefulSet{}
 	err := r.Client.Get(ctx, req.NamespacedName, set)
 	if errors.IsNotFound(err) {
 		logger.Info("StatefulSet has been deleted")
@@ -103,7 +106,7 @@ func (r *StatefulSetReconciler) Reconcile(ctx context.Context, req reconcile.Req
 }
 
 // ListRevisions returns a array of the ControllerRevisions that represent the revisions of set.
-func (r *StatefulSetReconciler) ListRevisions(set *apps.AdvancedStatefulSet) ([]*appsv1.ControllerRevision, error) {
+func (r *StatefulSetReconciler) ListRevisions(set *apis.AdvancedStatefulSet) ([]*appsv1.ControllerRevision, error) {
 	selector, err := metav1.LabelSelectorAsSelector(set.Spec.Selector)
 	if err != nil {
 		return nil, err
@@ -113,26 +116,88 @@ func (r *StatefulSetReconciler) ListRevisions(set *apps.AdvancedStatefulSet) ([]
 	if err != nil {
 		return nil, err
 	}
-	revisinsToUpgrade, err := r.Client.List(context.TODO(), revisions, client.InNamespace(set.Namespace), client.MatchingLabels(map[string]string{helper.UpgradeToAdvancedStatefulSetAnn: set.Name}))
+
+	appsV1Client := clientsetappsv1.AppsV1Interface(r.client.AppsV1())
+	revisionsToUpgrade, err := appsV1Client.ControllerRevisions(set.GetNamespace()).List(
+		context.TODO(), metav1.ListOptions{
+			LabelSelector: labels.SelectorFromValidatedSet(map[string]string{
+				apis.UpgradeToAdvancedStatefulSetAnn: set.Name,
+			}).String(),
+		})
 	if err != nil {
 		return nil, err
 	}
+
 	res := []*appsv1.ControllerRevision{}
-	for _, item := range append(revisions.Items, revisinsToUpgrade.Items...) {
+	for _, item := range append(revisions.Items, revisionsToUpgrade.Items...) {
 		local := item
 		res = append(res, &local)
 	}
 	return res, nil
 }
 
+func (r *StatefulSetReconciler) updateControllerRevision(revision *appsv1.ControllerRevision, newRevision int64) (*appsv1.ControllerRevision, error) {
+	clone := revision.DeepCopy()
+	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		if clone.Revision == newRevision {
+			return nil
+		}
+		clone.Revision = newRevision
+		appsV1Client := clientsetappsv1.AppsV1Interface(r.client.AppsV1())
+		updated, updateErr := appsV1Client.ControllerRevisions(clone.Namespace).Update(context.TODO(), clone, metav1.UpdateOptions{})
+		if updateErr == nil {
+			return nil
+		}
+		if updated != nil {
+			clone = updated
+		}
+
+		if updated, err := appsV1Client.ControllerRevisions(clone.Namespace).Get(context.TODO(), clone.Name, metav1.GetOptions{}); err == nil {
+			// make a copy so we don't mutate the shared cache
+			clone = updated.DeepCopy()
+		}
+		return updateErr
+	})
+	return clone, err
+}
+
+func (r *StatefulSetReconciler) createControllerRevision(parent metav1.Object, revision *appsv1.ControllerRevision, collisionCount *int32) (*appsv1.ControllerRevision, error) {
+	if collisionCount == nil {
+		return nil, fmt.Errorf("collisionCount should not be nil")
+	}
+
+	// Clone the input
+	clone := revision.DeepCopy()
+
+	// Continue to attempt to create the revision updating the name with a new hash on each iteration
+	for {
+		hash := hashControllerRevision(revision, collisionCount)
+		// Update the revisions name
+		clone.Name = controllerRevisionName(parent.GetName(), hash)
+		ns := parent.GetNamespace()
+		appsV1Client := clientsetappsv1.AppsV1Interface(r.client.AppsV1())
+		created, err := appsV1Client.ControllerRevisions(ns).Create(context.TODO(), clone, metav1.CreateOptions{})
+		if errors.IsAlreadyExists(err) {
+			exists, err := appsV1Client.ControllerRevisions(ns).Get(context.TODO(), clone.Name, metav1.GetOptions{})
+			if err != nil {
+				return nil, err
+			}
+			if bytes.Equal(exists.Data.Raw, clone.Data.Raw) {
+				return exists, nil
+			}
+			*collisionCount++
+			continue
+		}
+		return created, err
+	}
+}
+
 // getStatefulSetRevisions returns the current and update ControllerRevisions for set.
-func (r *StatefulSetReconciler) getStatefulSetRevisions(set *apps.AdvancedStatefulSet, revisions []*appsv1.ControllerRevision) (*appsv1.ControllerRevision, *appsv1.ControllerRevision, int32, error) {
+func (r *StatefulSetReconciler) getStatefulSetRevisions(set *apis.AdvancedStatefulSet, revisions []*appsv1.ControllerRevision) (*appsv1.ControllerRevision, *appsv1.ControllerRevision, int32, error) {
 	var currentRevision, updateRevision *appsv1.ControllerRevision
 
 	revisionCount := len(revisions)
-	sort.Slice(revisions, func(i, j int) bool {
-		return revisions[i].Revision < revisions[j].Revision
-	})
+	sort.Stable(byRevision(revisions))
 
 	var collisionCount int32
 	if set.Status.CollisionCount != nil {
@@ -176,7 +241,7 @@ func (r *StatefulSetReconciler) getStatefulSetRevisions(set *apps.AdvancedStatef
 }
 
 // updateStatefulSet performs the update function for a StatefulSet.
-func (r *StatefulSetReconciler) updateStatefulSet(set *apps.AdvancedStatefulSet, currentRevision *appsv1.ControllerRevision, updateRevision *appsv1.ControllerRevision, collisionCount int32, pods []*corev1.Pod) (*apps.AdvancedStatefulSetStatus, error) {
+func (r *StatefulSetReconciler) updateStatefulSet(set *apis.AdvancedStatefulSet, currentRevision *appsv1.ControllerRevision, updateRevision *appsv1.ControllerRevision, collisionCount int32, pods []*corev1.Pod) (*apis.AdvancedStatefulSetStatus, error) {
 	currentSet, err := applyRevision(set, currentRevision)
 	if err != nil {
 		return nil, err
@@ -186,15 +251,15 @@ func (r *StatefulSetReconciler) updateStatefulSet(set *apps.AdvancedStatefulSet,
 		return nil, err
 	}
 
-	status := apps.AdvancedStatefulSetStatus{}
+	status := apis.AdvancedStatefulSetStatus{}
 	status.ObservedGeneration = set.Generation
 	status.CurrentRevision = currentRevision.Name
 	status.UpdateRevision = updateRevision.Name
 	status.CollisionCount = new(int32)
 	*status.CollisionCount = collisionCount
 
-	deleteSlots := helper.GetDeleteSlots(set)
-	_replicaCount, deleteSlots := helper.GetMaxReplicaCountAndDeleteSlots(*set.Spec.Replicas, deleteSlots)
+	deleteSlots := apis.GetDeleteSlots(set)
+	_replicaCount, deleteSlots := apis.GetMaxReplicaCountAndDeleteSlots(*set.Spec.Replicas, deleteSlots)
 	replicaCount := int(_replicaCount)
 
 	replicas := make([]*corev1.Pod, replicaCount)
@@ -277,7 +342,7 @@ func (r *StatefulSetReconciler) updateStatefulSet(set *apps.AdvancedStatefulSet,
 		}
 		if isFailed(replicas[i]) || isSucceeded(replicas[i]) {
 			r.Recorder.Eventf(set, corev1.EventTypeWarning, "RecreatingFailedPod", "StatefulSet %s/%s is recreating failed Pod %s", set.Namespace, set.Name, replicas[i].Name)
-			if err := r.podControl.DeleteStatefulPod(set, replicas[i]); err != nil {
+			if err := r.PodControl.DeleteStatefulPod(set, replicas[i]); err != nil {
 				return &status, err
 			}
 			if getPodRevision(replicas[i]) == currentRevision.Name {
@@ -290,7 +355,7 @@ func (r *StatefulSetReconciler) updateStatefulSet(set *apps.AdvancedStatefulSet,
 			replicas[i] = newVersionedStatefulSetPod(currentSet, updateSet, currentRevision.Name, updateRevision.Name, i)
 		}
 		if !isCreated(replicas[i]) {
-			if err := r.podControl.CreateStatefulPod(set, replicas[i]); err != nil {
+			if err := r.PodControl.CreateStatefulPod(set, replicas[i]); err != nil {
 				return &status, err
 			}
 			status.Replicas++
@@ -318,7 +383,7 @@ func (r *StatefulSetReconciler) updateStatefulSet(set *apps.AdvancedStatefulSet,
 			continue
 		}
 		replica := replicas[i].DeepCopy()
-		if err := r.podControl.UpdateStatefulPod(updateSet, replica); err != nil {
+		if err := r.PodControl.UpdateStatefulPod(updateSet, replica); err != nil {
 			return &status, err
 		}
 	}
@@ -337,7 +402,7 @@ func (r *StatefulSetReconciler) updateStatefulSet(set *apps.AdvancedStatefulSet,
 		}
 		log.Log.Info("Terminating pod for scale down", "namespace", set.Namespace, "name", set.Name, "podName", condemned[target].Name)
 
-		if err := r.podControl.DeleteStatefulPod(set, condemned[target]); err != nil {
+		if err := r.PodControl.DeleteStatefulPod(set, condemned[target]); err != nil {
 			return &status, err
 		}
 		if getPodRevision(condemned[target]) == currentRevision.Name {
@@ -351,7 +416,7 @@ func (r *StatefulSetReconciler) updateStatefulSet(set *apps.AdvancedStatefulSet,
 		}
 	}
 
-	if set.Spec.UpdateStrategy.Type == apps.OnDeleteStatefulSetStrategyType {
+	if set.Spec.UpdateStrategy.Type == apis.OnDeleteStatefulSetStrategyType {
 		return &status, nil
 	}
 
@@ -365,7 +430,7 @@ func (r *StatefulSetReconciler) updateStatefulSet(set *apps.AdvancedStatefulSet,
 		}
 		if getPodRevision(replicas[target]) != updateRevision.Name && !isTerminating(replicas[target]) {
 			log.Log.Info("Terminating pod for update", "namespace", set.Namespace, "name", set.Name, "podName", replicas[target].Name)
-			err := r.podControl.DeleteStatefulPod(set, replicas[target])
+			err := r.PodControl.DeleteStatefulPod(set, replicas[target])
 			status.CurrentReplicas--
 			return &status, err
 		}
@@ -380,60 +445,42 @@ func (r *StatefulSetReconciler) updateStatefulSet(set *apps.AdvancedStatefulSet,
 }
 
 // updateStatefulSetStatus updates set's Status to be equal to status.
-func (r *StatefulSetReconciler) updateStatefulSetStatus(set *apps.AdvancedStatefulSet, status *apps.AdvancedStatefulSetStatus) error {
+func (r *StatefulSetReconciler) updateStatefulSetStatus(set *apis.AdvancedStatefulSet, status *apis.AdvancedStatefulSetStatus) error {
 	completeRollingUpdate(set, status)
 
 	if !inconsistentStatus(set, status) {
 		return nil
 	}
 
-	set = set.DeepCopy()
+	//set = set.DeepCopy()，这个地方存在争议，？暂时写不出来
 	return r.Client.Status().Update(context.TODO(), set)
 }
 
-// podControl is used for patching pods.
-type podControl struct {
-	Client   client.Client
-	Recorder record.EventRecorder
-}
+//// podControl is used for patching pods.
+//type podControl struct {
+//	Client   client.Client
+//	Recorder record.EventRecorder
+//}
 
-var _ StatefulPodControlInterface = &podControl{}
-
-// CreateStatefulPod creates a Pod in a StatefulSet.
-func (pc *podControl) CreateStatefulPod(set *apps.AdvancedStatefulSet, pod *corev1.Pod) error {
-	err := pc.Client.Create(context.TODO(), pod)
-	if err != nil {
-		pc.Recorder.Eventf(set, corev1.EventTypeWarning, "FailedToCreatePod", "Failed to create Pod %s for StatefulSet %s/%s: %v", pod.Name, set.Namespace, set.Name, err)
-		return err
+// recordClaimEvent records an event for verb applied to the PersistentVolumeClaim of a Pod in a StatefulSet. If err is
+// nil the generated event will have a reason of v1.EventTypeNormal. If err is not nil the generated event will have a
+// reason of v1.EventTypeWarning.
+func (r *StatefulSetReconciler) recordClaimEvent(verb string, set *apis.AdvancedStatefulSet, pod *corev1.Pod, claim *corev1.PersistentVolumeClaim, err error) {
+	if err == nil {
+		reason := fmt.Sprintf("Successful%s", strings.Title(verb))
+		message := fmt.Sprintf("%s Claim %s Pod %s in StatefulSet %s success",
+			strings.ToLower(verb), claim.Name, pod.Name, set.Name)
+		r.Recorder.Event(set, corev1.EventTypeNormal, reason, message)
+	} else {
+		reason := fmt.Sprintf("Failed%s", strings.Title(verb))
+		message := fmt.Sprintf("%s Claim %s for Pod %s in StatefulSet %s failed error: %s",
+			strings.ToLower(verb), claim.Name, pod.Name, set.Name, err)
+		r.Recorder.Event(set, corev1.EventTypeWarning, reason, message)
 	}
-	pc.Recorder.Eventf(set, corev1.EventTypeNormal, "CreatedPod", "Created Pod %s for StatefulSet %s/%s", pod.Name, set.Namespace, set.Name)
-	return nil
-}
-
-// DeleteStatefulPod deletes a Pod in a StatefulSet.
-func (pc *podControl) DeleteStatefulPod(set *apps.AdvancedStatefulSet, pod *corev1.Pod) error {
-	err := pc.Client.Delete(context.TODO(), pod)
-	if err != nil {
-		pc.Recorder.Eventf(set, corev1.EventTypeWarning, "FailedToDeletePod", "Failed to delete Pod %s for StatefulSet %s/%s: %v", pod.Name, set.Namespace, set.Name, err)
-		return err
-	}
-	pc.Recorder.Eventf(set, corev1.EventTypeNormal, "DeletedPod", "Deleted Pod %s for StatefulSet %s/%s", pod.Name, set.Namespace, set.Name)
-	return nil
-}
-
-// UpdateStatefulPod updates a Pod in a StatefulSet.
-func (pc *podControl) UpdateStatefulPod(set *apps.AdvancedStatefulSet, pod *corev1.Pod) error {
-	err := pc.Client.Update(context.TODO(), pod)
-	if err != nil {
-		pc.Recorder.Eventf(set, corev1.EventTypeWarning, "FailedToUpdatePod", "Failed to update Pod %s for StatefulSet %s/%s: %v", pod.Name, set.Namespace, set.Name, err)
-		return err
-	}
-	pc.Recorder.Eventf(set, corev1.EventTypeNormal, "UpdatedPod", "Updated Pod %s for StatefulSet %s/%s", pod.Name, set.Namespace, set.Name)
-	return nil
 }
 
 // getPodsForStatefulSet returns the pods associated with a StatefulSet.
-func (r *StatefulSetReconciler) getPodsForStatefulSet(set *apps.AdvancedStatefulSet, selector labels.Selector) ([]*corev1.Pod, error) {
+func (r *StatefulSetReconciler) getPodsForStatefulSet(set *apis.AdvancedStatefulSet, selector labels.Selector) ([]*corev1.Pod, error) {
 	podList := &corev1.PodList{}
 	err := r.Client.List(context.TODO(), podList, client.InNamespace(set.Namespace), client.MatchingLabelsSelector{Selector: selector})
 	if err != nil {
@@ -454,6 +501,30 @@ func (r *StatefulSetReconciler) SetupWithManager(mgr ctrl.Manager, options contr
 		Complete(r)
 }
 
+// newRevision creates a new ControllerRevision for a StatefulSet.
+func newRevision(set *apis.AdvancedStatefulSet, revision *appsv1.ControllerRevision, collisionCount *int32) (*appsv1.ControllerRevision, error) {
+	patch, err := getPatch(set)
+	if err != nil {
+		return nil, err
+	}
+	cr, err := NewControllerRevision(set,
+		controllerKind,
+		set.Spec.Template.Labels,
+		runtime.RawExtension{Raw: patch},
+		revision.Revision,
+		collisionCount)
+	if err != nil {
+		return nil, err
+	}
+	if cr.ObjectMeta.Annotations == nil {
+		cr.ObjectMeta.Annotations = make(map[string]string)
+	}
+	for key, value := range set.Annotations {
+		cr.ObjectMeta.Annotations[key] = value
+	}
+	return cr, nil
+}
+
 // findEqualRevisions finds ControllerRevisions that are equal to the given revision.
 func findEqualRevisions(revisions []*appsv1.ControllerRevision, revision *appsv1.ControllerRevision) []*appsv1.ControllerRevision {
 	equalRevisions := make([]*appsv1.ControllerRevision, 0)
@@ -470,36 +541,14 @@ func equalRevision(a, b *appsv1.ControllerRevision) bool {
 	return bytes.Equal(a.Data.Raw, b.Data.Raw)
 }
 
-// newRevision creates a new ControllerRevision for a StatefulSet.
-func newRevision(set *apps.AdvancedStatefulSet, revision *appsv1.ControllerRevision, collisionCount *int32) (*appsv1.ControllerRevision, error) {
-	patch, err := getPatch(set)
-	if err != nil {
-		return nil, err
-	}
-	cr := &appsv1.ControllerRevision{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: controllerRevisionName(set.Name, hashControllerRevision(revision, collisionCount)),
-			Labels: map[string]string{
-				helper.UpgradeToAdvancedStatefulSetAnn: set.Name,
-			},
-			Annotations: set.Annotations,
-		},
-		Revision: revision,
-		Data: corev1.RawExtension{
-			Raw: patch,
-		},
-	}
-	return cr, nil
-}
-
 // applyRevision applies a ControllerRevision to a StatefulSet.
-func applyRevision(set *apps.AdvancedStatefulSet, revision *appsv1.ControllerRevision) (*apps.AdvancedStatefulSet, error) {
+func applyRevision(set *apis.AdvancedStatefulSet, revision *appsv1.ControllerRevision) (*apis.AdvancedStatefulSet, error) {
 	clone := set.DeepCopy()
 	patched, err := strategicpatch.StrategicMergePatch([]byte(runtime.EncodeOrDie(scheme.Codecs, clone)), revision.Data.Raw, clone)
 	if err != nil {
 		return nil, err
 	}
-	restoredSet := &apps.AdvancedStatefulSet{}
+	restoredSet := &apis.AdvancedStatefulSet{}
 	err = json.Unmarshal(patched, restoredSet)
 	if err != nil {
 		return nil, err
@@ -507,16 +556,19 @@ func applyRevision(set *apps.AdvancedStatefulSet, revision *appsv1.ControllerRev
 	return restoredSet, nil
 }
 
-// nextRevision finds the next valid revision number.
+// nextRevision finds the next valid revision number based on revisions. If the length of revisions
+// is 0 this is 1. Otherwise, it is 1 greater than the largest revision's Revision. This method
+// assumes that revisions has been sorted by Revision.
 func nextRevision(revisions []*appsv1.ControllerRevision) int64 {
-	if len(revisions) == 0 {
+	count := len(revisions)
+	if count <= 0 {
 		return 1
 	}
-	return revisions[len(revisions)-1].Revision + 1
+	return revisions[count-1].Revision + 1
 }
 
 // inconsistentStatus checks if a StatefulSet's status is inconsistent.
-func inconsistentStatus(set *apps.AdvancedStatefulSet, status *apps.AdvancedStatefulSetStatus) bool {
+func inconsistentStatus(set *apis.AdvancedStatefulSet, status *apis.AdvancedStatefulSetStatus) bool {
 	return status.ObservedGeneration > set.Status.ObservedGeneration ||
 		status.Replicas != set.Status.Replicas ||
 		status.CurrentReplicas != set.Status.CurrentReplicas ||
@@ -527,8 +579,8 @@ func inconsistentStatus(set *apps.AdvancedStatefulSet, status *apps.AdvancedStat
 }
 
 // completeRollingUpdate completes a rolling update for a StatefulSet.
-func completeRollingUpdate(set *apps.AdvancedStatefulSet, status *apps.AdvancedStatefulSetStatus) {
-	if set.Spec.UpdateStrategy.Type == apps.RollingUpdateStatefulSetStrategyType &&
+func completeRollingUpdate(set *apis.AdvancedStatefulSet, status *apis.AdvancedStatefulSetStatus) {
+	if set.Spec.UpdateStrategy.Type == apis.RollingUpdateStatefulSetStrategyType &&
 		status.UpdatedReplicas == status.Replicas &&
 		status.ReadyReplicas == status.Replicas {
 		status.CurrentReplicas = status.UpdatedReplicas
@@ -537,7 +589,7 @@ func completeRollingUpdate(set *apps.AdvancedStatefulSet, status *apps.AdvancedS
 }
 
 // overlappingStatefulSets sorts StatefulSets by creation timestamp and name.
-type overlappingStatefulSets []*apps.AdvancedStatefulSet
+type overlappingStatefulSets []*apis.AdvancedStatefulSet
 
 func (o overlappingStatefulSets) Len() int {
 	return len(o)
@@ -578,6 +630,28 @@ func getParentName(pod *corev1.Pod) string {
 	return parent
 }
 
+// byRevision implements sort.Interface to allow ControllerRevisions to be sorted by Revision.
+type byRevision []*appsv1.ControllerRevision
+
+func (br byRevision) Len() int {
+	return len(br)
+}
+
+// Less breaks ties first by creation timestamp, then by name
+func (br byRevision) Less(i, j int) bool {
+	if br[i].Revision == br[j].Revision {
+		if br[j].CreationTimestamp.Equal(&br[i].CreationTimestamp) {
+			return br[i].Name < br[j].Name
+		}
+		return br[j].CreationTimestamp.After(br[i].CreationTimestamp.Time)
+	}
+	return br[i].Revision < br[j].Revision
+}
+
+func (br byRevision) Swap(i, j int) {
+	br[i], br[j] = br[j], br[i]
+}
+
 // getOrdinal gets the ordinal from a Pod.
 func getOrdinal(pod *corev1.Pod) int {
 	_, ordinal := getParentNameAndOrdinal(pod)
@@ -585,32 +659,32 @@ func getOrdinal(pod *corev1.Pod) int {
 }
 
 // getPodName gets the name of a Pod for a StatefulSet and ordinal.
-func getPodName(set *apps.AdvancedStatefulSet, ordinal int) string {
+func getPodName(set *apis.AdvancedStatefulSet, ordinal int) string {
 	return fmt.Sprintf("%s-%d", set.Name, ordinal)
 }
 
 // getPersistentVolumeClaimName gets the name of a PersistentVolumeClaim for a Pod.
-func getPersistentVolumeClaimName(set *apps.AdvancedStatefulSet, claim *corev1.PersistentVolumeClaim, ordinal int) string {
+func getPersistentVolumeClaimName(set *apis.AdvancedStatefulSet, claim *corev1.PersistentVolumeClaim, ordinal int) string {
 	return fmt.Sprintf("%s-%s-%d", claim.Name, set.Name, ordinal)
 }
 
 // isMemberOf checks if a Pod is a member of a StatefulSet.
-func isMemberOf(set *apps.AdvancedStatefulSet, pod *corev1.Pod) bool {
+func isMemberOf(set *apis.AdvancedStatefulSet, pod *corev1.Pod) bool {
 	return getParentName(pod) == set.Name
 }
 
 // identityMatches checks if a Pod has a valid identity for a StatefulSet.
-func identityMatches(set *apps.AdvancedStatefulSet, pod *corev1.Pod) bool {
+func identityMatches(set *apis.AdvancedStatefulSet, pod *corev1.Pod) bool {
 	parent, ordinal := getParentNameAndOrdinal(pod)
 	return ordinal >= 0 &&
 		set.Name == parent &&
 		pod.Name == getPodName(set, ordinal) &&
 		pod.Namespace == set.Namespace &&
-		pod.Labels[apps.AdvancedStatefulSetPodNameLabel] == pod.Name
+		pod.Labels[apis.AdvancedStatefulSetPodNameLabel] == pod.Name
 }
 
 // storageMatches checks if a Pod's storage matches a StatefulSet.
-func storageMatches(set *apps.AdvancedStatefulSet, pod *corev1.Pod) bool {
+func storageMatches(set *apis.AdvancedStatefulSet, pod *corev1.Pod) bool {
 	ordinal := getOrdinal(pod)
 	if ordinal < 0 {
 		return false
@@ -631,7 +705,7 @@ func storageMatches(set *apps.AdvancedStatefulSet, pod *corev1.Pod) bool {
 }
 
 // getPersistentVolumeClaims gets the PersistentVolumeClaims for a Pod.
-func getPersistentVolumeClaims(set *apps.AdvancedStatefulSet, pod *corev1.Pod) map[string]corev1.PersistentVolumeClaim {
+func getPersistentVolumeClaims(set *apis.AdvancedStatefulSet, pod *corev1.Pod) map[string]corev1.PersistentVolumeClaim {
 	ordinal := getOrdinal(pod)
 	templates := set.Spec.VolumeClaimTemplates
 	claims := make(map[string]corev1.PersistentVolumeClaim, len(templates))
@@ -652,7 +726,7 @@ func getPersistentVolumeClaims(set *apps.AdvancedStatefulSet, pod *corev1.Pod) m
 }
 
 // updateStorage updates a Pod's storage to match a StatefulSet.
-func updateStorage(set *apps.AdvancedStatefulSet, pod *corev1.Pod) {
+func updateStorage(set *apis.AdvancedStatefulSet, pod *corev1.Pod) {
 	currentVolumes := pod.Spec.Volumes
 	claims := getPersistentVolumeClaims(set, pod)
 	newVolumes := make([]corev1.Volume, 0, len(claims))
@@ -676,7 +750,7 @@ func updateStorage(set *apps.AdvancedStatefulSet, pod *corev1.Pod) {
 }
 
 // initIdentity initializes a Pod's identity for a StatefulSet.
-func initIdentity(set *apps.AdvancedStatefulSet, pod *corev1.Pod) {
+func initIdentity(set *apis.AdvancedStatefulSet, pod *corev1.Pod) {
 	updateIdentity(set, pod)
 	// Set these immutable fields only on initial Pod creation, not updates.
 	pod.Spec.Hostname = pod.Name
@@ -684,69 +758,23 @@ func initIdentity(set *apps.AdvancedStatefulSet, pod *corev1.Pod) {
 }
 
 // updateIdentity updates a Pod's identity to match a StatefulSet.
-func updateIdentity(set *apps.AdvancedStatefulSet, pod *corev1.Pod) {
+func updateIdentity(set *apis.AdvancedStatefulSet, pod *corev1.Pod) {
 	pod.Name = getPodName(set, getOrdinal(pod))
 	pod.Namespace = set.Namespace
 	if pod.Labels == nil {
 		pod.Labels = make(map[string]string)
 	}
-	pod.Labels[apps.AdvancedStatefulSetPodNameLabel] = pod.Name
+	pod.Labels[apis.AdvancedStatefulSetPodNameLabel] = pod.Name
 }
 
 // isRunningAndReady checks if a Pod is running and ready.
 func isRunningAndReady(pod *corev1.Pod) bool {
-	return pod.Status.Phase == corev1.PodRunning && k8s.IsPodReady(pod)
-}
-
-// isCreated checks if a Pod has been created.
-func isCreated(pod *corev1.Pod) bool {
-	return pod.Status.Phase != ""
-}
-
-// isFailed checks if a Pod has failed.
-func isFailed(pod *corev1.Pod) bool {
-	return pod.Status.Phase == corev1.PodFailed
-}
-
-// isSucceeded checks if a Pod has succeeded.
-func isSucceeded(pod *corev1.Pod) bool {
-	return pod.Status.Phase == corev1.PodSucceeded
-}
-
-// isTerminating checks if a Pod is being terminated.
-func isTerminating(pod *corev1.Pod) bool {
-	return pod.DeletionTimestamp != nil
-}
-
-// isHealthy checks if a Pod is healthy.
-func isHealthy(pod *corev1.Pod) bool {
-	return isRunningAndReady(pod) && !isTerminating(pod)
-}
-
-// allowsBurst checks if a StatefulSet allows burst operations.
-func allowsBurst(set *apps.AdvancedStatefulSet) bool {
-	return set.Spec.PodManagementPolicy == apps.ParallelPodManagement
-}
-
-// setPodRevision sets the revision of a Pod.
-func setPodRevision(pod *corev1.Pod, revision string) {
-	if pod.Labels == nil {
-		pod.Labels = make(map[string]string)
-	}
-	pod.Labels[appsv1.StatefulSetRevisionLabel] = revision
-}
-
-// getPodRevision gets the revision of a Pod.
-func getPodRevision(pod *corev1.Pod) string {
-	if pod.Labels == nil {
-		return ""
-	}
-	return pod.Labels[appsv1.StatefulSetRevisionLabel]
+	return pod.Status.Phase == corev1.PodRunning && IsPodReady(pod)
 }
 
 // newStatefulSetPod creates a new Pod for a StatefulSet.
-func newStatefulSetPod(set *apps.AdvancedStatefulSet, ordinal int) *corev1.Pod {
-	pod, _ := k8s.GetPodFromTemplate(&set.Spec.Template, set, metav1.NewControllerRef(set, controllerKind))
+func newStatefulSetPod(set *apis.AdvancedStatefulSet, ordinal int) *corev1.Pod {
+	pod, _ := GetPodFromTemplate(&set.Spec.Template, set, metav1.NewControllerRef(set, controllerKind))
 	pod.Name = getPodName(set, ordinal)
 	initIdentity(set, pod)
 	updateStorage(set, pod)
@@ -754,8 +782,8 @@ func newStatefulSetPod(set *apps.AdvancedStatefulSet, ordinal int) *corev1.Pod {
 }
 
 // newVersionedStatefulSetPod creates a new Pod for a StatefulSet with a specific revision.
-func newVersionedStatefulSetPod(currentSet, updateSet *apps.AdvancedStatefulSet, currentRevision, updateRevision string, ordinal int) *corev1.Pod {
-	if currentSet.Spec.UpdateStrategy.Type == apps.RollingUpdateStatefulSetStrategyType &&
+func newVersionedStatefulSetPod(currentSet, updateSet *apis.AdvancedStatefulSet, currentRevision, updateRevision string, ordinal int) *corev1.Pod {
+	if currentSet.Spec.UpdateStrategy.Type == apis.RollingUpdateStatefulSetStrategyType &&
 		(currentSet.Spec.UpdateStrategy.RollingUpdate == nil && ordinal < int(currentSet.Status.CurrentReplicas)) ||
 		(currentSet.Spec.UpdateStrategy.RollingUpdate != nil && ordinal < int(*currentSet.Spec.UpdateStrategy.RollingUpdate.Partition)) {
 		pod := newStatefulSetPod(currentSet, ordinal)
@@ -782,79 +810,10 @@ func (ao ascendingOrdinal) Less(i, j int) bool {
 	return getOrdinal(ao[i]) < getOrdinal(ao[j])
 }
 
-// hashControllerRevision hashes a ControllerRevision.
-func hashControllerRevision(revision *appsv1.ControllerRevision, probe *int32) string {
-	hf := fnv.New32()
-	if len(revision.Data.Raw) > 0 {
-		hf.Write(revision.Data.Raw)
-	}
-	if revision.Data.Object != nil {
-		k8s.DeepHashObject(hf, revision.Data.Object)
-	}
-	if probe != nil {
-		hf.Write([]byte(strconv.FormatInt(int64(*probe), 10)))
-	}
-	return rand.SafeEncodeString(fmt.Sprint(hf.Sum32()))
-}
-
-// controllerRevisionName generates a ControllerRevision name.
-func controllerRevisionName(prefix string, hash string) string {
-	if len(prefix) > 223 {
-		prefix = prefix[:223]
-	}
-	return fmt.Sprintf("%s-%s", prefix, hash)
-}
-
-// getPatch generates a patch for a StatefulSet.
-func getPatch(set *apps.AdvancedStatefulSet) ([]byte, error) {
-	str, err := runtime.Encode(scheme.Codecs, set)
-	if err != nil {
-		return nil, err
-	}
-	var raw map[string]interface{}
-	json.Unmarshal([]byte(str), &raw)
-	objCopy := make(map[string]interface{})
-	specCopy := make(map[string]interface{})
-	spec := raw["spec"].(map[string]interface{})
-	template := spec["template"].(map[string]interface{})
-	specCopy["template"] = template
-	template["$patch"] = "replace"
-	objCopy["spec"] = specCopy
-	patch, err := json.Marshal(objCopy)
-	return patch, err
-}
-
-func PerformController() {
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{})
-	if err != nil {
-		panic(err)
-	}
-
-	recorder := mgr.GetEventRecorderFor("statefulset-controller")
-	reconciler := &StatefulSetReconciler{
-		Client:   mgr.GetClient(),
-		Recorder: recorder,
-	}
-
-	err = reconciler.SetupWithManager(mgr)
-	if err != nil {
-		panic(err)
-	}
-
-	err = ctrl.NewWebhookManagedBy(mgr).For(&apps.AdvancedStatefulSet{}).Complete()
-	if err != nil {
-		panic(err)
-	}
-
-	err = mgr.Start(ctrl.SetupSignalHandler())
-	if err != nil {
-		panic(err)
-	}
-}
-
 // ShrinkPod scales down a specific pod in the StatefulSet.
-func (r *StatefulSetReconciler) ShrinkPod(set *apps.AdvancedStatefulSet, podOrdinal int) error {
-	pods, err := r.getPodsForStatefulSet(set, metav1.LabelSelectorAsSelector(set.Spec.Selector))
+func (r *StatefulSetReconciler) ShrinkPod(set *apis.AdvancedStatefulSet, podOrdinal int) error {
+	selector, err := metav1.LabelSelectorAsSelector(set.Spec.Selector)
+	pods, err := r.getPodsForStatefulSet(set, selector)
 	if err != nil {
 		return err
 	}
@@ -870,7 +829,7 @@ func (r *StatefulSetReconciler) ShrinkPod(set *apps.AdvancedStatefulSet, podOrdi
 		return nil
 	}
 
-	err = r.podControl.DeleteStatefulPod(set, targetPod)
+	err = r.PodControl.DeleteStatefulPod(set, targetPod)
 	if err != nil {
 		klog.Errorf("Failed to delete pod %s for StatefulSet %s/%s: %v", targetPod.Name, set.Namespace, set.Name, err)
 		return err

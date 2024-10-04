@@ -3,7 +3,7 @@ package cacheworkerset
 import (
 	"context"
 	"fmt"
-	v12 "github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset/client/v1"
+	v12 "github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset/asts/apis"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"

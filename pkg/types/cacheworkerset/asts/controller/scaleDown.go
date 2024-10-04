@@ -1,6 +1,6 @@
 package statefulset
 
-import apps "github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset/client/v1"
+import apps "github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset/apis"
 
 type ScaleDownStrategy interface {
 	// AllowCreateDuringDeletion returns true if Pods can be created during deletion
@@ -10,8 +10,8 @@ type ScaleDownStrategy interface {
 }
 
 type ScaleDownStatus struct {
-	// TotalReplicas is the total number of replicas in the StatefulSet
-	TotalReplicas int
+	// CurReplicas is the total number of replicas in the StatefulSet
+	CurReplicas int
 	// ScaledDown is the number of replicas that were scaled down
 	ScaledDown int
 	// Errors contains any errors that occurred during the scale down operation
@@ -59,7 +59,7 @@ type DefaultScaleDownOperation struct {
 
 func (o *DefaultScaleDownOperation) ExecuteScaleDown(strategy ScaleDownStrategy) (*ScaleDownStatus, error) {
 	status := &ScaleDownStatus{
-		TotalReplicas: int(*o.StatefulSet.Spec.Replicas),
+		CurReplicas: int(*o.StatefulSet.Spec.Replicas),
 	}
 
 	// Logic to execute scale down operation according to the strategy

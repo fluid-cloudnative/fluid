@@ -1,4 +1,4 @@
-package v1
+package apis
 
 import (
 	v1 "k8s.io/api/core/v1"
@@ -8,6 +8,23 @@ import (
 )
 
 type AdvancedStatefulSetUpdateStrategyType string
+type StatefulSetUpdateStrategyType string
+
+const (
+	// RollingUpdateStatefulSetStrategyType indicates that update will be
+	// applied to all Pods in the StatefulSet with respect to the StatefulSet
+	// ordering constraints. When a scale operation is performed with this
+	// strategy, new Pods will be created from the specification version indicated
+	// by the StatefulSet's updateRevision.
+	RollingUpdateStatefulSetStrategyType AdvancedStatefulSetUpdateStrategyType = "RollingUpdate"
+	// OnDeleteStatefulSetStrategyType triggers the legacy behavior. Version
+	// tracking and ordered rolling restarts are disabled. Pods are recreated
+	// from the StatefulSetSpec when they are manually deleted. When a scale
+	// operation is performed with this strategy,specification version indicated
+	// by the StatefulSet's currentRevision.
+	OnDeleteStatefulSetStrategyType AdvancedStatefulSetUpdateStrategyType = "OnDelete"
+	AdvancedStatefulSetPodNameLabel string                                = "AdvancedStatefulSetPod"
+)
 
 // AdvancedStatefulSetUpdateStrategy indicates the strategy that the StatefulSet
 // controller will use to perform updates. It includes any additional parameters
@@ -161,4 +178,17 @@ func (a AdvancedStatefulSetStatus) GetReplicas() int {
 func (a AdvancedStatefulSetStatus) GetSpec() interface{} {
 	//TODO implement me
 	panic("implement me")
+}
+
+func (a AdvancedStatefulSet) GetNamespace() string {
+	return a.ObjectMeta.Namespace
+}
+
+func (in *AdvancedStatefulSet) DeepCopy() *AdvancedStatefulSet {
+	if in == nil {
+		return nil
+	}
+	out := new(AdvancedStatefulSet)
+	in.DeepCopyInto(out)
+	return out
 }

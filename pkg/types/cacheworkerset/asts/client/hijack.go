@@ -1,4 +1,4 @@
-package apis
+package client
 
 import (
 	"context"
@@ -6,10 +6,11 @@ import (
 	"errors"
 	"sync"
 
-	asapplyv1 "github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset/client/v1"
-	asv1 "github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset/client/v1"
+	asv1 "github.com/pingcap/advanced-statefulset/client/apis/apps/v1"
+	asapplyv1 "github.com/pingcap/advanced-statefulset/client/client/applyconfiguration/apps/v1"
 	asclientset "github.com/pingcap/advanced-statefulset/client/client/clientset/versioned"
 	asclientsetv1 "github.com/pingcap/advanced-statefulset/client/client/clientset/versioned/typed/apps/v1"
+
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
