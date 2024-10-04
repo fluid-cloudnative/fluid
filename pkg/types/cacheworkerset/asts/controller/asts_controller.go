@@ -12,6 +12,8 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/kubernetes"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -116,8 +118,12 @@ func (r *StatefulSetReconciler) ListRevisions(set *apis.AdvancedStatefulSet) ([]
 	if err != nil {
 		return nil, err
 	}
+	kubeClient, ok := r.client.(kubernetes.Interface)
+	if !ok {
+		return nil, fmt.Errorf("could not convert client to kubernetes.Interface")
+	}
+	appsV1Client := clientsetappsv1.AppsV1Interface(kubeClient.AppsV1())
 
-	appsV1Client := clientsetappsv1.AppsV1Interface(r.client.AppsV1())
 	revisionsToUpgrade, err := appsV1Client.ControllerRevisions(set.GetNamespace()).List(
 		context.TODO(), metav1.ListOptions{
 			LabelSelector: labels.SelectorFromValidatedSet(map[string]string{
@@ -143,7 +149,11 @@ func (r *StatefulSetReconciler) updateControllerRevision(revision *appsv1.Contro
 			return nil
 		}
 		clone.Revision = newRevision
-		appsV1Client := clientsetappsv1.AppsV1Interface(r.client.AppsV1())
+		kubeClient, ok := r.client.(kubernetes.Interface)
+		if !ok {
+			return fmt.Errorf("could not convert client to kubernetes.Interface")
+		}
+		appsV1Client := clientsetappsv1.AppsV1Interface(kubeClient.AppsV1())
 		updated, updateErr := appsV1Client.ControllerRevisions(clone.Namespace).Update(context.TODO(), clone, metav1.UpdateOptions{})
 		if updateErr == nil {
 			return nil
@@ -175,7 +185,11 @@ func (r *StatefulSetReconciler) createControllerRevision(parent metav1.Object, r
 		// Update the revisions name
 		clone.Name = controllerRevisionName(parent.GetName(), hash)
 		ns := parent.GetNamespace()
-		appsV1Client := clientsetappsv1.AppsV1Interface(r.client.AppsV1())
+		kubeClient, ok := r.client.(kubernetes.Interface)
+		if !ok {
+			return nil, fmt.Errorf("could not convert client to kubernetes.Interface")
+		}
+		appsV1Client := clientsetappsv1.AppsV1Interface(kubeClient.AppsV1())
 		created, err := appsV1Client.ControllerRevisions(ns).Create(context.TODO(), clone, metav1.CreateOptions{})
 		if errors.IsAlreadyExists(err) {
 			exists, err := appsV1Client.ControllerRevisions(ns).Get(context.TODO(), clone.Name, metav1.GetOptions{})
@@ -507,6 +521,8 @@ func newRevision(set *apis.AdvancedStatefulSet, revision *appsv1.ControllerRevis
 	if err != nil {
 		return nil, err
 	}
+	var SchemeGroupVersion = schema.GroupVersion{Group: GroupName, Version: "v2"}
+	controllerKind := SchemeGroupVersion.WithKind("AdvancedStatefulset")
 	cr, err := NewControllerRevision(set,
 		controllerKind,
 		set.Spec.Template.Labels,
@@ -774,6 +790,8 @@ func isRunningAndReady(pod *corev1.Pod) bool {
 
 // newStatefulSetPod creates a new Pod for a StatefulSet.
 func newStatefulSetPod(set *apis.AdvancedStatefulSet, ordinal int) *corev1.Pod {
+	var SchemeGroupVersion = schema.GroupVersion{Group: GroupName, Version: "v2"}
+	controllerKind := SchemeGroupVersion.WithKind("AdvancedStatefulset")
 	pod, _ := GetPodFromTemplate(&set.Spec.Template, set, metav1.NewControllerRef(set, controllerKind))
 	pod.Name = getPodName(set, ordinal)
 	initIdentity(set, pod)

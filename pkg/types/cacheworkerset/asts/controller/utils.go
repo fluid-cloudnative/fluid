@@ -6,20 +6,30 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset/asts/apis"
 	"hash"
 	"hash/fnv"
-	appsv1 "k8s.io/api/apps/corev1"
 	apps "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
-	//metav1 "k8s.io/apimachinery/pkg/apis/meta/corev1"
+	apimachineryvalidation "k8s.io/apimachinery/pkg/api/validation"
+	"k8s.io/apimachinery/pkg/apis/meta/internalversion/scheme"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"strconv"
 )
 
 const ControllerRevisionHashLabel = "controller.kubernetes.io/hash"
-const controllerKind schema.GroupVerisionKind = "AdvancedStatefulset"
+const StatefulSetRevisionLabel = "advancedstatefulset.fluid.io/revision"
+const ParallelPodManagement = "Parallel"
+
+var ValidatePodName = apimachineryvalidation.NameIsDNSSubdomain
+
+const (
+	// GroupName is the group name use in this package
+	GroupName string = "fluid.io"
+)
 
 func IsPodReady(pod *corev1.Pod) bool {
 	return IsPodReadyConditionTrue(pod.Status)
@@ -65,7 +75,7 @@ func setPodRevision(pod *corev1.Pod, revision string) {
 	if pod.Labels == nil {
 		pod.Labels = make(map[string]string)
 	}
-	pod.Labels[appsv1.StatefulSetRevisionLabel] = revision
+	pod.Labels[StatefulSetRevisionLabel] = revision
 }
 
 // getPodRevision gets the revision of a Pod.
@@ -73,7 +83,7 @@ func getPodRevision(pod *corev1.Pod) string {
 	if pod.Labels == nil {
 		return ""
 	}
-	return pod.Labels[appsv1.StatefulSetRevisionLabel]
+	return pod.Labels[StatefulSetRevisionLabel]
 }
 
 // isCreated checks if a Pod has been created.
@@ -103,9 +113,35 @@ func isHealthy(pod *corev1.Pod) bool {
 
 // allowsBurst checks if a StatefulSet allows burst operations.
 func allowsBurst(set *apis.AdvancedStatefulSet) bool {
-	return set.Spec.PodManagementPolicy == apis.ParallelPodManagement
+	return set.Spec.PodManagementPolicy == ParallelPodManagement
 }
-
+func getPodsLabelSet(template *corev1.PodTemplateSpec) labels.Set {
+	desiredLabels := make(labels.Set)
+	for k, v := range template.Labels {
+		desiredLabels[k] = v
+	}
+	return desiredLabels
+}
+func getPodsFinalizers(template *corev1.PodTemplateSpec) []string {
+	desiredFinalizers := make([]string, len(template.Finalizers))
+	copy(desiredFinalizers, template.Finalizers)
+	return desiredFinalizers
+}
+func getPodsAnnotationSet(template *corev1.PodTemplateSpec) labels.Set {
+	desiredAnnotations := make(labels.Set)
+	for k, v := range template.Annotations {
+		desiredAnnotations[k] = v
+	}
+	return desiredAnnotations
+}
+func getPodsPrefix(controllerName string) string {
+	// use the dash (if the name isn't too long) to make the pod name a bit prettier
+	prefix := fmt.Sprintf("%s-", controllerName)
+	if len(ValidatePodName(prefix, true)) != 0 {
+		prefix = controllerName
+	}
+	return prefix
+}
 func GetPodFromTemplate(template *corev1.PodTemplateSpec, parentObject runtime.Object, controllerRef *metav1.OwnerReference) (*corev1.Pod, error) {
 	desiredLabels := getPodsLabelSet(template)
 	desiredFinalizers := getPodsFinalizers(template)
@@ -144,7 +180,7 @@ func DeepHashObject(hasher hash.Hash, objectToWrite interface{}) {
 	printer.Fprintf(hasher, "%#v", objectToWrite)
 }
 
-func hashControllerRevision(revision *appsv1.ControllerRevision, probe *int32) string {
+func hashControllerRevision(revision *apps.ControllerRevision, probe *int32) string {
 	hf := fnv.New32()
 	if len(revision.Data.Raw) > 0 {
 		hf.Write(revision.Data.Raw)

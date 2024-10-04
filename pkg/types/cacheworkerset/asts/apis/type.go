@@ -189,6 +189,6 @@ func (in *AdvancedStatefulSet) DeepCopy() *AdvancedStatefulSet {
 		return nil
 	}
 	out := new(AdvancedStatefulSet)
-	in.DeepCopyInto(out)
+	in.DeepCopyInto(out.ObjectMeta)
 	return out
 }
