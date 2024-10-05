@@ -55,7 +55,7 @@ func (p *MountPropagationInjector) Mutate(pod *corev1.Pod, runtimeInfos map[stri
 	if len(runtimeInfos) == 0 {
 		return
 	}
-	datasetNames := make([]string, len(runtimeInfos))
+	datasetNames := make([]string, 0, len(runtimeInfos))
 	for name, runtimeInfo := range runtimeInfos {
 		if runtimeInfo == nil {
 			err = fmt.Errorf("RuntimeInfo is nil")
