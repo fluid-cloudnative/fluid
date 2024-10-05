@@ -23,7 +23,7 @@ const (
 	// operation is performed with this strategy,specification version indicated
 	// by the StatefulSet's currentRevision.
 	OnDeleteStatefulSetStrategyType AdvancedStatefulSetUpdateStrategyType = "OnDelete"
-	AdvancedStatefulSetPodNameLabel string                                = "AdvancedStatefulSetPod"
+	AdvancedStatefulSetPodNameLabel string                                = "AdvancedStatefulSetPodLabel"
 )
 
 // AdvancedStatefulSetUpdateStrategy indicates the strategy that the StatefulSet

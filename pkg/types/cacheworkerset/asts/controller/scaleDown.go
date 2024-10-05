@@ -1,6 +1,9 @@
 package statefulset
 
-import apps "github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset/apis"
+import (
+	"github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset/asts/apis"
+	"log"
+)
 
 type ScaleDownStrategy interface {
 	// AllowCreateDuringDeletion returns true if Pods can be created during deletion
@@ -22,75 +25,33 @@ func (s *ScaleDownStatus) AddError(err error) {
 	s.Errors = append(s.Errors, err)
 }
 
-var _ ScaleDownOperation = &DefaultScaleDownOperation{}
-
 type DefaultScaleDownOperation struct {
-	StatefulSetControl StatefulSetControlInterface
-	PodControl         PodControlInterface
-	StatefulSet        *apps.StatefulSet
+	PodControl  AdvancedStatefulPodControl
+	StatefulSet *apis.AdvancedStatefulSet
 }
 
 func NewDefaultScaleDownOperation(
-	statefulSetControl StatefulSetControlInterface,
-	podControl PodControlInterface,
-	statefulSet *apps.StatefulSet) *DefaultScaleDownOperation {
+	podControl AdvancedStatefulPodControl,
+	statefulSet *apis.AdvancedStatefulSet) *DefaultScaleDownOperation {
 	return &DefaultScaleDownOperation{
-		StatefulSetControl: statefulSetControl,
-		PodControl:         podControl,
-		StatefulSet:        statefulSet,
+		PodControl:  podControl,
+		StatefulSet: statefulSet,
 	}
-}
-func (o *DefaultScaleDownOperation) ExecuteScaleDown(strategy ScaleDownStrategy) (*ScaleDownStatus, error) {
 }
 
 type ScaleDownOperation interface {
 	// ExecuteScaleDown performs the scale down operation according to the given strategy
-	ExecuteScaleDown(strategy ScaleDownStrategy) (*ScaleDownStatus, error)
+	ExecuteScaleDown(set *apis.AdvancedStatefulSet, strategy ScaleDownStrategy) (*ScaleDownStatus, error)
 }
 
-type DefaultScaleDownOperation struct {
-	// StatefulSetControlInterface is the control logic for StatefulSets
-	StatefulSetControl StatefulSetControlInterface
-	// PodControlInterface is used to create, update, and delete Pods
-	PodControl PodControlInterface
-	// StatefulSet is the target of the scale down operation
-	StatefulSet *apps.StatefulSet
-}
-
-func (o *DefaultScaleDownOperation) ExecuteScaleDown(strategy ScaleDownStrategy) (*ScaleDownStatus, error) {
-	status := &ScaleDownStatus{
-		CurReplicas: int(*o.StatefulSet.Spec.Replicas),
+func (o *DefaultScaleDownOperation) ExecuteScaleDown(set *apis.AdvancedStatefulSet, strategy ScaleDownStrategy) (ScaleDownStatus, error) {
+	r := StatefulSetReconciler{}
+	// 假设已经有一个 AdvancedStatefulSet 对象 set
+	// 调用 ShrinkPod 方法
+	PodScaleInNum, err := r.ScaleInPodFunc(set, 5)
+	if PodScaleInNum == -1 && err != nil {
+		log.Fatalf("Error shrinking pods: %v", err)
 	}
-
-	// Logic to execute scale down operation according to the strategy
-	// This may involve:
-	// - Waiting for Pods to be running and ready
-	// - Deleting Pods
-	// - Handling errors
-	// - Updating status
-
-	// Example pseudocode for waiting and deleting
-	pods, err := o.StatefulSetControl.ListPods(o.StatefulSet)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, pod := range pods {
-		if strategy.ShouldWaitForRunningAndReady() {
-			if err := o.PodControl.WaitForRunningAndReady(pod); err != nil {
-				status.AddError(err)
-				continue
-			}
-		}
-
-		if !strategy.AllowCreateDuringDeletion() {
-			if err := o.PodControl.DeletePod(pod); err != nil {
-				status.AddError(err)
-			} else {
-				status.UpdateScaledDown(1)
-			}
-		}
-	}
-
+	status := ScaleDownStatus{CurReplicas: 5, ScaledDown: PodScaleInNum}
 	return status, nil
 }

@@ -16,7 +16,10 @@ import (
 type WorkerType string
 type StatefulSetConditionType string
 
+var NeedScaleInAnnoKey string = "fluid.io/need-scale-in"
+
 const (
+	WorkerTypeAnnoKey       WorkerType = "fluid.io/workerset-type"
 	StatefulSetType         WorkerType = "statefulset"
 	AdvancedStatefulSetType WorkerType = "advanced_statefulset"
 	DaemonSetType           WorkerType = "daemonset"

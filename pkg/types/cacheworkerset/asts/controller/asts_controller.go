@@ -7,12 +7,14 @@ import (
 	"fmt"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/controllers"
+	"github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset"
 	apis "github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset/asts/apis"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/kubernetes"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -828,41 +830,101 @@ func (ao ascendingOrdinal) Less(i, j int) bool {
 	return getOrdinal(ao[i]) < getOrdinal(ao[j])
 }
 
-// ShrinkPod scales down a specific pod in the StatefulSet.
-func (r *StatefulSetReconciler) ShrinkPod(set *apis.AdvancedStatefulSet, podOrdinal int) error {
+// ShrinkPod scales down specific pods in the StatefulSet.
+
+func (r *StatefulSetReconciler) PatchPodForScaleIn(set *apis.AdvancedStatefulSet, replicas int) (int, error) {
 	selector, err := metav1.LabelSelectorAsSelector(set.Spec.Selector)
+	curNum := set.Status.CurrentReplicas
+	needToScaleInNum := int(curNum) - replicas
 	pods, err := r.getPodsForStatefulSet(set, selector)
 	if err != nil {
-		return err
+		return -1, err
 	}
 
-	targetPod := findPodByOrdinal(pods, podOrdinal)
-	if targetPod == nil {
-		klog.Errorf("Pod with ordinal %d not found for StatefulSet %s/%s", podOrdinal, set.Namespace, set.Name)
-		return nil
+	if needToScaleInNum <= 0 {
+		return -1, nil
 	}
 
-	if isTerminating(targetPod) {
-		klog.Infof("Pod %s for StatefulSet %s/%s is already terminating", targetPod.Name, set.Namespace, set.Name)
-		return nil
+	// Shuffle the pods to select randomly.
+	shuffledPods := make([]*corev1.Pod, len(pods))
+	perm := rand.Perm(len(pods))
+	for i, v := range perm {
+		shuffledPods[v] = pods[i]
 	}
 
-	err = r.PodControl.DeleteStatefulPod(set, targetPod)
-	if err != nil {
-		klog.Errorf("Failed to delete pod %s for StatefulSet %s/%s: %v", targetPod.Name, set.Namespace, set.Name, err)
-		return err
-	}
-
-	klog.Infof("Successfully initiated termination of pod %s for StatefulSet %s/%s", targetPod.Name, set.Namespace, set.Name)
-	return nil
-}
-
-// findPodByOrdinal finds a pod by its ordinal in a list of pods.
-func findPodByOrdinal(pods []*corev1.Pod, ordinal int) *corev1.Pod {
-	for _, pod := range pods {
-		if getOrdinal(pod) == ordinal {
-			return pod
+	selectedPods := shuffledPods[:needToScaleInNum]
+	for _, pod := range selectedPods {
+		if pod.Annotations == nil {
+			pod.Annotations = make(map[string]string)
+		}
+		pod.Annotations[cacheworkerset.NeedScaleInAnnoKey] = "true"
+		err := r.client.Update(context.TODO(), pod)
+		if err != nil {
+			return -1, err
 		}
 	}
-	return nil
+
+	return needToScaleInNum, nil
+}
+
+func (r *StatefulSetReconciler) ScaleInPodFunc(set *apis.AdvancedStatefulSet, NeedReplicas int) (int, error) {
+
+	PodScaleInNum, err := r.PatchPodForScaleIn(set, NeedReplicas)
+	if PodScaleInNum == -1 || err != nil {
+		return -1, err
+	}
+
+	selector, err := metav1.LabelSelectorAsSelector(set.Spec.Selector)
+	pods, err := r.getPodsForStatefulSet(set, selector)
+
+	if err != nil {
+		return -1, err
+	}
+
+	// Initialize an empty slice to hold the ordinals of pods that need to be scaled in.
+	podOrdinals := []int{}
+
+	for _, pod := range pods {
+		if pod.Annotations != nil && pod.Annotations[cacheworkerset.NeedScaleInAnnoKey] == "true" {
+			podOrdinal := getOrdinal(pod)
+			podOrdinals = append(podOrdinals, podOrdinal)
+		}
+	}
+	targetPods := findPodByOrdinalAndAnnotation(pods, podOrdinals, string(cacheworkerset.WorkerTypeAnnoKey))
+	if len(targetPods) == 0 {
+		klog.Errorf("Pods with needToScaleIn annotation not found for StatefulSet %s/%s", set.Namespace, set.Name)
+		return -1, nil
+	}
+
+	for _, targetPod := range targetPods {
+		if isTerminating(targetPod) {
+			klog.Infof("Pod %s for StatefulSet %s/%s is already terminating", targetPod.Name, set.Namespace, set.Name)
+			continue
+		}
+
+		err = r.PodControl.DeleteStatefulPod(set, targetPod)
+		if err != nil {
+			klog.Errorf("Failed to delete pod %s for StatefulSet %s/%s: %v", targetPod.Name, set.Namespace, set.Name, err)
+			return -1, err
+		}
+
+		klog.Infof("Successfully initiated termination of pod %s for StatefulSet %s/%s", targetPod.Name, set.Namespace, set.Name)
+	}
+
+	return PodScaleInNum, nil
+}
+
+// findPodByOrdinalAndAnnotation finds pods by their ordinal and annotation in a list of pods.
+
+func findPodByOrdinalAndAnnotation(pods []*corev1.Pod, ordinals []int, annotationKey string) []*corev1.Pod {
+	result := []*corev1.Pod{}
+	for _, pod := range pods {
+		podOrdinal := getOrdinal(pod)
+		for _, ordinal := range ordinals {
+			if podOrdinal == ordinal && pod.Annotations[annotationKey] == string(cacheworkerset.AdvancedStatefulSetType) {
+				result = append(result, pod)
+			}
+		}
+	}
+	return result
 }
