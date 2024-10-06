@@ -19,7 +19,7 @@ limitations under the License.
 package v1
 
 import (
-	v1 "github.com/pingcap/advanced-statefulset/client/apis/apps/v1"
+	v1 "github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset/asts/apis"
 )
 
 // StatefulSetUpdateStrategyApplyConfiguration represents an declarative configuration of the StatefulSetUpdateStrategy type for use

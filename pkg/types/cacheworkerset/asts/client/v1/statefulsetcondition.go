@@ -19,7 +19,7 @@ limitations under the License.
 package v1
 
 import (
-	v1 "github.com/pingcap/advanced-statefulset/client/apis/apps/v1"
+	v1 "github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset/asts/apis"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

@@ -9,6 +9,7 @@ import (
 
 type AdvancedStatefulSetUpdateStrategyType string
 type StatefulSetUpdateStrategyType string
+type StatefulSetConditionType string
 
 const (
 	// RollingUpdateStatefulSetStrategyType indicates that update will be
