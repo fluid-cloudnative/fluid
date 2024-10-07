@@ -21,6 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
 )
 
 const (
@@ -937,7 +938,7 @@ type ControllerRevision struct {
 	Data runtime.RawExtension `json:"data,omitempty" protobuf:"bytes,2,opt,name=data"`
 
 	// Revision indicates the revision of the state represented by Data.
-	Revision int64 `json:"revision" protobuf:"varint,3,opt,name=revision"`
+	Revision v1.ControllerRevision  `json:"revision" protobuf:"varint,3,opt,name=revision"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
