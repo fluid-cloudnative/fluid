@@ -32,45 +32,76 @@ import (
 )
 
 func TestTransformWorker(t *testing.T) {
-	resources := corev1.ResourceRequirements{}
-	resources.Limits = make(corev1.ResourceList)
-	resources.Limits[corev1.ResourceMemory] = resource.MustParse("2Gi")
-
-	result := resource.MustParse("20Gi")
+	resultStr := "20Gi"
+	result := resource.MustParse(resultStr)
 	var tests = []struct {
 		runtime    *datav1alpha1.JindoRuntime
 		dataset    *datav1alpha1.Dataset
 		jindoValue *Jindo
 		expect     string
 	}{
-		{&datav1alpha1.JindoRuntime{
-			Spec: datav1alpha1.JindoRuntimeSpec{
-				Secret: "secret",
-				TieredStore: datav1alpha1.TieredStore{
-					Levels: []datav1alpha1.Level{{
-						MediumType: common.Memory,
-						Quota:      &result,
-						High:       "0.8",
-						Low:        "0.1",
+		{
+			runtime: &datav1alpha1.JindoRuntime{
+				Spec: datav1alpha1.JindoRuntimeSpec{
+					Secret: "secret",
+					TieredStore: datav1alpha1.TieredStore{
+						Levels: []datav1alpha1.Level{{
+							Path:       "/var/lib/jindo/cache",
+							MediumType: common.SSD,
+							Quota:      &result,
+							High:       "0.8",
+							Low:        "0.1",
+						}},
+					},
+				},
+			},
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{{
+						MountPoint: "local:///mnt/test",
+						Name:       "test",
+					}},
+				}},
+			jindoValue: &Jindo{},
+			expect:     resultStr,
+		},
+		{
+			runtime: &datav1alpha1.JindoRuntime{
+				Spec: datav1alpha1.JindoRuntimeSpec{
+					Secret: "secret",
+					TieredStore: datav1alpha1.TieredStore{
+						Levels: []datav1alpha1.Level{{
+							Path:       "/dev/shm",
+							MediumType: common.Memory,
+							Quota:      &result,
+							High:       "0.99",
+							Low:        "0.95",
+						}},
+					},
+				},
+			},
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{{
+						MountPoint: "local:///mnt/test",
+						Name:       "test",
 					}},
 				},
 			},
-		}, &datav1alpha1.Dataset{
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "local:///mnt/test",
-					Name:       "test",
-				}},
-			}}, &Jindo{}, "1G"},
+			jindoValue: &Jindo{},
+			expect:     resultStr,
+		},
 	}
 	for _, test := range tests {
 		engine := &JindoCacheEngine{Log: fake.NullLogger()}
 		test.jindoValue.Worker.Port.Rpc = 8001
 		test.jindoValue.Worker.Port.Raft = 8002
-		dataPath := "/var/lib/docker/data"
-		userQuotas := "1G"
-		engine.transformWorker(test.runtime, dataPath, userQuotas, test.jindoValue)
-		if test.jindoValue.Worker.WorkerProperties["storage.data-dirs.capacities"] != test.expect {
+		engine.transformWorker(test.runtime, test.runtime.Spec.TieredStore.Levels[0].Path, resultStr, test.jindoValue)
+		if test.runtime.Spec.TieredStore.Levels[0].MediumType == common.Memory {
+			if test.jindoValue.Worker.WorkerProperties["storage.ram.cache.size"] != test.expect {
+				t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.Worker.WorkerProperties["storage.ram.cache.size"])
+			}
+		} else if test.jindoValue.Worker.WorkerProperties["storage.data-dirs.capacities"] != test.expect {
 			t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.Worker.WorkerProperties["storage.data-dirs.capacities"])
 		}
 	}
