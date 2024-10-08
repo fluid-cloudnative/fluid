@@ -40,7 +40,7 @@ import (
 
 func newAlluxioEngineREP(client client.Client, name string, namespace string) *AlluxioEngine {
 
-	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, "alluxio", v1alpha1.TieredStore{})
+	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, "alluxio")
 	engine := &AlluxioEngine{
 		runtime:     &v1alpha1.AlluxioRuntime{},
 		name:        name,

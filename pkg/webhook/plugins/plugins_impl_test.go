@@ -72,7 +72,7 @@ required:
 
 	// build slice of RuntimeInfos
 	var nilRuntimeInfos map[string]base.RuntimeInfoInterface = map[string]base.RuntimeInfoInterface{}
-	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "default", "jindo", datav1alpha1.TieredStore{})
+	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "default", "jindo")
 	if err != nil {
 		t.Error("fail to build runtimeInfo because of err", err)
 	}

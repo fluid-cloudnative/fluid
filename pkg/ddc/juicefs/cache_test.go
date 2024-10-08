@@ -35,7 +35,7 @@ import (
 func TestJuiceFSEngine_queryCacheStatus(t *testing.T) {
 	Convey("Test queryCacheStatus ", t, func() {
 		Convey("queryCacheStatus success", func() {
-			runtimeInfo, err := base.BuildRuntimeInfo("juicefs", "fluid", "juicefs", datav1alpha1.TieredStore{})
+			runtimeInfo, err := base.BuildRuntimeInfo("juicefs", "fluid", common.JuiceFSRuntime)
 			if err != nil {
 				t.Errorf("fail to create the runtimeInfo with error %v", err)
 			}

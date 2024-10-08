@@ -31,7 +31,7 @@ import (
 
 func getTestAlluxioEngine(client client.Client, name string, namespace string) *AlluxioEngine {
 	runTime := &datav1alpha1.AlluxioRuntime{}
-	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, "alluxio", datav1alpha1.TieredStore{})
+	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, "alluxio")
 	engine := &AlluxioEngine{
 		runtime:     runTime,
 		name:        name,

@@ -19,6 +19,7 @@ package juicefs
 import (
 	"testing"
 
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	ctrlhelper "github.com/fluid-cloudnative/fluid/pkg/ctrl"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
@@ -38,7 +39,7 @@ import (
 
 func newJuiceFSEngineREP(client client.Client, name string, namespace string) *JuiceFSEngine {
 
-	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, "juicefs", v1alpha1.TieredStore{})
+	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.JuiceFSRuntime)
 	engine := &JuiceFSEngine{
 		runtime:     &v1alpha1.JuiceFSRuntime{},
 		name:        name,
@@ -264,7 +265,7 @@ func TestSyncReplicas(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		engine := newJuiceFSEngineREP(fakeClient, testCase.name, testCase.namespace)
-		runtimeInfo, err := base.BuildRuntimeInfo(testCase.name, testCase.namespace, "juicefs", v1alpha1.TieredStore{})
+		runtimeInfo, err := base.BuildRuntimeInfo(testCase.name, testCase.namespace, common.JuiceFSRuntime)
 		if err != nil {
 			t.Errorf("JuiceFSEngine.CheckWorkersReady() error = %v", err)
 		}

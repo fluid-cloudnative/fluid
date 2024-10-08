@@ -48,7 +48,7 @@ func getTestEFCEngineNode(client client.Client, name string, namespace string, w
 	}
 	if withRunTime {
 		engine.runtime = &datav1alpha1.EFCRuntime{}
-		engine.runtimeInfo, _ = base.BuildRuntimeInfo(name, namespace, common.EFCRuntime, datav1alpha1.TieredStore{})
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo(name, namespace, common.EFCRuntime)
 	}
 	return engine
 }

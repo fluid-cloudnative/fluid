@@ -215,7 +215,7 @@ func TestInjectList(t *testing.T) {
 
 		runtimeInfos := map[string]base.RuntimeInfoInterface{}
 		for pvc, info := range testcase.infos {
-			runtimeInfo, err := base.BuildRuntimeInfo(info.name, info.namespace, info.runtimeType, datav1alpha1.TieredStore{})
+			runtimeInfo, err := base.BuildRuntimeInfo(info.name, info.namespace, info.runtimeType)
 			if err != nil {
 				t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 			}
@@ -257,7 +257,7 @@ func TestInjectUnstructured(t *testing.T) {
 	fakeClient := fake.NewFakeClientWithScheme(s, objs...)
 	runtimeInfos := map[string]base.RuntimeInfoInterface{}
 
-	runtimeInfo, err := base.BuildRuntimeInfo(name, namespace, runtimeType, datav1alpha1.TieredStore{})
+	runtimeInfo, err := base.BuildRuntimeInfo(name, namespace, runtimeType)
 	if err != nil {
 		t.Errorf("testcase %s failed due to error %v", name, err)
 	}
@@ -326,7 +326,7 @@ func TestInjectObject(t *testing.T) {
 	fakeClient := fake.NewFakeClientWithScheme(s, objs...)
 	runtimeInfos := map[string]base.RuntimeInfoInterface{}
 
-	runtimeInfo, err := base.BuildRuntimeInfo(name, namespace, runtimeType, datav1alpha1.TieredStore{})
+	runtimeInfo, err := base.BuildRuntimeInfo(name, namespace, runtimeType)
 	if err != nil {
 		t.Errorf("testcase %s failed due to error %v", name, err)
 	}

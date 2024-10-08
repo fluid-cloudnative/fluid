@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	v1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -36,7 +37,7 @@ import (
 
 func newGooseFSEngineREP(client client.Client, name string, namespace string) *GooseFSEngine {
 
-	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, "goosefs", v1alpha1.TieredStore{})
+	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.GooseFSRuntime)
 	engine := &GooseFSEngine{
 		runtime:     &v1alpha1.GooseFSRuntime{},
 		name:        name,

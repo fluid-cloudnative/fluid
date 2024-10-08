@@ -235,7 +235,7 @@ func TestCheckMasterHealthy(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 
-		runtimeInfo, err := base.BuildRuntimeInfo(testCase.name, testCase.namespace, "jindo", datav1alpha1.TieredStore{})
+		runtimeInfo, err := base.BuildRuntimeInfo(testCase.name, testCase.namespace, "jindo")
 		if err != nil {
 			t.Errorf("testcase %s failed due to %v", testCase.name, err)
 		}

@@ -46,7 +46,7 @@ func getTestAlluxioEngineNode(client client.Client, name string, namespace strin
 	}
 	if withRunTime {
 		engine.runtime = &v1alpha1.AlluxioRuntime{}
-		engine.runtimeInfo, _ = base.BuildRuntimeInfo(name, namespace, "alluxio", v1alpha1.TieredStore{})
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo(name, namespace, "alluxio")
 	}
 	return engine
 }

@@ -19,7 +19,7 @@ package base
 import (
 	"testing"
 
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
 func TestGetPersistentVolumeName(t *testing.T) {
@@ -49,7 +49,7 @@ func TestGetPersistentVolumeName(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		runtimeInfo, err := BuildRuntimeInfo(testCase.runtimeName, testCase.runtimeNamespace, "alluxio", datav1alpha1.TieredStore{})
+		runtimeInfo, err := BuildRuntimeInfo(testCase.runtimeName, testCase.runtimeNamespace, common.AlluxioRuntime)
 		if err != nil {
 			t.Errorf("fail to create the runtimeInfo with error %v", err)
 		}

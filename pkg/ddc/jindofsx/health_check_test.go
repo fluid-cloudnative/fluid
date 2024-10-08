@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/client-go/tools/record"
@@ -342,7 +343,7 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 				Recorder:  record.NewFakeRecorder(300),
 			}
 
-			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, "jindo", datav1alpha1.TieredStore{})
+			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, common.JindoRuntime)
 			if err != nil {
 				t.Errorf("JindoFSxEngine.CheckWorkersReady() error = %v", err)
 			}

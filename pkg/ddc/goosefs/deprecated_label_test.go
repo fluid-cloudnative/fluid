@@ -31,7 +31,7 @@ import (
 
 func getTestGooseFSEngine(client client.Client, name string, namespace string) *GooseFSEngine {
 	runTime := &datav1alpha1.GooseFSRuntime{}
-	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, "goosefs", datav1alpha1.TieredStore{})
+	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, "goosefs")
 	engine := &GooseFSEngine{
 		runtime:     runTime,
 		name:        name,

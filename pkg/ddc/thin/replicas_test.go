@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	ctrlhelper "github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -35,7 +36,7 @@ import (
 
 func newThinEngineREP(client client.Client, name string, namespace string) *ThinEngine {
 
-	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, "thin", v1alpha1.TieredStore{})
+	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.ThinRuntime)
 	engine := &ThinEngine{
 		runtime:     &v1alpha1.ThinRuntime{},
 		name:        name,
@@ -261,7 +262,7 @@ func TestSyncReplicas(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		engine := newThinEngineREP(fakeClient, testCase.name, testCase.namespace)
-		runtimeInfo, err := base.BuildRuntimeInfo(testCase.name, testCase.namespace, "thin", v1alpha1.TieredStore{})
+		runtimeInfo, err := base.BuildRuntimeInfo(testCase.name, testCase.namespace, common.ThinRuntime)
 		if err != nil {
 			t.Errorf("ThinEngine.CheckWorkersReady() error = %v", err)
 		}
