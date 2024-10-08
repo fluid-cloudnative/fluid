@@ -5817,7 +5817,7 @@ func TestInjectPodWithEnabledFUSEMetrics(t *testing.T) {
 					name:         "duplicate2",
 					namespace:    "big-data",
 					runtimeType:  common.JindoRuntime,
-					scrapeTarget: datav1alpha1.ScrapeTargetNone,
+					scrapeTarget: datav1alpha1.ScrapeTargetMountPodOnly,
 				},
 			},
 			want: &corev1.Pod{
@@ -5991,6 +5991,7 @@ func TestInjectPodWithEnabledFUSEMetrics(t *testing.T) {
 						common.InjectFuseSidecar:             common.True,
 						common.InjectUnprivilegedFuseSidecar: common.True,
 					},
+					Annotations: nil,
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{

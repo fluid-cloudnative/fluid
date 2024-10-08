@@ -207,3 +207,41 @@ func TestIntersectIntegerSets(t *testing.T) {
 		})
 	}
 }
+
+func TestOrderedKeys(t *testing.T) {
+	type args struct {
+		m map[string]struct{}
+	}
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{
+			name: "empty_map",
+			args: args{
+				m: map[string]struct{}{},
+			},
+			want: []string{},
+		},
+		{
+			name: "map_with_elements",
+			args: args{
+				m: map[string]struct{}{
+					"bbb":  {},
+					"aaa":  {},
+					"aa":   {},
+					"bbbb": {},
+				},
+			},
+			want: []string{"aa", "aaa", "bbb", "bbbb"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := OrderedKeys(tt.args.m); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("OrderedKeys() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
