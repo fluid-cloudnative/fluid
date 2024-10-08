@@ -215,7 +215,7 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &GooseFSEngine{Log: fake.NullLogger()}
-		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "goosefs", test.runtime.Spec.TieredStore)
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "goosefs", base.WithTieredStore(test.runtime.Spec.TieredStore))
 		engine.UnitTest = true
 		engine.transformResourcesForWorker(test.runtime, test.goosefsValue)
 		if test.goosefsValue.Worker.Resources.Limits[corev1.ResourceMemory] != "22Gi" {
@@ -276,7 +276,7 @@ func TestTransformResourcesForFuseWithValue(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &GooseFSEngine{Log: fake.NullLogger()}
-		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "goosefs", test.runtime.Spec.TieredStore)
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "goosefs", base.WithTieredStore(test.runtime.Spec.TieredStore))
 		engine.UnitTest = true
 		engine.transformResourcesForFuse(test.runtime, test.goosefsValue)
 		if test.goosefsValue.Fuse.Resources.Limits[corev1.ResourceMemory] != "22Gi" {

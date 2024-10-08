@@ -156,7 +156,7 @@ func TestTransformResourcesForWorkerNoValue(t *testing.T) {
 			name:      "test",
 			namespace: "test",
 		}
-		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "vineyard", test.runtime.Spec.TieredStore)
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "vineyard", base.WithTieredStore(test.runtime.Spec.TieredStore))
 		runtimeObjs := []runtime.Object{}
 		runtimeObjs = append(runtimeObjs, test.runtime.DeepCopy())
 		s := runtime.NewScheme()
@@ -198,7 +198,7 @@ func TestTransformResourcesForWorkerWithTieredStore(t *testing.T) {
 			name:      "test",
 			namespace: "test",
 		}
-		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "vineyard", test.runtime.Spec.TieredStore)
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "vineyard", base.WithTieredStore(test.runtime.Spec.TieredStore))
 		runtimeObjs := []runtime.Object{}
 		runtimeObjs = append(runtimeObjs, test.runtime.DeepCopy())
 		s := runtime.NewScheme()
@@ -295,7 +295,7 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 			name:      "test",
 			namespace: "test",
 		}
-		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "vineyard", test.runtime.Spec.TieredStore)
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "vineyard", base.WithTieredStore(test.runtime.Spec.TieredStore))
 		runtimeObjs := []runtime.Object{}
 		runtimeObjs = append(runtimeObjs, test.runtime.DeepCopy())
 		s := runtime.NewScheme()
@@ -370,7 +370,7 @@ func TestTransformResourcesForWorkerWithOnlyRequest(t *testing.T) {
 			name:      "test",
 			namespace: "test",
 		}
-		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "vineyard", test.runtime.Spec.TieredStore)
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "vineyard", base.WithTieredStore(test.runtime.Spec.TieredStore))
 		runtimeObjs := []runtime.Object{}
 		runtimeObjs = append(runtimeObjs, test.runtime.DeepCopy())
 		s := runtime.NewScheme()
@@ -458,7 +458,7 @@ func TestTransformResourcesForWorkerWithOnlyLimit(t *testing.T) {
 			name:      "test",
 			namespace: "test",
 		}
-		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "vineyard", test.runtime.Spec.TieredStore)
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "vineyard", base.WithTieredStore(test.runtime.Spec.TieredStore))
 		runtimeObjs := []runtime.Object{}
 		runtimeObjs = append(runtimeObjs, test.runtime.DeepCopy())
 		s := runtime.NewScheme()
@@ -539,7 +539,7 @@ func TestTransformResourcesForFuseWithValue(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &VineyardEngine{Log: fake.NullLogger()}
-		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "vineyard", test.runtime.Spec.TieredStore)
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "vineyard", base.WithTieredStore(test.runtime.Spec.TieredStore))
 		engine.transformResourcesForFuse(test.runtime, test.vineyardValue)
 		if test.vineyardValue.Fuse.Resources.Limits[corev1.ResourceMemory] != "2Gi" {
 			t.Errorf("expected 2Gi, got %v", test.vineyardValue.Fuse.Resources.Limits[corev1.ResourceMemory])

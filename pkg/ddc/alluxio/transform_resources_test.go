@@ -182,7 +182,7 @@ func TestTransformResourcesForWorkerNoValue(t *testing.T) {
 			name:      "test",
 			namespace: "test",
 		}
-		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", test.runtime.Spec.TieredStore)
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", base.WithTieredStore(test.runtime.Spec.TieredStore))
 		runtimeObjs := []runtime.Object{}
 		runtimeObjs = append(runtimeObjs, test.runtime.DeepCopy())
 		s := runtime.NewScheme()
@@ -230,7 +230,7 @@ func TestTransformResourcesForWorkerWithTieredStore(t *testing.T) {
 			name:      "test",
 			namespace: "test",
 		}
-		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", test.runtime.Spec.TieredStore)
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", base.WithTieredStore(test.runtime.Spec.TieredStore))
 		runtimeObjs := []runtime.Object{}
 		runtimeObjs = append(runtimeObjs, test.runtime.DeepCopy())
 		s := runtime.NewScheme()
@@ -336,7 +336,7 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 			name:      "test",
 			namespace: "test",
 		}
-		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", test.runtime.Spec.TieredStore)
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", base.WithTieredStore(test.runtime.Spec.TieredStore))
 		runtimeObjs := []runtime.Object{}
 		runtimeObjs = append(runtimeObjs, test.runtime.DeepCopy())
 		s := runtime.NewScheme()
@@ -422,7 +422,7 @@ func TestTransformResourcesForWorkerWithOnlyRequest(t *testing.T) {
 			name:      "test",
 			namespace: "test",
 		}
-		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", test.runtime.Spec.TieredStore)
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", base.WithTieredStore(test.runtime.Spec.TieredStore))
 		engine.UnitTest = true
 		runtimeObjs := []runtime.Object{}
 		runtimeObjs = append(runtimeObjs, test.runtime.DeepCopy())
@@ -508,7 +508,7 @@ func TestTransformResourcesForWorkerWithOnlyLimit(t *testing.T) {
 			name:      "test",
 			namespace: "test",
 		}
-		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", test.runtime.Spec.TieredStore)
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", base.WithTieredStore(test.runtime.Spec.TieredStore))
 		engine.UnitTest = true
 		runtimeObjs := []runtime.Object{}
 		runtimeObjs = append(runtimeObjs, test.runtime.DeepCopy())
@@ -581,7 +581,7 @@ func TestTransformResourcesForFuseWithValue(t *testing.T) {
 	}
 	for _, test := range tests {
 		engine := &AlluxioEngine{Log: fake.NullLogger()}
-		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", test.runtime.Spec.TieredStore)
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", base.WithTieredStore(test.runtime.Spec.TieredStore))
 		engine.UnitTest = true
 		engine.transformResourcesForFuse(test.runtime, test.alluxioValue)
 		if test.alluxioValue.Fuse.Resources.Limits[corev1.ResourceMemory] != "22Gi" {

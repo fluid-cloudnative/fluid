@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
@@ -43,7 +44,7 @@ func getTestVineyardEngineNode(client client.Client, name string, namespace stri
 	}
 	if withRunTime {
 		engine.runtime = &v1alpha1.VineyardRuntime{}
-		engine.runtimeInfo, _ = base.BuildRuntimeInfo(name, namespace, "vineyard", v1alpha1.TieredStore{})
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo(name, namespace, common.VineyardRuntime)
 	}
 	return engine
 }

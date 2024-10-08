@@ -71,7 +71,12 @@ func (e *ReferenceDatasetEngine) getRuntimeInfo() (base.RuntimeInfoInterface, er
 		return e.runtimeInfo, err
 	}
 
-	e.runtimeInfo, err = base.BuildRuntimeInfo(e.name, e.namespace, e.runtimeType, runtime.Spec.TieredStore, base.WithMetadataList(base.GetMetadataListFromAnnotation(runtime)))
+	opts := []base.RuntimeInfoOption {
+		base.WithTieredStore(runtime.Spec.TieredStore),
+		base.WithMetadataList(base.GetMetadataListFromAnnotation(runtime)),
+	}
+
+	e.runtimeInfo, err = base.BuildRuntimeInfo(e.name, e.namespace, e.runtimeType, opts...)
 	if err != nil {
 		return e.runtimeInfo, err
 	}

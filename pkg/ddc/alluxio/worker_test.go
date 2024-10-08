@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	ctrlhelper "github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
@@ -35,7 +36,7 @@ func TestSetupWorkers(t *testing.T) {
 
 	// runtimeInfoSpark tests create worker in exclusive mode.
 
-	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "big-data", "alluxio", datav1alpha1.TieredStore{})
+	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "big-data", common.AlluxioRuntime)
 
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
@@ -45,7 +46,7 @@ func TestSetupWorkers(t *testing.T) {
 	})
 
 	// runtimeInfoSpark tests create worker in shareMode mode.
-	runtimeInfoHadoop, err := base.BuildRuntimeInfo("hadoop", "big-data", "alluxio", datav1alpha1.TieredStore{})
+	runtimeInfoHadoop, err := base.BuildRuntimeInfo("hadoop", "big-data", common.AlluxioRuntime)
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -517,7 +518,7 @@ func TestCheckWorkersReady(t *testing.T) {
 				Log:       ctrl.Log.WithName(tt.fields.name),
 			}
 
-			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, "alluxio", datav1alpha1.TieredStore{})
+			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, common.AlluxioRuntime)
 			if err != nil {
 				t.Errorf("AlluxioEngine.CheckWorkersReady() error = %v", err)
 			}

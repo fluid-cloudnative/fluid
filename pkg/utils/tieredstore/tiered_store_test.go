@@ -300,7 +300,7 @@ func TestGetLevelStorageMap(t *testing.T) {
 			"name",
 			"namespace",
 			"runtimeType",
-			item.tieredStore,
+			base.WithTieredStore(item.tieredStore),
 		)
 		if err != nil {
 			t.Errorf("%s cannot build the runtimeInfo", k)
@@ -397,7 +397,7 @@ func TestGetTieredLevel(t *testing.T) {
 			"name",
 			"namespace",
 			"runtimeType",
-			item.tieredStore,
+			base.WithTieredStore(item.tieredStore),
 		)
 		if err != nil {
 			t.Errorf("%s cannot build the runtimeInfo", k)

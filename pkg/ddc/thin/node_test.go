@@ -234,8 +234,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 		engine := getTestThinEngineNode(c, testcase.fields.name, testcase.fields.namespace, true)
 		runtimeInfo, err := base.BuildRuntimeInfo(testcase.fields.name,
 			testcase.fields.namespace,
-			"thin",
-			datav1alpha1.TieredStore{})
+			common.ThinRuntime)
 		if err != nil {
 			t.Errorf("BuildRuntimeInfo() error = %v", err)
 		}
