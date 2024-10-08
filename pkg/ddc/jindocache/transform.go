@@ -826,7 +826,7 @@ func (e *JindoCacheEngine) transformFuseMetrics(runtime *datav1alpha1.JindoRunti
 		// user may explicitly set a metrics port in fuse args
 		if strings.HasPrefix(arg, "-ometrics_port=") {
 			if port, err := strconv.ParseInt(strings.TrimPrefix(arg, "-ometrics_port="), 10, 32); err != nil {
-				return errors.Wrap(err, "failed to parse port from %s transformFuseMetrics()")
+				return errors.Wrapf(err, "failed to parse port from %s transformFuseMetrics()", arg)
 			} else {
 				userDefinedPort = int(port)
 			}
