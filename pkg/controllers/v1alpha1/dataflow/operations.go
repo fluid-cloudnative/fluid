@@ -165,7 +165,7 @@ func reconcileOperationDataFlow(ctx reconcileRequestContext,
 		opRefNamespace = runAfter.Namespace
 	}
 
-	precedingOpStatus, err := utils.GetPrecedingOperationStatus(ctx.Client, runAfter, opRefNamespace)
+	precedingOpStatus, err := utils.GetPrecedingOperationStatus(ctx.Client, &runAfter.ObjectRef, opRefNamespace)
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
 			// preceding operation not found

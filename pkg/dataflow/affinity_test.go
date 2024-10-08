@@ -46,8 +46,10 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 			name: "default policy",
 			args: args{
 				runAfter: &datav1alpha1.OperationRef{
-					Kind: "DataLoad",
-					Name: "test-op",
+					ObjectRef: datav1alpha1.ObjectRef{
+						Kind: "DataLoad",
+						Name: "test-op",
+					},
 				},
 				objects: []runtime.Object{
 					&datav1alpha1.DataLoad{
@@ -68,8 +70,10 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 			name: "affinity no exist, prefer",
 			args: args{
 				runAfter: &datav1alpha1.OperationRef{
-					Kind: "DataLoad",
-					Name: "test-op",
+					ObjectRef: datav1alpha1.ObjectRef{
+						Kind: "DataLoad",
+						Name: "test-op",
+					},
 					AffinityStrategy: datav1alpha1.AffinityStrategy{
 						Policy: datav1alpha1.PreferAffinityStrategy,
 						Prefers: []datav1alpha1.Prefer{
@@ -115,8 +119,10 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 			name: "affinity no exist, required",
 			args: args{
 				runAfter: &datav1alpha1.OperationRef{
-					Kind: "DataLoad",
-					Name: "test-op",
+					ObjectRef: datav1alpha1.ObjectRef{
+						Kind: "DataLoad",
+						Name: "test-op",
+					},
 					AffinityStrategy: datav1alpha1.AffinityStrategy{
 						Policy: datav1alpha1.RequireAffinityStrategy,
 						Requires: []datav1alpha1.Require{
@@ -161,8 +167,10 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 			name: "no preceding op, error",
 			args: args{
 				runAfter: &datav1alpha1.OperationRef{
-					Kind: "DataLoad",
-					Name: "test-op",
+					ObjectRef: datav1alpha1.ObjectRef{
+						Kind: "DataLoad",
+						Name: "test-op",
+					},
 					AffinityStrategy: datav1alpha1.AffinityStrategy{
 						Policy: datav1alpha1.PreferAffinityStrategy,
 					},
@@ -186,8 +194,10 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 			name: "require policy, use node",
 			args: args{
 				runAfter: &datav1alpha1.OperationRef{
-					Kind: "DataLoad",
-					Name: "test-op",
+					ObjectRef: datav1alpha1.ObjectRef{
+						Kind: "DataLoad",
+						Name: "test-op",
+					},
 					AffinityStrategy: datav1alpha1.AffinityStrategy{
 						Policy: datav1alpha1.RequireAffinityStrategy,
 					},
@@ -243,8 +253,10 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 			name: "require policy, customized",
 			args: args{
 				runAfter: &datav1alpha1.OperationRef{
-					Kind: "DataLoad",
-					Name: "test-op",
+					ObjectRef: datav1alpha1.ObjectRef{
+						Kind: "DataLoad",
+						Name: "test-op",
+					},
 					AffinityStrategy: datav1alpha1.AffinityStrategy{
 						Policy: datav1alpha1.RequireAffinityStrategy,
 						Requires: []datav1alpha1.Require{
@@ -305,10 +317,94 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 			name: "prefer policy, use zone",
 			args: args{
 				runAfter: &datav1alpha1.OperationRef{
-					Kind:      "DataLoad",
-					Name:      "test-op",
-					Namespace: "test",
+					ObjectRef: datav1alpha1.ObjectRef{
+						Kind:      "DataLoad",
+						Name:      "test-op",
+						Namespace: "test",
+					},
 					AffinityStrategy: datav1alpha1.AffinityStrategy{
+						Policy: datav1alpha1.PreferAffinityStrategy,
+						Prefers: []datav1alpha1.Prefer{
+							{
+								Weight: 10,
+								Name:   common.K8sZoneLabelKey,
+							},
+						},
+					},
+				},
+				objects: []runtime.Object{
+					&datav1alpha1.DataLoad{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "test-op",
+							Namespace: "test",
+						},
+						Status: datav1alpha1.OperationStatus{
+							NodeAffinity: &v1.NodeAffinity{
+								RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
+									NodeSelectorTerms: []v1.NodeSelectorTerm{
+										{
+											MatchExpressions: []v1.NodeSelectorRequirement{
+												{
+													Key:      common.K8sNodeNameLabelKey,
+													Operator: v1.NodeSelectorOpIn,
+													Values:   []string{"node01"},
+												},
+												{
+													Key:      common.K8sZoneLabelKey,
+													Operator: v1.NodeSelectorOpIn,
+													Values:   []string{"zone01"},
+												},
+												{
+													Key:      common.K8sRegionLabelKey,
+													Operator: v1.NodeSelectorOpIn,
+													Values:   []string{"region01"},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				opNamespace:     "default",
+				currentAffinity: nil,
+			},
+			want: &v1.Affinity{
+				NodeAffinity: &v1.NodeAffinity{
+					PreferredDuringSchedulingIgnoredDuringExecution: []v1.PreferredSchedulingTerm{
+						{
+							Weight: 10,
+							Preference: v1.NodeSelectorTerm{
+								MatchExpressions: []v1.NodeSelectorRequirement{
+									{
+										Key:      common.K8sZoneLabelKey,
+										Operator: v1.NodeSelectorOpIn,
+										Values:   []string{"zone01"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "not use runAfter op",
+			args: args{
+				runAfter: &datav1alpha1.OperationRef{
+					ObjectRef: datav1alpha1.ObjectRef{
+						Kind:      "DataLoad",
+						Name:      "runAfter-op",
+						Namespace: "test",
+					},
+					AffinityStrategy: datav1alpha1.AffinityStrategy{
+						DependOn: &datav1alpha1.ObjectRef{
+							Kind:      "DataLoad",
+							Name:      "test-op",
+							Namespace: "test",
+						},
 						Policy: datav1alpha1.PreferAffinityStrategy,
 						Prefers: []datav1alpha1.Prefer{
 							{
