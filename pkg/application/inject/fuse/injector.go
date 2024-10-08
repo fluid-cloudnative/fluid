@@ -198,7 +198,8 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 		}
 
 		idx := len(injectedSidecars)
-		for pvcName, runtimeInfo := range runtimeInfos {
+		for _, pvcName := range utils.OrderedKeys(runtimeInfos) {
+			runtimeInfo := runtimeInfos[pvcName]
 			s.log.Info("Start mutating pvc in pod spec", "pod name", podName, "pvc name", pvcName)
 			// Append no suffix to fuse container name unless there are multiple ones.
 			containerNameSuffix := fmt.Sprintf("-%d", idx)

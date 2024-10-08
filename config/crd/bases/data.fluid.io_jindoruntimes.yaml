@@ -151,6 +151,22 @@ spec:
                     additionalProperties:
                       type: string
                     type: object
+                  metrics:
+                    description: Define whether fuse metrics will be enabled.
+                    properties:
+                      enabled:
+                        description: Enabled decides whether to expose client metrics.
+                        type: boolean
+                      scrapeTarget:
+                        description: ScrapeTarget decides which fuse component will
+                          be scraped by Prometheus.
+                        enum:
+                        - ""
+                        - All
+                        - MountPodOnly
+                        - SidecarOnly
+                        type: string
+                    type: object
                   nodeSelector:
                     additionalProperties:
                       type: string

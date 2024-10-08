@@ -117,6 +117,7 @@ type Fuse struct {
 	Mode           string              `json:"mode,omitempty"`
 	Env            map[string]string   `json:"env,omitempty"`
 	HostPID        bool                `json:"hostPID,omitempty"`
+	MetricsPort    int                 `json:"metricsPort,omitempty"`
 }
 
 type Mounts struct {

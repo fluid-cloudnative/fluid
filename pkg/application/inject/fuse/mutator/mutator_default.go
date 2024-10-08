@@ -19,7 +19,9 @@ package mutator
 import (
 	"context"
 	"fmt"
+	"strings"
 
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/application/inject/fuse/poststart"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -126,15 +128,19 @@ type defaultMutatorHelper struct {
 
 // PrepareMutation makes preparations for the later mutation. For example, the preparations may include dependent
 // resources creation(e.g. post start script) and fuse container template modifications.
-func (mutator *defaultMutatorHelper) PrepareMutation() error {
-	if !mutator.options.EnableCacheDir {
-		mutator.transformTemplateWithCacheDirDisabled()
+func (helper *defaultMutatorHelper) PrepareMutation() error {
+	if !helper.options.EnableCacheDir {
+		helper.transformTemplateWithCacheDirDisabled()
 	}
 
-	if !mutator.options.SkipSidecarPostStartInject {
-		if err := mutator.prepareFuseContainerPostStartScript(); err != nil {
+	if !helper.options.SkipSidecarPostStartInject {
+		if err := helper.prepareFuseContainerPostStartScript(); err != nil {
 			return err
 		}
+	}
+
+	if helper.runtimeInfo.GetFuseMetricsScrapeTarget() == datav1alpha1.ScrapeTargetNone || helper.runtimeInfo.GetFuseMetricsScrapeTarget() == datav1alpha1.ScrapeTargetMountPodOnly {
+		helper.removeFuseMetricsContainerPort()
 	}
 
 	return nil
@@ -173,6 +179,10 @@ func (helper *defaultMutatorHelper) Mutate() (*MutatingPodSpecs, error) {
 		if err := helper.prependFuseContainer(true /* asInit */); err != nil {
 			return nil, err
 		}
+	}
+
+	if helper.runtimeInfo.GetFuseMetricsScrapeTarget() == datav1alpha1.ScrapeTargetAll || helper.runtimeInfo.GetFuseMetricsScrapeTarget() == datav1alpha1.ScrapeTargetSidecarOnly {
+		helper.enablePrometheusMetricsScrape()
 	}
 
 	return helper.Specs, nil
@@ -305,6 +315,11 @@ func (helper *defaultMutatorHelper) prependFuseContainer(asInit bool) error {
 	} else {
 		helper.Specs.InitContainers = append([]corev1.Container{fuseContainer}, helper.Specs.InitContainers...)
 	}
+	if helper.Specs.MetaObj.Labels == nil {
+		helper.Specs.MetaObj.Labels = map[string]string{}
+	}
+	containerDatasetMappingLabelKey := common.LabelContainerDatasetMappingKeyPrefix + fuseContainer.Name
+	helper.Specs.MetaObj.Labels[containerDatasetMappingLabelKey] = fmt.Sprintf("%s_%s", helper.runtimeInfo.GetNamespace(), helper.runtimeInfo.GetName())
 	return nil
 }
 
@@ -394,6 +409,32 @@ func (helper *defaultMutatorHelper) transformTemplateWithCacheDirDisabled() {
 	template := helper.template
 	template.FuseContainer.VolumeMounts = utils.TrimVolumeMounts(template.FuseContainer.VolumeMounts, cacheDirNames)
 	template.VolumesToAdd = utils.TrimVolumes(template.VolumesToAdd, cacheDirNames)
+}
+
+func (helper *defaultMutatorHelper) enablePrometheusMetricsScrape() {
+	if helper.Specs.MetaObj.Annotations == nil {
+		helper.Specs.MetaObj.Annotations = map[string]string{}
+	}
+
+	if _, exists := helper.Specs.MetaObj.Annotations[common.AnnotationPrometheusFuseMetricsScrapeKey]; !exists {
+		helper.Specs.MetaObj.Annotations[common.AnnotationPrometheusFuseMetricsScrapeKey] = "true"
+	}
+}
+
+func (helper *defaultMutatorHelper) removeFuseMetricsContainerPort() {
+	if len(helper.template.FuseContainer.Ports) == 0 {
+		return
+	}
+
+	containerPorts := []corev1.ContainerPort{}
+	for _, containerPort := range helper.template.FuseContainer.Ports {
+		if strings.HasSuffix(containerPort.Name, "-metrics") {
+			continue
+		}
+		containerPorts = append(containerPorts, containerPort)
+	}
+
+	helper.template.FuseContainer.Ports = containerPorts
 }
 
 func randomizeNewVolumeName(origName string, existingNames []string) (string, error) {

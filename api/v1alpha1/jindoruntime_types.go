@@ -141,6 +141,10 @@ type JindoFuseSpec struct {
 
 	// +optional
 	LogConfig map[string]string `json:"logConfig,omitempty"`
+
+	// +optional
+	// Define whether fuse metrics will be enabled.
+	Metrics ClientMetrics `json:"metrics,omitempty"`
 }
 
 // JindoRuntimeSpec defines the desired state of JindoRuntime

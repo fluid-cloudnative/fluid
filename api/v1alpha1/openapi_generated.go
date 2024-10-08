@@ -37,6 +37,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioRuntimeSpec":         schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioRuntimeSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheableNodeAffinity":      schema_fluid_cloudnative_fluid_api_v1alpha1_CacheableNodeAffinity(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy":           schema_fluid_cloudnative_fluid_api_v1alpha1_CleanCachePolicy(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ClientMetrics":              schema_fluid_cloudnative_fluid_api_v1alpha1_ClientMetrics(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Condition":                  schema_fluid_cloudnative_fluid_api_v1alpha1_Condition(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Data":                       schema_fluid_cloudnative_fluid_api_v1alpha1_Data(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataBackup":                 schema_fluid_cloudnative_fluid_api_v1alpha1_DataBackup(ref),
@@ -852,6 +853,32 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_CleanCachePolicy(ref common.Ref
 							Description: "Optional max retry Attempts when cleanCache function returns an error after execution, runtime attempts to run it three more times by default. With Maximum Retry Attempts, you can customize the maximum number of retries. This gives you the option to continue processing retries.",
 							Type:        []string{"integer"},
 							Format:      "int32",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_ClientMetrics(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"enabled": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Enabled decides whether to expose client metrics.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"scrapeTarget": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ScrapeTarget decides which fuse component will be scraped by Prometheus.",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 				},
@@ -3714,11 +3741,18 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JindoFuseSpec(ref common.Refere
 							},
 						},
 					},
+					"metrics": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Define whether fuse metrics will be enabled.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.ClientMetrics"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.Toleration"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.ClientMetrics", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.Toleration"},
 	}
 }
 

@@ -16,6 +16,11 @@ limitations under the License.
 
 package utils
 
+import (
+	"cmp"
+	"slices"
+)
+
 // ContainsAll checks if a map contains all the elements in a slice
 func ContainsAll(m map[string]string, slice []string) bool {
 	if len(slice) == 0 {
@@ -68,4 +73,16 @@ func SetValueIfKeyAbsent(m map[string]string, key string, value string) {
 	if _, found := m[key]; !found {
 		m[key] = value
 	}
+}
+
+// OrderedKeys returns a sorted slice with all keys defined in the map.
+func OrderedKeys[K cmp.Ordered, V any](m map[K]V) []K {
+	keys := []K{}
+	for k := range m {
+		keys = append(keys, k)
+	}
+
+	slices.Sort(keys)
+
+	return keys
 }
