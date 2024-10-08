@@ -71,7 +71,7 @@ func (e *ReferenceDatasetEngine) getRuntimeInfo() (base.RuntimeInfoInterface, er
 		return e.runtimeInfo, err
 	}
 
-	opts := []base.RuntimeInfoOption {
+	opts := []base.RuntimeInfoOption{
 		base.WithTieredStore(runtime.Spec.TieredStore),
 		base.WithMetadataList(base.GetMetadataListFromAnnotation(runtime)),
 	}

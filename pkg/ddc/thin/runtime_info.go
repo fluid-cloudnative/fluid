@@ -35,7 +35,7 @@ func (t *ThinEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 			return t.runtimeInfo, err
 		}
 
-		opts := []base.RuntimeInfoOption {
+		opts := []base.RuntimeInfoOption{
 			base.WithTieredStore(runtime.Spec.TieredStore),
 			base.WithMetadataList(base.GetMetadataListFromAnnotation(runtime)),
 		}
