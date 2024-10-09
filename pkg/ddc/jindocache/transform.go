@@ -522,9 +522,6 @@ func (e *JindoCacheEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, d
 
 		properties["storage.slicelet.buffer.size"] = userQuotas
 		//properties["storage.slicelet.buffer.size"] = "90g"
-	} else {
-		properties["storage.data-dirs.capacities"] = userQuotas
-		///properties["storage.data-dirs.capacities"] = "80g,80g,80g"
 	}
 
 	properties["storage.rpc.port"] = strconv.Itoa(value.Worker.Port.Rpc)
@@ -546,6 +543,9 @@ func (e *JindoCacheEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, d
 	} else {
 		properties["storage.watermark.low.ratio"] = runtime.Spec.TieredStore.Levels[0].Low
 	}
+
+	properties["storage.data-dirs.capacities"] = userQuotas
+	///properties["storage.data-dirs.capacities"] = "80g,80g,80g"
 
 	if len(runtime.Spec.Worker.Properties) > 0 {
 		for k, v := range runtime.Spec.Worker.Properties {
