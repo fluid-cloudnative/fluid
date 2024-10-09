@@ -87,16 +87,17 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 	jindoFuseImage, fuseTag := e.parseFuseImage()
 
 	value = &Jindo{
-		Image:           jindoSmartdataImage,
-		ImageTag:        smartdataTag,
-		ImagePullPolicy: "Always",
-		FuseImage:       jindoFuseImage,
-		FuseImageTag:    fuseTag,
-		User:            0,
-		Group:           0,
-		FsGroup:         0,
-		UseHostNetwork:  true,
-		Properties:      e.transformPriority(metaPath),
+		Image:            jindoSmartdataImage,
+		ImageTag:         smartdataTag,
+		ImagePullPolicy:  "Always",
+		ImagePullSecrets: runtime.Spec.ImagePullSecrets,
+		FuseImage:        jindoFuseImage,
+		FuseImageTag:     fuseTag,
+		User:             0,
+		Group:            0,
+		FsGroup:          0,
+		UseHostNetwork:   true,
+		Properties:       e.transformPriority(metaPath),
 		Master: Master{
 			ReplicaCount: e.transformReplicasCount(runtime),
 			NodeSelector: e.transformMasterSelector(runtime),
@@ -175,6 +176,10 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 }
 
 func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPath string, value *Jindo, dataset *datav1alpha1.Dataset) (err error) {
+	if len(runtime.Spec.Master.ImagePullSecrets) != 0 {
+		value.Master.ImagePullSecrets = runtime.Spec.Master.ImagePullSecrets
+	}
+
 	properties := map[string]string{
 		//"namespace.meta-dir": "/mnt/disk1/bigboot/server",
 		"namespace.filelet.cache.size":  "100000",
@@ -280,6 +285,9 @@ func (e *JindoEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPa
 }
 
 func (e *JindoEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, metaPath string, dataPath string, userQuotas string, value *Jindo) (err error) {
+	if len(runtime.Spec.Worker.ImagePullSecrets) != 0 {
+		value.Worker.ImagePullSecrets = runtime.Spec.Worker.ImagePullSecrets
+	}
 
 	properties := map[string]string{}
 	// "storage.rpc.port": "6101",
@@ -395,6 +403,9 @@ func (e *JindoEngine) transformResources(runtime *datav1alpha1.JindoRuntime, val
 }
 
 func (e *JindoEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, value *Jindo) (err error) {
+	if len(runtime.Spec.Fuse.ImagePullSecrets) != 0 {
+		value.Fuse.ImagePullSecrets = runtime.Spec.Fuse.ImagePullSecrets
+	}
 	// default enable data-cache and disable meta-cache
 	properties := map[string]string{
 		"client.oss.retry":                          "5",

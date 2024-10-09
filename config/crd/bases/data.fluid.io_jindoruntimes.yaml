@@ -136,6 +136,22 @@ spec:
                     description: 'One of the three policies: `Always`, `IfNotPresent`,
                       `Never`'
                     type: string
+                  imagePullSecrets:
+                    description: ImagePullSecrets that will be used to pull images
+                    items:
+                      description: |-
+                        LocalObjectReference contains enough information to let you locate the
+                        referenced object inside the same namespace.
+                      properties:
+                        name:
+                          description: |-
+                            Name of the referent.
+                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            TODO: Add other useful fields. apiVersion, kind, uid?
+                          type: string
+                      type: object
+                      x-kubernetes-map-type: atomic
+                    type: array
                   imageTag:
                     description: Image Tag for Jindo Fuse(e.g. 2.3.0-SNAPSHOT)
                     type: string
@@ -300,6 +316,22 @@ spec:
                   For now, only "hdfs-site.xml" and "core-site.xml" are supported. It must take the filename of the conf file as the key and content
                   of the file as the value.
                 type: string
+              imagePullSecrets:
+                description: ImagePullSecrets that will be used to pull images
+                items:
+                  description: |-
+                    LocalObjectReference contains enough information to let you locate the
+                    referenced object inside the same namespace.
+                  properties:
+                    name:
+                      description: |-
+                        Name of the referent.
+                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        TODO: Add other useful fields. apiVersion, kind, uid?
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
+                type: array
               jindoVersion:
                 description: The version information that instructs fluid to orchestrate
                   a particular version of Jindo.
@@ -339,6 +371,22 @@ spec:
                     description: Environment variables that will be used by Jindo
                       component. <br>
                     type: object
+                  imagePullSecrets:
+                    description: ImagePullSecrets that will be used to pull images
+                    items:
+                      description: |-
+                        LocalObjectReference contains enough information to let you locate the
+                        referenced object inside the same namespace.
+                      properties:
+                        name:
+                          description: |-
+                            Name of the referent.
+                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            TODO: Add other useful fields. apiVersion, kind, uid?
+                          type: string
+                      type: object
+                      x-kubernetes-map-type: atomic
+                    type: array
                   labels:
                     additionalProperties:
                       type: string
@@ -4039,6 +4087,22 @@ spec:
                     description: Environment variables that will be used by Jindo
                       component. <br>
                     type: object
+                  imagePullSecrets:
+                    description: ImagePullSecrets that will be used to pull images
+                    items:
+                      description: |-
+                        LocalObjectReference contains enough information to let you locate the
+                        referenced object inside the same namespace.
+                      properties:
+                        name:
+                          description: |-
+                            Name of the referent.
+                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            TODO: Add other useful fields. apiVersion, kind, uid?
+                          type: string
+                      type: object
+                      x-kubernetes-map-type: atomic
+                    type: array
                   labels:
                     additionalProperties:
                       type: string

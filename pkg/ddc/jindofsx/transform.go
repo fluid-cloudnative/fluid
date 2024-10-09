@@ -123,6 +123,7 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 		Image:               smartdataConfig.image,
 		ImageTag:            smartdataConfig.imageTag,
 		ImagePullPolicy:     smartdataConfig.imagePullPolicy,
+		ImagePullSecrets:    runtime.Spec.ImagePullSecrets,
 		FuseImage:           jindoFuseImage,
 		FuseImageTag:        fuseTag,
 		FuseImagePullPolicy: fuseImagePullPolicy,
@@ -196,6 +197,9 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 }
 
 func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, metaPath string, value *Jindo, dataset *datav1alpha1.Dataset, secretMountSupport bool) (err error) {
+	if len(runtime.Spec.Master.ImagePullSecrets) != 0 {
+		value.Master.ImagePullSecrets = runtime.Spec.Master.ImagePullSecrets
+	}
 	properties := map[string]string{
 		"namespace.cluster.id":                      "local",
 		"namespace.oss.copy.size":                   "1073741824",
@@ -425,7 +429,9 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 }
 
 func (e *JindoFSxEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, dataPath string, userQuotas string, value *Jindo) {
-
+	if len(runtime.Spec.Worker.ImagePullSecrets) != 0 {
+		value.Worker.ImagePullSecrets = runtime.Spec.Worker.ImagePullSecrets
+	}
 	properties := map[string]string{
 		"storage.cluster.id":                   "local",
 		"storage.compaction.enable":            "false",
@@ -672,6 +678,9 @@ func (e *JindoFSxEngine) transformFuseResources(runtime *datav1alpha1.JindoRunti
 }
 
 func (e *JindoFSxEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
+	if len(runtime.Spec.Fuse.ImagePullSecrets) != 0 {
+		value.Fuse.ImagePullSecrets = runtime.Spec.Fuse.ImagePullSecrets
+	}
 	// default enable data-cache and disable meta-cache
 	properties := map[string]string{
 		"fs.jindofsx.request.user":           "root",
