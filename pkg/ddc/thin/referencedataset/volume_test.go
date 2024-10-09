@@ -64,7 +64,7 @@ func TestReferenceDatasetEngine_CreateVolume(t *testing.T) {
 			Namespace: "big-data",
 		},
 	}
-	var runtimeInfo, err = base.BuildRuntimeInfo(runtime.Name, runtime.Namespace, common.AlluxioRuntime, datav1alpha1.TieredStore{})
+	var runtimeInfo, err = base.BuildRuntimeInfo(runtime.Name, runtime.Namespace, common.AlluxioRuntime)
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -191,7 +191,7 @@ func TestReferenceDatasetEngine_DeleteVolume(t *testing.T) {
 		},
 	}
 
-	var runtimeInfo, err = base.BuildRuntimeInfo(refRuntime.Name, refRuntime.Namespace, common.ThinRuntime, datav1alpha1.TieredStore{})
+	var runtimeInfo, err = base.BuildRuntimeInfo(refRuntime.Name, refRuntime.Namespace, common.ThinRuntime)
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}

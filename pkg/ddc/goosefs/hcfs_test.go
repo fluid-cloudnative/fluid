@@ -36,7 +36,7 @@ import (
 
 func newGooseFSEngineHCFS(client client.Client, name string, namespace string) *GooseFSEngine {
 	runTime := &v1alpha1.GooseFSRuntime{}
-	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, "goosefs", v1alpha1.TieredStore{})
+	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, "goosefs")
 	engine := &GooseFSEngine{
 		runtime:     runTime,
 		name:        name,

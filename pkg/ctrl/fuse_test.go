@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
@@ -224,7 +225,7 @@ func TestCheckFuseHealthy(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 
-		runtimeInfo, err := base.BuildRuntimeInfo(testCase.name, testCase.namespace, "jindo", datav1alpha1.TieredStore{})
+		runtimeInfo, err := base.BuildRuntimeInfo(testCase.name, testCase.namespace, common.JindoRuntime)
 		if err != nil {
 			t.Errorf("testcase %s failed due to %v", testCase.name, err)
 		}
@@ -467,7 +468,6 @@ func TestCleanUpFuse(t *testing.T) {
 			test.name,
 			test.namespace,
 			test.runtimeType,
-			datav1alpha1.TieredStore{},
 		)
 		if err != nil {
 			t.Errorf("build runtime info error %v", err)

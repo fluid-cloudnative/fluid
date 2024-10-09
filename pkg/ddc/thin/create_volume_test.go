@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/api/core/v1"
@@ -29,7 +30,7 @@ import (
 )
 
 func TestThinEngine_CreateVolume(t *testing.T) {
-	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "thin", datav1alpha1.TieredStore{})
+	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", common.ThinRuntime)
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -94,7 +95,7 @@ func TestThinEngine_CreateVolume(t *testing.T) {
 }
 
 func TestThinEngine_createFusePersistentVolume(t *testing.T) {
-	runtimeInfo, err := base.BuildRuntimeInfo("thin", "fluid", "thin", datav1alpha1.TieredStore{})
+	runtimeInfo, err := base.BuildRuntimeInfo("thin", "fluid", common.ThinRuntime)
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -146,7 +147,7 @@ func TestThinEngine_createFusePersistentVolume(t *testing.T) {
 }
 
 func TestThinEngine_createFusePersistentVolumeClaim(t *testing.T) {
-	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "thin", datav1alpha1.TieredStore{})
+	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", common.ThinRuntime)
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}

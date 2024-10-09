@@ -112,7 +112,7 @@ var workerEndpointsConfigMapData = `
 `
 
 func newEFCEngine(client client.Client, name string, namespace string) *EFCEngine {
-	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.EFCRuntime, datav1alpha1.TieredStore{})
+	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.EFCRuntime)
 	engine := &EFCEngine{
 		runtime:     &datav1alpha1.EFCRuntime{},
 		name:        name,
@@ -616,7 +616,7 @@ func TestEFCEngine_getWorkerRunningPods(t *testing.T) {
 				Client:    mockClient,
 				Log:       ctrl.Log.WithName(tt.fields.name),
 			}
-			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, "efc", datav1alpha1.TieredStore{})
+			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, common.EFCRuntime)
 			if err != nil {
 				t.Errorf("EFCEngine.CheckWorkersReady() error = %v", err)
 			}

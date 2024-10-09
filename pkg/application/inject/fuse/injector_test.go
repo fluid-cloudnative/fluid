@@ -1158,7 +1158,7 @@ func TestInjectPod(t *testing.T) {
 
 		runtimeInfos := map[string]base.RuntimeInfoInterface{}
 		for pvc, info := range testcase.infos {
-			runtimeInfo, err := base.BuildRuntimeInfo(info.name, info.namespace, info.runtimeType, datav1alpha1.TieredStore{})
+			runtimeInfo, err := base.BuildRuntimeInfo(info.name, info.namespace, info.runtimeType)
 			if err != nil {
 				t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 			}
@@ -1448,7 +1448,7 @@ func TestSkipInjectPod(t *testing.T) {
 
 		runtimeInfos := map[string]base.RuntimeInfoInterface{}
 		for pvc, info := range testcase.infos {
-			runtimeInfo, err := base.BuildRuntimeInfo(info.name, info.namespace, info.runtimeType, datav1alpha1.TieredStore{})
+			runtimeInfo, err := base.BuildRuntimeInfo(info.name, info.namespace, info.runtimeType)
 			if err != nil {
 				t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 			}
@@ -2375,7 +2375,7 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 
 		runtimeInfos := map[string]base.RuntimeInfoInterface{}
 		for pvc, info := range testcase.infos {
-			runtimeInfo, err := base.BuildRuntimeInfo(info.name, info.namespace, info.runtimeType, datav1alpha1.TieredStore{})
+			runtimeInfo, err := base.BuildRuntimeInfo(info.name, info.namespace, info.runtimeType)
 			if err != nil {
 				t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 			}
@@ -2839,7 +2839,7 @@ func TestInjectPodWithDatasetSubPath(t *testing.T) {
 
 		runtimeInfos := map[string]base.RuntimeInfoInterface{}
 		for pvc, info := range testcase.infos {
-			runtimeInfo, err := base.BuildRuntimeInfo(info.name, info.namespace, info.runtimeType, datav1alpha1.TieredStore{})
+			runtimeInfo, err := base.BuildRuntimeInfo(info.name, info.namespace, info.runtimeType)
 			if err != nil {
 				t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 			}
@@ -4160,7 +4160,7 @@ func TestInjectPodUnprivileged(t *testing.T) {
 
 		runtimeInfos := map[string]base.RuntimeInfoInterface{}
 		for pvc, info := range testcase.infos {
-			runtimeInfo, err := base.BuildRuntimeInfo(info.name, info.namespace, info.runtimeType, datav1alpha1.TieredStore{})
+			runtimeInfo, err := base.BuildRuntimeInfo(info.name, info.namespace, info.runtimeType)
 			if err != nil {
 				t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 			}
@@ -5267,7 +5267,7 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 
 		runtimeInfos := map[string]base.RuntimeInfoInterface{}
 		for pvc, info := range testcase.infos {
-			runtimeInfo, err := base.BuildRuntimeInfo(info.name, info.namespace, info.runtimeType, datav1alpha1.TieredStore{})
+			runtimeInfo, err := base.BuildRuntimeInfo(info.name, info.namespace, info.runtimeType)
 			if err != nil {
 				t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 			}
@@ -6253,7 +6253,7 @@ func TestInjectPodWithEnabledFUSEMetrics(t *testing.T) {
 					ScrapeTarget: info.scrapeTarget,
 				}),
 			}
-			runtimeInfo, err := base.BuildRuntimeInfo(info.name, info.namespace, info.runtimeType, datav1alpha1.TieredStore{}, opts...)
+			runtimeInfo, err := base.BuildRuntimeInfo(info.name, info.namespace, info.runtimeType, opts...)
 			if err != nil {
 				t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 			}

@@ -4,7 +4,6 @@ import (
 	"reflect"
 	"testing"
 
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/google/go-cmp/cmp"
@@ -14,11 +13,11 @@ import (
 )
 
 func TestDatasetUsageInjector_Mutate(t *testing.T) {
-	runtimeInfo1, err := base.BuildRuntimeInfo("demo-dataset-1", "fluid-test", "", datav1alpha1.TieredStore{})
+	runtimeInfo1, err := base.BuildRuntimeInfo("demo-dataset-1", "fluid-test", "")
 	if err != nil {
 		t.Fatalf("build runtime info failed with %v", err)
 	}
-	runtimeInfo2, err := base.BuildRuntimeInfo("demo-dataset-2", "fluid-test", "", datav1alpha1.TieredStore{})
+	runtimeInfo2, err := base.BuildRuntimeInfo("demo-dataset-2", "fluid-test", "")
 	if err != nil {
 		t.Fatalf("build runtime info failed with %v", err)
 	}

@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	appsv1 "k8s.io/api/apps/v1"
 
@@ -37,7 +38,7 @@ func TestSetupWorkers(t *testing.T) {
 
 	// runtimeInfoSpark tests create worker in exclusive mode.
 
-	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "big-data", "jindo", datav1alpha1.TieredStore{})
+	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "big-data", common.JindoRuntime)
 
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
@@ -47,7 +48,7 @@ func TestSetupWorkers(t *testing.T) {
 	})
 
 	// runtimeInfoSpark tests create worker in shareMode mode.
-	runtimeInfoHadoop, err := base.BuildRuntimeInfo("hadoop", "big-data", "jindo", datav1alpha1.TieredStore{})
+	runtimeInfoHadoop, err := base.BuildRuntimeInfo("hadoop", "big-data", common.JindoRuntime)
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -533,7 +534,7 @@ func TestCheckWorkersReady(t *testing.T) {
 				Log:       ctrl.Log.WithName(tt.fields.name),
 			}
 
-			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, "jindo", datav1alpha1.TieredStore{})
+			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, common.JindoRuntime)
 			if err != nil {
 				t.Errorf("JindoFSxEngine.CheckWorkersReady() error = %v", err)
 			}

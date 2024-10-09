@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -37,7 +38,7 @@ import (
 
 func newJindoCacheEngineREP(client client.Client, name string, namespace string) *JindoCacheEngine {
 
-	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, "jindo", datav1alpha1.TieredStore{})
+	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.JindoRuntime)
 	engine := &JindoCacheEngine{
 		runtime:     &datav1alpha1.JindoRuntime{},
 		name:        name,

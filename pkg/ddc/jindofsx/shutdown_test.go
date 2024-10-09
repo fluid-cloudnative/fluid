@@ -22,6 +22,7 @@ import (
 
 	. "github.com/agiledragon/gomonkey/v2"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
@@ -44,7 +45,7 @@ func init() {
 }
 
 func TestDestroyWorker(t *testing.T) {
-	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "fluid", "jindo", datav1alpha1.TieredStore{})
+	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "fluid", common.JindoRuntime)
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -52,7 +53,7 @@ func TestDestroyWorker(t *testing.T) {
 		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
 	})
 
-	runtimeInfoHadoop, err := base.BuildRuntimeInfo("hadoop", "fluid", "jindo", datav1alpha1.TieredStore{})
+	runtimeInfoHadoop, err := base.BuildRuntimeInfo("hadoop", "fluid", common.JindoRuntime)
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}

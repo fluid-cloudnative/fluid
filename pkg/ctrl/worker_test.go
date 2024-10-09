@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 
@@ -376,7 +377,7 @@ func TestCheckWorkersHealthy(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 
-		runtimeInfo, err := base.BuildRuntimeInfo(testCase.name, testCase.namespace, "jindo", datav1alpha1.TieredStore{})
+		runtimeInfo, err := base.BuildRuntimeInfo(testCase.name, testCase.namespace, common.JindoRuntime)
 		if err != nil {
 			t.Errorf("testcase %s failed due to %v", testCase.name, err)
 		}

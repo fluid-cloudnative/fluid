@@ -242,7 +242,7 @@ func TestTransformWorker(t *testing.T) {
 			os.Setenv("VINEYARD_WORKER_IMAGE_ENV", "image-from-env:image-tag-from-env")
 		}
 		gotValue := &Vineyard{}
-		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "vineyard", v.runtime.Spec.TieredStore)
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "vineyard", base.WithTieredStore(v.runtime.Spec.TieredStore))
 		if err := engine.transformWorkers(v.runtime, gotValue); err == nil {
 			if gotValue.Worker.Replicas != v.wantValue.Worker.Replicas {
 				t.Errorf("check %s failure, got:%d,want:%d",

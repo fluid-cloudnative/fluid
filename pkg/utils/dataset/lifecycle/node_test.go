@@ -42,7 +42,7 @@ func init() {
 }
 
 func TestAlreadyAssigned(t *testing.T) {
-	runtimeInfoExclusive, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.TieredStore{})
+	runtimeInfoExclusive, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -89,7 +89,7 @@ func TestAlreadyAssigned(t *testing.T) {
 }
 
 func TestCanbeAssigned(t *testing.T) {
-	tireStore := datav1alpha1.TieredStore{
+	tieredStore := datav1alpha1.TieredStore{
 		Levels: []datav1alpha1.Level{
 			{
 				MediumType: common.Memory,
@@ -97,7 +97,7 @@ func TestCanbeAssigned(t *testing.T) {
 			},
 		},
 	}
-	runtimeInfoNotExclusive, err := base.BuildRuntimeInfo("hbase", "default", "alluxio", tireStore)
+	runtimeInfoNotExclusive, err := base.BuildRuntimeInfo("hbase", "default", "alluxio", base.WithTieredStore(tieredStore))
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -156,7 +156,7 @@ func TestCanbeAssigned(t *testing.T) {
 }
 
 func TestLabelCacheNode(t *testing.T) {
-	runtimeInfoExclusive, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.TieredStore{})
+	runtimeInfoExclusive, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -164,7 +164,7 @@ func TestLabelCacheNode(t *testing.T) {
 		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
 	})
 
-	runtimeInfoShareSpark, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio", datav1alpha1.TieredStore{})
+	runtimeInfoShareSpark, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -172,7 +172,7 @@ func TestLabelCacheNode(t *testing.T) {
 		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ShareMode},
 	})
 
-	runtimeInfoShareHbase, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.TieredStore{})
+	runtimeInfoShareHbase, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -180,7 +180,7 @@ func TestLabelCacheNode(t *testing.T) {
 		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ShareMode},
 	})
 
-	tireStore := datav1alpha1.TieredStore{
+	tieredStore := datav1alpha1.TieredStore{
 		Levels: []datav1alpha1.Level{
 			{
 				MediumType: common.Memory,
@@ -196,7 +196,7 @@ func TestLabelCacheNode(t *testing.T) {
 			},
 		},
 	}
-	runtimeInfoWithTireStore, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio", tireStore)
+	runtimeInfoWithTireStore, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio", base.WithTieredStore(tieredStore))
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -476,7 +476,7 @@ func TestCheckIfRuntimeInNode(t *testing.T) {
 	}
 
 	for _, test := range testCase {
-		runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.TieredStore{})
+		runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
 		if err != nil {
 			t.Errorf("fail to create the runtimeInfo with error %v", err)
 		}
@@ -490,7 +490,7 @@ func TestCheckIfRuntimeInNode(t *testing.T) {
 }
 
 func TestUnlabelCacheNode(t *testing.T) {
-	runtimeInfoExclusive, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.TieredStore{})
+	runtimeInfoExclusive, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -498,7 +498,7 @@ func TestUnlabelCacheNode(t *testing.T) {
 		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
 	})
 
-	runtimeInfoShareSpark, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio", datav1alpha1.TieredStore{})
+	runtimeInfoShareSpark, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -506,7 +506,7 @@ func TestUnlabelCacheNode(t *testing.T) {
 		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ShareMode},
 	})
 
-	runtimeInfoShareHbase, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.TieredStore{})
+	runtimeInfoShareHbase, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -514,7 +514,7 @@ func TestUnlabelCacheNode(t *testing.T) {
 		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ShareMode},
 	})
 
-	tireStore := datav1alpha1.TieredStore{
+	tieredStore := datav1alpha1.TieredStore{
 		Levels: []datav1alpha1.Level{
 			{
 				MediumType: common.Memory,
@@ -530,7 +530,7 @@ func TestUnlabelCacheNode(t *testing.T) {
 			},
 		},
 	}
-	runtimeInfoWithTireStore, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio", tireStore)
+	runtimeInfoWithTireStore, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio", base.WithTieredStore(tieredStore))
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}

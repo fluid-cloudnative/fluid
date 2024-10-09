@@ -21,6 +21,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,7 +41,7 @@ type TestCase struct {
 
 func newTestJuiceEngine(client client.Client, name string, namespace string, withRunTime bool) *JuiceFSEngine {
 	runTime := &datav1alpha1.JuiceFSRuntime{}
-	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, "juicefs", datav1alpha1.TieredStore{})
+	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.JuiceFSRuntime)
 	if !withRunTime {
 		runTimeInfo = nil
 		runTime = nil

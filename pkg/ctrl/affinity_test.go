@@ -265,7 +265,7 @@ func TestBuildWorkersAffinity(t *testing.T) {
 			runtimeObjs = append(runtimeObjs, tt.fields.dataset)
 			runtimeObjs = append(runtimeObjs, tt.fields.worker)
 			mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
-			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.dataset.Name, tt.fields.dataset.Namespace, "jindo", datav1alpha1.TieredStore{})
+			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.dataset.Name, tt.fields.dataset.Namespace, common.JindoRuntime)
 			if err != nil {
 				t.Errorf("testcase %s failed due to %v", tt.name, err)
 			}
@@ -360,7 +360,7 @@ func TestBuildWorkersAffinityForEFCRuntime(t *testing.T) {
 			runtimeObjs = append(runtimeObjs, tt.dataset)
 			runtimeObjs = append(runtimeObjs, tt.worker)
 			mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
-			runtimeInfo, err := base.BuildRuntimeInfo(tt.dataset.Name, tt.dataset.Namespace, common.EFCRuntime, datav1alpha1.TieredStore{})
+			runtimeInfo, err := base.BuildRuntimeInfo(tt.dataset.Name, tt.dataset.Namespace, common.EFCRuntime)
 			if err != nil {
 				t.Fatalf("testcase %s failed due to %v", tt.name, err)
 			}

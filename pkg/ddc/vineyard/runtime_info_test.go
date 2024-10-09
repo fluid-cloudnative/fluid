@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/api/apps/v1"
@@ -28,7 +29,7 @@ import (
 )
 
 func newVineyardEngineRT(client client.Client, name string, namespace string, withRuntimeInfo bool, unittest bool) *VineyardEngine {
-	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, "vineyard", v1alpha1.TieredStore{})
+	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.VineyardRuntime)
 	engine := &VineyardEngine{
 		runtime:     &v1alpha1.VineyardRuntime{},
 		name:        name,

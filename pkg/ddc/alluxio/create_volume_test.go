@@ -29,7 +29,7 @@ import (
 )
 
 func TestCreateVolume(t *testing.T) {
-	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.TieredStore{})
+	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -91,7 +91,7 @@ func TestCreateVolume(t *testing.T) {
 }
 
 func TestCreateFusePersistentVolume(t *testing.T) {
-	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.TieredStore{})
+	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -137,7 +137,7 @@ func TestCreateFusePersistentVolume(t *testing.T) {
 }
 
 func TestCreateFusePersistentVolumeClaim(t *testing.T) {
-	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.TieredStore{})
+	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}

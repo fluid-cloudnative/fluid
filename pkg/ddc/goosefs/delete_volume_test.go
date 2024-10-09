@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/api/core/v1"
@@ -39,7 +40,7 @@ type TestCase struct {
 
 func newTestGooseFSEngine(client client.Client, name string, namespace string, withRunTime bool) *GooseFSEngine {
 	runTime := &datav1alpha1.GooseFSRuntime{}
-	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, "goosefs", datav1alpha1.TieredStore{})
+	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.GooseFSRuntime)
 	if !withRunTime {
 		runTimeInfo = nil
 		runTime = nil

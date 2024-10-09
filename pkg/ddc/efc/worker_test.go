@@ -21,6 +21,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	ctrlhelper "github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"k8s.io/utils/ptr"
 
@@ -156,7 +157,7 @@ func TestEFCEngine_ShouldSetupWorkers(t *testing.T) {
 }
 
 func TestEFCEngine_SetupWorkers(t *testing.T) {
-	runtimeInfo, err := base.BuildRuntimeInfo("efc", "fluid", "efc", datav1alpha1.TieredStore{})
+	runtimeInfo, err := base.BuildRuntimeInfo("efc", "fluid", common.EFCRuntime)
 
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
@@ -432,7 +433,7 @@ func TestEFCEngine_CheckWorkersReady(t *testing.T) {
 				Client:    mockClient,
 				Log:       ctrl.Log.WithName(tt.fields.name),
 			}
-			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, "efc", datav1alpha1.TieredStore{})
+			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, common.EFCRuntime)
 			if err != nil {
 				t.Errorf("EFCEngine.CheckWorkersReady() error = %v", err)
 			}
@@ -675,7 +676,7 @@ func TestEFCEngine_syncWorkersEndpoints(t *testing.T) {
 				Client:    mockClient,
 				Log:       ctrl.Log.WithName(tt.fields.name),
 			}
-			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, "efc", datav1alpha1.TieredStore{})
+			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, common.EFCRuntime)
 			if err != nil {
 				t.Errorf("EFCEngine.CheckWorkersReady() error = %v", err)
 			}

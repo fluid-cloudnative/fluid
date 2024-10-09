@@ -106,7 +106,7 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 			Client: client,
 			name:   test.runtime.Name,
 		}
-		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "juicefs", test.runtime.Spec.TieredStore)
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "juicefs", base.WithTieredStore(test.runtime.Spec.TieredStore))
 		engine.UnitTest = true
 		err := engine.transformResourcesForWorker(test.runtime, test.juicefsValue)
 		if err != nil {
@@ -177,7 +177,7 @@ func TestTransformResourcesForFuseWithValue(t *testing.T) {
 			Client: client,
 			name:   test.runtime.Name,
 		}
-		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "juicefs", test.runtime.Spec.TieredStore)
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "juicefs", base.WithTieredStore(test.runtime.Spec.TieredStore))
 		engine.UnitTest = true
 		err := engine.transformResourcesForFuse(test.runtime, test.juiceValue)
 		if err != nil {

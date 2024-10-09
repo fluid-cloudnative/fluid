@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
@@ -46,7 +47,7 @@ func getTestJindoEngineNode(client client.Client, name string, namespace string,
 	}
 	if withRunTime {
 		engine.runtime = &v1alpha1.JindoRuntime{}
-		engine.runtimeInfo, _ = base.BuildRuntimeInfo(name, namespace, "Jindo", v1alpha1.TieredStore{})
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo(name, namespace, common.JindoRuntime)
 	}
 	return engine
 }

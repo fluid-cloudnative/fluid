@@ -18,7 +18,6 @@ package mountpropagationinjector
 import (
 	"testing"
 
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,7 +38,7 @@ func TestMutate(t *testing.T) {
 		t.Errorf("GetName expect %v, got %v", Name, plugin.GetName())
 	}
 
-	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio", datav1alpha1.TieredStore{})
+	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}

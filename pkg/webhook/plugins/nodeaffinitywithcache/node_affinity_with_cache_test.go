@@ -60,7 +60,7 @@ func TestPlugin(t *testing.T) {
 }
 
 func TestGetPreferredSchedulingTermWithGlobalMode(t *testing.T) {
-	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio", datav1alpha1.TieredStore{})
+	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -108,7 +108,7 @@ func TestMutateOnlyRequired(t *testing.T) {
 	if err != nil {
 		t.Error("new plugin occurs error", err)
 	}
-	runtimeInfo, err := base.BuildRuntimeInfo(alluxioRuntime.Name, alluxioRuntime.Namespace, "alluxio", datav1alpha1.TieredStore{})
+	runtimeInfo, err := base.BuildRuntimeInfo(alluxioRuntime.Name, alluxioRuntime.Namespace, "alluxio")
 	// enable Preferred scheduling
 	runtimeInfo.SetFuseNodeSelector(map[string]string{})
 
@@ -172,7 +172,7 @@ func TestMutateOnlyPrefer(t *testing.T) {
 		t.Errorf("GetName expect %v, got %v", Name, plugin.GetName())
 	}
 
-	runtimeInfo, err := base.BuildRuntimeInfo(alluxioRuntime.Name, alluxioRuntime.Namespace, "alluxio", datav1alpha1.TieredStore{})
+	runtimeInfo, err := base.BuildRuntimeInfo(alluxioRuntime.Name, alluxioRuntime.Namespace, "alluxio")
 	// enable Preferred scheduling
 	runtimeInfo.SetFuseNodeSelector(map[string]string{})
 
@@ -218,7 +218,7 @@ func TestMutateBothRequiredAndPrefer(t *testing.T) {
 	)
 
 	plugin, _ := NewPlugin(client, tieredLocality)
-	runtimeInfo, err := base.BuildRuntimeInfo(alluxioRuntime.Name, alluxioRuntime.Namespace, "alluxio", datav1alpha1.TieredStore{})
+	runtimeInfo, err := base.BuildRuntimeInfo(alluxioRuntime.Name, alluxioRuntime.Namespace, "alluxio")
 	// set global true to enable prefer
 	runtimeInfo.SetFuseNodeSelector(map[string]string{})
 
@@ -307,7 +307,7 @@ required:
 	_ = datav1alpha1.AddToScheme(schema)
 	client := fake.NewFakeClientWithScheme(schema, alluxioRuntime)
 
-	runtimeInfo, _ := base.BuildRuntimeInfo(alluxioRuntime.Name, alluxioRuntime.Namespace, "alluxio", datav1alpha1.TieredStore{})
+	runtimeInfo, _ := base.BuildRuntimeInfo(alluxioRuntime.Name, alluxioRuntime.Namespace, "alluxio")
 	// set global true to enable prefer
 	runtimeInfo.SetFuseNodeSelector(map[string]string{})
 

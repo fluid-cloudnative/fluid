@@ -57,7 +57,7 @@ func TestThinEngine_transformResourcesForFuse(t1 *testing.T) {
 			Log:  fake.NullLogger(),
 			name: test.runtime.Name,
 		}
-		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "thin", test.runtime.Spec.TieredStore)
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "thin", base.WithTieredStore(test.runtime.Spec.TieredStore))
 		engine.UnitTest = true
 		engine.transformResourcesForFuse(test.runtime.Spec.Fuse.Resources, test.value)
 		wantMemReq := test.runtime.Spec.Fuse.Resources.Requests[corev1.ResourceMemory]
@@ -103,7 +103,7 @@ func TestThinEngine_transformResourcesForWorker(t1 *testing.T) {
 			Log:  fake.NullLogger(),
 			name: test.runtime.Name,
 		}
-		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "thin", test.runtime.Spec.TieredStore)
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "thin", base.WithTieredStore(test.runtime.Spec.TieredStore))
 		engine.UnitTest = true
 		engine.transformResourcesForWorker(test.runtime.Spec.Worker.Resources, test.value)
 		wantMemReq := test.runtime.Spec.Worker.Resources.Requests[corev1.ResourceMemory]

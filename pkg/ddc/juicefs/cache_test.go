@@ -28,6 +28,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
@@ -35,7 +36,7 @@ import (
 func TestJuiceFSEngine_queryCacheStatus(t *testing.T) {
 	Convey("Test queryCacheStatus ", t, func() {
 		Convey("queryCacheStatus success", func() {
-			runtimeInfo, err := base.BuildRuntimeInfo("juicefs", "fluid", "juicefs", datav1alpha1.TieredStore{})
+			runtimeInfo, err := base.BuildRuntimeInfo("juicefs", "fluid", common.JuiceFSRuntime)
 			if err != nil {
 				t.Errorf("fail to create the runtimeInfo with error %v", err)
 			}
@@ -101,13 +102,14 @@ func TestJuiceFSEngine_queryCacheStatus(t *testing.T) {
 			}
 		})
 		Convey("queryCacheStatus", func() {
-			runtimeInfo, err := base.BuildRuntimeInfo("juicefs", "fluid", "juicefs", datav1alpha1.TieredStore{
+			tieredStore := datav1alpha1.TieredStore{
 				Levels: []datav1alpha1.Level{{
 					MediumType: "MEM",
 					Path:       "/data",
 					Quota:      resource.NewQuantity(100, resource.BinarySI),
 				}},
-			})
+			}
+			runtimeInfo, err := base.BuildRuntimeInfo("juicefs", "fluid", "juicefs", base.WithTieredStore(tieredStore))
 			if err != nil {
 				t.Errorf("fail to create the runtimeInfo with error %v", err)
 			}

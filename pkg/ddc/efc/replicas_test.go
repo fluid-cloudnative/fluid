@@ -37,7 +37,7 @@ import (
 )
 
 func newEFCEngineREP(client client.Client, name string, namespace string) *EFCEngine {
-	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.EFCRuntime, datav1alpha1.TieredStore{})
+	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.EFCRuntime)
 	engine := &EFCEngine{
 		runtime:     &datav1alpha1.EFCRuntime{},
 		name:        name,

@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	ctrlhelper "github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
@@ -152,7 +153,7 @@ func TestThinEngine_ShouldSetupWorkers(t *testing.T) {
 }
 
 func TestThinEngine_SetupWorkers(t *testing.T) {
-	runtimeInfo, err := base.BuildRuntimeInfo("thin", "fluid", "thin", datav1alpha1.TieredStore{})
+	runtimeInfo, err := base.BuildRuntimeInfo("thin", "fluid", common.ThinRuntime)
 
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
@@ -390,7 +391,7 @@ func TestThinEngine_CheckWorkersReady(t *testing.T) {
 				Client:    mockClient,
 				Log:       ctrl.Log.WithName(tt.fields.name),
 			}
-			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, "thin", datav1alpha1.TieredStore{})
+			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, common.ThinRuntime)
 			if err != nil {
 				t.Errorf("ThinEngine.CheckWorkersReady() error = %v", err)
 			}

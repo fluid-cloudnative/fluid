@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -36,7 +37,7 @@ func getTestJuiceFSEngineNode(client client.Client, name string, namespace strin
 	}
 	if withRunTime {
 		engine.runtime = &datav1alpha1.JuiceFSRuntime{}
-		engine.runtimeInfo, _ = base.BuildRuntimeInfo(name, namespace, "alluxio", datav1alpha1.TieredStore{})
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo(name, namespace, common.JuiceFSRuntime)
 	}
 	return engine
 }

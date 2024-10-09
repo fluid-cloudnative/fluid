@@ -19,6 +19,7 @@ package juicefs
 import (
 	"testing"
 
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	ctrlhelper "github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"k8s.io/utils/ptr"
 
@@ -154,7 +155,7 @@ func TestJuiceFSEngine_ShouldSetupWorkers(t *testing.T) {
 }
 
 func TestJuiceFSEngine_SetupWorkers(t *testing.T) {
-	runtimeInfo, err := base.BuildRuntimeInfo("juicefs", "fluid", "juicefs", datav1alpha1.TieredStore{})
+	runtimeInfo, err := base.BuildRuntimeInfo("juicefs", "fluid", common.JuiceFSRuntime)
 
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
@@ -392,7 +393,7 @@ func TestJuiceFSEngine_CheckWorkersReady(t *testing.T) {
 				Client:    mockClient,
 				Log:       ctrl.Log.WithName(tt.fields.name),
 			}
-			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, "juicefs", datav1alpha1.TieredStore{})
+			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, common.JuiceFSRuntime)
 			if err != nil {
 				t.Errorf("JuiceFSEngine.CheckWorkersReady() error = %v", err)
 			}

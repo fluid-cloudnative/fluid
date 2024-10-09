@@ -15,20 +15,20 @@ import (
 
 func TestCreatePersistentVolumeForRuntime(t *testing.T) {
 	// runtimeInfoExclusive is a runtimeInfo with ExclusiveMode with a PV already in use.
-	runtimeInfoHbase, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.TieredStore{})
+	runtimeInfoHbase, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
 
 	// runtimeInfoExclusive is a runtimeInfo in global mode with no correspond PV.
-	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio", datav1alpha1.TieredStore{})
+	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
 	runtimeInfoSpark.SetFuseNodeSelector(map[string]string{"test-node": "true"})
 
 	// runtimeInfoShare is a runtimeInfo in non global mode with no correspond PV.
-	runtimeInfoHadoop, err := base.BuildRuntimeInfo("hadoop", "fluid", "alluxio", datav1alpha1.TieredStore{})
+	runtimeInfoHadoop, err := base.BuildRuntimeInfo("hadoop", "fluid", "alluxio")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -121,12 +121,12 @@ func TestCreatePersistentVolumeForRuntime(t *testing.T) {
 }
 
 func TestCreatePersistentVolumeClaimForRuntime(t *testing.T) {
-	runtimeInfoHbase, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.TieredStore{})
+	runtimeInfoHbase, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
 
-	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio", datav1alpha1.TieredStore{})
+	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}

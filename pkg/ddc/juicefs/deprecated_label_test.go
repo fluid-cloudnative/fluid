@@ -19,6 +19,7 @@ package juicefs
 import (
 	"testing"
 
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -32,7 +33,7 @@ import (
 
 func getTestJuiceFSEngine(client client.Client, name string, namespace string) *JuiceFSEngine {
 	runTime := &datav1alpha1.JuiceFSRuntime{}
-	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, "juicefs", datav1alpha1.TieredStore{})
+	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.JuiceFSRuntime)
 	engine := &JuiceFSEngine{
 		runtime:     runTime,
 		name:        name,

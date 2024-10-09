@@ -42,7 +42,7 @@ type TestCase struct {
 
 func newTestEFCEngine(client client.Client, name string, namespace string, withRuntimeInfo bool) *EFCEngine {
 	runTime := &datav1alpha1.EFCRuntime{}
-	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.EFCRuntime, datav1alpha1.TieredStore{})
+	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.EFCRuntime)
 	if !withRuntimeInfo {
 		runTimeInfo = nil
 		runTime = nil

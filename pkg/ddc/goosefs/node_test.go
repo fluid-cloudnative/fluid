@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
@@ -45,7 +46,7 @@ func getTestGooseFSEngineNode(client client.Client, name string, namespace strin
 	}
 	if withRunTime {
 		engine.runtime = &v1alpha1.GooseFSRuntime{}
-		engine.runtimeInfo, _ = base.BuildRuntimeInfo(name, namespace, "goosefs", v1alpha1.TieredStore{})
+		engine.runtimeInfo, _ = base.BuildRuntimeInfo(name, namespace, common.GooseFSRuntime)
 	}
 	return engine
 }

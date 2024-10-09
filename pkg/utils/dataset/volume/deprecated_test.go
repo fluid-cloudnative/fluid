@@ -49,12 +49,12 @@ func TestHasDeprecatedPersistentVolumeName(t *testing.T) {
 		Spec: v1.PersistentVolumeSpec{},
 	}}
 
-	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio", datav1alpha1.TieredStore{})
+	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
 
-	runtimeInfoHbase, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio", datav1alpha1.TieredStore{})
+	runtimeInfoHbase, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}

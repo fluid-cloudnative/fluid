@@ -107,7 +107,7 @@ func mockRunningPodsOfStatefulSet() (pods []corev1.Pod) {
 
 func TestDestroyWorker(t *testing.T) {
 	// runtimeInfoSpark tests destroy Worker in exclusive mode.
-	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "fluid", "juicefs", datav1alpha1.TieredStore{})
+	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "fluid", common.JuiceFSRuntime)
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -116,7 +116,7 @@ func TestDestroyWorker(t *testing.T) {
 	})
 
 	// runtimeInfoSpark tests destroy Worker in shareMode mode.
-	runtimeInfoHadoop, err := base.BuildRuntimeInfo("hadoop", "fluid", "juicefs", datav1alpha1.TieredStore{})
+	runtimeInfoHadoop, err := base.BuildRuntimeInfo("hadoop", "fluid", common.JuiceFSRuntime)
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
