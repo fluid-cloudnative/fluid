@@ -186,6 +186,22 @@ spec:
                     description: 'One of the three policies: `Always`, `IfNotPresent`,
                       `Never`'
                     type: string
+                  imagePullSecrets:
+                    description: ImagePullSecrets that will be used to pull images
+                    items:
+                      description: |-
+                        LocalObjectReference contains enough information to let you locate the
+                        referenced object inside the same namespace.
+                      properties:
+                        name:
+                          description: |-
+                            Name of the referent.
+                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            TODO: Add other useful fields. apiVersion, kind, uid?
+                          type: string
+                      type: object
+                      x-kubernetes-map-type: atomic
+                    type: array
                   imageTag:
                     description: Image for thinRuntime fuse
                     type: string
@@ -649,6 +665,22 @@ spec:
                       type: object
                     type: array
                 type: object
+              imagePullSecrets:
+                description: ImagePullSecrets that will be used to pull images
+                items:
+                  description: |-
+                    LocalObjectReference contains enough information to let you locate the
+                    referenced object inside the same namespace.
+                  properties:
+                    name:
+                      description: |-
+                        Name of the referent.
+                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        TODO: Add other useful fields. apiVersion, kind, uid?
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
+                type: array
               nodePublishSecretPolicy:
                 default: MountNodePublishSecretIfExists
                 description: NodePublishSecretPolicy describes the policy to decide
@@ -2472,6 +2504,22 @@ spec:
                     description: 'One of the three policies: `Always`, `IfNotPresent`,
                       `Never`'
                     type: string
+                  imagePullSecrets:
+                    description: ImagePullSecrets that will be used to pull images
+                    items:
+                      description: |-
+                        LocalObjectReference contains enough information to let you locate the
+                        referenced object inside the same namespace.
+                      properties:
+                        name:
+                          description: |-
+                            Name of the referent.
+                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            TODO: Add other useful fields. apiVersion, kind, uid?
+                          type: string
+                      type: object
+                      x-kubernetes-map-type: atomic
+                    type: array
                   imageTag:
                     description: Image for thinRuntime fuse
                     type: string

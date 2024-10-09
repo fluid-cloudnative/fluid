@@ -28,54 +28,57 @@ type ThinValue struct {
 	common.ImageInfo `json:",inline"`
 	common.UserInfo  `json:",inline"`
 
-	Fuse            Fuse                   `json:"fuse,omitempty"`
-	Worker          Worker                 `json:"worker,omitempty"`
-	NodeSelector    map[string]string      `json:"nodeSelector,omitempty"`
-	Tolerations     []corev1.Toleration    `json:"tolerations,omitempty"`
-	PlacementMode   string                 `json:"placement,omitempty"`
-	Owner           *common.OwnerReference `json:"owner,omitempty"`
-	RuntimeValue    string                 `json:"runtimeValue"`
-	RuntimeIdentity common.RuntimeIdentity `json:"runtimeIdentity"`
+	Fuse             Fuse                          `json:"fuse,omitempty"`
+	Worker           Worker                        `json:"worker,omitempty"`
+	NodeSelector     map[string]string             `json:"nodeSelector,omitempty"`
+	Tolerations      []corev1.Toleration           `json:"tolerations,omitempty"`
+	PlacementMode    string                        `json:"placement,omitempty"`
+	Owner            *common.OwnerReference        `json:"owner,omitempty"`
+	RuntimeValue     string                        `json:"runtimeValue"`
+	RuntimeIdentity  common.RuntimeIdentity        `json:"runtimeIdentity"`
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 }
 
 type Worker struct {
-	Image           string                 `json:"image,omitempty"`
-	ImageTag        string                 `json:"imageTag,omitempty"`
-	ImagePullPolicy string                 `json:"imagePullPolicy,omitempty"`
-	Resources       common.Resources       `json:"resources,omitempty"`
-	NodeSelector    map[string]string      `json:"nodeSelector,omitempty"`
-	HostNetwork     bool                   `json:"hostNetwork,omitempty"`
-	Envs            []corev1.EnvVar        `json:"envs,omitempty"`
-	Ports           []corev1.ContainerPort `json:"ports,omitempty"`
-	Volumes         []corev1.Volume        `json:"volumes,omitempty"`
-	VolumeMounts    []corev1.VolumeMount   `json:"volumeMounts,omitempty"`
-	LivenessProbe   *corev1.Probe          `json:"livenessProbe,omitempty"`
-	ReadinessProbe  *corev1.Probe          `json:"readinessProbe,omitempty"`
-	CacheDir        string                 `json:"cacheDir,omitempty"`
+	Image            string                        `json:"image,omitempty"`
+	ImageTag         string                        `json:"imageTag,omitempty"`
+	ImagePullPolicy  string                        `json:"imagePullPolicy,omitempty"`
+	Resources        common.Resources              `json:"resources,omitempty"`
+	NodeSelector     map[string]string             `json:"nodeSelector,omitempty"`
+	HostNetwork      bool                          `json:"hostNetwork,omitempty"`
+	Envs             []corev1.EnvVar               `json:"envs,omitempty"`
+	Ports            []corev1.ContainerPort        `json:"ports,omitempty"`
+	Volumes          []corev1.Volume               `json:"volumes,omitempty"`
+	VolumeMounts     []corev1.VolumeMount          `json:"volumeMounts,omitempty"`
+	LivenessProbe    *corev1.Probe                 `json:"livenessProbe,omitempty"`
+	ReadinessProbe   *corev1.Probe                 `json:"readinessProbe,omitempty"`
+	CacheDir         string                        `json:"cacheDir,omitempty"`
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 }
 
 type Fuse struct {
-	Enabled         bool                   `json:"enabled,omitempty"`
-	Image           string                 `json:"image,omitempty"`
-	ImageTag        string                 `json:"imageTag,omitempty"`
-	ImagePullPolicy string                 `json:"imagePullPolicy,omitempty"`
-	Resources       common.Resources       `json:"resources,omitempty"`
-	Ports           []corev1.ContainerPort `json:"ports,omitempty"`
-	CriticalPod     bool                   `json:"criticalPod,omitempty"`
-	HostNetwork     bool                   `json:"hostNetwork,omitempty"`
-	HostPID         bool                   `json:"hostPID,omitempty"`
-	TargetPath      string                 `json:"targetPath,omitempty"`
-	NodeSelector    map[string]string      `json:"nodeSelector,omitempty"`
-	Envs            []corev1.EnvVar        `json:"envs,omitempty"`
-	Command         []string               `json:"command,omitempty"`
-	Args            []string               `json:"args,omitempty"`
-	Volumes         []corev1.Volume        `json:"volumes,omitempty"`
-	VolumeMounts    []corev1.VolumeMount   `json:"volumeMounts,omitempty"`
-	LivenessProbe   *corev1.Probe          `json:"livenessProbe,omitempty"`
-	ReadinessProbe  *corev1.Probe          `json:"readinessProbe,omitempty"`
-	CacheDir        string                 `json:"cacheDir,omitempty"`
-	ConfigValue     string                 `json:"configValue"`
-	ConfigStorage   string                 `json:"configStorage"`
+	Enabled          bool                          `json:"enabled,omitempty"`
+	Image            string                        `json:"image,omitempty"`
+	ImageTag         string                        `json:"imageTag,omitempty"`
+	ImagePullPolicy  string                        `json:"imagePullPolicy,omitempty"`
+	Resources        common.Resources              `json:"resources,omitempty"`
+	Ports            []corev1.ContainerPort        `json:"ports,omitempty"`
+	CriticalPod      bool                          `json:"criticalPod,omitempty"`
+	HostNetwork      bool                          `json:"hostNetwork,omitempty"`
+	HostPID          bool                          `json:"hostPID,omitempty"`
+	TargetPath       string                        `json:"targetPath,omitempty"`
+	NodeSelector     map[string]string             `json:"nodeSelector,omitempty"`
+	Envs             []corev1.EnvVar               `json:"envs,omitempty"`
+	Command          []string                      `json:"command,omitempty"`
+	Args             []string                      `json:"args,omitempty"`
+	Volumes          []corev1.Volume               `json:"volumes,omitempty"`
+	VolumeMounts     []corev1.VolumeMount          `json:"volumeMounts,omitempty"`
+	LivenessProbe    *corev1.Probe                 `json:"livenessProbe,omitempty"`
+	ReadinessProbe   *corev1.Probe                 `json:"readinessProbe,omitempty"`
+	CacheDir         string                        `json:"cacheDir,omitempty"`
+	ConfigValue      string                        `json:"configValue"`
+	ConfigStorage    string                        `json:"configStorage"`
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 }
 
 type Config struct {
