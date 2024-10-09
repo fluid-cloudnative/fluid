@@ -60,16 +60,6 @@ const (
 	// i.e. fluid.io/node-publish-method
 	LabelNodePublishMothod = LabelAnnotationPrefix + "node-publish-method"
 
-	// AnnotationDataFlowAffinityInject is an annotation representing enabled the dataflow affinity injection, for internal use.
-	// i.e. fluid.io/dataflow-affinity.inject
-	AnnotationDataFlowAffinityInject = LabelAnnotationPrefix + "dataflow-affinity.inject"
-	// AnnotationDataFlowAffinityPrefix is a prefix for dataflow affinity label name.
-	// i.e. dataflow-affinity.fluid.io.
-	AnnotationDataFlowAffinityPrefix = "dataflow-affinity.fluid.io."
-
-	// AnnotationDataFlowAffinityLabelsName is an annotation key name for exposed affinity labels for an operation in a dataflow.
-	AnnotationDataFlowAffinityLabelsName = "data-operation.fluid.io/affinity.labels"
-
 	// LabelAnnotationMountingDatasets is a label/annotation key indicating which datasets are currently being used by a pod.
 	// i.e. fluid.io/datasets-in-use
 	LabelAnnotationDatasetsInUse = LabelAnnotationPrefix + "datasets-in-use"
@@ -84,6 +74,20 @@ const (
 
 	// i.e. container-dataset-mapping.sidecar.fluid.io/
 	LabelContainerDatasetMappingKeyPrefix = "container-dataset-mapping.sidecar." + LabelAnnotationPrefix
+
+	// AnnotationDataFlowAffinityScopePrefix is an annotation prefix representing dataflow affinity related functions.
+	// i.e. affinity.dataflow.fluid.io/
+	AnnotationDataFlowAffinityScopePrefix = "affinity.dataflow." + LabelAnnotationPrefix
+	// AnnotationDataFlowAffinityInject is an annotation representing enabled the dataflow affinity injection, for internal use.
+	// i.e. affinity.dataflow.fluid.io/inject
+	AnnotationDataFlowAffinityInject = AnnotationDataFlowAffinityScopePrefix + "inject"
+	// AnnotationDataFlowAffinityLabelsName is an annotation key name for exposed affinity labels for an operation in a dataflow.
+	// i.e. affinity.dataflow.fluid.io/labels
+	AnnotationDataFlowAffinityLabelsName = AnnotationDataFlowAffinityScopePrefix + "labels"
+
+	// AnnotationDataFlowCustomizedAffinityPrefix is a prefix used to
+	// i.e. affinity.dataflow.fluid.io.
+	AnnotationDataFlowCustomizedAffinityPrefix = "affinity.dataflow.fluid.io."
 )
 
 var (

@@ -26,10 +26,10 @@ func TestGenerateNodeLabels(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "jobtest",
 						Annotations: map[string]string{
-							common.AnnotationDataFlowAffinityInject:                              "true",
-							common.AnnotationDataFlowAffinityPrefix + common.K8sNodeNameLabelKey: "node01",
-							common.AnnotationDataFlowAffinityPrefix + common.K8sRegionLabelKey:   "region01",
-							common.AnnotationDataFlowAffinityPrefix + common.K8sZoneLabelKey:     "zone01",
+							common.AnnotationDataFlowAffinityInject:                                        "true",
+							common.AnnotationDataFlowCustomizedAffinityPrefix + common.K8sNodeNameLabelKey: "node01",
+							common.AnnotationDataFlowCustomizedAffinityPrefix + common.K8sRegionLabelKey:   "region01",
+							common.AnnotationDataFlowCustomizedAffinityPrefix + common.K8sZoneLabelKey:     "zone01",
 						},
 					},
 				},
@@ -76,10 +76,10 @@ func TestGenerateNodeLabels(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "jobtest",
 						Annotations: map[string]string{
-							common.AnnotationDataFlowAffinityInject:                              "true",
-							common.AnnotationDataFlowAffinityPrefix + common.K8sNodeNameLabelKey: "node01",
-							common.AnnotationDataFlowAffinityPrefix + common.K8sZoneLabelKey:     "zone01",
-							common.AnnotationDataFlowAffinityPrefix + "k8s.rack":                 "rack01",
+							common.AnnotationDataFlowAffinityInject:                                        "true",
+							common.AnnotationDataFlowCustomizedAffinityPrefix + common.K8sNodeNameLabelKey: "node01",
+							common.AnnotationDataFlowCustomizedAffinityPrefix + common.K8sZoneLabelKey:     "zone01",
+							common.AnnotationDataFlowCustomizedAffinityPrefix + "k8s.rack":                 "rack01",
 						},
 					},
 				},

@@ -48,11 +48,11 @@ func GenerateNodeAffinity(job *batchv1.Job) (*corev1.NodeAffinity, error) {
 	// affinity labels with specific prefix.
 	hasInjectedLabels := false
 	for key, value := range annotations {
-		if strings.HasPrefix(key, common.AnnotationDataFlowAffinityPrefix) {
+		if strings.HasPrefix(key, common.AnnotationDataFlowCustomizedAffinityPrefix) {
 			nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions =
 				append(nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions,
 					corev1.NodeSelectorRequirement{
-						Key:      strings.TrimPrefix(key, common.AnnotationDataFlowAffinityPrefix),
+						Key:      strings.TrimPrefix(key, common.AnnotationDataFlowCustomizedAffinityPrefix),
 						Operator: corev1.NodeSelectorOpIn,
 						Values:   []string{value},
 					})
