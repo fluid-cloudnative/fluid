@@ -39,6 +39,11 @@ spec:
         args:
         - server
         - /data
+        startupProbe:
+          tcpSocket:
+            port: 9000
+          initialDelaySeconds: 1
+          periodSeconds: 3
         env:
         # Minio access key and secret key
         - name: MINIO_DOMAIN  # For enabling virtual host style S3 APIs.
