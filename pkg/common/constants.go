@@ -217,3 +217,10 @@ const (
 	K8sZoneLabelKey     = "topology.kubernetes.io/zone"
 	K8sRegionLabelKey   = "topology.kubernetes.io/region"
 )
+
+const (
+	FusePatternNone         = "None"
+	FusePatternAll          = "All"
+	FusePatternMountPodOnly = "MountPodOnly"
+	FusePatternSidecarOnly  = "SidecarOnly"
+)
