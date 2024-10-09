@@ -170,7 +170,8 @@ func fillCustomizedNodeAffinity(annotationsToInject map[string]string, nodeLabel
 	for _, name := range exposedLabelNames {
 		name = strings.TrimSpace(name)
 		if value, exist := nodeLabels[name]; exist {
-			annotationsToInject[common.AnnotationDataFlowAffinityPrefix+name] = value
+			// i.e. dataflow-affinity.fluid.io.
+			annotationsToInject[common.AnnotationDataFlowCustomizedAffinityPrefix+name] = value
 		}
 	}
 }
