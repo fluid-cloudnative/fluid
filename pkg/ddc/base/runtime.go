@@ -88,6 +88,8 @@ type RuntimeInfoInterface interface {
 
 	GetMetadataList() []datav1alpha1.Metadata
 
+	GetAnnotations() map[string]string
+
 	GetFuseMetricsScrapeTarget() mountModeSelector
 }
 
@@ -114,6 +116,8 @@ type RuntimeInfo struct {
 	deprecatedPVName bool
 
 	client client.Client
+
+	annotations map[string]string
 
 	metadataList []datav1alpha1.Metadata
 }
@@ -197,6 +201,17 @@ func WithMetadataList(metadataList []datav1alpha1.Metadata) RuntimeInfoOption {
 
 func (info *RuntimeInfo) GetMetadataList() []datav1alpha1.Metadata {
 	return info.metadataList
+}
+
+func WithAnnotations(annotations map[string]string) RuntimeInfoOption {
+	return func(info *RuntimeInfo) error {
+		info.annotations = annotations
+		return nil
+	}
+}
+
+func (info *RuntimeInfo) GetAnnotations() map[string]string {
+	return info.annotations
 }
 
 func WithClientMetrics(clientMetrics datav1alpha1.ClientMetrics) RuntimeInfoOption {
@@ -389,6 +404,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		opts := []RuntimeInfoOption{
 			WithTieredStore(datav1alpha1.TieredStore{}),
 			WithMetadataList(GetMetadataListFromAnnotation(alluxioRuntime)),
+			WithAnnotations(alluxioRuntime.Annotations),
 		}
 		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.AlluxioRuntime, opts...)
 		if err != nil {
@@ -405,6 +421,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 			WithTieredStore(datav1alpha1.TieredStore{}),
 			WithMetadataList(GetMetadataListFromAnnotation(jindoRuntime)),
 			WithClientMetrics(jindoRuntime.Spec.Fuse.Metrics),
+			WithAnnotations(jindoRuntime.Annotations),
 		}
 		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.JindoRuntime, opts...)
 		if err != nil {
@@ -420,6 +437,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		opts := []RuntimeInfoOption{
 			WithTieredStore(datav1alpha1.TieredStore{}),
 			WithMetadataList(GetMetadataListFromAnnotation(goosefsRuntime)),
+			WithAnnotations(goosefsRuntime.Annotations),
 		}
 		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.GooseFSRuntime, opts...)
 		if err != nil {
@@ -435,6 +453,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		opts := []RuntimeInfoOption{
 			WithTieredStore(datav1alpha1.TieredStore{}),
 			WithMetadataList(GetMetadataListFromAnnotation(juicefsRuntime)),
+			WithAnnotations(juicefsRuntime.Annotations),
 		}
 		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.JuiceFSRuntime, opts...)
 		if err != nil {
@@ -450,6 +469,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		opts := []RuntimeInfoOption{
 			WithTieredStore(datav1alpha1.TieredStore{}),
 			WithMetadataList(GetMetadataListFromAnnotation(thinRuntime)),
+			WithAnnotations(thinRuntime.Annotations),
 		}
 		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.ThinRuntime, opts...)
 		if err != nil {
@@ -465,6 +485,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		opts := []RuntimeInfoOption{
 			WithTieredStore(datav1alpha1.TieredStore{}),
 			WithMetadataList(GetMetadataListFromAnnotation(efcRuntime)),
+			WithAnnotations(efcRuntime.Annotations),
 		}
 		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.EFCRuntime, opts...)
 		if err != nil {
@@ -480,6 +501,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		opts := []RuntimeInfoOption{
 			WithTieredStore(datav1alpha1.TieredStore{}),
 			WithMetadataList(GetMetadataListFromAnnotation(vineyardRuntime)),
+			WithAnnotations(vineyardRuntime.Annotations),
 		}
 		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.VineyardRuntime, opts...)
 		if err != nil {

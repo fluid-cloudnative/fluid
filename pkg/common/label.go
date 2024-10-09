@@ -19,7 +19,7 @@ package common
 import "regexp"
 
 const (
-	// LabelAnnotationPrefix is the prefix of every labels and annotations added by the controller.
+	// LabelAnnotationPrefix is the prefix of every label and annotations added by the controller.
 	LabelAnnotationPrefix = "fluid.io/"
 
 	// LabelAnnotationStorageCapacityPrefix is the prefix for the storage annotaion.
@@ -56,9 +56,18 @@ const (
 	// i.e. fluid.io/dataset.referring-namespace
 	LabelAnnotationDatasetReferringNameSpace = LabelAnnotationDataset + ".referring-namespace"
 
-	// LabelNodePublishMothod is a pv label that indicates the method nodePuhlishVolume use
+	// LabelNodePublishMethod is a pv label that indicates the method nodePuhlishVolume use
 	// i.e. fluid.io/node-publish-method
-	LabelNodePublishMothod = LabelAnnotationPrefix + "node-publish-method"
+	LabelNodePublishMethod = LabelAnnotationPrefix + "node-publish-method"
+
+	// AnnotationSkipCheckMountReadyTarget is a runtime annotation that indicates if the fuse mount related with this runtime is ready should be checked in nodePuhlishVolume
+	// i.e. key: fluid.io/skip-check-mount-ready-target
+	//      value:
+	//   	"": Skip none,
+	//      "All": Skill all mount mode to check mount ready,
+	//   	"MountPod": for only mountPod to skip check mount ready,
+	//   	"Sidecar": for only sidecar to skip check mount ready,
+	AnnotationSkipCheckMountReadyTarget = LabelAnnotationPrefix + "skip-check-mount-ready-target"
 
 	// LabelAnnotationMountingDatasets is a label/annotation key indicating which datasets are currently being used by a pod.
 	// i.e. fluid.io/datasets-in-use
