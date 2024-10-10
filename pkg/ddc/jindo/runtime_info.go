@@ -33,6 +33,7 @@ func (e *JindoEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		opts := []base.RuntimeInfoOption{
 			base.WithTieredStore(runtime.Spec.TieredStore),
 			base.WithMetadataList(base.GetMetadataListFromAnnotation(runtime)),
+			base.WithAnnotations(runtime.Annotations),
 		}
 		// TODO: For now hack runtimeType with engineImpl for backward compatibility. Fix this
 		// when refactoring runtimeInfo.

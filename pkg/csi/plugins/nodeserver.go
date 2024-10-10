@@ -137,10 +137,13 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		mountPath = fluidPath + "/" + subPath
 	}
 
+	checkMountFusePattern := req.GetVolumeContext()[common.AnnotationCheckFuseMountReadyPattern]
 	// 1. Wait the runtime fuse ready and check the sub path existence
-	err = utils.CheckMountReadyAndSubPathExist(fluidPath, mountType, subPath)
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+	if checkMountFusePattern == common.FusePatternMountPodOnly || checkMountFusePattern == common.FusePatternAll {
+		err = utils.CheckMountReadyAndSubPathExist(fluidPath, mountType, subPath)
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
 	}
 
 	// use symlink
