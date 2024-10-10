@@ -48,6 +48,13 @@ spec:
 {{ toYaml .Values.fuse.labels | trim | indent 8 }}
 {{- end }}
     spec:
+      {{- if .Values.fuse.imagePullSecrets }}
+      imagePullSecrets:
+{{- toYaml .Values.fuse.imagePullSecrets | nindent 8 }}
+      {{- else if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      {{- end }}
       {{- if .Values.fuse.criticalPod }}
       priorityClassName: system-node-critical
       {{- end }}

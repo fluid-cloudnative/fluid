@@ -76,6 +76,9 @@ type JindoCompTemplateSpec struct {
 	// VolumeMounts specifies the volumes listed in ".spec.volumes" to mount into the jindo runtime component's filesystem.
 	// +optional
 	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
+
+	// ImagePullSecrets that will be used to pull images
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 }
 
 // JindoFuseSpec is a description of the Jindo Fuse
@@ -89,6 +92,9 @@ type JindoFuseSpec struct {
 
 	// One of the three policies: `Always`, `IfNotPresent`, `Never`
 	ImagePullPolicy string `json:"imagePullPolicy,omitempty"`
+
+	// ImagePullSecrets that will be used to pull images
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 
 	// Configurable properties for Jindo System. <br>
 	Properties map[string]string `json:"properties,omitempty"`
@@ -209,6 +215,10 @@ type JindoRuntimeSpec struct {
 	// Volumes is the list of Kubernetes volumes that can be mounted by the jindo runtime components and/or fuses.
 	// +optional
 	Volumes []corev1.Volume `json:"volumes,omitempty"`
+
+	// ImagePullSecrets that will be used to pull images
+	// +optional
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 }
 
 // +kubebuilder:object:root=true
