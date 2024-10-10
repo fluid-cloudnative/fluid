@@ -309,19 +309,11 @@ type WaitingStatus struct {
 	OperationComplete *bool `json:"operationComplete,omitempty"`
 }
 
-type ScrapeTarget string
-
-const (
-	ScrapeTargetNone         ScrapeTarget = ""
-	ScrapeTargetAll          ScrapeTarget = "All"
-	ScrapeTargetMountPodOnly ScrapeTarget = "MountPodOnly"
-	ScrapeTargetSidecarOnly  ScrapeTarget = "SidecarOnly"
-)
-
 type ClientMetrics struct {
 	// Enabled decides whether to expose client metrics.
 	Enabled bool `json:"enabled,omitempty"`
 	// ScrapeTarget decides which fuse component will be scraped by Prometheus.
-	// +kubebuilder:validation:Enum="";All;MountPodOnly;SidecarOnly
-	ScrapeTarget ScrapeTarget `json:"scrapeTarget,omitempty"`
+	// It is a list separated by comma where supported items are [MountPod, Sidecar, All (indicates MountPod and Sidecar), None].
+	// Defaults to None when it is not explicitly set.
+	ScrapeTarget string `json:"scrapeTarget,omitempty"`
 }

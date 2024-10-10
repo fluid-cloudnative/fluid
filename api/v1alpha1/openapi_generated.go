@@ -876,7 +876,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ClientMetrics(ref common.Refere
 					},
 					"scrapeTarget": {
 						SchemaProps: spec.SchemaProps{
-							Description: "ScrapeTarget decides which fuse component will be scraped by Prometheus.",
+							Description: "ScrapeTarget decides which fuse component will be scraped by Prometheus. It is a list separated by comma where supported items are [MountPod, Sidecar, All (indicates MountPod and Sidecar), None]. Defaults to None when it is not explicitly set.",
 							Type:        []string{"string"},
 							Format:      "",
 						},

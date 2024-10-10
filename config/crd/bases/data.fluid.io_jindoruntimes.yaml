@@ -158,13 +158,10 @@ spec:
                         description: Enabled decides whether to expose client metrics.
                         type: boolean
                       scrapeTarget:
-                        description: ScrapeTarget decides which fuse component will
-                          be scraped by Prometheus.
-                        enum:
-                        - ""
-                        - All
-                        - MountPodOnly
-                        - SidecarOnly
+                        description: |-
+                          ScrapeTarget decides which fuse component will be scraped by Prometheus.
+                          It is a list separated by comma where supported items are [MountPod, Sidecar, All (indicates MountPod and Sidecar), None].
+                          Defaults to None when it is not explicitly set.
                         type: string
                     type: object
                   nodeSelector:
