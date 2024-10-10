@@ -1014,7 +1014,8 @@ func TestGetRuntimeInfo(t *testing.T) {
 				namespace:   "default",
 				runtimeType: common.JindoRuntime,
 				fuse: Fuse{
-					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
+					CleanPolicy:         v1alpha1.OnRuntimeDeletedCleanPolicy,
+					MetricsScrapeTarget: mountModeSelector{},
 				},
 			},
 			wantErr: false,
@@ -1104,7 +1105,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 			}
 
 			if !tt.wantErr && !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetRuntimeInfo() = %#v, want %#v", got, tt.want)
+				t.Errorf("GetRuntimeInfo() = %#v\n, want %#v", got, tt.want)
 			}
 		})
 	}

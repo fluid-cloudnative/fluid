@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"strings"
 
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/application/inject/fuse/poststart"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -139,7 +138,7 @@ func (helper *defaultMutatorHelper) PrepareMutation() error {
 		}
 	}
 
-	if helper.runtimeInfo.GetFuseMetricsScrapeTarget() == datav1alpha1.ScrapeTargetNone || helper.runtimeInfo.GetFuseMetricsScrapeTarget() == datav1alpha1.ScrapeTargetMountPodOnly {
+	if !helper.runtimeInfo.GetFuseMetricsScrapeTarget().Selected(base.SidecarMountMode) {
 		helper.removeFuseMetricsContainerPort()
 	}
 
@@ -181,7 +180,7 @@ func (helper *defaultMutatorHelper) Mutate() (*MutatingPodSpecs, error) {
 		}
 	}
 
-	if helper.runtimeInfo.GetFuseMetricsScrapeTarget() == datav1alpha1.ScrapeTargetAll || helper.runtimeInfo.GetFuseMetricsScrapeTarget() == datav1alpha1.ScrapeTargetSidecarOnly {
+	if helper.runtimeInfo.GetFuseMetricsScrapeTarget().Selected(base.SidecarMountMode) {
 		helper.enablePrometheusMetricsScrape()
 	}
 

@@ -5380,7 +5380,7 @@ func TestInjectPodWithEnabledFUSEMetrics(t *testing.T) {
 		name         string
 		namespace    string
 		runtimeType  string
-		scrapeTarget datav1alpha1.ScrapeTarget
+		scrapeTarget string
 	}
 	type testCase struct {
 		name    string
@@ -5540,7 +5540,7 @@ func TestInjectPodWithEnabledFUSEMetrics(t *testing.T) {
 					name:         "duplicate",
 					namespace:    "big-data",
 					runtimeType:  common.JindoRuntime,
-					scrapeTarget: datav1alpha1.ScrapeTargetAll,
+					scrapeTarget: base.MountModeSelectAll,
 				},
 			},
 			want: &corev1.Pod{
@@ -5817,7 +5817,7 @@ func TestInjectPodWithEnabledFUSEMetrics(t *testing.T) {
 					name:         "duplicate2",
 					namespace:    "big-data",
 					runtimeType:  common.JindoRuntime,
-					scrapeTarget: datav1alpha1.ScrapeTargetMountPodOnly,
+					scrapeTarget: string(base.MountPodMountMode),
 				},
 			},
 			want: &corev1.Pod{
@@ -6091,7 +6091,7 @@ func TestInjectPodWithEnabledFUSEMetrics(t *testing.T) {
 					name:         "duplicate3",
 					namespace:    "big-data",
 					runtimeType:  common.JindoRuntime,
-					scrapeTarget: datav1alpha1.ScrapeTargetSidecarOnly,
+					scrapeTarget: string(base.SidecarMountMode),
 				},
 			},
 			want: &corev1.Pod{

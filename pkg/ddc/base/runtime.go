@@ -88,7 +88,7 @@ type RuntimeInfoInterface interface {
 
 	GetMetadataList() []datav1alpha1.Metadata
 
-	GetFuseMetricsScrapeTarget() datav1alpha1.ScrapeTarget
+	GetFuseMetricsScrapeTarget() mountModeSelector
 }
 
 // The real Runtime Info should implement
@@ -125,7 +125,7 @@ type Fuse struct {
 	CleanPolicy datav1alpha1.FuseCleanPolicy
 
 	// Metrics
-	MetricsScrapeTarget datav1alpha1.ScrapeTarget
+	MetricsScrapeTarget mountModeSelector
 }
 
 type TieredStoreInfo struct {
@@ -201,12 +201,20 @@ func (info *RuntimeInfo) GetMetadataList() []datav1alpha1.Metadata {
 
 func WithClientMetrics(clientMetrics datav1alpha1.ClientMetrics) RuntimeInfoOption {
 	return func(info *RuntimeInfo) error {
-		info.fuse.MetricsScrapeTarget = clientMetrics.ScrapeTarget
+		if len(clientMetrics.ScrapeTarget) == 0 {
+			// When scrape target is not set, default it to None
+			clientMetrics.ScrapeTarget = MountModeSelectNone
+		}
+		metricsScrapeTarget, err := ParseMountModeSelectorFromStr(clientMetrics.ScrapeTarget)
+		if err != nil {
+			return err
+		}
+		info.fuse.MetricsScrapeTarget = metricsScrapeTarget
 		return nil
 	}
 }
 
-func (info *RuntimeInfo) GetFuseMetricsScrapeTarget() datav1alpha1.ScrapeTarget {
+func (info *RuntimeInfo) GetFuseMetricsScrapeTarget() mountModeSelector {
 	return info.fuse.MetricsScrapeTarget
 }
 
