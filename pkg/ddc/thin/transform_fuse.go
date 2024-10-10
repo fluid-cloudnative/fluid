@@ -138,6 +138,9 @@ func (t *ThinEngine) parseFuseImage(runtime *datav1alpha1.ThinRuntime, value *Th
 	if len(runtime.Spec.Fuse.ImagePullPolicy) != 0 {
 		value.Fuse.ImagePullPolicy = runtime.Spec.Fuse.ImagePullPolicy
 	}
+	if len(runtime.Spec.Fuse.ImagePullSecrets) != 0 {
+		value.Fuse.ImagePullSecrets = runtime.Spec.Fuse.ImagePullSecrets
+	}
 }
 
 func (t *ThinEngine) parseFuseOptions(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinRuntimeProfile, dataset *datav1alpha1.Dataset) (option string, err error) {
@@ -187,6 +190,7 @@ func (t *ThinEngine) parseFromProfileFuse(profile *datav1alpha1.ThinRuntimeProfi
 	value.Fuse.Image = profile.Spec.Fuse.Image
 	value.Fuse.ImageTag = profile.Spec.Fuse.ImageTag
 	value.Fuse.ImagePullPolicy = profile.Spec.Fuse.ImagePullPolicy
+	value.Fuse.ImagePullSecrets = profile.Spec.Fuse.ImagePullSecrets
 	if len(profile.Spec.Fuse.Image) != 0 {
 		value.Fuse.Image = profile.Spec.Fuse.Image
 	}

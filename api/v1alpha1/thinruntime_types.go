@@ -63,6 +63,10 @@ type ThinRuntimeSpec struct {
 	// RuntimeManagement defines policies when managing the runtime
 	// +optional
 	RuntimeManagement RuntimeManagement `json:"management,omitempty"`
+
+	// ImagePullSecrets that will be used to pull images
+	// +optional
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 }
 
 // ThinCompTemplateSpec is a description of the thinRuntime components
@@ -75,6 +79,10 @@ type ThinCompTemplateSpec struct {
 
 	// One of the three policies: `Always`, `IfNotPresent`, `Never`
 	ImagePullPolicy string `json:"imagePullPolicy,omitempty"`
+
+	// ImagePullSecrets that will be used to pull images
+	// +optional
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 
 	// Replicas is the desired number of replicas of the given template.
 	// If unspecified, defaults to 1.
@@ -129,6 +137,10 @@ type ThinFuseSpec struct {
 
 	// One of the three policies: `Always`, `IfNotPresent`, `Never`
 	ImagePullPolicy string `json:"imagePullPolicy,omitempty"`
+
+	// ImagePullSecrets that will be used to pull images
+	// +optional
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 
 	// Ports used thinRuntime
 	// +optional

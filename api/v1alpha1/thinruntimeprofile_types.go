@@ -35,6 +35,10 @@ type ThinRuntimeProfileSpec struct {
 	// +required
 	FileSystemType string `json:"fileSystemType"`
 
+	// ImagePullSecrets that will be used to pull images
+	// +optional
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+
 	// The component spec of worker
 	Worker ThinCompTemplateSpec `json:"worker,omitempty"`
 

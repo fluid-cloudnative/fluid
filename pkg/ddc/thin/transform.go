@@ -44,6 +44,10 @@ func (t *ThinEngine) transform(runtime *datav1alpha1.ThinRuntime, profile *datav
 			Namespace: runtime.Namespace,
 			Name:      runtime.Name,
 		},
+		ImagePullSecrets: profile.Spec.ImagePullSecrets,
+	}
+	if len(runtime.Spec.ImagePullSecrets) != 0 {
+		value.ImagePullSecrets = runtime.Spec.ImagePullSecrets
 	}
 
 	value.FullnameOverride = t.name
@@ -79,7 +83,6 @@ func (t *ThinEngine) transformWorkers(runtime *datav1alpha1.ThinRuntime, profile
 		Envs:  []corev1.EnvVar{},
 		Ports: []corev1.ContainerPort{},
 	}
-
 	// parse config from profile
 	t.parseFromProfile(profile, value)
 
@@ -141,6 +144,9 @@ func (t *ThinEngine) parseWorkerImage(runtime *datav1alpha1.ThinRuntime, value *
 	if len(runtime.Spec.Worker.ImagePullPolicy) != 0 {
 		value.Worker.ImagePullPolicy = runtime.Spec.Worker.ImagePullPolicy
 	}
+	if len(runtime.Spec.Worker.ImagePullSecrets) != 0 {
+		value.Worker.ImagePullSecrets = runtime.Spec.Worker.ImagePullSecrets
+	}
 }
 
 func (t *ThinEngine) parseFromProfile(profile *datav1alpha1.ThinRuntimeProfile, value *ThinValue) {
@@ -151,6 +157,7 @@ func (t *ThinEngine) parseFromProfile(profile *datav1alpha1.ThinRuntimeProfile, 
 	value.Worker.Image = profile.Spec.Worker.Image
 	value.Worker.ImageTag = profile.Spec.Worker.ImageTag
 	value.Worker.ImagePullPolicy = profile.Spec.Worker.ImagePullPolicy
+	value.Worker.ImagePullSecrets = profile.Spec.Worker.ImagePullSecrets
 	// 2. volumes
 	err := t.transformWorkerVolumes(profile.Spec.Volumes, profile.Spec.Worker.VolumeMounts, value)
 	if err != nil {
