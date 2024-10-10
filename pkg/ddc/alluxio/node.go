@@ -38,8 +38,8 @@ func (e *AlluxioEngine) SyncScheduleInfoToCacheNodes() (err error) {
 	defer utils.TimeTrack(time.Now(), "SyncScheduleInfoToCacheNodes", "name", e.name, "namespace", e.namespace)
 
 	var (
-		currentCacheNodenames  []string
-		previousCacheNodenames []string
+		currentCacheNodeNames  []string
+		previousCacheNodeNames []string
 	)
 
 	workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
@@ -70,11 +70,11 @@ func (e *AlluxioEngine) SyncScheduleInfoToCacheNodes() (err error) {
 			return err
 		}
 		// nodesShouldHaveLabel = append(nodesShouldHaveLabel, node)
-		currentCacheNodenames = append(currentCacheNodenames, nodeName)
+		currentCacheNodeNames = append(currentCacheNodeNames, nodeName)
 	}
 
 	// find the nodes which already have the runtime label
-	previousCacheNodenames, err = e.getAssignedNodes()
+	previousCacheNodeNames, err = e.getAssignedNodes()
 	if err != nil {
 		return err
 	}
@@ -84,15 +84,15 @@ func (e *AlluxioEngine) SyncScheduleInfoToCacheNodes() (err error) {
 	// runtimeLabel := e.runtimeInfo.GetRuntimeLabelName()
 	// runtimeLabel := e.runtimeInfo.GetRuntimeLabelName()
 
-	currentCacheNodenames = utils.RemoveDuplicateStr(currentCacheNodenames)
-	previousCacheNodenames = utils.RemoveDuplicateStr(previousCacheNodenames)
+	currentCacheNodeNames = utils.RemoveDuplicateStr(currentCacheNodeNames)
+	previousCacheNodeNames = utils.RemoveDuplicateStr(previousCacheNodeNames)
 
-	addedCacheNodenames := utils.SubtractString(currentCacheNodenames, previousCacheNodenames)
-	removedCacheNodenames := utils.SubtractString(previousCacheNodenames, currentCacheNodenames)
+	addedCacheNodeNames := utils.SubtractString(currentCacheNodeNames, previousCacheNodeNames)
+	removedCacheNodeNames := utils.SubtractString(previousCacheNodeNames, currentCacheNodeNames)
 
-	if len(addedCacheNodenames) > 0 {
+	if len(addedCacheNodeNames) > 0 {
 
-		for _, nodeName := range addedCacheNodenames {
+		for _, nodeName := range addedCacheNodeNames {
 			node := v1.Node{}
 			err = e.Get(context.TODO(), types.NamespacedName{
 				Name: nodeName,
@@ -113,8 +113,8 @@ func (e *AlluxioEngine) SyncScheduleInfoToCacheNodes() (err error) {
 		}
 	}
 
-	if len(removedCacheNodenames) > 0 {
-		for _, nodeName := range removedCacheNodenames {
+	if len(removedCacheNodeNames) > 0 {
+		for _, nodeName := range removedCacheNodeNames {
 			node := v1.Node{}
 			err = e.Get(context.TODO(), types.NamespacedName{
 				Name: nodeName,

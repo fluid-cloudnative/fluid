@@ -63,11 +63,11 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 	}
 
 	var cachePaths []string // /mnt/disk1/bigboot or /mnt/disk1/bigboot,/mnt/disk2/bigboot
-	var stroagePath = "/dev/shm/"
+	var storagePath = "/dev/shm/"
 	if len(runtime.Spec.TieredStore.Levels) > 0 {
-		stroagePath = runtime.Spec.TieredStore.Levels[0].Path
+		storagePath = runtime.Spec.TieredStore.Levels[0].Path
 	}
-	originPath := strings.Split(stroagePath, ",")
+	originPath := strings.Split(storagePath, ",")
 	for _, value := range originPath {
 		cachePaths = append(cachePaths, strings.TrimRight(value, "/")+"/"+
 			e.namespace+"/"+e.name+"/jindofsx")

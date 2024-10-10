@@ -66,7 +66,7 @@ func (e *AlluxioEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 					return e.runtimeInfo, nil
 				}
 
-				e.Log.Info("Failed to get dataset when getruntimeInfo")
+				e.Log.Info("Failed to get dataset when getRuntimeInfo")
 				return e.runtimeInfo, err
 			}
 

@@ -123,7 +123,7 @@ func ShouldInQueue(pod *corev1.Pod) bool {
 
 	// ignore if restartPolicy is Always
 	if pod.Spec.RestartPolicy == corev1.RestartPolicyAlways {
-		log.Info("pod restart policy", "policy", pod.Spec.RestartPolicy)
+		log.Info("Pod restart policy", "policy", pod.Spec.RestartPolicy)
 		return false
 	}
 

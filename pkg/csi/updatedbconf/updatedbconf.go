@@ -66,7 +66,7 @@ func updateLine(line string, key string, values []string) (string, bool) {
 func updateConfig(content string, newFs []string, newPaths []string) (string, error) {
 	lines := strings.Split(content, "\n")
 	var hasPruneFsConfig = false
-	var hasPrunepPathConfig = false
+	var hasPrunePathConfig = false
 	var configChange = false
 	for i, line := range lines {
 		line = strings.TrimSpace(line)
@@ -80,7 +80,7 @@ func updateConfig(content string, newFs []string, newPaths []string) (string, er
 		}
 		// update PRUNEPATHS
 		if strings.HasPrefix(line, configKeyPrunePaths) {
-			hasPrunepPathConfig = true
+			hasPrunePathConfig = true
 			if newline, shouldUpdate := updateLine(line, configKeyPrunePaths, newPaths); shouldUpdate {
 				configChange = true
 				lines[i] = newline
@@ -92,7 +92,7 @@ func updateConfig(content string, newFs []string, newPaths []string) (string, er
 		configChange = true
 		lines = append(lines, fmt.Sprintf(`%s="%s"`, configKeyPruneFs, strings.Join(newFs, " ")))
 	}
-	if !hasPrunepPathConfig && len(newPaths) > 0 {
+	if !hasPrunePathConfig && len(newPaths) > 0 {
 		configChange = true
 		lines = append(lines, fmt.Sprintf(`%s="%s"`, configKeyPrunePaths, strings.Join(newPaths, " ")))
 	}

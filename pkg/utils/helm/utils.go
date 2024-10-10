@@ -48,7 +48,7 @@ func InstallRelease(name string, namespace string, valueFile string, chartName s
 		return err
 	}
 
-	// 3. check if the chart file exists, if it's it's unix path, then check if it's exist
+	// 3. check if the chart file exists, if it's unix path, then check if it's exist
 	if strings.HasPrefix(chartName, "/") {
 		if _, err = os.Stat(chartName); os.IsNotExist(err) {
 			// TODO: the chart will be put inside the binary in future

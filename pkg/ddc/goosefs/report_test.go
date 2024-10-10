@@ -26,7 +26,7 @@ func TestParseReportSummary(t *testing.T) {
 		summary string
 		want    cacheStates
 	}{
-		"test ParseReportSummary case 1": {
+		"test parseReportSummary case 1": {
 			summary: mockGooseFSReportSummaryForParseReport(),
 			want: cacheStates{
 				cacheCapacity: "19.07MiB",

@@ -100,8 +100,8 @@ func (cs *controllerServer) ValidateVolumeCapabilities(ctx context.Context, req 
 		Mode: csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER,
 	}
 
-	for _, cap := range req.VolumeCapabilities {
-		if cap.GetAccessMode().GetMode() != supportedAccessMode.GetMode() {
+	for _, volumeCap := range req.VolumeCapabilities {
+		if volumeCap.GetAccessMode().GetMode() != supportedAccessMode.GetMode() {
 			return &csi.ValidateVolumeCapabilitiesResponse{Message: "Only single node writer is supported"}, nil
 		}
 	}

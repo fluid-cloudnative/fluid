@@ -21,12 +21,12 @@ func Register(_ manager.Manager, ctx config.RunningContext) error {
 	if err != nil {
 		return err
 	}
-	newconfig, err := updateConfig(string(content), ctx.PruneFs, []string{ctx.PrunePath})
+	newConfig, err := updateConfig(string(content), ctx.PruneFs, []string{ctx.PrunePath})
 	if err != nil {
 		glog.Warningf("failed to update updatedb.conf %s ", err)
 		return nil
 	}
-	if newconfig == string(content) {
+	if newConfig == string(content) {
 		glog.Info("/etc/updatedb.conf has no changes, skip updating")
 		return nil
 	}
@@ -39,10 +39,10 @@ func Register(_ manager.Manager, ctx config.RunningContext) error {
 		if err != nil {
 			return err
 		}
-		newconfig = fmt.Sprintf("%s\n%s", modifiedByFluidComment, newconfig)
+		newConfig = fmt.Sprintf("%s\n%s", modifiedByFluidComment, newConfig)
 		glog.Info("backup complete, now update /etc/updatedb.conf")
 	}
-	return os.WriteFile(updatedbConfPath, []byte(newconfig), 0644)
+	return os.WriteFile(updatedbConfPath, []byte(newConfig), 0644)
 }
 
 // Enabled checks if the updatedb config modifier should be enabled

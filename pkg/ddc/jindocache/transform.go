@@ -63,11 +63,11 @@ func (e *JindoCacheEngine) transform(runtime *datav1alpha1.JindoRuntime) (value 
 	}
 
 	var cachePaths []string // /mnt/disk1/bigboot or /mnt/disk1/bigboot,/mnt/disk2/bigboot
-	var stroagePath = "/dev/shm/"
+	var storagePath = "/dev/shm/"
 	if len(runtime.Spec.TieredStore.Levels) > 0 {
-		stroagePath = runtime.Spec.TieredStore.Levels[0].Path
+		storagePath = runtime.Spec.TieredStore.Levels[0].Path
 	}
-	originPath := strings.Split(stroagePath, ",")
+	originPath := strings.Split(storagePath, ",")
 	for _, value := range originPath {
 		cachePaths = append(cachePaths, strings.TrimRight(value, "/")+"/"+
 			e.namespace+"/"+e.name+"/jindocache")
@@ -413,7 +413,7 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 			}
 			bucketName := rm[2]
 			if mount.Options["fs.oss.endpoint"] == "" {
-				err = fmt.Errorf("oss endpoint can not be null, please check <fs.oss.accessKeySecret> option")
+				err = fmt.Errorf("oss endpoint can not be null, please check <fs.oss.endpoint> option")
 				e.Log.Error(err, "oss endpoint can not be null")
 				return err
 			}
@@ -474,16 +474,16 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 				value.Secret = secretKeyRef.Name
 				if key == "fs."+mountType+".accessKeyId" {
 					value.SecretKey = secretKeyRef.Key
-					e.Log.Info("Get %s From %s!", key, secretKeyRef.Name)
+					e.Log.Info(fmt.Sprintf("Get %s From %s!", key, secretKeyRef.Name))
 				}
 				if key == "fs."+mountType+".accessKeySecret" {
 					value.SecretValue = secretKeyRef.Key
-					e.Log.Info("Get %s From %s!", key, secretKeyRef.Name)
+					e.Log.Info(fmt.Sprintf("Get %s From %s!", key, secretKeyRef.Name))
 				}
 			} else {
 				secret, err := kubeclient.GetSecret(e.Client, secretKeyRef.Name, e.namespace)
 				if err != nil {
-					e.Log.Info("can't get the input secret from dataset", secretKeyRef.Name)
+					e.Log.Error(err, "can't get the input secret from dataset", "secretName", secretKeyRef.Name)
 					break
 				}
 				value := secret.Data[secretKeyRef.Key]
@@ -867,7 +867,7 @@ func (e *JindoCacheEngine) transformLogConfig(runtime *datav1alpha1.JindoRuntime
 		"logger.verbose":         "0",
 	}
 
-	fusePropreties := map[string]string{
+	fuseProperties := map[string]string{
 		"logger.dir":            "/tmp/fuse-log",
 		"logger.consolelogger":  "true",
 		"logger.level":          "2",
@@ -885,12 +885,12 @@ func (e *JindoCacheEngine) transformLogConfig(runtime *datav1alpha1.JindoRuntime
 
 	if len(runtime.Spec.Fuse.LogConfig) > 0 {
 		for k, v := range runtime.Spec.Fuse.LogConfig {
-			fusePropreties[k] = v
+			fuseProperties[k] = v
 		}
 	}
 
 	value.LogConfig = fsxProperties
-	value.FuseLogConfig = fusePropreties
+	value.FuseLogConfig = fuseProperties
 }
 
 func (e *JindoCacheEngine) transformFuseNodeSelector(runtime *datav1alpha1.JindoRuntime, value *Jindo) {

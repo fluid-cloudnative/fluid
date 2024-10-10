@@ -36,7 +36,7 @@ func (e *Helper) SyncReplicas(ctx cruntime.ReconcileRequestContext,
 	var cond datav1alpha1.RuntimeCondition
 
 	if runtime.Replicas() != currentStatus.DesiredWorkerNumberScheduled {
-		// 1. Update scale condtion
+		// 1. Update scale condition
 		statusToUpdate := runtime.GetStatus()
 		if len(statusToUpdate.Conditions) == 0 {
 			statusToUpdate.Conditions = []datav1alpha1.RuntimeCondition{}

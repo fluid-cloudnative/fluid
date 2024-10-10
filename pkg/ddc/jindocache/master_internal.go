@@ -30,7 +30,7 @@ func (e *JindoCacheEngine) setupMasterInernal() (err error) {
 	var (
 		chartName = utils.GetChartsDirectory() + "/jindocache"
 	)
-	valuefileName, err := e.generateJindoValueFile()
+	valueFileName, err := e.generateJindoValueFile()
 	if err != nil {
 		return
 	}
@@ -43,7 +43,7 @@ func (e *JindoCacheEngine) setupMasterInernal() (err error) {
 		return
 	}
 
-	return helm.InstallRelease(e.name, e.namespace, valuefileName, chartName)
+	return helm.InstallRelease(e.name, e.namespace, valueFileName, chartName)
 }
 
 func (e *JindoCacheEngine) generateJindoValueFile() (valueFileName string, err error) {

@@ -75,7 +75,7 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, data
 
 	e.optimizeDefaultFuse(runtime, value, isNewFuseArgVersion)
 
-	if dataset.Spec.Owner != nil {
+	if len(value.Fuse.Args) > 1 && dataset.Spec.Owner != nil {
 		value.Fuse.Args[1] = strings.Join([]string{value.Fuse.Args[1], fmt.Sprintf("uid=%d,gid=%d", *dataset.Spec.Owner.UID, *dataset.Spec.Owner.GID)}, ",")
 	} else {
 		if len(value.Properties) == 0 {

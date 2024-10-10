@@ -56,9 +56,9 @@ func (e *AlluxioEngine) HasDeprecatedCommonLabelname() (deprecated bool, err err
 
 	if _, deprecated = nodeSelectors[e.getDeprecatedCommonLabelname()]; deprecated {
 		//
-		e.Log.Info("the deprecated node selector exists", "nodeselector", e.getDeprecatedCommonLabelname())
+		e.Log.Info("the deprecated node selector exists", "nodeSelector", e.getDeprecatedCommonLabelname())
 	} else {
-		e.Log.Info("The deprecated node selector doesn't exist", "nodeselector", e.getDeprecatedCommonLabelname())
+		e.Log.Info("The deprecated node selector doesn't exist", "nodeSelector", e.getDeprecatedCommonLabelname())
 	}
 
 	return

@@ -83,7 +83,7 @@ func (e *AlluxioEngine) shouldSyncMetadata() (should bool, err error) {
 	}
 
 	if !runtime.Spec.RuntimeManagement.MetadataSyncPolicy.AutoSyncEnabled() {
-		e.Log.V(1).Info("Skip syncing metadta cause runtime.Spec.RuntimeManagement.MetadataSyncPolicy.AutoSync=false", "runtime name", runtime.Name, "runtime namespace", runtime.Namespace)
+		e.Log.V(1).Info("Skip syncing metadata cause runtime.Spec.RuntimeManagement.MetadataSyncPolicy.AutoSync=false", "runtime name", runtime.Name, "runtime namespace", runtime.Namespace)
 		should = false
 		return should, nil
 	}
@@ -219,7 +219,7 @@ func (e *AlluxioEngine) syncMetadataInternal() (err error) {
 						if err != nil {
 							return
 						}
-						// Update dataset metrics after a suceessful status update
+						// Update dataset metrics after a successful status update
 						base.RecordDatasetMetrics(result, datasetToUpdate.Namespace, datasetToUpdate.Name, e.Log)
 					}
 					return

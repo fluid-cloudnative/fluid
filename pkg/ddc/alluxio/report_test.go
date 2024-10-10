@@ -26,7 +26,7 @@ func TestParseReportSummary(t *testing.T) {
 		summary string
 		want    cacheStates
 	}{
-		"test ParseReportSummary case 1": {
+		"test parseReportSummary case 1": {
 			summary: mockAlluxioReportSummaryForParseReport(),
 			want: cacheStates{
 				cacheCapacity: "19.07MiB",
@@ -36,7 +36,7 @@ func TestParseReportSummary(t *testing.T) {
 	}
 
 	for k, item := range testCases {
-		got := AlluxioEngine{}.ParseReportSummary(item.summary)
+		got := AlluxioEngine{}.parseReportSummary(item.summary)
 		if !reflect.DeepEqual(item.want, got) {
 			t.Errorf("%s check failure,want:%+v,got:%+v", k, item.want, got)
 		}

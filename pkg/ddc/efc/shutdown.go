@@ -100,7 +100,7 @@ func (e *EFCEngine) cleanupCache() (err error) {
 	workerPods, err := e.getWorkerRunningPods()
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
-			e.Log.Info("worker of runtime %s namespace %s has been shutdown.", runtime.Name, runtime.Namespace)
+			e.Log.Info(fmt.Sprintf("worker of runtime %s namespace %s has been shutdown.", runtime.Name, runtime.Namespace))
 			return nil
 		} else {
 			return err

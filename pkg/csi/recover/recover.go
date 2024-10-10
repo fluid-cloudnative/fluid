@@ -46,7 +46,7 @@ const (
 	defaultRecoverWarningThreshold = 50
 	serviceAccountTokenFile        = "/var/run/secrets/kubernetes.io/serviceaccount/token"
 	FuseRecoveryPeriod             = "RECOVER_FUSE_PERIOD"
-	RecoverWarningThreshold        = "REVOCER_WARNING_THRESHOLD"
+	RecoverWarningThreshold        = "RECOVER_WARNING_THRESHOLD"
 )
 
 var _ manager.Runnable = &FuseRecover{}
@@ -255,7 +255,7 @@ func (r *FuseRecover) doRecover(point mountinfo.MountPoint) {
 	}
 
 	glog.V(3).Infof("FuseRecovery: recovering broken mount point: %v", point)
-	// if app container restart, umount duplicate mount may lead to recover successed but can not access data
+	// if app container restart, umount duplicate mount may lead to recover successes but can not access data
 	// so we only umountDuplicate when it has mounted more than the recoverWarningThreshold
 	// please refer to https://github.com/fluid-cloudnative/fluid/issues/3399 for more information
 	if point.Count > r.recoverWarningThreshold {

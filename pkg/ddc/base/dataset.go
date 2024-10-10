@@ -31,20 +31,20 @@ func GetDatasetRefName(name, namespace string) string {
 
 func GetPhysicalDatasetFromMounts(mounts []datav1alpha1.Mount) []types.NamespacedName {
 	// virtual dataset can only mount dataset
-	var physicalNameSpacedName []types.NamespacedName
+	var physicalNamespacedName []types.NamespacedName
 	for _, mount := range mounts {
 		if common.IsFluidRefSchema(mount.MountPoint) {
 			datasetPath := strings.TrimPrefix(mount.MountPoint, string(common.RefSchema))
 			namespaceAndName := strings.Split(datasetPath, "/")
 			if len(namespaceAndName) >= 2 {
-				physicalNameSpacedName = append(physicalNameSpacedName, types.NamespacedName{
+				physicalNamespacedName = append(physicalNamespacedName, types.NamespacedName{
 					Namespace: namespaceAndName[0],
 					Name:      namespaceAndName[1],
 				})
 			}
 		}
 	}
-	return physicalNameSpacedName
+	return physicalNamespacedName
 }
 
 func GetPhysicalDatasetSubPath(virtualDataset *datav1alpha1.Dataset) []string {
