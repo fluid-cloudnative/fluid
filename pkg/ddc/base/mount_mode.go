@@ -48,7 +48,7 @@ func ParseMountModeSelectorFromStr(mountModeStr string) (mountModeSelector, erro
 		case string(SidecarMountMode):
 			ret[SidecarMountMode] = true
 		default:
-			return nil, fmt.Errorf("Unsupported mount mode %s, supported mount modes are %v", mountMode, SupportedMountModes)
+			return nil, fmt.Errorf("unsupported mount mode %s, supported mount modes are %v", mountMode, SupportedMountModes)
 		}
 	}
 
