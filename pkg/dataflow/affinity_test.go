@@ -57,7 +57,9 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 							Name:      "test-op",
 							Namespace: "default",
 						},
-						Status: datav1alpha1.OperationStatus{},
+						Status: datav1alpha1.OperationStatus{
+							Phase: common.PhaseComplete,
+						},
 					},
 				},
 				opNamespace:     "default",
@@ -91,6 +93,7 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 							Namespace: "default",
 						},
 						Status: datav1alpha1.OperationStatus{
+							Phase: common.PhaseComplete,
 							NodeAffinity: &v1.NodeAffinity{
 								RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
 									NodeSelectorTerms: []v1.NodeSelectorTerm{
@@ -139,6 +142,7 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 							Namespace: "default",
 						},
 						Status: datav1alpha1.OperationStatus{
+							Phase: common.PhaseComplete,
 							NodeAffinity: &v1.NodeAffinity{
 								RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
 									NodeSelectorTerms: []v1.NodeSelectorTerm{
@@ -181,7 +185,9 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 							Name:      "test-op2",
 							Namespace: "default",
 						},
-						Status: datav1alpha1.OperationStatus{},
+						Status: datav1alpha1.OperationStatus{
+							Phase: common.PhaseComplete,
+						},
 					},
 				},
 				opNamespace:     "default",
@@ -209,6 +215,7 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 							Namespace: "default",
 						},
 						Status: datav1alpha1.OperationStatus{
+							Phase: common.PhaseComplete,
 							NodeAffinity: &v1.NodeAffinity{
 								RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
 									NodeSelectorTerms: []v1.NodeSelectorTerm{
@@ -273,6 +280,7 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 							Namespace: "default",
 						},
 						Status: datav1alpha1.OperationStatus{
+							Phase: common.PhaseComplete,
 							NodeAffinity: &v1.NodeAffinity{
 								RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
 									NodeSelectorTerms: []v1.NodeSelectorTerm{
@@ -339,6 +347,7 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 							Namespace: "test",
 						},
 						Status: datav1alpha1.OperationStatus{
+							Phase: common.PhaseComplete,
 							NodeAffinity: &v1.NodeAffinity{
 								RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
 									NodeSelectorTerms: []v1.NodeSelectorTerm{
@@ -421,6 +430,7 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 							Namespace: "test",
 						},
 						Status: datav1alpha1.OperationStatus{
+							Phase: common.PhaseComplete,
 							NodeAffinity: &v1.NodeAffinity{
 								RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
 									NodeSelectorTerms: []v1.NodeSelectorTerm{
@@ -471,6 +481,35 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 				},
 			},
 			wantErr: false,
+		},
+		{
+			name: "preceding op not completed, error",
+			args: args{
+				runAfter: &datav1alpha1.OperationRef{
+					ObjectRef: datav1alpha1.ObjectRef{
+						Kind: "DataLoad",
+						Name: "test-op",
+					},
+					AffinityStrategy: datav1alpha1.AffinityStrategy{
+						Policy: datav1alpha1.PreferAffinityStrategy,
+					},
+				},
+				objects: []runtime.Object{
+					&datav1alpha1.DataLoad{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "test-op",
+							Namespace: "default",
+						},
+						Status: datav1alpha1.OperationStatus{
+							Phase: common.PhaseFailed,
+						},
+					},
+				},
+				opNamespace:     "default",
+				currentAffinity: nil,
+			},
+			want:    nil,
+			wantErr: true,
 		},
 	}
 	testScheme := runtime.NewScheme()
