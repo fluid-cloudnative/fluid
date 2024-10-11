@@ -24,6 +24,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -32,19 +33,11 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-// Runtime Information interface defines the interfaces that should be implemented
-// by Alluxio Runtime or other implementation .
-// Thread safety is required from implementations of this interface.
-type RuntimeInfoInterface interface {
-	GetTieredStoreInfo() TieredStoreInfo
-
-	GetName() string
-
-	GetNamespace() string
-
-	GetRuntimeType() string
-
-	// GetStoragetLabelname(read common.ReadType, storage common.StorageType) string
+// Conventions defines naming convention for all runtime.
+// Conventions includes all the literal string used in Fluid
+// to identify the relationship between a dataset(runtime) and its component(master, worker, fuse, persistentVolume, etc.).
+type Conventions interface {
+	GetPersistentVolumeName() string
 
 	GetLabelNameForMemory() string
 
@@ -60,7 +53,22 @@ type RuntimeInfoInterface interface {
 
 	GetDatasetNumLabelName() string
 
-	GetPersistentVolumeName() string
+	GetWorkerStatefulsetName() string
+}
+
+// Runtime Information interface defines the interfaces that should be implemented
+// by Alluxio Runtime or other implementation .
+// Thread safety is required from implementations of this interface.
+type RuntimeInfoInterface interface {
+	Conventions
+
+	GetTieredStoreInfo() TieredStoreInfo
+
+	GetName() string
+
+	GetNamespace() string
+
+	GetRuntimeType() string
 
 	IsExclusive() bool
 
@@ -92,6 +100,8 @@ type RuntimeInfoInterface interface {
 
 	GetFuseMetricsScrapeTarget() mountModeSelector
 }
+
+var _ RuntimeInfoInterface = &RuntimeInfo{}
 
 // The real Runtime Info should implement
 type RuntimeInfo struct {

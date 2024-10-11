@@ -22,19 +22,24 @@ import (
 	"strconv"
 	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
 
 	"github.com/go-logr/logr"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	fluidctrl "github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/tieredstore"
@@ -46,80 +51,132 @@ func init() {
 	rootLog = ctrl.Log.WithName("dataset.lifecycle")
 }
 
-// AlreadyAssigned checks if the node is already assigned the runtime engine
-// If runtime engine cached dataset is exclusive, will check if any runtime engine already assigned the runtime engine
-func AlreadyAssigned(runtimeInfo base.RuntimeInfoInterface, node v1.Node) (assigned bool) {
-	// label := e.getCommonLabelname()
+func SyncScheduleInfoToCacheNodes(runtimeInfo base.RuntimeInfoInterface, client client.Client) (err error) {
+	defer utils.TimeTrack(time.Now(), "SyncScheduleInfoToCacheNodes", "name", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace())
 
-	label := runtimeInfo.GetCommonLabelName()
-	log := rootLog.WithValues("runtime", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace())
+	var (
+		currentCacheNodeNames  []string
+		previousCacheNodeNames []string
+	)
 
-	if len(node.Labels) > 0 {
-		_, assigned = node.Labels[label]
+	workers, err := fluidctrl.GetWorkersAsStatefulset(client,
+		types.NamespacedName{Namespace: runtimeInfo.GetNamespace(), Name: runtimeInfo.GetWorkerStatefulsetName()})
+	if err != nil {
+		if fluiderrs.IsDeprecated(err) {
+			rootLog.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
+			return nil
+		}
+		return err
 	}
 
-	log.Info("Check alreadyAssigned", "node", node.Name, "label", label, "assigned", assigned)
+	workerSelector, err := metav1.LabelSelectorAsSelector(workers.Spec.Selector)
 
-	return
-
-}
-
-// CanbeAssigned checks if the node is already assigned the runtime engine
-func CanbeAssigned(runtimeInfo base.RuntimeInfoInterface, node v1.Node) bool {
-	// TODO(xieydd): Resource consumption of multi dataset same node
-	// if e.alreadyAssignedByFluid(node) {
-	// 	return false
-	// }
-	label := utils.GetExclusiveKey()
-	log := rootLog.WithValues("runtime", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace())
-	value, cannotBeAssigned := node.Labels[label]
-	if cannotBeAssigned {
-		log.Info("node ", node.Name, "is exclusive and already be assigned, can not be assigned",
-			"key", label,
-			"value", value)
-		return false
+	workerPods, err := kubeclient.GetPodsForStatefulSet(client, workers, workerSelector)
+	if err != nil {
+		return err
 	}
 
-	storageMap := tieredstore.GetLevelStorageMap(runtimeInfo)
-
-	for key, requirement := range storageMap {
-		if key == common.MemoryCacheStore {
-			nodeMemoryCapacity := *node.Status.Allocatable.Memory()
-			if requirement.Cmp(nodeMemoryCapacity) <= 0 {
-				log.Info("requirement is less than node memory capacity", "requirement", requirement,
-					"nodeMemoryCapacity", nodeMemoryCapacity)
-			} else {
-				log.Info("requirement is more than node memory capacity", "requirement", requirement,
-					"nodeMemoryCapacity", nodeMemoryCapacity)
-				return false
-			}
+	for _, pod := range workerPods {
+		if !podutil.IsPodReady(&pod) {
+			rootLog.V(1).Info("Skip the pod because it's not ready", "pod", pod.Name)
+			continue
 		}
 
-		// } else {
-		// 	nodeDiskCapacity := *node.Status.Allocatable.StorageEphemeral()
-		// 	if requirement.Cmp(nodeDiskCapacity) <= 0 {
-		// 		log.Info("requirement is less than node disk capacity", "requirement", requirement,
-		// 			"nodeDiskCapacity", nodeDiskCapacity)
-		// 	} else {
-		// 		log.Info("requirement is more than node disk capacity", "requirement", requirement,
-		// 			"nodeDiskCapacity", nodeDiskCapacity)
-		// 		return false
-		// 	}
-		// }
+		if len(pod.Spec.NodeName) != 0 {
+			currentCacheNodeNames = append(currentCacheNodeNames, pod.Spec.NodeName)
+		}
 	}
 
-	return true
+	// find the nodes which already have the runtime labels
+	previousCacheNodeNames, err = getAssignedNodes(runtimeInfo, client)
 
+	currentCacheNodeNames = utils.RemoveDuplicateStr(currentCacheNodeNames)
+	previousCacheNodeNames = utils.RemoveDuplicateStr(previousCacheNodeNames)
+
+	addedCacheNodenames := utils.SubtractString(currentCacheNodeNames, previousCacheNodeNames)
+	removedCacheNodenames := utils.SubtractString(previousCacheNodeNames, currentCacheNodeNames)
+
+	if len(addedCacheNodenames) > 0 {
+		for _, nodeName := range addedCacheNodenames {
+			node := corev1.Node{}
+			err = client.Get(context.TODO(), types.NamespacedName{
+				Name: nodeName,
+			}, &node)
+			if err != nil {
+				rootLog.Error(err, "Failed to find new cache node", "node", nodeName)
+				return err
+			}
+			if !CheckIfRuntimeInNode(node, runtimeInfo) {
+				err = LabelCacheNode(node, runtimeInfo, client)
+				if err != nil {
+					rootLog.Error(err, "Failed to label new cache node", "node", nodeName)
+					return err
+				}
+			} else {
+				rootLog.Info("The node is already added to cache", "node", nodeName)
+			}
+		}
+	}
+
+	if len(removedCacheNodenames) > 0 {
+		for _, nodeName := range removedCacheNodenames {
+			node := corev1.Node{}
+			err = client.Get(context.TODO(), types.NamespacedName{
+				Name: nodeName,
+			}, &node)
+			if utils.IgnoreNotFound(err) != nil {
+				rootLog.Error(err, "Failed to find new cache node", "node", nodeName)
+				return err
+			}
+			if CheckIfRuntimeInNode(node, runtimeInfo) {
+				err = UnlabelCacheNode(node, runtimeInfo, client)
+				if err != nil {
+					rootLog.Error(err, "Failed to unlabel cache node", "node", nodeName)
+					return err
+				}
+			} else {
+				rootLog.Info("The node is already removed from cache", "node", nodeName)
+			}
+
+		}
+	}
+	return nil
+}
+
+func getAssignedNodes(runtimeInfo base.RuntimeInfoInterface, cli client.Client) (nodeNames []string, err error) {
+	var (
+		nodeList     = &corev1.NodeList{}
+		runtimeLabel = runtimeInfo.GetRuntimeLabelName()
+	)
+
+	nodeNames = []string{}
+	datasetLabels, err := labels.Parse(fmt.Sprintf("%s=true", runtimeLabel))
+	if err != nil {
+		return
+	}
+
+	err = cli.List(context.TODO(), nodeList, &client.ListOptions{
+		LabelSelector: datasetLabels,
+	})
+	if err != nil {
+		return
+	}
+
+	for _, node := range nodeList.Items {
+		nodeNames = append(nodeNames, node.Name)
+	}
+
+	return
 }
 
 // CheckIfRuntimeInNode checks if the the runtime on this node
-func CheckIfRuntimeInNode(node v1.Node, runtimeInfo base.RuntimeInfoInterface) (found bool) {
+func CheckIfRuntimeInNode(node corev1.Node, runtimeInfo base.RuntimeInfoInterface) (found bool) {
 	key := runtimeInfo.GetRuntimeLabelName()
 	return findLabelNameOnNode(node, key)
 }
 
 // findLabelNameOnNode checks if the label exist
-func findLabelNameOnNode(node v1.Node, key string) (found bool) {
+func findLabelNameOnNode(node corev1.Node, key string) (found bool) {
 	labels := node.Labels
 	if len(labels) == 0 {
 		return
@@ -129,7 +186,7 @@ func findLabelNameOnNode(node v1.Node, key string) (found bool) {
 }
 
 // LabelCacheNode adds labels on a selected node to indicate the node is scheduled with corresponding runtime
-func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, client client.Client) (err error) {
+func LabelCacheNode(nodeToLabel corev1.Node, runtimeInfo base.RuntimeInfoInterface, client client.Client) (err error) {
 	defer utils.TimeTrack(time.Now(), "LabelCacheNode", "runtime", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace(), "node", nodeToLabel.Name)
 	// Label to be added
 	var (
@@ -155,7 +212,7 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 	}
 
 	nodeName := nodeToLabel.Name
-	var toUpdate *v1.Node
+	var toUpdate *corev1.Node
 	var modifiedLabels []string
 	var labelsToModify common.LabelsToModify
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
@@ -230,7 +287,7 @@ func LabelCacheNode(nodeToLabel v1.Node, runtimeInfo base.RuntimeInfoInterface, 
 	return nil
 }
 
-func labelNodeWithCapacityInfo(toUpdate *v1.Node, runtimeInfo base.RuntimeInfoInterface, labelsToModify *common.LabelsToModify) {
+func labelNodeWithCapacityInfo(toUpdate *corev1.Node, runtimeInfo base.RuntimeInfoInterface, labelsToModify *common.LabelsToModify) {
 	var (
 		// memCapacityLabel indicates in-memory cache capacity assigned on the node
 		// e.g. fluid.io/s-h-alluxio-m-default-hbase=1GiB
@@ -262,7 +319,7 @@ func labelNodeWithCapacityInfo(toUpdate *v1.Node, runtimeInfo base.RuntimeInfoIn
 }
 
 // UnlabelCacheNode remove labels on a selected node to indicate the node doesn't have the cache for
-func UnlabelCacheNode(node v1.Node, runtimeInfo base.RuntimeInfoInterface, client client.Client) (err error) {
+func UnlabelCacheNode(node corev1.Node, runtimeInfo base.RuntimeInfoInterface, client client.Client) (err error) {
 
 	var (
 		labelExclusiveName = utils.GetExclusiveKey()
@@ -278,7 +335,7 @@ func UnlabelCacheNode(node v1.Node, runtimeInfo base.RuntimeInfoInterface, clien
 	log.Info("check node labels", "labelNames", labelNames)
 
 	nodeName := node.Name
-	nodeToUpdate := &v1.Node{}
+	nodeToUpdate := &corev1.Node{}
 	var labelsToModify common.LabelsToModify
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		err = client.Get(context.TODO(), types.NamespacedName{Name: nodeName}, nodeToUpdate)
@@ -318,7 +375,7 @@ func UnlabelCacheNode(node v1.Node, runtimeInfo base.RuntimeInfoInterface, clien
 }
 
 // DecreaseDatasetNum deletes the datasetNum label or updates the number of the dataset in the specific node.
-func DecreaseDatasetNum(toUpdate *v1.Node, runtimeInfo base.RuntimeInfoInterface, labelsToModify *common.LabelsToModify) error {
+func DecreaseDatasetNum(toUpdate *corev1.Node, runtimeInfo base.RuntimeInfoInterface, labelsToModify *common.LabelsToModify) error {
 	var labelDatasetNum = runtimeInfo.GetDatasetNumLabelName()
 	if val, exist := toUpdate.Labels[labelDatasetNum]; exist {
 		currentDataset, err := strconv.Atoi(val)
@@ -337,7 +394,7 @@ func DecreaseDatasetNum(toUpdate *v1.Node, runtimeInfo base.RuntimeInfoInterface
 }
 
 // increaseDatasetNum adds the datasetNum label or updates the number of the dataset in the specific node.
-func increaseDatasetNum(toUpdate *v1.Node, runtimeInfo base.RuntimeInfoInterface, labelsToModify *common.LabelsToModify) error {
+func increaseDatasetNum(toUpdate *corev1.Node, runtimeInfo base.RuntimeInfoInterface, labelsToModify *common.LabelsToModify) error {
 	var labelDatasetNum = runtimeInfo.GetDatasetNumLabelName()
 	if currentDatasetNum, ok := toUpdate.Labels[labelDatasetNum]; ok {
 		currentData, err := strconv.Atoi(currentDatasetNum)
