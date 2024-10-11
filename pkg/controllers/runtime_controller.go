@@ -236,7 +236,7 @@ func (r *RuntimeReconciler) ReconcileRuntimeDeletion(engine base.Engine, ctx cru
 			log.Error(err, "Failed to remove finalizer")
 			return utils.RequeueIfError(err)
 		}
-		ctx.Log.V(1).Info("Finalizer is removed", "runtime", ctx.Runtime)
+		ctx.Log.Info("Finalizer is removed", "runtime", ctx.Runtime)
 	}
 
 	return ctrl.Result{}, nil
