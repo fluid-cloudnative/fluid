@@ -23,6 +23,8 @@ import (
 const ControllerRevisionHashLabel = "controller.kubernetes.io/hash"
 const StatefulSetRevisionLabel = "advancedstatefulset.fluid.io/revision"
 const ParallelPodManagement = "Parallel"
+const deletePodsAnnoKey = "fluid.io/need_delete_pods"
+const deletePodsAnnoValue = "true"
 
 var ValidatePodName = apimachineryvalidation.NameIsDNSSubdomain
 

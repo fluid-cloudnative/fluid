@@ -19,7 +19,6 @@ package alluxio
 import (
 	"context"
 	"fmt"
-
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 
@@ -47,7 +46,7 @@ func (e *AlluxioEngine) Shutdown() (err error) {
 		return
 	}
 	if e.retryShutdown < gracefulShutdownLimits {
-		err = e.cleanupCache()
+		err = e.CleanupCache()
 		if err != nil {
 			e.retryShutdown = e.retryShutdown + 1
 			e.Log.Info("clean cache failed",
@@ -61,7 +60,7 @@ func (e *AlluxioEngine) Shutdown() (err error) {
 		base.SafeClose(e.MetadataSyncDoneCh)
 	}
 
-	_, err = e.destroyWorkers(-1)
+	_, err = e.DestroyWorkers(-1)
 	if err != nil {
 		return
 	}
@@ -79,7 +78,7 @@ func (e *AlluxioEngine) Shutdown() (err error) {
 	if datav1alpha1.IsHostNetwork(runtime.Spec.Master.NetworkMode) ||
 		datav1alpha1.IsHostNetwork(runtime.Spec.Worker.NetworkMode) {
 		e.Log.Info("releasePorts for hostnetwork mode")
-		err = e.releasePorts()
+		err = e.ReleasePorts()
 		if err != nil {
 			return
 		}
@@ -93,13 +92,13 @@ func (e *AlluxioEngine) Shutdown() (err error) {
 // destroyMaster Destroies the master
 func (e *AlluxioEngine) destroyMaster() (err error) {
 	var found bool
-	found, err = helm.CheckRelease(e.name, e.namespace)
+	found, err = helm.CheckRelease(e.Name, e.Namespace)
 	if err != nil {
 		return err
 	}
 
 	if found {
-		err = helm.DeleteRelease(e.name, e.namespace)
+		err = helm.DeleteRelease(e.Name, e.Namespace)
 		if err != nil {
 			return
 		}
@@ -113,7 +112,7 @@ func (e *AlluxioEngine) destroyMaster() (err error) {
 // }
 
 // cleanupCache cleans up the cache
-func (e *AlluxioEngine) cleanupCache() (err error) {
+func (e *AlluxioEngine) CleanupCache() (err error) {
 	// TODO(cheyang): clean up the cache
 	cacheStates, err := e.queryCacheStatus()
 	if utils.IgnoreNotFound(err) != nil {
@@ -155,7 +154,7 @@ func (e *AlluxioEngine) cleanupCache() (err error) {
 	return fmt.Errorf("to make sure if the remaining cache is cleaned up, check again")
 }
 
-func (e *AlluxioEngine) releasePorts() (err error) {
+func (e *AlluxioEngine) ReleasePorts() (err error) {
 	var valueConfigMapName = e.getHelmValuesConfigMapName()
 
 	allocator, err := portallocator.GetRuntimePortAllocator()
@@ -163,7 +162,7 @@ func (e *AlluxioEngine) releasePorts() (err error) {
 		return errors.Wrap(err, "GetRuntimePortAllocator when releasePorts")
 	}
 
-	cm, err := kubeclient.GetConfigmapByName(e.Client, valueConfigMapName, e.namespace)
+	cm, err := kubeclient.GetConfigmapByName(e.Client, valueConfigMapName, e.Namespace)
 	if err != nil {
 		return errors.Wrap(err, "GetConfigmapByName when releasePorts")
 	}
@@ -194,8 +193,8 @@ func (e *AlluxioEngine) cleanAll() (err error) {
 
 	var (
 		valueConfigmapName = e.getHelmValuesConfigMapName()
-		configmapName      = e.name + "-config"
-		namespace          = e.namespace
+		configmapName      = e.Name + "-config"
+		namespace          = e.Namespace
 	)
 
 	cms := []string{valueConfigmapName, configmapName}
@@ -212,12 +211,12 @@ func (e *AlluxioEngine) cleanAll() (err error) {
 
 // destroyWorkers attempts to delete the workers until worker num reaches the given expectedWorkers, if expectedWorkers is -1, it means all the workers should be deleted
 // This func returns currentWorkers representing how many workers are left after this process.
-func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers int32, err error) {
+func (e *AlluxioEngine) DestroyWorkers(expectedWorkers int32) (currentWorkers int32, err error) {
 	//  SchedulerMutex only for patch mode
 	lifecycle.SchedulerMutex.Lock()
 	defer lifecycle.SchedulerMutex.Unlock()
 
-	runtimeInfo, err := e.getRuntimeInfo()
+	runtimeInfo, err := e.GetRuntimeInfo()
 	if err != nil {
 		return currentWorkers, err
 	}
@@ -292,7 +291,7 @@ func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers in
 				labelsToModify.Delete(label)
 			}
 
-			exclusiveLabelValue := utils.GetExclusiveValue(e.namespace, e.name)
+			exclusiveLabelValue := utils.GetExclusiveValue(e.Namespace, e.Name)
 			if val, exist := toUpdate.Labels[labelExclusiveName]; exist && val == exclusiveLabelValue {
 				labelsToModify.Delete(labelExclusiveName)
 			}
@@ -308,7 +307,7 @@ func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers in
 			if err != nil {
 				return err
 			}
-			e.Log.Info("Destroy worker", "Dataset", e.name, "deleted worker node", node.Name, "removed or updated labels", modifiedLabels)
+			e.Log.Info("Destroy worker", "Dataset", e.Name, "deleted worker node", node.Name, "removed or updated labels", modifiedLabels)
 			return nil
 		})
 
@@ -322,6 +321,102 @@ func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers in
 	return currentWorkers, nil
 }
 
+// DestroyPodsByAnnotationOnWorkerNodes attempts to delete all worker pods on the nodes that have the specified annotation.
+// This function also cleans up the cache related to the deleted pods.
+func (e *AlluxioEngine) DestroyPodsByAnnotationOnWorkerNodes(annotationKey string, annotationValue string) (err error) {
+	//  SchedulerMutex only for patch mode
+	lifecycle.SchedulerMutex.Lock()
+	defer lifecycle.SchedulerMutex.Unlock()
+
+	runtimeInfo, err := e.GetRuntimeInfo()
+	if err != nil {
+		return err
+	}
+
+	var (
+		nodeList        = &corev1.NodeList{}
+		labelCommonName = runtimeInfo.GetCommonLabelName()
+	)
+
+	datasetLabels, err := labels.Parse(fmt.Sprintf("%s=true", labelCommonName))
+	if err != nil {
+		return err
+	}
+
+	// List all nodes with the specified dataset labels
+	err = e.List(context.TODO(), nodeList, &client.ListOptions{
+		LabelSelector: datasetLabels,
+	})
+	if err != nil {
+		return err
+	}
+
+	// Iterate over each node to find and delete pods with the specified annotation
+	for _, node := range nodeList.Items {
+		nodeName := node.Name
+		currentPods, err := e.DestroyWorkerPodsByNode(nodeName, annotationKey, annotationValue)
+		if err != nil {
+			return err
+		}
+		e.Log.Info("Destroyed pods on node", "nodeName", nodeName, "remainingPods", currentPods)
+	}
+
+	// Clean up cache after deleting pods
+	err = e.CleanupCache()
+	if err != nil {
+		e.Log.Error(err, "Failed to clean up cache after deleting pods")
+		return err
+	}
+
+	return nil
+}
+
+// DestroyWorkerPodsByNode deletes all worker pods on the specified node that match the given annotation.
+func (e *AlluxioEngine) DestroyWorkerPodsByNode(nodeName string, annotationKey string, annotationValue string) (currentPods int32, err error) {
+	var podList corev1.PodList
+
+	// List all pods in the namespace
+	err = e.Client.List(context.TODO(), &podList, &client.ListOptions{
+		Namespace: e.Namespace,
+	})
+	if err != nil {
+		return currentPods, err
+	}
+
+	currentPods = int32(len(podList.Items))
+
+	// Select the pods based on the node name and annotation
+	for _, pod := range podList.Items {
+		if pod.Spec.NodeName != nodeName {
+			continue // Skip pods not on the specified node
+		}
+
+		// Check if the pod has the specified annotation
+		if value, exists := pod.Annotations[annotationKey]; !exists || value != annotationValue {
+			continue // Skip this pod if it doesn't match the annotation
+		}
+
+		podName := pod.Name
+		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+			// Delete the pod
+			err := e.Client.Delete(context.TODO(), &pod)
+			if err != nil {
+				e.Log.Error(err, "Failed to delete pod", "podname", podName)
+				return err
+			}
+			e.Log.Info("Deleted pod", "podname", podName)
+			return nil
+		})
+
+		if err != nil {
+			return currentPods, err
+		}
+
+		currentPods--
+	}
+
+	return currentPods, nil
+}
 func (e *AlluxioEngine) sortNodesToShutdown(candidateNodes []corev1.Node) (nodes []corev1.Node, err error) {
 	// If fuses are deployed in global mode. Scaling in workers has nothing to do with fuses.
 	// All nodes with related label can be candidate nodes.

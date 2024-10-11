@@ -358,7 +358,7 @@ func (r *StatefulSetReconciler) updateStatefulSet(set *apis.AdvancedStatefulSet,
 		}
 		if isFailed(replicas[i]) || isSucceeded(replicas[i]) {
 			r.Recorder.Eventf(set, corev1.EventTypeWarning, "RecreatingFailedPod", "StatefulSet %s/%s is recreating failed Pod %s", set.Namespace, set.Name, replicas[i].Name)
-			if err := r.PodControl.DeleteStatefulPod(set, replicas[i]); err != nil {
+			if err := r.PodControl.DeleteStatefulPodAndCleanUpCache(set, replicas[i]); err != nil {
 				return &status, err
 			}
 			if getPodRevision(replicas[i]) == currentRevision.Name {
@@ -418,7 +418,7 @@ func (r *StatefulSetReconciler) updateStatefulSet(set *apis.AdvancedStatefulSet,
 		}
 		log.Log.Info("Terminating pod for scale down", "namespace", set.Namespace, "name", set.Name, "podName", condemned[target].Name)
 
-		if err := r.PodControl.DeleteStatefulPod(set, condemned[target]); err != nil {
+		if err := r.PodControl.DeleteStatefulPodAndCleanUpCache(set, condemned[target]); err != nil {
 			return &status, err
 		}
 		if getPodRevision(condemned[target]) == currentRevision.Name {
@@ -446,7 +446,7 @@ func (r *StatefulSetReconciler) updateStatefulSet(set *apis.AdvancedStatefulSet,
 		}
 		if getPodRevision(replicas[target]) != updateRevision.Name && !isTerminating(replicas[target]) {
 			log.Log.Info("Terminating pod for update", "namespace", set.Namespace, "name", set.Name, "podName", replicas[target].Name)
-			err := r.PodControl.DeleteStatefulPod(set, replicas[target])
+			err := r.PodControl.DeleteStatefulPodAndCleanUpCache(set, replicas[target])
 			status.CurrentReplicas--
 			return &status, err
 		}
@@ -902,7 +902,7 @@ func (r *StatefulSetReconciler) ScaleInPodFunc(set *apis.AdvancedStatefulSet, Ne
 			continue
 		}
 
-		err = r.PodControl.DeleteStatefulPod(set, targetPod)
+		err = r.PodControl.DeleteStatefulPodAndCleanUpCache(set, targetPod)
 		if err != nil {
 			klog.Errorf("Failed to delete pod %s for StatefulSet %s/%s: %v", targetPod.Name, set.Namespace, set.Name, err)
 			return -1, err
@@ -927,4 +927,10 @@ func findPodByOrdinalAndAnnotation(pods []*corev1.Pod, ordinals []int, annotatio
 		}
 	}
 	return result
+}
+
+// getNodeForPod is a placeholder function. Implement it to return the node name associated with a given pod.
+func getNodeForPod(podName string) string {
+	// Implement logic to find the node for the pod.
+	return ""
 }

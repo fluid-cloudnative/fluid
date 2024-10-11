@@ -25,6 +25,7 @@ const (
 	// by the StatefulSet's currentRevision.
 	OnDeleteStatefulSetStrategyType AdvancedStatefulSetUpdateStrategyType = "OnDelete"
 	AdvancedStatefulSetPodNameLabel string                                = "AdvancedStatefulSetPodLabel"
+	UpgradeToAdvancedStatefulSetAnn string                                = "UpgradeToAdvancedStatefulSet"
 )
 
 // AdvancedStatefulSetUpdateStrategy indicates the strategy that the StatefulSet
@@ -190,6 +191,6 @@ func (in *AdvancedStatefulSet) DeepCopy() *AdvancedStatefulSet {
 		return nil
 	}
 	out := new(AdvancedStatefulSet)
-	in.DeepCopyInto(out.ObjectMeta)
+	in.DeepCopyInto(&out.ObjectMeta) // 使用 & 运算符获取地址
 	return out
 }

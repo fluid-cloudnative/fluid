@@ -34,9 +34,9 @@ import (
 // AlluxioEngine implements the Engine interface.
 type AlluxioEngine struct {
 	// *base.TemplateEngine
-	runtime     *datav1alpha1.AlluxioRuntime
-	name        string
-	namespace   string
+	Runtime     *datav1alpha1.AlluxioRuntime
+	Name        string
+	Namespace   string
 	runtimeType string
 	engineImpl  string
 	Log         logr.Logger
@@ -54,8 +54,8 @@ type AlluxioEngine struct {
 // Build function builds the Alluxio Engine
 func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error) {
 	engine := &AlluxioEngine{
-		name:        ctx.Name,
-		namespace:   ctx.Namespace,
+		Name:        ctx.Name,
+		Namespace:   ctx.Namespace,
 		Client:      ctx.Client,
 		Recorder:    ctx.Recorder,
 		Log:         ctx.Log,
@@ -74,13 +74,13 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 		if !ok {
 			return nil, fmt.Errorf("engine %s is failed to parse", ctx.Name)
 		}
-		engine.runtime = runtime
+		engine.Runtime = runtime
 	} else {
 		return nil, fmt.Errorf("engine %s is failed to parse", ctx.Name)
 	}
 
 	// Build and setup runtime info
-	runtimeInfo, err := engine.getRuntimeInfo()
+	runtimeInfo, err := engine.GetRuntimeInfo()
 	if err != nil {
 		return nil, fmt.Errorf("engine %s failed to get runtime info, error %s", ctx.Name, err.Error())
 	}
