@@ -16,6 +16,8 @@ limitations under the License.
 
 package juicefs
 
+import "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/lifecycle"
+
 func (j *JuiceFSEngine) SyncScheduleInfoToCacheNodes() (err error) {
-	return
+	return lifecycle.SyncScheduleInfoToCacheNodes(j.runtimeInfo, j.Client)
 }
