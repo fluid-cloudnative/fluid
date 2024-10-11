@@ -87,9 +87,9 @@ func (r *DatasetReconciler) Reconcile(context context.Context, req ctrl.Request)
 		// return utils.RequeueIfError(err)
 	} else {
 		if scaleout {
-			ctx.Log.V(1).Info("scale out the runtime controller on demand successfully", "controller", controller)
+			ctx.Log.Info("scale out the runtime controller on demand successfully", "controller", controller)
 		} else {
-			ctx.Log.Info("no need to scale out the runtime controller because it's already scaled", "controller", controller)
+			ctx.Log.V(1).Info("no need to scale out the runtime controller because it's already scaled", "controller", controller)
 		}
 	}
 
