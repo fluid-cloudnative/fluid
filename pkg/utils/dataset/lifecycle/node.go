@@ -26,7 +26,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
-	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
 
 	"github.com/go-logr/logr"
 
@@ -77,11 +76,6 @@ func SyncScheduleInfoToCacheNodes(runtimeInfo base.RuntimeInfoInterface, client 
 	}
 
 	for _, pod := range workerPods {
-		if !podutil.IsPodReady(&pod) {
-			rootLog.V(1).Info("Skip the pod because it's not ready", "pod", pod.Name)
-			continue
-		}
-
 		if len(pod.Spec.NodeName) != 0 {
 			currentCacheNodeNames = append(currentCacheNodeNames, pod.Spec.NodeName)
 		}
@@ -98,48 +92,64 @@ func SyncScheduleInfoToCacheNodes(runtimeInfo base.RuntimeInfoInterface, client 
 
 	if len(addedCacheNodenames) > 0 {
 		for _, nodeName := range addedCacheNodenames {
-			node := corev1.Node{}
-			err = client.Get(context.TODO(), types.NamespacedName{
-				Name: nodeName,
-			}, &node)
-			if err != nil {
-				rootLog.Error(err, "Failed to find new cache node", "node", nodeName)
-				return err
-			}
-			if !CheckIfRuntimeInNode(node, runtimeInfo) {
-				err = LabelCacheNode(node, runtimeInfo, client)
-				if err != nil {
-					rootLog.Error(err, "Failed to label new cache node", "node", nodeName)
-					return err
-				}
-			} else {
-				rootLog.Info("The node is already added to cache", "node", nodeName)
+			if innerErr := addScheduleInfoToNode(nodeName, runtimeInfo, client); innerErr != nil {
+				rootLog.Info(fmt.Sprintf("error when adding schedule info to node: %v, ignore it and continue", innerErr), "node", nodeName)
 			}
 		}
 	}
 
 	if len(removedCacheNodenames) > 0 {
 		for _, nodeName := range removedCacheNodenames {
-			node := corev1.Node{}
-			err = client.Get(context.TODO(), types.NamespacedName{
-				Name: nodeName,
-			}, &node)
-			if utils.IgnoreNotFound(err) != nil {
-				rootLog.Error(err, "Failed to find new cache node", "node", nodeName)
-				return err
+			if innerErr := removeScheduleInfoFromNode(nodeName, runtimeInfo, client); innerErr != nil {
+				rootLog.Info(fmt.Sprintf("error when removing schedule info from node: %v, ignore it and continue", innerErr), "node", nodeName)
 			}
-			if CheckIfRuntimeInNode(node, runtimeInfo) {
-				err = UnlabelCacheNode(node, runtimeInfo, client)
-				if err != nil {
-					rootLog.Error(err, "Failed to unlabel cache node", "node", nodeName)
-					return err
-				}
-			} else {
-				rootLog.Info("The node is already removed from cache", "node", nodeName)
-			}
-
 		}
 	}
+
+	return nil
+}
+
+func addScheduleInfoToNode(nodeName string, runtimeInfo base.RuntimeInfoInterface, client client.Client) (err error) {
+	node := corev1.Node{}
+	err = client.Get(context.TODO(), types.NamespacedName{
+		Name: nodeName,
+	}, &node)
+	if err != nil {
+		return err
+	}
+
+	if CheckIfRuntimeInNode(node, runtimeInfo) {
+		rootLog.Info("Node already added schedule info, skip.", "node", nodeName)
+		return
+	}
+
+	err = labelCacheNode(node, runtimeInfo, client)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func removeScheduleInfoFromNode(nodeName string, runtimeInfo base.RuntimeInfoInterface, client client.Client) (err error) {
+	node := corev1.Node{}
+	err = client.Get(context.TODO(), types.NamespacedName{
+		Name: nodeName,
+	}, &node)
+	if err != nil {
+		return err
+	}
+
+	if !CheckIfRuntimeInNode(node, runtimeInfo) {
+		rootLog.Info("Node doesn't have existing schedule info, skip.", "node", nodeName)
+		return
+	}
+
+	err = unlabelCacheNode(node, runtimeInfo, client)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -185,8 +195,8 @@ func findLabelNameOnNode(node corev1.Node, key string) (found bool) {
 	return
 }
 
-// LabelCacheNode adds labels on a selected node to indicate the node is scheduled with corresponding runtime
-func LabelCacheNode(nodeToLabel corev1.Node, runtimeInfo base.RuntimeInfoInterface, client client.Client) (err error) {
+// labelCacheNode adds labels on a selected node to indicate the node is scheduled with corresponding runtime
+func labelCacheNode(nodeToLabel corev1.Node, runtimeInfo base.RuntimeInfoInterface, client client.Client) (err error) {
 	defer utils.TimeTrack(time.Now(), "LabelCacheNode", "runtime", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace(), "node", nodeToLabel.Name)
 	// Label to be added
 	var (
@@ -318,8 +328,8 @@ func labelNodeWithCapacityInfo(toUpdate *corev1.Node, runtimeInfo base.RuntimeIn
 	labelsToModify.Add(totalCapacityLabel, totalValue)
 }
 
-// UnlabelCacheNode remove labels on a selected node to indicate the node doesn't have the cache for
-func UnlabelCacheNode(node corev1.Node, runtimeInfo base.RuntimeInfoInterface, client client.Client) (err error) {
+// unlabelCacheNode remove labels on a selected node to indicate the node doesn't have the cache for
+func unlabelCacheNode(node corev1.Node, runtimeInfo base.RuntimeInfoInterface, client client.Client) (err error) {
 
 	var (
 		labelExclusiveName = utils.GetExclusiveKey()

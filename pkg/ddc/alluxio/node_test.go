@@ -81,7 +81,15 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 						Namespace: "big-data",
 						UID:       "uid1",
 					},
-					Spec: appsv1.StatefulSetSpec{},
+					Spec: appsv1.StatefulSetSpec{
+						Selector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app":     "alluxio",
+								"role":    "alluxio-worker",
+								"release": "spark",
+							},
+						},
+					},
 				},
 				pods: []*v1.Pod{
 					{
@@ -98,12 +106,14 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 							Labels: map[string]string{
 								"app":              "alluxio",
 								"role":             "alluxio-worker",
+								"release":          "spark",
 								"fluid.io/dataset": "big-data-spark",
 							},
 						},
 						Spec: v1.PodSpec{
 							NodeName: "node1",
 						},
+						
 					},
 				},
 				nodes: []*v1.Node{
@@ -130,7 +140,15 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 						Namespace: "big-data",
 						UID:       "uid2",
 					},
-					Spec: appsv1.StatefulSetSpec{},
+					Spec: appsv1.StatefulSetSpec{
+						Selector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app":     "alluxio",
+								"role":    "alluxio-worker",
+								"release": "hbase",
+							},
+						},
+					},
 				},
 				pods: []*v1.Pod{
 					{
@@ -147,6 +165,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 							Labels: map[string]string{
 								"app":              "alluxio",
 								"role":             "alluxio-worker",
+								"release":          "hbase",
 								"fluid.io/dataset": "big-data-hbase",
 							},
 						},
@@ -186,7 +205,15 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 						Namespace: "big-data",
 						UID:       "uid3",
 					},
-					Spec: appsv1.StatefulSetSpec{},
+					Spec: appsv1.StatefulSetSpec{
+						Selector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app":     "alluxio",
+								"role":    "alluxio-worker",
+								"release": "hbase-a",
+							},
+						},
+					},
 				},
 				pods: []*v1.Pod{
 					{
@@ -196,6 +223,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 							Labels: map[string]string{
 								"app":              "alluxio",
 								"role":             "alluxio-worker",
+								"release":          "hbase-a",
 								"fluid.io/dataset": "big-data-hbase-a",
 							},
 						},
@@ -235,7 +263,15 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 						Namespace: "big-data",
 						UID:       "uid3",
 					},
-					Spec: appsv1.StatefulSetSpec{},
+					Spec: appsv1.StatefulSetSpec{
+						Selector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app":     "alluxio",
+								"role":    "alluxio-worker",
+								"release": "deprecated",
+							},
+						},
+					},
 				},
 				ds: &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{
 					Name:      "deprecated-worker",
@@ -250,6 +286,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 							Labels: map[string]string{
 								"app":              "alluxio",
 								"role":             "alluxio-worker",
+								"release":          "deprecated",
 								"fluid.io/dataset": "big-data-hbase-a",
 							},
 						},

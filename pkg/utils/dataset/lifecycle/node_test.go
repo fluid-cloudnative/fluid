@@ -186,7 +186,7 @@ func TestLabelCacheNode(t *testing.T) {
 	}
 
 	for _, test := range testCase {
-		err := LabelCacheNode(test.node, test.runtimeInfo, client)
+		err := labelCacheNode(test.node, test.runtimeInfo, client)
 		if err != nil {
 			t.Errorf("fail to exec the function with the error %v", err)
 		}
@@ -516,7 +516,7 @@ func TestUnlabelCacheNode(t *testing.T) {
 	client := fake.NewFakeClientWithScheme(testScheme, testNodes...)
 
 	for _, test := range testCases {
-		err := UnlabelCacheNode(*test.node, test.runtimeInfo, client)
+		err := unlabelCacheNode(*test.node, test.runtimeInfo, client)
 		if err != nil {
 			t.Errorf("fail to exec the function with the error %v", err)
 		}
