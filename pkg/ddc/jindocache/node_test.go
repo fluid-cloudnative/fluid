@@ -82,7 +82,15 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 						Namespace: "big-data",
 						UID:       "uid1",
 					},
-					Spec: appsv1.StatefulSetSpec{},
+					Spec: appsv1.StatefulSetSpec{
+						Selector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app":     "jindofs",
+								"role":    "jindofs-worker",
+								"release": "spark",
+							},
+						},
+					},
 					Status: appsv1.StatefulSetStatus{
 						Replicas: 1,
 					},
@@ -102,6 +110,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 							Labels: map[string]string{
 								"app":              "jindofs",
 								"role":             "jindofs-worker",
+								"release":          "spark",
 								"fluid.io/dataset": "big-data-spark",
 							},
 						},
@@ -134,7 +143,15 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 						Namespace: "big-data",
 						UID:       "uid2",
 					},
-					Spec: appsv1.StatefulSetSpec{},
+					Spec: appsv1.StatefulSetSpec{
+						Selector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app":     "jindofs",
+								"role":    "jindofs-worker",
+								"release": "hbase",
+							},
+						},
+					},
 					Status: appsv1.StatefulSetStatus{
 						Replicas: 1,
 					},
@@ -154,6 +171,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 							Labels: map[string]string{
 								"app":              "jindofs",
 								"role":             "jindofs-worker",
+								"release":          "hbase",
 								"fluid.io/dataset": "big-data-hbase",
 							},
 						},
@@ -193,7 +211,15 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 						Namespace: "big-data",
 						UID:       "uid3",
 					},
-					Spec: appsv1.StatefulSetSpec{},
+					Spec: appsv1.StatefulSetSpec{
+						Selector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app":     "jindofs",
+								"role":    "jindofs-worker",
+								"release": "hbase-a",
+							},
+						},
+					},
 				},
 				pods: []*v1.Pod{
 					{
@@ -203,6 +229,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 							Labels: map[string]string{
 								"app":              "jindofs",
 								"role":             "jindofs-worker",
+								"release":          "hbase-a",
 								"fluid.io/dataset": "big-data-hbase-a",
 							},
 						},
@@ -242,7 +269,15 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 						Namespace: "big-data",
 						UID:       "uid3",
 					},
-					Spec: appsv1.StatefulSetSpec{},
+					Spec: appsv1.StatefulSetSpec{
+						Selector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app":     "jindofs",
+								"role":    "jindofs-worker",
+								"release": "deprecated",
+							},
+						},
+					},
 				},
 				ds: &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{
 					Name:      "deprecated-jindofs-worker",
@@ -257,6 +292,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 							Labels: map[string]string{
 								"app":              "jindofs",
 								"role":             "jindofs-worker",
+								"release":          "deprecated",
 								"fluid.io/dataset": "big-data-hbase-a",
 							},
 						},

@@ -81,7 +81,15 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 						Namespace: "big-data",
 						UID:       "uid1",
 					},
-					Spec: appsv1.StatefulSetSpec{},
+					Spec: appsv1.StatefulSetSpec{
+						Selector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app":     "thin",
+								"role":    "thin-worker",
+								"release": "spark",
+							},
+						},
+					},
 				},
 				pods: []*v1.Pod{{
 					ObjectMeta: metav1.ObjectMeta{
@@ -97,6 +105,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 						Labels: map[string]string{
 							"app":              "thin",
 							"role":             "thin-worker",
+							"release":          "spark",
 							"fluid.io/dataset": "big-data-spark",
 						},
 					},
@@ -127,7 +136,15 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 						Namespace: "big-data",
 						UID:       "uid2",
 					},
-					Spec: appsv1.StatefulSetSpec{},
+					Spec: appsv1.StatefulSetSpec{
+						Selector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app":     "thin",
+								"role":    "thin-worker",
+								"release": "hbase",
+							},
+						},
+					},
 				},
 				pods: []*v1.Pod{
 					{
@@ -144,6 +161,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 							Labels: map[string]string{
 								"app":              "thin",
 								"role":             "thin-worker",
+								"release":          "hbase",
 								"fluid.io/dataset": "big-data-hbase",
 							},
 						},
@@ -178,7 +196,15 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 						Namespace: "big-data",
 						UID:       "uid3",
 					},
-					Spec: appsv1.StatefulSetSpec{},
+					Spec: appsv1.StatefulSetSpec{
+						Selector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app":     "thin",
+								"role":    "thin-worker",
+								"release": "hbase-a",
+							},
+						},
+					},
 				},
 				pods: []*v1.Pod{
 					{
@@ -188,6 +214,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 							Labels: map[string]string{
 								"app":              "thin",
 								"role":             "thin-worker",
+								"release":          "hbase-a",
 								"fluid.io/dataset": "big-data-hbase-a",
 							},
 						},

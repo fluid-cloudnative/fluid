@@ -79,7 +79,15 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 						Namespace: "big-data",
 						UID:       "uid1",
 					},
-					Spec: appsv1.StatefulSetSpec{},
+					Spec: appsv1.StatefulSetSpec{
+						Selector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app":     "vineyard",
+								"role":    "vineyard-worker",
+								"release": "spark",
+							},
+						},
+					},
 				},
 				pods: []*v1.Pod{
 					{
@@ -96,6 +104,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 							Labels: map[string]string{
 								"app":              "vineyard",
 								"role":             "vineyard-worker",
+								"release":          "spark",
 								"fluid.io/dataset": "big-data-spark",
 							},
 						},
@@ -128,7 +137,15 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 						Namespace: "big-data",
 						UID:       "uid2",
 					},
-					Spec: appsv1.StatefulSetSpec{},
+					Spec: appsv1.StatefulSetSpec{
+						Selector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app":     "vineyard",
+								"role":    "vineyard-worker",
+								"release": "hbase",
+							},
+						},
+					},
 				},
 				pods: []*v1.Pod{
 					{
@@ -145,6 +162,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 							Labels: map[string]string{
 								"app":              "vineyard",
 								"role":             "vineyard-worker",
+								"release":          "hbase",
 								"fluid.io/dataset": "big-data-hbase",
 							},
 						},
@@ -184,7 +202,15 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 						Namespace: "big-data",
 						UID:       "uid3",
 					},
-					Spec: appsv1.StatefulSetSpec{},
+					Spec: appsv1.StatefulSetSpec{
+						Selector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app":     "vineyard",
+								"role":    "vineyard-worker",
+								"release": "hbase-a",
+							},
+						},
+					},
 				},
 				pods: []*v1.Pod{
 					{
@@ -194,6 +220,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 							Labels: map[string]string{
 								"app":              "vineyard",
 								"role":             "vineyard-worker",
+								"release":          "hbase-a",
 								"fluid.io/dataset": "big-data-hbase-a",
 							},
 						},
@@ -233,7 +260,15 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 						Namespace: "big-data",
 						UID:       "uid3",
 					},
-					Spec: appsv1.StatefulSetSpec{},
+					Spec: appsv1.StatefulSetSpec{
+						Selector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app":     "vineyard",
+								"role":    "vineyard-worker",
+								"release": "deprecated",
+							},
+						},
+					},
 				},
 				ds: &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{
 					Name:      "deprecated-worker",
@@ -248,7 +283,8 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 							Labels: map[string]string{
 								"app":              "vineyard",
 								"role":             "vineyard-worker",
-								"fluid.io/dataset": "big-data-hbase-a",
+								"release":          "deprecated",
+								"fluid.io/dataset": "big-data-deprecated",
 							},
 						},
 						Spec: v1.PodSpec{
@@ -265,7 +301,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 						ObjectMeta: metav1.ObjectMeta{
 							Name: "node7",
 							Labels: map[string]string{
-								"fluid.io/s-default-hbase-a": "true",
+								"fluid.io/s-default-deprecated": "true",
 							},
 						},
 					},

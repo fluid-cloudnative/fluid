@@ -113,7 +113,6 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 						Spec: v1.PodSpec{
 							NodeName: "node1",
 						},
-						
 					},
 				},
 				nodes: []*v1.Node{
