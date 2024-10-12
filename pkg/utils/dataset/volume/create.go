@@ -124,6 +124,14 @@ func CreatePersistentVolumeForRuntime(client client.Client,
 			}
 		}
 
+		// set from runtime
+		for key, value := range runtime.GetAnnotations() {
+			if key == common.AnnotationSkipCheckMountReadyTarget {
+				pv.Spec.PersistentVolumeSource.CSI.VolumeAttributes[common.AnnotationSkipCheckMountReadyTarget] = value
+			}
+		}
+
+		// set from annotations[data.fluid.io/metadataList]
 		metadataList := runtime.GetMetadataList()
 		for i := range metadataList {
 			if selector := metadataList[i].Selector; selector.Group != corev1.GroupName || selector.Kind != "PersistentVolume" {
@@ -131,8 +139,8 @@ func CreatePersistentVolumeForRuntime(client client.Client,
 			}
 			pv.Labels = utils.UnionMapsWithOverride(pv.Labels, metadataList[i].Labels)
 			pv.Annotations = utils.UnionMapsWithOverride(pv.Annotations, metadataList[i].Annotations)
-			// if pv labels has common.LabelNodePublishMothod and it's value is symlink, add to volumeAttributes
-			if v, ok := metadataList[i].Labels[common.LabelNodePublishMothod]; ok && v == common.NodePublishMethodSymlink {
+			// if pv labels has common.LabelNodePublishMethod and it's value is symlink, add to volumeAttributes
+			if v, ok := metadataList[i].Labels[common.LabelNodePublishMethod]; ok && v == common.NodePublishMethodSymlink {
 				pv.Spec.PersistentVolumeSource.CSI.VolumeAttributes[common.NodePublishMethod] = v
 			}
 		}
