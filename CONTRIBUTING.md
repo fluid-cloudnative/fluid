@@ -18,19 +18,19 @@ For instance, there are multiple circumstances where you may want to open an iss
 - Have some questions about the project
 - ...
 
-When filing an issue, please make sure all your sensitive data have been excluded. Sensitive data could be password, secret key, network locations, private business data and anything that may do harm to your privacy. 
+When filing an issue, please make sure all your sensitive data has been excluded. Sensitive data could be password, secret key, network locations, private business data and anything that may do harm to your privacy. 
 
 ## Code Contributions
 The Fluid project accepts code contributions via Github pull requests(PR), and this is the only way accepted to apply your changes to the Fluid project.
 
-You should submit a PR If any modifications is going to be applied to the Fluid project, including but not limited to:
+You should submit a PR If any modifications are going to be applied to the Fluid project, including but not limited to:
 - Fix typos
 - Fix bugs
 - Fix or polish documents
 - Prune redundant codes
 - Add comments to codes for readability
 - Add missing test cases
-- Add new features or enhanced some feature
+- Add new features or enhance some feature
 - Refactor codes
 - ...
 
