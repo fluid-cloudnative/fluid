@@ -21,7 +21,7 @@ dataset-controller-57ddd56b54-9vd86          1/1     Running             0      
 fluid-webhook-84467465f8-t65mr               1/1     Running             0          113s
 ```
 
-Make sure `dataset-controller`, `fluid-webhook` pod and `csi-nodeplugin` pods work well. `juicefs-runtime-controller` will be installed automatically when JuiceFSRuntime created.
+Make sure `dataset-controller`, `fluid-webhook` pod and `csi-nodeplugin` pods work well. `juicefs-runtime-controller` will be installed automatically when JuiceFSRuntime is created.
 
 ## Enter the component Pod for performance analysis
 View the name of each Fluid component Pod (this article uses `Fluid dataset controller` as an example for performance analysis).
@@ -42,7 +42,7 @@ $ kubectl exec -it dataset-controller-77cfc8f9bf-m488j -n fluid-system bash
 
 
 ## Perform performance analysis
-After installing the Go environment, the **go tool pprof** command can be used for perform performance analysis. In addition, users can also access *http://127.0.0.1:6060/debug/pprof/* to view some data information.
+After installing the Go environment, the **go tool pprof** command can be used to perform performance analysis. In addition, users can also access *http://127.0.0.1:6060/debug/pprof/* to view some data information.
 
 The following data of the program can be analyzed：
 - allocs：A sampling of all past memory allocations
