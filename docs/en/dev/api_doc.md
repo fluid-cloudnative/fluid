@@ -3081,7 +3081,7 @@ map[string]string
 <td>
 <em>(Optional)</em>
 <p>NodeSelector is a selector which must be true for the fuse client to fit on a node,
-this option only effect when global is enabled</p>
+this option only affects when global is enabled</p>
 </td>
 </tr>
 <tr>
