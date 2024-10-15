@@ -41,120 +41,6 @@ func init() {
 	_ = v1.AddToScheme(testScheme)
 }
 
-func TestAlreadyAssigned(t *testing.T) {
-	runtimeInfoExclusive, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
-	runtimeInfoExclusive.SetupWithDataset(&datav1alpha1.Dataset{
-		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
-	})
-
-	var testCase = []struct {
-		runtimeInfo base.RuntimeInfoInterface
-		node        v1.Node
-		want        bool
-	}{
-		{
-			runtimeInfo: runtimeInfoExclusive,
-			node: v1.Node{
-				ObjectMeta: metav1.ObjectMeta{},
-				Spec:       v1.NodeSpec{},
-			},
-			want: false,
-		},
-		{
-			runtimeInfo: runtimeInfoExclusive,
-			node: v1.Node{
-				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"fluid.io/s-fluid-hbase": "true"}},
-				Spec:       v1.NodeSpec{},
-			},
-			want: true,
-		},
-		{
-			runtimeInfo: runtimeInfoExclusive,
-			node: v1.Node{
-				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"fluid.io/s-fluid-spark": "true"}},
-				Spec:       v1.NodeSpec{},
-			},
-			want: false,
-		},
-	}
-
-	for _, test := range testCase {
-		if result := AlreadyAssigned(test.runtimeInfo, test.node); result != test.want {
-			t.Errorf("expected %v, got %v", test.want, result)
-		}
-	}
-}
-
-func TestCanbeAssigned(t *testing.T) {
-	tieredStore := datav1alpha1.TieredStore{
-		Levels: []datav1alpha1.Level{
-			{
-				MediumType: common.Memory,
-				Quota:      resource.NewQuantity(2, resource.BinarySI),
-			},
-		},
-	}
-	runtimeInfoNotExclusive, err := base.BuildRuntimeInfo("hbase", "default", "alluxio", base.WithTieredStore(tieredStore))
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
-	runtimeInfoNotExclusive.SetupWithDataset(&datav1alpha1.Dataset{
-		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ShareMode},
-	})
-
-	var testCase = []struct {
-		runtimeInfo base.RuntimeInfoInterface
-		node        v1.Node
-		want        bool
-	}{
-		{
-			runtimeInfo: runtimeInfoNotExclusive,
-			node: v1.Node{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"fluid_exclusive": "default_hbase"},
-				},
-				Status: v1.NodeStatus{},
-			},
-			want: false,
-		},
-		{
-			runtimeInfo: runtimeInfoNotExclusive,
-			node: v1.Node{
-				ObjectMeta: metav1.ObjectMeta{},
-				Spec:       v1.NodeSpec{},
-				Status: v1.NodeStatus{
-					Allocatable: v1.ResourceList{
-						v1.ResourceMemory: *resource.NewQuantity(3, resource.BinarySI),
-					},
-				},
-			},
-			want: true,
-		},
-		{
-			runtimeInfo: runtimeInfoNotExclusive,
-			node: v1.Node{
-				ObjectMeta: metav1.ObjectMeta{},
-				Spec:       v1.NodeSpec{},
-				Status: v1.NodeStatus{
-					Allocatable: v1.ResourceList{
-						v1.ResourceMemory: *resource.NewQuantity(1, resource.BinarySI),
-					},
-				},
-			},
-			want: false,
-		},
-	}
-
-	for _, test := range testCase {
-		if result := CanbeAssigned(test.runtimeInfo, test.node); result != test.want {
-			t.Errorf("expected %v, got %v", test.want, result)
-		}
-	}
-}
-
 func TestLabelCacheNode(t *testing.T) {
 	runtimeInfoExclusive, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
 	if err != nil {
@@ -300,7 +186,7 @@ func TestLabelCacheNode(t *testing.T) {
 	}
 
 	for _, test := range testCase {
-		err := LabelCacheNode(test.node, test.runtimeInfo, client)
+		err := labelCacheNode(test.node, test.runtimeInfo, client)
 		if err != nil {
 			t.Errorf("fail to exec the function with the error %v", err)
 		}
@@ -630,7 +516,7 @@ func TestUnlabelCacheNode(t *testing.T) {
 	client := fake.NewFakeClientWithScheme(testScheme, testNodes...)
 
 	for _, test := range testCases {
-		err := UnlabelCacheNode(*test.node, test.runtimeInfo, client)
+		err := unlabelCacheNode(*test.node, test.runtimeInfo, client)
 		if err != nil {
 			t.Errorf("fail to exec the function with the error %v", err)
 		}
