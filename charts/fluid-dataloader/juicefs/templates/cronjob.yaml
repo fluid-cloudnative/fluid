@@ -61,22 +61,7 @@ spec:
           {{- end }}
           {{- end }}
         spec:
-          {{- if .Values.dataloader.schedulerName }}
-          schedulerName: {{ .Values.dataloader.schedulerName }}
-          {{- end }}
-          {{- with .Values.dataloader.nodeSelector }}
-          nodeSelector:
-            {{- toYaml . | nindent 8 }}
-          {{- end }}
-          {{- with .Values.dataloader.affinity }}
-          affinity:
-            {{- toYaml . | nindent 8 }}
-          {{- end }}
-          {{- with .Values.dataloader.tolerations }}
-          tolerations:
-            {{- toYaml . | nindent 8 }}
-          {{- end }}
-          restartPolicy: Never
+          {{- include "library.fluid.dataload.cronJobCommonTemplateSpec" . | nindent 10 }}
           {{- range $key, $val := .Values.dataloader.options }}
           {{- if eq $key "runtimeName" }}
           serviceAccountName: {{ printf "%s-loader" $val | quote }}

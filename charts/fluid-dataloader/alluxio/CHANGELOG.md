@@ -16,3 +16,6 @@
 
 ### 0.10.0
 - Support cron dataload
+
+### 0.10.3
+- Fix incorrect indentation of cron dataload template
