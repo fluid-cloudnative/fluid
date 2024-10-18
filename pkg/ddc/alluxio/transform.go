@@ -28,6 +28,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
+	cacheworkerset "github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/tieredstore"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/transformer"
@@ -82,6 +83,11 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 
 	// 5.transform the hadoop non-default configurations
 	err = e.transformHadoopConfig(runtime, value)
+	if err != nil {
+		return
+	}
+
+	err = e.transformScaleConfig(runtime, value)
 	if err != nil {
 		return
 	}
@@ -521,6 +527,19 @@ func (e *AlluxioEngine) transformPlacementMode(dataset *datav1alpha1.Dataset, va
 	if len(value.PlacementMode) == 0 {
 		value.PlacementMode = string(datav1alpha1.ExclusiveMode)
 	}
+}
+
+func (e *AlluxioEngine) transformScaleConfig(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) error {
+
+	value.ScaleSpec.WorkerType = runtime.Spec.ScaleConfig.WorkerType
+	if value.ScaleSpec.WorkerType == cacheworkerset.AdvancedStatefulSetType {
+		value.ScaleSpec.ScaleInSlots = runtime.Spec.ScaleConfig.ScaleInSlots
+	} else if value.ScaleSpec.WorkerType == cacheworkerset.StatefulSetType || value.ScaleSpec.WorkerType == cacheworkerset.DaemonSetType || value.ScaleSpec.WorkerType == "" {
+
+	} else {
+		return fmt.Errorf("invalid worker type: %v", value.ScaleSpec.WorkerType)
+	}
+	return nil
 }
 
 func (e *AlluxioEngine) transformShortCircuit(runtimeInfo base.RuntimeInfoInterface, value *Alluxio) {
