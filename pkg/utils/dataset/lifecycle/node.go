@@ -70,7 +70,7 @@ func SyncScheduleInfoToCacheNodes(runtimeInfo base.RuntimeInfoInterface, client 
 
 	workerSelector, err := metav1.LabelSelectorAsSelector(workers.Spec.Selector)
 
-	workerPods, err := kubeclient.GetPodsForStatefulSet(client, workers, workerSelector)
+	workerPods, err := kubeclient.GetPodsForCacheWorkerSet(client, workers, workerSelector)
 	if err != nil {
 		return err
 	}

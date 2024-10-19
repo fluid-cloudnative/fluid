@@ -21,7 +21,6 @@ import (
 	"reflect"
 
 	"github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset"
-	openkruise "github.com/openkruise/kruise-api/apps/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/util/retry"
@@ -47,35 +46,7 @@ func (e *AlluxioEngine) CheckMasterReady() (ready bool, err error) {
 	if runtime.Spec.ScaleConfig.WorkerType == "" || runtime.Spec.ScaleConfig.WorkerType == cacheworkerset.StatefulSetType {
 
 	} else if runtime.Spec.ScaleConfig.WorkerType == cacheworkerset.AdvancedStatefulSetType {
-		status := openkruise.StatefulSetStatus{
-			Replicas:          master.Status.Replicas,
-			ReadyReplicas:     master.Status.ReadyReplicas,
-			UpdatedReplicas:   master.Status.UpdatedReplicas,
-			CurrentReplicas:   master.Status.CurrentReplicas,
-			CurrentRevision:   master.Status.CurrentRevision,
-			UpdateRevision:    master.Status.UpdateRevision,
-			CollisionCount:    master.Status.CollisionCount,
-			Conditions:        master.Status.Conditions,
-			AvailableReplicas: master.Status.AvailableReplicas,
 
-			LabelSelector: master.Status.LabelSelector,
-		}
-		spec := openkruise.StatefulSetSpec{
-			Replicas:             master.Spec.Replicas,
-			PodManagementPolicy:  master.Spec.PodManagementPolicy,
-			ServiceName:          master.Spec.ServiceName,
-			Template:             master.Spec.Template,
-			VolumeClaimTemplates: master.Spec.VolumeClaimTemplates,
-			Selector:             master.Spec.Selector,
-			RevisionHistoryLimit: master.Spec.RevisionHistoryLimit,
-			UpdateStrategy:       master.Spec.UpdateStrategy,
-		}
-		set := openkruise.StatefulSet{
-			ObjectMeta: master.ObjectMeta,
-			Status:     status,
-			Spec:       spec,
-			TypeMeta:   master.TypeMeta,
-		}
 	} else if runtime.Spec.ScaleConfig.WorkerType == cacheworkerset.DaemonSetType {
 
 	}
