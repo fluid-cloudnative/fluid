@@ -42,14 +42,18 @@ func (e *AlluxioEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 	)
 
 	// 1. Master should be ready
-	master, err := kubeclient.GetStatefulSet(e.Client, masterName, namespace)
+	master, err := kubeclient.GetCacheWorkerSet(e.Client, masterName, namespace)
 	if err != nil {
 		return ready, err
 	}
 
 	// 2. Worker should be ready
-	workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
-		types.NamespacedName{Namespace: e.namespace, Name: workerName})
+	runtime, err := e.getRuntime()
+	if err != nil {
+		return
+	}
+	workers, err := ctrl.GetWorkersAsCacheWorkerset(e.Client,
+		types.NamespacedName{Namespace: e.namespace, Name: workerName}, runtime.Spec.ScaleConfig.WorkerType)
 	if err != nil {
 		if fluiderrs.IsDeprecated(err) {
 			e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
@@ -58,7 +62,7 @@ func (e *AlluxioEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		return ready, err
 	}
 
-	var workerNodeAffinity = kubeclient.MergeNodeSelectorAndNodeAffinity(workers.Spec.Template.Spec.NodeSelector, workers.Spec.Template.Spec.Affinity)
+	var workerNodeAffinity = kubeclient.MergeNodeSelectorAndNodeAffinity(workers.GetNodeSelector(), workers.GetAffinity())
 
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		runtime, err := e.getRuntime()
@@ -93,27 +97,27 @@ func (e *AlluxioEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		runtimeToUpdate.Status.CacheStates[common.RemoteThroughputRatio] = states.cacheHitStates.remoteThroughputRatio
 		runtimeToUpdate.Status.CacheStates[common.CacheThroughputRatio] = states.cacheHitStates.cacheThroughputRatio
 
-		runtimeToUpdate.Status.CurrentMasterNumberScheduled = int32(master.Status.Replicas)
-		runtimeToUpdate.Status.MasterNumberReady = int32(master.Status.ReadyReplicas)
+		runtimeToUpdate.Status.CurrentMasterNumberScheduled = int32(*master.GetReplicas())
+		runtimeToUpdate.Status.MasterNumberReady = int32(master.GetReadyReplicas())
 
-		if *master.Spec.Replicas == master.Status.ReadyReplicas {
+		if *master.GetReplicas() == master.GetReadyReplicas() {
 			runtimeToUpdate.Status.MasterPhase = data.RuntimePhaseReady
 			masterReady = true
 		} else {
 			runtimeToUpdate.Status.MasterPhase = data.RuntimePhaseNotReady
 		}
 
-		runtimeToUpdate.Status.WorkerNumberReady = int32(workers.Status.ReadyReplicas)
-		runtimeToUpdate.Status.WorkerNumberUnavailable = int32(*workers.Spec.Replicas - workers.Status.ReadyReplicas)
-		runtimeToUpdate.Status.WorkerNumberAvailable = int32(workers.Status.CurrentReplicas)
+		runtimeToUpdate.Status.WorkerNumberReady = int32(workers.GetReadyReplicas())
+		runtimeToUpdate.Status.WorkerNumberUnavailable = int32(*workers.GetReplicas() - workers.GetReadyReplicas())
+		runtimeToUpdate.Status.WorkerNumberAvailable = int32(workers.GetCurrentReplicas())
 		if runtime.Replicas() == 0 {
 			runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseReady
 			workerReady = true
-		} else if workers.Status.ReadyReplicas > 0 {
-			if runtime.Replicas() == workers.Status.ReadyReplicas {
+		} else if workers.GetReadyReplicas() > 0 {
+			if runtime.Replicas() == workers.GetReadyReplicas() {
 				runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseReady
 				workerReady = true
-			} else if workers.Status.ReadyReplicas >= 1 {
+			} else if workers.GetReadyReplicas() >= 1 {
 				runtimeToUpdate.Status.WorkerPhase = data.RuntimePhasePartialReady
 				workerReady = true
 			}

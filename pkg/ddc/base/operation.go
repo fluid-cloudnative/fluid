@@ -245,7 +245,7 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 		// if the status not Complete, there is a new starting job, not scale the statefulset to zero.
 		if operation.GetParallelTaskNumber() > 1 {
 			releaseNameSpacedName := operation.GetReleaseNameSpacedName()
-			err = kubeclient.ScaleStatefulSet(t.Client, utils.GetParallelOperationWorkersName(releaseNameSpacedName.Name), releaseNameSpacedName.Namespace, 0)
+			err = kubeclient.ScaleCacheWorkerSet(t.Client, utils.GetParallelOperationWorkersName(releaseNameSpacedName.Name), releaseNameSpacedName.Namespace, 0)
 			if err != nil {
 				return utils.RequeueIfError(err)
 			}
@@ -333,7 +333,7 @@ func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, o
 		// if the status not PhaseFailed, there is a new starting job, not scale the statefulset to zero.
 		if operation.GetParallelTaskNumber() > 1 {
 			releaseNameSpacedName := operation.GetReleaseNameSpacedName()
-			err = kubeclient.ScaleStatefulSet(t.Client, utils.GetParallelOperationWorkersName(releaseNameSpacedName.Name), releaseNameSpacedName.Namespace, 0)
+			err = kubeclient.ScaleCacheWorkerSet(t.Client, utils.GetParallelOperationWorkersName(releaseNameSpacedName.Name), releaseNameSpacedName.Namespace, 0)
 			if err != nil {
 				return utils.RequeueIfError(err)
 			}

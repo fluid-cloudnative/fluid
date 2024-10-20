@@ -179,7 +179,7 @@ func (e *AlluxioEngine) GetCacheHitStates() (cacheHitStates cacheHitStates) {
 func (e *AlluxioEngine) invokeCleanCache(path string) (err error) {
 	// 1. Check if master is ready, if not, just return
 	masterName := e.getMasterName()
-	master, err := kubeclient.GetStatefulSet(e.Client, masterName, e.namespace)
+	master, err := kubeclient.GetCacheWorkerSet(e.Client, masterName, e.namespace)
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
 			e.Log.Info("Failed to get master", "err", err.Error())
@@ -188,13 +188,13 @@ func (e *AlluxioEngine) invokeCleanCache(path string) (err error) {
 		// other error
 		return err
 	}
-	if master.Status.ReadyReplicas == 0 {
+
+	if master.GetReadyReplicas() == 0 {
 		e.Log.Info("The master is not ready, just skip clean cache.", "master", masterName)
 		return nil
 	} else {
 		e.Log.Info("The master is ready, so start cleaning cache", "master", masterName)
 	}
-
 	// 2. run clean action
 	podName, containerName := e.getMasterPodInfo()
 	fileUtils := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)
