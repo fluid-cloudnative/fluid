@@ -32,8 +32,14 @@ import (
 // calls for a status update and finally returns error if anything unexpected happens.
 func (e *AlluxioEngine) SetupWorkers() (err error) {
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
-			types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
+
+		runtime, err := e.getRuntime()
+		if err != nil {
+			return err
+		}
+		runtimeToUpdate := runtime.DeepCopy()
+		workers, err := ctrl.GetWorkersAsCacheWorkerset(e.Client,
+			types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()}, runtimeToUpdate.Spec.ScaleConfig.WorkerType)
 		if err != nil {
 			if fluiderrs.IsDeprecated(err) {
 				e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
@@ -41,11 +47,6 @@ func (e *AlluxioEngine) SetupWorkers() (err error) {
 			}
 			return err
 		}
-		runtime, err := e.getRuntime()
-		if err != nil {
-			return err
-		}
-		runtimeToUpdate := runtime.DeepCopy()
 		return e.Helper.SetupWorkers(runtimeToUpdate, runtimeToUpdate.Status, workers)
 	})
 	if err != nil {
@@ -74,8 +75,12 @@ func (e *AlluxioEngine) ShouldSetupWorkers() (should bool, err error) {
 
 // are the workers ready
 func (e *AlluxioEngine) CheckWorkersReady() (ready bool, err error) {
-	workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
-		types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
+	runtime, err := e.getRuntime()
+	if err != nil {
+		return
+	}
+	workers, err := ctrl.GetWorkersAsCacheWorkerset(e.Client,
+		types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()}, runtime.Spec.ScaleConfig.WorkerType)
 	if err != nil {
 		if fluiderrs.IsDeprecated(err) {
 			e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)

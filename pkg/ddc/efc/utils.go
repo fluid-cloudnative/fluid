@@ -116,7 +116,7 @@ func (e *EFCEngine) getWorkerRunningPods() (pods []v1.Pod, err error) {
 		return pods, err
 	}
 
-	allpods, err := kubeclient.GetPodsForStatefulSet(e.Client, sts, selector)
+	allpods, err := kubeclient.GetPodsForCacheWorkerSet(e.Client, sts, selector)
 	if err != nil {
 		return pods, err
 	}

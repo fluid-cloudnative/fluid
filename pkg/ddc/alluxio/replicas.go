@@ -22,9 +22,10 @@ import (
 	"reflect"
 
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
+	//"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	cacheworkerset "github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -34,9 +35,9 @@ import (
 
 // SyncReplicas syncs the replicas
 func (e *AlluxioEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err error) {
+
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
-			types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
+
 		if err != nil {
 			if fluiderrs.IsDeprecated(err) {
 				e.Log.Info("Warning: the current runtime is created by runtime controller before v0.7.0, scale out/in are not supported. To support these features, please create a new dataset", "details", err)
@@ -93,6 +94,9 @@ func (e *AlluxioEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err 
 			return err
 		}
 		runtimeToUpdate := runtime.DeepCopy()
+		workers, err := cacheworkerset.GetWorkerAsCacheWorkerSet(e.Client, e.getWorkerName(), e.namespace, string(runtimeToUpdate.Spec.ScaleConfig.WorkerType))
+		workers.WorkerType = runtimeToUpdate.Spec.ScaleConfig.WorkerType
+
 		err = e.Helper.SyncReplicas(ctx, runtimeToUpdate, runtimeToUpdate.Status, workers)
 		return err
 	})
