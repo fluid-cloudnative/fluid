@@ -3,8 +3,9 @@ package cacheworkerset
 import (
 	"context"
 	"fmt"
+	"reflect"
+
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	openkruise "github.com/openkruise/kruise/apis/apps/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -14,7 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -648,7 +648,7 @@ func (c *CacheWorkerSet) ToAdvancedStatefulSet() *openkruise.StatefulSet {
 }
 func GetWorkerAsCacheWorkerSet(c client.Client, name string, namespace string, WorkerType string) (*CacheWorkerSet, error) {
 	if WorkerType == string(StatefulSetType) || WorkerType == "" {
-		Sts, err := kubeclient.GetStatefulSet(c, name, namespace)
+		Sts, err := GetStatefulSet(c, name, namespace)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get StatefulSet: %")
 		}
@@ -658,7 +658,7 @@ func GetWorkerAsCacheWorkerSet(c client.Client, name string, namespace string, W
 			Sts:        Sts,
 		}, nil
 	} else if WorkerType == string(DaemonSetType) {
-		Ds, err := kubeclient.GetDaemonset(c, name, namespace)
+		Ds, err := GetDaemonset(c, name, namespace)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get DaemonSet: %w", err)
 		}
@@ -668,7 +668,7 @@ func GetWorkerAsCacheWorkerSet(c client.Client, name string, namespace string, W
 			Ds:         Ds,
 		}, nil
 	} else if WorkerType == string(AdvancedStatefulSetType) {
-		Asts, err := kubeclient.GetAdvancedStatefulSet(c, name, namespace)
+		Asts, err := GetAdvancedStatefulSet(c, name, namespace)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get AdvancedStatefulSet: %w", err)
 		}
@@ -706,7 +706,7 @@ func AstsToCacheWorkerSet(asts *openkruise.StatefulSet) *CacheWorkerSet {
 // ScaleStatefulSet scale the statefulset replicas
 func ScaleAdvancedStatefulSet(client client.Client, name string, namespace string, replicas int32) error {
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		workers, err := kubeclient.GetAdvancedStatefulSet(client, name, namespace)
+		workers, err := GetAdvancedStatefulSet(client, name, namespace)
 		if err != nil {
 			return err
 		}
@@ -724,10 +724,10 @@ func ScaleAdvancedStatefulSet(client client.Client, name string, namespace strin
 }
 
 func GetWorkersAsAdvancedStatefulset(client client.Client, key types.NamespacedName) (workers *openkruise.StatefulSet, err error) {
-	workers, err = kubeclient.GetAdvancedStatefulSet(client, key.Name, key.Namespace)
+	workers, err = GetAdvancedStatefulSet(client, key.Name, key.Namespace)
 	if err != nil {
 		if apierrs.IsNotFound(err) {
-			_, dsErr := kubeclient.GetDaemonset(client, key.Name, key.Namespace)
+			_, dsErr := GetDaemonset(client, key.Name, key.Namespace)
 			// return workers, fluiderr.NewDeprecated()
 			// find the daemonset successfully
 			if dsErr == nil {
@@ -740,4 +740,37 @@ func GetWorkersAsAdvancedStatefulset(client client.Client, key types.NamespacedN
 	}
 
 	return
+}
+
+// GetDaemonset gets the daemonset by name and namespace
+func GetDaemonset(c client.Client, name string, namespace string) (ds *appsv1.DaemonSet, err error) {
+	ds = &appsv1.DaemonSet{}
+	err = c.Get(context.TODO(), types.NamespacedName{
+		Name:      name,
+		Namespace: namespace,
+	}, ds)
+
+	return ds, err
+}
+
+// GetStatefulset gets the statefulset by name and namespace
+func GetAdvancedStatefulSet(c client.Client, name string, namespace string) (master *openkruise.StatefulSet, err error) {
+	master = &openkruise.StatefulSet{}
+	//apiClient, err := client.New(c, client.Options{Scheme: scheme})
+	err = c.Get(context.TODO(), types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}, master)
+
+	return master, err
+}
+
+// GetStatefulset gets the statefulset by name and namespace
+func GetStatefulSet(c client.Client, name string, namespace string) (master *appsv1.StatefulSet, err error) {
+	master = &appsv1.StatefulSet{}
+	err = c.Get(context.TODO(), types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}, master)
+	return master, err
 }

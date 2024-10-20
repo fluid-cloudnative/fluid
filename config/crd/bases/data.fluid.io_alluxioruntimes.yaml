@@ -1251,6 +1251,10 @@ spec:
                 - uid
                 - user
                 type: object
+              scaleConfig:
+                description: ScaleIn config and workerType
+                properties:
+                  
               tieredstore:
                 description: Tiered storage used by Alluxio
                 properties:

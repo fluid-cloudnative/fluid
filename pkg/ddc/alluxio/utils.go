@@ -19,10 +19,11 @@ package alluxio
 import (
 	"context"
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset"
-	openkruise "github.com/openkruise/kruise/apis/apps/v1beta1"
 	"strconv"
 	"strings"
+
+	"github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset"
+	openkruise "github.com/openkruise/kruise/apis/apps/v1beta1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -86,28 +87,37 @@ func (e *AlluxioEngine) getMasterAdvancedStatefulset(name string, namespace stri
 	return master, err
 }
 func (e *AlluxioEngine) getMasterCacheWorkerset(name string, namespace string) (master *cacheworkerset.CacheWorkerSet, err error) {
-
 	runtime, err := e.getRuntime()
+	if err != nil {
+		return nil, err // 确保在获取 runtime 失败时返回错误
+	}
+
 	switch runtime.Spec.ScaleConfig.WorkerType {
 	case cacheworkerset.StatefulSetType:
-		master, err := e.getMasterStatefulset(name, namespace)
+		cacheMaster, err := e.getMasterStatefulset(name, namespace)
 		if err != nil {
-			return
+			return nil, err // 返回 nil 和错误
 		}
-		return cacheworkerset.StsToCacheWorkerSet(master), nil
+		master = cacheworkerset.StsToCacheWorkerSet(cacheMaster) // 使用返回参数 master
+		return master, nil
+
 	case cacheworkerset.DaemonSetType:
-		master, err := e.getDaemonset(name, namespace)
+		cacheMaster, err := e.getDaemonset(name, namespace)
 		if err != nil {
-			return
+			return nil, err // 返回 nil 和错误
 		}
-		return cacheworkerset.DsToCacheWorkerSet(master), nil
+		master = cacheworkerset.DsToCacheWorkerSet(cacheMaster) // 使用返回参数 master
+		return master, nil
+
 	case cacheworkerset.AdvancedStatefulSetType:
-		master, err := e.getMasterAdvancedStatefulset(name, namespace)
+		cacheMaster, err := e.getMasterAdvancedStatefulset(name, namespace)
 		if err != nil {
-			return
+			return nil, err // 返回 nil 和错误
 		}
-		return cacheworkerset.AstsToCacheWorkerSet(master), nil
+		master = cacheworkerset.AstsToCacheWorkerSet(cacheMaster) // 使用返回参数 master
+		return master, nil
 	}
+
 	return nil, fmt.Errorf("unsupported worker type %s", runtime.Spec.ScaleConfig.WorkerType)
 }
 

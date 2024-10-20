@@ -18,12 +18,13 @@ package kubeclient
 
 import (
 	"context"
-	"github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset"
-	openkruise "github.com/openkruise/kruise/apis/apps/v1beta1"
-	"k8s.io/client-go/util/retry"
 	"reflect"
 	"regexp"
 	"strconv"
+
+	"github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset"
+	openkruise "github.com/openkruise/kruise/apis/apps/v1beta1"
+	"k8s.io/client-go/util/retry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -99,15 +100,16 @@ func GetCacheWorkerSet(c client.Client, name string, namespace string) (master *
 	//}, master)
 	//return master, err
 	if master.WorkerType == cacheworkerset.StatefulSetType {
-
-		Cachemaster, err := GetStatefulSet(c, name, namespace)
+		var Cachemaster *appsv1.StatefulSet
+		Cachemaster, err = GetStatefulSet(c, name, namespace)
 		if err != nil {
 			return
 		}
 		returnV := cacheworkerset.StsToCacheWorkerSet(Cachemaster)
 		return returnV, err
 	} else if master.WorkerType == cacheworkerset.AdvancedStatefulSetType {
-		Cachemaster, err := GetAdvancedStatefulSet(c, name, namespace)
+		var Cachemaster *openkruise.StatefulSet
+		Cachemaster, err = GetAdvancedStatefulSet(c, name, namespace)
 		if err != nil {
 			return
 		}
