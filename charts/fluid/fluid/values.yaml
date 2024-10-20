@@ -12,7 +12,7 @@ image:
   imagePullSecrets: []
 
 # Default registry, namespace and version tag for images managed by fluid
-imagePrefix: &defaultImagePrefix fluidcloudnative
+imagePrefix: &defaultImagePrefix registry.aliyuncs.com/fluid
 # imagePrefix: &defaultImagePrefix registry.aliyuncs.com/fluid
 version: &defaultVersion v1.0.3-3e38c94
 
