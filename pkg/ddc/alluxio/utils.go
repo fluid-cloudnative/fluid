@@ -19,6 +19,8 @@ package alluxio
 import (
 	"context"
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset"
+	openkruise "github.com/openkruise/kruise/apis/apps/v1beta1"
 	"strconv"
 	"strings"
 
@@ -73,6 +75,40 @@ func (e *AlluxioEngine) getMasterStatefulset(name string, namespace string) (mas
 	}, master)
 
 	return master, err
+}
+func (e *AlluxioEngine) getMasterAdvancedStatefulset(name string, namespace string) (master *openkruise.StatefulSet, err error) {
+	master = &openkruise.StatefulSet{}
+	err = e.Client.Get(context.TODO(), types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}, master)
+
+	return master, err
+}
+func (e *AlluxioEngine) getMasterCacheWorkerset(name string, namespace string) (master *cacheworkerset.CacheWorkerSet, err error) {
+
+	runtime, err := e.getRuntime()
+	switch runtime.Spec.ScaleConfig.WorkerType {
+	case cacheworkerset.StatefulSetType:
+		master, err := e.getMasterStatefulset(name, namespace)
+		if err != nil {
+			return
+		}
+		return cacheworkerset.StsToCacheWorkerSet(master), nil
+	case cacheworkerset.DaemonSetType:
+		master, err := e.getDaemonset(name, namespace)
+		if err != nil {
+			return
+		}
+		return cacheworkerset.DsToCacheWorkerSet(master), nil
+	case cacheworkerset.AdvancedStatefulSetType:
+		master, err := e.getMasterAdvancedStatefulset(name, namespace)
+		if err != nil {
+			return
+		}
+		return cacheworkerset.AstsToCacheWorkerSet(master), nil
+	}
+	return nil, fmt.Errorf("unsupported worker type %s", runtime.Spec.ScaleConfig.WorkerType)
 }
 
 func (e *AlluxioEngine) getDaemonset(name string, namespace string) (daemonset *appsv1.DaemonSet, err error) {

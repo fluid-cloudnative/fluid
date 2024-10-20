@@ -23,26 +23,25 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	openkruise "github.com/openkruise/kruise/apis/apps/v1beta1"
 
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (e *Helper) checkWorkerAffinity(workers *appsv1.StatefulSet) (found bool) {
+func (e *Helper) checkWorkerAffinity(workers *cacheworkerset.CacheWorkerSet) (found bool) {
 
-	if workers.Spec.Template.Spec.Affinity == nil {
+	if workers.GetAffinity() == nil {
 		return
 	}
 
-	if workers.Spec.Template.Spec.Affinity.NodeAffinity == nil {
+	if workers.GetNodeAffinity() == nil {
 		return
 	}
 
-	if len(workers.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution) == 0 {
+	if len(workers.GetNodeAffinityPreferredDuringSchedulingIgnoredDuringExecution()) == 0 {
 		return
 	}
 
-	for _, preferred := range workers.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution {
+	for _, preferred := range workers.GetNodeAffinityPreferredDuringSchedulingIgnoredDuringExecution() {
 		for _, term := range preferred.Preference.MatchExpressions {
 			if term.Key == e.runtimeInfo.GetFuseLabelName() {
 				found = true
@@ -80,25 +79,8 @@ func (e *Helper) checkWorkerAffinityForAts(workers *openkruise.StatefulSet) (fou
 }
 
 func (e *Helper) BuildCacheWorkersAffinity(workers *cacheworkerset.CacheWorkerSet) (workersToUpdate *cacheworkerset.CacheWorkerSet, err error) {
-
-	if workers.WorkerType == cacheworkerset.StatefulSetType {
-		transWork := workers.ToStatefulSet()
-		returnV, err := e.BuildWorkersAffinity(transWork)
-		transV := cacheworkerset.StsToCacheWorkerSet(returnV)
-
-		return transV, err
-	} else if workers.WorkerType == cacheworkerset.AdvancedStatefulSetType {
-		transWork := workers.ToAdvancedStatefulSet()
-		returnV, err := e.BuildWorkersAffinityForAsts(transWork)
-		transV := cacheworkerset.AstsToCacheWorkerSet(returnV)
-		return transV, err
-	} else if workers.WorkerType == cacheworkerset.DaemonSetType {
-		//transWork := workers.ToDaemonSet()
-		//returnV, err := e.BuildWorkersAffinityForDs(transWork)
-		//transV := cacheworkerset.DsToCacheWorkerSet(returnV)
-		//return transV, err
-	}
-	return nil, err
+	returnV, err := e.BuildWorkersAffinity(workers)
+	return returnV, err
 }
 
 func (e *Helper) BuildWorkersAffinityForAsts(workers *openkruise.StatefulSet) (workersToUpdate *openkruise.StatefulSet, err error) {
@@ -216,7 +198,7 @@ func (e *Helper) BuildWorkersAffinityForAsts(workers *openkruise.StatefulSet) (w
 }
 
 // BuildWorkersAffinity builds workers affinity if it doesn't have
-func (e *Helper) BuildWorkersAffinity(workers *appsv1.StatefulSet) (workersToUpdate *appsv1.StatefulSet, err error) {
+func (e *Helper) BuildWorkersAffinity(workers *cacheworkerset.CacheWorkerSet) (workersToUpdate *cacheworkerset.CacheWorkerSet, err error) {
 	// TODO: for now, runtime affinity can't be set by user, so we can assume the affinity is nil in the first time.
 	// We need to enhance it in future
 
@@ -228,8 +210,9 @@ func (e *Helper) BuildWorkersAffinity(workers *appsv1.StatefulSet) (workersToUpd
 		namespace = e.runtimeInfo.GetNamespace()
 	)
 
-	if workersToUpdate.Spec.Template.Spec.Affinity == nil {
-		workersToUpdate.Spec.Template.Spec.Affinity = &corev1.Affinity{}
+	if workersToUpdate.GetAffinity() == nil {
+		affinity := &corev1.Affinity{}
+		workersToUpdate.SetAffinity(affinity)
 		dataset, err := utils.GetDataset(e.client, name, namespace)
 		if err != nil {
 			return workersToUpdate, err
@@ -238,7 +221,7 @@ func (e *Helper) BuildWorkersAffinity(workers *appsv1.StatefulSet) (workersToUpd
 
 		// 2. Set pod anti affinity for the different dataset
 		if dataset.IsExclusiveMode() {
-			workersToUpdate.Spec.Template.Spec.Affinity.PodAntiAffinity = &corev1.PodAntiAffinity{
+			podAntiAffinity := &corev1.PodAntiAffinity{
 				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
 					{
 						LabelSelector: &metav1.LabelSelector{
@@ -253,8 +236,10 @@ func (e *Helper) BuildWorkersAffinity(workers *appsv1.StatefulSet) (workersToUpd
 					},
 				},
 			}
+			workersToUpdate.SetPodAntiAffinity(podAntiAffinity)
+
 		} else {
-			workersToUpdate.Spec.Template.Spec.Affinity.PodAntiAffinity = &corev1.PodAntiAffinity{
+			podAntiAffinity := &corev1.PodAntiAffinity{
 				PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
 					{
 						// The default weight is 50
@@ -272,6 +257,7 @@ func (e *Helper) BuildWorkersAffinity(workers *appsv1.StatefulSet) (workersToUpd
 						},
 					},
 				},
+
 				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
 					{
 						LabelSelector: &metav1.LabelSelector{
@@ -287,44 +273,65 @@ func (e *Helper) BuildWorkersAffinity(workers *appsv1.StatefulSet) (workersToUpd
 					},
 				},
 			}
+			workersToUpdate.SetPodAntiAffinity(podAntiAffinity)
 
 			// TODO: remove this when EFC is ready for spread-first scheduling policy
 			// Currently EFC prefers binpack-first scheduling policy to spread-first scheduling policy. Set PreferredDuringSchedulingIgnoredDuringExecution to empty
 			// to avoid using spread-first scheduling policy
 			if e.runtimeInfo.GetRuntimeType() == common.EFCRuntime {
-				workersToUpdate.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution = []corev1.WeightedPodAffinityTerm{}
+				preferredDuringSchedulingIgnoredDuringExecution := []corev1.WeightedPodAffinityTerm{}
+				workersToUpdate.SetPodAntiAffinityPreferredDuringSchedulingIgnoredDuringExecution(preferredDuringSchedulingIgnoredDuringExecution)
+
 			}
 		}
 
 		// 3. Prefer to locate on the node which already has fuse on it
-		if workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity == nil {
-			workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity = &corev1.NodeAffinity{}
+		if workersToUpdate.GetNodeAffinity() == nil {
+			NodeAffinity := &corev1.NodeAffinity{}
+			workersToUpdate.SetNodeAffinity(NodeAffinity)
+
 		}
 
-		if len(workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution) == 0 {
-			workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution = []corev1.PreferredSchedulingTerm{}
+		if len(workersToUpdate.GetNodeAffinityPreferredDuringSchedulingIgnoredDuringExecution()) == 0 {
+
+			PreferredDuringSchedulingIgnoredDuringExecution := []corev1.PreferredSchedulingTerm{}
+			workersToUpdate.SetNodeAffinityPreferredDuringSchedulingIgnoredDuringExecution(PreferredDuringSchedulingIgnoredDuringExecution)
+
 		}
 
-		workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution =
-			append(workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution,
-				corev1.PreferredSchedulingTerm{
-					Weight: 100,
-					Preference: corev1.NodeSelectorTerm{
-						MatchExpressions: []corev1.NodeSelectorRequirement{
-							{
-								Key:      e.runtimeInfo.GetFuseLabelName(),
-								Operator: corev1.NodeSelectorOpIn,
-								Values:   []string{"true"},
-							},
-						},
+		//workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution =
+		//	append(workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution,
+		//		corev1.PreferredSchedulingTerm{
+		//			Weight: 100,
+		//			Preference: corev1.NodeSelectorTerm{
+		//				MatchExpressions: []corev1.NodeSelectorRequirement{
+		//					{
+		//						Key:      e.runtimeInfo.GetFuseLabelName(),
+		//						Operator: corev1.NodeSelectorOpIn,
+		//						Values:   []string{"true"},
+		//					},
+		//				},
+		//			},
+		//		})
+		PreferredDuringSchedulingIgnoredDuringExecution := corev1.PreferredSchedulingTerm{
+			Weight: 100,
+			Preference: corev1.NodeSelectorTerm{
+				MatchExpressions: []corev1.NodeSelectorRequirement{
+					{
+						Key:      e.runtimeInfo.GetFuseLabelName(),
+						Operator: corev1.NodeSelectorOpIn,
+						Values:   []string{"true"},
 					},
-				})
+				},
+			},
+		}
+		workersToUpdate.AppendNodeAffinityPreferredDuringSchedulingIgnoredDuringExecution(PreferredDuringSchedulingIgnoredDuringExecution)
 
 		// 3. set node affinity if possible
 		if dataset.Spec.NodeAffinity != nil {
 			if dataset.Spec.NodeAffinity.Required != nil {
-				workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution =
-					dataset.Spec.NodeAffinity.Required
+				workersToUpdate.SetNodeAffinityRequired(dataset.Spec.NodeAffinity.Required)
+
 			}
 		}
 	}

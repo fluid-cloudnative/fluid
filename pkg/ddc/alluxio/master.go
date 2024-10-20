@@ -20,7 +20,6 @@ import (
 	"context"
 	"reflect"
 
-	"github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset"
 	corev1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/util/retry"
@@ -39,27 +38,16 @@ func (e *AlluxioEngine) CheckMasterReady() (ready bool, err error) {
 	if err != nil {
 		return
 	}
-	master, err := kubeclient.GetStatefulSet(e.Client, masterName, e.namespace)
+	master, err := kubeclient.GetCacheWorkerSet(e.Client, masterName, e.namespace)
 	if err != nil {
 		return
 	}
-	if runtime.Spec.ScaleConfig.WorkerType == "" || runtime.Spec.ScaleConfig.WorkerType == cacheworkerset.StatefulSetType {
 
-	} else if runtime.Spec.ScaleConfig.WorkerType == cacheworkerset.AdvancedStatefulSetType {
-
-	} else if runtime.Spec.ScaleConfig.WorkerType == cacheworkerset.DaemonSetType {
-
-	}
 	masterReplicas := runtime.Spec.Master.Replicas
 	if masterReplicas == 0 {
 		masterReplicas = 1
 	}
-	if masterReplicas == master.Status.ReadyReplicas {
-		ready = true
-	} else {
-		e.Log.Info("The master is not ready.", "replicas", masterReplicas,
-			"readyReplicas", master.Status.ReadyReplicas)
-	}
+	master.WorkerType = runtime.Spec.ScaleConfig.WorkerType
 
 	// 2. Update the phase
 	if ready {
@@ -70,7 +58,7 @@ func (e *AlluxioEngine) CheckMasterReady() (ready bool, err error) {
 			}
 			runtimeToUpdate := runtime.DeepCopy()
 
-			runtimeToUpdate.Status.CurrentMasterNumberScheduled = int32(master.Status.ReadyReplicas)
+			runtimeToUpdate.Status.CurrentMasterNumberScheduled = int32(master.GetReadyReplicas())
 
 			runtimeToUpdate.Status.MasterPhase = datav1alpha1.RuntimePhaseReady
 
@@ -136,7 +124,7 @@ func (e *AlluxioEngine) SetupMaster() (err error) {
 	masterName := e.getMasterName()
 
 	// 1. Setup the master
-	master, err := kubeclient.GetStatefulSet(e.Client, masterName, e.namespace)
+	master, err := kubeclient.GetCacheWorkerSet(e.Client, masterName, e.namespace)
 	if err != nil && apierrs.IsNotFound(err) {
 		//1. Is not found error
 		e.Log.V(1).Info("SetupMaster", "master", masterName)
@@ -146,9 +134,8 @@ func (e *AlluxioEngine) SetupMaster() (err error) {
 		return
 	} else {
 		//3.The master has been set up
-		e.Log.V(1).Info("The master has been set.", "replicas", master.Status.ReadyReplicas)
+		e.Log.V(1).Info("The master has been set.", "replicas", master.GetReadyReplicas())
 	}
-
 	// 2. Update the status of the runtime
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		runtime, err := e.getRuntime()

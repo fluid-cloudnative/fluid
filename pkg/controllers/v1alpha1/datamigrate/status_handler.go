@@ -165,7 +165,7 @@ func (c *CronStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestCont
 	if currentJob.Spec.Suspend != nil && *currentJob.Spec.Suspend {
 		ctx.Log.Info("scale the migrate workers statefulset", "name", utils.GetParallelOperationWorkersName(releaseName))
 		// scale the stateful set, the job acts as a worker.
-		err = kubeclient.ScaleStatefulSet(c.Client, utils.GetParallelOperationWorkersName(releaseName), c.dataMigrate.Namespace, c.dataMigrate.Spec.Parallelism-1)
+		err = kubeclient.ScaleCacheWorkerSet(c.Client, utils.GetParallelOperationWorkersName(releaseName), c.dataMigrate.Namespace, c.dataMigrate.Spec.Parallelism-1)
 		if err != nil {
 			return
 		}

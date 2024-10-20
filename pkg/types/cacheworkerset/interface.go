@@ -6,11 +6,11 @@ import (
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	openkruise "github.com/openkruise/kruise/apis/apps/v1beta1"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-
-	appsv1 "k8s.io/api/apps/v1"
-	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
@@ -40,11 +40,181 @@ type CacheWorkerSetInterface interface {
 
 // CacheWorkerManagerClass defines the manager class
 type CacheWorkerSet struct {
-	client     client.Client
-	WorkerType WorkerType
-	Sts        *appsv1.StatefulSet
-	Ds         *appsv1.DaemonSet
-	Asts       *openkruise.StatefulSet
+	client            client.Client
+	WorkerType        WorkerType
+	Sts               *appsv1.StatefulSet
+	Ds                *appsv1.DaemonSet
+	Asts              *openkruise.StatefulSet
+	DeletionTimestamp *metav1.Time
+}
+
+func (c *CacheWorkerSet) GetReplicas() *int32 {
+	switch c.WorkerType {
+	case StatefulSetType:
+		return c.Sts.Spec.Replicas
+
+	case AdvancedStatefulSetType:
+		return c.Asts.Spec.Replicas
+	case DaemonSetType:
+		return &c.Ds.Status.CurrentNumberScheduled
+	default:
+		return nil
+	}
+}
+func (c *CacheWorkerSet) SetReplicas(num *int32) {
+	switch c.WorkerType {
+	case StatefulSetType:
+		c.Sts.Spec.Replicas = num
+
+	case AdvancedStatefulSetType:
+		c.Asts.Spec.Replicas = num
+	case DaemonSetType:
+		c.Ds.Status.CurrentNumberScheduled = *num
+
+	}
+}
+func (c *CacheWorkerSet) GetSelector() *metav1.LabelSelector {
+	switch c.WorkerType {
+	case StatefulSetType:
+		return c.Sts.Spec.Selector
+	case AdvancedStatefulSetType:
+		return c.Asts.Spec.Selector
+	case DaemonSetType:
+		return c.Ds.Spec.Selector
+	default:
+		return nil
+	}
+}
+
+func (c *CacheWorkerSet) GetReadyReplicas() int32 {
+	switch c.WorkerType {
+	case StatefulSetType:
+		return c.Sts.Status.ReadyReplicas
+	case DaemonSetType:
+		return c.Ds.Status.NumberReady
+	case AdvancedStatefulSetType:
+		return c.Asts.Status.ReadyReplicas
+	default:
+		return 0
+	}
+}
+func (c *CacheWorkerSet) GetCurrentReplicas() int32 {
+	switch c.WorkerType {
+	case StatefulSetType:
+		return c.Sts.Status.CurrentReplicas
+	case AdvancedStatefulSetType:
+		return c.Asts.Status.CurrentReplicas
+	default:
+		return 0
+	}
+}
+func (c *CacheWorkerSet) GetNodeSelector() map[string]string {
+	switch c.WorkerType {
+	case StatefulSetType:
+		return c.Sts.Spec.Template.Spec.NodeSelector
+	case AdvancedStatefulSetType:
+		return c.Asts.Spec.Template.Spec.NodeSelector
+
+	}
+	return nil
+}
+func (c *CacheWorkerSet) GetAffinity() *corev1.Affinity {
+	switch c.WorkerType {
+	case StatefulSetType:
+		return c.Sts.Spec.Template.Spec.Affinity
+	case AdvancedStatefulSetType:
+		return c.Asts.Spec.Template.Spec.Affinity
+
+	}
+	return nil
+}
+func (c *CacheWorkerSet) SetAffinity(affinity *corev1.Affinity) {
+	switch c.WorkerType {
+	case StatefulSetType:
+		c.Sts.Spec.Template.Spec.Affinity = affinity
+	case AdvancedStatefulSetType:
+		c.Asts.Spec.Template.Spec.Affinity = affinity
+
+	}
+
+}
+func (c *CacheWorkerSet) SetPodAntiAffinity(affinity *corev1.PodAntiAffinity) {
+	switch c.WorkerType {
+	case StatefulSetType:
+		c.Sts.Spec.Template.Spec.Affinity.PodAntiAffinity = affinity
+	case AdvancedStatefulSetType:
+		c.Asts.Spec.Template.Spec.Affinity.PodAntiAffinity = affinity
+
+	}
+
+}
+func (c *CacheWorkerSet) GetNodeAffinity() *corev1.NodeAffinity {
+	switch c.WorkerType {
+	case StatefulSetType:
+		return c.Sts.Spec.Template.Spec.Affinity.NodeAffinity
+	case AdvancedStatefulSetType:
+		return c.Asts.Spec.Template.Spec.Affinity.NodeAffinity
+
+	}
+	return nil
+}
+func (c *CacheWorkerSet) SetNodeAffinity(NodeAffinity *corev1.NodeAffinity) {
+	switch c.WorkerType {
+	case StatefulSetType:
+		c.Sts.Spec.Template.Spec.Affinity.NodeAffinity = NodeAffinity
+	case AdvancedStatefulSetType:
+		c.Asts.Spec.Template.Spec.Affinity.NodeAffinity = NodeAffinity
+
+	}
+
+}
+func (c *CacheWorkerSet) SetNodeAffinityRequired(NodeAffinityRequired *corev1.NodeSelector) {
+	switch c.WorkerType {
+	case StatefulSetType:
+		c.Sts.Spec.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution = NodeAffinityRequired
+	case AdvancedStatefulSetType:
+		c.Asts.Spec.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution = NodeAffinityRequired
+
+	}
+
+}
+func (c *CacheWorkerSet) GetNodeAffinityPreferredDuringSchedulingIgnoredDuringExecution() []corev1.PreferredSchedulingTerm {
+	switch c.WorkerType {
+	case StatefulSetType:
+		return c.Sts.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution
+	case AdvancedStatefulSetType:
+		return c.Asts.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution
+
+	}
+	return nil
+}
+func (c *CacheWorkerSet) SetNodeAffinityPreferredDuringSchedulingIgnoredDuringExecution(PreferredSchedulingTerm []corev1.PreferredSchedulingTerm) {
+	switch c.WorkerType {
+	case StatefulSetType:
+		c.Sts.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution = PreferredSchedulingTerm
+	case AdvancedStatefulSetType:
+		c.Asts.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution = PreferredSchedulingTerm
+	}
+
+}
+func (c *CacheWorkerSet) AppendNodeAffinityPreferredDuringSchedulingIgnoredDuringExecution(PreferredSchedulingTerm corev1.PreferredSchedulingTerm) {
+	switch c.WorkerType {
+	case StatefulSetType:
+		c.Sts.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution = append(c.Sts.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution, PreferredSchedulingTerm)
+	case AdvancedStatefulSetType:
+		c.Asts.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution = append(c.Asts.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution, PreferredSchedulingTerm)
+	}
+
+}
+func (c *CacheWorkerSet) SetPodAntiAffinityPreferredDuringSchedulingIgnoredDuringExecution(preferredDuringSchedulingIgnoredDuringExecution []corev1.WeightedPodAffinityTerm) {
+	switch c.WorkerType {
+	case StatefulSetType:
+		c.Sts.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution = preferredDuringSchedulingIgnoredDuringExecution
+	case AdvancedStatefulSetType:
+		c.Asts.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution = preferredDuringSchedulingIgnoredDuringExecution
+
+	}
+
 }
 
 // GetNamespace 根据 WorkerType 获取命名空间
@@ -426,6 +596,10 @@ func (c *CacheWorkerSet) GetObjectKind() schema.ObjectKind {
 	}
 }
 
+// func (c *CacheWorkerSet) GetSelector(references []metav1.OwnerReference)
+//
+//	   switch c.WorkerType
+//	}
 func (c *CacheWorkerSet) DeepCopyObject() runtime.Object {
 	switch c.WorkerType {
 	case StatefulSetType:

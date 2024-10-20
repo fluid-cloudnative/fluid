@@ -53,114 +53,58 @@ func BuildHelper(runtimeInfo base.RuntimeInfoInterface, client client.Client, lo
 // calls for a status update and finally returns error if anything unexpected happens.
 func (e *Helper) SetupWorkers(runtime base.RuntimeInterface,
 	currentStatus datav1alpha1.RuntimeStatus,
-	getworkers *cacheworkerset.CacheWorkerSet) (err error) {
+	workers *cacheworkerset.CacheWorkerSet) (err error) {
 
 	desireReplicas := runtime.Replicas()
-	switch getworkers.WorkerType {
-	case cacheworkerset.StatefulSetType:
-		workers := getworkers.ToStatefulSet()
-		if *workers.Spec.Replicas != desireReplicas {
-			// workerToUpdate, err := e.buildWorkersAffinity(workers)
+	if *workers.GetReplicas() != desireReplicas {
+		// workerToUpdate, err := e.buildWorkersAffinity(workers)
 
-			workerToUpdate, err := e.BuildWorkersAffinity(workers)
-			if err != nil {
-				return err
-			}
-
-			workerToUpdate.Spec.Replicas = &desireReplicas
-			err = e.client.Update(context.TODO(), workerToUpdate)
-			if err != nil {
-				return err
-			}
-
-			workers = workerToUpdate
-		} else {
-			e.log.V(1).Info("Nothing to do for syncing")
+		workerToUpdate, err := e.BuildWorkersAffinity(workers)
+		if err != nil {
+			return err
 		}
 
-		if *workers.Spec.Replicas != runtime.GetStatus().DesiredWorkerNumberScheduled {
-			statusToUpdate := runtime.GetStatus()
+		//workerToUpdate.Spec.Replicas = &desireReplicas
+		workerToUpdate.SetReplicas(&desireReplicas)
+		err = e.client.Update(context.TODO(), workerToUpdate)
+		if err != nil {
+			return err
+		}
 
-			if workers.Status.ReadyReplicas > 0 {
-				if runtime.Replicas() == workers.Status.ReadyReplicas {
-					statusToUpdate.WorkerPhase = datav1alpha1.RuntimePhaseReady
-				} else {
-					statusToUpdate.WorkerPhase = datav1alpha1.RuntimePhasePartialReady
-				}
+		workers = workerToUpdate
+	} else {
+		e.log.V(1).Info("Nothing to do for syncing")
+	}
+
+	if *workers.GetReplicas() != runtime.GetStatus().DesiredWorkerNumberScheduled {
+		statusToUpdate := runtime.GetStatus()
+
+		if workers.GetReadyReplicas() > 0 {
+			if runtime.Replicas() == workers.GetReadyReplicas() {
+				statusToUpdate.WorkerPhase = datav1alpha1.RuntimePhaseReady
 			} else {
-				statusToUpdate.WorkerPhase = datav1alpha1.RuntimePhaseNotReady
+				statusToUpdate.WorkerPhase = datav1alpha1.RuntimePhasePartialReady
 			}
-
-			statusToUpdate.DesiredWorkerNumberScheduled = runtime.Replicas()
-			statusToUpdate.CurrentWorkerNumberScheduled = statusToUpdate.DesiredWorkerNumberScheduled
-
-			if len(statusToUpdate.Conditions) == 0 {
-				statusToUpdate.Conditions = []datav1alpha1.RuntimeCondition{}
-			}
-			cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersInitialized, datav1alpha1.RuntimeWorkersInitializedReason,
-				"The workers are initialized.", corev1.ConditionTrue)
-			statusToUpdate.Conditions =
-				utils.UpdateRuntimeCondition(statusToUpdate.Conditions,
-					cond)
-
-			status := *statusToUpdate
-			if !reflect.DeepEqual(status, currentStatus) {
-				return e.client.Status().Update(context.TODO(), runtime)
-			}
-		}
-	case cacheworkerset.AdvancedStatefulSetType:
-		workers := getworkers.ToAdvancedStatefulSet()
-		if *workers.Spec.Replicas != desireReplicas {
-			// workerToUpdate, err := e.buildWorkersAffinity(workers)
-
-			workerToUpdate, err := e.BuildWorkersAffinityForAsts(workers)
-			if err != nil {
-				return err
-			}
-
-			workerToUpdate.Spec.Replicas = &desireReplicas
-			err = e.client.Update(context.TODO(), workerToUpdate)
-			if err != nil {
-				return err
-			}
-
-			workers = workerToUpdate
 		} else {
-			e.log.V(1).Info("Nothing to do for syncing")
+			statusToUpdate.WorkerPhase = datav1alpha1.RuntimePhaseNotReady
 		}
 
-		if *workers.Spec.Replicas != runtime.GetStatus().DesiredWorkerNumberScheduled {
-			statusToUpdate := runtime.GetStatus()
+		statusToUpdate.DesiredWorkerNumberScheduled = runtime.Replicas()
+		statusToUpdate.CurrentWorkerNumberScheduled = statusToUpdate.DesiredWorkerNumberScheduled
 
-			if workers.Status.ReadyReplicas > 0 {
-				if runtime.Replicas() == workers.Status.ReadyReplicas {
-					statusToUpdate.WorkerPhase = datav1alpha1.RuntimePhaseReady
-				} else {
-					statusToUpdate.WorkerPhase = datav1alpha1.RuntimePhasePartialReady
-				}
-			} else {
-				statusToUpdate.WorkerPhase = datav1alpha1.RuntimePhaseNotReady
-			}
-
-			statusToUpdate.DesiredWorkerNumberScheduled = runtime.Replicas()
-			statusToUpdate.CurrentWorkerNumberScheduled = statusToUpdate.DesiredWorkerNumberScheduled
-
-			if len(statusToUpdate.Conditions) == 0 {
-				statusToUpdate.Conditions = []datav1alpha1.RuntimeCondition{}
-			}
-			cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersInitialized, datav1alpha1.RuntimeWorkersInitializedReason,
-				"The workers are initialized.", corev1.ConditionTrue)
-			statusToUpdate.Conditions =
-				utils.UpdateRuntimeCondition(statusToUpdate.Conditions,
-					cond)
-
-			status := *statusToUpdate
-			if !reflect.DeepEqual(status, currentStatus) {
-				return e.client.Status().Update(context.TODO(), runtime)
-			}
+		if len(statusToUpdate.Conditions) == 0 {
+			statusToUpdate.Conditions = []datav1alpha1.RuntimeCondition{}
 		}
-	case cacheworkerset.DaemonSetType:
+		cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersInitialized, datav1alpha1.RuntimeWorkersInitializedReason,
+			"The workers are initialized.", corev1.ConditionTrue)
+		statusToUpdate.Conditions =
+			utils.UpdateRuntimeCondition(statusToUpdate.Conditions,
+				cond)
 
+		status := *statusToUpdate
+		if !reflect.DeepEqual(status, currentStatus) {
+			return e.client.Status().Update(context.TODO(), runtime)
+		}
 	}
 
 	return
