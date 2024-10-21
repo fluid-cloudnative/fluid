@@ -9,7 +9,7 @@ GIT_VERSION := ${VERSION}-${GIT_SHA}
 PACKAGE := github.com/fluid-cloudnative/fluid
 
 # Go and build settings
-GO_MODULE ?= off
+GO_MODULE ?= on
 GC_FLAGS ?= -gcflags="all=-N -l"
 LOCAL_FLAGS ?= -gcflags=-l
 CGO_ENABLED ?= 0
