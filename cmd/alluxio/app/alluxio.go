@@ -19,6 +19,7 @@ package app
 import (
 	"os"
 	"time"
+
 	// +kubebuilder:scaffold:imports
 
 	"github.com/fluid-cloudnative/fluid"
@@ -29,6 +30,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	openkruiseappsv1beta1 "github.com/openkruise/kruise/apis/apps/v1beta1"
 	"github.com/spf13/cobra"
 	zapOpt "go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -80,6 +82,8 @@ var alluxioCmd = &cobra.Command{
 func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = datav1alpha1.AddToScheme(scheme)
+	// _ = openkruiseappsv1beta1.AddToScheme(clientgoscheme.Scheme)
+	_ = openkruiseappsv1beta1.AddToScheme(scheme)
 
 	alluxioCmd.Flags().StringVarP(&metricsAddr, "metrics-addr", "", ":8080", "The address the metric endpoint binds to.")
 	alluxioCmd.Flags().BoolVarP(&enableLeaderElection, "enable-leader-election", "", false, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")

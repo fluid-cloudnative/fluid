@@ -331,8 +331,11 @@ func (e *AlluxioEngine) checkFuseHealthy() (err error) {
 
 // checkExistenceOfMaster check engine existed
 func (e *AlluxioEngine) checkExistenceOfMaster() (err error) {
-
-	master, masterErr := kubeclient.GetCacheWorkerSet(e.Client, e.getMasterName(), e.namespace)
+	runtime, err := e.getRuntime()
+	if err != nil {
+		return
+	}
+	master, masterErr := kubeclient.GetCacheWorkerSet(e.Client, e.getMasterName(), e.namespace, runtime.Spec.ScaleConfig.WorkerType)
 
 	if (masterErr != nil && errors.IsNotFound(masterErr)) || *master.GetReplicas() <= 0 {
 		cond := utils.NewRuntimeCondition(data.RuntimeMasterReady, "The master are not ready.",

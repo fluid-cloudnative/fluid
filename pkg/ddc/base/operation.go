@@ -17,9 +17,11 @@ package base
 import (
 	"context"
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"reflect"
 	"time"
+
+	"github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -245,7 +247,7 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 		// if the status not Complete, there is a new starting job, not scale the statefulset to zero.
 		if operation.GetParallelTaskNumber() > 1 {
 			releaseNameSpacedName := operation.GetReleaseNameSpacedName()
-			err = kubeclient.ScaleCacheWorkerSet(t.Client, utils.GetParallelOperationWorkersName(releaseNameSpacedName.Name), releaseNameSpacedName.Namespace, 0)
+			err = kubeclient.ScaleCacheWorkerSet(t.Client, utils.GetParallelOperationWorkersName(releaseNameSpacedName.Name), releaseNameSpacedName.Namespace, 0, cacheworkerset.AdvancedStatefulSetType)
 			if err != nil {
 				return utils.RequeueIfError(err)
 			}
@@ -333,7 +335,7 @@ func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, o
 		// if the status not PhaseFailed, there is a new starting job, not scale the statefulset to zero.
 		if operation.GetParallelTaskNumber() > 1 {
 			releaseNameSpacedName := operation.GetReleaseNameSpacedName()
-			err = kubeclient.ScaleCacheWorkerSet(t.Client, utils.GetParallelOperationWorkersName(releaseNameSpacedName.Name), releaseNameSpacedName.Namespace, 0)
+			err = kubeclient.ScaleCacheWorkerSet(t.Client, utils.GetParallelOperationWorkersName(releaseNameSpacedName.Name), releaseNameSpacedName.Namespace, 0, cacheworkerset.AdvancedStatefulSetType)
 			if err != nil {
 				return utils.RequeueIfError(err)
 			}

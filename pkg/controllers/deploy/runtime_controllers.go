@@ -25,12 +25,6 @@ import (
 	"strings"
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/efc"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/goosefs"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindofsx"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/thin"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/vineyard"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/discovery"
 	"github.com/pkg/errors"
@@ -55,13 +49,7 @@ func setPrecheckFunc(checks map[string]CheckFunc) {
 
 func init() {
 	allPrecheckFuncs := map[string]CheckFunc{
-		"alluxioruntime-controller":  alluxio.Precheck,
-		"jindoruntime-controller":    jindofsx.Precheck,
-		"juicefsruntime-controller":  juicefs.Precheck,
-		"goosefsruntime-controller":  goosefs.Precheck,
-		"thinruntime-controller":     thin.Precheck,
-		"efcruntime-controller":      efc.Precheck,
-		"vineyardruntime-controller": vineyard.Precheck,
+		"alluxioruntime-controller": alluxio.Precheck,
 	}
 
 	setPrecheckFunc(filterOutDisabledRuntimes(allPrecheckFuncs))

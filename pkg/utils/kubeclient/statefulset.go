@@ -57,9 +57,9 @@ func ScaleStatefulSet(client client.Client, name string, namespace string, repli
 	return err
 }
 
-func ScaleCacheWorkerSet(client client.Client, name string, namespace string, replicas int32) error {
+func ScaleCacheWorkerSet(client client.Client, name string, namespace string, replicas int32, workerType cacheworkerset.WorkerType) error {
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		getworkers, err := GetCacheWorkerSet(client, name, namespace)
+		getworkers, err := GetCacheWorkerSet(client, name, namespace, workerType)
 		if err != nil {
 			return err
 		}
@@ -92,29 +92,25 @@ func ScaleCacheWorkerSet(client client.Client, name string, namespace string, re
 	})
 	return err
 }
-func GetCacheWorkerSet(c client.Client, name string, namespace string) (master *cacheworkerset.CacheWorkerSet, err error) {
-	//master = &cacheworkerset.CacheWorkerSet{}
-	//err = c.Get(context.TODO(), types.NamespacedName{
-	//	Namespace: namespace,
-	//	Name:      name,
-	//}, master)
-	//return master, err
-	if master.WorkerType == cacheworkerset.StatefulSetType {
+func GetCacheWorkerSet(c client.Client, name string, namespace string, workerType cacheworkerset.WorkerType) (master *cacheworkerset.CacheWorkerSet, err error) {
+
+	if workerType == cacheworkerset.StatefulSetType {
 		var Cachemaster *appsv1.StatefulSet
+
 		Cachemaster, err = GetStatefulSet(c, name, namespace)
 		if err != nil {
 			return
 		}
 		returnV := cacheworkerset.StsToCacheWorkerSet(Cachemaster)
 		return returnV, err
-	} else if master.WorkerType == cacheworkerset.AdvancedStatefulSetType {
+	} else if workerType == cacheworkerset.AdvancedStatefulSetType {
 		var Cachemaster *openkruise.StatefulSet
 		Cachemaster, err = GetAdvancedStatefulSet(c, name, namespace)
 		if err != nil {
 			return
 		}
 		return cacheworkerset.AstsToCacheWorkerSet(Cachemaster), err
-	} else if master.WorkerType == cacheworkerset.DaemonSetType {
+	} else if workerType == cacheworkerset.DaemonSetType {
 		//returnV,err := GetDaemonSet(name,namespace)
 	}
 	return

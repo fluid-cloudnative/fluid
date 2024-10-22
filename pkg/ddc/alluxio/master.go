@@ -25,6 +25,7 @@ import (
 	"k8s.io/client-go/util/retry"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
@@ -38,7 +39,8 @@ func (e *AlluxioEngine) CheckMasterReady() (ready bool, err error) {
 	if err != nil {
 		return
 	}
-	master, err := kubeclient.GetCacheWorkerSet(e.Client, masterName, e.namespace)
+	runtime.Spec.ScaleConfig.WorkerType = cacheworkerset.AdvancedStatefulSetType
+	master, err := kubeclient.GetCacheWorkerSet(e.Client, masterName, e.namespace, runtime.Spec.ScaleConfig.WorkerType)
 	if err != nil {
 		return
 	}
@@ -122,9 +124,13 @@ func (e *AlluxioEngine) ShouldSetupMaster() (should bool, err error) {
 // It returns any cache error encountered
 func (e *AlluxioEngine) SetupMaster() (err error) {
 	masterName := e.getMasterName()
-
+	runtime, err := e.getRuntime()
+	if err != nil {
+		return
+	}
+	runtime.Spec.ScaleConfig.WorkerType = cacheworkerset.AdvancedStatefulSetType
 	// 1. Setup the master
-	master, err := kubeclient.GetCacheWorkerSet(e.Client, masterName, e.namespace)
+	master, err := kubeclient.GetCacheWorkerSet(e.Client, masterName, e.namespace, runtime.Spec.ScaleConfig.WorkerType)
 	if err != nil && apierrs.IsNotFound(err) {
 		//1. Is not found error
 		e.Log.V(1).Info("SetupMaster", "master", masterName)

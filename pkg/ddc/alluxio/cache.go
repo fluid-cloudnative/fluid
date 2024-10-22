@@ -179,7 +179,8 @@ func (e *AlluxioEngine) GetCacheHitStates() (cacheHitStates cacheHitStates) {
 func (e *AlluxioEngine) invokeCleanCache(path string) (err error) {
 	// 1. Check if master is ready, if not, just return
 	masterName := e.getMasterName()
-	master, err := kubeclient.GetCacheWorkerSet(e.Client, masterName, e.namespace)
+	runtime, err := e.getRuntime()
+	master, err := kubeclient.GetCacheWorkerSet(e.Client, masterName, e.namespace, runtime.Spec.ScaleConfig.WorkerType)
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
 			e.Log.Info("Failed to get master", "err", err.Error())

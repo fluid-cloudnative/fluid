@@ -40,18 +40,16 @@ func (e *AlluxioEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		workerName               string = e.getWorkerName()
 		namespace                string = e.namespace
 	)
-
-	// 1. Master should be ready
-	master, err := kubeclient.GetCacheWorkerSet(e.Client, masterName, namespace)
-	if err != nil {
-		return ready, err
-	}
-
-	// 2. Worker should be ready
 	runtime, err := e.getRuntime()
 	if err != nil {
 		return
 	}
+	// 1. Master should be ready
+	master, err := kubeclient.GetCacheWorkerSet(e.Client, masterName, namespace, runtime.Spec.ScaleConfig.WorkerType)
+	if err != nil {
+		return ready, err
+	}
+
 	workers, err := ctrl.GetWorkersAsCacheWorkerset(e.Client,
 		types.NamespacedName{Namespace: e.namespace, Name: workerName}, runtime.Spec.ScaleConfig.WorkerType)
 	if err != nil {

@@ -18,6 +18,7 @@ package datamigrate
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
+	"github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	batchv1 "k8s.io/api/batch/v1"
@@ -165,7 +166,7 @@ func (c *CronStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestCont
 	if currentJob.Spec.Suspend != nil && *currentJob.Spec.Suspend {
 		ctx.Log.Info("scale the migrate workers statefulset", "name", utils.GetParallelOperationWorkersName(releaseName))
 		// scale the stateful set, the job acts as a worker.
-		err = kubeclient.ScaleCacheWorkerSet(c.Client, utils.GetParallelOperationWorkersName(releaseName), c.dataMigrate.Namespace, c.dataMigrate.Spec.Parallelism-1)
+		err = kubeclient.ScaleCacheWorkerSet(c.Client, utils.GetParallelOperationWorkersName(releaseName), c.dataMigrate.Namespace, c.dataMigrate.Spec.Parallelism-1, cacheworkerset.AdvancedStatefulSetType)
 		if err != nil {
 			return
 		}

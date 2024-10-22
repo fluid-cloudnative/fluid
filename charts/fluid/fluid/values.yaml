@@ -98,11 +98,11 @@ runtime:
       imageName: alluxioruntime-controller
       imageTag: *defaultVersion
     runtime:
-      imagePrefix: alluxio
+      imagePrefix: registry.cn-beijing.aliyuncs.com/acs
       imageName: alluxio-dev
       imageTag: 2.9.0
     fuse:
-      imagePrefix: alluxio
+      imagePrefix: registry.cn-beijing.aliyuncs.com/acs
       imageName: alluxio-dev
       imageTag: 2.9.0
     mountConfigStorage: configmap
