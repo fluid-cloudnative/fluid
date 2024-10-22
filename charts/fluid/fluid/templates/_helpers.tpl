@@ -93,8 +93,10 @@ Create the name of the service account to use
 {{- end -}}
 
 {{- define "fluid.controlplane.resources" -}}
-{{- if .resources -}}
-{{ toYaml .resources }}
+{{- $ := index . 0 -}}
+{{- $resources := index . 1 -}}
+{{- if $resources -}}
+{{ toYaml $resources }}
 {{- end -}}
 {{- end -}}
 

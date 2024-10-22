@@ -83,5 +83,5 @@ spec:
           name: metrics
           protocol: TCP
         resources:
-          {{- include "fluid.controlplane.resources" .Values.runtime.juicefs | nindent 10 }}
+          {{- include "fluid.controlplane.resources" (list $ .Values.runtime.juicefs.resources) | nindent 10 }}
       terminationGracePeriodSeconds: 10

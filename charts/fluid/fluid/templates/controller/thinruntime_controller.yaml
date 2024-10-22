@@ -24,6 +24,10 @@ spec:
         controller.runtime.fluid.io/replicas: {{ .Values.runtime.thin.replicas | quote }}
       {{- end }}
     spec:
+      {{- with .Values.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       serviceAccountName: thinruntime-controller
       {{ include "fluid.controlplane.affinity" . | nindent 6}}
       {{- if .Values.runtime.thin.tolerations }}
@@ -62,5 +66,5 @@ spec:
             name: metrics
             protocol: TCP
         resources:
-          {{- include "fluid.controlplane.resources" .Values.runtime.thin | nindent 10 }}
+          {{- include "fluid.controlplane.resources" (list $ .Values.runtime.thin.resources) | nindent 10 }}
       terminationGracePeriodSeconds: 10

@@ -76,5 +76,5 @@ spec:
           name: metrics
           protocol: TCP
         resources:
-          {{- include "fluid.controlplane.resources" .Values.dataset | nindent 10 }}
+          {{- include "fluid.controlplane.resources" (list $ .Values.dataset.resources) | nindent 10 }}
       terminationGracePeriodSeconds: 10
