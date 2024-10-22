@@ -135,3 +135,16 @@ func IsFusePod(pod corev1.Pod) bool {
 	}
 	return false
 }
+
+// PathExists returns true if the specified path exists. The code is replicated from "k8s.io/utils/mount.PathExists".
+func MountPathExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	} else if os.IsNotExist(err) {
+		return false, nil
+	} else if mount.IsCorruptedMnt(err) {
+		return true, err
+	}
+	return false, err
+}

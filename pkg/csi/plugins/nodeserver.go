@@ -214,7 +214,7 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 	}
 	defer ns.locks.Release(targetPath)
 
-	exists, err := mount.PathExists(targetPath)
+	exists, err := utils.MountPathExists(targetPath)
 	// Four cases are possible here, CSI plugin should continue to umount target path for the first two cases:
 	// 1. exists=true, err=nil => meaning path exists.
 	// 2. exists=true, err!=nil => meaning path exists with a corrupted mount point on it.
