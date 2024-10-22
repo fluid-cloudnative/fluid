@@ -67,10 +67,6 @@ spec:
           serviceAccountName: {{ printf "%s-loader" $val | quote }}
           {{- end }}
           {{- end }}
-          {{- with .Values.dataloader.imagePullSecrets }}
-          imagePullSecrets:
-            {{- toYaml . | nindent 8 }}
-          {{- end }}
           containers:
             - name: dataloader
               image: {{ required "Dataloader image should be set" .Values.dataloader.image }}
