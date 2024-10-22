@@ -214,12 +214,16 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 	}
 	defer ns.locks.Release(targetPath)
 
-	exists, err := mount.PathExists(targetPath)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "NodeUnpublishVolume: failed to check if path %s exists: %v", targetPath, err)
-	}
-
+	exists, err := utils.MountPathExists(targetPath)
+	// Four cases are possible here, CSI plugin should continue to umount target path for the first two cases:
+	// 1. exists=true, err=nil => meaning path exists.
+	// 2. exists=true, err!=nil => meaning path exists with a corrupted mount point on it.
+	// 3. exists=false, err=nil => meaning path does not exist, return OK.
+	// 4. exists=false, err!=nil => meaning failure to check whether path exists, return ERR.
 	if !exists {
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "NodeUnpublishVolume: failed to check if path %s exists: %v", targetPath, err)
+		}
 		glog.V(0).Infof("NodeUnpublishVolume: succeed because target path %s doesn't exist", targetPath)
 		return &csi.NodeUnpublishVolumeResponse{}, nil
 	}
