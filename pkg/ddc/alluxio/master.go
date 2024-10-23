@@ -39,18 +39,21 @@ func (e *AlluxioEngine) CheckMasterReady() (ready bool, err error) {
 	if err != nil {
 		return
 	}
-	runtime.Spec.ScaleConfig.WorkerType = cacheworkerset.AdvancedStatefulSetType
-	master, err := kubeclient.GetCacheWorkerSet(e.Client, masterName, e.namespace, runtime.Spec.ScaleConfig.WorkerType)
+	e.Log.Info("CheckMasterReady----success get runtime")
+	// runtime.Spec.ScaleConfig.WorkerType = cacheworkerset.AdvancedStatefulSetType
+	master, err := kubeclient.GetCacheWorkerSet(e.Client, masterName, e.namespace, cacheworkerset.AdvancedStatefulSetType)
 	if err != nil {
 		return
 	}
-
+	e.Log.Info("CheckMasterReady-----GetCacheWorkerSet")
 	masterReplicas := runtime.Spec.Master.Replicas
 	if masterReplicas == 0 {
 		masterReplicas = 1
 	}
-	master.WorkerType = runtime.Spec.ScaleConfig.WorkerType
-
+	e.Log.Info("CheckMasterReady-----masterReplicas")
+	// master.WorkerType = runtime.Spec.ScaleConfig.WorkerType
+	master.SetWorkerType(runtime.Spec.ScaleConfig.WorkerType)
+	e.Log.Info("CheckMasterReady-----SetWorkerType")
 	// 2. Update the phase
 	if ready {
 		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
@@ -73,6 +76,8 @@ func (e *AlluxioEngine) CheckMasterReady() (ready bool, err error) {
 				utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
 					cond)
 
+			e.Log.Info("CheckMasterReady-----retry.RetryOnConflict(retry.DefaultBackoff, func() ")
+
 			if runtime.Spec.APIGateway.Enabled {
 				if runtimeToUpdate.Status.APIGatewayStatus == nil {
 					runtimeToUpdate.Status.APIGatewayStatus, err = e.GetAPIGatewayStatus()
@@ -89,7 +94,7 @@ func (e *AlluxioEngine) CheckMasterReady() (ready bool, err error) {
 			if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
 				return e.Client.Status().Update(context.TODO(), runtimeToUpdate)
 			}
-
+			e.Log.Info("CheckMasterReady----- e.Client.Status().Update(context.TODO(), runtimeToUpdate) ")
 			return nil
 		})
 

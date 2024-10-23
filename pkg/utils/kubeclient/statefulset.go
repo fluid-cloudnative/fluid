@@ -23,12 +23,13 @@ import (
 	"strconv"
 
 	"github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset"
+	"github.com/go-logr/zapr"
 	openkruise "github.com/openkruise/kruise/apis/apps/v1beta1"
-	"k8s.io/client-go/util/retry"
-
+	"go.uber.org/zap"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/retry"
 
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -93,6 +94,10 @@ func ScaleCacheWorkerSet(client client.Client, name string, namespace string, re
 	return err
 }
 func GetCacheWorkerSet(c client.Client, name string, namespace string, workerType cacheworkerset.WorkerType) (master *cacheworkerset.CacheWorkerSet, err error) {
+	workerType = cacheworkerset.AdvancedStatefulSetType
+	zapLogger, _ := zap.NewProduction()
+	logger := zapr.NewLogger(zapLogger)
+	logger.Info("ENTER----GetCacheWorkerSet") // 使用传入的 logger 实例
 
 	if workerType == cacheworkerset.StatefulSetType {
 		var Cachemaster *appsv1.StatefulSet
@@ -105,6 +110,7 @@ func GetCacheWorkerSet(c client.Client, name string, namespace string, workerTyp
 		return returnV, err
 	} else if workerType == cacheworkerset.AdvancedStatefulSetType {
 		var Cachemaster *openkruise.StatefulSet
+		logger.Info("ENTER----cacheworkerset.AdvancedStatefulSetType") // 使用传入的 logger 实例
 		Cachemaster, err = GetAdvancedStatefulSet(c, name, namespace)
 		if err != nil {
 			return
@@ -126,16 +132,28 @@ func GetStatefulSet(c client.Client, name string, namespace string) (master *app
 	return master, err
 }
 
-// GetStatefulset gets the statefulset by name and namespace
+// GetAdvancedStatefulSet gets the statefulset by name and namespace
 func GetAdvancedStatefulSet(c client.Client, name string, namespace string) (master *openkruise.StatefulSet, err error) {
 	master = &openkruise.StatefulSet{}
-	//apiClient, err := client.New(c, client.Options{Scheme: scheme})
+	zapLogger, _ := zap.NewProduction()
+	logger := zapr.NewLogger(zapLogger)
+
+	logger.Info("ENTER--+++++++++++++++++++++++--GetAdvancedStatefulSet") // 进入函数时记录日志
+
+	// 调用 c.Get 获取 StatefulSet
 	err = c.Get(context.TODO(), types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
 	}, master)
 
-	return master, err
+	// 检查错误并记录
+	if err != nil {
+		logger.Error(err, "Failed to get Advanced StatefulSet", "namespace", namespace, "name", name)
+		return master, err // 返回 nil 和错误
+	}
+
+	logger.Info("EXIT--+++++++++++++++++++++++--GetAdvancedStatefulSet") // 退出函数时记录日志
+	return master, nil                                                   // 返回获取到的 master 和 nil 错误
 }
 
 // GetPodsForStatefulSet gets pods of the specified statefulset

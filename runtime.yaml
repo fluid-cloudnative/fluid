@@ -3,7 +3,9 @@ kind: AlluxioRuntime
 metadata:
   name: hbase
 spec:
-  replicas: 1
+  replicas: 2
+  scale:
+    workerType: advanced_statefulset
   tieredstore:
     levels:
       - mediumtype: MEM

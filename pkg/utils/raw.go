@@ -19,6 +19,7 @@ package utils
 import (
 	"fmt"
 
+	"github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -43,6 +44,7 @@ var (
 		{batchv1.SchemeGroupVersion, &batchv1.Job{}},
 		{appsv1.SchemeGroupVersion, &appsv1.StatefulSet{}},
 		{corev1.SchemeGroupVersion, &corev1.List{}},
+		{appsv1.SchemeGroupVersion, &cacheworkerset.CacheWorkerSet{}},
 	}
 	injectScheme = runtime.NewScheme()
 )

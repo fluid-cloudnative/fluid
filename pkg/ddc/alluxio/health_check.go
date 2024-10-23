@@ -81,9 +81,13 @@ func (e *AlluxioEngine) CheckRuntimeHealthy() (err error) {
 // checkMasterHealthy checks the master healthy
 func (e *AlluxioEngine) checkMasterHealthy() (err error) {
 	masterName := e.getMasterName()
+	runtime, err := e.getRuntime()
+	if err != nil {
+		return
+	}
 
 	healthy := false
-	master, err := kubeclient.GetStatefulSet(e.Client, masterName, e.namespace)
+	master, err := kubeclient.GetCacheWorkerSet(e.Client, masterName, e.namespace, runtime.Spec.ScaleConfig.WorkerType)
 
 	if err != nil {
 		return err
@@ -96,12 +100,12 @@ func (e *AlluxioEngine) checkMasterHealthy() (err error) {
 		}
 
 		runtimeToUpdate := runtime.DeepCopy()
-		if master.Status.Replicas != master.Status.ReadyReplicas {
+		if *master.GetReplicas() != master.GetReadyReplicas() {
 			if len(runtimeToUpdate.Status.Conditions) == 0 {
 				runtimeToUpdate.Status.Conditions = []data.RuntimeCondition{}
 			}
 			cond := utils.NewRuntimeCondition(data.RuntimeMasterReady, "The master is not ready.",
-				fmt.Sprintf("The master %s in %s is not ready.", master.Name, master.Namespace), corev1.ConditionFalse)
+				fmt.Sprintf("The master %s in %s is not ready.", master.GetName(), master.GetNamespace()), corev1.ConditionFalse)
 			_, oldCond := utils.GetRuntimeCondition(runtimeToUpdate.Status.Conditions, cond.Type)
 
 			if oldCond == nil || oldCond.Type != cond.Type {
@@ -144,10 +148,10 @@ func (e *AlluxioEngine) checkMasterHealthy() (err error) {
 
 	if !healthy {
 		err = fmt.Errorf("the master %s in %s is not ready. The expected number is %d, the actual number is %d",
-			master.Name,
-			master.Namespace,
-			master.Status.Replicas,
-			master.Status.ReadyReplicas)
+			master.GetName(),
+			master.GetNamespace(),
+			master.GetReplicas(),
+			master.GetReadyReplicas())
 	}
 
 	return err

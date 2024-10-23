@@ -27,7 +27,7 @@ github.com/docker/go-units
 ## explicit; go 1.13
 github.com/emicklei/go-restful/v3
 github.com/emicklei/go-restful/v3/log
-# github.com/evanphx/json-patch v4.12.0+incompatible
+# github.com/evanphx/json-patch v5.6.0+incompatible
 ## explicit
 github.com/evanphx/json-patch
 # github.com/evanphx/json-patch/v5 v5.8.0
@@ -204,10 +204,19 @@ github.com/onsi/gomega/matchers/support/goraph/edge
 github.com/onsi/gomega/matchers/support/goraph/node
 github.com/onsi/gomega/matchers/support/goraph/util
 github.com/onsi/gomega/types
-# github.com/openkruise/kruise v1.4.0
-## explicit; go 1.18
+# github.com/openkruise/kruise v1.5.5
+## explicit; go 1.19
 github.com/openkruise/kruise/apis/apps/pub
 github.com/openkruise/kruise/apis/apps/v1beta1
+# github.com/openkruise/kruise-api v1.5.0
+## explicit; go 1.18
+github.com/openkruise/kruise-api
+github.com/openkruise/kruise-api/apps/pub
+github.com/openkruise/kruise-api/apps/v1alpha1
+github.com/openkruise/kruise-api/apps/v1beta1
+github.com/openkruise/kruise-api/policy/v1alpha1
+github.com/openkruise/kruise-api/rollouts/v1alpha1
+github.com/openkruise/kruise-api/utils/scheme
 # github.com/pkg/errors v0.9.1
 ## explicit
 github.com/pkg/errors
@@ -822,6 +831,9 @@ sigs.k8s.io/controller-runtime/pkg/webhook
 sigs.k8s.io/controller-runtime/pkg/webhook/admission
 sigs.k8s.io/controller-runtime/pkg/webhook/conversion
 sigs.k8s.io/controller-runtime/pkg/webhook/internal/metrics
+# sigs.k8s.io/gateway-api v0.4.3
+## explicit; go 1.15
+sigs.k8s.io/gateway-api/apis/v1alpha2
 # sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd
 ## explicit; go 1.18
 sigs.k8s.io/json

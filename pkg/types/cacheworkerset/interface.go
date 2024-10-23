@@ -583,6 +583,9 @@ func (c *CacheWorkerSet) SetManagedFields(managedFields []metav1.ManagedFieldsEn
 	}
 }
 
+func (c *CacheWorkerSet) SetWorkerType(w WorkerType) {
+	c.WorkerType = w
+}
 func (c *CacheWorkerSet) GetObjectKind() schema.ObjectKind {
 	switch c.WorkerType {
 	case StatefulSetType:
@@ -647,6 +650,7 @@ func (c *CacheWorkerSet) ToAdvancedStatefulSet() *openkruise.StatefulSet {
 	return c.Asts
 }
 func GetWorkerAsCacheWorkerSet(c client.Client, name string, namespace string, WorkerType string) (*CacheWorkerSet, error) {
+	WorkerType = string(AdvancedStatefulSetType)
 	if WorkerType == string(StatefulSetType) || WorkerType == "" {
 		Sts, err := GetStatefulSet(c, name, namespace)
 		if err != nil {
