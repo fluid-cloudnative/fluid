@@ -19,13 +19,14 @@ package ctrl
 import (
 	"context"
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset"
 	"reflect"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	appsv1 "k8s.io/api/apps/v1"
+	_ "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/record"
 
@@ -37,13 +38,13 @@ import (
 // CheckMasterHealthy checks the sts healthy with role
 func (e *Helper) CheckMasterHealthy(recorder record.EventRecorder, runtime base.RuntimeInterface,
 	currentStatus datav1alpha1.RuntimeStatus,
-	sts *appsv1.StatefulSet) (err error) {
+	sts *cacheworkerset.CacheWorkerSet) (err error) {
 	var (
 		healthy             bool
 		selector            labels.Selector
 		unavailablePodNames []types.NamespacedName
 	)
-	if sts.Status.Replicas == sts.Status.ReadyReplicas {
+	if *sts.GetReplicas() == sts.GetReadyReplicas() {
 		healthy = true
 	}
 
@@ -67,7 +68,7 @@ func (e *Helper) CheckMasterHealthy(recorder record.EventRecorder, runtime base.
 	} else {
 		// 1. Update the status
 		cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeMasterReady, "The master is not ready.",
-			fmt.Sprintf("The master %s in %s is not ready.", sts.Name, sts.Namespace), corev1.ConditionFalse)
+			fmt.Sprintf("The master %s in %s is not ready.", sts.GetName(), sts.GetNamespace()), corev1.ConditionFalse)
 		_, oldCond := utils.GetRuntimeCondition(statusToUpdate.Conditions, cond.Type)
 
 		if oldCond == nil || oldCond.Type != cond.Type {
@@ -79,22 +80,22 @@ func (e *Helper) CheckMasterHealthy(recorder record.EventRecorder, runtime base.
 
 		// 2. Record the event
 
-		selector, err = metav1.LabelSelectorAsSelector(sts.Spec.Selector)
+		selector, err = metav1.LabelSelectorAsSelector(sts.GetSelector())
 		if err != nil {
-			return fmt.Errorf("error converting StatefulSet %s in namespace %s selector: %v", sts.Name, sts.Namespace, err)
+			return fmt.Errorf("error converting StatefulSet %s in namespace %s selector: %v", sts.GetName(), sts.GetNamespace(), err)
 		}
 
-		unavailablePodNames, err = kubeclient.GetUnavailablePodNamesForStatefulSet(e.client, sts, selector)
+		unavailablePodNames, err = kubeclient.GetUnavailablePodNamesForCacheWorkerSet(e.client, sts, selector)
 		if err != nil {
 			return err
 		}
 
 		// 3. Set event
 		err = fmt.Errorf("the master %s in %s is not ready. The expected number is %d, the actual number is %d, the unhealthy pods are %v",
-			sts.Name,
-			sts.Namespace,
-			sts.Status.Replicas,
-			sts.Status.ReadyReplicas,
+			sts.GetName(),
+			sts.GetNamespace(),
+			sts.GetReplicas(),
+			sts.GetReadyReplicas(),
 			unavailablePodNames)
 
 		recorder.Eventf(runtime, corev1.EventTypeWarning, "MasterUnhealthy", err.Error())

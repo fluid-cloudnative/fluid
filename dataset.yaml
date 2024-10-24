@@ -1,0 +1,8 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: Dataset
+metadata:
+  name: hbase
+spec:
+  mounts:
+    - mountPoint: https://mirrors.ustc.edu.cn/apache/hbase/stable/
+      name: hbase

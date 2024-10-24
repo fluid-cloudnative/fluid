@@ -21,7 +21,10 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
+	cacheworkerset "github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/go-logr/zapr"
+	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
@@ -31,9 +34,21 @@ import (
 // over the status by setting phases and conditions. The function
 // calls for a status update and finally returns error if anything unexpected happens.
 func (e *AlluxioEngine) SetupWorkers() (err error) {
+
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
-			types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
+
+		runtime, err := e.getRuntime()
+		if err != nil {
+			return err
+		}
+		runtimeToUpdate := runtime.DeepCopy()
+
+		zapLogger, _ := zap.NewProduction()
+		logger := zapr.NewLogger(zapLogger)
+		logger.Info("ENTER--SetupWorkers()--ctrl.GetWorkersAsCacheWorkerset") // 使用传入的 logger 实例
+		workers, err := ctrl.GetWorkersAsCacheWorkerset(e.Client,
+			types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()}, runtimeToUpdate.Spec.ScaleConfig.WorkerType)
+		logger.Info("EXIT--SetupWorkers()--ctrl.GetWorkersAsCacheWorkerset") // 使用传入的 logger 实例
 		if err != nil {
 			if fluiderrs.IsDeprecated(err) {
 				e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
@@ -41,11 +56,7 @@ func (e *AlluxioEngine) SetupWorkers() (err error) {
 			}
 			return err
 		}
-		runtime, err := e.getRuntime()
-		if err != nil {
-			return err
-		}
-		runtimeToUpdate := runtime.DeepCopy()
+		workers.WorkerType = cacheworkerset.AdvancedStatefulSetType
 		return e.Helper.SetupWorkers(runtimeToUpdate, runtimeToUpdate.Status, workers)
 	})
 	if err != nil {
@@ -74,8 +85,12 @@ func (e *AlluxioEngine) ShouldSetupWorkers() (should bool, err error) {
 
 // are the workers ready
 func (e *AlluxioEngine) CheckWorkersReady() (ready bool, err error) {
-	workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
-		types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
+	runtime, err := e.getRuntime()
+	if err != nil {
+		return
+	}
+	workers, err := ctrl.GetWorkersAsCacheWorkerset(e.Client,
+		types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()}, runtime.Spec.ScaleConfig.WorkerType)
 	if err != nil {
 		if fluiderrs.IsDeprecated(err) {
 			e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)

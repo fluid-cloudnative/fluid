@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -237,9 +238,16 @@ type AlluxioRuntimeSpec struct {
 	// +optional
 	RuntimeManagement RuntimeManagement `json:"management,omitempty"`
 
+	ScaleConfig AlluxioScaleSpec `json:"scale,omitempty"`
+
 	// ImagePullSecrets that will be used to pull images
 	// +optional
 	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+}
+
+type AlluxioScaleSpec struct {
+	WorkerType   cacheworkerset.WorkerType `json:"workerType,omitempty"`
+	ScaleInSlots []int                     `json:"scaleInSlots,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -259,7 +267,6 @@ type AlluxioRuntimeSpec struct {
 // +kubebuilder:resource:scope=Namespaced
 // +kubebuilder:resource:categories={fluid},shortName=alluxio
 // +genclient
-
 // AlluxioRuntime is the Schema for the alluxioruntimes API
 type AlluxioRuntime struct {
 	metav1.TypeMeta   `json:",inline"`

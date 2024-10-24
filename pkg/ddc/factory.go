@@ -19,14 +19,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/efc"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/goosefs"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindocache"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindofsx"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/thin"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/vineyard"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -39,15 +31,7 @@ var buildFuncMap map[string]buildFunc
 
 func init() {
 	buildFuncMap = map[string]buildFunc{
-		common.AlluxioEngineImpl:    alluxio.Build,
-		common.JindoFSEngineImpl:    jindo.Build,
-		common.JindoFSxEngineImpl:   jindofsx.Build,
-		common.JindoCacheEngineImpl: jindocache.Build,
-		common.GooseFSEngineImpl:    goosefs.Build,
-		common.JuiceFSEngineImpl:    juicefs.Build,
-		common.ThinEngineImpl:       thin.Build,
-		common.EFCEngineImpl:        efc.Build,
-		common.VineyardEngineImpl:   vineyard.Build,
+		common.AlluxioEngineImpl: alluxio.Build,
 	}
 }
 

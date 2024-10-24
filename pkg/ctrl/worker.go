@@ -23,6 +23,11 @@ import (
 
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
@@ -31,13 +36,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // GetWorkersAsStatefulset gets workers as statefulset object. if it returns deprecated errors, it indicates that
@@ -59,6 +59,13 @@ func GetWorkersAsStatefulset(client client.Client, key types.NamespacedName) (wo
 	}
 
 	return
+}
+
+// GetWorkersAsStatefulset gets workers as statefulset object. if it returns deprecated errors, it indicates that
+// not support anymore.
+func GetWorkersAsCacheWorkerset(client client.Client, key types.NamespacedName, workerType cacheworkerset.WorkerType) (workers *cacheworkerset.CacheWorkerSet, err error) {
+	workers, err = cacheworkerset.GetWorkerAsCacheWorkerSet(client, key.Name, key.Namespace, string(workerType))
+	return workers, err
 }
 
 // CheckworkersHealthy checks the sts healthy with role

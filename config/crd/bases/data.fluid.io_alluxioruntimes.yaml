@@ -1251,6 +1251,16 @@ spec:
                 - uid
                 - user
                 type: object
+              scale:
+                properties:
+                  scaleInSlots:
+                    items:
+                      type: integer
+                    type: array
+                  workerType:
+                    description: WorkerType defines the type of worker resource
+                    type: string
+                type: object
               tieredstore:
                 description: Tiered storage used by Alluxio
                 properties:

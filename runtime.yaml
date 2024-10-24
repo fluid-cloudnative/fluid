@@ -1,0 +1,15 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: AlluxioRuntime
+metadata:
+  name: hbase
+spec:
+  replicas: 1
+  scale:
+    workerType: advanced_statefulset
+  tieredstore:
+    levels:
+      - mediumtype: MEM
+        path: /dev/shm
+        quota: 0.05Gi
+        high: "0.95"
+        low: "0.7"

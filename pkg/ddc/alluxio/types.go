@@ -18,6 +18,7 @@ package alluxio
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -77,6 +78,8 @@ type Alluxio struct {
 	RuntimeIdentity common.RuntimeIdentity `json:"runtimeIdentity"`
 
 	Owner *common.OwnerReference `json:"owner,omitempty"`
+
+	ScaleSpec ScaleSpec `json:"scaleSpec,omitempty"`
 }
 
 type HadoopConfig struct {
@@ -258,4 +261,10 @@ func (value *Alluxio) getTiredStoreLevel0Path(name, namespace string) (path stri
 		}
 	}
 	return
+}
+
+type ScaleSpec struct {
+	WorkerType cacheworkerset.WorkerType `json:"workerType,omitempty"`
+
+	ScaleInSlots []int `json:"scaleInSlots,omitempty"`
 }

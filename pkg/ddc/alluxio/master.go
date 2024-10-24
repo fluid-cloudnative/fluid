@@ -38,23 +38,24 @@ func (e *AlluxioEngine) CheckMasterReady() (ready bool, err error) {
 	if err != nil {
 		return
 	}
-
+	e.Log.V(1).Info("Enter --------CheckMasterReady")
 	master, err := kubeclient.GetStatefulSet(e.Client, masterName, e.namespace)
 	if err != nil {
 		return
 	}
-
+	e.Log.V(1).Info("Enter --------runtime.Spec.Master.Replicas")
 	masterReplicas := runtime.Spec.Master.Replicas
 	if masterReplicas == 0 {
 		masterReplicas = 1
 	}
+	e.Log.V(1).Info("Enter --------master.Status.ReadyReplicas")
 	if masterReplicas == master.Status.ReadyReplicas {
 		ready = true
 	} else {
 		e.Log.Info("The master is not ready.", "replicas", masterReplicas,
 			"readyReplicas", master.Status.ReadyReplicas)
 	}
-
+	e.Log.V(1).Info("Enter --------RetryOnConflict")
 	// 2. Update the phase
 	if ready {
 		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
@@ -76,7 +77,7 @@ func (e *AlluxioEngine) CheckMasterReady() (ready bool, err error) {
 			runtimeToUpdate.Status.Conditions =
 				utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
 					cond)
-
+			e.Log.V(1).Info("Enter --------runtime.Spec.APIGateway.Enabled")
 			if runtime.Spec.APIGateway.Enabled {
 				if runtimeToUpdate.Status.APIGatewayStatus == nil {
 					runtimeToUpdate.Status.APIGatewayStatus, err = e.GetAPIGatewayStatus()
@@ -89,7 +90,7 @@ func (e *AlluxioEngine) CheckMasterReady() (ready bool, err error) {
 			} else {
 				e.Log.Info("No need to update APIGateway status")
 			}
-
+			e.Log.V(1).Info("Enter --------reflect.DeepEqual")
 			if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
 				return e.Client.Status().Update(context.TODO(), runtimeToUpdate)
 			}

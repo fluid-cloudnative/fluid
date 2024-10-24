@@ -13,7 +13,7 @@
 {{- $needDomainSocketVolume := and $shortCircuitEnabled (eq .Values.shortCircuit.policy "uuid") }}
 {{- $hostNetwork := .Values.worker.hostNetwork }}
 
-apiVersion: apps/v1
+apiVersion: apps.kruise.io/v1beta1
 kind: StatefulSet
 metadata:
   name: {{ template "alluxio.fullname" . }}-worker

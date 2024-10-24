@@ -22,5 +22,9 @@ import (
 
 // SyncScheduleInfoToCacheNodes syncs schedule info to nodes
 func (e *AlluxioEngine) SyncScheduleInfoToCacheNodes() (err error) {
-	return lifecycle.SyncScheduleInfoToCacheNodes(e.runtimeInfo, e.Client)
+	runtime, err := e.getRuntime()
+	if err != nil {
+		return err
+	}
+	return lifecycle.SyncScheduleInfoToCacheNodes(e.runtimeInfo, e.Client, runtime.Spec.ScaleConfig.WorkerType)
 }

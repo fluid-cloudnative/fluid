@@ -1,0 +1,20 @@
+apiVersion: apps.kruise.io/v1beta1
+kind: StatefulSet
+metadata:
+  name: sample
+spec:
+  replicas: 2
+  ordinals:
+    start: 3
+  serviceName: fake-service
+  selector:
+    matchLabels:
+      app: sample
+  template:
+    metadata:
+      labels:
+        app: sample
+    spec:
+      containers:
+      - name: main
+        image: nginx:alpine

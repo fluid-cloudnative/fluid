@@ -156,9 +156,13 @@ func (e *AlluxioEngine) checkMasterHealthy() (err error) {
 
 // checkWorkersHealthy check workers number changed
 func (e *AlluxioEngine) checkWorkersHealthy() (err error) {
+	runtime, err := e.getRuntime()
+	if err != nil {
+		return
+	}
 	// Check the status of workers
-	workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
-		types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
+	workers, err := ctrl.GetWorkersAsCacheWorkerset(e.Client,
+		types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()}, runtime.Spec.ScaleConfig.WorkerType)
 	if err != nil {
 		if fluiderrs.IsDeprecated(err) {
 			e.Log.Info("Warning: the current runtime is created by runtime controller before v0.7.0, checking worker health state is not supported. To support these features, please create a new dataset", "details", err)
@@ -177,16 +181,16 @@ func (e *AlluxioEngine) checkWorkersHealthy() (err error) {
 		}
 
 		runtimeToUpdate := runtime.DeepCopy()
-		if workers.Status.ReadyReplicas == 0 && *workers.Spec.Replicas > 0 {
+		if workers.GetReadyReplicas() == 0 && *workers.GetReplicas() > 0 {
 			// if workers.Status.NumberReady != workers.Status.DesiredNumberScheduled {
 			if len(runtimeToUpdate.Status.Conditions) == 0 {
 				runtimeToUpdate.Status.Conditions = []data.RuntimeCondition{}
 			}
 			cond := utils.NewRuntimeCondition(data.RuntimeWorkersReady, "The workers are not ready.",
 				fmt.Sprintf("The statefulset %s in %s are not ready, the Unavailable number is %d, please fix it.",
-					workers.Name,
-					workers.Namespace,
-					*workers.Spec.Replicas-workers.Status.ReadyReplicas), corev1.ConditionFalse)
+					workers.GetName(),
+					workers.GetNamespace(),
+					*workers.GetReplicas()-workers.GetReadyReplicas()), corev1.ConditionFalse)
 
 			_, oldCond := utils.GetRuntimeCondition(runtimeToUpdate.Status.Conditions, cond.Type)
 
@@ -217,8 +221,8 @@ func (e *AlluxioEngine) checkWorkersHealthy() (err error) {
 			// runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseReady
 		}
 		// runtimeToUpdate.Status.DesiredWorkerNumberScheduled = int32(workers.Status.DesiredNumberScheduled)
-		runtimeToUpdate.Status.WorkerNumberReady = int32(workers.Status.ReadyReplicas)
-		runtimeToUpdate.Status.WorkerNumberAvailable = int32(workers.Status.CurrentReplicas)
+		runtimeToUpdate.Status.WorkerNumberReady = int32(workers.GetReadyReplicas())
+		runtimeToUpdate.Status.WorkerNumberAvailable = int32(workers.GetCurrentReplicas())
 		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
 			updateErr := e.Client.Status().Update(context.TODO(), runtimeToUpdate)
 			if updateErr != nil {
@@ -236,9 +240,9 @@ func (e *AlluxioEngine) checkWorkersHealthy() (err error) {
 
 	if !healthy {
 		err = fmt.Errorf("the workers %s in %s are not ready, the unhealthy number %d",
-			workers.Name,
-			workers.Namespace,
-			*workers.Spec.Replicas-workers.Status.ReadyReplicas)
+			workers.GetName(),
+			workers.GetNamespace(),
+			*workers.GetReplicas()-workers.GetReadyReplicas())
 	}
 
 	return err

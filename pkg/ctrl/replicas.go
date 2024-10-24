@@ -20,8 +20,8 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	cacheworkerset "github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -31,7 +31,7 @@ import (
 func (e *Helper) SyncReplicas(ctx cruntime.ReconcileRequestContext,
 	runtime base.RuntimeInterface,
 	currentStatus datav1alpha1.RuntimeStatus,
-	workers *appsv1.StatefulSet) (err error) {
+	workers *cacheworkerset.CacheWorkerSet) (err error) {
 
 	var cond datav1alpha1.RuntimeCondition
 

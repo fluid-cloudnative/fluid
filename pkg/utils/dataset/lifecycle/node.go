@@ -19,6 +19,7 @@ package lifecycle
 import (
 	"context"
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset"
 	"strconv"
 	"time"
 
@@ -50,7 +51,7 @@ func init() {
 	rootLog = ctrl.Log.WithName("dataset.lifecycle")
 }
 
-func SyncScheduleInfoToCacheNodes(runtimeInfo base.RuntimeInfoInterface, client client.Client) (err error) {
+func SyncScheduleInfoToCacheNodes(runtimeInfo base.RuntimeInfoInterface, client client.Client, workerType cacheworkerset.WorkerType) (err error) {
 	defer utils.TimeTrack(time.Now(), "SyncScheduleInfoToCacheNodes", "name", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace())
 
 	var (
@@ -58,8 +59,7 @@ func SyncScheduleInfoToCacheNodes(runtimeInfo base.RuntimeInfoInterface, client 
 		previousCacheNodeNames []string
 	)
 
-	workers, err := fluidctrl.GetWorkersAsStatefulset(client,
-		types.NamespacedName{Namespace: runtimeInfo.GetNamespace(), Name: runtimeInfo.GetWorkerStatefulsetName()})
+	workers, err := fluidctrl.GetWorkersAsCacheWorkerset(client, types.NamespacedName{Namespace: runtimeInfo.GetNamespace(), Name: runtimeInfo.GetWorkerStatefulsetName()}, workerType)
 	if err != nil {
 		if fluiderrs.IsDeprecated(err) {
 			rootLog.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
@@ -68,9 +68,9 @@ func SyncScheduleInfoToCacheNodes(runtimeInfo base.RuntimeInfoInterface, client 
 		return err
 	}
 
-	workerSelector, err := metav1.LabelSelectorAsSelector(workers.Spec.Selector)
+	workerSelector, err := metav1.LabelSelectorAsSelector(workers.GetSelector())
 
-	workerPods, err := kubeclient.GetPodsForStatefulSet(client, workers, workerSelector)
+	workerPods, err := kubeclient.GetPodsForCacheWorkerSet(client, workers, workerSelector)
 	if err != nil {
 		return err
 	}
