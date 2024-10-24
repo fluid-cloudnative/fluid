@@ -23,6 +23,8 @@ import (
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	cacheworkerset "github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/go-logr/zapr"
+	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
@@ -40,9 +42,13 @@ func (e *AlluxioEngine) SetupWorkers() (err error) {
 			return err
 		}
 		runtimeToUpdate := runtime.DeepCopy()
+
+		zapLogger, _ := zap.NewProduction()
+		logger := zapr.NewLogger(zapLogger)
+		logger.Info("ENTER--SetupWorkers()--ctrl.GetWorkersAsCacheWorkerset") // 使用传入的 logger 实例
 		workers, err := ctrl.GetWorkersAsCacheWorkerset(e.Client,
 			types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()}, runtimeToUpdate.Spec.ScaleConfig.WorkerType)
-
+		logger.Info("EXIT--SetupWorkers()--ctrl.GetWorkersAsCacheWorkerset") // 使用传入的 logger 实例
 		if err != nil {
 			if fluiderrs.IsDeprecated(err) {
 				e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)

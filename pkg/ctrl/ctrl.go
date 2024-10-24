@@ -66,12 +66,26 @@ func (e *Helper) SetupWorkers(runtime base.RuntimeInterface,
 
 		//workerToUpdate.Spec.Replicas = &desireReplicas
 		workerToUpdate.SetReplicas(&desireReplicas)
-		err = e.client.Update(context.TODO(), workerToUpdate)
-		if err != nil {
-			return err
+		//workerToUpdate要转成具体类型
+		switch workerToUpdate.WorkerType {
+		case cacheworkerset.AdvancedStatefulSetType:
+			workertype := workerToUpdate.ToAdvancedStatefulSet()
+			err = e.client.Update(context.TODO(), workertype)
+			if err != nil {
+				return err
+			}
+			workers = workerToUpdate
+		case cacheworkerset.StatefulSetType:
+			workertype := workerToUpdate.ToStatefulSet()
+			err = e.client.Update(context.TODO(), workertype)
+			if err != nil {
+				return err
+			}
+			workers = workerToUpdate
+		case cacheworkerset.DaemonSetType:
+			//暂时不写
 		}
 
-		workers = workerToUpdate
 	} else {
 		e.log.V(1).Info("Nothing to do for syncing")
 	}

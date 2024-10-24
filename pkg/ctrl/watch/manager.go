@@ -18,7 +18,7 @@ package watch
 
 import (
 	"context"
-	"github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset"
+
 	appsv1 "k8s.io/api/apps/v1"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -74,17 +74,17 @@ func SetupWatcherForReconcilerWithDataset(mgr ctrl.Manager, options controller.O
 		return err
 	}
 
-	cacheworkersetEventHandler := &cacheworkersetEventHandler{}
-	err = c.Watch(source.Kind(mgr.GetCache(), &cacheworkerset.CacheWorkerSet{}),
-		handler.EnqueueRequestForOwner(mgr.GetScheme(), mgr.GetRESTMapper(), r.ManagedResource(), handler.OnlyControllerOwner()),
-		predicate.Funcs{
-			CreateFunc: cacheworkersetEventHandler.onCreateFunc(r),
-			UpdateFunc: cacheworkersetEventHandler.onUpdateFunc(r),
-			DeleteFunc: cacheworkersetEventHandler.onDeleteFunc(r),
-		})
-	if err != nil {
-		return err
-	}
+	// cacheworkersetEventHandler := &cacheworkersetEventHandler{}
+	// err = c.Watch(source.Kind(mgr.GetCache(), &cacheworkerset.CacheWorkerSet{}),
+	// 	handler.EnqueueRequestForOwner(mgr.GetScheme(), mgr.GetRESTMapper(), r.ManagedResource(), handler.OnlyControllerOwner()),
+	// 	predicate.Funcs{
+	// 		CreateFunc: cacheworkersetEventHandler.onCreateFunc(r),
+	// 		UpdateFunc: cacheworkersetEventHandler.onUpdateFunc(r),
+	// 		DeleteFunc: cacheworkersetEventHandler.onDeleteFunc(r),
+	// 	})
+	// if err != nil {
+	// 	return err
+	// }
 
 	daemonsetEventHandler := &daemonsetEventHandler{}
 	err = c.Watch(source.Kind(mgr.GetCache(), &appsv1.DaemonSet{}),
@@ -136,17 +136,17 @@ func SetupWatcherForReconciler(mgr ctrl.Manager, options controller.Options, r C
 		return err
 	}
 
-	cacheworkersetEventHandler := &cacheworkersetEventHandler{}
-	err = c.Watch(source.Kind(mgr.GetCache(), &cacheworkerset.CacheWorkerSet{}),
-		handler.EnqueueRequestForOwner(mgr.GetScheme(), mgr.GetRESTMapper(), r.ManagedResource(), handler.OnlyControllerOwner()),
-		predicate.Funcs{
-			CreateFunc: cacheworkersetEventHandler.onCreateFunc(r),
-			UpdateFunc: cacheworkersetEventHandler.onUpdateFunc(r),
-			DeleteFunc: cacheworkersetEventHandler.onDeleteFunc(r),
-		})
-	if err != nil {
-		return err
-	}
+	// cacheworkersetEventHandler := &cacheworkersetEventHandler{}
+	// err = c.Watch(source.Kind(mgr.GetCache(), &cacheworkerset.CacheWorkerSet{}),
+	// 	handler.EnqueueRequestForOwner(mgr.GetScheme(), mgr.GetRESTMapper(), r.ManagedResource(), handler.OnlyControllerOwner()),
+	// 	predicate.Funcs{
+	// 		CreateFunc: cacheworkersetEventHandler.onCreateFunc(r),
+	// 		UpdateFunc: cacheworkersetEventHandler.onUpdateFunc(r),
+	// 		DeleteFunc: cacheworkersetEventHandler.onDeleteFunc(r),
+	// 	})
+	// if err != nil {
+	// 	return err
+	// }
 
 	daemonsetEventHandler := &daemonsetEventHandler{}
 	err = c.Watch(source.Kind(mgr.GetCache(), &appsv1.DaemonSet{}),

@@ -26,6 +26,7 @@ import (
 	"github.com/go-logr/zapr"
 	openkruise "github.com/openkruise/kruise/apis/apps/v1beta1"
 	"go.uber.org/zap"
+
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -94,6 +95,7 @@ func ScaleCacheWorkerSet(client client.Client, name string, namespace string, re
 }
 func GetCacheWorkerSet(c client.Client, name string, namespace string, workerType cacheworkerset.WorkerType) (master *cacheworkerset.CacheWorkerSet, err error) {
 	workerType = cacheworkerset.AdvancedStatefulSetType
+
 	zapLogger, _ := zap.NewProduction()
 	logger := zapr.NewLogger(zapLogger)
 	logger.Info("ENTER----GetCacheWorkerSet") // 使用传入的 logger 实例

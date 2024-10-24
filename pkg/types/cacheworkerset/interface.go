@@ -6,7 +6,9 @@ import (
 	"reflect"
 
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
+	"github.com/go-logr/zapr"
 	openkruise "github.com/openkruise/kruise/apis/apps/v1beta1"
+	"go.uber.org/zap"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
@@ -672,9 +674,14 @@ func (c *CacheWorkerSet) ToAdvancedStatefulSet() *openkruise.StatefulSet {
 	return c.Asts
 }
 func GetWorkerAsCacheWorkerSet(c client.Client, name string, namespace string, WorkerType string) (*CacheWorkerSet, error) {
+
+	zapLogger, _ := zap.NewProduction()
+	logger := zapr.NewLogger(zapLogger)
+	logger.Info("ENTER--func--GetWorkerAsCacheWorkerSet") // 使用传入的 logger 实例
 	WorkerType = string(AdvancedStatefulSetType)
 	if WorkerType == string(StatefulSetType) || WorkerType == "" {
 		Sts, err := GetStatefulSet(c, name, namespace)
+		logger.Info("ENTER-----GetWorkersAsCacheWorkerset") // 使用传入的 logger 实例
 		if err != nil {
 			return nil, fmt.Errorf("failed to get StatefulSet: %")
 		}
@@ -695,9 +702,11 @@ func GetWorkerAsCacheWorkerSet(c client.Client, name string, namespace string, W
 		}, nil
 	} else if WorkerType == string(AdvancedStatefulSetType) {
 		Asts, err := GetAdvancedStatefulSet(c, name, namespace)
+		logger.Info("ENTER--WorkerType---GetWorkersAsCacheWorkerset---AdvancedStatefulSetType") // 使用传入的 logger 实例
 		if err != nil {
 			return nil, fmt.Errorf("failed to get AdvancedStatefulSet: %w", err)
 		}
+		logger.Info("EXIT--WorkerType---GetWorkersAsCacheWorkerset---AdvancedStatefulSetType") // 使用传入的 logger 实例
 		return &CacheWorkerSet{
 			client:     c,
 			WorkerType: AdvancedStatefulSetType,
@@ -782,6 +791,9 @@ func GetDaemonset(c client.Client, name string, namespace string) (ds *appsv1.Da
 // GetStatefulset gets the statefulset by name and namespace
 func GetAdvancedStatefulSet(c client.Client, name string, namespace string) (master *openkruise.StatefulSet, err error) {
 	master = &openkruise.StatefulSet{}
+	zapLogger, _ := zap.NewProduction()
+	logger := zapr.NewLogger(zapLogger)
+	logger.Info("ENTER--func--GetAdvancedStatefulSet AND use client.Get TO GET ") // 使用传入的 logger 实例
 	//apiClient, err := client.New(c, client.Options{Scheme: scheme})
 	err = c.Get(context.TODO(), types.NamespacedName{
 		Namespace: namespace,
