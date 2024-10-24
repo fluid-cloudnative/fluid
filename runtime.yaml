@@ -3,13 +3,13 @@ kind: AlluxioRuntime
 metadata:
   name: hbase
 spec:
-  replicas: 2
+  replicas: 1
   scale:
     workerType: advanced_statefulset
   tieredstore:
     levels:
       - mediumtype: MEM
-        path: /dev/shm
+        path: /dev/sda
         quota: 2Gi
         high: "0.95"
         low: "0.7"

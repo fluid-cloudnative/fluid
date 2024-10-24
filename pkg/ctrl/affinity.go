@@ -21,14 +21,22 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/go-logr/zapr"
 	openkruise "github.com/openkruise/kruise/apis/apps/v1beta1"
-
+	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func (e *Helper) checkWorkerAffinity(workers *cacheworkerset.CacheWorkerSet) (found bool) {
+	zapLogger, _ := zap.NewProduction()
+	logger := zapr.NewLogger(zapLogger)
 
+	logger.Info("ENTER--+++++++++++++++++++++++--checkWorkerAffinity") // 进入函数时记录日志
+	if workers == nil {
+		logger.Info("checkWorkerAffinity workers is nil")
+	}
+	logger.Info("checkWorkerAffinity workers is not nil") // 进入函数时记录日志
 	if workers.GetAffinity() == nil {
 		return
 	}
@@ -84,7 +92,7 @@ func (e *Helper) BuildCacheWorkersAffinity(workers *cacheworkerset.CacheWorkerSe
 }
 
 func (e *Helper) BuildWorkersAffinityForAsts(workers *openkruise.StatefulSet) (workersToUpdate *openkruise.StatefulSet, err error) {
-
+	workersToUpdate = workers.DeepCopy()
 	if e.checkWorkerAffinityForAts(workersToUpdate) {
 		return
 	}
@@ -201,7 +209,7 @@ func (e *Helper) BuildWorkersAffinityForAsts(workers *openkruise.StatefulSet) (w
 func (e *Helper) BuildWorkersAffinity(workers *cacheworkerset.CacheWorkerSet) (workersToUpdate *cacheworkerset.CacheWorkerSet, err error) {
 	// TODO: for now, runtime affinity can't be set by user, so we can assume the affinity is nil in the first time.
 	// We need to enhance it in future
-
+	workersToUpdate = workers.DeepCopy()
 	if e.checkWorkerAffinity(workersToUpdate) {
 		return
 	}

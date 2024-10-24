@@ -30,8 +30,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	kruiseapi "github.com/openkruise/kruise-api"
-	kruiseappsv1alpha1 "github.com/openkruise/kruise-api/apps/v1alpha1"
+	kruiseappsv1alpha1 "github.com/openkruise/kruise/apis/apps/v1beta1"
 	"github.com/spf13/cobra"
 	zapOpt "go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -84,7 +83,6 @@ func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = datav1alpha1.AddToScheme(scheme)
 	// _ = openkruiseappsv1beta1.AddToScheme(clientgoscheme.Scheme)
-	_ = kruiseapi.AddToScheme(scheme)
 	_ = kruiseappsv1alpha1.AddToScheme(scheme)
 
 	alluxioCmd.Flags().StringVarP(&metricsAddr, "metrics-addr", "", ":8080", "The address the metric endpoint binds to.")

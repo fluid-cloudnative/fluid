@@ -4,5 +4,5 @@ metadata:
   name: hbase
 spec:
   mounts:
-    - mountPoint: https://mirrors.tuna.tsinghua.edu.cn/apache/hbase/stable/
+    - mountPoint: https://mirrors.ustc.edu.cn/apache/hbase/stable/
       name: hbase

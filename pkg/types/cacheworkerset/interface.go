@@ -48,6 +48,26 @@ type CacheWorkerSet struct {
 	DeletionTimestamp *metav1.Time
 }
 
+func (c *CacheWorkerSet) DeepCopy() *CacheWorkerSet {
+	if c == nil {
+		return nil
+	}
+	newCws := &CacheWorkerSet{
+		client:            c.client,
+		WorkerType:        c.WorkerType,
+		DeletionTimestamp: c.DeletionTimestamp.DeepCopy(),
+	}
+	if c.WorkerType == StatefulSetType {
+		newCws.Sts = c.Sts.DeepCopy()
+	}
+	if c.WorkerType == DaemonSetType {
+		newCws.Ds = c.Ds.DeepCopy()
+	}
+	if c.WorkerType == AdvancedStatefulSetType {
+		newCws.Asts = c.Asts.DeepCopy()
+	}
+	return newCws
+}
 func (c *CacheWorkerSet) GetReplicas() *int32 {
 	switch c.WorkerType {
 	case StatefulSetType:
@@ -119,14 +139,16 @@ func (c *CacheWorkerSet) GetNodeSelector() map[string]string {
 	return nil
 }
 func (c *CacheWorkerSet) GetAffinity() *corev1.Affinity {
-	switch c.WorkerType {
-	case StatefulSetType:
-		return c.Sts.Spec.Template.Spec.Affinity
-	case AdvancedStatefulSetType:
-		return c.Asts.Spec.Template.Spec.Affinity
+	// c.WorkerType = AdvancedStatefulSetType
+	// switch c.WorkerType {
+	// case StatefulSetType:
+	// 	return c.Sts.Spec.Template.Spec.Affinity
+	// case AdvancedStatefulSetType:
+	// 	return c.Asts.Spec.Template.Spec.Affinity
 
-	}
-	return nil
+	// }
+	// return nil
+	return c.Asts.Spec.Template.Spec.Affinity
 }
 func (c *CacheWorkerSet) SetAffinity(affinity *corev1.Affinity) {
 	switch c.WorkerType {

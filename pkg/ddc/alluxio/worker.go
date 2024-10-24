@@ -21,6 +21,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
+	cacheworkerset "github.com/fluid-cloudnative/fluid/pkg/types/cacheworkerset"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -31,6 +32,7 @@ import (
 // over the status by setting phases and conditions. The function
 // calls for a status update and finally returns error if anything unexpected happens.
 func (e *AlluxioEngine) SetupWorkers() (err error) {
+
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 
 		runtime, err := e.getRuntime()
@@ -40,6 +42,7 @@ func (e *AlluxioEngine) SetupWorkers() (err error) {
 		runtimeToUpdate := runtime.DeepCopy()
 		workers, err := ctrl.GetWorkersAsCacheWorkerset(e.Client,
 			types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()}, runtimeToUpdate.Spec.ScaleConfig.WorkerType)
+
 		if err != nil {
 			if fluiderrs.IsDeprecated(err) {
 				e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
@@ -47,6 +50,7 @@ func (e *AlluxioEngine) SetupWorkers() (err error) {
 			}
 			return err
 		}
+		workers.WorkerType = cacheworkerset.AdvancedStatefulSetType
 		return e.Helper.SetupWorkers(runtimeToUpdate, runtimeToUpdate.Status, workers)
 	})
 	if err != nil {

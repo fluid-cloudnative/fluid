@@ -29,10 +29,9 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/util/retry"
-
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -125,10 +124,16 @@ func GetCacheWorkerSet(c client.Client, name string, namespace string, workerTyp
 // GetStatefulset gets the statefulset by name and namespace
 func GetStatefulSet(c client.Client, name string, namespace string) (master *appsv1.StatefulSet, err error) {
 	master = &appsv1.StatefulSet{}
+	zapLogger, _ := zap.NewProduction()
+	logger := zapr.NewLogger(zapLogger)
+	logger.Info("ENTER----GetStatefulSet") // 使用传入的 logger 实例
 	err = c.Get(context.TODO(), types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
 	}, master)
+	if err != nil {
+		logger.Info("EXIT----GetStatefulSet", err, "----") // 使用传入的 logger 实例
+	}
 	return master, err
 }
 

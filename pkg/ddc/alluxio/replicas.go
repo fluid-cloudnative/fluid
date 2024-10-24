@@ -95,7 +95,6 @@ func (e *AlluxioEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err 
 		}
 		runtimeToUpdate := runtime.DeepCopy()
 		workers, err := cacheworkerset.GetWorkerAsCacheWorkerSet(e.Client, e.getWorkerName(), e.namespace, string(runtimeToUpdate.Spec.ScaleConfig.WorkerType))
-		workers.WorkerType = runtimeToUpdate.Spec.ScaleConfig.WorkerType
 
 		err = e.Helper.SyncReplicas(ctx, runtimeToUpdate, runtimeToUpdate.Status, workers)
 		return err
