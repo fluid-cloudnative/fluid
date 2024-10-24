@@ -9,7 +9,7 @@ spec:
   tieredstore:
     levels:
       - mediumtype: MEM
-        path: /dev/sda
-        quota: 2Gi
+        path: /dev/shm
+        quota: 0.5Gi
         high: "0.95"
         low: "0.7"
