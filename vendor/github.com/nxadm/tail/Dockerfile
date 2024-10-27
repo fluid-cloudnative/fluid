@@ -1,7 +1,7 @@
 FROM golang
 
 RUN mkdir -p $GOPATH/src/github.com/nxadm/tail/
-ADD . $GOPATH/src/github.com/nxadm/tail/
+COPY . $GOPATH/src/github.com/nxadm/tail/
 
 # expecting to fetch dependencies successfully.
 RUN go get -v github.com/nxadm/tail

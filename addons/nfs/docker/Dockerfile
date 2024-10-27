@@ -17,7 +17,7 @@ RUN apt update && \
     apt clean autoclean && \
     apt autoremove --yes && \
     rm -rf /var/lib/{apt,dpkg,cache,log}/
-ADD ./fluid_config_init.py /
-ADD ./entrypoint.sh /usr/local/bin
+COPY ./fluid_config_init.py /
+COPY ./entrypoint.sh /usr/local/bin
 COPY --from=BUILD /src/fuse/fuse-nfs /bin/fuse-nfs
 CMD ["/usr/local/bin/entrypoint.sh"]

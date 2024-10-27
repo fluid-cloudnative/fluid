@@ -18,8 +18,8 @@ RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/' /etc/apk/repositories 
 ENV OSSFS_VERSION v1.91.1
 COPY --from=builder /usr/bin/ossfs /usr/bin/ossfs
 
-ADD mount_and_umount.py /
-ADD inotify.sh /
-ADD umount.sh /
+COPY mount_and_umount.py /
+COPY inotify.sh /
+COPY umount.sh /
 RUN chmod u+x /inotify.sh /umount.sh
 ENTRYPOINT ["/sbin/tini", "-g", "--"]

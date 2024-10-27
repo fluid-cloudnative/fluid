@@ -23,10 +23,10 @@ RUN curl -o ${HELM_VERSION}-linux-${TARGETARCH}.tar.gz https://get.helm.sh/${HEL
     chmod u+x /usr/local/bin/ddc-helm && \
     rm -f ${HELM_VERSION}-linux-${TARGETARCH}.tar.gz
 
-ADD charts/library /charts/library
-ADD charts/jindofs /charts/jindofs
-ADD charts/jindofsx /charts/jindofsx
-ADD charts/jindocache /charts/jindocache
+COPY charts/library /charts/library
+COPY charts/jindofs /charts/jindofs
+COPY charts/jindofsx /charts/jindofsx
+COPY charts/jindocache /charts/jindocache
 
 COPY --from=builder /go/bin/jindoruntime-controller /usr/local/bin/jindoruntime-controller
 #COPY --from=builder /go/bin/dlv /usr/local/bin/dlv

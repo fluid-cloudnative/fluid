@@ -26,7 +26,7 @@ RUN curl -o ${HELM_VERSION}-linux-${TARGETARCH}.tar.gz https://get.helm.sh/${HEL
     chmod u+x /usr/local/bin/ddc-helm && \
     rm -f ${HELM_VERSION}-linux-${TARGETARCH}.tar.gz
 
-ADD charts/ /charts
+COPY charts/ /charts
 
 COPY --from=builder /go/bin/goosefsruntime-controller /usr/local/bin/goosefsruntime-controller
 COPY --from=builder /go/bin/dlv /usr/local/bin/dlv
