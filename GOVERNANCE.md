@@ -36,7 +36,7 @@ How to become a new Committer:
 * Have submitted a minimum of 5 qualifying pull requests. What’s a qualifying pull request? One that carries significant technical weight and requires little effort to accept because it’s well documented and tested.
 
 Process for Becoming Committers
-1. Nominated by one of the maintainers or TOC members by open a community issue
+1. Nominated by one of the maintainers or TOC members by opening a community issue
 2. Have more than two +1 vote from maintainer or TOC member
 3. Community chair send invitation letters, and add the GitHub user to the “Fluid” team
 
