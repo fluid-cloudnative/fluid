@@ -86,7 +86,7 @@ You can see our documentation at [docs](docs/README.md) for more in-depth instal
 - [English](docs/en/TOC.md)
 - [简体中文](docs/zh/TOC.md)
 
-You can also visit [Fluid Homepage](https://fluid-cloudnative.github.io) to get relevant documents.
+You can also visit [Fluid Homepage](https://fluid-cloudnative.github.io) to get relevant documents.test
 
 ## Quick Demo
 
