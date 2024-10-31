@@ -28,9 +28,9 @@ RUN apk add --update curl tzdata iproute2 bash libc6-compat vim &&  \
 WORKDIR /
 COPY --from=builder /go/bin/fluid-csi /usr/local/bin/fluid-csi
 #COPY --from=builder /go/bin/dlv /usr/local/bin/dlv
-ADD csi/shell/check_mount.sh /usr/local/bin/check_mount.sh
-ADD csi/shell/entrypoint.sh /usr/local/bin/entrypoint.sh
-ADD csi/shell/check_bind_mounts.sh /usr/local/bin/check_bind_mounts.sh
+COPY csi/shell/check_mount.sh /usr/local/bin/check_mount.sh
+COPY csi/shell/entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY csi/shell/check_bind_mounts.sh /usr/local/bin/check_bind_mounts.sh
 RUN chmod u+x /usr/local/bin/fluid-csi && \
     chmod u+x /usr/local/bin/check_mount.sh && \
     chmod u+x /usr/local/bin/entrypoint.sh && \
