@@ -38,8 +38,8 @@ func (e *JindoEngine) queryCacheStatus() (states cacheStates, err error) {
 	strs := strings.Split(summary, "\n")
 	for _, str := range strs {
 		str = strings.TrimSpace(str)
-		if strings.HasPrefix(str, ddctypes.SummaryPrefixTotalDiskCapacity) {
-			totalCacheCapacityJindo, _ := utils.FromHumanSize(strings.TrimPrefix(str, ddctypes.SummaryPrefixTotalDiskCapacity))
+		if strings.HasPrefix(str, ddctypes.SummaryPrefixTotalCapacity) {
+			totalCacheCapacityJindo, _ := utils.FromHumanSize(strings.TrimPrefix(str, ddctypes.SummaryPrefixTotalCapacity))
 			// Convert JindoFS's binary byte units to Fluid's binary byte units
 			// e.g. 10KB -> 10KiB, 2GB -> 2GiB
 			states.cacheCapacity = utils.BytesSize(float64(totalCacheCapacityJindo))
