@@ -23,7 +23,7 @@ const (
 
 	Mount_TYPE = "mount_type"
 
-	SUMMARY_PREFIX_TOTAL_CAPACITY = "Total Disk Capacity: "
+	// SummaryPrefixTotalDiskCapacity = "Total Disk Capacity: "
 
 	SUMMARY_PREFIX_USED_CAPACITY = "Used Disk Capacity: "
 

@@ -33,7 +33,7 @@ const (
 
 	METRICS_PREFIX_BYTES_READ_UFS_THROUGHPUT = "Cluster.BytesReadUfsThroughput "
 
-	SUMMARY_PREFIX_TOTAL_CAPACITY = "Total Capacity: "
+	// SummaryPrefixTotalCapacity = "Total Capacity: "
 
 	SUMMARY_PREFIX_USED_CAPACITY = "Used Capacity: "
 
