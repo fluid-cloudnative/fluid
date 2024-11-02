@@ -35,8 +35,6 @@ const (
 
 	metricsPrefixBytesReadUfsThroughput = "Cluster.BytesReadUfsThroughput "
 
-	// SummaryPrefixTotalCapacity = "Total Capacity: "
-
 	summaryPrefixUsedCapacity = "Used Capacity: "
 
 	metadataSyncNotDoneMsg = "[Calculating]"
