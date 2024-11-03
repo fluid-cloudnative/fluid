@@ -17,8 +17,6 @@ limitations under the License.
 package jindo
 
 const (
-	// SummaryPrefixTotalDiskCapacity = "Total Capacity: "
-
 	SUMMARY_PREFIX_USED_CAPACITY = "Used Capacity: "
 
 	METADATA_SYNC_NOT_DONE_MSG = "[Calculating]"
