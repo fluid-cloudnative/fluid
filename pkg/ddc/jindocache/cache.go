@@ -42,7 +42,7 @@ func (e *JindoCacheEngine) queryCacheStatus() (states cacheStates, err error) {
 		usedCapacityLabel = SUMMARY_PREFIX_USED_MEM_CAPACITY
 	} else {
 		totalCapacityLabel = ddctypes.SummaryPrefixTotalDiskCapacity
-		usedCapacityLabel = SUMMARY_PREFIX_USED_CAPACITY
+		usedCapacityLabel = ddctypes.SummaryPrefixUsedDiskCapacity
 	}
 	strs := strings.Split(summary, "\n")
 	for _, str := range strs {

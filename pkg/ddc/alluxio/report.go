@@ -47,8 +47,8 @@ func (e AlluxioEngine) parseReportSummary(s string) cacheStates {
 			// e.g. 10KB -> 10KiB, 2GB -> 2GiB
 			states.cacheCapacity = utils.BytesSize(float64(totalCacheCapacityAlluxio))
 		}
-		if strings.HasPrefix(str, summaryPrefixUsedCapacity) {
-			usedCacheCapacityAlluxio, _ := utils.FromHumanSize(strings.TrimPrefix(str, summaryPrefixUsedCapacity))
+		if strings.HasPrefix(str, ddctypes.SummaryPrefixUsedCapacity) {
+			usedCacheCapacityAlluxio, _ := utils.FromHumanSize(strings.TrimPrefix(str, ddctypes.SummaryPrefixUsedCapacity))
 			// Convert Alluxio's binary byte units to Fluid's binary byte units
 			// e.g. 10KB -> 10KiB, 2GB -> 2GiB
 			states.cached = utils.BytesSize(float64(usedCacheCapacityAlluxio))

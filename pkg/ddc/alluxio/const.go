@@ -35,8 +35,6 @@ const (
 
 	metricsPrefixBytesReadUfsThroughput = "Cluster.BytesReadUfsThroughput "
 
-	summaryPrefixUsedCapacity = "Used Capacity: "
-
 	metadataSyncNotDoneMsg = "[Calculating]"
 
 	alluxioRuntimeMetricsLabel = "alluxio_runtime_metrics"

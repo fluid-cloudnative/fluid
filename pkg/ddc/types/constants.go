@@ -19,5 +19,9 @@ package types
 const (
 	SummaryPrefixTotalCapacity = "Total Capacity: "
 
+	SummaryPrefixUsedCapacity = "Used Capacity: "
+
 	SummaryPrefixTotalDiskCapacity = "Total Disk Capacity: "
+
+	SummaryPrefixUsedDiskCapacity = "Used Disk Capacity: "
 )
