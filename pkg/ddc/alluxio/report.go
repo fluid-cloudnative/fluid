@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
+	ddctypes "github.com/fluid-cloudnative/fluid/pkg/ddc/types"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
@@ -40,14 +41,14 @@ func (e AlluxioEngine) parseReportSummary(s string) cacheStates {
 	strs := strings.Split(s, "\n")
 	for _, str := range strs {
 		str = strings.TrimSpace(str)
-		if strings.HasPrefix(str, summaryPrefixTotalCapacity) {
-			totalCacheCapacityAlluxio, _ := utils.FromHumanSize(strings.TrimPrefix(str, summaryPrefixTotalCapacity))
+		if strings.HasPrefix(str, ddctypes.SummaryPrefixTotalCapacity) {
+			totalCacheCapacityAlluxio, _ := utils.FromHumanSize(strings.TrimPrefix(str, ddctypes.SummaryPrefixTotalCapacity))
 			// Convert Alluxio's binary byte units to Fluid's binary byte units
 			// e.g. 10KB -> 10KiB, 2GB -> 2GiB
 			states.cacheCapacity = utils.BytesSize(float64(totalCacheCapacityAlluxio))
 		}
-		if strings.HasPrefix(str, summaryPrefixUsedCapacity) {
-			usedCacheCapacityAlluxio, _ := utils.FromHumanSize(strings.TrimPrefix(str, summaryPrefixUsedCapacity))
+		if strings.HasPrefix(str, ddctypes.SummaryPrefixUsedCapacity) {
+			usedCacheCapacityAlluxio, _ := utils.FromHumanSize(strings.TrimPrefix(str, ddctypes.SummaryPrefixUsedCapacity))
 			// Convert Alluxio's binary byte units to Fluid's binary byte units
 			// e.g. 10KB -> 10KiB, 2GB -> 2GiB
 			states.cached = utils.BytesSize(float64(usedCacheCapacityAlluxio))

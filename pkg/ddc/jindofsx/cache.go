@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindofsx/operations"
+	ddctypes "github.com/fluid-cloudnative/fluid/pkg/ddc/types"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
@@ -40,8 +41,8 @@ func (e *JindoFSxEngine) queryCacheStatus() (states cacheStates, err error) {
 		totalCapacityLabel = SUMMARY_PREFIX_TOTAL_MEM_CAPACITY
 		usedCapacityLabel = SUMMARY_PREFIX_USED_MEM_CAPACITY
 	} else {
-		totalCapacityLabel = SUMMARY_PREFIX_TOTAL_CAPACITY
-		usedCapacityLabel = SUMMARY_PREFIX_USED_CAPACITY
+		totalCapacityLabel = ddctypes.SummaryPrefixTotalDiskCapacity
+		usedCapacityLabel = ddctypes.SummaryPrefixUsedDiskCapacity
 	}
 	strs := strings.Split(summary, "\n")
 	for _, str := range strs {

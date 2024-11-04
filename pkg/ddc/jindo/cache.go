@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo/operations"
+	ddctypes "github.com/fluid-cloudnative/fluid/pkg/ddc/types"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
@@ -37,14 +38,14 @@ func (e *JindoEngine) queryCacheStatus() (states cacheStates, err error) {
 	strs := strings.Split(summary, "\n")
 	for _, str := range strs {
 		str = strings.TrimSpace(str)
-		if strings.HasPrefix(str, SUMMARY_PREFIX_TOTAL_CAPACITY) {
-			totalCacheCapacityJindo, _ := utils.FromHumanSize(strings.TrimPrefix(str, SUMMARY_PREFIX_TOTAL_CAPACITY))
+		if strings.HasPrefix(str, ddctypes.SummaryPrefixTotalCapacity) {
+			totalCacheCapacityJindo, _ := utils.FromHumanSize(strings.TrimPrefix(str, ddctypes.SummaryPrefixTotalCapacity))
 			// Convert JindoFS's binary byte units to Fluid's binary byte units
 			// e.g. 10KB -> 10KiB, 2GB -> 2GiB
 			states.cacheCapacity = utils.BytesSize(float64(totalCacheCapacityJindo))
 		}
-		if strings.HasPrefix(str, SUMMARY_PREFIX_USED_CAPACITY) {
-			usedCacheCapacityJindo, _ := utils.FromHumanSize(strings.TrimPrefix(str, SUMMARY_PREFIX_USED_CAPACITY))
+		if strings.HasPrefix(str, ddctypes.SummaryPrefixUsedCapacity) {
+			usedCacheCapacityJindo, _ := utils.FromHumanSize(strings.TrimPrefix(str, ddctypes.SummaryPrefixUsedCapacity))
 			// Convert JindoFS's binary byte units to Fluid's binary byte units
 			// e.g. 10KB -> 10KiB, 2GB -> 2GiB
 			states.cached = utils.BytesSize(float64(usedCacheCapacityJindo))

@@ -33,10 +33,6 @@ const (
 
 	METRICS_PREFIX_BYTES_READ_UFS_THROUGHPUT = "Cluster.BytesReadUfsThroughput "
 
-	SUMMARY_PREFIX_TOTAL_CAPACITY = "Total Capacity: "
-
-	SUMMARY_PREFIX_USED_CAPACITY = "Used Capacity: "
-
 	METADATA_SYNC_NOT_DONE_MSG = "[Calculating]"
 
 	GOOSEFS_RUNTIME_METRICS_LABEL = "goosefs_runtime_metrics"
