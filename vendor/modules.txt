@@ -27,7 +27,7 @@ github.com/docker/go-units
 ## explicit; go 1.13
 github.com/emicklei/go-restful/v3
 github.com/emicklei/go-restful/v3/log
-# github.com/evanphx/json-patch v4.12.0+incompatible
+# github.com/evanphx/json-patch v5.6.0+incompatible
 ## explicit
 github.com/evanphx/json-patch
 # github.com/evanphx/json-patch/v5 v5.8.0
@@ -204,6 +204,10 @@ github.com/onsi/gomega/matchers/support/goraph/edge
 github.com/onsi/gomega/matchers/support/goraph/node
 github.com/onsi/gomega/matchers/support/goraph/util
 github.com/onsi/gomega/types
+# github.com/openkruise/kruise v1.5.5
+## explicit; go 1.19
+github.com/openkruise/kruise/apis/apps/pub
+github.com/openkruise/kruise/apis/apps/v1beta1
 # github.com/pkg/errors v0.9.1
 ## explicit
 github.com/pkg/errors
