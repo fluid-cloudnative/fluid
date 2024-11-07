@@ -36,6 +36,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/utils/mount"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -149,7 +150,12 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		// 1. only mountPod involved csi-plugin
 		// 2. skip check mount ready for mountPod, for the scenario that dataset.spec.mounts is nil
 		// 3. if check mount ready is skipped for mountPod, symlink is forced to use, avoiding that unPublishVolume error occurs
+		// 4. the existence of mountPath should be checked to avoid that target path is linked with a non-existent mountPath
 		useSymlink = true
+		// Wait for mountPath to be created by mountPod
+		if err := checkMountPathExists(ctx, mountPath); err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
 	} else {
 		err = utils.CheckMountReadyAndSubPathExist(fluidPath, mountType, subPath)
 		if err != nil {
@@ -657,4 +663,22 @@ func isLikelyNeedUnmount(mounter mount.Interface, path string) (needUnmount bool
 	}
 
 	return false, nil
+}
+
+func checkMountPathExists(ctx context.Context, mountPath string) error {
+	if err := wait.PollUntilContextTimeout(ctx, 2*time.Second, 30*time.Second, true, func(ctx context.Context) (done bool, err error) {
+		if _, err := os.Stat(mountPath); err != nil {
+			if os.IsNotExist(err) {
+				glog.Warningf("NodePublishVolume: Waiting for mountPath %s to be created by mountPod", mountPath)
+				return false, nil
+			}
+			glog.Errorf("NodePublishVolume: Failed to check mountPath %s exist error %v", mountPath, err)
+			return false, err
+		}
+		glog.Infof("NodePublishVolume: Check mountPath %s to be created by mountPod successfully", mountPath)
+		return true, nil
+	}); err != nil {
+		return status.Error(codes.Internal, errors.Wrapf(err, "Failed to stat mountPath %s", mountPath).Error())
+	}
+	return nil
 }
