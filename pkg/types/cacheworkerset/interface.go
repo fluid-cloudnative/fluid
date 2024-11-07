@@ -683,7 +683,7 @@ func GetWorkerAsCacheWorkerSet(c client.Client, name string, namespace string, W
 		Sts, err := GetStatefulSet(c, name, namespace)
 		logger.Info("ENTER-----GetWorkersAsCacheWorkerset") // 使用传入的 logger 实例
 		if err != nil {
-			return nil, fmt.Errorf("failed to get StatefulSet: %")
+			return nil, fmt.Errorf("failed to get StatefulSet:")
 		}
 		return &CacheWorkerSet{
 			client:     c,
