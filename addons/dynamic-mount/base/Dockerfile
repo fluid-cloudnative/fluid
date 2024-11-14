@@ -1,6 +1,7 @@
 FROM debian:bullseye@sha256:a165446a88794db4fec31e35e9441433f9552ae048fb1ed26df352d2b537cb96 as builder
 
-RUN apt update && apt install -y build-essential libfuse3-dev pkg-config git python3-pip
+RUN apt update && \
+    apt install -y build-essential git libfuse3-dev pkg-config python3-pip
 
 RUN pip install meson ninja
 
@@ -12,7 +13,10 @@ RUN cd libfuse/example && gcc -Wall passthrough.c `pkg-config fuse3 --cflags --l
 
 FROM debian:bullseye-slim@sha256:a165446a88794db4fec31e35e9441433f9552ae048fb1ed26df352d2b537cb96
 
-RUN apt update && apt install -y python3 fuse tini supervisor inotify-tools jq && rm -rf /var/cache/apt/* && ln -s /usr/bin/python3 /usr/local/bin/python
+RUN apt update && \
+    apt install -y fuse inotify-tools jq python3 supervisor tini && \
+    rm -rf /var/cache/apt/* && \
+    ln -s /usr/bin/python3 /usr/local/bin/python
 COPY inotify-fluid-config.ini /tmp/inotify-fluid-config.ini
 RUN cat /tmp/inotify-fluid-config.ini >> /etc/supervisor/supervisord.conf && rm /tmp/inotify-fluid-config.ini
 

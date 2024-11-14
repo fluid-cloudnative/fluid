@@ -13,7 +13,7 @@ RUN make efcruntime-controller-build && \
 
 # alpine:3.18
 FROM alpine@sha256:11e21d7b981a59554b3f822c49f6e9f57b6068bb74f49c4cd5cc4c663c7e5160
-RUN apk add --update curl tzdata iproute2 bash libc6-compat vim &&  \
+RUN apk add --update bash curl iproute2 libc6-compat tzdata vim &&  \
  	rm -rf /var/cache/apk/* && \
  	cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
  	echo "Asia/Shanghai" >  /etc/timezone
