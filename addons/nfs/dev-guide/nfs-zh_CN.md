@@ -73,7 +73,7 @@ sleep inf
 # Build environment
 FROM ubuntu:jammy as BUILD
 RUN apt update && \
-    apt install --yes libfuse-dev libnfs13 libnfs-dev libtool m4 automake libnfs-dev xsltproc make libtool
+    apt install --yes automake libfuse-dev libnfs-dev libnfs-dev libnfs13 libtool libtool m4 make xsltproc
 
 
 COPY ./fuse-nfs-master /src
@@ -85,7 +85,7 @@ RUN ./setup.sh && \
 # Production image
 FROM ubuntu:jammy
 RUN apt update && \
-    apt install --yes libnfs13 libfuse2 fuse python3 bash && \
+    apt install --yes bash fuse libfuse2 libnfs13 python3 && \
     apt clean autoclean && \
     apt autoremove --yes && \
     rm -rf /var/lib/{apt,dpkg,cache,log}/
