@@ -10,7 +10,9 @@ In order to meet users' needs to access data from other general storage systems 
 
 ## Demo
 
-| Storage System| User Guide | 
-|-----------------|:--------------------:|
-| NFS           |       [User Guide](./nfs/readme.md)        |
-| CubeFS 2.4       |       [User Guide](./cubefs/v2.4/readme.md)        |
+| Storage System |                User Guide                | 
+|----------------|:----------------------------------------:|
+| NFS            |      [User Guide](./nfs/readme.md)       |
+| CubeFS 2.4     |  [User Guide](./cubefs/v2.4/readme.md)   |
+| CephFS         |     [User Guide](./cephfs/readme.md)     |
+| GlusterFS      | [User Guide](./glusterfs/readme.md)      |
