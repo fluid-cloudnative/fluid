@@ -17,26 +17,26 @@ limitations under the License.
 package jindo
 
 const (
-	METADATA_SYNC_NOT_DONE_MSG = "[Calculating]"
+	MetadataSyncNotDoneMsg = "[Calculating]"
 
-	CHECK_METADATA_SYNC_DONE_TIMEOUT_MILLISEC = 500
+	CheckMetadataSyncDoneTimeoutMillisec = 500
 
-	HADOOP_CONF_HDFS_SITE_FILENAME = "hdfs-site.xml"
+	HadoopConfHdfsSiteFilename = "hdfs-site.xml"
 
-	HADOOP_CONF_CORE_SITE_FILENAME = "core-site.xml"
+	HadoopConfCoreSiteFilename = "core-site.xml"
 
-	JINDO_MASTERNUM_DEFAULT = 1
-	JINDO_HA_MASTERNUM      = 3
+	JindoMasterNumDefault = 1
+	JindoHAMasterNum      = 3
 
-	defaultMasterRpcPort    = 8101
-	DEFAULT_WORKER_RPC_PORT = 6101
-	DEFAULT_RAFT_RPC_PORT   = 8103
+	DefaultMasterRpcPort = 8101
+	DefaultWorkerRpcPort = 6101
+	DefaultRaftRpcPort   = 8103
 
-	workerPodRole = "jindo-worker"
+	WorkerPodRole = "jindo-worker"
 
-	runtimeFSType = "jindofs"
+	RuntimeFSType = "jindofs"
 
-	jindoFuseMountpath = "/jfs/jindofs-fuse"
+	JindoFuseMountPath = "/jfs/jindofs-fuse"
 
-	DEFAULT_JINDO_RUNTIME_IMAGE = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:3.8.0"
+	DefaultJindoRuntimeImage = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:3.8.0"
 )

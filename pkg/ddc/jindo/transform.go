@@ -171,7 +171,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 	e.transformLogConfig(runtime, value)
 	value.Master.DnsServer = dnsServer
 	value.Master.NameSpace = e.namespace
-	value.Fuse.MountPath = jindoFuseMountpath
+	value.Fuse.MountPath = JindoFuseMountPath
 	return value, err
 }
 
@@ -479,10 +479,10 @@ func (e *JindoEngine) transformNodeSelector(runtime *datav1alpha1.JindoRuntime) 
 }
 
 func (e *JindoEngine) transformReplicasCount(runtime *datav1alpha1.JindoRuntime) int {
-	if runtime.Spec.Master.Replicas == JINDO_HA_MASTERNUM {
-		return JINDO_HA_MASTERNUM
+	if runtime.Spec.Master.Replicas == JindoHAMasterNum {
+		return JindoHAMasterNum
 	}
-	return JINDO_MASTERNUM_DEFAULT
+	return JindoMasterNumDefault
 }
 
 func (e *JindoEngine) transformMasterSelector(runtime *datav1alpha1.JindoRuntime) map[string]string {
@@ -605,15 +605,15 @@ func (e *JindoEngine) allocatePorts(value *Jindo) error {
 	// usehostnetwork to choose port from port allocator
 	expectedPortNum := 2
 	if !value.UseHostNetwork {
-		value.Master.Port.Rpc = defaultMasterRpcPort
-		value.Worker.Port.Rpc = DEFAULT_WORKER_RPC_PORT
-		if value.Master.ReplicaCount == JINDO_HA_MASTERNUM {
-			value.Master.Port.Raft = DEFAULT_RAFT_RPC_PORT
+		value.Master.Port.Rpc = DefaultMasterRpcPort
+		value.Worker.Port.Rpc = DefaultWorkerRpcPort
+		if value.Master.ReplicaCount == JindoHAMasterNum {
+			value.Master.Port.Raft = DefaultRaftRpcPort
 		}
 		return nil
 	}
 
-	if value.Master.ReplicaCount == JINDO_HA_MASTERNUM {
+	if value.Master.ReplicaCount == JindoHAMasterNum {
 		expectedPortNum = 3
 	}
 
@@ -633,7 +633,7 @@ func (e *JindoEngine) allocatePorts(value *Jindo) error {
 	value.Master.Port.Rpc = allocatedPorts[index]
 	index++
 	value.Worker.Port.Rpc = allocatedPorts[index]
-	if value.Master.ReplicaCount == JINDO_HA_MASTERNUM {
+	if value.Master.ReplicaCount == JindoHAMasterNum {
 		index++
 		value.Master.Port.Raft = allocatedPorts[index]
 	}
@@ -658,7 +658,7 @@ func (e *JindoEngine) transformInitPortCheck(value *Jindo) error {
 	var ports []string
 
 	ports = append(ports, strconv.Itoa(value.Master.Port.Rpc))
-	if value.Master.ReplicaCount == JINDO_HA_MASTERNUM {
+	if value.Master.ReplicaCount == JindoHAMasterNum {
 		ports = append(ports, strconv.Itoa(value.Master.Port.Raft))
 	}
 

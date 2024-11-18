@@ -134,8 +134,8 @@ func (e *JindoEngine) cleanAll() (err error) {
 func (e *JindoEngine) cleanConfigMap() (err error) {
 	var (
 		valueConfigmapName  = e.getHelmValuesConfigmapName()
-		configmapName       = e.name + "-" + runtimeFSType + "-config"
-		clientConfigmapName = e.name + "-" + runtimeFSType + "-client-config"
+		configmapName       = e.name + "-" + RuntimeFSType + "-config"
+		clientConfigmapName = e.name + "-" + RuntimeFSType + "-client-config"
 		namespace           = e.namespace
 	)
 

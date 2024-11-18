@@ -52,7 +52,7 @@ func (e *JindoEngine) shouldSyncMetadata() (should bool, err error) {
 		return should, err
 	}
 
-	if dataset.Status.UfsTotal != "" && dataset.Status.UfsTotal != METADATA_SYNC_NOT_DONE_MSG {
+	if dataset.Status.UfsTotal != "" && dataset.Status.UfsTotal != MetadataSyncNotDoneMsg {
 		e.Log.V(1).Info("dataset ufs is ready",
 			"dataset name", dataset.Name,
 			"dataset namespace", dataset.Namespace,
@@ -102,7 +102,7 @@ func (e *JindoEngine) syncMetadataInternal() (err error) {
 				e.Log.Error(result.Err, "Metadata sync failed")
 				return result.Err
 			}
-		case <-time.After(CHECK_METADATA_SYNC_DONE_TIMEOUT_MILLISEC * time.Millisecond):
+		case <-time.After(CheckMetadataSyncDoneTimeoutMillisec * time.Millisecond):
 			e.Log.V(1).Info("Metadata sync still in progress")
 		}
 	} else {
@@ -113,8 +113,8 @@ func (e *JindoEngine) syncMetadataInternal() (err error) {
 				return
 			}
 			datasetToUpdate := dataset.DeepCopy()
-			datasetToUpdate.Status.UfsTotal = METADATA_SYNC_NOT_DONE_MSG
-			datasetToUpdate.Status.FileNum = METADATA_SYNC_NOT_DONE_MSG
+			datasetToUpdate.Status.UfsTotal = MetadataSyncNotDoneMsg
+			datasetToUpdate.Status.FileNum = MetadataSyncNotDoneMsg
 			if !reflect.DeepEqual(dataset, datasetToUpdate) {
 				err = e.Client.Status().Update(context.TODO(), datasetToUpdate)
 				if err != nil {
