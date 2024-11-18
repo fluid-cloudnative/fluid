@@ -212,6 +212,7 @@ runtime:
     #     cpu: 1000m
     #     memory: 512Mi
     enabled: false
+    runtimeWorkers: 3
     controller:
       imagePrefix: *defaultImagePrefix
       imageName: thinruntime-controller
