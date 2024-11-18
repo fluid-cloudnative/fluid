@@ -67,7 +67,7 @@ func (e GooseFSEngine) patchDatasetStatus(dataset *v1alpha1.Dataset, states *cac
 		return
 	}
 	// skip when `dataset.Status.UfsTotal` is "[Calculating]"
-	if dataset.Status.UfsTotal == METADATA_SYNC_NOT_DONE_MSG {
+	if dataset.Status.UfsTotal == MetadataSyncNotDoneMsg {
 		return
 	}
 
@@ -82,7 +82,7 @@ func (e GooseFSEngine) patchDatasetStatus(dataset *v1alpha1.Dataset, states *cac
 func (e *GooseFSEngine) GetCacheHitStates() (cacheHitStates cacheHitStates) {
 	// get cache hit states every 1 minute(CACHE_HIT_QUERY_INTERVAL_MIN * 20s)
 	cacheHitStates.timestamp = time.Now()
-	if e.lastCacheHitStates != nil && cacheHitStates.timestamp.Sub(e.lastCacheHitStates.timestamp).Minutes() < CACHE_HIT_QUERY_INTERVAL_MIN {
+	if e.lastCacheHitStates != nil && cacheHitStates.timestamp.Sub(e.lastCacheHitStates.timestamp).Minutes() < CacheHitQueryIntervalMin {
 		return *e.lastCacheHitStates
 	}
 

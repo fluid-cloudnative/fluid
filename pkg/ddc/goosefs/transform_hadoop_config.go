@@ -50,18 +50,18 @@ func (e *GooseFSEngine) transformHadoopConfig(runtime *datav1alpha1.GooseFSRunti
 	var confFiles []string
 	for k := range hadoopConfigMap.Data {
 		switch k {
-		case HADOOP_CONF_HDFS_SITE_FILENAME:
+		case HadoopConfHdfsSiteFilename:
 			value.HadoopConfig.IncludeHdfsSite = true
-			confFiles = append(confFiles, HADOOP_CONF_MOUNT_PATH+"/"+HADOOP_CONF_HDFS_SITE_FILENAME)
-		case HADOOP_CONF_CORE_SITE_FILENAME:
+			confFiles = append(confFiles, HadoopConfMountPath+"/"+HadoopConfHdfsSiteFilename)
+		case HadoopConfCoreSiteFilename:
 			value.HadoopConfig.IncludeCoreSite = true
-			confFiles = append(confFiles, HADOOP_CONF_MOUNT_PATH+"/"+HADOOP_CONF_CORE_SITE_FILENAME)
+			confFiles = append(confFiles, HadoopConfMountPath+"/"+HadoopConfCoreSiteFilename)
 		}
 	}
 
 	// Neither hdfs-site.xml nor core-site.xml is found in the configMap
 	if !value.HadoopConfig.IncludeCoreSite && !value.HadoopConfig.IncludeHdfsSite {
-		err = fmt.Errorf("neither \"%v\" nor \"%v\" is found in the specified configMap \"%v\" ", HADOOP_CONF_HDFS_SITE_FILENAME, HADOOP_CONF_CORE_SITE_FILENAME, runtime.Spec.HadoopConfig)
+		err = fmt.Errorf("neither \"%v\" nor \"%v\" is found in the specified configMap \"%v\" ", HadoopConfHdfsSiteFilename, HadoopConfCoreSiteFilename, runtime.Spec.HadoopConfig)
 		return err
 	}
 

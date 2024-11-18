@@ -220,7 +220,7 @@ func (e *GooseFSEngine) transformCommonPart(runtime *datav1alpha1.GooseFSRuntime
 	}
 
 	if !runtime.Spec.DisablePrometheus {
-		value.Monitoring = GOOSEFS_RUNTIME_METRICS_LABEL
+		value.Monitoring = GooseFSRuntimeMetricsLabel
 	}
 
 	// transform Tolerations
@@ -359,7 +359,7 @@ func (e *GooseFSEngine) transformWorkers(runtime *datav1alpha1.GooseFSRuntime, v
 
 // 8.allocate port for fluid engine
 func (e *GooseFSEngine) allocatePorts(value *GooseFS) error {
-	expectedPortNum := PORT_NUM
+	expectedPortNum := PortNum
 
 	if e.runtime.Spec.APIGateway.Enabled {
 		expectedPortNum += 1
