@@ -74,32 +74,32 @@ func (e GooseFSEngine) ParseReportMetric(metrics string, cacheHitStates, lastCac
 		str = strings.TrimSpace(str)
 		counterPattern := regexp.MustCompile(`\(Type:\sCOUNTER,\sValue:\s(.*)\)`)
 		gaugePattern := regexp.MustCompile(`\(Type:\sGAUGE,\sValue:\s(.*)/MIN\)`)
-		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_LOCAL) {
+		if strings.HasPrefix(str, MetricsPrefixBytesReadLocal) {
 			cacheHitStates.bytesReadLocal, _ = utils.FromHumanSize(counterPattern.FindStringSubmatch(str)[1])
 			continue
 		}
 
-		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_REMOTE) {
+		if strings.HasPrefix(str, MetricsPrefixBytesReadRemote) {
 			cacheHitStates.bytesReadRemote, _ = utils.FromHumanSize(counterPattern.FindStringSubmatch(str)[1])
 			continue
 		}
 
-		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_UFS_ALL) {
+		if strings.HasPrefix(str, MetricsPrefixBytesReadUfsAll) {
 			cacheHitStates.bytesReadUfsAll, _ = utils.FromHumanSize(counterPattern.FindStringSubmatch(str)[1])
 			continue
 		}
 
-		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_LOCAL_THROUGHPUT) {
+		if strings.HasPrefix(str, MetricsPrefixBytesReadLocalThroughput) {
 			localThroughput, _ = utils.FromHumanSize(gaugePattern.FindStringSubmatch(str)[1])
 			continue
 		}
 
-		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_REMOTE_THROUGHPUT) {
+		if strings.HasPrefix(str, MetricsPrefixBytesReadRemoteThroughput) {
 			remoteThroughput, _ = utils.FromHumanSize(gaugePattern.FindStringSubmatch(str)[1])
 			continue
 		}
 
-		if strings.HasPrefix(str, METRICS_PREFIX_BYTES_READ_UFS_THROUGHPUT) {
+		if strings.HasPrefix(str, MetricsPrefixBytesReadUfsThroughput) {
 			ufsThroughput, _ = utils.FromHumanSize(gaugePattern.FindStringSubmatch(str)[1])
 		}
 	}

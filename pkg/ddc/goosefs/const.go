@@ -21,36 +21,36 @@ const (
 	// goosefsHome string = "/opt/goosefs"
 
 	// goosefsUser string = "fluid"
-	METRICS_PREFIX_BYTES_READ_LOCAL = "Cluster.BytesReadLocal "
+	MetricsPrefixBytesReadLocal = "Cluster.BytesReadLocal "
 
-	METRICS_PREFIX_BYTES_READ_REMOTE = "Cluster.BytesReadRemote "
+	MetricsPrefixBytesReadRemote = "Cluster.BytesReadRemote "
 
-	METRICS_PREFIX_BYTES_READ_UFS_ALL = "Cluster.BytesReadUfsAll "
+	MetricsPrefixBytesReadUfsAll = "Cluster.BytesReadUfsAll "
 
-	METRICS_PREFIX_BYTES_READ_LOCAL_THROUGHPUT = "Cluster.BytesReadLocalThroughput "
+	MetricsPrefixBytesReadLocalThroughput = "Cluster.BytesReadLocalThroughput "
 
-	METRICS_PREFIX_BYTES_READ_REMOTE_THROUGHPUT = "Cluster.BytesReadRemoteThroughput "
+	MetricsPrefixBytesReadRemoteThroughput = "Cluster.BytesReadRemoteThroughput "
 
-	METRICS_PREFIX_BYTES_READ_UFS_THROUGHPUT = "Cluster.BytesReadUfsThroughput "
+	MetricsPrefixBytesReadUfsThroughput = "Cluster.BytesReadUfsThroughput "
 
-	METADATA_SYNC_NOT_DONE_MSG = "[Calculating]"
+	MetadataSyncNotDoneMsg = "[Calculating]"
 
-	GOOSEFS_RUNTIME_METRICS_LABEL = "goosefs_runtime_metrics"
+	GooseFSRuntimeMetricsLabel = "goosefs_runtime_metrics"
 
-	CHECK_METADATA_SYNC_DONE_TIMEOUT_MILLISEC = 500
+	CheckMetadataSyncDoneTimeoutMillisec = 500
 
 	AUTO_SELECT_PORT_MIN = 20000
 	AUTO_SELECT_PORT_MAX = 30000
 
-	PORT_NUM = 9
+	PortNum = 9
 
-	CACHE_HIT_QUERY_INTERVAL_MIN = 1
+	CacheHitQueryIntervalMin = 1
 
-	HADOOP_CONF_HDFS_SITE_FILENAME = "hdfs-site.xml"
+	HadoopConfHdfsSiteFilename = "hdfs-site.xml"
 
-	HADOOP_CONF_CORE_SITE_FILENAME = "core-site.xml"
+	HadoopConfCoreSiteFilename = "core-site.xml"
 
-	HADOOP_CONF_MOUNT_PATH = "/hdfs-config"
+	HadoopConfMountPath = "/hdfs-config"
 
-	WOKRER_POD_ROLE = "goosefs-worker"
+	WokrerPodRole = "goosefs-worker"
 )
