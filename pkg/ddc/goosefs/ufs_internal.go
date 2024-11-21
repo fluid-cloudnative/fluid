@@ -236,7 +236,7 @@ func (e *GooseFSEngine) processUpdatingUFS(ufsToUpdate *utils.UFSToUpdate) (err 
 	}
 	// need to reset ufsTotal to Calculating so that SyncMetadata will work
 	datasetToUpdate := dataset.DeepCopy()
-	datasetToUpdate.Status.UfsTotal = METADATA_SYNC_NOT_DONE_MSG
+	datasetToUpdate.Status.UfsTotal = MetadataSyncNotDoneMsg
 	if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
 		err = e.Client.Status().Update(context.TODO(), datasetToUpdate)
 		if err != nil {
