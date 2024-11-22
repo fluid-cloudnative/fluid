@@ -224,7 +224,7 @@ $ ln -s $GOPATH/src/github.com/fluid-cloudnative/fluid/charts $HOME/charts
 ```
 # Configure environment variable parameters related to AlluxioRuntime
 $ export ALLUXIO_RUNTIME_IMAGE_ENV="alluxio/alluxio-dev:2.9.0"
-$ export ALLUXIO_FUSE_IMAGE_ENV="alluxio/alluxio-dev:2.9.0
+$ export ALLUXIO_FUSE_IMAGE_ENV="alluxio/alluxio-dev:2.9.0"
 $ export DEFAULT_INIT_IMAGE_ENV="fluidcloudnative/init-users:v0.8.0-5bb4677"
 $ export MOUNT_ROOT="/runtime-mnt"
 $ export HOME="$HOME"
