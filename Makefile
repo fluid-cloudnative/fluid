@@ -131,7 +131,9 @@ DOCKER_BUILDX_PUSH += docker-buildx-push-webhook
 DOCKER_BUILDX_PUSH += docker-buildx-push-juicefsruntime-controller
 DOCKER_BUILDX_PUSH += docker-buildx-push-thinruntime-controller
 DOCKER_BUILDX_PUSH += docker-buildx-push-efcruntime-controller
-DOCKER_BUILDX_PUSH += docker-buildx-push-init-users
+DOCKER_BUILDX_PUSH += docker-buildx-push-vineyardruntime-controller
+# Not need to push init-users image by default
+# DOCKER_BUILDX_PUSH += docker-buildx-push-init-users
 DOCKER_BUILDX_PUSH += docker-buildx-push-crd-upgrader
 
 override LDFLAGS += \
