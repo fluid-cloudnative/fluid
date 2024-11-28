@@ -32,6 +32,7 @@ spec:
       role: jindofs-fuse
   template:
     metadata:
+      annotations:
       {{- if .Values.fuse.annotations }}
       {{- range $key, $val := .Values.fuse.annotations }}
         {{ $key | quote }}: {{ $val | quote }}
