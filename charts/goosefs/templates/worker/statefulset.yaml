@@ -25,6 +25,7 @@ spec:
   replicas: {{ .Values.worker.replicaCount }}
   template:
     metadata:
+      annotations:
       {{- if .Values.worker.annotations }}
 {{ toYaml .Values.worker.annotations | trim | indent 8  }}
       {{- end }}
