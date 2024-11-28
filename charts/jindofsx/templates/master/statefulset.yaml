@@ -34,6 +34,7 @@ spec:
   replicas: {{ $masterCount }}
   template:
     metadata:
+      annotations:
       {{- if .Values.master.annotations }}
       {{- range $key, $val := .Values.master.annotations }}
         {{ $key | quote }}: {{ $val | quote }}
