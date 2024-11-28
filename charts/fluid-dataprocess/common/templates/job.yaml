@@ -25,7 +25,6 @@ spec:
     metadata:
       name: {{ printf "%s-process" .Release.Name }}
       annotations:
-        sidecar.istio.io/inject: "false"
         {{- if .Values.dataProcess.annotations }}
         {{ toYaml .Values.dataProcess.annotations | nindent 8 }}
         {{- end }}
@@ -33,6 +32,7 @@ spec:
         release: {{ .Release.Name }}
         role: dataprocess-pod
         app: fluid-dataprocess
+        sidecar.istio.io/inject: "false"
         targetDataset: {{ required "targetDataset should be set" .Values.dataProcess.targetDataset }}
         {{- include "library.fluid.labels" . | nindent 8 }}
         {{- if .Values.dataProcess.labels }}

@@ -43,11 +43,11 @@ spec:
         metadata:
           name: {{ printf "%s-loader" .Release.Name }}
           annotations:
-            sidecar.istio.io/inject: "false"
           labels:
             release: {{ .Release.Name }}
             role: dataload-pod
             app: jindofs
+            sidecar.istio.io/inject: "false"
             cronjob: {{ printf "%s-job" .Release.Name }}
             targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
         spec:

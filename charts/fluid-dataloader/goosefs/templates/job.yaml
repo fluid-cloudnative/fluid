@@ -34,12 +34,11 @@ spec:
   template:
     metadata:
       name: {{ printf "%s-loader" .Release.Name }}
-      annotations:
-        sidecar.istio.io/inject: "false"
       labels:
         release: {{ .Release.Name }}
         role: dataload-pod
         app: goosefs
+        sidecar.istio.io/inject: "false"
         targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
         {{- include "library.fluid.labels" . | nindent 8 }}
     spec:

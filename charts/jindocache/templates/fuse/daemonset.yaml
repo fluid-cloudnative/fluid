@@ -32,8 +32,6 @@ spec:
       role: jindofs-fuse
   template:
     metadata:
-      annotations:
-        sidecar.istio.io/inject: "false"
       {{- if .Values.fuse.annotations }}
       {{- range $key, $val := .Values.fuse.annotations }}
         {{ $key | quote }}: {{ $val | quote }}
@@ -45,6 +43,7 @@ spec:
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: jindofs-fuse
+        sidecar.istio.io/inject: "false"
         {{- if .Values.fuse.labels }}
         {{- range $key, $val := .Values.fuse.labels }}
         {{ $key | quote }}: {{ $val | quote }}
