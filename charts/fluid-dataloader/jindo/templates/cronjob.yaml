@@ -42,7 +42,6 @@ spec:
       template:
         metadata:
           name: {{ printf "%s-loader" .Release.Name }}
-          annotations:
           labels:
             release: {{ .Release.Name }}
             role: dataload-pod
