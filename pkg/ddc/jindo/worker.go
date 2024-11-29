@@ -125,7 +125,7 @@ func (e *JindoEngine) CheckWorkersReady() (ready bool, err error) {
 func (e *JindoEngine) getWorkerSelectors() string {
 	labels := map[string]string{
 		"release":          e.name,
-		common.PodRoleType: workerPodRole,
+		common.PodRoleType: WorkerPodRole,
 		"app":              common.JindoRuntime,
 	}
 	labelSelector := &metav1.LabelSelector{
