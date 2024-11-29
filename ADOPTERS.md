@@ -50,3 +50,4 @@ The companies/organizations are listed in alphabetical order grouped by the phas
 | [Aliyun E-MapReduce](https://help.aliyun.com/en/emr/) | [@frankleaf](https://github.com/frankleaf) | Production | Accelerate Spark Service on BigData |
 | [数慧时空](https://diit.cn/) | [@zery](zerix.os@gmail.com) | Production | DataFabric System Storage Cache Layer  |
 | [同花顺](https://www.10jqka.com.cn/) | [@seriousgong](https://github.com/seriousgong) | Production | AI Platform on k8s |
+| [地平线](https://www.horizon.auto/) | [@chenyangxueHDU](https://github.com/chenyangxueHDU) | Production | AI Platform on k8s |
