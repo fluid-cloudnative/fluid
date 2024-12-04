@@ -53,7 +53,6 @@ spec:
   template:
     metadata:
       annotations:
-        sidecar.istio.io/inject: "false"
       {{- if .Values.master.annotations }}
       {{- range $key, $val := .Values.master.annotations }}
         {{ $key | quote }}: {{ $val | quote }}
@@ -66,6 +65,7 @@ spec:
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: alluxio-master
+        sidecar.istio.io/inject: "false"
         {{- if .Values.master.labels }}
         {{- range $key, $val := .Values.master.labels }}
         {{ $key | quote }}: {{ $val | quote }}
