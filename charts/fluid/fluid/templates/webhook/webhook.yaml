@@ -59,6 +59,8 @@ spec:
           - containerPort: 8080
             name: metrics
             protocol: TCP
+        resources:
+          {{- include "fluid.controlplane.resources" (list $ .Values.webhook.resources) | nindent 10 }}
         volumeMounts:
           - mountPath: /etc/fluid
             name: webhook-plugins
