@@ -24,16 +24,16 @@ spec:
   template:
     metadata:
       annotations:
-        sidecar.istio.io/inject: "false"
-      {{- if .Values.fuse.annotations }}
-{{ toYaml .Values.fuse.annotations | trim | indent 8  }}
-      {{- end }}
+        {{- if .Values.fuse.annotations }}
+        {{ toYaml .Values.fuse.annotations | nindent 8 }}
+        {{- end }}
       labels:
         app: {{ template "goosefs.name" . }}
         chart: {{ template "goosefs.chart" . }}
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: goosefs-fuse
+        sidecar.istio.io/inject: "false"
     spec:
       {{- if .Values.fuse.criticalPod }}
       priorityClassName: system-node-critical
