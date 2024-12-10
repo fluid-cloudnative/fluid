@@ -29,6 +29,7 @@ spec:
 {{ toYaml .Values.fuse.annotations | trim | indent 8  }}
       {{- end }}
       labels:
+        sidecar.istio.io/inject: "false"
         app: {{ template "goosefs.name" . }}
         chart: {{ template "goosefs.chart" . }}
         release: {{ .Release.Name }}
