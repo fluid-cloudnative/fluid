@@ -37,6 +37,7 @@ spec:
 {{ toYaml .Values.master.annotations | trim | indent 8  }}
       {{- end }}
       labels:
+        sidecar.istio.io/inject: "false"
         name: {{ $fullName }}-master
         app: {{ $name }}
         chart: {{ $chart }}
