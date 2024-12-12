@@ -29,14 +29,13 @@ spec:
       role: thin-fuse
   template:
     metadata:
-      annotations:
-        sidecar.istio.io/inject: "false"
       labels:
         app: {{ template "thin.name" . }}
         chart: {{ template "thin.chart" . }}
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: thin-fuse
+        sidecar.istio.io/inject: "false"
     spec:
       {{- if .Values.fuse.imagePullSecrets }}
       imagePullSecrets:

@@ -26,7 +26,6 @@ spec:
   template:
     metadata:
       annotations:
-        sidecar.istio.io/inject: "false"
       {{- if .Values.worker.annotations }}
 {{ toYaml .Values.worker.annotations | trim | indent 8  }}
       {{- end }}
@@ -37,6 +36,7 @@ spec:
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: goosefs-worker
+        sidecar.istio.io/inject: "false"
         fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
         fluid.io/dataset-placement: {{ .Values.placement }}
     spec:
