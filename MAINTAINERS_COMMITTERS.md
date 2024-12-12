@@ -24,3 +24,12 @@ This file lists the maintainers and committers of the Fluid project. More descri
 | [Dongdong Lv](mailto:lvdongdong30@gmail.com) | [ldd91](https://github.com/ldd91) | Unisound |
 | [Shouzhuo Sun](mailto:shawn.sun@alluxio.com) | [ssz1997](https://github.com/ssz1997) | Alluxio |
 | [Hao Ma](mailto:allenhaozi@gmail.com) | [allenhaozi](https://github.com/allenhaozi) | 4Paradigm |
+| [Weixiao Huang](mailto:hwx.simle@gmail.com) | [weixiao-huang](https://github.com/weixiao-huang) | Megvii Technology |
+| [Ni Wang](mailto:anonymous) | [uniqueni](https://github.com/uniqueni) | Beike |
+| [Shunli Feng](mailto:1171313930@qq.com) | [fengshunli](https://github.com/fengshunli) | Individual developer |
+| [Ye Cao](mailto:dashanjic@gmail.com) | [dashanji](https://github.com/dashanji) | Alibaba |
+| [Jun Yang](mailto:anonymous) | [yangjun289519474](https://github.com/yangjun289519474) | Alibaba Cloud |
+| [Zhiqiang Liu](mailto:xlzq1992@gmail.com) | [xliuqq](https://github.com/xliuqq) | Individual developer |
+| [Wenxiao Wang](mailto:724802019@qq.com) | [wang-mask](https://github.com/wang-mask) | Nanjing University |
+| [Xiaozheng Zhang](mailto:xiaozhengzhang@smail.nju.edu.cn) | [zhang-x-z](https://github.com/zhang-x-z) | Nanjing University |
+| [Shiming Wu](mailto:anonymous) | [wushiming540](https://github.com/wushiming540) | Huawei |
