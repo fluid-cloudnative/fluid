@@ -60,6 +60,7 @@ spec:
       {{- end }}
       {{- end }}
       labels:
+        sidecar.istio.io/inject: "false"
         name: {{ $fullName }}-master
         app: {{ $name }}
         chart: {{ $chart }}
