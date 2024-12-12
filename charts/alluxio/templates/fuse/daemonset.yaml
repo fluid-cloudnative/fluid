@@ -53,6 +53,7 @@ spec:
       {{- end }}
       {{- end }}
       labels:
+        sidecar.istio.io/inject: "false"
         app: {{ template "alluxio.name" . }}
         chart: {{ template "alluxio.chart" . }}
         release: {{ .Release.Name }}
