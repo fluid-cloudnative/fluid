@@ -42,6 +42,7 @@ spec:
       {{- end }}
       {{- end }}
       labels:
+        sidecar.istio.io/inject: "false"
         app: {{ template "juicefs.name" . }}
         chart: {{ template "juicefs.chart" . }}
         release: {{ .Release.Name }}
