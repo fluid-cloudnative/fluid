@@ -32,10 +32,9 @@ spec:
   template:
     metadata:
       annotations:
-        sidecar.istio.io/inject: "false"
-      {{- if .Values.master.annotations }}
-{{ toYaml .Values.master.annotations | trim | indent 8  }}
-      {{- end }}
+        {{- if .Values.master.annotations }}
+        {{ toYaml .Values.master.annotations | nindent 8 }}
+        {{- end }}
       labels:
         sidecar.istio.io/inject: "false"
         name: {{ $fullName }}-master
@@ -44,6 +43,7 @@ spec:
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: goosefs-master
+        sidecar.istio.io/inject: "false"
     spec:
       enableServiceLinks: false
       hostNetwork: {{ $hostNetwork }}
