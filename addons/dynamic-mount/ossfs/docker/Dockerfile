@@ -17,7 +17,7 @@ RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/' /etc/apk/repositories
 RUN apk update && \
     apk add bash curl coreutils fuse inotify-tools libgcc libstdc++ libxml2 openssl python3 tini && \
     rm -rf /var/cache/apk/*
-ENV OSSFS_VERSION v1.91.1
+ENV OSSFS_VERSION=v1.91.1
 COPY --from=builder /usr/bin/ossfs /usr/bin/ossfs
 
 COPY mount_and_umount.py /

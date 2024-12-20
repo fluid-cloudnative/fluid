@@ -10,6 +10,6 @@ RUN apk add --update bash curl iproute2 libc6-compat tzdata vim &&  \
  	echo "Asia/Shanghai" >  /etc/timezone
 
 # need kubectl as upgrade-crds.sh uses it.
-ENV K8S_VERSION v1.24.6
+ENV K8S_VERSION=v1.24.6
 ARG TARGETARCH
 RUN curl -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/${TARGETARCH}/kubectl && chmod +x /usr/local/bin/kubectl
