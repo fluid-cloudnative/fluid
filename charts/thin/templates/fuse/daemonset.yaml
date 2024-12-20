@@ -32,6 +32,7 @@ spec:
       annotations:
         sidecar.istio.io/inject: "false"
       labels:
+        sidecar.istio.io/inject: "false"
         app: {{ template "thin.name" . }}
         chart: {{ template "thin.chart" . }}
         release: {{ .Release.Name }}
