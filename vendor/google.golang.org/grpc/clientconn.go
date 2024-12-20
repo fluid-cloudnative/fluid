@@ -775,7 +775,10 @@ func (cc *ClientConn) updateResolverStateAndUnlock(s resolver.State, err error) 
 		}
 	}
 
-	balCfg := cc.sc.lbConfig
+	var balCfg serviceconfig.LoadBalancingConfig
+	if cc.sc != nil && cc.sc.lbConfig != nil {
+		balCfg = cc.sc.lbConfig
+	}
 	bw := cc.balancerWrapper
 	cc.mu.Unlock()
 
@@ -1371,7 +1374,7 @@ func (ac *addrConn) createTransport(ctx context.Context, addr resolver.Address, 
 	defer cancel()
 	copts.ChannelzParent = ac.channelz
 
-	newTr, err := transport.NewHTTP2Client(connectCtx, ac.cc.ctx, addr, copts, onClose)
+	newTr, err := transport.NewClientTransport(connectCtx, ac.cc.ctx, addr, copts, onClose)
 	if err != nil {
 		if logger.V(2) {
 			logger.Infof("Creating new client transport to %q: %v", addr, err)
@@ -1445,7 +1448,7 @@ func (ac *addrConn) startHealthCheck(ctx context.Context) {
 	if !ac.scopts.HealthCheckEnabled {
 		return
 	}
-	healthCheckFunc := internal.HealthCheckFunc
+	healthCheckFunc := ac.cc.dopts.healthCheckFunc
 	if healthCheckFunc == nil {
 		// The health package is not imported to set health check function.
 		//
@@ -1477,7 +1480,7 @@ func (ac *addrConn) startHealthCheck(ctx context.Context) {
 	}
 	// Start the health checking stream.
 	go func() {
-		err := healthCheckFunc(ctx, newStream, setConnectivityState, healthCheckConfig.ServiceName)
+		err := ac.cc.dopts.healthCheckFunc(ctx, newStream, setConnectivityState, healthCheckConfig.ServiceName)
 		if err != nil {
 			if status.Code(err) == codes.Unimplemented {
 				channelz.Error(logger, ac.channelz, "Subchannel health check is unimplemented at server side, thus health check is disabled")

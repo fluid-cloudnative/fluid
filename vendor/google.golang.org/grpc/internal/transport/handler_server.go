@@ -225,7 +225,7 @@ func (ht *serverHandlerTransport) do(fn func()) error {
 	}
 }
 
-func (ht *serverHandlerTransport) writeStatus(s *ServerStream, st *status.Status) error {
+func (ht *serverHandlerTransport) WriteStatus(s *Stream, st *status.Status) error {
 	ht.writeStatusMu.Lock()
 	defer ht.writeStatusMu.Unlock()
 
@@ -289,14 +289,14 @@ func (ht *serverHandlerTransport) writeStatus(s *ServerStream, st *status.Status
 
 // writePendingHeaders sets common and custom headers on the first
 // write call (Write, WriteHeader, or WriteStatus)
-func (ht *serverHandlerTransport) writePendingHeaders(s *ServerStream) {
+func (ht *serverHandlerTransport) writePendingHeaders(s *Stream) {
 	ht.writeCommonHeaders(s)
 	ht.writeCustomHeaders(s)
 }
 
 // writeCommonHeaders sets common headers on the first write
 // call (Write, WriteHeader, or WriteStatus).
-func (ht *serverHandlerTransport) writeCommonHeaders(s *ServerStream) {
+func (ht *serverHandlerTransport) writeCommonHeaders(s *Stream) {
 	h := ht.rw.Header()
 	h["Date"] = nil // suppress Date to make tests happy; TODO: restore
 	h.Set("Content-Type", ht.contentType)
@@ -317,7 +317,7 @@ func (ht *serverHandlerTransport) writeCommonHeaders(s *ServerStream) {
 
 // writeCustomHeaders sets custom headers set on the stream via SetHeader
 // on the first write call (Write, WriteHeader, or WriteStatus)
-func (ht *serverHandlerTransport) writeCustomHeaders(s *ServerStream) {
+func (ht *serverHandlerTransport) writeCustomHeaders(s *Stream) {
 	h := ht.rw.Header()
 
 	s.hdrMu.Lock()
@@ -333,7 +333,7 @@ func (ht *serverHandlerTransport) writeCustomHeaders(s *ServerStream) {
 	s.hdrMu.Unlock()
 }
 
-func (ht *serverHandlerTransport) write(s *ServerStream, hdr []byte, data mem.BufferSlice, _ *WriteOptions) error {
+func (ht *serverHandlerTransport) Write(s *Stream, hdr []byte, data mem.BufferSlice, _ *Options) error {
 	// Always take a reference because otherwise there is no guarantee the data will
 	// be available after this function returns. This is what callers to Write
 	// expect.
@@ -357,7 +357,7 @@ func (ht *serverHandlerTransport) write(s *ServerStream, hdr []byte, data mem.Bu
 	return nil
 }
 
-func (ht *serverHandlerTransport) writeHeader(s *ServerStream, md metadata.MD) error {
+func (ht *serverHandlerTransport) WriteHeader(s *Stream, md metadata.MD) error {
 	if err := s.SetHeader(md); err != nil {
 		return err
 	}
@@ -385,7 +385,7 @@ func (ht *serverHandlerTransport) writeHeader(s *ServerStream, md metadata.MD) e
 	return err
 }
 
-func (ht *serverHandlerTransport) HandleStreams(ctx context.Context, startStream func(*ServerStream)) {
+func (ht *serverHandlerTransport) HandleStreams(ctx context.Context, startStream func(*Stream)) {
 	// With this transport type there will be exactly 1 stream: this HTTP request.
 	var cancel context.CancelFunc
 	if ht.timeoutSet {
@@ -408,18 +408,16 @@ func (ht *serverHandlerTransport) HandleStreams(ctx context.Context, startStream
 
 	ctx = metadata.NewIncomingContext(ctx, ht.headerMD)
 	req := ht.req
-	s := &ServerStream{
-		Stream: &Stream{
-			id:             0, // irrelevant
-			ctx:            ctx,
-			requestRead:    func(int) {},
-			buf:            newRecvBuffer(),
-			method:         req.URL.Path,
-			recvCompress:   req.Header.Get("grpc-encoding"),
-			contentSubtype: ht.contentSubtype,
-		},
+	s := &Stream{
+		id:               0, // irrelevant
+		ctx:              ctx,
+		requestRead:      func(int) {},
 		cancel:           cancel,
+		buf:              newRecvBuffer(),
 		st:               ht,
+		method:           req.URL.Path,
+		recvCompress:     req.Header.Get("grpc-encoding"),
+		contentSubtype:   ht.contentSubtype,
 		headerWireLength: 0, // won't have access to header wire length until golang/go#18997.
 	}
 	s.trReader = &transportReader{
@@ -473,7 +471,9 @@ func (ht *serverHandlerTransport) runStream() {
 	}
 }
 
-func (ht *serverHandlerTransport) incrMsgRecv() {}
+func (ht *serverHandlerTransport) IncrMsgSent() {}
+
+func (ht *serverHandlerTransport) IncrMsgRecv() {}
 
 func (ht *serverHandlerTransport) Drain(string) {
 	panic("Drain() is not implemented")
