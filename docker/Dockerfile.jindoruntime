@@ -1,6 +1,6 @@
 # Build the jindoruntime-controller manager binary
 # golang:1.22.10-bullseye
-FROM golang@sha256:9de71b0e347a257cb44b112aeffd7de8133a731f6edb4bd10183a13eaf45d030 as builder
+FROM golang@sha256:1e3e0cdab013c62de8c3f4fe942138255e6a367b90079220ed6f3853a34329ff as builder
 
 WORKDIR /go/src/github.com/fluid-cloudnative/fluid
 COPY . .
