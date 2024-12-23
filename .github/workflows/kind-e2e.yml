@@ -48,7 +48,7 @@ jobs:
           path: ${{ env.GOPATH }}/src/github.com/fluid-cloudnative/fluid
 
       - name: Create k8s Kind Cluster
-        uses: helm/kind-action@v1.10.0
+        uses: helm/kind-action@v1.11.0
         with:
           node_image: kindest/node:${{ matrix.kubernetes-version }}
           cluster_name: ${{ env.KIND_CLUSTER }}
