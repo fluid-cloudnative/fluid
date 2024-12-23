@@ -2008,6 +2008,20 @@ CleanCachePolicy
 <p>Volumes is the list of Kubernetes volumes that can be mounted by the jindo runtime components and/or fuses.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>imagePullSecrets</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#localobjectreference-v1-core">
+[]Kubernetes core/v1.LocalObjectReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ImagePullSecrets that will be used to pull images</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -2448,6 +2462,20 @@ RuntimeManagement
 <p>RuntimeManagement defines policies when managing the runtime</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>imagePullSecrets</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#localobjectreference-v1-core">
+[]Kubernetes core/v1.LocalObjectReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ImagePullSecrets that will be used to pull images</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -2730,6 +2758,20 @@ string
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+<code>dependOn</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.ObjectRef">
+ObjectRef
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Specifies the dependent preceding operation in a workflow. If not set, use the operation referred to by RunAfter.</p>
+</td>
+</tr>
 <tr>
 <td>
 <code>policy</code></br>
@@ -3513,6 +3555,48 @@ int32
 <p>Optional max retry Attempts when cleanCache function returns an error after execution, runtime attempts
 to run it three more times by default. With Maximum Retry Attempts, you can customize the maximum number
 of retries. This gives you the option to continue processing retries.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.ClientMetrics">ClientMetrics
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.JindoFuseSpec">JindoFuseSpec</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>enabled</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>Enabled decides whether to expose client metrics.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>scrapeTarget</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>ScrapeTarget decides which fuse component will be scraped by Prometheus.
+It is a list separated by comma where supported items are [MountPod, Sidecar, All (indicates MountPod and Sidecar), None].
+Defaults to None when it is not explicitly set.</p>
 </td>
 </tr>
 </tbody>
@@ -6373,6 +6457,19 @@ bool
 <p>VolumeMounts specifies the volumes listed in &ldquo;.spec.volumes&rdquo; to mount into the jindo runtime component&rsquo;s filesystem.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>imagePullSecrets</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#localobjectreference-v1-core">
+[]Kubernetes core/v1.LocalObjectReference
+</a>
+</em>
+</td>
+<td>
+<p>ImagePullSecrets that will be used to pull images</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="data.fluid.io/v1alpha1.JindoFuseSpec">JindoFuseSpec
@@ -6423,6 +6520,19 @@ string
 </td>
 <td>
 <p>One of the three policies: <code>Always</code>, <code>IfNotPresent</code>, <code>Never</code></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>imagePullSecrets</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#localobjectreference-v1-core">
+[]Kubernetes core/v1.LocalObjectReference
+</a>
+</em>
+</td>
+<td>
+<p>ImagePullSecrets that will be used to pull images</p>
 </td>
 </tr>
 <tr>
@@ -6569,6 +6679,20 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td>
+<code>metrics</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.ClientMetrics">
+ClientMetrics
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Define whether fuse metrics will be enabled.</p>
 </td>
 </tr>
 </tbody>
@@ -6804,6 +6928,20 @@ CleanCachePolicy
 <td>
 <em>(Optional)</em>
 <p>Volumes is the list of Kubernetes volumes that can be mounted by the jindo runtime components and/or fuses.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>imagePullSecrets</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#localobjectreference-v1-core">
+[]Kubernetes core/v1.LocalObjectReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ImagePullSecrets that will be used to pull images</p>
 </td>
 </tr>
 </tbody>
@@ -7796,14 +7934,12 @@ not enabled by default.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="data.fluid.io/v1alpha1.OperationRef">OperationRef
+<h3 id="data.fluid.io/v1alpha1.ObjectRef">ObjectRef
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#data.fluid.io/v1alpha1.DataBackupSpec">DataBackupSpec</a>, 
-<a href="#data.fluid.io/v1alpha1.DataLoadSpec">DataLoadSpec</a>, 
-<a href="#data.fluid.io/v1alpha1.DataMigrateSpec">DataMigrateSpec</a>, 
-<a href="#data.fluid.io/v1alpha1.DataProcessSpec">DataProcessSpec</a>)
+<a href="#data.fluid.io/v1alpha1.AffinityStrategy">AffinityStrategy</a>, 
+<a href="#data.fluid.io/v1alpha1.OperationRef">OperationRef</a>)
 </p>
 <p>
 </p>
@@ -7859,6 +7995,42 @@ string
 <td>
 <em>(Optional)</em>
 <p>Namespace specifies the namespace of the referent operation.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.OperationRef">OperationRef
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.DataBackupSpec">DataBackupSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.DataLoadSpec">DataLoadSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.DataMigrateSpec">DataMigrateSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.DataProcessSpec">DataProcessSpec</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>ObjectRef</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.ObjectRef">
+ObjectRef
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>ObjectRef</code> are embedded into this type.)
+</p>
 </td>
 </tr>
 <tr>
@@ -9162,6 +9334,20 @@ string
 </tr>
 <tr>
 <td>
+<code>imagePullSecrets</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#localobjectreference-v1-core">
+[]Kubernetes core/v1.LocalObjectReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ImagePullSecrets that will be used to pull images</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>replicas</code></br>
 <em>
 int32
@@ -9345,6 +9531,20 @@ string
 </td>
 <td>
 <p>One of the three policies: <code>Always</code>, <code>IfNotPresent</code>, <code>Never</code></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>imagePullSecrets</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#localobjectreference-v1-core">
+[]Kubernetes core/v1.LocalObjectReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ImagePullSecrets that will be used to pull images</p>
 </td>
 </tr>
 <tr>
@@ -9563,6 +9763,20 @@ string
 </tr>
 <tr>
 <td>
+<code>imagePullSecrets</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#localobjectreference-v1-core">
+[]Kubernetes core/v1.LocalObjectReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ImagePullSecrets that will be used to pull images</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>worker</code></br>
 <em>
 <a href="#data.fluid.io/v1alpha1.ThinCompTemplateSpec">
@@ -9657,6 +9871,20 @@ string
 </td>
 <td>
 <p>file system of thinRuntime</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>imagePullSecrets</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#localobjectreference-v1-core">
+[]Kubernetes core/v1.LocalObjectReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ImagePullSecrets that will be used to pull images</p>
 </td>
 </tr>
 <tr>
@@ -9853,6 +10081,20 @@ RuntimeManagement
 <td>
 <em>(Optional)</em>
 <p>RuntimeManagement defines policies when managing the runtime</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>imagePullSecrets</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#localobjectreference-v1-core">
+[]Kubernetes core/v1.LocalObjectReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ImagePullSecrets that will be used to pull images</p>
 </td>
 </tr>
 </tbody>
@@ -10627,5 +10869,5 @@ bool
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>e8adb7d8</code>.
+on git commit <code>fc07663</code>.
 </em></p>
