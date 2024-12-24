@@ -66,17 +66,18 @@ spec:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 100
-            labelSelector:
-              matchExpressions:
-              - key: role
-                operator: In
-                values:
-                - jindofs-master
-              - key: release
-                operator: In
-                values:
-                - {{ .Release.Name  | quote }}
-            topologyKey: kubernetes.io/hostname
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: role
+                  operator: In
+                  values:
+                  - jindofs-master
+                - key: release
+                  operator: In
+                  values:
+                  - {{ .Release.Name  | quote }}
+              topologyKey: kubernetes.io/hostname
       nodeSelector:
 {{- if .Values.master.nodeSelector }}
 {{ toYaml .Values.master.nodeSelector | trim | indent 8  }}
