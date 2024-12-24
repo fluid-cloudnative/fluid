@@ -105,7 +105,8 @@ func (a *ScriptGeneratorForApp) getConfigmapName() string {
 func (a *ScriptGeneratorForApp) GetPostStartCommand(mountPaths string, mountTypes string) (handler *corev1.LifecycleHandler) {
 	// Return non-null post start command only when PostStartInjeciton is enabled
 	// https://github.com/kubernetes/kubernetes/issues/25766
-	cmd := []string{"bash", "-c", fmt.Sprintf("time %s %s %s >> /proc/1/fd/1", appScriptPath, mountPaths, mountTypes)}
+	// https://github.com/fluid-cloudnative/fluid/issues/4455
+	cmd := []string{"bash", "-c", fmt.Sprintf("while [ ! -e /proc/1/fd/1 ]; do sleep 1; done; bash -c 'time %s %s %s >> /proc/1/fd/1'", appScriptPath, mountPaths, mountTypes)}
 	handler = &corev1.LifecycleHandler{
 		Exec: &corev1.ExecAction{Command: cmd},
 	}
