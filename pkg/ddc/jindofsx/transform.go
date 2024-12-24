@@ -227,13 +227,6 @@ func (e *JindoFSxEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, met
 	// combine properties together
 	if len(runtime.Spec.Master.Properties) > 0 {
 		for k, v := range runtime.Spec.Master.Properties {
-			// user define master volume eg: pvc to persist metadata, they can use namespace.meta-dir to define, but can't used under 3 master
-			// because master will shared the same path to save data
-			if k == "namespace.meta-dir" && runtime.Spec.Master.Replicas == 3 {
-				err = fmt.Errorf("not support set namespace.meta.dir with %v and replicas = 3", v)
-				e.Log.Error(err, "namespace.meta-dir", v)
-				return
-			}
 			properties[k] = v
 		}
 	}
