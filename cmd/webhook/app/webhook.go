@@ -18,7 +18,8 @@ package app
 
 import (
 	"flag"
-	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins"
+	"os"
+
 	"github.com/spf13/cobra"
 	zapOpt "go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -26,7 +27,6 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -37,10 +37,12 @@ import (
 	"github.com/fluid-cloudnative/fluid"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/controllers"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl/watch"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	fluidwebhook "github.com/fluid-cloudnative/fluid/pkg/webhook"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/handler"
+	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins"
 )
 
 const (
@@ -59,6 +61,9 @@ var (
 	webhookPort   int
 	certDir       string
 	pprofAddr     string
+
+	kubeClientQPS   float32
+	kubeClientBurst int
 )
 
 var webhookCmd = &cobra.Command{
@@ -80,6 +85,9 @@ func init() {
 	webhookCmd.Flags().IntVar(&webhookPort, "webhook-port", 9443, "Admission webhook listen address.")
 	webhookCmd.Flags().StringVar(&certDir, "webhook-cert-dir", "/etc/k8s-webhook-server/certs", "Admission webhook cert/key dir.")
 	webhookCmd.Flags().StringVarP(&pprofAddr, "pprof-addr", "", "", "The address for pprof to use while exporting profiling results")
+	webhookCmd.Flags().Float32VarP(&kubeClientQPS, "kube-api-qps", "", 20, "QPS to use while talking with kubernetes apiserver.")
+	webhookCmd.Flags().IntVarP(&kubeClientBurst, "kube-api-burst", "", 30, "Burst to use while talking with kubernetes apiserver.")
+
 	webhookCmd.Flags().AddGoFlagSet(flag.CommandLine)
 }
 
@@ -104,12 +112,7 @@ func handle() {
 		o.Encoder = zapcore.NewConsoleEncoder(encCfg)
 	}))
 
-	cfg, err := ctrl.GetConfig()
-	if err != nil {
-		setupLog.Error(err, "can not get kube config")
-		os.Exit(1)
-	}
-
+	cfg := controllers.GetConfigOrDieWithQPSAndBurst(kubeClientQPS, kubeClientBurst)
 	utils.NewPprofServer(setupLog, pprofAddr, fullGoProfile)
 
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
@@ -140,14 +143,14 @@ func handle() {
 	}
 
 	// get client from mgr
-	client, err := client.New(cfg, client.Options{})
+	k8sClient, err := client.New(cfg, client.Options{})
 	if err != nil {
 		setupLog.Error(err, "initialize kube client failed")
 		os.Exit(1)
 	}
 
 	// initialize the cert files
-	certBuilder := fluidwebhook.NewCertificateBuilder(client, setupLog)
+	certBuilder := fluidwebhook.NewCertificateBuilder(k8sClient, setupLog)
 	caCert, err := certBuilder.BuildOrSyncCABundle(common.WebhookServiceName, certDir)
 	if err != nil || len(caCert) == 0 {
 		setupLog.Error(err, "initialize webhook CABundle failed")
