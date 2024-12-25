@@ -49,7 +49,8 @@ func NewUnprivilegedPostStartScriptGenerator() *unprivilegedPostStartScriptGener
 }
 
 func (g *unprivilegedPostStartScriptGenerator) GetPostStartCommand() (handler *corev1.LifecycleHandler) {
-	cmd := []string{"bash", "-c", fmt.Sprintf("time %s >> /proc/1/fd/1", g.scriptMountPath)}
+	// https://github.com/fluid-cloudnative/fluid/issues/4455
+	cmd := []string{"bash", "-c", fmt.Sprintf("while [ ! -e /proc/1/fd/1 ]; do sleep 1; done; bash -c 'time %s >> /proc/1/fd/1'", g.scriptMountPath)}
 
 	return &corev1.LifecycleHandler{
 		Exec: &corev1.ExecAction{Command: cmd},

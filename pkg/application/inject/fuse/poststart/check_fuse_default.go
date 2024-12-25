@@ -86,7 +86,8 @@ func NewDefaultPostStartScriptGenerator() *defaultPostStartScriptGenerator {
 
 func (g *defaultPostStartScriptGenerator) GetPostStartCommand(mountPath, mountType, subPath string) (handler *corev1.LifecycleHandler) {
 	// https://github.com/kubernetes/kubernetes/issues/25766
-	cmd := []string{"bash", "-c", fmt.Sprintf("time %s %s %s %s >> /proc/1/fd/1", g.scriptMountPath, mountPath, mountType, subPath)}
+	// https://github.com/fluid-cloudnative/fluid/issues/4455
+	cmd := []string{"bash", "-c", fmt.Sprintf("while [ ! -e /proc/1/fd/1 ]; do sleep 1; done; bash -c 'time %s %s %s %s >> /proc/1/fd/1'", g.scriptMountPath, mountPath, mountType, subPath)}
 
 	return &corev1.LifecycleHandler{
 		Exec: &corev1.ExecAction{Command: cmd},
