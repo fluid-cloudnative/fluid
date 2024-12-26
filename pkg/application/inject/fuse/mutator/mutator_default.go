@@ -21,21 +21,19 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/fluid-cloudnative/fluid/pkg/application/inject/fuse/poststart"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-var fuseDeviceResourceName string
 
 var (
 	// datavolume-, volume-localtime for JindoFS
@@ -49,10 +47,6 @@ var (
 	// fuse devices for Alluxio, JindoFS, GooseFS
 	hostFuseDeviceNames = []string{"alluxio-fuse-device", "jindofs-fuse-device", "goosefs-fuse-device", "thin-fuse-device"}
 )
-
-func init() {
-	fuseDeviceResourceName = utils.GetStringValueFromEnv(common.EnvFuseDeviceResourceName, common.DefaultFuseDeviceResourceName)
-}
 
 // TODO: DefaultMutator will be rewritten with polymorphism withe platform-specific mutation logic
 type DefaultMutator struct {
@@ -382,17 +376,6 @@ func (helper *defaultMutatorHelper) transformTemplateWithUnprivilegedSidecarEnab
 
 	template.FuseContainer.VolumeMounts = utils.TrimVolumeMounts(template.FuseContainer.VolumeMounts, hostFuseDeviceNames)
 	template.VolumesToAdd = utils.TrimVolumes(template.VolumesToAdd, hostFuseDeviceNames)
-
-	// add virtual fuse device resource
-	if template.FuseContainer.Resources.Limits == nil {
-		template.FuseContainer.Resources.Limits = map[corev1.ResourceName]resource.Quantity{}
-	}
-	template.FuseContainer.Resources.Limits[corev1.ResourceName(fuseDeviceResourceName)] = resource.MustParse("1")
-
-	if template.FuseContainer.Resources.Requests == nil {
-		template.FuseContainer.Resources.Requests = map[corev1.ResourceName]resource.Quantity{}
-	}
-	template.FuseContainer.Resources.Requests[corev1.ResourceName(fuseDeviceResourceName)] = resource.MustParse("1")
 
 	// invalidate privileged fuse container
 	if template.FuseContainer.SecurityContext != nil {

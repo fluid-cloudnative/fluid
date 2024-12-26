@@ -22,23 +22,19 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/google/go-cmp/cmp"
-	"k8s.io/apimachinery/pkg/api/resource"
-
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"gopkg.in/yaml.v3"
-	"k8s.io/utils/ptr"
-
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/ptr"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestInjectPod(t *testing.T) {
@@ -3110,17 +3106,9 @@ func TestInjectPodUnprivileged(t *testing.T) {
 											// "jindo",
 											"bash",
 											"-c",
-											"time /check-mount.sh >> /proc/1/fd/1",
+											"time /check-mount.sh /jfs jindo  >> /proc/1/fd/1",
 										},
 									},
-								},
-							},
-							Resources: corev1.ResourceRequirements{
-								Limits: map[corev1.ResourceName]resource.Quantity{
-									corev1.ResourceName(common.DefaultFuseDeviceResourceName): resource.MustParse("1"),
-								},
-								Requests: map[corev1.ResourceName]resource.Quantity{
-									corev1.ResourceName(common.DefaultFuseDeviceResourceName): resource.MustParse("1"),
 								},
 							},
 							Command: []string{"/entrypoint.sh"},
@@ -3134,7 +3122,7 @@ func TestInjectPodUnprivileged(t *testing.T) {
 									MountPath: "/mnt/disk1",
 								},
 								{
-									Name:      "check-mount-unprivileged-0",
+									Name:      "check-mount-0",
 									ReadOnly:  true,
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
@@ -3189,11 +3177,11 @@ func TestInjectPodUnprivileged(t *testing.T) {
 							},
 						},
 						{
-							Name: "check-mount-unprivileged-0",
+							Name: "check-mount-0",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "dataset-jindo-check-mount-unprivileged",
+										Name: "dataset-jindo-check-mount",
 									},
 									DefaultMode: ptr.To(mode),
 								},
@@ -3491,17 +3479,9 @@ func TestInjectPodUnprivileged(t *testing.T) {
 											// "jindo",
 											"bash",
 											"-c",
-											"time /check-mount.sh >> /proc/1/fd/1",
+											"time /check-mount.sh /jfs jindo  >> /proc/1/fd/1",
 										},
 									},
-								},
-							},
-							Resources: corev1.ResourceRequirements{
-								Limits: map[corev1.ResourceName]resource.Quantity{
-									corev1.ResourceName(common.DefaultFuseDeviceResourceName): resource.MustParse("1"),
-								},
-								Requests: map[corev1.ResourceName]resource.Quantity{
-									corev1.ResourceName(common.DefaultFuseDeviceResourceName): resource.MustParse("1"),
 								},
 							},
 							Command: []string{"/entrypoint.sh"},
@@ -3515,7 +3495,7 @@ func TestInjectPodUnprivileged(t *testing.T) {
 									MountPath: "/mnt/disk",
 								},
 								{
-									Name:      "check-mount-unprivileged-1",
+									Name:      "check-mount-1",
 									ReadOnly:  true,
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
@@ -3536,17 +3516,9 @@ func TestInjectPodUnprivileged(t *testing.T) {
 											// "jindo",
 											"bash",
 											"-c",
-											"time /check-mount.sh >> /proc/1/fd/1",
+											"time /check-mount.sh /jfs jindo  >> /proc/1/fd/1",
 										},
 									},
-								},
-							},
-							Resources: corev1.ResourceRequirements{
-								Limits: map[corev1.ResourceName]resource.Quantity{
-									corev1.ResourceName(common.DefaultFuseDeviceResourceName): resource.MustParse("1"),
-								},
-								Requests: map[corev1.ResourceName]resource.Quantity{
-									corev1.ResourceName(common.DefaultFuseDeviceResourceName): resource.MustParse("1"),
 								},
 							},
 							Command: []string{"/entrypoint.sh"},
@@ -3560,7 +3532,7 @@ func TestInjectPodUnprivileged(t *testing.T) {
 									MountPath: "/mnt/disk",
 								},
 								{
-									Name:      "check-mount-unprivileged-0",
+									Name:      "check-mount-0",
 									ReadOnly:  true,
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
@@ -3628,11 +3600,11 @@ func TestInjectPodUnprivileged(t *testing.T) {
 							},
 						},
 						{
-							Name: "check-mount-unprivileged-0",
+							Name: "check-mount-0",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "dataset1-jindo-check-mount-unprivileged",
+										Name: "dataset1-jindo-check-mount",
 									},
 									DefaultMode: ptr.To(mode),
 								},
@@ -3648,11 +3620,11 @@ func TestInjectPodUnprivileged(t *testing.T) {
 							},
 						},
 						{
-							Name: "check-mount-unprivileged-1",
+							Name: "check-mount-1",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "dataset2-jindo-check-mount-unprivileged",
+										Name: "dataset2-jindo-check-mount",
 									},
 									DefaultMode: ptr.To(mode),
 								},
@@ -3952,17 +3924,9 @@ func TestInjectPodUnprivileged(t *testing.T) {
 											// "jindo",
 											"bash",
 											"-c",
-											"time /check-mount.sh >> /proc/1/fd/1",
+											"time /check-mount.sh /jfs jindo  >> /proc/1/fd/1",
 										},
 									},
-								},
-							},
-							Resources: corev1.ResourceRequirements{
-								Limits: map[corev1.ResourceName]resource.Quantity{
-									corev1.ResourceName(common.DefaultFuseDeviceResourceName): resource.MustParse("1"),
-								},
-								Requests: map[corev1.ResourceName]resource.Quantity{
-									corev1.ResourceName(common.DefaultFuseDeviceResourceName): resource.MustParse("1"),
 								},
 							},
 							Command: []string{"/entrypoint.sh"},
@@ -3976,7 +3940,7 @@ func TestInjectPodUnprivileged(t *testing.T) {
 									MountPath: "/mnt/disk",
 								},
 								{
-									Name:      "check-mount-unprivileged-1",
+									Name:      "check-mount-1",
 									ReadOnly:  true,
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
@@ -3997,17 +3961,9 @@ func TestInjectPodUnprivileged(t *testing.T) {
 											// "jindo",
 											"bash",
 											"-c",
-											"time /check-mount.sh >> /proc/1/fd/1",
+											"time /check-mount.sh /jfs jindo  >> /proc/1/fd/1",
 										},
 									},
-								},
-							},
-							Resources: corev1.ResourceRequirements{
-								Limits: map[corev1.ResourceName]resource.Quantity{
-									corev1.ResourceName(common.DefaultFuseDeviceResourceName): resource.MustParse("1"),
-								},
-								Requests: map[corev1.ResourceName]resource.Quantity{
-									corev1.ResourceName(common.DefaultFuseDeviceResourceName): resource.MustParse("1"),
 								},
 							},
 							Command: []string{"/entrypoint.sh"},
@@ -4021,7 +3977,7 @@ func TestInjectPodUnprivileged(t *testing.T) {
 									MountPath: "/mnt/disk",
 								},
 								{
-									Name:      "check-mount-unprivileged-0",
+									Name:      "check-mount-0",
 									ReadOnly:  true,
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
@@ -4096,11 +4052,11 @@ func TestInjectPodUnprivileged(t *testing.T) {
 							},
 						},
 						{
-							Name: "check-mount-unprivileged-0",
+							Name: "check-mount-0",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "dataset-a-jindo-check-mount-unprivileged",
+										Name: "dataset-a-jindo-check-mount",
 									},
 									DefaultMode: ptr.To(mode),
 								},
@@ -4116,11 +4072,11 @@ func TestInjectPodUnprivileged(t *testing.T) {
 							},
 						},
 						{
-							Name: "check-mount-unprivileged-1",
+							Name: "check-mount-1",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "dataset-b-jindo-check-mount-unprivileged",
+										Name: "dataset-b-jindo-check-mount",
 									},
 									DefaultMode: ptr.To(mode),
 								},
@@ -6114,14 +6070,6 @@ func TestInjectPodWithEnabledFUSEMetrics(t *testing.T) {
 							Args: []string{
 								"-oroot_ns=jindo", "-okernel_cache", "-oattr_timeout=9000", "-oentry_timeout=9000", "-ometrics_port=15000",
 							},
-							Resources: corev1.ResourceRequirements{
-								Limits: map[corev1.ResourceName]resource.Quantity{
-									corev1.ResourceName(common.DefaultFuseDeviceResourceName): resource.MustParse("1"),
-								},
-								Requests: map[corev1.ResourceName]resource.Quantity{
-									corev1.ResourceName(common.DefaultFuseDeviceResourceName): resource.MustParse("1"),
-								},
-							},
 							Lifecycle: &corev1.Lifecycle{
 								PostStart: &corev1.LifecycleHandler{
 									Exec: &corev1.ExecAction{
@@ -6131,7 +6079,7 @@ func TestInjectPodWithEnabledFUSEMetrics(t *testing.T) {
 											// "jindo",
 											"bash",
 											"-c",
-											"time /check-mount.sh >> /proc/1/fd/1",
+											"time /check-mount.sh /jfs jindo  >> /proc/1/fd/1",
 										},
 									},
 								},
@@ -6151,7 +6099,7 @@ func TestInjectPodWithEnabledFUSEMetrics(t *testing.T) {
 									Name:      "fuse-device-0",
 									MountPath: "/dev/fuse",
 								}, {
-									Name:      "check-mount-unprivileged-0",
+									Name:      "check-mount-0",
 									ReadOnly:  true,
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
@@ -6213,11 +6161,11 @@ func TestInjectPodWithEnabledFUSEMetrics(t *testing.T) {
 								},
 							},
 						}, {
-							Name: "check-mount-unprivileged-0",
+							Name: "check-mount-0",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "duplicate3-jindo-check-mount-unprivileged",
+										Name: "duplicate3-jindo-check-mount",
 									},
 									DefaultMode: ptr.To(mode),
 								},

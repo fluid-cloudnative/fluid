@@ -138,7 +138,7 @@ func (mutator *unprivilegedMutatorHelper) prepareFuseContainerPostStartScript() 
 	}
 
 	// Fluid assumes pvc name is the same with runtime's name
-	gen := poststart.NewUnprivilegedPostStartScriptGenerator()
+	gen := poststart.NewDefaultPostStartScriptGenerator()
 	cmKey := gen.GetConfigMapKeyByOwner(types.NamespacedName{Namespace: datasetNamespace, Name: datasetName}, template.FuseMountInfo.FsType)
 	cm := gen.BuildConfigMap(ownerReference, cmKey)
 
@@ -161,7 +161,7 @@ func (mutator *unprivilegedMutatorHelper) prepareFuseContainerPostStartScript() 
 	if template.FuseContainer.Lifecycle == nil {
 		template.FuseContainer.Lifecycle = &corev1.Lifecycle{}
 	}
-	template.FuseContainer.Lifecycle.PostStart = gen.GetPostStartCommand()
+	template.FuseContainer.Lifecycle.PostStart = gen.GetPostStartCommand(template.FuseMountInfo.ContainerMountPath, template.FuseMountInfo.FsType, template.FuseMountInfo.SubPath)
 	template.VolumesToAdd = append(template.VolumesToAdd, gen.GetVolume(cmKey))
 
 	return nil
