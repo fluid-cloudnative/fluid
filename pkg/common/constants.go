@@ -167,11 +167,6 @@ const (
 )
 
 const (
-	EnvFuseDeviceResourceName     string = "VFUSE_RESOURCE_NAME"
-	DefaultFuseDeviceResourceName string = "fluid.io/fuse"
-)
-
-const (
 	DefaultImagePullPolicy = "IfNotPresent"
 	MyPodNamespace         = "MY_POD_NAMESPACE"
 	True                   = "true"
