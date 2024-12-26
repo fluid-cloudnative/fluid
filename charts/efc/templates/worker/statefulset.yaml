@@ -39,6 +39,7 @@ spec:
       {{- end }}
       {{- end }}
       labels:
+        sidecar.istio.io/inject: "false"
         app: {{ template "efc.name" . }}
         chart: {{ template "efc.chart" . }}
         release: {{ .Release.Name }}
