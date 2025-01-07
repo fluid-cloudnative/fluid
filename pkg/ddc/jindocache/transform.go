@@ -153,6 +153,9 @@ func (e *JindoCacheEngine) transform(runtime *datav1alpha1.JindoRuntime) (value 
 			Name:      e.name,
 		},
 	}
+
+	value.OwnerDatasetId = utils.GetDatasetId(e.namespace, e.name, e.runtimeInfo.GetOwnerDatasetUID())
+
 	e.transformNetworkMode(runtime, value)
 	err = e.transformHadoopConfig(runtime, value)
 	if err != nil {
@@ -904,7 +907,7 @@ func (e *JindoCacheEngine) transformFuseNodeSelector(runtime *datav1alpha1.Jindo
 	}
 
 	// The label will be added by CSI Plugin when any workload pod is scheduled on the node.
-	value.Fuse.NodeSelector[e.getFuseLabelname()] = "true"
+	value.Fuse.NodeSelector[utils.GetFuseLabelName(runtime.Namespace, runtime.Name, e.runtimeInfo.GetOwnerDatasetUID())] = "true"
 }
 
 func (e *JindoCacheEngine) transformNodeSelector(runtime *datav1alpha1.JindoRuntime) map[string]string {

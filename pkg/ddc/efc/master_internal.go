@@ -96,7 +96,9 @@ func (e *EFCEngine) generateEFCValueFile(runtime *datav1alpha1.EFCRuntime) (valu
 	}
 
 	//3. Save the configfile into configmap
-	err = kubeclient.CreateConfigMap(e.Client, e.getHelmValuesConfigMapName(), e.namespace, "data", data)
+	runtimeInfo := e.runtimeInfo
+	ownerDatasetId := utils.GetDatasetId(runtimeInfo.GetNamespace(), runtimeInfo.GetName(), runtimeInfo.GetOwnerDatasetUID())
+	err = kubeclient.CreateConfigMap(e.Client, e.getHelmValuesConfigMapName(), e.namespace, "data", data, ownerDatasetId)
 	if err != nil {
 		return
 	}

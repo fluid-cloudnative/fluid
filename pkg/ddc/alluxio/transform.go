@@ -50,6 +50,7 @@ func (e *AlluxioEngine) transform(runtime *datav1alpha1.AlluxioRuntime) (value *
 	}
 
 	value.FullnameOverride = e.name
+	value.OwnerDatasetId = utils.GetDatasetId(e.namespace, e.name, e.runtimeInfo.GetOwnerDatasetUID())
 
 	// 1.transform the common part
 	err = e.transformCommonPart(runtime, dataset, value)

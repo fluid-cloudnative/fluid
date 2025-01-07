@@ -134,6 +134,17 @@ func ContainsOwners(owners []metav1.OwnerReference, dataset *datav1alpha1.Datase
 	return false
 }
 
+func ContainsLabel(labels map[string]string, labelKey, labelValue string) bool {
+	value, exit := labels[labelKey]
+	if !exit {
+		return false
+	}
+	if value == labelValue {
+		return true
+	}
+	return false
+}
+
 // ContainsSelector Determine whether the labels contain the selector
 func ContainsSelector(labels map[string]string, selector map[string]string) bool {
 	for key, value := range selector {

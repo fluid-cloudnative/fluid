@@ -17,13 +17,9 @@ limitations under the License.
 package alluxio
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common/deprecated"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 )
-
-func (e *AlluxioEngine) getDeprecatedCommonLabelname() string {
-	return deprecated.LabelAnnotationStorageCapacityPrefix + e.namespace + "-" + e.name
-}
 
 func (e *AlluxioEngine) HasDeprecatedCommonLabelname() (deprecated bool, err error) {
 
@@ -54,11 +50,12 @@ func (e *AlluxioEngine) HasDeprecatedCommonLabelname() (deprecated bool, err err
 	nodeSelectors := workers.Spec.Template.Spec.NodeSelector
 	e.Log.Info("The current node selectors for worker", "workerName", workerName, "nodeSelector", nodeSelectors)
 
-	if _, deprecated = nodeSelectors[e.getDeprecatedCommonLabelname()]; deprecated {
+	deprecatedCommonLabelName := utils.GetCommonLabelName(true, e.namespace, e.name, e.runtimeInfo.GetOwnerDatasetUID())
+	if _, deprecated = nodeSelectors[deprecatedCommonLabelName]; deprecated {
 		//
-		e.Log.Info("the deprecated node selector exists", "nodeSelector", e.getDeprecatedCommonLabelname())
+		e.Log.Info("the deprecated node selector exists", "nodeselector", deprecatedCommonLabelName)
 	} else {
-		e.Log.Info("The deprecated node selector doesn't exist", "nodeSelector", e.getDeprecatedCommonLabelname())
+		e.Log.Info("The deprecated node selector doesn't exist", "nodeselector", deprecatedCommonLabelName)
 	}
 
 	return

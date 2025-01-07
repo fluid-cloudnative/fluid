@@ -22,6 +22,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -44,7 +45,7 @@ func getTestJindoFSxEngine(client client.Client, name string, namespace string) 
 	return engine
 }
 
-func TestJindoFSxEngine_GetDeprecatedCommonLabelname(t *testing.T) {
+func TestJindoFSxEngine_GetDeprecatedCommonLabelName(t *testing.T) {
 	testCases := []struct {
 		name      string
 		namespace string
@@ -66,10 +67,8 @@ func TestJindoFSxEngine_GetDeprecatedCommonLabelname(t *testing.T) {
 			out:       "data.fluid.io/storage-test-fluid",
 		},
 	}
-	fakeClient := fake.NewFakeClientWithScheme(testScheme)
 	for _, test := range testCases {
-		engine := getTestJindoFSxEngine(fakeClient, test.name, test.namespace)
-		out := engine.getDeprecatedCommonLabelname()
+		out := utils.GetCommonLabelName(true, test.namespace, test.name, "")
 		if out != test.out {
 			t.Errorf("input parameter is %s-%s,expected %s, got %s", test.namespace, test.name, test.out, out)
 		}

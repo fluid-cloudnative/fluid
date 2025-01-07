@@ -27,6 +27,7 @@ import (
 // The value yaml file
 type EFC struct {
 	FullnameOverride string                 `yaml:"fullnameOverride"`
+	OwnerDatasetId   string                 `yaml:"ownerDatasetId"`
 	PlacementMode    string                 `yaml:"placement,omitempty"`
 	Master           Master                 `yaml:"master"`
 	Worker           Worker                 `yaml:"worker"`

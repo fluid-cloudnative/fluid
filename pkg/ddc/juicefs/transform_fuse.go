@@ -128,7 +128,7 @@ func (j *JuiceFSEngine) transformFuseNodeSelector(runtime *datav1alpha1.JuiceFSR
 	}
 
 	// The label will be added by CSI Plugin when any workload pod is scheduled on the node.
-	value.Fuse.NodeSelector[j.getFuseLabelName()] = "true"
+	value.Fuse.NodeSelector[utils.GetFuseLabelName(runtime.Namespace, runtime.Name, j.runtimeInfo.GetOwnerDatasetUID())] = "true"
 }
 
 // genValue: generate the value of juicefs

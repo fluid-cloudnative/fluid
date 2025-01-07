@@ -57,6 +57,7 @@ spec:
         chart: {{ $chart }}
         release: {{ .Release.Name }}
         role: vineyard-fuse
+        {{- include "library.fluid.labels" . | nindent 8 }}
         {{- if .Values.fuse.labels }}
         {{- range $key, $val := .Values.fuse.labels }}
         {{ $key | quote }}: {{ $val | quote }}

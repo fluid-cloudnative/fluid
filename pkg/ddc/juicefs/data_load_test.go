@@ -538,7 +538,8 @@ func TestJuiceFSEngine_genDataLoadValue(t *testing.T) {
 				"cache-info-k3": "cache-info-v3",
 			},
 			want: &cdataload.DataLoadValue{
-				Name: "test-dataload",
+				Name:           "test-dataload",
+				OwnerDatasetId: "fluid-test-dataset",
 				Owner: &common.OwnerReference{
 					APIVersion:         "/",
 					Enabled:            true,
@@ -668,7 +669,8 @@ func TestJuiceFSEngine_genDataLoadValue(t *testing.T) {
 				"cache-info-k3": "cache-info-v3",
 			},
 			want: &cdataload.DataLoadValue{
-				Name: "test-dataload",
+				Name:           "test-dataload",
+				OwnerDatasetId: "fluid-test-dataset",
 				Owner: &common.OwnerReference{
 					APIVersion:         "/",
 					Enabled:            true,
@@ -801,7 +803,8 @@ func TestJuiceFSEngine_genDataLoadValue(t *testing.T) {
 				"cache-info-k3": "cache-info-v3",
 			},
 			want: &cdataload.DataLoadValue{
-				Name: "test-dataload",
+				Name:           "test-dataload",
+				OwnerDatasetId: "fluid-test-dataset",
 				Owner: &common.OwnerReference{
 					APIVersion:         "/",
 					Enabled:            true,
@@ -905,7 +908,8 @@ func TestJuiceFSEngine_genDataLoadValue(t *testing.T) {
 				"cache-info-k3": "cache-info-v3",
 			},
 			want: &cdataload.DataLoadValue{
-				Name: "test-dataload",
+				Name:           "test-dataload",
+				OwnerDatasetId: "fluid-test-dataset",
 				Owner: &common.OwnerReference{
 					APIVersion:         "/",
 					Enabled:            true,

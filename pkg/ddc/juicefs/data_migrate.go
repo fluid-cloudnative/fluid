@@ -174,6 +174,7 @@ func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequest
 		DataMigrateInfo: dataMigrateInfo,
 	}
 	dataMigrateValue.Owner = transformer.GenerateOwnerReferenceFromObject(dataMigrate)
+	dataMigrateValue.OwnerDatasetId = utils.GetDatasetId(j.namespace, j.name, j.runtimeInfo.GetOwnerDatasetUID())
 
 	// 6. create the value file
 	data, err := yaml.Marshal(dataMigrateValue)
@@ -181,7 +182,6 @@ func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequest
 		return
 	}
 	j.Log.Info("dataMigrate value", "value", string(data))
-
 	valueFile, err := os.CreateTemp(os.TempDir(), fmt.Sprintf("%s-%s-migrate-values.yaml", dataMigrate.Namespace, dataMigrate.Name))
 	if err != nil {
 		return

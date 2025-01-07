@@ -26,6 +26,7 @@ import (
 // JuiceFS The value json file
 type JuiceFS struct {
 	FullnameOverride string `json:"fullnameOverride"`
+	OwnerDatasetId   string `json:"ownerDatasetId"`
 	Edition          string `json:"edition,omitempty"`
 	Source           string `json:"source,omitempty"`
 

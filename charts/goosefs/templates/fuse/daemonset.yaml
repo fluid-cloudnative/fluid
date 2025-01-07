@@ -35,6 +35,7 @@ spec:
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: goosefs-fuse
+        {{- include "library.fluid.labels" . | nindent 8 }}
     spec:
       {{- if .Values.fuse.criticalPod }}
       priorityClassName: system-node-critical

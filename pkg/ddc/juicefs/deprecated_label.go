@@ -17,13 +17,9 @@ limitations under the License.
 package juicefs
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common/deprecated"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 )
-
-func (j *JuiceFSEngine) getDeprecatedCommonLabelName() string {
-	return deprecated.LabelAnnotationStorageCapacityPrefix + j.namespace + "-" + j.name
-}
 
 func (j *JuiceFSEngine) HasDeprecatedCommonLabelName() (deprecated bool, err error) {
 	// return deprecated.LabelAnnotationStorageCapacityPrefix + e.namespace + "-" + e.name
@@ -48,10 +44,12 @@ func (j *JuiceFSEngine) HasDeprecatedCommonLabelName() (deprecated bool, err err
 	nodeSelectors := fuses.Spec.Template.Spec.NodeSelector
 	j.Log.Info("The current node selectors for worker", "fuseName", fuseName, "nodeSelector", nodeSelectors)
 
-	if _, deprecated = nodeSelectors[j.getDeprecatedCommonLabelName()]; deprecated {
-		j.Log.Info("the deprecated node selector exists", "nodeselector", j.getDeprecatedCommonLabelName())
+	deprecatedCommonLabelName := utils.GetCommonLabelName(true, j.namespace, j.name, j.runtimeInfo.GetOwnerDatasetUID())
+	if _, deprecated = nodeSelectors[deprecatedCommonLabelName]; deprecated {
+		//
+		j.Log.Info("the deprecated node selector exists", "nodeselector", deprecatedCommonLabelName)
 	} else {
-		j.Log.Info("The deprecated node selector doesn't exist", "nodeselector", j.getDeprecatedCommonLabelName())
+		j.Log.Info("The deprecated node selector doesn't exist", "nodeselector", deprecatedCommonLabelName)
 	}
 
 	return

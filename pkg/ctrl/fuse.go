@@ -109,7 +109,7 @@ func (e *Helper) CheckFuseHealthy(recorder record.EventRecorder, runtime base.Ru
 func (e *Helper) CleanUpFuse() (count int, err error) {
 	var (
 		nodeList     = &corev1.NodeList{}
-		fuseLabelKey = common.LabelAnnotationFusePrefix + e.runtimeInfo.GetNamespace() + "-" + e.runtimeInfo.GetName()
+		fuseLabelKey = utils.GetFuseLabelName(e.runtimeInfo.GetNamespace(), e.runtimeInfo.GetName(), e.runtimeInfo.GetOwnerDatasetUID())
 	)
 
 	labelNames := []string{fuseLabelKey}
@@ -153,7 +153,7 @@ func (e *Helper) CleanUpFuse() (count int, err error) {
 func (e *Helper) GetFuseNodes() (nodes []corev1.Node, err error) {
 	var (
 		nodeList     = &corev1.NodeList{}
-		fuseLabelKey = common.LabelAnnotationFusePrefix + e.runtimeInfo.GetNamespace() + "-" + e.runtimeInfo.GetName()
+		fuseLabelKey = utils.GetFuseLabelName(e.runtimeInfo.GetNamespace(), e.runtimeInfo.GetName(), e.runtimeInfo.GetOwnerDatasetUID())
 	)
 
 	labelNames := []string{fuseLabelKey}

@@ -43,6 +43,7 @@ spec:
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: jindofs-master
+        {{- include "library.fluid.labels" . | nindent 8 }}
 {{- if .Values.labels }}
 {{ toYaml .Values.labels | trim | indent 8 }}
 {{- end }}

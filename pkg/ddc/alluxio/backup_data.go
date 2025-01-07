@@ -126,6 +126,13 @@ func (e *AlluxioEngine) generateDataBackupValueFile(ctx cruntime.ReconcileReques
 		RuntimeType:      common.AlluxioRuntime,
 		ImagePullSecrets: imagePullSecrets,
 	}
+
+	dataset, err := utils.GetDataset(e.Client, dataBackup.Dataset, dataBackup.Namespace)
+	if err != nil {
+		return
+	}
+	dataBackup.OwnerDatasetId = utils.GetDatasetId(dataset.Namespace, dataset.Name, string(dataset.UID))
+
 	pvcName, path, err := utils.ParseBackupRestorePath(databackup.Spec.BackupPath)
 	if err != nil {
 		return

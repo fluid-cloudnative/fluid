@@ -56,7 +56,7 @@ func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *d
 	if len(runtime.Spec.Fuse.NodeSelector) > 0 {
 		value.Fuse.NodeSelector = runtime.Spec.Fuse.NodeSelector
 	}
-	value.Fuse.NodeSelector[t.getFuseLabelName()] = "true"
+	value.Fuse.NodeSelector[utils.GetFuseLabelName(runtime.Namespace, runtime.Name, t.runtimeInfo.GetOwnerDatasetUID())] = "true"
 
 	// 5. ports
 	if len(runtime.Spec.Fuse.Ports) != 0 {

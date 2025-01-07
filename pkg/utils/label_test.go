@@ -181,3 +181,21 @@ func TestChangeNodeLabelWithPatchModel(t *testing.T) {
 		}
 	}
 }
+
+func TestGetFullNamespacedNameWithPrefixValue(t *testing.T) {
+	tests := []struct {
+		prefix, namespace, name, ownerDatasetUID string
+		expected                                 string
+	}{
+		{"normal-", "default", "test-dataset", "", "normal-default-test-dataset"},
+		{"overlimit-", "namespace-ajsdjikebnfacdsvwcaxqcackjascnbaksjcnakjscnackjasn", "dataset-demo", "58df5bd9cc", "overlimit-58df5bd9cc"},
+		{"overlimit-", "namespace-demo", "dataset-ajsdjikebnfacdsvwcaxqcackjascnbaksjcnakjscnackjasn", "6dfd85695", "overlimit-6dfd85695"},
+	}
+
+	for _, test := range tests {
+		result := GetNamespacedNameValueWithPrefix(test.prefix, test.namespace, test.name, test.ownerDatasetUID)
+		if result != test.expected {
+			t.Errorf("GetNamespacedNameValueWithPrefix(%v) = %v, want %v", test, result, test.expected)
+		}
+	}
+}

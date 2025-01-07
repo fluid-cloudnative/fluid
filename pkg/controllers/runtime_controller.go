@@ -139,6 +139,13 @@ func (r *RuntimeReconciler) ReconcileInternal(ctx cruntime.ReconcileRequestConte
 		if !utils.ContainsOwners(objectMeta.GetOwnerReferences(), dataset) {
 			return r.AddOwnerAndRequeue(ctx, dataset)
 		}
+
+		if errs := utils.PatchLabelToObjects(ctx.Client, common.LabelAnnotationDatasetId,
+			utils.GetDatasetId(dataset.GetNamespace(), dataset.GetName(), string(dataset.UID)),
+			dataset, runtime); len(errs) > 0 {
+			return utils.RequeueAfterInterval(time.Duration(5 * time.Second))
+		}
+
 		if !dataset.CanbeBound(ctx.Name, ctx.Namespace, ctx.Category) {
 			ctx.Log.Info("the dataset can't be bound to the runtime, because it's already bound to another runtime ",
 				"dataset", dataset.Name)
@@ -187,7 +194,7 @@ func (r *RuntimeReconciler) ReconcileRuntimeDeletion(engine base.Engine, ctx cru
 		return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
 	}
 
-	// 1. Delete the implementation of the the runtime
+	// 1. Delete the implementation of the runtime
 	err = engine.Shutdown()
 	if err != nil {
 		r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to shutdown engine %v", err)

@@ -31,16 +31,17 @@ type DataBackupValue struct {
 
 // DataBackup defines values used in DataBackup helm chart
 type DataBackup struct {
-	Namespace   string `yaml:"namespace,omitempty"`
-	Dataset     string `yaml:"dataset,omitempty"`
-	Name        string `yaml:"name,omitempty"`
-	NodeName    string `yaml:"nodeName,omitempty"`
-	Image       string `yaml:"image,omitempty"`
-	JavaEnv     string `yaml:"javaEnv,omitempty"`
-	Workdir     string `yaml:"workdir,omitempty"`
-	PVCName     string `yaml:"pvcName,omitempty"`
-	Path        string `yaml:"path,omitempty"`
-	RuntimeType string `yaml:"runtimeType,omitempty"`
+	Namespace      string `yaml:"namespace,omitempty"`
+	Dataset        string `yaml:"dataset,omitempty"`
+	OwnerDatasetId string `yaml:"ownerDatasetId,omitempty"`
+	Name           string `yaml:"name,omitempty"`
+	NodeName       string `yaml:"nodeName,omitempty"`
+	Image          string `yaml:"image,omitempty"`
+	JavaEnv        string `yaml:"javaEnv,omitempty"`
+	Workdir        string `yaml:"workdir,omitempty"`
+	PVCName        string `yaml:"pvcName,omitempty"`
+	Path           string `yaml:"path,omitempty"`
+	RuntimeType    string `yaml:"runtimeType,omitempty"`
 	// image pull secrets
 	ImagePullSecrets []corev1.LocalObjectReference `yaml:"imagePullSecrets,omitempty"`
 	Affinity         *corev1.Affinity              `yaml:"affinity,omitempty"`

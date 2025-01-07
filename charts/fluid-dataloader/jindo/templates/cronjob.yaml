@@ -50,6 +50,7 @@ spec:
             app: jindofs
             cronjob: {{ printf "%s-job" .Release.Name }}
             targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
+            {{- include "library.fluid.labels" . | nindent 12 }}
         spec:
           {{- include "library.fluid.dataload.cronJobCommonTemplateSpec" . | nindent 10 }}
           containers:

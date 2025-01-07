@@ -20,18 +20,17 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
-	"k8s.io/apimachinery/pkg/util/net"
-
 	"github.com/brahma-adshonor/gohook"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
+	"k8s.io/apimachinery/pkg/util/net"
 )
 
 func init() {
@@ -100,15 +99,21 @@ func TestSetupMasterInternal(t *testing.T) {
 	}
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
-	engine := EFCEngine{
-		name:      "test",
-		namespace: "fluid",
-		Client:    client,
-		Log:       fake.NullLogger(),
-		runtime:   efcruntime,
+	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "efc")
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
 
-	err := portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
+	engine := EFCEngine{
+		name:        "test",
+		namespace:   "fluid",
+		Client:      client,
+		Log:         fake.NullLogger(),
+		runtime:     efcruntime,
+		runtimeInfo: runtimeInfo,
+	}
+
+	err = portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -196,15 +201,21 @@ func TestGenerateEFCValueFile(t *testing.T) {
 
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
-	engine := EFCEngine{
-		name:      "test",
-		namespace: "fluid",
-		Client:    client,
-		Log:       fake.NullLogger(),
-		runtime:   efcruntime,
+	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "efc")
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
 
-	err := portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
+	engine := EFCEngine{
+		name:        "test",
+		namespace:   "fluid",
+		Client:      client,
+		Log:         fake.NullLogger(),
+		runtime:     efcruntime,
+		runtimeInfo: runtimeInfo,
+	}
+
+	err = portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
 	if err != nil {
 		t.Fatal(err.Error())
 	}

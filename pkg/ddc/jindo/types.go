@@ -23,6 +23,7 @@ import (
 )
 
 type Jindo struct {
+	OwnerDatasetId   string                    `json:"ownerDatasetId"`
 	Image            string                    `yaml:"image"`
 	ImageTag         string                    `yaml:"imageTag"`
 	ImagePullPolicy  string                    `yaml:"imagePullPolicy"`

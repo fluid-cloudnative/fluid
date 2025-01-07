@@ -45,6 +45,27 @@ func (j *JuiceFSEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		j.runtimeInfo.SetFuseNodeSelector(runtime.Spec.Fuse.NodeSelector)
 
 		if !j.UnitTest {
+			// Setup with Dataset Info
+			dataset, err := utils.GetDataset(j.Client, j.name, j.namespace)
+			if err != nil {
+				if len(runtime.GetOwnerReferences()) > 0 {
+					j.runtimeInfo.SetOwnerDatasetUID(runtime.GetOwnerReferences()[0].UID)
+				}
+				if utils.IgnoreNotFound(err) == nil {
+					j.Log.Info("Dataset is notfound", "name", j.name, "namespace", j.namespace)
+					return j.runtimeInfo, nil
+				}
+
+				j.Log.Info("Failed to get dataset when getruntimeInfo")
+				return j.runtimeInfo, err
+			}
+
+			j.runtimeInfo.SetupWithDataset(dataset)
+			j.Log.Info("Setup with dataset done", "exclusive", j.runtimeInfo.IsExclusive())
+
+			j.runtimeInfo.SetOwnerDatasetUID(dataset.GetUID())
+			j.Log.Info("Setup owner dataset-id", "UID", dataset.GetUID())
+
 			// Check if the runtime is using deprecated labels
 			isLabelDeprecated, err := j.HasDeprecatedCommonLabelName()
 			if err != nil {
@@ -60,22 +81,6 @@ func (j *JuiceFSEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 			j.runtimeInfo.SetDeprecatedPVName(isPVNameDeprecated)
 
 			j.Log.Info("Deprecation check finished", "isLabelDeprecated", j.runtimeInfo.IsDeprecatedNodeLabel(), "isPVNameDeprecated", j.runtimeInfo.IsDeprecatedPVName())
-
-			// Setup with Dataset Info
-			dataset, err := utils.GetDataset(j.Client, j.name, j.namespace)
-			if err != nil {
-				if utils.IgnoreNotFound(err) == nil {
-					j.Log.Info("Dataset is notfound", "name", j.name, "namespace", j.namespace)
-					return j.runtimeInfo, nil
-				}
-
-				j.Log.Info("Failed to get dataset when getruntimeInfo")
-				return j.runtimeInfo, err
-			}
-
-			j.runtimeInfo.SetupWithDataset(dataset)
-
-			j.Log.Info("Setup with dataset done", "exclusive", j.runtimeInfo.IsExclusive())
 		}
 	}
 

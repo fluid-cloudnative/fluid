@@ -263,7 +263,7 @@ func TestCreateConfigMapExist(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := CreateConfigMap(client, tt.args.name, tt.args.namespace, tt.args.key, tt.args.data)
+			err := CreateConfigMap(client, tt.args.name, tt.args.namespace, tt.args.key, tt.args.data, "")
 			if err != nil {
 				t.Errorf("testcase %v CreateConfigMap() err is %v", tt.name, err)
 			}

@@ -102,7 +102,9 @@ func (t *ThinEngine) generateThinValueFile(runtime *datav1alpha1.ThinRuntime, pr
 	}
 
 	//3. Save the configfile into configmap
-	err = kubeclient.CreateConfigMap(t.Client, t.getHelmValuesConfigMapName(), t.namespace, "data", data)
+	runtimeInfo := t.runtimeInfo
+	ownerDatasetId := utils.GetDatasetId(runtimeInfo.GetNamespace(), runtimeInfo.GetName(), runtimeInfo.GetOwnerDatasetUID())
+	err = kubeclient.CreateConfigMap(t.Client, t.getHelmValuesConfigMapName(), t.namespace, "data", data, ownerDatasetId)
 	if err != nil {
 		return
 	}

@@ -23,6 +23,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 type scriptGeneratorHelper struct {
@@ -41,6 +44,9 @@ func (helper *scriptGeneratorHelper) BuildConfigMap(ownerReference metav1.OwnerR
 			Name:            configMapKey.Name,
 			Namespace:       configMapKey.Namespace,
 			OwnerReferences: []metav1.OwnerReference{ownerReference},
+			Labels: map[string]string{
+				common.LabelAnnotationDatasetId: utils.GetDatasetId(configMapKey.Namespace, ownerReference.Name, string(ownerReference.UID)),
+			},
 		},
 		Data: data,
 	}

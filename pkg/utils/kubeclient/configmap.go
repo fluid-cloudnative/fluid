@@ -19,6 +19,7 @@ package kubeclient
 import (
 	"context"
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -130,6 +131,11 @@ func CopyConfigMap(client client.Client, src types.NamespacedName, dst types.Nam
 		Data: copiedConfigMap.Data,
 	}
 
+	if dstConfigMap.Labels == nil {
+		dstConfigMap.Labels = make(map[string]string)
+	}
+	dstConfigMap.Labels[common.LabelAnnotationDatasetId] = utils.GetDatasetId(dst.Namespace, dst.Name, string(reference.UID))
+
 	err = client.Create(context.TODO(), dstConfigMap)
 	if err != nil {
 		if otherErr := utils.IgnoreAlreadyExists(err); otherErr != nil {
@@ -144,11 +150,14 @@ func UpdateConfigMap(client client.Client, cm *v1.ConfigMap) error {
 	return err
 }
 
-func CreateConfigMap(client client.Client, name string, namespace string, key string, data []byte) (err error) {
+func CreateConfigMap(client client.Client, name string, namespace string, key string, data []byte, ownerDatasetId string) (err error) {
 	configMap := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
+			Labels: map[string]string{
+				common.LabelAnnotationDatasetId: ownerDatasetId,
+			},
 		},
 		Data: map[string]string{
 			key: string(data),

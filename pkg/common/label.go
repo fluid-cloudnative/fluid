@@ -34,6 +34,10 @@ const (
 	// i.e. fluid.io/dataset
 	LabelAnnotationDataset = LabelAnnotationPrefix + "dataset"
 
+	// LabelAnnotationDatasetId indicates the uuid of the dataset
+	// i.e. fluid.io/dataset-uuid
+	LabelAnnotationDatasetId = LabelAnnotationDataset + "-id"
+
 	// LabelAnnotationDatasetNum indicates the number of the dataset in specific node
 	// i.e. fluid.io/dataset-num
 	LabelAnnotationDatasetNum = LabelAnnotationPrefix + "dataset-num"
@@ -45,6 +49,10 @@ const (
 	// LabelAnnotationManagedBy indicates a resource(like pvc) that is managed by Fluid
 	// i.e. fluid.io/managed-by
 	LabelAnnotationManagedBy = LabelAnnotationPrefix + "managed-by"
+
+	// LabelAnnotationCopyFrom indicates a resource that is copied from another resource
+	// i.e. fluid.io/copied-from
+	LabelAnnotationCopyFrom = LabelAnnotationPrefix + "copied-from"
 
 	// fluid adminssion webhook inject flag
 	// i.e. fluid.io/enable-injection
