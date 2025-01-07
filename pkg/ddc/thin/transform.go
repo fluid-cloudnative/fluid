@@ -51,6 +51,7 @@ func (t *ThinEngine) transform(runtime *datav1alpha1.ThinRuntime, profile *datav
 	}
 
 	value.FullnameOverride = t.name
+	value.FullNamespacedNameOverride = utils.TransferFullNamespacedNameWithPrefixToLegalValue("", t.namespace, t.name)
 	value.Owner = transformer.GenerateOwnerReferenceFromObject(runtime)
 	toRuntimeSetConfig, err := t.toRuntimeSetConfig(nil, nil)
 	if err != nil {

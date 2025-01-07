@@ -114,19 +114,15 @@ func ChangeNodeLabelWithPatchMode(cli client.Client, node *v1.Node, labelsToModi
 	return PatchLabels(cli, node, labelsToModify)
 }
 
-func GetStoragetLabelName(read common.ReadType, storage common.StorageType, isDeprecated bool, runtimeType string, namespace string, name string) string {
+func GetStorageLabelName(read common.ReadType, storage common.StorageType, isDeprecated bool, runtimeType string, namespace string, name string) string {
 	prefix := common.LabelAnnotationStorageCapacityPrefix
 	if isDeprecated {
 		prefix = deprecated.LabelAnnotationStorageCapacityPrefix
 	}
-	return prefix +
-		string(read) +
-		runtimeType +
-		"-" +
-		string(storage) +
-		namespace +
-		"-" +
-		name
+
+	prefix = prefix + string(read) + runtimeType + "-" + string(storage)
+
+	return TransferFullNamespacedNameWithPrefixToLegalValue(prefix, namespace, name)
 }
 
 func GetLabelNameForMemory(isDeprecated bool, runtimeType string, namespace string, name string) string {
@@ -136,7 +132,7 @@ func GetLabelNameForMemory(isDeprecated bool, runtimeType string, namespace stri
 		read = deprecated.HumanReadType
 		storage = deprecated.MemoryStorageType
 	}
-	return GetStoragetLabelName(read, storage, isDeprecated, runtimeType, namespace, name)
+	return GetStorageLabelName(read, storage, isDeprecated, runtimeType, namespace, name)
 }
 
 func GetLabelNameForDisk(isDeprecated bool, runtimeType string, namespace string, name string) string {
@@ -146,7 +142,7 @@ func GetLabelNameForDisk(isDeprecated bool, runtimeType string, namespace string
 		read = deprecated.HumanReadType
 		storage = deprecated.DiskStorageType
 	}
-	return GetStoragetLabelName(read, storage, isDeprecated, runtimeType, namespace, name)
+	return GetStorageLabelName(read, storage, isDeprecated, runtimeType, namespace, name)
 }
 
 func GetLabelNameForTotal(isDeprecated bool, runtimeType string, namespace string, name string) string {
@@ -156,7 +152,7 @@ func GetLabelNameForTotal(isDeprecated bool, runtimeType string, namespace strin
 		read = deprecated.HumanReadType
 		storage = deprecated.TotalStorageType
 	}
-	return GetStoragetLabelName(read, storage, isDeprecated, runtimeType, namespace, name)
+	return GetStorageLabelName(read, storage, isDeprecated, runtimeType, namespace, name)
 }
 
 func GetCommonLabelName(isDeprecated bool, namespace string, name string) string {
@@ -165,7 +161,7 @@ func GetCommonLabelName(isDeprecated bool, namespace string, name string) string
 		prefix = deprecated.LabelAnnotationStorageCapacityPrefix
 	}
 
-	return prefix + namespace + "-" + name
+	return TransferFullNamespacedNameWithPrefixToLegalValue(prefix, namespace, name)
 }
 
 func GetRuntimeLabelName(isDeprecated bool, runtimeType string, namespace string, name string) string {
@@ -173,5 +169,12 @@ func GetRuntimeLabelName(isDeprecated bool, runtimeType string, namespace string
 	if isDeprecated {
 		prefix = deprecated.LabelAnnotationStorageCapacityPrefix
 	}
-	return prefix + runtimeType + "-" + namespace + "-" + name
+
+	prefix = prefix + runtimeType + "-"
+
+	return TransferFullNamespacedNameWithPrefixToLegalValue(prefix, namespace, name)
+}
+
+func GetFuseLabelName(namespace, name string) string {
+	return TransferFullNamespacedNameWithPrefixToLegalValue(common.LabelAnnotationFusePrefix, namespace, name)
 }

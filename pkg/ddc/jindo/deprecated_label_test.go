@@ -17,6 +17,7 @@ limitations under the License.
 package jindo
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -44,7 +45,7 @@ func getTestJindoEngine(client client.Client, name string, namespace string) *Ji
 	return engine
 }
 
-func TestJindoEngine_GetDeprecatedCommonLabelname(t *testing.T) {
+func TestJindoEngine_GetDeprecatedCommonLabelName(t *testing.T) {
 	testCases := []struct {
 		name      string
 		namespace string
@@ -66,10 +67,8 @@ func TestJindoEngine_GetDeprecatedCommonLabelname(t *testing.T) {
 			out:       "data.fluid.io/storage-test-fluid",
 		},
 	}
-	fakeClient := fake.NewFakeClientWithScheme(testScheme)
 	for _, test := range testCases {
-		engine := getTestJindoEngine(fakeClient, test.name, test.namespace)
-		out := engine.getDeprecatedCommonLabelname()
+		out := utils.GetCommonLabelName(true, test.namespace, test.name)
 		if out != test.out {
 			t.Errorf("input parameter is %s-%s,expected %s, got %s", test.namespace, test.name, test.out, out)
 		}
@@ -77,7 +76,7 @@ func TestJindoEngine_GetDeprecatedCommonLabelname(t *testing.T) {
 
 }
 
-func TestJindoEngine_HasDeprecatedCommonLabelname(t *testing.T) {
+func TestJindoEngine_HasDeprecatedCommonLabelName(t *testing.T) {
 
 	// worker-name = e.name+"-worker"
 	daemonSetWithSelector := &v1.DaemonSet{
@@ -137,7 +136,7 @@ func TestJindoEngine_HasDeprecatedCommonLabelname(t *testing.T) {
 
 	for _, test := range testCases {
 		engine := getTestJindoEngine(fakeClient, test.name, test.namespace)
-		out, err := engine.HasDeprecatedCommonLabelname()
+		out, err := engine.HasDeprecatedCommonLabelName()
 		if out != test.out {
 			t.Errorf("input parameter is %s-%s,expected %t, got %t", test.namespace, test.name, test.out, out)
 		}

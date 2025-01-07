@@ -355,7 +355,7 @@ func IsDatasetPVC(client client.Reader, name string, namespace string) (find boo
 	if err != nil {
 		return
 	}
-	_, find = pvc.Labels[common.LabelAnnotationStorageCapacityPrefix+namespace+"-"+name]
+	_, find = pvc.Labels[utils.TransferFullNamespacedNameWithPrefixToLegalValue(common.LabelAnnotationStorageCapacityPrefix, namespace, name)]
 	return
 }
 
@@ -369,7 +369,7 @@ func CheckIfPVCIsDataset(pvc *corev1.PersistentVolumeClaim) (isDataset bool) {
 	if len(namespace) == 0 {
 		namespace = corev1.NamespaceDefault
 	}
-	_, isDataset = pvc.Labels[common.LabelAnnotationStorageCapacityPrefix+namespace+"-"+name]
+	_, isDataset = pvc.Labels[utils.TransferFullNamespacedNameWithPrefixToLegalValue(common.LabelAnnotationStorageCapacityPrefix, namespace, name)]
 
 	if _, exists := common.GetManagerDatasetFromLabels(pvc.Labels); exists {
 		isDataset = true

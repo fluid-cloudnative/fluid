@@ -18,6 +18,7 @@ package goosefs
 
 import (
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -86,7 +87,7 @@ func (e *GooseFSEngine) transformFuse(runtime *datav1alpha1.GooseFSRuntime, data
 		value.Fuse.NodeSelector = map[string]string{}
 	}
 
-	value.Fuse.NodeSelector[e.getFuseLabelname()] = "true"
+	value.Fuse.NodeSelector[utils.GetFuseLabelName(runtime.Namespace, runtime.Name)] = "true"
 	value.Fuse.HostNetwork = true
 	value.Fuse.HostPID = common.HostPIDEnabled(runtime.Annotations)
 	value.Fuse.Enabled = true

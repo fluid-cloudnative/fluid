@@ -52,6 +52,7 @@ func (j *JuiceFSEngine) transform(runtime *datav1alpha1.JuiceFSRuntime) (value *
 	}
 
 	value.FullnameOverride = j.name
+	value.FullNamespacedNameOverride = utils.TransferFullNamespacedNameWithPrefixToLegalValue("", j.namespace, j.name)
 	value.Owner = transformer.GenerateOwnerReferenceFromObject(runtime)
 
 	// transform toleration

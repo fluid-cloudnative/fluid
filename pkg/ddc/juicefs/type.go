@@ -25,9 +25,10 @@ import (
 
 // JuiceFS The value json file
 type JuiceFS struct {
-	FullnameOverride string `json:"fullnameOverride"`
-	Edition          string `json:"edition,omitempty"`
-	Source           string `json:"source,omitempty"`
+	FullnameOverride           string `json:"fullnameOverride"`
+	FullNamespacedNameOverride string `json:"fullNamespacedNameOverride"`
+	Edition                    string `json:"edition,omitempty"`
+	Source                     string `json:"source,omitempty"`
 
 	common.ImageInfo `json:",inline"`
 	common.UserInfo  `json:",inline"`

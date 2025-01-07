@@ -8,7 +8,7 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
     role: thin-worker
-    fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
+    fluid.io/dataset: {{ .Values.fullNamespacedNameOverride }}
     fluid.io/dataset-placement: {{ .Values.placement }}
     {{- include "library.fluid.labels" . | nindent 4 }}
   ownerReferences:
@@ -41,7 +41,7 @@ spec:
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: thin-worker
-        fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
+        fluid.io/dataset: {{ .Values.fullNamespacedNameOverride }}
         fluid.io/dataset-placement: {{ .Values.placement }}
     spec:
       {{- if .Values.worker.imagePullSecrets }}
