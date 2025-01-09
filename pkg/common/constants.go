@@ -212,3 +212,7 @@ const (
 	K8sZoneLabelKey     = "topology.kubernetes.io/zone"
 	K8sRegionLabelKey   = "topology.kubernetes.io/region"
 )
+
+const (
+	SkipPrecheckAnnotationKey = "sidecar.fluid.io/skip-precheck"
+)

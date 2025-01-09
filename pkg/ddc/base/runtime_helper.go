@@ -20,12 +20,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
-
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
 // GetFuseContainerTemplate collects the fuse container spec from the runtime's fuse daemonSet spec. The function summarizes fuse related information into
@@ -52,9 +51,9 @@ func (info *RuntimeInfo) GetFuseContainerTemplate() (template *common.FuseInject
 
 	template.FuseContainer.Name = common.FuseContainerName
 
-	hostMountPath, mountType, subPath, err := kubeclient.GetMountInfoFromVolumeClaim(info.client, info.name, info.namespace)
+	hostMountPath, mountType, subPath, err := info.getMountInfo()
 	if err != nil {
-		return template, errors.Wrapf(err, "failed get mount info from PVC \"%s/%s\"", info.namespace, info.name)
+		return template, errors.Wrapf(err, "failed to get mount info by runtimeInfo %s/%s", info.namespace, info.name)
 	}
 
 	fuseVolMount, err := kubeclient.GetFuseMountInContainer(mountType, ds.Spec.Template.Spec.Containers[0])
@@ -86,4 +85,22 @@ func (info *RuntimeInfo) getFuseDaemonset() (ds *appsv1.DaemonSet, err error) {
 		fuseName = info.name + "-fuse"
 	}
 	return kubeclient.GetDaemonset(info.client, fuseName, info.GetNamespace())
+}
+
+func (info *RuntimeInfo) getMountInfo() (path, mountType, subpath string, err error) {
+	pv, err := kubeclient.GetPersistentVolume(info.client, info.GetPersistentVolumeName())
+	if err != nil {
+		err = errors.Wrapf(err, "cannot find pvc \"%s/%s\"'s bounded PV", info.namespace, info.name)
+		return
+	}
+
+	if pv.Spec.CSI != nil && len(pv.Spec.CSI.VolumeAttributes) > 0 {
+		path = pv.Spec.CSI.VolumeAttributes[common.VolumeAttrFluidPath]
+		mountType = pv.Spec.CSI.VolumeAttributes[common.VolumeAttrMountType]
+		subpath = pv.Spec.CSI.VolumeAttributes[common.VolumeAttrFluidSubPath]
+	} else {
+		err = fmt.Errorf("the pv %s is not created by fluid", pv.Name)
+	}
+
+	return
 }
