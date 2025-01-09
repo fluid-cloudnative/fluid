@@ -26,7 +26,8 @@ import (
 
 // The value yaml file
 type GooseFS struct {
-	FullnameOverride string `yaml:"fullnameOverride"`
+	FullnameOverride           string `yaml:"fullnameOverride"`
+	FullNamespacedNameOverride string `yaml:"fullNamespacedNameOverride"`
 
 	common.ImageInfo `yaml:",inline"`
 	common.UserInfo  `yaml:",inline"`

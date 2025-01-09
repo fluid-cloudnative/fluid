@@ -29,5 +29,12 @@ func GetExclusiveKey() string {
 
 // GetExclusiveValue gets exclusive value
 func GetExclusiveValue(namespace, name string) string {
-	return fmt.Sprintf("%s_%s", namespace, name)
+	exclusiveValue := fmt.Sprintf("%s_%s", namespace, name)
+
+	// ensure forward compatibility
+	if len(exclusiveValue) <= 63 {
+		return exclusiveValue
+	}
+
+	return TransferFullNamespacedNameWithPrefixToLegalValue("", namespace, name)
 }

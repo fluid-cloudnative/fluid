@@ -41,7 +41,7 @@ func (e *VineyardEngine) transform(runtime *datav1alpha1.VineyardRuntime) (value
 		Owner: transformer.GenerateOwnerReferenceFromObject(runtime),
 	}
 	value.FullnameOverride = e.name
-
+	value.FullNamespacedNameOverride = utils.TransferFullNamespacedNameWithPrefixToLegalValue("", e.namespace, e.name)
 	value.TieredStore, err = e.transformTieredStore(runtime)
 	if err != nil {
 		return
@@ -271,7 +271,7 @@ func (e *VineyardEngine) transformWorkerPorts(runtime *datav1alpha1.VineyardRunt
 
 func (e *VineyardEngine) transformFuseNodeSelector(runtime *datav1alpha1.VineyardRuntime) map[string]string {
 	nodeSelector := map[string]string{}
-	nodeSelector[e.getFuseLabelName()] = "true"
+	nodeSelector[utils.GetFuseLabelName(runtime.Namespace, runtime.Name)] = "true"
 	return nodeSelector
 }
 

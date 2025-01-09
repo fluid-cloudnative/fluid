@@ -46,7 +46,7 @@ func (e *JindoEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		e.runtimeInfo.SetFuseNodeSelector(runtime.Spec.Fuse.NodeSelector)
 
 		// Check if the runtime is using deprecated labels
-		isLabelDeprecated, err := e.HasDeprecatedCommonLabelname()
+		isLabelDeprecated, err := e.HasDeprecatedCommonLabelName()
 		if err != nil {
 			return e.runtimeInfo, err
 		}

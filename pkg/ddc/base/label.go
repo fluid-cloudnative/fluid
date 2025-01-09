@@ -48,5 +48,5 @@ func (info *RuntimeInfo) GetDatasetNumLabelName() string {
 
 // GetFuseLabelName gets the label indicating a fuse running on some node.
 func (info *RuntimeInfo) GetFuseLabelName() string {
-	return common.LabelAnnotationFusePrefix + info.namespace + "-" + info.name
+	return utils.TransferFullNamespacedNameWithPrefixToLegalValue(common.LabelAnnotationFusePrefix, info.namespace, info.name)
 }

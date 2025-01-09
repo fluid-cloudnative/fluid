@@ -24,9 +24,10 @@ import (
 )
 
 type DataMigrateValue struct {
-	Name            string                 `json:"name"`
-	Owner           *common.OwnerReference `json:"owner,omitempty"`
-	DataMigrateInfo DataMigrateInfo        `json:"datamigrate"`
+	Name                       string                 `json:"name"`
+	FullNamespacedNameOverride string                 `json:"fullNamespacedNameOverride"`
+	Owner                      *common.OwnerReference `json:"owner,omitempty"`
+	DataMigrateInfo            DataMigrateInfo        `json:"datamigrate"`
 }
 
 type DataMigrateInfo struct {

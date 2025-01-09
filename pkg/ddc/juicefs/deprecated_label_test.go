@@ -17,6 +17,7 @@ limitations under the License.
 package juicefs
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -136,10 +137,8 @@ func TestJuiceFSEngine_getDeprecatedCommonLabelName(t *testing.T) {
 			out:       "data.fluid.io/storage-test-fluid",
 		},
 	}
-	fakeClient := fake.NewFakeClientWithScheme(testScheme)
 	for _, test := range testCases {
-		engine := getTestJuiceFSEngine(fakeClient, test.name, test.namespace)
-		out := engine.getDeprecatedCommonLabelName()
+		out := utils.GetCommonLabelName(true, test.namespace, test.name)
 		if out != test.out {
 			t.Errorf("input parameter is %s-%s,expected %s, got %s", test.namespace, test.name, test.out, out)
 		}

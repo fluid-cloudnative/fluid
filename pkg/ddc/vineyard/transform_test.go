@@ -14,6 +14,7 @@ limitations under the License.
 package vineyard
 
 import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"reflect"
 	"strings"
@@ -604,6 +605,10 @@ func TestTransformFuseNodeSelector(t *testing.T) {
 		{
 			name: "NoWorkerPorts",
 			runtime: &datav1alpha1.VineyardRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "vineyard",
+					Namespace: "fluid",
+				},
 				Spec: datav1alpha1.VineyardRuntimeSpec{
 					Worker: datav1alpha1.VineyardCompTemplateSpec{
 						NodeSelector: map[string]string{},

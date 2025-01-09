@@ -23,7 +23,8 @@ import (
 )
 
 type ThinValue struct {
-	FullnameOverride string `json:"fullnameOverride"`
+	FullnameOverride           string `json:"fullnameOverride"`
+	FullNamespacedNameOverride string `json:"fullNamespacedNameOverride"`
 
 	common.ImageInfo `json:",inline"`
 	common.UserInfo  `json:",inline"`
