@@ -44,7 +44,7 @@ func (j *JuiceFSEngine) HasDeprecatedCommonLabelName() (deprecated bool, err err
 	nodeSelectors := fuses.Spec.Template.Spec.NodeSelector
 	j.Log.Info("The current node selectors for worker", "fuseName", fuseName, "nodeSelector", nodeSelectors)
 
-	deprecatedCommonLabelName := utils.GetCommonLabelName(true, j.namespace, j.name)
+	deprecatedCommonLabelName := utils.GetCommonLabelName(true, j.namespace, j.name, j.runtimeInfo.GetNamespacedNameAlias())
 	if _, deprecated = nodeSelectors[deprecatedCommonLabelName]; deprecated {
 		//
 		j.Log.Info("the deprecated node selector exists", "nodeselector", deprecatedCommonLabelName)

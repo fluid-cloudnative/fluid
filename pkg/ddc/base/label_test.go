@@ -49,7 +49,7 @@ func TestGetStorageLabelName(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		result := utils.GetStorageLabelName(common.HumanReadType, common.MemoryStorageType, test.info.IsDeprecatedNodeLabel(), test.info.runtimeType, test.info.namespace, test.info.name)
+		result := utils.GetStorageLabelName(common.HumanReadType, common.MemoryStorageType, test.info.IsDeprecatedNodeLabel(), test.info.runtimeType, test.info.namespace, test.info.name, "")
 		if test.expectedResult != result {
 			t.Errorf("check failure, expected %s, get %s", test.expectedResult, result)
 		}

@@ -23,13 +23,13 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/net"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/net"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 
@@ -54,6 +54,10 @@ func TestJuiceFSEngine_transform(t *testing.T) {
 	testObjs = append(testObjs, (*juicefsSecret).DeepCopy())
 
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "juicefs")
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
 	engine := JuiceFSEngine{
 		name:      "test",
 		namespace: "fluid",
@@ -64,6 +68,7 @@ func TestJuiceFSEngine_transform(t *testing.T) {
 				Fuse: datav1alpha1.JuiceFSFuseSpec{},
 			},
 		},
+		runtimeInfo: runtimeInfo,
 	}
 	ctrl.SetLogger(zap.New(func(o *zap.Options) {
 		o.Development = true

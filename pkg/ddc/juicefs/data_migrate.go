@@ -174,7 +174,7 @@ func (j *JuiceFSEngine) generateDataMigrateValueFile(r cruntime.ReconcileRequest
 		DataMigrateInfo: dataMigrateInfo,
 	}
 	dataMigrateValue.Owner = transformer.GenerateOwnerReferenceFromObject(dataMigrate)
-	dataMigrateValue.FullNamespacedNameOverride = utils.TransferFullNamespacedNameWithPrefixToLegalValue("", j.namespace, j.name)
+	dataMigrateValue.FullNamespacedNameOverride = utils.GetNamespacedNameValueWithPrefix("", j.namespace, j.name, j.runtimeInfo.GetNamespacedNameAlias())
 
 	// 6. create the value file
 	data, err := yaml.Marshal(dataMigrateValue)

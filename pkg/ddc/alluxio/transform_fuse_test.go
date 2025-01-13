@@ -23,6 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
@@ -62,11 +63,18 @@ func TestTransformFuseWithNoArgs(t *testing.T) {
 			}}, &Alluxio{}, []string{"fuse", "--fuse-opts=kernel_cache,rw,allow_other", "/alluxio/default/test/alluxio-fuse", "/"}, false},
 	}
 	for _, test := range tests {
+		runtimeInfo, err := base.BuildRuntimeInfo("test", "default", "alluxio")
+		if err != nil {
+			t.Errorf("fail to create the runtimeInfo with error %v", err)
+		}
 		engine := &AlluxioEngine{
-			name:      "test",
-			namespace: "default",
-			Log:       fake.NullLogger()}
-		err := engine.transformFuse(test.runtime, test.dataset, test.alluxioValue)
+			name:        "test",
+			namespace:   "default",
+			Log:         fake.NullLogger(),
+			runtimeInfo: runtimeInfo,
+			Client:      fake.NewFakeClientWithScheme(testScheme),
+		}
+		err = engine.transformFuse(test.runtime, test.dataset, test.alluxioValue)
 		if err != nil {
 			t.Errorf("Got err %v", err)
 		}
@@ -153,11 +161,18 @@ func TestTransformFuseWithArgs(t *testing.T) {
 			}}, &Alluxio{}, []string{"fuse", "--fuse-opts=kernel_cache,allow_other", "/alluxio/default/test/alluxio-fuse", "/"}, false},
 	}
 	for _, test := range tests {
+		runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio")
+		if err != nil {
+			t.Errorf("fail to create the runtimeInfo with error %v", err)
+		}
 		engine := &AlluxioEngine{
-			name:      "test",
-			namespace: "default",
-			Log:       fake.NullLogger()}
-		err := engine.transformFuse(test.runtime, test.dataset, test.alluxioValue)
+			name:        "test",
+			namespace:   "default",
+			Log:         fake.NullLogger(),
+			runtimeInfo: runtimeInfo,
+			Client:      fake.NewFakeClientWithScheme(testScheme),
+		}
+		err = engine.transformFuse(test.runtime, test.dataset, test.alluxioValue)
 		if err != nil {
 			t.Errorf("Got err %v", err)
 		}
@@ -230,7 +245,16 @@ func TestTransformFuseWithNetwork(t *testing.T) {
 		},
 	}
 
-	engine := &AlluxioEngine{Log: fake.NullLogger()}
+	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
+
+	engine := &AlluxioEngine{
+		Log:         fake.NullLogger(),
+		runtimeInfo: runtimeInfo,
+		Client:      fake.NewFakeClientWithScheme(testScheme),
+	}
 	ds := &datav1alpha1.Dataset{}
 	for k, v := range testCases {
 		gotValue := &Alluxio{}

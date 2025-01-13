@@ -174,7 +174,7 @@ func (e *VineyardEngine) destroyWorkers(expectedWorkers int32) (currentWorkers i
 				labelsToModify.Delete(label)
 			}
 
-			exclusiveLabelValue := utils.GetExclusiveValue(e.namespace, e.name)
+			exclusiveLabelValue := runtimeInfo.GetExclusiveLabelValue()
 			if val, exist := toUpdate.Labels[labelExclusiveName]; exist && val == exclusiveLabelValue {
 				labelsToModify.Delete(labelExclusiveName)
 			}

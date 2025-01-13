@@ -27,10 +27,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
 func TestTransformFuse(t *testing.T) {
@@ -73,6 +73,10 @@ func TestTransformFuse(t *testing.T) {
 		juicefsSecret3.DeepCopy())
 
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "juicefs")
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
 	engine := JuiceFSEngine{
 		name:      "test",
 		namespace: "fluid",
@@ -83,6 +87,7 @@ func TestTransformFuse(t *testing.T) {
 				Fuse: datav1alpha1.JuiceFSFuseSpec{},
 			},
 		},
+		runtimeInfo: runtimeInfo,
 	}
 
 	var tests = []struct {

@@ -171,7 +171,7 @@ func createFusePersistentVolumeClaim(client client.Client, virtualRuntime base.R
 				Namespace: virtualNamespace,
 				Labels: map[string]string{
 					// see 'pkg/util/webhook/scheduler/mutating/schedule_pod_handler.go' 'CheckIfPVCIsDataset' function usage
-					utils.TransferFullNamespacedNameWithPrefixToLegalValue(common.LabelAnnotationStorageCapacityPrefix, virtualNamespace, virtualName): "true",
+					utils.GetNamespacedNameValueWithPrefix(common.LabelAnnotationStorageCapacityPrefix, virtualNamespace, virtualName, virtualRuntime.GetNamespacedNameAlias()): "true",
 					common.LabelAnnotationDatasetReferringName:      runtimePVC.Name,
 					common.LabelAnnotationDatasetReferringNameSpace: runtimePVC.Namespace,
 				},

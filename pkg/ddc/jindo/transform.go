@@ -120,7 +120,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 		},
 	}
 
-	value.FullNamespacedNameOverride = utils.TransferFullNamespacedNameWithPrefixToLegalValue("", e.namespace, e.name)
+	value.FullNamespacedNameOverride = utils.GetNamespacedNameValueWithPrefix("", e.namespace, e.name, e.runtimeInfo.GetNamespacedNameAlias())
 
 	e.transformNetworkMode(runtime, value)
 	err = e.transformHadoopConfig(runtime, value)
@@ -464,7 +464,7 @@ func (e *JindoEngine) transformFuseNodeSelector(runtime *datav1alpha1.JindoRunti
 	}
 
 	// The label will be added by CSI Plugin when any workload pod is scheduled on the node.
-	value.Fuse.NodeSelector[utils.GetFuseLabelName(runtime.Namespace, runtime.Name)] = "true"
+	value.Fuse.NodeSelector[utils.GetFuseLabelName(runtime.Namespace, runtime.Name, e.runtimeInfo.GetNamespacedNameAlias())] = "true"
 
 	return nil
 }

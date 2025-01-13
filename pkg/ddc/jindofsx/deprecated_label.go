@@ -50,7 +50,7 @@ func (e *JindoFSxEngine) HasDeprecatedCommonLabelname() (deprecated bool, err er
 	nodeSelectors := workers.Spec.Template.Spec.NodeSelector
 	e.Log.Info("The current node selectors for worker", "workerName", workerName, "nodeSelector", nodeSelectors)
 
-	deprecatedCommonLabelName := utils.GetCommonLabelName(true, e.namespace, e.name)
+	deprecatedCommonLabelName := utils.GetCommonLabelName(true, e.namespace, e.name, e.runtimeInfo.GetNamespacedNameAlias())
 	if _, deprecated = nodeSelectors[deprecatedCommonLabelName]; deprecated {
 		//
 		e.Log.Info("the deprecated node selector exists", "nodeselector", deprecatedCommonLabelName)

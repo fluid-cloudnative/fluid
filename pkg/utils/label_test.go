@@ -184,18 +184,18 @@ func TestChangeNodeLabelWithPatchModel(t *testing.T) {
 
 func TestGetFullNamespacedNameWithPrefixValue(t *testing.T) {
 	tests := []struct {
-		prefix, namespace, name string
-		expected                string
+		prefix, namespace, name, overLimitNamespacedNameAlias string
+		expected                                              string
 	}{
-		{"normal-", "default", "test-dataset", "normal-default-test-dataset"},
-		{"overlimit-", "namespace-ajsdjikebnfacdsvwcaxqcackjascnbaksjcnakjscnackjasn", "dataset-demo", "overlimit-namespac-datasetd-58df5bd9cc"},
-		{"overlimit-", "namespace-demo", "dataset-ajsdjikebnfacdsvwcaxqcackjascnbaksjcnakjscnackjasn", "overlimit-namespac-dataseta-6dfd85695"},
+		{"normal-", "default", "test-dataset", "", "normal-default-test-dataset"},
+		{"overlimit-", "namespace-ajsdjikebnfacdsvwcaxqcackjascnbaksjcnakjscnackjasn", "dataset-demo", "58df5bd9cc", "overlimit-58df5bd9cc"},
+		{"overlimit-", "namespace-demo", "dataset-ajsdjikebnfacdsvwcaxqcackjascnbaksjcnakjscnackjasn", "6dfd85695", "overlimit-6dfd85695"},
 	}
 
 	for _, test := range tests {
-		result := TransferFullNamespacedNameWithPrefixToLegalValue(test.prefix, test.namespace, test.name)
+		result := GetNamespacedNameValueWithPrefix(test.prefix, test.namespace, test.name, test.overLimitNamespacedNameAlias)
 		if result != test.expected {
-			t.Errorf("TransferFullNamespacedNameWithPrefixToLegalValue(%v) = %v, want %v", test, result, test.expected)
+			t.Errorf("GetNamespacedNameValueWithPrefix(%v) = %v, want %v", test, result, test.expected)
 		}
 	}
 }

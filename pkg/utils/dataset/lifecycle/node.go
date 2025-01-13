@@ -241,7 +241,7 @@ func labelCacheNode(nodeToLabel corev1.Node, runtimeInfo base.RuntimeInfoInterfa
 		labelsToModify.Add(commonLabel, "true")
 
 		if exclusiveness {
-			exclusiveLabelValue := utils.GetExclusiveValue(runtimeInfo.GetNamespace(), runtimeInfo.GetName())
+			exclusiveLabelValue := runtimeInfo.GetExclusiveLabelValue()
 			labelsToModify.Add(exclusiveLabel, exclusiveLabelValue)
 		}
 
@@ -359,7 +359,7 @@ func unlabelCacheNode(node corev1.Node, runtimeInfo base.RuntimeInfoInterface, c
 			labelsToModify.Delete(label)
 		}
 
-		exclusiveLabelValue := utils.GetExclusiveValue(runtimeInfo.GetNamespace(), runtimeInfo.GetName())
+		exclusiveLabelValue := runtimeInfo.GetExclusiveLabelValue()
 		if val, exist := nodeToUpdate.Labels[labelExclusiveName]; exist && val == exclusiveLabelValue {
 			labelsToModify.Delete(labelExclusiveName)
 		}

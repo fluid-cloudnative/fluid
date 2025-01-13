@@ -68,7 +68,7 @@ func TestJindoCacheEngine_GetDeprecatedCommonLabelname(t *testing.T) {
 		},
 	}
 	for _, test := range testCases {
-		out := utils.GetCommonLabelName(true, test.namespace, test.name)
+		out := utils.GetCommonLabelName(true, test.namespace, test.name, "")
 		if out != test.out {
 			t.Errorf("input parameter is %s-%s,expected %s, got %s", test.namespace, test.name, test.out, out)
 		}
