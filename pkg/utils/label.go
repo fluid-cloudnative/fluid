@@ -20,12 +20,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/common/deprecated"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/validation"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -114,64 +114,92 @@ func ChangeNodeLabelWithPatchMode(cli client.Client, node *v1.Node, labelsToModi
 	return PatchLabels(cli, node, labelsToModify)
 }
 
-func GetStoragetLabelName(read common.ReadType, storage common.StorageType, isDeprecated bool, runtimeType string, namespace string, name string) string {
+func GetStorageLabelName(read common.ReadType, storage common.StorageType, isDeprecated bool, runtimeType string, namespace, name, overLimitNamespacedNameAlias string) string {
 	prefix := common.LabelAnnotationStorageCapacityPrefix
 	if isDeprecated {
 		prefix = deprecated.LabelAnnotationStorageCapacityPrefix
 	}
-	return prefix +
-		string(read) +
-		runtimeType +
-		"-" +
-		string(storage) +
-		namespace +
-		"-" +
-		name
+
+	prefix = prefix + string(read) + runtimeType + "-" + string(storage)
+
+	return GetNamespacedNameValueWithPrefix(prefix, namespace, name, overLimitNamespacedNameAlias)
 }
 
-func GetLabelNameForMemory(isDeprecated bool, runtimeType string, namespace string, name string) string {
+func GetLabelNameForMemory(isDeprecated bool, runtimeType string, namespace, name, overLimitNamespacedNameAlias string) string {
 	read := common.HumanReadType
 	storage := common.MemoryStorageType
 	if isDeprecated {
 		read = deprecated.HumanReadType
 		storage = deprecated.MemoryStorageType
 	}
-	return GetStoragetLabelName(read, storage, isDeprecated, runtimeType, namespace, name)
+	return GetStorageLabelName(read, storage, isDeprecated, runtimeType, namespace, name, overLimitNamespacedNameAlias)
 }
 
-func GetLabelNameForDisk(isDeprecated bool, runtimeType string, namespace string, name string) string {
+func GetLabelNameForDisk(isDeprecated bool, runtimeType string, namespace, name, overLimitNamespacedNameAlias string) string {
 	read := common.HumanReadType
 	storage := common.DiskStorageType
 	if isDeprecated {
 		read = deprecated.HumanReadType
 		storage = deprecated.DiskStorageType
 	}
-	return GetStoragetLabelName(read, storage, isDeprecated, runtimeType, namespace, name)
+	return GetStorageLabelName(read, storage, isDeprecated, runtimeType, namespace, name, overLimitNamespacedNameAlias)
 }
 
-func GetLabelNameForTotal(isDeprecated bool, runtimeType string, namespace string, name string) string {
+func GetLabelNameForTotal(isDeprecated bool, runtimeType string, namespace, name, overLimitNamespacedNameAlias string) string {
 	read := common.HumanReadType
 	storage := common.TotalStorageType
 	if isDeprecated {
 		read = deprecated.HumanReadType
 		storage = deprecated.TotalStorageType
 	}
-	return GetStoragetLabelName(read, storage, isDeprecated, runtimeType, namespace, name)
+	return GetStorageLabelName(read, storage, isDeprecated, runtimeType, namespace, name, overLimitNamespacedNameAlias)
 }
 
-func GetCommonLabelName(isDeprecated bool, namespace string, name string) string {
+func GetCommonLabelName(isDeprecated bool, namespace, name, overLimitNamespacedNameAlias string) string {
 	prefix := common.LabelAnnotationStorageCapacityPrefix
 	if isDeprecated {
 		prefix = deprecated.LabelAnnotationStorageCapacityPrefix
 	}
 
-	return prefix + namespace + "-" + name
+	return GetNamespacedNameValueWithPrefix(prefix, namespace, name, overLimitNamespacedNameAlias)
 }
 
-func GetRuntimeLabelName(isDeprecated bool, runtimeType string, namespace string, name string) string {
+func GetRuntimeLabelName(isDeprecated bool, runtimeType string, namespace, name, overLimitNamespacedNameAlias string) string {
 	prefix := common.LabelAnnotationStorageCapacityPrefix
 	if isDeprecated {
 		prefix = deprecated.LabelAnnotationStorageCapacityPrefix
 	}
-	return prefix + runtimeType + "-" + namespace + "-" + name
+
+	prefix = prefix + runtimeType + "-"
+
+	return GetNamespacedNameValueWithPrefix(prefix, namespace, name, overLimitNamespacedNameAlias)
+}
+
+func GetFuseLabelName(namespace, name, overLimitNamespacedNameAlias string) string {
+	return GetNamespacedNameValueWithPrefix(common.LabelAnnotationFusePrefix, namespace, name, overLimitNamespacedNameAlias)
+}
+
+func GetExclusiveKey() string {
+	return common.FluidExclusiveKey
+}
+
+// GetNamespacedNameValueWithPrefix Transfer a fully namespaced name with a prefix to a legal value which under max length limit.
+// If the full namespaced name exceeds 63 characters, it calculates the hash value of the name and truncates the name and namespace,
+// then appends the hash value to ensure the name's uniqueness and length constraint.
+func GetNamespacedNameValueWithPrefix(prefix, namespace, name, overLimitNamespacedNameAlias string) (fullNamespacedNameWithPrefix string) {
+	namespacedName := fmt.Sprintf("%s-%s", namespace, name)
+	fullNamespacedNameWithPrefix = fmt.Sprintf("%s%s", prefix, namespacedName)
+	// ensure forward compatibility
+	if len(fullNamespacedNameWithPrefix) < validation.DNS1035LabelMaxLength {
+		return
+	}
+
+	if overLimitNamespacedNameAlias == "" {
+		log.Info("The overLimitNamespacedNameAlias is absent, fall back to original value which causes the resource creation failed by scheme validation", "key", fmt.Sprintf("%s-%s", namespace, name))
+		return fullNamespacedNameWithPrefix
+	}
+
+	fullNamespacedNameWithPrefix = fmt.Sprintf("%s%s", prefix, overLimitNamespacedNameAlias)
+
+	return
 }

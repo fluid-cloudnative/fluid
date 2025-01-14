@@ -13,7 +13,7 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
     role: jindofs-worker
-    fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
+    fluid.io/dataset: {{ .Values.fullNamespacedNameOverride }}
     fluid.io/dataset-placement: {{ .Values.placement }}
     {{- include "library.fluid.labels" . | nindent 4 }}
   ownerReferences:
@@ -49,7 +49,7 @@ spec:
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: jindofs-worker
-        fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
+        fluid.io/dataset: {{ .Values.fullNamespacedNameOverride }}
         fluid.io/dataset-placement: {{ .Values.placement }}
         {{- if .Values.worker.labels }}
         {{- range $key, $val := .Values.worker.labels }}

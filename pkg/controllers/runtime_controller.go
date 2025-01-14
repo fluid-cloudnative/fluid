@@ -187,7 +187,7 @@ func (r *RuntimeReconciler) ReconcileRuntimeDeletion(engine base.Engine, ctx cru
 		return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
 	}
 
-	// 1. Delete the implementation of the the runtime
+	// 1. Delete the implementation of the runtime
 	err = engine.Shutdown()
 	if err != nil {
 		r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to shutdown engine %v", err)

@@ -18,26 +18,19 @@ package goosefs
 
 import (
 	"fmt"
+	"testing"
 
 	"github.com/brahma-adshonor/gohook"
-
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
-
-	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
-
 	"github.com/pkg/errors"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"k8s.io/apimachinery/pkg/runtime"
-
 	"k8s.io/apimachinery/pkg/util/net"
 
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-
-	"testing"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 )
 
 func TestSetupMasterInternal(t *testing.T) {
@@ -131,6 +124,11 @@ func TestSetupMasterInternal(t *testing.T) {
 
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
+	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "goosefs")
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
+
 	engine := GooseFSEngine{
 
 		name: "hbase",
@@ -156,9 +154,10 @@ func TestSetupMasterInternal(t *testing.T) {
 				},
 			},
 		},
+		runtimeInfo: runtimeInfo,
 	}
 
-	err := portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
+	err = portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -295,6 +294,11 @@ func TestGenerateGooseFSValueFile(t *testing.T) {
 
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
+	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "goosefs")
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
+
 	engine := GooseFSEngine{
 
 		name: "hbase",
@@ -320,9 +324,10 @@ func TestGenerateGooseFSValueFile(t *testing.T) {
 				},
 			},
 		},
+		runtimeInfo: runtimeInfo,
 	}
 
-	err := portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 50}, "bitmap", GetReservedPorts)
+	err = portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 50}, "bitmap", GetReservedPorts)
 	if err != nil {
 		t.Fatal(err.Error())
 	}

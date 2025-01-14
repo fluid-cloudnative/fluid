@@ -19,12 +19,11 @@ package jindocache
 import (
 	"os"
 	"reflect"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	corev1 "k8s.io/api/core/v1"
@@ -32,6 +31,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/net"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 func TestTransformTolerations(t *testing.T) {
@@ -636,15 +637,20 @@ func TestJindoCacheEngine_transform(t *testing.T) {
 			s.AddKnownTypes(datav1alpha1.GroupVersion, &datav1alpha1.DatasetList{})
 			_ = corev1.AddToScheme(s)
 			client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+			runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "jindocache")
+			if err != nil {
+				t.Errorf("fail to create the runtimeInfo with error %v", err)
+			}
 			e := &JindoCacheEngine{
-				runtime:   tt.fields.runtime,
-				name:      tt.fields.name,
-				namespace: tt.fields.namespace,
-				Client:    client,
-				Log:       fake.NullLogger(),
+				runtime:     tt.fields.runtime,
+				name:        tt.fields.name,
+				namespace:   tt.fields.namespace,
+				Client:      client,
+				Log:         fake.NullLogger(),
+				runtimeInfo: runtimeInfo,
 			}
 			tt.args.runtime = tt.fields.runtime
-			err := portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
+			err = portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
 			if err != nil {
 				t.Fatalf("failed to set up runtime port allocator due to %v", err)
 			}
@@ -1143,15 +1149,21 @@ func TestJindoCacheEngine_transformPolicy(t *testing.T) {
 			s.AddKnownTypes(datav1alpha1.GroupVersion, &datav1alpha1.DatasetList{})
 			_ = corev1.AddToScheme(s)
 			client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+			runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "jinocache")
+			if err != nil {
+				t.Errorf("fail to create the runtimeInfo with error %v", err)
+			}
+
 			e := &JindoCacheEngine{
-				runtime:   tt.fields.runtime,
-				name:      tt.fields.name,
-				namespace: tt.fields.namespace,
-				Client:    client,
-				Log:       fake.NullLogger(),
+				runtime:     tt.fields.runtime,
+				name:        tt.fields.name,
+				namespace:   tt.fields.namespace,
+				Client:      client,
+				Log:         fake.NullLogger(),
+				runtimeInfo: runtimeInfo,
 			}
 			tt.args.runtime = tt.fields.runtime
-			err := portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
+			err = portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
 			if err != nil {
 				t.Fatalf("failed to set up runtime port allocator due to %v", err)
 			}
@@ -1352,15 +1364,21 @@ func TestJindoCacheEngine_transformCacheSet(t *testing.T) {
 			s.AddKnownTypes(datav1alpha1.GroupVersion, &datav1alpha1.DatasetList{})
 			_ = corev1.AddToScheme(s)
 			client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+			runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "jindocache")
+			if err != nil {
+				t.Errorf("fail to create the runtimeInfo with error %v", err)
+			}
+
 			e := &JindoCacheEngine{
-				runtime:   tt.fields.runtime,
-				name:      tt.fields.name,
-				namespace: tt.fields.namespace,
-				Client:    client,
-				Log:       fake.NullLogger(),
+				runtime:     tt.fields.runtime,
+				name:        tt.fields.name,
+				namespace:   tt.fields.namespace,
+				Client:      client,
+				Log:         fake.NullLogger(),
+				runtimeInfo: runtimeInfo,
 			}
 			tt.args.runtime = tt.fields.runtime
-			err := portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
+			err = portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
 			if err != nil {
 				t.Fatalf("failed to set up runtime port allocator due to %v", err)
 			}

@@ -21,15 +21,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/pkg/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // Conventions defines naming convention for all runtime.
@@ -53,6 +53,8 @@ type Conventions interface {
 	GetDatasetNumLabelName() string
 
 	GetWorkerStatefulsetName() string
+
+	GetExclusiveLabelValue() string
 }
 
 // Runtime Information interface defines the interfaces that should be implemented
@@ -67,6 +69,8 @@ type RuntimeInfoInterface interface {
 
 	GetNamespace() string
 
+	GetNamespacedNameAlias() string
+
 	GetRuntimeType() string
 
 	IsExclusive() bool
@@ -76,6 +80,8 @@ type RuntimeInfoInterface interface {
 	SetupFuseCleanPolicy(policy datav1alpha1.FuseCleanPolicy)
 
 	SetupWithDataset(dataset *datav1alpha1.Dataset)
+
+	SetNamespacedNameAlias(alias types.UID)
 
 	GetFuseNodeSelector() (nodeSelector map[string]string)
 
@@ -104,9 +110,10 @@ var _ RuntimeInfoInterface = &RuntimeInfo{}
 
 // The real Runtime Info should implement
 type RuntimeInfo struct {
-	name        string
-	namespace   string
-	runtimeType string
+	name                         string
+	namespace                    string
+	overLimitNamespacedNameAlias string
+	runtimeType                  string
 
 	//tieredstore datav1alpha1.TieredStore
 	tieredstoreInfo TieredStoreInfo
@@ -272,6 +279,10 @@ func (info *RuntimeInfo) GetNamespace() string {
 	return info.namespace
 }
 
+func (info *RuntimeInfo) GetNamespacedNameAlias() string {
+	return info.overLimitNamespacedNameAlias
+}
+
 // GetRuntimeType gets runtime type
 func (info *RuntimeInfo) GetRuntimeType() string {
 	return info.runtimeType
@@ -285,6 +296,14 @@ func (info *RuntimeInfo) IsExclusive() bool {
 // SetupWithDataset determines if need to setup with the info of dataset
 func (info *RuntimeInfo) SetupWithDataset(dataset *datav1alpha1.Dataset) {
 	info.exclusive = dataset.IsExclusiveMode()
+}
+
+// SetupWithDataset determines if need to setup with the info of dataset
+func (info *RuntimeInfo) SetNamespacedNameAlias(alias types.UID) {
+	if alias == "" {
+		return
+	}
+	info.overLimitNamespacedNameAlias = string(alias)
 }
 
 // SetFuseNodeSelector setups the fuse deploy mode
@@ -525,6 +544,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 
 	if runtimeInfo != nil {
 		runtimeInfo.SetClient(client)
+		runtimeInfo.SetNamespacedNameAlias(dataset.UID)
 	}
 	return runtimeInfo, err
 }

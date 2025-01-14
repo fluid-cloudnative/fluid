@@ -75,9 +75,16 @@ func TestTransformFuse(t *testing.T) {
 		}, &Alluxio{}, []string{"fuse", "--fuse-opts=kernel_cache,rw,uid=1000,gid=1000,allow_other"}},
 	}
 	for _, test := range tests {
-		engine := &AlluxioEngine{}
+		runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
+		if err != nil {
+			t.Errorf("fail to create the runtimeInfo with error %v", err)
+		}
+		engine := &AlluxioEngine{
+			runtimeInfo: runtimeInfo,
+			Client:      fake.NewFakeClientWithScheme(testScheme),
+		}
 		engine.Log = ctrl.Log
-		err := engine.transformFuse(test.runtime, test.dataset, test.value)
+		err = engine.transformFuse(test.runtime, test.dataset, test.value)
 		if err != nil {
 			t.Errorf("error %v", err)
 		}
@@ -1012,7 +1019,16 @@ func TestTransformWorkerProperties(t *testing.T) {
 }
 
 func TestTransformFuseProperties(t *testing.T) {
-	engine := &AlluxioEngine{Log: fake.NullLogger()}
+	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio")
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
+
+	engine := &AlluxioEngine{
+		Log:         fake.NullLogger(),
+		Client:      fake.NewFakeClientWithScheme(testScheme),
+		runtimeInfo: runtimeInfo,
+	}
 	var x int64 = 1000
 	ctrl.SetLogger(zap.New(func(o *zap.Options) {
 		o.Development = true

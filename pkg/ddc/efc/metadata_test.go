@@ -22,6 +22,7 @@ import (
 
 	"github.com/brahma-adshonor/gohook"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -86,14 +87,20 @@ func TestSyncMetadataInternal(t *testing.T) {
 
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
-	engine := &EFCEngine{
-		name:      "spark",
-		namespace: "fluid",
-		Client:    client,
-		Log:       fake.NullLogger(),
+	runtimeInfo, err := base.BuildRuntimeInfo("spark", "fluid", "efc")
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
 
-	err := gohook.HookMethod(engine, "TotalStorageBytes", mockTotalStorageBytesError, nil)
+	engine := &EFCEngine{
+		name:        "spark",
+		namespace:   "fluid",
+		Client:      client,
+		Log:         fake.NullLogger(),
+		runtimeInfo: runtimeInfo,
+	}
+
+	err = gohook.HookMethod(engine, "TotalStorageBytes", mockTotalStorageBytesError, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}

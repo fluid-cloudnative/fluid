@@ -25,6 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
@@ -101,6 +102,11 @@ func TestSetupMasterInternal(t *testing.T) {
 	}
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
+	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "vineyard", base.WithTieredStore(vineyardruntime.Spec.TieredStore))
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
+
 	engine := VineyardEngine{
 		name:      "hbase",
 		namespace: "fluid",
@@ -115,6 +121,7 @@ func TestSetupMasterInternal(t *testing.T) {
 				},
 			},
 		},
+		runtimeInfo: runtimeInfo,
 	}
 	err = engine.setupMasterInternal()
 	if err == nil {
@@ -128,7 +135,7 @@ func TestSetupMasterInternal(t *testing.T) {
 	}
 	err = engine.setupMasterInternal()
 	if err != nil {
-		t.Errorf("fail to exec check helm release")
+		t.Errorf("fail to exec check helm release, %v", err)
 	}
 	wrappedUnhookCheckRelease()
 
@@ -167,7 +174,7 @@ func TestSetupMasterInternal(t *testing.T) {
 	}
 	err = engine.setupMasterInternal()
 	if err != nil {
-		t.Errorf("fail to install release")
+		t.Errorf("fail to install release, %v", err)
 	}
 	wrappedUnhookInstallRelease()
 	wrappedUnhookCheckRelease()
@@ -208,6 +215,10 @@ func TestGenerateVineyardValueFile(t *testing.T) {
 	}
 
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "vineyard", base.WithTieredStore(vineyardruntime.Spec.TieredStore))
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
 	engine := VineyardEngine{
 		name:      "hbase",
 		namespace: "fluid",
@@ -222,9 +233,10 @@ func TestGenerateVineyardValueFile(t *testing.T) {
 				},
 			},
 		},
+		runtimeInfo: runtimeInfo,
 	}
 
-	_, err := engine.generateVineyardValueFile(vineyardruntime)
+	_, err = engine.generateVineyardValueFile(vineyardruntime)
 	if err != nil {
 		t.Errorf("fail to generateVineyardValueFile %v", err)
 	}

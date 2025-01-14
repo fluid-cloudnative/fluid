@@ -24,6 +24,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/net"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -83,7 +84,13 @@ func TestTransformFuse(t *testing.T) {
 		if strings.Contains(k, "env") {
 			os.Setenv("VINEYARD_FUSE_IMAGE_ENV", "image-from-env:image-tag-from-env")
 		}
-		engine := &VineyardEngine{}
+		runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "vineyard")
+		if err != nil {
+			t.Errorf("fail to create the runtimeInfo with error %v", err)
+		}
+		engine := &VineyardEngine{
+			runtimeInfo: runtimeInfo,
+		}
 		engine.Log = ctrl.Log
 		engine.transformFuse(test.runtime, test.value)
 
@@ -604,6 +611,10 @@ func TestTransformFuseNodeSelector(t *testing.T) {
 		{
 			name: "NoWorkerPorts",
 			runtime: &datav1alpha1.VineyardRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "vineyard",
+					Namespace: "fluid",
+				},
 				Spec: datav1alpha1.VineyardRuntimeSpec{
 					Worker: datav1alpha1.VineyardCompTemplateSpec{
 						NodeSelector: map[string]string{},
@@ -618,9 +629,14 @@ func TestTransformFuseNodeSelector(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "vineyard")
+			if err != nil {
+				t.Errorf("fail to create the runtimeInfo with error %v", err)
+			}
 			engine := &VineyardEngine{
-				name:      "vineyard",
-				namespace: "fluid",
+				name:        "vineyard",
+				namespace:   "fluid",
+				runtimeInfo: runtimeInfo,
 			}
 			actual := engine.transformFuseNodeSelector(tt.runtime)
 			if !reflect.DeepEqual(actual, tt.expected) {

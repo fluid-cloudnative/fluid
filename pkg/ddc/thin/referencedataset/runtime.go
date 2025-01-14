@@ -102,6 +102,7 @@ func (e *ReferenceDatasetEngine) getRuntimeInfo() (base.RuntimeInfoInterface, er
 	// set exclusive mode
 	// TODO: how to handle the exclusive mode ?
 	e.runtimeInfo.SetupWithDataset(dataset)
+	e.runtimeInfo.SetNamespacedNameAlias(dataset.UID)
 
 	e.Log.Info("Setup with dataset done", "exclusive", e.runtimeInfo.IsExclusive())
 
