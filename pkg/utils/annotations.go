@@ -75,7 +75,7 @@ const (
 	PlatformUnprivileged = "Unprivileged"
 )
 
-func GetServerlessPlatfrom(infos map[string]string) (platform string) {
+func GetServerlessPlatform(infos map[string]string) (platform string) {
 	if matchedKey(infos, ServerlessPlatformKey) {
 		return infos[ServerlessPlatformKey]
 	}
@@ -127,6 +127,10 @@ func serverlessPlatformMatched(infos map[string]string) (match bool) {
 	}
 
 	return matchedKey(infos, ServerlessPlatformKey)
+}
+
+func SkipPrecheckEnable(infos map[string]string) (match bool) {
+	return enabled(infos, common.SkipPrecheckAnnotationKey)
 }
 
 // enabled checks if the given name has a value of "true"

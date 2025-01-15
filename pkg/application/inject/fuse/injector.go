@@ -258,5 +258,5 @@ func (s *Injector) shouldInject(pod common.FluidObject) (should bool, err error)
 }
 
 func (s *Injector) getServerlessPlatformFromMeta(metaObj metav1.ObjectMeta) string {
-	return utils.GetServerlessPlatfrom(metaObj.Labels)
+	return utils.GetServerlessPlatform(metaObj.Labels)
 }

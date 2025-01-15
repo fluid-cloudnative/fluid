@@ -17,7 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func CollectRuntimeInfosFromPVCs(client client.Client, pvcNames []string, namespace string, setupLog logr.Logger) (runtimeInfos map[string]base.RuntimeInfoInterface, err error) {
+func CollectRuntimeInfosFromPVCs(client client.Client, pvcNames []string, namespace string, setupLog logr.Logger, skipPrecheck bool) (runtimeInfos map[string]base.RuntimeInfoInterface, err error) {
 	if utils.IsTimeTrackerDebugEnabled() {
 		defer utils.TimeTrack(time.Now(), "CreateUpdatePodForSchedulingHandler.checkIfDatasetPVCs",
 			"pvc.names", pvcNames, "pvc.namespace", namespace)
@@ -50,20 +50,7 @@ func CollectRuntimeInfosFromPVCs(client client.Client, pvcNames []string, namesp
 			}
 			isDatasetPVC = kubeclient.CheckIfPVCIsDataset(pvc)
 			if isDatasetPVC {
-				// isReferringPVC, referringName, referringNamespace := kubeclient.GetReferringDatasetPVCInfo(pvc)
-				// if isReferringPVC {
-				// 	pvc, err = kubeclient.GetPersistentVolumeClaim(a.Client, referringName, referringNamespace)
-				// 	if err != nil {
-				// 		setupLog.Error(err,
-				// 			"unable to get referring pvc, get failure",
-				// 			"name", referringName,
-				// 			"namespace", referringNamespace)
-				// 		return
-				// 	}
-				// }
-
-				runtimeInfo, err = buildRuntimeInfoInternal(client, pvc, setupLog)
-				// runtimeInfo, err = base.GetRuntimeInfo(a.Client, pvcName, namespace)
+				runtimeInfo, err = buildRuntimeInfoInternalWithPrecheck(client, pvc, setupLog, skipPrecheck)
 				if err != nil {
 					err = errors.Wrapf(err, "failed to build runtime info for PVC \"%v/%v\"", namespace, pvcName)
 					return
@@ -86,9 +73,9 @@ func CollectRuntimeInfosFromPVCs(client client.Client, pvcNames []string, namesp
 	return
 }
 
-func buildRuntimeInfoInternal(client client.Client,
+func buildRuntimeInfoInternalWithPrecheck(client client.Client,
 	pvc *corev1.PersistentVolumeClaim,
-	log logr.Logger) (runtimeInfo base.RuntimeInfoInterface, err error) {
+	log logr.Logger, skipPrecheck bool) (runtimeInfo base.RuntimeInfoInterface, err error) {
 	if utils.IsTimeTrackerDebugEnabled() {
 		defer utils.TimeTrack(time.Now(), "mutating.buildRuntimeInfoInternalByPVC",
 			"pvc.name", pvc.GetName(), "pvc.namespace", pvc.GetNamespace())
@@ -102,7 +89,23 @@ func buildRuntimeInfoInternal(client client.Client,
 		pvcName = datasetName
 	}
 
-	dataset, err := utils.GetDataset(client, pvcName, namespace)
+	if !skipPrecheck {
+		if err = checkDatasetBound(client, pvcName, namespace); err != nil {
+			return
+		}
+	}
+
+	runtimeInfo, err = base.GetRuntimeInfo(client, pvcName, namespace)
+	if err != nil {
+		log.Error(err, "unable to get runtimeInfo, get failure", "runtime", pvc.GetName(), "namespace", namespace)
+		return
+	}
+	runtimeInfo.SetDeprecatedNodeLabel(false)
+	return
+}
+
+func checkDatasetBound(client client.Client, name, namespace string) (err error) {
+	dataset, err := utils.GetDataset(client, name, namespace)
 	if err != nil {
 		return
 	}
@@ -116,12 +119,5 @@ func buildRuntimeInfoInternal(client client.Client,
 		err = fmt.Errorf("dataset \"%s/%s\" not bound", dataset.Namespace, dataset.Name)
 		return
 	}
-
-	runtimeInfo, err = base.GetRuntimeInfo(client, pvcName, namespace)
-	if err != nil {
-		log.Error(err, "unable to get runtimeInfo, get failure", "runtime", pvc.GetName(), "namespace", namespace)
-		return
-	}
-	runtimeInfo.SetDeprecatedNodeLabel(false)
-	return
+	return nil
 }

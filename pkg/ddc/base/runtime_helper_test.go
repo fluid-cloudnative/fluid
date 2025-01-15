@@ -22,13 +22,11 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // func TestGetTemplateToInjectForFuse(t *testing.T) {
@@ -1168,4 +1166,181 @@ func TestGetFuseDaemonset(t *testing.T) {
 			t.Errorf("testcase %s is failed, want err %v, got err %v", test.name, test.wantErr, err)
 		}
 	}
+}
+
+func TestGetMountInfoFromVolumeClaim(t *testing.T) {
+	namespace := "default"
+	testPVCInputs := []*corev1.PersistentVolumeClaim{{
+		ObjectMeta: metav1.ObjectMeta{Name: "fluid-dataset",
+			Namespace: namespace},
+		Spec: corev1.PersistentVolumeClaimSpec{
+			VolumeName: "default-fluid-dataset",
+		},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "nonfluidpvc",
+			Annotations: common.ExpectedFluidAnnotations,
+			Namespace:   namespace},
+		Spec: corev1.PersistentVolumeClaimSpec{
+			VolumeName: "nonfluidpv",
+		},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "nopv",
+			Annotations: common.ExpectedFluidAnnotations,
+			Namespace:   namespace},
+		Spec: corev1.PersistentVolumeClaimSpec{
+			VolumeName: "nopv",
+		},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "fluid-dataset-subpath",
+			Annotations: common.ExpectedFluidAnnotations,
+			Namespace:   namespace},
+		Spec: corev1.PersistentVolumeClaimSpec{
+			VolumeName: "default-fluid-dataset-subpath",
+		},
+	}}
+
+	objs := []runtime.Object{}
+
+	for _, pvc := range testPVCInputs {
+		objs = append(objs, pvc.DeepCopy())
+	}
+
+	testPVInputs := []*corev1.PersistentVolume{{
+		ObjectMeta: metav1.ObjectMeta{Name: "default-fluid-dataset"},
+		Spec: corev1.PersistentVolumeSpec{
+			PersistentVolumeSource: corev1.PersistentVolumeSource{
+				CSI: &corev1.CSIPersistentVolumeSource{
+					Driver: "fuse.csi.fluid.io",
+					VolumeAttributes: map[string]string{
+						common.VolumeAttrFluidPath: "/runtime-mnt/jindo/big-data/nofounddataset/jindofs-fuse",
+						common.VolumeAttrMountType: common.JindoRuntime,
+					},
+				},
+			},
+		},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "nonfluidpv", Annotations: common.ExpectedFluidAnnotations},
+		Spec:       corev1.PersistentVolumeSpec{},
+	}, {
+		ObjectMeta: metav1.ObjectMeta{Name: "default-fluid-dataset-subpath"},
+		Spec: corev1.PersistentVolumeSpec{
+			PersistentVolumeSource: corev1.PersistentVolumeSource{
+				CSI: &corev1.CSIPersistentVolumeSource{
+					Driver: "fuse.csi.fluid.io",
+					VolumeAttributes: map[string]string{
+						common.VolumeAttrFluidPath:    "/runtime-mnt/jindo/big-data/nofounddataset/jindofs-fuse",
+						common.VolumeAttrMountType:    common.JindoRuntime,
+						common.VolumeAttrFluidSubPath: "subtest",
+					},
+				},
+			},
+		},
+	}}
+
+	for _, pv := range testPVInputs {
+		objs = append(objs, pv.DeepCopy())
+	}
+
+	type args struct {
+		name      string
+		namespace string
+	}
+	tests := []struct {
+		name        string
+		args        args
+		wantError   bool
+		wantPath    string
+		wantType    string
+		wantSubPath string
+	}{{
+		name: "volumeClaim doesn't exist",
+		args: args{
+			name:      "notExist",
+			namespace: namespace,
+		},
+		wantError: true,
+	}, {
+		name: "non fluid pv",
+		args: args{
+			name:      "nonfluidpvc",
+			namespace: namespace,
+		},
+		wantError: true,
+	}, {
+		name: " fluid pv",
+		args: args{
+			name:      "fluid-dataset",
+			namespace: namespace,
+		},
+		wantError: false,
+		wantPath:  "/runtime-mnt/jindo/big-data/nofounddataset/jindofs-fuse",
+		wantType:  common.JindoRuntime,
+	}, {
+		name: "no pv",
+		args: args{
+			name:      "nopv",
+			namespace: namespace,
+		},
+		wantError: true,
+	}, {
+		name: "sub pv",
+		args: args{
+			name:      "fluid-dataset-subpath",
+			namespace: namespace,
+		},
+		wantError:   false,
+		wantPath:    "/runtime-mnt/jindo/big-data/nofounddataset/jindofs-fuse",
+		wantType:    common.JindoRuntime,
+		wantSubPath: "subtest",
+	}}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testScheme := runtime.NewScheme()
+			_ = corev1.AddToScheme(testScheme)
+			runtimeInfo := RuntimeInfo{
+				name:        tt.args.name,
+				namespace:   tt.args.namespace,
+				runtimeType: common.JindoRuntime,
+				client:      fake.NewFakeClientWithScheme(testScheme, objs...),
+			}
+
+			path, mountType, subpath, err := runtimeInfo.getMountInfo()
+			got := err != nil
+
+			if got != tt.wantError {
+				t.Errorf("testcase %v getMountInfo() for %v in %v = %v, err = %v", tt.name,
+					tt.args.name,
+					tt.args.namespace,
+					got,
+					err)
+			}
+
+			if path != tt.wantPath {
+				t.Errorf("testcase %v GetMountInfoFromVolumeClaim() for %v in %v  got path  %v, want path = %v", tt.name,
+					tt.args.name,
+					tt.args.namespace,
+					path,
+					tt.wantPath)
+			}
+
+			if mountType != tt.wantType {
+				t.Errorf("testcase %v GetMountInfoFromVolumeClaim() for %v in %v  got mountType  %v, want mountType = %v", tt.name,
+					tt.args.name,
+					tt.args.namespace,
+					mountType,
+					tt.wantType)
+			}
+
+			if subpath != tt.wantSubPath {
+				t.Errorf("testcase %v GetMountInfoFromVolumeClaim() for %v in %v  got subpath  %v, want subpath = %v", tt.name,
+					tt.args.name,
+					tt.args.namespace,
+					subpath,
+					tt.wantSubPath)
+			}
+
+		})
+	}
+
 }
