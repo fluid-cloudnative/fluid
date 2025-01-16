@@ -123,7 +123,8 @@ func (a *FluidMutatingHandler) MutatePod(pod *corev1.Pod) (err error) {
 	var setupLog = ctrl.Log.WithName("AddScheduleInfoToPod")
 	setupLog.V(1).Info("start to add schedule info", "Pod", pod.Name, "Namespace", pod.Namespace)
 	pvcNames := kubeclient.GetPVCNamesFromPod(pod)
-	runtimeInfos, err := webhookutils.CollectRuntimeInfosFromPVCs(a.Client, pvcNames, pod.Namespace, setupLog)
+	runtimeInfos, err := webhookutils.CollectRuntimeInfosFromPVCs(a.Client, pvcNames, pod.Namespace, setupLog,
+		utils.SkipPrecheckEnable(pod.Annotations))
 	if err != nil {
 		setupLog.Error(err, "failed to collect runtime infos from PVCs", "pvcNames", pvcNames)
 		return errors.Wrapf(err, "failed to collect runtime infos from PVCs %v", pvcNames)
