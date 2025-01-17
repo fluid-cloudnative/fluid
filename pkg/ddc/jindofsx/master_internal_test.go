@@ -17,6 +17,7 @@ limitations under the License.
 package jindofsx
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -84,7 +85,19 @@ func TestSetupMasterInternal(t *testing.T) {
 		testObjs = append(testObjs, datasetInput.DeepCopy())
 	}
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-
+	quota := resource.MustParse("20Gi")
+	tiredStore := datav1alpha1.TieredStore{
+		Levels: []datav1alpha1.Level{{
+			MediumType: common.Memory,
+			Quota:      &quota,
+			High:       "0.8",
+			Low:        "0.1",
+		}},
+	}
+	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", common.JindoRuntime, base.WithTieredStore(tiredStore))
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
 	engine := JindoFSxEngine{
 		name:      "hbase",
 		namespace: "fluid",
@@ -97,8 +110,9 @@ func TestSetupMasterInternal(t *testing.T) {
 				},
 			},
 		},
+		runtimeInfo: runtimeInfo,
 	}
-	err := portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
+	err = portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -176,6 +190,10 @@ func TestGenerateJindoValueFile(t *testing.T) {
 
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 	result := resource.MustParse("20Gi")
+	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", common.JindoRuntime)
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
 	engine := JindoFSxEngine{
 		name:      "hbase",
 		namespace: "fluid",
@@ -196,9 +214,10 @@ func TestGenerateJindoValueFile(t *testing.T) {
 				},
 			},
 		},
+		runtimeInfo: runtimeInfo,
 	}
 
-	err := portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 50}, "bitmap", GetReservedPorts)
+	err = portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 50}, "bitmap", GetReservedPorts)
 	if err != nil {
 		t.Fatal(err.Error())
 	}

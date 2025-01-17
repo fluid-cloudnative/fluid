@@ -19,15 +19,15 @@ package jindo
 import (
 	"testing"
 
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"k8s.io/apimachinery/pkg/api/resource"
-
 	"github.com/brahma-adshonor/gohook"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/net"
@@ -177,6 +177,18 @@ func TestGenerateJindoValueFile(t *testing.T) {
 
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 	result := resource.MustParse("20Gi")
+	tiredStore := datav1alpha1.TieredStore{
+		Levels: []datav1alpha1.Level{{
+			MediumType: common.Memory,
+			Quota:      &result,
+			High:       "0.8",
+			Low:        "0.1",
+		}},
+	}
+	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", common.JindoRuntime, base.WithTieredStore(tiredStore))
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
 	engine := JindoEngine{
 		name:      "hbase",
 		namespace: "fluid",
@@ -187,19 +199,13 @@ func TestGenerateJindoValueFile(t *testing.T) {
 				Master: datav1alpha1.JindoCompTemplateSpec{
 					Replicas: 2,
 				},
-				TieredStore: datav1alpha1.TieredStore{
-					Levels: []datav1alpha1.Level{{
-						MediumType: common.Memory,
-						Quota:      &result,
-						High:       "0.8",
-						Low:        "0.1",
-					}},
-				},
+				TieredStore: tiredStore,
 			},
 		},
+		runtimeInfo: runtimeInfo,
 	}
 
-	err := portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 50}, "bitmap", GetReservedPorts)
+	err = portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 50}, "bitmap", GetReservedPorts)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
