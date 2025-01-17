@@ -41,6 +41,9 @@ func TransformQuantityToAlluxioUnit(q *resource.Quantity) (value string) {
 // that can be recognized by Jindo.
 func TransformQuantityToJindoUnit(q *resource.Quantity) (value string) {
 	value = q.String()
+	if strings.HasSuffix(value, "Ti") {
+		value = strings.ReplaceAll(value, "Ti", "t")
+	}
 	if strings.HasSuffix(value, "Gi") {
 		value = strings.ReplaceAll(value, "Gi", "g")
 	}

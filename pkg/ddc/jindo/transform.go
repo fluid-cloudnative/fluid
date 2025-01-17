@@ -24,15 +24,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	corev1 "k8s.io/api/core/v1"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
+	jindoutils "github.com/fluid-cloudnative/fluid/pkg/utils/jindo"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/transformer"
-	corev1 "k8s.io/api/core/v1"
 )
 
 func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jindo, err error) {
@@ -52,36 +53,15 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 		return
 	}
 
-	var cachePaths []string // /mnt/disk1/bigboot or /mnt/disk1/bigboot,/mnt/disk2/bigboot
-	storagePath := runtime.Spec.TieredStore.Levels[0].Path
-	originPath := strings.Split(storagePath, ",")
-	for _, value := range originPath {
-		cachePaths = append(cachePaths, strings.TrimRight(value, "/")+"/"+
-			e.namespace+"/"+e.name+"/bigboot")
+	cachePaths, originPaths, originQuotas := jindoutils.ProcessTiredStoreInfo(e.runtimeInfo)
+	var quotaWithJindoUnit []string // 1Gi or 1Gi,2Gi,3Gi
+	for _, quota := range originQuotas {
+		quotaWithJindoUnit = append(quotaWithJindoUnit, utils.TransformQuantityToJindoUnit(quota))
 	}
+
 	metaPath := cachePaths[0]
 	dataPath := strings.Join(cachePaths, ",")
-
-	var userSetQuota []string // 1Gi or 1Gi,2Gi,3Gi
-	if runtime.Spec.TieredStore.Levels[0].Quota != nil {
-		userSetQuota = append(userSetQuota, utils.TransformQuantityToJindoUnit(runtime.Spec.TieredStore.Levels[0].Quota))
-	}
-
-	if runtime.Spec.TieredStore.Levels[0].QuotaList != "" {
-		quotaList := runtime.Spec.TieredStore.Levels[0].QuotaList
-		quotas := strings.Split(quotaList, ",")
-		if len(quotas) != len(originPath) {
-			err = fmt.Errorf("the num of cache path and quota must be equal")
-			return
-		}
-		for _, value := range quotas {
-			if strings.HasSuffix(value, "Gi") {
-				value = strings.ReplaceAll(value, "Gi", "g")
-			}
-			userSetQuota = append(userSetQuota, value)
-		}
-	}
-	userQuotas := strings.Join(userSetQuota, ",") // 1g or 1g,2g
+	userQuotas := strings.Join(quotaWithJindoUnit, ",")
 
 	jindoSmartdataImage, smartdataTag, dnsServer := e.getSmartDataConfigs()
 	jindoFuseImage, fuseTag := e.parseFuseImage()
@@ -111,7 +91,7 @@ func (e *JindoEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jind
 		},
 		Mounts: Mounts{
 			Master:            e.transformMasterMountPath(metaPath),
-			WorkersAndClients: e.transformWorkerMountPath(originPath),
+			WorkersAndClients: e.transformWorkerMountPath(originPaths),
 		},
 		Owner: transformer.GenerateOwnerReferenceFromObject(runtime),
 		RuntimeIdentity: common.RuntimeIdentity{

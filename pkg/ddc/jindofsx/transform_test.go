@@ -21,16 +21,17 @@ import (
 	"reflect"
 	"testing"
 
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/net"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
 func TestTransformTolerations(t *testing.T) {
@@ -635,7 +636,7 @@ func TestJindoFSxEngine_transform(t *testing.T) {
 			s.AddKnownTypes(datav1alpha1.GroupVersion, &datav1alpha1.DatasetList{})
 			_ = corev1.AddToScheme(s)
 			client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
-			runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "jindofsx")
+			runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", common.JindoRuntime)
 			if err != nil {
 				t.Errorf("fail to create the runtimeInfo with error %v", err)
 			}

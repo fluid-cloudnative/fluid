@@ -637,7 +637,7 @@ func TestJindoCacheEngine_transform(t *testing.T) {
 			s.AddKnownTypes(datav1alpha1.GroupVersion, &datav1alpha1.DatasetList{})
 			_ = corev1.AddToScheme(s)
 			client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
-			runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "jindocache")
+			runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", common.JindoRuntime)
 			if err != nil {
 				t.Errorf("fail to create the runtimeInfo with error %v", err)
 			}
@@ -1149,11 +1149,10 @@ func TestJindoCacheEngine_transformPolicy(t *testing.T) {
 			s.AddKnownTypes(datav1alpha1.GroupVersion, &datav1alpha1.DatasetList{})
 			_ = corev1.AddToScheme(s)
 			client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
-			runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "jinocache")
+			runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", common.JindoRuntime)
 			if err != nil {
 				t.Errorf("fail to create the runtimeInfo with error %v", err)
 			}
-
 			e := &JindoCacheEngine{
 				runtime:     tt.fields.runtime,
 				name:        tt.fields.name,
@@ -1364,11 +1363,10 @@ func TestJindoCacheEngine_transformCacheSet(t *testing.T) {
 			s.AddKnownTypes(datav1alpha1.GroupVersion, &datav1alpha1.DatasetList{})
 			_ = corev1.AddToScheme(s)
 			client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
-			runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "jindocache")
+			runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", common.JindoRuntime)
 			if err != nil {
 				t.Errorf("fail to create the runtimeInfo with error %v", err)
 			}
-
 			e := &JindoCacheEngine{
 				runtime:     tt.fields.runtime,
 				name:        tt.fields.name,

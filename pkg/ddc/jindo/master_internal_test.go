@@ -183,11 +183,19 @@ func TestGenerateJindoValueFile(t *testing.T) {
 	}
 
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "jindo")
+	result := resource.MustParse("20Gi")
+	tiredStore := datav1alpha1.TieredStore{
+		Levels: []datav1alpha1.Level{{
+			MediumType: common.Memory,
+			Quota:      &result,
+			High:       "0.8",
+			Low:        "0.1",
+		}},
+	}
+	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", common.JindoRuntime, base.WithTieredStore(tiredStore))
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
-	result := resource.MustParse("20Gi")
 	engine := JindoEngine{
 		name:      "hbase",
 		namespace: "fluid",
@@ -198,14 +206,7 @@ func TestGenerateJindoValueFile(t *testing.T) {
 				Master: datav1alpha1.JindoCompTemplateSpec{
 					Replicas: 2,
 				},
-				TieredStore: datav1alpha1.TieredStore{
-					Levels: []datav1alpha1.Level{{
-						MediumType: common.Memory,
-						Quota:      &result,
-						High:       "0.8",
-						Low:        "0.1",
-					}},
-				},
+				TieredStore: tiredStore,
 			},
 		},
 		runtimeInfo: runtimeInfo,
