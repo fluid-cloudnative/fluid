@@ -32,8 +32,6 @@ spec:
       role: thin-worker
   template:
     metadata:
-      annotations:
-        sidecar.istio.io/inject: "false"
       labels:
         sidecar.istio.io/inject: "false"
         app: {{ template "thin.name" . }}
@@ -41,6 +39,7 @@ spec:
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: thin-worker
+        sidecar.istio.io/inject: "false"
         fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
         fluid.io/dataset-placement: {{ .Values.placement }}
     spec:

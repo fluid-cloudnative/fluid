@@ -35,7 +35,6 @@ spec:
   template:
     metadata:
       annotations:
-        sidecar.istio.io/inject: "false"
       {{- if .Values.worker.annotations }}
       {{- range $key, $val := .Values.worker.annotations}}
         {{ $key | quote }}: {{ $val | quote }}
@@ -48,6 +47,7 @@ spec:
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: juicefs-worker
+        sidecar.istio.io/inject: "false"
         fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
         fluid.io/dataset-placement: {{ .Values.placement }}
         {{- if .Values.worker.labels }}

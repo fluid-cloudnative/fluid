@@ -29,8 +29,6 @@ spec:
       role: thin-fuse
   template:
     metadata:
-      annotations:
-        sidecar.istio.io/inject: "false"
       labels:
         sidecar.istio.io/inject: "false"
         app: {{ template "thin.name" . }}
@@ -38,6 +36,7 @@ spec:
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: thin-fuse
+        sidecar.istio.io/inject: "false"
     spec:
       {{- if .Values.fuse.imagePullSecrets }}
       imagePullSecrets:

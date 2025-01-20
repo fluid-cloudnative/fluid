@@ -28,7 +28,6 @@ spec:
     metadata:
       name: {{ printf "%s-migrate" .Release.Name }}
       annotations:
-        sidecar.istio.io/inject: "false"
       {{- if .Values.datamigrate.annotations }}
       {{- range $key, $val := .Values.datamigrate.annotations }}
         {{ $key | quote }}: {{ $val | quote }}
@@ -38,6 +37,7 @@ spec:
         release: {{ .Release.Name }}
         role: datamigrate-pod
         app: juicefs
+        sidecar.istio.io/inject: "false"
         targetDataset: {{ required "targetDataset should be set" .Values.datamigrate.targetDataset }}
         fluid.io/operation: migrate-{{ .Release.Namespace }}-{{ .Release.Name }}
         {{- include "library.fluid.labels" . | nindent 8 }}
