@@ -20,6 +20,10 @@
     ".AffinityStrategy": {
       "type": "object",
       "properties": {
+        "dependOn": {
+          "description": "Specifies the dependent preceding operation in a workflow. If not set, use the operation referred to by RunAfter.",
+          "$ref": "#/definitions/.ObjectRef"
+        },
         "policy": {
           "description": "Policy one of: \"\", \"Require\", \"Prefer\"",
           "type": "string"
@@ -410,6 +414,19 @@
           "description": "Optional max retry Attempts when cleanCache function returns an error after execution, runtime attempts to run it three more times by default. With Maximum Retry Attempts, you can customize the maximum number of retries. This gives you the option to continue processing retries.",
           "type": "integer",
           "format": "int32"
+        }
+      }
+    },
+    ".ClientMetrics": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "description": "Enabled decides whether to expose client metrics.",
+          "type": "boolean"
+        },
+        "scrapeTarget": {
+          "description": "ScrapeTarget decides which fuse component will be scraped by Prometheus. It is a list separated by comma where supported items are [MountPod, Sidecar, All (indicates MountPod and Sidecar), None]. Defaults to None when it is not explicitly set.",
+          "type": "string"
         }
       }
     },
@@ -1872,6 +1889,14 @@
             "default": ""
           }
         },
+        "imagePullSecrets": {
+          "description": "ImagePullSecrets that will be used to pull images",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.LocalObjectReference"
+          }
+        },
         "labels": {
           "description": "Labels will be added on JindoFS Master or Worker pods. DEPRECATED: This is a deprecated field. Please use PodMetadata instead. Note: this field is set to be exclusive with PodMetadata.Labels",
           "type": "object",
@@ -1973,6 +1998,14 @@
           "description": "One of the three policies: `Always`, `IfNotPresent`, `Never`",
           "type": "string"
         },
+        "imagePullSecrets": {
+          "description": "ImagePullSecrets that will be used to pull images",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.LocalObjectReference"
+          }
+        },
         "imageTag": {
           "description": "Image Tag for Jindo Fuse(e.g. 2.3.0-SNAPSHOT)",
           "type": "string"
@@ -1991,6 +2024,11 @@
             "type": "string",
             "default": ""
           }
+        },
+        "metrics": {
+          "description": "Define whether fuse metrics will be enabled.",
+          "default": {},
+          "$ref": "#/definitions/.ClientMetrics"
         },
         "nodeSelector": {
           "description": "NodeSelector is a selector which must be true for the fuse client to fit on a node, this option only effect when global is enabled",
@@ -2099,6 +2137,14 @@
         "hadoopConfig": {
           "description": "Name of the configMap used to support HDFS configurations when using HDFS as Jindo's UFS. The configMap must be in the same namespace with the JindoRuntime. The configMap should contain user-specific HDFS conf files in it. For now, only \"hdfs-site.xml\" and \"core-site.xml\" are supported. It must take the filename of the conf file as the key and content of the file as the value.",
           "type": "string"
+        },
+        "imagePullSecrets": {
+          "description": "ImagePullSecrets that will be used to pull images",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.LocalObjectReference"
+          }
         },
         "jindoVersion": {
           "description": "The version information that instructs fluid to orchestrate a particular version of Jindo.",
@@ -2675,6 +2721,33 @@
         },
         "osVersion": {
           "description": "Specific operating system version that can have optimization.",
+          "type": "string"
+        }
+      }
+    },
+    ".ObjectRef": {
+      "type": "object",
+      "required": [
+        "kind",
+        "name"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "API version of the referent operation",
+          "type": "string"
+        },
+        "kind": {
+          "description": "Kind specifies the type of the referent operation",
+          "type": "string",
+          "default": ""
+        },
+        "name": {
+          "description": "Name specifies the name of the referent operation",
+          "type": "string",
+          "default": ""
+        },
+        "namespace": {
+          "description": "Namespace specifies the namespace of the referent operation.",
           "type": "string"
         }
       }
@@ -3266,6 +3339,14 @@
           "description": "One of the three policies: `Always`, `IfNotPresent`, `Never`",
           "type": "string"
         },
+        "imagePullSecrets": {
+          "description": "ImagePullSecrets that will be used to pull images",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.LocalObjectReference"
+          }
+        },
         "imageTag": {
           "description": "Image for thinRuntime fuse",
           "type": "string"
@@ -3356,6 +3437,14 @@
         "imagePullPolicy": {
           "description": "One of the three policies: `Always`, `IfNotPresent`, `Never`",
           "type": "string"
+        },
+        "imagePullSecrets": {
+          "description": "ImagePullSecrets that will be used to pull images",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.LocalObjectReference"
+          }
         },
         "imageTag": {
           "description": "Image for thinRuntime fuse",
@@ -3537,6 +3626,14 @@
           "default": {},
           "$ref": "#/definitions/.ThinFuseSpec"
         },
+        "imagePullSecrets": {
+          "description": "ImagePullSecrets that will be used to pull images",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.LocalObjectReference"
+          }
+        },
         "nodePublishSecretPolicy": {
           "description": "NodePublishSecretPolicy describes the policy to decide which to do with node publish secret when mounting an existing persistent volume.",
           "type": "string"
@@ -3572,6 +3669,14 @@
           "description": "The component spec of thinRuntime",
           "default": {},
           "$ref": "#/definitions/.ThinFuseSpec"
+        },
+        "imagePullSecrets": {
+          "description": "ImagePullSecrets that will be used to pull images",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.LocalObjectReference"
+          }
         },
         "management": {
           "description": "RuntimeManagement defines policies when managing the runtime",

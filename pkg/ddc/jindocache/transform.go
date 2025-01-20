@@ -757,15 +757,16 @@ func (e *JindoCacheEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, val
 	}
 	// default enable data-cache and disable meta-cache
 	properties := map[string]string{
-		"fs.jindocache.request.user":          "root",
-		"fs.jindocache.tmp.data.dir":          "/tmp",
-		"fs.jindocache.client.metrics.enable": "true",
-		"fs.jindocache.rpc.timeout":           "30000", // brpc timeout 30s avoid client hang
-		"fs.oss.download.queue.size":          "16",
-		"fs.oss.download.thread.concurrency":  "32",
-		"fs.s3.download.queue.size":           "16",
-		"fs.s3.download.thread.concurrency":   "32",
-		"fs.xengine":                          "jindocache",
+		"fs.jindocache.request.user":                 "root",
+		"fs.jindocache.tmp.data.dir":                 "/tmp",
+		"fs.jindocache.client.metrics.enable":        "true",
+		"fs.jindocache.rpc.timeout":                  "30000", // brpc timeout 30s avoid client hang
+		"fs.oss.download.queue.size":                 "16",
+		"fs.oss.download.thread.concurrency":         "32",
+		"fs.s3.download.queue.size":                  "16",
+		"fs.s3.download.thread.concurrency":          "32",
+		"fs.xengine":                                 "jindocache",
+		"jindofsx.read.readahead.prefetcher.version": "legacy",
 	}
 
 	readOnly := false
