@@ -134,29 +134,20 @@ func (r *RuntimeReconciler) ReconcileInternal(ctx cruntime.ReconcileRequestConte
 		return result, err
 	}
 
-	if dataset != nil {
+	if ctx.Dataset != nil {
 		// 7.Add the OwnerReference of runtime and requeue
 		if !utils.ContainsOwners(objectMeta.GetOwnerReferences(), dataset) {
 			return r.AddOwnerAndRequeue(ctx, dataset)
 		}
-		if !dataset.CanbeBound(ctx.Name, ctx.Namespace, ctx.Category) {
-			ctx.Log.Info("the dataset can't be bound to the runtime, because it's already bound to another runtime ",
-				"dataset", dataset.Name)
-			r.Recorder.Eventf(runtime, corev1.EventTypeWarning,
-				common.ErrorProcessRuntimeReason,
-				"the dataset can't be bound to the runtime, because it's already bound to another runtime %s",
-				dataset.Name)
-			return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
-		}
-		// check reference dataset support
-		isSupport, reason := r.CheckIfReferenceDatasetIsSupported(ctx)
-		if !isSupport {
+
+		// 8. check if runtime can be bounded to the dataset
+		if canBeBound, reason := r.CheckIfDatasetReadyToBound(ctx); !canBeBound {
 			ctx.Log.Info(reason, "dataset", dataset.Name)
 			r.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, reason)
 			return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
 		}
 
-		// 8. Add Finalizer of runtime and requeue
+		// 9. Add Finalizer of runtime and requeue
 		if !utils.ContainsString(objectMeta.GetFinalizers(), ctx.FinalizerName) {
 			return r.implement.AddFinalizerAndRequeue(ctx, ctx.FinalizerName)
 		} else {
@@ -169,7 +160,7 @@ func (r *RuntimeReconciler) ReconcileInternal(ctx cruntime.ReconcileRequestConte
 		return utils.RequeueAfterInterval(time.Duration(5 * time.Second))
 	}
 
-	// 9.Start to reconcile runtime
+	// 10.Start to reconcile runtime
 	return r.implement.ReconcileRuntime(engine, ctx)
 }
 
@@ -187,7 +178,7 @@ func (r *RuntimeReconciler) ReconcileRuntimeDeletion(engine base.Engine, ctx cru
 		return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
 	}
 
-	// 1. Delete the implementation of the the runtime
+	// 1. Delete the implementation of the runtime
 	err = engine.Shutdown()
 	if err != nil {
 		r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to shutdown engine %v", err)
@@ -368,6 +359,52 @@ func (r *RuntimeReconciler) CheckIfReferenceDatasetIsSupported(ctx cruntime.Reco
 		return false, "dataset mounting another dataset can only use thin runtime"
 	}
 	return true, ""
+}
+
+func (r *RuntimeReconciler) CheckIfDatasetMountLengthIsSupported(ctx cruntime.ReconcileRequestContext) (bool, string) {
+	constraint := common.MountsLengthConstraintMap[ctx.EngineImpl]
+	switch len(ctx.Dataset.Spec.Mounts) {
+	case 0:
+		if constraint.AllowZeroMountPoints {
+			return true, "the mounts length of dataset can not be zero"
+		}
+	default:
+		if !constraint.AllowUnlimitedMountPoints {
+			if len(ctx.Dataset.Spec.Mounts) > constraint.AllowedMaxMountsLength {
+				return false, fmt.Sprintf("the mounts length of dataset is %d, which is larger than the limit %d", len(ctx.Dataset.Spec.Mounts), constraint.AllowedMaxMountsLength)
+			}
+		}
+	}
+	return true, ""
+}
+
+func (r *RuntimeReconciler) CheckIfDatasetReadyToBound(ctx cruntime.ReconcileRequestContext) (isSupported bool, reason string) {
+	dataset := ctx.Dataset
+	// 1. check if dataset has bound with another runtime
+	if !dataset.CanbeBound(ctx.Name, ctx.Namespace, ctx.Category) {
+		reason = "the dataset can't be bound to the runtime, because it's already bound to another runtime "
+		return
+	}
+
+	// 2. check reference dataset support
+	isSupported, reason = r.CheckIfReferenceDatasetIsSupported(ctx)
+	if !isSupported {
+		return
+	}
+	mounted := base.GetPhysicalDatasetFromMounts(ctx.Dataset.Spec.Mounts)
+	if len(mounted) > 0 && ctx.RuntimeType != common.ThinRuntime {
+		isSupported = false
+		reason = "dataset mounting another dataset can only use thin runtime"
+		return
+	}
+
+	// 3. check mounts length
+	isSupported, reason = r.CheckIfDatasetMountLengthIsSupported(ctx)
+	if !isSupported {
+		return
+	}
+	isSupported = true
+	return
 }
 
 func (r *RuntimeReconciler) ReportDatasetNotReadyCondition(ctx cruntime.ReconcileRequestContext, notReadyReason error) error {
