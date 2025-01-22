@@ -38,7 +38,7 @@ set -e
 
 function log() {
 	msg=$1
-	echo -e "$(date '+%Y-%m-%d %H:%M:%S') fluid-post-start-check $msg"
+	echo -e ">>> $(date '+%Y-%m-%d %H:%M:%S') fluid-post-start-check $msg"
 }
 
 ConditionPathIsMountPoint="$1"
