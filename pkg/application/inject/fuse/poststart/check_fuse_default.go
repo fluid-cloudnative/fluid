@@ -34,7 +34,12 @@ var (
 	replacer                 = strings.NewReplacer("¬", "`")
 	contentPrivilegedSidecar = `#!/bin/bash
 
-set -ex
+set -e
+
+function log() {
+	msg=$1
+	echo -e ">>> $(date '+%Y-%m-%d %H:%M:%S') fluid-post-start-check $msg"
+}
 
 ConditionPathIsMountPoint="$1"
 MountType="$2"
@@ -45,26 +50,26 @@ if [[ "$MountType" == "jindo" ]]; then
   MountType=/dev/fuse
 fi
 
-count=0
-# while ! mount | grep alluxio | grep  $ConditionPathIsMountPoint | grep -v grep
+count=1
+limit=30
 while ! cat /proc/self/mountinfo | grep $ConditionPathIsMountPoint | grep $MountType
 do
-    sleep 3
+    sleep 1
     count=¬expr $count + 1¬
-    if test $count -eq 10
+    if test $count -eq $limit
     then
-        echo "timed out!"
+        log "timed out checking mount point for $limit seconds!"
         exit 1
     fi
 done
 
 # different with csi, as here the mount point is the parent dir of the fuse mount point, 
 if [ ! -e  $ConditionPathIsMountPoint/*/$SubPath ] ; then
-  echo "sub path [$SubPath] not exist!"
+  log "sub path [$SubPath] not exist!"
   exit 2
 fi
 
-echo "succeed in checking mount point $ConditionPathIsMountPoint"
+log "succeed in checking mount point $ConditionPathIsMountPoint after $count attempts"
 `
 )
 
