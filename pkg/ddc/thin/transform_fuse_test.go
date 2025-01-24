@@ -23,6 +23,7 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/testutil"
 	"gopkg.in/yaml.v2"
@@ -492,8 +493,19 @@ func TestThinEngine_transformFuse(t1 *testing.T) {
 		},
 	}
 	value := &ThinValue{}
+	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "thin")
+	if err != nil {
+		t1.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
 	t1.Run("test", func(t1 *testing.T) {
-		t := &ThinEngine{Log: fake.NullLogger(), namespace: "fluid", name: "test", runtime: runtime}
+		t := &ThinEngine{
+			Log:         fake.NullLogger(),
+			namespace:   "fluid",
+			name:        "test",
+			runtime:     runtime,
+			runtimeInfo: runtimeInfo,
+			Client:      fake.NewFakeClientWithScheme(testScheme),
+		}
 		if err := t.transformFuse(runtime, profile, dataset, value); err != nil {
 			t1.Errorf("transformFuse() error = %v", err)
 		}
@@ -712,7 +724,19 @@ func TestThinEngine_transformFuseWithDuplicateOptionKey(t1 *testing.T) {
 	}
 	value := &ThinValue{}
 	t1.Run("test", func(t1 *testing.T) {
-		t := &ThinEngine{Log: fake.NullLogger(), namespace: "fluid", name: "test", runtime: runtime}
+		runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "thin")
+		if err != nil {
+			t1.Errorf("fail to create the runtimeInfo with error %v", err)
+		}
+
+		t := &ThinEngine{
+			Log:         fake.NullLogger(),
+			namespace:   "fluid",
+			name:        "test",
+			runtime:     runtime,
+			runtimeInfo: runtimeInfo,
+			Client:      fake.NewFakeClientWithScheme(testScheme),
+		}
 		if err := t.transformFuse(runtime, profile, dataset, value); err != nil {
 			t1.Errorf("transformFuse() error = %v", err)
 		}

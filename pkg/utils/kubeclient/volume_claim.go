@@ -23,7 +23,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func GetPersistentVolumeClaim(client client.Client, name, namespace string) (pvc *v1.PersistentVolumeClaim, err error) {
+func GetPersistentVolumeClaim(client client.Reader, name, namespace string) (pvc *v1.PersistentVolumeClaim, err error) {
 	pvc = &v1.PersistentVolumeClaim{}
 	err = client.Get(context.TODO(),
 		types.NamespacedName{

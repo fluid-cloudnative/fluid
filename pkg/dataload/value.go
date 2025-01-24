@@ -23,9 +23,10 @@ import (
 
 // DataLoadValue defines the value yaml file used in DataLoad helm chart
 type DataLoadValue struct {
-	Name         string                 `json:"name"`
-	Owner        *common.OwnerReference `json:"owner,omitempty"`
-	DataLoadInfo DataLoadInfo           `json:"dataloader"`
+	Name           string                 `json:"name"`
+	OwnerDatasetId string                 `json:"ownerDatasetId"`
+	Owner          *common.OwnerReference `json:"owner,omitempty"`
+	DataLoadInfo   DataLoadInfo           `json:"dataloader"`
 }
 
 // DataLoadInfo defines values used in DataLoad helm chart

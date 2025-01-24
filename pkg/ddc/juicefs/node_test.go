@@ -211,7 +211,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 		}
 
 		nodeList := &corev1.NodeList{}
-		datasetLabels, err := labels.Parse(fmt.Sprintf("%s=true", engine.getCommonLabelName()))
+		datasetLabels, err := labels.Parse(fmt.Sprintf("%s=true", engine.runtimeInfo.GetCommonLabelName()))
 		if err != nil {
 			return
 		}

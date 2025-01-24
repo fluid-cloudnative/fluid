@@ -52,6 +52,7 @@ func (j *JuiceFSEngine) transform(runtime *datav1alpha1.JuiceFSRuntime) (value *
 	}
 
 	value.FullnameOverride = j.name
+	value.OwnerDatasetId = utils.GetDatasetId(j.namespace, j.name, j.runtimeInfo.GetOwnerDatasetUID())
 	value.Owner = transformer.GenerateOwnerReferenceFromObject(runtime)
 
 	// transform toleration

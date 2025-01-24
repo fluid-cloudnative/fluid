@@ -14,8 +14,8 @@ limitations under the License.
 package vineyard
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 func (e *VineyardEngine) CheckRuntimeReady() (ready bool) {
@@ -45,8 +45,20 @@ func (e *VineyardEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 			return e.runtimeInfo, err
 		}
 
-		// Setup Fuse Deploy Mode
-		e.runtimeInfo.SetFuseNodeSelector(common.VineyardFuseNodeSelector)
+		dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+		if err != nil {
+			if len(runtime.GetOwnerReferences()) > 0 {
+				e.runtimeInfo.SetOwnerDatasetUID(runtime.GetOwnerReferences()[0].UID)
+			}
+			if utils.IgnoreNotFound(err) == nil {
+				e.Log.Info("Dataset is notfound", "name", e.name, "namespace", e.namespace)
+				return e.runtimeInfo, nil
+			}
+
+			e.Log.Info("Failed to get dataset when getruntimeInfo")
+			return e.runtimeInfo, err
+		}
+		e.runtimeInfo.SetOwnerDatasetUID(dataset.GetUID())
 	}
 
 	return e.runtimeInfo, nil

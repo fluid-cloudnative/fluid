@@ -35,12 +35,12 @@ func GetNamespacedNameByVolumeId(client client.Reader, volumeId string) (namespa
 	namespace = pv.Spec.ClaimRef.Namespace
 	name = pv.Spec.ClaimRef.Name
 
-	ok, err := kubeclient.IsDatasetPVC(client, name, namespace)
+	pvc, err := kubeclient.GetPersistentVolumeClaim(client, name, namespace)
 	if err != nil {
 		return "", "", err
 	}
 
-	if !ok {
+	if !kubeclient.CheckIfPVCIsDataset(pvc) {
 		return "", "", errors.Errorf("pv %s is not bounded with a fluid pvc", volumeId)
 	}
 

@@ -25,6 +25,7 @@ import (
 
 type DataMigrateValue struct {
 	Name            string                 `json:"name"`
+	OwnerDatasetId  string                 `json:"ownerDatasetId"`
 	Owner           *common.OwnerReference `json:"owner,omitempty"`
 	DataMigrateInfo DataMigrateInfo        `json:"datamigrate"`
 }

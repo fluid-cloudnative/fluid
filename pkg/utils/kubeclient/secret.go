@@ -66,13 +66,18 @@ func CopySecretToNamespace(client client.Client, from types.NamespacedName, to t
 		return err
 	}
 
-	secretToCreate := &v1.Secret{}
-	secretToCreate.Namespace = to.Namespace
-	secretToCreate.Name = to.Name
-	secretToCreate.Data = secret.Data
-	secretToCreate.StringData = secret.StringData
-	secretToCreate.Labels = map[string]string{}
-	secretToCreate.Labels["fluid.io/copied-from"] = fmt.Sprintf("%s_%s", from.Namespace, from.Name)
+	secretToCreate := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      to.Name,
+			Namespace: to.Namespace,
+			Labels: map[string]string{
+				common.LabelAnnotationCopyFrom: fmt.Sprintf("%s_%s", from.Namespace, from.Name),
+			},
+		},
+		Data:       secret.Data,
+		StringData: secret.StringData,
+	}
+
 	if ownerReference != nil {
 		secretToCreate.OwnerReferences = append(secretToCreate.OwnerReferences, metav1.OwnerReference{
 			APIVersion:         ownerReference.APIVersion,

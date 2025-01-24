@@ -23,6 +23,7 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	corev1 "k8s.io/api/core/v1"
@@ -634,15 +635,20 @@ func TestJindoFSxEngine_transform(t *testing.T) {
 			s.AddKnownTypes(datav1alpha1.GroupVersion, &datav1alpha1.DatasetList{})
 			_ = corev1.AddToScheme(s)
 			client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+			runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "jindofsx")
+			if err != nil {
+				t.Errorf("fail to create the runtimeInfo with error %v", err)
+			}
 			e := &JindoFSxEngine{
-				runtime:   tt.fields.runtime,
-				name:      tt.fields.name,
-				namespace: tt.fields.namespace,
-				Client:    client,
-				Log:       fake.NullLogger(),
+				runtime:     tt.fields.runtime,
+				name:        tt.fields.name,
+				namespace:   tt.fields.namespace,
+				Client:      client,
+				Log:         fake.NullLogger(),
+				runtimeInfo: runtimeInfo,
 			}
 			tt.args.runtime = tt.fields.runtime
-			err := portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
+			err = portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
 			if err != nil {
 				t.Fatalf("failed to set up runtime port allocator due to %v", err)
 			}

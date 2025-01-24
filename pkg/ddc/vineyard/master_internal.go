@@ -94,7 +94,9 @@ func (e *VineyardEngine) generateVineyardValueFile(runtime *datav1alpha1.Vineyar
 	}
 
 	//3. Save the configfile into configmap
-	err = kubeclient.CreateConfigMap(e.Client, e.getConfigmapName(), e.namespace, "data", data)
+	runtimeInfo := e.runtimeInfo
+	ownerDatasetId := utils.GetDatasetId(runtimeInfo.GetNamespace(), runtimeInfo.GetName(), runtimeInfo.GetOwnerDatasetUID())
+	err = kubeclient.CreateConfigMap(e.Client, e.getConfigmapName(), e.namespace, "data", data, ownerDatasetId)
 	if err != nil {
 		return
 	}

@@ -26,16 +26,15 @@ import (
 	"k8s.io/apimachinery/pkg/util/net"
 
 	"github.com/brahma-adshonor/gohook"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 )
 
 var (
@@ -124,6 +123,11 @@ func TestSetupMasterInternal(t *testing.T) {
 	}
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
+	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "juicefs")
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
+
 	engine := JuiceFSEngine{
 		name:      "test",
 		namespace: "fluid",
@@ -134,8 +138,9 @@ func TestSetupMasterInternal(t *testing.T) {
 				Fuse: datav1alpha1.JuiceFSFuseSpec{},
 			},
 		},
+		runtimeInfo: runtimeInfo,
 	}
-	err := portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
+	err = portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -249,6 +254,11 @@ func TestGenerateJuiceFSValueFile(t *testing.T) {
 
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
+	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "juicefs")
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
+
 	engine := JuiceFSEngine{
 		name:      "test",
 		namespace: "fluid",
@@ -259,9 +269,10 @@ func TestGenerateJuiceFSValueFile(t *testing.T) {
 				Fuse: datav1alpha1.JuiceFSFuseSpec{},
 			},
 		},
+		runtimeInfo: runtimeInfo,
 	}
 
-	_, err := engine.generateJuicefsValueFile(juicefsruntime)
+	_, err = engine.generateJuicefsValueFile(juicefsruntime)
 	if err != nil {
 		t.Errorf("fail to exec the function: %v", err)
 	}

@@ -74,7 +74,9 @@ func (e *JindoFSxEngine) generateJindoValueFile() (valueFileName string, err err
 		return
 	}
 
-	err = kubeclient.CreateConfigMap(e.Client, e.getHelmValuesConfigMapName(), e.namespace, "data", data)
+	runtimeInfo := e.runtimeInfo
+	ownerDatasetId := utils.GetDatasetId(runtimeInfo.GetNamespace(), runtimeInfo.GetName(), runtimeInfo.GetOwnerDatasetUID())
+	err = kubeclient.CreateConfigMap(e.Client, e.getHelmValuesConfigMapName(), e.namespace, "data", data, ownerDatasetId)
 	if err != nil {
 		return
 	}

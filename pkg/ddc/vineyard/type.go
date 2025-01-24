@@ -24,6 +24,7 @@ import (
 // The value yaml file
 type Vineyard struct {
 	FullnameOverride string `json:"fullnameOverride"`
+	OwnerDatasetId   string `json:"ownerDatasetId"`
 
 	common.ImageInfo `json:",inline"`
 	common.UserInfo  `json:",inline"`

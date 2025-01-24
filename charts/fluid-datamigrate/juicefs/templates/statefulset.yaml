@@ -34,7 +34,7 @@ spec:
     metadata:
       labels:
         app: {{ printf "%s-workers" .Release.Name }}
-        fluid.io/operation: migrate-{{ .Release.Namespace }}-{{ .Release.Name }}
+        fluid.io/operation: migrate-{{ .Values.ownerDatasetId }}
     spec:
       containers:
         - name: worker

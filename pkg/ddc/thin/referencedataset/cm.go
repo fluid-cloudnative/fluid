@@ -53,11 +53,18 @@ func copyFuseDaemonSetForRefDataset(client client.Client, refDataset *datav1alph
 		UID:        refDataset.UID,
 	}
 
-	dsToCreate := &appsv1.DaemonSet{}
-	dsToCreate.Name = refDataset.Name + "-fuse"
-	dsToCreate.Namespace = refDataset.Namespace
-	dsToCreate.OwnerReferences = append(dsToCreate.OwnerReferences, ownerReference)
-	dsToCreate.Spec = *ds.Spec.DeepCopy()
+	dsToCreate := &appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            refDataset.Name + "-fuse",
+			Namespace:       refDataset.Namespace,
+			OwnerReferences: []metav1.OwnerReference{ownerReference},
+			Labels: map[string]string{
+				common.LabelAnnotationDatasetId: utils.GetDatasetId(refDataset.Namespace, refDataset.Name, string(refDataset.UID)),
+			},
+		},
+		Spec: *ds.Spec.DeepCopy(),
+	}
+
 	if len(dsToCreate.Spec.Template.Spec.NodeSelector) == 0 {
 		dsToCreate.Spec.Template.Spec.NodeSelector = map[string]string{}
 	}

@@ -80,6 +80,9 @@ func CreateRuntimeForReferenceDatasetIfNotExist(client client.Client, dataset *d
 							Controller: ptr.To(true),
 						},
 					},
+					Labels: map[string]string{
+						common.LabelAnnotationDatasetId: GetDatasetId(dataset.GetNamespace(), dataset.GetName(), string(dataset.GetUID())),
+					},
 				},
 			}
 			err = client.Create(context.TODO(), &runtime)

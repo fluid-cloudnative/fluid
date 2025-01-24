@@ -47,6 +47,7 @@ spec:
             app: juicefs
             cronjob: {{ printf "%s-migrate" .Release.Name }}
             targetDataset: {{ required "targetDataset should be set" .Values.datamigrate.targetDataset }}
+            {{- include "library.fluid.labels" . | nindent 12 }}
           {{- if .Values.datamigrate.labels }}
           {{- range $key, $val := .Values.datamigrate.labels }}
             {{ $key | quote }}: {{ $val | quote }}

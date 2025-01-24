@@ -51,6 +51,7 @@ func (t *ThinEngine) transform(runtime *datav1alpha1.ThinRuntime, profile *datav
 	}
 
 	value.FullnameOverride = t.name
+	value.OwnerDatasetId = utils.GetDatasetId(t.namespace, t.name, t.runtimeInfo.GetOwnerDatasetUID())
 	value.Owner = transformer.GenerateOwnerReferenceFromObject(runtime)
 	toRuntimeSetConfig, err := t.toRuntimeSetConfig(nil, nil)
 	if err != nil {

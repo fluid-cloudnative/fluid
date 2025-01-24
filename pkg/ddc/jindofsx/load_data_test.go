@@ -189,7 +189,8 @@ func Test_genDataLoadValue(t *testing.T) {
 				},
 			},
 			want: &cdataload.DataLoadValue{
-				Name: "test-dataload",
+				Name:           "test-dataload",
+				OwnerDatasetId: "fluid-test-dataset",
 				Owner: &common.OwnerReference{
 					APIVersion:         "/",
 					Enabled:            true,
@@ -301,7 +302,8 @@ func Test_genDataLoadValue(t *testing.T) {
 				},
 			},
 			want: &cdataload.DataLoadValue{
-				Name: "test-dataload",
+				Name:           "test-dataload",
+				OwnerDatasetId: "fluid-test-dataset",
 				Owner: &common.OwnerReference{
 					APIVersion:         "/",
 					Enabled:            true,
@@ -416,7 +418,8 @@ func Test_genDataLoadValue(t *testing.T) {
 				},
 			},
 			want: &cdataload.DataLoadValue{
-				Name: "test-dataload",
+				Name:           "test-dataload",
+				OwnerDatasetId: "fluid-test-dataset",
 				Owner: &common.OwnerReference{
 					APIVersion:         "/",
 					Enabled:            true,
@@ -502,7 +505,8 @@ func Test_genDataLoadValue(t *testing.T) {
 				},
 			},
 			want: &cdataload.DataLoadValue{
-				Name: "test-dataload",
+				Name:           "test-dataload",
+				OwnerDatasetId: "fluid-test-dataset",
 				Owner: &common.OwnerReference{
 					APIVersion:         "/",
 					Enabled:            true,

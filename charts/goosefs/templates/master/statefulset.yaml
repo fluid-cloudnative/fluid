@@ -44,6 +44,7 @@ spec:
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: goosefs-master
+        {{- include "library.fluid.labels" . | nindent 8 }}
     spec:
       enableServiceLinks: false
       hostNetwork: {{ $hostNetwork }}

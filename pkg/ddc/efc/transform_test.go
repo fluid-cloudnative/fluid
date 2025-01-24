@@ -19,14 +19,16 @@ package efc
 import (
 	"testing"
 
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/net"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
 func TestEFCEngine_transform(t *testing.T) {
@@ -66,17 +68,22 @@ func TestEFCEngine_transform(t *testing.T) {
 		testObjs = append(testObjs, test.dataset.DeepCopy())
 
 		client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+		runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "efc")
+		if err != nil {
+			t.Errorf("fail to create the runtimeInfo with error %v", err)
+		}
 		engine := EFCEngine{
-			name:      "test",
-			namespace: "fluid",
-			Client:    client,
-			Log:       fake.NullLogger(),
-			runtime:   test.runtime,
+			name:        "test",
+			namespace:   "fluid",
+			Client:      client,
+			Log:         fake.NullLogger(),
+			runtime:     test.runtime,
+			runtimeInfo: runtimeInfo,
 		}
 		ctrl.SetLogger(zap.New(func(o *zap.Options) {
 			o.Development = true
 		}))
-		err := portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
+		err = portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
 		if err != nil {
 			t.Fatal(err.Error())
 		}

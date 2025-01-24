@@ -100,7 +100,8 @@ func (e *EFCEngine) createPersistentVolumeForRuntime(runtime base.RuntimeInfoInt
 				Name:      pvName,
 				Namespace: runtime.GetNamespace(),
 				Labels: map[string]string{
-					runtime.GetCommonLabelName(): "true",
+					runtime.GetCommonLabelName():    "true",
+					common.LabelAnnotationDatasetId: utils.GetDatasetId(runtime.GetNamespace(), runtime.GetName(), runtime.GetOwnerDatasetUID()),
 				},
 				Annotations: common.ExpectedFluidAnnotations,
 			},

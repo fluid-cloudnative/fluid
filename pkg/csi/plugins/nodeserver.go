@@ -344,8 +344,7 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 	// 4. remove label on node
 	// Once the label is removed, fuse pod on corresponding node will be terminated
 	// since node selector in the fuse daemonSet no longer matches.
-	// TODO: move all the label keys into a util func
-	fuseLabelKey := common.LabelAnnotationFusePrefix + namespace + "-" + name
+	fuseLabelKey := utils.GetFuseLabelName(namespace, name, runtimeInfo.GetOwnerDatasetUID())
 	var labelsToModify common.LabelsToModify
 	labelsToModify.Delete(fuseLabelKey)
 
@@ -401,7 +400,11 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	}
 
 	// 4. Label node to launch FUSE Pod
-	fuseLabelKey := common.LabelAnnotationFusePrefix + namespace + "-" + name
+	runtimeInfo, err := base.GetRuntimeInfo(ns.client, name, namespace)
+	if err != nil {
+		return nil, errors.Wrapf(err, "NodeStageVolume: failed to get runtime info for %s/%s", namespace, name)
+	}
+	fuseLabelKey := utils.GetFuseLabelName(namespace, name, runtimeInfo.GetOwnerDatasetUID())
 	var labelsToModify common.LabelsToModify
 	labelsToModify.Add(fuseLabelKey, "true")
 

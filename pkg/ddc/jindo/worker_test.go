@@ -814,10 +814,15 @@ func TestBuildWorkersAffinity(t *testing.T) {
 			runtimeObjs = append(runtimeObjs, tt.fields.dataset)
 			runtimeObjs = append(runtimeObjs, tt.fields.worker)
 			mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+			runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "jindo")
+			if err != nil {
+				t.Errorf("fail to create the runtimeInfo with error %v", err)
+			}
 			e := &JindoEngine{
-				name:      tt.fields.dataset.Name,
-				namespace: tt.fields.dataset.Namespace,
-				Client:    mockClient,
+				name:        tt.fields.dataset.Name,
+				namespace:   tt.fields.dataset.Namespace,
+				Client:      mockClient,
+				runtimeInfo: runtimeInfo,
 			}
 
 			want := tt.fields.want

@@ -45,6 +45,26 @@ func (e *GooseFSEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		e.runtimeInfo.SetFuseNodeSelector(runtime.Spec.Fuse.NodeSelector)
 
 		if !e.UnitTest {
+			// Setup with Dataset Info
+			dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+			if err != nil {
+				if len(runtime.GetOwnerReferences()) > 0 {
+					e.runtimeInfo.SetOwnerDatasetUID(runtime.GetOwnerReferences()[0].UID)
+				}
+				if utils.IgnoreNotFound(err) == nil {
+					e.Log.Info("Dataset is notfound", "name", e.name, "namespace", e.namespace)
+					return e.runtimeInfo, nil
+				}
+
+				e.Log.Info("Failed to get dataset when getruntimeInfo")
+				return e.runtimeInfo, err
+			}
+
+			e.runtimeInfo.SetupWithDataset(dataset)
+			e.Log.Info("Setup with dataset done", "exclusive", e.runtimeInfo.IsExclusive())
+
+			e.runtimeInfo.SetOwnerDatasetUID(dataset.UID)
+
 			// Check if the runtime is using deprecated labels
 			isLabelDeprecated, err := e.HasDeprecatedCommonLabelname()
 			if err != nil {
@@ -61,21 +81,6 @@ func (e *GooseFSEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 
 			e.Log.Info("Deprecation check finished", "isLabelDeprecated", e.runtimeInfo.IsDeprecatedNodeLabel(), "isPVNameDeprecated", e.runtimeInfo.IsDeprecatedPVName())
 
-			// Setup with Dataset Info
-			dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
-			if err != nil {
-				if utils.IgnoreNotFound(err) == nil {
-					e.Log.Info("Dataset is notfound", "name", e.name, "namespace", e.namespace)
-					return e.runtimeInfo, nil
-				}
-
-				e.Log.Info("Failed to get dataset when getruntimeInfo")
-				return e.runtimeInfo, err
-			}
-
-			e.runtimeInfo.SetupWithDataset(dataset)
-
-			e.Log.Info("Setup with dataset done", "exclusive", e.runtimeInfo.IsExclusive())
 		}
 	}
 

@@ -312,7 +312,7 @@ func (helper *defaultMutatorHelper) prependFuseContainer(asInit bool) error {
 		helper.Specs.MetaObj.Labels = map[string]string{}
 	}
 	containerDatasetMappingLabelKey := common.LabelContainerDatasetMappingKeyPrefix + fuseContainer.Name
-	helper.Specs.MetaObj.Labels[containerDatasetMappingLabelKey] = fmt.Sprintf("%s_%s", helper.runtimeInfo.GetNamespace(), helper.runtimeInfo.GetName())
+	helper.Specs.MetaObj.Labels[containerDatasetMappingLabelKey] = utils.GetDatasetId(helper.runtimeInfo.GetNamespace(), helper.runtimeInfo.GetName(), helper.runtimeInfo.GetOwnerDatasetUID())
 	return nil
 }
 

@@ -98,7 +98,9 @@ func (j *JuiceFSEngine) generateJuicefsValueFile(runtime *datav1alpha1.JuiceFSRu
 	}
 
 	//3. Save the configfile into configmap
-	err = kubeclient.CreateConfigMap(j.Client, j.getHelmValuesConfigMapName(), j.namespace, "data", data)
+	runtimeInfo := j.runtimeInfo
+	ownerDatasetId := utils.GetDatasetId(runtimeInfo.GetNamespace(), runtimeInfo.GetName(), runtimeInfo.GetOwnerDatasetUID())
+	err = kubeclient.CreateConfigMap(j.Client, j.getHelmValuesConfigMapName(), j.namespace, "data", data, ownerDatasetId)
 	if err != nil {
 		return
 	}

@@ -45,6 +45,7 @@ func (e *GooseFSEngine) transform(runtime *datav1alpha1.GooseFSRuntime) (value *
 	value = &GooseFS{}
 
 	value.FullnameOverride = e.name
+	value.OwnerDatasetId = utils.GetDatasetId(e.namespace, e.name, e.runtimeInfo.GetOwnerDatasetUID())
 
 	// 1.transform the common part
 	err = e.transformCommonPart(runtime, dataset, value)

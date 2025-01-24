@@ -20,6 +20,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"os"
 	"path/filepath"
@@ -162,11 +163,16 @@ func TestJuiceFSEngine_generateDataMigrateValueFile(t *testing.T) {
 	}
 
 	for _, test := range testCases {
+		runtimeInfo, err := base.BuildRuntimeInfo("juicefs", "fluid", "juicefs")
+		if err != nil {
+			t.Errorf("fail to create the runtimeInfo with error %v", err)
+		}
 		engine := JuiceFSEngine{
-			name:      "juicefs",
-			namespace: "fluid",
-			Client:    client,
-			Log:       fake.NullLogger(),
+			name:        "juicefs",
+			namespace:   "fluid",
+			Client:      client,
+			Log:         fake.NullLogger(),
+			runtimeInfo: runtimeInfo,
 		}
 		fileName, err := engine.generateDataMigrateValueFile(context, &test.dataMigrate)
 		if err != nil {

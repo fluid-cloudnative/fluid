@@ -186,9 +186,10 @@ func (e *JindoCacheEngine) genDataLoadValue(image string, runtime *datav1alpha1.
 	dataloadInfo.Options = options
 
 	dataLoadValue := &cdataload.DataLoadValue{
-		Name:         dataload.Name,
-		DataLoadInfo: dataloadInfo,
-		Owner:        transformer.GenerateOwnerReferenceFromObject(dataload),
+		Name:           dataload.Name,
+		OwnerDatasetId: utils.GetDatasetId(targetDataset.Namespace, targetDataset.Name, string(targetDataset.UID)),
+		DataLoadInfo:   dataloadInfo,
+		Owner:          transformer.GenerateOwnerReferenceFromObject(dataload),
 	}
 
 	return dataLoadValue, nil

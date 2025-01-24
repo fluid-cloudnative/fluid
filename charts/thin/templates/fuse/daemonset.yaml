@@ -38,6 +38,7 @@ spec:
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: thin-fuse
+        {{- include "library.fluid.labels" . | nindent 8 }}
     spec:
       {{- if .Values.fuse.imagePullSecrets }}
       imagePullSecrets:

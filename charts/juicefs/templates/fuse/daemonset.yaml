@@ -45,6 +45,7 @@ spec:
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: juicefs-fuse
+        {{- include "library.fluid.labels" . | nindent 8 }}
         {{- if .Values.fuse.labels }}
         {{- range $key, $val := .Values.fuse.labels }}
         {{ $key | quote }}: {{ $val | quote }}

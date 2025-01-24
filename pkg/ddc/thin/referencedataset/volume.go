@@ -112,6 +112,7 @@ func createFusePersistentVolume(client client.Client, virtualRuntime base.Runtim
 				Name: virtualPvName,
 				Labels: map[string]string{
 					virtualRuntime.GetCommonLabelName(): "true",
+					common.LabelAnnotationDatasetId:     utils.GetDatasetId(virtualDataset.GetNamespace(), virtualDataset.GetName(), string(virtualDataset.GetUID())),
 				},
 				Annotations: physicalPV.ObjectMeta.Annotations,
 			},
@@ -171,9 +172,10 @@ func createFusePersistentVolumeClaim(client client.Client, virtualRuntime base.R
 				Namespace: virtualNamespace,
 				Labels: map[string]string{
 					// see 'pkg/util/webhook/scheduler/mutating/schedule_pod_handler.go' 'CheckIfPVCIsDataset' function usage
-					common.LabelAnnotationStorageCapacityPrefix + virtualNamespace + "-" + virtualName: "true",
-					common.LabelAnnotationDatasetReferringName:                                         runtimePVC.Name,
-					common.LabelAnnotationDatasetReferringNameSpace:                                    runtimePVC.Namespace,
+					utils.GetNamespacedNameValueWithPrefix(common.LabelAnnotationStorageCapacityPrefix, virtualNamespace, virtualName, virtualRuntime.GetOwnerDatasetUID()): "true",
+					common.LabelAnnotationDatasetReferringName:      runtimePVC.Name,
+					common.LabelAnnotationDatasetReferringNameSpace: runtimePVC.Namespace,
+					common.LabelAnnotationDatasetId:                 utils.GetDatasetId(virtualNamespace, virtualName, virtualRuntime.GetOwnerDatasetUID()),
 				},
 				Annotations: common.ExpectedFluidAnnotations,
 			},

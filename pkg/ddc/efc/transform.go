@@ -47,6 +47,7 @@ func (e *EFCEngine) transform(runtime *datav1alpha1.EFCRuntime) (value *EFC, err
 	}
 
 	value.FullnameOverride = e.name
+	value.OwnerDatasetId = utils.GetDatasetId(e.namespace, e.name, e.runtimeInfo.GetOwnerDatasetUID())
 
 	err = e.transformMasters(runtime, dataset, value)
 	if err != nil {
@@ -216,7 +217,7 @@ func (e *EFCEngine) transformFuse(runtime *datav1alpha1.EFCRuntime,
 		value.Fuse.NodeSelector = runtime.Spec.Fuse.NodeSelector
 	}
 	// The label will be added by CSI Plugin when any workload pod is scheduled on the node.
-	value.Fuse.NodeSelector[e.getFuseLabelName()] = "true"
+	value.Fuse.NodeSelector[utils.GetFuseLabelName(runtime.Namespace, runtime.Name, e.runtimeInfo.GetOwnerDatasetUID())] = "true"
 
 	// tiered store
 	err = e.transformFuseTieredStore(runtime, value)

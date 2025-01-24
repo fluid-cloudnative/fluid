@@ -170,7 +170,7 @@ func (t *ThinEngine) destroyWorkers(expectedWorkers int32) (currentWorkers int32
 				labelsToModify.Delete(label)
 			}
 
-			exclusiveLabelValue := utils.GetExclusiveValue(t.namespace, t.name)
+			exclusiveLabelValue := runtimeInfo.GetExclusiveLabelValue()
 			if val, exist := toUpdate.Labels[labelExclusiveName]; exist && val == exclusiveLabelValue {
 				labelsToModify.Delete(labelExclusiveName)
 			}

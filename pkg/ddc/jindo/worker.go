@@ -225,7 +225,7 @@ func (e *JindoEngine) buildWorkersAffinity(workers *v1.StatefulSet) (workersToUp
 					Preference: corev1.NodeSelectorTerm{
 						MatchExpressions: []corev1.NodeSelectorRequirement{
 							{
-								Key:      e.getFuseLabelname(),
+								Key:      utils.GetFuseLabelName(e.namespace, e.name, e.runtimeInfo.GetOwnerDatasetUID()),
 								Operator: corev1.NodeSelectorOpIn,
 								Values:   []string{"true"},
 							},

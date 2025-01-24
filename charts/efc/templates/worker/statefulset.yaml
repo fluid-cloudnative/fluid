@@ -8,7 +8,7 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
     role: efc-worker
-    fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
+    fluid.io/dataset: {{ .Values.ownerDatasetId }}
     fluid.io/dataset-placement: {{ .Values.placement }}
     {{- include "library.fluid.labels" . | nindent 4 }}
   ownerReferences:
@@ -45,8 +45,9 @@ spec:
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         role: efc-worker
-        fluid.io/dataset: {{ .Release.Namespace }}-{{ .Release.Name }}
+        fluid.io/dataset: {{ .Values.ownerDatasetId }}
         fluid.io/dataset-placement: {{ .Values.placement }}
+        {{- include "library.fluid.labels" . | nindent 8 }}
         {{- if .Values.worker.labels }}
         {{- range $key, $val := .Values.worker.labels }}
         {{ $key | quote }}: {{ $val | quote }}

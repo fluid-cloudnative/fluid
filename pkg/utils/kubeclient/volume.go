@@ -19,6 +19,7 @@ package kubeclient
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -345,31 +346,18 @@ func ShouldRemoveProtectionFinalizer(client client.Client, name, namespace strin
 	return
 }
 
-// IsDatasetPVC check whether the PVC is a dataset PVC
-func IsDatasetPVC(client client.Reader, name string, namespace string) (find bool, err error) {
-	pvc := &corev1.PersistentVolumeClaim{}
-	err = client.Get(context.TODO(), types.NamespacedName{
-		Namespace: namespace,
-		Name:      name,
-	}, pvc)
-	if err != nil {
-		return
-	}
-	_, find = pvc.Labels[common.LabelAnnotationStorageCapacityPrefix+namespace+"-"+name]
-	return
-}
-
 // CheckIfPVCIsDataset checks if the pvc is dataset
 func CheckIfPVCIsDataset(pvc *corev1.PersistentVolumeClaim) (isDataset bool) {
-	if pvc == nil {
+	if pvc == nil || pvc.Labels == nil {
 		return
 	}
-	name := pvc.GetName()
-	namespace := pvc.GetNamespace()
-	if len(namespace) == 0 {
-		namespace = corev1.NamespaceDefault
+
+	for labelKey := range pvc.Labels {
+		if strings.HasPrefix(labelKey, common.LabelAnnotationStorageCapacityPrefix) {
+			isDataset = true
+			break
+		}
 	}
-	_, isDataset = pvc.Labels[common.LabelAnnotationStorageCapacityPrefix+namespace+"-"+name]
 
 	if _, exists := common.GetManagerDatasetFromLabels(pvc.Labels); exists {
 		isDataset = true

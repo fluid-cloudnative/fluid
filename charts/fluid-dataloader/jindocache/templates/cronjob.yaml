@@ -55,6 +55,7 @@ spec:
             app: jindocache
             cronjob: {{ printf "%s-job" .Release.Name }}
             targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
+            {{- include "library.fluid.labels" . | nindent 12 }}
           {{- if .Values.dataloader.labels }}
           {{- range $key, $val := .Values.dataloader.labels }}
             {{ $key | quote }}: {{ $val | quote }}

@@ -52,6 +52,9 @@ func (e *EFCEngine) getRuntimeInfo() (info base.RuntimeInfoInterface, err error)
 			// Setup with Dataset Info
 			dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 			if err != nil {
+				if len(runtime.GetOwnerReferences()) > 0 {
+					e.runtimeInfo.SetOwnerDatasetUID(runtime.GetOwnerReferences()[0].UID)
+				}
 				if utils.IgnoreNotFound(err) == nil {
 					e.Log.Info("Dataset is notfound", "name", e.name, "namespace", e.namespace)
 					return e.runtimeInfo, nil
@@ -62,6 +65,7 @@ func (e *EFCEngine) getRuntimeInfo() (info base.RuntimeInfoInterface, err error)
 			}
 
 			e.runtimeInfo.SetupWithDataset(dataset)
+			e.runtimeInfo.SetOwnerDatasetUID(dataset.UID)
 
 			e.Log.Info("Setup with dataset done", "exclusive", e.runtimeInfo.IsExclusive())
 		}
