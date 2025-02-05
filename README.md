@@ -133,10 +133,16 @@ See [ROADMAP.md](ROADMAP.md)  for the  roadmap details. It may be updated from t
 
 Feel free to reach out if you have any questions. The maintainers of this project are reachable via:
 
-DingTalk:
+DingTalk Group:
 
 <div>
   <img src="static/dingtalk.png" width="280" title="dingtalk">
+</div>
+
+WeChat Group:
+
+<div>
+  <img src="static/wechat.png" width="280" title="dingtalk">
 </div>
 
 WeChat Official Account:

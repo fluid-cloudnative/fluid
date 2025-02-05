@@ -131,11 +131,23 @@ Fluid现在是[Cloud Native Computing Foundation](https://cncf.io) (CNCF) 开源
 
 ## 欢迎加入与反馈
 
-Fluid让Kubernetes真正具有分布式数据缓存的基础能力，开源只是一个起点，需要大家的共同参与。大家在使用过程发现Bug或需要的Feature，都可以直接在 [GitHub](https://github.com/fluid-cloudnative/fluid)上面提 issue 或 PR，一起参与讨论。另外我们有一个钉钉群，欢迎您的参与和讨论。
+Fluid让Kubernetes真正具有分布式数据缓存的基础能力，开源只是一个起点，需要大家的共同参与。大家在使用过程发现Bug或需要的Feature，都可以直接在 [GitHub](https://github.com/fluid-cloudnative/fluid)上面提 issue 或 PR，一起参与讨论。另外我们有钉钉与微信交流群，欢迎您的参与和讨论。
 
 钉钉讨论群
 <div>
   <img src="static/dingtalk.png" width="280" title="dingtalk">
+</div>
+
+微信讨论群:
+
+<div>
+  <img src="static/wechat.png" width="280" title="dingtalk">
+</div>
+
+微信官方公众号:
+
+<div>
+  <img src="https://fluid-imgs.oss-cn-shanghai.aliyuncs.com/public/imgs/wxgzh_code.png" width="280" title="dingtalk">
 </div>
 
 Slack 讨论群
