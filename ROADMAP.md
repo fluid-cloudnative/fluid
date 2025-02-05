@@ -1,6 +1,19 @@
 # Fluid Roadmap
 
-## Fluid 2024 Roadmap
+## Fluid 2025 Roadmap
+
+### Data Anyway
+
+#### Objective: Unified Cache Runtime Integration
+
+- Enable seamless integration of new cache runtimes with minimal code changes through a universal Cache Runtime framework.
+
+
+### Data Anywhere
+
+
+### Data Anytime
+
 
 ### Objective: Achieve orchestration of data operations and Kubernetes job scheduling systems
 
