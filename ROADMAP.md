@@ -2,66 +2,47 @@
 
 ## Fluid 2025 Roadmap
 
-### Data Anyway
+### **1. Data Anyway**  
+**Objective**: Enable fluid data access **regardless of infrastructure constraints** (e.g., storage types, runtime environments) with minimal effort.
 
-#### Objective: Unified Cache Runtime Integration
+#### **Technical Directions**  
+- **Unified Cache Runtime Framework**  
+  - Enable integration of new cache runtimes(e.g., Cubefs, DragonFly) with minimal code changes.  
+  - Standardize APIs for cache engine compatibility (e.g., Alluxio, Vineyard, JuiceFS).  
+- **ThinRuntime Productization**:  
+  - Support dynamic volume mounting capabilities for multi-cloud/hybrid-cloud scenarios.  
+  - Improve stability and performance for large-scale deployments.  
+  - Minimum container permission (remove the privileged permission of FUSE Pod)
 
-- Enable seamless integration of new cache runtimes with minimal code changes through a universal Cache Runtime framework.
+### **2. Data Anywhere**  
+**Objective**: Achieve **cross-region, cross-cluster, and cross-platform** data mobility and accessibility.  
+
+#### **Technical Directions**  
+- **Multi-Cluster Dataset Unified Management**  
+  - **Global Dataset**: Create datasets pointing to the same data source across clusters.  
+  - **Queue Integration**: Orchestrate dependencies between data preparation and task scheduling.  
+- **Efficient Data Prewarming & Migration**  
+  - **Distributed Prewarming**: Maximize bandwidth utilization for fast data loading.  
+  - **Throttling Control**: Limit bandwidth usage during prewarming to avoid saturation.  
+  - **Rsync Optimization**: Improve cross-region sync efficiency (e.g., Horizon integration).  
+- **Intelligent Scaling**:  
+  - Recommend Pods for scaling (e.g., prioritize underutilized nodes).  
+  - Ensure cache engine compatibility with dynamic throughput adjustments post-scaling.  
+- **Disk-Aware Scheduling**:  
+  - Schedule workloads based on disk capacity and utilization.  
+  - Support standard scenarios (e.g., disk-level resource allocation).  
+- **Observability-Driven Optimization**  
+  - **Pattern Recognition**: Analyze data access patterns to auto-inject acceleration components (e.g., caching, prefetching).  
+  - **Idle Dataset Detection**: Identify unused datasets via reference counting and access history.  
+
+---
+
+### **3. Data Anytime**  
+**Core Goal**: Ensure **real-time, adaptive, and intelligent** data availability for workloads.  
+
+#### **Technical Directions**  
+
+---
 
 
-### Data Anywhere
-
-
-### Data Anytime
-
-
-### Objective: Achieve orchestration of data operations and Kubernetes job scheduling systems
-
-- Support temporality through Kueue
-   - Once data migration is completed, run data preheating, triggering the running of machine learning tasks (such as tfjob, mpiJob, pytorchJob, sparkJob)
-   - After computation is completed, data migration and cache cleaning can be carried out
-- Choose data access methods based on the scheduling results of the Kubernetes scheduler (default scheduler, Volcano, YuniKorn)
-   - If scheduled to ordinary nodes with shared operating system kernels, adaptively use csi plugin mode
-   - If scheduled to Kata container nodes with independent operating system kernels, you can use the sidecar mode adaptively and support scalable modifications by cloud vendors
-
-### Objective: Simplify the work of operation and maintenance and AI developers through Python SDK
-
-- Support basic data operation
-- Combine with Hugging face and Pytorch to support transparent data acceleration through pre-reading and multi-stream reading
-- Support defining automated data flow operations
-
-### Objective: Further deeply integrate the machine learning ecosystem to simplify the user experience
-
-- Integrate with Kubeflow Pipelines to accelerate datasets in the pipeline
-- Integrate with Fairing for model development and deployment in the notebook environment
-- Integrate with KServe to facilitate model deployment
-
-### Objective: Continuous security enhancement
-
-- Minimum container permission (remove the privileged permission of FUSE Pod)
-- Minimum rbac permission
-- Minimal container image installation
-- Continuously provide best practice documentation
-
-### Objective: Simplicity and reliability, friendlier to users and developers
-
-- Simplify deployment
-  - Merge Dataset/Runtime controllers into one binary package
-- Simplify usage
-  - Support Runtimeless, Dataset as the single API entry for users to use Fluid
-
- ### Objective: Enhance code quality & security improvements & documentation for production ready:
-
- - Improve code quality
-  - Reduce repetitive code
-  - Improve test coverage
-- Security hardening
-  - Minimize the permissions of controller's RBAC
-  - Regularly review and update the permissions when new runtime is introduced
-- Enhance observability
-  - Provide monitoring and alerts for Datasets
-- Enhance the quality of documentation
-  - Organize the documentation so users can navigate it easily and find the information
-  - Provide more practical examples and tutorials can significantly improve the user's comprehension and learning process.
-  - Maintain consistency in language, style, and formatting throughout the documentation
 
