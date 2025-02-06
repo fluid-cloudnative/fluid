@@ -1,54 +1,62 @@
 # Fluid Roadmap
 
-## Fluid 2024 Roadmap
+## Fluid 2025 Roadmap
 
-### Objective: Achieve orchestration of data operations and Kubernetes job scheduling systems
+### **1. Data Anyway**  
+**Objective**: Enable fluid data access **regardless of infrastructure constraints** (e.g., storage types, runtime environments) without developing controller code.
 
-- Support temporality through Kueue
-   - Once data migration is completed, run data preheating, triggering the running of machine learning tasks (such as tfjob, mpiJob, pytorchJob, sparkJob)
-   - After computation is completed, data migration and cache cleaning can be carried out
-- Choose data access methods based on the scheduling results of the Kubernetes scheduler (default scheduler, Volcano, YuniKorn)
-   - If scheduled to ordinary nodes with shared operating system kernels, adaptively use csi plugin mode
-   - If scheduled to Kata container nodes with independent operating system kernels, you can use the sidecar mode adaptively and support scalable modifications by cloud vendors
+- **Unified Cache Runtime Framework**  
+  - Enable integration of new cache runtimes(e.g., Cubefs, DragonFly) via a **generic Cache Runtime interface** with minimal code changes.    
+  - Standardize APIs for cache engine compatibility (e.g., Alluxio, Vineyard, JuiceFS).  
+- **Adaptive Data Access**:  
+  - Data Access Mode based on Scheduler's Decsion:  
+    - *Shared-Kernel Nodes* → Use CSI plugins for direct mounting.  
+    - *Kata Containers* → Switch to sidecar-based container. 
+- **ThinRuntime Productization**:  
+  - Improve stability and performance for large-scale deployments.  
+  - Minimum container permission (remove the privileged permission of FUSE Pod)
 
-### Objective: Simplify the work of operation and maintenance and AI developers through Python SDK
 
-- Support basic data operation
-- Combine with Hugging face and Pytorch to support transparent data acceleration through pre-reading and multi-stream reading
-- Support defining automated data flow operations
+### **2. Data Anywhere**  
+**Objective**: Achieve **cross-region, cross-cluster, and cross-platform** data mobility and accessibility.  
 
-### Objective: Further deeply integrate the machine learning ecosystem to simplify the user experience
+- **Multi-Cluster Dataset Unified Management**  
+  - **Global Dataset**: Create datasets pointing to the same data source across clusters.  
+  - **Queue Integration**: Orchestrate dependencies between data preparation and task scheduling.  
+  - **Persistent Data Mirroring**  
+    - **Region-Aware Replication**: Automatically mirror datasets across clouds/regions.  
+    - **Consistency Guarantees**: Support both eventual and strong consistency models.  
 
-- Integrate with Kubeflow Pipelines to accelerate datasets in the pipeline
-- Integrate with Fairing for model development and deployment in the notebook environment
-- Integrate with KServe to facilitate model deployment
+- **Efficient Data Prewarming & Migration**  
+  - **Distributed Prewarming**: Maximize bandwidth utilization for fast data loading.  
+  - **Throttling Control**: Limit bandwidth usage during prewarming to avoid saturation.  
+  - **Rsync Optimization**: Improve cross-region sync efficiency.  
 
-### Objective: Continuous security enhancement
+- **Elastic Caching & Scheduling**:  
+  - **Disk-Aware Scheduling**: Optimize workload placement based on disk capacity, utilization, and locality.  
+  - **Intelligent Scaling**:  
+    - Recommend underutilized Pods for scaling (cost/performance-aware).  
+    - Ensure cache engines adapt to dynamic throughput post-scaling.  
+  - **Cloud-Agnostic Recovery**: Rebuild caches across regions using cloud disk snapshots.  
 
-- Minimum container permission (remove the privileged permission of FUSE Pod)
-- Minimum rbac permission
-- Minimal container image installation
-- Continuously provide best practice documentation
+- **Observability-Driven Optimization**  
+  - **Pattern Recognition**: Analyze data access patterns to auto-inject acceleration components (e.g., caching, prefetching).  
+  - **Idle Dataset Detection**: Identify unused datasets via reference counting and access history.  
 
-### Objective: Simplicity and reliability, friendlier to users and developers
+- **Application-Side Acceleration**  
+  - **Transparent Prefetching**:  
+    - Inject sidecar containers to prefetch data dynamically (e.g., Alluxio/Fluid Runtime).  
+    - Auto-adjust prefetch strategies (block size, concurrency) based on access patterns.  
+  - **Dynamic SDK Injection**: Attach acceleration SDKs to Pods via Fluid Admission Controller (no base image modification).  
 
-- Simplify deployment
-  - Merge Dataset/Runtime controllers into one binary package
-- Simplify usage
-  - Support Runtimeless, Dataset as the single API entry for users to use Fluid
 
- ### Objective: Enhance code quality & security improvements & documentation for production ready:
+### **3. Data Anytime**  
+**Core Goal**: Ensure **real-time, adaptive, and intelligent** data availability for workloads.  
 
- - Improve code quality
-  - Reduce repetitive code
-  - Improve test coverage
-- Security hardening
-  - Minimize the permissions of controller's RBAC
-  - Regularly review and update the permissions when new runtime is introduced
-- Enhance observability
-  - Provide monitoring and alerts for Datasets
-- Enhance the quality of documentation
-  - Organize the documentation so users can navigate it easily and find the information
-  - Provide more practical examples and tutorials can significantly improve the user's comprehension and learning process.
-  - Maintain consistency in language, style, and formatting throughout the documentation
+- **Temporal Workflows with Kueue**:  
+  - Trigger ML jobs (TFJob, PyTorchJob) **after prewarming completes**.  
+  - Automate post-job cleanup (data migration/cache eviction).  
+- **Dynamic Volume Mounting**:  
+  - Support dynamic volume mounting capabilities for multi-cloud/hybrid-cloud scenarios.  
+  - Enable dyanmic data mount operations in Python SDK. 
 
