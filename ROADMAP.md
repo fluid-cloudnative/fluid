@@ -3,7 +3,7 @@
 ## Fluid 2025 Roadmap
 
 ### **1. Data Anyway**  
-**Objective**: Enable fluid data access **regardless of infrastructure constraints** (e.g., storage types, runtime environments) with minimal effort.
+**Objective**: Enable fluid data access **regardless of infrastructure constraints** (e.g., storage types, runtime environments) without developing controller code.
 
 - **Unified Cache Runtime Framework**  
   - Enable integration of new cache runtimes(e.g., Cubefs, DragonFly) via a **generic Cache Runtime interface** with minimal code changes.    
@@ -30,7 +30,7 @@
 - **Efficient Data Prewarming & Migration**  
   - **Distributed Prewarming**: Maximize bandwidth utilization for fast data loading.  
   - **Throttling Control**: Limit bandwidth usage during prewarming to avoid saturation.  
-  - **Rsync Optimization**: Improve cross-region sync efficiency (e.g., Horizon integration).  
+  - **Rsync Optimization**: Improve cross-region sync efficiency.  
 
 - **Elastic Caching & Scheduling**:  
   - **Disk-Aware Scheduling**: Optimize workload placement based on disk capacity, utilization, and locality.  
@@ -49,7 +49,6 @@
     - Auto-adjust prefetch strategies (block size, concurrency) based on access patterns.  
   - **Dynamic SDK Injection**: Attach acceleration SDKs to Pods via Fluid Admission Controller (no base image modification).  
 
----
 
 ### **3. Data Anytime**  
 **Core Goal**: Ensure **real-time, adaptive, and intelligent** data availability for workloads.  
@@ -61,4 +60,3 @@
   - Support dynamic volume mounting capabilities for multi-cloud/hybrid-cloud scenarios.  
   - Enable dyanmic data mount operations in Python SDK. 
 
----
