@@ -129,7 +129,7 @@ func (p *FilePrefetcher) buildFilePrefetcherConfig(pod *corev1.Pod, runtimeInfos
 	extraEnvs := map[string]string{}
 	// extraEnvsStr takes the format like: '<key1>=<value1> <key2>=<value2> <key3>=<value3>'
 	extraEnvsStr := defaultFn(pod.Annotations, AnnotationFilePrefetcherExtraEnvs, "")
-	if len(extraEnvs) > 0 {
+	if len(extraEnvsStr) > 0 {
 		keyValuePairs := strings.Split(extraEnvsStr, " ")
 		for _, keyValuePair := range keyValuePairs {
 			kvSlice := strings.Split(keyValuePair, "=")
