@@ -63,8 +63,9 @@ func (p *FilePrefetcher) Mutate(pod *corev1.Pod, runtimeInfos map[string]base.Ru
 
 	config, err := p.buildFilePrefetcherConfig(pod, runtimeInfos)
 	if err != nil {
-		p.log.Error(err, "failed to build file prefetcher config, skipping injecting file prefetcher sidecar")
-		return false, nil
+		p.log.Error(err, "failed to build file prefetcher config")
+		err = fmt.Errorf("failed to build file prefetcher config: %v", err)
+		return true, err
 	}
 
 	if len(config.GlobPaths) == 0 {
