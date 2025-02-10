@@ -315,6 +315,7 @@ webhook:
           - NodeAffinityWithCache
           - MountPropagationInjector
           - DatasetUsageInjector
+          - FilePrefetcher
         withoutDataset:
           - PreferNodesWithoutCache
       # serverless webhook plugins
@@ -322,6 +323,7 @@ webhook:
         withDataset:
           - FuseSidecar
           - DatasetUsageInjector
+          - FilePrefetcher
         withoutDataset: []
     pluginConfig:
       - name: NodeAffinityWithCache
