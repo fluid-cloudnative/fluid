@@ -112,6 +112,7 @@ spec:
           - name: fluid-src-dir
             mountPath: {{ .Values.runtime.mountRoot | quote }}
             mountPropagation: "HostToContainer"
+          {{- if .Values.csi.useNodeAuthorization }}
           - name: kubelet-kube-config
             mountPath: /etc/kubernetes/kubelet.conf
             mountPropagation: "HostToContainer"
@@ -123,6 +124,7 @@ spec:
             mountPath: {{ .Values.csi.kubelet.certDir | quote }}
             readOnly: true
           {{- end }}
+          {{- end }}
           - name: updatedb-conf
             mountPath: /host-etc/updatedb.conf
           - name: updatedb-conf-bak
@@ -132,11 +134,18 @@ spec:
           hostPath:
             path: {{ .Values.csi.kubelet.rootDir | quote }}
             type: Directory
+        {{- if .Values.csi.useNodeAuthorization }}
+        {{- $kubeletRootDir := ternary ( .Values.csi.kubelet.rootDir ) ( print .Values.csi.kubelet.rootDir "/" ) ( hasSuffix "/" .Values.csi.kubelet.rootDir ) }}
         {{- if not ( hasPrefix $kubeletRootDir .Values.csi.kubelet.certDir ) }}
         - name: kubelet-cert-dir
           hostPath:
             path: {{ .Values.csi.kubelet.certDir | quote }}
             type: Directory
+        {{- end }}
+        - name: kubelet-kube-config
+          hostPath:
+            path: {{ .Values.csi.kubelet.kubeConfigFile | quote }}
+            type: File
         {{- end }}
         - name: plugin-dir
           hostPath:
@@ -150,10 +159,6 @@ spec:
             path: {{ .Values.runtime.mountRoot | quote }}
             type: DirectoryOrCreate
           name: fluid-src-dir
-        - hostPath:
-            path: {{ .Values.csi.kubelet.kubeConfigFile | quote }}
-            type: File
-          name: kubelet-kube-config
         - hostPath:
             path: /etc/updatedb.conf
             type: FileOrCreate
