@@ -285,7 +285,7 @@ func parseVersion(version string) (*ClientVersion, error) {
 	}
 	re := regexp.MustCompile(`^v?(\d+)\.(\d+)\.(\d+)(?:-(.+))?$`)
 	matches := re.FindStringSubmatch(strings.TrimSpace(version))
-	if matches == nil || len(matches) < 4 {
+	if len(matches) < 4 {
 		return nil, fmt.Errorf("invalid version string: %s", version)
 	}
 	major, err := strconv.Atoi(matches[1])
