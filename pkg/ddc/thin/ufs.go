@@ -126,7 +126,7 @@ func (t ThinEngine) updateFuseConfigOnChange(runtime *datav1alpha1.ThinRuntime, 
 // Updating the fuse pod is to let kubelet run syncPod and update the configmap content
 func (t ThinEngine) updateFusePod() (err error) {
 	// get fuse pod
-	pods, err := t.GetRunningPodsOfDaemonset(t.getFuseDaemonsetName(), t.namespace)
+	pods, err := t.GetRunningPodsOfDaemonset(t.getFuseName(), t.namespace)
 	if err != nil {
 		t.Log.Error(err, "Failed to get fuse pods")
 		return
