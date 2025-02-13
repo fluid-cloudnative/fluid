@@ -102,7 +102,7 @@ func (e *VineyardEngine) getWorkerName() (dsName string) {
 	return e.name + "-worker"
 }
 
-func (e *VineyardEngine) getFuseDaemonsetName() (dsName string) {
+func (e *VineyardEngine) getFuseName() (dsName string) {
 	return e.name + "-fuse"
 }
 

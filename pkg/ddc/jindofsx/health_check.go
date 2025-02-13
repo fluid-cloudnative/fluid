@@ -134,27 +134,13 @@ func (e *JindoFSxEngine) checkWorkersHealthy() (err error) {
 
 // checkFuseHealthy checks the Fuse healthy
 func (e *JindoFSxEngine) checkFuseHealthy() (err error) {
-	Fuse, err := kubeclient.GetDaemonset(e.Client, e.getFuseName(), e.namespace)
+	runtime, err := e.getRuntime()
 	if err != nil {
-		return err
-	}
-
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
-		runtime, err := e.getRuntime()
-		if err != nil {
-			return
-		}
-		runtimeToUpdate := runtime.DeepCopy()
-		err = e.Helper.CheckFuseHealthy(e.Recorder, runtimeToUpdate, runtimeToUpdate.Status, Fuse)
-		if err != nil {
-			e.Log.Error(err, "Failed to check Fuse healthy")
-		}
 		return
-	})
-
-	if err != nil {
-		e.Log.Error(err, "Failed to check Fuse healthy")
 	}
-
+	err = e.Helper.CheckFuseHealthy(e.Recorder, runtime.DeepCopy(), e.getFuseName())
+	if err != nil {
+		e.Log.Error(err, "Failed to check runtimeFuse healthy")
+	}
 	return
 }

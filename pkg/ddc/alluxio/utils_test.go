@@ -715,8 +715,8 @@ func TestGetFuseDaemonsetName(t *testing.T) {
 			e := &AlluxioEngine{
 				name: tt.fields.name,
 			}
-			if gotDsName := e.getFuseDaemonsetName(); gotDsName != tt.wantDsName {
-				t.Errorf("AlluxioEngine.getFuseDaemonsetName() = %v, want %v", gotDsName, tt.wantDsName)
+			if gotDsName := e.getFuseName(); gotDsName != tt.wantDsName {
+				t.Errorf("AlluxioEngine.getFuseName() = %v, want %v", gotDsName, tt.wantDsName)
 			}
 		})
 	}
