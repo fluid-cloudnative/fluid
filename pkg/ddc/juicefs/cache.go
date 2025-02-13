@@ -64,7 +64,7 @@ func (j *JuiceFSEngine) queryCacheStatus() (states cacheStates, err error) {
 		}
 	} else {
 		containerName = common.JuiceFSFuseContainer
-		dsName := j.getFuseDaemonsetName()
+		dsName := j.getFuseName()
 		pods, err = j.GetRunningPodsOfDaemonset(dsName, j.namespace)
 		if err != nil || len(pods) == 0 {
 			return

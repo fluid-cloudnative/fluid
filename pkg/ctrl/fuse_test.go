@@ -252,8 +252,7 @@ func TestCheckFuseHealthy(t *testing.T) {
 
 		h := BuildHelper(runtimeInfo, fakeClient, fake.NullLogger())
 
-		err = h.CheckFuseHealthy(record.NewFakeRecorder(300),
-			runtime, runtime.Status, ds)
+		err = h.CheckFuseHealthy(record.NewFakeRecorder(300), runtime, ds.Name)
 
 		if testCase.isErr == (err == nil) {
 			t.Errorf("check fuse's healthy failed,err:%v", err)

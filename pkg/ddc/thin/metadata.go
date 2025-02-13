@@ -171,7 +171,7 @@ func (t *ThinEngine) syncMetadataInternal() (err error) {
 
 			t.Log.Info("Metadata Sync starts", "dataset namespace", t.namespace, "dataset name", t.name)
 
-			stsName := t.getFuseDaemonsetName()
+			stsName := t.getFuseName()
 			pods, err := t.GetRunningPodsOfDaemonset(stsName, t.namespace)
 			if err != nil || len(pods) == 0 {
 				result.UfsTotal = ""
