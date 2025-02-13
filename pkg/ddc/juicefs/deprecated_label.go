@@ -25,7 +25,7 @@ func (j *JuiceFSEngine) HasDeprecatedCommonLabelName() (deprecated bool, err err
 	// return deprecated.LabelAnnotationStorageCapacityPrefix + e.namespace + "-" + e.name
 
 	var (
-		fuseName  string = j.getFuseDaemonsetName()
+		fuseName  string = j.getFuseName()
 		namespace string = j.namespace
 	)
 

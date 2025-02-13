@@ -225,7 +225,7 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 					},
 				},
 			},
-			wantErr: true,
+			wantErr: false,
 		}, {
 			name: "no-master-nohealthy",
 			fields: fields{

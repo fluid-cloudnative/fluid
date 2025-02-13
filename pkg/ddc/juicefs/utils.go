@@ -73,7 +73,7 @@ func (j *JuiceFSEngine) getRuntime() (*datav1alpha1.JuiceFSRuntime, error) {
 	return &runtime, nil
 }
 
-func (j *JuiceFSEngine) getFuseDaemonsetName() (dsName string) {
+func (j *JuiceFSEngine) getFuseName() (dsName string) {
 	return j.name + "-fuse"
 }
 func (j *JuiceFSEngine) getWorkerName() (dsName string) {

@@ -191,7 +191,7 @@ func (j *JuiceFSEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runti
 	j.Log.V(1).Info("syncFuseSpec")
 	var cmdChanged bool
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		fuses, err := kubeclient.GetDaemonset(j.Client, j.getFuseDaemonsetName(), j.namespace)
+		fuses, err := kubeclient.GetDaemonset(j.Client, j.getFuseName(), j.namespace)
 		if err != nil {
 			return err
 		}

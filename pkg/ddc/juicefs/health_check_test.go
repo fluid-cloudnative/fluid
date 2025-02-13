@@ -17,6 +17,9 @@ package juicefs
 
 import (
 	"context"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"k8s.io/client-go/tools/record"
 	"reflect"
 	"testing"
 
@@ -156,6 +159,7 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 			namespace: "fluid",
 			name:      "hbase",
 			runtime:   &juicefsruntimeInputs[0],
+			Recorder:  record.NewFakeRecorder(1),
 		},
 		{
 			Client:    client,
@@ -163,27 +167,30 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 			namespace: "fluid",
 			name:      "test",
 			runtime:   &juicefsruntimeInputs[1],
+			Recorder:  record.NewFakeRecorder(1),
 		},
 	}
 
 	var testCase = []struct {
-		engine                             JuiceFSEngine
-		expectedErrorNil                   bool
-		expectedWorkerPhase                datav1alpha1.RuntimePhase
-		expectedRuntimeWorkerNumberReady   int32
-		expectedRuntimeWorkerAvailable     int32
-		expectedRuntimeFuseNumberReady     int32
-		expectedRuntimeFuseNumberAvailable int32
-		expectedDataset                    datav1alpha1.Dataset
+		engine                               JuiceFSEngine
+		expectedErrorNil                     bool
+		expectedWorkerPhase                  datav1alpha1.RuntimePhase
+		expectedRuntimeWorkerNumberReady     int32
+		expectedRuntimeWorkerAvailable       int32
+		expectedRuntimeFuseNumberReady       int32
+		expectedRuntimeFuseNumberAvailable   int32
+		expectedRuntimeFuseNumberUnavailable int32
+		expectedDataset                      datav1alpha1.Dataset
 	}{
 		{
-			engine:                             engines[0],
-			expectedErrorNil:                   true,
-			expectedWorkerPhase:                "",
-			expectedRuntimeWorkerNumberReady:   1,
-			expectedRuntimeWorkerAvailable:     1,
-			expectedRuntimeFuseNumberReady:     1,
-			expectedRuntimeFuseNumberAvailable: 1,
+			engine:                               engines[0],
+			expectedErrorNil:                     true,
+			expectedWorkerPhase:                  "",
+			expectedRuntimeWorkerNumberReady:     1,
+			expectedRuntimeWorkerAvailable:       1,
+			expectedRuntimeFuseNumberReady:       1,
+			expectedRuntimeFuseNumberAvailable:   1,
+			expectedRuntimeFuseNumberUnavailable: 0,
 			expectedDataset: datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "hbase",
@@ -202,13 +209,14 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 			},
 		},
 		{
-			engine:                             engines[1],
-			expectedErrorNil:                   false,
-			expectedWorkerPhase:                "",
-			expectedRuntimeWorkerNumberReady:   0,
-			expectedRuntimeWorkerAvailable:     0,
-			expectedRuntimeFuseNumberReady:     0,
-			expectedRuntimeFuseNumberAvailable: 0,
+			engine:                               engines[1],
+			expectedErrorNil:                     false,
+			expectedWorkerPhase:                  "",
+			expectedRuntimeWorkerNumberReady:     0,
+			expectedRuntimeWorkerAvailable:       0,
+			expectedRuntimeFuseNumberReady:       0,
+			expectedRuntimeFuseNumberAvailable:   0,
+			expectedRuntimeFuseNumberUnavailable: 0,
 			expectedDataset: datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
@@ -228,6 +236,8 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 		},
 	}
 	for _, test := range testCase {
+		runtimeInfo, _ := base.BuildRuntimeInfo(test.engine.name, test.engine.namespace, common.JuiceFSRuntime)
+		test.engine.Helper = ctrl.BuildHelper(runtimeInfo, client, test.engine.Log)
 		err := test.engine.CheckRuntimeHealthy()
 		if err != nil && test.expectedErrorNil == true ||
 			err == nil && test.expectedErrorNil == false {
@@ -249,7 +259,8 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 			return
 		}
 		if juicefsruntime.Status.FuseNumberReady != test.expectedRuntimeFuseNumberReady ||
-			juicefsruntime.Status.FuseNumberAvailable != test.expectedRuntimeFuseNumberAvailable {
+			juicefsruntime.Status.FuseNumberAvailable != test.expectedRuntimeFuseNumberAvailable ||
+			juicefsruntime.Status.FuseNumberUnavailable != test.expectedRuntimeFuseNumberUnavailable {
 			t.Errorf("fail to update the runtime")
 			return
 		}
@@ -341,6 +352,7 @@ func TestCheckFuseHealthy(t *testing.T) {
 					Namespace: "fluid",
 				},
 			},
+			Recorder: record.NewFakeRecorder(1),
 		},
 		{
 			Client:    client,
@@ -353,33 +365,39 @@ func TestCheckFuseHealthy(t *testing.T) {
 					Namespace: "fluid",
 				},
 			},
+			Recorder: record.NewFakeRecorder(1),
 		},
 	}
 
 	var testCase = []struct {
-		engine                             JuiceFSEngine
-		expectedWorkerPhase                datav1alpha1.RuntimePhase
-		expectedErrorNil                   bool
-		expectedRuntimeFuseNumberReady     int32
-		expectedRuntimeFuseNumberAvailable int32
+		engine                               JuiceFSEngine
+		expectedWorkerPhase                  datav1alpha1.RuntimePhase
+		expectedErrorNil                     bool
+		expectedRuntimeFuseNumberReady       int32
+		expectedRuntimeFuseNumberAvailable   int32
+		expectedRuntimeFuseNumberUnavailable int32
 	}{
 		{
-			engine:                             engines[0],
-			expectedWorkerPhase:                datav1alpha1.RuntimePhaseNotReady,
-			expectedErrorNil:                   false,
-			expectedRuntimeFuseNumberReady:     1,
-			expectedRuntimeFuseNumberAvailable: 1,
+			engine:                               engines[0],
+			expectedWorkerPhase:                  datav1alpha1.RuntimePhaseNotReady,
+			expectedErrorNil:                     true,
+			expectedRuntimeFuseNumberReady:       1,
+			expectedRuntimeFuseNumberAvailable:   1,
+			expectedRuntimeFuseNumberUnavailable: 1,
 		},
 		{
-			engine:                             engines[1],
-			expectedWorkerPhase:                datav1alpha1.RuntimePhaseReady,
-			expectedErrorNil:                   true,
-			expectedRuntimeFuseNumberReady:     1,
-			expectedRuntimeFuseNumberAvailable: 1,
+			engine:                               engines[1],
+			expectedWorkerPhase:                  datav1alpha1.RuntimePhaseReady,
+			expectedErrorNil:                     true,
+			expectedRuntimeFuseNumberReady:       1,
+			expectedRuntimeFuseNumberAvailable:   1,
+			expectedRuntimeFuseNumberUnavailable: 0,
 		},
 	}
 
 	for _, test := range testCase {
+		runtimeInfo, _ := base.BuildRuntimeInfo(test.engine.name, test.engine.namespace, common.JuiceFSRuntime)
+		test.engine.Helper = ctrl.BuildHelper(runtimeInfo, client, test.engine.Log)
 		err := test.engine.checkFuseHealthy()
 		if err != nil && test.expectedErrorNil == true ||
 			err == nil && test.expectedErrorNil == false {
@@ -394,7 +412,8 @@ func TestCheckFuseHealthy(t *testing.T) {
 		}
 
 		if juicefsruntime.Status.FuseNumberReady != test.expectedRuntimeFuseNumberReady ||
-			juicefsruntime.Status.FuseNumberAvailable != test.expectedRuntimeFuseNumberAvailable {
+			juicefsruntime.Status.FuseNumberAvailable != test.expectedRuntimeFuseNumberAvailable ||
+			juicefsruntime.Status.FuseNumberUnavailable != test.expectedRuntimeFuseNumberUnavailable {
 			t.Errorf("fail to update the runtime")
 			return
 		}

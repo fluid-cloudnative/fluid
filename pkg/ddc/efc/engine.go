@@ -27,6 +27,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -44,7 +45,7 @@ type EFCEngine struct {
 	//When reaching this gracefulShutdownLimits, the system is forced to clean up.
 	gracefulShutdownLimits int32
 	retryShutdown          int32
-	// initImage              string
+	Recorder               record.EventRecorder
 }
 
 func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error) {
@@ -52,6 +53,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 		name:                   ctx.Name,
 		namespace:              ctx.Namespace,
 		Client:                 ctx.Client,
+		Recorder:               ctx.Recorder,
 		Log:                    ctx.Log,
 		runtimeType:            ctx.RuntimeType,
 		engineImpl:             ctx.EngineImpl,

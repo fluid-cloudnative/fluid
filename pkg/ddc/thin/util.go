@@ -61,7 +61,7 @@ func (t *ThinEngine) getThinRuntimeProfile() (*datav1alpha1.ThinRuntimeProfile, 
 	return &profile, nil
 }
 
-func (t *ThinEngine) getFuseDaemonsetName() (dsName string) {
+func (t *ThinEngine) getFuseName() (dsName string) {
 	return t.name + "-fuse"
 }
 
