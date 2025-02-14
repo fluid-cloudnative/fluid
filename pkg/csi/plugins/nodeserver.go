@@ -32,8 +32,9 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/cmdguard"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/pkg/errors"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -60,7 +61,7 @@ type nodeServer struct {
 	apiReader            client.Reader
 	nodeAuthorizedClient *kubernetes.Clientset
 	locks                *utils.VolumeLocks
-	node                 *v1.Node
+	node                 *corev1.Node
 }
 
 func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
@@ -464,7 +465,7 @@ func (ns *nodeServer) getRuntimeNamespacedName(volumeContext map[string]string, 
 }
 
 // getNode first checks cached node
-func (ns *nodeServer) getNode() (node *v1.Node, err error) {
+func (ns *nodeServer) getNode() (node *corev1.Node, err error) {
 	// Default to allow patch stale node info
 	if envVar, found := os.LookupEnv(AllowPatchStaleNodeEnv); !found || envVar == "true" {
 		if ns.node != nil {
@@ -473,20 +474,23 @@ func (ns *nodeServer) getNode() (node *v1.Node, err error) {
 		}
 	}
 
-	if node, err = ns.nodeAuthorizedClient.CoreV1().Nodes().Get(context.TODO(), ns.nodeId, metav1.GetOptions{}); err != nil {
-		return nil, err
+	useNodeAuthorization := ns.nodeAuthorizedClient != nil
+	if useNodeAuthorization {
+		if node, err = ns.nodeAuthorizedClient.CoreV1().Nodes().Get(context.TODO(), ns.nodeId, metav1.GetOptions{}); err != nil {
+			return nil, err
+		}
+	} else {
+		if node, err = kubeclient.GetNode(ns.apiReader, ns.nodeId); err != nil {
+			return nil, err
+		}
 	}
-
-	// if node, err = kubeclient.GetNode(ns.apiReader, ns.nodeId); err != nil {
-	// return nil, err
-	// }
 
 	glog.V(1).Infof("Got node %s from api server", node.Name)
 	ns.node = node
 	return ns.node, nil
 }
 
-func (ns *nodeServer) patchNodeWithLabel(node *v1.Node, labelsToModify common.LabelsToModify) error {
+func (ns *nodeServer) patchNodeWithLabel(node *corev1.Node, labelsToModify common.LabelsToModify) error {
 	labels := labelsToModify.GetLabels()
 	labelValuePair := map[string]interface{}{}
 
@@ -516,10 +520,22 @@ func (ns *nodeServer) patchNodeWithLabel(node *v1.Node, labelsToModify common.La
 	if err != nil {
 		return err
 	}
-
-	_, err = ns.nodeAuthorizedClient.CoreV1().Nodes().Patch(context.TODO(), node.Name, types.StrategicMergePatchType, patchByteData, metav1.PatchOptions{})
-	if err != nil {
-		return err
+	useNodeAuthorization := ns.nodeAuthorizedClient != nil
+	if useNodeAuthorization {
+		_, err = ns.nodeAuthorizedClient.CoreV1().Nodes().Patch(context.TODO(), node.Name, types.StrategicMergePatchType, patchByteData, metav1.PatchOptions{})
+		if err != nil {
+			return err
+		}
+	} else {
+		nodeToPatch := &corev1.Node{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: node.Name,
+			},
+		}
+		err = ns.client.Patch(context.TODO(), nodeToPatch, client.RawPatch(types.StrategicMergePatchType, patchByteData))
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
