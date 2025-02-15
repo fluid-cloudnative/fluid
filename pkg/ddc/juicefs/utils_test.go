@@ -122,8 +122,8 @@ func TestJuiceFSEngine_getFuseDaemonsetName(t *testing.T) {
 			e := &JuiceFSEngine{
 				name: tt.fields.name,
 			}
-			if gotDsName := e.getFuseDaemonsetName(); gotDsName != tt.wantDsName {
-				t.Errorf("JuiceFSEngine.getFuseDaemonsetName() = %v, want %v", gotDsName, tt.wantDsName)
+			if gotDsName := e.getFuseName(); gotDsName != tt.wantDsName {
+				t.Errorf("JuiceFSEngine.getFuseName() = %v, want %v", gotDsName, tt.wantDsName)
 			}
 		})
 	}

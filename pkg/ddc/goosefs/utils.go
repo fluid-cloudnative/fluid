@@ -101,7 +101,7 @@ func (e *GooseFSEngine) getWorkerName() (dsName string) {
 	return e.name + "-worker"
 }
 
-func (e *GooseFSEngine) getFuseDaemonsetName() (dsName string) {
+func (e *GooseFSEngine) getFuseName() (dsName string) {
 	return e.name + "-fuse"
 }
 

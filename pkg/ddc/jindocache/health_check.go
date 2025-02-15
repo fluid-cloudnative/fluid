@@ -133,28 +133,17 @@ func (e *JindoCacheEngine) checkWorkersHealthy() (err error) {
 }
 
 // checkFuseHealthy checks the Fuse healthy
-func (e *JindoCacheEngine) checkFuseHealthy() (err error) {
-	Fuse, err := kubeclient.GetDaemonset(e.Client, e.getFuseName(), e.namespace)
-	if err != nil {
-		return err
-	}
-
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
+func (e *JindoCacheEngine) checkFuseHealthy() error {
+	return retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
 		runtime, err := e.getRuntime()
 		if err != nil {
+			e.Log.Error(err, "Failed to get Runtime", "runtimeName", e.name, "runtimeNamespace", e.namespace)
 			return
 		}
-		runtimeToUpdate := runtime.DeepCopy()
-		err = e.Helper.CheckFuseHealthy(e.Recorder, runtimeToUpdate, runtimeToUpdate.Status, Fuse)
+		err = e.Helper.CheckFuseHealthy(e.Recorder, runtime.DeepCopy(), e.getFuseName())
 		if err != nil {
-			e.Log.Error(err, "Failed to check Fuse healthy")
+			e.Log.Error(err, "Failed to check runtimeFuse healthy")
 		}
 		return
 	})
-
-	if err != nil {
-		e.Log.Error(err, "Failed to check Fuse healthy")
-	}
-
-	return
 }

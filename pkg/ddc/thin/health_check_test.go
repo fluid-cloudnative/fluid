@@ -21,14 +21,18 @@ import (
 	"reflect"
 	"testing"
 
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/ptr"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
 func TestCheckRuntimeHealthy(t *testing.T) {
@@ -202,6 +206,8 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 		},
 	}
 	for _, test := range testCase {
+		runtimeInfo, _ := base.BuildRuntimeInfo(test.engine.name, test.engine.namespace, common.ThinRuntime)
+		test.engine.Helper = ctrl.BuildHelper(runtimeInfo, client, test.engine.Log)
 		err := test.engine.CheckRuntimeHealthy()
 		if err != nil && test.expectedErrorNil == true ||
 			err == nil && test.expectedErrorNil == false {
@@ -314,6 +320,7 @@ func TestCheckFuseHealthy(t *testing.T) {
 					Namespace: "fluid",
 				},
 			},
+			Recorder: record.NewFakeRecorder(1),
 		},
 		{
 			Client:    client,
@@ -326,33 +333,39 @@ func TestCheckFuseHealthy(t *testing.T) {
 					Namespace: "fluid",
 				},
 			},
+			Recorder: record.NewFakeRecorder(1),
 		},
 	}
 
 	var testCase = []struct {
-		engine                             ThinEngine
-		expectedWorkerPhase                datav1alpha1.RuntimePhase
-		expectedErrorNil                   bool
-		expectedRuntimeFuseNumberReady     int32
-		expectedRuntimeFuseNumberAvailable int32
+		engine                               ThinEngine
+		expectedWorkerPhase                  datav1alpha1.RuntimePhase
+		expectedErrorNil                     bool
+		expectedRuntimeFuseNumberReady       int32
+		expectedRuntimeFuseNumberAvailable   int32
+		expectedRuntimeFuseNumberUnavailable int32
 	}{
 		{
-			engine:                             engines[0],
-			expectedWorkerPhase:                datav1alpha1.RuntimePhaseNotReady,
-			expectedErrorNil:                   false,
-			expectedRuntimeFuseNumberReady:     1,
-			expectedRuntimeFuseNumberAvailable: 1,
+			engine:                               engines[0],
+			expectedWorkerPhase:                  datav1alpha1.RuntimePhaseNotReady,
+			expectedErrorNil:                     true,
+			expectedRuntimeFuseNumberReady:       1,
+			expectedRuntimeFuseNumberAvailable:   1,
+			expectedRuntimeFuseNumberUnavailable: 1,
 		},
 		{
-			engine:                             engines[1],
-			expectedWorkerPhase:                datav1alpha1.RuntimePhaseReady,
-			expectedErrorNil:                   true,
-			expectedRuntimeFuseNumberReady:     1,
-			expectedRuntimeFuseNumberAvailable: 1,
+			engine:                               engines[1],
+			expectedWorkerPhase:                  datav1alpha1.RuntimePhaseReady,
+			expectedErrorNil:                     true,
+			expectedRuntimeFuseNumberReady:       1,
+			expectedRuntimeFuseNumberAvailable:   1,
+			expectedRuntimeFuseNumberUnavailable: 0,
 		},
 	}
 
 	for _, test := range testCase {
+		runtimeInfo, _ := base.BuildRuntimeInfo(test.engine.name, test.engine.namespace, common.ThinRuntime)
+		test.engine.Helper = ctrl.BuildHelper(runtimeInfo, client, test.engine.Log)
 		err := test.engine.checkFuseHealthy()
 		if err != nil && test.expectedErrorNil == true ||
 			err == nil && test.expectedErrorNil == false {
@@ -367,7 +380,8 @@ func TestCheckFuseHealthy(t *testing.T) {
 		}
 
 		if ThinRuntime.Status.FuseNumberReady != test.expectedRuntimeFuseNumberReady ||
-			ThinRuntime.Status.FuseNumberAvailable != test.expectedRuntimeFuseNumberAvailable {
+			ThinRuntime.Status.FuseNumberAvailable != test.expectedRuntimeFuseNumberAvailable ||
+			ThinRuntime.Status.FuseNumberUnavailable != test.expectedRuntimeFuseNumberUnavailable {
 			t.Errorf("fail to update the runtime")
 			return
 		}

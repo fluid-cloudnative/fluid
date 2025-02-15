@@ -21,15 +21,14 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/thin/referencedataset"
-
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/thin/referencedataset"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
@@ -44,6 +43,7 @@ type ThinEngine struct {
 	engineImpl     string
 	Log            logr.Logger
 	client.Client
+	Recorder record.EventRecorder
 	//When reaching this gracefulShutdownLimits, the system is forced to clean up.
 	gracefulShutdownLimits int32
 	MetadataSyncDoneCh     chan base.MetadataSyncResult
@@ -80,6 +80,7 @@ func buildThinEngine(id string, ctx cruntime.ReconcileRequestContext) (base.Engi
 		name:                   ctx.Name,
 		namespace:              ctx.Namespace,
 		Client:                 ctx.Client,
+		Recorder:               ctx.Recorder,
 		Log:                    ctx.Log,
 		runtimeType:            ctx.RuntimeType,
 		engineImpl:             ctx.EngineImpl,
