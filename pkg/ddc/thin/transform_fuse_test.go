@@ -749,3 +749,243 @@ func TestThinEngine_transformFuseWithDuplicateOptionKey(t1 *testing.T) {
 		}
 	})
 }
+
+func TestParseHostVolumeFromDataset(t *testing.T) {
+	tests := []struct {
+		name        string
+		dataset     *datav1alpha1.Dataset
+		expected    *ThinValue
+		expectedErr bool
+	}{
+		{
+			name: "ValidHostVolume",
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Options: map[string]string{
+								common.DatasetOptionFluidFuseHostVolume: "/host/path:/mount/path",
+							},
+						},
+					},
+				},
+			},
+			expected: &ThinValue{
+				Fuse: Fuse{
+					Volumes: []corev1.Volume{
+						{
+							Name: "fluid-fuse-hostvolume-0",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/host/path",
+								},
+							},
+						},
+					},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "fluid-fuse-hostvolume-0",
+							MountPath: "/mount/path",
+						},
+					},
+				},
+			},
+			expectedErr: false,
+		},
+		{
+			name: "ValidHostVolumeWithDefaultMountPath",
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Options: map[string]string{
+								common.DatasetOptionFluidFuseHostVolume: "/host/path",
+							},
+						},
+					},
+				},
+			},
+			expected: &ThinValue{
+				Fuse: Fuse{
+					Volumes: []corev1.Volume{
+						{
+							Name: "fluid-fuse-hostvolume-0",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/host/path",
+								},
+							},
+						},
+					},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "fluid-fuse-hostvolume-0",
+							MountPath: "/host/path",
+						},
+					},
+				},
+			},
+			expectedErr: false,
+		},
+		{
+			name: "ValidHostVolumeWithMultiHostVolume",
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Options: map[string]string{
+								common.DatasetOptionFluidFuseHostVolume: "/host/path-1",
+							},
+						},
+						{
+							Options: map[string]string{
+								common.DatasetOptionFluidFuseHostVolume: "/host/path-2",
+							},
+						},
+					},
+				},
+			},
+			expected: &ThinValue{
+				Fuse: Fuse{
+					Volumes: []corev1.Volume{
+						{
+							Name: "fluid-fuse-hostvolume-0",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/host/path-1",
+								},
+							},
+						},
+						{
+							Name: "fluid-fuse-hostvolume-1",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/host/path-2",
+								},
+							},
+						},
+					},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "fluid-fuse-hostvolume-0",
+							MountPath: "/host/path-1",
+						},
+						{
+							Name:      "fluid-fuse-hostvolume-1",
+							MountPath: "/host/path-2",
+						},
+					},
+				},
+			},
+			expectedErr: false,
+		},
+		{
+			name: "InvalidHostVolume",
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Options: map[string]string{
+								common.DatasetOptionFluidFuseHostVolume: "/host/path:/mount/path:/invalid",
+							},
+						},
+					},
+				},
+			},
+			expected:    nil,
+			expectedErr: true,
+		},
+		{
+			name: "NonAbsoluteHostPath",
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Options: map[string]string{
+								common.DatasetOptionFluidFuseHostVolume: "host/path:/mount/path",
+							},
+						},
+					},
+				},
+			},
+			expected:    nil,
+			expectedErr: true,
+		},
+		{
+			name: "NonAbsoluteMountPath",
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Options: map[string]string{
+								common.DatasetOptionFluidFuseHostVolume: "/host/path:mount/path",
+							},
+						},
+					},
+				},
+			},
+			expected:    nil,
+			expectedErr: true,
+		},
+		{
+			name: "ReadOnlyAccessMode",
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Options: map[string]string{
+								common.DatasetOptionFluidFuseHostVolume: "/host/path:/mount/path",
+							},
+						},
+					},
+					AccessModes: []corev1.PersistentVolumeAccessMode{
+						corev1.ReadOnlyMany,
+					},
+				},
+			},
+			expected: &ThinValue{
+				Fuse: Fuse{
+					Volumes: []corev1.Volume{
+						{
+							Name: "fluid-fuse-hostvolume-0",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/host/path",
+								},
+							},
+						},
+					},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "fluid-fuse-hostvolume-0",
+							MountPath: "/mount/path",
+							ReadOnly:  true,
+						},
+					},
+				},
+			},
+			expectedErr: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			thinValue := &ThinValue{}
+
+			thinEngine := &ThinEngine{
+				Log:       fake.NullLogger(),
+				namespace: "fluid",
+				name:      "test",
+				Client:    fake.NewFakeClientWithScheme(testScheme),
+			}
+
+			err := thinEngine.parseHostVolumeFromDataset(test.dataset, thinValue)
+			if err != nil != test.expectedErr {
+				t.Errorf("Expected error %v, got %v", test.expectedErr, err)
+			}
+			if err == nil && !reflect.DeepEqual(thinValue, test.expected) {
+				t.Errorf("Expected %v, got %v", test.expected, thinValue)
+			}
+		})
+	}
+}
