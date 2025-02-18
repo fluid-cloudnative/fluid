@@ -18,8 +18,12 @@ package jindo
 
 import (
 	"os"
+	"strings"
+
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 )
 
 const (
@@ -50,5 +54,44 @@ func GetRuntimeImage() (image string) {
 	} else if GetDefaultEngineImpl() == common.JindoCacheEngineImpl {
 		image = defaultJindoCacheRuntimeImage
 	}
+	return
+}
+
+func ProcessTiredStoreInfo(runtimeInfo base.RuntimeInfoInterface) (originPaths []string, cachePaths []string, quotas []*resource.Quantity) {
+	tireStoreInfo := runtimeInfo.GetTieredStoreInfo()
+	var defaultStoragePath = "/dev/shm/"
+
+	var subPath string
+	if GetDefaultEngineImpl() == common.JindoFSxEngineImpl {
+		subPath = "jindofsx"
+	} else if GetDefaultEngineImpl() == common.JindoFSEngineImpl {
+		subPath = "bigboot"
+	} else if GetDefaultEngineImpl() == common.JindoCacheEngineImpl {
+		subPath = "jindocache"
+	}
+
+	if len(tireStoreInfo.Levels) > 0 {
+		for _, cachePath := range tireStoreInfo.Levels[0].CachePaths {
+			originPaths = append(originPaths, cachePath.Path)
+			cachePaths = append(cachePaths, strings.TrimRight(cachePath.Path, "/")+"/"+
+				runtimeInfo.GetNamespace()+"/"+runtimeInfo.GetName()+"/"+subPath)
+		}
+
+	}
+	if len(cachePaths) == 0 {
+		originPaths = append(originPaths, defaultStoragePath)
+		cachePaths = append(cachePaths, strings.TrimRight(defaultStoragePath, "/")+"/"+
+			runtimeInfo.GetNamespace()+"/"+runtimeInfo.GetName()+"/"+subPath)
+	}
+
+	if len(tireStoreInfo.Levels) == 0 {
+		Quantity1Gi, _ := resource.ParseQuantity("1Gi")
+		quotas = append(quotas, &Quantity1Gi)
+	} else {
+		for _, cachePath := range tireStoreInfo.Levels[0].CachePaths {
+			quotas = append(quotas, cachePath.Quota)
+		}
+	}
+
 	return
 }
