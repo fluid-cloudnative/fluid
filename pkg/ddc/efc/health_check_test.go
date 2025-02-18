@@ -17,6 +17,7 @@
 package efc
 
 import (
+	"k8s.io/client-go/tools/record"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -291,7 +292,7 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 		},
 		{
 			name:    "fuse-no-healthy",
-			wantErr: true,
+			wantErr: false,
 			fields: fields{
 				name:      "fuse-no-health-data",
 				namespace: "big-data",
@@ -438,6 +439,7 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 				namespace: tt.fields.namespace,
 				Client:    mockClient,
 				Log:       ctrl.Log.WithName(tt.fields.name),
+				Recorder:  record.NewFakeRecorder(1),
 			}
 
 			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, common.EFCRuntime)

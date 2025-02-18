@@ -233,82 +233,17 @@ func (e *VineyardEngine) checkWorkersHealthy() (err error) {
 }
 
 // checkFuseHealthy check fuses number changed
-func (e *VineyardEngine) checkFuseHealthy() (err error) {
-	fuseName := e.getFuseDaemonsetName()
-
-	fuses, err := e.getDaemonset(fuseName, e.namespace)
-	if err != nil {
-		return err
-	}
-
-	healthy := false
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-
+func (e *VineyardEngine) checkFuseHealthy() error {
+	return retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
 		runtime, err := e.getRuntime()
 		if err != nil {
-			return err
+			e.Log.Error(err, "Failed to get Runtime", "runtimeName", e.name, "runtimeNamespace", e.namespace)
+			return
 		}
-
-		runtimeToUpdate := runtime.DeepCopy()
-
-		// if fuses.Status.NumberReady != fuses.Status.DesiredNumberScheduled {
-		if fuses.Status.NumberUnavailable > 0 ||
-			(fuses.Status.DesiredNumberScheduled > 0 && fuses.Status.NumberAvailable == 0) {
-			if len(runtimeToUpdate.Status.Conditions) == 0 {
-				runtimeToUpdate.Status.Conditions = []data.RuntimeCondition{}
-			}
-			cond := utils.NewRuntimeCondition(data.RuntimeFusesReady, "The Fuses are not ready.",
-				fmt.Sprintf("The daemonset %s in %s are not ready, the unhealthy number %d",
-					fuses.Name,
-					fuses.Namespace,
-					fuses.Status.UpdatedNumberScheduled), corev1.ConditionFalse)
-			_, oldCond := utils.GetRuntimeCondition(runtimeToUpdate.Status.Conditions, cond.Type)
-
-			if oldCond == nil || oldCond.Type != cond.Type {
-				runtimeToUpdate.Status.Conditions =
-					utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
-						cond)
-			}
-
-			runtimeToUpdate.Status.FusePhase = data.RuntimePhaseNotReady
-			e.Log.Error(err, "Failed to check the fuse healthy")
-		} else {
-			healthy = true
-			runtimeToUpdate.Status.FusePhase = data.RuntimePhaseReady
-			cond := utils.NewRuntimeCondition(data.RuntimeFusesReady, "The Fuses are ready.",
-				"The fuses are ready", corev1.ConditionFalse)
-			_, oldCond := utils.GetRuntimeCondition(runtimeToUpdate.Status.Conditions, cond.Type)
-
-			if oldCond == nil || oldCond.Type != cond.Type {
-				runtimeToUpdate.Status.Conditions =
-					utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
-						cond)
-			}
+		err = e.Helper.CheckFuseHealthy(e.Recorder, runtime.DeepCopy(), e.getFuseName())
+		if err != nil {
+			e.Log.Error(err, "Failed to check runtimeFuse healthy")
 		}
-
-		runtimeToUpdate.Status.FuseNumberReady = int32(fuses.Status.NumberReady)
-		runtimeToUpdate.Status.FuseNumberAvailable = int32(fuses.Status.NumberAvailable)
-		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
-			updateErr := e.Client.Status().Update(context.TODO(), runtimeToUpdate)
-			if updateErr != nil {
-				e.Log.Error(updateErr, "Failed to update the runtime")
-				return updateErr
-			}
-		}
-
-		return err
+		return
 	})
-
-	if err != nil {
-		e.Log.Error(err, "Failed update runtime")
-		return err
-	}
-
-	if !healthy {
-		err = fmt.Errorf("the daemonset %s in %s are not ready, the unhealthy number %d",
-			fuses.Name,
-			fuses.Namespace,
-			fuses.Status.UpdatedNumberScheduled)
-	}
-	return err
 }
