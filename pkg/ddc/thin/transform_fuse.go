@@ -18,6 +18,7 @@ package thin
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -35,6 +36,11 @@ func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *d
 	}
 
 	t.parseFromProfileFuse(profile, value)
+
+	err = t.parseHostVolumeFromDataset(dataset, value)
+	if err != nil {
+		t.Log.Error(err, "failed to transform from dataset")
+	}
 
 	// 1. image
 	t.parseFuseImage(runtime, value)
@@ -141,6 +147,74 @@ func (t *ThinEngine) parseFuseImage(runtime *datav1alpha1.ThinRuntime, value *Th
 	if len(runtime.Spec.Fuse.ImagePullSecrets) != 0 {
 		value.Fuse.ImagePullSecrets = runtime.Spec.Fuse.ImagePullSecrets
 	}
+}
+
+func (t *ThinEngine) parseHostVolumeFromDataset(dataset *datav1alpha1.Dataset, thinValue *ThinValue) error {
+	index := 0
+	for _, mount := range dataset.Spec.Mounts {
+		for key, value := range mount.Options {
+			if key != common.DatasetOptionFluidFuseHostVolume {
+				continue
+			}
+
+			var hostPath, mountPath string
+			subStrings := strings.Split(value, ":")
+			if len(subStrings) > 2 {
+				return fmt.Errorf("invalid dataset option, %s: %s", key, value)
+			}
+
+			hostPath = subStrings[0]
+			if !filepath.IsAbs(hostPath) {
+				return fmt.Errorf("invalid dataset option, %s: %s, should be a absolute hostPath", key, value)
+			}
+
+			mountPath = hostPath
+			if len(subStrings) == 2 {
+				mountPath = subStrings[1]
+				if !filepath.IsAbs(mountPath) {
+					return fmt.Errorf("invalid dataset options, %s: %s, should be a absolute mountPath", key, value)
+				}
+
+				for _, volumeMount := range thinValue.Fuse.VolumeMounts {
+					if volumeMount.MountPath == mountPath {
+						return fmt.Errorf("invalid dataset options, %s: %s, mountPath %s is conflicted", key, value, volumeMount.MountPath)
+					}
+				}
+			}
+
+			readOnly := false
+			for _, mode := range dataset.Spec.AccessModes {
+				if mode == corev1.ReadOnlyMany {
+					readOnly = true
+					break
+				}
+			}
+
+			volume, volumeMount := createVolumeAndMount(index, hostPath, mountPath, readOnly)
+			thinValue.Fuse.Volumes = append(thinValue.Fuse.Volumes, volume)
+			thinValue.Fuse.VolumeMounts = append(thinValue.Fuse.VolumeMounts, volumeMount)
+			index++
+			break
+		}
+	}
+
+	return nil
+}
+
+func createVolumeAndMount(index int, hostPath, mountPath string, readOnly bool) (corev1.Volume, corev1.VolumeMount) {
+	volumeName := fmt.Sprintf("fluid-fuse-hostvolume-%v", index)
+	return corev1.Volume{
+			Name: volumeName,
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: hostPath,
+				},
+			},
+		}, corev1.VolumeMount{
+			Name:      volumeName,
+			MountPath: mountPath,
+			ReadOnly:  readOnly,
+		}
 }
 
 func (t *ThinEngine) parseFuseOptions(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinRuntimeProfile, dataset *datav1alpha1.Dataset) (option string, err error) {
