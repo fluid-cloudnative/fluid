@@ -142,80 +142,17 @@ func (j *JuiceFSEngine) checkWorkersHealthy() (err error) {
 }
 
 // checkFuseHealthy check fuses number changed
-func (j *JuiceFSEngine) checkFuseHealthy() (err error) {
-	fuseName := j.getFuseDaemonsetName()
-
-	fuses, err := j.getDaemonset(fuseName, j.namespace)
-	if err != nil {
-		return err
-	}
-
-	healthy := false
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-
+func (j *JuiceFSEngine) checkFuseHealthy() error {
+	return retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
 		runtime, err := j.getRuntime()
 		if err != nil {
-			return err
+			j.Log.Error(err, "Failed to get Runtime", "runtimeName", j.name, "runtimeNamespace", j.namespace)
+			return
 		}
-
-		runtimeToUpdate := runtime.DeepCopy()
-
-		if fuses.Status.NumberUnavailable > 0 ||
-			(fuses.Status.DesiredNumberScheduled > 0 && fuses.Status.NumberAvailable == 0) {
-			if len(runtimeToUpdate.Status.Conditions) == 0 {
-				runtimeToUpdate.Status.Conditions = []data.RuntimeCondition{}
-			}
-			cond := utils.NewRuntimeCondition(data.RuntimeFusesReady, "The Fuses are not ready.",
-				fmt.Sprintf("The daemonset %s in %s are not ready, the unhealthy number %d",
-					fuses.Name,
-					fuses.Namespace,
-					fuses.Status.UpdatedNumberScheduled), v1.ConditionFalse)
-			_, oldCond := utils.GetRuntimeCondition(runtimeToUpdate.Status.Conditions, cond.Type)
-
-			if oldCond == nil || oldCond.Type != cond.Type {
-				runtimeToUpdate.Status.Conditions =
-					utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
-						cond)
-			}
-
-			runtimeToUpdate.Status.FusePhase = data.RuntimePhaseNotReady
-			j.Log.Error(err, "Failed to check the fuse healthy")
-		} else {
-			healthy = true
-			runtimeToUpdate.Status.FusePhase = data.RuntimePhaseReady
-			cond := utils.NewRuntimeCondition(data.RuntimeFusesReady, "The Fuses are ready.",
-				"The fuses are ready", v1.ConditionFalse)
-			_, oldCond := utils.GetRuntimeCondition(runtimeToUpdate.Status.Conditions, cond.Type)
-
-			if oldCond == nil || oldCond.Type != cond.Type {
-				runtimeToUpdate.Status.Conditions =
-					utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
-						cond)
-			}
+		err = j.Helper.CheckFuseHealthy(j.Recorder, runtime.DeepCopy(), j.getFuseName())
+		if err != nil {
+			j.Log.Error(err, "Failed to check runtimeFuse healthy")
 		}
-
-		runtimeToUpdate.Status.FuseNumberReady = int32(fuses.Status.NumberReady)
-		runtimeToUpdate.Status.FuseNumberAvailable = int32(fuses.Status.NumberAvailable)
-		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
-			updateErr := j.Client.Status().Update(context.TODO(), runtimeToUpdate)
-			if updateErr != nil {
-				return updateErr
-			}
-		}
-
-		return err
+		return
 	})
-
-	if err != nil {
-		j.Log.Error(err, "Failed update runtime")
-		return err
-	}
-
-	if !healthy {
-		err = fmt.Errorf("the daemonset %s in %s are not ready, the unhealthy number %d",
-			fuses.Name,
-			fuses.Namespace,
-			fuses.Status.UpdatedNumberScheduled)
-	}
-	return err
 }

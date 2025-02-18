@@ -93,7 +93,7 @@ func TestCheckFuseHealthy(t *testing.T) {
 		Items: []corev1.Pod{{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "hbase-jindofs-fuse-0",
-				Namespace: "big-data",
+				Namespace: "fluid",
 				Labels:    map[string]string{"a": "b"},
 			},
 			Status: corev1.PodStatus{
@@ -125,7 +125,7 @@ func TestCheckFuseHealthy(t *testing.T) {
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "hbase-jindofs-fuse",
-				Namespace: "big-data",
+				Namespace: "fluid",
 			},
 			Spec: appsv1.DaemonSetSpec{},
 			Status: appsv1.DaemonSetStatus{
@@ -194,7 +194,7 @@ func TestCheckFuseHealthy(t *testing.T) {
 			fuse: &appsv1.DaemonSet{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "hbase-jindofs-fuse",
-					Namespace: "big-data",
+					Namespace: "fluid",
 				},
 				Spec: appsv1.DaemonSetSpec{},
 				Status: appsv1.DaemonSetStatus{
@@ -220,7 +220,7 @@ func TestCheckFuseHealthy(t *testing.T) {
 				},
 			},
 			Phase: datav1alpha1.RuntimePhaseNotReady,
-			isErr: true,
+			isErr: false,
 		},
 	}
 	for _, testCase := range testCases {
@@ -252,8 +252,7 @@ func TestCheckFuseHealthy(t *testing.T) {
 
 		h := BuildHelper(runtimeInfo, fakeClient, fake.NullLogger())
 
-		err = h.CheckFuseHealthy(record.NewFakeRecorder(300),
-			runtime, runtime.Status, ds)
+		err = h.CheckFuseHealthy(record.NewFakeRecorder(300), runtime, ds.Name)
 
 		if testCase.isErr == (err == nil) {
 			t.Errorf("check fuse's healthy failed,err:%v", err)

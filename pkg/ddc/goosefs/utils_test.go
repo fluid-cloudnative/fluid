@@ -653,8 +653,8 @@ func TestGetFuseDaemonsetName(t *testing.T) {
 			e := &GooseFSEngine{
 				name: tt.fields.name,
 			}
-			if gotDsName := e.getFuseDaemonsetName(); gotDsName != tt.wantDsName {
-				t.Errorf("GooseFSEngine.getFuseDaemonsetName() = %v, want %v", gotDsName, tt.wantDsName)
+			if gotDsName := e.getFuseName(); gotDsName != tt.wantDsName {
+				t.Errorf("GooseFSEngine.getFuseName() = %v, want %v", gotDsName, tt.wantDsName)
 			}
 		})
 	}

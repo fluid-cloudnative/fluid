@@ -28,7 +28,7 @@ import (
 )
 
 func (t *ThinEngine) totalStorageBytesInternal() (total int64, err error) {
-	stsName := t.getFuseDaemonsetName()
+	stsName := t.getFuseName()
 	pods, err := t.GetRunningPodsOfDaemonset(stsName, t.namespace)
 	if err != nil || len(pods) == 0 {
 		return
@@ -43,7 +43,7 @@ func (t *ThinEngine) totalStorageBytesInternal() (total int64, err error) {
 }
 
 func (t *ThinEngine) totalFileNumsInternal() (fileCount int64, err error) {
-	stsName := t.getFuseDaemonsetName()
+	stsName := t.getFuseName()
 	pods, err := t.GetRunningPodsOfDaemonset(stsName, t.namespace)
 	if err != nil || len(pods) == 0 {
 		return
@@ -58,7 +58,7 @@ func (t *ThinEngine) totalFileNumsInternal() (fileCount int64, err error) {
 }
 
 func (t *ThinEngine) usedSpaceInternal() (usedSpace int64, err error) {
-	stsName := t.getFuseDaemonsetName()
+	stsName := t.getFuseName()
 	pods, err := t.GetRunningPodsOfDaemonset(stsName, t.namespace)
 	if err != nil || len(pods) == 0 {
 		return

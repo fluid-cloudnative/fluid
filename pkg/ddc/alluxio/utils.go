@@ -110,7 +110,7 @@ func (e *AlluxioEngine) getWorkerName() (dsName string) {
 	return e.name + "-worker"
 }
 
-func (e *AlluxioEngine) getFuseDaemonsetName() (dsName string) {
+func (e *AlluxioEngine) getFuseName() (dsName string) {
 	return e.name + "-fuse"
 }
 

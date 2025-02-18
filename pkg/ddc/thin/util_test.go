@@ -114,8 +114,8 @@ func TestThinEngine_getFuseDaemonsetName(t *testing.T) {
 			e := &ThinEngine{
 				name: tt.fields.name,
 			}
-			if gotDsName := e.getFuseDaemonsetName(); gotDsName != tt.wantDsName {
-				t.Errorf("ThinEngine.getFuseDaemonsetName() = %v, want %v", gotDsName, tt.wantDsName)
+			if gotDsName := e.getFuseName(); gotDsName != tt.wantDsName {
+				t.Errorf("ThinEngine.getFuseName() = %v, want %v", gotDsName, tt.wantDsName)
 			}
 		})
 	}
