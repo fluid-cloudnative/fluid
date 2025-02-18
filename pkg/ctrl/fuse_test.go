@@ -51,11 +51,6 @@ func TestCheckFuseHealthy(t *testing.T) {
 			Spec: datav1alpha1.JindoRuntimeSpec{
 				Replicas: 3, // 2
 			},
-			Status: datav1alpha1.RuntimeStatus{
-				CurrentFuseNumberScheduled: 2,
-				DesiredFuseNumberScheduled: 3,
-				FusePhase:                  "Ready",
-			},
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -65,12 +60,6 @@ func TestCheckFuseHealthy(t *testing.T) {
 			Spec: datav1alpha1.JindoRuntimeSpec{
 				Replicas: 2,
 			},
-			Status: datav1alpha1.RuntimeStatus{
-				CurrentFuseNumberScheduled: 3,
-				DesiredFuseNumberScheduled: 2,
-
-				FusePhase: "NotReady",
-			},
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -79,12 +68,6 @@ func TestCheckFuseHealthy(t *testing.T) {
 			},
 			Spec: datav1alpha1.JindoRuntimeSpec{
 				Replicas: 2,
-			},
-			Status: datav1alpha1.RuntimeStatus{
-				CurrentFuseNumberScheduled: 2,
-				DesiredFuseNumberScheduled: 2,
-
-				FusePhase: "NotReady",
 			},
 		},
 	}
@@ -129,8 +112,11 @@ func TestCheckFuseHealthy(t *testing.T) {
 			},
 			Spec: appsv1.DaemonSetSpec{},
 			Status: appsv1.DaemonSetStatus{
-				NumberUnavailable: 0,
-				NumberReady:       1,
+				NumberUnavailable:      0,
+				NumberReady:            1,
+				NumberAvailable:        1,
+				DesiredNumberScheduled: 1,
+				CurrentNumberScheduled: 1,
 			},
 		}, {
 			ObjectMeta: metav1.ObjectMeta{
@@ -139,18 +125,11 @@ func TestCheckFuseHealthy(t *testing.T) {
 			},
 			Spec: appsv1.DaemonSetSpec{},
 			Status: appsv1.DaemonSetStatus{
-				NumberUnavailable: 1,
-				NumberReady:       1,
-			},
-		}, {
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "obj-jindofs-fuse",
-				Namespace: "fluid",
-			},
-			Spec: appsv1.DaemonSetSpec{},
-			Status: appsv1.DaemonSetStatus{
-				NumberUnavailable: 1,
-				NumberReady:       1,
+				NumberUnavailable:      1,
+				NumberReady:            1,
+				NumberAvailable:        1,
+				DesiredNumberScheduled: 2,
+				CurrentNumberScheduled: 1,
 			},
 		},
 	}
@@ -179,13 +158,14 @@ func TestCheckFuseHealthy(t *testing.T) {
 	_ = appsv1.AddToScheme(s)
 	fakeClient := fake.NewFakeClientWithScheme(s, objs...)
 	testCases := []struct {
-		caseName  string
-		name      string
-		namespace string
-		Phase     datav1alpha1.RuntimePhase
-		fuse      *appsv1.DaemonSet
-		TypeValue bool
-		isErr     bool
+		caseName   string
+		name       string
+		namespace  string
+		Phase      datav1alpha1.RuntimePhase
+		fuse       *appsv1.DaemonSet
+		fuseReason string
+		TypeValue  bool
+		isErr      bool
 	}{
 		{
 			caseName:  "Healthy",
@@ -198,12 +178,16 @@ func TestCheckFuseHealthy(t *testing.T) {
 				},
 				Spec: appsv1.DaemonSetSpec{},
 				Status: appsv1.DaemonSetStatus{
-					NumberUnavailable: 0,
+					NumberUnavailable:      0,
+					NumberAvailable:        1,
+					NumberReady:            1,
+					DesiredNumberScheduled: 1,
+					CurrentNumberScheduled: 1,
 				},
 			},
-			Phase: datav1alpha1.RuntimePhaseReady,
-
-			isErr: false,
+			Phase:      datav1alpha1.RuntimePhaseReady,
+			fuseReason: "The fuse is ready.",
+			isErr:      false,
 		},
 		{
 			caseName:  "Unhealthy",
@@ -216,11 +200,16 @@ func TestCheckFuseHealthy(t *testing.T) {
 				},
 				Spec: appsv1.DaemonSetSpec{},
 				Status: appsv1.DaemonSetStatus{
-					NumberUnavailable: 1,
+					NumberUnavailable:      1,
+					NumberAvailable:        1,
+					NumberReady:            1,
+					DesiredNumberScheduled: 2,
+					CurrentNumberScheduled: 1,
 				},
 			},
-			Phase: datav1alpha1.RuntimePhaseNotReady,
-			isErr: false,
+			Phase:      datav1alpha1.RuntimePhaseNotReady,
+			fuseReason: "The fuses are not ready.",
+			isErr:      false,
 		},
 	}
 	for _, testCase := range testCases {
@@ -272,7 +261,35 @@ func TestCheckFuseHealthy(t *testing.T) {
 				testCase.Phase,
 				runtime.Status.FusePhase)
 		}
+		if runtime.Status.DesiredFuseNumberScheduled != testCase.fuse.Status.DesiredNumberScheduled {
+			t.Errorf("testcase %s is failed, expect DesiredFuseNumberScheduled %v, got %v", testCase.caseName,
+				runtime.Status.DesiredFuseNumberScheduled,
+				testCase.fuse.Status.DesiredNumberScheduled)
+		}
 
+		if runtime.Status.CurrentFuseNumberScheduled != testCase.fuse.Status.CurrentNumberScheduled {
+			t.Errorf("testcase %s is failed, expect CurrentFuseNumberScheduled %v, got %v", testCase.caseName,
+				runtime.Status.CurrentFuseNumberScheduled,
+				testCase.fuse.Status.CurrentNumberScheduled)
+		}
+
+		if runtime.Status.FuseNumberUnavailable != testCase.fuse.Status.NumberUnavailable {
+			t.Errorf("testcase %s is failed, expect FuseNumberUnavailable %v, got %v", testCase.caseName,
+				runtime.Status.FuseNumberUnavailable,
+				testCase.fuse.Status.NumberUnavailable)
+		}
+
+		if runtime.Status.FuseNumberAvailable != testCase.fuse.Status.NumberAvailable {
+			t.Errorf("testcase %s is failed, expect FuseNumberAvailable %v, got %v", testCase.caseName,
+				runtime.Status.FuseNumberAvailable,
+				testCase.fuse.Status.NumberAvailable)
+		}
+
+		if runtime.Status.FuseNumberReady != testCase.fuse.Status.NumberReady {
+			t.Errorf("testcase %s is failed, expect FuseNumberReady %v, got %v", testCase.caseName,
+				runtime.Status.FuseNumberReady,
+				testCase.fuse.Status.NumberReady)
+		}
 	}
 }
 

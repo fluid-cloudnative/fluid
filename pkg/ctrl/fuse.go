@@ -68,6 +68,9 @@ func (e *Helper) CheckFuseHealthy(recorder record.EventRecorder, runtime base.Ru
 					cond)
 		}
 		statusToUpdate.FusePhase = fusePhase
+		statusToUpdate.FuseReason = reason
+		statusToUpdate.CurrentFuseNumberScheduled = int32(ds.Status.CurrentNumberScheduled)
+		statusToUpdate.DesiredFuseNumberScheduled = int32(ds.Status.DesiredNumberScheduled)
 		statusToUpdate.FuseNumberReady = int32(ds.Status.NumberReady)
 		statusToUpdate.FuseNumberAvailable = int32(ds.Status.NumberAvailable)
 		statusToUpdate.FuseNumberUnavailable = int32(ds.Status.NumberUnavailable)
