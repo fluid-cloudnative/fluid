@@ -297,7 +297,14 @@ func (r *RuntimeReconciler) ReconcileRuntime(engine base.Engine, ctx cruntime.Re
 		return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
 	}
 
-	return utils.RequeueAfterInterval(time.Duration(90 * time.Second))
+	needRequeue, requeueInterval := utils.GenerateRandomRequeueDurationFromEnv()
+	if needRequeue {
+		log.Info("Need requeue after", "interval", requeueInterval)
+		return utils.RequeueAfterInterval(requeueInterval)
+	}
+
+	log.V(1).Info("Not need to requeue")
+	return utils.NoRequeue()
 }
 
 // AddFinalizerAndRequeue add  finalizer and requeue
