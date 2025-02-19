@@ -32,13 +32,10 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/cmdguard"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/utils/mount"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -59,7 +56,7 @@ type nodeServer struct {
 	*csicommon.DefaultNodeServer
 	client               client.Client
 	apiReader            client.Reader
-	nodeAuthorizedClient *kubernetes.Clientset
+	nodeAuthorizedClient NodeAuthorizedClient
 	locks                *utils.VolumeLocks
 	node                 *corev1.Node
 }
@@ -474,16 +471,13 @@ func (ns *nodeServer) getNode() (node *corev1.Node, err error) {
 		}
 	}
 
-	useNodeAuthorization := ns.nodeAuthorizedClient != nil
-	if useNodeAuthorization {
-		if node, err = ns.nodeAuthorizedClient.CoreV1().Nodes().Get(context.TODO(), ns.nodeId, metav1.GetOptions{}); err != nil {
-			return nil, err
-		}
-	} else {
-		if node, err = kubeclient.GetNode(ns.apiReader, ns.nodeId); err != nil {
-			return nil, err
-		}
+	if node, err = ns.nodeAuthorizedClient.Get(ns.nodeId); err != nil {
+		return nil, err
 	}
+
+	// if node, err = kubeclient.Get(ns.apiReader, ns.nodeId); err != nil {
+	// return nil, err
+	// }
 
 	glog.V(1).Infof("Got node %s from api server", node.Name)
 	ns.node = node
@@ -520,22 +514,10 @@ func (ns *nodeServer) patchNodeWithLabel(node *corev1.Node, labelsToModify commo
 	if err != nil {
 		return err
 	}
-	useNodeAuthorization := ns.nodeAuthorizedClient != nil
-	if useNodeAuthorization {
-		_, err = ns.nodeAuthorizedClient.CoreV1().Nodes().Patch(context.TODO(), node.Name, types.StrategicMergePatchType, patchByteData, metav1.PatchOptions{})
-		if err != nil {
-			return err
-		}
-	} else {
-		nodeToPatch := &corev1.Node{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: node.Name,
-			},
-		}
-		err = ns.client.Patch(context.TODO(), nodeToPatch, client.RawPatch(types.StrategicMergePatchType, patchByteData))
-		if err != nil {
-			return err
-		}
+
+	err = ns.nodeAuthorizedClient.Patch(node, types.StrategicMergePatchType, patchByteData)
+	if err != nil {
+		return err
 	}
 
 	return nil

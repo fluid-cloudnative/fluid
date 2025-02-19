@@ -112,7 +112,7 @@ spec:
           - name: fluid-src-dir
             mountPath: {{ .Values.runtime.mountRoot | quote }}
             mountPropagation: "HostToContainer"
-          {{- if .Values.csi.useNodeAuthorization }}
+          {{- if or (.Values.csi.useNodeAuthorization) (semverCompare "<1.30.0-0" .Capabilities.KubeVersion.Version) }}
           - name: kubelet-kube-config
             mountPath: /etc/kubernetes/kubelet.conf
             mountPropagation: "HostToContainer"
@@ -134,7 +134,7 @@ spec:
           hostPath:
             path: {{ .Values.csi.kubelet.rootDir | quote }}
             type: Directory
-        {{- if .Values.csi.useNodeAuthorization }}
+        {{- if or (.Values.csi.useNodeAuthorization) (semverCompare "<1.30.0-0" .Capabilities.KubeVersion.Version) }}
         {{- $kubeletRootDir := ternary ( .Values.csi.kubelet.rootDir ) ( print .Values.csi.kubelet.rootDir "/" ) ( hasSuffix "/" .Values.csi.kubelet.rootDir ) }}
         {{- if not ( hasPrefix $kubeletRootDir .Values.csi.kubelet.certDir ) }}
         - name: kubelet-cert-dir

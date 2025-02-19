@@ -44,7 +44,7 @@ rules:
   - apiGroups: [""]
     resources: ["events"]
     verbs: ["create", "patch"]
-  {{- if not .Values.csi.useNodeAuthorization }}
+  {{- if and (not .Values.csi.useNodeAuthorization) (semverCompare ">=1.30.0-0" .Capabilities.KubeVersion.Version) }}
   - apiGroups: [""]
     resources: ["nodes"]
     verbs: ["get", "patch"]
