@@ -61,6 +61,8 @@ csi:
   # Whether or not to borrow kubelet's config file to use node authorization to restrict CSI Plugin's permission
   # See why Fluid's CSI Plugins need node-specific authorization at https://github.com/fluid-cloudnative/fluid/security/advisories/GHSA-93xx-cvmc-9w3v
   # See node authorization at https://kubernetes.io/docs/reference/access-authn-authz/node/
+  # If false, use NodeBinding Token with ValidatingAdmissionPolicy instead of kubelet config for Node-Specific Restrictions.
+  # can only be set false when k8s.version >= 1.30 and the below kubelet.kubeConfigFile is useless.
   useNodeAuthorization: true
   kubelet:
     kubeConfigFile: /etc/kubernetes/kubelet.conf
