@@ -29,6 +29,15 @@ import (
 	"k8s.io/client-go/util/retry"
 )
 
+// UpdateDatasetStatus updates the status of a dataset in the JindoEngine.
+// This function is primarily responsible for updating the phase and conditions of the dataset based on the given phase,
+// and updating the cache state based on the runtime status.
+//
+// Parameters:
+//   - phase (datav1alpha1.DatasetPhase): The new phase to update the dataset to.
+//
+// Returns:
+//   - err (error): Returns an error if the update process fails, otherwise returns nil.
 func (e *JindoEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (err error) {
 	// 1. update the runtime status
 	runtime, err := e.getRuntime()
