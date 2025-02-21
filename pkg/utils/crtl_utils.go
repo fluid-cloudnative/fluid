@@ -17,16 +17,44 @@ limitations under the License.
 package utils
 
 import (
+	stdlog "log"
+	"math/rand"
+	"os"
+	"strconv"
 	"strings"
 	"time"
-
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
+
+const (
+	RuntimeReconcileDurationEnv string = "FLUID_RUNTIME_RECONCILE_DURATION"
+
+	RuntimeReconcileDurationOffsetEnv string = "FLUID_RUNTIME_RECONCILE_DURATION_OFFSET"
+
+	defaultRuntimeReconcileDuration time.Duration = time.Duration(90 * time.Second)
+)
+
+var (
+	RuntimeReconcileDurationEnvVal       string = ""
+	RuntimeReconcileDurationOffsetEnvVal string = ""
+)
+
+func init() {
+	if envVal, exists := os.LookupEnv(RuntimeReconcileDurationEnv); exists {
+		RuntimeReconcileDurationEnvVal = envVal
+		stdlog.Printf("Found %s value %s, using it as RuntimeReconcileDurationEnvVal", RuntimeReconcileDurationEnv, envVal)
+	}
+	if envVal, exists := os.LookupEnv(RuntimeReconcileDurationOffsetEnv); exists {
+		RuntimeReconcileDurationOffsetEnvVal = envVal
+		stdlog.Printf("Found %s value %s, using it as RuntimeReconcileDurationOffsetEnvVal", RuntimeReconcileDurationOffsetEnv, envVal)
+	}
+}
 
 // IgnoreAlreadyExists ignores already existes error
 func IgnoreAlreadyExists(err error) error {
@@ -178,4 +206,42 @@ func CalculateDuration(creationTime time.Time, finishTime time.Time) string {
 		finishTime = time.Now()
 	}
 	return finishTime.Sub(creationTime).Round(time.Second).String()
+}
+
+func GenerateRandomRequeueDurationFromEnv() (needReconcile bool, d time.Duration) {
+	d = defaultRuntimeReconcileDuration
+	needReconcile = true
+
+	if RuntimeReconcileDurationEnvVal == "" {
+		return
+	}
+
+	duration, err := strconv.Atoi(RuntimeReconcileDurationEnvVal)
+	if err != nil {
+		return
+	}
+
+	if duration == -1 {
+		needReconcile = false
+		return
+	}
+
+	d = time.Duration(duration) * time.Second
+
+	if RuntimeReconcileDurationOffsetEnvVal == "" {
+		return
+	}
+
+	offset, err := strconv.Atoi(RuntimeReconcileDurationOffsetEnvVal)
+	if err != nil {
+		return
+	}
+
+	if offset < 0 || offset > duration {
+		return
+	}
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	randomDurationValue := (r.Intn(2*offset+1) + duration - offset)
+	d = time.Duration(randomDurationValue) * time.Second
+	return
 }

@@ -18,6 +18,7 @@ package thin
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"time"
 
@@ -112,6 +113,7 @@ func (t *ThinEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		runtimeToUpdate.Status.ValueFileConfigmap = t.getHelmValuesConfigMapName()
 
 		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
+			t.Log.V(1).Info("Update RuntimeStatus", "runtime", fmt.Sprintf("%s/%s", runtime.GetNamespace(), runtime.GetName()))
 			err = t.Client.Status().Update(context.TODO(), runtimeToUpdate)
 			if err != nil {
 				t.Log.Error(err, "Failed to update the runtime")

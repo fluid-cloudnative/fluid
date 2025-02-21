@@ -18,6 +18,7 @@ package ctrl
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -103,6 +104,7 @@ func (e *Helper) SetupWorkers(runtime base.RuntimeInterface,
 
 		status := *statusToUpdate
 		if !reflect.DeepEqual(status, currentStatus) {
+			e.log.V(1).Info("Update runtime status", "runtime", fmt.Sprintf("%s/%s", runtime.GetNamespace(), runtime.GetName()))
 			return e.client.Status().Update(context.TODO(), runtime)
 		}
 	}

@@ -2,6 +2,8 @@ package utils
 
 import (
 	"fmt"
+	stdlog "log"
+	"os"
 	"testing"
 	"time"
 
@@ -364,6 +366,105 @@ func TestIgnoreNoKindMatchError(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := IgnoreNoKindMatchError(tt.err); (err != nil) != tt.wantErr {
 				t.Errorf("IgnoreNoKindMatchError() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestGenerateRandomRequeueDurationFromEnv(t *testing.T) {
+	tests := []struct {
+		name                     string
+		runtimeReconcileDuration string
+		runtimeReconcileOffset   string
+		expectedNeedReconcile    bool
+		expectedDurationMax      time.Duration
+		expectedDurationMin      time.Duration
+	}{
+		{
+			name:                     "NoEnvVars",
+			runtimeReconcileDuration: "",
+			runtimeReconcileOffset:   "",
+			expectedNeedReconcile:    true,
+			expectedDurationMax:      defaultRuntimeReconcileDuration,
+			expectedDurationMin:      defaultRuntimeReconcileDuration,
+		},
+		{
+			name:                     "InvalidDuration",
+			runtimeReconcileDuration: "abc",
+			runtimeReconcileOffset:   "",
+			expectedNeedReconcile:    true,
+			expectedDurationMax:      defaultRuntimeReconcileDuration,
+			expectedDurationMin:      defaultRuntimeReconcileDuration,
+		},
+		{
+			name:                     "DurationIsMinusOne",
+			runtimeReconcileDuration: "-1",
+			runtimeReconcileOffset:   "",
+			expectedNeedReconcile:    false,
+			expectedDurationMax:      0,
+			expectedDurationMin:      0,
+		},
+		{
+			name:                     "ValidDurationNoOffset",
+			runtimeReconcileDuration: "10",
+			runtimeReconcileOffset:   "",
+			expectedNeedReconcile:    true,
+			expectedDurationMax:      10 * time.Second,
+			expectedDurationMin:      10 * time.Second,
+		},
+		{
+			name:                     "InvalidOffset",
+			runtimeReconcileDuration: "10",
+			runtimeReconcileOffset:   "abc",
+			expectedNeedReconcile:    true,
+			expectedDurationMax:      10 * time.Second,
+			expectedDurationMin:      10 * time.Second,
+		},
+		{
+			name:                     "OffsetOutOfRange",
+			runtimeReconcileDuration: "10",
+			runtimeReconcileOffset:   "15",
+			expectedNeedReconcile:    true,
+			expectedDurationMax:      10 * time.Second,
+			expectedDurationMin:      10 * time.Second,
+		},
+		{
+			name:                     "ValidDurationAndOffset",
+			runtimeReconcileDuration: "10",
+			runtimeReconcileOffset:   "2",
+			expectedNeedReconcile:    true,
+			expectedDurationMax:      12 * time.Second,
+			expectedDurationMin:      8 * time.Second,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if test.runtimeReconcileDuration != "" {
+				os.Setenv(RuntimeReconcileDurationEnv, test.runtimeReconcileDuration)
+			}
+			if test.runtimeReconcileOffset != "" {
+				os.Setenv(RuntimeReconcileDurationOffsetEnv, test.runtimeReconcileOffset)
+			}
+			defer os.Unsetenv(RuntimeReconcileDurationEnv)
+			defer os.Unsetenv(RuntimeReconcileDurationOffsetEnv)
+			if envVal, exists := os.LookupEnv(RuntimeReconcileDurationEnv); exists {
+				RuntimeReconcileDurationEnvVal = envVal
+				stdlog.Printf("Found %s value %s, using it as RuntimeReconcileDurationEnvVal", RuntimeReconcileDurationEnv, envVal)
+			}
+			if envVal, exists := os.LookupEnv(RuntimeReconcileDurationOffsetEnv); exists {
+				RuntimeReconcileDurationOffsetEnvVal = envVal
+				stdlog.Printf("Found %s value %s, using it as RuntimeReconcileDurationOffsetEnvVal", RuntimeReconcileDurationOffsetEnv, envVal)
+			}
+			needReconcile, duration := GenerateRandomRequeueDurationFromEnv()
+
+			if needReconcile != test.expectedNeedReconcile {
+				t.Errorf("Expected needReconcile to be %v, got %v", test.expectedNeedReconcile, needReconcile)
+			}
+			if needReconcile {
+				if duration < test.expectedDurationMin || duration > test.expectedDurationMax {
+					t.Errorf("Expected duration between %v and %v, got %v", test.expectedDurationMin, test.expectedDurationMax, duration)
+				}
 			}
 		})
 	}

@@ -153,6 +153,7 @@ func (t ThinEngine) updateFusePod() (err error) {
 		}
 		podToUpdate.SetAnnotations(annotations)
 
+		t.Log.V(1).Info("Update FusePod", "pod", fmt.Sprintf("%s/%s", podToUpdate.Namespace, podToUpdate.Name))
 		err := t.Client.Update(context.TODO(), podToUpdate)
 		if err != nil {
 			t.Log.Error(err, fmt.Sprintf("Fuse pod %s update failed", podToUpdate.GetName()))

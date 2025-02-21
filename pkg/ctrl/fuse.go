@@ -21,16 +21,17 @@ import (
 	"fmt"
 	"reflect"
 
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
 // CheckFuseHealthy checks the ds healthy with role
@@ -75,6 +76,7 @@ func (e *Helper) CheckFuseHealthy(recorder record.EventRecorder, runtime base.Ru
 		statusToUpdate.FuseNumberAvailable = int32(ds.Status.NumberAvailable)
 		statusToUpdate.FuseNumberUnavailable = int32(ds.Status.NumberUnavailable)
 		if !reflect.DeepEqual(*statusToUpdate, currentStatus) {
+			e.log.V(1).Info("Update runtime status", "runtime", fmt.Sprintf("%s/%s", runtime.GetNamespace(), runtime.GetName()))
 			return e.client.Status().Update(context.TODO(), runtime)
 		}
 		return nil
