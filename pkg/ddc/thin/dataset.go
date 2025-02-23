@@ -18,14 +18,16 @@ package thin
 
 import (
 	"context"
+	"fmt"
 	"reflect"
+
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/util/retry"
 )
 
 func (t *ThinEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (err error) {
@@ -40,11 +42,11 @@ func (t *ThinEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (err e
 		if err != nil {
 			return err
 		}
+
 		datasetToUpdate := dataset.DeepCopy()
 		var cond datav1alpha1.DatasetCondition
 
-		switch phase {
-		case datav1alpha1.BoundDatasetPhase:
+		if phase == datav1alpha1.BoundDatasetPhase {
 			// Stores dataset mount info
 			if len(datasetToUpdate.Status.Mounts) == 0 {
 				datasetToUpdate.Status.Mounts = datasetToUpdate.Spec.Mounts
@@ -60,27 +62,32 @@ func (t *ThinEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (err e
 				common.AccelerateCategory,
 				common.ThinRuntime,
 				t.runtime.Spec.Replicas))
-
-			cond = utils.NewDatasetCondition(datav1alpha1.DatasetReady, datav1alpha1.DatasetReadyReason,
-				"The ddc runtime is ready.",
-				corev1.ConditionTrue)
-		case datav1alpha1.FailedDatasetPhase:
-			cond = utils.NewDatasetCondition(datav1alpha1.DatasetReady, datav1alpha1.DatasetReadyReason,
-				"The ddc runtime is not ready.",
-				corev1.ConditionFalse)
-		default:
-			cond = utils.NewDatasetCondition(datav1alpha1.DatasetReady, datav1alpha1.DatasetReadyReason,
-				"The ddc runtime is unknown.",
-				corev1.ConditionFalse)
 		}
 
-		datasetToUpdate.Status.Phase = phase
-		datasetToUpdate.Status.Conditions = utils.UpdateDatasetCondition(datasetToUpdate.Status.Conditions,
-			cond)
+		if datasetToUpdate.Status.Phase != phase {
+			datasetToUpdate.Status.Phase = phase
+
+			switch phase {
+			case datav1alpha1.BoundDatasetPhase:
+				cond = utils.NewDatasetCondition(datav1alpha1.DatasetReady, datav1alpha1.DatasetReadyReason,
+					"The ddc runtime is ready.",
+					corev1.ConditionTrue)
+			case datav1alpha1.FailedDatasetPhase:
+				cond = utils.NewDatasetCondition(datav1alpha1.DatasetReady, datav1alpha1.DatasetReadyReason,
+					"The ddc runtime is not ready.",
+					corev1.ConditionFalse)
+			default:
+				cond = utils.NewDatasetCondition(datav1alpha1.DatasetReady, datav1alpha1.DatasetReadyReason,
+					"The ddc runtime is unknown.",
+					corev1.ConditionFalse)
+			}
+			datasetToUpdate.Status.Conditions = utils.UpdateDatasetCondition(datasetToUpdate.Status.Conditions,
+				cond)
+		}
 
 		datasetToUpdate.Status.CacheStates = runtime.Status.CacheStates
-
 		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
+			t.Log.V(1).Info("Update DatasetStatus", "dataset", fmt.Sprintf("%s/%s", datasetToUpdate.GetNamespace(), datasetToUpdate.GetName()))
 			err = t.Client.Status().Update(context.TODO(), datasetToUpdate)
 			if err != nil {
 				return err
@@ -119,6 +126,7 @@ func (t *ThinEngine) UpdateCacheOfDataset() (err error) {
 		t.Log.Info("the dataset status", "status", datasetToUpdate.Status)
 
 		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
+			t.Log.V(1).Info("Update RuntimeStatus", "runtime", fmt.Sprintf("%s/%s", runtime.GetNamespace(), runtime.GetName()))
 			err = t.Client.Status().Update(context.TODO(), datasetToUpdate)
 			return err
 		} else {

@@ -19,11 +19,12 @@ package base
 import (
 	"time"
 
+	"k8s.io/apimachinery/pkg/types"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/metrics"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 // SyncReplicas syncs the replicas
