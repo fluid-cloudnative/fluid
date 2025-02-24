@@ -40,7 +40,7 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
       
       - name: Set up Helm
-        uses: azure/setup-helm@v4.2.0
+        uses: azure/setup-helm@v4.3.0
 
       - name: Checkout code
         uses: actions/checkout@v4
