@@ -17,7 +17,7 @@ limitations under the License.
 package compatibility
 
 import (
-	nativelog "log"
+	nativeLog "log"
 	"sync"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -32,14 +32,14 @@ var (
 
 // DiscoverBatchAPICompatibility discovers compatibility of the batch API group in the cluster and set in batchV1CronJobCompatible variable.
 func discoverBatchAPICompatibility() {
-	nativelog.Printf("Discovering batch/v1 group version to check API compatibility...")
+	nativeLog.Printf("Discovering batch/v1 group version to check API compatibility...")
 	restConfig := ctrl.GetConfigOrDie()
 
 	discoveryClient := discovery.NewDiscoveryClientForConfigOrDie(restConfig)
 
 	resources, err := discoveryClient.ServerResourcesForGroupVersion("batch/v1")
 	if err != nil && !errors.IsNotFound(err) {
-		nativelog.Fatalf("failed to discover batch/v1 group version: %v", err)
+		nativeLog.Fatalf("failed to discover batch/v1 group version: %v", err)
 	}
 
 	if len(resources.APIResources) > 0 {

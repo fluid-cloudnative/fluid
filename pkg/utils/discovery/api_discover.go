@@ -2,7 +2,7 @@ package discovery
 
 import (
 	"fmt"
-	nativelog "log"
+	nativeLog "log"
 	"strings"
 	"sync"
 	"time"
@@ -56,7 +56,7 @@ func initDiscovery() {
 		allEnabledResources = append(allEnabledResources, resource)
 	}
 
-	nativelog.Printf("Discovered Fluid CRDs in cluster: %v, enable related reconcilers only", allEnabledResources)
+	nativeLog.Printf("Discovered Fluid CRDs in cluster: %v, enable related reconcilers only", allEnabledResources)
 }
 
 func discoverFluidResourcesInCluster() {
@@ -83,6 +83,6 @@ func discoverFluidResourcesInCluster() {
 		return nil
 	})
 	if err != nil {
-		nativelog.Fatalf("failed to discover installed fluid runtime CRDs under %s: %v", fluidGroupVersion, err)
+		nativeLog.Fatalf("failed to discover installed fluid runtime CRDs under %s: %v", fluidGroupVersion, err)
 	}
 }
