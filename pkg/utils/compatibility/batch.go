@@ -17,32 +17,29 @@ limitations under the License.
 package compatibility
 
 import (
-	"log"
+	nativeLog "log"
+	"sync"
 
-	"github.com/fluid-cloudnative/fluid/pkg/utils/testutil"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/discovery"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-var batchV1CronJobCompatible = false
-
-func init() {
-	if testutil.IsUnitTest() {
-		return
-	}
-	discoverBatchAPICompatibility()
-}
+var (
+	batchV1CronJobCompatible = false
+	once                     sync.Once
+)
 
 // DiscoverBatchAPICompatibility discovers compatibility of the batch API group in the cluster and set in batchV1CronJobCompatible variable.
 func discoverBatchAPICompatibility() {
+	nativeLog.Printf("Discovering batch/v1 group version to check API compatibility...")
 	restConfig := ctrl.GetConfigOrDie()
 
 	discoveryClient := discovery.NewDiscoveryClientForConfigOrDie(restConfig)
 
 	resources, err := discoveryClient.ServerResourcesForGroupVersion("batch/v1")
 	if err != nil && !errors.IsNotFound(err) {
-		log.Fatalf("failed to discover batch/v1 group version: %v", err)
+		nativeLog.Fatalf("failed to discover batch/v1 group version: %v", err)
 	}
 
 	if len(resources.APIResources) > 0 {
@@ -56,5 +53,8 @@ func discoverBatchAPICompatibility() {
 }
 
 func IsBatchV1CronJobSupported() bool {
+	once.Do(func() {
+		discoverBatchAPICompatibility()
+	})
 	return batchV1CronJobCompatible
 }
