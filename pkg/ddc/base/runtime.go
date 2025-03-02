@@ -104,6 +104,10 @@ type RuntimeInfoInterface interface {
 	GetAnnotations() map[string]string
 
 	GetFuseMetricsScrapeTarget() mountModeSelector
+
+	SetFuseLaunchMode(mode datav1alpha1.FuseLaunchMode)
+
+	GetFuseLaunchMode() datav1alpha1.FuseLaunchMode
 }
 
 var _ RuntimeInfoInterface = &RuntimeInfo{}
@@ -149,6 +153,9 @@ type Fuse struct {
 
 	// Metrics
 	MetricsScrapeTarget mountModeSelector
+
+	// LaunchMode decides how to launch fuse pods.
+	LaunchMode datav1alpha1.FuseLaunchMode
 }
 
 type TieredStoreInfo struct {
@@ -333,6 +340,19 @@ func (info *RuntimeInfo) GetFuseCleanPolicy() datav1alpha1.FuseCleanPolicy {
 	return info.fuse.CleanPolicy
 }
 
+func (info *RuntimeInfo) SetFuseLaunchMode(mode datav1alpha1.FuseLaunchMode) {
+	if mode == "" {
+		// Default to set the fuse launch mode to EagerMode
+		info.fuse.LaunchMode = datav1alpha1.LazyMode
+		return
+	}
+	info.fuse.LaunchMode = mode
+}
+
+func (info *RuntimeInfo) GetFuseLaunchMode() datav1alpha1.FuseLaunchMode {
+	return info.fuse.LaunchMode
+}
+
 // SetDeprecatedNodeLabel set the DeprecatedNodeLabel
 func (info *RuntimeInfo) SetDeprecatedNodeLabel(deprecated bool) {
 	info.deprecatedNodeLabel = deprecated
@@ -443,6 +463,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		}
 		runtimeInfo.SetFuseNodeSelector(alluxioRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(alluxioRuntime.Spec.Fuse.CleanPolicy)
+		runtimeInfo.SetFuseLaunchMode(alluxioRuntime.Spec.Fuse.LaunchMode)
 	case common.JindoRuntime:
 		jindoRuntime, err := utils.GetJindoRuntime(client, name, namespace)
 		if err != nil {
@@ -460,6 +481,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		}
 		runtimeInfo.SetFuseNodeSelector(jindoRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(jindoRuntime.Spec.Fuse.CleanPolicy)
+		runtimeInfo.SetFuseLaunchMode(jindoRuntime.Spec.Fuse.LaunchMode)
 	case common.GooseFSRuntime:
 		goosefsRuntime, err := utils.GetGooseFSRuntime(client, name, namespace)
 		if err != nil {
@@ -476,6 +498,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		}
 		runtimeInfo.SetFuseNodeSelector(goosefsRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(goosefsRuntime.Spec.Fuse.CleanPolicy)
+		runtimeInfo.SetFuseLaunchMode(goosefsRuntime.Spec.Fuse.LaunchMode)
 	case common.JuiceFSRuntime:
 		juicefsRuntime, err := utils.GetJuiceFSRuntime(client, name, namespace)
 		if err != nil {
@@ -492,6 +515,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		}
 		runtimeInfo.SetFuseNodeSelector(juicefsRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(juicefsRuntime.Spec.Fuse.CleanPolicy)
+		runtimeInfo.SetFuseLaunchMode(juicefsRuntime.Spec.Fuse.LaunchMode)
 	case common.ThinRuntime:
 		thinRuntime, err := utils.GetThinRuntime(client, name, namespace)
 		if err != nil {
@@ -508,6 +532,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		}
 		runtimeInfo.SetFuseNodeSelector(thinRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(thinRuntime.Spec.Fuse.CleanPolicy)
+		runtimeInfo.SetFuseLaunchMode(thinRuntime.Spec.Fuse.LaunchMode)
 	case common.EFCRuntime:
 		efcRuntime, err := utils.GetEFCRuntime(client, name, namespace)
 		if err != nil {
@@ -524,6 +549,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		}
 		runtimeInfo.SetFuseNodeSelector(efcRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(efcRuntime.Spec.Fuse.CleanPolicy)
+		runtimeInfo.SetFuseLaunchMode(efcRuntime.Spec.Fuse.LaunchMode)
 	case common.VineyardRuntime:
 		vineyardRuntime, err := utils.GetVineyardRuntime(client, name, namespace)
 		if err != nil {
@@ -540,6 +566,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		}
 		runtimeInfo.SetFuseNodeSelector(common.VineyardFuseNodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(vineyardRuntime.Spec.Fuse.CleanPolicy)
+		runtimeInfo.SetFuseLaunchMode(vineyardRuntime.Spec.Fuse.LaunchMode)
 	default:
 		err = fmt.Errorf("fail to get runtimeInfo for runtime type: %s", runtimeType)
 		return

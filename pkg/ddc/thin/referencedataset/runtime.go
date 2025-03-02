@@ -85,6 +85,9 @@ func (e *ReferenceDatasetEngine) getRuntimeInfo() (base.RuntimeInfoInterface, er
 	// Setup Fuse Deploy Mode
 	e.runtimeInfo.SetFuseNodeSelector(runtime.Spec.Fuse.NodeSelector)
 
+	// Setup Fuse Launch Mode
+	e.runtimeInfo.SetFuseLaunchMode(runtime.Spec.Fuse.LaunchMode)
+
 	// Ignore the deprecated common labels and PersistentVolumes, use physical runtime
 
 	// Setup with Dataset Info

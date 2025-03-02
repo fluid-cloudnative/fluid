@@ -180,6 +180,12 @@ type ThinFuseSpec struct {
 	// +optional
 	NetworkMode NetworkMode `json:"networkMode,omitempty"`
 
+	// LaunchMode specifies the launch mode of fuse pod, Lazy/Eager, default to Lazy
+	// +kubebuilder:validation:Enum="";Lazy;Eager
+	// +kubebuilder:default:=Lazy
+	// +optional
+	LaunchMode FuseLaunchMode `json:"launchMode,omitempty"`
+
 	// livenessProbe of thin fuse pod
 	// +optional
 	LivenessProbe *corev1.Probe `json:"livenessProbe,omitempty"`

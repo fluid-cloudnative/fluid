@@ -790,8 +790,10 @@ func (e *JindoFSxEngine) transformFuseNodeSelector(runtime *datav1alpha1.JindoRu
 		value.Fuse.NodeSelector = map[string]string{}
 	}
 
-	// The label will be added by CSI Plugin when any workload pod is scheduled on the node.
-	value.Fuse.NodeSelector[utils.GetFuseLabelName(runtime.Namespace, runtime.Name, e.runtimeInfo.GetOwnerDatasetUID())] = "true"
+	if runtime.Spec.Fuse.LaunchMode != datav1alpha1.EagerMode {
+		// The label will be added by CSI Plugin when any workload pod is scheduled on the node.
+		value.Fuse.NodeSelector[utils.GetFuseLabelName(runtime.Namespace, runtime.Name, e.runtimeInfo.GetOwnerDatasetUID())] = "true"
+	}
 }
 
 func (e *JindoFSxEngine) transformNodeSelector(runtime *datav1alpha1.JindoRuntime) map[string]string {

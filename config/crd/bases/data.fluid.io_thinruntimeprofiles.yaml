@@ -205,6 +205,15 @@ spec:
                   imageTag:
                     description: Image for thinRuntime fuse
                     type: string
+                  launchMode:
+                    default: Lazy
+                    description: LaunchMode specifies the launch mode of fuse pod,
+                      Lazy/Eager, default to Lazy
+                    enum:
+                    - ""
+                    - Lazy
+                    - Eager
+                    type: string
                   livenessProbe:
                     description: livenessProbe of thin fuse pod
                     properties:

@@ -86,8 +86,10 @@ func (e *GooseFSEngine) transformFuse(runtime *datav1alpha1.GooseFSRuntime, data
 	} else {
 		value.Fuse.NodeSelector = map[string]string{}
 	}
-
-	value.Fuse.NodeSelector[utils.GetFuseLabelName(runtime.Namespace, runtime.Name, e.runtimeInfo.GetOwnerDatasetUID())] = "true"
+	if runtime.Spec.Fuse.LaunchMode != datav1alpha1.EagerMode {
+		// The label will be added by CSI Plugin when any workload pod is scheduled on the node.
+		value.Fuse.NodeSelector[utils.GetFuseLabelName(runtime.Namespace, runtime.Name, e.runtimeInfo.GetOwnerDatasetUID())] = "true"
+	}
 	value.Fuse.HostNetwork = true
 	value.Fuse.HostPID = common.HostPIDEnabled(runtime.Annotations)
 	value.Fuse.Enabled = true

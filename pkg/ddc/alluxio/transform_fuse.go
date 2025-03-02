@@ -100,7 +100,10 @@ func (e *AlluxioEngine) transformFuse(runtime *datav1alpha1.AlluxioRuntime, data
 	} else {
 		value.Fuse.NodeSelector = map[string]string{}
 	}
-	value.Fuse.NodeSelector[utils.GetFuseLabelName(runtime.Namespace, runtime.Name, e.runtimeInfo.GetOwnerDatasetUID())] = "true"
+	if runtime.Spec.Fuse.LaunchMode != datav1alpha1.EagerMode {
+		// The label will be added by CSI Plugin when any workload pod is scheduled on the node.
+		value.Fuse.NodeSelector[utils.GetFuseLabelName(runtime.Namespace, runtime.Name, e.runtimeInfo.GetOwnerDatasetUID())] = "true"
+	}
 
 	// parse fuse container network mode
 	value.Fuse.HostNetwork = datav1alpha1.IsHostNetwork(runtime.Spec.Fuse.NetworkMode)
