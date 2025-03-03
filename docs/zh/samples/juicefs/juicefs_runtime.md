@@ -46,9 +46,9 @@ kubectl create secret generic jfs-secret \
 
 其中：
 
-- `metaurl`：元数据服务的访问 URL (比如 Redis)。更多信息参考[这篇文档](https://juicefs.com/docs/zh/community/databases_for_metadata/) 。
-- `access-key`：对象存储的 access key。
-- `secret-key`：对象存储的 secret key。
+- `metaurl`：元数据服务的访问 URL (比如 Redis)，必填。更多信息参考[这篇文档](https://juicefs.com/docs/zh/community/databases_for_metadata/) 。
+- `access-key`：对象存储的 access key，非必填，若 JuiceFS 已经格式化过，可以不填。
+- `secret-key`：对象存储的 secret key，非必填，若 JuiceFS 已经格式化过，可以不填。
 
 **查看待创建的 `Dataset` 资源对象**
 
@@ -61,22 +61,22 @@ metadata:
 spec:
   mounts:
     - name: minio
-      mountPoint: "juicefs:///demo"
+      mountPoint: "juicefs:///demo"   # JuiceFS 的子目录，以 `juicefs://` 开头。必填
       options:
-        bucket: "<bucket>"
-        storage: "minio"
+        bucket: "<bucket>"            # Bucket URL。非必填，若 JuiceFS 已经格式化过，可以不填
+        storage: "minio"              # 对象存储类型。非必填，若 JuiceFS 已经格式化过，可以不填
       encryptOptions:
-        - name: metaurl
+        - name: metaurl               # 元数据服务的访问 URL。必填
           valueFrom:
             secretKeyRef:
               name: jfs-secret
               key: metaurl
-        - name: access-key
+        - name: access-key            # 对象存储的 access key。非必填，若 JuiceFS 已经格式化过，可以不填。
           valueFrom:
             secretKeyRef:
               name: jfs-secret
               key: access-key
-        - name: secret-key
+        - name: secret-key            # 对象存储的 secret key。非必填，若 JuiceFS 已经格式化过，可以不填。
           valueFrom:
             secretKeyRef:
               name: jfs-secret
@@ -217,9 +217,9 @@ kubectl create secret generic jfs-secret \
 
 其中：
 
-- `token`：JuiceFS 管理 token。更多信息参考[这篇文档](https://juicefs.com/docs/zh/cloud/metadata/#%E4%BB%A4%E7%89%8C%E7%AE%A1%E7%90%86)。
-- `access-key`：对象存储的 access key。
-- `secret-key`：对象存储的 secret key。
+- `token`：JuiceFS 管理 token。非必填，若通过 `initconfig` 来连接元数据，可不填。更多信息参考[这篇文档](https://juicefs.com/docs/zh/cloud/metadata/#%E4%BB%A4%E7%89%8C%E7%AE%A1%E7%90%86)。
+- `access-key`：对象存储的 access key，非必填，若 ak/sk 设置在 JuiceFS 的控制台，可不填。
+- `secret-key`：对象存储的 secret key，非必填，若 ak/sk 设置在 JuiceFS 的控制台，可不填。
 
 **查看待创建的 `Dataset` 资源对象**
 
@@ -232,21 +232,21 @@ metadata:
 spec:
   mounts:
     - name: minio
-      mountPoint: "juicefs:///demo"
+      mountPoint: "juicefs:///demo"    # JuiceFS 的子目录，以 `juicefs://` 开头。必填
       options:
-        bucket: "<bucket>"
+        bucket: "<bucket>"             # Bucket URL。非必填，若不需要显示指定，可以不填
       encryptOptions:
-        - name: token
+        - name: token                  # JuiceFS 管理的 token。非必填，若通过 `initconfig` 来连接元数据，可不填。
           valueFrom:
             secretKeyRef:
               name: jfs-secret
               key: token
-        - name: access-key
+        - name: access-key             # 对象存储的 access key，非必填，若 ak/sk 设置在 JuiceFS 的控制台，可不填。
           valueFrom:
             secretKeyRef:
               name: jfs-secret
               key: access-key
-        - name: secret-key
+        - name: secret-key             # 对象存储的 secret key，非必填，若 ak/sk 设置在 JuiceFS 的控制台，可不填。
           valueFrom:
             secretKeyRef:
               name: jfs-secret
@@ -260,7 +260,7 @@ EOF
 - `mountPoint`：指的是 JuiceFS 的子目录，是用户在 JuiceFS 文件系统中存储数据的目录，以 `juicefs://` 开头；如 `juicefs:///demo` 为 JuiceFS 文件系统的 `/demo` 子目录。
 - `bucket`：Bucket URL。例如使用 S3 作为对象存储，bucket 为 `https://myjuicefs.s3.us-east-2.amazonaws.com`；更多信息参考[这篇文档](https://juicefs.com/docs/zh/community/how_to_setup_object_storage/) 。
 
-> **注意**：其中 `name` 和 `token` 为必填项。
+> **注意**：其中 `name` 为必填项。
 
 JuiceFS 对应的 `Dataset` 只支持一个 mount，且 JuiceFS 没有 UFS，`mountPoint` 中可以指定需要挂载的子目录（`juicefs:///` 为根路径），会作为根目录挂载到容器内。
 
