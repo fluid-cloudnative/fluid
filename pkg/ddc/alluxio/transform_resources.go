@@ -181,7 +181,10 @@ func (e *AlluxioEngine) transformResourcesForFuse(runtime *datav1alpha1.AlluxioR
 	}
 
 }
-
+// transformTolerations updates the Alluxio configuration with tolerations specified in the dataset.
+// It iterates over each toleration in dataset.Spec.Tolerations, clears the TolerationSeconds field,
+// and appends the modified toleration to value.Tolerations. This ensures that only the necessary toleration
+// settings (without expiration) are transferred to the Alluxio value.
 func (e *AlluxioEngine) transformTolerations(dataset *datav1alpha1.Dataset, value *Alluxio) {
 	if len(dataset.Spec.Tolerations) > 0 {
 		// value.Tolerations = dataset.Spec.Tolerations
