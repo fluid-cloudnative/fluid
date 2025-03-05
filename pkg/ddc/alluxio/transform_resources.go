@@ -58,7 +58,6 @@ func (e *AlluxioEngine) transformResourcesForMaster(runtime *datav1alpha1.Alluxi
 // 
 // Return value:
 //   - error: Returns an error if any issue occurs during resource transformation; otherwise, returns nil.
-
 func (e *AlluxioEngine) transformResourcesForWorker(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) error {
 
 	//for worker
