@@ -47,8 +47,8 @@ kubectl create secret generic jfs-secret \
 ```
 
 - `metaurl`: Connection URL for metadata engine (e.g. Redis), it is required. Read [this document](https://juicefs.com/docs/community/databases_for_metadata/) for more information.
-- `access-key`: Access key of object storage, not required, if your filesystem is already formated, can be empty.
-- `secret-key`: Secret key of object storage, not required, if your filesystem is already formated, can be empty.
+- `access-key`: Access key of object storage, not required, if your filesystem is already formatted, can be empty.
+- `secret-key`: Secret key of object storage, not required, if your filesystem is already formatted, can be empty.
 
 **Check `Dataset` to be created**
 
@@ -63,7 +63,7 @@ spec:
     - name: minio
       mountPoint: "juicefs:///demo"     # Refers to the subdirectory of JuiceFS, starts with `juicefs://`. Required.
       options:
-        bucket: "<bucket>"              # Bucket URL. Not required, if your filesystem is already formated, can be empty.
+        bucket: "<bucket>"              # Bucket URL. Not required, if your filesystem is already formatted, can be empty.
         storage: "minio"
       encryptOptions:
         - name: metaurl                 # Connection URL for metadata engine. Required.
@@ -71,12 +71,12 @@ spec:
             secretKeyRef:
               name: jfs-secret
               key: metaurl
-        - name: access-key              # Access key of object storage. Not required, if your filesystem is already formated, can be empty.
+        - name: access-key              # Access key of object storage. Not required, if your filesystem is already formatted, can be empty.
           valueFrom:
             secretKeyRef:
               name: jfs-secret
               key: access-key
-        - name: secret-key              # Secret key of object storage. Not required, if your filesystem is already formated, can be empty.
+        - name: secret-key              # Secret key of object storage. Not required, if your filesystem is already formatted, can be empty.
           valueFrom:
             secretKeyRef:
               name: jfs-secret
