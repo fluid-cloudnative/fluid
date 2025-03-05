@@ -159,6 +159,17 @@ func TestQueryCacheStatus(t *testing.T) {
 	})
 }
 
+// TestGetCacheHitStates verifies that the GetCacheHitStates method of the AlluxioEngine
+// correctly extracts and maps the cache hit metrics from the engine's report.
+// It overrides the GetReportMetrics method to return a controlled report, then asserts that
+// the returned cache hit state contains the expected values for both local cache hits (bytesReadLocal)
+// and unified file system hits (bytesReadUfsAll), ensuring correct metric parsing.
+//
+// Parameters:
+//   - t (*testing.T): The testing context used for running and reporting the test.
+//
+// Returns:
+//   - None: This test function does not return a value but uses assertions to verify correctness.
 func TestGetCacheHitStates(t *testing.T) {
 	Convey("Test GetCacheHitStates ", t, func() {
 		Convey("with data ", func() {
