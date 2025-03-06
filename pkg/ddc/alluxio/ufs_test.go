@@ -907,6 +907,12 @@ func TestFindUnmountedUFS(t *testing.T) {
 	}
 }
 
+// TestUpdateMountTime verifies if AlluxioEngine's updateMountTime method correctly updates runtime's MountTime status.
+// It creates a runtime with outdated MountTime, executes the update method, then checks if MountTime gets refreshed timestamp.
+//
+// param: t *testing.T - The testing context used for running the test and reporting failures.
+//
+// returns: None (This is a test function and does not return any value.)
 func TestUpdateMountTime(t *testing.T) {
 	yesterday := time.Now().AddDate(0, 0, -1)
 
