@@ -173,7 +173,6 @@ func (e *AlluxioEngine) genDataLoadValue(image string, targetDataset *datav1alph
 
 // CheckRuntimeReady checks if the Alluxio runtime is operational.
 // It obtains master pod details, creates file utilities, and checks readiness.
-// Logs unavailability and returns false if not ready. 
 //
 // Returns:
 //   ready bool - Runtime readiness status (true = ready, false = not ready).
