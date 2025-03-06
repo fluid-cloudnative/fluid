@@ -206,7 +206,7 @@ func (p *FilePrefetcher) parseGlobPathsFromFileList(fileList string, pod *corev1
 			continue
 		}
 		// e.g. uriPath="pvc://mypvc/path/to/myfolder/*.pkl" => items=["mypvc", "path", "to", "myfolder", "*.pkl"]
-		items := filepath.SplitList(strings.TrimPrefix(uriPath, string(common.VolumeScheme)))
+		items := strings.Split(strings.TrimPrefix(uriPath, string(common.VolumeScheme)), string(filepath.Separator))
 		if len(items) == 0 {
 			p.log.Info("skip adding path to prefetch list because it does not specify a valid persistentVolumeClaim", "path", uriPath)
 			continue
