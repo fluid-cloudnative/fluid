@@ -20,6 +20,7 @@ import (
 	"fmt"
 	stdlog "log"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -95,12 +96,12 @@ func (p *FilePrefetcher) Mutate(pod *corev1.Pod, runtimeInfos map[string]base.Ru
 			Name:      filePrefetcherStatusVolumeName,
 			MountPath: filePrefetcherStatusVolumeMountPath,
 		}
-		for _, ctr := range pod.Spec.Containers {
+		for idx, ctr := range pod.Spec.Containers {
 			if strings.HasPrefix(ctr.Name, common.FuseContainerName) {
 				// Skip injecting file prefetcher status volume into fluid's fuse sidecar containers.
 				continue
 			}
-			ctr.VolumeMounts = append(ctr.VolumeMounts, statusVolumeMount)
+			pod.Spec.Containers[idx].VolumeMounts = append(pod.Spec.Containers[idx].VolumeMounts, statusVolumeMount)
 		}
 	}
 
@@ -205,7 +206,7 @@ func (p *FilePrefetcher) parseGlobPathsFromFileList(fileList string, pod *corev1
 			continue
 		}
 		// e.g. uriPath="pvc://mypvc/path/to/myfolder/*.pkl" => items=["mypvc", "path", "to", "myfolder", "*.pkl"]
-		items := strings.Split(strings.TrimPrefix(uriPath, string(common.VolumeScheme)), "/")
+		items := filepath.SplitList(strings.TrimPrefix(uriPath, string(common.VolumeScheme)))
 		if len(items) == 0 {
 			p.log.Info("skip adding path to prefetch list because it does not specify a valid persistentVolumeClaim", "path", uriPath)
 			continue
@@ -217,7 +218,7 @@ func (p *FilePrefetcher) parseGlobPathsFromFileList(fileList string, pod *corev1
 			globPath = "**"
 		} else {
 			pvcName = items[0]
-			globPath = strings.Join(items[1:], "/")
+			globPath = filepath.Clean(fmt.Sprintf("%c%s", filepath.Separator, filepath.Join(items[1:]...)))
 		}
 
 		if _, ok := runtimeInfos[pvcName]; !ok {
