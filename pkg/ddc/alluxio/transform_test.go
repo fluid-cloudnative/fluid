@@ -708,6 +708,16 @@ func TestAlluxioEngine_allocateSinglePort(t *testing.T) {
 	}
 }
 
+// Test function to test the allocatePorts functionality in the AlluxioEngine
+// It sets up the port range for allocation and initializes a port allocator
+// The test cases are structured with different input values and expected results
+// Fields include various configuration values for the Alluxio runtime and test setup
+// Args contain the allocated ports and Alluxio instance to be used in the test cases
+// Test case for setting properties in Alluxio runtime with given allocated ports
+// The test checks that the allocated ports are properly mapped to the expected ports
+// Initialize the AlluxioEngine instance with the test case fields.
+// Call allocatePorts to allocate ports and check for errors.
+// Check if the allocated APIGateway port matches the expected value.
 func TestAlluxioEngine_allocatePorts(t *testing.T) {
 	pr := net.ParsePortRangeOrDie("20000-21000")
 	err := portallocator.SetupRuntimePortAllocator(nil, pr, "bitmap", dummy)
