@@ -862,6 +862,13 @@ func TestAlluxioEngine_allocatePorts(t *testing.T) {
 	}
 }
 
+// TestTransformMasterProperties 测试 transformMasters 方法是否能够正确地转换 Alluxio master 的配置信息。
+// 该测试包含多个测试用例，验证不同情况下的配置合并逻辑是否符合预期。
+// 测试用例如下：
+// 1. master properties 不是空的，测试是否正确覆盖 Runtime.Spec.Master.Properties 。
+// 2. master properties 不是空的，同时存在其他 worker 相关属性，测试是否正确合并所有配置。
+// 在每个测试用例中，首先调用 transformMasters 方法，并检查返回值是否为 nil，
+// 然后验证转换后的 Value.Properties 是否符合预期的 wantValue.Properties。
 func TestTransformMasterProperties(t *testing.T) {
 	engine := &AlluxioEngine{Log: fake.NullLogger()}
 
