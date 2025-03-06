@@ -28,6 +28,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// TestUpdateCacheOfDataset tests the UpdateCacheOfDataset function of the JindoEngine.
+// It sets up a fake client with a dataset and runtime, then calls the function and verifies
+// that the dataset's status is updated correctly.
 func TestUpdateCacheOfDataset(t *testing.T) {
 	testDatasetInputs := []*datav1alpha1.Dataset{
 		{
