@@ -303,6 +303,7 @@ func TestCleanUpFuse(t *testing.T) {
 		log              logr.Logger
 		runtimeType      string
 		nodeInputs       []*corev1.Node
+		fuseLaunchMode   datav1alpha1.FuseLaunchMode
 	}{
 		{
 			wantedCount: 1,
@@ -324,8 +325,9 @@ func TestCleanUpFuse(t *testing.T) {
 					"node-select":             "true",
 				},
 			},
-			log:         fake.NullLogger(),
-			runtimeType: "jindo",
+			log:            fake.NullLogger(),
+			runtimeType:    "jindo",
+			fuseLaunchMode: datav1alpha1.LazyMode,
 			nodeInputs: []*corev1.Node{
 				{
 					ObjectMeta: metav1.ObjectMeta{
@@ -378,8 +380,9 @@ func TestCleanUpFuse(t *testing.T) {
 					"node-select":          "true",
 				},
 			},
-			log:         fake.NullLogger(),
-			runtimeType: "alluxio",
+			log:            fake.NullLogger(),
+			runtimeType:    "alluxio",
+			fuseLaunchMode: datav1alpha1.LazyMode,
 			nodeInputs: []*corev1.Node{
 				{
 					ObjectMeta: metav1.ObjectMeta{
@@ -434,8 +437,9 @@ func TestCleanUpFuse(t *testing.T) {
 					"node-select":            "true",
 				},
 			},
-			log:         fake.NullLogger(),
-			runtimeType: "goosefs",
+			log:            fake.NullLogger(),
+			runtimeType:    "goosefs",
+			fuseLaunchMode: datav1alpha1.LazyMode,
 			nodeInputs: []*corev1.Node{
 				{
 					ObjectMeta: metav1.ObjectMeta{
@@ -454,6 +458,63 @@ func TestCleanUpFuse(t *testing.T) {
 							"fluid.io/s-h-goosefs-d-fluid-hadoop": "5B",
 							"fluid.io/s-h-goosefs-m-fluid-hadoop": "1B",
 							"fluid.io/s-h-goosefs-t-fluid-hadoop": "6B",
+						},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "fuse",
+						Labels: map[string]string{
+							"fluid.io/dataset-num":   "1",
+							"fluid.io/f-fluid-spark": "true",
+							"node-select":            "true",
+						},
+					},
+				},
+			},
+		},
+		{
+			wantedCount: 0,
+			name:        "hadoop",
+			namespace:   "fluid",
+			wantedNodeLabels: map[string]map[string]string{
+				"no-fuse": {},
+				"multiple-fuse": {
+					"fluid.io/f-fluid-spark":              "true",
+					"node-select":                         "true",
+					"fluid.io/f-fluid-hadoop":             "true",
+					"fluid.io/s-fluid-hadoop":             "true",
+					"fluid.io/s-h-juicefs-d-fluid-hadoop": "5B",
+					"fluid.io/s-h-juicefs-m-fluid-hadoop": "1B",
+					"fluid.io/s-h-juicefs-t-fluid-hadoop": "6B",
+				},
+				"fuse": {
+					"fluid.io/dataset-num":   "1",
+					"fluid.io/f-fluid-spark": "true",
+					"node-select":            "true",
+				},
+			},
+			log:            fake.NullLogger(),
+			runtimeType:    "juicefs",
+			fuseLaunchMode: datav1alpha1.EagerMode,
+			nodeInputs: []*corev1.Node{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:   "no-fuse",
+						Labels: map[string]string{},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "multiple-fuse",
+						Labels: map[string]string{
+							"fluid.io/f-fluid-spark":              "true",
+							"node-select":                         "true",
+							"fluid.io/f-fluid-hadoop":             "true",
+							"fluid.io/s-fluid-hadoop":             "true",
+							"fluid.io/s-h-juicefs-d-fluid-hadoop": "5B",
+							"fluid.io/s-h-juicefs-m-fluid-hadoop": "1B",
+							"fluid.io/s-h-juicefs-t-fluid-hadoop": "6B",
 						},
 					},
 				},
@@ -488,6 +549,7 @@ func TestCleanUpFuse(t *testing.T) {
 		if err != nil {
 			t.Errorf("build runtime info error %v", err)
 		}
+		runtimeInfo.SetFuseLaunchMode(test.fuseLaunchMode)
 		h := &Helper{
 			runtimeInfo: runtimeInfo,
 			client:      fakeClient,
