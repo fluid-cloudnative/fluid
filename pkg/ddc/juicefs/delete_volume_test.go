@@ -77,6 +77,14 @@ func doTestCases(testCases []TestCase, t *testing.T) {
 	}
 }
 
+// TestJuiceFSEngine_DeleteVolume tests the DeleteVolume functionality of the JuiceFS engine.
+// It mainly tests the behavior of deleting a JuiceFS volume under different scenarios (normal, erroneous, and no runtime).
+// Parameters:
+// - t: The test suite for executing tests and reporting results.
+// Test cases include:
+// - Successfully deleting a JuiceFS volume with no errors.
+// - Failing to delete a JuiceFS volume with an error annotation.
+// - Failing to delete a JuiceFS volume with no runtime.
 func TestJuiceFSEngine_DeleteVolume(t *testing.T) {
 	testPVInputs := []*v1.PersistentVolume{
 		{
