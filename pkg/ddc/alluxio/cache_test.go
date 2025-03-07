@@ -429,6 +429,16 @@ func mockAlluxioReportMetrics() string {
 	return r
 }
 
+// TestAlluxioEngine_getGracefulShutdownLimits tests the getGracefulShutdownLimits method of the AlluxioEngine.
+// This test verifies the correct retrieval of graceful shutdown retry limits under different runtime configurations.
+// It covers three scenarios:
+// 1. When no CleanCachePolicy is specified, ensuring the default value (3) is returned.
+// 2. When CleanCachePolicy with MaxRetryAttempts is set, ensuring the configured value is returned.
+// 3. An error scenario where the runtime object might not be properly retrieved, testing error handling.
+// The test uses a fake Kubernetes client to simulate runtime object states and validate the method's behavior.
+//
+// Parameters:
+// - t: Testing handler for test reporting and control.
 func TestAlluxioEngine_getGracefulShutdownLimits(t *testing.T) {
 	type fields struct {
 		runtime            *datav1alpha1.AlluxioRuntime
