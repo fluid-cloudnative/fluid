@@ -250,6 +250,9 @@ func TestUpdateDatasetStatus(t *testing.T) {
 	}
 }
 
+// TestBindToDataset tests the BindToDataset method of JindoEngine to verify whether it can correctly bind the dataset to the runtime 
+// and update the dataset's cache state and HCFS status. The test creates mock Dataset and JindoRuntime objects, 
+// uses a fake client to simulate operations, and finally checks if the dataset's Phase, CacheStates, and HCFSStatus match the expected results.
 func TestBindToDataset(t *testing.T) {
 	testDatasetInputs := []*datav1alpha1.Dataset{
 		{
