@@ -56,7 +56,12 @@ func newTestJuiceEngine(client client.Client, name string, namespace string, wit
 	}
 	return engine
 }
-
+// doTestCases 是一个测试函数，用于验证删除 PersistentVolume (PV) 的行为是否符合预期。
+// 该函数接收一个 TestCase 切片和一个 testing.T 对象作为参数，遍历每个测试用例并执行以下操作：
+// 1. 调用测试用例中的 engine 的 DeleteVolume 方法，尝试删除 PV。
+// 2. 获取删除后的 PV 对象，并与一个空的 PV 对象进行比较，判断 PV 是否被成功删除。
+// 3. 检查 DeleteVolume 方法的返回值，验证是否与测试用例中预期的错误状态一致。
+// 如果 PV 删除状态或错误状态与预期不符，函数会通过 testing.T 的 Errorf 方法报告错误。
 func doTestCases(testCases []TestCase, t *testing.T) {
 	for _, test := range testCases {
 		err := test.engine.DeleteVolume()
