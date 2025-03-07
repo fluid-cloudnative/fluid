@@ -75,6 +75,14 @@ func doTestCases(testCases []TestCase, t *testing.T) {
 	}
 }
 
+// TestAlluxioEngine_DeleteVolume tests the DeleteVolume function of the AlluxioEngine.
+// It sets up test cases with different PersistentVolume (PV) and PersistentVolumeClaim (PVC) inputs,
+// including scenarios with and without errors. The function uses a fake Kubernetes client to simulate
+// the behavior of the AlluxioEngine when deleting volumes. The test cases include:
+// 1. A common scenario where the volume should be deleted without errors.
+// 2. A scenario where an error is expected due to specific annotations on the PVC.
+// 3. A scenario where an error is expected because the AlluxioEngine is not running.
+// The function then runs these test cases using the doTestCases helper function to verify the expected outcomes.
 func TestAlluxioEngine_DeleteVolume(t *testing.T) {
 	testPVInputs := []*v1.PersistentVolume{
 		{
