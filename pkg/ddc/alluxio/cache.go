@@ -63,6 +63,11 @@ func (e *AlluxioEngine) queryCacheStatus() (states cacheStates, err error) {
 
 }
 
+// PatchDatasetStatus updates the Dataset status with cached percentage based on the provided cache states.
+// It skips updating under the following conditions:
+// - When the Dataset's UfsTotal field is empty
+// - When the Dataset's UfsTotal field contains the metadata sync pending message
+// The cached percentage is calculated as (cached bytes / UfsTotal bytes) * 100.
 func (e AlluxioEngine) patchDatasetStatus(dataset *v1alpha1.Dataset, states *cacheStates) {
 	// skip when `dataset.Status.UfsTotal` is empty
 	if dataset.Status.UfsTotal == "" {
