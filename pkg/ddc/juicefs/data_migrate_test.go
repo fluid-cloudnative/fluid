@@ -597,12 +597,12 @@ func TestJuiceFSEngine_genDataUrl(t *testing.T) {
 	}
 }
 
-// TestJuiceFSEngine_setParallelMigrateOptions 测试 JuiceFSEngine 的 setParallelMigrateOptions 方法。
-// 该方法用于设置并行迁移选项，包括 SSH 端口和 SSH 准备超时时间。
-// 测试用例包括：
-// 1. 正常设置并行迁移选项。
-// 2. 使用默认值设置并行迁移选项。
-// 3. 设置错误的并行迁移选项，期望返回错误。
+// TestJuiceFSEngine_setParallelMigrateOptions tests the setParallelMigrateOptions method of JuiceFSEngine.
+// This method is responsible for setting parallel migration options, including SSH port and SSH ready timeout.
+// The test cases cover:
+// 1. Normal scenario where parallel migration options are set correctly.
+// 2. Default values are used when no parallel options are provided.
+// 3. Error scenario where invalid parallel options are provided.
 func TestJuiceFSEngine_setParallelMigrateOptions(t *testing.T) {
 	type args struct {
 		dataMigrateInfo *cdatamigrate.DataMigrateInfo
