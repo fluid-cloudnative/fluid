@@ -474,6 +474,17 @@ func TestGetMasterPod(t *testing.T) {
 	}
 }
 
+// TestGetMasterStatefulset tests the getMasterStatefulset method of the AlluxioEngine struct.  
+// It verifies that the method correctly retrieves the expected StatefulSet based on the provided  
+// AlluxioRuntime, name, and namespace. The test includes a sample runtime and expected   
+// StatefulSet, checking for both successful retrieval and error scenarios.  
+//  
+// Parameters:  
+//   - t: The test framework's context, which provides methods for logging and error reporting.  
+//   
+// Returns:  
+//   - The test does not return any value, but it reports errors using the t.Error and  
+//     t.Errorf methods to indicate whether the test passed or failed.
 func TestGetMasterStatefulset(t *testing.T) {
 	type fields struct {
 		runtime   *datav1alpha1.AlluxioRuntime
