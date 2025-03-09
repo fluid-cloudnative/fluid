@@ -281,12 +281,13 @@ func TestThinEngine_CheckAndUpdateRuntimeStatus(t *testing.T) {
 
 func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
 	type fields struct {
-		worker    *appsv1.StatefulSet
-		pods      []*corev1.Pod
-		ds        *appsv1.DaemonSet
-		nodes     []*corev1.Node
-		name      string
-		namespace string
+		worker         *appsv1.StatefulSet
+		pods           []*corev1.Pod
+		ds             *appsv1.DaemonSet
+		nodes          []*corev1.Node
+		fuseLaunchMode datav1alpha1.FuseLaunchMode
+		name           string
+		namespace      string
 	}
 	testcases := []struct {
 		name        string
@@ -495,7 +496,7 @@ func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
 						Addresses: []corev1.NodeAddress{
 							{
 								Type:    corev1.NodeInternalIP,
-								Address: "10.0.0.2",
+								Address: "10.0.0.6",
 							},
 						},
 					},
@@ -509,6 +510,83 @@ func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
 					"runtime.json": "{\"workers\":[],\"fuses\":[]}",
 				},
 			}, want: "{\"workers\":[],\"fuses\":[]}",
+			wantUpdated: false,
+		},
+		{
+			name: "launch_fuse_eager_mode",
+			fields: fields{
+				name:           "flink",
+				namespace:      "big-data",
+				fuseLaunchMode: datav1alpha1.EagerMode,
+				worker: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "flink-worker",
+						Namespace: "big-data",
+						UID:       "uid2",
+					},
+					Spec: appsv1.StatefulSetSpec{},
+				},
+				pods: []*corev1.Pod{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "flink-worker-0",
+							Namespace: "big-data",
+							OwnerReferences: []metav1.OwnerReference{{
+								Kind:       "StatefulSet",
+								APIVersion: "apps/v1",
+								Name:       "flink-worker",
+								UID:        "uid2",
+								Controller: ptr.To(true),
+							}},
+							Labels: map[string]string{
+								"app":              "thin",
+								"role":             "thin-worker",
+								"fluid.io/dataset": "big-data-flink",
+							},
+						},
+						Spec: corev1.PodSpec{NodeName: "node7"},
+					},
+				},
+				nodes: []*corev1.Node{{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "node7",
+						Labels: map[string]string{
+							"fluid.io/f-big-data-flink":      "true",
+							"fluid.io/s-big-data-flink":      "true",
+							"fluid.io/s-thin-big-data-flink": "true",
+						},
+					},
+					Status: corev1.NodeStatus{
+						Addresses: []corev1.NodeAddress{
+							{
+								Type:    corev1.NodeInternalIP,
+								Address: "10.0.0.7",
+							},
+						},
+					},
+				}, {
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "node8",
+						Labels: map[string]string{"fluid.io/s-default-flink": "true",
+							"fluid.io/s-thin-big-data-flink": "true"},
+					}, Status: corev1.NodeStatus{
+						Addresses: []corev1.NodeAddress{
+							{
+								Type:    corev1.NodeInternalIP,
+								Address: "172.17.0.10",
+							},
+						},
+					},
+				}},
+			},
+			configMap: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "flink-runtimeset",
+					Namespace: "big-data",
+				}, Data: map[string]string{
+					"runtime.json": "{\"workers\":[\"10.0.0.7\",\"172.17.0.10\"],\"fuses\":[\"10.0.0.1\",\"10.0.0.2\",\"10.0.0.6\",\"10.0.0.7\",\"172.17.0.9\",\"172.17.0.10\",\"192.168.0.1\",\"192.168.0.2\"]}",
+				},
+			}, want: "{\"workers\":[\"10.0.0.7\",\"172.17.0.10\"],\"fuses\":[\"10.0.0.1\",\"10.0.0.2\",\"10.0.0.6\",\"10.0.0.7\",\"172.17.0.9\",\"172.17.0.10\",\"192.168.0.1\",\"192.168.0.2\"]}",
 			wantUpdated: false,
 		},
 	}
@@ -543,6 +621,7 @@ func TestThinEngine_UpdateRuntimeSetConfigIfNeeded(t *testing.T) {
 		if err != nil {
 			t.Errorf("BuildRuntimeInfo() error = %v", err)
 		}
+		runtimeInfo.SetFuseLaunchMode(testcase.fields.fuseLaunchMode)
 
 		engine.Helper = ctrlhelper.BuildHelper(runtimeInfo, c, engine.Log)
 		updated, err := engine.UpdateRuntimeSetConfigIfNeeded()

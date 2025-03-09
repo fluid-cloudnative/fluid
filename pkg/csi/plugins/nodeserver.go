@@ -343,6 +343,12 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 	}
 
 	// 4. remove label on node
+	// if fuse launch mode is eager, there is no need to remove label on node
+	if runtimeInfo.GetFuseLaunchMode() == v1alpha1.EagerMode {
+		glog.Infof("NodeUnstageVolume: NodeUnstage succeeded with VolumeId: %s without removing NodeLabel", volumeId)
+		return &csi.NodeUnstageVolumeResponse{}, nil
+	}
+
 	// Once the label is removed, fuse pod on corresponding node will be terminated
 	// since node selector in the fuse daemonSet no longer matches.
 	fuseLabelKey := utils.GetFuseLabelName(namespace, name, runtimeInfo.GetOwnerDatasetUID())
@@ -405,6 +411,13 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	if err != nil {
 		return nil, errors.Wrapf(err, "NodeStageVolume: failed to get runtime info for %s/%s", namespace, name)
 	}
+
+	// if fuse launch mode is eager, there is no need to add label on node
+	if runtimeInfo.GetFuseLaunchMode() == v1alpha1.EagerMode {
+		glog.Infof("NodeStageVolume: NodeStage succeeded with VolumeId: %s without adding NodeLabel", volumeId)
+		return &csi.NodeStageVolumeResponse{}, nil
+	}
+
 	fuseLabelKey := utils.GetFuseLabelName(namespace, name, runtimeInfo.GetOwnerDatasetUID())
 	var labelsToModify common.LabelsToModify
 	labelsToModify.Add(fuseLabelKey, "true")

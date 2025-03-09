@@ -53,3 +53,13 @@ const (
 	// OnRuntimeDeletedCleanPolicy cleans fuse pod only when the cache runtime is deleted
 	OnRuntimeDeletedCleanPolicy FuseCleanPolicy = "OnRuntimeDeleted"
 )
+
+type FuseLaunchMode string
+
+const (
+	// LazyMode is the default launch mode, which will launch fuse pods by the application pods
+	LazyMode FuseLaunchMode = "Lazy"
+
+	// EagerMode is the optional launch mode, which will launch fuse pods by deploy fuse statefulset actively
+	EagerMode FuseLaunchMode = "Eager"
+)

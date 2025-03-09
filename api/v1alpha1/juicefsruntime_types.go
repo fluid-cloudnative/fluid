@@ -172,6 +172,12 @@ type JuiceFSFuseSpec struct {
 	// +kubebuilder:validation:Enum=HostNetwork;"";ContainerNetwork
 	// +optional
 	NetworkMode NetworkMode `json:"networkMode,omitempty"`
+
+	// LaunchMode specifies the launch mode of fuse pod, Lazy/Eager, default to Lazy
+	// +kubebuilder:validation:Enum="";Lazy;Eager
+	// +kubebuilder:default:=Lazy
+	// +optional
+	LaunchMode FuseLaunchMode `json:"launchMode,omitempty"`
 }
 
 //+kubebuilder:object:root=true
