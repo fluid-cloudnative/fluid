@@ -569,6 +569,22 @@ func GetRuntimeInfo(reader client.Reader, name, namespace string) (runtimeInfo R
 		}
 		runtimeInfo.SetFuseNodeSelector(common.VineyardFuseNodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(vineyardRuntime.Spec.Fuse.CleanPolicy)
+	case common.CacheRuntime:
+		cacheRuntime, err := utils.GetCacheRuntime(reader, name, namespace)
+		if err != nil {
+			return runtimeInfo, err
+		}
+		opts := []RuntimeInfoOption{
+			WithTieredStore(datav1alpha1.TieredStore{}),
+			WithMetadataList(GetMetadataListFromAnnotation(cacheRuntime)),
+			WithAnnotations(cacheRuntime.Annotations),
+		}
+		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.CacheRuntime, opts...)
+		if err != nil {
+			return runtimeInfo, err
+		}
+		runtimeInfo.SetFuseNodeSelector(cacheRuntime.Spec.Client.NodeSelector)
+		runtimeInfo.SetupFuseCleanPolicy(cacheRuntime.Spec.Client.CleanPolicy)
 	default:
 		err = fmt.Errorf("fail to get runtimeInfo for runtime type: %s", runtimeType)
 		return

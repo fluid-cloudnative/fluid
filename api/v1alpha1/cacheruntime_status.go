@@ -23,11 +23,11 @@ import (
 
 // CacheRuntimeStatus defines the observed state of CacheRuntime
 type CacheRuntimeStatus struct {
-	// ValueFileConfigmap used to set helm chart values configurations
-	ValueFileConfigmap string `json:"valueFile"`
+	// SetupValueFile used to set runtime configurations
+	SetupValueFile string `json:"setupValueFile"`
 
-	// ConfigFileConfigmap used to set cacheruntime configurations
-	ConfigFileConfigmap string `json:"configFile"`
+	// EngineConfigFile used to set cacheruntime configurations
+	EngineConfigFile string `json:"engineConfigFile"` //TODO： 改一下
 
 	// SetupDuration tell user how much time was spent to setup the runtime
 	SetupDuration string `json:"setupDuration,omitempty"`
@@ -37,10 +37,6 @@ type CacheRuntimeStatus struct {
 	// +patchStrategy=merge
 	Conditions []RuntimeCondition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type"`
 
-	// CacheStatus represents the total resources of the dataset.
-	// TODO: support by cacheManager
-	// CacheStates common.CacheStateList `json:"cacheStates,omitempty"`
-
 	// Selector is used for auto-scaling
 	Selector string `json:"selector,omitempty"` // this must be the string form of the selector
 
@@ -48,7 +44,7 @@ type CacheRuntimeStatus struct {
 	CacheAffinity *corev1.NodeAffinity `json:"cacheAffinity,omitempty"`
 
 	// ComponentsStatus is a map of RuntimeComponent and its status
-	ComponentsStatus []RuntimeComponentStatus `json:"componentsStatus,omitempty"`
+	RuntimeComponentStatusCollection `json:",inline"`
 
 	// MountPointsStatuses represents the mount points specified in the bounded dataset
 	MountPointsStatuses []MountPointStatus `json:"mountPointsStatus,omitempty"`
@@ -63,22 +59,26 @@ type MountPointStatus struct {
 	MountTime *metav1.Time `json:"mountTime,omitempty"`
 }
 
+type RuntimeComponentStatusCollection struct {
+	Master RuntimeComponentStatus `json:"master,omitempty"`
+	Worker RuntimeComponentStatus `json:"worker,omitempty"`
+	Client RuntimeComponentStatus `json:"client,omitempty"`
+}
+
 type RuntimeComponentStatus struct {
-	// Phase is the running phase of component
+	// Phase is the running phase of a component
 	Phase RuntimePhase `json:"phase"`
 
 	// Reason for component's condition transition
 	Reason string `json:"reason,omitempty"`
 
-	// The total number of nodes that should be running the runtime
-	// pod (including nodes correctly running the runtime master pod).
-	DesiredScheduledReplicas int32 `json:"desiredScheduledReplicas"`
+	ReadyReplicas int32 `json:"readyReplicas,omitempty"`
 
-	// The total number of nodes that should be running the runtime
-	// pod (including nodes correctly running the runtime master pod).
-	CurrentScheduledReplicas int32 `json:"currentScheduledReplicas"`
+	CurrentReplicas int32 `json:"currentReplicas,omitempty"`
 
-	// The number of nodes that should be running the runtime worker pod and have zero
-	// or more of the runtime master pod running and ready.
-	ReadyReplicas int32 `json:"readyReplicas"`
+	DesiredReplicas int32 `json:"desiredReplicas,omitempty"`
+
+	UnavailableReplicas int32 `json:"unavailableReplicas,omitempty"`
+
+	AvailableReplicas int32 `json:"availableReplicas,omitempty"`
 }

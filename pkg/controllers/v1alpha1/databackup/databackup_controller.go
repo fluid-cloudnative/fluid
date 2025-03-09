@@ -85,6 +85,7 @@ func (r *DataBackupReconciler) Reconcile(context context.Context, req ctrl.Reque
 			Log:      r.Log.WithValues("DataBackup", req.NamespacedName),
 			Recorder: r.Recorder,
 			Client:   r.Client,
+			Scheme:   r.Scheme,
 			Category: common.AccelerateCategory,
 		},
 		DataOpFinalizerName: cdatabackup.Finalizer,
