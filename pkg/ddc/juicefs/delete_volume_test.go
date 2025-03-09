@@ -57,6 +57,12 @@ func newTestJuiceEngine(client client.Client, name string, namespace string, wit
 	return engine
 }
 
+// doTestCases is a test function used to verify whether the behavior of deleting PersistentVolume (PV) meets expectations.
+// The function takes a slice of TestCase and a testing.T object as parameters, iterates through each test case, and performs the following operations:
+// 1. Calls the DeleteVolume method of the engine in the test case to attempt to delete the PV.
+// 2. Retrieves the PV object after deletion and compares it with an empty PV object to determine if the PV has been successfully deleted.
+// 3. Checks the return value of the DeleteVolume method to verify if it matches the expected error state in the test case.
+// If the PV deletion status or error state does not match the expected result, the function reports an error using the Errorf method of testing.T.
 func doTestCases(testCases []TestCase, t *testing.T) {
 	for _, test := range testCases {
 		err := test.engine.DeleteVolume()
