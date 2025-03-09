@@ -444,6 +444,24 @@ func TestTransformResourcesForWorkerWithOnlyRequest(t *testing.T) {
 	}
 }
 
+// TestTransformResourcesForWorkerWithOnlyLimit is a unit test function that validates the transformation
+// of resource requirements for Alluxio workers when only resource limits are specified. It ensures that
+// the memory and CPU limits are correctly applied to the worker configuration and that the resulting
+// resource requests are handled as expected.
+//
+// The function performs the following steps:
+// 1. Defines resource requirements with limits for memory (20Gi) and CPU (500m).
+// 2. Sets up test cases to validate the transformation logic, including scenarios with and without
+//    tiered store configurations.
+// 3. Initializes an AlluxioEngine instance with a fake client and runtime objects for testing.
+// 4. Transforms the resource requirements for the worker using the AlluxioEngine.
+// 5. Validates the transformed resource limits and requests against the expected results.
+//
+// Test cases include:
+// - A scenario where tiered store configuration is provided, ensuring memory limits and requests are set correctly.
+// - A scenario without tiered store configuration, ensuring memory limits are set but requests are not.
+//
+// Errors are reported if the transformation logic does not produce the expected results.
 func TestTransformResourcesForWorkerWithOnlyLimit(t *testing.T) {
 
 	resources := corev1.ResourceRequirements{}
