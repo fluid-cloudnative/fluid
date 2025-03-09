@@ -139,35 +139,32 @@ func TestTransformMasterVolumes(t *testing.T) {
 // The function iterates through each test case, applies the transformWorkerVolumes method, and checks if the output matches the expected result.
 // If an error occurs and it is not expected, or if the output does not match the expected result, the test fails with an appropriate error message.
 func TestTransformWorkerVolumes(t *testing.T) {
-	// Define a testCase struct to represent each test case.
 	type testCase struct {
-		name      string         // Name of the test case.
-		runtime   *datav1alpha1.AlluxioRuntime // Input AlluxioRuntime object.
-		expect    *Alluxio       // Expected Alluxio object after transformation.
-		expectErr bool           // Flag to indicate if an error is expected.
+		name      string         
+		runtime   *datav1alpha1.AlluxioRuntime 
+		expect    *Alluxio       
+		expectErr bool           
 	}
-
-	// Define a list of test cases to be executed.
 	testCases := []testCase{
 		{
-			name: "all", // Test case name.
+			name: "all", 
 			runtime: &datav1alpha1.AlluxioRuntime{
 				Spec: datav1alpha1.AlluxioRuntimeSpec{
-					Volumes: []corev1.Volume{ // Define volumes in the runtime.
+					Volumes: []corev1.Volume{ 
 						{
 							Name: "test",
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{
-									SecretName: "test", // Use a secret as the volume source.
+									SecretName: "test", 
 								},
 							},
 						},
 					},
 					Worker: datav1alpha1.AlluxioCompTemplateSpec{
-						VolumeMounts: []corev1.VolumeMount{ // Define volume mounts for the worker.
+						VolumeMounts: []corev1.VolumeMount{ 
 							{
 								Name:      "test",
-								MountPath: "/test", // Mount path for the volume.
+								MountPath: "/test", 
 							},
 						},
 					},
@@ -175,35 +172,35 @@ func TestTransformWorkerVolumes(t *testing.T) {
 			},
 			expect: &Alluxio{
 				Worker: Worker{
-					Volumes: []corev1.Volume{ // Expected volumes in the Alluxio worker.
+					Volumes: []corev1.Volume{ 
 						{
 							Name: "test",
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{
-									SecretName: "test", // Expected secret volume source.
+									SecretName: "test", 
 								},
 							},
 						},
 					},
-					VolumeMounts: []corev1.VolumeMount{ // Expected volume mounts in the Alluxio worker.
+					VolumeMounts: []corev1.VolumeMount{ 
 						{
 							Name:      "test",
-							MountPath: "/test", // Expected mount path.
+							MountPath: "/test", 
 						},
 					},
 				},
 			},
-			expectErr: false, // No error is expected for this test case.
+			expectErr: false, 
 		},
 		{
-			name: "onlyVolumeMounts", // Test case name.
+			name: "onlyVolumeMounts", 
 			runtime: &datav1alpha1.AlluxioRuntime{
 				Spec: datav1alpha1.AlluxioRuntimeSpec{
 					Worker: datav1alpha1.AlluxioCompTemplateSpec{
-						VolumeMounts: []corev1.VolumeMount{ // Define only volume mounts without volumes.
+						VolumeMounts: []corev1.VolumeMount{ 
 							{
 								Name:      "test",
-								MountPath: "/test", // Mount path for the volume.
+								MountPath: "/test", 
 							},
 						},
 					},
@@ -211,47 +208,42 @@ func TestTransformWorkerVolumes(t *testing.T) {
 			},
 			expect: &Alluxio{
 				Worker: Worker{
-					Volumes: []corev1.Volume{ // Expected volumes in the Alluxio worker.
+					Volumes: []corev1.Volume{ 
 						{
 							Name: "test",
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{
-									SecretName: "test", // Expected secret volume source.
+									SecretName: "test", 
 								},
 							},
 						},
 					},
-					VolumeMounts: []corev1.VolumeMount{ // Expected volume mounts in the Alluxio worker.
+					VolumeMounts: []corev1.VolumeMount{ 
 						{
 							Name:      "test",
-							MountPath: "/test", // Expected mount path.
+							MountPath: "/test", 
 						},
 					},
 				},
 			},
-			expectErr: true, // An error is expected for this test case due to missing volumes.
+			expectErr: true, 
 		},
 	}
-
-	// Iterate through each test case and execute the test.
 	for _, testCase := range testCases {
-		engine := &AlluxioEngine{} // Initialize the AlluxioEngine.
-		got := &Alluxio{}          // Initialize the output Alluxio object.
-		err := engine.transformWorkerVolumes(testCase.runtime, got) // Apply the transformation.
+		engine := &AlluxioEngine{} 
+		got := &Alluxio{}          
+		err := engine.transformWorkerVolumes(testCase.runtime, got) 
 
-		// Check if an error occurred and handle accordingly.
 		if err != nil && !testCase.expectErr {
-			t.Errorf("Got unexpected error %v", err) // Fail the test if an unexpected error occurs.
+			t.Errorf("Got unexpected error %v", err) 
 		}
 
-		// Skip further checks if an error is expected.
 		if testCase.expectErr {
 			continue
 		}
 
-		// Compare the output with the expected result.
 		if !reflect.DeepEqual(got, testCase.expect) {
-			t.Errorf("want %v, got %v for testcase %s", testCase.expect, got, testCase.name) // Fail the test if the output does not match the expected result.
+			t.Errorf("want %v, got %v for testcase %s", testCase.expect, got, testCase.name) 
 		}
 	}
 }
