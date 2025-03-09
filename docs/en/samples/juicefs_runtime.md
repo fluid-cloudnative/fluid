@@ -46,9 +46,9 @@ kubectl create secret generic jfs-secret \
     --from-literal=secret-key=<secretkey>
 ```
 
-- `metaurl`: Connection URL for metadata engine (e.g. Redis). Read [this document](https://juicefs.com/docs/community/databases_for_metadata/) for more information.
-- `access-key`: Access key of object storage.
-- `secret-key`: Secret key of object storage.
+- `metaurl`: Connection URL for metadata engine (e.g. Redis), it is required. Read [this document](https://juicefs.com/docs/community/databases_for_metadata/) for more information.
+- `access-key`: Access key of object storage, not required, if your filesystem is already formatted, can be empty.
+- `secret-key`: Secret key of object storage, not required, if your filesystem is already formatted, can be empty.
 
 **Check `Dataset` to be created**
 
@@ -61,22 +61,22 @@ metadata:
 spec:
   mounts:
     - name: minio
-      mountPoint: "juicefs:///demo"
+      mountPoint: "juicefs:///demo"     # Refers to the subdirectory of JuiceFS, starts with `juicefs://`. Required.
       options:
-        bucket: "<bucket>"
+        bucket: "<bucket>"              # Bucket URL. Not required, if your filesystem is already formatted, can be empty.
         storage: "minio"
       encryptOptions:
-        - name: metaurl
+        - name: metaurl                 # Connection URL for metadata engine. Required.
           valueFrom:
             secretKeyRef:
               name: jfs-secret
               key: metaurl
-        - name: access-key
+        - name: access-key              # Access key of object storage. Not required, if your filesystem is already formatted, can be empty.
           valueFrom:
             secretKeyRef:
               name: jfs-secret
               key: access-key
-        - name: secret-key
+        - name: secret-key              # Secret key of object storage. Not required, if your filesystem is already formatted, can be empty.
           valueFrom:
             secretKeyRef:
               name: jfs-secret
@@ -215,9 +215,9 @@ kubectl create secret generic jfs-secret \
     --from-literal=secret-key=<secretkey>
 ```
 
-- `token`: JuiceFS managed token. Read [this document](https://juicefs.com/docs/cloud/metadata/#token-management) for more details.
-- `access-key`: Access key of object storage.
-- `secret-key`: Secret key of object storage.
+- `token`: JuiceFS managed token. Not required, if JuiceFS connected to meta server via `initconfig`, can be empty. Read [this document](https://juicefs.com/docs/cloud/metadata/#token-management) for more details.
+- `access-key`: Access key of object storage, not required, if it has been configured in JuiceFS console, can be empty. 
+- `secret-key`: Secret key of object storage, not required, if it has been configured in JuiceFS console, can be empty.
 
 **Check `Dataset` to be created**
 
@@ -230,21 +230,21 @@ metadata:
 spec:
   mounts:
     - name: minio
-      mountPoint: "juicefs:///demo"
+      mountPoint: "juicefs:///demo"   # Refers to the subdirectory of JuiceFS, starts with `juicefs://`. Required.
       options:
-        bucket: "<bucket>"
+        bucket: "<bucket>"            # Bucket URL. Not required, if no display of the specification is required, can be empty.
       encryptOptions:
-        - name: token
+        - name: token                 # JuiceFS managed token. Not required, if JuiceFS connected to meta server via `initconfig`, can be empty.
           valueFrom:
             secretKeyRef:
               name: jfs-secret
               key: token
-        - name: access-key
+        - name: access-key            # Access key of object storage. Not required, if it has been configured in JuiceFS console, can be empty.
           valueFrom:
             secretKeyRef:
               name: jfs-secret
               key: access-key
-        - name: secret-key
+        - name: secret-key            # Secret key of object storage. Not required, if it has been configured in JuiceFS console, can be empty.
           valueFrom:
             secretKeyRef:
               name: jfs-secret
@@ -256,7 +256,7 @@ EOF
 - `mountPoint`: Refers to the subdirectory of JuiceFS, which is the directory where users store data in the JuiceFS file system, starts with `juicefs://`. For example, `juicefs:///demo` is the `/demo` subdirectory of the JuiceFS file system.
 - `bucket`: Bucket URL. For example, using S3 as object storage, bucket is `https://myjuicefs.s3.us-east-2.amazonaws.com`. Read [this document](https://juicefs.com/docs/community/how_to_setup_object_storage/) to learn how to setup different object storage.
 
-> **Attention**: `name` and `token` are required.
+> **Attention**: `name` is required.
 
 Since JuiceFS uses local cache, the corresponding `Dataset` supports only one mount, and JuiceFS does not have UFS, you can specify subdirectory in `mountPoint` (`juicefs:///` represents root directory), and it will be mounted as the root directory into the container.
 

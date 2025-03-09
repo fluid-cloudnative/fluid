@@ -597,6 +597,12 @@ func TestJuiceFSEngine_genDataUrl(t *testing.T) {
 	}
 }
 
+// TestJuiceFSEngine_setParallelMigrateOptions tests the setParallelMigrateOptions method of JuiceFSEngine.
+// This method is responsible for setting parallel migration options, including SSH port and SSH ready timeout.
+// The test cases cover:
+// 1. Normal scenario where parallel migration options are set correctly.
+// 2. Default values are used when no parallel options are provided.
+// 3. Error scenario where invalid parallel options are provided.
 func TestJuiceFSEngine_setParallelMigrateOptions(t *testing.T) {
 	type args struct {
 		dataMigrateInfo *cdatamigrate.DataMigrateInfo
