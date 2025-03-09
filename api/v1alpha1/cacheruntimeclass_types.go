@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Fluid Author.
+Copyright 2025 The Fluid Author.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// +k8s:deepcopy-gen=package
+// +groupName=data.fluid.io
 package v1alpha1
 
 import (
@@ -22,106 +24,117 @@ import (
 )
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:scope=Namespaced
+// +kubebuilder:resource:scope=Cluster
 // +genclient
 
 type CacheRuntimeClass struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	// PluginName is the name of the plugin used by the runtime class
-	PluginName string `json:"pluginName,omitempty"`
+	// file system of cacheRuntime
+	// +required
+	FileSystemType string `json:"fileSystemType"`
 
 	// Topology defines the topology of the CacheRuntime components
-	Topology CacheRuntimeTopology `json:"topology,omitempty"`
+	Topology *CacheRuntimeTopology `json:"topology,omitempty"`
 
 	// ExtraResources defines the extra resources used by the CacheRuntime components
 	// +optional
 	ExtraResources CacheRuntimeExtraResources `json:"extraResources,omitempty"`
-
-	//TODO DataOperation Definition
-}
-
-type CacheRuntimeExtraResources struct {
-	// ConfigMap holds configuration data for pods to consume.
-	Configmaps []CacheRuntimeResourceConfigmap `json:"configmaps,omitempty"`
-}
-
-type CacheRuntimeResourceConfigmap struct {
-	// Name of the configmap
-	Name string `json:"name,omitempty"`
-
-	// TemplateRef indicates the template reference of the configmap
-	TemplateRef CacheRuntimeResourceConfigmapTemplateRef `json:"templateRef,omitempty"`
-}
-
-type CacheRuntimeResourceConfigmapTemplateRef struct {
-	// Name of the configmap
-	Name string `json:"name,omitempty"`
-
-	// Namespace of the configmap
-	Namespace string `json:"namespace,omitempty"`
 }
 
 type CacheRuntimeTopology struct {
-	// The component spec of Cache master
+	// The component spec of master component
 	// +optional
-	Master CacheRuntimeTopologyComponentDefinition `json:"master,omitempty"`
+	Master *CacheRuntimeTopologyComponentDefinition `json:"master,omitempty"`
 
-	// The component spec of Cache worker
+	// The component spec of worker component
 	// +optional
-	Worker CacheRuntimeTopologyComponentDefinition `json:"worker,omitempty"`
+	Worker *CacheRuntimeTopologyComponentDefinition `json:"worker,omitempty"`
 
-	// The component spec of Cache client
+	// The component spec of client component
 	// +optional
-	Client CacheRuntimeTopologyComponentDefinition `json:"client,omitempty"`
+	Client *CacheRuntimeTopologyComponentDefinition `json:"client,omitempty"`
 }
 
 type CacheRuntimeTopologyComponentDefinition struct {
-	// Replicas defines the default replicas of the component
-	Replicas int `json:"replicas,omitempty"`
-
 	// WorkloadType defines the default workload type of the component
 	WorkloadType metav1.TypeMeta `json:"workloadType,omitempty"`
 
-	// EncryptOptionSecretMountConfig defines the config of the encrypt option secret mount
-	// +optional
-	EncryptOptionSecretMountConfig EncryptOptionSecretMountConfig `json:"encryptOptionSecretMountConfig,omitempty"`
+	Options map[string]string `json:"options,omitempty"`
 
-	// CacheDirMountConfig defines the config of the cache dir mount
-	// +optional
-	CacheDirMountConfig bool `json:"cacheDirMountConfig,omitempty"`
+	// PodTemplateSpec defines the pod spec of the components
+	PodTemplateSpec corev1.PodTemplateSpec `json:"podTemplateSpec,omitempty"`
 
-	// Services defines the services used by the components
+	// Service defines the service used by the components
 	// +optional
-	Services []CacheRuntimeTopologyComponentService `json:"services,omitempty"`
+	Service CacheRuntimeComponentService `json:"service,omitempty"`
 
-	// PodSpec defines the pod spec of the components
-	PodSpec corev1.PodSpec `json:"podSpec,omitempty"`
+	Dependencies Dependencies `json:"dependencies,omitempty"`
 }
 
-type CacheRuntimeTopologyComponentService struct {
-	// Name of the service
+type Dependencies struct {
+	// EncryptOptionConfig defines the config of the encrypt option secret mount
+	// +optional
+	EncryptOption *EncryptOptionConfig `json:"encryptOption,omitempty"`
+
+	// ExtraResources define the usage of extraResources
+	// +optional
+	ExtraResources *ExtraResources `json:"extraResources,omitempty"`
+}
+
+type CacheRuntimeComponentService struct {
+	Headless *CacheRuntimeComponentHeadlessService `json:"headless,omitempty"`
+
+	// TODO: ClusterIPService *CacheRuntimeComponentHeadlessService `json:"clusterIPService,omitempty"`
+}
+
+type CacheRuntimeComponentHeadlessService struct {
+}
+
+type EncryptOptionConfig struct {
+}
+
+type ExtraResources struct {
+	// Configmaps define the template of configmaps which will be used to create a configmap in runtime's namespace
+	Configmaps []ExtraResourceConfigmapConfig `json:"configmaps,omitempty"`
+}
+
+type CacheRuntimeExtraResources struct {
+	// Configmaps define the template of configmaps which will be used to create a configmap in runtime's namespace
+	Configmaps []CacheRuntimeExtraResourceConfigmap `json:"configmaps,omitempty"`
+}
+
+type CacheRuntimeExtraResourceConfigmap struct {
+	// Name of the configmap
 	Name string `json:"name,omitempty"`
 
-	// Type of the service
-	// +kubebuilder:validation:Enum=headless;"";clusterIP;nodeIP
+	// Data contains the configuration data.
+	// Each key must consist of alphanumeric characters, '-', '_' or '.'.
+	// Values with non-UTF-8 byte sequences must use the BinaryData field.
+	// The keys stored in Data must not overlap with the keys in
+	// the BinaryData field, this is enforced during validation process.
 	// +optional
-	Type string `json:"type,omitempty"`
-
-	// Ports of the service
-	Ports []corev1.ContainerPort `json:"ports,omitempty"`
+	Data map[string]string `json:"data,omitempty"`
 }
 
-type EncryptOptionSecretMountConfig struct {
-	// MountPath of the encrypt option secret volume
+type ExtraResourceConfigmapConfig struct {
+	// Name indicates the configmap template name defined in extraResources.configmaps
+	Name string `json:"name,omitempty"`
+
+	// MountPath define the configmap volume mountPath
 	MountPath string `json:"mountPath,omitempty"`
-
-	// SetAsEnv indicates whether the encrypt option secret volume should be set as env in component pod's containers
-	SetAsEnv bool `json:"setAsEnv,omitempty"`
 }
 
-type CacheDirMountConfig struct {
-	// Enable indicates whether the cache dir mount should be mounted to the component
-	Enable bool `json:"enable,omitempty"`
+//+kubebuilder:object:root=true
+
+// CacheRuntimeClassList contains a list of RuntimeClass
+type CacheRuntimeClassList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []CacheRuntimeClass `json:"items"`
+}
+
+func init() {
+	SchemeBuilder.Register(&CacheRuntimeClass{}, &CacheRuntimeClassList{})
 }

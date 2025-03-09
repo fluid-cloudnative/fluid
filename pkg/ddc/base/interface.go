@@ -31,3 +31,14 @@ type RuntimeInterface interface {
 
 	client.Object
 }
+
+type CacheRuntimeInterface interface {
+
+	// Replicas gets the replicas of runtime worker
+	Replicas() int32
+
+	// GetStatus gets the status of runtime
+	GetStatus() *datav1alpha1.CacheRuntimeStatus
+
+	client.Object
+}

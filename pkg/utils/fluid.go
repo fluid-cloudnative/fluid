@@ -31,7 +31,8 @@ func IsPodManagedByFluid(pod *corev1.Pod) bool {
 		common.GooseFSRuntime,
 		common.JuiceFSRuntime,
 		common.ThinRuntime,
-		common.EFCRuntime}
+		common.EFCRuntime,
+		common.CacheRuntime}
 
 	// Runtime Pod and DataOperation Pod both have the App label.
 	for _, label := range fluidPodLabels {
