@@ -132,9 +132,6 @@ func TestGenerateDataLoadValueFile(t *testing.T) {
 	}
 }
 
-// Test_genDataLoadValue 测试 genDataLoadValue 函数生成 DataLoad 配置的准确性
-// - 验证不同输入参数组合下生成的 DataLoad 配置是否符合预期
-// - 覆盖调度器名称设置、挂载点配置、运行时参数等关键场景
 //
 // Test_genDataLoadValue tests the accuracy of genDataLoadValue function in generating DataLoad configurations
 // - Verifies if generated DataLoad configurations match expectations under different parameter combinations
