@@ -351,6 +351,33 @@ func TestGenerateStaticPorts(t *testing.T) {
 	}
 }
 
+// TestTransformShortCircuit 测试 AlluxioEngine 的 transformShortCircuit 方法。
+// 该测试函数验证了在不同存储层级配置下，AlluxioEngine 是否正确处理短路策略（Short Circuit Policy）和短路配置（Short Circuit Configuration）。
+//
+// 测试用例包括：
+// 1. 当存储层级包含 emptyDir 类型的卷时，验证短路策略和短路配置是否正确设置。
+// 2. 当存储层级不包含 emptyDir 类型的卷时，验证短路策略和短路配置是否正确设置。
+//
+// 每个测试用例通过模拟 RuntimeInfo 的 GetTieredStoreInfo 方法，提供不同的存储层级配置，
+// 并检查 AlluxioEngine 是否正确处理这些配置，生成预期的短路策略和属性。
+//
+// 参数：
+//   - t *testing.T：测试框架提供的测试对象，用于报告测试失败和日志记录。
+//
+// 测试用例结构：
+//   - Name：测试用例的名称，描述测试的场景。
+//   - RuntimeInfo：模拟的 RuntimeInfo 对象，提供存储层级信息。
+//   - MockPatchFunc：用于模拟 RuntimeInfo 的 GetTieredStoreInfo 方法，返回特定的存储层级配置。
+//   - Value：Alluxio 配置对象，用于存储 transformShortCircuit 方法的输出。
+//   - want：期望的结果，包括短路策略、短路配置和属性键值对。
+//
+// 测试逻辑：
+// 1. 使用 gomonkey 库模拟 RuntimeInfo 的 GetTieredStoreInfo 方法，返回测试用例中定义的存储层级配置。
+// 2. 调用 transformShortCircuit 方法，处理 RuntimeInfo 和 Alluxio 配置。
+// 3. 检查 Alluxio 配置中的 Fuse.ShortCircuitPolicy 是否符合预期。
+// 4. 检查 Alluxio 配置中的 ShortCircuit 结构体是否符合预期。
+// 5. 如果测试用例中定义了期望的属性键值对，检查 Alluxio 配置中的属性是否正确设置。
+// 6. 重置 gomonkey 的补丁，确保不影响其他测试用例。
 func TestTransformShortCircuit(t *testing.T) {
 	engine := &AlluxioEngine{Log: fake.NullLogger()}
 
