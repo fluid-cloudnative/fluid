@@ -67,6 +67,21 @@ func GetFSInfoFromConfigMap(client client.Client, name string, namespace string)
 	return parseFSInfoFromConfigMap(configMap)
 }
 
+// parseFSInfoFromConfigMap extracts file system configuration information 
+// from the provided ConfigMap. It parses the data field of the ConfigMap 
+// into a JuiceFS structure and populates the returned map with relevant 
+// configuration details. If the parsing fails or the data field is missing, 
+// an error is returned.
+//
+// Parameters:
+// - configMap: A pointer to a v1.ConfigMap object that contains the 
+//   configuration data.
+//
+// Returns:
+// - info: A map containing parsed configuration details such as MetaUrlSecret, 
+//   TokenSecret, AccessKeySecret, SecretKeySecret, FormatCmd, Name, and Edition.
+// - err: An error if the data parsing process fails or if the required data 
+//   field is missing.
 func parseFSInfoFromConfigMap(configMap *v1.ConfigMap) (info map[string]string, err error) {
 	var value JuiceFS
 	info = map[string]string{}
