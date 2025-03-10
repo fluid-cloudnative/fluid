@@ -23,6 +23,15 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
+// TestTransformDatasetToVolume is a unit test function that verifies the transformation of a Dataset into a UFSPath 
+// in the Alluxio runtime. It ensures that the Dataset's mount points are correctly converted into corresponding 
+// container and host paths.
+//
+// Parameters:
+//   - t: *testing.T, the Go testing framework's object used to manage the test execution and report failures.
+//
+// Return value:
+//   - None (this is a test function, and it does not return any values).
 func TestTransformDatasetToVolume(t *testing.T) {
 	var ufsPath = UFSPath{}
 	ufsPath.Name = "test"
