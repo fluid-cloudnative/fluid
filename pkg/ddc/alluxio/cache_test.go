@@ -36,127 +36,149 @@ import (
 	"k8s.io/utils/ptr"
 )
 
+// TestQueryCacheStatus is a unit test for the queryCacheStatus function.
+// It verifies the correctness of the function under different dataset conditions.
 func TestQueryCacheStatus(t *testing.T) {
-	Convey("test queryCacheStatus ", t, func() {
-		Convey("with dataset UFSTotal is not empty ", func() {
-			var engine *AlluxioEngine
-			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetReportSummary",
-				func(_ *AlluxioEngine) (string, error) {
-					summary := mockAlluxioReportSummary()
-					return summary, nil
-				})
-			defer patch1.Reset()
-
-			patch2 := ApplyFunc(utils.GetDataset,
-				func(_ client.Client, _ string, _ string) (*datav1alpha1.Dataset, error) {
-					d := &datav1alpha1.Dataset{
-						Status: datav1alpha1.DatasetStatus{
-							UfsTotal: "52.18MiB",
-						},
-					}
-					return d, nil
-				})
-			defer patch2.Reset()
-
-			patch3 := ApplyMethod(reflect.TypeOf(engine), "GetCacheHitStates",
-				func(_ *AlluxioEngine) cacheHitStates {
-					return cacheHitStates{
-						bytesReadLocal:  20310917,
-						bytesReadUfsAll: 32243712,
-					}
-				})
-			defer patch3.Reset()
-
-			e := &AlluxioEngine{}
-			got, err := e.queryCacheStatus()
-			want := cacheStates{
-				cacheCapacity:    "19.07MiB",
-				cached:           "0.00B",
-				cachedPercentage: "0.0%",
-				cacheHitStates: cacheHitStates{
-					bytesReadLocal:  20310917,
-					bytesReadUfsAll: 32243712,
-				},
-			}
-
-			So(got, ShouldResemble, want)
-			So(err, ShouldEqual, nil)
-		})
-
-		Convey("with dataset UFSTotal is: [Calculating]", func() {
-			var engine *AlluxioEngine
-			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetReportSummary",
-				func(_ *AlluxioEngine) (string, error) {
-					summary := mockAlluxioReportSummary()
-					return summary, nil
-				})
-			defer patch1.Reset()
-
-			patch2 := ApplyFunc(utils.GetDataset,
-				func(_ client.Client, _ string, _ string) (*datav1alpha1.Dataset, error) {
-					d := &datav1alpha1.Dataset{
-						Status: datav1alpha1.DatasetStatus{
-							UfsTotal: "[Calculating]",
-						},
-					}
-					return d, nil
-				})
-			defer patch2.Reset()
-
-			patch3 := ApplyMethod(reflect.TypeOf(engine), "GetCacheHitStates",
-				func(_ *AlluxioEngine) cacheHitStates {
-					return cacheHitStates{}
-				})
-			defer patch3.Reset()
-
-			e := &AlluxioEngine{}
-			got, err := e.queryCacheStatus()
-			want := cacheStates{
-				cacheCapacity: "19.07MiB",
-				cached:        "0.00B",
-			}
-
-			So(got, ShouldResemble, want)
-			So(err, ShouldEqual, nil)
-		})
-
-		Convey("with dataset UFSTotal is empty", func() {
-			var engine *AlluxioEngine
-			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetReportSummary",
-				func(_ *AlluxioEngine) (string, error) {
-					summary := mockAlluxioReportSummary()
-					return summary, nil
-				})
-			defer patch1.Reset()
-
-			patch2 := ApplyFunc(utils.GetDataset,
-				func(_ client.Client, _ string, _ string) (*datav1alpha1.Dataset, error) {
-					d := &datav1alpha1.Dataset{
-						Status: datav1alpha1.DatasetStatus{
-							UfsTotal: "",
-						},
-					}
-					return d, nil
-				})
-			defer patch2.Reset()
-
-			patch3 := ApplyMethod(reflect.TypeOf(engine), "GetCacheHitStates",
-				func(_ *AlluxioEngine) cacheHitStates {
-					return cacheHitStates{}
-				})
-			defer patch3.Reset()
-
-			e := &AlluxioEngine{}
-			got, err := e.queryCacheStatus()
-			want := cacheStates{
-				cacheCapacity: "19.07MiB",
-				cached:        "0.00B",
-			}
-
-			So(got, ShouldResemble, want)
-			So(err, ShouldEqual, nil)
-		})
-	})
+    // Define a test scenario using Convey
+    Convey("test queryCacheStatus ", t, func() {
+        
+        // Scenario: Dataset UFSTotal is not empty
+        Convey("with dataset UFSTotal is not empty ", func() {
+            var engine *AlluxioEngine
+            
+            // Mock GetReportSummary method
+            patch1 := ApplyMethod(reflect.TypeOf(engine), "GetReportSummary",
+                func(_ *AlluxioEngine) (string, error) {
+                    summary := mockAlluxioReportSummary()
+                    return summary, nil
+                })
+            defer patch1.Reset()
+            
+            // Mock GetDataset function to return a dataset with UFSTotal
+            patch2 := ApplyFunc(utils.GetDataset,
+                func(_ client.Client, _ string, _ string) (*datav1alpha1.Dataset, error) {
+                    d := &datav1alpha1.Dataset{
+                        Status: datav1alpha1.DatasetStatus{
+                            UfsTotal: "52.18MiB",
+                        },
+                    }
+                    return d, nil
+                })
+            defer patch2.Reset()
+            
+            // Mock GetCacheHitStates method
+            patch3 := ApplyMethod(reflect.TypeOf(engine), "GetCacheHitStates",
+                func(_ *AlluxioEngine) cacheHitStates {
+                    return cacheHitStates{
+                        bytesReadLocal:  20310917,
+                        bytesReadUfsAll: 32243712,
+                    }
+                })
+            defer patch3.Reset()
+            
+            e := &AlluxioEngine{}
+            got, err := e.queryCacheStatus()
+            want := cacheStates{
+                cacheCapacity:    "19.07MiB",
+                cached:           "0.00B",
+                cachedPercentage: "0.0%",
+                cacheHitStates: cacheHitStates{
+                    bytesReadLocal:  20310917,
+                    bytesReadUfsAll: 32243712,
+                },
+            }
+            
+            // Verify the expected results
+            So(got, ShouldResemble, want)
+            So(err, ShouldEqual, nil)
+        })
+        
+        // Scenario: Dataset UFSTotal is [Calculating]
+        Convey("with dataset UFSTotal is: [Calculating]", func() {
+            var engine *AlluxioEngine
+            
+            // Mock GetReportSummary method
+            patch1 := ApplyMethod(reflect.TypeOf(engine), "GetReportSummary",
+                func(_ *AlluxioEngine) (string, error) {
+                    summary := mockAlluxioReportSummary()
+                    return summary, nil
+                })
+            defer patch1.Reset()
+            
+            // Mock GetDataset function to return a dataset with UFSTotal as [Calculating]
+            patch2 := ApplyFunc(utils.GetDataset,
+                func(_ client.Client, _ string, _ string) (*datav1alpha1.Dataset, error) {
+                    d := &datav1alpha1.Dataset{
+                        Status: datav1alpha1.DatasetStatus{
+                            UfsTotal: "[Calculating]",
+                        },
+                    }
+                    return d, nil
+                })
+            defer patch2.Reset()
+            
+            // Mock GetCacheHitStates method
+            patch3 := ApplyMethod(reflect.TypeOf(engine), "GetCacheHitStates",
+                func(_ *AlluxioEngine) cacheHitStates {
+                    return cacheHitStates{}
+                })
+            defer patch3.Reset()
+            
+            e := &AlluxioEngine{}
+            got, err := e.queryCacheStatus()
+            want := cacheStates{
+                cacheCapacity: "19.07MiB",
+                cached:        "0.00B",
+            }
+            
+            // Verify the expected results
+            So(got, ShouldResemble, want)
+            So(err, ShouldEqual, nil)
+        })
+        
+        // Scenario: Dataset UFSTotal is empty
+        Convey("with dataset UFSTotal is empty", func() {
+            var engine *AlluxioEngine
+            
+            // Mock GetReportSummary method
+            patch1 := ApplyMethod(reflect.TypeOf(engine), "GetReportSummary",
+                func(_ *AlluxioEngine) (string, error) {
+                    summary := mockAlluxioReportSummary()
+                    return summary, nil
+                })
+            defer patch1.Reset()
+            
+            // Mock GetDataset function to return a dataset with an empty UFSTotal
+            patch2 := ApplyFunc(utils.GetDataset,
+                func(_ client.Client, _ string, _ string) (*datav1alpha1.Dataset, error) {
+                    d := &datav1alpha1.Dataset{
+                        Status: datav1alpha1.DatasetStatus{
+                            UfsTotal: "",
+                        },
+                    }
+                    return d, nil
+                })
+            defer patch2.Reset()
+            
+            // Mock GetCacheHitStates method
+            patch3 := ApplyMethod(reflect.TypeOf(engine), "GetCacheHitStates",
+                func(_ *AlluxioEngine) cacheHitStates {
+                    return cacheHitStates{}
+                })
+            defer patch3.Reset()
+            
+            e := &AlluxioEngine{}
+            got, err := e.queryCacheStatus()
+            want := cacheStates{
+                cacheCapacity: "19.07MiB",
+                cached:        "0.00B",
+            }
+            
+            // Verify the expected results
+            So(got, ShouldResemble, want)
+            So(err, ShouldEqual, nil)
+        })
+    })
 }
 
 func TestGetCacheHitStates(t *testing.T) {
