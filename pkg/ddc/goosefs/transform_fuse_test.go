@@ -17,11 +17,14 @@ limitations under the License.
 package goosefs
 
 import (
+	"reflect"
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestTransformFuseWithNoArgs(t *testing.T) {
@@ -102,5 +105,105 @@ func TestTransformFuseWithArgs(t *testing.T) {
 		if test.goosefsValue.Fuse.Args[1] != test.expect {
 			t.Errorf("expected fuse %v, but got %v", test.expect, test.goosefsValue.Fuse.Args[1])
 		}
+	}
+}
+
+func TestTransformFuseWithLaunchMode(t *testing.T) {
+	testCases := map[string]struct {
+		runtime   *datav1alpha1.GooseFSRuntime
+		wantValue *GooseFS
+	}{
+		"test fuse launch mode case 1": {
+			runtime: &datav1alpha1.GooseFSRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hbase",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.GooseFSRuntimeSpec{
+					Fuse: datav1alpha1.GooseFSFuseSpec{
+						LaunchMode: datav1alpha1.EagerMode,
+						NodeSelector: map[string]string{
+							"fuse_node": "true",
+						},
+					},
+				},
+			},
+			wantValue: &GooseFS{
+				Fuse: Fuse{
+					NodeSelector: map[string]string{
+						"fuse_node": "true",
+					},
+				},
+			},
+		},
+		"test fuse launch mode case 2": {
+			runtime: &datav1alpha1.GooseFSRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hbase",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.GooseFSRuntimeSpec{
+					Fuse: datav1alpha1.GooseFSFuseSpec{
+						LaunchMode: datav1alpha1.LazyMode,
+						NodeSelector: map[string]string{
+							"fuse_node": "true",
+						},
+					},
+				},
+			},
+			wantValue: &GooseFS{
+				Fuse: Fuse{
+					NodeSelector: map[string]string{
+						utils.GetFuseLabelName("fluid", "hbase", ""): "true",
+						"fuse_node": "true",
+					},
+				},
+			},
+		},
+		"test fuse launch mode case 3": {
+			runtime: &datav1alpha1.GooseFSRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hbase",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.GooseFSRuntimeSpec{
+					Fuse: datav1alpha1.GooseFSFuseSpec{
+						LaunchMode: "",
+					},
+				},
+			},
+			wantValue: &GooseFS{
+				Fuse: Fuse{
+					NodeSelector: map[string]string{
+						utils.GetFuseLabelName("fluid", "hbase", ""): "true",
+					},
+				},
+			},
+		},
+	}
+
+	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "GooseFS")
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
+
+	engine := &GooseFSEngine{
+		Log:         fake.NullLogger(),
+		runtimeInfo: runtimeInfo,
+		Client:      fake.NewFakeClientWithScheme(testScheme),
+	}
+	ds := &datav1alpha1.Dataset{}
+	for k, v := range testCases {
+		gotValue := &GooseFS{}
+		if err := engine.transformFuse(v.runtime, ds, gotValue); err == nil {
+			if !reflect.DeepEqual(gotValue.Fuse.NodeSelector, v.wantValue.Fuse.NodeSelector) {
+				t.Errorf("check %s failure, got:%+v,want:%+v",
+					k,
+					gotValue.Fuse.NodeSelector,
+					v.wantValue.Fuse.NodeSelector,
+				)
+			}
+		}
+
 	}
 }

@@ -124,6 +124,12 @@ type EFCFuseSpec struct {
 	// +optional
 	NetworkMode NetworkMode `json:"networkMode,omitempty"`
 
+	// LaunchMode specifies the launch mode of fuse pod, Lazy/Eager, default to Lazy
+	// +kubebuilder:validation:Enum="";Lazy;Eager
+	// +kubebuilder:default:=Lazy
+	// +optional
+	LaunchMode FuseLaunchMode `json:"launchMode,omitempty"`
+
 	// PodMetadata defines labels and annotations that will be propagated to EFC's fuse pods
 	// +optional
 	PodMetadata PodMetadata `json:"podMetadata,omitempty"`

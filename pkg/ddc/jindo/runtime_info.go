@@ -45,6 +45,9 @@ func (e *JindoEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		// Setup Fuse Deploy Mode
 		e.runtimeInfo.SetFuseNodeSelector(runtime.Spec.Fuse.NodeSelector)
 
+		// Setup Fuse Launch Mode
+		e.runtimeInfo.SetFuseLaunchMode(runtime.Spec.Fuse.LaunchMode)
+
 		// Setup with Dataset Info
 		dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 		if err != nil {

@@ -141,6 +141,12 @@ type JindoFuseSpec struct {
 	// +optional
 	CleanPolicy FuseCleanPolicy `json:"cleanPolicy,omitempty"`
 
+	// LaunchMode specifies the launch mode of fuse pod, Lazy/Eager, default to Lazy
+	// +kubebuilder:validation:Enum="";Lazy;Eager
+	// +kubebuilder:default:=Lazy
+	// +optional
+	LaunchMode FuseLaunchMode `json:"launchMode,omitempty"`
+
 	// If disable JindoFS fuse
 	// +optional
 	Disabled bool `json:"disabled,omitempty"`

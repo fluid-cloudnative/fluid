@@ -239,6 +239,15 @@ spec:
                   imageTag:
                     description: Image for JuiceFS fuse
                     type: string
+                  launchMode:
+                    default: Lazy
+                    description: LaunchMode specifies the launch mode of fuse pod,
+                      Lazy/Eager, default to Lazy
+                    enum:
+                    - ""
+                    - Lazy
+                    - Eager
+                    type: string
                   networkMode:
                     description: Whether to use hostnetwork or not
                     enum:

@@ -214,7 +214,7 @@ func TestBuildRuntimeInfo(t *testing.T) {
 	}
 }
 
-func TestCleanPolicy(t *testing.T) {
+func TestCleanPolicyAndLaunchMode(t *testing.T) {
 	s := runtime.NewScheme()
 
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.AlluxioRuntime{})
@@ -258,6 +258,7 @@ func TestCleanPolicy(t *testing.T) {
 		Spec: v1alpha1.AlluxioRuntimeSpec{
 			Fuse: v1alpha1.AlluxioFuseSpec{
 				CleanPolicy: v1alpha1.OnDemandCleanPolicy,
+				LaunchMode:  v1alpha1.LazyMode,
 			},
 		},
 	}
@@ -286,6 +287,7 @@ func TestCleanPolicy(t *testing.T) {
 		Spec: v1alpha1.AlluxioRuntimeSpec{
 			Fuse: v1alpha1.AlluxioFuseSpec{
 				CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
+				LaunchMode:  v1alpha1.EagerMode,
 			},
 		},
 	}
@@ -346,6 +348,7 @@ func TestCleanPolicy(t *testing.T) {
 		Spec: v1alpha1.JindoRuntimeSpec{
 			Fuse: v1alpha1.JindoFuseSpec{
 				CleanPolicy: v1alpha1.OnDemandCleanPolicy,
+				LaunchMode:  v1alpha1.LazyMode,
 			},
 		},
 	}
@@ -374,6 +377,7 @@ func TestCleanPolicy(t *testing.T) {
 		Spec: v1alpha1.JindoRuntimeSpec{
 			Fuse: v1alpha1.JindoFuseSpec{
 				CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
+				LaunchMode:  v1alpha1.EagerMode,
 			},
 		},
 	}
@@ -434,6 +438,7 @@ func TestCleanPolicy(t *testing.T) {
 		Spec: v1alpha1.JuiceFSRuntimeSpec{
 			Fuse: v1alpha1.JuiceFSFuseSpec{
 				CleanPolicy: v1alpha1.OnDemandCleanPolicy,
+				LaunchMode:  v1alpha1.LazyMode,
 			},
 		},
 	}
@@ -462,6 +467,7 @@ func TestCleanPolicy(t *testing.T) {
 		Spec: v1alpha1.JuiceFSRuntimeSpec{
 			Fuse: v1alpha1.JuiceFSFuseSpec{
 				CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
+				LaunchMode:  v1alpha1.EagerMode,
 			},
 		},
 	}
@@ -522,6 +528,7 @@ func TestCleanPolicy(t *testing.T) {
 		Spec: v1alpha1.GooseFSRuntimeSpec{
 			Fuse: v1alpha1.GooseFSFuseSpec{
 				CleanPolicy: v1alpha1.OnDemandCleanPolicy,
+				LaunchMode:  v1alpha1.LazyMode,
 			},
 		},
 	}
@@ -550,6 +557,7 @@ func TestCleanPolicy(t *testing.T) {
 		Spec: v1alpha1.GooseFSRuntimeSpec{
 			Fuse: v1alpha1.GooseFSFuseSpec{
 				CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
+				LaunchMode:  v1alpha1.EagerMode,
 			},
 		},
 	}
@@ -599,6 +607,7 @@ func TestCleanPolicy(t *testing.T) {
 				runtimeType: common.AlluxioRuntime,
 				fuse: Fuse{
 					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
+					LaunchMode:  v1alpha1.LazyMode,
 				},
 			},
 			wantErr: false,
@@ -616,6 +625,7 @@ func TestCleanPolicy(t *testing.T) {
 				runtimeType: common.AlluxioRuntime,
 				fuse: Fuse{
 					CleanPolicy: v1alpha1.OnDemandCleanPolicy,
+					LaunchMode:  v1alpha1.LazyMode,
 				},
 			},
 			wantErr: false,
@@ -633,6 +643,7 @@ func TestCleanPolicy(t *testing.T) {
 				runtimeType: common.AlluxioRuntime,
 				fuse: Fuse{
 					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
+					LaunchMode:  v1alpha1.EagerMode,
 				},
 			},
 			wantErr: false,
@@ -650,6 +661,7 @@ func TestCleanPolicy(t *testing.T) {
 				runtimeType: common.JindoRuntime,
 				fuse: Fuse{
 					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
+					LaunchMode:  v1alpha1.LazyMode,
 				},
 			},
 			wantErr: false,
@@ -667,6 +679,7 @@ func TestCleanPolicy(t *testing.T) {
 				runtimeType: common.JindoRuntime,
 				fuse: Fuse{
 					CleanPolicy: v1alpha1.OnDemandCleanPolicy,
+					LaunchMode:  v1alpha1.LazyMode,
 				},
 			},
 			wantErr: false,
@@ -684,6 +697,7 @@ func TestCleanPolicy(t *testing.T) {
 				runtimeType: common.JindoRuntime,
 				fuse: Fuse{
 					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
+					LaunchMode:  v1alpha1.EagerMode,
 				},
 			},
 			wantErr: false,
@@ -701,6 +715,7 @@ func TestCleanPolicy(t *testing.T) {
 				runtimeType: common.JuiceFSRuntime,
 				fuse: Fuse{
 					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
+					LaunchMode:  v1alpha1.LazyMode,
 				},
 			},
 			wantErr: false,
@@ -718,6 +733,7 @@ func TestCleanPolicy(t *testing.T) {
 				runtimeType: common.JuiceFSRuntime,
 				fuse: Fuse{
 					CleanPolicy: v1alpha1.OnDemandCleanPolicy,
+					LaunchMode:  v1alpha1.LazyMode,
 				},
 			},
 			wantErr: false,
@@ -735,6 +751,7 @@ func TestCleanPolicy(t *testing.T) {
 				runtimeType: common.JuiceFSRuntime,
 				fuse: Fuse{
 					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
+					LaunchMode:  v1alpha1.EagerMode,
 				},
 			},
 			wantErr: false,
@@ -752,6 +769,7 @@ func TestCleanPolicy(t *testing.T) {
 				runtimeType: common.GooseFSRuntime,
 				fuse: Fuse{
 					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
+					LaunchMode:  v1alpha1.LazyMode,
 				},
 			},
 			wantErr: false,
@@ -769,6 +787,7 @@ func TestCleanPolicy(t *testing.T) {
 				runtimeType: common.GooseFSRuntime,
 				fuse: Fuse{
 					CleanPolicy: v1alpha1.OnDemandCleanPolicy,
+					LaunchMode:  v1alpha1.LazyMode,
 				},
 			},
 			wantErr: false,
@@ -786,6 +805,7 @@ func TestCleanPolicy(t *testing.T) {
 				runtimeType: common.GooseFSRuntime,
 				fuse: Fuse{
 					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
+					LaunchMode:  v1alpha1.EagerMode,
 				},
 			},
 			wantErr: false,
@@ -802,6 +822,9 @@ func TestCleanPolicy(t *testing.T) {
 			}
 			if !tt.wantErr && !reflect.DeepEqual(got.GetFuseCleanPolicy(), tt.want.GetFuseCleanPolicy()) {
 				t.Errorf("GetRuntimeInfo() = %#v, want %#v", got, tt.want)
+			}
+			if !tt.wantErr && !reflect.DeepEqual(got.GetFuseLaunchMode(), tt.want.GetFuseLaunchMode()) {
+				t.Errorf("GetFuseLaunchMode() = %#v, want %#v", got.GetFuseLaunchMode(), tt.want.GetFuseLaunchMode())
 			}
 		})
 	}
@@ -964,6 +987,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 				runtimeType: common.AlluxioRuntime,
 				fuse: Fuse{
 					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
+					LaunchMode:  v1alpha1.LazyMode,
 				},
 			},
 			wantErr: false,
@@ -981,6 +1005,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 				runtimeType: common.GooseFSRuntime,
 				fuse: Fuse{
 					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
+					LaunchMode:  v1alpha1.LazyMode,
 				},
 			},
 			wantErr: false,
@@ -998,6 +1023,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 				runtimeType: common.GooseFSRuntime,
 				fuse: Fuse{
 					CleanPolicy: v1alpha1.OnDemandCleanPolicy,
+					LaunchMode:  v1alpha1.LazyMode,
 				},
 			},
 			wantErr: true,
@@ -1015,6 +1041,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 				runtimeType: common.JindoRuntime,
 				fuse: Fuse{
 					CleanPolicy:         v1alpha1.OnRuntimeDeletedCleanPolicy,
+					LaunchMode:          v1alpha1.LazyMode,
 					MetricsScrapeTarget: mountModeSelector{},
 				},
 			},
@@ -1033,6 +1060,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 				runtimeType: common.JuiceFSRuntime,
 				fuse: Fuse{
 					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
+					LaunchMode:  v1alpha1.LazyMode,
 				},
 			},
 			wantErr: false,
@@ -1050,6 +1078,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 				runtimeType: common.JuiceFSRuntime,
 				fuse: Fuse{
 					CleanPolicy: v1alpha1.OnDemandCleanPolicy,
+					LaunchMode:  v1alpha1.LazyMode,
 				},
 			},
 			wantErr: true,
@@ -1067,6 +1096,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 				runtimeType: common.EFCRuntime,
 				fuse: Fuse{
 					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
+					LaunchMode:  v1alpha1.LazyMode,
 				},
 			},
 			wantErr: false,
@@ -1084,6 +1114,7 @@ func TestGetRuntimeInfo(t *testing.T) {
 				runtimeType: common.EFCRuntime,
 				fuse: Fuse{
 					CleanPolicy: v1alpha1.OnDemandCleanPolicy,
+					LaunchMode:  v1alpha1.LazyMode,
 				},
 			},
 			wantErr: true,
