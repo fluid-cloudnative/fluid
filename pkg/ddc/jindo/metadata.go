@@ -27,6 +27,13 @@ import (
 	"k8s.io/client-go/util/retry"
 )
 
+// SyncMetadata synchronizes metadata for the JindoEngine instance.
+// It first checks whether metadata synchronization is necessary using `shouldSyncMetadata`.
+// If synchronization is needed, it calls `syncMetadataInternal` to perform the update.
+// Execution time is tracked, and logs are recorded for debugging and monitoring purposes.
+//
+// Returns:
+//   - err: An error if metadata synchronization fails or if the check for synchronization necessity encounters an issue.
 func (e *JindoEngine) SyncMetadata() (err error) {
 	defer utils.TimeTrack(time.Now(), "JindoEngine.SyncMetadata", "name", e.name, "namespace", e.namespace)
 	defer e.Log.V(1).Info("End to sync metadata", "name", e.name, "namespace", e.namespace)
