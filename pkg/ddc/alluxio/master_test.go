@@ -175,7 +175,6 @@ func TestCheckMasterReady(t *testing.T) {
 //     1. Runtime with MasterPhase "NotReady" should return false.
 //     2. Runtime with MasterPhase "None" should return true.
 //   - Fails the test if actual results mismatch expectations.
-
 func TestShouldSetupMaster(t *testing.T) {
 	alluxioruntimeInputs := []datav1alpha1.AlluxioRuntime{
 		{
