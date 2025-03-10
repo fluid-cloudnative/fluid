@@ -33,6 +33,7 @@ import (
 // Return value:
 //   - None (this is a test function, and it does not return any values).
 func TestTransformDatasetToVolume(t *testing.T) {
+	// Initialize UFSPath variables for expected results.
 	var ufsPath = UFSPath{}
 	ufsPath.Name = "test"
 	ufsPath.HostPath = "/mnt/test"
@@ -43,12 +44,14 @@ func TestTransformDatasetToVolume(t *testing.T) {
 	ufsPath1.HostPath = "/mnt/test"
 	ufsPath1.ContainerPath = "/underFSStorage"
 
+	// Define test cases with different Dataset configurations
 	var tests = []struct {
 		runtime *datav1alpha1.AlluxioRuntime
 		dataset *datav1alpha1.Dataset
 		value   *Alluxio
 		expect  UFSPath
 	}{
+		// Test case 1: Simple Mount configuration
 		{&datav1alpha1.AlluxioRuntime{}, &datav1alpha1.Dataset{
 			Spec: datav1alpha1.DatasetSpec{
 				Mounts: []datav1alpha1.Mount{{
@@ -57,6 +60,8 @@ func TestTransformDatasetToVolume(t *testing.T) {
 				}},
 			},
 		}, &Alluxio{}, ufsPath},
+		
+		// Test case 2: Mount with a path specified
 		{&datav1alpha1.AlluxioRuntime{}, &datav1alpha1.Dataset{
 			Spec: datav1alpha1.DatasetSpec{
 				Mounts: []datav1alpha1.Mount{{
@@ -67,11 +72,17 @@ func TestTransformDatasetToVolume(t *testing.T) {
 			},
 		}, &Alluxio{}, ufsPath1},
 	}
+	
+	// Iterate through all test cases and run the test.
 	for _, test := range tests {
+		// Create an instance of AlluxioEngine to call the function under test.
 		engine := &AlluxioEngine{}
+		// Call the function that we want to test.
 		engine.transformDatasetToVolume(test.runtime, test.dataset, test.value)
+		// Compare the actual result with the expected result.
 		if test.value.UFSPaths[0].HostPath != test.expect.HostPath ||
 			test.value.UFSPaths[0].ContainerPath != test.expect.ContainerPath {
+			// If the result doesn't match the expected values, report an error.
 			t.Errorf("expected %v, got %v", test.expect, test.value.UFSPaths[0])
 		}
 	}
