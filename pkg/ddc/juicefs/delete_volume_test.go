@@ -146,6 +146,15 @@ func TestJuiceFSEngine_DeleteVolume(t *testing.T) {
 	doTestCases(testCases, t)
 }
 
+// TestJuiceFSEngine_deleteFusePersistentVolume tests the deletion of a FUSE PersistentVolume 
+// in the JuiceFS engine. It creates test PersistentVolume objects and initializes 
+// JuiceFS engine instances with and without runtime. The function verifies if the 
+// PersistentVolume is correctly deleted and whether an error is expected based on 
+// the engine configuration.
+//
+// Test Scenario:
+//   - When the engine has a runtime, the PersistentVolume should be deleted without error.
+//   - When the engine has no runtime, deletion should fail with an error.
 func TestJuiceFSEngine_deleteFusePersistentVolume(t *testing.T) {
 	testPVInputs := []*v1.PersistentVolume{
 		{
