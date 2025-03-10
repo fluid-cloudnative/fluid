@@ -169,6 +169,16 @@ func TestGetFSInfoFromConfigMap(t *testing.T) {
 	}
 }
 
+// Test_parseFSInfoFromConfigMap is a unit test function for the parseFSInfoFromConfigMap method.
+// It validates whether the function correctly extracts and parses dataset information 
+// from a given Kubernetes ConfigMap.
+//
+// Steps:
+// 1. Define test cases with different ConfigMap data inputs.
+// 2. Execute parseFSInfoFromConfigMap using the provided test cases.
+// 3. Verify the returned metadata information against expected values.
+// 4. Check for expected errors in erroneous cases.
+// 5. Use assertions to ensure the function behaves as intended.
 func Test_parseFSInfoFromConfigMap(t *testing.T) {
 	type args struct {
 		configMap *v1.ConfigMap
