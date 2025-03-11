@@ -328,6 +328,14 @@ spec:
                           More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                         type: object
                     type: object
+                  updateStrategy:
+                    description: |-
+                      UpdateStrategy decides when to update Fuse pods.
+                      Currently Fluid supports two UpdateStrategy: OnDelete and OnIdle
+                      OnDelete update fuse pod by native daemonset once the fuse pod on some node is deleted
+                      OnIdle update fuse pod once the fuse pod on some node is in idle
+                      Defaults to OnDelete
+                    type: string
                   volumeMounts:
                     description: VolumeMounts specifies the volumes listed in ".spec.volumes"
                       to mount into runtime component's filesystem.

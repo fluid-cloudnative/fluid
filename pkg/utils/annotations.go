@@ -17,8 +17,13 @@ limitations under the License.
 package utils
 
 import (
+	"context"
+	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/json"
 	stdlog "log"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
@@ -158,4 +163,27 @@ func matchedKey(infos map[string]string, name string) (match bool) {
 		}
 	}
 	return
+}
+
+func PatchAnnotations(cli client.Client, obj client.Object, annotationsToModify map[string]string) error {
+	labelValuePair := map[string]interface{}{}
+	for k, v := range annotationsToModify {
+		labelValuePair[k] = v
+	}
+
+	metadata := map[string]interface{}{
+		"metadata": map[string]interface{}{
+			"labels": labelValuePair,
+		},
+	}
+
+	patchByteData, err := json.Marshal(metadata)
+	if err != nil {
+		return err
+	}
+
+	if err := cli.Patch(context.TODO(), obj, client.RawPatch(types.StrategicMergePatchType, patchByteData)); err != nil {
+		return errors.Wrapf(err, "patch object labels failed, node name: %s", obj.GetName())
+	}
+	return nil
 }

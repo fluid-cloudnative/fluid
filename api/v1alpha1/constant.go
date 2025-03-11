@@ -53,3 +53,16 @@ const (
 	// OnRuntimeDeletedCleanPolicy cleans fuse pod only when the cache runtime is deleted
 	OnRuntimeDeletedCleanPolicy FuseCleanPolicy = "OnRuntimeDeleted"
 )
+
+type FuseUpdateStrategy string
+
+const (
+	// NoneFuseUpdateStrategy is the default clean policy. It will be transformed to OnDeleteFuseUpdateStrategy automatically.
+	NoneFuseUpdateStrategy FuseUpdateStrategy = ""
+
+	// OnDeleteFuseUpdateStrategy cleans fuse pod once th fuse pod on some node is deleted
+	OnDeleteFuseUpdateStrategy FuseUpdateStrategy = "OnDelete"
+
+	// OnIdleFuseUpdateStrategy cleans fuse pod once th fuse pod on some node is in idle
+	OnIdleFuseUpdateStrategy FuseUpdateStrategy = "OnIdle"
+)

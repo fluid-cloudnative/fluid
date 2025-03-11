@@ -164,6 +164,14 @@ type JuiceFSFuseSpec struct {
 	// +optional
 	CleanPolicy FuseCleanPolicy `json:"cleanPolicy,omitempty"`
 
+	// UpdateStrategy decides when to update Fuse pods.
+	// Currently Fluid supports two UpdateStrategy: OnDelete and OnIdle
+	// OnDelete update fuse pod by native daemonset once the fuse pod on some node is deleted
+	// OnIdle update fuse pod once the fuse pod on some node is in idle
+	// Defaults to OnDelete
+	// +optional
+	UpdateStrategy FuseUpdateStrategy `json:"updateStrategy,omitempty"`
+
 	// PodMetadata defines labels and annotations that will be propagated to JuiceFs's pods.
 	// +optional
 	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
