@@ -242,6 +242,11 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 	}
 }
 
+// TestCheckMasterHealthy is a test function that verifies the health status of master nodes
+// in a simulated Kubernetes environment. It uses fake clients to create test StatefulSets
+// and AlluxioRuntime objects, and checks if the master nodes are healthy based on predefined
+// conditions. The test cases include scenarios for different engines (HBase and Spark) with
+// expected outcomes for error presence and master phase status.
 func TestCheckMasterHealthy(t *testing.T) {
 	var statefulsetInputs = []appsv1.StatefulSet{
 		{
