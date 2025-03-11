@@ -206,7 +206,6 @@ func Test_isPortInUsed(t *testing.T) {
 	}
 }
 
-
 // Test_lookUpUsedCapacity verifies the functionality of lookUpUsedCapacity in retrieving used capacity values based on node identifiers.
 // This test validates two key scenarios:
 // 1. Capacity lookup using the node's internal IP address (NodeInternalIP type).
