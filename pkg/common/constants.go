@@ -156,11 +156,11 @@ const (
 	AccelerateCategory Category = "Accelerate"
 )
 
-var (
-	ExpectedFluidAnnotations = map[string]string{
+func GetExpectedFluidAnnotations() map[string]string {
+	return map[string]string{
 		"CreatedBy": "fluid",
 	}
-)
+}
 
 const (
 	FluidExclusiveKey string = "fluid_exclusive"

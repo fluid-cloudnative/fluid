@@ -89,7 +89,7 @@ func (e *EFCEngine) createPersistentVolumeForRuntime(runtime base.RuntimeInfoInt
 
 	pvName := runtime.GetPersistentVolumeName()
 
-	found, err := kubeclient.IsPersistentVolumeExist(e.Client, pvName, common.ExpectedFluidAnnotations)
+	found, err := kubeclient.IsPersistentVolumeExist(e.Client, pvName, common.GetExpectedFluidAnnotations())
 	if err != nil {
 		return err
 	}
@@ -103,7 +103,7 @@ func (e *EFCEngine) createPersistentVolumeForRuntime(runtime base.RuntimeInfoInt
 					runtime.GetCommonLabelName():    "true",
 					common.LabelAnnotationDatasetId: utils.GetDatasetId(runtime.GetNamespace(), runtime.GetName(), runtime.GetOwnerDatasetUID()),
 				},
-				Annotations: common.ExpectedFluidAnnotations,
+				Annotations: common.GetExpectedFluidAnnotations(),
 			},
 			Spec: corev1.PersistentVolumeSpec{
 				AccessModes: accessModes,
