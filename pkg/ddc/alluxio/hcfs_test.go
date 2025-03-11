@@ -49,6 +49,12 @@ func newAlluxioEngineHCFS(client client.Client, name string, namespace string) *
 	return engine
 }
 
+// TestGetHCFSStatus tests various scenarios of the GetHCFSStatus method.
+// This test verifies the logic of retrieving HCFS status, covering the following cases:
+// 1. In the normal case, it should correctly return the expected endpoint and filesystem version.
+// 2. When the service is not registered, GetHCFSStatus should return an appropriate error.
+// 3. When an error occurs during configuration retrieval, GetHCFSStatus should return the error.
+// The test uses mocks of kubeclient.ExecCommandInContainerWithFullOutput to simulate different outputs.
 func TestGetHCFSStatus(t *testing.T) {
 	mockExecCommon := func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
 		return "conf", "", nil
