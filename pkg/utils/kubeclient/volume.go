@@ -275,7 +275,7 @@ func RemoveProtectionFinalizer(client client.Client, name, namespace string) (er
 // If cannot get PVC, cannot get PvcMountPods, or running pod is using the volume, return corresponding error
 func ShouldDeleteDataset(client client.Client, name, namespace string) (err error) {
 	// 1. Check if the pvc exists
-	exist, err := IsPersistentVolumeClaimExist(client, name, namespace, common.ExpectedFluidAnnotations)
+	exist, err := IsPersistentVolumeClaimExist(client, name, namespace, common.GetExpectedFluidAnnotations())
 	if err != nil {
 		return
 	}

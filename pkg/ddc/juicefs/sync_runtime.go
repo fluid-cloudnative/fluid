@@ -18,7 +18,9 @@ package juicefs
 
 import (
 	"context"
+	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -27,6 +29,7 @@ import (
 	"k8s.io/client-go/util/retry"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -200,24 +203,28 @@ func (j *JuiceFSEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runti
 
 		// nodeSelector
 		if nodeSelectorChanged, newSelector := j.isNodeSelectorChanged(fusesToUpdate.Spec.Template.Spec.NodeSelector, value.Fuse.NodeSelector); nodeSelectorChanged {
+			j.Log.Info("syncFuseSpec nodeSelectorChanged")
 			fusesToUpdate.Spec.Template.Spec.NodeSelector = newSelector
 			changed = true
 		}
 
 		// volumes
 		if volumeChanged, newVolumes := j.isVolumesChanged(fusesToUpdate.Spec.Template.Spec.Volumes, value.Fuse.Volumes); volumeChanged {
+			j.Log.Info("syncFuseSpec volumeChanged")
 			fusesToUpdate.Spec.Template.Spec.Volumes = newVolumes
 			changed = true
 		}
 
 		// labels
 		if labelChanged, newLabels := j.isLabelsChanged(fusesToUpdate.Spec.Template.ObjectMeta.Labels, value.Fuse.Labels); labelChanged {
+			j.Log.Info("syncFuseSpec labelChanged")
 			fusesToUpdate.Spec.Template.ObjectMeta.Labels = newLabels
 			changed = true
 		}
 
 		// annotations
 		if annoChanged, newAnnos := j.isAnnotationsChanged(fusesToUpdate.Spec.Template.ObjectMeta.Annotations, value.Fuse.Annotations); annoChanged {
+			j.Log.Info("syncFuseSpec annoChanged")
 			fusesToUpdate.Spec.Template.ObjectMeta.Annotations = newAnnos
 			changed = true
 		}
@@ -233,18 +240,21 @@ func (j *JuiceFSEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runti
 		if len(fusesToUpdate.Spec.Template.Spec.Containers) == 1 {
 			// resource
 			if resourcesChanged, newResources := j.isResourcesChanged(fusesToUpdate.Spec.Template.Spec.Containers[0].Resources, runtime.Spec.Fuse.Resources); resourcesChanged {
+				j.Log.Info("syncFuseSpec resourcesChanged")
 				fusesToUpdate.Spec.Template.Spec.Containers[0].Resources = newResources
 				changed = true
 			}
 
 			// env
 			if envChanged, newEnvs := j.isEnvsChanged(fusesToUpdate.Spec.Template.Spec.Containers[0].Env, value.Fuse.Envs); envChanged {
+				j.Log.Info("syncFuseSpec envChanged")
 				fusesToUpdate.Spec.Template.Spec.Containers[0].Env = newEnvs
 				changed = true
 			}
 
 			// volumeMounts
 			if volumeMountChanged, newVolumeMounts := j.isVolumeMountsChanged(fusesToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts, value.Fuse.VolumeMounts); volumeMountChanged {
+				j.Log.Info("syncFuseSpec volumeMountChanged")
 				fusesToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts = newVolumeMounts
 				changed = true
 			}
@@ -255,6 +265,7 @@ func (j *JuiceFSEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runti
 				fuseImage = fuseImage + ":" + value.Fuse.ImageTag
 			}
 			if imageChanged, newImage := j.isImageChanged(fusesToUpdate.Spec.Template.Spec.Containers[0].Image, fuseImage); imageChanged {
+				j.Log.Info("syncFuseSpec imageChanged")
 				fusesToUpdate.Spec.Template.Spec.Containers[0].Image = newImage
 				changed = true
 			}
@@ -279,10 +290,36 @@ func (j *JuiceFSEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runti
 			}
 			j.Log.Info("The fuse is updated")
 
+			if currentGeneration, exist := fusesToUpdate.Spec.Template.Labels[common.LabelRuntimeFuseGeneration]; exist {
+				currentGenerationInt, err := strconv.Atoi(currentGeneration)
+				if err != nil {
+					j.Log.Error(err, "Failed to parse current fuse generation from the ds label")
+					return nil
+				}
+				newGeneration := strconv.FormatInt(int64(currentGenerationInt+1), 10)
+				fusesToUpdate.Spec.Template.Labels[common.LabelRuntimeFuseGeneration] = newGeneration
+
+				pvc, err := kubeclient.GetPersistentVolumeClaim(j.Client, j.name, j.namespace)
+				if err != nil {
+					return err
+				}
+
+				labelsToModify := common.LabelsToModify{}
+				if _, exist := pvc.Labels[common.LabelRuntimeFuseGeneration]; exist {
+					labelsToModify.Update(common.LabelRuntimeFuseGeneration, newGeneration)
+				} else {
+					labelsToModify.Add(common.LabelRuntimeFuseGeneration, newGeneration)
+				}
+
+				if _, err = utils.PatchLabels(j.Client, pvc, labelsToModify); err != nil {
+					j.Log.Error(err, fmt.Sprintf("imageChanged but failed to update image info on pvc %s/%s", j.namespace, j.name))
+				}
+			}
 			err = j.Client.Update(context.TODO(), fusesToUpdate)
 			if err != nil {
 				j.Log.Error(err, "Failed to update the ds spec")
 			}
+
 		} else {
 			j.Log.V(1).Info("The fuse is not changed")
 		}

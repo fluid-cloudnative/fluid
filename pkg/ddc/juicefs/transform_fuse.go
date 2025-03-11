@@ -112,6 +112,9 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 		return err
 	}
 
+	// transform downwardAPIVolume for use
+	j.transformFuseDownwardAPIVolumes(runtime, value)
+
 	// set critical fuse pod to avoid eviction
 	value.Fuse.CriticalPod = common.CriticalFusePodEnabled()
 

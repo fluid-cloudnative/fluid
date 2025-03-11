@@ -21,8 +21,9 @@ import (
 	stdlog "log"
 	"os"
 
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
 var (

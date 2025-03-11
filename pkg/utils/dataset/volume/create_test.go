@@ -7,6 +7,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -125,10 +126,49 @@ func TestCreatePersistentVolumeClaimForRuntime(t *testing.T) {
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
+	runtimeInfoHbase.SetFuseName("hbase-fuse")
 
 	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
+	runtimeInfoSpark.SetFuseName("spark-fuse")
+
+	testDsInputs := []*appsv1.DaemonSet{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase-fuse",
+				Namespace: "fluid",
+			},
+			Spec: appsv1.DaemonSetSpec{
+				Template: v1.PodTemplateSpec{
+					Spec: v1.PodSpec{
+						Containers: []v1.Container{
+							{
+								Image: "fuse-image:v1",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "spark-fuse",
+				Namespace: "fluid",
+			},
+			Spec: appsv1.DaemonSetSpec{
+				Template: v1.PodTemplateSpec{
+					Spec: v1.PodSpec{
+						Containers: []v1.Container{
+							{
+								Image: "fuse-image:v1",
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	testPVCInputs := []*v1.PersistentVolumeClaim{{
@@ -144,6 +184,9 @@ func TestCreatePersistentVolumeClaimForRuntime(t *testing.T) {
 	testObjs := []runtime.Object{}
 	for _, pvcInput := range testPVCInputs {
 		testObjs = append(testObjs, pvcInput.DeepCopy())
+	}
+	for _, dsInput := range testDsInputs {
+		testObjs = append(testObjs, dsInput.DeepCopy())
 	}
 
 	testDatasetInputs := []*datav1alpha1.Dataset{
