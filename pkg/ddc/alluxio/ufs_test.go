@@ -809,102 +809,140 @@ func TestGenUFSMountOptionsWithDuplicatedKey(t *testing.T) {
 	}
 }
 
+// TestFindUnmountedUFS tests the FindUnmountedUFS method of AlluxioEngine.
+// It verifies whether the method correctly identifies unmounted UFS (Under File System) paths
+// based on the mount points specified in the DatasetSpec.
+// The test covers various scenarios, including S3, local, and HDFS mount points,
+// ensuring the method returns the expected unmounted paths.
 func TestFindUnmountedUFS(t *testing.T) {
 
-	type fields struct {
-		mountPoints          []datav1alpha1.Mount
-		wantedUnmountedPaths []string
-	}
+    // fields defines the structure for test cases, containing:
+    // - mountPoints: a slice of Mount objects representing the dataset's mount points.
+    // - wantedUnmountedPaths: a slice of expected unmounted paths for verification.
+    type fields struct {
+        mountPoints          []datav1alpha1.Mount
+        wantedUnmountedPaths []string
+    }
 
-	tests := []fields{
-		{
-			mountPoints: []datav1alpha1.Mount{
-				{
-					MountPoint: "s3://bucket/path/train",
-					Path:       "/path1",
-				},
-			},
-			wantedUnmountedPaths: []string{"/path1"},
-		},
-		{
-			mountPoints: []datav1alpha1.Mount{
-				{
-					MountPoint: "local://mnt/test",
-					Path:       "/path2",
-				},
-			},
-			wantedUnmountedPaths: []string{},
-		},
-		{
-			mountPoints: []datav1alpha1.Mount{
-				{
-					MountPoint: "s3://bucket/path/train",
-					Path:       "/path1",
-				},
-				{
-					MountPoint: "local://mnt/test",
-					Path:       "/path2",
-				},
-				{
-					MountPoint: "hdfs://endpoint/path/train",
-					Path:       "/path3",
-				},
-			},
-			wantedUnmountedPaths: []string{"/path1", "/path3"},
-		},
-	}
+    // tests defines a slice of test cases with different mount configurations:
+    // 1. S3 mount point, expecting the path to be unmounted.
+    // 2. Local mount point, expecting no unmounted paths.
+    // 3. Mixed mount points (S3, local, HDFS), expecting S3 and HDFS paths to be unmounted.
+    tests := []fields{
+        {
+            mountPoints: []datav1alpha1.Mount{
+                {
+                    MountPoint: "s3://bucket/path/train", // S3 mount point
+                    Path:       "/path1",
+                },
+            },
+            wantedUnmountedPaths: []string{"/path1"}, // S3 paths are expected to be unmounted
+        },
+        {
+            mountPoints: []datav1alpha1.Mount{
+                {
+                    MountPoint: "local://mnt/test", // Local mount point
+                    Path:       "/path2",
+                },
+            },
+            wantedUnmountedPaths: []string{}, // Local paths are not expected to be unmounted
+        },
+        {
+            mountPoints: []datav1alpha1.Mount{
+                {
+                    MountPoint: "s3://bucket/path/train", // S3 mount point
+                    Path:       "/path1",
+                },
+                {
+                    MountPoint: "local://mnt/test", // Local mount point
+                    Path:       "/path2",
+                },
+                {
+                    MountPoint: "hdfs://endpoint/path/train", // HDFS mount point
+                    Path:       "/path3",
+                },
+            },
+            wantedUnmountedPaths: []string{"/path1", "/path3"}, // S3 and HDFS paths are expected to be unmounted
+        },
+    }
 
-	for index, test := range tests {
-		t.Run("test", func(t *testing.T) {
-			s := runtime.NewScheme()
-			runtime := datav1alpha1.AlluxioRuntime{}
-			dataset := datav1alpha1.Dataset{
-				ObjectMeta: v1.ObjectMeta{
-					Name:      "test",
-					Namespace: "default",
-				},
-				Spec: datav1alpha1.DatasetSpec{
-					Mounts: test.mountPoints,
-				},
-			}
+    // Iterate over each test case
+    for index, test := range tests {
+        // t.Run runs a sub-test with a descriptive name, allowing better debugging
+        t.Run("test", func(t *testing.T) {
+            // Initialize a new Kubernetes runtime scheme to register API types
+            s := runtime.NewScheme()
 
-			s.AddKnownTypes(datav1alpha1.GroupVersion, &runtime)
-			s.AddKnownTypes(datav1alpha1.GroupVersion, &dataset)
-			_ = corev1.AddToScheme(s)
-			mockClient := fake.NewFakeClientWithScheme(s, &runtime, &dataset)
+            // Create an AlluxioRuntime and Dataset object for testing
+            runtime := datav1alpha1.AlluxioRuntime{}
+            dataset := datav1alpha1.Dataset{
+                // ObjectMeta defines the metadata for the Dataset object
+                ObjectMeta: v1.ObjectMeta{
+                    Name:      "test",
+                    Namespace: "default",
+                },
+                // Spec defines the mount points for the dataset, using the test case's mountPoints
+                Spec: datav1alpha1.DatasetSpec{
+                    Mounts: test.mountPoints,
+                },
+            }
 
-			var afsUtils operations.AlluxioFileUtils
-			patch1 := ApplyMethod(reflect.TypeOf(afsUtils), "Ready", func(_ operations.AlluxioFileUtils) bool {
-				return true
-			})
-			defer patch1.Reset()
+            // Register the AlluxioRuntime and Dataset types in the scheme
+            s.AddKnownTypes(datav1alpha1.GroupVersion, &runtime)
+            s.AddKnownTypes(datav1alpha1.GroupVersion, &dataset)
+            // Add core Kubernetes types (like Pods) to the scheme
+            _ = corev1.AddToScheme(s)
 
-			patch2 := ApplyMethod(reflect.TypeOf(afsUtils), "FindUnmountedAlluxioPaths", func(_ operations.AlluxioFileUtils, alluxioPaths []string) ([]string, error) {
-				return alluxioPaths, nil
-			})
-			defer patch2.Reset()
+            // Create a fake Kubernetes client with the scheme and the test objects
+            mockClient := fake.NewFakeClientWithScheme(s, &runtime, &dataset)
 
-			e := &AlluxioEngine{
-				runtime:            &runtime,
-				name:               "test",
-				namespace:          "default",
-				Log:                fake.NullLogger(),
-				Client:             mockClient,
-				MetadataSyncDoneCh: nil,
-			}
+            // Define an AlluxioFileUtils instance for mocking Alluxio operations
+            var afsUtils operations.AlluxioFileUtils
 
-			unmountedPaths, err := e.FindUnmountedUFS()
-			if err != nil {
-				t.Errorf("AlluxioEngine.FindUnmountedUFS() error = %v", err)
-				return
-			}
-			if (len(unmountedPaths) != 0 || len(test.wantedUnmountedPaths) != 0) &&
-				!reflect.DeepEqual(unmountedPaths, test.wantedUnmountedPaths) {
-				t.Errorf("%d check failure, want: %s, got: %s", index, strings.Join(test.wantedUnmountedPaths, ","), strings.Join(unmountedPaths, ","))
-				return
-			}
-		})
-	}
+            // Mock the Ready method of AlluxioFileUtils to always return true
+            // This simulates that the Alluxio file system is ready for operations
+            patch1 := ApplyMethod(reflect.TypeOf(afsUtils), "Ready", func(_ operations.AlluxioFileUtils) bool {
+                return true
+            })
+            // Ensure the mock is reset after the test to avoid interference
+            defer patch1.Reset()
+
+            // Mock the FindUnmountedAlluxioPaths method to return the input paths as unmounted
+            // This simulates Alluxio's behavior of identifying unmounted paths
+            patch2 := ApplyMethod(reflect.TypeOf(afsUtils), "FindUnmountedAlluxioPaths", func(_ operations.AlluxioFileUtils, alluxioPaths []string) ([]string, error) {
+                return alluxioPaths, nil
+            })
+            // Ensure the mock is reset after the test
+            defer patch2.Reset()
+
+            // Initialize an AlluxioEngine instance for testing
+            e := &AlluxioEngine{
+                runtime:            &runtime,
+                name:               "test",
+                namespace:          "default",
+                Log:                fake.NullLogger(), // Use a null logger to avoid logging output
+                Client:             mockClient,        // Use the mock client
+                MetadataSyncDoneCh: nil,               // No metadata sync channel needed for this test
+            }
+
+            // Call the FindUnmountedUFS method to get the unmounted paths
+            unmountedPaths, err := e.FindUnmountedUFS()
+            // Check if an error occurred during the operation
+            if err != nil {
+                t.Errorf("AlluxioEngine.FindUnmountedUFS() error = %v", err)
+                return
+            }
+
+            // Compare the actual unmounted paths with the expected ones
+            // If either slice is non-empty, perform a deep equality check
+            if (len(unmountedPaths) != 0 || len(test.wantedUnmountedPaths) != 0) &&
+                !reflect.DeepEqual(unmountedPaths, test.wantedUnmountedPaths) {
+                // If the slices don't match, report a test failure with details
+                t.Errorf("%d check failure, want: %s, got: %s", index, strings.Join(test.wantedUnmountedPaths, ","), strings.Join(unmountedPaths, ","))
+                return
+            }
+        })
+    }
 }
 
 func TestUpdateMountTime(t *testing.T) {
