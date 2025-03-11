@@ -18,7 +18,10 @@ package juicefs
 
 import (
 	"context"
+	"fmt"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -282,6 +285,27 @@ func (j *JuiceFSEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runti
 			err = j.Client.Update(context.TODO(), fusesToUpdate)
 			if err != nil {
 				j.Log.Error(err, "Failed to update the ds spec")
+			}
+
+			newFuse, err := kubeclient.GetDaemonset(j.Client, j.getFuseName(), j.namespace)
+			if err != nil {
+				return err
+			}
+
+			pvc, err := kubeclient.GetPersistentVolumeClaim(j.Client, j.name, j.namespace)
+			if err != nil {
+				return err
+			}
+
+			labelsToModify := common.LabelsToModify{}
+			if _, exist := pvc.Labels[common.AnnotationRuntimeFuseGeneration]; exist {
+				labelsToModify.Update(common.AnnotationRuntimeFuseGeneration, strconv.Itoa(int(newFuse.Generation)))
+			} else {
+				labelsToModify.Add(common.AnnotationRuntimeFuseGeneration, strconv.Itoa(int(newFuse.Generation)))
+			}
+
+			if _, err = utils.PatchLabels(j.Client, pvc, labelsToModify); err != nil {
+				j.Log.Error(err, fmt.Sprintf("imageChanged but failed to update image info on pvc %s/%s", j.namespace, j.name))
 			}
 		} else {
 			j.Log.V(1).Info("The fuse is not changed")

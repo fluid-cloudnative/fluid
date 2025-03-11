@@ -20,18 +20,54 @@ import (
 	"context"
 	"testing"
 
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
 func TestCreateVolume(t *testing.T) {
 	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
+
+	engine := &AlluxioEngine{
+		Log:         fake.NullLogger(),
+		namespace:   "fluid",
+		name:        "hbase",
+		runtimeInfo: runtimeInfo,
+		runtime: &datav1alpha1.AlluxioRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase",
+				Namespace: "fluid",
+			},
+		},
+	}
+
+	engine.runtimeInfo.SetFuseName(engine.getFuseName())
+
+	testDsInputs := &appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      engine.getFuseName(),
+			Namespace: engine.namespace,
+		},
+		Spec: appsv1.DaemonSetSpec{
+			Template: v1.PodTemplateSpec{
+				Spec: v1.PodSpec{
+					Containers: []v1.Container{
+						{
+							Image: "fuse-image:v1",
+						},
+					},
+				},
+			},
+		},
 	}
 
 	testDatasetInputs := []*datav1alpha1.Dataset{
@@ -48,21 +84,11 @@ func TestCreateVolume(t *testing.T) {
 	for _, datasetInput := range testDatasetInputs {
 		testObjs = append(testObjs, datasetInput.DeepCopy())
 	}
+	testObjs = append(testObjs, testDsInputs)
+
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
-	engine := &AlluxioEngine{
-		Client:      client,
-		Log:         fake.NullLogger(),
-		namespace:   "fluid",
-		name:        "hbase",
-		runtimeInfo: runtimeInfo,
-		runtime: &datav1alpha1.AlluxioRuntime{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase",
-				Namespace: "fluid",
-			},
-		},
-	}
+	engine.Client = client
 
 	err = engine.CreateVolume()
 	if err != nil {
@@ -87,6 +113,10 @@ func TestCreateVolume(t *testing.T) {
 	}
 	if len(pvcs.Items) != 1 {
 		t.Errorf("fail to create the pvc")
+	}
+
+	if pvcs.Items[0].Annotations[common.AnnotationRuntimeFuseGeneration] != testDsInputs.Spec.Template.Spec.Containers[0].Image {
+		t.Errorf("fail to check image version on pvc")
 	}
 }
 
@@ -142,6 +172,33 @@ func TestCreateFusePersistentVolumeClaim(t *testing.T) {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
 
+	engine := &AlluxioEngine{
+		Log:         fake.NullLogger(),
+		namespace:   "fluid",
+		name:        "hbase",
+		runtimeInfo: runtimeInfo,
+	}
+
+	engine.runtimeInfo.SetFuseName(engine.getFuseName())
+
+	testDsInputs := &appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      engine.getFuseName(),
+			Namespace: engine.namespace,
+		},
+		Spec: appsv1.DaemonSetSpec{
+			Template: v1.PodTemplateSpec{
+				Spec: v1.PodSpec{
+					Containers: []v1.Container{
+						{
+							Image: "fuse-image:v1",
+						},
+					},
+				},
+			},
+		},
+	}
+
 	testDatasetInputs := []*datav1alpha1.Dataset{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -156,15 +213,9 @@ func TestCreateFusePersistentVolumeClaim(t *testing.T) {
 	for _, datasetInput := range testDatasetInputs {
 		testObjs = append(testObjs, datasetInput.DeepCopy())
 	}
+	testObjs = append(testObjs, testDsInputs)
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-
-	engine := &AlluxioEngine{
-		Client:      client,
-		Log:         fake.NullLogger(),
-		namespace:   "fluid",
-		name:        "hbase",
-		runtimeInfo: runtimeInfo,
-	}
+	engine.Client = client
 
 	err = engine.createFusePersistentVolumeClaim()
 	if err != nil {
@@ -179,5 +230,9 @@ func TestCreateFusePersistentVolumeClaim(t *testing.T) {
 	}
 	if len(pvcs.Items) != 1 {
 		t.Errorf("fail to create the pvc")
+	}
+
+	if pvcs.Items[0].Annotations[common.AnnotationRuntimeFuseGeneration] != testDsInputs.Spec.Template.Spec.Containers[0].Image {
+		t.Errorf("fail to check image version on pvc")
 	}
 }

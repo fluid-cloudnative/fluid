@@ -4303,6 +4303,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSFuseSpec(ref common.Refe
 							Format:      "",
 						},
 					},
+					"updateStrategy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "UpdateStrategy decides when to update Fuse pods. Currently Fluid supports two UpdateStrategy: OnDelete and OnIdle OnDelete update fuse pod by native daemonset once the fuse pod on some node is deleted OnIdle update fuse pod once the fuse pod on some node is in idle Defaults to OnDelete",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"podMetadata": {
 						SchemaProps: spec.SchemaProps{
 							Description: "PodMetadata defines labels and annotations that will be propagated to JuiceFs's pods.",

@@ -150,17 +150,22 @@ spec:
             - name: juicefs-fuse-mount
               mountPath: {{ .Values.fuse.hostMountPath }}
               mountPropagation: Bidirectional
+            - name: juicefs-fuse-labels
+              mountPath: {{ .Values.fuse.hostMountPath }}/.meta/fuse/
             - mountPath: /root/script
               name: script
-          {{- if .Values.fuse.volumeMounts }}
-{{ toYaml .Values.fuse.volumeMounts | indent 12 }}
-          {{- end }}
       restartPolicy: Always
       volumes:
         - name: juicefs-fuse-mount
           hostPath:
             path: {{ .Values.fuse.hostMountPath }}
             type: DirectoryOrCreate
+        - name: juicefs-fuse-labels
+          downwardAPI:
+            items:
+              - path: labels
+                fieldRef:
+                  fieldPath: metadata.labels
         - name: script
           configMap:
             name: {{ template "juicefs.fullname" . }}-fuse-script

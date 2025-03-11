@@ -54,6 +54,26 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 
 	// transform envs
 	value.Fuse.Envs = runtime.Spec.Fuse.Env
+	value.Fuse.Envs = append(value.Fuse.Envs, corev1.EnvVar{
+		Name:  common.EnvRuntimeFuseImageVersion,
+		Value: fmt.Sprintf("%s:%s", value.Fuse.Image, value.Fuse.ImageTag),
+	})
+
+	//volumes := &corev1.Volume{
+	//	Name: "fluid-fuse-pod-template-generation",
+	//	VolumeSource: corev1.VolumeSource{
+	//		DownwardAPI: &corev1.DownwardAPIVolumeSource{
+	//			Items: []corev1.DownwardAPIVolumeFile{
+	//				{
+	//					Path: "pod_template_generation",
+	//					FieldRef: &corev1.ObjectFieldSelector{
+	//						FieldPath: "pod-template-generation",
+	//					},
+	//				},
+	//			},
+	//		},
+	//	},
+	//}
 
 	// transform options
 	var tiredStoreLevel *datav1alpha1.Level
@@ -258,6 +278,7 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 	value.Fuse.MountPath = j.getMountPoint()
 	value.Worker.MountPath = j.getMountPoint()
 	value.Fuse.HostMountPath = j.getHostMountPoint()
+	value.Fuse.HostMetaPath = utils.GetRuntimeRootMetadataPath(j.namespace, j.name, j.runtimeType)
 	if subPath != "/" {
 		value.Fuse.SubPath = subPath
 		// options["subdir"] = subPath

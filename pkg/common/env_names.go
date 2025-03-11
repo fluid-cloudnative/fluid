@@ -25,6 +25,8 @@ const (
 
 	EnvRuntimeInfoCacheSize = "RUNTIMEINFO_CACHE_SIZE"
 
+	EnvRuntimeFuseImageVersion = "RUNTIMEINFO_FUSE_IMAGE_VERSION"
+
 	EnvEnableRuntimeInfoCache = "ENABLE_RUNTIMEINFO_CACHE"
 
 	EnvRuntimeInfoCacheTTL = "RUNTIMEINFO_CACHE_TTL"

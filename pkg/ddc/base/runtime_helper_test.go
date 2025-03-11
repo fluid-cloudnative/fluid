@@ -1178,21 +1178,21 @@ func TestGetMountInfoFromVolumeClaim(t *testing.T) {
 		},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "nonfluidpvc",
-			Annotations: common.ExpectedFluidAnnotations,
+			Annotations: common.GetExpectedFluidAnnotations(),
 			Namespace:   namespace},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			VolumeName: "nonfluidpv",
 		},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "nopv",
-			Annotations: common.ExpectedFluidAnnotations,
+			Annotations: common.GetExpectedFluidAnnotations(),
 			Namespace:   namespace},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			VolumeName: "nopv",
 		},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "fluid-dataset-subpath",
-			Annotations: common.ExpectedFluidAnnotations,
+			Annotations: common.GetExpectedFluidAnnotations(),
 			Namespace:   namespace},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			VolumeName: "default-fluid-dataset-subpath",
@@ -1219,7 +1219,7 @@ func TestGetMountInfoFromVolumeClaim(t *testing.T) {
 			},
 		},
 	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "nonfluidpv", Annotations: common.ExpectedFluidAnnotations},
+		ObjectMeta: metav1.ObjectMeta{Name: "nonfluidpv", Annotations: common.GetExpectedFluidAnnotations()},
 		Spec:       corev1.PersistentVolumeSpec{},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "default-fluid-dataset-subpath"},

@@ -37,7 +37,7 @@ func TestIsPersistentVolumeClaimExist(t *testing.T) {
 		Spec: v1.PersistentVolumeClaimSpec{},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "createdByFluid",
-			Annotations: common.ExpectedFluidAnnotations,
+			Annotations: common.GetExpectedFluidAnnotations(),
 			Namespace:   namespace},
 		Spec: v1.PersistentVolumeClaimSpec{},
 	}}
@@ -83,7 +83,7 @@ func TestIsPersistentVolumeClaimExist(t *testing.T) {
 			args: args{
 				name:        "createdByFluid",
 				namespace:   namespace,
-				annotations: common.ExpectedFluidAnnotations,
+				annotations: common.GetExpectedFluidAnnotations(),
 			},
 			want: true,
 		}, {
@@ -115,7 +115,7 @@ func TestDeletePersistentVolumeClaim(t *testing.T) {
 		Spec: v1.PersistentVolumeClaimSpec{},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "bbb",
-			Annotations: common.ExpectedFluidAnnotations,
+			Annotations: common.GetExpectedFluidAnnotations(),
 			Namespace:   namespace},
 		Spec: v1.PersistentVolumeClaimSpec{},
 	}}
@@ -342,7 +342,7 @@ func TestRemoveProtectionFinalizer(t *testing.T) {
 		},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "hasFinalizer",
-			Annotations: common.ExpectedFluidAnnotations,
+			Annotations: common.GetExpectedFluidAnnotations(),
 			Namespace:   namespace,
 			Finalizers:  []string{persistentVolumeClaimProtectionFinalizerName}},
 		Spec: v1.PersistentVolumeClaimSpec{

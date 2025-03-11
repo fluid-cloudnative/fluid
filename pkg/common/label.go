@@ -83,6 +83,9 @@ const (
 )
 
 const (
+	// i.e. fuse.runtime.fluid.io/image-version
+	AnnotationRuntimeFuseGeneration = "fuse.runtime." + LabelAnnotationPrefix + "generation"
+
 	// i.e. controller.runtime.fluid.io/replicas
 	RuntimeControllerReplicas = "controller.runtime." + LabelAnnotationPrefix + "replicas"
 
