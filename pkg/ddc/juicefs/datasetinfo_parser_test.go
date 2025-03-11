@@ -113,23 +113,21 @@ func Test_parseCacheInfoFromConfigMap(t *testing.T) {
 	}
 }
 
+// TestGetFSInfoFromConfigMap is a unit test for the GetFSInfoFromConfigMap function.
+// It verifies that the function correctly retrieves file system information from a ConfigMap.
+// 
+// The test sets up a fake Kubernetes client with a predefined ConfigMap and Dataset,
+// then calls GetFSInfoFromConfigMap and compares the returned metadata with expected values.
+//
+// Steps:
+// 1. Create a fake ConfigMap containing FS configuration data.
+// 2. Create a fake Dataset associated with the ConfigMap.
+// 3. Use a fake client to simulate interactions with the Kubernetes API.
+// 4. Call GetFSInfoFromConfigMap with the dataset's name and namespace.
+// 5. Validate that the returned metadata matches the expected values.
+//
+// If the function does not return the correct values, the test fails with an error message.
 func TestGetFSInfoFromConfigMap(t *testing.T) {
-	// TestGetFSInfoFromConfigMap is a unit test for the GetFSInfoFromConfigMap function.
-	// It verifies that the function correctly retrieves file system information from a ConfigMap.
-	// 
-	// The test sets up a fake Kubernetes client with a predefined ConfigMap and Dataset,
-	// then calls GetFSInfoFromConfigMap and compares the returned metadata with expected values.
-	//
-	// Steps:
-	// 1. Create a fake ConfigMap containing FS configuration data.
-	// 2. Create a fake Dataset associated with the ConfigMap.
-	// 3. Use a fake client to simulate interactions with the Kubernetes API.
-	// 4. Call GetFSInfoFromConfigMap with the dataset's name and namespace.
-	// 5. Validate that the returned metadata matches the expected values.
-	//
-	// If the function does not return the correct values, the test fails with an error message.
-
-	
 	configMap := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-dataset-juicefs-values",
