@@ -18,11 +18,15 @@ package efc
 
 import (
 	"context"
+	"strconv"
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -50,12 +54,35 @@ func TestEFCEngine_CreateVolume(t *testing.T) {
 		},
 	}
 
+	testDsInputs := []*appsv1.DaemonSet{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase-fuse",
+				Namespace: "fluid",
+			},
+			Spec: appsv1.DaemonSetSpec{
+				Template: v1.PodTemplateSpec{
+					Spec: v1.PodSpec{
+						Containers: []v1.Container{
+							{
+								Image: "fuse-image:v1",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
 	testObjs := []runtime.Object{}
 	for _, runtimeInput := range testRuntimeInputs {
 		testObjs = append(testObjs, runtimeInput.DeepCopy())
 	}
 	for _, datasetInput := range testDatasetInputs {
 		testObjs = append(testObjs, datasetInput.DeepCopy())
+	}
+	for _, dsInput := range testDsInputs {
+		testObjs = append(testObjs, dsInput)
 	}
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
@@ -65,9 +92,13 @@ func TestEFCEngine_CreateVolume(t *testing.T) {
 		namespace: "fluid",
 		name:      "hbase",
 	}
-
-	err := engine.CreateVolume()
+	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", common.EFCRuntime)
 	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
+	engine.runtimeInfo = runtimeInfo
+	engine.runtimeInfo.SetFuseName(engine.getFuseName())
+	if err := engine.CreateVolume(); err != nil {
 		t.Errorf("fail to exec CreateVolume with error %v", err)
 	}
 
@@ -147,6 +178,10 @@ func TestEFCEngine_createFusePersistentVolume(t *testing.T) {
 }
 
 func TestEFCEngine_createFusePersistentVolumeClaim(t *testing.T) {
+	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", common.ThinRuntime)
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
 	testRuntimeInputs := []*datav1alpha1.EFCRuntime{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -167,6 +202,26 @@ func TestEFCEngine_createFusePersistentVolumeClaim(t *testing.T) {
 		},
 	}
 
+	testDsInputs := []*appsv1.DaemonSet{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase-fuse",
+				Namespace: "fluid",
+			},
+			Spec: appsv1.DaemonSetSpec{
+				Template: v1.PodTemplateSpec{
+					Spec: v1.PodSpec{
+						Containers: []v1.Container{
+							{
+								Image: "fuse-image:v1",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
 	testObjs := []runtime.Object{}
 	for _, runtimeInput := range testRuntimeInputs {
 		testObjs = append(testObjs, runtimeInput.DeepCopy())
@@ -174,17 +229,21 @@ func TestEFCEngine_createFusePersistentVolumeClaim(t *testing.T) {
 	for _, datasetInput := range testDatasetInputs {
 		testObjs = append(testObjs, datasetInput.DeepCopy())
 	}
+	for _, dsInput := range testDsInputs {
+		testObjs = append(testObjs, dsInput.DeepCopy())
+	}
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
 	engine := &EFCEngine{
-		Client:    client,
-		Log:       fake.NullLogger(),
-		namespace: "fluid",
-		name:      "hbase",
+		Client:      client,
+		Log:         fake.NullLogger(),
+		namespace:   "fluid",
+		name:        "hbase",
+		runtimeInfo: runtimeInfo,
 	}
+	engine.runtimeInfo.SetFuseName(engine.getFuseName())
 
-	err := engine.createFusePersistentVolumeClaim()
-	if err != nil {
+	if err := engine.createFusePersistentVolumeClaim(); err != nil {
 		t.Errorf("fail to exec createFusePersistentVolumeClaim with error %v", err)
 	}
 
@@ -196,5 +255,9 @@ func TestEFCEngine_createFusePersistentVolumeClaim(t *testing.T) {
 	}
 	if len(pvcs.Items) != 1 {
 		t.Errorf("fail to create the pvc")
+	}
+
+	if pvcs.Items[0].Labels[common.LabelRuntimeFuseGeneration] != strconv.Itoa(int(testDsInputs[0].Generation)) {
+		t.Errorf("fail to check fuse generation on pvc")
 	}
 }

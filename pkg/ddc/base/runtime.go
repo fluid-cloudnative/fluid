@@ -77,7 +77,11 @@ type RuntimeInfoInterface interface {
 
 	SetFuseNodeSelector(nodeSelector map[string]string)
 
+	SetFuseName(fuseName string)
+
 	SetupFuseCleanPolicy(policy datav1alpha1.FuseCleanPolicy)
+
+	SetupFuseUpdateStrategy(strategy datav1alpha1.FuseUpdateStrategy)
 
 	SetupWithDataset(dataset *datav1alpha1.Dataset)
 
@@ -85,7 +89,11 @@ type RuntimeInfoInterface interface {
 
 	GetFuseNodeSelector() (nodeSelector map[string]string)
 
+	GetFuseName() string
+
 	GetFuseCleanPolicy() datav1alpha1.FuseCleanPolicy
+
+	GetFuseUpdateStrategy() datav1alpha1.FuseUpdateStrategy
 
 	SetDeprecatedNodeLabel(deprecated bool)
 
@@ -142,10 +150,15 @@ type RuntimeInfo struct {
 }
 
 type Fuse struct {
+	Name string
+
 	NodeSelector map[string]string
 
 	// CleanPolicy decides when to clean fuse pods.
 	CleanPolicy datav1alpha1.FuseCleanPolicy
+
+	// UpdateStrategy decides when to update fuse pods.
+	UpdateStrategy datav1alpha1.FuseUpdateStrategy
 
 	// Metrics
 	MetricsScrapeTarget mountModeSelector
@@ -315,6 +328,16 @@ func (info *RuntimeInfo) SetFuseNodeSelector(nodeSelector map[string]string) {
 }
 
 // GetFuseNodeSelector gets the fuse deploy mode
+func (info *RuntimeInfo) GetFuseName() string {
+	return info.fuse.Name
+}
+
+// SetFuseNodeSelector setups the fuse deploy mode
+func (info *RuntimeInfo) SetFuseName(fuseName string) {
+	info.fuse.Name = fuseName
+}
+
+// GetFuseNodeSelector gets the fuse deploy mode
 func (info *RuntimeInfo) GetFuseNodeSelector() (nodeSelector map[string]string) {
 	nodeSelector = info.fuse.NodeSelector
 	return
@@ -329,8 +352,21 @@ func (info *RuntimeInfo) SetupFuseCleanPolicy(policy datav1alpha1.FuseCleanPolic
 	info.fuse.CleanPolicy = policy
 }
 
+func (info *RuntimeInfo) SetupFuseUpdateStrategy(strategy datav1alpha1.FuseUpdateStrategy) {
+	if strategy == datav1alpha1.NoneFuseUpdateStrategy {
+		// Default to set the fuse clean policy to OnRuntimeDeleted
+		info.fuse.UpdateStrategy = datav1alpha1.OnDeleteFuseUpdateStrategy
+		return
+	}
+	info.fuse.UpdateStrategy = strategy
+}
+
 func (info *RuntimeInfo) GetFuseCleanPolicy() datav1alpha1.FuseCleanPolicy {
 	return info.fuse.CleanPolicy
+}
+
+func (info *RuntimeInfo) GetFuseUpdateStrategy() datav1alpha1.FuseUpdateStrategy {
+	return info.fuse.UpdateStrategy
 }
 
 // SetDeprecatedNodeLabel set the DeprecatedNodeLabel
@@ -492,6 +528,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		}
 		runtimeInfo.SetFuseNodeSelector(juicefsRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(juicefsRuntime.Spec.Fuse.CleanPolicy)
+		runtimeInfo.SetupFuseUpdateStrategy(juicefsRuntime.Spec.Fuse.UpdateStrategy)
 	case common.ThinRuntime:
 		thinRuntime, err := utils.GetThinRuntime(client, name, namespace)
 		if err != nil {
