@@ -145,6 +145,16 @@ func TestJindoEngine_DeleteVolume(t *testing.T) {
 	doTestCases(testCases, t)
 }
 
+// TestJindoEngine_DeleteFusePersistentVolume tests the deletion of a Fuse Persistent Volume in the JindoEngine.
+// It creates a fake client with a predefined Persistent Volume and initializes two instances of JindoEngine,
+// one with runtime enabled and one without. It then runs test cases to verify the deletion behavior of the
+// Persistent Volume in both scenarios.
+//
+// Test cases:
+// - JindoEngine with runtime enabled: expects the Persistent Volume to be deleted without errors.
+// - JindoEngine without runtime enabled: expects the Persistent Volume to be deleted with an error.
+//
+// The function uses the doTestCases helper to execute the test cases and validate the results.
 func TestJindoEngine_DeleteFusePersistentVolume(t *testing.T) {
 	testPVInputs := []*v1.PersistentVolume{
 		{
