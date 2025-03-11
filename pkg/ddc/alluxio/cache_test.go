@@ -36,6 +36,8 @@ import (
 	"k8s.io/utils/ptr"
 )
 
+// TestQueryCacheStatus is a unit test for the queryCacheStatus function.
+// It verifies the correctness of the function under different dataset conditions.
 func TestQueryCacheStatus(t *testing.T) {
 	Convey("test queryCacheStatus ", t, func() {
 		Convey("with dataset UFSTotal is not empty ", func() {
