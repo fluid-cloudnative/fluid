@@ -206,7 +206,20 @@ func Test_isPortInUsed(t *testing.T) {
 	}
 }
 
+
+// Test_lookUpUsedCapacity verifies the functionality of lookUpUsedCapacity in retrieving used capacity values based on node identifiers.
+// This test validates two key scenarios:
+// 1. Capacity lookup using the node's internal IP address (NodeInternalIP type).
+// 2. Capacity lookup using the node's internal DNS hostname (NodeInternalDNS type).
+// For each case, it checks if the returned value matches the expected capacity from the provided map.
+//
+// Parameters:
+//   - t (testing.T): The test object to run the test case.
+//
+// Returns:
+//   - None.
 func Test_lookUpUsedCapacity(t *testing.T) {
+	// Define test parameters and initial capacity data
 	type args struct {
 		node            corev1.Node
 		usedCapacityMap map[string]int64
@@ -221,7 +234,8 @@ func Test_lookUpUsedCapacity(t *testing.T) {
 	usedCapacityMap := map[string]int64{}
 	usedCapacityMap[internalIP] = usageForInternalIP
 	usedCapacityMap[internalHost] = usageForInternalHost
-
+	
+	// Define test cases
 	tests := []struct {
 		name string
 		args args
@@ -262,6 +276,8 @@ func Test_lookUpUsedCapacity(t *testing.T) {
 			want: usageForInternalHost,
 		},
 	}
+	
+	// Run test cases
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := lookUpUsedCapacity(tt.args.node, tt.args.usedCapacityMap); got != tt.want {
