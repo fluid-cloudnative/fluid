@@ -183,6 +183,10 @@ func TestTransformMaster(t *testing.T) {
 	}
 }
 
+// TestTransformWorkers verifies that the transformWorkers function correctly transforms 
+// the worker configuration of AlluxioRuntime into the expected Alluxio structure. 
+// It tests different network modes, node selectors, and image pull secrets to ensure 
+// correct transformation behavior.
 func TestTransformWorkers(t *testing.T) {
 	testCases := map[string]struct {
 		runtime   *datav1alpha1.AlluxioRuntime
