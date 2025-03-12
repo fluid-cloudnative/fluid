@@ -44,6 +44,10 @@ func getTestAlluxioEngine(client client.Client, name string, namespace string) *
 	return engine
 }
 
+// TestAlluxioEngine_GetDeprecatedCommonLabelname tests the GetCommonLabelName function
+// to ensure that the common label name is correctly generated for various test cases.
+// It checks different combinations of the `namespace` and `name` inputs and verifies
+// that the expected output matches the generated label name.
 func TestAlluxioEngine_GetDeprecatedCommonLabelname(t *testing.T) {
 	testCases := []struct {
 		name      string
