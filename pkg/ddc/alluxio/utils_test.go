@@ -23,6 +23,7 @@ import (
 	"reflect"
 	"testing"
 
+	. "github.com/agiledragon/gomonkey/v2"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -603,7 +604,6 @@ func TestGetDaemonset(t *testing.T) {
 // It defines a set of test cases with expected pod and container names based on the engine's name.
 // The function iterates through the test cases, initializes an AlluxioEngine instance,
 // and verifies whether the returned pod name and container name match the expected values.
-
 func TestGetMasterPodInfo(t *testing.T) {
 	type fields struct {
 		name string
