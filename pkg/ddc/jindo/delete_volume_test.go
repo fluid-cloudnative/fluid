@@ -188,47 +188,37 @@ func TestJindoEngine_DeleteFusePersistentVolume(t *testing.T) {
 // 2. With a JindoEngine instance that lacks a runtime, expecting an error upon attempting to delete the PVC.  
 // The test initializes a fake Kubernetes client and the corresponding PVC inputs to execute these scenarios.  
 func TestJindoEngine_DeleteFusePersistentVolumeClaim(t *testing.T) {  
-	// Define test PVC inputs with metadata and finalizers  
 	testPVCInputs := []*v1.PersistentVolumeClaim{  
 		{  
 			ObjectMeta: metav1.ObjectMeta{  
 				Name:       "hbase",  
 				Namespace:  "fluid",  
-				Finalizers: []string{"kubernetes.io/pvc-protection"}, // This finalizer prevents deletion errors  
+				Finalizers: []string{"kubernetes.io/pvc-protection"}, // no err  
 			},  
 			Spec: v1.PersistentVolumeClaimSpec{},  
 		},  
 	}  
 
-	// Initialize an empty slice to hold runtime objects for testing  
 	tests := []runtime.Object{}  
 
-	// Deep copy each PVC input and append to tests for use in the fake client  
 	for _, pvcInput := range testPVCInputs {  
 		tests = append(tests, pvcInput.DeepCopy())  
 	}  
 
-	// Create a fake Kubernetes client using the defined test scheme and PVCs  
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, tests...)  
-
-	// Initialize JindoEngine instances for testing with and without runtime  
 	JindoEngine := newTestJindoEngine(fakeClient, "hbase", "fluid", true)  
 	JindoEngineNoRuntime := newTestJindoEngine(fakeClient, "hbase", "fluid", false)  
-
-	// Define test cases with expected outcomes for both JindoEngine instances  
 	testCases := []TestCase{  
 		{  
 			engine:    JindoEngine,  
-			isDeleted: true,  // Expect deletion to succeed  
-			isErr:     false, // Expect no error  
+			isDeleted: true,  
+			isErr:     false,  
 		},  
 		{  
 			engine:    JindoEngineNoRuntime,  
-			isDeleted: true,  // Expect deletion to be attempted  
-			isErr:     true,  // Expect an error due to lack of runtime  
+			isDeleted: true,  
+			isErr:     true,  
 		},  
 	}  
-
-	// Execute the defined test cases, passing in the testing object  
 	doTestCases(testCases, t)  
 }  
