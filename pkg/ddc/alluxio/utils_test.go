@@ -218,23 +218,21 @@ func Test_isPortInUsed(t *testing.T) {
 // Returns:
 //   - None.
 func Test_lookUpUsedCapacity(t *testing.T) {
-	// Define test parameters and initial capacity data
 	type args struct {
 		node            corev1.Node
 		usedCapacityMap map[string]int64
 	}
-
+	
 	internalIP := "192.168.1.147"
 	var usageForInternalIP int64 = 1024
-
+	
 	internalHost := "slave001"
 	var usageForInternalHost int64 = 4096
-
+	
 	usedCapacityMap := map[string]int64{}
 	usedCapacityMap[internalIP] = usageForInternalIP
 	usedCapacityMap[internalHost] = usageForInternalHost
 	
-	// Define test cases
 	tests := []struct {
 		name string
 		args args
@@ -275,8 +273,6 @@ func Test_lookUpUsedCapacity(t *testing.T) {
 			want: usageForInternalHost,
 		},
 	}
-	
-	// Run test cases
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := lookUpUsedCapacity(tt.args.node, tt.args.usedCapacityMap); got != tt.want {
