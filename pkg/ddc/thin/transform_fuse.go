@@ -62,8 +62,10 @@ func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *d
 	if len(runtime.Spec.Fuse.NodeSelector) > 0 {
 		value.Fuse.NodeSelector = runtime.Spec.Fuse.NodeSelector
 	}
-	value.Fuse.NodeSelector[utils.GetFuseLabelName(runtime.Namespace, runtime.Name, t.runtimeInfo.GetOwnerDatasetUID())] = "true"
-
+	if runtime.Spec.Fuse.LaunchMode != datav1alpha1.EagerMode && profile.Spec.Fuse.LaunchMode != datav1alpha1.EagerMode {
+		// The label will be added by CSI Plugin when any workload pod is scheduled on the node.
+		value.Fuse.NodeSelector[utils.GetFuseLabelName(runtime.Namespace, runtime.Name, t.runtimeInfo.GetOwnerDatasetUID())] = "true"
+	}
 	// 5. ports
 	if len(runtime.Spec.Fuse.Ports) != 0 {
 		value.Fuse.Ports = append(value.Fuse.Ports, runtime.Spec.Fuse.Ports...)

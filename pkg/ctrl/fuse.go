@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -120,6 +121,11 @@ func (e *Helper) CheckFuseHealthy(recorder record.EventRecorder, runtime base.Ru
 
 // CleanUpFuse will cleanup node label for Fuse.
 func (e *Helper) CleanUpFuse() (count int, err error) {
+	if e.runtimeInfo.GetFuseLaunchMode() == datav1alpha1.EagerMode {
+		e.log.Info("No need to clean up fuse node label in eager mode")
+		return count, nil
+	}
+
 	var (
 		nodeList     = &corev1.NodeList{}
 		fuseLabelKey = utils.GetFuseLabelName(e.runtimeInfo.GetNamespace(), e.runtimeInfo.GetName(), e.runtimeInfo.GetOwnerDatasetUID())
@@ -174,6 +180,20 @@ func (e *Helper) GetFuseNodes() (nodes []corev1.Node, err error) {
 	fuseLabelSelector, err := labels.Parse(fmt.Sprintf("%s=true", fuseLabelKey))
 	if err != nil {
 		return
+	}
+
+	// replace the fuseLabelSelector by customized fuse nodeSelectors in Eager mode
+	if e.runtimeInfo.GetFuseLaunchMode() == datav1alpha1.EagerMode {
+		fuseNodeSelectors := e.runtimeInfo.GetFuseNodeSelector()
+		var fuseLabelSelectorStrs []string
+		for k, v := range fuseNodeSelectors {
+			fuseLabelSelectorStrs = append(fuseLabelSelectorStrs, fmt.Sprintf("%s=%s", k, v))
+		}
+
+		fuseLabelSelector, err = labels.Parse(strings.Join(fuseLabelSelectorStrs, ","))
+		if err != nil {
+			return
+		}
 	}
 
 	err = e.client.List(context.TODO(), nodeList, &client.ListOptions{
