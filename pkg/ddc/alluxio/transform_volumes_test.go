@@ -140,31 +140,31 @@ func TestTransformMasterVolumes(t *testing.T) {
 // If an error occurs and it is not expected, or if the output does not match the expected result, the test fails with an appropriate error message.
 func TestTransformWorkerVolumes(t *testing.T) {
 	type testCase struct {
-		name      string         
-		runtime   *datav1alpha1.AlluxioRuntime 
-		expect    *Alluxio       
-		expectErr bool           
+		name      string
+		runtime   *datav1alpha1.AlluxioRuntime
+		expect    *Alluxio
+		expectErr bool
 	}
 	testCases := []testCase{
 		{
-			name: "all", 
+			name: "all",
 			runtime: &datav1alpha1.AlluxioRuntime{
 				Spec: datav1alpha1.AlluxioRuntimeSpec{
-					Volumes: []corev1.Volume{ 
+					Volumes: []corev1.Volume{
 						{
 							Name: "test",
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{
-									SecretName: "test", 
+									SecretName: "test",
 								},
 							},
 						},
 					},
 					Worker: datav1alpha1.AlluxioCompTemplateSpec{
-						VolumeMounts: []corev1.VolumeMount{ 
+						VolumeMounts: []corev1.VolumeMount{
 							{
 								Name:      "test",
-								MountPath: "/test", 
+								MountPath: "/test",
 							},
 						},
 					},
@@ -172,35 +172,35 @@ func TestTransformWorkerVolumes(t *testing.T) {
 			},
 			expect: &Alluxio{
 				Worker: Worker{
-					Volumes: []corev1.Volume{ 
+					Volumes: []corev1.Volume{
 						{
 							Name: "test",
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{
-									SecretName: "test", 
+									SecretName: "test",
 								},
 							},
 						},
 					},
-					VolumeMounts: []corev1.VolumeMount{ 
+					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      "test",
-							MountPath: "/test", 
+							MountPath: "/test",
 						},
 					},
 				},
 			},
-			expectErr: false, 
+			expectErr: false,
 		},
 		{
-			name: "onlyVolumeMounts", 
+			name: "onlyVolumeMounts",
 			runtime: &datav1alpha1.AlluxioRuntime{
 				Spec: datav1alpha1.AlluxioRuntimeSpec{
 					Worker: datav1alpha1.AlluxioCompTemplateSpec{
-						VolumeMounts: []corev1.VolumeMount{ 
+						VolumeMounts: []corev1.VolumeMount{
 							{
 								Name:      "test",
-								MountPath: "/test", 
+								MountPath: "/test",
 							},
 						},
 					},
@@ -208,34 +208,34 @@ func TestTransformWorkerVolumes(t *testing.T) {
 			},
 			expect: &Alluxio{
 				Worker: Worker{
-					Volumes: []corev1.Volume{ 
+					Volumes: []corev1.Volume{
 						{
 							Name: "test",
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{
-									SecretName: "test", 
+									SecretName: "test",
 								},
 							},
 						},
 					},
-					VolumeMounts: []corev1.VolumeMount{ 
+					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      "test",
-							MountPath: "/test", 
+							MountPath: "/test",
 						},
 					},
 				},
 			},
-			expectErr: true, 
+			expectErr: true,
 		},
 	}
 	for _, testCase := range testCases {
-		engine := &AlluxioEngine{} 
-		got := &Alluxio{}          
-		err := engine.transformWorkerVolumes(testCase.runtime, got) 
+		engine := &AlluxioEngine{}
+		got := &Alluxio{}
+		err := engine.transformWorkerVolumes(testCase.runtime, got)
 
 		if err != nil && !testCase.expectErr {
-			t.Errorf("Got unexpected error %v", err) 
+			t.Errorf("Got unexpected error %v", err)
 		}
 
 		if testCase.expectErr {
@@ -243,7 +243,7 @@ func TestTransformWorkerVolumes(t *testing.T) {
 		}
 
 		if !reflect.DeepEqual(got, testCase.expect) {
-			t.Errorf("want %v, got %v for testcase %s", testCase.expect, got, testCase.name) 
+			t.Errorf("want %v, got %v for testcase %s", testCase.expect, got, testCase.name)
 		}
 	}
 }
