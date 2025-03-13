@@ -199,7 +199,13 @@ func TestQueryHCFSEndpoint(t *testing.T) {
 		}
 	}
 }
-
+// TestCompatibleUFSVersion 测试 Alluxio 引擎查询兼容的底层文件系统（UFS）版本的功能。
+// 该测试通过模拟 kubeclient.ExecCommandInContainerWithFullOutput 的行为，验证在不同执行结果下，
+// queryCompatibleUFSVersion 方法是否能够正确返回预期的输出。
+// 测试分为两个场景：
+// 1. 模拟成功执行，返回预期的 "conf" 结果。
+// 2. 模拟执行失败，返回错误信息 "err"。
+// 每个场景结束后，都会通过 wrappedUnhook 函数清理钩子（hook），以避免对后续测试产生影响。
 func TestCompatibleUFSVersion(t *testing.T) {
 	mockExecCommon := func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
 		return "conf", "", nil
