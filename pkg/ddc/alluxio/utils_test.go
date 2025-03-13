@@ -293,6 +293,22 @@ Worker Name      Last Heartbeat   Storage       MEM
 	return r, "", nil
 }
 
+// TestGetDataSetFileNum 测试AlluxioEngine的getDataSetFileNum方法是否能正确获取数据集文件数量
+// 该测试用例验证当AlluxioRuntime的名称为"spark"且位于"default"命名空间时，
+// 方法返回的文件数量是否为预期的"1000"，且不返回错误[1,2](@ref).
+// 
+// Parameters:
+// - t *testing.T: Go测试框架的测试对象，用于断言和错误报告
+// - fields: 包含测试配置的结构体，包括AlluxioRuntime实例、测试名称、命名空间和日志记录器
+//   - runtime *datav1alpha1.AlluxioRuntime: 被测试的AlluxioRuntime对象
+//   - name string: AlluxioRuntime的名称
+//   - namespace string: AlluxioRuntime所在的命名空间
+//   - Log logr.Logger: 用于记录测试日志的对象[4,5](@ref).
+// 
+// Returns:
+// - string: 表示数据集文件数量的字符串结果（如"1000"）
+// - error: 如果测试过程中发生错误则返回非nil错误对象，否则返回nil[4,6](@ref).
+
 func TestGetDataSetFileNum(t *testing.T) {
 	type fields struct {
 		runtime   *datav1alpha1.AlluxioRuntime
