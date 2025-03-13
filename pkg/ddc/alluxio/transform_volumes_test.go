@@ -133,6 +133,11 @@ func TestTransformMasterVolumes(t *testing.T) {
 
 }
 
+// TestTransformWorkerVolumes is a unit test function that tests the transformWorkerVolumes method of the AlluxioEngine.
+// It defines a series of test cases to verify the correctness of volume and volume mount transformations for the Alluxio worker.
+// Each test case includes an input AlluxioRuntime object and an expected Alluxio object, along with a flag to indicate if an error is expected.
+// The function iterates through each test case, applies the transformWorkerVolumes method, and checks if the output matches the expected result.
+// If an error occurs and it is not expected, or if the output does not match the expected result, the test fails with an appropriate error message.
 func TestTransformWorkerVolumes(t *testing.T) {
 	type testCase struct {
 		name      string
@@ -140,7 +145,6 @@ func TestTransformWorkerVolumes(t *testing.T) {
 		expect    *Alluxio
 		expectErr bool
 	}
-
 	testCases := []testCase{
 		{
 			name: "all",
@@ -155,7 +159,8 @@ func TestTransformWorkerVolumes(t *testing.T) {
 								},
 							},
 						},
-					}, Worker: datav1alpha1.AlluxioCompTemplateSpec{
+					},
+					Worker: datav1alpha1.AlluxioCompTemplateSpec{
 						VolumeMounts: []corev1.VolumeMount{
 							{
 								Name:      "test",
@@ -176,7 +181,8 @@ func TestTransformWorkerVolumes(t *testing.T) {
 								},
 							},
 						},
-					}, VolumeMounts: []corev1.VolumeMount{
+					},
+					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      "test",
 							MountPath: "/test",
@@ -185,7 +191,8 @@ func TestTransformWorkerVolumes(t *testing.T) {
 				},
 			},
 			expectErr: false,
-		}, {
+		},
+		{
 			name: "onlyVolumeMounts",
 			runtime: &datav1alpha1.AlluxioRuntime{
 				Spec: datav1alpha1.AlluxioRuntimeSpec{
@@ -210,7 +217,8 @@ func TestTransformWorkerVolumes(t *testing.T) {
 								},
 							},
 						},
-					}, VolumeMounts: []corev1.VolumeMount{
+					},
+					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      "test",
 							MountPath: "/test",
@@ -221,11 +229,11 @@ func TestTransformWorkerVolumes(t *testing.T) {
 			expectErr: true,
 		},
 	}
-
 	for _, testCase := range testCases {
 		engine := &AlluxioEngine{}
 		got := &Alluxio{}
 		err := engine.transformWorkerVolumes(testCase.runtime, got)
+
 		if err != nil && !testCase.expectErr {
 			t.Errorf("Got unexpected error %v", err)
 		}
@@ -237,9 +245,7 @@ func TestTransformWorkerVolumes(t *testing.T) {
 		if !reflect.DeepEqual(got, testCase.expect) {
 			t.Errorf("want %v, got %v for testcase %s", testCase.expect, got, testCase.name)
 		}
-
 	}
-
 }
 
 func TestTransformFuseVolumes(t *testing.T) {
