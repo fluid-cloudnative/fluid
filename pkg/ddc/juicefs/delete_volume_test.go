@@ -39,13 +39,24 @@ type TestCase struct {
 	isErr     bool
 }
 
+// newTestJuiceEngine creates a JuiceFSEngine for testing
+// Parameters:
+// 	 - client: fake client
+//   - name: the name of the JuiceFS engine
+//   - namespace: the namespace of the JuiceFS engine
+//   - withRunTime: whether the JuiceFS engine has runtime
+// Returns:
+//   - JuiceFSEngine: the JuiceFS engine for testing
 func newTestJuiceEngine(client client.Client, name string, namespace string, withRunTime bool) *JuiceFSEngine {
+	// 1. Create a JuiceFSRuntime and RuntimeInfo 
 	runTime := &datav1alpha1.JuiceFSRuntime{}
 	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.JuiceFSRuntime)
+	// 2. If the JuiceFS engine does not have runtime, set the runtime and runtimeInfo to nil
 	if !withRunTime {
 		runTimeInfo = nil
 		runTime = nil
 	}
+	// 3. Create a JuiceFSEngine
 	engine := &JuiceFSEngine{
 		runtime:     runTime,
 		name:        name,
@@ -54,6 +65,7 @@ func newTestJuiceEngine(client client.Client, name string, namespace string, wit
 		runtimeInfo: runTimeInfo,
 		Log:         fake.NullLogger(),
 	}
+	// 4. Return the JuiceFSEngine
 	return engine
 }
 
