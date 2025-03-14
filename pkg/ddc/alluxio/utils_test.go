@@ -62,33 +62,49 @@ func TestIsFluidNativeScheme(t *testing.T) {
 	}
 }
 
+// TestAlluxioEngine_getInitUserDir tests the getInitUserDir method of AlluxioEngine.
+// It verifies that the method returns the expected directory path based on the namespace and name.
 func TestAlluxioEngine_getInitUserDir(t *testing.T) {
+	// fields defines the structure of test input data for AlluxioEngine.
 	type fields struct {
-		runtime       *datav1alpha1.AlluxioRuntime
-		name          string
-		namespace     string
-		runtimeType   string
-		Log           logr.Logger
-		Client        client.Client
-		retryShutdown int32
+		runtime       *datav1alpha1.AlluxioRuntime // The Alluxio runtime configuration.
+		name          string                       // Name of the Alluxio instance.
+		namespace     string                       // Kubernetes namespace of the instance.
+		runtimeType   string                       // Type of runtime (e.g., "alluxio").
+		Log           logr.Logger                  // Logger instance for logging.
+		Client        client.Client                // Kubernetes client for interacting with the API server.
+		retryShutdown int32                        // Number of retries for shutdown operations.
 	}
+
+	// tests defines a slice of test cases, each with a name, input fields, and expected output.
 	tests := []struct {
-		name   string
-		fields fields
-		want   string
+		name   string // Name of the test case.
+		fields fields // Input fields for the AlluxioEngine instance.
+		want   string // Expected output directory path.
 	}{
-		{name: "test",
-			fields: fields{runtime: &datav1alpha1.AlluxioRuntime{
-				TypeMeta:   v1.TypeMeta{},
-				ObjectMeta: v1.ObjectMeta{},
-				Spec:       datav1alpha1.AlluxioRuntimeSpec{},
-				Status:     datav1alpha1.RuntimeStatus{},
-			}, name: "test", namespace: "default", runtimeType: "alluxio", Log: fake.NullLogger()},
-			want: fmt.Sprintf("/tmp/fluid/%s/%s", "default", "test"),
+		{
+			name: "test", // Test case name.
+			fields: fields{
+				runtime: &datav1alpha1.AlluxioRuntime{
+					TypeMeta:   v1.TypeMeta{},      // Metadata about the type (kind, API version).
+					ObjectMeta: v1.ObjectMeta{},    // Object metadata (e.g., name, namespace).
+					Spec:       datav1alpha1.AlluxioRuntimeSpec{}, // Specification of the Alluxio runtime.
+					Status:     datav1alpha1.RuntimeStatus{},     // Status of the Alluxio runtime.
+				},
+				name:        "test",         // Alluxio instance name set to "test".
+				namespace:   "default",      // Namespace set to "default".
+				runtimeType: "alluxio",      // Runtime type set to "alluxio".
+				Log:         fake.NullLogger(), // Use a null logger for testing (no actual logging).
+			},
+			want: fmt.Sprintf("/tmp/fluid/%s/%s", "default", "test"), // Expected output: "/tmp/fluid/default/test".
 		},
 	}
+
+	// Iterate over each test case.
 	for _, tt := range tests {
+		// t.Run runs a subtest with the given test case name.
 		t.Run(tt.name, func(t *testing.T) {
+			// Initialize an AlluxioEngine instance with the test case fields.
 			e := &AlluxioEngine{
 				runtime:       tt.fields.runtime,
 				name:          tt.fields.name,
@@ -98,7 +114,10 @@ func TestAlluxioEngine_getInitUserDir(t *testing.T) {
 				Client:        tt.fields.Client,
 				retryShutdown: tt.fields.retryShutdown,
 			}
+
+			// Call getInitUserDir and compare the result with the expected value.
 			if got := e.getInitUserDir(); got != tt.want {
+				// If the result doesn't match, fail the test and report the mismatch.
 				t.Errorf("AlluxioEngine.getInitUserDir() = %v, want %v", got, tt.want)
 			}
 		})
