@@ -692,6 +692,7 @@ func TestGetWorkerDaemonsetName(t *testing.T) {
 		})
 	}
 }
+
 // TestGetFuseDaemonsetName is a unit test for the getFuseName method of the AlluxioEngine struct.
 // This test verifies that the method correctly constructs the expected daemonset name 
 // based on the given engine name.
@@ -702,7 +703,6 @@ func TestGetWorkerDaemonsetName(t *testing.T) {
 // The test iterates through all defined cases, creates an instance of AlluxioEngine with 
 // the given name, calls the `getFuseName` method, and checks if the returned result matches 
 // the expected value. If the result differs, an error message is reported.
-
 func TestGetFuseDaemonsetName(t *testing.T) {
 	type fields struct {
 		name string
