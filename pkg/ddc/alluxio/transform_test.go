@@ -1131,6 +1131,23 @@ func TestTransformFuseProperties(t *testing.T) {
 	}
 }
 
+// TestGenerateNonNativeMountsInfo validates the generation of non-local storage mount configurations for Alluxio engine.
+//
+// Functionality:
+// - Tests the logic that converts Dataset storage definitions into Alluxio mount commands
+// - Filters out local storage types (e.g. pvc://)
+// - Handles security credential injection from Kubernetes Secrets
+// - Verifies command argument formatting for different storage protocols
+//
+// Parameters:
+//   - t *（testing.T） : Go test framework handler
+//
+// Returns:
+//   - No direct return value
+//   - Fails test through t.Fatalf if:
+//     1. Unexpected error occurs during generation (err != nil)
+//     2. Generated commands mismatch wantValue expectations
+//     3. Protocol handling violates defined rules
 func TestGenerateNonNativeMountsInfo(t *testing.T) {
 	const (
 		SecretName = "ds-secret"
