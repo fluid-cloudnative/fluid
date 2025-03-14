@@ -212,7 +212,6 @@ func (e *AlluxioEngine) invokeCleanCache(path string) (err error) {
 // Returns:
 //   - gracefulShutdownLimits: The maximum number of retry attempts
 //   - error: Any error encountered while getting the runtime
-
 func (e *AlluxioEngine) getGracefulShutdownLimits() (gracefulShutdownLimits int32, err error) {
 	runtime, err := e.getRuntime()
 	if err != nil {
