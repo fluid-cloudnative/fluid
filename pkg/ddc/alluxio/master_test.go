@@ -233,7 +233,7 @@ func TestShouldSetupMaster(t *testing.T) {
 // 1. The SetupMaster function executes without errors.
 // 2. The runtime object is correctly retrieved after execution.
 // 3. The runtime's status is properly updated, including the selector, 
-//    configuration map name, and the presence of conditions.
+//    configuration map name, and the presence of conditions.。
 func TestSetupMaster(t *testing.T) {
 	statefulSetInputs := []v1.StatefulSet{
 		{
