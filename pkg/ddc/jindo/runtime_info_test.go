@@ -44,6 +44,14 @@ func newJindoEngineRT(client client.Client, name string, namespace string, withR
 	return engine
 }
 
+// TestGetRuntimeInfo tests the jindoEngine's getRuntimeInfo method under various scenarios.
+// It validates the correct retrieval of runtime information from both existing and non-existing configurations,
+// including error handling and nil return checks. Test cases cover:
+// - Multiple JindoRuntime instances (hbase, hadoop) in the "fluid" namespace
+// - Presence/Absence of runtime information (controlled by withRuntimeInfo flag)
+// - Associated DaemonSets and Dataset configurations
+// The test uses a fake Kubernetes client with preloaded JindoRuntimes, DaemonSets, and Datasets
+// to simulate cluster state and verify expected behaviors.
 func TestGetRuntimeInfo(t *testing.T) {
 	runtimeInputs := []*datav1alpha1.JindoRuntime{
 		{
