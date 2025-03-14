@@ -31,13 +31,13 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 )
 
-// newJuiceFSEngineRT 创建一个新的 JuiceFSEngine 实例
-// client: Kubernetes 客户端
-// name: 引擎的名称
-// namespace: 引擎所在的命名空间
-// withRuntimeInfo: 是否包含运行时信息
-// unittest: 是否为单元测试
-// 返回: 一个新的 JuiceFSEngine 实例
+// newJuiceFSEngineRT creates a new instance of JuiceFSEngine
+// client: Kubernetes client
+// name: Name of the engine
+// namespace: Namespace where the engine resides
+// withRuntimeInfo: Whether to include runtime information
+// unittest: Whether it is for unit testing
+// Returns: A new instance of JuiceFSEngine
 func newJuiceFSEngineRT(client client.Client, name string, namespace string, withRuntimeInfo bool, unittest bool) *JuiceFSEngine {
 	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.JuiceFSRuntime)
 	engine := &JuiceFSEngine{
@@ -56,8 +56,7 @@ func newJuiceFSEngineRT(client client.Client, name string, namespace string, wit
 	return engine
 }
 
-// TestJuiceFSEngine_getRuntimeInfo 测试 JuiceFSEngine 的 getRuntimeInfo 方法
-// t: 测试框架的上下文
+
 func TestJuiceFSEngine_getRuntimeInfo(t *testing.T) {
 	runtimeInputs := []*datav1alpha1.JuiceFSRuntime{
 		{
