@@ -53,6 +53,9 @@ func newAlluxioEngineREP(client client.Client, name string, namespace string) *A
 	return engine
 }
 
+// TestSyncReplicas tests the SyncReplicas method for AlluxioRuntime replica synchronization.
+// It simulates scaling scenarios using mock nodes, runtimes, and workloads, and verifies
+// runtime conditions and replica counts are updated correctly.
 func TestSyncReplicas(t *testing.T) {
 	nodeInputs := []*corev1.Node{
 		{
