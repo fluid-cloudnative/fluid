@@ -412,6 +412,22 @@ func TestGetRuntime(t *testing.T) {
 	}
 }
 
+// TestGetMasterPod verifies the correct retrieval of the master Pod for an Alluxio runtime.
+// This test validates whether the AlluxioEngine's getMasterPod method accurately fetches 
+// the expected Pod resource from Kubernetes based on the provided runtime configuration.
+//
+// Test Cases:
+// - Standard scenario: Checks if the master Pod is correctly retrieved when valid runtime metadata is provided.
+//
+// Parameters:
+// - t *testing.T: Testing framework handle for assertion and logging
+//
+// Test Logic:
+// 1. Defines test structures with mock AlluxioRuntime configurations and expected Pod results
+// 2. Initializes a fake Kubernetes client with test-specific schemas and objects
+// 3. Executes getMasterPod with different test configurations
+// 4. Compares actual results against expected outcomes using deep equality checks
+// 5. Reports discrepancies between actual and expected results through testing.T
 func TestGetMasterPod(t *testing.T) {
 	type fields struct {
 		runtime   *datav1alpha1.AlluxioRuntime
