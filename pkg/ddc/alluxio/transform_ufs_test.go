@@ -68,25 +68,20 @@ func TestTransformDatasetToVolume(t *testing.T) {
 	}
 }
 
-// TestTransformDatasetToVolume tests the transformDatasetToVolume function of the AlluxioEngine.
-// This test verifies the correctness of transforming a Dataset into a UFSVolume structure.
-// It covers various cases including:
-// - Basic mapping from Dataset to UFSVolume without SubPath.
-// - Dataset MountPoint with and without explicit subpath specification.
-//
-// The test scenarios include:
-// - Dataset with MountPoint "pvc://test" mapping directly to container path.
-// - Dataset with MountPoint "pvc://test1" having a container path without subpath.
-// - Dataset with MountPoint "pvc://test2/subpath" explicitly specifying a subpath.
-// - Dataset with MountPoint "pvc://test2/subpath" with an explicit path specification.
+// TestTransformDatasetToPVC tests the transformation of Dataset specifications into Persistent Volume Claim (PVC) 
+// configurations in Alluxio volumes. It validates the correct conversion of Dataset mount configurations to 
+// corresponding UFSVolume structures with proper path mappings.
 //
 // Parameters:
-//   - runtime: An instance of AlluxioRuntime configuration.
-//   - dataset: A pointer to the Dataset struct containing dataset specifications.
-//   - value: A pointer to an Alluxio struct that is to be populated by the transformation.
+//   - t *testing.T : Go testing framework context for test reporting and assertions
 //
-// The function asserts that the transformDatasetToVolume method populates the 'value' parameter
-// with the expected UFSVolume configuration based on the provided dataset.
+// Test Components:
+//   - Defines 4 expected UFSVolume configurations covering different PVC mount scenarios
+//   - Constructs test cases with varying Dataset.Spec.Mounts configurations
+//   - Verifies transformed Alluxio configuration matches expected volume parameters
+//
+// Return Value:
+//   - None (Standard Go test function, reports failures through t.Errorf)
 func TestTransformDatasetToPVC(t *testing.T) {
 	var ufsVolume = UFSVolume{}
 	ufsVolume.Name = "test"
