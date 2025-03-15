@@ -236,6 +236,10 @@ func (e *AlluxioEngine) getGracefulShutdownLimits() (gracefulShutdownLimits int3
 	return
 }
 
+// getCleanCacheGracePeriodSeconds retrieves the grace period in seconds for cleaning the cache.
+// It first attempts to get the runtime configuration. If successful, it checks if the grace period
+// is specified in the runtime's CleanCachePolicy. If specified, it returns that value. Otherwise,
+// it returns a default value.
 func (e *AlluxioEngine) getCleanCacheGracePeriodSeconds() (cleanCacheGracePeriodSeconds int32, err error) {
 	runtime, err := e.getRuntime()
 	if err != nil {
