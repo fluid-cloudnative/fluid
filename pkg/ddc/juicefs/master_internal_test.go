@@ -197,7 +197,17 @@ func TestSetupMasterInternal(t *testing.T) {
 	wrappedUnhookInstallRelease()
 	wrappedUnhookCheckRelease()
 }
-
+// TestGenerateJuiceFSValueFile 单元测试，验证 JuiceFS 引擎生成配置文件的能力
+// 测试场景覆盖以下关键点：
+// 1. 模拟 Kubernetes 环境中的核心资源（Secret/JuiceFSRuntime/Dataset）
+// 2. 验证配置文件的生成逻辑与错误处理机制
+// 3. 测试数据包括：
+//    - Secret 对象：存储 JuiceFS 的元数据服务连接信息（metaurl）
+//    - JuiceFSRuntime 对象：定义分布式缓存系统的存储配置（路径、介质类型、配额等）
+//    - Dataset 对象：描述数据集的挂载点信息及加密参数
+// 4. 使用 fake Kubernetes client 模拟 API 交互，实现测试环境隔离
+// 5. 验证引擎运行时信息的正确构建（runtimeInfo）
+// 6. 测试核心方法 generateJuicefsValueFile 的健壮性，确保生成符合预期的 JuiceFS 配置文件
 func TestGenerateJuiceFSValueFile(t *testing.T) {
 	juicefsSecret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
