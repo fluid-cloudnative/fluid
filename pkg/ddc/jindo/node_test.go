@@ -66,19 +66,7 @@ func getTestJindoEngineNode(client client.Client, name string, namespace string,
 }
 
 
-// TestSyncScheduleInfoToCacheNodes 测试 SyncScheduleInfoToCacheNodes 方法是否正确地将调度信息同步到缓存节点。
-// 该测试定义了多个测试用例，每个用例包括不同的 worker、pods 和 nodes 结构。
-// 主要逻辑包括：
-// 1. 创建多个不同场景的 StatefulSet、Pod 和 Node，并添加到 fake 客户端。
-// 2. 通过 getTestJindoEngineNode 初始化 JindoEngine，并调用 SyncScheduleInfoToCacheNodes 方法同步节点信息。
-// 3. 通过标签选择器查询同步后的 NodeList，并与预期的 nodeNames 进行比对。
-// 4. 若同步的节点列表与预期不符，则测试失败。
-//
-// 该测试用例涵盖了以下场景：
-// - "create": 测试初始创建时，pod 是否正确映射到 node。
-// - "add": 测试新的 pod 添加后，是否能正确更新节点信息。
-// - "noController": 测试 pod 无 controller 时，不应同步节点信息。
-// - "deprecated": 测试过时（deprecated）的 daemonset 不应影响同步结果
+
 func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 	type fields struct {
 		// runtime   *datav1alpha1.JindoRuntime
