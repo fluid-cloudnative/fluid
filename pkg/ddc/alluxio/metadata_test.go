@@ -349,6 +349,14 @@ func TestSyncMetadataWithoutMaster(t *testing.T) {
 	}
 }
 
+// TestShouldSyncMetadata tests the behavior of the shouldSyncMetadata method.
+// This test verifies whether metadata synchronization is correctly determined
+// under different Dataset and AlluxioRuntime configurations.
+// Test cases include:
+// 1. A Dataset with metadata already synced should not trigger synchronization.
+// 2. A Dataset with an empty UfsTotal should trigger synchronization by default.
+// 3. A Dataset with AutoSync enabled should trigger synchronization.
+// 4. A Dataset with AutoSync disabled should not trigger synchronization.
 func TestShouldSyncMetadata(t *testing.T) {
 	datasetInputs := []datav1alpha1.Dataset{
 		{
