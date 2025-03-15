@@ -68,6 +68,25 @@ func TestTransformDatasetToVolume(t *testing.T) {
 	}
 }
 
+// TestTransformDatasetToVolume tests the transformDatasetToVolume function of the AlluxioEngine.
+// This test verifies the correctness of transforming a Dataset into a UFSVolume structure.
+// It covers various cases including:
+// - Basic mapping from Dataset to UFSVolume without SubPath.
+// - Dataset MountPoint with and without explicit subpath specification.
+//
+// The test scenarios include:
+// - Dataset with MountPoint "pvc://test" mapping directly to container path.
+// - Dataset with MountPoint "pvc://test1" having a container path without subpath.
+// - Dataset with MountPoint "pvc://test2/subpath" explicitly specifying a subpath.
+// - Dataset with MountPoint "pvc://test2/subpath" with an explicit path specification.
+//
+// Parameters:
+//   - runtime: An instance of AlluxioRuntime configuration.
+//   - dataset: A pointer to the Dataset struct containing dataset specifications.
+//   - value: A pointer to an Alluxio struct that is to be populated by the transformation.
+//
+// The function asserts that the transformDatasetToVolume method populates the 'value' parameter
+// with the expected UFSVolume configuration based on the provided dataset.
 func TestTransformDatasetToPVC(t *testing.T) {
 	var ufsVolume = UFSVolume{}
 	ufsVolume.Name = "test"
