@@ -588,7 +588,22 @@ func TestGetMediumTypeFromVolumeSource(t *testing.T) {
 	}
 }
 
+// TestAlluxioEngine_allocateSinglePort is a unit test function that tests 
+// the `allocateSinglePort` method of the `AlluxioEngine` struct.
+// The function verifies the behavior of port allocation for Alluxio master 
+// and worker components under different scenarios,
+// including when properties are set, unset, or when runtime specifications 
+// are provided.
+// 
+// Parameters:
+//   - t: A testing.T object provided by the Go testing framework, used to 
+// manage test state and support formatted test logs.
+//
+// Returns:
+//   - None. The function is a test function and does not return any value. 
+// It reports test failures using the `t.Errorf` method.
 func TestAlluxioEngine_allocateSinglePort(t *testing.T) {
+	// Define the fields required for the AlluxioEngine struct.
 	type fields struct {
 		runtime            *datav1alpha1.AlluxioRuntime
 		name               string
@@ -600,11 +615,13 @@ func TestAlluxioEngine_allocateSinglePort(t *testing.T) {
 		initImage          string
 		MetadataSyncDoneCh chan base.MetadataSyncResult
 	}
+	// Define the arguments required for the test cases.
 	type args struct {
 		allocatedPorts []int
 		alluxioValue   *Alluxio
 	}
 
+	// Define a slice of test cases, each with a name, fields, arguments, and expected results.
 	tests := []struct {
 		name      string
 		fields    fields
@@ -671,8 +688,10 @@ func TestAlluxioEngine_allocateSinglePort(t *testing.T) {
 			wantPorts: []int{20005},
 		},
 	}
+	// Iterate over each test case and run the test.
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Initialize the AlluxioEngine with the fields from the test case.
 			e := &AlluxioEngine{
 				runtime:            tt.fields.runtime,
 				name:               tt.fields.name,
@@ -685,6 +704,7 @@ func TestAlluxioEngine_allocateSinglePort(t *testing.T) {
 				MetadataSyncDoneCh: tt.fields.MetadataSyncDoneCh,
 			}
 
+			// Initialize index and preIndex to track the position in the allocated ports slice.
 			index := 0
 			preIndex := 0
 
