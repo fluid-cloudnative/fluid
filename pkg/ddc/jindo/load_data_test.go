@@ -132,6 +132,10 @@ func TestGenerateDataLoadValueFile(t *testing.T) {
 	}
 }
 
+//
+// Test_genDataLoadValue tests the accuracy of genDataLoadValue function in generating DataLoad configurations
+// - Verifies if generated DataLoad configurations match expectations under different parameter combinations
+// - Covers key scenarios: scheduler name setting, mount point configuration, runtime parameters
 func Test_genDataLoadValue(t *testing.T) {
 	testCases := map[string]struct {
 		image         string
