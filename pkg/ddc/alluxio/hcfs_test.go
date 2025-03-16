@@ -128,7 +128,27 @@ func TestGetHCFSStatus(t *testing.T) {
 	}
 
 }
+// This test function verifies the behavior of the `queryHCFSEndpoint` method in the Alluxio engine.
+    // It simulates different scenarios by creating mock Kubernetes Service objects and clients.
 
+    // Two mock Service objects are created:
+    // 1. A valid service (`service`) that represents a registered service.
+    // 2. An invalid service (`serviceWithErr`) that represents an unregistered service.
+
+    // These Service objects are added to a runtime object list, which is then used to create two fake clients:
+    // 1. `fakeClient` contains the valid service.
+    // 2. `fakeClientWithErr` contains the invalid service.
+
+    // The test defines three test cases:
+    // 1. "not-found": The service is not found, expecting an empty string and no error.
+    // 2. "not-register": The service is unregistered, expecting an empty string and no error.
+    // 3. "hbase": A valid service, expecting the correct HCFS endpoint and no error.
+
+    // For each test case, an Alluxio engine instance is created, and the `queryHCFSEndpoint` method is called.
+    // If the test case involves an unregistered service, the client with errors (`fakeClientWithErr`) is used.
+
+    // The test verifies that the output of the method matches the expected endpoint and that the error state is as expected.
+    // If the output or error state does not match the expected values, an error is logged.
 func TestQueryHCFSEndpoint(t *testing.T) {
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
