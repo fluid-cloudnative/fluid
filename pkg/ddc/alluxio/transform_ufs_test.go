@@ -138,7 +138,27 @@ func TestTransformDatasetToPVC(t *testing.T) {
 		}
 	}
 }
-
+// TestTransformDatasetWithAffinity is a unit test function that validates the transformation 
+// of datasets into volumes while considering node affinity settings. 
+// This function ensures that the Alluxio master's affinity configuration is correctly set 
+// based on the dataset's node affinity requirements.
+//
+// Parameters:
+// - t (*testing.T): The testing framework used to run the unit test.
+//
+// Returns:
+// - None: The function does not return a value but will report errors if the 
+//   transformation logic does not produce the expected results.
+//
+// This test function performs the following steps:
+// 1. Defines an expected UFSPath object with predefined HostPath and ContainerPath values.
+// 2. Sets up a test case to validate the transformation logic for a dataset with node affinity:
+//    - The dataset specifies a mount point and includes a CacheableNodeAffinity with a required 
+//      NodeSelectorTerm that matches nodes with a specific label value ("test-label-value").
+// 3. Initializes an AlluxioEngine instance and calls the transformDatasetToVolume method 
+//    for each test case, passing the runtime, dataset, and value objects.
+// 4. Verifies that the Alluxio master's affinity configuration (NodeAffinity) is not nil after 
+//    the transformation. If it is nil, an error is reported using t.Error.
 func TestTransformDatasetWithAffinity(t *testing.T) {
 	var ufsPath = UFSPath{}
 	ufsPath.Name = "test"
