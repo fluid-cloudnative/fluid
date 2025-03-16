@@ -144,6 +144,14 @@ func TestTransformResourcesForMaster(t *testing.T) {
 	}
 }
 
+// mockAlluxioRuntimeForMaster creates a mock AlluxioRuntime object with the specified
+// resource requirements for both the Master and JobMaster components.
+//
+// Parameters:
+// - res: corev1.ResourceRequirements specifying the resource requirements for the components.
+//
+// Returns:
+// - *datav1alpha1.AlluxioRuntime: A pointer to the created AlluxioRuntime object.
 func mockAlluxioRuntimeForMaster(res corev1.ResourceRequirements) *datav1alpha1.AlluxioRuntime {
 	runtime := &datav1alpha1.AlluxioRuntime{
 		Spec: datav1alpha1.AlluxioRuntimeSpec{
