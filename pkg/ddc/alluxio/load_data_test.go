@@ -465,6 +465,21 @@ func Test_genDataLoadValue(t *testing.T) {
 	}
 }
 
+// TestCheckRuntimeReady tests the CheckRuntimeReady function of the AlluxioEngine.
+// This function verifies whether the Alluxio runtime is ready by mocking the execution of container commands.
+// It uses two mock functions:
+// 1. mockExecCommon: Simulates a successful command execution.
+// 2. mockExecErr: Simulates a failed command execution.
+//
+// The test cases include:
+// 1. A successful runtime check, where the function should return true.
+// 2. A failed runtime check, where the function should return false.
+//
+// Parameters:
+// - t (*testing.T): The testing context for logging and error reporting.
+//
+// Returns:
+// - None. The function asserts the expected results and fails the test if the conditions are not met.
 func TestCheckRuntimeReady(t *testing.T) {
 	mockExecCommon := func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
 		return "", "", nil
