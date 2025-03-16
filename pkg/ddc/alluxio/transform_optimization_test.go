@@ -448,7 +448,32 @@ func TestAlluxioEngine_setPortProperties(t *testing.T) {
 		})
 	}
 }
-
+// TestOptimizeDefaultForFuseWithArgs conducts comprehensive validation of the optimizeDefaultFuse method's behavior across distinct parameter versioning contexts
+//
+// The evaluation encompasses two principal scenarios:
+// 
+// 1. Contemporary Fuse Argument Configuration (isNewFuseArgVersion=true):
+//    - Input Profile: AlluxioRuntime specification containing fuse parameters with fuse-opts directives
+//    - Expected Outcome: Automatic injection of mount path "/mnt/runtime" and root directory "/" arguments
+//    - Verification Protocol: Rigorous assertion of argument list completeness including appended paths
+//
+// 2. Legacy Fuse Argument Configuration (isNewFuseArgVersion=false):
+//    - Input Profile: AlluxioRuntime specification with conventional fuse parameters and fuse-opts
+//    - Expected Outcome: Preservation of original argument structure without path injection
+//    - Verification Protocol: Strict validation of parameter fidelity to initial configuration
+//
+// Test Case Architecture:
+// Each evaluation instance comprises:
+//   - runtime: AlluxioRuntime configuration object encapsulating fuse specifications
+//   - alluxioValue: Alluxio configuration entity with initialized empty fuse parameters
+//   - isNewFuseArgVersion: Boolean indicator for parameter version compliance
+//   - expectArgs: Precisely defined expected fuse argument array
+//
+// Execution Workflow:
+// 1. Instantiate AlluxioEngine component
+// 2. Execute optimizeDefaultFuse parameter transformation logic
+// 3. Perform deep reflective comparison between actual and expected arguments
+// 4. Generate diagnostic output for any detected discrepancies
 func TestOptimizeDefaultForFuseWithArgs(t *testing.T) {
 	var tests = []struct {
 		runtime             *datav1alpha1.AlluxioRuntime
