@@ -93,7 +93,12 @@ func TestTransformFuse(t *testing.T) {
 		}
 	}
 }
-
+// TestTransformMaster function is designed to test the transformMasters method of the AlluxioEngine struct.
+// This method processes a given AlluxioRuntime object to set properties in the Alluxio struct, specifically focusing on the HostNetwork and ImagePullSecrets fields within the Master attribute.
+// The function outlines several test cases, each containing a uniquely configured AlluxioRuntime object and the expected Alluxio object outcome.
+// These test cases cover various network modes (such as ContainerNetworkMode and HostNetworkMode) and hierarchical imagePullSecrets configurations.
+// After executing each test case, the actual result is compared with the expected outcome, and if there's a mismatch, an error is logged using t.Errorf.
+// This process ensures the accuracy of the transformMasters method under different configurations.
 func TestTransformMaster(t *testing.T) {
 	testCases := map[string]struct {
 		runtime   *datav1alpha1.AlluxioRuntime
