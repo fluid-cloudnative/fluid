@@ -183,7 +183,7 @@ func TestJuiceFSEngine_generateDataMigrateValueFile(t *testing.T) {
 		}
 	}
 }
-
+//确保genDataUrl方法能够正确解析PVC(Persistent Vlume Claim)类型的ExternalStronge URI，并生成正确的数据迁移路径和配置信息
 func TestJuiceFSEngine_genDataUrl_PVC(t *testing.T) {
 	type args struct {
 		data          v1alpha1.DataToMigrate
