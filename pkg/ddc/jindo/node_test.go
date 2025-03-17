@@ -37,18 +37,17 @@ import (
 )
 
 
-// getTestJindoEngineNode 创建并返回一个 JindoEngine 实例，用于测试。
-// 它根据参数 `withRunTime` 决定是否初始化 runtime 相关信息。
-// 
-// 参数：
-// - client: Kubernetes 客户端，用于操作 API 资源。
-// - name: JindoEngine 实例的名称。
-// - namespace: JindoEngine 所在的命名空间。
-// - withRunTime: 是否初始化 runtime 和 runtimeInfo。
+// getTestJindoEngineNode creates and returns a JindoEngine instance for testing.
+// It determines whether to initialize runtime-related information based on the `withRunTime` parameter.
 //
-// 返回值：
-// - *JindoEngine: 生成的 JindoEngine 实例。
-
+// Parameters:
+// - client: Kubernetes client used to interact with API resources.
+// - name: Name of the JindoEngine instance.
+// - namespace: Namespace where the JindoEngine instance is located.
+// - withRunTime: Whether to initialize runtime and runtimeInfo.
+//
+// Returns:
+// - *JindoEngine: The generated JindoEngine instance.。
 func getTestJindoEngineNode(client client.Client, name string, namespace string, withRunTime bool) *JindoEngine {
 	engine := &JindoEngine{
 		runtime:     nil,
@@ -64,8 +63,6 @@ func getTestJindoEngineNode(client client.Client, name string, namespace string,
 	}
 	return engine
 }
-
-
 
 func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 	type fields struct {
