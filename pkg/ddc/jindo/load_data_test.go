@@ -554,6 +554,17 @@ func Test_genDataLoadValue(t *testing.T) {
 	}
 }
 
+// TestGenerateDataLoadValueFileWithRuntimeHDD tests the generation of data load value files 
+// when using a JindoRuntime with an HDD-based tiered storage configuration.
+//
+// This function ensures that the dataset and JindoRuntime configurations are correctly initialized
+// and that the tiered storage settings, such as medium type (HDD), quota, and thresholds, are properly applied.
+//
+// Parameters:
+//   - t: The testing object provided by the Go testing framework.
+//
+// Returns:
+//   - None (but the test fails if the expected conditions are not met).
 func TestGenerateDataLoadValueFileWithRuntimeHDD(t *testing.T) {
 	datasetInputs := []datav1alpha1.Dataset{
 		{
