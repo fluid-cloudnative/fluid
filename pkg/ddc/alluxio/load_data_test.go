@@ -108,6 +108,18 @@ func TestGenerateDataLoadValueFile(t *testing.T) {
 	}
 }
 
+// Test_genDataLoadValue is a unit test function that tests the genDataLoadValue method of the AlluxioEngine struct.
+// It verifies the correctness of the DataLoadValue generation under different scenarios, including cases with scheduler name,
+// affinity, node selector, and tolerations. The function uses a map of test cases to compare the generated DataLoadValue
+// with the expected output. If there is a mismatch, the test will fail and report the discrepancy.
+//
+// Parameters:
+//   - t: A testing.T object used for managing test state and reporting test failures. It provides methods like Errorf and Fail
+//        to indicate test failures and log additional information.
+//
+// Returns:
+//   - None (This is a test function, so it does not return any value. Its purpose is to validate the behavior of the code
+//           under test and report any issues via the testing.T object.)
 func Test_genDataLoadValue(t *testing.T) {
 	testCases := map[string]struct {
 		image         string
