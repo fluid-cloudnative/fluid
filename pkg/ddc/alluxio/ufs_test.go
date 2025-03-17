@@ -112,29 +112,12 @@ func TestFreeStorageBytes(t *testing.T) {
 	}
 }
 
-
-
-
-// TestTotalStorageBytes 是对 AlluxioEngine 的 TotalStorageBytes 方法进行单元测试的测试函数
-// 该测试验证以下功能：
-// 1. 正确计算 Alluxio 运行时环境的总存储容量
-// 2. 正确处理底层命令执行可能出现的错误情况
-
-// 测试用例结构：
-// - fields: 包含 AlluxioRuntime 运行时对象和引擎名称的测试依赖项
-// - wantValue: 预期的总存储字节数
-// - wantErr: 期望是否返回错误
-
-// 测试流程：
-// 1. 使用 mock 函数替换容器命令执行逻辑（kubeclient.ExecCommandInContainerWithFullOutput）
-// 2. 创建 AlluxioEngine 实例并调用 TotalStorageBytes 方法
-// 3. 验证返回值和错误是否符合预期
-
-// 特殊说明：
-// - 使用 ApplyFunc 进行函数补丁，模拟容器内执行命令的响应
-// - 每个测试用例独立运行，保持测试隔离性
-// - 测试数据包含一个名为 "spark" 的 AlluxioRuntime 对象测试用例
-// - 预期值为 6,706,560,319 字节（约 6.7GB）
+// TestTotalStorageBytes verifies the functionality of AlluxioEngine's TotalStorageBytes method.
+// It validates whether the method correctly calculates total storage capacity by:
+// - Mocking AlluxioRuntime configuration and container command execution
+// - Testing both normal scenarios (expected values) and error conditions
+// - Using patched container command output to ensure predictable test results
+// Each test case checks if returned values match expectations and errors are properly handled.
 func TestTotalStorageBytes(t *testing.T) {
 	type fields struct {
 		runtime *datav1alpha1.AlluxioRuntime
