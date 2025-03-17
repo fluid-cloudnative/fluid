@@ -317,6 +317,27 @@ func TestJuiceFSEngine_genDataUrl_PVC(t *testing.T) {
 	}
 }
 
+// TestJuiceFSEngine_genDataUrl 测试 JuiceFSEngine 的 genDataUrl 函数
+//
+// 该函数用于生成数据迁移的 URL，支持以下两种数据源：
+// 1. 外部存储（ExternalStorage）：通过 URI 和加密选项生成带认证信息的 URL。
+// 2. 数据集存储（DataSet）：通过数据集信息和挂载点生成 JuiceFS 格式的 URL。
+//
+// 参数：
+//   - t *testing.T：测试框架的上下文对象，用于报告测试结果和错误。
+//
+// 测试用例：
+//   - test-external：测试外部存储的 URL 生成，验证是否正确地替换了加密选项。
+//   - test-external-subpath：测试外部存储子路径的 URL 生成。
+//   - test-external-subpath-file：测试外部存储子路径文件的 URL 生成。
+//   - test-dataset：测试数据集存储的 URL 生成，验证是否正确地处理了子路径。
+//   - test-dataset-no-path：测试数据集存储的 URL 生成（无子路径）。
+//   - test-dataset-subpath-file：测试数据集存储子路径文件的 URL 生成。
+//   - test-dataset-subpath-file2：测试数据集存储子路径文件的 URL 生成（带挂载点）。
+//   - test-dataset-subpath-file3：测试数据集存储子路径文件的 URL 生成（带挂载点，无子路径）。
+//
+// 返回值：
+//   - 无返回值，通过 t.Errorf 报告测试失败。
 func TestJuiceFSEngine_genDataUrl(t *testing.T) {
 	juicefsSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
