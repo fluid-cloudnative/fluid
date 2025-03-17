@@ -49,7 +49,11 @@ func init() {
 	_ = appsv1.AddToScheme(testScheme)
 }
 
+// TestSetupMasterInternal tests the setupMasterInternal function of JuiceFSEngine under various scenarios.
+// It covers cases where the Helm release exists, doesn't exist, encounters errors during checking/installation,
+// and verifies the correct handling of each situation through mock implementations and hook injections.
 func TestSetupMasterInternal(t *testing.T) {
+	// Mock implementations for helm.CheckRelease under different scenarios
 	mockExecCheckReleaseCommonFound := func(name string, namespace string) (exist bool, err error) {
 		return true, nil
 	}
@@ -59,6 +63,8 @@ func TestSetupMasterInternal(t *testing.T) {
 	mockExecCheckReleaseErr := func(name string, namespace string) (exist bool, err error) {
 		return false, errors.New("fail to check release")
 	}
+
+	// Mock implementations for helm.InstallRelease under different scenarios
 	mockExecInstallReleaseCommon := func(name string, namespace string, valueFile string, chartName string) error {
 		return nil
 	}
@@ -66,6 +72,7 @@ func TestSetupMasterInternal(t *testing.T) {
 		return errors.New("fail to install dataload chart")
 	}
 
+	// Helper functions for unhooking mocked implementations
 	wrappedUnhookCheckRelease := func() {
 		err := gohook.UnHook(helm.CheckRelease)
 		if err != nil {
@@ -79,6 +86,7 @@ func TestSetupMasterInternal(t *testing.T) {
 		}
 	}
 
+	// Setup test Kubernetes objects
 	juicefsSecret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
@@ -97,6 +105,7 @@ func TestSetupMasterInternal(t *testing.T) {
 	testObjs := []runtime.Object{}
 	testObjs = append(testObjs, (*juicefsruntime).DeepCopy(), (*juicefsSecret).DeepCopy())
 
+	// Create test dataset objects
 	var datasetInputs = []datav1alpha1.Dataset{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -123,11 +132,13 @@ func TestSetupMasterInternal(t *testing.T) {
 	}
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
+	// Build runtime information
 	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "juicefs")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
 
+	// Initialize JuiceFS engine instance
 	engine := JuiceFSEngine{
 		name:      "test",
 		namespace: "fluid",
@@ -140,12 +151,14 @@ func TestSetupMasterInternal(t *testing.T) {
 		},
 		runtimeInfo: runtimeInfo,
 	}
+
+	// Setup port allocator for testing
 	err = portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
 
-	// check release found
+	// Test case 1: Existing Helm release scenario
 	err = gohook.Hook(helm.CheckRelease, mockExecCheckReleaseCommonFound, nil)
 	if err != nil {
 		t.Fatal(err.Error())
@@ -156,7 +169,7 @@ func TestSetupMasterInternal(t *testing.T) {
 	}
 	wrappedUnhookCheckRelease()
 
-	// check release error
+	// Test case 2: Error during release check
 	err = gohook.Hook(helm.CheckRelease, mockExecCheckReleaseErr, nil)
 	if err != nil {
 		t.Fatal(err.Error())
@@ -167,13 +180,13 @@ func TestSetupMasterInternal(t *testing.T) {
 	}
 	wrappedUnhookCheckRelease()
 
-	// check release not found
+	// Test case 3: Missing Helm release scenario
 	err = gohook.Hook(helm.CheckRelease, mockExecCheckReleaseCommonNotFound, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
 
-	// install release with error
+	// Subcase 3a: Error during release installation
 	err = gohook.Hook(helm.InstallRelease, mockExecInstallReleaseErr, nil)
 	if err != nil {
 		t.Fatal(err.Error())
@@ -184,7 +197,7 @@ func TestSetupMasterInternal(t *testing.T) {
 	}
 	wrappedUnhookInstallRelease()
 
-	// install release successfully
+	// Subcase 3b: Successful release installation
 	err = gohook.Hook(helm.InstallRelease, mockExecInstallReleaseCommon, nil)
 	if err != nil {
 		t.Fatal(err.Error())
