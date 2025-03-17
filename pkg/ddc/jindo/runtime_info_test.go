@@ -27,6 +27,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// newJindoEngineRT creates a new JindoEngine instance for testing.
+// It initializes the engine with a default JindoRuntime and a null logger.
+// When withRuntimeInfo is true, it also builds and assigns the runtimeInfo using the
+// provided name, namespace, and common.JindoRuntime type. This helper is used in tests to
+// simulate different runtime configurations.
 func newJindoEngineRT(client client.Client, name string, namespace string, withRuntimeInfo bool) *JindoEngine {
 	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.JindoRuntime)
 	engine := &JindoEngine{
