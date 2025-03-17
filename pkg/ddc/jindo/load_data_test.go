@@ -653,6 +653,9 @@ func TestGenerateDataLoadValueFileWithRuntimeHDD(t *testing.T) {
 	}
 }
 
+
+// TestCheckRuntimeReady tests the CheckRuntimeReady function of the JindoEngine.
+// It verifies the behavior of the function by mocking the execution of commands in a Kubernetes container
 func TestCheckRuntimeReady(t *testing.T) {
 	mockExecCommon := func(podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
 		return "", "", nil
