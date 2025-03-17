@@ -744,6 +744,17 @@ func TestGetFuseDaemonsetName(t *testing.T) {
 	}
 }
 
+// TestGetMountPoint tests the AlluxioEngine.getMountPoint method to ensure it correctly constructs
+// the mount point path. The test verifies the path concatenation logic using configured MountRoot,
+// namespace, and engine name parameters to validate the resulting filesystem path.
+//
+// Parameters:
+//  - t : *testing.T
+//    Testing framework handle for managing test state and reporting failures
+//
+// Returns:
+//  - None
+//    Failures are reported through t.Errorf
 func TestGetMountPoint(t *testing.T) {
 	type fields struct {
 		name      string
