@@ -653,7 +653,7 @@ func TestGenerateDataLoadValueFileWithRuntimeHDD(t *testing.T) {
 	}
 }
 
-
+// for test
 // TestCheckRuntimeReady tests the CheckRuntimeReady function of the JindoEngine.
 // It verifies the behavior of the function by mocking the execution of commands in a Kubernetes container
 func TestCheckRuntimeReady(t *testing.T) {
