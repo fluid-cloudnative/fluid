@@ -58,6 +58,14 @@ func parseCacheInfoFromConfigMap(configMap *v1.ConfigMap) (cacheinfo map[string]
 	return configmapinfo, nil
 }
 
+// GetFSInfoFromConfigMap retrieves file system information from a specified ConfigMap.
+// Parameters:
+//   - client: A Kubernetes client used to interact with the cluster.
+//   - name: The base name of the target ConfigMap.
+//   - namespace: The namespace where the ConfigMap is located.
+// Returns:
+//   - A map containing file system information parsed from the ConfigMap.
+//   - An error if the ConfigMap retrieval or parsing fails.
 func GetFSInfoFromConfigMap(client client.Client, name string, namespace string) (info map[string]string, err error) {
 	configMapName := fmt.Sprintf("%s-juicefs-values", name)
 	configMap, err := kubeclient.GetConfigmapByName(client, configMapName, namespace)
