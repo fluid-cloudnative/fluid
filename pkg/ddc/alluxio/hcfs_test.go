@@ -128,28 +128,30 @@ func TestGetHCFSStatus(t *testing.T) {
 	}
 
 }
-// This test function verifies the behavior of the `queryHCFSEndpoint` method in the Alluxio engine.
-// It simulates different scenarios by creating mock Kubernetes Service objects and clients.
 
-// Two mock Service objects are created:
-// 1. A valid service (`service`) that represents a registered service.
-// 2. An invalid service (`serviceWithErr`) that represents an unregistered service.
-
-// These Service objects are added to a runtime object list, which is then used to create two fake clients:
-// 1. `fakeClient` contains the valid service.
-// 2. `fakeClientWithErr` contains the invalid service.
-
-// The test defines three test cases:
-// 1. "not-found": The service is not found, expecting an empty string and no error.
-// 2. "not-register": The service is unregistered, expecting an empty string and no error.
-// 3. "hbase": A valid service, expecting the correct HCFS endpoint and no error.
-
-// For each test case, an Alluxio engine instance is created, and the `queryHCFSEndpoint` method is called.
-// If the test case involves an unregistered service, the client with errors (`fakeClientWithErr`) is used.
-
-// The test verifies that the output of the method matches the expected endpoint and that the error state is as expected.
-// If the output or error state does not match the expected values, an error is logged.
-
+// TestQueryHCFSEndpoint verifies the behavior of AlluxioEngine's HCFS endpoint query functionality.
+// This test validates three main scenarios:
+// 1. Service Not Found: When the specified Service resource doesn't exist in the cluster
+// 2. Unregistered Service: When the Service exists but lacks proper registration (invalid scheme configuration)
+// 3. Normal Case: When a properly configured Service exists with expected annotations and port configuration
+// 
+// Test Setup:
+// - Creates mock Service resources with different configurations:
+//   * Valid service "hbase-master-0" with port 2333 and fluid annotations
+//   * Invalid service "not-register-master-0" without proper registration
+// - Uses two fake Kubernetes clients:
+//   * Normal client with complete scheme configuration
+//   * Error-injected client with incomplete scheme to simulate registration issues
+// 
+// Test Cases:
+// - "not-found": Verifies empty return and no error when service doesn't exist
+// - "not-register": Tests error handling when service exists but client scheme is misconfigured
+// - "hbase": Validates correct endpoint URL construction ("alluxio://hbase-master-0.fluid:2333")
+// 
+// Assertions:
+// - Compares returned endpoint string with expected values
+// - Verifies error presence matches test case expectations
+// - Validates proper handling of Kubernetes API interactions and DNS naming conventions
 func TestQueryHCFSEndpoint(t *testing.T) {
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
