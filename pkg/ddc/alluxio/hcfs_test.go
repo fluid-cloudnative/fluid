@@ -129,29 +129,59 @@ func TestGetHCFSStatus(t *testing.T) {
 
 }
 
-// TestQueryHCFSEndpoint verifies the behavior of AlluxioEngine's HCFS endpoint query functionality.
-// This test validates three main scenarios:
-// 1. Service Not Found: When the specified Service resource doesn't exist in the cluster
-// 2. Unregistered Service: When the Service exists but lacks proper registration (invalid scheme configuration)
-// 3. Normal Case: When a properly configured Service exists with expected annotations and port configuration
-// 
-// Test Setup:
-// - Creates mock Service resources with different configurations:
-//   * Valid service "hbase-master-0" with port 2333 and fluid annotations
-//   * Invalid service "not-register-master-0" without proper registration
-// - Uses two fake Kubernetes clients:
-//   * Normal client with complete scheme configuration
-//   * Error-injected client with incomplete scheme to simulate registration issues
-// 
-// Test Cases:
-// - "not-found": Verifies empty return and no error when service doesn't exist
-// - "not-register": Tests error handling when service exists but client scheme is misconfigured
-// - "hbase": Validates correct endpoint URL construction ("alluxio://hbase-master-0.fluid:2333")
-// 
-// Assertions:
-// - Compares returned endpoint string with expected values
-// - Verifies error presence matches test case expectations
-// - Validates proper handling of Kubernetes API interactions and DNS naming conventions
+// TestQueryHCFSEndpoint comprehensively validates the HCFS endpoint resolution logic in AlluxioEngine.
+// This test suite ensures correct handling of various Kubernetes service discovery scenarios and 
+// proper construction of HCFS endpoints following Alluxio's connection pattern.
+
+// Key Focus Areas:
+// - Service discovery through Kubernetes API
+// - Annotation-based service filtering (using common.ExpectedFluidAnnotations)
+// - Endpoint URL formatting with DNS naming conventions
+// - Error resilience for missing/misconfigured services
+
+// Environment Simulation:
+// 1. Mock Kubernetes Cluster Setup:
+//    - Creates 2 mock Service resources:
+//      a) Valid Service: 
+//         - Name: "hbase-master-0", Namespace: "fluid"
+//         - Annotations: Matching fluid system requirements
+//         - Port Configuration: RPC port 2333 exposed
+//      b) Invalid Service:
+//         - Name: "not-register-master-0"
+//         - Missing critical registration attributes
+//    - Implements dual client configurations:
+//      a) Fully functional client with proper scheme registration
+//      b) Defective client with incomplete scheme to simulate registration failures
+
+// Test Matrix:
+// [1] Non-existent Service Handling ("not-found"):
+//     - Objective: Verify graceful handling of missing services
+//     - Expected: Empty endpoint, no error returned
+
+// [2] Misregistered Service Scenario ("not-register"):
+//     - Objective: Test error containment for scheme mismatches
+//     - Special Setup: Uses deliberately misconfigured client
+//     - Expected: Empty endpoint with suppressed error
+
+// [3] Normal Operational Case ("hbase"):
+//     - Objective: Validate correct endpoint assembly
+//     - Verification Points:
+//       * Service name to DNS conversion (hbase-master-0 -> hbase-master-0.fluid)
+//       * Port number integration
+//       * Protocol prefix application ("alluxio://")
+//     - Expected: "alluxio://hbase-master-0.fluid:2333"
+
+// Validation Methodology:
+// 1. Cross-verify generated endpoint against predefined patterns
+// 2. Error state analysis using error/nil checks
+// 3. Client operation simulation with fake.RuntimeObjects
+// 4. Scheme configuration testing through API surface validation
+
+// Critical Dependencies:
+// - Kubernetes Service naming conventions
+// - Fluid system annotation requirements
+// - Alluxio connection string specifications
+// - Go-client testing framework behavior
 func TestQueryHCFSEndpoint(t *testing.T) {
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
