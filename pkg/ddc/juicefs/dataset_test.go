@@ -245,6 +245,16 @@ func TestUpdateDatasetStatus(t *testing.T) {
 	}
 }
 
+// TestBindToDataset verifies the functionality of the BindToDataset method in the JuiceFSEngine struct.
+// It initializes test datasets and JuiceFS runtime objects, creates a fake client, and invokes the method.
+// The test checks if the dataset's status is updated correctly to the expected bound phase, with cache states
+// and HCFS status properly reflected. If the function does not produce the expected results, it logs an error.
+//
+// Parameters:
+// - t *testing.T: The testing framework's instance used to report errors and manage test execution.
+//
+// Returns:
+// - This function does not return a value but reports test failures using t.Errorf().
 func TestBindToDataset(t *testing.T) {
 	testDatasetInputs := []*datav1alpha1.Dataset{
 		{
