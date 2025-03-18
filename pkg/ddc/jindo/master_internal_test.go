@@ -34,45 +34,68 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 )
 
+// TestSetupMasterInternal is a unit test function that verifies the behavior of the setupMasterInternal function in the JindoEngine.
+// It leverages mock functions and gohook to simulate various scenarios related to checking and installing Helm releases.
+// The test cases include:
+// 1. Handling errors when creating runtime information.
+// 2. Handling different responses when checking for Helm releases, including:
+//    - The release is found.
+//    - The release is not found.
+//    - An error occurs while checking the release.
+// 3. Handling different responses when installing a Helm release, including:
+//    - Successful installation.
+//    - Failure to install the release.
+// 4. Setting up a fake Kubernetes client with test objects to simulate real interactions.
+// 5. Using gohook to dynamically hook and unhook function calls to test various outcomes.
 func TestSetupMasterInternal(t *testing.T) {
 	mockExecCheckReleaseCommonFound := func(name string, namespace string) (exist bool, err error) {
+		// Simulates that the Helm release exists and no error occurs.
 		return true, nil
 	}
 	mockExecCheckReleaseCommonNotFound := func(name string, namespace string) (exist bool, err error) {
+		// Simulates that the Helm release does not exist.
 		return false, nil
 	}
 	mockExecCheckReleaseErr := func(name string, namespace string) (exist bool, err error) {
+		// Simulates an error while checking for the Helm release.
 		return false, errors.New("fail to check release")
 	}
 	mockExecInstallReleaseCommon := func(name string, namespace string, valueFile string, chartName string) error {
+		// Simulates a successful Helm release installation.
 		return nil
 	}
 	mockExecInstallReleaseErr := func(name string, namespace string, valueFile string, chartName string) error {
+		// Simulates a failure in installing the Helm release.
 		return errors.New("fail to install dataload chart")
 	}
 
 	wrappedUnhookCheckRelease := func() {
+		// Unhooks the mock function for helm.CheckRelease and logs a fatal error if it fails.
 		err := gohook.UnHook(helm.CheckRelease)
 		if err != nil {
 			t.Fatal(err.Error())
 		}
 	}
 	wrappedUnhookInstallRelease := func() {
+		// Unhooks the mock function for helm.InstallRelease and logs a fatal error if it fails.
 		err := gohook.UnHook(helm.InstallRelease)
 		if err != nil {
 			t.Fatal(err.Error())
 		}
 	}
 
+	// Creates a mock JindoRuntime object in the "fluid" namespace.
 	allixioruntime := &datav1alpha1.JindoRuntime{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "hbase",
 			Namespace: "fluid",
 		},
 	}
+	// Initializes a slice of runtime objects with the JindoRuntime instance.
 	testObjs := []runtime.Object{}
 	testObjs = append(testObjs, (*allixioruntime).DeepCopy())
 
+	// Creates dataset objects and adds them to testObjs for simulating Kubernetes resources.
 	datasetInputs := []datav1alpha1.Dataset{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -84,13 +107,17 @@ func TestSetupMasterInternal(t *testing.T) {
 	for _, datasetInput := range datasetInputs {
 		testObjs = append(testObjs, datasetInput.DeepCopy())
 	}
+
+	// Initializes a fake Kubernetes client with test objects.
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
+	// Builds runtime information for the JindoRuntime.
 	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "jindo")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
 
+	// Initializes the JindoEngine instance with test parameters.
 	engine := JindoEngine{
 		name:      "hbase",
 		namespace: "fluid",
@@ -105,17 +132,20 @@ func TestSetupMasterInternal(t *testing.T) {
 		},
 		runtimeInfo: runtimeInfo,
 	}
+
+	// Sets up the runtime port allocator.
 	err = portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
+
+	// Test case: Ensures setupMasterInternal catches an error when no release is found.
 	err = engine.setupMasterInernal()
 	if err == nil {
 		t.Errorf("fail to catch the error")
 	}
 
-	// create configmap successfully
-	// check release found
+	// Test case: Hook helm.CheckRelease with mockExecCheckReleaseCommonFound to simulate the release being found.
 	err = gohook.Hook(helm.CheckRelease, mockExecCheckReleaseCommonFound, nil)
 	if err != nil {
 		t.Fatal(err.Error())
@@ -123,7 +153,7 @@ func TestSetupMasterInternal(t *testing.T) {
 	_ = engine.setupMasterInernal()
 	wrappedUnhookCheckRelease()
 
-	// check release error
+	// Test case: Hook helm.CheckRelease with mockExecCheckReleaseErr to simulate an error while checking the release.
 	err = gohook.Hook(helm.CheckRelease, mockExecCheckReleaseErr, nil)
 	if err != nil {
 		t.Fatal(err.Error())
@@ -134,13 +164,13 @@ func TestSetupMasterInternal(t *testing.T) {
 	}
 	wrappedUnhookCheckRelease()
 
-	// check release not found
+	// Test case: Hook helm.CheckRelease with mockExecCheckReleaseCommonNotFound to simulate the release not being found.
 	err = gohook.Hook(helm.CheckRelease, mockExecCheckReleaseCommonNotFound, nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
 
-	// install release with error
+	// Test case: Hook helm.InstallRelease with mockExecInstallReleaseErr to simulate a failed installation.
 	err = gohook.Hook(helm.InstallRelease, mockExecInstallReleaseErr, nil)
 	if err != nil {
 		t.Fatal(err.Error())
@@ -151,7 +181,7 @@ func TestSetupMasterInternal(t *testing.T) {
 	}
 	wrappedUnhookInstallRelease()
 
-	// install release successfully
+	// Test case: Hook helm.InstallRelease with mockExecInstallReleaseCommon to simulate a successful installation.
 	err = gohook.Hook(helm.InstallRelease, mockExecInstallReleaseCommon, nil)
 	if err != nil {
 		t.Fatal(err.Error())
