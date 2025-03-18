@@ -134,7 +134,7 @@ func TestGetHCFSStatus(t *testing.T) {
 // 1. Service Not Found: When the specified Service resource doesn't exist in the cluster
 // 2. Unregistered Service: When the Service exists but lacks proper registration (invalid scheme configuration)
 // 3. Normal Case: When a properly configured Service exists with expected annotations and port configuration
-// Test Setup:
+// Setup:
 // - Creates mock Service resources with different configurations:
 // * Valid service "hbase-master-0" with port 2333 and fluid annotations
 // * Invalid service "not-register-master-0" without proper registration
