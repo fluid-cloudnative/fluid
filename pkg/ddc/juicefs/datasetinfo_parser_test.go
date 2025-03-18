@@ -68,49 +68,65 @@ func TestGetCacheInfoFromConfigmap(t *testing.T) {
 
 }
 
+// 定义测试函数 Test_parseCacheInfoFromConfigMap，用于测试 parseCacheInfoFromConfigMap 函数的功能
 func Test_parseCacheInfoFromConfigMap(t *testing.T) {
-	type args struct {
-		configMap *v1.ConfigMap
-	}
-	tests := []struct {
-		name          string
-		args          args
-		wantCacheInfo map[string]string
-		wantErr       bool
-	}{
-		{
-			name: "parseCacheInfoFromConfigMap",
-			args: args{configMap: &v1.ConfigMap{
-				Data: map[string]string{
-					"data": valuesConfigMapData,
-				},
-			}},
-			wantCacheInfo: map[string]string{"mountpath": "/runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse", "edition": "community"},
-			wantErr:       false,
-		},
-		{
-			name: "parseCacheInfoFromConfigMap-err",
-			args: args{configMap: &v1.ConfigMap{
-				Data: map[string]string{
-					"data": `test`,
-				},
-			}},
-			wantCacheInfo: nil,
-			wantErr:       true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotPorts, err := parseCacheInfoFromConfigMap(tt.args.configMap)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("parseCacheInfoFromConfigMap() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(gotPorts, tt.wantCacheInfo) {
-				t.Errorf("parseCacheInfoFromConfigMap() gotPorts = %v, want %v", gotPorts, tt.wantCacheInfo)
-			}
-		})
-	}
+    // 定义 args 结构体，用于表示测试用例的输入参数
+    type args struct {
+        configMap *v1.ConfigMap // configMap 是测试函数的输入参数，类型为 *v1.ConfigMap
+    }
+
+    // 定义测试用例集合
+    tests := []struct {
+        name          string            // 测试用例的名称
+        args          args              // 测试用例的输入参数
+        wantCacheInfo map[string]string // 期望的缓存信息结果
+        wantErr       bool              // 是否期望返回错误
+    }{
+        // 第一个测试用例：正常解析 ConfigMap 数据
+        {
+            name: "parseCacheInfoFromConfigMap", // 测试用例名称
+            args: args{configMap: &v1.ConfigMap{ // 输入参数
+                Data: map[string]string{ // ConfigMap 的数据字段
+                    "data": valuesConfigMapData, // 假设 valuesConfigMapData 是一个预定义的字符串，包含有效的配置数据
+                },
+            }},
+            wantCacheInfo: map[string]string{ // 期望的缓存信息结果
+                "mountpath": "/runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse", // 预期的挂载路径
+                "edition":   "community", // 预期的版本信息
+            },
+            wantErr: false, // 不期望返回错误
+        },
+        // 第二个测试用例：解析错误的 ConfigMap 数据
+        {
+            name: "parseCacheInfoFromConfigMap-err", // 测试用例名称
+            args: args{configMap: &v1.ConfigMap{ // 输入参数
+                Data: map[string]string{ // ConfigMap 的数据字段
+                    "data": `test`, // 无效的配置数据
+                },
+            }},
+            wantCacheInfo: nil, // 期望的缓存信息结果为 nil
+            wantErr:       true, // 期望返回错误
+        },
+    }
+
+    // 遍历测试用例集合，逐个运行测试
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) { // 使用 t.Run 运行子测试
+            // 调用待测试的函数 parseCacheInfoFromConfigMap，获取返回值和错误
+            gotPorts, err := parseCacheInfoFromConfigMap(tt.args.configMap)
+
+            // 检查错误是否符合预期
+            if (err != nil) != tt.wantErr {
+                t.Errorf("parseCacheInfoFromConfigMap() error = %v, wantErr %v", err, tt.wantErr)
+                return
+            }
+
+            // 检查返回的缓存信息是否符合预期
+            if !reflect.DeepEqual(gotPorts, tt.wantCacheInfo) {
+                t.Errorf("parseCacheInfoFromConfigMap() gotPorts = %v, want %v", gotPorts, tt.wantCacheInfo)
+            }
+        })
+    }
 }
 
 func TestGetFSInfoFromConfigMap(t *testing.T) {
