@@ -29,7 +29,6 @@ import (
 	"k8s.io/client-go/util/retry"
 )
 
-
 // UpdateDatasetStatus updates the status of a dataset in the JindoEngine.
 // This function is primarily responsible for updating the phase and conditions of the dataset based on the given phase,
 // and updating the cache state based on the runtime status.
