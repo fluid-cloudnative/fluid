@@ -129,6 +129,59 @@ func TestGetHCFSStatus(t *testing.T) {
 
 }
 
+// TestQueryHCFSEndpoint comprehensively validates the HCFS endpoint resolution logic in AlluxioEngine.
+// This test suite ensures correct handling of various Kubernetes service discovery scenarios and 
+// proper construction of HCFS endpoints following Alluxio's connection pattern.
+
+// Key Focus Areas:
+// - Service discovery through Kubernetes API
+// - Annotation-based service filtering (using common.ExpectedFluidAnnotations)
+// - Endpoint URL formatting with DNS naming conventions
+// - Error resilience for missing/misconfigured services
+
+// Environment Simulation:
+// 1. Mock Kubernetes Cluster Setup:
+//    - Creates 2 mock Service resources:
+//      a) Valid Service: 
+//         - Name: "hbase-master-0", Namespace: "fluid"
+//         - Annotations: Matching fluid system requirements
+//         - Port Configuration: RPC port 2333 exposed
+//      b) Invalid Service:
+//         - Name: "not-register-master-0"
+//         - Missing critical registration attributes
+//    - Implements dual client configurations:
+//      a) Fully functional client with proper scheme registration
+//      b) Defective client with incomplete scheme to simulate registration failures
+
+// Test Matrix:
+// [1] Non-existent Service Handling ("not-found"):
+//     - Objective: Verify graceful handling of missing services
+//     - Expected: Empty endpoint, no error returned
+
+// [2] Misregistered Service Scenario ("not-register"):
+//     - Objective: Test error containment for scheme mismatches
+//     - Special Setup: Uses deliberately misconfigured client
+//     - Expected: Empty endpoint with suppressed error
+
+// [3] Normal Operational Case ("hbase"):
+//     - Objective: Validate correct endpoint assembly
+//     - Verification Points:
+//       * Service name to DNS conversion (hbase-master-0 -> hbase-master-0.fluid)
+//       * Port number integration
+//       * Protocol prefix application ("alluxio://")
+//     - Expected: "alluxio://hbase-master-0.fluid:2333"
+
+// Validation Methodology:
+// 1. Cross-verify generated endpoint against predefined patterns
+// 2. Error state analysis using error/nil checks
+// 3. Client operation simulation with fake.RuntimeObjects
+// 4. Scheme configuration testing through API surface validation
+
+// Critical Dependencies:
+// - Kubernetes Service naming conventions
+// - Fluid system annotation requirements
+// - Alluxio connection string specifications
+// - Go-client testing framework behavior
 func TestQueryHCFSEndpoint(t *testing.T) {
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
