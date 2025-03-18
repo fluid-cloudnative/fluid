@@ -657,6 +657,14 @@ func TestGetMasterPodInfo(t *testing.T) {
 	}
 }
 
+// TestGetMasterStatefulsetName verifies the functionality of getMasterName method in the AlluxioEngine struct.
+// This test ensures that the correct StatefulSet name is generated based on the name of the Alluxio engine.
+//
+// Parameters:
+//   - t (testing.T): The test object used to run the test case.
+//
+// Returns:
+//   - None.
 func TestGetMasterStatefulsetName(t *testing.T) {
 	type fields struct {
 		name string
