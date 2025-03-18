@@ -104,7 +104,21 @@ func TestUpdateCacheOfDataset(t *testing.T) {
 	}
 }
 
+// TestUpdateDatasetStatus is a unit test function to verify the correctness of the UpdateDatasetStatus method 
+// in the AlluxioEngine struct. This method is responsible for updating the status of a Dataset.
+//
+// Test procedure:
+// 1. Create test datasets and runtime objects to simulate Kubernetes resources.
+// 2. Use a fake client to manage these objects.
+// 3. Initialize an instance of AlluxioEngine with test data.
+// 4. Define test cases with different DatasetPhase values and expected results.
+// 5. Execute UpdateDatasetStatus for each test case.
+// 6. Validate whether the updated Dataset status matches the expected results, including Phase, CacheStates, and HCFSStatus.
+// 7. If any test fails, output an error message.
+//
+// This test ensures that UpdateDatasetStatus correctly updates the Dataset's status and handles different DatasetPhase transitions properly.
 func TestUpdateDatasetStatus(t *testing.T) {
+	// Create test dataset inputs
 	testDatasetInputs := []*datav1alpha1.Dataset{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -120,11 +134,14 @@ func TestUpdateDatasetStatus(t *testing.T) {
 			},
 		},
 	}
+
+	// Convert dataset inputs into runtime objects for the fake client
 	testObjs := []runtime.Object{}
 	for _, datasetInput := range testDatasetInputs {
 		testObjs = append(testObjs, datasetInput.DeepCopy())
 	}
 
+	// Create test runtime inputs
 	testRuntimeInputs := []*datav1alpha1.AlluxioRuntime{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -143,11 +160,16 @@ func TestUpdateDatasetStatus(t *testing.T) {
 			},
 		},
 	}
+
+	// Convert runtime inputs into runtime objects for the fake client
 	for _, runtimeInput := range testRuntimeInputs {
 		testObjs = append(testObjs, runtimeInput.DeepCopy())
 	}
+
+	// Create a fake client with test objects
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
+	// Initialize AlluxioEngine instance
 	engine := &AlluxioEngine{
 		Client:    client,
 		Log:       fake.NullLogger(),
@@ -156,6 +178,7 @@ func TestUpdateDatasetStatus(t *testing.T) {
 		runtime:   testRuntimeInputs[0],
 	}
 
+	// Define test cases with different dataset phases and expected results
 	var testCase = []struct {
 		phase          datav1alpha1.DatasetPhase
 		expectedResult datav1alpha1.Dataset
@@ -228,27 +251,33 @@ func TestUpdateDatasetStatus(t *testing.T) {
 		},
 	}
 
+	// Execute test cases
 	for _, test := range testCase {
+		// Update dataset status using the engine method
 		err := engine.UpdateDatasetStatus(test.phase)
 		if err != nil {
-			t.Errorf("fail to exec UpdateCacheOfDataset with error %v", err)
+			t.Errorf("failed to execute UpdateDatasetStatus with error: %v", err)
 			return
 		}
 
+		// Retrieve the updated dataset list
 		var datasets datav1alpha1.DatasetList
 		err = client.List(context.TODO(), &datasets)
 		if err != nil {
-			t.Errorf("fail to list the datasets with error %v", err)
+			t.Errorf("failed to list datasets with error: %v", err)
 			return
 		}
+
+		// Validate the dataset status matches the expected result
 		if !reflect.DeepEqual(datasets.Items[0].Status.Phase, test.expectedResult.Status.Phase) ||
 			!reflect.DeepEqual(datasets.Items[0].Status.CacheStates, test.expectedResult.Status.CacheStates) ||
 			!reflect.DeepEqual(datasets.Items[0].Status.HCFSStatus, test.expectedResult.Status.HCFSStatus) {
-			t.Errorf("fail to exec the function with error %v", err)
+			t.Errorf("unexpected dataset status, expected: %+v, got: %+v", test.expectedResult.Status, datasets.Items[0].Status)
 			return
 		}
 	}
 }
+
 
 func TestBindToDataset(t *testing.T) {
 	testDatasetInputs := []*datav1alpha1.Dataset{
