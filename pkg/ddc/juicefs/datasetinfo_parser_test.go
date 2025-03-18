@@ -68,72 +68,79 @@ func TestGetCacheInfoFromConfigmap(t *testing.T) {
 
 }
 
-// Test_parseCacheInfoFromConfigMap 是 parseCacheInfoFromConfigMap 函数的单元测试函数。
-// 该测试函数用于验证 parseCacheInfoFromConfigMap 函数是否能够正确解析 ConfigMap 中的数据，
-// 并返回预期的缓存信息，同时检查函数在不同输入条件下的错误处理是否符合预期。
+// Test_parseCacheInfoFromConfigMap is a unit test function for the parseCacheInfoFromConfigMap function.
+// This test function verifies whether parseCacheInfoFromConfigMap correctly parses data from a ConfigMap
+// and returns the expected cache information. It also checks if the function handles errors as expected
+// under different input conditions.
 //
-// 测试用例设计：
-// 1. 正常用例：输入包含有效数据的 ConfigMap，验证函数是否能正确解析并返回缓存信息。
-// 2. 错误用例：输入包含无效数据的 ConfigMap，验证函数是否能正确处理错误并返回预期结果。
+// Test Cases:
+// 1. Normal Case: Input a ConfigMap with valid data, and verify if the function correctly parses and returns the cache information.
+// 2. Error Case: Input a ConfigMap with invalid data, and verify if the function handles the error and returns the expected result.
 //
-// 输入：
-// - 无显式输入参数，测试用例通过结构体定义。
+// Input:
+// - No explicit input parameters; test cases are defined via a struct.
 //
-// 输出：
-// - 无显式返回值，测试结果通过 testing.T 的方法输出。
+// Output:
+// - No explicit return value; test results are reported using methods from testing.T.
 func Test_parseCacheInfoFromConfigMap(t *testing.T) {
-    // 定义 args 结构体，用于表示测试用例的输入参数
+    // args struct defines the input parameters for the test cases.
+    // configMap is the input parameter for parseCacheInfoFromConfigMap, of type *v1.ConfigMap.
     type args struct {
-        configMap *v1.ConfigMap // configMap 是测试函数的输入参数，类型为 *v1.ConfigMap
+        configMap *v1.ConfigMap
     }
 
-    // 定义测试用例集合
+    // Define a set of test cases. Each test case contains the following fields:
+    // - name: The name of the test case, used to identify the test scenario.
+    // - args: The input parameters for the test case, of type args.
+    // - wantCacheInfo: The expected cache information result, of type map[string]string.
+    // - wantErr: Whether an error is expected.
     tests := []struct {
-        name          string            // 测试用例的名称
-        args          args              // 测试用例的输入参数
-        wantCacheInfo map[string]string // 期望的缓存信息结果
-        wantErr       bool              // 是否期望返回错误
+        name          string            // Name of the test case
+        args          args              // Input parameters for the test case
+        wantCacheInfo map[string]string // Expected cache information result
+        wantErr       bool              // Whether an error is expected
     }{
-        // 第一个测试用例：正常解析 ConfigMap 数据
+        // First test case: Normal parsing of ConfigMap data
         {
-            name: "parseCacheInfoFromConfigMap", // 测试用例名称
-            args: args{configMap: &v1.ConfigMap{ // 输入参数
-                Data: map[string]string{ // ConfigMap 的数据字段
-                    "data": valuesConfigMapData, // 假设 valuesConfigMapData 是一个预定义的字符串，包含有效的配置数据
+            name: "parseCacheInfoFromConfigMap", // Name of the test case
+            args: args{configMap: &v1.ConfigMap{ // Input parameters
+                Data: map[string]string{ // Data field of the ConfigMap
+                    "data": valuesConfigMapData, // Assume valuesConfigMapData is a predefined string containing valid configuration data
                 },
             }},
-            wantCacheInfo: map[string]string{ // 期望的缓存信息结果
-                "mountpath": "/runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse", // 预期的挂载路径
-                "edition":   "community", // 预期的版本信息
+            wantCacheInfo: map[string]string{ // Expected cache information result
+                "mountpath": "/runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse", // Expected mount path
+                "edition":   "community", // Expected edition information
             },
-            wantErr: false, // 不期望返回错误
+            wantErr: false, // No error is expected
         },
-        // 第二个测试用例：解析错误的 ConfigMap 数据
+        // Second test case: Parsing invalid ConfigMap data
         {
-            name: "parseCacheInfoFromConfigMap-err", // 测试用例名称
-            args: args{configMap: &v1.ConfigMap{ // 输入参数
-                Data: map[string]string{ // ConfigMap 的数据字段
-                    "data": `test`, // 无效的配置数据
+            name: "parseCacheInfoFromConfigMap-err", // Name of the test case
+            args: args{configMap: &v1.ConfigMap{ // Input parameters
+                Data: map[string]string{ // Data field of the ConfigMap
+                    "data": `test`, // Invalid configuration data
                 },
             }},
-            wantCacheInfo: nil, // 期望的缓存信息结果为 nil
-            wantErr:       true, // 期望返回错误
+            wantCacheInfo: nil, // Expected cache information result is nil
+            wantErr:       true, // An error is expected
         },
     }
 
-    // 遍历测试用例集合，逐个运行测试
+    // Iterate through the test cases and run each test
     for _, tt := range tests {
-        t.Run(tt.name, func(t *testing.T) { // 使用 t.Run 运行子测试
-            // 调用待测试的函数 parseCacheInfoFromConfigMap，获取返回值和错误
+        // Use t.Run to execute the subtest, with the subtest name as tt.name
+        t.Run(tt.name, func(t *testing.T) {
+            // Call the function under test, parseCacheInfoFromConfigMap, and get the return value and error
             gotPorts, err := parseCacheInfoFromConfigMap(tt.args.configMap)
 
-            // 检查错误是否符合预期
+            // Check if the error matches the expectation
             if (err != nil) != tt.wantErr {
                 t.Errorf("parseCacheInfoFromConfigMap() error = %v, wantErr %v", err, tt.wantErr)
                 return
             }
 
-            // 检查返回的缓存信息是否符合预期
+            // Check if the returned cache information matches the expectation
             if !reflect.DeepEqual(gotPorts, tt.wantCacheInfo) {
                 t.Errorf("parseCacheInfoFromConfigMap() gotPorts = %v, want %v", gotPorts, tt.wantCacheInfo)
             }
