@@ -68,7 +68,19 @@ func TestGetCacheInfoFromConfigmap(t *testing.T) {
 
 }
 
-// 定义测试函数 Test_parseCacheInfoFromConfigMap，用于测试 parseCacheInfoFromConfigMap 函数的功能
+// Test_parseCacheInfoFromConfigMap 是 parseCacheInfoFromConfigMap 函数的单元测试函数。
+// 该测试函数用于验证 parseCacheInfoFromConfigMap 函数是否能够正确解析 ConfigMap 中的数据，
+// 并返回预期的缓存信息，同时检查函数在不同输入条件下的错误处理是否符合预期。
+//
+// 测试用例设计：
+// 1. 正常用例：输入包含有效数据的 ConfigMap，验证函数是否能正确解析并返回缓存信息。
+// 2. 错误用例：输入包含无效数据的 ConfigMap，验证函数是否能正确处理错误并返回预期结果。
+//
+// 输入：
+// - 无显式输入参数，测试用例通过结构体定义。
+//
+// 输出：
+// - 无显式返回值，测试结果通过 testing.T 的方法输出。
 func Test_parseCacheInfoFromConfigMap(t *testing.T) {
     // 定义 args 结构体，用于表示测试用例的输入参数
     type args struct {
