@@ -208,12 +208,18 @@ func TestTransformResourcesForWorkerNoValue(t *testing.T) {
 	}
 }
 
+// TestTransformResourcesForWorkerWithTieredStore tests resource configuration conversion logic for Alluxio worker with tiered storage settings
+// This test validates:
+// - Correct transformation of tiered store quotas into Kubernetes resource requests
+// - Proper handling of memory resource allocation boundaries
+// - Absence of unintended resource limits when not explicitly specified
 func TestTransformResourcesForWorkerWithTieredStore(t *testing.T) {
 	result := resource.MustParse("20Gi")
 
+	// Test cases structured to validate different tiered storage configurations
 	var tests = []struct {
-		runtime      *datav1alpha1.AlluxioRuntime
-		alluxioValue *Alluxio
+		runtime      *datav1alpha1.AlluxioRuntime  // Input Alluxio runtime configuration
+		alluxioValue *Alluxio                      // Expected output configuration
 	}{
 		{&datav1alpha1.AlluxioRuntime{
 			ObjectMeta: metav1.ObjectMeta{
@@ -223,22 +229,26 @@ func TestTransformResourcesForWorkerWithTieredStore(t *testing.T) {
 			Spec: datav1alpha1.AlluxioRuntimeSpec{
 				TieredStore: datav1alpha1.TieredStore{
 					Levels: []datav1alpha1.Level{{
-						MediumType: common.Memory,
-						Quota:      &result,
+						MediumType: common.Memory,  // Memory-based tiered storage configuration
+						Quota:      &result,       // 20Gi quota allocation
 					}},
 				},
 			},
 		}, &Alluxio{
-			Properties: map[string]string{},
+			Properties: map[string]string{},  // Expected empty properties map
 		}},
 	}
+	// Iterate through test cases to validate transformation logic
 	for _, test := range tests {
+		// Initialize test environment with mocked dependencies
 		engine := &AlluxioEngine{
-			Log:       fake.NullLogger(),
+			Log:       fake.NullLogger(),  // Discard logging output
 			name:      "test",
 			namespace: "test",
 		}
+		// Build runtime information with tiered store configuration
 		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", base.WithTieredStore(test.runtime.Spec.TieredStore))
+		// Configure Kubernetes API client mock
 		runtimeObjs := []runtime.Object{}
 		runtimeObjs = append(runtimeObjs, test.runtime.DeepCopy())
 		s := runtime.NewScheme()
@@ -246,14 +256,18 @@ func TestTransformResourcesForWorkerWithTieredStore(t *testing.T) {
 		_ = corev1.AddToScheme(s)
 		client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
 		engine.Client = client
+		// Execute core transformation logic
 		err := engine.transformResourcesForWorker(test.runtime, test.alluxioValue)
+		// Validate error handling and resource allocation
 		t.Log(err)
 		if err != nil {
 			t.Errorf("expected no err, got err %v", err)
 		}
+		// Verify memory request matches tiered store quota
 		if test.alluxioValue.Worker.Resources.Requests[corev1.ResourceMemory] != "20Gi" {
 			t.Errorf("expected 20Gi, got %v", test.alluxioValue.Worker.Resources.Requests[corev1.ResourceMemory])
 		}
+		// Ensure no memory limit is set by default
 		if result, found := test.alluxioValue.Worker.Resources.Limits[corev1.ResourceMemory]; found {
 			t.Errorf("expected nil, got %v", result)
 		}
