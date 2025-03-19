@@ -326,6 +326,13 @@ func TestSyncReplicas(t *testing.T) {
 	}
 }
 
+// TestSyncReplicasWithoutWorker 测试在无 Worker 的情况下同步 AlluxioRuntime 副本的功能。
+// 该测试用例验证了在没有 Worker 的情况下，SyncReplicas 函数是否能正确更新 AlluxioRuntime 和 Dataset 的状态。
+// 测试用例包括以下步骤：
+// 1. 初始化测试环境，包括 StatefulSet、DaemonSet、AlluxioRuntime 和 Dataset 的模拟对象。
+// 2. 创建 AlluxioEngine 实例，并调用 SyncReplicas 函数。
+// 3. 验证 SyncReplicas 函数的执行结果是否符合预期，包括错误处理、Runtime 状态更新和 Dataset 状态更新。
+// 测试用例期望在没有 Worker 的情况下，Runtime 的 WorkerPhase 为 NotReady，Dataset 的 Phase 为 Failed。
 func TestSyncReplicasWithoutWorker(t *testing.T) {
 	var statefulsetInputs = []appsv1.StatefulSet{}
 
