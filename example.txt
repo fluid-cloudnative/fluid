@@ -1,0 +1,5 @@
+Hadoop hadoop zookeeper
+Zookeeper HBase HBase
+hadoop Spark Hive
+Hive Spark spark zookeeper hadoop
+12345
