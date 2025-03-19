@@ -182,43 +182,43 @@ func TestJindoEngine_DeleteFusePersistentVolume(t *testing.T) {
 	doTestCases(testCases, t)
 }
 
-// TestJindoEngine_DeleteFusePersistentVolumeClaim tests the DeleteFusePersistentVolumeClaim method of JindoEngine.  
-// This test verifies the behavior when deleting a PersistentVolumeClaim (PVC) under two scenarios:  
-// 1. With a functional JindoEngine instance, expecting successful deletion of the PVC.  
-// 2. With a JindoEngine instance that lacks a runtime, expecting an error upon attempting to delete the PVC.  
-// The test initializes a fake Kubernetes client and the corresponding PVC inputs to execute these scenarios.  
-func TestJindoEngine_DeleteFusePersistentVolumeClaim(t *testing.T) {  
-	testPVCInputs := []*v1.PersistentVolumeClaim{  
-		{  
-			ObjectMeta: metav1.ObjectMeta{  
-				Name:       "hbase",  
-				Namespace:  "fluid",  
-				Finalizers: []string{"kubernetes.io/pvc-protection"}, // no err  
-			},  
-			Spec: v1.PersistentVolumeClaimSpec{},  
-		},  
-	}  
+// TestJindoEngine_DeleteFusePersistentVolumeClaim tests the DeleteFusePersistentVolumeClaim method of JindoEngine.
+// This test verifies the behavior when deleting a PersistentVolumeClaim (PVC) under two scenarios:
+// 1. With a functional JindoEngine instance, expecting successful deletion of the PVC.
+// 2. With a JindoEngine instance that lacks a runtime, expecting an error upon attempting to delete the PVC.
+// The test initializes a fake Kubernetes client and the corresponding PVC inputs to execute these scenarios.
+func TestJindoEngine_DeleteFusePersistentVolumeClaim(t *testing.T) {
+	testPVCInputs := []*v1.PersistentVolumeClaim{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:       "hbase",
+				Namespace:  "fluid",
+				Finalizers: []string{"kubernetes.io/pvc-protection"}, // no err
+			},
+			Spec: v1.PersistentVolumeClaimSpec{},
+		},
+	}
 
-	tests := []runtime.Object{}  
+	tests := []runtime.Object{}
 
-	for _, pvcInput := range testPVCInputs {  
-		tests = append(tests, pvcInput.DeepCopy())  
-	}  
+	for _, pvcInput := range testPVCInputs {
+		tests = append(tests, pvcInput.DeepCopy())
+	}
 
-	fakeClient := fake.NewFakeClientWithScheme(testScheme, tests...)  
-	JindoEngine := newTestJindoEngine(fakeClient, "hbase", "fluid", true)  
-	JindoEngineNoRuntime := newTestJindoEngine(fakeClient, "hbase", "fluid", false)  
-	testCases := []TestCase{  
-		{  
-			engine:    JindoEngine,  
-			isDeleted: true,  
-			isErr:     false,  
-		},  
-		{  
-			engine:    JindoEngineNoRuntime,  
-			isDeleted: true,  
-			isErr:     true,  
-		},  
-	}  
-	doTestCases(testCases, t)  
-}  
+	fakeClient := fake.NewFakeClientWithScheme(testScheme, tests...)
+	JindoEngine := newTestJindoEngine(fakeClient, "hbase", "fluid", true)
+	JindoEngineNoRuntime := newTestJindoEngine(fakeClient, "hbase", "fluid", false)
+	testCases := []TestCase{
+		{
+			engine:    JindoEngine,
+			isDeleted: true,
+			isErr:     false,
+		},
+		{
+			engine:    JindoEngineNoRuntime,
+			isDeleted: true,
+			isErr:     true,
+		},
+	}
+	doTestCases(testCases, t)
+}
