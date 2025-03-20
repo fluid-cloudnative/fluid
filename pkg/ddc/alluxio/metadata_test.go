@@ -510,6 +510,14 @@ func TestShouldSyncMetadata(t *testing.T) {
 	}
 }
 
+// TestShouldRestoreMetadata tests the shouldRestoreMetadata function of the AlluxioEngine.
+// It creates a set of test datasets and initializes a fake client with these datasets.
+// Then, it creates two AlluxioEngine instances with different configurations and checks
+// if the shouldRestoreMetadata function returns the expected results for each instance.
+// The test cases include:
+// - An engine with a dataset that has a DataRestoreLocation specified, expecting shouldRestoreMetadata to return true.
+// - An engine with a dataset that does not have a DataRestoreLocation specified, expecting shouldRestoreMetadata to return false.
+// If the function does not return the expected result or an error occurs, the test will fail.
 func TestShouldRestoreMetadata(t *testing.T) {
 	datasetInputs := []datav1alpha1.Dataset{
 		{
