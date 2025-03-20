@@ -179,12 +179,6 @@ func (j *JuiceFSEngine) genDataLoadValue(image string, cacheinfo map[string]stri
 	dataloadInfo.TargetPaths = targetPaths
 
 	options := map[string]string{}
-	// resolve spec options
-	if dataload.Spec.Options != nil {
-		for key, value := range dataload.Spec.Options {
-			options[key] = value
-		}
-	}
 
 	for key, value := range cacheinfo {
 		options[key] = value
@@ -201,9 +195,21 @@ func (j *JuiceFSEngine) genDataLoadValue(image string, cacheinfo map[string]stri
 	}
 	options["edition"] = cacheinfo[Edition]
 	options["runtimeName"] = j.name
-	if _, ok := options["timeout"]; !ok {
-		options["timeout"] = DefaultDataLoadTimeout
+	timeout := dataload.Spec.Options["timeout"]
+	delete(dataload.Spec.Options, "timeout")
+	if timeout == "" {
+		timeout = DefaultDataLoadTimeout
 	}
+	warmupOtions := []string{}
+	for k, v := range dataload.Spec.Options {
+		if v != "" {
+			warmupOtions = append(warmupOtions, fmt.Sprintf("--%s=%s", k, v))
+		} else {
+			warmupOtions = append(warmupOtions, fmt.Sprintf("--%s", k))
+		}
+	}
+	options["option"] = strings.Join(warmupOtions, " ")
+	options["timeout"] = timeout
 
 	dataloadInfo.Options = options
 

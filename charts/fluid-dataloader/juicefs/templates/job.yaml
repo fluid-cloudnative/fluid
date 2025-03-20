@@ -124,6 +124,10 @@ spec:
             - name: TIMEOUT
               value: {{ $val | quote }}
             {{- end }}
+            {{- if eq $key "option" }}
+            - name: OPTION
+              value: {{ $val | quote }}
+            {{- end }}
             {{- if eq $key "edition" }}
             - name: EDITION
               value: {{ $val | quote }}
