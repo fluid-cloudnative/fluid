@@ -424,7 +424,7 @@ func TestGetRuntime(t *testing.T) {
 }
 
 // TestGetMasterPod verifies the correct retrieval of the master Pod for an Alluxio runtime.
-// This test validates whether the AlluxioEngine's getMasterPod method accurately fetches 
+// This test validates whether the AlluxioEngine's getMasterPod method accurately fetches
 // the expected Pod resource from Kubernetes based on the provided runtime configuration.
 //
 // Test Cases:
@@ -736,14 +736,14 @@ func TestGetWorkerDaemonsetName(t *testing.T) {
 }
 
 // TestGetFuseDaemonsetName is a unit test for the getFuseName method of the AlluxioEngine struct.
-// This test verifies that the method correctly constructs the expected daemonset name 
+// This test verifies that the method correctly constructs the expected daemonset name
 // based on the given engine name.
-// The test defines a struct `fields` containing the engine name and a test case struct 
+// The test defines a struct `fields` containing the engine name and a test case struct
 // that includes the test case name, input fields, and the expected daemonset name.
 // The test case used:
 // - When the engine name is "spark", the expected daemonset name should be "spark-fuse".
-// The test iterates through all defined cases, creates an instance of AlluxioEngine with 
-// the given name, calls the `getFuseName` method, and checks if the returned result matches 
+// The test iterates through all defined cases, creates an instance of AlluxioEngine with
+// the given name, calls the `getFuseName` method, and checks if the returned result matches
 // the expected value. If the result differs, an error message is reported.
 func TestGetFuseDaemonsetName(t *testing.T) {
 	type fields struct {

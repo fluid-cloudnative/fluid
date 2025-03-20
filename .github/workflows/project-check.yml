@@ -62,6 +62,9 @@ jobs:
           echo $(git status --porcelain | grep generated)
           if [ -z "$(git status --porcelain | grep generated)" ]; then echo "openapi validation passed."; else echo "openapi validation failed. Please use 'make gen-openapi' to update openapi"; exit 1; fi
 
+      - name: Code fmt check
+        run: |
+          gofmt -l ./pkg ./cmd ./api | grep . && echo "Please run "make fmt" to verify gofmt" && exit 1 || exit 0
 
       - name: Project lint
         run: |
