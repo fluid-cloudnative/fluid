@@ -83,69 +83,48 @@ func TestGetCacheInfoFromConfigmap(t *testing.T) {
 // Output:
 // - No explicit return value; test results are reported using methods from testing.T.
 func Test_parseCacheInfoFromConfigMap(t *testing.T) {
-    // args struct defines the input parameters for the test cases.
-    // configMap is the input parameter for parseCacheInfoFromConfigMap, of type *v1.ConfigMap.
-    type args struct {
-        configMap *v1.ConfigMap
-    }
-
-    // Define a set of test cases. Each test case contains the following fields:
-    // - name: The name of the test case, used to identify the test scenario.
-    // - args: The input parameters for the test case, of type args.
-    // - wantCacheInfo: The expected cache information result, of type map[string]string.
-    // - wantErr: Whether an error is expected.
-    tests := []struct {
-        name          string            // Name of the test case
-        args          args              // Input parameters for the test case
-        wantCacheInfo map[string]string // Expected cache information result
-        wantErr       bool              // Whether an error is expected
-    }{
-        // First test case: Normal parsing of ConfigMap data
-        {
-            name: "parseCacheInfoFromConfigMap", // Name of the test case
-            args: args{configMap: &v1.ConfigMap{ // Input parameters
-                Data: map[string]string{ // Data field of the ConfigMap
-                    "data": valuesConfigMapData, // Assume valuesConfigMapData is a predefined string containing valid configuration data
-                },
-            }},
-            wantCacheInfo: map[string]string{ // Expected cache information result
-                "mountpath": "/runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse", // Expected mount path
-                "edition":   "community", // Expected edition information
-            },
-            wantErr: false, // No error is expected
-        },
-        // Second test case: Parsing invalid ConfigMap data
-        {
-            name: "parseCacheInfoFromConfigMap-err", // Name of the test case
-            args: args{configMap: &v1.ConfigMap{ // Input parameters
-                Data: map[string]string{ // Data field of the ConfigMap
-                    "data": `test`, // Invalid configuration data
-                },
-            }},
-            wantCacheInfo: nil, // Expected cache information result is nil
-            wantErr:       true, // An error is expected
-        },
-    }
-
-    // Iterate through the test cases and run each test
-    for _, tt := range tests {
-        // Use t.Run to execute the subtest, with the subtest name as tt.name
-        t.Run(tt.name, func(t *testing.T) {
-            // Call the function under test, parseCacheInfoFromConfigMap, and get the return value and error
-            gotPorts, err := parseCacheInfoFromConfigMap(tt.args.configMap)
-
-            // Check if the error matches the expectation
-            if (err != nil) != tt.wantErr {
-                t.Errorf("parseCacheInfoFromConfigMap() error = %v, wantErr %v", err, tt.wantErr)
-                return
-            }
-
-            // Check if the returned cache information matches the expectation
-            if !reflect.DeepEqual(gotPorts, tt.wantCacheInfo) {
-                t.Errorf("parseCacheInfoFromConfigMap() gotPorts = %v, want %v", gotPorts, tt.wantCacheInfo)
-            }
-        })
-    }
+	type args struct {
+		configMap *v1.ConfigMap
+	}
+	tests := []struct {
+		name          string
+		args          args
+		wantCacheInfo map[string]string
+		wantErr       bool
+	}{
+		{
+			name: "parseCacheInfoFromConfigMap",
+			args: args{configMap: &v1.ConfigMap{
+				Data: map[string]string{
+					"data": valuesConfigMapData,
+				},
+			}},
+			wantCacheInfo: map[string]string{"mountpath": "/runtime-mnt/juicefs/default/jfsdemo/juicefs-fuse", "edition": "community"},
+			wantErr:       false,
+		},
+		{
+			name: "parseCacheInfoFromConfigMap-err",
+			args: args{configMap: &v1.ConfigMap{
+				Data: map[string]string{
+					"data": `test`,
+				},
+			}},
+			wantCacheInfo: nil,
+			wantErr:       true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotPorts, err := parseCacheInfoFromConfigMap(tt.args.configMap)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("parseCacheInfoFromConfigMap() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotPorts, tt.wantCacheInfo) {
+				t.Errorf("parseCacheInfoFromConfigMap() gotPorts = %v, want %v", gotPorts, tt.wantCacheInfo)
+			}
+		})
+	}
 }
 
 func TestGetFSInfoFromConfigMap(t *testing.T) {
