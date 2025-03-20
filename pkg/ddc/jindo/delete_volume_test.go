@@ -83,19 +83,19 @@ func doTestCases(testCases []TestCase, t *testing.T) {
 //
 // Test Strategy:
 // 1. Setup test environment with mocked Kubernetes resources:
-//    - PVs with 'CreatedBy=fluid' annotation to simulate Fluid-managed persistent volumes
-//    - PVCs with different configurations (normal vs error cases)
-// 2. Create 3 test scenarios using parameterized test pattern:
-//    Case 1: Normal deletion (JindoEngineCommon)
-//      - Input: Valid PV/PVC without conflicting annotations
-//      - Expected: Successful deletion (isDeleted=true, isErr=false)
-//    Case 2: Protected PVC deletion (JindoEngineErr)
-//      - Input: PVC with 'CreatedBy=fluid' annotation (protected resource)
-//      - Expected: Failed deletion (isErr=true)
-//    Case 3: Missing runtime scenario (JindoEngineNoRunTime)
-//      - Input: Engine with runtime=false configuration
-//      - Expected: Failed deletion (isErr=true)
-// 3. Verification: Uses doTestCases() helper to validate deletion outcomes against expectations
+//   - PVs with 'CreatedBy=fluid' annotation to simulate Fluid-managed persistent volumes
+//   - PVCs with different configurations (normal vs error cases)
+//     2. Create 3 test scenarios using parameterized test pattern:
+//     Case 1: Normal deletion (JindoEngineCommon)
+//   - Input: Valid PV/PVC without conflicting annotations
+//   - Expected: Successful deletion (isDeleted=true, isErr=false)
+//     Case 2: Protected PVC deletion (JindoEngineErr)
+//   - Input: PVC with 'CreatedBy=fluid' annotation (protected resource)
+//   - Expected: Failed deletion (isErr=true)
+//     Case 3: Missing runtime scenario (JindoEngineNoRunTime)
+//   - Input: Engine with runtime=false configuration
+//   - Expected: Failed deletion (isErr=true)
+//     3. Verification: Uses doTestCases() helper to validate deletion outcomes against expectations
 //
 // Test Resources:
 // - fake.NewFakeClientWithScheme: Simulates Kubernetes API server with predefined resources
