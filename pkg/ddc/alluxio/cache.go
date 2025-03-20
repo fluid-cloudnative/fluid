@@ -68,13 +68,13 @@ func (e *AlluxioEngine) queryCacheStatus() (states cacheStates, err error) {
 // - When the Dataset's UfsTotal field is empty
 // - When the Dataset's UfsTotal field contains the metadata sync pending message
 // The cached percentage is calculated as (cached bytes / UfsTotal bytes) * 100.
-// 
+//
 // Parameters:
 //   - dataset (v1alpha1.Dataset): Pointer to the Dataset object containing UFS metadata.
 //     The Status.UfsTotal field must be a valid human-readable size string (e.g. "10GiB")
 //   - states (cacheStates): Pointer to the cache state structure that will be modified in-place.
 //     The cached field must be a valid human-readable size string (e.g. "5GiB")
-// 
+//
 // Returns:
 //   - None: Modifies the states.cachedPercentage field directly with formatted percentage string.
 //     The percentage is stored as a string using cachedPercentageFormat (e.g. "45.60%")

@@ -218,8 +218,8 @@ func TestTransformResourcesForWorkerWithTieredStore(t *testing.T) {
 
 	// Test cases structured to validate different tiered storage configurations
 	var tests = []struct {
-		runtime      *datav1alpha1.AlluxioRuntime  // Input Alluxio runtime configuration
-		alluxioValue *Alluxio                      // Expected output configuration
+		runtime      *datav1alpha1.AlluxioRuntime // Input Alluxio runtime configuration
+		alluxioValue *Alluxio                     // Expected output configuration
 	}{
 		{&datav1alpha1.AlluxioRuntime{
 			ObjectMeta: metav1.ObjectMeta{
@@ -229,20 +229,20 @@ func TestTransformResourcesForWorkerWithTieredStore(t *testing.T) {
 			Spec: datav1alpha1.AlluxioRuntimeSpec{
 				TieredStore: datav1alpha1.TieredStore{
 					Levels: []datav1alpha1.Level{{
-						MediumType: common.Memory,  // Memory-based tiered storage configuration
+						MediumType: common.Memory, // Memory-based tiered storage configuration
 						Quota:      &result,       // 20Gi quota allocation
 					}},
 				},
 			},
 		}, &Alluxio{
-			Properties: map[string]string{},  // Expected empty properties map
+			Properties: map[string]string{}, // Expected empty properties map
 		}},
 	}
 	// Iterate through test cases to validate transformation logic
 	for _, test := range tests {
 		// Initialize test environment with mocked dependencies
 		engine := &AlluxioEngine{
-			Log:       fake.NullLogger(),  // Discard logging output
+			Log:       fake.NullLogger(), // Discard logging output
 			name:      "test",
 			namespace: "test",
 		}
@@ -472,12 +472,12 @@ func TestTransformResourcesForWorkerWithOnlyRequest(t *testing.T) {
 // resource requests are handled as expected.
 //
 // The function performs the following steps:
-// 1. Defines resource requirements with limits for memory (20Gi) and CPU (500m).
-// 2. Sets up test cases to validate the transformation logic, including scenarios with and without
-//    tiered store configurations.
-// 3. Initializes an AlluxioEngine instance with a fake client and runtime objects for testing.
-// 4. Transforms the resource requirements for the worker using the AlluxioEngine.
-// 5. Validates the transformed resource limits and requests against the expected results.
+//  1. Defines resource requirements with limits for memory (20Gi) and CPU (500m).
+//  2. Sets up test cases to validate the transformation logic, including scenarios with and without
+//     tiered store configurations.
+//  3. Initializes an AlluxioEngine instance with a fake client and runtime objects for testing.
+//  4. Transforms the resource requirements for the worker using the AlluxioEngine.
+//  5. Validates the transformed resource limits and requests against the expected results.
 //
 // Test cases include:
 // - A scenario where tiered store configuration is provided, ensuring memory limits and requests are set correctly.
