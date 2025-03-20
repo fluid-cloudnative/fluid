@@ -219,6 +219,11 @@ func TestJindoEngine_DeleteFusePersistentVolume(t *testing.T) {
 	doTestCases(testCases, t)
 }
 
+// TestJindoEngine_DeleteFusePersistentVolumeClaim tests the DeleteFusePersistentVolumeClaim method of JindoEngine.
+// This test verifies the behavior when deleting a PersistentVolumeClaim (PVC) under two scenarios:
+// 1. With a functional JindoEngine instance, expecting successful deletion of the PVC.
+// 2. With a JindoEngine instance that lacks a runtime, expecting an error upon attempting to delete the PVC.
+// The test initializes a fake Kubernetes client and the corresponding PVC inputs to execute these scenarios.
 func TestJindoEngine_DeleteFusePersistentVolumeClaim(t *testing.T) {
 	testPVCInputs := []*v1.PersistentVolumeClaim{
 		{
