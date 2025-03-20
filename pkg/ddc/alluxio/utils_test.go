@@ -622,6 +622,10 @@ func TestGetDaemonset(t *testing.T) {
 	}
 }
 
+// TestGetMasterPodInfo tests the getMasterPodInfo function of the AlluxioEngine struct.
+// It defines a set of test cases with expected pod and container names based on the engine's name.
+// The function iterates through the test cases, initializes an AlluxioEngine instance,
+// and verifies whether the returned pod name and container name match the expected values.
 func TestGetMasterPodInfo(t *testing.T) {
 	type fields struct {
 		name string
