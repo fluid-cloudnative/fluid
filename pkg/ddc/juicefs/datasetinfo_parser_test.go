@@ -127,7 +127,6 @@ func Test_parseCacheInfoFromConfigMap(t *testing.T) {
 // 5. Validate that the returned metadata matches the expected values.
 //
 // If the function does not return the correct values, the test fails with an error message.
-
 func TestGetFSInfoFromConfigMap(t *testing.T) {
 	configMap := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
