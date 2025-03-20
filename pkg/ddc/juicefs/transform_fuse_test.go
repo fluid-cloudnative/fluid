@@ -30,6 +30,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
@@ -1452,5 +1453,105 @@ func TestJuiceFSEngine_genMountOptions(t *testing.T) {
 				t.Errorf("genMountOptions() gotOptions = %v, want %v", gotOptions, tt.wantOptions)
 			}
 		})
+	}
+}
+
+func TestTransformFuseWithLaunchMode(t *testing.T) {
+	testCases := map[string]struct {
+		runtime   *datav1alpha1.JuiceFSRuntime
+		wantValue *JuiceFS
+	}{
+		"test fuse launch mode case 1": {
+			runtime: &datav1alpha1.JuiceFSRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hbase",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.JuiceFSRuntimeSpec{
+					Fuse: datav1alpha1.JuiceFSFuseSpec{
+						LaunchMode: datav1alpha1.EagerMode,
+						NodeSelector: map[string]string{
+							"fuse_node": "true",
+						},
+					},
+				},
+			},
+			wantValue: &JuiceFS{
+				Fuse: Fuse{
+					NodeSelector: map[string]string{
+						"fuse_node": "true",
+					},
+				},
+			},
+		},
+		"test fuse launch mode case 2": {
+			runtime: &datav1alpha1.JuiceFSRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hbase",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.JuiceFSRuntimeSpec{
+					Fuse: datav1alpha1.JuiceFSFuseSpec{
+						LaunchMode: datav1alpha1.LazyMode,
+						NodeSelector: map[string]string{
+							"fuse_node": "true",
+						},
+					},
+				},
+			},
+			wantValue: &JuiceFS{
+				Fuse: Fuse{
+					NodeSelector: map[string]string{
+						utils.GetFuseLabelName("fluid", "hbase", ""): "true",
+						"fuse_node": "true",
+					},
+				},
+			},
+		},
+		"test fuse launch mode case 3": {
+			runtime: &datav1alpha1.JuiceFSRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hbase",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.JuiceFSRuntimeSpec{
+					Fuse: datav1alpha1.JuiceFSFuseSpec{
+						LaunchMode: "",
+					},
+				},
+			},
+			wantValue: &JuiceFS{
+				Fuse: Fuse{
+					NodeSelector: map[string]string{
+						utils.GetFuseLabelName("fluid", "hbase", ""): "true",
+					},
+				},
+			},
+		},
+	}
+
+	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "JuiceFS")
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
+
+	engine := &JuiceFSEngine{
+		Log:         fake.NullLogger(),
+		runtimeInfo: runtimeInfo,
+		Client:      fake.NewFakeClientWithScheme(testScheme),
+	}
+	ds := &datav1alpha1.Dataset{}
+	for k, v := range testCases {
+		gotValue := &JuiceFS{}
+		if err := engine.transformFuse(v.runtime, ds, gotValue); err == nil {
+			if !reflect.DeepEqual(gotValue.Fuse.NodeSelector, v.wantValue.Fuse.NodeSelector) {
+				t.Errorf("check %s failure, got:%+v,want:%+v",
+					k,
+					gotValue.Fuse.NodeSelector,
+					v.wantValue.Fuse.NodeSelector,
+				)
+			}
+		}
+
 	}
 }

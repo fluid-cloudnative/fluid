@@ -94,6 +94,18 @@ func TestBuildWorkersAffinity(t *testing.T) {
 									},
 								},
 							},
+							{
+								Weight: 100,
+								Preference: v1.NodeSelectorTerm{
+									MatchExpressions: []v1.NodeSelectorRequirement{
+										{
+											Key:      "nodeA",
+											Operator: v1.NodeSelectorOpIn,
+											Values:   []string{"true"},
+										},
+									},
+								},
+							},
 						},
 					},
 				},
@@ -160,6 +172,18 @@ func TestBuildWorkersAffinity(t *testing.T) {
 									MatchExpressions: []v1.NodeSelectorRequirement{
 										{
 											Key:      "fluid.io/f-big-data-test2",
+											Operator: v1.NodeSelectorOpIn,
+											Values:   []string{"true"},
+										},
+									},
+								},
+							},
+							{
+								Weight: 100,
+								Preference: v1.NodeSelectorTerm{
+									MatchExpressions: []v1.NodeSelectorRequirement{
+										{
+											Key:      "nodeA",
 											Operator: v1.NodeSelectorOpIn,
 											Values:   []string{"true"},
 										},
@@ -248,6 +272,83 @@ func TestBuildWorkersAffinity(t *testing.T) {
 									},
 								},
 							},
+							{
+								Weight: 100,
+								Preference: v1.NodeSelectorTerm{
+									MatchExpressions: []v1.NodeSelectorRequirement{
+										{
+											Key:      "nodeA",
+											Operator: v1.NodeSelectorOpIn,
+											Values:   []string{"true"},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}, {
+			name: "fuse-eager-mode-with-fuse-nodeSelector",
+			fields: fields{
+				dataset: &datav1alpha1.Dataset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test4",
+						Namespace: "big-data",
+					},
+					Spec: datav1alpha1.DatasetSpec{},
+				},
+				worker: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test4-thin-worker",
+						Namespace: "big-data",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: ptr.To[int32](1),
+					},
+				},
+				want: &v1.Affinity{
+					PodAntiAffinity: &v1.PodAntiAffinity{
+						RequiredDuringSchedulingIgnoredDuringExecution: []v1.PodAffinityTerm{
+							{
+								LabelSelector: &metav1.LabelSelector{
+									MatchExpressions: []metav1.LabelSelectorRequirement{
+										{
+											Key:      "fluid.io/dataset",
+											Operator: metav1.LabelSelectorOpExists,
+										},
+									},
+								},
+								TopologyKey: "kubernetes.io/hostname",
+							},
+						},
+					},
+					NodeAffinity: &v1.NodeAffinity{
+						PreferredDuringSchedulingIgnoredDuringExecution: []v1.PreferredSchedulingTerm{
+							{
+								Weight: 100,
+								Preference: v1.NodeSelectorTerm{
+									MatchExpressions: []v1.NodeSelectorRequirement{
+										{
+											Key:      "fluid.io/f-big-data-test4",
+											Operator: v1.NodeSelectorOpIn,
+											Values:   []string{"true"},
+										},
+									},
+								},
+							},
+							{
+								Weight: 100,
+								Preference: v1.NodeSelectorTerm{
+									MatchExpressions: []v1.NodeSelectorRequirement{
+										{
+											Key:      "nodeA",
+											Operator: v1.NodeSelectorOpIn,
+											Values:   []string{"true"},
+										},
+									},
+								},
+							},
 						},
 					},
 				},
@@ -265,10 +366,12 @@ func TestBuildWorkersAffinity(t *testing.T) {
 			runtimeObjs = append(runtimeObjs, tt.fields.dataset)
 			runtimeObjs = append(runtimeObjs, tt.fields.worker)
 			mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
-			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.dataset.Name, tt.fields.dataset.Namespace, common.JindoRuntime)
+			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.dataset.Name, tt.fields.dataset.Namespace, common.ThinRuntime)
 			if err != nil {
 				t.Errorf("testcase %s failed due to %v", tt.name, err)
 			}
+			runtimeInfo.SetFuseLaunchMode(datav1alpha1.EagerMode)
+			runtimeInfo.SetFuseNodeSelector(map[string]string{"nodeA": "true"})
 			h := BuildHelper(runtimeInfo, mockClient, fake.NullLogger())
 
 			want := tt.fields.want

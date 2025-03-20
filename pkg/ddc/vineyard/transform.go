@@ -271,7 +271,11 @@ func (e *VineyardEngine) transformWorkerPorts(runtime *datav1alpha1.VineyardRunt
 
 func (e *VineyardEngine) transformFuseNodeSelector(runtime *datav1alpha1.VineyardRuntime) map[string]string {
 	nodeSelector := map[string]string{}
-	nodeSelector[utils.GetFuseLabelName(runtime.Namespace, runtime.Name, e.runtimeInfo.GetOwnerDatasetUID())] = "true"
+
+	if runtime.Spec.Fuse.LaunchMode != datav1alpha1.EagerMode {
+		// The label will be added by CSI Plugin when any workload pod is scheduled on the node.
+		nodeSelector[utils.GetFuseLabelName(runtime.Namespace, runtime.Name, e.runtimeInfo.GetOwnerDatasetUID())] = "true"
+	}
 	return nodeSelector
 }
 

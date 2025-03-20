@@ -285,6 +285,15 @@ spec:
                     items:
                       type: string
                     type: array
+                  launchMode:
+                    default: Lazy
+                    description: LaunchMode specifies the launch mode of fuse pod,
+                      Lazy/Eager, default to Lazy
+                    enum:
+                    - ""
+                    - Lazy
+                    - Eager
+                    type: string
                   nodeSelector:
                     additionalProperties:
                       type: string
