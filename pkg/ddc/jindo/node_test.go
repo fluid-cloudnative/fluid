@@ -51,6 +51,15 @@ func getTestJindoEngineNode(client client.Client, name string, namespace string,
 	}
 	return engine
 }
+// TestSyncScheduleInfoToCacheNodes tests the correctness of the SyncScheduleInfoToCacheNodes method.  
+// This method synchronizes scheduling information to cache nodes.  
+// The test cases cover the following scenarios:  
+// 1. "create" - Creates a new worker node and synchronizes scheduling information.  
+// 2. "add" - Adds a new node to an existing worker group and synchronizes scheduling information.  
+// 3. "noController" - Handles a pod without a corresponding StatefulSet controller to check proper processing.  
+// 4. "deprecated" - Processes deprecated worker components to ensure synchronization logic remains valid.  
+// The test constructs various worker, pod, and node resources, invokes SyncScheduleInfoToCacheNodes,  
+// and verifies whether the synchronized node labels match the expected results.  
 
 func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 	type fields struct {
