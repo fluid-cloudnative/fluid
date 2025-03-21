@@ -283,125 +283,9 @@ func TestThinEngine_parseFuseOptions(t1 *testing.T) {
 }
 
 func TestThinEngine_transformFuse(t1 *testing.T) {
-	profile := &datav1alpha1.ThinRuntimeProfile{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test",
-		},
-		Spec: datav1alpha1.ThinRuntimeProfileSpec{
-			FileSystemType: "test",
-			Fuse: datav1alpha1.ThinFuseSpec{
-				Image:           "test",
-				ImageTag:        "v1",
-				ImagePullPolicy: "Always",
-				Resources: corev1.ResourceRequirements{
-					Requests: corev1.ResourceList{
-						// Should be inherited
-						corev1.ResourceCPU: resource.MustParse("100m"),
-						// Should be overridden
-						corev1.ResourceMemory: resource.MustParse("2Gi"),
-					},
-				},
-				Env: []corev1.EnvVar{{
-					Name:  "a",
-					Value: "b",
-				}},
-				NodeSelector: map[string]string{"a": "b"},
-				Ports: []corev1.ContainerPort{{
-					Name:          "port",
-					ContainerPort: 8080,
-				}},
-				NetworkMode: datav1alpha1.HostNetworkMode,
-				VolumeMounts: []corev1.VolumeMount{{
-					Name:      "a",
-					MountPath: "/test",
-				}},
-			},
-			Volumes: []corev1.Volume{{
-				Name: "a",
-				VolumeSource: corev1.VolumeSource{
-					HostPath: &corev1.HostPathVolumeSource{Path: "/test"},
-				},
-			}},
-		},
-	}
-	runtime := &datav1alpha1.ThinRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "fluid",
-		},
-		Spec: datav1alpha1.ThinRuntimeSpec{
-			ThinRuntimeProfileName: "test",
-			Fuse: datav1alpha1.ThinFuseSpec{
-				Resources: corev1.ResourceRequirements{
-					Requests: corev1.ResourceList{
-						corev1.ResourceMemory: resource.MustParse("1Gi"),
-					},
-					Limits: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("200m"),
-						corev1.ResourceMemory: resource.MustParse("4Gi"),
-					},
-				},
-				Env: []corev1.EnvVar{{
-					Name: "b",
-					ValueFrom: &corev1.EnvVarSource{
-						ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-							LocalObjectReference: corev1.LocalObjectReference{Name: "test-cm"},
-						},
-					},
-				}},
-				Options: map[string]string{
-					"fuse-opt": "foo",
-				},
-				NodeSelector: map[string]string{"b": "c"},
-				VolumeMounts: []corev1.VolumeMount{{
-					Name:      "b",
-					MountPath: "/b",
-				}},
-				LivenessProbe: &corev1.Probe{
-					ProbeHandler: corev1.ProbeHandler{
-						HTTPGet: &corev1.HTTPGetAction{
-							Path: "/healthz",
-						},
-					},
-					InitialDelaySeconds: 1,
-					TimeoutSeconds:      1,
-					PeriodSeconds:       1,
-					SuccessThreshold:    1,
-					FailureThreshold:    1,
-				},
-				ReadinessProbe: &corev1.Probe{
-					ProbeHandler: corev1.ProbeHandler{
-						HTTPGet: &corev1.HTTPGetAction{
-							Path: "/healthz",
-						},
-					},
-					InitialDelaySeconds: 1,
-					TimeoutSeconds:      1,
-					PeriodSeconds:       1,
-					SuccessThreshold:    1,
-					FailureThreshold:    1,
-				},
-			},
-			Volumes: []corev1.Volume{{
-				Name: "b",
-				VolumeSource: corev1.VolumeSource{
-					HostPath: &corev1.HostPathVolumeSource{Path: "/b"},
-				},
-			}},
-		},
-	}
-	dataset := &datav1alpha1.Dataset{
-		Spec: datav1alpha1.DatasetSpec{
-			SharedOptions: map[string]string{
-				"c": "d",
-			},
-			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteMany},
-			Mounts: []datav1alpha1.Mount{{
-				MountPoint: "abc",
-				Options:    map[string]string{"a": "b"},
-			}},
-		},
-	}
+	profile := buildBaseThinRuntimeProfile()
+	runtime := buildBaseThinRuntime()
+	dataset := buildBaseDataset()
 	wantValue := &ThinValue{
 		Fuse: Fuse{
 			Enabled:         true,
@@ -515,6 +399,94 @@ func TestThinEngine_transformFuse(t1 *testing.T) {
 			valueYaml, _ := yaml.Marshal(value.Fuse)
 			wantYaml, _ := yaml.Marshal(wantValue.Fuse)
 			t1.Errorf("transformFuse() \ngot = %v, \nwant = %v", string(valueYaml), string(wantYaml))
+		}
+	})
+}
+
+func TestThinEngine_transformFuseWithContainerNetwork(t1 *testing.T) {
+	profile := buildBaseThinRuntimeProfile()
+	thinRuntime := buildBaseThinRuntime()
+	dataset := buildBaseDataset()
+	value := &ThinValue{}
+	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "thin")
+	if err != nil {
+		t1.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
+	t1.Run("test", func(t1 *testing.T) {
+		hostNetworkMode := datav1alpha1.HostNetworkMode
+		containerNetworkMode := datav1alpha1.ContainerNetworkMode
+		tests := []struct {
+			name                     string
+			fuseNetworkModeInProfile *datav1alpha1.NetworkMode
+			fuseNetworkModeInRuntime *datav1alpha1.NetworkMode
+			wantFuseHostNetwork      bool
+		}{
+			{
+				name:                     "nilInProfile-nilInRuntime",
+				fuseNetworkModeInProfile: nil,
+				fuseNetworkModeInRuntime: nil,
+				wantFuseHostNetwork:      true,
+			}, {
+				name:                     "containerNetworkInProfile-nilInRuntime",
+				fuseNetworkModeInProfile: &containerNetworkMode,
+				fuseNetworkModeInRuntime: nil,
+				wantFuseHostNetwork:      false,
+			},
+			{
+				name:                     "hostNetworkInProfile-nilInRuntime",
+				fuseNetworkModeInProfile: &hostNetworkMode,
+				fuseNetworkModeInRuntime: nil,
+				wantFuseHostNetwork:      true,
+			},
+			{
+				name:                     "nilInProfile-hostNetworkInRuntime",
+				fuseNetworkModeInProfile: nil,
+				fuseNetworkModeInRuntime: &hostNetworkMode,
+				wantFuseHostNetwork:      true,
+			},
+			{
+				name:                     "nilInProfile-containerNetworkInRuntime",
+				fuseNetworkModeInProfile: nil,
+				fuseNetworkModeInRuntime: &containerNetworkMode,
+				wantFuseHostNetwork:      false,
+			},
+			{
+				name:                     "containerNetworkInProfile-hostNetworkInRuntime",
+				fuseNetworkModeInProfile: &containerNetworkMode,
+				fuseNetworkModeInRuntime: &hostNetworkMode,
+				wantFuseHostNetwork:      true,
+			},
+			{
+				name:                     "hostNetworkInProfile-containerNetworkInRuntime",
+				fuseNetworkModeInProfile: &hostNetworkMode,
+				fuseNetworkModeInRuntime: &containerNetworkMode,
+				wantFuseHostNetwork:      false,
+			},
+		}
+
+		for _, test := range tests {
+			if test.fuseNetworkModeInProfile != nil {
+				profile.Spec.Fuse.NetworkMode = *test.fuseNetworkModeInProfile
+			}
+			if test.fuseNetworkModeInRuntime != nil {
+				thinRuntime.Spec.Fuse.NetworkMode = *test.fuseNetworkModeInRuntime
+			}
+			t := &ThinEngine{
+				Log:         fake.NullLogger(),
+				namespace:   "fluid",
+				name:        "test",
+				runtime:     thinRuntime,
+				runtimeInfo: runtimeInfo,
+				Client:      fake.NewFakeClientWithScheme(testScheme),
+			}
+			if err := t.transformFuse(thinRuntime, profile, dataset, value); err != nil {
+				t1.Errorf("transformFuse() error = %v", err)
+			}
+
+			if value.Fuse.HostNetwork != test.wantFuseHostNetwork {
+				t1.Errorf("transformFuse() \ngot HostNetwork = %v, \nwant HostNetwork = %v", value.Fuse.HostNetwork, test.wantFuseHostNetwork)
+
+			}
 		}
 	})
 }
@@ -987,5 +959,133 @@ func TestParseHostVolumeFromDataset(t *testing.T) {
 				t.Errorf("Expected %v, got %v", test.expected, thinValue)
 			}
 		})
+	}
+}
+
+func buildBaseDataset() *datav1alpha1.Dataset {
+	return &datav1alpha1.Dataset{
+		Spec: datav1alpha1.DatasetSpec{
+			SharedOptions: map[string]string{
+				"c": "d",
+			},
+			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteMany},
+			Mounts: []datav1alpha1.Mount{{
+				MountPoint: "abc",
+				Options:    map[string]string{"a": "b"},
+			}},
+		},
+	}
+}
+
+func buildBaseThinRuntime() *datav1alpha1.ThinRuntime {
+	return &datav1alpha1.ThinRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "fluid",
+		},
+		Spec: datav1alpha1.ThinRuntimeSpec{
+			ThinRuntimeProfileName: "test",
+			Fuse: datav1alpha1.ThinFuseSpec{
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceMemory: resource.MustParse("1Gi"),
+					},
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("200m"),
+						corev1.ResourceMemory: resource.MustParse("4Gi"),
+					},
+				},
+				Env: []corev1.EnvVar{{
+					Name: "b",
+					ValueFrom: &corev1.EnvVarSource{
+						ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{Name: "test-cm"},
+						},
+					},
+				}},
+				Options: map[string]string{
+					"fuse-opt": "foo",
+				},
+				NodeSelector: map[string]string{"b": "c"},
+				VolumeMounts: []corev1.VolumeMount{{
+					Name:      "b",
+					MountPath: "/b",
+				}},
+				LivenessProbe: &corev1.Probe{
+					ProbeHandler: corev1.ProbeHandler{
+						HTTPGet: &corev1.HTTPGetAction{
+							Path: "/healthz",
+						},
+					},
+					InitialDelaySeconds: 1,
+					TimeoutSeconds:      1,
+					PeriodSeconds:       1,
+					SuccessThreshold:    1,
+					FailureThreshold:    1,
+				},
+				ReadinessProbe: &corev1.Probe{
+					ProbeHandler: corev1.ProbeHandler{
+						HTTPGet: &corev1.HTTPGetAction{
+							Path: "/healthz",
+						},
+					},
+					InitialDelaySeconds: 1,
+					TimeoutSeconds:      1,
+					PeriodSeconds:       1,
+					SuccessThreshold:    1,
+					FailureThreshold:    1,
+				},
+			},
+			Volumes: []corev1.Volume{{
+				Name: "b",
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{Path: "/b"},
+				},
+			}},
+		},
+	}
+}
+
+func buildBaseThinRuntimeProfile() *datav1alpha1.ThinRuntimeProfile {
+	return &datav1alpha1.ThinRuntimeProfile{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test",
+		},
+		Spec: datav1alpha1.ThinRuntimeProfileSpec{
+			FileSystemType: "test",
+			Fuse: datav1alpha1.ThinFuseSpec{
+				Image:           "test",
+				ImageTag:        "v1",
+				ImagePullPolicy: "Always",
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						// Should be inherited
+						corev1.ResourceCPU: resource.MustParse("100m"),
+						// Should be overridden
+						corev1.ResourceMemory: resource.MustParse("2Gi"),
+					},
+				},
+				Env: []corev1.EnvVar{{
+					Name:  "a",
+					Value: "b",
+				}},
+				NodeSelector: map[string]string{"a": "b"},
+				Ports: []corev1.ContainerPort{{
+					Name:          "port",
+					ContainerPort: 8080,
+				}},
+				NetworkMode: datav1alpha1.HostNetworkMode,
+				VolumeMounts: []corev1.VolumeMount{{
+					Name:      "a",
+					MountPath: "/test",
+				}},
+			},
+			Volumes: []corev1.Volume{{
+				Name: "a",
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{Path: "/test"},
+				},
+			}},
+		},
 	}
 }
