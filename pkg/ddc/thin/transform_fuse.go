@@ -86,7 +86,9 @@ func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *d
 	}
 
 	// 9. network
-	value.Fuse.HostNetwork = datav1alpha1.IsHostNetwork(runtime.Spec.Fuse.NetworkMode)
+	if runtime.Spec.Fuse.NetworkMode != "" {
+		value.Fuse.HostNetwork = datav1alpha1.IsHostNetwork(runtime.Spec.Fuse.NetworkMode)
+	}
 	value.Fuse.HostPID = common.HostPIDEnabled(runtime.Annotations)
 
 	// 10. targetPath to mount
