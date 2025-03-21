@@ -179,6 +179,13 @@ func TestMountRootWithoutEnvSet(t *testing.T) {
 		}
 	}
 }
+
+// Test_isPortInUsed tests the functionality of the isPortInUsed function.
+// This function checks whether a specified port is in the list of used ports.
+// Test cases include:
+//   - Checking if a port is in the list of used ports.
+// Each test case calls the isPortInUsed function and verifies if the returned value matches the expected result.
+// If the returned value does not match the expected result, the test fails and outputs an error message.
 func Test_isPortInUsed(t *testing.T) {
 	type args struct {
 		port      int
