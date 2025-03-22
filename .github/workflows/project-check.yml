@@ -43,6 +43,7 @@ jobs:
         with:
           version: latest
           args: --timeout 10m --verbose
+
       - name: Lint preparation
         run: |
           arch=$(go env GOARCH)
