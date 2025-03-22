@@ -112,6 +112,12 @@ func TestFreeStorageBytes(t *testing.T) {
 	}
 }
 
+// TestTotalStorageBytes verifies the functionality of AlluxioEngine's TotalStorageBytes method.
+// It validates whether the method correctly calculates total storage capacity by:
+// - Mocking AlluxioRuntime configuration and container command execution
+// - Testing both normal scenarios (expected values) and error conditions
+// - Using patched container command output to ensure predictable test results
+// Each test case checks if returned values match expectations and errors are properly handled.
 func TestTotalStorageBytes(t *testing.T) {
 	type fields struct {
 		runtime *datav1alpha1.AlluxioRuntime
