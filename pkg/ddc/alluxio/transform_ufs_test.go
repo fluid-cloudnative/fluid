@@ -88,6 +88,20 @@ func TestTransformDatasetToVolume(t *testing.T) {
 	}
 }
 
+// TestTransformDatasetToPVC tests the transformation of Dataset specifications into Persistent Volume Claim (PVC) 
+// configurations in Alluxio volumes. It validates the correct conversion of Dataset mount configurations to 
+// corresponding UFSVolume structures with proper path mappings.
+//
+// Parameters:
+//   - t *testing.T : Go testing framework context for test reporting and assertions
+//
+// Test Components:
+//   - Defines 4 expected UFSVolume configurations covering different PVC mount scenarios
+//   - Constructs test cases with varying Dataset.Spec.Mounts configurations
+//   - Verifies transformed Alluxio configuration matches expected volume parameters
+//
+// Return Value:
+//   - None (Standard Go test function, reports failures through t.Errorf)
 func TestTransformDatasetToPVC(t *testing.T) {
 	var ufsVolume = UFSVolume{}
 	ufsVolume.Name = "test"
