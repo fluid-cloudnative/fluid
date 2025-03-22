@@ -44,17 +44,17 @@ func getTestAlluxioEngine(client client.Client, name string, namespace string) *
 	return engine
 }
 
-// TestAlluxioEngine_GetDeprecatedCommonLabelname 测试 GetCommonLabelName 函数，
-// 以确保在不同测试用例下，能够正确生成通用标签名称。
-// 
-// GetCommonLabelName 函数的参数：
-//   - useDeprecated (bool): 是否使用已弃用的标签格式。
-//   - namespace (string): 资源所属的命名空间。
-//   - name (string): 资源的名称。
-//   - suffix (string): 标签的后缀，本测试用例中未使用该参数。
-// 
-// 该测试通过检查不同 `namespace` 和 `name` 组合的情况，
-// 并验证生成的标签名称是否与预期输出匹配，确保函数逻辑正确。
+// TestAlluxioEngine_GetDeprecatedCommonLabelname tests the GetCommonLabelName function,
+// to ensure that it generates the correct common label name under different test cases.
+//
+// Parameters for the GetCommonLabelName function:
+//   - useDeprecated (bool): Whether to use the deprecated label format.
+//   - namespace (string): The namespace to which the resource belongs.
+//   - name (string): The name of the resource.
+//   - suffix (string): The suffix of the label, which is not used in this test case.
+//
+// This test checks various combinations of `namespace` and `name`, 
+// and validates whether the generated label name matches the expected output, ensuring the function logic is correct.
 func TestAlluxioEngine_GetDeprecatedCommonLabelname(t *testing.T) {
 	testCases := []struct {
 		name      string
