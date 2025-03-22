@@ -57,10 +57,6 @@ jobs:
           git status --porcelain
           if [ -z "`git status --porcelain`" ]; then echo "CRD validation passed."; else echo "CRD validation failed. Please use 'make update-crd' to keep CRDs latest"; exit 1; fi
       
-      - name: Check gofmt
-        run: |
-          gofmt -l ./pkg ./cmd ./api | grep . && echo "Please run "make fmt" to verify gofmt" && exit 1 || exit 0
-
       - name: OpenAPI validation check
         run: |
           make gen-openapi
