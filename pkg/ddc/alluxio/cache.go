@@ -221,6 +221,13 @@ func (e *AlluxioEngine) invokeCleanCache(path string) (err error) {
 
 }
 
+// getGracefulShutdownLimits retrieves the maximum number of retry attempts for graceful shutdown.
+// It first attempts to get the value from the runtime specification's CleanCachePolicy.
+// If MaxRetryAttempts is not specified in the runtime, it returns the default value.
+//
+// Returns:
+//   - gracefulShutdownLimits: The number of retry attempts allowed for graceful shutdown
+//   - error: Any error that occurred while retrieving the runtime
 func (e *AlluxioEngine) getGracefulShutdownLimits() (gracefulShutdownLimits int32, err error) {
 	runtime, err := e.getRuntime()
 	if err != nil {
