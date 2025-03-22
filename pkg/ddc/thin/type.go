@@ -65,7 +65,7 @@ type Fuse struct {
 	Resources        common.Resources              `json:"resources,omitempty"`
 	Ports            []corev1.ContainerPort        `json:"ports,omitempty"`
 	CriticalPod      bool                          `json:"criticalPod,omitempty"`
-	HostNetwork      bool                          `json:"hostNetwork,omitempty"`
+	HostNetwork      bool                          `json:"hostNetwork"`
 	HostPID          bool                          `json:"hostPID,omitempty"`
 	TargetPath       string                        `json:"targetPath,omitempty"`
 	NodeSelector     map[string]string             `json:"nodeSelector,omitempty"`
