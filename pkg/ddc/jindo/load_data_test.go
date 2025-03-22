@@ -554,7 +554,7 @@ func Test_genDataLoadValue(t *testing.T) {
 	}
 }
 
-// TestGenerateDataLoadValueFileWithRuntimeHDD tests the generation of data load value files 
+// TestGenerateDataLoadValueFileWithRuntimeHDD tests the generation of data load value files
 // when using a JindoRuntime with an HDD-based tiered storage configuration.
 //
 // This function ensures that the dataset and JindoRuntime configurations are correctly initialized
