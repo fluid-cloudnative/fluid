@@ -95,6 +95,7 @@ fuse:
   mountPath: /mnt/jfs
   cacheDir: ""
   hostMountPath: /mnt/jfs
+  hostMetaPath: /mnt/.meta
   command: "/usr/local/bin/juicefs mount /mnt/jfs"
   statCmd: "stat -c %i /mnt/jfs"
   updateStrategy:

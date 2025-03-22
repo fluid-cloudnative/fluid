@@ -111,8 +111,10 @@ type Fuse struct {
 	SubPath       string            `json:"subPath,omitempty"`
 	MountPath     string            `json:"mountPath,omitempty"`
 	HostMountPath string            `json:"hostMountPath,omitempty"`
+	HostMetaPath  string            `json:"hostMetaPath,omitempty"`
 	Command       string            `json:"command,omitempty"`
 	StatCmd       string            `json:"statCmd,omitempty"`
+	PostStartCmd  string            `json:"postStartCmd,omitempty"`
 	Labels        map[string]string `json:"labels,omitempty"`
 	Annotations   map[string]string `json:"annotations,omitempty"`
 }

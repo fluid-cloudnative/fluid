@@ -228,6 +228,15 @@ func CreatePersistentVolumeClaimForRuntime(client client.Client,
 				},
 			},
 		}
+
+		fuseDs, err := kubeclient.GetDaemonset(client, runtime.GetFuseName(), runtime.GetNamespace())
+		if err != nil {
+			return err
+		}
+		if len(fuseDs.Spec.Template.Spec.Containers) == 1 {
+			pvc.Annotations[common.AnnotationRuntimeFuseImageVersion] = fuseDs.Spec.Template.Spec.Containers[0].Image
+		}
+
 		metadataList := runtime.GetMetadataList()
 		for i := range metadataList {
 			if selector := metadataList[i].Selector; selector.Group != corev1.GroupName || selector.Kind != "PersistentVolumeClaim" {
