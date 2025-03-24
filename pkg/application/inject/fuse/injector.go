@@ -173,7 +173,6 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 			Specs:  podSpecs,
 			Options: common.FuseSidecarInjectOption{
 				EnableCacheDir:             utils.InjectCacheDirEnabled(podSpecs.MetaObj.Labels),
-				EnableUnprivilegedSidecar:  utils.FuseSidecarUnprivileged(podSpecs.MetaObj.Labels),
 				SkipSidecarPostStartInject: utils.SkipSidecarPostStartInject(podSpecs.MetaObj.Labels),
 			},
 			ExtraArgs: mutator.FindExtraArgsFromMetadata(podSpecs.MetaObj, platform),
