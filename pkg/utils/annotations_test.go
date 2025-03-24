@@ -112,8 +112,7 @@ func TestServerlessEnabled(t *testing.T) {
 		expect      bool
 	}
 
-	ServerlessPlatformKey = "serverless.fluid.io/platform"
-	ServerlessPlatformVal = "foo"
+	DeprecatedServerlessPlatformKey = "serverless.fluid.io/platform"
 
 	testcases := []testCase{
 		{
@@ -310,8 +309,7 @@ func TestServerlessPlatformMatched(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.envs != nil {
-				ServerlessPlatformKey = tt.envs.ServerlessPlatformKey
-				ServerlessPlatformVal = tt.envs.ServerlessPlatformVal
+				DeprecatedServerlessPlatformKey = tt.envs.ServerlessPlatformKey
 			}
 			if gotMatch := serverlessPlatformMatched(tt.infos); gotMatch != tt.wantMatch {
 				t.Errorf("ServerlessPlatformMatched() = %v, want %v", gotMatch, tt.wantMatch)

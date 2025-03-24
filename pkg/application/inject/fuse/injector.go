@@ -162,9 +162,9 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 			continue
 		}
 
-		platform := s.getServerlessPlatformFromMeta(podSpecs.MetaObj)
-		if len(platform) == 0 {
-			return out, fmt.Errorf("can't find any supported platform-specific mutator in pod's metadata")
+		platform, err := s.getServerlessPlatformFromMeta(podSpecs.MetaObj)
+		if err != nil {
+			return out, fmt.Errorf("fail to get serverless platform from pod's meta: %v", err)
 		}
 
 		mutatorBuildArgs := mutator.MutatorBuildArgs{
@@ -257,6 +257,6 @@ func (s *Injector) shouldInject(pod common.FluidObject) (should bool, err error)
 	return should, nil
 }
 
-func (s *Injector) getServerlessPlatformFromMeta(metaObj metav1.ObjectMeta) string {
-	return utils.GetServerlessPlatform(metaObj.Labels)
+func (s *Injector) getServerlessPlatformFromMeta(metaObj metav1.ObjectMeta) (string, error) {
+	return utils.GetServerlessPlatform(metaObj)
 }

@@ -17,26 +17,25 @@ limitations under the License.
 package utils
 
 import (
+	"fmt"
 	stdlog "log"
 	"os"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
-	ServerlessPlatformKey        string = ""
-	ServerlessPlatformVal        string = ""
-	disableApplicationController string = ""
+	// DEPRECATED: the label key for Fluid webhook to determine serverless platform.
+	// It's replaced by commmon.AnnotationServerlessPlatform.
+	DeprecatedServerlessPlatformKey string = ""
+	disableApplicationController    string = ""
 )
 
 func init() {
-	if envVal, exists := os.LookupEnv(common.EnvServerlessPlatformKey); exists {
-		ServerlessPlatformKey = envVal
-		stdlog.Printf("Found %s value %s, using it as ServerlessPlatformLabelKey", common.EnvServerlessPlatformKey, envVal)
-	}
-	if envVal, exists := os.LookupEnv(common.EnvServerlessPlatformVal); exists {
-		ServerlessPlatformVal = envVal
-		stdlog.Printf("Found %s value %s, using it as ServerlessPlatformLabelValue", common.EnvServerlessPlatformVal, envVal)
+	if envVal, exists := os.LookupEnv(common.DeprecatedEnvServerlessPlatformKey); exists {
+		DeprecatedServerlessPlatformKey = envVal
+		stdlog.Printf("Found %s value %s, using it as ServerlessPlatformLabelKey", common.DeprecatedEnvServerlessPlatformKey, envVal)
 	}
 	if envVal, exists := os.LookupEnv(common.EnvDisableApplicationController); exists {
 		disableApplicationController = envVal
@@ -75,21 +74,52 @@ const (
 	PlatformUnprivileged = "Unprivileged"
 )
 
-func GetServerlessPlatform(infos map[string]string) (platform string) {
-	if matchedKey(infos, ServerlessPlatformKey) {
-		return infos[ServerlessPlatformKey]
+func GetServerlessPlatform(metaObj metav1.ObjectMeta) (platform string, err error) {
+	metaLabels := metaObj.Labels
+	metaAnnotations := metaObj.Annotations
+
+	// Setting both DeprecatedServerlessPlatformKey and common.InjectServerless is not allowed
+	if matchedKey(metaLabels, DeprecatedServerlessPlatformKey) && enabled(metaLabels, common.InjectServerless) {
+		err = fmt.Errorf("\"%s\" and \"%s\" is not allowed to set together, remove \"%s\" and retry", DeprecatedServerlessPlatformKey, common.InjectServerless, DeprecatedServerlessPlatformKey)
+		return
 	}
 
-	if enabled(infos, common.InjectServerless) || enabled(infos, common.InjectFuseSidecar) {
-		if enabled(infos, common.InjectUnprivilegedFuseSidecar) {
-			return PlatformUnprivileged
+	// handle deprecated serverless platform key.
+	if matchedKey(metaLabels, DeprecatedServerlessPlatformKey) {
+		platform = metaLabels[DeprecatedServerlessPlatformKey]
+		return
+	}
+
+	// handle deprecated common.InjectFuseSidecar. In this case,
+	// only two platforms are supported: PlatformDefault and PlatformUnprivileged
+	if enabled(metaLabels, common.InjectFuseSidecar) {
+		if enabled(metaLabels, common.InjectUnprivilegedFuseSidecar) {
+			platform = PlatformUnprivileged
 		} else {
-			return PlatformDefault
+			platform = PlatformDefault
 		}
+		return
+	}
+
+	if enabled(metaLabels, common.InjectServerless) {
+		if enabled(metaLabels, common.InjectUnprivilegedFuseSidecar) {
+			platform = PlatformUnprivileged
+			return
+		}
+
+		// Setting common.InjectServerless in labels and common.AnnotationServerlessPlatform in annotations
+		// together to indicate the serverless platform
+		if matchedKey(metaAnnotations, common.AnnotationServerlessPlatform) {
+			platform = metaAnnotations[common.AnnotationServerlessPlatform]
+			return
+		}
+
+		platform = PlatformDefault
+		return
 	}
 
 	// default to an empty platform, meaning no platform is found
-	return ""
+	return "", fmt.Errorf("no serverless platform can be found from Pod's metadata")
 }
 
 // ServerlessEnabled decides if fuse sidecar should be injected, whether privileged or unprivileged
@@ -122,11 +152,11 @@ func AppControllerDisabled(info map[string]string) (match bool) {
 }
 
 func serverlessPlatformMatched(infos map[string]string) (match bool) {
-	if len(ServerlessPlatformKey) == 0 {
+	if len(DeprecatedServerlessPlatformKey) == 0 {
 		return
 	}
 
-	return matchedKey(infos, ServerlessPlatformKey)
+	return matchedKey(infos, DeprecatedServerlessPlatformKey)
 }
 
 func SkipPrecheckEnable(infos map[string]string) (match bool) {
