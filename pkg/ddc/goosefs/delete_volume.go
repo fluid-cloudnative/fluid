@@ -20,6 +20,7 @@ import (
 	volumeHelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 )
 
+// DeleteVolume creates volume
 // DeleteVolume deletes the GooseFS volume by performing the following steps:
 // 1. Initializes the runtime if it is not already initialized.
 // 2. Deletes the Fuse Persistent Volume Claim (PVC) associated with the volume.
