@@ -18,7 +18,7 @@ package common
 
 // Runtime for Alluxio
 const (
-	AlluxioRuntime = "alluxio"
+	    AlluxioRuntime = "alluxio"
 
 	AlluxioMountType = "fuse.alluxio-fuse"
 
