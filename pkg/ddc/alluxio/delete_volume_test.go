@@ -38,17 +38,19 @@ type TestCase struct {
 }
 
 // newTestAlluxioEngine creates an instance of AlluxioEngine for testing purposes.
-// 
+//
 // Parameters:
-//   client     - A Kubernetes client used for interactions with the API server.
-//   name       - The name for the AlluxioEngine (used for associated PV/PVC resources in tests).
-//   namespace  - The namespace where the resources reside.
-//   withRunTime - A flag indicating whether the engine should be initialized with runtime information.
-//                 When true, an AlluxioRuntime instance and corresponding runtimeInfo are created;
-//                 when false, both runtime and runtimeInfo are set to nil to simulate a scenario without runtime support.
-// 
+//
+//	client     - A Kubernetes client used for interactions with the API server.
+//	name       - The name for the AlluxioEngine (used for associated PV/PVC resources in tests).
+//	namespace  - The namespace where the resources reside.
+//	withRunTime - A flag indicating whether the engine should be initialized with runtime information.
+//	              When true, an AlluxioRuntime instance and corresponding runtimeInfo are created;
+//	              when false, both runtime and runtimeInfo are set to nil to simulate a scenario without runtime support.
+//
 // Returns:
-//   A pointer to an AlluxioEngine instance configured according to the provided parameters.
+//
+//	A pointer to an AlluxioEngine instance configured according to the provided parameters.
 func newTestAlluxioEngine(client client.Client, name string, namespace string, withRunTime bool) *AlluxioEngine {
 	runTime := &datav1alpha1.AlluxioRuntime{}
 	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, "alluxio")

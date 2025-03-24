@@ -184,6 +184,7 @@ func TestMountRootWithoutEnvSet(t *testing.T) {
 // This function checks whether a specified port is in the list of used ports.
 // Test cases include:
 //   - Checking if a port is in the list of used ports.
+//
 // Each test case calls the isPortInUsed function and verifies if the returned value matches the expected result.
 // If the returned value does not match the expected result, the test fails and outputs an error message.
 func Test_isPortInUsed(t *testing.T) {
@@ -368,29 +369,29 @@ func TestGetDataSetFileNum(t *testing.T) {
 	}
 }
 
-// TestGetRuntime tests the AlluxioEngine.getRuntime() method to verify it correctly retrieves 
+// TestGetRuntime tests the AlluxioEngine.getRuntime() method to verify it correctly retrieves
 // the AlluxioRuntime custom resource from the Kubernetes cluster.
-// 
+//
 // Test Structure:
 // - Defines a test table with multiple test cases (though currently only one example exists).
 // - Each test case specifies:
-//   * Input fields: Simulated AlluxioEngine instance configuration.
-//   * Expected output: The AlluxioRuntime object that should be returned.
-//   * Error expectation: Whether an error is expected during retrieval.
-// 
+//   - Input fields: Simulated AlluxioEngine instance configuration.
+//   - Expected output: The AlluxioRuntime object that should be returned.
+//   - Error expectation: Whether an error is expected during retrieval.
+//
 // Key Testing Components:
-// - Uses Kubernetes client-go testing utilities (fake client, scheme registration) to mock 
-//   API server interactions, avoiding real cluster dependencies.
-// - Validates both successful retrieval and error conditions.
-// - Checks deep equality between retrieved and expected objects to ensure metadata accuracy.
+//   - Uses Kubernetes client-go testing utilities (fake client, scheme registration) to mock
+//     API server interactions, avoiding real cluster dependencies.
+//   - Validates both successful retrieval and error conditions.
+//   - Checks deep equality between retrieved and expected objects to ensure metadata accuracy.
 //
 // Test Workflow for Each Case:
 // 1. Register required Kubernetes resource types (AlluxioRuntime, core v1) into the scheme.
 // 2. Initialize a fake client preloaded with the expected AlluxioRuntime object.
 // 3. Instantiate the AlluxioEngine with test-specific configurations and the fake client.
 // 4. Execute getRuntime() and validate:
-//    - Error behavior matches expectations
-//    - Retrieved object matches the expected object structure exactly
+//   - Error behavior matches expectations
+//   - Retrieved object matches the expected object structure exactly
 //
 // Edge Cases Covered (via additional test cases in TODO):
 // - Non-existent runtime
@@ -815,12 +816,12 @@ func TestGetFuseDaemonsetName(t *testing.T) {
 // namespace, and engine name parameters to validate the resulting filesystem path.
 //
 // Parameters:
-//  - t : *testing.T
-//    Testing framework handle for managing test state and reporting failures
+//   - t : *testing.T
+//     Testing framework handle for managing test state and reporting failures
 //
 // Returns:
-//  - None
-//    Failures are reported through t.Errorf
+//   - None
+//     Failures are reported through t.Errorf
 func TestGetMountPoint(t *testing.T) {
 	type fields struct {
 		name      string
