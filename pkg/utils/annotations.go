@@ -134,6 +134,7 @@ func ServerlessEnabled(infos map[string]string) (match bool) {
 // FuseSidecarPrivileged decides if the injected fuse sidecar should be privileged, only used when fuse sidecar should be injected
 // TODO: The func is used for Fluid App controller to determine if it's a pod should be watched. It could be better to use another way(e.g. a special label)to indicate this.
 func FuseSidecarPrivileged(metaObj metav1.ObjectMeta) (match bool) {
+	// error can be ignored here because platform equals to "" when error is not nil
 	platform, _ := GetServerlessPlatform(metaObj)
 	return platform == PlatformDefault
 }
