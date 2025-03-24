@@ -816,12 +816,12 @@ func TestGetFuseDaemonsetName(t *testing.T) {
 // namespace, and engine name parameters to validate the resulting filesystem path.
 //
 // Parameters:
-//  - t : *testing.T
-//    Testing framework handle for managing test state and reporting failures
+//   - t : *testing.T
+//     Testing framework handle for managing test state and reporting failures
 //
 // Returns:
-//  - None
-//    Failures are reported through t.Errorf
+//   - None
+//     Failures are reported through t.Errorf
 func TestGetMountPoint(t *testing.T) {
 	type fields struct {
 		name      string
