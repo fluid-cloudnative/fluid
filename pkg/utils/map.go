@@ -86,3 +86,13 @@ func OrderedKeys[K cmp.Ordered, V any](m map[K]V) []K {
 
 	return keys
 }
+
+func KeyMatched[K comparable, V any](m map[K]V, key K) bool {
+	_, match := m[key]
+	return match
+}
+
+func KeyValueMatched[K comparable, V comparable](m map[K]V, key K, value V) bool {
+	val, exists := m[key]
+	return exists && val == value
+}

@@ -231,51 +231,6 @@ func TestCacheDirInjectionEnabled(t *testing.T) {
 	}
 }
 
-func TestMatchedValue(t *testing.T) {
-	tests := []struct {
-		name   string
-		infos  map[string]string
-		key    string
-		val    string
-		expect bool
-	}{
-		{
-			name: "include_key_matched",
-			infos: map[string]string{
-				"mytest": "foobar",
-			},
-			key:    "mytest",
-			val:    "foobar",
-			expect: true,
-		},
-		{
-			name: "include_key_not_matched",
-			infos: map[string]string{
-				"mytest": "foobar",
-			},
-			key:    "mytest",
-			val:    "other",
-			expect: false,
-		},
-		{
-			name: "exclude_key",
-			infos: map[string]string{
-				"other": "foobar",
-			},
-			key:    "mytest",
-			val:    "foobar",
-			expect: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if gotMatch := matchedValue(tt.infos, tt.key, tt.val); gotMatch != tt.expect {
-				t.Errorf("matchedValue() = %v, want %v", gotMatch, tt.expect)
-			}
-		})
-	}
-}
-
 func TestServerlessPlatformMatched(t *testing.T) {
 	type envPlatform struct {
 		ServerlessPlatformKey string
@@ -313,36 +268,6 @@ func TestServerlessPlatformMatched(t *testing.T) {
 			}
 			if gotMatch := serverlessPlatformMatched(tt.infos); gotMatch != tt.wantMatch {
 				t.Errorf("ServerlessPlatformMatched() = %v, want %v", gotMatch, tt.wantMatch)
-			}
-		})
-	}
-}
-
-func Test_matchedKey(t *testing.T) {
-
-	tests := []struct {
-		name      string
-		key       string
-		infos     map[string]string
-		wantMatch bool
-	}{
-		{
-			name:      "test_default_platform",
-			infos:     map[string]string{"disabled.fluid.io/platform": "test"},
-			key:       "",
-			wantMatch: false,
-		},
-		{
-			name:      "test_platform_env_set",
-			infos:     map[string]string{"serverless.fluid.io/platform": "test"},
-			key:       "serverless.fluid.io/platform",
-			wantMatch: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if gotMatch := matchedKey(tt.infos, tt.key); gotMatch != tt.wantMatch {
-				t.Errorf("matchedKey() = %v, want %v", gotMatch, tt.wantMatch)
 			}
 		})
 	}

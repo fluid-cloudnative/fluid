@@ -61,7 +61,7 @@ func InjectCacheDirEnabled(infos map[string]string) (match bool) {
 }
 
 func SkipSidecarPostStartInject(infos map[string]string) (match bool) {
-	return matchedValue(infos, common.InjectSidecarPostStart, common.False)
+	return KeyValueMatched(infos, common.InjectSidecarPostStart, common.False)
 }
 
 func AppContainerPostStartInjectEnabled(infos map[string]string) (match bool) {
@@ -79,13 +79,13 @@ func GetServerlessPlatform(metaObj metav1.ObjectMeta) (platform string, err erro
 	metaAnnotations := metaObj.Annotations
 
 	// Setting both DeprecatedServerlessPlatformKey and common.InjectServerless is not allowed
-	if matchedKey(metaLabels, DeprecatedServerlessPlatformKey) && enabled(metaLabels, common.InjectServerless) {
+	if KeyMatched(metaLabels, DeprecatedServerlessPlatformKey) && enabled(metaLabels, common.InjectServerless) {
 		err = fmt.Errorf("\"%s\" and \"%s\" is not allowed to set together, remove \"%s\" and retry", DeprecatedServerlessPlatformKey, common.InjectServerless, DeprecatedServerlessPlatformKey)
 		return
 	}
 
 	// handle deprecated serverless platform key.
-	if matchedKey(metaLabels, DeprecatedServerlessPlatformKey) {
+	if KeyMatched(metaLabels, DeprecatedServerlessPlatformKey) {
 		platform = metaLabels[DeprecatedServerlessPlatformKey]
 		return
 	}
@@ -109,7 +109,7 @@ func GetServerlessPlatform(metaObj metav1.ObjectMeta) (platform string, err erro
 
 		// Setting common.InjectServerless in labels and common.AnnotationServerlessPlatform in annotations
 		// together to indicate the serverless platform
-		if matchedKey(metaAnnotations, common.AnnotationServerlessPlatform) {
+		if KeyMatched(metaAnnotations, common.AnnotationServerlessPlatform) {
 			platform = metaAnnotations[common.AnnotationServerlessPlatform]
 			return
 		}
@@ -148,7 +148,7 @@ func InjectSidecarDone(infos map[string]string) (match bool) {
 }
 
 func AppControllerDisabled(info map[string]string) (match bool) {
-	return matchedKey(info, disableApplicationController)
+	return KeyMatched(info, disableApplicationController)
 }
 
 func serverlessPlatformMatched(infos map[string]string) (match bool) {
@@ -156,7 +156,7 @@ func serverlessPlatformMatched(infos map[string]string) (match bool) {
 		return
 	}
 
-	return matchedKey(infos, DeprecatedServerlessPlatformKey)
+	return KeyMatched(infos, DeprecatedServerlessPlatformKey)
 }
 
 func SkipPrecheckEnable(infos map[string]string) (match bool) {
@@ -165,27 +165,5 @@ func SkipPrecheckEnable(infos map[string]string) (match bool) {
 
 // enabled checks if the given name has a value of "true"
 func enabled(infos map[string]string, name string) (match bool) {
-	return matchedValue(infos, name, common.True)
-}
-
-// matchedValue checks if the given name has the expected value
-func matchedValue(infos map[string]string, name string, val string) (match bool) {
-	for key, value := range infos {
-		if key == name && value == val {
-			match = true
-			break
-		}
-	}
-	return
-}
-
-// matchedKey checks if the given name exists
-func matchedKey(infos map[string]string, name string) (match bool) {
-	for key := range infos {
-		if key == name {
-			match = true
-			break
-		}
-	}
-	return
+	return KeyValueMatched(infos, name, common.True)
 }
