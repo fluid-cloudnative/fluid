@@ -21,6 +21,11 @@ import (
 )
 
 // DeleteVolume creates volume
+// DeleteVolume deletes the GooseFS volume by performing the following steps:
+// 1. Initializes the runtime if it is not already initialized.
+// 2. Deletes the Fuse Persistent Volume Claim (PVC) associated with the volume.
+// 3. Deletes the Fuse Persistent Volume (PV) associated with the volume.
+// Returns an error if any of the steps fail.
 func (e *GooseFSEngine) DeleteVolume() (err error) {
 
 	if e.runtime == nil {
