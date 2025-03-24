@@ -51,6 +51,19 @@ func getTestAlluxioEngineNode(client client.Client, name string, namespace strin
 	return engine
 }
 
+// TestSyncScheduleInfoToCacheNodes tests the behavior of the SyncScheduleInfoToCacheNodes method 
+// for AlluxioEngine, ensuring it correctly labels Kubernetes nodes based on pod scheduling.
+//
+// This test covers multiple scenarios:
+// - "create": Ensures labels are added to nodes where pods are scheduled.
+// - "add": Verifies label addition when new pods/nodes are involved.
+// - "noController": Checks behavior when pods lack a controller reference (should not label).
+// - "deprecated": Tests legacy deployment via DaemonSet and ensures no labels are added.
+//
+// The test sets up a fake Kubernetes client populated with a combination of StatefulSets,
+// DaemonSets, Pods, and Nodes for each test case. It invokes SyncScheduleInfoToCacheNodes()
+// and validates that node labels are correctly synchronized with expected node names.
+// Discrepancies between expected and actual labeled nodes trigger test failures.
 func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 	type fields struct {
 		// runtime   *datav1alpha1.AlluxioRuntime
