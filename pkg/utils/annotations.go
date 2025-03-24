@@ -123,17 +123,19 @@ func GetServerlessPlatform(metaObj metav1.ObjectMeta) (platform string, err erro
 }
 
 // ServerlessEnabled decides if fuse sidecar should be injected, whether privileged or unprivileged
-// - serverlessPlatform implies injecting unprivileged fuse sidecar
-// - serverless.fluid.io/inject=true implies injecting (privileged/unprivileged) fuse sidecar,
+// We don't have to know which serverless platform it is using here.
+// - serverless.fluid.io/inject=true implies injecting fuse sidecar.
+// - [deprecated] serverlessPlatform implies injecting fuse sidecar according to the deprecated env variable. It's deprecated by common.AnnotationServerlessPlatform.
 // - [deprecated] fuse.sidecar.fluid.io/inject=true is the deprecated version of serverless.fluid.io/inject=true
 func ServerlessEnabled(infos map[string]string) (match bool) {
-	return serverlessPlatformMatched(infos) || enabled(infos, common.InjectServerless) || enabled(infos, common.InjectFuseSidecar)
+	return enabled(infos, common.InjectServerless) || serverlessPlatformMatched(infos) || enabled(infos, common.InjectFuseSidecar)
 }
 
 // FuseSidecarPrivileged decides if the injected fuse sidecar should be privileged, only used when fuse sidecar should be injected
-// - sidecar is privileged only when setting serverless.fluid.io/inject=true without unprivileged.sidecar.fluid.io/inject=true
-func FuseSidecarPrivileged(infos map[string]string) (match bool) {
-	return enabled(infos, common.InjectServerless) && !(enabled(infos, common.InjectUnprivilegedFuseSidecar))
+// TODO: The func is used for Fluid App controller to determine if it's a pod should be watched. It could be better to use another way(e.g. a special label)to indicate this.
+func FuseSidecarPrivileged(metaObj metav1.ObjectMeta) (match bool) {
+	platform, _ := GetServerlessPlatform(metaObj)
+	return platform == PlatformDefault
 }
 
 func InjectSidecarDone(infos map[string]string) (match bool) {

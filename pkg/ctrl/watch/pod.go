@@ -104,7 +104,7 @@ func ShouldInQueue(pod *corev1.Pod) bool {
 	}
 
 	// ignore if it's not fluid label pod
-	if !utils.FuseSidecarPrivileged(pod.Labels) {
+	if !utils.FuseSidecarPrivileged(pod.ObjectMeta) {
 		log.Info("Privileged fuse sidecar is not enabled.", "labels", pod.Labels)
 		return false
 	}
