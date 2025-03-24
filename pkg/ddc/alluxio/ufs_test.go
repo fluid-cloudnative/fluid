@@ -112,6 +112,12 @@ func TestFreeStorageBytes(t *testing.T) {
 	}
 }
 
+// TestTotalStorageBytes verifies the functionality of AlluxioEngine's TotalStorageBytes method.
+// It validates whether the method correctly calculates total storage capacity by:
+// - Mocking AlluxioRuntime configuration and container command execution
+// - Testing both normal scenarios (expected values) and error conditions
+// - Using patched container command output to ensure predictable test results
+// Each test case checks if returned values match expectations and errors are properly handled.
 func TestTotalStorageBytes(t *testing.T) {
 	type fields struct {
 		runtime *datav1alpha1.AlluxioRuntime
@@ -233,6 +239,23 @@ func TestShouldCheckUFS(t *testing.T) {
 	}
 }
 
+
+// TestPrepareUFS tests the PrepareUFS method of AlluxioEngine.
+// This method prepares the underlying file system (UFS) by checking
+// the Alluxio master state, mounting UFS, and performing necessary
+// metadata synchronization.
+//
+// Test logic:
+// 1. Create multiple test cases to simulate different states of
+//    AlluxioRuntime, Dataset, and StatefulSet.
+// 2. Initialize AlluxioEngine and its dependencies using a fake client.
+// 3. Use Monkey Patching to mock the behavior of AlluxioFileUtils methods.
+// 4. Call e.PrepareUFS() and verify whether the UFS mounting process
+//    executes correctly.
+// 5. Assert that the returned errors match the expected outcomes.
+//
+// Parameters:
+// - t *testing.T: The testing context provided by the Go testing framework.
 func TestPrepareUFS(t *testing.T) {
 	type fields struct {
 		runtime            *datav1alpha1.AlluxioRuntime

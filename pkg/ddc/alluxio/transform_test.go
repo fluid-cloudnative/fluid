@@ -94,6 +94,12 @@ func TestTransformFuse(t *testing.T) {
 	}
 }
 
+// TestTransformMaster function is designed to test the transformMasters method of the AlluxioEngine struct.
+// This method processes a given AlluxioRuntime object to set properties in the Alluxio struct, specifically focusing on the HostNetwork and ImagePullSecrets fields within the Master attribute.
+// The function outlines several test cases, each containing a uniquely configured AlluxioRuntime object and the expected Alluxio object outcome.
+// These test cases cover various network modes (such as ContainerNetworkMode and HostNetworkMode) and hierarchical imagePullSecrets configurations.
+// After executing each test case, the actual result is compared with the expected outcome, and if there's a mismatch, an error is logged using t.Errorf.
+// This process ensures the accuracy of the transformMasters method under different configurations.
 func TestTransformMaster(t *testing.T) {
 	testCases := map[string]struct {
 		runtime   *datav1alpha1.AlluxioRuntime
@@ -183,9 +189,9 @@ func TestTransformMaster(t *testing.T) {
 	}
 }
 
-// TestTransformWorkers verifies that the transformWorkers function correctly transforms 
-// the worker configuration of AlluxioRuntime into the expected Alluxio structure. 
-// It tests different network modes, node selectors, and image pull secrets to ensure 
+// TestTransformWorkers verifies that the transformWorkers function correctly transforms
+// the worker configuration of AlluxioRuntime into the expected Alluxio structure.
+// It tests different network modes, node selectors, and image pull secrets to ensure
 // correct transformation behavior.
 func TestTransformWorkers(t *testing.T) {
 	testCases := map[string]struct {
@@ -588,19 +594,21 @@ func TestGetMediumTypeFromVolumeSource(t *testing.T) {
 	}
 }
 
-// TestAlluxioEngine_allocateSinglePort is a unit test function that tests 
+// TestAlluxioEngine_allocateSinglePort is a unit test function that tests
 // the `allocateSinglePort` method of the `AlluxioEngine` struct.
-// The function verifies the behavior of port allocation for Alluxio master 
+// The function verifies the behavior of port allocation for Alluxio master
 // and worker components under different scenarios,
-// including when properties are set, unset, or when runtime specifications 
+// including when properties are set, unset, or when runtime specifications
 // are provided.
-// 
+//
 // Parameters:
-//   - t: A testing.T object provided by the Go testing framework, used to 
+//   - t: A testing.T object provided by the Go testing framework, used to
+//
 // manage test state and support formatted test logs.
 //
 // Returns:
-//   - None. The function is a test function and does not return any value. 
+//   - None. The function is a test function and does not return any value.
+//
 // It reports test failures using the `t.Errorf` method.
 func TestAlluxioEngine_allocateSinglePort(t *testing.T) {
 	// Define the fields required for the AlluxioEngine struct.
@@ -902,10 +910,10 @@ func TestAlluxioEngine_allocatePorts(t *testing.T) {
 //
 // Test Cases:
 // 1. "master properties is not null":
-//    - Ensures that when master-specific properties exist, they override the global properties.
+//   - Ensures that when master-specific properties exist, they override the global properties.
 //
 // 2. "properties is not null for master":
-//    - Ensures that both master-specific and additional global properties are correctly handled.
+//   - Ensures that both master-specific and additional global properties are correctly handled.
 //
 // The function iterates over multiple test cases and checks if the transformed properties
 // match the expected values. If the transformation does not produce the expected result, the test fails.

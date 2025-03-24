@@ -108,6 +108,18 @@ func TestGenerateDataLoadValueFile(t *testing.T) {
 	}
 }
 
+// Test_genDataLoadValue is a unit test function that tests the genDataLoadValue method of the AlluxioEngine struct.
+// It verifies the correctness of the DataLoadValue generation under different scenarios, including cases with scheduler name,
+// affinity, node selector, and tolerations. The function uses a map of test cases to compare the generated DataLoadValue
+// with the expected output. If there is a mismatch, the test will fail and report the discrepancy.
+//
+// Parameters:
+//   - t: A testing.T object used for managing test state and reporting test failures. It provides methods like Errorf and Fail
+//        to indicate test failures and log additional information.
+//
+// Returns:
+//   - None (This is a test function, so it does not return any value. Its purpose is to validate the behavior of the code
+//           under test and report any issues via the testing.T object.)
 func Test_genDataLoadValue(t *testing.T) {
 	testCases := map[string]struct {
 		image         string
@@ -465,6 +477,21 @@ func Test_genDataLoadValue(t *testing.T) {
 	}
 }
 
+// TestCheckRuntimeReady tests the CheckRuntimeReady function of the AlluxioEngine.
+// This function verifies whether the Alluxio runtime is ready by mocking the execution of container commands.
+// It uses two mock functions:
+// 1. mockExecCommon: Simulates a successful command execution.
+// 2. mockExecErr: Simulates a failed command execution.
+//
+// The test cases include:
+// 1. A successful runtime check, where the function should return true.
+// 2. A failed runtime check, where the function should return false.
+//
+// Parameters:
+// - t (*testing.T): The testing context for logging and error reporting.
+//
+// Returns:
+// - None. The function asserts the expected results and fails the test if the conditions are not met.
 func TestCheckRuntimeReady(t *testing.T) {
 	mockExecCommon := func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
 		return "", "", nil

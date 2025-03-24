@@ -116,6 +116,24 @@ func TestUpdateCacheOfDataset(t *testing.T) {
 	}
 }
 
+// TestUpdateDatasetStatus tests the UpdateDatasetStatus method of JindoEngine to ensure correct
+// dataset status updates under various phases. It validates:
+// 1. Phase transitions (Bound, Failed, None)
+// 2. Preservation of HCFS status fields during updates
+// 3. Proper synchronization of cache states from runtime status
+//
+// Test strategy:
+//   - Creates mock Dataset and JindoRuntime objects in a test namespace
+//   - Uses a fake Kubernetes client to simulate API server interactions
+//   - Verifies three key aspects of DatasetStatus after updates:
+//     a) Phase matches expected state
+//     b) CacheStates are properly propagated from runtime status
+//     c) HCFSStatus fields remain unchanged during phase transitions
+//
+// Test cases cover:
+// - Successful bound state update
+// - Failure state handling
+// - Default/none state transition
 func TestUpdateDatasetStatus(t *testing.T) {
 	testDatasetInputs := []*datav1alpha1.Dataset{
 		{
@@ -253,8 +271,8 @@ func TestUpdateDatasetStatus(t *testing.T) {
 	}
 }
 
-// TestBindToDataset tests the BindToDataset method of JindoEngine to verify whether it can correctly bind the dataset to the runtime 
-// and update the dataset's cache state and HCFS status. The test creates mock Dataset and JindoRuntime objects, 
+// TestBindToDataset tests the BindToDataset method of JindoEngine to verify whether it can correctly bind the dataset to the runtime
+// and update the dataset's cache state and HCFS status. The test creates mock Dataset and JindoRuntime objects,
 // uses a fake client to simulate operations, and finally checks if the dataset's Phase, CacheStates, and HCFSStatus match the expected results.
 func TestBindToDataset(t *testing.T) {
 	testDatasetInputs := []*datav1alpha1.Dataset{

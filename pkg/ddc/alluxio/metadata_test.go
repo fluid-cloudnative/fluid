@@ -349,6 +349,14 @@ func TestSyncMetadataWithoutMaster(t *testing.T) {
 	}
 }
 
+// TestShouldSyncMetadata tests the behavior of the shouldSyncMetadata method.
+// This test verifies whether metadata synchronization is correctly determined
+// under different Dataset and AlluxioRuntime configurations.
+// Test cases include:
+// 1. A Dataset with metadata already synced should not trigger synchronization.
+// 2. A Dataset with an empty UfsTotal should trigger synchronization by default.
+// 3. A Dataset with AutoSync enabled should trigger synchronization.
+// 4. A Dataset with AutoSync disabled should not trigger synchronization.
 func TestShouldSyncMetadata(t *testing.T) {
 	datasetInputs := []datav1alpha1.Dataset{
 		{
@@ -502,6 +510,14 @@ func TestShouldSyncMetadata(t *testing.T) {
 	}
 }
 
+// TestShouldRestoreMetadata tests the shouldRestoreMetadata function of the AlluxioEngine.
+// It creates a set of test datasets and initializes a fake client with these datasets.
+// Then, it creates two AlluxioEngine instances with different configurations and checks
+// if the shouldRestoreMetadata function returns the expected results for each instance.
+// The test cases include:
+// - An engine with a dataset that has a DataRestoreLocation specified, expecting shouldRestoreMetadata to return true.
+// - An engine with a dataset that does not have a DataRestoreLocation specified, expecting shouldRestoreMetadata to return false.
+// If the function does not return the expected result or an error occurs, the test will fail.
 func TestShouldRestoreMetadata(t *testing.T) {
 	datasetInputs := []datav1alpha1.Dataset{
 		{

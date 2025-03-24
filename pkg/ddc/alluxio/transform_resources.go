@@ -48,14 +48,14 @@ func (e *AlluxioEngine) transformResourcesForMaster(runtime *datav1alpha1.Alluxi
 }
 
 // transformResourcesForWorker is responsible for transforming and setting resource limits for the Alluxio Worker component.
-// This function updates the resource requirements for the Worker and JobWorker based on the runtime configuration 
+// This function updates the resource requirements for the Worker and JobWorker based on the runtime configuration
 // and ensures that memory requests meet the required constraints.
 //
 // Parameters:
-//   - runtime: *datav1alpha1.AlluxioRuntime, the runtime configuration of Alluxio, including resource definitions 
-//      for Worker and JobWorker.
+//   - runtime: *datav1alpha1.AlluxioRuntime, the runtime configuration of Alluxio, including resource definitions
+//     for Worker and JobWorker.
 //   - value: *Alluxio, the Alluxio runtime instance used to store the transformed resource information.
-// 
+//
 // Return value:
 //   - error: Returns an error if any issue occurs during resource transformation; otherwise, returns nil.
 func (e *AlluxioEngine) transformResourcesForWorker(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) error {
