@@ -70,8 +70,8 @@ func AppContainerPostStartInjectEnabled(infos map[string]string) (match bool) {
 
 // ---- Utils functions to decide serverless platform ----
 const (
-	PlatformDefault      = "Default"
-	PlatformUnprivileged = "Unprivileged"
+	PlatformDefault      = "default"
+	PlatformUnprivileged = "unprivileged"
 )
 
 func GetServerlessPlatform(metaObj metav1.ObjectMeta) (platform string, err error) {
