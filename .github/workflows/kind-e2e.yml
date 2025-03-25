@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  GO_VERSION: 1.22.10
+  GO_VERSION: 1.23.7
 
 jobs:
   kind-e2e-test:
