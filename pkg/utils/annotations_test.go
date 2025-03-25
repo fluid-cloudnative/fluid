@@ -20,6 +20,9 @@ import (
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestEnabled(t *testing.T) {
@@ -253,3 +256,126 @@ func TestAppControllerDisabled(t *testing.T) {
 		})
 	}
 }
+
+var _ = Describe("GetServerlessPlatform", func() {
+	Context("when the deprecated serverless platform key is set", func() {
+		It("should return the deprecated platform value", func() {
+			DeprecatedServerlessPlatformKey = "fluid.io/deprecated-serverless-platform-key"
+			defer func() {
+				DeprecatedServerlessPlatformKey = ""
+			}()
+			metaObj := metav1.ObjectMeta{
+				Labels: map[string]string{
+					"fluid.io/deprecated-serverless-platform-key": "myplatform",
+				},
+			}
+			platform, err := GetServerlessPlatform(metaObj)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(platform).To(Equal("myplatform"))
+		})
+	})
+
+	Context("when both deprecated serverless platform key and common.InjectServerless are set", func() {
+		It("should return an error", func() {
+			DeprecatedServerlessPlatformKey = "fluid.io/deprecated-serverless-platform-key"
+			defer func() {
+				DeprecatedServerlessPlatformKey = ""
+			}()
+			metaObj := metav1.ObjectMeta{
+				Labels: map[string]string{
+					"fluid.io/deprecated-serverless-platform-key": "myplatform",
+					common.InjectServerless:                       common.True,
+				},
+			}
+			platform, err := GetServerlessPlatform(metaObj)
+			Expect(err).To(HaveOccurred())
+			Expect(platform).To(BeEmpty())
+		})
+	})
+
+	Context("when common.InjectFuseSidecar is set", func() {
+		Context("and common.InjectUnprivilegedFuseSidecar is set", func() {
+			It("should return PlatformUnprivileged", func() {
+				metaObj := metav1.ObjectMeta{
+					Labels: map[string]string{
+						common.InjectFuseSidecar:             common.True,
+						common.InjectUnprivilegedFuseSidecar: common.True,
+					},
+				}
+				platform, err := GetServerlessPlatform(metaObj)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(platform).To(Equal(PlatformUnprivileged))
+			})
+		})
+
+		Context("and common.InjectUnprivilegedFuseSidecar is not set", func() {
+			It("should return PlatformDefault", func() {
+				metaObj := metav1.ObjectMeta{
+					Labels: map[string]string{
+						common.InjectFuseSidecar: common.True,
+					},
+				}
+				platform, err := GetServerlessPlatform(metaObj)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(platform).To(Equal(PlatformDefault))
+			})
+		})
+	})
+
+	Context("when common.InjectServerless is set", func() {
+		Context("and common.InjectUnprivilegedFuseSidecar is set", func() {
+			It("should return PlatformUnprivileged", func() {
+				metaObj := metav1.ObjectMeta{
+					Labels: map[string]string{
+						common.InjectServerless:              common.True,
+						common.InjectUnprivilegedFuseSidecar: common.True,
+					},
+				}
+				platform, err := GetServerlessPlatform(metaObj)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(platform).To(Equal(PlatformUnprivileged))
+			})
+		})
+
+		Context("and common.InjectUnprivilegedFuseSidecar is not set", func() {
+			It("should return PlatformDefault", func() {
+				metaObj := metav1.ObjectMeta{
+					Labels: map[string]string{
+						common.InjectServerless: common.True,
+					},
+				}
+				platform, err := GetServerlessPlatform(metaObj)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(platform).To(Equal(PlatformDefault))
+			})
+		})
+
+		Context("and common.AnnotationServerlessPlatform is set in annotations", func() {
+			It("should return the annotation value", func() {
+				metaObj := metav1.ObjectMeta{
+					Labels: map[string]string{
+						common.InjectServerless: common.True,
+					},
+					Annotations: map[string]string{
+						common.AnnotationServerlessPlatform: "platform1",
+					},
+				}
+				platform, err := GetServerlessPlatform(metaObj)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(platform).To(Equal("platform1"))
+			})
+		})
+	})
+
+	Context("when no serverless platform is set", func() {
+		It("should return an error", func() {
+			metaObj := metav1.ObjectMeta{}
+			platform, err := GetServerlessPlatform(metaObj)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("no serverless platform can be found from Pod's metadata"))
+			Expect(platform).To(BeEmpty())
+		})
+	})
+
+})
+

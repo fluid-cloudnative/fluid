@@ -322,8 +322,3 @@ var _ = Describe("KeyValueMatched", func() {
 		})
 	})
 })
-
-func TestMap(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Map Suite")
-}
