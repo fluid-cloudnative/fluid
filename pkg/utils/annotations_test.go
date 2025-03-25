@@ -378,4 +378,3 @@ var _ = Describe("GetServerlessPlatform", func() {
 	})
 
 })
-
