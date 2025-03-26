@@ -20,6 +20,9 @@ import (
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestEnabled(t *testing.T) {
@@ -56,55 +59,6 @@ func TestEnabled(t *testing.T) {
 	}
 }
 
-func TestFuseSidecarVirtualFuseDeviceEnabled(t *testing.T) {
-	type testCase struct {
-		name        string
-		annotations map[string]string
-		expect      bool
-	}
-
-	testcases := []testCase{
-		{
-			name: "enable_virtual_fuse_device_sidecar",
-			annotations: map[string]string{
-				common.InjectFuseSidecar:             "true",
-				common.InjectUnprivilegedFuseSidecar: "true",
-			},
-			expect: true,
-		},
-		{
-			name: "enable_virtual_fuse_device_serverless",
-			annotations: map[string]string{
-				common.InjectServerless:              "true",
-				common.InjectUnprivilegedFuseSidecar: "true",
-			},
-			expect: true,
-		},
-		{
-			name: "sidecar_without_virtual_fuse_device",
-			annotations: map[string]string{
-				common.InjectFuseSidecar: "true",
-			},
-			expect: false,
-		},
-		{
-			name: "override_virtual_fuse_device_enabled",
-			annotations: map[string]string{
-				common.InjectServerless:              "false",
-				common.InjectUnprivilegedFuseSidecar: "true",
-			},
-			expect: false,
-		},
-	}
-
-	for _, testcase := range testcases {
-		got := FuseSidecarUnprivileged(testcase.annotations)
-		if got != testcase.expect {
-			t.Errorf("The testcase %s's failed due to expect %v but got %v", testcase.name, testcase.expect, got)
-		}
-	}
-}
-
 func TestServerlessEnabled(t *testing.T) {
 	type testCase struct {
 		name        string
@@ -112,8 +66,7 @@ func TestServerlessEnabled(t *testing.T) {
 		expect      bool
 	}
 
-	ServerlessPlatformKey = "serverless.fluid.io/platform"
-	ServerlessPlatformVal = "foo"
+	DeprecatedServerlessPlatformKey = "serverless.fluid.io/platform"
 
 	testcases := []testCase{
 		{
@@ -232,51 +185,6 @@ func TestCacheDirInjectionEnabled(t *testing.T) {
 	}
 }
 
-func TestMatchedValue(t *testing.T) {
-	tests := []struct {
-		name   string
-		infos  map[string]string
-		key    string
-		val    string
-		expect bool
-	}{
-		{
-			name: "include_key_matched",
-			infos: map[string]string{
-				"mytest": "foobar",
-			},
-			key:    "mytest",
-			val:    "foobar",
-			expect: true,
-		},
-		{
-			name: "include_key_not_matched",
-			infos: map[string]string{
-				"mytest": "foobar",
-			},
-			key:    "mytest",
-			val:    "other",
-			expect: false,
-		},
-		{
-			name: "exclude_key",
-			infos: map[string]string{
-				"other": "foobar",
-			},
-			key:    "mytest",
-			val:    "foobar",
-			expect: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if gotMatch := matchedValue(tt.infos, tt.key, tt.val); gotMatch != tt.expect {
-				t.Errorf("matchedValue() = %v, want %v", gotMatch, tt.expect)
-			}
-		})
-	}
-}
-
 func TestServerlessPlatformMatched(t *testing.T) {
 	type envPlatform struct {
 		ServerlessPlatformKey string
@@ -310,41 +218,10 @@ func TestServerlessPlatformMatched(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.envs != nil {
-				ServerlessPlatformKey = tt.envs.ServerlessPlatformKey
-				ServerlessPlatformVal = tt.envs.ServerlessPlatformVal
+				DeprecatedServerlessPlatformKey = tt.envs.ServerlessPlatformKey
 			}
 			if gotMatch := serverlessPlatformMatched(tt.infos); gotMatch != tt.wantMatch {
 				t.Errorf("ServerlessPlatformMatched() = %v, want %v", gotMatch, tt.wantMatch)
-			}
-		})
-	}
-}
-
-func Test_matchedKey(t *testing.T) {
-
-	tests := []struct {
-		name      string
-		key       string
-		infos     map[string]string
-		wantMatch bool
-	}{
-		{
-			name:      "test_default_platform",
-			infos:     map[string]string{"disabled.fluid.io/platform": "test"},
-			key:       "",
-			wantMatch: false,
-		},
-		{
-			name:      "test_platform_env_set",
-			infos:     map[string]string{"serverless.fluid.io/platform": "test"},
-			key:       "serverless.fluid.io/platform",
-			wantMatch: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if gotMatch := matchedKey(tt.infos, tt.key); gotMatch != tt.wantMatch {
-				t.Errorf("matchedKey() = %v, want %v", gotMatch, tt.wantMatch)
 			}
 		})
 	}
@@ -379,3 +256,125 @@ func TestAppControllerDisabled(t *testing.T) {
 		})
 	}
 }
+
+var _ = Describe("GetServerlessPlatform", func() {
+	Context("when the deprecated serverless platform key is set", func() {
+		It("should return the deprecated platform value", func() {
+			DeprecatedServerlessPlatformKey = "fluid.io/deprecated-serverless-platform-key"
+			defer func() {
+				DeprecatedServerlessPlatformKey = ""
+			}()
+			metaObj := metav1.ObjectMeta{
+				Labels: map[string]string{
+					"fluid.io/deprecated-serverless-platform-key": "myplatform",
+				},
+			}
+			platform, err := GetServerlessPlatform(metaObj)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(platform).To(Equal("myplatform"))
+		})
+	})
+
+	Context("when both deprecated serverless platform key and common.InjectServerless are set", func() {
+		It("should return an error", func() {
+			DeprecatedServerlessPlatformKey = "fluid.io/deprecated-serverless-platform-key"
+			defer func() {
+				DeprecatedServerlessPlatformKey = ""
+			}()
+			metaObj := metav1.ObjectMeta{
+				Labels: map[string]string{
+					"fluid.io/deprecated-serverless-platform-key": "myplatform",
+					common.InjectServerless:                       common.True,
+				},
+			}
+			platform, err := GetServerlessPlatform(metaObj)
+			Expect(err).To(HaveOccurred())
+			Expect(platform).To(BeEmpty())
+		})
+	})
+
+	Context("when common.InjectFuseSidecar is set", func() {
+		Context("and common.InjectUnprivilegedFuseSidecar is set", func() {
+			It("should return PlatformUnprivileged", func() {
+				metaObj := metav1.ObjectMeta{
+					Labels: map[string]string{
+						common.InjectFuseSidecar:             common.True,
+						common.InjectUnprivilegedFuseSidecar: common.True,
+					},
+				}
+				platform, err := GetServerlessPlatform(metaObj)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(platform).To(Equal(ServerlessPlatformUnprivileged))
+			})
+		})
+
+		Context("and common.InjectUnprivilegedFuseSidecar is not set", func() {
+			It("should return PlatformDefault", func() {
+				metaObj := metav1.ObjectMeta{
+					Labels: map[string]string{
+						common.InjectFuseSidecar: common.True,
+					},
+				}
+				platform, err := GetServerlessPlatform(metaObj)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(platform).To(Equal(ServerlessPlatformDefault))
+			})
+		})
+	})
+
+	Context("when common.InjectServerless is set", func() {
+		Context("and common.InjectUnprivilegedFuseSidecar is set", func() {
+			It("should return PlatformUnprivileged", func() {
+				metaObj := metav1.ObjectMeta{
+					Labels: map[string]string{
+						common.InjectServerless:              common.True,
+						common.InjectUnprivilegedFuseSidecar: common.True,
+					},
+				}
+				platform, err := GetServerlessPlatform(metaObj)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(platform).To(Equal(ServerlessPlatformUnprivileged))
+			})
+		})
+
+		Context("and common.InjectUnprivilegedFuseSidecar is not set", func() {
+			It("should return PlatformDefault", func() {
+				metaObj := metav1.ObjectMeta{
+					Labels: map[string]string{
+						common.InjectServerless: common.True,
+					},
+				}
+				platform, err := GetServerlessPlatform(metaObj)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(platform).To(Equal(ServerlessPlatformDefault))
+			})
+		})
+
+		Context("and common.AnnotationServerlessPlatform is set in annotations", func() {
+			It("should return the annotation value", func() {
+				metaObj := metav1.ObjectMeta{
+					Labels: map[string]string{
+						common.InjectServerless: common.True,
+					},
+					Annotations: map[string]string{
+						common.AnnotationServerlessPlatform: "platform1",
+					},
+				}
+				platform, err := GetServerlessPlatform(metaObj)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(platform).To(Equal("platform1"))
+			})
+		})
+	})
+
+	Context("when no serverless platform is set", func() {
+		It("should return an error", func() {
+			metaObj := metav1.ObjectMeta{}
+			platform, err := GetServerlessPlatform(metaObj)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("no serverless platform can be found from Pod's metadata"))
+			Expect(platform).To(BeEmpty())
+		})
+	})
+
+})

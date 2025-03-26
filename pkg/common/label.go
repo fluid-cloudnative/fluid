@@ -107,6 +107,12 @@ const (
 	AnnotationDataFlowCustomizedAffinityPrefix = "affinity.dataflow.fluid.io."
 )
 
+const (
+	// AnnotationServerlessPlatform is an annotation key name for the platform type of serverless.
+	// i.e. serverless.fluid.io/platform
+	AnnotationServerlessPlatform = "serverless." + LabelAnnotationPrefix + "platform"
+)
+
 var (
 	// LabelAnnotationPodSchedRegex is the fluid cache label for scheduling pod, format: 'fluid.io/dataset.{dataset name}.sched]'
 	// use string literal to meet security check.

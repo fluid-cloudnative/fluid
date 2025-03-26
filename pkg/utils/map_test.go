@@ -19,6 +19,9 @@ package utils
 import (
 	"reflect"
 	"testing"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 func TestContainsAll(t *testing.T) {
@@ -245,3 +248,77 @@ func TestOrderedKeys(t *testing.T) {
 		})
 	}
 }
+
+var _ = Describe("KeyMatched", func() {
+	Context("when the map is empty", func() {
+		It("should return false for any key", func() {
+			m := map[string]int{}
+			Expect(KeyMatched(m, "key1")).To(BeFalse())
+		})
+	})
+
+	Context("when the map contains the key", func() {
+		It("should return true", func() {
+			m := map[string]int{"key1": 1, "key2": 2}
+			Expect(KeyMatched(m, "key1")).To(BeTrue())
+		})
+	})
+
+	Context("when the map does not contain the key", func() {
+		It("should return false", func() {
+			m := map[string]int{"key1": 1, "key2": 2}
+			Expect(KeyMatched(m, "key3")).To(BeFalse())
+		})
+	})
+
+	Context("when the map is nil", func() {
+		It("should return false for any key", func() {
+			var m map[string]int
+			Expect(KeyMatched(m, "key1")).To(BeFalse())
+		})
+	})
+
+	Context("when the query key is empty", func() {
+		It("should return false", func() {
+			m := map[string]string{"key1": "value1"}
+			Expect(KeyMatched(m, "")).To(BeFalse())
+		})
+	})
+})
+
+var _ = Describe("KeyValueMatched", func() {
+	Context("when the map is empty", func() {
+		It("should return false for any key-value pair", func() {
+			m := map[string]int{}
+			Expect(KeyValueMatched(m, "key1", 1)).To(BeFalse())
+		})
+	})
+
+	Context("when the map contains the key with the matching value", func() {
+		It("should return true", func() {
+			m := map[string]int{"key1": 1, "key2": 2}
+			Expect(KeyValueMatched(m, "key1", 1)).To(BeTrue())
+		})
+	})
+
+	Context("when the map contains the key with a different value", func() {
+		It("should return false", func() {
+			m := map[string]int{"key1": 1, "key2": 2}
+			Expect(KeyValueMatched(m, "key1", 2)).To(BeFalse())
+		})
+	})
+
+	Context("when the map does not contain the key", func() {
+		It("should return false", func() {
+			m := map[string]int{"key1": 1, "key2": 2}
+			Expect(KeyValueMatched(m, "key3", 3)).To(BeFalse())
+		})
+	})
+
+	Context("when the map is nil", func() {
+		It("should return false for any key-value pair", func() {
+			var m map[string]int
+			Expect(KeyValueMatched(m, "key1", 1)).To(BeFalse())
+		})
+	})
+})

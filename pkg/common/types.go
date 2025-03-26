@@ -169,14 +169,12 @@ type FuseMountInfo struct {
 // FuseSidecarInjectOption are options for webhook to inject fuse sidecar containers
 type FuseSidecarInjectOption struct {
 	EnableCacheDir             bool
-	EnableUnprivilegedSidecar  bool
 	SkipSidecarPostStartInject bool
 }
 
 func (f FuseSidecarInjectOption) String() string {
-	return fmt.Sprintf("EnableCacheDir=%v;EnableUnprivilegedSidecar=%v;SkipSidecarPostStartInject=%v",
+	return fmt.Sprintf("EnableCacheDir=%v;SkipSidecarPostStartInject=%v",
 		f.EnableCacheDir,
-		f.EnableUnprivilegedSidecar,
 		f.SkipSidecarPostStartInject)
 }
 
