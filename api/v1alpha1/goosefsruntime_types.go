@@ -113,6 +113,12 @@ type GooseFSFuseSpec struct {
 	// +optional
 	CleanPolicy FuseCleanPolicy `json:"cleanPolicy,omitempty"`
 
+	// LaunchMode specifies the launch mode of fuse pod, Lazy/Eager, default to Lazy
+	// +kubebuilder:validation:Enum="";Lazy;Eager
+	// +kubebuilder:default:=Lazy
+	// +optional
+	LaunchMode FuseLaunchMode `json:"launchMode,omitempty"`
+
 	// Annotations is an unstructured key value map stored with a resource that may be
 	// set by external tools to store and retrieve arbitrary metadata. They are not
 	// queryable and should be preserved when modifying objects.

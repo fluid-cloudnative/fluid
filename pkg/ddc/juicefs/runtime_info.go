@@ -44,6 +44,9 @@ func (j *JuiceFSEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		// Setup Fuse Deploy Mode
 		j.runtimeInfo.SetFuseNodeSelector(runtime.Spec.Fuse.NodeSelector)
 
+		// Setup Fuse Launch Mode
+		j.runtimeInfo.SetFuseLaunchMode(runtime.Spec.Fuse.LaunchMode)
+
 		if !j.UnitTest {
 			// Setup with Dataset Info
 			dataset, err := utils.GetDataset(j.Client, j.name, j.namespace)

@@ -115,6 +115,15 @@ spec:
                       OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted
                       Defaults to OnRuntimeDeleted
                     type: string
+                  launchMode:
+                    default: Lazy
+                    description: LaunchMode specifies the launch mode of fuse pod,
+                      Lazy/Eager, default to Lazy
+                    enum:
+                    - ""
+                    - Lazy
+                    - Eager
+                    type: string
                   networkMode:
                     description: Whether to use hostnetwork or not
                     enum:

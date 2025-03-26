@@ -157,6 +157,26 @@ func (e *Helper) BuildWorkersAffinity(workers *appsv1.StatefulSet) (workersToUpd
 					},
 				})
 
+		// if fuse launch mode is eager, set worker node affinity by fuse node selector
+		if e.runtimeInfo.GetFuseLaunchMode() == datav1alpha1.EagerMode {
+			var requirements []corev1.NodeSelectorRequirement
+			for key, val := range e.runtimeInfo.GetFuseNodeSelector() {
+				requirements = append(requirements, corev1.NodeSelectorRequirement{
+					Key:      key,
+					Operator: corev1.NodeSelectorOpIn,
+					Values:   []string{val},
+				})
+			}
+			workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution =
+				append(workersToUpdate.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution,
+					corev1.PreferredSchedulingTerm{
+						Weight: 100,
+						Preference: corev1.NodeSelectorTerm{
+							MatchExpressions: requirements,
+						},
+					})
+		}
+
 		// 3. set node affinity if possible
 		if dataset.Spec.NodeAffinity != nil {
 			if dataset.Spec.NodeAffinity.Required != nil {

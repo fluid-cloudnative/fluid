@@ -163,6 +163,15 @@ spec:
                       DEPRECATED: this is a deprecated field. Please use PodMetadata.Labels instead.
                       Note: this field is set to be exclusive with PodMetadata.Labels
                     type: object
+                  launchMode:
+                    default: Lazy
+                    description: LaunchMode specifies the launch mode of fuse pod,
+                      Lazy/Eager, default to Lazy
+                    enum:
+                    - ""
+                    - Lazy
+                    - Eager
+                    type: string
                   logConfig:
                     additionalProperties:
                       type: string

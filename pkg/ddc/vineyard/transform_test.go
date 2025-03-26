@@ -22,6 +22,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -643,6 +644,95 @@ func TestTransformFuseNodeSelector(t *testing.T) {
 				t.Errorf("%s: expected %v, got %v", tt.name, tt.expected, actual)
 			}
 		})
+	}
+}
+
+func TestTransformFuseWithLaunchMode(t *testing.T) {
+	testCases := map[string]struct {
+		runtime   *datav1alpha1.VineyardRuntime
+		wantValue *Vineyard
+	}{
+		"test fuse launch mode case 1": {
+			runtime: &datav1alpha1.VineyardRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hbase",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.VineyardRuntimeSpec{
+					Fuse: datav1alpha1.VineyardClientSocketSpec{
+						LaunchMode: datav1alpha1.EagerMode,
+					},
+				},
+			},
+			wantValue: &Vineyard{
+				Fuse: Fuse{
+					NodeSelector: map[string]string{},
+				},
+			},
+		},
+		"test fuse launch mode case 2": {
+			runtime: &datav1alpha1.VineyardRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hbase",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.VineyardRuntimeSpec{
+					Fuse: datav1alpha1.VineyardClientSocketSpec{
+						LaunchMode: datav1alpha1.LazyMode,
+					},
+				},
+			},
+			wantValue: &Vineyard{
+				Fuse: Fuse{
+					NodeSelector: map[string]string{
+						utils.GetFuseLabelName("fluid", "hbase", ""): "true",
+					},
+				},
+			},
+		},
+		"test fuse launch mode case 3": {
+			runtime: &datav1alpha1.VineyardRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hbase",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.VineyardRuntimeSpec{
+					Fuse: datav1alpha1.VineyardClientSocketSpec{
+						LaunchMode: "",
+					},
+				},
+			},
+			wantValue: &Vineyard{
+				Fuse: Fuse{
+					NodeSelector: map[string]string{
+						utils.GetFuseLabelName("fluid", "hbase", ""): "true",
+					},
+				},
+			},
+		},
+	}
+
+	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "Vineyard")
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
+
+	engine := &VineyardEngine{
+		Log:         fake.NullLogger(),
+		runtimeInfo: runtimeInfo,
+		Client:      fake.NewFakeClientWithScheme(testScheme),
+	}
+
+	for k, v := range testCases {
+		gotValue := &Vineyard{}
+		engine.transformFuse(v.runtime, gotValue)
+		if !reflect.DeepEqual(gotValue.Fuse.NodeSelector, v.wantValue.Fuse.NodeSelector) {
+			t.Errorf("check %s failure, got:%+v,want:%+v",
+				k,
+				gotValue.Fuse.NodeSelector,
+				v.wantValue.Fuse.NodeSelector,
+			)
+		}
 	}
 }
 

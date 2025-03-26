@@ -503,6 +503,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioFuseSpec(ref common.Refe
 							Format:      "",
 						},
 					},
+					"launchMode": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LaunchMode specifies the launch mode of fuse pod, Lazy/Eager, default to Lazy",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"volumeMounts": {
 						SchemaProps: spec.SchemaProps{
 							Description: "VolumeMounts specifies the volumes listed in \".spec.volumes\" to mount into the alluxio runtime component's filesystem.",
@@ -2468,6 +2475,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_EFCFuseSpec(ref common.Referenc
 							Format:      "",
 						},
 					},
+					"launchMode": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LaunchMode specifies the launch mode of fuse pod, Lazy/Eager, default to Lazy",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"podMetadata": {
 						SchemaProps: spec.SchemaProps{
 							Description: "PodMetadata defines labels and annotations that will be propagated to EFC's fuse pods",
@@ -3045,6 +3059,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSFuseSpec(ref common.Refe
 					"cleanPolicy": {
 						SchemaProps: spec.SchemaProps{
 							Description: "CleanPolicy decides when to clean GooseFS Fuse pods. Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted OnDemand cleans fuse pod once th fuse pod on some node is not needed OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted Defaults to OnRuntimeDeleted",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"launchMode": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LaunchMode specifies the launch mode of fuse pod, Lazy/Eager, default to Lazy",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -3747,6 +3768,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JindoFuseSpec(ref common.Refere
 							Format:      "",
 						},
 					},
+					"launchMode": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LaunchMode specifies the launch mode of fuse pod, Lazy/Eager, default to Lazy",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"disabled": {
 						SchemaProps: spec.SchemaProps{
 							Description: "If disable JindoFS fuse",
@@ -4313,6 +4341,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSFuseSpec(ref common.Refe
 					"networkMode": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Whether to use hostnetwork or not",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"launchMode": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LaunchMode specifies the launch mode of fuse pod, Lazy/Eager, default to Lazy",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -6200,6 +6235,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ThinFuseSpec(ref common.Referen
 							Format:      "",
 						},
 					},
+					"launchMode": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LaunchMode specifies the launch mode of fuse pod, Lazy/Eager, default to Lazy",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"livenessProbe": {
 						SchemaProps: spec.SchemaProps{
 							Description: "livenessProbe of thin fuse pod",
@@ -6776,6 +6818,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardClientSocketSpec(ref co
 					"networkMode": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Whether to use hostnetwork or not Default is HostNetwork",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"launchMode": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LaunchMode specifies the launch mode of fuse pod, Lazy/Eager, default to Lazy",
 							Type:        []string{"string"},
 							Format:      "",
 						},
