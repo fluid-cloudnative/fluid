@@ -68,6 +68,20 @@ func TestGetCacheInfoFromConfigmap(t *testing.T) {
 
 }
 
+// Test_parseCacheInfoFromConfigMap is a unit test function for the parseCacheInfoFromConfigMap function.
+// This test function verifies whether parseCacheInfoFromConfigMap correctly parses data from a ConfigMap
+// and returns the expected cache information. It also checks if the function handles errors as expected
+// under different input conditions.
+//
+// Test Cases:
+// 1. Normal Case: Input a ConfigMap with valid data, and verify if the function correctly parses and returns the cache information.
+// 2. Error Case: Input a ConfigMap with invalid data, and verify if the function handles the error and returns the expected result.
+//
+// Input:
+// - No explicit input parameters; test cases are defined via a struct.
+//
+// Output:
+// - No explicit return value; test results are reported using methods from testing.T.
 func Test_parseCacheInfoFromConfigMap(t *testing.T) {
 	type args struct {
 		configMap *v1.ConfigMap
