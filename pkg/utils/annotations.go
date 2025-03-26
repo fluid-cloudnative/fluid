@@ -70,8 +70,8 @@ func AppContainerPostStartInjectEnabled(infos map[string]string) (match bool) {
 
 // ---- Utils functions to decide serverless platform ----
 const (
-	PlatformDefault      = "default"
-	PlatformUnprivileged = "unprivileged"
+	ServerlessPlatformDefault      = "default"
+	ServerlessPlatformUnprivileged = "unprivileged"
 )
 
 func GetServerlessPlatform(metaObj metav1.ObjectMeta) (platform string, err error) {
@@ -94,16 +94,16 @@ func GetServerlessPlatform(metaObj metav1.ObjectMeta) (platform string, err erro
 	// only two platforms are supported: PlatformDefault and PlatformUnprivileged
 	if enabled(metaLabels, common.InjectFuseSidecar) {
 		if enabled(metaLabels, common.InjectUnprivilegedFuseSidecar) {
-			platform = PlatformUnprivileged
+			platform = ServerlessPlatformUnprivileged
 		} else {
-			platform = PlatformDefault
+			platform = ServerlessPlatformDefault
 		}
 		return
 	}
 
 	if enabled(metaLabels, common.InjectServerless) {
 		if enabled(metaLabels, common.InjectUnprivilegedFuseSidecar) {
-			platform = PlatformUnprivileged
+			platform = ServerlessPlatformUnprivileged
 			return
 		}
 
@@ -114,7 +114,7 @@ func GetServerlessPlatform(metaObj metav1.ObjectMeta) (platform string, err erro
 			return
 		}
 
-		platform = PlatformDefault
+		platform = ServerlessPlatformDefault
 		return
 	}
 
@@ -136,7 +136,7 @@ func ServerlessEnabled(infos map[string]string) (match bool) {
 func FuseSidecarPrivileged(metaObj metav1.ObjectMeta) (match bool) {
 	// error can be ignored here because platform equals to "" when error is not nil
 	platform, _ := GetServerlessPlatform(metaObj)
-	return platform == PlatformDefault
+	return platform == ServerlessPlatformDefault
 }
 
 func InjectSidecarDone(infos map[string]string) (match bool) {

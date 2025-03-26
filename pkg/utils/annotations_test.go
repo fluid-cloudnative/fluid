@@ -304,7 +304,7 @@ var _ = Describe("GetServerlessPlatform", func() {
 				}
 				platform, err := GetServerlessPlatform(metaObj)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(platform).To(Equal(PlatformUnprivileged))
+				Expect(platform).To(Equal(ServerlessPlatformUnprivileged))
 			})
 		})
 
@@ -317,7 +317,7 @@ var _ = Describe("GetServerlessPlatform", func() {
 				}
 				platform, err := GetServerlessPlatform(metaObj)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(platform).To(Equal(PlatformDefault))
+				Expect(platform).To(Equal(ServerlessPlatformDefault))
 			})
 		})
 	})
@@ -333,7 +333,7 @@ var _ = Describe("GetServerlessPlatform", func() {
 				}
 				platform, err := GetServerlessPlatform(metaObj)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(platform).To(Equal(PlatformUnprivileged))
+				Expect(platform).To(Equal(ServerlessPlatformUnprivileged))
 			})
 		})
 
@@ -346,7 +346,7 @@ var _ = Describe("GetServerlessPlatform", func() {
 				}
 				platform, err := GetServerlessPlatform(metaObj)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(platform).To(Equal(PlatformDefault))
+				Expect(platform).To(Equal(ServerlessPlatformDefault))
 			})
 		})
 
