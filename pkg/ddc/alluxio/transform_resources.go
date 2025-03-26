@@ -33,18 +33,30 @@ import (
 	"k8s.io/client-go/util/retry"
 )
 
+// transformResourcesForMaster transforms the resource requirements for the Alluxio master and job master
+// based on the provided AlluxioRuntime specification. It updates the resource configuration in the
+// Alluxio value object if the corresponding resource limits or requests are specified in the runtime.
+//
+// Parameters:
+//   - runtime: A pointer to the AlluxioRuntime object containing the resource specifications.
+//   - value: A pointer to the Alluxio object where the transformed resource configurations will be stored.
 func (e *AlluxioEngine) transformResourcesForMaster(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) {
-
+	// If the runtime object is nil, return immediately as there is nothing to transform.
 	if runtime == nil {
 		return
 	}
+
+	// Check if resource limits or requests are specified for the Alluxio master.
+	// If so, transform the resource requirements and update the Alluxio value object.
 	if len(runtime.Spec.Master.Resources.Limits) > 0 || len(runtime.Spec.Master.Resources.Requests) > 0 {
 		value.Master.Resources = utils.TransformRequirementsToResources(runtime.Spec.Master.Resources)
 	}
+
+	// Check if resource limits or requests are specified for the Alluxio job master.
+	// If so, transform the resource requirements and update the Alluxio value object.
 	if len(runtime.Spec.JobMaster.Resources.Limits) > 0 || len(runtime.Spec.JobMaster.Resources.Requests) > 0 {
 		value.JobMaster.Resources = utils.TransformRequirementsToResources(runtime.Spec.JobMaster.Resources)
 	}
-
 }
 
 // transformResourcesForWorker is responsible for transforming and setting resource limits for the Alluxio Worker component.
