@@ -143,6 +143,11 @@ spec:
             privileged: true
           {{- end }}
           lifecycle:
+            {{- if .Values.fuse.postStartCmd }}
+            postStart:
+              exec:
+                command: ["sh", "-c", "{{ .Values.fuse.postStartCmd }}"]
+            {{- end }}
             preStop:
               exec:
                 command: ["sh", "-c", "umount {{ .Values.fuse.mountPath }}"]
@@ -150,6 +155,8 @@ spec:
             - name: juicefs-fuse-mount
               mountPath: {{ .Values.fuse.hostMountPath }}
               mountPropagation: Bidirectional
+            - name: juicefs-fuse-meta
+              mountPath: {{ .Values.fuse.hostMetaPath }}
             - mountPath: /root/script
               name: script
           {{- if .Values.fuse.volumeMounts }}
@@ -160,6 +167,10 @@ spec:
         - name: juicefs-fuse-mount
           hostPath:
             path: {{ .Values.fuse.hostMountPath }}
+            type: DirectoryOrCreate
+        - name: juicefs-fuse-meta
+          hostPath:
+            path: {{ .Values.fuse.hostMetaPath }}
             type: DirectoryOrCreate
         - name: script
           configMap:

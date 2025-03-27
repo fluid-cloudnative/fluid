@@ -18,6 +18,7 @@ package juicefs
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"strings"
 	"time"
@@ -27,6 +28,7 @@ import (
 	"k8s.io/client-go/util/retry"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -189,7 +191,11 @@ func (j *JuiceFSEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, run
 
 func (j *JuiceFSEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) (changed bool, err error) {
 	j.Log.V(1).Info("syncFuseSpec")
-	var cmdChanged bool
+	var (
+		cmdChanged, imageChanged bool
+		newImage                 string
+	)
+
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		fuses, err := kubeclient.GetDaemonset(j.Client, j.getFuseName(), j.namespace)
 		if err != nil {
@@ -254,7 +260,9 @@ func (j *JuiceFSEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runti
 			if value.ImageTag != "" {
 				fuseImage = fuseImage + ":" + value.Fuse.ImageTag
 			}
-			if imageChanged, newImage := j.isImageChanged(fusesToUpdate.Spec.Template.Spec.Containers[0].Image, fuseImage); imageChanged {
+
+			imageChanged, newImage = j.isImageChanged(fusesToUpdate.Spec.Template.Spec.Containers[0].Image, fuseImage)
+			if imageChanged {
 				fusesToUpdate.Spec.Template.Spec.Containers[0].Image = newImage
 				changed = true
 			}
@@ -282,6 +290,23 @@ func (j *JuiceFSEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runti
 			err = j.Client.Update(context.TODO(), fusesToUpdate)
 			if err != nil {
 				j.Log.Error(err, "Failed to update the ds spec")
+			}
+
+			if imageChanged {
+				pvc, err := kubeclient.GetPersistentVolumeClaim(j.Client, j.name, j.namespace)
+				if err != nil {
+					return err
+				}
+				pvcUpdate := pvc.DeepCopy()
+				if pvcUpdate.Annotations == nil {
+					pvcUpdate.Annotations = make(map[string]string)
+				}
+				pvcUpdate.Annotations[common.AnnotationRuntimeFuseImageVersion] = newImage
+				if err = j.Client.Update(context.TODO(), pvcUpdate); err != nil {
+					j.Log.Error(err, fmt.Sprintf("imageChanged but failed to update image info on pvc %s/%s", j.namespace, j.name))
+					return err
+				}
+				j.Log.Info(fmt.Sprintf("imageChanged and finished to update image info on pvc %s/%s", j.namespace, j.name))
 			}
 		} else {
 			j.Log.V(1).Info("The fuse is not changed")
