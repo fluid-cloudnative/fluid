@@ -35,6 +35,18 @@ import (
 	"k8s.io/utils/ptr"
 )
 
+// getTestAlluxioEngineNode creates and returns a test instance of AlluxioEngine.
+// It initializes the AlluxioEngine with the provided client, name, and namespace.
+// If withRunTime is true, it also sets up a runtime and runtimeInfo for the engine.
+//
+// Parameters:
+//   - client: The Kubernetes client used by the AlluxioEngine.
+//   - name: The name of the AlluxioEngine instance.
+//   - namespace: The namespace in which the AlluxioEngine resides.
+//   - withRunTime: A boolean flag indicating whether to initialize the runtime and runtimeInfo.
+//
+// Returns:
+//   - A pointer to an AlluxioEngine instance configured with the provided parameters.
 func getTestAlluxioEngineNode(client client.Client, name string, namespace string, withRunTime bool) *AlluxioEngine {
 	engine := &AlluxioEngine{
 		runtime:     nil,
