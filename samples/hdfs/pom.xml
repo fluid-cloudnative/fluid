@@ -11,7 +11,7 @@
     <properties>
         <java.version>11</java.version>
         <hadoop.version>3.3.0</hadoop.version>
-        <alluxio.version>2.4.1</alluxio.version>
+        <alluxio.version>2.9.4</alluxio.version>
     </properties>
 
     <dependencies>
