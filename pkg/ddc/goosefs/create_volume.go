@@ -21,7 +21,14 @@ import (
 	volumeHelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 )
 
-// CreateVolume creates volume
+// CreateVolume creates PersistentVolume and PersistentVolumeClaim for GooseFS runtime.
+// It creates the following resources in order:
+// 1. Fuse PersistentVolume for accessing GooseFS file system from pods.
+// 2. Fuse PersistentVolumeClaim matching the created PV.
+// 3. HCFS PersistentVolume for compatibility with Hadoop Compatible File System interface.
+// The method handles getting runtime information, constructing appropriate PV/PVC specs
+// based on the runtime configuration, and creating them in the Kubernetes cluster.
+// Returns error if any of the creation operations fail.
 func (e *GooseFSEngine) CreateVolume() (err error) {
 	if e.runtime == nil {
 		e.runtime, err = e.getRuntime()
