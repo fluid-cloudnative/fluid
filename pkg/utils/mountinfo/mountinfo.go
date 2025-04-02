@@ -140,7 +140,7 @@ func loadMountInfo() (map[string]*Mount, error) {
 		return nil, err
 	}
 	defer func() {
-		file.Close()
+		_ = file.Close()
 	}()
 	mountsByPath, err := readMountInfo(file)
 	if err != nil {

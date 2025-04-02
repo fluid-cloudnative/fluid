@@ -78,7 +78,7 @@ func (a VineyardFileUtils) ReportSummary() (summary []string, err error) {
 			return summary, err
 		}
 		defer func() {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 		}()
 
 		body, err = io.ReadAll(resp.Body)
