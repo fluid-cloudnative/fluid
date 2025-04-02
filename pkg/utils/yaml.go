@@ -40,7 +40,9 @@ func ToYaml(values interface{}, file *os.File) error {
 		return err
 	}
 
-	defer file.Close()
+	defer func() {
+		file.Close()
+	}()
 	_, err = file.Write(data)
 	if err != nil {
 		log.Error(err, "failed to write file", "data", data, "fileName", file.Name())
