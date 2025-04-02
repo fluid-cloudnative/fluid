@@ -38,6 +38,16 @@ jobs:
         with:
           path: ${{ env.GOPATH }}/src/github.com/fluid-cloudnative/fluid
 
+      - name: Check rebase
+        run: |
+          git fetch origin master
+          # Check if the current branch contains the latest master commit
+          MASTER_COMMIT=$(git rev-parse origin/master)
+          if ! git merge-base --is-ancestor $MASTER_COMMIT HEAD; then
+          echo "::error ::Current branch is not up-to-date with master. Please rebase."
+          exit 1
+          fi
+
       - name: Lint golang code
         uses: golangci/golangci-lint-action@v6
         with:
