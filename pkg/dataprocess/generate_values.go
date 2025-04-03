@@ -48,10 +48,6 @@ func GenDataProcessValueFile(client client.Client, dataset *datav1alpha1.Dataset
 		dataProcessValue.DataProcessInfo.ScriptProcessor.Affinity = affinity
 	}
 
-	if err != nil {
-		return "", errors.Wrapf(err, "failed to generate dataProcessValue of DataProcess %s/%s", dataProcess.GetNamespace(), dataProcess.GetName())
-	}
-
 	data, err := yaml.Marshal(dataProcessValue)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to marshal dataProcessValue of DataProcess %s/%s", dataProcess.GetNamespace(), dataProcess.GetName())

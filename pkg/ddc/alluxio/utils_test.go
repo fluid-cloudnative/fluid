@@ -172,7 +172,7 @@ func TestMountRootWithoutEnvSet(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		os.Unsetenv(utils.MountRoot)
+		_ = os.Unsetenv(utils.MountRoot)
 		if tc.expected != getMountRoot() {
 			t.Errorf("expected %#v, got %#v",
 				tc.expected, getMountRoot())

@@ -58,7 +58,7 @@ func TestMountRootWithoutEnvSet(t *testing.T) {
 		{"/var/lib/mymount", ""},
 	}
 	for _, tc := range testCases {
-		os.Unsetenv(MountRoot)
+		_ = os.Unsetenv(MountRoot)
 		mountRoot, err := GetMountRoot()
 		if err == nil {
 			t.Errorf("Expected error happened, but no error")
