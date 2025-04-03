@@ -553,7 +553,7 @@ func TestTransformPodMetadata(t *testing.T) {
 	}
 }
 
-// TestGetMediumTypeFromVolumeSource verifies the logic for determining storage medium type 
+// TestGetMediumTypeFromVolumeSource verifies the logic for determining storage medium type
 // from Kubernetes volume sources in AlluxioEngine. The test validates:
 // 1. Default medium type is used when no specific volume configuration exists
 // 2. Explicit medium type from EmptyDir volume configuration takes precedence over default
