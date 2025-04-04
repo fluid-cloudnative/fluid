@@ -441,10 +441,10 @@ func TestGenerateRandomRequeueDurationFromEnv(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			if test.runtimeReconcileDuration != "" {
-				os.Setenv(RuntimeReconcileDurationEnv, test.runtimeReconcileDuration)
+				_ = os.Setenv(RuntimeReconcileDurationEnv, test.runtimeReconcileDuration)
 			}
 			if test.runtimeReconcileOffset != "" {
-				os.Setenv(RuntimeReconcileDurationOffsetEnv, test.runtimeReconcileOffset)
+				_ = os.Setenv(RuntimeReconcileDurationOffsetEnv, test.runtimeReconcileOffset)
 			}
 			defer func() {
 				_ = os.Unsetenv(RuntimeReconcileDurationEnv)
