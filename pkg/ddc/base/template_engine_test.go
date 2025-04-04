@@ -73,7 +73,7 @@ var _ = Describe("TemplateEngine", func() {
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		impl = enginemock.NewMockImplement(ctrl)
-		os.Setenv("FLUID_SYNC_RETRY_DURATION", "0s")
+		_ = os.Setenv("FLUID_SYNC_RETRY_DURATION", "0s")
 		t = base.NewTemplateEngine(impl, "default-test", fakeCtx)
 	})
 
