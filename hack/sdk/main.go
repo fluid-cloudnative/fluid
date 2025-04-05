@@ -66,14 +66,14 @@ func main() {
 }
 
 func swaggify(name string) string {
-	name = strings.Replace(name, "github.com/fluid-cloudnative/fluid/api/v1alpha1", "", -1)
-	name = strings.Replace(name, "github.com/kubernetes-sigs/kube-batch/pkg/client/clientset/", "", -1)
-	name = strings.Replace(name, "k8s.io/api/core/", "", -1)
-	name = strings.Replace(name, "k8s.io/apimachinery/pkg/apis/meta/", "", -1)
-	name = strings.Replace(name, "k8s.io/kubernetes/pkg/controller/", "", -1)
-	name = strings.Replace(name, "k8s.io/client-go/listers/core/", "", -1)
-	name = strings.Replace(name, "k8s.io/client-go/util/workqueue", "", -1)
-	name = strings.Replace(name, "k8s.io/apimachinery/pkg/api/resource", "", -1)
-	name = strings.Replace(name, "/", ".", -1)
+	name = strings.ReplaceAll(name, "github.com/fluid-cloudnative/fluid/api/v1alpha1", "")
+	name = strings.ReplaceAll(name, "github.com/kubernetes-sigs/kube-batch/pkg/client/clientset/", "")
+	name = strings.ReplaceAll(name, "k8s.io/api/core/", "")
+	name = strings.ReplaceAll(name, "k8s.io/apimachinery/pkg/apis/meta/", "")
+	name = strings.ReplaceAll(name, "k8s.io/kubernetes/pkg/controller/", "")
+	name = strings.ReplaceAll(name, "k8s.io/client-go/listers/core/", "")
+	name = strings.ReplaceAll(name, "k8s.io/client-go/util/workqueue", "")
+	name = strings.ReplaceAll(name, "k8s.io/apimachinery/pkg/api/resource", "")
+	name = strings.ReplaceAll(name, "/", ".")
 	return name
 }
