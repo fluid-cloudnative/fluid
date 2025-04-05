@@ -4225,9 +4225,9 @@ func TestInjectPodUnprivileged(t *testing.T) {
 		for _, injectedFuse := range testcase.fuse {
 			for _, wantVolume := range injectedFuse.Spec.Template.Spec.Volumes {
 				// Skip check for volumes like "<runtime>-fuse-mount" and "<runtime>-fuse-device"
-				if wantVolume.VolumeSource.HostPath != nil &&
-					(strings.HasPrefix(wantVolume.VolumeSource.HostPath.Path, "/dev") ||
-						strings.HasPrefix(wantVolume.VolumeSource.HostPath.Path, "/runtime-mnt")) {
+				if wantVolume.HostPath != nil &&
+					(strings.HasPrefix(wantVolume.HostPath.Path, "/dev") ||
+						strings.HasPrefix(wantVolume.HostPath.Path, "/runtime-mnt")) {
 					continue
 				}
 				wantTemp := wantVolume.DeepCopy()
