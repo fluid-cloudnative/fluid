@@ -582,6 +582,21 @@ func TestShouldRestoreMetadata(t *testing.T) {
 	}
 }
 
+// TestRestoreMetadataInternal tests the RestoreMetadataInternal method of AlluxioEngine to validate metadata restoration functionality.
+// The test covers the following scenarios:
+// 1. Simulates metadata query failure scenarios and validates error handling logic
+// 2. Tests different data restore path configurations (including local:// and pvc:// protocol paths)
+// 3. Verifies Dataset status update logic after successful metadata restoration
+// 4. Uses multiple test cases to validate boundary conditions and code stability
+//
+// Test methodology details:
+// - Uses gohook for function replacement to mock different filesystem operation responses
+// - Employs fake Kubernetes client for API interaction testing
+// - Includes two Dataset test objects with different DataRestoreLocation configurations
+// - Validates metadata restoration correctness including UFS total size and file count
+// - Tests error paths through fault injection
+// - Maintains test isolation through hook cleanup wrappers
+// - Verifies both success and failure paths with multiple engine instances
 func TestRestoreMetadataInternal(t *testing.T) {
 	QueryMetaDataInfoIntoFileCommon := func(a operations.AlluxioFileUtils, key operations.KeyOfMetaDataFile, filename string) (value string, err error) {
 		return "1024", nil
