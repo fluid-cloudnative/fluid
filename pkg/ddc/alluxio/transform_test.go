@@ -361,6 +361,35 @@ func TestGenerateStaticPorts(t *testing.T) {
 	}
 }
 
+// TestTransformShortCircuit tests the transformShortCircuit method of the AlluxioEngine.
+// This test validates if the AlluxioEngine correctly handles the short circuit policy and configuration
+// under different tiered storage configurations.
+//
+// Test cases include:
+// 1. When the storage tier contains an emptyDir type volume, verify if the short circuit policy and configuration are correctly set.
+// 2. When the storage tier does not contain an emptyDir type volume, verify if the short circuit policy and configuration are correctly set.
+//
+// Each test case simulates the GetTieredStoreInfo method of RuntimeInfo, providing different storage tier configurations,
+// and checks whether the AlluxioEngine correctly processes these configurations, generating the expected short circuit policy and attributes.
+//
+// Parameters:
+//   - t *testing.T: The testing framework's testing object, used to report test failures and log outputs.
+//
+// Test case structure:
+//   - Name: The name of the test case, describing the scenario being tested.
+//   - RuntimeInfo: The simulated RuntimeInfo object that provides storage tier information.
+//   - MockPatchFunc: A function that mocks the GetTieredStoreInfo method of RuntimeInfo, returning a specific storage tier configuration.
+//   - Value: The Alluxio configuration object that stores the output of the transformShortCircuit method.
+//   - want: The expected result, including the short circuit policy, configuration, and key-value pairs of properties.
+//
+// Test logic:
+// 1. Use the gomonkey library to mock the GetTieredStoreInfo method of RuntimeInfo to return the storage tier configuration defined in the test case.
+// 2. Call the transformShortCircuit method to process the RuntimeInfo and Alluxio configuration.
+// 3. Check whether the Fuse.ShortCircuitPolicy in the Alluxio configuration matches the expected value.
+// 4. Check whether the ShortCircuit structure in the Alluxio configuration matches the expected value.
+// 5. If the test case defines expected property key-value pairs, check whether the properties in the Alluxio configuration are set correctly.
+// 6. Reset the gomonkey patch to ensure no impact on other test cases.
+
 func TestTransformShortCircuit(t *testing.T) {
 	engine := &AlluxioEngine{Log: fake.NullLogger()}
 
