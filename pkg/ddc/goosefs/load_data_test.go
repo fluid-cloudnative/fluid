@@ -19,12 +19,12 @@ package goosefs
 import (
 	"errors"
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 
 	"github.com/brahma-adshonor/gohook"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -115,15 +115,15 @@ func TestGenerateDataLoadValueFile(t *testing.T) {
 	}{
 		{
 			dataLoad:       dataLoadNoTarget,
-			expectFileName: filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml"),
+			expectFileName: filepath.Join(common.TempDir, "fluid-test-dataload-loader-values.yaml"),
 		},
 		{
 			dataLoad:       dataLoadWithTarget,
-			expectFileName: filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml"),
+			expectFileName: filepath.Join(common.TempDir, "fluid-test-dataload-loader-values.yaml"),
 		},
 		{
 			dataLoad:       dataLoadWithOptions,
-			expectFileName: filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml"),
+			expectFileName: filepath.Join(common.TempDir, "fluid-test-dataload-loader-values.yaml"),
 		},
 	}
 	for _, test := range testCases {

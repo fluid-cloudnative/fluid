@@ -19,14 +19,15 @@ package juicefs
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	cdatamigrate "github.com/fluid-cloudnative/fluid/pkg/datamigrate"
@@ -150,15 +151,15 @@ func TestJuiceFSEngine_generateDataMigrateValueFile(t *testing.T) {
 	}{
 		{
 			dataMigrate:    dataMigrateNoTarget,
-			expectFileName: filepath.Join(os.TempDir(), "fluid-test-datamigrate-migrate-values.yaml"),
+			expectFileName: filepath.Join(common.TempDir, "fluid-test-datamigrate-migrate-values.yaml"),
 		},
 		{
 			dataMigrate:    dataMigrateWithTarget,
-			expectFileName: filepath.Join(os.TempDir(), "fluid-test-datamigrate-migrate-values.yaml"),
+			expectFileName: filepath.Join(common.TempDir, "fluid-test-datamigrate-migrate-values.yaml"),
 		},
 		{
 			dataMigrate:    parallelDataMigrateWithTarget,
-			expectFileName: filepath.Join(os.TempDir(), "fluid-test-para-datamigrate-migrate-values.yaml"),
+			expectFileName: filepath.Join(common.TempDir, "fluid-test-para-datamigrate-migrate-values.yaml"),
 		},
 	}
 
