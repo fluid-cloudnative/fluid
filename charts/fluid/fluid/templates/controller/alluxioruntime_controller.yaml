@@ -43,6 +43,8 @@ spec:
           - --development=false
           - --runtime-node-port-range={{ .Values.runtime.alluxio.portRange }}
           - --runtime-workers={{ .Values.runtime.alluxio.runtimeWorkers }}
+          - --kube-api-qps={{ .Values.runtime.alluxio.kubeClientQPS }}
+          - --kube-api-burst={{ .Values.runtime.alluxio.kubeClientBurst }}
           - --pprof-addr=:6060
           - --enable-leader-election
           - --leader-election-namespace={{ include "fluid.namespace" . }}

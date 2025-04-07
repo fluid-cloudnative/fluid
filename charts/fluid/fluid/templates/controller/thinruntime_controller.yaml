@@ -43,6 +43,8 @@ spec:
           - --pprof-addr=:6060
           - --enable-leader-election
           - --runtime-workers={{ .Values.runtime.thin.runtimeWorkers }}
+          - --kube-api-qps={{ .Values.runtime.thin.kubeClientQPS }}
+          - --kube-api-burst={{ .Values.runtime.thin.kubeClientBurst }}
           - --leader-election-namespace={{ include "fluid.namespace" . }}
         command: ["thinruntime-controller", "start"]
         env:
