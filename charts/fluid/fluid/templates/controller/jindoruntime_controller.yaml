@@ -42,6 +42,8 @@ spec:
           - --development=false
           - --runtime-node-port-range={{ .Values.runtime.jindo.portRange }}
           - --runtime-workers={{ .Values.runtime.jindo.runtimeWorkers }}
+          - --kube-api-qps={{ .Values.runtime.jindo.kubeClientQPS }}
+          - --kube-api-burst={{ .Values.runtime.jindo.kubeClientBurst }}
           - --pprof-addr=:6060
           - --enable-leader-election
           - --leader-election-namespace={{ include "fluid.namespace" . }}

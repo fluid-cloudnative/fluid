@@ -90,6 +90,8 @@ runtime:
     #     cpu: 1000m
     #     memory: 512Mi
     runtimeWorkers: 3
+    kubeClientQPS: 20
+    kubeClientBurst: 30
     portRange: 20000-26000
     portAllocatePolicy: random
     enabled: false
@@ -123,6 +125,8 @@ runtime:
     #     cpu: 1000m
     #     memory: 512Mi
     runtimeWorkers: 3
+    kubeClientQPS: 20
+    kubeClientBurst: 30
     portRange: 18000-19999
     portAllocatePolicy: random
     enabled: false
@@ -159,6 +163,8 @@ runtime:
     #     cpu: 1000m
     #     memory: 512Mi
     runtimeWorkers: 3
+    kubeClientQPS: 20
+    kubeClientBurst: 30
     portRange: 26000-32000
     portAllocatePolicy: random
     enabled: false
@@ -192,6 +198,8 @@ runtime:
     #     memory: 512Mi
     enabled: false
     runtimeWorkers: 3
+    kubeClientQPS: 20
+    kubeClientBurst: 30
     controller:
       imagePrefix: *defaultImagePrefix
       imageName: juicefsruntime-controller
@@ -217,6 +225,8 @@ runtime:
     #     memory: 512Mi
     enabled: false
     runtimeWorkers: 3
+    kubeClientQPS: 20
+    kubeClientBurst: 30
     controller:
       imagePrefix: *defaultImagePrefix
       imageName: thinruntime-controller
@@ -235,6 +245,9 @@ runtime:
     #   limits:
     #     cpu: 1000m
     #     memory: 512Mi
+    runtimeWorkers: 3
+    kubeClientQPS: 20
+    kubeClientBurst: 30
     enabled: false
     controller:
       imagePrefix: *defaultImagePrefix
@@ -270,6 +283,9 @@ runtime:
     #   limits:
     #     cpu: 1000m
     #     memory: 512Mi
+    runtimeWorkers: 3
+    kubeClientQPS: 20
+    kubeClientBurst: 30
     enabled: false
     controller:
       imagePrefix: *defaultImagePrefix

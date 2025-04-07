@@ -43,6 +43,8 @@ spec:
           - --pprof-addr=:6060
           - --enable-leader-election
           - --runtime-workers={{ .Values.runtime.juicefs.runtimeWorkers }}
+          - --kube-api-qps={{ .Values.runtime.juicefs.kubeClientQPS }}
+          - --kube-api-burst={{ .Values.runtime.juicefs.kubeClientBurst }}
           - --leader-election-namespace={{ include "fluid.namespace" . }}
         command: ["juicefsruntime-controller", "start"]
         env:

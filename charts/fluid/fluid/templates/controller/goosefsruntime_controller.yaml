@@ -44,6 +44,8 @@ spec:
           - --development=false
           - --runtime-node-port-range={{ .Values.runtime.goosefs.portRange }}
           - --runtime-workers={{ .Values.runtime.goosefs.runtimeWorkers }}
+          - --kube-api-qps={{ .Values.runtime.goosefs.kubeClientQPS }}
+          - --kube-api-burst={{ .Values.runtime.goosefs.kubeClientBurst }}
           - --pprof-addr=:6060
           - --enable-leader-election
           - --leader-election-namespace={{ include "fluid.namespace" . }}

@@ -44,6 +44,9 @@ spec:
           - --pprof-addr=:6060
           - --enable-leader-election
           - --leader-election-namespace={{ include "fluid.namespace" . }}
+          - --runtime-workers={{ .Values.runtime.efc.runtimeWorkers }}
+          - --kube-api-qps={{ .Values.runtime.efc.kubeClientQPS }}
+          - --kube-api-burst={{ .Values.runtime.efc.kubeClientBurst }}
         command: ["efcruntime-controller", "start"]
         env:
           {{- if .Values.runtime.mountRoot }}

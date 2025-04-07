@@ -44,6 +44,9 @@ spec:
           - --pprof-addr=:6060
           - --enable-leader-election
           - --leader-election-namespace={{ include "fluid.namespace" . }}
+          - --runtime-workers={{ .Values.runtime.vineyard.runtimeWorkers }}
+          - --kube-api-qps={{ .Values.runtime.vineyard.kubeClientQPS }}
+          - --kube-api-burst={{ .Values.runtime.vineyard.kubeClientBurst }}
         env:
         {{- if .Values.workdir }}
         - name: FLUID_WORKDIR
