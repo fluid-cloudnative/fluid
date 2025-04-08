@@ -41,7 +41,7 @@ def patchNodeLabel(key, value, node):
 
 def createDatasetAndRuntime(*runtimes):
     api = client.CustomObjectsApi()
-    mirror = "https://mirrors.tuna.tsinghua.edu.cn/apache/hbase/stable/"
+    mirror = "https://mirrors.ustc.edu.cn/apache/hbase/stable/"
     for runtime in runtimes:
         my_dataset = {
             "apiVersion": "data.fluid.io/v1alpha1",
