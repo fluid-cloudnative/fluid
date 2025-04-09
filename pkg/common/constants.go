@@ -217,3 +217,7 @@ const (
 const (
 	SkipPrecheckAnnotationKey = "sidecar.fluid.io/skip-precheck"
 )
+
+const (
+	TempDir = "/tmp"
+)

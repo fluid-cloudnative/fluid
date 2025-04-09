@@ -18,7 +18,6 @@ package juicefs
 
 import (
 	"encoding/json"
-	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -223,11 +222,11 @@ func TestJuiceFSEngine_GenerateDataLoadValueFileWithRuntimeHDD(t *testing.T) {
 	}{
 		{
 			dataLoad:       dataLoadNoTarget,
-			expectFileName: filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml"),
+			expectFileName: filepath.Join(common.TempDir, "fluid-test-dataload-loader-values.yaml"),
 		},
 		{
 			dataLoad:       dataLoadWithTarget,
-			expectFileName: filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml"),
+			expectFileName: filepath.Join(common.TempDir, "fluid-test-dataload-loader-values.yaml"),
 		},
 	}
 
@@ -350,11 +349,11 @@ func TestJuiceFSEngine_GenerateDataLoadValueFileWithRuntime(t *testing.T) {
 	}{
 		{
 			dataLoad:       dataLoadNoTarget,
-			expectFileName: filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml"),
+			expectFileName: filepath.Join(common.TempDir, "fluid-test-dataload-loader-values.yaml"),
 		},
 		{
 			dataLoad:       dataLoadWithTarget,
-			expectFileName: filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml"),
+			expectFileName: filepath.Join(common.TempDir, "fluid-test-dataload-loader-values.yaml"),
 		},
 	}
 
