@@ -102,17 +102,21 @@ func (e *GooseFSEngine) GetCacheHitStates() (cacheHitStates cacheHitStates) {
 	return
 }
 
-// clean cache
+// invokeCleanCache cleans the cache for a specified path in the GooseFS cluster.
+// This function ensures that the master pod is ready before initiating the clean action.
+// If the master pod is not available or not ready, the function logs the issue and exits gracefully.
+// Otherwise, it proceeds to clean the cache using the GooseFS file utilities.
 func (e *GooseFSEngine) invokeCleanCache(path string) (err error) {
-	// 1. Check if master is ready, if not, just return
+	// 1. Check if the master pod is ready. If not, log the status and return without performing any action.
 	masterName := e.getMasterName()
 	master, err := kubeclient.GetStatefulSet(e.Client, masterName, e.namespace)
 	if err != nil {
+		// Ignore "not found" errors and exit gracefully.
 		if utils.IgnoreNotFound(err) == nil {
 			e.Log.Info("Failed to get master", "err", err.Error())
 			return nil
 		}
-		// other error
+		// Return other unexpected errors.
 		return err
 	}
 	if master.Status.ReadyReplicas == 0 {
@@ -122,9 +126,8 @@ func (e *GooseFSEngine) invokeCleanCache(path string) (err error) {
 		e.Log.Info("The master is ready, so start cleaning cache", "master", masterName)
 	}
 
-	// 2. run clean action
+	// 2. Run the clean action using the GooseFS file utilities.
 	podName, containerName := e.getMasterPodInfo()
 	fileUitls := operations.NewGooseFSFileUtils(podName, containerName, e.namespace, e.Log)
 	return fileUitls.CleanCache(path)
-
 }
