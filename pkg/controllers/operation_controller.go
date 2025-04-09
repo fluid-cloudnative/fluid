@@ -240,7 +240,7 @@ func (o *OperationReconciler) addFinalizerAndRequeue(ctx dataoperation.Reconcile
 
 	finalizers := append(objectMeta.GetFinalizers(), ctx.DataOpFinalizerName)
 	objectMeta.SetFinalizers(finalizers)
-	ctx.Log.Info("Add finalizer and requeue", "finalizer", ctx.Finalizers)
+	ctx.Log.Info("Add finalizer and requeue", "finalizer", finalizers)
 
 	prevGeneration := object.GetGeneration()
 	if err := o.Update(ctx, object); err != nil {
