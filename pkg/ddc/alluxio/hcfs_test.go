@@ -66,7 +66,7 @@ func TestGetHCFSStatus(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "hbase-master-0",
 			Namespace:   "fluid",
-			Annotations: common.ExpectedFluidAnnotations,
+			Annotations: common.GetExpectedFluidAnnotations(),
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
@@ -81,7 +81,7 @@ func TestGetHCFSStatus(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "not-register-master-0",
 			Namespace:   "fluid",
-			Annotations: common.ExpectedFluidAnnotations,
+			Annotations: common.GetExpectedFluidAnnotations(),
 		},
 	}
 	runtimeObjs := []runtime.Object{}
@@ -146,7 +146,7 @@ func TestQueryHCFSEndpoint(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "hbase-master-0",
 			Namespace:   "fluid",
-			Annotations: common.ExpectedFluidAnnotations,
+			Annotations: common.GetExpectedFluidAnnotations(),
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
@@ -161,7 +161,7 @@ func TestQueryHCFSEndpoint(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "not-register-master-0",
 			Namespace:   "fluid",
-			Annotations: common.ExpectedFluidAnnotations,
+			Annotations: common.GetExpectedFluidAnnotations(),
 		},
 	}
 	runtimeObjs := []runtime.Object{}

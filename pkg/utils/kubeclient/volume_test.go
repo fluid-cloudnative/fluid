@@ -35,7 +35,7 @@ func TestIsPersistentVolumeExist(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: "notCreatedByFluid"},
 		Spec:       v1.PersistentVolumeSpec{},
 	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "createdByFluid", Annotations: common.ExpectedFluidAnnotations},
+		ObjectMeta: metav1.ObjectMeta{Name: "createdByFluid", Annotations: common.GetExpectedFluidAnnotations()},
 		Spec:       v1.PersistentVolumeSpec{},
 	}}
 
@@ -76,7 +76,7 @@ func TestIsPersistentVolumeExist(t *testing.T) {
 			name: "volume is created by fluid",
 			args: args{
 				name:        "createdByFluid",
-				annotations: common.ExpectedFluidAnnotations,
+				annotations: common.GetExpectedFluidAnnotations(),
 			},
 			want: true,
 		}, {
@@ -105,7 +105,7 @@ func TestDeletePersistentVolume(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: "found"},
 		Spec:       v1.PersistentVolumeSpec{},
 	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "bbb", Annotations: common.ExpectedFluidAnnotations},
+		ObjectMeta: metav1.ObjectMeta{Name: "bbb", Annotations: common.GetExpectedFluidAnnotations()},
 		Spec:       v1.PersistentVolumeSpec{},
 	}}
 
@@ -295,11 +295,11 @@ func TestShouldDeleteDataset(t *testing.T) {
 		Spec:       v1.PersistentVolumeSpec{},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "bbb",
-			Annotations: common.ExpectedFluidAnnotations},
+			Annotations: common.GetExpectedFluidAnnotations()},
 		Spec: v1.PersistentVolumeSpec{},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "runningDataset",
-			Annotations: common.ExpectedFluidAnnotations},
+			Annotations: common.GetExpectedFluidAnnotations()},
 		Spec: v1.PersistentVolumeSpec{},
 	}}
 
@@ -313,7 +313,7 @@ func TestShouldDeleteDataset(t *testing.T) {
 		Spec: v1.PersistentVolumeClaimSpec{},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "runningDataset",
-			Annotations: common.ExpectedFluidAnnotations,
+			Annotations: common.GetExpectedFluidAnnotations(),
 			Namespace:   namespace},
 		Spec: v1.PersistentVolumeClaimSpec{},
 	}}
@@ -442,11 +442,11 @@ func TestShouldRemoveProtectionFinalizer(t *testing.T) {
 		Spec:       v1.PersistentVolumeSpec{},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "completeDataset",
-			Annotations: common.ExpectedFluidAnnotations},
+			Annotations: common.GetExpectedFluidAnnotations()},
 		Spec: v1.PersistentVolumeSpec{},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "runningDataset",
-			Annotations: common.ExpectedFluidAnnotations},
+			Annotations: common.GetExpectedFluidAnnotations()},
 		Spec: v1.PersistentVolumeSpec{},
 	}}
 
@@ -462,35 +462,35 @@ func TestShouldRemoveProtectionFinalizer(t *testing.T) {
 		Spec: v1.PersistentVolumeClaimSpec{},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "runningDataset",
-			Annotations:       common.ExpectedFluidAnnotations,
+			Annotations:       common.GetExpectedFluidAnnotations(),
 			Namespace:         namespace,
 			Finalizers:        []string{persistentVolumeClaimProtectionFinalizerName},
 			DeletionTimestamp: &metav1.Time{Time: validateTime}},
 		Spec: v1.PersistentVolumeClaimSpec{},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "completeDataset",
-			Annotations:       common.ExpectedFluidAnnotations,
+			Annotations:       common.GetExpectedFluidAnnotations(),
 			Namespace:         namespace,
 			Finalizers:        []string{persistentVolumeClaimProtectionFinalizerName},
 			DeletionTimestamp: &metav1.Time{Time: validateTime}},
 		Spec: v1.PersistentVolumeClaimSpec{},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "completeDatasetNoTimeout",
-			Annotations:       common.ExpectedFluidAnnotations,
+			Annotations:       common.GetExpectedFluidAnnotations(),
 			Namespace:         namespace,
 			Finalizers:        []string{persistentVolumeClaimProtectionFinalizerName},
 			DeletionTimestamp: &now},
 		Spec: v1.PersistentVolumeClaimSpec{},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "noDeletionTimestamp",
-			Annotations: common.ExpectedFluidAnnotations,
+			Annotations: common.GetExpectedFluidAnnotations(),
 			Namespace:   namespace,
 			Finalizers:  []string{persistentVolumeClaimProtectionFinalizerName},
 		},
 		Spec: v1.PersistentVolumeClaimSpec{},
 	}, {
 		ObjectMeta: metav1.ObjectMeta{Name: "noFinalizer",
-			Annotations:       common.ExpectedFluidAnnotations,
+			Annotations:       common.GetExpectedFluidAnnotations(),
 			Namespace:         namespace,
 			DeletionTimestamp: &now,
 			Finalizers:        []string{"another-finalizer"},
