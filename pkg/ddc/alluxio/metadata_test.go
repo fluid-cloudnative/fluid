@@ -670,6 +670,11 @@ func TestRestoreMetadataInternal(t *testing.T) {
 	wrappedUnhookQueryMetaDataInfoIntoFile()
 }
 
+// TestSyncMetadataInternal tests the syncMetadataInternal function of the AlluxioEngine.
+// It simulates the behavior of syncing metadata for datasets and verifies that the 
+// expected metadata (e.g., UfsTotal and FileNum) is correctly updated in the dataset's status.
+// The test uses a fake client to mimic interactions with a Kubernetes cluster and validates
+// the results by comparing the dataset's status fields with the expected values.
 func TestSyncMetadataInternal(t *testing.T) {
 	datasetInputs := []datav1alpha1.Dataset{
 		{
