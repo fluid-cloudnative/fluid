@@ -79,6 +79,9 @@ spec:
           - name: FLUID_SYNC_RETRY_DURATION
             value: {{ .Values.runtime.syncRetryDuration | quote }}
           {{- end }}
+          {{- if .Values.runtime.goosefs.env }}
+          {{ toYaml .Values.runtime.goosefs.env | nindent 10 }}
+          {{- end }}
         ports:
         - containerPort: 8080
           name: metrics
