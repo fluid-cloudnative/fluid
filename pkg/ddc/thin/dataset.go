@@ -31,11 +31,6 @@ import (
 )
 
 func (t *ThinEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (err error) {
-	runtime, err := t.getRuntime()
-	if err != nil {
-		return err
-	}
-
 	// 2. update the dataset status
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		dataset, err := utils.GetDataset(t.Client, t.name, t.namespace)
@@ -85,7 +80,6 @@ func (t *ThinEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (err e
 				cond)
 		}
 
-		datasetToUpdate.Status.CacheStates = runtime.Status.CacheStates
 		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
 			t.Log.V(1).Info("Update DatasetStatus", "dataset", fmt.Sprintf("%s/%s", datasetToUpdate.GetNamespace(), datasetToUpdate.GetName()))
 			err = t.Client.Status().Update(context.TODO(), datasetToUpdate)
@@ -108,39 +102,6 @@ func (t *ThinEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (err e
 }
 
 func (t *ThinEngine) UpdateCacheOfDataset() (err error) {
-	runtime, err := t.getRuntime()
-	if err != nil {
-		return err
-	}
-
-	// 2.update the dataset status
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		dataset, err := utils.GetDataset(t.Client, t.name, t.namespace)
-		if err != nil {
-			return err
-		}
-		datasetToUpdate := dataset.DeepCopy()
-
-		datasetToUpdate.Status.CacheStates = runtime.Status.CacheStates
-
-		t.Log.Info("the dataset status", "status", datasetToUpdate.Status)
-
-		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
-			t.Log.V(1).Info("Update RuntimeStatus", "runtime", fmt.Sprintf("%s/%s", runtime.GetNamespace(), runtime.GetName()))
-			err = t.Client.Status().Update(context.TODO(), datasetToUpdate)
-			return err
-		} else {
-			t.Log.Info("No need to update the cache of the data")
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		return utils.LoggingErrorExceptConflict(t.Log, err, "Failed to Update dataset",
-			types.NamespacedName{Namespace: t.namespace, Name: t.name})
-	}
-
 	return
 }
 

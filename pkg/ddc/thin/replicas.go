@@ -18,36 +18,8 @@ package thin
 
 import (
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/util/retry"
 )
 
 func (t ThinEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err error) {
-	var (
-		workerName string = t.getWorkerName()
-		namespace  string = t.namespace
-	)
-
-	workers, err := kubeclient.GetStatefulSet(t.Client, workerName, namespace)
-	if err != nil {
-		return err
-	}
-
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		runtime, err := t.getRuntime()
-		if err != nil {
-			return err
-		}
-		runtimeToUpdate := runtime.DeepCopy()
-		err = t.Helper.SyncReplicas(ctx, runtimeToUpdate, runtimeToUpdate.Status, workers)
-		return err
-	})
-	if err != nil {
-		return utils.LoggingErrorExceptConflict(t.Log, err, "Failed to sync the replicas",
-			types.NamespacedName{Namespace: t.namespace, Name: t.name})
-	}
-
-	return
+	return nil
 }

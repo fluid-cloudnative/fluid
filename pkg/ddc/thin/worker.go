@@ -27,6 +27,9 @@ import (
 )
 
 func (t ThinEngine) CheckWorkersReady() (ready bool, err error) {
+	if !t.runtime.Spec.Worker.Enabled {
+		return true, nil
+	}
 	var (
 		workerName string = t.getWorkerName()
 		namespace  string = t.namespace
@@ -55,6 +58,9 @@ func (t ThinEngine) CheckWorkersReady() (ready bool, err error) {
 }
 
 func (t ThinEngine) ShouldSetupWorkers() (should bool, err error) {
+	if !t.runtime.Spec.Worker.Enabled {
+		return false, nil
+	}
 	runtime, err := t.getRuntime()
 	if err != nil {
 		return
@@ -71,6 +77,9 @@ func (t ThinEngine) ShouldSetupWorkers() (should bool, err error) {
 }
 
 func (t ThinEngine) SetupWorkers() (err error) {
+	if !t.runtime.Spec.Worker.Enabled {
+		return nil
+	}
 	var (
 		workerName string = t.getWorkerName()
 		namespace  string = t.namespace

@@ -119,9 +119,6 @@ spec:
           - mountPath: /etc/fluid/config
             name: thin-conf
             readOnly: true
-          - mountPath: /etc/fluid/runtime
-            name: runtime
-            readOnly: true
           {{- if .Values.fuse.cacheDir }}
           - name: cache-dir
             mountPath: {{ .Values.fuse.cacheDir }}
@@ -155,13 +152,6 @@ spec:
                 path: config.json
             defaultMode: 0444
         {{- end }}
-        - name: runtime
-          configMap:
-            name: {{ template "thin.fullname" . }}-runtimeset
-            items:
-              - key: runtime.json
-                path: runtime.json
-            defaultMode: 0444
         {{- if .Values.fuse.volumes }}
 {{ toYaml .Values.fuse.volumes | indent 8 }}
         {{- end }}

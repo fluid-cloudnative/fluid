@@ -192,24 +192,3 @@ func (t *ThinEngine) extractVolumeMountOptions(pv *corev1.PersistentVolume) (mou
 
 	return
 }
-
-func (t *ThinEngine) toRuntimeSetConfig(workers []string, fuses []string) (result string, err error) {
-	if workers == nil {
-		workers = []string{}
-	}
-
-	if fuses == nil {
-		fuses = []string{}
-	}
-
-	status := RuntimeSetConfig{
-		Workers: workers,
-		Fuses:   fuses,
-	}
-	var runtimeStr []byte
-	runtimeStr, err = json.Marshal(status)
-	if err != nil {
-		return
-	}
-	return string(runtimeStr), err
-}

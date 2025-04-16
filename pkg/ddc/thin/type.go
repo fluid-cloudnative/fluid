@@ -41,6 +41,7 @@ type ThinValue struct {
 }
 
 type Worker struct {
+	Enabled          bool                          `json:"enabled,omitempty"`
 	Image            string                        `json:"image,omitempty"`
 	ImageTag         string                        `json:"imageTag,omitempty"`
 	ImagePullPolicy  string                        `json:"imagePullPolicy,omitempty"`

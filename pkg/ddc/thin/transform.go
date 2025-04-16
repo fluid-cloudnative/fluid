@@ -53,19 +53,16 @@ func (t *ThinEngine) transform(runtime *datav1alpha1.ThinRuntime, profile *datav
 	value.FullnameOverride = t.name
 	value.OwnerDatasetId = utils.GetDatasetId(t.namespace, t.name, t.runtimeInfo.GetOwnerDatasetUID())
 	value.Owner = transformer.GenerateOwnerReferenceFromObject(runtime)
-	toRuntimeSetConfig, err := t.toRuntimeSetConfig(nil, nil)
-	if err != nil {
-		return
-	}
-	value.RuntimeValue = toRuntimeSetConfig
 
 	// transform toleration
 	t.transformTolerations(dataset, value)
 
 	// transform the workers
-	err = t.transformWorkers(runtime, profile, value)
-	if err != nil {
-		return
+	if runtime.Spec.Worker.Enabled {
+		err = t.transformWorkers(runtime, profile, value)
+		if err != nil {
+			return
+		}
 	}
 
 	// transform the fuse

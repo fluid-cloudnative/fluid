@@ -17,6 +17,7 @@ limitations under the License.
 package poststart
 
 import (
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -35,27 +36,26 @@ type scriptGeneratorHelper struct {
 	scriptMountPath string
 }
 
-func (helper *scriptGeneratorHelper) BuildConfigMap(ownerReference metav1.OwnerReference, configMapKey types.NamespacedName) *corev1.ConfigMap {
+func (helper *scriptGeneratorHelper) BuildConfigMap(dataset *datav1alpha1.Dataset, configMapKey types.NamespacedName) *corev1.ConfigMap {
 	data := map[string]string{}
 	data[helper.scriptFileName] = helper.scriptContent
 	// data[helper.scriptFileName] = replacer.Replace(helper.scriptContent)
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            configMapKey.Name,
-			Namespace:       configMapKey.Namespace,
-			OwnerReferences: []metav1.OwnerReference{ownerReference},
+			Name:      configMapKey.Name,
+			Namespace: configMapKey.Namespace,
 			Labels: map[string]string{
-				common.LabelAnnotationDatasetId: utils.GetDatasetId(configMapKey.Namespace, ownerReference.Name, string(ownerReference.UID)),
+				common.LabelAnnotationDatasetId: utils.GetDatasetId(configMapKey.Namespace, dataset.Name, string(dataset.UID)),
 			},
 		},
 		Data: data,
 	}
 }
 
-func (helper *scriptGeneratorHelper) GetConfigMapKeyByOwner(datasetKey types.NamespacedName, runtimeType string) types.NamespacedName {
+func (helper *scriptGeneratorHelper) GetNamespacedConfigMapKey(datasetKey types.NamespacedName, runtimeType string) types.NamespacedName {
 	return types.NamespacedName{
 		Namespace: datasetKey.Namespace,
-		Name:      datasetKey.Name + "-" + strings.ToLower(runtimeType) + "-" + helper.configMapName,
+		Name:      strings.ToLower(runtimeType) + "-" + helper.configMapName,
 	}
 }
 

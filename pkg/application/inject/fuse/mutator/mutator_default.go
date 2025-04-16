@@ -24,7 +24,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -331,24 +330,16 @@ func (helper *defaultMutatorHelper) prepareFuseContainerPostStartScript() error 
 		return err
 	}
 
-	ownerReference := metav1.OwnerReference{
-		APIVersion: dataset.APIVersion,
-		Kind:       dataset.Kind,
-		Name:       dataset.Name,
-		UID:        dataset.UID,
-	}
-
 	// Fluid assumes pvc name is the same with runtime's name
 	gen := poststart.NewDefaultPostStartScriptGenerator()
-	cmKey := gen.GetConfigMapKeyByOwner(types.NamespacedName{Namespace: datasetNamespace, Name: datasetName}, template.FuseMountInfo.FsType)
-	cm := gen.BuildConfigMap(ownerReference, cmKey)
-
+	cmKey := gen.GetNamespacedConfigMapKey(types.NamespacedName{Namespace: datasetNamespace, Name: datasetName}, template.FuseMountInfo.FsType)
 	found, err := kubeclient.IsConfigMapExist(helper.client, cmKey.Name, cmKey.Namespace)
 	if err != nil {
 		return err
 	}
 
 	if !found {
+		cm := gen.BuildConfigMap(dataset, cmKey)
 		err = helper.client.Create(context.TODO(), cm)
 		if err != nil {
 			// If ConfigMap creation succeeds concurrently, continue to mutate
