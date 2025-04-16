@@ -19,7 +19,6 @@ package goosefs
 import (
 	"errors"
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -28,6 +27,7 @@ import (
 
 	"github.com/brahma-adshonor/gohook"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"

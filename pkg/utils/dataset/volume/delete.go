@@ -45,7 +45,7 @@ func DeleteFusePersistentVolume(client client.Client,
 }
 
 func deleteFusePersistentVolumeIfExists(client client.Client, pvName string, log logr.Logger) (err error) {
-	found, err := kubeclient.IsPersistentVolumeExist(client, pvName, common.ExpectedFluidAnnotations)
+	found, err := kubeclient.IsPersistentVolumeExist(client, pvName, common.GetExpectedFluidAnnotations())
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func deleteFusePersistentVolumeIfExists(client client.Client, pvName string, log
 		}
 		retries := 10
 		for i := 0; i < retries; i++ {
-			found, err = kubeclient.IsPersistentVolumeExist(client, pvName, common.ExpectedFluidAnnotations)
+			found, err = kubeclient.IsPersistentVolumeExist(client, pvName, common.GetExpectedFluidAnnotations())
 			if err != nil {
 				return err
 			}
@@ -85,7 +85,7 @@ func DeleteFusePersistentVolumeClaim(client client.Client,
 	runtime base.RuntimeInfoInterface,
 	log logr.Logger) (err error) {
 
-	found, err := kubeclient.IsPersistentVolumeClaimExist(client, runtime.GetName(), runtime.GetNamespace(), common.ExpectedFluidAnnotations)
+	found, err := kubeclient.IsPersistentVolumeClaimExist(client, runtime.GetName(), runtime.GetNamespace(), common.GetExpectedFluidAnnotations())
 	if err != nil {
 		return err
 	}
@@ -99,7 +99,7 @@ func DeleteFusePersistentVolumeClaim(client client.Client,
 		stillFound := false
 		retries := 10
 		for i := 0; i < retries; i++ {
-			stillFound, err = kubeclient.IsPersistentVolumeClaimExist(client, runtime.GetName(), runtime.GetNamespace(), common.ExpectedFluidAnnotations)
+			stillFound, err = kubeclient.IsPersistentVolumeClaimExist(client, runtime.GetName(), runtime.GetNamespace(), common.GetExpectedFluidAnnotations())
 			if err != nil {
 				return err
 			}

@@ -27,7 +27,7 @@ import (
 )
 
 func HasDeprecatedPersistentVolumeName(client client.Client, runtime base.RuntimeInfoInterface, log logr.Logger) (deprecated bool, err error) {
-	deprecated, err = kubeclient.IsPersistentVolumeExist(client, runtime.GetName(), common.ExpectedFluidAnnotations)
+	deprecated, err = kubeclient.IsPersistentVolumeExist(client, runtime.GetName(), common.GetExpectedFluidAnnotations())
 	if err != nil {
 		log.Error(err, "Failed to check if deprecated PV exists", "expeceted PV name", runtime.GetName())
 		return

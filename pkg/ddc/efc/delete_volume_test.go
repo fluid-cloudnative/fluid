@@ -98,7 +98,7 @@ func TestEFCEngine_DeleteVolume(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "fluid-efcdemo",
 				//Namespace:   "fluid",
-				Annotations: common.ExpectedFluidAnnotations,
+				Annotations: common.GetExpectedFluidAnnotations(),
 			},
 			Spec: v1.PersistentVolumeSpec{},
 		},
@@ -106,7 +106,7 @@ func TestEFCEngine_DeleteVolume(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "fluid-error",
 				//Namespace:   "fluid",
-				Annotations: common.ExpectedFluidAnnotations,
+				Annotations: common.GetExpectedFluidAnnotations(),
 			},
 			Spec: v1.PersistentVolumeSpec{},
 		},
@@ -123,7 +123,7 @@ func TestEFCEngine_DeleteVolume(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        "error",
 				Namespace:   "fluid",
-				Annotations: common.ExpectedFluidAnnotations,
+				Annotations: common.GetExpectedFluidAnnotations(),
 				Finalizers:  []string{"kubernetes.io/pvc-protection"}, // err because it needs sleep
 			},
 			Spec: v1.PersistentVolumeClaimSpec{},

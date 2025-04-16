@@ -47,9 +47,12 @@ const (
 	// NoneCleanPolicy is the default clean policy. It will be transformed to OnRuntimeDeletedCleanPolicy automatically.
 	NoneCleanPolicy FuseCleanPolicy = ""
 
-	// OnDemandCleanPolicy cleans fuse pod once th fuse pod on some node is not needed
+	// OnDemandCleanPolicy cleans fuse pod once the fuse pod on some node is not needed
 	OnDemandCleanPolicy FuseCleanPolicy = "OnDemand"
 
 	// OnRuntimeDeletedCleanPolicy cleans fuse pod only when the cache runtime is deleted
 	OnRuntimeDeletedCleanPolicy FuseCleanPolicy = "OnRuntimeDeleted"
+
+	// OnFuseChangedCleanPolicy cleans fuse pod when the fuse in runtime is updated and the fuse pod on some node is not needed
+	OnFuseChangedCleanPolicy FuseCleanPolicy = "OnFuseChanged"
 )

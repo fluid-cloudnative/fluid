@@ -22,9 +22,11 @@ import (
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 // transform worker volumes
@@ -221,4 +223,37 @@ func (j *JuiceFSEngine) transformFuseCacheVolumes(runtime *datav1alpha1.JuiceFSR
 		value.Fuse.Volumes = append(value.Fuse.Volumes, v)
 	}
 	return err
+}
+
+func (j *JuiceFSEngine) transformFuseDownwardAPIVolumes(runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) {
+	if runtime.Spec.Fuse.CleanPolicy != datav1alpha1.OnFuseChangedCleanPolicy {
+		return
+	}
+
+	volumeName := "fuse-labels-downward-api-volume"
+	var mode int32 = 0755
+	volume := corev1.Volume{
+		Name: volumeName,
+		VolumeSource: corev1.VolumeSource{
+			DownwardAPI: &corev1.DownwardAPIVolumeSource{
+				Items: []corev1.DownwardAPIVolumeFile{
+					{
+						Path: utils.MetaDataFuseLabelFileName,
+						FieldRef: &corev1.ObjectFieldSelector{
+							APIVersion: "v1",
+							FieldPath:  "metadata.labels",
+						},
+					},
+				},
+				DefaultMode: ptr.To(mode),
+			},
+		},
+	}
+	volumeMount := corev1.VolumeMount{
+		Name:      volumeName,
+		ReadOnly:  true,
+		MountPath: utils.GetRuntimeFuseMetadataPath(runtime.Namespace, runtime.Name, common.JuiceFSRuntime),
+	}
+	value.Fuse.Volumes = append(value.Fuse.Volumes, volume)
+	value.Fuse.VolumeMounts = append(value.Fuse.VolumeMounts, volumeMount)
 }

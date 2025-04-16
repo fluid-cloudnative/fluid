@@ -65,6 +65,24 @@ func TestReferenceDatasetEngine_CreateVolume(t *testing.T) {
 		},
 	}
 	var runtimeInfo, err = base.BuildRuntimeInfo(runtime.Name, runtime.Namespace, common.AlluxioRuntime)
+	var testDsInput = appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "done-fuse",
+			Namespace: "big-data",
+		},
+		Spec: appsv1.DaemonSetSpec{
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Image: "fuse-image:v1",
+						},
+					},
+				},
+			},
+		},
+	}
+
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -103,6 +121,7 @@ func TestReferenceDatasetEngine_CreateVolume(t *testing.T) {
 	testObjs = append(testObjs, &dataset, &refDataset)
 	testObjs = append(testObjs, &runtime, &refRuntime)
 	testObjs = append(testObjs, &pv, &pvc)
+	testObjs = append(testObjs, &testDsInput)
 
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
@@ -198,14 +217,14 @@ func TestReferenceDatasetEngine_DeleteVolume(t *testing.T) {
 	var pv = corev1.PersistentVolume{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        runtimeInfo.GetPersistentVolumeName(),
-			Annotations: common.ExpectedFluidAnnotations,
+			Annotations: common.GetExpectedFluidAnnotations(),
 		},
 	}
 	var pvc = corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        refRuntime.GetName(),
 			Namespace:   refRuntime.GetNamespace(),
-			Annotations: common.ExpectedFluidAnnotations,
+			Annotations: common.GetExpectedFluidAnnotations(),
 			Finalizers:  []string{"kubernetes.io/pvc-protection"},
 		},
 	}

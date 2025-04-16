@@ -80,6 +80,9 @@ const (
 	// LabelAnnotationMountingDatasets is a label/annotation key indicating which datasets are currently being used by a pod.
 	// i.e. fluid.io/datasets-in-use
 	LabelAnnotationDatasetsInUse = LabelAnnotationPrefix + "datasets-in-use"
+
+	// i.e. fuse.runtime.fluid.io/generation
+	LabelRuntimeFuseGeneration = "fuse.runtime." + LabelAnnotationPrefix + "generation"
 )
 
 const (

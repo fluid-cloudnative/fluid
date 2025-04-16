@@ -291,75 +291,15 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 	}
 	defer ns.locks.Release(volumeId)
 
-	// 1. get runtime namespace and name
-	// A nil volumeContext is passed because unlike csi.NodeStageVolumeRequest, csi.NodeUnstageVolumeRequest has
-	// no volume context attribute.
-	namespace, name, err := ns.getRuntimeNamespacedName(nil, volumeId)
+	cleanFuseFunc, err := ns.getCleanFuseFunc(volumeId)
 	if err != nil {
-		if utils.IgnoreNotFound(err) == nil {
-			// For cases like the related persistent volume has been deleted, ignore it and return success
-			glog.Warningf("NodeUnstageVolume: volume %s not found, maybe it's already cleaned up, ignore it", volumeId)
-			return &csi.NodeUnstageVolumeResponse{}, nil
+		return nil, err
+	}
+
+	if cleanFuseFunc != nil {
+		if err := cleanFuseFunc(); err != nil {
+			return nil, errors.Wrapf(err, "NodeUnstageVolume: failed to clean fuse for volume %s", volumeId)
 		}
-		glog.Errorf("NodeUnstageVolume: can't get runtime namespace and name given (volumeContext: nil, volumeId: %s): %v", volumeId, err)
-		return nil, errors.Wrapf(err, "NodeUnstageVolume: can't get namespace and name by volume id %s", volumeId)
-	}
-
-	// 2. Check fuse clean policy. If clean policy is set to OnRuntimeDeleted, there is no
-	// need to clean fuse eagerly.
-	runtimeInfo, err := base.GetRuntimeInfo(ns.client, name, namespace)
-	if err != nil {
-		if utils.IgnoreNotFound(err) == nil {
-			// For cases like the dataset or runtime has been deleted, ignore it and return success
-			glog.Warningf("NodeUnstageVolume: dataset or runtime %s/%s not found, maybe it's already cleaned up", namespace, name)
-			return &csi.NodeUnstageVolumeResponse{}, nil
-		}
-		return nil, errors.Wrapf(err, "NodeUnstageVolume: failed to get runtime info for %s/%s", namespace, name)
-	}
-
-	var shouldCleanFuse bool
-	cleanPolicy := runtimeInfo.GetFuseCleanPolicy()
-	glog.Infof("NodeUnstageVolume: Using %s clean policy for runtime %s in namespace %s", cleanPolicy, runtimeInfo.GetName(), runtimeInfo.GetNamespace())
-	switch cleanPolicy {
-	case v1alpha1.OnDemandCleanPolicy:
-		shouldCleanFuse = true
-	case v1alpha1.OnRuntimeDeletedCleanPolicy:
-		shouldCleanFuse = false
-	default:
-		return nil, errors.Errorf("NodeUnstageVolume: unknown Fuse clean policy: %s", cleanPolicy)
-	}
-
-	if !shouldCleanFuse {
-		return &csi.NodeUnstageVolumeResponse{}, nil
-	}
-
-	// 3. check if the path is mounted
-	inUse, err := checkMountInUse(volumeId)
-	if err != nil {
-		return nil, errors.Wrap(err, "NodeUnstageVolume: can't check mount in use")
-	}
-	if inUse {
-		return nil, fmt.Errorf("NodeUnstageVolume: can't stop fuse cause it's in use")
-	}
-
-	// 4. remove label on node
-	// Once the label is removed, fuse pod on corresponding node will be terminated
-	// since node selector in the fuse daemonSet no longer matches.
-	fuseLabelKey := utils.GetFuseLabelName(namespace, name, runtimeInfo.GetOwnerDatasetUID())
-	var labelsToModify common.LabelsToModify
-	labelsToModify.Delete(fuseLabelKey)
-
-	node, err := ns.getNode()
-	if err != nil {
-		glog.Errorf("NodeUnstageVolume: can't get node %s: %v", ns.nodeId, err)
-		return nil, errors.Wrapf(err, "NodeUnstageVolume: can't get node %s", ns.nodeId)
-	}
-
-	// _, err = utils.ChangeNodeLabelWithPatchMode(ns.client, node, labelsToModify)
-	err = ns.patchNodeWithLabel(node, labelsToModify)
-	if err != nil {
-		glog.Errorf("NodeUnstageVolume: error when patching labels on node %s: %v", ns.nodeId, err)
-		return nil, errors.Wrapf(err, "NodeUnstageVolume: error when patching labels on node %s", ns.nodeId)
 	}
 
 	return &csi.NodeUnstageVolumeResponse{}, nil
@@ -695,4 +635,114 @@ func checkMountPathExists(ctx context.Context, mountPath string) error {
 		return status.Error(codes.Internal, errors.Wrapf(err, "Failed to stat mountPath %s", mountPath).Error())
 	}
 	return nil
+}
+
+func (ns *nodeServer) getCleanFuseFunc(volumeId string) (func() error, error) {
+	// 1. get runtime namespace and name from pvc
+	// A nil volumeContext is passed because unlike csi.NodeStageVolumeRequest, csi.NodeUnstageVolumeRequest has
+	// no volume context attribute.
+	pvc, err := volume.GetPVCByVolumeId(ns.apiReader, volumeId)
+	if err != nil {
+		if utils.IgnoreNotFound(err) == nil {
+			// For cases like the related persistent volume has been deleted, ignore it and return success
+			glog.Warningf("NodeUnstageVolume: volume %s not found, maybe it's already cleaned up, ignore it", volumeId)
+			return nil, nil
+		}
+		glog.Errorf("NodeUnstageVolume: can't get runtime namespace and name given (volumeContext: nil, volumeId: %s): %v", volumeId, err)
+		return nil, errors.Wrapf(err, "NodeUnstageVolume: can't get namespace and name by volume id %s", volumeId)
+	}
+	namespace, name := pvc.Namespace, pvc.Name
+
+	// get latestFuseGeneration from pvc annotations
+	var latestFuseGeneration string
+	if pvc.Labels != nil {
+		latestFuseGeneration = pvc.Labels[common.LabelRuntimeFuseGeneration]
+	}
+
+	// 2. Check fuse clean policy. If clean policy is set to OnRuntimeDeleted, there is no
+	// need to clean fuse eagerly.
+	runtimeInfo, err := base.GetRuntimeInfo(ns.client, name, namespace)
+	if err != nil {
+		if utils.IgnoreNotFound(err) == nil {
+			// For cases like the dataset or runtime has been deleted, ignore it and return success
+			glog.Warningf("NodeUnstageVolume: dataset or runtime %s/%s not found, maybe it's already cleaned up", namespace, name)
+			return nil, nil
+		}
+		return nil, errors.Wrapf(err, "NodeUnstageVolume: failed to get runtime info for %s/%s", namespace, name)
+	}
+
+	var shouldCleanFuse bool
+	cleanPolicy := runtimeInfo.GetFuseCleanPolicy()
+	glog.Infof("NodeUnstageVolume: Using %s clean policy for runtime %s in namespace %s", cleanPolicy, runtimeInfo.GetName(), runtimeInfo.GetNamespace())
+	switch cleanPolicy {
+	case v1alpha1.OnDemandCleanPolicy:
+		shouldCleanFuse = true
+	case v1alpha1.OnRuntimeDeletedCleanPolicy:
+		shouldCleanFuse = false
+	case v1alpha1.OnFuseChangedCleanPolicy:
+		if checkIfFuseNeedUpdate(runtimeInfo, latestFuseGeneration) {
+			shouldCleanFuse = true
+		}
+	default:
+		return nil, errors.Errorf("NodeUnstageVolume: unknown Fuse clean policy: %s", cleanPolicy)
+	}
+
+	//if getCleanFuseFunc == true, fuse pod will be deleted and recreate by NodeStage
+	if !shouldCleanFuse {
+		return nil, nil
+	}
+
+	return func() error {
+		// check if the path is mounted
+		inUse, err := checkMountInUse(volumeId)
+		if err != nil {
+			return errors.Wrap(err, "NodeUnstageVolume: can't check mount in use")
+		}
+		if inUse {
+			return fmt.Errorf("NodeUnstageVolume: can't stop fuse cause it's in use")
+		}
+
+		// remove label on node
+		// Once the label is removed, fuse pod on corresponding node will be terminated
+		// since node selector in the fuse daemonSet no longer matches.
+		fuseLabelKey := utils.GetFuseLabelName(runtimeInfo.GetNamespace(), runtimeInfo.GetName(), runtimeInfo.GetOwnerDatasetUID())
+		var labelsToModify common.LabelsToModify
+		labelsToModify.Delete(fuseLabelKey)
+
+		node, err := ns.getNode()
+		if err != nil {
+			glog.Errorf("NodeUnstageVolume: can't get node %s: %v", ns.nodeId, err)
+			return errors.Wrapf(err, "NodeUnstageVolume: can't get node %s", ns.nodeId)
+		}
+
+		if err := ns.patchNodeWithLabel(node, labelsToModify); err != nil {
+			glog.Errorf("NodeUnstageVolume: error when patching labels on node %s: %v", ns.nodeId, err)
+			return errors.Wrapf(err, "NodeUnstageVolume: error when patching labels on node %s", ns.nodeId)
+		}
+
+		return nil
+	}, nil
+}
+
+func checkIfFuseNeedUpdate(runtimeInfo base.RuntimeInfoInterface, latestFuseImageVersion string) (needUpdate bool) {
+	if len(latestFuseImageVersion) == 0 {
+		return
+	}
+
+	currentImageVersion, err := utils.LoadCurrentFuseGenerationFromMeta(runtimeInfo.GetNamespace(), runtimeInfo.GetName(), runtimeInfo.GetRuntimeType())
+	glog.Infof("NodeUnstage GetFuseImageVersionFromMetadata %v, %v", currentImageVersion, err)
+	if err != nil {
+		glog.Warningf("NodeUnstage GetFuseImageVersionFromMetadata failed %v, skip to update fuse pod", err)
+		return
+	}
+	if len(currentImageVersion) == 0 {
+		return
+	}
+
+	glog.Infof("NodeUnstage checkIfFuseNeedUpdate currentImageVersion: %v, latestFuseImageVersion: %v", currentImageVersion, latestFuseImageVersion)
+	if currentImageVersion != latestFuseImageVersion {
+		needUpdate = true
+		return
+	}
+	return
 }

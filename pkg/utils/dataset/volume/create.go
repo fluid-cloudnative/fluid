@@ -18,6 +18,7 @@ package volume
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -51,7 +52,7 @@ func CreatePersistentVolumeForRuntime(client client.Client,
 
 	pvName := runtime.GetPersistentVolumeName()
 
-	found, err := kubeclient.IsPersistentVolumeExist(client, pvName, common.ExpectedFluidAnnotations)
+	found, err := kubeclient.IsPersistentVolumeExist(client, pvName, common.GetExpectedFluidAnnotations())
 	if err != nil {
 		return err
 	}
@@ -65,7 +66,7 @@ func CreatePersistentVolumeForRuntime(client client.Client,
 					runtime.GetCommonLabelName():    "true",
 					common.LabelAnnotationDatasetId: utils.GetDatasetId(runtime.GetNamespace(), runtime.GetName(), runtime.GetOwnerDatasetUID()),
 				},
-				Annotations: common.ExpectedFluidAnnotations,
+				Annotations: common.GetExpectedFluidAnnotations(),
 			},
 			Spec: corev1.PersistentVolumeSpec{
 				AccessModes: accessModes,
@@ -197,7 +198,7 @@ func CreatePersistentVolumeClaimForRuntime(client client.Client,
 		return err
 	}
 
-	found, err := kubeclient.IsPersistentVolumeClaimExist(client, runtime.GetName(), runtime.GetNamespace(), common.ExpectedFluidAnnotations)
+	found, err := kubeclient.IsPersistentVolumeClaimExist(client, runtime.GetName(), runtime.GetNamespace(), common.GetExpectedFluidAnnotations())
 	if err != nil {
 		return err
 	}
@@ -211,7 +212,7 @@ func CreatePersistentVolumeClaimForRuntime(client client.Client,
 					runtime.GetCommonLabelName():    "true",
 					common.LabelAnnotationDatasetId: utils.GetDatasetId(runtime.GetNamespace(), runtime.GetName(), runtime.GetOwnerDatasetUID()),
 				},
-				Annotations: common.ExpectedFluidAnnotations,
+				Annotations: common.GetExpectedFluidAnnotations(),
 			},
 			Spec: corev1.PersistentVolumeClaimSpec{
 				Selector: &metav1.LabelSelector{
@@ -228,6 +229,15 @@ func CreatePersistentVolumeClaimForRuntime(client client.Client,
 				},
 			},
 		}
+
+		// record fuse image version in pvc
+		fuseDs, err := kubeclient.GetDaemonset(client, runtime.GetFuseName(), runtime.GetNamespace())
+		if err == nil && fuseDs != nil {
+			if len(fuseDs.Spec.Template.Spec.Containers) == 1 {
+				pvc.Labels[common.LabelRuntimeFuseGeneration] = strconv.Itoa(int(fuseDs.Generation))
+			}
+		}
+
 		metadataList := runtime.GetMetadataList()
 		for i := range metadataList {
 			if selector := metadataList[i].Selector; selector.Group != corev1.GroupName || selector.Kind != "PersistentVolumeClaim" {
