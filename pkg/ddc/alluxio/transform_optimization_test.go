@@ -196,35 +196,31 @@ func TestOptimizeDefaultForMasterNoValue(t *testing.T) {
 }
 
 // TestOptimizeDefaultForMasterWithValue tests the optimizeDefaultForMaster method of AlluxioEngine
-// when the AlluxioRuntime has specified JVM options for Master.
-// It verifies that the JVM options from the runtime spec are correctly applied to the Alluxio configuration.
+// It verifies that when AlluxioRuntime specifies JVM options for Master, these options are correctly
+// applied to the Alluxio Master configuration. The test case checks if the JvmOptions from the runtime
+// spec are properly transferred to the Alluxio Master's JvmOptions. It compares the expected JVM options
+// with the actual options set in the Alluxio Master configuration to ensure they match.
+
 func TestOptimizeDefaultForMasterWithValue(t *testing.T) {
-	// Define test cases with input runtime spec, initial Alluxio config, and expected output
 	var tests = []struct {
-		runtime      *datav1alpha1.AlluxioRuntime // Input AlluxioRuntime spec
-		alluxioValue *Alluxio                     // Initial Alluxio configuration
-		expect       []string                     // Expected JVM options after optimization
+		runtime      *datav1alpha1.AlluxioRuntime
+		alluxioValue *Alluxio
+		expect       []string
 	}{
-		// Test case where Master has specified JVM options in runtime spec
 		{&datav1alpha1.AlluxioRuntime{
 			Spec: datav1alpha1.AlluxioRuntimeSpec{
 				Master: datav1alpha1.AlluxioCompTemplateSpec{
-					JvmOptions: []string{"-Xmx4G"},  // Input JVM options
+					JvmOptions: []string{"-Xmx4G"},
 				},
 			},
 		}, &Alluxio{
 			Properties: map[string]string{},
-			Master:     Master{},  // Initial empty Master config
-		}, []string{"-Xmx4G"}},  // Expected JVM options to be set
+			Master:     Master{},
+		}, []string{"-Xmx4G"}},
 	}
-	
-	// Iterate through each test case
 	for _, test := range tests {
 		engine := &AlluxioEngine{}
-		// Call the method being tested
 		engine.optimizeDefaultForMaster(test.runtime, test.alluxioValue)
-		
-		// Verify the JVM options are correctly set
 		if test.alluxioValue.Master.JvmOptions[0] != test.expect[0] {
 			t.Errorf("expected %v, got %v", test.expect, test.alluxioValue.Master.JvmOptions)
 		}
