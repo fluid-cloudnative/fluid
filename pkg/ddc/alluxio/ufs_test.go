@@ -422,6 +422,14 @@ func TestPrepareUFS(t *testing.T) {
 	}
 }
 
+// UpdateDatasetStatus updates the status of a dataset in the JindoEngine.
+// This function synchronizes the dataset phase with the underlying runtime status.
+//
+// Parameters:
+// - phase (datav1alpha1.DatasetPhase): The target phase to transition to.
+//
+// Returns:
+// - error: Returns nil on success, or error details if the update fails.
 func TestGenUFSMountOptions(t *testing.T) {
 	type fields struct {
 		runtime            *datav1alpha1.AlluxioRuntime
