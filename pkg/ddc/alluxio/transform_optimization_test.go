@@ -195,6 +195,12 @@ func TestOptimizeDefaultForMasterNoValue(t *testing.T) {
 	}
 }
 
+// TestOptimizeDefaultForMasterWithValue tests the optimizeDefaultForMaster method of AlluxioEngine
+// It verifies that when AlluxioRuntime specifies JVM options for Master, these options are correctly
+// applied to the Alluxio Master configuration. The test case checks if the JvmOptions from the runtime
+// spec are properly transferred to the Alluxio Master's JvmOptions. It compares the expected JVM options
+// with the actual options set in the Alluxio Master configuration to ensure they match.
+
 func TestOptimizeDefaultForMasterWithValue(t *testing.T) {
 	var tests = []struct {
 		runtime      *datav1alpha1.AlluxioRuntime
