@@ -19,13 +19,13 @@ package thin
 import (
 	"context"
 	"fmt"
-
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/lifecycle"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -237,10 +237,15 @@ func (t *ThinEngine) cleanAll() (err error) {
 	return nil
 }
 
+// runtimeset config has been duplicated, keep it for garbage collection
 func (t *ThinEngine) cleanUpOrphanedResources() (err error) {
 	orphanedConfigMapName := fmt.Sprintf("%s-runtimeset", t.name)
 	cm, err := kubeclient.GetConfigmapByName(t.Client, orphanedConfigMapName, t.namespace)
 	if err != nil {
+		if apierrors.IsNotFound(err) {
+			t.Log.Info("Orphaned configmap not exist, do not need to delete it", "configmap", orphanedConfigMapName)
+			return nil
+		}
 		return err
 	}
 

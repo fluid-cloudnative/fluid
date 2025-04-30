@@ -141,12 +141,7 @@ func (e *ReferenceDatasetEngine) createConfigMapForRefDataset(client client.Clie
 		// Currently EFCRuntime only supports CSI mode, so do nothing here.
 		e.Log.Info("Skip createConfigMapForRefDataset because the physicalRuntimeType=EFC", "name", e.name, "namespace", e.namespace)
 	case common.ThinRuntime:
-		runtimesetConfigMapName := physicalRuntimeName + "-runtimeset"
-		err := kubeclient.CopyConfigMap(client, types.NamespacedName{Name: runtimesetConfigMapName, Namespace: physicalRuntimeNamespace},
-			types.NamespacedName{Name: runtimesetConfigMapName, Namespace: refNameSpace}, ownerReference)
-		if err != nil {
-			return err
-		}
+		e.Log.Info("Skip createConfigMapForRefDataset because the physicalRuntimeType=THIN", "name", e.name, "namespace", e.namespace)
 	default:
 		err := fmt.Errorf("fail to get configmap for runtime type: %s", physicalRuntimeType)
 		return err

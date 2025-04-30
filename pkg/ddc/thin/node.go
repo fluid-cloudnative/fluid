@@ -26,7 +26,5 @@ func (t ThinEngine) SyncScheduleInfoToCacheNodes() (err error) {
 		return
 	}
 
-	updated, err := t.UpdateRuntimeSetConfigIfNeeded()
-	t.Log.V(1).Info("UpdateRuntimeSetConfigIfNeeded", "updated", updated)
 	return
 }
