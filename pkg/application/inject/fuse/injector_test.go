@@ -244,7 +244,7 @@ func TestInjectPod(t *testing.T) {
 									Name:      "jindofs-fuse-mount-0",
 									MountPath: "/jfs",
 								}, {
-									Name:      "check-mount-0",
+									Name:      "default-check-mount-0",
 									ReadOnly:  true,
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
@@ -314,11 +314,11 @@ func TestInjectPod(t *testing.T) {
 								},
 							},
 						}, {
-							Name: "check-mount-0",
+							Name: "default-check-mount-0",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "duplicate-jindo-check-mount",
+										Name: "jindo-default-check-mount",
 									},
 									DefaultMode: ptr.To(mode),
 								},
@@ -497,7 +497,7 @@ func TestInjectPod(t *testing.T) {
 									Name:      "jindofs-fuse-mount-0",
 									MountPath: "/jfs",
 								}, {
-									Name:      "check-mount-0",
+									Name:      "default-check-mount-0",
 									ReadOnly:  true,
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
@@ -578,11 +578,11 @@ func TestInjectPod(t *testing.T) {
 									Path: "/runtime_mnt/dataset1",
 								},
 							}}, {
-							Name: "check-mount-0",
+							Name: "default-check-mount-0",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "dataset1-jindo-check-mount",
+										Name: "jindo-default-check-mount",
 									},
 									DefaultMode: ptr.To(mode),
 								},
@@ -787,7 +787,7 @@ func TestInjectPod(t *testing.T) {
 									Name:      "jindofs-fuse-mount-0",
 									MountPath: "/jfs",
 								}, {
-									Name:      "check-mount-0",
+									Name:      "default-check-mount-0",
 									ReadOnly:  true,
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
@@ -857,11 +857,11 @@ func TestInjectPod(t *testing.T) {
 								},
 							},
 						}, {
-							Name: "check-mount-0",
+							Name: "default-check-mount-0",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "customizedenv-jindo-check-mount",
+										Name: "jindo-default-check-mount",
 									},
 									DefaultMode: ptr.To(mode),
 								},
@@ -1040,7 +1040,7 @@ func TestInjectPod(t *testing.T) {
 									Name:      "jindofs-fuse-mount-0",
 									MountPath: "/jfs",
 								}, {
-									Name:      "check-mount-0",
+									Name:      "default-check-mount-0",
 									ReadOnly:  true,
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
@@ -1121,11 +1121,11 @@ func TestInjectPod(t *testing.T) {
 									Path: "/runtime_mnt/dataset-conflict",
 								},
 							}}, {
-							Name: "check-mount-0",
+							Name: "default-check-mount-0",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "dataset-conflict-jindo-check-mount",
+										Name: "jindo-default-check-mount",
 									},
 									DefaultMode: ptr.To(mode),
 								},
@@ -1762,7 +1762,7 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 									Name:      "jindofs-fuse-mount-0",
 									MountPath: "/jfs",
 								}, {
-									Name:      "check-mount-0",
+									Name:      "default-check-mount-0",
 									ReadOnly:  true,
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
@@ -1845,11 +1845,11 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 								},
 							},
 						}, {
-							Name: "check-mount-0",
+							Name: "default-check-mount-0",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "duplicate-jindo-check-mount",
+										Name: "jindo-default-check-mount",
 									},
 									DefaultMode: ptr.To(mode),
 								},
@@ -2166,7 +2166,7 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 									Name:      "jindofs-fuse-mount-1",
 									MountPath: "/jfs",
 								}, {
-									Name:      "check-mount-1",
+									Name:      "default-check-mount-1",
 									ReadOnly:  true,
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
@@ -2207,7 +2207,7 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 									Name:      "jindofs-fuse-mount-0",
 									MountPath: "/jfs",
 								}, {
-									Name:      "check-mount-0",
+									Name:      "default-check-mount-0",
 									ReadOnly:  true,
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
@@ -2291,11 +2291,11 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 								},
 							},
 						}, {
-							Name: "check-mount-0",
+							Name: "default-check-mount-0",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "dataset1-jindo-check-mount",
+										Name: "jindo-default-check-mount",
 									},
 									DefaultMode: ptr.To(mode),
 								},
@@ -2327,11 +2327,11 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 								},
 							},
 						}, {
-							Name: "check-mount-1",
+							Name: "default-check-mount-1",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "dataset2-jindo-check-mount",
+										Name: "jindo-default-check-mount",
 									},
 									DefaultMode: ptr.To(mode),
 								},
@@ -2721,7 +2721,7 @@ func TestInjectPodWithDatasetSubPath(t *testing.T) {
 									Name:      "jindofs-fuse-mount-0",
 									MountPath: "/jfs",
 								}, {
-									Name:      "check-mount-0",
+									Name:      "default-check-mount-0",
 									ReadOnly:  true,
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
@@ -2802,11 +2802,11 @@ func TestInjectPodWithDatasetSubPath(t *testing.T) {
 									Path: "/runtime_mnt/dataset1",
 								},
 							}}, {
-							Name: "check-mount-0",
+							Name: "default-check-mount-0",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "subpath-jindo-check-mount",
+										Name: "jindo-default-check-mount",
 									},
 									DefaultMode: ptr.To(mode),
 								},
@@ -3122,7 +3122,7 @@ func TestInjectPodUnprivileged(t *testing.T) {
 									MountPath: "/mnt/disk1",
 								},
 								{
-									Name:      "check-mount-0",
+									Name:      "default-check-mount-0",
 									ReadOnly:  true,
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
@@ -3177,11 +3177,11 @@ func TestInjectPodUnprivileged(t *testing.T) {
 							},
 						},
 						{
-							Name: "check-mount-0",
+							Name: "default-check-mount-0",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "dataset-jindo-check-mount",
+										Name: "jindo-default-check-mount",
 									},
 									DefaultMode: ptr.To(mode),
 								},
@@ -3495,7 +3495,7 @@ func TestInjectPodUnprivileged(t *testing.T) {
 									MountPath: "/mnt/disk",
 								},
 								{
-									Name:      "check-mount-1",
+									Name:      "default-check-mount-1",
 									ReadOnly:  true,
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
@@ -3532,7 +3532,7 @@ func TestInjectPodUnprivileged(t *testing.T) {
 									MountPath: "/mnt/disk",
 								},
 								{
-									Name:      "check-mount-0",
+									Name:      "default-check-mount-0",
 									ReadOnly:  true,
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
@@ -3600,11 +3600,11 @@ func TestInjectPodUnprivileged(t *testing.T) {
 							},
 						},
 						{
-							Name: "check-mount-0",
+							Name: "default-check-mount-0",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "dataset1-jindo-check-mount",
+										Name: "jindo-default-check-mount",
 									},
 									DefaultMode: ptr.To(mode),
 								},
@@ -3624,7 +3624,7 @@ func TestInjectPodUnprivileged(t *testing.T) {
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "dataset2-jindo-check-mount",
+										Name: "jindo-default-check-mount",
 									},
 									DefaultMode: ptr.To(mode),
 								},
@@ -3940,7 +3940,7 @@ func TestInjectPodUnprivileged(t *testing.T) {
 									MountPath: "/mnt/disk",
 								},
 								{
-									Name:      "check-mount-1",
+									Name:      "default-check-mount-1",
 									ReadOnly:  true,
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
@@ -3977,7 +3977,7 @@ func TestInjectPodUnprivileged(t *testing.T) {
 									MountPath: "/mnt/disk",
 								},
 								{
-									Name:      "check-mount-0",
+									Name:      "default-check-mount-0",
 									ReadOnly:  true,
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
@@ -4052,11 +4052,11 @@ func TestInjectPodUnprivileged(t *testing.T) {
 							},
 						},
 						{
-							Name: "check-mount-0",
+							Name: "default-check-mount-0",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "dataset-a-jindo-check-mount",
+										Name: "jindo-default-check-mount",
 									},
 									DefaultMode: ptr.To(mode),
 								},
@@ -4072,11 +4072,11 @@ func TestInjectPodUnprivileged(t *testing.T) {
 							},
 						},
 						{
-							Name: "check-mount-1",
+							Name: "default-check-mount-1",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "dataset-b-jindo-check-mount",
+										Name: "jindo-default-check-mount",
 									},
 									DefaultMode: ptr.To(mode),
 								},
@@ -4452,7 +4452,7 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 									Name:      "jindofs-fuse-mount-0",
 									MountPath: "/jfs",
 								}, {
-									Name:      "check-mount-0",
+									Name:      "default-check-mount-0",
 									ReadOnly:  true,
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
@@ -4522,11 +4522,11 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 								},
 							},
 						}, {
-							Name: "check-mount-0",
+							Name: "default-check-mount-0",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "duplicate-jindo-check-mount",
+										Name: "jindo-default-check-mount",
 									},
 									DefaultMode: ptr.To[int32](mode),
 								},
@@ -4719,7 +4719,7 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 									Name:      "jindofs-fuse-mount-0",
 									MountPath: "/jfs",
 								}, {
-									Name:      "check-mount-0",
+									Name:      "default-check-mount-0",
 									ReadOnly:  true,
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
@@ -4764,7 +4764,7 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 									Name:      "jindofs-fuse-mount-0",
 									MountPath: "/jfs",
 								}, {
-									Name:      "check-mount-0",
+									Name:      "default-check-mount-0",
 									ReadOnly:  true,
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
@@ -4845,11 +4845,11 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 									Path: "/runtime_mnt/dataset1",
 								},
 							}}, {
-							Name: "check-mount-0",
+							Name: "default-check-mount-0",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "dataset1-jindo-check-mount",
+										Name: "jindo-default-check-mount",
 									},
 									DefaultMode: ptr.To[int32](mode),
 								},
@@ -5055,7 +5055,7 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 									Name:      "jindofs-fuse-mount-0",
 									MountPath: "/jfs",
 								}, {
-									Name:      "check-mount-0",
+									Name:      "default-check-mount-0",
 									ReadOnly:  true,
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
@@ -5120,7 +5120,7 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 									Name:      "jindofs-fuse-mount-0",
 									MountPath: "/jfs",
 								}, {
-									Name:      "check-mount-0",
+									Name:      "default-check-mount-0",
 									ReadOnly:  true,
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
@@ -5190,11 +5190,11 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 								},
 							},
 						}, {
-							Name: "check-mount-0",
+							Name: "default-check-mount-0",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "customizedenv-jindo-check-mount",
+										Name: "jindo-default-check-mount",
 									},
 									DefaultMode: ptr.To[int32](mode),
 								},
@@ -5550,7 +5550,7 @@ func TestInjectPodWithEnabledFUSEMetrics(t *testing.T) {
 									Name:      "jindofs-fuse-mount-0",
 									MountPath: "/jfs",
 								}, {
-									Name:      "check-mount-0",
+									Name:      "default-check-mount-0",
 									ReadOnly:  true,
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
@@ -5620,11 +5620,11 @@ func TestInjectPodWithEnabledFUSEMetrics(t *testing.T) {
 								},
 							},
 						}, {
-							Name: "check-mount-0",
+							Name: "default-check-mount-0",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "duplicate-jindo-check-mount",
+										Name: "jindo-default-check-mount",
 									},
 									DefaultMode: ptr.To(mode),
 								},
@@ -5822,7 +5822,7 @@ func TestInjectPodWithEnabledFUSEMetrics(t *testing.T) {
 									Name:      "jindofs-fuse-mount-0",
 									MountPath: "/jfs",
 								}, {
-									Name:      "check-mount-0",
+									Name:      "default-check-mount-0",
 									ReadOnly:  true,
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
@@ -5892,11 +5892,11 @@ func TestInjectPodWithEnabledFUSEMetrics(t *testing.T) {
 								},
 							},
 						}, {
-							Name: "check-mount-0",
+							Name: "default-check-mount-0",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "duplicate2-jindo-check-mount",
+										Name: "jindo-default-check-mount",
 									},
 									DefaultMode: ptr.To(mode),
 								},
@@ -6099,7 +6099,7 @@ func TestInjectPodWithEnabledFUSEMetrics(t *testing.T) {
 									Name:      "fuse-device-0",
 									MountPath: "/dev/fuse",
 								}, {
-									Name:      "check-mount-0",
+									Name:      "default-check-mount-0",
 									ReadOnly:  true,
 									MountPath: "/check-mount.sh",
 									SubPath:   "check-mount.sh",
@@ -6161,11 +6161,11 @@ func TestInjectPodWithEnabledFUSEMetrics(t *testing.T) {
 								},
 							},
 						}, {
-							Name: "check-mount-0",
+							Name: "default-check-mount-0",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "duplicate3-jindo-check-mount",
+										Name: "jindo-default-check-mount",
 									},
 									DefaultMode: ptr.To(mode),
 								},
