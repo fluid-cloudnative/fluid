@@ -25,7 +25,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -130,17 +129,10 @@ func (mutator *unprivilegedMutatorHelper) prepareFuseContainerPostStartScript() 
 		return err
 	}
 
-	ownerReference := metav1.OwnerReference{
-		APIVersion: dataset.APIVersion,
-		Kind:       dataset.Kind,
-		Name:       dataset.Name,
-		UID:        dataset.UID,
-	}
-
 	// Fluid assumes pvc name is the same with runtime's name
 	gen := poststart.NewDefaultPostStartScriptGenerator()
-	cmKey := gen.GetConfigMapKeyByOwner(types.NamespacedName{Namespace: datasetNamespace, Name: datasetName}, template.FuseMountInfo.FsType)
-	cm := gen.BuildConfigMap(ownerReference, cmKey)
+	cmKey := gen.GetNamespacedConfigMapKey(types.NamespacedName{Namespace: datasetNamespace, Name: datasetName}, template.FuseMountInfo.FsType)
+	cm := gen.BuildConfigMap(dataset, cmKey)
 
 	found, err := kubeclient.IsConfigMapExist(mutator.client, cmKey.Name, cmKey.Namespace)
 	if err != nil {

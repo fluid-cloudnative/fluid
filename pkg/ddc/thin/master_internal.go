@@ -19,6 +19,7 @@ package thin
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/yaml"
@@ -64,11 +65,15 @@ func (t *ThinEngine) setupMasterInternal() (err error) {
 }
 
 func (t *ThinEngine) generateThinValueFile(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinRuntimeProfile) (valueFileName string, err error) {
-	//0. Check if the configmap exists
-	err = kubeclient.DeleteConfigMap(t.Client, t.getHelmValuesConfigMapName(), t.namespace)
-	if err != nil {
-		t.Log.Error(err, "Failed to clean value files")
-		return
+	enableRuntimeHelmValueConfig := t.ifRuntimeHelmValueEnable()
+
+	if enableRuntimeHelmValueConfig {
+		//0. Check if the configmap exists
+		err = kubeclient.DeleteConfigMap(t.Client, t.getHelmValuesConfigMapName(), t.namespace)
+		if err != nil {
+			t.Log.Error(err, "Failed to clean value files")
+			return
+		}
 	}
 
 	// labelName := common.LabelAnnotationStorageCapacityPrefix + e.runtimeType + "-" + e.name
@@ -101,15 +106,33 @@ func (t *ThinEngine) generateThinValueFile(runtime *datav1alpha1.ThinRuntime, pr
 		return
 	}
 
-	//3. Save the configfile into configmap
-	runtimeInfo := t.runtimeInfo
-	ownerDatasetId := utils.GetDatasetId(runtimeInfo.GetNamespace(), runtimeInfo.GetName(), runtimeInfo.GetOwnerDatasetUID())
-	err = kubeclient.CreateConfigMap(t.Client, t.getHelmValuesConfigMapName(), t.namespace, "data", data, ownerDatasetId)
-	if err != nil {
-		return
+	if enableRuntimeHelmValueConfig {
+		//3. Save the configfile into configmap
+		runtimeInfo := t.runtimeInfo
+		ownerDatasetId := utils.GetDatasetId(runtimeInfo.GetNamespace(), runtimeInfo.GetName(), runtimeInfo.GetOwnerDatasetUID())
+		err = kubeclient.CreateConfigMap(t.Client, t.getHelmValuesConfigMapName(), t.namespace, "data", data, ownerDatasetId)
+		if err != nil {
+			return
+		}
 	}
 
 	return valueFileName, err
+}
+
+func (t *ThinEngine) ifRuntimeHelmValueEnable() bool {
+	runtime := t.runtime
+	if runtime == nil {
+		return false
+	}
+	value, exist := runtime.Annotations[common.AnnotationEnableRuntimeHelmValueConfig]
+	if !exist {
+		return false
+	}
+	enableRuntimeHelmValueConfig, err := strconv.ParseBool(value)
+	if err != nil {
+		return false
+	}
+	return enableRuntimeHelmValueConfig
 }
 
 func (t *ThinEngine) getHelmValuesConfigMapName() string {
