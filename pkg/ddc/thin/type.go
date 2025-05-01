@@ -35,7 +35,6 @@ type ThinValue struct {
 	Tolerations      []corev1.Toleration           `json:"tolerations,omitempty"`
 	PlacementMode    string                        `json:"placement,omitempty"`
 	Owner            *common.OwnerReference        `json:"owner,omitempty"`
-	RuntimeValue     string                        `json:"runtimeValue"`
 	RuntimeIdentity  common.RuntimeIdentity        `json:"runtimeIdentity"`
 	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 }
@@ -89,10 +88,4 @@ type Config struct {
 	PersistentVolumeAttrs        map[string]*corev1.CSIPersistentVolumeSource `json:"persistentVolumeAttrs,omitempty"`
 	PersistentVolumeMountOptions map[string][]string                          `json:"persistentVolumeMountOptions,omitempty"`
 	AccessModes                  []corev1.PersistentVolumeAccessMode          `json:"accessModes,omitempty"`
-}
-
-// RuntimeSetConfig is with the info of the workers and fuses
-type RuntimeSetConfig struct {
-	Workers []string `json:"workers"`
-	Fuses   []string `json:"fuses"`
 }
