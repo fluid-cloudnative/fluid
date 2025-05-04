@@ -172,12 +172,19 @@ func TestCreateFusePersistentVolume(t *testing.T) {
 	}
 }
 
+// TestCreateFusePersistentVolumeClaim tests the createFusePersistentVolumeClaim function of the AlluxioEngine.
+// It ensures that the function successfully creates a PersistentVolumeClaim (PVC) with the correct metadata.
+// The test sets up a fake Kubernetes client with a mock DaemonSet and a Dataset to simulate the environment.
+// After invoking the target function, it verifies that a PVC is created and labeled with the correct
+// fuse generation based on the input DaemonSet's generation.
 func TestCreateFusePersistentVolumeClaim(t *testing.T) {
+	// Prepare runtime information for the AlluxioEngine.
 	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
 
+	// Initialize a fake AlluxioEngine instance with mock runtime info.
 	engine := &AlluxioEngine{
 		Log:         fake.NullLogger(),
 		namespace:   "fluid",
@@ -185,8 +192,10 @@ func TestCreateFusePersistentVolumeClaim(t *testing.T) {
 		runtimeInfo: runtimeInfo,
 	}
 
+	// Set the Fuse name based on runtime information.
 	engine.runtimeInfo.SetFuseName(engine.getFuseName())
 
+	// Create a mock DaemonSet representing the Fuse deployment.
 	testDsInputs := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      engine.getFuseName(),
@@ -205,6 +214,7 @@ func TestCreateFusePersistentVolumeClaim(t *testing.T) {
 		},
 	}
 
+	// Create a test Dataset to simulate the presence of an Alluxio dataset.
 	testDatasetInputs := []*datav1alpha1.Dataset{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -215,6 +225,7 @@ func TestCreateFusePersistentVolumeClaim(t *testing.T) {
 		},
 	}
 
+	// Build the fake client using the test scheme and input objects.
 	testObjs := []runtime.Object{}
 	for _, datasetInput := range testDatasetInputs {
 		testObjs = append(testObjs, datasetInput.DeepCopy())
@@ -223,11 +234,13 @@ func TestCreateFusePersistentVolumeClaim(t *testing.T) {
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 	engine.Client = client
 
+	// Call the method to create the PVC and assert no errors occurred.
 	err = engine.createFusePersistentVolumeClaim()
 	if err != nil {
 		t.Errorf("fail to exec createFusePersistentVolumeClaim with error %v", err)
 	}
 
+	// List all PVCs in the fake client and verify that exactly one was created.
 	var pvcs v1.PersistentVolumeClaimList
 	err = client.List(context.TODO(), &pvcs)
 	if err != nil {
@@ -238,6 +251,7 @@ func TestCreateFusePersistentVolumeClaim(t *testing.T) {
 		t.Errorf("fail to create the pvc")
 	}
 
+	// Validate that the PVC has the correct fuse generation label.
 	if pvcs.Items[0].Labels[common.LabelRuntimeFuseGeneration] != strconv.Itoa(int(testDsInputs.Generation)) {
 		t.Errorf("fail to check fuse generation on pvc")
 	}
