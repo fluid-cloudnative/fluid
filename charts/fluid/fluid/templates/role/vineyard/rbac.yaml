@@ -86,6 +86,8 @@ rules:
       - datasets
       - vineyardruntimes/status
       - datasets/status
+      - persistentpodstates
+      - persistentpodstates/status
     verbs:
       - get
       - list

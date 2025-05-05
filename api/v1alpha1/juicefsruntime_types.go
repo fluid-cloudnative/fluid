@@ -80,6 +80,12 @@ type JuiceFSRuntimeSpec struct {
 	// RuntimeManagement defines policies when managing the runtime
 	// +optional
 	RuntimeManagement RuntimeManagement `json:"management,omitempty"`
+
+	// UpdateStrategy defines the update policy for worker pod.
+	// +kubebuilder:validation:Enum=ReCreate;InPlace;InPlaceIfPossible
+	// +kubebuilder:default=ReCreate
+	// +optional
+	UpdateStrategy UpdateStrategy `json:"updateStrategy,omitempty"`
 }
 
 // JuiceFSCompTemplateSpec is a description of the JuiceFS components

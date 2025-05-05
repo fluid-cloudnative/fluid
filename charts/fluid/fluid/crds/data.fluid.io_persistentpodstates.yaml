@@ -1,0 +1,63 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+  name: persistentpodstates.data.fluid.io
+spec:
+  group: data.fluid.io
+  names:
+    kind: PersistentPodState
+    listKind: PersistentPodStateList
+    plural: persistentpodstates
+    singular: persistentpodstate
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: PersistentPodState is the Schema for the PersistentPodState API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: PersistentPodStateSpec defines the desired state of PersistentPodState
+            type: object
+          status:
+            description: PersistentPodStateStatus defines the observed state of PersistentPodState
+            properties:
+              lastUpdateTime:
+                format: date-time
+                type: string
+              podStates:
+                additionalProperties:
+                  properties:
+                    nodeName:
+                      type: string
+                  required:
+                  - nodeName
+                  type: object
+                description: "\tPodStates is the pod name mapping to state."
+                type: object
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

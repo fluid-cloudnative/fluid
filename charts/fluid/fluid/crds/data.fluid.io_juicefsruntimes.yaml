@@ -2882,6 +2882,14 @@ spec:
                       type: object
                     type: array
                 type: object
+              updateStrategy:
+                default: ReCreate
+                description: UpdateStrategy defines the update policy for worker pod.
+                enum:
+                - ReCreate
+                - InPlace
+                - InPlaceIfPossible
+                type: string
               volumes:
                 description: Volumes is the list of Kubernetes volumes that can be
                   mounted by the alluxio runtime components and/or fuses.

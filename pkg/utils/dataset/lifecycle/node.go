@@ -19,7 +19,11 @@ package lifecycle
 import (
 	"context"
 	"fmt"
+	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
+	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -68,7 +72,6 @@ func SyncScheduleInfoToCacheNodes(runtimeInfo base.RuntimeInfoInterface, client 
 		}
 		return err
 	}
-
 	workerSelector, err := metav1.LabelSelectorAsSelector(workers.Spec.Selector)
 
 	workerPods, err := kubeclient.GetPodsForStatefulSet(client, workers, workerSelector)
@@ -107,7 +110,75 @@ func SyncScheduleInfoToCacheNodes(runtimeInfo base.RuntimeInfoInterface, client 
 		}
 	}
 
+	// previous worker pod index to node name.
+	persistentPodState, err := kubeclient.GetPersistentPodState(client, runtimeInfo.GetWorkerPodStateName(), runtimeInfo.GetNamespace())
+	if err != nil {
+		return err
+	}
+	// runtime not support
+	if persistentPodState == nil {
+		rootLog.V(1).Info("runtime not support in-place update, skip", "name", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace())
+		return nil
+	}
+
+	updatedPodState := persistentPodState.DeepCopy()
+
+	// update configmap interval >= 1s, wait for next reconcile.
+	if updatedPodState.Status.LastUpdateTime != nil && time.Since(updatedPodState.Status.LastUpdateTime.Time) < time.Second {
+		rootLog.V(1).Info("update persistentPodState too fast, will wait for next.", "name", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace())
+		return nil
+	}
+
+	// insert new podState via current worker statefulset pods
+	for _, pod := range workerPods {
+		podNodeName := pod.Spec.NodeName
+		// 1. pod not ready, continue
+		if !podutil.IsPodReady(&pod) || len(podNodeName) == 0 {
+			continue
+		}
+		podState, ok := updatedPodState.Status.PodStates[pod.Name]
+		// 2. index already recorded
+		if ok && podState.NodeName == podNodeName {
+			continue
+		}
+		// 3. insert new index or replace
+		if updatedPodState.Status.PodStates == nil {
+			updatedPodState.Status.PodStates = make(map[string]v1alpha1.PodState)
+		}
+		updatedPodState.Status.PodStates[pod.Name] = v1alpha1.PodState{
+			NodeName: podNodeName,
+		}
+	}
+
+	replicas := int(*workers.Spec.Replicas)
+
+	// delete old podState when index >= replicas, scale down statefulSet scenario
+	for podName := range updatedPodState.Status.PodStates {
+		index, err := parseStsPodIndex(podName)
+		if err != nil {
+			rootLog.Info(fmt.Sprintf("failed to parse statefulset pod name: %v, ignore it and continue", err), "name", podName)
+			continue
+		}
+		// index starts from 0 to replicas - 1
+		if index >= replicas {
+			rootLog.Info(fmt.Sprintf("remove pod state for index: %d", index))
+			delete(updatedPodState.Status.PodStates, podName)
+		}
+	}
+
+	if !reflect.DeepEqual(persistentPodState.Status, updatedPodState.Status) {
+		updatedPodState.Status.LastUpdateTime = &metav1.Time{Time: time.Now()}
+		rootLog.Info("update podpersistentstate status", "status", updatedPodState.Status)
+		if err = kubeclient.UpdatePersistentPodStateStatus(client, updatedPodState); err != nil {
+			return err
+		}
+	}
 	return nil
+}
+
+func parseStsPodIndex(podName string) (int, error) {
+	index := strings.LastIndex(podName, "-")
+	return strconv.Atoi(podName[index+1:])
 }
 
 func addScheduleInfoToNode(nodeName string, runtimeInfo base.RuntimeInfoInterface, client client.Client) (err error) {
