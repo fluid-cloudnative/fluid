@@ -81,7 +81,7 @@ type defaultPostStartScriptGenerator struct {
 func NewDefaultPostStartScriptGenerator() *defaultPostStartScriptGenerator {
 	return &defaultPostStartScriptGenerator{
 		scriptGeneratorHelper: scriptGeneratorHelper{
-			configMapName:   "check-mount",
+			configMapName:   "default-check-mount",
 			scriptFileName:  "check-mount.sh",
 			scriptMountPath: "/check-mount.sh",
 			scriptContent:   replacer.Replace(contentPrivilegedSidecar),
