@@ -58,9 +58,12 @@ func (t *ThinEngine) transform(runtime *datav1alpha1.ThinRuntime, profile *datav
 	t.transformTolerations(dataset, value)
 
 	// transform the workers
-	err = t.transformWorkers(runtime, profile, value)
-	if err != nil {
-		return
+	if t.isWorkerEnable() {
+		value.Worker.Enabled = true
+		err = t.transformWorkers(runtime, profile, value)
+		if err != nil {
+			return
+		}
 	}
 
 	// transform the fuse

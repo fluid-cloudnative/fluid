@@ -54,6 +54,11 @@ func TestThinEngine_ShouldSetupWorkers(t *testing.T) {
 						Name:      "test0",
 						Namespace: "thin",
 					},
+					Spec: datav1alpha1.ThinRuntimeSpec{
+						Worker: datav1alpha1.ThinCompTemplateSpec{
+							Enabled: true,
+						},
+					},
 					Status: datav1alpha1.RuntimeStatus{
 						WorkerPhase: datav1alpha1.RuntimePhaseNone,
 					},
@@ -71,6 +76,11 @@ func TestThinEngine_ShouldSetupWorkers(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test1",
 						Namespace: "thin",
+					},
+					Spec: datav1alpha1.ThinRuntimeSpec{
+						Worker: datav1alpha1.ThinCompTemplateSpec{
+							Enabled: true,
+						},
 					},
 					Status: datav1alpha1.RuntimeStatus{
 						WorkerPhase: datav1alpha1.RuntimePhaseNotReady,
@@ -90,6 +100,11 @@ func TestThinEngine_ShouldSetupWorkers(t *testing.T) {
 						Name:      "test2",
 						Namespace: "thin",
 					},
+					Spec: datav1alpha1.ThinRuntimeSpec{
+						Worker: datav1alpha1.ThinCompTemplateSpec{
+							Enabled: true,
+						},
+					},
 					Status: datav1alpha1.RuntimeStatus{
 						WorkerPhase: datav1alpha1.RuntimePhasePartialReady,
 					},
@@ -108,8 +123,28 @@ func TestThinEngine_ShouldSetupWorkers(t *testing.T) {
 						Name:      "test3",
 						Namespace: "thin",
 					},
+					Spec: datav1alpha1.ThinRuntimeSpec{
+						Worker: datav1alpha1.ThinCompTemplateSpec{
+							Enabled: true,
+						},
+					},
 					Status: datav1alpha1.RuntimeStatus{
 						WorkerPhase: datav1alpha1.RuntimePhaseReady,
+					},
+				},
+			},
+			wantShould: false,
+			wantErr:    false,
+		},
+		{
+			name: "test4",
+			fields: fields{
+				name:      "test3",
+				namespace: "thin",
+				runtime: &datav1alpha1.ThinRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test3",
+						Namespace: "thin",
 					},
 				},
 			},
@@ -296,7 +331,10 @@ func TestThinEngine_CheckWorkersReady(t *testing.T) {
 					},
 					Spec: datav1alpha1.ThinRuntimeSpec{
 						Replicas: 1,
-						Fuse:     datav1alpha1.ThinFuseSpec{},
+						Worker: datav1alpha1.ThinCompTemplateSpec{
+							Enabled: true,
+						},
+						Fuse: datav1alpha1.ThinFuseSpec{},
 					},
 				},
 				worker: &appsv1.StatefulSet{
@@ -336,7 +374,10 @@ func TestThinEngine_CheckWorkersReady(t *testing.T) {
 					},
 					Spec: datav1alpha1.ThinRuntimeSpec{
 						Replicas: 1,
-						Fuse:     datav1alpha1.ThinFuseSpec{},
+						Worker: datav1alpha1.ThinCompTemplateSpec{
+							Enabled: true,
+						},
+						Fuse: datav1alpha1.ThinFuseSpec{},
 					},
 				},
 				worker: &appsv1.StatefulSet{

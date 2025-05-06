@@ -77,6 +77,9 @@ const (
 	//   	"Sidecar": for only sidecar to skip check mount ready,
 	AnnotationSkipCheckMountReadyTarget = LabelAnnotationPrefix + "skip-check-mount-ready-target"
 
+	// AnnotationDisableRuntimeHelmValueConfig is a runtime label indicates the configmap contains helm value will not be created in setup.
+	AnnotationDisableRuntimeHelmValueConfig = "runtime." + LabelAnnotationPrefix + "disable-helm-value-config"
+
 	// LabelAnnotationMountingDatasets is a label/annotation key indicating which datasets are currently being used by a pod.
 	// i.e. fluid.io/datasets-in-use
 	LabelAnnotationDatasetsInUse = LabelAnnotationPrefix + "datasets-in-use"

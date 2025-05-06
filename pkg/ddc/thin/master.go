@@ -17,19 +17,16 @@
 package thin
 
 import (
-	"context"
-	"reflect"
-
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	corev1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/client-go/util/retry"
 )
 
-func (t ThinEngine) CheckMasterReady() (ready bool, err error) {
-	// thinRuntime has no master role
+func (t ThinEngine) CheckMasterReady() (bool, error) {
+	if _, err := kubeclient.GetDaemonset(t.Client, t.getFuseName(), t.namespace); err != nil {
+		return false, err
+	}
+
 	return true, nil
 }
 
@@ -39,7 +36,7 @@ func (t ThinEngine) ShouldSetupMaster() (should bool, err error) {
 		return
 	}
 
-	switch runtime.Status.WorkerPhase {
+	switch runtime.Status.FusePhase {
 	case datav1alpha1.RuntimePhaseNone:
 		should = true
 	default:
@@ -49,61 +46,19 @@ func (t ThinEngine) ShouldSetupMaster() (should bool, err error) {
 }
 
 func (t ThinEngine) SetupMaster() (err error) {
-	workerName := t.getWorkerName()
-
+	fuseName := t.getFuseName()
 	// 1. Setup
-	_, err = kubeclient.GetStatefulSet(t.Client, workerName, t.namespace)
+	_, err = kubeclient.GetDaemonset(t.Client, fuseName, t.namespace)
 	if err != nil && apierrs.IsNotFound(err) {
-		//1. Is not found error
-		t.Log.V(1).Info("SetupMaster", "worker", workerName)
+		//3.1. Is not found error
+		t.Log.Info("SetupMaster", "fuse", fuseName)
 		return t.setupMasterInternal()
 	} else if err != nil {
-		//2. Other errors
+		//3.2. Other errors
 		return
-	} else {
-		//3.The fuse has been set up
-		t.Log.V(1).Info("The worker has been set.")
 	}
 
-	// 2. Update the status of the runtime
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		runtime, err := t.getRuntime()
-		if err != nil {
-			return err
-		}
-		runtimeToUpdate := runtime.DeepCopy()
-
-		runtimeToUpdate.Status.WorkerPhase = datav1alpha1.RuntimePhaseNotReady
-		replicas := runtimeToUpdate.Spec.Worker.Replicas
-		if replicas == 0 {
-			replicas = 1
-		}
-
-		// Init selector for worker
-		runtimeToUpdate.Status.Selector = t.getWorkerSelectors()
-		runtimeToUpdate.Status.DesiredWorkerNumberScheduled = replicas
-		runtimeToUpdate.Status.ValueFileConfigmap = t.getHelmValuesConfigMapName()
-
-		if len(runtimeToUpdate.Status.Conditions) == 0 {
-			runtimeToUpdate.Status.Conditions = []datav1alpha1.RuntimeCondition{}
-		}
-		cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersInitialized, datav1alpha1.RuntimeWorkersInitializedReason,
-			"The worker is initialized.", corev1.ConditionTrue)
-		runtimeToUpdate.Status.Conditions =
-			utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
-				cond)
-
-		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
-			return t.Client.Status().Update(context.TODO(), runtimeToUpdate)
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		t.Log.Error(err, "Update runtime status")
-		return err
-	}
-
+	// 2.The fuse has been set up
+	t.Log.V(1).Info("The fuse has been set.")
 	return
 }

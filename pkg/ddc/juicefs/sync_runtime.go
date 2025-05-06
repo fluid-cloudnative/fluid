@@ -390,7 +390,7 @@ func (j JuiceFSEngine) isVolumesChanged(crtVolumes, runtimeVolumes []corev1.Volu
 	}
 	for _, volume := range runtimeVolumes {
 		if m, ok := volumes[volume.Name]; !ok || !reflect.DeepEqual(m, volume) {
-			j.Log.Info("The volumes is different.", "current sts", crtVolumes, "runtime", runtimeVolumes)
+			j.Log.Info("The volumes is different.", "current fuse volumes", crtVolumes, "runtime", runtimeVolumes)
 			volumes[volume.Name] = volume
 			changed = true
 		}
