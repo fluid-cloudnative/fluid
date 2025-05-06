@@ -567,6 +567,14 @@ func TestGenUFSMountOptions(t *testing.T) {
 	}
 }
 
+// TestGenUFSMountOptionsMultiTimes verifies the behavior when generating Under FileSystem (UFS) mount options
+// multiple times. It ensures that shared configuration options and encrypted credentials from Kubernetes Secrets
+// are properly merged with individual mount point configurations. The test specifically checks that:
+// - Shared options defined at the dataset level are correctly applied to all mounts
+// - Encrypted parameters (e.g., AWS credentials) are properly extracted from Secrets
+// - Multiple consecutive calls to genUFSMountOptions maintain consistency and don't overwrite shared configurations
+// - Both regular options and secret-based options are combined in the final output
+// This validation is crucial for multi-mount scenarios to prevent configuration conflicts between mount points.
 func TestGenUFSMountOptionsMultiTimes(t *testing.T) {
 	type fields struct {
 		dataset               datav1alpha1.Dataset
