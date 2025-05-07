@@ -33,6 +33,7 @@ runtimeValue: ""
 
 ## WORKER ##
 worker:
+  enabled: false
   image: ""
   imageTag: ""
   imagePullPolicy: ""

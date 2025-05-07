@@ -21,39 +21,38 @@ import (
 	"fmt"
 	"reflect"
 
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/util/retry"
+
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/util/retry"
 )
 
 func (t ThinEngine) CheckRuntimeHealthy() (err error) {
-	// 1. Check the healthy of the workers
-	err = t.checkWorkersHealthy()
-	if err != nil {
-		t.Log.Error(err, "The workers are not healthy")
-		updateErr := t.UpdateDatasetStatus(data.FailedDatasetPhase)
+	if t.isWorkerEnable() {
+		// 1. Check the healthy of the workers
+		err = t.checkWorkersHealthy()
+		if err != nil {
+			t.Log.Error(err, "The workers are not healthy")
+			updateErr := t.UpdateDatasetStatus(data.FailedDatasetPhase)
+			if updateErr != nil {
+				t.Log.Error(updateErr, "Failed to update dataset")
+			}
+			return
+		}
+
+		updateErr := t.UpdateDatasetStatus(data.BoundDatasetPhase)
 		if updateErr != nil {
 			t.Log.Error(updateErr, "Failed to update dataset")
 		}
-		return
 	}
 
-	// 2. Check the healthy of the fuse
+	// Check the healthy of the fuse
 	err = t.checkFuseHealthy()
 	if err != nil {
-		t.Log.Error(err, "The fuse is not healthy")
-		updateErr := t.UpdateDatasetStatus(data.FailedDatasetPhase)
-		if updateErr != nil {
-			t.Log.Error(updateErr, "Failed to update dataset")
-		}
+		t.Log.Error(err, "checkFuseHealthy failed")
 		return
-	}
-
-	updateErr := t.UpdateDatasetStatus(data.BoundDatasetPhase)
-	if updateErr != nil {
-		t.Log.Error(updateErr, "Failed to update dataset")
 	}
 
 	return
