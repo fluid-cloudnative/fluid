@@ -265,6 +265,7 @@ func TestJuiceFSxEngine_syncFuseSpec(t *testing.T) {
 	res := resource.MustParse("320Gi")
 	type fields struct {
 		runtime   *datav1alpha1.JuiceFSRuntime
+		helmValue *corev1.ConfigMap
 		name      string
 		namespace string
 	}
@@ -286,6 +287,15 @@ func TestJuiceFSxEngine_syncFuseSpec(t *testing.T) {
 				name:      "emtpy",
 				namespace: "default",
 				runtime:   &datav1alpha1.JuiceFSRuntime{},
+				helmValue: &corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "emtpy-juicefs-values",
+						Namespace: "default",
+					},
+					Data: map[string]string{
+						"data": "",
+					},
+				},
 			}, args: args{
 				fuse: &appsv1.DaemonSet{
 					ObjectMeta: metav1.ObjectMeta{
@@ -302,6 +312,15 @@ func TestJuiceFSxEngine_syncFuseSpec(t *testing.T) {
 				name:      "nofuse",
 				namespace: "default",
 				runtime:   &datav1alpha1.JuiceFSRuntime{},
+				helmValue: &corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "nofuse-juicefs-values",
+						Namespace: "default",
+					},
+					Data: map[string]string{
+						"data": "",
+					},
+				},
 			}, args: args{
 				fuse: &appsv1.DaemonSet{
 					ObjectMeta: metav1.ObjectMeta{
@@ -335,6 +354,15 @@ func TestJuiceFSxEngine_syncFuseSpec(t *testing.T) {
 								},
 							},
 						},
+					},
+				},
+				helmValue: &corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "same-juicefs-values",
+						Namespace: "default",
+					},
+					Data: map[string]string{
+						"data": "",
 					},
 				},
 			}, args: args{
@@ -379,18 +407,21 @@ func TestJuiceFSxEngine_syncFuseSpec(t *testing.T) {
 			tt.fields.runtime.SetNamespace(tt.fields.namespace)
 			s.AddKnownTypes(appsv1.SchemeGroupVersion, tt.args.fuse)
 			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
+			s.AddKnownTypes(corev1.SchemeGroupVersion, tt.fields.helmValue)
 
 			_ = corev1.AddToScheme(s)
 			runtimeObjs = append(runtimeObjs, tt.fields.runtime)
+			runtimeObjs = append(runtimeObjs, tt.fields.helmValue)
 			runtimeObjs = append(runtimeObjs, tt.args.fuse)
 			client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
 
 			e := &JuiceFSEngine{
-				runtime:   tt.fields.runtime,
-				name:      tt.fields.name,
-				namespace: tt.fields.namespace,
-				Log:       fake.NullLogger(),
-				Client:    client,
+				runtime:    tt.fields.runtime,
+				name:       tt.fields.name,
+				namespace:  tt.fields.namespace,
+				Log:        fake.NullLogger(),
+				Client:     client,
+				engineImpl: "juicefs",
 			}
 			value := &JuiceFS{
 				Fuse: Fuse{},
