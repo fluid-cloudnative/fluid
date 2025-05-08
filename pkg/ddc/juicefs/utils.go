@@ -210,6 +210,41 @@ func (j *JuiceFSEngine) GetValuesConfigMap() (cm *corev1.ConfigMap, err error) {
 	return
 }
 
+func (j *JuiceFSEngine) GetValues() (JuiceFS, error) {
+	helmValueConfigMap, err := j.GetValuesConfigMap()
+	if err != nil {
+		return JuiceFS{}, err
+	}
+	if helmValueConfigMap == nil {
+		return JuiceFS{}, fmt.Errorf("helm value %s not found", j.getHelmValuesConfigMapName())
+	}
+	helmValue, exist := helmValueConfigMap.Data["data"]
+	if !exist {
+		return JuiceFS{}, fmt.Errorf("data in helm value %s do not exist", j.getHelmValuesConfigMapName())
+	}
+	var currentValue JuiceFS
+	if err := yaml.Unmarshal([]byte(helmValue), &currentValue); err != nil {
+		return JuiceFS{}, err
+	}
+	return currentValue, nil
+}
+
+func (j *JuiceFSEngine) SaveValues(value *JuiceFS) error {
+	helmValueConfigMap, err := j.GetValuesConfigMap()
+	if err != nil {
+		return err
+	}
+	if helmValueConfigMap == nil {
+		return fmt.Errorf("helm value %s not found", j.getHelmValuesConfigMapName())
+	}
+	data, err := yaml.Marshal(value)
+	if err != nil {
+		return err
+	}
+	helmValueConfigMap.Data["data"] = string(data)
+	return kubeclient.UpdateConfigMap(j.Client, helmValueConfigMap)
+}
+
 func (j *JuiceFSEngine) GetEdition() (edition string) {
 	cm, err := j.GetValuesConfigMap()
 	if err != nil || cm == nil {
