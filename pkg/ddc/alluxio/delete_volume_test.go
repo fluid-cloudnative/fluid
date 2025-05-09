@@ -203,6 +203,19 @@ func TestAlluxioEngine_DeleteFusePersistentVolume(t *testing.T) {
 	doTestCases(testCases, t)
 }
 
+// TestAlluxioEngine_DeleteFusePersistentVolumeClaim tests the functionality of deleting Fuse PersistentVolumeClaim in the AlluxioEngine.
+// This function is mainly responsible for:
+// - Setting up multiple test cases with different configurations of PersistentVolumeClaim.
+// - Creating a fake client to simulate interactions with Kubernetes API for testing.
+// - Initializing different AlluxioEngine instances with various runtime settings.
+// - Executing test cases and verifying whether the deletion operations of PersistentVolumeClaim succeed as expected.
+
+// Parameters:
+// - t (*testing.T): The testing framework's testing object, used to report test results and handle test failures.
+
+// Returns:
+// - None. The function reports test failures directly through the *testing.T object passed in.
+
 func TestAlluxioEngine_DeleteFusePersistentVolumeClaim(t *testing.T) {
 	testPVCInputs := []*v1.PersistentVolumeClaim{
 		{
