@@ -211,3 +211,12 @@ type FluidObject interface {
 
 	GetMetaObject() (metaObject metav1.ObjectMeta, err error)
 }
+
+type RuntimeWorkerInfo struct {
+	PodStates      map[string]PodState `yaml:"podStates"`
+	LastUpdateTime *metav1.Time        `yaml:"lastUpdateTime"`
+}
+
+type PodState struct {
+	NodeName string `yaml:"nodeName"`
+}

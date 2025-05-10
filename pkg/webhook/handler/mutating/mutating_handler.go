@@ -20,6 +20,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"k8s.io/apimachinery/pkg/util/yaml"
 	"net/http"
 	"time"
 
@@ -84,21 +87,31 @@ func (a *FluidMutatingHandler) Handle(ctx context.Context, req admission.Request
 		undoNamespaceOverride = true
 	}
 
-	// check whether should inject
-	if common.CheckExpectValue(pod.Labels, common.EnableFluidInjectionFlag, common.False) {
-		setupLog.Info("skip mutating the pod because injection is disabled", "Pod", pod.Name, "Namespace", pod.Namespace)
-		return admission.Allowed("skip mutating the pod because injection is disabled")
-	}
-	if common.CheckExpectValue(pod.Labels, common.InjectSidecarDone, common.True) {
-		setupLog.Info("skip mutating the pod because injection is done", "Pod", pod.Name, "Namespace", pod.Namespace)
-		return admission.Allowed("skip mutating the pod because injection is done")
+	// mutating runtime worker pod
+	if common.CheckExpectValue(pod.Labels, common.RuntimePodType, common.RuntimeWorkerPod) {
+		// mutating app pod, check whether should inject
+		if common.CheckExpectValue(pod.Labels, common.InjectWorkerPodDone, common.True) {
+			setupLog.Info("skip mutating the worker pod because injection is done", "Pod", pod.Name, "Namespace", pod.Namespace)
+			return admission.Allowed("skip mutating the worker pod because injection is done")
+		}
+		err = a.MutateRuntimeWorkerPod(pod)
+	} else {
+		// mutating app pod, check whether should inject
+		if common.CheckExpectValue(pod.Labels, common.EnableFluidInjectionFlag, common.False) {
+			setupLog.Info("skip mutating the pod because injection is disabled", "Pod", pod.Name, "Namespace", pod.Namespace)
+			return admission.Allowed("skip mutating the pod because injection is disabled")
+		}
+		if common.CheckExpectValue(pod.Labels, common.InjectSidecarDone, common.True) {
+			setupLog.Info("skip mutating the pod because injection is done", "Pod", pod.Name, "Namespace", pod.Namespace)
+			return admission.Allowed("skip mutating the pod because injection is done")
+		}
+
+		err = a.MutatePod(pod)
 	}
 
-	err = a.MutatePod(pod)
 	if err != nil {
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
-
 	if undoNamespaceOverride {
 		pod.Namespace = ""
 	}
@@ -112,6 +125,103 @@ func (a *FluidMutatingHandler) Handle(ctx context.Context, req admission.Request
 	resp := admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
 	setupLog.V(1).Info("patch response", "name", pod.GetName(), "namespace", pod.GetNamespace(), "patches", utils.DumpJSON(resp.Patch))
 	return resp
+}
+
+func (a *FluidMutatingHandler) MutateRuntimeWorkerPod(pod *corev1.Pod) (err error) {
+	if utils.IsTimeTrackerDebugEnabled() {
+		defer utils.TimeTrack(time.Now(), "AddAffinityToWorkerPod",
+			"pod.name", pod.GetName(), "pod.namespace", pod.GetNamespace())
+	}
+	var setupLog = ctrl.Log.WithName("AddAffinityToWorkerPod")
+
+	// use annotation for runtime name as the value for label 'fluid.io/dataset' may be the uuid when length >= 64.
+	runtimeName, ok := pod.Annotations[common.AnnotationRuntimeName]
+	if !ok {
+		setupLog.Info("no runtimeName found in pod, skip mutating the pod", "Pod", pod.Name, "Namespace", pod.Namespace)
+		return
+	}
+
+	runtimeNamespace := pod.Namespace
+	runtimeInfo, err := base.GetRuntimeInfo(a.Client, runtimeName, runtimeNamespace)
+	if err != nil {
+		setupLog.Info("runtime may not be ready, skip mutating worker pods", "Pod", pod.Name, "Namespace", pod.Namespace, "error", err)
+		return nil
+	}
+
+	// add label for injection done
+	pod.ObjectMeta.Labels[common.InjectWorkerPodDone] = common.True
+
+	updateStrategy := runtimeInfo.GetUpdateStrategy()
+	if updateStrategy == datav1alpha1.ReCreate {
+		setupLog.Info("updateStrategy is ReCreate, skip mutating the pod", "Pod", pod.Name, "Namespace", pod.Namespace)
+		return nil
+	}
+
+	configmap, err := kubeclient.GetConfigmapByName(a.Client, runtimeInfo.GetWorkerRuntimeConfigMapName(), runtimeNamespace)
+	if err != nil {
+		return err
+	}
+	// config map not created, the statefulset is being created now.
+	if configmap == nil {
+		setupLog.Info("no configmap found in runtime, skip mutating the pod", "Pod", pod.Name, "Namespace", pod.Namespace)
+		return nil
+	}
+
+	data, ok := configmap.Data[common.WorkerStatesKey]
+	// states are not sync yet.
+	if !ok {
+		return nil
+	}
+	podStates := &common.RuntimeWorkerInfo{}
+	err = yaml.Unmarshal([]byte(data), podStates)
+	if err != nil {
+		return err
+	}
+	podState, ok := podStates.PodStates[pod.Name]
+	if !ok {
+		return
+	}
+
+	nodeName := podState.NodeName
+
+	setupLog.Info("add terms to pod", "pod", pod)
+
+	if updateStrategy == datav1alpha1.InPlace {
+		terms := []corev1.NodeSelectorTerm{
+			{
+				MatchExpressions: []corev1.NodeSelectorRequirement{
+					{
+						Key:      common.K8sNodeNameLabelKey,
+						Operator: corev1.NodeSelectorOpIn,
+						Values:   []string{nodeName},
+					},
+				},
+			},
+		}
+		utils.InjectNodeSelectorTerms(terms, pod)
+		return
+	}
+
+	if updateStrategy == datav1alpha1.InPlaceIfPossible {
+		terms := []corev1.PreferredSchedulingTerm{
+			{
+				Preference: corev1.NodeSelectorTerm{
+					MatchExpressions: []corev1.NodeSelectorRequirement{
+						{
+							Key:      common.K8sNodeNameLabelKey,
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{nodeName},
+						},
+					},
+				},
+				Weight: 100,
+			},
+		}
+		utils.InjectPreferredSchedulingTerms(terms, pod)
+		return
+	}
+
+	return nil
 }
 
 // MutatePod will call all plugins to get total prefer info

@@ -190,6 +190,8 @@ const (
 	InjectAppPostStart            = "app.poststart" + inject          // app.poststart.fluid.io/inject
 	InjectSidecarPostStart        = "fuse.sidecar.poststart" + inject // fuse.sidecar.poststart.fluid.io/inject
 
+	InjectWorkerPodDone = "done.worker" + inject // done.worker.fluid.io/inject
+
 	injectServerful     = ".serverful" + inject
 	InjectServerfulFuse = "fuse" + injectServerful
 
@@ -216,4 +218,9 @@ const (
 
 const (
 	SkipPrecheckAnnotationKey = "sidecar.fluid.io/skip-precheck"
+)
+
+const (
+	// WorkerStatesKey is the key of the pod states in the runtime related config map.
+	WorkerStatesKey = "workerStates"
 )

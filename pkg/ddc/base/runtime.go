@@ -55,6 +55,8 @@ type Conventions interface {
 	GetWorkerStatefulsetName() string
 
 	GetExclusiveLabelValue() string
+
+	GetWorkerRuntimeConfigMapName() string
 }
 
 // Runtime Information interface defines the interfaces that should be implemented
@@ -108,6 +110,10 @@ type RuntimeInfoInterface interface {
 	GetAnnotations() map[string]string
 
 	GetFuseMetricsScrapeTarget() mountModeSelector
+
+	SetUpdateStrategy(strategy datav1alpha1.UpdateStrategy)
+
+	GetUpdateStrategy() datav1alpha1.UpdateStrategy
 }
 
 var _ RuntimeInfoInterface = &RuntimeInfo{}
@@ -143,6 +149,8 @@ type RuntimeInfo struct {
 	annotations map[string]string
 
 	metadataList []datav1alpha1.Metadata
+
+	updateStrategy datav1alpha1.UpdateStrategy
 }
 
 type Fuse struct {
@@ -371,6 +379,17 @@ func (info *RuntimeInfo) SetClient(client client.Client) {
 	info.client = client
 }
 
+func (info *RuntimeInfo) SetUpdateStrategy(strategy datav1alpha1.UpdateStrategy) {
+	info.updateStrategy = strategy
+}
+
+func (info *RuntimeInfo) GetUpdateStrategy() datav1alpha1.UpdateStrategy {
+	if len(info.updateStrategy) == 0 {
+		return datav1alpha1.ReCreate
+	}
+	return info.updateStrategy
+}
+
 func convertToTieredstoreInfo(tieredstore datav1alpha1.TieredStore) (TieredStoreInfo, error) {
 	if len(tieredstore.Levels) == 0 {
 		return TieredStoreInfo{}, nil
@@ -508,6 +527,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		}
 		runtimeInfo.SetFuseNodeSelector(juicefsRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(juicefsRuntime.Spec.Fuse.CleanPolicy)
+		runtimeInfo.SetUpdateStrategy(juicefsRuntime.Spec.UpdateStrategy)
 	case common.ThinRuntime:
 		thinRuntime, err := utils.GetThinRuntime(client, name, namespace)
 		if err != nil {

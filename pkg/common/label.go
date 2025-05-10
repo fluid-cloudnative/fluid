@@ -35,7 +35,7 @@ const (
 	LabelAnnotationDataset = LabelAnnotationPrefix + "dataset"
 
 	// LabelAnnotationDatasetId indicates the uuid of the dataset
-	// i.e. fluid.io/dataset-uuid
+	// i.e. fluid.io/dataset-id
 	LabelAnnotationDatasetId = LabelAnnotationDataset + "-id"
 
 	// LabelAnnotationDatasetNum indicates the number of the dataset in specific node
@@ -123,6 +123,20 @@ var (
 	// LabelAnnotationPodSchedRegex is the fluid cache label for scheduling pod, format: 'fluid.io/dataset.{dataset name}.sched]'
 	// use string literal to meet security check.
 	LabelAnnotationPodSchedRegex = regexp.MustCompile(`^fluid\.io/dataset\.([A-Za-z0-9.-]*)\.sched$`)
+)
+
+const (
+	// RuntimePodType is the label key for runtime pod type
+	RuntimePodType   = "fluid.io/runtime-pod-type"
+	RuntimeWorkerPod = "worker"
+
+	// LabelConfigMapType fluid.io/configmap-type is the label key for runtime configmap type
+	LabelConfigMapType = LabelAnnotationPrefix + "configmap-type"
+	// RuntimeWorkerStateConfigMapTypeName is the label value of the configmap type for runtime worker state
+	RuntimeWorkerStateConfigMapTypeName = "worker-state"
+
+	// AnnotationRuntimeName is the annotation key for the runtime name
+	AnnotationRuntimeName = LabelAnnotationPrefix + "runtime-name"
 )
 
 type OperationType string
