@@ -279,10 +279,10 @@ func TestTransformResourcesForWorkerWithTieredStore(t *testing.T) {
 // transformed based on the AlluxioRuntime specification, particularly considering
 // the memory quota defined in the tiered storage configuration.
 // The test includes scenarios where:
-// 1. The specified memory limit is less than the memory tier quota, resulting in an error
-//    and the original resource values being retained.
-// 2. The specified memory limit is sufficient, and the memory request is adjusted
-//    to match the memory tier quota.
+//  1. The specified memory limit is less than the memory tier quota, resulting in an error
+//     and the original resource values being retained.
+//  2. The specified memory limit is sufficient, and the memory request is adjusted
+//     to match the memory tier quota.
 func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 
 	resources := corev1.ResourceRequirements{}
