@@ -28,4 +28,6 @@ const (
 	EnvEnableRuntimeInfoCache = "ENABLE_RUNTIMEINFO_CACHE"
 
 	EnvRuntimeInfoCacheTTL = "RUNTIMEINFO_CACHE_TTL"
+
+	EnvEnableMountValidation = "ENABLE_MOUNT_VALIDATION"
 )
