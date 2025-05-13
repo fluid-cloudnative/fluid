@@ -711,7 +711,6 @@ func TestJuiceFSEngine_setParallelMigrateOptions(t *testing.T) {
 	}
 }
 
-
 // Test_addWorkerPodAntiAffinity tests the addWorkerPodPreferredAntiAffinity function
 // which adds pod anti-affinity rules to DataMigrateInfo to ensure worker pods
 // are scheduled on different nodes for better availability.
