@@ -37,6 +37,18 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// TestJuiceFSEngine_generateDataMigrateValueFile tests the generateDataMigrateValueFile method of JuiceFSEngine.
+// This function verifies that the value file for data migration is generated correctly based on different DataMigrate specifications.
+// Test cases cover the following scenarios:
+// - Data migration without a target path.
+// - Data migration with a specified target path.
+// - Data migration with a specified target path and parallel migration options.
+//
+// Parameters:
+//   - t (*testing.T): The test context used to report errors and test results.
+//
+// Returns:
+//   - No return value. Test failures are reported via t.Errorf.
 func TestJuiceFSEngine_generateDataMigrateValueFile(t *testing.T) {
 	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
