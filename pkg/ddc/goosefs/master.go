@@ -123,9 +123,28 @@ func (e *GooseFSEngine) ShouldSetupMaster() (should bool, err error) {
 	return
 }
 
-// SetupMaster setups the master and updates the status
-// It will print the information in the Debug window according to the Master status
-// It return any cache error encountered
+// SetupMaster setups the master and updates the status of the runtime.
+//
+// This function performs the following steps:
+// 1. Checks if the master StatefulSet exists:
+//   - If not found, initializes the master via `setupMasterInternal()`.
+//   - If found, logs the current ready replicas.
+//
+// 2. Updates the runtime status:
+//   - Sets the master phase to `RuntimePhaseNotReady`.
+//   - Records desired master replicas (defaulting to 1 if unspecified).
+//   - Initializes worker selectors and sets the value file configmap.
+//   - Adds a condition indicating the master is initialized.
+//
+// 3. Uses retry logic to handle concurrent updates to the runtime status.
+//
+//	Parameters:
+//	- e: *GooseFSEngine
+//	   The engine instance containing client, logger, namespace, and configuration for the GooseFS runtime.
+//
+//	Returns:
+//	- error
+//	   Returns an error if the master setup fails or the runtime status update encounters an issue.
 func (e *GooseFSEngine) SetupMaster() (err error) {
 	masterName := e.getMasterName()
 
