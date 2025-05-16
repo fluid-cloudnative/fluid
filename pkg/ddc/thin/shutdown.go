@@ -19,11 +19,13 @@ package thin
 import (
 	"context"
 	"fmt"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/lifecycle"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
@@ -221,14 +223,21 @@ func (t *ThinEngine) cleanAll() (err error) {
 
 	var (
 		valueConfigmapName = t.getHelmValuesConfigMapName()
-		configmapName      = t.name + "-config"
+		thinConfigmapName  = t.name + "-config"
 		namespace          = t.namespace
 	)
 
-	cms := []string{valueConfigmapName, configmapName}
+	cmNames := []string{valueConfigmapName, thinConfigmapName}
 
-	for _, cm := range cms {
-		err = kubeclient.DeleteConfigMap(t.Client, cm, namespace)
+	for _, cmName := range cmNames {
+		_, err = kubeclient.GetConfigmapByName(t.Client, cmName, namespace)
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				return nil
+			}
+			return err
+		}
+		err = kubeclient.DeleteConfigMap(t.Client, cmName, namespace)
 		if err != nil {
 			return
 		}
