@@ -83,6 +83,17 @@ func (e *GooseFSEngine) UpdateCacheOfDataset() (err error) {
 }
 
 // UpdateDatasetStatus updates the status of the dataset
+// UpdateDatasetStatus updates the status of the dataset to the specified phase.
+// This function performs the following steps:
+// 1. Retrieves the current runtime status.
+// 2. Updates the dataset status, including phase, conditions, and cache states.
+// 3. If the dataset's HCFS status is not set, it retrieves the HCFS status.
+// 4. If there are any changes to the dataset status, it updates the status in the Kubernetes API.
+// The function uses retry logic to handle conflicts when updating the dataset status.
+// Parameters:
+// - phase: The new phase to set for the dataset.
+// Returns:
+// - err: An error if any step fails.
 func (e *GooseFSEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (err error) {
 	// 1. update the runtime status
 	runtime, err := e.getRuntime()
