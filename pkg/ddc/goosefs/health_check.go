@@ -78,7 +78,6 @@ func (e *GooseFSEngine) CheckRuntimeHealthy() (err error) {
 	return
 }
 
-// checkMasterHealthy checks the master healthy
 // checkMasterHealthy checks whether the GooseFS master StatefulSet is healthy.
 // It compares the desired and ready replica counts of the master StatefulSet.
 // If the master is not healthy, it updates the runtime status to NotReady with the appropriate condition.
