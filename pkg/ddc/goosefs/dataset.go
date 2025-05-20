@@ -30,6 +30,28 @@ import (
 )
 
 // UpdateCacheOfDataset updates the CacheStates and Runtimes of the dataset.
+// UpdateCacheOfDataset synchronizes the cache status and runtime information from GooseFS Runtime
+// to the associated Dataset object. This function will:
+// - Update Dataset's CacheStates with the latest runtime cache metrics
+// - Add/Update the Runtime entry in Dataset's Runtimes list with correct replicas
+//
+// The function uses a retry mechanism to handle potential conflicts during Dataset status updates.
+//
+// Receiver:
+//
+//	e *GooseFSEngine: Engine instance containing runtime metadata and client utilities
+//
+// Returns:
+//
+//	error: Returns nil if the update succeeds, otherwise returns error encountered during:
+//	       - Runtime status fetching
+//	       - Dataset status retrieval/update
+//	       - Conflict retries exhaustion
+//
+// Note:
+//   - Relies on runtime.Spec.Worker.Replicas for actual cache worker count
+//   - Uses runtime.Name to ensure Dataset references the correct Runtime resource
+//   - Requires utils.AddRuntimesIfNotExist to deduplicate runtime entries by UID/name/namespace
 func (e *GooseFSEngine) UpdateCacheOfDataset() (err error) {
 	// 1. update the runtime status
 	runtime, err := e.getRuntime()
