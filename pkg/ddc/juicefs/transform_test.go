@@ -17,6 +17,7 @@ limitations under the License.
 package juicefs
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"reflect"
 	"testing"
 
@@ -183,13 +184,14 @@ func TestJuiceFSEngine_transformPodMetadata(t *testing.T) {
 						Labels:      map[string]string{"common-key": "common-value"},
 						Annotations: map[string]string{"common-annotation": "val"},
 					},
+					UpdateStrategy: datav1alpha1.InPlaceIfPossible,
 				},
 			},
 			Value: &JuiceFS{},
 			wantValue: &JuiceFS{
 				Worker: Worker{
-					Labels:      map[string]string{"common-key": "common-value"},
-					Annotations: map[string]string{"common-annotation": "val"},
+					Labels:      map[string]string{"common-key": "common-value", common.RuntimePodType: common.RuntimeWorkerPod},
+					Annotations: map[string]string{"common-annotation": "val", common.AnnotationRuntimeName: ""},
 				},
 				Fuse: Fuse{
 					Labels:      map[string]string{"common-key": "common-value"},
@@ -205,10 +207,11 @@ func TestJuiceFSEngine_transformPodMetadata(t *testing.T) {
 						Labels:      map[string]string{"common-key": "common-value"},
 						Annotations: map[string]string{"common-annotation": "val"},
 					},
+					UpdateStrategy: datav1alpha1.InPlaceIfPossible,
 					Worker: datav1alpha1.JuiceFSCompTemplateSpec{
 						PodMetadata: datav1alpha1.PodMetadata{
-							Labels:      map[string]string{"common-key": "worker-value"},
-							Annotations: map[string]string{"common-annotation": "worker-val"},
+							Labels:      map[string]string{"common-key": "worker-value", common.RuntimePodType: common.RuntimeWorkerPod},
+							Annotations: map[string]string{"common-annotation": "worker-val", common.AnnotationRuntimeName: ""},
 						},
 					},
 				},
@@ -216,8 +219,8 @@ func TestJuiceFSEngine_transformPodMetadata(t *testing.T) {
 			Value: &JuiceFS{},
 			wantValue: &JuiceFS{
 				Worker: Worker{
-					Labels:      map[string]string{"common-key": "worker-value"},
-					Annotations: map[string]string{"common-annotation": "worker-val"},
+					Labels:      map[string]string{"common-key": "worker-value", common.RuntimePodType: common.RuntimeWorkerPod},
+					Annotations: map[string]string{"common-annotation": "worker-val", common.AnnotationRuntimeName: ""},
 				},
 				Fuse: Fuse{
 					Labels:      map[string]string{"common-key": "common-value"},

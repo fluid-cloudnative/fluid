@@ -65,6 +65,7 @@ rules:
       - thinruntimes
       - efcruntimes
       - vineyardruntimes
+      - persistentpodstates
     verbs:
       - get
       - list
