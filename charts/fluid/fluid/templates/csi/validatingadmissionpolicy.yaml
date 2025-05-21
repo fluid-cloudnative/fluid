@@ -1,0 +1,32 @@
+{{- if and (not .Values.csi.useNodeAuthorization) (semverCompare ">=1.30.0-0" .Capabilities.KubeVersion.Version) -}}
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: "fluid-csi-node-policy"
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        # supported values: "*", "CONNECT", "CREATE", "DELETE", "UPDATE"
+        operations: ["UPDATE"]
+        resources: ["nodes"]
+  matchConditions:
+    # only fluid-csi request will be checked.
+    - name: isRestrictedUser
+      expression: request.userInfo.username == "system:serviceaccount:fluid-system:fluid-csi"
+  variables:
+    - name: userNodeName
+      expression: >-
+        request.userInfo.extra[?'authentication.kubernetes.io/node-name'][0].orValue('')
+    - name: objectNodeName
+      expression: >-
+        object.?metadata.name.orValue('')
+  validations:
+    - expression: "variables.userNodeName != ''"
+      message: "userNodeName is empty, user token does not container node name."
+    - expression: "variables.objectNodeName == variables.userNodeName"
+      messageExpression: >-
+        "objectNodeName '" + variables.objectNodeName + "' is not equal to userNodeName '" + variables.userNodeName + "'"
+{{- end }}
