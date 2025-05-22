@@ -258,6 +258,18 @@ func TestOptimizeDefaultForWorkerNoValue(t *testing.T) {
 	}
 }
 
+// TestOptimizeDefaultForWorkerWithValue tests the optimizeDefaultForWorker function of the AlluxioEngine.
+// It verifies that the JVM options are correctly set for Worker based on the provided AlluxioRuntime and Alluxio configurations.
+// The test case covers the scenario where specific JVM options are provided in the Worker configuration,
+// and checks if these options are properly applied to the Alluxio Worker configuration.
+//
+// Parameters:
+//   - t *testing.T: The testing framework used to report errors and log test results.
+//
+// Returns:
+//   - None. The function asserts the expected JVM options against the actual values in Alluxio configuration
+//     and reports errors if they do not match.
+
 func TestOptimizeDefaultForWorkerWithValue(t *testing.T) {
 	var tests = []struct {
 		runtime      *datav1alpha1.AlluxioRuntime
