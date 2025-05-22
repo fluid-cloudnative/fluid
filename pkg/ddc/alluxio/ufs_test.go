@@ -164,7 +164,25 @@ func TestTotalStorageBytes(t *testing.T) {
 		})
 	}
 }
-
+// TestTotalFileNums validates the AlluxioEngine's ability to correctly retrieve total file numbers from the Alluxio runtime.
+// The test performs the following operations:
+// - Creates mock AlluxioRuntime configurations
+// - Overrides Kubernetes exec command interactions
+// - Verifies both value accuracy and error handling
+//
+// Test Components:
+// - fields: Contains the Alluxio runtime configuration and engine identity
+// - tests: Table-driven test cases with expected values and error conditions
+//!
+// Flow:
+// 1. Initialize AlluxioEngine with test parameters
+// 2. Mock Kubernetes command execution using function patch
+// 3. Execute TotalFileNums() method
+// 4. Validate against expected values and error states
+//
+// Note:
+// - Uses monkey patching for Kubernetes client isolation
+// - Requires proper setup of mockExecCommandInContainerForTotalFileNums
 func TestTotalFileNums(t *testing.T) {
 	type fields struct {
 		runtime *datav1alpha1.AlluxioRuntime
