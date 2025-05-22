@@ -170,6 +170,11 @@ func TestMountRootWithEnvSet(t *testing.T) {
 	}
 }
 
+// TestMountRootWithoutEnvSet tests that the getMountRoot function returns
+// the default mount root path ("/alluxio") when the environment variable
+// for mount root is not set. It uses a test case with an input path of
+// "/var/lib/mymount" but expects "/alluxio" as the result since the
+// environment variable is explicitly unset before calling getMountRoot.
 func TestMountRootWithoutEnvSet(t *testing.T) {
 	var testCases = []struct {
 		input    string
