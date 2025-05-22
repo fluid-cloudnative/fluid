@@ -268,7 +268,7 @@ func TestOptimizeDefaultForWorkerNoValue(t *testing.T) {
 //
 // Returns:
 //   - None. The function asserts the expected JVM options against the actual values in Alluxio configuration
-//     and reports errors if they do not match.
+//   - and reports errors if they do not match.
 
 func TestOptimizeDefaultForWorkerWithValue(t *testing.T) {
 	var tests = []struct {
