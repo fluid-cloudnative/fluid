@@ -82,7 +82,6 @@ func (e *GooseFSEngine) UpdateCacheOfDataset() (err error) {
 
 }
 
-// UpdateDatasetStatus updates the status of the dataset
 // UpdateDatasetStatus updates the status of the dataset to the specified phase.
 // This function performs the following steps:
 // 1. Retrieves the current runtime status.
