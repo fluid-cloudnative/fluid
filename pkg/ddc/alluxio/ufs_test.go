@@ -1010,6 +1010,29 @@ func TestUpdateMountTime(t *testing.T) {
 	}
 }
 
+// TestCheckIfRemountRequired tests the checkIfRemountRequired function in AlluxioEngine.
+// It verifies whether the system correctly identifies when a remount is required based on:
+//   - Runtime's last mount time
+//   - Pod's container start time
+//   - Dataset mount configurations
+//
+// Test cases:
+//  1. When pod started AFTER last mount time (expect remount)
+//     - Runtime mount time: yesterday
+//     - Pod start time: yesterday + 1 day
+//     - Expected: ["/path"] (remount required)
+//  2. When pod started BEFORE last mount time (expect no remount)
+//     - Runtime mount time: yesterday
+//     - Pod start time: yesterday - 1 day
+//     - Expected: [] (no remount needed)
+//
+// The test:
+//   - Creates mock runtime, pod and dataset objects
+//   - Initializes fake Kubernetes client with test objects
+//   - Mocks AlluxioFileUtils operations:
+//     - Always reports Ready() = true
+//     - FindUnmountedAlluxioPaths() returns original paths
+//   - Compares actual remount paths with expected results
 func TestCheckIfRemountRequired(t *testing.T) {
 	yesterday := time.Now().AddDate(0, 0, -1)
 
