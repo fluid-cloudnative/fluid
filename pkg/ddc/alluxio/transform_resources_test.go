@@ -167,6 +167,7 @@ func mockAlluxioRuntimeForMaster(res corev1.ResourceRequirements) *datav1alpha1.
 
 }
 
+
 func TestTransformResourcesForWorkerNoValue(t *testing.T) {
 	var tests = []struct {
 		runtime      *datav1alpha1.AlluxioRuntime
@@ -602,6 +603,12 @@ func TestTransformResourcesForWorkerWithOnlyLimit(t *testing.T) {
 	}
 }
 
+// TestTransformResourcesForFuseNoValue tests the transformResourcesForFuse function in AlluxioEngine
+// when no resource values are specified in the AlluxioRuntime Spec. It verifies that:
+// 1. The function can handle empty AlluxioRuntime Spec without errors
+// 2. No resource limits are set on the Fuse when no values are specified
+// The test creates a mock AlluxioRuntime with empty Spec and checks the resulting Alluxio configuration
+// doesn't contain any Fuse resource limits.
 func TestTransformResourcesForFuseNoValue(t *testing.T) {
 	var tests = []struct {
 		runtime      *datav1alpha1.AlluxioRuntime
