@@ -164,6 +164,7 @@ func TestTotalStorageBytes(t *testing.T) {
 		})
 	}
 }
+
 // TestTotalFileNums validates the AlluxioEngine's ability to correctly retrieve total file numbers from the Alluxio runtime.
 // The test performs the following operations:
 // - Creates mock AlluxioRuntime configurations
@@ -173,7 +174,7 @@ func TestTotalStorageBytes(t *testing.T) {
 // Test Components:
 // - fields: Contains the Alluxio runtime configuration and engine identity
 // - tests: Table-driven test cases with expected values and error conditions
-//!
+// !
 // Flow:
 // 1. Initialize AlluxioEngine with test parameters
 // 2. Mock Kubernetes command execution using function patch
@@ -1030,8 +1031,8 @@ func TestUpdateMountTime(t *testing.T) {
 //   - Creates mock runtime, pod and dataset objects
 //   - Initializes fake Kubernetes client with test objects
 //   - Mocks AlluxioFileUtils operations:
-//     - Always reports Ready() = true
-//     - FindUnmountedAlluxioPaths() returns original paths
+//   - Always reports Ready() = true
+//   - FindUnmountedAlluxioPaths() returns original paths
 //   - Compares actual remount paths with expected results
 func TestCheckIfRemountRequired(t *testing.T) {
 	yesterday := time.Now().AddDate(0, 0, -1)
