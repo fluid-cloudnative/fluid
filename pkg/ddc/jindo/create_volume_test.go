@@ -90,11 +90,18 @@ func TestCreateVolume(t *testing.T) {
 	}
 }
 
+// TestCreateFusePersistentVolume tests whether the JindoEngine's createFusePersistentVolume function
+// successfully creates a PersistentVolume (PV) for FUSE.
+// It sets up a fake client with a sample Dataset, initializes the JindoEngine,
+// invokes the PV creation logic, and checks that exactly one PV was created.
 func TestCreateFusePersistentVolume(t *testing.T) {
+	// Build runtime information for the Jindo engine
 	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", common.JindoRuntime)
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
+
+	// Define test input Dataset
 	testDatasetInputs := []*datav1alpha1.Dataset{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -105,12 +112,16 @@ func TestCreateFusePersistentVolume(t *testing.T) {
 		},
 	}
 
+	// Prepare test objects for the fake client
 	testObjs := []runtime.Object{}
 	for _, datasetInput := range testDatasetInputs {
 		testObjs = append(testObjs, datasetInput.DeepCopy())
 	}
+
+	// Create a fake client with the test scheme and test objects
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
+	// Initialize the JindoEngine with fake client and runtime info
 	engine := &JindoEngine{
 		Client:      client,
 		Log:         fake.NullLogger(),
@@ -119,11 +130,13 @@ func TestCreateFusePersistentVolume(t *testing.T) {
 		runtimeInfo: runtimeInfo,
 	}
 
+	// Attempt to create the FUSE PersistentVolume
 	err = engine.createFusePersistentVolume()
 	if err != nil {
 		t.Errorf("fail to exec createFusePersistentVolume with error %v", err)
 	}
 
+	// List all PersistentVolumes to verify one was created
 	var pvs v1.PersistentVolumeList
 	err = client.List(context.TODO(), &pvs)
 	if err != nil {
