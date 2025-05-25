@@ -231,6 +231,15 @@ func TestPatchDatasetStatus(t *testing.T) {
 	}
 }
 
+// TestInvokeCleanCache tests the behavior of the invokeCleanCache function in the AlluxioEngine.
+// It simulates different StatefulSet statuses using a fake client to verify whether the function
+// correctly determines if an error should be returned based on the readiness state of the replicas.
+//
+// Parameters:
+// - t (*testing.T): The testing context used to run assertions.
+//
+// Returns:
+// - None. The function uses t.Errorf to report test failures.
 func TestInvokeCleanCache(t *testing.T) {
 	masterInputs := []*appsv1.StatefulSet{
 		{
