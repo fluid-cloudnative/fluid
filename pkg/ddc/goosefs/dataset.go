@@ -29,7 +29,6 @@ import (
 	"k8s.io/client-go/util/retry"
 )
 
-// UpdateCacheOfDataset updates the CacheStates and Runtimes of the dataset.
 // UpdateCacheOfDataset synchronizes the cache status and runtime information from GooseFS Runtime
 // to the associated Dataset object. This function will:
 // - Update Dataset's CacheStates with the latest runtime cache metrics
