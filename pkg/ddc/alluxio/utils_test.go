@@ -170,6 +170,10 @@ func TestMountRootWithEnvSet(t *testing.T) {
 	}
 }
 
+// TestMountRootWithoutEnvSet tests the getMountRoot function when the MountRoot environment variable is not set.
+// It verifies that getMountRoot returns the default mount root path "/alluxio" when no environment variable is configured.
+// The test unsets the MountRoot environment variable and compares the actual result with the expected default value.
+
 func TestMountRootWithoutEnvSet(t *testing.T) {
 	var testCases = []struct {
 		input    string
