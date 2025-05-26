@@ -112,12 +112,6 @@ func TestFreeStorageBytes(t *testing.T) {
 	}
 }
 
-// TestTotalStorageBytes verifies the functionality of AlluxioEngine's TotalStorageBytes method.
-// It validates whether the method correctly calculates total storage capacity by:
-// - Mocking AlluxioRuntime configuration and container command execution
-// - Testing both normal scenarios (expected values) and error conditions
-// - Using patched container command output to ensure predictable test results
-// Each test case checks if returned values match expectations and errors are properly handled.
 func TestTotalStorageBytes(t *testing.T) {
 	type fields struct {
 		runtime *datav1alpha1.AlluxioRuntime
@@ -165,25 +159,6 @@ func TestTotalStorageBytes(t *testing.T) {
 	}
 }
 
-// TestTotalFileNums validates the AlluxioEngine's ability to correctly retrieve total file numbers from the Alluxio runtime.
-// The test performs the following operations:
-// - Creates mock AlluxioRuntime configurations
-// - Overrides Kubernetes exec command interactions
-// - Verifies both value accuracy and error handling
-//
-// Test Components:
-// - fields: Contains the Alluxio runtime configuration and engine identity
-// - tests: Table-driven test cases with expected values and error conditions
-// !
-// Flow:
-// 1. Initialize AlluxioEngine with test parameters
-// 2. Mock Kubernetes command execution using function patch
-// 3. Execute TotalFileNums() method
-// 4. Validate against expected values and error states
-//
-// Note:
-// - Uses monkey patching for Kubernetes client isolation
-// - Requires proper setup of mockExecCommandInContainerForTotalFileNums
 func TestTotalFileNums(t *testing.T) {
 	type fields struct {
 		runtime *datav1alpha1.AlluxioRuntime
@@ -258,22 +233,6 @@ func TestShouldCheckUFS(t *testing.T) {
 	}
 }
 
-// TestPrepareUFS tests the PrepareUFS method of AlluxioEngine.
-// This method prepares the underlying file system (UFS) by checking
-// the Alluxio master state, mounting UFS, and performing necessary
-// metadata synchronization.
-//
-// Test logic:
-//  1. Create multiple test cases to simulate different states of
-//     AlluxioRuntime, Dataset, and StatefulSet.
-//  2. Initialize AlluxioEngine and its dependencies using a fake client.
-//  3. Use Monkey Patching to mock the behavior of AlluxioFileUtils methods.
-//  4. Call e.PrepareUFS() and verify whether the UFS mounting process
-//     executes correctly.
-//  5. Assert that the returned errors match the expected outcomes.
-//
-// Parameters:
-// - t *testing.T: The testing context provided by the Go testing framework.
 func TestPrepareUFS(t *testing.T) {
 	type fields struct {
 		runtime            *datav1alpha1.AlluxioRuntime
@@ -586,14 +545,6 @@ func TestGenUFSMountOptions(t *testing.T) {
 	}
 }
 
-// TestGenUFSMountOptionsMultiTimes verifies the behavior when generating Under FileSystem (UFS) mount options
-// multiple times. It ensures that shared configuration options and encrypted credentials from Kubernetes Secrets
-// are properly merged with individual mount point configurations. The test specifically checks that:
-// - Shared options defined at the dataset level are correctly applied to all mounts
-// - Encrypted parameters (e.g., AWS credentials) are properly extracted from Secrets
-// - Multiple consecutive calls to genUFSMountOptions maintain consistency and don't overwrite shared configurations
-// - Both regular options and secret-based options are combined in the final output
-// This validation is crucial for multi-mount scenarios to prevent configuration conflicts between mount points.
 func TestGenUFSMountOptionsMultiTimes(t *testing.T) {
 	type fields struct {
 		dataset               datav1alpha1.Dataset
@@ -1030,29 +981,6 @@ func TestUpdateMountTime(t *testing.T) {
 	}
 }
 
-// TestCheckIfRemountRequired tests the checkIfRemountRequired function in AlluxioEngine.
-// It verifies whether the system correctly identifies when a remount is required based on:
-//   - Runtime's last mount time
-//   - Pod's container start time
-//   - Dataset mount configurations
-//
-// Test cases:
-//  1. When pod started AFTER last mount time (expect remount)
-//     - Runtime mount time: yesterday
-//     - Pod start time: yesterday + 1 day
-//     - Expected: ["/path"] (remount required)
-//  2. When pod started BEFORE last mount time (expect no remount)
-//     - Runtime mount time: yesterday
-//     - Pod start time: yesterday - 1 day
-//     - Expected: [] (no remount needed)
-//
-// The test:
-//   - Creates mock runtime, pod and dataset objects
-//   - Initializes fake Kubernetes client with test objects
-//   - Mocks AlluxioFileUtils operations:
-//   - Always reports Ready() = true
-//   - FindUnmountedAlluxioPaths() returns original paths
-//   - Compares actual remount paths with expected results
 func TestCheckIfRemountRequired(t *testing.T) {
 	yesterday := time.Now().AddDate(0, 0, -1)
 
