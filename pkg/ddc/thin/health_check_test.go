@@ -93,6 +93,9 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 			},
 			Spec: datav1alpha1.ThinRuntimeSpec{
 				Replicas: 1,
+				Worker: datav1alpha1.ThinCompTemplateSpec{
+					Enabled: true,
+				},
 			},
 			Status: datav1alpha1.RuntimeStatus{
 				CacheStates: map[common.CacheStateName]string{common.Cached: "true"},
@@ -105,6 +108,9 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 			},
 			Spec: datav1alpha1.ThinRuntimeSpec{
 				Replicas: 1,
+				Worker: datav1alpha1.ThinCompTemplateSpec{
+					Enabled: true,
+				},
 			},
 			Status: datav1alpha1.RuntimeStatus{
 				CacheStates: map[common.CacheStateName]string{common.Cached: "true"},

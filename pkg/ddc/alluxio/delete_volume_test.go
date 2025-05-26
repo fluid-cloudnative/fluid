@@ -37,6 +37,20 @@ type TestCase struct {
 	isErr     bool
 }
 
+// newTestAlluxioEngine creates an instance of AlluxioEngine for testing purposes.
+//
+// Parameters:
+//
+//	client     - A Kubernetes client used for interactions with the API server.
+//	name       - The name for the AlluxioEngine (used for associated PV/PVC resources in tests).
+//	namespace  - The namespace where the resources reside.
+//	withRunTime - A flag indicating whether the engine should be initialized with runtime information.
+//	              When true, an AlluxioRuntime instance and corresponding runtimeInfo are created;
+//	              when false, both runtime and runtimeInfo are set to nil to simulate a scenario without runtime support.
+//
+// Returns:
+//
+//	A pointer to an AlluxioEngine instance configured according to the provided parameters.
 func newTestAlluxioEngine(client client.Client, name string, namespace string, withRunTime bool) *AlluxioEngine {
 	runTime := &datav1alpha1.AlluxioRuntime{}
 	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, "alluxio")
@@ -188,6 +202,19 @@ func TestAlluxioEngine_DeleteFusePersistentVolume(t *testing.T) {
 	}
 	doTestCases(testCases, t)
 }
+
+// TestAlluxioEngine_DeleteFusePersistentVolumeClaim tests the functionality of deleting Fuse PersistentVolumeClaim in the AlluxioEngine.
+// This function is mainly responsible for:
+// - Setting up multiple test cases with different configurations of PersistentVolumeClaim.
+// - Creating a fake client to simulate interactions with Kubernetes API for testing.
+// - Initializing different AlluxioEngine instances with various runtime settings.
+// - Executing test cases and verifying whether the deletion operations of PersistentVolumeClaim succeed as expected.
+
+// Parameters:
+// - t (*testing.T): The testing framework's testing object, used to report test results and handle test failures.
+
+// Returns:
+// - None. The function reports test failures directly through the *testing.T object passed in.
 
 func TestAlluxioEngine_DeleteFusePersistentVolumeClaim(t *testing.T) {
 	testPVCInputs := []*v1.PersistentVolumeClaim{

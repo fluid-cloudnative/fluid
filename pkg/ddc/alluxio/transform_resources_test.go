@@ -144,6 +144,14 @@ func TestTransformResourcesForMaster(t *testing.T) {
 	}
 }
 
+// mockAlluxioRuntimeForMaster creates a mock AlluxioRuntime object with the specified
+// resource requirements for both the Master and JobMaster components.
+//
+// Parameters:
+// - res: corev1.ResourceRequirements specifying the resource requirements for the components.
+//
+// Returns:
+// - *datav1alpha1.AlluxioRuntime: A pointer to the created AlluxioRuntime object.
 func mockAlluxioRuntimeForMaster(res corev1.ResourceRequirements) *datav1alpha1.AlluxioRuntime {
 	runtime := &datav1alpha1.AlluxioRuntime{
 		Spec: datav1alpha1.AlluxioRuntimeSpec{
@@ -200,12 +208,18 @@ func TestTransformResourcesForWorkerNoValue(t *testing.T) {
 	}
 }
 
+// TestTransformResourcesForWorkerWithTieredStore tests resource configuration conversion logic for Alluxio worker with tiered storage settings
+// This test validates:
+// - Correct transformation of tiered store quotas into Kubernetes resource requests
+// - Proper handling of memory resource allocation boundaries
+// - Absence of unintended resource limits when not explicitly specified
 func TestTransformResourcesForWorkerWithTieredStore(t *testing.T) {
 	result := resource.MustParse("20Gi")
 
+	// Test cases structured to validate different tiered storage configurations
 	var tests = []struct {
-		runtime      *datav1alpha1.AlluxioRuntime
-		alluxioValue *Alluxio
+		runtime      *datav1alpha1.AlluxioRuntime // Input Alluxio runtime configuration
+		alluxioValue *Alluxio                     // Expected output configuration
 	}{
 		{&datav1alpha1.AlluxioRuntime{
 			ObjectMeta: metav1.ObjectMeta{
@@ -215,22 +229,26 @@ func TestTransformResourcesForWorkerWithTieredStore(t *testing.T) {
 			Spec: datav1alpha1.AlluxioRuntimeSpec{
 				TieredStore: datav1alpha1.TieredStore{
 					Levels: []datav1alpha1.Level{{
-						MediumType: common.Memory,
-						Quota:      &result,
+						MediumType: common.Memory, // Memory-based tiered storage configuration
+						Quota:      &result,       // 20Gi quota allocation
 					}},
 				},
 			},
 		}, &Alluxio{
-			Properties: map[string]string{},
+			Properties: map[string]string{}, // Expected empty properties map
 		}},
 	}
+	// Iterate through test cases to validate transformation logic
 	for _, test := range tests {
+		// Initialize test environment with mocked dependencies
 		engine := &AlluxioEngine{
-			Log:       fake.NullLogger(),
+			Log:       fake.NullLogger(), // Discard logging output
 			name:      "test",
 			namespace: "test",
 		}
+		// Build runtime information with tiered store configuration
 		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", base.WithTieredStore(test.runtime.Spec.TieredStore))
+		// Configure Kubernetes API client mock
 		runtimeObjs := []runtime.Object{}
 		runtimeObjs = append(runtimeObjs, test.runtime.DeepCopy())
 		s := runtime.NewScheme()
@@ -238,20 +256,33 @@ func TestTransformResourcesForWorkerWithTieredStore(t *testing.T) {
 		_ = corev1.AddToScheme(s)
 		client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
 		engine.Client = client
+		// Execute core transformation logic
 		err := engine.transformResourcesForWorker(test.runtime, test.alluxioValue)
+		// Validate error handling and resource allocation
 		t.Log(err)
 		if err != nil {
 			t.Errorf("expected no err, got err %v", err)
 		}
+		// Verify memory request matches tiered store quota
 		if test.alluxioValue.Worker.Resources.Requests[corev1.ResourceMemory] != "20Gi" {
 			t.Errorf("expected 20Gi, got %v", test.alluxioValue.Worker.Resources.Requests[corev1.ResourceMemory])
 		}
+		// Ensure no memory limit is set by default
 		if result, found := test.alluxioValue.Worker.Resources.Limits[corev1.ResourceMemory]; found {
 			t.Errorf("expected nil, got %v", result)
 		}
 	}
 }
 
+// TestTransformResourcesForWorkerWithValue tests the transformResourcesForWorker function.
+// It checks if the worker's memory resources (limits and requests) are correctly
+// transformed based on the AlluxioRuntime specification, particularly considering
+// the memory quota defined in the tiered storage configuration.
+// The test includes scenarios where:
+//  1. The specified memory limit is less than the memory tier quota, resulting in an error
+//     and the original resource values being retained.
+//  2. The specified memory limit is sufficient, and the memory request is adjusted
+//     to match the memory tier quota.
 func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 
 	resources := corev1.ResourceRequirements{}
@@ -358,6 +389,29 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 	}
 }
 
+// TestTransformResourcesForWorkerWithOnlyRequest is a unit test function that validates the transformation
+// of resource requests for Alluxio workers when only resource requests are specified (without limits).
+// This function ensures that the memory and CPU requests are correctly applied to the worker configuration
+// based on the provided resource requests and tiered store settings.
+//
+// Parameters:
+// - t (testing.T): The testing framework used to run the unit test.
+//
+// Returns:
+//   - None: The function does not return a value but will report errors if the transformation logic does not
+//     produce the expected results.
+//
+// This test function performs the following steps:
+// 1. Defines resource requests for memory (1Gi) and CPU (500m) with no resource limits.
+// 2. Sets up test cases to validate the transformation logic for two scenarios:
+//   - Scenario 1: A tiered store configuration is provided with a memory quota of 20Gi.
+//   - Scenario 2: No tiered store configuration is provided, and the memory request remains as 1Gi.
+//
+// 3. Initializes an AlluxioEngine instance with a fake client and runtime objects for testing.
+// 4. Transforms the resource requirements for the worker using the AlluxioEngine.
+// 5. Validates that the transformed memory requests match the expected values based on the scenarios.
+//
+// Errors will be reported if the transformation logic does not produce the expected memory requests.
 func TestTransformResourcesForWorkerWithOnlyRequest(t *testing.T) {
 
 	resources := corev1.ResourceRequirements{}
@@ -450,12 +504,12 @@ func TestTransformResourcesForWorkerWithOnlyRequest(t *testing.T) {
 // resource requests are handled as expected.
 //
 // The function performs the following steps:
-// 1. Defines resource requirements with limits for memory (20Gi) and CPU (500m).
-// 2. Sets up test cases to validate the transformation logic, including scenarios with and without
-//    tiered store configurations.
-// 3. Initializes an AlluxioEngine instance with a fake client and runtime objects for testing.
-// 4. Transforms the resource requirements for the worker using the AlluxioEngine.
-// 5. Validates the transformed resource limits and requests against the expected results.
+//  1. Defines resource requirements with limits for memory (20Gi) and CPU (500m).
+//  2. Sets up test cases to validate the transformation logic, including scenarios with and without
+//     tiered store configurations.
+//  3. Initializes an AlluxioEngine instance with a fake client and runtime objects for testing.
+//  4. Transforms the resource requirements for the worker using the AlluxioEngine.
+//  5. Validates the transformed resource limits and requests against the expected results.
 //
 // Test cases include:
 // - A scenario where tiered store configuration is provided, ensuring memory limits and requests are set correctly.

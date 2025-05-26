@@ -81,21 +81,22 @@ func doTestCases(testCases []TestCase, t *testing.T) {
 // Parameters:
 //   - t *testing.T : Go testing framework context for test assertions and logging
 //
-// Test Strategy:
-// 1. Setup test environment with mocked Kubernetes resources:
-//    - PVs with 'CreatedBy=fluid' annotation to simulate Fluid-managed persistent volumes
-//    - PVCs with different configurations (normal vs error cases)
+// 1. Setup test environment with mocked Kubenetes resources:
+// - PVCs with 'CreatedBy=fluid' annotation to simulate Fluid-managed persistent volumes
+// - PVCs with different configurations (normal vs error cases)
+
 // 2. Create 3 test scenarios using parameterized test pattern:
-//    Case 1: Normal deletion (JindoEngineCommon)
-//      - Input: Valid PV/PVC without conflicting annotations
-//      - Expected: Successful deletion (isDeleted=true, isErr=false)
-//    Case 2: Protected PVC deletion (JindoEngineErr)
-//      - Input: PVC with 'CreatedBy=fluid' annotation (protected resource)
-//      - Expected: Failed deletion (isErr=true)
-//    Case 3: Missing runtime scenario (JindoEngineNoRunTime)
-//      - Input: Engine with runtime=false configuration
-//      - Expected: Failed deletion (isErr=true)
-// 3. Verification: Uses doTestCases() helper to validate deletion outcomes against expectations
+// Case 1: Normal deletion (JindoEngineCommon)
+//   - Input: Valid PV/PVC without conflicting annotations
+//   - Expected: Successful deletion (isDeleted=true, isErr=false)
+// Case 2: Protected PVC deletion (JindoEngineErr)
+//   - Input: PVC with "CreatedBy=fluid" annotation (protected resource)
+//   - Expected: Failed deletion (isErr=true)
+// Case 3: Missing runtime scenario (JindoEngineNoRunTime)
+//   - Input: Engine with volume=false configuration
+//   - Expected: Failed (isErr=true)
+
+// 3. Verification: Uses doTestCases() helper to validate deletion
 //
 // Test Resources:
 // - fake.NewFakeClientWithScheme: Simulates Kubernetes API server with predefined resources
@@ -172,6 +173,16 @@ func TestJindoEngine_DeleteVolume(t *testing.T) {
 	doTestCases(testCases, t)
 }
 
+// TestJindoEngine_DeleteFusePersistentVolume tests the deletion of a Fuse Persistent Volume in the JindoEngine.
+// It creates a fake client with a predefined Persistent Volume and initializes two instances of JindoEngine,
+// one with runtime enabled and one without. It then runs test cases to verify the deletion behavior of the
+// Persistent Volume in both scenarios.
+//
+// Test cases:
+// - JindoEngine with runtime enabled: expects the Persistent Volume to be deleted without errors.
+// - JindoEngine without runtime enabled: expects the Persistent Volume to be deleted with an error.
+//
+// The function uses the doTestCases helper to execute the test cases and validate the results.
 func TestJindoEngine_DeleteFusePersistentVolume(t *testing.T) {
 	testPVInputs := []*v1.PersistentVolume{
 		{
@@ -209,6 +220,11 @@ func TestJindoEngine_DeleteFusePersistentVolume(t *testing.T) {
 	doTestCases(testCases, t)
 }
 
+// TestJindoEngine_DeleteFusePersistentVolumeClaim tests the DeleteFusePersistentVolumeClaim method of JindoEngine.
+// This test verifies the behavior when deleting a PersistentVolumeClaim (PVC) under two scenarios:
+// 1. With a functional JindoEngine instance, expecting successful deletion of the PVC.
+// 2. With a JindoEngine instance that lacks a runtime, expecting an error upon attempting to delete the PVC.
+// The test initializes a fake Kubernetes client and the corresponding PVC inputs to execute these scenarios.
 func TestJindoEngine_DeleteFusePersistentVolumeClaim(t *testing.T) {
 	testPVCInputs := []*v1.PersistentVolumeClaim{
 		{

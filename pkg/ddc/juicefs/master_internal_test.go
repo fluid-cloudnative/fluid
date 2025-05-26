@@ -49,6 +49,9 @@ func init() {
 	_ = appsv1.AddToScheme(testScheme)
 }
 
+// TestSetupMasterInternal tests the setupMasterInternal function of JuiceFSEngine under various scenarios.
+// It covers cases where the Helm release exists, doesn't exist, encounters errors during checking/installation,
+// and verifies the correct handling of each situation through mock implementations and hook injections.
 func TestSetupMasterInternal(t *testing.T) {
 	mockExecCheckReleaseCommonFound := func(name string, namespace string) (exist bool, err error) {
 		return true, nil

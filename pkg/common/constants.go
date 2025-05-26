@@ -156,11 +156,11 @@ const (
 	AccelerateCategory Category = "Accelerate"
 )
 
-var (
-	ExpectedFluidAnnotations = map[string]string{
+func GetExpectedFluidAnnotations() map[string]string {
+	return map[string]string{
 		"CreatedBy": "fluid",
 	}
-)
+}
 
 const (
 	FluidExclusiveKey string = "fluid_exclusive"
@@ -197,10 +197,11 @@ const (
 )
 
 const (
-	EnvServerlessPlatformKey        = "KEY_SERVERLESS_PLATFORM"
-	EnvServerlessPlatformVal        = "VALUE_SERVERLESS_PLATFORM"
-	EnvDisableApplicationController = "KEY_DISABLE_APP_CONTROLLER"
-	EnvImagePullSecretsKey          = "IMAGE_PULL_SECRETS"
+	// DEPRECATED: env variable for Fluid webhook to determine the serverless platform.
+	// Use commmon.AnnotationServerlessPlatform instead.
+	DeprecatedEnvServerlessPlatformKey = "KEY_SERVERLESS_PLATFORM"
+	EnvDisableApplicationController    = "KEY_DISABLE_APP_CONTROLLER"
+	EnvImagePullSecretsKey             = "IMAGE_PULL_SECRETS"
 )
 
 const (

@@ -195,6 +195,12 @@ func TestOptimizeDefaultForMasterNoValue(t *testing.T) {
 	}
 }
 
+// TestOptimizeDefaultForMasterWithValue tests the optimizeDefaultForMaster method of AlluxioEngine
+// It verifies that when AlluxioRuntime specifies JVM options for Master, these options are correctly
+// applied to the Alluxio Master configuration. The test case checks if the JvmOptions from the runtime
+// spec are properly transferred to the Alluxio Master's JvmOptions. It compares the expected JVM options
+// with the actual options set in the Alluxio Master configuration to ensure they match.
+
 func TestOptimizeDefaultForMasterWithValue(t *testing.T) {
 	var tests = []struct {
 		runtime      *datav1alpha1.AlluxioRuntime
@@ -221,6 +227,14 @@ func TestOptimizeDefaultForMasterWithValue(t *testing.T) {
 	}
 }
 
+// TestOptimizeDefaultForWorkerNoValue tests the default behavior of the optimizeDefaultForWorker function when no Worker JVM options are set.
+// This test case verifies whether the optimizeDefaultForWorker function correctly sets the default JVM options when the Worker JVM options in AlluxioRuntime and Alluxio are empty.
+//
+// Parameters:
+//   - t *testing.T: The testing framework used to report errors and log test results.
+//
+// Return:
+//   - None. The function asserts the expected JVM options against the actual values and reports errors if they do not match.
 func TestOptimizeDefaultForWorkerNoValue(t *testing.T) {
 	var tests = []struct {
 		runtime      *datav1alpha1.AlluxioRuntime
@@ -269,6 +283,15 @@ func TestOptimizeDefaultForWorkerWithValue(t *testing.T) {
 	}
 }
 
+// TestOptimizeDefaultForFuseNoValue tests the optimizeDefaultFuse function of the AlluxioEngine.
+// It verifies that the JVM options and fuse arguments are correctly set based on the provided AlluxioRuntime and Alluxio configurations.
+// The test cases cover scenarios with both new and old fuse argument versions, and check if the expected JVM options and fuse arguments are applied correctly.
+//
+// Parameters:
+//   - t *testing.T: The testing framework used to report errors and log test results.
+//
+// Returns:
+//   - None. The function asserts the expected JVM options and fuse arguments against the actual values and reports errors if they do not match.
 func TestOptimizeDefaultForFuseNoValue(t *testing.T) {
 	var tests = []struct {
 		runtime             *datav1alpha1.AlluxioRuntime

@@ -36,6 +36,16 @@ import (
 	"k8s.io/utils/ptr"
 )
 
+// getTestJindoEngineNode creates and returns a JindoEngine instance for testing.
+// It determines whether to initialize runtime-related information based on the `withRunTime` parameter.
+// Parameters:
+// - client: Kubernetes client used to interact with API resources.
+// - name: Name of the JindoEngine instance.
+// - namespace: Namespace where the JindoEngine instance is located.
+// - withRunTime: Whether to initialize runtime and runtimeInfo.
+//
+// Returns:
+// - *JindoEngine: The generated JindoEngine instance.。
 func getTestJindoEngineNode(client client.Client, name string, namespace string, withRunTime bool) *JindoEngine {
 	engine := &JindoEngine{
 		runtime:     nil,

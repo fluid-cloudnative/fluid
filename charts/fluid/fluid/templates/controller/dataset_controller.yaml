@@ -42,6 +42,11 @@ spec:
           - --pprof-addr=:6060
           - --enable-leader-election
           - --leader-election-namespace={{ include "fluid.namespace" . }}
+          - --reconcile-workers={{ .Values.dataset.runtimeWorkers }}
+          - --kube-api-qps={{ .Values.dataset.kubeClientQPS }}
+          - --kube-api-burst={{ .Values.dataset.kubeClientBurst }}
+          - --workqueue-qps={{ .Values.dataset.workQueueQPS }}
+          - --workqueue-burst={{ .Values.dataset.workQueueBurst }}
         env:
           {{- if .Values.workdir }}
           - name: FLUID_WORKDIR

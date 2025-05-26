@@ -18,15 +18,19 @@ package juicefs
 
 import (
 	"context"
+	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -187,114 +191,194 @@ func (j *JuiceFSEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, run
 	return
 }
 
-func (j *JuiceFSEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) (changed bool, err error) {
+func (j *JuiceFSEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.JuiceFSRuntime, latestValue *JuiceFS) (bool, error) {
 	j.Log.V(1).Info("syncFuseSpec")
-	var cmdChanged bool
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+
+	//1. check if fuse cmd configmap needs to update
+	if err := j.updateFuseCmdConfigmapOnChanged(latestValue); err != nil {
+		return false, err
+	}
+
+	//2. check if fuse needs to update
+	var fuseChanged, fuseGenerationNeedIncrease bool
+	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		fuses, err := kubeclient.GetDaemonset(j.Client, j.getFuseName(), j.namespace)
 		if err != nil {
 			return err
 		}
-
 		fusesToUpdate := fuses.DeepCopy()
 
-		// nodeSelector
-		if nodeSelectorChanged, newSelector := j.isNodeSelectorChanged(fusesToUpdate.Spec.Template.Spec.NodeSelector, value.Fuse.NodeSelector); nodeSelectorChanged {
-			fusesToUpdate.Spec.Template.Spec.NodeSelector = newSelector
-			changed = true
-		}
-
-		// volumes
-		if volumeChanged, newVolumes := j.isVolumesChanged(fusesToUpdate.Spec.Template.Spec.Volumes, value.Fuse.Volumes); volumeChanged {
-			fusesToUpdate.Spec.Template.Spec.Volumes = newVolumes
-			changed = true
-		}
-
-		// labels
-		if labelChanged, newLabels := j.isLabelsChanged(fusesToUpdate.Spec.Template.ObjectMeta.Labels, value.Fuse.Labels); labelChanged {
-			fusesToUpdate.Spec.Template.ObjectMeta.Labels = newLabels
-			changed = true
-		}
-
-		// annotations
-		if annoChanged, newAnnos := j.isAnnotationsChanged(fusesToUpdate.Spec.Template.ObjectMeta.Annotations, value.Fuse.Annotations); annoChanged {
-			fusesToUpdate.Spec.Template.ObjectMeta.Annotations = newAnnos
-			changed = true
-		}
-
-		// options -> configmap
-		fuseCommand, err := j.getFuseCommand()
-		if err != nil || fuseCommand == "" {
-			j.Log.Error(err, "Failed to get fuse command")
+		currentValue, err := j.GetValueFromConfigmap()
+		if err != nil {
 			return err
 		}
-		cmdChanged, _ = j.isCommandChanged(fuseCommand, value.Fuse.Command)
 
-		if len(fusesToUpdate.Spec.Template.Spec.Containers) == 1 {
-			// resource
-			if resourcesChanged, newResources := j.isResourcesChanged(fusesToUpdate.Spec.Template.Spec.Containers[0].Resources, runtime.Spec.Fuse.Resources); resourcesChanged {
-				fusesToUpdate.Spec.Template.Spec.Containers[0].Resources = newResources
-				changed = true
-			}
-
-			// env
-			if envChanged, newEnvs := j.isEnvsChanged(fusesToUpdate.Spec.Template.Spec.Containers[0].Env, value.Fuse.Envs); envChanged {
-				fusesToUpdate.Spec.Template.Spec.Containers[0].Env = newEnvs
-				changed = true
-			}
-
-			// volumeMounts
-			if volumeMountChanged, newVolumeMounts := j.isVolumeMountsChanged(fusesToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts, value.Fuse.VolumeMounts); volumeMountChanged {
-				fusesToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts = newVolumeMounts
-				changed = true
-			}
-
-			// image
-			fuseImage := value.Fuse.Image
-			if value.ImageTag != "" {
-				fuseImage = fuseImage + ":" + value.Fuse.ImageTag
-			}
-			if imageChanged, newImage := j.isImageChanged(fusesToUpdate.Spec.Template.Spec.Containers[0].Image, fuseImage); imageChanged {
-				fusesToUpdate.Spec.Template.Spec.Containers[0].Image = newImage
-				changed = true
-			}
+		fuseChanged, fuseGenerationNeedIncrease = j.checkAndSetFuseChanges(currentValue, latestValue, runtime, fusesToUpdate)
+		if !fuseChanged {
+			j.Log.V(1).Info("The fuse is not changed")
+			return nil
 		}
 
-		if cmdChanged {
-			j.Log.Info("The fuse config is updated")
-			err = j.updateFuseScript(value.Fuse.Command)
+		if reflect.DeepEqual(fuses, fusesToUpdate) {
+			fuseChanged = false
+			j.Log.V(1).Info("The fuse is not changed, skip")
+			return nil
+		}
+		j.Log.Info("The fuse changes, need to update")
+
+		if fuseGenerationNeedIncrease {
+			err := j.increaseFuseGeneration(fusesToUpdate)
 			if err != nil {
-				j.Log.Error(err, "Failed to update the ds config")
+				j.Log.Error(err, "Failed to update the fuse generation")
 				return err
 			}
-		} else {
-			j.Log.V(1).Info("The fuse config is not changed")
 		}
 
-		if changed {
-			if reflect.DeepEqual(fuses, fusesToUpdate) {
-				changed = false
-				j.Log.V(1).Info("The fuse is not changed, skip")
-				return nil
-			}
-			j.Log.Info("The fuse is updated")
-
-			err = j.Client.Update(context.TODO(), fusesToUpdate)
-			if err != nil {
-				j.Log.Error(err, "Failed to update the ds spec")
-			}
-		} else {
-			j.Log.V(1).Info("The fuse is not changed")
+		if err := j.Client.Update(context.TODO(), fusesToUpdate); err != nil {
+			j.Log.Error(err, "Failed to update the ds spec")
+			return err
 		}
 
-		return err
+		if err := j.SaveValueToConfigmap(latestValue); err != nil {
+			j.Log.Error(err, "Failed to update the ds spec")
+			return err
+		}
+
+		return nil
 	})
-
-	if fluiderrs.IsDeprecated(err) {
-		j.Log.Info("Warning: the current runtime is created by runtime controller before v0.7.0, update specs are not supported. To support these features, please create a new dataset", "details", err)
-		return false, nil
+	if err != nil {
+		if fluiderrs.IsDeprecated(err) {
+			j.Log.Info("Warning: the current runtime is created by runtime controller before v0.7.0, update specs are not supported. To support these features, please create a new dataset", "details", err)
+			return false, nil
+		}
+		return false, err
 	}
-	return
+
+	return fuseChanged, nil
+}
+
+func (j *JuiceFSEngine) checkAndSetFuseChanges(currentValue, latestValue *JuiceFS, runtime *datav1alpha1.JuiceFSRuntime, fusesToUpdate *appsv1.DaemonSet) (bool, bool) {
+	var fuseChanged, fuseGenerationNeedUpdate bool
+	// nodeSelector
+	if nodeSelectorChanged, newSelector := j.isNodeSelectorChanged(currentValue.Fuse.NodeSelector, latestValue.Fuse.NodeSelector); nodeSelectorChanged {
+		j.Log.Info("syncFuseSpec nodeSelectorChanged")
+		fusesToUpdate.Spec.Template.Spec.NodeSelector = newSelector
+		fuseChanged = true
+	}
+
+	// volumes
+	if volumeChanged, newVolumes := j.isVolumesChanged(currentValue.Fuse.Volumes, latestValue.Fuse.Volumes); volumeChanged {
+		j.Log.Info("syncFuseSpec volumeChanged")
+		fusesToUpdate.Spec.Template.Spec.Volumes = newVolumes
+		fuseChanged = true
+	}
+
+	// labels
+	if labelChanged, newLabels := j.isLabelsChanged(currentValue.Fuse.Labels, latestValue.Fuse.Labels); labelChanged {
+		j.Log.Info("syncFuseSpec labelChanged")
+		fusesToUpdate.Spec.Template.ObjectMeta.Labels = newLabels
+		fuseChanged = true
+	}
+
+	// annotations
+	if annoChanged, newAnnos := j.isAnnotationsChanged(currentValue.Fuse.Annotations, latestValue.Fuse.Annotations); annoChanged {
+		j.Log.Info("syncFuseSpec annoChanged")
+		fusesToUpdate.Spec.Template.ObjectMeta.Annotations = newAnnos
+		fuseChanged = true
+	}
+
+	if len(fusesToUpdate.Spec.Template.Spec.Containers) == 1 {
+		// resource
+		if resourcesChanged, newResources := j.isResourcesChanged(fusesToUpdate.Spec.Template.Spec.Containers[0].Resources, runtime.Spec.Fuse.Resources); resourcesChanged {
+			j.Log.Info("syncFuseSpec resourcesChanged")
+			fusesToUpdate.Spec.Template.Spec.Containers[0].Resources = newResources
+			fuseChanged = true
+		}
+
+		// env
+		if envChanged, newEnvs := j.isEnvsChanged(currentValue.Fuse.Envs, latestValue.Fuse.Envs); envChanged {
+			j.Log.Info("syncFuseSpec envChanged")
+			fusesToUpdate.Spec.Template.Spec.Containers[0].Env = newEnvs
+			fuseChanged = true
+		}
+
+		// volumeMounts
+		if volumeMountChanged, newVolumeMounts := j.isVolumeMountsChanged(currentValue.Fuse.VolumeMounts, latestValue.Fuse.VolumeMounts); volumeMountChanged {
+			j.Log.Info("syncFuseSpec volumeMountChanged")
+			fusesToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts = newVolumeMounts
+			fuseChanged = true
+		}
+
+		// image
+		latestFuseImage := latestValue.Fuse.Image
+		if latestValue.ImageTag != "" {
+			latestFuseImage = latestFuseImage + ":" + latestValue.Fuse.ImageTag
+		}
+
+		currentFuseImage := currentValue.Fuse.Image
+		if currentValue.ImageTag != "" {
+			currentFuseImage = currentFuseImage + ":" + currentValue.Fuse.ImageTag
+		}
+
+		if imageChanged, newImage := j.isImageChanged(currentFuseImage, latestFuseImage); imageChanged {
+			j.Log.Info("syncFuseSpec imageChanged")
+			fusesToUpdate.Spec.Template.Spec.Containers[0].Image = newImage
+			fuseChanged, fuseGenerationNeedUpdate = true, true
+		}
+	}
+
+	return fuseChanged, fuseGenerationNeedUpdate
+}
+
+func (j *JuiceFSEngine) updateFuseCmdConfigmapOnChanged(latestValue *JuiceFS) error {
+	// options -> configmap
+	fuseCommand, err := j.getFuseCommand()
+	if err != nil || fuseCommand == "" {
+		j.Log.Error(err, "Failed to get fuse command")
+		return err
+	}
+
+	if cmdChanged, _ := j.isCommandChanged(fuseCommand, latestValue.Fuse.Command); cmdChanged {
+		j.Log.Info("The fuse config is updated")
+		if err := j.updateFuseScript(latestValue.Fuse.Command); err != nil {
+			j.Log.Error(err, "Failed to update the ds config")
+			return err
+		}
+		return nil
+	}
+	j.Log.V(1).Info("The fuse config is not changed")
+	return nil
+}
+
+func (j *JuiceFSEngine) increaseFuseGeneration(fusesToUpdate *appsv1.DaemonSet) error {
+	newGeneration := "1"
+	currentGeneration, exist := fusesToUpdate.Spec.Template.Labels[common.LabelRuntimeFuseGeneration]
+	if exist {
+		currentGenerationInt, err := strconv.Atoi(currentGeneration)
+		if err != nil {
+			j.Log.Error(err, "Failed to parse current fuse generation from the ds label")
+			return nil
+		}
+		newGeneration = strconv.FormatInt(int64(currentGenerationInt+1), 10)
+	}
+
+	fusesToUpdate.Spec.Template.Labels[common.LabelRuntimeFuseGeneration] = newGeneration
+	pvc, err := kubeclient.GetPersistentVolumeClaim(j.Client, j.name, j.namespace)
+	if err != nil {
+		return err
+	}
+
+	labelsToModify := common.LabelsToModify{}
+	if _, exist := pvc.Labels[common.LabelRuntimeFuseGeneration]; exist {
+		labelsToModify.Update(common.LabelRuntimeFuseGeneration, newGeneration)
+	} else {
+		labelsToModify.Add(common.LabelRuntimeFuseGeneration, newGeneration)
+	}
+
+	if _, err = utils.PatchLabels(j.Client, pvc, labelsToModify); err != nil {
+		j.Log.Error(err, fmt.Sprintf("imageChanged but failed to update image info on pvc %s/%s", j.namespace, j.name))
+	}
+	return nil
 }
 
 func (j *JuiceFSEngine) isVolumeMountsChanged(crtVolumeMounts, runtimeVolumeMounts []corev1.VolumeMount) (changed bool, newVolumeMounts []corev1.VolumeMount) {
@@ -353,7 +437,7 @@ func (j JuiceFSEngine) isVolumesChanged(crtVolumes, runtimeVolumes []corev1.Volu
 	}
 	for _, volume := range runtimeVolumes {
 		if m, ok := volumes[volume.Name]; !ok || !reflect.DeepEqual(m, volume) {
-			j.Log.Info("The volumes is different.", "current sts", crtVolumes, "runtime", runtimeVolumes)
+			j.Log.Info("The volumes is different.", "current fuse volumes", crtVolumes, "runtime", runtimeVolumes)
 			volumes[volume.Name] = volume
 			changed = true
 		}

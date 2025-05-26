@@ -36,6 +36,8 @@ import (
 	"k8s.io/utils/ptr"
 )
 
+// TestQueryCacheStatus is a unit test for the queryCacheStatus function.
+// It verifies the correctness of the function under different dataset conditions.
 func TestQueryCacheStatus(t *testing.T) {
 	Convey("test queryCacheStatus ", t, func() {
 		Convey("with dataset UFSTotal is not empty ", func() {
@@ -159,6 +161,17 @@ func TestQueryCacheStatus(t *testing.T) {
 	})
 }
 
+// TestGetCacheHitStates verifies that the GetCacheHitStates method of the AlluxioEngine
+// correctly extracts and maps the cache hit metrics from the engine's report.
+// It overrides the GetReportMetrics method to return a controlled report, then asserts that
+// the returned cache hit state contains the expected values for both local cache hits (bytesReadLocal)
+// and unified file system hits (bytesReadUfsAll), ensuring correct metric parsing.
+//
+// Parameters:
+//   - t (*testing.T): The testing context used for running and reporting the test.
+//
+// Returns:
+//   - None: This test function does not return a value but uses assertions to verify correctness.
 func TestGetCacheHitStates(t *testing.T) {
 	Convey("Test GetCacheHitStates ", t, func() {
 		Convey("with data ", func() {
@@ -218,6 +231,15 @@ func TestPatchDatasetStatus(t *testing.T) {
 	}
 }
 
+// TestInvokeCleanCache tests the behavior of the invokeCleanCache function in the AlluxioEngine.
+// It simulates different StatefulSet statuses using a fake client to verify whether the function
+// correctly determines if an error should be returned based on the readiness state of the replicas.
+//
+// Parameters:
+// - t (*testing.T): The testing context used to run assertions.
+//
+// Returns:
+// - None. The function uses t.Errorf to report test failures.
 func TestInvokeCleanCache(t *testing.T) {
 	masterInputs := []*appsv1.StatefulSet{
 		{
@@ -429,6 +451,16 @@ func mockAlluxioReportMetrics() string {
 	return r
 }
 
+// TestAlluxioEngine_getGracefulShutdownLimits tests the getGracefulShutdownLimits method of the AlluxioEngine.
+// This test verifies the correct retrieval of graceful shutdown retry limits under different runtime configurations.
+// It covers three scenarios:
+// 1. When no CleanCachePolicy is specified, ensuring the default value (3) is returned.
+// 2. When CleanCachePolicy with MaxRetryAttempts is set, ensuring the configured value is returned.
+// 3. An error scenario where the runtime object might not be properly retrieved, testing error handling.
+// The test uses a fake Kubernetes client to simulate runtime object states and validate the method's behavior.
+//
+// Parameters:
+// - t: Testing handler for test reporting and control.
 func TestAlluxioEngine_getGracefulShutdownLimits(t *testing.T) {
 	type fields struct {
 		runtime            *datav1alpha1.AlluxioRuntime

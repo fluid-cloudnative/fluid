@@ -35,12 +35,12 @@ type ThinValue struct {
 	Tolerations      []corev1.Toleration           `json:"tolerations,omitempty"`
 	PlacementMode    string                        `json:"placement,omitempty"`
 	Owner            *common.OwnerReference        `json:"owner,omitempty"`
-	RuntimeValue     string                        `json:"runtimeValue"`
 	RuntimeIdentity  common.RuntimeIdentity        `json:"runtimeIdentity"`
 	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 }
 
 type Worker struct {
+	Enabled          bool                          `json:"enabled,omitempty"`
 	Image            string                        `json:"image,omitempty"`
 	ImageTag         string                        `json:"imageTag,omitempty"`
 	ImagePullPolicy  string                        `json:"imagePullPolicy,omitempty"`
@@ -65,7 +65,7 @@ type Fuse struct {
 	Resources        common.Resources              `json:"resources,omitempty"`
 	Ports            []corev1.ContainerPort        `json:"ports,omitempty"`
 	CriticalPod      bool                          `json:"criticalPod,omitempty"`
-	HostNetwork      bool                          `json:"hostNetwork,omitempty"`
+	HostNetwork      bool                          `json:"hostNetwork"`
 	HostPID          bool                          `json:"hostPID,omitempty"`
 	TargetPath       string                        `json:"targetPath,omitempty"`
 	NodeSelector     map[string]string             `json:"nodeSelector,omitempty"`
@@ -89,10 +89,4 @@ type Config struct {
 	PersistentVolumeAttrs        map[string]*corev1.CSIPersistentVolumeSource `json:"persistentVolumeAttrs,omitempty"`
 	PersistentVolumeMountOptions map[string][]string                          `json:"persistentVolumeMountOptions,omitempty"`
 	AccessModes                  []corev1.PersistentVolumeAccessMode          `json:"accessModes,omitempty"`
-}
-
-// RuntimeSetConfig is with the info of the workers and fuses
-type RuntimeSetConfig struct {
-	Workers []string `json:"workers"`
-	Fuses   []string `json:"fuses"`
 }

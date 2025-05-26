@@ -42,6 +42,10 @@ spec:
           - --development=false
           - --runtime-node-port-range={{ .Values.runtime.jindo.portRange }}
           - --runtime-workers={{ .Values.runtime.jindo.runtimeWorkers }}
+          - --kube-api-qps={{ .Values.runtime.jindo.kubeClientQPS }}
+          - --kube-api-burst={{ .Values.runtime.jindo.kubeClientBurst }}
+          - --workqueue-qps={{ .Values.runtime.jindo.workQueueQPS }}
+          - --workqueue-burst={{ .Values.runtime.jindo.workQueueBurst }}
           - --pprof-addr=:6060
           - --enable-leader-election
           - --leader-election-namespace={{ include "fluid.namespace" . }}
@@ -89,6 +93,9 @@ spec:
         {{- end }}
         - name: HELM_DRIVER
           value: {{ template "fluid.helmDriver" . }}
+        {{- if .Values.runtime.jindo.env }}
+        {{ toYaml .Values.runtime.jindo.env | nindent 10 }}
+        {{- end }}
         ports:
           - containerPort: 8080
             name: metrics

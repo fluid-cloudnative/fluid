@@ -43,6 +43,10 @@ spec:
           - --pprof-addr=:6060
           - --enable-leader-election
           - --runtime-workers={{ .Values.runtime.juicefs.runtimeWorkers }}
+          - --kube-api-qps={{ .Values.runtime.juicefs.kubeClientQPS }}
+          - --kube-api-burst={{ .Values.runtime.juicefs.kubeClientBurst }}
+          - --workqueue-qps={{ .Values.runtime.juicefs.workQueueQPS }}
+          - --workqueue-burst={{ .Values.runtime.juicefs.workQueueBurst }}
           - --leader-election-namespace={{ include "fluid.namespace" . }}
         command: ["juicefsruntime-controller", "start"]
         env:
@@ -78,6 +82,9 @@ spec:
           {{- end }}
           - name: HELM_DRIVER
             value: {{ template "fluid.helmDriver" . }}
+          {{- if .Values.runtime.juicefs.env }}
+          {{ toYaml .Values.runtime.juicefs.env | nindent 10 }}
+          {{- end }}
         ports:
         - containerPort: 8080
           name: metrics

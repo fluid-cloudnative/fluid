@@ -77,7 +77,9 @@ func (a VineyardFileUtils) ReportSummary() (summary []string, err error) {
 			err = fmt.Errorf("failed to get metrics from %s, error: %v", u.String(), err)
 			return summary, err
 		}
-		defer resp.Body.Close()
+		defer func() {
+			_ = resp.Body.Close()
+		}()
 
 		body, err = io.ReadAll(resp.Body)
 		if err != nil {

@@ -164,6 +164,18 @@ func TestCheckMasterReady(t *testing.T) {
 	}
 }
 
+// TestShouldSetupMaster tests the ShouldSetupMaster function of AlluxioEngine.
+// Functionality: Verifies if the Alluxio master should be set up based on runtime status.
+// Parameters:
+//   - t *testing.T: Standard testing object for test reporting and logging.
+//
+// Return: None (testing function).
+// Notes:
+//   - Uses fake client to simulate interactions with Kubernetes API.
+//   - Tests two scenarios:
+//     1. Runtime with MasterPhase "NotReady" should return false.
+//     2. Runtime with MasterPhase "None" should return true.
+//   - Fails the test if actual results mismatch expectations.
 func TestShouldSetupMaster(t *testing.T) {
 	alluxioruntimeInputs := []datav1alpha1.AlluxioRuntime{
 		{
@@ -226,6 +238,14 @@ func TestShouldSetupMaster(t *testing.T) {
 	}
 }
 
+// TestSetupMaster tests the SetupMaster function of the AlluxioEngine.
+// It initializes a fake Kubernetes client with predefined StatefulSet and AlluxioRuntime objects,
+// then verifies whether SetupMaster correctly updates the runtime's status fields.
+// The test ensures that:
+//  1. The SetupMaster function executes without errors.
+//  2. The runtime object is correctly retrieved after execution.
+//  3. The runtime's status is properly updated, including the selector,
+//     configuration map name, and the presence of conditions.。
 func TestSetupMaster(t *testing.T) {
 	statefulSetInputs := []v1.StatefulSet{
 		{

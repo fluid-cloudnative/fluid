@@ -39,6 +39,7 @@ spec:
       {{- end }}
       {{- end }}
       labels:
+        fuse.runtime.fluid.io/generation: "1"
         sidecar.istio.io/inject: "false"
         app: {{ template "juicefs.name" . }}
         chart: {{ template "juicefs.chart" . }}

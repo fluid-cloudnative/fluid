@@ -43,6 +43,10 @@ spec:
           - --pprof-addr=:6060
           - --enable-leader-election
           - --runtime-workers={{ .Values.runtime.thin.runtimeWorkers }}
+          - --kube-api-qps={{ .Values.runtime.thin.kubeClientQPS }}
+          - --kube-api-burst={{ .Values.runtime.thin.kubeClientBurst }}
+          - --workqueue-qps={{ .Values.runtime.thin.workQueueQPS }}
+          - --workqueue-burst={{ .Values.runtime.thin.workQueueBurst }}
           - --leader-election-namespace={{ include "fluid.namespace" . }}
         command: ["thinruntime-controller", "start"]
         env:
@@ -62,6 +66,9 @@ spec:
             value: {{ template "fluid.helmDriver" . }}
           - name: THIN_FUSE_CONFIG_STORAGE
             value: {{ .Values.runtime.thin.fuse.configStorage }}
+          {{- if .Values.runtime.thin.env }}
+          {{ toYaml .Values.runtime.thin.env | nindent 10 }}
+          {{- end }}
         ports:
           - containerPort: 8080
             name: metrics

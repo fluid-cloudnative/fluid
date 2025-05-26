@@ -77,9 +77,15 @@ const (
 	//   	"Sidecar": for only sidecar to skip check mount ready,
 	AnnotationSkipCheckMountReadyTarget = LabelAnnotationPrefix + "skip-check-mount-ready-target"
 
+	// AnnotationDisableRuntimeHelmValueConfig is a runtime label indicates the configmap contains helm value will not be created in setup.
+	AnnotationDisableRuntimeHelmValueConfig = "runtime." + LabelAnnotationPrefix + "disable-helm-value-config"
+
 	// LabelAnnotationMountingDatasets is a label/annotation key indicating which datasets are currently being used by a pod.
 	// i.e. fluid.io/datasets-in-use
 	LabelAnnotationDatasetsInUse = LabelAnnotationPrefix + "datasets-in-use"
+
+	// i.e. fuse.runtime.fluid.io/generation
+	LabelRuntimeFuseGeneration = "fuse.runtime." + LabelAnnotationPrefix + "generation"
 )
 
 const (
@@ -105,6 +111,12 @@ const (
 	// AnnotationDataFlowCustomizedAffinityPrefix is a prefix used to
 	// i.e. affinity.dataflow.fluid.io.
 	AnnotationDataFlowCustomizedAffinityPrefix = "affinity.dataflow.fluid.io."
+)
+
+const (
+	// AnnotationServerlessPlatform is an annotation key name for the platform type of serverless.
+	// i.e. serverless.fluid.io/platform
+	AnnotationServerlessPlatform = "serverless." + LabelAnnotationPrefix + "platform"
 )
 
 var (

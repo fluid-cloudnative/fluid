@@ -82,7 +82,7 @@ func TestTransformFuse(t *testing.T) {
 	}
 	for k, test := range tests {
 		if strings.Contains(k, "env") {
-			os.Setenv("VINEYARD_FUSE_IMAGE_ENV", "image-from-env:image-tag-from-env")
+			_ = os.Setenv("VINEYARD_FUSE_IMAGE_ENV", "image-from-env:image-tag-from-env")
 		}
 		runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "vineyard")
 		if err != nil {
@@ -110,7 +110,7 @@ func TestTransformFuse(t *testing.T) {
 			t.Errorf("Expected Fuse Env %v, got %v", test.expectEnv, test.value.Fuse.Env)
 		}
 		if strings.Contains(k, "env") {
-			os.Unsetenv("VINEYARD_FUSE_IMAGE_ENV")
+			_ = os.Unsetenv("VINEYARD_FUSE_IMAGE_ENV")
 		}
 	}
 }
@@ -164,7 +164,7 @@ func TestTransformMaster(t *testing.T) {
 	ds := &datav1alpha1.Dataset{}
 	for k, v := range testCases {
 		if strings.Contains(k, "env") {
-			os.Setenv("VINEYARD_MASTER_IMAGE_ENV", "image-from-env:image-tag-from-env")
+			_ = os.Setenv("VINEYARD_MASTER_IMAGE_ENV", "image-from-env:image-tag-from-env")
 		}
 		gotValue := &Vineyard{}
 		if err := engine.transformMasters(v.runtime, ds, gotValue); err == nil {
@@ -191,7 +191,7 @@ func TestTransformMaster(t *testing.T) {
 			}
 		}
 		if strings.Contains(k, "env") {
-			os.Unsetenv("VINEYARD_MASTER_IMAGE_ENV")
+			_ = os.Unsetenv("VINEYARD_MASTER_IMAGE_ENV")
 		}
 	}
 }
@@ -246,7 +246,7 @@ func TestTransformWorker(t *testing.T) {
 	engine := &VineyardEngine{Log: fake.NullLogger()}
 	for k, v := range testCases {
 		if strings.Contains(k, "env") {
-			os.Setenv("VINEYARD_WORKER_IMAGE_ENV", "image-from-env:image-tag-from-env")
+			_ = os.Setenv("VINEYARD_WORKER_IMAGE_ENV", "image-from-env:image-tag-from-env")
 		}
 		gotValue := &Vineyard{}
 		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "vineyard", base.WithTieredStore(v.runtime.Spec.TieredStore))
@@ -281,7 +281,7 @@ func TestTransformWorker(t *testing.T) {
 			}
 		}
 		if strings.Contains(k, "env") {
-			os.Unsetenv("VINEYARD_WORKER_IMAGE_ENV")
+			_ = os.Unsetenv("VINEYARD_WORKER_IMAGE_ENV")
 		}
 	}
 }

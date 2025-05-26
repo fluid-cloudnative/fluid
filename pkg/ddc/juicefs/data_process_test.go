@@ -27,7 +27,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// TestJuiceFSEngine_generateDataProcessValueFile tests the generateDataProcessValueFile function of the JuiceFSEngine.
+// It verifies the behavior of the function under different scenarios, including invalid input and missing datasets.
+//
+// Parameters:
+//   - t: The testing context used for reporting test failures and logging.
 func TestJuiceFSEngine_generateDataProcessValueFile(t *testing.T) {
+	// 1. Define a sample dataset and dataProcess object for testing.
 	dataset := &datav1alpha1.Dataset{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "demo-dataset",
@@ -60,6 +66,7 @@ func TestJuiceFSEngine_generateDataProcessValueFile(t *testing.T) {
 		},
 	}
 
+	// 2. Define the test cases using a struct to encapsulate the test arguments and expected results.
 	type args struct {
 		engine *JuiceFSEngine
 		ctx    cruntime.ReconcileRequestContext
@@ -111,6 +118,8 @@ func TestJuiceFSEngine_generateDataProcessValueFile(t *testing.T) {
 			wantErr: false,
 		},
 	}
+
+	// 3. Run each test case and verify the results.
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := tt.args.engine.generateDataProcessValueFile(tt.args.ctx, tt.args.object)

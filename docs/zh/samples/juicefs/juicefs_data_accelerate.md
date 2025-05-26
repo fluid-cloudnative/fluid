@@ -21,9 +21,12 @@ spec:
     namespace: default
   target:
     - path: /dir1
+  options:
+    threads: "50"
 ```
 
 其中：
 - `spec.dataset.name`：指定要加速数据访问的 Dataset 名称；
 - `spec.dataset.namespce`：指定要加速数据访问的 Dataset 的 namespace；
 - `spec.target.path`：指定要加速数据访问的数据路径，可以是目录或文件；target 是列表，可以填多个 path。
+- `spec.options`：指定缓存加速的参数，可用参数可参考 [JuiceFS 的缓存加速文档](https://juicefs.com/docs/zh/community/command_reference#warmup)，注意 key 和 value 均为字符串类型。

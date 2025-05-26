@@ -77,6 +77,8 @@ type RuntimeInfoInterface interface {
 
 	SetFuseNodeSelector(nodeSelector map[string]string)
 
+	SetFuseName(fuseName string)
+
 	SetupFuseCleanPolicy(policy datav1alpha1.FuseCleanPolicy)
 
 	SetupWithDataset(dataset *datav1alpha1.Dataset)
@@ -84,6 +86,8 @@ type RuntimeInfoInterface interface {
 	SetOwnerDatasetUID(alias types.UID)
 
 	GetFuseNodeSelector() (nodeSelector map[string]string)
+
+	GetFuseName() string
 
 	GetFuseCleanPolicy() datav1alpha1.FuseCleanPolicy
 
@@ -142,6 +146,8 @@ type RuntimeInfo struct {
 }
 
 type Fuse struct {
+	Name string
+
 	NodeSelector map[string]string
 
 	// CleanPolicy decides when to clean fuse pods.
@@ -312,6 +318,16 @@ func (info *RuntimeInfo) SetOwnerDatasetUID(datasetUID types.UID) {
 // SetFuseNodeSelector setups the fuse deploy mode
 func (info *RuntimeInfo) SetFuseNodeSelector(nodeSelector map[string]string) {
 	info.fuse.NodeSelector = nodeSelector
+}
+
+// GetFuseNodeSelector gets the fuse deploy mode
+func (info *RuntimeInfo) GetFuseName() string {
+	return info.fuse.Name
+}
+
+// SetFuseNodeSelector setups the fuse deploy mode
+func (info *RuntimeInfo) SetFuseName(fuseName string) {
+	info.fuse.Name = fuseName
 }
 
 // GetFuseNodeSelector gets the fuse deploy mode

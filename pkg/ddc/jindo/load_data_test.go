@@ -132,6 +132,9 @@ func TestGenerateDataLoadValueFile(t *testing.T) {
 	}
 }
 
+// Test_genDataLoadValue tests the accuracy of genDataLoadValue function in generating DataLoad configurations
+// - Verifies if generated DataLoad configurations match expectations under different parameter combinations
+// - Covers key scenarios: scheduler name setting, mount point configuration, runtime parameters
 func Test_genDataLoadValue(t *testing.T) {
 	testCases := map[string]struct {
 		image         string
@@ -554,6 +557,17 @@ func Test_genDataLoadValue(t *testing.T) {
 	}
 }
 
+// TestGenerateDataLoadValueFileWithRuntimeHDD tests the generation of data load value files
+// when using a JindoRuntime with an HDD-based tiered storage configuration.
+//
+// This function ensures that the dataset and JindoRuntime configurations are correctly initialized
+// and that the tiered storage settings, such as medium type (HDD), quota, and thresholds, are properly applied.
+//
+// Parameters:
+//   - t: The testing object provided by the Go testing framework.
+//
+// Returns:
+//   - None (but the test fails if the expected conditions are not met).
 func TestGenerateDataLoadValueFileWithRuntimeHDD(t *testing.T) {
 	datasetInputs := []datav1alpha1.Dataset{
 		{
@@ -653,6 +667,8 @@ func TestGenerateDataLoadValueFileWithRuntimeHDD(t *testing.T) {
 	}
 }
 
+// TestCheckRuntimeReady tests the CheckRuntimeReady function of the JindoEngine.
+// It verifies the behavior of the function by mocking the execution of commands in a Kubernetes container
 func TestCheckRuntimeReady(t *testing.T) {
 	mockExecCommon := func(podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
 		return "", "", nil

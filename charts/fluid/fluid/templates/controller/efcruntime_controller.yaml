@@ -44,6 +44,11 @@ spec:
           - --pprof-addr=:6060
           - --enable-leader-election
           - --leader-election-namespace={{ include "fluid.namespace" . }}
+          - --runtime-workers={{ .Values.runtime.efc.runtimeWorkers }}
+          - --kube-api-qps={{ .Values.runtime.efc.kubeClientQPS }}
+          - --kube-api-burst={{ .Values.runtime.efc.kubeClientBurst }}
+          - --workqueue-qps={{ .Values.runtime.efc.workQueueQPS }}
+          - --workqueue-burst={{ .Values.runtime.efc.workQueueBurst }}
         command: ["efcruntime-controller", "start"]
         env:
           {{- if .Values.runtime.mountRoot }}
@@ -87,6 +92,9 @@ spec:
               {{- end }}
             {{- end }}
             value: {{ join "," $secretList | quote }}
+          {{- end }}
+          {{- if .Values.runtime.efc.env }}
+          {{ toYaml .Values.runtime.efc.env | nindent 10 }}
           {{- end }}
         ports:
         - containerPort: 8080

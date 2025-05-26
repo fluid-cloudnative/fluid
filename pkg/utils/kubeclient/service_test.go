@@ -33,7 +33,7 @@ func TestGetServiceByName(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: "svc1"},
 		Spec:       v1.ServiceSpec{},
 	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "svc2", Annotations: common.ExpectedFluidAnnotations},
+		ObjectMeta: metav1.ObjectMeta{Name: "svc2", Annotations: common.GetExpectedFluidAnnotations()},
 		Spec:       v1.ServiceSpec{},
 	}}
 

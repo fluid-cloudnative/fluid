@@ -175,7 +175,8 @@ func (e *AlluxioEngine) genDataLoadValue(image string, targetDataset *datav1alph
 // It obtains master pod details, creates file utilities, and checks readiness.
 //
 // Returns:
-//   ready bool - Runtime readiness status (true = ready, false = not ready).
+//
+//	ready bool - Runtime readiness status (true = ready, false = not ready).
 func (e *AlluxioEngine) CheckRuntimeReady() (ready bool) {
 	podName, containerName := e.getMasterPodInfo()
 	fileUtils := operations.NewAlluxioFileUtils(podName, containerName, e.namespace, e.Log)

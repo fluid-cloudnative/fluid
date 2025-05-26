@@ -17,6 +17,7 @@ limitations under the License.
 package juicefs
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -25,14 +26,15 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
-	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
+	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
 var valuesConfigMapData = `
@@ -561,7 +563,7 @@ func TestJuiceFSEngine_genDataLoadValue(t *testing.T) {
 					ImagePullSecrets: []v1.LocalObjectReference{},
 					Options: map[string]string{
 						// dataload spec options
-						"dl-opts-k-1": "dl-opts-v-1",
+						"option": "--dl-opts-k-1=dl-opts-v-1",
 						// cache info
 						Edition:         CommunityEdition,
 						"cache-info-k1": "cache-info-v1",
@@ -728,7 +730,7 @@ func TestJuiceFSEngine_genDataLoadValue(t *testing.T) {
 					},
 					Options: map[string]string{
 						// dataload spec options
-						"dl-opts-k-1": "dl-opts-v-1",
+						"option": "--dl-opts-k-1=dl-opts-v-1",
 						// cache info
 						Edition:         CommunityEdition,
 						"cache-info-k1": "cache-info-v1",
@@ -829,7 +831,7 @@ func TestJuiceFSEngine_genDataLoadValue(t *testing.T) {
 					},
 					Options: map[string]string{
 						// dataload spec options
-						"dl-opts-k-1": "dl-opts-v-1",
+						"option": "--dl-opts-k-1=dl-opts-v-1",
 						// cache info
 						Edition:         CommunityEdition,
 						"cache-info-k1": "cache-info-v1",
@@ -938,7 +940,7 @@ func TestJuiceFSEngine_genDataLoadValue(t *testing.T) {
 					},
 					Options: map[string]string{
 						// dataload spec options
-						"dl-opts-k-1": "dl-opts-v-1",
+						"option": "--dl-opts-k-1=dl-opts-v-1",
 						// cache info
 						Edition:         CommunityEdition,
 						"cache-info-k1": "cache-info-v1",
@@ -961,7 +963,9 @@ func TestJuiceFSEngine_genDataLoadValue(t *testing.T) {
 		}
 		got, _ := engine.genDataLoadValue(item.image, item.cacheInfo, item.pods, item.targetDataset, item.dataload)
 		if !reflect.DeepEqual(got, item.want) {
-			t.Errorf("case %s, got %v,want:%v", k, got, item.want)
+			gotJson, _ := json.Marshal(got)
+			wantJson, _ := json.Marshal(item.want)
+			t.Errorf("case %s, got %v\nwant:%v", k, string(gotJson), string(wantJson))
 		}
 	}
 }

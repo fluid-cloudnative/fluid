@@ -133,3 +133,10 @@ func (t *ThinEngine) getDataSetFileNum() (string, error) {
 func (t ThinEngine) getFuseConfigMapName() string {
 	return t.name + "-fuse-conf"
 }
+
+func (t ThinEngine) isWorkerEnable() bool {
+	if t.runtime == nil {
+		return false
+	}
+	return t.runtime.Spec.Worker.Enabled
+}

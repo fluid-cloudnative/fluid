@@ -50,8 +50,8 @@ func (args MutatorBuildArgs) String() string {
 }
 
 var mutatorBuildFn map[string]func(MutatorBuildArgs) Mutator = map[string]func(MutatorBuildArgs) Mutator{
-	utils.PlatformDefault:      NewDefaultMutator,
-	utils.PlatformUnprivileged: NewUnprivilegedMutator,
+	utils.ServerlessPlatformDefault:      NewDefaultMutator,
+	utils.ServerlessPlatformUnprivileged: NewUnprivilegedMutator,
 }
 
 func BuildMutator(args MutatorBuildArgs, platform string) (Mutator, error) {

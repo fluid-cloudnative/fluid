@@ -94,6 +94,12 @@ func TestTransformFuse(t *testing.T) {
 	}
 }
 
+// TestTransformMaster function is designed to test the transformMasters method of the AlluxioEngine struct.
+// This method processes a given AlluxioRuntime object to set properties in the Alluxio struct, specifically focusing on the HostNetwork and ImagePullSecrets fields within the Master attribute.
+// The function outlines several test cases, each containing a uniquely configured AlluxioRuntime object and the expected Alluxio object outcome.
+// These test cases cover various network modes (such as ContainerNetworkMode and HostNetworkMode) and hierarchical imagePullSecrets configurations.
+// After executing each test case, the actual result is compared with the expected outcome, and if there's a mismatch, an error is logged using t.Errorf.
+// This process ensures the accuracy of the transformMasters method under different configurations.
 func TestTransformMaster(t *testing.T) {
 	testCases := map[string]struct {
 		runtime   *datav1alpha1.AlluxioRuntime
@@ -183,9 +189,9 @@ func TestTransformMaster(t *testing.T) {
 	}
 }
 
-// TestTransformWorkers verifies that the transformWorkers function correctly transforms 
-// the worker configuration of AlluxioRuntime into the expected Alluxio structure. 
-// It tests different network modes, node selectors, and image pull secrets to ensure 
+// TestTransformWorkers verifies that the transformWorkers function correctly transforms
+// the worker configuration of AlluxioRuntime into the expected Alluxio structure.
+// It tests different network modes, node selectors, and image pull secrets to ensure
 // correct transformation behavior.
 func TestTransformWorkers(t *testing.T) {
 	testCases := map[string]struct {
@@ -354,6 +360,35 @@ func TestGenerateStaticPorts(t *testing.T) {
 		t.Errorf("Expect the value %v, but got %v", expect, gotValue)
 	}
 }
+
+// TestTransformShortCircuit tests the transformShortCircuit method of the AlluxioEngine.
+// This test validates if the AlluxioEngine correctly handles the short circuit policy and configuration
+// under different tiered storage configurations.
+//
+// Test cases include:
+// 1. When the storage tier contains an emptyDir type volume, verify if the short circuit policy and configuration are correctly set.
+// 2. When the storage tier does not contain an emptyDir type volume, verify if the short circuit policy and configuration are correctly set.
+//
+// Each test case simulates the GetTieredStoreInfo method of RuntimeInfo, providing different storage tier configurations,
+// and checks whether the AlluxioEngine correctly processes these configurations, generating the expected short circuit policy and attributes.
+//
+// Parameters:
+//   - t *testing.T: The testing framework's testing object, used to report test failures and log outputs.
+//
+// Test case structure:
+//   - Name: The name of the test case, describing the scenario being tested.
+//   - RuntimeInfo: The simulated RuntimeInfo object that provides storage tier information.
+//   - MockPatchFunc: A function that mocks the GetTieredStoreInfo method of RuntimeInfo, returning a specific storage tier configuration.
+//   - Value: The Alluxio configuration object that stores the output of the transformShortCircuit method.
+//   - want: The expected result, including the short circuit policy, configuration, and key-value pairs of properties.
+//
+// Test logic:
+// 1. Use the gomonkey library to mock the GetTieredStoreInfo method of RuntimeInfo to return the storage tier configuration defined in the test case.
+// 2. Call the transformShortCircuit method to process the RuntimeInfo and Alluxio configuration.
+// 3. Check whether the Fuse.ShortCircuitPolicy in the Alluxio configuration matches the expected value.
+// 4. Check whether the ShortCircuit structure in the Alluxio configuration matches the expected value.
+// 5. If the test case defines expected property key-value pairs, check whether the properties in the Alluxio configuration are set correctly.
+// 6. Reset the gomonkey patch to ensure no impact on other test cases.
 
 func TestTransformShortCircuit(t *testing.T) {
 	engine := &AlluxioEngine{Log: fake.NullLogger()}
@@ -547,6 +582,10 @@ func TestTransformPodMetadata(t *testing.T) {
 	}
 }
 
+// TestGetMediumTypeFromVolumeSource verifies the logic for determining storage medium type
+// from Kubernetes volume sources in AlluxioEngine. The test validates:
+// 1. Default medium type is used when no specific volume configuration exists
+// 2. Explicit medium type from EmptyDir volume configuration takes precedence over default
 func TestGetMediumTypeFromVolumeSource(t *testing.T) {
 	engine := &AlluxioEngine{Log: fake.NullLogger()}
 
@@ -588,7 +627,24 @@ func TestGetMediumTypeFromVolumeSource(t *testing.T) {
 	}
 }
 
+// TestAlluxioEngine_allocateSinglePort is a unit test function that tests
+// the `allocateSinglePort` method of the `AlluxioEngine` struct.
+// The function verifies the behavior of port allocation for Alluxio master
+// and worker components under different scenarios,
+// including when properties are set, unset, or when runtime specifications
+// are provided.
+//
+// Parameters:
+//   - t: A testing.T object provided by the Go testing framework, used to
+//
+// manage test state and support formatted test logs.
+//
+// Returns:
+//   - None. The function is a test function and does not return any value.
+//
+// It reports test failures using the `t.Errorf` method.
 func TestAlluxioEngine_allocateSinglePort(t *testing.T) {
+	// Define the fields required for the AlluxioEngine struct.
 	type fields struct {
 		runtime            *datav1alpha1.AlluxioRuntime
 		name               string
@@ -600,11 +656,13 @@ func TestAlluxioEngine_allocateSinglePort(t *testing.T) {
 		initImage          string
 		MetadataSyncDoneCh chan base.MetadataSyncResult
 	}
+	// Define the arguments required for the test cases.
 	type args struct {
 		allocatedPorts []int
 		alluxioValue   *Alluxio
 	}
 
+	// Define a slice of test cases, each with a name, fields, arguments, and expected results.
 	tests := []struct {
 		name      string
 		fields    fields
@@ -671,8 +729,10 @@ func TestAlluxioEngine_allocateSinglePort(t *testing.T) {
 			wantPorts: []int{20005},
 		},
 	}
+	// Iterate over each test case and run the test.
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Initialize the AlluxioEngine with the fields from the test case.
 			e := &AlluxioEngine{
 				runtime:            tt.fields.runtime,
 				name:               tt.fields.name,
@@ -685,6 +745,7 @@ func TestAlluxioEngine_allocateSinglePort(t *testing.T) {
 				MetadataSyncDoneCh: tt.fields.MetadataSyncDoneCh,
 			}
 
+			// Initialize index and preIndex to track the position in the allocated ports slice.
 			index := 0
 			preIndex := 0
 
@@ -882,10 +943,10 @@ func TestAlluxioEngine_allocatePorts(t *testing.T) {
 //
 // Test Cases:
 // 1. "master properties is not null":
-//    - Ensures that when master-specific properties exist, they override the global properties.
+//   - Ensures that when master-specific properties exist, they override the global properties.
 //
 // 2. "properties is not null for master":
-//    - Ensures that both master-specific and additional global properties are correctly handled.
+//   - Ensures that both master-specific and additional global properties are correctly handled.
 //
 // The function iterates over multiple test cases and checks if the transformed properties
 // match the expected values. If the transformation does not produce the expected result, the test fails.
@@ -1131,6 +1192,23 @@ func TestTransformFuseProperties(t *testing.T) {
 	}
 }
 
+// TestGenerateNonNativeMountsInfo validates the generation of non-local storage mount configurations for Alluxio engine.
+//
+// Functionality:
+// - Tests the logic that converts Dataset storage definitions into Alluxio mount commands
+// - Filters out local storage types (e.g. pvc://)
+// - Handles security credential injection from Kubernetes Secrets
+// - Verifies command argument formatting for different storage protocols
+//
+// Parameters:
+//   - t *（testing.T） : Go test framework handler
+//
+// Returns:
+//   - No direct return value
+//   - Fails test through t.Fatalf if:
+//     1. Unexpected error occurs during generation (err != nil)
+//     2. Generated commands mismatch wantValue expectations
+//     3. Protocol handling violates defined rules
 func TestGenerateNonNativeMountsInfo(t *testing.T) {
 	const (
 		SecretName = "ds-secret"

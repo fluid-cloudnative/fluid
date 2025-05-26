@@ -19,6 +19,7 @@ package juicefs
 import (
 	"context"
 	"fmt"
+	"k8s.io/client-go/util/retry"
 	"regexp"
 	"strconv"
 	"strings"
@@ -208,6 +209,43 @@ func (j *JuiceFSEngine) GetValuesConfigMap() (cm *corev1.ConfigMap, err error) {
 	}
 
 	return
+}
+
+func (j *JuiceFSEngine) GetValueFromConfigmap() (*JuiceFS, error) {
+	helmValueConfigMap, err := j.GetValuesConfigMap()
+	if err != nil {
+		return nil, err
+	}
+	if helmValueConfigMap == nil {
+		return nil, fmt.Errorf("helm value %s not found", j.getHelmValuesConfigMapName())
+	}
+	helmValue, exist := helmValueConfigMap.Data["data"]
+	if !exist {
+		return nil, fmt.Errorf("data in helm value %s do not exist", j.getHelmValuesConfigMapName())
+	}
+	var currentValue JuiceFS
+	if err := yaml.Unmarshal([]byte(helmValue), &currentValue); err != nil {
+		return nil, err
+	}
+	return &currentValue, nil
+}
+
+func (j *JuiceFSEngine) SaveValueToConfigmap(value *JuiceFS) error {
+	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		helmValueConfigMap, err := j.GetValuesConfigMap()
+		if err != nil {
+			return err
+		}
+		if helmValueConfigMap == nil {
+			return fmt.Errorf("helm value %s not found", j.getHelmValuesConfigMapName())
+		}
+		data, err := yaml.Marshal(value)
+		if err != nil {
+			return err
+		}
+		helmValueConfigMap.Data["data"] = string(data)
+		return kubeclient.UpdateConfigMap(j.Client, helmValueConfigMap)
+	})
 }
 
 func (j *JuiceFSEngine) GetEdition() (edition string) {
@@ -415,31 +453,33 @@ func (j JuiceFSEngine) updateWorkerScript(command string) error {
 }
 
 func (j JuiceFSEngine) updateFuseScript(command string) error {
-	cm, err := kubeclient.GetConfigmapByName(j.Client, j.getFuseScriptName(), j.namespace)
-	if err != nil {
-		return err
-	}
-	if cm == nil {
-		j.Log.Info("value configMap not found")
-		return nil
-	}
-	data := cm.Data
-	script := data["script.sh"]
-
-	newScript := script
-	newScripts := strings.Split(newScript, "\n")
-	// mount command is the last one, replace it
-	for i := len(newScripts) - 1; i >= 0; i-- {
-		if newScripts[i] != "" {
-			newScripts[i] = command
-			break
+	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		cm, err := kubeclient.GetConfigmapByName(j.Client, j.getFuseScriptName(), j.namespace)
+		if err != nil {
+			return err
 		}
-	}
+		if cm == nil {
+			j.Log.Info("value configMap not found")
+			return nil
+		}
+		data := cm.Data
+		script := data["script.sh"]
 
-	newValues := make(map[string]string)
-	newValues["script.sh"] = strings.Join(newScripts, "\n")
-	cm.Data = newValues
-	return j.Client.Update(context.Background(), cm)
+		newScript := script
+		newScripts := strings.Split(newScript, "\n")
+		// mount command is the last one, replace it
+		for i := len(newScripts) - 1; i >= 0; i-- {
+			if newScripts[i] != "" {
+				newScripts[i] = command
+				break
+			}
+		}
+
+		newValues := make(map[string]string)
+		newValues["script.sh"] = strings.Join(newScripts, "\n")
+		cm.Data = newValues
+		return j.Client.Update(context.Background(), cm)
+	})
 }
 
 func (j *JuiceFSEngine) getWorkerScriptName() string {

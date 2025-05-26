@@ -43,6 +43,10 @@ spec:
           - --development=false
           - --runtime-node-port-range={{ .Values.runtime.alluxio.portRange }}
           - --runtime-workers={{ .Values.runtime.alluxio.runtimeWorkers }}
+          - --kube-api-qps={{ .Values.runtime.alluxio.kubeClientQPS }}
+          - --kube-api-burst={{ .Values.runtime.alluxio.kubeClientBurst }}
+          - --workqueue-qps={{ .Values.runtime.alluxio.workQueueQPS }}
+          - --workqueue-burst={{ .Values.runtime.alluxio.workQueueBurst }}
           - --pprof-addr=:6060
           - --enable-leader-election
           - --leader-election-namespace={{ include "fluid.namespace" . }}
@@ -90,6 +94,9 @@ spec:
             value: {{ template "fluid.helmDriver" .}}
           - name: ALLUXIO_MOUNT_CONFIG_STORAGE
             value: {{ .Values.runtime.alluxio.mountConfigStorage }}
+          {{- if .Values.runtime.alluxio.env }}
+          {{ toYaml .Values.runtime.alluxio.env | nindent 10 }}
+          {{- end }}
         ports:
         - containerPort: 8080
           name: metrics

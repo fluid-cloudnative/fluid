@@ -62,6 +62,13 @@ func TestIsFluidNativeScheme(t *testing.T) {
 	}
 }
 
+// TestAlluxioEngine_getInitUsersArgs tests the user initialization parameters generation functionality of utils.GetInitUsersArgs
+//
+// Parameters:
+// - t (*testing.T): Testing context object from Go test framework
+//
+// Returns:
+// - No return value, reports test failures through t.Errorf
 func TestAlluxioEngine_getInitUserDir(t *testing.T) {
 	type fields struct {
 		runtime       *datav1alpha1.AlluxioRuntime
@@ -163,6 +170,10 @@ func TestMountRootWithEnvSet(t *testing.T) {
 	}
 }
 
+// TestMountRootWithoutEnvSet tests the getMountRoot function when the MountRoot environment variable is not set.
+// It verifies that getMountRoot returns the default mount root path "/alluxio" when no environment variable is configured.
+// The test unsets the MountRoot environment variable and compares the actual result with the expected default value.
+
 func TestMountRootWithoutEnvSet(t *testing.T) {
 	var testCases = []struct {
 		input    string
@@ -172,13 +183,21 @@ func TestMountRootWithoutEnvSet(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		os.Unsetenv(utils.MountRoot)
+		_ = os.Unsetenv(utils.MountRoot)
 		if tc.expected != getMountRoot() {
 			t.Errorf("expected %#v, got %#v",
 				tc.expected, getMountRoot())
 		}
 	}
 }
+
+// Test_isPortInUsed tests the functionality of the isPortInUsed function.
+// This function checks whether a specified port is in the list of used ports.
+// Test cases include:
+//   - Checking if a port is in the list of used ports.
+//
+// Each test case calls the isPortInUsed function and verifies if the returned value matches the expected result.
+// If the returned value does not match the expected result, the test fails and outputs an error message.
 func Test_isPortInUsed(t *testing.T) {
 	type args struct {
 		port      int
@@ -206,6 +225,17 @@ func Test_isPortInUsed(t *testing.T) {
 	}
 }
 
+// Test_lookUpUsedCapacity verifies the functionality of lookUpUsedCapacity in retrieving used capacity values based on node identifiers.
+// This test validates two key scenarios:
+// 1. Capacity lookup using the node's internal IP address (NodeInternalIP type).
+// 2. Capacity lookup using the node's internal DNS hostname (NodeInternalDNS type).
+// For each case, it checks if the returned value matches the expected capacity from the provided map.
+//
+// Parameters:
+//   - t (testing.T): The test object to run the test case.
+//
+// Returns:
+//   - None.
 func Test_lookUpUsedCapacity(t *testing.T) {
 	type args struct {
 		node            corev1.Node
@@ -350,6 +380,35 @@ func TestGetDataSetFileNum(t *testing.T) {
 	}
 }
 
+// TestGetRuntime tests the AlluxioEngine.getRuntime() method to verify it correctly retrieves
+// the AlluxioRuntime custom resource from the Kubernetes cluster.
+//
+// Test Structure:
+// - Defines a test table with multiple test cases (though currently only one example exists).
+// - Each test case specifies:
+//   - Input fields: Simulated AlluxioEngine instance configuration.
+//   - Expected output: The AlluxioRuntime object that should be returned.
+//   - Error expectation: Whether an error is expected during retrieval.
+//
+// Key Testing Components:
+//   - Uses Kubernetes client-go testing utilities (fake client, scheme registration) to mock
+//     API server interactions, avoiding real cluster dependencies.
+//   - Validates both successful retrieval and error conditions.
+//   - Checks deep equality between retrieved and expected objects to ensure metadata accuracy.
+//
+// Test Workflow for Each Case:
+// 1. Register required Kubernetes resource types (AlluxioRuntime, core v1) into the scheme.
+// 2. Initialize a fake client preloaded with the expected AlluxioRuntime object.
+// 3. Instantiate the AlluxioEngine with test-specific configurations and the fake client.
+// 4. Execute getRuntime() and validate:
+//   - Error behavior matches expectations
+//   - Retrieved object matches the expected object structure exactly
+//
+// Edge Cases Covered (via additional test cases in TODO):
+// - Non-existent runtime
+// - Invalid namespace/name configurations
+// - API version/kind mismatches
+// - Cluster connection failures (simulated via client misconfiguration)
 func TestGetRuntime(t *testing.T) {
 	type fields struct {
 		runtime   *datav1alpha1.AlluxioRuntime
@@ -412,6 +471,22 @@ func TestGetRuntime(t *testing.T) {
 	}
 }
 
+// TestGetMasterPod verifies the correct retrieval of the master Pod for an Alluxio runtime.
+// This test validates whether the AlluxioEngine's getMasterPod method accurately fetches
+// the expected Pod resource from Kubernetes based on the provided runtime configuration.
+//
+// Test Cases:
+// - Standard scenario: Checks if the master Pod is correctly retrieved when valid runtime metadata is provided.
+//
+// Parameters:
+// - t *testing.T: Testing framework handle for assertion and logging
+//
+// Test Logic:
+// 1. Defines test structures with mock AlluxioRuntime configurations and expected Pod results
+// 2. Initializes a fake Kubernetes client with test-specific schemas and objects
+// 3. Executes getMasterPod with different test configurations
+// 4. Compares actual results against expected outcomes using deep equality checks
+// 5. Reports discrepancies between actual and expected results through testing.T
 func TestGetMasterPod(t *testing.T) {
 	type fields struct {
 		runtime   *datav1alpha1.AlluxioRuntime
@@ -474,6 +549,17 @@ func TestGetMasterPod(t *testing.T) {
 	}
 }
 
+// TestGetMasterStatefulset tests the getMasterStatefulset method of the AlluxioEngine struct.
+// It verifies that the method correctly retrieves the expected StatefulSet based on the provided
+// AlluxioRuntime, name, and namespace. The test includes a sample runtime and expected
+// StatefulSet, checking for both successful retrieval and error scenarios.
+//
+// Parameters:
+//   - t: The test framework's context, which provides methods for logging and error reporting.
+//
+// Returns:
+//   - The test does not return any value, but it reports errors using the t.Error and
+//     t.Errorf methods to indicate whether the test passed or failed.
 func TestGetMasterStatefulset(t *testing.T) {
 	type fields struct {
 		runtime   *datav1alpha1.AlluxioRuntime
@@ -600,6 +686,10 @@ func TestGetDaemonset(t *testing.T) {
 	}
 }
 
+// TestGetMasterPodInfo tests the getMasterPodInfo function of the AlluxioEngine struct.
+// It defines a set of test cases with expected pod and container names based on the engine's name.
+// The function iterates through the test cases, initializes an AlluxioEngine instance,
+// and verifies whether the returned pod name and container name match the expected values.
 func TestGetMasterPodInfo(t *testing.T) {
 	type fields struct {
 		name string
@@ -635,6 +725,14 @@ func TestGetMasterPodInfo(t *testing.T) {
 	}
 }
 
+// TestGetMasterStatefulsetName verifies the functionality of getMasterName method in the AlluxioEngine struct.
+// This test ensures that the correct StatefulSet name is generated based on the name of the Alluxio engine.
+//
+// Parameters:
+//   - t (testing.T): The test object used to run the test case.
+//
+// Returns:
+//   - None.
 func TestGetMasterStatefulsetName(t *testing.T) {
 	type fields struct {
 		name string
@@ -693,6 +791,16 @@ func TestGetWorkerDaemonsetName(t *testing.T) {
 	}
 }
 
+// TestGetFuseDaemonsetName is a unit test for the getFuseName method of the AlluxioEngine struct.
+// This test verifies that the method correctly constructs the expected daemonset name
+// based on the given engine name.
+// The test defines a struct `fields` containing the engine name and a test case struct
+// that includes the test case name, input fields, and the expected daemonset name.
+// The test case used:
+// - When the engine name is "spark", the expected daemonset name should be "spark-fuse".
+// The test iterates through all defined cases, creates an instance of AlluxioEngine with
+// the given name, calls the `getFuseName` method, and checks if the returned result matches
+// the expected value. If the result differs, an error message is reported.
 func TestGetFuseDaemonsetName(t *testing.T) {
 	type fields struct {
 		name string
@@ -722,6 +830,17 @@ func TestGetFuseDaemonsetName(t *testing.T) {
 	}
 }
 
+// TestGetMountPoint tests the AlluxioEngine.getMountPoint method to ensure it correctly constructs
+// the mount point path. The test verifies the path concatenation logic using configured MountRoot,
+// namespace, and engine name parameters to validate the resulting filesystem path.
+//
+// Parameters:
+//   - t : *testing.T
+//     Testing framework handle for managing test state and reporting failures
+//
+// Returns:
+//   - None
+//     Failures are reported through t.Errorf
 func TestGetMountPoint(t *testing.T) {
 	type fields struct {
 		name      string

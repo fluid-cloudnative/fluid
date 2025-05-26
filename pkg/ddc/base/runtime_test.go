@@ -879,23 +879,53 @@ func TestGetRuntimeInfo(t *testing.T) {
 		},
 	}
 
-	juicefsRuntime := v1alpha1.JuiceFSRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "juice",
-			Namespace: "default",
+	juicefsRuntimes := []v1alpha1.JuiceFSRuntime{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "juice",
+				Namespace: "default",
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "juice-update-strategy-on-idle",
+				Namespace: "default",
+			},
+			Spec: v1alpha1.JuiceFSRuntimeSpec{
+				Fuse: v1alpha1.JuiceFSFuseSpec{
+					CleanPolicy: v1alpha1.OnFuseChangedCleanPolicy,
+				},
+			},
 		},
 	}
-	dataJuice := v1alpha1.Dataset{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "juice",
-			Namespace: "default",
+	dataJuices := []v1alpha1.Dataset{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "juice",
+				Namespace: "default",
+			},
+			Status: v1alpha1.DatasetStatus{
+				Runtimes: []v1alpha1.Runtime{
+					{
+						Name:      "juice",
+						Namespace: "default",
+						Type:      common.JuiceFSRuntime,
+					},
+				},
+			},
 		},
-		Status: v1alpha1.DatasetStatus{
-			Runtimes: []v1alpha1.Runtime{
-				{
-					Name:      "juice",
-					Namespace: "default",
-					Type:      common.JuiceFSRuntime,
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "juice-update-strategy-on-idle",
+				Namespace: "default",
+			},
+			Status: v1alpha1.DatasetStatus{
+				Runtimes: []v1alpha1.Runtime{
+					{
+						Name:      "juice-update-strategy-on-idle",
+						Namespace: "default",
+						Type:      common.JuiceFSRuntime,
+					},
 				},
 			},
 		},
@@ -938,7 +968,12 @@ func TestGetRuntimeInfo(t *testing.T) {
 	alluxioRuntimeObjs = append(alluxioRuntimeObjs, &alluxioRuntime, &dataAlluxio)
 	goosefsRuntimeObjs = append(goosefsRuntimeObjs, &goosefsRuntime, &dataGooseFS)
 	jindoRuntimeObjs = append(jindoRuntimeObjs, &jindoRuntime, &dataJindo)
-	juicefsRuntimeObjs = append(juicefsRuntimeObjs, &juicefsRuntime, &dataJuice)
+	for _, jfsRuntime := range juicefsRuntimes {
+		juicefsRuntimeObjs = append(juicefsRuntimeObjs, &jfsRuntime)
+	}
+	for _, jfsDataset := range dataJuices {
+		juicefsRuntimeObjs = append(juicefsRuntimeObjs, &jfsDataset)
+	}
 	efcRuntimeObjs = append(efcRuntimeObjs, &efcRuntime, &dataEFC)
 	type args struct {
 		client    client.Client
@@ -1033,6 +1068,23 @@ func TestGetRuntimeInfo(t *testing.T) {
 				runtimeType: common.JuiceFSRuntime,
 				fuse: Fuse{
 					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "juicefs_test_with_cleanStrategy_OnFuseChangedCleanPolicy",
+			args: args{
+				client:    fakeutils.NewFakeClientWithScheme(s, juicefsRuntimeObjs...),
+				name:      "juice-update-strategy-on-idle",
+				namespace: "default",
+			},
+			want: &RuntimeInfo{
+				name:        "juice-update-strategy-on-idle",
+				namespace:   "default",
+				runtimeType: common.JuiceFSRuntime,
+				fuse: Fuse{
+					CleanPolicy: v1alpha1.OnFuseChangedCleanPolicy,
 				},
 			},
 			wantErr: false,

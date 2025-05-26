@@ -248,6 +248,10 @@ func TestTransformWorkerVolumes(t *testing.T) {
 	}
 }
 
+// TestTransformFuseVolumes tests the behavior of the transformFuseVolumes method.
+// It defines multiple test cases to verify whether the Volumes and VolumeMounts
+// in an AlluxioRuntime object are correctly transformed into the Alluxio structure,
+// and checks the error handling logic.
 func TestTransformFuseVolumes(t *testing.T) {
 	type testCase struct {
 		name      string

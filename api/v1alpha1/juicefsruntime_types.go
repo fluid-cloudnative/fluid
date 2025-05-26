@@ -157,10 +157,11 @@ type JuiceFSFuseSpec struct {
 	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
 
 	// CleanPolicy decides when to clean Juicefs Fuse pods.
-	// Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
-	// OnDemand cleans fuse pod once th fuse pod on some node is not needed
+	// Currently Fluid supports three policies: OnDemand, OnRuntimeDeleted and OnFuseChangedCleanPolicy
+	// OnDemand cleans fuse pod once the fuse pod on some node is not needed
 	// OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted
-	// Defaults to OnDemand
+	// OnFuseChangedCleanPolicy cleans fuse pod once the fuse pod on some node is not needed and the fuse in runtime is updated
+	// Defaults to OnRuntimeDeleted
 	// +optional
 	CleanPolicy FuseCleanPolicy `json:"cleanPolicy,omitempty"`
 

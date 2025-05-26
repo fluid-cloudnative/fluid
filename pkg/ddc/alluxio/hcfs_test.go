@@ -66,7 +66,7 @@ func TestGetHCFSStatus(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "hbase-master-0",
 			Namespace:   "fluid",
-			Annotations: common.ExpectedFluidAnnotations,
+			Annotations: common.GetExpectedFluidAnnotations(),
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
@@ -81,7 +81,7 @@ func TestGetHCFSStatus(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "not-register-master-0",
 			Namespace:   "fluid",
-			Annotations: common.ExpectedFluidAnnotations,
+			Annotations: common.GetExpectedFluidAnnotations(),
 		},
 	}
 	runtimeObjs := []runtime.Object{}
@@ -129,12 +129,24 @@ func TestGetHCFSStatus(t *testing.T) {
 
 }
 
+// TestQueryHCFSEndpoint verifies the behavior of AlluxioEngine's HCFS endpoint query functionality.
+// This test validates three main scenarios:
+// 1. Service Not Found: When the specified Service resource doesn't exist in the cluster
+// 2. Unregistered Service: When the Service exists but lacks proper registration (invalid scheme configuration)
+// 3. Normal Case: When a properly configured Service exists with expected annotations and port configuration
+// Setup:
+// - Creates mock Service resources with different configurations:
+// * Valid service "hbase-master-0" with port 2333 and fluid annotations
+// * Invalid service "not-register-master-0" without proper registration
+// - Uses two fake Kubernetes clients:
+// * Normal client with complete scheme configuration
+// * Error-injected client with incomplete scheme to simulate registration issues
 func TestQueryHCFSEndpoint(t *testing.T) {
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "hbase-master-0",
 			Namespace:   "fluid",
-			Annotations: common.ExpectedFluidAnnotations,
+			Annotations: common.GetExpectedFluidAnnotations(),
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
@@ -149,7 +161,7 @@ func TestQueryHCFSEndpoint(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "not-register-master-0",
 			Namespace:   "fluid",
-			Annotations: common.ExpectedFluidAnnotations,
+			Annotations: common.GetExpectedFluidAnnotations(),
 		},
 	}
 	runtimeObjs := []runtime.Object{}

@@ -69,7 +69,7 @@ func (e *ReferenceDatasetEngine) DeleteVolume() (err error) {
 
 func createFusePersistentVolume(client client.Client, virtualRuntime base.RuntimeInfoInterface, physicalRuntime base.RuntimeInfoInterface, log logr.Logger) (accessModes []corev1.PersistentVolumeAccessMode, err error) {
 	virtualPvName := virtualRuntime.GetPersistentVolumeName()
-	found, err := kubeclient.IsPersistentVolumeExist(client, virtualPvName, common.ExpectedFluidAnnotations)
+	found, err := kubeclient.IsPersistentVolumeExist(client, virtualPvName, common.GetExpectedFluidAnnotations())
 	if err != nil {
 		return accessModes, err
 	}
@@ -153,7 +153,7 @@ func createFusePersistentVolumeClaim(client client.Client, virtualRuntime base.R
 	virtualName := virtualRuntime.GetName()
 	virtualNamespace := virtualRuntime.GetNamespace()
 
-	found, err := kubeclient.IsPersistentVolumeClaimExist(client, virtualName, virtualNamespace, common.ExpectedFluidAnnotations)
+	found, err := kubeclient.IsPersistentVolumeClaimExist(client, virtualName, virtualNamespace, common.GetExpectedFluidAnnotations())
 	if err != nil {
 		return err
 	}
@@ -177,7 +177,7 @@ func createFusePersistentVolumeClaim(client client.Client, virtualRuntime base.R
 					common.LabelAnnotationDatasetReferringNameSpace: runtimePVC.Namespace,
 					common.LabelAnnotationDatasetId:                 utils.GetDatasetId(virtualNamespace, virtualName, virtualRuntime.GetOwnerDatasetUID()),
 				},
-				Annotations: common.ExpectedFluidAnnotations,
+				Annotations: common.GetExpectedFluidAnnotations(),
 			},
 			Spec: corev1.PersistentVolumeClaimSpec{
 				Selector: &metav1.LabelSelector{

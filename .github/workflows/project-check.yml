@@ -7,7 +7,7 @@ on:
     branches: [ master, release-* ]
 
 env:
-  GO_VERSION: 1.22.10
+  GO_VERSION: 1.23.7
 
 # Declare default permissions as read only.
 permissions: read-all
@@ -43,6 +43,7 @@ jobs:
         with:
           version: latest
           args: --timeout 10m --verbose
+
       - name: Lint preparation
         run: |
           arch=$(go env GOARCH)
@@ -62,6 +63,9 @@ jobs:
           echo $(git status --porcelain | grep generated)
           if [ -z "$(git status --porcelain | grep generated)" ]; then echo "openapi validation passed."; else echo "openapi validation failed. Please use 'make gen-openapi' to update openapi"; exit 1; fi
 
+      - name: Code fmt check
+        run: |
+          gofmt -l ./pkg ./cmd ./api | grep . && echo "Please run "make fmt" to verify gofmt" && exit 1 || exit 0
 
       - name: Project lint
         run: |

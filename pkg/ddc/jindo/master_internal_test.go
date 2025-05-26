@@ -160,6 +160,15 @@ func TestSetupMasterInternal(t *testing.T) {
 	wrappedUnhookInstallRelease()
 }
 
+// TestGenerateJindoValueFile tests the functionality of generating Jindo value files for Fluid's JindoRuntime.
+// This test creates a mock environment with a JindoRuntime instance and associated Dataset,
+// then verifies that the engine can properly generate configuration values without errors.
+// The test covers:
+// - Setting up a JindoRuntime with specific tiered storage configuration
+// - Creating a fake client with test objects
+// - Building runtime information
+// - Configuring port allocation
+// - Validating the value file generation process
 func TestGenerateJindoValueFile(t *testing.T) {
 	jindoruntime := &datav1alpha1.JindoRuntime{
 		ObjectMeta: metav1.ObjectMeta{
