@@ -293,6 +293,16 @@ Worker Name      Last Heartbeat   Storage       MEM
 	return r, "", nil
 }
 
+// TestGetDataSetFileNum tests the getDataSetFileNum method of AlluxioEngine.
+// It verifies the behavior by mocking container command execution and comparing
+// actual outputs against expected values. Test cases include both success and
+// error scenarios.
+//
+// Parameters:
+//   - t *testing.T: Testing framework handle for assertions and logging.
+//
+// Returns:
+//   - None (test failures are reported via t.Errorf or t.Fatal).
 func TestGetDataSetFileNum(t *testing.T) {
 	type fields struct {
 		runtime   *datav1alpha1.AlluxioRuntime
