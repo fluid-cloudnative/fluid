@@ -36,7 +36,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
-
 // TestCheckRuntimeHealthy is a unit test that verifies the health check logic
 // for the Jindo runtime environment. It creates a mock runtime and simulates
 // different health scenarios, asserting that the status returned by the 
