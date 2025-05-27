@@ -167,7 +167,6 @@ func mockAlluxioRuntimeForMaster(res corev1.ResourceRequirements) *datav1alpha1.
 
 }
 
-
 func TestTransformResourcesForWorkerNoValue(t *testing.T) {
 	var tests = []struct {
 		runtime      *datav1alpha1.AlluxioRuntime
