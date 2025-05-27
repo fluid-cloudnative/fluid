@@ -35,31 +35,32 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// newAlluxioEngineHCFS 创建并返回一个新的 AlluxioEngine 实例。
-// 它使用提供的客户端、名称和命名空间初始化该引擎，并构建 Alluxio 运行时信息。
-// 参数:
-//   - client: 用于与 Kubernetes API 交互的客户端。
-//   - name: Alluxio 引擎的名称。
-//   - namespace: Alluxio 引擎的命名空间。
-// 返回:
-//   - 返回一个配置好的 AlluxioEngine 实例。
+// newAlluxioEngineHCFS creates and returns a new AlluxioEngine instance.
+// It initializes the engine using the provided client, name, and namespace, 
+// and builds the Alluxio runtime information.
+// Parameters:
+//   - client: The client used to interact with the Kubernetes API.
+//   - name: The name of the Alluxio engine.
+//   - namespace: The namespace of the Alluxio engine.
+// Returns:
+//   - Returns a configured AlluxioEngine instance.
 func newAlluxioEngineHCFS(client client.Client, name string, namespace string) *AlluxioEngine {
-	// 创建一个新的 AlluxioRuntime 实例
+	// Create a new AlluxioRuntime instance
 	runTime := &v1alpha1.AlluxioRuntime{}
-	// 使用 name 和 namespace 构建 Alluxio 运行时信息
+	// Build the Alluxio runtime information using the name and namespace
 	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, "alluxio")
 
-	// 创建并返回一个新的 AlluxioEngine 实例
+	// Create and return a new AlluxioEngine instance
 	engine := &AlluxioEngine{
-		runtime:     runTime,              // 初始化运行时对象
-		name:        name,                 // 设置引擎的名称
-		namespace:   namespace,            // 设置引擎的命名空间
-		Client:      client,               // 设置与 Kubernetes API 的客户端
-		runtimeInfo: runTimeInfo,          // 设置运行时信息
-		Log:         fake.NullLogger(),    // 设置日志记录器（假日志记录器）
+		runtime:     runTime,              // Initialize the runtime object
+		name:        name,                 // Set the engine name
+		namespace:   namespace,            // Set the engine namespace
+		Client:      client,               // Set the Kubernetes API client
+		runtimeInfo: runTimeInfo,          // Set the runtime information
+		Log:         fake.NullLogger(),    // Set the logger (fake logger)
 	}
 
-	return engine // 返回配置好的 AlluxioEngine 实例
+	return engine // Return the configured AlluxioEngine instance
 }
 
 func TestGetHCFSStatus(t *testing.T) {
