@@ -184,6 +184,10 @@ func TestJuiceFSEngine_generateDataMigrateValueFile(t *testing.T) {
 	}
 }
 
+// TestJuiceFSEngine_genDataUrl_PVc is a unit test for the genDataUrl method of the JuiceFSEngine struct.
+
+// Test objective: Ensure that the genDataUrl method correctly parses pvc (PersistentVolumeClaim) type ExternalStageURI, and generates the correct data migration path and configuration information.
+
 func TestJuiceFSEngine_genDataUrl_PVC(t *testing.T) {
 	type args struct {
 		data          v1alpha1.DataToMigrate
