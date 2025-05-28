@@ -95,6 +95,11 @@ func mockAlluxioEngineWithClient(name, ns string, port int32) *AlluxioEngine {
 	return e
 }
 
+// TestQueryAPIGatewayEndpoint tests whether the Alluxio engine's queryAPIGatewayEndpoint method
+// correctly returns the API gateway access endpoint.
+// It uses two different test cases with varying engineName, engineNamespace, and port values,
+// and verifies that the generated endpoint string matches the expected format "%s-master-0.%s:%d".
+// The test cases cover both the default namespace and the system namespace scenarios.
 func TestQueryAPIGatewayEndpoint(t *testing.T) {
 	endpointFormat := "%s-master-0.%s:%d"
 	testCases := map[string]struct {
