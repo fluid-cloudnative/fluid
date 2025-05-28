@@ -50,6 +50,9 @@ func mockExecCommandInContainerForTotalFileNums() (stdout string, stderr string,
 	return r, "", nil
 }
 
+// TestUsedStorageBytes tests the UsedStorageBytes method of the AlluxioEngine.
+// It verifies that the method returns the expected used storage value and error status.
+// Currently, it checks a basic case where the expected used storage is 0 and no error is expected.
 func TestUsedStorageBytes(t *testing.T) {
 	type fields struct {
 	}
