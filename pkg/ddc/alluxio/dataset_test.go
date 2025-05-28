@@ -118,7 +118,6 @@ func TestUpdateCacheOfDataset(t *testing.T) {
 //
 // This test ensures that UpdateDatasetStatus correctly updates the Dataset's status and handles different DatasetPhase transitions properly.
 func TestUpdateDatasetStatus(t *testing.T) {
-	// Create test dataset inputs
 	testDatasetInputs := []*datav1alpha1.Dataset{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -134,14 +133,11 @@ func TestUpdateDatasetStatus(t *testing.T) {
 			},
 		},
 	}
-
-	// Convert dataset inputs into runtime objects for the fake client
 	testObjs := []runtime.Object{}
 	for _, datasetInput := range testDatasetInputs {
 		testObjs = append(testObjs, datasetInput.DeepCopy())
 	}
 
-	// Create test runtime inputs
 	testRuntimeInputs := []*datav1alpha1.AlluxioRuntime{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -160,16 +156,11 @@ func TestUpdateDatasetStatus(t *testing.T) {
 			},
 		},
 	}
-
-	// Convert runtime inputs into runtime objects for the fake client
 	for _, runtimeInput := range testRuntimeInputs {
 		testObjs = append(testObjs, runtimeInput.DeepCopy())
 	}
-
-	// Create a fake client with test objects
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
-	// Initialize AlluxioEngine instance
 	engine := &AlluxioEngine{
 		Client:    client,
 		Log:       fake.NullLogger(),
@@ -178,7 +169,6 @@ func TestUpdateDatasetStatus(t *testing.T) {
 		runtime:   testRuntimeInputs[0],
 	}
 
-	// Define test cases with different dataset phases and expected results
 	var testCase = []struct {
 		phase          datav1alpha1.DatasetPhase
 		expectedResult datav1alpha1.Dataset
@@ -251,33 +241,27 @@ func TestUpdateDatasetStatus(t *testing.T) {
 		},
 	}
 
-	// Execute test cases
 	for _, test := range testCase {
-		// Update dataset status using the engine method
 		err := engine.UpdateDatasetStatus(test.phase)
 		if err != nil {
-			t.Errorf("failed to execute UpdateDatasetStatus with error: %v", err)
+			t.Errorf("fail to exec UpdateCacheOfDataset with error %v", err)
 			return
 		}
 
-		// Retrieve the updated dataset list
 		var datasets datav1alpha1.DatasetList
 		err = client.List(context.TODO(), &datasets)
 		if err != nil {
-			t.Errorf("failed to list datasets with error: %v", err)
+			t.Errorf("fail to list the datasets with error %v", err)
 			return
 		}
-
-		// Validate the dataset status matches the expected result
 		if !reflect.DeepEqual(datasets.Items[0].Status.Phase, test.expectedResult.Status.Phase) ||
 			!reflect.DeepEqual(datasets.Items[0].Status.CacheStates, test.expectedResult.Status.CacheStates) ||
 			!reflect.DeepEqual(datasets.Items[0].Status.HCFSStatus, test.expectedResult.Status.HCFSStatus) {
-			t.Errorf("unexpected dataset status, expected: %+v, got: %+v", test.expectedResult.Status, datasets.Items[0].Status)
+			t.Errorf("fail to exec the function with error %v", err)
 			return
 		}
 	}
 }
-
 
 func TestBindToDataset(t *testing.T) {
 	testDatasetInputs := []*datav1alpha1.Dataset{
