@@ -920,6 +920,7 @@ func TestGetInitTierPathsEnv(t *testing.T) {
 		})
 	}
 }
+
 // TestGetMountRoot tests the function that retrieves the mount root directory.
 // It checks if the function correctly returns the expected mount root path based on the environment variable MOUNT_ROOT.
 // The test sets the MOUNT_ROOT environment variable to a specific path and verifies that the function returns the correct mount root path.
