@@ -1,4 +1,4 @@
-/*
+This is an symbol text./*
 Copyright 2021 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,7 +27,15 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+
+// TestUpdateCacheOfDataset tests the UpdateCacheOfDataset function of JuiceFSEngine.
+// It verifies if the Dataset's cache states are correctly updated based on the associated JuiceFSRuntime's status.
+// The test sets up a mock Dataset and JuiceFSRuntime, then triggers the cache update and checks if the Dataset's
+// CacheStates field matches the expected status from the Runtime. It validates the synchronization between
+// Runtime status and Dataset cache states in the Kubernetes cluster.
+
 func TestUpdateCacheOfDataset(t *testing.T) {
+// 1. Define mock Dataset objects for testing
 	testDatasetInputs := []*datav1alpha1.Dataset{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -37,11 +45,14 @@ func TestUpdateCacheOfDataset(t *testing.T) {
 			Spec: datav1alpha1.DatasetSpec{},
 		},
 	}
+
+// 2. Convert Dataset objects to Kubernetes runtime objects and add to test environment
 	testObjs := []runtime.Object{}
 	for _, datasetInput := range testDatasetInputs {
 		testObjs = append(testObjs, datasetInput.DeepCopy())
 	}
-
+	
+// 3. Define mock JuiceFSRuntime objects with cache status configuration
 	testRuntimeInputs := []*datav1alpha1.JuiceFSRuntime{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -58,11 +69,16 @@ func TestUpdateCacheOfDataset(t *testing.T) {
 			},
 		},
 	}
+	
+// 4. Add Runtime objects to test environment
 	for _, runtimeInput := range testRuntimeInputs {
 		testObjs = append(testObjs, runtimeInput.DeepCopy())
 	}
+	
+// 5. Initialize fake Kubernetes client with test objects and scheme
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
+// 6. Create JuiceFSEngine instance with mock dependencies
 	engine := &JuiceFSEngine{
 		Client:    client,
 		Log:       fake.NullLogger(),
@@ -70,13 +86,15 @@ func TestUpdateCacheOfDataset(t *testing.T) {
 		namespace: "fluid",
 		runtime:   testRuntimeInputs[0],
 	}
-
+	
+// 7. Execute the core function being tested: UpdateCacheOfDataset
 	err := engine.UpdateCacheOfDataset()
 	if err != nil {
 		t.Errorf("fail to exec UpdateCacheOfDataset with error %v", err)
 		return
 	}
 
+// 8. Define expected Dataset status for validation
 	expectedDataset := datav1alpha1.Dataset{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "hbase",
@@ -88,13 +106,16 @@ func TestUpdateCacheOfDataset(t *testing.T) {
 			},
 		},
 	}
-
+	
+// 9. Retrieve actual Dataset status from cluster
 	var datasets datav1alpha1.DatasetList
 	err = client.List(context.TODO(), &datasets)
 	if err != nil {
 		t.Errorf("fail to list the datasets with error %v", err)
 		return
 	}
+	
+// 10. Validate if actual status matches expected status
 	if !reflect.DeepEqual(datasets.Items[0].Status, expectedDataset.Status) {
 		t.Errorf("fail to exec the function with error %v", err)
 		return
