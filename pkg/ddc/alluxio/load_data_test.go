@@ -51,73 +51,73 @@ import (
 //   - None (This is a test function, so it does not return any value. Its purpose is to validate the file path generation
 //     logic and report any discrepancies through test failures.)
 func TestGenerateDataLoadValueFile(t *testing.T) {
-    datasetInputs := []datav1alpha1.Dataset{
-        {
-            ObjectMeta: metav1.ObjectMeta{
-                Name:      "test-dataset",
-                Namespace: "fluid",
-            },
-        },
-    }
-    testObjs := []runtime.Object{}
-    for _, datasetInput := range datasetInputs {
-        testObjs = append(testObjs, datasetInput.DeepCopy())
-    }
-    client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+	datasetInputs := []datav1alpha1.Dataset{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-dataset",
+				Namespace: "fluid",
+			},
+		},
+	}
+	testObjs := []runtime.Object{}
+	for _, datasetInput := range datasetInputs {
+		testObjs = append(testObjs, datasetInput.DeepCopy())
+	}
+	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
-    context := cruntime.ReconcileRequestContext{
-        Client: client,
-    }
-    dataLoadNoTarget := datav1alpha1.DataLoad{
-        ObjectMeta: metav1.ObjectMeta{
-            Name:      "test-dataload",
-            Namespace: "fluid",
-        },
-        Spec: datav1alpha1.DataLoadSpec{
-            Dataset: datav1alpha1.TargetDataset{
-                Name:      "test-dataset",
-                Namespace: "fluid",
-            },
-        },
-    }
-    dataLoadWithTarget := datav1alpha1.DataLoad{
-        ObjectMeta: metav1.ObjectMeta{
-            Name:      "test-dataload",
-            Namespace: "fluid",
-        },
-        Spec: datav1alpha1.DataLoadSpec{
-            Dataset: datav1alpha1.TargetDataset{
-                Name:      "test-dataset",
-                Namespace: "fluid",
-            },
-            Target: []datav1alpha1.TargetPath{
-                {
-                    Path:     "/test",
-                    Replicas: 1,
-                },
-            },
-        },
-    }
+	context := cruntime.ReconcileRequestContext{
+		Client: client,
+	}
+	dataLoadNoTarget := datav1alpha1.DataLoad{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-dataload",
+			Namespace: "fluid",
+		},
+		Spec: datav1alpha1.DataLoadSpec{
+			Dataset: datav1alpha1.TargetDataset{
+				Name:      "test-dataset",
+				Namespace: "fluid",
+			},
+		},
+	}
+	dataLoadWithTarget := datav1alpha1.DataLoad{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-dataload",
+			Namespace: "fluid",
+		},
+		Spec: datav1alpha1.DataLoadSpec{
+			Dataset: datav1alpha1.TargetDataset{
+				Name:      "test-dataset",
+				Namespace: "fluid",
+			},
+			Target: []datav1alpha1.TargetPath{
+				{
+					Path:     "/test",
+					Replicas: 1,
+				},
+			},
+		},
+	}
 
-    testCases := []struct {
-        dataLoad       datav1alpha1.DataLoad
-        expectFileName string
-    }{
-        {
-            dataLoad:       dataLoadNoTarget,
-            expectFileName: filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml"),
-        },
-        {
-            dataLoad:       dataLoadWithTarget,
-            expectFileName: filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml"),
-        },
-    }
-    for _, test := range testCases {
-        engine := AlluxioEngine{}
-        if fileName, err := engine.generateDataLoadValueFile(context, &test.dataLoad); !strings.Contains(fileName, test.expectFileName) {
-            t.Errorf("fail to generate the dataload value file: %v", err)
-        }
-    }
+	testCases := []struct {
+		dataLoad       datav1alpha1.DataLoad
+		expectFileName string
+	}{
+		{
+			dataLoad:       dataLoadNoTarget,
+			expectFileName: filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml"),
+		},
+		{
+			dataLoad:       dataLoadWithTarget,
+			expectFileName: filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml"),
+		},
+	}
+	for _, test := range testCases {
+		engine := AlluxioEngine{}
+		if fileName, err := engine.generateDataLoadValueFile(context, &test.dataLoad); !strings.Contains(fileName, test.expectFileName) {
+			t.Errorf("fail to generate the dataload value file: %v", err)
+		}
+	}
 }
 
 func Test_genDataLoadValue(t *testing.T) {
