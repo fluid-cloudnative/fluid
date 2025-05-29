@@ -38,109 +38,102 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// TestGenerateDataLoadValueFile tests the functionality of generating DataLoad value configuration files.
+// It verifies that the JindoEngine correctly generates value file paths for DataLoad operations,
+// handling both cases with and without specified target paths. The test sets up mock datasets,
+// JindoRuntime configurations, and DataLoad specifications to validate the file path generation logic.
 func TestGenerateDataLoadValueFile(t *testing.T) {
-	// 定义一个数据集（dataset），这是测试所需的输入之一
 	datasetInputs := []datav1alpha1.Dataset{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-dataset",  // 数据集名称
-				Namespace: "fluid",         // 数据集所在的命名空间
+				Name:      "test-dataset",
+				Namespace: "fluid",
 			},
-			Spec: datav1alpha1.DatasetSpec{},  // 数据集的规格，当前没有配置内容
+			Spec: datav1alpha1.DatasetSpec{},
 		},
 	}
 
-	// 定义一个 JindoRuntime 对象，这是测试所需的第二个输入
 	jindo := &datav1alpha1.JindoRuntime{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-dataset",  // JindoRuntime 的名称
-			Namespace: "fluid",         // JindoRuntime 的命名空间
+			Name:      "test-dataset",
+			Namespace: "fluid",
 		},
 	}
 
-	// 配置 JindoRuntime 的规格，设置了 `Secret` 和 `TieredStore` 等字段
 	jindo.Spec = datav1alpha1.JindoRuntimeSpec{
-		Secret: "secret",  // JindoRuntime 的 Secret
+		Secret: "secret",
 		TieredStore: datav1alpha1.TieredStore{
 			Levels: []datav1alpha1.Level{{
-				MediumType: common.Memory,  // 存储介质类型：内存
-				Quota:      resource.NewQuantity(1, resource.BinarySI),  // 存储配额：1 字节
-				High:       "0.8",  // 高水位线
-				Low:        "0.1",  // 低水位线
+				MediumType: common.Memory,
+				Quota:      resource.NewQuantity(1, resource.BinarySI),
+				High:       "0.8",
+				Low:        "0.1",
 			}},
 		},
 	}
 
-	// 将 JindoRuntime 类型添加到测试方案中
 	testScheme.AddKnownTypes(datav1alpha1.GroupVersion, jindo)
 
-	// 将数据集对象和 JindoRuntime 对象添加到测试对象列表中
 	testObjs := []runtime.Object{}
 	for _, datasetInput := range datasetInputs {
 		testObjs = append(testObjs, datasetInput.DeepCopy())
 	}
 	testObjs = append(testObjs, jindo.DeepCopy())
 
-	// 创建一个假的 Kubernetes 客户端并初始化 context
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 	context := cruntime.ReconcileRequestContext{
 		Client: client,
 	}
 
-	// 定义两个 DataLoad 对象，一个没有目标路径，一个有目标路径
 	dataLoadNoTarget := datav1alpha1.DataLoad{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-dataload",  // DataLoad 对象名称
-			Namespace: "fluid",         // DataLoad 对象命名空间
+			Name:      "test-dataload",
+			Namespace: "fluid",
 		},
 		Spec: datav1alpha1.DataLoadSpec{
 			Dataset: datav1alpha1.TargetDataset{
-				Name:      "test-dataset",  // 关联的数据集名称
-				Namespace: "fluid",         // 数据集命名空间
+				Name:      "test-dataset",
+				Namespace: "fluid",
 			},
 		},
 	}
 	dataLoadWithTarget := datav1alpha1.DataLoad{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-dataload",  // DataLoad 对象名称
-			Namespace: "fluid",         // DataLoad 对象命名空间
+			Name:      "test-dataload",
+			Namespace: "fluid",
 		},
 		Spec: datav1alpha1.DataLoadSpec{
 			Dataset: datav1alpha1.TargetDataset{
-				Name:      "test-dataset",  // 关联的数据集名称
-				Namespace: "fluid",         // 数据集命名空间
+				Name:      "test-dataset",
+				Namespace: "fluid",
 			},
-			Target: []datav1alpha1.TargetPath{  // 目标路径，数据加载目标
+			Target: []datav1alpha1.TargetPath{
 				{
-					Path:     "/test",  // 目标路径
-					Replicas: 1,        // 副本数量
+					Path:     "/test",
+					Replicas: 1,
 				},
 			},
 		},
 	}
 
-	// 定义测试用例，包含 DataLoad 对象和期望的文件路径
 	testCases := []struct {
-		dataLoad       datav1alpha1.DataLoad  // 测试用例中的 DataLoad 对象
-		expectFileName string                  // 期望生成的文件路径
+		dataLoad       datav1alpha1.DataLoad
+		expectFileName string
 	}{
 		{
-			dataLoad:       dataLoadNoTarget,  // 不带目标路径的 DataLoad
+			dataLoad:       dataLoadNoTarget,
 			expectFileName: filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml"),
 		},
 		{
-			dataLoad:       dataLoadWithTarget,  // 带有目标路径的 DataLoad
+			dataLoad:       dataLoadWithTarget,
 			expectFileName: filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml"),
 		},
 	}
 
-	// 循环遍历每个测试用例，执行生成文件路径的逻辑
 	for _, test := range testCases {
-		engine := JindoEngine{}  // 初始化 JindoEngine 实例
-		// 调用 generateDataLoadValueFile 函数生成文件路径
+		engine := JindoEngine{}
 		if fileName, _ := engine.generateDataLoadValueFile(context, &test.dataLoad); !strings.Contains(fileName, test.expectFileName) {
-			// 如果生成的文件路径不包含期望的文件路径，测试失败
-			t.Errorf("fail to generate the dataload value file")
+			t.Errorf("Generated file path %s does not match expected pattern %s", fileName, test.expectFileName)
 		}
 	}
 }
