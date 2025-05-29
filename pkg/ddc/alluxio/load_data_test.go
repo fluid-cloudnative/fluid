@@ -38,104 +38,86 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// TestGenerateDataLoadValueFile tests the functionality of generating DataLoad value configuration files.
-// It verifies that the JindoEngine correctly generates value file paths for DataLoad operations,
-// handling both cases with and without specified target paths. The test sets up mock datasets,
-// JindoRuntime configurations, and DataLoad specifications to validate the file path generation logic.
+// TestGenerateDataLoadValueFile is a unit test function that tests the generateDataLoadValueFile method of the AlluxioEngine struct.
+// It verifies the correct generation of DataLoad value file paths under different scenarios, including cases with and without target paths.
+// The test sets up mock datasets and DataLoad specifications to validate that the engine produces the expected temporary file paths
+// for value configuration files. It ensures the file naming convention follows the pattern "fluid-<dataload-name>-loader-values.yaml".
+//
+// Parameters:
+//   - t: A testing.T object used for managing test state and reporting test failures. It provides methods like Errorf
+//     to indicate test failures and log additional information about mismatched file paths.
+//
+// Returns:
+//   - None (This is a test function, so it does not return any value. Its purpose is to validate the file path generation
+//     logic and report any discrepancies through test failures.)
 func TestGenerateDataLoadValueFile(t *testing.T) {
-	datasetInputs := []datav1alpha1.Dataset{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-dataset",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.DatasetSpec{},
-		},
-	}
+    datasetInputs := []datav1alpha1.Dataset{
+        {
+            ObjectMeta: metav1.ObjectMeta{
+                Name:      "test-dataset",
+                Namespace: "fluid",
+            },
+        },
+    }
+    testObjs := []runtime.Object{}
+    for _, datasetInput := range datasetInputs {
+        testObjs = append(testObjs, datasetInput.DeepCopy())
+    }
+    client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
-	jindo := &datav1alpha1.JindoRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-dataset",
-			Namespace: "fluid",
-		},
-	}
+    context := cruntime.ReconcileRequestContext{
+        Client: client,
+    }
+    dataLoadNoTarget := datav1alpha1.DataLoad{
+        ObjectMeta: metav1.ObjectMeta{
+            Name:      "test-dataload",
+            Namespace: "fluid",
+        },
+        Spec: datav1alpha1.DataLoadSpec{
+            Dataset: datav1alpha1.TargetDataset{
+                Name:      "test-dataset",
+                Namespace: "fluid",
+            },
+        },
+    }
+    dataLoadWithTarget := datav1alpha1.DataLoad{
+        ObjectMeta: metav1.ObjectMeta{
+            Name:      "test-dataload",
+            Namespace: "fluid",
+        },
+        Spec: datav1alpha1.DataLoadSpec{
+            Dataset: datav1alpha1.TargetDataset{
+                Name:      "test-dataset",
+                Namespace: "fluid",
+            },
+            Target: []datav1alpha1.TargetPath{
+                {
+                    Path:     "/test",
+                    Replicas: 1,
+                },
+            },
+        },
+    }
 
-	jindo.Spec = datav1alpha1.JindoRuntimeSpec{
-		Secret: "secret",
-		TieredStore: datav1alpha1.TieredStore{
-			Levels: []datav1alpha1.Level{{
-				MediumType: common.Memory,
-				Quota:      resource.NewQuantity(1, resource.BinarySI),
-				High:       "0.8",
-				Low:        "0.1",
-			}},
-		},
-	}
-
-	testScheme.AddKnownTypes(datav1alpha1.GroupVersion, jindo)
-
-	testObjs := []runtime.Object{}
-	for _, datasetInput := range datasetInputs {
-		testObjs = append(testObjs, datasetInput.DeepCopy())
-	}
-	testObjs = append(testObjs, jindo.DeepCopy())
-
-	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-	context := cruntime.ReconcileRequestContext{
-		Client: client,
-	}
-
-	dataLoadNoTarget := datav1alpha1.DataLoad{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-dataload",
-			Namespace: "fluid",
-		},
-		Spec: datav1alpha1.DataLoadSpec{
-			Dataset: datav1alpha1.TargetDataset{
-				Name:      "test-dataset",
-				Namespace: "fluid",
-			},
-		},
-	}
-	dataLoadWithTarget := datav1alpha1.DataLoad{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-dataload",
-			Namespace: "fluid",
-		},
-		Spec: datav1alpha1.DataLoadSpec{
-			Dataset: datav1alpha1.TargetDataset{
-				Name:      "test-dataset",
-				Namespace: "fluid",
-			},
-			Target: []datav1alpha1.TargetPath{
-				{
-					Path:     "/test",
-					Replicas: 1,
-				},
-			},
-		},
-	}
-
-	testCases := []struct {
-		dataLoad       datav1alpha1.DataLoad
-		expectFileName string
-	}{
-		{
-			dataLoad:       dataLoadNoTarget,
-			expectFileName: filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml"),
-		},
-		{
-			dataLoad:       dataLoadWithTarget,
-			expectFileName: filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml"),
-		},
-	}
-
-	for _, test := range testCases {
-		engine := JindoEngine{}
-		if fileName, _ := engine.generateDataLoadValueFile(context, &test.dataLoad); !strings.Contains(fileName, test.expectFileName) {
-			t.Errorf("Generated file path %s does not match expected pattern %s", fileName, test.expectFileName)
-		}
-	}
+    testCases := []struct {
+        dataLoad       datav1alpha1.DataLoad
+        expectFileName string
+    }{
+        {
+            dataLoad:       dataLoadNoTarget,
+            expectFileName: filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml"),
+        },
+        {
+            dataLoad:       dataLoadWithTarget,
+            expectFileName: filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml"),
+        },
+    }
+    for _, test := range testCases {
+        engine := AlluxioEngine{}
+        if fileName, err := engine.generateDataLoadValueFile(context, &test.dataLoad); !strings.Contains(fileName, test.expectFileName) {
+            t.Errorf("fail to generate the dataload value file: %v", err)
+        }
+    }
 }
 
 func Test_genDataLoadValue(t *testing.T) {
