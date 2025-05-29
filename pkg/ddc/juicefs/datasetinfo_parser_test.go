@@ -28,6 +28,17 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
+// TestGetCacheInfoFromConfigmap 测试从 ConfigMap 中获取缓存信息的功能。
+// 1. 创建一个模拟的 ConfigMap 和 Dataset 对象。
+// 2. 使用这些对象初始化一个假的客户端。
+// 3. 调用 GetCacheInfoFromConfigmap 函数并检查返回的缓存信息是否与预期值匹配。
+// 4. 如果返回的缓存信息与预期值不匹配，则报告错误。
+//
+// 参数:
+// t - *testing.T 测试框架提供的测试对象，用于管理测试状态和报告错误。
+//
+// 返回值:
+// 无返回值，但如果测试失败，会调用 t.Errorf 报告错误。
 func TestGetCacheInfoFromConfigmap(t *testing.T) {
 	configMap := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
