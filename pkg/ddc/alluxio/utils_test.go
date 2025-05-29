@@ -622,6 +622,10 @@ func TestGetMasterStatefulset(t *testing.T) {
 	}
 }
 
+// TestGetDaemonset is a unit test for the AlluxioEngine.getDaemonset method.
+// It uses a fake Kubernetes client to simulate an AlluxioRuntime and a corresponding DaemonSet object,
+// verifying whether getDaemonset correctly retrieves the expected DaemonSet based on the provided name and namespace.
+// The test checks both the returned object and error status to ensure functional correctness and robustness.
 func TestGetDaemonset(t *testing.T) {
 	type fields struct {
 		runtime   *datav1alpha1.AlluxioRuntime
