@@ -166,6 +166,19 @@ func TestAlluxioEngine_DeleteVolume(t *testing.T) {
 	doTestCases(testCases, t)
 }
 
+// TestAlluxioEngine_DeleteFusePersistentVolume tests the functionality of deleting Fuse PersistentVolume in the AlluxioEngine.
+// This function is mainly responsible for:
+// - Setting up test cases with different configurations of PersistentVolume.
+// - Creating a fake client to simulate interactions with the Kubernetes API for testing.
+// - Initializing different AlluxioEngine instances with and without runtime settings.
+// - Executing test cases and verifying whether the deletion operations of PersistentVolume succeed as expected.
+
+// Parameters:
+// - t (*testing.T): The testing framework's testing object, used to report test results and handle test failures.
+
+// Returns:
+// - None. The function reports test failures directly through the *testing.T object passed in.
+
 func TestAlluxioEngine_DeleteFusePersistentVolume(t *testing.T) {
 	testPVInputs := []*v1.PersistentVolume{
 		{
