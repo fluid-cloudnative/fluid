@@ -31,42 +31,35 @@ var (
 	cachedPercentageFormat = "%.1f%%"
 )
 
-// queryCacheStatus checks the cache status
+// queryCacheStatus checks the cache status of the GooseFS engine.
+// It retrieves the fsadmin report summary from GooseFS, parses the summary to
+// obtain cache states, and updates the dataset status accordingly. Additionally,
+// it retrieves the cache hit states and returns them along with the overall cache states.
 func (e *GooseFSEngine) queryCacheStatus() (states cacheStates, err error) {
 	// get goosefs fsadmin report summary
-	// 获取GooseFS的fsadmin报告摘要
 	summary, err := e.GetReportSummary()
 	if err != nil {
-		// 如果获取报告摘要失败，记录错误日志并返回错误
 		e.Log.Error(err, "Failed to get GooseFS summary when query cache status")
 		return states, err
 	}
 
-	// 检查报告摘要是否为空
 	if len(summary) == 0 {
-		// 如果摘要为空，返回错误
 		return states, errors.New("GooseFS summary is empty")
 	}
 
 	// parse goosefs fsadmin report summary
-	// 解析GooseFS的fsadmin报告摘要
 	states = e.ParseReportSummary(summary)
 
-	// 获取数据集信息
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
-		// 如果获取数据集失败，记录错误日志并返回错误
 		e.Log.Error(err, "Failed to get dataset when query cache status")
 		return states, err
 	}
 
-	// 更新数据集状态
 	e.patchDatasetStatus(dataset, &states)
 
-	// 获取缓存命中状态
 	states.cacheHitStates = e.GetCacheHitStates()
 
-	// 返回缓存状态
 	return states, nil
 }
 
