@@ -90,6 +90,14 @@ func TestCreateVolume(t *testing.T) {
 	}
 }
 
+// TestCreateFusePersistentVolume tests the createFusePersistentVolume method of the JindoEngine.
+// It verifies that a PersistentVolume can be successfully created based on the given runtime and dataset.
+// The test flow includes:
+// - Building a RuntimeInfo instance
+// - Creating a test Dataset object
+// - Initializing the JindoEngine with a fake client
+// - Executing the createFusePersistentVolume method
+// - Checking that exactly one PersistentVolume has been created
 func TestCreateFusePersistentVolume(t *testing.T) {
 	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", common.JindoRuntime)
 	if err != nil {
