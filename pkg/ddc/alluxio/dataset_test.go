@@ -104,6 +104,14 @@ func TestUpdateCacheOfDataset(t *testing.T) {
 	}
 }
 
+// TestUpdateDatasetStatus tests the functionality of UpdateDatasetStatus method in AlluxioEngine.
+// This test creates mock Dataset and AlluxioRuntime objects, and verifies that:
+// 1. The Dataset status is correctly updated according to the provided phase parameter
+// 2. Cache states from the runtime are properly propagated to the Dataset
+// 3. HCFS status information is preserved during updates
+// 4. Runtime information is correctly added to Dataset status when in BoundDatasetPhase
+// The test cycles through three phases: BoundDatasetPhase, FailedDatasetPhase, and NoneDatasetPhase,
+// validating the expected results for each case.
 func TestUpdateDatasetStatus(t *testing.T) {
 	testDatasetInputs := []*datav1alpha1.Dataset{
 		{
