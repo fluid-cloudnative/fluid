@@ -104,6 +104,19 @@ func TestUpdateCacheOfDataset(t *testing.T) {
 	}
 }
 
+// TestUpdateDatasetStatus is a unit test function to verify the correctness of the UpdateDatasetStatus method 
+// in the AlluxioEngine struct. This method is responsible for updating the status of a Dataset.
+//
+// Test procedure:
+// 1. Create test datasets and runtime objects to simulate Kubernetes resources.
+// 2. Use a fake client to manage these objects.
+// 3. Initialize an instance of AlluxioEngine with test data.
+// 4. Define test cases with different DatasetPhase values and expected results.
+// 5. Execute UpdateDatasetStatus for each test case.
+// 6. Validate whether the updated Dataset status matches the expected results, including Phase, CacheStates, and HCFSStatus.
+// 7. If any test fails, output an error message.
+//
+// This test ensures that UpdateDatasetStatus correctly updates the Dataset's status and handles different DatasetPhase transitions properly.
 func TestUpdateDatasetStatus(t *testing.T) {
 	testDatasetInputs := []*datav1alpha1.Dataset{
 		{
