@@ -31,7 +31,10 @@ var (
 	cachedPercentageFormat = "%.1f%%"
 )
 
-// queryCacheStatus checks the cache status
+// queryCacheStatus checks the cache status of the GooseFS engine.
+// It retrieves the fsadmin report summary from GooseFS, parses the summary to
+// obtain cache states, and updates the dataset status accordingly. Additionally,
+// it retrieves the cache hit states and returns them along with the overall cache states.
 func (e *GooseFSEngine) queryCacheStatus() (states cacheStates, err error) {
 	// get goosefs fsadmin report summary
 	summary, err := e.GetReportSummary()
