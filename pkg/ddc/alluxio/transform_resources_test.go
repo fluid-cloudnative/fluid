@@ -602,6 +602,12 @@ func TestTransformResourcesForWorkerWithOnlyLimit(t *testing.T) {
 	}
 }
 
+// TestTransformResourcesForFuseNoValue tests the transformResourcesForFuse function when no resource values are specified
+// in the AlluxioRuntime Spec. It verifies that the function doesn't set any memory limit for Fuse resources when
+// the input runtime doesn't contain resource specifications. The test case uses an empty AlluxioRuntimeSpec and
+// an empty Alluxio configuration to ensure the transformation logic handles nil/non-existent resource values correctly.
+// The validation checks that no memory resource limit exists in the resulting Fuse configuration, which should be
+// the expected behavior when no resource constraints are defined in the runtime specification.
 func TestTransformResourcesForFuseNoValue(t *testing.T) {
 	var tests = []struct {
 		runtime      *datav1alpha1.AlluxioRuntime
