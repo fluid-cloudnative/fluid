@@ -1279,98 +1279,116 @@ func TestGenerateNonNativeMountsInfo(t *testing.T) {
 	}
 }
 
+// TestTransformMasterMountConfigMap 测试 AlluxioEngine 的 transformMasters 方法，
+// 验证其正确处理 Mount 配置（包括加密选项）并生成预期的 Alluxio Master 配置。
 func TestTransformMasterMountConfigMap(t *testing.T) {
-	const (
-		SecretName = "alluxio-secret"
-		SecretKey  = "secret-key"
-	)
+    // 定义测试中使用的常量（Secret 名称和 Key）
+    const (
+        SecretName = "alluxio-secret"
+        SecretKey  = "secret-key"
+    )
 
-	engine := &AlluxioEngine{Log: fake.NullLogger()}
+    // 初始化 AlluxioEngine 实例，使用空日志记录器
+    engine := &AlluxioEngine{Log: fake.NullLogger()}
 
-	type testCase struct {
-		Name      string
-		Runtime   *datav1alpha1.AlluxioRuntime
-		Value     *Alluxio
-		DataSet   *datav1alpha1.Dataset
-		wantValue *Alluxio
-	}
+    // 定义测试用例结构体
+    type testCase struct {
+        Name      string          // 测试用例名称
+        Runtime   *datav1alpha1.AlluxioRuntime  // 输入的 AlluxioRuntime 配置
+        Value     *Alluxio        // 输入的 Alluxio 配置（待填充）
+        DataSet   *datav1alpha1.Dataset  // 输入的 Dataset 配置（包含 Mount 信息）
+        wantValue *Alluxio        // 期望输出的 Alluxio 配置
+    }
 
-	testCases := []testCase{
-		{
-			Name: "use mount config map",
-			Runtime: &datav1alpha1.AlluxioRuntime{
-				Spec: datav1alpha1.AlluxioRuntimeSpec{},
-			},
-			Value: &Alluxio{},
-			DataSet: &datav1alpha1.Dataset{
-				Spec: datav1alpha1.DatasetSpec{
-					Mounts: []datav1alpha1.Mount{
-						{
-							MountPoint: "https://mirrors.bit.edu.cn/apache/hbase",
-							Name:       "hbase",
-							EncryptOptions: []datav1alpha1.EncryptOption{
-								{
-									Name: "secret",
-									ValueFrom: datav1alpha1.EncryptOptionSource{
-										SecretKeyRef: datav1alpha1.SecretKeySelector{
-											Name: SecretName,
-											Key:  SecretKey,
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			wantValue: &Alluxio{
-				Master: Master{
-					MountConfigStorage: ConfigmapStorageName,
-					NonNativeMounts: []string{
-						fmt.Sprintf("/hbase https://mirrors.bit.edu.cn/apache/hbase --option secret=/etc/fluid/secrets/%s/%s", SecretName, SecretKey),
-					},
-					Volumes: []corev1.Volume{
-						{
-							Name: fmt.Sprintf("alluxio-mount-secret-%s", SecretName),
-							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{
-									SecretName: SecretName,
-								},
-							},
-						},
-					},
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      fmt.Sprintf("alluxio-mount-secret-%s", SecretName),
-							ReadOnly:  true,
-							MountPath: fmt.Sprintf("/etc/fluid/secrets/%s", SecretName),
-						},
-					},
-				},
-			},
-		},
-	}
+    // 定义测试用例集合
+    testCases := []testCase{
+        {
+            Name: "use mount config map",  // 测试用例描述
+            Runtime: &datav1alpha1.AlluxioRuntime{
+                Spec: datav1alpha1.AlluxioRuntimeSpec{},  // 空的 Runtime 配置
+            },
+            Value: &Alluxio{},  // 空的初始 Alluxio 配置
+            DataSet: &datav1alpha1.Dataset{
+                Spec: datav1alpha1.DatasetSpec{
+                    Mounts: []datav1alpha1.Mount{
+                        {
+                            MountPoint: "https://mirrors.bit.edu.cn/apache/hbase",  // 远程存储地址
+                            Name:       "hbase",  // Mount 名称
+                            EncryptOptions: []datav1alpha1.EncryptOption{
+                                {
+                                    Name: "secret",  // 加密选项名称
+                                    ValueFrom: datav1alpha1.EncryptOptionSource{
+                                        SecretKeyRef: datav1alpha1.SecretKeySelector{
+                                            Name: SecretName,  // 引用的 Secret 名称
+                                            Key:  SecretKey,   // Secret 中的 Key
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            // 期望生成的 Alluxio Master 配置
+            wantValue: &Alluxio{
+                Master: Master{
+                    MountConfigStorage: ConfigmapStorageName,  // 使用 ConfigMap 存储配置
+                    NonNativeMounts: []string{
+                        // 预期的 Mount 命令格式：<本地路径> <远程路径> --option <加密配置>
+                        fmt.Sprintf("/hbase https://mirrors.bit.edu.cn/apache/hbase --option secret=/etc/fluid/secrets/%s/%s", SecretName, SecretKey),
+                    },
+                    Volumes: []corev1.Volume{
+                        {
+                            Name: fmt.Sprintf("alluxio-mount-secret-%s", SecretName),  // Volume 名称
+                            VolumeSource: corev1.VolumeSource{
+                                Secret: &corev1.SecretVolumeSource{
+                                    SecretName: SecretName,  // 引用的 Secret
+                                },
+                            },
+                        },
+                    },
+                    VolumeMounts: []corev1.VolumeMount{
+                        {
+                            Name:      fmt.Sprintf("alluxio-mount-secret-%s", SecretName),  // 挂载名称
+                            ReadOnly:  true,  // 只读挂载
+                            MountPath: fmt.Sprintf("/etc/fluid/secrets/%s", SecretName),  // Secret 挂载路径
+                        },
+                    },
+                },
+            },
+        },
+    }
 
-	for _, tt := range testCases {
-		err := engine.transformMasters(tt.Runtime, tt.DataSet, tt.Value)
-		if err != nil {
-			t.Fatalf("test name: %s. Expect err = nil, but got err = %v", tt.Name, err)
-		}
-		if tt.Value.Master.MountConfigStorage != tt.wantValue.Master.MountConfigStorage {
-			t.Fatalf("test name: %s. expect %s got %s", tt.Name,
-				tt.wantValue.Master.MountConfigStorage, tt.Value.Master.MountConfigStorage)
-		}
-		if !reflect.DeepEqual(tt.Value.Master.NonNativeMounts, tt.wantValue.Master.NonNativeMounts) {
-			t.Fatalf("test name: %s. expect %s got %s", tt.Name,
-				tt.wantValue.Master.NonNativeMounts, tt.Value.Master.NonNativeMounts)
-		}
-		if !reflect.DeepEqual(tt.Value.Master.VolumeMounts, tt.wantValue.Master.VolumeMounts) {
-			t.Fatalf("test name: %s. expect %v got %v", tt.Name,
-				tt.wantValue.Master.VolumeMounts, tt.Value.Master.VolumeMounts)
-		}
-		if !reflect.DeepEqual(tt.Value.Master.Volumes, tt.wantValue.Master.Volumes) {
-			t.Fatalf("test name: %s. expect %v got %v", tt.Name,
-				tt.wantValue.Master.Volumes, tt.Value.Master.Volumes)
-		}
-	}
+    // 遍历所有测试用例
+    for _, tt := range testCases {
+        // 调用 transformMasters 方法，传入 Runtime、Dataset 和待填充的 Alluxio 配置
+        err := engine.transformMasters(tt.Runtime, tt.DataSet, tt.Value)
+        if err != nil {
+            t.Fatalf("test name: %s. Expect err = nil, but got err = %v", tt.Name, err)
+        }
+
+        // 验证 MountConfigStorage 是否正确设置
+        if tt.Value.Master.MountConfigStorage != tt.wantValue.Master.MountConfigStorage {
+            t.Fatalf("test name: %s. expect %s got %s", tt.Name,
+                tt.wantValue.Master.MountConfigStorage, tt.Value.Master.MountConfigStorage)
+        }
+
+        // 验证 NonNativeMounts 是否与预期一致
+        if !reflect.DeepEqual(tt.Value.Master.NonNativeMounts, tt.wantValue.Master.NonNativeMounts) {
+            t.Fatalf("test name: %s. expect %s got %s", tt.Name,
+                tt.wantValue.Master.NonNativeMounts, tt.Value.Master.NonNativeMounts)
+        }
+
+        // 验证 VolumeMounts 是否与预期一致
+        if !reflect.DeepEqual(tt.Value.Master.VolumeMounts, tt.wantValue.Master.VolumeMounts) {
+            t.Fatalf("test name: %s. expect %v got %v", tt.Name,
+                tt.wantValue.Master.VolumeMounts, tt.Value.Master.VolumeMounts)
+        }
+
+        // 验证 Volumes 是否与预期一致
+        if !reflect.DeepEqual(tt.Value.Master.Volumes, tt.wantValue.Master.Volumes) {
+            t.Fatalf("test name: %s. expect %v got %v", tt.Name,
+                tt.wantValue.Master.Volumes, tt.Value.Master.Volumes)
+        }
+    }
 }
