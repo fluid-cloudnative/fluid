@@ -83,7 +83,7 @@ func TestUsedStorageBytes(t *testing.T) {
 
 // TestFreeStorageBytes 是用于测试 AlluxioEngine.FreeStorageBytes 方法的单元测试函数。
 // 该测试函数定义了一组测试用例，每个用例包含预期的返回值和是否预期出错的标志。
-// 测试逻辑会调用 FreeStorageBytes 方法，并校验返回的值是否与预期一致，以及是否正确处理错误情况。
+// 测试会调用 FreeStorageBytes 方法，并校验返回的值是否与预期一致，以及是否正确处理错误情况。
 func TestFreeStorageBytes(t *testing.T) {
 	type fields struct {
 	}
