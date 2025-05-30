@@ -56,7 +56,6 @@ func newJuiceFSEngineRT(client client.Client, name string, namespace string, wit
 	return engine
 }
 
-
 func TestJuiceFSEngine_getRuntimeInfo(t *testing.T) {
 	runtimeInputs := []*datav1alpha1.JuiceFSRuntime{
 		{
@@ -177,4 +176,5 @@ func TestJuiceFSEngine_getRuntimeInfo(t *testing.T) {
 			t.Errorf(" want %t, got %t", testCase.isErr, isErr)
 		}
 	}
+	
 }
