@@ -349,45 +349,35 @@ func TestOptimizeDefaultForFuseNoValue(t *testing.T) {
 	}
 }
 
-// Tests the behavior of the optimizeDefaultFuse method under different configurations
-// This test case verifies whether the JVM options for Alluxio Fuse are correctly optimized and merged
+// TestOptimizeDefaultForFuseWithValue 测试Alluxio引擎在特定条件下对Fuse配置的优化逻辑。
+// 该测试验证当运行时配置、Alluxio属性以及Fuse参数版本状态变化时，
+// optimizeDefaultFuse方法是否能正确设置Fuse的JVM选项。
+// 测试用例通过结构体数组定义，包含运行时实例、Alluxio属性、Fuse参数版本标记及预期的JVM选项列表，
+// 遍历每个测试用例，调用优化方法后检查实际结果是否与预期一致，确保配置优化的正确性。
 func TestOptimizeDefaultForFuseWithValue(t *testing.T) {
-    // Defines the test case structure
-    // runtime: Input Alluxio runtime configuration
-    // alluxioValue: Input Alluxio configuration values
-    // isNewFuseArgVersion: Indicates whether to use the new Fuse argument version
-    // expect: Expected Fuse JVM options result
-    var tests = []struct {
-        runtime             *datav1alpha1.AlluxioRuntime
-        alluxioValue        *Alluxio
-        isNewFuseArgVersion bool
-        expect              []string
-    }{
-        // Test case 1: Verifies that when JvmOptions are defined in runtime, they are correctly preserved after optimization
-        {&datav1alpha1.AlluxioRuntime{
-            Spec: datav1alpha1.AlluxioRuntimeSpec{
-                Fuse: datav1alpha1.AlluxioFuseSpec{
-                    JvmOptions: []string{"-Xmx4G"}, // Sets the maximum heap memory for Fuse JVM to 4G
-                },
-            },
-        }, &Alluxio{
-            Properties: map[string]string{}, // Empty property map
-        }, true, []string{"-Xmx4G"}}, // Expects the optimized JVM options to remain unchanged
-    }
-    
-    // Iterates through all test cases
-    for _, test := range tests {
-        // Creates a test engine instance
-        engine := &AlluxioEngine{}
-        
-        // Executes the optimization method
-        engine.optimizeDefaultFuse(test.runtime, test.alluxioValue, test.isNewFuseArgVersion)
-        
-        // Verifies if the optimization result matches the expectation
-        if test.alluxioValue.Fuse.JvmOptions[0] != test.expect[0] {
-            t.Errorf("expected %v, got %v", test.expect, test.alluxioValue.Fuse.JvmOptions)
-        }
-    }
+	var tests = []struct {
+		runtime             *datav1alpha1.AlluxioRuntime
+		alluxioValue        *Alluxio
+		isNewFuseArgVersion bool
+		expect              []string
+	}{
+		{&datav1alpha1.AlluxioRuntime{
+			Spec: datav1alpha1.AlluxioRuntimeSpec{
+				Fuse: datav1alpha1.AlluxioFuseSpec{
+					JvmOptions: []string{"-Xmx4G"},
+				},
+			},
+		}, &Alluxio{
+			Properties: map[string]string{},
+		}, true, []string{"-Xmx4G"}},
+	}
+	for _, test := range tests {
+		engine := &AlluxioEngine{}
+		engine.optimizeDefaultFuse(test.runtime, test.alluxioValue, test.isNewFuseArgVersion)
+		if test.alluxioValue.Fuse.JvmOptions[0] != test.expect[0] {
+			t.Errorf("expected %v, got %v", test.expect, test.alluxioValue.Fuse.JvmOptions)
+		}
+	}
 }
 
 func TestAlluxioEngine_setPortProperties(t *testing.T) {
