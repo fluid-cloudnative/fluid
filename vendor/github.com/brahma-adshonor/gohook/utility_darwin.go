@@ -1,6 +1,4 @@
-//go:build darwin
 // +build darwin
-
 package gohook
 
 var (

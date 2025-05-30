@@ -1,4 +1,5 @@
 /*
+
 Aggregator is a reporter used by the Ginkgo CLI to aggregate and present parallel test output
 coherently as tests complete.  You shouldn't need to use this in your code.  To run tests in parallel:
 

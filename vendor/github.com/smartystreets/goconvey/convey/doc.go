@@ -10,9 +10,9 @@ import "github.com/smartystreets/goconvey/convey/reporting"
 // C is the Convey context which you can optionally obtain in your action
 // by calling Convey like:
 //
-//	Convey(..., func(c C) {
-//	  ...
-//	})
+//   Convey(..., func(c C) {
+//     ...
+//   })
 //
 // See the documentation on Convey for more details.
 //
@@ -42,17 +42,17 @@ type C interface {
 // IMPORTANT NOTE: The top-level Convey() within a Test method
 // must conform to the following signature:
 //
-//	Convey(description string, t *testing.T, action func())
+//     Convey(description string, t *testing.T, action func())
 //
 // All other calls should look like this (no need to pass in *testing.T):
 //
-//	Convey(description string, action func())
+//     Convey(description string, action func())
 //
 // Don't worry, goconvey will panic if you get it wrong so you can fix it.
 //
 // Additionally, you may explicitly obtain access to the Convey context by doing:
 //
-//	Convey(description string, action func(c C))
+//     Convey(description string, action func(c C))
 //
 // You may need to do this if you want to pass the context through to a
 // goroutine, or to close over the context in a handler to a library which
@@ -67,8 +67,8 @@ type C interface {
 //
 // This parameter is inserted before the block itself:
 //
-//	Convey(description string, t *testing.T, mode FailureMode, action func())
-//	Convey(description string, mode FailureMode, action func())
+//     Convey(description string, t *testing.T, mode FailureMode, action func())
+//     Convey(description string, mode FailureMode, action func())
 //
 // See the examples package for, well, examples.
 func Convey(items ...any) {
@@ -250,12 +250,13 @@ func SuppressConsoleStatistics() {
 // Generally, the best place to do this would be in a TestMain function,
 // after all tests have been run. Something like this:
 //
-//	func TestMain(m *testing.M) {
-//	    convey.SuppressConsoleStatistics()
-//	    result := m.Run()
-//	    convey.PrintConsoleStatistics()
-//	    os.Exit(result)
-//	}
+// func TestMain(m *testing.M) {
+//     convey.SuppressConsoleStatistics()
+//     result := m.Run()
+//     convey.PrintConsoleStatistics()
+//     os.Exit(result)
+// }
+//
 func PrintConsoleStatistics() {
 	reporting.PrintConsoleStatistics()
 }

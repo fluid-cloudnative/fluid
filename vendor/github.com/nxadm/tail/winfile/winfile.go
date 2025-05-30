@@ -1,5 +1,4 @@
 // Copyright (c) 2019 FOSS contributors of https://github.com/nxadm/tail
-//go:build windows
 // +build windows
 
 package winfile
