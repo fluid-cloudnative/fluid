@@ -35,6 +35,7 @@ import (
 	"k8s.io/klog/v2"
 	"k8s.io/utils/ptr"
 )
+
 // TestSyncMetadata verifies metadata synchronization logic in AlluxioEngine.
 //
 // The test covers three core scenarios:
@@ -48,6 +49,7 @@ import (
 // - Hooks AlluxioFileUtils.QueryMetaDataInfoIntoFile to simulate metadata queries
 // - Validates error handling in SyncMetadata execution
 // - Verifies unhook operation cleanup via wrappedUnhookQueryMetaDataInfoIntoFile
+
 func TestSyncMetadata(t *testing.T) {
 	QueryMetaDataInfoIntoFileCommon := func(a operations.AlluxioFileUtils, key operations.KeyOfMetaDataFile, filename string) (value string, err error) {
 		return "1024", nil
