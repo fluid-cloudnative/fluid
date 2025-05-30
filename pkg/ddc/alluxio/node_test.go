@@ -51,19 +51,20 @@ func getTestAlluxioEngineNode(client client.Client, name string, namespace strin
 	return engine
 }
 
-// TestSyncScheduleInfoToCacheNodes tests the behavior of the SyncScheduleInfoToCacheNodes method 
-// for AlluxioEngine, ensuring it correctly labels Kubernetes nodes based on pod scheduling.
+// TestSyncScheduleInfoToCacheNodes tests the SyncScheduleInfoToCacheNodes function of AlluxioEngine.
+// Functionality: Verifies that AlluxioEngine correctly syncs cache node label information to Kubernetes Node objects.
+// Parameters:
+//   - t *testing.T: Standard testing object for test reporting and logging.
 //
-// This test covers multiple scenarios:
-// - "create": Ensures labels are added to nodes where pods are scheduled.
-// - "add": Verifies label addition when new pods/nodes are involved.
-// - "noController": Checks behavior when pods lack a controller reference (should not label).
-// - "deprecated": Tests legacy deployment via DaemonSet and ensures no labels are added.
-//
-// The test sets up a fake Kubernetes client populated with a combination of StatefulSets,
-// DaemonSets, Pods, and Nodes for each test case. It invokes SyncScheduleInfoToCacheNodes()
-// and validates that node labels are correctly synchronized with expected node names.
-// Discrepancies between expected and actual labeled nodes trigger test failures.
+// Return: None (testing function).
+// Notes:
+//   - Uses fake Kubernetes client with a predefined schema and runtime objects.
+//   - Covers multiple test scenarios:
+//     1. "create": A pod with controller reference should cause the node to be labeled.
+//     2. "add": Similar to create, ensures label is added to the node associated with the pod.
+//     3. "noController": Pod has no controller reference; no node should be labeled.
+//     4. "deprecated": Uses a DaemonSet instead of StatefulSet; should not apply label.
+//   - Fails the test if expected node label state does not match actual state.
 func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 	type fields struct {
 		// runtime   *datav1alpha1.AlluxioRuntime
