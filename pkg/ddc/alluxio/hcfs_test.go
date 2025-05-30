@@ -45,22 +45,17 @@ import (
 // Returns:
 //   - Returns a configured AlluxioEngine instance.
 func newAlluxioEngineHCFS(client client.Client, name string, namespace string) *AlluxioEngine {
-	// Create a new AlluxioRuntime instance
 	runTime := &v1alpha1.AlluxioRuntime{}
-	// Build the Alluxio runtime information using the name and namespace
 	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, "alluxio")
-
-	// Create and return a new AlluxioEngine instance
 	engine := &AlluxioEngine{
-		runtime:     runTime,              // Initialize the runtime object
-		name:        name,                 // Set the engine name
-		namespace:   namespace,            // Set the engine namespace
-		Client:      client,               // Set the Kubernetes API client
-		runtimeInfo: runTimeInfo,          // Set the runtime information
-		Log:         fake.NullLogger(),    // Set the logger (fake logger)
+		runtime:     runTime,
+		name:        name,
+		namespace:   namespace,
+		Client:      client,
+		runtimeInfo: runTimeInfo,
+		Log:         fake.NullLogger(),
 	}
-
-	return engine // Return the configured AlluxioEngine instance
+	return engine
 }
 
 func TestGetHCFSStatus(t *testing.T) {
