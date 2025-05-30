@@ -866,6 +866,16 @@ func TestGenUFSMountOptionsWithDuplicatedKey(t *testing.T) {
 	}
 }
 
+// TestFindUnmountedUFS verifies if AlluxioEngine's FindUnmountedUFS method correctly identifies
+// UFS paths that should be considered for mounting based on their scheme.
+// It iterates through predefined test cases, each with a set of mount points and the expected
+// unmounted paths. For each case, it mocks the necessary dependencies, calls FindUnmountedUFS,
+// and then compares the returned unmounted paths with the expected ones.
+//
+// param: t *testing.T - The testing context used for running the test and reporting failures.
+//
+// returns: None (This is a test function and does not return any value.)
+
 func TestFindUnmountedUFS(t *testing.T) {
 
 	type fields struct {
