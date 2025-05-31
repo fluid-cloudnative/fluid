@@ -173,6 +173,15 @@ func TestTransformDatasetToPVC(t *testing.T) {
 	}
 }
 
+// TestTransformDatasetWithAffinity is a unit test function that verifies the behavior of the
+// transformDatasetToVolume method when a Dataset with NodeAffinity is provided.
+// It ensures that the NodeAffinity configuration is correctly transferred to the Alluxio master's affinity settings.
+//
+// Parameters:
+//   - t: *testing.T, the Go testing framework's object used to manage the test execution and report failures.
+//
+// Return value:
+//   - None (this is a test function, and it does not return any values).
 func TestTransformDatasetWithAffinity(t *testing.T) {
 	var ufsPath = UFSPath{}
 	ufsPath.Name = "test"
