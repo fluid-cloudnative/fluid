@@ -349,6 +349,11 @@ func TestOptimizeDefaultForFuseNoValue(t *testing.T) {
 	}
 }
 
+// TestOptimizeDefaultForFuseWithValue 测试Alluxio引擎在特定条件下对Fuse配置的优化逻辑。
+// 该测试验证当运行时配置、Alluxio属性以及Fuse参数版本状态变化时，
+// optimizeDefaultFuse方法是否能正确设置Fuse的JVM选项。
+// 测试用例通过结构体数组定义，包含运行时实例、Alluxio属性、Fuse参数版本标记及预期的JVM选项列表，
+// 遍历每个测试用例，调用优化方法后检查实际结果是否与预期一致，确保配置优化的正确性。
 func TestOptimizeDefaultForFuseWithValue(t *testing.T) {
 	var tests = []struct {
 		runtime             *datav1alpha1.AlluxioRuntime
