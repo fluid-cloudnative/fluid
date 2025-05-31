@@ -474,7 +474,6 @@ func TestAlluxioEngine_setPortProperties(t *testing.T) {
 // 2. Execute optimizeDefaultFuse parameter transformation logic
 // 3. Perform deep reflective comparison between actual and expected arguments
 // 4. Generate diagnostic output for any detected discrepancies
-
 func TestOptimizeDefaultForFuseWithArgs(t *testing.T) {
 	var tests = []struct {
 		runtime             *datav1alpha1.AlluxioRuntime
