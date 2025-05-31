@@ -739,6 +739,25 @@ func TestGenUFSMountOptionsMultiTimes(t *testing.T) {
 	}
 }
 
+// TestGenUFSMountOptionsWithDuplicatedKey is a unit test for the genUFSMountOptions method
+// of the AlluxioEngine struct. This test verifies the handling of duplicated keys in mount options,
+// particularly in the context of shared encryption options and mount-specific encryption options.
+//
+// The test sets up a fake Kubernetes client with a dataset, secret, and runtime, then mocks
+// the behavior of Alluxio-related methods such as Ready, IsMounted, Mount, and QueryMetaDataInfoIntoFile.
+//
+// Test Case:
+// - A dataset is defined with both shared encryption options and mount-specific encryption options.
+// - The secret contains multiple key-value pairs used for encryption references.
+// - The test checks whether genUFSMountOptions correctly detects and handles duplicated keys.
+// - If an error is expected (wantErr = true), the test verifies that the function returns an error.
+//
+// Mocks & Patches:
+// - Fake Kubernetes client simulates runtime, dataset, and secret objects.
+// - Methods from AlluxioFileUtils are patched to control their behavior in the test environment.
+//
+// Expected Behavior:
+// - If duplicated keys exist in mount options, genUFSMountOptions should return an error.
 func TestGenUFSMountOptionsWithDuplicatedKey(t *testing.T) {
 	type fields struct {
 		runtime            *datav1alpha1.AlluxioRuntime
