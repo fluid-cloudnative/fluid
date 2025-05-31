@@ -38,6 +38,18 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// TestGenerateDataLoadValueFile is a unit test function that tests the generateDataLoadValueFile method of the AlluxioEngine struct.
+// It verifies the correct generation of DataLoad value file paths under different scenarios, including cases with and without target paths.
+// The test sets up mock datasets and DataLoad specifications to validate that the engine produces the expected temporary file paths
+// for value configuration files. It ensures the file naming convention follows the pattern "fluid-<dataload-name>-loader-values.yaml".
+//
+// Parameters:
+//   - t: A testing.T object used for managing test state and reporting test failures. It provides methods like Errorf
+//     to indicate test failures and log additional information about mismatched file paths.
+//
+// Returns:
+//   - None (This is a test function, so it does not return any value. Its purpose is to validate the file path generation
+//     logic and report any discrepancies through test failures.)
 func TestGenerateDataLoadValueFile(t *testing.T) {
 	datasetInputs := []datav1alpha1.Dataset{
 		{
