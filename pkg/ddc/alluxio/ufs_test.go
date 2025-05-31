@@ -231,6 +231,26 @@ func TestTotalFileNums(t *testing.T) {
 	}
 }
 
+// TestShouldCheckUFS validates the AlluxioEngine's logic for determining whether
+// it should perform a check on the Under File System (UFS).
+//
+// The test performs the following operations:
+// - Initializes a minimal AlluxioEngine instance
+// - Invokes the ShouldCheckUFS() method
+// - Verifies the boolean result and error status
+//
+// Test Components:
+// - tests: A table-driven slice defining expected outcomes for each case
+//
+// Flow:
+// 1. Construct a new AlluxioEngine instance (with default or minimal config)
+// 2. Call the ShouldCheckUFS() method
+// 3. Check if the returned value matches expected 'wantShould'
+// 4. Validate that the presence or absence of an error matches 'wantErr'
+//
+// Note:
+// - This test assumes default internal state is sufficient for logic evaluation
+// - It can be extended to include more cases or mocked dependencies if needed
 func TestShouldCheckUFS(t *testing.T) {
 	tests := []struct {
 		name       string
