@@ -34,6 +34,14 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 )
 
+// TestSetupMasterInternal tests the behavior of JindoEngine.setupMasterInernal under various Helm release scenarios:
+//   1. When no hook is applied to helm.CheckRelease, setupMasterInernal should return an error.
+//   2. When helm.CheckRelease is hooked to return exist=true, setupMasterInernal should succeed (skip installation).
+//   3. When helm.CheckRelease is hooked to return an error, setupMasterInernal should propagate that error.
+//   4. When helm.CheckRelease is hooked to return exist=false, setupMasterInernal proceeds to install:
+//      4.1. If helm.InstallRelease is hooked to return an error, setupMasterInernal should return that error.
+//      4.2. If helm.InstallRelease is hooked to succeed, setupMasterInernal should complete successfully.
+
 func TestSetupMasterInternal(t *testing.T) {
 	mockExecCheckReleaseCommonFound := func(name string, namespace string) (exist bool, err error) {
 		return true, nil
