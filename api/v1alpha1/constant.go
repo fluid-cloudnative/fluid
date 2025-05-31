@@ -56,3 +56,14 @@ const (
 	// OnFuseChangedCleanPolicy cleans fuse pod when the fuse in runtime is updated and the fuse pod on some node is not needed
 	OnFuseChangedCleanPolicy FuseCleanPolicy = "OnFuseChanged"
 )
+
+type UpdateStrategy string
+
+const (
+	// ReCreate is the default update strategy.
+	ReCreate UpdateStrategy = "ReCreate"
+
+	InPlace UpdateStrategy = "InPlace"
+
+	InPlaceIfPossible UpdateStrategy = "InPlaceIfPossible"
+)
