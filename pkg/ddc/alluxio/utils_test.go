@@ -154,6 +154,9 @@ func TestAlluxioEngine_getInitUsersArgs(t *testing.T) {
 	}
 }
 
+// Tests getMountRoot() with env var set. Verifies it correctly appends default subpath.
+// Example: "/var/lib/mymount" → "/var/lib/mymount/alluxio"
+// Note: t.Setenv auto-cleans after test. Add more cases for empty paths, etc. if needed.
 func TestMountRootWithEnvSet(t *testing.T) {
 	var testCases = []struct {
 		input    string
