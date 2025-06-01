@@ -36,7 +36,6 @@ import (
 // - t *testing.T: The testing object used to report test results.
 // Returns:
 // - None. It reports test failures using t.Errorf if the build function fails.
-
 func TestBuild(t *testing.T) {
 	var namespace = v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
