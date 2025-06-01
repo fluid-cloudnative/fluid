@@ -30,6 +30,13 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
+// TestBuild tests the build function by creating a fake client with predefined test objects.
+// It verifies that the engine is successfully built without any errors.
+// Parameters:
+// - t *testing.T: The testing object used to report test results.
+// Returns:
+// - None. It reports test failures using t.Errorf if the build function fails.
+
 func TestBuild(t *testing.T) {
 	var namespace = v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
