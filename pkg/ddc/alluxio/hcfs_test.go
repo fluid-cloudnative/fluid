@@ -203,7 +203,6 @@ func TestQueryHCFSEndpoint(t *testing.T) {
 // TestCompatibleUFSVersion tests the compatibility of the UFS (Under File System) version
 // by mocking the execution of commands in a container. It verifies that the function
 // queryCompatibleUFSVersion returns the expected output based on the mocked command execution results.
-
 func TestCompatibleUFSVersion(t *testing.T) {
 	mockExecCommon := func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
 		return "conf", "", nil
