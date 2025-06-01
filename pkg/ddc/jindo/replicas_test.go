@@ -35,7 +35,16 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
+// newJindoEngineREP creates and initializes a new JindoEngine instance.
+// It sets up the runtime information, logger, and helper utility.
+//
+// Parameters:
+// - client: the Kubernetes client used for interacting with the cluster
+// - name: the name of the JindoRuntime
+// - namespace: the Kubernetes namespace where the runtime is deployed
+//
+// Returns:
+// - A pointer to the initialized JindoEngine instance
 func newJindoEngineREP(client client.Client, name string, namespace string) *JindoEngine {
 
 	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.JindoRuntime)
