@@ -21,6 +21,16 @@ import (
 	"testing"
 )
 
+// TestParseReportSummary tests the parseReportSummary method of AlluxioEngine.
+// It verifies that the method correctly parses the Alluxio report summary string
+// and extracts the cache capacity and cached size information.
+// 
+// The test case includes:
+// - A mock Alluxio report summary string (mockAlluxioReportSummaryForParseReport)
+// - Expected cacheStates output with cacheCapacity and cached values
+//
+// The test compares the parsed output with expected values and reports any discrepancies.
+// This ensures the parsing logic handles the Alluxio report summary format correctly.
 func TestParseReportSummary(t *testing.T) {
 	testCases := map[string]struct {
 		summary string
