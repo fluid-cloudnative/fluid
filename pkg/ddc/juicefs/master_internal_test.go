@@ -198,6 +198,27 @@ func TestSetupMasterInternal(t *testing.T) {
 	wrappedUnhookCheckRelease()
 }
 
+// TestGenerateJuiceFSValueFile tests the generateJuicefsValueFile method of the JuiceFSEngine.
+// This test verifies that the function correctly generates a JuiceFS configuration value file
+// from the provided JuiceFSRuntime specification. It covers the complete workflow including:
+// - Mock Kubernetes Secret creation with metadata URL
+// - JuiceFSRuntime specification with tiered storage configuration
+// - Dataset definition with mount points and encryption options
+// - Building runtime information
+// - JuiceFS engine initialization
+// - Value file generation execution
+// 
+// The test ensures the function handles all required objects and configurations properly
+// and returns without errors.
+// 
+// Key components tested:
+// - Secret handling for sensitive configuration data
+// - Tiered storage configuration parsing
+// - Mount point and encryption options processing
+// - JuiceFS engine runtime initialization
+// 
+// Expected behavior: The function should successfully generate the JuiceFS value file
+// without returning any errors.
 func TestGenerateJuiceFSValueFile(t *testing.T) {
 	juicefsSecret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
