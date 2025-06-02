@@ -166,7 +166,7 @@ func TestCheckMasterReady(t *testing.T) {
 
 // TestShouldSetupMaster tests the ShouldSetupMaster function of AlluxioEngine.
 // Functionality: Verifies if the Alluxio master should be set up based on runtime status.
-// Parameters: 
+// Parameters:
 //   - t *testing.T: Standard testing object for test reporting and logging.
 // Return: None (testing function).
 // Notes:

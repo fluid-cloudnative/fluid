@@ -183,9 +183,9 @@ func TestTransformMaster(t *testing.T) {
 	}
 }
 
-// TestTransformWorkers verifies that the transformWorkers function correctly transforms 
-// the worker configuration of AlluxioRuntime into the expected Alluxio structure. 
-// It tests different network modes, node selectors, and image pull secrets to ensure 
+// TestTransformWorkers verifies that the transformWorkers function correctly transforms
+// the worker configuration of AlluxioRuntime into the expected Alluxio structure.
+// It tests different network modes, node selectors, and image pull secrets to ensure
 // correct transformation behavior.
 func TestTransformWorkers(t *testing.T) {
 	testCases := map[string]struct {
@@ -588,19 +588,19 @@ func TestGetMediumTypeFromVolumeSource(t *testing.T) {
 	}
 }
 
-// TestAlluxioEngine_allocateSinglePort is a unit test function that tests 
+// TestAlluxioEngine_allocateSinglePort is a unit test function that tests
 // the `allocateSinglePort` method of the `AlluxioEngine` struct.
-// The function verifies the behavior of port allocation for Alluxio master 
+// The function verifies the behavior of port allocation for Alluxio master
 // and worker components under different scenarios,
-// including when properties are set, unset, or when runtime specifications 
+// including when properties are set, unset, or when runtime specifications
 // are provided.
-// 
+//
 // Parameters:
-//   - t: A testing.T object provided by the Go testing framework, used to 
+//   - t: A testing.T object provided by the Go testing framework, used to
 // manage test state and support formatted test logs.
 //
 // Returns:
-//   - None. The function is a test function and does not return any value. 
+//   - None. The function is a test function and does not return any value.
 // It reports test failures using the `t.Errorf` method.
 func TestAlluxioEngine_allocateSinglePort(t *testing.T) {
 	// Define the fields required for the AlluxioEngine struct.
