@@ -35,6 +35,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// newAlluxioEngineHCFS creates a new instance of AlluxioEngine with the provided client,
+// name, and namespace. It initializes the runtime, runtime information, and logger
+// for the engine, and returns the initialized AlluxioEngine instance.
+//
+// Parameters:
+//   - client: The Kubernetes client used to interact with the cluster.
+//   - name: The name of the Alluxio engine.
+//   - namespace: The namespace where the Alluxio engine will be deployed.
+//
+// Returns:
+//   - *AlluxioEngine: A pointer to the newly created AlluxioEngine instance.
 func newAlluxioEngineHCFS(client client.Client, name string, namespace string) *AlluxioEngine {
 	runTime := &v1alpha1.AlluxioRuntime{}
 	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, "alluxio")
