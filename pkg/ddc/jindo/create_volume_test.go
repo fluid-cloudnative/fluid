@@ -160,7 +160,13 @@ func TestCreateFusePersistentVolume(t *testing.T) {
 		t.Errorf("fail to create the pv")
 	}
 }
-
+// TestCreateFusePersistentVolumeClaim tests the creation of a PersistentVolumeClaim for Jindo Fuse.
+// It sets up a JindoEngine instance, creates a DaemonSet and Dataset, and then calls the createFusePersistentVolumeClaim method.
+// It verifies that the PersistentVolumeClaim is created successfully and checks if the label for runtime fuse generation is set correctly.
+// It uses a fake client to simulate the Kubernetes API interactions and checks the results against expected values.
+// It also ensures that the PersistentVolumeClaim is associated with the correct DaemonSet and Dataset.
+// The test checks for the correct number of PersistentVolumeClaims created and verifies the label for runtime fuse generation.
+// If any assertions fail, it reports an error with a descriptive message.
 func TestCreateFusePersistentVolumeClaim(t *testing.T) {
 	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", common.JindoRuntime)
 	if err != nil {
