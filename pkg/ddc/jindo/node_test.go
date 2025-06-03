@@ -62,6 +62,14 @@ func getTestJindoEngineNode(client client.Client, name string, namespace string,
 	return engine
 }
 
+// TestSyncScheduleInfoToCacheNodes verifies the behavior of the SyncScheduleInfoToCacheNodes method in various scenarios.
+// This test checks how node labels are updated to reflect dataset scheduling based on worker Pods' node assignments.
+// It simulates different cluster states using fake Kubernetes clients and runtime objects, including:
+// - Nodes with/without prior dataset labels.
+// - Pods with or without appropriate controller references.
+// - Support for both StatefulSet and DaemonSet-based workers.
+// Each test case defines an expected set of nodes that should be labeled after the synchronization,
+// and the test compares the actual labeled nodes with the expected result to validate correctness.
 func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 	type fields struct {
 		// runtime   *datav1alpha1.JindoRuntime
