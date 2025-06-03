@@ -30,6 +30,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// getTestAlluxioEngine creates and returns a new AlluxioEngine instance.
+// 
+// Parameters:
+// - client: The client for interacting with the Kubernetes cluster.
+// - name: The name of the AlluxioEngine instance.
+// - namespace: The namespace in which the AlluxioEngine instance resides.
+// 
+// Return values:
+// - Returns a pointer to an AlluxioEngine instance.
 func getTestAlluxioEngine(client client.Client, name string, namespace string) *AlluxioEngine {
 	runTime := &datav1alpha1.AlluxioRuntime{}
 	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, "alluxio")
