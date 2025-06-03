@@ -31,13 +31,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 )
 
-// newJuiceFSEngineRT creates a new instance of JuiceFSEngine
-// client: Kubernetes client
-// name: Name of the engine
-// namespace: Namespace where the engine resides
-// withRuntimeInfo: Whether to include runtime information
-// unittest: Whether it is for unit testing
-// Returns: A new instance of JuiceFSEngine
 func newJuiceFSEngineRT(client client.Client, name string, namespace string, withRuntimeInfo bool, unittest bool) *JuiceFSEngine {
 	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.JuiceFSRuntime)
 	engine := &JuiceFSEngine{
@@ -56,6 +49,13 @@ func newJuiceFSEngineRT(client client.Client, name string, namespace string, wit
 	return engine
 }
 
+// newJuiceFSEngineRT creates a new instance of JuiceFSEngine
+// client: Kubernetes client
+// name: Name of the engine
+// namespace: Namespace where the engine resides
+// withRuntimeInfo: Whether to include runtime information
+// unittest: Whether it is for unit testing
+// Returns: A new instance of JuiceFSEngine
 func TestJuiceFSEngine_getRuntimeInfo(t *testing.T) {
 	runtimeInputs := []*datav1alpha1.JuiceFSRuntime{
 		{
