@@ -31,6 +31,14 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// TestCreateVolume tests the CreateVolume method of the JindoEngine.
+// It verifies that the method correctly creates PersistentVolume (PV) and PersistentVolumeClaim (PVC) resources
+// in Kubernetes based on the provided JindoRuntime and Dataset specifications.
+// The test checks:
+// 1. Successful execution of CreateVolume without errors.
+// 2. Correct creation of exactly one PersistentVolume.
+// 3. Correct creation of exactly one PersistentVolumeClaim.
+// 4. Proper setting of the fuse generation label on the created PVC.
 func TestCreateVolume(t *testing.T) {
 	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", common.JindoRuntime)
 	if err != nil {
