@@ -101,6 +101,11 @@ func TestUpdateCacheOfDataset(t *testing.T) {
 	}
 }
 
+// TestUpdateDatasetStatus is a test function that verifies the behavior of the UpdateDatasetStatus method in the JuiceFSEngine.
+// It tests the function with different dataset phases (Bound, Failed, None) and ensures that the dataset status is updated correctly.
+// The function creates a fake client with test datasets and runtime objects, then calls UpdateDatasetStatus with each phase.
+// It checks if the dataset status matches the expected result after each update.
+// If any of the checks fail, the test will report an error.
 func TestUpdateDatasetStatus(t *testing.T) {
 	testDatasetInputs := []*datav1alpha1.Dataset{
 		{
