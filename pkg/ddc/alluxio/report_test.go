@@ -52,12 +52,12 @@ func TestParseReportSummary(t *testing.T) {
 // - 'want': the expected cacheHitStates result after parsing.
 //
 // The test checks two scenarios:
-// 1. When there is no previous cache hit state (lastCacheHitStates is nil), 
-//    it verifies that the parsed bytesReadLocal and bytesReadUfsAll values are correct.
-// 2. When a previous cache hit state exists, it also checks the computed cache hit ratios 
-//    and throughput ratios for correctness using deep equality.
+//  1. When there is no previous cache hit state (lastCacheHitStates is nil),
+//     it verifies that the parsed bytesReadLocal and bytesReadUfsAll values are correct.
+//  2. When a previous cache hit state exists, it also checks the computed cache hit ratios
+//     and throughput ratios for correctness using deep equality.
 //
-// If the actual output differs from the expected output, the test reports an error 
+// If the actual output differs from the expected output, the test reports an error
 // with detailed information for debugging.
 func TestParseReportMetric(t *testing.T) {
 	testCases := map[string]struct {
