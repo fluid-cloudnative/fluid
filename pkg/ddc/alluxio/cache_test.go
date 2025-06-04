@@ -197,6 +197,10 @@ func TestGetCacheHitStates(t *testing.T) {
 	})
 }
 
+// TestPatchDatasetStatus verifies that the patchDatasetStatus method correctly calculates 
+// and updates the cached data percentage in a Dataset's status. It runs multiple test cases 
+// with different total and cached values, and checks whether the computed percentage matches 
+// the expected result.
 func TestPatchDatasetStatus(t *testing.T) {
 	engine := &AlluxioEngine{}
 	testCases := []struct {
