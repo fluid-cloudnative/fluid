@@ -126,6 +126,12 @@ func TestCreateVolume(t *testing.T) {
 	}
 }
 
+// TestCreateFusePersistentVolume tests the createFusePersistentVolume function of the AlluxioEngine.
+// It verifies that the function can successfully create a PersistentVolume (PV) for the Alluxio Fuse.
+// The test first builds the runtime information for the AlluxioEngine. Then it creates a mock dataset
+// and initializes a fake Kubernetes client with the dataset. After that, it invokes the
+// createFusePersistentVolume function of the AlluxioEngine. Finally, it checks if exactly one PV
+// is created in the fake client.
 func TestCreateFusePersistentVolume(t *testing.T) {
 	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
 	if err != nil {
