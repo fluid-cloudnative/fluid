@@ -45,7 +45,7 @@ import (
 // - withRunTime: Whether to initialize runtime and runtimeInfo.
 //
 // Returns:
-// - *JindoEngine: The generated JindoEngine instance.。
+// - *JindoEngine: The generated JindoEngine instance.
 func getTestJindoEngineNode(client client.Client, name string, namespace string, withRunTime bool) *JindoEngine {
 	engine := &JindoEngine{
 		runtime:     nil,
