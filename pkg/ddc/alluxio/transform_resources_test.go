@@ -450,12 +450,12 @@ func TestTransformResourcesForWorkerWithOnlyRequest(t *testing.T) {
 // resource requests are handled as expected.
 //
 // The function performs the following steps:
-// 1. Defines resource requirements with limits for memory (20Gi) and CPU (500m).
-// 2. Sets up test cases to validate the transformation logic, including scenarios with and without
-//    tiered store configurations.
-// 3. Initializes an AlluxioEngine instance with a fake client and runtime objects for testing.
-// 4. Transforms the resource requirements for the worker using the AlluxioEngine.
-// 5. Validates the transformed resource limits and requests against the expected results.
+//  1. Defines resource requirements with limits for memory (20Gi) and CPU (500m).
+//  2. Sets up test cases to validate the transformation logic, including scenarios with and without
+//     tiered store configurations.
+//  3. Initializes an AlluxioEngine instance with a fake client and runtime objects for testing.
+//  4. Transforms the resource requirements for the worker using the AlluxioEngine.
+//  5. Validates the transformed resource limits and requests against the expected results.
 //
 // Test cases include:
 // - A scenario where tiered store configuration is provided, ensuring memory limits and requests are set correctly.

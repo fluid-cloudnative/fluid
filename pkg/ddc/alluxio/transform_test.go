@@ -183,9 +183,9 @@ func TestTransformMaster(t *testing.T) {
 	}
 }
 
-// TestTransformWorkers verifies that the transformWorkers function correctly transforms 
-// the worker configuration of AlluxioRuntime into the expected Alluxio structure. 
-// It tests different network modes, node selectors, and image pull secrets to ensure 
+// TestTransformWorkers verifies that the transformWorkers function correctly transforms
+// the worker configuration of AlluxioRuntime into the expected Alluxio structure.
+// It tests different network modes, node selectors, and image pull secrets to ensure
 // correct transformation behavior.
 func TestTransformWorkers(t *testing.T) {
 	testCases := map[string]struct {
@@ -882,10 +882,10 @@ func TestAlluxioEngine_allocatePorts(t *testing.T) {
 //
 // Test Cases:
 // 1. "master properties is not null":
-//    - Ensures that when master-specific properties exist, they override the global properties.
+//   - Ensures that when master-specific properties exist, they override the global properties.
 //
 // 2. "properties is not null for master":
-//    - Ensures that both master-specific and additional global properties are correctly handled.
+//   - Ensures that both master-specific and additional global properties are correctly handled.
 //
 // The function iterates over multiple test cases and checks if the transformed properties
 // match the expected values. If the transformation does not produce the expected result, the test fails.

@@ -41,14 +41,15 @@ type TestCase struct {
 
 // newTestJuiceEngine creates a JuiceFSEngine for testing
 // Parameters:
-// 	 - client: fake client
+//   - client: fake client
 //   - name: the name of the JuiceFS engine
 //   - namespace: the namespace of the JuiceFS engine
 //   - withRunTime: whether the JuiceFS engine has runtime
+//
 // Returns:
 //   - JuiceFSEngine: the JuiceFS engine for testing
 func newTestJuiceEngine(client client.Client, name string, namespace string, withRunTime bool) *JuiceFSEngine {
-	// 1. Create a JuiceFSRuntime and RuntimeInfo 
+	// 1. Create a JuiceFSRuntime and RuntimeInfo
 	runTime := &datav1alpha1.JuiceFSRuntime{}
 	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.JuiceFSRuntime)
 	// 2. If the JuiceFS engine does not have runtime, set the runtime and runtimeInfo to nil
@@ -214,17 +215,17 @@ func TestJuiceFSEngine_deleteFusePersistentVolume(t *testing.T) {
 //   - Proper handling of PVC finalizers (e.g., kubernetes.io/pvc-protection)
 //   - Failure scenarios when Runtime integration is disabled
 //   - Interaction with mocked Kubernetes API using fake client
-// 
+//
 // The test suite includes two primary cases:
 // 1. Normal deletion with Runtime enabled (expected success)
 // 2. Deletion failure when Runtime is disabled (simulates missing dependency)
-// 
+//
 // Setup steps:
 // - Creates test PVCs with protection finalizer to simulate real-world conditions
 // - Uses deep copies to ensure test data isolation
 // - Configures fake client with predefined test objects for controlled testing
 // - Exercises both enabled/disabled Runtime engine variations
-// 
+//
 // This test ensures JuiceFS Engine correctly handles PVC lifecycle operations while respecting Kubernetes resource protection mechanisms.
 func TestJuiceFSEngine_deleteFusePersistentVolumeClaim(t *testing.T) {
 	testPVCInputs := []*v1.PersistentVolumeClaim{
