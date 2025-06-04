@@ -30,21 +30,21 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 )
 
-// TestJuiceFSEngine_CreateVolume 是一个单元测试函数，用于测试 JuiceFSEngine 的 CreateVolume 方法。
-// 该测试函数的主要目的是验证 JuiceFSEngine 是否能够正确创建 PersistentVolume (PV) 和 PersistentVolumeClaim (PVC)。
-// 测试过程包括：
-// 1. 构建 RuntimeInfo 对象。
-// 2. 创建测试数据集 (Dataset) 对象。
-// 3. 使用 fake client 初始化 JuiceFSEngine。
-// 4. 调用 CreateVolume 方法创建 PV 和 PVC。
-// 5. 验证 PV 和 PVC 是否成功创建。
-// 如果任何步骤失败，测试将返回错误。
+// TestJuiceFSEngine_CreateVolume is a unit test function that tests the CreateVolume method of JuiceFSEngine.
+// The main purpose of this test function is to verify whether JuiceFSEngine can correctly create a PersistentVolume (PV) and PersistentVolumeClaim (PVC).
+// The test process includes:
+// 1. Building a RuntimeInfo object.
+// 2. Creating a test Dataset object.
+// 3. Initializing JuiceFSEngine with a fake client.
+// 4. Calling the CreateVolume method to create PV and PVC.
+// 5. Verifying whether PV and PVC are successfully created.
+// If any step fails, the test will return an error.
 //
-// 参数:
-//   - t *testing.T: testing.T 对象，用于管理测试状态和支持测试日志输出。
+// Parameters:
+//   - t *testing.T: A testing.T object used to manage test state and support test log output.
 //
-// 返回值:
-//   - 无返回值。如果测试失败，会通过 t.Errorf 报告错误。
+// Returns:
+//   - No return value. If the test fails, errors will be reported via t.Errorf.
 func TestJuiceFSEngine_CreateVolume(t *testing.T) {
 	runtimeInfo, err := base.BuildRuntimeInfo("juicefs", "fluid", common.JuiceFSRuntime)
 	if err != nil {
