@@ -24,6 +24,14 @@ import (
 )
 
 // Query the API Gateway status
+// GetAPIGatewayStatus retrieves the API Gateway status for GooseFS engine
+// This method attempts to obtain the HCFS endpoint through queryAPIGatewayEndpoint(),
+// constructs and returns an APIGatewayStatus object containing the endpoint information.
+// Returns:
+// - *datav1alpha1.APIGatewayStatus: Contains the API Gateway endpoint if successfully retrieved
+// - error: Returns error details if failed to query the endpoint
+// Error Handling:
+// - Logs and returns error when endpoint query operation fails
 func (e *GooseFSEngine) GetAPIGatewayStatus() (status *datav1alpha1.APIGatewayStatus, err error) {
 	endpoint, err := e.queryAPIGatewayEndpoint()
 	if err != nil {
