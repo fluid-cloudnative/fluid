@@ -27,6 +27,18 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// TestUpdateCacheOfDataset: Tests the UpdateCacheOfDataset method of JuiceFSEngine
+// This test creates mock datasets and runtime objects, invokes UpdateCacheOfDataset,
+// and verifies the cache state updates in the dataset status.
+//
+// TestUpdateDatasetStatus: Tests the UpdateDatasetStatus method of JuiceFSEngine
+// This test simulates different dataset phases (Bound/Failed/None) and verifies
+// the status field updates in the dataset.
+//
+// TestBindToDataset: Tests the BindToDataset method of JuiceFSEngine
+// This test initializes datasets and runtime objects, invokes BindToDataset,
+// and verifies the dataset status transitions to Bound phase with correct cache states.
+
 func TestUpdateCacheOfDataset(t *testing.T) {
 	testDatasetInputs := []*datav1alpha1.Dataset{
 		{
@@ -250,16 +262,6 @@ func TestUpdateDatasetStatus(t *testing.T) {
 	}
 }
 
-// TestBindToDataset verifies the functionality of the BindToDataset method in the JuiceFSEngine struct.
-// It initializes test datasets and JuiceFS runtime objects, creates a fake client, and invokes the method.
-// The test checks if the dataset's status is updated correctly to the expected bound phase, with cache states
-// and HCFS status properly reflected. If the function does not produce the expected results, it logs an error.
-//
-// Parameters:
-// - t *testing.T: The testing framework's instance used to report errors and manage test execution.
-//
-// Returns:
-// - This function does not return a value but reports test failures using t.Errorf().
 func TestBindToDataset(t *testing.T) {
 	testDatasetInputs := []*datav1alpha1.Dataset{
 		{
