@@ -36,6 +36,19 @@ import (
 	"k8s.io/utils/ptr"
 )
 
+// TestSyncMetadata verifies metadata synchronization logic in AlluxioEngine.
+//
+// The test covers three core scenarios:
+// 1. Normal metadata sync with pre-populated UfsTotal field (hbase dataset)
+// 2. Error handling when UfsTotal is empty but no restore path exists (spark dataset)
+// 3. Metadata restoration workflow when DataRestoreLocation is specified (hadoop dataset)
+//
+// Test implementation details:
+// - Uses fake Kubernetes client for API interactions
+// - Initializes test datasets with different status conditions
+// - Hooks AlluxioFileUtils.QueryMetaDataInfoIntoFile to simulate metadata queries
+// - Validates error handling in SyncMetadata execution
+// - Verifies unhook operation cleanup via wrappedUnhookQueryMetaDataInfoIntoFile
 func TestSyncMetadata(t *testing.T) {
 	QueryMetaDataInfoIntoFileCommon := func(a operations.AlluxioFileUtils, key operations.KeyOfMetaDataFile, filename string) (value string, err error) {
 		return "1024", nil
