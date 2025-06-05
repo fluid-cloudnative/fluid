@@ -628,6 +628,20 @@ func TestTransformResourcesForFuseNoValue(t *testing.T) {
 	}
 }
 
+// TestTransformResourcesForFuseWithValue tests the resource transformation logic for Alluxio Fuse components
+// when explicit resource values are provided. The test verifies that the transformation correctly calculates
+// and sets the memory limits for Fuse pods by combining:
+//  1. Explicitly configured Fuse resource limits
+//  2. Tiered store memory quotas
+// Test scenario:
+// - Creates mock AlluxioRuntime specification with:
+//   * Fuse memory limit: 2Gi
+//   * Tiered store memory quota: 20Gi
+// - Verifies transformed Fuse memory limit equals expected sum (22Gi)
+// This test ensures the resource aggregation logic handles:
+// - Proper arithmetic addition of resource quantities
+// - Correct handling of different resource units (Gi)
+// - Integration of tiered store configuration with Fuse component settings
 func TestTransformResourcesForFuseWithValue(t *testing.T) {
 
 	resources := corev1.ResourceRequirements{}
