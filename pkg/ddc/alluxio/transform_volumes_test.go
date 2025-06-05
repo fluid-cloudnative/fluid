@@ -24,6 +24,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+// TestTransformMasterVolumes tests the transformMasterVolumes method.
+// It defines multiple test cases to validate that the function correctly transforms volumes and volume mounts
+// for the Alluxio master component. The test checks both successful transformations and error conditions.
 func TestTransformMasterVolumes(t *testing.T) {
 	type testCase struct {
 		name      string
