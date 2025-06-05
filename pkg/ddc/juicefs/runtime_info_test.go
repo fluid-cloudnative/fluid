@@ -49,6 +49,13 @@ func newJuiceFSEngineRT(client client.Client, name string, namespace string, wit
 	return engine
 }
 
+// newJuiceFSEngineRT creates a new instance of JuiceFSEngine
+// client: Kubernetes client
+// name: Name of the engine
+// namespace: Namespace where the engine resides
+// withRuntimeInfo: Whether to include runtime information
+// unittest: Whether it is for unit testing
+// Returns: A new instance of JuiceFSEngine
 func TestJuiceFSEngine_getRuntimeInfo(t *testing.T) {
 	runtimeInputs := []*datav1alpha1.JuiceFSRuntime{
 		{
