@@ -35,6 +35,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// newAlluxioEngineHCFS creates and returns a new AlluxioEngine instance.
+// It initializes the Alluxio runtime, builds runtime information based on the provided name and namespace,
+// and sets up the client, logger, and other necessary fields for the engine.
 func newAlluxioEngineHCFS(client client.Client, name string, namespace string) *AlluxioEngine {
 	runTime := &v1alpha1.AlluxioRuntime{}
 	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, "alluxio")
