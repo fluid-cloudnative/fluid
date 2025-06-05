@@ -34,8 +34,35 @@ import (
 	"strings"
 )
 
-// generateDataBackupValueFile builds a DataBackupValueFile by extracted specifications from the given DataBackup, and
-// marshals the DataBackup to a temporary yaml file where stores values that'll be used by fluid dataBackup helm chart
+
+// generateDataBackupValueFile constructs a DataBackupValue configuration file for GooseFS data backup operations. 
+// This function performs the following critical tasks:
+// 1. Validates input object as a DataBackup CR
+// 2. Retrieves associated GooseFS runtime specifications
+// 3. Determines active master pod information (including HA configurations)
+// 4. Resolves backup worker image details through environment variables or defaults
+// 5. Constructs Java environment parameters for GooseFS connectivity
+// 6. Processes backup path into PVC and filesystem path components
+// 7. Configures affinity rules based on 'RunAfter' dependency operations
+// 8. Sets user security context and init container configurations
+// 9. Marshals the complete backup specification into a temporary YAML file
+// 
+// The generated YAML file contains all runtime parameters required by the Fluid data backup helm chart,
+// including master node connectivity, image specifications, security contexts, and volume mount details.
+// Temporary files are created in FLUID_WORKDIR (default: /tmp) with strict 0400 permissions.
+// 
+// Parameters:
+// - ctx: Reconciliation context containing logger and namespace
+// - object: Kubernetes DataBackup custom resource object
+// 
+// Returns:
+// - valueFileName: Path to the generated temporary YAML value file
+// - err: Error status during file generation (if any)
+// 
+// Note: The function handles multi-master configurations and automatically propagates:
+// - Image pull secrets from environment variables
+// - UID/GID settings from DataBackup CR or Runtime defaults
+// - Affinity constraints based on predecessor operations
 func (e *GooseFSEngine) generateDataBackupValueFile(ctx cruntime.ReconcileRequestContext, object client.Object) (valueFileName string, err error) {
 	logger := ctx.Log.WithName("generateDataBackupValueFile")
 
