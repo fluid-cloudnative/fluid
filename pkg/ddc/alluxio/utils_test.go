@@ -38,6 +38,13 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
+// TestIsFluidNativeScheme tests whether the IsFluidNativeScheme function correctly identifies Fluid native schemes.
+//
+// Parameters:
+// - t (*testing.T): Testing context object from Go test framework
+//
+// Returns:
+// - No return value; reports test failures through t.Errorf
 func TestIsFluidNativeScheme(t *testing.T) {
 
 	var tests = []struct {
