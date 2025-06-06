@@ -84,6 +84,9 @@ func TestUsedStorageBytes(t *testing.T) {
 	}
 }
 
+// TestFreeStorageBytes is a unit test for the AlluxioEngine.FreeStorageBytes method.
+// This test function defines a set of test cases, each including the expected return value and a flag indicating whether an error is expected.
+// The test invokes the FreeStorageBytes method and checks whether the returned value matches the expected result and whether error handling is performed correctly.
 func TestFreeStorageBytes(t *testing.T) {
 	type fields struct {
 	}
