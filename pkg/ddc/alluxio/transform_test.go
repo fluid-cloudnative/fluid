@@ -1106,6 +1106,16 @@ func TestTransformWorkerProperties(t *testing.T) {
 	}
 }
 
+// TestTransformFuseProperties verifies that the transformFuse method correctly merges
+// and overrides FUSE-related configuration properties from the AlluxioRuntime spec.
+// 
+// Specifically, it ensures that:
+// - FUSE-specific properties override general properties when both are provided.
+// - The resulting Alluxio configuration reflects the correct FUSE properties in both
+//   the `.Fuse.Properties` and `.Properties` fields.
+//
+// The test sets up an AlluxioEngine with mocked runtime information and compares
+// the resulting configuration against expected values.
 func TestTransformFuseProperties(t *testing.T) {
 	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio")
 	if err != nil {
