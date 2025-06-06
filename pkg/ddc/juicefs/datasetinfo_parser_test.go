@@ -28,6 +28,18 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
+// UpdateDatasetStatus updates the status of a dataset in the JindoEngine.
+// This function performs a two-step update process:
+// 1. Updates the underlying runtime status to reflect current state
+// 2. Updates the dataset's phase and conditions based on the runtime status
+//
+// Parameters:
+//   - phase (datavalalpha1.DatasetPhase): The target phase to transition the dataset to
+//     (e.g., Bound, NotBound, Failed, Pending)
+//
+// Returns:
+//   - error: Returns nil if update succeeds, otherwise returns the encountered error
+//     including conflicts during update retries or failures to get runtime/dataset
 func TestGetCacheInfoFromConfigmap(t *testing.T) {
 	configMap := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
