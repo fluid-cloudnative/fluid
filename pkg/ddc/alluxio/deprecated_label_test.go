@@ -75,73 +75,108 @@ func TestAlluxioEngine_GetDeprecatedCommonLabelname(t *testing.T) {
 
 }
 
+// TestAlluxioEngine_HasDeprecatedCommonLabelname 测试Alluxio引擎检测废弃标签的功能
+// 该测试验证HasDeprecatedCommonLabelname方法能否正确识别DaemonSet中是否包含废弃的标签格式
 func TestAlluxioEngine_HasDeprecatedCommonLabelname(t *testing.T) {
-
-	// worker-name = e.name+"-worker"
+	// 创建带有特定节点选择器的DaemonSet
+	// 该DaemonSet使用了废弃的标签格式: "data.fluid.io/storage-<runtime>-<dataset>"
 	daemonSetWithSelector := &v1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase-worker",
-			Namespace: "fluid",
+			Name:      "hbase-worker",  // 工作负载名称
+			Namespace: "fluid",         // 所属命名空间
 		},
 		Spec: v1.DaemonSetSpec{
 			Template: corev1.PodTemplateSpec{
-				Spec: corev1.PodSpec{NodeSelector: map[string]string{"data.fluid.io/storage-fluid-hbase": "selector"}},
+				Spec: corev1.PodSpec{
+					// 节点选择器使用废弃标签格式
+					NodeSelector: map[string]string{
+						"data.fluid.io/storage-fluid-hbase": "selector",
+					},
+				},
 			},
 		},
 	}
+
+	// 创建另一个DaemonSet（虽然名称不同但使用了相同的标签格式）
 	daemonSetWithoutSelector := &v1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hadoop-worker",
-			Namespace: "fluid",
+			Name:      "hadoop-worker",  // 不同工作负载
+			Namespace: "fluid",          // 相同命名空间
 		},
 		Spec: v1.DaemonSetSpec{
 			Template: corev1.PodTemplateSpec{
-				Spec: corev1.PodSpec{NodeSelector: map[string]string{"data.fluid.io/storage-fluid-hbase": "selector"}},
+				Spec: corev1.PodSpec{
+					// 同样使用废弃标签格式
+					NodeSelector: map[string]string{
+						"data.fluid.io/storage-fluid-hbase": "selector",
+					},
+				},
 			},
 		},
 	}
+
+	// 准备测试用的Kubernetes API对象
 	runtimeObjs := []runtime.Object{}
 	runtimeObjs = append(runtimeObjs, daemonSetWithSelector)
 	runtimeObjs = append(runtimeObjs, daemonSetWithoutSelector)
+	
+	// 创建Scheme并注册API类型
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(v1.SchemeGroupVersion, daemonSetWithSelector)
+	
+	// 使用伪客户端(fake client)模拟Kubernetes API
 	fakeClient := fake.NewFakeClientWithScheme(scheme, runtimeObjs...)
 
+	// 定义测试用例
 	testCases := []struct {
-		name      string
-		namespace string
-		out       bool
-		isErr     bool
+		name      string // 数据集名称
+		namespace string // 命名空间
+		out       bool   // 期望返回值
+		isErr     bool   // 是否期望错误
 	}{
 		{
-			name:      "hbase",
+			name:      "hbase",  // 匹配存在的DaemonSet
 			namespace: "fluid",
-			out:       true,
+			out:       true,     // 应检测到废弃标签
 			isErr:     false,
 		},
 		{
-			name:      "none",
+			name:      "none",   // 不存在的数据集
 			namespace: "fluid",
-			out:       false,
+			out:       false,    // 不应检测到废弃标签
 			isErr:     false,
 		},
 		{
-			name:      "hadoop",
+			name:      "hadoop", // 存在但名称不匹配的DaemonSet
 			namespace: "fluid",
-			out:       false,
+			out:       false,    // 不应检测到废弃标签
 			isErr:     false,
 		},
 	}
 
+	// 遍历执行所有测试用例
 	for _, test := range testCases {
+		// 为当前测试用例创建Alluxio引擎实例
 		engine := getTestAlluxioEngine(fakeClient, test.name, test.namespace)
+		
+		// 调用被测试方法
 		out, err := engine.HasDeprecatedCommonLabelname()
+		
+		// 验证返回值是否符合预期
 		if out != test.out {
-			t.Errorf("input parameter is %s-%s,expected %t, got %t", test.namespace, test.name, test.out, out)
+			t.Errorf(
+				"测试数据集 %s/%s 失败: 期望 %t, 实际 %t", 
+				test.namespace, test.name, test.out, out,
+			)
 		}
+		
+		// 验证错误情况是否符合预期
 		isErr := err != nil
 		if isErr != test.isErr {
-			t.Errorf("input parameter is %s-%s,expected %t, got %t", test.namespace, test.name, test.isErr, isErr)
+			t.Errorf(
+				"测试数据集 %s/%s 错误验证失败: 期望错误 %t, 实际 %t", 
+				test.namespace, test.name, test.isErr, isErr,
+			)
 		}
 	}
 }
