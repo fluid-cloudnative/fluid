@@ -29,7 +29,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
-
+// TestTransformResourcesForMaster 是一个单元测试函数，用于验证 AlluxioEngine 中的 transformResourcesForMaster 方法是否能正确地将资源配置从 runtime 中提取并传递到 Alluxio 的 Master 和 JobMaster 字段中。
+// 
+// 该测试覆盖了以下几种情况：
+// 1. 同时存在资源请求（Requests）和资源限制（Limits）的情况：确保 Master 和 JobMaster 都正确设置了 CPU 和内存的请求与限制；
+// 2. 仅存在资源请求（Requests）的情况：确保正确传递 Requests 字段，同时忽略 Limits 字段；
+// 3. 既没有 Requests 也没有 Limits 的情况（空资源配置）：确保结果对象的资源字段保持为空；
+// 4. 明确提供空的资源列表（ResourceList{}）作为 Requests 或 Limits 的情况：确保不会误设置默认值；
+// 
+// 测试通过构造不同资源配置的 AlluxioRuntime 输入，并验证 transformResourcesForMaster 执行后 `got` 中的 Master 和 JobMaster 的 Resources 字段是否与期望的 `want` 匹配。
+// 若结果不一致，则通过 t.Errorf 报告测试失败。
 func TestTransformResourcesForMaster(t *testing.T) {
 	testCases := map[string]struct {
 		runtime *datav1alpha1.AlluxioRuntime
