@@ -49,7 +49,19 @@ func (e *GooseFSEngine) CreateVolume() (err error) {
 
 }
 
-// createFusePersistentVolume
+// createFusePersistentVolume creates a PersistentVolume (PV) for GooseFS Fuse
+// 
+// This function performs the following steps:
+// 1. Retrieves the runtime information using getRuntimeInfo()
+// 2. Calls volumeHelper.CreatePersistentVolumeForRuntime to create a PV with:
+//    - Runtime information (name, namespace, etc.)
+//    - Mount point path (obtained via getMountPoint())
+//    - Mount type (GooseFSMountType constant)
+// 3. Handles any errors during PV creation
+//
+// Returns:
+//   - error: returns nil if PV is created successfully, otherwise returns error
+//     from underlying operations (e.g., runtime info retrieval or PV creation)
 func (e *GooseFSEngine) createFusePersistentVolume() (err error) {
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
