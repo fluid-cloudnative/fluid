@@ -167,6 +167,13 @@ func TestSetupMasterInternal(t *testing.T) {
 	wrappedUnhookCheckRelease()
 }
 
+// TestGenerateAlluxioValueFile tests the functionality of generating Alluxio configuration files.
+// It verifies successful generation under valid input conditions and ensures idempotency of subsequent calls.
+// The test creates mock AlluxioRuntime/Dataset resources, initializes dependencies (port allocator),
+// and validates error handling during configuration generation.
+//
+// Parameters:
+//   t : *testing.T - Testing context object for test control and reporting
 func TestGenerateAlluxioValueFile(t *testing.T) {
 	allixioruntime := &datav1alpha1.AlluxioRuntime{
 		ObjectMeta: metav1.ObjectMeta{
