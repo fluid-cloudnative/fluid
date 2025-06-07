@@ -82,7 +82,10 @@ func (e *GooseFSEngine) shouldSyncMetadata() (should bool, err error) {
 	return should, nil
 }
 
-// shouldRestoreMetadata checks whether should restore metadata from backup
+// shouldRestoreMetadata checks whether the GooseFS dataset's metadata should be restored from backup
+// by verifying if DataRestoreLocation is specified in the dataset spec. Returns:
+//   - should (bool): true if restoration is needed (DataRestoreLocation exists)
+//   - err (error): any error encountered when fetching the dataset
 func (e *GooseFSEngine) shouldRestoreMetadata() (should bool, err error) {
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
