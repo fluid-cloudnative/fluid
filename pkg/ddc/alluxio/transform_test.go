@@ -1279,6 +1279,18 @@ func TestGenerateNonNativeMountsInfo(t *testing.T) {
 	}
 }
 
+// TestTransformMasterMountConfigMap verifies the behavior of AlluxioEngine.transformMasters()  
+// in processing mount configurations (including encrypted secrets) and generating the expected  
+// Alluxio Master specifications.  
+//  
+// Key test cases:  
+// - Validates correct handling of non-native mounts (e.g., remote HBase storage with secret references).  
+// - Ensures generated volumes/volumeMounts align with Kubernetes Secret configurations.  
+// - Checks MountConfigStorage assignment (e.g., ConfigMap usage).  
+//  
+// Example:  
+//   Input: Dataset with encrypted mount options → Output: Alluxio Master spec with secret volumes  
+//   and properly formatted mount commands.  
 func TestTransformMasterMountConfigMap(t *testing.T) {
 	const (
 		SecretName = "alluxio-secret"
