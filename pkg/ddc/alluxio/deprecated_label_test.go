@@ -75,73 +75,109 @@ func TestAlluxioEngine_GetDeprecatedCommonLabelname(t *testing.T) {
 
 }
 
+// TestAlluxioEngine_HasDeprecatedCommonLabelname tests the detection of deprecated labels in the Alluxio engine.
+// This test verifies whether the HasDeprecatedCommonLabelname method can correctly identify if a DaemonSet
+// contains deprecated label formats.
 func TestAlluxioEngine_HasDeprecatedCommonLabelname(t *testing.T) {
-
-	// worker-name = e.name+"-worker"
+	// Create a DaemonSet with a specific node selector.
+	// This DaemonSet uses a deprecated label format: "data.fluid.io/storage-<runtime>-<dataset>"
 	daemonSetWithSelector := &v1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase-worker",
-			Namespace: "fluid",
+			Name:      "hbase-worker",  // workload name
+			Namespace: "fluid",         // namespace
 		},
 		Spec: v1.DaemonSetSpec{
 			Template: corev1.PodTemplateSpec{
-				Spec: corev1.PodSpec{NodeSelector: map[string]string{"data.fluid.io/storage-fluid-hbase": "selector"}},
+				Spec: corev1.PodSpec{
+					// Node selector uses the deprecated label format
+					NodeSelector: map[string]string{
+						"data.fluid.io/storage-fluid-hbase": "selector",
+					},
+				},
 			},
 		},
 	}
+
+	// Create another DaemonSet (different name but same deprecated label format)
 	daemonSetWithoutSelector := &v1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hadoop-worker",
-			Namespace: "fluid",
+			Name:      "hadoop-worker",  // different workload
+			Namespace: "fluid",          // same namespace
 		},
 		Spec: v1.DaemonSetSpec{
 			Template: corev1.PodTemplateSpec{
-				Spec: corev1.PodSpec{NodeSelector: map[string]string{"data.fluid.io/storage-fluid-hbase": "selector"}},
+				Spec: corev1.PodSpec{
+					// Also uses the deprecated label format
+					NodeSelector: map[string]string{
+						"data.fluid.io/storage-fluid-hbase": "selector",
+					},
+				},
 			},
 		},
 	}
+
+	// Prepare Kubernetes API objects for testing
 	runtimeObjs := []runtime.Object{}
 	runtimeObjs = append(runtimeObjs, daemonSetWithSelector)
 	runtimeObjs = append(runtimeObjs, daemonSetWithoutSelector)
+
+	// Create Scheme and register API types
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(v1.SchemeGroupVersion, daemonSetWithSelector)
+
+	// Use a fake client to simulate Kubernetes API
 	fakeClient := fake.NewFakeClientWithScheme(scheme, runtimeObjs...)
 
+	// Define test cases
 	testCases := []struct {
-		name      string
-		namespace string
-		out       bool
-		isErr     bool
+		name      string // dataset name
+		namespace string // namespace
+		out       bool   // expected result
+		isErr     bool   // whether an error is expected
 	}{
 		{
-			name:      "hbase",
+			name:      "hbase",  // matches an existing DaemonSet
 			namespace: "fluid",
-			out:       true,
+			out:       true,     // should detect deprecated label
 			isErr:     false,
 		},
 		{
-			name:      "none",
+			name:      "none",   // dataset does not exist
 			namespace: "fluid",
-			out:       false,
+			out:       false,    // should not detect deprecated label
 			isErr:     false,
 		},
 		{
-			name:      "hadoop",
+			name:      "hadoop", // DaemonSet exists but name does not match
 			namespace: "fluid",
-			out:       false,
+			out:       false,    // should not detect deprecated label
 			isErr:     false,
 		},
 	}
 
+	// Execute all test cases
 	for _, test := range testCases {
+		// Create an Alluxio engine instance for the current test case
 		engine := getTestAlluxioEngine(fakeClient, test.name, test.namespace)
+
+		// Call the method under test
 		out, err := engine.HasDeprecatedCommonLabelname()
+
+		// Validate the result
 		if out != test.out {
-			t.Errorf("input parameter is %s-%s,expected %t, got %t", test.namespace, test.name, test.out, out)
+			t.Errorf(
+				"Dataset %s/%s test failed: expected %t, got %t",
+				test.namespace, test.name, test.out, out,
+			)
 		}
+
+		// Validate error expectation
 		isErr := err != nil
 		if isErr != test.isErr {
-			t.Errorf("input parameter is %s-%s,expected %t, got %t", test.namespace, test.name, test.isErr, isErr)
+			t.Errorf(
+				"Dataset %s/%s error check failed: expected error %t, got %t",
+				test.namespace, test.name, test.isErr, isErr,
+			)
 		}
 	}
 }
