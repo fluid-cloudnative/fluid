@@ -202,6 +202,12 @@ func TestSyncMetadata(t *testing.T) {
 	wrappedUnhookQueryMetaDataInfoIntoFile()
 }
 
+// TestSyncMetadataWithoutMaster tests the SyncMetadata method of AlluxioEngine when no master node is available.
+// It verifies that runtime phases (Master/Worker/Fuse) and dataset phase are correctly updated to NotReady/Failed states.
+// Paramaters:
+//   - t (*testing.T): Go testing framework's test handler for reporting failures and logging
+// Returns:
+//   - None (test assertions are made through t.Errorf/t.Fatal on failure)
 func TestSyncMetadataWithoutMaster(t *testing.T) {
 	var statefulsetInputs = []appsv1.StatefulSet{}
 
