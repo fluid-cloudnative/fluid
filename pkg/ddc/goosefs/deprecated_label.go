@@ -21,6 +21,13 @@ import (
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 )
 
+// HasDeprecatedCommonLabelname checks whether the deprecated common label name exists.
+// This method retrieves the DaemonSet's NodeSelector and determines if it contains the deprecated label name.
+//
+// Returns:
+//
+//	deprecated: true if the deprecated common label name exists, otherwise false.
+//	err: error information if any error occurs during execution.
 func (e *GooseFSEngine) HasDeprecatedCommonLabelname() (deprecated bool, err error) {
 
 	// return deprecated.LabelAnnotationStorageCapacityPrefix + e.namespace + "-" + e.name
