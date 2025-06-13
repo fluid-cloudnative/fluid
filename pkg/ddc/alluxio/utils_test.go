@@ -38,6 +38,13 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
+// TestIsFluidNativeScheme tests whether the IsFluidNativeScheme function correctly identifies Fluid native schemes.
+//
+// Parameters:
+// - t (*testing.T): Testing context object from Go test framework
+//
+// Returns:
+// - No return value; reports test failures through t.Errorf
 func TestIsFluidNativeScheme(t *testing.T) {
 
 	var tests = []struct {
@@ -154,6 +161,9 @@ func TestAlluxioEngine_getInitUsersArgs(t *testing.T) {
 	}
 }
 
+// Tests getMountRoot() with env var set. Verifies it correctly appends default subpath.
+// Example: "/var/lib/mymount" → "/var/lib/mymount/alluxio"
+// Note: t.Setenv auto-cleans after test. Add more cases for empty paths, etc. if needed.
 func TestMountRootWithEnvSet(t *testing.T) {
 	var testCases = []struct {
 		input    string
@@ -323,6 +333,16 @@ Worker Name      Last Heartbeat   Storage       MEM
 	return r, "", nil
 }
 
+// TestGetDataSetFileNum tests the getDataSetFileNum method of AlluxioEngine.
+// It verifies the behavior by mocking container command execution and comparing
+// actual outputs against expected values. Test cases include both success and
+// error scenarios.
+//
+// Parameters:
+//   - t *testing.T: Testing framework handle for assertions and logging.
+//
+// Returns:
+//   - None (test failures are reported via t.Errorf or t.Fatal).
 func TestGetDataSetFileNum(t *testing.T) {
 	type fields struct {
 		runtime   *datav1alpha1.AlluxioRuntime
@@ -762,6 +782,16 @@ func TestGetMasterStatefulsetName(t *testing.T) {
 	}
 }
 
+// TestGetWorkerDaemonsetName is a unit test for the getWorkerName method of the AlluxioEngine struct.
+// This test verifies that the method correctly constructs the expected worker daemonset name
+// based on the given engine name.
+// The test defines a struct `fields` containing the engine name and a test case struct
+// that includes the test case name, input fields, and the expected daemonset name.
+// The test case used:
+// - When the engine name is "spark", the expected daemonset name should be "spark-worker".
+// The test iterates through all defined cases, creates an instance of AlluxioEngine with
+// the given name, calls the `getWorkerName` method, and checks if the returned result matches
+// the expected value. If the result differs, an error message is reported.
 func TestGetWorkerDaemonsetName(t *testing.T) {
 	type fields struct {
 		name string

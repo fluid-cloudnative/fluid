@@ -24,6 +24,22 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
+// GetHCFSStatus retrieves the status information of HCFS (Hadoop Compatible File System)
+// This function queries the HCFS endpoint and the underlying filesystem compatible version
+//
+// Process flow:
+//  1. First calls queryHCFSEndpoint() to get the HCFS access endpoint
+//  2. If endpoint retrieval fails, logs the error and returns the error
+//  3. Calls queryCompatibleUFSVersion() to get the underlying filesystem compatible version
+//  4. If version retrieval fails, logs the error and returns the error
+//  5. Constructs the HCFSStatus struct and populates it with the retrieved information
+//  6. Returns the status information and nil error
+//
+// Returns:
+//   - *datav1alpha1.HCFSStatus: Pointer to a struct containing HCFS status information,
+//     including endpoint and version details
+//   - error: Returns an error if any issues occur during the query process
+//
 // Query the hcfs status
 func (e *GooseFSEngine) GetHCFSStatus() (status *datav1alpha1.HCFSStatus, err error) {
 	endpoint, err := e.queryHCFSEndpoint()
