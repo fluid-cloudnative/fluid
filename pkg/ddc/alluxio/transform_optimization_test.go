@@ -326,6 +326,16 @@ func TestOptimizeDefaultForFuseNoValue(t *testing.T) {
 	}
 }
 
+// TestOptimizeDefaultForFuseWithValue tests the optimizeDefaultFuse function with different scenarios.
+// This test case verifies that the function correctly optimizes the default fuse configuration
+// based on the provided AlluxioRuntime, Alluxio value, and fuse argument version flag.
+// It checks if the generated JVM options for the fuse component match the expected values.
+//
+// Parameters:
+// - t (*testing.T): The testing framework's test instance for reporting failures.
+//
+// Returns:
+// - None. The test uses t.Errorf to report failures directly.
 func TestOptimizeDefaultForFuseWithValue(t *testing.T) {
 	var tests = []struct {
 		runtime             *datav1alpha1.AlluxioRuntime
