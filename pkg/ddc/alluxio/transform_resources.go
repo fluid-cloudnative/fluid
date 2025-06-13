@@ -153,8 +153,12 @@ func (e *AlluxioEngine) transformResourcesForWorker(runtime *datav1alpha1.Alluxi
 	return nil
 }
 
+// transformResourcesForFuse updates the Fuse component's resource settings
+// in the Alluxio deployment by transforming user-defined resource limits
+// and incorporating tiered storage memory requirements.
 func (e *AlluxioEngine) transformResourcesForFuse(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) {
 
+	// Skip if no memory limit is specified
 	if runtime.Spec.Fuse.Resources.Limits == nil {
 		e.Log.Info("skip setting memory limit")
 		return
@@ -165,8 +169,10 @@ func (e *AlluxioEngine) transformResourcesForFuse(runtime *datav1alpha1.AlluxioR
 		return
 	}
 
+	// Set base resource requirements for Fuse
 	value.Fuse.Resources = utils.TransformRequirementsToResources(runtime.Spec.Fuse.Resources)
 
+	// Get tiered storage memory requirements
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		e.Log.Error(err, "failed to transformResourcesForFuse")
@@ -175,6 +181,7 @@ func (e *AlluxioEngine) transformResourcesForFuse(runtime *datav1alpha1.AlluxioR
 
 	e.Log.Info("transformFuse", "storageMap", storageMap)
 
+	// Calculate final memory limit
 	// TODO(iluoeli): it should be xmx + direct memory
 	memLimit := resource.MustParse("50Gi")
 	if quantity, exists := runtime.Spec.Fuse.Resources.Limits[corev1.ResourceMemory]; exists && !quantity.IsZero() {
@@ -199,6 +206,7 @@ func (e *AlluxioEngine) transformResourcesForFuse(runtime *datav1alpha1.AlluxioR
 		// 	value.Fuse.Resources.Limits[corev1.ResourceEphemeralStorage] = req.String()
 		// }
 	}
+	// Apply the final memory limit to Fuse resources
 	if value.Fuse.Resources.Limits != nil {
 		value.Fuse.Resources.Limits[corev1.ResourceMemory] = memLimit.String()
 	}
