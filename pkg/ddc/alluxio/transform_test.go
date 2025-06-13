@@ -44,7 +44,11 @@ var (
 		Name:       "local",
 	}
 )
-
+// TestTransformFuse tests the transformFuse method of the Alluxio engine to ensure it correctly
+// generates the expected FUSE mount arguments in the Alluxio object based on the provided
+// AlluxioRuntime and Dataset specifications.
+// Specifically, it checks that the UID and GID values from the Dataset are properly included
+// in the generated fuse arguments.
 func TestTransformFuse(t *testing.T) {
 
 	var x int64 = 1000
