@@ -29,8 +29,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
-// setup fuse
-func (j *JuiceFSEngine) setupMasterInternal() (err error) {
+func (j *JuiceFSEngine) installJuiceFS() (err error) {
 	var (
 		chartName = utils.GetChartsDirectory() + "/" + common.JuiceFSChart
 	)

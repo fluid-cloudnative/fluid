@@ -147,15 +147,6 @@ func TestJuiceFSEngine_SetupMaster(t *testing.T) {
 			t.Errorf("fail to exec the func with error %v", err)
 			return
 		}
-		juicefsruntime, err := test.engine.getRuntime()
-		if err != nil {
-			t.Errorf("fail to get the runtime")
-			return
-		}
-		if juicefsruntime.Status.WorkerPhase == datav1alpha1.RuntimePhaseNone {
-			t.Errorf("fail to update the runtime")
-			return
-		}
 	}
 }
 

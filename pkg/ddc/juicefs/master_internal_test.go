@@ -153,7 +153,7 @@ func TestSetupMasterInternal(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	err = engine.setupMasterInternal()
+	err = engine.installJuiceFS()
 	if err != nil {
 		t.Errorf("fail to exec check helm release: %v", err)
 	}
@@ -164,7 +164,7 @@ func TestSetupMasterInternal(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	err = engine.setupMasterInternal()
+	err = engine.installJuiceFS()
 	if err == nil {
 		t.Errorf("fail to catch the error: %v", err)
 	}
@@ -181,7 +181,7 @@ func TestSetupMasterInternal(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	err = engine.setupMasterInternal()
+	err = engine.installJuiceFS()
 	if err == nil {
 		t.Errorf("fail to catch the error")
 	}
@@ -192,7 +192,7 @@ func TestSetupMasterInternal(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	err = engine.setupMasterInternal()
+	err = engine.installJuiceFS()
 	fmt.Println(err)
 	if err != nil {
 		t.Errorf("fail to install release")
