@@ -29,7 +29,16 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
-// CheckMasterReady checks if the master is ready
+// CheckMasterReady checks if the master is ready.
+// This function verifies if the GooseFS master StatefulSet has the expected number of ready replicas
+// and updates the runtime status accordingly when the master is determined to be ready.
+//
+// Parameters:
+//   - None explicit, uses the GooseFSEngine receiver
+//
+// Returns:
+//   - ready (bool): True if the master has the expected number of ready replicas, otherwise false.
+//   - err (error): Returns an error if any operation fails, otherwise returns nil.
 func (e *GooseFSEngine) CheckMasterReady() (ready bool, err error) {
 
 	masterName := e.getMasterName()
