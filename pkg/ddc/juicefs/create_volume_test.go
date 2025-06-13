@@ -32,6 +32,20 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
+// TestJuiceFSEngine_CreateVolume is a unit test function that tests the CreateVolume method of JuiceFSEngine.
+// The main purpose of this test function is to verify whether JuiceFSEngine can correctly create a PersistentVolume (PV) and PersistentVolumeClaim (PVC).
+// The test process includes:
+// 1. Building a RuntimeInfo object.
+// 2. Creating a test Dataset object.
+// 3. Initializing JuiceFSEngine with a fake client.
+// 4. Calling the CreateVolume method to create PV and PVC.
+// 5. Verifying whether PV and PVC are successfully created.
+// If any step fails, the test will return an error.
+//
+// Parameters:
+//   - t *testing.T: A testing.T object used to manage test state and support test log output.
+// Returns:
+//   - No return value. If the test fails, errors will be reported via t.Errorf.
 func TestJuiceFSEngine_CreateVolume(t *testing.T) {
 	runtimeInfo, err := base.BuildRuntimeInfo("juicefs", "fluid", common.JuiceFSRuntime)
 	if err != nil {
