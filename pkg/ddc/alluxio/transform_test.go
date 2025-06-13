@@ -497,6 +497,15 @@ func TestTransformShortCircuit(t *testing.T) {
 	}
 }
 
+// TestTransformPodMetadata tests the transformation of Pod metadata (labels and annotations)
+// for AlluxioRuntime components. It verifies that common metadata specified in the Runtime's
+// PodMetadata is correctly applied to Master, Worker, and Fuse components, while ensuring
+// component-specific metadata overrides the common settings when present.
+// 1. Verifies that labels/annotations from Runtime.Spec.PodMetadata are propagated to
+//    all components (Master, Worker, Fuse) when no component-specific metadata exists.
+// 2. Set master and worker labels/annotations:
+//    Validates that component-specific metadata in Master/Worker PodMetadata takes precedence
+//    over common metadata, while Fuse uses common metadata when no Fuse-specific settings exist.
 func TestTransformPodMetadata(t *testing.T) {
 	engine := &AlluxioEngine{Log: fake.NullLogger()}
 
