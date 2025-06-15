@@ -37,6 +37,10 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
+// TestCheckRuntimeHealthy is a unit test that verifies the health check logic
+// for the Jindo runtime environment. It creates a mock runtime and simulates
+// different health scenarios, asserting that the status returned by the
+// CheckRuntimeHealthy method matches the expected outcome.
 func TestCheckRuntimeHealthy(t *testing.T) {
 	var statefulsetInputs = []appsv1.StatefulSet{
 		{
@@ -369,6 +373,22 @@ func TestCheckMasterHealthy(t *testing.T) {
 	}
 }
 
+// TestCheckWorkersHealthy validates the health check functionality for Alluxio runtime workers.
+// It covers three primary scenarios:
+// 1. Unhealthy workers (StatefulSet with readyReplicas < desired replicas)
+// 2. Healthy workers (StatefulSet with readyReplicas matching desired count)
+// 3. Deprecated worker types (DaemonSet-based workers that should remain unchanged)
+//
+// The test verifies:
+// - Correct error handling based on worker status
+// - Proper updates to RuntimeStatus fields (WorkerNumberReady/Available)
+// - Appropriate condition updates for worker readiness
+// - Idempotency for deprecated worker implementations
+//
+// Test cases include:
+//   - Case 1: Workers not ready (0 ready replicas out of 2 desired)
+//   - Case 2: Workers fully ready (1 ready replica matching desired count)
+//   - Case 3: Deprecated worker type (no status changes expected)
 func TestCheckWorkersHealthy(t *testing.T) {
 	var statefulSetInputs = []appsv1.StatefulSet{
 		{

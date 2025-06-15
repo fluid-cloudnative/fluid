@@ -26,6 +26,23 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// TestCheckMasterReady tests the CheckMasterReady method of the AlluxioEngine.
+// It simulates different runtime environments using fake Kubernetes clients and
+// verifies whether the engine correctly determines the readiness of the master component.
+//
+// Parameters:
+//   - t *testing.T: Standard testing object used for logging and test failure reporting.
+//
+// Return: None (standard Go testing function).
+//
+// Notes:
+//   - Uses a fake client to mock interactions with the Kubernetes API server.
+//   - Creates multiple AlluxioRuntime and StatefulSet objects with specific ready states.
+//   - Tests two scenarios:
+//     1. A runtime with insufficient master replicas should result in false readiness.
+//     2. A runtime with all required master replicas ready should result in true readiness.
+//   - Also verifies that when readiness is true, the runtime's status conditions are updated correctly.
+//   - Fails the test if actual readiness does not match the expected result or if status update is missing.
 func TestCheckMasterReady(t *testing.T) {
 	statefulsetInputs := []v1.StatefulSet{
 		{
