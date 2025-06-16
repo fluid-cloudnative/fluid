@@ -10,5 +10,5 @@
 # DO NOT REPORT SECURITY VULNERABILITIES DIRECTLY TO THESE NAMES, FOLLOW THE
 # INSTRUCTIONS AT https://kubernetes.io/security/
 
-cheyang
-RongGu
+* [cheyang](mailto:cheyang52@gmail.com)
+* [RongGu](mailto:gurongwalker@gmail.com)
