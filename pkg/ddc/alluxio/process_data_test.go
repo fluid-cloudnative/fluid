@@ -27,7 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// TestAlluxioEngine_generateDataProcessValueFile tests the generateDataProcessValueFile 
+// TestAlluxioEngine_generateDataProcessValueFile tests the generateDataProcessValueFile
 // function of AlluxioEngine under different input scenarios.
 //
 // Parameters:
@@ -36,8 +36,8 @@ import (
 // - args: includes the engine instance, request context, and the input object to test.
 //
 // Return:
-// - Verifies whether generateDataProcessValueFile returns an error as expected 
-//   in each scenario.
+//   - Verifies whether generateDataProcessValueFile returns an error as expected
+//     in each scenario.
 func TestAlluxioEngine_generateDataProcessValueFile(t *testing.T) {
 	dataset := &datav1alpha1.Dataset{
 		ObjectMeta: metav1.ObjectMeta{
