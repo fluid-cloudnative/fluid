@@ -120,14 +120,11 @@ func TestAlluxioEngine_HasDeprecatedCommonLabelname(t *testing.T) {
 	runtimeObjs := []runtime.Object{}
 	runtimeObjs = append(runtimeObjs, daemonSetWithSelector)
 	runtimeObjs = append(runtimeObjs, daemonSetWithoutSelector)
-
 	// Create Scheme and register API types
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(v1.SchemeGroupVersion, daemonSetWithSelector)
-
 	// Use a fake client to simulate Kubernetes API
 	fakeClient := fake.NewFakeClientWithScheme(scheme, runtimeObjs...)
-
 	// Define test cases
 	testCases := []struct {
 		name      string // dataset name
@@ -159,10 +156,8 @@ func TestAlluxioEngine_HasDeprecatedCommonLabelname(t *testing.T) {
 	for _, test := range testCases {
 		// Create an Alluxio engine instance for the current test case
 		engine := getTestAlluxioEngine(fakeClient, test.name, test.namespace)
-
 		// Call the method under test
 		out, err := engine.HasDeprecatedCommonLabelname()
-
 		// Validate the result
 		if out != test.out {
 			t.Errorf(
@@ -170,7 +165,6 @@ func TestAlluxioEngine_HasDeprecatedCommonLabelname(t *testing.T) {
 				test.namespace, test.name, test.out, out,
 			)
 		}
-
 		// Validate error expectation
 		isErr := err != nil
 		if isErr != test.isErr {
