@@ -53,7 +53,7 @@ func getTestAlluxioEngine(client client.Client, name string, namespace string) *
 //   - name (string): The name of the resource.
 //   - suffix (string): The suffix of the label, which is not used in this test case.
 //
-// This test checks various combinations of `namespace` and `name`, 
+// This test checks various combinations of `namespace` and `name`,
 // and validates whether the generated label name matches the expected output, ensuring the function logic is correct.
 func TestAlluxioEngine_GetDeprecatedCommonLabelname(t *testing.T) {
 	testCases := []struct {

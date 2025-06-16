@@ -22,12 +22,10 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 
-	corev1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/util/retry"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 func (j JuiceFSEngine) CheckMasterReady() (ready bool, err error) {
@@ -35,6 +33,9 @@ func (j JuiceFSEngine) CheckMasterReady() (ready bool, err error) {
 	return true, nil
 }
 
+// ShouldSetupMaster checks if a further call of func `SetupMaster` is needed.
+// JuiceFS Runtime has no master role, so the function check runtime.status.WorkerPhase
+// to know if juicefs is installed and set up.
 func (j JuiceFSEngine) ShouldSetupMaster() (should bool, err error) {
 	runtime, err := j.getRuntime()
 	if err != nil {
@@ -50,6 +51,9 @@ func (j JuiceFSEngine) ShouldSetupMaster() (should bool, err error) {
 	return
 }
 
+// SetupMaster installs juicefs components into the cluster.
+// JuiceFS Runtime has no master role, implementing func `SetupMaster` here
+// is just for a same lifecycle as other runtimes (other runtimes may have master component)
 func (j JuiceFSEngine) SetupMaster() (err error) {
 	workerName := j.getWorkerName()
 
@@ -58,7 +62,7 @@ func (j JuiceFSEngine) SetupMaster() (err error) {
 	if err != nil && apierrs.IsNotFound(err) {
 		//1. Is not found error
 		j.Log.V(1).Info("SetupMaster", "worker", workerName)
-		return j.setupMasterInternal()
+		return j.installJuiceFS()
 	} else if err != nil {
 		//2. Other errors
 		return
@@ -75,25 +79,9 @@ func (j JuiceFSEngine) SetupMaster() (err error) {
 		}
 		runtimeToUpdate := runtime.DeepCopy()
 
-		runtimeToUpdate.Status.WorkerPhase = datav1alpha1.RuntimePhaseNotReady
-		replicas := runtimeToUpdate.Spec.Worker.Replicas
-		if replicas == 0 {
-			replicas = 1
-		}
-
 		// Init selector for worker
 		runtimeToUpdate.Status.Selector = j.getWorkerSelectors()
-		runtimeToUpdate.Status.DesiredWorkerNumberScheduled = replicas
 		runtimeToUpdate.Status.ValueFileConfigmap = j.getHelmValuesConfigMapName()
-
-		if len(runtimeToUpdate.Status.Conditions) == 0 {
-			runtimeToUpdate.Status.Conditions = []datav1alpha1.RuntimeCondition{}
-		}
-		cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersInitialized, datav1alpha1.RuntimeWorkersInitializedReason,
-			"The worker is initialized.", corev1.ConditionTrue)
-		runtimeToUpdate.Status.Conditions =
-			utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
-				cond)
 
 		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
 			return j.Client.Status().Update(context.TODO(), runtimeToUpdate)
