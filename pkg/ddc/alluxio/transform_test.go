@@ -318,6 +318,8 @@ func TestTransformWorkers(t *testing.T) {
 	}
 }
 
+// TestGenerateStaticPorts tests the logic of generateStaticPorts method
+// Verifies if the generated port assignments match expected values when APIGateway is enabled and Master replicas is 3
 func TestGenerateStaticPorts(t *testing.T) {
 	engine := &AlluxioEngine{Log: fake.NullLogger(),
 		runtime: &datav1alpha1.AlluxioRuntime{
