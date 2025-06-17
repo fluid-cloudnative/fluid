@@ -79,17 +79,14 @@ func TestAlluxioEngine_GetDeprecatedCommonLabelname(t *testing.T) {
 // This test verifies whether the HasDeprecatedCommonLabelname method can correctly identify if a DaemonSet
 // contains deprecated label formats.
 func TestAlluxioEngine_HasDeprecatedCommonLabelname(t *testing.T) {
-	// Create a DaemonSet with a specific node selector.
-	// This DaemonSet uses a deprecated label format: "data.fluid.io/storage-<runtime>-<dataset>"
 	daemonSetWithSelector := &v1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase-worker",  // workload name
-			Namespace: "fluid",         // namespace
+			Name:      "hbase-worker",  
+			Namespace: "fluid",         
 		},
 		Spec: v1.DaemonSetSpec{
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
-					// Node selector uses the deprecated label format
 					NodeSelector: map[string]string{
 						"data.fluid.io/storage-fluid-hbase": "selector",
 					},
@@ -98,16 +95,14 @@ func TestAlluxioEngine_HasDeprecatedCommonLabelname(t *testing.T) {
 		},
 	}
 
-	// Create another DaemonSet (different name but same deprecated label format)
 	daemonSetWithoutSelector := &v1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hadoop-worker",  // different workload
-			Namespace: "fluid",          // same namespace
+			Name:      "hadoop-worker",  
+			Namespace: "fluid",          /
 		},
 		Spec: v1.DaemonSetSpec{
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
-					// Also uses the deprecated label format
 					NodeSelector: map[string]string{
 						"data.fluid.io/storage-fluid-hbase": "selector",
 					},
@@ -116,56 +111,46 @@ func TestAlluxioEngine_HasDeprecatedCommonLabelname(t *testing.T) {
 		},
 	}
 
-	// Prepare Kubernetes API objects for testing
 	runtimeObjs := []runtime.Object{}
 	runtimeObjs = append(runtimeObjs, daemonSetWithSelector)
 	runtimeObjs = append(runtimeObjs, daemonSetWithoutSelector)
-	// Create Scheme and register API types
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(v1.SchemeGroupVersion, daemonSetWithSelector)
-	// Use a fake client to simulate Kubernetes API
 	fakeClient := fake.NewFakeClientWithScheme(scheme, runtimeObjs...)
-	// Define test cases
 	testCases := []struct {
-		name      string // dataset name
-		namespace string // namespace
-		out       bool   // expected result
-		isErr     bool   // whether an error is expected
+		name      string 
+		namespace string 
+		out       bool   
+		isErr     bool   
 	}{
 		{
-			name:      "hbase",  // matches an existing DaemonSet
+			name:      "hbase",  
 			namespace: "fluid",
-			out:       true,     // should detect deprecated label
+			out:       true,     
 			isErr:     false,
 		},
 		{
-			name:      "none",   // dataset does not exist
+			name:      "none",   
 			namespace: "fluid",
-			out:       false,    // should not detect deprecated label
+			out:       false,    
 			isErr:     false,
 		},
 		{
-			name:      "hadoop", // DaemonSet exists but name does not match
+			name:      "hadoop", 
 			namespace: "fluid",
-			out:       false,    // should not detect deprecated label
+			out:       false,    
 			isErr:     false,
 		},
 	}
-
-	// Execute all test cases
 	for _, test := range testCases {
-		// Create an Alluxio engine instance for the current test case
 		engine := getTestAlluxioEngine(fakeClient, test.name, test.namespace)
-		// Call the method under test
 		out, err := engine.HasDeprecatedCommonLabelname()
-		// Validate the result
 		if out != test.out {
 			t.Errorf(
 				"Dataset %s/%s test failed: expected %t, got %t",
 				test.namespace, test.name, test.out, out,
 			)
 		}
-		// Validate error expectation
 		isErr := err != nil
 		if isErr != test.isErr {
 			t.Errorf(
