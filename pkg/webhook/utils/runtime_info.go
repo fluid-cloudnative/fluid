@@ -17,7 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func CollectRuntimeInfosFromPVCs(client client.Client, pvcNames []string, namespace string, setupLog logr.Logger, skipPrecheck bool) (runtimeInfos map[string]base.RuntimeInfoInterface, err error) {
+func CollectRuntimeInfosFromPVCs(client client.Reader, pvcNames []string, namespace string, setupLog logr.Logger, skipPrecheck bool) (runtimeInfos map[string]base.RuntimeInfoInterface, err error) {
 	if utils.IsTimeTrackerDebugEnabled() {
 		defer utils.TimeTrack(time.Now(), "CreateUpdatePodForSchedulingHandler.checkIfDatasetPVCs",
 			"pvc.names", pvcNames, "pvc.namespace", namespace)
@@ -73,7 +73,7 @@ func CollectRuntimeInfosFromPVCs(client client.Client, pvcNames []string, namesp
 	return
 }
 
-func buildRuntimeInfoInternalWithPrecheck(client client.Client,
+func buildRuntimeInfoInternalWithPrecheck(client client.Reader,
 	pvc *corev1.PersistentVolumeClaim,
 	log logr.Logger, skipPrecheck bool) (runtimeInfo base.RuntimeInfoInterface, err error) {
 	if utils.IsTimeTrackerDebugEnabled() {
@@ -104,7 +104,7 @@ func buildRuntimeInfoInternalWithPrecheck(client client.Client,
 	return
 }
 
-func checkDatasetBound(client client.Client, name, namespace string) (err error) {
+func checkDatasetBound(client client.Reader, name, namespace string) (err error) {
 	dataset, err := utils.GetDataset(client, name, namespace)
 	if err != nil {
 		return

@@ -219,7 +219,7 @@ func TestInjectList(t *testing.T) {
 			if err != nil {
 				t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 			}
-			runtimeInfo.SetClient(fakeClient)
+			runtimeInfo.SetAPIReader(fakeClient)
 			runtimeInfos[pvc] = runtimeInfo
 		}
 
@@ -261,7 +261,7 @@ func TestInjectUnstructured(t *testing.T) {
 	if err != nil {
 		t.Errorf("testcase %s failed due to error %v", name, err)
 	}
-	runtimeInfo.SetClient(fakeClient)
+	runtimeInfo.SetAPIReader(fakeClient)
 	runtimeInfos[name] = runtimeInfo
 	pod := corev1.Pod{
 		TypeMeta: metav1.TypeMeta{
@@ -330,7 +330,7 @@ func TestInjectObject(t *testing.T) {
 	if err != nil {
 		t.Errorf("testcase %s failed due to error %v", name, err)
 	}
-	runtimeInfo.SetClient(fakeClient)
+	runtimeInfo.SetAPIReader(fakeClient)
 	runtimeInfos[name] = runtimeInfo
 
 	deploy := appsv1.Deployment{

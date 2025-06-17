@@ -390,7 +390,7 @@ func TestAlluxioEngineCleanupCache(t *testing.T) {
 			defer patch1.Reset()
 
 			patch2 := ApplyFunc(utils.GetDataset,
-				func(_ client.Client, _ string, _ string) (*datav1alpha1.Dataset, error) {
+				func(_ client.Reader, _ string, _ string) (*datav1alpha1.Dataset, error) {
 					d := &datav1alpha1.Dataset{
 						Status: datav1alpha1.DatasetStatus{
 							UfsTotal: "19.07MiB",

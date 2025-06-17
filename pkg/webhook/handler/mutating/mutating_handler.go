@@ -40,12 +40,14 @@ import (
 // FluidMutatingHandler mutates a pod and has implemented admission.DecoderInjector
 type FluidMutatingHandler struct {
 	Client client.Client
+	Reader client.Reader
 	// A decoder will be automatically injected
 	decoder *admission.Decoder
 }
 
-func (a *FluidMutatingHandler) Setup(client client.Client, decoder *admission.Decoder) {
+func (a *FluidMutatingHandler) Setup(client client.Client, reader client.Reader, decoder *admission.Decoder) {
 	a.Client = client
+	a.Reader = reader
 	a.decoder = decoder
 }
 
@@ -94,9 +96,20 @@ func (a *FluidMutatingHandler) Handle(ctx context.Context, req admission.Request
 		return admission.Allowed("skip mutating the pod because injection is done")
 	}
 
-	err = a.MutatePod(pod)
-	if err != nil {
-		return admission.Errored(http.StatusInternalServerError, err)
+	backupPod := pod.DeepCopy()
+	if err := a.MutatePod(pod, false); err != nil {
+		setupLog.Error(err, "failed to mutate pod with cache client", "Pod", pod.Name, "Namespace", pod.Namespace)
+		if webhookutils.IsNeedRetryWithApiReaderError(err) {
+			setupLog.Info("retrying with API reader",
+				"namespace", pod.Namespace,
+				"pod", pod.Name,
+				"reason", err.Error(),
+			)
+			pod = backupPod
+			if err := a.MutatePod(pod, true); err != nil {
+				return admission.Errored(http.StatusInternalServerError, err)
+			}
+		}
 	}
 
 	if undoNamespaceOverride {
@@ -115,7 +128,12 @@ func (a *FluidMutatingHandler) Handle(ctx context.Context, req admission.Request
 }
 
 // MutatePod will call all plugins to get total prefer info
-func (a *FluidMutatingHandler) MutatePod(pod *corev1.Pod) (err error) {
+func (a *FluidMutatingHandler) MutatePod(pod *corev1.Pod, useDirectReader bool) (err error) {
+	handlerClient := a.Reader
+	if !useDirectReader {
+		handlerClient = a.Client
+	}
+
 	if utils.IsTimeTrackerDebugEnabled() {
 		defer utils.TimeTrack(time.Now(), "AddScheduleInfoToPod",
 			"pod.name", pod.GetName(), "pod.namespace", pod.GetNamespace())
@@ -123,11 +141,11 @@ func (a *FluidMutatingHandler) MutatePod(pod *corev1.Pod) (err error) {
 	var setupLog = ctrl.Log.WithName("AddScheduleInfoToPod")
 	setupLog.V(1).Info("start to add schedule info", "Pod", pod.Name, "Namespace", pod.Namespace)
 	pvcNames := kubeclient.GetPVCNamesFromPod(pod)
-	runtimeInfos, err := webhookutils.CollectRuntimeInfosFromPVCs(a.Client, pvcNames, pod.Namespace, setupLog,
+	runtimeInfos, err := webhookutils.CollectRuntimeInfosFromPVCs(handlerClient, pvcNames, pod.Namespace, setupLog,
 		utils.SkipPrecheckEnable(pod.Annotations))
 	if err != nil {
 		setupLog.Error(err, "failed to collect runtime infos from PVCs", "pvcNames", pvcNames)
-		return errors.Wrapf(err, "failed to collect runtime infos from PVCs %v", pvcNames)
+		return webhookutils.NewNeedRetryWithApiReaderError(errors.Wrapf(err, "failed to collect runtime infos from PVCs %v", pvcNames))
 	}
 
 	// get plugins registry and get the need plugins list from it

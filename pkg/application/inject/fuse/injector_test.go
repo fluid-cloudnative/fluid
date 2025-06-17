@@ -1158,7 +1158,7 @@ func TestInjectPod(t *testing.T) {
 			if err != nil {
 				t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 			}
-			runtimeInfo.SetClient(fakeClient)
+			runtimeInfo.SetAPIReader(fakeClient)
 			runtimeInfos[pvc] = runtimeInfo
 		}
 
@@ -1448,7 +1448,7 @@ func TestSkipInjectPod(t *testing.T) {
 			if err != nil {
 				t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 			}
-			runtimeInfo.SetClient(fakeClient)
+			runtimeInfo.SetAPIReader(fakeClient)
 			runtimeInfos[pvc] = runtimeInfo
 		}
 
@@ -2375,7 +2375,7 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 			if err != nil {
 				t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 			}
-			runtimeInfo.SetClient(fakeClient)
+			runtimeInfo.SetAPIReader(fakeClient)
 			runtimeInfos[pvc] = runtimeInfo
 		}
 
@@ -2839,7 +2839,7 @@ func TestInjectPodWithDatasetSubPath(t *testing.T) {
 			if err != nil {
 				t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 			}
-			runtimeInfo.SetClient(fakeClient)
+			runtimeInfo.SetAPIReader(fakeClient)
 			runtimeInfos[pvc] = runtimeInfo
 		}
 
@@ -4120,7 +4120,7 @@ func TestInjectPodUnprivileged(t *testing.T) {
 			if err != nil {
 				t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 			}
-			runtimeInfo.SetClient(fakeClient)
+			runtimeInfo.SetAPIReader(fakeClient)
 			runtimeInfos[pvc] = runtimeInfo
 		}
 
@@ -5227,7 +5227,7 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 			if err != nil {
 				t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 			}
-			runtimeInfo.SetClient(fakeClient)
+			runtimeInfo.SetAPIReader(fakeClient)
 			runtimeInfos[pvc] = runtimeInfo
 		}
 
@@ -6205,7 +6205,7 @@ func TestInjectPodWithEnabledFUSEMetrics(t *testing.T) {
 			if err != nil {
 				t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 			}
-			runtimeInfo.SetClient(fakeClient)
+			runtimeInfo.SetAPIReader(fakeClient)
 			runtimeInfos[pvc] = runtimeInfo
 		}
 
