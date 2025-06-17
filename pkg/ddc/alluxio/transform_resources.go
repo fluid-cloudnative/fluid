@@ -153,6 +153,18 @@ func (e *AlluxioEngine) transformResourcesForWorker(runtime *datav1alpha1.Alluxi
 	return nil
 }
 
+// transformResourcesForFuse adjusts the FUSE container resource requirements
+// based on the memory limits specified in the AlluxioRuntime spec and the tiered store configuration.
+//
+// Logic:
+// 1. Skip if no resource limits or memory limit is defined in the runtime spec.
+// 2. Convert the resource requirements from runtime to internal representation.
+// 3. Retrieve runtime info and get tiered storage requirements.
+// 4. If MemoryCacheStore is configured, add its requirement to the memory limit.
+// 5. Update the final memory limit in the FUSE resource configuration.
+//
+// Note: disk cache resources are not handled yet (commented out).
+// TODO(iluoeli): Final memory limit should consider both heap (Xmx) and direct memory.
 func (e *AlluxioEngine) transformResourcesForFuse(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) {
 
 	if runtime.Spec.Fuse.Resources.Limits == nil {
