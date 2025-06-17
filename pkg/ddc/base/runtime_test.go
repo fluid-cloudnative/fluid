@@ -1149,11 +1149,11 @@ func TestGetRuntimeInfo(t *testing.T) {
 				return
 			}
 			if got != nil {
-				got.SetClient(nil)
+				got.SetClientReader(nil)
 			}
 
 			if tt.want != nil {
-				tt.want.SetClient(nil)
+				tt.want.SetClientReader(nil)
 			}
 
 			if !tt.wantErr && !reflect.DeepEqual(got, tt.want) {
