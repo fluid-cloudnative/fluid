@@ -94,7 +94,10 @@ func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *d
 	// 10. targetPath to mount
 	value.Fuse.TargetPath = t.getTargetPath()
 
-	// 11. env
+	// 11. lifecycle
+	t.parseLifecycle(runtime, profile, value)
+
+	// 12. env
 	options, err := t.parseFuseOptions(runtime, profile, dataset)
 	if err != nil {
 		return
@@ -113,22 +116,22 @@ func (t *ThinEngine) transformFuse(runtime *datav1alpha1.ThinRuntime, profile *d
 		})
 	}
 
-	// 12. fuse config
+	// 13. fuse config
 	err = t.transformFuseConfig(runtime, dataset, value)
 	if err != nil {
 		return err
 	}
 
-	// 13. critical
+	// 14. critical
 	// set critical fuse pod to avoid eviction
 	value.Fuse.CriticalPod = common.CriticalFusePodEnabled()
 
-	// 14. cachedir
+	// 15. cachedir
 	if len(runtime.Spec.TieredStore.Levels) > 0 {
 		value.Fuse.CacheDir = runtime.Spec.TieredStore.Levels[0].Path
 	}
 
-	// 15. mount related node publish secret to fuse if the dataset specifies any mountpoint with pvc type.
+	// 16. mount related node publish secret to fuse if the dataset specifies any mountpoint with pvc type.
 	err = t.transfromSecretsForPersistentVolumeClaimMounts(dataset, profile.Spec.NodePublishSecretPolicy, value)
 	if err != nil {
 		return err
@@ -148,6 +151,39 @@ func (t *ThinEngine) parseFuseImage(runtime *datav1alpha1.ThinRuntime, value *Th
 	}
 	if len(runtime.Spec.Fuse.ImagePullSecrets) != 0 {
 		value.Fuse.ImagePullSecrets = runtime.Spec.Fuse.ImagePullSecrets
+	}
+}
+
+func (t *ThinEngine) parseLifecycle(runtime *datav1alpha1.ThinRuntime, profile *datav1alpha1.ThinRuntimeProfile, value *ThinValue) {
+	// default lifecycle config
+	value.Fuse.Lifecycle = &corev1.Lifecycle{
+		PreStop: &corev1.LifecycleHandler{
+			Exec: &corev1.ExecAction{
+				Command: []string{
+					"sh", "-c", fmt.Sprintf("umount %s", t.getTargetPath()),
+				},
+			},
+		},
+	}
+
+	// set lifecycle from profile
+	if fuseLifecycleInProfile := profile.Spec.Fuse.Lifecycle; fuseLifecycleInProfile != nil {
+		if fuseLifecycleInProfile.PreStop != nil {
+			value.Fuse.Lifecycle.PreStop = fuseLifecycleInProfile.PreStop
+		}
+		if fuseLifecycleInProfile.PostStart != nil {
+			value.Fuse.Lifecycle.PostStart = fuseLifecycleInProfile.PostStart
+		}
+	}
+
+	// set lifecycle from runtime
+	if fuseLifecycleInRuntime := runtime.Spec.Fuse.Lifecycle; fuseLifecycleInRuntime != nil {
+		if fuseLifecycleInRuntime.PreStop != nil {
+			value.Fuse.Lifecycle.PreStop = fuseLifecycleInRuntime.PreStop
+		}
+		if fuseLifecycleInRuntime.PostStart != nil {
+			value.Fuse.Lifecycle.PostStart = fuseLifecycleInRuntime.PostStart
+		}
 	}
 }
 
