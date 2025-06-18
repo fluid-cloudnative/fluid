@@ -23,28 +23,28 @@ The companies/organizations are listed in alphabetical order grouped by the phas
 | [bilibili](http://www.bilibili.com/)  | [@umialpha](https://github.com/umialpha) | Production | bilibili AI platform |
 | [AnalyticDB On Alibaba Cloud](https://www.aliyun.com/product/ApsaraDB/ads)  | [@daomin885](jiebin.cjb@alibaba-inc.com) | Production | LakeCache Containers |
 | [鹏行智能](https://www.pxing.com/)  | [@chenhuaicong](https://github.com/chenhuaicong) | Testing | Pxing AI training platform |
-| [数元灵](https://www.dmetasoul.com/)  | [@xuzhiwei](xuzw@dmetasoul.com) | Testing | MetaSpore distributed multimodal AI platform |
+| [数元灵](https://www.dmetasoul.com/)  | [@xuzhiwei](https://github.com/xuzhiwei) | Testing | MetaSpore distributed multimodal AI platform |
 | [Gaussian Robotics](https://www.gaussianrobotics.com/)  | [@gaohairong](gaohairong@gs-robot.com) | Testing | AI Platform on k8s |
-| [Metaapp](https://www.metaapp.cn/)  | [@xzbcodelife](xzbzxcasdf@163.com) | Testing | Recommendation |
+| [Metaapp](https://www.metaapp.cn/)  | [@xzbcodelife](https://github.com/xzbcodelife) | Testing | Recommendation |
 | [Baidu AI Cloud](https://cloud.baidu.com/)  | [@abowloflrf](https://github.com/abowloflrf) | Staging | Cloud Container Engine |
 | [Envision](https://www.envision-group.com/cn/digital.html)  | [@shaoxuefeng](https://github.com/shaoxuefeng) | Testing | AI Platform on k8s |
 | [Metabit Trading](https://www.metabit-trading.com)  | [@jianhong](https://github.com/jianhong-metabit) | Production | AI Platform on k8s |
 | [Zhejiang Lab](https://www.zhejianglab.com)  | [@hongchen](https://github.com/hongchenokok) | Testing | AI Platform on k8s |
 | [XIAOMI](https://www.mi.com/)  | [@PeterChg](https://github.com/PeterChg) | Staging | Cloudml AI Platform |
-| [Soul APP](https://soulapp.cn/)  | [@mornight](zhanyu@soulapp.cn) | Testing | AI Platform on k8s |
-| [HUYA](https://www.huya.com)  | [@BobLiu20](liubofang@huya.com) | Production | AI Platform on k8s |
-| [OPPO](https://www.oppo.com) | [@laibruce](laiyanhui@oppo.com) | Production | Data acceleration |
-| [CloudView](https://cloudview.mobi) | [@kastland](kastland@126.com) | Production | AI Platform on k8s |
-| [Inceptio](https://www.inceptio.ai) | [@willwu](wusnong@163.com) | Production | Bigdata Platform and Autonomous Driving Simulation Platform |
+| [Soul APP](https://soulapp.cn/)  | [@mornight](https://github.com/mornight) | Testing | AI Platform on k8s |
+| [HUYA](https://www.huya.com)  | [@BobLiu20](https://github.com/BobLiu20) | Production | AI Platform on k8s |
+| [OPPO](https://www.oppo.com) | [@laibruce](https://github.com/laibruce) | Production | Data acceleration |
+| [CloudView](https://cloudview.mobi) | [@kastland](https://github.com/kastland) | Production | AI Platform on k8s |
+| [Inceptio](https://www.inceptio.ai) | [@willwu](https://github.com/willwu) | Production | Bigdata Platform and Autonomous Driving Simulation Platform |
 | [autelrobotics](https://www.autelrobotics.cn) | [@andyzheung](https://github.com/andyzheung) | Testing | AI platform training data cache and big emr job data process data cache |
 | [coScene](https://www.coscene.cn) | [@juchaosong](https://github.com/juchaosong) | Production | Data Platform on k8s |
-| [pvmed](https://www.pvmedtech.com/) | [@huozhuoliang](huozhuoliang@pvmedtech.com) | Testing | AI training platform|
-| [DPTechnology](https://www.dp.tech/) | [@liyangbing](liyb@dp.tech) | Production | AI Platform on k8s|
-| [Megvii](https://megvii.com/) | [@huangweixiao](huangweixiao@megvii.com) | Testing | AI Platform on k8s|
-| [图森未来](https://cn.tusimple.com/) | [@bojian](jian.bo@tusen.ai) | Testing | Elastic Container Orchestration Service on k8s |
-| [得物](https://dewu.com/) | [@wangweidong](wangweidong@shizhuang-inc.com) | Staging | AI Platform(KubeAI) on k8s |
-| [KubeDL](https://kubedl.io/) | [@SimonCqk](cqk0100@gmail.com) | Production | AI Training/Big Data/Stream Media Platforms In Aicheng Technology At Large Scale |
-| [liblibai](https://liblib.ai) | [@zxj](zxj861216@163.com) | Production | AIGC Platform on k8s |
+| [pvmed](https://www.pvmedtech.com/) | [@huozhuoliang](https://github.com/huozhuoliang) | Testing | AI training platform|
+| [DPTechnology](https://www.dp.tech/) | [@liyangbing](https://github.com/liyangbing) | Production | AI Platform on k8s|
+| [Megvii](https://megvii.com/) | [@huangweixiao](https://github.com/huangweixiao) | Testing | AI Platform on k8s|
+| [图森未来](https://cn.tusimple.com/) | [@bojian](https://github.com/bojian) | Testing | Elastic Container Orchestration Service on k8s |
+| [得物](https://dewu.com/) | [@wangweidong](https://github.com/wangweidong) | Staging | AI Platform(KubeAI) on k8s |
+| [KubeDL](https://kubedl.io/) | [@SimonCqk](https://github.com/SimonCqk) | Production | AI Training/Big Data/Stream Media Platforms In Aicheng Technology At Large Scale |
+| [liblibai](https://liblib.ai) | [@zxj](https://github.com/zxj) | Production | AIGC Platform on k8s |
 | [HappyElements](https://www.happyelements.com) | [@Luckyboys](https://github.com/Luckyboys) | Production | AIGC Platform on k8s |
 | [JoinQuant](https://www.joinquant.com/) | [@David-Xiang](https://github.com/David-Xiang) | Production | AI Platform on k8s |
 | [Aliyun E-MapReduce](https://help.aliyun.com/en/emr/) | [@frankleaf](https://github.com/frankleaf) | Production | Accelerate Spark Service on BigData |
