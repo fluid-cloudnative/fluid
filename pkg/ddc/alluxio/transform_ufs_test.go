@@ -23,8 +23,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-// TestTransformDatasetToVolume is a unit test function that verifies the transformation of a Dataset into a UFSPath 
-// in the Alluxio runtime. It ensures that the Dataset's mount points are correctly converted into corresponding 
+// TestTransformDatasetToVolume is a unit test function that verifies the transformation of a Dataset into a UFSPath
+// in the Alluxio runtime. It ensures that the Dataset's mount points are correctly converted into corresponding
 // container and host paths.
 //
 // Parameters:
@@ -60,7 +60,7 @@ func TestTransformDatasetToVolume(t *testing.T) {
 				}},
 			},
 		}, &Alluxio{}, ufsPath},
-		
+
 		// Test case 2: Mount with a path specified
 		{&datav1alpha1.AlluxioRuntime{}, &datav1alpha1.Dataset{
 			Spec: datav1alpha1.DatasetSpec{
@@ -72,7 +72,7 @@ func TestTransformDatasetToVolume(t *testing.T) {
 			},
 		}, &Alluxio{}, ufsPath1},
 	}
-	
+
 	// Iterate through all test cases and run the test.
 	for _, test := range tests {
 		// Create an instance of AlluxioEngine to call the function under test.

@@ -218,8 +218,8 @@ func TestTransformResourcesForWorkerWithTieredStore(t *testing.T) {
 
 	// Test cases structured to validate different tiered storage configurations
 	var tests = []struct {
-		runtime      *datav1alpha1.AlluxioRuntime  // Input Alluxio runtime configuration
-		alluxioValue *Alluxio                      // Expected output configuration
+		runtime      *datav1alpha1.AlluxioRuntime // Input Alluxio runtime configuration
+		alluxioValue *Alluxio                     // Expected output configuration
 	}{
 		{&datav1alpha1.AlluxioRuntime{
 			ObjectMeta: metav1.ObjectMeta{
@@ -229,20 +229,20 @@ func TestTransformResourcesForWorkerWithTieredStore(t *testing.T) {
 			Spec: datav1alpha1.AlluxioRuntimeSpec{
 				TieredStore: datav1alpha1.TieredStore{
 					Levels: []datav1alpha1.Level{{
-						MediumType: common.Memory,  // Memory-based tiered storage configuration
+						MediumType: common.Memory, // Memory-based tiered storage configuration
 						Quota:      &result,       // 20Gi quota allocation
 					}},
 				},
 			},
 		}, &Alluxio{
-			Properties: map[string]string{},  // Expected empty properties map
+			Properties: map[string]string{}, // Expected empty properties map
 		}},
 	}
 	// Iterate through test cases to validate transformation logic
 	for _, test := range tests {
 		// Initialize test environment with mocked dependencies
 		engine := &AlluxioEngine{
-			Log:       fake.NullLogger(),  // Discard logging output
+			Log:       fake.NullLogger(), // Discard logging output
 			name:      "test",
 			namespace: "test",
 		}
