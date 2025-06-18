@@ -29,7 +29,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
-
+// TestTransformResourcesForMaster tests the transformResourcesForMaster method of the AlluxioEngine.
+// This unit test verifies the resource transformation logic for the Alluxio master component.
+// It ensures that the CPU and memory resource requests and limits from an AlluxioRuntime
+// object are correctly passed and mapped to the Alluxio struct's Master and JobMaster fields.
+// The test defines multiple scenarios using table-driven tests:
+//   1. With both resource requests and limits set.
+//   2. With only resource requests set.
+//   3. With empty resource requirements or only empty requests/limits.
+// For each test case, the transformResourcesForMaster method is invoked, and the output is 
+// compared against the expected result using DeepEqual. Any mismatch is reported as a test error.
 func TestTransformResourcesForMaster(t *testing.T) {
 	testCases := map[string]struct {
 		runtime *datav1alpha1.AlluxioRuntime
