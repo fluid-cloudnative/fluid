@@ -35,7 +35,7 @@ jobs:
 
     steps:
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
         with:
           go-version: ${{ env.GO_VERSION }}
       
@@ -43,12 +43,12 @@ jobs:
         uses: azure/setup-helm@v4.3.0
 
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           path: ${{ env.GOPATH }}/src/github.com/fluid-cloudnative/fluid
 
       - name: Create k8s Kind Cluster
-        uses: helm/kind-action@v1.12.0
+        uses: helm/kind-action@a1b0e391336a6ee6713a0583f8c6240d70863de3 # v1.12.0
         with:
           node_image: kindest/node:${{ matrix.kubernetes-version }}
           cluster_name: ${{ env.KIND_CLUSTER }}
