@@ -22,7 +22,7 @@ The companies/organizations are listed in alphabetical order grouped by the phas
 | [Weibo](http://www.weibo.com/)  | [@wutong](https://github.com/wutong) | Production | weibo deep learning platform |
 | [bilibili](http://www.bilibili.com/)  | [@umialpha](https://github.com/umialpha) | Production | bilibili AI platform |
 | [AnalyticDB On Alibaba Cloud](https://www.aliyun.com/product/ApsaraDB/ads)  | [@daomin885](jiebin.cjb@alibaba-inc.com) | Production | LakeCache Containers |
-| [鹏行智能](https://www.pxing.com/)  | [@chenhuaicong](chenhc@pxing.com) | Testing | Pxing AI training platform |
+| [鹏行智能](https://www.pxing.com/)  | [@chenhuaicong](https://github.com/chenhuaicong) | Testing | Pxing AI training platform |
 | [数元灵](https://www.dmetasoul.com/)  | [@xuzhiwei](xuzw@dmetasoul.com) | Testing | MetaSpore distributed multimodal AI platform |
 | [Gaussian Robotics](https://www.gaussianrobotics.com/)  | [@gaohairong](gaohairong@gs-robot.com) | Testing | AI Platform on k8s |
 | [Metaapp](https://www.metaapp.cn/)  | [@xzbcodelife](xzbzxcasdf@163.com) | Testing | Recommendation |
@@ -48,6 +48,6 @@ The companies/organizations are listed in alphabetical order grouped by the phas
 | [HappyElements](https://www.happyelements.com) | [@Luckyboys](https://github.com/Luckyboys) | Production | AIGC Platform on k8s |
 | [JoinQuant](https://www.joinquant.com/) | [@David-Xiang](https://github.com/David-Xiang) | Production | AI Platform on k8s |
 | [Aliyun E-MapReduce](https://help.aliyun.com/en/emr/) | [@frankleaf](https://github.com/frankleaf) | Production | Accelerate Spark Service on BigData |
-| [数慧时空](https://diit.cn/) | [@zery](zerix.os@gmail.com) | Production | DataFabric System Storage Cache Layer  |
+| [数慧时空](https://diit.cn/) | [@zery](https://github.com/zery) | Production | DataFabric System Storage Cache Layer  |
 | [同花顺](https://www.10jqka.com.cn/) | [@seriousgong](https://github.com/seriousgong) | Production | AI Platform on k8s |
 | [地平线](https://www.horizon.auto/) | [@chenyangxueHDU](https://github.com/chenyangxueHDU) | Production | AI Platform on k8s |
