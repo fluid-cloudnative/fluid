@@ -10,7 +10,7 @@ The following are the adopters of project Fluid. If you are using Fluid to simpl
 The companies/organizations are listed in alphabetical order grouped by the phase.
 | Organization | Contact | Phases      | Description of Use |
 | ------------ | ------- | ----------- | ------------------ |
-| [4Paradigm.com](http://www.4paradigm.com/)  | [@mahao](mahao) | Testing | 4Paradigm Sage EE |
+| [4Paradigm.com](http://www.4paradigm.com/)  | [@mahao](@mahao) | Testing | 4Paradigm Sage EE |
 | [PITS Globale Datenrettungsdienste](https://www.pitsdatenrettung.de/)  | [@arnoldberlin](mahao@4paradigm.com) | Testing | ML & Kubernetes |
 | [BossZhipin](https://www.zhipin.com/)  | [@lilyzhoupeijie](zhoupeijie@kanzhun.com) | Staging | Alsenal AI Platform |
 | [China Telecom](https://www.chinatelecom-h.com/en/global/home.php) | [@yangyuliufeng](qiulingwei.js@chinatelecom.cn) | Staging | AI Platform on k8s |
