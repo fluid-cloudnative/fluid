@@ -10,17 +10,17 @@ The following are the adopters of project Fluid. If you are using Fluid to simpl
 The companies/organizations are listed in alphabetical order grouped by the phase.
 | Organization | Contact | Phases      | Description of Use |
 | ------------ | ------- | ----------- | ------------------ |
-| [4Paradigm.com](http://www.4paradigm.com/)  | [@mahao](@mahao) | Testing | 4Paradigm Sage EE |
-| [PITS Globale Datenrettungsdienste](https://www.pitsdatenrettung.de/)  | [@arnoldberlin](mahao@4paradigm.com) | Testing | ML & Kubernetes |
-| [BossZhipin](https://www.zhipin.com/)  | [@lilyzhoupeijie](zhoupeijie@kanzhun.com) | Staging | Alsenal AI Platform |
-| [China Telecom](https://www.chinatelecom-h.com/en/global/home.php) | [@yangyuliufeng](qiulingwei.js@chinatelecom.cn) | Staging | AI Platform on k8s |
-| [HAOMO](http://haomo.ai/)  | [@tongyan](tongyan@haomo.ai) | Testing | HAOMO Auto Machine Learning Platform |
-| [Platform of Artificial Intelligence On Alibaba Cloud](https://www.aliyun.com/product/bigdata/product/learn)  | [@2sin18](yuanman.ym@alibaba-inc.com) | Production  | PAI Deep Learning Containers |
+| [4Paradigm.com](http://www.4paradigm.com/)  | [@mahao](https://github.com/mahao) | Testing | 4Paradigm Sage EE |
+| [PITS Globale Datenrettungsdienste](https://www.pitsdatenrettung.de/)  | [@arnoldberlin](https://github.com/arnoldberlin) | Testing | ML & Kubernetes |
+| [BossZhipin](https://www.zhipin.com/)  | [@lilyzhoupeijie](https://github.com/lilyzhoupeijie) | Staging | Alsenal AI Platform |
+| [China Telecom](https://www.chinatelecom-h.com/en/global/home.php) | [@yangyuliufeng](https://github.com/yangyuliufeng) | Staging | AI Platform on k8s |
+| [HAOMO](http://haomo.ai/)  | [@tongyan](https://github.com/tongyan) | Testing | HAOMO Auto Machine Learning Platform |
+| [Platform of Artificial Intelligence On Alibaba Cloud](https://www.aliyun.com/product/bigdata/product/learn)  | [@2sin18](https://github.com/2sin18) | Production  | PAI Deep Learning Containers |
 | [Qihoo 360](http://www.360.cn/)  | [@yuchang](https://github.com/70data) | Production | BigData platform |
-| [TencentCloud](https://cloud.tencent.com/)  | [@xieydd](chrisydxie@tencent.com) | Testing | Tencent Kubernetes Engine |
-| [Unisound](https://www.unisound.com/)  | [@ldd91](lvdongdong@unisound.com) | Staging | Atlas Deep Learning Platform |
-| [Weibo](http://www.weibo.com/)  | [@wutong](wutong6@staff.weibo.com) | Production | weibo deep learning platform |
-| [bilibili](http://www.bilibili.com/)  | [@umialpha](lilei06@bilibili.com) | Production | bilibili AI platform |
+| [TencentCloud](https://cloud.tencent.com/)  | [@xieydd](https://github.com/xieydd) | Testing | Tencent Kubernetes Engine |
+| [Unisound](https://www.unisound.com/)  | [@ldd91](https://github.com/ldd91) | Staging | Atlas Deep Learning Platform |
+| [Weibo](http://www.weibo.com/)  | [@wutong](https://github.com/wutong) | Production | weibo deep learning platform |
+| [bilibili](http://www.bilibili.com/)  | [@umialpha](https://github.com/umialpha) | Production | bilibili AI platform |
 | [AnalyticDB On Alibaba Cloud](https://www.aliyun.com/product/ApsaraDB/ads)  | [@daomin885](jiebin.cjb@alibaba-inc.com) | Production | LakeCache Containers |
 | [鹏行智能](https://www.pxing.com/)  | [@chenhuaicong](chenhc@pxing.com) | Testing | Pxing AI training platform |
 | [数元灵](https://www.dmetasoul.com/)  | [@xuzhiwei](xuzw@dmetasoul.com) | Testing | MetaSpore distributed multimodal AI platform |
