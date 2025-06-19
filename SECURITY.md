@@ -13,11 +13,11 @@ If you find a security related bug in Fluid, we kindly ask you for responsible d
 
 ### Private Disclosure Processes
 
-We ask that all suspected vulnerabilities be privately and responsibly disclosed by contacting our [security contact](SECURITY_CONTACTS.md) or [contacting our maintainers](mailto:fluid.opensource.project@gmail.com).
+We ask that all suspected vulnerabilities be privately and responsibly disclosed by contacting our [security contact](SECURITY_CONTACTS) or [contacting our maintainers](mailto:fluid.opensource.project@gmail.com).
 
 ### Public Disclosure Processes
 
-If you know of a publicly disclosed security vulnerability please IMMEDIATELY email the our [security contact](SECURITY_CONTACTS.md) or [contacting our maintainers](mailto:fluid.opensource.project@gmail.com) to inform about the vulnerability so they may start the patch, release, and communication process.
+If you know of a publicly disclosed security vulnerability please IMMEDIATELY email the our [security contact](SECURITY_CONTACTS) or [contacting our maintainers](mailto:fluid.opensource.project@gmail.com) to inform about the vulnerability so they may start the patch, release, and communication process.
 
 ### Compensation
 
@@ -31,4 +31,4 @@ The advisory will only be made public when the patched version is released to in
 
 Please report vulnerabilities by e-mail to the following address: 
 
-[security contact](SECURITY_CONTACTS.md) or [contacting our maintainers](mailto:fluid.opensource.project@gmail.com) 
+[security contact](SECURITY_CONTACTS) or [contacting our maintainers](mailto:fluid.opensource.project@gmail.com) 
