@@ -1,4 +1,5 @@
-FROM fluidcloudnative/fluid-dynamic-mount-base:v0.4
+# FROM fluidcloudnative/fluid-dynamic-mount-base:v0.4
+FROM fluidcloudnative/fluid-dynamic-mount-base:v0.4@sha256:b4c037b23d96d40ee67f1a578e6193c369fdbb12c38134725ca353babe3a30cd
 
 # Install Juicefs
 WORKDIR /app
