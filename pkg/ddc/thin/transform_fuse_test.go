@@ -374,6 +374,15 @@ func TestThinEngine_transformFuse(t1 *testing.T) {
 			// MountPath:   "/thin/fluid/test/thin-fuse",
 			ConfigValue:   "{\"mounts\":[{\"mountPoint\":\"abc\",\"options\":{\"a\":\"b\",\"c\":\"d\"}}],\"targetPath\":\"/thin/fluid/test/thin-fuse\",\"runtimeOptions\":{\"fuse-opt\":\"foo\"},\"accessModes\":[\"ReadWriteMany\"]}",
 			ConfigStorage: "configmap",
+			Lifecycle: &corev1.Lifecycle{
+				PreStop: &corev1.LifecycleHandler{
+					Exec: &corev1.ExecAction{
+						Command: []string{
+							"sh", "-c", "umount /thin/fluid/test/thin-fuse",
+						},
+					},
+				},
+			},
 		},
 	}
 	value := &ThinValue{}
@@ -692,6 +701,15 @@ func TestThinEngine_transformFuseWithDuplicateOptionKey(t1 *testing.T) {
 			// MountPath:   "/thin/fluid/test/thin-fuse",
 			ConfigValue:   "{\"mounts\":[{\"mountPoint\":\"abc\",\"options\":{\"a\":\"b\"}}],\"targetPath\":\"/thin/fluid/test/thin-fuse\",\"accessModes\":[\"ReadOnlyMany\"]}",
 			ConfigStorage: "configmap",
+			Lifecycle: &corev1.Lifecycle{
+				PreStop: &corev1.LifecycleHandler{
+					Exec: &corev1.ExecAction{
+						Command: []string{
+							"sh", "-c", "umount /thin/fluid/test/thin-fuse",
+						},
+					},
+				},
+			},
 		},
 	}
 	value := &ThinValue{}
