@@ -1,5 +1,6 @@
 # Build environment
-FROM ubuntu:jammy as BUILD
+# FROM ubuntu:jammy as BUILD
+FROM ubuntu:jammy@sha256:01a3ee0b5e413cefaaffc6abe68c9c37879ae3cced56a8e088b1649e5b269eeey as BUILD
 RUN apt update && \
     apt install --yes automake libfuse-dev libnfs-dev libnfs-dev libnfs13 libtool libtool m4 make xsltproc
 
@@ -11,7 +12,8 @@ RUN ./setup.sh && \
     make
 
 # Production image
-FROM ubuntu:jammy
+# FROM ubuntu:jammy as BUILD
+FROM ubuntu:jammy@sha256:01a3ee0b5e413cefaaffc6abe68c9c37879ae3cced56a8e088b1649e5b269eee
 RUN apt update && \
     apt install --yes bash fuse libfuse2 libnfs13 python3 && \
     apt clean autoclean && \

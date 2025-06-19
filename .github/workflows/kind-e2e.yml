@@ -40,7 +40,7 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
       
       - name: Set up Helm
-        uses: azure/setup-helm@v4.3.0
+        uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # v4.3.0
 
       - name: Checkout code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -73,7 +73,7 @@ jobs:
 
       - name: Dump environment
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
         with:
           name: gha-e2e-logs-${{ github.job }}-${{ matrix.kubernetes-version }}
           path: "src/github.com/fluid-cloudnative/fluid/e2e-tmp/testcase-*.tgz"
