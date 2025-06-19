@@ -30,6 +30,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// newAlluxioEngineRT 创建一个新的 AlluxioEngine 实例。
+// 参数：
+// - client: Kubernetes 客户端接口，用于与集群资源交互。
+// - name: AlluxioRuntime 的名称。
+// - namespace: AlluxioRuntime 所在的命名空间。
+// - withRuntimeInfo: 是否构建并包含 runtimeInfo。
+// - unittest: 是否启用单元测试模式（影响 logger 和行为）。
+// 返回值：
+// - *AlluxioEngine: 一个初始化完成的 AlluxioEngine 指针对象。
+
 func newAlluxioEngineRT(client client.Client, name string, namespace string, withRuntimeInfo bool, unittest bool) *AlluxioEngine {
 	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.AlluxioRuntime)
 	engine := &AlluxioEngine{
