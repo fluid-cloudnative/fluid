@@ -1,0 +1,7 @@
+meson==0.61.5 \
+    --hash=sha256:58c2ddb5f885da0e929f15d89f38d8a7d97f981f56815bcba008414f8511f59a \
+    --hash=sha256:5e9a0d65c1a51936362b9686d1c5e9e184a6fd245d57e7269750ce50c20f5d9a
+    # via -r requirements.txt
+ninja==1.11.1.1 \
+    --hash=sha256:84502ec98f02a037a169c4b0d5d86075eaf6afc55e1879003d6cab51ced2ea4b \
+    --hash=sha256:9d793b08dd857e38d0b6ffe9e6b7145d7c485a42dcfea04905ca0cdb6017cc3c
