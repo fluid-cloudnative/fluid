@@ -18,8 +18,12 @@ package mutator
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -180,10 +184,16 @@ func (helper *defaultMutatorHelper) Mutate() (*MutatingPodSpecs, error) {
 	return helper.Specs, nil
 }
 
-func (helper *defaultMutatorHelper) mutateDatasetVolumes() error {
+func (helper *defaultMutatorHelper) mutateDatasetVolumes() (err error) {
 	volumes := helper.Specs.Volumes
-
 	mountPath := helper.template.FuseMountInfo.HostMountPath
+	if common.HostPathMode(helper.Specs.MetaObj.Annotations[common.HostMountPathModeOnDefaultPlatformKey]) == common.HostPathModeRandomSuffix {
+		mountPath, err = helper.generateUniqueHostPath(mountPath)
+		if err != nil {
+			return err
+		}
+	}
+
 	if helper.template.FuseMountInfo.SubPath != "" {
 		mountPath = mountPath + "/" + helper.template.FuseMountInfo.SubPath
 	}
@@ -241,6 +251,17 @@ func (helper *defaultMutatorHelper) appendFuseContainerVolumes() (err error) {
 	)
 	for _, volume := range helper.Specs.Volumes {
 		volumeNames = append(volumeNames, volume.Name)
+	}
+
+	if common.HostPathMode(helper.Specs.MetaObj.Annotations[common.HostMountPathModeOnDefaultPlatformKey]) == common.HostPathModeRandomSuffix {
+		for index, volume := range volumesToAdd {
+			if utils.IsVolumeNameHasPrefixes(volume, hostMountNames) {
+				if volume.HostPath != nil {
+					volume.HostPath.Path = fmt.Sprintf("%s/%s", volume.HostPath.Path, helper.ctx.generateUniqueHostMountPath)
+					volumesToAdd[index] = volume
+				}
+			}
+		}
 	}
 
 	// Append volumes
@@ -392,6 +413,29 @@ func (helper *defaultMutatorHelper) enablePrometheusMetricsScrape() {
 	if _, exists := helper.Specs.MetaObj.Annotations[common.AnnotationPrometheusFuseMetricsScrapeKey]; !exists {
 		helper.Specs.MetaObj.Annotations[common.AnnotationPrometheusFuseMetricsScrapeKey] = "true"
 	}
+}
+func (helper *defaultMutatorHelper) generateUniqueHostPath(originalMountPath string) (string, error) {
+	bytes := make([]byte, 8)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", err
+	}
+	uniqueDirName := hex.EncodeToString(bytes)[:8]
+
+	name := helper.Specs.MetaObj.Name
+	if helper.Specs.MetaObj.Name == "" {
+		name = helper.Specs.MetaObj.GenerateName + "--generate-name"
+	}
+	generateUniqueHostMountPath := fmt.Sprintf("%s/%d-%s", name, time.Now().UnixMicro(), uniqueDirName)
+	helper.ctx.generateUniqueHostMountPath = generateUniqueHostMountPath
+
+	mountPathParts := strings.Split(originalMountPath, string(filepath.Separator))
+	if len(mountPathParts) < 2 {
+		return "", fmt.Errorf("unsupported host mount path format: %s", originalMountPath)
+	}
+	baseComponents := mountPathParts[:len(mountPathParts)-1]
+	lastComponent := mountPathParts[len(mountPathParts)-1]
+	newPathComponents := append(baseComponents, generateUniqueHostMountPath, lastComponent)
+	return fmt.Sprintf("/%s", filepath.Join(newPathComponents...)), nil
 }
 
 func (helper *defaultMutatorHelper) removeFuseMetricsContainerPort() {
