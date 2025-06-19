@@ -1,6 +1,6 @@
 # Build the csi binary
 # golang:1.23.7-bullseye
-FROM golang:1.23.7-bullseye as builder
+FROM golang:1.23.7-bullseye@sha256:0c15d02d61ecf2fc471091355291ba69bb2737225baea9ce6378d1e54d110030 as builder
 
 WORKDIR /go/src/github.com/fluid-cloudnative/fluid
 COPY . .
