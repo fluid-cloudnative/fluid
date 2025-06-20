@@ -66,6 +66,19 @@ func TestGetAPIGatewayStatus(t *testing.T) {
 	}
 }
 
+// mockAlluxioEngineWithClient creates and returns a pointer to an AlluxioEngine instance 
+// initialized with a mocked Kubernetes client and a Service object.
+// This function takes three parameters:
+// - name: The name of the Alluxio engine instance.
+// - ns: The namespace in which the Alluxio engine will be deployed.
+// - port: The port number for the Service that provides access to the Alluxio master.
+// The function constructs a mock Kubernetes Service object for the Alluxio master node, 
+// specifying a named port for REST access. It then creates a fake client using this 
+// Service object, allowing you to simulate interactions with the Kubernetes API 
+// without needing a real cluster.
+// Finally, it returns a pointer to an AlluxioEngine instance that contains the mock client,
+// the specified name, and namespace, which can be utilized for testing purposes in a 
+// controlled environment.
 func mockAlluxioEngineWithClient(name, ns string, port int32) *AlluxioEngine {
 
 	var mockClient client.Client
