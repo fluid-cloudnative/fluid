@@ -19,8 +19,22 @@ package validation
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 	"testing"
 )
+
+func FuzzIsSafePath(f *testing.F) {
+	// f.Add()
+	f.Fuzz(func(t *testing.T, input string) {
+		err := IsValidMountRoot(input)
+		if err == nil {
+			// valid input must start with "/"
+			if !strings.HasPrefix(input, string(filepath.Separator)) {
+				t.Errorf("testcase %s failed, expect the input starts with '/'", input)
+			}
+		}
+	})
+}
 
 func TestIsSafePathWithSafePath(t *testing.T) {
 
