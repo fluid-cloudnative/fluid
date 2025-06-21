@@ -168,6 +168,17 @@ func TestJuiceFSEngine_createFusePersistentVolume(t *testing.T) {
 	}
 }
 
+//This is a unit test for the 'createFusePersistentVolumeClaim' method of the JuiceFSEngine.
+//Test process: 
+//1.Initialize the test environment (create RuntimeInfo and JuiceFSEngine instances) 
+//2.Prepare test data (simulate DaemonSet and Dataset objects) 
+//3.Execute the target method 
+//4.Verify the result (check if the PVC is created and if the label is correct)
+//Key verification points: 
+//1.Whether the method can be executed successfully without errors. 
+//2.Whether the PVC was created correctly or not. 
+//3.Is the "Fuse generation" label on the PVC correct?
+
 func TestJuiceFSEngine_createFusePersistentVolumeClaim(t *testing.T) {
 	runtimeInfo, err := base.BuildRuntimeInfo("juicefs", "fluid", common.JuiceFSRuntime)
 	if err != nil {
