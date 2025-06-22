@@ -24,7 +24,7 @@ import (
 // TestParseReportSummary tests the parseReportSummary method of AlluxioEngine.
 // It verifies that the method correctly parses the Alluxio report summary string
 // and extracts the cache capacity and cached size information.
-// 
+//
 // The test case includes:
 // - A mock Alluxio report summary string (mockAlluxioReportSummaryForParseReport)
 // - Expected cacheStates output with cacheCapacity and cached values
