@@ -164,7 +164,10 @@ func (e *GooseFSEngine) checkMasterHealthy() (err error) {
 
 }
 
-// checkWorkersHealthy check workers number changed
+// checkWorkersHealthy checks the health status of workers in a GooseFSEngine runtime.
+// It retrieves the worker statefulset and evaluates whether the workers are ready based on their status.
+// If the workers are not ready, it updates the runtime's status with appropriate conditions and logs relevant information.
+// If the runtime was created by a controller before v0.7.0, it logs a warning indicating that worker health checking is not supported for such runtimes.
 func (e *GooseFSEngine) checkWorkersHealthy() (err error) {
 	// Check the status of workers
 	workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
