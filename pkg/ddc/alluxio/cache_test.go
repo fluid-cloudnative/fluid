@@ -572,6 +572,13 @@ func TestAlluxioEngine_getGracefulShutdownLimits(t *testing.T) {
 	}
 }
 
+// TestAlluxioEngine_getCleanCacheGracePeriodSeconds verifies the behavior of
+// the AlluxioEngine.getCleanCacheGracePeriodSeconds() method.
+// It covers the following scenarios:
+// 1. When no CleanCachePolicy is defined in the runtime spec, the method should return the default value (60 seconds).
+// 2. When GracePeriodSeconds is explicitly set in CleanCachePolicy, the method should return the configured value.
+// 3. When the runtime object is not found or the GracePeriodSeconds is not defined properly, it should return an error.
+// The test uses a fake Kubernetes client initialized with deep-copied runtime objects to simulate the environment.
 func TestAlluxioEngine_getCleanCacheGracePeriodSeconds(t *testing.T) {
 	type fields struct {
 		runtime       *datav1alpha1.AlluxioRuntime
