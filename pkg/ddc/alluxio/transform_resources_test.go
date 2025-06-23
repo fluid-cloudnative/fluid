@@ -167,8 +167,11 @@ func mockAlluxioRuntimeForMaster(res corev1.ResourceRequirements) *datav1alpha1.
 
 }
 
-// TestTransformResourcesForWorkerNoValue 测试当资源未设置值时，TransformResourcesForWorker 函数的行为是否符合预期。
-// 该测试主要验证在输入资源缺少 value 字段的情况下，函数能否正确处理并返回预期结果。
+// TestTransformResourcesForWorkerNoValue tests whether the TransformResourcesForWorker
+// function behaves as expected when resources have no set values.
+//
+// This test primarily verifies if the function can correctly handle
+// and return the expected result when the input resources lack the value field.
 func TestTransformResourcesForWorkerNoValue(t *testing.T) {
 	var tests = []struct {
 		runtime      *datav1alpha1.AlluxioRuntime
