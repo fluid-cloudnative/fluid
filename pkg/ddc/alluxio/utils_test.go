@@ -62,13 +62,7 @@ func TestIsFluidNativeScheme(t *testing.T) {
 	}
 }
 
-// TestAlluxioEngine_getInitUsersArgs tests the user initialization parameters generation functionality of utils.GetInitUsersArgs
-//
-// Parameters:
-// - t (*testing.T): Testing context object from Go test framework
-//
-// Returns:
-// - No return value, reports test failures through t.Errorf
+
 func TestAlluxioEngine_getInitUserDir(t *testing.T) {
 	type fields struct {
 		runtime       *datav1alpha1.AlluxioRuntime
@@ -111,6 +105,15 @@ func TestAlluxioEngine_getInitUserDir(t *testing.T) {
 		})
 	}
 }
+
+
+// TestAlluxioEngine_getInitUsersArgs tests the user initialization parameters generation functionality of utils.GetInitUsersArgs
+//
+// Parameters:
+// - t (*testing.T): Testing context object from Go test framework
+//
+// Returns:
+// - No return value, reports test failures through t.Errorf
 
 func TestAlluxioEngine_getInitUsersArgs(t *testing.T) {
 	type fields struct {
