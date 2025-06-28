@@ -93,6 +93,8 @@ rules:
       - datasets
       - efcruntimes/status
       - datasets/status
+      - persistentpodstates
+      - persistentpodstates/status
     verbs:
       - get
       - list
