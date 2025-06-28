@@ -34,6 +34,15 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 )
 
+// TestSetupMasterInternal tests the internal setup logic of the JindoEngine's master component.
+// This includes testing various scenarios such as:
+// - Failure in runtime port allocator
+// - Helm release already exists
+// - Helm release check error
+// - Helm release not found followed by install failure
+// - Helm release not found followed by successful install
+// Mock hooks are applied to helm.CheckRelease and helm.InstallRelease for each scenario.
+// gohook is used for method patching and unhooking during testing.
 func TestSetupMasterInternal(t *testing.T) {
 	mockExecCheckReleaseCommonFound := func(name string, namespace string) (exist bool, err error) {
 		return true, nil
