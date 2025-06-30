@@ -80,6 +80,7 @@ type Fuse struct {
 	ConfigValue      string                        `json:"configValue"`
 	ConfigStorage    string                        `json:"configStorage"`
 	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+	Lifecycle        *corev1.Lifecycle             `json:"lifecycle,omitempty"`
 }
 
 type Config struct {
