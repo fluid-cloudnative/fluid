@@ -45,7 +45,7 @@ CSI_IMG ?= ${IMG_REPO}/fluid-csi
 INIT_USERS_IMG ?= ${IMG_REPO}/init-users
 WEBHOOK_IMG ?= ${IMG_REPO}/fluid-webhook
 CRD_UPGRADER_IMG ?= ${IMG_REPO}/fluid-crd-upgrader
-PREFETCHER_IMAGE ?= ${IMG_REPO}/file-prefetcher
+PREFETCHER_IMAGE ?= ${IMG_REPO}/fluid-file-prefetcher
 
 # Dockerfile paths
 DATASET_DOCKERFILE ?= docker/Dockerfile.dataset
