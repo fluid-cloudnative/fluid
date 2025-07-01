@@ -350,6 +350,11 @@ webhook:
   #     cpu: 1000m
   #     memory: 512Mi
 
+  # TODO: move this into pluginsProfile
+  filePrefetcher:
+    imagePrefix: *defaultImagePrefix
+    imageName: fluid-file-prefetcher
+    imageTag: v0.1.0
   # if configmap `webhook-plugins` exists and not want to replace the content, set this to false.
   forceReplacePluginsProfile: false
   pluginsProfile:

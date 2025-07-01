@@ -55,6 +55,10 @@ spec:
             value: {{ .Values.webhook.serverlessInject.vfuseResourceName | quote }}
           {{- end }}
           {{- end }}
+          {{- if .Values.webhook.filePrefetcher }}
+          - name: FILE_PREFETCHR_IMAGE
+            value: {{ include "fluid.controlplane.imageTransform" (list .Values.webhook.filePrefetcher.imagePrefix .Values.webhook.filePrefetcher.imageName .Values.webhook.filePrefetcher.imageTag . ) }}
+          {{- end }}
         ports:
           - containerPort: 8080
             name: metrics
