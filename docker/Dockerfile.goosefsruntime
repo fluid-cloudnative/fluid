@@ -11,8 +11,8 @@ RUN make goosefsruntime-controller-build && \
 # Debug
 RUN go install github.com/go-delve/delve/cmd/dlv@v1.8.2
 
-# alpine:3.19.1
-FROM alpine:3.19.1@sha256:c5b1261d6d3e43071626931fc004f70149baeba2c8ec672bd4f27761f8e1ad6b
+# alpine:3.20.6
+FROM alpine:3.20.6@sha256:de4fe7064d8f98419ea6b49190df1abbf43450c1702eeb864fe9ced453c1cc5f
 RUN apk add --update bash curl iproute2 libc6-compat tzdata vim &&  \
  	rm -rf /var/cache/apk/* && \
  	cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
