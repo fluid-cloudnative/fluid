@@ -1,6 +1,6 @@
 # Build the dataset-controller manager binary
-# golang:1.23.7-bullseye
-FROM golang:1.23.7-bullseye as builder
+# golang:1.23.10-bullseye
+FROM golang:1.23.10-bullseye@sha256:05ed4a0dad540eaf289072132678452ec19fa99481658be4813bff6250fedcee as builder
 
 WORKDIR /go/src/github.com/fluid-cloudnative/fluid
 COPY . .
