@@ -362,19 +362,19 @@ webhook:
       # serverful webhook plugins
       serverful:
         withDataset:
+          - FilePrefetcher
           - RequireNodeWithFuse
           - NodeAffinityWithCache
           - MountPropagationInjector
           - DatasetUsageInjector
-          - FilePrefetcher
         withoutDataset:
           - PreferNodesWithoutCache
       # serverless webhook plugins
       serverless:
         withDataset:
+          - FilePrefetcher
           - FuseSidecar
           - DatasetUsageInjector
-          - FilePrefetcher
         withoutDataset: []
     pluginConfig:
       - name: NodeAffinityWithCache
