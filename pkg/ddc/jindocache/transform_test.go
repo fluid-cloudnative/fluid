@@ -1479,3 +1479,102 @@ func TestJindoEngine_transformSecret(t *testing.T) {
 		}
 	}
 }
+
+func TestJindoEngine_transformMountpoint(t *testing.T) {
+	jindocacheSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "fluid",
+		},
+		Data: map[string][]byte{
+			"AccessKeyId":     []byte("test"),
+			"AccessKeySecret": []byte("test"),
+		},
+	}
+	testObjs := []runtime.Object{}
+	testObjs = append(testObjs, (*jindocacheSecret).DeepCopy())
+
+	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+	engine := JindoCacheEngine{
+		name:      "test",
+		namespace: "fluid",
+		Client:    client,
+		Log:       fake.NullLogger(),
+		runtime: &datav1alpha1.JindoRuntime{
+			Spec: datav1alpha1.JindoRuntimeSpec{
+				Fuse: datav1alpha1.JindoFuseSpec{},
+			},
+		},
+	}
+	ctrl.SetLogger(zap.New(func(o *zap.Options) {
+		o.Development = true
+	}))
+
+	var tests = []struct {
+		runtime *datav1alpha1.JindoRuntime
+		dataset *datav1alpha1.Dataset
+		value   *Jindo
+	}{
+		{&datav1alpha1.JindoRuntime{
+			Spec: datav1alpha1.JindoRuntimeSpec{
+				Fuse: datav1alpha1.JindoFuseSpec{},
+				Worker: datav1alpha1.JindoCompTemplateSpec{
+					Replicas:     2,
+					Resources:    corev1.ResourceRequirements{},
+					Env:          nil,
+					NodeSelector: nil,
+				},
+			},
+		}, &datav1alpha1.Dataset{
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{{
+					MountPoint: "dls://test/subdir",
+					Name:       "test",
+					Options: map[string]string{
+						"fs.dls.endpoint": "oss-cn-shanghai.dls.aliyuncs.com",
+						"fs.dls.region":   "oss-cn-shanghai",
+					},
+					EncryptOptions: []datav1alpha1.EncryptOption{{
+						Name: "fs.dls.accessKeyId",
+						ValueFrom: datav1alpha1.EncryptOptionSource{
+							SecretKeyRef: datav1alpha1.SecretKeySelector{
+								Name: "test",
+								Key:  "AccessKeyId",
+							},
+						},
+					},
+						{
+							Name: "fs.dls.accessKeySecret",
+							ValueFrom: datav1alpha1.EncryptOptionSource{
+								SecretKeyRef: datav1alpha1.SecretKeySelector{
+									Name: "test",
+									Key:  "AccessKeySecret",
+								},
+							},
+						}},
+				}},
+			},
+		}, &Jindo{}},
+	}
+	for _, test := range tests {
+		err := engine.transformMaster(test.runtime, "/test", test.value, test.dataset, true)
+		if err != nil {
+			t.Errorf("error %v", err)
+		}
+		if test.value.SecretKey != "AccessKeyId" {
+			t.Errorf("expected value AccessKeyId, but got %v", test.value.SecretKey)
+		}
+		if test.value.SecretValue != "AccessKeySecret" {
+			t.Errorf("expected value AccessKeyId, but got %v", test.value.SecretKey)
+		}
+		if test.value.Secret != "test" {
+			t.Errorf("expected value AccessKeyId, but got %v", test.value.SecretKey)
+		}
+		if test.value.Master.FileStoreProperties["fs.dls.endpoint"] == "oss-cn-shanghai.dls.aliyuncs.com" {
+			t.Errorf("expected value oss-cn-shanghai.dls.aliyuncs.com, but got %v", test.value.Master.FileStoreProperties["fs.dls.endpoint"])
+		}
+		if test.value.Master.FileStoreProperties["fs.dls.region"] == "oss-cn-shanghai" {
+			t.Errorf("expected value oss-cn-shanghai, but got %v", test.value.Master.FileStoreProperties["fs.dls.region"])
+		}
+	}
+}
