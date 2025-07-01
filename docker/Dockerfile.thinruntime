@@ -8,6 +8,13 @@ COPY . .
 RUN make thinruntime-controller-build && \
     cp bin/thinruntime-controller /go/bin/thinruntime-controller
 
+WORKDIR /go/src/github.com/fluid-cloudnative/
+RUN git clone https://github.com/fluid-cloudnative/helm.git
+WORKDIR /go/src/github.com/fluid-cloudnative/helm
+RUN git checkout release-3.17-for-fluid && \
+    make build && \
+    cp bin/helm /go/bin/ddc-helm
+
 # Debug
 #RUN go install github.com/go-delve/delve/cmd/dlv@v1.8.2
 
@@ -29,6 +36,7 @@ RUN curl -o ${HELM_VERSION}-linux-${TARGETARCH}.tar.gz https://get.helm.sh/${HEL
 COPY charts/ /charts
 
 COPY --from=builder /go/bin/thinruntime-controller /usr/local/bin/thinruntime-controller
+COPY --from=builder /go/bin/ddc-helm /usr/local/bin/ddc-helm
 #COPY --from=builder /go/bin/dlv /usr/local/bin/dlv
 RUN chmod -R u+x /usr/local/bin/
 
