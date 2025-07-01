@@ -105,7 +105,7 @@ DOCKER_BUILD += docker-build-efcruntime-controller
 DOCKER_BUILD += docker-build-vineyardruntime-controller
 DOCKER_BUILD += docker-build-init-users
 DOCKER_BUILD += docker-build-crd-upgrader
-DOCKER_BUILD += docker-build-prefetcher
+# DOCKER_BUILD += docker-build-prefetcher
 
 # Push docker images
 DOCKER_PUSH := docker-push-dataset-controller
@@ -122,7 +122,7 @@ DOCKER_PUSH += docker-push-vineyardruntime-controller
 # Not need to push init-users image by default
 # DOCKER_PUSH += docker-push-init-users
 DOCKER_PUSH += docker-push-crd-upgrader
-DOCKER_PUSH += docker-push-prefetcher
+# DOCKER_PUSH += docker-push-prefetcher
 
 # Buildx and push docker images
 DOCKER_BUILDX_PUSH := docker-buildx-push-dataset-controller
@@ -139,7 +139,7 @@ DOCKER_BUILDX_PUSH += docker-buildx-push-vineyardruntime-controller
 # Not need to push init-users image by default
 # DOCKER_BUILDX_PUSH += docker-buildx-push-init-users
 DOCKER_BUILDX_PUSH += docker-buildx-push-crd-upgrader
-DOCKER_BUILDX_PUSH += docker-buildx-push-prefetcher
+# DOCKER_BUILDX_PUSH += docker-buildx-push-prefetcher
 
 override LDFLAGS += \
   -X ${PACKAGE}.version=${VERSION} \
