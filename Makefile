@@ -61,7 +61,7 @@ CSI_DOCKERFILE ?= docker/Dockerfile.csi
 INIT_USERS_DOCKERFILE ?= charts/alluxio/docker/init-users
 WEBHOOK_DOCKERFILE ?= docker/Dockerfile.webhook
 CRD_UPGRADER_DOCKERFILE ?= docker/Dockerfile.crds
-PREFETCHER_DOCKERFILE ?= tools/file-prefetcher/Dockerfile
+PREFETCHER_DOCKERFILE ?= docker/Dockerfile.fileprefetch
 
 # Binary paths
 CSI_BINARY ?= bin/fluid-csi
