@@ -1,13 +1,13 @@
 # FROM debian:bookworm-slim
 FROM debian:bookworm-slim@sha256:e5865e6858dacc255bead044a7f2d0ad8c362433cfaa5acefb670c1edf54dfef
 
-RUN apt update && apt install -y python3
+RUN apt update && \
+    apt install -y --no-install-recommends python3 && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/local/fluid
 
-COPY ./tools/file-prefetcher/main.py /usr/local/fluid/main.py
-
-COPY ./tools/file-prefetcher/entrypoint.sh /usr/local/fluid/entrypoint.sh
+COPY ./tools/file-prefetcher/main.py ./tools/file-prefetcher/entrypoint.sh /usr/local/fluid/
 
 RUN chmod u+x /usr/local/fluid/entrypoint.sh
 
