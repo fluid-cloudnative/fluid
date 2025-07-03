@@ -74,7 +74,7 @@ func CreatePersistentVolumeForRuntime(client client.Client,
 				ClaimRef: &corev1.ObjectReference{
 					Namespace: runtime.GetNamespace(),
 					Name:      runtime.GetName(),
-				}, 
+				},
 				AccessModes: accessModes,
 				Capacity: corev1.ResourceList{
 					corev1.ResourceName(corev1.ResourceStorage): storageCapacity,
@@ -221,7 +221,7 @@ func CreatePersistentVolumeClaimForRuntime(client client.Client,
 				Annotations: common.GetExpectedFluidAnnotations(),
 			},
 			Spec: corev1.PersistentVolumeClaimSpec{
-				VolumeName: runtime.GetPersistentVolumeName(),
+				VolumeName:       runtime.GetPersistentVolumeName(),
 				StorageClassName: &common.FluidStorageClass,
 				AccessModes:      accessModes,
 				Resources: corev1.VolumeResourceRequirements{
