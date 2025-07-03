@@ -6,6 +6,7 @@ GIT_TAG := $(shell if [ -z "`git status --porcelain`" ]; then git describe --exa
 GIT_TREE_STATE := $(shell if [ -z "`git status --porcelain`" ]; then echo "clean" ; else echo "dirty"; fi)
 GIT_SHA := $(shell git rev-parse --short HEAD || echo "HEAD")
 GIT_VERSION := ${VERSION}-${GIT_SHA}
+PREFETCHER_VERSION := v0.1.0
 PACKAGE := github.com/fluid-cloudnative/fluid
 
 # Go and build settings
@@ -44,6 +45,7 @@ CSI_IMG ?= ${IMG_REPO}/fluid-csi
 INIT_USERS_IMG ?= ${IMG_REPO}/init-users
 WEBHOOK_IMG ?= ${IMG_REPO}/fluid-webhook
 CRD_UPGRADER_IMG ?= ${IMG_REPO}/fluid-crd-upgrader
+PREFETCHER_IMAGE ?= ${IMG_REPO}/fluid-file-prefetcher
 
 # Dockerfile paths
 DATASET_DOCKERFILE ?= docker/Dockerfile.dataset
@@ -59,6 +61,7 @@ CSI_DOCKERFILE ?= docker/Dockerfile.csi
 INIT_USERS_DOCKERFILE ?= charts/alluxio/docker/init-users
 WEBHOOK_DOCKERFILE ?= docker/Dockerfile.webhook
 CRD_UPGRADER_DOCKERFILE ?= docker/Dockerfile.crds
+PREFETCHER_DOCKERFILE ?= docker/Dockerfile.fileprefetch
 
 # Binary paths
 CSI_BINARY ?= bin/fluid-csi
@@ -103,6 +106,7 @@ DOCKER_BUILD += docker-build-efcruntime-controller
 DOCKER_BUILD += docker-build-vineyardruntime-controller
 DOCKER_BUILD += docker-build-init-users
 DOCKER_BUILD += docker-build-crd-upgrader
+# DOCKER_BUILD += docker-build-prefetcher
 
 # Push docker images
 DOCKER_PUSH := docker-push-dataset-controller
@@ -119,6 +123,7 @@ DOCKER_PUSH += docker-push-vineyardruntime-controller
 # Not need to push init-users image by default
 # DOCKER_PUSH += docker-push-init-users
 DOCKER_PUSH += docker-push-crd-upgrader
+# DOCKER_PUSH += docker-push-prefetcher
 
 # Buildx and push docker images
 DOCKER_BUILDX_PUSH := docker-buildx-push-dataset-controller
@@ -135,6 +140,7 @@ DOCKER_BUILDX_PUSH += docker-buildx-push-vineyardruntime-controller
 # Not need to push init-users image by default
 # DOCKER_BUILDX_PUSH += docker-buildx-push-init-users
 DOCKER_BUILDX_PUSH += docker-buildx-push-crd-upgrader
+# DOCKER_BUILDX_PUSH += docker-buildx-push-prefetcher
 
 override LDFLAGS += \
   -X ${PACKAGE}.version=${VERSION} \
@@ -299,6 +305,10 @@ docker-build-webhook:
 docker-build-crd-upgrader:
 	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} . -f ${CRD_UPGRADER_DOCKERFILE} -t ${CRD_UPGRADER_IMG}:${GIT_VERSION}
 
+.PHONY: docker-build-prefetcher
+docker-build-prefetcher:
+	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} . -f ${PREFETCHER_DOCKERFILE} -t ${PREFETCHER_IMAGE}:${PREFETCHER_VERSION}
+
 # Push the docker image
 .PHONY: docker-push-dataset-controller
 docker-push-dataset-controller: docker-build-dataset-controller
@@ -352,6 +362,10 @@ docker-push-webhook: docker-build-webhook
 docker-push-crd-upgrader: docker-build-crd-upgrader
 	docker push ${CRD_UPGRADER_IMG}:${GIT_VERSION}
 
+.PHONY: docker-push-prefetcher
+docker-push-prefetcher: docker-build-prefetcher
+	docker push ${PREFETCHER_IMAGE}:${PREFETCHER_VERSION}
+
 # Buildx and push the docker image
 .PHONY: docker-buildx-push-dataset-controller
 docker-buildx-push-dataset-controller:
@@ -404,6 +418,10 @@ docker-buildx-push-webhook:
 .PHONY: docker-buildx-push-crd-upgrader
 docker-buildx-push-crd-upgrader:
 	docker buildx build --push --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} . -f ${CRD_UPGRADER_DOCKERFILE} -t ${CRD_UPGRADER_IMG}:${GIT_VERSION}
+
+.PHONY: docker-buildx-push-prefetcher
+docker-buildx-push-crd-prefetcher:
+	docker buildx build --push --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} . -f ${PREFETCHER_DOCKERFILE} -t ${PREFETCHER_IMAGE}:${PREFETCHER_VERSION}
 
 .PHONY: docker-build-all
 docker-build-all: pre-setup ${DOCKER_BUILD}
