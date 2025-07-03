@@ -10,18 +10,17 @@ RUN make application-controller-build && \
 
 # Debug
 #RUN go install github.com/go-delve/delve/cmd/dlv@v1.8.2
-
 # alpine:3.20.6
 FROM alpine:3.20.6@sha256:de4fe7064d8f98419ea6b49190df1abbf43450c1702eeb864fe9ced453c1cc5f
-RUN apk add --update bash curl iproute2 libc6-compat tzdata vim &&  \
+RUN apk add --update bash curl wget iproute2 libc6-compat tzdata vim &&  \
  	rm -rf /var/cache/apk/* && \
  	cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
  	echo "Asia/Shanghai" >  /etc/timezone
 
 ARG TARGETARCH
 ARG HELM_VERSION
-RUN curl -o ${HELM_VERSION}-linux-${TARGETARCH}.tar.gz https://get.helm.sh/${HELM_VERSION}-linux-${TARGETARCH}.tar.gz && \
-    tar -xvf ${HELM_VERSION}-linux-${TARGETARCH}.tar.gz && \
+RUN wget -O helm-${HELM_VERSION}-linux-${TARGETARCH}.tar.gz https://github.com/fluid-cloudnative/helm/releases/download/${HELM_VERSION}/helm-${HELM_VERSION}-linux-${TARGETARCH}.tar.gz && \
+    tar -xvf helm-${HELM_VERSION}-linux-${TARGETARCH}.tar.gz && \
     mv linux-${TARGETARCH}/helm /usr/local/bin/ddc-helm && \
     chmod u+x /usr/local/bin/ddc-helm && \
     rm -f ${HELM_VERSION}-linux-${TARGETARCH}.tar.gz
