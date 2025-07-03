@@ -91,12 +91,13 @@ func InstallRelease(name string, namespace string, valueFile string, chartName s
 
 // CheckRelease checks if the release with the given name and namespace exist.
 func CheckRelease(name, namespace string) (exist bool, err error) {
+	defer utils.TimeTrack(time.Now(), "Helm.CheckRelease", "name", name, "namespace", namespace)
 	_, err = exec.LookPath(helmCmd[0])
 	if err != nil {
 		return exist, err
 	}
 
-	cmd, err := cmdguard.Command(helmCmd[0], "status", name, "-n", namespace)
+	cmd, err := cmdguard.Command(helmCmd[0], "status", name, "-n", namespace, "--revision", "1")
 	if err != nil {
 		return exist, err
 	}
@@ -158,6 +159,7 @@ func CheckRelease(name, namespace string) (exist bool, err error) {
 
 // DeleteRelease deletes release with the name and namespace
 func DeleteRelease(name, namespace string) error {
+	defer utils.TimeTrack(time.Now(), "Helm.DeleteRelease", "name", name, "namespace", namespace)
 	binary, err := exec.LookPath(helmCmd[0])
 	if err != nil {
 		return err
