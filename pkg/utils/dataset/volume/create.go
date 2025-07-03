@@ -69,6 +69,12 @@ func CreatePersistentVolumeForRuntime(client client.Client,
 				Annotations: common.GetExpectedFluidAnnotations(),
 			},
 			Spec: corev1.PersistentVolumeSpec{
+				// Specify claim ref for faster volume binding
+				// In Fluid, PVC's namespace/name is same as Dataset's namespace/name
+				ClaimRef: &corev1.ObjectReference{
+					Namespace: runtime.GetNamespace(),
+					Name:      runtime.GetName(),
+				}, 
 				AccessModes: accessModes,
 				Capacity: corev1.ResourceList{
 					corev1.ResourceName(corev1.ResourceStorage): storageCapacity,
@@ -215,11 +221,7 @@ func CreatePersistentVolumeClaimForRuntime(client client.Client,
 				Annotations: common.GetExpectedFluidAnnotations(),
 			},
 			Spec: corev1.PersistentVolumeClaimSpec{
-				Selector: &metav1.LabelSelector{
-					MatchLabels: map[string]string{
-						runtime.GetCommonLabelName(): "true",
-					},
-				},
+				VolumeName: runtime.GetPersistentVolumeName(),
 				StorageClassName: &common.FluidStorageClass,
 				AccessModes:      accessModes,
 				Resources: corev1.VolumeResourceRequirements{
