@@ -19,8 +19,8 @@ jobs:
           command: |
             test -z "$(go fmt ./... 2>/dev/null | tee /dev/stderr)" || (echo "please format Go code with 'gofmt'")
             go vet ./...
-      - run: docker build --build-arg TARGETARCH=amd64 --build-arg HELM_VERSION=helm-v3.11.3 . -f docker/Dockerfile.dataset -t dataset-controller:${CIRCLE_BUILD_NUM}
-      - run: docker build --build-arg TARGETARCH=amd64 --build-arg HELM_VERSION=helm-v3.11.3 . -f docker/Dockerfile.alluxioruntime -t alluxioruntime-controller:${CIRCLE_BUILD_NUM}
-      - run: docker build --build-arg TARGETARCH=amd64 --build-arg HELM_VERSION=helm-v3.11.3 . -f docker/Dockerfile.csi -t fluid-csi:${CIRCLE_BUILD_NUM}
+      - run: docker build --build-arg TARGETARCH=amd64 --build-arg HELM_VERSION=v3.17.3 . -f docker/Dockerfile.dataset -t dataset-controller:${CIRCLE_BUILD_NUM}
+      - run: docker build --build-arg TARGETARCH=amd64 --build-arg HELM_VERSION=v3.17.3 . -f docker/Dockerfile.alluxioruntime -t alluxioruntime-controller:${CIRCLE_BUILD_NUM}
+      - run: docker build --build-arg TARGETARCH=amd64 --build-arg HELM_VERSION=v3.17.3 . -f docker/Dockerfile.csi -t fluid-csi:${CIRCLE_BUILD_NUM}
 
 # maybe later we need to upload output to helm repository
