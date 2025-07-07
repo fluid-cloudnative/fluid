@@ -16,15 +16,6 @@
 
 package thin
 
-import (
-	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/lifecycle"
-)
-
 func (t ThinEngine) SyncScheduleInfoToCacheNodes() (err error) {
-	err = lifecycle.SyncScheduleInfoToCacheNodes(t.runtimeInfo, t.Client)
-	if err != nil {
-		return
-	}
-
-	return
+	return nil
 }
