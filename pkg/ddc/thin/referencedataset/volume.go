@@ -107,6 +107,12 @@ func createFusePersistentVolume(client client.Client, virtualRuntime base.Runtim
 				"pv.AccessModes", accessModes)
 		}
 
+		// set persistent volume's claim ref
+		copiedPvSpec.ClaimRef = &corev1.ObjectReference{
+			Namespace: virtualRuntime.GetNamespace(),
+			Name:      virtualRuntime.GetName(),
+		}
+
 		pv := &corev1.PersistentVolume{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: virtualPvName,
@@ -180,11 +186,7 @@ func createFusePersistentVolumeClaim(client client.Client, virtualRuntime base.R
 				Annotations: common.GetExpectedFluidAnnotations(),
 			},
 			Spec: corev1.PersistentVolumeClaimSpec{
-				Selector: &metav1.LabelSelector{
-					MatchLabels: map[string]string{
-						virtualRuntime.GetCommonLabelName(): "true",
-					},
-				},
+				VolumeName: virtualRuntime.GetPersistentVolumeName(),
 				StorageClassName: &common.FluidStorageClass,
 				AccessModes:      accessModes,
 				Resources:        *runtimePVC.Spec.Resources.DeepCopy(),
