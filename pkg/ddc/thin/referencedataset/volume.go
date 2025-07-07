@@ -186,7 +186,7 @@ func createFusePersistentVolumeClaim(client client.Client, virtualRuntime base.R
 				Annotations: common.GetExpectedFluidAnnotations(),
 			},
 			Spec: corev1.PersistentVolumeClaimSpec{
-				VolumeName: virtualRuntime.GetPersistentVolumeName(),
+				VolumeName:       virtualRuntime.GetPersistentVolumeName(),
 				StorageClassName: &common.FluidStorageClass,
 				AccessModes:      accessModes,
 				Resources:        *runtimePVC.Spec.Resources.DeepCopy(),
