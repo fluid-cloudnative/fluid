@@ -1,0 +1,20 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: PersistentPodState
+metadata:
+  name: {{ template "juicefs.fullname" . }}-pod-state
+  labels:
+    app: {{ template "juicefs.name" . }}
+    chart: {{ template "juicefs.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    fluid.io/configmap-type: worker-state
+    {{- include "library.fluid.labels" . | nindent 4 }}
+  ownerReferences:
+  {{- if .Values.owner.enabled }}
+    - apiVersion: {{ .Values.owner.apiVersion }}
+      blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+      controller: {{ .Values.owner.controller }}
+      kind: {{ .Values.owner.kind }}
+      name: {{ .Values.owner.name }}
+      uid: {{ .Values.owner.uid }}
+  {{- end }}
