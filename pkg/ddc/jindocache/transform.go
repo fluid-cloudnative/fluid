@@ -466,6 +466,17 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 			}
 		}
 
+		// support dls
+		if strings.HasPrefix(mount.MountPoint, "dls://") {
+			mountType = "dls"
+			if mount.Options["fs.dls.endpoint"] != "" {
+				propertiesFileStore["jindocache.dls.endpoint"] = mount.Options["fs.dls.endpoint"]
+			}
+			if mount.Options["fs.dls.region"] != "" {
+				propertiesFileStore["jindocache.dls.region"] = mount.Options["fs.dls.region"]
+			}
+		}
+
 		// to check whether encryptOptions exist
 		for _, encryptOption := range mount.EncryptOptions {
 			key := encryptOption.Name
