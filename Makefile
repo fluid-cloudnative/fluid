@@ -1,5 +1,5 @@
 # Version and Git information
-VERSION := v1.0.6
+VERSION := v1.0.7
 BUILD_DATE := $(shell date -u +'%Y-%m-%d_%H:%M:%S')
 GIT_COMMIT := $(shell git rev-parse HEAD)
 GIT_TAG := $(shell if [ -z "`git status --porcelain`" ]; then git describe --exact-match --tags HEAD 2>/dev/null; fi)
