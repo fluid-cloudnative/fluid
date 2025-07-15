@@ -56,7 +56,7 @@ spec:
           {{- end }}
           {{- end }}
           {{- if .Values.webhook.filePrefetcher }}
-          - name: FILE_PREFETCHR_IMAGE
+          - name: FILE_PREFETCHER_IMAGE
             value: {{ include "fluid.controlplane.imageTransform" (list .Values.webhook.filePrefetcher.imagePrefix .Values.webhook.filePrefetcher.imageName .Values.webhook.filePrefetcher.imageTag . ) }}
           {{- end }}
         ports:
