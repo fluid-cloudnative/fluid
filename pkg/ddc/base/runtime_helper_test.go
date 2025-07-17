@@ -497,7 +497,7 @@ import (
 // 		if err != nil {
 // 			t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 // 		}
-// 		runtimeInfo.SetClient(fakeClient)
+// 		runtimeInfo.SetClientReader(fakeClient)
 // 		_, err = runtimeInfo.GetTemplateToInjectForFuse(testcase.pvcName, testcase.pvc.Namespace, options)
 // 		if (err == nil) == testcase.expectErr {
 // 			t.Errorf("testcase %s failed due to expecting want error: %v error %v", testcase.name, testcase.expectErr, err)
@@ -866,7 +866,7 @@ import (
 // 		if err != nil {
 // 			t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 // 		}
-// 		runtimeInfo.SetClient(fakeClient)
+// 		runtimeInfo.SetClientReader(fakeClient)
 // 		_, err = runtimeInfo.GetTemplateToInjectForFuse(testcase.pvcName, testcase.pvc.Namespace, options)
 // 		if (err == nil) == testcase.expectErr {
 // 			t.Errorf("testcase %s failed due to expecting want error: %v error %v", testcase.name, testcase.expectErr, err)
@@ -1075,7 +1075,7 @@ import (
 // 		if err != nil {
 // 			t.Errorf("testcase %s failed due to error %v", testcase.name, err)
 // 		}
-// 		runtimeInfo.SetClient(fakeClient)
+// 		runtimeInfo.SetClientReader(fakeClient)
 // 		template, err := runtimeInfo.GetTemplateToInjectForFuse(testcase.pvcName, testcase.pvc.Namespace, options)
 // 		if (err == nil) == testcase.expectErr {
 // 			t.Errorf("testcase %s failed due to expecting want error: %v error %v", testcase.name, testcase.expectErr, err)
@@ -1158,7 +1158,7 @@ func TestGetFuseDaemonset(t *testing.T) {
 		}
 
 		if fakeClient != nil {
-			runtimeInfo.SetClient(fakeClient)
+			runtimeInfo.SetClientReader(fakeClient)
 		}
 
 		_, err := runtimeInfo.getFuseDaemonset()
