@@ -92,6 +92,7 @@ type mutatingContext struct {
 	appendedVolumeNames         map[string]string
 	datasetUsedInContainers     *bool
 	datasetUsedInInitContainers *bool
+	generateUniqueHostMountPath string
 }
 
 func (ctx *mutatingContext) GetAppendedVolumeNames() (nameMapping map[string]string, err error) {

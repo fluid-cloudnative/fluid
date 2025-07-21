@@ -59,6 +59,16 @@ outer:
 	return
 }
 
+func IsVolumeNameHasPrefixes(input corev1.Volume, prefixes []string) bool {
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(input.Name, prefix) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func FindVolumeByVolumeMount(volumeMount corev1.VolumeMount, volumes []corev1.Volume) *corev1.Volume {
 	for _, vol := range volumes {
 		if vol.Name == volumeMount.Name {
