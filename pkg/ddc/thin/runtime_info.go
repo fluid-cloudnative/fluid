@@ -17,9 +17,13 @@
 package thin
 
 import (
+	"fmt"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
 func (t *ThinEngine) CheckRuntimeReady() (ready bool) {
@@ -29,12 +33,11 @@ func (t *ThinEngine) CheckRuntimeReady() (ready bool) {
 
 // getRuntimeInfo gets runtime info
 func (t *ThinEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
+	runtime, err := t.getRuntime()
+	if err != nil {
+		return t.runtimeInfo, err
+	}
 	if t.runtimeInfo == nil {
-		runtime, err := t.getRuntime()
-		if err != nil {
-			return t.runtimeInfo, err
-		}
-
 		opts := []base.RuntimeInfoOption{
 			base.WithTieredStore(runtime.Spec.TieredStore),
 			base.WithMetadataList(base.GetMetadataListFromAnnotation(runtime)),
@@ -78,6 +81,37 @@ func (t *ThinEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 			t.runtimeInfo.SetOwnerDatasetUID(dataset.GetUID())
 
 			t.Log.Info("Setup with dataset done", "exclusive", t.runtimeInfo.IsExclusive())
+		}
+	}
+
+	// Handling information of bound dataset. XXXEngine.getRuntimeInfo() might be called before the runtime is bound to a dataset,
+	// so here we must lazily set dataset-related information once we found there's one bound dataset.
+	if len(t.runtimeInfo.GetOwnerDatasetUID()) == 0 {
+		owners := runtime.GetOwnerReferences()
+		if len(owners) > 0 {
+			firstOwner := owners[0]
+			firstOwnerPath := field.NewPath("metadata").Child("ownerReferences").Index(0)
+			if firstOwner.Kind != datav1alpha1.Datasetkind {
+				return nil, fmt.Errorf("first owner of the runtime (%s) has invalid Kind \"%s\", expected to be %s ", firstOwnerPath.String(), firstOwner.Kind, datav1alpha1.Datasetkind)
+			}
+
+			if firstOwner.Name != runtime.GetName() {
+				return nil, fmt.Errorf("first owner of the runtime (%s) has different name with runtime, expected to be same", firstOwnerPath.String())
+			}
+
+			t.runtimeInfo.SetOwnerDatasetUID(firstOwner.UID)
+		}
+	}
+
+	exclusiveModePtr := t.runtimeInfo.IsExclusive()
+	if exclusiveModePtr == nil {
+		dataset, err := utils.GetDataset(t.Client, t.name, t.namespace)
+		if utils.IgnoreNotFound(err) != nil {
+			return nil, err
+		}
+
+		if dataset != nil {
+			t.runtimeInfo.SetupWithDataset(dataset)
 		}
 	}
 
