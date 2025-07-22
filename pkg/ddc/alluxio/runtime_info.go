@@ -17,9 +17,13 @@ limitations under the License.
 package alluxio
 
 import (
+	"fmt"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
 // getRuntimeInfo gets runtime info
@@ -43,26 +47,6 @@ func (e *AlluxioEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		e.runtimeInfo.SetFuseNodeSelector(runtime.Spec.Fuse.NodeSelector)
 
 		if !e.UnitTest {
-			// Setup with Dataset Info
-			dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
-			if err != nil {
-				if len(runtime.GetOwnerReferences()) > 0 {
-					e.runtimeInfo.SetOwnerDatasetUID(runtime.GetOwnerReferences()[0].UID)
-				}
-				if utils.IgnoreNotFound(err) == nil {
-					e.Log.Info("Dataset is notfound", "name", e.name, "namespace", e.namespace)
-					return e.runtimeInfo, nil
-				}
-
-				e.Log.Info("Failed to get dataset when getRuntimeInfo")
-				return e.runtimeInfo, err
-			}
-
-			e.runtimeInfo.SetupWithDataset(dataset)
-			e.Log.Info("Setup with dataset done", "exclusive", e.runtimeInfo.IsExclusive())
-
-			e.runtimeInfo.SetOwnerDatasetUID(dataset.GetUID())
-
 			// Check if the runtime is using deprecated labels
 			isLabelDeprecated, err := e.HasDeprecatedCommonLabelname()
 			if err != nil {
@@ -78,6 +62,42 @@ func (e *AlluxioEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 			e.runtimeInfo.SetDeprecatedPVName(isPVNameDeprecated)
 
 			e.Log.Info("Deprecation check finished", "isLabelDeprecated", e.runtimeInfo.IsDeprecatedNodeLabel(), "isPVNameDeprecated", e.runtimeInfo.IsDeprecatedPVName())
+		}
+	}
+
+	// Handling information of bound dataset. XXXEngine.getRuntimeInfo() might be called before the runtime is bound to a dataset,
+	// so here we must lazily set dataset-related information once we found there's one bound dataset.
+	if len(e.runtimeInfo.GetOwnerDatasetUID()) == 0 {
+		runtime, err := e.getRuntime()
+		if err != nil {
+			return e.runtimeInfo, err
+		}
+
+		owners := runtime.GetOwnerReferences()
+		if len(owners) > 0 {
+			firstOwner := owners[0]
+			firstOwnerPath := field.NewPath("metadata").Child("ownerReferences").Index(0)
+			if firstOwner.Kind != datav1alpha1.Datasetkind {
+				return nil, fmt.Errorf("first owner of the runtime (%s) has invalid Kind \"%s\", expected to be %s ", firstOwnerPath.String(), firstOwner.Kind, datav1alpha1.Datasetkind)
+			}
+
+			if firstOwner.Name != runtime.GetName() {
+				return nil, fmt.Errorf("first owner of the runtime (%s) has different name with runtime, expected to be same", firstOwnerPath.String())
+			}
+
+			e.runtimeInfo.SetOwnerDatasetUID(firstOwner.UID)
+		}
+	}
+
+	exclusiveModePtr := e.runtimeInfo.IsExclusive()
+	if exclusiveModePtr == nil {
+		dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+		if utils.IgnoreNotFound(err) != nil {
+			return nil, err
+		}
+
+		if dataset != nil {
+			e.runtimeInfo.SetupWithDataset(dataset)
 		}
 	}
 

@@ -28,12 +28,11 @@ import (
 
 // getRuntimeInfo gets runtime info
 func (e *GooseFSEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
-	runtime, err := e.getRuntime()
-	if err != nil {
-		return e.runtimeInfo, err
-	}
-
 	if e.runtimeInfo == nil {
+		runtime, err := e.getRuntime()
+		if err != nil {
+			return e.runtimeInfo, err
+		}
 		opts := []base.RuntimeInfoOption{
 			base.WithTieredStore(runtime.Spec.TieredStore),
 			base.WithMetadataList(base.GetMetadataListFromAnnotation(runtime)),
@@ -71,6 +70,10 @@ func (e *GooseFSEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 	// Handling information of bound dataset. XXXEngine.getRuntimeInfo() might be called before the runtime is bound to a dataset,
 	// so here we must lazily set dataset-related information once we found there's one bound dataset.
 	if len(e.runtimeInfo.GetOwnerDatasetUID()) == 0 {
+		runtime, err := e.getRuntime()
+		if err != nil {
+			return e.runtimeInfo, err
+		}
 		owners := runtime.GetOwnerReferences()
 		if len(owners) > 0 {
 			firstOwner := owners[0]

@@ -33,11 +33,12 @@ func (t *ThinEngine) CheckRuntimeReady() (ready bool) {
 
 // getRuntimeInfo gets runtime info
 func (t *ThinEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
-	runtime, err := t.getRuntime()
-	if err != nil {
-		return t.runtimeInfo, err
-	}
 	if t.runtimeInfo == nil {
+		runtime, err := t.getRuntime()
+		if err != nil {
+			return t.runtimeInfo, err
+		}
+
 		opts := []base.RuntimeInfoOption{
 			base.WithTieredStore(runtime.Spec.TieredStore),
 			base.WithMetadataList(base.GetMetadataListFromAnnotation(runtime)),
@@ -84,9 +85,17 @@ func (t *ThinEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		}
 	}
 
+	if t.UnitTest {
+		return t.runtimeInfo, nil
+	}
+
 	// Handling information of bound dataset. XXXEngine.getRuntimeInfo() might be called before the runtime is bound to a dataset,
 	// so here we must lazily set dataset-related information once we found there's one bound dataset.
 	if len(t.runtimeInfo.GetOwnerDatasetUID()) == 0 {
+		runtime, err := t.getRuntime()
+		if err != nil {
+			return nil, err
+		}
 		owners := runtime.GetOwnerReferences()
 		if len(owners) > 0 {
 			firstOwner := owners[0]

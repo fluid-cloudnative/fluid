@@ -28,12 +28,11 @@ import (
 
 // getRuntimeInfo gets runtime info
 func (j *JuiceFSEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
-	runtime, err := j.getRuntime()
-	if err != nil {
-		return j.runtimeInfo, err
-	}
-
 	if j.runtimeInfo == nil {
+		runtime, err := j.getRuntime()
+		if err != nil {
+			return j.runtimeInfo, err
+		}
 		opts := []base.RuntimeInfoOption{
 			base.WithTieredStore(runtime.Spec.TieredStore),
 			base.WithMetadataList(base.GetMetadataListFromAnnotation(runtime)),
@@ -69,9 +68,18 @@ func (j *JuiceFSEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		}
 	}
 
+	if j.UnitTest {
+		return j.runtimeInfo, nil
+	}
+
 	// Handling information of bound dataset. XXXEngine.getRuntimeInfo() might be called before the runtime is bound to a dataset,
 	// so here we must lazily set dataset-related information once we found there's one bound dataset.
 	if len(j.runtimeInfo.GetOwnerDatasetUID()) == 0 {
+		runtime, err := j.getRuntime()
+		if err != nil {
+			return nil, err
+		}
+
 		owners := runtime.GetOwnerReferences()
 		if len(owners) > 0 {
 			firstOwner := owners[0]
