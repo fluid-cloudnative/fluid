@@ -14,8 +14,11 @@ limitations under the License.
 package vineyard
 
 import (
+	"fmt"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
 func (e *VineyardEngine) CheckRuntimeReady() (ready bool) {
@@ -25,11 +28,12 @@ func (e *VineyardEngine) CheckRuntimeReady() (ready bool) {
 
 // getRuntimeInfo gets runtime info
 func (e *VineyardEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
+	runtime, err := e.getRuntime()
+	if err != nil {
+		return e.runtimeInfo, err
+	}
+
 	if e.runtimeInfo == nil {
-		runtime, err := e.getRuntime()
-		if err != nil {
-			return e.runtimeInfo, err
-		}
 		// Add the symlink method to the vineyard runtime metadata
 		if runtime.ObjectMeta.Annotations == nil {
 			runtime.ObjectMeta.Annotations = make(map[string]string)
@@ -44,21 +48,25 @@ func (e *VineyardEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		if err != nil {
 			return e.runtimeInfo, err
 		}
+	}
 
-		dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
-		if err != nil {
-			if len(runtime.GetOwnerReferences()) > 0 {
-				e.runtimeInfo.SetOwnerDatasetUID(runtime.GetOwnerReferences()[0].UID)
-			}
-			if utils.IgnoreNotFound(err) == nil {
-				e.Log.Info("Dataset is notfound", "name", e.name, "namespace", e.namespace)
-				return e.runtimeInfo, nil
+	// Handling information of bound dataset. XXXEngine.getRuntimeInfo() might be called before the runtime is bound to a dataset,
+	// so here we must lazily set dataset-related information once we found there's one bound dataset.
+	if len(e.runtimeInfo.GetOwnerDatasetUID()) == 0 {
+		owners := runtime.GetOwnerReferences()
+		if len(owners) > 0 {
+			firstOwner := owners[0]
+			firstOwnerPath := field.NewPath("metadata").Child("ownerReferences").Index(0)
+			if firstOwner.Kind != datav1alpha1.Datasetkind {
+				return nil, fmt.Errorf("first owner of the runtime (%s) has invalid Kind \"%s\", expected to be %s ", firstOwnerPath.String(), firstOwner.Kind, datav1alpha1.Datasetkind)
 			}
 
-			e.Log.Info("Failed to get dataset when getruntimeInfo")
-			return e.runtimeInfo, err
+			if firstOwner.Name != runtime.GetName() {
+				return nil, fmt.Errorf("first owner of the runtime (%s) has different name with runtime, expected to be same", firstOwnerPath.String())
+			}
+
+			e.runtimeInfo.SetOwnerDatasetUID(firstOwner.UID)
 		}
-		e.runtimeInfo.SetOwnerDatasetUID(dataset.GetUID())
 	}
 
 	return e.runtimeInfo, nil
