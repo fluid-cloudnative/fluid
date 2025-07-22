@@ -52,6 +52,7 @@ func newTestJuiceEngine(client client.Client, name string, namespace string, wit
 	// 1. Create a JuiceFSRuntime and RuntimeInfo
 	runTime := &datav1alpha1.JuiceFSRuntime{}
 	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.JuiceFSRuntime)
+	runTimeInfo.SetOwnerDatasetUID("dummy-dataset-uid")
 	// 2. If the JuiceFS engine does not have runtime, set the runtime and runtimeInfo to nil
 	if !withRunTime {
 		runTimeInfo = nil

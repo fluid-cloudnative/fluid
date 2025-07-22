@@ -41,6 +41,7 @@ type TestCase struct {
 func newTestJindoEngine(client client.Client, name string, namespace string, withRunTime bool) *JindoEngine {
 	runTime := &datav1alpha1.JindoRuntime{}
 	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.JindoRuntime)
+	runTimeInfo.SetOwnerDatasetUID("dummy-dataset-uid")
 	if !withRunTime {
 		runTimeInfo = nil
 		runTime = nil

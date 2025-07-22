@@ -65,6 +65,10 @@ func (e *AlluxioEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		}
 	}
 
+	if e.UnitTest {
+		return e.runtimeInfo, nil
+	}
+
 	// Handling information of bound dataset. XXXEngine.getRuntimeInfo() might be called before the runtime is bound to a dataset,
 	// so here we must lazily set dataset-related information once we found there's one bound dataset.
 	if len(e.runtimeInfo.GetOwnerDatasetUID()) == 0 {

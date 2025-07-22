@@ -41,6 +41,7 @@ import (
 // 4. Proper setting of the fuse generation label on the created PVC.
 func TestCreateVolume(t *testing.T) {
 	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", common.JindoRuntime)
+	runtimeInfo.SetOwnerDatasetUID("dummy-dataset-uid")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -134,6 +135,7 @@ func TestCreateVolume(t *testing.T) {
 // - Checking that exactly one PersistentVolume has been created
 func TestCreateFusePersistentVolume(t *testing.T) {
 	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", common.JindoRuntime)
+	runtimeInfo.SetOwnerDatasetUID("dummy-dataset-uid")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -179,6 +181,7 @@ func TestCreateFusePersistentVolume(t *testing.T) {
 
 func TestCreateFusePersistentVolumeClaim(t *testing.T) {
 	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", common.JindoRuntime)
+	runtimeInfo.SetOwnerDatasetUID("dummy-dataset-uid")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}

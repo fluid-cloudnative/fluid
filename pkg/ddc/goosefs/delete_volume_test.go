@@ -41,6 +41,7 @@ type TestCase struct {
 func newTestGooseFSEngine(client client.Client, name string, namespace string, withRunTime bool) *GooseFSEngine {
 	runTime := &datav1alpha1.GooseFSRuntime{}
 	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.GooseFSRuntime)
+	runTimeInfo.SetOwnerDatasetUID("dummy-dataset-uid")
 	if !withRunTime {
 		runTimeInfo = nil
 		runTime = nil
