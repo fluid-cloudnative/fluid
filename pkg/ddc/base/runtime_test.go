@@ -24,6 +24,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	utilsptr "k8s.io/utils/ptr"
 
 	fakeutils "github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/api/apps/v1"
@@ -184,7 +185,7 @@ func TestBuildRuntimeInfo(t *testing.T) {
 				name:        "dataset",
 				namespace:   "default",
 				runtimeType: runtimetype,
-				exclusive:   false,
+				exclusive:   utilsptr.To(false),
 				//setup:       false,
 			},
 			wantErr: false,
