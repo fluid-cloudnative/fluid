@@ -17,10 +17,23 @@ limitations under the License.
 package juicefs
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 )
 
 func (j *JuiceFSEngine) Validate(ctx cruntime.ReconcileRequestContext) (err error) {
+	// XXXEngine.runtimeInfo must have full information about the bound dataset for further reconcilation.
+	// getRuntimeInfo() here is a refresh to make sure the information is correctly set
+	runtimeInfo, err := j.getRuntimeInfo()
+	if err != nil {
+		return err
+	}
+
+	err = base.ValidateRuntimeInfo(runtimeInfo)
+	if err != nil {
+		return err
+	}
+
 	// TODO: impl validation logic for JuiceFSEngine
 	return nil
 }
