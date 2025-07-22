@@ -215,9 +215,12 @@ func labelCacheNode(nodeToLabel corev1.Node, runtimeInfo base.RuntimeInfoInterfa
 
 	log := rootLog.WithValues("runtime", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace())
 
-	exclusiveness := runtimeInfo.IsExclusive()
-	log.Info("Placement Mode", "IsExclusive", exclusiveness)
-	if exclusiveness {
+	exclusivePlacementMode := true
+	if runtimeInfo.IsExclusive() != nil {
+		exclusivePlacementMode = *runtimeInfo.IsExclusive()
+	}
+	log.Info("Placement Mode", "IsExclusive", exclusivePlacementMode)
+	if exclusivePlacementMode {
 		exclusiveLabel = utils.GetExclusiveKey()
 	}
 
@@ -240,7 +243,7 @@ func labelCacheNode(nodeToLabel corev1.Node, runtimeInfo base.RuntimeInfoInterfa
 		labelsToModify.Add(runtimeLabel, "true")
 		labelsToModify.Add(commonLabel, "true")
 
-		if exclusiveness {
+		if exclusivePlacementMode {
 			exclusiveLabelValue := runtimeInfo.GetExclusiveLabelValue()
 			labelsToModify.Add(exclusiveLabel, exclusiveLabelValue)
 		}

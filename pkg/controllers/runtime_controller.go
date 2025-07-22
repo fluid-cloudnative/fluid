@@ -38,6 +38,7 @@ import (
 	// "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/fluid-cloudnative/fluid/pkg/dump"
+	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	"github.com/fluid-cloudnative/fluid/pkg/metrics"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	corev1 "k8s.io/api/core/v1"
@@ -256,7 +257,11 @@ func (r *RuntimeReconciler) ReconcileRuntime(engine base.Engine, ctx cruntime.Re
 	)
 	log.V(1).Info("process the Runtime", "Runtime", ctx.NamespacedName)
 
-	if err = engine.Validate(ctx); err != nil {
+	err = retry.OnError(retry.DefaultRetry, func(err error) bool { return fluiderrs.IsTemporaryValidationFailed(err) }, func() error {
+		return engine.Validate(ctx)
+	})
+
+	if err != nil {
 		r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorValidateSpecFieldsReason, "Validation failed for spec fields of Dataset and Runtime: %v", err)
 		log.Error(err, "Validation failed for spec fields of Dataset and Runtime")
 		return utils.RequeueAfterInterval(time.Duration(20 * time.Second))

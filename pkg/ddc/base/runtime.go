@@ -28,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	utilsptr "k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -73,7 +74,7 @@ type RuntimeInfoInterface interface {
 
 	GetRuntimeType() string
 
-	IsExclusive() bool
+	IsExclusive() *bool
 
 	SetFuseNodeSelector(nodeSelector map[string]string)
 
@@ -125,7 +126,7 @@ type RuntimeInfo struct {
 	//tieredstore datav1alpha1.TieredStore
 	tieredstoreInfo TieredStoreInfo
 
-	exclusive bool
+	exclusive *bool
 	// Check if the runtime info is already setup by the dataset
 	//setup bool
 
@@ -298,13 +299,13 @@ func (info *RuntimeInfo) GetRuntimeType() string {
 }
 
 // IsExclusive determines if the runtime is exlusive
-func (info *RuntimeInfo) IsExclusive() bool {
+func (info *RuntimeInfo) IsExclusive() *bool {
 	return info.exclusive
 }
 
 // SetupWithDataset determines if need to setup with the info of dataset
 func (info *RuntimeInfo) SetupWithDataset(dataset *datav1alpha1.Dataset) {
-	info.exclusive = dataset.IsExclusiveMode()
+	info.exclusive = utilsptr.To(dataset.IsExclusiveMode())
 }
 
 // SetupWithDataset determines if need to setup with the info of dataset

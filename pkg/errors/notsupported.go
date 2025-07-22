@@ -18,12 +18,14 @@ package errors
 
 import (
 	"fmt"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 const (
-	StatusReasonNotSupported metav1.StatusReason = "NotSupported"
+	StatusReasonNotSupported              metav1.StatusReason = "NotSupported"
+	StatusReasonTemporaryValidationFailed metav1.StatusReason = "TemporaryValidationFailed"
 )
 
 func NewNotSupported(qualifiedResource schema.GroupResource, targetType string) *FluidStatusError {
@@ -40,4 +42,16 @@ func NewNotSupported(qualifiedResource schema.GroupResource, targetType string) 
 // IsNotSupported returns true if the specified error was created by NewNotSupported.
 func IsNotSupported(err error) (notSupported bool) {
 	return ReasonForError(err) == StatusReasonNotSupported
+}
+
+func NewTemporaryValidationFailed(failureMsg string) *FluidStatusError {
+	return &FluidStatusError{
+		reason:  StatusReasonTemporaryValidationFailed,
+		details: &metav1.StatusDetails{},
+		message: fmt.Sprintf("temporary validation failure: %s", failureMsg),
+	}
+}
+
+func IsTemporaryValidationFailed(err error) (temporaryValidationFailed bool) {
+	return ReasonForError(err) == StatusReasonTemporaryValidationFailed
 }
