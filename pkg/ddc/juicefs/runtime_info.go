@@ -23,6 +23,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/testutil"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
@@ -68,7 +69,7 @@ func (j *JuiceFSEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		}
 	}
 
-	if j.UnitTest {
+	if testutil.IsUnitTest() {
 		return j.runtimeInfo, nil
 	}
 

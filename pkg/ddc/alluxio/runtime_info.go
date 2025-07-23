@@ -23,6 +23,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/testutil"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
@@ -65,7 +66,7 @@ func (e *AlluxioEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		}
 	}
 
-	if e.UnitTest {
+	if testutil.IsUnitTest() {
 		return e.runtimeInfo, nil
 	}
 

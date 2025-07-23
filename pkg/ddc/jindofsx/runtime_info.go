@@ -23,6 +23,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/testutil"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
@@ -64,6 +65,10 @@ func (e *JindoFSxEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		e.runtimeInfo.SetDeprecatedPVName(isPVNameDeprecated)
 
 		e.Log.Info("Deprecation check finished", "isLabelDeprecated", e.runtimeInfo.IsDeprecatedNodeLabel(), "isPVNameDeprecated", e.runtimeInfo.IsDeprecatedPVName())
+	}
+
+	if testutil.IsUnitTest() {
+		return e.runtimeInfo, nil
 	}
 
 	// Handling information of bound dataset. XXXEngine.getRuntimeInfo() might be called before the runtime is bound to a dataset,

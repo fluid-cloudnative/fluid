@@ -22,6 +22,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/testutil"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
@@ -53,6 +54,10 @@ func (e *EFCEngine) getRuntimeInfo() (info base.RuntimeInfoInterface, err error)
 
 			e.Log.Info("Deprecation check finished", "isLabelDeprecated", e.runtimeInfo.IsDeprecatedNodeLabel(), "isPVNameDeprecated", e.runtimeInfo.IsDeprecatedPVName())
 		}
+	}
+
+	if testutil.IsUnitTest() {
+		return e.runtimeInfo, nil
 	}
 
 	// Handling information of bound dataset. XXXEngine.getRuntimeInfo() might be called before the runtime is bound to a dataset,
