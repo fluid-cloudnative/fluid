@@ -15,7 +15,7 @@ package vineyard
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/testutil"
 )
 
 func (e *VineyardEngine) CheckRuntimeReady() (ready bool) {
@@ -30,6 +30,7 @@ func (e *VineyardEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		if err != nil {
 			return e.runtimeInfo, err
 		}
+
 		// Add the symlink method to the vineyard runtime metadata
 		if runtime.ObjectMeta.Annotations == nil {
 			runtime.ObjectMeta.Annotations = make(map[string]string)
@@ -44,21 +45,28 @@ func (e *VineyardEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		if err != nil {
 			return e.runtimeInfo, err
 		}
+	}
 
-		dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+	if testutil.IsUnitTest() {
+		return e.runtimeInfo, nil
+	}
+
+	// Handling information of bound dataset. XXXEngine.getRuntimeInfo() might be called before the runtime is bound to a dataset,
+	// so here we must lazily set dataset-related information once we found there's one bound dataset.
+	if len(e.runtimeInfo.GetOwnerDatasetUID()) == 0 {
+		runtime, err := e.getRuntime()
 		if err != nil {
-			if len(runtime.GetOwnerReferences()) > 0 {
-				e.runtimeInfo.SetOwnerDatasetUID(runtime.GetOwnerReferences()[0].UID)
-			}
-			if utils.IgnoreNotFound(err) == nil {
-				e.Log.Info("Dataset is notfound", "name", e.name, "namespace", e.namespace)
-				return e.runtimeInfo, nil
-			}
-
-			e.Log.Info("Failed to get dataset when getruntimeInfo")
-			return e.runtimeInfo, err
+			return nil, err
 		}
-		e.runtimeInfo.SetOwnerDatasetUID(dataset.GetUID())
+
+		uid, err := base.GetOwnerDatasetUIDFromRuntimeMeta(runtime.ObjectMeta)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(uid) > 0 {
+			e.runtimeInfo.SetOwnerDatasetUID(uid)
+		}
 	}
 
 	return e.runtimeInfo, nil

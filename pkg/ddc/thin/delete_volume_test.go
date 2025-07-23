@@ -41,6 +41,7 @@ type TestCase struct {
 func newTestThinEngine(client client.Client, name string, namespace string, withRunTime bool) *ThinEngine {
 	runTime := &datav1alpha1.ThinRuntime{}
 	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.ThinRuntime)
+	runTimeInfo.SetOwnerDatasetUID("dummy-dataset-uid")
 	if !withRunTime {
 		runTimeInfo = nil
 		runTime = nil

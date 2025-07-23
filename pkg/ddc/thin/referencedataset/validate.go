@@ -16,9 +16,24 @@ limitations under the License.
 
 package referencedataset
 
-import "github.com/fluid-cloudnative/fluid/pkg/runtime"
+import (
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/runtime"
+)
 
 func (e *ReferenceDatasetEngine) Validate(runtime.ReconcileRequestContext) (err error) {
-	// TODO: impl validation logic for ReferenceDatasetEngine
+	// XXXEngine.runtimeInfo must have full information about the bound dataset for further reconcilation.
+	// getRuntimeInfo() here is a refresh to make sure the information is correctly set
+	runtimeInfo, err := e.getRuntimeInfo()
+	if err != nil {
+		return err
+	}
+
+	err = base.ValidateRuntimeInfo(runtimeInfo)
+	if err != nil {
+		return err
+	}
+
+	// TODO: impl validation logic for AlluxioEngine
 	return nil
 }

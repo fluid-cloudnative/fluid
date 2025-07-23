@@ -49,6 +49,7 @@ import (
 //   - No return value. If the test fails, errors will be reported via t.Errorf.
 func TestJuiceFSEngine_CreateVolume(t *testing.T) {
 	runtimeInfo, err := base.BuildRuntimeInfo("juicefs", "fluid", common.JuiceFSRuntime)
+	runtimeInfo.SetOwnerDatasetUID("dummy-dataset-uid")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -139,6 +140,7 @@ func TestJuiceFSEngine_CreateVolume(t *testing.T) {
 
 func TestJuiceFSEngine_createFusePersistentVolume(t *testing.T) {
 	runtimeInfo, err := base.BuildRuntimeInfo("juicefs", "fluid", common.JuiceFSRuntime)
+	runtimeInfo.SetOwnerDatasetUID("dummy-dataset-uid")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -185,6 +187,7 @@ func TestJuiceFSEngine_createFusePersistentVolume(t *testing.T) {
 
 func TestJuiceFSEngine_createFusePersistentVolumeClaim(t *testing.T) {
 	runtimeInfo, err := base.BuildRuntimeInfo("juicefs", "fluid", common.JuiceFSRuntime)
+	runtimeInfo.SetOwnerDatasetUID("dummy-dataset-uid")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}

@@ -20,6 +20,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/testutil"
 )
 
 func (t *ThinEngine) CheckRuntimeReady() (ready bool) {
@@ -58,26 +59,39 @@ func (t *ThinEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 			t.runtimeInfo.SetDeprecatedPVName(isPVNameDeprecated)
 
 			t.Log.Info("Deprecation check finished", "isLabelDeprecated", t.runtimeInfo.IsDeprecatedNodeLabel(), "isPVNameDeprecated", t.runtimeInfo.IsDeprecatedPVName())
+		}
+	}
 
-			// Setup with Dataset Info
-			dataset, err := utils.GetDataset(t.Client, t.name, t.namespace)
-			if err != nil {
-				if len(runtime.GetOwnerReferences()) > 0 {
-					t.runtimeInfo.SetOwnerDatasetUID(runtime.GetOwnerReferences()[0].UID)
-				}
-				if utils.IgnoreNotFound(err) == nil {
-					t.Log.Info("Dataset is notfound", "name", t.name, "namespace", t.namespace)
-					return t.runtimeInfo, nil
-				}
+	if testutil.IsUnitTest() {
+		return t.runtimeInfo, nil
+	}
 
-				t.Log.Info("Failed to get dataset when getruntimeInfo")
-				return t.runtimeInfo, err
-			}
+	// Handling information of bound dataset. XXXEngine.getRuntimeInfo() might be called before the runtime is bound to a dataset,
+	// so here we must lazily set dataset-related information once we found there's one bound dataset.
+	if len(t.runtimeInfo.GetOwnerDatasetUID()) == 0 {
+		runtime, err := t.getRuntime()
+		if err != nil {
+			return nil, err
+		}
 
+		uid, err := base.GetOwnerDatasetUIDFromRuntimeMeta(runtime.ObjectMeta)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(uid) > 0 {
+			t.runtimeInfo.SetOwnerDatasetUID(uid)
+		}
+	}
+
+	if !t.runtimeInfo.IsPlacementModeSet() {
+		dataset, err := utils.GetDataset(t.Client, t.name, t.namespace)
+		if utils.IgnoreNotFound(err) != nil {
+			return nil, err
+		}
+
+		if dataset != nil {
 			t.runtimeInfo.SetupWithDataset(dataset)
-			t.runtimeInfo.SetOwnerDatasetUID(dataset.GetUID())
-
-			t.Log.Info("Setup with dataset done", "exclusive", t.runtimeInfo.IsExclusive())
 		}
 	}
 

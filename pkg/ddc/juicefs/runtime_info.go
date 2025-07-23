@@ -20,6 +20,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/testutil"
 )
 
 // getRuntimeInfo gets runtime info
@@ -29,7 +30,6 @@ func (j *JuiceFSEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		if err != nil {
 			return j.runtimeInfo, err
 		}
-
 		opts := []base.RuntimeInfoOption{
 			base.WithTieredStore(runtime.Spec.TieredStore),
 			base.WithMetadataList(base.GetMetadataListFromAnnotation(runtime)),
@@ -47,27 +47,6 @@ func (j *JuiceFSEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		j.runtimeInfo.SetFuseName(j.getFuseName())
 
 		if !j.UnitTest {
-			// Setup with Dataset Info
-			dataset, err := utils.GetDataset(j.Client, j.name, j.namespace)
-			if err != nil {
-				if len(runtime.GetOwnerReferences()) > 0 {
-					j.runtimeInfo.SetOwnerDatasetUID(runtime.GetOwnerReferences()[0].UID)
-				}
-				if utils.IgnoreNotFound(err) == nil {
-					j.Log.Info("Dataset is notfound", "name", j.name, "namespace", j.namespace)
-					return j.runtimeInfo, nil
-				}
-
-				j.Log.Info("Failed to get dataset when getruntimeInfo")
-				return j.runtimeInfo, err
-			}
-
-			j.runtimeInfo.SetupWithDataset(dataset)
-			j.Log.Info("Setup with dataset done", "exclusive", j.runtimeInfo.IsExclusive())
-
-			j.runtimeInfo.SetOwnerDatasetUID(dataset.GetUID())
-			j.Log.Info("Setup owner dataset-id", "UID", dataset.GetUID())
-
 			// Check if the runtime is using deprecated labels
 			isLabelDeprecated, err := j.HasDeprecatedCommonLabelName()
 			if err != nil {
@@ -83,6 +62,39 @@ func (j *JuiceFSEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 			j.runtimeInfo.SetDeprecatedPVName(isPVNameDeprecated)
 
 			j.Log.Info("Deprecation check finished", "isLabelDeprecated", j.runtimeInfo.IsDeprecatedNodeLabel(), "isPVNameDeprecated", j.runtimeInfo.IsDeprecatedPVName())
+		}
+	}
+
+	if testutil.IsUnitTest() {
+		return j.runtimeInfo, nil
+	}
+
+	// Handling information of bound dataset. XXXEngine.getRuntimeInfo() might be called before the runtime is bound to a dataset,
+	// so here we must lazily set dataset-related information once we found there's one bound dataset.
+	if len(j.runtimeInfo.GetOwnerDatasetUID()) == 0 {
+		runtime, err := j.getRuntime()
+		if err != nil {
+			return nil, err
+		}
+
+		uid, err := base.GetOwnerDatasetUIDFromRuntimeMeta(runtime.ObjectMeta)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(uid) > 0 {
+			j.runtimeInfo.SetOwnerDatasetUID(uid)
+		}
+	}
+
+	if !j.runtimeInfo.IsPlacementModeSet() {
+		dataset, err := utils.GetDataset(j.Client, j.name, j.namespace)
+		if utils.IgnoreNotFound(err) != nil {
+			return nil, err
+		}
+
+		if dataset != nil {
+			j.runtimeInfo.SetupWithDataset(dataset)
 		}
 	}
 

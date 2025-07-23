@@ -33,6 +33,7 @@ import (
 
 func TestThinEngine_CreateVolume(t *testing.T) {
 	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", common.ThinRuntime)
+	runtimeInfo.SetOwnerDatasetUID("dummy-dataset-uid")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -123,6 +124,7 @@ func TestThinEngine_CreateVolume(t *testing.T) {
 
 func TestThinEngine_createFusePersistentVolume(t *testing.T) {
 	runtimeInfo, err := base.BuildRuntimeInfo("thin", "fluid", common.ThinRuntime)
+	runtimeInfo.SetOwnerDatasetUID("dummy-dataset-uid")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -175,6 +177,7 @@ func TestThinEngine_createFusePersistentVolume(t *testing.T) {
 
 func TestThinEngine_createFusePersistentVolumeClaim(t *testing.T) {
 	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", common.ThinRuntime)
+	runtimeInfo.SetOwnerDatasetUID("dummy-dataset-uid")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}

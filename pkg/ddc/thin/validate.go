@@ -19,6 +19,7 @@ package thin
 import (
 	"fmt"
 
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
@@ -66,6 +67,18 @@ func validateDuplicateDatasetMounts(ctx cruntime.ReconcileRequestContext) error 
 }
 
 func (t *ThinEngine) Validate(ctx cruntime.ReconcileRequestContext) (err error) {
+	// XXXEngine.runtimeInfo must have full information about the bound dataset for further reconcilation.
+	// getRuntimeInfo() here is a refresh to make sure the information is correctly set
+	runtimeInfo, err := t.getRuntimeInfo()
+	if err != nil {
+		return err
+	}
+
+	err = base.ValidateRuntimeInfo(runtimeInfo)
+	if err != nil {
+		return err
+	}
+
 	for _, checkFn := range checks {
 		if err := checkFn(ctx); err != nil {
 			return err

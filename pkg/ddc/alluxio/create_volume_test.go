@@ -39,6 +39,7 @@ import (
 // and one PVC are created after the function execution
 func TestCreateVolume(t *testing.T) {
 	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
+	runtimeInfo.SetOwnerDatasetUID("dummy-dataset-uid")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -134,6 +135,7 @@ func TestCreateVolume(t *testing.T) {
 // is created in the fake client.
 func TestCreateFusePersistentVolume(t *testing.T) {
 	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
+	runtimeInfo.SetOwnerDatasetUID("dummy-dataset-uid")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}
@@ -186,6 +188,7 @@ func TestCreateFusePersistentVolume(t *testing.T) {
 func TestCreateFusePersistentVolumeClaim(t *testing.T) {
 	// Prepare runtime information for the AlluxioEngine.
 	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
+	runtimeInfo.SetOwnerDatasetUID("dummy-dataset-uid")
 	if err != nil {
 		t.Errorf("fail to create the runtimeInfo with error %v", err)
 	}

@@ -22,7 +22,10 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	transformerutils "github.com/fluid-cloudnative/fluid/pkg/utils/transformer"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
 func GetDatasetRefName(name, namespace string) string {
@@ -76,4 +79,23 @@ func CheckReferenceDataset(dataset *datav1alpha1.Dataset) (check bool, err error
 	}
 
 	return
+}
+
+func GetOwnerDatasetUIDFromRuntimeMeta(metaObj metav1.ObjectMeta) (types.UID, error) {
+	datasetOwners := transformerutils.FilterOwnerByKind(metaObj.GetOwnerReferences(), datav1alpha1.Datasetkind)
+	if len(datasetOwners) > 0 {
+		ownerPath := field.NewPath("metadata").Child("ownerReferences")
+		if len(datasetOwners) > 1 {
+			// num of dataset owners should be at most 1
+			return "", fmt.Errorf("found multiple Dataset owners in %s, something went wrong", ownerPath.String())
+		}
+
+		if datasetOwners[0].Name != metaObj.GetName() {
+			return "", fmt.Errorf("owner Dataset of the runtime in %s has different name with runtime, expected to be same", ownerPath.String())
+		}
+
+		return datasetOwners[0].UID, nil
+	}
+
+	return "", nil
 }

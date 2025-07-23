@@ -35,6 +35,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	fluidctrl "github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -215,9 +216,9 @@ func labelCacheNode(nodeToLabel corev1.Node, runtimeInfo base.RuntimeInfoInterfa
 
 	log := rootLog.WithValues("runtime", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace())
 
-	exclusiveness := runtimeInfo.IsExclusive()
-	log.Info("Placement Mode", "IsExclusive", exclusiveness)
-	if exclusiveness {
+	placementMode := runtimeInfo.GetPlacementModeWithDefault(datav1alpha1.ExclusiveMode)
+	log.Info("Placement Mode", "mode", placementMode)
+	if placementMode == datav1alpha1.ExclusiveMode {
 		exclusiveLabel = utils.GetExclusiveKey()
 	}
 
@@ -240,7 +241,7 @@ func labelCacheNode(nodeToLabel corev1.Node, runtimeInfo base.RuntimeInfoInterfa
 		labelsToModify.Add(runtimeLabel, "true")
 		labelsToModify.Add(commonLabel, "true")
 
-		if exclusiveness {
+		if placementMode == datav1alpha1.ExclusiveMode {
 			exclusiveLabelValue := runtimeInfo.GetExclusiveLabelValue()
 			labelsToModify.Add(exclusiveLabel, exclusiveLabelValue)
 		}

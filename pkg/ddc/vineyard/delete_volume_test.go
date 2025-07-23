@@ -38,6 +38,7 @@ type TestCase struct {
 func newTestVineyardEngine(client client.Client, name string, namespace string, withRunTime bool) *VineyardEngine {
 	runTime := &datav1alpha1.VineyardRuntime{}
 	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.VineyardRuntime)
+	runTimeInfo.SetOwnerDatasetUID("dummy-dataset-uid")
 	if !withRunTime {
 		runTimeInfo = nil
 		runTime = nil

@@ -62,52 +62,55 @@ func (e *ReferenceDatasetEngine) getRuntime() (*datav1alpha1.ThinRuntime, error)
 }
 
 func (e *ReferenceDatasetEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
-	if e.runtimeInfo != nil {
-		return e.runtimeInfo, nil
-	}
-
-	runtime, err := e.getRuntime()
-	if err != nil {
-		return e.runtimeInfo, err
-	}
-
-	opts := []base.RuntimeInfoOption{
-		base.WithTieredStore(runtime.Spec.TieredStore),
-		base.WithMetadataList(base.GetMetadataListFromAnnotation(runtime)),
-		base.WithAnnotations(runtime.Annotations),
-	}
-
-	e.runtimeInfo, err = base.BuildRuntimeInfo(e.name, e.namespace, e.runtimeType, opts...)
-	if err != nil {
-		return e.runtimeInfo, err
-	}
-
-	// Setup Fuse Deploy Mode
-	e.runtimeInfo.SetFuseNodeSelector(runtime.Spec.Fuse.NodeSelector)
-
-	// Ignore the deprecated common labels and PersistentVolumes, use physical runtime
-
-	// Setup with Dataset Info
-	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
-	if err != nil {
-		if len(runtime.GetOwnerReferences()) > 0 {
-			e.runtimeInfo.SetOwnerDatasetUID(runtime.GetOwnerReferences()[0].UID)
-		}
-		if utils.IgnoreNotFound(err) == nil {
-			e.Log.Info("Dataset is notfound", "name", e.name, "namespace", e.namespace)
-			return e.runtimeInfo, nil
+	if e.runtimeInfo == nil {
+		runtime, err := e.getRuntime()
+		if err != nil {
+			return e.runtimeInfo, err
 		}
 
-		e.Log.Info("Failed to get dataset when get runtimeInfo")
-		return e.runtimeInfo, err
+		opts := []base.RuntimeInfoOption{
+			base.WithTieredStore(runtime.Spec.TieredStore),
+			base.WithMetadataList(base.GetMetadataListFromAnnotation(runtime)),
+			base.WithAnnotations(runtime.Annotations),
+		}
+
+		e.runtimeInfo, err = base.BuildRuntimeInfo(e.name, e.namespace, e.runtimeType, opts...)
+		if err != nil {
+			return e.runtimeInfo, err
+		}
+
+		// Setup Fuse Deploy Mode
+		e.runtimeInfo.SetFuseNodeSelector(runtime.Spec.Fuse.NodeSelector)
 	}
 
-	// set exclusive mode
-	// TODO: how to handle the exclusive mode ?
-	e.runtimeInfo.SetupWithDataset(dataset)
-	e.runtimeInfo.SetOwnerDatasetUID(dataset.UID)
+	// Handling information of bound dataset. XXXEngine.getRuntimeInfo() might be called before the runtime is bound to a dataset,
+	// so here we must lazily set dataset-related information once we found there's one bound dataset.
+	if len(e.runtimeInfo.GetOwnerDatasetUID()) == 0 {
+		runtime, err := e.getRuntime()
+		if err != nil {
+			return nil, err
+		}
 
-	e.Log.Info("Setup with dataset done", "exclusive", e.runtimeInfo.IsExclusive())
+		uid, err := base.GetOwnerDatasetUIDFromRuntimeMeta(runtime.ObjectMeta)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(uid) > 0 {
+			e.runtimeInfo.SetOwnerDatasetUID(uid)
+		}
+	}
+
+	if !e.runtimeInfo.IsPlacementModeSet() {
+		dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+		if utils.IgnoreNotFound(err) != nil {
+			return nil, err
+		}
+
+		if dataset != nil {
+			e.runtimeInfo.SetupWithDataset(dataset)
+		}
+	}
 
 	return e.runtimeInfo, nil
 }
