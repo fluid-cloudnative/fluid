@@ -9,7 +9,7 @@ func ValidateRuntimeInfo(runtimeInfo RuntimeInfoInterface) (err error) {
 		return fluiderrs.NewTemporaryValidationFailed("OwnerDatasetUID is not set in runtime info, this is usually a temporary state, retrying")
 	}
 
-	if runtimeInfo.IsExclusive() == nil {
+	if !runtimeInfo.IsPlacementModeSet() {
 		return fluiderrs.NewTemporaryValidationFailed("exclusive mode is not set in runtime info, this is usually a temporary state, retrying")
 	}
 

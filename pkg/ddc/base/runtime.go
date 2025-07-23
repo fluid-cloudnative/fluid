@@ -28,7 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	utilsptr "k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -74,7 +73,9 @@ type RuntimeInfoInterface interface {
 
 	GetRuntimeType() string
 
-	IsExclusive() *bool
+	GetPlacementModeWithDefault(defaultMode datav1alpha1.PlacementMode) datav1alpha1.PlacementMode
+
+	IsPlacementModeSet() bool
 
 	SetFuseNodeSelector(nodeSelector map[string]string)
 
@@ -126,7 +127,7 @@ type RuntimeInfo struct {
 	//tieredstore datav1alpha1.TieredStore
 	tieredstoreInfo TieredStoreInfo
 
-	exclusive *bool
+	placementMode *datav1alpha1.PlacementMode
 	// Check if the runtime info is already setup by the dataset
 	//setup bool
 
@@ -298,14 +299,25 @@ func (info *RuntimeInfo) GetRuntimeType() string {
 	return info.runtimeType
 }
 
-// IsExclusive determines if the runtime is exlusive
-func (info *RuntimeInfo) IsExclusive() *bool {
-	return info.exclusive
+func (info *RuntimeInfo) IsPlacementModeSet() bool {
+	return info.placementMode != nil
+}
+
+func (info *RuntimeInfo) GetPlacementModeWithDefault(defaultMode datav1alpha1.PlacementMode) datav1alpha1.PlacementMode {
+	if !info.IsPlacementModeSet() || info.placementMode == nil {
+		return defaultMode
+	}
+
+	return *info.placementMode
 }
 
 // SetupWithDataset determines if need to setup with the info of dataset
 func (info *RuntimeInfo) SetupWithDataset(dataset *datav1alpha1.Dataset) {
-	info.exclusive = utilsptr.To(dataset.IsExclusiveMode())
+	var placementMode datav1alpha1.PlacementMode = dataset.Spec.PlacementMode
+	if placementMode == datav1alpha1.DefaultMode {
+		placementMode = datav1alpha1.ExclusiveMode
+	}
+	info.placementMode = &placementMode
 }
 
 // SetupWithDataset determines if need to setup with the info of dataset

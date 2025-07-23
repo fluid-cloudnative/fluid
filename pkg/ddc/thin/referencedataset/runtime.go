@@ -107,7 +107,7 @@ func (e *ReferenceDatasetEngine) getRuntimeInfo() (base.RuntimeInfoInterface, er
 	e.runtimeInfo.SetupWithDataset(dataset)
 	e.runtimeInfo.SetOwnerDatasetUID(dataset.UID)
 
-	e.Log.Info("Setup with dataset done", "exclusive", e.runtimeInfo.IsExclusive())
+	e.Log.Info("Setup with dataset done", "placement mode", e.runtimeInfo.GetPlacementModeWithDefault(datav1alpha1.ExclusiveMode))
 
 	return e.runtimeInfo, nil
 }

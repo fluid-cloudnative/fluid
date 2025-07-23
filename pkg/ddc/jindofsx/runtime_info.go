@@ -85,8 +85,7 @@ func (e *JindoFSxEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		}
 	}
 
-	exclusiveModePtr := e.runtimeInfo.IsExclusive()
-	if exclusiveModePtr == nil {
+	if !e.runtimeInfo.IsPlacementModeSet() {
 		dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 		if utils.IgnoreNotFound(err) != nil {
 			return nil, err

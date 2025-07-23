@@ -59,26 +59,6 @@ func (t *ThinEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 			t.runtimeInfo.SetDeprecatedPVName(isPVNameDeprecated)
 
 			t.Log.Info("Deprecation check finished", "isLabelDeprecated", t.runtimeInfo.IsDeprecatedNodeLabel(), "isPVNameDeprecated", t.runtimeInfo.IsDeprecatedPVName())
-
-			// Setup with Dataset Info
-			dataset, err := utils.GetDataset(t.Client, t.name, t.namespace)
-			if err != nil {
-				if len(runtime.GetOwnerReferences()) > 0 {
-					t.runtimeInfo.SetOwnerDatasetUID(runtime.GetOwnerReferences()[0].UID)
-				}
-				if utils.IgnoreNotFound(err) == nil {
-					t.Log.Info("Dataset is notfound", "name", t.name, "namespace", t.namespace)
-					return t.runtimeInfo, nil
-				}
-
-				t.Log.Info("Failed to get dataset when getruntimeInfo")
-				return t.runtimeInfo, err
-			}
-
-			t.runtimeInfo.SetupWithDataset(dataset)
-			t.runtimeInfo.SetOwnerDatasetUID(dataset.GetUID())
-
-			t.Log.Info("Setup with dataset done", "exclusive", t.runtimeInfo.IsExclusive())
 		}
 	}
 
@@ -104,8 +84,7 @@ func (t *ThinEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		}
 	}
 
-	exclusiveModePtr := t.runtimeInfo.IsExclusive()
-	if exclusiveModePtr == nil {
+	if !t.runtimeInfo.IsPlacementModeSet() {
 		dataset, err := utils.GetDataset(t.Client, t.name, t.namespace)
 		if utils.IgnoreNotFound(err) != nil {
 			return nil, err

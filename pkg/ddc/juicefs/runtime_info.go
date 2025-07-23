@@ -87,8 +87,7 @@ func (j *JuiceFSEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		}
 	}
 
-	exclusiveModePtr := j.runtimeInfo.IsExclusive()
-	if exclusiveModePtr == nil {
+	if !j.runtimeInfo.IsPlacementModeSet() {
 		dataset, err := utils.GetDataset(j.Client, j.name, j.namespace)
 		if utils.IgnoreNotFound(err) != nil {
 			return nil, err
