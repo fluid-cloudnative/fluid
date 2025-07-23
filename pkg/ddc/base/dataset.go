@@ -91,7 +91,7 @@ func GetOwnerDatasetUIDFromRuntimeMeta(metaObj metav1.ObjectMeta) (types.UID, er
 		}
 
 		if datasetOwners[0].Name != metaObj.GetName() {
-			return "", fmt.Errorf("Dataset owner of the runtime in %s has different name with runtime, expected to be same", ownerPath.String())
+			return "", fmt.Errorf("owner Dataset of the runtime in %s has different name with runtime, expected to be same", ownerPath.String())
 		}
 
 		return datasetOwners[0].UID, nil
