@@ -17,13 +17,9 @@
 package efc
 
 import (
-	"fmt"
-
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/testutil"
-	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
 // getRuntimeInfo gets runtime info
@@ -68,19 +64,13 @@ func (e *EFCEngine) getRuntimeInfo() (info base.RuntimeInfoInterface, err error)
 			return e.runtimeInfo, err
 		}
 
-		owners := runtime.GetOwnerReferences()
-		if len(owners) > 0 {
-			firstOwner := owners[0]
-			firstOwnerPath := field.NewPath("metadata").Child("ownerReferences").Index(0)
-			if firstOwner.Kind != datav1alpha1.Datasetkind {
-				return nil, fmt.Errorf("first owner of the runtime (%s) has invalid Kind \"%s\", expected to be %s ", firstOwnerPath.String(), firstOwner.Kind, datav1alpha1.Datasetkind)
-			}
+		uid, err := base.GetOwnerDatasetUIDFromRuntimeMeta(runtime.ObjectMeta)
+		if err != nil {
+			return nil, err
+		}
 
-			if firstOwner.Name != runtime.GetName() {
-				return nil, fmt.Errorf("first owner of the runtime (%s) has different name with runtime, expected to be same", firstOwnerPath.String())
-			}
-
-			e.runtimeInfo.SetOwnerDatasetUID(firstOwner.UID)
+		if len(uid) > 0 {
+			e.runtimeInfo.SetOwnerDatasetUID(uid)
 		}
 	}
 

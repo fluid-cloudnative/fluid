@@ -18,6 +18,7 @@ package transformer
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -35,4 +36,16 @@ func GenerateOwnerReferenceFromObject(obj client.Object) *common.OwnerReference 
 
 	return ref
 
+}
+
+func FilterOwnerByKind(ownerReferences []metav1.OwnerReference, ownerKind string) []metav1.OwnerReference {
+	ret := []metav1.OwnerReference{}
+
+	for _, owner := range ownerReferences {
+		if owner.Kind == ownerKind {
+			ret = append(ret, owner)
+		}
+	}
+
+	return ret
 }
