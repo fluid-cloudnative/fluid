@@ -374,6 +374,153 @@ func TestThinEngine_transformFuse(t1 *testing.T) {
 			// MountPath:   "/thin/fluid/test/thin-fuse",
 			ConfigValue:   "{\"mounts\":[{\"mountPoint\":\"abc\",\"options\":{\"a\":\"b\",\"c\":\"d\"}}],\"targetPath\":\"/thin/fluid/test/thin-fuse\",\"runtimeOptions\":{\"fuse-opt\":\"foo\"},\"accessModes\":[\"ReadWriteMany\"]}",
 			ConfigStorage: "configmap",
+			Lifecycle: &corev1.Lifecycle{
+				PreStop: &corev1.LifecycleHandler{
+					Exec: &corev1.ExecAction{
+						Command: []string{
+							"umount",
+							"/thin/fluid/test/thin-fuse",
+						},
+					},
+				},
+			},
+		},
+	}
+	value := &ThinValue{}
+	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "thin")
+	if err != nil {
+		t1.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
+	t1.Run("test", func(t1 *testing.T) {
+		t := &ThinEngine{
+			Log:         fake.NullLogger(),
+			namespace:   "fluid",
+			name:        "test",
+			runtime:     runtime,
+			runtimeInfo: runtimeInfo,
+			Client:      fake.NewFakeClientWithScheme(testScheme),
+		}
+		if err := t.transformFuse(runtime, profile, dataset, value); err != nil {
+			t1.Errorf("transformFuse() error = %v", err)
+		}
+
+		value.Fuse.Envs = testutil.SortEnvVarByName(value.Fuse.Envs, common.ThinFuseOptionEnvKey)
+		if !testutil.DeepEqualIgnoringSliceOrder(t1, value.Fuse, wantValue.Fuse) {
+			valueYaml, _ := yaml.Marshal(value.Fuse)
+			wantYaml, _ := yaml.Marshal(wantValue.Fuse)
+			t1.Errorf("transformFuse() \ngot = %v, \nwant = %v", string(valueYaml), string(wantYaml))
+		}
+	})
+}
+
+func TestThinEngine_transformFuseWithCustomPreStopHook(t1 *testing.T) {
+	profile := buildBaseThinRuntimeProfile()
+	profile.Spec.Fuse.Lifecycle = &corev1.Lifecycle{
+		PreStop: &corev1.LifecycleHandler{
+			Exec: &corev1.ExecAction{
+				Command: []string{"custom.sh"},
+			},
+		},
+	}
+	runtime := buildBaseThinRuntime()
+	dataset := buildBaseDataset()
+	wantValue := &ThinValue{
+		Fuse: Fuse{
+			Enabled:         true,
+			Image:           "test",
+			ImageTag:        "v1",
+			ImagePullPolicy: "Always",
+			TargetPath:      "/thin/fluid/test/thin-fuse",
+			Resources: common.Resources{
+				Requests: map[corev1.ResourceName]string{
+					corev1.ResourceCPU:    "100m",
+					corev1.ResourceMemory: "1Gi",
+				},
+				Limits: map[corev1.ResourceName]string{
+					corev1.ResourceCPU:    "200m",
+					corev1.ResourceMemory: "4Gi",
+				},
+			},
+			HostNetwork: true,
+			Envs: []corev1.EnvVar{{
+				Name:  "a",
+				Value: "b",
+			}, {
+				Name: "b",
+				ValueFrom: &corev1.EnvVarSource{
+					ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: "test-cm",
+						},
+					},
+				},
+			}, {
+				Name:  common.ThinFuseOptionEnvKey,
+				Value: "fuse-opt=foo",
+			}, {
+				Name:  common.ThinFusePointEnvKey,
+				Value: "/thin/fluid/test/thin-fuse",
+			}},
+			NodeSelector: map[string]string{"b": "c", "fluid.io/f-fluid-test": "true"},
+			Ports: []corev1.ContainerPort{{
+				Name:          "port",
+				ContainerPort: 8080,
+			}},
+			LivenessProbe: &corev1.Probe{
+				ProbeHandler: corev1.ProbeHandler{
+					HTTPGet: &corev1.HTTPGetAction{
+						Path: "/healthz",
+					},
+				},
+				InitialDelaySeconds: 1,
+				TimeoutSeconds:      1,
+				PeriodSeconds:       1,
+				SuccessThreshold:    1,
+				FailureThreshold:    1,
+			},
+			ReadinessProbe: &corev1.Probe{
+				ProbeHandler: corev1.ProbeHandler{
+					HTTPGet: &corev1.HTTPGetAction{
+						Path: "/healthz",
+					},
+				},
+				InitialDelaySeconds: 1,
+				TimeoutSeconds:      1,
+				PeriodSeconds:       1,
+				SuccessThreshold:    1,
+				FailureThreshold:    1,
+			},
+			Volumes: []corev1.Volume{{
+				Name: "a",
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{Path: "/test"},
+				},
+			}, {
+				Name: "b",
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{Path: "/b"},
+				},
+			}},
+			VolumeMounts: []corev1.VolumeMount{{
+				Name:      "a",
+				MountPath: "/test",
+			}, {
+				Name:      "b",
+				MountPath: "/b",
+			}},
+			// ConfigValue: "{\"/thin/fluid/test/thin-fuse\":\"a=b\"}",
+			// MountPath:   "/thin/fluid/test/thin-fuse",
+			ConfigValue:   "{\"mounts\":[{\"mountPoint\":\"abc\",\"options\":{\"a\":\"b\",\"c\":\"d\"}}],\"targetPath\":\"/thin/fluid/test/thin-fuse\",\"runtimeOptions\":{\"fuse-opt\":\"foo\"},\"accessModes\":[\"ReadWriteMany\"]}",
+			ConfigStorage: "configmap",
+			Lifecycle: &corev1.Lifecycle{
+				PreStop: &corev1.LifecycleHandler{
+					Exec: &corev1.ExecAction{
+						Command: []string{
+							"custom.sh",
+						},
+					},
+				},
+			},
 		},
 	}
 	value := &ThinValue{}
@@ -692,6 +839,16 @@ func TestThinEngine_transformFuseWithDuplicateOptionKey(t1 *testing.T) {
 			// MountPath:   "/thin/fluid/test/thin-fuse",
 			ConfigValue:   "{\"mounts\":[{\"mountPoint\":\"abc\",\"options\":{\"a\":\"b\"}}],\"targetPath\":\"/thin/fluid/test/thin-fuse\",\"accessModes\":[\"ReadOnlyMany\"]}",
 			ConfigStorage: "configmap",
+			Lifecycle: &corev1.Lifecycle{
+				PreStop: &corev1.LifecycleHandler{
+					Exec: &corev1.ExecAction{
+						Command: []string{
+							"umount",
+							"/thin/fluid/test/thin-fuse",
+						},
+					},
+				},
+			},
 		},
 	}
 	value := &ThinValue{}

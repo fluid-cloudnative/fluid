@@ -100,10 +100,10 @@ spec:
             privileged: true
             runAsGroup: 0
             runAsUser: 0
+          {{- if .Values.fuse.lifecycle }}
           lifecycle:
-            preStop:
-              exec:
-                command: ["sh", "-c", "umount {{ .Values.fuse.targetPath }}"]
+          {{ toYaml .Values.fuse.lifecycle | nindent 12 }}
+          {{- end }}
           {{- if .Values.fuse.livenessProbe }}
           livenessProbe:
 {{ toYaml .Values.fuse.livenessProbe | trim | indent 12  }}

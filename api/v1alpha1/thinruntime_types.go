@@ -191,6 +191,9 @@ type ThinFuseSpec struct {
 	// VolumeMounts specifies the volumes listed in ".spec.volumes" to mount into the thinruntime component's filesystem.
 	// +optional
 	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
+
+	// Lifecycle describes actions that the management system should take in response to container lifecycle events.
+	Lifecycle *corev1.Lifecycle `json:"lifecycle,omitempty"`
 }
 
 //+kubebuilder:object:root=true
