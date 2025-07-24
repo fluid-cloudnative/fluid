@@ -17,7 +17,7 @@ limitations under the License.
 package vineyard
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 )
 
@@ -29,9 +29,8 @@ func (e *VineyardEngine) Validate(ctx cruntime.ReconcileRequestContext) (err err
 		return err
 	}
 
-	err = base.ValidateRuntimeInfo(runtimeInfo)
-	if err != nil {
-		return err
+	if len(runtimeInfo.GetOwnerDatasetUID()) == 0 {
+		return fluiderrs.NewTemporaryValidationFailed("OwnerDatasetUID is not set in runtime info, this is usually a temporary state, retrying")
 	}
 
 	// TODO: impl validation logic for VineyardEngine
