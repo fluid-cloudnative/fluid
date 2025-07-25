@@ -36,7 +36,7 @@ const (
 
 // GetDataset gets the dataset.
 // It returns a pointer to the dataset if successful.
-func GetDataset(client client.Client, name, namespace string) (*datav1alpha1.Dataset, error) {
+func GetDataset(client client.Reader, name, namespace string) (*datav1alpha1.Dataset, error) {
 
 	key := types.NamespacedName{
 		Name:      name,

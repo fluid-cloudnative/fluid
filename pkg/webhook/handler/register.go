@@ -22,7 +22,6 @@ import (
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/util/sets"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -46,12 +45,12 @@ func init() {
 }
 
 // Register registers the handlers to the manager
-func Register(mgr manager.Manager, client client.Client, log logr.Logger) {
+func Register(mgr manager.Manager, log logr.Logger) {
 	server := mgr.GetWebhookServer()
 	filterActiveHandlers()
 	for path, handler := range handlerMap {
 		decoder := admission.NewDecoder(mgr.GetScheme())
-		handler.Setup(client, decoder)
+		handler.Setup(mgr.GetClient(), mgr.GetAPIReader(), decoder)
 		server.Register(path, &webhook.Admission{Handler: handler})
 		log.Info("Registered webhook handler", "path", path)
 	}
