@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestAlluxioFileUtilsSuite(t *testing.T) {
+func TestOperations(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "AlluxioFileUtils Suite")
+	RunSpecs(t, "Operations Suite")
 }
