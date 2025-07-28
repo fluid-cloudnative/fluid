@@ -69,30 +69,6 @@ spec:
           spec:
             description: JuiceFSRuntimeSpec defines the desired state of JuiceFSRuntime
             properties:
-              cleanCachePolicy:
-                description: CleanCachePolicy defines cleanCache Policy
-                properties:
-                  gracePeriodSeconds:
-                    default: 60
-                    description: |-
-                      Optional duration in seconds the cache needs to clean gracefully. May be decreased in delete runtime request.
-                      Value must be non-negative integer. The value zero indicates clean immediately via the timeout
-                      command (no opportunity to shut down).
-                      If this value is nil, the default grace period will be used instead.
-                      The grace period is the duration in seconds after the processes running in the pod are sent
-                      a termination signal and the time when the processes are forcibly halted with timeout command.
-                      Set this value longer than the expected cleanup time for your process.
-                    format: int32
-                    type: integer
-                  maxRetryAttempts:
-                    default: 3
-                    description: |-
-                      Optional max retry Attempts when cleanCache function returns an error after execution, runtime attempts
-                      to run it three more times by default. With Maximum Retry Attempts, you can customize the maximum number
-                      of retries. This gives you the option to continue processing retries.
-                    format: int32
-                    type: integer
-                type: object
               configs:
                 description: Configs of JuiceFS
                 items:
@@ -769,6 +745,45 @@ spec:
                   imageTag:
                     description: Image tag (e.g. 2.3.0-SNAPSHOT)
                     type: string
+                type: object
+              management:
+                description: RuntimeManagement defines policies when managing the
+                  runtime
+                properties:
+                  cleanCachePolicy:
+                    description: CleanCachePolicy defines the policy of cleaning cache
+                      when shutting down the runtime
+                    properties:
+                      gracePeriodSeconds:
+                        default: 60
+                        description: |-
+                          Optional duration in seconds the cache needs to clean gracefully. May be decreased in delete runtime request.
+                          Value must be non-negative integer. The value zero indicates clean immediately via the timeout
+                          command (no opportunity to shut down).
+                          If this value is nil, the default grace period will be used instead.
+                          The grace period is the duration in seconds after the processes running in the pod are sent
+                          a termination signal and the time when the processes are forcibly halted with timeout command.
+                          Set this value longer than the expected cleanup time for your process.
+                        format: int32
+                        type: integer
+                      maxRetryAttempts:
+                        default: 3
+                        description: |-
+                          Optional max retry Attempts when cleanCache function returns an error after execution, runtime attempts
+                          to run it three more times by default. With Maximum Retry Attempts, you can customize the maximum number
+                          of retries. This gives you the option to continue processing retries.
+                        format: int32
+                        type: integer
+                    type: object
+                  metadataSyncPolicy:
+                    description: MetadataSyncPolicy defines the policy of syncing
+                      metadata when setting up the runtime. If not set,
+                    properties:
+                      autoSync:
+                        description: AutoSync enables automatic metadata sync when
+                          setting up a runtime. If not set, it defaults to true.
+                        type: boolean
+                    type: object
                 type: object
               master:
                 description: The component spec of JuiceFS master

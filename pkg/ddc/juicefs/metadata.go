@@ -50,7 +50,18 @@ func (j *JuiceFSEngine) shouldSyncMetadata() (should bool, err error) {
 		return should, err
 	}
 
-	//todo(xuzhihao): option to enable/disable automatic metadata sync
+	runtime, err := utils.GetJuiceFSRuntime(j.Client, j.name, j.namespace)
+	if err != nil {
+		should = false
+		return should, err
+	}
+
+	if !runtime.Spec.RuntimeManagement.MetadataSyncPolicy.AutoSyncEnabled() {
+		j.Log.V(1).Info("Skip syncing metadata cause runtime.Spec.RuntimeManagement.MetadataSyncPolicy.AutoSync=false", "runtime name", runtime.Name, "runtime namespace", runtime.Namespace)
+		should = false
+		return should, nil
+	}
+
 	//todo: periodical metadata sync
 	if dataset.Status.UfsTotal != "" && dataset.Status.UfsTotal != MetadataSyncNotDoneMsg {
 		j.Log.V(1).Info("dataset ufs is ready",
