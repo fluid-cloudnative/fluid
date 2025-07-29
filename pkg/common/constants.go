@@ -143,6 +143,13 @@ const (
 	VolumeTypeVolumeTemplate VolumeType = "volumeTemplate"
 )
 
+type HostPathMode string
+
+const (
+	HostPathModeFixed        HostPathMode = "fixed"
+	HostPathModeRandomSuffix HostPathMode = "random-suffix"
+)
+
 // GetDefaultTieredStoreOrder get the TieredStoreOrder from the default Map
 // because the crd has validated the value, It's not possible to meet unknown MediumType
 func GetDefaultTieredStoreOrder(MediumType MediumType) (order int) {
@@ -215,5 +222,6 @@ const (
 )
 
 const (
-	SkipPrecheckAnnotationKey = "sidecar.fluid.io/skip-precheck"
+	SkipPrecheckAnnotationKey             = "sidecar.fluid.io/skip-precheck"
+	HostMountPathModeOnDefaultPlatformKey = "default.fuse-sidecar.fluid.io/host-mount-path-mode"
 )
