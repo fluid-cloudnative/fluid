@@ -21,8 +21,13 @@ import (
 	"path"
 	"strings"
 
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/golang/glog"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+)
+
+const (
+	subPahVolumeKeyWord = "volume-subpaths"
 )
 
 type MountPoint struct {
@@ -34,7 +39,7 @@ type MountPoint struct {
 	NamespacedDatasetName string // <namespace>-<dataset>
 }
 
-func GetBrokenMountPoints() ([]MountPoint, error) {
+func GetBrokenMountPoints() (MountPoints, error) {
 	// get mountinfo from proc
 	mountByPath, err := loadMountInfo()
 	if err != nil {
@@ -64,6 +69,7 @@ func getGlobalMounts(mountByPath map[string]*Mount) (globalMountByName map[strin
 
 	for k, v := range mountByPath {
 		if strings.Contains(k, mountRoot) {
+			vCopy := v
 			fields := strings.Split(k, "/")
 			if len(fields) < 6 {
 				continue
@@ -71,7 +77,7 @@ func getGlobalMounts(mountByPath map[string]*Mount) (globalMountByName map[strin
 			// fluid global mount path is: /{rootPath}/{runtimeType}/{namespace}/{datasetName}/{runtimeTypeFuse}
 			namespace, datasetName := fields[3], fields[4]
 			namespacedName := fmt.Sprintf("%s-%s", namespace, datasetName)
-			globalMountByName[namespacedName] = v
+			globalMountByName[namespacedName] = vCopy
 		}
 	}
 	return
@@ -81,6 +87,9 @@ func getBindMounts(mountByPath map[string]*Mount) (bindMountByName map[string][]
 	bindMountByName = make(map[string][]*Mount)
 	for k, m := range mountByPath {
 		var datasetNamespacedName string
+		// Shallow copy mCopy intends to address loop scoping issue in golang version <= 1.21
+		// ref: https://go.dev/blog/loopvar-preview
+		mCopy := m
 		if strings.Contains(k, "kubernetes.io~csi") && strings.Contains(k, "mount") {
 			// fluid bind mount target path is: /{kubeletRootDir}(default: /var/lib/kubelet)/pods/{podUID}/volumes/kubernetes.io~csi/{namespace}-{datasetName}/mount
 			fields := strings.Split(k, "/")
@@ -88,16 +97,16 @@ func getBindMounts(mountByPath map[string]*Mount) (bindMountByName map[string][]
 				continue
 			}
 			datasetNamespacedName = fields[len(fields)-2]
-			bindMountByName[datasetNamespacedName] = append(bindMountByName[datasetNamespacedName], m)
+			bindMountByName[datasetNamespacedName] = append(bindMountByName[datasetNamespacedName], mCopy)
 		}
-		if strings.Contains(k, "volume-subpaths") {
+		if strings.Contains(k, subPahVolumeKeyWord) {
 			// pod using subPath, bind mount path is: /{kubeletRootDir}(default: /var/lib/kubelet)/pods/{podUID}/volume-subpaths/{namespace}-{datasetName}/{containerName}/{volumeIndex}
 			fields := strings.Split(k, "/")
 			if len(fields) < 4 {
 				continue
 			}
 			datasetNamespacedName = fields[len(fields)-3]
-			bindMountByName[datasetNamespacedName] = append(bindMountByName[datasetNamespacedName], m)
+			bindMountByName[datasetNamespacedName] = append(bindMountByName[datasetNamespacedName], mCopy)
 		}
 	}
 	return
@@ -111,7 +120,13 @@ func getBrokenBindMounts(globalMountByName map[string]*Mount, bindMountByName ma
 			glog.V(6).Infof("ignoring mountpoint %s because of not finding its global mount point", name)
 			continue
 		}
-		for _, bindMount := range bindMounts {
+		for _, bm := range bindMounts {
+			bindMount := bm
+			if strings.HasSuffix(bindMount.Subtree, "//deleted") {
+				glog.V(5).Infof("bindMount subtree has been deleted, trim /deleted suffix, bindmount: %v", bindMount)
+				bindMount.Subtree = strings.TrimSuffix(bindMount.Subtree, "//deleted")
+			}
+
 			// In case of not sharing same peer group in mount info, meaning it a broken mount point
 			if len(utils.IntersectIntegerSets(bindMount.PeerGroups, globalMount.PeerGroups)) == 0 {
 				brokenMounts = append(brokenMounts, MountPoint{
@@ -126,4 +141,20 @@ func getBrokenBindMounts(globalMountByName map[string]*Mount, bindMountByName ma
 		}
 	}
 	return
+}
+
+type MountPoints []MountPoint
+
+func (mp MountPoints) Len() int { return len(mp) }
+func (mp MountPoints) Less(i, j int) bool {
+	if strings.Contains(mp[i].MountPath, subPahVolumeKeyWord) && !strings.Contains(mp[j].MountPath, subPahVolumeKeyWord) {
+		return false
+	}
+	if !strings.Contains(mp[i].MountPath, subPahVolumeKeyWord) && strings.Contains(mp[j].MountPath, subPahVolumeKeyWord) {
+		return true
+	}
+	return mp[i].MountPath < mp[j].MountPath
+}
+func (mp MountPoints) Swap(i, j int) {
+	mp[i], mp[j] = mp[j], mp[i]
 }
