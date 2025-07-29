@@ -94,6 +94,8 @@ rules:
       - alluxiodataloads/status
       - alluxioruntimes/status
       - datasets/status
+      - persistentpodstates
+      - persistentpodstates/status
     verbs:
       - get
       - list
