@@ -38,6 +38,20 @@ type TestCase struct {
 	isErr     bool
 }
 
+// newTestJindoEngine creates a mock JindoEngine instance for testing purposes.
+// This helper function is used to simulate JindoEngine behavior under different runtime conditions.
+// It accepts a Kubernetes client, a runtime name and namespace, and a boolean flag indicating whether
+// to initialize the engine with a runtime.
+// 
+// Parameters:
+// - client: a fake or real Kubernetes client used by the engine to interact with cluster resources.
+// - name: the name of the JindoRuntime, used to build runtime metadata.
+// - namespace: the namespace of the JindoRuntime.
+// - withRunTime: if true, the engine will be initialized with a valid JindoRuntime and runtimeInfo;
+//                if false, the runtime and runtimeInfo will be set to nil, simulating a missing runtime.
+//
+// Returns:
+// - A pointer to the initialized JindoEngine instance, ready for use in unit tests.
 func newTestJindoEngine(client client.Client, name string, namespace string, withRunTime bool) *JindoEngine {
 	runTime := &datav1alpha1.JindoRuntime{}
 	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.JindoRuntime)
