@@ -27,20 +27,20 @@ import (
 	"strings"
 	"time"
 
-	versionutil "github.com/fluid-cloudnative/fluid/pkg/utils/version"
-
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/client-go/util/retry"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
+	jindoutils "github.com/fluid-cloudnative/fluid/pkg/utils/jindo"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/transformer"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/client-go/util/retry"
+	versionutil "github.com/fluid-cloudnative/fluid/pkg/utils/version"
 )
 
 type smartdataConfig struct {
@@ -62,47 +62,16 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 		return
 	}
 
-	var cachePaths []string // /mnt/disk1/bigboot or /mnt/disk1/bigboot,/mnt/disk2/bigboot
-	var storagePath = "/dev/shm/"
-	if len(runtime.Spec.TieredStore.Levels) > 0 {
-		storagePath = runtime.Spec.TieredStore.Levels[0].Path
+	cachePaths, originPaths, originQuotas := jindoutils.ProcessTiredStoreInfo(e.runtimeInfo)
+	var quotaWithJindoUnit, quotas []string // 1Gi or 1Gi,2Gi,3Gi
+	for _, quota := range originQuotas {
+		quotaWithJindoUnit = append(quotaWithJindoUnit, utils.TransformQuantityToJindoUnit(quota))
+		quotas = append(quotas, quota.String())
 	}
-	originPath := strings.Split(storagePath, ",")
-	for _, value := range originPath {
-		cachePaths = append(cachePaths, strings.TrimRight(value, "/")+"/"+
-			e.namespace+"/"+e.name+"/jindofsx")
-	}
+
 	metaPath := cachePaths[0]
 	dataPath := strings.Join(cachePaths, ",")
-
-	var quotas []string
-	var userSetQuota []string // 1Gi or 1Gi,2Gi,3Gi
-	if len(runtime.Spec.TieredStore.Levels) == 0 {
-		userSetQuota = append(userSetQuota, "1Gi")
-		quotas = append(quotas, "1Gi")
-	} else if runtime.Spec.TieredStore.Levels[0].Quota != nil {
-		userSetQuota = append(userSetQuota, utils.TransformQuantityToJindoUnit(runtime.Spec.TieredStore.Levels[0].Quota))
-		quotas = append(quotas, runtime.Spec.TieredStore.Levels[0].Quota.String())
-	}
-
-	if len(runtime.Spec.TieredStore.Levels) != 0 && runtime.Spec.TieredStore.Levels[0].QuotaList != "" {
-		quotaList := runtime.Spec.TieredStore.Levels[0].QuotaList
-		quotas = strings.Split(quotaList, ",")
-		if len(quotas) != len(originPath) {
-			err = fmt.Errorf("the num of cache path and quota must be equal")
-			return
-		}
-		for _, value := range quotas {
-			if strings.HasSuffix(value, "Gi") {
-				value = strings.ReplaceAll(value, "Gi", "g")
-			}
-			if strings.HasSuffix(value, "Mi") {
-				value = strings.ReplaceAll(value, "Mi", "m")
-			}
-			userSetQuota = append(userSetQuota, value)
-		}
-	}
-	userQuotas := strings.Join(userSetQuota, ",") // 1g or 1g,2g
+	userQuotas := strings.Join(quotaWithJindoUnit, ",")
 
 	smartdataConfig := e.getSmartDataConfigs(runtime)
 	smartdataTag := smartdataConfig.imageTag
@@ -145,7 +114,7 @@ func (e *JindoFSxEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *J
 		},
 		Mounts: Mounts{
 			Master:            e.transformMasterMountPath(metaPath, mediumType, volumeType),
-			WorkersAndClients: e.transformWorkerMountPath(originPath, quotas, e.getMediumTypeFromVolumeSource(string(mediumType), runtime.Spec.TieredStore.Levels), volumeType),
+			WorkersAndClients: e.transformWorkerMountPath(originPaths, quotas, e.getMediumTypeFromVolumeSource(string(mediumType), runtime.Spec.TieredStore.Levels), volumeType),
 		},
 		Owner: transformer.GenerateOwnerReferenceFromObject(runtime),
 		RuntimeIdentity: common.RuntimeIdentity{
