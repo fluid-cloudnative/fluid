@@ -371,3 +371,30 @@ jfsdemo-worker-0                                               1/1     Running  
 ```
 
 You can see that the pod has been created successfully, and the FUSE component of JuiceFS has also started successfully.
+
+## Other configurations
+
+More configurations of JuiceFSRuntime are as follows:
+
+```yaml
+apiVersion: data.fluid.io/v1alpha1
+kind: JuiceFSRuntime
+metadata:
+  name: xxx
+spec:
+  replicas: 1                       # replicas of worker 
+  configs:                          # configurations of juicefs filesystem
+    - trash-days=0
+  juicefsVersion:                   # image of worker
+    image: registry.cn-hangzhou.aliyuncs.com/juicefs/mount
+    imageTag: nightly
+  fuse:
+    image: registry.cn-hangzhou.aliyuncs.com/juicefs/mount
+    imageTag: nightly
+    options:                        # mount options of fuse pod 
+      "verbose": ""
+    networkMode: ContainerNetwork   # network mode of fuse pod 
+  management:
+    metadataSyncPolicy:
+      autoSync: false               # enable auto sync of metadata or not 
+```
