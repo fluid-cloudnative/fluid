@@ -77,9 +77,9 @@ type JuiceFSRuntimeSpec struct {
 	// +optional
 	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
 
-	// CleanCachePolicy defines cleanCache Policy
+	// RuntimeManagement defines policies when managing the runtime
 	// +optional
-	CleanCachePolicy CleanCachePolicy `json:"cleanCachePolicy,omitempty"`
+	RuntimeManagement RuntimeManagement `json:"management,omitempty"`
 }
 
 // JuiceFSCompTemplateSpec is a description of the JuiceFS components

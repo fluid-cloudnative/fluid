@@ -22,11 +22,13 @@ import (
 	"time"
 
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 
 	"github.com/brahma-adshonor/gohook"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -53,10 +55,46 @@ func TestShouldSyncMetadata(t *testing.T) {
 				UfsTotal: "",
 			},
 		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "no-sync",
+				Namespace: "fluid",
+			},
+		},
+	}
+	runtimeInputs := []datav1alpha1.JuiceFSRuntime{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase",
+				Namespace: "fluid",
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "spark",
+				Namespace: "fluid",
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "no-sync",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.JuiceFSRuntimeSpec{
+				RuntimeManagement: datav1alpha1.RuntimeManagement{
+					MetadataSyncPolicy: datav1alpha1.MetadataSyncPolicy{
+						AutoSync: ptr.To(false),
+					},
+				},
+			},
+		},
 	}
 	testObjs := []runtime.Object{}
 	for _, datasetInput := range datasetInputs {
 		testObjs = append(testObjs, datasetInput.DeepCopy())
+	}
+	for _, runtimeInput := range runtimeInputs {
+		testObjs = append(testObjs, runtimeInput.DeepCopy())
 	}
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
@@ -143,11 +181,65 @@ func TestSyncMetadata(t *testing.T) {
 				UfsTotal: "",
 			},
 		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "no-sync",
+				Namespace: "fluid",
+			},
+			Status: datav1alpha1.DatasetStatus{
+				UfsTotal: "",
+			},
+		},
+	}
+	runtimeInputs := []datav1alpha1.JuiceFSRuntime{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.JuiceFSRuntimeSpec{
+				RuntimeManagement: datav1alpha1.RuntimeManagement{},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "spark",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.JuiceFSRuntimeSpec{
+				RuntimeManagement: datav1alpha1.RuntimeManagement{},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hadoop",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.JuiceFSRuntimeSpec{
+				RuntimeManagement: datav1alpha1.RuntimeManagement{},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "no-sync",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.JuiceFSRuntimeSpec{
+				RuntimeManagement: datav1alpha1.RuntimeManagement{
+					MetadataSyncPolicy: datav1alpha1.MetadataSyncPolicy{
+						AutoSync: ptr.To(false),
+					},
+				},
+			},
+		},
 	}
 
 	testObjs := []runtime.Object{}
 	for _, datasetInput := range datasetInputs {
 		testObjs = append(testObjs, datasetInput.DeepCopy())
+	}
+	for _, runtimeInput := range runtimeInputs {
+		testObjs = append(testObjs, runtimeInput.DeepCopy())
 	}
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 

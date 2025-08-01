@@ -374,3 +374,29 @@ jfsdemo-worker-0         1/1     Running   0          4m56s
 
 可以看到 pod 已经创建成功，同时 JuiceFS 的 FUSE 组件也启动成功。
 
+## 其他配置
+
+更多 JuiceFSRuntime 的配置如下：
+
+```yaml
+apiVersion: data.fluid.io/v1alpha1
+kind: JuiceFSRuntime
+metadata:
+  name: xxx
+spec:
+  replicas: 1                       # worker 的副本数
+  configs:                          # juicefs 文件系统的配置参数
+    - trash-days=0
+  juicefsVersion:                   # worker 的镜像参数
+    image: registry.cn-hangzhou.aliyuncs.com/juicefs/mount
+    imageTag: nightly
+  fuse:
+    image: registry.cn-hangzhou.aliyuncs.com/juicefs/mount
+    imageTag: nightly
+    options:                        # fuse pod 挂载参数
+      "verbose": ""
+    networkMode: ContainerNetwork   # fuse pod 的网络模式
+  management:
+    metadataSyncPolicy:
+      autoSync: false               # 是否开启元数据定时同步
+```
