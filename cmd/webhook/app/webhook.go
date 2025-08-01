@@ -164,7 +164,7 @@ func handle() {
 	}
 
 	// register admission handlers
-	handler.Register(mgr, mgr.GetClient(), setupLog)
+	handler.Register(mgr, setupLog)
 
 	// register pod mutating handlers
 	err = plugins.RegisterMutatingHandlers(mgr.GetClient())
