@@ -37,17 +37,17 @@ import (
 //
 // The test is divided into two scenarios:
 // 1. queryCacheStatus success case:
-//    - Creates a mock JuiceFSRuntime environment
-//    - Mocks various engine methods:
-//      * GetRunningPodsOfDaemonset to return mock pods
-//      * GetPodMetrics to return mock metrics
-//      * GetRunningPodsOfStatefulSet to return mock pods
-//      * GetEdition to return "enterprise"
-//    - Verifies the returned cacheStates matches expected values
+//   - Creates a mock JuiceFSRuntime environment
+//   - Mocks various engine methods:
+//   - GetRunningPodsOfDaemonset to return mock pods
+//   - GetPodMetrics to return mock metrics
+//   - GetRunningPodsOfStatefulSet to return mock pods
+//   - GetEdition to return "enterprise"
+//   - Verifies the returned cacheStates matches expected values
 //
 // 2. queryCacheStatus with tiered store case:
-//    - Similar setup but with tiered store configuration
-//    - Verifies different expected cacheStates values
+//   - Similar setup but with tiered store configuration
+//   - Verifies different expected cacheStates values
 //
 // The test uses goconvey framework for BDD-style testing
 // Each scenario checks both error cases and the correctness of returned cache states
