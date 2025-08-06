@@ -45,6 +45,7 @@ type AlluxioEngine struct {
 	initImage          string
 	MetadataSyncDoneCh chan base.MetadataSyncResult
 	runtimeInfo        base.RuntimeInfoInterface
+	// TODO(xuzhihao): remove this UnitTest flag
 	UnitTest           bool
 	lastCacheHitStates *cacheHitStates
 	*ctrl.Helper
@@ -90,6 +91,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 
 	template := base.NewTemplateEngine(engine, id, ctx)
 
+	// TODO(xuzhihao): is it possible to create namespace?
 	err = kubeclient.EnsureNamespace(ctx.Client, ctx.Namespace)
 	return template, err
 }
