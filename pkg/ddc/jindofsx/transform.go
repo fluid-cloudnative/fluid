@@ -1055,35 +1055,22 @@ func (e *JindoFSxEngine) transformRunAsUser(runtime *datav1alpha1.JindoRuntime, 
 func (e *JindoFSxEngine) transformTolerations(dataset *datav1alpha1.Dataset, runtime *datav1alpha1.JindoRuntime, value *Jindo) {
 	value.Tolerations = []corev1.Toleration{}
 	if len(dataset.Spec.Tolerations) > 0 {
-		// value.Tolerations = dataset.Spec.Tolerations
-		for _, toleration := range dataset.Spec.Tolerations {
-			toleration.TolerationSeconds = nil
-			value.Tolerations = append(value.Tolerations, toleration)
-		}
-		value.Master.Tolerations = value.Tolerations
-		value.Worker.Tolerations = value.Tolerations
-		value.Fuse.Tolerations = value.Tolerations
+		value.Tolerations = dataset.Spec.Tolerations
 	}
 
+	value.Master.Tolerations = value.Tolerations
 	if len(runtime.Spec.Master.Tolerations) > 0 {
-		for _, toleration := range runtime.Spec.Master.Tolerations {
-			toleration.TolerationSeconds = nil
-			value.Master.Tolerations = append(value.Master.Tolerations, toleration)
-		}
+		value.Master.Tolerations = append(value.Master.Tolerations, runtime.Spec.Master.Tolerations...)
 	}
 
+	value.Worker.Tolerations = value.Tolerations
 	if len(runtime.Spec.Worker.Tolerations) > 0 {
-		for _, toleration := range runtime.Spec.Worker.Tolerations {
-			toleration.TolerationSeconds = nil
-			value.Worker.Tolerations = append(value.Worker.Tolerations, toleration)
-		}
+		value.Worker.Tolerations = append(value.Worker.Tolerations, runtime.Spec.Worker.Tolerations...)
 	}
 
+	value.Fuse.Tolerations = value.Tolerations
 	if len(runtime.Spec.Fuse.Tolerations) > 0 {
-		for _, toleration := range runtime.Spec.Fuse.Tolerations {
-			toleration.TolerationSeconds = nil
-			value.Fuse.Tolerations = append(value.Fuse.Tolerations, toleration)
-		}
+		value.Fuse.Tolerations = append(value.Fuse.Tolerations, runtime.Spec.Fuse.Tolerations...)
 	}
 }
 

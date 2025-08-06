@@ -223,11 +223,6 @@ func (e *AlluxioEngine) transformResourcesForFuse(runtime *datav1alpha1.AlluxioR
 // settings (without expiration) are transferred to the Alluxio value.
 func (e *AlluxioEngine) transformTolerations(dataset *datav1alpha1.Dataset, value *Alluxio) {
 	if len(dataset.Spec.Tolerations) > 0 {
-		// value.Tolerations = dataset.Spec.Tolerations
-		value.Tolerations = []corev1.Toleration{}
-		for _, toleration := range dataset.Spec.Tolerations {
-			toleration.TolerationSeconds = nil
-			value.Tolerations = append(value.Tolerations, toleration)
-		}
+		value.Tolerations = dataset.Spec.Tolerations
 	}
 }
