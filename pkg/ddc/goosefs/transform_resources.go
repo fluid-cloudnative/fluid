@@ -155,11 +155,6 @@ func (e *GooseFSEngine) transformResourcesForFuse(runtime *datav1alpha1.GooseFSR
 
 func (e *GooseFSEngine) transformTolerations(dataset *datav1alpha1.Dataset, value *GooseFS) {
 	if len(dataset.Spec.Tolerations) > 0 {
-		// value.Tolerations = dataset.Spec.Tolerations
-		value.Tolerations = []corev1.Toleration{}
-		for _, toleration := range dataset.Spec.Tolerations {
-			toleration.TolerationSeconds = nil
-			value.Tolerations = append(value.Tolerations, toleration)
-		}
+		value.Tolerations = dataset.Spec.Tolerations
 	}
 }

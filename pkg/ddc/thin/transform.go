@@ -190,11 +190,6 @@ func (t *ThinEngine) parseFromProfile(profile *datav1alpha1.ThinRuntimeProfile, 
 
 func (t *ThinEngine) transformTolerations(dataset *datav1alpha1.Dataset, value *ThinValue) {
 	if len(dataset.Spec.Tolerations) > 0 {
-		// value.Tolerations = dataset.Spec.Tolerations
-		value.Tolerations = []corev1.Toleration{}
-		for _, toleration := range dataset.Spec.Tolerations {
-			toleration.TolerationSeconds = nil
-			value.Tolerations = append(value.Tolerations, toleration)
-		}
+		value.Tolerations = dataset.Spec.Tolerations
 	}
 }

@@ -21,6 +21,9 @@ import (
 	"reflect"
 	"testing"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -34,6 +37,156 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
+
+var _ = Describe("TestTransformTolerations", func() {
+	var (
+		engine     *JindoCacheEngine
+		dataset    *datav1alpha1.Dataset
+		jindoValue *Jindo
+	)
+
+	BeforeEach(func() {
+		engine = &JindoCacheEngine{
+			Log: fake.NullLogger(),
+		}
+		jindoValue = &Jindo{}
+	})
+
+	Context("when dataset have tolerations", func() {
+		BeforeEach(func() {
+			dataset = &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{{
+						MountPoint: "local:///mnt/test",
+						Name:       "test",
+					}},
+					Tolerations: []corev1.Toleration{{
+						Key:      "jindo",
+						Operator: "Equals",
+						Value:    "true",
+					}},
+				},
+			}
+		})
+		Context("and runtime have tolerations", func() {
+			It("Should correctly combine tolerations from dataset and runtime", func() {
+				result := resource.MustParse("20Gi")
+				runtime := &datav1alpha1.JindoRuntime{
+					Spec: datav1alpha1.JindoRuntimeSpec{
+						Secret: "secret",
+						TieredStore: datav1alpha1.TieredStore{
+							Levels: []datav1alpha1.Level{{
+								MediumType: common.Memory,
+								Quota:      &result,
+								High:       "0.8",
+								Low:        "0.1",
+							}},
+						},
+						Master: datav1alpha1.JindoCompTemplateSpec{
+							Tolerations: []corev1.Toleration{{
+								Key:      "master",
+								Operator: "Equals",
+								Value:    "true",
+							}},
+						},
+						Worker: datav1alpha1.JindoCompTemplateSpec{
+							Tolerations: []corev1.Toleration{{
+								Key:      "worker",
+								Operator: "Equals",
+								Value:    "true",
+							}},
+						},
+						Fuse: datav1alpha1.JindoFuseSpec{
+							Tolerations: []corev1.Toleration{{
+								Key:      "fuse",
+								Operator: "Equals",
+								Value:    "true",
+							}},
+						},
+					},
+				}
+
+				engine.transformTolerations(dataset, runtime, jindoValue)
+
+				Expect(len(jindoValue.Master.Tolerations)).To(Equal(2))
+				Expect(len(jindoValue.Worker.Tolerations)).To(Equal(2))
+				Expect(len(jindoValue.Fuse.Tolerations)).To(Equal(2))
+			})
+		})
+
+		Context(" and runtime does not have tolerations", func() {
+			It("Should contains tolerations defined in dataset", func() {
+				result := resource.MustParse("20Gi")
+				runtime := &datav1alpha1.JindoRuntime{
+					Spec: datav1alpha1.JindoRuntimeSpec{
+						Secret: "secret",
+						TieredStore: datav1alpha1.TieredStore{
+							Levels: []datav1alpha1.Level{{
+								MediumType: common.Memory,
+								Quota:      &result,
+								High:       "0.8",
+								Low:        "0.1",
+							}},
+						},
+					},
+				}
+				engine.transformTolerations(dataset, runtime, jindoValue)
+
+				Expect(len(jindoValue.Master.Tolerations)).To(Equal(1))
+				Expect(len(jindoValue.Worker.Tolerations)).To(Equal(1))
+				Expect(len(jindoValue.Fuse.Tolerations)).To(Equal(1))
+			})
+		})
+	})
+
+	Context("when only runtime have tolerations", func() {
+		It("Should contains tolerations defined in runtime", func() {
+			dataset = &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{{
+						MountPoint: "local:///mnt/test",
+						Name:       "test",
+					}},
+				},
+			}
+
+			result := resource.MustParse("20Gi")
+			runtime := &datav1alpha1.JindoRuntime{
+				Spec: datav1alpha1.JindoRuntimeSpec{
+					TieredStore: datav1alpha1.TieredStore{
+						Levels: []datav1alpha1.Level{{
+							MediumType: common.Memory,
+							Quota:      &result,
+							High:       "0.8",
+							Low:        "0.1",
+						}},
+					},
+					Master: datav1alpha1.JindoCompTemplateSpec{
+						Tolerations: []corev1.Toleration{
+							{
+								Key:      "toleration1",
+								Operator: "Equals",
+								Value:    "master",
+							},
+							{
+								Key:      "toleration2",
+								Operator: "Equals",
+								Value:    "master",
+							},
+						},
+					},
+				},
+			}
+			engine.transformTolerations(dataset, runtime, jindoValue)
+
+			Expect(len(jindoValue.Master.Tolerations)).To(Equal(2))
+			Expect(jindoValue.Master.Tolerations[0].Key).To(Equal("toleration1"))
+			Expect(jindoValue.Master.Tolerations[0].Value).To(Equal("master"))
+			Expect(len(jindoValue.Worker.Tolerations)).To(Equal(0))
+			Expect(len(jindoValue.Fuse.Tolerations)).To(Equal(0))
+		})
+	})
+})
 
 func TestTransformTolerations(t *testing.T) {
 	resources := corev1.ResourceRequirements{}
