@@ -103,7 +103,7 @@ type RuntimeInfoInterface interface {
 
 	GetFuseContainerTemplate() (template *common.FuseInjectionTemplate, err error)
 
-	SetClient(client client.Client)
+	SetAPIReader(apiReader client.Reader)
 
 	GetMetadataList() []datav1alpha1.Metadata
 
@@ -140,7 +140,7 @@ type RuntimeInfo struct {
 	// Check if the deprecated PV naming style is used
 	deprecatedPVName bool
 
-	client client.Client
+	apiReader client.Reader
 
 	annotations map[string]string
 
@@ -380,8 +380,8 @@ func (info *RuntimeInfo) IsDeprecatedPVName() bool {
 	return info.deprecatedPVName
 }
 
-func (info *RuntimeInfo) SetClient(client client.Client) {
-	info.client = client
+func (info *RuntimeInfo) SetAPIReader(apiReader client.Reader) {
+	info.apiReader = apiReader
 }
 
 func convertToTieredstoreInfo(tieredstore datav1alpha1.TieredStore) (TieredStoreInfo, error) {
@@ -445,8 +445,8 @@ func convertToTieredstoreInfo(tieredstore datav1alpha1.TieredStore) (TieredStore
 }
 
 // GetRuntimeInfo gets the RuntimeInfo according to name and namespace of it
-func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo RuntimeInfoInterface, err error) {
-	dataset, err := utils.GetDataset(client, name, namespace)
+func GetRuntimeInfo(reader client.Reader, name, namespace string) (runtimeInfo RuntimeInfoInterface, err error) {
+	dataset, err := utils.GetDataset(reader, name, namespace)
 	if err != nil {
 		return runtimeInfo, err
 	}
@@ -457,7 +457,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 	}
 	switch runtimeType {
 	case common.AlluxioRuntime:
-		alluxioRuntime, err := utils.GetAlluxioRuntime(client, name, namespace)
+		alluxioRuntime, err := utils.GetAlluxioRuntime(reader, name, namespace)
 		if err != nil {
 			return runtimeInfo, err
 		}
@@ -473,7 +473,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		runtimeInfo.SetFuseNodeSelector(alluxioRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(alluxioRuntime.Spec.Fuse.CleanPolicy)
 	case common.JindoRuntime:
-		jindoRuntime, err := utils.GetJindoRuntime(client, name, namespace)
+		jindoRuntime, err := utils.GetJindoRuntime(reader, name, namespace)
 		if err != nil {
 			return runtimeInfo, err
 		}
@@ -490,7 +490,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		runtimeInfo.SetFuseNodeSelector(jindoRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(jindoRuntime.Spec.Fuse.CleanPolicy)
 	case common.GooseFSRuntime:
-		goosefsRuntime, err := utils.GetGooseFSRuntime(client, name, namespace)
+		goosefsRuntime, err := utils.GetGooseFSRuntime(reader, name, namespace)
 		if err != nil {
 			return runtimeInfo, err
 		}
@@ -506,7 +506,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		runtimeInfo.SetFuseNodeSelector(goosefsRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(goosefsRuntime.Spec.Fuse.CleanPolicy)
 	case common.JuiceFSRuntime:
-		juicefsRuntime, err := utils.GetJuiceFSRuntime(client, name, namespace)
+		juicefsRuntime, err := utils.GetJuiceFSRuntime(reader, name, namespace)
 		if err != nil {
 			return runtimeInfo, err
 		}
@@ -522,7 +522,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		runtimeInfo.SetFuseNodeSelector(juicefsRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(juicefsRuntime.Spec.Fuse.CleanPolicy)
 	case common.ThinRuntime:
-		thinRuntime, err := utils.GetThinRuntime(client, name, namespace)
+		thinRuntime, err := utils.GetThinRuntime(reader, name, namespace)
 		if err != nil {
 			return runtimeInfo, err
 		}
@@ -538,7 +538,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		runtimeInfo.SetFuseNodeSelector(thinRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(thinRuntime.Spec.Fuse.CleanPolicy)
 	case common.EFCRuntime:
-		efcRuntime, err := utils.GetEFCRuntime(client, name, namespace)
+		efcRuntime, err := utils.GetEFCRuntime(reader, name, namespace)
 		if err != nil {
 			return runtimeInfo, err
 		}
@@ -554,7 +554,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 		runtimeInfo.SetFuseNodeSelector(efcRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(efcRuntime.Spec.Fuse.CleanPolicy)
 	case common.VineyardRuntime:
-		vineyardRuntime, err := utils.GetVineyardRuntime(client, name, namespace)
+		vineyardRuntime, err := utils.GetVineyardRuntime(reader, name, namespace)
 		if err != nil {
 			return runtimeInfo, err
 		}
@@ -575,7 +575,7 @@ func GetRuntimeInfo(client client.Client, name, namespace string) (runtimeInfo R
 	}
 
 	if runtimeInfo != nil {
-		runtimeInfo.SetClient(client)
+		runtimeInfo.SetAPIReader(reader)
 		runtimeInfo.SetOwnerDatasetUID(dataset.UID)
 	}
 	return runtimeInfo, err

@@ -817,7 +817,7 @@ func TestMutatePod(t *testing.T) {
 			Client: fakeClient,
 		}
 
-		err := handler.MutatePod(testcase.in)
+		err := handler.MutatePod(testcase.in, false)
 		if !((err != nil) == testcase.wantErr) {
 			t.Errorf("testcase %s is failed due to error %v", testcase.name, err)
 		}
@@ -903,7 +903,7 @@ func TestHandle(t *testing.T) {
 
 	for _, test := range tests {
 		handler := &FluidMutatingHandler{}
-		handler.Setup(fakeClient, decoder)
+		handler.Setup(fakeClient, fakeClient, decoder)
 
 		resp := handler.Handle(context.TODO(), test.req)
 
@@ -1353,7 +1353,7 @@ func TestMutatePodWithReferencedDataset(t *testing.T) {
 			Client: fakeClient,
 		}
 
-		err := handler.MutatePod(testcase.in)
+		err := handler.MutatePod(testcase.in, false)
 		if testcase.wantErr {
 			if err == nil {
 				t.Errorf("testcase %s want error but get nil", testcase.name)

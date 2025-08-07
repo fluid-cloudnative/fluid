@@ -72,7 +72,7 @@ func (info *RuntimeInfo) GetFuseContainerTemplate() (template *common.FuseInject
 }
 
 func (info *RuntimeInfo) getFuseDaemonset() (ds *appsv1.DaemonSet, err error) {
-	if info.client == nil {
+	if info.apiReader == nil {
 		err = fmt.Errorf("client is not set")
 		return
 	}
@@ -84,11 +84,11 @@ func (info *RuntimeInfo) getFuseDaemonset() (ds *appsv1.DaemonSet, err error) {
 	default:
 		fuseName = info.name + "-fuse"
 	}
-	return kubeclient.GetDaemonset(info.client, fuseName, info.GetNamespace())
+	return kubeclient.GetDaemonset(info.apiReader, fuseName, info.GetNamespace())
 }
 
 func (info *RuntimeInfo) getMountInfo() (path, mountType, subpath string, err error) {
-	pv, err := kubeclient.GetPersistentVolume(info.client, info.GetPersistentVolumeName())
+	pv, err := kubeclient.GetPersistentVolume(info.apiReader, info.GetPersistentVolumeName())
 	if err != nil {
 		err = errors.Wrapf(err, "cannot find pvc \"%s/%s\"'s bounded PV", info.namespace, info.name)
 		return
