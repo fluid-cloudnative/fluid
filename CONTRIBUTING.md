@@ -128,7 +128,7 @@ You are warmly welcome if you'd like to join our community as a member. Together
 **Some requirements are needed to join our community:**
 
 - Have read [Contributing to Fluid](CONTRIBUTING.md) carefully
-- Promise to observe our [code of conduct](code-of-conduct.md)
+- Promise to observe our [code of conduct](CODE_OF_CONDUCT.md)
 - Have submitted multiple PRs to Fluid
 - Be active in the community, including but not limited to:
     - Open new issues
