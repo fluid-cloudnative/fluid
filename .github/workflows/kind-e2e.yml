@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        kubernetes-version: ["v1.29.2", "v1.28.7", "v1.26.15", "v1.24.17", "v1.22.17"]
+        kubernetes-version: ["v1.33.3", "v1.30.7", "v1.28.15", "v1.24.17", "v1.22.17"]
     env:
       GOPATH: ${{ github.workspace }}
       GO111MODULE: auto
