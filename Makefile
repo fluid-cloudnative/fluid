@@ -12,7 +12,7 @@ PACKAGE := github.com/fluid-cloudnative/fluid
 # Go and build settings
 GO_MODULE ?= off
 GC_FLAGS ?= -gcflags="all=-N -l"
-LOCAL_FLAGS ?= -gcflags=-l
+LOCAL_FLAGS ?= -gcflags="all=-N -l"
 CGO_ENABLED ?= 0
 GOOS ?= linux
 GOBIN := $(shell if [ -z "$(shell go env GOBIN)" ]; then echo "$(shell go env GOPATH)/bin"; else echo "$(shell go env GOBIN)"; fi)
