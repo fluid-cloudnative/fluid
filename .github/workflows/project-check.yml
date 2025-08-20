@@ -74,6 +74,10 @@ jobs:
           find ./charts | grep Chart.yaml | xargs dirname | xargs helm lint
 
   build:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: ["ubuntu-latest", "ubuntu-24.04-arm"]
     env:
       GOPATH: ${{ github.workspace }}
       GO111MODULE: auto
@@ -81,7 +85,7 @@ jobs:
     defaults:
       run:
         working-directory: ${{ env.GOPATH }}/src/github.com/fluid-cloudnative/fluid
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
     steps:
     - name: Set up Go
       uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0

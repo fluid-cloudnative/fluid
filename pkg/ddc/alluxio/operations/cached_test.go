@@ -18,96 +18,106 @@ package operations
 
 import (
 	"errors"
-	"testing"
 
-	"github.com/brahma-adshonor/gohook"
+	"github.com/agiledragon/gomonkey/v2"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
-func TestAlluxioFileUtils_CachedState(t *testing.T) {
-	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
-		return "Alluxio cluster summary: \n    Master Address: 192.168.0.193:20009  \n Used Capacity: 0B\n", "", nil
-	}
-	ExecErr := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
-		return "", "", errors.New("fail to run the command")
-	}
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(AlluxioFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
+
+var _ = Describe("AlluxioFileUtils.CachedState", func() {
+	var (
+		a     *AlluxioFileUtils
+		patch *gomonkey.Patches
+	)
+
+	BeforeEach(func() {
+		a = &AlluxioFileUtils{log: fake.NullLogger()}
+	})
+
+	AfterEach(func() {
+		if patch != nil {
+			patch.Reset()
 		}
-	}
+	})
 
-	err := gohook.Hook(AlluxioFileUtils.exec, ExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	a := &AlluxioFileUtils{log: fake.NullLogger()}
-	_, err = a.CachedState()
-	if err == nil {
-		t.Error("check failure, want err, got nil")
-	}
-	wrappedUnhookExec()
+	Context("when exec returns an error", func() {
+		It("should return an error", func() {
+			ExecErr := func(command []string, verbose bool) (stdout string, stderr string, err error) {
+				return "", "", errors.New("fail to run the command")
+			}
+			patch = gomonkey.ApplyPrivateMethod(a, "exec", ExecErr)
 
-	err = gohook.Hook(AlluxioFileUtils.exec, ExecCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	cached, err := a.CachedState()
-	if err != nil {
-		t.Errorf("check failure, want nil, got err: %v", err)
-	}
-	if cached != 0 {
-		t.Errorf("check failure, want 0, got: %d", cached)
-	}
-	wrappedUnhookExec()
-}
+			_, err := a.CachedState()
+			Expect(err).To(HaveOccurred())
+		})
+	})
 
-func TestAlluxioFIlUtils_CleanCache(t *testing.T) {
-	ExecCommonUbuntu := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
-		return "Ubuntu", "", nil
-	}
-	ExecCommonAlpine := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
-		return "Alpine", "", nil
-	}
-	ExecErr := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
-		return "", "", errors.New("fail to run the command")
-	}
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(AlluxioFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
+	Context("when exec executes successfully", func() {
+		It("should not return an error", func() {
+			ExecCommon := func(command []string, verbose bool) (stdout string, stderr string, err error) {
+				return "Alluxio cluster summary: \n    Master Address: 192.168.0.193:20009  \n Used Capacity: 0B\n", "", nil
+			}
+			patch = gomonkey.ApplyPrivateMethod(a, "exec", ExecCommon)
+
+			cached, err := a.CachedState()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cached).To(Equal(int64(0)))
+		})
+	})
+})
+
+var _ = Describe("AlluxioFileUtils.CleanCache", func() {
+	var (
+		a     *AlluxioFileUtils
+		patch *gomonkey.Patches
+	)
+
+	BeforeEach(func() {
+		a = &AlluxioFileUtils{log: fake.NullLogger()}
+	})
+
+	AfterEach(func() {
+		if patch != nil {
+			patch.Reset()
 		}
-	}
+	})
 
-	err := gohook.Hook(AlluxioFileUtils.exec, ExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	a := &AlluxioFileUtils{log: fake.NullLogger()}
-	err = a.CleanCache("/", 30)
-	if err == nil {
-		t.Error("check failure, want err, got nil")
-	}
-	wrappedUnhookExec()
+	Context("when exec returns an error", func() {
+		It("should return an error", func() {
+			ExecErr := func(command []string, verbose bool) (stdout string, stderr string, err error) {
+				return "", "", errors.New("fail to run the command")
+			}
+			patch = gomonkey.ApplyPrivateMethod(a, "exec", ExecErr)
 
-	err = gohook.Hook(AlluxioFileUtils.exec, ExecCommonUbuntu, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = a.CleanCache("/", 30)
-	if err != nil {
-		t.Errorf("check failure, want nil, got err: %v", err)
-	}
-	wrappedUnhookExec()
+			err := a.CleanCache("/", 30)
+			Expect(err).To(HaveOccurred())
+		})
+	})
 
-	err = gohook.Hook(AlluxioFileUtils.exec, ExecCommonAlpine, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = a.CleanCache("/", 30)
-	if err != nil {
-		t.Errorf("check failure, want nil, got err: %v", err)
-	}
-	wrappedUnhookExec()
-}
+	Context("when exec executes successfully on Ubuntu", func() {
+		It("should not return an error", func() {
+			ExecCommonUbuntu := func(command []string, verbose bool) (stdout string, stderr string, err error) {
+				return "Ubuntu", "", nil
+			}
+			patch = gomonkey.ApplyPrivateMethod(a, "exec", ExecCommonUbuntu)
+
+			err := a.CleanCache("/", 30)
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+
+	Context("when exec executes successfully on Alpine", func() {
+		It("should not return an error", func() {
+			ExecCommonAlpine := func(command []string, verbose bool) (stdout string, stderr string, err error) {
+				return "Alpine", "", nil
+			}
+			patch = gomonkey.ApplyPrivateMethod(a, "exec", ExecCommonAlpine)
+
+			err := a.CleanCache("/", 30)
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+})
