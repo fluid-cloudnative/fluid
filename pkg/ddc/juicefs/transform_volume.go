@@ -63,23 +63,29 @@ func (j *JuiceFSEngine) transformWorkerVolumes(runtime *datav1alpha1.JuiceFSRunt
 
 // transform worker cache volumes
 // after genValue & genMount function
-func (j *JuiceFSEngine) transformWorkerCacheVolumes(runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) (err error) {
+func (j *JuiceFSEngine) transformWorkerCacheVolumes(runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS, options map[string]string) (err error) {
 	cacheDir := ""
 
 	// if cache-dir is set in worker option, it will override the cache-dir of worker in runtime
-	workerOptions := runtime.Spec.Worker.Options
-	for k, v := range workerOptions {
+	for k, v := range options {
 		if k == "cache-dir" {
 			cacheDir = v
 			break
 		}
 	}
+	cacheValueMap := map[string]string{}
+	for _, v := range value.CacheDirs {
+		cacheValueMap[v.Path] = v.Path
+	}
 	// set tiredstore cache as volume also, for clear cache when shut down
-	caches := value.CacheDirs
+	caches := MapDeepCopy(value.CacheDirs)
 	index := len(caches)
 	if cacheDir != "" {
 		originPath := strings.Split(cacheDir, ":")
 		for i, p := range originPath {
+			if _, ok := cacheValueMap[p]; ok {
+				continue
+			}
 			var volumeType = common.VolumeTypeHostPath
 			caches[strconv.Itoa(index+i+1)] = cache{
 				Path: p,
@@ -161,23 +167,29 @@ func (j *JuiceFSEngine) transformFuseVolumes(runtime *datav1alpha1.JuiceFSRuntim
 
 // transform fuse cache volumes
 // after genValue & genMount function
-func (j *JuiceFSEngine) transformFuseCacheVolumes(runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) (err error) {
+func (j *JuiceFSEngine) transformFuseCacheVolumes(runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS, options map[string]string) (err error) {
 	cacheDir := ""
 
 	// if cache-dir is set in fuse option, it will override the cache-dir of worker in runtime
-	fuseOptions := runtime.Spec.Fuse.Options
-	for k, v := range fuseOptions {
+	for k, v := range options {
 		if k == "cache-dir" {
 			cacheDir = v
 			break
 		}
 	}
 
-	caches := value.CacheDirs
+	cacheValueMap := map[string]string{}
+	for _, v := range value.CacheDirs {
+		cacheValueMap[v.Path] = v.Path
+	}
+	caches := MapDeepCopy(value.CacheDirs)
 	index := len(caches)
 	if cacheDir != "" {
 		originPath := strings.Split(cacheDir, ":")
 		for i, p := range originPath {
+			if _, ok := cacheValueMap[p]; ok {
+				continue
+			}
 			var volumeType = common.VolumeTypeHostPath
 			caches[strconv.Itoa(index+i+1)] = cache{
 				Path: p,
