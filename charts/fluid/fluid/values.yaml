@@ -224,10 +224,10 @@ runtime:
     fuse:
       ceimagePrefix: juicedata
       ceimageName: mount
-      ceimageTag: ce-v1.2.0
+      ceimageTag: ce-v1.3.0
       eeimagePrefix: juicedata
       eeimageName: mount
-      eeimageTag: ee-5.0.21-317356c
+      eeimageTag: ee-5.2.10-eb0a8b3
   thin:
     replicas: 1
     env: []
