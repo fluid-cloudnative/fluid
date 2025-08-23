@@ -7,5 +7,11 @@ coverage:
       default:
         target: 60%
 ignore:
+  - "api/**"
+  - "hack/**"
+  # out of maintenance engines
+  - "pkg/ddc/goosefs"
+  - "pkg/ddc/jindo"
+  - "pkg/ddc/jindofsx"
   - "**/*_generated.*"
   - "pkg/utils/testutil"
