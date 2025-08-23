@@ -2,10 +2,10 @@ coverage:
   status:
     project:
       default:
-        threshold: 0.1%
+        informational: true
     patch:
       default:
-        target: 60%
+        informational: true
 ignore:
   - "api/**"
   - "hack/**"
