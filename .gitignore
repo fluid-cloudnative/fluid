@@ -38,3 +38,5 @@ openapi-gen
 # debug related
 **/__debug_bin
 **/__pycache__
+
+**/coverage.txt

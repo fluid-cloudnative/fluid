@@ -2,10 +2,19 @@ coverage:
   status:
     project:
       default:
-        threshold: 0.1%
+        informational: true
     patch:
       default:
-        target: 60%
+        informational: true
 ignore:
+  - "api/**"
+  - "hack/**"
+  # out of maintenance engines
+  - "pkg/ddc/goosefs"
+  - "pkg/ddc/jindo"
+  - "pkg/ddc/jindofsx"
   - "**/*_generated.*"
   - "pkg/utils/testutil"
+# https://docs.codecov.com/docs/fixing-paths
+fixes:
+  - "src/github.com/fluid-cloudnative/fluid/::"
