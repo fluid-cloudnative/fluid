@@ -249,6 +249,7 @@ func TestJuiceFSEngine_transformWorkerCacheVolumes(t *testing.T) {
 	type args struct {
 		runtime *datav1alpha1.JuiceFSRuntime
 		value   *JuiceFS
+		options map[string]string
 	}
 	tests := []struct {
 		name             string
@@ -287,9 +288,7 @@ func TestJuiceFSEngine_transformWorkerCacheVolumes(t *testing.T) {
 			args: args{
 				runtime: &datav1alpha1.JuiceFSRuntime{
 					Spec: datav1alpha1.JuiceFSRuntimeSpec{
-						Worker: datav1alpha1.JuiceFSCompTemplateSpec{
-							Options: map[string]string{"cache-dir": "/worker-cache1:/worker-cache2"},
-						},
+						Worker: datav1alpha1.JuiceFSCompTemplateSpec{},
 					},
 				},
 				value: &JuiceFS{
@@ -297,6 +296,7 @@ func TestJuiceFSEngine_transformWorkerCacheVolumes(t *testing.T) {
 						"1": {Path: "/cache", Type: string(common.VolumeTypeHostPath)},
 					},
 				},
+				options: map[string]string{"cache-dir": "/worker-cache1:/worker-cache2"},
 			},
 			wantErr: false,
 			wantVolumes: []corev1.Volume{
@@ -349,7 +349,6 @@ func TestJuiceFSEngine_transformWorkerCacheVolumes(t *testing.T) {
 				runtime: &datav1alpha1.JuiceFSRuntime{
 					Spec: datav1alpha1.JuiceFSRuntimeSpec{
 						Worker: datav1alpha1.JuiceFSCompTemplateSpec{
-							Options: map[string]string{"cache-dir": "/worker-cache1:/worker-cache2"},
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "cache",
@@ -388,6 +387,7 @@ func TestJuiceFSEngine_transformWorkerCacheVolumes(t *testing.T) {
 						},
 					},
 				},
+				options: map[string]string{"cache-dir": "/worker-cache1:/worker-cache2"},
 			},
 			wantErr: false,
 			wantVolumes: []corev1.Volume{
@@ -436,9 +436,7 @@ func TestJuiceFSEngine_transformWorkerCacheVolumes(t *testing.T) {
 			args: args{
 				runtime: &datav1alpha1.JuiceFSRuntime{
 					Spec: datav1alpha1.JuiceFSRuntimeSpec{
-						Worker: datav1alpha1.JuiceFSCompTemplateSpec{
-							Options: map[string]string{"cache-dir": "/worker-cache1"},
-						},
+						Worker: datav1alpha1.JuiceFSCompTemplateSpec{},
 					},
 				},
 				value: &JuiceFS{
@@ -455,6 +453,7 @@ func TestJuiceFSEngine_transformWorkerCacheVolumes(t *testing.T) {
 					},
 					Worker: Worker{},
 				},
+				options: map[string]string{"cache-dir": "/worker-cache1"},
 			},
 			wantErr: false,
 			wantVolumes: []corev1.Volume{
@@ -491,7 +490,7 @@ func TestJuiceFSEngine_transformWorkerCacheVolumes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			j := &JuiceFSEngine{}
-			if err := j.transformWorkerCacheVolumes(tt.args.runtime, tt.args.value); (err != nil) != tt.wantErr {
+			if err := j.transformWorkerCacheVolumes(tt.args.runtime, tt.args.value, tt.args.options); (err != nil) != tt.wantErr {
 				t.Errorf("transformWorkerCacheVolumes() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
@@ -531,6 +530,7 @@ func TestJuiceFSEngine_transformFuseCacheVolumes(t *testing.T) {
 	type args struct {
 		runtime *datav1alpha1.JuiceFSRuntime
 		value   *JuiceFS
+		options map[string]string
 	}
 	tests := []struct {
 		name             string
@@ -602,9 +602,7 @@ func TestJuiceFSEngine_transformFuseCacheVolumes(t *testing.T) {
 			args: args{
 				runtime: &datav1alpha1.JuiceFSRuntime{
 					Spec: datav1alpha1.JuiceFSRuntimeSpec{
-						Fuse: datav1alpha1.JuiceFSFuseSpec{
-							Options: map[string]string{"cache-dir": "/fuse-cache1"},
-						},
+						Fuse: datav1alpha1.JuiceFSFuseSpec{},
 					},
 				},
 				value: &JuiceFS{
@@ -620,6 +618,7 @@ func TestJuiceFSEngine_transformFuseCacheVolumes(t *testing.T) {
 						},
 					},
 				},
+				options: map[string]string{"cache-dir": "/fuse-cache1"},
 			},
 			wantErr: false,
 			wantVolumes: []corev1.Volume{
@@ -656,7 +655,7 @@ func TestJuiceFSEngine_transformFuseCacheVolumes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			j := &JuiceFSEngine{}
-			if err := j.transformFuseCacheVolumes(tt.args.runtime, tt.args.value); (err != nil) != tt.wantErr {
+			if err := j.transformFuseCacheVolumes(tt.args.runtime, tt.args.value, tt.args.options); (err != nil) != tt.wantErr {
 				t.Errorf("transformFuseCacheVolumes() error = %v, wantErr %v", err, tt.wantErr)
 			}
 

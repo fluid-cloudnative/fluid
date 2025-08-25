@@ -179,7 +179,7 @@ func (j *JuiceFSEngine) transformWorkers(runtime *datav1alpha1.JuiceFSRuntime, d
 		j.Log.Error(err, "failed to transform volumes for worker")
 	}
 	// transform cache volumes for worker
-	err = j.transformWorkerCacheVolumes(runtime, value)
+	err = j.transformWorkerCacheVolumes(runtime, value, option)
 	if err != nil {
 		j.Log.Error(err, "failed to transform cache volumes for worker")
 		return err

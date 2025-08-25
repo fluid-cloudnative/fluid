@@ -19,10 +19,11 @@ package juicefs
 import (
 	"context"
 	"fmt"
-	"k8s.io/client-go/util/retry"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"k8s.io/client-go/util/retry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -488,4 +489,24 @@ func (j *JuiceFSEngine) getWorkerScriptName() string {
 
 func (j *JuiceFSEngine) getFuseScriptName() string {
 	return fmt.Sprintf("%s-fuse-script", j.name)
+}
+
+func DeepCopy[T any](in *T) *T {
+	if in == nil {
+		return nil
+	}
+	dst := new(T)
+	*dst = *in
+	return dst
+}
+
+func MapDeepCopy[T any](in map[string]T) map[string]T {
+	if in == nil {
+		return nil
+	}
+	dst := make(map[string]T, len(in))
+	for k, v := range in {
+		dst[k] = *DeepCopy(&v)
+	}
+	return dst
 }
