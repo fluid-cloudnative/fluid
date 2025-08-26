@@ -149,38 +149,3 @@ func GetPhaseFromStatefulset(replicas int32, sts appsv1.StatefulSet) (phase data
 	return
 
 }
-
-// GetUnavailablePodsStatefulSet gets unavailable pods of the specified statefulset
-func GetUnavailablePodsStatefulSet(c client.Client, sts *appsv1.StatefulSet, selector labels.Selector) (unavailablePods []*v1.Pod, err error) {
-
-	pods, err := GetPodsForStatefulSet(c, sts, selector)
-	if err != nil {
-		return
-	}
-
-	for _, pod := range pods {
-		if !isRunningAndReady(&pod) {
-			unavailablePods = append(unavailablePods, &pod)
-		}
-	}
-
-	return
-}
-
-// GetUnavailablePodNamesForStatefulSet gets pod names of the specified statefulset
-func GetUnavailablePodNamesForStatefulSet(c client.Client, sts *appsv1.StatefulSet, selector labels.Selector) (names []types.NamespacedName, err error) {
-
-	pods, err := GetUnavailablePodsStatefulSet(c, sts, selector)
-	if err != nil {
-		return
-	}
-
-	for _, pod := range pods {
-		names = append(names, types.NamespacedName{
-			Namespace: pod.Namespace,
-			Name:      pod.Name,
-		})
-	}
-
-	return
-}
