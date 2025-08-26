@@ -24,14 +24,9 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/record"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 // CheckMasterHealthy checks the sts healthy with role
@@ -39,9 +34,7 @@ func (e *Helper) CheckMasterHealthy(recorder record.EventRecorder, runtime base.
 	currentStatus datav1alpha1.RuntimeStatus,
 	sts *appsv1.StatefulSet) (err error) {
 	var (
-		healthy             bool
-		selector            labels.Selector
-		unavailablePodNames []types.NamespacedName
+		healthy bool
 	)
 	if sts.Status.Replicas == sts.Status.ReadyReplicas {
 		healthy = true
@@ -78,24 +71,11 @@ func (e *Helper) CheckMasterHealthy(recorder record.EventRecorder, runtime base.
 		statusToUpdate.MasterPhase = datav1alpha1.RuntimePhaseNotReady
 
 		// 2. Record the event
-
-		selector, err = metav1.LabelSelectorAsSelector(sts.Spec.Selector)
-		if err != nil {
-			return fmt.Errorf("error converting StatefulSet %s in namespace %s selector: %v", sts.Name, sts.Namespace, err)
-		}
-
-		unavailablePodNames, err = kubeclient.GetUnavailablePodNamesForStatefulSet(e.client, sts, selector)
-		if err != nil {
-			return err
-		}
-
-		// 3. Set event
-		err = fmt.Errorf("the master %s in %s is not ready. The expected number is %d, the actual number is %d, the unhealthy pods are %v",
+		err = fmt.Errorf("the master %s in %s is not ready. The expected number is %d, the actual number is %d",
 			sts.Name,
 			sts.Namespace,
 			sts.Status.Replicas,
-			sts.Status.ReadyReplicas,
-			unavailablePodNames)
+			sts.Status.ReadyReplicas)
 
 		recorder.Eventf(runtime, corev1.EventTypeWarning, "MasterUnhealthy", err.Error())
 

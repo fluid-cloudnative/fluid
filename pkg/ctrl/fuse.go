@@ -102,18 +102,12 @@ func (e *Helper) CheckFuseHealthy(recorder record.EventRecorder, runtime base.Ru
 	}
 
 	// 2. Record the event
-	unavailablePodNames, err := kubeclient.GetUnavailableDaemonPodNames(e.client, ds)
-	if err != nil {
-		e.log.Error(err, "Failed to get UnavailableDaemonPodNames", "fuseDaemonsetName", ds.Name, "fuseDaemonsetNamespace", ds.Namespace)
-		return err
-	}
 	recorder.Eventf(runtime, corev1.EventTypeWarning, "FuseUnhealthy",
-		fmt.Errorf("the fuse %s in %s are not ready. The expected number is %d, the actual number is %d, the unhealthy pods are %v",
+		fmt.Errorf("the fuse %s in %s are not ready. The expected number is %d, the actual number is %d",
 			ds.Name,
 			ds.Namespace,
 			ds.Status.DesiredNumberScheduled,
-			ds.Status.NumberReady,
-			unavailablePodNames).Error())
+			ds.Status.NumberReady).Error())
 
 	return nil
 }
