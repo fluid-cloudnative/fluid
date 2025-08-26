@@ -52,6 +52,18 @@ func UnionMapsWithOverride(map1 map[string]string, map2 map[string]string) map[s
 	return retMap
 }
 
+// GetMapsDifference calculates the difference between two maps,
+// returning maps that exist in the map1 but not in the map2.
+func GetMapsDifference(map1 map[string]string, map2 map[string]string) map[string]string {
+	retMap := map[string]string{}
+	for k, v := range map1 {
+		if _, exist := map2[k]; !exist {
+			retMap[k] = v
+		}
+	}
+	return retMap
+}
+
 // IntersectIntegerSets returns the intersection of integer set 1 and set 2.
 func IntersectIntegerSets(map1 map[int]bool, map2 map[int]bool) map[int]bool {
 	ret := map[int]bool{}

@@ -208,12 +208,12 @@ func (j *JuiceFSEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runti
 		}
 		fusesToUpdate := fuses.DeepCopy()
 
-		currentValue, err := j.GetValueFromConfigmap()
+		oldValue, err := j.GetValueFromConfigmap()
 		if err != nil {
 			return err
 		}
 
-		fuseChanged, fuseGenerationNeedIncrease = j.checkAndSetFuseChanges(currentValue, latestValue, runtime, fusesToUpdate)
+		fuseChanged, fuseGenerationNeedIncrease = j.checkAndSetFuseChanges(oldValue, latestValue, runtime, fusesToUpdate)
 		if !fuseChanged {
 			j.Log.V(1).Info("The fuse is not changed")
 			return nil
@@ -257,33 +257,39 @@ func (j *JuiceFSEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runti
 	return fuseChanged, nil
 }
 
-func (j *JuiceFSEngine) checkAndSetFuseChanges(currentValue, latestValue *JuiceFS, runtime *datav1alpha1.JuiceFSRuntime, fusesToUpdate *appsv1.DaemonSet) (bool, bool) {
+// TODO: move the default configurations defined in helm fuse template to the logic of transformFuse,
+// ensuring that checkAndSetFuseChanges don't need to care about the configuration in actual daemonset
+func (j *JuiceFSEngine) checkAndSetFuseChanges(oldValue, latestValue *JuiceFS, runtime *datav1alpha1.JuiceFSRuntime, fusesToUpdate *appsv1.DaemonSet) (bool, bool) {
 	var fuseChanged, fuseGenerationNeedUpdate bool
 	// nodeSelector
-	if nodeSelectorChanged, newSelector := j.isNodeSelectorChanged(currentValue.Fuse.NodeSelector, latestValue.Fuse.NodeSelector); nodeSelectorChanged {
+	if nodeSelectorChanged, newSelector := j.isNodeSelectorChanged(oldValue.Fuse.NodeSelector, latestValue.Fuse.NodeSelector); nodeSelectorChanged {
 		j.Log.Info("syncFuseSpec nodeSelectorChanged")
-		fusesToUpdate.Spec.Template.Spec.NodeSelector = newSelector
+		fusesToUpdate.Spec.Template.Spec.NodeSelector =
+			utils.UnionMapsWithOverride(utils.GetMapsDifference(fusesToUpdate.Spec.Template.Spec.NodeSelector, oldValue.Fuse.NodeSelector), newSelector)
 		fuseChanged = true
 	}
 
 	// volumes
-	if volumeChanged, newVolumes := j.isVolumesChanged(currentValue.Fuse.Volumes, latestValue.Fuse.Volumes); volumeChanged {
+	if volumeChanged, newVolumes := j.isVolumesChanged(oldValue.Fuse.Volumes, latestValue.Fuse.Volumes); volumeChanged {
 		j.Log.Info("syncFuseSpec volumeChanged")
-		fusesToUpdate.Spec.Template.Spec.Volumes = newVolumes
+		fusesToUpdate.Spec.Template.Spec.Volumes =
+			append(utils.GetVolumesDifference(fusesToUpdate.Spec.Template.Spec.Volumes, oldValue.Fuse.Volumes), newVolumes...)
 		fuseChanged = true
 	}
 
 	// labels
-	if labelChanged, newLabels := j.isLabelsChanged(currentValue.Fuse.Labels, latestValue.Fuse.Labels); labelChanged {
+	if labelChanged, newLabels := j.isLabelsChanged(oldValue.Fuse.Labels, latestValue.Fuse.Labels); labelChanged {
 		j.Log.Info("syncFuseSpec labelChanged")
-		fusesToUpdate.Spec.Template.ObjectMeta.Labels = newLabels
+		fusesToUpdate.Spec.Template.ObjectMeta.Labels =
+			utils.UnionMapsWithOverride(utils.GetMapsDifference(fusesToUpdate.Spec.Template.ObjectMeta.Labels, oldValue.Fuse.Labels), newLabels)
 		fuseChanged = true
 	}
 
 	// annotations
-	if annoChanged, newAnnos := j.isAnnotationsChanged(currentValue.Fuse.Annotations, latestValue.Fuse.Annotations); annoChanged {
+	if annoChanged, newAnnos := j.isAnnotationsChanged(oldValue.Fuse.Annotations, latestValue.Fuse.Annotations); annoChanged {
 		j.Log.Info("syncFuseSpec annoChanged")
-		fusesToUpdate.Spec.Template.ObjectMeta.Annotations = newAnnos
+		fusesToUpdate.Spec.Template.ObjectMeta.Annotations =
+			utils.UnionMapsWithOverride(utils.GetMapsDifference(fusesToUpdate.Spec.Template.ObjectMeta.Annotations, oldValue.Fuse.Annotations), newAnnos)
 		fuseChanged = true
 	}
 
@@ -296,28 +302,31 @@ func (j *JuiceFSEngine) checkAndSetFuseChanges(currentValue, latestValue *JuiceF
 		}
 
 		// env
-		if envChanged, newEnvs := j.isEnvsChanged(currentValue.Fuse.Envs, latestValue.Fuse.Envs); envChanged {
+		if envChanged, newEnvs := j.isEnvsChanged(oldValue.Fuse.Envs, latestValue.Fuse.Envs); envChanged {
 			j.Log.Info("syncFuseSpec envChanged")
-			fusesToUpdate.Spec.Template.Spec.Containers[0].Env = newEnvs
+			fusesToUpdate.Spec.Template.Spec.Containers[0].Env =
+				append(utils.GetEnvsDifference(fusesToUpdate.Spec.Template.Spec.Containers[0].Env, oldValue.Fuse.Envs), newEnvs...)
 			fuseChanged = true
 		}
 
 		// volumeMounts
-		if volumeMountChanged, newVolumeMounts := j.isVolumeMountsChanged(currentValue.Fuse.VolumeMounts, latestValue.Fuse.VolumeMounts); volumeMountChanged {
+		if volumeMountChanged, newVolumeMounts := j.isVolumeMountsChanged(oldValue.Fuse.VolumeMounts, latestValue.Fuse.VolumeMounts); volumeMountChanged {
 			j.Log.Info("syncFuseSpec volumeMountChanged")
-			fusesToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts = newVolumeMounts
+			fusesToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts =
+				append(utils.GetVolumeMountsDifference(fusesToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts,
+					oldValue.Fuse.VolumeMounts), newVolumeMounts...)
 			fuseChanged = true
 		}
 
 		// image
 		latestFuseImage := latestValue.Fuse.Image
-		if latestValue.ImageTag != "" {
+		if latestValue.Fuse.ImageTag != "" {
 			latestFuseImage = latestFuseImage + ":" + latestValue.Fuse.ImageTag
 		}
 
-		currentFuseImage := currentValue.Fuse.Image
-		if currentValue.ImageTag != "" {
-			currentFuseImage = currentFuseImage + ":" + currentValue.Fuse.ImageTag
+		currentFuseImage := oldValue.Fuse.Image
+		if oldValue.Fuse.ImageTag != "" {
+			currentFuseImage = currentFuseImage + ":" + oldValue.Fuse.ImageTag
 		}
 
 		if imageChanged, newImage := j.isImageChanged(currentFuseImage, latestFuseImage); imageChanged {
@@ -451,6 +460,9 @@ func (j JuiceFSEngine) isVolumesChanged(crtVolumes, runtimeVolumes []corev1.Volu
 }
 
 func (j JuiceFSEngine) isLabelsChanged(crtLabels, runtimeLabels map[string]string) (changed bool, newLabels map[string]string) {
+	if len(crtLabels) == 0 {
+		crtLabels = make(map[string]string)
+	}
 	newLabels = crtLabels
 	for k, v := range runtimeLabels {
 		if crtv, ok := crtLabels[k]; !ok || crtv != v {
@@ -463,6 +475,9 @@ func (j JuiceFSEngine) isLabelsChanged(crtLabels, runtimeLabels map[string]strin
 }
 
 func (j JuiceFSEngine) isAnnotationsChanged(crtAnnotations, runtimeAnnotations map[string]string) (changed bool, newAnnotations map[string]string) {
+	if len(crtAnnotations) == 0 {
+		crtAnnotations = make(map[string]string)
+	}
 	newAnnotations = crtAnnotations
 	for k, v := range runtimeAnnotations {
 		if crtv, ok := crtAnnotations[k]; !ok || crtv != v {

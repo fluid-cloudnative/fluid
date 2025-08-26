@@ -17,9 +17,12 @@ limitations under the License.
 package juicefs
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -973,5 +976,316 @@ func TestJuiceFSEngine_isAnnotationsChanged(t *testing.T) {
 				t.Errorf("isAnnotationsChanged() gotNewAnnotations = %v, want %v", gotNewAnnotations, tt.wantNewAnnotations)
 			}
 		})
+	}
+}
+
+var _ = Describe("checkAndSetFuseChanges", func() {
+	var (
+		engine *JuiceFSEngine
+		scheme *runtime.Scheme
+	)
+
+	BeforeEach(func() {
+		scheme = runtime.NewScheme()
+		_ = datav1alpha1.AddToScheme(scheme)
+		_ = appsv1.AddToScheme(scheme)
+		_ = corev1.AddToScheme(scheme)
+
+		engine = &JuiceFSEngine{
+			name:      "test",
+			namespace: "default",
+		}
+	})
+
+	Context("When checking Fuse changes", func() {
+		var (
+			currentValue         *JuiceFS
+			latestValue          *JuiceFS
+			runtime              *datav1alpha1.JuiceFSRuntime
+			expectedFuseToUpdate *appsv1.DaemonSet
+			fuseToUpdate         *appsv1.DaemonSet
+		)
+		BeforeEach(func() {
+			currentValue = constructBaseRuntimeValue()
+			latestValue = constructBaseRuntimeValue()
+			expectedFuseToUpdate = constructBaseFuseDaemonset()
+			fuseToUpdate = constructBaseFuseDaemonset()
+
+			runtime = &datav1alpha1.JuiceFSRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+				Spec: datav1alpha1.JuiceFSRuntimeSpec{
+					Fuse: datav1alpha1.JuiceFSFuseSpec{
+						Resources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("100m"),
+								corev1.ResourceMemory: resource.MustParse("100Mi"),
+							},
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("200m"),
+								corev1.ResourceMemory: resource.MustParse("200Mi"),
+							},
+						},
+					},
+				},
+			}
+		})
+
+		It("Should detect no changes when current and latest values are identical", func() {
+			changed, generationNeedUpdate := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
+
+			Expect(changed).To(BeFalse())
+			Expect(generationNeedUpdate).To(BeFalse())
+			Expect(reflect.DeepEqual(*fuseToUpdate, *expectedFuseToUpdate)).To(BeTrue())
+		})
+
+		It("Should detect nodeSelector changes", func() {
+			latestValue.Fuse.NodeSelector["key2"] = "value2"
+			expectedFuseToUpdate.Spec.Template.Spec.NodeSelector["key2"] = "value2"
+			changed, generationNeedUpdate := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
+
+			Expect(changed).To(BeTrue())
+			Expect(generationNeedUpdate).To(BeFalse())
+			Expect(fuseToUpdate.Spec.Template.Spec.NodeSelector).To(HaveKeyWithValue("key2", "value2"))
+			Expect(reflect.DeepEqual(*fuseToUpdate, *expectedFuseToUpdate)).To(BeTrue())
+		})
+		//
+		It("Should detect volume changes", func() {
+			latestValue.Fuse.Volumes = append(latestValue.Fuse.Volumes, corev1.Volume{
+				Name: "new-volume",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			})
+			expectedFuseToUpdate.Spec.Template.Spec.Volumes = append(expectedFuseToUpdate.Spec.Template.Spec.Volumes, corev1.Volume{
+				Name: "new-volume",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				}})
+
+			changed, generationNeedUpdate := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
+			Expect(changed).To(BeTrue())
+			Expect(generationNeedUpdate).To(BeFalse())
+			Expect(len(fuseToUpdate.Spec.Template.Spec.Volumes)).To(Equal(3))
+		})
+
+		It("Should detect label changes", func() {
+			latestValue.Fuse.Labels["label2"] = "value2"
+			expectedFuseToUpdate.Spec.Template.Labels["label2"] = "value2"
+
+			changed, generationNeedUpdate := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
+
+			Expect(changed).To(BeTrue())
+			Expect(generationNeedUpdate).To(BeFalse())
+			Expect(fuseToUpdate.Spec.Template.ObjectMeta.Labels).To(HaveKeyWithValue("label2", "value2"))
+			Expect(reflect.DeepEqual(*fuseToUpdate, *expectedFuseToUpdate)).To(BeTrue())
+		})
+
+		It("Should detect annotation changes", func() {
+			latestValue.Fuse.Annotations["annotation2"] = "value2"
+			expectedFuseToUpdate.Spec.Template.Annotations["annotation2"] = "value2"
+
+			changed, generationNeedUpdate := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
+
+			Expect(changed).To(BeTrue())
+			Expect(generationNeedUpdate).To(BeFalse())
+			Expect(fuseToUpdate.Spec.Template.ObjectMeta.Annotations).To(HaveKeyWithValue("annotation2", "value2"))
+			Expect(reflect.DeepEqual(*fuseToUpdate, *expectedFuseToUpdate)).To(BeTrue())
+		})
+
+		It("Should detect resource changes", func() {
+			updatedResource := corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("200m"),
+					corev1.ResourceMemory: resource.MustParse("128Mi"),
+				},
+				Limits: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("400m"),
+					corev1.ResourceMemory: resource.MustParse("256Mi"),
+				},
+			}
+			runtime.Spec.Fuse.Resources = updatedResource
+			expectedFuseToUpdate.Spec.Template.Spec.Containers[0].Resources = updatedResource
+			changed, generationNeedUpdate := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
+
+			Expect(changed).To(BeTrue())
+			Expect(generationNeedUpdate).To(BeFalse())
+			Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu().String()).To(Equal("200m"))
+			Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].Resources.Requests.Memory().String()).To(Equal("128Mi"))
+			Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu().String()).To(Equal("400m"))
+			Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].Resources.Limits.Memory().String()).To(Equal("256Mi"))
+
+			Expect(reflect.DeepEqual(*fuseToUpdate, *expectedFuseToUpdate)).To(BeTrue())
+
+		})
+
+		It("Should detect environment variable changes", func() {
+			latestValue.Fuse.Envs = append(latestValue.Fuse.Envs, corev1.EnvVar{
+				Name:  "NEW_ENV",
+				Value: "new_value",
+			})
+
+			changed, generationNeedUpdate := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
+
+			Expect(changed).To(BeTrue())
+			Expect(generationNeedUpdate).To(BeFalse())
+			Expect(len(fuseToUpdate.Spec.Template.Spec.Containers[0].Env)).To(Equal(3))
+			Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].Env[2].Name).To(Equal("NEW_ENV"))
+		})
+
+		It("Should detect volume mount changes", func() {
+			latestValue.Fuse.VolumeMounts = append(latestValue.Fuse.VolumeMounts, corev1.VolumeMount{
+				Name:      "new-volume",
+				MountPath: "/new",
+			})
+
+			changed, generationNeedUpdate := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
+
+			Expect(changed).To(BeTrue())
+			Expect(generationNeedUpdate).To(BeFalse())
+			Expect(len(fuseToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts)).To(Equal(3))
+			Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts[2].Name).To(Equal("new-volume"))
+		})
+
+		It("Should detect image changes and require generation update", func() {
+			latestValue.Fuse.Image = "juicefs/fuse"
+			latestValue.Fuse.ImageTag = "v2.0.0"
+
+			changed, generationNeedUpdate := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
+
+			fmt.Println(fuseToUpdate.Spec.Template.Spec.Containers[0].Image)
+			Expect(changed).To(BeTrue())
+			Expect(generationNeedUpdate).To(BeTrue())
+			Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].Image).To(Equal("juicefs/fuse:v2.0.0"))
+		})
+	})
+})
+
+func constructBaseRuntimeValue() *JuiceFS {
+	return &JuiceFS{
+		Fuse: Fuse{
+			NodeSelector: map[string]string{
+				"key1": "value1",
+			},
+			Volumes: []corev1.Volume{
+				{
+					Name: "test-volume",
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+			},
+			Labels: map[string]string{
+				"label1": "value1",
+			},
+			Annotations: map[string]string{
+				"annotation1": "value1",
+			},
+			Envs: []corev1.EnvVar{
+				{
+					Name:  "ENV1",
+					Value: "value1",
+				},
+			},
+			VolumeMounts: []corev1.VolumeMount{
+				{
+					Name:      "test-volume",
+					MountPath: "/test",
+				},
+			},
+			Resources: common.Resources{
+				Requests: common.ResourceList{
+					corev1.ResourceCPU:    "100m",
+					corev1.ResourceMemory: "100Mi",
+				},
+				Limits: common.ResourceList{
+					corev1.ResourceCPU:    "200m",
+					corev1.ResourceMemory: "200Mi",
+				},
+			},
+			Image:    "juicefs/fuse",
+			ImageTag: "v1.0.0",
+		},
+	}
+}
+
+func constructBaseFuseDaemonset() *appsv1.DaemonSet {
+	return &appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-fuse",
+			Namespace: "default",
+		},
+		Spec: appsv1.DaemonSetSpec{
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"label1":     "value1",
+						"helm_label": "helm_value",
+					},
+					Annotations: map[string]string{
+						"annotation1":     "value1",
+						"helm_annotation": "helm_value",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "test-volume",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
+						{
+							Name: "helm-volume",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
+					},
+					NodeSelector: map[string]string{
+						"key1":      "value1",
+						"helm_key1": "helm_value",
+					},
+					Containers: []corev1.Container{
+						{
+							Name:  "fuse",
+							Image: "juicefs/fuse:v1.0.0",
+							Resources: corev1.ResourceRequirements{
+								Requests: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("100m"),
+									corev1.ResourceMemory: resource.MustParse("100Mi"),
+								},
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("200m"),
+									corev1.ResourceMemory: resource.MustParse("200Mi"),
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "ENV1",
+									Value: "value1",
+								},
+								{
+									Name:  "HELM_ENV1",
+									Value: "HELM_value1",
+								},
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "test-volume",
+									MountPath: "/test",
+								},
+								{
+									Name:      "helm-volume",
+									MountPath: "/test_helm",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 }

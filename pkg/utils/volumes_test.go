@@ -465,3 +465,175 @@ func TestFilterVolumesByVolumeMounts(t *testing.T) {
 		})
 	}
 }
+
+func TestGetVolumesDifference(t *testing.T) {
+	volume1 := corev1.Volume{Name: "volume1"}
+	volume2 := corev1.Volume{Name: "volume2"}
+	volume3 := corev1.Volume{Name: "volume3"}
+	volume4 := corev1.Volume{Name: "volume4"}
+
+	tests := []struct {
+		name     string
+		base     []corev1.Volume
+		filter   []corev1.Volume
+		expected []corev1.Volume
+	}{
+		{
+			name:     "nil_volumes",
+			base:     []corev1.Volume{},
+			filter:   []corev1.Volume{},
+			expected: []corev1.Volume{},
+		},
+		{
+			name:     "nil_base_not_nil_exclude",
+			base:     []corev1.Volume{},
+			filter:   []corev1.Volume{volume1, volume2},
+			expected: []corev1.Volume{},
+		},
+		{
+			name:     "not_nil_base_nil_exclude",
+			base:     []corev1.Volume{volume1, volume2},
+			filter:   []corev1.Volume{},
+			expected: []corev1.Volume{volume1, volume2},
+		},
+		{
+			name:     "same_base_and_exclude",
+			base:     []corev1.Volume{volume1, volume2},
+			filter:   []corev1.Volume{volume1, volume2},
+			expected: []corev1.Volume{},
+		},
+		{
+			name:     "base_include_all_exclude",
+			base:     []corev1.Volume{volume1, volume2, volume3, volume4},
+			filter:   []corev1.Volume{volume2, volume4},
+			expected: []corev1.Volume{volume1, volume3},
+		},
+		{
+			name:     "base_include_no_exclude",
+			base:     []corev1.Volume{volume1, volume2},
+			filter:   []corev1.Volume{volume3, volume4},
+			expected: []corev1.Volume{volume1, volume2},
+		},
+		{
+			name:     "base_include_partial_exclude",
+			base:     []corev1.Volume{volume1, volume2, volume3},
+			filter:   []corev1.Volume{volume2, volume4},
+			expected: []corev1.Volume{volume1, volume3},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := GetVolumesDifference(tt.base, tt.filter)
+			if len(result) != len(tt.expected) {
+				t.Errorf("expected slice length %d, actual slice length %d", len(tt.expected), len(result))
+				return
+			}
+			expectedMap := make(map[string]bool)
+			for _, v := range tt.expected {
+				expectedMap[v.Name] = true
+			}
+
+			resultMap := make(map[string]bool)
+			for _, v := range result {
+				resultMap[v.Name] = true
+			}
+			for name, expectedVolume := range expectedMap {
+				resultVolume, exist := resultMap[name]
+				if !exist {
+					t.Errorf("expected Volume %s, but not exist in return", name)
+				}
+
+				if !reflect.DeepEqual(resultVolume, expectedVolume) {
+					t.Errorf("expected Volume %v, but got %v", expectedVolume, resultVolume)
+				}
+			}
+		})
+	}
+}
+
+func TestGetVolumeMountsDifference(t *testing.T) {
+	volumeMount1 := corev1.VolumeMount{Name: "volumeMount1"}
+	volumeMount2 := corev1.VolumeMount{Name: "volumeMount2"}
+	volumeMount3 := corev1.VolumeMount{Name: "volumeMount3"}
+	volumeMount4 := corev1.VolumeMount{Name: "volumeMount4"}
+
+	tests := []struct {
+		name     string
+		base     []corev1.VolumeMount
+		filter   []corev1.VolumeMount
+		expected []corev1.VolumeMount
+	}{
+		{
+			name:     "nil_volumes",
+			base:     []corev1.VolumeMount{},
+			filter:   []corev1.VolumeMount{},
+			expected: []corev1.VolumeMount{},
+		},
+		{
+			name:     "nil_base_not_nil_exclude",
+			base:     []corev1.VolumeMount{},
+			filter:   []corev1.VolumeMount{volumeMount1, volumeMount2},
+			expected: []corev1.VolumeMount{},
+		},
+		{
+			name:     "not_nil_base_nil_exclude",
+			base:     []corev1.VolumeMount{volumeMount1, volumeMount2},
+			filter:   []corev1.VolumeMount{},
+			expected: []corev1.VolumeMount{volumeMount1, volumeMount2},
+		},
+		{
+			name:     "same_base_and_exclude",
+			base:     []corev1.VolumeMount{volumeMount1, volumeMount2},
+			filter:   []corev1.VolumeMount{volumeMount1, volumeMount2},
+			expected: []corev1.VolumeMount{},
+		},
+		{
+			name:     "base_include_all_exclude",
+			base:     []corev1.VolumeMount{volumeMount1, volumeMount2, volumeMount3, volumeMount4},
+			filter:   []corev1.VolumeMount{volumeMount2, volumeMount4},
+			expected: []corev1.VolumeMount{volumeMount1, volumeMount3},
+		},
+		{
+			name:     "base_include_no_exclude",
+			base:     []corev1.VolumeMount{volumeMount1, volumeMount2},
+			filter:   []corev1.VolumeMount{volumeMount3, volumeMount4},
+			expected: []corev1.VolumeMount{volumeMount1, volumeMount2},
+		},
+		{
+			name:     "base_include_partial_exclude",
+			base:     []corev1.VolumeMount{volumeMount1, volumeMount2, volumeMount3},
+			filter:   []corev1.VolumeMount{volumeMount2, volumeMount4},
+			expected: []corev1.VolumeMount{volumeMount1, volumeMount3},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := GetVolumeMountsDifference(tt.base, tt.filter)
+			if len(result) != len(tt.expected) {
+				t.Errorf("expected slice length %d, actual slice length %d", len(tt.expected), len(result))
+				return
+			}
+			expectedMap := make(map[string]bool)
+			for _, v := range tt.expected {
+				expectedMap[v.Name] = true
+			}
+
+			resultMap := make(map[string]bool)
+			for _, v := range result {
+				resultMap[v.Name] = true
+			}
+			for name, expectedVolumeMount := range expectedMap {
+				resultVolumeMount, exist := resultMap[name]
+				if !exist {
+					t.Errorf("expected VolumeMount %s, but not exist in return", name)
+				}
+
+				if !reflect.DeepEqual(resultVolumeMount, expectedVolumeMount) {
+					t.Errorf("expected VolumeMount %v, but got %v", expectedVolumeMount, resultVolumeMount)
+				}
+			}
+		})
+	}
+}
