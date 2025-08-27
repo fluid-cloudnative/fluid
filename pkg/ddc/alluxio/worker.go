@@ -73,16 +73,16 @@ func (e *AlluxioEngine) ShouldSetupWorkers() (should bool, err error) {
 }
 
 // are the workers ready
-func (e *AlluxioEngine) CheckWorkersReady() (ready bool, err error) {
+func (e *AlluxioEngine) CheckWorkersReady() (readyOrPartialReady bool, err error) {
 	workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
 		types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
 	if err != nil {
 		if fluiderrs.IsDeprecated(err) {
 			e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
-			ready = true
-			return ready, nil
+			readyOrPartialReady = true
+			return readyOrPartialReady, nil
 		}
-		return ready, err
+		return readyOrPartialReady, err
 	}
 
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
@@ -91,7 +91,7 @@ func (e *AlluxioEngine) CheckWorkersReady() (ready bool, err error) {
 			return err
 		}
 		runtimeToUpdate := runtime.DeepCopy()
-		ready, err = e.Helper.CheckWorkersReady(runtimeToUpdate, runtimeToUpdate.Status, workers)
+		readyOrPartialReady, err = e.Helper.CheckAndUpdateWorkerStatus(runtimeToUpdate, workers)
 		if err != nil {
 			_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to check worker ready", types.NamespacedName{Namespace: e.namespace, Name: e.name})
 		}

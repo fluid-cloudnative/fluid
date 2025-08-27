@@ -112,7 +112,7 @@ func (e *JindoFSxEngine) CheckWorkersReady() (ready bool, err error) {
 			return err
 		}
 		runtimeToUpdate := runtime.DeepCopy()
-		ready, err = e.Helper.CheckWorkersReady(runtimeToUpdate, runtimeToUpdate.Status, workers)
+		ready, err = e.Helper.CheckAndUpdateWorkerStatus(runtimeToUpdate, workers)
 		if err != nil {
 			_ = utils.LoggingErrorExceptConflict(e.Log,
 				err,

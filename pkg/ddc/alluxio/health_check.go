@@ -171,66 +171,21 @@ func (e *AlluxioEngine) checkWorkersHealthy() (err error) {
 	healthy := false
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 
-		runtime, err := e.getRuntime()
-		if err != nil {
-			return err
+		runtime, innerErr := e.getRuntime()
+		if innerErr != nil {
+			return innerErr
 		}
 
-		runtimeToUpdate := runtime.DeepCopy()
-		if workers.Status.ReadyReplicas == 0 && *workers.Spec.Replicas > 0 {
-			// if workers.Status.NumberReady != workers.Status.DesiredNumberScheduled {
-			if len(runtimeToUpdate.Status.Conditions) == 0 {
-				runtimeToUpdate.Status.Conditions = []data.RuntimeCondition{}
-			}
-			cond := utils.NewRuntimeCondition(data.RuntimeWorkersReady, "The workers are not ready.",
-				fmt.Sprintf("The statefulset %s in %s are not ready, the Unavailable number is %d, please fix it.",
-					workers.Name,
-					workers.Namespace,
-					*workers.Spec.Replicas-workers.Status.ReadyReplicas), corev1.ConditionFalse)
-
-			_, oldCond := utils.GetRuntimeCondition(runtimeToUpdate.Status.Conditions, cond.Type)
-
-			if oldCond == nil || oldCond.Type != cond.Type {
-				runtimeToUpdate.Status.Conditions =
-					utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
-						cond)
-			}
-
-			runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseNotReady
-
-			// runtimeToUpdate.Status.DesiredWorkerNumberScheduled
-			// runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseNotReady
-
-			e.Log.Error(err, "the workers are not ready")
-		} else {
-			healthy = true
-			cond := utils.NewRuntimeCondition(data.RuntimeWorkersReady, "The workers are ready.",
-				"The workers are ready", corev1.ConditionTrue)
-
-			_, oldCond := utils.GetRuntimeCondition(runtimeToUpdate.Status.Conditions, cond.Type)
-
-			if oldCond == nil || oldCond.Type != cond.Type {
-				runtimeToUpdate.Status.Conditions =
-					utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
-						cond)
-			}
-			// runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseReady
-		}
-		// runtimeToUpdate.Status.DesiredWorkerNumberScheduled = int32(workers.Status.DesiredNumberScheduled)
-		runtimeToUpdate.Status.WorkerNumberReady = int32(workers.Status.ReadyReplicas)
-		runtimeToUpdate.Status.WorkerNumberAvailable = int32(workers.Status.CurrentReplicas)
-		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
-			updateErr := e.Client.Status().Update(context.TODO(), runtimeToUpdate)
-			if updateErr != nil {
-				return updateErr
-			}
+		healthy, innerErr = e.Helper.CheckAndUpdateWorkerStatus(runtime, workers)
+		if innerErr != nil {
+			return innerErr
 		}
 
-		return err
+		return innerErr
 	})
 
 	if err != nil {
-		e.Log.Error(err, "Failed update runtime")
+		e.Log.Error(err, "fail to check if workers are ready")
 		return err
 	}
 
