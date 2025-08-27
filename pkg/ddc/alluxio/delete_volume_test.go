@@ -18,250 +18,187 @@ package alluxio
 
 import (
 	"context"
-	"reflect"
-	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1 "k8s.io/api/core/v1"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-type TestCase struct {
-	engine    *AlluxioEngine
-	isDeleted bool
-	isErr     bool
-}
+var _ = Describe("AlluxioEngine Volume Deletion Tests", Label("pkg.ddc.alluxio.delete_volume_test.go"), func() {
+	var (
+		dataset        *datav1alpha1.Dataset
+		alluxioruntime *datav1alpha1.AlluxioRuntime
+		engine         *AlluxioEngine
+		mockedObjects  mockedObjects
+		client         client.Client
+		resources      []runtime.Object
+	)
 
-// newTestAlluxioEngine creates an instance of AlluxioEngine for testing purposes.
-//
-// Parameters:
-//
-//	client     - A Kubernetes client used for interactions with the API server.
-//	name       - The name for the AlluxioEngine (used for associated PV/PVC resources in tests).
-//	namespace  - The namespace where the resources reside.
-//	withRunTime - A flag indicating whether the engine should be initialized with runtime information.
-//	              When true, an AlluxioRuntime instance and corresponding runtimeInfo are created;
-//	              when false, both runtime and runtimeInfo are set to nil to simulate a scenario without runtime support.
-//
-// Returns:
-//
-//	A pointer to an AlluxioEngine instance configured according to the provided parameters.
-func newTestAlluxioEngine(client client.Client, name string, namespace string, withRunTime bool) *AlluxioEngine {
-	runTime := &datav1alpha1.AlluxioRuntime{}
-	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, "alluxio")
-	runTimeInfo.SetOwnerDatasetUID("dummy-dataset-uid")
-	if !withRunTime {
-		runTimeInfo = nil
-		runTime = nil
-	}
-	engine := &AlluxioEngine{
-		runtime:     runTime,
-		name:        name,
-		namespace:   namespace,
-		Client:      client,
-		runtimeInfo: runTimeInfo,
-		Log:         fake.NullLogger(),
-	}
-	return engine
-}
-
-func doTestCases(testCases []TestCase, t *testing.T) {
-	for _, test := range testCases {
-		err := test.engine.DeleteVolume()
-		pv := &v1.PersistentVolume{}
-		nullPV := v1.PersistentVolume{}
-		key := types.NamespacedName{
-			Namespace: test.engine.namespace,
-			Name:      test.engine.name,
+	BeforeEach(func() {
+		dataset, alluxioruntime = mockFluidObjectsForTests(types.NamespacedName{Namespace: "fluid", Name: "hbase"})
+		engine = mockAlluxioEngineForTests(dataset, alluxioruntime)
+		mockedObjects = mockAlluxioObjectsForTests(dataset, alluxioruntime, engine)
+		resources = []runtime.Object{
+			dataset,
+			alluxioruntime,
+			mockedObjects.MasterSts,
+			mockedObjects.WorkerSts,
+			mockedObjects.FuseDs,
+			mockedObjects.PersistentVolumeClaim,
+			mockedObjects.PersistentVolume,
 		}
-		_ = test.engine.Client.Get(context.TODO(), key, pv)
-		if test.isDeleted != reflect.DeepEqual(nullPV, *pv) {
-			t.Errorf("PV/PVC still exist after delete.")
-		}
-		isErr := err != nil
-		if isErr != test.isErr {
-			t.Errorf("expected %t, got %t.", test.isErr, isErr)
-		}
-	}
-}
+	})
 
-// TestAlluxioEngine_DeleteVolume tests the DeleteVolume function of the AlluxioEngine.
-// It sets up test cases with different PersistentVolume (PV) and PersistentVolumeClaim (PVC) inputs,
-// including scenarios with and without errors. The function uses a fake Kubernetes client to simulate
-// the behavior of the AlluxioEngine when deleting volumes. The test cases include:
-// 1. A common scenario where the volume should be deleted without errors.
-// 2. A scenario where an error is expected due to specific annotations on the PVC.
-// 3. A scenario where an error is expected because the AlluxioEngine is not running.
-// The function then runs these test cases using the doTestCases helper function to verify the expected outcomes.
-func TestAlluxioEngine_DeleteVolume(t *testing.T) {
-	testPVInputs := []*v1.PersistentVolume{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "fluid-hbase",
-				Annotations: map[string]string{
-					"CreatedBy": "fluid",
-				},
-			},
-			Spec: v1.PersistentVolumeSpec{},
-		},
-	}
+	// JustBeforeEach is guaranteed to run after every BeforeEach()
+	// So it's easy to modify resources' specs with an extra BeforeEach()
+	JustBeforeEach(func() {
+		client = fake.NewFakeClientWithScheme(datav1alpha1.UnitTestScheme, resources...)
+		engine.Client = client
+	})
 
-	tests := []runtime.Object{}
+	// TestAlluxioEngine_DeleteVolume tests the DeleteVolume function of the AlluxioEngine.
+	// It sets up test cases with different PersistentVolume (PV) and PersistentVolumeClaim (PVC) inputs,
+	// including scenarios with and without errors. The function uses a fake Kubernetes client to simulate
+	// the behavior of the AlluxioEngine when deleting volumes. The test cases include:
+	// 1. A common scenario where the volume should be deleted without errors.
+	// 2. A scenario where an error is expected due to specific annotations on the PVC.
+	// 3. A scenario where an error is expected because the AlluxioEngine is not running.
+	// The function then runs these test cases using the doTestCases helper function to verify the expected outcomes.
 
-	for _, pvInput := range testPVInputs {
-		tests = append(tests, pvInput.DeepCopy())
-	}
+	Describe("Test AlluxioEngine.DeleteVolume()", func() {
+		BeforeEach(func() {
+			mockedObjects.PersistentVolume.Namespace = ""
+		})
+		When("given AlluxioEngine works as expected", func() {
+			It("should delete volume successfully", func() {
+				err := engine.DeleteVolume()
+				Expect(err).To(BeNil())
 
-	testPVCInputs := []*v1.PersistentVolumeClaim{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:       "hbase",
-				Namespace:  "fluid",
-				Finalizers: []string{"kubernetes.io/pvc-protection"}, // no err
-			},
-			Spec: v1.PersistentVolumeClaimSpec{},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:       "error",
-				Namespace:  "fluid",
-				Finalizers: []string{"kubernetes.io/pvc-protection"},
-				Annotations: map[string]string{
-					"CreatedBy": "fluid", // have err
-				},
-			},
-			Spec: v1.PersistentVolumeClaimSpec{},
-		},
-	}
+				err = client.Get(context.TODO(), types.NamespacedName{Namespace: engine.namespace, Name: engine.name}, &corev1.PersistentVolumeClaim{})
+				Expect(apierrs.IsNotFound(err)).To(BeTrue())
 
-	for _, pvcInput := range testPVCInputs {
-		tests = append(tests, pvcInput.DeepCopy())
-	}
+				err = client.Get(context.TODO(), types.NamespacedName{Namespace: engine.namespace, Name: engine.runtimeInfo.GetPersistentVolumeName()}, &corev1.PersistentVolume{})
+				Expect(apierrs.IsNotFound(err)).To(BeTrue())
+			})
+		})
 
-	fakeClient := fake.NewFakeClientWithScheme(testScheme, tests...)
-	alluxioEngineCommon := newTestAlluxioEngine(fakeClient, "hbase", "fluid", true)
-	alluxioEngineErr := newTestAlluxioEngine(fakeClient, "error", "fluid", true)
-	alluxioEngineNoRunTime := newTestAlluxioEngine(fakeClient, "hbase", "fluid", false)
-	var testCases = []TestCase{
-		{
-			engine:    alluxioEngineCommon,
-			isDeleted: true,
-			isErr:     false,
-		},
-		{
-			engine:    alluxioEngineErr,
-			isDeleted: true,
-			isErr:     true,
-		},
-		{
-			engine:    alluxioEngineNoRunTime,
-			isDeleted: true,
-			isErr:     true,
-		},
-	}
-	doTestCases(testCases, t)
-}
+		When("related PVC and PV is already deleted", func() {
+			BeforeEach(func() {
+				resources = []runtime.Object{
+					dataset,
+					alluxioruntime,
+					mockedObjects.MasterSts,
+					mockedObjects.WorkerSts,
+					mockedObjects.FuseDs,
+					// mockedObjects.PersistentVolumeClaim,
+					// mockedObjects.PersistentVolume,
+				}
+			})
 
-// TestAlluxioEngine_DeleteFusePersistentVolume tests the functionality of deleting Fuse PersistentVolume in the AlluxioEngine.
-// This function is mainly responsible for:
-// - Setting up test cases with different configurations of PersistentVolume.
-// - Creating a fake client to simulate interactions with the Kubernetes API for testing.
-// - Initializing different AlluxioEngine instances with and without runtime settings.
-// - Executing test cases and verifying whether the deletion operations of PersistentVolume succeed as expected.
+			It("don't need to do anything", func() {
+				err := engine.DeleteVolume()
+				Expect(err).To(BeNil())
+			})
+		})
+	})
 
-// Parameters:
-// - t (*testing.T): The testing framework's testing object, used to report test results and handle test failures.
+	Describe("Test AlluxioEngine.deleteFusePersistentVolume()", func() {
+		When("given AlluxioEngine works as expected", func() {
+			BeforeEach(func() {
+				mockedObjects.PersistentVolume.Namespace = ""
+			})
+			It("should delete fuse PV successfully", func() {
+				err := engine.deleteFusePersistentVolume()
+				Expect(err).To(BeNil())
 
-// Returns:
-// - None. The function reports test failures directly through the *testing.T object passed in.
+				err = client.Get(context.TODO(), types.NamespacedName{Name: engine.runtimeInfo.GetPersistentVolumeName()}, &corev1.PersistentVolumeClaim{})
+				Expect(apierrs.IsNotFound(err)).To(BeTrue())
+			})
+		})
 
-func TestAlluxioEngine_DeleteFusePersistentVolume(t *testing.T) {
-	testPVInputs := []*v1.PersistentVolume{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "fluid-hbase",
-				Annotations: map[string]string{
-					"CreatedBy": "fluid",
-				},
-			},
-			Spec: v1.PersistentVolumeSpec{},
-		},
-	}
+		When("related PV is already deleted", func() {
+			BeforeEach(func() {
+				resources = []runtime.Object{
+					dataset,
+					alluxioruntime,
+					mockedObjects.MasterSts,
+					mockedObjects.WorkerSts,
+					mockedObjects.FuseDs,
+					mockedObjects.PersistentVolumeClaim,
+					// mockedObjects.PersistentVolume,
+				}
 
-	tests := []runtime.Object{}
+			})
+			It("don't need to do anything", func() {
+				err := engine.deleteFusePersistentVolume()
+				Expect(err).To(BeNil())
+			})
+		})
 
-	for _, pvInput := range testPVInputs {
-		tests = append(tests, pvInput.DeepCopy())
-	}
+		When("PV exists but does not have fluid annotations on it", func() {
+			BeforeEach(func() {
+				mockedObjects.PersistentVolume.Namespace = ""
+				mockedObjects.PersistentVolume.Annotations = map[string]string{}
+			})
+			It("should not delete the PV", func() {
+				err := engine.deleteFusePersistentVolume()
+				Expect(err).To(BeNil())
 
-	fakeClient := fake.NewFakeClientWithScheme(testScheme, tests...)
-	alluxioEngine := newTestAlluxioEngine(fakeClient, "hbase", "fluid", true)
-	alluxioEngineNoRuntime := newTestAlluxioEngine(fakeClient, "hbase", "fluid", false)
-	testCases := []TestCase{
-		{
-			engine:    alluxioEngine,
-			isDeleted: true,
-			isErr:     false,
-		},
-		{
-			engine:    alluxioEngineNoRuntime,
-			isDeleted: true,
-			isErr:     true,
-		},
-	}
-	doTestCases(testCases, t)
-}
+				err = client.Get(context.TODO(), types.NamespacedName{Name: engine.runtimeInfo.GetPersistentVolumeName()}, &corev1.PersistentVolume{})
+				Expect(err).To(BeNil())
+			})
+		})
+	})
 
-// TestAlluxioEngine_DeleteFusePersistentVolumeClaim tests the functionality of deleting Fuse PersistentVolumeClaim in the AlluxioEngine.
-// This function is mainly responsible for:
-// - Setting up multiple test cases with different configurations of PersistentVolumeClaim.
-// - Creating a fake client to simulate interactions with Kubernetes API for testing.
-// - Initializing different AlluxioEngine instances with various runtime settings.
-// - Executing test cases and verifying whether the deletion operations of PersistentVolumeClaim succeed as expected.
+	Describe("Test AlluxioEngine.deleteFusePersistentVolumeClaim()", func() {
+		When("given AlluxioEngine works as expected", func() {
+			It("should delete the fuse PVC successfully", func() {
+				err := engine.deleteFusePersistentVolumeClaim()
+				Expect(err).To(BeNil())
 
-// Parameters:
-// - t (*testing.T): The testing framework's testing object, used to report test results and handle test failures.
+				err = client.Get(context.TODO(), types.NamespacedName{Name: engine.name, Namespace: engine.namespace}, &corev1.PersistentVolumeClaim{})
+				Expect(apierrs.IsNotFound(err)).To(BeTrue())
+			})
+		})
 
-// Returns:
-// - None. The function reports test failures directly through the *testing.T object passed in.
+		When("related pvc is already deleted", func() {
+			BeforeEach(func() {
+				resources = []runtime.Object{
+					dataset,
+					alluxioruntime,
+					mockedObjects.MasterSts,
+					mockedObjects.WorkerSts,
+					mockedObjects.FuseDs,
+					// mockedObjects.PersistentVolumeClaim,
+					mockedObjects.PersistentVolume,
+				}
+			})
 
-func TestAlluxioEngine_DeleteFusePersistentVolumeClaim(t *testing.T) {
-	testPVCInputs := []*v1.PersistentVolumeClaim{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:       "hbase",
-				Namespace:  "fluid",
-				Finalizers: []string{"kubernetes.io/pvc-protection"}, // no err
-			},
-			Spec: v1.PersistentVolumeClaimSpec{},
-		},
-	}
+			It("don't need to do anything", func() {
+				err := engine.deleteFusePersistentVolumeClaim()
+				Expect(err).To(BeNil())
+			})
+		})
 
-	tests := []runtime.Object{}
+		When("related pvc exists but do not have fluid annotaions on it", func() {
+			BeforeEach(func() {
+				mockedObjects.PersistentVolumeClaim.Annotations = map[string]string{}
+			})
 
-	for _, pvcInput := range testPVCInputs {
-		tests = append(tests, pvcInput.DeepCopy())
-	}
+			It("should not delete the pvc", func() {
+				err := engine.deleteFusePersistentVolumeClaim()
+				Expect(err).To(BeNil())
 
-	fakeClient := fake.NewFakeClientWithScheme(testScheme, tests...)
-	alluxioEngine := newTestAlluxioEngine(fakeClient, "hbase", "fluid", true)
-	alluxioEngineNoRuntime := newTestAlluxioEngine(fakeClient, "hbase", "fluid", false)
-	testCases := []TestCase{
-		{
-			engine:    alluxioEngine,
-			isDeleted: true,
-			isErr:     false,
-		},
-		{
-			engine:    alluxioEngineNoRuntime,
-			isDeleted: true,
-			isErr:     true,
-		},
-	}
-	doTestCases(testCases, t)
-}
+				err = client.Get(context.TODO(), types.NamespacedName{Name: engine.name, Namespace: engine.namespace}, &corev1.PersistentVolumeClaim{})
+				Expect(err).To(BeNil())
+			})
+		})
+	})
+})
