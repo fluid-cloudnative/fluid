@@ -105,4 +105,8 @@ jobs:
       run: |
         make build
         make test
-        bash <(curl -s https://codecov.io/bash)
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
