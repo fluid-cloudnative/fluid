@@ -17,319 +17,176 @@ limitations under the License.
 package alluxio
 
 import (
-	"context"
-	"reflect"
-	"testing"
-
+	"github.com/agiledragon/gomonkey/v2"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-func TestUpdateCacheOfDataset(t *testing.T) {
-	testDatasetInputs := []*datav1alpha1.Dataset{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.DatasetSpec{},
-		},
-	}
-	testObjs := []runtime.Object{}
-	for _, datasetInput := range testDatasetInputs {
-		testObjs = append(testObjs, datasetInput.DeepCopy())
-	}
-
-	testRuntimeInputs := []*datav1alpha1.AlluxioRuntime{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.AlluxioRuntimeSpec{
-				Master: datav1alpha1.AlluxioCompTemplateSpec{
-					Replicas: 1,
-				},
-			},
-			Status: datav1alpha1.RuntimeStatus{
-				CacheStates: map[common.CacheStateName]string{
-					common.Cached: "true",
-				},
-			},
-		},
-	}
-	for _, runtimeInput := range testRuntimeInputs {
-		testObjs = append(testObjs, runtimeInput.DeepCopy())
-	}
-	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-
-	engine := &AlluxioEngine{
-		Client:    client,
-		Log:       fake.NullLogger(),
-		name:      "hbase",
-		namespace: "fluid",
-		runtime:   testRuntimeInputs[0],
-	}
-
-	err := engine.UpdateCacheOfDataset()
-	if err != nil {
-		t.Errorf("fail to exec UpdateCacheOfDataset with error %v", err)
-		return
-	}
-
-	expectedDataset := datav1alpha1.Dataset{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase",
-			Namespace: "fluid",
-		},
-		Status: datav1alpha1.DatasetStatus{
-			CacheStates: map[common.CacheStateName]string{
-				common.Cached: "true",
-			},
-		},
-	}
-
-	var datasets datav1alpha1.DatasetList
-	err = client.List(context.TODO(), &datasets)
-	if err != nil {
-		t.Errorf("fail to list the datasets with error %v", err)
-		return
-	}
-	if !reflect.DeepEqual(datasets.Items[0].Status, expectedDataset.Status) {
-		t.Errorf("fail to exec the function with error %v", err)
-		return
-	}
-}
-
-func TestUpdateDatasetStatus(t *testing.T) {
-	testDatasetInputs := []*datav1alpha1.Dataset{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.DatasetSpec{},
-			Status: datav1alpha1.DatasetStatus{
-				HCFSStatus: &datav1alpha1.HCFSStatus{
-					Endpoint:                    "test Endpoint",
-					UnderlayerFileSystemVersion: "Underlayer HCFS Compatible Version",
-				},
-			},
-		},
-	}
-	testObjs := []runtime.Object{}
-	for _, datasetInput := range testDatasetInputs {
-		testObjs = append(testObjs, datasetInput.DeepCopy())
-	}
-
-	testRuntimeInputs := []*datav1alpha1.AlluxioRuntime{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.AlluxioRuntimeSpec{
-				Master: datav1alpha1.AlluxioCompTemplateSpec{
-					Replicas: 1,
-				},
-			},
-			Status: datav1alpha1.RuntimeStatus{
-				CacheStates: map[common.CacheStateName]string{
-					common.Cached: "true",
-				},
-			},
-		},
-	}
-	for _, runtimeInput := range testRuntimeInputs {
-		testObjs = append(testObjs, runtimeInput.DeepCopy())
-	}
-	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-
-	engine := &AlluxioEngine{
-		Client:    client,
-		Log:       fake.NullLogger(),
-		name:      "hbase",
-		namespace: "fluid",
-		runtime:   testRuntimeInputs[0],
-	}
-
-	var testCase = []struct {
-		phase          datav1alpha1.DatasetPhase
-		expectedResult datav1alpha1.Dataset
-	}{
-		{
-			phase: datav1alpha1.BoundDatasetPhase,
-			expectedResult: datav1alpha1.Dataset{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "hbase",
-					Namespace: "fluid",
-				},
-				Status: datav1alpha1.DatasetStatus{
-					Phase: datav1alpha1.BoundDatasetPhase,
-					CacheStates: map[common.CacheStateName]string{
-						common.Cached: "true",
-					},
-					HCFSStatus: &datav1alpha1.HCFSStatus{
-						Endpoint:                    "test Endpoint",
-						UnderlayerFileSystemVersion: "Underlayer HCFS Compatible Version",
-					},
-					Runtimes: []datav1alpha1.Runtime{
-						{
-							Name:           "hbase",
-							Namespace:      "fluid",
-							Category:       common.AccelerateCategory,
-							Type:           common.AlluxioRuntime,
-							MasterReplicas: 1,
-						},
-					},
-				},
-			},
-		},
-		{
-			phase: datav1alpha1.FailedDatasetPhase,
-			expectedResult: datav1alpha1.Dataset{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "hbase",
-					Namespace: "fluid",
-				},
-				Status: datav1alpha1.DatasetStatus{
-					Phase: datav1alpha1.FailedDatasetPhase,
-					CacheStates: map[common.CacheStateName]string{
-						common.Cached: "true",
-					},
-					HCFSStatus: &datav1alpha1.HCFSStatus{
-						Endpoint:                    "test Endpoint",
-						UnderlayerFileSystemVersion: "Underlayer HCFS Compatible Version",
-					},
-				},
-			},
-		},
-		{
-			phase: datav1alpha1.NoneDatasetPhase,
-			expectedResult: datav1alpha1.Dataset{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "hbase",
-					Namespace: "fluid",
-				},
-				Status: datav1alpha1.DatasetStatus{
-					Phase: datav1alpha1.NoneDatasetPhase,
-					CacheStates: map[common.CacheStateName]string{
-						common.Cached: "true",
-					},
-					HCFSStatus: &datav1alpha1.HCFSStatus{
-						Endpoint:                    "test Endpoint",
-						UnderlayerFileSystemVersion: "Underlayer HCFS Compatible Version",
-					},
-				},
-			},
-		},
-	}
-
-	for _, test := range testCase {
-		err := engine.UpdateDatasetStatus(test.phase)
-		if err != nil {
-			t.Errorf("fail to exec UpdateCacheOfDataset with error %v", err)
-			return
+var _ = Describe("AlluxioEngine Dataset Status Tests", Label("pkg.ddc.alluxio.dataset_test.go"), func() {
+	var (
+		dataset        *datav1alpha1.Dataset
+		alluxioruntime *datav1alpha1.AlluxioRuntime
+		engine         *AlluxioEngine
+		mockedObjects  mockedObjects
+		client         client.Client
+		resources      []runtime.Object
+	)
+	BeforeEach(func() {
+		dataset, alluxioruntime = mockFluidObjectsForTests(types.NamespacedName{Namespace: "fluid", Name: "hbase"})
+		engine = mockAlluxioEngineForTests(dataset, alluxioruntime)
+		mockedObjects = mockAlluxioObjectsForTests(dataset, alluxioruntime, engine)
+		resources = []runtime.Object{
+			dataset,
+			alluxioruntime,
+			mockedObjects.MasterSts,
+			mockedObjects.WorkerSts,
+			mockedObjects.FuseDs,
 		}
+	})
 
-		var datasets datav1alpha1.DatasetList
-		err = client.List(context.TODO(), &datasets)
-		if err != nil {
-			t.Errorf("fail to list the datasets with error %v", err)
-			return
-		}
-		if !reflect.DeepEqual(datasets.Items[0].Status.Phase, test.expectedResult.Status.Phase) ||
-			!reflect.DeepEqual(datasets.Items[0].Status.CacheStates, test.expectedResult.Status.CacheStates) ||
-			!reflect.DeepEqual(datasets.Items[0].Status.HCFSStatus, test.expectedResult.Status.HCFSStatus) {
-			t.Errorf("fail to exec the function with error %v", err)
-			return
-		}
-	}
-}
+	JustBeforeEach(func() {
+		client = fake.NewFakeClientWithScheme(datav1alpha1.UnitTestScheme, resources...)
+		engine.Client = client
+	})
 
-func TestBindToDataset(t *testing.T) {
-	testDatasetInputs := []*datav1alpha1.Dataset{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.DatasetSpec{},
-			Status: datav1alpha1.DatasetStatus{
-				HCFSStatus: &datav1alpha1.HCFSStatus{
-					Endpoint:                    "test Endpoint",
-					UnderlayerFileSystemVersion: "Underlayer HCFS Compatible Version",
-				},
-			},
-		},
-	}
-	testObjs := []runtime.Object{}
-	for _, datasetInput := range testDatasetInputs {
-		testObjs = append(testObjs, datasetInput.DeepCopy())
-	}
+	Describe("Test AlluxioEngine.UpdateCacheOfDataset()", func() {
+		When("everything works as expected", func() {
+			BeforeEach(func() {
+				alluxioruntime.Status.CacheStates = map[common.CacheStateName]string{
+					common.Cached:           "42.00GiB",
+					common.CacheCapacity:    "100.00GiB",
+					common.CacheHitRatio:    "95%",
+					common.CachedPercentage: "100.0%",
+					common.LocalHitRatio:    "60.0%",
+					common.RemoteHitRatio:   "40.0%",
+				}
+			})
 
-	testRuntimeInputs := []*datav1alpha1.AlluxioRuntime{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.AlluxioRuntimeSpec{},
-			Status: datav1alpha1.RuntimeStatus{
-				CacheStates: map[common.CacheStateName]string{
-					common.Cached: "true",
-				},
-			},
-		},
-	}
-	for _, runtimeInput := range testRuntimeInputs {
-		testObjs = append(testObjs, runtimeInput.DeepCopy())
-	}
-	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+			It("should update cache status of dataset", func() {
+				err := engine.UpdateCacheOfDataset()
+				Expect(err).To(BeNil())
 
-	engine := &AlluxioEngine{
-		Client:    client,
-		Log:       fake.NullLogger(),
-		name:      "hbase",
-		namespace: "fluid",
-		runtime:   testRuntimeInputs[0],
-	}
+				datasetToCheck, err := utils.GetDataset(client, dataset.Name, dataset.Namespace)
+				Expect(err).To(BeNil())
+				Expect(datasetToCheck.Status.CacheStates).To(Equal(alluxioruntime.Status.CacheStates))
+			})
+		})
+	})
 
-	var expectedResult = datav1alpha1.Dataset{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase",
-			Namespace: "fluid",
-		},
-		Status: datav1alpha1.DatasetStatus{
-			Phase: datav1alpha1.BoundDatasetPhase,
-			CacheStates: map[common.CacheStateName]string{
-				common.Cached: "true",
-			},
-			HCFSStatus: &datav1alpha1.HCFSStatus{
-				Endpoint:                    "test Endpoint",
-				UnderlayerFileSystemVersion: "Underlayer HCFS Compatible Version",
-			},
-		},
-	}
-	err := engine.BindToDataset()
-	if err != nil {
-		t.Errorf("fail to exec UpdateCacheOfDataset with error %v", err)
-		return
-	}
+	Describe("Test AlluxioEngine.UpdateDatasetStatus()", func() {
+		When("Dataset's phase transit from NotBound to Bound", func() {
+			BeforeEach(func() {
+				dataset.Status.Phase = datav1alpha1.NotBoundDatasetPhase
+			})
+			It("should update dataset's phase to Bound", func() {
+				patch := gomonkey.ApplyMethodFunc(engine, "GetHCFSStatus", func() (*datav1alpha1.HCFSStatus, error) {
+					return &datav1alpha1.HCFSStatus{
+						Endpoint:                    "dummy-endpoint",
+						UnderlayerFileSystemVersion: "dummy-version-v1.0.0",
+					}, nil
+				})
+				defer patch.Reset()
 
-	var datasets datav1alpha1.DatasetList
-	err = client.List(context.TODO(), &datasets)
-	if err != nil {
-		t.Errorf("fail to list the datasets with error %v", err)
-		return
-	}
-	if !reflect.DeepEqual(datasets.Items[0].Status.Phase, expectedResult.Status.Phase) ||
-		!reflect.DeepEqual(datasets.Items[0].Status.CacheStates, expectedResult.Status.CacheStates) ||
-		!reflect.DeepEqual(datasets.Items[0].Status.HCFSStatus, expectedResult.Status.HCFSStatus) {
-		t.Errorf("fail to exec the function with error %v", err)
-		return
-	}
-}
+				err := engine.UpdateDatasetStatus(datav1alpha1.BoundDatasetPhase)
+				Expect(err).To(BeNil())
+
+				datasetToCheck, err := utils.GetDataset(client, dataset.Name, dataset.Namespace)
+				Expect(err).To(BeNil())
+				Expect(datasetToCheck.Status.Phase).To(Equal(datav1alpha1.BoundDatasetPhase))
+				Expect(datasetToCheck.Status.Mounts).To(Equal(dataset.Spec.Mounts))
+				Expect(datasetToCheck.Status.Runtimes).To(HaveLen(1))
+				Expect(datasetToCheck.Status.Runtimes[0]).To(Equal(datav1alpha1.Runtime{
+					Name:           alluxioruntime.Name,
+					Namespace:      alluxioruntime.Namespace,
+					Category:       common.AccelerateCategory,
+					Type:           common.AlluxioRuntime,
+					MasterReplicas: alluxioruntime.Spec.Master.Replicas,
+				}))
+
+			})
+		})
+
+		When("Dataset's phase transit from Bound to Failed", func() {
+			BeforeEach(func() {
+				dataset.Status.Phase = datav1alpha1.BoundDatasetPhase
+				dataset.Status.HCFSStatus = &datav1alpha1.HCFSStatus{
+					Endpoint:                    "dummy-endpoint",
+					UnderlayerFileSystemVersion: "dummy-version-v1.0.0",
+				}
+			})
+			It("should update dataset's phase to Failed", func() {
+				err := engine.UpdateDatasetStatus(datav1alpha1.FailedDatasetPhase)
+				Expect(err).To(BeNil())
+
+				datasetToCheck, err := utils.GetDataset(client, dataset.Name, dataset.Namespace)
+				Expect(err).To(BeNil())
+				Expect(datasetToCheck.Status.Phase).To(Equal(datav1alpha1.FailedDatasetPhase))
+				Expect(datasetToCheck.Status.Conditions).To(HaveLen(1))
+				Expect(datasetToCheck.Status.Conditions[0].Message).To(Equal("The ddc runtime is not ready."))
+			})
+		})
+
+		When("Dataset's phase transit from Bound to NotBound phase", func() {
+			BeforeEach(func() {
+				dataset.Status.Phase = datav1alpha1.BoundDatasetPhase
+				dataset.Status.HCFSStatus = &datav1alpha1.HCFSStatus{
+					Endpoint:                    "dummy-endpoint",
+					UnderlayerFileSystemVersion: "dummy-version-v1.0.0",
+				}
+			})
+
+			It("should update dataset's phase to NotBound phase", func() {
+				err := engine.UpdateDatasetStatus(datav1alpha1.NotBoundDatasetPhase)
+				Expect(err).To(BeNil())
+
+				datasetToCheck, err := utils.GetDataset(client, dataset.Name, dataset.Namespace)
+				Expect(err).To(BeNil())
+				Expect(datasetToCheck.Status.Phase).To(Equal(datav1alpha1.NotBoundDatasetPhase))
+				Expect(datasetToCheck.Status.Conditions).To(HaveLen(1))
+				Expect(datasetToCheck.Status.Conditions[0].Message).To(Equal("The ddc runtime is unknown."))
+			})
+		})
+	})
+
+	Describe("Test AlluxioEngine.BindToDataset()", func() {
+		When("Dataset's phase is NotBound", func() {
+			BeforeEach(func() {
+				dataset.Status.Phase = datav1alpha1.NotBoundDatasetPhase
+			})
+			It("should update dataset's phase to Bound", func() {
+				patch := gomonkey.ApplyMethodFunc(engine, "GetHCFSStatus", func() (*datav1alpha1.HCFSStatus, error) {
+					return &datav1alpha1.HCFSStatus{
+						Endpoint:                    "dummy-endpoint",
+						UnderlayerFileSystemVersion: "dummy-version-v1.0.0",
+					}, nil
+				})
+				defer patch.Reset()
+
+				err := engine.UpdateDatasetStatus(datav1alpha1.BoundDatasetPhase)
+				Expect(err).To(BeNil())
+
+				datasetToCheck, err := utils.GetDataset(client, dataset.Name, dataset.Namespace)
+				Expect(err).To(BeNil())
+				Expect(datasetToCheck.Status.Phase).To(Equal(datav1alpha1.BoundDatasetPhase))
+				Expect(datasetToCheck.Status.Mounts).To(Equal(dataset.Spec.Mounts))
+				Expect(datasetToCheck.Status.Runtimes).To(HaveLen(1))
+				Expect(datasetToCheck.Status.Runtimes[0]).To(Equal(datav1alpha1.Runtime{
+					Name:           alluxioruntime.Name,
+					Namespace:      alluxioruntime.Namespace,
+					Category:       common.AccelerateCategory,
+					Type:           common.AlluxioRuntime,
+					MasterReplicas: alluxioruntime.Spec.Master.Replicas,
+				}))
+
+			})
+		})
+	})
+})

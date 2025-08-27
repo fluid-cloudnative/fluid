@@ -14,205 +14,247 @@ limitations under the License.
 package alluxio
 
 import (
-	"reflect"
-	"testing"
-
-	. "github.com/agiledragon/gomonkey/v2"
+	"github.com/agiledragon/gomonkey/v2"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
+var _ = Describe("AlluxioEngine Runtime Status Tests", Label("pkg.ddc.alluxio.status_test.go"), func() {
+	var (
+		dataset        *datav1alpha1.Dataset
+		alluxioruntime *datav1alpha1.AlluxioRuntime
+		engine         *AlluxioEngine
+		mockedObjects  mockedObjects
+		client         client.Client
+		resources      []runtime.Object
+	)
 
-	masterInputs := []*appsv1.StatefulSet{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hadoop-master",
-				Namespace: "fluid",
-			},
-			Spec: appsv1.StatefulSetSpec{
-				Replicas: ptr.To[int32](1),
-			},
-			Status: appsv1.StatefulSetStatus{
-				ReadyReplicas: 1,
-			},
-		}, {
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "deprecated-master",
-				Namespace: "fluid",
-			},
-			Status: appsv1.StatefulSetStatus{
-				ReadyReplicas: 1,
-			},
-		},
-	}
+	BeforeEach(func() {
+		dataset, alluxioruntime = mockFluidObjectsForTests(types.NamespacedName{Namespace: "fluid", Name: "hbase"})
+		engine = mockAlluxioEngineForTests(dataset, alluxioruntime)
+		mockedObjects = mockAlluxioObjectsForTests(dataset, alluxioruntime, engine)
+		resources = []runtime.Object{
+			dataset,
+			alluxioruntime,
+			mockedObjects.MasterSts,
+			mockedObjects.WorkerSts,
+			mockedObjects.FuseDs,
+			mockedObjects.PersistentVolumeClaim,
+			mockedObjects.PersistentVolume,
+		}
+	})
 
-	var deprecatedWorkerInputs = []appsv1.DaemonSet{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "deprecated-worker",
-				Namespace: "fluid",
-			},
-		},
-	}
+	// JustBeforeEach is guaranteed to run after every BeforeEach()
+	// So it's easy to modify resources' specs with an extra BeforeEach()
+	JustBeforeEach(func() {
+		client = fake.NewFakeClientWithScheme(datav1alpha1.UnitTestScheme, resources...)
+		engine.Client = client
+	})
 
-	var workerInputs = []appsv1.StatefulSet{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hadoop-worker",
-				Namespace: "fluid",
-			},
-			Spec: appsv1.StatefulSetSpec{
-				Replicas: ptr.To[int32](3),
-			},
-			Status: appsv1.StatefulSetStatus{
-				Replicas:      3,
-				ReadyReplicas: 2,
-			},
-		},
-	}
+	Describe("Test AlluxioEngine.CheckAndUpdateRuntimeStatus()", func() {
+		When("Alluxio master and worker are all ready", func() {
+			BeforeEach(func() {
+				mockedObjects.MasterSts.Spec.Replicas = ptr.To[int32](1)
+				mockedObjects.MasterSts.Status.Replicas = 1
+				mockedObjects.MasterSts.Status.ReadyReplicas = 1
 
-	runtimeInputs := []*datav1alpha1.AlluxioRuntime{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hadoop",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.AlluxioRuntimeSpec{
-				Replicas: 2,
-			},
-			Status: datav1alpha1.RuntimeStatus{
-				CurrentWorkerNumberScheduled: 3,
-				CurrentMasterNumberScheduled: 3,
-				CurrentFuseNumberScheduled:   3,
-				DesiredMasterNumberScheduled: 2,
-				DesiredWorkerNumberScheduled: 3,
-				DesiredFuseNumberScheduled:   2,
-				Conditions: []datav1alpha1.RuntimeCondition{
-					utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersInitialized, datav1alpha1.RuntimeWorkersInitializedReason, "The workers are initialized.", v1.ConditionTrue),
-					utils.NewRuntimeCondition(datav1alpha1.RuntimeFusesInitialized, datav1alpha1.RuntimeFusesInitializedReason, "The fuses are initialized.", v1.ConditionTrue),
-				},
-				WorkerPhase: "NotReady",
-				FusePhase:   "NotReady",
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "obj",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.AlluxioRuntimeSpec{
-				Replicas: 2,
-			},
-			Status: datav1alpha1.RuntimeStatus{
-				CurrentWorkerNumberScheduled: 2,
-				CurrentMasterNumberScheduled: 2,
-				CurrentFuseNumberScheduled:   2,
-				DesiredMasterNumberScheduled: 2,
-				DesiredWorkerNumberScheduled: 2,
-				DesiredFuseNumberScheduled:   2,
-				WorkerPhase:                  "NotReady",
-				FusePhase:                    "NotReady",
-			},
-		}, {
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "deprecated",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.AlluxioRuntimeSpec{
-				Replicas: 2,
-			},
-			Status: datav1alpha1.RuntimeStatus{
-				CurrentWorkerNumberScheduled: 2,
-				CurrentMasterNumberScheduled: 2,
-				CurrentFuseNumberScheduled:   2,
-				DesiredMasterNumberScheduled: 2,
-				DesiredWorkerNumberScheduled: 2,
-				DesiredFuseNumberScheduled:   2,
-				WorkerPhase:                  "NotReady",
-				FusePhase:                    "NotReady",
-			},
-		},
-	}
-
-	objs := []runtime.Object{}
-	for _, masterInput := range masterInputs {
-		objs = append(objs, masterInput.DeepCopy())
-	}
-
-	for _, workerInput := range workerInputs {
-		objs = append(objs, workerInput.DeepCopy())
-	}
-
-	for _, runtimeInput := range runtimeInputs {
-		objs = append(objs, runtimeInput.DeepCopy())
-	}
-
-	for _, deprecatedWorkerInput := range deprecatedWorkerInputs {
-		objs = append(objs, deprecatedWorkerInput.DeepCopy())
-	}
-	fakeClient := fake.NewFakeClientWithScheme(testScheme, objs...)
-
-	testCases := []struct {
-		testName   string
-		name       string
-		namespace  string
-		isErr      bool
-		deprecated bool
-		wanted     bool
-	}{
-		{testName: "deprecated",
-			name:       "deprecated",
-			namespace:  "fluid",
-			deprecated: true,
-		}, {
-			testName:  "hadoop",
-			name:      "hadoop",
-			namespace: "fluid",
-			wanted:    true,
-		},
-	}
-
-	for _, testCase := range testCases {
-		engine := newAlluxioEngineREP(fakeClient, testCase.name, testCase.namespace)
-
-		patch1 := ApplyMethod(reflect.TypeOf(engine), "GetReportSummary",
-			func(_ *AlluxioEngine) (string, error) {
-				summary := mockAlluxioReportSummary()
-				return summary, nil
+				alluxioruntime.Spec.Replicas = 3
+				mockedObjects.WorkerSts.Spec.Replicas = ptr.To[int32](3)
+				mockedObjects.WorkerSts.Status.Replicas = 3
+				mockedObjects.WorkerSts.Status.ReadyReplicas = 3
+				mockedObjects.WorkerSts.Status.CurrentReplicas = 3
 			})
-		defer patch1.Reset()
 
-		patch2 := ApplyFunc(utils.GetDataset,
-			func(_ client.Reader, _ string, _ string) (*datav1alpha1.Dataset, error) {
-				d := &datav1alpha1.Dataset{
-					Status: datav1alpha1.DatasetStatus{
-						UfsTotal: "19.07MiB",
+			It("should return ready and successfully update runtime status", func() {
+				mockedCacheStates := cacheStates{
+					cacheCapacity:    "18.00GiB",
+					cached:           "4.20GiB",
+					cachedPercentage: "100.0%",
+					cacheHitStates: cacheHitStates{
+						cacheHitRatio:  "100.0%",
+						localHitRatio:  "33.3%",
+						remoteHitRatio: "66.7%",
+
+						localThroughputRatio:  "30.0%",
+						remoteThroughputRatio: "70.0%",
+						cacheThroughputRatio:  "100.0%",
+
+						bytesReadLocal:  int64(1 << 30),
+						bytesReadRemote: int64(2 << 30),
+						bytesReadUfsAll: int64(1 << 30),
 					},
 				}
-				return d, nil
-			})
-		defer patch2.Reset()
+				patch := gomonkey.ApplyPrivateMethod(engine, "queryCacheStatus", func() (cacheStates, error) {
+					return mockedCacheStates, nil
+				})
+				defer patch.Reset()
 
-		patch3 := ApplyMethod(reflect.TypeOf(engine), "GetCacheHitStates",
-			func(_ *AlluxioEngine) cacheHitStates {
-				return cacheHitStates{
-					bytesReadLocal:  20310917,
-					bytesReadUfsAll: 32243712,
-				}
-			})
-		defer patch3.Reset()
+				ready, err := engine.CheckAndUpdateRuntimeStatus()
+				Expect(err).To(BeNil())
+				Expect(ready).To(BeTrue())
 
-		ready, err := engine.CheckAndUpdateRuntimeStatus()
-		if err != nil || ready != testCase.wanted {
-			t.Errorf("testcase %s Failed due to %v", testCase.testName, err)
-		}
-	}
-}
+				updatedRuntime, err := utils.GetAlluxioRuntime(engine.Client, engine.name, engine.namespace)
+				Expect(err).To(BeNil())
+				Expect(updatedRuntime.Status.MasterPhase).To(Equal(datav1alpha1.RuntimePhaseReady))
+				Expect(updatedRuntime.Status.CurrentMasterNumberScheduled).To(Equal(int32(1)))
+				Expect(updatedRuntime.Status.MasterNumberReady).To(Equal(int32(1)))
+				Expect(updatedRuntime.Status.WorkerPhase).To(Equal(datav1alpha1.RuntimePhaseReady))
+				Expect(updatedRuntime.Status.WorkerNumberReady).To(Equal(int32(3)))
+				Expect(updatedRuntime.Status.WorkerNumberAvailable).To(Equal(int32(3)))
+				Expect(updatedRuntime.Status.WorkerNumberUnavailable).To(Equal(int32(0)))
+
+				Expect(updatedRuntime.Status.CacheStates).To(HaveKeyWithValue(common.Cached, mockedCacheStates.cached))
+				Expect(updatedRuntime.Status.CacheStates).To(HaveKeyWithValue(common.CacheCapacity, mockedCacheStates.cacheCapacity))
+				Expect(updatedRuntime.Status.CacheStates).To(HaveKeyWithValue(common.CachedPercentage, mockedCacheStates.cachedPercentage))
+				Expect(updatedRuntime.Status.CacheStates).To(HaveKeyWithValue(common.CacheHitRatio, mockedCacheStates.cacheHitStates.cacheHitRatio))
+				Expect(updatedRuntime.Status.CacheStates).To(HaveKeyWithValue(common.LocalHitRatio, mockedCacheStates.cacheHitStates.localHitRatio))
+				Expect(updatedRuntime.Status.CacheStates).To(HaveKeyWithValue(common.RemoteHitRatio, mockedCacheStates.cacheHitStates.remoteHitRatio))
+				Expect(updatedRuntime.Status.CacheStates).To(HaveKeyWithValue(common.CacheThroughputRatio, mockedCacheStates.cacheHitStates.cacheThroughputRatio))
+				Expect(updatedRuntime.Status.CacheStates).To(HaveKeyWithValue(common.LocalThroughputRatio, mockedCacheStates.cacheHitStates.localThroughputRatio))
+				Expect(updatedRuntime.Status.CacheStates).To(HaveKeyWithValue(common.RemoteThroughputRatio, mockedCacheStates.cacheHitStates.remoteThroughputRatio))
+			})
+		})
+
+		When("alluxio master is ready but alluxio worker is partial ready", func() {
+			BeforeEach(func() {
+				mockedObjects.MasterSts.Spec.Replicas = ptr.To[int32](1)
+				mockedObjects.MasterSts.Status.ReadyReplicas = 1
+
+				alluxioruntime.Spec.Replicas = 3
+				mockedObjects.WorkerSts.Spec.Replicas = ptr.To[int32](3)
+				mockedObjects.WorkerSts.Status.ReadyReplicas = 2
+				mockedObjects.WorkerSts.Status.CurrentReplicas = 2
+			})
+
+			It("should return ready and runtime.status.workerPhase should be set to partial ready", func() {
+				patch := gomonkey.ApplyPrivateMethod(engine, "queryCacheStatus", func() (cacheStates, error) {
+					return cacheStates{}, nil
+				})
+				defer patch.Reset()
+				ready, err := engine.CheckAndUpdateRuntimeStatus()
+				Expect(err).To(BeNil())
+				Expect(ready).To(BeTrue())
+
+				updatedRuntime, err := utils.GetAlluxioRuntime(engine.Client, engine.name, engine.namespace)
+				Expect(err).To(BeNil())
+				Expect(updatedRuntime.Status.MasterPhase).To(Equal(datav1alpha1.RuntimePhaseReady))
+				Expect(updatedRuntime.Status.MasterNumberReady).To(Equal(int32(1)))
+				Expect(updatedRuntime.Status.WorkerPhase).To(Equal(datav1alpha1.RuntimePhasePartialReady))
+				Expect(updatedRuntime.Status.WorkerNumberReady).To(Equal(int32(2)))
+				Expect(updatedRuntime.Status.WorkerNumberAvailable).To(Equal(int32(2)))
+				Expect(updatedRuntime.Status.WorkerNumberUnavailable).To(Equal(int32(1)))
+			})
+		})
+	})
+
+	When("master is not ready", func() {
+		BeforeEach(func() {
+			mockedObjects.MasterSts.Spec.Replicas = ptr.To[int32](1)
+			mockedObjects.MasterSts.Status.ReadyReplicas = 0
+		})
+
+		It("should update master phase in runtime status to notReady and return notReady", func() {
+			patch := gomonkey.ApplyPrivateMethod(engine, "queryCacheStatus", func() (cacheStates, error) {
+				return cacheStates{}, nil
+			})
+			defer patch.Reset()
+
+			ready, err := engine.CheckAndUpdateRuntimeStatus()
+			Expect(err).To(BeNil())
+			Expect(ready).To(BeFalse())
+
+			updatedRuntime, err := utils.GetAlluxioRuntime(engine.Client, engine.name, engine.namespace)
+			Expect(err).To(BeNil())
+			Expect(updatedRuntime.Status.MasterPhase).To(Equal(datav1alpha1.RuntimePhaseNotReady))
+		})
+	})
+
+	When("worker is not ready", func() {
+		BeforeEach(func() {
+			mockedObjects.MasterSts.Spec.Replicas = ptr.To[int32](1)
+			mockedObjects.MasterSts.Status.ReadyReplicas = 1
+			mockedObjects.WorkerSts.Spec.Replicas = ptr.To[int32](3)
+			mockedObjects.WorkerSts.Status.ReadyReplicas = 0
+		})
+
+		It("should update worker phase in runtime status to notReady and return notReady", func() {
+			patch := gomonkey.ApplyPrivateMethod(engine, "queryCacheStatus", func() (cacheStates, error) {
+				return cacheStates{}, nil
+			})
+			defer patch.Reset()
+			ready, err := engine.CheckAndUpdateRuntimeStatus()
+			Expect(err).To(BeNil())
+			Expect(ready).To(BeFalse())
+
+			updatedRuntime, err := utils.GetAlluxioRuntime(engine.Client, engine.name, engine.namespace)
+			Expect(err).To(BeNil())
+			Expect(updatedRuntime.Status.WorkerPhase).To(Equal(datav1alpha1.RuntimePhaseNotReady))
+		})
+	})
+
+	When("the runtime has been set non-nil node affinity", func() {
+		BeforeEach(func() {
+			mockedObjects.MasterSts.Spec.Replicas = ptr.To[int32](1)
+			mockedObjects.MasterSts.Status.ReadyReplicas = 1
+			mockedObjects.WorkerSts.Spec.Replicas = ptr.To[int32](3)
+			mockedObjects.WorkerSts.Status.ReadyReplicas = 3
+			mockedObjects.WorkerSts.Spec.Template.Spec.NodeSelector = map[string]string{
+				"test-node-selector": "value1",
+			}
+
+			mockedObjects.WorkerSts.Spec.Template.Spec.Affinity = &corev1.Affinity{
+				NodeAffinity: &corev1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+						NodeSelectorTerms: []corev1.NodeSelectorTerm{
+							{
+								MatchExpressions: []corev1.NodeSelectorRequirement{
+									{
+										Key:      "test-node-affinity",
+										Operator: corev1.NodeSelectorOpIn,
+										Values:   []string{"value2"},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+		})
+
+		It("should update node affinity info to runtime status", func() {
+			patch := gomonkey.ApplyPrivateMethod(engine, "queryCacheStatus", func() (cacheStates, error) {
+				return cacheStates{}, nil
+			})
+			defer patch.Reset()
+			ready, err := engine.CheckAndUpdateRuntimeStatus()
+			Expect(err).To(BeNil())
+			Expect(ready).To(BeTrue())
+
+			updatedRuntime, err := utils.GetAlluxioRuntime(engine.Client, engine.name, engine.namespace)
+			Expect(err).To(BeNil())
+			Expect(updatedRuntime.Status.CacheAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions).To(ContainElements(
+				corev1.NodeSelectorRequirement{
+					Key:      "test-node-affinity",
+					Operator: corev1.NodeSelectorOpIn,
+					Values:   []string{"value2"},
+				},
+				corev1.NodeSelectorRequirement{
+					Key:      "test-node-selector",
+					Operator: corev1.NodeSelectorOpIn,
+					Values:   []string{"value1"},
+				},
+			))
+
+		})
+	})
+})

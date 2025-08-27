@@ -17,185 +17,247 @@ limitations under the License.
 package alluxio
 
 import (
-	"reflect"
 	"testing"
+	"time"
 
-	. "github.com/agiledragon/gomonkey/v2"
+	"github.com/agiledragon/gomonkey/v2"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/go-logr/logr"
-	. "github.com/smartystreets/goconvey/convey"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"k8s.io/utils/ptr"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-// TestQueryCacheStatus is a unit test for the queryCacheStatus function.
-// It verifies the correctness of the function under different dataset conditions.
-func TestQueryCacheStatus(t *testing.T) {
-	Convey("test queryCacheStatus ", t, func() {
-		Convey("with dataset UFSTotal is not empty ", func() {
-			var engine *AlluxioEngine
-			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetReportSummary",
-				func(_ *AlluxioEngine) (string, error) {
-					summary := mockAlluxioReportSummary()
+var _ = Describe("AlluxioEngine Cache related tests", Label("pkg.ddc.alluxio.cache_test.go"), func() {
+	var (
+		dataset        *datav1alpha1.Dataset
+		alluxioruntime *datav1alpha1.AlluxioRuntime
+		engine         *AlluxioEngine
+		mockedObjects  mockedObjects
+		client         client.Client
+		resources      []runtime.Object
+	)
+	BeforeEach(func() {
+		dataset, alluxioruntime = mockFluidObjectsForTests(types.NamespacedName{Namespace: "fluid", Name: "hbase"})
+		engine = mockAlluxioEngineForTests(dataset, alluxioruntime)
+		mockedObjects = mockAlluxioObjectsForTests(dataset, alluxioruntime, engine)
+		resources = []runtime.Object{
+			dataset,
+			alluxioruntime,
+			mockedObjects.MasterSts,
+			mockedObjects.WorkerSts,
+			mockedObjects.FuseDs,
+		}
+	})
+
+	// JustBeforeEach is guaranteed to run after every BeforeEach()
+	// So it's easy to modify resources' specs with an extra BeforeEach()
+	JustBeforeEach(func() {
+		client = fake.NewFakeClientWithScheme(datav1alpha1.UnitTestScheme, resources...)
+		engine.runtimeInfo.SetFuseName(engine.getFuseName())
+		engine.Client = client
+	})
+
+	Describe("Test AlluxioEngine.queryCacheStatus()", func() {
+
+		When("dataset's ufs total size is not empty", func() {
+			BeforeEach(func() {
+				dataset.Status.UfsTotal = "16.16MiB"
+			})
+
+			Context("and cached size is 0B", func() {
+				It("should successfully query cache status and cached percentage should be 0%", func() {
+					patch1 := gomonkey.ApplyMethodFunc(engine, "GetReportSummary", func() (string, error) {
+						summary := mockAlluxioReportSummary("0B", "19.07MB")
+						return summary, nil
+					})
+					defer patch1.Reset()
+					patch2 := gomonkey.ApplyMethodFunc(engine, "GetCacheHitStates", func() cacheHitStates {
+						return cacheHitStates{
+							bytesReadLocal:  12345678,
+							bytesReadUfsAll: 87654321,
+						}
+					})
+					defer patch2.Reset()
+
+					cacheStates, err := engine.queryCacheStatus()
+					Expect(err).To(BeNil())
+					Expect(cacheStates.cached).To(Equal("0.00B"))
+					Expect(cacheStates.cacheCapacity).To(Equal("19.07MiB"))
+					Expect(cacheStates.cachedPercentage).To(Equal("0.0%"))
+					Expect(cacheStates.cacheHitStates.bytesReadLocal).To(Equal(int64(12345678)))
+					Expect(cacheStates.cacheHitStates.bytesReadUfsAll).To(Equal(int64(87654321)))
+				})
+			})
+
+			Context("and cache size is half of the ufs total size", func() {
+				It("should successfully query cache status and cached percentage should be 50%", func() {
+					patch1 := gomonkey.ApplyMethodFunc(engine, "GetReportSummary", func() (string, error) {
+						summary := mockAlluxioReportSummary("8.08MB", "19.07MB")
+						return summary, nil
+					})
+					defer patch1.Reset()
+					patch2 := gomonkey.ApplyMethodFunc(engine, "GetCacheHitStates", func() cacheHitStates {
+						return cacheHitStates{
+							bytesReadLocal:  12345678,
+							bytesReadUfsAll: 87654321,
+						}
+					})
+					defer patch2.Reset()
+
+					cacheStates, err := engine.queryCacheStatus()
+					Expect(err).To(BeNil())
+					Expect(cacheStates.cached).To(Equal("8.08MiB"))
+					Expect(cacheStates.cacheCapacity).To(Equal("19.07MiB"))
+					Expect(cacheStates.cachedPercentage).To(Equal("50.0%"))
+					Expect(cacheStates.cacheHitStates.bytesReadLocal).To(Equal(int64(12345678)))
+					Expect(cacheStates.cacheHitStates.bytesReadUfsAll).To(Equal(int64(87654321)))
+				})
+			})
+		})
+
+		When("dataset's ufs total size is [Calculating]", func() {
+			BeforeEach(func() {
+				dataset.Status.UfsTotal = metadataSyncNotDoneMsg
+			})
+
+			It("should successfully query cache status and cached percentage is empty", func() {
+				patch1 := gomonkey.ApplyMethodFunc(engine, "GetReportSummary", func() (string, error) {
+					summary := mockAlluxioReportSummary("0B", "19.07MB")
 					return summary, nil
 				})
-			defer patch1.Reset()
-
-			patch2 := ApplyFunc(utils.GetDataset,
-				func(_ client.Reader, _ string, _ string) (*datav1alpha1.Dataset, error) {
-					d := &datav1alpha1.Dataset{
-						Status: datav1alpha1.DatasetStatus{
-							UfsTotal: "52.18MiB",
-						},
-					}
-					return d, nil
-				})
-			defer patch2.Reset()
-
-			patch3 := ApplyMethod(reflect.TypeOf(engine), "GetCacheHitStates",
-				func(_ *AlluxioEngine) cacheHitStates {
+				defer patch1.Reset()
+				patch2 := gomonkey.ApplyMethodFunc(engine, "GetCacheHitStates", func() cacheHitStates {
 					return cacheHitStates{
-						bytesReadLocal:  20310917,
-						bytesReadUfsAll: 32243712,
+						bytesReadLocal:  12345678,
+						bytesReadUfsAll: 87654321,
 					}
 				})
-			defer patch3.Reset()
+				defer patch2.Reset()
 
-			e := &AlluxioEngine{}
-			got, err := e.queryCacheStatus()
-			want := cacheStates{
-				cacheCapacity:    "19.07MiB",
-				cached:           "0.00B",
-				cachedPercentage: "0.0%",
-				cacheHitStates: cacheHitStates{
-					bytesReadLocal:  20310917,
-					bytesReadUfsAll: 32243712,
-				},
-			}
-
-			So(got, ShouldResemble, want)
-			So(err, ShouldEqual, nil)
+				cacheStates, err := engine.queryCacheStatus()
+				Expect(err).To(BeNil())
+				Expect(cacheStates.cachedPercentage).To(HaveLen(0))
+			})
 		})
 
-		Convey("with dataset UFSTotal is: [Calculating]", func() {
-			var engine *AlluxioEngine
-			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetReportSummary",
-				func(_ *AlluxioEngine) (string, error) {
-					summary := mockAlluxioReportSummary()
+		When("dataset's ufs total size is empty", func() {
+			BeforeEach(func() {
+				dataset.Status.UfsTotal = ""
+			})
+
+			It("should successfully query cache status and cached percentage is empty", func() {
+				patch1 := gomonkey.ApplyMethodFunc(engine, "GetReportSummary", func() (string, error) {
+					summary := mockAlluxioReportSummary("0B", "19.07MB")
 					return summary, nil
 				})
-			defer patch1.Reset()
-
-			patch2 := ApplyFunc(utils.GetDataset,
-				func(_ client.Reader, _ string, _ string) (*datav1alpha1.Dataset, error) {
-					d := &datav1alpha1.Dataset{
-						Status: datav1alpha1.DatasetStatus{
-							UfsTotal: "[Calculating]",
-						},
+				defer patch1.Reset()
+				patch2 := gomonkey.ApplyMethodFunc(engine, "GetCacheHitStates", func() cacheHitStates {
+					return cacheHitStates{
+						bytesReadLocal:  12345678,
+						bytesReadUfsAll: 87654321,
 					}
-					return d, nil
 				})
-			defer patch2.Reset()
+				defer patch2.Reset()
 
-			patch3 := ApplyMethod(reflect.TypeOf(engine), "GetCacheHitStates",
-				func(_ *AlluxioEngine) cacheHitStates {
-					return cacheHitStates{}
-				})
-			defer patch3.Reset()
-
-			e := &AlluxioEngine{}
-			got, err := e.queryCacheStatus()
-			want := cacheStates{
-				cacheCapacity: "19.07MiB",
-				cached:        "0.00B",
-			}
-
-			So(got, ShouldResemble, want)
-			So(err, ShouldEqual, nil)
-		})
-
-		Convey("with dataset UFSTotal is empty", func() {
-			var engine *AlluxioEngine
-			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetReportSummary",
-				func(_ *AlluxioEngine) (string, error) {
-					summary := mockAlluxioReportSummary()
-					return summary, nil
-				})
-			defer patch1.Reset()
-
-			patch2 := ApplyFunc(utils.GetDataset,
-				func(_ client.Reader, _ string, _ string) (*datav1alpha1.Dataset, error) {
-					d := &datav1alpha1.Dataset{
-						Status: datav1alpha1.DatasetStatus{
-							UfsTotal: "",
-						},
-					}
-					return d, nil
-				})
-			defer patch2.Reset()
-
-			patch3 := ApplyMethod(reflect.TypeOf(engine), "GetCacheHitStates",
-				func(_ *AlluxioEngine) cacheHitStates {
-					return cacheHitStates{}
-				})
-			defer patch3.Reset()
-
-			e := &AlluxioEngine{}
-			got, err := e.queryCacheStatus()
-			want := cacheStates{
-				cacheCapacity: "19.07MiB",
-				cached:        "0.00B",
-			}
-
-			So(got, ShouldResemble, want)
-			So(err, ShouldEqual, nil)
+				cacheStates, err := engine.queryCacheStatus()
+				Expect(err).To(BeNil())
+				Expect(cacheStates.cachedPercentage).To(HaveLen(0))
+			})
 		})
 	})
-}
 
-// TestGetCacheHitStates verifies that the GetCacheHitStates method of the AlluxioEngine
-// correctly extracts and maps the cache hit metrics from the engine's report.
-// It overrides the GetReportMetrics method to return a controlled report, then asserts that
-// the returned cache hit state contains the expected values for both local cache hits (bytesReadLocal)
-// and unified file system hits (bytesReadUfsAll), ensuring correct metric parsing.
-//
-// Parameters:
-//   - t (*testing.T): The testing context used for running and reporting the test.
-//
-// Returns:
-//   - None: This test function does not return a value but uses assertions to verify correctness.
-func TestGetCacheHitStates(t *testing.T) {
-	Convey("Test GetCacheHitStates ", t, func() {
-		Convey("with data ", func() {
-			var engine *AlluxioEngine
-			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetReportMetrics",
-				func(_ *AlluxioEngine) (string, error) {
-					r := mockAlluxioReportMetrics()
-					return r, nil
+	Describe("Test AlluxioEngine.GetCacheHitStates()", func() {
+		When("first time to call GetCacheHitStates()", func() {
+			BeforeEach(func() {
+				engine.lastCacheHitStates = nil
+			})
+
+			It("should parse the cache hit states and store it into lastCacheHitStates", func() {
+				patch1 := gomonkey.ApplyMethodFunc(engine, "GetReportMetrics", func() (string, error) {
+					return mockAlluxioReportMetrics(
+						"16.00MB",
+						"500KB/MIN",
+						"30.00MB",
+						"700KB/MIN",
+						"20.00MB",
+						"1.1MB/MIN"), nil
 				})
-			defer patch1.Reset()
+				defer patch1.Reset()
 
-			e := &AlluxioEngine{}
+				gotCacheHitStates := engine.GetCacheHitStates()
 
-			got := e.GetCacheHitStates()
-			want := cacheHitStates{
-				bytesReadLocal:  20310917,
-				bytesReadUfsAll: 32243712,
-			}
-			So(got.bytesReadLocal, ShouldEqual, want.bytesReadLocal)
-			So(got.bytesReadUfsAll, ShouldEqual, want.bytesReadUfsAll)
+				Expect(gotCacheHitStates.bytesReadLocal).To(Equal(int64(16 << 20) /*16.00MB*/))
+				Expect(gotCacheHitStates.bytesReadRemote).To(Equal(int64(30 << 20) /*30.00MB*/))
+				Expect(gotCacheHitStates.bytesReadUfsAll).To(Equal(int64(20 << 20) /*20.00MB*/))
+				Expect(engine.lastCacheHitStates).NotTo(BeNil())
+				// Expect(cacheHitStates.bytesReadLocal).To(Equal())
+			})
 		})
 
+		When("second time to call GetCacheHitStates", func() {
+			BeforeEach(func() {
+				engine.lastCacheHitStates = &cacheHitStates{
+					bytesReadLocal:  16 << 20,
+					bytesReadRemote: 30 << 20,
+					bytesReadUfsAll: 20 << 20,
+				}
+			})
+			Context("when interval between lastCacheHitStates and now is less than 1 minute", func() {
+				BeforeEach(func() {
+					engine.lastCacheHitStates.timestamp = time.Now().Add(-1 * time.Second)
+				})
+				It("should return lastCacheHitStates", func() {
+					gotCacheHitStates := engine.GetCacheHitStates()
+					Expect(gotCacheHitStates.bytesReadLocal).To(Equal(int64(16 << 20)))
+					Expect(gotCacheHitStates.bytesReadRemote).To(Equal(int64(30 << 20)))
+					Expect(gotCacheHitStates.bytesReadUfsAll).To(Equal(int64(20 << 20)))
+				})
+			})
+
+			Context("when interval between lastCacheHitStates and now is greater than 1 minute", func() {
+				BeforeEach(func() {
+					engine.lastCacheHitStates.timestamp = time.Now().Add(-2 * time.Minute)
+				})
+				It("should calculate cache hit states", func() {
+					patch1 := gomonkey.ApplyMethodFunc(engine, "GetReportMetrics", func() (string, error) {
+						return mockAlluxioReportMetrics(
+							"21.00MB", // 16.00MB + 5.00MB
+							"2.00MB/MIN",
+							"40.00MB", // 30.00MB + 10.00MB
+							"1.00MB/MIN",
+							"55.00MB", // 20.00MB + 35.00MB
+							"1.00MB/MIN"), nil
+					})
+					defer patch1.Reset()
+
+					gotCacheHitStates := engine.GetCacheHitStates()
+					Expect(gotCacheHitStates.bytesReadLocal).To(Equal(int64(21 << 20)))
+					Expect(gotCacheHitStates.bytesReadRemote).To(Equal(int64(40 << 20)))
+					Expect(gotCacheHitStates.bytesReadUfsAll).To(Equal(int64(55 << 20)))
+
+					Expect(gotCacheHitStates.cacheHitRatio).To(Equal("30.0%"))  // (5.00MB + 10.00MB) / (5.00MB + 10.00MB + 35.00MB)
+					Expect(gotCacheHitStates.localHitRatio).To(Equal("10.0%"))  // 5.00MB / (5.00MB + 10.00MB + 35.00MB)
+					Expect(gotCacheHitStates.remoteHitRatio).To(Equal("20.0%")) // 10.00MB / (5.00MB + 10.00MB + 35.00MB)
+
+					Expect(gotCacheHitStates.localThroughputRatio).To(Equal("50.0%"))  // 2.00MB/min / (2.00MB/min + 1.00MB/MIN + 1.00MB/MIN)
+					Expect(gotCacheHitStates.remoteThroughputRatio).To(Equal("25.0%")) // 1.00MB/min / (2.00MB/min + 1.00MB/MIN + 1.00MB/MIN)
+					Expect(gotCacheHitStates.cacheThroughputRatio).To(Equal("75.0%"))  // (1.00MB/min + 2.00MB/min) / (2.00MB/min + 1.00MB/MIN + 1.00MB/MIN)
+				})
+			})
+		})
 	})
-}
+})
 
 // TestPatchDatasetStatus verifies that the patchDatasetStatus method correctly calculates
 // and updates the cached data percentage in a Dataset's status. It runs multiple test cases
@@ -304,155 +366,6 @@ func TestInvokeCleanCache(t *testing.T) {
 			t.Errorf("test-name:%s want %t, got %t", testCase.name, testCase.isErr, isErr)
 		}
 	}
-}
-
-// $ alluxio fsadmin report summary
-func mockAlluxioReportSummary() string {
-	s := `Alluxio cluster summary: 
-	Master Address: 172.18.0.2:20000
-	Web Port: 20001
-	Rpc Port: 20000
-	Started: 06-29-2021 13:43:56:297
-	Uptime: 0 day(s), 0 hour(s), 4 minute(s), and 13 second(s)
-	Version: 2.3.1-SNAPSHOT
-	Safe Mode: false
-	Zookeeper Enabled: false
-	Live Workers: 1
-	Lost Workers: 0
-	Total Capacity: 19.07MB
-		Tier: MEM  Size: 19.07MB
-	Used Capacity: 0B
-		Tier: MEM  Size: 0B
-	Free Capacity: 19.07MB
-	`
-	return s
-}
-
-func mockAlluxioReportMetrics() string {
-	r := `Cluster.BytesReadAlluxio  (Type: COUNTER, Value: 0B)
-	Cluster.BytesReadAlluxioThroughput  (Type: GAUGE, Value: 0B/MIN)
-	Cluster.BytesReadDomain  (Type: COUNTER, Value: 0B)
-	Cluster.BytesReadDomainThroughput  (Type: GAUGE, Value: 0B/MIN)
-	Cluster.BytesReadLocal  (Type: COUNTER, Value: 19.37MB)
-	Cluster.BytesReadLocalThroughput  (Type: GAUGE, Value: 495.97KB/MIN)
-	Cluster.BytesReadPerUfs.UFS:s3:%2F%2Ffluid  (Type: COUNTER, Value: 30.75MB)
-	Cluster.BytesReadUfsAll  (Type: COUNTER, Value: 30.75MB)
-	Cluster.BytesReadUfsThroughput  (Type: GAUGE, Value: 787.17KB/MIN)
-	Cluster.BytesWrittenAlluxio  (Type: COUNTER, Value: 0B)
-	Cluster.BytesWrittenAlluxioThroughput  (Type: GAUGE, Value: 0B/MIN)
-	Cluster.BytesWrittenDomain  (Type: COUNTER, Value: 0B)
-	Cluster.BytesWrittenDomainThroughput  (Type: GAUGE, Value: 0B/MIN)
-	Cluster.BytesWrittenLocal  (Type: COUNTER, Value: 0B)
-	Cluster.BytesWrittenLocalThroughput  (Type: GAUGE, Value: 0B/MIN)
-	Cluster.BytesWrittenUfsAll  (Type: COUNTER, Value: 0B)
-	Cluster.BytesWrittenUfsThroughput  (Type: GAUGE, Value: 0B/MIN)
-	Cluster.CapacityFree  (Type: GAUGE, Value: 9,842,601)
-	Cluster.CapacityFreeTierHDD  (Type: GAUGE, Value: 0)
-	Cluster.CapacityFreeTierMEM  (Type: GAUGE, Value: 9,842,601)
-	Cluster.CapacityFreeTierSSD  (Type: GAUGE, Value: 0)
-	Cluster.CapacityTotal  (Type: GAUGE, Value: 20,000,000)
-	Cluster.CapacityTotalTierHDD  (Type: GAUGE, Value: 0)
-	Cluster.CapacityTotalTierMEM  (Type: GAUGE, Value: 20,000,000)
-	Cluster.CapacityTotalTierSSD  (Type: GAUGE, Value: 0)
-	Cluster.CapacityUsed  (Type: GAUGE, Value: 10,157,399)
-	Cluster.CapacityUsedTierHDD  (Type: GAUGE, Value: 0)
-	Cluster.CapacityUsedTierMEM  (Type: GAUGE, Value: 10,157,399)
-	Cluster.CapacityUsedTierSSD  (Type: GAUGE, Value: 0)
-	Cluster.RootUfsCapacityFree  (Type: GAUGE, Value: -1)
-	Cluster.RootUfsCapacityTotal  (Type: GAUGE, Value: -1)
-	Cluster.RootUfsCapacityUsed  (Type: GAUGE, Value: -1)
-	Cluster.Workers  (Type: GAUGE, Value: 1)
-	Master.CompleteFileOps  (Type: COUNTER, Value: 0)
-	Master.ConnectFromMaster.UFS:s3:%2F%2Ffluid.UFS_TYPE:s3  (Type: TIMER, Value: 0)
-	Master.Create.UFS:%2Fjournal%2FBlockMaster.UFS_TYPE:local  (Type: TIMER, Value: 1)
-	Master.Create.UFS:%2Fjournal%2FFileSystemMaster.UFS_TYPE:local  (Type: TIMER, Value: 1)
-	Master.Create.UFS:%2Fjournal%2FMetaMaster.UFS_TYPE:local  (Type: TIMER, Value: 1)
-	Master.CreateDirectoryOps  (Type: COUNTER, Value: 0)
-	Master.CreateFileOps  (Type: COUNTER, Value: 0)
-	Master.DeletePathOps  (Type: COUNTER, Value: 0)
-	Master.DirectoriesCreated  (Type: COUNTER, Value: 0)
-	Master.EdgeCacheSize  (Type: GAUGE, Value: 7)
-	Master.Exists.UFS:s3:%2F%2Ffluid.UFS_TYPE:s3  (Type: TIMER, Value: 2)
-	Master.FileBlockInfosGot  (Type: COUNTER, Value: 0)
-	Master.FileInfosGot  (Type: COUNTER, Value: 25)
-	Master.FilesCompleted  (Type: COUNTER, Value: 7)
-	Master.FilesCreated  (Type: COUNTER, Value: 7)
-	Master.FilesFreed  (Type: COUNTER, Value: 0)
-	Master.FilesPersisted  (Type: COUNTER, Value: 0)
-	Master.FilesPinned  (Type: GAUGE, Value: 0)
-	Master.FreeFileOps  (Type: COUNTER, Value: 0)
-	Master.GetAcl.UFS:s3:%2F%2Ffluid.UFS_TYPE:s3  (Type: TIMER, Value: 7)
-	Master.GetBlockInfo.User:root  (Type: TIMER, Value: 3)
-	Master.GetBlockMasterInfo.User:root  (Type: TIMER, Value: 173)
-	Master.GetConfigHash.User:root  (Type: TIMER, Value: 40)
-	Master.GetFileBlockInfoOps  (Type: COUNTER, Value: 0)
-	Master.GetFileInfoOps  (Type: COUNTER, Value: 9)
-	Master.GetFileLocations.User:root.UFS:s3:%2F%2Ffluid.UFS_TYPE:s3  (Type: TIMER, Value: 24)
-	Master.GetFingerprint.User:root.UFS:s3:%2F%2Ffluid.UFS_TYPE:s3  (Type: TIMER, Value: 1)
-	Master.GetMountTable.User:root  (Type: TIMER, Value: 2)
-	Master.GetNewBlockOps  (Type: COUNTER, Value: 0)
-	Master.GetSpace.UFS:s3:%2F%2Ffluid.UFS_TYPE:s3  (Type: TIMER, Value: 18)
-	Master.GetSpace.User:root.UFS:s3:%2F%2Ffluid.UFS_TYPE:s3  (Type: TIMER, Value: 103)
-	Master.GetStatus.User:root  (Type: TIMER, Value: 6)
-	Master.GetStatus.User:root.UFS:s3:%2F%2Ffluid.UFS_TYPE:s3  (Type: TIMER, Value: 3)
-	Master.GetStatusFailures.User:root.UFS:s3:%2F%2Ffluid.UFS_TYPE:s3  (Type: COUNTER, Value: 2)
-	Master.GetWorkerInfoList.User:root  (Type: TIMER, Value: 2)
-	Master.InodeCacheSize  (Type: GAUGE, Value: 8)
-	Master.JournalFlushTimer  (Type: TIMER, Value: 22)
-	Master.LastBackupEntriesCount  (Type: GAUGE, Value: -1)
-	Master.LastBackupRestoreCount  (Type: GAUGE, Value: -1)
-	Master.LastBackupRestoreTimeMs  (Type: GAUGE, Value: -1)
-	Master.LastBackupTimeMs  (Type: GAUGE, Value: -1)
-	Master.ListStatus.UFS:%2Fjournal%2FBlockMaster.UFS_TYPE:local  (Type: TIMER, Value: 63)
-	Master.ListStatus.UFS:%2Fjournal%2FFileSystemMaster.UFS_TYPE:local  (Type: TIMER, Value: 63)
-	Master.ListStatus.UFS:%2Fjournal%2FMetaMaster.UFS_TYPE:local  (Type: TIMER, Value: 63)
-	Master.ListStatus.UFS:%2Fjournal%2FMetricsMaster.UFS_TYPE:local  (Type: TIMER, Value: 63)
-	Master.ListStatus.UFS:%2Fjournal%2FTableMaster.UFS_TYPE:local  (Type: TIMER, Value: 63)
-	Master.ListStatus.User:root  (Type: TIMER, Value: 3)
-	Master.ListStatus.User:root.UFS:s3:%2F%2Ffluid.UFS_TYPE:s3  (Type: TIMER, Value: 1)
-	Master.ListingCacheSize  (Type: GAUGE, Value: 8)
-	Master.MountOps  (Type: COUNTER, Value: 0)
-	Master.NewBlocksGot  (Type: COUNTER, Value: 0)
-	Master.PathsDeleted  (Type: COUNTER, Value: 0)
-	Master.PathsMounted  (Type: COUNTER, Value: 0)
-	Master.PathsRenamed  (Type: COUNTER, Value: 0)
-	Master.PathsUnmounted  (Type: COUNTER, Value: 0)
-	Master.PerUfsOpConnectFromMaster.UFS:s3:%2F%2Ffluid  (Type: GAUGE, Value: 0)
-	Master.PerUfsOpCreate.UFS:%2Fjournal%2FBlockMaster  (Type: GAUGE, Value: 1)
-	Master.PerUfsOpCreate.UFS:%2Fjournal%2FFileSystemMaster  (Type: GAUGE, Value: 1)
-	Master.PerUfsOpCreate.UFS:%2Fjournal%2FMetaMaster  (Type: GAUGE, Value: 1)
-	Master.PerUfsOpExists.UFS:s3:%2F%2Ffluid  (Type: GAUGE, Value: 2)
-	Master.PerUfsOpGetFileLocations.UFS:s3:%2F%2Ffluid  (Type: GAUGE, Value: 24)
-	Master.PerUfsOpGetFingerprint.UFS:s3:%2F%2Ffluid  (Type: GAUGE, Value: 1)
-	Master.PerUfsOpGetSpace.UFS:s3:%2F%2Ffluid  (Type: GAUGE, Value: 116)
-	Master.PerUfsOpGetStatus.UFS:s3:%2F%2Ffluid  (Type: GAUGE, Value: 3)
-	Master.PerUfsOpListStatus.UFS:%2Fjournal%2FBlockMaster  (Type: GAUGE, Value: 60)
-	Master.PerUfsOpListStatus.UFS:%2Fjournal%2FFileSystemMaster  (Type: GAUGE, Value: 60)
-	Master.PerUfsOpListStatus.UFS:%2Fjournal%2FMetaMaster  (Type: GAUGE, Value: 60)
-	Master.PerUfsOpListStatus.UFS:%2Fjournal%2FMetricsMaster  (Type: GAUGE, Value: 60)
-	Master.PerUfsOpListStatus.UFS:%2Fjournal%2FTableMaster  (Type: GAUGE, Value: 60)
-	Master.PerUfsOpListStatus.UFS:s3:%2F%2Ffluid  (Type: GAUGE, Value: 1)
-	Master.RenamePathOps  (Type: COUNTER, Value: 0)
-	Master.SetAclOps  (Type: COUNTER, Value: 0)
-	Master.SetAttributeOps  (Type: COUNTER, Value: 0)
-	Master.TotalPaths  (Type: GAUGE, Value: 8)
-	Master.UfsSessionCount-Ufs:s3:%2F%2Ffluid  (Type: COUNTER, Value: 0)
-	Master.UnmountOps  (Type: COUNTER, Value: 0)
-	Master.blockHeartbeat.User:root  (Type: TIMER, Value: 2,410)
-	Master.commitBlock.User:root  (Type: TIMER, Value: 1)
-	Master.getConfigHash  (Type: TIMER, Value: 4)
-	Master.getConfigHash.User:root  (Type: TIMER, Value: 239)
-	Master.getConfiguration  (Type: TIMER, Value: 20)
-	Master.getConfiguration.User:root  (Type: TIMER, Value: 428)
-	Master.getMasterInfo.User:root  (Type: TIMER, Value: 173)
-	Master.getMetrics.User:root  (Type: TIMER, Value: 33)
-	Master.getPinnedFileIds.User:root  (Type: TIMER, Value: 2,410)
-	Master.getUfsInfo.User:root  (Type: TIMER, Value: 1)
-	Master.getWorkerId.User:root  (Type: TIMER, Value: 1)
-	Master.metricsHeartbeat.User:root  (Type: TIMER, Value: 4)
-	Master.registerWorker.User:root  (Type: TIMER, Value: 1)
-	`
-	return r
 }
 
 // TestAlluxioEngine_getGracefulShutdownLimits tests the getGracefulShutdownLimits method of the AlluxioEngine.

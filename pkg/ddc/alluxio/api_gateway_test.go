@@ -18,15 +18,14 @@ package alluxio
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 func TestGetAPIGatewayStatus(t *testing.T) {
@@ -55,44 +54,27 @@ func TestGetAPIGatewayStatus(t *testing.T) {
 		},
 	}
 
-	for k, item := range testCases {
-		e := mockAlluxioEngineWithClient(item.engineName, item.engineNamespace, item.port)
-		got, _ := e.GetAPIGatewayStatus()
+	for _, item := range testCases {
+		namespacedName := types.NamespacedName{Name: item.engineName, Namespace: item.engineNamespace}
+		dataset, runtime := mockFluidObjectsForTests(namespacedName)
+		engine := mockAlluxioEngineForTests(dataset, runtime)
+		mockedObjects := mockAlluxioObjectsForTests(dataset, runtime, engine)
 
-		if !reflect.DeepEqual(got, item.wantStatus) {
-			t.Errorf("%s check failure,want:%v,got:%v", k, item.wantStatus, got)
-		}
+		svc := mockedObjects.Services[fmt.Sprintf("%s-master-0", item.engineName)]
+		svc.Spec.Ports = append(svc.Spec.Ports, corev1.ServicePort{Name: "rest", Port: item.port})
+		client := fake.NewFakeClientWithScheme(datav1alpha1.UnitTestScheme, svc)
+		engine.Client = client
+
+		// e := mockAlluxioEngineWithClient(item.engineName, item.engineNamespace, item.port)
+		got, err := engine.GetAPIGatewayStatus()
+
+		assert.NoError(t, err)
+		assert.Equal(t, got, item.wantStatus)
+		// if !reflect.DeepEqual(got, item.wantStatus) {
+		// t.Errorf("%s check failure,want:%v,got:%v", k, item.wantStatus, got)
+		// }
 
 	}
-}
-
-func mockAlluxioEngineWithClient(name, ns string, port int32) *AlluxioEngine {
-
-	var mockClient client.Client
-
-	mockSvc := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-master-0", name),
-			Namespace: ns,
-		},
-		Spec: corev1.ServiceSpec{
-			Ports: []corev1.ServicePort{
-				{
-					Name: "rest",
-					Port: port,
-				},
-			},
-		},
-	}
-
-	mockClient = fake.NewFakeClient(mockSvc)
-
-	e := &AlluxioEngine{
-		Client:    mockClient,
-		name:      name,
-		namespace: ns,
-	}
-	return e
 }
 
 // TestQueryAPIGatewayEndpoint tests whether the Alluxio engine's queryAPIGatewayEndpoint method
@@ -122,13 +104,20 @@ func TestQueryAPIGatewayEndpoint(t *testing.T) {
 		},
 	}
 
-	for k, item := range testCases {
-		e := mockAlluxioEngineWithClient(item.engineName, item.engineNamespace, item.port)
-		got, _ := e.queryAPIGatewayEndpoint()
+	for _, item := range testCases {
+		namespacedName := types.NamespacedName{Name: item.engineName, Namespace: item.engineNamespace}
+		dataset, runtime := mockFluidObjectsForTests(namespacedName)
+		engine := mockAlluxioEngineForTests(dataset, runtime)
+		mockedObjects := mockAlluxioObjectsForTests(dataset, runtime, engine)
 
-		if !reflect.DeepEqual(got, item.wantEndpoint) {
-			t.Errorf("%s check failure,want:%v,got:%v", k, item.wantEndpoint, got)
-		}
+		svc := mockedObjects.Services[fmt.Sprintf("%s-master-0", item.engineName)]
+		svc.Spec.Ports = append(svc.Spec.Ports, corev1.ServicePort{Name: "rest", Port: item.port})
+		client := fake.NewFakeClientWithScheme(datav1alpha1.UnitTestScheme, svc)
+		engine.Client = client
 
+		got, err := engine.queryAPIGatewayEndpoint()
+
+		assert.NoError(t, err)
+		assert.Equal(t, got, item.wantEndpoint)
 	}
 }

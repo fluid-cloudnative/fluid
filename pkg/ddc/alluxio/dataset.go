@@ -127,6 +127,7 @@ func (e *AlluxioEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (er
 				cond)
 		}
 
+		// TODO: Do we have to update cachestates here? It is updated in AlluxioEngine.UpdateCacheOfDataset()
 		datasetToUpdate.Status.CacheStates = runtime.Status.CacheStates
 		// datasetToUpdate.Status.CacheStates =
 

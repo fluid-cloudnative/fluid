@@ -384,7 +384,7 @@ func TestAlluxioEngineCleanupCache(t *testing.T) {
 
 			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetReportSummary",
 				func(_ *AlluxioEngine) (string, error) {
-					summary := mockAlluxioReportSummary()
+					summary := mockAlluxioReportSummary("0B", "19.07MB")
 					return summary, nil
 				})
 			defer patch1.Reset()

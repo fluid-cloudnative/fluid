@@ -16,8 +16,6 @@ limitations under the License.
 package alluxio
 
 import (
-	"context"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -25,14 +23,14 @@ import (
 	"strings"
 	"testing"
 
+	. "github.com/agiledragon/gomonkey/v2"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 
-	"github.com/brahma-adshonor/gohook"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -493,42 +491,27 @@ func Test_genDataLoadValue(t *testing.T) {
 // Returns:
 // - None. The function asserts the expected results and fails the test if the conditions are not met.
 func TestCheckRuntimeReady(t *testing.T) {
-	mockExecCommon := func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
-		return "", "", nil
-	}
-	mockExecErr := func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
-		return "err", "", errors.New("error")
-	}
-	wrappedUnhook := func() {
-		err := gohook.UnHook(kubeclient.ExecCommandInContainerWithFullOutput)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-
 	engine := AlluxioEngine{
 		namespace: "fluid",
 		name:      "hbase",
 		Log:       fake.NullLogger(),
 	}
 
-	err := gohook.Hook(kubeclient.ExecCommandInContainerWithFullOutput, mockExecCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patch1 := ApplyMethodFunc(operations.AlluxioFileUtils{}, "Ready", func() bool {
+		return true
+	})
 	if ready := engine.CheckRuntimeReady(); ready != true {
 		fmt.Println(ready)
 		t.Errorf("fail to exec the function CheckRuntimeReady")
 	}
-	wrappedUnhook()
+	patch1.Reset()
 
-	err = gohook.Hook(kubeclient.ExecCommandInContainerWithFullOutput, mockExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patch2 := ApplyMethodFunc(operations.AlluxioFileUtils{}, "Ready", func() bool {
+		return false
+	})
 	if ready := engine.CheckRuntimeReady(); ready != false {
 		fmt.Println(ready)
 		t.Errorf("fail to exec the function CheckRuntimeReady")
 	}
-	wrappedUnhook()
+	patch2.Reset()
 }
