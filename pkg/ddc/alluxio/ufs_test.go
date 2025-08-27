@@ -26,7 +26,6 @@ import (
 	"time"
 
 	"github.com/agiledragon/gomonkey/v2"
-	. "github.com/agiledragon/gomonkey/v2"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -34,7 +33,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -191,7 +189,7 @@ var _ = Describe("AlluxioEngine UFS related tests", func() {
 		When("extractEncryptOptions == true", func() {
 			BeforeEach(func() {
 				secret := corev1.Secret{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name:      "sensitive-options",
 						Namespace: dataset.Namespace,
 					},
@@ -289,7 +287,7 @@ var _ = Describe("AlluxioEngine UFS related tests", func() {
 				timeNow = metav1.Now()
 				masterPodName, masterContainerName := engine.getMasterPodInfo()
 				masterPod := corev1.Pod{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name:      masterPodName,
 						Namespace: engine.namespace,
 					},
@@ -487,7 +485,7 @@ func TestTotalStorageBytes(t *testing.T) {
 			name: "test",
 			fields: fields{
 				runtime: &datav1alpha1.AlluxioRuntime{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "spark",
 					},
 				},
@@ -502,7 +500,7 @@ func TestTotalStorageBytes(t *testing.T) {
 				runtime: tt.fields.runtime,
 				name:    tt.fields.name,
 			}
-			patch1 := ApplyFunc(kubeclient.ExecCommandInContainerWithFullOutput, func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
+			patch1 := gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithFullOutput, func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
 				stdout, stderr, err := mockExecCommandInContainerForTotalStorageBytes()
 				return stdout, stderr, err
 			})
@@ -553,7 +551,7 @@ func TestTotalFileNums(t *testing.T) {
 			name: "test",
 			fields: fields{
 				runtime: &datav1alpha1.AlluxioRuntime{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "spark",
 					},
 				},
@@ -568,7 +566,7 @@ func TestTotalFileNums(t *testing.T) {
 				runtime: tt.fields.runtime,
 				name:    tt.fields.name,
 			}
-			patch1 := ApplyFunc(kubeclient.ExecCommandInContainerWithFullOutput, func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
+			patch1 := gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithFullOutput, func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
 				stdout, stderr, err := mockExecCommandInContainerForTotalFileNums()
 				return stdout, stderr, err
 			})
@@ -644,7 +642,7 @@ func TestFindUnmountedUFS(t *testing.T) {
 			s := runtime.NewScheme()
 			runtime := datav1alpha1.AlluxioRuntime{}
 			dataset := datav1alpha1.Dataset{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "default",
 				},
@@ -659,12 +657,12 @@ func TestFindUnmountedUFS(t *testing.T) {
 			mockClient := fake.NewFakeClientWithScheme(s, &runtime, &dataset)
 
 			var afsUtils operations.AlluxioFileUtils
-			patch1 := ApplyMethod(reflect.TypeOf(afsUtils), "Ready", func(_ operations.AlluxioFileUtils) bool {
+			patch1 := gomonkey.ApplyMethod(reflect.TypeOf(afsUtils), "Ready", func(_ operations.AlluxioFileUtils) bool {
 				return true
 			})
 			defer patch1.Reset()
 
-			patch2 := ApplyMethod(reflect.TypeOf(afsUtils), "FindUnmountedAlluxioPaths", func(_ operations.AlluxioFileUtils, alluxioPaths []string) ([]string, error) {
+			patch2 := gomonkey.ApplyMethod(reflect.TypeOf(afsUtils), "FindUnmountedAlluxioPaths", func(_ operations.AlluxioFileUtils, alluxioPaths []string) ([]string, error) {
 				return alluxioPaths, nil
 			})
 			defer patch2.Reset()
@@ -708,12 +706,12 @@ func TestUpdateMountTime(t *testing.T) {
 	tests := []fields{
 		{
 			runtime: &datav1alpha1.AlluxioRuntime{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "default",
 				},
 				Status: datav1alpha1.RuntimeStatus{
-					MountTime: &v1.Time{
+					MountTime: &metav1.Time{
 						Time: yesterday,
 					},
 				},

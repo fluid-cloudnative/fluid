@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"github.com/agiledragon/gomonkey/v2"
-	. "github.com/agiledragon/gomonkey/v2"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
@@ -78,12 +77,12 @@ var _ = Describe("AlluxioEngine Cache related tests", Label("pkg.ddc.alluxio.cac
 
 			Context("and cached size is 0B", func() {
 				It("should successfully query cache status and cached percentage should be 0%", func() {
-					patch1 := ApplyMethodFunc(engine, "GetReportSummary", func() (string, error) {
+					patch1 := gomonkey.ApplyMethodFunc(engine, "GetReportSummary", func() (string, error) {
 						summary := mockAlluxioReportSummary("0B", "19.07MB")
 						return summary, nil
 					})
 					defer patch1.Reset()
-					patch2 := ApplyMethodFunc(engine, "GetCacheHitStates", func() cacheHitStates {
+					patch2 := gomonkey.ApplyMethodFunc(engine, "GetCacheHitStates", func() cacheHitStates {
 						return cacheHitStates{
 							bytesReadLocal:  12345678,
 							bytesReadUfsAll: 87654321,
@@ -103,12 +102,12 @@ var _ = Describe("AlluxioEngine Cache related tests", Label("pkg.ddc.alluxio.cac
 
 			Context("and cache size is half of the ufs total size", func() {
 				It("should successfully query cache status and cached percentage should be 50%", func() {
-					patch1 := ApplyMethodFunc(engine, "GetReportSummary", func() (string, error) {
+					patch1 := gomonkey.ApplyMethodFunc(engine, "GetReportSummary", func() (string, error) {
 						summary := mockAlluxioReportSummary("8.08MB", "19.07MB")
 						return summary, nil
 					})
 					defer patch1.Reset()
-					patch2 := ApplyMethodFunc(engine, "GetCacheHitStates", func() cacheHitStates {
+					patch2 := gomonkey.ApplyMethodFunc(engine, "GetCacheHitStates", func() cacheHitStates {
 						return cacheHitStates{
 							bytesReadLocal:  12345678,
 							bytesReadUfsAll: 87654321,
@@ -133,12 +132,12 @@ var _ = Describe("AlluxioEngine Cache related tests", Label("pkg.ddc.alluxio.cac
 			})
 
 			It("should successfully query cache status and cached percentage is empty", func() {
-				patch1 := ApplyMethodFunc(engine, "GetReportSummary", func() (string, error) {
+				patch1 := gomonkey.ApplyMethodFunc(engine, "GetReportSummary", func() (string, error) {
 					summary := mockAlluxioReportSummary("0B", "19.07MB")
 					return summary, nil
 				})
 				defer patch1.Reset()
-				patch2 := ApplyMethodFunc(engine, "GetCacheHitStates", func() cacheHitStates {
+				patch2 := gomonkey.ApplyMethodFunc(engine, "GetCacheHitStates", func() cacheHitStates {
 					return cacheHitStates{
 						bytesReadLocal:  12345678,
 						bytesReadUfsAll: 87654321,
@@ -158,12 +157,12 @@ var _ = Describe("AlluxioEngine Cache related tests", Label("pkg.ddc.alluxio.cac
 			})
 
 			It("should successfully query cache status and cached percentage is empty", func() {
-				patch1 := ApplyMethodFunc(engine, "GetReportSummary", func() (string, error) {
+				patch1 := gomonkey.ApplyMethodFunc(engine, "GetReportSummary", func() (string, error) {
 					summary := mockAlluxioReportSummary("0B", "19.07MB")
 					return summary, nil
 				})
 				defer patch1.Reset()
-				patch2 := ApplyMethodFunc(engine, "GetCacheHitStates", func() cacheHitStates {
+				patch2 := gomonkey.ApplyMethodFunc(engine, "GetCacheHitStates", func() cacheHitStates {
 					return cacheHitStates{
 						bytesReadLocal:  12345678,
 						bytesReadUfsAll: 87654321,
