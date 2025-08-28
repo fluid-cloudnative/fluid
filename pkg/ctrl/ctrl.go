@@ -49,6 +49,44 @@ func BuildHelper(runtimeInfo base.RuntimeInfoInterface, client client.Client, lo
 		log:         log,
 	}
 }
+func (e *Helper) SyncMasterHealthStateToStatus(runtime base.RuntimeInterface, expectReplicas int32, masterSts *appsv1.StatefulSet) (healthy bool) {
+	var (
+		phase datav1alpha1.RuntimePhase     = kubeclient.GetPhaseFromStatefulset(expectReplicas, *masterSts)
+		cond  datav1alpha1.RuntimeCondition = datav1alpha1.RuntimeCondition{}
+	)
+
+	switch phase {
+	case datav1alpha1.RuntimePhaseReady, datav1alpha1.RuntimePhasePartialReady:
+		healthy = true
+	default:
+		healthy = false
+	}
+
+	// must not DeepCopy() here because we'll update runtime's status later
+	statusToUpdate := runtime.GetStatus()
+	statusToUpdate.MasterPhase = phase
+	statusToUpdate.MasterNumberReady = masterSts.Status.ReadyReplicas
+	statusToUpdate.CurrentMasterNumberScheduled = masterSts.Status.Replicas
+	statusToUpdate.DesiredMasterNumberScheduled = *masterSts.Spec.Replicas
+	if len(statusToUpdate.Conditions) == 0 {
+		statusToUpdate.Conditions = []datav1alpha1.RuntimeCondition{}
+	}
+
+	switch phase {
+	case datav1alpha1.RuntimePhaseReady, datav1alpha1.RuntimePhasePartialReady:
+		cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeMasterReady, datav1alpha1.RuntimeMasterReadyReason,
+			"The master is ready.", corev1.ConditionTrue)
+	case datav1alpha1.RuntimePhaseNotReady:
+		cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeMasterReady, datav1alpha1.RuntimeMasterReadyReason,
+			"The master is not ready.", corev1.ConditionFalse)
+	}
+
+	if cond.Type != "" {
+		statusToUpdate.Conditions = utils.UpdateRuntimeCondition(statusToUpdate.Conditions, cond)
+	}
+
+	return healthy
+}
 
 // SetupWorkers checks the desired and current replicas of workers and makes an update
 // over the status by setting phases and conditions. The function
@@ -133,9 +171,11 @@ func (e *Helper) CheckAndUpdateWorkerStatus(runtime base.RuntimeInterface, worke
 
 	statusToUpdate := runtime.GetStatus()
 	statusToUpdate.WorkerPhase = phase
-	statusToUpdate.WorkerNumberReady = workers.Status.Replicas
+	statusToUpdate.WorkerNumberReady = workers.Status.ReadyReplicas
 	statusToUpdate.WorkerNumberAvailable = workers.Status.AvailableReplicas
 	statusToUpdate.WorkerNumberUnavailable = *workers.Spec.Replicas - workers.Status.AvailableReplicas
+	statusToUpdate.CurrentWorkerNumberScheduled = workers.Status.Replicas
+	statusToUpdate.DesiredWorkerNumberScheduled = *workers.Spec.Replicas
 	if len(statusToUpdate.Conditions) == 0 {
 		statusToUpdate.Conditions = []datav1alpha1.RuntimeCondition{}
 	}

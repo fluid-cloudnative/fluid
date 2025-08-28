@@ -36,65 +36,37 @@ func (e *JindoFSxEngine) CheckMasterReady() (ready bool, err error) {
 		return
 	}
 	masterName := e.getMasterName()
-	// 1. Check the status
-	runtime, err := e.getRuntime()
-	if err != nil {
-		return
-	}
-
 	master, err := kubeclient.GetStatefulSet(e.Client, masterName, e.namespace)
 	if err != nil {
 		return
 	}
 
-	masterReplicas := runtime.Spec.Master.Replicas
-	if masterReplicas == 0 {
-		masterReplicas = 1
-	}
-	if masterReplicas == master.Status.ReadyReplicas {
-		ready = true
-	} else {
-		e.Log.Info("The master is not ready.", "replicas", masterReplicas,
-			"readyReplicas", master.Status.ReadyReplicas)
-	}
-
-	// 2. Update the phase
-	if ready {
-		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-			runtime, err := e.getRuntime()
-			if err != nil {
-				return err
-			}
-			runtimeToUpdate := runtime.DeepCopy()
-
-			runtimeToUpdate.Status.CurrentMasterNumberScheduled = int32(master.Status.ReadyReplicas)
-
-			runtimeToUpdate.Status.MasterPhase = datav1alpha1.RuntimePhaseReady
-
-			if len(runtimeToUpdate.Status.Conditions) == 0 {
-				runtimeToUpdate.Status.Conditions = []datav1alpha1.RuntimeCondition{}
-			}
-			cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeMasterReady, datav1alpha1.RuntimeMasterReadyReason,
-				"The master is ready.", corev1.ConditionTrue)
-			runtimeToUpdate.Status.Conditions =
-				utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
-					cond)
-
-			if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
-				return e.Client.Status().Update(context.TODO(), runtimeToUpdate)
-			}
-
-			return nil
-		})
-
+	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		runtime, err := e.getRuntime()
 		if err != nil {
-			e.Log.Error(err, "Update runtime status")
-			return
+			return err
 		}
-	}
+		masterReplicas := runtime.Spec.Master.Replicas
+		if masterReplicas == 0 {
+			masterReplicas = 1
+		}
+		oldStatus := runtime.GetStatus().DeepCopy()
+		ready = e.Helper.SyncMasterHealthStateToStatus(runtime, masterReplicas, master)
+
+		if !reflect.DeepEqual(oldStatus, runtime.GetStatus()) {
+			return e.Client.Status().Update(context.TODO(), runtime)
+		}
+
+		return nil
+	})
 
 	if err != nil {
+		e.Log.Error(err, "fail to update master health state to status")
 		return
+	}
+
+	if !ready {
+		e.Log.Info("The master is not ready.")
 	}
 
 	return
