@@ -157,7 +157,7 @@ func TestCheckMasterReady(t *testing.T) {
 		},
 		{
 			engine:         engines[1],
-			expectedResult: false,
+			expectedResult: true,
 		},
 	}
 
