@@ -105,6 +105,11 @@ func (e *EFCEngine) SetupMaster() (err error) {
 }
 
 func (e *EFCEngine) CheckMasterReady() (ready bool, err error) {
+	if e.runtime.Spec.Master.Disabled {
+		ready = true
+		err = nil
+		return
+	}
 	masterName := e.getMasterName()
 	master, err := kubeclient.GetStatefulSet(e.Client, masterName, e.namespace)
 	if err != nil {
