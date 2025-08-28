@@ -67,7 +67,7 @@ func (e *Helper) SyncMasterHealthStateToStatus(runtime base.RuntimeInterface, ex
 	statusToUpdate.MasterPhase = phase
 	statusToUpdate.MasterNumberReady = masterSts.Status.ReadyReplicas
 	statusToUpdate.CurrentMasterNumberScheduled = masterSts.Status.Replicas
-	statusToUpdate.DesiredMasterNumberScheduled = *masterSts.Spec.Replicas
+	statusToUpdate.DesiredMasterNumberScheduled = expectReplicas
 	if len(statusToUpdate.Conditions) == 0 {
 		statusToUpdate.Conditions = []datav1alpha1.RuntimeCondition{}
 	}
@@ -173,9 +173,12 @@ func (e *Helper) CheckAndUpdateWorkerStatus(runtime base.RuntimeInterface, worke
 	statusToUpdate.WorkerPhase = phase
 	statusToUpdate.WorkerNumberReady = workers.Status.ReadyReplicas
 	statusToUpdate.WorkerNumberAvailable = workers.Status.AvailableReplicas
-	statusToUpdate.WorkerNumberUnavailable = *workers.Spec.Replicas - workers.Status.AvailableReplicas
 	statusToUpdate.CurrentWorkerNumberScheduled = workers.Status.Replicas
-	statusToUpdate.DesiredWorkerNumberScheduled = *workers.Spec.Replicas
+	statusToUpdate.DesiredWorkerNumberScheduled = runtime.Replicas()
+	statusToUpdate.WorkerNumberUnavailable = runtime.Replicas() - workers.Status.AvailableReplicas
+	if statusToUpdate.WorkerNumberUnavailable <= 0 {
+		statusToUpdate.WorkerNumberUnavailable = 0
+	}
 	if len(statusToUpdate.Conditions) == 0 {
 		statusToUpdate.Conditions = []datav1alpha1.RuntimeCondition{}
 	}
