@@ -1107,3 +1107,77 @@ echo "$(date '+%Y/%m/%d %H:%M:%S').$(printf "%03d" $(($(date '+%N')/1000))) juic
 		})
 	}
 }
+
+func TestDeepCopy(t *testing.T) {
+	var p *int
+	if got := DeepCopy(p); got != nil {
+		t.Errorf("DeepCopy(nil) = %v, want nil", got)
+	}
+
+	x := 123
+	cp := DeepCopy(&x)
+	if cp == &x {
+		t.Errorf("DeepCopy should return a different pointer")
+	}
+	if *cp != x {
+		t.Errorf("DeepCopy value = %v, want %v", *cp, x)
+	}
+
+	type S struct {
+		A int
+		B string
+	}
+	s := S{A: 10, B: "test"}
+	sp := DeepCopy(&s)
+	if sp == &s {
+		t.Errorf("DeepCopy should return a different pointer")
+	}
+	if *sp != s {
+		t.Errorf("DeepCopy value = %+v, want %+v", *sp, s)
+	}
+}
+
+func TestMapDeepCopy(t *testing.T) {
+	var mp map[string]int
+	if got := MapDeepCopy(mp); got != nil {
+		t.Errorf("MapDeepCopy(nil) = %v, want nil", got)
+	}
+
+	empty := make(map[string]int)
+	got := MapDeepCopy(empty)
+	if got == nil {
+		t.Errorf("MapDeepCopy(empty) = nil, want empty map")
+	}
+	if len(got) != 0 {
+		t.Errorf("MapDeepCopy(empty) length = %d, want 0", len(got))
+	}
+
+	origin := map[string]int{
+		"a": 1,
+		"b": 2,
+	}
+	copied := MapDeepCopy(origin)
+	if reflect.DeepEqual(copied, origin) == false {
+		t.Errorf("MapDeepCopy() = %v, want %v", copied, origin)
+	}
+	copied["a"] = 100
+	if origin["a"] == 100 {
+		t.Errorf("origin updated after edit copied, origin: %v, copied: %v", origin, copied)
+	}
+
+	type S struct {
+		A int
+	}
+	originStruct := map[string]S{
+		"x": {A: 5},
+		"y": {A: 10},
+	}
+	copiedStruct := MapDeepCopy(originStruct)
+	if !reflect.DeepEqual(copiedStruct, originStruct) {
+		t.Errorf("MapDeepCopy() = %v, want %v", copiedStruct, originStruct)
+	}
+	copiedStruct["x"] = S{A: 999}
+	if originStruct["x"].A == 999 {
+		t.Errorf("origin updated after edit copied, origin: %v, copied: %v", origin, copied)
+	}
+}
