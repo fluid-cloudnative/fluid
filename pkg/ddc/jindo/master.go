@@ -50,11 +50,11 @@ func (e *JindoEngine) CheckMasterReady() (ready bool, err error) {
 		if masterReplicas == 0 {
 			masterReplicas = 1
 		}
-		oldStatus := runtime.GetStatus().DeepCopy()
-		ready = e.Helper.SyncMasterHealthStateToStatus(runtime, masterReplicas, master)
+		runtimeToUpdate := runtime.DeepCopy()
+		ready = e.Helper.SyncMasterHealthStateToStatus(runtimeToUpdate, masterReplicas, master)
 
-		if !reflect.DeepEqual(oldStatus, runtime.GetStatus()) {
-			return e.Client.Status().Update(context.TODO(), runtime)
+		if !reflect.DeepEqual(runtime.GetStatus(), runtimeToUpdate.GetStatus()) {
+			return e.Client.Status().Update(context.TODO(), runtimeToUpdate)
 		}
 
 		return nil

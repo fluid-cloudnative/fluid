@@ -46,10 +46,10 @@ func (e *GooseFSEngine) CheckMasterReady() (ready bool, err error) {
 		if masterReplicas == 0 {
 			masterReplicas = 1
 		}
-		oldStatus := runtime.GetStatus().DeepCopy()
-		ready = e.Helper.SyncMasterHealthStateToStatus(runtime, masterReplicas, master)
+		runtimeToUpdate := runtime.DeepCopy()
+		ready = e.Helper.SyncMasterHealthStateToStatus(runtimeToUpdate, masterReplicas, master)
 
-		statusToUpdate := runtime.GetStatus()
+		statusToUpdate := runtimeToUpdate.GetStatus()
 		if runtime.Spec.APIGateway.Enabled && statusToUpdate.APIGatewayStatus == nil {
 			statusToUpdate.APIGatewayStatus, err = e.GetAPIGatewayStatus()
 			if err != nil {
@@ -59,8 +59,8 @@ func (e *GooseFSEngine) CheckMasterReady() (ready bool, err error) {
 			e.Log.Info("No need to update APIGateway status")
 		}
 
-		if !reflect.DeepEqual(oldStatus, statusToUpdate) {
-			return e.Client.Status().Update(context.TODO(), runtime)
+		if !reflect.DeepEqual(runtime.GetStatus(), statusToUpdate) {
+			return e.Client.Status().Update(context.TODO(), runtimeToUpdate)
 		}
 
 		return nil

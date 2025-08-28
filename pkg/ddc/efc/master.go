@@ -117,11 +117,11 @@ func (e *EFCEngine) CheckMasterReady() (ready bool, err error) {
 			return err
 		}
 		masterReplicas := runtime.MasterReplicas()
-		oldStatus := runtime.GetStatus().DeepCopy()
-		ready = e.Helper.SyncMasterHealthStateToStatus(runtime, masterReplicas, master)
+		runtimeToUpdate := runtime.DeepCopy()
+		ready = e.Helper.SyncMasterHealthStateToStatus(runtimeToUpdate, masterReplicas, master)
 
-		if !reflect.DeepEqual(oldStatus, runtime.GetStatus()) {
-			return e.Client.Status().Update(context.TODO(), runtime)
+		if !reflect.DeepEqual(runtime.GetStatus(), runtimeToUpdate.GetStatus()) {
+			return e.Client.Status().Update(context.TODO(), runtimeToUpdate)
 		}
 
 		return nil
