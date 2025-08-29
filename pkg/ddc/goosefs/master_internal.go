@@ -58,6 +58,10 @@ func (e *GooseFSEngine) setupMasterInternal() (err error) {
 }
 
 // generate goosefs struct
+// generateGooseFSValueFile generates the GooseFS values file for the Helm chart.
+// It first deletes any existing ConfigMap for Helm values, then transforms the runtime
+// configuration into a values structure, marshals it to YAML, and writes it to a
+// temporary file. Finally, it saves the YAML data into a new ConfigMap.
 func (e *GooseFSEngine) generateGooseFSValueFile(runtime *datav1alpha1.GooseFSRuntime) (valueFileName string, err error) {
 
 	//0. Check if the configmap exists
