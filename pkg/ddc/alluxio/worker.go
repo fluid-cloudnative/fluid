@@ -17,6 +17,9 @@ limitations under the License.
 package alluxio
 
 import (
+	"context"
+	"reflect"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
@@ -91,12 +94,23 @@ func (e *AlluxioEngine) CheckWorkersReady() (readyOrPartialReady bool, err error
 			return err
 		}
 		runtimeToUpdate := runtime.DeepCopy()
-		readyOrPartialReady, err = e.Helper.CheckAndUpdateWorkerStatus(runtimeToUpdate, workers)
-		if err != nil {
-			_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to check worker ready", types.NamespacedName{Namespace: e.namespace, Name: e.name})
+
+		readyOrPartialReady = e.Helper.SyncWorkerHealthStateToStatus(runtimeToUpdate, runtime.Replicas(), workers)
+		if !reflect.DeepEqual(runtime.GetStatus(), runtimeToUpdate.GetStatus()) {
+			return e.Client.Status().Update(context.TODO(), runtimeToUpdate)
 		}
-		return err
+
+		return nil
 	})
+
+	if err != nil {
+		e.Log.Error(err, "fail to update worker health state to status")
+		return
+	}
+
+	if !readyOrPartialReady {
+		e.Log.Info("The workers are not ready.")
+	}
 
 	return
 }

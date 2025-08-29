@@ -17,6 +17,9 @@ limitations under the License.
 package juicefs
 
 import (
+	"context"
+	"reflect"
+
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -27,7 +30,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
-func (j JuiceFSEngine) CheckWorkersReady() (ready bool, err error) {
+func (j JuiceFSEngine) CheckWorkersReady() (readyOrPartialReady bool, err error) {
 	var (
 		workerName string = j.getWorkerName()
 		namespace  string = j.namespace
@@ -35,7 +38,7 @@ func (j JuiceFSEngine) CheckWorkersReady() (ready bool, err error) {
 
 	workers, err := kubeclient.GetStatefulSet(j.Client, workerName, namespace)
 	if err != nil {
-		return ready, err
+		return readyOrPartialReady, err
 	}
 
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
@@ -44,13 +47,23 @@ func (j JuiceFSEngine) CheckWorkersReady() (ready bool, err error) {
 			return err
 		}
 		runtimeToUpdate := runtime.DeepCopy()
-		ready, err = j.Helper.CheckAndUpdateWorkerStatus(runtimeToUpdate, workers)
-		if err != nil {
-			_ = utils.LoggingErrorExceptConflict(j.Log, err, "Failed to setup worker",
-				types.NamespacedName{Namespace: j.namespace, Name: j.name})
+
+		readyOrPartialReady = j.Helper.SyncWorkerHealthStateToStatus(runtimeToUpdate, runtime.Replicas(), workers)
+		if !reflect.DeepEqual(runtime.GetStatus(), runtimeToUpdate.GetStatus()) {
+			return j.Client.Status().Update(context.TODO(), runtimeToUpdate)
 		}
-		return err
+
+		return nil
 	})
+
+	if err != nil {
+		j.Log.Error(err, "fail to update worker health state to status")
+		return
+	}
+
+	if !readyOrPartialReady {
+		j.Log.Info("The workers are not ready.")
+	}
 
 	return
 }

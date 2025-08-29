@@ -17,6 +17,9 @@
 package thin
 
 import (
+	"context"
+	"reflect"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -26,7 +29,7 @@ import (
 	"k8s.io/client-go/util/retry"
 )
 
-func (t ThinEngine) CheckWorkersReady() (ready bool, err error) {
+func (t ThinEngine) CheckWorkersReady() (readyOrPartialReady bool, err error) {
 	if !t.isWorkerEnable() {
 		return true, nil
 	}
@@ -37,7 +40,7 @@ func (t ThinEngine) CheckWorkersReady() (ready bool, err error) {
 
 	workers, err := kubeclient.GetStatefulSet(t.Client, workerName, namespace)
 	if err != nil {
-		return ready, err
+		return readyOrPartialReady, err
 	}
 
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
@@ -46,13 +49,23 @@ func (t ThinEngine) CheckWorkersReady() (ready bool, err error) {
 			return err
 		}
 		runtimeToUpdate := runtime.DeepCopy()
-		ready, err = t.Helper.CheckAndUpdateWorkerStatus(runtimeToUpdate, workers)
-		if err != nil {
-			_ = utils.LoggingErrorExceptConflict(t.Log, err, "Failed to setup worker",
-				types.NamespacedName{Namespace: t.namespace, Name: t.name})
+
+		readyOrPartialReady = t.Helper.SyncWorkerHealthStateToStatus(runtimeToUpdate, runtime.Replicas(), workers)
+		if !reflect.DeepEqual(runtime.GetStatus(), runtimeToUpdate.GetStatus()) {
+			return t.Client.Status().Update(context.TODO(), runtimeToUpdate)
 		}
-		return err
+
+		return nil
 	})
+
+	if err != nil {
+		t.Log.Error(err, "fail to update worker health state to status")
+		return
+	}
+
+	if !readyOrPartialReady {
+		t.Log.Info("The workers are not ready.")
+	}
 
 	return
 }

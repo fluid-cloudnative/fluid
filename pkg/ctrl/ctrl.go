@@ -88,6 +88,57 @@ func (e *Helper) SyncMasterHealthStateToStatus(runtime base.RuntimeInterface, ex
 	return healthy
 }
 
+func (e *Helper) SyncWorkerHealthStateToStatus(runtime base.RuntimeInterface, expectReplicas int32, workerSts *appsv1.StatefulSet) (readyOrPartialReady bool) {
+
+	var (
+		phase datav1alpha1.RuntimePhase     = kubeclient.GetPhaseFromStatefulset(expectReplicas, *workerSts)
+		cond  datav1alpha1.RuntimeCondition = datav1alpha1.RuntimeCondition{}
+	)
+
+	switch phase {
+	case datav1alpha1.RuntimePhaseReady, datav1alpha1.RuntimePhasePartialReady:
+		readyOrPartialReady = true
+	default:
+		readyOrPartialReady = false
+	}
+
+	// update the status as the workers are ready
+
+	statusToUpdate := runtime.GetStatus()
+	statusToUpdate.WorkerPhase = phase
+	statusToUpdate.WorkerNumberReady = workerSts.Status.ReadyReplicas
+	statusToUpdate.WorkerNumberAvailable = workerSts.Status.AvailableReplicas
+	statusToUpdate.CurrentWorkerNumberScheduled = workerSts.Status.Replicas
+	statusToUpdate.DesiredWorkerNumberScheduled = expectReplicas
+	statusToUpdate.WorkerNumberUnavailable = expectReplicas - workerSts.Status.AvailableReplicas
+	if statusToUpdate.WorkerNumberUnavailable <= 0 {
+		statusToUpdate.WorkerNumberUnavailable = 0
+	}
+	if len(statusToUpdate.Conditions) == 0 {
+		statusToUpdate.Conditions = []datav1alpha1.RuntimeCondition{}
+	}
+
+	switch phase {
+	case datav1alpha1.RuntimePhaseReady:
+		cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersReady, datav1alpha1.RuntimeWorkersReadyReason,
+			"The workers are ready.", corev1.ConditionTrue)
+	case datav1alpha1.RuntimePhasePartialReady:
+		cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersReady, datav1alpha1.RuntimeWorkersReadyReason,
+			"The workers are partially ready.", corev1.ConditionTrue)
+	case datav1alpha1.RuntimePhaseNotReady:
+		cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersReady, datav1alpha1.RuntimeWorkersReadyReason,
+			"The workers are not ready.", corev1.ConditionFalse)
+	}
+
+	if cond.Type != "" {
+		statusToUpdate.Conditions =
+			utils.UpdateRuntimeCondition(statusToUpdate.Conditions,
+				cond)
+	}
+
+	return readyOrPartialReady
+}
+
 // SetupWorkers checks the desired and current replicas of workers and makes an update
 // over the status by setting phases and conditions. The function
 // calls for a status update and finally returns error if anything unexpected happens.
@@ -152,60 +203,60 @@ func (e *Helper) SetupWorkers(runtime base.RuntimeInterface,
 }
 
 // CheckAndUpdateWorkerStatus checks if workers are ready
-func (e *Helper) CheckAndUpdateWorkerStatus(runtime base.RuntimeInterface, workers *appsv1.StatefulSet) (readyOrPartialReady bool, err error) {
+// func (e *Helper) CheckAndUpdateWorkerStatus(runtime base.RuntimeInterface, workers *appsv1.StatefulSet) (readyOrPartialReady bool, err error) {
 
-	var (
-		phase datav1alpha1.RuntimePhase     = kubeclient.GetPhaseFromStatefulset(runtime.Replicas(), *workers)
-		cond  datav1alpha1.RuntimeCondition = datav1alpha1.RuntimeCondition{}
-	)
+// 	var (
+// 		phase datav1alpha1.RuntimePhase     = kubeclient.GetPhaseFromStatefulset(runtime.Replicas(), *workers)
+// 		cond  datav1alpha1.RuntimeCondition = datav1alpha1.RuntimeCondition{}
+// 	)
 
-	switch phase {
-	case datav1alpha1.RuntimePhaseReady, datav1alpha1.RuntimePhasePartialReady:
-		readyOrPartialReady = true
-	default:
-		e.log.Info("workers are not ready", "phase", phase)
-	}
+// 	switch phase {
+// 	case datav1alpha1.RuntimePhaseReady, datav1alpha1.RuntimePhasePartialReady:
+// 		readyOrPartialReady = true
+// 	default:
+// 		e.log.Info("workers are not ready", "phase", phase)
+// 	}
 
-	// update the status as the workers are ready
-	oldStatus := runtime.GetStatus().DeepCopy()
+// 	// update the status as the workers are ready
+// 	oldStatus := runtime.GetStatus().DeepCopy()
 
-	statusToUpdate := runtime.GetStatus()
-	statusToUpdate.WorkerPhase = phase
-	statusToUpdate.WorkerNumberReady = workers.Status.ReadyReplicas
-	statusToUpdate.WorkerNumberAvailable = workers.Status.AvailableReplicas
-	statusToUpdate.CurrentWorkerNumberScheduled = workers.Status.Replicas
-	statusToUpdate.DesiredWorkerNumberScheduled = runtime.Replicas()
-	statusToUpdate.WorkerNumberUnavailable = runtime.Replicas() - workers.Status.AvailableReplicas
-	if statusToUpdate.WorkerNumberUnavailable <= 0 {
-		statusToUpdate.WorkerNumberUnavailable = 0
-	}
-	if len(statusToUpdate.Conditions) == 0 {
-		statusToUpdate.Conditions = []datav1alpha1.RuntimeCondition{}
-	}
+// 	statusToUpdate := runtime.GetStatus()
+// 	statusToUpdate.WorkerPhase = phase
+// 	statusToUpdate.WorkerNumberReady = workers.Status.ReadyReplicas
+// 	statusToUpdate.WorkerNumberAvailable = workers.Status.AvailableReplicas
+// 	statusToUpdate.CurrentWorkerNumberScheduled = workers.Status.Replicas
+// 	statusToUpdate.DesiredWorkerNumberScheduled = runtime.Replicas()
+// 	statusToUpdate.WorkerNumberUnavailable = runtime.Replicas() - workers.Status.AvailableReplicas
+// 	if statusToUpdate.WorkerNumberUnavailable <= 0 {
+// 		statusToUpdate.WorkerNumberUnavailable = 0
+// 	}
+// 	if len(statusToUpdate.Conditions) == 0 {
+// 		statusToUpdate.Conditions = []datav1alpha1.RuntimeCondition{}
+// 	}
 
-	switch phase {
-	case datav1alpha1.RuntimePhaseReady:
-		cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersReady, datav1alpha1.RuntimeWorkersReadyReason,
-			"The workers are ready.", corev1.ConditionTrue)
-	case datav1alpha1.RuntimePhasePartialReady:
-		cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersReady, datav1alpha1.RuntimeWorkersReadyReason,
-			"The workers are partially ready.", corev1.ConditionTrue)
-	case datav1alpha1.RuntimePhaseNotReady:
-		cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersReady, datav1alpha1.RuntimeWorkersReadyReason,
-			"The workers are not ready.", corev1.ConditionFalse)
-	}
+// 	switch phase {
+// 	case datav1alpha1.RuntimePhaseReady:
+// 		cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersReady, datav1alpha1.RuntimeWorkersReadyReason,
+// 			"The workers are ready.", corev1.ConditionTrue)
+// 	case datav1alpha1.RuntimePhasePartialReady:
+// 		cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersReady, datav1alpha1.RuntimeWorkersReadyReason,
+// 			"The workers are partially ready.", corev1.ConditionTrue)
+// 	case datav1alpha1.RuntimePhaseNotReady:
+// 		cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersReady, datav1alpha1.RuntimeWorkersReadyReason,
+// 			"The workers are not ready.", corev1.ConditionFalse)
+// 	}
 
-	if cond.Type != "" {
-		statusToUpdate.Conditions =
-			utils.UpdateRuntimeCondition(statusToUpdate.Conditions,
-				cond)
-	}
+// 	if cond.Type != "" {
+// 		statusToUpdate.Conditions =
+// 			utils.UpdateRuntimeCondition(statusToUpdate.Conditions,
+// 				cond)
+// 	}
 
-	if !reflect.DeepEqual(oldStatus, statusToUpdate) {
-		err = e.client.Status().Update(context.TODO(), runtime)
-	} else {
-		e.log.V(1).Info("No need to update runtime status for checking healthy")
-	}
+// 	if !reflect.DeepEqual(oldStatus, statusToUpdate) {
+// 		err = e.client.Status().Update(context.TODO(), runtime)
+// 	} else {
+// 		e.log.V(1).Info("No need to update runtime status for checking healthy")
+// 	}
 
-	return
-}
+// 	return
+// }

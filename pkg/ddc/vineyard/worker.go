@@ -14,6 +14,9 @@ limitations under the License.
 package vineyard
 
 import (
+	"context"
+	"reflect"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
@@ -70,16 +73,16 @@ func (e *VineyardEngine) ShouldSetupWorkers() (should bool, err error) {
 }
 
 // are the workers ready
-func (e *VineyardEngine) CheckWorkersReady() (ready bool, err error) {
+func (e *VineyardEngine) CheckWorkersReady() (readyOrPartialReady bool, err error) {
 	workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
 		types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
 	if err != nil {
 		if fluiderrs.IsDeprecated(err) {
 			e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
-			ready = true
-			return ready, nil
+			readyOrPartialReady = true
+			return readyOrPartialReady, nil
 		}
-		return ready, err
+		return readyOrPartialReady, err
 	}
 
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
@@ -88,12 +91,23 @@ func (e *VineyardEngine) CheckWorkersReady() (ready bool, err error) {
 			return err
 		}
 		runtimeToUpdate := runtime.DeepCopy()
-		ready, err = e.Helper.CheckAndUpdateWorkerStatus(runtimeToUpdate, workers)
-		if err != nil {
-			_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to check worker ready", types.NamespacedName{Namespace: e.namespace, Name: e.name})
+
+		readyOrPartialReady = e.Helper.SyncWorkerHealthStateToStatus(runtimeToUpdate, runtime.Replicas(), workers)
+		if !reflect.DeepEqual(runtime.GetStatus(), runtimeToUpdate.GetStatus()) {
+			return e.Client.Status().Update(context.TODO(), runtimeToUpdate)
 		}
-		return err
+
+		return nil
 	})
+
+	if err != nil {
+		e.Log.Error(err, "fail to update worker health state to status")
+		return
+	}
+
+	if !readyOrPartialReady {
+		e.Log.Info("The workers are not ready.")
+	}
 
 	return
 }

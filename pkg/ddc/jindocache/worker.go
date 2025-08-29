@@ -17,6 +17,9 @@ limitations under the License.
 package jindocache
 
 import (
+	"context"
+	"reflect"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
@@ -87,10 +90,9 @@ func (e *JindoCacheEngine) ShouldSetupWorkers() (should bool, err error) {
 }
 
 // CheckWorkersReady checks if the workers are ready
-func (e *JindoCacheEngine) CheckWorkersReady() (ready bool, err error) {
-
+func (e *JindoCacheEngine) CheckWorkersReady() (readyOrPartialReady bool, err error) {
 	if e.runtime.Spec.Worker.Disabled {
-		ready = true
+		readyOrPartialReady = true
 		err = nil
 		return
 	}
@@ -100,10 +102,10 @@ func (e *JindoCacheEngine) CheckWorkersReady() (ready bool, err error) {
 	if err != nil {
 		if fluiderrs.IsDeprecated(err) {
 			e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
-			ready = true
-			return ready, nil
+			readyOrPartialReady = true
+			return readyOrPartialReady, nil
 		}
-		return ready, err
+		return readyOrPartialReady, err
 	}
 
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
@@ -112,18 +114,23 @@ func (e *JindoCacheEngine) CheckWorkersReady() (ready bool, err error) {
 			return err
 		}
 		runtimeToUpdate := runtime.DeepCopy()
-		ready, err = e.Helper.CheckAndUpdateWorkerStatus(runtimeToUpdate, workers)
-		if err != nil {
-			_ = utils.LoggingErrorExceptConflict(e.Log,
-				err,
-				"Failed to setup worker",
-				types.NamespacedName{
-					Namespace: e.namespace,
-					Name:      e.name,
-				})
+
+		readyOrPartialReady = e.Helper.SyncWorkerHealthStateToStatus(runtimeToUpdate, runtime.Replicas(), workers)
+		if !reflect.DeepEqual(runtime.GetStatus(), runtimeToUpdate.GetStatus()) {
+			return e.Client.Status().Update(context.TODO(), runtimeToUpdate)
 		}
-		return err
+
+		return nil
 	})
+
+	if err != nil {
+		e.Log.Error(err, "fail to update worker health state to status")
+		return
+	}
+
+	if !readyOrPartialReady {
+		e.Log.Info("The workers are not ready.")
+	}
 
 	return
 }
