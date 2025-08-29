@@ -88,7 +88,7 @@ func (e *VineyardEngine) CheckWorkersReady() (ready bool, err error) {
 			return err
 		}
 		runtimeToUpdate := runtime.DeepCopy()
-		ready, err = e.Helper.CheckWorkersReady(runtimeToUpdate, runtimeToUpdate.Status, workers)
+		ready, err = e.Helper.CheckAndUpdateWorkerStatus(runtimeToUpdate, workers)
 		if err != nil {
 			_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to check worker ready", types.NamespacedName{Namespace: e.namespace, Name: e.name})
 		}

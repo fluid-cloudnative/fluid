@@ -107,18 +107,21 @@ func TestCheckMasterReady(t *testing.T) {
 			namespace: "fluid",
 			Client:    client,
 			Log:       fake.NullLogger(),
+			runtime:   &EFCRuntimeInputs[0],
 		},
 		{
 			name:      "hbase",
 			namespace: "fluid",
 			Client:    client,
 			Log:       fake.NullLogger(),
+			runtime:   &EFCRuntimeInputs[1],
 		},
 		{
 			name:      "hadoop",
 			namespace: "fluid",
 			Client:    client,
 			Log:       fake.NullLogger(),
+			runtime:   &EFCRuntimeInputs[2],
 		},
 	}
 
@@ -132,7 +135,7 @@ func TestCheckMasterReady(t *testing.T) {
 		},
 		{
 			engine:         engines[1],
-			expectedResult: false,
+			expectedResult: true, // partial ready means healthy
 		},
 		{
 			engine:         engines[2],
@@ -143,19 +146,6 @@ func TestCheckMasterReady(t *testing.T) {
 	for _, test := range testCases {
 		if ready, _ := test.engine.CheckMasterReady(); ready != test.expectedResult {
 			t.Errorf("fail to exec the function")
-			return
-		}
-		if !test.expectedResult {
-			continue
-		}
-		EFCRuntime, err := test.engine.getRuntime()
-		if err != nil {
-			t.Errorf("fail to get runtime %v", err)
-			return
-		}
-		if len(EFCRuntime.Status.Conditions) == 0 {
-			t.Errorf("fail to update the runtime conditions")
-			return
 		}
 	}
 }

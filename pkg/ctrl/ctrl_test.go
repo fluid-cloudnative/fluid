@@ -564,7 +564,7 @@ func TestCheckWorkersReady(t *testing.T) {
 
 			h := BuildHelper(runtimeInfo, mockClient, fake.NullLogger())
 
-			gotReady, err := h.CheckWorkersReady(tt.fields.runtime, tt.fields.runtime.Status, tt.fields.worker)
+			gotReady, err := h.CheckAndUpdateWorkerStatus(tt.fields.runtime, tt.fields.worker)
 
 			if err != nil {
 				t.Errorf("CheckWorkersReady() got error %v", err)

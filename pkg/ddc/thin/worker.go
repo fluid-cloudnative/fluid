@@ -46,7 +46,7 @@ func (t ThinEngine) CheckWorkersReady() (ready bool, err error) {
 			return err
 		}
 		runtimeToUpdate := runtime.DeepCopy()
-		ready, err = t.Helper.CheckWorkersReady(runtimeToUpdate, runtimeToUpdate.Status, workers)
+		ready, err = t.Helper.CheckAndUpdateWorkerStatus(runtimeToUpdate, workers)
 		if err != nil {
 			_ = utils.LoggingErrorExceptConflict(t.Log, err, "Failed to setup worker",
 				types.NamespacedName{Namespace: t.namespace, Name: t.name})

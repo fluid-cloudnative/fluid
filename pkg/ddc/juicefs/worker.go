@@ -44,7 +44,7 @@ func (j JuiceFSEngine) CheckWorkersReady() (ready bool, err error) {
 			return err
 		}
 		runtimeToUpdate := runtime.DeepCopy()
-		ready, err = j.Helper.CheckWorkersReady(runtimeToUpdate, runtimeToUpdate.Status, workers)
+		ready, err = j.Helper.CheckAndUpdateWorkerStatus(runtimeToUpdate, workers)
 		if err != nil {
 			_ = utils.LoggingErrorExceptConflict(j.Log, err, "Failed to setup worker",
 				types.NamespacedName{Namespace: j.namespace, Name: j.name})
