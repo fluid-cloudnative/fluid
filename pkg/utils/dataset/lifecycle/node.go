@@ -19,7 +19,6 @@ package lifecycle
 import (
 	"context"
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
 	"reflect"
 	"strconv"
@@ -143,9 +142,9 @@ func SyncScheduleInfoToCacheNodes(runtimeInfo base.RuntimeInfoInterface, client 
 		}
 		// 3. insert new index or replace
 		if updatedPodState.Status.PodStates == nil {
-			updatedPodState.Status.PodStates = make(map[string]v1alpha1.PodState)
+			updatedPodState.Status.PodStates = make(map[string]datav1alpha1.PodState)
 		}
-		updatedPodState.Status.PodStates[pod.Name] = v1alpha1.PodState{
+		updatedPodState.Status.PodStates[pod.Name] = datav1alpha1.PodState{
 			NodeName: podNodeName,
 		}
 	}
