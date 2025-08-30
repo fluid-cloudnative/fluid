@@ -262,6 +262,15 @@ func (j *JuiceFSEngine) transformPodMetadata(runtime *datav1alpha1.JuiceFSRuntim
 	value.Worker.Annotations = utils.UnionMapsWithOverride(commonAnnotations, runtime.Spec.Worker.PodMetadata.Annotations)
 	value.Fuse.Annotations = utils.UnionMapsWithOverride(commonAnnotations, runtime.Spec.Fuse.PodMetadata.Annotations)
 
+	// only Worker Pods requiring in-place updates trigger the mutating webhook
+	if runtime.Spec.UpdateStrategy == datav1alpha1.InPlaceIfPossible ||
+		runtime.Spec.UpdateStrategy == datav1alpha1.InPlace {
+		// in-place update for worker pods used in webhook mutating.
+		value.Worker.Labels[common.RuntimePodType] = common.RuntimeWorkerPod
+		// the runtime name used in webhook mutating to mutate in-place updated worker pods.
+		value.Worker.Annotations[common.AnnotationRuntimeName] = runtime.Name
+	}
+
 	return nil
 }
 
