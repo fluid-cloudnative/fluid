@@ -139,6 +139,41 @@ func (e *Helper) SyncWorkerHealthStateToStatus(runtime base.RuntimeInterface, ex
 	return readyOrPartialReady
 }
 
+func (e *Helper) SyncFuseHealthStateToStatus(runtime base.RuntimeInterface, fuseDs *appsv1.DaemonSet) (healthy bool) {
+	statusToUpdate := runtime.GetStatus()
+	var (
+		cond      datav1alpha1.RuntimeCondition
+		fusePhase datav1alpha1.RuntimePhase
+	)
+	if len(statusToUpdate.Conditions) == 0 {
+		statusToUpdate.Conditions = []datav1alpha1.RuntimeCondition{}
+	}
+
+	if fuseDs.Status.NumberUnavailable > 0 || (fuseDs.Status.DesiredNumberScheduled > 0 && fuseDs.Status.NumberAvailable == 0) {
+		healthy = false
+		cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeFusesReady, "The fuses are not ready.", "The fuses are not ready.", corev1.ConditionFalse)
+		fusePhase = datav1alpha1.RuntimePhaseNotReady
+	} else {
+		healthy = true
+		cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeFusesReady, "The fuses are ready.", "The fuses are ready.", corev1.ConditionTrue)
+		fusePhase = datav1alpha1.RuntimePhaseReady
+	}
+
+	if len(cond.Type) == 0 {
+		statusToUpdate.Conditions = utils.UpdateRuntimeCondition(statusToUpdate.Conditions, cond)
+	}
+
+	statusToUpdate.FusePhase = fusePhase
+	statusToUpdate.FuseReason = cond.Reason
+	statusToUpdate.CurrentFuseNumberScheduled = int32(fuseDs.Status.CurrentNumberScheduled)
+	statusToUpdate.DesiredFuseNumberScheduled = int32(fuseDs.Status.DesiredNumberScheduled)
+	statusToUpdate.FuseNumberReady = int32(fuseDs.Status.NumberReady)
+	statusToUpdate.FuseNumberAvailable = int32(fuseDs.Status.NumberAvailable)
+	statusToUpdate.FuseNumberUnavailable = int32(fuseDs.Status.NumberUnavailable)
+
+	return healthy
+}
+
 // SetupWorkers checks the desired and current replicas of workers and makes an update
 // over the status by setting phases and conditions. The function
 // calls for a status update and finally returns error if anything unexpected happens.

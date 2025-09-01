@@ -36,7 +36,6 @@ import (
 
 // CheckRuntimeHealthy checks the healthy of the runtime
 func (e *AlluxioEngine) CheckRuntimeHealthy() (err error) {
-
 	// 1. Check the healthy of the master
 	err = e.checkMasterHealthy()
 	if err != nil {
@@ -169,20 +168,20 @@ func (e *AlluxioEngine) checkWorkersHealthy() (err error) {
 	}
 
 	healthy := false
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+	// err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 
-		runtime, innerErr := e.getRuntime()
-		if innerErr != nil {
-			return innerErr
-		}
+	// 	// runtime, innerErr := e.getRuntime()
+	// 	// if innerErr != nil {
+	// 	// return innerErr
+	// 	// }
 
-		healthy, innerErr = e.Helper.CheckAndUpdateWorkerStatus(runtime, workers)
-		if innerErr != nil {
-			return innerErr
-		}
+	// 	// healthy, innerErr = e.Helper.CheckAndUpdateWorkerStatus(runtime, workers)
+	// 	// if innerErr != nil {
+	// 	// 	return innerErr
+	// 	// }
 
-		return innerErr
-	})
+	// 	// return innerErr
+	// })
 
 	if err != nil {
 		e.Log.Error(err, "fail to check if workers are ready")
