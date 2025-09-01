@@ -33,7 +33,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"k8s.io/utils/ptr"
@@ -61,7 +60,7 @@ func GetWorkersAsStatefulset(client client.Client, key types.NamespacedName) (wo
 }
 
 // CheckworkersHealthy checks the sts healthy with role
-func (e *Helper) CheckWorkersHealthy(recorder record.EventRecorder, runtime base.RuntimeInterface,
+func (e *Helper) CheckWorkersHealthy(recorder record.EventRecorder, runtime datav1alpha1.RuntimeInterface,
 	currentStatus datav1alpha1.RuntimeStatus,
 	sts *appsv1.StatefulSet) (err error) {
 	var (

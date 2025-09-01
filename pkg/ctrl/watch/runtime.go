@@ -17,7 +17,7 @@ limitations under the License.
 package watch
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
@@ -27,7 +27,7 @@ type runtimeEventHandler struct {
 func (handler *runtimeEventHandler) onCreateFunc(r Controller) func(e event.CreateEvent) bool {
 	return func(e event.CreateEvent) bool {
 		log.V(1).Info("enter runtimeEventHandler.onCreateFunc", "name", e.Object.GetName(), "namespace", e.Object.GetNamespace())
-		_, ok := e.Object.(base.RuntimeInterface)
+		_, ok := e.Object.(datav1alpha1.RuntimeInterface)
 		if !ok {
 			log.Info("runtime.onCreateFunc Skip", "object", e.Object)
 			return false
@@ -41,13 +41,13 @@ func (handler *runtimeEventHandler) onCreateFunc(r Controller) func(e event.Crea
 func (handler *runtimeEventHandler) onUpdateFunc(r Controller) func(e event.UpdateEvent) bool {
 	return func(e event.UpdateEvent) (needUpdate bool) {
 		log.V(1).Info("enter runtimeEventHandler.onUpdateFunc", "newObj.name", e.ObjectNew.GetName(), "newObj.namespace", e.ObjectNew.GetNamespace())
-		runtimeNew, ok := e.ObjectNew.(base.RuntimeInterface)
+		runtimeNew, ok := e.ObjectNew.(datav1alpha1.RuntimeInterface)
 		if !ok {
 			log.Info("runtime.onUpdateFunc Skip", "object", e.ObjectNew)
 			return needUpdate
 		}
 
-		runtimeOld, ok := e.ObjectOld.(base.RuntimeInterface)
+		runtimeOld, ok := e.ObjectOld.(datav1alpha1.RuntimeInterface)
 		if !ok {
 			log.Info("runtime.onUpdateFunc Skip", "object", e.ObjectNew)
 			return needUpdate
@@ -66,7 +66,7 @@ func (handler *runtimeEventHandler) onUpdateFunc(r Controller) func(e event.Upda
 func (handler *runtimeEventHandler) onDeleteFunc(r Controller) func(e event.DeleteEvent) bool {
 	return func(e event.DeleteEvent) bool {
 		log.V(1).Info("enter runtimeEventHandler.onDeleteFunc", "name", e.Object.GetName(), "namespace", e.Object.GetNamespace())
-		_, ok := e.Object.(base.RuntimeInterface)
+		_, ok := e.Object.(datav1alpha1.RuntimeInterface)
 		if !ok {
 			log.Info("runtime.onDeleteFunc Skip", "object", e.Object)
 			return false

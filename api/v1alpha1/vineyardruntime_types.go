@@ -341,6 +341,8 @@ func init() {
 	SchemeBuilder.Register(&VineyardRuntime{}, &VineyardRuntimeList{})
 }
 
+var _ RuntimeInterface = &VineyardRuntime{}
+
 // Replicas gets the replicas of runtime worker
 func (runtime *VineyardRuntime) Replicas() int32 {
 	return runtime.Spec.Replicas
@@ -348,4 +350,8 @@ func (runtime *VineyardRuntime) Replicas() int32 {
 
 func (runtime *VineyardRuntime) GetStatus() *RuntimeStatus {
 	return &runtime.Status
+}
+
+func (runtime *VineyardRuntime) SetStatus(status RuntimeStatus) {
+	runtime.Status = status
 }

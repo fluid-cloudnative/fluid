@@ -283,6 +283,8 @@ func init() {
 	SchemeBuilder.Register(&AlluxioRuntime{}, &AlluxioRuntimeList{})
 }
 
+var _ RuntimeInterface = &AlluxioRuntime{}
+
 // Replicas gets the replicas of runtime worker
 func (runtime *AlluxioRuntime) Replicas() int32 {
 	return runtime.Spec.Replicas
@@ -290,4 +292,8 @@ func (runtime *AlluxioRuntime) Replicas() int32 {
 
 func (runtime *AlluxioRuntime) GetStatus() *RuntimeStatus {
 	return &runtime.Status
+}
+
+func (runtime *AlluxioRuntime) SetStatus(status RuntimeStatus) {
+	runtime.Status = status
 }

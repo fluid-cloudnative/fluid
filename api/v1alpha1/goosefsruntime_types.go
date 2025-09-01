@@ -226,6 +226,8 @@ func init() {
 	SchemeBuilder.Register(&GooseFSRuntime{}, &GooseFSRuntimeList{})
 }
 
+var _ RuntimeInterface = &GooseFSRuntime{}
+
 // Replicas gets the replicas of runtime worker
 func (runtime *GooseFSRuntime) Replicas() int32 {
 	return runtime.Spec.Replicas
@@ -233,4 +235,8 @@ func (runtime *GooseFSRuntime) Replicas() int32 {
 
 func (runtime *GooseFSRuntime) GetStatus() *RuntimeStatus {
 	return &runtime.Status
+}
+
+func (runtime *GooseFSRuntime) SetStatus(status RuntimeStatus) {
+	runtime.Status = status
 }

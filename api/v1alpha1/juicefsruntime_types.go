@@ -212,6 +212,8 @@ func init() {
 	SchemeBuilder.Register(&JuiceFSRuntime{}, &JuiceFSRuntimeList{})
 }
 
+var _ RuntimeInterface = &JuiceFSRuntime{}
+
 // Replicas gets the replicas of runtime worker
 func (j *JuiceFSRuntime) Replicas() int32 {
 	return j.Spec.Replicas
@@ -219,4 +221,8 @@ func (j *JuiceFSRuntime) Replicas() int32 {
 
 func (j *JuiceFSRuntime) GetStatus() *RuntimeStatus {
 	return &j.Status
+}
+
+func (j *JuiceFSRuntime) SetStatus(status RuntimeStatus) {
+	j.Status = status
 }

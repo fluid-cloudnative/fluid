@@ -201,6 +201,8 @@ func init() {
 	SchemeBuilder.Register(&EFCRuntime{}, &EFCRuntimeList{})
 }
 
+var _ RuntimeInterface = &EFCRuntime{}
+
 func (runtime *EFCRuntime) Enabled() bool {
 	return !runtime.Spec.Worker.Disabled
 }
@@ -215,6 +217,10 @@ func (runtime *EFCRuntime) Replicas() int32 {
 
 func (runtime *EFCRuntime) GetStatus() *RuntimeStatus {
 	return &runtime.Status
+}
+
+func (runtime *EFCRuntime) SetStatus(status RuntimeStatus) {
+	runtime.Status = status
 }
 
 func (runtime *EFCRuntime) MasterEnabled() bool {

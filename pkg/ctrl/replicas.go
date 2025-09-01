@@ -18,7 +18,6 @@ package ctrl
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
@@ -29,7 +28,7 @@ import (
 
 // CheckWorkersReady checks if workers are ready
 func (e *Helper) SyncReplicas(ctx cruntime.ReconcileRequestContext,
-	runtime base.RuntimeInterface,
+	runtime datav1alpha1.RuntimeInterface,
 	currentStatus datav1alpha1.RuntimeStatus,
 	workers *appsv1.StatefulSet) (err error) {
 

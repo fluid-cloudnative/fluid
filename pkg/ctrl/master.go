@@ -22,7 +22,6 @@ import (
 	"reflect"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -30,7 +29,7 @@ import (
 )
 
 // CheckMasterHealthy checks the sts healthy with role
-func (e *Helper) CheckMasterHealthy(recorder record.EventRecorder, runtime base.RuntimeInterface,
+func (e *Helper) CheckMasterHealthy(recorder record.EventRecorder, runtime datav1alpha1.RuntimeInterface,
 	currentStatus datav1alpha1.RuntimeStatus,
 	sts *appsv1.StatefulSet) (err error) {
 	var (

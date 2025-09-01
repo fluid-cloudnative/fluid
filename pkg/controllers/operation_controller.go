@@ -278,7 +278,7 @@ func (o *OperationReconciler) addOwnerAndRequeue(ctx dataoperation.ReconcileRequ
 // TODO: Maybe the function can be separated into two sub-function and make them globally accessible.
 func (o *OperationReconciler) getRuntimeObjectAndEngineImpl(runtimeType, name, namespace string) (obj client.Object, engineImpl string, err error) {
 	// support all runtime
-	var runtime base.RuntimeInterface
+	var runtime datav1alpha1.RuntimeInterface
 	switch runtimeType {
 	case common.AlluxioRuntime:
 		runtime, err = utils.GetAlluxioRuntime(o.Client, name, namespace)

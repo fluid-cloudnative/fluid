@@ -29,13 +29,12 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
 // CheckFuseHealthy checks the ds healthy with role
-func (e *Helper) CheckFuseHealthy(recorder record.EventRecorder, runtime base.RuntimeInterface, fuseName string) error {
+func (e *Helper) CheckFuseHealthy(recorder record.EventRecorder, runtime datav1alpha1.RuntimeInterface, fuseName string) error {
 	currentStatus := runtime.GetStatus()
 
 	runtimeInfo := e.runtimeInfo

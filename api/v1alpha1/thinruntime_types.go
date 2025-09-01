@@ -209,14 +209,6 @@ type ThinRuntime struct {
 	Status RuntimeStatus   `json:"status,omitempty"`
 }
 
-func (in *ThinRuntime) Replicas() int32 {
-	return in.Spec.Replicas
-}
-
-func (in *ThinRuntime) GetStatus() *RuntimeStatus {
-	return &in.Status
-}
-
 //+kubebuilder:object:root=true
 
 // ThinRuntimeList contains a list of ThinRuntime
@@ -228,4 +220,18 @@ type ThinRuntimeList struct {
 
 func init() {
 	SchemeBuilder.Register(&ThinRuntime{}, &ThinRuntimeList{})
+}
+
+var _ RuntimeInterface = &ThinRuntime{}
+
+func (in *ThinRuntime) Replicas() int32 {
+	return in.Spec.Replicas
+}
+
+func (in *ThinRuntime) GetStatus() *RuntimeStatus {
+	return &in.Status
+}
+
+func (in *ThinRuntime) SetStatus(status RuntimeStatus) {
+	in.Status = status
 }

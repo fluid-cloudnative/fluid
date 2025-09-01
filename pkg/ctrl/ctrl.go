@@ -49,7 +49,7 @@ func BuildHelper(runtimeInfo base.RuntimeInfoInterface, client client.Client, lo
 		log:         log,
 	}
 }
-func (e *Helper) SyncMasterHealthStateToStatus(runtime base.RuntimeInterface, expectReplicas int32, masterSts *appsv1.StatefulSet) (healthy bool) {
+func (e *Helper) SyncMasterHealthStateToStatus(runtime datav1alpha1.RuntimeInterface, expectReplicas int32, masterSts *appsv1.StatefulSet) (healthy bool) {
 	var (
 		phase datav1alpha1.RuntimePhase     = kubeclient.GetPhaseFromStatefulset(expectReplicas, *masterSts)
 		cond  datav1alpha1.RuntimeCondition = datav1alpha1.RuntimeCondition{}
@@ -88,7 +88,7 @@ func (e *Helper) SyncMasterHealthStateToStatus(runtime base.RuntimeInterface, ex
 	return healthy
 }
 
-func (e *Helper) SyncWorkerHealthStateToStatus(runtime base.RuntimeInterface, expectReplicas int32, workerSts *appsv1.StatefulSet) (readyOrPartialReady bool) {
+func (e *Helper) SyncWorkerHealthStateToStatus(runtime datav1alpha1.RuntimeInterface, expectReplicas int32, workerSts *appsv1.StatefulSet) (readyOrPartialReady bool) {
 
 	var (
 		phase datav1alpha1.RuntimePhase     = kubeclient.GetPhaseFromStatefulset(expectReplicas, *workerSts)
@@ -139,7 +139,7 @@ func (e *Helper) SyncWorkerHealthStateToStatus(runtime base.RuntimeInterface, ex
 	return readyOrPartialReady
 }
 
-func (e *Helper) SyncFuseHealthStateToStatus(runtime base.RuntimeInterface, fuseDs *appsv1.DaemonSet) (healthy bool) {
+func (e *Helper) SyncFuseHealthStateToStatus(runtime datav1alpha1.RuntimeInterface, fuseDs *appsv1.DaemonSet) (healthy bool) {
 	statusToUpdate := runtime.GetStatus()
 	var (
 		cond      datav1alpha1.RuntimeCondition
@@ -177,7 +177,7 @@ func (e *Helper) SyncFuseHealthStateToStatus(runtime base.RuntimeInterface, fuse
 // SetupWorkers checks the desired and current replicas of workers and makes an update
 // over the status by setting phases and conditions. The function
 // calls for a status update and finally returns error if anything unexpected happens.
-func (e *Helper) SetupWorkers(runtime base.RuntimeInterface,
+func (e *Helper) SetupWorkers(runtime datav1alpha1.RuntimeInterface,
 	currentStatus datav1alpha1.RuntimeStatus,
 	workers *appsv1.StatefulSet) (err error) {
 
@@ -238,7 +238,7 @@ func (e *Helper) SetupWorkers(runtime base.RuntimeInterface,
 }
 
 // CheckAndUpdateWorkerStatus checks if workers are ready
-// func (e *Helper) CheckAndUpdateWorkerStatus(runtime base.RuntimeInterface, workers *appsv1.StatefulSet) (readyOrPartialReady bool, err error) {
+// func (e *Helper) CheckAndUpdateWorkerStatus(runtime datav1alpha1.RuntimeInterface, workers *appsv1.StatefulSet) (readyOrPartialReady bool, err error) {
 
 // 	var (
 // 		phase datav1alpha1.RuntimePhase     = kubeclient.GetPhaseFromStatefulset(runtime.Replicas(), *workers)
