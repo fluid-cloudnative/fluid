@@ -306,6 +306,9 @@ func TestJuiceFSEngine_CheckWorkersReady(t *testing.T) {
 						Name:      "test0-worker",
 						Namespace: "juicefs",
 					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: ptr.To[int32](1),
+					},
 					Status: appsv1.StatefulSetStatus{
 						Replicas:      1,
 						ReadyReplicas: 1,
@@ -345,6 +348,9 @@ func TestJuiceFSEngine_CheckWorkersReady(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test1-worker",
 						Namespace: "juicefs",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: ptr.To[int32](1),
 					},
 					Status: appsv1.StatefulSetStatus{
 						Replicas:      1,

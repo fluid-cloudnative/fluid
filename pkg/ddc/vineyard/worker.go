@@ -74,7 +74,7 @@ func (e *VineyardEngine) ShouldSetupWorkers() (should bool, err error) {
 // are the workers ready
 func (e *VineyardEngine) CheckWorkersReady() (ready bool, err error) {
 	getRuntimeFn := func(client client.Client) (base.RuntimeInterface, error) {
-		return utils.GetVineyardRuntime(client, e.namespace, e.name)
+		return utils.GetVineyardRuntime(client, e.name, e.namespace)
 	}
 
 	ready, err = e.Helper.CheckAndUpdateWorkerStatus(getRuntimeFn, types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})

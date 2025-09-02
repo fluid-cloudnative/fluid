@@ -182,7 +182,7 @@ func TestGetPhaseFromStatefulset(t *testing.T) {
 				},
 			},
 			replicas: 0,
-			want: datav1alpha1.RuntimePhaseReady,
+			want:     datav1alpha1.RuntimePhaseReady,
 		},
 		{
 			name: "notReady",

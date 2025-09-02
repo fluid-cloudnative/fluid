@@ -338,6 +338,9 @@ func TestEFCEngine_CheckWorkersReady(t *testing.T) {
 						Name:      "test0-worker",
 						Namespace: "efc",
 					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: ptr.To[int32](1),
+					},
 					Status: appsv1.StatefulSetStatus{
 						Replicas:      1,
 						ReadyReplicas: 1,
@@ -366,6 +369,9 @@ func TestEFCEngine_CheckWorkersReady(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test1-worker",
 						Namespace: "efc",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: ptr.To[int32](1),
 					},
 					Status: appsv1.StatefulSetStatus{
 						Replicas:      1,
@@ -397,6 +403,9 @@ func TestEFCEngine_CheckWorkersReady(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test2-worker",
 						Namespace: "efc",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: ptr.To[int32](0),
 					},
 					Status: appsv1.StatefulSetStatus{
 						Replicas:      0,

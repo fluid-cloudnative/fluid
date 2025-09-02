@@ -17,6 +17,7 @@ limitations under the License.
 package alluxio
 
 import (
+	"context"
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -25,12 +26,149 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
+
+var _ = Describe("AlluxioEngine Worker Component Tests", Focus, Label("pkg.ddc.alluxio.worker_test.go"), func() {
+	var (
+		dataset        *datav1alpha1.Dataset
+		alluxioruntime *datav1alpha1.AlluxioRuntime
+		engine         *AlluxioEngine
+		mockedObjects  mockedObjects
+		client         client.Client
+		resources      []runtime.Object
+	)
+	BeforeEach(func() {
+		dataset, alluxioruntime = mockFluidObjectsForTests(types.NamespacedName{Namespace: "fluid", Name: "hbase"})
+		engine = mockAlluxioEngineForTests(dataset, alluxioruntime)
+		mockedObjects = mockAlluxioObjectsForTests(dataset, alluxioruntime, engine)
+		resources = []runtime.Object{
+			dataset,
+			alluxioruntime,
+			mockedObjects.MasterSts,
+			mockedObjects.WorkerSts,
+			mockedObjects.FuseDs,
+		}
+	})
+
+	// JustBeforeEach is guaranteed to run after every BeforeEach()
+	// So it's easy to modify resources' specs with an extra BeforeEach()
+	JustBeforeEach(func() {
+		client = fake.NewFakeClientWithScheme(datav1alpha1.UnitTestScheme, resources...)
+		engine.Client = client
+	})
+
+	Describe("Test AlluxioEngine.CheckWorkersReady()", func() {
+		JustBeforeEach(func() {
+			engine.Helper = ctrlhelper.BuildHelper(engine.runtimeInfo, engine.Client, engine.Log)
+		})
+		When("worker is not ready", func() {
+			BeforeEach(func() {
+				mockedObjects.WorkerSts.Spec.Replicas = ptr.To[int32](1)
+				mockedObjects.WorkerSts.Status.Replicas = 1
+				mockedObjects.WorkerSts.Status.ReadyReplicas = 0
+			})
+
+			It("should return false when worker is not ready", func() {
+				ready, err := engine.CheckWorkersReady()
+				Expect(err).To(BeNil())
+				Expect(ready).To(BeFalse())
+
+				// Check if the runtime status is updated correctly
+				updatedRuntime := &datav1alpha1.AlluxioRuntime{}
+				err = client.Get(context.TODO(), types.NamespacedName{Name: alluxioruntime.Name, Namespace: alluxioruntime.Namespace}, updatedRuntime)
+				Expect(err).To(BeNil())
+				Expect(updatedRuntime.Status.WorkerPhase).To(Equal(datav1alpha1.RuntimePhaseNotReady))
+				Expect(updatedRuntime.Status.DesiredWorkerNumberScheduled).To(Equal(int32(1)))
+				Expect(updatedRuntime.Status.CurrentWorkerNumberScheduled).To(Equal(int32(1)))
+				Expect(updatedRuntime.Status.WorkerNumberReady).To(Equal(int32(0)))
+			})
+		})
+
+		When("worker is fully ready", func() {
+			BeforeEach(func() {
+				mockedObjects.WorkerSts.Spec.Replicas = ptr.To[int32](1)
+				mockedObjects.WorkerSts.Status.ReadyReplicas = 1
+				mockedObjects.WorkerSts.Status.Replicas = 1
+			})
+
+			It("should return true when worker is ready", func() {
+				ready, err := engine.CheckWorkersReady()
+				Expect(err).To(BeNil())
+				Expect(ready).To(BeTrue())
+
+				// Check if the runtime status is updated correctly
+				updatedRuntime := &datav1alpha1.AlluxioRuntime{}
+				err = client.Get(context.TODO(), types.NamespacedName{Name: alluxioruntime.Name, Namespace: alluxioruntime.Namespace}, updatedRuntime)
+				Expect(err).To(BeNil())
+				Expect(updatedRuntime.Status.WorkerPhase).To(Equal(datav1alpha1.RuntimePhaseReady))
+				Expect(updatedRuntime.Status.DesiredWorkerNumberScheduled).To(Equal(int32(1)))
+				Expect(updatedRuntime.Status.CurrentWorkerNumberScheduled).To(Equal(int32(1)))
+				Expect(updatedRuntime.Status.WorkerNumberReady).To(Equal(int32(1)))
+			})
+		})
+
+		When("worker is partially ready", func() {
+			BeforeEach(func() {
+				mockedObjects.WorkerSts.Status.Replicas = 3
+				mockedObjects.WorkerSts.Spec.Replicas = ptr.To[int32](3)
+				mockedObjects.WorkerSts.Status.ReadyReplicas = 1
+				mockedObjects.WorkerSts.Status.AvailableReplicas = 1
+			})
+
+			It("should return true when worker is partially ready", func() {
+				ready, err := engine.CheckWorkersReady()
+				Expect(err).To(BeNil())
+				Expect(ready).To(BeTrue())
+
+				// Check if the runtime status is updated correctly
+				updatedRuntime := &datav1alpha1.AlluxioRuntime{}
+				err = client.Get(context.TODO(), types.NamespacedName{Name: alluxioruntime.Name, Namespace: alluxioruntime.Namespace}, updatedRuntime)
+				Expect(err).To(BeNil())
+				Expect(updatedRuntime.Status.WorkerPhase).To(Equal(datav1alpha1.RuntimePhasePartialReady))
+				Expect(updatedRuntime.Status.DesiredWorkerNumberScheduled).To(Equal(int32(3)))
+				Expect(updatedRuntime.Status.CurrentWorkerNumberScheduled).To(Equal(int32(3)))
+				Expect(updatedRuntime.Status.WorkerNumberReady).To(Equal(int32(1)))
+				Expect(updatedRuntime.Status.WorkerNumberAvailable).To(Equal(int32(1)))
+				Expect(updatedRuntime.Status.WorkerNumberUnavailable).To(Equal(int32(2)))
+			})
+		})
+
+		When("worker is in deprecated daemonset mode", func() {
+			BeforeEach(func() {
+				deprecatedWorkerDaemonSet := &appsv1.DaemonSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      engine.getWorkerName(),
+						Namespace: engine.namespace,
+					},
+					Spec: appsv1.DaemonSetSpec{},
+				}
+				resources = []runtime.Object{
+					dataset,
+					alluxioruntime,
+					mockedObjects.MasterSts,
+					deprecatedWorkerDaemonSet,
+					mockedObjects.FuseDs,
+				}
+			})
+
+			It("should return true and skip handling for deprecated daemonset", func() {
+				ready, err := engine.CheckWorkersReady()
+				Expect(err).To(BeNil())
+				Expect(ready).To(BeTrue())
+			})
+		})
+	})
+})
 
 func TestSetupWorkers(t *testing.T) {
 
@@ -60,7 +198,7 @@ func TestSetupWorkers(t *testing.T) {
 
 	type fields struct {
 		replicas         int32
-		nodeInputs       []*v1.Node
+		nodeInputs       []*corev1.Node
 		worker           *appsv1.StatefulSet
 		deprecatedWorker *appsv1.DaemonSet
 		runtime          *datav1alpha1.AlluxioRuntime
@@ -78,7 +216,7 @@ func TestSetupWorkers(t *testing.T) {
 			name: "test0",
 			fields: fields{
 				replicas: 1,
-				nodeInputs: []*v1.Node{
+				nodeInputs: []*corev1.Node{
 					{
 						ObjectMeta: metav1.ObjectMeta{
 							Name: "test-node-spark",
@@ -208,7 +346,7 @@ func TestSetupWorkers(t *testing.T) {
 			if tt.fields.deprecatedWorker != nil {
 				s.AddKnownTypes(appsv1.SchemeGroupVersion, tt.fields.deprecatedWorker)
 			}
-			_ = v1.AddToScheme(s)
+			_ = corev1.AddToScheme(s)
 			runtimeObjs = append(runtimeObjs, tt.fields.runtime)
 			if tt.fields.deprecatedWorker != nil {
 				runtimeObjs = append(runtimeObjs, tt.fields.deprecatedWorker)
@@ -338,7 +476,7 @@ func TestShouldSetupWorkers(t *testing.T) {
 			s := runtime.NewScheme()
 			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
 			s.AddKnownTypes(datav1alpha1.GroupVersion, data)
-			_ = v1.AddToScheme(s)
+			_ = corev1.AddToScheme(s)
 			runtimeObjs = append(runtimeObjs, tt.fields.runtime, data)
 			mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
 			e := &AlluxioEngine{
@@ -506,7 +644,7 @@ func TestCheckWorkersReady(t *testing.T) {
 			s.AddKnownTypes(datav1alpha1.GroupVersion, data)
 			s.AddKnownTypes(appsv1.SchemeGroupVersion, tt.fields.worker)
 			s.AddKnownTypes(appsv1.SchemeGroupVersion, tt.fields.fuse)
-			_ = v1.AddToScheme(s)
+			_ = corev1.AddToScheme(s)
 
 			runtimeObjs = append(runtimeObjs, tt.fields.runtime, data, tt.fields.worker, tt.fields.fuse)
 			mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
