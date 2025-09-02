@@ -137,7 +137,7 @@ func GetPhaseFromStatefulset(replicas int32, sts appsv1.StatefulSet) (phase data
 		return
 	}
 	if sts.Status.ReadyReplicas > 0 {
-		if replicas == sts.Status.ReadyReplicas {
+		if replicas <= sts.Status.ReadyReplicas {
 			phase = datav1alpha1.RuntimePhaseReady
 		} else {
 			phase = datav1alpha1.RuntimePhasePartialReady

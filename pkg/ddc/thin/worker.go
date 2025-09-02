@@ -19,40 +19,33 @@ package thin
 import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (t ThinEngine) CheckWorkersReady() (ready bool, err error) {
 	if !t.isWorkerEnable() {
 		return true, nil
 	}
-	var (
-		workerName string = t.getWorkerName()
-		namespace  string = t.namespace
-	)
 
-	workers, err := kubeclient.GetStatefulSet(t.Client, workerName, namespace)
-	if err != nil {
-		return ready, err
+	getRuntimeFn := func(client client.Client) (base.RuntimeInterface, error) {
+		return utils.GetThinRuntime(client, t.name, t.namespace)
 	}
 
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		runtime, err := t.getRuntime()
-		if err != nil {
-			return err
-		}
-		runtimeToUpdate := runtime.DeepCopy()
-		ready, err = t.Helper.CheckWorkersReady(runtimeToUpdate, runtimeToUpdate.Status, workers)
-		if err != nil {
-			_ = utils.LoggingErrorExceptConflict(t.Log, err, "Failed to setup worker",
-				types.NamespacedName{Namespace: t.namespace, Name: t.name})
-		}
-		return err
-	})
+	ready, err = t.Helper.CheckAndUpdateWorkerStatus(getRuntimeFn, types.NamespacedName{Namespace: t.namespace, Name: t.getWorkerName()})
+	if err != nil {
+		t.Log.Error(err, "fail to check and update worker status")
+		return
+	}
+
+	if !ready {
+		t.Log.Info("workers are not ready")
+	}
 
 	return
 }

@@ -22,10 +22,14 @@ import (
 	"reflect"
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/go-logr/logr"
@@ -113,37 +117,58 @@ func (e *Helper) SetupWorkers(runtime base.RuntimeInterface,
 
 }
 
-// CheckWorkersReady checks if workers are ready
-func (e *Helper) CheckWorkersReady(runtime base.RuntimeInterface,
-	currentStatus datav1alpha1.RuntimeStatus,
-	workers *appsv1.StatefulSet) (ready bool, err error) {
-
-	var (
-		phase datav1alpha1.RuntimePhase     = kubeclient.GetPhaseFromStatefulset(runtime.Replicas(), *workers)
-		cond  datav1alpha1.RuntimeCondition = datav1alpha1.RuntimeCondition{}
-	)
-
-	switch phase {
-	case datav1alpha1.RuntimePhaseReady, datav1alpha1.RuntimePhasePartialReady:
-		ready = true
-	default:
-		e.log.Info("workers are not ready", "phase", phase)
+// CheckAndUpdateWorkerStatus checks the worker statefulset's status and update it to runtime's status accordingly.
+// It returns readyOrPartialReady to indicate if the worker statefulset is (partial) ready or not ready.
+func (e *Helper) CheckAndUpdateWorkerStatus(getRuntimeFn func(client.Client) (base.RuntimeInterface, error), workerStsNamespacedName types.NamespacedName) (readyOrPartialReady bool, err error) {
+	workers, err := GetWorkersAsStatefulset(e.client,
+		workerStsNamespacedName)
+	if err != nil {
+		if fluiderrs.IsDeprecated(err) {
+			e.log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
+			readyOrPartialReady = true
+			return readyOrPartialReady, nil
+		}
+		return readyOrPartialReady, err
 	}
 
-	// update the status as the workers are ready
-	if phase != currentStatus.WorkerPhase {
+	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		runtime, err := getRuntimeFn(e.client)
+		if err != nil {
+			return err
+		}
+
+		oldStatus := runtime.GetStatus().DeepCopy()
 		statusToUpdate := runtime.GetStatus()
+		var expectReplicas int32
+		if workers.Spec.Replicas != nil {
+			expectReplicas = *workers.Spec.Replicas
+		} else {
+			expectReplicas = 0
+		}
+
+		statusToUpdate.DesiredWorkerNumberScheduled = expectReplicas
+		statusToUpdate.CurrentWorkerNumberScheduled = workers.Status.Replicas
+		statusToUpdate.WorkerNumberReady = workers.Status.ReadyReplicas
+		statusToUpdate.WorkerNumberAvailable = workers.Status.AvailableReplicas
+		statusToUpdate.WorkerNumberUnavailable = workers.Status.Replicas - workers.Status.AvailableReplicas
+		if statusToUpdate.WorkerNumberUnavailable < 0 {
+			statusToUpdate.WorkerNumberUnavailable = 0
+		}
+
+		phase := kubeclient.GetPhaseFromStatefulset(expectReplicas, *workers)
 		statusToUpdate.WorkerPhase = phase
 
+		var cond datav1alpha1.RuntimeCondition
 		if len(statusToUpdate.Conditions) == 0 {
 			statusToUpdate.Conditions = []datav1alpha1.RuntimeCondition{}
 		}
-
 		switch phase {
 		case datav1alpha1.RuntimePhaseReady:
+			readyOrPartialReady = true
 			cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersReady, datav1alpha1.RuntimeWorkersReadyReason,
 				"The workers are ready.", corev1.ConditionTrue)
 		case datav1alpha1.RuntimePhasePartialReady:
+			readyOrPartialReady = true
 			cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersReady, datav1alpha1.RuntimeWorkersReadyReason,
 				"The workers are partially ready.", corev1.ConditionTrue)
 		case datav1alpha1.RuntimePhaseNotReady:
@@ -151,19 +176,20 @@ func (e *Helper) CheckWorkersReady(runtime base.RuntimeInterface,
 				"The workers are not ready.", corev1.ConditionFalse)
 		}
 
-		if cond.Type != "" {
-			statusToUpdate.Conditions =
-				utils.UpdateRuntimeCondition(statusToUpdate.Conditions,
-					cond)
+		if len(cond.Type) != 0 {
+			statusToUpdate.Conditions = utils.UpdateRuntimeCondition(statusToUpdate.Conditions, cond)
 		}
 
-		if !reflect.DeepEqual(currentStatus, statusToUpdate) {
-			err = e.client.Status().Update(context.TODO(), runtime)
+		if !reflect.DeepEqual(oldStatus, statusToUpdate) {
+			return e.client.Status().Update(context.TODO(), runtime)
 		}
 
-	} else {
-		e.log.V(1).Info("No need to update runtime status for checking healthy")
+		return nil
+	})
+
+	if err != nil {
+		return false, errors.Wrap(err, "failed to update worker ready status in runtime status")
 	}
 
-	return
+	return readyOrPartialReady, nil
 }

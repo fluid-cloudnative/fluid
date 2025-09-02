@@ -26,12 +26,14 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // getWorkerSelectors gets the selector of the worker
@@ -98,24 +100,19 @@ func (e *EFCEngine) SetupWorkers() (err error) {
 
 // are the workers ready
 func (e *EFCEngine) CheckWorkersReady() (ready bool, err error) {
-	workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
-		types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
-	if err != nil {
-		return ready, err
+	getRuntimeFn := func(client client.Client) (base.RuntimeInterface, error) {
+		return utils.GetEFCRuntime(client, e.name, e.namespace)
 	}
 
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		runtime, err := e.getRuntime()
-		if err != nil {
-			return err
-		}
-		runtimeToUpdate := runtime.DeepCopy()
-		ready, err = e.Helper.CheckWorkersReady(runtimeToUpdate, runtimeToUpdate.Status, workers)
-		if err != nil {
-			_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to check worker ready", types.NamespacedName{Namespace: e.namespace, Name: e.name})
-		}
-		return err
-	})
+	ready, err = e.Helper.CheckAndUpdateWorkerStatus(getRuntimeFn, types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
+	if err != nil {
+		e.Log.Error(err, "fail to check and update worker status")
+		return
+	}
+
+	if !ready {
+		e.Log.Info("workers are not ready")
+	}
 
 	return
 }
