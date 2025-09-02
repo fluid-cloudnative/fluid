@@ -79,7 +79,6 @@ func (j *JuiceFSEngine) transformWorkerCacheVolumes(runtime *datav1alpha1.JuiceF
 		for i, p := range originPath {
 			if _, ok := cacheValueMap[p]; ok {
 				caches[strconv.Itoa(i)] = cacheValueMap[p]
-				continue
 			} else {
 				var volumeType = common.VolumeTypeHostPath
 				caches[strconv.Itoa(i)] = cache{
