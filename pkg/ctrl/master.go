@@ -24,9 +24,14 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/util/retry"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // CheckMasterHealthy checks the sts healthy with role
@@ -95,4 +100,69 @@ func (e *Helper) CheckMasterHealthy(recorder record.EventRecorder, runtime base.
 
 	return
 
+}
+
+func (e *Helper) CheckAndUpdateMasterStatus(getRuntimeFn func(client.Client) (base.RuntimeInterface, error), masterStsNamespacedName types.NamespacedName) (ready bool, err error) {
+	masterSts, err := kubeclient.GetStatefulSet(e.client, masterStsNamespacedName.Name, masterStsNamespacedName.Namespace)
+	if err != nil {
+		return
+	}
+
+	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		runtime, err := getRuntimeFn(e.client)
+		if err != nil {
+			return err
+		}
+
+		oldStatus := runtime.GetStatus().DeepCopy()
+		statusToUpdate := runtime.GetStatus()
+		var expectReplicas int32
+		if masterSts.Spec.Replicas != nil {
+			expectReplicas = *masterSts.Spec.Replicas
+		} else {
+			expectReplicas = 0
+		}
+
+		statusToUpdate.DesiredMasterNumberScheduled = expectReplicas
+		statusToUpdate.CurrentMasterNumberScheduled = masterSts.Status.Replicas
+		statusToUpdate.MasterNumberReady = masterSts.Status.ReadyReplicas
+
+		phase := kubeclient.GetPhaseFromStatefulset(expectReplicas, *masterSts)
+		statusToUpdate.MasterPhase = phase
+
+		var cond datav1alpha1.RuntimeCondition
+		if len(statusToUpdate.Conditions) == 0 {
+			statusToUpdate.Conditions = []datav1alpha1.RuntimeCondition{}
+		}
+		switch phase {
+		case datav1alpha1.RuntimePhaseReady:
+			ready = true
+			cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeMasterReady, datav1alpha1.RuntimeMasterReadyReason,
+				"The master is ready.", corev1.ConditionTrue)
+		case datav1alpha1.RuntimePhasePartialReady:
+			ready = true
+			cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeMasterReady, datav1alpha1.RuntimeMasterReadyReason,
+				"The master is partially ready.", corev1.ConditionTrue)
+		case datav1alpha1.RuntimePhaseNotReady:
+			ready = false
+			cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeMasterReady, datav1alpha1.RuntimeMasterReadyReason,
+				"The master is not ready.", corev1.ConditionFalse)
+		}
+
+		if len(cond.Type) != 0 {
+			statusToUpdate.Conditions = utils.UpdateRuntimeCondition(statusToUpdate.Conditions, cond)
+		}
+
+		if !reflect.DeepEqual(oldStatus, statusToUpdate) {
+			return e.client.Status().Update(context.TODO(), runtime)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return false, errors.Wrap(err, "failed to update master ready status in runtime status")
+	}
+
+	return ready, nil
 }
