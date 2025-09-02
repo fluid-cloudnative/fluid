@@ -4,17 +4,44 @@ import (
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/ptr"
 )
 
 func TestCheckMasterReady(t *testing.T) {
 	statefulsetInputs := []v1.StatefulSet{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "spark-master",
+				Name:      "spark-jindofs-master",
+				Namespace: "fluid",
+			},
+			Spec: v1.StatefulSetSpec{
+				Replicas: ptr.To[int32](1),
+			},
+			Status: v1.StatefulSetStatus{
+				ReadyReplicas: 1,
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase-jindofs-master",
+				Namespace: "fluid",
+			},
+			Spec: v1.StatefulSetSpec{
+				Replicas: ptr.To[int32](2),
+			},
+			Status: v1.StatefulSetStatus{
+				ReadyReplicas: 1,
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hadoop-jindofs-master",
 				Namespace: "fluid",
 			},
 			Status: v1.StatefulSetStatus{
@@ -23,20 +50,14 @@ func TestCheckMasterReady(t *testing.T) {
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase-master",
+				Name:      "notready-jindofs-master",
 				Namespace: "fluid",
 			},
-			Status: v1.StatefulSetStatus{
-				ReadyReplicas: 1,
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hadoop-master",
-				Namespace: "fluid",
+			Spec: v1.StatefulSetSpec{
+				Replicas: ptr.To[int32](1),
 			},
 			Status: v1.StatefulSetStatus{
-				ReadyReplicas: 1,
+				ReadyReplicas: 0,
 			},
 		},
 	}
@@ -84,6 +105,17 @@ func TestCheckMasterReady(t *testing.T) {
 				},
 			},
 		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "notready",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.JindoRuntimeSpec{
+				Master: datav1alpha1.JindoCompTemplateSpec{
+					Replicas: 1,
+				},
+			},
+		},
 	}
 	for _, JindoRuntime := range JindoRuntimeInputs {
 		testObjs = append(testObjs, JindoRuntime.DeepCopy())
@@ -96,6 +128,7 @@ func TestCheckMasterReady(t *testing.T) {
 			namespace: "fluid",
 			Client:    client,
 			Log:       fake.NullLogger(),
+			Helper:    ctrl.BuildHelper(&base.RuntimeInfo{}, client, fake.NullLogger()),
 			runtime: &datav1alpha1.JindoRuntime{Spec: datav1alpha1.JindoRuntimeSpec{
 				Master: datav1alpha1.JindoCompTemplateSpec{
 					Disabled: false,
@@ -107,6 +140,7 @@ func TestCheckMasterReady(t *testing.T) {
 			namespace: "fluid",
 			Client:    client,
 			Log:       fake.NullLogger(),
+			Helper:    ctrl.BuildHelper(&base.RuntimeInfo{}, client, fake.NullLogger()),
 			runtime: &datav1alpha1.JindoRuntime{Spec: datav1alpha1.JindoRuntimeSpec{
 				Master: datav1alpha1.JindoCompTemplateSpec{
 					Disabled: false,
@@ -118,6 +152,19 @@ func TestCheckMasterReady(t *testing.T) {
 			namespace: "fluid",
 			Client:    client,
 			Log:       fake.NullLogger(),
+			Helper:    ctrl.BuildHelper(&base.RuntimeInfo{}, client, fake.NullLogger()),
+			runtime: &datav1alpha1.JindoRuntime{Spec: datav1alpha1.JindoRuntimeSpec{
+				Master: datav1alpha1.JindoCompTemplateSpec{
+					Disabled: false,
+				}},
+			},
+		},
+		{
+			name:      "notready",
+			namespace: "fluid",
+			Client:    client,
+			Log:       fake.NullLogger(),
+			Helper:    ctrl.BuildHelper(&base.RuntimeInfo{}, client, fake.NullLogger()),
 			runtime: &datav1alpha1.JindoRuntime{Spec: datav1alpha1.JindoRuntimeSpec{
 				Master: datav1alpha1.JindoCompTemplateSpec{
 					Disabled: false,
@@ -132,10 +179,14 @@ func TestCheckMasterReady(t *testing.T) {
 	}{
 		{
 			engine:         engines[0],
-			expectedResult: false,
+			expectedResult: true,
 		},
 		{
 			engine:         engines[1],
+			expectedResult: true,
+		},
+		{
+			engine:         engines[3],
 			expectedResult: false,
 		},
 	}

@@ -20,11 +20,188 @@ import (
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-	v1 "k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
+
+var _ = Describe("AlluxioEngine master component tests", Focus, Label("pkg.ddc.alluxio.master_test.go"), func() {
+	var (
+		dataset        *datav1alpha1.Dataset
+		alluxioruntime *datav1alpha1.AlluxioRuntime
+		engine         *AlluxioEngine
+		mockedObjects  mockedObjects
+		client         client.Client
+		resources      []runtime.Object
+	)
+	BeforeEach(func() {
+		dataset, alluxioruntime = mockFluidObjectsForTests(types.NamespacedName{Namespace: "fluid", Name: "hbase"})
+		engine = mockAlluxioEngineForTests(dataset, alluxioruntime)
+		mockedObjects = mockAlluxioObjectsForTests(dataset, alluxioruntime, engine)
+		resources = []runtime.Object{
+			dataset,
+			alluxioruntime,
+			mockedObjects.MasterSts,
+			mockedObjects.WorkerSts,
+			mockedObjects.FuseDs,
+		}
+	})
+
+	// JustBeforeEach is guaranteed to run after every BeforeEach()
+	// So it's easy to modify resources' specs with an extra BeforeEach()
+	JustBeforeEach(func() {
+		client = fake.NewFakeClientWithScheme(datav1alpha1.UnitTestScheme, resources...)
+		engine.runtimeInfo.SetFuseName(engine.getFuseName())
+		engine.Client = client
+	})
+
+	Describe("Test AlluxioEngine.CheckMasterReady()", func() {
+		JustBeforeEach(func() {
+			engine.Helper = ctrl.BuildHelper(engine.runtimeInfo, engine.Client, engine.Log)
+		})
+		When("all master replicas are ready", func() {
+			BeforeEach(func() {
+				mockedObjects.MasterSts.Spec.Replicas = ptr.To[int32](1)
+				mockedObjects.MasterSts.Status.Replicas = 1
+				mockedObjects.MasterSts.Status.ReadyReplicas = 1
+			})
+
+			It("Should return ready as true", func() {
+				ready, err := engine.CheckMasterReady()
+				Expect(err).To(BeNil())
+				Expect(ready).To(BeTrue())
+
+				// Check if the runtime status is updated correctly
+				updatedRuntime, err := utils.GetAlluxioRuntime(client, alluxioruntime.Name, alluxioruntime.Namespace)
+				Expect(err).To(BeNil())
+
+				// Check if MasterPhase is set correctly
+				Expect(updatedRuntime.Status.MasterPhase).To(Equal(datav1alpha1.RuntimePhaseReady))
+
+				// Check if the condition is set correctly
+				Expect(len(updatedRuntime.Status.Conditions)).To(Equal(1))
+				Expect(updatedRuntime.Status.Conditions[0].Type).To(Equal(datav1alpha1.RuntimeMasterReady))
+				Expect(updatedRuntime.Status.Conditions[0].Status).To(Equal(corev1.ConditionTrue))
+
+				Expect(updatedRuntime.Status.DesiredMasterNumberScheduled).To(Equal(int32(1)))
+				Expect(updatedRuntime.Status.CurrentMasterNumberScheduled).To(Equal(int32(1)))
+				Expect(updatedRuntime.Status.MasterNumberReady).To(Equal(int32(1)))
+			})
+		})
+
+		When("not all master replicas are ready", func() {
+			BeforeEach(func() {
+				mockedObjects.MasterSts.Spec.Replicas = ptr.To[int32](3)
+				mockedObjects.MasterSts.Status.ReadyReplicas = 2
+				mockedObjects.MasterSts.Status.Replicas = 3
+			})
+
+			It("Should return ready as true because it's partially ready", func() {
+				ready, err := engine.CheckMasterReady()
+				Expect(err).To(BeNil())
+				Expect(ready).To(BeTrue())
+
+				// Check if the runtime status is updated correctly
+				updatedRuntime, err := utils.GetAlluxioRuntime(client, alluxioruntime.Name, alluxioruntime.Namespace)
+				Expect(err).To(BeNil())
+
+				// Check if MasterPhase is set correctly
+				Expect(updatedRuntime.Status.MasterPhase).To(Equal(datav1alpha1.RuntimePhasePartialReady))
+
+				// Check if the condition is set correctly
+				Expect(len(updatedRuntime.Status.Conditions)).To(Equal(1))
+				Expect(updatedRuntime.Status.Conditions[0].Type).To(Equal(datav1alpha1.RuntimeMasterReady))
+				Expect(updatedRuntime.Status.Conditions[0].Status).To(Equal(corev1.ConditionTrue))
+				Expect(updatedRuntime.Status.DesiredMasterNumberScheduled).To(Equal(int32(3)))
+				Expect(updatedRuntime.Status.CurrentMasterNumberScheduled).To(Equal(int32(3)))
+				Expect(updatedRuntime.Status.MasterNumberReady).To(Equal(int32(2)))
+			})
+		})
+
+		When("none of the master replicas is ready", func() {
+			BeforeEach(func() {
+				mockedObjects.MasterSts.Spec.Replicas = ptr.To[int32](1)
+				mockedObjects.MasterSts.Status.Replicas = 1
+				mockedObjects.MasterSts.Status.ReadyReplicas = 0
+			})
+
+			It("should return ready as false", func() {
+				ready, err := engine.CheckMasterReady()
+				Expect(err).To(BeNil())
+				Expect(ready).To(BeFalse())
+
+				// Check if the runtime status is updated correctly
+				updatedRuntime, err := utils.GetAlluxioRuntime(client, alluxioruntime.Name, alluxioruntime.Namespace)
+				Expect(err).To(BeNil())
+
+				Expect(len(updatedRuntime.Status.Conditions)).To(Equal(1))
+				Expect(updatedRuntime.Status.Conditions[0].Status).To(Equal(corev1.ConditionFalse))
+				Expect(updatedRuntime.Status.DesiredMasterNumberScheduled).To(Equal(int32(1)))
+				Expect(updatedRuntime.Status.CurrentMasterNumberScheduled).To(Equal(int32(1)))
+				Expect(updatedRuntime.Status.MasterNumberReady).To(Equal(int32(0)))
+			})
+		})
+
+		When("master replicas is set to 0", func() {
+			BeforeEach(func() {
+				mockedObjects.MasterSts.Spec.Replicas = ptr.To[int32](0)
+			})
+
+			It("Should return ready as true", func() {
+				ready, err := engine.CheckMasterReady()
+				Expect(err).To(BeNil())
+				Expect(ready).To(BeTrue())
+
+				// Check if the runtime status is updated correctly
+				updatedRuntime, err := utils.GetAlluxioRuntime(client, alluxioruntime.Name, alluxioruntime.Namespace)
+				Expect(err).To(BeNil())
+
+				Expect(len(updatedRuntime.Status.Conditions)).To(Equal(1))
+				Expect(updatedRuntime.Status.Conditions[0].Status).To(Equal(corev1.ConditionTrue))
+				Expect(updatedRuntime.Status.DesiredMasterNumberScheduled).To(Equal(int32(0)))
+				Expect(updatedRuntime.Status.CurrentMasterNumberScheduled).To(Equal(int32(0)))
+				Expect(updatedRuntime.Status.MasterNumberReady).To(Equal(int32(0)))
+			})
+		})
+
+		When("master replicas is not set", func() {
+			BeforeEach(func() {
+				mockedObjects.MasterSts.Spec.Replicas = nil
+			})
+
+			It("Should return ready as true", func() {
+				ready, err := engine.CheckMasterReady()
+				Expect(err).To(BeNil())
+				Expect(ready).To(BeTrue())
+
+				// Check if the runtime status is updated correctly
+				updatedRuntime, err := engine.getRuntime()
+				Expect(err).To(BeNil())
+
+				// Check if MasterPhase is set correctly
+				Expect(updatedRuntime.Status.MasterPhase).To(Equal(datav1alpha1.RuntimePhaseReady))
+
+				// Check if the condition is set correctly
+				Expect(len(updatedRuntime.Status.Conditions)).To(Equal(1))
+				Expect(updatedRuntime.Status.Conditions[0].Type).To(Equal(datav1alpha1.RuntimeMasterReady))
+				Expect(updatedRuntime.Status.Conditions[0].Status).To(Equal(corev1.ConditionTrue))
+				Expect(updatedRuntime.Status.DesiredMasterNumberScheduled).To(Equal(int32(0)))
+				Expect(updatedRuntime.Status.CurrentMasterNumberScheduled).To(Equal(int32(0)))
+				Expect(updatedRuntime.Status.MasterNumberReady).To(Equal(int32(0)))
+			})
+		})
+	})
+})
 
 // TestCheckMasterReady tests the CheckMasterReady method of the AlluxioEngine.
 // It simulates different runtime environments using fake Kubernetes clients and
@@ -44,13 +221,13 @@ import (
 //   - Also verifies that when readiness is true, the runtime's status conditions are updated correctly.
 //   - Fails the test if actual readiness does not match the expected result or if status update is missing.
 func TestCheckMasterReady(t *testing.T) {
-	statefulsetInputs := []v1.StatefulSet{
+	statefulsetInputs := []appsv1.StatefulSet{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "spark-master",
 				Namespace: "fluid",
 			},
-			Status: v1.StatefulSetStatus{
+			Status: appsv1.StatefulSetStatus{
 				ReadyReplicas: 1,
 			},
 		},
@@ -59,7 +236,7 @@ func TestCheckMasterReady(t *testing.T) {
 				Name:      "hbase-master",
 				Namespace: "fluid",
 			},
-			Status: v1.StatefulSetStatus{
+			Status: appsv1.StatefulSetStatus{
 				ReadyReplicas: 1,
 			},
 		},
@@ -68,7 +245,7 @@ func TestCheckMasterReady(t *testing.T) {
 				Name:      "hadoop-master",
 				Namespace: "fluid",
 			},
-			Status: v1.StatefulSetStatus{
+			Status: appsv1.StatefulSetStatus{
 				ReadyReplicas: 1,
 			},
 		},
@@ -264,13 +441,13 @@ func TestShouldSetupMaster(t *testing.T) {
 //  3. The runtime's status is properly updated, including the selector,
 //     configuration map name, and the presence of conditions.。
 func TestSetupMaster(t *testing.T) {
-	statefulSetInputs := []v1.StatefulSet{
+	statefulSetInputs := []appsv1.StatefulSet{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "spark-master",
 				Namespace: "fluid",
 			},
-			Status: v1.StatefulSetStatus{
+			Status: appsv1.StatefulSetStatus{
 				ReadyReplicas: 1,
 			},
 		},
