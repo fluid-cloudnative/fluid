@@ -68,23 +68,24 @@ func (j *JuiceFSEngine) transformWorkerCacheVolumes(runtime *datav1alpha1.JuiceF
 
 	// if cache-dir is set in worker option, it will override the cache-dir of worker in runtime
 	cacheDir = options["cache-dir"]
-	cacheValueMap := map[string]string{}
+	cacheValueMap := map[string]cache{}
 	for _, v := range value.CacheDirs {
-		cacheValueMap[v.Path] = v.Path
+		cacheValueMap[v.Path] = v
 	}
 	// set tiredstore cache as volume also, for clear cache when shut down
-	caches := MapDeepCopy(value.CacheDirs)
-	index := len(caches)
+	caches := map[string]cache{}
 	if cacheDir != "" {
 		originPath := strings.Split(cacheDir, ":")
 		for i, p := range originPath {
 			if _, ok := cacheValueMap[p]; ok {
+				caches[strconv.Itoa(i)] = cacheValueMap[p]
 				continue
-			}
-			var volumeType = common.VolumeTypeHostPath
-			caches[strconv.Itoa(index+i+1)] = cache{
-				Path: p,
-				Type: string(volumeType),
+			} else {
+				var volumeType = common.VolumeTypeHostPath
+				caches[strconv.Itoa(i)] = cache{
+					Path: p,
+					Type: string(volumeType),
+				}
 			}
 		}
 	}
@@ -168,22 +169,22 @@ func (j *JuiceFSEngine) transformFuseCacheVolumes(runtime *datav1alpha1.JuiceFSR
 	// if cache-dir is set in fuse option, it will override the cache-dir of worker in runtime
 	cacheDir = options["cache-dir"]
 
-	cacheValueMap := map[string]string{}
+	cacheValueMap := map[string]cache{}
 	for _, v := range value.CacheDirs {
-		cacheValueMap[v.Path] = v.Path
+		cacheValueMap[v.Path] = v
 	}
-	caches := MapDeepCopy(value.CacheDirs)
-	index := len(caches)
+	caches := map[string]cache{}
 	if cacheDir != "" {
 		originPath := strings.Split(cacheDir, ":")
 		for i, p := range originPath {
 			if _, ok := cacheValueMap[p]; ok {
-				continue
-			}
-			var volumeType = common.VolumeTypeHostPath
-			caches[strconv.Itoa(index+i+1)] = cache{
-				Path: p,
-				Type: string(volumeType),
+				caches[strconv.Itoa(i)] = cacheValueMap[p]
+			} else {
+				var volumeType = common.VolumeTypeHostPath
+				caches[strconv.Itoa(i)] = cache{
+					Path: p,
+					Type: string(volumeType),
+				}
 			}
 		}
 	}
