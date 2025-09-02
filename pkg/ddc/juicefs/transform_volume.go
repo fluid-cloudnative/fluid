@@ -67,12 +67,7 @@ func (j *JuiceFSEngine) transformWorkerCacheVolumes(runtime *datav1alpha1.JuiceF
 	cacheDir := ""
 
 	// if cache-dir is set in worker option, it will override the cache-dir of worker in runtime
-	for k, v := range options {
-		if k == "cache-dir" {
-			cacheDir = v
-			break
-		}
-	}
+	cacheDir = options["cache-dir"]
 	cacheValueMap := map[string]string{}
 	for _, v := range value.CacheDirs {
 		cacheValueMap[v.Path] = v.Path
@@ -171,12 +166,7 @@ func (j *JuiceFSEngine) transformFuseCacheVolumes(runtime *datav1alpha1.JuiceFSR
 	cacheDir := ""
 
 	// if cache-dir is set in fuse option, it will override the cache-dir of worker in runtime
-	for k, v := range options {
-		if k == "cache-dir" {
-			cacheDir = v
-			break
-		}
-	}
+	cacheDir = options["cache-dir"]
 
 	cacheValueMap := map[string]string{}
 	for _, v := range value.CacheDirs {

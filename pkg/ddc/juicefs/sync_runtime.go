@@ -526,11 +526,12 @@ func (j JuiceFSEngine) isCommandChanged(crtCommand, runtimeCommand string) (chan
 	if len(workerOption) != len(runtimeOption) {
 		j.Log.Info("The command is different.", "current sts", crtCommand, "runtime", runtimeCommand)
 		changed = true
-	}
-	for k, v := range runtimeOption {
-		if wv, ok := workerOption[k]; !ok || wv != v {
-			j.Log.Info("The command is different.", "current sts", crtCommand, "runtime", runtimeCommand)
-			changed = true
+	} else {
+		for k, v := range runtimeOption {
+			if wv, ok := workerOption[k]; !ok || wv != v {
+				j.Log.Info("The command is different.", "current sts", crtCommand, "runtime", runtimeCommand)
+				changed = true
+			}
 		}
 	}
 	newCommand = runtimeCommand
