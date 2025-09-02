@@ -429,3 +429,188 @@ func TestCheckWorkersHealthy(t *testing.T) {
 
 	}
 }
+
+func TestSetupWorkers(t *testing.T) {
+
+	// runtimeInfoSpark tests create worker in exclusive mode.
+
+	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "big-data", common.JindoRuntime)
+
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
+	runtimeInfoSpark.SetupWithDataset(&datav1alpha1.Dataset{
+		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
+	})
+
+	// runtimeInfoSpark tests create worker in shareMode mode.
+	runtimeInfoHadoop, err := base.BuildRuntimeInfo("hadoop", "big-data", common.JindoRuntime)
+	if err != nil {
+		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	}
+	runtimeInfoHadoop.SetupWithDataset(&datav1alpha1.Dataset{
+		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ShareMode},
+	})
+	nodeSelector := map[string]string{
+		"node-select": "true",
+	}
+	runtimeInfoHadoop.SetFuseNodeSelector(nodeSelector)
+
+	type fields struct {
+		replicas    int32
+		nodeInputs  []*corev1.Node
+		worker      appsv1.StatefulSet
+		runtime     *datav1alpha1.JindoRuntime
+		runtimeInfo base.RuntimeInfoInterface
+		name        string
+		namespace   string
+	}
+	tests := []struct {
+		name             string
+		fields           fields
+		wantedNodeLabels map[string]map[string]string
+	}{
+		{
+			name: "test0",
+			fields: fields{
+				replicas: 1,
+				nodeInputs: []*corev1.Node{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "test-node-spark",
+						},
+					},
+				},
+				worker: appsv1.StatefulSet{
+
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "spark-jindofs-worker",
+						Namespace: "big-data",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: ptr.To[int32](1),
+					},
+				},
+				runtime: &datav1alpha1.JindoRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "spark",
+						Namespace: "big-data",
+					},
+					Spec: datav1alpha1.JindoRuntimeSpec{
+						Replicas: 1,
+					},
+				},
+				runtimeInfo: runtimeInfoSpark,
+				name:        "spark",
+				namespace:   "big-data",
+			},
+			wantedNodeLabels: map[string]map[string]string{
+				"test-node-spark": {
+					"fluid.io/dataset-num":                "1",
+					"fluid.io/s-jindo-big-data-spark":     "true",
+					"fluid.io/s-big-data-spark":           "true",
+					"fluid.io/s-h-jindo-t-big-data-spark": "0B",
+					"fluid_exclusive":                     "big-data_spark",
+				},
+			},
+		},
+		{
+			name: "test1",
+			fields: fields{
+				replicas: 3,
+				worker: appsv1.StatefulSet{
+
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "hadoop-jindofs-worker",
+						Namespace: "big-data",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: ptr.To[int32](1),
+					},
+				},
+				runtime: &datav1alpha1.JindoRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "hadoop",
+						Namespace: "big-data",
+					},
+					Spec: datav1alpha1.JindoRuntimeSpec{
+						Replicas: 3,
+					},
+				},
+				runtimeInfo: runtimeInfoHadoop,
+				name:        "hadoop",
+				namespace:   "big-data",
+			},
+			wantedNodeLabels: map[string]map[string]string{
+				"test-node-hadoop": {
+					"fluid.io/dataset-num":                 "1",
+					"fluid.io/s-jindo-big-data-hadoop":     "true",
+					"fluid.io/s-big-data-hadoop":           "true",
+					"fluid.io/s-h-jindo-t-big-data-hadoop": "0B",
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			runtimeObjs := []runtime.Object{}
+			for _, nodeInput := range tt.fields.nodeInputs {
+				runtimeObjs = append(runtimeObjs, nodeInput.DeepCopy())
+			}
+			runtimeObjs = append(runtimeObjs, tt.fields.worker.DeepCopy())
+
+			s := runtime.NewScheme()
+			data := &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      tt.fields.name,
+					Namespace: tt.fields.namespace,
+				},
+			}
+			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
+			s.AddKnownTypes(datav1alpha1.GroupVersion, data)
+			s.AddKnownTypes(appsv1.SchemeGroupVersion, &tt.fields.worker)
+			_ = corev1.AddToScheme(s)
+			runtimeObjs = append(runtimeObjs, tt.fields.runtime)
+			runtimeObjs = append(runtimeObjs, data)
+			mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+
+			h := BuildHelper(tt.fields.runtimeInfo, mockClient, fake.NullLogger())
+
+			err := h.SetupWorkers(tt.fields.runtime, tt.fields.runtime.Status, &tt.fields.worker)
+
+			if err != nil {
+				t.Errorf("test case %s h.SetupWorkers() error = %v", t.Name(), err)
+			}
+
+			worker := &appsv1.StatefulSet{}
+			key := types.NamespacedName{
+				Namespace: tt.fields.worker.Namespace,
+				Name:      tt.fields.worker.Name,
+			}
+
+			err = mockClient.Get(context.TODO(), key, worker)
+			if err != nil {
+				t.Errorf("test case %s mockClient.Get() error = %v", t.Name(), err)
+			}
+
+			if tt.fields.replicas != *worker.Spec.Replicas {
+				t.Errorf("Failed to scale %v for %v", tt.name, tt.fields)
+			}
+
+			// for _, node := range tt.fields.nodeInputs {
+			// 	newNode, err := kubeclient.GetNode(mockClient, node.Name)
+			// 	if err != nil {
+			// 		t.Errorf("fail to get the node with the error %v", err)
+			// 	}
+
+			// 	if len(newNode.Labels) != len(tt.wantedNodeLabels[node.Name]) {
+			// 		t.Errorf("fail to decrease the labels, newNode labels is %v", newNode.Labels)
+			// 	}
+			// 	if len(newNode.Labels) != 0 && !reflect.DeepEqual(newNode.Labels, tt.wantedNodeLabels[node.Name]) {
+			// 		t.Errorf("fail to decrease the labels, newNode labels is %v", newNode.Labels)
+			// 	}
+			// }
+		})
+	}
+}
