@@ -63,27 +63,28 @@ func (j *JuiceFSEngine) transformWorkerVolumes(runtime *datav1alpha1.JuiceFSRunt
 
 // transform worker cache volumes
 // after genValue & genMount function
-func (j *JuiceFSEngine) transformWorkerCacheVolumes(runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) (err error) {
+func (j *JuiceFSEngine) transformWorkerCacheVolumes(runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS, options map[string]string) (err error) {
 	cacheDir := ""
 
 	// if cache-dir is set in worker option, it will override the cache-dir of worker in runtime
-	workerOptions := runtime.Spec.Worker.Options
-	for k, v := range workerOptions {
-		if k == "cache-dir" {
-			cacheDir = v
-			break
-		}
+	cacheDir = options["cache-dir"]
+	cacheValueMap := map[string]cache{}
+	for _, v := range value.CacheDirs {
+		cacheValueMap[v.Path] = v
 	}
 	// set tiredstore cache as volume also, for clear cache when shut down
-	caches := value.CacheDirs
-	index := len(caches)
+	caches := map[string]cache{}
 	if cacheDir != "" {
 		originPath := strings.Split(cacheDir, ":")
 		for i, p := range originPath {
-			var volumeType = common.VolumeTypeHostPath
-			caches[strconv.Itoa(index+i+1)] = cache{
-				Path: p,
-				Type: string(volumeType),
+			if _, ok := cacheValueMap[p]; ok {
+				caches[strconv.Itoa(i)] = cacheValueMap[p]
+			} else {
+				var volumeType = common.VolumeTypeHostPath
+				caches[strconv.Itoa(i)] = cache{
+					Path: p,
+					Type: string(volumeType),
+				}
 			}
 		}
 	}
@@ -161,27 +162,28 @@ func (j *JuiceFSEngine) transformFuseVolumes(runtime *datav1alpha1.JuiceFSRuntim
 
 // transform fuse cache volumes
 // after genValue & genMount function
-func (j *JuiceFSEngine) transformFuseCacheVolumes(runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) (err error) {
+func (j *JuiceFSEngine) transformFuseCacheVolumes(runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS, options map[string]string) (err error) {
 	cacheDir := ""
 
 	// if cache-dir is set in fuse option, it will override the cache-dir of worker in runtime
-	fuseOptions := runtime.Spec.Fuse.Options
-	for k, v := range fuseOptions {
-		if k == "cache-dir" {
-			cacheDir = v
-			break
-		}
-	}
+	cacheDir = options["cache-dir"]
 
-	caches := value.CacheDirs
-	index := len(caches)
+	cacheValueMap := map[string]cache{}
+	for _, v := range value.CacheDirs {
+		cacheValueMap[v.Path] = v
+	}
+	caches := map[string]cache{}
 	if cacheDir != "" {
 		originPath := strings.Split(cacheDir, ":")
 		for i, p := range originPath {
-			var volumeType = common.VolumeTypeHostPath
-			caches[strconv.Itoa(index+i+1)] = cache{
-				Path: p,
-				Type: string(volumeType),
+			if _, ok := cacheValueMap[p]; ok {
+				caches[strconv.Itoa(i)] = cacheValueMap[p]
+			} else {
+				var volumeType = common.VolumeTypeHostPath
+				caches[strconv.Itoa(i)] = cache{
+					Path: p,
+					Type: string(volumeType),
+				}
 			}
 		}
 	}

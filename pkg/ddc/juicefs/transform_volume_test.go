@@ -249,6 +249,7 @@ func TestJuiceFSEngine_transformWorkerCacheVolumes(t *testing.T) {
 	type args struct {
 		runtime *datav1alpha1.JuiceFSRuntime
 		value   *JuiceFS
+		options map[string]string
 	}
 	tests := []struct {
 		name             string
@@ -266,10 +267,11 @@ func TestJuiceFSEngine_transformWorkerCacheVolumes(t *testing.T) {
 						"1": {Path: "/cache", Type: string(common.VolumeTypeHostPath)},
 					},
 				},
+				options: map[string]string{"cache-dir": "/cache"},
 			},
 			wantErr: false,
 			wantVolumes: []corev1.Volume{{
-				Name: "cache-dir-1",
+				Name: "cache-dir-0",
 				VolumeSource: corev1.VolumeSource{
 					HostPath: &corev1.HostPathVolumeSource{
 						Path: "/cache",
@@ -278,7 +280,7 @@ func TestJuiceFSEngine_transformWorkerCacheVolumes(t *testing.T) {
 				},
 			}},
 			wantVolumeMounts: []corev1.VolumeMount{{
-				Name:      "cache-dir-1",
+				Name:      "cache-dir-0",
 				MountPath: "/cache",
 			}},
 		},
@@ -287,9 +289,7 @@ func TestJuiceFSEngine_transformWorkerCacheVolumes(t *testing.T) {
 			args: args{
 				runtime: &datav1alpha1.JuiceFSRuntime{
 					Spec: datav1alpha1.JuiceFSRuntimeSpec{
-						Worker: datav1alpha1.JuiceFSCompTemplateSpec{
-							Options: map[string]string{"cache-dir": "/worker-cache1:/worker-cache2"},
-						},
+						Worker: datav1alpha1.JuiceFSCompTemplateSpec{},
 					},
 				},
 				value: &JuiceFS{
@@ -297,11 +297,12 @@ func TestJuiceFSEngine_transformWorkerCacheVolumes(t *testing.T) {
 						"1": {Path: "/cache", Type: string(common.VolumeTypeHostPath)},
 					},
 				},
+				options: map[string]string{"cache-dir": "/cache:/worker-cache1:/worker-cache2"},
 			},
 			wantErr: false,
 			wantVolumes: []corev1.Volume{
 				{
-					Name: "cache-dir-1",
+					Name: "cache-dir-0",
 					VolumeSource: corev1.VolumeSource{
 						HostPath: &corev1.HostPathVolumeSource{
 							Path: "/cache",
@@ -310,7 +311,7 @@ func TestJuiceFSEngine_transformWorkerCacheVolumes(t *testing.T) {
 					},
 				},
 				{
-					Name: "cache-dir-2",
+					Name: "cache-dir-1",
 					VolumeSource: corev1.VolumeSource{
 						HostPath: &corev1.HostPathVolumeSource{
 							Path: "/worker-cache1",
@@ -319,7 +320,7 @@ func TestJuiceFSEngine_transformWorkerCacheVolumes(t *testing.T) {
 					},
 				},
 				{
-					Name: "cache-dir-3",
+					Name: "cache-dir-2",
 					VolumeSource: corev1.VolumeSource{
 						HostPath: &corev1.HostPathVolumeSource{
 							Path: "/worker-cache2",
@@ -330,15 +331,15 @@ func TestJuiceFSEngine_transformWorkerCacheVolumes(t *testing.T) {
 			},
 			wantVolumeMounts: []corev1.VolumeMount{
 				{
-					Name:      "cache-dir-1",
+					Name:      "cache-dir-0",
 					MountPath: "/cache",
 				},
 				{
-					Name:      "cache-dir-2",
+					Name:      "cache-dir-1",
 					MountPath: "/worker-cache1",
 				},
 				{
-					Name:      "cache-dir-3",
+					Name:      "cache-dir-2",
 					MountPath: "/worker-cache2",
 				},
 			},
@@ -349,7 +350,6 @@ func TestJuiceFSEngine_transformWorkerCacheVolumes(t *testing.T) {
 				runtime: &datav1alpha1.JuiceFSRuntime{
 					Spec: datav1alpha1.JuiceFSRuntimeSpec{
 						Worker: datav1alpha1.JuiceFSCompTemplateSpec{
-							Options: map[string]string{"cache-dir": "/worker-cache1:/worker-cache2"},
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "cache",
@@ -388,6 +388,7 @@ func TestJuiceFSEngine_transformWorkerCacheVolumes(t *testing.T) {
 						},
 					},
 				},
+				options: map[string]string{"cache-dir": "/worker-cache1:/worker-cache2"},
 			},
 			wantErr: false,
 			wantVolumes: []corev1.Volume{
@@ -398,16 +399,7 @@ func TestJuiceFSEngine_transformWorkerCacheVolumes(t *testing.T) {
 					},
 				},
 				{
-					Name: "cache-dir-1",
-					VolumeSource: corev1.VolumeSource{
-						HostPath: &corev1.HostPathVolumeSource{
-							Path: "/cache",
-							Type: &dir,
-						},
-					},
-				},
-				{
-					Name: "cache-dir-2",
+					Name: "cache-dir-0",
 					VolumeSource: corev1.VolumeSource{
 						HostPath: &corev1.HostPathVolumeSource{
 							Path: "/worker-cache1",
@@ -422,11 +414,7 @@ func TestJuiceFSEngine_transformWorkerCacheVolumes(t *testing.T) {
 					MountPath: "/worker-cache2",
 				},
 				{
-					Name:      "cache-dir-1",
-					MountPath: "/cache",
-				},
-				{
-					Name:      "cache-dir-2",
+					Name:      "cache-dir-0",
 					MountPath: "/worker-cache1",
 				},
 			},
@@ -436,9 +424,7 @@ func TestJuiceFSEngine_transformWorkerCacheVolumes(t *testing.T) {
 			args: args{
 				runtime: &datav1alpha1.JuiceFSRuntime{
 					Spec: datav1alpha1.JuiceFSRuntimeSpec{
-						Worker: datav1alpha1.JuiceFSCompTemplateSpec{
-							Options: map[string]string{"cache-dir": "/worker-cache1"},
-						},
+						Worker: datav1alpha1.JuiceFSCompTemplateSpec{},
 					},
 				},
 				value: &JuiceFS{
@@ -455,19 +441,12 @@ func TestJuiceFSEngine_transformWorkerCacheVolumes(t *testing.T) {
 					},
 					Worker: Worker{},
 				},
+				options: map[string]string{"cache-dir": "/worker-cache1"},
 			},
 			wantErr: false,
 			wantVolumes: []corev1.Volume{
 				{
-					Name: "cache-dir-1",
-					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{
-							Medium: corev1.StorageMediumMemory,
-						},
-					},
-				},
-				{
-					Name: "cache-dir-2",
+					Name: "cache-dir-0",
 					VolumeSource: corev1.VolumeSource{
 						HostPath: &corev1.HostPathVolumeSource{
 							Path: "/worker-cache1",
@@ -478,11 +457,7 @@ func TestJuiceFSEngine_transformWorkerCacheVolumes(t *testing.T) {
 			},
 			wantVolumeMounts: []corev1.VolumeMount{
 				{
-					Name:      "cache-dir-1",
-					MountPath: "/cache",
-				},
-				{
-					Name:      "cache-dir-2",
+					Name:      "cache-dir-0",
 					MountPath: "/worker-cache1",
 				},
 			},
@@ -491,7 +466,7 @@ func TestJuiceFSEngine_transformWorkerCacheVolumes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			j := &JuiceFSEngine{}
-			if err := j.transformWorkerCacheVolumes(tt.args.runtime, tt.args.value); (err != nil) != tt.wantErr {
+			if err := j.transformWorkerCacheVolumes(tt.args.runtime, tt.args.value, tt.args.options); (err != nil) != tt.wantErr {
 				t.Errorf("transformWorkerCacheVolumes() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
@@ -531,6 +506,7 @@ func TestJuiceFSEngine_transformFuseCacheVolumes(t *testing.T) {
 	type args struct {
 		runtime *datav1alpha1.JuiceFSRuntime
 		value   *JuiceFS
+		options map[string]string
 	}
 	tests := []struct {
 		name             string
@@ -548,10 +524,11 @@ func TestJuiceFSEngine_transformFuseCacheVolumes(t *testing.T) {
 						"1": {Path: "/cache", Type: string(common.VolumeTypeHostPath)},
 					},
 				},
+				options: map[string]string{"cache-dir": "/cache"},
 			},
 			wantErr: false,
 			wantVolumes: []corev1.Volume{{
-				Name: "cache-dir-1",
+				Name: "cache-dir-0",
 				VolumeSource: corev1.VolumeSource{
 					HostPath: &corev1.HostPathVolumeSource{
 						Path: "/cache",
@@ -560,7 +537,7 @@ func TestJuiceFSEngine_transformFuseCacheVolumes(t *testing.T) {
 				},
 			}},
 			wantVolumeMounts: []corev1.VolumeMount{{
-				Name:      "cache-dir-1",
+				Name:      "cache-dir-0",
 				MountPath: "/cache",
 			}},
 		},
@@ -602,9 +579,7 @@ func TestJuiceFSEngine_transformFuseCacheVolumes(t *testing.T) {
 			args: args{
 				runtime: &datav1alpha1.JuiceFSRuntime{
 					Spec: datav1alpha1.JuiceFSRuntimeSpec{
-						Fuse: datav1alpha1.JuiceFSFuseSpec{
-							Options: map[string]string{"cache-dir": "/fuse-cache1"},
-						},
+						Fuse: datav1alpha1.JuiceFSFuseSpec{},
 					},
 				},
 				value: &JuiceFS{
@@ -620,19 +595,12 @@ func TestJuiceFSEngine_transformFuseCacheVolumes(t *testing.T) {
 						},
 					},
 				},
+				options: map[string]string{"cache-dir": "/fuse-cache1"},
 			},
 			wantErr: false,
 			wantVolumes: []corev1.Volume{
 				{
-					Name: "cache-dir-1",
-					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{
-							Medium: corev1.StorageMediumMemory,
-						},
-					},
-				},
-				{
-					Name: "cache-dir-2",
+					Name: "cache-dir-0",
 					VolumeSource: corev1.VolumeSource{
 						HostPath: &corev1.HostPathVolumeSource{
 							Path: "/fuse-cache1",
@@ -643,11 +611,7 @@ func TestJuiceFSEngine_transformFuseCacheVolumes(t *testing.T) {
 			},
 			wantVolumeMounts: []corev1.VolumeMount{
 				{
-					Name:      "cache-dir-1",
-					MountPath: "/cache",
-				},
-				{
-					Name:      "cache-dir-2",
+					Name:      "cache-dir-0",
 					MountPath: "/fuse-cache1",
 				},
 			},
@@ -656,7 +620,7 @@ func TestJuiceFSEngine_transformFuseCacheVolumes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			j := &JuiceFSEngine{}
-			if err := j.transformFuseCacheVolumes(tt.args.runtime, tt.args.value); (err != nil) != tt.wantErr {
+			if err := j.transformFuseCacheVolumes(tt.args.runtime, tt.args.value, tt.args.options); (err != nil) != tt.wantErr {
 				t.Errorf("transformFuseCacheVolumes() error = %v, wantErr %v", err, tt.wantErr)
 			}
 

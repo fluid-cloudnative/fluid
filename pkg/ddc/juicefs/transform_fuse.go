@@ -106,7 +106,7 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 		return err
 	}
 	// transform cache volumes for fuse
-	err = j.transformFuseCacheVolumes(runtime, value)
+	err = j.transformFuseCacheVolumes(runtime, value, options)
 	if err != nil {
 		j.Log.Error(err, "failed to transform cache volumes for fuse")
 		return err
@@ -266,7 +266,7 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 		// options["subdir"] = subPath
 	}
 
-	var storagePath = DefaultCacheDir
+	var storagePath = ""
 	var volumeType = common.VolumeTypeHostPath
 	var volumeSource datav1alpha1.VolumeSource
 	if tiredStoreLevel != nil {
@@ -283,6 +283,9 @@ func (j *JuiceFSEngine) genValue(mount datav1alpha1.Mount, tiredStoreLevel *data
 	// transform cacheDir
 	value.CacheDirs = make(map[string]cache)
 	for i, v := range originPath {
+		if v == "" {
+			continue
+		}
 		value.CacheDirs[strconv.Itoa(i+1)] = cache{
 			Path:         v,
 			Type:         string(volumeType),
