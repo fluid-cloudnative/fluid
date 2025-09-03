@@ -23,8 +23,10 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -59,7 +61,7 @@ func (e *GooseFSEngine) CheckRuntimeHealthy() (err error) {
 	}
 
 	// 3. Check the healthy of the fuse
-	err = e.checkFuseHealthy()
+	_, err = e.checkFuseHealthy()
 	if err != nil {
 		e.Log.Error(err, "The fuse is not healthy")
 		updateErr := e.UpdateDatasetStatus(data.FailedDatasetPhase)
@@ -260,17 +262,20 @@ func (e *GooseFSEngine) checkWorkersHealthy() (err error) {
 }
 
 // checkFuseHealthy check fuses number changed
-func (e *GooseFSEngine) checkFuseHealthy() error {
-	return retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
-		runtime, err := e.getRuntime()
-		if err != nil {
-			e.Log.Error(err, "Failed to get Runtime", "runtimeName", e.name, "runtimeNamespace", e.namespace)
-			return
-		}
-		err = e.Helper.CheckFuseHealthy(e.Recorder, runtime.DeepCopy(), e.getFuseName())
-		if err != nil {
-			e.Log.Error(err, "Failed to check runtimeFuse healthy")
-		}
+func (e *GooseFSEngine) checkFuseHealthy() (ready bool, err error) {
+	getRuntimeFn := func(client client.Client) (base.RuntimeInterface, error) {
+		return utils.GetGooseFSRuntime(client, e.name, e.namespace)
+	}
+
+	ready, err = e.Helper.CheckAndUpdateFuseStatus(getRuntimeFn, types.NamespacedName{Namespace: e.namespace, Name: e.getFuseName()})
+	if err != nil {
+		e.Log.Error(err, "fail to check and update fuse status")
 		return
-	})
+	}
+
+	if !ready {
+		e.Log.Info("fuses are not ready")
+	}
+
+	return
 }
