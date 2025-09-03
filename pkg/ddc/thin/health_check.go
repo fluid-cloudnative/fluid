@@ -22,9 +22,12 @@ import (
 	"reflect"
 
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
@@ -49,7 +52,7 @@ func (t ThinEngine) CheckRuntimeHealthy() (err error) {
 	}
 
 	// Check the healthy of the fuse
-	err = t.checkFuseHealthy()
+	_, err = t.checkFuseHealthy()
 	if err != nil {
 		t.Log.Error(err, "checkFuseHealthy failed")
 		return
@@ -139,17 +142,20 @@ func (t *ThinEngine) checkWorkersHealthy() (err error) {
 }
 
 // checkFuseHealthy check fuses number changed
-func (t *ThinEngine) checkFuseHealthy() error {
-	return retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
-		runtime, err := t.getRuntime()
-		if err != nil {
-			t.Log.Error(err, "Failed to get Runtime", "runtimeName", t.name, "runtimeNamespace", t.namespace)
-			return
-		}
-		err = t.Helper.CheckFuseHealthy(t.Recorder, runtime.DeepCopy(), t.getFuseName())
-		if err != nil {
-			t.Log.Error(err, "Failed to check runtimeFuse healthy")
-		}
+func (t *ThinEngine) checkFuseHealthy() (ready bool, err error) {
+	getRuntimeFn := func(client client.Client) (base.RuntimeInterface, error) {
+		return utils.GetThinRuntime(client, t.name, t.namespace)
+	}
+
+	ready, err = t.Helper.CheckAndUpdateFuseStatus(getRuntimeFn, types.NamespacedName{Namespace: t.namespace, Name: t.getFuseName()})
+	if err != nil {
+		t.Log.Error(err, "fail to check and update fuse status")
 		return
-	})
+	}
+
+	if !ready {
+		t.Log.Info("fuses are not ready")
+	}
+
+	return
 }

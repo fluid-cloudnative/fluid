@@ -24,7 +24,9 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -33,6 +35,52 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
+
+func (e *Helper) CheckAndUpdateFuseStatus(getRuntimeFn func(client.Client) (base.RuntimeInterface, error), fuseDsNamespacedName types.NamespacedName) (ready bool, err error) {
+	fuseDs, err := kubeclient.GetDaemonset(e.client, fuseDsNamespacedName.Name, fuseDsNamespacedName.Namespace)
+	if err != nil {
+		return
+	}
+
+	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		runtime, err := getRuntimeFn(e.client)
+		if err != nil {
+			return err
+		}
+
+		oldStatus := runtime.GetStatus().DeepCopy()
+		statusToUpdate := runtime.GetStatus()
+
+		statusToUpdate.DesiredMasterNumberScheduled = fuseDs.Status.DesiredNumberScheduled
+		statusToUpdate.CurrentFuseNumberScheduled = fuseDs.Status.CurrentNumberScheduled
+		statusToUpdate.FuseNumberReady = fuseDs.Status.NumberReady
+		statusToUpdate.FuseNumberAvailable = fuseDs.Status.NumberAvailable
+		statusToUpdate.FuseNumberUnavailable = fuseDs.Status.NumberUnavailable
+
+		// fluid assumes fluid components are always ready
+		statusToUpdate.FusePhase = datav1alpha1.RuntimePhaseReady
+		ready = true
+
+		if len(statusToUpdate.Conditions) == 0 {
+			statusToUpdate.Conditions = []datav1alpha1.RuntimeCondition{}
+		}
+		cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeFusesReady, datav1alpha1.RuntimeFusesReadyReason, "The fuses are ready.", corev1.ConditionTrue)
+		statusToUpdate.FuseReason = cond.Reason
+		statusToUpdate.Conditions = utils.UpdateRuntimeCondition(statusToUpdate.Conditions, cond)
+
+		if !reflect.DeepEqual(oldStatus, statusToUpdate) {
+			return e.client.Status().Update(context.TODO(), runtime)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return false, errors.Wrapf(err, "failed to update fuse ready status in runtime status")
+	}
+
+	return ready, nil
+}
 
 // CheckFuseHealthy checks the ds healthy with role
 func (e *Helper) CheckFuseHealthy(recorder record.EventRecorder, runtime base.RuntimeInterface, fuseName string) error {

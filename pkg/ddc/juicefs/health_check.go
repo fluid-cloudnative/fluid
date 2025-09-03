@@ -21,9 +21,12 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -43,7 +46,7 @@ func (j *JuiceFSEngine) CheckRuntimeHealthy() (err error) {
 	}
 
 	// 2. Check the healthy of the fuse
-	err = j.checkFuseHealthy()
+	_, err = j.checkFuseHealthy()
 	if err != nil {
 		j.Log.Error(err, "The fuse is not healthy")
 		updateErr := j.UpdateDatasetStatus(data.FailedDatasetPhase)
@@ -142,17 +145,20 @@ func (j *JuiceFSEngine) checkWorkersHealthy() (err error) {
 }
 
 // checkFuseHealthy check fuses number changed
-func (j *JuiceFSEngine) checkFuseHealthy() error {
-	return retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
-		runtime, err := j.getRuntime()
-		if err != nil {
-			j.Log.Error(err, "Failed to get Runtime", "runtimeName", j.name, "runtimeNamespace", j.namespace)
-			return
-		}
-		err = j.Helper.CheckFuseHealthy(j.Recorder, runtime.DeepCopy(), j.getFuseName())
-		if err != nil {
-			j.Log.Error(err, "Failed to check runtimeFuse healthy")
-		}
+func (j *JuiceFSEngine) checkFuseHealthy() (ready bool, err error) {
+	getRuntimeFn := func(client client.Client) (base.RuntimeInterface, error) {
+		return utils.GetJuiceFSRuntime(client, j.name, j.namespace)
+	}
+
+	ready, err = j.Helper.CheckAndUpdateFuseStatus(getRuntimeFn, types.NamespacedName{Namespace: j.namespace, Name: j.getFuseName()})
+	if err != nil {
+		j.Log.Error(err, "fail to check and update fuse status")
 		return
-	})
+	}
+
+	if !ready {
+		j.Log.Info("fuses are not ready")
+	}
+
+	return
 }

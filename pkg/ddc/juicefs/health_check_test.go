@@ -398,7 +398,7 @@ func TestCheckFuseHealthy(t *testing.T) {
 	for _, test := range testCase {
 		runtimeInfo, _ := base.BuildRuntimeInfo(test.engine.name, test.engine.namespace, common.JuiceFSRuntime)
 		test.engine.Helper = ctrl.BuildHelper(runtimeInfo, client, test.engine.Log)
-		err := test.engine.checkFuseHealthy()
+		_, err := test.engine.checkFuseHealthy()
 		if err != nil && test.expectedErrorNil == true ||
 			err == nil && test.expectedErrorNil == false {
 			t.Errorf("fail to exec the CheckFuseHealthy function with err %v", err)
