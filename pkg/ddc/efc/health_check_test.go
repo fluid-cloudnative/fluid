@@ -71,6 +71,9 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 						Name:      "health-data-master",
 						Namespace: "big-data",
 					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: ptr.To[int32](1),
+					},
 					Status: appsv1.StatefulSetStatus{
 						Replicas:      1,
 						ReadyReplicas: 1,
@@ -130,6 +133,9 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "master-no-health-data-master",
 						Namespace: "big-data",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: ptr.To[int32](1),
 					},
 					Status: appsv1.StatefulSetStatus{
 						Replicas:      1,
@@ -191,6 +197,9 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 						Name:      "worker-no-health-data-master",
 						Namespace: "big-data",
 					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: ptr.To[int32](1),
+					},
 					Status: appsv1.StatefulSetStatus{
 						Replicas:      1,
 						ReadyReplicas: 1,
@@ -251,6 +260,9 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 						Name:      "worker-partial-health-data-master",
 						Namespace: "big-data",
 					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: ptr.To[int32](1),
+					},
 					Status: appsv1.StatefulSetStatus{
 						Replicas:      1,
 						ReadyReplicas: 1,
@@ -292,7 +304,7 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 		},
 		{
 			name:    "fuse-no-healthy",
-			wantErr: false,
+			wantErr: false, // fluid assumes fuse is always healthy
 			fields: fields{
 				name:      "fuse-no-health-data",
 				namespace: "big-data",
@@ -310,6 +322,9 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "fuse-no-health-data-master",
 						Namespace: "big-data",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: ptr.To[int32](1),
 					},
 					Status: appsv1.StatefulSetStatus{
 						Replicas:      1,
@@ -370,6 +385,9 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "endpoints-no-health-data-master",
 						Namespace: "big-data",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: ptr.To[int32](1),
 					},
 					Status: appsv1.StatefulSetStatus{
 						Replicas:      1,

@@ -53,7 +53,7 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 			Status: appsv1.StatefulSetStatus{
 				Replicas:        1,
 				ReadyReplicas:   1,
-				CurrentReplicas: 1,
+				AvailableReplicas: 1,
 			},
 			Spec: appsv1.StatefulSetSpec{
 				Replicas: ptr.To[int32](1),

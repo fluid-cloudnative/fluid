@@ -24,6 +24,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/ptr"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/api/core/v1"
@@ -68,6 +69,9 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 						Name:      "health-data-jindofs-worker",
 						Namespace: "big-data",
 					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: ptr.To[int32](1),
+					},
 					Status: appsv1.StatefulSetStatus{
 						Replicas:      1,
 						ReadyReplicas: 1,
@@ -77,6 +81,9 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "health-data-jindofs-master",
 						Namespace: "big-data",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: ptr.To[int32](1),
 					},
 					Status: appsv1.StatefulSetStatus{
 						Replicas:      1,
@@ -115,6 +122,9 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 						Name:      "unhealthy-master-jindofs-worker",
 						Namespace: "big-data",
 					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: ptr.To[int32](1),
+					},
 					Status: appsv1.StatefulSetStatus{
 						ReadyReplicas: 0,
 						Replicas:      1,
@@ -123,6 +133,9 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "unhealthy-master-jindofs-master",
 						Namespace: "big-data",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: ptr.To[int32](1),
 					},
 					Status: appsv1.StatefulSetStatus{
 						ReadyReplicas: 0,
@@ -158,6 +171,9 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 						Name:      "unhealthy-worker-jindofs-worker",
 						Namespace: "big-data",
 					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: ptr.To[int32](1),
+					},
 					Status: appsv1.StatefulSetStatus{
 						ReadyReplicas: 0,
 						Replicas:      1,
@@ -166,6 +182,9 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "unhealthy-worker-jindofs-master",
 						Namespace: "big-data",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: ptr.To[int32](1),
 					},
 					Status: appsv1.StatefulSetStatus{
 						ReadyReplicas: 1,

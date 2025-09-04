@@ -45,7 +45,7 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 			Status: appsv1.StatefulSetStatus{
 				Replicas:        1,
 				ReadyReplicas:   1,
-				CurrentReplicas: 1,
+				AvailableReplicas: 1,
 			},
 		},
 		{
@@ -59,7 +59,7 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 			Status: appsv1.StatefulSetStatus{
 				Replicas:        1,
 				ReadyReplicas:   0,
-				CurrentReplicas: 0,
+				AvailableReplicas: 0,
 			},
 		},
 	}

@@ -74,6 +74,16 @@ func (e *EFCEngine) CheckRuntimeHealthy() (err error) {
 		return fmt.Errorf("the fuse \"%s\" is not healthy", e.getFuseName())
 	}
 
+	_, err = e.syncWorkersEndpoints()
+	if err != nil {
+		e.Log.Error(err, "The worker endpoints is not healthy")
+		updateErr := e.UpdateDatasetStatus(data.FailedDatasetPhase)
+		if updateErr != nil {
+			e.Log.Error(updateErr, "Failed to update dataset")
+		}
+		return
+	}
+
 	err = e.UpdateDatasetStatus(data.BoundDatasetPhase)
 	if err != nil {
 		e.Log.Error(err, "fail to update dataset status to \"Bound\"")
