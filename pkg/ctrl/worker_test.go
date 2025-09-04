@@ -24,6 +24,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
@@ -32,7 +33,81 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
+
+var _ = Describe("Ctrl Worker Tests", Label("pkg.ctrl.master_test.go"), func() {
+	var helper *Helper
+	var resources []runtime.Object
+	var workerSts *appsv1.StatefulSet
+	var k8sClient client.Client
+	var runtimeInfo base.RuntimeInfoInterface
+	BeforeEach(func() {
+		workerSts = mockRuntimeStatefulset("test-helper", "fluid")
+		resources = []runtime.Object{
+			workerSts,
+		}
+	})
+	JustBeforeEach(func() {
+		k8sClient = fake.NewFakeClientWithScheme(datav1alpha1.UnitTestScheme, resources...)
+		helper = BuildHelper(runtimeInfo, k8sClient, fake.NullLogger())
+	})
+
+	Describe("Test Helper.CheckAndUpdateMasterStatus()", func() {
+		When("master sts is ready", func() {
+			BeforeEach(func() {
+				workerSts.Spec.Replicas = ptr.To[int32](1)
+				workerSts.Status.AvailableReplicas = 1
+				workerSts.Status.Replicas = 1
+				workerSts.Status.ReadyReplicas = 1
+			})
+
+			When("applying to AlluxioRuntime", func() {
+				var alluxioruntime *datav1alpha1.AlluxioRuntime
+				BeforeEach(func() {
+					alluxioruntime = &datav1alpha1.AlluxioRuntime{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "test-alluxio",
+							Namespace: "fluid",
+						},
+						Spec:   datav1alpha1.AlluxioRuntimeSpec{},
+						Status: datav1alpha1.RuntimeStatus{},
+					}
+					resources = append(resources, alluxioruntime)
+				})
+				It("should update AlluxioRuntime's status successfully", func() {
+					getRuntimeFn := func(k8sClient client.Client) (base.RuntimeInterface, error) {
+						runtime := &datav1alpha1.AlluxioRuntime{}
+						err := k8sClient.Get(context.TODO(), types.NamespacedName{Namespace: alluxioruntime.Namespace, Name: alluxioruntime.Name}, runtime)
+						return runtime, err
+					}
+
+					ready, err := helper.CheckAndUpdateWorkerStatus(getRuntimeFn, types.NamespacedName{Namespace: workerSts.Namespace, Name: workerSts.Name})
+					Expect(err).To(BeNil())
+					Expect(ready).To(BeTrue())
+
+					gotRuntime := &datav1alpha1.AlluxioRuntime{}
+					err = k8sClient.Get(context.TODO(), types.NamespacedName{Namespace: alluxioruntime.Namespace, Name: alluxioruntime.Name}, gotRuntime)
+					Expect(err).To(BeNil())
+					Expect(gotRuntime.Status.WorkerPhase).To(Equal(datav1alpha1.RuntimePhaseReady))
+					Expect(gotRuntime.Status.DesiredWorkerNumberScheduled).To(BeEquivalentTo(1))
+					Expect(gotRuntime.Status.CurrentWorkerNumberScheduled).To(BeEquivalentTo(1))
+					Expect(gotRuntime.Status.WorkerNumberReady).To(BeEquivalentTo(1))
+					Expect(gotRuntime.Status.WorkerNumberAvailable).To(BeEquivalentTo(1))
+					Expect(gotRuntime.Status.WorkerNumberUnavailable).To(BeEquivalentTo(0))
+
+					Expect(gotRuntime.Status.Conditions).To(HaveLen(1))
+					Expect(gotRuntime.Status.Conditions[0].Type).To(Equal(datav1alpha1.RuntimeWorkersReady))
+					Expect(gotRuntime.Status.Conditions[0].Status).To(Equal(corev1.ConditionTrue))
+				})
+			})
+		})
+
+	})
+
+})
 
 func TestGetWorkersAsStatefulset(t *testing.T) {
 
