@@ -30,7 +30,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -38,7 +37,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	"k8s.io/utils/ptr"
 )
 
 // GetWorkersAsStatefulset gets workers as statefulset object. if it returns deprecated errors, it indicates that
@@ -60,79 +58,6 @@ func GetWorkersAsStatefulset(client client.Client, key types.NamespacedName) (wo
 	}
 
 	return
-}
-
-// CheckworkersHealthy checks the sts healthy with role
-func (e *Helper) CheckWorkersHealthy(recorder record.EventRecorder, runtime base.RuntimeInterface,
-	currentStatus datav1alpha1.RuntimeStatus,
-	sts *appsv1.StatefulSet) (err error) {
-	var (
-		healthy bool
-	)
-
-	if sts.Spec.Replicas == ptr.To[int32](0) || sts.Status.ReadyReplicas > 0 {
-		healthy = true
-	}
-
-	statusToUpdate := runtime.GetStatus()
-	if len(statusToUpdate.Conditions) == 0 {
-		statusToUpdate.Conditions = []datav1alpha1.RuntimeCondition{}
-	}
-
-	if healthy {
-		var cond datav1alpha1.RuntimeCondition
-		if sts.Status.Replicas == sts.Status.ReadyReplicas {
-			statusToUpdate.WorkerPhase = datav1alpha1.RuntimePhaseReady
-			cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersReady, "The worker are ready.",
-				"The worker are ready.", corev1.ConditionTrue)
-		} else {
-			statusToUpdate.WorkerPhase = datav1alpha1.RuntimePhasePartialReady
-			cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersReady, "The worker are partial ready.",
-				"The worker are partial ready.", corev1.ConditionTrue)
-		}
-		_, oldCond := utils.GetRuntimeCondition(statusToUpdate.Conditions, cond.Type)
-		if oldCond == nil || oldCond.Type != cond.Type {
-			statusToUpdate.Conditions =
-				utils.UpdateRuntimeCondition(statusToUpdate.Conditions,
-					cond)
-		}
-	} else {
-		// 1. Update the status
-		cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersReady, "The workers are not ready.",
-			fmt.Sprintf("The workers %s in %s are not ready.", sts.Name, sts.Namespace), corev1.ConditionFalse)
-		_, oldCond := utils.GetRuntimeCondition(statusToUpdate.Conditions, cond.Type)
-
-		if oldCond == nil || oldCond.Type != cond.Type {
-			statusToUpdate.Conditions =
-				utils.UpdateRuntimeCondition(statusToUpdate.Conditions,
-					cond)
-		}
-		statusToUpdate.WorkerPhase = datav1alpha1.RuntimePhaseNotReady
-
-		// 2. Record the event
-		err = fmt.Errorf("the workers %s in namespace %s are not ready. The expected number is %d, the actual number is %d",
-			sts.Name,
-			sts.Namespace,
-			sts.Status.Replicas,
-			sts.Status.ReadyReplicas)
-
-		recorder.Eventf(runtime, corev1.EventTypeWarning, "WorkersUnhealthy", err.Error())
-	}
-
-	status := *statusToUpdate
-	if !reflect.DeepEqual(status, currentStatus) {
-		updateErr := e.client.Status().Update(context.TODO(), runtime)
-		if updateErr != nil {
-			return updateErr
-		}
-	}
-
-	if err != nil {
-		return
-	}
-
-	return
-
 }
 
 func (e *Helper) GetWorkerNodes() (nodes []corev1.Node, err error) {

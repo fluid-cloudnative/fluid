@@ -25,7 +25,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -80,84 +79,6 @@ func (e *Helper) CheckAndUpdateFuseStatus(getRuntimeFn func(client.Client) (base
 	}
 
 	return ready, nil
-}
-
-// CheckFuseHealthy checks the ds healthy with role
-func (e *Helper) CheckFuseHealthy(recorder record.EventRecorder, runtime base.RuntimeInterface, fuseName string) error {
-	currentStatus := runtime.GetStatus()
-
-	runtimeInfo := e.runtimeInfo
-	ds, err := kubeclient.GetDaemonset(e.client, fuseName, runtimeInfo.GetNamespace())
-	if err != nil {
-		e.log.Error(err, "Failed to get Fuse Daemonset", "fuseDaemonsetName", ds.Name, "fuseDaemonsetNamespace", ds.Namespace)
-		return err
-	}
-
-	healthy := true
-	if ds.Status.NumberUnavailable > 0 ||
-		(ds.Status.DesiredNumberScheduled > 0 && ds.Status.NumberAvailable == 0) {
-		healthy = false
-	}
-
-	updateRuntimeStatus := func(fusePhase datav1alpha1.RuntimePhase,
-		reason, message string) error {
-		statusToUpdate := runtime.GetStatus()
-
-		conditionStatus := corev1.ConditionFalse
-		if fusePhase == datav1alpha1.RuntimePhaseReady {
-			conditionStatus = corev1.ConditionTrue
-		}
-
-		cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeFusesReady, reason, message, conditionStatus)
-		_, oldCond := utils.GetRuntimeCondition(statusToUpdate.Conditions, cond.Type)
-
-		if oldCond == nil || oldCond.Type != cond.Type {
-			statusToUpdate.Conditions =
-				utils.UpdateRuntimeCondition(statusToUpdate.Conditions,
-					cond)
-		}
-		statusToUpdate.FusePhase = fusePhase
-		statusToUpdate.FuseReason = reason
-		statusToUpdate.CurrentFuseNumberScheduled = int32(ds.Status.CurrentNumberScheduled)
-		statusToUpdate.DesiredFuseNumberScheduled = int32(ds.Status.DesiredNumberScheduled)
-		statusToUpdate.FuseNumberReady = int32(ds.Status.NumberReady)
-		statusToUpdate.FuseNumberAvailable = int32(ds.Status.NumberAvailable)
-		statusToUpdate.FuseNumberUnavailable = int32(ds.Status.NumberUnavailable)
-		if !reflect.DeepEqual(*statusToUpdate, currentStatus) {
-			e.log.V(1).Info("Update runtime status", "runtime", fmt.Sprintf("%s/%s", runtime.GetNamespace(), runtime.GetName()))
-			return e.client.Status().Update(context.TODO(), runtime)
-		}
-		return nil
-	}
-
-	if healthy {
-		if err := updateRuntimeStatus(
-			datav1alpha1.RuntimePhaseReady,
-			"The fuse is ready.",
-			"The fuse is ready."); err != nil {
-			return err
-		}
-		return nil
-	}
-
-	// handle unhealthy case
-	// 1. Update the status
-	if err := updateRuntimeStatus(
-		datav1alpha1.RuntimePhaseNotReady,
-		"The fuses are not ready.",
-		fmt.Sprintf("The fuses %s in %s are not ready.", ds.Name, ds.Namespace)); err != nil {
-		return err
-	}
-
-	// 2. Record the event
-	recorder.Eventf(runtime, corev1.EventTypeWarning, "FuseUnhealthy",
-		fmt.Errorf("the fuse %s in %s are not ready. The expected number is %d, the actual number is %d",
-			ds.Name,
-			ds.Namespace,
-			ds.Status.DesiredNumberScheduled,
-			ds.Status.NumberReady).Error())
-
-	return nil
 }
 
 // CleanUpFuse will cleanup node label for Fuse.
