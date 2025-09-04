@@ -57,7 +57,7 @@ func (e *Helper) CheckAndUpdateFuseStatus(getRuntimeFn func(client.Client) (base
 		statusToUpdate.FuseNumberAvailable = fuseDs.Status.NumberAvailable
 		statusToUpdate.FuseNumberUnavailable = fuseDs.Status.NumberUnavailable
 
-		// fluid assumes fluid components are always ready
+		// fluid assumes fuse components are always ready
 		statusToUpdate.FusePhase = datav1alpha1.RuntimePhaseReady
 		ready = true
 
