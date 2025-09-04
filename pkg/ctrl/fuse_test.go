@@ -25,16 +25,95 @@ import (
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/go-logr/logr"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 var (
 	testScheme *runtime.Scheme
 )
+
+var _ = Describe("Ctrl Helper Fuse Tests", Label("pkg.ctrl.fuse_test.go"), func() {
+	var helper *Helper
+	var resources []runtime.Object
+	var fuseDs *appsv1.DaemonSet
+	var k8sClient client.Client
+	var runtimeInfo base.RuntimeInfoInterface
+
+	BeforeEach(func() {
+		fuseDs = mockRuntimeDaemonset("test-helper-fuse", "fluid")
+		resources = []runtime.Object{
+			fuseDs,
+		}
+	})
+
+	JustBeforeEach(func() {
+		k8sClient = fake.NewFakeClientWithScheme(datav1alpha1.UnitTestScheme, resources...)
+		helper = BuildHelper(runtimeInfo, k8sClient, fake.NullLogger())
+	})
+
+	Describe("Test Helper.CheckAndUpdateFuseStatus()", func() {
+		When("fuse ds is ready", func() {
+			BeforeEach(func() {
+				fuseDs.Status.DesiredNumberScheduled = 1
+				fuseDs.Status.CurrentNumberScheduled = 1
+				fuseDs.Status.NumberReady = 1
+				fuseDs.Status.NumberAvailable = 1
+				fuseDs.Status.NumberUnavailable = 0
+			})
+
+			When("applying to AlluxioRuntime", func() {
+				var alluxioruntime *datav1alpha1.AlluxioRuntime
+				BeforeEach(func() {
+					alluxioruntime = &datav1alpha1.AlluxioRuntime{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "test-alluxio",
+							Namespace: "fluid",
+						},
+						Spec:   datav1alpha1.AlluxioRuntimeSpec{},
+						Status: datav1alpha1.RuntimeStatus{},
+					}
+					resources = append(resources, alluxioruntime)
+				})
+
+				It("should update AlluxioRuntime's status successfully", func() {
+					getRuntimeFn := func(k8sClient client.Client) (base.RuntimeInterface, error) {
+						runtime := &datav1alpha1.AlluxioRuntime{}
+						err := k8sClient.Get(context.TODO(), types.NamespacedName{Namespace: alluxioruntime.Namespace, Name: alluxioruntime.Name}, runtime)
+						return runtime, err
+					}
+
+					ready, err := helper.CheckAndUpdateFuseStatus(getRuntimeFn, types.NamespacedName{Namespace: fuseDs.Namespace, Name: fuseDs.Name})
+					Expect(err).To(BeNil())
+					Expect(ready).To(BeTrue())
+
+					gotRuntime := &datav1alpha1.AlluxioRuntime{}
+					err = k8sClient.Get(context.TODO(), types.NamespacedName{Namespace: alluxioruntime.Namespace, Name: alluxioruntime.Name}, gotRuntime)
+					Expect(err).To(BeNil())
+					Expect(gotRuntime.Status.FusePhase).To(Equal(datav1alpha1.RuntimePhaseReady))
+					Expect(gotRuntime.Status.DesiredMasterNumberScheduled).To(BeEquivalentTo(1))
+					Expect(gotRuntime.Status.CurrentFuseNumberScheduled).To(BeEquivalentTo(1))
+					Expect(gotRuntime.Status.FuseNumberReady).To(BeEquivalentTo(1))
+					Expect(gotRuntime.Status.FuseNumberAvailable).To(BeEquivalentTo(1))
+					Expect(gotRuntime.Status.FuseNumberUnavailable).To(BeEquivalentTo(0))
+
+					Expect(gotRuntime.Status.Conditions).To(HaveLen(1))
+					Expect(gotRuntime.Status.Conditions[0].Type).To(Equal(datav1alpha1.RuntimeFusesReady))
+					Expect(gotRuntime.Status.Conditions[0].Status).To(Equal(corev1.ConditionTrue))
+				})
+			})
+		})
+	})
+})
 
 func TestCleanUpFuse(t *testing.T) {
 	var testCase = []struct {

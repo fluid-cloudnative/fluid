@@ -25,13 +25,13 @@ func mockRuntimeStatefulset(name, namespace string) *appsv1.StatefulSet {
 	}
 }
 
-// func mockRuntimeDaemonset(name, namespace string) *appsv1.DaemonSet {
-// 	return &appsv1.DaemonSet{
-// 		ObjectMeta: metav1.ObjectMeta{
-// 			Name:      name,
-// 			Namespace: namespace,
-// 		},
-// 		Spec:   appsv1.DaemonSetSpec{},
-// 		Status: appsv1.DaemonSetStatus{},
-// 	}
-// }
+func mockRuntimeDaemonset(name, namespace string) *appsv1.DaemonSet {
+	return &appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Spec:   appsv1.DaemonSetSpec{},
+		Status: appsv1.DaemonSetStatus{},
+	}
+}

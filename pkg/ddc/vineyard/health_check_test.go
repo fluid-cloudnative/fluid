@@ -51,8 +51,8 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Status: appsv1.StatefulSetStatus{
-				Replicas:        1,
-				ReadyReplicas:   1,
+				Replicas:          1,
+				ReadyReplicas:     1,
 				AvailableReplicas: 1,
 			},
 			Spec: appsv1.StatefulSetSpec{

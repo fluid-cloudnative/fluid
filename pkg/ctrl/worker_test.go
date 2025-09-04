@@ -45,7 +45,7 @@ var _ = Describe("Ctrl Worker Tests", Label("pkg.ctrl.master_test.go"), func() {
 	var k8sClient client.Client
 	var runtimeInfo base.RuntimeInfoInterface
 	BeforeEach(func() {
-		workerSts = mockRuntimeStatefulset("test-helper", "fluid")
+		workerSts = mockRuntimeStatefulset("test-helper-worker", "fluid")
 		resources = []runtime.Object{
 			workerSts,
 		}
@@ -55,7 +55,7 @@ var _ = Describe("Ctrl Worker Tests", Label("pkg.ctrl.master_test.go"), func() {
 		helper = BuildHelper(runtimeInfo, k8sClient, fake.NullLogger())
 	})
 
-	Describe("Test Helper.CheckAndUpdateMasterStatus()", func() {
+	Describe("Test Helper.CheckAndUpdateWorkerStatus()", func() {
 		When("master sts is ready", func() {
 			BeforeEach(func() {
 				workerSts.Spec.Replicas = ptr.To[int32](1)
