@@ -84,7 +84,7 @@ var _ = Describe("Ctrl Worker Tests", Label("pkg.ctrl.master_test.go"), func() {
 						return runtime, err
 					}
 
-					ready, err := helper.CheckAndUpdateWorkerStatus(getRuntimeFn, types.NamespacedName{Namespace: workerSts.Namespace, Name: workerSts.Name})
+					ready, err := helper.CheckAndSyncWorkerStatus(getRuntimeFn, types.NamespacedName{Namespace: workerSts.Namespace, Name: workerSts.Name})
 					Expect(err).To(BeNil())
 					Expect(ready).To(BeTrue())
 

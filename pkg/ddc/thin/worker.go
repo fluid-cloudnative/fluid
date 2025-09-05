@@ -37,7 +37,7 @@ func (t ThinEngine) CheckWorkersReady() (ready bool, err error) {
 		return utils.GetThinRuntime(client, t.name, t.namespace)
 	}
 
-	ready, err = t.Helper.CheckAndUpdateWorkerStatus(getRuntimeFn, types.NamespacedName{Namespace: t.namespace, Name: t.getWorkerName()})
+	ready, err = t.Helper.CheckAndSyncWorkerStatus(getRuntimeFn, types.NamespacedName{Namespace: t.namespace, Name: t.getWorkerName()})
 	if err != nil {
 		t.Log.Error(err, "fail to check and update worker status")
 		return

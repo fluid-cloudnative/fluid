@@ -75,7 +75,7 @@ func (j *JuiceFSEngine) checkFuseHealthy() (ready bool, err error) {
 		return utils.GetJuiceFSRuntime(client, j.name, j.namespace)
 	}
 
-	ready, err = j.Helper.CheckAndUpdateFuseStatus(getRuntimeFn, types.NamespacedName{Namespace: j.namespace, Name: j.getFuseName()})
+	ready, err = j.Helper.CheckAndSyncFuseStatus(getRuntimeFn, types.NamespacedName{Namespace: j.namespace, Name: j.getFuseName()})
 	if err != nil {
 		j.Log.Error(err, "failed to check and update fuse status")
 		return

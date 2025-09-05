@@ -93,7 +93,7 @@ func (e *JindoEngine) CheckWorkersReady() (ready bool, err error) {
 		return utils.GetJindoRuntime(client, e.name, e.namespace)
 	}
 
-	ready, err = e.Helper.CheckAndUpdateWorkerStatus(getRuntimeFn, types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
+	ready, err = e.Helper.CheckAndSyncWorkerStatus(getRuntimeFn, types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
 	if err != nil {
 		e.Log.Error(err, "fail to check and update worker status")
 		return

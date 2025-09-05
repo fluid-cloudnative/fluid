@@ -98,7 +98,7 @@ func (e *JindoFSxEngine) checkFuseHealthy() (ready bool, err error) {
 		return utils.GetJindoRuntime(client, e.name, e.namespace)
 	}
 
-	ready, err = e.Helper.CheckAndUpdateFuseStatus(getRuntimeFn, types.NamespacedName{Namespace: e.namespace, Name: e.getFuseName()})
+	ready, err = e.Helper.CheckAndSyncFuseStatus(getRuntimeFn, types.NamespacedName{Namespace: e.namespace, Name: e.getFuseName()})
 	if err != nil {
 		e.Log.Error(err, "failed to check and update fuse status")
 		return

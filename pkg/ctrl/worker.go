@@ -166,9 +166,9 @@ func (e *Helper) SetupWorkers(runtime base.RuntimeInterface,
 
 }
 
-// CheckAndUpdateWorkerStatus checks the worker statefulset's status and update it to runtime's status accordingly.
+// CheckAndSyncWorkerStatus checks the worker statefulset's status and update it to runtime's status accordingly.
 // It returns readyOrPartialReady to indicate if the worker statefulset is (partial) ready or not ready.
-func (e *Helper) CheckAndUpdateWorkerStatus(getRuntimeFn func(client.Client) (base.RuntimeInterface, error), workerStsNamespacedName types.NamespacedName) (readyOrPartialReady bool, err error) {
+func (e *Helper) CheckAndSyncWorkerStatus(getRuntimeFn func(client.Client) (base.RuntimeInterface, error), workerStsNamespacedName types.NamespacedName) (readyOrPartialReady bool, err error) {
 	workers, err := GetWorkersAsStatefulset(e.client,
 		workerStsNamespacedName)
 	if err != nil {

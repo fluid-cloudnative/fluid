@@ -38,7 +38,7 @@ func (e *GooseFSEngine) CheckMasterReady() (ready bool, err error) {
 		return utils.GetGooseFSRuntime(client, e.name, e.namespace)
 	}
 
-	ready, err = e.Helper.CheckAndUpdateMasterStatus(getRuntimeFn, types.NamespacedName{Namespace: e.namespace, Name: e.getMasterName()})
+	ready, err = e.Helper.CheckAndSyncMasterStatus(getRuntimeFn, types.NamespacedName{Namespace: e.namespace, Name: e.getMasterName()})
 	if err != nil {
 		e.Log.Error(err, "fail to check and update master status")
 		return

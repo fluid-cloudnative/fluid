@@ -34,7 +34,7 @@ func (j JuiceFSEngine) CheckWorkersReady() (ready bool, err error) {
 		return utils.GetJuiceFSRuntime(client, j.name, j.namespace)
 	}
 
-	ready, err = j.Helper.CheckAndUpdateWorkerStatus(getRuntimeFn, types.NamespacedName{Namespace: j.namespace, Name: j.getWorkerName()})
+	ready, err = j.Helper.CheckAndSyncWorkerStatus(getRuntimeFn, types.NamespacedName{Namespace: j.namespace, Name: j.getWorkerName()})
 	if err != nil {
 		j.Log.Error(err, "fail to check and update worker status")
 		return

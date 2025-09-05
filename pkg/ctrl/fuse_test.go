@@ -92,7 +92,7 @@ var _ = Describe("Ctrl Helper Fuse Tests", Label("pkg.ctrl.fuse_test.go"), func(
 						return runtime, err
 					}
 
-					ready, err := helper.CheckAndUpdateFuseStatus(getRuntimeFn, types.NamespacedName{Namespace: fuseDs.Namespace, Name: fuseDs.Name})
+					ready, err := helper.CheckAndSyncFuseStatus(getRuntimeFn, types.NamespacedName{Namespace: fuseDs.Namespace, Name: fuseDs.Name})
 					Expect(err).To(BeNil())
 					Expect(ready).To(BeTrue())
 

@@ -72,7 +72,7 @@ func (t *ThinEngine) checkFuseHealthy() (ready bool, err error) {
 		return utils.GetThinRuntime(client, t.name, t.namespace)
 	}
 
-	ready, err = t.Helper.CheckAndUpdateFuseStatus(getRuntimeFn, types.NamespacedName{Namespace: t.namespace, Name: t.getFuseName()})
+	ready, err = t.Helper.CheckAndSyncFuseStatus(getRuntimeFn, types.NamespacedName{Namespace: t.namespace, Name: t.getFuseName()})
 	if err != nil {
 		t.Log.Error(err, "fail to check and update fuse status")
 		return

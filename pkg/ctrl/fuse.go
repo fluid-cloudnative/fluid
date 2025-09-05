@@ -35,7 +35,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
-func (e *Helper) CheckAndUpdateFuseStatus(getRuntimeFn func(client.Client) (base.RuntimeInterface, error), fuseDsNamespacedName types.NamespacedName) (ready bool, err error) {
+func (e *Helper) CheckAndSyncFuseStatus(getRuntimeFn func(client.Client) (base.RuntimeInterface, error), fuseDsNamespacedName types.NamespacedName) (ready bool, err error) {
 	fuseDs, err := kubeclient.GetDaemonset(e.client, fuseDsNamespacedName.Name, fuseDsNamespacedName.Namespace)
 	if err != nil {
 		return

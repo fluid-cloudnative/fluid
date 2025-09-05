@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (e *Helper) CheckAndUpdateMasterStatus(getRuntimeFn func(client.Client) (base.RuntimeInterface, error), masterStsNamespacedName types.NamespacedName) (ready bool, err error) {
+func (e *Helper) CheckAndSyncMasterStatus(getRuntimeFn func(client.Client) (base.RuntimeInterface, error), masterStsNamespacedName types.NamespacedName) (ready bool, err error) {
 	masterSts, err := kubeclient.GetStatefulSet(e.client, masterStsNamespacedName.Name, masterStsNamespacedName.Namespace)
 	if err != nil {
 		return
