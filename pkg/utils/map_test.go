@@ -322,3 +322,101 @@ var _ = Describe("KeyValueMatched", func() {
 		})
 	})
 })
+
+// TestGetMapsDifference tests the GetMapsDifference function
+func TestGetMapsDifference(t *testing.T) {
+	tests := []struct {
+		name     string
+		map1     map[string]string
+		map2     map[string]string
+		expected map[string]string
+	}{
+		{
+			name: "Normal case with unique elements in map1",
+			map1: map[string]string{
+				"key1": "value1",
+				"key2": "value2",
+				"key3": "value3",
+			},
+			map2: map[string]string{
+				"key1": "value1",
+				"key4": "value4",
+			},
+			expected: map[string]string{
+				"key2": "value2",
+				"key3": "value3",
+			},
+		},
+		{
+			name:     "map1 is empty",
+			map1:     map[string]string{},
+			map2:     map[string]string{"key1": "value1"},
+			expected: map[string]string{},
+		},
+		{
+			name: "map2 is empty",
+			map1: map[string]string{
+				"key1": "value1",
+				"key2": "value2",
+			},
+			map2: map[string]string{},
+			expected: map[string]string{
+				"key1": "value1",
+				"key2": "value2",
+			},
+		},
+		{
+			name:     "Both maps are empty",
+			map1:     map[string]string{},
+			map2:     map[string]string{},
+			expected: map[string]string{},
+		},
+		{
+			name: "Both maps are identical",
+			map1: map[string]string{
+				"key1": "value1",
+				"key2": "value2",
+			},
+			map2: map[string]string{
+				"key1": "value1",
+				"key2": "value2",
+			},
+			expected: map[string]string{},
+		},
+		{
+			name: "Maps have completely different keys",
+			map1: map[string]string{
+				"key1": "value1",
+				"key2": "value2",
+			},
+			map2: map[string]string{
+				"key3": "value3",
+				"key4": "value4",
+			},
+			expected: map[string]string{
+				"key1": "value1",
+				"key2": "value2",
+			},
+		},
+		{
+			name: "map1 is subset of map2",
+			map1: map[string]string{
+				"key1": "value1",
+			},
+			map2: map[string]string{
+				"key1": "value1",
+				"key2": "value2",
+			},
+			expected: map[string]string{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := GetMapsDifference(tt.map1, tt.map2)
+			if !reflect.DeepEqual(result, tt.expected) {
+				t.Errorf("GetMapsDifference() = %v, expected %v", result, tt.expected)
+			}
+		})
+	}
+}

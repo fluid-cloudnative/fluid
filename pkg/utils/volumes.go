@@ -138,3 +138,35 @@ func FilterVolumesByVolumeMounts(volumes []corev1.Volume, volumeMounts []corev1.
 
 	return retVolumes
 }
+
+// GetVolumesDifference calculates the difference between two volume slices,
+// returning volumes that exist in the baseVolumes slice but not in the excludeVolumes slice.
+func GetVolumesDifference(baseVolumes, volumesToExclude []corev1.Volume) []corev1.Volume {
+	retVolumes := make([]corev1.Volume, 0)
+	volumesRecord := make(map[string]bool)
+	for _, v := range volumesToExclude {
+		volumesRecord[v.Name] = true
+	}
+	for _, v := range baseVolumes {
+		if !volumesRecord[v.Name] {
+			retVolumes = append(retVolumes, v)
+		}
+	}
+	return retVolumes
+}
+
+// GetVolumeMountsDifference calculates the difference between two volume slices,
+// returning volumeMounts that exist in the baseVolumeMounts slice but not in the volumeMountsToExclude slice.
+func GetVolumeMountsDifference(baseVolumeMounts, volumeMountsToExclude []corev1.VolumeMount) []corev1.VolumeMount {
+	retVolumeMounts := make([]corev1.VolumeMount, 0)
+	volumeMountsRecord := make(map[string]bool)
+	for _, v := range volumeMountsToExclude {
+		volumeMountsRecord[v.Name] = true
+	}
+	for _, v := range baseVolumeMounts {
+		if !volumeMountsRecord[v.Name] {
+			retVolumeMounts = append(retVolumeMounts, v)
+		}
+	}
+	return retVolumeMounts
+}
