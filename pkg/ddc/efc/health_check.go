@@ -31,10 +31,10 @@ func (e *EFCEngine) CheckRuntimeHealthy() (err error) {
 	// 1. Check the healthy of the master
 	masterReady, err := e.CheckMasterReady()
 	if err != nil {
-		e.Log.Error(err, "fail to check if master is ready")
+		e.Log.Error(err, "failed to check if master is ready")
 		updateErr := e.UpdateDatasetStatus(data.FailedDatasetPhase)
 		if updateErr != nil {
-			e.Log.Error(updateErr, "fail to update dataset status to \"Failed\"")
+			e.Log.Error(updateErr, "failed to update dataset status to \"Failed\"")
 		}
 		return
 	}
@@ -46,10 +46,10 @@ func (e *EFCEngine) CheckRuntimeHealthy() (err error) {
 	// 2. Check the healthy of the workers
 	workerReady, err := e.CheckWorkersReady()
 	if err != nil {
-		e.Log.Error(err, "fail to check if workers are ready")
+		e.Log.Error(err, "failed to check if workers are ready")
 		updateErr := e.UpdateDatasetStatus(data.FailedDatasetPhase)
 		if updateErr != nil {
-			e.Log.Error(updateErr, "fail to update dataset status to \"Failed\"")
+			e.Log.Error(updateErr, "failed to update dataset status to \"Failed\"")
 		}
 		return
 	}
@@ -64,7 +64,7 @@ func (e *EFCEngine) CheckRuntimeHealthy() (err error) {
 		e.Log.Error(err, "The fuse is not healthy")
 		updateErr := e.UpdateDatasetStatus(data.FailedDatasetPhase)
 		if updateErr != nil {
-			e.Log.Error(updateErr, "fail to update dataset status to \"Failed\"")
+			e.Log.Error(updateErr, "failed to update dataset status to \"Failed\"")
 		}
 		return
 	}
@@ -86,7 +86,7 @@ func (e *EFCEngine) CheckRuntimeHealthy() (err error) {
 
 	err = e.UpdateDatasetStatus(data.BoundDatasetPhase)
 	if err != nil {
-		e.Log.Error(err, "fail to update dataset status to \"Bound\"")
+		e.Log.Error(err, "failed to update dataset status to \"Bound\"")
 		return
 	}
 
@@ -101,7 +101,7 @@ func (e *EFCEngine) checkFuseHealthy() (ready bool, err error) {
 
 	ready, err = e.Helper.CheckAndUpdateFuseStatus(getRuntimeFn, types.NamespacedName{Namespace: e.namespace, Name: e.getFuseName()})
 	if err != nil {
-		e.Log.Error(err, "fail to check and update fuse status")
+		e.Log.Error(err, "failed to check and update fuse status")
 		return
 	}
 

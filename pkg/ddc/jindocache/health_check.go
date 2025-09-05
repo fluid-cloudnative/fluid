@@ -33,7 +33,7 @@ func (e *JindoCacheEngine) CheckRuntimeHealthy() (err error) {
 		var masterReady bool
 		masterReady, err = e.CheckMasterReady()
 		if err != nil {
-			e.Log.Error(err, "fail to check if master is ready")
+			e.Log.Error(err, "failed to check if master is ready")
 			updateErr := e.UpdateDatasetStatus(data.FailedDatasetPhase)
 			if updateErr != nil {
 				e.Log.Error(updateErr, "failed to update dataset status to \"Failed\"")
@@ -51,7 +51,7 @@ func (e *JindoCacheEngine) CheckRuntimeHealthy() (err error) {
 		var workerReady bool
 		workerReady, err = e.CheckWorkersReady()
 		if err != nil {
-			e.Log.Error(err, "fail to check if worker is ready")
+			e.Log.Error(err, "failed to check if worker is ready")
 			updateErr := e.UpdateDatasetStatus(data.FailedDatasetPhase)
 			if updateErr != nil {
 				e.Log.Error(updateErr, "Failed to update dataset")
@@ -69,7 +69,7 @@ func (e *JindoCacheEngine) CheckRuntimeHealthy() (err error) {
 		var fuseReady bool
 		fuseReady, err = e.checkFuseHealthy()
 		if err != nil {
-			e.Log.Error(err, "fail to check if fuse is ready")
+			e.Log.Error(err, "failed to check if fuse is ready")
 			updateErr := e.UpdateDatasetStatus(data.FailedDatasetPhase)
 			if updateErr != nil {
 				e.Log.Error(updateErr, "Failed to update dataset")
@@ -86,7 +86,7 @@ func (e *JindoCacheEngine) CheckRuntimeHealthy() (err error) {
 	// 4. Update the dataset as Bounded
 	err = e.UpdateDatasetStatus(data.BoundDatasetPhase)
 	if err != nil {
-		e.Log.Error(err, "fail to update dataset status to \"Bound\"")
+		e.Log.Error(err, "failed to update dataset status to \"Bound\"")
 		return
 	}
 
@@ -101,7 +101,7 @@ func (e *JindoCacheEngine) checkFuseHealthy() (ready bool, err error) {
 
 	ready, err = e.Helper.CheckAndUpdateFuseStatus(getRuntimeFn, types.NamespacedName{Namespace: e.namespace, Name: e.getFuseName()})
 	if err != nil {
-		e.Log.Error(err, "fail to check and update fuse status")
+		e.Log.Error(err, "failed to check and update fuse status")
 		return
 	}
 

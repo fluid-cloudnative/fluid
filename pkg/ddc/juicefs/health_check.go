@@ -32,7 +32,7 @@ func (j *JuiceFSEngine) CheckRuntimeHealthy() (err error) {
 	// 1. Check the healthy of the workers
 	workerReady, err := j.CheckWorkersReady()
 	if err != nil {
-		j.Log.Error(err, "fail to check if worker is ready")
+		j.Log.Error(err, "failed to check if worker is ready")
 		updateErr := j.UpdateDatasetStatus(data.FailedDatasetPhase)
 		if updateErr != nil {
 			j.Log.Error(updateErr, "failed to update dataset status to \"Failed\"")
@@ -47,10 +47,10 @@ func (j *JuiceFSEngine) CheckRuntimeHealthy() (err error) {
 	// 2. Check the healthy of the fuse
 	fuseReady, err := j.checkFuseHealthy()
 	if err != nil {
-		j.Log.Error(err, "fail to check if fuse is healthy")
+		j.Log.Error(err, "failed to check if fuse is healthy")
 		updateErr := j.UpdateDatasetStatus(data.FailedDatasetPhase)
 		if updateErr != nil {
-			j.Log.Error(updateErr, "fail to update dataset status to \"Failed\"")
+			j.Log.Error(updateErr, "failed to update dataset status to \"Failed\"")
 		}
 		return
 	}
@@ -77,7 +77,7 @@ func (j *JuiceFSEngine) checkFuseHealthy() (ready bool, err error) {
 
 	ready, err = j.Helper.CheckAndUpdateFuseStatus(getRuntimeFn, types.NamespacedName{Namespace: j.namespace, Name: j.getFuseName()})
 	if err != nil {
-		j.Log.Error(err, "fail to check and update fuse status")
+		j.Log.Error(err, "failed to check and update fuse status")
 		return
 	}
 
