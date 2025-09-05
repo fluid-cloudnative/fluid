@@ -17,126 +17,86 @@ limitations under the License.
 package jindo
 
 import (
+	"fmt"
+
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
-	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	corev1 "k8s.io/api/core/v1"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/util/retry"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (e *JindoEngine) CheckRuntimeHealthy() (err error) {
 	// 1. Check the healthy of the master
-	err = e.checkMasterHealthy()
+	masterReady, err := e.CheckMasterReady()
 	if err != nil {
-		e.Log.Error(err, "The master is not healthy")
+		e.Log.Error(err, "failed to check if master is ready")
 		updateErr := e.UpdateDatasetStatus(data.FailedDatasetPhase)
 		if updateErr != nil {
-			e.Log.Error(updateErr, "Failed to update dataset")
+			e.Log.Error(updateErr, "failed to update dataset status to \"Failed\"")
 		}
 		return
+	}
+
+	if !masterReady {
+		return fmt.Errorf("the master \"%s\" is not healthy, expect at least one replica is ready", e.getMasterName())
 	}
 
 	// 2. Check the healthy of the workers
-	err = e.checkWorkersHealthy()
+	workerReady, err := e.CheckWorkersReady()
 	if err != nil {
-		e.Log.Error(err, "The worker is not healthy")
+		e.Log.Error(err, "failed to check if worker is ready")
 		updateErr := e.UpdateDatasetStatus(data.FailedDatasetPhase)
 		if updateErr != nil {
-			e.Log.Error(updateErr, "Failed to update dataset")
+			e.Log.Error(updateErr, "failed to update dataset status to \"Failed\"")
 		}
 		return
+	}
+
+	if !workerReady {
+		return fmt.Errorf("the worker \"%s\" is not healthy, expect at least one replica is ready", e.getWorkerName())
 	}
 
 	// 3. Check the healthy of the fuse
-	err = e.checkFuseHealthy()
+	fuseReady, err := e.checkFuseHealthy()
 	if err != nil {
-		e.Log.Error(err, "The fuse is not healthy")
+		e.Log.Error(err, "failed to check if fuse is ready")
 		updateErr := e.UpdateDatasetStatus(data.FailedDatasetPhase)
 		if updateErr != nil {
-			e.Log.Error(updateErr, "Failed to update dataset")
+			e.Log.Error(updateErr, "failed to update dataset status to \"Failed\"")
 		}
 		return
 	}
 
-	// 4. Update the dataset as Bounded
-	return e.UpdateDatasetStatus(data.BoundDatasetPhase)
-}
-
-// checkMasterHealthy checks the master healthy
-func (e *JindoEngine) checkMasterHealthy() (err error) {
-	master, err := kubeclient.GetStatefulSet(e.Client, e.getMasterName(), e.namespace)
-	if err != nil {
-		return err
+	if !fuseReady {
+		// fluid assumes fuse is always ready, so it's a protective branch.
+		return fmt.Errorf("the fuse \"%s\" is not healthy", e.getFuseName())
 	}
 
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
-		runtime, err := e.getRuntime()
-		if err != nil {
-			return
-		}
-		runtimeToUpdate := runtime.DeepCopy()
-		err = e.Helper.CheckMasterHealthy(e.Recorder, runtimeToUpdate, runtimeToUpdate.Status, master)
-		if err != nil {
-			e.Log.Error(err, "Failed to check master healthy")
-		}
-		return
-	})
-
+	err = e.UpdateDatasetStatus(data.BoundDatasetPhase)
 	if err != nil {
-		e.Log.Error(err, "Failed to check master healthy")
-	}
-
-	return
-}
-
-// checkWorkerHealthy checks the Worker healthy
-func (e *JindoEngine) checkWorkersHealthy() (err error) {
-	workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
-		types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
-	if err != nil {
-		if fluiderrs.IsDeprecated(err) {
-			e.Log.Info("Warning: the current runtime is created by runtime controller before v0.7.0, checking worker health state is not supported. To support these features, please create a new dataset", "details", err)
-			e.Recorder.Event(e.runtime, corev1.EventTypeWarning, common.RuntimeDeprecated, "The runtime is created by controllers before v0.7.0, to fully enable latest capabilities, please delete the runtime and create a new one")
-			return nil
-		}
+		e.Log.Error(err, "failed to update dataset status to \"Bound\"")
 		return
-	}
-
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
-		runtime, err := e.getRuntime()
-		if err != nil {
-			return
-		}
-		runtimeToUpdate := runtime.DeepCopy()
-		err = e.Helper.CheckWorkersHealthy(e.Recorder, runtimeToUpdate, runtimeToUpdate.Status, workers)
-		if err != nil {
-			e.Log.Error(err, "Failed to check Worker healthy")
-		}
-		return
-	})
-
-	if err != nil {
-		e.Log.Error(err, "Failed to check Worker healthy")
 	}
 
 	return
 }
 
 // checkFuseHealthy checks the Fuse healthy
-func (e *JindoEngine) checkFuseHealthy() error {
-	return retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
-		runtime, err := e.getRuntime()
-		if err != nil {
-			e.Log.Error(err, "Failed to get Runtime", "runtimeName", e.name, "runtimeNamespace", e.namespace)
-			return
-		}
-		err = e.Helper.CheckFuseHealthy(e.Recorder, runtime.DeepCopy(), e.getFuseName())
-		if err != nil {
-			e.Log.Error(err, "Failed to check runtimeFuse healthy")
-		}
+func (e *JindoEngine) checkFuseHealthy() (ready bool, err error) {
+	getRuntimeFn := func(client client.Client) (base.RuntimeInterface, error) {
+		return utils.GetJindoRuntime(client, e.name, e.namespace)
+	}
+
+	ready, err = e.Helper.CheckAndSyncFuseStatus(getRuntimeFn, types.NamespacedName{Namespace: e.namespace, Name: e.getFuseName()})
+	if err != nil {
+		e.Log.Error(err, "failed to check and update fuse status")
 		return
-	})
+	}
+
+	if !ready {
+		e.Log.Info("fuses are not ready")
+	}
+
+	return
 }

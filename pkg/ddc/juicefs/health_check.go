@@ -17,14 +17,12 @@ limitations under the License.
 package juicefs
 
 import (
-	"context"
 	"fmt"
-	"reflect"
 
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/util/retry"
+	"k8s.io/apimachinery/pkg/types"
 
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -32,127 +30,60 @@ import (
 
 func (j *JuiceFSEngine) CheckRuntimeHealthy() (err error) {
 	// 1. Check the healthy of the workers
-	err = j.checkWorkersHealthy()
+	workerReady, err := j.CheckWorkersReady()
 	if err != nil {
-		j.Log.Error(err, "The workers are not healthy")
+		j.Log.Error(err, "failed to check if worker is ready")
 		updateErr := j.UpdateDatasetStatus(data.FailedDatasetPhase)
 		if updateErr != nil {
-			j.Log.Error(updateErr, "Failed to update dataset")
+			j.Log.Error(updateErr, "failed to update dataset status to \"Failed\"")
 		}
 		return
+	}
+
+	if !workerReady {
+		return fmt.Errorf("the worker \"%s\" is not healthy, expect at least one replica is ready", j.getWorkerName())
 	}
 
 	// 2. Check the healthy of the fuse
-	err = j.checkFuseHealthy()
+	fuseReady, err := j.checkFuseHealthy()
 	if err != nil {
-		j.Log.Error(err, "The fuse is not healthy")
+		j.Log.Error(err, "failed to check if fuse is healthy")
 		updateErr := j.UpdateDatasetStatus(data.FailedDatasetPhase)
 		if updateErr != nil {
-			j.Log.Error(updateErr, "Failed to update dataset")
+			j.Log.Error(updateErr, "failed to update dataset status to \"Failed\"")
 		}
 		return
 	}
 
-	updateErr := j.UpdateDatasetStatus(data.BoundDatasetPhase)
-	if updateErr != nil {
-		j.Log.Error(updateErr, "Failed to update dataset")
+	if !fuseReady {
+		// fluid assumes fuse is always ready, so it's a protective branch.
+		return fmt.Errorf("the fuse \"%s\" is not healthy", j.getFuseName())
+	}
+
+	err = j.UpdateDatasetStatus(data.BoundDatasetPhase)
+	if err != nil {
+		j.Log.Error(err, "failed to update dataset status to \"Bound\"")
+		return
 	}
 
 	return
 }
 
-// checkWorkersHealthy check workers number changed
-func (j *JuiceFSEngine) checkWorkersHealthy() (err error) {
-	workerName := j.getWorkerName()
-
-	// Check the status of workers
-	workers, err := kubeclient.GetStatefulSet(j.Client, workerName, j.namespace)
-	if err != nil {
-		return err
-	}
-
-	healthy := false
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-
-		runtime, err := j.getRuntime()
-		if err != nil {
-			return err
-		}
-
-		runtimeToUpdate := runtime.DeepCopy()
-		if workers.Status.ReadyReplicas == 0 && *workers.Spec.Replicas > 0 {
-			if len(runtimeToUpdate.Status.Conditions) == 0 {
-				runtimeToUpdate.Status.Conditions = []data.RuntimeCondition{}
-			}
-			cond := utils.NewRuntimeCondition(data.RuntimeWorkersReady, "The workers are not ready.",
-				fmt.Sprintf("The statefulset %s in %s are not ready, the Unavailable number is %d, please fix it.",
-					workers.Name,
-					workers.Namespace,
-					*workers.Spec.Replicas-workers.Status.ReadyReplicas), v1.ConditionFalse)
-
-			_, oldCond := utils.GetRuntimeCondition(runtimeToUpdate.Status.Conditions, cond.Type)
-
-			if oldCond == nil || oldCond.Type != cond.Type {
-				runtimeToUpdate.Status.Conditions =
-					utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
-						cond)
-			}
-
-			runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseNotReady
-
-			j.Log.Error(err, "the workers are not ready")
-		} else {
-			healthy = true
-			cond := utils.NewRuntimeCondition(data.RuntimeWorkersReady, "The workers are ready.",
-				"The workers are ready", v1.ConditionTrue)
-
-			_, oldCond := utils.GetRuntimeCondition(runtimeToUpdate.Status.Conditions, cond.Type)
-
-			if oldCond == nil || oldCond.Type != cond.Type {
-				runtimeToUpdate.Status.Conditions =
-					utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
-						cond)
-			}
-		}
-		runtimeToUpdate.Status.WorkerNumberReady = workers.Status.ReadyReplicas
-		runtimeToUpdate.Status.WorkerNumberAvailable = workers.Status.CurrentReplicas
-		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
-			updateErr := j.Client.Status().Update(context.TODO(), runtimeToUpdate)
-			if updateErr != nil {
-				return updateErr
-			}
-		}
-
-		return err
-	})
-
-	if err != nil {
-		j.Log.Error(err, "Failed update runtime")
-		return err
-	}
-
-	if !healthy {
-		err = fmt.Errorf("the workers %s in %s are not ready, the unhealthy number %d",
-			workers.Name,
-			workers.Namespace,
-			*workers.Spec.Replicas-workers.Status.ReadyReplicas)
-	}
-
-	return err
-}
-
 // checkFuseHealthy check fuses number changed
-func (j *JuiceFSEngine) checkFuseHealthy() error {
-	return retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
-		runtime, err := j.getRuntime()
-		if err != nil {
-			j.Log.Error(err, "Failed to get Runtime", "runtimeName", j.name, "runtimeNamespace", j.namespace)
-			return
-		}
-		err = j.Helper.CheckFuseHealthy(j.Recorder, runtime.DeepCopy(), j.getFuseName())
-		if err != nil {
-			j.Log.Error(err, "Failed to check runtimeFuse healthy")
-		}
+func (j *JuiceFSEngine) checkFuseHealthy() (ready bool, err error) {
+	getRuntimeFn := func(client client.Client) (base.RuntimeInterface, error) {
+		return utils.GetJuiceFSRuntime(client, j.name, j.namespace)
+	}
+
+	ready, err = j.Helper.CheckAndSyncFuseStatus(getRuntimeFn, types.NamespacedName{Namespace: j.namespace, Name: j.getFuseName()})
+	if err != nil {
+		j.Log.Error(err, "failed to check and update fuse status")
 		return
-	})
+	}
+
+	if !ready {
+		j.Log.Info("fuses are not ready")
+	}
+
+	return
 }

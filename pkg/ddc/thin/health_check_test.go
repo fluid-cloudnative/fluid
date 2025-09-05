@@ -43,9 +43,9 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Status: appsv1.StatefulSetStatus{
-				Replicas:        1,
-				ReadyReplicas:   1,
-				CurrentReplicas: 1,
+				Replicas:          1,
+				ReadyReplicas:     1,
+				AvailableReplicas: 1,
 			},
 		},
 		{
@@ -57,9 +57,9 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 				Replicas: ptr.To[int32](1),
 			},
 			Status: appsv1.StatefulSetStatus{
-				Replicas:        1,
-				ReadyReplicas:   0,
-				CurrentReplicas: 0,
+				Replicas:          1,
+				ReadyReplicas:     0,
+				AvailableReplicas: 0,
 			},
 		},
 	}
@@ -372,7 +372,7 @@ func TestCheckFuseHealthy(t *testing.T) {
 	for _, test := range testCase {
 		runtimeInfo, _ := base.BuildRuntimeInfo(test.engine.name, test.engine.namespace, common.ThinRuntime)
 		test.engine.Helper = ctrl.BuildHelper(runtimeInfo, client, test.engine.Log)
-		err := test.engine.checkFuseHealthy()
+		_, err := test.engine.checkFuseHealthy()
 		if err != nil && test.expectedErrorNil == true ||
 			err == nil && test.expectedErrorNil == false {
 			t.Errorf("fail to exec the CheckFuseHealthy function with err %v", err)

@@ -17,10 +17,13 @@ import (
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/ptr"
 )
 
 func TestCheckMasterReady(t *testing.T) {
@@ -29,6 +32,9 @@ func TestCheckMasterReady(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "spark-master",
 				Namespace: "fluid",
+			},
+			Spec: v1.StatefulSetSpec{
+				Replicas: ptr.To[int32](1),
 			},
 			Status: v1.StatefulSetStatus{
 				ReadyReplicas: 1,
@@ -39,6 +45,9 @@ func TestCheckMasterReady(t *testing.T) {
 				Name:      "hbase-master",
 				Namespace: "fluid",
 			},
+			Spec: v1.StatefulSetSpec{
+				Replicas: ptr.To[int32](2),
+			},
 			Status: v1.StatefulSetStatus{
 				ReadyReplicas: 1,
 			},
@@ -48,8 +57,11 @@ func TestCheckMasterReady(t *testing.T) {
 				Name:      "hadoop-master",
 				Namespace: "fluid",
 			},
+			Spec: v1.StatefulSetSpec{
+				Replicas: ptr.To[int32](1),
+			},
 			Status: v1.StatefulSetStatus{
-				ReadyReplicas: 1,
+				ReadyReplicas: 0,
 			},
 		},
 	}
@@ -110,18 +122,21 @@ func TestCheckMasterReady(t *testing.T) {
 			namespace: "fluid",
 			Client:    client,
 			Log:       fake.NullLogger(),
+			Helper:    ctrl.BuildHelper(&base.RuntimeInfo{}, client, fake.NullLogger()),
 		},
 		{
 			name:      "hbase",
 			namespace: "fluid",
 			Client:    client,
 			Log:       fake.NullLogger(),
+			Helper:    ctrl.BuildHelper(&base.RuntimeInfo{}, client, fake.NullLogger()),
 		},
 		{
 			name:      "hadoop",
 			namespace: "fluid",
 			Client:    client,
 			Log:       fake.NullLogger(),
+			Helper:    ctrl.BuildHelper(&base.RuntimeInfo{}, client, fake.NullLogger()),
 		},
 	}
 
@@ -135,6 +150,10 @@ func TestCheckMasterReady(t *testing.T) {
 		},
 		{
 			engine:         engines[1],
+			expectedResult: true,
+		},
+		{
+			engine:         engines[2],
 			expectedResult: false,
 		},
 	}

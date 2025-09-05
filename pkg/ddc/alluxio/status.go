@@ -130,6 +130,20 @@ func (e *AlluxioEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 			runtimeToUpdate.Status.SetupDuration = utils.CalculateDuration(runtimeToUpdate.CreationTimestamp.Time, time.Now())
 		}
 
+		// Update API Gateway address if it is enabled
+		if runtimeToUpdate.Spec.APIGateway.Enabled {
+			if runtimeToUpdate.Status.APIGatewayStatus == nil {
+				runtimeToUpdate.Status.APIGatewayStatus, err = e.GetAPIGatewayStatus()
+				if err != nil {
+					return err
+				}
+			} else {
+				e.Log.V(1).Info("No need to update APIGateway status")
+			}
+		} else {
+			e.Log.V(1).Info("No need to update APIGateway status")
+		}
+
 		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
 			err = e.Client.Status().Update(context.TODO(), runtimeToUpdate)
 		} else {

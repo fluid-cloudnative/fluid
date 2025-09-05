@@ -17,10 +17,12 @@ limitations under the License.
 package juicefs
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -28,29 +30,19 @@ import (
 )
 
 func (j JuiceFSEngine) CheckWorkersReady() (ready bool, err error) {
-	var (
-		workerName string = j.getWorkerName()
-		namespace  string = j.namespace
-	)
-
-	workers, err := kubeclient.GetStatefulSet(j.Client, workerName, namespace)
-	if err != nil {
-		return ready, err
+	getRuntimeFn := func(client client.Client) (base.RuntimeInterface, error) {
+		return utils.GetJuiceFSRuntime(client, j.name, j.namespace)
 	}
 
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		runtime, err := j.getRuntime()
-		if err != nil {
-			return err
-		}
-		runtimeToUpdate := runtime.DeepCopy()
-		ready, err = j.Helper.CheckWorkersReady(runtimeToUpdate, runtimeToUpdate.Status, workers)
-		if err != nil {
-			_ = utils.LoggingErrorExceptConflict(j.Log, err, "Failed to setup worker",
-				types.NamespacedName{Namespace: j.namespace, Name: j.name})
-		}
-		return err
-	})
+	ready, err = j.Helper.CheckAndSyncWorkerStatus(getRuntimeFn, types.NamespacedName{Namespace: j.namespace, Name: j.getWorkerName()})
+	if err != nil {
+		j.Log.Error(err, "fail to check and update worker status")
+		return
+	}
+
+	if !ready {
+		j.Log.Info("workers are not ready")
+	}
 
 	return
 }

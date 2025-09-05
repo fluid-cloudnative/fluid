@@ -21,11 +21,14 @@ import (
 	"reflect"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	corev1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (e *EFCEngine) ShouldSetupMaster() (should bool, err error) {
@@ -105,61 +108,18 @@ func (e *EFCEngine) SetupMaster() (err error) {
 }
 
 func (e *EFCEngine) CheckMasterReady() (ready bool, err error) {
-	// 1. Check the status
-	runtime, err := e.getRuntime()
+	getRuntimeFn := func(client client.Client) (base.RuntimeInterface, error) {
+		return utils.GetEFCRuntime(client, e.name, e.namespace)
+	}
+
+	ready, err = e.Helper.CheckAndSyncMasterStatus(getRuntimeFn, types.NamespacedName{Namespace: e.namespace, Name: e.getMasterName()})
 	if err != nil {
+		e.Log.Error(err, "fail to check and update master status")
 		return
 	}
 
-	master, err := kubeclient.GetStatefulSet(e.Client, e.getMasterName(), e.namespace)
-	if err != nil {
-		return
-	}
-
-	masterReplicas := runtime.MasterReplicas()
-	if masterReplicas == master.Status.ReadyReplicas {
-		ready = true
-	} else {
-		e.Log.Info("The master is not ready.", "replicas", masterReplicas,
-			"readyReplicas", master.Status.ReadyReplicas)
-	}
-
-	// 2. Update the phase
-	if ready {
-		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-			runtime, err := e.getRuntime()
-			if err != nil {
-				return err
-			}
-			runtimeToUpdate := runtime.DeepCopy()
-
-			runtimeToUpdate.Status.CurrentMasterNumberScheduled = int32(master.Status.ReadyReplicas)
-			runtimeToUpdate.Status.MasterPhase = datav1alpha1.RuntimePhaseReady
-
-			if len(runtimeToUpdate.Status.Conditions) == 0 {
-				runtimeToUpdate.Status.Conditions = []datav1alpha1.RuntimeCondition{}
-			}
-			cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeMasterReady, datav1alpha1.RuntimeMasterReadyReason,
-				"The master is ready.", corev1.ConditionTrue)
-			runtimeToUpdate.Status.Conditions =
-				utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
-					cond)
-
-			if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
-				return e.Client.Status().Update(context.TODO(), runtimeToUpdate)
-			}
-
-			return nil
-		})
-
-		if err != nil {
-			e.Log.Error(err, "Update runtime status")
-			return
-		}
-	}
-
-	if err != nil {
-		return
+	if !ready {
+		e.Log.Info("master is not ready")
 	}
 
 	return

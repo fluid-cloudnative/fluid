@@ -23,8 +23,10 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -35,44 +37,56 @@ import (
 
 // CheckRuntimeHealthy checks the healthy of the runtime
 func (e *GooseFSEngine) CheckRuntimeHealthy() (err error) {
-
 	// 1. Check the healthy of the master
-	err = e.checkMasterHealthy()
+	masterReady, err := e.CheckMasterReady()
 	if err != nil {
-		e.Log.Error(err, "The master is not healthy")
+		e.Log.Error(err, "failed to check if master is ready")
 		updateErr := e.UpdateDatasetStatus(data.FailedDatasetPhase)
 		if updateErr != nil {
-			e.Log.Error(updateErr, "Failed to update dataset")
+			e.Log.Error(updateErr, "failed to update dataset status to \"Failed\"")
 		}
 		return
+	}
+
+	if !masterReady {
+		return fmt.Errorf("the master \"%s\" is not healthy, expect at least one replica is ready", e.getMasterName())
 	}
 
 	// 2. Check the healthy of the workers
-	err = e.checkWorkersHealthy()
+	workerReady, err := e.CheckWorkersReady()
 	if err != nil {
-		e.Log.Error(err, "The workers are not healthy")
+		e.Log.Error(err, "failed to check if workers are ready")
 		updateErr := e.UpdateDatasetStatus(data.FailedDatasetPhase)
 		if updateErr != nil {
-			e.Log.Error(updateErr, "Failed to update dataset")
+			e.Log.Error(updateErr, "failed to update dataset status to \"Failed\"")
 		}
 		return
 	}
 
+	if !workerReady {
+		return fmt.Errorf("the worker \"%s\" is not healthy, expect at least one replica is ready", e.getWorkerName())
+	}
+
 	// 3. Check the healthy of the fuse
-	err = e.checkFuseHealthy()
+	fuseReady, err := e.checkFuseHealthy()
 	if err != nil {
 		e.Log.Error(err, "The fuse is not healthy")
 		updateErr := e.UpdateDatasetStatus(data.FailedDatasetPhase)
 		if updateErr != nil {
-			e.Log.Error(updateErr, "Failed to update dataset")
+			e.Log.Error(updateErr, "failed to update dataset status to \"Failed\"")
 		}
 		return
 	}
 
-	// 4. If the status is fine, update dataset's status
-	updateErr := e.UpdateDatasetStatus(data.BoundDatasetPhase)
-	if updateErr != nil {
-		e.Log.Error(updateErr, "Failed to update dataset")
+	if !fuseReady {
+		// fluid assumes fuse is always ready, so it's a protective branch.
+		return fmt.Errorf("the fuse \"%s\" is not healthy", e.getFuseName())
+	}
+
+	err = e.UpdateDatasetStatus(data.BoundDatasetPhase)
+	if err != nil {
+		e.Log.Error(err, "failed to update dataset status to \"Bound\"")
+		return
 	}
 
 	return
@@ -260,17 +274,20 @@ func (e *GooseFSEngine) checkWorkersHealthy() (err error) {
 }
 
 // checkFuseHealthy check fuses number changed
-func (e *GooseFSEngine) checkFuseHealthy() error {
-	return retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
-		runtime, err := e.getRuntime()
-		if err != nil {
-			e.Log.Error(err, "Failed to get Runtime", "runtimeName", e.name, "runtimeNamespace", e.namespace)
-			return
-		}
-		err = e.Helper.CheckFuseHealthy(e.Recorder, runtime.DeepCopy(), e.getFuseName())
-		if err != nil {
-			e.Log.Error(err, "Failed to check runtimeFuse healthy")
-		}
+func (e *GooseFSEngine) checkFuseHealthy() (ready bool, err error) {
+	getRuntimeFn := func(client client.Client) (base.RuntimeInterface, error) {
+		return utils.GetGooseFSRuntime(client, e.name, e.namespace)
+	}
+
+	ready, err = e.Helper.CheckAndSyncFuseStatus(getRuntimeFn, types.NamespacedName{Namespace: e.namespace, Name: e.getFuseName()})
+	if err != nil {
+		e.Log.Error(err, "failed to check and update fuse status")
 		return
-	})
+	}
+
+	if !ready {
+		e.Log.Info("fuses are not ready")
+	}
+
+	return
 }

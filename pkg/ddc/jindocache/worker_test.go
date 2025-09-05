@@ -410,6 +410,9 @@ func TestCheckWorkersReady(t *testing.T) {
 						Name:      "spark-jindofs-worker",
 						Namespace: "big-data",
 					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: ptr.To[int32](1),
+					},
 					Status: appsv1.StatefulSetStatus{
 						ReadyReplicas: 1,
 					},
@@ -449,6 +452,9 @@ func TestCheckWorkersReady(t *testing.T) {
 						Name:      "hbase-jindofs-worker",
 						Namespace: "big-data",
 					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: ptr.To[int32](1),
+					},
 					Status: appsv1.StatefulSetStatus{
 						ReadyReplicas: 0,
 					},
@@ -486,6 +492,9 @@ func TestCheckWorkersReady(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "deprecated-jindofs-worker-0",
 						Namespace: "big-data",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: ptr.To[int32](1),
 					},
 					Status: appsv1.StatefulSetStatus{
 						ReadyReplicas: 0,

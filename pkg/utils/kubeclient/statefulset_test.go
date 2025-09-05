@@ -173,6 +173,18 @@ func TestGetPhaseFromStatefulset(t *testing.T) {
 		want     datav1alpha1.RuntimePhase
 	}{
 		{
+			name: "ready-with-0-replica",
+			args: appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{Name: "ready-with-0-replica", Namespace: namespace},
+				Spec:       appsv1.StatefulSetSpec{},
+				Status: appsv1.StatefulSetStatus{
+					ReadyReplicas: 0,
+				},
+			},
+			replicas: 0,
+			want:     datav1alpha1.RuntimePhaseReady,
+		},
+		{
 			name: "notReady",
 			args: appsv1.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{Name: "notReady",
@@ -216,6 +228,19 @@ func TestGetPhaseFromStatefulset(t *testing.T) {
 				Spec: appsv1.StatefulSetSpec{},
 				Status: appsv1.StatefulSetStatus{
 					ReadyReplicas: 2,
+				},
+			},
+			replicas: 2,
+			want:     datav1alpha1.RuntimePhaseReady,
+		},
+		{
+			name: "ready-1",
+			args: appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{Name: "ready",
+					Namespace: namespace},
+				Spec: appsv1.StatefulSetSpec{},
+				Status: appsv1.StatefulSetStatus{
+					ReadyReplicas: 3,
 				},
 			},
 			replicas: 2,

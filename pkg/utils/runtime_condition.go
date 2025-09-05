@@ -47,9 +47,15 @@ func UpdateRuntimeCondition(conditions []data.RuntimeCondition, condition data.R
 		return conditions
 	}
 
-	// We are updating an existing condition, so we need to check if it has changed.
-	if condition.Status == oldCondtion.Status {
-		condition.LastTransitionTime = oldCondtion.LastTransitionTime
+	// We define two types of runtime condition: ready type conditions (e.g. WorkerReady) and action type conditions (e.g. WorkerScaledOut).
+	// For ready type conditions, recording the earliest transition and probe time is enough and
+	// we avoiding update its probe time and transition time in every sync because it needs large amount of status updates.
+	if isReadyTypeCondition(condition) {
+		// keep old transition time and probe time if condition status is not changed
+		if condition.Status == oldCondtion.Status {
+			condition.LastTransitionTime = oldCondtion.LastTransitionTime
+			condition.LastProbeTime = oldCondtion.LastProbeTime
+		}
 	}
 
 	conditions[index] = condition
@@ -70,6 +76,12 @@ func GetRuntimeCondition(conditions []data.RuntimeCondition,
 		}
 	}
 	return -1, nil
+}
+
+func isReadyTypeCondition(condition data.RuntimeCondition) bool {
+	return condition.Type == data.RuntimeMasterReady ||
+		condition.Type == data.RuntimeFusesReady ||
+		condition.Type == data.RuntimeWorkersReady
 }
 
 // func trimRuntimeConditions(conditions []data.RuntimeCondition) []data.RuntimeCondition {

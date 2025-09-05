@@ -42,6 +42,9 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 				Name:      "hbase-master",
 				Namespace: "fluid",
 			},
+			Spec: appsv1.StatefulSetSpec{
+				Replicas: ptr.To[int32](1),
+			},
 			Status: appsv1.StatefulSetStatus{
 				Replicas:      3,
 				ReadyReplicas: 3,
@@ -53,9 +56,9 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Status: appsv1.StatefulSetStatus{
-				Replicas:        1,
-				ReadyReplicas:   1,
-				CurrentReplicas: 1,
+				Replicas:          1,
+				ReadyReplicas:     1,
+				AvailableReplicas: 1,
 			},
 			Spec: appsv1.StatefulSetSpec{
 				Replicas: ptr.To[int32](1),
@@ -672,7 +675,7 @@ func TestCheckFuseHealthy(t *testing.T) {
 	for _, test := range testCase {
 		runtimeInfo, _ := base.BuildRuntimeInfo(test.engine.name, test.engine.namespace, common.GooseFSRuntime)
 		test.engine.Helper = ctrl.BuildHelper(runtimeInfo, client, test.engine.Log)
-		err := test.engine.checkFuseHealthy()
+		_, err := test.engine.checkFuseHealthy()
 		if err != nil && test.expectedErrorNil == true ||
 			err == nil && test.expectedErrorNil == false {
 			t.Errorf("fail to exec the checkMasterHealthy function with err %v", err)
