@@ -1132,7 +1132,9 @@ var _ = Describe("checkAndSetFuseChanges", func() {
 			Expect(changed).To(BeTrue())
 			Expect(generationNeedUpdate).To(BeFalse())
 			Expect(len(fuseToUpdate.Spec.Template.Spec.Containers[0].Env)).To(Equal(3))
-			Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].Env[2].Name).To(Equal("NEW_ENV"))
+			// Avoid using a specific index(e.g. Env[2]) to avoid flaky test: iterating golang map is not ordered
+			// Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].Env[2].Name).To(Equal("NEW_ENV"))
+			Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].Env).To(ContainElement(corev1.EnvVar{Name: "NEW_ENV", Value: "new_value"}))
 		})
 
 		It("Should detect volume mount changes", func() {
@@ -1146,7 +1148,9 @@ var _ = Describe("checkAndSetFuseChanges", func() {
 			Expect(changed).To(BeTrue())
 			Expect(generationNeedUpdate).To(BeFalse())
 			Expect(len(fuseToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts)).To(Equal(3))
-			Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts[2].Name).To(Equal("new-volume"))
+			// Avoid using a specific index(e.g. VolumeMounts[2]) to avoid flaky test: iterating golang map is not ordered
+			// Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts[2].Name).To(Equal("new-volume"))
+			Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts).To(ContainElement(corev1.VolumeMount{Name: "new-volume", MountPath: "/new"}))
 		})
 
 		It("Should detect image changes and require generation update", func() {
