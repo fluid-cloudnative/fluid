@@ -17,478 +17,522 @@
 package lifecycle
 
 import (
-	"fmt"
-	"reflect"
-	"testing"
-
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	v1 "k8s.io/api/core/v1"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-var (
-	testScheme *runtime.Scheme
-)
-
-func init() {
-	testScheme = runtime.NewScheme()
-	_ = v1.AddToScheme(testScheme)
-}
-
-func TestLabelCacheNode(t *testing.T) {
-	runtimeInfoExclusive, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
-	runtimeInfoExclusive.SetupWithDataset(&datav1alpha1.Dataset{
-		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
-	})
-
-	runtimeInfoShareSpark, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio")
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
-	runtimeInfoShareSpark.SetupWithDataset(&datav1alpha1.Dataset{
-		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ShareMode},
-	})
-
-	runtimeInfoShareHbase, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
-	runtimeInfoShareHbase.SetupWithDataset(&datav1alpha1.Dataset{
-		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ShareMode},
-	})
-
-	tieredStore := datav1alpha1.TieredStore{
-		Levels: []datav1alpha1.Level{
-			{
-				MediumType: common.Memory,
-				Quota:      resource.NewQuantity(1, resource.BinarySI),
-			},
-			{
-				MediumType: common.SSD,
-				Quota:      resource.NewQuantity(2, resource.BinarySI),
-			},
-			{
-				MediumType: common.HDD,
-				Quota:      resource.NewQuantity(3, resource.BinarySI),
-			},
-		},
-	}
-	runtimeInfoWithTireStore, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio", base.WithTieredStore(tieredStore))
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
-	runtimeInfoWithTireStore.SetupWithDataset(&datav1alpha1.Dataset{
-		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
-	})
-
-	nodeInputs := []*v1.Node{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "test-node-exclusive",
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "test-node-share",
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "test-node-tireStore",
-			},
-		},
-	}
-
-	testNodes := []runtime.Object{}
-	for _, nodeInput := range nodeInputs {
-		testNodes = append(testNodes, nodeInput.DeepCopy())
-	}
-
-	client := fake.NewFakeClientWithScheme(testScheme, testNodes...)
-
-	var testCase = []struct {
-		node        v1.Node
+var _ = Describe("Dataset Lifecycle Node Tests", Label("pkg.utils.dataset.lifecycle.node_test.go"), func() {
+	var (
+		client      client.Client
 		runtimeInfo base.RuntimeInfoInterface
-		wantedMap   map[string]string
-	}{
-		{
-			node: v1.Node{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-node-exclusive",
-				},
-			},
-			runtimeInfo: runtimeInfoExclusive,
-			wantedMap: map[string]string{
-				"fluid.io/dataset-num":               "1",
-				"fluid.io/s-alluxio-fluid-hbase":     "true",
-				"fluid.io/s-fluid-hbase":             "true",
-				"fluid.io/s-h-alluxio-t-fluid-hbase": "0B",
-				"fluid_exclusive":                    "fluid_hbase",
-			},
-		},
-		{
-			node: v1.Node{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-node-share",
-				},
-			},
-			runtimeInfo: runtimeInfoShareSpark,
-			wantedMap: map[string]string{
-				"fluid.io/dataset-num":               "1",
-				"fluid.io/s-alluxio-fluid-spark":     "true",
-				"fluid.io/s-fluid-spark":             "true",
-				"fluid.io/s-h-alluxio-t-fluid-spark": "0B",
-			},
-		},
-		{
-			node: v1.Node{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-node-share",
-				},
-			},
-			runtimeInfo: runtimeInfoShareHbase,
-			wantedMap: map[string]string{
-				"fluid.io/dataset-num":               "2",
-				"fluid.io/s-alluxio-fluid-spark":     "true",
-				"fluid.io/s-fluid-spark":             "true",
-				"fluid.io/s-h-alluxio-t-fluid-spark": "0B",
-				"fluid.io/s-alluxio-fluid-hbase":     "true",
-				"fluid.io/s-fluid-hbase":             "true",
-				"fluid.io/s-h-alluxio-t-fluid-hbase": "0B",
-			},
-		},
-		{
-			node: v1.Node{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-node-tireStore",
-				},
-			},
-			runtimeInfo: runtimeInfoWithTireStore,
-			wantedMap: map[string]string{
-				"fluid.io/dataset-num":               "1",
-				"fluid.io/s-alluxio-fluid-spark":     "true",
-				"fluid.io/s-fluid-spark":             "true",
-				"fluid.io/s-h-alluxio-d-fluid-spark": "5B",
-				"fluid.io/s-h-alluxio-m-fluid-spark": "1B",
-				"fluid.io/s-h-alluxio-t-fluid-spark": "6B",
-				"fluid_exclusive":                    "fluid_spark",
-			},
-		},
-	}
+		testScheme  *runtime.Scheme
+		resources   []runtime.Object
+	)
 
-	for _, test := range testCase {
-		err := labelCacheNode(test.node, test.runtimeInfo, client)
-		if err != nil {
-			t.Errorf("fail to exec the function with the error %v", err)
-		}
-		node, err := kubeclient.GetNode(client, test.node.Name)
-		if err != nil {
-			fmt.Println(err)
-		}
-		if !reflect.DeepEqual(node.Labels, test.wantedMap) {
-			t.Errorf("fail to update the labels")
-		}
-	}
-}
+	BeforeEach(func() {
+		testScheme = runtime.NewScheme()
+		_ = corev1.AddToScheme(testScheme)
+		_ = appsv1.AddToScheme(testScheme)
+		_ = datav1alpha1.AddToScheme(testScheme)
 
-func TestDecreaseDatasetNum(t *testing.T) {
-	var testCase = []struct {
-		node           *v1.Node
-		runtimeInfo    base.RuntimeInfo
-		expectedResult common.LabelsToModify
-	}{
-		{
-			node: &v1.Node{
-				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"fluid.io/dataset-num": "2"}},
-				Spec:       v1.NodeSpec{},
-			},
-			runtimeInfo:    base.RuntimeInfo{},
-			expectedResult: common.LabelsToModify{},
-		},
-		{
-			node: &v1.Node{
-				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"fluid.io/dataset-num": "1"}},
-				Spec:       v1.NodeSpec{},
-			},
-			runtimeInfo:    base.RuntimeInfo{},
-			expectedResult: common.LabelsToModify{},
-		},
-		{
-			node: &v1.Node{
-				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"fluid.io/dataset-num": "test"}},
-				Spec:       v1.NodeSpec{},
-			},
-			runtimeInfo:    base.RuntimeInfo{},
-			expectedResult: common.LabelsToModify{},
-		},
-		{
-			node: &v1.Node{
-				ObjectMeta: metav1.ObjectMeta{},
-				Spec:       v1.NodeSpec{},
-			},
-			runtimeInfo:    base.RuntimeInfo{},
-			expectedResult: common.LabelsToModify{},
-		},
-	}
-
-	testCase[0].expectedResult.Update("fluid.io/dataset-num", "1")
-	testCase[1].expectedResult.Delete("fluid.io/dataset-num")
-
-	for _, test := range testCase {
-		var labels common.LabelsToModify
-		_ = DecreaseDatasetNum(test.node, &test.runtimeInfo, &labels)
-		if !reflect.DeepEqual(labels.GetLabels(), test.expectedResult.GetLabels()) {
-			t.Errorf("fail to exec the function with the error ")
-		}
-
-	}
-}
-
-func TestIncreaseDatasetNum(t *testing.T) {
-	var testCase = []struct {
-		node           *v1.Node
-		runtimeInfo    base.RuntimeInfo
-		expectedResult common.LabelsToModify
-	}{
-		{
-			node: &v1.Node{
-				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"fluid.io/dataset-num": "1"}},
-				Spec:       v1.NodeSpec{},
-			},
-			runtimeInfo:    base.RuntimeInfo{},
-			expectedResult: common.LabelsToModify{},
-		},
-		{
-			node: &v1.Node{
-				ObjectMeta: metav1.ObjectMeta{},
-				Spec:       v1.NodeSpec{},
-			},
-			runtimeInfo:    base.RuntimeInfo{},
-			expectedResult: common.LabelsToModify{},
-		},
-	}
-
-	testCase[0].expectedResult.Update("fluid.io/dataset-num", "2")
-	testCase[1].expectedResult.Add("fluid.io/dataset-num", "1")
-
-	for _, test := range testCase {
-		var labels common.LabelsToModify
-		_ = increaseDatasetNum(test.node, &test.runtimeInfo, &labels)
-		if !reflect.DeepEqual(labels.GetLabels(), test.expectedResult.GetLabels()) {
-			t.Errorf("fail to exec the function with the error ")
-		}
-	}
-}
-
-func TestCheckIfRuntimeInNode(t *testing.T) {
-	var testCase = []struct {
-		node   *v1.Node
-		key    string
-		wanted bool
-	}{
-		{
-			node: &v1.Node{
-				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"fluid.io/dataset-num": "2"}},
-				Spec:       v1.NodeSpec{},
-			},
-			key:    "abc",
-			wanted: false,
-		},
-		{
-			node: &v1.Node{
-				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"fluid.io/s-alluxio-fluid-hbase": "true"}},
-				Spec:       v1.NodeSpec{},
-			},
-
-			wanted: true,
-		},
-		{
-			node: &v1.Node{
-				ObjectMeta: metav1.ObjectMeta{},
-				Spec:       v1.NodeSpec{},
-			},
-
-			wanted: false,
-		},
-	}
-
-	for _, test := range testCase {
-		runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
-		if err != nil {
-			t.Errorf("fail to create the runtimeInfo with error %v", err)
-		}
-
-		found := hasRuntimeLabel(*test.node, runtimeInfo)
-
-		if found != test.wanted {
-			t.Errorf("fail to Find the label on node ")
-		}
-	}
-}
-
-func TestUnlabelCacheNode(t *testing.T) {
-	runtimeInfoExclusive, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
-	runtimeInfoExclusive.SetupWithDataset(&datav1alpha1.Dataset{
-		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
+		var err error
+		runtimeInfo, err = base.BuildRuntimeInfo("hbase", "fluid", common.AlluxioRuntime)
+		Expect(err).To(BeNil())
 	})
 
-	runtimeInfoShareSpark, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio")
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
-	runtimeInfoShareSpark.SetupWithDataset(&datav1alpha1.Dataset{
-		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ShareMode},
+	JustBeforeEach(func() {
+		client = fake.NewFakeClientWithScheme(testScheme, resources...)
 	})
 
-	runtimeInfoShareHbase, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
-	runtimeInfoShareHbase.SetupWithDataset(&datav1alpha1.Dataset{
-		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ShareMode},
+	Describe("Test labelCacheNode()", func() {
+		When("given exclusive placement mode runtime", func() {
+			BeforeEach(func() {
+				runtimeInfo.SetupWithDataset(&datav1alpha1.Dataset{
+					Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
+				})
+
+				resources = []runtime.Object{
+					&corev1.Node{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "test-node-exclusive",
+						},
+					},
+				}
+			})
+
+			It("should add exclusive labels to node", func() {
+				node := corev1.Node{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-node-exclusive",
+					},
+				}
+
+				err := labelCacheNode(node, runtimeInfo, client)
+				Expect(err).To(BeNil())
+
+				gotNode, err := kubeclient.GetNode(client, "test-node-exclusive")
+				Expect(err).To(BeNil())
+				Expect(gotNode.Labels).To(HaveKeyWithValue("fluid.io/dataset-num", "1"))
+				Expect(gotNode.Labels).To(HaveKeyWithValue("fluid.io/s-alluxio-fluid-hbase", "true"))
+				Expect(gotNode.Labels).To(HaveKeyWithValue("fluid.io/s-fluid-hbase", "true"))
+				Expect(gotNode.Labels).To(HaveKeyWithValue("fluid_exclusive", "fluid_hbase"))
+			})
+		})
+
+		When("given share placement mode runtime", func() {
+			BeforeEach(func() {
+				runtimeInfo.SetupWithDataset(&datav1alpha1.Dataset{
+					Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ShareMode},
+				})
+
+				resources = []runtime.Object{
+					&corev1.Node{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "test-node-share",
+						},
+					},
+				}
+			})
+
+			It("should add share mode labels to node", func() {
+				node := corev1.Node{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-node-share",
+					},
+				}
+
+				err := labelCacheNode(node, runtimeInfo, client)
+				Expect(err).To(BeNil())
+
+				gotNode, err := kubeclient.GetNode(client, "test-node-share")
+				Expect(err).To(BeNil())
+				Expect(gotNode.Labels).To(HaveKeyWithValue("fluid.io/dataset-num", "1"))
+				Expect(gotNode.Labels).To(HaveKeyWithValue("fluid.io/s-alluxio-fluid-hbase", "true"))
+				Expect(gotNode.Labels).To(HaveKeyWithValue("fluid.io/s-fluid-hbase", "true"))
+				Expect(gotNode.Labels).NotTo(HaveKey("fluid_exclusive"))
+			})
+		})
+
+		When("given runtime with tiered store", func() {
+			BeforeEach(func() {
+				tieredStore := datav1alpha1.TieredStore{
+					Levels: []datav1alpha1.Level{
+						{
+							MediumType: common.Memory,
+							Quota:      resource.NewQuantity(1<<30, resource.BinarySI),
+						},
+						{
+							MediumType: common.SSD,
+							Quota:      resource.NewQuantity(2<<30, resource.BinarySI),
+						},
+						{
+							MediumType: common.HDD,
+							Quota:      resource.NewQuantity(3<<30, resource.BinarySI),
+						},
+					},
+				}
+
+				var err error
+				runtimeInfo, err = base.BuildRuntimeInfo("spark", "fluid", "alluxio", base.WithTieredStore(tieredStore))
+				Expect(err).To(BeNil())
+				runtimeInfo.SetupWithDataset(&datav1alpha1.Dataset{
+					Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
+				})
+
+				resources = []runtime.Object{
+					&corev1.Node{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "test-node-tiered",
+						},
+					},
+				}
+			})
+
+			It("should add capacity labels to node", func() {
+				node := corev1.Node{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-node-tiered",
+					},
+				}
+
+				err := labelCacheNode(node, runtimeInfo, client)
+				Expect(err).To(BeNil())
+
+				gotNode, err := kubeclient.GetNode(client, "test-node-tiered")
+				Expect(err).To(BeNil())
+				Expect(gotNode.Labels).To(HaveKeyWithValue("fluid.io/s-h-alluxio-m-fluid-spark", "1GiB"))
+				Expect(gotNode.Labels).To(HaveKeyWithValue("fluid.io/s-h-alluxio-d-fluid-spark", "5GiB"))
+				Expect(gotNode.Labels).To(HaveKeyWithValue("fluid.io/s-h-alluxio-t-fluid-spark", "6GiB"))
+			})
+		})
 	})
 
-	tieredStore := datav1alpha1.TieredStore{
-		Levels: []datav1alpha1.Level{
-			{
-				MediumType: common.Memory,
-				Quota:      resource.NewQuantity(1, resource.BinarySI),
-			},
-			{
-				MediumType: common.SSD,
-				Quota:      resource.NewQuantity(2, resource.BinarySI),
-			},
-			{
-				MediumType: common.HDD,
-				Quota:      resource.NewQuantity(3, resource.BinarySI),
-			},
-		},
-	}
-	runtimeInfoWithTireStore, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio", base.WithTieredStore(tieredStore))
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
-	runtimeInfoWithTireStore.SetupWithDataset(&datav1alpha1.Dataset{
-		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
+	Describe("Test DecreaseDatasetNum()", func() {
+		When("node has dataset-num label with value 2", func() {
+			It("should decrease dataset number to 1", func() {
+				node := &corev1.Node{
+					ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"fluid.io/dataset-num": "2"}},
+				}
+				runtimeInfo := &base.RuntimeInfo{}
+
+				var labels common.LabelsToModify
+				err := DecreaseDatasetNum(node, runtimeInfo, &labels)
+				Expect(err).To(BeNil())
+
+				// Check that the label modification is correct
+				modifications := labels.GetLabels()
+				Expect(modifications).To(HaveLen(1))
+				Expect(modifications[0].GetLabelKey()).To(Equal("fluid.io/dataset-num"))
+				Expect(modifications[0].GetLabelValue()).To(Equal("1"))
+				Expect(modifications[0].GetOperationType()).To(Equal(common.UpdateLabel))
+			})
+		})
+
+		When("node has dataset-num label with value 1", func() {
+			It("should delete dataset-num label", func() {
+				node := &corev1.Node{
+					ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"fluid.io/dataset-num": "1"}},
+				}
+				runtimeInfo := &base.RuntimeInfo{}
+
+				var labels common.LabelsToModify
+				err := DecreaseDatasetNum(node, runtimeInfo, &labels)
+				Expect(err).To(BeNil())
+
+				// Check that the label is marked for deletion
+				modifications := labels.GetLabels()
+				Expect(modifications).To(HaveLen(1))
+				Expect(modifications[0].GetLabelKey()).To(Equal("fluid.io/dataset-num"))
+				Expect(modifications[0].GetOperationType()).To(Equal(common.DeleteLabel))
+			})
+		})
+
+		When("node has invalid dataset-num label", func() {
+			It("should return error", func() {
+				node := &corev1.Node{
+					ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"fluid.io/dataset-num": "invalid"}},
+				}
+				runtimeInfo := &base.RuntimeInfo{}
+
+				var labels common.LabelsToModify
+				err := DecreaseDatasetNum(node, runtimeInfo, &labels)
+				Expect(err).NotTo(BeNil())
+			})
+		})
+
+		When("node has no dataset-num label", func() {
+			It("should not modify labels", func() {
+				node := &corev1.Node{
+					ObjectMeta: metav1.ObjectMeta{},
+				}
+				runtimeInfo := &base.RuntimeInfo{}
+
+				var labels common.LabelsToModify
+				err := DecreaseDatasetNum(node, runtimeInfo, &labels)
+				Expect(err).To(BeNil())
+				Expect(labels.GetLabels()).To(BeEmpty())
+			})
+		})
 	})
 
-	var testCases = []struct {
-		name        string
-		node        *v1.Node
-		runtimeInfo base.RuntimeInfoInterface
-		wantedMap   map[string]string
-	}{
-		{
-			name: "test-node-exclusive",
-			node: &v1.Node{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-node-exclusive",
-					Labels: map[string]string{
-						"fluid.io/dataset-num":               "1",
-						"fluid.io/s-alluxio-fluid-hbase":     "true",
-						"fluid.io/s-fluid-hbase":             "true",
-						"fluid.io/s-h-alluxio-t-fluid-hbase": "0B",
-						"fluid_exclusive":                    "fluid_hbase",
-						"test":                               "abc",
-					},
-				},
-			},
-			runtimeInfo: runtimeInfoExclusive,
-			wantedMap: map[string]string{
-				"test": "abc",
-			},
-		},
-		{
-			name: "test-node-share",
-			node: &v1.Node{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-node-share",
-					Labels: map[string]string{
-						"fluid.io/dataset-num":               "1",
-						"fluid.io/s-alluxio-fluid-spark":     "true",
-						"fluid.io/s-fluid-spark":             "true",
-						"fluid.io/s-h-alluxio-t-fluid-spark": "0B",
-					},
-				},
-			},
-			runtimeInfo: runtimeInfoShareSpark,
-			wantedMap:   map[string]string{},
-		}, {
-			name: "test-node-share-1",
-			node: &v1.Node{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-node-share-1",
-					Labels: map[string]string{
-						"fluid.io/dataset-num":               "2",
-						"fluid.io/s-alluxio-fluid-spark":     "true",
-						"fluid.io/s-fluid-spark":             "true",
-						"fluid.io/s-h-alluxio-t-fluid-spark": "0B",
-						"fluid.io/s-alluxio-fluid-hbase":     "true",
-						"fluid.io/s-fluid-hbase":             "true",
-						"fluid.io/s-h-alluxio-t-fluid-hbase": "0B",
-					},
-				},
-			},
-			runtimeInfo: runtimeInfoShareHbase,
-			wantedMap: map[string]string{
-				"fluid.io/dataset-num":               "1",
-				"fluid.io/s-alluxio-fluid-spark":     "true",
-				"fluid.io/s-fluid-spark":             "true",
-				"fluid.io/s-h-alluxio-t-fluid-spark": "0B",
-			},
-		}, {
-			name: "test-node-tireStore",
-			node: &v1.Node{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-node-tireStore",
-					Labels: map[string]string{
-						"fluid.io/dataset-num":               "1",
-						"fluid.io/s-alluxio-fluid-spark":     "true",
-						"fluid.io/s-fluid-spark":             "true",
-						"fluid.io/s-h-alluxio-d-fluid-spark": "5B",
-						"fluid.io/s-h-alluxio-m-fluid-spark": "1B",
-						"fluid.io/s-h-alluxio-t-fluid-spark": "6B",
-						"fluid_exclusive":                    "fluid_spark",
-					},
-				},
-			},
-			runtimeInfo: runtimeInfoWithTireStore,
-			wantedMap:   map[string]string{},
-		},
-	}
-	testNodes := []runtime.Object{}
-	for _, test := range testCases {
-		testNodes = append(testNodes, test.node)
-	}
+	Describe("Test increaseDatasetNum", func() {
+		When("node has existing dataset-num label", func() {
+			It("should increase dataset number", func() {
+				node := &corev1.Node{
+					ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"fluid.io/dataset-num": "1"}},
+				}
+				runtimeInfo := &base.RuntimeInfo{}
 
-	client := fake.NewFakeClientWithScheme(testScheme, testNodes...)
+				var labels common.LabelsToModify
+				err := increaseDatasetNum(node, runtimeInfo, &labels)
+				Expect(err).To(BeNil())
 
-	for _, test := range testCases {
-		err := unlabelCacheNode(*test.node, test.runtimeInfo, client)
-		if err != nil {
-			t.Errorf("fail to exec the function with the error %v", err)
-		}
-		node, err := kubeclient.GetNode(client, test.node.Name)
-		if err != nil {
-			fmt.Println(err)
-		}
-		if len(node.Labels) == 0 && len(test.wantedMap) == 0 {
-			continue
-		}
-		if !reflect.DeepEqual(node.Labels, test.wantedMap) {
-			t.Errorf("test case %v fail to delete the labels, wanted %v, got %v", test.name, test.wantedMap, node.Labels)
-		}
-	}
-}
+				modifications := labels.GetLabels()
+				Expect(modifications).To(HaveLen(1))
+				Expect(modifications[0].GetLabelKey()).To(Equal("fluid.io/dataset-num"))
+				Expect(modifications[0].GetLabelValue()).To(Equal("2"))
+				Expect(modifications[0].GetOperationType()).To(Equal(common.UpdateLabel))
+			})
+		})
+
+		When("node has no dataset-num label", func() {
+			It("should add dataset-num label with value 1", func() {
+				node := &corev1.Node{
+					ObjectMeta: metav1.ObjectMeta{},
+				}
+				runtimeInfo := &base.RuntimeInfo{}
+
+				var labels common.LabelsToModify
+				err := increaseDatasetNum(node, runtimeInfo, &labels)
+				Expect(err).To(BeNil())
+
+				modifications := labels.GetLabels()
+				Expect(modifications).To(HaveLen(1))
+				Expect(modifications[0].GetLabelKey()).To(Equal("fluid.io/dataset-num"))
+				Expect(modifications[0].GetLabelValue()).To(Equal("1"))
+				Expect(modifications[0].GetOperationType()).To(Equal(common.AddLabel))
+			})
+		})
+	})
+
+	Describe("Test hasRuntimeLabel", func() {
+		When("node has runtime label", func() {
+			It("should return true", func() {
+				node := corev1.Node{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: map[string]string{"fluid.io/s-alluxio-fluid-hbase": "true"},
+					},
+				}
+
+				runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
+				Expect(err).To(BeNil())
+
+				found := hasRuntimeLabel(node, runtimeInfo)
+				Expect(found).To(BeTrue())
+			})
+		})
+
+		When("node has no runtime label", func() {
+			It("should return false", func() {
+				node := corev1.Node{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: map[string]string{"other-label": "value"},
+					},
+				}
+
+				runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
+				Expect(err).To(BeNil())
+
+				found := hasRuntimeLabel(node, runtimeInfo)
+				Expect(found).To(BeFalse())
+			})
+		})
+
+		When("node has no labels", func() {
+			It("should return false", func() {
+				node := corev1.Node{
+					ObjectMeta: metav1.ObjectMeta{},
+				}
+
+				runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
+				Expect(err).To(BeNil())
+
+				found := hasRuntimeLabel(node, runtimeInfo)
+				Expect(found).To(BeFalse())
+			})
+		})
+	})
+
+	Describe("Test unlabelCacheNode()", func() {
+		When("given exclusive placement mode runtime", func() {
+			BeforeEach(func() {
+				runtimeInfo.SetupWithDataset(&datav1alpha1.Dataset{
+					Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
+				})
+
+				resources = []runtime.Object{
+					&corev1.Node{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "test-node-exclusive",
+							Labels: map[string]string{
+								"fluid.io/dataset-num":               "1",
+								"fluid.io/s-alluxio-fluid-hbase":     "true",
+								"fluid.io/s-fluid-hbase":             "true",
+								"fluid.io/s-h-alluxio-t-fluid-hbase": "0B",
+								"fluid_exclusive":                    "fluid_hbase",
+								"test":                               "abc",
+							},
+						},
+					},
+				}
+			})
+
+			It("should remove fluid labels and keep other labels", func() {
+				node := corev1.Node{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-node-exclusive",
+						Labels: map[string]string{
+							"fluid.io/dataset-num":               "1",
+							"fluid.io/s-alluxio-fluid-hbase":     "true",
+							"fluid.io/s-fluid-hbase":             "true",
+							"fluid.io/s-h-alluxio-t-fluid-hbase": "0B",
+							"fluid_exclusive":                    "fluid_hbase",
+							"test":                               "abc",
+						},
+					},
+				}
+
+				err := unlabelCacheNode(node, runtimeInfo, client)
+				Expect(err).To(BeNil())
+
+				gotNode, err := kubeclient.GetNode(client, "test-node-exclusive")
+				Expect(err).To(BeNil())
+				Expect(gotNode.Labels).To(HaveKeyWithValue("test", "abc"))
+				Expect(gotNode.Labels).NotTo(HaveKey("fluid.io/s-alluxio-fluid-hbase"))
+				Expect(gotNode.Labels).NotTo(HaveKey("fluid_exclusive"))
+			})
+		})
+
+		When("given share placement mode runtime", func() {
+			BeforeEach(func() {
+				runtimeInfo.SetupWithDataset(&datav1alpha1.Dataset{
+					Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ShareMode},
+				})
+
+				resources = []runtime.Object{
+					&corev1.Node{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "test-node-share",
+							Labels: map[string]string{
+								"fluid.io/dataset-num":               "1",
+								"fluid.io/s-alluxio-fluid-hbase":     "true",
+								"fluid.io/s-fluid-hbase":             "true",
+								"fluid.io/s-h-alluxio-t-fluid-hbase": "0B",
+							},
+						},
+					},
+				}
+			})
+
+			It("should remove all fluid labels", func() {
+				node := corev1.Node{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-node-share",
+						Labels: map[string]string{
+							"fluid.io/dataset-num":               "1",
+							"fluid.io/s-alluxio-fluid-spark":     "true",
+							"fluid.io/s-fluid-spark":             "true",
+							"fluid.io/s-h-alluxio-t-fluid-spark": "0B",
+						},
+					},
+				}
+
+				err := unlabelCacheNode(node, runtimeInfo, client)
+				Expect(err).To(BeNil())
+
+				gotNode, err := kubeclient.GetNode(client, "test-node-share")
+				Expect(err).To(BeNil())
+				Expect(gotNode.Labels).To(BeEmpty())
+			})
+		})
+
+		When("given runtime with tiered store", func() {
+			BeforeEach(func() {
+				tieredStore := datav1alpha1.TieredStore{
+					Levels: []datav1alpha1.Level{
+						{
+							MediumType: common.Memory,
+							Quota:      resource.NewQuantity(1, resource.BinarySI),
+						},
+						{
+							MediumType: common.SSD,
+							Quota:      resource.NewQuantity(2, resource.BinarySI),
+						},
+						{
+							MediumType: common.HDD,
+							Quota:      resource.NewQuantity(3, resource.BinarySI),
+						},
+					},
+				}
+
+				var err error
+				runtimeInfo, err = base.BuildRuntimeInfo("spark", "fluid", "alluxio", base.WithTieredStore(tieredStore))
+				Expect(err).To(BeNil())
+				runtimeInfo.SetupWithDataset(&datav1alpha1.Dataset{
+					Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
+				})
+
+				resources = []runtime.Object{
+					&corev1.Node{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "test-node-tiered",
+							Labels: map[string]string{
+								"fluid.io/dataset-num":               "1",
+								"fluid.io/s-alluxio-fluid-spark":     "true",
+								"fluid.io/s-fluid-spark":             "true",
+								"fluid.io/s-h-alluxio-d-fluid-spark": "5B",
+								"fluid.io/s-h-alluxio-m-fluid-spark": "1B",
+								"fluid.io/s-h-alluxio-t-fluid-spark": "6B",
+								"fluid_exclusive":                    "fluid_spark",
+							},
+						},
+					},
+				}
+			})
+
+			It("should remove all fluid labels including capacity labels", func() {
+				node := corev1.Node{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-node-tiered",
+						Labels: map[string]string{
+							"fluid.io/dataset-num":               "1",
+							"fluid.io/s-alluxio-fluid-spark":     "true",
+							"fluid.io/s-fluid-spark":             "true",
+							"fluid.io/s-h-alluxio-d-fluid-spark": "5B",
+							"fluid.io/s-h-alluxio-m-fluid-spark": "1B",
+							"fluid.io/s-h-alluxio-t-fluid-spark": "6B",
+							"fluid_exclusive":                    "fluid_spark",
+						},
+					},
+				}
+
+				err := unlabelCacheNode(node, runtimeInfo, client)
+				Expect(err).To(BeNil())
+
+				gotNode, err := kubeclient.GetNode(client, "test-node-tiered")
+				Expect(err).To(BeNil())
+				Expect(gotNode.Labels).To(BeEmpty())
+			})
+		})
+	})
+
+	Describe("Test calculateNodeDifferences", func() {
+		Context("when given current and previous node lists", func() {
+			It("should calculate correct differences", func() {
+				currentNodes := []string{"node-1", "node-2", "node-3"}
+				previousNodes := []string{"node-2", "node-3", "node-4"}
+
+				nodesToAdd, nodesToRemove := calculateNodeDifferences(currentNodes, previousNodes)
+
+				Expect(nodesToAdd).To(Equal([]string{"node-1"}))
+				Expect(nodesToRemove).To(Equal([]string{"node-4"}))
+			})
+		})
+
+		Context("when given identical node lists", func() {
+			It("should return empty differences", func() {
+				currentNodes := []string{"node-1", "node-2"}
+				previousNodes := []string{"node-1", "node-2"}
+
+				nodesToAdd, nodesToRemove := calculateNodeDifferences(currentNodes, previousNodes)
+
+				Expect(nodesToAdd).To(BeEmpty())
+				Expect(nodesToRemove).To(BeEmpty())
+			})
+		})
+
+		Context("when given completely different node lists", func() {
+			It("should return all nodes as differences", func() {
+				currentNodes := []string{"node-1", "node-2"}
+				previousNodes := []string{"node-3", "node-4"}
+
+				nodesToAdd, nodesToRemove := calculateNodeDifferences(currentNodes, previousNodes)
+
+				Expect(nodesToAdd).To(Equal([]string{"node-1", "node-2"}))
+				Expect(nodesToRemove).To(Equal([]string{"node-3", "node-4"}))
+			})
+		})
+	})
+})
