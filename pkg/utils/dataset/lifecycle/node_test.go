@@ -289,46 +289,6 @@ func TestIncreaseDatasetNum(t *testing.T) {
 	}
 }
 
-func TestFindLabelNameOnNode(t *testing.T) {
-	var testCase = []struct {
-		node   *v1.Node
-		key    string
-		wanted bool
-	}{
-		{
-			node: &v1.Node{
-				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"fluid.io/dataset-num": "2"}},
-				Spec:       v1.NodeSpec{},
-			},
-			key:    "abc",
-			wanted: false,
-		},
-		{
-			node: &v1.Node{
-				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"fluid.io/dataset-num": "1"}},
-				Spec:       v1.NodeSpec{},
-			},
-			key:    "fluid.io/dataset-num",
-			wanted: true,
-		},
-		{
-			node: &v1.Node{
-				ObjectMeta: metav1.ObjectMeta{},
-				Spec:       v1.NodeSpec{},
-			},
-			key:    "fluid.io/dataset-num",
-			wanted: false,
-		},
-	}
-
-	for _, test := range testCase {
-		wanted := findLabelNameOnNode(*test.node, test.key)
-		if wanted != test.wanted {
-			t.Errorf("fail to Find the label on node ")
-		}
-	}
-}
-
 func TestCheckIfRuntimeInNode(t *testing.T) {
 	var testCase = []struct {
 		node   *v1.Node
@@ -367,7 +327,7 @@ func TestCheckIfRuntimeInNode(t *testing.T) {
 			t.Errorf("fail to create the runtimeInfo with error %v", err)
 		}
 
-		found := CheckIfRuntimeInNode(*test.node, runtimeInfo)
+		found := hasRuntimeLabel(*test.node, runtimeInfo)
 
 		if found != test.wanted {
 			t.Errorf("fail to Find the label on node ")
