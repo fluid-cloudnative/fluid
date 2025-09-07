@@ -28,7 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var _ = Describe("Secret related unit tests", Focus, Label("pkg.utils.kubeclient.secret_test.go"), func() {
+var _ = Describe("Secret related unit tests", Label("pkg.utils.kubeclient.secret_test.go"), func() {
 	var (
 		fakeClient client.Client
 		testScheme *runtime.Scheme
