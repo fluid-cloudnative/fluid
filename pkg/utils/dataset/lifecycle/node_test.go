@@ -17,6 +17,9 @@
 package lifecycle
 
 import (
+	"context"
+	"fmt"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -27,6 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -532,6 +536,158 @@ var _ = Describe("Dataset Lifecycle Node Tests", Label("pkg.utils.dataset.lifecy
 
 				Expect(nodesToAdd).To(Equal([]string{"node-1", "node-2"}))
 				Expect(nodesToRemove).To(Equal([]string{"node-3", "node-4"}))
+			})
+		})
+	})
+
+	Describe("Test SyncScheduleInfoToCacheNodes", func() {
+		var (
+			nodes []*corev1.Node
+			pods  []*corev1.Pod
+			sts   *appsv1.StatefulSet
+		)
+
+		BeforeEach(func() {
+			nodeNumToMock := 3
+			for i := 0; i < nodeNumToMock; i++ {
+				node := &corev1.Node{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: fmt.Sprintf("node-%d", i),
+					},
+				}
+				nodes = append(nodes, node)
+			}
+
+			// mock a pod for each node
+			for i := 0; i < nodeNumToMock; i++ {
+				pod := &corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      fmt.Sprintf("hbase-worker-%d", i),
+						Namespace: "fluid",
+						Labels: map[string]string{
+							"app": "hbase-worker",
+						},
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: "apps/v1",
+								Kind:       "StatefulSet",
+								Name:       "hbase-worker",
+								UID:        "test-uid",
+								Controller: ptr.To(true),
+							},
+						},
+					},
+					Spec: corev1.PodSpec{
+						NodeName: fmt.Sprintf("node-%d", i),
+					},
+				}
+				pods = append(pods, pod)
+			}
+
+			sts = &appsv1.StatefulSet{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "apps/v1",
+					Kind:       "StatefulSet",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "fluid",
+					Name:      "hbase-worker",
+					UID:       "test-uid",
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"app": "hbase-worker",
+						},
+					},
+				},
+			}
+		})
+
+		When("calling SyncScheduleInfoToCacheNodes several times to mock runtime scaling", func() {
+
+			BeforeEach(func() {
+				// 复用现有的 runtimeInfo 设置
+				runtimeInfo.SetupWithDataset(&datav1alpha1.Dataset{
+					Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
+				})
+
+				resources = []runtime.Object{sts}
+				for _, node := range nodes {
+					resources = append(resources, node)
+				}
+			})
+
+			It("should successfully add or remove schedule info on proper nodes", func() {
+				By("scaling two pods to node-0 and node-1, the two nodes should have runtime labels", func() {
+					Expect(client.Create(context.TODO(), pods[0])).To(Succeed())
+					Expect(client.Create(context.TODO(), pods[1])).To(Succeed())
+
+					Expect(SyncScheduleInfoToCacheNodes(runtimeInfo, client)).To(Succeed())
+
+					gotNode0, err := kubeclient.GetNode(client, "node-0")
+					Expect(err).To(BeNil())
+					Expect(gotNode0).NotTo(BeNil())
+					Expect(gotNode0.Labels).To(HaveKeyWithValue(runtimeInfo.GetRuntimeLabelName(), "true"))
+
+					gotNode1, err := kubeclient.GetNode(client, "node-1")
+					Expect(err).To(BeNil())
+					Expect(gotNode1).NotTo(BeNil())
+					Expect(gotNode1.Labels).To(HaveKeyWithValue(runtimeInfo.GetRuntimeLabelName(), "true"))
+
+					gotNode2, err := kubeclient.GetNode(client, "node-2")
+					Expect(err).To(BeNil())
+					Expect(gotNode2).NotTo(BeNil())
+					Expect(gotNode2.Labels).NotTo(HaveKey(runtimeInfo.GetRuntimeLabelName()))
+				})
+
+				By("scaling out a third pod to node-2, all pods should have runtime labels", func() {
+					Expect(client.Create(context.TODO(), pods[2])).To(Succeed())
+
+					Expect(SyncScheduleInfoToCacheNodes(runtimeInfo, client)).To(Succeed())
+
+					for i := 0; i < 3; i++ {
+						gotNode, err := kubeclient.GetNode(client, fmt.Sprintf("node-%d", i))
+						Expect(err).To(BeNil())
+						Expect(gotNode).NotTo(BeNil())
+						Expect(gotNode.Labels).To(HaveKeyWithValue(runtimeInfo.GetRuntimeLabelName(), "true"))
+					}
+				})
+
+				By("scaling in pods on node-1 and node-2, only node-0 should have runtime labels", func() {
+					Expect(client.Delete(context.TODO(), pods[2])).To(Succeed())
+					Expect(client.Delete(context.TODO(), pods[1])).To(Succeed())
+
+					Expect(SyncScheduleInfoToCacheNodes(runtimeInfo, client)).To(Succeed())
+
+					gotNode0, err := kubeclient.GetNode(client, "node-0")
+					Expect(err).To(BeNil())
+					Expect(gotNode0).NotTo(BeNil())
+					Expect(gotNode0.Labels).To(HaveKeyWithValue(runtimeInfo.GetRuntimeLabelName(), "true"))
+
+					gotNode1, err := kubeclient.GetNode(client, "node-1")
+					Expect(err).To(BeNil())
+					Expect(gotNode1).NotTo(BeNil())
+					Expect(gotNode1.Labels).NotTo(HaveKey(runtimeInfo.GetRuntimeLabelName()))
+
+					gotNode2, err := kubeclient.GetNode(client, "node-2")
+					Expect(err).To(BeNil())
+					Expect(gotNode2).NotTo(BeNil())
+					Expect(gotNode2.Labels).NotTo(HaveKey(runtimeInfo.GetRuntimeLabelName()))
+				})
+
+				By("scaling in the last pod node node-0, now all nodes should not have runtime labels", func() {
+					Expect(client.Delete(context.TODO(), pods[0])).To(Succeed())
+
+					Expect(SyncScheduleInfoToCacheNodes(runtimeInfo, client)).To(Succeed())
+
+					for i := 0; i < 3; i++ {
+						gotNode, err := kubeclient.GetNode(client, fmt.Sprintf("node-%d", i))
+						Expect(err).To(BeNil())
+						Expect(gotNode).NotTo(BeNil())
+						Expect(gotNode.Labels).NotTo(HaveKey(runtimeInfo.GetRuntimeLabelName()))
+					}
+				})
 			})
 		})
 	})
