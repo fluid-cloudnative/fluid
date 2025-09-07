@@ -20,7 +20,6 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-	"github.com/go-logr/logr"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -30,12 +29,11 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Get helpers", Label("pkg.utils.dataset.volume.get_test.go"), func() {
+var _ = Describe("Get helpers related tests", Label("pkg.utils.dataset.volume.get_test.go"), func() {
 	var (
 		scheme    *runtime.Scheme
 		clientObj client.Client
 		resources []runtime.Object
-		log       logr.Logger
 	)
 
 	BeforeEach(func() {
@@ -43,7 +41,6 @@ var _ = Describe("Get helpers", Label("pkg.utils.dataset.volume.get_test.go"), f
 		_ = v1.AddToScheme(scheme)
 		_ = datav1alpha1.AddToScheme(scheme)
 		resources = nil
-		log = fake.NullLogger()
 	})
 
 	JustBeforeEach(func() {
@@ -63,7 +60,6 @@ var _ = Describe("Get helpers", Label("pkg.utils.dataset.volume.get_test.go"), f
 				Expect(err).To(BeNil())
 				Expect(got).NotTo(BeNil())
 				Expect(got.Name).To(Equal("name"))
-				_ = log
 			})
 		})
 
@@ -82,11 +78,11 @@ var _ = Describe("Get helpers", Label("pkg.utils.dataset.volume.get_test.go"), f
 	})
 
 	Context("Test GetNamespacedNameByVolumeId()", func() {
-		When("pv has claimRef and pvc is fluid", func() {
+		When("pv has claimRef and pvc is managed by fluid", func() {
 			BeforeEach(func() {
 				resources = append(resources,
 					&v1.PersistentVolume{ObjectMeta: metav1.ObjectMeta{Name: "ns2-n"}, Spec: v1.PersistentVolumeSpec{ClaimRef: &v1.ObjectReference{Namespace: "ns2", Name: "n"}}},
-					&v1.PersistentVolumeClaim{ObjectMeta: metav1.ObjectMeta{Name: "n", Namespace: "ns2", Labels: map[string]string{common.LabelAnnotationStorageCapacityPrefix + "ns2-n": ""}}},
+					&v1.PersistentVolumeClaim{ObjectMeta: metav1.ObjectMeta{Name: "n", Namespace: "ns2", Labels: map[string]string{common.LabelAnnotationStorageCapacityPrefix + "ns2-n": "true"}}},
 				)
 			})
 			It("should return namespace and name", func() {
@@ -103,7 +99,7 @@ var _ = Describe("Get helpers", Label("pkg.utils.dataset.volume.get_test.go"), f
 			})
 			It("should return error", func() {
 				_, _, err := GetNamespacedNameByVolumeId(clientObj, "v")
-				Expect(err).ToNot(BeNil())
+				Expect(err).NotTo(BeNil())
 			})
 		})
 	})

@@ -17,15 +17,19 @@ limitations under the License.
 package volume
 
 import (
+	"context"
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
 	v1 "k8s.io/api/core/v1"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -53,18 +57,6 @@ var _ = Describe("Delete Volume Tests", Label("pkg.utils.dataset.volume.delete_t
 	})
 
 	Context("Test DeleteFusePersistentVolume()", func() {
-		When("PV is not annotated by fluid", func() {
-			BeforeEach(func() {
-				resources = append(resources, &v1.PersistentVolume{ObjectMeta: metav1.ObjectMeta{Name: "no-anno"}})
-				var err error
-				runtimeInfo, err = base.BuildRuntimeInfo("no-anno", "fluid", "alluxio")
-				Expect(err).To(BeNil())
-			})
-			It("should no-op and return success", func() {
-				Expect(DeleteFusePersistentVolume(clientObj, runtimeInfo, log)).To(Succeed())
-			})
-		})
-
 		When("PV with fluid annotations exists", func() {
 			BeforeEach(func() {
 				resources = append(resources, &v1.PersistentVolume{ObjectMeta: metav1.ObjectMeta{Name: "fluid-hadoop", Annotations: common.GetExpectedFluidAnnotations()}})
@@ -74,11 +66,78 @@ var _ = Describe("Delete Volume Tests", Label("pkg.utils.dataset.volume.delete_t
 			})
 			It("should delete the PV successfully", func() {
 				Expect(DeleteFusePersistentVolume(clientObj, runtimeInfo, log)).To(Succeed())
+				gotPV, err := kubeclient.GetPersistentVolume(clientObj, "fluid-hadoop")
+				Expect(err).NotTo(BeNil())
+				Expect(apierrs.IsNotFound(err)).To(BeTrue())
+				Expect(gotPV).To(BeNil())
+			})
+		})
+
+		When("PV has no fluid-expected annotations", func() {
+			BeforeEach(func() {
+				resources = append(resources, &v1.PersistentVolume{ObjectMeta: metav1.ObjectMeta{Name: "fluid-no-anno"}})
+				var err error
+				runtimeInfo, err = base.BuildRuntimeInfo("no-anno", "fluid", "alluxio")
+				Expect(err).To(BeNil())
+			})
+			It("should no-op and return success", func() {
+				Expect(DeleteFusePersistentVolume(clientObj, runtimeInfo, log)).To(Succeed())
+				// The PV should still exists
+				gotPV, err := kubeclient.GetPersistentVolume(clientObj, "fluid-no-anno")
+				Expect(err).To(BeNil())
+				Expect(gotPV).NotTo(BeNil())
 			})
 		})
 	})
 
 	Context("Test DeleteFusePersistentVolumeClaim()", func() {
+		When("PVC with fluid annotations exists", func() {
+			BeforeEach(func() {
+				pvc := &v1.PersistentVolumeClaim{ObjectMeta: metav1.ObjectMeta{Name: "hadoop", Namespace: "fluid", Annotations: common.GetExpectedFluidAnnotations()}}
+				resources = append(resources, pvc)
+				var err error
+				runtimeInfo, err = base.BuildRuntimeInfo("hadoop", "fluid", "alluxio")
+				Expect(err).To(BeNil())
+			})
+			It("should delete the PVC successfully", func() {
+				Expect(DeleteFusePersistentVolumeClaim(clientObj, runtimeInfo, log)).To(Succeed())
+				pvc := &v1.PersistentVolumeClaim{}
+				err := clientObj.Get(context.TODO(), types.NamespacedName{Name: "hadoop", Namespace: "fluid"}, pvc)
+				Expect(err).NotTo(BeNil())
+				Expect(apierrs.IsNotFound(err)).To(BeTrue())
+			})
+		})
+
+		When("PVC has no fluid-expected annotations", func() {
+			BeforeEach(func() {
+				pvc := &v1.PersistentVolumeClaim{ObjectMeta: metav1.ObjectMeta{Name: "no-anno", Namespace: "fluid"}}
+				resources = append(resources, pvc)
+				var err error
+				runtimeInfo, err = base.BuildRuntimeInfo("no-anno", "fluid", "alluxio")
+				Expect(err).To(BeNil())
+			})
+			It("should no-op and return success", func() {
+				Expect(DeleteFusePersistentVolumeClaim(clientObj, runtimeInfo, log)).To(Succeed())
+				// The PVC should still exist
+				key := types.NamespacedName{Name: "no-anno", Namespace: "fluid"}
+				pvc := &v1.PersistentVolumeClaim{}
+				err := clientObj.Get(context.TODO(), key, pvc)
+				Expect(err).To(BeNil())
+				Expect(pvc).NotTo(BeNil())
+			})
+		})
+
+		When("PVC does not exist", func() {
+			BeforeEach(func() {
+				var err error
+				runtimeInfo, err = base.BuildRuntimeInfo("not-exist", "fluid", "alluxio")
+				Expect(err).To(BeNil())
+			})
+			It("should no-op and return success", func() {
+				Expect(DeleteFusePersistentVolumeClaim(clientObj, runtimeInfo, log)).To(Succeed())
+			})
+		})
+
 		When("PVC is stuck terminating with pvc-protection finalizer", func() {
 			BeforeEach(func() {
 				pvc := &v1.PersistentVolumeClaim{ObjectMeta: metav1.ObjectMeta{Name: "force-delete", Namespace: "fluid", Finalizers: []string{"kubernetes.io/pvc-protection"}, Annotations: common.GetExpectedFluidAnnotations(), DeletionTimestamp: &metav1.Time{Time: time.Now().Add(-35 * time.Second)}}}
@@ -89,6 +148,10 @@ var _ = Describe("Delete Volume Tests", Label("pkg.utils.dataset.volume.delete_t
 			})
 			It("should remove finalizer if needed and succeed", func() {
 				Expect(DeleteFusePersistentVolumeClaim(clientObj, runtimeInfo, log)).To(Succeed())
+				pvc := &v1.PersistentVolumeClaim{}
+				err := clientObj.Get(context.TODO(), types.NamespacedName{Name: "force-delete", Namespace: "fluid"}, pvc)
+				Expect(err).NotTo(BeNil())
+				Expect(apierrs.IsNotFound(err)).To(BeTrue())
 			})
 		})
 	})
