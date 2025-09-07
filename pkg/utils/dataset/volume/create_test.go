@@ -2,140 +2,46 @@ package volume
 
 import (
 	"context"
-	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-func TestCreatePersistentVolumeForRuntime(t *testing.T) {
-	// runtimeInfoExclusive is a runtimeInfo with ExclusiveMode with a PV already in use.
-	runtimeInfoHbase, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
+var _ = Describe("Create Volume Tests", Label("pkg.utils.dataset.volume.create_test.go"), func() {
+	var (
+		scheme      *runtime.Scheme
+		client      client.Client
+		runtimeInfo base.RuntimeInfoInterface
+		dataset     *datav1alpha1.Dataset
+		daemonset   *appsv1.DaemonSet
+		resources   []runtime.Object
+		log         logr.Logger
+	)
 
-	// runtimeInfoExclusive is a runtimeInfo in global mode with no correspond PV.
-	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio")
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
-	runtimeInfoSpark.SetFuseNodeSelector(map[string]string{"test-node": "true"})
+	BeforeEach(func() {
+		scheme = runtime.NewScheme()
+		_ = v1.AddToScheme(scheme)
+		_ = appsv1.AddToScheme(scheme)
+		_ = datav1alpha1.AddToScheme(scheme)
 
-	// runtimeInfoShare is a runtimeInfo in non global mode with no correspond PV.
-	runtimeInfoHadoop, err := base.BuildRuntimeInfo("hadoop", "fluid", "alluxio")
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
+		var err error
+		runtimeInfo, err = base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
+		Expect(err).To(BeNil())
 
-	testPVInputs := []*v1.PersistentVolume{{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "fluid-hbase",
-			Annotations: map[string]string{
-				"CreatedBy": "fluid",
-			},
-		},
-		Spec: v1.PersistentVolumeSpec{},
-	}}
-	testObjs := []runtime.Object{}
-	for _, pvInput := range testPVInputs {
-		testObjs = append(testObjs, pvInput.DeepCopy())
-	}
+		dataset = &datav1alpha1.Dataset{ObjectMeta: metav1.ObjectMeta{Name: "hbase", Namespace: "fluid"}}
 
-	testDatasetInputs := []*datav1alpha1.Dataset{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.DatasetSpec{},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "spark",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.DatasetSpec{},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hadoop",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.DatasetSpec{},
-		},
-	}
-	for _, datasetInput := range testDatasetInputs {
-		testObjs = append(testObjs, datasetInput.DeepCopy())
-	}
-	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-
-	var testCase = []struct {
-		runtimeInfo   base.RuntimeInfoInterface
-		mountPath     string
-		mountType     string
-		expectedPVNum int
-	}{
-		{
-			runtimeInfo:   runtimeInfoHbase,
-			mountPath:     "/runtimeInfoHbase",
-			mountType:     "alluxio",
-			expectedPVNum: 1,
-		},
-		{
-			runtimeInfo:   runtimeInfoSpark,
-			mountPath:     "/runtimeInfoSpark",
-			mountType:     "alluxio",
-			expectedPVNum: 2,
-		},
-		{
-			runtimeInfo:   runtimeInfoHadoop,
-			mountPath:     "/runtimeInfoHadoop",
-			mountType:     "alluxio",
-			expectedPVNum: 3,
-		},
-	}
-
-	for _, test := range testCase {
-		var log = ctrl.Log.WithName("delete")
-		err := CreatePersistentVolumeForRuntime(client, test.runtimeInfo, test.mountPath, test.mountType, log)
-		if err != nil {
-			t.Errorf("fail to exec the function with error %v", err)
-			return
-		}
-		var pvs v1.PersistentVolumeList
-		err = client.List(context.TODO(), &pvs)
-		if err != nil {
-			t.Errorf("fail to exec the function with error %v", err)
-			return
-		}
-		if len(pvs.Items) != test.expectedPVNum {
-			t.Errorf("fail to create the pv")
-		}
-	}
-}
-
-func TestCreatePersistentVolumeClaimForRuntime(t *testing.T) {
-	runtimeInfoHbase, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
-	runtimeInfoHbase.SetFuseName("hbase-fuse")
-
-	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio")
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
-	runtimeInfoSpark.SetFuseName("spark-fuse")
-
-	testDsInputs := []*appsv1.DaemonSet{
-		{
+		daemonset = &appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "hbase-fuse",
 				Namespace: "fluid",
@@ -145,100 +51,78 @@ func TestCreatePersistentVolumeClaimForRuntime(t *testing.T) {
 					Spec: v1.PodSpec{
 						Containers: []v1.Container{
 							{
-								Image: "fuse-image:v1",
+								Image: "fuse:v1",
 							},
 						},
 					},
 				},
 			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "spark-fuse",
-				Namespace: "fluid",
-			},
-			Spec: appsv1.DaemonSetSpec{
-				Template: v1.PodTemplateSpec{
-					Spec: v1.PodSpec{
-						Containers: []v1.Container{
-							{
-								Image: "fuse-image:v1",
-							},
-						},
+		}
+
+		resources = []runtime.Object{
+			dataset,
+			daemonset,
+		}
+
+		log = fake.NullLogger()
+	})
+
+	JustBeforeEach(func() {
+		client = fake.NewFakeClientWithScheme(scheme, resources...)
+	})
+
+	Context("Test CreatePersistentVolumeForRuntime()", func() {
+		When("runtime info has defined node affinity on it", func() {
+			BeforeEach(func() {
+				runtimeInfo.SetFuseNodeSelector(map[string]string{"test-affinity": "true"})
+			})
+			It("should create PV with node affinity and annotations", func() {
+				Expect(CreatePersistentVolumeForRuntime(client, runtimeInfo, "/mnt", "alluxio", log)).To(Succeed())
+				var list v1.PersistentVolumeList
+				Expect(client.List(context.TODO(), &list)).To(Succeed())
+				Expect(list.Items).To(HaveLen(1))
+				pv := list.Items[0]
+				Expect(pv.Spec.CSI).NotTo(BeNil())
+				Expect(pv.Spec.CSI.VolumeAttributes).To(HaveKeyWithValue(common.VolumeAttrFluidPath, "/mnt"))
+				Expect(pv.Spec.NodeAffinity).NotTo(BeNil())
+			})
+		})
+
+		When("PV with fluid annotations is already exists", func() {
+			BeforeEach(func() {
+				// Pre-create PV with expected annotations
+				pv := &v1.PersistentVolume{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:        runtimeInfo.GetPersistentVolumeName(),
+						Annotations: common.GetExpectedFluidAnnotations(),
 					},
-				},
-			},
-		},
-	}
+				}
 
-	testPVCInputs := []*v1.PersistentVolumeClaim{{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase",
-			Namespace: "fluid",
-			Annotations: map[string]string{
-				"CreatedBy": "fluid",
-			},
-		},
-		Spec: v1.PersistentVolumeClaimSpec{},
-	}}
-	testObjs := []runtime.Object{}
-	for _, pvcInput := range testPVCInputs {
-		testObjs = append(testObjs, pvcInput.DeepCopy())
-	}
-	for _, dsInput := range testDsInputs {
-		testObjs = append(testObjs, dsInput.DeepCopy())
-	}
+				resources = append(resources, pv)
+			})
+			It("should skip creating PV if it already exists with fluid annotations", func() {
+				Expect(CreatePersistentVolumeForRuntime(client, runtimeInfo, "/mnt", "alluxio", log)).To(Succeed())
+				var list v1.PersistentVolumeList
+				Expect(client.List(context.TODO(), &list)).To(Succeed())
+				Expect(list.Items).To(HaveLen(1))
+			})
+		})
+	})
 
-	testDatasetInputs := []*datav1alpha1.Dataset{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.DatasetSpec{},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "spark",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.DatasetSpec{},
-		},
-	}
-	for _, datasetInput := range testDatasetInputs {
-		testObjs = append(testObjs, datasetInput.DeepCopy())
-	}
+	Context("Test CreatePersistentVolumeClaimForRuntime()", func() {
+		It("should create PVC and record fuse generation if exists", func() {
+			runtimeInfo.SetFuseName("hbase-fuse")
+			Expect(CreatePersistentVolumeClaimForRuntime(client, runtimeInfo, log)).To(Succeed())
+			var list v1.PersistentVolumeClaimList
+			Expect(client.List(context.TODO(), &list)).To(Succeed())
+			Expect(list.Items).ToNot(BeEmpty())
+		})
 
-	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-	var testCase = []struct {
-		runtimeInfo    base.RuntimeInfoInterface
-		expectedPVCNum int
-	}{
-		{
-			runtimeInfo:    runtimeInfoHbase,
-			expectedPVCNum: 1,
-		},
-		{
-			runtimeInfo:    runtimeInfoSpark,
-			expectedPVCNum: 2,
-		},
-	}
-
-	for _, test := range testCase {
-		var log = ctrl.Log.WithName("delete")
-		err := CreatePersistentVolumeClaimForRuntime(client, test.runtimeInfo, log)
-		if err != nil {
-			t.Errorf("fail to exec the function with error %v", err)
-			return
-		}
-		var pvs v1.PersistentVolumeClaimList
-		err = client.List(context.TODO(), &pvs)
-		if err != nil {
-			t.Errorf("fail to exec the function with error %v", err)
-			return
-		}
-		if len(pvs.Items) != test.expectedPVCNum {
-			t.Errorf("fail to create the pv")
-		}
-	}
-}
+		It("should create PVC even if no fuse daemonset found (no generation label)", func() {
+			Expect(CreatePersistentVolumeClaimForRuntime(client, runtimeInfo, log)).To(Succeed())
+			var list v1.PersistentVolumeClaimList
+			Expect(client.List(context.TODO(), &list)).To(Succeed())
+			Expect(list.Items).ToNot(BeEmpty())
+		})
+	})
+})

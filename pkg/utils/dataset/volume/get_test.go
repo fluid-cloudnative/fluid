@@ -17,61 +17,94 @@ limitations under the License.
 package volume
 
 import (
-	"context"
-	"testing"
-
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	"github.com/go-logr/logr"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-func TestGetNamespacedNameByVolumeId(t *testing.T) {
-	testPVs := []runtime.Object{}
-	client := fake.NewFakeClientWithScheme(testScheme, testPVs...)
-	testCase := []struct {
-		volumeId        string
-		pv              *v1.PersistentVolume
-		pvc             *v1.PersistentVolumeClaim
-		expectName      string
-		expectNamespace string
-		wantErr         bool
-	}{
-		{
-			volumeId: "default-test",
-			pv: &v1.PersistentVolume{
-				ObjectMeta: metav1.ObjectMeta{Name: "default-test"},
-				Spec: v1.PersistentVolumeSpec{ClaimRef: &v1.ObjectReference{
-					Namespace: "default",
-					Name:      "test",
-				}},
-			},
-			pvc: &v1.PersistentVolumeClaim{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "default",
-					Labels: map[string]string{
-						common.LabelAnnotationStorageCapacityPrefix + "default-test": "",
-					},
-				},
-			},
-			expectName:      "test",
-			expectNamespace: "default",
-			wantErr:         false,
-		},
-	}
-	for _, test := range testCase {
-		_ = client.Create(context.TODO(), test.pv)
-		_ = client.Create(context.TODO(), test.pvc)
-		namespace, name, err := GetNamespacedNameByVolumeId(client, test.volumeId)
-		if err != nil {
-			t.Errorf("failed to call GetNamespacedNameByVolumeId due to %v", err)
-		}
+var _ = Describe("Get helpers", Label("pkg.utils.dataset.volume.get_test.go"), func() {
+	var (
+		scheme    *runtime.Scheme
+		clientObj client.Client
+		resources []runtime.Object
+		log       logr.Logger
+	)
 
-		if name != test.expectName && namespace != test.expectNamespace {
-			t.Errorf("testcase %s Expect name %s, but got %s, Expect namespace %s, but got %s",
-				test.volumeId, test.expectName, name, test.expectNamespace, namespace)
-		}
-	}
-}
+	BeforeEach(func() {
+		scheme = runtime.NewScheme()
+		_ = v1.AddToScheme(scheme)
+		_ = datav1alpha1.AddToScheme(scheme)
+		resources = nil
+		log = fake.NullLogger()
+	})
+
+	JustBeforeEach(func() {
+		clientObj = fake.NewFakeClientWithScheme(scheme, resources...)
+	})
+
+	Context("Test GetPVCByVolumeId()", func() {
+		When("pv is bound to a fluid pvc", func() {
+			BeforeEach(func() {
+				resources = append(resources,
+					&v1.PersistentVolume{ObjectMeta: metav1.ObjectMeta{Name: "ns-name"}, Spec: v1.PersistentVolumeSpec{ClaimRef: &v1.ObjectReference{Namespace: "ns", Name: "name"}}},
+					&v1.PersistentVolumeClaim{ObjectMeta: metav1.ObjectMeta{Name: "name", Namespace: "ns", Labels: map[string]string{common.LabelAnnotationStorageCapacityPrefix + "ns-name": ""}}},
+				)
+			})
+			It("should return the pvc", func() {
+				got, err := GetPVCByVolumeId(clientObj, "ns-name")
+				Expect(err).To(BeNil())
+				Expect(got).NotTo(BeNil())
+				Expect(got.Name).To(Equal("name"))
+				_ = log
+			})
+		})
+
+		When("pv is bound to a non-fluid pvc", func() {
+			BeforeEach(func() {
+				resources = append(resources,
+					&v1.PersistentVolume{ObjectMeta: metav1.ObjectMeta{Name: "x"}, Spec: v1.PersistentVolumeSpec{ClaimRef: &v1.ObjectReference{Namespace: "ns", Name: "n"}}},
+					&v1.PersistentVolumeClaim{ObjectMeta: metav1.ObjectMeta{Name: "n", Namespace: "ns"}},
+				)
+			})
+			It("should return error", func() {
+				_, err := GetPVCByVolumeId(clientObj, "x")
+				Expect(err).ToNot(BeNil())
+			})
+		})
+	})
+
+	Context("Test GetNamespacedNameByVolumeId()", func() {
+		When("pv has claimRef and pvc is fluid", func() {
+			BeforeEach(func() {
+				resources = append(resources,
+					&v1.PersistentVolume{ObjectMeta: metav1.ObjectMeta{Name: "ns2-n"}, Spec: v1.PersistentVolumeSpec{ClaimRef: &v1.ObjectReference{Namespace: "ns2", Name: "n"}}},
+					&v1.PersistentVolumeClaim{ObjectMeta: metav1.ObjectMeta{Name: "n", Namespace: "ns2", Labels: map[string]string{common.LabelAnnotationStorageCapacityPrefix + "ns2-n": ""}}},
+				)
+			})
+			It("should return namespace and name", func() {
+				ns, name, err := GetNamespacedNameByVolumeId(clientObj, "ns2-n")
+				Expect(err).To(BeNil())
+				Expect(ns).To(Equal("ns2"))
+				Expect(name).To(Equal("n"))
+			})
+		})
+
+		When("pv has nil claimRef", func() {
+			BeforeEach(func() {
+				resources = append(resources, &v1.PersistentVolume{ObjectMeta: metav1.ObjectMeta{Name: "v"}})
+			})
+			It("should return error", func() {
+				_, _, err := GetNamespacedNameByVolumeId(clientObj, "v")
+				Expect(err).ToNot(BeNil())
+			})
+		})
+	})
+})
