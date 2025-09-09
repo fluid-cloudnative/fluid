@@ -24,8 +24,6 @@ import (
 	"strings"
 	"time"
 
-	apierrs "k8s.io/apimachinery/pkg/api/errors"
-	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -54,29 +52,6 @@ func init() {
 		RuntimeReconcileDurationOffsetEnvVal = envVal
 		stdlog.Printf("Found %s value %s, using it as RuntimeReconcileDurationOffsetEnvVal", RuntimeReconcileDurationOffsetEnv, envVal)
 	}
-}
-
-// IgnoreAlreadyExists ignores already existes error
-func IgnoreAlreadyExists(err error) error {
-	if apierrs.IsAlreadyExists(err) {
-		return nil
-	}
-	return err
-}
-
-// IgnoreNotFound ignores not found
-func IgnoreNotFound(err error) error {
-	if apierrs.IsNotFound(err) {
-		return nil
-	}
-	return err
-}
-
-func IgnoreNoKindMatchError(err error) error {
-	if apimeta.IsNoMatchError(err) {
-		return nil
-	}
-	return err
 }
 
 // NoRequeue returns the result of a reconcile invocation and no err
