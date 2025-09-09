@@ -114,21 +114,6 @@ func RequeueImmediatelyUnlessGenerationChanged(prevGeneration, curGeneration int
 	}
 }
 
-// GetOrDefault returns the default value unless there is a specified value.
-func GetOrDefault(str *string, defaultValue string) string {
-	if str == nil {
-		return defaultValue
-	} else {
-		return *str
-	}
-}
-
-// Now returns the current time
-func Now() *metav1.Time {
-	now := metav1.Now()
-	return &now
-}
-
 // ContainsString Determine whether the string array contains a specific string
 // return true if contains the string and return false if not.
 func ContainsString(slice []string, s string) bool {
