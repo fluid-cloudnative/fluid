@@ -16,10 +16,20 @@ limitations under the License.
 
 package utils
 
-import v1 "k8s.io/api/core/v1"
+import (
+	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
+)
+
+var log logr.Logger
+
+func init() {
+	log = ctrl.Log.WithName("utils")
+}
 
 // InjectNodeSelectorRequirements injects(not append) a node selector term to affinity‘s nodeAffinity.
-func InjectNodeSelectorRequirements(matchExpressions []v1.NodeSelectorRequirement, affinity *v1.Affinity) *v1.Affinity {
+func InjectNodeSelectorRequirements(matchExpressions []corev1.NodeSelectorRequirement, affinity *corev1.Affinity) *corev1.Affinity {
 	result := affinity
 
 	if len(matchExpressions) == 0 {
@@ -27,18 +37,18 @@ func InjectNodeSelectorRequirements(matchExpressions []v1.NodeSelectorRequiremen
 	}
 
 	if affinity == nil {
-		result = &v1.Affinity{}
+		result = &corev1.Affinity{}
 	}
 
 	if result.NodeAffinity == nil {
-		result.NodeAffinity = &v1.NodeAffinity{}
+		result.NodeAffinity = &corev1.NodeAffinity{}
 	}
 	if result.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution == nil {
-		result.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution = &v1.NodeSelector{}
+		result.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution = &corev1.NodeSelector{}
 	}
 	// no element
 	if result.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms == nil {
-		result.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms = []v1.NodeSelectorTerm{
+		result.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms = []corev1.NodeSelectorTerm{
 			{
 				MatchExpressions: matchExpressions,
 			},
@@ -53,17 +63,17 @@ func InjectNodeSelectorRequirements(matchExpressions []v1.NodeSelectorRequiremen
 	return result
 }
 
-func InjectPreferredSchedulingTermsToAffinity(terms []v1.PreferredSchedulingTerm, affinity *v1.Affinity) *v1.Affinity {
+func InjectPreferredSchedulingTermsToAffinity(terms []corev1.PreferredSchedulingTerm, affinity *corev1.Affinity) *corev1.Affinity {
 	result := affinity
 	if len(terms) == 0 {
 		return result
 	}
 	if affinity == nil {
-		result = &v1.Affinity{}
+		result = &corev1.Affinity{}
 	}
 
 	if result.NodeAffinity == nil {
-		result.NodeAffinity = &v1.NodeAffinity{}
+		result.NodeAffinity = &corev1.NodeAffinity{}
 	}
 
 	result.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution =
