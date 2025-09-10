@@ -110,8 +110,16 @@ func (e *Helper) SetupWorkers(runtime base.RuntimeInterface,
 	currentStatus datav1alpha1.RuntimeStatus,
 	workers *appsv1.StatefulSet) (err error) {
 
-	desireReplicas := runtime.Replicas()
-	if *workers.Spec.Replicas != desireReplicas {
+	var (
+		desireReplicas int32 = runtime.Replicas()
+		actualReplicas int32 = 0
+	)
+
+	if workers.Spec.Replicas != nil {
+		actualReplicas = *workers.Spec.Replicas
+	}
+
+	if actualReplicas != desireReplicas {
 		// workerToUpdate, err := e.buildWorkersAffinity(workers)
 
 		workerToUpdate, err := e.BuildWorkersAffinity(workers)
@@ -131,24 +139,9 @@ func (e *Helper) SetupWorkers(runtime base.RuntimeInterface,
 	}
 
 	if *workers.Spec.Replicas != runtime.GetStatus().DesiredWorkerNumberScheduled {
+		// DO NOT DeepCopy here because the status might be updated somewhere else
 		statusToUpdate := runtime.GetStatus()
 
-		if workers.Status.ReadyReplicas > 0 {
-			if runtime.Replicas() == workers.Status.ReadyReplicas {
-				statusToUpdate.WorkerPhase = datav1alpha1.RuntimePhaseReady
-			} else {
-				statusToUpdate.WorkerPhase = datav1alpha1.RuntimePhasePartialReady
-			}
-		} else {
-			statusToUpdate.WorkerPhase = datav1alpha1.RuntimePhaseNotReady
-		}
-
-		statusToUpdate.DesiredWorkerNumberScheduled = runtime.Replicas()
-		statusToUpdate.CurrentWorkerNumberScheduled = statusToUpdate.DesiredWorkerNumberScheduled
-
-		if len(statusToUpdate.Conditions) == 0 {
-			statusToUpdate.Conditions = []datav1alpha1.RuntimeCondition{}
-		}
 		cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersInitialized, datav1alpha1.RuntimeWorkersInitializedReason,
 			"The workers are initialized.", corev1.ConditionTrue)
 		statusToUpdate.Conditions =

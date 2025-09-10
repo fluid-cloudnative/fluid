@@ -17,6 +17,8 @@ limitations under the License.
 package ctrl
 
 import (
+	"fmt"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -35,42 +37,43 @@ func (e *Helper) SyncReplicas(ctx cruntime.ReconcileRequestContext,
 
 	var cond datav1alpha1.RuntimeCondition
 
-	if runtime.Replicas() != currentStatus.DesiredWorkerNumberScheduled {
-		// 1. Update scale condition
+	// nil pointer protection
+	var currentWorkerStsReplicas int32
+	if workers.Spec.Replicas != nil {
+		currentWorkerStsReplicas = *workers.Spec.Replicas
+	} else {
+		currentWorkerStsReplicas = 0
+	}
+
+	if runtime.Replicas() != currentWorkerStsReplicas {
+		// 1. update scale condition
 		statusToUpdate := runtime.GetStatus()
 		if len(statusToUpdate.Conditions) == 0 {
 			statusToUpdate.Conditions = []datav1alpha1.RuntimeCondition{}
 		}
 
-		if runtime.Replicas() < currentStatus.DesiredWorkerNumberScheduled {
+		if runtime.Replicas() < currentWorkerStsReplicas {
+			scalingMsg := fmt.Sprintf("Runtime scaled in from %d replicas to %d replicas.", currentWorkerStsReplicas, runtime.Replicas())
 			cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkerScaledIn, datav1alpha1.RuntimeWorkersScaledInReason,
-				"The workers scaled in.", corev1.ConditionTrue)
+				scalingMsg, corev1.ConditionTrue)
+			ctx.Recorder.Eventf(runtime, corev1.EventTypeNormal, common.Succeed, scalingMsg)
 		} else {
+			scalingMsg := fmt.Sprintf("Runtime scaled out from %d replicas to %d replicas.", currentWorkerStsReplicas, runtime.Replicas())
 			cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkerScaledOut, datav1alpha1.RuntimeWorkersScaledOutReason,
-				"The workers scaled out.", corev1.ConditionTrue)
+				scalingMsg, corev1.ConditionTrue)
+			ctx.Recorder.Eventf(runtime, corev1.EventTypeNormal, common.Succeed, scalingMsg)
 		}
 		statusToUpdate.Conditions =
 			utils.UpdateRuntimeCondition(statusToUpdate.Conditions, cond)
 
-		// 2. Record events
-		if runtime.Replicas() < currentStatus.DesiredWorkerNumberScheduled {
-			ctx.Recorder.Eventf(runtime, corev1.EventTypeNormal, common.Succeed, "Runtime scaled in. current replicas: %d, desired replicas: %d.",
-				runtime.Replicas(),
-				currentStatus.DesiredWorkerNumberScheduled)
-		} else {
-			ctx.Recorder.Eventf(runtime, corev1.EventTypeNormal, common.Succeed, "Runtime scaled out. current replicas: %d, desired replicas: %d.",
-				runtime.Replicas(),
-				currentStatus.DesiredWorkerNumberScheduled)
-		}
-
-		// 3. setup the workers for scaling
+		// 2. setup the workers for scaling
 		err = e.SetupWorkers(runtime, currentStatus, workers)
 		if err != nil {
 			return
 		}
 
 	} else {
-		e.log.V(1).Info("Nothing to do")
+		e.log.V(1).Info("Nothing to do for syncing replicas")
 		return
 	}
 
