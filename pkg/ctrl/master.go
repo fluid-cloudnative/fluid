@@ -63,6 +63,14 @@ func (e *Helper) CheckAndSyncMasterStatus(getRuntimeFn func(client.Client) (base
 		if len(statusToUpdate.Conditions) == 0 {
 			statusToUpdate.Conditions = []datav1alpha1.RuntimeCondition{}
 		}
+
+		// add masterInitCond to indicate master is initialized, this is idempotent because RuntimeMasterInitialized is a OnceActionType condition
+		masterInitCond := utils.NewRuntimeCondition(datav1alpha1.RuntimeMasterInitialized, datav1alpha1.RuntimeMasterInitializedReason,
+			"The master is initialized.", corev1.ConditionTrue)
+		statusToUpdate.Conditions =
+			utils.UpdateRuntimeCondition(statusToUpdate.Conditions,
+				masterInitCond)
+
 		switch phase {
 		case datav1alpha1.RuntimePhaseReady:
 			ready = true

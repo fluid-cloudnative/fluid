@@ -96,15 +96,10 @@ func (e *JindoEngine) SetupMaster() (err error) {
 		runtimeToUpdate := runtime.DeepCopy()
 
 		runtimeToUpdate.Status.MasterPhase = datav1alpha1.RuntimePhaseNotReady
-		replicas := runtimeToUpdate.Spec.Master.Replicas
-		if replicas == 0 {
-			replicas = 1
-		}
 
 		// Init selector for worker
 		runtimeToUpdate.Status.Selector = e.getWorkerSelectors()
 
-		runtimeToUpdate.Status.DesiredMasterNumberScheduled = replicas
 		runtimeToUpdate.Status.ValueFileConfigmap = e.getHelmValuesConfigmapName()
 
 		if len(runtimeToUpdate.Status.Conditions) == 0 {
