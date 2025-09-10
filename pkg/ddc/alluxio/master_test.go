@@ -89,9 +89,11 @@ var _ = Describe("AlluxioEngine master component tests", Label("pkg.ddc.alluxio.
 				Expect(updatedRuntime.Status.MasterPhase).To(Equal(datav1alpha1.RuntimePhaseReady))
 
 				// Check if the condition is set correctly
-				Expect(len(updatedRuntime.Status.Conditions)).To(Equal(1))
-				Expect(updatedRuntime.Status.Conditions[0].Type).To(Equal(datav1alpha1.RuntimeMasterReady))
+				Expect(len(updatedRuntime.Status.Conditions)).To(Equal(2))
+				Expect(updatedRuntime.Status.Conditions[0].Type).To(Equal(datav1alpha1.RuntimeMasterInitialized))
 				Expect(updatedRuntime.Status.Conditions[0].Status).To(Equal(corev1.ConditionTrue))
+				Expect(updatedRuntime.Status.Conditions[1].Type).To(Equal(datav1alpha1.RuntimeMasterReady))
+				Expect(updatedRuntime.Status.Conditions[1].Status).To(Equal(corev1.ConditionTrue))
 
 				Expect(updatedRuntime.Status.DesiredMasterNumberScheduled).To(Equal(int32(1)))
 				Expect(updatedRuntime.Status.CurrentMasterNumberScheduled).To(Equal(int32(1)))
@@ -119,9 +121,11 @@ var _ = Describe("AlluxioEngine master component tests", Label("pkg.ddc.alluxio.
 				Expect(updatedRuntime.Status.MasterPhase).To(Equal(datav1alpha1.RuntimePhasePartialReady))
 
 				// Check if the condition is set correctly
-				Expect(len(updatedRuntime.Status.Conditions)).To(Equal(1))
-				Expect(updatedRuntime.Status.Conditions[0].Type).To(Equal(datav1alpha1.RuntimeMasterReady))
+				Expect(len(updatedRuntime.Status.Conditions)).To(Equal(2))
+				Expect(updatedRuntime.Status.Conditions[0].Type).To(Equal(datav1alpha1.RuntimeMasterInitialized))
 				Expect(updatedRuntime.Status.Conditions[0].Status).To(Equal(corev1.ConditionTrue))
+				Expect(updatedRuntime.Status.Conditions[1].Type).To(Equal(datav1alpha1.RuntimeMasterReady))
+				Expect(updatedRuntime.Status.Conditions[1].Status).To(Equal(corev1.ConditionTrue))
 				Expect(updatedRuntime.Status.DesiredMasterNumberScheduled).To(Equal(int32(3)))
 				Expect(updatedRuntime.Status.CurrentMasterNumberScheduled).To(Equal(int32(3)))
 				Expect(updatedRuntime.Status.MasterNumberReady).To(Equal(int32(2)))
@@ -144,8 +148,11 @@ var _ = Describe("AlluxioEngine master component tests", Label("pkg.ddc.alluxio.
 				updatedRuntime, err := utils.GetAlluxioRuntime(client, alluxioruntime.Name, alluxioruntime.Namespace)
 				Expect(err).To(BeNil())
 
-				Expect(len(updatedRuntime.Status.Conditions)).To(Equal(1))
-				Expect(updatedRuntime.Status.Conditions[0].Status).To(Equal(corev1.ConditionFalse))
+				Expect(len(updatedRuntime.Status.Conditions)).To(Equal(2))
+				Expect(updatedRuntime.Status.Conditions[0].Type).To(Equal(datav1alpha1.RuntimeMasterInitialized))
+				Expect(updatedRuntime.Status.Conditions[0].Status).To(Equal(corev1.ConditionTrue))
+				Expect(updatedRuntime.Status.Conditions[1].Type).To(Equal(datav1alpha1.RuntimeMasterReady))
+				Expect(updatedRuntime.Status.Conditions[1].Status).To(Equal(corev1.ConditionFalse))
 				Expect(updatedRuntime.Status.DesiredMasterNumberScheduled).To(Equal(int32(1)))
 				Expect(updatedRuntime.Status.CurrentMasterNumberScheduled).To(Equal(int32(1)))
 				Expect(updatedRuntime.Status.MasterNumberReady).To(Equal(int32(0)))
@@ -166,8 +173,11 @@ var _ = Describe("AlluxioEngine master component tests", Label("pkg.ddc.alluxio.
 				updatedRuntime, err := utils.GetAlluxioRuntime(client, alluxioruntime.Name, alluxioruntime.Namespace)
 				Expect(err).To(BeNil())
 
-				Expect(len(updatedRuntime.Status.Conditions)).To(Equal(1))
+				Expect(len(updatedRuntime.Status.Conditions)).To(Equal(2))
+				Expect(updatedRuntime.Status.Conditions[0].Type).To(Equal(datav1alpha1.RuntimeMasterInitialized))
 				Expect(updatedRuntime.Status.Conditions[0].Status).To(Equal(corev1.ConditionTrue))
+				Expect(updatedRuntime.Status.Conditions[1].Type).To(Equal(datav1alpha1.RuntimeMasterReady))
+				Expect(updatedRuntime.Status.Conditions[1].Status).To(Equal(corev1.ConditionTrue))
 				Expect(updatedRuntime.Status.DesiredMasterNumberScheduled).To(Equal(int32(0)))
 				Expect(updatedRuntime.Status.CurrentMasterNumberScheduled).To(Equal(int32(0)))
 				Expect(updatedRuntime.Status.MasterNumberReady).To(Equal(int32(0)))
@@ -192,9 +202,11 @@ var _ = Describe("AlluxioEngine master component tests", Label("pkg.ddc.alluxio.
 				Expect(updatedRuntime.Status.MasterPhase).To(Equal(datav1alpha1.RuntimePhaseReady))
 
 				// Check if the condition is set correctly
-				Expect(len(updatedRuntime.Status.Conditions)).To(Equal(1))
-				Expect(updatedRuntime.Status.Conditions[0].Type).To(Equal(datav1alpha1.RuntimeMasterReady))
+				Expect(len(updatedRuntime.Status.Conditions)).To(Equal(2))
+				Expect(updatedRuntime.Status.Conditions[0].Type).To(Equal(datav1alpha1.RuntimeMasterInitialized))
 				Expect(updatedRuntime.Status.Conditions[0].Status).To(Equal(corev1.ConditionTrue))
+				Expect(updatedRuntime.Status.Conditions[1].Type).To(Equal(datav1alpha1.RuntimeMasterReady))
+				Expect(updatedRuntime.Status.Conditions[1].Status).To(Equal(corev1.ConditionTrue))
 				Expect(updatedRuntime.Status.DesiredMasterNumberScheduled).To(Equal(int32(0)))
 				Expect(updatedRuntime.Status.CurrentMasterNumberScheduled).To(Equal(int32(0)))
 				Expect(updatedRuntime.Status.MasterNumberReady).To(Equal(int32(0)))
