@@ -50,7 +50,7 @@ func (e *Helper) CheckAndSyncFuseStatus(getRuntimeFn func(client.Client) (base.R
 		oldStatus := runtime.GetStatus().DeepCopy()
 		statusToUpdate := runtime.GetStatus()
 
-		statusToUpdate.DesiredMasterNumberScheduled = fuseDs.Status.DesiredNumberScheduled
+		statusToUpdate.DesiredFuseNumberScheduled = fuseDs.Status.DesiredNumberScheduled
 		statusToUpdate.CurrentFuseNumberScheduled = fuseDs.Status.CurrentNumberScheduled
 		statusToUpdate.FuseNumberReady = fuseDs.Status.NumberReady
 		statusToUpdate.FuseNumberAvailable = fuseDs.Status.NumberAvailable
