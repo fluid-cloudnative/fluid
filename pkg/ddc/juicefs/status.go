@@ -25,7 +25,6 @@ import (
 
 	"k8s.io/client-go/util/retry"
 
-	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
@@ -81,22 +80,8 @@ func (j *JuiceFSEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		// 2. Update cache throughput ratio
 		runtimeToUpdate.Status.CacheStates[common.CacheThroughputRatio] = states.cacheThroughputRatio
 
-		runtimeToUpdate.Status.WorkerNumberReady = int32(workers.Status.ReadyReplicas)
-		runtimeToUpdate.Status.WorkerNumberUnavailable = int32(*workers.Spec.Replicas - workers.Status.ReadyReplicas)
-		runtimeToUpdate.Status.WorkerNumberAvailable = int32(workers.Status.CurrentReplicas)
-		if runtime.Replicas() == 0 {
-			runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseReady
+		if runtime.Replicas() == 0 || workers.Status.ReadyReplicas > 0 {
 			workerReady = true
-		} else if workers.Status.ReadyReplicas > 0 {
-			if runtime.Replicas() == workers.Status.ReadyReplicas {
-				runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseReady
-				workerReady = true
-			} else if workers.Status.ReadyReplicas >= 1 {
-				runtimeToUpdate.Status.WorkerPhase = data.RuntimePhasePartialReady
-				workerReady = true
-			}
-		} else {
-			runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseNotReady
 		}
 
 		if workerReady {
