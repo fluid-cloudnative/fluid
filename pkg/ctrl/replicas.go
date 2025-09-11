@@ -53,15 +53,15 @@ func (e *Helper) SyncReplicas(ctx cruntime.ReconcileRequestContext,
 		}
 
 		if runtime.Replicas() < currentWorkerStsReplicas {
-			scalingMsg := fmt.Sprintf("Runtime scaled in from %d replicas to %d replicas.", currentWorkerStsReplicas, runtime.Replicas())
+			scalingMsg := fmt.Sprintf("Workers scaled in from %d replicas to %d replicas.", currentWorkerStsReplicas, runtime.Replicas())
 			cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkerScaledIn, datav1alpha1.RuntimeWorkersScaledInReason,
 				scalingMsg, corev1.ConditionTrue)
-			ctx.Recorder.Eventf(runtime, corev1.EventTypeNormal, common.Succeed, scalingMsg)
+			ctx.Recorder.Eventf(runtime, corev1.EventTypeNormal, common.Succeed, "Runtime scaled in")
 		} else {
-			scalingMsg := fmt.Sprintf("Runtime scaled out from %d replicas to %d replicas.", currentWorkerStsReplicas, runtime.Replicas())
+			scalingMsg := fmt.Sprintf("Workers scaled out from %d replicas to %d replicas.", currentWorkerStsReplicas, runtime.Replicas())
 			cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkerScaledOut, datav1alpha1.RuntimeWorkersScaledOutReason,
 				scalingMsg, corev1.ConditionTrue)
-			ctx.Recorder.Eventf(runtime, corev1.EventTypeNormal, common.Succeed, scalingMsg)
+			ctx.Recorder.Eventf(runtime, corev1.EventTypeNormal, common.Succeed, "Runtime scaled out")
 		}
 		statusToUpdate.Conditions =
 			utils.UpdateRuntimeCondition(statusToUpdate.Conditions, cond)
