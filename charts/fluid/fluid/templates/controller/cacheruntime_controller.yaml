@@ -1,0 +1,65 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cacheruntime-controller
+  namespace: {{ include "fluid.namespace" . }}
+  labels:
+    control-plane: cacheruntime-controller
+spec:
+  selector:
+    matchLabels:
+      control-plane: cacheruntime-controller
+  replicas: {{ .Values.runtime.cache.replicas }}
+  template:
+    metadata:
+      labels:
+        control-plane: cacheruntime-controller
+      annotations:
+      {{ if gt (.Values.runtime.cache.replicas | int) 1 -}}
+        controller.runtime.fluid.io/replicas: {{ .Values.runtime.cache.replicas | quote }}
+      {{- end }}
+    spec:
+      {{- with .Values.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: cacheruntime-controller
+      {{ include "fluid.controlplane.affinity" . | nindent 6}}
+      {{- if .Values.runtime.cache.tolerations }}
+      tolerations:
+{{ toYaml .Values.runtime.cache.tolerations | indent 6 }}
+      {{- end }}
+      #hostNetwork: true
+      containers:
+      - image: {{ include "fluid.controlplane.imageTransform" (list .Values.runtime.cache.controller.imagePrefix .Values.runtime.cache.controller.imageName .Values.runtime.cache.controller.imageTag . ) }}
+        name: manager
+        args:
+          - --development=false
+          - --pprof-addr=:6060
+          - --enable-leader-election
+          - --runtime-workers={{ .Values.runtime.cache.runtimeWorkers }}
+          - --leader-election-namespace={{ include "fluid.namespace" . }}
+        command: ["cacheruntime-controller", "start"]
+        env:
+          {{- if .Values.runtime.mountRoot }}
+          - name: MOUNT_ROOT
+            value: {{ .Values.runtime.mountRoot | quote }}
+          {{- end }}
+          {{- if .Values.runtime.criticalFusePod }}
+          - name: CRITICAL_FUSE_POD
+            value: {{ ternary "true" "false" (semverCompare ">=1.16.0-0" .Capabilities.KubeVersion.Version) | quote }}
+          {{- end }}
+          {{- if .Values.runtime.syncRetryDuration }}
+          - name: FLUID_SYNC_RETRY_DURATION
+            value: {{ .Values.runtime.syncRetryDuration | quote }}
+          {{- end }}
+          - name: HELM_DRIVER
+            value: {{ template "fluid.helmDriver" . }}
+        ports:
+          - containerPort: 8080
+            name: metrics
+            protocol: TCP
+        resources:
+          {{- include "fluid.controlplane.resources" (list $ .Values.runtime.cache.resources) | nindent 10 }}
+      terminationGracePeriodSeconds: 10

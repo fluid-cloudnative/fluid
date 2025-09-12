@@ -4066,15 +4066,15 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JobProcessor(ref common.Referen
 				Properties: map[string]spec.Schema{
 					"podSpec": {
 						SchemaProps: spec.SchemaProps{
-							Description: "PodSpec defines Pod specification of the DataProcess job.",
-							Ref:         ref("k8s.io/api/core/v1.PodSpec"),
+							Description: "PodTemplateSpec defines Pod specification of the DataProcess job.",
+							Ref:         ref("k8s.io/api/core/v1.PodTemplateSpec"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.PodSpec"},
+			"k8s.io/api/core/v1.PodTemplateSpec"},
 	}
 }
 

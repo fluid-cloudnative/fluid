@@ -22,6 +22,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,6 +35,7 @@ type ReconcileRequestContext struct {
 	common.Category
 	*datav1alpha1.Dataset
 	Runtime client.Object
+	Scheme  *runtime.Scheme
 
 	RuntimeType   string
 	EngineImpl    string

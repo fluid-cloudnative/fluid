@@ -88,6 +88,15 @@ const (
 	LabelRuntimeFuseGeneration = "fuse.runtime." + LabelAnnotationPrefix + "generation"
 )
 
+// label and annotations for cacheRuntime
+const (
+	CacheRuntimeLabelAnnotationPrefix = "cacheruntime." + LabelAnnotationPrefix
+
+	LabelCacheRuntimeName = CacheRuntimeLabelAnnotationPrefix + "name"
+
+	LabelCacheRuntimeComponentName = CacheRuntimeLabelAnnotationPrefix + "component-name"
+)
+
 const (
 	// i.e. controller.runtime.fluid.io/replicas
 	RuntimeControllerReplicas = "controller.runtime." + LabelAnnotationPrefix + "replicas"

@@ -29,8 +29,11 @@ func (handler *runtimeEventHandler) onCreateFunc(r Controller) func(e event.Crea
 		log.V(1).Info("enter runtimeEventHandler.onCreateFunc", "name", e.Object.GetName(), "namespace", e.Object.GetNamespace())
 		_, ok := e.Object.(base.RuntimeInterface)
 		if !ok {
-			log.Info("runtime.onCreateFunc Skip", "object", e.Object)
-			return false
+			_, ok := e.Object.(base.CacheRuntimeInterface)
+			if !ok {
+				log.Info("runtime.onCreateFunc Skip", "object", e.Object)
+				return false
+			}
 		}
 
 		log.V(1).Info("exit runtimeEventHandler.onCreateFunc", "name", e.Object.GetName(), "namespace", e.Object.GetNamespace())
@@ -68,8 +71,11 @@ func (handler *runtimeEventHandler) onDeleteFunc(r Controller) func(e event.Dele
 		log.V(1).Info("enter runtimeEventHandler.onDeleteFunc", "name", e.Object.GetName(), "namespace", e.Object.GetNamespace())
 		_, ok := e.Object.(base.RuntimeInterface)
 		if !ok {
-			log.Info("runtime.onDeleteFunc Skip", "object", e.Object)
-			return false
+			_, ok := e.Object.(base.CacheRuntimeInterface)
+			if !ok {
+				log.Info("runtime.onDeleteFunc Skip", "object", e.Object)
+				return false
+			}
 		}
 
 		log.V(1).Info("exit runtimeEventHandler.onDeleteFunc", "name", e.Object.GetName(), "namespace", e.Object.GetNamespace())

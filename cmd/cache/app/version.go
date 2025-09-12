@@ -14,31 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package base
+package app
 
 import (
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"github.com/fluid-cloudnative/fluid"
+	"github.com/spf13/cobra"
 )
 
-type RuntimeInterface interface {
+var (
+	short bool
+)
 
-	// Replicas gets the replicas of runtime worker
-	Replicas() int32
-
-	// GetStatus gets the status of runtime
-	GetStatus() *datav1alpha1.RuntimeStatus
-
-	client.Object
+func init() {
+	versionCmd.Flags().BoolVar(&short, "short", false, "print just the short version info")
 }
 
-type CacheRuntimeInterface interface {
-
-	// Replicas gets the replicas of runtime worker
-	Replicas() int32
-
-	// GetStatus gets the status of runtime
-	GetStatus() *datav1alpha1.CacheRuntimeStatus
-
-	client.Object
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "print version information",
+	Run: func(cmd *cobra.Command, args []string) {
+		fluid.PrintVersion(short)
+	},
 }
