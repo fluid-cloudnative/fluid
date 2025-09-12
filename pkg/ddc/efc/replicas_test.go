@@ -109,7 +109,6 @@ func TestSyncReplicas(t *testing.T) {
 				Replicas: 3, // 2
 			},
 			Status: datav1alpha1.RuntimeStatus{
-				CurrentWorkerNumberScheduled: 2,
 				DesiredWorkerNumberScheduled: 2,
 				Conditions:                   []datav1alpha1.RuntimeCondition{},
 			},
@@ -120,11 +119,10 @@ func TestSyncReplicas(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: datav1alpha1.EFCRuntimeSpec{
-				Replicas: 2,
+				Replicas: 1,
 			},
 			Status: datav1alpha1.RuntimeStatus{
-				CurrentWorkerNumberScheduled: 3,
-				DesiredWorkerNumberScheduled: 3,
+				DesiredWorkerNumberScheduled: 2,
 				Conditions:                   []datav1alpha1.RuntimeCondition{},
 			},
 		},
@@ -137,7 +135,6 @@ func TestSyncReplicas(t *testing.T) {
 				Replicas: 2,
 			},
 			Status: datav1alpha1.RuntimeStatus{
-				CurrentWorkerNumberScheduled: 2,
 				DesiredWorkerNumberScheduled: 2,
 				Conditions:                   []datav1alpha1.RuntimeCondition{},
 			},

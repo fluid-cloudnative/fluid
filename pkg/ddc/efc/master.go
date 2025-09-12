@@ -75,12 +75,10 @@ func (e *EFCEngine) SetupMaster() (err error) {
 		runtimeToUpdate := runtime.DeepCopy()
 
 		runtimeToUpdate.Status.MasterPhase = datav1alpha1.RuntimePhaseNotReady
-		replicas := runtimeToUpdate.MasterReplicas()
 
 		// Init selector for worker
 		runtimeToUpdate.Status.Selector = e.getWorkerSelectors()
 
-		runtimeToUpdate.Status.DesiredMasterNumberScheduled = replicas
 		runtimeToUpdate.Status.ValueFileConfigmap = e.getHelmValuesConfigMapName()
 
 		if len(runtimeToUpdate.Status.Conditions) == 0 {

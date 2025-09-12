@@ -16,6 +16,8 @@ limitations under the License.
 package utils
 
 import (
+	"slices"
+
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,15 +41,21 @@ func NewRuntimeCondition(conditionType data.RuntimeConditionType, reason, messag
 // and has the same status and reason then we are not going to update.
 func UpdateRuntimeCondition(conditions []data.RuntimeCondition, condition data.RuntimeCondition) []data.RuntimeCondition {
 	// conditions = trimRuntimeConditions(conditions)
+	retConditions := slices.Clone(conditions)
 
-	index, oldCondtion := GetRuntimeCondition(conditions, condition.Type)
+	index, oldCondtion := GetRuntimeCondition(retConditions, condition.Type)
 
 	if oldCondtion == nil {
-		conditions = append(conditions, condition)
-		return conditions
+		retConditions = append(retConditions, condition)
+		return retConditions
 	}
 
 	// We define two types of runtime condition: ready type conditions (e.g. WorkerReady) and action type conditions (e.g. WorkerScaledOut).
+	// For action type conditions that occur only once (e.g. WorkerInitialized), if condition exists, fluid will not update it.
+	if isOnceActionTypeCondition(condition) {
+		return retConditions
+	}
+
 	// For ready type conditions, recording the earliest transition and probe time is enough and
 	// we avoiding update its probe time and transition time in every sync because it needs large amount of status updates.
 	if isReadyTypeCondition(condition) {
@@ -58,8 +66,8 @@ func UpdateRuntimeCondition(conditions []data.RuntimeCondition, condition data.R
 		}
 	}
 
-	conditions[index] = condition
-	return conditions
+	retConditions[index] = condition
+	return retConditions
 }
 
 // GetRuntimeCondition gets a runtime condition given a runtime condition type.
@@ -82,6 +90,12 @@ func isReadyTypeCondition(condition data.RuntimeCondition) bool {
 	return condition.Type == data.RuntimeMasterReady ||
 		condition.Type == data.RuntimeFusesReady ||
 		condition.Type == data.RuntimeWorkersReady
+}
+
+func isOnceActionTypeCondition(condition data.RuntimeCondition) bool {
+	return condition.Type == data.RuntimeMasterInitialized ||
+		condition.Type == data.RuntimeFusesInitialized ||
+		condition.Type == data.RuntimeWorkersInitialized
 }
 
 // func trimRuntimeConditions(conditions []data.RuntimeCondition) []data.RuntimeCondition {

@@ -105,13 +105,6 @@ var _ = Describe("AlluxioEngine Runtime Status Tests", Label("pkg.ddc.alluxio.st
 
 				updatedRuntime, err := utils.GetAlluxioRuntime(engine.Client, engine.name, engine.namespace)
 				Expect(err).To(BeNil())
-				Expect(updatedRuntime.Status.MasterPhase).To(Equal(datav1alpha1.RuntimePhaseReady))
-				Expect(updatedRuntime.Status.CurrentMasterNumberScheduled).To(Equal(int32(1)))
-				Expect(updatedRuntime.Status.MasterNumberReady).To(Equal(int32(1)))
-				Expect(updatedRuntime.Status.WorkerPhase).To(Equal(datav1alpha1.RuntimePhaseReady))
-				Expect(updatedRuntime.Status.WorkerNumberReady).To(Equal(int32(3)))
-				Expect(updatedRuntime.Status.WorkerNumberAvailable).To(Equal(int32(3)))
-				Expect(updatedRuntime.Status.WorkerNumberUnavailable).To(Equal(int32(0)))
 
 				Expect(updatedRuntime.Status.CacheStates).To(HaveKeyWithValue(common.Cached, mockedCacheStates.cached))
 				Expect(updatedRuntime.Status.CacheStates).To(HaveKeyWithValue(common.CacheCapacity, mockedCacheStates.cacheCapacity))
@@ -145,60 +138,9 @@ var _ = Describe("AlluxioEngine Runtime Status Tests", Label("pkg.ddc.alluxio.st
 				Expect(err).To(BeNil())
 				Expect(ready).To(BeTrue())
 
-				updatedRuntime, err := utils.GetAlluxioRuntime(engine.Client, engine.name, engine.namespace)
+				_, err = utils.GetAlluxioRuntime(engine.Client, engine.name, engine.namespace)
 				Expect(err).To(BeNil())
-				Expect(updatedRuntime.Status.MasterPhase).To(Equal(datav1alpha1.RuntimePhaseReady))
-				Expect(updatedRuntime.Status.MasterNumberReady).To(Equal(int32(1)))
-				Expect(updatedRuntime.Status.WorkerPhase).To(Equal(datav1alpha1.RuntimePhasePartialReady))
-				Expect(updatedRuntime.Status.WorkerNumberReady).To(Equal(int32(2)))
-				Expect(updatedRuntime.Status.WorkerNumberAvailable).To(Equal(int32(2)))
-				Expect(updatedRuntime.Status.WorkerNumberUnavailable).To(Equal(int32(1)))
 			})
-		})
-	})
-
-	When("master is not ready", func() {
-		BeforeEach(func() {
-			mockedObjects.MasterSts.Spec.Replicas = ptr.To[int32](1)
-			mockedObjects.MasterSts.Status.ReadyReplicas = 0
-		})
-
-		It("should update master phase in runtime status to notReady and return notReady", func() {
-			patch := gomonkey.ApplyPrivateMethod(engine, "queryCacheStatus", func() (cacheStates, error) {
-				return cacheStates{}, nil
-			})
-			defer patch.Reset()
-
-			ready, err := engine.CheckAndUpdateRuntimeStatus()
-			Expect(err).To(BeNil())
-			Expect(ready).To(BeFalse())
-
-			updatedRuntime, err := utils.GetAlluxioRuntime(engine.Client, engine.name, engine.namespace)
-			Expect(err).To(BeNil())
-			Expect(updatedRuntime.Status.MasterPhase).To(Equal(datav1alpha1.RuntimePhaseNotReady))
-		})
-	})
-
-	When("worker is not ready", func() {
-		BeforeEach(func() {
-			mockedObjects.MasterSts.Spec.Replicas = ptr.To[int32](1)
-			mockedObjects.MasterSts.Status.ReadyReplicas = 1
-			mockedObjects.WorkerSts.Spec.Replicas = ptr.To[int32](3)
-			mockedObjects.WorkerSts.Status.ReadyReplicas = 0
-		})
-
-		It("should update worker phase in runtime status to notReady and return notReady", func() {
-			patch := gomonkey.ApplyPrivateMethod(engine, "queryCacheStatus", func() (cacheStates, error) {
-				return cacheStates{}, nil
-			})
-			defer patch.Reset()
-			ready, err := engine.CheckAndUpdateRuntimeStatus()
-			Expect(err).To(BeNil())
-			Expect(ready).To(BeFalse())
-
-			updatedRuntime, err := utils.GetAlluxioRuntime(engine.Client, engine.name, engine.namespace)
-			Expect(err).To(BeNil())
-			Expect(updatedRuntime.Status.WorkerPhase).To(Equal(datav1alpha1.RuntimePhaseNotReady))
 		})
 	})
 

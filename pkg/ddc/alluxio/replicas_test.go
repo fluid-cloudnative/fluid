@@ -115,18 +115,11 @@ func TestSyncReplicas(t *testing.T) {
 				Replicas: 3, // 2
 			},
 			Status: v1alpha1.RuntimeStatus{
-				CurrentWorkerNumberScheduled: 2,
-				CurrentMasterNumberScheduled: 2, // 0
-				CurrentFuseNumberScheduled:   2,
-				DesiredMasterNumberScheduled: 3,
 				DesiredWorkerNumberScheduled: 2,
-				DesiredFuseNumberScheduled:   3,
 				Conditions: []v1alpha1.RuntimeCondition{
 					utils.NewRuntimeCondition(v1alpha1.RuntimeWorkersInitialized, v1alpha1.RuntimeWorkersInitializedReason, "The workers are initialized.", corev1.ConditionTrue),
 					utils.NewRuntimeCondition(v1alpha1.RuntimeFusesInitialized, v1alpha1.RuntimeFusesInitializedReason, "The fuses are initialized.", corev1.ConditionTrue),
 				},
-				WorkerPhase: "NotReady",
-				FusePhase:   "NotReady",
 			},
 		},
 		{
@@ -135,21 +128,14 @@ func TestSyncReplicas(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: v1alpha1.AlluxioRuntimeSpec{
-				Replicas: 2,
+				Replicas: 1,
 			},
 			Status: v1alpha1.RuntimeStatus{
-				CurrentWorkerNumberScheduled: 3,
-				CurrentMasterNumberScheduled: 3,
-				CurrentFuseNumberScheduled:   3,
-				DesiredMasterNumberScheduled: 2,
-				DesiredWorkerNumberScheduled: 3,
-				DesiredFuseNumberScheduled:   2,
+				DesiredWorkerNumberScheduled: 2,
 				Conditions: []v1alpha1.RuntimeCondition{
 					utils.NewRuntimeCondition(v1alpha1.RuntimeWorkersInitialized, v1alpha1.RuntimeWorkersInitializedReason, "The workers are initialized.", corev1.ConditionTrue),
 					utils.NewRuntimeCondition(v1alpha1.RuntimeFusesInitialized, v1alpha1.RuntimeFusesInitializedReason, "The fuses are initialized.", corev1.ConditionTrue),
 				},
-				WorkerPhase: "NotReady",
-				FusePhase:   "NotReady",
 			},
 		},
 		{
@@ -161,14 +147,7 @@ func TestSyncReplicas(t *testing.T) {
 				Replicas: 2,
 			},
 			Status: v1alpha1.RuntimeStatus{
-				CurrentWorkerNumberScheduled: 2,
-				CurrentMasterNumberScheduled: 2,
-				CurrentFuseNumberScheduled:   2,
-				DesiredMasterNumberScheduled: 2,
-				DesiredWorkerNumberScheduled: 3,
-				DesiredFuseNumberScheduled:   2,
-				WorkerPhase:                  "NotReady",
-				FusePhase:                    "NotReady",
+				DesiredWorkerNumberScheduled: 2,
 			},
 		},
 	}

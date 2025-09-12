@@ -145,7 +145,7 @@ var _ = Describe("AlluxioEngine Metadata Synchronization Tests", Label("pkg.ddc.
 			It("should return error", func() {
 				err := engine.SyncMetadata()
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("the master engine is not existed"))
+				Expect(err.Error()).To(ContainSubstring("the master engine does not exist"))
 			})
 		})
 	})

@@ -25,6 +25,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -110,16 +111,11 @@ func TestSyncReplicas(t *testing.T) {
 				Replicas: 3, // 2
 			},
 			Status: v1alpha1.RuntimeStatus{
-				CurrentWorkerNumberScheduled: 2,
-				CurrentFuseNumberScheduled:   2,
-				DesiredWorkerNumberScheduled: 3,
-				DesiredFuseNumberScheduled:   3,
+				DesiredWorkerNumberScheduled: 2,
 				Conditions: []v1alpha1.RuntimeCondition{
 					utils.NewRuntimeCondition(v1alpha1.RuntimeWorkersInitialized, v1alpha1.RuntimeWorkersInitializedReason, "The workers are initialized.", corev1.ConditionTrue),
 					utils.NewRuntimeCondition(v1alpha1.RuntimeFusesInitialized, v1alpha1.RuntimeFusesInitializedReason, "The fuses are initialized.", corev1.ConditionTrue),
 				},
-				WorkerPhase: "NotReady",
-				FusePhase:   "NotReady",
 			},
 		},
 		{
@@ -128,19 +124,15 @@ func TestSyncReplicas(t *testing.T) {
 				Namespace: "fluid",
 			},
 			Spec: v1alpha1.JuiceFSRuntimeSpec{
-				Replicas: 2,
+				Replicas: 1,
 			},
 			Status: v1alpha1.RuntimeStatus{
-				CurrentWorkerNumberScheduled: 3,
-				CurrentFuseNumberScheduled:   3,
 				DesiredWorkerNumberScheduled: 2,
 				DesiredFuseNumberScheduled:   2,
 				Conditions: []v1alpha1.RuntimeCondition{
 					utils.NewRuntimeCondition(v1alpha1.RuntimeWorkersInitialized, v1alpha1.RuntimeWorkersInitializedReason, "The workers are initialized.", corev1.ConditionTrue),
 					utils.NewRuntimeCondition(v1alpha1.RuntimeFusesInitialized, v1alpha1.RuntimeFusesInitializedReason, "The fuses are initialized.", corev1.ConditionTrue),
 				},
-				WorkerPhase: "NotReady",
-				FusePhase:   "NotReady",
 			},
 		},
 		{
@@ -152,16 +144,12 @@ func TestSyncReplicas(t *testing.T) {
 				Replicas: 2,
 			},
 			Status: v1alpha1.RuntimeStatus{
-				CurrentWorkerNumberScheduled: 2,
-				CurrentFuseNumberScheduled:   2,
 				DesiredWorkerNumberScheduled: 2,
 				DesiredFuseNumberScheduled:   2,
 				Conditions: []v1alpha1.RuntimeCondition{
 					utils.NewRuntimeCondition(v1alpha1.RuntimeWorkersInitialized, v1alpha1.RuntimeWorkersInitializedReason, "The workers are initialized.", corev1.ConditionTrue),
 					utils.NewRuntimeCondition(v1alpha1.RuntimeFusesInitialized, v1alpha1.RuntimeFusesInitializedReason, "The fuses are initialized.", corev1.ConditionTrue),
 				},
-				WorkerPhase: "NotReady",
-				FusePhase:   "NotReady",
 			},
 		},
 	}
@@ -171,17 +159,26 @@ func TestSyncReplicas(t *testing.T) {
 				Name:      "hbase-worker",
 				Namespace: "fluid",
 			},
+			Spec: appsv1.StatefulSetSpec{
+				Replicas: ptr.To[int32](2),
+			},
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "hadoop-worker",
 				Namespace: "fluid",
 			},
+			Spec: appsv1.StatefulSetSpec{
+				Replicas: ptr.To[int32](2),
+			},
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "obj-worker",
 				Namespace: "fluid",
+			},
+			Spec: appsv1.StatefulSetSpec{
+				Replicas: ptr.To[int32](2),
 			},
 		},
 		{
@@ -247,13 +244,13 @@ func TestSyncReplicas(t *testing.T) {
 		{
 			name:      "hbase",
 			namespace: "fluid",
-			Type:      "FusesScaledOut",
+			Type:      v1alpha1.RuntimeWorkerScaledOut,
 			isErr:     false,
 		},
 		{
 			name:      "hadoop",
 			namespace: "fluid",
-			Type:      "FusesScaledIn",
+			Type:      v1alpha1.RuntimeWorkerScaledIn,
 			isErr:     false,
 		},
 		{
@@ -279,8 +276,8 @@ func TestSyncReplicas(t *testing.T) {
 			t.Errorf("sync replicas failed,err:%s", err.Error())
 		}
 		rt, _ := engine.getRuntime()
-		if len(rt.Status.Conditions) == 4 {
-			Type := rt.Status.Conditions[3].Type
+		if len(rt.Status.Conditions) == 3 {
+			Type := rt.Status.Conditions[2].Type
 			if Type != testCase.Type {
 				t.Errorf("runtime condition want %s, got %s", testCase.Type, Type)
 			}

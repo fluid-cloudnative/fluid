@@ -76,9 +76,11 @@ var _ = Describe("Ctrl Master Tests", Label("pkg.ctrl.master_test.go"), func() {
 					Expect(gotRuntime.Status.CurrentMasterNumberScheduled).To(Equal(masterSts.Status.Replicas))
 					Expect(gotRuntime.Status.MasterNumberReady).To(Equal(masterSts.Status.ReadyReplicas))
 
-					Expect(gotRuntime.Status.Conditions).To(HaveLen(1))
-					Expect(gotRuntime.Status.Conditions[0].Type).To(Equal(datav1alpha1.RuntimeMasterReady))
+					Expect(gotRuntime.Status.Conditions).To(HaveLen(2))
+					Expect(gotRuntime.Status.Conditions[0].Type).To(Equal(datav1alpha1.RuntimeMasterInitialized))
 					Expect(gotRuntime.Status.Conditions[0].Status).To(Equal(corev1.ConditionTrue))
+					Expect(gotRuntime.Status.Conditions[1].Type).To(Equal(datav1alpha1.RuntimeMasterReady))
+					Expect(gotRuntime.Status.Conditions[1].Status).To(Equal(corev1.ConditionTrue))
 				})
 			})
 		})

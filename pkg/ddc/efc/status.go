@@ -21,7 +21,6 @@ import (
 	"reflect"
 	"time"
 
-	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -81,27 +80,12 @@ func (e *EFCEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 		runtimeToUpdate.Status.CacheStates[common.RemoteThroughputRatio] = states.cacheHitStates.remoteThroughputRatio
 		runtimeToUpdate.Status.CacheStates[common.CacheThroughputRatio] = states.cacheHitStates.cacheThroughputRatio
 
-		runtimeToUpdate.Status.CurrentMasterNumberScheduled = int32(master.Status.Replicas)
-		runtimeToUpdate.Status.MasterNumberReady = int32(master.Status.ReadyReplicas)
 		if *master.Spec.Replicas == master.Status.ReadyReplicas {
-			runtimeToUpdate.Status.MasterPhase = data.RuntimePhaseReady
 			masterReady = true
-		} else {
-			runtimeToUpdate.Status.MasterPhase = data.RuntimePhaseNotReady
 		}
 
-		runtimeToUpdate.Status.CurrentWorkerNumberScheduled = int32(workers.Status.Replicas)
-		runtimeToUpdate.Status.WorkerNumberReady = int32(workers.Status.ReadyReplicas)
-		runtimeToUpdate.Status.WorkerNumberUnavailable = int32(*workers.Spec.Replicas - workers.Status.ReadyReplicas)
-		runtimeToUpdate.Status.WorkerNumberAvailable = int32(workers.Status.CurrentReplicas)
-		if runtime.Replicas() == workers.Status.ReadyReplicas {
-			runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseReady
+		if runtime.Replicas() == 0 || workers.Status.ReadyReplicas > 0 {
 			workerReady = true
-		} else if workers.Status.ReadyReplicas >= 1 {
-			runtimeToUpdate.Status.WorkerPhase = data.RuntimePhasePartialReady
-			workerReady = true
-		} else {
-			runtimeToUpdate.Status.WorkerPhase = data.RuntimePhaseNotReady
 		}
 
 		if masterReady && workerReady {

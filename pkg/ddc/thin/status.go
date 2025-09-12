@@ -32,7 +32,7 @@ import (
 
 func (t *ThinEngine) CheckAndUpdateRuntimeStatus() (bool, error) {
 	var (
-		runtimeReady, workerReady bool
+		runtimeReady bool
 	)
 
 	dataset, err := utils.GetDataset(t.Client, t.name, t.namespace)
@@ -62,25 +62,7 @@ func (t *ThinEngine) CheckAndUpdateRuntimeStatus() (bool, error) {
 			// set node affinity
 			workerNodeAffinity := kubeclient.MergeNodeSelectorAndNodeAffinity(workers.Spec.Template.Spec.NodeSelector, workers.Spec.Template.Spec.Affinity)
 			runtimeToUpdate.Status.CacheAffinity = workerNodeAffinity
-			runtimeToUpdate.Status.WorkerNumberReady = int32(workers.Status.ReadyReplicas)
-			runtimeToUpdate.Status.WorkerNumberUnavailable = int32(*workers.Spec.Replicas - workers.Status.ReadyReplicas)
-			runtimeToUpdate.Status.WorkerNumberAvailable = int32(workers.Status.CurrentReplicas)
-			if runtime.Replicas() == 0 {
-				runtimeToUpdate.Status.WorkerPhase = datav1alpha1.RuntimePhaseReady
-				workerReady = true
-			} else if workers.Status.ReadyReplicas > 0 {
-				if runtime.Replicas() == workers.Status.ReadyReplicas {
-					runtimeToUpdate.Status.WorkerPhase = datav1alpha1.RuntimePhaseReady
-					workerReady = true
-				} else if workers.Status.ReadyReplicas >= 1 {
-					runtimeToUpdate.Status.WorkerPhase = datav1alpha1.RuntimePhasePartialReady
-					workerReady = true
-				}
-			} else {
-				runtimeToUpdate.Status.WorkerPhase = datav1alpha1.RuntimePhaseNotReady
-			}
-
-			if workerReady {
+			if runtime.Replicas() == 0 || workers.Status.ReadyReplicas > 0 {
 				runtimeReady = true
 			}
 		}
@@ -122,7 +104,7 @@ func (t *ThinEngine) CheckAndUpdateRuntimeStatus() (bool, error) {
 		if len(runtimeToUpdate.Status.Conditions) == 0 {
 			runtimeToUpdate.Status.Conditions = []datav1alpha1.RuntimeCondition{}
 		}
-		cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersInitialized, datav1alpha1.RuntimeWorkersInitializedReason,
+		cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeFusesInitialized, datav1alpha1.RuntimeFusesInitializedReason,
 			"The fuse is initialized.", corev1.ConditionTrue)
 		runtimeToUpdate.Status.Conditions =
 			utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,

@@ -100,7 +100,7 @@ var _ = Describe("Ctrl Helper Fuse Tests", Label("pkg.ctrl.fuse_test.go"), func(
 					err = k8sClient.Get(context.TODO(), types.NamespacedName{Namespace: alluxioruntime.Namespace, Name: alluxioruntime.Name}, gotRuntime)
 					Expect(err).To(BeNil())
 					Expect(gotRuntime.Status.FusePhase).To(Equal(datav1alpha1.RuntimePhaseReady))
-					Expect(gotRuntime.Status.DesiredMasterNumberScheduled).To(BeEquivalentTo(1))
+					Expect(gotRuntime.Status.DesiredFuseNumberScheduled).To(BeEquivalentTo(1))
 					Expect(gotRuntime.Status.CurrentFuseNumberScheduled).To(BeEquivalentTo(1))
 					Expect(gotRuntime.Status.FuseNumberReady).To(BeEquivalentTo(1))
 					Expect(gotRuntime.Status.FuseNumberAvailable).To(BeEquivalentTo(1))
