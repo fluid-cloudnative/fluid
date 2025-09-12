@@ -83,7 +83,7 @@ func (e *AlluxioEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err 
 
 					return err
 				})
-				totalErr := fmt.Errorf("the master engine is not existed %v", updateErr)
+				totalErr := fmt.Errorf("the master engine does not exist: %v", updateErr)
 				return totalErr
 			}
 			return err

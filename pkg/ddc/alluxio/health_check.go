@@ -113,7 +113,7 @@ func (e *AlluxioEngine) checkExistenceOfMaster() (err error) {
 
 	if (masterErr != nil && errors.IsNotFound(masterErr)) || *master.Spec.Replicas <= 0 {
 		//the totalErr promise the sync will return and Requeue
-		return fmt.Errorf("the master engine is not existed: %v", masterErr)
+		return fmt.Errorf("the master engine does not exist: %v", masterErr)
 	} else if master.Spec.Replicas == nil || *master.Spec.Replicas <= 0 {
 		return fmt.Errorf("the master engine's replica is 0")
 	} else {
