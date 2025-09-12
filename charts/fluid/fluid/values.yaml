@@ -52,6 +52,7 @@ dataset:
     imageTag: *defaultVersion
 
 csi:
+  enabled: true
   tolerations:
     - operator: Exists
   featureGates: "FuseRecovery=false"
