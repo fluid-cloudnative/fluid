@@ -18,6 +18,8 @@ version: &defaultVersion v1.0.7-2244413
 
 crdUpgrade:
   enabled: true
+  tolerations:
+    - operator: Exists
   # This sets the time-to-live (TTL) for crd-upgrade jobs. Default is 259200 seconds (3 days).
   ttlSecondsAfterFinished: 259200 
   imagePrefix: *defaultImagePrefix
@@ -50,6 +52,7 @@ dataset:
     imageTag: *defaultVersion
 
 csi:
+  enabled: true
   tolerations:
     - operator: Exists
   featureGates: "FuseRecovery=false"

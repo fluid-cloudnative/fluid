@@ -1,3 +1,4 @@
+{{ if .Values.csi.enabled -}}
 kind: DaemonSet
 apiVersion: apps/v1
 metadata:
@@ -167,3 +168,4 @@ spec:
             path: /etc/updatedb.conf.backup
             type: FileOrCreate
           name: updatedb-conf-bak
+{{- end }}
