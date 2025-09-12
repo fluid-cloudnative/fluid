@@ -19,6 +19,10 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if .Values.crdUpgrade.tolerations }}
+      tolerations:
+{{ toYaml .Values.crdUpgrade.tolerations | indent 6 }}
+      {{- end }}
       serviceAccountName: fluid-crds-upgrade
       containers:
         - name: fluid-crds-upgrade
