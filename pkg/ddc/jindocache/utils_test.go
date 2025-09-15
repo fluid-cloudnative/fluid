@@ -121,3 +121,100 @@ func TestJindoFSEngine_getHostMountPoint(t *testing.T) {
 		})
 	}
 }
+
+func TestParseVersionFromImageTag(t *testing.T) {
+	tests := []struct {
+		name     string
+		imageTag string
+		want     jindoVersion
+		wantErr  bool
+	}{
+		{
+			name:     "valid version without tag",
+			imageTag: "6.2.0",
+			want: jindoVersion{
+				Major: 6,
+				Minor: 2,
+				Patch: 0,
+				Tag:   "",
+			},
+			wantErr: false,
+		},
+		{
+			name:     "valid version with tag",
+			imageTag: "6.9.1-202501020304",
+			want: jindoVersion{
+				Major: 6,
+				Minor: 9,
+				Patch: 1,
+				Tag:   "202501020304",
+			},
+			wantErr: false,
+		},
+		{
+			name:     "valid version with complex tag",
+			imageTag: "4.5.2-community-edition",
+			want: jindoVersion{
+				Major: 4,
+				Minor: 5,
+				Patch: 2,
+				Tag:   "community-edition",
+			},
+			wantErr: false,
+		},
+		{
+			name:     "invalid version format",
+			imageTag: "invalid.version",
+			want:     jindoVersion{},
+			wantErr:  true,
+		},
+		{
+			name:     "empty version",
+			imageTag: "",
+			want:     jindoVersion{},
+			wantErr:  true,
+		},
+		{
+			name:     "version with spaces",
+			imageTag: " 4.2.1-beta ",
+			want: jindoVersion{
+				Major: 4,
+				Minor: 2,
+				Patch: 1,
+				Tag:   "beta",
+			},
+			wantErr: false,
+		},
+		{
+			name:     "non-numeric major version",
+			imageTag: "x.1.2",
+			want:     jindoVersion{},
+			wantErr:  true,
+		},
+		{
+			name:     "non-numeric minor version",
+			imageTag: "1.x.2",
+			want:     jindoVersion{},
+			wantErr:  true,
+		},
+		{
+			name:     "non-numeric patch version",
+			imageTag: "1.2.x",
+			want:     jindoVersion{},
+			wantErr:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := parseVersionFromImageTag(tt.imageTag)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("parseVersionFromImageTag() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && (got.Major != tt.want.Major || got.Minor != tt.want.Minor || got.Patch != tt.want.Patch || got.Tag != tt.want.Tag) {
+				t.Errorf("parseVersionFromImageTag() = %+v, want %+v", got, tt.want)
+			}
+		})
+	}
+}

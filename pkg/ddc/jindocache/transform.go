@@ -780,7 +780,20 @@ func (e *JindoCacheEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, val
 		"fs.s3.download.queue.size":                  "16",
 		"fs.s3.download.thread.concurrency":          "32",
 		"fs.xengine":                                 "jindocache",
-		"jindofsx.read.readahead.prefetcher.version": "legacy",
+		"jindofsx.read.readahead.prefetcher.version": "default",
+	}
+
+	// Assume value.FuseImageTag has been set here
+	if len(value.FuseImageTag) != 0 {
+		fuseVersion, err := parseVersionFromImageTag(value.FuseImageTag)
+		if err != nil {
+			e.Log.Info("fail to parse version from image tag, ignore the error and continue", "imageTag", value.FuseImageTag, "error", err)
+		} else {
+			legacyPrefetcherJindoVersion := jindoVersion{6, 2, 0, ""}
+			if fuseVersion.compare(legacyPrefetcherJindoVersion) <= 0 {
+				properties["jindofsx.read.readahead.prefetcher.version"] = "legacy"
+			}
+		}
 	}
 
 	readOnly := false
