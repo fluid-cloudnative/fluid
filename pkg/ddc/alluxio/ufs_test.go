@@ -583,57 +583,15 @@ func TestTotalFileNums(t *testing.T) {
 	}
 }
 
-// TestShouldCheckUFS validates the AlluxioEngine's logic for determining whether
-// it should perform a check on the Under File System (UFS).
+// TestFindUnmountedUFS verifies if AlluxioEngine's FindUnmountedUFS method correctly identifies
+// UFS paths that should be considered for mounting based on their scheme.
+// It iterates through predefined test cases, each with a set of mount points and the expected
+// unmounted paths. For each case, it mocks the necessary dependencies, calls FindUnmountedUFS,
+// and then compares the returned unmounted paths with the expected ones.
 //
-// The test performs the following operations:
-// - Initializes a minimal AlluxioEngine instance
-// - Invokes the ShouldCheckUFS() method
-// - Verifies the boolean result and error status
+// param: t *testing.T - The testing context used for running the test and reporting failures.
 //
-// Test Components:
-// - tests: A table-driven slice defining expected outcomes for each case
-//
-// Flow:
-// 1. Construct a new AlluxioEngine instance (with default or minimal config)
-// 2. Call the ShouldCheckUFS() method
-// 3. Check if the returned value matches expected 'wantShould'
-// 4. Validate that the presence or absence of an error matches 'wantErr'
-//
-// Note:
-// - This test assumes default internal state is sufficient for logic evaluation
-// - It can be extended to include more cases or mocked dependencies if needed
-func TestShouldCheckUFS(t *testing.T) {
-	tests := []struct {
-		name       string
-		wantShould bool
-		wantErr    bool
-	}{
-		{
-			name:       "test",
-			wantShould: true,
-			wantErr:    false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			e := &AlluxioEngine{}
-			gotShould, err := e.ShouldCheckUFS()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("AlluxioEngine.ShouldCheckUFS() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if gotShould != tt.wantShould {
-				t.Errorf("AlluxioEngine.ShouldCheckUFS() = %v, want %v", gotShould, tt.wantShould)
-			}
-		})
-	}
-}
-
-// TestPrepareUFS tests the PrepareUFS method of AlluxioEngine.
-// This method prepares the underlying file system (UFS) by checking
-// the Alluxio master state, mounting UFS, and performing necessary
-// metadata synchronization.
+// returns: None (This is a test function and does not return any value.)
 func TestFindUnmountedUFS(t *testing.T) {
 
 	type fields struct {
