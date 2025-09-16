@@ -149,11 +149,11 @@ runtime:
     smartdata:
       imagePrefix: registry.cn-shanghai.aliyuncs.com/jindofs
       imageName: smartdata
-      imageTag: 6.2.0
+      imageTag: 6.9.1-202509151826
     fuse:
       imagePrefix: registry.cn-shanghai.aliyuncs.com/jindofs
       imageName: jindo-fuse
-      imageTag: 6.2.0
+      imageTag: 6.9.1-202509151826
     controller:
       imagePrefix: *defaultImagePrefix
       imageName: jindoruntime-controller
