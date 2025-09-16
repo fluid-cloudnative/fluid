@@ -318,3 +318,70 @@ type ClientMetrics struct {
 	// Defaults to None when it is not explicitly set.
 	ScrapeTarget string `json:"scrapeTarget,omitempty"`
 }
+
+// CacheRuntimeTieredStore is a description of the tiered store
+type CacheRuntimeTieredStore struct {
+	// configurations for multiple tiers
+	Levels []CacheRuntimeTieredStoreLevel `json:"levels,omitempty"`
+}
+
+// CacheRuntimeTieredStoreLevel describes configurations a tier needs. <br>
+type CacheRuntimeTieredStoreLevel struct {
+	Medium MediumSource `json:"medium,omitempty"`
+
+	// File paths to be used for the tier. Multiple paths are supported.
+	// Multiple paths should be separated with comma. For example: "/mnt/cache1,/mnt/cache2".
+	// +kubebuilder:validation:MinLength=1
+	// +optional
+	Path string `json:"path,omitempty"`
+
+	// Quota for the whole tier. (e.g. 100Gi)
+	// Please note that if there're multiple paths used for this tierstore,
+	// the quota will be equally divided into these paths. If you'd like to
+	// set quota for each, path, see QuotaList for more information.
+	// +optional
+	Quota string `json:"quota,omitempty"`
+
+	// Ratio of high watermark of the tier (e.g. 0.9)
+	High string `json:"high,omitempty"`
+
+	// Ratio of low watermark of the tier (e.g. 0.7)
+	Low string `json:"low,omitempty"`
+}
+
+type MediumSource struct {
+	// ProcessMemory indicates
+	ProcessMemory *ProcessMemoryMediumSource `json:"processMemory,omitempty"`
+
+	// ProcessMemory indicates
+	Volume *VolumeMediumSource `json:"inline"`
+}
+
+//tieredStore:
+//  levels:
+//	- quota: 8Gi # quota will add to component.container.resource.request/limit.memory
+//	  high: "0.99"
+//    low: "0.99"
+//	  mediumSource:
+//      processMemory: {}
+
+type ProcessMemoryMediumSource struct {
+}
+
+//tieredStore:
+//  levels:
+//	- quota: 8Gi
+//	  high: "0.99"
+//    low: "0.99"
+// 	  path: /dev/shm
+//	  mediumSource:
+//		emptyDir:{}
+//      ephemeral:
+//        volumeClaimTemplate:{} #生命周期是否保留？
+//		hostPath:{}
+
+type VolumeMediumSource struct {
+	HostPath  *corev1.HostPathVolumeSource  `json:"hostPath,omitempty"`
+	EmptyDir  *corev1.EmptyDirVolumeSource  `json:"emptyDir,omitempty"`
+	Ephemeral *corev1.EphemeralVolumeSource `json:"ephemeral,omitempty"`
+}

@@ -1,0 +1,190 @@
+/*
+Copyright 2020 The Fluid Author.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+// +k8s:deepcopy-gen=package
+// +groupName=data.fluid.io
+package v1alpha1
+
+import (
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+const (
+	CacheRuntimeKind = "CacheRuntime"
+)
+
+// +kubebuilder:object:root=true
+// +kubebuilder:resource:scope=Namespaced
+
+// CacheRuntimeList contains a list of CacheRuntime
+type CacheRuntimeList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []CacheRuntime `json:"items"`
+}
+
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=`.metadata.creationTimestamp`,priority=0
+// +kubebuilder:resource:scope=Namespaced
+// +kubebuilder:resource:categories={fluid}
+// +genclient
+
+// CacheRuntime is the Schema for the CacheRuntimes API
+type CacheRuntime struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   CacheRuntimeSpec   `json:"spec,omitempty"`
+	Status CacheRuntimeStatus `json:"status,omitempty"`
+}
+
+// CacheRuntimeSpec defines the desired state of CacheRuntime
+type CacheRuntimeSpec struct {
+	// RuntimeClassName is the name of the RuntimeClass required by the cacheRuntime.
+	RuntimeClassName string `json:"runtimeClassName,omitempty"`
+
+	// The component spec of master
+	// +optional
+	Master CacheRuntimeMasterSpec `json:"master,omitempty"`
+
+	// The component spec of worker
+	// +optional
+	Worker CacheRuntimeWorkerSpec `json:"worker,omitempty"`
+
+	// The component spec of client
+	// +optional
+	Client CacheRuntimeClientSpec `json:"client,omitempty"`
+
+	// Options defines the configurable options for cache system.
+	// +optional
+	Options map[string]string `json:"options,omitempty"`
+
+	// PodMetadata defines labels and annotations that will be propagated to the all components' pods
+	// +optional
+	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
+
+	// ImagePullSecrets that will be used to pull images
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+
+	// Volumes is the list of Kubernetes volumes that can be mounted by the cache runtime components.
+	// +optional
+	Volumes []corev1.Volume `json:"volumes,omitempty"`
+}
+
+// CacheRuntimeMasterSpec is a description of the CacheRuntime master component
+type CacheRuntimeMasterSpec struct {
+	CacheRuntimeComponentCommonSpec `json:",inline"`
+
+	// Replicas is the desired replicas of the component.
+	// If unspecified, defaults to 1.
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:default=1
+	// +optional
+	Replicas int32 `json:"replicas,omitempty"`
+}
+
+// CacheRuntimeWorkerSpec is a description of the CacheRuntime worker component
+type CacheRuntimeWorkerSpec struct {
+	CacheRuntimeComponentCommonSpec `json:",inline"`
+
+	// Replicas is the desired replicas of the given template.
+	// If unspecified, defaults to 1.
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:default=1
+	// +optional
+	Replicas int32 `json:"replicas,omitempty"`
+
+	// Tiered storage used by worker
+	// +optional
+	TieredStore CacheRuntimeTieredStore `json:"tieredStore,omitempty"`
+}
+
+// CacheRuntimeClientSpec is a description of the CacheRuntime client component
+type CacheRuntimeClientSpec struct {
+	CacheRuntimeComponentCommonSpec `json:",inline"`
+
+	// Tiered storage used by worker
+	// +optional
+	TieredStore CacheRuntimeTieredStore `json:"tieredStore,omitempty"`
+
+	// CleanPolicy decides when to clean CacheFS Fuse pods.
+	// Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
+	// OnDemand cleans fuse pod once th fuse pod on some node is not needed
+	// OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted
+	// Defaults to OnRuntimeDeleted
+	// +kubebuilder:validation:Enum=OnRuntimeDeleted;"";OnDemand
+	// +kubebuilder:default=OnRuntimeDeleted
+	// +optional
+	CleanPolicy FuseCleanPolicy `json:"cleanPolicy,omitempty"`
+}
+
+// CacheRuntimeComponentCommonSpec is a common description of the CacheRuntime component
+type CacheRuntimeComponentCommonSpec struct {
+	// If disable CacheRuntime component
+	// +optional
+	Disabled bool `json:"disabled,omitempty"`
+
+	// The version information that instructs fluid to orchestrate a particular version.
+	// +optional
+	RuntimeVersion VersionSpec `json:"runtimeVersion,omitempty"`
+
+	// Options is configurable options for Cache System.
+	// +optional
+	Options map[string]string `json:"options,omitempty"`
+
+	// PodMetadata defines labels and annotations that will be propagated to all CacheRuntime components' pods
+	// +optional
+	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
+
+	// Resources that will be requested by the CacheRuntime component.
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// Environment variables that will be used by CacheRuntime component.
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,7,rep,name=env"`
+
+	// VolumeMounts specifies the volumes listed in ".spec.volumes" to mount into the CacheRuntime component's filesystem.
+	// +optional
+	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
+
+	// Arguments to the entrypoint.
+	// +optional
+	// +listType=atomic
+	Args []string `json:"args,omitempty"`
+
+	// NodeSelector is a selector that must be true for the component pods to fit on a node
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// If specified, the pod's tolerations.
+	// +optional
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+}
+
+func init() {
+	SchemeBuilder.Register(&CacheRuntime{}, &CacheRuntimeList{})
+}
+
+func (in *CacheRuntime) Replicas() int32 {
+	return in.Spec.Worker.Replicas
+}
+
+func (in *CacheRuntime) GetStatus() *CacheRuntimeStatus {
+	return &in.Status
+}

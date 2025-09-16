@@ -13,12 +13,14 @@ limitations under the License.
 package ddc
 
 import (
+	"fmt"
 	"strings"
 
 	fluidv1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	cache "github.com/fluid-cloudnative/fluid/pkg/ddc/cache/engine"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/efc"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/goosefs"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo"
@@ -29,8 +31,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/vineyard"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-
-	"fmt"
 )
 
 type buildFunc func(id string, ctx cruntime.ReconcileRequestContext) (engine base.Engine, err error)
@@ -48,6 +48,7 @@ func init() {
 		common.ThinEngineImpl:       thin.Build,
 		common.EFCEngineImpl:        efc.Build,
 		common.VineyardEngineImpl:   vineyard.Build,
+		common.CacheEngineImpl:      cache.Build,
 	}
 }
 
@@ -71,7 +72,7 @@ func GenerateEngineID(namespacedName types.NamespacedName) string {
 
 // InferEngineImpl infers which engineImpl should be use for a given runtime.
 // For a new runtime which has not been set up, returns the default engineImpl.
-// NOTE: for backward compatibility, the func checks runtimeStatus.ValueFileConfigmap to identify
+// NOTE: for backward compatibility, the func checks runtimeStatus.SetupValueFileConfigmap to identify
 // the engine implementation for a running Runtime.
 // TODO: This could change in the future by checking runtimeStatus.engineImpl instead.
 func InferEngineImpl(runtimeStatus fluidv1alpha1.RuntimeStatus, defaultImpl string) string {
