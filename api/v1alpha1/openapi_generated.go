@@ -97,7 +97,12 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ObjectRef":                  schema_fluid_cloudnative_fluid_api_v1alpha1_ObjectRef(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationRef":               schema_fluid_cloudnative_fluid_api_v1alpha1_OperationRef(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationStatus":            schema_fluid_cloudnative_fluid_api_v1alpha1_OperationStatus(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.PersistentPodState":         schema_fluid_cloudnative_fluid_api_v1alpha1_PersistentPodState(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.PersistentPodStateList":     schema_fluid_cloudnative_fluid_api_v1alpha1_PersistentPodStateList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.PersistentPodStateSpec":     schema_fluid_cloudnative_fluid_api_v1alpha1_PersistentPodStateSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.PersistentPodStateStatus":   schema_fluid_cloudnative_fluid_api_v1alpha1_PersistentPodStateStatus(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata":                schema_fluid_cloudnative_fluid_api_v1alpha1_PodMetadata(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.PodState":                   schema_fluid_cloudnative_fluid_api_v1alpha1_PodState(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Prefer":                     schema_fluid_cloudnative_fluid_api_v1alpha1_Prefer(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Processor":                  schema_fluid_cloudnative_fluid_api_v1alpha1_Processor(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Require":                    schema_fluid_cloudnative_fluid_api_v1alpha1_Require(ref),
@@ -4540,6 +4545,13 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSRuntimeSpec(ref common.R
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeManagement"),
 						},
 					},
+					"updateStrategy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "UpdateStrategy defines the update policy for worker pod.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},
@@ -5134,6 +5146,148 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_OperationStatus(ref common.Refe
 	}
 }
 
+func schema_fluid_cloudnative_fluid_api_v1alpha1_PersistentPodState(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PersistentPodState is the Schema for the PersistentPodState API",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PersistentPodStateSpec"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PersistentPodStateStatus"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.PersistentPodStateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PersistentPodStateStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_PersistentPodStateList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PersistentPodStateList contains a list of PersistentPodState",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PersistentPodState"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.PersistentPodState", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_PersistentPodStateSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PersistentPodStateSpec defines the desired state of PersistentPodState",
+				Type:        []string{"object"},
+			},
+		},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_PersistentPodStateStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PersistentPodStateStatus defines the observed state of PersistentPodState",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"podStates": {
+						SchemaProps: spec.SchemaProps{
+							Description: "\tPodStates is the pod name mapping to state.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodState"),
+									},
+								},
+							},
+						},
+					},
+					"lastUpdateTime": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.PodState", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+	}
+}
+
 func schema_fluid_cloudnative_fluid_api_v1alpha1_PodMetadata(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -5174,6 +5328,26 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_PodMetadata(ref common.Referenc
 						},
 					},
 				},
+			},
+		},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_PodState(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"nodeName": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+				},
+				Required: []string{"nodeName"},
 			},
 		},
 	}

@@ -95,6 +95,8 @@ rules:
       - datasets
       - juicefsruntimes/status
       - datasets/status
+      - persistentpodstates
+      - persistentpodstates/status
     verbs:
       - get
       - list

@@ -81,7 +81,7 @@ func (e *Helper) BuildWorkersAffinity(workers *appsv1.StatefulSet) (workersToUpd
 						LabelSelector: &metav1.LabelSelector{
 							MatchExpressions: []metav1.LabelSelectorRequirement{
 								{
-									Key:      "fluid.io/dataset",
+									Key:      common.LabelAnnotationDataset,
 									Operator: metav1.LabelSelectorOpExists,
 								},
 							},
@@ -100,7 +100,7 @@ func (e *Helper) BuildWorkersAffinity(workers *appsv1.StatefulSet) (workersToUpd
 							LabelSelector: &metav1.LabelSelector{
 								MatchExpressions: []metav1.LabelSelectorRequirement{
 									{
-										Key:      "fluid.io/dataset",
+										Key:      common.LabelAnnotationDataset,
 										Operator: metav1.LabelSelectorOpExists,
 									},
 								},
