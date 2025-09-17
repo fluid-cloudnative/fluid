@@ -176,7 +176,7 @@ func (version *jindoVersion) compare(other jindoVersion) int {
 }
 
 func parseVersionFromImageTag(imageTag string) (jindoVersion, error) {
-	re := regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+)(?:-(.+))?$`)
+	re := regexp.MustCompile(`^v?(\d+)\.(\d+)\.(\d+)(?:-(.+))?$`)
 	matches := re.FindStringSubmatch(strings.TrimSpace(imageTag))
 	// expected length of matches is 4 or 5
 	if len(matches) < 4 || len(matches) > 5 {

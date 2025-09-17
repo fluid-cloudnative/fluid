@@ -141,8 +141,30 @@ func TestParseVersionFromImageTag(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name:     "valid version without tag and with a 'v' prefix",
+			imageTag: "v6.2.0",
+			want: jindoVersion{
+				Major: 6,
+				Minor: 2,
+				Patch: 0,
+				Tag:   "",
+			},
+			wantErr: false,
+		},
+		{
 			name:     "valid version with tag",
 			imageTag: "6.9.1-202501020304",
+			want: jindoVersion{
+				Major: 6,
+				Minor: 9,
+				Patch: 1,
+				Tag:   "202501020304",
+			},
+			wantErr: false,
+		},
+		{
+			name:     "valid version with tag and a 'v' prefix",
+			imageTag: "v6.9.1-202501020304",
 			want: jindoVersion{
 				Major: 6,
 				Minor: 9,
