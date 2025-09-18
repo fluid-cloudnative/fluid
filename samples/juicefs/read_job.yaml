@@ -26,6 +26,7 @@ spec:
           resources:
             limits:
               memory: "64Mi"
+              ephemeral-storage: "2Gi"
       automountServiceAccountToken: false
       volumes:
         - name: data-vol
