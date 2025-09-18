@@ -1,0 +1,34 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: read-job
+  namespace: default
+  labels:
+    app: read-job
+spec:
+  template:
+    metadata:
+      name: read-job
+      labels:
+        app: read-job
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: read-job
+          image: busybox
+          command: ['sh']
+          args:
+            - -c
+            - set -ex; test -n "$(cat /data/foo/bar)"
+          volumeMounts:
+            - name: data-vol
+              mountPath: /data
+          resources:
+            limits:
+              memory: "64Mi"
+              ephemeral-storage: "512Mi"
+      automountServiceAccountToken: false
+      volumes:
+        - name: data-vol
+          persistentVolumeClaim:
+            claimName: jfsdemo
