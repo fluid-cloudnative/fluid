@@ -19,7 +19,9 @@ package jindocache
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strconv"
+	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -142,4 +144,65 @@ func (e *JindoCacheEngine) TotalJindoStorageBytes() (value int64, err error) {
 	}
 	e.Log.Info("calculated total ufs size of jindocache storage", "total ufs size", utils.BytesSize(float64(ufsSize)))
 	return ufsSize, err
+}
+
+type jindoVersion struct {
+	Major int
+	Minor int
+	Patch int
+	Tag   string
+}
+
+func (version *jindoVersion) compare(other jindoVersion) int {
+	if version.Major < other.Major {
+		return -1
+	} else if version.Major > other.Major {
+		return 1
+	}
+
+	if version.Minor < other.Minor {
+		return -1
+	} else if version.Minor > other.Minor {
+		return 1
+	}
+
+	if version.Patch < other.Patch {
+		return -1
+	} else if version.Patch > other.Patch {
+		return 1
+	}
+
+	return 0
+}
+
+func parseVersionFromImageTag(imageTag string) (jindoVersion, error) {
+	re := regexp.MustCompile(`^v?(\d+)\.(\d+)\.(\d+)(?:-(.+))?$`)
+	matches := re.FindStringSubmatch(strings.TrimSpace(imageTag))
+	// expected length of matches is 4 or 5
+	if len(matches) < 4 || len(matches) > 5 {
+		return jindoVersion{}, fmt.Errorf("invalid image tag \"%s\"", imageTag)
+	}
+	major, err := strconv.Atoi(matches[1])
+	if err != nil {
+		return jindoVersion{}, fmt.Errorf("invalid major version from image tag \"%s\": %v", imageTag, err)
+	}
+	minor, err := strconv.Atoi(matches[2])
+	if err != nil {
+		return jindoVersion{}, fmt.Errorf("invalid minor version from image tag \"%s\": %v", imageTag, err)
+	}
+	patch, err := strconv.Atoi(matches[3])
+	if err != nil {
+		return jindoVersion{}, fmt.Errorf("invalid patch version from image tag \"%s\": %v", imageTag, err)
+	}
+	var tag string
+	if len(matches) >= 5 {
+		tag = matches[4]
+	}
+
+	return jindoVersion{
+		Major: major,
+		Minor: minor,
+		Patch: patch,
+		Tag:   tag,
+	}, nil
 }

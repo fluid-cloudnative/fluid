@@ -13,7 +13,7 @@ function deploy_fluid() {
     echo "Replacing image tags in values.yaml with $IMAGE_TAG"
     sed -i -E "s/version: &defaultVersion v[0-9]\.[0-9]\.[0-9]-[a-z0-9]+$/version: \&defaultVersion $IMAGE_TAG/g" charts/fluid/fluid/values.yaml
     kubectl create ns fluid-system
-    helm install --create-namespace --set runtime.jindo.smartdata.imagePrefix=registry.cn-hongkong.aliyuncs.com/jindofs --set runtime.jindo.fuse.imagePrefix=registry.cn-hongkong.aliyuncs.com/jindofs fluid charts/fluid/fluid
+    helm install --create-namespace --set runtime.jindo.smartdata.imagePrefix=registry-cn-hongkong.ack.aliyuncs.com/acs --set runtime.jindo.fuse.imagePrefix=registry-cn-hongkong.ack.aliyuncs.com/acs fluid charts/fluid/fluid
 }
 
 function main() {
