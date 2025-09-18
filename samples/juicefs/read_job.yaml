@@ -23,6 +23,9 @@ spec:
           volumeMounts:
             - name: data-vol
               mountPath: /data
+          resources:
+            limits:
+              memory: "64Mi"
       automountServiceAccountToken: false
       volumes:
         - name: data-vol
