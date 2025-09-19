@@ -279,7 +279,6 @@ runtime:
       imagePrefix: *defaultImagePrefix
       imageName: efcruntime-controller
       imageTag: *defaultVersion
-      imagePullPolicy: Always
     init:
       imagePrefix: registry.cn-zhangjiakou.aliyuncs.com/nascache
       imageName: init-alifuse
@@ -320,7 +319,6 @@ runtime:
       imagePrefix: *defaultImagePrefix
       imageName: vineyardruntime-controller
       imageTag: *defaultVersion
-      imagePullPolicy: Always
     master:
       imagePrefix: registry.aliyuncs.com/vineyard
       imageName: vineyardd

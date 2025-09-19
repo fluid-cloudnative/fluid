@@ -35,6 +35,7 @@ spec:
       #hostNetwork: true
       containers:
       - image: {{ include "fluid.controlplane.imageTransform" (list .Values.dataset.controller.imagePrefix .Values.dataset.controller.imageName .Values.dataset.controller.imageTag . ) }}
+        imagePullPolicy: IfNotPresent
         name: manager
         command: ["dataset-controller", "start"]
         args:

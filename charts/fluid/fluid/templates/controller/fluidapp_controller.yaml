@@ -33,6 +33,7 @@ spec:
       #hostNetwork: true
       containers:
       - image: {{ include "fluid.controlplane.imageTransform" (list .Values.fluidapp.controller.imagePrefix .Values.fluidapp.controller.imageName .Values.fluidapp.controller.imageTag . ) }}
+        imagePullPolicy: IfNotPresent
         name: manager
         command: ["fluidapp-controller", "start"]
         args:
