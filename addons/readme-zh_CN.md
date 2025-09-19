@@ -13,3 +13,4 @@ Fluid 为 Kubernetes 用户提供一套简单高效的云上数据访问方案�
 | CubeFS 2.4   | [案例](./cubefs/v2.4/readme-zh_CN.md) |
 | CephFS       |   [案例](./cephfs/readme-zh_CN.md)    |
 | GlusterFS    |  [案例](./glusterfs/readme-zh_CN.md)  |
+| Curvine      |  [案例](./curvine/readme-zh_CN.md)    |
