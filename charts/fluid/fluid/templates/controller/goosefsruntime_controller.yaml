@@ -37,7 +37,7 @@ spec:
       #hostNetwork: true
       containers:
       - image: {{ include "fluid.controlplane.imageTransform" (list .Values.runtime.goosefs.controller.imagePrefix .Values.runtime.goosefs.controller.imageName .Values.runtime.goosefs.controller.imageTag . ) }}
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         name: manager
         command: ["goosefsruntime-controller", "start"]
         args:

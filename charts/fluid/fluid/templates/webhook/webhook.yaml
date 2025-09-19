@@ -28,6 +28,7 @@ spec:
       {{ include "fluid.controlplane.affinity" . | nindent 6}}
       containers:
       - image: {{ include "fluid.controlplane.imageTransform" (list .Values.webhook.imagePrefix .Values.webhook.imageName .Values.webhook.imageTag . ) }}
+        imagePullPolicy: IfNotPresent
         name: manager
         command: ["fluid-webhook", "start"]
         args:
