@@ -18,21 +18,10 @@ package utils
 import (
 	"fmt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"os"
 	"path/filepath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
-
-	"github.com/pkg/errors"
 )
-
-func GetEnvByKey(k string) (string, error) {
-	if v, ok := os.LookupEnv(k); ok {
-		return v, nil
-	} else {
-		return "", errors.Errorf("can not find the env value, key:%s", k)
-	}
-}
 
 // determine if subPath is a subdirectory of path
 func IsSubPath(path, subPath string) bool {
