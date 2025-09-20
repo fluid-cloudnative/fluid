@@ -37,7 +37,7 @@ spec:
       #hostNetwork: true
       containers:
       - image: {{ include "fluid.controlplane.imageTransform" (list .Values.runtime.efc.controller.imagePrefix .Values.runtime.efc.controller.imageName .Values.runtime.efc.controller.imageTag . ) }}
-        imagePullPolicy: {{ .Values.runtime.efc.controller.imagePullPolicy }}
+        imagePullPolicy: IfNotPresent
         name: manager
         args:
           - --development=true

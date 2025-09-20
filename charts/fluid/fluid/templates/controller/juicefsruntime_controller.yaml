@@ -37,6 +37,7 @@ spec:
       #hostNetwork: true
       containers:
       - image: {{ include "fluid.controlplane.imageTransform" (list .Values.runtime.juicefs.controller.imagePrefix .Values.runtime.juicefs.controller.imageName .Values.runtime.juicefs.controller.imageTag . ) }}
+        imagePullPolicy: IfNotPresent
         name: manager
         args:
           - --development=false

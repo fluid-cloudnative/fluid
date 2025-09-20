@@ -36,6 +36,7 @@ spec:
       {{- end }}
       containers:
       - image: {{ include "fluid.controlplane.imageTransform" (list .Values.runtime.jindo.controller.imagePrefix .Values.runtime.jindo.controller.imageName .Values.runtime.jindo.controller.imageTag . ) }}
+        imagePullPolicy: IfNotPresent
         name: manager
         command: ["jindoruntime-controller", "start"]
         args:

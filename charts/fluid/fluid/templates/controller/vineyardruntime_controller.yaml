@@ -36,6 +36,7 @@ spec:
       {{- end }}
       containers:
       - image: {{ include "fluid.controlplane.imageTransform" (list .Values.runtime.vineyard.controller.imagePrefix .Values.runtime.vineyard.controller.imageName .Values.runtime.vineyard.controller.imageTag . ) }}
+        imagePullPolicy: IfNotPresent
         name: manager
         command: ["vineyardruntime-controller", "start"]
         args:
