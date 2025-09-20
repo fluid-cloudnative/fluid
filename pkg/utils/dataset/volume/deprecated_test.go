@@ -17,73 +17,66 @@ limitations under the License.
 package volume
 
 import (
-	"testing"
-
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-var (
-	testScheme *runtime.Scheme
-)
+var _ = Describe("Deprecated PV Tests", Label("pkg.utils.dataset.volume.deprecated_test.go"), func() {
+	var (
+		scheme      *runtime.Scheme
+		clientObj   client.Client
+		runtimeInfo base.RuntimeInfoInterface
+		resources   []runtime.Object
+		log         logr.Logger
+	)
 
-func init() {
-	testScheme = runtime.NewScheme()
-	_ = v1.AddToScheme(testScheme)
-	_ = appsv1.AddToScheme(testScheme)
-	_ = datav1alpha1.AddToScheme(testScheme)
-}
+	BeforeEach(func() {
+		scheme = runtime.NewScheme()
+		_ = v1.AddToScheme(scheme)
+		_ = appsv1.AddToScheme(scheme)
+		_ = datav1alpha1.AddToScheme(scheme)
+		resources = nil
+		log = fake.NullLogger()
+	})
 
-func TestHasDeprecatedPersistentVolumeName(t *testing.T) {
-	testPVInputs := []*v1.PersistentVolume{{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "hbase",
-			Annotations: map[string]string{
-				"CreatedBy": "fluid",
-			},
-		},
-		Spec: v1.PersistentVolumeSpec{},
-	}}
+	JustBeforeEach(func() {
+		clientObj = fake.NewFakeClientWithScheme(scheme, resources...)
+	})
 
-	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "fluid", "alluxio")
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
+	When("deprecated PV exists", func() {
+		BeforeEach(func() {
+			resources = append(resources, &v1.PersistentVolume{ObjectMeta: metav1.ObjectMeta{Name: "hbase", Annotations: map[string]string{"CreatedBy": "fluid"}}})
+			var err error
+			runtimeInfo, err = base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
+			Expect(err).To(BeNil())
+		})
+		It("should return true", func() {
+			deprecated, err := HasDeprecatedPersistentVolumeName(clientObj, runtimeInfo, log)
+			Expect(err).To(BeNil())
+			Expect(deprecated).To(BeTrue())
+		})
+	})
 
-	runtimeInfoHbase, err := base.BuildRuntimeInfo("hbase", "fluid", "alluxio")
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
-
-	testPVs := []runtime.Object{}
-	for _, pvInput := range testPVInputs {
-		testPVs = append(testPVs, pvInput.DeepCopy())
-	}
-	client := fake.NewFakeClientWithScheme(testScheme, testPVs...)
-
-	var testCase = []struct {
-		runtimeInfo    base.RuntimeInfoInterface
-		expectedResult bool
-	}{
-		{
-			runtimeInfo:    runtimeInfoSpark,
-			expectedResult: false,
-		},
-		{
-			runtimeInfo:    runtimeInfoHbase,
-			expectedResult: true,
-		},
-	}
-	for _, test := range testCase {
-		var log = ctrl.Log.WithName("deprecated")
-		if result, _ := HasDeprecatedPersistentVolumeName(client, test.runtimeInfo, log); result != test.expectedResult {
-			t.Errorf("fail to exec the function with the error %v", err)
-		}
-	}
-}
+	When("no deprecated PV exists", func() {
+		BeforeEach(func() {
+			var err error
+			runtimeInfo, err = base.BuildRuntimeInfo("spark", "fluid", "alluxio")
+			Expect(err).To(BeNil())
+		})
+		It("should return false", func() {
+			deprecated, err := HasDeprecatedPersistentVolumeName(clientObj, runtimeInfo, log)
+			Expect(err).To(BeNil())
+			Expect(deprecated).To(BeFalse())
+		})
+	})
+})

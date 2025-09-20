@@ -51,110 +51,64 @@ func init() {
 	rootLog = ctrl.Log.WithName("dataset.lifecycle")
 }
 
-func SyncScheduleInfoToCacheNodes(runtimeInfo base.RuntimeInfoInterface, client client.Client) (err error) {
+func SyncScheduleInfoToCacheNodes(runtimeInfo base.RuntimeInfoInterface, client client.Client) error {
 	defer utils.TimeTrack(time.Now(), "SyncScheduleInfoToCacheNodes", "name", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace())
 
-	var (
-		currentCacheNodeNames  []string
-		previousCacheNodeNames []string
-	)
+	// Get current cache nodes from worker pods
+	desiredNodeNames, err := getDesiredNodesWithScheduleInfo(runtimeInfo, client)
+	if err != nil {
+		return err
+	}
 
+	// Get previously assigned cache nodes
+	actualNodeNames, err := getActualNodesWithScheduleInfo(runtimeInfo, client)
+	if err != nil {
+		return err
+	}
+
+	// Calculate node differences
+	nodesToAddScheduleInfo, nodesToRemoveScheduleInfo := calculateNodeDifferences(desiredNodeNames, actualNodeNames)
+
+	// Apply changes to nodes
+	applyNodeChanges(nodesToAddScheduleInfo, nodesToRemoveScheduleInfo, runtimeInfo, client)
+
+	return nil
+}
+
+// getDesiredNodesWithScheduleInfo retrieves the desired cache nodes with schedule info
+func getDesiredNodesWithScheduleInfo(runtimeInfo base.RuntimeInfoInterface, client client.Client) ([]string, error) {
 	workers, err := fluidctrl.GetWorkersAsStatefulset(client,
 		types.NamespacedName{Namespace: runtimeInfo.GetNamespace(), Name: runtimeInfo.GetWorkerStatefulsetName()})
 	if err != nil {
 		if fluiderrs.IsDeprecated(err) {
 			rootLog.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
-			return nil
+			return nil, nil
 		}
-		return err
+		return nil, err
 	}
 
 	workerSelector, err := metav1.LabelSelectorAsSelector(workers.Spec.Selector)
+	if err != nil {
+		return nil, err
+	}
 
 	workerPods, err := kubeclient.GetPodsForStatefulSet(client, workers, workerSelector)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
+	var nodeNames []string
 	for _, pod := range workerPods {
-		if len(pod.Spec.NodeName) != 0 {
-			currentCacheNodeNames = append(currentCacheNodeNames, pod.Spec.NodeName)
+		if pod.Spec.NodeName != "" {
+			nodeNames = append(nodeNames, pod.Spec.NodeName)
 		}
 	}
 
-	// find the nodes which already have the runtime labels
-	previousCacheNodeNames, err = getAssignedNodes(runtimeInfo, client)
-
-	currentCacheNodeNames = utils.RemoveDuplicateStr(currentCacheNodeNames)
-	previousCacheNodeNames = utils.RemoveDuplicateStr(previousCacheNodeNames)
-
-	addedCacheNodenames := utils.SubtractString(currentCacheNodeNames, previousCacheNodeNames)
-	removedCacheNodenames := utils.SubtractString(previousCacheNodeNames, currentCacheNodeNames)
-
-	if len(addedCacheNodenames) > 0 {
-		for _, nodeName := range addedCacheNodenames {
-			if innerErr := addScheduleInfoToNode(nodeName, runtimeInfo, client); innerErr != nil {
-				rootLog.Info(fmt.Sprintf("error when adding schedule info to node: %v, ignore it and continue", innerErr), "node", nodeName)
-			}
-		}
-	}
-
-	if len(removedCacheNodenames) > 0 {
-		for _, nodeName := range removedCacheNodenames {
-			if innerErr := removeScheduleInfoFromNode(nodeName, runtimeInfo, client); innerErr != nil {
-				rootLog.Info(fmt.Sprintf("error when removing schedule info from node: %v, ignore it and continue", innerErr), "node", nodeName)
-			}
-		}
-	}
-
-	return nil
+	return utils.RemoveDuplicateStr(nodeNames), nil
 }
 
-func addScheduleInfoToNode(nodeName string, runtimeInfo base.RuntimeInfoInterface, client client.Client) (err error) {
-	node := corev1.Node{}
-	err = client.Get(context.TODO(), types.NamespacedName{
-		Name: nodeName,
-	}, &node)
-	if err != nil {
-		return err
-	}
-
-	if CheckIfRuntimeInNode(node, runtimeInfo) {
-		rootLog.Info("Node already added schedule info, skip.", "node", nodeName)
-		return
-	}
-
-	err = labelCacheNode(node, runtimeInfo, client)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func removeScheduleInfoFromNode(nodeName string, runtimeInfo base.RuntimeInfoInterface, client client.Client) (err error) {
-	node := corev1.Node{}
-	err = client.Get(context.TODO(), types.NamespacedName{
-		Name: nodeName,
-	}, &node)
-	if err != nil {
-		return err
-	}
-
-	if !CheckIfRuntimeInNode(node, runtimeInfo) {
-		rootLog.Info("Node doesn't have existing schedule info, skip.", "node", nodeName)
-		return
-	}
-
-	err = unlabelCacheNode(node, runtimeInfo, client)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func getAssignedNodes(runtimeInfo base.RuntimeInfoInterface, cli client.Client) (nodeNames []string, err error) {
+// getActualNodesWithScheduleInfo retrieves the actual cache nodes with schedule info
+func getActualNodesWithScheduleInfo(runtimeInfo base.RuntimeInfoInterface, cli client.Client) (nodeNames []string, err error) {
 	var (
 		nodeList     = &corev1.NodeList{}
 		runtimeLabel = runtimeInfo.GetRuntimeLabelName()
@@ -177,23 +131,85 @@ func getAssignedNodes(runtimeInfo base.RuntimeInfoInterface, cli client.Client) 
 		nodeNames = append(nodeNames, node.Name)
 	}
 
+	return utils.RemoveDuplicateStr(nodeNames), nil
+}
+
+// calculateNodeDifferences calculates which nodes need to be added or removed
+func calculateNodeDifferences(currentNodes, previousNodes []string) (nodesToAddLabels, nodesToRemovedLabels []string) {
+	nodesToAddLabels = utils.SubtractString(currentNodes, previousNodes)
+	nodesToRemovedLabels = utils.SubtractString(previousNodes, currentNodes)
 	return
 }
 
-// CheckIfRuntimeInNode checks if the the runtime on this node
-func CheckIfRuntimeInNode(node corev1.Node, runtimeInfo base.RuntimeInfoInterface) (found bool) {
-	key := runtimeInfo.GetRuntimeLabelName()
-	return findLabelNameOnNode(node, key)
+// applyNodeChanges applies the calculated changes to the nodes
+func applyNodeChanges(nodesToAddScheduleInfo, nodesToRemoveScheduleInfo []string, runtimeInfo base.RuntimeInfoInterface, client client.Client) {
+	// Add schedule info to new nodes
+	for _, nodeName := range nodesToAddScheduleInfo {
+		if err := addScheduleInfoToNode(nodeName, runtimeInfo, client); err != nil {
+			rootLog.Info("Failed to add schedule info to node, continuing", "node", nodeName, "error", err)
+		}
+	}
+
+	// Remove schedule info from old nodes
+	for _, nodeName := range nodesToRemoveScheduleInfo {
+		if err := removeScheduleInfoFromNode(nodeName, runtimeInfo, client); err != nil {
+			rootLog.Info("Failed to remove schedule info from node, continuing", "node", nodeName, "error", err)
+		}
+	}
 }
 
-// findLabelNameOnNode checks if the label exist
-func findLabelNameOnNode(node corev1.Node, key string) (found bool) {
-	labels := node.Labels
-	if len(labels) == 0 {
+func addScheduleInfoToNode(nodeName string, runtimeInfo base.RuntimeInfoInterface, client client.Client) (err error) {
+	node := corev1.Node{}
+	err = client.Get(context.TODO(), types.NamespacedName{
+		Name: nodeName,
+	}, &node)
+	if err != nil {
+		return err
+	}
+
+	if hasRuntimeLabel(node, runtimeInfo) {
+		rootLog.Info("Node already added schedule info, skip.", "node", nodeName)
 		return
 	}
-	_, found = labels[key]
-	return
+
+	err = labelCacheNode(node, runtimeInfo, client)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func removeScheduleInfoFromNode(nodeName string, runtimeInfo base.RuntimeInfoInterface, client client.Client) (err error) {
+	node := corev1.Node{}
+	err = client.Get(context.TODO(), types.NamespacedName{
+		Name: nodeName,
+	}, &node)
+	if err != nil {
+		return err
+	}
+
+	if !hasRuntimeLabel(node, runtimeInfo) {
+		rootLog.Info("Node doesn't have existing schedule info, skip.", "node", nodeName)
+		return
+	}
+
+	err = unlabelCacheNode(node, runtimeInfo, client)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// hasRuntimeLabel checks if the node has the runtime label
+func hasRuntimeLabel(node corev1.Node, runtimeInfo base.RuntimeInfoInterface) bool {
+	key := runtimeInfo.GetRuntimeLabelName()
+	if len(node.Labels) == 0 {
+		return false
+	}
+	_, found := node.Labels[key]
+	return found
 }
 
 // labelCacheNode adds labels on a selected node to indicate the node is scheduled with corresponding runtime
