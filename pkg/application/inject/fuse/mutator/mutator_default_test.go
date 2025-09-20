@@ -66,8 +66,6 @@ var _ = Describe("Default mutator related unit tests", Label("pkg.application.in
 				},
 				Specs: specs,
 			}
-
-			mutator = NewDefaultMutator(args)
 		})
 
 		It("should successfully mutate the pod and one fuse sidecar container will be injected", func() {
@@ -346,6 +344,44 @@ var _ = Describe("Default mutator related unit tests", Label("pkg.application.in
 							MountPath:        "/data0",
 							MountPropagation: &mountPropagationHostToContainer,
 						}))
+				})
+			})
+		})
+
+		When("the pod to mutate specifies random-suffix host path mode", func() {
+			BeforeEach(func() {
+				podToMutate.ObjectMeta.Annotations = map[string]string{
+					common.HostMountPathModeOnDefaultPlatformKey: string(common.HostPathModeRandomSuffix),
+				}
+			})
+
+			It("should add or mutate host path volumes with random suffix", func() {
+				By("mutate Pod", func() {
+					mutator = NewDefaultMutator(args)
+					runtimeInfo, err := base.GetRuntimeInfo(client, datasetName, datasetNamespace)
+					Expect(err).NotTo(HaveOccurred())
+
+					err = mutator.MutateWithRuntimeInfo(datasetName, runtimeInfo, "-0")
+					Expect(err).To(BeNil())
+
+					err = mutator.PostMutate()
+					Expect(err).To(BeNil())
+				})
+
+				By("check mutated Pod", func() {
+					podSpecs := mutator.GetMutatedPodSpecs()
+					Expect(podSpecs).NotTo(BeNil())
+
+					Expect(podSpecs.Containers).To(HaveLen(2))
+					Expect(podSpecs.Containers[0].Name).To(HavePrefix(common.FuseContainerName))
+
+					matchedVolume := corev1.Volume{}
+					Expect(podSpecs.Volumes).To(ContainElement(WithTransform(func(volume corev1.Volume) string { return volume.Name }, Equal("thin-fuse-mount-0")), &matchedVolume))
+					Expect(matchedVolume.HostPath.Path).To(MatchRegexp("^/runtime-mnt/thin/fluid/test-dataset//test-pod/\\d+-[0-9a-z]{1,8}$"))
+
+					matchedMutatedVolume := corev1.Volume{}
+					Expect(podSpecs.Volumes).To(ContainElement(WithTransform(func(volume corev1.Volume) string { return volume.Name }, Equal("data-vol-0")), &matchedMutatedVolume))
+					Expect(matchedMutatedVolume.HostPath.Path).To(MatchRegexp("^/runtime-mnt/thin/fluid/test-dataset/test-pod/\\d+-[0-9a-z]{1,8}/thin-fuse$"))
 				})
 			})
 		})
