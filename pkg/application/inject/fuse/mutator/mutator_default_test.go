@@ -355,33 +355,72 @@ var _ = Describe("Default mutator related unit tests", Label("pkg.application.in
 				}
 			})
 
-			It("should add or mutate host path volumes with random suffix", func() {
-				By("mutate Pod", func() {
-					mutator = NewDefaultMutator(args)
-					runtimeInfo, err := base.GetRuntimeInfo(client, datasetName, datasetNamespace)
-					Expect(err).NotTo(HaveOccurred())
+			When("the pod to mutate has a non-empty name", func() {
+				It("should add or mutate host path volumes with random suffix when pod has non-empty name", func() {
+					By("mutate Pod", func() {
+						mutator = NewDefaultMutator(args)
+						runtimeInfo, err := base.GetRuntimeInfo(client, datasetName, datasetNamespace)
+						Expect(err).NotTo(HaveOccurred())
 
-					err = mutator.MutateWithRuntimeInfo(datasetName, runtimeInfo, "-0")
-					Expect(err).To(BeNil())
+						err = mutator.MutateWithRuntimeInfo(datasetName, runtimeInfo, "-0")
+						Expect(err).To(BeNil())
 
-					err = mutator.PostMutate()
-					Expect(err).To(BeNil())
+						err = mutator.PostMutate()
+						Expect(err).To(BeNil())
+					})
+
+					By("check mutated Pod", func() {
+						podSpecs := mutator.GetMutatedPodSpecs()
+						Expect(podSpecs).NotTo(BeNil())
+
+						Expect(podSpecs.Containers).To(HaveLen(2))
+						Expect(podSpecs.Containers[0].Name).To(HavePrefix(common.FuseContainerName))
+
+						matchedVolume := corev1.Volume{}
+						Expect(podSpecs.Volumes).To(ContainElement(WithTransform(func(volume corev1.Volume) string { return volume.Name }, Equal("thin-fuse-mount-0")), &matchedVolume))
+						Expect(matchedVolume.HostPath.Path).To(MatchRegexp("^/runtime-mnt/thin/fluid/test-dataset//test-pod/\\d+-[0-9a-z]{1,8}$"))
+
+						matchedMutatedVolume := corev1.Volume{}
+						Expect(podSpecs.Volumes).To(ContainElement(WithTransform(func(volume corev1.Volume) string { return volume.Name }, Equal("data-vol-0")), &matchedMutatedVolume))
+						Expect(matchedMutatedVolume.HostPath.Path).To(MatchRegexp("^/runtime-mnt/thin/fluid/test-dataset/test-pod/\\d+-[0-9a-z]{1,8}/thin-fuse$"))
+					})
+				})
+			})
+
+			When("pod has generate name", func() {
+				BeforeEach(func() {
+					podToMutate.ObjectMeta.GenerateName = "mypod-"
+					podToMutate.ObjectMeta.Name = ""
 				})
 
-				By("check mutated Pod", func() {
-					podSpecs := mutator.GetMutatedPodSpecs()
-					Expect(podSpecs).NotTo(BeNil())
+				It("should add or mutate host path volumes with random suffix and generate name when pod has generate name", func() {
+					By("mutate Pod", func() {
+						mutator = NewDefaultMutator(args)
+						runtimeInfo, err := base.GetRuntimeInfo(client, datasetName, datasetNamespace)
+						Expect(err).NotTo(HaveOccurred())
 
-					Expect(podSpecs.Containers).To(HaveLen(2))
-					Expect(podSpecs.Containers[0].Name).To(HavePrefix(common.FuseContainerName))
+						err = mutator.MutateWithRuntimeInfo(datasetName, runtimeInfo, "-0")
+						Expect(err).To(BeNil())
 
-					matchedVolume := corev1.Volume{}
-					Expect(podSpecs.Volumes).To(ContainElement(WithTransform(func(volume corev1.Volume) string { return volume.Name }, Equal("thin-fuse-mount-0")), &matchedVolume))
-					Expect(matchedVolume.HostPath.Path).To(MatchRegexp("^/runtime-mnt/thin/fluid/test-dataset//test-pod/\\d+-[0-9a-z]{1,8}$"))
+						err = mutator.PostMutate()
+						Expect(err).To(BeNil())
+					})
 
-					matchedMutatedVolume := corev1.Volume{}
-					Expect(podSpecs.Volumes).To(ContainElement(WithTransform(func(volume corev1.Volume) string { return volume.Name }, Equal("data-vol-0")), &matchedMutatedVolume))
-					Expect(matchedMutatedVolume.HostPath.Path).To(MatchRegexp("^/runtime-mnt/thin/fluid/test-dataset/test-pod/\\d+-[0-9a-z]{1,8}/thin-fuse$"))
+					By("check mutated Pod", func() {
+						podSpecs := mutator.GetMutatedPodSpecs()
+						Expect(podSpecs).NotTo(BeNil())
+
+						Expect(podSpecs.Containers).To(HaveLen(2))
+						Expect(podSpecs.Containers[0].Name).To(HavePrefix(common.FuseContainerName))
+
+						matchedVolume := corev1.Volume{}
+						Expect(podSpecs.Volumes).To(ContainElement(WithTransform(func(volume corev1.Volume) string { return volume.Name }, Equal("thin-fuse-mount-0")), &matchedVolume))
+						Expect(matchedVolume.HostPath.Path).To(MatchRegexp("^/runtime-mnt/thin/fluid/test-dataset//mypod---generate-name/\\d+-[0-9a-z]{1,8}$"))
+
+						matchedMutatedVolume := corev1.Volume{}
+						Expect(podSpecs.Volumes).To(ContainElement(WithTransform(func(volume corev1.Volume) string { return volume.Name }, Equal("data-vol-0")), &matchedMutatedVolume))
+						Expect(matchedMutatedVolume.HostPath.Path).To(MatchRegexp("^/runtime-mnt/thin/fluid/test-dataset/mypod---generate-name/\\d+-[0-9a-z]{1,8}/thin-fuse$"))
+					})
 				})
 			})
 		})
