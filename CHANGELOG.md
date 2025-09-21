@@ -1,5 +1,106 @@
 # Fluid Release Notes
 
+## v1.0.7
+### Highlights
+*   **JindoFS 6.9.1** by default – higher read-bandwidth utilisation; file-prefetcher tag now auto-matches JindoFS image.  
+*   **Sidecar coexistence** – multiple sidecar Pods can share one node without mount conflict; webhook allocates unique hostPath automatically.  
+*   **JuiceFSRuntime** can disable metadata-sync & dataset-size calculation to cut control-plane load.  
+*   **ThinRuntimeProfile** supports custom Pod lifecycle hooks.  
+
+### Bug Fixes
+*   Fix JuiceFSRuntime fields unexpectedly overwritten after update.  
+*   Fix missing tolerations when JindoRuntime sets multiple ones.  
+*   Fix Fuse-Pod creation failure on very long Dataset names.  
+*   Suppress excessive Runtime status updates.  
+*   Correct volume generation when TieredStore contains no data.
+
+---
+
+## v1.0.6
+### Highlights
+*   **Prefetch Sidecar** – accelerates model-serving cold start and improves bandwidth usage.  
+*   **JuiceFSRuntime Fuse seamless upgrade** – idle Pods auto-cleaned via `cleanPolicy: onFuseChange`.  
+*   **JuiceFSRuntime preheat** – exposes advanced warming parameters in DataLoad.  
+*   **Control-plane tunables** – runtimeWorkers, kubeClient QPS/Burst, work-queue, env all user-configurable.  
+
+### Enhancements
+*   Security: upgrade Helm → 3.17.3, Alpine → 3.19.1.  
+*   ThinRuntime controller optimised to 35 instances/s.  
+*   Fuse mount-check ConfigMap shared at namespace level to cut webhook CPU.  
+*   Batch API detection added to lower DatasetController APIServer pressure.
+
+### Bug Fixes
+*   ThinRuntime `containerNetwork` setting now takes effect.  
+*   JuiceFSRuntime no longer triggers spurious updates during sync.
+
+---
+
+## v1.0.5
+### Highlights
+*  **Enhanced Binding Efficiency in Kubernetes Clusters**  - Optimized ThinRuntimeController’s binding performance for large-scale Dataset deployments, reducing resource scheduling latency in Kubernetes clusters.  
+* **Integration with Third-Party Storage via HostPath**  - Enabled Dataset to mount third-party storage systems (e.g., NFS, Ceph) through node-local HostPath volumes, extending compatibility with heterogeneous data sources.  
+* **Distributed Fault Tolerance for High Availability**  - Isolated single-node FUSE failures from impacting Dataset-wide availability, ensuring cluster-level stability in distributed environments.  
+* **Extended Support for Long Naming Conventions**  - Permitted creation of Datasets with lengthy names and namespaces, avoiding Kubernetes label length constraints (63-character limit).   
+
+### Bug Fixes
+*   Webhook development-mode log panic removed.
+
+---
+
+## v1.0.4
+### Highlights
+* Added support to configure the `maxConcurrentReconciles` parameter for the `ThinRuntimeController`, allowing for improved concurrency management.
+* Introduced support for resource configuration within the Fluid webhook, enabling more precise control over resource allocation.
+* Added support for configuring `Burst` (default 30) and `Qps` (default 20) settings for client interactions with the APIServer through the Fluid Webhook, enhancing request handling capabilities.
+* Implemented `mountMode` configuration to allow skipping the check for mount readiness, streamlining deployment processes.
+ 
+
+### Bug Fixes
+*   JindoRuntime master StatefulSet anti-affinity added for HA.
+
+---
+
+## v1.0.3
+### Highlights
+*   **Dynamic mount status** – exposes real-time mount progress to users.  
+*   **Dataflow affinity** – new operations can inherit node affinity from previous ones.  
+*   **JindoCache Prometheus** – native data-plane metrics scraping.  
+*   **imagePullSecret** – supported at Runtime level (Thin, Jindo, JuiceFS).
+
+### Bug Fixes
+*   CronDataLoad no longer fails when affinity / nodeSelector / schedulerName / imagePullSecrets present.  
+*   Upgrade-safe – DataOps with same Dataset name keep working after Fluid version bump.
+
+---
+
+## v1.0.2
+### Highlights
+*   **DataProcess resources** – requests/limits now configurable.  
+*   **Dataset-in-use info** – injected into mutated app Pods for observability.  
+*   **Hierarchical imagePullSecrets** – AlluxioRuntime supports repo secrets at multiple scopes.  
+*   **Sub-path dynamic mount** – JuiceFS and others can mount `subPath` on the fly.
+
+### Bug Fixes
+*   JindoRuntime syncs AK/SK secrets correctly.  
+*   JuiceFS worker port conflict resolved.  
+*   DataLoad cronJob template fixed for JindoCache.
+
+---
+
+## v1.0.1
+### Highlights
+*   **Data-flow affinity scheduling** – operations stick to cache nodes where previous jobs ran.  
+*   **Dynamic mount-point updates** – Dataset mount list editable without restart.  
+*   **Sidecar PVC acceleration** – Fluid PVC can be accelerated in sidecar mode.  
+
+### Runtime Versions
+*   JuiceFS community → v1.1.0, enterprise → v4.9.16  
+*   JindoRuntime → v6.2.0  
+
+### Bug Fixes
+*   JuiceFS attr-cache / entry-cache options can be overridden.  
+*   JindoRuntime name no longer restricted by “jindofs” substring.
+
 ## v1.0.0
 
 ### Highlights
