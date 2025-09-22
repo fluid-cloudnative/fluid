@@ -78,7 +78,7 @@ WEBHOOK_BINARY ?= bin/fluid-webhook
 
 # Miscellaneous
 HELM_VERSION ?= v3.18.4
-CRD_OPTIONS ?= "crd"
+CRD_OPTIONS ?= "crd:maxDescLen=0"
 
 # Build binaries
 BINARY_BUILD := dataset-controller-build
