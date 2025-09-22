@@ -40,52 +40,28 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: DataBackup is the Schema for the backup API
         properties:
           apiVersion:
-            description: |-
-              APIVersion defines the versioned schema of this representation of an object.
-              Servers should convert recognized schemas to the latest internal value, and
-              may reject unrecognized values.
-              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: |-
-              Kind is a string value representing the REST resource this object represents.
-              Servers may infer this from the endpoint the client submits requests to.
-              Cannot be updated.
-              In CamelCase.
-              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
           spec:
-            description: DataBackupSpec defines the desired state of DataBackup
             properties:
               backupPath:
-                description: BackupPath defines the target path to save data of the
-                  DataBackup
                 type: string
               dataset:
-                description: Dataset defines the target dataset of the DataBackup
                 type: string
               runAfter:
-                description: Specifies that the preceding operation in a workflow
                 properties:
                   affinityStrategy:
-                    description: AffinityStrategy specifies the pod affinity strategy
-                      with the referent operation.
                     properties:
                       dependOn:
-                        description: Specifies the dependent preceding operation in
-                          a workflow. If not set, use the operation referred to by
-                          RunAfter.
                         properties:
                           apiVersion:
-                            description: API version of the referent operation
                             type: string
                           kind:
-                            description: Kind specifies the type of the referent operation
                             enum:
                             - DataLoad
                             - DataBackup
@@ -93,23 +69,17 @@ spec:
                             - DataProcess
                             type: string
                           name:
-                            description: Name specifies the name of the referent operation
                             type: string
                           namespace:
-                            description: Namespace specifies the namespace of the
-                              referent operation.
                             type: string
                         required:
                         - kind
                         - name
                         type: object
                       policy:
-                        description: 'Policy one of: "", "Require", "Prefer"'
                         type: string
                       prefers:
                         items:
-                          description: Prefer defines the label key and weight for
-                            generating a PreferredSchedulingTerm.
                           properties:
                             name:
                               type: string
@@ -123,8 +93,6 @@ spec:
                         type: array
                       requires:
                         items:
-                          description: Require defines the label key for generating
-                            a NodeSelectorTerm.
                           properties:
                             name:
                               type: string
@@ -134,10 +102,8 @@ spec:
                         type: array
                     type: object
                   apiVersion:
-                    description: API version of the referent operation
                     type: string
                   kind:
-                    description: Kind specifies the type of the referent operation
                     enum:
                     - DataLoad
                     - DataBackup
@@ -145,32 +111,24 @@ spec:
                     - DataProcess
                     type: string
                   name:
-                    description: Name specifies the name of the referent operation
                     type: string
                   namespace:
-                    description: Namespace specifies the namespace of the referent
-                      operation.
                     type: string
                 required:
                 - kind
                 - name
                 type: object
               runAs:
-                description: Manage the user to run Alluxio DataBackup
                 properties:
                   gid:
-                    description: The gid to run the alluxio runtime
                     format: int64
                     type: integer
                   group:
-                    description: The group name to run the alluxio runtime
                     type: string
                   uid:
-                    description: The uid to run the alluxio runtime
                     format: int64
                     type: integer
                   user:
-                    description: The user name to run the alluxio runtime
                     type: string
                 required:
                 - gid
@@ -179,43 +137,27 @@ spec:
                 - user
                 type: object
               ttlSecondsAfterFinished:
-                description: TTLSecondsAfterFinished is the time second to clean up
-                  data operations after finished or failed
                 format: int32
                 type: integer
             type: object
           status:
-            description: OperationStatus defines the observed state of operation
             properties:
               conditions:
-                description: Conditions consists of transition information on operation's
-                  Phase
                 items:
-                  description: Condition explains the transitions on phase
                   properties:
                     lastProbeTime:
-                      description: LastProbeTime describes last time this condition
-                        was updated.
                       format: date-time
                       type: string
                     lastTransitionTime:
-                      description: LastTransitionTime describes last time the condition
-                        transitioned from one status to another.
                       format: date-time
                       type: string
                     message:
-                      description: Message is a human-readable message indicating
-                        details about the transition
                       type: string
                     reason:
-                      description: Reason for the condition's last transition
                       type: string
                     status:
-                      description: Status of the condition, one of `True`, `False`
-                        or `Unknown`
                       type: string
                     type:
-                      description: Type of condition, either `Complete` or `Failed`
                       type: string
                   required:
                   - status
@@ -223,71 +165,32 @@ spec:
                   type: object
                 type: array
               duration:
-                description: Duration tell user how much time was spent to operation
                 type: string
               infos:
                 additionalProperties:
                   type: string
-                description: Infos operation customized name-value
                 type: object
               lastScheduleTime:
-                description: LastScheduleTime is the last time the cron operation
-                  was scheduled
                 format: date-time
                 type: string
               lastSuccessfulTime:
-                description: LastSuccessfulTime is the last time the cron operation
-                  successfully completed
                 format: date-time
                 type: string
               nodeAffinity:
-                description: NodeAffinity records the node affinity for operation
-                  pods
                 properties:
                   preferredDuringSchedulingIgnoredDuringExecution:
-                    description: |-
-                      The scheduler will prefer to schedule pods to nodes that satisfy
-                      the affinity expressions specified by this field, but it may choose
-                      a node that violates one or more of the expressions. The node that is
-                      most preferred is the one with the greatest sum of weights, i.e.
-                      for each node that meets all of the scheduling requirements (resource
-                      request, requiredDuringScheduling affinity expressions, etc.),
-                      compute a sum by iterating through the elements of this field and adding
-                      "weight" to the sum if the node matches the corresponding matchExpressions; the
-                      node(s) with the highest sum are the most preferred.
                     items:
-                      description: |-
-                        An empty preferred scheduling term matches all objects with implicit weight 0
-                        (i.e. it's a no-op). A null preferred scheduling term matches no objects (i.e. is also a no-op).
                       properties:
                         preference:
-                          description: A node selector term, associated with the corresponding
-                            weight.
                           properties:
                             matchExpressions:
-                              description: A list of node selector requirements by
-                                node's labels.
                               items:
-                                description: |-
-                                  A node selector requirement is a selector that contains values, a key, and an operator
-                                  that relates the key and values.
                                 properties:
                                   key:
-                                    description: The label key that the selector applies
-                                      to.
                                     type: string
                                   operator:
-                                    description: |-
-                                      Represents a key's relationship to a set of values.
-                                      Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.
                                     type: string
                                   values:
-                                    description: |-
-                                      An array of string values. If the operator is In or NotIn,
-                                      the values array must be non-empty. If the operator is Exists or DoesNotExist,
-                                      the values array must be empty. If the operator is Gt or Lt, the values
-                                      array must have a single element, which will be interpreted as an integer.
-                                      This array is replaced during a strategic merge patch.
                                     items:
                                       type: string
                                     type: array
@@ -297,29 +200,13 @@ spec:
                                 type: object
                               type: array
                             matchFields:
-                              description: A list of node selector requirements by
-                                node's fields.
                               items:
-                                description: |-
-                                  A node selector requirement is a selector that contains values, a key, and an operator
-                                  that relates the key and values.
                                 properties:
                                   key:
-                                    description: The label key that the selector applies
-                                      to.
                                     type: string
                                   operator:
-                                    description: |-
-                                      Represents a key's relationship to a set of values.
-                                      Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.
                                     type: string
                                   values:
-                                    description: |-
-                                      An array of string values. If the operator is In or NotIn,
-                                      the values array must be non-empty. If the operator is Exists or DoesNotExist,
-                                      the values array must be empty. If the operator is Gt or Lt, the values
-                                      array must have a single element, which will be interpreted as an integer.
-                                      This array is replaced during a strategic merge patch.
                                     items:
                                       type: string
                                     type: array
@@ -331,8 +218,6 @@ spec:
                           type: object
                           x-kubernetes-map-type: atomic
                         weight:
-                          description: Weight associated with matching the corresponding
-                            nodeSelectorTerm, in the range 1-100.
                           format: int32
                           type: integer
                       required:
@@ -341,46 +226,18 @@ spec:
                       type: object
                     type: array
                   requiredDuringSchedulingIgnoredDuringExecution:
-                    description: |-
-                      If the affinity requirements specified by this field are not met at
-                      scheduling time, the pod will not be scheduled onto the node.
-                      If the affinity requirements specified by this field cease to be met
-                      at some point during pod execution (e.g. due to an update), the system
-                      may or may not try to eventually evict the pod from its node.
                     properties:
                       nodeSelectorTerms:
-                        description: Required. A list of node selector terms. The
-                          terms are ORed.
                         items:
-                          description: |-
-                            A null or empty node selector term matches no objects. The requirements of
-                            them are ANDed.
-                            The TopologySelectorTerm type implements a subset of the NodeSelectorTerm.
                           properties:
                             matchExpressions:
-                              description: A list of node selector requirements by
-                                node's labels.
                               items:
-                                description: |-
-                                  A node selector requirement is a selector that contains values, a key, and an operator
-                                  that relates the key and values.
                                 properties:
                                   key:
-                                    description: The label key that the selector applies
-                                      to.
                                     type: string
                                   operator:
-                                    description: |-
-                                      Represents a key's relationship to a set of values.
-                                      Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.
                                     type: string
                                   values:
-                                    description: |-
-                                      An array of string values. If the operator is In or NotIn,
-                                      the values array must be non-empty. If the operator is Exists or DoesNotExist,
-                                      the values array must be empty. If the operator is Gt or Lt, the values
-                                      array must have a single element, which will be interpreted as an integer.
-                                      This array is replaced during a strategic merge patch.
                                     items:
                                       type: string
                                     type: array
@@ -390,29 +247,13 @@ spec:
                                 type: object
                               type: array
                             matchFields:
-                              description: A list of node selector requirements by
-                                node's fields.
                               items:
-                                description: |-
-                                  A node selector requirement is a selector that contains values, a key, and an operator
-                                  that relates the key and values.
                                 properties:
                                   key:
-                                    description: The label key that the selector applies
-                                      to.
                                     type: string
                                   operator:
-                                    description: |-
-                                      Represents a key's relationship to a set of values.
-                                      Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.
                                     type: string
                                   values:
-                                    description: |-
-                                      An array of string values. If the operator is In or NotIn,
-                                      the values array must be non-empty. If the operator is Exists or DoesNotExist,
-                                      the values array must be empty. If the operator is Gt or Lt, the values
-                                      array must have a single element, which will be interpreted as an integer.
-                                      This array is replaced during a strategic merge patch.
                                     items:
                                       type: string
                                     type: array
@@ -430,14 +271,10 @@ spec:
                     x-kubernetes-map-type: atomic
                 type: object
               phase:
-                description: Phase describes current phase of operation
                 type: string
               waitingFor:
-                description: WaitingStatus stores information about waiting operation.
                 properties:
                   operationComplete:
-                    description: OperationComplete indicates if the preceding operation
-                      is complete
                     type: boolean
                 type: object
             required:
