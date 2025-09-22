@@ -14,15 +14,10 @@
 
 |![更新](static/bell-outline-badge.svg) 最新进展：|
 |------------------|
-|**最新版发布**：2024年4月17日, Fluid v1.0.0  发布! 版本更新介绍详情情参见 [CHANGELOG](CHANGELOG.md)。|
-|v0.9.0版发布：2023年5月26日, Fluid v0.9.0  发布! 版本更新介绍详情情参见 [CHANGELOG](CHANGELOG.md)。|
-|v0.8.0版发布：2022年9月3日, Fluid v0.8.0  发布! 版本更新介绍详情情参见 [CHANGELOG](CHANGELOG.md)。|
-|v0.7.0版发布：2022年3月2日, Fluid v0.7.0  发布! 版本更新介绍详情情参见 [CHANGELOG](CHANGELOG.md)。|
-|v0.6.0版发布：2021年8月11日, Fluid v0.6.0  发布! 版本更新介绍详情情参见 [CHANGELOG](CHANGELOG.md)。|
-|v0.5.0版发布：2021年5月16日, Fluid v0.6.0  发布! 版本更新介绍详情情参见 [CHANGELOG](CHANGELOG.md)。|
+|**最新版发布**：2025年9月21日, Fluid v1.0.7  发布! 版本更新介绍详情情参见 [CHANGELOG](CHANGELOG.md)。|
+|v1.0.6版发布：2025年7月12日, Fluid v1.0.6  发布! 版本更新介绍详情情参见 [CHANGELOG](CHANGELOG.md)。|
+|v1.0.5版发布：2025年2月26日, Fluid v1.0.5  发布! 版本更新介绍详情情参见 [CHANGELOG](CHANGELOG.md)。|
 |进入CNCF：2021年4月27日, Fluid通过CNCF Technical Oversight Committee (TOC)投票决定被接受进入CNCF，成为[CNCF Sandbox Project](https://lists.cncf.io/g/cncf-toc/message/5822)。|
-|v0.4.0版发布：2020年11月6日, Fluid v0.6.0  发布! 版本更新介绍详情情参见 [CHANGELOG](CHANGELOG.md)。|
-|v0.3.0版发布：2020年10月1日, Fluid v0.6.0  发布! 版本更新介绍详情情参见 [CHANGELOG](CHANGELOG.md)。|
 
 ## 什么是Fluid
 
