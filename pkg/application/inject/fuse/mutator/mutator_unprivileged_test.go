@@ -90,6 +90,7 @@ var _ = Describe("Unprivileged mutator related unit tests", Label("pkg.applicati
 				mountPropagationHostToContainer := corev1.MountPropagationHostToContainer
 				Expect(podSpecs.Containers).To(HaveLen(2))
 				Expect(podSpecs.Containers[0].Name).To(HavePrefix(common.FuseContainerName))
+				Expect(podSpecs.Containers[0].SecurityContext).NotTo(BeNil())
 				Expect(podSpecs.Containers[0].SecurityContext.Privileged).To(Equal(ptr.To(false)))
 				Expect(podSpecs.Containers[0].SecurityContext.Capabilities.Add).ShouldNot(ContainElement("SYS_ADMIN"))
 				Expect(podSpecs.Containers[0].VolumeMounts).ShouldNot(ContainElement(WithTransform(func(vm corev1.VolumeMount) *corev1.MountPropagationMode { return vm.MountPropagation }, Equal(&mountPropagationBidirectional))))
