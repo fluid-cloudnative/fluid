@@ -1,0 +1,10 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: ThinRuntimeProfile
+metadata:
+  name: curvine
+spec:
+  fileSystemType: fuse
+  fuse:
+    image: fluid-cloudnative/curvine-thinruntime
+    imageTag: v1.0.0
+    imagePullPolicy: IfNotPresent
