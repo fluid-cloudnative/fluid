@@ -62,6 +62,8 @@
     - [JuiceFSRuntime 缓存配置](samples/juicefs/juicefs_cache_dir.md)
     - [JuiceFSRuntime 加速数据访问](samples/juicefs/juicefs_data_accelerate.md)
     - [JuiceFSRuntime 数据迁移](samples/juicefs/juicefs_data_migrate.md)
++ 数据面板
+  - [Dashboard 可视化管理](dashboard/overview.md)
 + 运维指南
   - [运行时监控](operation/monitoring.md)
   - [JVM性能分析](dev/profiling.md)
