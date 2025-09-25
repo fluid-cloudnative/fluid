@@ -1,0 +1,32 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: Dataset
+metadata:
+  name: oss-data
+spec:
+  sharedOptions:
+    oss-endpoint: <OSS_ENDPOINT>  # e.g. oss-cn-beijing-internal.aliyuncs.com
+  sharedEncryptOptions:
+  - name: oss-access-key
+    valueFrom:
+      secretKeyRef:
+        name: access-key
+        key: fs.oss.accessKeyId
+  - name: oss-secret-key
+    valueFrom:
+      secretKeyRef:
+        name: access-key
+        key: fs.oss.accessKeySecret
+  mounts:
+  - mountPoint: oss://mybucket/path/to/data
+    name: dynamic-test1
+    path: /test1
+---
+apiVersion: data.fluid.io/v1alpha1
+kind: ThinRuntime
+metadata:
+  name: oss-data
+  annotations:
+    fluid.io/skip-check-mount-ready-target: "All"
+    data.fluid.io/metadataList: '[{"Labels": {"fluid.io/node-publish-method": "symlink"}, "selector": { "kind": "PersistentVolume"}}]'
+spec:
+  profileName: ossfs-profile
