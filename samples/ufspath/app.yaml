@@ -16,6 +16,7 @@ spec:
       labels:
         app: nginx
     spec:
+      automountServiceAccountToken: false
       securityContext:
         runAsUser: 1005
         runAsGroup: 1005

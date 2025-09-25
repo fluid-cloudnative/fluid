@@ -17,6 +17,7 @@ spec:
           volumeMounts:
             - mountPath: /data
               name: fluid-vol
+      automountServiceAccountToken: false
       volumes:
         - name: fluid-vol
           persistentVolumeClaim:
