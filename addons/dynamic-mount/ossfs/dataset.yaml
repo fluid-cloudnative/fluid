@@ -9,13 +9,13 @@ spec:
   - name: oss-access-key
     valueFrom:
       secretKeyRef:
-        name: access-key
-        key: fs.oss.accessKeyId
+        name: oss-cred-secret
+        key: akId
   - name: oss-secret-key
     valueFrom:
       secretKeyRef:
-        name: access-key
-        key: fs.oss.accessKeySecret
+        name: oss-cred-secret
+        key: akSecret
   mounts:
   - mountPoint: oss://mybucket/path/to/data
     name: dynamic-test1
