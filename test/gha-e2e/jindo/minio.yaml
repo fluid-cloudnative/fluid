@@ -55,3 +55,4 @@ spec:
         ports:
         - containerPort: 9000
           hostPort: 9000
+      automountServiceAccountToken: false
