@@ -1,27 +1,18 @@
-# alpine:3.18
-FROM alpine@sha256:11e21d7b981a59554b3f822c49f6e9f57b6068bb74f49c4cd5cc4c663c7e5160 AS builder
-ENV OSSFS_VERSION 1.91.1
-RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/' /etc/apk/repositories
-RUN apk update && \
-    apk add alpine-sdk automake autoconf curl-dev fuse fuse-dev libxml2-dev pkgconf
-RUN wget -qO- https://github.com/aliyun/ossfs/archive/v$OSSFS_VERSION.tar.gz |tar xz
-RUN cd ossfs-1.91.1 \
-  && ./autogen.sh \
-  && ./configure --prefix=/usr \
-  && make \
-  && make install
+# FROM fluidcloudnative/fluid-dynamic-mount-base:v0.4
+FROM fluidcloudnative/fluid-dynamic-mount-base:v0.4@sha256:b4c037b23d96d40ee67f1a578e6193c369fdbb12c38134725ca353babe3a30cd
+WORKDIR /root
+RUN apt update && \
+    apt-get install -y automake autotools-dev g++ git libcurl4-gnutls-dev libfuse-dev libssl-dev libxml2-dev make pkg-config && \
+    git clone -b v1.91.8 https://github.com/aliyun/ossfs.git && \
+    cd ossfs && \
+    ./autogen.sh && \
+    ./configure && \
+    make && \
+    make install && \
+    cd .. && \
+    rm -rf ossfs
 
-# alpine:3.18
-FROM alpine@sha256:11e21d7b981a59554b3f822c49f6e9f57b6068bb74f49c4cd5cc4c663c7e5160
-RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/' /etc/apk/repositories
-RUN apk update && \
-    apk add bash curl coreutils fuse inotify-tools libgcc libstdc++ libxml2 openssl python3 tini && \
-    rm -rf /var/cache/apk/*
-ENV OSSFS_VERSION=v1.91.1
-COPY --from=builder /usr/bin/ossfs /usr/bin/ossfs
-
-COPY mount_and_umount.py /
-COPY inotify.sh /
-COPY umount.sh /
-RUN chmod u+x /inotify.sh /umount.sh
-ENTRYPOINT ["/sbin/tini", "-g", "--"]
+RUN ossfs --version
+RUN apt install -y jq 
+COPY mount.sh /opt/mount.sh
+RUN chmod u+x /opt/mount.sh
