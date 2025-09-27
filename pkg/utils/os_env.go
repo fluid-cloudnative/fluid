@@ -27,6 +27,14 @@ import (
 
 var envVarRegex *regexp.Regexp
 
+func GetEnvByKey(k string) (string, error) {
+	if v, ok := os.LookupEnv(k); ok {
+		return v, nil
+	} else {
+		return "", fmt.Errorf("can not find the env value, key:%s", k)
+	}
+}
+
 func GetDurationValueFromEnv(key string, defaultValue time.Duration) (value time.Duration) {
 	var err error
 	value = defaultValue

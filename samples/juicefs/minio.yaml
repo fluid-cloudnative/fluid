@@ -28,6 +28,7 @@ spec:
         # Label is used as selector in the service.
         app: minio
     spec:
+      automountServiceAccountToken: false
       containers:
       - name: minio
         # Pulls the default Minio image from Docker Hub

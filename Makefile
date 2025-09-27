@@ -1,5 +1,5 @@
 # Version and Git information
-VERSION := v1.0.7
+VERSION := v1.0.8
 BUILD_DATE := $(shell date -u +'%Y-%m-%d_%H:%M:%S')
 GIT_COMMIT := $(shell git rev-parse HEAD)
 GIT_TAG := $(shell if [ -z "`git status --porcelain`" ]; then git describe --exact-match --tags HEAD 2>/dev/null; fi)
@@ -78,7 +78,7 @@ WEBHOOK_BINARY ?= bin/fluid-webhook
 
 # Miscellaneous
 HELM_VERSION ?= v3.18.4
-CRD_OPTIONS ?= "crd"
+CRD_OPTIONS ?= "crd:maxDescLen=0"
 
 # Build binaries
 BINARY_BUILD := dataset-controller-build

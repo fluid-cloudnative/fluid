@@ -18,40 +18,7 @@ package utils
 
 import (
 	"testing"
-
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
-
-func TestGetEnvByKey(t *testing.T) {
-	testCases := map[string]struct {
-		key       string
-		envKey    string
-		value     string
-		wantValue string
-	}{
-		"test get env value by key case 1": {
-			key:       "MY_POD_NAMESPACE",
-			envKey:    "MY_POD_NAMESPACE",
-			value:     common.NamespaceFluidSystem,
-			wantValue: common.NamespaceFluidSystem,
-		},
-		"test get env value by key case 2": {
-			key:       "MY_POD_NAMESPACE",
-			envKey:    "MY_POD_NAMESPACES",
-			value:     common.NamespaceFluidSystem,
-			wantValue: "",
-		},
-	}
-
-	for k, item := range testCases {
-		// prepare env value
-		t.Setenv(item.key, item.value)
-		gotValue, _ := GetEnvByKey(item.envKey)
-		if gotValue != item.wantValue {
-			t.Errorf("%s check failure, want:%v,got:%v", k, item.wantValue, gotValue)
-		}
-	}
-}
 
 func TestIsSubPath(t *testing.T) {
 	testCases := map[string]struct {

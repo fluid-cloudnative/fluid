@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["dom", "es5", "es2017", "es2020.promise", "ES2021", "dom.iterable"],
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    // "isolatedModules": false,
+    "noEmit": true
+  },
+  "include": ["extensions", "types"]
+}

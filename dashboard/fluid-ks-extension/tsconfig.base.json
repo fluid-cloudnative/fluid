@@ -1,0 +1,18 @@
+{
+  "exclude": ["node_modules", "lib", "esm", "cjs", "**/*.test.ts", "**/*.test.tsx", "**/v3dist"],
+  "compilerOptions": {
+    "strict": true,
+    "target": "ES2015",
+    "lib": ["DOM", "ESNext", "ES2020.Promise", "ES2021", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "allowJs": true,
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
+    "jsx": "react",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noEmitOnError": true
+  }
+}

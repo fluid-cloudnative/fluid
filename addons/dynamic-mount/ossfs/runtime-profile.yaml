@@ -5,11 +5,11 @@ metadata:
 spec:
   fileSystemType: ossfs
   fuse:
-    image: fluidcloudnative/ossfs
+    image: <IMG_REPO>/ossfs-dynamic-mount
     imageTag: v1.0
     imagePullPolicy: IfNotPresent
     command:
-    - "/sbin/tini"
+    - "tini"
     - "-g"
     - "--"
-    - "/inotify.sh"
+    - "/usr/local/bin/entrypoint.sh"
