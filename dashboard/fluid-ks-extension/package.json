@@ -115,7 +115,7 @@
     "fork-ts-checker-webpack-plugin": "^6.3.5",
     "friendly-errors-webpack-plugin": "^1.7.0",
     "fs-extra": "^10.0.0",
-    "http-proxy-middleware": "^1.0.3",
+    "http-proxy-middleware": "^2.0.9",
     "inquirer": "^8.1.0",
     "ip": "^1.1.5",
     "lodash": "^4.17.20",
