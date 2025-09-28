@@ -13,8 +13,8 @@ spec:
           command: ["/bin/sh"]
           resources:
             limits:
-              memory: "64Mi"
-              ephemeral-storage: "512Mi"
+              memory: "512Mi"
+              ephemeral-storage: "5Gi"
           args:
           - -c
           - set -ex; test -n "$(ls /data)" && test "$(cat /data/testfile)" = "helloworld"
