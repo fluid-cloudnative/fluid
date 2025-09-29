@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: fluid-test
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: busybox
+          image: busybox
+          command: ["/bin/sh"]
+          resources:
+            limits:
+              memory: "512Mi"
+              ephemeral-storage: "5Gi"
+          args:
+          - -c
+          - set -ex; test -n "$(ls /data)" && test "$(cat /data/testfile)" = "helloworld"
+          volumeMounts:
+            - mountPath: /data
+              name: fluid-vol
+      automountServiceAccountToken: false
+      volumes:
+        - name: fluid-vol
+          persistentVolumeClaim:
+            claimName: jindo-demo
