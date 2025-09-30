@@ -1,0 +1,12 @@
+{
+  "name": "fluid",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Fluid, elastic data abstraction and acceleration for BigData&#x2F;AI applications in cloud.",
+  "homepage": "",
+  "author": "",
+  "main": "dist/index.js",
+  "files": [
+    "dist"
+  ]
+}
