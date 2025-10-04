@@ -154,5 +154,8 @@
   },
   "engines": {
     "node": ">= 16.0.0"
+  },
+  "resolutions": {
+    "ejs": "3.1.10"
   }
 }
