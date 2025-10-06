@@ -165,6 +165,8 @@
     "on-headers": ">=1.1.0",
     "tmp": ">=0.2.4",
     "koa": ">=2.16.2",
-    "marked": ">=0.7.0"
+    "marked": ">=0.7.0",
+    "**/@ks-console/server/path-to-regexp": "^3.3.0",
+    "**/@ks-console/shared/path-to-regexp": "^3.3.0"
   }
 }
