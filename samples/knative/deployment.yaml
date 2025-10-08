@@ -12,6 +12,7 @@ spec:
         app: model-serving
         serverless.fluid.io/inject: "true"
     spec:
+      automountServiceAccountToken: false
       containers:
         - image: fluidcloudnative/serving
           name: serving

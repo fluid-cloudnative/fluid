@@ -19,6 +19,7 @@ spec:
       securityContext:
         runAsUser: 1005
         runAsGroup: 1005
+      automountServiceAccountToken: false
       containers:
         - name: nginx
           image: nginx
