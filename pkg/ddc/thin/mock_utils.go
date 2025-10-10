@@ -6,21 +6,11 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/client-go/tools/record"
 )
-
-type mockedObjects struct {
-	FuseDs     *appsv1.DaemonSet
-	ConfigMaps map[string]*corev1.ConfigMap
-
-	PersistentVolume      *corev1.PersistentVolume
-	PersistentVolumeClaim *corev1.PersistentVolumeClaim
-}
 
 func mockFluidObjectsForTests(namespacedName types.NamespacedName) (*datav1alpha1.Dataset, *datav1alpha1.ThinRuntime, *datav1alpha1.ThinRuntimeProfile) {
 	datasetUid := uuid.NewUUID()
@@ -138,5 +128,3 @@ func mockThinEngineForTests(dataset *datav1alpha1.Dataset, runtime *datav1alpha1
 
 	return engine
 }
-
-
