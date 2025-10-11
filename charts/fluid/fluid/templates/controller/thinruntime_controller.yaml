@@ -59,9 +59,9 @@ spec:
           - name: CRITICAL_FUSE_POD
             value: {{ ternary "true" "false" (semverCompare ">=1.16.0-0" .Capabilities.KubeVersion.Version) | quote }}
           {{- end }}
-          {{- if .Values.runtime.syncRetryDuration }}
+          {{- if .Values.runtime.thin.syncRetryRateLimitDuration }}
           - name: FLUID_SYNC_RETRY_DURATION
-            value: {{ .Values.runtime.syncRetryDuration | quote }}
+            value: {{ .Values.runtime.thin.syncRetryRateLimitDuration | quote }}
           {{- end }}
           - name: HELM_DRIVER
             value: {{ template "fluid.helmDriver" . }}
