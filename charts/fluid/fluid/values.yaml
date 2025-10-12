@@ -234,6 +234,7 @@ runtime:
   thin:
     replicas: 1
     env: []
+    syncRetryRateLimitDuration: 0s
     tolerations:
       - operator: Exists
     resources: ~
