@@ -17,3 +17,7 @@
 0.1.4
 
 - Add `sidecar.istio.io/inject` to components annotation
+
+0.1.5
+
+- Support ThinRuntime pod metadata (including labels and annotations)

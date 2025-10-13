@@ -1,6 +1,6 @@
 name: thin
 apiVersion: v2
-version: 0.1.4
+version: 0.1.5
 appVersion: v1.0.0
 maintainers:
   - name: Fluid
