@@ -1,6 +1,6 @@
 # Build the juicefsruntime-controller manager binary
-# golang:1.23.10-bullseye
-FROM golang:1.23.10-bullseye@sha256:05ed4a0dad540eaf289072132678452ec19fa99481658be4813bff6250fedcee as builder
+# golang:1.24.8-bookworm
+FROM golang:1.24.8-bookworm@sha256:4ed690d6649d63c312b99a6120025ec79ce3b542968a37da53d6236c7c61a848 as builder
 
 WORKDIR /go/src/github.com/fluid-cloudnative/fluid
 COPY . .
