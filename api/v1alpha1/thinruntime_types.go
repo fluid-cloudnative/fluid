@@ -194,6 +194,10 @@ type ThinFuseSpec struct {
 
 	// Lifecycle describes actions that the management system should take in response to container lifecycle events.
 	Lifecycle *corev1.Lifecycle `json:"lifecycle,omitempty"`
+
+	// PodMetadata defines labels and annotations that will be propagated to ThinRuntime's FUSE pods.
+	// +optional
+	PodMetadata PodMetadata `json:"podMetadata,omitempty"`
 }
 
 //+kubebuilder:object:root=true

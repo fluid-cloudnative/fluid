@@ -61,6 +61,8 @@ fuse:
   image: ""
   imageTag: ""
   imagePullPolicy: IfNotPresent
+  labels: {}
+  annotations: {}
   envs:
   nodeSelector:
   dnsPolicy: ClusterFirstWithHostNet

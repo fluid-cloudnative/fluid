@@ -2189,7 +2189,7 @@ TieredStore
 <td>
 <code>configs</code></br>
 <em>
-string
+[]string
 </em>
 </td>
 <td>
@@ -2263,16 +2263,16 @@ PodMetadata
 </tr>
 <tr>
 <td>
-<code>cleanCachePolicy</code></br>
+<code>management</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.CleanCachePolicy">
-CleanCachePolicy
+<a href="#data.fluid.io/v1alpha1.RuntimeManagement">
+RuntimeManagement
 </a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>CleanCachePolicy defines cleanCache Policy</p>
+<p>RuntimeManagement defines policies when managing the runtime</p>
 </td>
 </tr>
 </table>
@@ -3511,7 +3511,6 @@ Kubernetes core/v1.NodeSelector
 <a href="#data.fluid.io/v1alpha1.EFCRuntimeSpec">EFCRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.GooseFSRuntimeSpec">GooseFSRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec</a>, 
-<a href="#data.fluid.io/v1alpha1.JuiceFSRuntimeSpec">JuiceFSRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.RuntimeManagement">RuntimeManagement</a>)
 </p>
 <p>
@@ -7255,10 +7254,11 @@ FuseCleanPolicy
 <td>
 <em>(Optional)</em>
 <p>CleanPolicy decides when to clean Juicefs Fuse pods.
-Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted
-OnDemand cleans fuse pod once th fuse pod on some node is not needed
+Currently Fluid supports three policies: OnDemand, OnRuntimeDeleted and OnFuseChangedCleanPolicy
+OnDemand cleans fuse pod once the fuse pod on some node is not needed
 OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted
-Defaults to OnDemand</p>
+OnFuseChangedCleanPolicy cleans fuse pod once the fuse pod on some node is not needed and the fuse in runtime is updated
+Defaults to OnRuntimeDeleted</p>
 </td>
 </tr>
 <tr>
@@ -7403,7 +7403,7 @@ TieredStore
 <td>
 <code>configs</code></br>
 <em>
-string
+[]string
 </em>
 </td>
 <td>
@@ -7477,16 +7477,16 @@ PodMetadata
 </tr>
 <tr>
 <td>
-<code>cleanCachePolicy</code></br>
+<code>management</code></br>
 <em>
-<a href="#data.fluid.io/v1alpha1.CleanCachePolicy">
-CleanCachePolicy
+<a href="#data.fluid.io/v1alpha1.RuntimeManagement">
+RuntimeManagement
 </a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>CleanCachePolicy defines cleanCache Policy</p>
+<p>RuntimeManagement defines policies when managing the runtime</p>
 </td>
 </tr>
 </tbody>
@@ -8197,6 +8197,7 @@ Kubernetes core/v1.NodeAffinity
 <a href="#data.fluid.io/v1alpha1.JuiceFSRuntimeSpec">JuiceFSRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.Metadata">Metadata</a>, 
 <a href="#data.fluid.io/v1alpha1.Processor">Processor</a>, 
+<a href="#data.fluid.io/v1alpha1.ThinFuseSpec">ThinFuseSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.VineyardClientSocketSpec">VineyardClientSocketSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.VineyardCompTemplateSpec">VineyardCompTemplateSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.VineyardRuntimeSpec">VineyardRuntimeSpec</a>)
@@ -8558,6 +8559,7 @@ Kubernetes meta/v1.Time
 <p>
 (<em>Appears on:</em>
 <a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.JuiceFSRuntimeSpec">JuiceFSRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.ThinRuntimeSpec">ThinRuntimeSpec</a>)
 </p>
 <p>
@@ -9706,6 +9708,33 @@ Kubernetes core/v1.Probe
 <td>
 <em>(Optional)</em>
 <p>VolumeMounts specifies the volumes listed in &ldquo;.spec.volumes&rdquo; to mount into the thinruntime component&rsquo;s filesystem.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lifecycle</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#lifecycle-v1-core">
+Kubernetes core/v1.Lifecycle
+</a>
+</em>
+</td>
+<td>
+<p>Lifecycle describes actions that the management system should take in response to container lifecycle events.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata defines labels and annotations that will be propagated to ThinRuntime&rsquo;s FUSE pods.</p>
 </td>
 </tr>
 </tbody>
@@ -10869,5 +10898,5 @@ bool
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>fc07663</code>.
+on git commit <code>9c50ed52c</code>.
 </em></p>
