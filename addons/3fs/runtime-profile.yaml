@@ -1,0 +1,12 @@
+apiVersion:data.fluid.io/v1alpha1
+kind:ThinRuntimeProfile
+metadata:
+name:3fs
+spec:
+fileSystemType:3fs
+fuse:
+    image:shaowenchen/demo-fluid-3fs
+    imageTag:latest
+    imagePullPolicy:Always
+    command:
+      -"/usr/local/bin/entrypoint.sh"
