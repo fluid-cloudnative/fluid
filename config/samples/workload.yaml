@@ -17,6 +17,7 @@ spec:
         app: nginx
     spec:
       hostNetwork: true
+      automountServiceAccountToken: false
       containers:
       - name: nginx
         image: nginx
