@@ -178,7 +178,7 @@ func addScheduleInfoToNode(nodeName string, runtimeInfo base.RuntimeInfoInterfac
 	}
 
 	if nodeExcludeSelector != nil && nodeExcludeSelector.Matches(labels.Set(node.Labels)) {
-		rootLog.V(1).Info("Skip node that matches nodeExcludeSelector", "nodeExcludeSelector", nodeExcludeSelector.String())
+		rootLog.V(1).Info("Skip addScheduleInfoToNode to node that matches nodeExcludeSelector", "nodeExcludeSelector", nodeExcludeSelector.String(), "node", node.Name)
 		return nil
 	}
 
@@ -452,16 +452,16 @@ func increaseDatasetNum(toUpdate *corev1.Node, runtimeInfo base.RuntimeInfoInter
 }
 
 func parseNodeExcludeSelectorFromEnv() error {
-	excludeSelectorStr := utils.GetStringValueFromEnv("FLUID_SCHEDULE_INFO_EXCLUDE_NODE_SELECTOR", "")
+	excludeSelectorStr := utils.GetStringValueFromEnv(common.EnvScheduleInfoExcludeNodeSelector, "")
 	if len(excludeSelectorStr) != 0 {
 		tmpSelector, err := metav1.ParseToLabelSelector(excludeSelectorStr)
 		if err != nil {
-			return fmt.Errorf("failed to parse node exclude selector \"%v\" from env FLUID_SCHEDULE_INFO_EXCLUDE_NODE_SELECTOR: %v", excludeSelectorStr, err)
+			return fmt.Errorf("failed to parse node exclude selector \"%v\" from env %s: %v", excludeSelectorStr, common.EnvScheduleInfoExcludeNodeSelector, err)
 		}
 
 		nodeExcludeSelector, err = metav1.LabelSelectorAsSelector(tmpSelector)
 		if err != nil {
-			return fmt.Errorf("failed to parse node exclude selector \"%v\" from FLUID_SCHEDULE_INFO_EXCLUDE_NODE_SELECTOR: %v", tmpSelector.String(), err)
+			return fmt.Errorf("failed to parse node exclude selector \"%v\" from %s: %v", tmpSelector.String(), common.EnvScheduleInfoExcludeNodeSelector, err)
 		}
 	}
 
