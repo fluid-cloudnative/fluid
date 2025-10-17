@@ -19,6 +19,7 @@ package lifecycle
 import (
 	"context"
 	"fmt"
+	stdlog "log"
 	"strconv"
 	"time"
 
@@ -46,9 +47,18 @@ import (
 )
 
 var rootLog logr.Logger
+var nodeExcludeSelector labels.Selector
 
 func init() {
 	rootLog = ctrl.Log.WithName("dataset.lifecycle")
+	if err := parseNodeExcludeSelectorFromEnv(); err != nil {
+		stdlog.Fatal(err)
+	}
+	if nodeExcludeSelector != nil {
+		stdlog.Printf("Found non-empty nodeExcludeSelector \"%s\"", nodeExcludeSelector.String())
+	} else {
+		stdlog.Print("nodeExcludeSelector is empty, no node would be excluded when syncing schedule info of runtimes")
+	}
 }
 
 func SyncScheduleInfoToCacheNodes(runtimeInfo base.RuntimeInfoInterface, client client.Client) error {
@@ -165,6 +175,11 @@ func addScheduleInfoToNode(nodeName string, runtimeInfo base.RuntimeInfoInterfac
 	}, &node)
 	if err != nil {
 		return err
+	}
+
+	if nodeExcludeSelector != nil && nodeExcludeSelector.Matches(labels.Set(node.Labels)) {
+		rootLog.V(1).Info("Skip node that matches nodeExcludeSelector", "nodeExcludeSelector", nodeExcludeSelector.String())
+		return nil
 	}
 
 	if hasRuntimeLabel(node, runtimeInfo) {
@@ -433,5 +448,22 @@ func increaseDatasetNum(toUpdate *corev1.Node, runtimeInfo base.RuntimeInfoInter
 	} else {
 		labelsToModify.Add(labelDatasetNum, "1")
 	}
+	return nil
+}
+
+func parseNodeExcludeSelectorFromEnv() error {
+	excludeSelectorStr := utils.GetStringValueFromEnv("FLUID_SCHEDULE_INFO_EXCLUDE_NODE_SELECTOR", "")
+	if len(excludeSelectorStr) != 0 {
+		tmpSelector, err := metav1.ParseToLabelSelector(excludeSelectorStr)
+		if err != nil {
+			return fmt.Errorf("failed to parse node exclude selector \"%v\" from env FLUID_SCHEDULE_INFO_EXCLUDE_NODE_SELECTOR: %v", excludeSelectorStr, err)
+		}
+
+		nodeExcludeSelector, err = metav1.LabelSelectorAsSelector(tmpSelector)
+		if err != nil {
+			return fmt.Errorf("failed to parse node exclude selector \"%v\" from FLUID_SCHEDULE_INFO_EXCLUDE_NODE_SELECTOR: %v", tmpSelector.String(), err)
+		}
+	}
+
 	return nil
 }
