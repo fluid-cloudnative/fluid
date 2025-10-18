@@ -63,6 +63,10 @@ spec:
           - name: FLUID_SYNC_RETRY_DURATION
             value: {{ .Values.runtime.thin.syncRetryRateLimitDuration | quote }}
           {{- end }}
+          {{- if .Values.runtime.syncScheduleInfoNodeExcludeSelector }}
+          - name: FLUID_SCHEDULE_INFO_EXCLUDE_NODE_SELECTOR
+            value: {{ .Values.runtime.syncScheduleInfoNodeExcludeSelector | quote }}
+          {{- end }}
           - name: HELM_DRIVER
             value: {{ template "fluid.helmDriver" . }}
           - name: THIN_FUSE_CONFIG_STORAGE

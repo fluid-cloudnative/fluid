@@ -84,6 +84,9 @@ csi:
 runtime:
   criticalFusePod: true
   syncRetryDuration: 15s
+  # syncScheduleInfoNodeExcludeSelector is used to exclude nodes that should be skipped when syncing schedule info
+  # e.g. syncScheduleInfoNodeExcludeSelector: "mynode=dev,type=virtual-kubelet"
+  syncScheduleInfoNodeExcludeSelector: ""
   mountRoot: /runtime-mnt
   alluxio:
     replicas: 1

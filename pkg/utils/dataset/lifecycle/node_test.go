@@ -19,6 +19,7 @@ package lifecycle
 import (
 	"context"
 	"fmt"
+	"os"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -29,6 +30,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -688,6 +690,44 @@ var _ = Describe("Dataset Lifecycle Node Tests", Label("pkg.utils.dataset.lifecy
 						Expect(gotNode.Labels).NotTo(HaveKey(runtimeInfo.GetRuntimeLabelName()))
 					}
 				})
+			})
+		})
+	})
+
+	Describe("Test parseNodeExcludeSelectorFromEnv", func() {
+		AfterEach(func() {
+			os.Unsetenv(common.EnvScheduleInfoExcludeNodeSelector)
+		})
+		When("FLUID_SCHEDULE_INFO_EXCLUDE_NODE_SELECTOR is not set", func() {
+			It("Should not return error and nodeExcludeSelector should be nil", func() {
+				err := parseNodeExcludeSelectorFromEnv()
+				Expect(err).To(BeNil())
+				Expect(nodeExcludeSelector).To(BeNil())
+			})
+		})
+
+		When("FLUID_SCHEDULE_INFO_EXCLUDE_NODE_SELECTOR has valid label selector", func() {
+			It("Should parse the selector correctly", func() {
+				os.Setenv(common.EnvScheduleInfoExcludeNodeSelector, "type=valid-value")
+				err := parseNodeExcludeSelectorFromEnv()
+				Expect(err).To(BeNil())
+				Expect(nodeExcludeSelector).NotTo(BeNil())
+
+				// Test that the selector works correctly
+				testLabels := map[string]string{"type": "valid-value"}
+				Expect(nodeExcludeSelector.Matches(labels.Set(testLabels))).To(BeTrue())
+
+				testLabels2 := map[string]string{"type": "other-value"}
+				Expect(nodeExcludeSelector.Matches(labels.Set(testLabels2))).To(BeFalse())
+			})
+		})
+
+		When("FLUID_SCHEDULE_INFO_EXCLUDE_NODE_SELECTOR has invalid label selector", func() {
+			It("Should return error", func() {
+				_ = os.Setenv(common.EnvScheduleInfoExcludeNodeSelector, "invalid_label_selector!")
+				err := parseNodeExcludeSelectorFromEnv()
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(ContainSubstring("failed to parse node exclude selector"))
 			})
 		})
 	})
