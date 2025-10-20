@@ -125,9 +125,6 @@ spec:
             value: {{ .Values.runtimeIdentity.name }}
           securityContext:
             privileged: true
-            capabilities:
-              add:
-                - SYS_ADMIN
           volumeMounts:
             - name: jindofs-fuse-device
               mountPath: /dev/fuse
