@@ -108,3 +108,6 @@ Mount ufs volumes according to dataset's accessModes
 
 1.0.3
 Supporting syncing AK/SK secret key-value pairs
+
+1.0.4
+Remove "SYS_ADMIN" from fuse container's securityContext
