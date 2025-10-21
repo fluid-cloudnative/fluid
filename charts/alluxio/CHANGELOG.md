@@ -253,3 +253,6 @@
 
 0.9.13
 - Remove `fsGroup` to avoid changing owner group of directory
+
+0.9.14
+- Remove "SYS_ADMIN" from fuse container's securityContext
