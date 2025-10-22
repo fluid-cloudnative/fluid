@@ -61,7 +61,7 @@ csi:
   registrar:
     imagePrefix: *defaultImagePrefix
     imageName: csi-node-driver-registrar
-    imageTag: v2.3.0
+    imageTag: v2.14.0
   plugins:
     imagePrefix: *defaultImagePrefix
     imageName: fluid-csi
