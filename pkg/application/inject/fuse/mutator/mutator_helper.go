@@ -49,12 +49,16 @@ func (mh *mutatorHelper) doMutate(helperData *helperData) error {
 	}
 
 	if err := mh.mutateDatasetVolumesFn(helperData); err != nil {
-		return err
+		return errors.Wrapf(err, "failed to mutate dataset volumes for runtime \"%s/%s\"", helperData.runtimeInfo.GetNamespace(), helperData.runtimeInfo.GetName())
 	}
 
 	if err := mh.appendFuseContainerVolumesFn(helperData); err != nil {
-		return err
+		return errors.Wrapf(err, "failed to append fuse container volumes for runtime \"%s/%s\"", helperData.runtimeInfo.GetNamespace(), helperData.runtimeInfo.GetName())
 	}
 
-	return mh.injectFuseContainerFn(helperData)
+	if err := mh.injectFuseContainerFn(helperData); err != nil {
+		return errors.Wrapf(err, "failed to inject fuse container for runtime \"%s/%s\"", helperData.runtimeInfo.GetNamespace(), helperData.runtimeInfo.GetName())
+	}
+
+	return nil
 }
