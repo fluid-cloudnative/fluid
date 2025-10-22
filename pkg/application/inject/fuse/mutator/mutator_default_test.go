@@ -425,4 +425,123 @@ var _ = Describe("Default mutator related unit tests", Label("pkg.application.in
 			})
 		})
 	})
+
+	When("the mutator injects a Pod with multiple Fluid PVCs", func() {
+		var (
+			datasetNum int = 3
+		)
+
+		var (
+			datasetNames      []string
+			datasetNamespaces []string
+			datasets          []*datav1alpha1.Dataset
+			runtimes          []*datav1alpha1.ThinRuntime
+			daemonSets        []*appsv1.DaemonSet
+			pvs               []*corev1.PersistentVolume
+
+			objs []runtime.Object
+		)
+
+		var (
+			podToMutate *corev1.Pod
+
+			client  client.Client
+			mutator Mutator
+			args    MutatorBuildArgs
+		)
+		BeforeEach(func() {
+			for i := 0; i < datasetNum; i++ {
+				datasetName := fmt.Sprintf("test-dataset-%d", i)
+				datasetNamespace := "fluid"
+				dataset, runtime, daemonSet, pv := test_buildFluidResources(datasetName, datasetNamespace)
+
+				datasetNames = append(datasetNames, datasetName)
+				datasetNamespaces = append(datasetNamespaces, datasetNamespace)
+				datasets = append(datasets, dataset)
+				runtimes = append(runtimes, runtime)
+				daemonSets = append(daemonSets, daemonSet)
+				pvs = append(pvs, pv)
+
+				objs = append(objs, dataset, runtime, daemonSet, pv)
+			}
+
+			podToMutate = test_buildPodToMutate(datasetNames)
+		})
+
+		JustBeforeEach(func() {
+			client = fake.NewFakeClientWithScheme(scheme, objs...)
+			pod, err := applicationspod.NewApplication(podToMutate).GetPodSpecs()
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(pod).To(HaveLen(1))
+
+			specs, err := CollectFluidObjectSpecs(pod[0])
+			Expect(err).NotTo(HaveOccurred())
+
+			args = MutatorBuildArgs{
+				Client: client,
+				Log:    fake.NullLogger(),
+				Options: common.FuseSidecarInjectOption{
+					EnableCacheDir:             false,
+					SkipSidecarPostStartInject: false,
+				},
+				Specs: specs,
+			}
+		})
+
+		It("should successfully mutate the pod and multiple fuse sidecar containers should be injected", func() {
+			mutator = NewDefaultMutator(args)
+
+			for i := 0; i < datasetNum; i++ {
+				By(fmt.Sprintf("mutate pvc No.%d", i), func() {
+					datasetName := datasetNames[i]
+					datasetNamespace := datasetNamespaces[i]
+					runtimeInfo, err := base.GetRuntimeInfo(client, datasetName, datasetNamespace)
+					Expect(err).NotTo(HaveOccurred())
+
+					err = mutator.MutateWithRuntimeInfo(datasetName, runtimeInfo, fmt.Sprintf("-%d", i))
+					Expect(err).To(BeNil())
+				})
+
+				By(fmt.Sprintf("check pvc No.%d is mutated successfully", i), func() {
+					podSpecs := mutator.GetMutatedPodSpecs()
+					Expect(podSpecs).NotTo(BeNil())
+
+					mountPropagationBidirectional := corev1.MountPropagationBidirectional
+					mountPropagationHostToContainer := corev1.MountPropagationHostToContainer
+					Expect(podSpecs.Containers).To(HaveLen(i + 2))
+					Expect(podSpecs.Containers[0].Name).To(HavePrefix(common.FuseContainerName))
+					Expect(podSpecs.Containers[0].VolumeMounts).To(ContainElement(
+						corev1.VolumeMount{
+							Name:             fmt.Sprintf("thin-fuse-mount-%d", i),
+							MountPath:        fmt.Sprintf("/runtime-mnt/thin/%s/%s/", datasetNamespaces[i], datasetNames[i]),
+							MountPropagation: &mountPropagationBidirectional,
+						}))
+					Expect(podSpecs.Containers[0].VolumeMounts).To(ContainElement(
+						corev1.VolumeMount{
+							Name:      fmt.Sprintf("default-check-mount-%d", i),
+							ReadOnly:  true,
+							MountPath: "/check-mount.sh",
+							SubPath:   "check-mount.sh",
+						}))
+
+					Expect(podSpecs.Containers[len(podSpecs.Containers)-1].VolumeMounts).To(ContainElement(
+						corev1.VolumeMount{
+							Name:             fmt.Sprintf("data-vol-%d", i),
+							MountPath:        fmt.Sprintf("/data%d", i),
+							MountPropagation: &mountPropagationHostToContainer,
+						},
+					))
+					Expect(podSpecs.Volumes).To(ContainElements(
+						corev1.Volume{Name: fmt.Sprintf("data-vol-%d", i), VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: fmt.Sprintf("/runtime-mnt/thin/%s/%s/thin-fuse", datasetNamespaces[i], datasetNames[i])}}},
+						corev1.Volume{Name: fmt.Sprintf("default-check-mount-%d", i), VolumeSource: corev1.VolumeSource{ConfigMap: &corev1.ConfigMapVolumeSource{LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-default-check-mount", pvs[i].Spec.CSI.VolumeAttributes[common.VolumeAttrMountType])}, DefaultMode: ptr.To[int32](0755)}}},
+					))
+				})
+			}
+
+			By("PostMutate should successfully", func() {
+				err := mutator.PostMutate()
+				Expect(err).To(BeNil())
+			})
+		})
+	})
 })
