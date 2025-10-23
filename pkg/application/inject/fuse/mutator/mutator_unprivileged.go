@@ -17,6 +17,7 @@ limitations under the License.
 package mutator
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
@@ -33,6 +34,9 @@ func NewUnprivilegedMutator(opts MutatorBuildArgs) Mutator {
 	var mutateDatasetVolumesFn = defaultMutateDatasetVolumes
 	var appendFuseContainerVolumesFn = defaultAppendFuseContainerVolumes
 	var injectFuseContainerFn = defaultInjectFuseContainer
+	if opts.Options.SidecarInjectionMode == common.SidecarInjectionMode_NativeSidecar {
+		injectFuseContainerFn = defaultInjectFuseNativeSidecar
+	}
 
 	return &UnprivilegedMutator{
 		DefaultMutator: DefaultMutator{

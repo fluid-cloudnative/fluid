@@ -60,6 +60,10 @@ spec:
           - name: FILE_PREFETCHER_IMAGE
             value: {{ include "fluid.controlplane.imageTransform" (list .Values.webhook.filePrefetcher.imagePrefix .Values.webhook.filePrefetcher.imageName .Values.webhook.filePrefetcher.imageTag . ) }}
           {{- end }}
+          {{- if .Values.webhook.fuseSidecar.sidecarInjectionMode }}
+          - name: FUSE_SIDECAR_INJECTION_MODE
+            value: {{ .Values.webhook.fuseSidecar.sidecarInjectionMode | quote }}
+          {{- end }}
         ports:
           - containerPort: 8080
             name: metrics

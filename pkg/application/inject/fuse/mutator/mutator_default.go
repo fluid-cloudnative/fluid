@@ -66,6 +66,9 @@ func NewDefaultMutator(args MutatorBuildArgs) Mutator {
 	var mutateDatasetVolumesFn = defaultMutateDatasetVolumes
 	var appendFuseContainerVolumesFn = defaultAppendFuseContainerVolumes
 	var injectFuseContainerFn = defaultInjectFuseContainer
+	if args.Options.SidecarInjectionMode == common.SidecarInjectionMode_NativeSidecar {
+		injectFuseContainerFn = defaultInjectFuseNativeSidecar
+	}
 
 	return &DefaultMutator{
 		options: args.Options,
@@ -280,6 +283,26 @@ func defaultInjectFuseContainer(helper *helperData) (err error) {
 	return nil
 }
 
+func defaultInjectFuseNativeSidecar(helper *helperData) (err error) {
+	usedInContainers, err := helper.ctx.GetDatsetUsedInContainers()
+	if err != nil {
+		return err
+	}
+
+	usedInInitContainers, err := helper.ctx.GetDatasetUsedInInitContainers()
+	if err != nil {
+		return err
+	}
+
+	if usedInContainers || usedInInitContainers {
+		if err := prependFuseNativeSidecar(helper); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func prepareFuseContainerPostStartScript(helper *helperData) error {
 	// 4. inject the post start script for fuse container, if configmap doesn't exist, try to create it.
 	// Post start script varies according to privileged or unprivileged sidecar.
@@ -413,6 +436,30 @@ func prependFuseContainer(helper *helperData, asInit bool) error {
 	if helper.Specs.MetaObj.Labels == nil {
 		helper.Specs.MetaObj.Labels = map[string]string{}
 	}
+	containerDatasetMappingLabelKey := common.LabelContainerDatasetMappingKeyPrefix + fuseContainer.Name
+	helper.Specs.MetaObj.Labels[containerDatasetMappingLabelKey] = utils.GetDatasetId(helper.runtimeInfo.GetNamespace(), helper.runtimeInfo.GetName(), helper.runtimeInfo.GetOwnerDatasetUID())
+	return nil
+}
+
+func prependFuseNativeSidecar(helper *helperData) error {
+	fuseContainer := helper.template.FuseContainer
+	fuseContainer.Name = common.FuseContainerName + helper.nameSuffix
+
+	ctxAppenedVolumeNames, err := helper.ctx.GetAppendedVolumeNames()
+	if err != nil {
+		return err
+	}
+	for oldName, newName := range ctxAppenedVolumeNames {
+		for i, volumeMount := range fuseContainer.VolumeMounts {
+			if volumeMount.Name == oldName {
+				fuseContainer.VolumeMounts[i].Name = newName
+			}
+		}
+	}
+
+	containterRestartPolicyAlways := corev1.ContainerRestartPolicyAlways
+	fuseContainer.RestartPolicy = &containterRestartPolicyAlways
+	helper.Specs.InitContainers = append([]corev1.Container{fuseContainer}, helper.Specs.InitContainers...)
 	containerDatasetMappingLabelKey := common.LabelContainerDatasetMappingKeyPrefix + fuseContainer.Name
 	helper.Specs.MetaObj.Labels[containerDatasetMappingLabelKey] = utils.GetDatasetId(helper.runtimeInfo.GetNamespace(), helper.runtimeInfo.GetName(), helper.runtimeInfo.GetOwnerDatasetUID())
 	return nil

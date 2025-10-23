@@ -360,6 +360,9 @@ webhook:
     imagePrefix: *defaultImagePrefix
     imageName: fluid-file-prefetcher
     imageTag: v0.1.0
+  fuseSidecar:
+    # Accepted values: "default", "legacy", "native-sidecar"
+    sidecarInjectionMode: "default"
   # if configmap `webhook-plugins` exists and not want to replace the content, set this to false.
   forceReplacePluginsProfile: false
   pluginsProfile:

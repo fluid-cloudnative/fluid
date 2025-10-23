@@ -18,6 +18,7 @@ package common
 
 import (
 	"fmt"
+	"os"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -170,6 +171,27 @@ type FuseMountInfo struct {
 type FuseSidecarInjectOption struct {
 	EnableCacheDir             bool
 	SkipSidecarPostStartInject bool
+	SidecarInjectionMode       SidecarInjectionMode
+}
+
+type SidecarInjectionMode string
+
+const (
+	SidecarInjectionMode_Default       SidecarInjectionMode = "default"
+	SidecarInjectionMode_Legacy        SidecarInjectionMode = "legacy"
+	SidecarInjectionMode_NativeSidecar SidecarInjectionMode = "native-sidecar"
+)
+
+func GetSidecarInjectionMode() SidecarInjectionMode {
+	mode := os.Getenv(EnvFuseSidecarInjectionMode)
+	switch mode {
+		case "legacy":
+			return SidecarInjectionMode_Legacy
+		case "native-sidecar":
+			return SidecarInjectionMode_NativeSidecar
+		default:
+			return SidecarInjectionMode_Default
+	}
 }
 
 func (f FuseSidecarInjectOption) String() string {
