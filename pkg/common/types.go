@@ -185,12 +185,12 @@ const (
 func GetSidecarInjectionMode() SidecarInjectionMode {
 	mode := os.Getenv(EnvFuseSidecarInjectionMode)
 	switch mode {
-		case "legacy":
-			return SidecarInjectionMode_Legacy
-		case "native-sidecar":
-			return SidecarInjectionMode_NativeSidecar
-		default:
-			return SidecarInjectionMode_Default
+	case "legacy":
+		return SidecarInjectionMode_Legacy
+	case "native-sidecar":
+		return SidecarInjectionMode_NativeSidecar
+	default:
+		return SidecarInjectionMode_Default
 	}
 }
 
