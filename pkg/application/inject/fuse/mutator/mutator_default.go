@@ -461,6 +461,9 @@ func prependFuseNativeSidecar(helper *helperData) error {
 	fuseContainer.RestartPolicy = &containterRestartPolicyAlways
 	helper.Specs.InitContainers = append([]corev1.Container{fuseContainer}, helper.Specs.InitContainers...)
 	containerDatasetMappingLabelKey := common.LabelContainerDatasetMappingKeyPrefix + fuseContainer.Name
+	if helper.Specs.MetaObj.Labels == nil {
+		helper.Specs.MetaObj.Labels = map[string]string{}
+	}
 	helper.Specs.MetaObj.Labels[containerDatasetMappingLabelKey] = utils.GetDatasetId(helper.runtimeInfo.GetNamespace(), helper.runtimeInfo.GetName(), helper.runtimeInfo.GetOwnerDatasetUID())
 	return nil
 }

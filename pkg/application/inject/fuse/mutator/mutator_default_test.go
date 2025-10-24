@@ -424,6 +424,80 @@ var _ = Describe("Default mutator related unit tests", Label("pkg.application.in
 				})
 			})
 		})
+
+		When("the mutator uses native-sidecar injection mode", func() {
+			When("pod.spec.containers mounts a Fluid PVC", func() {
+				It("should inject a native fuse sidecar container into init container", func() {
+					By("mutate Pod", func() {
+						args.Options.SidecarInjectionMode = common.SidecarInjectionMode_NativeSidecar
+						mutator = NewDefaultMutator(args)
+						runtimeInfo, err := base.GetRuntimeInfo(client, datasetName, datasetNamespace)
+						Expect(err).NotTo(HaveOccurred())
+
+						err = mutator.MutateWithRuntimeInfo(datasetName, runtimeInfo, "-0")
+						Expect(err).To(BeNil())
+
+						err = mutator.PostMutate()
+						Expect(err).To(BeNil())
+					})
+
+					By("check mutated Pod", func() {
+						podSpecs := mutator.GetMutatedPodSpecs()
+						Expect(podSpecs).NotTo(BeNil())
+
+						Expect(podSpecs.Containers).To(HaveLen(1))
+						Expect(podSpecs.InitContainers).To(HaveLen(1))
+						Expect(podSpecs.InitContainers[0].Name).To(HavePrefix(common.FuseContainerName))
+						containerRestartPolicyAlways := corev1.ContainerRestartPolicyAlways
+						Expect(podSpecs.InitContainers[0].RestartPolicy).To(Equal(&containerRestartPolicyAlways))
+					})
+				})
+			})
+
+			When("both pod.spec.containers and pod.spec.initContainers mount the same Fluid PVC", func() {
+				BeforeEach(func() {
+					// Add an init container that also mounts the Fluid PVC
+					podToMutate.Spec.InitContainers = []corev1.Container{
+						{
+							Name:  "init-container",
+							Image: "init-image",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "data-vol-0",
+									MountPath: "/data0",
+								},
+							},
+						},
+					}
+				})
+				It("should inject ONLY ONE native fuse sidecar container into init container", func() {
+					By("mutate Pod", func() {
+						args.Options.SidecarInjectionMode = common.SidecarInjectionMode_NativeSidecar
+						mutator = NewDefaultMutator(args)
+						runtimeInfo, err := base.GetRuntimeInfo(client, datasetName, datasetNamespace)
+						Expect(err).NotTo(HaveOccurred())
+
+						err = mutator.MutateWithRuntimeInfo(datasetName, runtimeInfo, "-0")
+						Expect(err).To(BeNil())
+
+						err = mutator.PostMutate()
+						Expect(err).To(BeNil())
+					})
+
+					By("check mutated Pod", func() {
+						podSpecs := mutator.GetMutatedPodSpecs()
+						Expect(podSpecs).NotTo(BeNil())
+
+						Expect(podSpecs.Containers).To(HaveLen(1))
+						Expect(podSpecs.InitContainers).To(HaveLen(2)) // one native sidecar + one app init container
+						Expect(podSpecs.InitContainers[0].Name).To(HavePrefix(common.FuseContainerName))
+
+						containerRestartPolicyAlways := corev1.ContainerRestartPolicyAlways
+						Expect(podSpecs.InitContainers[0].RestartPolicy).To(Equal(&containerRestartPolicyAlways))
+					})
+				})
+			})
+		})
 	})
 
 	When("the mutator injects a Pod with multiple Fluid PVCs", func() {
