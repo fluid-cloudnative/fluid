@@ -433,11 +433,13 @@ func prependFuseContainer(helper *helperData, asInit bool) error {
 	} else {
 		helper.Specs.InitContainers = append([]corev1.Container{fuseContainer}, helper.Specs.InitContainers...)
 	}
+
+	// TODO: move this to annotation because label has a max length limit for both key and value
+	containerDatasetMappingLabelKey := common.LabelContainerDatasetMappingKeyPrefix + fuseContainer.Name
 	if helper.Specs.MetaObj.Labels == nil {
 		helper.Specs.MetaObj.Labels = map[string]string{}
 	}
-	containerDatasetMappingLabelKey := common.LabelContainerDatasetMappingKeyPrefix + fuseContainer.Name
-	helper.Specs.MetaObj.Labels[containerDatasetMappingLabelKey] = utils.GetDatasetId(helper.runtimeInfo.GetNamespace(), helper.runtimeInfo.GetName(), helper.runtimeInfo.GetOwnerDatasetUID())
+	helper.Specs.MetaObj.Labels[containerDatasetMappingLabelKey] = fmt.Sprintf("%s_%s", helper.runtimeInfo.GetNamespace(), helper.runtimeInfo.GetName())
 	return nil
 }
 
@@ -460,11 +462,13 @@ func prependFuseNativeSidecar(helper *helperData) error {
 	containterRestartPolicyAlways := corev1.ContainerRestartPolicyAlways
 	fuseContainer.RestartPolicy = &containterRestartPolicyAlways
 	helper.Specs.InitContainers = append([]corev1.Container{fuseContainer}, helper.Specs.InitContainers...)
+
+	// TODO: move this to annotation because label has a max length limit for both key and value
 	containerDatasetMappingLabelKey := common.LabelContainerDatasetMappingKeyPrefix + fuseContainer.Name
 	if helper.Specs.MetaObj.Labels == nil {
 		helper.Specs.MetaObj.Labels = map[string]string{}
 	}
-	helper.Specs.MetaObj.Labels[containerDatasetMappingLabelKey] = utils.GetDatasetId(helper.runtimeInfo.GetNamespace(), helper.runtimeInfo.GetName(), helper.runtimeInfo.GetOwnerDatasetUID())
+	helper.Specs.MetaObj.Labels[containerDatasetMappingLabelKey] = fmt.Sprintf("%s_%s", helper.runtimeInfo.GetNamespace(), helper.runtimeInfo.GetName())
 	return nil
 }
 
