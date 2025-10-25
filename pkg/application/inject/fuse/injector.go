@@ -38,14 +38,16 @@ import (
 )
 
 type Injector struct {
-	client client.Client
-	log    logr.Logger
+	client               client.Client
+	log                  logr.Logger
+	sidecarInjectionMode common.SidecarInjectionMode
 }
 
 func NewInjector(client client.Client) *Injector {
 	return &Injector{
-		client: client,
-		log:    ctrl.Log.WithName("fuse-injector"),
+		client:               client,
+		log:                  ctrl.Log.WithName("fuse-injector"),
+		sidecarInjectionMode: common.GetSidecarInjectionMode(),
 	}
 }
 
@@ -174,6 +176,7 @@ func (s *Injector) inject(in runtime.Object, runtimeInfos map[string]base.Runtim
 			Options: common.FuseSidecarInjectOption{
 				EnableCacheDir:             utils.InjectCacheDirEnabled(podSpecs.MetaObj.Labels),
 				SkipSidecarPostStartInject: utils.SkipSidecarPostStartInject(podSpecs.MetaObj.Labels),
+				SidecarInjectionMode:       s.sidecarInjectionMode,
 			},
 			ExtraArgs: mutator.FindExtraArgsFromMetadata(podSpecs.MetaObj, platform),
 		}
