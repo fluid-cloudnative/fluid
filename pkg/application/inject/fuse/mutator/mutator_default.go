@@ -258,7 +258,7 @@ func defaultAppendFuseContainerVolumes(helper *helperData) (err error) {
 }
 
 func defaultInjectFuseContainer(helper *helperData) (err error) {
-	used, err := helper.ctx.GetDatsetUsedInContainers()
+	used, err := helper.ctx.GetDatasetUsedInContainers()
 	if err != nil {
 		return err
 	}
@@ -284,7 +284,7 @@ func defaultInjectFuseContainer(helper *helperData) (err error) {
 }
 
 func defaultInjectFuseNativeSidecar(helper *helperData) (err error) {
-	usedInContainers, err := helper.ctx.GetDatsetUsedInContainers()
+	usedInContainers, err := helper.ctx.GetDatasetUsedInContainers()
 	if err != nil {
 		return err
 	}
@@ -459,8 +459,8 @@ func prependFuseNativeSidecar(helper *helperData) error {
 		}
 	}
 
-	containterRestartPolicyAlways := corev1.ContainerRestartPolicyAlways
-	fuseContainer.RestartPolicy = &containterRestartPolicyAlways
+	containerRestartPolicyAlways := corev1.ContainerRestartPolicyAlways
+	fuseContainer.RestartPolicy = &containerRestartPolicyAlways
 	helper.Specs.InitContainers = append([]corev1.Container{fuseContainer}, helper.Specs.InitContainers...)
 
 	// TODO: move this to annotation because label has a max length limit for both key and value
