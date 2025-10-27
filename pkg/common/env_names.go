@@ -31,3 +31,7 @@ const (
 
 	EnvScheduleInfoExcludeNodeSelector = "FLUID_SCHEDULE_INFO_EXCLUDE_NODE_SELECTOR"
 )
+
+const (
+	EnvFuseSidecarInjectionMode = "FUSE_SIDECAR_INJECTION_MODE"
+)

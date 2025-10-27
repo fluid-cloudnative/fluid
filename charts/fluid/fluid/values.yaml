@@ -360,6 +360,12 @@ webhook:
     imagePrefix: *defaultImagePrefix
     imageName: fluid-file-prefetcher
     imageTag: v0.1.0
+  fuseSidecar:
+    # Accepted values: "default", "legacy", "native-sidecar"
+    # - "default": default behavior of webhook. The actual behavior will be determined by Fluid. Currently, default behavior equals to "legacy".
+    # - "legacy": fuse sidecar container would be a normal container injected to pod.spec.containers[].
+    # - "native-sidecar": fuse sidecar container would be a native sidecar container injected to pod.spec.initContainers[]. See https://kubernetes.io/blog/2023/08/25/native-sidecar-containers/.
+    sidecarInjectionMode: "default"
   # if configmap `webhook-plugins` exists and not want to replace the content, set this to false.
   forceReplacePluginsProfile: false
   pluginsProfile:
