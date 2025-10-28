@@ -81,10 +81,7 @@ spec:
           - name: FLUID_SYNC_RETRY_DURATION
             value: {{ .Values.runtime.syncRetryDuration | quote }}
           {{- end }}
-          {{- if .Values.runtime.syncScheduleInfoNodeExcludeSelector }}
-          - name: FLUID_SCHEDULE_INFO_EXCLUDE_NODE_SELECTOR
-            value: {{ .Values.runtime.syncScheduleInfoNodeExcludeSelector | quote }}
-          {{- end }}
+          {{- include "fluid.controllers.envs.syncScheduleInfoNodeExcludeSelector" . | nindent 10 }}
           - name: HELM_DRIVER
             value: {{ template "fluid.helmDriver" . }}
           {{- if .Values.runtime.juicefs.env }}

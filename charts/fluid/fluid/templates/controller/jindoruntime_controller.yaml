@@ -84,10 +84,7 @@ spec:
         - name: FLUID_SYNC_RETRY_DURATION
           value: {{ .Values.runtime.syncRetryDuration | quote }}
         {{- end }}
-        {{- if .Values.runtime.syncScheduleInfoNodeExcludeSelector }}
-        - name: FLUID_SCHEDULE_INFO_EXCLUDE_NODE_SELECTOR
-          value: {{ .Values.runtime.syncScheduleInfoNodeExcludeSelector | quote }}
-        {{- end }}
+        {{- include "fluid.controllers.envs.syncScheduleInfoNodeExcludeSelector" . | nindent 8 }}
         {{- if .Values.runtime.jindo.engine }}
         - name: JINDO_ENGINE_TYPE
           value: {{ .Values.runtime.jindo.engine | quote }}
@@ -99,7 +96,7 @@ spec:
         - name: HELM_DRIVER
           value: {{ template "fluid.helmDriver" . }}
         {{- if .Values.runtime.jindo.env }}
-        {{ toYaml .Values.runtime.jindo.env | nindent 10 }}
+        {{ toYaml .Values.runtime.jindo.env | nindent 8 }}
         {{- end }}
         ports:
           - containerPort: 8080
