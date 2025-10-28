@@ -161,3 +161,11 @@ Check if feature gate DataflowAffinity is enabled in the featureGates.
 {{- end -}}
 {{- $found -}}
 {{- end -}}
+
+{{/* Common syncScheduleInfoNodeExcludeSelector env for all runtime controllers*/}}
+{{- define "fluid.controllers.envs.syncScheduleInfoNodeExcludeSelector" -}}
+{{- if .Values.runtime.syncScheduleInfoNodeExcludeSelector }}
+- name: FLUID_SCHEDULE_INFO_EXCLUDE_NODE_SELECTOR
+  value: {{ .Values.runtime.syncScheduleInfoNodeExcludeSelector | quote }}
+{{- end }}
+{{- end -}}
