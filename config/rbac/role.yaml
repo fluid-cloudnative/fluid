@@ -8,177 +8,13 @@ rules:
   - data.fluid.io
   resources:
   - alluxioruntimes
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - data.fluid.io
-  resources:
-  - alluxioruntimes/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - data.fluid.io
-  resources:
   - dataprocesses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - data.fluid.io
-  resources:
-  - dataprocesses/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - data.fluid.io
-  resources:
-  - dataprocesses/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - data.fluid.io
-  resources:
   - datasets
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - data.fluid.io
-  resources:
-  - datasets/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - data.fluid.io
-  resources:
   - efcruntimes
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - data.fluid.io
-  resources:
-  - efcruntimes/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - data.fluid.io
-  resources:
   - goosefsruntimes
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - data.fluid.io
-  resources:
-  - goosefsruntimes/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - data.fluid.io
-  resources:
   - jindoruntimes
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - data.fluid.io
-  resources:
-  - jindoruntimes/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - data.fluid.io
-  resources:
   - juicefsruntimes
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - data.fluid.io
-  resources:
-  - juicefsruntimes/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - data.fluid.io
-  resources:
   - thinruntimes
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - data.fluid.io
-  resources:
-  - thinruntimes/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - data.fluid.io
-  resources:
-  - thinruntimes/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - data.fluid.io
-  resources:
   - vineyardruntimes
   verbs:
   - create
@@ -191,8 +27,23 @@ rules:
 - apiGroups:
   - data.fluid.io
   resources:
+  - alluxioruntimes/status
+  - dataprocesses/status
+  - datasets/status
+  - efcruntimes/status
+  - goosefsruntimes/status
+  - jindoruntimes/status
+  - juicefsruntimes/status
+  - thinruntimes/status
   - vineyardruntimes/status
   verbs:
   - get
   - patch
+  - update
+- apiGroups:
+  - data.fluid.io
+  resources:
+  - dataprocesses/finalizers
+  - thinruntimes/finalizers
+  verbs:
   - update
