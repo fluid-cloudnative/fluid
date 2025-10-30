@@ -475,10 +475,6 @@ func (ns *nodeServer) getNode() (node *corev1.Node, err error) {
 		return nil, err
 	}
 
-	// if node, err = kubeclient.Get(ns.apiReader, ns.nodeId); err != nil {
-	// return nil, err
-	// }
-
 	glog.V(1).Infof("Got node %s from api server", node.Name)
 	ns.node = node
 	return ns.node, nil

@@ -43,7 +43,7 @@ func discoverNodeBindingTokenCompatibility() {
 
 	serverVersion, err := discoveryClient.ServerVersion()
 	if err != nil && !errors.IsNotFound(err) {
-		nativeLog.Fatalf("failed to discover batch/v1 group version: %v", err)
+		nativeLog.Fatalf("failed to discover Kubernetes server version: %v", err)
 	}
 	// transform to semver.Version and compare
 	currentVersion, err := semver.ParseTolerant(serverVersion.GitVersion)

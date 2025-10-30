@@ -25,7 +25,7 @@ spec:
         object.?metadata.name.orValue('')
   validations:
     - expression: "variables.userNodeName != ''"
-      message: "userNodeName is empty, user token does not container node name."
+      message: "userNodeName is empty, user token does not contain node name."
     - expression: "variables.objectNodeName == variables.userNodeName"
       messageExpression: >-
         "objectNodeName '" + variables.objectNodeName + "' is not equal to userNodeName '" + variables.userNodeName + "'"
