@@ -51,3 +51,4 @@ The companies/organizations are listed in alphabetical order grouped by the phas
 | [数慧时空](https://diit.cn/) | [@zery](https://github.com/zery) | Production | DataFabric System Storage Cache Layer  |
 | [同花顺](https://www.10jqka.com.cn/) | [@seriousgong](https://github.com/seriousgong) | Production | AI Platform on k8s |
 | [地平线](https://www.horizon.auto/) | [@chenyangxueHDU](https://github.com/chenyangxueHDU) | Production | AI Platform on k8s |
+| [天翼云](https://huiju.ctyun.cn/) | [@liuxiang](https://github.com/lx1036) | Production | AI Platform on k8s |
