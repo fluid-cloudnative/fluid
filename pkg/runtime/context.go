@@ -32,7 +32,7 @@ type ReconcileRequestContext struct {
 	context.Context
 	types.NamespacedName
 	common.Category
-	*datav1alpha1.Dataset
+	Dataset *datav1alpha1.Dataset
 	Runtime client.Object
 
 	RuntimeType   string

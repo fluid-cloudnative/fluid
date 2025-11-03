@@ -125,8 +125,8 @@ func (r *DatasetReconciler) reconcileDataset(ctx reconcileRequestContext, needRe
 	log.V(1).Info("process the dataset", "dataset", ctx.Dataset)
 
 	// 0. Validate name is prefixed with a number such as "20-hbase".
-	if errs := validation.IsDNS1035Label(ctx.Dataset.ObjectMeta.Name); len(ctx.Dataset.ObjectMeta.Name) > 0 && len(errs) > 0 {
-		err := field.Invalid(field.NewPath("metadata").Child("name"), ctx.Dataset.ObjectMeta.Name, strings.Join(errs, ","))
+	if errs := validation.IsDNS1035Label(ctx.Dataset.Name); len(ctx.Dataset.Name) > 0 && len(errs) > 0 {
+		err := field.Invalid(field.NewPath("metadata").Child("name"), ctx.Dataset.Name, strings.Join(errs, ","))
 		ctx.Log.Error(err, "Failed to create dataset", "DatasetCreateError", ctx)
 		r.Recorder.Eventf(&ctx.Dataset, v1.EventTypeWarning, common.ErrorCreateDataset, "Failed to create dataset because err: %v", err)
 		return utils.RequeueIfError(err)
@@ -138,7 +138,7 @@ func (r *DatasetReconciler) reconcileDataset(ctx reconcileRequestContext, needRe
 	}
 
 	// 2.Add finalizer
-	if !utils.ContainsString(ctx.Dataset.ObjectMeta.GetFinalizers(), finalizer) {
+	if !utils.ContainsString(ctx.Dataset.GetFinalizers(), finalizer) {
 		return r.addFinalizerAndRequeue(ctx)
 	}
 

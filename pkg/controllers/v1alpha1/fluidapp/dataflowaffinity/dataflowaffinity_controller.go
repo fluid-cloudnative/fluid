@@ -19,6 +19,8 @@ package dataflowaffinity
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl/watch"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -31,7 +33,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"strings"
 )
 
 const DataOpJobControllerName string = "DataOpJobController"
@@ -98,7 +99,7 @@ func (f *DataOpJobReconciler) Reconcile(ctx context.Context, request reconcile.R
 	// inject dataflow enabled affinity if not exist.
 	if _, ok := job.Annotations[common.AnnotationDataFlowAffinityInject]; !ok {
 		job.Annotations[common.AnnotationDataFlowAffinityInject] = "true"
-		if err := f.Client.Update(ctx, job); err != nil {
+		if err := f.Update(ctx, job); err != nil {
 			requestCtx.Log.Error(err, "Failed to add dataflow affinity enabled label", "AnnotationUpdateError", ctx)
 			return utils.RequeueIfError(err)
 		}
@@ -159,7 +160,7 @@ func (f *DataOpJobReconciler) injectPodNodeLabelsToJob(job *batchv1.Job) error {
 		}
 	}
 
-	if err = f.Client.Update(context.TODO(), job); err != nil {
+	if err = f.Update(context.TODO(), job); err != nil {
 		return err
 	}
 
