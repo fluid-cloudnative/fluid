@@ -63,6 +63,7 @@ spec:
           - name: FLUID_SYNC_RETRY_DURATION
             value: {{ .Values.runtime.syncRetryDuration | quote }}
           {{- end }}
+          {{- include "fluid.controllers.envs.syncScheduleInfoNodeExcludeSelector" . | nindent 10 }}
           {{- if .Values.runtime.efc.init.imageName }}
           - name: EFC_INIT_FUSE_IMAGE_ENV
             value: {{ include "fluid.runtime.imageTransform" (list .Values.runtime.efc.init.imagePrefix .Values.runtime.efc.init.imageName .Values.runtime.efc.init.imageTag . ) }}

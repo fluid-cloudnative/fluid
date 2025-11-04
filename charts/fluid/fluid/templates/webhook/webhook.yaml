@@ -60,6 +60,13 @@ spec:
           - name: FILE_PREFETCHER_IMAGE
             value: {{ include "fluid.controlplane.imageTransform" (list .Values.webhook.filePrefetcher.imagePrefix .Values.webhook.filePrefetcher.imageName .Values.webhook.filePrefetcher.imageTag . ) }}
           {{- end }}
+          {{- if .Values.webhook.fuseSidecar.sidecarInjectionMode }}
+          {{- if ( and (eq .Values.webhook.fuseSidecar.sidecarInjectionMode "native-sidecar") ( semverCompare "<1.28.0-0" .Capabilities.KubeVersion.Version ) ) }}
+          {{- fail "native-sidecar is not supported in kubernetes version < 1.28.0-0" }}
+          {{- end }}
+          - name: FUSE_SIDECAR_INJECTION_MODE
+            value: {{ .Values.webhook.fuseSidecar.sidecarInjectionMode | quote }}
+          {{- end }}
         ports:
           - containerPort: 8080
             name: metrics

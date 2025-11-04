@@ -30,11 +30,32 @@ import (
 // 	scriptPath                = "/" + scriptName
 // )
 
+// The standard error returned from the execution of the postStartHook
+// will appear in the kubelet logs to clarify the reason for the PostStartHook.
 var (
 	replacer                 = strings.NewReplacer("¬", "`")
 	contentPrivilegedSidecar = `#!/bin/bash
 
 set -e
+
+redirect_output_with_retry() {
+    local n=0
+    local try=5
+
+    while [[ $try -gt $n ]]; do
+        if exec 1>>/proc/1/fd/1 2>&1; then
+            return 0
+        else
+            n=$((n + 1))
+            sleep 1
+        fi
+    done
+
+	echo "[PostStartHook] Redirection failed" >&2
+    return 125
+}
+
+redirect_output_with_retry
 
 function log() {
 	msg=$1
@@ -91,7 +112,7 @@ func NewDefaultPostStartScriptGenerator() *defaultPostStartScriptGenerator {
 
 func (g *defaultPostStartScriptGenerator) GetPostStartCommand(mountPath, mountType, subPath string) (handler *corev1.LifecycleHandler) {
 	// https://github.com/kubernetes/kubernetes/issues/25766
-	cmd := []string{"bash", "-c", fmt.Sprintf("time %s %s %s %s >> /proc/1/fd/1", g.scriptMountPath, mountPath, mountType, subPath)}
+	cmd := []string{"bash", "-c", fmt.Sprintf("time %s %s %s %s", g.scriptMountPath, mountPath, mountType, subPath)}
 
 	return &corev1.LifecycleHandler{
 		Exec: &corev1.ExecAction{Command: cmd},

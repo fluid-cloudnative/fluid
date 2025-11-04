@@ -14,7 +14,7 @@ image:
 # Default registry, namespace and version tag for images managed by fluid
 imagePrefix: &defaultImagePrefix fluidcloudnative
 # imagePrefix: &defaultImagePrefix registry.aliyuncs.com/fluid
-version: &defaultVersion v1.0.7-319d40e
+version: &defaultVersion v1.0.8-6533239
 
 crdUpgrade:
   enabled: true
@@ -61,7 +61,7 @@ csi:
   registrar:
     imagePrefix: *defaultImagePrefix
     imageName: csi-node-driver-registrar
-    imageTag: v2.3.0
+    imageTag: v2.14.0
   plugins:
     imagePrefix: *defaultImagePrefix
     imageName: fluid-csi
@@ -84,6 +84,9 @@ csi:
 runtime:
   criticalFusePod: true
   syncRetryDuration: 15s
+  # syncScheduleInfoNodeExcludeSelector is used to exclude nodes that should be skipped when syncing schedule info
+  # e.g. syncScheduleInfoNodeExcludeSelector: "mynode=dev,type=virtual-kubelet"
+  syncScheduleInfoNodeExcludeSelector: ""
   mountRoot: /runtime-mnt
   alluxio:
     replicas: 1
@@ -234,6 +237,7 @@ runtime:
   thin:
     replicas: 1
     env: []
+    syncRetryRateLimitDuration: 0s
     tolerations:
       - operator: Exists
     resources: ~
@@ -356,6 +360,12 @@ webhook:
     imagePrefix: *defaultImagePrefix
     imageName: fluid-file-prefetcher
     imageTag: v0.1.0
+  fuseSidecar:
+    # Accepted values: "default", "legacy", "native-sidecar"
+    # - "default": default behavior of webhook. The actual behavior will be determined by Fluid. Currently, default behavior equals to "legacy".
+    # - "legacy": fuse sidecar container would be a normal container injected to pod.spec.containers[].
+    # - "native-sidecar": fuse sidecar container would be a native sidecar container injected to pod.spec.initContainers[]. See https://kubernetes.io/blog/2023/08/25/native-sidecar-containers/.
+    sidecarInjectionMode: "default"
   # if configmap `webhook-plugins` exists and not want to replace the content, set this to false.
   forceReplacePluginsProfile: false
   pluginsProfile:

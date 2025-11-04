@@ -28,6 +28,7 @@ spec:
                 values:
                 - nginx
             topologyKey: "kubernetes.io/hostname"
+      automountServiceAccountToken: false
       containers:
         - name: nginx
           image: nginx

@@ -31,9 +31,30 @@ const (
 	appConfigMapName = appVolName
 )
 
+// The standard error returned from the execution of the postStartHook
+// will appear in the kubelet logs to clarify the reason for the PostStartHook.
 var contentCheckMountReadyScript = `#!/bin/bash
 
 set -e
+
+redirect_output_with_retry() {
+    local n=0
+    local try=5
+
+    while [[ $try -gt $n ]]; do
+        if exec 1>>/proc/1/fd/1 2>&1; then
+            return 0
+        else
+            n=$((n + 1))
+            sleep 1
+        fi
+    done
+
+	echo "[PostStartHook] Redirection failed" >&2
+    return 125
+}
+
+redirect_output_with_retry
 
 if [[ "$#" -ne 2 ]]; then
   echo -e "Usage:"
@@ -105,7 +126,7 @@ func (a *ScriptGeneratorForApp) getConfigmapName() string {
 func (a *ScriptGeneratorForApp) GetPostStartCommand(mountPaths string, mountTypes string) (handler *corev1.LifecycleHandler) {
 	// Return non-null post start command only when PostStartInjeciton is enabled
 	// https://github.com/kubernetes/kubernetes/issues/25766
-	cmd := []string{"bash", "-c", fmt.Sprintf("time %s %s %s >> /proc/1/fd/1", appScriptPath, mountPaths, mountTypes)}
+	cmd := []string{"bash", "-c", fmt.Sprintf("time %s %s %s", appScriptPath, mountPaths, mountTypes)}
 	handler = &corev1.LifecycleHandler{
 		Exec: &corev1.ExecAction{Command: cmd},
 	}

@@ -79,6 +79,7 @@ spec:
           - name: FLUID_SYNC_RETRY_DURATION
             value: {{ .Values.runtime.syncRetryDuration | quote }}
           {{- end }}
+          {{- include "fluid.controllers.envs.syncScheduleInfoNodeExcludeSelector" . | nindent 10 }}
           {{- if .Values.runtime.goosefs.env }}
           {{ toYaml .Values.runtime.goosefs.env | nindent 10 }}
           {{- end }}

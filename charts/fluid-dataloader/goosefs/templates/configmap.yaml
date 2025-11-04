@@ -25,13 +25,9 @@ data:
     )
     GOOSEFS_HOME=/opt/goosefs
     function public::goosefs::init_conf() {
-      local IFS=$'\n' # split by line instead of space
-      for keyvaluepair in $(env); do
-        # split around the first "="
-        key=$(echo ${keyvaluepair} | cut -d= -f1)
-        value=$(echo ${keyvaluepair} | cut -d= -f2-)
-        if [[ "${goosefs_env_vars[*]}" =~ "${key}" ]]; then
-          echo "export ${key}=\"${value}\"" >> $GOOSEFS_HOME/conf/goosefs-env.sh
+      for key in "${goosefs_env_vars[@]}"; do
+        if [[ -v $key ]]; then
+          echo "export ${key}=\"${!key}\"" >> $GOOSEFS_HOME/conf/goosefs-env.sh
         fi
       done
     }

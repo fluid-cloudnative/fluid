@@ -28,4 +28,10 @@ const (
 	EnvEnableRuntimeInfoCache = "ENABLE_RUNTIMEINFO_CACHE"
 
 	EnvRuntimeInfoCacheTTL = "RUNTIMEINFO_CACHE_TTL"
+
+	EnvScheduleInfoExcludeNodeSelector = "FLUID_SCHEDULE_INFO_EXCLUDE_NODE_SELECTOR"
+)
+
+const (
+	EnvFuseSidecarInjectionMode = "FUSE_SIDECAR_INJECTION_MODE"
 )

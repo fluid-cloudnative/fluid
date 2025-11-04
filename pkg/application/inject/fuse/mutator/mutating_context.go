@@ -107,7 +107,7 @@ func (ctx *mutatingContext) SetAppendedVolumeNames(nameMapping map[string]string
 	ctx.appendedVolumeNames = nameMapping
 }
 
-func (ctx *mutatingContext) GetDatsetUsedInContainers() (bool, error) {
+func (ctx *mutatingContext) GetDatasetUsedInContainers() (bool, error) {
 	if ctx.datasetUsedInContainers == nil {
 		return false, fmt.Errorf("mutatingContext.datasetUsedInContainers is not set")
 	}

@@ -11,3 +11,6 @@
 
 ### 0.10.3
 - Fix incorrect indentation of cron dataload template
+
+### 0.10.4
+- Refactor environment variable handling

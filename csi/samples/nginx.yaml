@@ -3,6 +3,7 @@ kind: Pod
 metadata:
   name: nginx
 spec:
+  automountServiceAccountToken: false
   containers:
   - image: nginx
     imagePullPolicy: Always

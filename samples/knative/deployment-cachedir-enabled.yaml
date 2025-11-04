@@ -13,6 +13,7 @@ spec:
         serverless.fluid.io/inject: "true"
         cachedir.sidecar.fluid.io/inject: "true"
     spec:
+      automountServiceAccountToken: false
       containers:
         - image: fluidcloudnative/serving
           name: serving

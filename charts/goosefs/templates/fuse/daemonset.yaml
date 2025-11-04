@@ -109,9 +109,6 @@ spec:
             runAsUser: {{ .Values.user }}
             runAsGroup: {{ .Values.group }}
             privileged: true
-            capabilities:
-              add:
-                - SYS_ADMIN
           lifecycle:
             preStop:
               exec:

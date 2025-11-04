@@ -75,10 +75,11 @@ spec:
         - name: FLUID_SYNC_RETRY_DURATION
           value: {{ .Values.runtime.syncRetryDuration | quote }}
         {{- end }}
+        {{- include "fluid.controllers.envs.syncScheduleInfoNodeExcludeSelector" . | nindent 8 }}
         - name: HELM_DRIVER
           value: {{ template "fluid.helmDriver" . }}
         {{- if .Values.runtime.vineyard.env }}
-        {{ toYaml .Values.runtime.vineyard.env | nindent 10 }}
+        {{ toYaml .Values.runtime.vineyard.env | nindent 8 }}
         {{- end }}
         ports:
           - containerPort: 8080

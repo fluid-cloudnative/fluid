@@ -205,7 +205,7 @@ func TestInjectPod(t *testing.T) {
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
-						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s-%s", "big-data", "duplicate"),
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s_%s", "big-data", "duplicate"),
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -224,7 +224,7 @@ func TestInjectPod(t *testing.T) {
 											// "jindo",
 											"bash",
 											"-c",
-											"time /check-mount.sh /jfs jindo  >> /proc/1/fd/1",
+											"time /check-mount.sh /jfs jindo ",
 										},
 									},
 								},
@@ -472,7 +472,7 @@ func TestInjectPod(t *testing.T) {
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
-						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s-%s", "big-data", "dataset1"),
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s_%s", "big-data", "dataset1"),
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -511,7 +511,7 @@ func TestInjectPod(t *testing.T) {
 											// "jindo",
 											"bash",
 											"-c",
-											"time /check-mount.sh /jfs jindo  >> /proc/1/fd/1",
+											"time /check-mount.sh /jfs jindo ",
 										},
 									},
 								},
@@ -742,7 +742,7 @@ func TestInjectPod(t *testing.T) {
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
-						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s-%s", "big-data", "customizedenv"),
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s_%s", "big-data", "customizedenv"),
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -761,7 +761,7 @@ func TestInjectPod(t *testing.T) {
 											// "jindo",
 											"bash",
 											"-c",
-											"time /check-mount.sh /jfs jindo  >> /proc/1/fd/1",
+											"time /check-mount.sh /jfs jindo ",
 										},
 									},
 								},
@@ -1015,7 +1015,7 @@ func TestInjectPod(t *testing.T) {
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
-						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s-%s", "big-data", "dataset-conflict"),
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s_%s", "big-data", "dataset-conflict"),
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -1054,7 +1054,7 @@ func TestInjectPod(t *testing.T) {
 											// "jindo",
 											"bash",
 											"-c",
-											"time /check-mount.sh /jfs jindo  >> /proc/1/fd/1",
+											"time /check-mount.sh /jfs jindo ",
 										},
 									},
 								},
@@ -1723,7 +1723,7 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
-						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s-%s", "big-data", "duplicate"),
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s_%s", "big-data", "duplicate"),
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -1742,7 +1742,7 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 											// "jindo",
 											"bash",
 											"-c",
-											"time /check-mount.sh /jfs jindo  >> /proc/1/fd/1",
+											"time /check-mount.sh /jfs jindo ",
 										},
 									},
 								},
@@ -2126,8 +2126,8 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
-						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s-%s", "big-data", "dataset1"),
-						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-1"): fmt.Sprintf("%s-%s", "big-data", "dataset2"),
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s_%s", "big-data", "dataset1"),
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-1"): fmt.Sprintf("%s_%s", "big-data", "dataset2"),
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -2146,7 +2146,7 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 											// "jindo",
 											"bash",
 											"-c",
-											"time /check-mount.sh /jfs jindo  >> /proc/1/fd/1",
+											"time /check-mount.sh /jfs jindo ",
 										},
 									},
 								},
@@ -2187,7 +2187,7 @@ func TestInjectPodWithMultiplePVC(t *testing.T) {
 											// "jindo",
 											"bash",
 											"-c",
-											"time /check-mount.sh /jfs jindo  >> /proc/1/fd/1",
+											"time /check-mount.sh /jfs jindo ",
 										},
 									},
 								},
@@ -2696,7 +2696,7 @@ func TestInjectPodWithDatasetSubPath(t *testing.T) {
 					Namespace: "ref",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
-						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s-%s", "ref", "subpath"),
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s_%s", "ref", "subpath"),
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -2735,7 +2735,7 @@ func TestInjectPodWithDatasetSubPath(t *testing.T) {
 											// "jindo",
 											"bash",
 											"-c",
-											"time /check-mount.sh /jfs jindo path-a >> /proc/1/fd/1",
+											"time /check-mount.sh /jfs jindo path-a",
 										},
 									},
 								},
@@ -3087,7 +3087,7 @@ func TestInjectPodUnprivileged(t *testing.T) {
 					Labels: map[string]string{
 						common.InjectFuseSidecar:             common.True,
 						common.InjectUnprivilegedFuseSidecar: common.True,
-						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s-%s", "big-data", "dataset"),
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s_%s", "big-data", "dataset"),
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -3106,7 +3106,7 @@ func TestInjectPodUnprivileged(t *testing.T) {
 											// "jindo",
 											"bash",
 											"-c",
-											"time /check-mount.sh /jfs jindo  >> /proc/1/fd/1",
+											"time /check-mount.sh /jfs jindo ",
 										},
 									},
 								},
@@ -3459,8 +3459,8 @@ func TestInjectPodUnprivileged(t *testing.T) {
 					Labels: map[string]string{
 						common.InjectFuseSidecar:             common.True,
 						common.InjectUnprivilegedFuseSidecar: common.True,
-						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s-%s", "big-data", "dataset1"),
-						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-1"): fmt.Sprintf("%s-%s", "big-data", "dataset2"),
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s_%s", "big-data", "dataset1"),
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-1"): fmt.Sprintf("%s_%s", "big-data", "dataset2"),
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -3479,7 +3479,7 @@ func TestInjectPodUnprivileged(t *testing.T) {
 											// "jindo",
 											"bash",
 											"-c",
-											"time /check-mount.sh /jfs jindo  >> /proc/1/fd/1",
+											"time /check-mount.sh /jfs jindo ",
 										},
 									},
 								},
@@ -3516,7 +3516,7 @@ func TestInjectPodUnprivileged(t *testing.T) {
 											// "jindo",
 											"bash",
 											"-c",
-											"time /check-mount.sh /jfs jindo  >> /proc/1/fd/1",
+											"time /check-mount.sh /jfs jindo ",
 										},
 									},
 								},
@@ -3904,8 +3904,8 @@ func TestInjectPodUnprivileged(t *testing.T) {
 						common.InjectFuseSidecar:             common.True,
 						common.InjectUnprivilegedFuseSidecar: common.True,
 						common.InjectAppPostStart:            common.True,
-						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s-%s", "big-data", "dataset-a"),
-						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-1"): fmt.Sprintf("%s-%s", "big-data", "dataset-b"),
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s_%s", "big-data", "dataset-a"),
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-1"): fmt.Sprintf("%s_%s", "big-data", "dataset-b"),
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -3924,7 +3924,7 @@ func TestInjectPodUnprivileged(t *testing.T) {
 											// "jindo",
 											"bash",
 											"-c",
-											"time /check-mount.sh /jfs jindo  >> /proc/1/fd/1",
+											"time /check-mount.sh /jfs jindo ",
 										},
 									},
 								},
@@ -3961,7 +3961,7 @@ func TestInjectPodUnprivileged(t *testing.T) {
 											// "jindo",
 											"bash",
 											"-c",
-											"time /check-mount.sh /jfs jindo  >> /proc/1/fd/1",
+											"time /check-mount.sh /jfs jindo ",
 										},
 									},
 								},
@@ -3990,7 +3990,7 @@ func TestInjectPodUnprivileged(t *testing.T) {
 							Lifecycle: &corev1.Lifecycle{
 								PostStart: &corev1.LifecycleHandler{
 									Exec: &corev1.ExecAction{
-										Command: []string{"bash", "-c", "time /check-fluid-mount-ready.sh /data1:/data2 jindo:jindo >> /proc/1/fd/1"},
+										Command: []string{"bash", "-c", "time /check-fluid-mount-ready.sh /data1:/data2 jindo:jindo"},
 									},
 								},
 							},
@@ -4424,7 +4424,7 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
-						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "init-fluid-fuse-0"): fmt.Sprintf("%s-%s", "big-data", "duplicate"),
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "init-fluid-fuse-0"): fmt.Sprintf("%s_%s", "big-data", "duplicate"),
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -4691,8 +4691,8 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
-						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"):      fmt.Sprintf("%s-%s", "big-data", "dataset1"),
-						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "init-fluid-fuse-0"): fmt.Sprintf("%s-%s", "big-data", "dataset1"),
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"):      fmt.Sprintf("%s_%s", "big-data", "dataset1"),
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "init-fluid-fuse-0"): fmt.Sprintf("%s_%s", "big-data", "dataset1"),
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -4778,7 +4778,7 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 											// "jindo",
 											"bash",
 											"-c",
-											"time /check-mount.sh /jfs jindo  >> /proc/1/fd/1",
+											"time /check-mount.sh /jfs jindo ",
 										},
 									},
 								},
@@ -5021,8 +5021,8 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
-						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"):      fmt.Sprintf("%s-%s", "big-data", "customizedenv"),
-						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "init-fluid-fuse-0"): fmt.Sprintf("%s-%s", "big-data", "customizedenv"),
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"):      fmt.Sprintf("%s_%s", "big-data", "customizedenv"),
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "init-fluid-fuse-0"): fmt.Sprintf("%s_%s", "big-data", "customizedenv"),
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -5094,7 +5094,7 @@ func TestInjectPodWithInitContainer(t *testing.T) {
 											// "jindo",
 											"bash",
 											"-c",
-											"time /check-mount.sh /jfs jindo  >> /proc/1/fd/1",
+											"time /check-mount.sh /jfs jindo ",
 										},
 									},
 								},
@@ -5505,7 +5505,7 @@ func TestInjectPodWithEnabledFUSEMetrics(t *testing.T) {
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
-						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s-%s", "big-data", "duplicate"),
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s_%s", "big-data", "duplicate"),
 					},
 					Annotations: map[string]string{
 						common.AnnotationPrometheusFuseMetricsScrapeKey: common.True,
@@ -5530,7 +5530,7 @@ func TestInjectPodWithEnabledFUSEMetrics(t *testing.T) {
 											// "jindo",
 											"bash",
 											"-c",
-											"time /check-mount.sh /jfs jindo  >> /proc/1/fd/1",
+											"time /check-mount.sh /jfs jindo ",
 										},
 									},
 								},
@@ -5782,7 +5782,7 @@ func TestInjectPodWithEnabledFUSEMetrics(t *testing.T) {
 					Namespace: "big-data",
 					Labels: map[string]string{
 						common.InjectFuseSidecar: common.True,
-						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s-%s", "big-data", "duplicate2"),
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s_%s", "big-data", "duplicate2"),
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -5801,7 +5801,7 @@ func TestInjectPodWithEnabledFUSEMetrics(t *testing.T) {
 											// "jindo",
 											"bash",
 											"-c",
-											"time /check-mount.sh /jfs jindo  >> /proc/1/fd/1",
+											"time /check-mount.sh /jfs jindo ",
 										},
 									},
 								},
@@ -6057,7 +6057,7 @@ func TestInjectPodWithEnabledFUSEMetrics(t *testing.T) {
 					Labels: map[string]string{
 						common.InjectFuseSidecar:             common.True,
 						common.InjectUnprivilegedFuseSidecar: common.True,
-						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s-%s", "big-data", "duplicate3"),
+						fmt.Sprintf("%s%s", common.LabelContainerDatasetMappingKeyPrefix, "fluid-fuse-0"): fmt.Sprintf("%s_%s", "big-data", "duplicate3"),
 					},
 					Annotations: map[string]string{
 						common.AnnotationPrometheusFuseMetricsScrapeKey: common.True,
@@ -6079,7 +6079,7 @@ func TestInjectPodWithEnabledFUSEMetrics(t *testing.T) {
 											// "jindo",
 											"bash",
 											"-c",
-											"time /check-mount.sh /jfs jindo  >> /proc/1/fd/1",
+											"time /check-mount.sh /jfs jindo ",
 										},
 									},
 								},

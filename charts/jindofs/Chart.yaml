@@ -1,6 +1,6 @@
 apiVersion: v2
 appVersion: 3.8.0
-version: 0.8.8
+version: 0.8.9
 description: FileSystem on the cloud based on Aliyun Object Storage aimed for data
   acceleration.
 home: https://help.aliyun.com/document_detail/164207.html

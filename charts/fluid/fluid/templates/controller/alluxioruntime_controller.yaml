@@ -81,6 +81,7 @@ spec:
           - name: FLUID_SYNC_RETRY_DURATION
             value: {{ .Values.runtime.syncRetryDuration | quote }}
           {{- end }}
+          {{- include "fluid.controllers.envs.syncScheduleInfoNodeExcludeSelector" . | nindent 10 }}
           {{- if .Values.image.imagePullSecrets }}
           - name: IMAGE_PULL_SECRETS
             {{- $secretList := list }}

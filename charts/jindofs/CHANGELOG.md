@@ -40,3 +40,7 @@ Make fuse tolerate any trint
 0.8.8
 
 Add `sidecar.istio.io/inject` to components annotation
+
+0.8.9
+
+Remove "SYS_ADMIN" from fuse container's securityContext

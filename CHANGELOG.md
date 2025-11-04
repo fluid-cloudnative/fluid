@@ -1,5 +1,21 @@
 # Fluid Release Notes
 
+## v1.0.8
+### Highlights
+*   **Native Sidecar support** – Enable Kubernetes Native Sidecar injection for FUSE deployments to resolve lifecycle management, startup order, and resource isolation issues.  
+*   **Dynamic PodMetadata configuration** – Customize labels/annotations for ThinRuntime FUSE Pods during deployment.  
+*   **Optimized node scheduling** – Disable non-essential node sync to accelerate cache engine scheduling.  
+*   **Realtime resource updates** – Set default ThinRuntime Reconcile RateLimit to 0 for instant resource status reflection.  
+*   **Reliable mount detection** – Reinforced postStart redirection logic to eliminate probabilistic mount-check failures.  
+*   **Extended storage support** – Add 3FS and Curvine client compatibility through ThinRuntime.  
+ 
+
+### Enhancements
+*   **Privilege reduction** – Strip non-essential administrative permissions from FUSE containers. 
+*   **Minimized control-plane permissions** – Tighten ServiceAccount RBAC rules for core controllers by removing redundant authorizations.  
+
+---
+
 ## v1.0.7
 ### Highlights
 *   **JindoFS 6.9.1** by default – higher read-bandwidth utilisation; file-prefetcher tag now auto-matches JindoFS image.  

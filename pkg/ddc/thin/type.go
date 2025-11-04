@@ -59,6 +59,8 @@ type Worker struct {
 
 type Fuse struct {
 	Enabled          bool                          `json:"enabled,omitempty"`
+	Labels           map[string]string             `json:"labels,omitempty"`
+	Annotations      map[string]string             `json:"annotations,omitempty"`
 	Image            string                        `json:"image,omitempty"`
 	ImageTag         string                        `json:"imageTag,omitempty"`
 	ImagePullPolicy  string                        `json:"imagePullPolicy,omitempty"`
