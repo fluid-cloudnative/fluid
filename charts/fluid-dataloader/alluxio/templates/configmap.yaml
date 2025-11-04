@@ -25,13 +25,9 @@ data:
     )
     ALLUXIO_HOME=/opt/alluxio
     function public::alluxio::init_conf() {
-      local IFS=$'\n' # split by line instead of space
-      for keyvaluepair in $(env); do
-        # split around the first "="
-        key=$(echo ${keyvaluepair} | cut -d= -f1)
-        value=$(echo ${keyvaluepair} | cut -d= -f2-)
-        if [[ "${alluxio_env_vars[*]}" =~ "${key}" ]]; then
-          echo "export ${key}=\"${value}\"" >> $ALLUXIO_HOME/conf/alluxio-env.sh
+      for key in "${alluxio_env_vars[@]}"; do
+        if [[ -v $key ]]; then
+          echo "export ${key}=\"${!key}\"" >> $ALLUXIO_HOME/conf/alluxio-env.sh
         fi
       done
     }
