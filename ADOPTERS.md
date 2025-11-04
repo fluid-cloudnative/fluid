@@ -52,3 +52,4 @@ The companies/organizations are listed in alphabetical order grouped by the phas
 | [同花顺](https://www.10jqka.com.cn/) | [@seriousgong](https://github.com/seriousgong) | Production | AI Platform on k8s |
 | [地平线](https://www.horizon.auto/) | [@chenyangxueHDU](https://github.com/chenyangxueHDU) | Production | AI Platform on k8s |
 | [天翼云](https://huiju.ctyun.cn/) | [@liuxiang](https://github.com/lx1036) | Production | AI Platform on k8s |
+| [网易互娱](https://www.netease.com/) | [@zhangxiang](https://github.com/zhangxiangzyx-alt) | Production | AI Platform on k8s |
