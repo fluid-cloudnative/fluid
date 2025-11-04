@@ -31,6 +31,10 @@ spec:
       automountServiceAccountToken: false
       containers:
       - name: minio
+        resources:
+          limits:
+            memory: "512Mi"
+            ephemeral-storage: "5Gi"
         # Pulls the default Minio image from Docker Hub
         image: minio/minio
         args:
