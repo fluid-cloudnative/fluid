@@ -165,6 +165,39 @@ func parseCacheDirFromConfigMap(configMap *v1.ConfigMap) (cacheDir string, cache
 	return "", "", errors.New("fail to parseCacheDirFromConfigMap")
 }
 
+// getMountInfo retrieves and parses mount configuration from the associated Dataset resource.
+// The function performs the following operations:
+//  1. Fetches the Dataset resource using the controller's client
+//  2. Validates the existence of mount configuration
+//  3. Normalizes the mount path format (trims whitespace, ensures trailing slash)
+//  4. Parses filesystem-specific metadata based on protocol prefix:
+//     - NAS (nfs://): Extracts filesystem ID, service endpoint, and directory path
+//     - CPFS (cpfs://): Extracts filesystem ID, cluster address, and share path
+//
+// Returns:
+//  - MountInfo struct containing parsed mount details:
+//      MountPoint        : Cleaned mount path without protocol prefix
+//      MountPointPrefix  : Protocol identifier (e.g., "nfs://" or "cpfs://")
+//      FileSystemId      : Unique filesystem identifier (NAS IDs are truncated to prefix)
+//      ServiceAddr       : Regional service endpoint (e.g., "cn-hangzhou.nas.aliyuncs.com")
+//      DirPath           : Absolute path within the filesystem
+//  - error in these cases:
+//      * Dataset retrieval failure
+//      * Missing mount configuration in Dataset
+//      * Invalid mount path format (doesn't match expected patterns)
+//      * Unsupported protocol prefix
+//      * Regex parsing failures
+//
+// Notes:
+//  - Only processes the FIRST mount entry in Dataset.Spec.Mounts
+//  - Enforces strict path normalization: trims whitespace and appends trailing slash
+//  - NAS filesystem IDs are truncated at first hyphen (e.g., "fs-12345" becomes "fs")
+//  - Supported prefixes:
+//      NasMountPointPrefix = "nfs://"
+//      CpfsMountPointPrefix = "cpfs://"
+//  - All errors include contextual identifiers (Runtime name/namespace/mountpoint) for diagnostics
+//  - Successful parsing emits structured log with all extracted mount parameters
+
 func (e *EFCEngine) getMountInfo() (info MountInfo, err error) {
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 	if err != nil {
