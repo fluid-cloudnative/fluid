@@ -44,7 +44,7 @@ jobs:
         uses: golangci/golangci-lint-action@0a35821d5c230e903fcfe077583637dea1b27b47 # v9.0.0
         with:
           version: latest
-          args: --timeout 10m --exclude=SA1019 --verbose
+          args: --timeout 10m --exclude SA1019 --verbose
 
       - name: Lint preparation
         run: |
