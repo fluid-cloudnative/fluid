@@ -16,7 +16,11 @@ spec:
       containers:
       - name: read-job
         image: busybox
-        command: ['sh'] 
+        resources:
+          limits:
+            memory: "512Mi"
+            ephemeral-storage: "5Gi"
+        command: ['sh']
         args:
         - -c
         - set -ex; test -n "$(cat /data/foo/bar)"
