@@ -22,7 +22,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/brahma-adshonor/gohook"
+	"github.com/agiledragon/gomonkey/v2"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
@@ -35,17 +35,8 @@ func TestAlluxioFileUtils_GetConf(t *testing.T) {
 			return "conf", "", nil
 		}
 	}
-	err := gohook.Hook(kubeclient.ExecCommandInContainerWithFullOutput, mockExec, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	wrappedUnhook := func() {
-		err := gohook.UnHook(kubeclient.ExecCommandInContainerWithFullOutput)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-	defer wrappedUnhook()
+	patches := gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithFullOutput, mockExec)
+	defer patches.Reset()
 
 	var tests = []struct {
 		in    string
