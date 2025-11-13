@@ -152,6 +152,11 @@ func parsePortsFromConfigMap(configMap *v1.ConfigMap) (ports []int, err error) {
 	return ports, nil
 }
 
+// parseCacheDirFromConfigMap parses the cache directory and cache type from the given ConfigMap.
+// It reads the "data" key from the ConfigMap, unmarshals it as YAML, and extracts the
+// cache directory path and volume type from the tiered store configuration (level 0).
+// It returns the parsed cache directory and cache type, or an error if the "data"
+// key is missing or unmarshalling fails.
 func parseCacheDirFromConfigMap(configMap *v1.ConfigMap) (cacheDir string, cacheType common.VolumeType, err error) {
 	var value EFC
 	if v, ok := configMap.Data["data"]; ok {
