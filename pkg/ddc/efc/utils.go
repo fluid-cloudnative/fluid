@@ -143,7 +143,7 @@ func (e *EFCEngine) getWorkersEndpointsConfigmapName() string {
 
 // parsePortsFromConfigMap extracts port numbers from the given ConfigMap.
 // It expects the "data" key in ConfigMap.Data to contain a YAML string that can
-// be unmarshalled into an EFC struct. Returns a slice with the port or an error.
+// be unmarshalled into an EFC struct. Returns a slice of ports or an error.
 func parsePortsFromConfigMap(configMap *v1.ConfigMap) (ports []int, err error) {
 	var value EFC
 	if v, ok := configMap.Data["data"]; ok {
