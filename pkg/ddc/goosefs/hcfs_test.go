@@ -21,8 +21,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/brahma-adshonor/gohook"
-	v1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/agiledragon/gomonkey/v2"
+	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
@@ -55,12 +55,6 @@ func TestGetHCFSStatus(t *testing.T) {
 	mockExecErr := func(podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
 		return "err", "", errors.New("other error")
 	}
-	wrappedUnhook := func() {
-		err := gohook.UnHook(kubeclient.ExecCommandInContainer)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "hbase-master-0",
@@ -92,16 +86,14 @@ func TestGetHCFSStatus(t *testing.T) {
 	fakeClientWithErr := fake.NewFakeClientWithScheme(scheme, runtimeObjs...)
 
 	// test common case
-	err := gohook.Hook(kubeclient.ExecCommandInContainer, mockExecCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches := gomonkey.ApplyFunc(kubeclient.ExecCommandInContainer, mockExecCommon)
+
 	engine := newGooseFSEngineHCFS(fakeClient, "hbase", "fluid")
 	out, err := engine.GetHCFSStatus()
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	wrappedUnhook()
+	patches.Reset()
 	status := &v1alpha1.HCFSStatus{
 		Endpoint:                    "goosefs://hbase-master-0.fluid:2333",
 		UnderlayerFileSystemVersion: "conf",
@@ -118,13 +110,11 @@ func TestGetHCFSStatus(t *testing.T) {
 	}
 
 	// test when getConf with err
-	err = gohook.Hook(kubeclient.ExecCommandInContainer, mockExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyFunc(kubeclient.ExecCommandInContainer, mockExecErr)
+	defer patches.Reset()
+
 	engine = newGooseFSEngineHCFS(fakeClient, "hbase", "fluid")
 	_, err = engine.GetHCFSStatus()
-	wrappedUnhook()
 	if err == nil {
 		t.Errorf("expect get Conf Err, but not got.")
 	}
@@ -209,30 +199,19 @@ func TestCompatibleUFSVersion(t *testing.T) {
 	mockExecErr := func(podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
 		return "err", "", errors.New("other error")
 	}
-	wrappedUnhook := func() {
-		err := gohook.UnHook(kubeclient.ExecCommandInContainer)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-	err := gohook.Hook(kubeclient.ExecCommandInContainer, mockExecCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches := gomonkey.ApplyFunc(kubeclient.ExecCommandInContainer, mockExecCommon)
+	defer patches.Reset()
+
 	engine := newGooseFSEngineHCFS(nil, "hbase", "fluid")
 	out, _ := engine.queryCompatibleUFSVersion()
 	if out != "conf" {
 		t.Errorf("expected %s, got %s", "conf", out)
 	}
-	wrappedUnhook()
-	err = gohook.Hook(kubeclient.ExecCommandInContainer, mockExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+
+	patches.ApplyFunc(kubeclient.ExecCommandInContainer, mockExecErr)
 	engine = newGooseFSEngineHCFS(nil, "hbase", "fluid")
 	out, _ = engine.queryCompatibleUFSVersion()
 	if out != "err" {
 		t.Errorf("expected %s, got %s", "err", out)
 	}
-	wrappedUnhook()
 }
