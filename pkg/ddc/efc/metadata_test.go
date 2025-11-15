@@ -20,7 +20,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/brahma-adshonor/gohook"
+	"github.com/agiledragon/gomonkey/v2"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
@@ -35,24 +35,12 @@ func TestSyncMetadataInternal(t *testing.T) {
 	mockTotalStorageBytesError := func(e *EFCEngine) (int64, error) {
 		return 0, errors.New("other error")
 	}
-	wrappedUnhookTotalStorageBytes := func(e *EFCEngine) {
-		err := gohook.UnHookMethod(e, "TotalStorageBytes")
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 
 	mockTotalFileNumsCommon := func(e *EFCEngine) (int64, error) {
 		return 0, nil
 	}
 	mockTotalFileNumsError := func(e *EFCEngine) (int64, error) {
 		return 0, errors.New("other error")
-	}
-	wrappedUnhookTotalFileNums := func(e *EFCEngine) {
-		err := gohook.UnHookMethod(e, "TotalFileNums")
-		if err != nil {
-			t.Fatal(err.Error())
-		}
 	}
 
 	testObjs := []runtime.Object{}
@@ -100,76 +88,42 @@ func TestSyncMetadataInternal(t *testing.T) {
 		runtimeInfo: runtimeInfo,
 	}
 
-	err = gohook.HookMethod(engine, "TotalStorageBytes", mockTotalStorageBytesError, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches := gomonkey.ApplyMethod(engine, "TotalStorageBytes", mockTotalStorageBytesError)
+	defer patches.Reset()
+
 	err = engine.syncMetadataInternal()
 	if err == nil {
 		t.Errorf("fail to exec the function")
 	}
-	wrappedUnhookTotalStorageBytes(engine)
 
-	err = gohook.HookMethod(engine, "TotalStorageBytes", mockTotalStorageBytesCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = gohook.HookMethod(engine, "TotalFileNums", mockTotalFileNumsError, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyMethod(engine, "TotalStorageBytes", mockTotalStorageBytesCommon)
+	patches.ApplyMethod(engine, "TotalFileNums", mockTotalFileNumsError)
+
 	err = engine.syncMetadataInternal()
 	if err == nil {
 		t.Errorf("fail to exec the function")
 	}
-	wrappedUnhookTotalStorageBytes(engine)
-	wrappedUnhookTotalFileNums(engine)
 
-	err = gohook.HookMethod(engine, "TotalStorageBytes", mockTotalStorageBytesCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = gohook.HookMethod(engine, "TotalFileNums", mockTotalFileNumsCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyMethod(engine, "TotalStorageBytes", mockTotalStorageBytesCommon)
+	patches.ApplyMethod(engine, "TotalFileNums", mockTotalFileNumsCommon)
+
 	err = engine.syncMetadataInternal()
 	if err != nil {
 		t.Errorf("fail to exec the function")
 	}
-	wrappedUnhookTotalStorageBytes(engine)
-	wrappedUnhookTotalFileNums(engine)
 }
 
 func TestSyncMetadata(t *testing.T) {
 	mockShouldCheckUFSCommon := func(e *EFCEngine) (should bool, err error) {
 		return true, nil
 	}
-	wrappedUnhookShouldCheckUFS := func(e *EFCEngine) {
-		err := gohook.UnHookMethod(e, "ShouldCheckUFS")
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 
 	mockTotalStorageBytesCommon := func(e *EFCEngine) (int64, error) {
 		return 0, nil
 	}
-	wrappedUnhookTotalStorageBytes := func(e *EFCEngine) {
-		err := gohook.UnHookMethod(e, "TotalStorageBytes")
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 
 	mockTotalFileNumsCommon := func(e *EFCEngine) (int64, error) {
 		return 0, nil
-	}
-	wrappedUnhookTotalFileNums := func(e *EFCEngine) {
-		err := gohook.UnHookMethod(e, "TotalFileNums")
-		if err != nil {
-			t.Fatal(err.Error())
-		}
 	}
 
 	testObjs := []runtime.Object{}
@@ -211,25 +165,13 @@ func TestSyncMetadata(t *testing.T) {
 		Log:       fake.NullLogger(),
 	}
 
-	err := gohook.HookMethod(engine, "ShouldCheckUFS", mockShouldCheckUFSCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = gohook.HookMethod(engine, "TotalStorageBytes", mockTotalStorageBytesCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = gohook.HookMethod(engine, "TotalFileNums", mockTotalFileNumsCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches := gomonkey.ApplyMethod(engine, "ShouldCheckUFS", mockShouldCheckUFSCommon)
+	patches.ApplyMethod(engine, "TotalStorageBytes", mockTotalStorageBytesCommon)
+	patches.ApplyMethod(engine, "TotalFileNums", mockTotalFileNumsCommon)
+	defer patches.Reset()
 
-	err = engine.SyncMetadata()
+	err := engine.SyncMetadata()
 	if err != nil {
 		t.Errorf("fail to exec the function")
 	}
-
-	wrappedUnhookTotalFileNums(engine)
-	wrappedUnhookTotalStorageBytes(engine)
-	wrappedUnhookShouldCheckUFS(engine)
 }

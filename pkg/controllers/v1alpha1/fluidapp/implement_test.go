@@ -19,7 +19,7 @@ package fluidapp
 import (
 	"testing"
 
-	"github.com/brahma-adshonor/gohook"
+	"github.com/agiledragon/gomonkey/v2"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,17 +35,9 @@ func TestFluidAppReconcilerImplement_umountFuseSidecars(t *testing.T) {
 	mockExec := func(p1, p2, p3 string, p4 []string) (stdout string, stderr string, e error) {
 		return "", "", nil
 	}
-	err := gohook.Hook(kubeclient.ExecCommandInContainer, mockExec, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	wrappedUnhook := func() {
-		err := gohook.UnHook(kubeclient.ExecCommandInContainer)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-	defer wrappedUnhook()
+
+	patches := gomonkey.ApplyFunc(kubeclient.ExecCommandInContainer, mockExec)
+	defer patches.Reset()
 
 	type fields struct {
 		Client   client.Client

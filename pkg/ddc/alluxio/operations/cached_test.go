@@ -20,7 +20,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/brahma-adshonor/gohook"
+	"github.com/agiledragon/gomonkey/v2"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
@@ -31,28 +31,17 @@ func TestAlluxioFileUtils_CachedState(t *testing.T) {
 	ExecErr := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(AlluxioFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 
-	err := gohook.Hook(AlluxioFileUtils.exec, ExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches := gomonkey.ApplyFunc(AlluxioFileUtils.exec, ExecErr)
+	defer patches.Reset()
+
 	a := &AlluxioFileUtils{log: fake.NullLogger()}
-	_, err = a.CachedState()
+	_, err := a.CachedState()
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	wrappedUnhookExec()
 
-	err = gohook.Hook(AlluxioFileUtils.exec, ExecCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyFunc(AlluxioFileUtils.exec, ExecCommon)
 	cached, err := a.CachedState()
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
@@ -60,7 +49,6 @@ func TestAlluxioFileUtils_CachedState(t *testing.T) {
 	if cached != 0 {
 		t.Errorf("check failure, want 0, got: %d", cached)
 	}
-	wrappedUnhookExec()
 }
 
 func TestAlluxioFIlUtils_CleanCache(t *testing.T) {
@@ -73,41 +61,25 @@ func TestAlluxioFIlUtils_CleanCache(t *testing.T) {
 	ExecErr := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(AlluxioFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 
-	err := gohook.Hook(AlluxioFileUtils.exec, ExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches := gomonkey.ApplyFunc(AlluxioFileUtils.exec, ExecErr)
+	defer patches.Reset()
+
 	a := &AlluxioFileUtils{log: fake.NullLogger()}
-	err = a.CleanCache("/", 30)
+	err := a.CleanCache("/", 30)
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	wrappedUnhookExec()
 
-	err = gohook.Hook(AlluxioFileUtils.exec, ExecCommonUbuntu, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyFunc(AlluxioFileUtils.exec, ExecCommonUbuntu)
 	err = a.CleanCache("/", 30)
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
-	wrappedUnhookExec()
 
-	err = gohook.Hook(AlluxioFileUtils.exec, ExecCommonAlpine, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyFunc(AlluxioFileUtils.exec, ExecCommonAlpine)
 	err = a.CleanCache("/", 30)
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
-	wrappedUnhookExec()
 }

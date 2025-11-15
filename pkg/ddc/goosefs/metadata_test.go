@@ -18,7 +18,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/brahma-adshonor/gohook"
+	"github.com/agiledragon/gomonkey/v2"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/goosefs/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
@@ -29,13 +29,6 @@ import (
 func TestSyncMetadata(t *testing.T) {
 	QueryMetaDataInfoIntoFileCommon := func(a operations.GooseFSFileUtils, key operations.KeyOfMetaDataFile, filename string) (value string, err error) {
 		return "1024", nil
-	}
-
-	wrappedUnhookQueryMetaDataInfoIntoFile := func() {
-		err := gohook.UnHook(operations.GooseFSFileUtils.QueryMetaDataInfoIntoFile)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
 	}
 
 	datasetInputs := []datav1alpha1.Dataset{
@@ -109,15 +102,13 @@ func TestSyncMetadata(t *testing.T) {
 		Log:       fake.NullLogger(),
 	}
 
-	err := gohook.Hook(operations.GooseFSFileUtils.QueryMetaDataInfoIntoFile, QueryMetaDataInfoIntoFileCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = engine.SyncMetadata()
+	patches := gomonkey.ApplyPrivateMethod(operations.GooseFSFileUtils{}, "QueryMetaDataInfoIntoFile", QueryMetaDataInfoIntoFileCommon)
+	defer patches.Reset()
+
+	err := engine.SyncMetadata()
 	if err != nil {
 		t.Errorf("fail to exec function RestoreMetadataInternal")
 	}
-	wrappedUnhookQueryMetaDataInfoIntoFile()
 }
 
 func TestShouldSyncMetadata(t *testing.T) {
@@ -256,13 +247,6 @@ func TestRestoreMetadataInternal(t *testing.T) {
 		return "", errors.New("fail to query MetaDataInfo")
 	}
 
-	wrappedUnhookQueryMetaDataInfoIntoFile := func() {
-		err := gohook.UnHook(operations.GooseFSFileUtils.QueryMetaDataInfoIntoFile)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-
 	datasetInputs := []datav1alpha1.Dataset{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -311,20 +295,15 @@ func TestRestoreMetadataInternal(t *testing.T) {
 		},
 	}
 
-	err := gohook.Hook(operations.GooseFSFileUtils.QueryMetaDataInfoIntoFile, QueryMetaDataInfoIntoFileErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = engines[0].RestoreMetadataInternal()
+	patches := gomonkey.ApplyPrivateMethod(operations.GooseFSFileUtils{}, "QueryMetaDataInfoIntoFile", QueryMetaDataInfoIntoFileErr)
+	defer patches.Reset()
+
+	err := engines[0].RestoreMetadataInternal()
 	if err == nil {
 		t.Errorf("fail to catch the error")
 	}
-	wrappedUnhookQueryMetaDataInfoIntoFile()
 
-	err = gohook.Hook(operations.GooseFSFileUtils.QueryMetaDataInfoIntoFile, QueryMetaDataInfoIntoFileCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(operations.GooseFSFileUtils{}, "QueryMetaDataInfoIntoFile", QueryMetaDataInfoIntoFileCommon)
 
 	var testCases = []struct {
 		engine                  GooseFSEngine
@@ -349,5 +328,4 @@ func TestRestoreMetadataInternal(t *testing.T) {
 			t.Errorf("fail to exec function RestoreMetadataInternal")
 		}
 	}
-	wrappedUnhookQueryMetaDataInfoIntoFile()
 }

@@ -23,7 +23,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/brahma-adshonor/gohook"
+	"github.com/agiledragon/gomonkey/v2"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
@@ -66,17 +66,8 @@ func TestGooseFSFileUtils_IsExist(t *testing.T) {
 		}
 	}
 
-	err := gohook.Hook(kubeclient.ExecCommandInContainer, mockExec, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	wrappedUnhook := func() {
-		err := gohook.UnHook(kubeclient.ExecCommandInContainer)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-	defer wrappedUnhook()
+	patches := gomonkey.ApplyFunc(kubeclient.ExecCommandInContainer, mockExec)
+	defer patches.Reset()
 
 	var tests = []struct {
 		in    string
@@ -116,17 +107,8 @@ func TestGooseFSFileUtils_Du(t *testing.T) {
 		}
 	}
 
-	err := gohook.HookByIndirectJmp(kubeclient.ExecCommandInContainer, mockExec, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	wrappedUnhook := func() {
-		err := gohook.UnHook(kubeclient.ExecCommandInContainer)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-	defer wrappedUnhook()
+	patches := gomonkey.ApplyFunc(kubeclient.ExecCommandInContainer, mockExec)
+	defer patches.Reset()
 
 	var tests = []struct {
 		in         string
@@ -161,33 +143,21 @@ func TestGooseFSFileUtils_ReportSummary(t *testing.T) {
 	ExecErr := func(a GooseFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(GooseFSFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 
-	err := gohook.Hook(GooseFSFileUtils.exec, ExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches := gomonkey.ApplyPrivateMethod(GooseFSFileUtils{}, "exec", ExecErr)
+	defer patches.Reset()
+
 	a := GooseFSFileUtils{}
-	_, err = a.ReportSummary()
+	_, err := a.ReportSummary()
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	wrappedUnhookExec()
 
-	err = gohook.Hook(GooseFSFileUtils.exec, ExecCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(GooseFSFileUtils{}, "exec", ExecCommon)
 	_, err = a.ReportSummary()
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
-	wrappedUnhookExec()
 }
 
 func TestLoadMetadataWithoutTimeout(t *testing.T) {
@@ -197,33 +167,21 @@ func TestLoadMetadataWithoutTimeout(t *testing.T) {
 	ExecWithoutTimeoutErr := func(a GooseFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
-	wrappedUnhookExecWithoutTimeout := func() {
-		err := gohook.UnHook(GooseFSFileUtils.execWithoutTimeout)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 
-	err := gohook.Hook(GooseFSFileUtils.execWithoutTimeout, ExecWithoutTimeoutErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches := gomonkey.ApplyPrivateMethod(GooseFSFileUtils{}, "execWithoutTimeout", ExecWithoutTimeoutErr)
+	defer patches.Reset()
+
 	a := GooseFSFileUtils{log: fake.NullLogger()}
-	err = a.LoadMetadataWithoutTimeout("/")
+	err := a.LoadMetadataWithoutTimeout("/")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	wrappedUnhookExecWithoutTimeout()
 
-	err = gohook.Hook(GooseFSFileUtils.execWithoutTimeout, ExecWithoutTimeoutCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(GooseFSFileUtils{}, "execWithoutTimeout", ExecWithoutTimeoutCommon)
 	err = a.LoadMetadataWithoutTimeout("/")
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
-	wrappedUnhookExecWithoutTimeout()
 }
 
 func TestLoadMetaData(t *testing.T) {
@@ -233,33 +191,21 @@ func TestLoadMetaData(t *testing.T) {
 	ExecErr := func(a GooseFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(GooseFSFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 
-	err := gohook.Hook(GooseFSFileUtils.exec, ExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches := gomonkey.ApplyPrivateMethod(GooseFSFileUtils{}, "exec", ExecErr)
+	defer patches.Reset()
+
 	a := GooseFSFileUtils{log: fake.NullLogger()}
-	err = a.LoadMetaData("/", true)
+	err := a.LoadMetaData("/", true)
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	wrappedUnhookExec()
 
-	err = gohook.Hook(GooseFSFileUtils.exec, ExecCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(GooseFSFileUtils{}, "exec", ExecCommon)
 	err = a.LoadMetaData("/", false)
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
-	wrappedUnhookExec()
 }
 
 func TestQueryMetaDataInfoIntoFile(t *testing.T) {
@@ -269,41 +215,29 @@ func TestQueryMetaDataInfoIntoFile(t *testing.T) {
 	ExecErr := func(a GooseFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(GooseFSFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 
-	err := gohook.Hook(GooseFSFileUtils.exec, ExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches := gomonkey.ApplyPrivateMethod(GooseFSFileUtils{}, "exec", ExecErr)
+	defer patches.Reset()
+
 	a := GooseFSFileUtils{log: fake.NullLogger()}
 
 	keySets := []KeyOfMetaDataFile{DatasetName, Namespace, UfsTotal, FileNum, ""}
 	for index, keySet := range keySets {
-		_, err = a.QueryMetaDataInfoIntoFile(keySet, "/tmp/file")
+		_, err := a.QueryMetaDataInfoIntoFile(keySet, "/tmp/file")
 		if err == nil {
 			t.Errorf("%d check failure, want err, got nil", index)
 			return
 		}
 	}
-	wrappedUnhookExec()
 
-	err = gohook.Hook(GooseFSFileUtils.exec, ExecCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(GooseFSFileUtils{}, "exec", ExecCommon)
 	for index, keySet := range keySets {
-		_, err = a.QueryMetaDataInfoIntoFile(keySet, "/tmp/file")
+		_, err := a.QueryMetaDataInfoIntoFile(keySet, "/tmp/file")
 		if err != nil {
 			t.Errorf("%d check failure, want nil, got err: %v", index, err)
 			return
 		}
 	}
-	wrappedUnhookExec()
 }
 
 func TestMKdir(t *testing.T) {
@@ -313,33 +247,21 @@ func TestMKdir(t *testing.T) {
 	ExecErr := func(a GooseFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(GooseFSFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 
-	err := gohook.Hook(GooseFSFileUtils.exec, ExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches := gomonkey.ApplyPrivateMethod(GooseFSFileUtils{}, "exec", ExecErr)
+	defer patches.Reset()
+
 	a := GooseFSFileUtils{}
-	err = a.Mkdir("/")
+	err := a.Mkdir("/")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	wrappedUnhookExec()
 
-	err = gohook.Hook(GooseFSFileUtils.exec, ExecCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(GooseFSFileUtils{}, "exec", ExecCommon)
 	err = a.Mkdir("/")
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
-	wrappedUnhookExec()
 }
 
 func TestMount(t *testing.T) {
@@ -348,12 +270,6 @@ func TestMount(t *testing.T) {
 	}
 	ExecErr := func(a GooseFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
-	}
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(GooseFSFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
 	}
 
 	a := GooseFSFileUtils{}
@@ -383,31 +299,25 @@ func TestMount(t *testing.T) {
 		},
 	}
 
-	err := gohook.Hook(GooseFSFileUtils.exec, ExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches := gomonkey.ApplyPrivateMethod(GooseFSFileUtils{}, "exec", ExecErr)
+	defer patches.Reset()
+
 	for index, test := range testCases {
-		err = a.Mount("/", "/", nil, test.readOnly, test.shared)
+		err := a.Mount("/", "/", nil, test.readOnly, test.shared)
 		if err == nil {
 			t.Errorf("%d check failure, want err, got nil", index)
 			return
 		}
 	}
-	wrappedUnhookExec()
 
-	err = gohook.Hook(GooseFSFileUtils.exec, ExecCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(GooseFSFileUtils{}, "exec", ExecCommon)
 	for index, test := range testCases {
-		err = a.Mount("/", "/", nil, test.readOnly, test.shared)
+		err := a.Mount("/", "/", nil, test.readOnly, test.shared)
 		if err != nil {
 			t.Errorf("%d check failure, want nil, got err: %v", index, err)
 			return
 		}
 	}
-	wrappedUnhookExec()
 }
 
 func TestIsMounted(t *testing.T) {
@@ -417,29 +327,18 @@ func TestIsMounted(t *testing.T) {
 	ExecErr := func(a GooseFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(GooseFSFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 
-	err := gohook.Hook(GooseFSFileUtils.exec, ExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches := gomonkey.ApplyPrivateMethod(GooseFSFileUtils{}, "exec", ExecErr)
+	defer patches.Reset()
+
 	a := &GooseFSFileUtils{log: fake.NullLogger()}
-	_, err = a.IsMounted("/hbase")
+	_, err := a.IsMounted("/hbase")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 		return
 	}
-	wrappedUnhookExec()
 
-	err = gohook.Hook(GooseFSFileUtils.exec, ExecCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(GooseFSFileUtils{}, "exec", ExecCommon)
 	var testCases = []struct {
 		goosefsPath    string
 		expectedResult bool
@@ -474,33 +373,21 @@ func TestReady(t *testing.T) {
 	ExecErr := func(a GooseFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(GooseFSFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 
-	err := gohook.Hook(GooseFSFileUtils.exec, ExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches := gomonkey.ApplyPrivateMethod(GooseFSFileUtils{}, "exec", ExecErr)
+	defer patches.Reset()
+
 	a := &GooseFSFileUtils{log: fake.NullLogger()}
 	ready := a.Ready()
 	if ready != false {
 		t.Errorf("check failure, want false, got %t", ready)
 	}
-	wrappedUnhookExec()
 
-	err = gohook.Hook(GooseFSFileUtils.exec, ExecCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(GooseFSFileUtils{}, "exec", ExecCommon)
 	ready = a.Ready()
 	if ready != true {
 		t.Errorf("check failure, want true, got %t", ready)
 	}
-	wrappedUnhookExec()
 }
 
 func TestDu(t *testing.T) {
@@ -510,28 +397,17 @@ func TestDu(t *testing.T) {
 	ExecErr := func(a GooseFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(GooseFSFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 
-	err := gohook.Hook(GooseFSFileUtils.exec, ExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches := gomonkey.ApplyPrivateMethod(GooseFSFileUtils{}, "exec", ExecErr)
+	defer patches.Reset()
+
 	a := &GooseFSFileUtils{log: fake.NullLogger()}
-	_, _, _, err = a.Du("/hbase")
+	_, _, _, err := a.Du("/hbase")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	wrappedUnhookExec()
 
-	err = gohook.Hook(GooseFSFileUtils.exec, ExecCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(GooseFSFileUtils{}, "exec", ExecCommon)
 	ufs, cached, cachedPercentage, err := a.Du("/hbase")
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
@@ -545,7 +421,6 @@ func TestDu(t *testing.T) {
 	if cachedPercentage != "0%" {
 		t.Errorf("check failure, want 0, got %s", cachedPercentage)
 	}
-	wrappedUnhookExec()
 }
 
 func TestCount(t *testing.T) {
@@ -567,17 +442,9 @@ func TestCount(t *testing.T) {
 		}
 	}
 
-	err := gohook.HookByIndirectJmp(kubeclient.ExecCommandInContainer, mockExec, nil)
-	wrappedUnhook := func() {
-		err := gohook.UnHook(kubeclient.ExecCommandInContainer)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-	defer wrappedUnhook()
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches := gomonkey.ApplyFunc(kubeclient.ExecCommandInContainer, mockExec)
+	defer patches.Reset()
+
 	var tests = []struct {
 		in               string
 		out1, out2, out3 int64
@@ -611,28 +478,17 @@ func TestGetFileCount(t *testing.T) {
 	ExecWithoutTimeoutErr := func(a GooseFSFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(GooseFSFileUtils.execWithoutTimeout)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 
-	err := gohook.Hook(GooseFSFileUtils.execWithoutTimeout, ExecWithoutTimeoutErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches := gomonkey.ApplyPrivateMethod(GooseFSFileUtils{}, "execWithoutTimeout", ExecWithoutTimeoutErr)
+	defer patches.Reset()
+
 	a := &GooseFSFileUtils{log: fake.NullLogger()}
-	_, err = a.GetFileCount()
+	_, err := a.GetFileCount()
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	wrappedUnhookExec()
 
-	err = gohook.Hook(GooseFSFileUtils.execWithoutTimeout, ExecWithoutTimeoutCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(GooseFSFileUtils{}, "execWithoutTimeout", ExecWithoutTimeoutCommon)
 	fileCount, err := a.GetFileCount()
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
@@ -640,7 +496,6 @@ func TestGetFileCount(t *testing.T) {
 	if fileCount != 6367897 {
 		t.Errorf("check failure, want 6367897, got %d", fileCount)
 	}
-	wrappedUnhookExec()
 }
 
 func TestReportMetrics(t *testing.T) {
@@ -651,34 +506,21 @@ func TestReportMetrics(t *testing.T) {
 		return "", "", errors.New("fail to run the command")
 	}
 
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(GooseFSFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
+	patches := gomonkey.ApplyPrivateMethod(GooseFSFileUtils{}, "exec", ExecErr)
+	defer patches.Reset()
 
-	err := gohook.Hook(GooseFSFileUtils.exec, ExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
 	a := &GooseFSFileUtils{log: fake.NullLogger()}
 
-	_, err = a.ReportMetrics()
+	_, err := a.ReportMetrics()
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	wrappedUnhookExec()
 
-	err = gohook.Hook(GooseFSFileUtils.exec, ExecCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(GooseFSFileUtils{}, "exec", ExecCommon)
 	_, err = a.ReportMetrics()
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
-	wrappedUnhookExec()
 }
 
 func TestReportCapacity(t *testing.T) {
@@ -689,33 +531,20 @@ func TestReportCapacity(t *testing.T) {
 		return "", "", errors.New("fail to run the command")
 	}
 
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(GooseFSFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
+	patches := gomonkey.ApplyPrivateMethod(GooseFSFileUtils{}, "exec", ExecErr)
+	defer patches.Reset()
 
-	err := gohook.Hook(GooseFSFileUtils.exec, ExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
 	a := &GooseFSFileUtils{log: fake.NullLogger()}
-	_, err = a.ReportCapacity()
+	_, err := a.ReportCapacity()
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	wrappedUnhookExec()
 
-	err = gohook.Hook(GooseFSFileUtils.exec, ExecCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(GooseFSFileUtils{}, "exec", ExecCommon)
 	_, err = a.ReportCapacity()
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
-	wrappedUnhookExec()
 }
 
 func TestExec(t *testing.T) {
@@ -726,33 +555,20 @@ func TestExec(t *testing.T) {
 		return "", "", errors.New("fail to run the command")
 	}
 
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(GooseFSFileUtils.execWithoutTimeout)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
+	patches := gomonkey.ApplyPrivateMethod(GooseFSFileUtils{}, "execWithoutTimeout", ExecWithoutTimeoutErr)
+	defer patches.Reset()
 
-	err := gohook.Hook(GooseFSFileUtils.execWithoutTimeout, ExecWithoutTimeoutErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
 	a := &GooseFSFileUtils{log: fake.NullLogger()}
-	_, _, err = a.exec([]string{"goosefs", "fsadmin", "report", "capacity"}, false)
+	_, _, err := a.exec([]string{"goosefs", "fsadmin", "report", "capacity"}, false)
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	wrappedUnhookExec()
 
-	err = gohook.Hook(GooseFSFileUtils.execWithoutTimeout, ExecWithoutTimeoutCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(GooseFSFileUtils{}, "execWithoutTimeout", ExecWithoutTimeoutCommon)
 	_, _, err = a.exec([]string{"goosefs", "fsadmin", "report", "capacity"}, true)
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
-	wrappedUnhookExec()
 }
 
 func TestExecWithoutTimeout(t *testing.T) {
@@ -762,28 +578,17 @@ func TestExecWithoutTimeout(t *testing.T) {
 	mockExecErr := func(podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
 		return "err", "", errors.New("other error")
 	}
-	wrappedUnhook := func() {
-		err := gohook.UnHook(kubeclient.ExecCommandInContainer)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 
-	err := gohook.Hook(kubeclient.ExecCommandInContainer, mockExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches := gomonkey.ApplyFunc(kubeclient.ExecCommandInContainer, mockExecErr)
+	defer patches.Reset()
+
 	a := &GooseFSFileUtils{log: fake.NullLogger()}
-	_, _, err = a.execWithoutTimeout([]string{"goosefs", "fsadmin", "report", "capacity"}, false)
+	_, _, err := a.execWithoutTimeout([]string{"goosefs", "fsadmin", "report", "capacity"}, false)
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	wrappedUnhook()
 
-	err = gohook.Hook(kubeclient.ExecCommandInContainer, mockExecCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyFunc(kubeclient.ExecCommandInContainer, mockExecCommon)
 	_, _, err = a.execWithoutTimeout([]string{"goosefs", "fsadmin", "report", "capacity"}, true)
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
@@ -798,28 +603,16 @@ func TestMasterPodName(t *testing.T) {
 		return "", "", errors.New("fail to run the command")
 	}
 
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(GooseFSFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
+	patches := gomonkey.ApplyPrivateMethod(GooseFSFileUtils{}, "exec", ExecErr)
+	defer patches.Reset()
 
-	err := gohook.Hook(GooseFSFileUtils.exec, ExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
 	a := &GooseFSFileUtils{log: fake.NullLogger()}
-	_, err = a.MasterPodName()
+	_, err := a.MasterPodName()
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	wrappedUnhookExec()
 
-	err = gohook.Hook(GooseFSFileUtils.exec, ExecCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(GooseFSFileUtils{}, "exec", ExecCommon)
 	address, err := a.MasterPodName()
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
@@ -827,7 +620,6 @@ func TestMasterPodName(t *testing.T) {
 	if address != "192.168.0.193" {
 		t.Errorf("check failure, want: %s, got: %s", "192.168.0.193", address)
 	}
-	wrappedUnhookExec()
 }
 
 func TestUnMount(t *testing.T) {
@@ -835,21 +627,12 @@ func TestUnMount(t *testing.T) {
 		return "Unmounted /hbase \n", "", nil
 	}
 
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(GooseFSFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
+	patches := gomonkey.ApplyPrivateMethod(GooseFSFileUtils{}, "exec", ExecCommon)
+	defer patches.Reset()
 
-	err := gohook.Hook(GooseFSFileUtils.exec, ExecCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
 	a := &GooseFSFileUtils{log: fake.NullLogger()}
-	err = a.UnMount("/hbase")
+	err := a.UnMount("/hbase")
 	if err != nil {
 		t.Error("check failure, want err, got nil")
 	}
-	wrappedUnhookExec()
 }

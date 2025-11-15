@@ -21,7 +21,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/brahma-adshonor/gohook"
+	"github.com/agiledragon/gomonkey/v2"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
@@ -52,33 +52,21 @@ func TestEFCFileUtils_exec(t *testing.T) {
 		return "", "", errors.New("fail to run the command")
 	}
 
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(EFCFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
+	patches := gomonkey.ApplyPrivateMethod(EFCFileUtils{}, "exec", ExecWithoutTimeoutErr)
+	defer patches.Reset()
 
-	err := gohook.Hook(EFCFileUtils.exec, ExecWithoutTimeoutErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
 	a := &EFCFileUtils{log: fake.NullLogger()}
-	_, _, err = a.exec([]string{"mkdir", "abc"}, false)
+	_, _, err := a.exec([]string{"mkdir", "abc"}, false)
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	wrappedUnhookExec()
 
-	err = gohook.Hook(EFCFileUtils.exec, ExecWithoutTimeoutCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(EFCFileUtils{}, "exec", ExecWithoutTimeoutCommon)
+
 	_, _, err = a.exec([]string{"mkdir", "abc"}, true)
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
-	wrappedUnhookExec()
 }
 
 func TestEFCFileUtils_DeleteDir(t *testing.T) {
@@ -88,33 +76,21 @@ func TestEFCFileUtils_DeleteDir(t *testing.T) {
 	ExecErr := func(a EFCFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(EFCFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
+	patches := gomonkey.ApplyPrivateMethod(EFCFileUtils{}, "exec", ExecErr)
+	defer patches.Reset()
 
-	err := gohook.Hook(EFCFileUtils.exec, ExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
 	a := EFCFileUtils{}
-	err = a.DeleteDir("")
+	err := a.DeleteDir("")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	wrappedUnhookExec()
 
-	err = gohook.Hook(EFCFileUtils.exec, ExecCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(EFCFileUtils{}, "exec", ExecCommon)
+
 	err = a.DeleteDir("")
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
-	wrappedUnhookExec()
 }
 
 func TestEFCFileUtils_Ready(t *testing.T) {
@@ -124,31 +100,19 @@ func TestEFCFileUtils_Ready(t *testing.T) {
 	ExecErr := func(a EFCFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(EFCFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
+	patches := gomonkey.ApplyPrivateMethod(EFCFileUtils{}, "exec", ExecErr)
+	defer patches.Reset()
 
-	err := gohook.Hook(EFCFileUtils.exec, ExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
 	a := EFCFileUtils{}
 	ready := a.Ready()
 	if ready == true {
 		t.Error("check failure, want err, got nil")
 	}
-	wrappedUnhookExec()
 
-	err = gohook.Hook(EFCFileUtils.exec, ExecCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(EFCFileUtils{}, "exec", ExecCommon)
+
 	ready = a.Ready()
 	if ready == false {
-		t.Errorf("check failure, want nil, got err: %v", err)
+		t.Errorf("check failure, want ready")
 	}
-	wrappedUnhookExec()
 }

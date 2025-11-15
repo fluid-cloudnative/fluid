@@ -20,7 +20,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/brahma-adshonor/gohook"
+	"github.com/agiledragon/gomonkey/v2"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
@@ -55,19 +55,6 @@ func TestSetupMasterInternal(t *testing.T) {
 	}
 	mockExecInstallReleaseErr := func(name string, namespace string, valueFile string, chartName string) error {
 		return errors.New("fail to install dataload chart")
-	}
-
-	wrappedUnhookCheckRelease := func() {
-		err := gohook.UnHook(helm.CheckRelease)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-	wrappedUnhookInstallRelease := func() {
-		err := gohook.UnHook(helm.InstallRelease)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
 	}
 
 	efcruntime := &datav1alpha1.EFCRuntime{
@@ -118,55 +105,39 @@ func TestSetupMasterInternal(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	// check release found
-	err = gohook.Hook(helm.CheckRelease, mockExecCheckReleaseCommonFound, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches := gomonkey.ApplyFunc(helm.CheckRelease, mockExecCheckReleaseCommonFound)
+	defer patches.Reset()
+
 	err = engine.setupMasterInternal()
 	if err != nil {
 		t.Errorf("fail to exec check helm release: %v", err)
 	}
-	wrappedUnhookCheckRelease()
 
 	// check release error
-	err = gohook.Hook(helm.CheckRelease, mockExecCheckReleaseErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyFunc(helm.CheckRelease, mockExecCheckReleaseErr)
+
 	err = engine.setupMasterInternal()
 	if err == nil {
 		t.Errorf("fail to catch the error: %v", err)
 	}
-	wrappedUnhookCheckRelease()
 
 	// check release not found
-	err = gohook.Hook(helm.CheckRelease, mockExecCheckReleaseCommonNotFound, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyFunc(helm.CheckRelease, mockExecCheckReleaseCommonNotFound)
 
 	// install release with error
-	err = gohook.Hook(helm.InstallRelease, mockExecInstallReleaseErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyFunc(helm.InstallRelease, mockExecInstallReleaseErr)
+
 	err = engine.setupMasterInternal()
 	if err == nil {
 		t.Errorf("fail to catch the error")
 	}
-	wrappedUnhookInstallRelease()
 
 	// install release successfully
-	err = gohook.Hook(helm.InstallRelease, mockExecInstallReleaseCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyFunc(helm.InstallRelease, mockExecInstallReleaseCommon)
 	err = engine.setupMasterInternal()
 	if err != nil {
 		t.Errorf("fail to install release")
 	}
-	wrappedUnhookInstallRelease()
-	wrappedUnhookCheckRelease()
 }
 
 func TestGenerateEFCValueFile(t *testing.T) {
