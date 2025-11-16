@@ -22,7 +22,6 @@ import (
 	"testing"
 
 	. "github.com/agiledragon/gomonkey/v2"
-	"github.com/brahma-adshonor/gohook"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
@@ -117,11 +116,11 @@ func TestTotalStorageBytes(t *testing.T) {
 				Client:    fakeClient,
 				Log:       fake.NullLogger(),
 			}
-			patch1 := ApplyFunc(kubeclient.ExecCommandInContainerWithFullOutput, func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
+			patches := ApplyFunc(kubeclient.ExecCommandInContainerWithFullOutput, func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
 				stdout, stderr, err := mockExecCommandInContainerForUsedStorageBytes()
 				return stdout, stderr, err
 			})
-			defer patch1.Reset()
+			defer patches.Reset()
 			gotValue, err := e.TotalStorageBytes()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ThinEngine.TotalStorageBytes() error = %v, wantErr %v", err, tt.wantErr)
@@ -198,11 +197,11 @@ func TestTotalFileNums(t *testing.T) {
 				Log:       fake.NullLogger(),
 				Client:    fakeClient,
 			}
-			patch1 := ApplyFunc(kubeclient.ExecCommandInContainerWithFullOutput, func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
+			patches := ApplyFunc(kubeclient.ExecCommandInContainerWithFullOutput, func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
 				stdout, stderr, err := mockExecCommandInContainerForTotalFileNums()
 				return stdout, stderr, err
 			})
-			defer patch1.Reset()
+			defer patches.Reset()
 			gotValue, err := e.TotalFileNums()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ThinEngine.TotalFileNums() error = %v, wantErr %v", err, tt.wantErr)
@@ -430,11 +429,11 @@ func TestThinEngine_UsedStorageBytes(t *testing.T) {
 				Log:       fake.NullLogger(),
 				Client:    fakeClient,
 			}
-			patch1 := ApplyFunc(kubeclient.ExecCommandInContainerWithFullOutput, func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
+			patches := ApplyFunc(kubeclient.ExecCommandInContainerWithFullOutput, func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
 				stdout, stderr, err := mockExecCommandInContainerForUsedStorageBytes()
 				return stdout, stderr, err
 			})
-			defer patch1.Reset()
+			defer patches.Reset()
 			gotValue, err := j.UsedStorageBytes()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ThinEngine.UsedStorageBytes() error = %v, wantErr %v", err, tt.wantErr)
@@ -451,17 +450,9 @@ func TestThinEngine_updateFuseConfigOnChange(t *testing.T) {
 	mockUpdate := func(client client.Client, cm *corev1.ConfigMap) error {
 		return nil
 	}
-	err := gohook.Hook(kubeclient.UpdateConfigMap, mockUpdate, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	wrappedUnhook := func() {
-		err := gohook.UnHook(kubeclient.UpdateConfigMap)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-	defer wrappedUnhook()
+
+	patches := ApplyFunc(kubeclient.UpdateConfigMap, mockUpdate)
+	defer patches.Reset()
 
 	dataset := datav1alpha1.Dataset{
 		ObjectMeta: metav1.ObjectMeta{
