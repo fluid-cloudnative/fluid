@@ -673,7 +673,7 @@ func TestCheckRuntimeReady(t *testing.T) {
 		t.Errorf("fail to exec the function CheckRuntimeReady")
 	}
 
-	patches = gomonkey.ApplyFunc(kubeclient.ExecCommandInContainer, mockExecErr)
+	patches.ApplyFunc(kubeclient.ExecCommandInContainer, mockExecErr)
 
 	if ready := engine.CheckRuntimeReady(); ready != false {
 		fmt.Println(ready)

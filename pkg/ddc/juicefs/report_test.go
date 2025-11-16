@@ -17,10 +17,10 @@ limitations under the License.
 package juicefs
 
 import (
+	"github.com/agiledragon/gomonkey/v2"
 	"reflect"
 	"testing"
 
-	"github.com/brahma-adshonor/gohook"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
@@ -290,10 +290,9 @@ func TestJuiceFSEngine_getPodMetrics(t *testing.T) {
 	GetMetricCommon := func(a operations.JuiceFileUtils, juicefsPath string) (metric string, err error) {
 		return mockJuiceFSMetric(), nil
 	}
-	err := gohook.Hook(operations.JuiceFileUtils.GetMetric, GetMetricCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches := gomonkey.ApplyMethod(operations.JuiceFileUtils{}, "GetMetric", GetMetricCommon)
+	defer patches.Reset()
+
 	j := JuiceFSEngine{
 		Log: fake.NullLogger(),
 	}

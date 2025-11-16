@@ -24,7 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 
-	"github.com/brahma-adshonor/gohook"
+	"github.com/agiledragon/gomonkey/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
@@ -138,13 +138,6 @@ func TestShouldSyncMetadata(t *testing.T) {
 func TestSyncMetadata(t *testing.T) {
 	QueryMetaDataInfoIntoFileCommon := func(a operations.JuiceFileUtils, key operations.KeyOfMetaDataFile, filename string) (value string, err error) {
 		return "1024", nil
-	}
-
-	wrappedUnhookQueryMetaDataInfoIntoFile := func() {
-		err := gohook.UnHook(operations.JuiceFileUtils.QueryMetaDataInfoIntoFile)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
 	}
 
 	datasetInputs := []datav1alpha1.Dataset{
@@ -272,15 +265,13 @@ func TestSyncMetadata(t *testing.T) {
 		Log:       fake.NullLogger(),
 	}
 
-	err := gohook.Hook(operations.JuiceFileUtils.QueryMetaDataInfoIntoFile, QueryMetaDataInfoIntoFileCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = engine.SyncMetadata()
+	patch := gomonkey.ApplyMethodFunc(operations.JuiceFileUtils{}, "QueryMetaDataInfoIntoFile", QueryMetaDataInfoIntoFileCommon)
+	defer patch.Reset()
+
+	err := engine.SyncMetadata()
 	if err != nil {
 		t.Errorf("fail to exec function RestoreMetadataInternal: %v", err)
 	}
-	wrappedUnhookQueryMetaDataInfoIntoFile()
 }
 
 func TestJuiceFSEngine_syncMetadataInternal(t *testing.T) {
