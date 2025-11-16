@@ -45,7 +45,7 @@ func TestJindoFileUtils_exec(t *testing.T) {
 		return "", "", errors.New("fail to run the command")
 	}
 
-	patches := gomonkey.ApplyPrivateMethod(reflect.TypeOf(JindoFileUtils{}), "execWithoutTimeout", ExecWithoutTimeoutErr)
+	patches := gomonkey.ApplyPrivateMethod(JindoFileUtils{}, "execWithoutTimeout", ExecWithoutTimeoutErr)
 	defer patches.Reset()
 
 	a := &JindoFileUtils{log: fake.NullLogger()}
@@ -54,7 +54,7 @@ func TestJindoFileUtils_exec(t *testing.T) {
 		t.Error("check failure, want err, got nil")
 	}
 
-	patches.ApplyPrivateMethod(reflect.TypeOf(JindoFileUtils{}), "execWithoutTimeout", ExecWithoutTimeoutCommon)
+	patches.ApplyPrivateMethod(JindoFileUtils{}, "execWithoutTimeout", ExecWithoutTimeoutCommon)
 	_, _, err = a.exec([]string{"/sdk/bin/jindo", "jfs", "-report"}, true)
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
@@ -69,7 +69,7 @@ func TestJindoFileUtils_GetUfsTotalSize(t *testing.T) {
 		return "", "", errors.New("fail to run the command")
 	}
 
-	patches := gomonkey.ApplyPrivateMethod(reflect.TypeOf(JindoFileUtils{}), "execWithoutTimeout", ExecWithoutTimeoutErr)
+	patches := gomonkey.ApplyPrivateMethod(JindoFileUtils{}, "execWithoutTimeout", ExecWithoutTimeoutErr)
 	defer patches.Reset()
 
 	a := &JindoFileUtils{log: fake.NullLogger()}
@@ -78,7 +78,7 @@ func TestJindoFileUtils_GetUfsTotalSize(t *testing.T) {
 		t.Error("check failure, want err, got nil")
 	}
 
-	patches.ApplyPrivateMethod(reflect.TypeOf(JindoFileUtils{}), "execWithoutTimeout", ExecWithoutTimeoutCommon)
+	patches.ApplyPrivateMethod(JindoFileUtils{}, "execWithoutTimeout", ExecWithoutTimeoutCommon)
 	_, err = a.GetUfsTotalSize("/tmpDictionary", false)
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
@@ -92,8 +92,8 @@ func TestJindoFileUtils_Ready(t *testing.T) {
 	ExecErr := func(a JindoFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
-	
-	patches := gomonkey.ApplyPrivateMethod(reflect.TypeOf(JindoFileUtils{}), "exec", ExecErr)
+
+	patches := gomonkey.ApplyPrivateMethod(JindoFileUtils{}, "exec", ExecErr)
 	defer patches.Reset()
 
 	a := &JindoFileUtils{log: fake.NullLogger()}
@@ -102,7 +102,7 @@ func TestJindoFileUtils_Ready(t *testing.T) {
 		t.Errorf("check failure, want false, got %t", ready)
 	}
 
-	patches.ApplyPrivateMethod(reflect.TypeOf(JindoFileUtils{}), "exec", ExecCommon)
+	patches.ApplyPrivateMethod(JindoFileUtils{}, "exec", ExecCommon)
 	ready = a.Ready()
 	if ready != true {
 		t.Errorf("check failure, want true, got %t", ready)
@@ -116,8 +116,8 @@ func TestJindoFileUtils_LoadMetadataWithoutTimeout(t *testing.T) {
 	ExecWithoutTimeoutErr := func(a JindoFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
-	
-	patches := gomonkey.ApplyPrivateMethod(reflect.TypeOf(JindoFileUtils{}), "execWithoutTimeout", ExecWithoutTimeoutErr)
+
+	patches := gomonkey.ApplyPrivateMethod(JindoFileUtils{}, "execWithoutTimeout", ExecWithoutTimeoutErr)
 	defer patches.Reset()
 
 	a := JindoFileUtils{log: fake.NullLogger()}
@@ -126,7 +126,7 @@ func TestJindoFileUtils_LoadMetadataWithoutTimeout(t *testing.T) {
 		t.Error("check failure, want err, got nil")
 	}
 
-	patches.ApplyPrivateMethod(reflect.TypeOf(JindoFileUtils{}), "execWithoutTimeout", ExecWithoutTimeoutCommon)
+	patches.ApplyPrivateMethod(JindoFileUtils{}, "execWithoutTimeout", ExecWithoutTimeoutCommon)
 	err = a.LoadMetadataWithoutTimeout("/")
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)

@@ -16,7 +16,6 @@ package operations
 
 import (
 	"errors"
-	"reflect"
 	"testing"
 
 	"github.com/agiledragon/gomonkey/v2"
@@ -31,7 +30,7 @@ func TestJindoFIlUtils_CleanCache(t *testing.T) {
 		return "", "", errors.New("fail to run the command")
 	}
 
-	patches := gomonkey.ApplyPrivateMethod(reflect.TypeOf(JindoFileUtils{}), "exec", ExecErr)
+	patches := gomonkey.ApplyPrivateMethod(JindoFileUtils{}, "exec", ExecErr)
 	defer patches.Reset()
 
 	a := &JindoFileUtils{log: fake.NullLogger()}
@@ -40,7 +39,7 @@ func TestJindoFIlUtils_CleanCache(t *testing.T) {
 		t.Error("check failure, want err, got nil")
 	}
 
-	patches.ApplyPrivateMethod(reflect.TypeOf(JindoFileUtils{}), "exec", ExecCommon)
+	patches.ApplyPrivateMethod(JindoFileUtils{}, "exec", ExecCommon)
 	err = a.CleanCache()
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
