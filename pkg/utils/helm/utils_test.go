@@ -22,7 +22,7 @@ import (
 	"os/exec"
 	"testing"
 
-	"github.com/brahma-adshonor/gohook"
+	"github.com/agiledragon/gomonkey/v2"
 )
 
 func TestInstallRelease(t *testing.T) {
@@ -45,62 +45,28 @@ func TestInstallRelease(t *testing.T) {
 		return nil, errors.New("fail to run the command")
 	}
 
-	wrappedUnhookLookPath := func() {
-		err := gohook.UnHook(exec.LookPath)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-	wrappedUnhookStat := func() {
-		err := gohook.UnHook(os.Stat)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-	wrappedUnhookCombinedOutput := func() {
-		err := gohook.UnHook((*exec.Cmd).CombinedOutput)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-
-	err := gohook.Hook(exec.LookPath, LookPathErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = InstallRelease("fluid", "default", "testValueFile", "testChartName")
+	lookPathPatch := gomonkey.ApplyFunc(exec.LookPath, LookPathErr)
+	err := InstallRelease("fluid", "default", "testValueFile", "testChartName")
 	if err == nil {
 		t.Errorf("fail to catch the error")
 	}
-	wrappedUnhookLookPath()
+	lookPathPatch.Reset()
 
-	err = gohook.Hook(exec.LookPath, LookPathCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = gohook.Hook(os.Stat, StatErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	lookPathPatch.ApplyFunc(exec.LookPath, LookPathCommon)
+	statPatch := gomonkey.ApplyFunc(os.Stat, StatErr)
 	err = InstallRelease("fluid", "default", "testValueFile", "/chart/fluid")
 	if err == nil {
 		t.Errorf("fail to catch the error")
 	}
-	wrappedUnhookStat()
+	statPatch.Reset()
 
-	err = gohook.Hook(os.Stat, StatCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = gohook.Hook((*exec.Cmd).CombinedOutput, CombinedOutputErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	statPatch.ApplyFunc(os.Stat, StatCommon)
+	combineOutputPatch := gomonkey.ApplyMethod((*exec.Cmd)(nil), "CombinedOutput", CombinedOutputErr)
 	err = InstallRelease("fluid", "default", "testValueFile", "/chart/fluid")
 	if err == nil {
 		t.Errorf("fail to catch the error")
 	}
-	wrappedUnhookCombinedOutput()
+	combineOutputPatch.Reset()
 
 	badValue := "test$bad"
 	err = InstallRelease("fluid", badValue, "testValueFile", "/chart/fluid")
@@ -108,17 +74,14 @@ func TestInstallRelease(t *testing.T) {
 		t.Errorf("fail to catch the error of %s", badValue)
 	}
 
-	err = gohook.Hook((*exec.Cmd).CombinedOutput, CombinedOutputCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	combineOutputPatch.ApplyMethod((*exec.Cmd)(nil), "CombinedOutput", CombinedOutputCommon)
 	err = InstallRelease("fluid", "default", "testValueFile", "/chart/fluid")
 	if err != nil {
 		t.Errorf("fail to exec the function")
 	}
-	wrappedUnhookCombinedOutput()
-	wrappedUnhookStat()
-	wrappedUnhookLookPath()
+	combineOutputPatch.Reset()
+	lookPathPatch.Reset()
+	statPatch.Reset()
 }
 
 func TestCheckRelease(t *testing.T) {
@@ -138,48 +101,20 @@ func TestCheckRelease(t *testing.T) {
 		return errors.New("fail to run the command")
 	}
 
-	wrappedUnhookLookPath := func() {
-		err := gohook.UnHook(exec.LookPath)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
+	lookupPatch := gomonkey.ApplyFunc(exec.LookPath, LookPathErr)
+	_, err := CheckRelease("fluid", "default")
+	if err == nil {
+		t.Errorf("fail to catch the error")
 	}
-	wrappedUnhookStart := func() {
-		err := gohook.UnHook((*exec.Cmd).Start)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-	wrappedUnhookWait := func() {
-		err := gohook.UnHook((*exec.Cmd).Wait)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
+	lookupPatch.Reset()
 
-	err := gohook.Hook(exec.LookPath, LookPathErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	lookupPatch.ApplyFunc(exec.LookPath, LookPathCommon)
+	startPatch := gomonkey.ApplyMethod((*exec.Cmd)(nil), "Start", StartErr)
 	_, err = CheckRelease("fluid", "default")
 	if err == nil {
 		t.Errorf("fail to catch the error")
 	}
-	wrappedUnhookLookPath()
-
-	err = gohook.Hook(exec.LookPath, LookPathCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = gohook.Hook((*exec.Cmd).Start, StartErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	_, err = CheckRelease("fluid", "default")
-	if err == nil {
-		t.Errorf("fail to catch the error")
-	}
-	wrappedUnhookStart()
+	startPatch.Reset()
 
 	badValue := "test$bad"
 	_, err = CheckRelease("fluid", badValue)
@@ -187,21 +122,15 @@ func TestCheckRelease(t *testing.T) {
 		t.Errorf("fail to catch the error of %s", badValue)
 	}
 
-	err = gohook.Hook((*exec.Cmd).Start, StartCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = gohook.Hook((*exec.Cmd).Wait, WaitErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	startPatch.ApplyMethod((*exec.Cmd)(nil), "Start", StartCommon)
+	waitPatch := gomonkey.ApplyMethod((*exec.Cmd)(nil), "Wait", WaitErr)
 	_, err = CheckRelease("fluid", "default")
 	if err == nil {
 		t.Errorf("fail to catch the error")
 	}
-	wrappedUnhookWait()
-	wrappedUnhookStart()
-	wrappedUnhookLookPath()
+	waitPatch.Reset()
+	startPatch.Reset()
+	lookupPatch.Reset()
 }
 
 func TestDeleteRelease(t *testing.T) {
@@ -218,42 +147,20 @@ func TestDeleteRelease(t *testing.T) {
 		return nil, errors.New("fail to run the command")
 	}
 
-	wrappedUnhookOutput := func() {
-		err := gohook.UnHook((*exec.Cmd).Output)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
+	lookPathPatch := gomonkey.ApplyFunc(exec.LookPath, LookPathErr)
+	err := DeleteRelease("fluid", "default")
+	if err == nil {
+		t.Errorf("fail to catch the error")
 	}
-	wrappedUnhookLookPath := func() {
-		err := gohook.UnHook(exec.LookPath)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
+	lookPathPatch.Reset()
 
-	err := gohook.Hook(exec.LookPath, LookPathErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	lookPathPatch.ApplyFunc(exec.LookPath, LookPathCommon)
+	outputPatch := gomonkey.ApplyMethod((*exec.Cmd)(nil), "Output", OutputErr)
 	err = DeleteRelease("fluid", "default")
 	if err == nil {
 		t.Errorf("fail to catch the error")
 	}
-	wrappedUnhookLookPath()
-
-	err = gohook.Hook(exec.LookPath, LookPathCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = gohook.Hook((*exec.Cmd).Output, OutputErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = DeleteRelease("fluid", "default")
-	if err == nil {
-		t.Errorf("fail to catch the error")
-	}
-	wrappedUnhookOutput()
+	outputPatch.Reset()
 	// test check illegal arguements
 	badValue := "test$bad"
 	err = DeleteRelease("fluid", badValue)
@@ -261,16 +168,13 @@ func TestDeleteRelease(t *testing.T) {
 		t.Errorf("fail to catch the error of %s", badValue)
 	}
 
-	err = gohook.Hook((*exec.Cmd).Output, OutputCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	outputPatch.ApplyMethod((*exec.Cmd)(nil), "Output", OutputCommon)
 	err = DeleteRelease("fluid", "default")
 	if err != nil {
 		t.Errorf("fail to exec the function")
 	}
-	wrappedUnhookOutput()
-	wrappedUnhookLookPath()
+	outputPatch.Reset()
+	lookPathPatch.Reset()
 }
 
 func TestListReleases(t *testing.T) {
@@ -287,47 +191,22 @@ func TestListReleases(t *testing.T) {
 		return nil, errors.New("fail to run the command")
 	}
 
-	wrappedUnhookOutput := func() {
-		err := gohook.UnHook((*exec.Cmd).Output)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
+	lookPathPatch := gomonkey.ApplyFunc(exec.LookPath, LookPathErr)
+	_, err := ListReleases("default")
+	if err == nil {
+		t.Errorf("fail to catch the error")
 	}
-	wrappedUnhookLookPath := func() {
-		err := gohook.UnHook(exec.LookPath)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
+	lookPathPatch.Reset()
 
-	err := gohook.Hook(exec.LookPath, LookPathErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	lookPathPatch.ApplyFunc(exec.LookPath, LookPathCommon)
+	outputPatch := gomonkey.ApplyMethod((*exec.Cmd)(nil), "Output", OutputErr)
 	_, err = ListReleases("default")
 	if err == nil {
 		t.Errorf("fail to catch the error")
 	}
-	wrappedUnhookLookPath()
+	outputPatch.Reset()
 
-	err = gohook.Hook(exec.LookPath, LookPathCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = gohook.Hook((*exec.Cmd).Output, OutputErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	_, err = ListReleases("default")
-	if err == nil {
-		t.Errorf("fail to catch the error")
-	}
-	wrappedUnhookOutput()
-
-	err = gohook.Hook((*exec.Cmd).Output, OutputCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	outputPatch.ApplyMethod((*exec.Cmd)(nil), "Output", OutputCommon)
 	release, err := ListReleases("default")
 	if err != nil {
 		t.Errorf("fail to exec the function")
@@ -335,13 +214,13 @@ func TestListReleases(t *testing.T) {
 	if len(release) != 2 {
 		t.Errorf("fail to exec the function ListRelease")
 	}
-	wrappedUnhookOutput()
+	outputPatch.Reset()
 
 	_, err = ListReleases("def$ault")
 	if err == nil {
 		t.Errorf("fail to catch the error")
 	}
-	wrappedUnhookLookPath()
+	lookPathPatch.Reset()
 }
 
 func TestListReleaseMap(t *testing.T) {
@@ -358,47 +237,22 @@ func TestListReleaseMap(t *testing.T) {
 		return nil, errors.New("fail to run the command")
 	}
 
-	wrappedUnhookOutput := func() {
-		err := gohook.UnHook((*exec.Cmd).Output)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
+	lookPathPatch := gomonkey.ApplyFunc(exec.LookPath, LookPathErr)
+	_, err := ListReleaseMap("default")
+	if err == nil {
+		t.Errorf("fail to catch the error")
 	}
-	wrappedUnhookLookPath := func() {
-		err := gohook.UnHook(exec.LookPath)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
+	lookPathPatch.Reset()
 
-	err := gohook.Hook(exec.LookPath, LookPathErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	lookPathPatch.ApplyFunc(exec.LookPath, LookPathCommon)
+	outputPatch := gomonkey.ApplyMethod((*exec.Cmd)(nil), "Output", OutputErr)
 	_, err = ListReleaseMap("default")
 	if err == nil {
 		t.Errorf("fail to catch the error")
 	}
-	wrappedUnhookLookPath()
+	outputPatch.Reset()
 
-	err = gohook.Hook(exec.LookPath, LookPathCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = gohook.Hook((*exec.Cmd).Output, OutputErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	_, err = ListReleaseMap("default")
-	if err == nil {
-		t.Errorf("fail to catch the error")
-	}
-	wrappedUnhookOutput()
-
-	err = gohook.Hook((*exec.Cmd).Output, OutputCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	outputPatch.ApplyMethod((*exec.Cmd)(nil), "Output", OutputCommon)
 	release, err := ListReleaseMap("default")
 	if err != nil {
 		t.Errorf("fail to exec the function")
@@ -406,13 +260,13 @@ func TestListReleaseMap(t *testing.T) {
 	if len(release) != 2 {
 		t.Errorf("fail to split the strout")
 	}
-	wrappedUnhookOutput()
+	outputPatch.Reset()
 
 	_, err = ListReleaseMap("def$ault")
 	if err == nil {
 		t.Errorf("fail to catch the error")
 	}
-	wrappedUnhookLookPath()
+	lookPathPatch.Reset()
 }
 
 func TestListAllReleasesWithDetail(t *testing.T) {
@@ -429,47 +283,22 @@ func TestListAllReleasesWithDetail(t *testing.T) {
 		return nil, errors.New("fail to run the command")
 	}
 
-	wrappedUnhookOutput := func() {
-		err := gohook.UnHook((*exec.Cmd).Output)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
+	lookPathPatch := gomonkey.ApplyFunc(exec.LookPath, LookPathErr)
+	_, err := ListAllReleasesWithDetail("default")
+	if err == nil {
+		t.Errorf("fail to catch the error")
 	}
-	wrappedUnhookLookPath := func() {
-		err := gohook.UnHook(exec.LookPath)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
+	lookPathPatch.Reset()
 
-	err := gohook.Hook(exec.LookPath, LookPathErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	lookPathPatch.ApplyFunc(exec.LookPath, LookPathCommon)
+	outputPatch := gomonkey.ApplyMethod((*exec.Cmd)(nil), "Output", OutputErr)
 	_, err = ListAllReleasesWithDetail("default")
 	if err == nil {
 		t.Errorf("fail to catch the error")
 	}
-	wrappedUnhookLookPath()
+	outputPatch.Reset()
 
-	err = gohook.Hook(exec.LookPath, LookPathCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = gohook.Hook((*exec.Cmd).Output, OutputErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	_, err = ListAllReleasesWithDetail("default")
-	if err == nil {
-		t.Errorf("fail to catch the error")
-	}
-	wrappedUnhookOutput()
-
-	err = gohook.Hook((*exec.Cmd).Output, OutputCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	outputPatch.ApplyMethod((*exec.Cmd)(nil), "Output", OutputCommon)
 	release, err := ListAllReleasesWithDetail("default")
 	if err != nil {
 		t.Errorf("fail to exec the function")
@@ -477,13 +306,13 @@ func TestListAllReleasesWithDetail(t *testing.T) {
 	if len(release) != 2 {
 		t.Errorf("fail to split the strout")
 	}
-	wrappedUnhookOutput()
+	outputPatch.Reset()
 
 	_, err = ListAllReleasesWithDetail("def$ault")
 	if err == nil {
 		t.Errorf("fail to catch the error")
 	}
-	wrappedUnhookLookPath()
+	lookPathPatch.Reset()
 }
 
 func TestDeleteReleaseIfExists(t *testing.T) {
@@ -502,60 +331,32 @@ func TestDeleteReleaseIfExists(t *testing.T) {
 	DeleteReleaseErr := func(name, namespace string) (err error) {
 		return errors.New("fail to run the command")
 	}
-	wrappedUnhookCheckRelease := func() {
-		err := gohook.UnHook(CheckRelease)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-	wrappedUnhookDeleteRelease := func() {
-		err := gohook.UnHook(DeleteRelease)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-	err := gohook.Hook(CheckRelease, CheckReleaseErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = DeleteReleaseIfExists("fluid", "default")
+
+	patches := gomonkey.ApplyFunc(CheckRelease, CheckReleaseErr)
+	err := DeleteReleaseIfExists("fluid", "default")
 	if err == nil {
 		t.Errorf("fail to catch the error")
 	}
-	wrappedUnhookCheckRelease()
+	patches.Reset()
 
-	err = gohook.Hook(CheckRelease, CheckReleaseCommonFalse, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyFunc(CheckRelease, CheckReleaseCommonFalse)
 	err = DeleteReleaseIfExists("fluid", "default")
 	if err != nil {
 		t.Errorf("fail to exec the function")
 	}
-	wrappedUnhookCheckRelease()
+	patches.Reset()
 
-	err = gohook.Hook(CheckRelease, CheckReleaseCommonTrue, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = gohook.Hook(DeleteRelease, DeleteReleaseErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyFunc(CheckRelease, CheckReleaseCommonTrue)
+	patches.ApplyFunc(DeleteRelease, DeleteReleaseErr)
 	err = DeleteReleaseIfExists("fluid", "default")
 	if err == nil {
 		t.Errorf("fail to catch the error")
 	}
-	wrappedUnhookDeleteRelease()
 
-	err = gohook.Hook(DeleteRelease, DeleteReleaseCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyFunc(DeleteRelease, DeleteReleaseCommon)
 	err = DeleteReleaseIfExists("fluid", "default")
 	if err != nil {
 		t.Errorf("fail to catch the error")
 	}
-	wrappedUnhookDeleteRelease()
-	wrappedUnhookCheckRelease()
+	patches.Reset()
 }

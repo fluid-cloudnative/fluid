@@ -6,7 +6,7 @@ matrix:
       os:
         - linux
       go_import_path: github.com/fluid-cloudnative/fluid
-      #for the convenience of gohook to set gcflag here
+      #for the convenience of gomonkey to set gcflag here
       env:
         - CI_TEST_FLAGS='-race -coverprofile=coverage.txt -covermode=atomic'
       sudo: true
