@@ -84,20 +84,19 @@ func TestJuiceFileUtils_Mkdir(t *testing.T) {
 		return "", "", errors.New("fail to run the command")
 	}
 
-	patch1 := gomonkey.ApplyMethodFunc(JuiceFileUtils{}, "exec", ExecErr)
+	patches := gomonkey.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecErr)
+	defer patches.Reset()
 	a := JuiceFileUtils{}
 	err := a.Mkdir("/")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	patch1.Reset()
 
-	patch2 := gomonkey.ApplyMethodFunc(JuiceFileUtils{}, "exec", ExecCommon)
+	patches.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecCommon)
 	err = a.Mkdir("/")
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
-	patch2.Reset()
 }
 
 func TestJuiceFileUtils_exec(t *testing.T) {
@@ -108,20 +107,19 @@ func TestJuiceFileUtils_exec(t *testing.T) {
 		return "", "", errors.New("fail to run the command")
 	}
 
-	patch1 := gomonkey.ApplyMethodFunc(JuiceFileUtils{}, "exec", ExecWithoutTimeoutErr)
+	patches := gomonkey.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecWithoutTimeoutErr)
+	defer patches.Reset()
 	a := &JuiceFileUtils{log: fake.NullLogger()}
 	_, _, err := a.exec([]string{"mkdir", "abc"}, false)
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	patch1.Reset()
 
-	patch2 := gomonkey.ApplyMethodFunc(JuiceFileUtils{}, "exec", ExecWithoutTimeoutCommon)
+	patches.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecWithoutTimeoutCommon)
 	_, _, err = a.exec([]string{"mkdir", "abc"}, false)
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
-	patch2.Reset()
 }
 
 func TestJuiceFileUtils_GetMetric(t *testing.T) {
@@ -132,15 +130,15 @@ func TestJuiceFileUtils_GetMetric(t *testing.T) {
 		return "", "", errors.New("fail to run the command")
 	}
 
-	patch1 := gomonkey.ApplyMethodFunc(JuiceFileUtils{}, "exec", ExecErr)
+	patches := gomonkey.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecErr)
+	defer patches.Reset()
 	a := JuiceFileUtils{}
 	_, err := a.GetMetric("/tmp")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	patch1.Reset()
 
-	patch2 := gomonkey.ApplyMethodFunc(JuiceFileUtils{}, "exec", ExecCommon)
+	patches.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecCommon)
 	m, err := a.GetMetric("/tmp")
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
@@ -148,7 +146,6 @@ func TestJuiceFileUtils_GetMetric(t *testing.T) {
 	if m != "juicefs metrics success" {
 		t.Errorf("expected juicefs metrics success, got %s", m)
 	}
-	patch2.Reset()
 }
 
 func TestJuiceFileUtils_DeleteCacheDirs(t *testing.T) {
@@ -159,20 +156,19 @@ func TestJuiceFileUtils_DeleteCacheDirs(t *testing.T) {
 		return "", "", errors.New("fail to run the command")
 	}
 
-	patch1 := gomonkey.ApplyMethodFunc(JuiceFileUtils{}, "exec", ExecErr)
+	patches := gomonkey.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecErr)
+	defer patches.Reset()
 	a := JuiceFileUtils{}
 	err := a.DeleteCacheDirs([]string{"/tmp/raw/chunks"})
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	patch1.Reset()
 
-	patch2 := gomonkey.ApplyMethodFunc(JuiceFileUtils{}, "exec", ExecCommon)
+	patches.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecCommon)
 	err = a.DeleteCacheDirs([]string{"/tmp/raw/chunks"})
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
-	patch2.Reset()
 }
 
 func TestJuiceFileUtils_DeleteCacheDir(t *testing.T) {
@@ -185,20 +181,19 @@ func TestJuiceFileUtils_DeleteCacheDir(t *testing.T) {
 
 	a := JuiceFileUtils{}
 	// no error
-	patch1 := gomonkey.ApplyMethodFunc(JuiceFileUtils{}, "exec", ExecCommon)
+	patches := gomonkey.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecCommon)
+	defer patches.Reset()
 	err := a.DeleteCacheDir("/tmp/raw/chunks")
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
-	patch1.Reset()
 
 	// error
-	patch2 := gomonkey.ApplyMethodFunc(JuiceFileUtils{}, "exec", ExecErr)
+	patches.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecErr)
 	err = a.DeleteCacheDir("/tmp/raw/chunks")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	patch2.Reset()
 }
 
 func TestJuiceFileUtils_GetStatus(t *testing.T) {
@@ -209,15 +204,15 @@ func TestJuiceFileUtils_GetStatus(t *testing.T) {
 		return "", "", errors.New("fail to run the command")
 	}
 
-	patch1 := gomonkey.ApplyMethodFunc(JuiceFileUtils{}, "exec", ExecErr)
+	patches := gomonkey.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecErr)
+	defer patches.Reset()
 	a := JuiceFileUtils{}
 	err := a.DeleteCacheDir("/tmp/raw/chunks")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	patch1.Reset()
 
-	patch2 := gomonkey.ApplyMethodFunc(JuiceFileUtils{}, "exec", ExecCommon)
+	patches.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecCommon)
 	got, err := a.GetStatus("test")
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
@@ -225,7 +220,6 @@ func TestJuiceFileUtils_GetStatus(t *testing.T) {
 	if got != CommonStatus {
 		t.Errorf("want %s, got: %v", CommonStatus, got)
 	}
-	patch2.Reset()
 }
 
 func TestJuiceFileUtils_LoadMetadataWithoutTimeout(t *testing.T) {
@@ -236,20 +230,19 @@ func TestJuiceFileUtils_LoadMetadataWithoutTimeout(t *testing.T) {
 		return "", "", errors.New("fail to run the command")
 	}
 
-	patch1 := gomonkey.ApplyMethodFunc(JuiceFileUtils{}, "exec", ExecWithoutTimeoutErr)
+	patches := gomonkey.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecWithoutTimeoutErr)
+	defer patches.Reset()
 	a := JuiceFileUtils{log: fake.NullLogger()}
 	err := a.LoadMetadataWithoutTimeout("/tmp")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	patch1.Reset()
 
-	patch2 := gomonkey.ApplyMethodFunc(JuiceFileUtils{}, "exec", ExecWithoutTimeoutCommon)
+	patches.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecWithoutTimeoutCommon)
 	err = a.LoadMetadataWithoutTimeout("/tmp")
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
-	patch2.Reset()
 }
 
 func TestJuiceFileUtils_Count(t *testing.T) {
@@ -263,22 +256,21 @@ func TestJuiceFileUtils_Count(t *testing.T) {
 		return "-9223372036854775808   /tmp", "", nil
 	}
 
-	patch1 := gomonkey.ApplyMethodFunc(JuiceFileUtils{}, "exec", ExecWithoutTimeoutErr)
+	patches := gomonkey.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecWithoutTimeoutErr)
+	defer patches.Reset()
 	a := &JuiceFileUtils{log: fake.NullLogger()}
 	_, err := a.Count("/tmp")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	patch1.Reset()
 
-	patch2 := gomonkey.ApplyMethodFunc(JuiceFileUtils{}, "exec", ExecWithoutTimeoutNegative)
+	patches.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecWithoutTimeoutNegative)
 	_, err = a.Count("/tmp")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	patch2.Reset()
 
-	patch3 := gomonkey.ApplyMethodFunc(JuiceFileUtils{}, "exec", ExecWithoutTimeoutCommon)
+	patches.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecWithoutTimeoutCommon)
 	fileCount, err := a.Count("/tmp")
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
@@ -286,7 +278,6 @@ func TestJuiceFileUtils_Count(t *testing.T) {
 	if fileCount != 6367897 {
 		t.Errorf("check failure, want 6367897, got %d", fileCount)
 	}
-	patch3.Reset()
 }
 
 func TestJuiceFileUtils_GetFileCount(t *testing.T) {
@@ -297,15 +288,15 @@ func TestJuiceFileUtils_GetFileCount(t *testing.T) {
 		return "", "", errors.New("fail to run the command")
 	}
 
-	patch1 := gomonkey.ApplyMethodFunc(JuiceFileUtils{}, "exec", ExecWithoutTimeoutErr)
+	patches := gomonkey.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecWithoutTimeoutErr)
+	defer patches.Reset()
 	a := &JuiceFileUtils{log: fake.NullLogger()}
 	_, err := a.GetFileCount("/tmp")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	patch1.Reset()
 
-	patch2 := gomonkey.ApplyMethodFunc(JuiceFileUtils{}, "exec", ExecWithoutTimeoutCommon)
+	patches.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecWithoutTimeoutCommon)
 	fileCount, err := a.GetFileCount("/tmp")
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
@@ -313,7 +304,6 @@ func TestJuiceFileUtils_GetFileCount(t *testing.T) {
 	if fileCount != 6367897 {
 		t.Errorf("check failure, want 6367897, got %d", fileCount)
 	}
-	patch2.Reset()
 }
 
 func TestJuiceFileUtils_GetUsedSpace(t *testing.T) {
@@ -324,15 +314,15 @@ func TestJuiceFileUtils_GetUsedSpace(t *testing.T) {
 		return "", "", errors.New("fail to run the command")
 	}
 
-	patch1 := gomonkey.ApplyMethodFunc(JuiceFileUtils{}, "exec", ExecWithoutTimeoutErr)
+	patches := gomonkey.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecWithoutTimeoutErr)
+	defer patches.Reset()
 	a := &JuiceFileUtils{log: fake.NullLogger()}
 	_, err := a.GetUsedSpace("/runtime-mnt/juicefs/kube-system/jfsdemo/juicefs-fuse")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	patch1.Reset()
 
-	patch2 := gomonkey.ApplyMethodFunc(JuiceFileUtils{}, "exec", ExecWithoutTimeoutCommon)
+	patches.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecWithoutTimeoutCommon)
 	usedSpace, err := a.GetUsedSpace("/runtime-mnt/juicefs/kube-system/jfsdemo/juicefs-fuse")
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
@@ -340,7 +330,6 @@ func TestJuiceFileUtils_GetUsedSpace(t *testing.T) {
 	if usedSpace != 87687856128 {
 		t.Errorf("check failure, want 87687856128, got %d", usedSpace)
 	}
-	patch2.Reset()
 }
 
 func TestJuiceFSFileUtils_QueryMetaDataInfoIntoFile(t *testing.T) {
@@ -351,7 +340,8 @@ func TestJuiceFSFileUtils_QueryMetaDataInfoIntoFile(t *testing.T) {
 		return "", "", errors.New("fail to run the command")
 	}
 
-	patch1 := gomonkey.ApplyMethodFunc(JuiceFileUtils{}, "exec", ExecErr)
+	patches := gomonkey.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecErr)
+	defer patches.Reset()
 	a := JuiceFileUtils{log: fake.NullLogger()}
 
 	keySets := []KeyOfMetaDataFile{DatasetName, Namespace, UfsTotal, FileNum, ""}
@@ -359,22 +349,18 @@ func TestJuiceFSFileUtils_QueryMetaDataInfoIntoFile(t *testing.T) {
 		_, err := a.QueryMetaDataInfoIntoFile(keySet, "/tmp/file")
 		if err == nil {
 			t.Errorf("%d check failure, want err, got nil", index)
-			patch1.Reset()
 			return
 		}
 	}
-	patch1.Reset()
 
-	patch2 := gomonkey.ApplyMethodFunc(JuiceFileUtils{}, "exec", ExecCommon)
+	patches.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecCommon)
 	for index, keySet := range keySets {
 		_, err := a.QueryMetaDataInfoIntoFile(keySet, "/tmp/file")
 		if err != nil {
 			t.Errorf("%d check failure, want nil, got err: %v", index, err)
-			patch2.Reset()
 			return
 		}
 	}
-	patch2.Reset()
 }
 
 func TestValidDir(t *testing.T) {
