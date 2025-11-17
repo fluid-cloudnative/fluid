@@ -34,7 +34,7 @@ func (e *EFCEngine) transformResourcesForMaster(runtime *datav1alpha1.EFCRuntime
 		Limits:   common.ResourceList{},
 	}
 	if len(runtime.Spec.Master.Resources.Limits) > 0 || len(runtime.Spec.Master.Resources.Requests) > 0 {
-		value.Master.Resources = utils.TransformRequirementsToResources(runtime.Spec.Master.Resources)
+		value.Master.Resources = utils.TransformCoreV1ResourcesToInternalResources(runtime.Spec.Master.Resources)
 	}
 
 	if len(value.Master.TieredStore.Levels) > 0 &&
@@ -94,7 +94,7 @@ func (e *EFCEngine) transformResourcesForFuse(runtime *datav1alpha1.EFCRuntime, 
 		Limits:   common.ResourceList{},
 	}
 	if len(runtime.Spec.Fuse.Resources.Limits) > 0 || len(runtime.Spec.Fuse.Resources.Requests) > 0 {
-		value.Fuse.Resources = utils.TransformRequirementsToResources(runtime.Spec.Fuse.Resources)
+		value.Fuse.Resources = utils.TransformCoreV1ResourcesToInternalResources(runtime.Spec.Fuse.Resources)
 	}
 
 	if len(value.Fuse.TieredStore.Levels) > 0 &&
@@ -154,7 +154,7 @@ func (e *EFCEngine) transformResourcesForWorker(runtime *datav1alpha1.EFCRuntime
 		Limits:   common.ResourceList{},
 	}
 	if len(runtime.Spec.Worker.Resources.Limits) > 0 || len(runtime.Spec.Worker.Resources.Requests) > 0 {
-		value.Worker.Resources = utils.TransformRequirementsToResources(runtime.Spec.Worker.Resources)
+		value.Worker.Resources = utils.TransformCoreV1ResourcesToInternalResources(runtime.Spec.Worker.Resources)
 	}
 
 	if len(value.Worker.TieredStore.Levels) > 0 &&

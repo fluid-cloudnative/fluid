@@ -93,7 +93,7 @@ func TestTransformRequirementsToResources(t *testing.T) {
 	}
 
 	for k, item := range testCases {
-		got := TransformRequirementsToResources(item.required)
+		got := TransformCoreV1ResourcesToInternalResources(item.required)
 		if !reflect.DeepEqual(got, item.wantRes) {
 			t.Errorf("%s check failure,want:%v,got:%v", k, item.wantRes, got)
 		}

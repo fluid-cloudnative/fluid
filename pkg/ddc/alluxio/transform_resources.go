@@ -48,15 +48,11 @@ func (e *AlluxioEngine) transformResourcesForMaster(runtime *datav1alpha1.Alluxi
 
 	// Check if resource limits or requests are specified for the Alluxio master.
 	// If so, transform the resource requirements and update the Alluxio value object.
-	if len(runtime.Spec.Master.Resources.Limits) > 0 || len(runtime.Spec.Master.Resources.Requests) > 0 {
-		value.Master.Resources = utils.TransformRequirementsToResources(runtime.Spec.Master.Resources)
-	}
+	value.Master.Resources = utils.TransformCoreV1ResourcesToInternalResources(runtime.Spec.Master.Resources)
 
 	// Check if resource limits or requests are specified for the Alluxio job master.
 	// If so, transform the resource requirements and update the Alluxio value object.
-	if len(runtime.Spec.JobMaster.Resources.Limits) > 0 || len(runtime.Spec.JobMaster.Resources.Requests) > 0 {
-		value.JobMaster.Resources = utils.TransformRequirementsToResources(runtime.Spec.JobMaster.Resources)
-	}
+	value.JobMaster.Resources = utils.TransformCoreV1ResourcesToInternalResources(runtime.Spec.JobMaster.Resources)
 }
 
 // transformResourcesForWorker is responsible for transforming and setting resource limits for the Alluxio Worker component.
@@ -73,12 +69,9 @@ func (e *AlluxioEngine) transformResourcesForMaster(runtime *datav1alpha1.Alluxi
 func (e *AlluxioEngine) transformResourcesForWorker(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio) error {
 
 	//for worker
-	value.Worker.Resources = utils.TransformRequirementsToResources(runtime.Spec.Worker.Resources)
-
+	value.Worker.Resources = utils.TransformCoreV1ResourcesToInternalResources(runtime.Spec.Worker.Resources)
 	// for job worker
-	if len(runtime.Spec.JobWorker.Resources.Limits) > 0 || len(runtime.Spec.JobWorker.Resources.Requests) > 0 {
-		value.JobWorker.Resources = utils.TransformRequirementsToResources(runtime.Spec.JobWorker.Resources)
-	}
+	value.JobWorker.Resources = utils.TransformCoreV1ResourcesToInternalResources(runtime.Spec.JobWorker.Resources)
 
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
@@ -177,7 +170,7 @@ func (e *AlluxioEngine) transformResourcesForFuse(runtime *datav1alpha1.AlluxioR
 		return
 	}
 
-	value.Fuse.Resources = utils.TransformRequirementsToResources(runtime.Spec.Fuse.Resources)
+	value.Fuse.Resources = utils.TransformCoreV1ResourcesToInternalResources(runtime.Spec.Fuse.Resources)
 
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {

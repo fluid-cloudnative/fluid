@@ -35,7 +35,7 @@ func (e *VineyardEngine) transformResourcesForMaster(runtime *datav1alpha1.Viney
 		return
 	}
 	if len(runtime.Spec.Master.Resources.Limits) > 0 || len(runtime.Spec.Master.Resources.Requests) > 0 {
-		value.Master.Resources = utils.TransformRequirementsToResources(runtime.Spec.Master.Resources)
+		value.Master.Resources = utils.TransformCoreV1ResourcesToInternalResources(runtime.Spec.Master.Resources)
 	}
 
 }
@@ -125,7 +125,7 @@ func (e *VineyardEngine) transformResourcesForWorker(runtime *datav1alpha1.Viney
 		return err
 	}
 	//for worker
-	value.Worker.Resources = utils.TransformRequirementsToResources(runtime.Spec.Worker.Resources)
+	value.Worker.Resources = utils.TransformCoreV1ResourcesToInternalResources(runtime.Spec.Worker.Resources)
 
 	if needUpdated {
 		if value.Worker.Resources.Requests == nil {
@@ -186,6 +186,6 @@ func (e *VineyardEngine) transformResourcesForFuse(runtime *datav1alpha1.Vineyar
 		return
 	}
 
-	value.Fuse.Resources = utils.TransformRequirementsToResources(runtime.Spec.Fuse.Resources)
+	value.Fuse.Resources = utils.TransformCoreV1ResourcesToInternalResources(runtime.Spec.Fuse.Resources)
 
 }

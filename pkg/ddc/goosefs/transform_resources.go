@@ -32,16 +32,16 @@ func (e *GooseFSEngine) transformResourcesForMaster(runtime *datav1alpha1.GooseF
 	}
 
 	if len(runtime.Spec.Master.Resources.Limits) > 0 || len(runtime.Spec.Master.Resources.Requests) > 0 {
-		value.Master.Resources = utils.TransformRequirementsToResources(runtime.Spec.Master.Resources)
+		value.Master.Resources = utils.TransformCoreV1ResourcesToInternalResources(runtime.Spec.Master.Resources)
 	}
 	if len(runtime.Spec.JobMaster.Resources.Limits) > 0 || len(runtime.Spec.JobMaster.Resources.Requests) > 0 {
-		value.JobMaster.Resources = utils.TransformRequirementsToResources(runtime.Spec.JobMaster.Resources)
+		value.JobMaster.Resources = utils.TransformCoreV1ResourcesToInternalResources(runtime.Spec.JobMaster.Resources)
 	}
 	if len(runtime.Spec.Master.Resources.Limits) == 0 && len(runtime.Spec.Master.Resources.Requests) == 0 {
 		return
 	}
 
-	value.Master.Resources = utils.TransformRequirementsToResources(runtime.Spec.Master.Resources)
+	value.Master.Resources = utils.TransformCoreV1ResourcesToInternalResources(runtime.Spec.Master.Resources)
 }
 
 func (e *GooseFSEngine) transformResourcesForWorker(runtime *datav1alpha1.GooseFSRuntime, value *GooseFS) {
@@ -56,11 +56,11 @@ func (e *GooseFSEngine) transformResourcesForWorker(runtime *datav1alpha1.GooseF
 		return
 	}
 
-	value.Worker.Resources = utils.TransformRequirementsToResources(runtime.Spec.Worker.Resources)
+	value.Worker.Resources = utils.TransformCoreV1ResourcesToInternalResources(runtime.Spec.Worker.Resources)
 
 	// for job worker
 	if len(runtime.Spec.JobWorker.Resources.Limits) > 0 || len(runtime.Spec.JobWorker.Resources.Requests) > 0 {
-		value.JobWorker.Resources = utils.TransformRequirementsToResources(runtime.Spec.JobWorker.Resources)
+		value.JobWorker.Resources = utils.TransformCoreV1ResourcesToInternalResources(runtime.Spec.JobWorker.Resources)
 	}
 
 	runtimeInfo, err := e.getRuntimeInfo()
@@ -113,7 +113,7 @@ func (e *GooseFSEngine) transformResourcesForFuse(runtime *datav1alpha1.GooseFSR
 		return
 	}
 
-	value.Fuse.Resources = utils.TransformRequirementsToResources(runtime.Spec.Fuse.Resources)
+	value.Fuse.Resources = utils.TransformCoreV1ResourcesToInternalResources(runtime.Spec.Fuse.Resources)
 
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {

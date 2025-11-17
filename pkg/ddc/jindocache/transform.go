@@ -584,25 +584,7 @@ func (e *JindoCacheEngine) transformResources(runtime *datav1alpha1.JindoRuntime
 }
 
 func (e *JindoCacheEngine) transformMasterResources(runtime *datav1alpha1.JindoRuntime, value *Jindo, userQuotas string) (err error) {
-	if runtime.Spec.Master.Resources.Limits != nil {
-		e.Log.Info("setting Resources limit")
-		if runtime.Spec.Master.Resources.Limits.Cpu() != nil {
-			value.Master.Resources.Limits.CPU = runtime.Spec.Master.Resources.Limits.Cpu().String()
-		}
-		if runtime.Spec.Master.Resources.Limits.Memory() != nil {
-			value.Master.Resources.Limits.Memory = runtime.Spec.Master.Resources.Limits.Memory().String()
-		}
-	}
-
-	if runtime.Spec.Master.Resources.Requests != nil {
-		e.Log.Info("setting Resources request")
-		if runtime.Spec.Master.Resources.Requests.Cpu() != nil {
-			value.Master.Resources.Requests.CPU = runtime.Spec.Master.Resources.Requests.Cpu().String()
-		}
-		if runtime.Spec.Master.Resources.Requests.Memory() != nil {
-			value.Master.Resources.Requests.Memory = runtime.Spec.Master.Resources.Requests.Memory().String()
-		}
-	}
+	value.Master.Resources = utils.TransformCoreV1ResourcesToInternalResources(runtime.Spec.Master.Resources)
 
 	limitMemEnable := false
 	if os.Getenv("USE_DEFAULT_MEM_LIMIT") == "true" {
@@ -632,7 +614,10 @@ func (e *JindoCacheEngine) transformMasterResources(runtime *datav1alpha1.JindoR
 				}
 
 				if needUpdated {
-					value.Master.Resources.Requests.Memory = defaultMetaSize
+					if value.Master.Resources.Requests == nil {
+						value.Master.Resources.Requests = make(common.ResourceList)
+					}
+					value.Master.Resources.Requests[corev1.ResourceMemory] = defaultMetaSize
 					err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 						runtime, err := e.getRuntime()
 						if err != nil {
@@ -670,25 +655,7 @@ func (e *JindoCacheEngine) transformMasterResources(runtime *datav1alpha1.JindoR
 }
 
 func (e *JindoCacheEngine) transformWorkerResources(runtime *datav1alpha1.JindoRuntime, value *Jindo, userQuotas string) (err error) {
-	if runtime.Spec.Worker.Resources.Limits != nil {
-		e.Log.Info("setting Resources limit")
-		if runtime.Spec.Worker.Resources.Limits.Cpu() != nil {
-			value.Worker.Resources.Limits.CPU = runtime.Spec.Worker.Resources.Limits.Cpu().String()
-		}
-		if runtime.Spec.Worker.Resources.Limits.Memory() != nil {
-			value.Worker.Resources.Limits.Memory = runtime.Spec.Worker.Resources.Limits.Memory().String()
-		}
-	}
-
-	if runtime.Spec.Worker.Resources.Requests != nil {
-		e.Log.Info("setting Resources request")
-		if runtime.Spec.Worker.Resources.Requests.Cpu() != nil {
-			value.Worker.Resources.Requests.CPU = runtime.Spec.Worker.Resources.Requests.Cpu().String()
-		}
-		if runtime.Spec.Worker.Resources.Requests.Memory() != nil {
-			value.Worker.Resources.Requests.Memory = runtime.Spec.Worker.Resources.Requests.Memory().String()
-		}
-	}
+	value.Worker.Resources = utils.TransformCoreV1ResourcesToInternalResources(runtime.Spec.Worker.Resources)
 
 	// mem set request
 	if e.hasTieredStore(runtime) && e.getTieredStoreType(runtime) == 0 {
@@ -704,11 +671,14 @@ func (e *JindoCacheEngine) transformWorkerResources(runtime *datav1alpha1.JindoR
 
 		if !runtime.Spec.Worker.Resources.Limits.Memory().IsZero() &&
 			userQuotasQuantity.Cmp(*runtime.Spec.Worker.Resources.Limits.Memory()) > 0 {
-			return fmt.Errorf("the memory tierdStore's size %v is greater than master limits memory %v",
+			return fmt.Errorf("the memory tierdStore's size %v is greater than worker limits memory %v",
 				userQuotasQuantity, runtime.Spec.Worker.Resources.Limits.Memory())
 		}
 		if needUpdated {
-			value.Worker.Resources.Requests.Memory = userQuotas
+			if value.Worker.Resources.Requests == nil {
+				value.Worker.Resources.Requests = make(common.ResourceList)
+			}
+			value.Worker.Resources.Requests[corev1.ResourceMemory] = userQuotas
 			err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 				runtime, err := e.getRuntime()
 				if err != nil {
@@ -744,25 +714,7 @@ func (e *JindoCacheEngine) transformWorkerResources(runtime *datav1alpha1.JindoR
 }
 
 func (e *JindoCacheEngine) transformFuseResources(runtime *datav1alpha1.JindoRuntime, value *Jindo) {
-	if runtime.Spec.Fuse.Resources.Limits != nil {
-		e.Log.Info("setting Resources limit")
-		if runtime.Spec.Fuse.Resources.Limits.Cpu() != nil {
-			value.Fuse.Resources.Limits.CPU = runtime.Spec.Fuse.Resources.Limits.Cpu().String()
-		}
-		if runtime.Spec.Fuse.Resources.Limits.Memory() != nil {
-			value.Fuse.Resources.Limits.Memory = runtime.Spec.Fuse.Resources.Limits.Memory().String()
-		}
-	}
-
-	if runtime.Spec.Fuse.Resources.Requests != nil {
-		e.Log.Info("setting Resources request")
-		if runtime.Spec.Fuse.Resources.Requests.Cpu() != nil {
-			value.Fuse.Resources.Requests.CPU = runtime.Spec.Fuse.Resources.Requests.Cpu().String()
-		}
-		if runtime.Spec.Fuse.Resources.Requests.Memory() != nil {
-			value.Fuse.Resources.Requests.Memory = runtime.Spec.Fuse.Resources.Requests.Memory().String()
-		}
-	}
+	value.Fuse.Resources = utils.TransformCoreV1ResourcesToInternalResources(runtime.Spec.Fuse.Resources)
 }
 
 func (e *JindoCacheEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, value *Jindo) {

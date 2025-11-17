@@ -21,7 +21,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func TransformRequirementsToResources(res corev1.ResourceRequirements) (cRes common.Resources) {
+func TransformCoreV1ResourcesToInternalResources(res corev1.ResourceRequirements) (cRes common.Resources) {
 
 	cRes = common.Resources{}
 
