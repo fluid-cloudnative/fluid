@@ -14,13 +14,15 @@ GO_MODULE ?= off
 GC_FLAGS ?= -gcflags="all=-N -l"
 LOCAL_FLAGS ?= -gcflags="all=-N -l"
 CGO_ENABLED ?= 0
-GOOS ?= linux
+GOOS ?= $(shell go env GOOS)
 GOBIN := $(shell if [ -z "$(shell go env GOBIN)" ]; then echo "$(shell go env GOPATH)/bin"; else echo "$(shell go env GOBIN)"; fi)
 
 # Architecture detection
 UNAME := $(shell uname -m)
 ifeq ($(UNAME), aarch64)
     ARCH := arm64
+else ifeq ($(UNAME), arm64)
+	ARCH := arm64
 else
     ARCH := amd64
 endif

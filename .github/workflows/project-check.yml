@@ -81,7 +81,6 @@ jobs:
     env:
       GOPATH: ${{ github.workspace }}
       GO111MODULE: auto
-      CI_TEST_FLAGS: -race -coverprofile=coverage.txt -covermode=atomic
     defaults:
       run:
         working-directory: ${{ env.GOPATH }}/src/github.com/fluid-cloudnative/fluid
@@ -97,17 +96,32 @@ jobs:
       with:
         path: ${{ env.GOPATH }}/src/github.com/fluid-cloudnative/fluid
 
-    - name: CI Preparation
-      run: |
-        arch=$(go env GOARCH)
-        os=$(go env GOOS)
-        curl -L https://github.com/kubernetes-sigs/kubebuilder/releases/download/v2.3.1/kubebuilder_2.3.1_${os}_${arch}.tar.gz | tar -xz -C /tmp/
-        sudo mv /tmp/kubebuilder_2.3.1_${os}_${arch} /usr/local/kubebuilder
-        export PATH=$PATH:/usr/local/kubebuilder/bin
-
     - name: CI script
       run: |
         make build
+  
+  unittest:
+    runs-on: ubuntu-latest
+    env:
+      GOPATH: ${{ github.workspace }}
+      GO111MODULE: auto
+      CI_TEST_FLAGS: -race -coverprofile=coverage.txt -covermode=atomic
+    defaults:
+      run:
+        working-directory: ${{ env.GOPATH }}/src/github.com/fluid-cloudnative/fluid
+    steps:
+    - name: Set up Go
+      uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+      with:
+        go-version: ${{ env.GO_VERSION }}
+    
+    - name: Checkout code
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      with:
+        path: ${{ env.GOPATH }}/src/github.com/fluid-cloudnative/fluid
+
+    - name: CI script
+      run: |
         make test
 
     - name: Upload coverage to Codecov
