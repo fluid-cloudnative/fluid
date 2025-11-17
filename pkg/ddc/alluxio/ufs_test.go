@@ -657,12 +657,12 @@ func TestFindUnmountedUFS(t *testing.T) {
 			mockClient := fake.NewFakeClientWithScheme(s, &runtime, &dataset)
 
 			var afsUtils operations.AlluxioFileUtils
-			patch1 := gomonkey.ApplyMethod(reflect.TypeOf(afsUtils), "Ready", func(_ operations.AlluxioFileUtils) bool {
+			patch1 := gomonkey.ApplyMethod(afsUtils, "Ready", func(_ operations.AlluxioFileUtils) bool {
 				return true
 			})
 			defer patch1.Reset()
 
-			patch2 := gomonkey.ApplyMethod(reflect.TypeOf(afsUtils), "FindUnmountedAlluxioPaths", func(_ operations.AlluxioFileUtils, alluxioPaths []string) ([]string, error) {
+			patch2 := gomonkey.ApplyMethod(&afsUtils, "FindUnmountedAlluxioPaths", func(_ *operations.AlluxioFileUtils, alluxioPaths []string) ([]string, error) {
 				return alluxioPaths, nil
 			})
 			defer patch2.Reset()

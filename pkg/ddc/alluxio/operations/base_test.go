@@ -642,26 +642,26 @@ func TestAlluxioFileUtils_MasterPodName(t *testing.T) {
 }
 
 func TestAlluxioFileUtils_ExecMountScripts(t *testing.T) {
-	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+	ExecCommon := func(command []string, verbose bool) (stdout string, stderr string, err error) {
 		return strings.Join(command, " "), "", nil
 	}
-	ExecErr := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+	ExecErr := func(command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
 
-	// 修复Windows环境下gomonkey.ApplyMethod的问题
-	patches := gomonkey.ApplyPrivateMethod(reflect.TypeOf(AlluxioFileUtils{}), "exec", ExecErr)
+	a := &AlluxioFileUtils{log: fake.NullLogger()}
+	patches := gomonkey.ApplyPrivateMethod(*a, "exec", ExecErr)
 	defer patches.Reset()
 
-	a := &AlluxioFileUtils{log: fake.NullLogger()}
 	err := a.ExecMountScripts()
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
 
-	patches.ApplyPrivateMethod(reflect.TypeOf(AlluxioFileUtils{}), "exec", ExecCommon)
+	patches = gomonkey.ApplyPrivateMethod(*a, "exec", ExecCommon)
 	err = a.ExecMountScripts()
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
+	defer patches.Reset()
 }
