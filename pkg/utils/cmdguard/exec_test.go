@@ -22,7 +22,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/brahma-adshonor/gohook"
+	"github.com/agiledragon/gomonkey/v2"
 )
 
 func TestCheckCommandArgs(t *testing.T) {
@@ -226,16 +226,12 @@ func Test_buildPathList(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := gohook.Hook(exec.LookPath, tt.mockLookpathFunc, nil)
-			if err != nil {
-				t.Fatalf("failed to hook function: %v", err)
-			}
+			patches := gomonkey.ApplyFunc(exec.LookPath, tt.mockLookpathFunc)
 			got := buildPathList(tt.args.pathList)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("buildPathList() = %v, want %v", got, tt.want)
 			}
-			_ = gohook.UnHook(tt.mockLookpathFunc)
-
+			patches.Reset()
 		})
 	}
 }

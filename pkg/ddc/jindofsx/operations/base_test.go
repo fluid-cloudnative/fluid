@@ -19,7 +19,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/brahma-adshonor/gohook"
+	"github.com/agiledragon/gomonkey/v2"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
@@ -45,33 +45,19 @@ func TestJindoFileUtils_exec(t *testing.T) {
 		return "", "", errors.New("fail to run the command")
 	}
 
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(JindoFileUtils.execWithoutTimeout)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
+	patches := gomonkey.ApplyPrivateMethod(JindoFileUtils{}, "execWithoutTimeout", ExecWithoutTimeoutErr)
+	defer patches.Reset()
 
-	err := gohook.Hook(JindoFileUtils.execWithoutTimeout, ExecWithoutTimeoutErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
 	a := &JindoFileUtils{log: fake.NullLogger()}
-	_, _, err = a.exec([]string{"jindo", "fs", "-report"}, false)
+	_, _, err := a.exec([]string{"jindo", "fs", "-report"}, false)
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	wrappedUnhookExec()
-
-	err = gohook.Hook(JindoFileUtils.execWithoutTimeout, ExecWithoutTimeoutCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(JindoFileUtils{}, "execWithoutTimeout", ExecWithoutTimeoutCommon)
 	_, _, err = a.exec([]string{"jindo", "fs", "-report"}, true)
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
-	wrappedUnhookExec()
 }
 
 func TestJindoFileUtils_ReportSummary(t *testing.T) {
@@ -81,33 +67,21 @@ func TestJindoFileUtils_ReportSummary(t *testing.T) {
 	ExecErr := func(a JindoFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(JindoFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 
-	err := gohook.Hook(JindoFileUtils.exec, ExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches := gomonkey.ApplyPrivateMethod(JindoFileUtils{}, "exec", ExecErr)
+	defer patches.Reset()
+
 	a := JindoFileUtils{}
-	_, err = a.ReportSummary()
+	_, err := a.ReportSummary()
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	wrappedUnhookExec()
 
-	err = gohook.Hook(JindoFileUtils.exec, ExecCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(JindoFileUtils{}, "exec", ExecCommon)
 	_, err = a.ReportSummary()
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
-	wrappedUnhookExec()
 }
 
 func TestJindoFileUtils_GetUfsTotalSize(t *testing.T) {
@@ -118,33 +92,20 @@ func TestJindoFileUtils_GetUfsTotalSize(t *testing.T) {
 		return "", "", errors.New("fail to run the command")
 	}
 
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(JindoFileUtils.execWithoutTimeout)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-
-	err := gohook.Hook(JindoFileUtils.execWithoutTimeout, ExecWithoutTimeoutErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
 	a := &JindoFileUtils{log: fake.NullLogger()}
-	_, err = a.GetUfsTotalSize("/tmpDictionary")
+	patches := gomonkey.ApplyPrivateMethod(JindoFileUtils{}, "execWithoutTimeout", ExecWithoutTimeoutErr)
+	defer patches.Reset()
+
+	_, err := a.GetUfsTotalSize("/tmpDictionary")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	wrappedUnhookExec()
 
-	err = gohook.Hook(JindoFileUtils.execWithoutTimeout, ExecWithoutTimeoutCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(JindoFileUtils{}, "execWithoutTimeout", ExecWithoutTimeoutCommon)
 	_, err = a.GetUfsTotalSize("/tmpDictionary")
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
-	wrappedUnhookExec()
 }
 
 func TestJindoFileUtils_Ready(t *testing.T) {
@@ -154,31 +115,19 @@ func TestJindoFileUtils_Ready(t *testing.T) {
 	ExecErr := func(a JindoFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(JindoFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 
-	err := gohook.Hook(JindoFileUtils.exec, ExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
 	a := &JindoFileUtils{log: fake.NullLogger()}
+	patches := gomonkey.ApplyPrivateMethod(JindoFileUtils{}, "exec", ExecErr)
+	defer patches.Reset()
+
 	ready := a.Ready()
 	if ready != false {
 		t.Errorf("check failure, want false, got %t", ready)
 	}
-	wrappedUnhookExec()
 
-	err = gohook.Hook(JindoFileUtils.exec, ExecCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(JindoFileUtils{}, "exec", ExecCommon)
 	ready = a.Ready()
 	if ready != true {
 		t.Errorf("check failure, want true, got %t", ready)
 	}
-	wrappedUnhookExec()
 }

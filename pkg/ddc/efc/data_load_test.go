@@ -19,7 +19,7 @@ package efc
 import (
 	"testing"
 
-	"github.com/brahma-adshonor/gohook"
+	"github.com/agiledragon/gomonkey/v2"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/efc/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
@@ -179,17 +179,9 @@ func TestEFCEngine_CheckRuntimeReady(t *testing.T) {
 	ReadyCommon := func(a operations.EFCFileUtils) (ready bool) {
 		return true
 	}
-	wrappedUnhookReady := func() {
-		err := gohook.UnHook(operations.EFCFileUtils.Ready)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 
-	err := gohook.Hook(operations.EFCFileUtils.Ready, ReadyCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches := gomonkey.ApplyMethod(operations.EFCFileUtils{}, "Ready", ReadyCommon)
+	defer patches.Reset()
 
 	for _, tt := range tests {
 		testObjs := []runtime.Object{}
@@ -208,6 +200,4 @@ func TestEFCEngine_CheckRuntimeReady(t *testing.T) {
 			}
 		})
 	}
-
-	wrappedUnhookReady()
 }

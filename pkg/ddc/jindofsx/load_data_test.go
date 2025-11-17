@@ -25,7 +25,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/brahma-adshonor/gohook"
+	"github.com/agiledragon/gomonkey/v2"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
@@ -660,31 +660,23 @@ func TestCheckRuntimeReady(t *testing.T) {
 	mockExecErr := func(podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
 		return "err", "", errors.New("error")
 	}
-	wrappedUnhook := func() {
-		err := gohook.UnHook(kubeclient.ExecCommandInContainer)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 
 	engine := JindoFSxEngine{
 		namespace: "fluid",
 		name:      "hbase",
 		Log:       fake.NullLogger(),
 	}
-
-	err := gohook.Hook(kubeclient.ExecCommandInContainer, mockExecCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
+	patches := gomonkey.ApplyFunc(kubeclient.ExecCommandInContainer, mockExecCommon)
+	defer patches.Reset()
+	if ready := engine.CheckRuntimeReady(); ready != true {
+		fmt.Println(ready)
+		t.Errorf("fail to exec the function CheckRuntimeReady")
 	}
 
-	err = gohook.Hook(kubeclient.ExecCommandInContainer, mockExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyFunc(kubeclient.ExecCommandInContainer, mockExecErr)
+
 	if ready := engine.CheckRuntimeReady(); ready != false {
 		fmt.Println(ready)
 		t.Errorf("fail to exec the function CheckRuntimeReady")
 	}
-	wrappedUnhook()
 }

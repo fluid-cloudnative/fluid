@@ -56,7 +56,6 @@ replace k8s.io/sample-controller => k8s.io/sample-controller v0.29.15
 
 require (
 	github.com/agiledragon/gomonkey/v2 v2.13.0
-	github.com/brahma-adshonor/gohook v1.1.9
 	github.com/container-storage-interface/spec v1.8.0
 	github.com/docker/go-units v0.5.0
 	github.com/felixge/fgprof v0.9.5
@@ -136,7 +135,6 @@ require (
 	go.uber.org/automaxprocs v1.6.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/arch v0.0.0-20190312162104-788fe5ffcd8c // indirect
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
 	golang.org/x/mod v0.27.0 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect

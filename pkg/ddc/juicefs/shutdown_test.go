@@ -34,7 +34,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
 
 	. "github.com/agiledragon/gomonkey/v2"
-	"github.com/brahma-adshonor/gohook"
 	. "github.com/smartystreets/goconvey/convey"
 	corev1 "k8s.io/api/core/v1"
 
@@ -289,19 +288,6 @@ func TestJuiceFSEngine_destroyMaster(t *testing.T) {
 		return errors.New("fail to delete chart")
 	}
 
-	wrappedUnhookCheckRelease := func() {
-		err := gohook.UnHook(helm.CheckRelease)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-	wrappedUnhookDeleteRelease := func() {
-		err := gohook.UnHook(helm.DeleteRelease)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-
 	fakeClient := fake.NewFakeClientWithScheme(testScheme)
 	engine := JuiceFSEngine{
 		name:      "test",
@@ -316,55 +302,40 @@ func TestJuiceFSEngine_destroyMaster(t *testing.T) {
 	}
 
 	// check release found & delete common
-	err := gohook.Hook(helm.CheckRelease, mockExecCheckReleaseCommonFound, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = gohook.Hook(helm.DeleteRelease, mockExecDeleteReleaseCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = engine.destroyMaster()
+	checkReleasePatch := ApplyFunc(helm.CheckRelease, mockExecCheckReleaseCommonFound)
+	deleteReleasePatch := ApplyFunc(helm.DeleteRelease, mockExecDeleteReleaseCommon)
+	err := engine.destroyMaster()
 	if err != nil {
 		t.Errorf("fail to exec check helm release: %v", err)
 	}
-	wrappedUnhookCheckRelease()
-	wrappedUnhookDeleteRelease()
+	checkReleasePatch.Reset()
+	deleteReleasePatch.Reset()
 
 	// check release not found
-	err = gohook.Hook(helm.CheckRelease, mockExecCheckReleaseCommonNotFound, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	checkReleasePatch.ApplyFunc(helm.CheckRelease, mockExecCheckReleaseCommonNotFound)
 	err = engine.destroyMaster()
 	if err != nil {
 		t.Errorf("fail to exec check helm release: %v", err)
 	}
+	checkReleasePatch.Reset()
 
 	// check release error
-	err = gohook.Hook(helm.CheckRelease, mockExecCheckReleaseErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	checkReleasePatch.ApplyFunc(helm.CheckRelease, mockExecCheckReleaseErr)
 	err = engine.destroyMaster()
 	if err == nil {
 		t.Errorf("fail to exec check helm release: %v", err)
 	}
+	checkReleasePatch.Reset()
 
 	// check release found & delete common error
-	err = gohook.Hook(helm.CheckRelease, mockExecCheckReleaseCommonFound, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = gohook.Hook(helm.DeleteRelease, mockExecDeleteReleaseErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	checkReleasePatch.ApplyFunc(helm.CheckRelease, mockExecCheckReleaseCommonFound)
+	deleteReleasePatch.ApplyFunc(helm.DeleteRelease, mockExecDeleteReleaseErr)
 	err = engine.destroyMaster()
 	if err == nil {
 		t.Errorf("fail to exec check helm release: %v", err)
 	}
-	wrappedUnhookDeleteRelease()
+	checkReleasePatch.Reset()
+	deleteReleasePatch.Reset()
 }
 
 func TestJuiceFSEngine_cleanupCache(t *testing.T) {
@@ -446,8 +417,8 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 					return r, nil
 				})
 			defer patch1.Reset()
-			patch2 := ApplyMethod(reflect.TypeOf(operations.JuiceFileUtils{}), "DeleteCacheDir",
-				func(_ operations.JuiceFileUtils, cacheDir string) error {
+			patch2 := ApplyMethod(reflect.TypeOf(operations.JuiceFileUtils{}), "DeleteCacheDirs",
+				func(_ operations.JuiceFileUtils, cacheDirs []string) error {
 					return errors.New("delete dir error")
 				})
 			defer patch2.Reset()
@@ -471,8 +442,8 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 					return r, nil
 				})
 			defer patch1.Reset()
-			patch2 := ApplyMethod(reflect.TypeOf(operations.JuiceFileUtils{}), "DeleteCacheDir",
-				func(_ operations.JuiceFileUtils, cacheDir string) error {
+			patch2 := ApplyMethod(reflect.TypeOf(operations.JuiceFileUtils{}), "DeleteCacheDirs",
+				func(_ operations.JuiceFileUtils, cacheDirs []string) error {
 					return errors.New("delete dir error")
 				})
 			defer patch2.Reset()
@@ -544,12 +515,6 @@ func TestJuiceFSEngine_getUUID_community(t *testing.T) {
 	ExecErr := func(a operations.JuiceFileUtils, source string) (status string, err error) {
 		return "", errors.New("fail to run the command")
 	}
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(operations.JuiceFileUtils.GetStatus)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 	pod := corev1.Pod{}
 	e := JuiceFSEngine{
 		name:        "test",
@@ -560,20 +525,14 @@ func TestJuiceFSEngine_getUUID_community(t *testing.T) {
 		Client:      client,
 	}
 
-	err := gohook.Hook(operations.JuiceFileUtils.GetStatus, ExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	_, err = e.getUUID(pod, common.JuiceFSWorkerContainer)
+	patches := ApplyMethod(operations.JuiceFileUtils{}, "GetStatus", ExecErr)
+	defer patches.Reset()
+	_, err := e.getUUID(pod, common.JuiceFSWorkerContainer)
 	if err == nil {
 		t.Error("getUUID failure, want err, got nil")
 	}
-	wrappedUnhookExec()
 
-	err = gohook.Hook(operations.JuiceFileUtils.GetStatus, ExecCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyMethod(operations.JuiceFileUtils{}, "GetStatus", ExecCommon)
 	got, err := e.getUUID(pod, common.JuiceFSWorkerContainer)
 	if err != nil {
 		t.Errorf("getUUID failure, want nil, got err: %v", err)
@@ -581,7 +540,6 @@ func TestJuiceFSEngine_getUUID_community(t *testing.T) {
 	if got != "73416457-6f3f-490b-abb6-cbc1f837944e" {
 		t.Errorf("getUUID err, got: %v", got)
 	}
-	wrappedUnhookExec()
 }
 
 func TestJuiceFSEngine_getUUID_enterprise(t *testing.T) {

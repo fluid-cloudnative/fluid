@@ -20,7 +20,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/brahma-adshonor/gohook"
+	"github.com/agiledragon/gomonkey/v2"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
@@ -83,33 +83,20 @@ func TestJuiceFileUtils_Mkdir(t *testing.T) {
 	ExecErr := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(JuiceFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 
-	err := gohook.Hook(JuiceFileUtils.exec, ExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches := gomonkey.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecErr)
+	defer patches.Reset()
 	a := JuiceFileUtils{}
-	err = a.Mkdir("/")
+	err := a.Mkdir("/")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	wrappedUnhookExec()
 
-	err = gohook.Hook(JuiceFileUtils.exec, ExecCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecCommon)
 	err = a.Mkdir("/")
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
-	wrappedUnhookExec()
 }
 
 func TestJuiceFileUtils_exec(t *testing.T) {
@@ -120,33 +107,19 @@ func TestJuiceFileUtils_exec(t *testing.T) {
 		return "", "", errors.New("fail to run the command")
 	}
 
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(JuiceFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-
-	err := gohook.Hook(JuiceFileUtils.exec, ExecWithoutTimeoutErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches := gomonkey.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecWithoutTimeoutErr)
+	defer patches.Reset()
 	a := &JuiceFileUtils{log: fake.NullLogger()}
-	_, _, err = a.exec([]string{"mkdir", "abc"}, false)
+	_, _, err := a.exec([]string{"mkdir", "abc"}, false)
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	wrappedUnhookExec()
 
-	err = gohook.Hook(JuiceFileUtils.exec, ExecWithoutTimeoutCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecWithoutTimeoutCommon)
 	_, _, err = a.exec([]string{"mkdir", "abc"}, false)
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
-	wrappedUnhookExec()
 }
 
 func TestJuiceFileUtils_GetMetric(t *testing.T) {
@@ -156,28 +129,16 @@ func TestJuiceFileUtils_GetMetric(t *testing.T) {
 	ExecErr := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(JuiceFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 
-	err := gohook.Hook(JuiceFileUtils.exec, ExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches := gomonkey.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecErr)
+	defer patches.Reset()
 	a := JuiceFileUtils{}
-	_, err = a.GetMetric("/tmp")
+	_, err := a.GetMetric("/tmp")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	wrappedUnhookExec()
 
-	err = gohook.Hook(JuiceFileUtils.exec, ExecCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecCommon)
 	m, err := a.GetMetric("/tmp")
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
@@ -185,7 +146,6 @@ func TestJuiceFileUtils_GetMetric(t *testing.T) {
 	if m != "juicefs metrics success" {
 		t.Errorf("expected juicefs metrics success, got %s", m)
 	}
-	wrappedUnhookExec()
 }
 
 func TestJuiceFileUtils_DeleteCacheDirs(t *testing.T) {
@@ -195,33 +155,20 @@ func TestJuiceFileUtils_DeleteCacheDirs(t *testing.T) {
 	ExecErr := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(JuiceFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 
-	err := gohook.Hook(JuiceFileUtils.exec, ExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches := gomonkey.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecErr)
+	defer patches.Reset()
 	a := JuiceFileUtils{}
-	err = a.DeleteCacheDirs([]string{"/tmp/raw/chunks"})
+	err := a.DeleteCacheDirs([]string{"/tmp/raw/chunks"})
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	wrappedUnhookExec()
 
-	err = gohook.Hook(JuiceFileUtils.exec, ExecCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecCommon)
 	err = a.DeleteCacheDirs([]string{"/tmp/raw/chunks"})
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
-	wrappedUnhookExec()
 }
 
 func TestJuiceFileUtils_DeleteCacheDir(t *testing.T) {
@@ -231,35 +178,22 @@ func TestJuiceFileUtils_DeleteCacheDir(t *testing.T) {
 	ExecErr := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(JuiceFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 
 	a := JuiceFileUtils{}
 	// no error
-	err := gohook.Hook(JuiceFileUtils.exec, ExecCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = a.DeleteCacheDir("/tmp/raw/chunks")
+	patches := gomonkey.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecCommon)
+	defer patches.Reset()
+	err := a.DeleteCacheDir("/tmp/raw/chunks")
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
-	wrappedUnhookExec()
 
 	// error
-	err = gohook.Hook(JuiceFileUtils.exec, ExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecErr)
 	err = a.DeleteCacheDir("/tmp/raw/chunks")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	wrappedUnhookExec()
 }
 
 func TestJuiceFileUtils_GetStatus(t *testing.T) {
@@ -269,28 +203,16 @@ func TestJuiceFileUtils_GetStatus(t *testing.T) {
 	ExecErr := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(JuiceFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 
-	err := gohook.Hook(JuiceFileUtils.exec, ExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches := gomonkey.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecErr)
+	defer patches.Reset()
 	a := JuiceFileUtils{}
-	err = a.DeleteCacheDir("/tmp/raw/chunks")
+	err := a.DeleteCacheDir("/tmp/raw/chunks")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	wrappedUnhookExec()
 
-	err = gohook.Hook(JuiceFileUtils.exec, ExecCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecCommon)
 	got, err := a.GetStatus("test")
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
@@ -298,7 +220,6 @@ func TestJuiceFileUtils_GetStatus(t *testing.T) {
 	if got != CommonStatus {
 		t.Errorf("want %s, got: %v", CommonStatus, got)
 	}
-	wrappedUnhookExec()
 }
 
 func TestJuiceFileUtils_LoadMetadataWithoutTimeout(t *testing.T) {
@@ -308,33 +229,20 @@ func TestJuiceFileUtils_LoadMetadataWithoutTimeout(t *testing.T) {
 	ExecWithoutTimeoutErr := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
-	wrappedUnhookExecWithoutTimeout := func() {
-		err := gohook.UnHook(JuiceFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 
-	err := gohook.Hook(JuiceFileUtils.exec, ExecWithoutTimeoutErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches := gomonkey.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecWithoutTimeoutErr)
+	defer patches.Reset()
 	a := JuiceFileUtils{log: fake.NullLogger()}
-	err = a.LoadMetadataWithoutTimeout("/tmp")
+	err := a.LoadMetadataWithoutTimeout("/tmp")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	wrappedUnhookExecWithoutTimeout()
 
-	err = gohook.Hook(JuiceFileUtils.exec, ExecWithoutTimeoutCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecWithoutTimeoutCommon)
 	err = a.LoadMetadataWithoutTimeout("/tmp")
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
-	wrappedUnhookExecWithoutTimeout()
 }
 
 func TestJuiceFileUtils_Count(t *testing.T) {
@@ -347,38 +255,22 @@ func TestJuiceFileUtils_Count(t *testing.T) {
 	ExecWithoutTimeoutNegative := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "-9223372036854775808   /tmp", "", nil
 	}
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(JuiceFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 
-	err := gohook.Hook(JuiceFileUtils.exec, ExecWithoutTimeoutErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches := gomonkey.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecWithoutTimeoutErr)
+	defer patches.Reset()
 	a := &JuiceFileUtils{log: fake.NullLogger()}
+	_, err := a.Count("/tmp")
+	if err == nil {
+		t.Error("check failure, want err, got nil")
+	}
+
+	patches.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecWithoutTimeoutNegative)
 	_, err = a.Count("/tmp")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	wrappedUnhookExec()
 
-	err = gohook.Hook(JuiceFileUtils.exec, ExecWithoutTimeoutNegative, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	_, err = a.Count("/tmp")
-	if err == nil {
-		t.Error("check failure, want err, got nil")
-	}
-	wrappedUnhookExec()
-
-	err = gohook.Hook(JuiceFileUtils.exec, ExecWithoutTimeoutCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecWithoutTimeoutCommon)
 	fileCount, err := a.Count("/tmp")
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
@@ -386,7 +278,6 @@ func TestJuiceFileUtils_Count(t *testing.T) {
 	if fileCount != 6367897 {
 		t.Errorf("check failure, want 6367897, got %d", fileCount)
 	}
-	wrappedUnhookExec()
 }
 
 func TestJuiceFileUtils_GetFileCount(t *testing.T) {
@@ -396,28 +287,16 @@ func TestJuiceFileUtils_GetFileCount(t *testing.T) {
 	ExecWithoutTimeoutErr := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(JuiceFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 
-	err := gohook.Hook(JuiceFileUtils.exec, ExecWithoutTimeoutErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches := gomonkey.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecWithoutTimeoutErr)
+	defer patches.Reset()
 	a := &JuiceFileUtils{log: fake.NullLogger()}
-	_, err = a.GetFileCount("/tmp")
+	_, err := a.GetFileCount("/tmp")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	wrappedUnhookExec()
 
-	err = gohook.Hook(JuiceFileUtils.exec, ExecWithoutTimeoutCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecWithoutTimeoutCommon)
 	fileCount, err := a.GetFileCount("/tmp")
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
@@ -425,7 +304,6 @@ func TestJuiceFileUtils_GetFileCount(t *testing.T) {
 	if fileCount != 6367897 {
 		t.Errorf("check failure, want 6367897, got %d", fileCount)
 	}
-	wrappedUnhookExec()
 }
 
 func TestJuiceFileUtils_GetUsedSpace(t *testing.T) {
@@ -435,28 +313,16 @@ func TestJuiceFileUtils_GetUsedSpace(t *testing.T) {
 	ExecWithoutTimeoutErr := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(JuiceFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 
-	err := gohook.Hook(JuiceFileUtils.exec, ExecWithoutTimeoutErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches := gomonkey.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecWithoutTimeoutErr)
+	defer patches.Reset()
 	a := &JuiceFileUtils{log: fake.NullLogger()}
-	_, err = a.GetUsedSpace("/runtime-mnt/juicefs/kube-system/jfsdemo/juicefs-fuse")
+	_, err := a.GetUsedSpace("/runtime-mnt/juicefs/kube-system/jfsdemo/juicefs-fuse")
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
-	wrappedUnhookExec()
 
-	err = gohook.Hook(JuiceFileUtils.exec, ExecWithoutTimeoutCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecWithoutTimeoutCommon)
 	usedSpace, err := a.GetUsedSpace("/runtime-mnt/juicefs/kube-system/jfsdemo/juicefs-fuse")
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
@@ -464,7 +330,6 @@ func TestJuiceFileUtils_GetUsedSpace(t *testing.T) {
 	if usedSpace != 87687856128 {
 		t.Errorf("check failure, want 87687856128, got %d", usedSpace)
 	}
-	wrappedUnhookExec()
 }
 
 func TestJuiceFSFileUtils_QueryMetaDataInfoIntoFile(t *testing.T) {
@@ -474,41 +339,28 @@ func TestJuiceFSFileUtils_QueryMetaDataInfoIntoFile(t *testing.T) {
 	ExecErr := func(a JuiceFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "", "", errors.New("fail to run the command")
 	}
-	wrappedUnhookExec := func() {
-		err := gohook.UnHook(JuiceFileUtils.exec)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 
-	err := gohook.Hook(JuiceFileUtils.exec, ExecErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches := gomonkey.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecErr)
+	defer patches.Reset()
 	a := JuiceFileUtils{log: fake.NullLogger()}
 
 	keySets := []KeyOfMetaDataFile{DatasetName, Namespace, UfsTotal, FileNum, ""}
 	for index, keySet := range keySets {
-		_, err = a.QueryMetaDataInfoIntoFile(keySet, "/tmp/file")
+		_, err := a.QueryMetaDataInfoIntoFile(keySet, "/tmp/file")
 		if err == nil {
 			t.Errorf("%d check failure, want err, got nil", index)
 			return
 		}
 	}
-	wrappedUnhookExec()
 
-	err = gohook.Hook(JuiceFileUtils.exec, ExecCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	patches.ApplyPrivateMethod(JuiceFileUtils{}, "exec", ExecCommon)
 	for index, keySet := range keySets {
-		_, err = a.QueryMetaDataInfoIntoFile(keySet, "/tmp/file")
+		_, err := a.QueryMetaDataInfoIntoFile(keySet, "/tmp/file")
 		if err != nil {
 			t.Errorf("%d check failure, want nil, got err: %v", index, err)
 			return
 		}
 	}
-	wrappedUnhookExec()
 }
 
 func TestValidDir(t *testing.T) {

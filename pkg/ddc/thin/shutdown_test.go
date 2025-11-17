@@ -22,7 +22,6 @@ import (
 	"testing"
 
 	. "github.com/agiledragon/gomonkey/v2"
-	"github.com/brahma-adshonor/gohook"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
@@ -221,19 +220,6 @@ func TestThinEngine_destroyMaster(t *testing.T) {
 		return errors.New("fail to delete chart")
 	}
 
-	wrappedUnhookCheckRelease := func() {
-		err := gohook.UnHook(helm.CheckRelease)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-	wrappedUnhookDeleteRelease := func() {
-		err := gohook.UnHook(helm.DeleteRelease)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-
 	orphanedCm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "fluid",
@@ -255,26 +241,17 @@ func TestThinEngine_destroyMaster(t *testing.T) {
 	}
 
 	// check release found & delete common
-	err := gohook.Hook(helm.CheckRelease, mockExecCheckReleaseCommonFound, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = gohook.Hook(helm.DeleteRelease, mockExecDeleteReleaseCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = engine.destroyMaster()
+	checkReleasePatch := ApplyFunc(helm.CheckRelease, mockExecCheckReleaseCommonFound)
+	deleteReleasePatc := ApplyFunc(helm.DeleteRelease, mockExecDeleteReleaseCommon)
+	err := engine.destroyMaster()
 	if err != nil {
 		t.Errorf("fail to exec check helm release: %v", err)
 	}
-	wrappedUnhookCheckRelease()
-	wrappedUnhookDeleteRelease()
+	checkReleasePatch.Reset()
+	deleteReleasePatc.Reset()
 
 	// check release not found
-	err = gohook.Hook(helm.CheckRelease, mockExecCheckReleaseCommonNotFound, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	checkReleasePatch.ApplyFunc(helm.CheckRelease, mockExecCheckReleaseCommonNotFound)
 	err = engine.destroyMaster()
 	if err != nil {
 		t.Errorf("fail to exec check helm release: %v", err)
@@ -285,31 +262,25 @@ func TestThinEngine_destroyMaster(t *testing.T) {
 	} else if cm != nil {
 		t.Errorf("orphaned configmap should be cleaned up")
 	}
+	checkReleasePatch.Reset()
 
 	// check release error
-	err = gohook.Hook(helm.CheckRelease, mockExecCheckReleaseErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	checkReleasePatch.ApplyFunc(helm.CheckRelease, mockExecCheckReleaseErr)
 	err = engine.destroyMaster()
 	if err == nil {
 		t.Errorf("fail to exec check helm release: %v", err)
 	}
+	checkReleasePatch.Reset()
 
 	// check release found & delete common error
-	err = gohook.Hook(helm.CheckRelease, mockExecCheckReleaseCommonFound, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = gohook.Hook(helm.DeleteRelease, mockExecDeleteReleaseErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	checkReleasePatch.ApplyFunc(helm.CheckRelease, mockExecCheckReleaseCommonFound)
+	deleteReleasePatc.ApplyFunc(helm.DeleteRelease, mockExecDeleteReleaseErr)
 	err = engine.destroyMaster()
 	if err == nil {
 		t.Errorf("fail to exec check helm release: %v", err)
 	}
-	wrappedUnhookDeleteRelease()
+	checkReleasePatch.Reset()
+	deleteReleasePatc.Reset()
 }
 
 func TestThinEngine_cleanAll(t *testing.T) {
@@ -358,10 +329,10 @@ func TestThinEngine_cleanAll(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			helper := &ctrl.Helper{}
-			patch1 := ApplyMethod(reflect.TypeOf(helper), "CleanUpFuse", func(_ *ctrl.Helper) (int, error) {
+			patches := ApplyMethod(reflect.TypeOf(helper), "CleanUpFuse", func(_ *ctrl.Helper) (int, error) {
 				return 0, nil
 			})
-			defer patch1.Reset()
+			defer patches.Reset()
 			j := &ThinEngine{
 				name:      tt.fields.name,
 				namespace: tt.fields.namespace,

@@ -20,7 +20,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/brahma-adshonor/gohook"
+	"github.com/agiledragon/gomonkey/v2"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"k8s.io/client-go/kubernetes"
@@ -47,36 +47,23 @@ func TestInitClient(t *testing.T) {
 	NewForConfigError := func(c *rest.Config) (*kubernetes.Clientset, error) {
 		return nil, errors.New("fail to run the function")
 	}
-	wrappedUnhookPathExists := func() {
-		err := gohook.UnHook(utils.PathExists)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-	wrappedUnhookBuildConfigFromFlags := func() {
-		err := gohook.UnHook(clientcmd.BuildConfigFromFlags)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
-	wrappedUnhookNewForConfig := func() {
-		err := gohook.UnHook(kubernetes.NewForConfig)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-	}
 
 	t.Setenv(common.RecommendedKubeConfigPathEnv, "Path for test")
 
-	err := gohook.Hook(utils.PathExists, PathExistsTrue, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = gohook.Hook(clientcmd.BuildConfigFromFlags, BuildConfigFromFlagsErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	pathExistPatch := gomonkey.ApplyFunc(utils.PathExists, PathExistsTrue)
+	buildConfigFromFlagsPatch := gomonkey.ApplyFunc(clientcmd.BuildConfigFromFlags, BuildConfigFromFlagsErr)
 
+	restConfig = nil
+	clientset = nil
+
+	err := initClient()
+	if err == nil {
+		t.Errorf("expected error, get nil")
+	}
+	buildConfigFromFlagsPatch.Reset()
+
+	buildConfigFromFlagsPatch.ApplyFunc(clientcmd.BuildConfigFromFlags, BuildConfigFromFlagsCommon)
+	newForConfigPatch := gomonkey.ApplyFunc(kubernetes.NewForConfig, NewForConfigError)
 	restConfig = nil
 	clientset = nil
 
@@ -84,29 +71,10 @@ func TestInitClient(t *testing.T) {
 	if err == nil {
 		t.Errorf("expected error, get nil")
 	}
-	wrappedUnhookBuildConfigFromFlags()
+	newForConfigPatch.Reset()
 
-	err = gohook.Hook(clientcmd.BuildConfigFromFlags, BuildConfigFromFlagsCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = gohook.Hook(kubernetes.NewForConfig, NewForConfigError, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	restConfig = nil
-	clientset = nil
+	newForConfigPatch.ApplyFunc(kubernetes.NewForConfig, NewForConfigCommon)
 
-	err = initClient()
-	if err == nil {
-		t.Errorf("expected error, get nil")
-	}
-	wrappedUnhookNewForConfig()
-
-	err = gohook.Hook(kubernetes.NewForConfig, NewForConfigCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
 	restConfig = nil
 	clientset = nil
 
@@ -114,18 +82,12 @@ func TestInitClient(t *testing.T) {
 	if err != nil {
 		t.Errorf("expected no error, get %v", err)
 	}
-	wrappedUnhookNewForConfig()
-	wrappedUnhookBuildConfigFromFlags()
-	wrappedUnhookPathExists()
+	newForConfigPatch.Reset()
+	buildConfigFromFlagsPatch.Reset()
+	pathExistPatch.Reset()
 
-	err = gohook.Hook(utils.PathExists, PathExistsFalse, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = gohook.Hook(clientcmd.BuildConfigFromFlags, BuildConfigFromFlagsErr, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	pathExistPatch.ApplyFunc(utils.PathExists, PathExistsFalse)
+	buildConfigFromFlagsPatch.ApplyFunc(clientcmd.BuildConfigFromFlags, BuildConfigFromFlagsErr)
 
 	restConfig = nil
 	clientset = nil
@@ -134,16 +96,10 @@ func TestInitClient(t *testing.T) {
 	if err == nil {
 		t.Errorf("expected error, get nil")
 	}
-	wrappedUnhookBuildConfigFromFlags()
+	buildConfigFromFlagsPatch.Reset()
 
-	err = gohook.Hook(clientcmd.BuildConfigFromFlags, BuildConfigFromFlagsCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	err = gohook.Hook(kubernetes.NewForConfig, NewForConfigError, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	buildConfigFromFlagsPatch.ApplyFunc(clientcmd.BuildConfigFromFlags, BuildConfigFromFlagsCommon)
+	newForConfigPatch.ApplyFunc(kubernetes.NewForConfig, NewForConfigError)
 	restConfig = nil
 	clientset = nil
 
@@ -151,12 +107,9 @@ func TestInitClient(t *testing.T) {
 	if err == nil {
 		t.Errorf("expected error, get nil")
 	}
-	wrappedUnhookNewForConfig()
+	newForConfigPatch.Reset()
 
-	err = gohook.Hook(kubernetes.NewForConfig, NewForConfigCommon, nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	newForConfigPatch.ApplyFunc(kubernetes.NewForConfig, NewForConfigCommon)
 	restConfig = nil
 	clientset = nil
 
@@ -164,8 +117,7 @@ func TestInitClient(t *testing.T) {
 	if err != nil {
 		t.Errorf("expected no error, get %v", err)
 	}
-	wrappedUnhookNewForConfig()
-	wrappedUnhookBuildConfigFromFlags()
-	wrappedUnhookPathExists()
-
+	newForConfigPatch.Reset()
+	buildConfigFromFlagsPatch.Reset()
+	pathExistPatch.Reset()
 }
