@@ -114,16 +114,7 @@ spec:
           imagePullPolicy: {{ .Values.fuse.imagePullPolicy }}
           {{- if .Values.fuse.resources  }}
           resources:
-            {{- if .Values.fuse.resources.limits }}
-            limits:
-              cpu: {{ .Values.fuse.resources.limits.cpu }}
-              memory: {{ .Values.fuse.resources.limits.memory }}
-            {{- end }}
-            {{- if .Values.fuse.resources.requests }}
-            requests:
-              cpu: {{ .Values.fuse.resources.requests.cpu }}
-              memory: {{ .Values.fuse.resources.requests.memory }}
-            {{- end }}
+            {{ toYaml .Values.fuse.resources | trim | nindent 12  }}
           {{- end }}
           command: ["/entrypoint.sh"]
           {{- if .Values.fuse.args }}

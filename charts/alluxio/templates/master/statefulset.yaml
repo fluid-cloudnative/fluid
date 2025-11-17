@@ -176,7 +176,8 @@ spec:
             runAsUser: {{ .Values.user }}
             runAsGroup: {{ .Values.group }}
           {{- if .Values.master.resources  }}
-{{ include "alluxio.master.resources" . | indent 10 }}
+          resources:
+            {{ toYaml .Values.master.resources | trim | nindent 12  }}
           {{- end }}
           {{- if eq .Values.master.mountConfigStorage "configmap"}}
           command: ["/etc/fluid/scripts/entrypoint.sh"]
@@ -306,7 +307,8 @@ spec:
             runAsUser: {{ .Values.user }}
             runAsGroup: {{ .Values.group }}
           {{- if .Values.jobMaster.resources  }}
-{{ include "alluxio.jobMaster.resources" . | indent 10 }}
+          resources:
+            {{ toYaml .Values.jobMaster.resources | trim | nindent 12  }}
           {{- end }}
           command: ["/entrypoint.sh"]
           {{- if .Values.jobMaster.args }}

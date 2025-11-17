@@ -128,7 +128,8 @@ spec:
             runAsUser: {{ .Values.user }}
             runAsGroup: {{ .Values.group }}
           {{- if .Values.worker.resources  }}
-{{ include "alluxio.worker.resources" . | indent 10 }}
+          resources:
+          {{ toYaml .Values.worker.resources | trim | nindent 12  }}
           {{- end }}
           command: ["/entrypoint.sh"]
           {{- if .Values.worker.args }}
@@ -214,7 +215,7 @@ spec:
             runAsGroup: {{ .Values.group }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           {{- if .Values.jobWorker.resources  }}
-{{ include "alluxio.jobWorker.resources" . | indent 10 }}
+            {{ toYaml .Values.jobWorker.resources | trim | nindent 12  }}
           {{- end }}
           command: ["/entrypoint.sh"]
           {{- if .Values.jobWorker.args }}
