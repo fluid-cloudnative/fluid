@@ -32,6 +32,9 @@ spec:
       - name: minio
         # Pulls the default Minio image from Docker Hub
         image: minio/minio
+        resources:
+          limits:
+            memory: "512Mi"
         args:
         - server
         - /data
