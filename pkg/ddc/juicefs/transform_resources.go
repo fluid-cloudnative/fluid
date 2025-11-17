@@ -26,26 +26,11 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
 func (j *JuiceFSEngine) transformResourcesForFuse(runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) (err error) {
-	value.Fuse.Resources = common.Resources{
-		Requests: common.ResourceList{},
-		Limits:   common.ResourceList{},
-	}
-	if runtime.Spec.Fuse.Resources.Limits != nil {
-		j.Log.Info("setting fuse Resources limit")
-		for k, v := range runtime.Spec.Fuse.Resources.Limits {
-			value.Fuse.Resources.Limits[k] = v.String()
-		}
-	}
-
-	if runtime.Spec.Fuse.Resources.Requests != nil {
-		j.Log.Info("setting fuse Resources request")
-		for k, v := range runtime.Spec.Fuse.Resources.Requests {
-			value.Fuse.Resources.Requests[k] = v.String()
-		}
-	}
+	value.Fuse.Resources = utils.TransformCoreV1ResourcesToInternalResources(runtime.Spec.Fuse.Resources)
 
 	// mem set request
 	if j.hasTieredStore(runtime) && j.getTieredStoreType(runtime) == 0 && runtime.Spec.Fuse.Options["cache-size"] == "" {
@@ -62,11 +47,14 @@ func (j *JuiceFSEngine) transformResourcesForFuse(runtime *datav1alpha1.JuiceFSR
 		}
 		if !runtime.Spec.Fuse.Resources.Limits.Memory().IsZero() &&
 			userQuota.Cmp(*runtime.Spec.Fuse.Resources.Limits.Memory()) > 0 {
-			return fmt.Errorf("the fuse memory tierdStore's size %v is greater than master limits memory %v",
+			return fmt.Errorf("the fuse memory tierdStore's size %v is greater than fuse limits memory %v",
 				userQuota, runtime.Spec.Fuse.Resources.Limits.Memory())
 		}
 
 		if needUpdated {
+			if value.Fuse.Resources.Requests == nil {
+				value.Fuse.Resources.Requests = make(common.ResourceList)
+			}
 			value.Fuse.Resources.Requests[corev1.ResourceMemory] = userQuota.String()
 			err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 				runtime, err := j.getRuntime()
@@ -96,23 +84,7 @@ func (j *JuiceFSEngine) transformResourcesForFuse(runtime *datav1alpha1.JuiceFSR
 }
 
 func (j *JuiceFSEngine) transformResourcesForWorker(runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) (err error) {
-	value.Worker.Resources = common.Resources{
-		Requests: common.ResourceList{},
-		Limits:   common.ResourceList{},
-	}
-	if runtime.Spec.Worker.Resources.Limits != nil {
-		j.Log.Info("setting worker Resources limit")
-		for k, v := range runtime.Spec.Worker.Resources.Limits {
-			value.Worker.Resources.Limits[k] = v.String()
-		}
-	}
-
-	if runtime.Spec.Worker.Resources.Requests != nil {
-		j.Log.Info("setting worker Resources request")
-		for k, v := range runtime.Spec.Worker.Resources.Requests {
-			value.Worker.Resources.Requests[k] = v.String()
-		}
-	}
+	value.Worker.Resources = utils.TransformCoreV1ResourcesToInternalResources(runtime.Spec.Worker.Resources)
 
 	// mem set request in enterprise edition
 	if j.hasTieredStore(runtime) && j.getTieredStoreType(runtime) == 0 && value.Edition == EnterpriseEdition && runtime.Spec.Worker.Options["cache-size"] == "" {
@@ -129,11 +101,14 @@ func (j *JuiceFSEngine) transformResourcesForWorker(runtime *datav1alpha1.JuiceF
 		}
 		if !runtime.Spec.Worker.Resources.Limits.Memory().IsZero() &&
 			userQuota.Cmp(*runtime.Spec.Worker.Resources.Limits.Memory()) > 0 {
-			return fmt.Errorf("the worker memory tierdStore's size %v is greater than master limits memory %v",
+			return fmt.Errorf("the worker memory tierdStore's size %v is greater than worker limits memory %v",
 				userQuota, runtime.Spec.Worker.Resources.Limits.Memory())
 		}
 
 		if needUpdated {
+			if value.Worker.Resources.Requests == nil {
+				value.Worker.Resources.Requests = make(common.ResourceList)
+			}
 			value.Worker.Resources.Requests[corev1.ResourceMemory] = userQuota.String()
 			err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 				runtime, err := j.getRuntime()

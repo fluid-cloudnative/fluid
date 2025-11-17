@@ -18,6 +18,7 @@ package thin
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -60,23 +61,17 @@ func (t *ThinEngine) transformResourcesForFuse(resources corev1.ResourceRequirem
 		value.Fuse.Resources.Limits = common.ResourceList{}
 	}
 
-	if resources.Limits != nil {
-		t.Log.Info("setting fuse Resources limit")
-		if quantity, ok := resources.Limits[corev1.ResourceCPU]; ok {
-			value.Fuse.Resources.Limits[corev1.ResourceCPU] = quantity.String()
-		}
-		if quantity, ok := resources.Limits[corev1.ResourceMemory]; ok {
-			value.Fuse.Resources.Limits[corev1.ResourceMemory] = quantity.String()
+	// Use the following implementation to allow resource override over the value defined in ThinRuntimeProfile
+	cRes := utils.TransformCoreV1ResourcesToInternalResources(resources)
+	if cRes.Limits != nil {
+		for k, v := range cRes.Limits {
+			value.Fuse.Resources.Limits[k] = v
 		}
 	}
 
-	if resources.Requests != nil {
-		t.Log.Info("setting fuse Resources request")
-		if quantity, ok := resources.Requests[corev1.ResourceCPU]; ok {
-			value.Fuse.Resources.Requests[corev1.ResourceCPU] = quantity.String()
-		}
-		if quantity, ok := resources.Requests[corev1.ResourceMemory]; ok {
-			value.Fuse.Resources.Requests[corev1.ResourceMemory] = quantity.String()
+	if cRes.Requests != nil {
+		for k, v := range cRes.Requests {
+			value.Fuse.Resources.Requests[k] = v
 		}
 	}
 }
