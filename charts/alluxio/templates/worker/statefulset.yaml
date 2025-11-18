@@ -129,7 +129,7 @@ spec:
             runAsGroup: {{ .Values.group }}
           {{- if .Values.worker.resources  }}
           resources:
-          {{ toYaml .Values.worker.resources | trim | nindent 12  }}
+            {{ toYaml .Values.worker.resources | trim | nindent 12  }}
           {{- end }}
           command: ["/entrypoint.sh"]
           {{- if .Values.worker.args }}
@@ -215,6 +215,7 @@ spec:
             runAsGroup: {{ .Values.group }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           {{- if .Values.jobWorker.resources  }}
+          resources:
             {{ toYaml .Values.jobWorker.resources | trim | nindent 12  }}
           {{- end }}
           command: ["/entrypoint.sh"]
