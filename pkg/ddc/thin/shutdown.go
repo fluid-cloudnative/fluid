@@ -33,6 +33,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// Shutdown performs a graceful shutdown of the ThinEngine with retry capabilities.
+// The shutdown process includes cache cleanup, worker destruction, master destruction,
+// and final resource cleanup. If cache cleanup fails, it will retry up to the
+// gracefulShutdownLimits. Returns an error if any step in the shutdown sequence fails.
+// The method executes steps sequentially and stops immediately on any error.
 func (t ThinEngine) Shutdown() (err error) {
 	if t.retryShutdown < t.gracefulShutdownLimits {
 		err = t.cleanupCache()
