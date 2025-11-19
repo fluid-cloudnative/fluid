@@ -47,7 +47,7 @@ func (j *JuiceFSEngine) transformResourcesForFuse(runtime *datav1alpha1.JuiceFSR
 		}
 		if !runtime.Spec.Fuse.Resources.Limits.Memory().IsZero() &&
 			userQuota.Cmp(*runtime.Spec.Fuse.Resources.Limits.Memory()) > 0 {
-			return fmt.Errorf("the fuse memory tierdStore's size %v is greater than fuse limits memory %v",
+			return fmt.Errorf("the fuse memory tieredStore's size %v is greater than fuse limits memory %v",
 				userQuota, runtime.Spec.Fuse.Resources.Limits.Memory())
 		}
 
@@ -101,7 +101,7 @@ func (j *JuiceFSEngine) transformResourcesForWorker(runtime *datav1alpha1.JuiceF
 		}
 		if !runtime.Spec.Worker.Resources.Limits.Memory().IsZero() &&
 			userQuota.Cmp(*runtime.Spec.Worker.Resources.Limits.Memory()) > 0 {
-			return fmt.Errorf("the worker memory tierdStore's size %v is greater than worker limits memory %v",
+			return fmt.Errorf("the worker memory tieredStore's size %v is greater than worker limits memory %v",
 				userQuota, runtime.Spec.Worker.Resources.Limits.Memory())
 		}
 

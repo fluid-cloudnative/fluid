@@ -100,8 +100,8 @@ func (e *AlluxioEngine) transformResourcesForWorker(runtime *datav1alpha1.Alluxi
 
 			if !runtime.Spec.Worker.Resources.Limits.Memory().IsZero() &&
 				req.Cmp(*runtime.Spec.Worker.Resources.Limits.Memory()) > 0 {
-				err = fmt.Errorf("the memory tierdStore's size %v is greater than worker limits memory %v", req, runtime.Spec.Worker.Resources.Limits.Memory())
-				e.Log.Error(err, "the memory tierdStore's size is is greater than worker limits memory")
+				err = fmt.Errorf("the memory tieredStore's size %v is greater than worker limits memory %v", req, runtime.Spec.Worker.Resources.Limits.Memory())
+				e.Log.Error(err, "the memory tieredStore's size is is greater than worker limits memory")
 				return err
 			}
 
