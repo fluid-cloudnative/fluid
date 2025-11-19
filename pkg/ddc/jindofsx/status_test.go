@@ -59,7 +59,6 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 		},
 	}
 
-
 	var workerInputs = []appsv1.StatefulSet{
 		{
 			ObjectMeta: metav1.ObjectMeta{

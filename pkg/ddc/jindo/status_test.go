@@ -59,7 +59,6 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 		},
 	}
 
-
 	var workerInputs = []appsv1.StatefulSet{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -163,8 +162,7 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 		namespace  string
 		isErr      bool
 		deprecated bool
-	}{
-	}
+	}{}
 
 	for _, testCase := range testCases {
 		engine := newJindoEngineREP(fakeClient, testCase.name, testCase.namespace)
