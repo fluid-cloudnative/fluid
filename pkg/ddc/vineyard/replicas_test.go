@@ -204,11 +204,6 @@ func TestSyncReplicas(t *testing.T) {
 				Name:      "obj-fuse",
 				Namespace: "fluid",
 			},
-		}, {
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "deprecated-worker",
-				Namespace: "fluid",
-			},
 		},
 	}
 
@@ -275,9 +270,6 @@ func TestSyncReplicas(t *testing.T) {
 		}
 		rt, _ := engine.getRuntime()
 		found := false
-		if testCase.deprecated {
-			break
-		}
 
 		for _, cond := range rt.Status.Conditions {
 

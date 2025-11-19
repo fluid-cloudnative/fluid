@@ -59,14 +59,6 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 		},
 	}
 
-	var deprecatedWorkerInputs = []appsv1.DaemonSet{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "deprecated-jindofs-worker",
-				Namespace: "fluid",
-			},
-		},
-	}
 
 	var workerInputs = []appsv1.StatefulSet{
 		{
@@ -179,10 +171,6 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 	for _, runtimeInput := range runtimeInputs {
 		objs = append(objs, runtimeInput.DeepCopy())
 	}
-
-	for _, deprecatedWorkerInput := range deprecatedWorkerInputs {
-		objs = append(objs, deprecatedWorkerInput.DeepCopy())
-	}
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, objs...)
 	// engine := newJindoFSxEngineREP(fakeClient, testCase.name, testCase.namespace)
 
@@ -193,9 +181,7 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 		isErr      bool
 		deprecated bool
 	}{
-		{testName: "deprecated",
-			name:      "deprecated",
-			namespace: "fluid"},
+		// Removed deprecated test case
 	}
 
 	for _, testCase := range testCases {

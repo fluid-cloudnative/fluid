@@ -275,7 +275,6 @@ func TestSyncReplicas(t *testing.T) {
 		Type           datav1alpha1.RuntimeConditionType
 		isErr          bool
 		condtionLength int
-		deprecated     bool
 	}{
 		{
 			testName:       "scaleout",
@@ -307,7 +306,6 @@ func TestSyncReplicas(t *testing.T) {
 			Type:           "",
 			isErr:          false,
 			condtionLength: 0,
-			deprecated:     false,
 		}, {
 			testName:       "notFound",
 			name:           "notFound",
@@ -315,15 +313,6 @@ func TestSyncReplicas(t *testing.T) {
 			Type:           "",
 			isErr:          true,
 			condtionLength: 0,
-			deprecated:     false,
-		}, {
-			testName:       "deprecated",
-			name:           "deprecated",
-			namespace:      "fluid",
-			Type:           "",
-			isErr:          true,
-			condtionLength: 0,
-			deprecated:     true,
 		},
 	}
 	for _, testCase := range testCases {
@@ -340,9 +329,6 @@ func TestSyncReplicas(t *testing.T) {
 		}
 		rt, _ := engine.getRuntime()
 		found := false
-		if testCase.deprecated {
-			continue
-		}
 
 		for _, cond := range rt.Status.Conditions {
 

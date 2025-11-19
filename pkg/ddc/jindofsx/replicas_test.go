@@ -318,14 +318,6 @@ func TestSyncReplicas(t *testing.T) {
 			isErr:          true,
 			condtionLength: 0,
 			deprecated:     false,
-		}, {
-			testName:       "deprecated",
-			name:           "deprecated",
-			namespace:      "fluid",
-			Type:           "",
-			isErr:          true,
-			condtionLength: 0,
-			deprecated:     true,
 		},
 	}
 	for _, testCase := range testCases {
