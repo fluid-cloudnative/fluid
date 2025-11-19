@@ -63,13 +63,13 @@ func (t *ThinEngine) transformResourcesForFuse(resources corev1.ResourceRequirem
 
 	// Use the following implementation to allow resource override over the value defined in ThinRuntimeProfile
 	cRes := utils.TransformCoreV1ResourcesToInternalResources(resources)
-	if cRes.Limits != nil {
+	if len(cRes.Limits) > 0 {
 		for k, v := range cRes.Limits {
 			value.Fuse.Resources.Limits[k] = v
 		}
 	}
 
-	if cRes.Requests != nil {
+	if len(cRes.Requests) > 0 {
 		for k, v := range cRes.Requests {
 			value.Fuse.Resources.Requests[k] = v
 		}
