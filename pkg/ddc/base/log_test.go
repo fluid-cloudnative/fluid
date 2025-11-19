@@ -18,16 +18,16 @@ package base
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-
-	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 )
 
 func TestLoggingErrorExceptConflict(t *testing.T) {
@@ -42,8 +42,8 @@ func TestLoggingErrorExceptConflict(t *testing.T) {
 		Log:     fake.NullLogger(),
 	})
 
-	err := engine.loggingErrorExceptConflict(fluiderrs.NewDeprecated(schema.GroupResource{Group: "", Resource: "test"}, types.NamespacedName{}), "test")
-	if !fluiderrs.IsDeprecated(err) {
-		t.Errorf("Failed to check deprecated error %v", err)
+	err := engine.loggingErrorExceptConflict(apierrs.NewConflict(schema.GroupResource{Group: "test-group", Resource: "test-resource"}, "myresource", fmt.Errorf("Conflict error")), "test")
+	if err != nil {
+		t.Errorf("log should ignore conflict error, but error occured %v", err)
 	}
 }

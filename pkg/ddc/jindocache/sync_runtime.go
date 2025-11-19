@@ -25,7 +25,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
@@ -121,11 +120,6 @@ func (e *JindoCacheEngine) syncMasterSpec(ctx cruntime.ReconcileRequestContext, 
 		return err
 	})
 
-	if fluiderrs.IsDeprecated(err) {
-		e.Log.Info("Warning: the current runtime is created by runtime controller before v0.7.0, update specs are not supported. To support these features, please create a new dataset", "details", err)
-		return false, nil
-	}
-
 	return
 }
 
@@ -181,11 +175,6 @@ func (e *JindoCacheEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, 
 
 		return err
 	})
-
-	if fluiderrs.IsDeprecated(err) {
-		e.Log.Info("Warning: the current runtime is created by runtime controller before v0.7.0, update specs are not supported. To support these features, please create a new dataset", "details", err)
-		return false, nil
-	}
 
 	return
 }
@@ -256,9 +245,5 @@ func (e *JindoCacheEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, ru
 		return err
 	})
 
-	if fluiderrs.IsDeprecated(err) {
-		e.Log.Info("Warning: the current runtime is created by runtime controller before v0.7.0, update specs are not supported. To support these features, please create a new dataset", "details", err)
-		return false, nil
-	}
 	return
 }

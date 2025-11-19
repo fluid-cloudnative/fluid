@@ -23,7 +23,6 @@ import (
 
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
-	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
@@ -38,10 +37,6 @@ func (e *AlluxioEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err 
 		workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
 			types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
 		if err != nil {
-			if fluiderrs.IsDeprecated(err) {
-				e.Log.Info("Warning: the current runtime is created by runtime controller before v0.7.0, scale out/in are not supported. To support these features, please create a new dataset", "details", err)
-				return nil
-			}
 			if errors.IsNotFound(err) {
 				cond := utils.NewRuntimeCondition(data.RuntimeWorkersReady, "The workers are not ready.",
 					fmt.Sprintf("The statefulset %s in %s is not found, please fix it.",

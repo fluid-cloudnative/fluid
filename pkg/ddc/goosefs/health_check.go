@@ -21,10 +21,8 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -181,17 +179,11 @@ func (e *GooseFSEngine) checkMasterHealthy() (err error) {
 // checkWorkersHealthy checks the health status of workers in a GooseFSEngine runtime.
 // It retrieves the worker statefulset and evaluates whether the workers are ready based on their status.
 // If the workers are not ready, it updates the runtime's status with appropriate conditions and logs relevant information.
-// If the runtime was created by a controller before v0.7.0, it logs a warning indicating that worker health checking is not supported for such runtimes.
 func (e *GooseFSEngine) checkWorkersHealthy() (err error) {
 	// Check the status of workers
 	workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
 		types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
 	if err != nil {
-		if fluiderrs.IsDeprecated(err) {
-			e.Log.Info("Warning: the current runtime is created by runtime controller before v0.7.0, checking worker health state is not supported. To support these features, please create a new dataset", "details", err)
-			e.Recorder.Event(e.runtime, corev1.EventTypeWarning, common.RuntimeDeprecated, "The runtime is created by controllers before v0.7.0, to fully enable latest capabilities, please delete the runtime and create a new one")
-			return nil
-		}
 		return
 	}
 

@@ -18,7 +18,6 @@ package jindofsx
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
-	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
@@ -39,10 +38,6 @@ func (e JindoFSxEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err 
 		workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
 			types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
 		if err != nil {
-			if fluiderrs.IsDeprecated(err) {
-				e.Log.Info("Warning: the current runtime is created by runtime controller before v0.7.0, scale out/in are not supported. To support these features, please create a new dataset", "details", err)
-				return nil
-			}
 			return err
 		}
 

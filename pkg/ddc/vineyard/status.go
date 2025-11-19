@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
-	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"k8s.io/apimachinery/pkg/types"
@@ -46,10 +45,6 @@ func (e *VineyardEngine) CheckAndUpdateRuntimeStatus() (ready bool, err error) {
 	workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
 		types.NamespacedName{Namespace: e.namespace, Name: workerName})
 	if err != nil {
-		if fluiderrs.IsDeprecated(err) {
-			e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
-			return ready, nil
-		}
 		return ready, err
 	}
 

@@ -53,6 +53,6 @@ func NewDeprecated(qualifiedResource schema.GroupResource, key types.NamespacedN
 }
 
 // IsDeprecated returns true if the specified error was created by NewDeprecated.
-func IsDeprecated(err error) (deprecated bool) {
-	return ReasonForError(err) == StatusReasonDeprecated
-}
+// func IsDeprecated(err error) (deprecated bool) {
+// 	return ReasonForError(err) == StatusReasonDeprecated
+// }
