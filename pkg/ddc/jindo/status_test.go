@@ -59,14 +59,6 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 		},
 	}
 
-	var deprecatedWorkerInputs = []appsv1.DaemonSet{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "deprecated-jindofs-worker",
-				Namespace: "fluid",
-			},
-		},
-	}
 
 	var workerInputs = []appsv1.StatefulSet{
 		{
@@ -146,24 +138,6 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 				WorkerPhase:                  "NotReady",
 				FusePhase:                    "NotReady",
 			},
-		}, {
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "deprecated",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.JindoRuntimeSpec{
-				Replicas: 2,
-			},
-			Status: datav1alpha1.RuntimeStatus{
-				CurrentWorkerNumberScheduled: 2,
-				CurrentMasterNumberScheduled: 2,
-				CurrentFuseNumberScheduled:   2,
-				DesiredMasterNumberScheduled: 2,
-				DesiredWorkerNumberScheduled: 2,
-				DesiredFuseNumberScheduled:   2,
-				WorkerPhase:                  "NotReady",
-				FusePhase:                    "NotReady",
-			},
 		},
 	}
 
@@ -180,9 +154,6 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 		objs = append(objs, runtimeInput.DeepCopy())
 	}
 
-	for _, deprecatedWorkerInput := range deprecatedWorkerInputs {
-		objs = append(objs, deprecatedWorkerInput.DeepCopy())
-	}
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, objs...)
 	// engine := newJindoEngineREP(fakeClient, testCase.name, testCase.namespace)
 
@@ -193,9 +164,6 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 		isErr      bool
 		deprecated bool
 	}{
-		{testName: "deprecated",
-			name:      "deprecated",
-			namespace: "fluid"},
 	}
 
 	for _, testCase := range testCases {

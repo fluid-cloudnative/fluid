@@ -143,30 +143,6 @@ var _ = Describe("AlluxioEngine Worker Component Tests", Label("pkg.ddc.alluxio.
 			})
 		})
 
-		When("worker is in deprecated daemonset mode", func() {
-			BeforeEach(func() {
-				deprecatedWorkerDaemonSet := &appsv1.DaemonSet{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      engine.getWorkerName(),
-						Namespace: engine.namespace,
-					},
-					Spec: appsv1.DaemonSetSpec{},
-				}
-				resources = []runtime.Object{
-					dataset,
-					alluxioruntime,
-					mockedObjects.MasterSts,
-					deprecatedWorkerDaemonSet,
-					mockedObjects.FuseDs,
-				}
-			})
-
-			It("should return true and skip handling for deprecated daemonset", func() {
-				ready, err := engine.CheckWorkersReady()
-				Expect(err).To(BeNil())
-				Expect(ready).To(BeTrue())
-			})
-		})
 	})
 })
 

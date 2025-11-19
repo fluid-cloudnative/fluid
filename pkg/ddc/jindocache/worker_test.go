@@ -442,47 +442,6 @@ func TestCheckWorkersReady(t *testing.T) {
 			},
 			wantReady: false,
 			wantErr:   false,
-		}, {
-			name: "deprecated",
-			fields: fields{
-				name:      "deprecated",
-				namespace: "big-data",
-				runtime: &datav1alpha1.JindoRuntime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "deprecated",
-						Namespace: "big-data",
-					},
-					Spec: datav1alpha1.JindoRuntimeSpec{
-						Replicas: 1,
-						Fuse:     datav1alpha1.JindoFuseSpec{},
-					},
-				},
-				worker: &appsv1.StatefulSet{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "deprecated-jindofs-worker-0",
-						Namespace: "big-data",
-					},
-					Spec: appsv1.StatefulSetSpec{
-						Replicas: ptr.To[int32](1),
-					},
-					Status: appsv1.StatefulSetStatus{
-						ReadyReplicas: 0,
-					},
-				},
-				fuse: &appsv1.DaemonSet{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "deprecated-jindofs-worker",
-						Namespace: "big-data",
-					},
-					Status: appsv1.DaemonSetStatus{
-						NumberAvailable:        0,
-						DesiredNumberScheduled: 1,
-						CurrentNumberScheduled: 0,
-					},
-				},
-			},
-			wantReady: true,
-			wantErr:   false,
 		},
 	}
 	for _, tt := range tests {

@@ -213,11 +213,6 @@ func TestSyncReplicas(t *testing.T) {
 				Name:      "obj-fuse",
 				Namespace: "fluid",
 			},
-		}, {
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "deprecated-worker",
-				Namespace: "fluid",
-			},
 		},
 	}
 
