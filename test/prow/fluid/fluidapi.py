@@ -1,5 +1,6 @@
 API_VERSION = "data.fluid.io/v1alpha1"
-webufs = "https://mirrors.ustc.edu.cn/apache/zookeeper/stable/"
+# webufs = "https://mirrors.ustc.edu.cn/apache/zookeeper/stable/"
+webufs = "https://downloads.apache.org/zookeeper/stable/"
 
 oss_bucket = "oss://fluid-e2e"
 oss_endpoint = "oss-cn-hongkong-internal.aliyuncs.com"

@@ -12,6 +12,9 @@ Steps:
 8. clean up
 """
 
+HBASE_WEB_UFS_URL = "https://downloads.apache.org/hbase/stable/"
+HADOOP_WEB_UFS_URL = "https://downloads.apache.org/hadoop/common/stable/"
+
 import os
 import sys
 import time
@@ -136,7 +139,7 @@ def main():
     namespace = "default"
 
     mount = fluidapi.Mount()
-    mount.set_mount_info("hadoop", "https://mirrors.ustc.edu.cn/apache/hadoop/common/stable/")
+    mount.set_mount_info("hadoop", HADOOP_WEB_UFS_URL)
 
     dataset = fluidapi.assemble_dataset("alluxio-webufs") \
         .set_namespaced_name(namespace, name) \
@@ -186,7 +189,7 @@ def main():
     )
 
     new_mount = fluidapi.Mount()
-    new_mount.set_mount_info("hbase", "https://mirrors.ustc.edu.cn/apache/hbase/stable/")
+    new_mount.set_mount_info("hbase", HBASE_WEB_UFS_URL)
 
 
     new_dataset = fluidapi.assemble_dataset("alluxio-webufs") \
