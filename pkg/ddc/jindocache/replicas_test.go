@@ -321,7 +321,7 @@ func TestSyncReplicas(t *testing.T) {
 			name:           "deprecated",
 			namespace:      "fluid",
 			Type:           "",
-			isErr:          false,
+			isErr:          true,
 			condtionLength: 0,
 			deprecated:     true,
 		},

@@ -290,37 +290,6 @@ func TestSetupWorkers(t *testing.T) {
 					"fluid.io/s-h-alluxio-t-big-data-hadoop": "0B",
 				},
 			},
-		}, {
-			name: "deprecated",
-			fields: fields{
-				replicas: 0,
-				worker:   &appsv1.StatefulSet{},
-				deprecatedWorker: &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{
-					Name:      "deprecated-worker",
-					Namespace: "big-data",
-				}},
-				runtime: &datav1alpha1.AlluxioRuntime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "deprecated",
-						Namespace: "big-data",
-					},
-					Spec: datav1alpha1.AlluxioRuntimeSpec{
-						Replicas: 1,
-					},
-				},
-				runtimeInfo: runtimeInfoHadoop,
-				name:        "deprecated",
-				namespace:   "big-data",
-				deprecated:  true,
-			},
-			wantedNodeLabels: map[string]map[string]string{
-				"test-node-hadoop": {
-					"fluid.io/dataset-num":                   "1",
-					"fluid.io/s-alluxio-big-data-hadoop":     "true",
-					"fluid.io/s-big-data-hadoop":             "true",
-					"fluid.io/s-h-alluxio-t-big-data-hadoop": "0B",
-				},
-			},
 		},
 	}
 

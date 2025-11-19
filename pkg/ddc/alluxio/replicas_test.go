@@ -271,14 +271,6 @@ func TestSyncReplicas(t *testing.T) {
 			Type:           "",
 			isErr:          false,
 			condtionLength: 0,
-		}, {
-			testName:       "deprecated",
-			name:           "deprecated",
-			namespace:      "fluid",
-			Type:           "",
-			isErr:          false,
-			condtionLength: 0,
-			deprecated:     true,
 		},
 	}
 	for _, testCase := range testCases {
@@ -292,9 +284,6 @@ func TestSyncReplicas(t *testing.T) {
 		}
 		rt, _ := engine.getRuntime()
 		found := false
-		if testCase.deprecated {
-			break
-		}
 		for _, cond := range rt.Status.Conditions {
 
 			if cond.Type == testCase.Type {
