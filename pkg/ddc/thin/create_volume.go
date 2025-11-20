@@ -20,6 +20,9 @@ import (
 	volumehelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 )
 
+// CreateVolume creates the persistent volume and persistent volume claim for thin runtime.
+// It first initializes the runtime if not already initialized, then creates the fuse persistent volume
+// and fuse persistent volume claim. This function handles the entire volume creation workflow for thin runtime.
 func (t ThinEngine) CreateVolume() (err error) {
 	if t.runtime == nil {
 		t.runtime, err = t.getRuntime()
