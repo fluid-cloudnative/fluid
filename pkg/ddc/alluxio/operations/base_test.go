@@ -650,18 +650,18 @@ func TestAlluxioFileUtils_ExecMountScripts(t *testing.T) {
 	}
 
 	a := &AlluxioFileUtils{log: fake.NullLogger()}
-	patches := gomonkey.ApplyPrivateMethod(*a, "exec", ExecErr)
-	defer patches.Reset()
+	patch1 := gomonkey.ApplyPrivateMethod(*a, "exec", ExecErr)
 
 	err := a.ExecMountScripts()
 	if err == nil {
 		t.Error("check failure, want err, got nil")
 	}
+	patch1.Reset()
 
-	patches = gomonkey.ApplyPrivateMethod(*a, "exec", ExecCommon)
+	patch2 := gomonkey.ApplyPrivateMethod(*a, "exec", ExecCommon)
 	err = a.ExecMountScripts()
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
 	}
-	defer patches.Reset()
+	patch2.Reset()
 }
