@@ -309,20 +309,27 @@ func (j *JuiceFSEngine) checkAndSetFuseChanges(oldValue, latestValue *JuiceFS, r
 		}
 
 		// image
-		latestFuseImage := latestValue.Fuse.Image
-		if latestValue.Fuse.ImageTag != "" {
-			latestFuseImage = latestFuseImage + ":" + latestValue.Fuse.ImageTag
-		}
+		// For image, we assume once image/imageTag is set, it shall not be removed by user.
+		// It's hard for Fluid to detect the removal and find a way to rollout image back to the default image.
+		if len(runtime.Spec.Fuse.Image) == 0 && len(runtime.Spec.Fuse.ImageTag) == 0 {
+			// Do not touch image info because user are using the default image
+			j.Log.Info("No user-defined image info on Runtime, skip syncing image")
+		} else {
+			latestFuseImage := latestValue.Fuse.Image
+			if latestValue.Fuse.ImageTag != "" {
+				latestFuseImage = latestFuseImage + ":" + latestValue.Fuse.ImageTag
+			}
 
-		currentFuseImage := oldValue.Fuse.Image
-		if oldValue.Fuse.ImageTag != "" {
-			currentFuseImage = currentFuseImage + ":" + oldValue.Fuse.ImageTag
-		}
+			currentFuseImage := oldValue.Fuse.Image
+			if oldValue.Fuse.ImageTag != "" {
+				currentFuseImage = currentFuseImage + ":" + oldValue.Fuse.ImageTag
+			}
 
-		if imageChanged, newImage := j.isImageChanged(currentFuseImage, latestFuseImage); imageChanged {
-			j.Log.Info("syncFuseSpec imageChanged")
-			fusesToUpdate.Spec.Template.Spec.Containers[0].Image = newImage
-			fuseChanged, fuseGenerationNeedUpdate = true, true
+			if imageChanged, newImage := j.isImageChanged(currentFuseImage, latestFuseImage); imageChanged {
+				j.Log.Info("syncFuseSpec imageChanged")
+				fusesToUpdate.Spec.Template.Spec.Containers[0].Image = newImage
+				fuseChanged, fuseGenerationNeedUpdate = true, true
+			}
 		}
 	}
 
@@ -381,125 +388,107 @@ func (j *JuiceFSEngine) increaseFuseGeneration(fusesToUpdate *appsv1.DaemonSet) 
 }
 
 func (j *JuiceFSEngine) isVolumeMountsChanged(crtVolumeMounts, runtimeVolumeMounts []corev1.VolumeMount) (changed bool, newVolumeMounts []corev1.VolumeMount) {
-	mounts := make(map[string]corev1.VolumeMount)
-	for _, mount := range crtVolumeMounts {
-		mounts[mount.Name] = mount
+	newVolumeMounts = runtimeVolumeMounts
+	if len(crtVolumeMounts) == 0 && len(runtimeVolumeMounts) == 0 {
+		return
 	}
-	for _, mount := range runtimeVolumeMounts {
-		if m, ok := mounts[mount.Name]; !ok || !reflect.DeepEqual(m, mount) {
-			j.Log.Info("The volumeMounts is different.", "current sts", crtVolumeMounts, "runtime", runtimeVolumeMounts)
-			mounts[mount.Name] = mount
-			changed = true
-		}
+
+	if !reflect.DeepEqual(crtVolumeMounts, runtimeVolumeMounts) {
+		j.Log.Info("The volumeMounts are different", "old", crtVolumeMounts, "new", runtimeVolumeMounts)
+		changed = true
 	}
-	vms := []corev1.VolumeMount{}
-	for _, mount := range mounts {
-		vms = append(vms, mount)
-	}
-	newVolumeMounts = vms
+
 	return
 }
 
 func (j JuiceFSEngine) isEnvsChanged(crtEnvs, runtimeEnvs []corev1.EnvVar) (changed bool, newEnvs []corev1.EnvVar) {
-	envMap := make(map[string]corev1.EnvVar)
-	for _, env := range crtEnvs {
-		envMap[env.Name] = env
+	// TODO: Be careful of flaky detection. Caller should make sure the envs are arranged in a deterministic way (for example sorted).
+	// Currently JuiceFS transform env variable in a deterministic way.
+	newEnvs = runtimeEnvs
+	if len(crtEnvs) == 0 && len(runtimeEnvs) == 0 {
+		return
 	}
-	for _, env := range runtimeEnvs {
-		if envMap[env.Name].Value != env.Value || !reflect.DeepEqual(envMap[env.Name].ValueFrom, env.ValueFrom) {
-			j.Log.Info("The env is different.", "current sts", crtEnvs, "runtime", runtimeEnvs)
-			envMap[env.Name] = env
-			changed = true
-		}
+
+	if !reflect.DeepEqual(crtEnvs, runtimeEnvs) {
+		j.Log.Info("The env is different", "old", crtEnvs, "new", runtimeEnvs)
+		changed = true
 	}
-	envs := []corev1.EnvVar{}
-	for _, env := range envMap {
-		envs = append(envs, env)
-	}
-	newEnvs = envs
+
 	return
 }
 
 func (j JuiceFSEngine) isResourcesChanged(crtResources, runtimeResources corev1.ResourceRequirements) (changed bool, newResources corev1.ResourceRequirements) {
+	newResources = runtimeResources
 	if !utils.ResourceRequirementsEqual(crtResources, runtimeResources) {
-		j.Log.Info("The resource requirement is different.", "current sts", crtResources, "runtime", runtimeResources)
+		j.Log.Info("The resource requirement is different.", "old", crtResources, "new", runtimeResources)
 		changed = true
 	}
-	newResources = runtimeResources
 	return
 }
 
 func (j JuiceFSEngine) isVolumesChanged(crtVolumes, runtimeVolumes []corev1.Volume) (changed bool, newVolumes []corev1.Volume) {
-	volumes := make(map[string]corev1.Volume)
-	for _, mount := range crtVolumes {
-		volumes[mount.Name] = mount
+	newVolumes = runtimeVolumes
+
+	// handle cases where nil slice equals to empty slice
+	if len(crtVolumes) == 0 && len(runtimeVolumes) == 0 {
+		return
 	}
-	for _, volume := range runtimeVolumes {
-		if m, ok := volumes[volume.Name]; !ok || !reflect.DeepEqual(m, volume) {
-			j.Log.Info("The volumes is different.", "current fuse volumes", crtVolumes, "runtime", runtimeVolumes)
-			volumes[volume.Name] = volume
-			changed = true
-		}
+
+	if !reflect.DeepEqual(crtVolumes, runtimeVolumes) {
+		j.Log.Info("The volumes are different.", "old", crtVolumes, "new", runtimeVolumes)
+		changed = true
 	}
-	vs := []corev1.Volume{}
-	for _, volume := range volumes {
-		vs = append(vs, volume)
-	}
-	newVolumes = vs
 	return
 }
 
 func (j JuiceFSEngine) isLabelsChanged(crtLabels, runtimeLabels map[string]string) (changed bool, newLabels map[string]string) {
-	if len(crtLabels) == 0 {
-		crtLabels = make(map[string]string)
+	newLabels = runtimeLabels
+	// handle cases where nil map equals to empty map
+	if len(crtLabels) == 0 && len(runtimeLabels) == 0 {
+		return
 	}
-	newLabels = crtLabels
-	for k, v := range runtimeLabels {
-		if crtv, ok := crtLabels[k]; !ok || crtv != v {
-			j.Log.Info("The labels is different.", "current sts", crtLabels, "runtime", runtimeLabels)
-			newLabels[k] = v
-			changed = true
-		}
+
+	if !reflect.DeepEqual(crtLabels, runtimeLabels) {
+		j.Log.Info("The labels are different.", "old", crtLabels, "new", runtimeLabels)
+		changed = true
 	}
 	return
 }
 
 func (j JuiceFSEngine) isAnnotationsChanged(crtAnnotations, runtimeAnnotations map[string]string) (changed bool, newAnnotations map[string]string) {
-	if len(crtAnnotations) == 0 {
-		crtAnnotations = make(map[string]string)
+	newAnnotations = runtimeAnnotations
+	// handle cases where nil map equals to empty map
+	if len(crtAnnotations) == 0 && len(runtimeAnnotations) == 0 {
+		return
 	}
-	newAnnotations = crtAnnotations
-	for k, v := range runtimeAnnotations {
-		if crtv, ok := crtAnnotations[k]; !ok || crtv != v {
-			j.Log.Info("The annotations is different.", "current sts", crtAnnotations, "runtime", runtimeAnnotations)
-			newAnnotations[k] = v
-			changed = true
-		}
+
+	if !reflect.DeepEqual(crtAnnotations, runtimeAnnotations) {
+		j.Log.Info("The annotations are different.", "old", crtAnnotations, "new", runtimeAnnotations)
+		changed = true
 	}
+
 	return
 }
 
 func (j JuiceFSEngine) isImageChanged(crtImage, runtimeImage string) (changed bool, newImage string) {
+	newImage = runtimeImage
 	if crtImage != runtimeImage {
 		j.Log.Info("The image is different.", "current sts", crtImage, "runtime", runtimeImage)
 		changed = true
 	}
-	newImage = runtimeImage
 	return
 }
 
 func (j JuiceFSEngine) isNodeSelectorChanged(crtNodeSelector, runtimeNodeSelector map[string]string) (changed bool, newNodeSelector map[string]string) {
-	if crtNodeSelector == nil {
-		crtNodeSelector = map[string]string{}
+	newNodeSelector = runtimeNodeSelector
+	if len(crtNodeSelector) == 0 && len(runtimeNodeSelector) == 0 {
+		return
 	}
-	if runtimeNodeSelector == nil {
-		runtimeNodeSelector = map[string]string{}
-	}
+
 	if !reflect.DeepEqual(crtNodeSelector, runtimeNodeSelector) {
 		j.Log.Info("The nodeSelector is different.", "current sts", crtNodeSelector, "runtime", runtimeNodeSelector)
 		changed = true
 	}
-	newNodeSelector = runtimeNodeSelector
 	return
 }
 
