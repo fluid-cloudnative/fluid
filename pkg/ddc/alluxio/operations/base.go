@@ -321,7 +321,7 @@ func (a AlluxioFileUtils) GetMountedAlluxioPaths() ([]string, error) {
 	return mountedPaths, err
 }
 
-func (a AlluxioFileUtils) FindUnmountedAlluxioPaths(alluxioPaths []string) ([]string, error) {
+func (a *AlluxioFileUtils) FindUnmountedAlluxioPaths(alluxioPaths []string) ([]string, error) {
 	mountedPaths, err := a.GetMountedAlluxioPaths()
 	if err != nil {
 		return []string{}, err
