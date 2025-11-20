@@ -19,9 +19,7 @@ GOBIN := $(shell if [ -z "$(shell go env GOBIN)" ]; then echo "$(shell go env GO
 
 # Architecture detection
 UNAME := $(shell uname -m)
-ifeq ($(UNAME), aarch64)
-    ARCH := arm64
-else ifeq ($(UNAME), arm64)
+ifeq ($(UNAME),$(filter $(UNAME),aarch64 arm64))
 	ARCH := arm64
 else
     ARCH := amd64
