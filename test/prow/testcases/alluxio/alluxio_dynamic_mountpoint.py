@@ -12,8 +12,6 @@ Steps:
 8. clean up
 """
 
-HBASE_WEB_UFS_URL = "https://downloads.apache.org/hbase/stable/"
-HADOOP_WEB_UFS_URL = "https://downloads.apache.org/hadoop/common/stable/"
 
 import os
 import sys
@@ -30,6 +28,9 @@ from framework.exception import TestError
 
 from kubernetes import client, config
 from kubernetes.stream import stream
+
+HBASE_WEB_UFS_URL = fluidapi.webufs_apache_mirror + "hbase/stable/"
+HADOOP_WEB_UFS_URL = fluidapi.webufs_apache_mirror + "hadoop/common/stable/"
 
 def checkAlluxioruntimeMountpoint(dataset_name, namespace, mp1, mp2):
     exec_command = ["/bin/sh",
