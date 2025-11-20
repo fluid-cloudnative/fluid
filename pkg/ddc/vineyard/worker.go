@@ -18,7 +18,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -34,10 +33,6 @@ func (e *VineyardEngine) SetupWorkers() (err error) {
 		workers, err := ctrl.GetWorkersAsStatefulset(e.Client,
 			types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
 		if err != nil {
-			if fluiderrs.IsDeprecated(err) {
-				e.Log.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
-				return nil
-			}
 			return err
 		}
 		runtime, err := e.getRuntime()

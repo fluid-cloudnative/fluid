@@ -54,15 +54,6 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 		},
 	}
 
-	var deprecatedWorkerInputs = []appsv1.DaemonSet{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "deprecated-worker",
-				Namespace: "fluid",
-			},
-		},
-	}
-
 	var workerInputs = []appsv1.StatefulSet{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -154,10 +145,6 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 	for _, runtimeInput := range runtimeInputs {
 		objs = append(objs, runtimeInput.DeepCopy())
 	}
-
-	for _, deprecatedWorkerInput := range deprecatedWorkerInputs {
-		objs = append(objs, deprecatedWorkerInput.DeepCopy())
-	}
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, objs...)
 
 	testCases := []struct {
@@ -168,11 +155,7 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 		deprecated bool
 		wanted     bool
 	}{
-		{testName: "deprecated",
-			name:       "deprecated",
-			namespace:  "fluid",
-			deprecated: true,
-		}, {
+		{
 			testName:  "hadoop",
 			name:      "hadoop",
 			namespace: "fluid",

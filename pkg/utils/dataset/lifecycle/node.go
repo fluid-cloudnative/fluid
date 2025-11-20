@@ -40,7 +40,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	fluidctrl "github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/tieredstore"
@@ -90,10 +89,6 @@ func getDesiredNodesWithScheduleInfo(runtimeInfo base.RuntimeInfoInterface, clie
 	workers, err := fluidctrl.GetWorkersAsStatefulset(client,
 		types.NamespacedName{Namespace: runtimeInfo.GetNamespace(), Name: runtimeInfo.GetWorkerStatefulsetName()})
 	if err != nil {
-		if fluiderrs.IsDeprecated(err) {
-			rootLog.Info("Warning: Deprecated mode is not support, so skip handling", "details", err)
-			return nil, nil
-		}
 		return nil, err
 	}
 

@@ -19,6 +19,7 @@ package jindocache
 import (
 	"testing"
 
+	"github.com/agiledragon/gomonkey/v2"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
@@ -33,37 +34,11 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 	masterInputs := []*appsv1.StatefulSet{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hadoop-master",
-				Namespace: "fluid",
-			},
-			Status: appsv1.StatefulSetStatus{
-				ReadyReplicas: 0,
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase-master",
+				Name:      "hbase-jindofs-master",
 				Namespace: "fluid",
 			},
 			Status: appsv1.StatefulSetStatus{
 				ReadyReplicas: 1,
-			},
-		}, {
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "deprecated-jindofs-master",
-				Namespace: "fluid",
-			},
-			Status: appsv1.StatefulSetStatus{
-				ReadyReplicas: 1,
-			},
-		},
-	}
-
-	var deprecatedWorkerInputs = []appsv1.DaemonSet{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "deprecated-jindofs-worker",
-				Namespace: "fluid",
 			},
 		},
 	}
@@ -71,7 +46,7 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 	var workerInputs = []appsv1.StatefulSet{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase-worker",
+				Name:      "hbase-jindofs-worker",
 				Namespace: "fluid",
 			},
 			Status: appsv1.StatefulSetStatus{
@@ -105,66 +80,6 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 				FusePhase:   "NotReady",
 			},
 		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hadoop",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.JindoRuntimeSpec{
-				Replicas: 2,
-			},
-			Status: datav1alpha1.RuntimeStatus{
-				CurrentWorkerNumberScheduled: 3,
-				CurrentMasterNumberScheduled: 3,
-				CurrentFuseNumberScheduled:   3,
-				DesiredMasterNumberScheduled: 2,
-				DesiredWorkerNumberScheduled: 3,
-				DesiredFuseNumberScheduled:   2,
-				Conditions: []datav1alpha1.RuntimeCondition{
-					utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersInitialized, datav1alpha1.RuntimeWorkersInitializedReason, "The workers are initialized.", v1.ConditionTrue),
-					utils.NewRuntimeCondition(datav1alpha1.RuntimeFusesInitialized, datav1alpha1.RuntimeFusesInitializedReason, "The fuses are initialized.", v1.ConditionTrue),
-				},
-				WorkerPhase: "NotReady",
-				FusePhase:   "NotReady",
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "obj",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.JindoRuntimeSpec{
-				Replicas: 2,
-			},
-			Status: datav1alpha1.RuntimeStatus{
-				CurrentWorkerNumberScheduled: 2,
-				CurrentMasterNumberScheduled: 2,
-				CurrentFuseNumberScheduled:   2,
-				DesiredMasterNumberScheduled: 2,
-				DesiredWorkerNumberScheduled: 2,
-				DesiredFuseNumberScheduled:   2,
-				WorkerPhase:                  "NotReady",
-				FusePhase:                    "NotReady",
-			},
-		}, {
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "deprecated",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.JindoRuntimeSpec{
-				Replicas: 2,
-			},
-			Status: datav1alpha1.RuntimeStatus{
-				CurrentWorkerNumberScheduled: 2,
-				CurrentMasterNumberScheduled: 2,
-				CurrentFuseNumberScheduled:   2,
-				DesiredMasterNumberScheduled: 2,
-				DesiredWorkerNumberScheduled: 2,
-				DesiredFuseNumberScheduled:   2,
-				WorkerPhase:                  "NotReady",
-				FusePhase:                    "NotReady",
-			},
-		},
 	}
 
 	objs := []runtime.Object{}
@@ -179,31 +94,33 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 	for _, runtimeInput := range runtimeInputs {
 		objs = append(objs, runtimeInput.DeepCopy())
 	}
-
-	for _, deprecatedWorkerInput := range deprecatedWorkerInputs {
-		objs = append(objs, deprecatedWorkerInput.DeepCopy())
-	}
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, objs...)
 	// engine := newJindoCacheEngineREP(fakeClient, testCase.name, testCase.namespace)
 
 	testCases := []struct {
-		testName   string
-		name       string
-		namespace  string
-		isErr      bool
-		deprecated bool
+		testName  string
+		name      string
+		namespace string
+		isErr     bool
 	}{
-		{testName: "deprecated",
-			name:      "deprecated",
+		// TODO: add more unit tests
+		{testName: "hbase",
+			name:      "hbase",
 			namespace: "fluid"},
 	}
 
 	for _, testCase := range testCases {
 		engine := newJindoCacheEngineREP(fakeClient, testCase.name, testCase.namespace)
 
+		patches := gomonkey.ApplyPrivateMethod(engine, "syncCacheModeRuntimeStatus", func() (ready bool, err error) {
+			return true, nil
+		})
+
 		_, err := engine.CheckAndUpdateRuntimeStatus()
 		if err != nil {
 			t.Errorf("testcase %s Failed due to %v", testCase.testName, err)
 		}
+
+		patches.Reset()
 	}
 }

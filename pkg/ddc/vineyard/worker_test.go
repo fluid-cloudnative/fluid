@@ -149,37 +149,6 @@ func TestSetupWorkers(t *testing.T) {
 					"fluid.io/s-h-vineyard-t-big-data-hadoop": "0B",
 				},
 			},
-		}, {
-			name: "deprecated",
-			fields: fields{
-				replicas: 0,
-				worker:   &appsv1.StatefulSet{},
-				deprecatedWorker: &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{
-					Name:      "deprecated-worker",
-					Namespace: "big-data",
-				}},
-				runtime: &datav1alpha1.VineyardRuntime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "deprecated",
-						Namespace: "big-data",
-					},
-					Spec: datav1alpha1.VineyardRuntimeSpec{
-						Replicas: 1,
-					},
-				},
-				runtimeInfo: runtimeInfoHadoop,
-				name:        "deprecated",
-				namespace:   "big-data",
-				deprecated:  true,
-			},
-			wantedNodeLabels: map[string]map[string]string{
-				"test-node-hadoop": {
-					"fluid.io/dataset-num":                    "1",
-					"fluid.io/s-vineyard-big-data-hadoop":     "true",
-					"fluid.io/s-big-data-hadoop":              "true",
-					"fluid.io/s-h-vineyard-t-big-data-hadoop": "0B",
-				},
-			},
 		},
 	}
 
@@ -451,46 +420,6 @@ func TestCheckWorkersReady(t *testing.T) {
 				},
 			},
 			wantReady: false,
-			wantErr:   false,
-		}, {
-			name: "deprecated",
-			fields: fields{
-				name:      "deprecated",
-				namespace: "big-data",
-				runtime: &datav1alpha1.VineyardRuntime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "deprecated",
-						Namespace: "big-data",
-					},
-					Spec: datav1alpha1.VineyardRuntimeSpec{
-						Replicas: 1,
-					},
-				},
-				worker: &appsv1.StatefulSet{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "deprecated-worker-0",
-						Namespace: "big-data",
-					},
-					Spec: appsv1.StatefulSetSpec{
-						Replicas: ptr.To[int32](1),
-					},
-					Status: appsv1.StatefulSetStatus{
-						ReadyReplicas: 0,
-					},
-				},
-				fuse: &appsv1.DaemonSet{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "deprecated-worker",
-						Namespace: "big-data",
-					},
-					Status: appsv1.DaemonSetStatus{
-						NumberAvailable:        0,
-						DesiredNumberScheduled: 1,
-						CurrentNumberScheduled: 0,
-					},
-				},
-			},
-			wantReady: true,
 			wantErr:   false,
 		},
 	}

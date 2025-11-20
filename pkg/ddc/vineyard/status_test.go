@@ -173,11 +173,7 @@ func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
 		deprecated bool
 		wanted     bool
 	}{
-		{testName: "deprecated",
-			name:       "deprecated",
-			namespace:  "fluid",
-			deprecated: true,
-		}, {
+		{
 			testName:  "hadoop",
 			name:      "hadoop",
 			namespace: "fluid",

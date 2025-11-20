@@ -23,7 +23,6 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
@@ -126,20 +125,8 @@ func TestGetWorkersAsStatefulset(t *testing.T) {
 		},
 	}
 
-	daemonsetInputs := []*appsv1.DaemonSet{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "ds-jindofs-worker",
-				Namespace: "big-data",
-			},
-		},
-	}
-
 	objs := []runtime.Object{}
 
-	for _, runtimeInput := range daemonsetInputs {
-		objs = append(objs, runtimeInput.DeepCopy())
-	}
 	for _, statefulsetInput := range statefulsetInputs {
 		objs = append(objs, statefulsetInput.DeepCopy())
 	}
@@ -162,14 +149,6 @@ func TestGetWorkersAsStatefulset(t *testing.T) {
 			success:         true,
 			deprecatedError: false,
 		}, {
-			name: "deprecatedError",
-			key: types.NamespacedName{
-				Name:      "ds-jindofs-worker",
-				Namespace: "big-data",
-			},
-			success:         false,
-			deprecatedError: true,
-		}, {
 			name: "otherError",
 			key: types.NamespacedName{
 				Name:      "test-jindofs-worker",
@@ -185,12 +164,6 @@ func TestGetWorkersAsStatefulset(t *testing.T) {
 
 		if testCase.success != (err == nil) {
 			t.Errorf("testcase %s failed due to expect succcess %v, got error %v", testCase.name, testCase.success, err)
-		}
-
-		if !testCase.success {
-			if testCase.deprecatedError != fluiderrs.IsDeprecated(err) {
-				t.Errorf("testcase %s failed due to expect isdeprecated  %v, got  %v", testCase.name, testCase.deprecatedError, fluiderrs.IsDeprecated(err))
-			}
 		}
 	}
 

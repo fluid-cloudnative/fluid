@@ -398,22 +398,9 @@ func TestCheckWorkersHealthy(t *testing.T) {
 		},
 	}
 
-	var daemonSetInputs = []appsv1.DaemonSet{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "deprecated-worker",
-				Namespace: "fluid",
-			},
-		},
-	}
-
 	testObjs := []runtime.Object{}
 	for _, statefulSet := range statefulSetInputs {
 		testObjs = append(testObjs, statefulSet.DeepCopy())
-	}
-
-	for _, daemonSet := range daemonSetInputs {
-		testObjs = append(testObjs, daemonSet.DeepCopy())
 	}
 
 	var goosefsruntimeInputs = []datav1alpha1.GooseFSRuntime{
@@ -426,12 +413,6 @@ func TestCheckWorkersHealthy(t *testing.T) {
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "spark",
-				Namespace: "fluid",
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "deprecated",
 				Namespace: "fluid",
 			},
 		},
@@ -465,19 +446,6 @@ func TestCheckWorkersHealthy(t *testing.T) {
 					Namespace: "fluid",
 				},
 			},
-		},
-		{
-			Client:    client,
-			Log:       fake.NullLogger(),
-			namespace: "fluid",
-			name:      "deprecated",
-			runtime: &datav1alpha1.GooseFSRuntime{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "deprecated",
-					Namespace: "fluid",
-				},
-			},
-			Recorder: record.NewFakeRecorder(1),
 		},
 	}
 
@@ -527,41 +495,6 @@ func TestCheckWorkersHealthy(t *testing.T) {
 		_, cond := utils.GetRuntimeCondition(goosefsruntime.Status.Conditions, datav1alpha1.RuntimeWorkersReady)
 		if cond == nil {
 			t.Errorf("fail to update the condition")
-			return
-		}
-	}
-
-	var testCaseWithDeprecatedRuntime = []struct {
-		engine           GooseFSEngine
-		expectedErrorNil bool
-	}{
-		{
-			engine:           engines[2],
-			expectedErrorNil: true,
-		},
-	}
-
-	for _, test := range testCaseWithDeprecatedRuntime {
-		runtimeBefore, err := test.engine.getRuntime()
-		if err != nil {
-			t.Errorf("fail to get the runtime with the error %v", err)
-			return
-		}
-
-		err = test.engine.checkWorkersHealthy()
-		if test.expectedErrorNil != (err == nil) {
-			t.Errorf("fail to exec the checkMasterHealthy function with err %v", err)
-			return
-		}
-
-		runtimeAfter, err := test.engine.getRuntime()
-		if err != nil {
-			t.Errorf("fail to get the runtime with the error %v", err)
-			return
-		}
-
-		if !reflect.DeepEqual(runtimeBefore, runtimeAfter) {
-			t.Error("Runtime should remain unchanged")
 			return
 		}
 	}

@@ -254,69 +254,6 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 				},
 			},
 			nodeNames: []string{},
-		}, {
-			name: "deprecated",
-			fields: fields{
-				name:      "deprecated",
-				namespace: "big-data",
-				worker: &appsv1.StatefulSet{
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "StatefulSet",
-						APIVersion: "apps/v1",
-					},
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "deprecated-worker",
-						Namespace: "big-data",
-						UID:       "uid3",
-					},
-					Spec: appsv1.StatefulSetSpec{
-						Selector: &metav1.LabelSelector{
-							MatchLabels: map[string]string{
-								"app":     "jindofs",
-								"role":    "jindofs-worker",
-								"release": "deprecated",
-							},
-						},
-					},
-				},
-				ds: &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{
-					Name:      "deprecated-jindofs-worker",
-					Namespace: "big-data",
-					UID:       "uid3",
-				}},
-				pods: []*v1.Pod{
-					{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "deprecated-jindofs-worker-0",
-							Namespace: "big-data",
-							Labels: map[string]string{
-								"app":              "jindofs",
-								"role":             "jindofs-worker",
-								"release":          "deprecated",
-								"fluid.io/dataset": "big-data-hbase-a",
-							},
-						},
-						Spec: v1.PodSpec{
-							NodeName: "node5",
-						},
-					},
-				},
-				nodes: []*v1.Node{
-					{
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "node6",
-						},
-					}, {
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "node7",
-							Labels: map[string]string{
-								"fluid.io/s-default-hbase-a": "true",
-							},
-						},
-					},
-				},
-			},
-			nodeNames: []string{},
 		},
 	}
 
