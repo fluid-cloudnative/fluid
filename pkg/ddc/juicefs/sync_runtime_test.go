@@ -1033,6 +1033,393 @@ var _ = Describe("checkAndSetFuseChanges", func() {
 			}
 		})
 
+		Context("When latestValue chnaged because runtime.spec changed (i.e. user update/patch runtime.spec)", func() {
+			Context("Detect fuse nodeSelector changes", func() {
+				cases := []struct {
+					caseText            string
+					latestNodeSelectors map[string]string
+					changed             bool
+				}{
+					{
+						caseText:            "should have no nodeSelector changed",
+						latestNodeSelectors: map[string]string{"key1": "value1"},
+						changed:             false,
+					},
+					{
+						caseText:            "should add a new nodeSelector",
+						latestNodeSelectors: map[string]string{"key1": "value1", "key2": "value2"},
+						changed:             true,
+					},
+					{
+						caseText:            "should remove a new nodeSelector",
+						latestNodeSelectors: map[string]string{},
+						changed:             true,
+					},
+					{
+						caseText:            "should update a old nodeSelector",
+						latestNodeSelectors: map[string]string{"key1": "new-value"},
+						changed:             true,
+					},
+				}
+
+				for _, c := range cases {
+					It(c.caseText, func() {
+						latestValue.Fuse.NodeSelector = c.latestNodeSelectors
+						changed, _ := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
+						Expect(changed).To(Equal(c.changed))
+						// Make sure helm related configurations are not touched
+						Expect(fuseToUpdate.Spec.Template.Spec.NodeSelector).To(HaveKeyWithValue("helm_key1", "helm_value"))
+						for k, v := range c.latestNodeSelectors {
+							Expect(fuseToUpdate.Spec.Template.Spec.NodeSelector).To(HaveKeyWithValue(k, v))
+						}
+					})
+				}
+			})
+
+			Context("detect volume chnages", func() {
+				cases := []struct {
+					caseText      string
+					latestVolumes []corev1.Volume
+					changed       bool
+				}{
+					{
+						caseText: "should have no volume changed",
+						latestVolumes: []corev1.Volume{
+							{
+								Name: "test-volume",
+								VolumeSource: corev1.VolumeSource{
+									EmptyDir: &corev1.EmptyDirVolumeSource{},
+								},
+							},
+						},
+						changed: false,
+					},
+					{
+						caseText: "should add a new volume",
+						latestVolumes: []corev1.Volume{
+							{
+								Name: "test-volume",
+								VolumeSource: corev1.VolumeSource{
+									EmptyDir: &corev1.EmptyDirVolumeSource{},
+								},
+							},
+							{
+								Name: "new-volume",
+								VolumeSource: corev1.VolumeSource{
+									EmptyDir: &corev1.EmptyDirVolumeSource{},
+								},
+							},
+						},
+						changed: true,
+					},
+					{
+						caseText:      "should remove a volume",
+						latestVolumes: []corev1.Volume{},
+						changed:       true,
+					},
+					{
+						caseText: "should update a volume",
+						latestVolumes: []corev1.Volume{
+							{
+								Name: "test-volume",
+								VolumeSource: corev1.VolumeSource{
+									HostPath: &corev1.HostPathVolumeSource{
+										Path: "/tmp",
+									},
+								},
+							},
+						},
+						changed: true,
+					},
+				}
+
+				for _, c := range cases {
+					It(c.caseText, func() {
+						latestValue.Fuse.Volumes = c.latestVolumes
+						changed, _ := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
+						Expect(changed).To(Equal(c.changed))
+						// Make sure helm related configurations are not touched
+						Expect(fuseToUpdate.Spec.Template.Spec.Volumes).To(ContainElement(corev1.Volume{
+							Name: "helm-volume",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							}}))
+
+						for _, vol := range c.latestVolumes {
+							Expect(fuseToUpdate.Spec.Template.Spec.Volumes).To(ContainElement(vol))
+						}
+					})
+				}
+			})
+
+			Context("detect label changes", func() {
+				cases := []struct {
+					caseText     string
+					latestLabels map[string]string
+					changed      bool
+				}{
+					{
+						caseText:     "should have no label changed",
+						latestLabels: map[string]string{"label1": "value1"},
+						changed:      false,
+					},
+					{
+						caseText:     "should add a new label",
+						latestLabels: map[string]string{"label1": "value1", "label2": "value2"},
+						changed:      true,
+					},
+					{
+						caseText:     "should remove a label",
+						latestLabels: map[string]string{},
+						changed:      true,
+					},
+					{
+						caseText:     "should update a label",
+						latestLabels: map[string]string{"label1": "new-value"},
+						changed:      true,
+					},
+				}
+
+				for _, c := range cases {
+					It(c.caseText, func() {
+						latestValue.Fuse.Labels = c.latestLabels
+						changed, _ := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
+						Expect(changed).To(Equal(c.changed))
+						// Make sure helm related configurations are not touched
+						Expect(fuseToUpdate.Spec.Template.Labels).To(HaveKeyWithValue("helm_label", "helm_value"))
+						for k, v := range c.latestLabels {
+							Expect(fuseToUpdate.Spec.Template.Labels).To(HaveKeyWithValue(k, v))
+						}
+					})
+				}
+			})
+
+			Context("detect annotations changes", func() {
+				cases := []struct {
+					caseText          string
+					latestAnnotations map[string]string
+					changed           bool
+				}{
+					{
+						caseText:          "should have no annotation changed",
+						latestAnnotations: map[string]string{"annotation1": "value1"},
+						changed:           false,
+					},
+					{
+						caseText:          "should add a new annotation",
+						latestAnnotations: map[string]string{"annotation1": "value1", "annotation2": "value2"},
+						changed:           true,
+					},
+					{
+						caseText:          "should remove an annotation",
+						latestAnnotations: map[string]string{},
+						changed:           true,
+					},
+					{
+						caseText:          "should update an annotation",
+						latestAnnotations: map[string]string{"annotation1": "new-value"},
+						changed:           true,
+					},
+				}
+
+				for _, c := range cases {
+					It(c.caseText, func() {
+						latestValue.Fuse.Annotations = c.latestAnnotations
+						changed, _ := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
+						Expect(changed).To(Equal(c.changed))
+						// Make sure helm related configurations are not touched
+						Expect(fuseToUpdate.Spec.Template.Annotations).To(HaveKeyWithValue("helm_annotation", "helm_value"))
+						for k, v := range c.latestAnnotations {
+							Expect(fuseToUpdate.Spec.Template.Annotations).To(HaveKeyWithValue(k, v))
+						}
+					})
+				}
+			})
+
+			Context("detect resources chnages", func() {
+				cases := []struct {
+					caseText         string
+					latestResources  common.Resources
+					runtimeResources corev1.ResourceRequirements
+					changed          bool
+				}{
+					{
+						caseText: "should have no resource changed",
+						latestResources: common.Resources{
+							Requests: common.ResourceList{
+								corev1.ResourceCPU:    "100m",
+								corev1.ResourceMemory: "100Mi",
+							},
+							Limits: common.ResourceList{
+								corev1.ResourceCPU:    "200m",
+								corev1.ResourceMemory: "200Mi",
+							},
+						},
+						runtimeResources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("100m"),
+								corev1.ResourceMemory: resource.MustParse("100Mi"),
+							},
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("200m"),
+								corev1.ResourceMemory: resource.MustParse("200Mi"),
+							},
+						},
+						changed: false,
+					},
+					{
+						caseText: "should change resource requests",
+						latestResources: common.Resources{
+							Requests: common.ResourceList{
+								corev1.ResourceCPU:    "200m",
+								corev1.ResourceMemory: "200Mi",
+							},
+							Limits: common.ResourceList{
+								corev1.ResourceCPU:    "200m",
+								corev1.ResourceMemory: "200Mi",
+							},
+						},
+						runtimeResources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("200m"),
+								corev1.ResourceMemory: resource.MustParse("200Mi"),
+							},
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("200m"),
+								corev1.ResourceMemory: resource.MustParse("200Mi"),
+							},
+						},
+						changed: true,
+					},
+					{
+						caseText: "should change resource limits",
+						latestResources: common.Resources{
+							Requests: common.ResourceList{
+								corev1.ResourceCPU:    "100m",
+								corev1.ResourceMemory: "100Mi",
+							},
+							Limits: common.ResourceList{
+								corev1.ResourceCPU:    "400m",
+								corev1.ResourceMemory: "400Mi",
+							},
+						},
+						runtimeResources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("100m"),
+								corev1.ResourceMemory: resource.MustParse("100Mi"),
+							},
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("400m"),
+								corev1.ResourceMemory: resource.MustParse("400Mi"),
+							},
+						},
+						changed: true,
+					},
+					{
+						caseText: "should change both resource requests and limits",
+						latestResources: common.Resources{
+							Requests: common.ResourceList{
+								corev1.ResourceCPU:    "300m",
+								corev1.ResourceMemory: "300Mi",
+							},
+							Limits: common.ResourceList{
+								corev1.ResourceCPU:    "600m",
+								corev1.ResourceMemory: "600Mi",
+							},
+						},
+						runtimeResources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("300m"),
+								corev1.ResourceMemory: resource.MustParse("300Mi"),
+							},
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("600m"),
+								corev1.ResourceMemory: resource.MustParse("600Mi"),
+							},
+						},
+						changed: true,
+					},
+				}
+
+				for _, c := range cases {
+					It(c.caseText, func() {
+						latestValue.Fuse.Resources = c.latestResources
+						runtime.Spec.Fuse.Resources = c.runtimeResources
+						changed, _ := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
+						Expect(changed).To(Equal(c.changed))
+						if c.changed {
+							Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].Resources).To(Equal(c.runtimeResources))
+						}
+					})
+				}
+			})
+
+			Context("detect environment variable changes", func() {
+				cases := []struct {
+					caseText   string
+					latestEnvs []corev1.EnvVar
+					changed    bool
+				}{
+					{
+						caseText: "should have no env changed",
+						latestEnvs: []corev1.EnvVar{
+							{
+								Name:  "ENV1",
+								Value: "value1",
+							},
+						},
+						changed: false,
+					},
+					{
+						caseText: "should add a new env",
+						latestEnvs: []corev1.EnvVar{
+							{
+								Name:  "ENV1",
+								Value: "value1",
+							},
+							{
+								Name:  "ENV2",
+								Value: "value2",
+							},
+						},
+						changed: true,
+					},
+					{
+						caseText:   "should remove an env",
+						latestEnvs: []corev1.EnvVar{},
+						changed:    true,
+					},
+					{
+						caseText: "should update an env",
+						latestEnvs: []corev1.EnvVar{
+							{
+								Name:  "ENV1",
+								Value: "new-value",
+							},
+						},
+						changed: true,
+					},
+				}
+
+				for _, c := range cases {
+					It(c.caseText, func() {
+						latestValue.Fuse.Envs = c.latestEnvs
+						changed, _ := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
+						Expect(changed).To(Equal(c.changed))
+						// Make sure helm related configurations are not touched
+						Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].Env).To(ContainElement(corev1.EnvVar{
+							Name:  "HELM_ENV1",
+							Value: "HELM_value1",
+						}))
+
+						for _, env := range c.latestEnvs {
+							Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].Env).To(ContainElement(env))
+						}
+					})
+				}
+			})
+		})
+
 		It("Should detect no changes when current and latest values are identical", func() {
 			changed, generationNeedUpdate := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
 
@@ -1156,6 +1543,8 @@ var _ = Describe("checkAndSetFuseChanges", func() {
 		It("Should detect image changes and require generation update", func() {
 			latestValue.Fuse.Image = "juicefs/fuse"
 			latestValue.Fuse.ImageTag = "v2.0.0"
+			runtime.Spec.Fuse.Image = "juicefs/fuse"
+			runtime.Spec.Fuse.ImageTag = "v2.0.0"
 
 			changed, generationNeedUpdate := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
 
