@@ -82,31 +82,19 @@ func (j *JuiceFSEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, run
 			return err
 		}
 
+		if workers.Spec.UpdateStrategy.Type != appsv1.OnDeleteStatefulSetStrategyType {
+			j.Log.V(1).Info("Worker Sts's update strategy is not safe to sync worker spec, skipping", "updateStrategy", workers.Spec.UpdateStrategy.Type)
+			return nil
+		}
+
 		workersToUpdate := workers.DeepCopy()
 
-		// nodeSelector
-		if nodeSelectorChanged, newSelector := j.isNodeSelectorChanged(workersToUpdate.Spec.Template.Spec.NodeSelector, value.Worker.NodeSelector); nodeSelectorChanged {
-			workersToUpdate.Spec.Template.Spec.NodeSelector = newSelector
-			changed = true
+		oldValue, err := j.GetValueFromConfigmap()
+		if err != nil {
+			return err
 		}
 
-		// volumes
-		if volumeChanged, newVolumes := j.isVolumesChanged(workersToUpdate.Spec.Template.Spec.Volumes, value.Worker.Volumes); volumeChanged {
-			workersToUpdate.Spec.Template.Spec.Volumes = newVolumes
-			changed = true
-		}
-
-		// labels
-		if labelChanged, newLabels := j.isLabelsChanged(workersToUpdate.Spec.Template.ObjectMeta.Labels, value.Worker.Labels); labelChanged {
-			workersToUpdate.Spec.Template.ObjectMeta.Labels = newLabels
-			changed = true
-		}
-
-		// annotations
-		if annoChanged, newAnnos := j.isAnnotationsChanged(workersToUpdate.Spec.Template.ObjectMeta.Annotations, value.Worker.Annotations); annoChanged {
-			workersToUpdate.Spec.Template.ObjectMeta.Annotations = newAnnos
-			changed = true
-		}
+		changed = j.checkAndSetWorkerChanges(oldValue, value, runtime, workersToUpdate)
 
 		// options -> configmap
 		workerCommand, err := j.getWorkerCommand()
@@ -115,36 +103,6 @@ func (j *JuiceFSEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, run
 			return err
 		}
 		cmdChanged, _ = j.isCommandChanged(workerCommand, value.Worker.Command)
-
-		if len(workersToUpdate.Spec.Template.Spec.Containers) == 1 {
-			// resource
-			if resourcesChanged, newResources := j.isResourcesChanged(workersToUpdate.Spec.Template.Spec.Containers[0].Resources, runtime.Spec.Worker.Resources); resourcesChanged {
-				workersToUpdate.Spec.Template.Spec.Containers[0].Resources = newResources
-				changed = true
-			}
-
-			// env
-			if envChanged, newEnvs := j.isEnvsChanged(workersToUpdate.Spec.Template.Spec.Containers[0].Env, value.Worker.Envs); envChanged {
-				workersToUpdate.Spec.Template.Spec.Containers[0].Env = newEnvs
-				changed = true
-			}
-
-			// volumeMounts
-			if volumeMountChanged, newVolumeMounts := j.isVolumeMountsChanged(workersToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts, value.Worker.VolumeMounts); volumeMountChanged {
-				workersToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts = newVolumeMounts
-				changed = true
-			}
-
-			// image
-			runtimeImage := value.Image
-			if value.ImageTag != "" {
-				runtimeImage = runtimeImage + ":" + value.ImageTag
-			}
-			if imageChanged, newImage := j.isImageChanged(workersToUpdate.Spec.Template.Spec.Containers[0].Image, runtimeImage); imageChanged {
-				workersToUpdate.Spec.Template.Spec.Containers[0].Image = newImage
-				changed = true
-			}
-		}
 
 		if cmdChanged {
 			j.Log.Info("The worker config is updated")
@@ -173,14 +131,106 @@ func (j *JuiceFSEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, run
 
 			err = j.Client.Update(context.TODO(), workersToUpdate)
 			if err != nil {
-				j.Log.Error(err, "Failed to update the sts spec")
+				j.Log.Error(err, "failed to update the sts spec")
+				return err
+			}
+
+			if err := j.SaveValueToConfigmap(value); err != nil {
+				j.Log.Error(err, "failed to save latest value to configmap")
+				return err
 			}
 		} else {
 			j.Log.V(1).Info("The worker is not changed")
 		}
 
-		return err
+		return nil
 	})
+
+	return
+}
+
+func (j *JuiceFSEngine) checkAndSetWorkerChanges(oldValue, latestValue *JuiceFS, runtime *datav1alpha1.JuiceFSRuntime, workersToUpdate *appsv1.StatefulSet) (workerChanged bool) {
+	// nodeSelector
+	if nodeSelectorChanged, newSelector := j.isNodeSelectorChanged(oldValue.Worker.NodeSelector, latestValue.Worker.NodeSelector); nodeSelectorChanged {
+		j.Log.Info("syncWorkerSpec nodeSelectorChanged")
+		workersToUpdate.Spec.Template.Spec.NodeSelector =
+			utils.UnionMapsWithOverride(utils.GetMapsDifference(workersToUpdate.Spec.Template.Spec.NodeSelector, oldValue.Worker.NodeSelector), newSelector)
+		workerChanged = true
+	}
+
+	// volumes
+	if volumeChanged, newVolumes := j.isVolumesChanged(oldValue.Worker.Volumes, latestValue.Worker.Volumes); volumeChanged {
+		j.Log.Info("syncWorkerSpec volumeChanged")
+		workersToUpdate.Spec.Template.Spec.Volumes = append(utils.GetVolumesDifference(workersToUpdate.Spec.Template.Spec.Volumes, oldValue.Worker.Volumes), newVolumes...)
+		workerChanged = true
+	}
+
+	// labels
+	if labelChanged, newLabels := j.isLabelsChanged(oldValue.Worker.Labels, latestValue.Worker.Labels); labelChanged {
+		j.Log.Info("syncWorkerSpec labelChanged")
+		workersToUpdate.Spec.Template.ObjectMeta.Labels =
+			utils.UnionMapsWithOverride(utils.GetMapsDifference(workersToUpdate.Spec.Template.ObjectMeta.Labels, oldValue.Worker.Labels), newLabels)
+		workerChanged = true
+	}
+
+	// annotations
+	if annoChanged, newAnnos := j.isAnnotationsChanged(oldValue.Worker.Annotations, latestValue.Worker.Annotations); annoChanged {
+		j.Log.Info("syncWorkerSpec annoChanged")
+		workersToUpdate.Spec.Template.ObjectMeta.Annotations =
+			utils.UnionMapsWithOverride(utils.GetMapsDifference(workersToUpdate.Spec.Template.ObjectMeta.Annotations, oldValue.Worker.Annotations), newAnnos)
+		workerChanged = true
+	}
+
+	// FIXME: we cannot simply assume there is only one container in the worker pod, because some sidecar containers may be injected by other plugins.
+	if len(workersToUpdate.Spec.Template.Spec.Containers) == 1 {
+		// resource
+		// TODO: check if we can simply compare worker's resources and runtime.spec.worker.resources
+		if resourcesChanged, newResources := j.isResourcesChanged(workersToUpdate.Spec.Template.Spec.Containers[0].Resources, runtime.Spec.Worker.Resources); resourcesChanged {
+			workersToUpdate.Spec.Template.Spec.Containers[0].Resources = newResources
+			workerChanged = true
+		}
+
+		// env
+		if envChanged, newEnvs := j.isEnvsChanged(oldValue.Worker.Envs, latestValue.Worker.Envs); envChanged {
+			j.Log.Info("syncWorkerSpec envChanged")
+			workersToUpdate.Spec.Template.Spec.Containers[0].Env =
+				append(utils.GetEnvsDifference(workersToUpdate.Spec.Template.Spec.Containers[0].Env, oldValue.Worker.Envs), newEnvs...)
+			workerChanged = true
+		}
+
+		// volumeMounts
+		if volumeMountChanged, newVolumeMounts := j.isVolumeMountsChanged(oldValue.Worker.VolumeMounts, latestValue.Worker.VolumeMounts); volumeMountChanged {
+			j.Log.Info("syncWorkerSpec volumeMountChanged")
+			workersToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts =
+				append(utils.GetVolumeMountsDifference(workersToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts,
+					oldValue.Worker.VolumeMounts), newVolumeMounts...)
+			workerChanged = true
+		}
+
+		// image
+		// For image, we assume once image/imageTag is set, it shall not be removed by user.
+		// It's hard for Fluid to detect the removal and find a way to rollout image back to the default image.
+		if len(runtime.Spec.JuiceFSVersion.Image) == 0 && len(runtime.Spec.JuiceFSVersion.ImageTag) == 0 {
+			// Do not touch image info because user are using the default image
+			j.Log.Info("No user-defined image info on Runtime, skip syncing image")
+		} else {
+			latestWorkerImage := latestValue.Worker.Image
+			if latestValue.Worker.ImageTag != "" {
+				latestWorkerImage = latestWorkerImage + ":" + latestValue.Worker.ImageTag
+			}
+
+			oldWorkerImage := oldValue.Worker.Image
+			if oldValue.Worker.ImageTag != "" {
+				oldWorkerImage = oldWorkerImage + ":" + oldValue.Worker.ImageTag
+			}
+
+			if imageChanged, newImage := j.isImageChanged(oldWorkerImage, latestWorkerImage); imageChanged {
+				j.Log.Info("syncWorkerSpec imageChanged")
+				workersToUpdate.Spec.Template.Spec.Containers[0].Image = newImage
+				workerChanged = true
+			}
+		}
+	}
 
 	return
 }
@@ -249,8 +299,7 @@ func (j *JuiceFSEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runti
 
 // TODO: move the default configurations defined in helm fuse template to the logic of transformFuse,
 // ensuring that checkAndSetFuseChanges don't need to care about the configuration in actual daemonset
-func (j *JuiceFSEngine) checkAndSetFuseChanges(oldValue, latestValue *JuiceFS, runtime *datav1alpha1.JuiceFSRuntime, fusesToUpdate *appsv1.DaemonSet) (bool, bool) {
-	var fuseChanged, fuseGenerationNeedUpdate bool
+func (j *JuiceFSEngine) checkAndSetFuseChanges(oldValue, latestValue *JuiceFS, runtime *datav1alpha1.JuiceFSRuntime, fusesToUpdate *appsv1.DaemonSet) (fuseChanged bool, fuseGenerationNeedUpdate bool) {
 	// nodeSelector
 	if nodeSelectorChanged, newSelector := j.isNodeSelectorChanged(oldValue.Fuse.NodeSelector, latestValue.Fuse.NodeSelector); nodeSelectorChanged {
 		j.Log.Info("syncFuseSpec nodeSelectorChanged")
@@ -339,9 +388,14 @@ func (j *JuiceFSEngine) checkAndSetFuseChanges(oldValue, latestValue *JuiceFS, r
 func (j *JuiceFSEngine) updateFuseCmdConfigmapOnChanged(latestValue *JuiceFS) error {
 	// options -> configmap
 	fuseCommand, err := j.getFuseCommand()
-	if err != nil || fuseCommand == "" {
+	if err != nil {
 		j.Log.Error(err, "Failed to get fuse command")
 		return err
+	}
+
+	if len(fuseCommand) == 0 {
+		j.Log.Info("cannot get fuse command, got an empty fuse command, skip updating Fuse command configmap")
+		return nil
 	}
 
 	if cmdChanged, _ := j.isCommandChanged(fuseCommand, latestValue.Fuse.Command); cmdChanged {
