@@ -147,7 +147,7 @@ func TestTransformResourcesForWorkerNoValue(t *testing.T) {
 		size          string
 		runtime       *datav1alpha1.JindoRuntime
 		jindoValue    *Jindo
-		wantResources Resources
+		wantResources common.Resources
 	}{
 		{
 			name:      "test",
@@ -171,10 +171,9 @@ func TestTransformResourcesForWorkerNoValue(t *testing.T) {
 			},
 			jindoValue: &Jindo{
 				Properties: map[string]string{},
-			}, wantResources: Resources{
-				Requests: Resource{
-					CPU:    "",
-					Memory: "10Gi",
+			}, wantResources: common.Resources{
+				Requests: common.ResourceList{
+					corev1.ResourceMemory: "10Gi",
 				},
 			}}, {
 			name:      "noTieredStore",
@@ -189,9 +188,7 @@ func TestTransformResourcesForWorkerNoValue(t *testing.T) {
 			},
 			jindoValue: &Jindo{
 				Properties: map[string]string{},
-			}, wantResources: Resources{
-				Requests: Resource{},
-			}},
+			}, wantResources: common.Resources{}},
 	}
 	for _, test := range tests {
 		// engine := &JindoCacheEngine{Log: fake.NullLogger()}
@@ -212,23 +209,17 @@ func TestTransformResourcesForWorkerNoValue(t *testing.T) {
 		if err != nil {
 			t.Errorf("got error %v", err)
 		}
-		if test.jindoValue.Worker.Resources.Requests.Memory != test.wantResources.Requests.Memory {
-			t.Errorf("expected %v, got %v",
-				test.wantResources.Requests.Memory,
-				test.jindoValue.Worker.Resources.Requests.Memory)
+		if test.jindoValue.Worker.Resources.Requests[corev1.ResourceMemory] != test.wantResources.Requests[corev1.ResourceMemory] {
+			t.Errorf("expected nil, got %v", test.jindoValue.Worker.Resources.Requests[corev1.ResourceMemory])
 		}
-		if test.jindoValue.Worker.Resources.Requests.CPU != test.wantResources.Requests.CPU {
-			t.Errorf("expected %v, got %v",
-				test.wantResources.Requests.CPU,
-				test.jindoValue.Worker.Resources.Requests.CPU)
+		if test.jindoValue.Worker.Resources.Requests[corev1.ResourceCPU] != test.wantResources.Requests[corev1.ResourceCPU] {
+			t.Errorf("expected nil, got %v", test.jindoValue.Worker.Resources.Requests[corev1.ResourceCPU])
 		}
-		if test.jindoValue.Worker.Resources.Limits.Memory != test.wantResources.Limits.Memory {
-			t.Errorf("expected %v, got %v",
-				test.wantResources.Limits.Memory,
-				test.jindoValue.Worker.Resources.Limits.Memory)
+		if test.jindoValue.Worker.Resources.Limits[corev1.ResourceMemory] != test.wantResources.Limits[corev1.ResourceMemory] {
+			t.Errorf("expected nil, got %v", test.jindoValue.Worker.Resources.Limits[corev1.ResourceMemory])
 		}
-		if test.jindoValue.Worker.Resources.Limits.CPU != test.wantResources.Limits.CPU {
-			t.Errorf("expected %v, got %v", test.wantResources.Limits.CPU, test.jindoValue.Worker.Resources.Limits.CPU)
+		if test.jindoValue.Worker.Resources.Limits[corev1.ResourceCPU] != test.wantResources.Limits[corev1.ResourceCPU] {
+			t.Errorf("expected nil, got %v", test.jindoValue.Worker.Resources.Limits[corev1.ResourceCPU])
 		}
 	}
 }
@@ -271,17 +262,17 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 		if err != nil {
 			t.Errorf("got error %v", err)
 		}
-		if test.jindoValue.Worker.Resources.Requests.Memory != "1Gi" {
-			t.Errorf("expected nil, got %v", test.jindoValue.Worker.Resources.Requests.Memory)
+		if test.jindoValue.Worker.Resources.Requests[corev1.ResourceMemory] != "1Gi" {
+			t.Errorf("expected nil, got %v", test.jindoValue.Worker.Resources.Requests[corev1.ResourceMemory])
 		}
-		if test.jindoValue.Worker.Resources.Requests.CPU != "1" {
-			t.Errorf("expected nil, got %v", test.jindoValue.Worker.Resources.Requests.CPU)
+		if test.jindoValue.Worker.Resources.Requests[corev1.ResourceCPU] != "1" {
+			t.Errorf("expected nil, got %v", test.jindoValue.Worker.Resources.Requests[corev1.ResourceCPU])
 		}
-		if test.jindoValue.Worker.Resources.Limits.Memory != "2Gi" {
-			t.Errorf("expected nil, got %v", test.jindoValue.Worker.Resources.Limits.Memory)
+		if test.jindoValue.Worker.Resources.Limits[corev1.ResourceMemory] != "2Gi" {
+			t.Errorf("expected nil, got %v", test.jindoValue.Worker.Resources.Limits[corev1.ResourceMemory])
 		}
-		if test.jindoValue.Worker.Resources.Limits.CPU != "2" {
-			t.Errorf("expected nil, got %v", test.jindoValue.Worker.Resources.Limits.CPU)
+		if test.jindoValue.Worker.Resources.Limits[corev1.ResourceCPU] != "2" {
+			t.Errorf("expected nil, got %v", test.jindoValue.Worker.Resources.Limits[corev1.ResourceCPU])
 		}
 	}
 }

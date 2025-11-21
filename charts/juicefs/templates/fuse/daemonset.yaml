@@ -80,7 +80,7 @@ spec:
           imagePullPolicy: {{ .Values.fuse.imagePullPolicy }}
           {{- if .Values.fuse.resources  }}
           resources:
-{{ toYaml .Values.fuse.resources | trim | indent 12  }}
+            {{ toYaml .Values.fuse.resources | trim | nindent 12  }}
           {{- end }}
           command: ["sh", "/root/script/script.sh"]
           env:

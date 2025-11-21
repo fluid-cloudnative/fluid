@@ -64,7 +64,7 @@ type HadoopConfig struct {
 
 type Master struct {
 	ReplicaCount        int                           `json:"replicaCount"`
-	Resources           Resources                     `json:"resources"`
+	Resources           common.Resources              `json:"resources"`
 	NodeSelector        map[string]string             `json:"nodeSelector,omitempty"`
 	MasterProperties    map[string]string             `json:"properties"`
 	FileStoreProperties map[string]string             `json:"fileStoreProperties"`
@@ -87,7 +87,7 @@ type Master struct {
 
 type Worker struct {
 	ReplicaCount     int                 `json:"replicaCount"`
-	Resources        Resources           `json:"resources,omitempty"`
+	Resources        common.Resources    `json:"resources,omitempty"`
 	NodeSelector     map[string]string   `json:"nodeSelector,omitempty"`
 	WorkerProperties map[string]string   `json:"properties"`
 	Port             Ports               `json:"ports,omitempty"`
@@ -116,7 +116,7 @@ type Fuse struct {
 	Labels           map[string]string             `json:"labels,omitempty"`
 	Annotations      map[string]string             `json:"annotations,omitempty"`
 	CriticalPod      bool                          `json:"criticalPod,omitempty"`
-	Resources        Resources                     `json:"resources,omitempty"`
+	Resources        common.Resources              `json:"resources,omitempty"`
 	MountPath        string                        `json:"mountPath,omitempty"`
 	Mode             string                        `json:"mode,omitempty"`
 	Env              map[string]string             `json:"env,omitempty"`
@@ -128,11 +128,6 @@ type Fuse struct {
 type Mounts struct {
 	Master            map[string]*Level `json:"master"`
 	WorkersAndClients map[string]*Level `json:"workersAndClients"`
-}
-
-type Resources struct {
-	Limits   Resource `json:"limits"`
-	Requests Resource `json:"requests"`
 }
 
 type Resource struct {

@@ -12,6 +12,7 @@ Steps:
 8. clean up
 """
 
+
 import os
 import sys
 import time
@@ -27,6 +28,9 @@ from framework.exception import TestError
 
 from kubernetes import client, config
 from kubernetes.stream import stream
+
+HBASE_WEB_UFS_URL = fluidapi.webufs_apache_mirror + "hbase/stable/"
+HADOOP_WEB_UFS_URL = fluidapi.webufs_apache_mirror + "hadoop/common/stable/"
 
 def checkAlluxioruntimeMountpoint(dataset_name, namespace, mp1, mp2):
     exec_command = ["/bin/sh",
@@ -136,7 +140,7 @@ def main():
     namespace = "default"
 
     mount = fluidapi.Mount()
-    mount.set_mount_info("hadoop", "https://mirrors.ustc.edu.cn/apache/hadoop/common/stable/")
+    mount.set_mount_info("hadoop", HADOOP_WEB_UFS_URL)
 
     dataset = fluidapi.assemble_dataset("alluxio-webufs") \
         .set_namespaced_name(namespace, name) \
@@ -186,7 +190,7 @@ def main():
     )
 
     new_mount = fluidapi.Mount()
-    new_mount.set_mount_info("hbase", "https://mirrors.ustc.edu.cn/apache/hbase/stable/")
+    new_mount.set_mount_info("hbase", HBASE_WEB_UFS_URL)
 
 
     new_dataset = fluidapi.assemble_dataset("alluxio-webufs") \

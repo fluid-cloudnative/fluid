@@ -573,7 +573,7 @@ func TestJindoCacheEngine_transformMasterResources(t *testing.T) {
 		args                args
 		wantErr             bool
 		wantRuntimeResource corev1.ResourceRequirements
-		wantValue           Resources
+		wantValue           common.Resources
 	}{
 		// TODO: Add test cases.
 		{
@@ -608,9 +608,9 @@ func TestJindoCacheEngine_transformMasterResources(t *testing.T) {
 					corev1.ResourceMemory: resource.MustParse("30Gi"),
 				},
 			},
-			wantValue: Resources{
-				Requests: Resource{
-					Memory: "30Gi",
+			wantValue: common.Resources{
+				Requests: common.ResourceList{
+					corev1.ResourceMemory: "30Gi",
 				},
 			},
 		},

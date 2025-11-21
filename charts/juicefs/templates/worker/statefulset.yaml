@@ -82,7 +82,7 @@ spec:
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           {{- if .Values.worker.resources  }}
           resources:
-{{ toYaml .Values.worker.resources | trim | indent 12  }}
+            {{ toYaml .Values.worker.resources | trim | nindent 12  }}
           {{- end }}
           command: ["sh", "/root/script/script.sh"]
           securityContext:
