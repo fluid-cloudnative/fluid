@@ -100,7 +100,10 @@ func (j *JuiceFSEngine) SyncRuntime(ctx cruntime.ReconcileRequestContext) (chang
 }
 
 func (j *JuiceFSEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.JuiceFSRuntime, oldValue, latestValue *JuiceFS) (changed bool, err error) {
-	j.Log.V(1).Info("syncWorkerSpec")
+	j.Log.V(1).Info("entering syncWorkerSpec")
+	defer func() {
+		j.Log.V(1).Info("exiting syncWorkerSpec")
+	}()
 	var cmdChanged bool
 	workers, err := ctrl.GetWorkersAsStatefulset(j.Client,
 		types.NamespacedName{Namespace: j.namespace, Name: j.getWorkerName()})
@@ -126,7 +129,7 @@ func (j *JuiceFSEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, run
 	cmdChanged, _ = j.isCommandChanged(workerCommand, latestValue.Worker.Command)
 
 	if cmdChanged {
-		j.Log.Info("The worker config is updated")
+		j.Log.Info("syncWorkerSpec: the worker command or options are updated, trying to update worker config")
 		err = j.updateWorkerScript(latestValue.Worker.Command)
 		if err != nil {
 			j.Log.Error(err, "Failed to update the sts config")
@@ -134,29 +137,29 @@ func (j *JuiceFSEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, run
 		}
 		if !changed {
 			// if worker sts not changed, rollout worker sts to reload the script
-			j.Log.Info("rollout restart worker", "sts", workersToUpdate.Name)
+			j.Log.Info("syncWorkerSpec: rollout restart worker", "sts", workersToUpdate.Name)
 			workersToUpdate.Spec.Template.ObjectMeta.Annotations["kubectl.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
 			changed = true
 		}
 	} else {
-		j.Log.V(1).Info("The worker config is not changed")
+		j.Log.V(1).Info("syncWorkerSpec: the worker config is not changed")
 	}
 
 	if changed {
 		if reflect.DeepEqual(workers, workersToUpdate) {
 			changed = false
-			j.Log.V(1).Info("The worker is not changed, skip")
+			j.Log.V(1).Info("syncWorkerSpec: no differences detected about worker after equality check", "worker sts", types.NamespacedName{Namespace: workersToUpdate.Namespace, Name: workersToUpdate.Name})
 			return
 		}
 
+		j.Log.Info("syncWorkerSpec: some fields are changed in worker, try to update worker sts", "worker sts", types.NamespacedName{Namespace: workersToUpdate.Namespace, Name: workersToUpdate.Name})
 		err = j.Client.Update(context.TODO(), workersToUpdate)
 		if err != nil {
 			j.Log.Error(err, "failed to update the sts spec")
 			return
 		}
-		j.Log.Info("The worker is updated")
 	} else {
-		j.Log.V(1).Info("The worker is not changed")
+		j.Log.V(1).Info("syncWorkerSpec: no differences detected about worker", "worker sts", types.NamespacedName{Namespace: workersToUpdate.Namespace, Name: workersToUpdate.Name})
 	}
 
 	return
@@ -165,7 +168,7 @@ func (j *JuiceFSEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, run
 func (j *JuiceFSEngine) checkAndSetWorkerChanges(oldValue, latestValue *JuiceFS, runtime *datav1alpha1.JuiceFSRuntime, workersToUpdate *appsv1.StatefulSet) (workerChanged bool) {
 	// nodeSelector
 	if nodeSelectorChanged, newSelector := j.isNodeSelectorChanged(oldValue.Worker.NodeSelector, latestValue.Worker.NodeSelector); nodeSelectorChanged {
-		j.Log.Info("syncWorkerSpec nodeSelectorChanged")
+		j.Log.Info("syncWorkerSpec: node selector changed", "old", oldValue.Worker.NodeSelector, "new", newSelector)
 		workersToUpdate.Spec.Template.Spec.NodeSelector =
 			utils.UnionMapsWithOverride(utils.GetMapsDifference(workersToUpdate.Spec.Template.Spec.NodeSelector, oldValue.Worker.NodeSelector), newSelector)
 		oldValue.Worker.NodeSelector = latestValue.Worker.NodeSelector
@@ -174,7 +177,7 @@ func (j *JuiceFSEngine) checkAndSetWorkerChanges(oldValue, latestValue *JuiceFS,
 
 	// volumes
 	if volumeChanged, newVolumes := j.isVolumesChanged(oldValue.Worker.Volumes, latestValue.Worker.Volumes); volumeChanged {
-		j.Log.Info("syncWorkerSpec volumeChanged")
+		j.Log.Info("syncWorkerSpec: volumes changed", "old", oldValue.Worker.Volumes, "new", newVolumes)
 		workersToUpdate.Spec.Template.Spec.Volumes = append(utils.GetVolumesDifference(workersToUpdate.Spec.Template.Spec.Volumes, oldValue.Worker.Volumes), newVolumes...)
 		oldValue.Worker.Volumes = latestValue.Worker.Volumes
 		workerChanged = true
@@ -182,7 +185,7 @@ func (j *JuiceFSEngine) checkAndSetWorkerChanges(oldValue, latestValue *JuiceFS,
 
 	// labels
 	if labelChanged, newLabels := j.isLabelsChanged(oldValue.Worker.Labels, latestValue.Worker.Labels); labelChanged {
-		j.Log.Info("syncWorkerSpec labelChanged")
+		j.Log.Info("syncWorkerSpec: labels changed", "old", oldValue.Worker.Labels, "new", newLabels)
 		workersToUpdate.Spec.Template.ObjectMeta.Labels =
 			utils.UnionMapsWithOverride(utils.GetMapsDifference(workersToUpdate.Spec.Template.ObjectMeta.Labels, oldValue.Worker.Labels), newLabels)
 		oldValue.Worker.Labels = latestValue.Worker.Labels
@@ -191,7 +194,7 @@ func (j *JuiceFSEngine) checkAndSetWorkerChanges(oldValue, latestValue *JuiceFS,
 
 	// annotations
 	if annoChanged, newAnnos := j.isAnnotationsChanged(oldValue.Worker.Annotations, latestValue.Worker.Annotations); annoChanged {
-		j.Log.Info("syncWorkerSpec annoChanged")
+		j.Log.Info("syncWorkerSpec: annotations changed", "old", oldValue.Worker.Annotations, "new", newAnnos)
 		workersToUpdate.Spec.Template.ObjectMeta.Annotations =
 			utils.UnionMapsWithOverride(utils.GetMapsDifference(workersToUpdate.Spec.Template.ObjectMeta.Annotations, oldValue.Worker.Annotations), newAnnos)
 		oldValue.Worker.Annotations = latestValue.Worker.Annotations
@@ -203,13 +206,14 @@ func (j *JuiceFSEngine) checkAndSetWorkerChanges(oldValue, latestValue *JuiceFS,
 		// resource
 		// TODO: check if we can simply compare worker's resources and runtime.spec.worker.resources
 		if resourcesChanged, newResources := j.isResourcesChanged(workersToUpdate.Spec.Template.Spec.Containers[0].Resources, runtime.Spec.Worker.Resources); resourcesChanged {
+			j.Log.Info("syncWorkerSpec: resources changed", "old", workersToUpdate.Spec.Template.Spec.Containers[0].Resources, "new", newResources)
 			workersToUpdate.Spec.Template.Spec.Containers[0].Resources = newResources
 			workerChanged = true
 		}
 
 		// env
 		if envChanged, newEnvs := j.isEnvsChanged(oldValue.Worker.Envs, latestValue.Worker.Envs); envChanged {
-			j.Log.Info("syncWorkerSpec envChanged")
+			j.Log.Info("syncWorkerSpec: env variables changed", "old", oldValue.Worker.Envs, "new", newEnvs)
 			workersToUpdate.Spec.Template.Spec.Containers[0].Env =
 				append(utils.GetEnvsDifference(workersToUpdate.Spec.Template.Spec.Containers[0].Env, oldValue.Worker.Envs), newEnvs...)
 			oldValue.Worker.Envs = latestValue.Worker.Envs
@@ -218,7 +222,7 @@ func (j *JuiceFSEngine) checkAndSetWorkerChanges(oldValue, latestValue *JuiceFS,
 
 		// volumeMounts
 		if volumeMountChanged, newVolumeMounts := j.isVolumeMountsChanged(oldValue.Worker.VolumeMounts, latestValue.Worker.VolumeMounts); volumeMountChanged {
-			j.Log.Info("syncWorkerSpec volumeMountChanged")
+			j.Log.Info("syncWorkerSpec: volume mounts changed", "old", oldValue.Worker.VolumeMounts, "new", newVolumeMounts)
 			workersToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts =
 				append(utils.GetVolumeMountsDifference(workersToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts,
 					oldValue.Worker.VolumeMounts), newVolumeMounts...)
@@ -231,7 +235,7 @@ func (j *JuiceFSEngine) checkAndSetWorkerChanges(oldValue, latestValue *JuiceFS,
 		// It's hard for Fluid to detect the removal and find a way to rollout image back to the default image.
 		if len(runtime.Spec.JuiceFSVersion.Image) == 0 && len(runtime.Spec.JuiceFSVersion.ImageTag) == 0 {
 			// Do not touch image info because user are using the default image
-			j.Log.Info("No user-defined image info on Runtime, skip syncing image")
+			j.Log.Info("syncWorkerSpec: no user-defined image info on Runtime, skip syncing image")
 		} else {
 			latestWorkerImage := latestValue.Image
 			if latestValue.ImageTag != "" {
@@ -244,7 +248,7 @@ func (j *JuiceFSEngine) checkAndSetWorkerChanges(oldValue, latestValue *JuiceFS,
 			}
 
 			if imageChanged, newImage := j.isImageChanged(oldWorkerImage, latestWorkerImage); imageChanged {
-				j.Log.Info("syncWorkerSpec imageChanged")
+				j.Log.Info("syncWorkerSpec: image changed", "old", oldWorkerImage, "new", newImage)
 				workersToUpdate.Spec.Template.Spec.Containers[0].Image = newImage
 				oldValue.Image = latestValue.Image
 				oldValue.ImageTag = latestValue.ImageTag
@@ -257,7 +261,10 @@ func (j *JuiceFSEngine) checkAndSetWorkerChanges(oldValue, latestValue *JuiceFS,
 }
 
 func (j *JuiceFSEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.JuiceFSRuntime, oldValue, latestValue *JuiceFS) (bool, error) {
-	j.Log.V(1).Info("syncFuseSpec")
+	j.Log.V(1).Info("entering syncFuseSpec")
+	defer func() {
+		j.Log.V(1).Info("exiting syncFuseSpec")
+	}()
 
 	//1. check if fuse cmd configmap needs to update
 	if err := j.updateFuseCmdConfigmapOnChanged(latestValue); err != nil {
@@ -274,27 +281,27 @@ func (j *JuiceFSEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runti
 
 	fuseChanged, fuseGenerationNeedIncrease = j.checkAndSetFuseChanges(oldValue, latestValue, runtime, fusesToUpdate)
 	if !fuseChanged {
-		j.Log.V(1).Info("The fuse is not changed")
+		j.Log.V(1).Info("syncFuseSpec: no differences detected about fuse")
 		return fuseChanged, nil
 	}
-
-	if reflect.DeepEqual(fuses, fusesToUpdate) {
-		fuseChanged = false
-		j.Log.V(1).Info("The fuse is not changed, skip")
-		return fuseChanged, nil
-	}
-	j.Log.Info("The fuse changes, need to update")
 
 	if fuseGenerationNeedIncrease {
 		err := j.increaseFuseGeneration(fusesToUpdate)
 		if err != nil {
-			j.Log.Error(err, "Failed to update the fuse generation")
+			j.Log.Error(err, "syncFuseSpec: failed to update the fuse generation on fuse daemonset", "fuse ds", types.NamespacedName{Namespace: fusesToUpdate.Namespace, Name: fusesToUpdate.Name})
 			return fuseChanged, err
 		}
 	}
 
+	if reflect.DeepEqual(fuses, fusesToUpdate) {
+		fuseChanged = false
+		j.Log.V(1).Info("syncFuseSpec: no differences detected about fuse after equality check")
+		return fuseChanged, nil
+	}
+	j.Log.Info("syncFuseSpec: some fields are changed in fuse, try to update fuse daemonset", "fuse ds", types.NamespacedName{Namespace: fusesToUpdate.Namespace, Name: fusesToUpdate.Name})
+
 	if err := j.Client.Update(context.TODO(), fusesToUpdate); err != nil {
-		j.Log.Error(err, "Failed to update the ds spec")
+		j.Log.Error(err, "syncFuseSpec: failed to update the ds spec", "fuse ds", types.NamespacedName{Namespace: fusesToUpdate.Namespace, Name: fusesToUpdate.Name})
 		return fuseChanged, err
 	}
 
@@ -306,7 +313,7 @@ func (j *JuiceFSEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runti
 func (j *JuiceFSEngine) checkAndSetFuseChanges(oldValue, latestValue *JuiceFS, runtime *datav1alpha1.JuiceFSRuntime, fusesToUpdate *appsv1.DaemonSet) (fuseChanged bool, fuseGenerationNeedUpdate bool) {
 	// nodeSelector
 	if nodeSelectorChanged, newSelector := j.isNodeSelectorChanged(oldValue.Fuse.NodeSelector, latestValue.Fuse.NodeSelector); nodeSelectorChanged {
-		j.Log.Info("syncFuseSpec nodeSelectorChanged")
+		j.Log.Info("syncFuseSpec: node selector changed", "old", oldValue.Fuse.NodeSelector, "new", newSelector)
 		fusesToUpdate.Spec.Template.Spec.NodeSelector =
 			utils.UnionMapsWithOverride(utils.GetMapsDifference(fusesToUpdate.Spec.Template.Spec.NodeSelector, oldValue.Fuse.NodeSelector), newSelector)
 		oldValue.Fuse.NodeSelector = latestValue.Fuse.NodeSelector
@@ -315,7 +322,7 @@ func (j *JuiceFSEngine) checkAndSetFuseChanges(oldValue, latestValue *JuiceFS, r
 
 	// volumes
 	if volumeChanged, newVolumes := j.isVolumesChanged(oldValue.Fuse.Volumes, latestValue.Fuse.Volumes); volumeChanged {
-		j.Log.Info("syncFuseSpec volumeChanged")
+		j.Log.Info("syncFuseSpec: volume changed", "old", oldValue.Fuse.Volumes, "new", newVolumes)
 		fusesToUpdate.Spec.Template.Spec.Volumes =
 			append(utils.GetVolumesDifference(fusesToUpdate.Spec.Template.Spec.Volumes, oldValue.Fuse.Volumes), newVolumes...)
 		oldValue.Fuse.Volumes = latestValue.Fuse.Volumes
@@ -324,7 +331,7 @@ func (j *JuiceFSEngine) checkAndSetFuseChanges(oldValue, latestValue *JuiceFS, r
 
 	// labels
 	if labelChanged, newLabels := j.isLabelsChanged(oldValue.Fuse.Labels, latestValue.Fuse.Labels); labelChanged {
-		j.Log.Info("syncFuseSpec labelChanged")
+		j.Log.Info("syncFuseSpec: labels changed", "old", oldValue.Fuse.Labels, "new", newLabels)
 		fusesToUpdate.Spec.Template.ObjectMeta.Labels =
 			utils.UnionMapsWithOverride(utils.GetMapsDifference(fusesToUpdate.Spec.Template.ObjectMeta.Labels, oldValue.Fuse.Labels), newLabels)
 		oldValue.Fuse.Labels = latestValue.Fuse.Labels
@@ -333,7 +340,7 @@ func (j *JuiceFSEngine) checkAndSetFuseChanges(oldValue, latestValue *JuiceFS, r
 
 	// annotations
 	if annoChanged, newAnnos := j.isAnnotationsChanged(oldValue.Fuse.Annotations, latestValue.Fuse.Annotations); annoChanged {
-		j.Log.Info("syncFuseSpec annoChanged")
+		j.Log.Info("syncFuseSpec annotations changed", "old", oldValue.Fuse.Annotations, "new", newAnnos)
 		fusesToUpdate.Spec.Template.ObjectMeta.Annotations =
 			utils.UnionMapsWithOverride(utils.GetMapsDifference(fusesToUpdate.Spec.Template.ObjectMeta.Annotations, oldValue.Fuse.Annotations), newAnnos)
 		oldValue.Fuse.Annotations = latestValue.Fuse.Annotations
@@ -343,14 +350,14 @@ func (j *JuiceFSEngine) checkAndSetFuseChanges(oldValue, latestValue *JuiceFS, r
 	if len(fusesToUpdate.Spec.Template.Spec.Containers) == 1 {
 		// resource
 		if resourcesChanged, newResources := j.isResourcesChanged(fusesToUpdate.Spec.Template.Spec.Containers[0].Resources, runtime.Spec.Fuse.Resources); resourcesChanged {
-			j.Log.Info("syncFuseSpec resourcesChanged")
+			j.Log.Info("syncFuseSpec: resources changed", "old", fusesToUpdate.Spec.Template.Spec.Containers[0].Resources, "new", newResources)
 			fusesToUpdate.Spec.Template.Spec.Containers[0].Resources = newResources
 			fuseChanged = true
 		}
 
 		// env
 		if envChanged, newEnvs := j.isEnvsChanged(oldValue.Fuse.Envs, latestValue.Fuse.Envs); envChanged {
-			j.Log.Info("syncFuseSpec envChanged")
+			j.Log.Info("syncFuseSpec: env variables changed", "old", oldValue.Fuse.Envs, "new", newEnvs)
 			fusesToUpdate.Spec.Template.Spec.Containers[0].Env =
 				append(utils.GetEnvsDifference(fusesToUpdate.Spec.Template.Spec.Containers[0].Env, oldValue.Fuse.Envs), newEnvs...)
 			oldValue.Fuse.Envs = latestValue.Fuse.Envs
@@ -359,7 +366,7 @@ func (j *JuiceFSEngine) checkAndSetFuseChanges(oldValue, latestValue *JuiceFS, r
 
 		// volumeMounts
 		if volumeMountChanged, newVolumeMounts := j.isVolumeMountsChanged(oldValue.Fuse.VolumeMounts, latestValue.Fuse.VolumeMounts); volumeMountChanged {
-			j.Log.Info("syncFuseSpec volumeMountChanged")
+			j.Log.Info("syncFuseSpec: volume mounts changed", "old", oldValue.Fuse.VolumeMounts, "new", newVolumeMounts)
 			fusesToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts =
 				append(utils.GetVolumeMountsDifference(fusesToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts,
 					oldValue.Fuse.VolumeMounts), newVolumeMounts...)
@@ -372,7 +379,7 @@ func (j *JuiceFSEngine) checkAndSetFuseChanges(oldValue, latestValue *JuiceFS, r
 		// It's hard for Fluid to detect the removal and find a way to rollout image back to the default image.
 		if len(runtime.Spec.Fuse.Image) == 0 && len(runtime.Spec.Fuse.ImageTag) == 0 {
 			// Do not touch image info because user are using the default image
-			j.Log.Info("No user-defined image info on Runtime, skip syncing image")
+			j.Log.Info("syncFuseSpec: no user-defined image info on Runtime, skip syncing image")
 		} else {
 			latestFuseImage := latestValue.Fuse.Image
 			if latestValue.Fuse.ImageTag != "" {
@@ -385,7 +392,7 @@ func (j *JuiceFSEngine) checkAndSetFuseChanges(oldValue, latestValue *JuiceFS, r
 			}
 
 			if imageChanged, newImage := j.isImageChanged(currentFuseImage, latestFuseImage); imageChanged {
-				j.Log.Info("syncFuseSpec imageChanged")
+				j.Log.Info("syncFuseSpec: image changed", "old", currentFuseImage, "new", latestFuseImage)
 				fusesToUpdate.Spec.Template.Spec.Containers[0].Image = newImage
 				fuseChanged, fuseGenerationNeedUpdate = true, true
 			}
@@ -458,7 +465,6 @@ func (j *JuiceFSEngine) isVolumeMountsChanged(crtVolumeMounts, runtimeVolumeMoun
 	}
 
 	if !reflect.DeepEqual(crtVolumeMounts, runtimeVolumeMounts) {
-		j.Log.Info("The volumeMounts are different", "old", crtVolumeMounts, "new", runtimeVolumeMounts)
 		changed = true
 	}
 
@@ -474,7 +480,6 @@ func (j JuiceFSEngine) isEnvsChanged(crtEnvs, runtimeEnvs []corev1.EnvVar) (chan
 	}
 
 	if !reflect.DeepEqual(crtEnvs, runtimeEnvs) {
-		j.Log.Info("The env is different", "old", crtEnvs, "new", runtimeEnvs)
 		changed = true
 	}
 
@@ -484,7 +489,6 @@ func (j JuiceFSEngine) isEnvsChanged(crtEnvs, runtimeEnvs []corev1.EnvVar) (chan
 func (j JuiceFSEngine) isResourcesChanged(crtResources, runtimeResources corev1.ResourceRequirements) (changed bool, newResources corev1.ResourceRequirements) {
 	newResources = runtimeResources
 	if !utils.ResourceRequirementsEqual(crtResources, runtimeResources) {
-		j.Log.Info("The resource requirement is different.", "old", crtResources, "new", runtimeResources)
 		changed = true
 	}
 	return
@@ -499,7 +503,6 @@ func (j JuiceFSEngine) isVolumesChanged(crtVolumes, runtimeVolumes []corev1.Volu
 	}
 
 	if !reflect.DeepEqual(crtVolumes, runtimeVolumes) {
-		j.Log.Info("The volumes are different.", "old", crtVolumes, "new", runtimeVolumes)
 		changed = true
 	}
 	return
@@ -513,7 +516,6 @@ func (j JuiceFSEngine) isLabelsChanged(crtLabels, runtimeLabels map[string]strin
 	}
 
 	if !reflect.DeepEqual(crtLabels, runtimeLabels) {
-		j.Log.Info("The labels are different.", "old", crtLabels, "new", runtimeLabels)
 		changed = true
 	}
 	return
@@ -527,7 +529,6 @@ func (j JuiceFSEngine) isAnnotationsChanged(crtAnnotations, runtimeAnnotations m
 	}
 
 	if !reflect.DeepEqual(crtAnnotations, runtimeAnnotations) {
-		j.Log.Info("The annotations are different.", "old", crtAnnotations, "new", runtimeAnnotations)
 		changed = true
 	}
 
@@ -537,7 +538,6 @@ func (j JuiceFSEngine) isAnnotationsChanged(crtAnnotations, runtimeAnnotations m
 func (j JuiceFSEngine) isImageChanged(crtImage, runtimeImage string) (changed bool, newImage string) {
 	newImage = runtimeImage
 	if crtImage != runtimeImage {
-		j.Log.Info("The image is different.", "current sts", crtImage, "runtime", runtimeImage)
 		changed = true
 	}
 	return
@@ -550,7 +550,6 @@ func (j JuiceFSEngine) isNodeSelectorChanged(crtNodeSelector, runtimeNodeSelecto
 	}
 
 	if !reflect.DeepEqual(crtNodeSelector, runtimeNodeSelector) {
-		j.Log.Info("The nodeSelector is different.", "current sts", crtNodeSelector, "runtime", runtimeNodeSelector)
 		changed = true
 	}
 	return
