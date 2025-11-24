@@ -157,7 +157,7 @@ type CacheRuntimeComponentCommonSpec struct {
 
 	// Environment variables that will be used by CacheRuntime component.
 	// +optional
-	Env []corev1.EnvVar `json:"env,omitempty" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,7,rep,name=env"`
+	Env []corev1.EnvVar `json:"env,omitempty"`
 
 	// VolumeMounts specifies the volumes listed in ".spec.volumes" to mount into the CacheRuntime component's filesystem.
 	// +optional
