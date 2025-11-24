@@ -44,107 +44,120 @@ func (j *JuiceFSEngine) SyncRuntime(ctx cruntime.ReconcileRequestContext) (chang
 		return changed, err
 	}
 
-	var value *JuiceFS
-	value, err = j.transform(runtime)
+	var latestValue *JuiceFS
+	latestValue, err = j.transform(runtime)
 	if err != nil {
 		return
 	}
 
-	// 1. sync workers
-	workerChanged, err := j.syncWorkerSpec(ctx, runtime, value)
-	if err != nil {
-		return
-	}
-	if workerChanged {
-		j.Log.Info("Worker Spec is updated", "name", ctx.Name, "namespace", ctx.Namespace)
-		return workerChanged, err
-	}
+	// Syncing the runtime spec in a atomic way: if anything unexpected happens in the middle, the process can be retry and inconsitency will be fixed.
+	// 1. get old value from configmap
+	// 2. sync worker spec given old value, latest value, and runtime spec. Meanwhile, old value will be updated to match what has been synced.
+	// 3. sync fuse spec given old value, latest value, and runtime spec. Meanwhile, old value will be updated to match what has been synced.
+	// 4. Commit value changes to complete the process
 
-	// 2. sync fuse
-	fuseChanged, err := j.syncFuseSpec(ctx, runtime, value)
-	if err != nil {
-		return
-	}
-	if fuseChanged {
-		j.Log.Info("Fuse Spec is updated", "name", ctx.Name, "namespace", ctx.Namespace)
-		return fuseChanged, err
-	}
-	return
-}
-
-func (j *JuiceFSEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) (changed bool, err error) {
-	j.Log.V(1).Info("syncWorkerSpec")
-	var cmdChanged bool
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		workers, err := ctrl.GetWorkersAsStatefulset(j.Client,
-			types.NamespacedName{Namespace: j.namespace, Name: j.getWorkerName()})
-		if err != nil {
-			return err
+		valueToSync, innerErr := j.GetValueFromConfigmap()
+		if innerErr != nil {
+			return innerErr
 		}
 
-		if workers.Spec.UpdateStrategy.Type != appsv1.OnDeleteStatefulSetStrategyType {
-			j.Log.V(1).Info("Worker Sts's update strategy is not safe to sync worker spec, skipping", "updateStrategy", workers.Spec.UpdateStrategy.Type)
-			return nil
+		// 1. sync workers. syncWorkerSpec should not have a retryOnConflict logic because we want the process to be atomic
+		workerChanged, innerErr := j.syncWorkerSpec(ctx, runtime, valueToSync, latestValue)
+		if innerErr != nil {
+			return innerErr
+		}
+		if workerChanged {
+			j.Log.Info("Worker Spec is updated", "name", ctx.Name, "namespace", ctx.Namespace)
 		}
 
-		workersToUpdate := workers.DeepCopy()
-
-		oldValue, err := j.GetValueFromConfigmap()
-		if err != nil {
-			return err
+		// 2. sync fuse. syncFuseSpec should not have a retryOnConflict logic because we want the process to be atomic
+		fuseChanged, innerErr := j.syncFuseSpec(ctx, runtime, valueToSync, latestValue)
+		if innerErr != nil {
+			return innerErr
+		}
+		if fuseChanged {
+			j.Log.Info("Fuse Spec is updated", "name", ctx.Name, "namespace", ctx.Namespace)
 		}
 
-		changed = j.checkAndSetWorkerChanges(oldValue, value, runtime, workersToUpdate)
-
-		// options -> configmap
-		workerCommand, err := j.getWorkerCommand()
-		if err != nil || workerCommand == "" {
-			j.Log.Error(err, "Failed to get worker command")
-			return err
-		}
-		cmdChanged, _ = j.isCommandChanged(workerCommand, value.Worker.Command)
-
-		if cmdChanged {
-			j.Log.Info("The worker config is updated")
-			err = j.updateWorkerScript(value.Worker.Command)
-			if err != nil {
-				j.Log.Error(err, "Failed to update the sts config")
-				return err
+		if workerChanged || fuseChanged {
+			j.Log.Info("Committing changed value to configmap", "name", ctx.Name, "namespace", ctx.Namespace)
+			if innerErr = j.SaveValueToConfigmap(valueToSync); innerErr != nil {
+				j.Log.Error(innerErr, "failed to save changed value to configmap")
+				return innerErr
 			}
-			if !changed {
-				// if worker sts not changed, rollout worker sts to reload the script
-				j.Log.Info("rollout restart worker", "sts", workersToUpdate.Name)
-				workersToUpdate.Spec.Template.ObjectMeta.Annotations["kubectl.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
-				changed = true
-			}
-		} else {
-			j.Log.V(1).Info("The worker config is not changed")
-		}
-
-		if changed {
-			if reflect.DeepEqual(workers, workersToUpdate) {
-				changed = false
-				j.Log.V(1).Info("The worker is not changed, skip")
-				return nil
-			}
-			j.Log.Info("The worker is updated")
-
-			err = j.Client.Update(context.TODO(), workersToUpdate)
-			if err != nil {
-				j.Log.Error(err, "failed to update the sts spec")
-				return err
-			}
-
-			if err := j.SaveValueToConfigmap(value); err != nil {
-				j.Log.Error(err, "failed to save latest value to configmap")
-				return err
-			}
-		} else {
-			j.Log.V(1).Info("The worker is not changed")
 		}
 
 		return nil
 	})
+
+	if err != nil {
+		j.Log.Error(err, "Failed to update runtime")
+		return false, err
+	}
+
+	return
+}
+
+func (j *JuiceFSEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.JuiceFSRuntime, oldValue, latestValue *JuiceFS) (changed bool, err error) {
+	j.Log.V(1).Info("syncWorkerSpec")
+	var cmdChanged bool
+	workers, err := ctrl.GetWorkersAsStatefulset(j.Client,
+		types.NamespacedName{Namespace: j.namespace, Name: j.getWorkerName()})
+	if err != nil {
+		return
+	}
+
+	if workers.Spec.UpdateStrategy.Type != appsv1.OnDeleteStatefulSetStrategyType {
+		j.Log.V(1).Info("Worker Sts's update strategy is not safe to sync worker spec, skipping", "updateStrategy", workers.Spec.UpdateStrategy.Type)
+		return
+	}
+
+	workersToUpdate := workers.DeepCopy()
+
+	changed = j.checkAndSetWorkerChanges(oldValue, latestValue, runtime, workersToUpdate)
+
+	// options -> configmap
+	workerCommand, err := j.getWorkerCommand()
+	if err != nil || workerCommand == "" {
+		j.Log.Error(err, "Failed to get worker command")
+		return
+	}
+	cmdChanged, _ = j.isCommandChanged(workerCommand, latestValue.Worker.Command)
+
+	if cmdChanged {
+		j.Log.Info("The worker config is updated")
+		err = j.updateWorkerScript(latestValue.Worker.Command)
+		if err != nil {
+			j.Log.Error(err, "Failed to update the sts config")
+			return
+		}
+		if !changed {
+			// if worker sts not changed, rollout worker sts to reload the script
+			j.Log.Info("rollout restart worker", "sts", workersToUpdate.Name)
+			workersToUpdate.Spec.Template.ObjectMeta.Annotations["kubectl.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
+			changed = true
+		}
+	} else {
+		j.Log.V(1).Info("The worker config is not changed")
+	}
+
+	if changed {
+		if reflect.DeepEqual(workers, workersToUpdate) {
+			changed = false
+			j.Log.V(1).Info("The worker is not changed, skip")
+			return
+		}
+
+		err = j.Client.Update(context.TODO(), workersToUpdate)
+		if err != nil {
+			j.Log.Error(err, "failed to update the sts spec")
+			return
+		}
+		j.Log.Info("The worker is updated")
+	} else {
+		j.Log.V(1).Info("The worker is not changed")
+	}
 
 	return
 }
@@ -155,6 +168,7 @@ func (j *JuiceFSEngine) checkAndSetWorkerChanges(oldValue, latestValue *JuiceFS,
 		j.Log.Info("syncWorkerSpec nodeSelectorChanged")
 		workersToUpdate.Spec.Template.Spec.NodeSelector =
 			utils.UnionMapsWithOverride(utils.GetMapsDifference(workersToUpdate.Spec.Template.Spec.NodeSelector, oldValue.Worker.NodeSelector), newSelector)
+		oldValue.Worker.NodeSelector = latestValue.Worker.NodeSelector
 		workerChanged = true
 	}
 
@@ -162,6 +176,7 @@ func (j *JuiceFSEngine) checkAndSetWorkerChanges(oldValue, latestValue *JuiceFS,
 	if volumeChanged, newVolumes := j.isVolumesChanged(oldValue.Worker.Volumes, latestValue.Worker.Volumes); volumeChanged {
 		j.Log.Info("syncWorkerSpec volumeChanged")
 		workersToUpdate.Spec.Template.Spec.Volumes = append(utils.GetVolumesDifference(workersToUpdate.Spec.Template.Spec.Volumes, oldValue.Worker.Volumes), newVolumes...)
+		oldValue.Worker.Volumes = latestValue.Worker.Volumes
 		workerChanged = true
 	}
 
@@ -170,6 +185,7 @@ func (j *JuiceFSEngine) checkAndSetWorkerChanges(oldValue, latestValue *JuiceFS,
 		j.Log.Info("syncWorkerSpec labelChanged")
 		workersToUpdate.Spec.Template.ObjectMeta.Labels =
 			utils.UnionMapsWithOverride(utils.GetMapsDifference(workersToUpdate.Spec.Template.ObjectMeta.Labels, oldValue.Worker.Labels), newLabels)
+		oldValue.Worker.Labels = latestValue.Worker.Labels
 		workerChanged = true
 	}
 
@@ -178,6 +194,7 @@ func (j *JuiceFSEngine) checkAndSetWorkerChanges(oldValue, latestValue *JuiceFS,
 		j.Log.Info("syncWorkerSpec annoChanged")
 		workersToUpdate.Spec.Template.ObjectMeta.Annotations =
 			utils.UnionMapsWithOverride(utils.GetMapsDifference(workersToUpdate.Spec.Template.ObjectMeta.Annotations, oldValue.Worker.Annotations), newAnnos)
+		oldValue.Worker.Annotations = latestValue.Worker.Annotations
 		workerChanged = true
 	}
 
@@ -195,6 +212,7 @@ func (j *JuiceFSEngine) checkAndSetWorkerChanges(oldValue, latestValue *JuiceFS,
 			j.Log.Info("syncWorkerSpec envChanged")
 			workersToUpdate.Spec.Template.Spec.Containers[0].Env =
 				append(utils.GetEnvsDifference(workersToUpdate.Spec.Template.Spec.Containers[0].Env, oldValue.Worker.Envs), newEnvs...)
+			oldValue.Worker.Envs = latestValue.Worker.Envs
 			workerChanged = true
 		}
 
@@ -204,6 +222,7 @@ func (j *JuiceFSEngine) checkAndSetWorkerChanges(oldValue, latestValue *JuiceFS,
 			workersToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts =
 				append(utils.GetVolumeMountsDifference(workersToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts,
 					oldValue.Worker.VolumeMounts), newVolumeMounts...)
+			oldValue.Worker.VolumeMounts = latestValue.Worker.VolumeMounts
 			workerChanged = true
 		}
 
@@ -214,19 +233,21 @@ func (j *JuiceFSEngine) checkAndSetWorkerChanges(oldValue, latestValue *JuiceFS,
 			// Do not touch image info because user are using the default image
 			j.Log.Info("No user-defined image info on Runtime, skip syncing image")
 		} else {
-			latestWorkerImage := latestValue.Worker.Image
-			if latestValue.Worker.ImageTag != "" {
-				latestWorkerImage = latestWorkerImage + ":" + latestValue.Worker.ImageTag
+			latestWorkerImage := latestValue.Image
+			if latestValue.ImageTag != "" {
+				latestWorkerImage = latestWorkerImage + ":" + latestValue.ImageTag
 			}
 
-			oldWorkerImage := oldValue.Worker.Image
-			if oldValue.Worker.ImageTag != "" {
-				oldWorkerImage = oldWorkerImage + ":" + oldValue.Worker.ImageTag
+			oldWorkerImage := oldValue.Image
+			if oldValue.ImageTag != "" {
+				oldWorkerImage = oldWorkerImage + ":" + oldValue.ImageTag
 			}
 
 			if imageChanged, newImage := j.isImageChanged(oldWorkerImage, latestWorkerImage); imageChanged {
 				j.Log.Info("syncWorkerSpec imageChanged")
 				workersToUpdate.Spec.Template.Spec.Containers[0].Image = newImage
+				oldValue.Image = latestValue.Image
+				oldValue.ImageTag = latestValue.ImageTag
 				workerChanged = true
 			}
 		}
@@ -235,7 +256,7 @@ func (j *JuiceFSEngine) checkAndSetWorkerChanges(oldValue, latestValue *JuiceFS,
 	return
 }
 
-func (j *JuiceFSEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.JuiceFSRuntime, latestValue *JuiceFS) (bool, error) {
+func (j *JuiceFSEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.JuiceFSRuntime, oldValue, latestValue *JuiceFS) (bool, error) {
 	j.Log.V(1).Info("syncFuseSpec")
 
 	//1. check if fuse cmd configmap needs to update
@@ -245,53 +266,36 @@ func (j *JuiceFSEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runti
 
 	//2. check if fuse needs to update
 	var fuseChanged, fuseGenerationNeedIncrease bool
-	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		fuses, err := kubeclient.GetDaemonset(j.Client, j.getFuseName(), j.namespace)
-		if err != nil {
-			return err
-		}
-		fusesToUpdate := fuses.DeepCopy()
-
-		oldValue, err := j.GetValueFromConfigmap()
-		if err != nil {
-			return err
-		}
-
-		fuseChanged, fuseGenerationNeedIncrease = j.checkAndSetFuseChanges(oldValue, latestValue, runtime, fusesToUpdate)
-		if !fuseChanged {
-			j.Log.V(1).Info("The fuse is not changed")
-			return nil
-		}
-
-		if reflect.DeepEqual(fuses, fusesToUpdate) {
-			fuseChanged = false
-			j.Log.V(1).Info("The fuse is not changed, skip")
-			return nil
-		}
-		j.Log.Info("The fuse changes, need to update")
-
-		if fuseGenerationNeedIncrease {
-			err := j.increaseFuseGeneration(fusesToUpdate)
-			if err != nil {
-				j.Log.Error(err, "Failed to update the fuse generation")
-				return err
-			}
-		}
-
-		if err := j.Client.Update(context.TODO(), fusesToUpdate); err != nil {
-			j.Log.Error(err, "Failed to update the ds spec")
-			return err
-		}
-
-		if err := j.SaveValueToConfigmap(latestValue); err != nil {
-			j.Log.Error(err, "Failed to update the ds spec")
-			return err
-		}
-
-		return nil
-	})
+	fuses, err := kubeclient.GetDaemonset(j.Client, j.getFuseName(), j.namespace)
 	if err != nil {
 		return false, err
+	}
+	fusesToUpdate := fuses.DeepCopy()
+
+	fuseChanged, fuseGenerationNeedIncrease = j.checkAndSetFuseChanges(oldValue, latestValue, runtime, fusesToUpdate)
+	if !fuseChanged {
+		j.Log.V(1).Info("The fuse is not changed")
+		return fuseChanged, nil
+	}
+
+	if reflect.DeepEqual(fuses, fusesToUpdate) {
+		fuseChanged = false
+		j.Log.V(1).Info("The fuse is not changed, skip")
+		return fuseChanged, nil
+	}
+	j.Log.Info("The fuse changes, need to update")
+
+	if fuseGenerationNeedIncrease {
+		err := j.increaseFuseGeneration(fusesToUpdate)
+		if err != nil {
+			j.Log.Error(err, "Failed to update the fuse generation")
+			return fuseChanged, err
+		}
+	}
+
+	if err := j.Client.Update(context.TODO(), fusesToUpdate); err != nil {
+		j.Log.Error(err, "Failed to update the ds spec")
+		return fuseChanged, err
 	}
 
 	return fuseChanged, nil
@@ -305,6 +309,7 @@ func (j *JuiceFSEngine) checkAndSetFuseChanges(oldValue, latestValue *JuiceFS, r
 		j.Log.Info("syncFuseSpec nodeSelectorChanged")
 		fusesToUpdate.Spec.Template.Spec.NodeSelector =
 			utils.UnionMapsWithOverride(utils.GetMapsDifference(fusesToUpdate.Spec.Template.Spec.NodeSelector, oldValue.Fuse.NodeSelector), newSelector)
+		oldValue.Fuse.NodeSelector = latestValue.Fuse.NodeSelector
 		fuseChanged = true
 	}
 
@@ -313,6 +318,7 @@ func (j *JuiceFSEngine) checkAndSetFuseChanges(oldValue, latestValue *JuiceFS, r
 		j.Log.Info("syncFuseSpec volumeChanged")
 		fusesToUpdate.Spec.Template.Spec.Volumes =
 			append(utils.GetVolumesDifference(fusesToUpdate.Spec.Template.Spec.Volumes, oldValue.Fuse.Volumes), newVolumes...)
+		oldValue.Fuse.Volumes = latestValue.Fuse.Volumes
 		fuseChanged = true
 	}
 
@@ -321,6 +327,7 @@ func (j *JuiceFSEngine) checkAndSetFuseChanges(oldValue, latestValue *JuiceFS, r
 		j.Log.Info("syncFuseSpec labelChanged")
 		fusesToUpdate.Spec.Template.ObjectMeta.Labels =
 			utils.UnionMapsWithOverride(utils.GetMapsDifference(fusesToUpdate.Spec.Template.ObjectMeta.Labels, oldValue.Fuse.Labels), newLabels)
+		oldValue.Fuse.Labels = latestValue.Fuse.Labels
 		fuseChanged = true
 	}
 
@@ -329,6 +336,7 @@ func (j *JuiceFSEngine) checkAndSetFuseChanges(oldValue, latestValue *JuiceFS, r
 		j.Log.Info("syncFuseSpec annoChanged")
 		fusesToUpdate.Spec.Template.ObjectMeta.Annotations =
 			utils.UnionMapsWithOverride(utils.GetMapsDifference(fusesToUpdate.Spec.Template.ObjectMeta.Annotations, oldValue.Fuse.Annotations), newAnnos)
+		oldValue.Fuse.Annotations = latestValue.Fuse.Annotations
 		fuseChanged = true
 	}
 
@@ -345,6 +353,7 @@ func (j *JuiceFSEngine) checkAndSetFuseChanges(oldValue, latestValue *JuiceFS, r
 			j.Log.Info("syncFuseSpec envChanged")
 			fusesToUpdate.Spec.Template.Spec.Containers[0].Env =
 				append(utils.GetEnvsDifference(fusesToUpdate.Spec.Template.Spec.Containers[0].Env, oldValue.Fuse.Envs), newEnvs...)
+			oldValue.Fuse.Envs = latestValue.Fuse.Envs
 			fuseChanged = true
 		}
 
@@ -354,6 +363,7 @@ func (j *JuiceFSEngine) checkAndSetFuseChanges(oldValue, latestValue *JuiceFS, r
 			fusesToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts =
 				append(utils.GetVolumeMountsDifference(fusesToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts,
 					oldValue.Fuse.VolumeMounts), newVolumeMounts...)
+			oldValue.Fuse.VolumeMounts = latestValue.Fuse.VolumeMounts
 			fuseChanged = true
 		}
 

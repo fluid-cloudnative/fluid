@@ -245,7 +245,7 @@ func TestJuiceFSxEngine_syncWorkerSpec(t *testing.T) {
 				Log:       fake.NullLogger(),
 				Client:    client,
 			}
-			gotChanged, err := e.syncWorkerSpec(tt.args.ctx, tt.fields.runtime, tt.args.value)
+			gotChanged, err := e.syncWorkerSpec(tt.args.ctx, tt.fields.runtime, &JuiceFS{}, tt.args.value)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Testcase %s JuiceFSEngine.syncWorkerSpec() error = %v, wantErr %v", tt.name, err, tt.wantErr)
 				return
@@ -429,7 +429,7 @@ func TestJuiceFSxEngine_syncFuseSpec(t *testing.T) {
 			value := &JuiceFS{
 				Fuse: Fuse{},
 			}
-			gotChanged, err := e.syncFuseSpec(tt.args.ctx, tt.fields.runtime, value)
+			gotChanged, err := e.syncFuseSpec(tt.args.ctx, tt.fields.runtime, &JuiceFS{}, value)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("testcase %s: JuiceFSEngine.syncFuseSpec() error = %v, wantErr %v", tt.name, err, tt.wantErr)
 				return
@@ -979,7 +979,7 @@ func TestJuiceFSEngine_isAnnotationsChanged(t *testing.T) {
 	}
 }
 
-var _ = Describe("checkAndSetFuseChanges", func() {
+var _ = Describe("JuiceFSEngine.checkAndSetFuseChanges()", func() {
 	var engine *JuiceFSEngine
 
 	BeforeEach(func() {
