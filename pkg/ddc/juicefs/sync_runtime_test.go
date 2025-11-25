@@ -478,10 +478,19 @@ func TestJuiceFSEngine_isVolumeMountsChanged(t *testing.T) {
 			wantNewVolumeMounts: []corev1.VolumeMount{{Name: "test", MountPath: "/data2"}},
 		},
 		{
-			name: "test-new",
+			name: "test-override",
 			args: args{
 				crtVolumeMounts:     []corev1.VolumeMount{{Name: "test", MountPath: "/data"}},
 				runtimeVolumeMounts: []corev1.VolumeMount{{Name: "test2", MountPath: "/data2"}},
+			},
+			wantChanged:         true,
+			wantNewVolumeMounts: []corev1.VolumeMount{{Name: "test2", MountPath: "/data2"}},
+		},
+		{
+			name: "test-add",
+			args: args{
+				crtVolumeMounts:     []corev1.VolumeMount{{Name: "test", MountPath: "/data"}},
+				runtimeVolumeMounts: []corev1.VolumeMount{{Name: "test", MountPath: "/data"}, {Name: "test2", MountPath: "/data2"}},
 			},
 			wantChanged:         true,
 			wantNewVolumeMounts: []corev1.VolumeMount{{Name: "test", MountPath: "/data"}, {Name: "test2", MountPath: "/data2"}},
@@ -545,10 +554,19 @@ func TestJuiceFSEngine_isEnvsChanged(t *testing.T) {
 			wantNewEnvs: []corev1.EnvVar{{Name: "test", Value: "test2"}},
 		},
 		{
-			name: "test-new",
+			name: "test-override",
 			args: args{
 				crtEnvs:     []corev1.EnvVar{{Name: "test", Value: "test"}},
 				runtimeEnvs: []corev1.EnvVar{{Name: "test2", Value: "test2"}},
+			},
+			wantChanged: true,
+			wantNewEnvs: []corev1.EnvVar{{Name: "test2", Value: "test2"}},
+		},
+		{
+			name: "test-add",
+			args: args{
+				crtEnvs:     []corev1.EnvVar{{Name: "test", Value: "test"}},
+				runtimeEnvs: []corev1.EnvVar{{Name: "test", Value: "test"}, {Name: "test2", Value: "test2"}},
 			},
 			wantChanged: true,
 			wantNewEnvs: []corev1.EnvVar{{Name: "test", Value: "test"}, {Name: "test2", Value: "test2"}},
@@ -686,6 +704,15 @@ func TestJuiceFSEngine_isVolumesChanged(t *testing.T) {
 			},
 			wantChanged:    true,
 			wantNewVolumes: []corev1.Volume{{Name: "test", VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/test2"}}}},
+		},
+		{
+			name: "test-deleted",
+			args: args{
+				crtVolumes:     []corev1.Volume{{Name: "test", VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/test"}}}},
+				runtimeVolumes: []corev1.Volume{},
+			},
+			wantChanged:    true,
+			wantNewVolumes: []corev1.Volume{},
 		},
 		{
 			name: "test-new",
@@ -899,13 +926,22 @@ func TestJuiceFSEngine_isLabelsChanged(t *testing.T) {
 			wantNewLabels: map[string]string{"test": "def"},
 		},
 		{
-			name: "test-new",
+			name: "test-add",
 			args: args{
 				crtLabels:     map[string]string{"test": "abc"},
-				runtimeLabels: map[string]string{"test2": "def"},
+				runtimeLabels: map[string]string{"test": "abc", "test2": "def"},
 			},
 			wantChanged:   true,
 			wantNewLabels: map[string]string{"test": "abc", "test2": "def"},
+		},
+		{
+			name: "test-remove",
+			args: args{
+				crtLabels:     map[string]string{"test": "abc"},
+				runtimeLabels: map[string]string{},
+			},
+			wantChanged:   true,
+			wantNewLabels: map[string]string{},
 		},
 	}
 	for _, tt := range tests {
@@ -957,10 +993,19 @@ func TestJuiceFSEngine_isAnnotationsChanged(t *testing.T) {
 			name: "test-new",
 			args: args{
 				crtAnnotations:     map[string]string{"test": "abc"},
-				runtimeAnnotations: map[string]string{"test2": "def"},
+				runtimeAnnotations: map[string]string{"test": "abc", "test2": "def"},
 			},
 			wantChanged:        true,
 			wantNewAnnotations: map[string]string{"test": "abc", "test2": "def"},
+		},
+		{
+			name: "test-remove",
+			args: args{
+				crtAnnotations:     map[string]string{"test": "abc"},
+				runtimeAnnotations: map[string]string{},
+			},
+			wantChanged:        true,
+			wantNewAnnotations: map[string]string{},
 		},
 	}
 	for _, tt := range tests {
