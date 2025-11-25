@@ -135,6 +135,7 @@ func (j *JuiceFSEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, run
 			j.Log.Error(err, "Failed to update the sts config")
 			return
 		}
+		oldValue.Worker.Command = latestValue.Worker.Command
 		if !changed {
 			// if worker sts not changed, rollout worker sts to reload the script
 			j.Log.Info("syncWorkerSpec: rollout restart worker", "sts", workersToUpdate.Name)
@@ -267,7 +268,7 @@ func (j *JuiceFSEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runti
 	}()
 
 	//1. check if fuse cmd configmap needs to update
-	if err := j.updateFuseCmdConfigmapOnChanged(latestValue); err != nil {
+	if err := j.updateFuseCmdConfigmapOnChanged(oldValue, latestValue); err != nil {
 		return false, err
 	}
 
@@ -404,7 +405,7 @@ func (j *JuiceFSEngine) checkAndSetFuseChanges(oldValue, latestValue *JuiceFS, r
 	return fuseChanged, fuseGenerationNeedUpdate
 }
 
-func (j *JuiceFSEngine) updateFuseCmdConfigmapOnChanged(latestValue *JuiceFS) error {
+func (j *JuiceFSEngine) updateFuseCmdConfigmapOnChanged(oldValue, latestValue *JuiceFS) error {
 	// options -> configmap
 	fuseCommand, err := j.getFuseCommand()
 	if err != nil {
@@ -423,6 +424,7 @@ func (j *JuiceFSEngine) updateFuseCmdConfigmapOnChanged(latestValue *JuiceFS) er
 			j.Log.Error(err, "Failed to update the ds config")
 			return err
 		}
+		oldValue.Fuse.Command = latestValue.Fuse.Command
 		return nil
 	}
 	j.Log.V(1).Info("The fuse config is not changed")
