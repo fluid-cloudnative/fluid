@@ -202,21 +202,28 @@ func (j *JuiceFSEngine) checkAndSetWorkerChanges(oldValue, latestValue *JuiceFS,
 		workerChanged = true
 	}
 
-	// FIXME: we cannot simply assume there is only one container in the worker pod, because some sidecar containers may be injected by other plugins.
-	if len(workersToUpdate.Spec.Template.Spec.Containers) == 1 {
+	containerIdx := -1
+	for i, ctr := range workersToUpdate.Spec.Template.Spec.Containers {
+		if ctr.Name == JuiceFSWorkerContainerName {
+			containerIdx = i
+			break
+		}
+	}
+
+	if containerIdx >= 0 {
 		// resource
 		// TODO: check if we can simply compare worker's resources and runtime.spec.worker.resources
-		if resourcesChanged, newResources := j.isResourcesChanged(workersToUpdate.Spec.Template.Spec.Containers[0].Resources, runtime.Spec.Worker.Resources); resourcesChanged {
-			j.Log.Info("syncWorkerSpec: resources changed", "old", workersToUpdate.Spec.Template.Spec.Containers[0].Resources, "new", newResources)
-			workersToUpdate.Spec.Template.Spec.Containers[0].Resources = newResources
+		if resourcesChanged, newResources := j.isResourcesChanged(workersToUpdate.Spec.Template.Spec.Containers[containerIdx].Resources, runtime.Spec.Worker.Resources); resourcesChanged {
+			j.Log.Info("syncWorkerSpec: resources changed", "old", workersToUpdate.Spec.Template.Spec.Containers[containerIdx].Resources, "new", newResources)
+			workersToUpdate.Spec.Template.Spec.Containers[containerIdx].Resources = newResources
 			workerChanged = true
 		}
 
 		// env
 		if envChanged, newEnvs := j.isEnvsChanged(oldValue.Worker.Envs, latestValue.Worker.Envs); envChanged {
 			j.Log.Info("syncWorkerSpec: env variables changed", "old", oldValue.Worker.Envs, "new", newEnvs)
-			workersToUpdate.Spec.Template.Spec.Containers[0].Env =
-				append(utils.GetEnvsDifference(workersToUpdate.Spec.Template.Spec.Containers[0].Env, oldValue.Worker.Envs), newEnvs...)
+			workersToUpdate.Spec.Template.Spec.Containers[containerIdx].Env =
+				append(utils.GetEnvsDifference(workersToUpdate.Spec.Template.Spec.Containers[containerIdx].Env, oldValue.Worker.Envs), newEnvs...)
 			oldValue.Worker.Envs = latestValue.Worker.Envs
 			workerChanged = true
 		}
@@ -224,8 +231,8 @@ func (j *JuiceFSEngine) checkAndSetWorkerChanges(oldValue, latestValue *JuiceFS,
 		// volumeMounts
 		if volumeMountChanged, newVolumeMounts := j.isVolumeMountsChanged(oldValue.Worker.VolumeMounts, latestValue.Worker.VolumeMounts); volumeMountChanged {
 			j.Log.Info("syncWorkerSpec: volume mounts changed", "old", oldValue.Worker.VolumeMounts, "new", newVolumeMounts)
-			workersToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts =
-				append(utils.GetVolumeMountsDifference(workersToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts,
+			workersToUpdate.Spec.Template.Spec.Containers[containerIdx].VolumeMounts =
+				append(utils.GetVolumeMountsDifference(workersToUpdate.Spec.Template.Spec.Containers[containerIdx].VolumeMounts,
 					oldValue.Worker.VolumeMounts), newVolumeMounts...)
 			oldValue.Worker.VolumeMounts = latestValue.Worker.VolumeMounts
 			workerChanged = true
@@ -250,7 +257,7 @@ func (j *JuiceFSEngine) checkAndSetWorkerChanges(oldValue, latestValue *JuiceFS,
 
 			if imageChanged, newImage := j.isImageChanged(oldWorkerImage, latestWorkerImage); imageChanged {
 				j.Log.Info("syncWorkerSpec: image changed", "old", oldWorkerImage, "new", newImage)
-				workersToUpdate.Spec.Template.Spec.Containers[0].Image = newImage
+				workersToUpdate.Spec.Template.Spec.Containers[containerIdx].Image = newImage
 				oldValue.Image = latestValue.Image
 				oldValue.ImageTag = latestValue.ImageTag
 				workerChanged = true
@@ -348,19 +355,27 @@ func (j *JuiceFSEngine) checkAndSetFuseChanges(oldValue, latestValue *JuiceFS, r
 		fuseChanged = true
 	}
 
-	if len(fusesToUpdate.Spec.Template.Spec.Containers) == 1 {
+	containerIdx := -1
+	for i, ctr := range fusesToUpdate.Spec.Template.Spec.Containers {
+		if ctr.Name == JuiceFSFuseContainerName {
+			containerIdx = i
+			break
+		}
+	}
+
+	if containerIdx >= 0 {
 		// resource
-		if resourcesChanged, newResources := j.isResourcesChanged(fusesToUpdate.Spec.Template.Spec.Containers[0].Resources, runtime.Spec.Fuse.Resources); resourcesChanged {
-			j.Log.Info("syncFuseSpec: resources changed", "old", fusesToUpdate.Spec.Template.Spec.Containers[0].Resources, "new", newResources)
-			fusesToUpdate.Spec.Template.Spec.Containers[0].Resources = newResources
+		if resourcesChanged, newResources := j.isResourcesChanged(fusesToUpdate.Spec.Template.Spec.Containers[containerIdx].Resources, runtime.Spec.Fuse.Resources); resourcesChanged {
+			j.Log.Info("syncFuseSpec: resources changed", "old", fusesToUpdate.Spec.Template.Spec.Containers[containerIdx].Resources, "new", newResources)
+			fusesToUpdate.Spec.Template.Spec.Containers[containerIdx].Resources = newResources
 			fuseChanged = true
 		}
 
 		// env
 		if envChanged, newEnvs := j.isEnvsChanged(oldValue.Fuse.Envs, latestValue.Fuse.Envs); envChanged {
 			j.Log.Info("syncFuseSpec: env variables changed", "old", oldValue.Fuse.Envs, "new", newEnvs)
-			fusesToUpdate.Spec.Template.Spec.Containers[0].Env =
-				append(utils.GetEnvsDifference(fusesToUpdate.Spec.Template.Spec.Containers[0].Env, oldValue.Fuse.Envs), newEnvs...)
+			fusesToUpdate.Spec.Template.Spec.Containers[containerIdx].Env =
+				append(utils.GetEnvsDifference(fusesToUpdate.Spec.Template.Spec.Containers[containerIdx].Env, oldValue.Fuse.Envs), newEnvs...)
 			oldValue.Fuse.Envs = latestValue.Fuse.Envs
 			fuseChanged = true
 		}
@@ -368,8 +383,8 @@ func (j *JuiceFSEngine) checkAndSetFuseChanges(oldValue, latestValue *JuiceFS, r
 		// volumeMounts
 		if volumeMountChanged, newVolumeMounts := j.isVolumeMountsChanged(oldValue.Fuse.VolumeMounts, latestValue.Fuse.VolumeMounts); volumeMountChanged {
 			j.Log.Info("syncFuseSpec: volume mounts changed", "old", oldValue.Fuse.VolumeMounts, "new", newVolumeMounts)
-			fusesToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts =
-				append(utils.GetVolumeMountsDifference(fusesToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts,
+			fusesToUpdate.Spec.Template.Spec.Containers[containerIdx].VolumeMounts =
+				append(utils.GetVolumeMountsDifference(fusesToUpdate.Spec.Template.Spec.Containers[containerIdx].VolumeMounts,
 					oldValue.Fuse.VolumeMounts), newVolumeMounts...)
 			oldValue.Fuse.VolumeMounts = latestValue.Fuse.VolumeMounts
 			fuseChanged = true
@@ -394,7 +409,7 @@ func (j *JuiceFSEngine) checkAndSetFuseChanges(oldValue, latestValue *JuiceFS, r
 
 			if imageChanged, newImage := j.isImageChanged(currentFuseImage, latestFuseImage); imageChanged {
 				j.Log.Info("syncFuseSpec: image changed", "old", currentFuseImage, "new", latestFuseImage)
-				fusesToUpdate.Spec.Template.Spec.Containers[0].Image = newImage
+				fusesToUpdate.Spec.Template.Spec.Containers[containerIdx].Image = newImage
 				oldValue.Fuse.Image = latestValue.Fuse.Image
 				oldValue.Fuse.ImageTag = latestValue.Fuse.ImageTag
 				fuseChanged, fuseGenerationNeedUpdate = true, true

@@ -66,3 +66,8 @@ const (
 
 	NativeVolumeMigratePath = "/mnt/fluid-native/"
 )
+
+const (
+	JuiceFSWorkerContainerName = "juicefs-worker"
+	JuiceFSFuseContainerName   = "juicefs-fuse"
+)
