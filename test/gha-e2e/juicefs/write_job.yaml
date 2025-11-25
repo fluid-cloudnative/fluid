@@ -16,6 +16,9 @@ spec:
       containers:
       - name: write-job
         image: busybox
+        resources:
+          limits:
+            ephemeral-storage: "5Gi"
         command: ['sh', '-c', 'mkdir /data/foo && echo helloworld > /data/foo/bar']
         volumeMounts:
         - name: data-vol
