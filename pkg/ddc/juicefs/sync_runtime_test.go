@@ -1653,7 +1653,7 @@ func constructBaseFuseDaemonset() *appsv1.DaemonSet {
 					},
 					Containers: []corev1.Container{
 						{
-							Name:  "fuse",
+							Name:  JuiceFSFuseContainerName,
 							Image: "juicefs/fuse:v1.0.0",
 							Resources: corev1.ResourceRequirements{
 								Requests: corev1.ResourceList{
