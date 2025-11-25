@@ -394,6 +394,8 @@ func (j *JuiceFSEngine) checkAndSetFuseChanges(oldValue, latestValue *JuiceFS, r
 			if imageChanged, newImage := j.isImageChanged(currentFuseImage, latestFuseImage); imageChanged {
 				j.Log.Info("syncFuseSpec: image changed", "old", currentFuseImage, "new", latestFuseImage)
 				fusesToUpdate.Spec.Template.Spec.Containers[0].Image = newImage
+				oldValue.Fuse.Image = latestValue.Fuse.Image
+				oldValue.Fuse.ImageTag = latestValue.Fuse.ImageTag
 				fuseChanged, fuseGenerationNeedUpdate = true, true
 			}
 		}
