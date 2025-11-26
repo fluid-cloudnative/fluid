@@ -434,12 +434,13 @@ func prependFuseContainer(helper *helperData, asInit bool) error {
 		helper.Specs.InitContainers = append([]corev1.Container{fuseContainer}, helper.Specs.InitContainers...)
 	}
 
-	// TODO: move this to annotation because label has a max length limit for both key and value
-	containerDatasetMappingLabelKey := common.LabelContainerDatasetMappingKeyPrefix + fuseContainer.Name
+	containerDatasetMappingNamespaceKey := common.LabelContainerDatasetNamespaceKeyPrefix + fuseContainer.Name
+	containerDatasetMappingNameKey := common.LabelContainerDatasetNameKeyPrefix + fuseContainer.Name
 	if helper.Specs.MetaObj.Labels == nil {
 		helper.Specs.MetaObj.Labels = map[string]string{}
 	}
-	helper.Specs.MetaObj.Labels[containerDatasetMappingLabelKey] = fmt.Sprintf("%s_%s", helper.runtimeInfo.GetNamespace(), helper.runtimeInfo.GetName())
+	helper.Specs.MetaObj.Labels[containerDatasetMappingNamespaceKey] = helper.runtimeInfo.GetNamespace()
+	helper.Specs.MetaObj.Labels[containerDatasetMappingNameKey] = helper.runtimeInfo.GetName()
 	return nil
 }
 
@@ -463,12 +464,13 @@ func prependFuseNativeSidecar(helper *helperData) error {
 	fuseContainer.RestartPolicy = &containerRestartPolicyAlways
 	helper.Specs.InitContainers = append([]corev1.Container{fuseContainer}, helper.Specs.InitContainers...)
 
-	// TODO: move this to annotation because label has a max length limit for both key and value
-	containerDatasetMappingLabelKey := common.LabelContainerDatasetMappingKeyPrefix + fuseContainer.Name
+	containerDatasetMappingNamespaceKey := common.LabelContainerDatasetNamespaceKeyPrefix + fuseContainer.Name
+	containerDatasetMappingNameKey := common.LabelContainerDatasetNameKeyPrefix + fuseContainer.Name
 	if helper.Specs.MetaObj.Labels == nil {
 		helper.Specs.MetaObj.Labels = map[string]string{}
 	}
-	helper.Specs.MetaObj.Labels[containerDatasetMappingLabelKey] = fmt.Sprintf("%s_%s", helper.runtimeInfo.GetNamespace(), helper.runtimeInfo.GetName())
+	helper.Specs.MetaObj.Labels[containerDatasetMappingNamespaceKey] = helper.runtimeInfo.GetNamespace()
+	helper.Specs.MetaObj.Labels[containerDatasetMappingNameKey] = helper.runtimeInfo.GetName()
 	return nil
 }
 
