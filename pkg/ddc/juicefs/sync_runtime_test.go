@@ -28,12 +28,222 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
+
+var _ = Describe("JuiceFS Sync Runtime Related Tests", Label("pkg.ddc.juicefs.sync_runtime_test.go"), func() {
+	var (
+		dataset        *datav1alpha1.Dataset
+		juicefsruntime *datav1alpha1.JuiceFSRuntime
+		engine         *JuiceFSEngine
+		mockedObjects  mockedObjects
+		client         client.Client
+		resources      []runtime.Object
+	)
+	BeforeEach(func() {
+		dataset, juicefsruntime = mockFluidObjectsForTests(types.NamespacedName{Namespace: "fluid", Name: "jfsdemo"})
+		engine = mockJuiceFSEngineForTests(dataset, juicefsruntime)
+		mockedObjects = mockJuiceFSObjectsForTests(dataset, juicefsruntime, engine)
+		resources = []runtime.Object{
+			dataset,
+			juicefsruntime,
+			mockedObjects.WorkerSts,
+			mockedObjects.FuseDs,
+			mockedObjects.PersistentVolume,
+			mockedObjects.PersistentVolumeClaim,
+		}
+		for _, v := range mockedObjects.ConfigMaps {
+			resources = append(resources, v)
+		}
+	})
+
+	// JustBeforeEach is guaranteed to run after every BeforeEach()
+	// So it's easy to modify resources' specs with an extra BeforeEach()
+	JustBeforeEach(func() {
+		client = fake.NewFakeClientWithScheme(datav1alpha1.UnitTestScheme, resources...)
+		engine.runtimeInfo.SetFuseName(engine.getFuseName())
+		engine.Client = client
+	})
+
+	Context("Test JuiceFSEngine.syncWorkerSpec", func() {
+		When("Worker spec does not have a OnDelete update strategy", func() {
+			BeforeEach(func() {
+				mockedObjects.WorkerSts.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
+			})
+
+			It("should skip syncing", func() {
+				changed, err := engine.syncWorkerSpec(cruntime.ReconcileRequestContext{}, juicefsruntime, &JuiceFS{}, &JuiceFS{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(changed).To(BeFalse())
+			})
+		})
+
+		When("When nothing changed", func() {
+			BeforeEach(func() {
+				mockedObjects.WorkerSts.Spec.UpdateStrategy.Type = appsv1.OnDeleteStatefulSetStrategyType
+			})
+
+			It("should sync runtime properly but no changes will be applied", func() {
+				oldValue := mockJuiceFSValue(dataset, juicefsruntime)
+				latestValue := mockJuiceFSValue(dataset, juicefsruntime)
+				changed, err := engine.syncWorkerSpec(cruntime.ReconcileRequestContext{}, juicefsruntime, oldValue, latestValue)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(changed).To(BeFalse())
+
+				updatedSts, err := kubeclient.GetStatefulSet(client, mockedObjects.WorkerSts.Name, mockedObjects.WorkerSts.Namespace)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(updatedSts).To(Equal(mockedObjects.WorkerSts))
+			})
+		})
+
+		When("some fields in Runtime's spec changed", func() {
+			BeforeEach(func() {
+				mockedObjects.WorkerSts.Spec.UpdateStrategy.Type = appsv1.OnDeleteStatefulSetStrategyType
+			})
+
+			It("should sync runtime properly and worker sts's spec will be updated", func() {
+				oldValue := mockJuiceFSValue(dataset, juicefsruntime)
+				latestValue := mockJuiceFSValue(dataset, juicefsruntime)
+				latestValue.Worker.Labels = map[string]string{"foo": "bar"}
+				latestValue.Worker.Annotations = map[string]string{"foo-anno": "bar-anno"}
+				latestValue.Worker.Envs = []corev1.EnvVar{
+					{
+						Name:  "FOO-ENV",
+						Value: "BAR-ENV",
+					},
+				}
+				latestValue.Worker.Volumes = append(latestValue.Worker.Volumes, corev1.Volume{Name: "added-vol", VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/mnt/host-vol"}}})
+				latestValue.Worker.VolumeMounts = append(latestValue.Worker.VolumeMounts, corev1.VolumeMount{Name: "added-vol", MountPath: "/mnt/host-vol"})
+				changed, err := engine.syncWorkerSpec(cruntime.ReconcileRequestContext{}, juicefsruntime, oldValue, latestValue)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(changed).To(BeTrue())
+
+				// check if old values are updated
+				Expect(oldValue).To(Equal(latestValue))
+
+				// check if worker sts is updated
+				updatedSts, err := kubeclient.GetStatefulSet(client, mockedObjects.WorkerSts.Name, mockedObjects.WorkerSts.Namespace)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(updatedSts.Spec.Template.Labels).To(HaveKeyWithValue("foo", "bar"))
+				Expect(updatedSts.Spec.Template.Annotations).To(HaveKeyWithValue("foo-anno", "bar-anno"))
+				Expect(updatedSts.Spec.Template.Spec.Containers[0].Env).To(ContainElement(corev1.EnvVar{Name: "FOO-ENV", Value: "BAR-ENV"}))
+				Expect(updatedSts.Spec.Template.Spec.Volumes).To(ContainElement(corev1.Volume{Name: "added-vol", VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/mnt/host-vol"}}}))
+				Expect(updatedSts.Spec.Template.Spec.Containers[0].VolumeMounts).To(ContainElement(corev1.VolumeMount{Name: "added-vol", MountPath: "/mnt/host-vol"}))
+			})
+		})
+
+		When("only command changed", func() {
+			BeforeEach(func() {
+				mockedObjects.WorkerSts.Spec.UpdateStrategy.Type = appsv1.OnDeleteStatefulSetStrategyType
+			})
+
+			It("should sync runtime properly and worker sts's spec and worker command will be updated", func() {
+				oldValue := mockJuiceFSValue(dataset, juicefsruntime)
+				latestValue := mockJuiceFSValue(dataset, juicefsruntime)
+				latestValue.Worker.Command = latestValue.Worker.Command + ",new-opt=new-value"
+				changed, err := engine.syncWorkerSpec(cruntime.ReconcileRequestContext{}, juicefsruntime, oldValue, latestValue)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(changed).To(BeTrue())
+
+				updatedSts, err := kubeclient.GetStatefulSet(client, mockedObjects.WorkerSts.Name, mockedObjects.WorkerSts.Namespace)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(updatedSts.Spec.Template.ObjectMeta.Annotations).To(HaveKey("kubectl.kubernetes.io/restartedAt"))
+				Expect(oldValue.Worker.Command).To(ContainSubstring("new-opt=new-value"))
+
+				cm, err := kubeclient.GetConfigmapByName(client, engine.getWorkerScriptName(), juicefsruntime.Namespace)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cm.Data["script.sh"]).To(ContainSubstring("new-opt=new-value"))
+			})
+		})
+	})
+
+	Context("Test JuiceFSEngine.syncFuseSpec", func() {
+		When("When nothing changed", func() {
+			BeforeEach(func() {
+				mockedObjects.FuseDs.Spec.UpdateStrategy.Type = appsv1.OnDeleteDaemonSetStrategyType
+			})
+
+			It("should sync runtime properly but no changes will be applied", func() {
+				oldValue := mockJuiceFSValue(dataset, juicefsruntime)
+				latestValue := mockJuiceFSValue(dataset, juicefsruntime)
+				changed, err := engine.syncFuseSpec(cruntime.ReconcileRequestContext{}, juicefsruntime, oldValue, latestValue)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(changed).To(BeFalse())
+
+				updatedDs, err := kubeclient.GetDaemonset(client, mockedObjects.FuseDs.Name, mockedObjects.FuseDs.Namespace)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(updatedDs).To(Equal(mockedObjects.FuseDs))
+			})
+		})
+
+		When("some fields in Runtime's spec changed", func() {
+			BeforeEach(func() {
+				mockedObjects.FuseDs.Spec.UpdateStrategy.Type = appsv1.OnDeleteDaemonSetStrategyType
+			})
+
+			It("should sync runtime properly and fuse ds's spec will be updated", func() {
+				oldValue := mockJuiceFSValue(dataset, juicefsruntime)
+				latestValue := mockJuiceFSValue(dataset, juicefsruntime)
+				latestValue.Fuse.Labels = map[string]string{"foo": "bar"}
+				latestValue.Fuse.Annotations = map[string]string{"foo-anno": "bar-anno"}
+				latestValue.Fuse.Envs = []corev1.EnvVar{
+					{
+						Name:  "FOO-ENV",
+						Value: "BAR-ENV",
+					},
+				}
+				latestValue.Fuse.Volumes = append(latestValue.Fuse.Volumes, corev1.Volume{Name: "added-vol", VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/mnt/host-vol"}}})
+				latestValue.Fuse.VolumeMounts = append(latestValue.Fuse.VolumeMounts, corev1.VolumeMount{Name: "added-vol", MountPath: "/mnt/host-vol"})
+				changed, err := engine.syncFuseSpec(cruntime.ReconcileRequestContext{}, juicefsruntime, oldValue, latestValue)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(changed).To(BeTrue())
+
+				// check if old values are updated
+				Expect(oldValue).To(Equal(latestValue))
+
+				// check if fuse ds is updated
+				updatedDs, err := kubeclient.GetDaemonset(client, mockedObjects.FuseDs.Name, mockedObjects.FuseDs.Namespace)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(updatedDs.Spec.Template.Labels).To(HaveKeyWithValue("foo", "bar"))
+				Expect(updatedDs.Spec.Template.Annotations).To(HaveKeyWithValue("foo-anno", "bar-anno"))
+				Expect(updatedDs.Spec.Template.Spec.Containers[0].Env).To(ContainElement(corev1.EnvVar{Name: "FOO-ENV", Value: "BAR-ENV"}))
+				Expect(updatedDs.Spec.Template.Spec.Volumes).To(ContainElement(corev1.Volume{Name: "added-vol", VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/mnt/host-vol"}}}))
+				Expect(updatedDs.Spec.Template.Spec.Containers[0].VolumeMounts).To(ContainElement(corev1.VolumeMount{Name: "added-vol", MountPath: "/mnt/host-vol"}))
+			})
+		})
+	})
+
+	When("only command changes", func() {
+		BeforeEach(func() {
+			mockedObjects.FuseDs.Spec.UpdateStrategy.Type = appsv1.OnDeleteDaemonSetStrategyType
+		})
+
+		It("should sync runtime properly and worker sts's spec and worker command will be updated", func() {
+			oldValue := mockJuiceFSValue(dataset, juicefsruntime)
+			latestValue := mockJuiceFSValue(dataset, juicefsruntime)
+			latestValue.Fuse.Command = latestValue.Fuse.Command + ",new-opt=new-value"
+			changed, err := engine.syncFuseSpec(cruntime.ReconcileRequestContext{}, juicefsruntime, oldValue, latestValue)
+			Expect(err).NotTo(HaveOccurred())
+			// Currently, for fuse, command change will not affect daemonset's spec. So it's not changed.
+			Expect(changed).To(BeFalse())
+
+			Expect(oldValue.Fuse.Command).To(ContainSubstring("new-opt=new-value"))
+
+			cm, err := kubeclient.GetConfigmapByName(client, engine.getFuseScriptName(), juicefsruntime.Namespace)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cm.Data["script.sh"]).To(ContainSubstring("new-opt=new-value"))
+
+		})
+	})
+
+})
 
 func TestJuiceFSxEngine_syncWorkerSpec(t *testing.T) {
 	cms := []corev1.ConfigMap{

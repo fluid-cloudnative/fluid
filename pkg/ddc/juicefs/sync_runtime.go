@@ -139,6 +139,9 @@ func (j *JuiceFSEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, run
 		if !changed {
 			// if worker sts not changed, rollout worker sts to reload the script
 			j.Log.Info("syncWorkerSpec: rollout restart worker", "sts", workersToUpdate.Name)
+			if len(workersToUpdate.Spec.Template.ObjectMeta.Annotations) == 0 {
+				workersToUpdate.Spec.Template.ObjectMeta.Annotations = map[string]string{}
+			}
 			workersToUpdate.Spec.Template.ObjectMeta.Annotations["kubectl.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
 			changed = true
 		}
