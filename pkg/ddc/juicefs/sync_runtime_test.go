@@ -103,6 +103,27 @@ var _ = Describe("JuiceFS Sync Runtime Related Tests", Label("pkg.ddc.juicefs.sy
 			})
 		})
 
+		When("upgrade Fluid from v1.0.6 to v1.0.7+, cache-dir volume index logic changed", func() {
+			BeforeEach(func() {
+				mockedObjects.WorkerSts.Spec.UpdateStrategy.Type = appsv1.OnDeleteStatefulSetStrategyType
+			})
+
+			It("should update worker sts's volumes and volume mounts", func() {
+				oldValue := mockJuiceFSValue(dataset, juicefsruntime)
+				oldValue.Worker.Volumes = []corev1.Volume{{Name: "cache-dir-1", VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}}}
+				oldValue.Worker.VolumeMounts = []corev1.VolumeMount{{Name: "cache-dir-1", MountPath: "/mnt/cache"}}
+				latestValue := mockJuiceFSValue(dataset, juicefsruntime)
+				changed, err := engine.syncWorkerSpec(cruntime.ReconcileRequestContext{}, juicefsruntime, oldValue, latestValue)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(changed).To(BeTrue())
+
+				updatedSts, err := kubeclient.GetStatefulSet(client, mockedObjects.WorkerSts.Name, mockedObjects.WorkerSts.Namespace)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(updatedSts.Spec.Template.Spec.Volumes).To(ContainElement(corev1.Volume{Name: "cache-dir-0", VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}}))
+				Expect(updatedSts.Spec.Template.Spec.Containers[0].VolumeMounts).To(ContainElement(corev1.VolumeMount{Name: "cache-dir-0", MountPath: "/mnt/cache"}))
+			})
+		})
+
 		When("some fields in Runtime's spec changed", func() {
 			BeforeEach(func() {
 				mockedObjects.WorkerSts.Spec.UpdateStrategy.Type = appsv1.OnDeleteStatefulSetStrategyType
