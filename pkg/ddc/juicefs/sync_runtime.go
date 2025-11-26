@@ -206,13 +206,7 @@ func (j *JuiceFSEngine) checkAndSetWorkerChanges(oldValue, latestValue *JuiceFS,
 		workerChanged = true
 	}
 
-	containerIdx := -1
-	for i, ctr := range workersToUpdate.Spec.Template.Spec.Containers {
-		if ctr.Name == JuiceFSWorkerContainerName {
-			containerIdx = i
-			break
-		}
-	}
+	containerIdx := utils.GetContainerIndex(workersToUpdate.Spec.Template.Spec.Containers, JuiceFSWorkerContainerName)
 
 	if containerIdx >= 0 {
 		// resource
@@ -359,13 +353,7 @@ func (j *JuiceFSEngine) checkAndSetFuseChanges(oldValue, latestValue *JuiceFS, r
 		fuseChanged = true
 	}
 
-	containerIdx := -1
-	for i, ctr := range fusesToUpdate.Spec.Template.Spec.Containers {
-		if ctr.Name == JuiceFSFuseContainerName {
-			containerIdx = i
-			break
-		}
-	}
+	containerIdx := utils.GetContainerIndex(fusesToUpdate.Spec.Template.Spec.Containers, JuiceFSFuseContainerName)
 
 	if containerIdx >= 0 {
 		// resource

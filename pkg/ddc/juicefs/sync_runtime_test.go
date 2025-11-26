@@ -121,6 +121,7 @@ var _ = Describe("JuiceFS Sync Runtime Related Tests", Label("pkg.ddc.juicefs.sy
 				}
 				latestValue.Worker.Volumes = append(latestValue.Worker.Volumes, corev1.Volume{Name: "added-vol", VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/mnt/host-vol"}}})
 				latestValue.Worker.VolumeMounts = append(latestValue.Worker.VolumeMounts, corev1.VolumeMount{Name: "added-vol", MountPath: "/mnt/host-vol"})
+				latestValue.Worker.NodeSelector = map[string]string{"foo-nodeselector": "bar-nodeselector"}
 				changed, err := engine.syncWorkerSpec(cruntime.ReconcileRequestContext{}, juicefsruntime, oldValue, latestValue)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(changed).To(BeTrue())
@@ -136,6 +137,34 @@ var _ = Describe("JuiceFS Sync Runtime Related Tests", Label("pkg.ddc.juicefs.sy
 				Expect(updatedSts.Spec.Template.Spec.Containers[0].Env).To(ContainElement(corev1.EnvVar{Name: "FOO-ENV", Value: "BAR-ENV"}))
 				Expect(updatedSts.Spec.Template.Spec.Volumes).To(ContainElement(corev1.Volume{Name: "added-vol", VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/mnt/host-vol"}}}))
 				Expect(updatedSts.Spec.Template.Spec.Containers[0].VolumeMounts).To(ContainElement(corev1.VolumeMount{Name: "added-vol", MountPath: "/mnt/host-vol"}))
+				Expect(updatedSts.Spec.Template.Spec.NodeSelector).To(HaveKeyWithValue("foo-nodeselector", "bar-nodeselector"))
+			})
+		})
+
+		When("only image changed", func() {
+			BeforeEach(func() {
+				mockedObjects.WorkerSts.Spec.UpdateStrategy.Type = appsv1.OnDeleteStatefulSetStrategyType
+			})
+
+			It("should sync runtime properly and worker sts's image will be updated", func() {
+				oldValue := mockJuiceFSValue(dataset, juicefsruntime)
+				latestValue := mockJuiceFSValue(dataset, juicefsruntime)
+
+				juicefsruntime.Spec.JuiceFSVersion.Image = "juicefs/juicefs-fuse"
+				juicefsruntime.Spec.JuiceFSVersion.ImageTag = "new-tag"
+				latestValue.Image = juicefsruntime.Spec.JuiceFSVersion.Image
+				latestValue.ImageTag = juicefsruntime.Spec.JuiceFSVersion.ImageTag
+
+				changed, err := engine.syncWorkerSpec(cruntime.ReconcileRequestContext{}, juicefsruntime, oldValue, latestValue)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(changed).To(BeTrue())
+
+				Expect(oldValue.Image).To(Equal(juicefsruntime.Spec.JuiceFSVersion.Image))
+				Expect(oldValue.ImageTag).To(Equal(juicefsruntime.Spec.JuiceFSVersion.ImageTag))
+
+				updatedSts, err := kubeclient.GetStatefulSet(client, mockedObjects.WorkerSts.Name, mockedObjects.WorkerSts.Namespace)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(updatedSts.Spec.Template.Spec.Containers[0].Image).To(Equal(juicefsruntime.Spec.JuiceFSVersion.Image + ":" + juicefsruntime.Spec.JuiceFSVersion.ImageTag))
 			})
 		})
 
@@ -166,10 +195,6 @@ var _ = Describe("JuiceFS Sync Runtime Related Tests", Label("pkg.ddc.juicefs.sy
 
 	Context("Test JuiceFSEngine.syncFuseSpec", func() {
 		When("When nothing changed", func() {
-			BeforeEach(func() {
-				mockedObjects.FuseDs.Spec.UpdateStrategy.Type = appsv1.OnDeleteDaemonSetStrategyType
-			})
-
 			It("should sync runtime properly but no changes will be applied", func() {
 				oldValue := mockJuiceFSValue(dataset, juicefsruntime)
 				latestValue := mockJuiceFSValue(dataset, juicefsruntime)
@@ -184,10 +209,6 @@ var _ = Describe("JuiceFS Sync Runtime Related Tests", Label("pkg.ddc.juicefs.sy
 		})
 
 		When("some fields in Runtime's spec changed", func() {
-			BeforeEach(func() {
-				mockedObjects.FuseDs.Spec.UpdateStrategy.Type = appsv1.OnDeleteDaemonSetStrategyType
-			})
-
 			It("should sync runtime properly and fuse ds's spec will be updated", func() {
 				oldValue := mockJuiceFSValue(dataset, juicefsruntime)
 				latestValue := mockJuiceFSValue(dataset, juicefsruntime)
@@ -220,12 +241,33 @@ var _ = Describe("JuiceFS Sync Runtime Related Tests", Label("pkg.ddc.juicefs.sy
 		})
 	})
 
-	When("only command changes", func() {
-		BeforeEach(func() {
-			mockedObjects.FuseDs.Spec.UpdateStrategy.Type = appsv1.OnDeleteDaemonSetStrategyType
+	When("only image changes", func() {
+		It("should sync runtime properly and image will be updated", func() {
+			juicefsruntime.Spec.Fuse.Image = "juicefs/juicefs-fuse"
+			juicefsruntime.Spec.Fuse.ImageTag = "new-tag"
+
+			oldValue := mockJuiceFSValue(dataset, juicefsruntime)
+			latestValue := mockJuiceFSValue(dataset, juicefsruntime)
+			latestValue.Fuse.Image = juicefsruntime.Spec.Fuse.Image
+			latestValue.Fuse.ImageTag = juicefsruntime.Spec.Fuse.ImageTag
+			changed, err := engine.syncFuseSpec(cruntime.ReconcileRequestContext{}, juicefsruntime, oldValue, latestValue)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(changed).To(BeTrue())
+
+			Expect(oldValue.Fuse.Image).To(Equal(juicefsruntime.Spec.Fuse.Image))
+			Expect(oldValue.Fuse.ImageTag).To(Equal(juicefsruntime.Spec.Fuse.ImageTag))
+
+			updatedDs, err := kubeclient.GetDaemonset(client, mockedObjects.FuseDs.Name, mockedObjects.FuseDs.Namespace)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(updatedDs.Spec.Template.Spec.Containers[0].Image).To(Equal(juicefsruntime.Spec.Fuse.Image + ":" + juicefsruntime.Spec.Fuse.ImageTag))
+			// image changes lead to fuse generation changes
+			Expect(updatedDs.Spec.Template.ObjectMeta.Labels).To(HaveKeyWithValue(common.LabelRuntimeFuseGeneration, "1"))
 		})
 
-		It("should sync runtime properly and worker sts's spec and worker command will be updated", func() {
+	})
+
+	When("only command changes", func() {
+		It("should sync runtime properly and fuse ds's spec and fuse command will be updated", func() {
 			oldValue := mockJuiceFSValue(dataset, juicefsruntime)
 			latestValue := mockJuiceFSValue(dataset, juicefsruntime)
 			latestValue.Fuse.Command = latestValue.Fuse.Command + ",new-opt=new-value"
