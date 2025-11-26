@@ -1278,7 +1278,7 @@ var _ = Describe("JuiceFSEngine.checkAndSetFuseChanges()", func() {
 			}
 		})
 
-		Context("When latestValue chnaged because runtime.spec changed (i.e. user update/patch runtime.spec)", func() {
+		Context("When latestValue changed because runtime.spec changed (i.e. user update/patch runtime.spec)", func() {
 			Context("Detect fuse nodeSelector changes", func() {
 				cases := []struct {
 					caseText            string
@@ -1321,7 +1321,7 @@ var _ = Describe("JuiceFSEngine.checkAndSetFuseChanges()", func() {
 				}
 			})
 
-			Context("detect volume chnages", func() {
+			Context("detect volume changes", func() {
 				cases := []struct {
 					caseText      string
 					latestVolumes []corev1.Volume
@@ -1481,7 +1481,7 @@ var _ = Describe("JuiceFSEngine.checkAndSetFuseChanges()", func() {
 				}
 			})
 
-			Context("detect resources chnages", func() {
+			Context("detect resources changes", func() {
 				cases := []struct {
 					caseText         string
 					latestResources  common.Resources
@@ -1734,7 +1734,7 @@ var _ = Describe("JuiceFSEngine.checkAndSetFuseChanges()", func() {
 					runtime.Spec.Fuse.Image = ""
 					runtime.Spec.Fuse.ImageTag = ""
 
-					// latestValue changes probably because our default image chnages
+					// latestValue changes probably because our default image changes
 					latestValue.Fuse.Image = "juicefs/fuse"
 					latestValue.Fuse.ImageTag = "v2.0.0"
 

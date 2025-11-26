@@ -41,7 +41,7 @@ import (
 func (j *JuiceFSEngine) SyncRuntime(ctx cruntime.ReconcileRequestContext) (changed bool, err error) {
 	runtime, err := j.getRuntime()
 	if err != nil {
-		return changed, err
+		return
 	}
 
 	var latestValue *JuiceFS
@@ -50,7 +50,7 @@ func (j *JuiceFSEngine) SyncRuntime(ctx cruntime.ReconcileRequestContext) (chang
 		return
 	}
 
-	// Syncing the runtime spec in a atomic way: if anything unexpected happens in the middle, the process can be retry and inconsitency will be fixed.
+	// Syncing the runtime spec in a atomic way: if anything unexpected happens in the middle, the process can be retry and inconsistency will be fixed.
 	// 1. get old value from configmap
 	// 2. sync worker spec given old value, latest value, and runtime spec. Meanwhile, old value will be updated to match what has been synced.
 	// 3. sync fuse spec given old value, latest value, and runtime spec. Meanwhile, old value will be updated to match what has been synced.
@@ -80,7 +80,8 @@ func (j *JuiceFSEngine) SyncRuntime(ctx cruntime.ReconcileRequestContext) (chang
 			j.Log.Info("Fuse Spec is updated", "name", ctx.Name, "namespace", ctx.Namespace)
 		}
 
-		if workerChanged || fuseChanged {
+		changed = workerChanged || fuseChanged
+		if changed {
 			j.Log.Info("Committing changed value to configmap", "name", ctx.Name, "namespace", ctx.Namespace)
 			if innerErr = j.SaveValueToConfigmap(valueToSync); innerErr != nil {
 				j.Log.Error(innerErr, "failed to save changed value to configmap")
@@ -351,7 +352,7 @@ func (j *JuiceFSEngine) checkAndSetFuseChanges(oldValue, latestValue *JuiceFS, r
 
 	// annotations
 	if annoChanged, newAnnos := j.isAnnotationsChanged(oldValue.Fuse.Annotations, latestValue.Fuse.Annotations); annoChanged {
-		j.Log.Info("syncFuseSpec annotations changed", "old", oldValue.Fuse.Annotations, "new", newAnnos)
+		j.Log.Info("syncFuseSpec: annotations changed", "old", oldValue.Fuse.Annotations, "new", newAnnos)
 		fusesToUpdate.Spec.Template.ObjectMeta.Annotations =
 			utils.UnionMapsWithOverride(utils.GetMapsDifference(fusesToUpdate.Spec.Template.ObjectMeta.Annotations, oldValue.Fuse.Annotations), newAnnos)
 		oldValue.Fuse.Annotations = latestValue.Fuse.Annotations
