@@ -265,6 +265,14 @@ var _ = Describe("Application Injector Related Tests", Label("pkg.application.in
 		Expect(out.Spec.Containers[containerIdx].Env).To(ContainElements(fuseDs.Spec.Template.Spec.Containers[0].Env))
 
 		fuseContainerSuffix := strings.TrimPrefix(containerName, common.FuseContainerName)
+		// Verify post start hook
+		Expect(out.Spec.Containers[containerIdx].Lifecycle.PostStart).To(Equal(&corev1.LifecycleHandler{
+			Exec: &corev1.ExecAction{
+				Command: []string{"bash", "-c", fmt.Sprintf("time /check-mount.sh /runtime-mnt/thin/%s/%s/ thin ", dataset.Namespace, dataset.Name)},
+			},
+		}))
+
+		// Verify the fuse container volume mounts
 		for _, vm := range fuseDs.Spec.Template.Spec.Containers[0].VolumeMounts {
 			vm.Name = vm.Name + fuseContainerSuffix
 			Expect(out.Spec.Containers[containerIdx].VolumeMounts).To(ContainElement(vm))
@@ -276,6 +284,7 @@ var _ = Describe("Application Injector Related Tests", Label("pkg.application.in
 			SubPath:   "check-mount.sh",
 		}))
 
+		// Verify the fuse container volumes
 		for _, v := range fuseDs.Spec.Template.Spec.Volumes {
 			v.Name = v.Name + fuseContainerSuffix
 			Expect(out.Spec.Volumes).To(ContainElement(v))
