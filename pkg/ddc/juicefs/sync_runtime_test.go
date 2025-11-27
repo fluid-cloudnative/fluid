@@ -28,12 +28,297 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
+
+var _ = Describe("JuiceFS Sync Runtime Related Tests", Label("pkg.ddc.juicefs.sync_runtime_test.go"), func() {
+	var (
+		dataset        *datav1alpha1.Dataset
+		juicefsruntime *datav1alpha1.JuiceFSRuntime
+		engine         *JuiceFSEngine
+		mockedObjects  mockedObjects
+		client         client.Client
+		resources      []runtime.Object
+	)
+	BeforeEach(func() {
+		dataset, juicefsruntime = mockFluidObjectsForTests(types.NamespacedName{Namespace: "fluid", Name: "jfsdemo"})
+		engine = mockJuiceFSEngineForTests(dataset, juicefsruntime)
+		mockedObjects = mockJuiceFSObjectsForTests(dataset, juicefsruntime, engine)
+		resources = []runtime.Object{
+			dataset,
+			juicefsruntime,
+			mockedObjects.WorkerSts,
+			mockedObjects.FuseDs,
+			mockedObjects.PersistentVolume,
+			mockedObjects.PersistentVolumeClaim,
+		}
+		for _, v := range mockedObjects.ConfigMaps {
+			resources = append(resources, v)
+		}
+	})
+
+	// JustBeforeEach is guaranteed to run after every BeforeEach()
+	// So it's easy to modify resources' specs with an extra BeforeEach()
+	JustBeforeEach(func() {
+		client = fake.NewFakeClientWithScheme(datav1alpha1.UnitTestScheme, resources...)
+		engine.runtimeInfo.SetFuseName(engine.getFuseName())
+		engine.Client = client
+	})
+
+	Context("Test JuiceFSEngine.syncWorkerSpec", func() {
+		When("Worker spec does not have a OnDelete update strategy", func() {
+			BeforeEach(func() {
+				mockedObjects.WorkerSts.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
+			})
+
+			It("should skip syncing", func() {
+				changed, err := engine.syncWorkerSpec(cruntime.ReconcileRequestContext{}, juicefsruntime, &JuiceFS{}, &JuiceFS{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(changed).To(BeFalse())
+			})
+		})
+
+		When("When nothing changed", func() {
+			BeforeEach(func() {
+				mockedObjects.WorkerSts.Spec.UpdateStrategy.Type = appsv1.OnDeleteStatefulSetStrategyType
+			})
+
+			It("should sync runtime properly but no changes will be applied", func() {
+				oldValue := mockJuiceFSValue(dataset, juicefsruntime)
+				latestValue := mockJuiceFSValue(dataset, juicefsruntime)
+				changed, err := engine.syncWorkerSpec(cruntime.ReconcileRequestContext{}, juicefsruntime, oldValue, latestValue)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(changed).To(BeFalse())
+
+				updatedSts, err := kubeclient.GetStatefulSet(client, mockedObjects.WorkerSts.Name, mockedObjects.WorkerSts.Namespace)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(updatedSts).To(Equal(mockedObjects.WorkerSts))
+			})
+		})
+
+		When("upgrade Fluid from v1.0.6 to v1.0.7+, cache-dir volume index logic changed", func() {
+			BeforeEach(func() {
+				mockedObjects.WorkerSts.Spec.UpdateStrategy.Type = appsv1.OnDeleteStatefulSetStrategyType
+			})
+
+			It("should update worker sts's volumes and volume mounts", func() {
+				oldValue := mockJuiceFSValue(dataset, juicefsruntime)
+				oldValue.Worker.Volumes = []corev1.Volume{{Name: "cache-dir-1", VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}}}
+				oldValue.Worker.VolumeMounts = []corev1.VolumeMount{{Name: "cache-dir-1", MountPath: "/mnt/cache"}}
+				latestValue := mockJuiceFSValue(dataset, juicefsruntime)
+				changed, err := engine.syncWorkerSpec(cruntime.ReconcileRequestContext{}, juicefsruntime, oldValue, latestValue)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(changed).To(BeTrue())
+
+				updatedSts, err := kubeclient.GetStatefulSet(client, mockedObjects.WorkerSts.Name, mockedObjects.WorkerSts.Namespace)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(updatedSts.Spec.Template.Spec.Volumes).To(ContainElement(corev1.Volume{Name: "cache-dir-0", VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}}))
+				Expect(updatedSts.Spec.Template.Spec.Containers[0].VolumeMounts).To(ContainElement(corev1.VolumeMount{Name: "cache-dir-0", MountPath: "/mnt/cache"}))
+			})
+		})
+
+		When("some fields in Runtime's spec changed", func() {
+			BeforeEach(func() {
+				mockedObjects.WorkerSts.Spec.UpdateStrategy.Type = appsv1.OnDeleteStatefulSetStrategyType
+			})
+
+			It("should sync runtime properly and worker sts's spec will be updated", func() {
+				oldValue := mockJuiceFSValue(dataset, juicefsruntime)
+				latestValue := mockJuiceFSValue(dataset, juicefsruntime)
+				latestValue.Worker.Labels = map[string]string{"foo": "bar"}
+				latestValue.Worker.Annotations = map[string]string{"foo-anno": "bar-anno"}
+				latestValue.Worker.Envs = []corev1.EnvVar{
+					{
+						Name:  "FOO-ENV",
+						Value: "BAR-ENV",
+					},
+				}
+				latestValue.Worker.Volumes = append(latestValue.Worker.Volumes, corev1.Volume{Name: "added-vol", VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/mnt/host-vol"}}})
+				latestValue.Worker.VolumeMounts = append(latestValue.Worker.VolumeMounts, corev1.VolumeMount{Name: "added-vol", MountPath: "/mnt/host-vol"})
+				latestValue.Worker.NodeSelector = map[string]string{"foo-nodeselector": "bar-nodeselector"}
+				changed, err := engine.syncWorkerSpec(cruntime.ReconcileRequestContext{}, juicefsruntime, oldValue, latestValue)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(changed).To(BeTrue())
+
+				// check if old values are updated
+				Expect(oldValue).To(Equal(latestValue))
+
+				// check if worker sts is updated
+				updatedSts, err := kubeclient.GetStatefulSet(client, mockedObjects.WorkerSts.Name, mockedObjects.WorkerSts.Namespace)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(updatedSts.Spec.Template.Labels).To(HaveKeyWithValue("foo", "bar"))
+				Expect(updatedSts.Spec.Template.Annotations).To(HaveKeyWithValue("foo-anno", "bar-anno"))
+				Expect(updatedSts.Spec.Template.Spec.Containers[0].Env).To(ContainElement(corev1.EnvVar{Name: "FOO-ENV", Value: "BAR-ENV"}))
+				Expect(updatedSts.Spec.Template.Spec.Volumes).To(ContainElement(corev1.Volume{Name: "added-vol", VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/mnt/host-vol"}}}))
+				Expect(updatedSts.Spec.Template.Spec.Containers[0].VolumeMounts).To(ContainElement(corev1.VolumeMount{Name: "added-vol", MountPath: "/mnt/host-vol"}))
+				Expect(updatedSts.Spec.Template.Spec.NodeSelector).To(HaveKeyWithValue("foo-nodeselector", "bar-nodeselector"))
+			})
+		})
+
+		When("only image changed", func() {
+			BeforeEach(func() {
+				mockedObjects.WorkerSts.Spec.UpdateStrategy.Type = appsv1.OnDeleteStatefulSetStrategyType
+			})
+
+			It("should sync runtime properly and worker sts's image will be updated", func() {
+				oldValue := mockJuiceFSValue(dataset, juicefsruntime)
+				latestValue := mockJuiceFSValue(dataset, juicefsruntime)
+
+				juicefsruntime.Spec.JuiceFSVersion.Image = "juicefs/juicefs-fuse"
+				juicefsruntime.Spec.JuiceFSVersion.ImageTag = "new-tag"
+				latestValue.Image = juicefsruntime.Spec.JuiceFSVersion.Image
+				latestValue.ImageTag = juicefsruntime.Spec.JuiceFSVersion.ImageTag
+
+				changed, err := engine.syncWorkerSpec(cruntime.ReconcileRequestContext{}, juicefsruntime, oldValue, latestValue)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(changed).To(BeTrue())
+
+				Expect(oldValue.Image).To(Equal(juicefsruntime.Spec.JuiceFSVersion.Image))
+				Expect(oldValue.ImageTag).To(Equal(juicefsruntime.Spec.JuiceFSVersion.ImageTag))
+
+				updatedSts, err := kubeclient.GetStatefulSet(client, mockedObjects.WorkerSts.Name, mockedObjects.WorkerSts.Namespace)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(updatedSts.Spec.Template.Spec.Containers[0].Image).To(Equal(juicefsruntime.Spec.JuiceFSVersion.Image + ":" + juicefsruntime.Spec.JuiceFSVersion.ImageTag))
+			})
+		})
+
+		When("only command changed", func() {
+			BeforeEach(func() {
+				mockedObjects.WorkerSts.Spec.UpdateStrategy.Type = appsv1.OnDeleteStatefulSetStrategyType
+			})
+
+			It("should sync runtime properly and worker sts's spec and worker command will be updated", func() {
+				oldValue := mockJuiceFSValue(dataset, juicefsruntime)
+				latestValue := mockJuiceFSValue(dataset, juicefsruntime)
+				latestValue.Worker.Command = latestValue.Worker.Command + ",new-opt=new-value"
+				changed, err := engine.syncWorkerSpec(cruntime.ReconcileRequestContext{}, juicefsruntime, oldValue, latestValue)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(changed).To(BeTrue())
+
+				updatedSts, err := kubeclient.GetStatefulSet(client, mockedObjects.WorkerSts.Name, mockedObjects.WorkerSts.Namespace)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(updatedSts.Spec.Template.ObjectMeta.Annotations).To(HaveKey("kubectl.kubernetes.io/restartedAt"))
+				Expect(oldValue.Worker.Command).To(ContainSubstring("new-opt=new-value"))
+
+				cm, err := kubeclient.GetConfigmapByName(client, engine.getWorkerScriptName(), juicefsruntime.Namespace)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cm.Data["script.sh"]).To(ContainSubstring("new-opt=new-value"))
+			})
+		})
+	})
+
+	Context("Test JuiceFSEngine.syncFuseSpec", func() {
+		When("Fuse spec does not have a OnDelete update strategy", func() {
+			BeforeEach(func() {
+				mockedObjects.FuseDs.Spec.UpdateStrategy.Type = appsv1.RollingUpdateDaemonSetStrategyType
+			})
+
+			It("should skip syncing", func() {
+				changed, err := engine.syncWorkerSpec(cruntime.ReconcileRequestContext{}, juicefsruntime, &JuiceFS{}, &JuiceFS{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(changed).To(BeFalse())
+			})
+		})
+
+		When("When nothing changed", func() {
+			It("should sync runtime properly but no changes will be applied", func() {
+				oldValue := mockJuiceFSValue(dataset, juicefsruntime)
+				latestValue := mockJuiceFSValue(dataset, juicefsruntime)
+				changed, err := engine.syncFuseSpec(cruntime.ReconcileRequestContext{}, juicefsruntime, oldValue, latestValue)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(changed).To(BeFalse())
+
+				updatedDs, err := kubeclient.GetDaemonset(client, mockedObjects.FuseDs.Name, mockedObjects.FuseDs.Namespace)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(updatedDs).To(Equal(mockedObjects.FuseDs))
+			})
+		})
+
+		When("some fields in Runtime's spec changed", func() {
+			It("should sync runtime properly and fuse ds's spec will be updated", func() {
+				oldValue := mockJuiceFSValue(dataset, juicefsruntime)
+				latestValue := mockJuiceFSValue(dataset, juicefsruntime)
+				latestValue.Fuse.Labels = map[string]string{"foo": "bar"}
+				latestValue.Fuse.Annotations = map[string]string{"foo-anno": "bar-anno"}
+				latestValue.Fuse.Envs = []corev1.EnvVar{
+					{
+						Name:  "FOO-ENV",
+						Value: "BAR-ENV",
+					},
+				}
+				latestValue.Fuse.Volumes = append(latestValue.Fuse.Volumes, corev1.Volume{Name: "added-vol", VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/mnt/host-vol"}}})
+				latestValue.Fuse.VolumeMounts = append(latestValue.Fuse.VolumeMounts, corev1.VolumeMount{Name: "added-vol", MountPath: "/mnt/host-vol"})
+				changed, err := engine.syncFuseSpec(cruntime.ReconcileRequestContext{}, juicefsruntime, oldValue, latestValue)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(changed).To(BeTrue())
+
+				// check if old values are updated
+				Expect(oldValue).To(Equal(latestValue))
+
+				// check if fuse ds is updated
+				updatedDs, err := kubeclient.GetDaemonset(client, mockedObjects.FuseDs.Name, mockedObjects.FuseDs.Namespace)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(updatedDs.Spec.Template.Labels).To(HaveKeyWithValue("foo", "bar"))
+				Expect(updatedDs.Spec.Template.Annotations).To(HaveKeyWithValue("foo-anno", "bar-anno"))
+				Expect(updatedDs.Spec.Template.Spec.Containers[0].Env).To(ContainElement(corev1.EnvVar{Name: "FOO-ENV", Value: "BAR-ENV"}))
+				Expect(updatedDs.Spec.Template.Spec.Volumes).To(ContainElement(corev1.Volume{Name: "added-vol", VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/mnt/host-vol"}}}))
+				Expect(updatedDs.Spec.Template.Spec.Containers[0].VolumeMounts).To(ContainElement(corev1.VolumeMount{Name: "added-vol", MountPath: "/mnt/host-vol"}))
+			})
+		})
+	})
+
+	When("only image changes", func() {
+		It("should sync runtime properly and image will be updated", func() {
+			juicefsruntime.Spec.Fuse.Image = "juicefs/juicefs-fuse"
+			juicefsruntime.Spec.Fuse.ImageTag = "new-tag"
+
+			oldValue := mockJuiceFSValue(dataset, juicefsruntime)
+			latestValue := mockJuiceFSValue(dataset, juicefsruntime)
+			latestValue.Fuse.Image = juicefsruntime.Spec.Fuse.Image
+			latestValue.Fuse.ImageTag = juicefsruntime.Spec.Fuse.ImageTag
+			changed, err := engine.syncFuseSpec(cruntime.ReconcileRequestContext{}, juicefsruntime, oldValue, latestValue)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(changed).To(BeTrue())
+
+			Expect(oldValue.Fuse.Image).To(Equal(juicefsruntime.Spec.Fuse.Image))
+			Expect(oldValue.Fuse.ImageTag).To(Equal(juicefsruntime.Spec.Fuse.ImageTag))
+
+			updatedDs, err := kubeclient.GetDaemonset(client, mockedObjects.FuseDs.Name, mockedObjects.FuseDs.Namespace)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(updatedDs.Spec.Template.Spec.Containers[0].Image).To(Equal(juicefsruntime.Spec.Fuse.Image + ":" + juicefsruntime.Spec.Fuse.ImageTag))
+			// image changes lead to fuse generation changes
+			Expect(updatedDs.Spec.Template.ObjectMeta.Labels).To(HaveKeyWithValue(common.LabelRuntimeFuseGeneration, "1"))
+		})
+
+	})
+
+	When("only command changes", func() {
+		It("should sync runtime properly and fuse ds's spec and fuse command will be updated", func() {
+			oldValue := mockJuiceFSValue(dataset, juicefsruntime)
+			latestValue := mockJuiceFSValue(dataset, juicefsruntime)
+			latestValue.Fuse.Command = latestValue.Fuse.Command + ",new-opt=new-value"
+			changed, err := engine.syncFuseSpec(cruntime.ReconcileRequestContext{}, juicefsruntime, oldValue, latestValue)
+			Expect(err).NotTo(HaveOccurred())
+			// Currently, for fuse, command change will not affect daemonset's spec. So it's not changed.
+			Expect(changed).To(BeFalse())
+
+			Expect(oldValue.Fuse.Command).To(ContainSubstring("new-opt=new-value"))
+
+			cm, err := kubeclient.GetConfigmapByName(client, engine.getFuseScriptName(), juicefsruntime.Namespace)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cm.Data["script.sh"]).To(ContainSubstring("new-opt=new-value"))
+
+		})
+	})
+
+})
 
 func TestJuiceFSxEngine_syncWorkerSpec(t *testing.T) {
 	cms := []corev1.ConfigMap{
@@ -245,7 +530,7 @@ func TestJuiceFSxEngine_syncWorkerSpec(t *testing.T) {
 				Log:       fake.NullLogger(),
 				Client:    client,
 			}
-			gotChanged, err := e.syncWorkerSpec(tt.args.ctx, tt.fields.runtime, tt.args.value)
+			gotChanged, err := e.syncWorkerSpec(tt.args.ctx, tt.fields.runtime, &JuiceFS{}, tt.args.value)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Testcase %s JuiceFSEngine.syncWorkerSpec() error = %v, wantErr %v", tt.name, err, tt.wantErr)
 				return
@@ -429,7 +714,7 @@ func TestJuiceFSxEngine_syncFuseSpec(t *testing.T) {
 			value := &JuiceFS{
 				Fuse: Fuse{},
 			}
-			gotChanged, err := e.syncFuseSpec(tt.args.ctx, tt.fields.runtime, value)
+			gotChanged, err := e.syncFuseSpec(tt.args.ctx, tt.fields.runtime, &JuiceFS{}, value)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("testcase %s: JuiceFSEngine.syncFuseSpec() error = %v, wantErr %v", tt.name, err, tt.wantErr)
 				return
@@ -478,10 +763,19 @@ func TestJuiceFSEngine_isVolumeMountsChanged(t *testing.T) {
 			wantNewVolumeMounts: []corev1.VolumeMount{{Name: "test", MountPath: "/data2"}},
 		},
 		{
-			name: "test-new",
+			name: "test-override",
 			args: args{
 				crtVolumeMounts:     []corev1.VolumeMount{{Name: "test", MountPath: "/data"}},
 				runtimeVolumeMounts: []corev1.VolumeMount{{Name: "test2", MountPath: "/data2"}},
+			},
+			wantChanged:         true,
+			wantNewVolumeMounts: []corev1.VolumeMount{{Name: "test2", MountPath: "/data2"}},
+		},
+		{
+			name: "test-add",
+			args: args{
+				crtVolumeMounts:     []corev1.VolumeMount{{Name: "test", MountPath: "/data"}},
+				runtimeVolumeMounts: []corev1.VolumeMount{{Name: "test", MountPath: "/data"}, {Name: "test2", MountPath: "/data2"}},
 			},
 			wantChanged:         true,
 			wantNewVolumeMounts: []corev1.VolumeMount{{Name: "test", MountPath: "/data"}, {Name: "test2", MountPath: "/data2"}},
@@ -545,10 +839,19 @@ func TestJuiceFSEngine_isEnvsChanged(t *testing.T) {
 			wantNewEnvs: []corev1.EnvVar{{Name: "test", Value: "test2"}},
 		},
 		{
-			name: "test-new",
+			name: "test-override",
 			args: args{
 				crtEnvs:     []corev1.EnvVar{{Name: "test", Value: "test"}},
 				runtimeEnvs: []corev1.EnvVar{{Name: "test2", Value: "test2"}},
+			},
+			wantChanged: true,
+			wantNewEnvs: []corev1.EnvVar{{Name: "test2", Value: "test2"}},
+		},
+		{
+			name: "test-add",
+			args: args{
+				crtEnvs:     []corev1.EnvVar{{Name: "test", Value: "test"}},
+				runtimeEnvs: []corev1.EnvVar{{Name: "test", Value: "test"}, {Name: "test2", Value: "test2"}},
 			},
 			wantChanged: true,
 			wantNewEnvs: []corev1.EnvVar{{Name: "test", Value: "test"}, {Name: "test2", Value: "test2"}},
@@ -686,6 +989,15 @@ func TestJuiceFSEngine_isVolumesChanged(t *testing.T) {
 			},
 			wantChanged:    true,
 			wantNewVolumes: []corev1.Volume{{Name: "test", VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/test2"}}}},
+		},
+		{
+			name: "test-deleted",
+			args: args{
+				crtVolumes:     []corev1.Volume{{Name: "test", VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/test"}}}},
+				runtimeVolumes: []corev1.Volume{},
+			},
+			wantChanged:    true,
+			wantNewVolumes: []corev1.Volume{},
 		},
 		{
 			name: "test-new",
@@ -899,13 +1211,22 @@ func TestJuiceFSEngine_isLabelsChanged(t *testing.T) {
 			wantNewLabels: map[string]string{"test": "def"},
 		},
 		{
-			name: "test-new",
+			name: "test-add",
 			args: args{
 				crtLabels:     map[string]string{"test": "abc"},
-				runtimeLabels: map[string]string{"test2": "def"},
+				runtimeLabels: map[string]string{"test": "abc", "test2": "def"},
 			},
 			wantChanged:   true,
 			wantNewLabels: map[string]string{"test": "abc", "test2": "def"},
+		},
+		{
+			name: "test-remove",
+			args: args{
+				crtLabels:     map[string]string{"test": "abc"},
+				runtimeLabels: map[string]string{},
+			},
+			wantChanged:   true,
+			wantNewLabels: map[string]string{},
 		},
 	}
 	for _, tt := range tests {
@@ -957,10 +1278,19 @@ func TestJuiceFSEngine_isAnnotationsChanged(t *testing.T) {
 			name: "test-new",
 			args: args{
 				crtAnnotations:     map[string]string{"test": "abc"},
-				runtimeAnnotations: map[string]string{"test2": "def"},
+				runtimeAnnotations: map[string]string{"test": "abc", "test2": "def"},
 			},
 			wantChanged:        true,
 			wantNewAnnotations: map[string]string{"test": "abc", "test2": "def"},
+		},
+		{
+			name: "test-remove",
+			args: args{
+				crtAnnotations:     map[string]string{"test": "abc"},
+				runtimeAnnotations: map[string]string{},
+			},
+			wantChanged:        true,
+			wantNewAnnotations: map[string]string{},
 		},
 	}
 	for _, tt := range tests {
@@ -979,18 +1309,10 @@ func TestJuiceFSEngine_isAnnotationsChanged(t *testing.T) {
 	}
 }
 
-var _ = Describe("checkAndSetFuseChanges", func() {
-	var (
-		engine *JuiceFSEngine
-		scheme *runtime.Scheme
-	)
+var _ = Describe("JuiceFSEngine.checkAndSetFuseChanges()", func() {
+	var engine *JuiceFSEngine
 
 	BeforeEach(func() {
-		scheme = runtime.NewScheme()
-		_ = datav1alpha1.AddToScheme(scheme)
-		_ = appsv1.AddToScheme(scheme)
-		_ = corev1.AddToScheme(scheme)
-
 		engine = &JuiceFSEngine{
 			name:      "test",
 			namespace: "default",
@@ -999,16 +1321,14 @@ var _ = Describe("checkAndSetFuseChanges", func() {
 
 	Context("When checking Fuse changes", func() {
 		var (
-			currentValue         *JuiceFS
-			latestValue          *JuiceFS
-			runtime              *datav1alpha1.JuiceFSRuntime
-			expectedFuseToUpdate *appsv1.DaemonSet
-			fuseToUpdate         *appsv1.DaemonSet
+			currentValue *JuiceFS
+			latestValue  *JuiceFS
+			runtime      *datav1alpha1.JuiceFSRuntime
+			fuseToUpdate *appsv1.DaemonSet
 		)
 		BeforeEach(func() {
 			currentValue = constructBaseRuntimeValue()
 			latestValue = constructBaseRuntimeValue()
-			expectedFuseToUpdate = constructBaseFuseDaemonset()
 			fuseToUpdate = constructBaseFuseDaemonset()
 
 			runtime = &datav1alpha1.JuiceFSRuntime{
@@ -1033,136 +1353,500 @@ var _ = Describe("checkAndSetFuseChanges", func() {
 			}
 		})
 
-		It("Should detect no changes when current and latest values are identical", func() {
-			changed, generationNeedUpdate := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
+		Context("When latestValue changed because runtime.spec changed (i.e. user update/patch runtime.spec)", func() {
+			Context("Detect fuse nodeSelector changes", func() {
+				cases := []struct {
+					caseText            string
+					latestNodeSelectors map[string]string
+					changed             bool
+				}{
+					{
+						caseText:            "should have no nodeSelector changed",
+						latestNodeSelectors: map[string]string{"key1": "value1"},
+						changed:             false,
+					},
+					{
+						caseText:            "should add a new nodeSelector",
+						latestNodeSelectors: map[string]string{"key1": "value1", "key2": "value2"},
+						changed:             true,
+					},
+					{
+						caseText:            "should remove a new nodeSelector",
+						latestNodeSelectors: map[string]string{},
+						changed:             true,
+					},
+					{
+						caseText:            "should update a old nodeSelector",
+						latestNodeSelectors: map[string]string{"key1": "new-value"},
+						changed:             true,
+					},
+				}
 
-			Expect(changed).To(BeFalse())
-			Expect(generationNeedUpdate).To(BeFalse())
-			Expect(reflect.DeepEqual(*fuseToUpdate, *expectedFuseToUpdate)).To(BeTrue())
-		})
-
-		It("Should detect nodeSelector changes", func() {
-			latestValue.Fuse.NodeSelector["key2"] = "value2"
-			expectedFuseToUpdate.Spec.Template.Spec.NodeSelector["key2"] = "value2"
-			changed, generationNeedUpdate := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
-
-			Expect(changed).To(BeTrue())
-			Expect(generationNeedUpdate).To(BeFalse())
-			Expect(fuseToUpdate.Spec.Template.Spec.NodeSelector).To(HaveKeyWithValue("key2", "value2"))
-			Expect(reflect.DeepEqual(*fuseToUpdate, *expectedFuseToUpdate)).To(BeTrue())
-		})
-		//
-		It("Should detect volume changes", func() {
-			latestValue.Fuse.Volumes = append(latestValue.Fuse.Volumes, corev1.Volume{
-				Name: "new-volume",
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			})
-			expectedFuseToUpdate.Spec.Template.Spec.Volumes = append(expectedFuseToUpdate.Spec.Template.Spec.Volumes, corev1.Volume{
-				Name: "new-volume",
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				}})
-
-			changed, generationNeedUpdate := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
-			Expect(changed).To(BeTrue())
-			Expect(generationNeedUpdate).To(BeFalse())
-			Expect(len(fuseToUpdate.Spec.Template.Spec.Volumes)).To(Equal(3))
-		})
-
-		It("Should detect label changes", func() {
-			latestValue.Fuse.Labels["label2"] = "value2"
-			expectedFuseToUpdate.Spec.Template.Labels["label2"] = "value2"
-
-			changed, generationNeedUpdate := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
-
-			Expect(changed).To(BeTrue())
-			Expect(generationNeedUpdate).To(BeFalse())
-			Expect(fuseToUpdate.Spec.Template.ObjectMeta.Labels).To(HaveKeyWithValue("label2", "value2"))
-			Expect(reflect.DeepEqual(*fuseToUpdate, *expectedFuseToUpdate)).To(BeTrue())
-		})
-
-		It("Should detect annotation changes", func() {
-			latestValue.Fuse.Annotations["annotation2"] = "value2"
-			expectedFuseToUpdate.Spec.Template.Annotations["annotation2"] = "value2"
-
-			changed, generationNeedUpdate := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
-
-			Expect(changed).To(BeTrue())
-			Expect(generationNeedUpdate).To(BeFalse())
-			Expect(fuseToUpdate.Spec.Template.ObjectMeta.Annotations).To(HaveKeyWithValue("annotation2", "value2"))
-			Expect(reflect.DeepEqual(*fuseToUpdate, *expectedFuseToUpdate)).To(BeTrue())
-		})
-
-		It("Should detect resource changes", func() {
-			updatedResource := corev1.ResourceRequirements{
-				Requests: corev1.ResourceList{
-					corev1.ResourceCPU:    resource.MustParse("200m"),
-					corev1.ResourceMemory: resource.MustParse("128Mi"),
-				},
-				Limits: corev1.ResourceList{
-					corev1.ResourceCPU:    resource.MustParse("400m"),
-					corev1.ResourceMemory: resource.MustParse("256Mi"),
-				},
-			}
-			runtime.Spec.Fuse.Resources = updatedResource
-			expectedFuseToUpdate.Spec.Template.Spec.Containers[0].Resources = updatedResource
-			changed, generationNeedUpdate := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
-
-			Expect(changed).To(BeTrue())
-			Expect(generationNeedUpdate).To(BeFalse())
-			Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu().String()).To(Equal("200m"))
-			Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].Resources.Requests.Memory().String()).To(Equal("128Mi"))
-			Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu().String()).To(Equal("400m"))
-			Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].Resources.Limits.Memory().String()).To(Equal("256Mi"))
-
-			Expect(reflect.DeepEqual(*fuseToUpdate, *expectedFuseToUpdate)).To(BeTrue())
-
-		})
-
-		It("Should detect environment variable changes", func() {
-			latestValue.Fuse.Envs = append(latestValue.Fuse.Envs, corev1.EnvVar{
-				Name:  "NEW_ENV",
-				Value: "new_value",
+				for _, c := range cases {
+					It(c.caseText, func() {
+						latestValue.Fuse.NodeSelector = c.latestNodeSelectors
+						changed, _ := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
+						Expect(changed).To(Equal(c.changed))
+						// Make sure helm related configurations are not touched
+						Expect(fuseToUpdate.Spec.Template.Spec.NodeSelector).To(HaveKeyWithValue("helm_key1", "helm_value"))
+						for k, v := range c.latestNodeSelectors {
+							Expect(fuseToUpdate.Spec.Template.Spec.NodeSelector).To(HaveKeyWithValue(k, v))
+						}
+					})
+				}
 			})
 
-			changed, generationNeedUpdate := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
+			Context("detect volume changes", func() {
+				cases := []struct {
+					caseText      string
+					latestVolumes []corev1.Volume
+					changed       bool
+				}{
+					{
+						caseText: "should have no volume changed",
+						latestVolumes: []corev1.Volume{
+							{
+								Name: "test-volume",
+								VolumeSource: corev1.VolumeSource{
+									EmptyDir: &corev1.EmptyDirVolumeSource{},
+								},
+							},
+						},
+						changed: false,
+					},
+					{
+						caseText: "should add a new volume",
+						latestVolumes: []corev1.Volume{
+							{
+								Name: "test-volume",
+								VolumeSource: corev1.VolumeSource{
+									EmptyDir: &corev1.EmptyDirVolumeSource{},
+								},
+							},
+							{
+								Name: "new-volume",
+								VolumeSource: corev1.VolumeSource{
+									EmptyDir: &corev1.EmptyDirVolumeSource{},
+								},
+							},
+						},
+						changed: true,
+					},
+					{
+						caseText:      "should remove a volume",
+						latestVolumes: []corev1.Volume{},
+						changed:       true,
+					},
+					{
+						caseText: "should update a volume",
+						latestVolumes: []corev1.Volume{
+							{
+								Name: "test-volume",
+								VolumeSource: corev1.VolumeSource{
+									HostPath: &corev1.HostPathVolumeSource{
+										Path: "/tmp",
+									},
+								},
+							},
+						},
+						changed: true,
+					},
+				}
 
-			Expect(changed).To(BeTrue())
-			Expect(generationNeedUpdate).To(BeFalse())
-			Expect(len(fuseToUpdate.Spec.Template.Spec.Containers[0].Env)).To(Equal(3))
-			// Avoid using a specific index(e.g. Env[2]) to avoid flaky test: iterating golang map is not ordered
-			// Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].Env[2].Name).To(Equal("NEW_ENV"))
-			Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].Env).To(ContainElement(corev1.EnvVar{Name: "NEW_ENV", Value: "new_value"}))
-		})
+				for _, c := range cases {
+					It(c.caseText, func() {
+						latestValue.Fuse.Volumes = c.latestVolumes
+						changed, _ := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
+						Expect(changed).To(Equal(c.changed))
+						// Make sure helm related configurations are not touched
+						Expect(fuseToUpdate.Spec.Template.Spec.Volumes).To(ContainElement(corev1.Volume{
+							Name: "helm-volume",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							}}))
 
-		It("Should detect volume mount changes", func() {
-			latestValue.Fuse.VolumeMounts = append(latestValue.Fuse.VolumeMounts, corev1.VolumeMount{
-				Name:      "new-volume",
-				MountPath: "/new",
+						for _, vol := range c.latestVolumes {
+							Expect(fuseToUpdate.Spec.Template.Spec.Volumes).To(ContainElement(vol))
+						}
+					})
+				}
 			})
 
-			changed, generationNeedUpdate := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
+			Context("detect label changes", func() {
+				cases := []struct {
+					caseText     string
+					latestLabels map[string]string
+					changed      bool
+				}{
+					{
+						caseText:     "should have no label changed",
+						latestLabels: map[string]string{"label1": "value1"},
+						changed:      false,
+					},
+					{
+						caseText:     "should add a new label",
+						latestLabels: map[string]string{"label1": "value1", "label2": "value2"},
+						changed:      true,
+					},
+					{
+						caseText:     "should remove a label",
+						latestLabels: map[string]string{},
+						changed:      true,
+					},
+					{
+						caseText:     "should update a label",
+						latestLabels: map[string]string{"label1": "new-value"},
+						changed:      true,
+					},
+				}
 
-			Expect(changed).To(BeTrue())
-			Expect(generationNeedUpdate).To(BeFalse())
-			Expect(len(fuseToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts)).To(Equal(3))
-			// Avoid using a specific index(e.g. VolumeMounts[2]) to avoid flaky test: iterating golang map is not ordered
-			// Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts[2].Name).To(Equal("new-volume"))
-			Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts).To(ContainElement(corev1.VolumeMount{Name: "new-volume", MountPath: "/new"}))
-		})
+				for _, c := range cases {
+					It(c.caseText, func() {
+						latestValue.Fuse.Labels = c.latestLabels
+						changed, _ := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
+						Expect(changed).To(Equal(c.changed))
+						// Make sure helm related configurations are not touched
+						Expect(fuseToUpdate.Spec.Template.Labels).To(HaveKeyWithValue("helm_label", "helm_value"))
+						for k, v := range c.latestLabels {
+							Expect(fuseToUpdate.Spec.Template.Labels).To(HaveKeyWithValue(k, v))
+						}
+					})
+				}
+			})
 
-		It("Should detect image changes and require generation update", func() {
-			latestValue.Fuse.Image = "juicefs/fuse"
-			latestValue.Fuse.ImageTag = "v2.0.0"
+			Context("detect annotations changes", func() {
+				cases := []struct {
+					caseText          string
+					latestAnnotations map[string]string
+					changed           bool
+				}{
+					{
+						caseText:          "should have no annotation changed",
+						latestAnnotations: map[string]string{"annotation1": "value1"},
+						changed:           false,
+					},
+					{
+						caseText:          "should add a new annotation",
+						latestAnnotations: map[string]string{"annotation1": "value1", "annotation2": "value2"},
+						changed:           true,
+					},
+					{
+						caseText:          "should remove an annotation",
+						latestAnnotations: map[string]string{},
+						changed:           true,
+					},
+					{
+						caseText:          "should update an annotation",
+						latestAnnotations: map[string]string{"annotation1": "new-value"},
+						changed:           true,
+					},
+				}
 
-			changed, generationNeedUpdate := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
+				for _, c := range cases {
+					It(c.caseText, func() {
+						latestValue.Fuse.Annotations = c.latestAnnotations
+						changed, _ := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
+						Expect(changed).To(Equal(c.changed))
+						// Make sure helm related configurations are not touched
+						Expect(fuseToUpdate.Spec.Template.Annotations).To(HaveKeyWithValue("helm_annotation", "helm_value"))
+						for k, v := range c.latestAnnotations {
+							Expect(fuseToUpdate.Spec.Template.Annotations).To(HaveKeyWithValue(k, v))
+						}
+					})
+				}
+			})
 
-			fmt.Println(fuseToUpdate.Spec.Template.Spec.Containers[0].Image)
-			Expect(changed).To(BeTrue())
-			Expect(generationNeedUpdate).To(BeTrue())
-			Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].Image).To(Equal("juicefs/fuse:v2.0.0"))
+			Context("detect resources changes", func() {
+				cases := []struct {
+					caseText         string
+					latestResources  common.Resources
+					runtimeResources corev1.ResourceRequirements
+					changed          bool
+				}{
+					{
+						caseText: "should have no resource changed",
+						latestResources: common.Resources{
+							Requests: common.ResourceList{
+								corev1.ResourceCPU:    "100m",
+								corev1.ResourceMemory: "100Mi",
+							},
+							Limits: common.ResourceList{
+								corev1.ResourceCPU:    "200m",
+								corev1.ResourceMemory: "200Mi",
+							},
+						},
+						runtimeResources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("100m"),
+								corev1.ResourceMemory: resource.MustParse("100Mi"),
+							},
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("200m"),
+								corev1.ResourceMemory: resource.MustParse("200Mi"),
+							},
+						},
+						changed: false,
+					},
+					{
+						caseText: "should change resource requests",
+						latestResources: common.Resources{
+							Requests: common.ResourceList{
+								corev1.ResourceCPU:    "200m",
+								corev1.ResourceMemory: "200Mi",
+							},
+							Limits: common.ResourceList{
+								corev1.ResourceCPU:    "200m",
+								corev1.ResourceMemory: "200Mi",
+							},
+						},
+						runtimeResources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("200m"),
+								corev1.ResourceMemory: resource.MustParse("200Mi"),
+							},
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("200m"),
+								corev1.ResourceMemory: resource.MustParse("200Mi"),
+							},
+						},
+						changed: true,
+					},
+					{
+						caseText: "should change resource limits",
+						latestResources: common.Resources{
+							Requests: common.ResourceList{
+								corev1.ResourceCPU:    "100m",
+								corev1.ResourceMemory: "100Mi",
+							},
+							Limits: common.ResourceList{
+								corev1.ResourceCPU:    "400m",
+								corev1.ResourceMemory: "400Mi",
+							},
+						},
+						runtimeResources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("100m"),
+								corev1.ResourceMemory: resource.MustParse("100Mi"),
+							},
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("400m"),
+								corev1.ResourceMemory: resource.MustParse("400Mi"),
+							},
+						},
+						changed: true,
+					},
+					{
+						caseText: "should change both resource requests and limits",
+						latestResources: common.Resources{
+							Requests: common.ResourceList{
+								corev1.ResourceCPU:    "300m",
+								corev1.ResourceMemory: "300Mi",
+							},
+							Limits: common.ResourceList{
+								corev1.ResourceCPU:    "600m",
+								corev1.ResourceMemory: "600Mi",
+							},
+						},
+						runtimeResources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("300m"),
+								corev1.ResourceMemory: resource.MustParse("300Mi"),
+							},
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("600m"),
+								corev1.ResourceMemory: resource.MustParse("600Mi"),
+							},
+						},
+						changed: true,
+					},
+				}
+
+				for _, c := range cases {
+					It(c.caseText, func() {
+						latestValue.Fuse.Resources = c.latestResources
+						runtime.Spec.Fuse.Resources = c.runtimeResources
+						changed, _ := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
+						Expect(changed).To(Equal(c.changed))
+						if c.changed {
+							Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].Resources).To(Equal(c.runtimeResources))
+						}
+					})
+				}
+			})
+
+			Context("detect environment variable changes", func() {
+				cases := []struct {
+					caseText   string
+					latestEnvs []corev1.EnvVar
+					changed    bool
+				}{
+					{
+						caseText: "should have no env changed",
+						latestEnvs: []corev1.EnvVar{
+							{
+								Name:  "ENV1",
+								Value: "value1",
+							},
+						},
+						changed: false,
+					},
+					{
+						caseText: "should add a new env",
+						latestEnvs: []corev1.EnvVar{
+							{
+								Name:  "ENV1",
+								Value: "value1",
+							},
+							{
+								Name:  "ENV2",
+								Value: "value2",
+							},
+						},
+						changed: true,
+					},
+					{
+						caseText:   "should remove an env",
+						latestEnvs: []corev1.EnvVar{},
+						changed:    true,
+					},
+					{
+						caseText: "should update an env",
+						latestEnvs: []corev1.EnvVar{
+							{
+								Name:  "ENV1",
+								Value: "new-value",
+							},
+						},
+						changed: true,
+					},
+				}
+
+				for _, c := range cases {
+					It(c.caseText, func() {
+						latestValue.Fuse.Envs = c.latestEnvs
+						changed, _ := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
+						Expect(changed).To(Equal(c.changed))
+						// Make sure helm related configurations are not touched
+						Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].Env).To(ContainElement(corev1.EnvVar{
+							Name:  "HELM_ENV1",
+							Value: "HELM_value1",
+						}))
+
+						for _, env := range c.latestEnvs {
+							Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].Env).To(ContainElement(env))
+						}
+					})
+				}
+			})
+
+			Context("detect volume mount changes", func() {
+				cases := []struct {
+					caseText           string
+					latestVolumeMounts []corev1.VolumeMount
+					changed            bool
+				}{
+					{
+						caseText: "should have no volume mount changed",
+						latestVolumeMounts: []corev1.VolumeMount{
+							{
+								Name:      "test-volume",
+								MountPath: "/test",
+							},
+						},
+						changed: false,
+					},
+					{
+						caseText: "should add a new volume mount",
+						latestVolumeMounts: []corev1.VolumeMount{
+							{
+								Name:      "test-volume",
+								MountPath: "/test",
+							},
+							{
+								Name:      "new-volume",
+								MountPath: "/new-path",
+							},
+						},
+						changed: true,
+					},
+					{
+						caseText:           "should remove a volume mount",
+						latestVolumeMounts: []corev1.VolumeMount{},
+						changed:            true,
+					},
+					{
+						caseText: "should update a volume mount",
+						latestVolumeMounts: []corev1.VolumeMount{
+							{
+								Name:      "test-volume",
+								MountPath: "/updated-path",
+							},
+						},
+						changed: true,
+					},
+				}
+
+				for _, c := range cases {
+					It(c.caseText, func() {
+						latestValue.Fuse.VolumeMounts = c.latestVolumeMounts
+						changed, _ := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
+						Expect(changed).To(Equal(c.changed))
+						// Make sure helm related configurations are not touched
+						Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts).To(ContainElement(corev1.VolumeMount{
+							Name:      "helm-volume",
+							MountPath: "/test_helm",
+						}))
+
+						for _, vm := range c.latestVolumeMounts {
+							Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].VolumeMounts).To(ContainElement(vm))
+						}
+					})
+				}
+			})
+
+			Context("detect image changes", func() {
+				It("should not do anything if runtime has no image or imageTag set", func() {
+					runtime.Spec.Fuse.Image = ""
+					runtime.Spec.Fuse.ImageTag = ""
+
+					// latestValue changes probably because our default image changes
+					latestValue.Fuse.Image = "juicefs/fuse"
+					latestValue.Fuse.ImageTag = "v2.0.0"
+
+					changed, generationNeedUpdate := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
+
+					Expect(changed).To(BeFalse())
+					Expect(generationNeedUpdate).To(BeFalse())
+					Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].Image).To(Equal(fmt.Sprintf("%s:%s", currentValue.Fuse.Image, currentValue.Fuse.ImageTag)))
+				})
+
+				It("should keep image unchanged if runtime.spec.fuse image info is not changed", func() {
+					runtime.Spec.Fuse.Image = currentValue.Fuse.Image
+					runtime.Spec.Fuse.ImageTag = currentValue.Fuse.ImageTag
+					latestValue.Fuse.Image = currentValue.Fuse.Image
+					latestValue.Fuse.ImageTag = currentValue.Fuse.ImageTag
+
+					changed, generationNeedUpdate := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
+
+					Expect(changed).To(BeFalse())
+					Expect(generationNeedUpdate).To(BeFalse())
+					Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].Image).To(Equal(fmt.Sprintf("%s:%s", currentValue.Fuse.Image, currentValue.Fuse.ImageTag)))
+				})
+
+				It("Should detect image changes and require generation update", func() {
+					latestValue.Fuse.Image = "juicefs/fuse"
+					latestValue.Fuse.ImageTag = "v2.0.0"
+					runtime.Spec.Fuse.Image = "juicefs/fuse"
+					runtime.Spec.Fuse.ImageTag = "v2.0.0"
+
+					changed, generationNeedUpdate := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
+
+					fmt.Println(fuseToUpdate.Spec.Template.Spec.Containers[0].Image)
+					Expect(changed).To(BeTrue())
+					Expect(generationNeedUpdate).To(BeTrue())
+					Expect(fuseToUpdate.Spec.Template.Spec.Containers[0].Image).To(Equal("juicefs/fuse:v2.0.0"))
+				})
+			})
 		})
 	})
 })
@@ -1254,7 +1938,7 @@ func constructBaseFuseDaemonset() *appsv1.DaemonSet {
 					},
 					Containers: []corev1.Container{
 						{
-							Name:  "fuse",
+							Name:  JuiceFSFuseContainerName,
 							Image: "juicefs/fuse:v1.0.0",
 							Resources: corev1.ResourceRequirements{
 								Requests: corev1.ResourceList{

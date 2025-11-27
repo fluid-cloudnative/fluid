@@ -73,9 +73,7 @@ type EncryptEnvOption struct {
 // Worker struct describes the configuration of JuiceFS worker node, including image, resources, environmental variables, volume mounts, etc.
 type Worker struct {
 	Privileged      bool                 `json:"privileged"`
-	Image           string               `json:"image,omitempty"`
 	NodeSelector    map[string]string    `json:"nodeSelector,omitempty"`
-	ImageTag        string               `json:"imageTag,omitempty"`
 	ImagePullPolicy string               `json:"imagePullPolicy,omitempty"`
 	Resources       common.Resources     `json:"resources,omitempty"`
 	Envs            []corev1.EnvVar      `json:"envs,omitempty"`
