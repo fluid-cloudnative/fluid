@@ -32,6 +32,9 @@ spec:
       - name: redis
         # Pulls the default Redis image from Docker Hub
         image: redis
+        resources:
+          limits:
+            memory: 512Mi
         ports:
         - containerPort: 6379
           hostPort: 6379
