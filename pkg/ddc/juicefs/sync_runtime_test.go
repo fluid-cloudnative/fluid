@@ -215,6 +215,18 @@ var _ = Describe("JuiceFS Sync Runtime Related Tests", Label("pkg.ddc.juicefs.sy
 	})
 
 	Context("Test JuiceFSEngine.syncFuseSpec", func() {
+		When("Fuse spec does not have a OnDelete update strategy", func() {
+			BeforeEach(func() {
+				mockedObjects.FuseDs.Spec.UpdateStrategy.Type = appsv1.RollingUpdateDaemonSetStrategyType
+			})
+
+			It("should skip syncing", func() {
+				changed, err := engine.syncWorkerSpec(cruntime.ReconcileRequestContext{}, juicefsruntime, &JuiceFS{}, &JuiceFS{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(changed).To(BeFalse())
+			})
+		})
+
 		When("When nothing changed", func() {
 			It("should sync runtime properly but no changes will be applied", func() {
 				oldValue := mockJuiceFSValue(dataset, juicefsruntime)

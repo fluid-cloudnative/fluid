@@ -272,19 +272,24 @@ func (j *JuiceFSEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runti
 		j.Log.V(1).Info("exiting syncFuseSpec")
 	}()
 
-	//1. check if fuse cmd configmap needs to update
-	if err := j.updateFuseCmdConfigmapOnChanged(oldValue, latestValue); err != nil {
-		return false, err
-	}
-
-	//2. check if fuse needs to update
-	var fuseChanged, fuseGenerationNeedIncrease bool
 	fuses, err := kubeclient.GetDaemonset(j.Client, j.getFuseName(), j.namespace)
 	if err != nil {
 		return false, err
 	}
-	fusesToUpdate := fuses.DeepCopy()
 
+	if fuses.Spec.UpdateStrategy.Type != appsv1.OnDeleteDaemonSetStrategyType {
+		j.Log.V(1).Info("Fuse Daemonset's update strategy is not safe to sync fuse spec, skipping", "updateStrategy", fuses.Spec.UpdateStrategy.Type)
+		return false, nil
+	}
+
+	// 1. check if fuse cmd configmap needs to update
+	if err := j.updateFuseCmdConfigmapOnChanged(oldValue, latestValue); err != nil {
+		return false, err
+	}
+
+	// 2. check if fuse daemonset needs to update
+	var fuseChanged, fuseGenerationNeedIncrease bool
+	fusesToUpdate := fuses.DeepCopy()
 	fuseChanged, fuseGenerationNeedIncrease = j.checkAndSetFuseChanges(oldValue, latestValue, runtime, fusesToUpdate)
 	if !fuseChanged {
 		j.Log.V(1).Info("syncFuseSpec: no differences detected about fuse")

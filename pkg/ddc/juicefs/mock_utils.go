@@ -285,6 +285,9 @@ func mockJuiceFSObjectsForTests(dataset *datav1alpha1.Dataset, runtime *datav1al
 					"role":     fuseLabels["role"],
 				},
 			},
+			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
+				Type: appsv1.OnDeleteDaemonSetStrategyType,
+			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: fuseLabels,
