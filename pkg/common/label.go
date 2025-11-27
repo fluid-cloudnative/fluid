@@ -95,8 +95,11 @@ const (
 	// i.e. prometheus.fuse.fluid.io/scrape
 	AnnotationPrometheusFuseMetricsScrapeKey = "prometheus.fuse." + LabelAnnotationPrefix + "scrape"
 
-	// i.e. container-dataset-mapping.sidecar.fluid.io/
-	LabelContainerDatasetMappingKeyPrefix = "container-dataset-mapping.sidecar." + LabelAnnotationPrefix
+	// i.e. dataset-namespace.sidecar.fluid.io/
+	LabelContainerDatasetNamespaceKeyPrefix = "dataset-namespace.sidecar." + LabelAnnotationPrefix
+
+	// i.e. dataset-name.sidecar.fluid.io/
+	LabelContainerDatasetNameKeyPrefix = "dataset-name.sidecar." + LabelAnnotationPrefix
 
 	// AnnotationDataFlowAffinityScopePrefix is an annotation prefix representing dataflow affinity related functions.
 	// i.e. affinity.dataflow.fluid.io/
