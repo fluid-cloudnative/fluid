@@ -385,4 +385,61 @@ var _ = Describe("StatefulSet related unit tests", Label("pkg.utils.kubeclient.s
 			})
 		})
 	})
+
+	Describe("Test UpdateStatefulSetUpdateStrategy()", func() {
+		var (
+			sts *appsv1.StatefulSet
+		)
+
+		BeforeEach(func() {
+			sts = &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-sts",
+					Namespace: "test-ns",
+				},
+				Spec: appsv1.StatefulSetSpec{
+					UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
+						Type: appsv1.RollingUpdateStatefulSetStrategyType,
+					},
+				},
+			}
+		})
+
+		When("statefulset exists", func() {
+			BeforeEach(func() {
+				resources = []runtime.Object{sts}
+			})
+
+			It("should successfully update statefulset update strategy", func() {
+				newStrategy := appsv1.StatefulSetUpdateStrategy{
+					Type: appsv1.OnDeleteStatefulSetStrategyType,
+				}
+
+				Expect(UpdateStatefulSetUpdateStrategy(client, "test-sts", "test-ns", newStrategy)).To(Succeed())
+
+				updatedSts := &appsv1.StatefulSet{}
+				Expect(client.Get(context.TODO(), types.NamespacedName{
+					Name:      "test-sts",
+					Namespace: "test-ns",
+				}, updatedSts)).To(Succeed())
+				Expect(updatedSts.Spec.UpdateStrategy.Type).To(Equal(appsv1.OnDeleteStatefulSetStrategyType))
+			})
+		})
+
+		When("statefulset does not exist", func() {
+			BeforeEach(func() {
+				resources = []runtime.Object{}
+			})
+
+			It("should return not found error", func() {
+				newStrategy := appsv1.StatefulSetUpdateStrategy{
+					Type: appsv1.OnDeleteStatefulSetStrategyType,
+				}
+
+				err := UpdateStatefulSetUpdateStrategy(client, "not-exist", "test-ns", newStrategy)
+				Expect(err).NotTo(BeNil())
+				Expect(apierrs.IsNotFound(err)).To(BeTrue())
+			})
+		})
+	})
 })
