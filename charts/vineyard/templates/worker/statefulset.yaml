@@ -37,6 +37,8 @@ metadata:
     uid: {{ .Values.owner.uid }}
   {{- end }}
 spec:
+  updateStrategy:
+    type: OnDelete
   replicas: {{ .Values.worker.replicas }}
   serviceName: {{ $fullName }}-worker
   podManagementPolicy: Parallel

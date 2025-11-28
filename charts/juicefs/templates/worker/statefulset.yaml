@@ -22,6 +22,8 @@ metadata:
       uid: {{ .Values.owner.uid }}
   {{- end }}
 spec:
+  updateStrategy:
+    type: OnDelete
   replicas: {{ .Values.worker.replicas }}
   serviceName: {{ template "juicefs.fullname" . }}-worker
   podManagementPolicy: {{ .Values.worker.podManagementPolicy }}

@@ -37,6 +37,8 @@ metadata:
       uid: {{ .Values.owner.uid }}
   {{- end }}
 spec:
+  updateStrategy:
+    type: OnDelete
   selector:
     matchLabels:
       app: {{ $name }}
