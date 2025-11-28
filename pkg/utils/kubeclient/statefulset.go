@@ -158,7 +158,7 @@ func UpdateStatefulSetUpdateStrategy(client client.Client, name, namespace strin
 		}
 		workersToUpdate := workers.DeepCopy()
 		workersToUpdate.Spec.UpdateStrategy = strategy
-		if !reflect.DeepEqual(workers, workersToUpdate) {
+		if !reflect.DeepEqual(workers.Spec.UpdateStrategy, workersToUpdate.Spec.UpdateStrategy) {
 			err = client.Update(context.TODO(), workersToUpdate)
 			if err != nil {
 				return err

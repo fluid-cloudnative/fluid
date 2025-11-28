@@ -45,7 +45,7 @@ func UpdateDaemonSetUpdateStrategy(client client.Client, name, namespace string,
 		}
 		dsToUpdate := ds.DeepCopy()
 		dsToUpdate.Spec.UpdateStrategy = strategy
-		if !reflect.DeepEqual(ds, dsToUpdate) {
+		if !reflect.DeepEqual(ds.Spec.UpdateStrategy, dsToUpdate.Spec.UpdateStrategy) {
 			err = client.Update(context.TODO(), dsToUpdate)
 			if err != nil {
 				return err
