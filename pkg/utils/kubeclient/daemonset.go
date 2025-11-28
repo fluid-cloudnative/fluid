@@ -18,9 +18,11 @@ package kubeclient
 
 import (
 	"context"
+	"reflect"
 
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -33,4 +35,24 @@ func GetDaemonset(c client.Reader, name string, namespace string) (ds *appsv1.Da
 	}, ds)
 
 	return ds, err
+}
+
+func UpdateDaemonSetUpdateStrategy(client client.Client, name, namespace string, strategy appsv1.DaemonSetUpdateStrategy) error {
+	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		ds, err := GetDaemonset(client, name, namespace)
+		if err != nil {
+			return err
+		}
+		dsToUpdate := ds.DeepCopy()
+		ds.Spec.UpdateStrategy = strategy
+		if !reflect.DeepEqual(ds, dsToUpdate) {
+			err = client.Update(context.TODO(), dsToUpdate)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+
+	return err
 }

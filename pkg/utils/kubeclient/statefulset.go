@@ -149,3 +149,22 @@ func GetPhaseFromStatefulset(replicas int32, sts appsv1.StatefulSet) (phase data
 	return
 
 }
+
+func UpdateStatefulSetUpdateStrategy(client client.Client, name, namespace string, strategy appsv1.StatefulSetUpdateStrategy) error {
+	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		workers, err := GetStatefulSet(client, name, namespace)
+		if err != nil {
+			return err
+		}
+		workersToUpdate := workers.DeepCopy()
+		workersToUpdate.Spec.UpdateStrategy = strategy
+		if !reflect.DeepEqual(workers, workersToUpdate) {
+			err = client.Update(context.TODO(), workersToUpdate)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	return err
+}

@@ -113,7 +113,13 @@ func (j *JuiceFSEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, run
 	}
 
 	if workers.Spec.UpdateStrategy.Type != appsv1.OnDeleteStatefulSetStrategyType {
-		j.Log.V(1).Info("Worker Sts's update strategy is not safe to sync worker spec, skipping", "updateStrategy", workers.Spec.UpdateStrategy.Type)
+		j.Log.V(1).Info("Worker Sts's update strategy is not safe to sync worker spec", "updateStrategy", workers.Spec.UpdateStrategy.Type)
+		err = kubeclient.UpdateStatefulSetUpdateStrategy(j.Client, workers.Name, workers.Namespace, appsv1.StatefulSetUpdateStrategy{Type: appsv1.OnDeleteStatefulSetStrategyType})
+		if err != nil {
+			return
+		}
+		j.Log.Info("syncWorkerSpec: successfully updated worker sts update strategy to OnDelete", "worker sts", types.NamespacedName{Namespace: workers.Namespace, Name: workers.Name})
+		// statefulset update event would trigger a new reconcilation, so it's safe to return here
 		return
 	}
 
@@ -278,7 +284,13 @@ func (j *JuiceFSEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runti
 	}
 
 	if fuses.Spec.UpdateStrategy.Type != appsv1.OnDeleteDaemonSetStrategyType {
-		j.Log.V(1).Info("Fuse Daemonset's update strategy is not safe to sync fuse spec, skipping", "updateStrategy", fuses.Spec.UpdateStrategy.Type)
+		j.Log.V(1).Info("Fuse Daemonset's update strategy is not safe to sync fuse spec", "updateStrategy", fuses.Spec.UpdateStrategy.Type)
+		err = kubeclient.UpdateDaemonSetUpdateStrategy(j.Client, fuses.Name, fuses.Namespace, appsv1.DaemonSetUpdateStrategy{Type: appsv1.OnDeleteDaemonSetStrategyType})
+		if err != nil {
+			return false, err
+		}
+		j.Log.Info("syncFuseSpec: successfully update fuse daemonset's update strategy to OnDelete", "fuse ds", types.NamespacedName{Namespace: fuses.Namespace, Name: fuses.Name})
+		// daemonset update event would trigger a new reconcilation, so it's safe to return here
 		return false, nil
 	}
 
