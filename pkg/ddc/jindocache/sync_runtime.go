@@ -91,7 +91,7 @@ func (e *JindoCacheEngine) syncMasterSpec(ctx cruntime.ReconcileRequestContext, 
 			if err != nil {
 				return err
 			}
-			e.Log.Info("Successfully update the update strategy of master sts to OnDelete", "master sts", types.NamespacedName{Name: master.Name, Namespace: master.Namespace})
+			e.Log.Info("Successfully updated master sts update strategy to OnDelete", "master sts", types.NamespacedName{Name: master.Name, Namespace: master.Namespace})
 			return nil
 		}
 
@@ -152,7 +152,7 @@ func (e *JindoCacheEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, 
 			if err != nil {
 				return err
 			}
-			e.Log.Info("Successfully update the update strategy of worker sts to OnDelete", "worker sts", types.NamespacedName{Name: workers.Name, Namespace: workers.Namespace})
+			e.Log.Info("Successfully updated worker sts update strategy to OnDelete", "worker sts", types.NamespacedName{Name: workers.Name, Namespace: workers.Namespace})
 			return nil
 		}
 
@@ -214,7 +214,7 @@ func (e *JindoCacheEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, ru
 			if err != nil {
 				return err
 			}
-			e.Log.Info("Successfully update the update strategy of fuse ds to OnDelete", "fuse ds", types.NamespacedName{Name: fuses.Name, Namespace: fuses.Namespace})
+			e.Log.Info("Successfully updated fuse ds update strategy to OnDelete", "fuse ds", types.NamespacedName{Name: fuses.Name, Namespace: fuses.Namespace})
 			return nil
 		}
 

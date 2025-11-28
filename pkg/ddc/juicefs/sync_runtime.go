@@ -119,7 +119,7 @@ func (j *JuiceFSEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, run
 			return
 		}
 		j.Log.Info("syncWorkerSpec: successfully updated worker sts update strategy to OnDelete", "worker sts", types.NamespacedName{Namespace: workers.Namespace, Name: workers.Name})
-		// statefulset update event would trigger a new reconcilation, so it's safe to return here
+		// statefulset update event would trigger a new reconciliation, so it's safe to return here
 		return
 	}
 
@@ -289,8 +289,8 @@ func (j *JuiceFSEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runti
 		if err != nil {
 			return false, err
 		}
-		j.Log.Info("syncFuseSpec: successfully update fuse daemonset's update strategy to OnDelete", "fuse ds", types.NamespacedName{Namespace: fuses.Namespace, Name: fuses.Name})
-		// daemonset update event would trigger a new reconcilation, so it's safe to return here
+		j.Log.Info("syncFuseSpec: successfully updated fuse daemonset's update strategy to OnDelete", "fuse ds", types.NamespacedName{Namespace: fuses.Namespace, Name: fuses.Name})
+		// daemonset update event would trigger a new reconciliation, so it's safe to return here
 		return false, nil
 	}
 
