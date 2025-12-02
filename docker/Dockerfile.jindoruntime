@@ -5,6 +5,8 @@ FROM golang:1.23.10-bullseye@sha256:05ed4a0dad540eaf289072132678452ec19fa9948165
 WORKDIR /go/src/github.com/fluid-cloudnative/fluid
 COPY . .
 
+ARG FLUID_VERSION
+RUN bash hack/helm/pin_runtime_chart_version.sh ${FLUID_VERSION}
 RUN make jindoruntime-controller-build && \
     cp bin/jindoruntime-controller /go/bin/jindoruntime-controller
 
