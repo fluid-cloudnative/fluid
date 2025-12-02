@@ -34,7 +34,7 @@ import (
 // SyncRuntime syncs the runtime spec
 func (e *JindoFSxEngine) SyncRuntime(ctx cruntime.ReconcileRequestContext) (changed bool, err error) {
 	if runtimeOpts.ControllerSkipSyncingRuntime() {
-		e.Log.V(1).Info("ControllerSkipSyncRuntime is enabled, skip syncing runtime")
+		e.Log.V(1).Info("Skipping runtime sync due to CONTROLLER_SKIP_SYNCING_RUNTIME being enabled")
 		return
 	}
 
