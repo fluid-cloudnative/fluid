@@ -31,11 +31,11 @@ var controllerSkipSyncingRuntime bool
 
 func setControllerSkipSyncingRuntime() {
 	if strVal, found := os.LookupEnv(EnvControllerSkipSyncingRuntime); found {
-		if boolVal, err := strconv.ParseBool(strVal); err != nil {
+		boolVal, err := strconv.ParseBool(strVal)
+		if err != nil {
 			panic(errors.Wrapf(err, "can't parse env %s to bool", EnvControllerSkipSyncingRuntime))
-		} else {
-			controllerSkipSyncingRuntime = boolVal
 		}
+		controllerSkipSyncingRuntime = boolVal
 	}
 
 	log.Info("ControllerSkipSyncingRuntime", "value", controllerSkipSyncingRuntime)
