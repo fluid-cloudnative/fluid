@@ -46,7 +46,7 @@ func Test_setControllerSkipSyncingRuntime(t *testing.T) {
 		}
 		t.Run(tt.name, func(t *testing.T) {
 			setControllerSkipSyncingRuntime()
-			got := ControllerSkipSyncingRuntime()
+			got := ShouldSkipSyncingRuntime()
 			if got != tt.expect {
 				t.Errorf("ControllerSkipSyncingRuntime() = %v, want %v", got, tt.expect)
 			}

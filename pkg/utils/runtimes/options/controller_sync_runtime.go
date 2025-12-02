@@ -41,6 +41,6 @@ func setControllerSkipSyncingRuntime() {
 	log.Info("ControllerSkipSyncingRuntime", "value", controllerSkipSyncingRuntime)
 }
 
-func ControllerSkipSyncingRuntime() bool {
+func ShouldSkipSyncingRuntime() bool {
 	return controllerSkipSyncingRuntime
 }
