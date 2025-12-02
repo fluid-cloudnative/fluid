@@ -22,7 +22,7 @@ for chart in $charts; do
         if [[ $(grep -c "appVersion:" $chart/Chart.yaml) == 0 ]]; then
             echo "appVersion: $fluid_version" >> $chart/Chart.yaml
         else
-            sed -i "" 's/appVersion:.*/appVersion: '"$fluid_version"'/' $chart/Chart.yaml
+            sed -i 's/appVersion:.*/appVersion: '"$fluid_version"'/' $chart/Chart.yaml
         fi
     fi
 done
