@@ -28,6 +28,7 @@ import (
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	runtimeOpts "github.com/fluid-cloudnative/fluid/pkg/utils/runtimes/options"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
@@ -35,6 +36,11 @@ import (
 
 // SyncRuntime syncs the runtime spec
 func (e *JindoCacheEngine) SyncRuntime(ctx cruntime.ReconcileRequestContext) (changed bool, err error) {
+	if runtimeOpts.ShouldSkipSyncingRuntime() {
+		e.Log.V(1).Info("Skipping runtime sync due to CONTROLLER_SKIP_SYNCING_RUNTIME being enabled")
+		return
+	}
+
 	runtime, err := e.getRuntime()
 	if err != nil {
 		return changed, err

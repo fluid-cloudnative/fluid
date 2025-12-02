@@ -35,10 +35,16 @@ import (
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	runtimeOpts "github.com/fluid-cloudnative/fluid/pkg/utils/runtimes/options"
 )
 
 // SyncRuntime syncs the runtime spec
 func (j *JuiceFSEngine) SyncRuntime(ctx cruntime.ReconcileRequestContext) (changed bool, err error) {
+	if runtimeOpts.ShouldSkipSyncingRuntime() {
+		j.Log.V(1).Info("Skipping runtime sync due to CONTROLLER_SKIP_SYNCING_RUNTIME being enabled")
+		return
+	}
+
 	runtime, err := j.getRuntime()
 	if err != nil {
 		return
