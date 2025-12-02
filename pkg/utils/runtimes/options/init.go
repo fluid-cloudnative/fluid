@@ -29,4 +29,5 @@ var (
 func init() {
 	setPortCheckOption()
 	setCriticalFusePodOption()
+	setControllerSkipSyncingRuntime()
 }
