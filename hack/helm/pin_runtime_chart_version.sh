@@ -3,7 +3,7 @@
 # USAGE:
 #   FLUID_HOME=/path/to/fluid
 #   cd $FLUID_HOME
-#   bash hack/helm/inject_library_chart.sh
+#   bash hack/helm/pin_runtime_chart_version.sh <fluid_version>
 
 set -e
 
@@ -22,7 +22,7 @@ for chart in $charts; do
         if [[ $(grep -c "appVersion:" $chart/Chart.yaml) == 0 ]]; then
             echo "appVersion: $fluid_version" >> $chart/Chart.yaml
         else
-            sed -i 's/appVersion:.*/appVersion: '"$fluid_version"'/' $chart/Chart.yaml
+            sed -i "s|^appVersion:.*|appVersion: ${fluid_version//\//\\/}|" "$chart/Chart.yaml"
         fi
     fi
 done

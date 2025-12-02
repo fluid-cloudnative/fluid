@@ -8,7 +8,7 @@ COPY . .
 ARG FLUID_VERSION
 RUN make efcruntime-controller-build && \
     cp bin/efcruntime-controller /go/bin/efcruntime-controller
-RUN bash hack/helm/pin_runtime_chart_version.sh ${FLUID_VERSION}
+RUN bash hack/helm/pin_runtime_chart_version.sh "${FLUID_VERSION}"
 
 # Debug
 #RUN go install github.com/go-delve/delve/cmd/dlv@v1.8.2

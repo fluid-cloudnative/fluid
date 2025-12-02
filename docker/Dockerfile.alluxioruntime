@@ -8,7 +8,7 @@ COPY . .
 ARG FLUID_VERSION
 RUN make alluxioruntime-controller-build && \
     cp bin/alluxioruntime-controller /go/bin/alluxioruntime-controller
-RUN bash hack/helm/pin_runtime_chart_version.sh ${FLUID_VERSION}
+RUN bash hack/helm/pin_runtime_chart_version.sh "${FLUID_VERSION}"
 
 # alpine:3.20.6
 FROM alpine:3.20.6@sha256:de4fe7064d8f98419ea6b49190df1abbf43450c1702eeb864fe9ced453c1cc5f
