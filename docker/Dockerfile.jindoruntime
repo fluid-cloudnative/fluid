@@ -25,10 +25,10 @@ RUN wget -O helm-${HELM_VERSION}-linux-${TARGETARCH}.tar.gz https://github.com/f
     chmod u+x /usr/local/bin/ddc-helm && \
     rm -f ${HELM_VERSION}-linux-${TARGETARCH}.tar.gz
 
-COPY charts/library /charts/library
-COPY charts/jindofs /charts/jindofs
-COPY charts/jindofsx /charts/jindofsx
-COPY charts/jindocache /charts/jindocache
+COPY --from=builder /go/src/github.com/fluid-cloudnative/fluid/charts/library /charts/library
+COPY --from=builder /go/src/github.com/fluid-cloudnative/fluid/charts/jindofs /charts/jindofs
+COPY --from=builder /go/src/github.com/fluid-cloudnative/fluid/charts/jindofsx /charts/jindofsx
+COPY --from=builder /go/src/github.com/fluid-cloudnative/fluid/charts/jindocache /charts/jindocache
 
 COPY --from=builder /go/bin/jindoruntime-controller /usr/local/bin/jindoruntime-controller
 #COPY --from=builder /go/bin/dlv /usr/local/bin/dlv

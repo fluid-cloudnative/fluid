@@ -28,7 +28,7 @@ RUN wget -O helm-${HELM_VERSION}-linux-${TARGETARCH}.tar.gz https://github.com/f
     chmod u+x /usr/local/bin/ddc-helm && \
     rm -f ${HELM_VERSION}-linux-${TARGETARCH}.tar.gz
 
-COPY charts/ /charts
+COPY --from=builder /go/src/github.com/fluid-cloudnative/fluid/charts/ /charts
 
 COPY --from=builder /go/bin/dataset-controller /usr/local/bin/dataset-controller
 # COPY --from=builder /go/bin/dlv /usr/local/bin/dlv
