@@ -104,7 +104,7 @@ def main():
     datalaod = fluidapi.DataLoad(name=dataload_name, namespace=namespace) \
         .set_target_dataset(name, namespace) \
         .set_load_metadata(True) \
-        .set_ttlSecondsAfterFinished(20)
+        .set_ttlSecondsAfterFinished(40) # By default, DataLoad reconciler polls every 20 seconds. 40 seconds should be enough for DataLoad to sync status to Complete.
     
     flow = TestFlow("Common - Test Clean Up Dataoperation")
 
@@ -156,7 +156,7 @@ def main():
     flow.append_step(
         StatusCheckStep(
             step_name="wait dataload to clean up",
-            forth_fn=currying_fn(wait_clean_up, dataload_name=dataload_name, namespace=namespace, ttl=20)
+            forth_fn=currying_fn(wait_clean_up, dataload_name=dataload_name, namespace=namespace, ttl=40)
         )
     )
 
