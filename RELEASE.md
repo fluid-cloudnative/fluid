@@ -1,9 +1,5 @@
 # Release Process
 
-The Fluid is released on an as-needed basis. The process is as follows:
+The canonical [release process for Fluid](https://github.com/fluid-cloudnative/community/blob/master/operations/release.md) is maintained in the community repository.
 
-1. An issue is proposing a new release with a changelog since the last release
-1. All [OWNERS](OWNERS) must LGTM this release
-1. An OWNER runs `git tag -s $VERSION` and inserts the changelog and pushes the tag with `git push $VERSION`
-1. The release issue is closed
-1. An announcement email is sent to `fluid-dev@googlegroups.com` with the subject `[ANNOUNCE] fluid-project $VERSION is released`
+Please refer to the latest version of the document for all release procedures, criteria, and timelines.
