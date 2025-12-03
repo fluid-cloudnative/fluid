@@ -1,6 +1,7 @@
 # Golang CircleCI 2.1 configuration file
 #
 # Check https://circleci.com/docs/2.1/language-go/ for more details
+# TODO: migrate this to Github Actions
 version: 2.1
 jobs:
   build:
@@ -19,8 +20,23 @@ jobs:
           command: |
             test -z "$(go fmt ./... 2>/dev/null | tee /dev/stderr)" || (echo "please format Go code with 'gofmt'")
             go vet ./...
-      - run: docker build --build-arg TARGETARCH=amd64 --build-arg HELM_VERSION=v3.17.3 . -f docker/Dockerfile.dataset -t dataset-controller:${CIRCLE_BUILD_NUM}
-      - run: docker build --build-arg TARGETARCH=amd64 --build-arg HELM_VERSION=v3.17.3 . -f docker/Dockerfile.alluxioruntime -t alluxioruntime-controller:${CIRCLE_BUILD_NUM}
-      - run: docker build --build-arg TARGETARCH=amd64 --build-arg HELM_VERSION=v3.17.3 . -f docker/Dockerfile.csi -t fluid-csi:${CIRCLE_BUILD_NUM}
+      - run: 
+          name: build docker images(dataset-controller)
+          command: |
+            FLUID_VERSION=$(sed -n -e 's/^VERSION := //p' Makefile)
+            FLUID_VERSION=$FLUID_VERSION-$(git rev-parse --short HEAD || echo "HEAD")
+            docker build --build-arg TARGETARCH=amd64 --build-arg HELM_VERSION=v3.17.3 --build-arg FLUID_VERSION=$FLUID_VERSION . -f docker/Dockerfile.dataset -t dataset-controller:${CIRCLE_BUILD_NUM}
+      - run: 
+          name: build docker images(alluxioruntime-controller)
+          command: |
+            FLUID_VERSION=$(sed -n -e 's/^VERSION := //p' Makefile)
+            FLUID_VERSION=$FLUID_VERSION-$(git rev-parse --short HEAD || echo "HEAD")
+            docker build --build-arg TARGETARCH=amd64 --build-arg HELM_VERSION=v3.17.3 --build-arg FLUID_VERSION=$FLUID_VERSION . -f docker/Dockerfile.alluxioruntime -t alluxioruntime-controller:${CIRCLE_BUILD_NUM}
+      - run:
+          name: build docker images(fluid-csi) 
+          command: |
+            FLUID_VERSION=$(sed -n -e 's/^VERSION := //p' Makefile)
+            FLUID_VERSION=$FLUID_VERSION-$(git rev-parse --short HEAD || echo "HEAD")
+            docker build --build-arg TARGETARCH=amd64 --build-arg HELM_VERSION=v3.17.3 . -f docker/Dockerfile.csi -t fluid-csi:${CIRCLE_BUILD_NUM}
 
 # maybe later we need to upload output to helm repository
