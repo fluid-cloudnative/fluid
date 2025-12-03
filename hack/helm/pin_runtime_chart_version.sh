@@ -8,7 +8,7 @@
 set -e
 
 fluid_version=$1
-if [ -z "$fluid_version" ]; then
+if [[ -z "$fluid_version" ]]; then
   echo "$0 got an error: please specify a non-empty Fluid version to continue"
   exit 1
 fi
