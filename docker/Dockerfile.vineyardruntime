@@ -5,8 +5,10 @@ FROM golang:1.23.10-bullseye@sha256:05ed4a0dad540eaf289072132678452ec19fa9948165
 WORKDIR /go/src/github.com/fluid-cloudnative/fluid
 COPY . .
 
+ARG FLUID_VERSION
 RUN make vineyardruntime-controller-build && \
     cp bin/vineyardruntime-controller /go/bin/vineyardruntime-controller
+RUN bash hack/helm/pin_runtime_chart_version.sh "${FLUID_VERSION}"
 
 # alpine:3.20.6
 FROM alpine:3.20.6@sha256:de4fe7064d8f98419ea6b49190df1abbf43450c1702eeb864fe9ced453c1cc5f
@@ -23,7 +25,7 @@ RUN wget -O helm-${HELM_VERSION}-linux-${TARGETARCH}.tar.gz https://github.com/f
     chmod u+x /usr/local/bin/ddc-helm && \
     rm -f ${HELM_VERSION}-linux-${TARGETARCH}.tar.gz
 
-COPY charts/ /charts
+COPY --from=builder /go/src/github.com/fluid-cloudnative/fluid/charts/ /charts
 
 COPY --from=builder /go/bin/vineyardruntime-controller /usr/local/bin/vineyardruntime-controller
 #COPY --from=builder /go/bin/dlv /usr/local/bin/dlv

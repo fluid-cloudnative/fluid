@@ -5,8 +5,10 @@ FROM golang:1.23.10-bullseye@sha256:05ed4a0dad540eaf289072132678452ec19fa9948165
 WORKDIR /go/src/github.com/fluid-cloudnative/fluid
 COPY . .
 
+ARG FLUID_VERSION
 RUN make jindoruntime-controller-build && \
     cp bin/jindoruntime-controller /go/bin/jindoruntime-controller
+RUN bash hack/helm/pin_runtime_chart_version.sh "${FLUID_VERSION}"
 
 # alpine:3.20.6
 FROM alpine:3.20.6@sha256:de4fe7064d8f98419ea6b49190df1abbf43450c1702eeb864fe9ced453c1cc5f
@@ -23,10 +25,10 @@ RUN wget -O helm-${HELM_VERSION}-linux-${TARGETARCH}.tar.gz https://github.com/f
     chmod u+x /usr/local/bin/ddc-helm && \
     rm -f ${HELM_VERSION}-linux-${TARGETARCH}.tar.gz
 
-COPY charts/library /charts/library
-COPY charts/jindofs /charts/jindofs
-COPY charts/jindofsx /charts/jindofsx
-COPY charts/jindocache /charts/jindocache
+COPY --from=builder /go/src/github.com/fluid-cloudnative/fluid/charts/library /charts/library
+COPY --from=builder /go/src/github.com/fluid-cloudnative/fluid/charts/jindofs /charts/jindofs
+COPY --from=builder /go/src/github.com/fluid-cloudnative/fluid/charts/jindofsx /charts/jindofsx
+COPY --from=builder /go/src/github.com/fluid-cloudnative/fluid/charts/jindocache /charts/jindocache
 
 COPY --from=builder /go/bin/jindoruntime-controller /usr/local/bin/jindoruntime-controller
 #COPY --from=builder /go/bin/dlv /usr/local/bin/dlv

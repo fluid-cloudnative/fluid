@@ -93,6 +93,8 @@ BINARY_BUILD += csi-build
 BINARY_BUILD += webhook-build
 
 # Build docker images
+DOCKER_BUILD_ARGS := --build-arg HELM_VERSION=$(HELM_VERSION) --build-arg FLUID_VERSION=$(GIT_VERSION)
+
 DOCKER_BUILD := docker-build-dataset-controller
 DOCKER_BUILD += docker-build-application-controller
 DOCKER_BUILD += docker-build-alluxioruntime-controller
@@ -255,39 +257,39 @@ application-controller-build:
 # Build the docker image
 .PHONY: docker-build-dataset-controller
 docker-build-dataset-controller:
-	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} --build-arg HELM_VERSION=${HELM_VERSION} . -f ${DATASET_DOCKERFILE} -t ${DATASET_CONTROLLER_IMG}:${GIT_VERSION}
+	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} ${DOCKER_BUILD_ARGS} . -f ${DATASET_DOCKERFILE} -t ${DATASET_CONTROLLER_IMG}:${GIT_VERSION}
 
 .PHONY: docker-build-application-controller
 docker-build-application-controller:
-	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} --build-arg HELM_VERSION=${HELM_VERSION} . -f ${APPLICATION_DOCKERFILE} -t ${APPLICATION_CONTROLLER_IMG}:${GIT_VERSION}
+	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} ${DOCKER_BUILD_ARGS} . -f ${APPLICATION_DOCKERFILE} -t ${APPLICATION_CONTROLLER_IMG}:${GIT_VERSION}
 
 .PHONY: docker-build-alluxioruntime-controller
 docker-build-alluxioruntime-controller:
-	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} --build-arg HELM_VERSION=${HELM_VERSION} . -f ${ALLUXIORUNTIME_DOCKERFILE} -t ${ALLUXIORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} ${DOCKER_BUILD_ARGS} . -f ${ALLUXIORUNTIME_DOCKERFILE} -t ${ALLUXIORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 .PHONY: docker-build-jindoruntime-controller
 docker-build-jindoruntime-controller:
-	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} --build-arg HELM_VERSION=${HELM_VERSION} . -f ${JINDORUNTIME_DOCKERFILE} -t ${JINDORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} ${DOCKER_BUILD_ARGS} . -f ${JINDORUNTIME_DOCKERFILE} -t ${JINDORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 .PHONY: docker-build-goosefsruntime-controller
 docker-build-goosefsruntime-controller:
-	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} --build-arg HELM_VERSION=${HELM_VERSION} . -f ${GOOSEFSRUNTIME_DOCKERFILE} -t ${GOOSEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} ${DOCKER_BUILD_ARGS} . -f ${GOOSEFSRUNTIME_DOCKERFILE} -t ${GOOSEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 .PHONY: docker-build-juicefsruntime-controller
 docker-build-juicefsruntime-controller:
-	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} --build-arg HELM_VERSION=${HELM_VERSION} . -f ${JUICEFSRUNTIME_DOCKERFILE} -t ${JUICEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} ${DOCKER_BUILD_ARGS} . -f ${JUICEFSRUNTIME_DOCKERFILE} -t ${JUICEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 .PHONY: docker-build-thinruntime-controller
 docker-build-thinruntime-controller:
-	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} --build-arg HELM_VERSION=${HELM_VERSION} . -f ${THINRUNTIME_DOCKERFILE} -t ${THINRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} ${DOCKER_BUILD_ARGS} . -f ${THINRUNTIME_DOCKERFILE} -t ${THINRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 .PHONY: docker-build-efcruntime-controller
 docker-build-efcruntime-controller:
-	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} --build-arg HELM_VERSION=${HELM_VERSION} . -f ${EFCRUNTIME_DOCKERFILE} -t ${EFCRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} ${DOCKER_BUILD_ARGS} . -f ${EFCRUNTIME_DOCKERFILE} -t ${EFCRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 .PHONY: docker-build-vineyardruntime-controller
 docker-build-vineyardruntime-controller:
-	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} --build-arg HELM_VERSION=${HELM_VERSION} . -f ${VINEYARDRUNTIME_DOCKERFILE} -t ${VINEYARDRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} ${DOCKER_BUILD_ARGS} . -f ${VINEYARDRUNTIME_DOCKERFILE} -t ${VINEYARDRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 .PHONY: docker-build-csi
 docker-build-csi:
@@ -369,39 +371,39 @@ docker-push-prefetcher: docker-build-prefetcher
 # Buildx and push the docker image
 .PHONY: docker-buildx-push-dataset-controller
 docker-buildx-push-dataset-controller:
-	docker buildx build --push --build-arg HELM_VERSION=${HELM_VERSION} --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} . -f ${DATASET_DOCKERFILE} -t ${DATASET_CONTROLLER_IMG}:${GIT_VERSION}
+	docker buildx build --push ${DOCKER_BUILD_ARGS} --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} . -f ${DATASET_DOCKERFILE} -t ${DATASET_CONTROLLER_IMG}:${GIT_VERSION}
 
 .PHONY: docker-buildx-push-application-controller
 docker-buildx-push-application-controller:
-	docker buildx build --push --build-arg HELM_VERSION=${HELM_VERSION} --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} . -f ${APPLICATION_DOCKERFILE} -t ${APPLICATION_CONTROLLER_IMG}:${GIT_VERSION}
+	docker buildx build --push ${DOCKER_BUILD_ARGS} --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} . -f ${APPLICATION_DOCKERFILE} -t ${APPLICATION_CONTROLLER_IMG}:${GIT_VERSION}
 
 .PHONY: docker-buildx-push-alluxioruntime-controller
 docker-buildx-push-alluxioruntime-controller:
-	docker buildx build --push --build-arg HELM_VERSION=${HELM_VERSION} --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} . -f ${ALLUXIORUNTIME_DOCKERFILE} -t ${ALLUXIORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker buildx build --push ${DOCKER_BUILD_ARGS} --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} . -f ${ALLUXIORUNTIME_DOCKERFILE} -t ${ALLUXIORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 .PHONY: docker-buildx-push-jindoruntime-controller
 docker-buildx-push-jindoruntime-controller:
-	docker buildx build --push --build-arg HELM_VERSION=${HELM_VERSION} --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} . -f ${JINDORUNTIME_DOCKERFILE} -t ${JINDORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker buildx build --push ${DOCKER_BUILD_ARGS} --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} . -f ${JINDORUNTIME_DOCKERFILE} -t ${JINDORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 .PHONY: docker-buildx-push-goosefsruntime-controller
 docker-buildx-push-goosefsruntime-controller:
-	docker buildx build --push --build-arg HELM_VERSION=${HELM_VERSION} --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} . -f ${GOOSEFSRUNTIME_DOCKERFILE} -t ${GOOSEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker buildx build --push ${DOCKER_BUILD_ARGS} --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} . -f ${GOOSEFSRUNTIME_DOCKERFILE} -t ${GOOSEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 .PHONY: docker-buildx-push-juicefsruntime-controller
 docker-buildx-push-juicefsruntime-controller:
-	docker buildx build --push --build-arg HELM_VERSION=${HELM_VERSION} --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} . -f ${JUICEFSRUNTIME_DOCKERFILE} -t ${JUICEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker buildx build --push ${DOCKER_BUILD_ARGS} --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} . -f ${JUICEFSRUNTIME_DOCKERFILE} -t ${JUICEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 .PHONY: docker-buildx-push-thinruntime-controller
 docker-buildx-push-thinruntime-controller:
-	docker buildx build --push --build-arg HELM_VERSION=${HELM_VERSION} --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} . -f ${THINRUNTIME_DOCKERFILE} -t ${THINRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker buildx build --push ${DOCKER_BUILD_ARGS} --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} . -f ${THINRUNTIME_DOCKERFILE} -t ${THINRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 .PHONY: docker-buildx-push-efcruntime-controller
 docker-buildx-push-efcruntime-controller:
-	docker buildx build --push --build-arg HELM_VERSION=${HELM_VERSION} --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} . -f ${EFCRUNTIME_DOCKERFILE} -t ${EFCRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker buildx build --push ${DOCKER_BUILD_ARGS} --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} . -f ${EFCRUNTIME_DOCKERFILE} -t ${EFCRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 .PHONY: docker-buildx-push-vineyardruntime-controller
 docker-buildx-push-vineyardruntime-controller:
-	docker buildx build --push --build-arg HELM_VERSION=${HELM_VERSION} --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} . -f ${VINEYARDRUNTIME_DOCKERFILE} -t ${VINEYARDRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker buildx build --push ${DOCKER_BUILD_ARGS} --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} . -f ${VINEYARDRUNTIME_DOCKERFILE} -t ${VINEYARDRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 .PHONY: docker-buildx-push-csi
 docker-buildx-push-csi: generate fmt vet

@@ -137,20 +137,23 @@ def create_dataload_fn(dataload):
 
 def check_dataload_job_status_fn(dataload_name, dataload_namespace="default"):
     def check():
-        api = client.CustomObjectsApi()
+        try:
+            api = client.CustomObjectsApi()
 
-        resource = api.get_namespaced_custom_object(
-            group="data.fluid.io",
-            version="v1alpha1",
-            name=dataload_name,
-            namespace=dataload_namespace,
-            plural="dataloads"
-        )
+            resource = api.get_namespaced_custom_object(
+                group="data.fluid.io",
+                version="v1alpha1",
+                name=dataload_name,
+                namespace=dataload_namespace,
+                plural="dataloads"
+            )
 
-        if "status" in resource:
-            if "phase" in resource["status"]:
-                if resource["status"]["phase"] == "Complete":
-                    return True
+            if "status" in resource:
+                if "phase" in resource["status"]:
+                    if resource["status"]["phase"] == "Complete":
+                        return True
+        except Exception as e:
+            print(e)
 
         return False
 

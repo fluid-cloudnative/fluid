@@ -5,8 +5,10 @@ FROM golang:1.23.10-bullseye@sha256:05ed4a0dad540eaf289072132678452ec19fa9948165
 WORKDIR /go/src/github.com/fluid-cloudnative/fluid
 COPY . .
 
+ARG FLUID_VERSION
 RUN make application-controller-build && \
     cp bin/fluidapp-controller /go/bin/fluidapp-controller
+RUN bash hack/helm/pin_runtime_chart_version.sh "${FLUID_VERSION}"
 
 # Debug
 #RUN go install github.com/go-delve/delve/cmd/dlv@v1.8.2
@@ -25,7 +27,7 @@ RUN wget -O helm-${HELM_VERSION}-linux-${TARGETARCH}.tar.gz https://github.com/f
     chmod u+x /usr/local/bin/ddc-helm && \
     rm -f ${HELM_VERSION}-linux-${TARGETARCH}.tar.gz
 
-COPY charts/ /charts
+COPY --from=builder /go/src/github.com/fluid-cloudnative/fluid/charts/ /charts
 
 COPY --from=builder /go/bin/fluidapp-controller /usr/local/bin/fluidapp-controller
 #COPY --from=builder /go/bin/dlv /usr/local/bin/dlv
