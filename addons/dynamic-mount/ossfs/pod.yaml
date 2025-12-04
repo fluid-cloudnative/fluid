@@ -6,6 +6,9 @@ spec:
   containers:
     - name: nginx
       image: nginx
+      resources:
+        limits:
+          ephemeral-storage: "5Gi"
       volumeMounts:
         - mountPath: /data
           name: data-vol
