@@ -44,7 +44,10 @@ var _ = Describe("JindoCacheEngine resources transformation tests", Label("pkg.d
 			value := Jindo{}
 			Expect(engine.transformMasterResources(jindoruntime, &value, "")).NotTo(HaveOccurred())
 
-			Expect(value.Master.Resources).To(Equal(common.Resources{}))
+			Expect(value.Master.Resources).To(Equal(common.Resources{
+				Requests: common.ResourceList{},
+				Limits:   common.ResourceList{},
+			}))
 		})
 
 		It("Should set resources in master when resources set in runtime.spec.master.resources", func() {
@@ -141,7 +144,10 @@ var _ = Describe("JindoCacheEngine resources transformation tests", Label("pkg.d
 				jindoruntime.Spec.Worker.Resources = corev1.ResourceRequirements{}
 				value := Jindo{}
 				Expect(engine.transformWorkerResources(jindoruntime, &value, "")).NotTo(HaveOccurred())
-				Expect(value.Worker.Resources).To(Equal(common.Resources{}))
+				Expect(value.Worker.Resources).To(Equal(common.Resources{
+					Requests: common.ResourceList{},
+					Limits:   common.ResourceList{},
+				}))
 			})
 
 			It("Should set resources in worker when resources set in runtime.spec.worker.resources", func() {
@@ -177,7 +183,7 @@ var _ = Describe("JindoCacheEngine resources transformation tests", Label("pkg.d
 				Expect(engine.transformWorkerResources(jindoruntime, &value, "")).NotTo(HaveOccurred())
 
 				Expect(value.Worker.Resources.Requests).NotTo(BeNil())
-				Expect(value.Worker.Resources.Limits).To(BeNil())
+				Expect(value.Worker.Resources.Limits).NotTo(BeNil())
 				Expect(value.Worker.Resources.Requests[corev1.ResourceCPU]).To(Equal("100m"))
 				Expect(value.Worker.Resources.Requests[corev1.ResourceMemory]).To(Equal("1Gi"))
 			})
@@ -192,7 +198,7 @@ var _ = Describe("JindoCacheEngine resources transformation tests", Label("pkg.d
 				value := Jindo{}
 				Expect(engine.transformWorkerResources(jindoruntime, &value, "")).NotTo(HaveOccurred())
 
-				Expect(value.Worker.Resources.Requests).To(BeNil())
+				Expect(value.Worker.Resources.Requests).NotTo(BeNil())
 				Expect(value.Worker.Resources.Limits).NotTo(BeNil())
 				Expect(value.Worker.Resources.Limits[corev1.ResourceCPU]).To(Equal("200m"))
 				Expect(value.Worker.Resources.Limits[corev1.ResourceMemory]).To(Equal("2Gi"))
