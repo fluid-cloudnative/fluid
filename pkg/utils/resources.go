@@ -23,17 +23,18 @@ import (
 
 func TransformCoreV1ResourcesToInternalResources(res corev1.ResourceRequirements) (cRes common.Resources) {
 
-	cRes = common.Resources{}
+	cRes = common.Resources{
+		Requests: common.ResourceList{},
+		Limits:   common.ResourceList{},
+	}
 
 	if len(res.Requests) > 0 {
-		cRes.Requests = make(common.ResourceList)
 		for k, v := range res.Requests {
 			cRes.Requests[k] = v.String()
 		}
 	}
 
 	if len(res.Limits) > 0 {
-		cRes.Limits = make(common.ResourceList)
 		for k, v := range res.Limits {
 			cRes.Limits[k] = v.String()
 		}
