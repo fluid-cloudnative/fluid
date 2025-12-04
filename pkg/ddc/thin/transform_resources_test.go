@@ -67,7 +67,7 @@ func TestThinEngine_transformResourcesForFuse(t1 *testing.T) {
 		if len(test.runtime.Spec.Fuse.Resources.Requests) != 0 && (wantMemReq.String() != test.value.Fuse.Resources.Requests[corev1.ResourceMemory] ||
 			wantCpuReq.String() != test.value.Fuse.Resources.Requests[corev1.ResourceCPU]) ||
 			len(test.runtime.Spec.Fuse.Resources.Limits) != 0 && (wantMemLim.String() != test.value.Fuse.Resources.Limits[corev1.ResourceMemory] ||
-			wantCpuLim.String() != test.value.Fuse.Resources.Limits[corev1.ResourceCPU]) {
+				wantCpuLim.String() != test.value.Fuse.Resources.Limits[corev1.ResourceCPU]) {
 			t1.Errorf("expected %v, got %v", test.runtime.Spec.Fuse.Resources, test.value.Fuse.Resources)
 		}
 	}
@@ -113,7 +113,7 @@ func TestThinEngine_transformResourcesForWorker(t1 *testing.T) {
 		if len(test.runtime.Spec.Worker.Resources.Requests) != 0 && (wantMemReq.String() != test.value.Worker.Resources.Requests[corev1.ResourceMemory] ||
 			wantCpuReq.String() != test.value.Worker.Resources.Requests[corev1.ResourceCPU]) ||
 			len(test.runtime.Spec.Worker.Resources.Limits) != 0 && (wantMemLim.String() != test.value.Worker.Resources.Limits[corev1.ResourceMemory] ||
-			wantCpuLim.String() != test.value.Worker.Resources.Limits[corev1.ResourceCPU]) {
+				wantCpuLim.String() != test.value.Worker.Resources.Limits[corev1.ResourceCPU]) {
 			t1.Errorf("expected %v, got %v", test.runtime.Spec.Worker.Resources, test.value.Worker.Resources)
 		}
 	}
