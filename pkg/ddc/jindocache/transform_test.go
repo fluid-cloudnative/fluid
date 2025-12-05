@@ -612,6 +612,7 @@ func TestJindoCacheEngine_transformMasterResources(t *testing.T) {
 				Requests: common.ResourceList{
 					corev1.ResourceMemory: "30Gi",
 				},
+				Limits: common.ResourceList{},
 			},
 		},
 	}
