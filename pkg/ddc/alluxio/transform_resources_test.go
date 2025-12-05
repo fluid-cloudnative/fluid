@@ -94,6 +94,7 @@ func TestTransformResourcesForMaster(t *testing.T) {
 							corev1.ResourceCPU:    "100m",
 							corev1.ResourceMemory: "100Mi",
 						},
+						Limits: common.ResourceList{},
 					},
 				},
 				JobMaster: JobMaster{
@@ -102,6 +103,7 @@ func TestTransformResourcesForMaster(t *testing.T) {
 							corev1.ResourceCPU:    "100m",
 							corev1.ResourceMemory: "100Mi",
 						},
+						Limits: common.ResourceList{},
 					},
 				},
 			},
@@ -112,13 +114,39 @@ func TestTransformResourcesForMaster(t *testing.T) {
 					Requests: corev1.ResourceList{},
 				},
 			),
-			got:  &Alluxio{},
-			want: &Alluxio{},
+			got: &Alluxio{},
+			want: &Alluxio{
+				Master: Master{
+					Resources: common.Resources{
+						Requests: common.ResourceList{},
+						Limits:   common.ResourceList{},
+					},
+				},
+				JobMaster: JobMaster{
+					Resources: common.Resources{
+						Requests: common.ResourceList{},
+						Limits:   common.ResourceList{},
+					},
+				},
+			},
 		},
 		"test alluxio master pass through resources without request and limit case 2": {
 			runtime: mockAlluxioRuntimeForMaster(corev1.ResourceRequirements{}),
 			got:     &Alluxio{},
-			want:    &Alluxio{},
+			want: &Alluxio{
+				Master: Master{
+					Resources: common.Resources{
+						Requests: common.ResourceList{},
+						Limits:   common.ResourceList{},
+					},
+				},
+				JobMaster: JobMaster{
+					Resources: common.Resources{
+						Requests: common.ResourceList{},
+						Limits:   common.ResourceList{},
+					},
+				},
+			},
 		},
 		"test alluxio master pass through resources without request and limit case 3": {
 			runtime: mockAlluxioRuntimeForMaster(
@@ -126,8 +154,21 @@ func TestTransformResourcesForMaster(t *testing.T) {
 					Limits: corev1.ResourceList{},
 				},
 			),
-			got:  &Alluxio{},
-			want: &Alluxio{},
+			got: &Alluxio{},
+			want: &Alluxio{
+				Master: Master{
+					Resources: common.Resources{
+						Requests: common.ResourceList{},
+						Limits:   common.ResourceList{},
+					},
+				},
+				JobMaster: JobMaster{
+					Resources: common.Resources{
+						Requests: common.ResourceList{},
+						Limits:   common.ResourceList{},
+					},
+				},
+			},
 		},
 	}
 

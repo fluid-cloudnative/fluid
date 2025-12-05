@@ -92,6 +92,7 @@ func TestTransformResourcesForMaster(t *testing.T) {
 							corev1.ResourceCPU:    "100m",
 							corev1.ResourceMemory: "100Mi",
 						},
+						Limits: common.ResourceList{},
 					},
 				},
 				JobMaster: JobMaster{
@@ -100,6 +101,7 @@ func TestTransformResourcesForMaster(t *testing.T) {
 							corev1.ResourceCPU:    "100m",
 							corev1.ResourceMemory: "100Mi",
 						},
+						Limits: common.ResourceList{},
 					},
 				},
 			},

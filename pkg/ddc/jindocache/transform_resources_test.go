@@ -44,7 +44,10 @@ var _ = Describe("JindoCacheEngine resources transformation tests", Label("pkg.d
 			value := Jindo{}
 			Expect(engine.transformMasterResources(jindoruntime, &value, "")).NotTo(HaveOccurred())
 
-			Expect(value.Master.Resources).To(Equal(common.Resources{}))
+			Expect(value.Master.Resources).To(Equal(common.Resources{
+				Requests: common.ResourceList{},
+				Limits:   common.ResourceList{},
+			}))
 		})
 
 		It("Should set resources in master when resources set in runtime.spec.master.resources", func() {
@@ -79,8 +82,8 @@ var _ = Describe("JindoCacheEngine resources transformation tests", Label("pkg.d
 			value := Jindo{}
 			Expect(engine.transformMasterResources(jindoruntime, &value, "")).NotTo(HaveOccurred())
 
-			Expect(value.Master.Resources.Requests).NotTo(BeNil())
-			Expect(value.Master.Resources.Limits).To(BeNil())
+			Expect(len(value.Master.Resources.Limits)).To(Equal(0))
+			Expect(len(value.Master.Resources.Requests)).NotTo(Equal(0))
 			Expect(value.Master.Resources.Requests[corev1.ResourceCPU]).To(Equal("100m"))
 			Expect(value.Master.Resources.Requests[corev1.ResourceMemory]).To(Equal("1Gi"))
 		})
@@ -95,8 +98,8 @@ var _ = Describe("JindoCacheEngine resources transformation tests", Label("pkg.d
 			value := Jindo{}
 			Expect(engine.transformMasterResources(jindoruntime, &value, "")).NotTo(HaveOccurred())
 
-			Expect(value.Master.Resources.Requests).To(BeNil())
-			Expect(value.Master.Resources.Limits).NotTo(BeNil())
+			Expect(len(value.Master.Resources.Requests)).To(Equal(0))
+			Expect(len(value.Master.Resources.Limits)).NotTo(Equal(0))
 			Expect(value.Master.Resources.Limits[corev1.ResourceCPU]).To(Equal("200m"))
 			Expect(value.Master.Resources.Limits[corev1.ResourceMemory]).To(Equal("2Gi"))
 		})
@@ -141,7 +144,10 @@ var _ = Describe("JindoCacheEngine resources transformation tests", Label("pkg.d
 				jindoruntime.Spec.Worker.Resources = corev1.ResourceRequirements{}
 				value := Jindo{}
 				Expect(engine.transformWorkerResources(jindoruntime, &value, "")).NotTo(HaveOccurred())
-				Expect(value.Worker.Resources).To(Equal(common.Resources{}))
+				Expect(value.Worker.Resources).To(Equal(common.Resources{
+					Requests: common.ResourceList{},
+					Limits:   common.ResourceList{},
+				}))
 			})
 
 			It("Should set resources in worker when resources set in runtime.spec.worker.resources", func() {
@@ -176,8 +182,8 @@ var _ = Describe("JindoCacheEngine resources transformation tests", Label("pkg.d
 				value := Jindo{}
 				Expect(engine.transformWorkerResources(jindoruntime, &value, "")).NotTo(HaveOccurred())
 
-				Expect(value.Worker.Resources.Requests).NotTo(BeNil())
-				Expect(value.Worker.Resources.Limits).To(BeNil())
+				Expect(len(value.Worker.Resources.Limits)).To(Equal(0))
+				Expect(len(value.Worker.Resources.Requests)).NotTo(Equal(0))
 				Expect(value.Worker.Resources.Requests[corev1.ResourceCPU]).To(Equal("100m"))
 				Expect(value.Worker.Resources.Requests[corev1.ResourceMemory]).To(Equal("1Gi"))
 			})
@@ -192,8 +198,8 @@ var _ = Describe("JindoCacheEngine resources transformation tests", Label("pkg.d
 				value := Jindo{}
 				Expect(engine.transformWorkerResources(jindoruntime, &value, "")).NotTo(HaveOccurred())
 
-				Expect(value.Worker.Resources.Requests).To(BeNil())
-				Expect(value.Worker.Resources.Limits).NotTo(BeNil())
+				Expect(len(value.Worker.Resources.Requests)).To(Equal(0))
+				Expect(len(value.Worker.Resources.Limits)).NotTo(Equal(0))
 				Expect(value.Worker.Resources.Limits[corev1.ResourceCPU]).To(Equal("200m"))
 				Expect(value.Worker.Resources.Limits[corev1.ResourceMemory]).To(Equal("2Gi"))
 			})
@@ -287,7 +293,10 @@ var _ = Describe("JindoCacheEngine resources transformation tests", Label("pkg.d
 			value := Jindo{}
 			engine.transformFuseResources(jindoruntime, &value)
 
-			Expect(value.Fuse.Resources).To(Equal(common.Resources{}))
+			Expect(value.Fuse.Resources).To(Equal(common.Resources{
+				Requests: common.ResourceList{},
+				Limits:   common.ResourceList{},
+			}))
 		})
 
 		It("Should set resources in fuse when resources set in runtime.spec.fuse.resources", func() {
@@ -322,8 +331,8 @@ var _ = Describe("JindoCacheEngine resources transformation tests", Label("pkg.d
 			value := Jindo{}
 			engine.transformFuseResources(jindoruntime, &value)
 
-			Expect(value.Fuse.Resources.Requests).NotTo(BeNil())
-			Expect(value.Fuse.Resources.Limits).To(BeNil())
+			Expect(len(value.Fuse.Resources.Limits)).To(Equal(0))
+			Expect(len(value.Fuse.Resources.Requests)).NotTo(Equal(0))
 			Expect(value.Fuse.Resources.Requests[corev1.ResourceCPU]).To(Equal("100m"))
 			Expect(value.Fuse.Resources.Requests[corev1.ResourceMemory]).To(Equal("1Gi"))
 		})
@@ -338,8 +347,8 @@ var _ = Describe("JindoCacheEngine resources transformation tests", Label("pkg.d
 			value := Jindo{}
 			engine.transformFuseResources(jindoruntime, &value)
 
-			Expect(value.Fuse.Resources.Requests).To(BeNil())
-			Expect(value.Fuse.Resources.Limits).NotTo(BeNil())
+			Expect(len(value.Fuse.Resources.Requests)).To(Equal(0))
+			Expect(len(value.Fuse.Resources.Limits)).NotTo(Equal(0))
 			Expect(value.Fuse.Resources.Limits[corev1.ResourceCPU]).To(Equal("200m"))
 			Expect(value.Fuse.Resources.Limits[corev1.ResourceMemory]).To(Equal("2Gi"))
 		})
