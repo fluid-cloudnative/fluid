@@ -24,8 +24,8 @@ import (
 func TransformCoreV1ResourcesToInternalResources(res corev1.ResourceRequirements) (cRes common.Resources) {
 
 	cRes = common.Resources{
-		Requests: common.ResourceList{},
-		Limits:   common.ResourceList{},
+		Requests: make(common.ResourceList, len(res.Requests)),
+		Limits:   make(common.ResourceList, len(res.Limits)),
 	}
 
 	if len(res.Requests) > 0 {
