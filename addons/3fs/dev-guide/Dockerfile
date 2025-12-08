@@ -22,7 +22,11 @@ RUN apt update && \
     rm -rf /var/lib/apt/lists/* apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb
 
 # Install Rust
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+RUN wget -O rustup-init "https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/rustup-init" && \
+    echo "f39939f3c83a31eda563840394548455a095842de8467556748c55a9346a4959 *rustup-init" | sha256sum -c - && \
+    chmod +x rustup-init && \
+    ./rustup-init -y --no-modify-path --default-toolchain 1.90.0 && \
+    rm rustup-init
 
 # Install FoundationDB client
 RUN wget https://github.com/apple/foundationdb/releases/download/${FOUNDATIONDB_TAG}/foundationdb-clients_${FOUNDATIONDB_VERSION}_amd64.deb && \
