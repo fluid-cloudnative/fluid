@@ -126,9 +126,6 @@ type RuntimeInfo struct {
 	// Fuse configuration
 	fuse Fuse
 
-	// Check if the deprecated PV naming style is used
-	deprecatedPVName bool
-
 	apiReader client.Reader
 
 	annotations map[string]string
