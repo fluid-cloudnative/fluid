@@ -93,10 +93,6 @@ type RuntimeInfoInterface interface {
 
 	GetFuseCleanPolicy() datav1alpha1.FuseCleanPolicy
 
-	SetDeprecatedPVName(deprecated bool)
-
-	IsDeprecatedPVName() bool
-
 	GetFuseContainerTemplate() (template *common.FuseInjectionTemplate, err error)
 
 	SetAPIReader(apiReader client.Reader)
@@ -353,14 +349,6 @@ func (info *RuntimeInfo) SetupFuseCleanPolicy(policy datav1alpha1.FuseCleanPolic
 
 func (info *RuntimeInfo) GetFuseCleanPolicy() datav1alpha1.FuseCleanPolicy {
 	return info.fuse.CleanPolicy
-}
-
-func (info *RuntimeInfo) SetDeprecatedPVName(deprecated bool) {
-	info.deprecatedPVName = deprecated
-}
-
-func (info *RuntimeInfo) IsDeprecatedPVName() bool {
-	return info.deprecatedPVName
 }
 
 func (info *RuntimeInfo) SetAPIReader(apiReader client.Reader) {
