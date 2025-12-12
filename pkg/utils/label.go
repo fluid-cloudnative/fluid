@@ -138,13 +138,13 @@ func GetLabelNameForTotal(runtimeType string, namespace, name, ownerDatasetUID s
 	return GetStorageLabelName(read, storage, runtimeType, namespace, name, ownerDatasetUID)
 }
 
-func GetCommonLabelName(isDeprecated bool, namespace, name, ownerDatasetUID string) string {
+func GetCommonLabelName(namespace, name, ownerDatasetUID string) string {
 	prefix := common.LabelAnnotationStorageCapacityPrefix
 
 	return GetNamespacedNameValueWithPrefix(prefix, namespace, name, ownerDatasetUID)
 }
 
-func GetRuntimeLabelName(isDeprecated bool, runtimeType string, namespace, name, ownerDatasetUID string) string {
+func GetRuntimeLabelName(runtimeType string, namespace, name, ownerDatasetUID string) string {
 	prefix := common.LabelAnnotationStorageCapacityPrefix
 	prefix = prefix + runtimeType + "-"
 

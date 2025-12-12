@@ -93,10 +93,6 @@ type RuntimeInfoInterface interface {
 
 	GetFuseCleanPolicy() datav1alpha1.FuseCleanPolicy
 
-	SetDeprecatedNodeLabel(deprecated bool)
-
-	IsDeprecatedNodeLabel() bool
-
 	SetDeprecatedPVName(deprecated bool)
 
 	IsDeprecatedPVName() bool
@@ -133,9 +129,6 @@ type RuntimeInfo struct {
 
 	// Fuse configuration
 	fuse Fuse
-
-	// Check if the deprecated node label is used
-	deprecatedNodeLabel bool
 
 	// Check if the deprecated PV naming style is used
 	deprecatedPVName bool
@@ -360,16 +353,6 @@ func (info *RuntimeInfo) SetupFuseCleanPolicy(policy datav1alpha1.FuseCleanPolic
 
 func (info *RuntimeInfo) GetFuseCleanPolicy() datav1alpha1.FuseCleanPolicy {
 	return info.fuse.CleanPolicy
-}
-
-// SetDeprecatedNodeLabel set the DeprecatedNodeLabel
-func (info *RuntimeInfo) SetDeprecatedNodeLabel(deprecated bool) {
-	info.deprecatedNodeLabel = deprecated
-}
-
-// IsDeprecatedNodeLabel checks if using deprecated node label
-func (info *RuntimeInfo) IsDeprecatedNodeLabel() bool {
-	return info.deprecatedNodeLabel
 }
 
 func (info *RuntimeInfo) SetDeprecatedPVName(deprecated bool) {

@@ -77,7 +77,6 @@ required:
 		t.Error("fail to build runtimeInfo because of err", err)
 	}
 	runtimeInfo.SetFuseNodeSelector(map[string]string{})
-	runtimeInfo.SetDeprecatedNodeLabel(false)
 	// runtimeInfos := append(nilRuntimeInfos, runtimeInfo)
 	runtimeInfos := map[string]base.RuntimeInfoInterface{"hbase": runtimeInfo}
 
