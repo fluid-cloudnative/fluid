@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/common/deprecated"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -114,62 +113,39 @@ func ChangeNodeLabelWithPatchMode(cli client.Client, node *v1.Node, labelsToModi
 	return PatchLabels(cli, node, labelsToModify)
 }
 
-func GetStorageLabelName(read common.ReadType, storage common.StorageType, isDeprecated bool, runtimeType string, namespace, name, ownerDatasetUID string) string {
+func GetStorageLabelName(read common.ReadType, storage common.StorageType, runtimeType string, namespace, name, ownerDatasetUID string) string {
 	prefix := common.LabelAnnotationStorageCapacityPrefix
-	if isDeprecated {
-		prefix = deprecated.LabelAnnotationStorageCapacityPrefix
-	}
-
 	prefix = prefix + string(read) + runtimeType + "-" + string(storage)
 
 	return GetNamespacedNameValueWithPrefix(prefix, namespace, name, ownerDatasetUID)
 }
 
-func GetLabelNameForMemory(isDeprecated bool, runtimeType string, namespace, name, ownerDatasetUID string) string {
+func GetLabelNameForMemory(runtimeType string, namespace, name, ownerDatasetUID string) string {
 	read := common.HumanReadType
 	storage := common.MemoryStorageType
-	if isDeprecated {
-		read = deprecated.HumanReadType
-		storage = deprecated.MemoryStorageType
-	}
-	return GetStorageLabelName(read, storage, isDeprecated, runtimeType, namespace, name, ownerDatasetUID)
+	return GetStorageLabelName(read, storage, runtimeType, namespace, name, ownerDatasetUID)
 }
 
-func GetLabelNameForDisk(isDeprecated bool, runtimeType string, namespace, name, ownerDatasetUID string) string {
+func GetLabelNameForDisk(runtimeType string, namespace, name, ownerDatasetUID string) string {
 	read := common.HumanReadType
 	storage := common.DiskStorageType
-	if isDeprecated {
-		read = deprecated.HumanReadType
-		storage = deprecated.DiskStorageType
-	}
-	return GetStorageLabelName(read, storage, isDeprecated, runtimeType, namespace, name, ownerDatasetUID)
+	return GetStorageLabelName(read, storage, runtimeType, namespace, name, ownerDatasetUID)
 }
 
-func GetLabelNameForTotal(isDeprecated bool, runtimeType string, namespace, name, ownerDatasetUID string) string {
+func GetLabelNameForTotal(runtimeType string, namespace, name, ownerDatasetUID string) string {
 	read := common.HumanReadType
 	storage := common.TotalStorageType
-	if isDeprecated {
-		read = deprecated.HumanReadType
-		storage = deprecated.TotalStorageType
-	}
-	return GetStorageLabelName(read, storage, isDeprecated, runtimeType, namespace, name, ownerDatasetUID)
+	return GetStorageLabelName(read, storage, runtimeType, namespace, name, ownerDatasetUID)
 }
 
 func GetCommonLabelName(isDeprecated bool, namespace, name, ownerDatasetUID string) string {
 	prefix := common.LabelAnnotationStorageCapacityPrefix
-	if isDeprecated {
-		prefix = deprecated.LabelAnnotationStorageCapacityPrefix
-	}
 
 	return GetNamespacedNameValueWithPrefix(prefix, namespace, name, ownerDatasetUID)
 }
 
 func GetRuntimeLabelName(isDeprecated bool, runtimeType string, namespace, name, ownerDatasetUID string) string {
 	prefix := common.LabelAnnotationStorageCapacityPrefix
-	if isDeprecated {
-		prefix = deprecated.LabelAnnotationStorageCapacityPrefix
-	}
-
 	prefix = prefix + runtimeType + "-"
 
 	return GetNamespacedNameValueWithPrefix(prefix, namespace, name, ownerDatasetUID)
