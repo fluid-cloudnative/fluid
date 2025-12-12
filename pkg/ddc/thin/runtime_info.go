@@ -19,7 +19,6 @@ package thin
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/testutil"
 )
 
@@ -49,17 +48,6 @@ func (t *ThinEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 
 		// Setup Fuse Deploy Mode
 		t.runtimeInfo.SetFuseNodeSelector(runtime.Spec.Fuse.NodeSelector)
-
-		if !t.UnitTest {
-			// Check if the runtime is using deprecated naming style for PersistentVolumes
-			isPVNameDeprecated, err := volume.HasDeprecatedPersistentVolumeName(t.Client, t.runtimeInfo, t.Log)
-			if err != nil {
-				return t.runtimeInfo, err
-			}
-			t.runtimeInfo.SetDeprecatedPVName(isPVNameDeprecated)
-
-			t.Log.Info("Deprecation check finished", "isLabelDeprecated", t.runtimeInfo.IsDeprecatedNodeLabel(), "isPVNameDeprecated", t.runtimeInfo.IsDeprecatedPVName())
-		}
 	}
 
 	if testutil.IsUnitTest() {

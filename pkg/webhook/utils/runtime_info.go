@@ -55,7 +55,6 @@ func CollectRuntimeInfosFromPVCs(client client.Reader, pvcNames []string, namesp
 					err = errors.Wrapf(err, "failed to build runtime info for PVC \"%v/%v\"", namespace, pvcName)
 					return
 				}
-				runtimeInfo.SetDeprecatedNodeLabel(false)
 				runtimeInfos[pvcName] = runtimeInfo
 			}
 			cache.AddRuntimeInfoByKey(types.NamespacedName{
@@ -100,7 +99,6 @@ func buildRuntimeInfoInternalWithPrecheck(client client.Reader,
 		log.Error(err, "unable to get runtimeInfo, get failure", "runtime", pvc.GetName(), "namespace", namespace)
 		return
 	}
-	runtimeInfo.SetDeprecatedNodeLabel(false)
 	return
 }
 

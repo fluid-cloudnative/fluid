@@ -24,28 +24,19 @@ import (
 
 func TestGetPersistentVolumeName(t *testing.T) {
 	var testCases = []struct {
-		runtimeName        string
-		runtimeNamespace   string
-		isDeprecatedPVName bool
-		expectedPVName     string
+		runtimeName      string
+		runtimeNamespace string
+		expectedPVName   string
 	}{
 		{
-			runtimeName:        "spark",
-			runtimeNamespace:   "fluid",
-			isDeprecatedPVName: false,
-			expectedPVName:     "fluid-spark",
+			runtimeName:      "spark",
+			runtimeNamespace: "fluid",
+			expectedPVName:   "fluid-spark",
 		},
 		{
-			runtimeName:        "hadoop",
-			runtimeNamespace:   "test",
-			isDeprecatedPVName: false,
-			expectedPVName:     "test-hadoop",
-		},
-		{
-			runtimeName:        "hbase",
-			runtimeNamespace:   "fluid",
-			isDeprecatedPVName: true,
-			expectedPVName:     "hbase",
+			runtimeName:      "hadoop",
+			runtimeNamespace: "test",
+			expectedPVName:   "test-hadoop",
 		},
 	}
 	for _, testCase := range testCases {
@@ -53,7 +44,6 @@ func TestGetPersistentVolumeName(t *testing.T) {
 		if err != nil {
 			t.Errorf("fail to create the runtimeInfo with error %v", err)
 		}
-		runtimeInfo.SetDeprecatedPVName(testCase.isDeprecatedPVName)
 		result := runtimeInfo.GetPersistentVolumeName()
 		if result != testCase.expectedPVName {
 			t.Errorf("get failure, expected %s, get %s", testCase.expectedPVName, result)
