@@ -411,7 +411,7 @@ func mockAlluxioObjectsForTests(dataset *datav1alpha1.Dataset, runtime *datav1al
 			Namespace: runtime.Namespace,
 			Labels: map[string]string{
 				common.LabelAnnotationDatasetId: utils.GetDatasetId(runtime.Namespace, runtime.Name, string(dataset.UID)),
-				utils.GetCommonLabelName(false, runtime.Namespace, runtime.Name, string(dataset.UID)): "true",
+				utils.GetCommonLabelName(runtime.Namespace, runtime.Name, string(dataset.UID)): "true",
 			},
 			Annotations: common.GetExpectedFluidAnnotations(),
 		},
@@ -446,7 +446,7 @@ func mockAlluxioObjectsForTests(dataset *datav1alpha1.Dataset, runtime *datav1al
 			Name:      runtime.Name,
 			Namespace: runtime.Namespace,
 			Labels: map[string]string{
-				utils.GetCommonLabelName(false, runtime.Namespace, runtime.Name, string(dataset.UID)): "true",
+				utils.GetCommonLabelName(runtime.Namespace, runtime.Name, string(dataset.UID)): "true",
 				common.LabelAnnotationDatasetId: utils.GetDatasetId(runtime.Namespace, runtime.Name, string(dataset.UID)),
 			},
 			Annotations: common.GetExpectedFluidAnnotations(),

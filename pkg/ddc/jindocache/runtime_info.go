@@ -19,7 +19,6 @@ package jindocache
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/testutil"
 )
 
@@ -45,23 +44,6 @@ func (e *JindoCacheEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 
 		// Setup Fuse Deploy Mode
 		e.runtimeInfo.SetFuseNodeSelector(runtime.Spec.Fuse.NodeSelector)
-
-		// Check if the runtime is using deprecated labels
-		isLabelDeprecated, err := e.HasDeprecatedCommonLabelname()
-		if err != nil {
-			return e.runtimeInfo, err
-		}
-		e.runtimeInfo.SetDeprecatedNodeLabel(isLabelDeprecated)
-
-		// Check if the runtime is using deprecated naming style for PersistentVolumes
-		isPVNameDeprecated, err := volume.HasDeprecatedPersistentVolumeName(e.Client, e.runtimeInfo, e.Log)
-		if err != nil {
-			return e.runtimeInfo, err
-		}
-		e.runtimeInfo.SetDeprecatedPVName(isPVNameDeprecated)
-
-		e.Log.Info("Deprecation check finished", "isLabelDeprecated", e.runtimeInfo.IsDeprecatedNodeLabel(), "isPVNameDeprecated", e.runtimeInfo.IsDeprecatedPVName())
-
 	}
 
 	if testutil.IsUnitTest() {

@@ -24,23 +24,23 @@ import (
 )
 
 func (info *RuntimeInfo) GetLabelNameForMemory() string {
-	return utils.GetLabelNameForMemory(info.IsDeprecatedNodeLabel(), info.runtimeType, info.namespace, info.name, info.ownerDatasetUID)
+	return utils.GetLabelNameForMemory(info.runtimeType, info.namespace, info.name, info.ownerDatasetUID)
 }
 
 func (info *RuntimeInfo) GetLabelNameForDisk() string {
-	return utils.GetLabelNameForDisk(info.IsDeprecatedNodeLabel(), info.runtimeType, info.namespace, info.name, info.ownerDatasetUID)
+	return utils.GetLabelNameForDisk(info.runtimeType, info.namespace, info.name, info.ownerDatasetUID)
 }
 
 func (info *RuntimeInfo) GetLabelNameForTotal() string {
-	return utils.GetLabelNameForTotal(info.IsDeprecatedNodeLabel(), info.runtimeType, info.namespace, info.name, info.ownerDatasetUID)
+	return utils.GetLabelNameForTotal(info.runtimeType, info.namespace, info.name, info.ownerDatasetUID)
 }
 
 func (info *RuntimeInfo) GetCommonLabelName() string {
-	return utils.GetCommonLabelName(info.IsDeprecatedNodeLabel(), info.namespace, info.name, info.ownerDatasetUID)
+	return utils.GetCommonLabelName(info.namespace, info.name, info.ownerDatasetUID)
 }
 
 func (info *RuntimeInfo) GetRuntimeLabelName() string {
-	return utils.GetRuntimeLabelName(info.IsDeprecatedNodeLabel(), info.runtimeType, info.namespace, info.name, info.ownerDatasetUID)
+	return utils.GetRuntimeLabelName(info.runtimeType, info.namespace, info.name, info.ownerDatasetUID)
 }
 
 // GetDatasetNumLabelname get the label to record how much datasets on a node

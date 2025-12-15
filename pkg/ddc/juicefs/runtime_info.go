@@ -19,7 +19,6 @@ package juicefs
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/testutil"
 )
 
@@ -45,24 +44,6 @@ func (j *JuiceFSEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		j.runtimeInfo.SetFuseNodeSelector(runtime.Spec.Fuse.NodeSelector)
 
 		j.runtimeInfo.SetFuseName(j.getFuseName())
-
-		if !j.UnitTest {
-			// Check if the runtime is using deprecated labels
-			isLabelDeprecated, err := j.HasDeprecatedCommonLabelName()
-			if err != nil {
-				return j.runtimeInfo, err
-			}
-			j.runtimeInfo.SetDeprecatedNodeLabel(isLabelDeprecated)
-
-			// Check if the runtime is using deprecated naming style for PersistentVolumes
-			isPVNameDeprecated, err := volume.HasDeprecatedPersistentVolumeName(j.Client, j.runtimeInfo, j.Log)
-			if err != nil {
-				return j.runtimeInfo, err
-			}
-			j.runtimeInfo.SetDeprecatedPVName(isPVNameDeprecated)
-
-			j.Log.Info("Deprecation check finished", "isLabelDeprecated", j.runtimeInfo.IsDeprecatedNodeLabel(), "isPVNameDeprecated", j.runtimeInfo.IsDeprecatedPVName())
-		}
 	}
 
 	if testutil.IsUnitTest() {
