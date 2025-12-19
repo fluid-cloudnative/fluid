@@ -25,7 +25,6 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -40,49 +39,6 @@ import (
 // not support anymore.
 func GetWorkersAsStatefulset(client client.Client, key types.NamespacedName) (workers *appsv1.StatefulSet, err error) {
 	return kubeclient.GetStatefulSet(client, key.Name, key.Namespace)
-}
-
-func (e *Helper) GetWorkerNodes() (nodes []corev1.Node, err error) {
-	var (
-		nodeList = &corev1.NodeList{}
-		// runtimeLabel indicates the specific runtime pod is on the node
-		// e.g. fluid.io/s-alluxio-default-hbase=true
-		runtimeLabelKey = e.runtimeInfo.GetRuntimeLabelName()
-	)
-
-	labelNames := []string{runtimeLabelKey}
-	e.log.Info("check node labels", "labelNames", labelNames)
-	runtimeLabelSelector, err := labels.Parse(fmt.Sprintf("%s=true", runtimeLabelKey))
-	if err != nil {
-		return
-	}
-
-	err = e.client.List(context.TODO(), nodeList, &client.ListOptions{
-		LabelSelector: runtimeLabelSelector,
-	})
-	if err != nil {
-		return nodes, err
-	}
-
-	nodes = nodeList.Items
-	if len(nodes) == 0 {
-		e.log.Info("No node with runtime label is found")
-		return
-	} else {
-		e.log.Info("Find the runtime label for nodes", "len", len(nodes))
-	}
-
-	return
-}
-
-// GetIpAddressesOfWorker gets Ipaddresses from the Worker Node
-func (e *Helper) GetIpAddressesOfWorker() (ipAddresses []string, err error) {
-	nodes, err := e.GetWorkerNodes()
-	if err != nil {
-		return
-	}
-	ipAddresses = kubeclient.GetIpAddressesOfNodes(nodes)
-	return
 }
 
 // SetupWorkers checks the desired and current replicas of workers and makes an update
