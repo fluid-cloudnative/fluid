@@ -7,6 +7,8 @@ Resource Types:
 <ul><li>
 <a href="#data.fluid.io/v1alpha1.AlluxioRuntime">AlluxioRuntime</a>
 </li><li>
+<a href="#data.fluid.io/v1alpha1.CacheRuntime">CacheRuntime</a>
+</li><li>
 <a href="#data.fluid.io/v1alpha1.DataLoad">DataLoad</a>
 </li><li>
 <a href="#data.fluid.io/v1alpha1.DataMigrate">DataMigrate</a>
@@ -352,6 +354,190 @@ RuntimeManagement
 <em>
 <a href="#data.fluid.io/v1alpha1.RuntimeStatus">
 RuntimeStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.CacheRuntime">CacheRuntime
+</h3>
+<p>
+<p>CacheRuntime is the Schema for the CacheRuntimes API</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>apiVersion</code></br>
+string</td>
+<td>
+<code>data.fluid.io/v1alpha1</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>kind</code></br>
+string
+</td>
+<td><code>CacheRuntime</code></td>
+</tr>
+<tr>
+<td>
+<code>metadata</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.CacheRuntimeSpec">
+CacheRuntimeSpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>runtimeClassName</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>RuntimeClassName is the name of the CacheRuntimeClass to use for this runtime.
+The CacheRuntimeClass defines the implementation details of the cache runtime.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>master</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.CacheRuntimeMasterSpec">
+CacheRuntimeMasterSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Master is the desired state of the master component.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>worker</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.CacheRuntimeWorkerSpec">
+CacheRuntimeWorkerSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Worker is the desired state of the worker component.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>client</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.CacheRuntimeClientSpec">
+CacheRuntimeClientSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Client is the desired state of the client component.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>options</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Options is a set of key-value pairs that provide additional configuration for the cache system.
+These options will be propagated to all components.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata contains labels and annotations that will be propagated to all component pods.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>imagePullSecrets</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#localobjectreference-v1-core">
+[]Kubernetes core/v1.LocalObjectReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ImagePullSecrets is an optional list of references to secrets in the same namespace
+to use for pulling any of the images used by this PodSpec.
+More info: <a href="https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod">https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod</a></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>volumes</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#volume-v1-core">
+[]Kubernetes core/v1.Volume
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Volumes is the list of volumes that can be mounted by containers belonging to the cache runtime components.
+More info: <a href="https://kubernetes.io/docs/concepts/storage/volumes">https://kubernetes.io/docs/concepts/storage/volumes</a></p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.CacheRuntimeStatus">
+CacheRuntimeStatus
 </a>
 </em>
 </td>
@@ -3472,6 +3658,512 @@ RuntimeManagement
 </tr>
 </tbody>
 </table>
+<h3 id="data.fluid.io/v1alpha1.CacheRuntimeClass">CacheRuntimeClass
+</h3>
+<p>
+<p>CacheRuntimeClass is the Schema for the cacheruntimeclasses API.
+CacheRuntimeClass defines a class of cache runtime implementations with specific configurations.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>metadata</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>fileSystemType</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>FileSystemType is the file system type of the cache runtime (e.g., &ldquo;alluxio&rdquo;, &ldquo;juicefs&rdquo;)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>topology</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.RuntimeTopology">
+RuntimeTopology
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Topology describes the topology of the CacheRuntime components (master, worker, client)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>extraResources</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.RuntimeExtraResources">
+RuntimeExtraResources
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ExtraResources specifies additional resources (e.g., ConfigMaps) used by the CacheRuntime components</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.CacheRuntimeClientSpec">CacheRuntimeClientSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.CacheRuntimeSpec">CacheRuntimeSpec</a>)
+</p>
+<p>
+<p>CacheRuntimeClientSpec describes the desired state of CacheRuntime client component</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>RuntimeComponentCommonSpec</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.RuntimeComponentCommonSpec">
+RuntimeComponentCommonSpec
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>RuntimeComponentCommonSpec</code> are embedded into this type.)
+</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>tieredStore</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.RuntimeTieredStore">
+RuntimeTieredStore
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>TieredStore describes the tiered storage configuration used by the client component.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>cleanPolicy</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.FuseCleanPolicy">
+FuseCleanPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CleanPolicy determines when to clean up the FUSE client pods.
+Currently supports two policies:
+- &ldquo;OnDemand&rdquo;: Clean up the FUSE pod when it is no longer needed on a node
+- &ldquo;OnRuntimeDeleted&rdquo;: Clean up the FUSE pod only when the CacheRuntime is deleted
+Defaults to &ldquo;OnRuntimeDeleted&rdquo;.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.CacheRuntimeMasterSpec">CacheRuntimeMasterSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.CacheRuntimeSpec">CacheRuntimeSpec</a>)
+</p>
+<p>
+<p>CacheRuntimeMasterSpec describes the desired state of CacheRuntime master component</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>RuntimeComponentCommonSpec</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.RuntimeComponentCommonSpec">
+RuntimeComponentCommonSpec
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>RuntimeComponentCommonSpec</code> are embedded into this type.)
+</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>replicas</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Replicas is the desired number of replicas of the master component.
+If unspecified, defaults to 1.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.CacheRuntimeSpec">CacheRuntimeSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.CacheRuntime">CacheRuntime</a>)
+</p>
+<p>
+<p>CacheRuntimeSpec describes the desired state of CacheRuntime</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>runtimeClassName</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>RuntimeClassName is the name of the CacheRuntimeClass to use for this runtime.
+The CacheRuntimeClass defines the implementation details of the cache runtime.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>master</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.CacheRuntimeMasterSpec">
+CacheRuntimeMasterSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Master is the desired state of the master component.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>worker</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.CacheRuntimeWorkerSpec">
+CacheRuntimeWorkerSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Worker is the desired state of the worker component.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>client</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.CacheRuntimeClientSpec">
+CacheRuntimeClientSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Client is the desired state of the client component.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>options</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Options is a set of key-value pairs that provide additional configuration for the cache system.
+These options will be propagated to all components.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata contains labels and annotations that will be propagated to all component pods.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>imagePullSecrets</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#localobjectreference-v1-core">
+[]Kubernetes core/v1.LocalObjectReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ImagePullSecrets is an optional list of references to secrets in the same namespace
+to use for pulling any of the images used by this PodSpec.
+More info: <a href="https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod">https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod</a></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>volumes</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#volume-v1-core">
+[]Kubernetes core/v1.Volume
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Volumes is the list of volumes that can be mounted by containers belonging to the cache runtime components.
+More info: <a href="https://kubernetes.io/docs/concepts/storage/volumes">https://kubernetes.io/docs/concepts/storage/volumes</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.CacheRuntimeStatus">CacheRuntimeStatus
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.CacheRuntime">CacheRuntime</a>)
+</p>
+<p>
+<p>CacheRuntimeStatus describes the observed state of a CacheRuntime</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>valueFile</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ValueFile is the path to the generated values file used for runtime configuration.
+This file is generated during the setup phase and contains the resolved configuration.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>configFile</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ConfigFile is the path to the engine-specific configuration file.
+This file contains the cache engine&rsquo;s native configuration format.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>setupDuration</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>SetupDuration is the duration spent setting up the runtime, in human-readable format (e.g., &ldquo;2m30s&rdquo;).
+This helps users understand the setup time for the runtime.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>conditions</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.RuntimeCondition">
+[]RuntimeCondition
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Conditions represent the latest available observations of the runtime&rsquo;s state.
+Known condition types include &ldquo;Ready&rdquo;, &ldquo;Available&rdquo;, etc.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>selector</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Selector is the label selector in string form, used for service discovery and auto-scaling.
+This is the serialized form of a label selector that can be used to find runtime pods.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>cacheAffinity</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#nodeaffinity-v1-core">
+Kubernetes core/v1.NodeAffinity
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CacheAffinity describes the node affinity for cache worker pods.
+This includes node selector terms that specify which nodes are suitable for cache placement.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>RuntimeComponentStatusCollection</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.RuntimeComponentStatusCollection">
+RuntimeComponentStatusCollection
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>RuntimeComponentStatusCollection</code> are embedded into this type.)
+</p>
+<p>RuntimeComponentStatusCollection contains the status of runtime components (master, worker, client).</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>mountPoints</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.MountPointStatus">
+[]MountPointStatus
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>MountPoints represents the status of mount points specified in the bound dataset.
+Each entry tracks the mount configuration and the time of the last successful mount.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.CacheRuntimeWorkerSpec">CacheRuntimeWorkerSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.CacheRuntimeSpec">CacheRuntimeSpec</a>)
+</p>
+<p>
+<p>CacheRuntimeWorkerSpec describes the desired state of CacheRuntime worker component</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>RuntimeComponentCommonSpec</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.RuntimeComponentCommonSpec">
+RuntimeComponentCommonSpec
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>RuntimeComponentCommonSpec</code> are embedded into this type.)
+</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>replicas</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Replicas is the desired number of replicas of the worker component.
+If unspecified, defaults to 1.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>tieredStore</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.RuntimeTieredStore">
+RuntimeTieredStore
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>TieredStore describes the tiered storage configuration used by the worker component.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="data.fluid.io/v1alpha1.CacheableNodeAffinity">CacheableNodeAffinity
 </h3>
 <p>
@@ -3600,6 +4292,42 @@ Defaults to None when it is not explicitly set.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="data.fluid.io/v1alpha1.ComponentServiceConfig">ComponentServiceConfig
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.RuntimeComponentService">RuntimeComponentService</a>)
+</p>
+<p>
+<p>ComponentServiceConfig defines the service configuration for runtime components.
+Currently only headless service is supported, but this can be extended in the future
+to support other service types such as ClusterIP, NodePort, LoadBalancer, etc.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>headless</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.HeadlessRuntimeComponentService">
+HeadlessRuntimeComponentService
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Headless enables a headless service for the component.
+A headless service does not allocate a cluster IP and allows direct pod-to-pod communication.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="data.fluid.io/v1alpha1.Condition">Condition
 </h3>
 <p>
@@ -3687,6 +4415,98 @@ Kubernetes meta/v1.Time
 </td>
 <td>
 <p>LastTransitionTime describes last time the condition transitioned from one status to another.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.ConfigMapDependencyConfig">ConfigMapDependencyConfig
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.ExtraResourcesComponentDependency">ExtraResourcesComponentDependency</a>)
+</p>
+<p>
+<p>ConfigMapDependencyConfig defines the ConfigMap mount configuration</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>name</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Name is the ConfigMap template name defined in extraResources.configMaps</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>mountPath</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>MountPath is the path within the container at which the ConfigMap should be mounted.
+Must not contain &lsquo;:&rsquo;.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.ConfigMapRuntimeExtraResource">ConfigMapRuntimeExtraResource
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.RuntimeExtraResources">RuntimeExtraResources</a>)
+</p>
+<p>
+<p>ConfigMapRuntimeExtraResource defines a ConfigMap template for CacheRuntime extra resources</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>name</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Name is the name of the ConfigMap.
+This will be used as the actual ConfigMap name when created in the runtime&rsquo;s namespace.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>data</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Data contains the configuration data.
+Each key must consist of alphanumeric characters, &lsquo;-&rsquo;, &lsquo;_&rsquo; or &lsquo;.&rsquo;.
+Values with non-UTF-8 byte sequences must use the BinaryData field.
+The keys stored in Data must not overlap with the keys in
+the BinaryData field, this is enforced during validation process.</p>
 </td>
 </tr>
 </tbody>
@@ -5455,6 +6275,15 @@ EncryptOptionSource
 </tr>
 </tbody>
 </table>
+<h3 id="data.fluid.io/v1alpha1.EncryptOptionComponentDependency">EncryptOptionComponentDependency
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.RuntimeComponentDependencies">RuntimeComponentDependencies</a>)
+</p>
+<p>
+<p>EncryptOptionComponentDependency defines the configuration for encrypt option dependency</p>
+</p>
 <h3 id="data.fluid.io/v1alpha1.EncryptOptionSource">EncryptOptionSource
 </h3>
 <p>
@@ -5589,11 +6418,45 @@ string
 </tr>
 </tbody>
 </table>
+<h3 id="data.fluid.io/v1alpha1.ExtraResourcesComponentDependency">ExtraResourcesComponentDependency
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.RuntimeComponentDependencies">RuntimeComponentDependencies</a>)
+</p>
+<p>
+<p>ExtraResourcesComponentDependency defines the extra resources configuration for component dependencies</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>configMaps</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.ConfigMapDependencyConfig">
+[]ConfigMapDependencyConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ConfigMaps is a list of ConfigMaps in the same namespace to mount into the component</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="data.fluid.io/v1alpha1.FuseCleanPolicy">FuseCleanPolicy
 (<code>string</code> alias)</p></h3>
 <p>
 (<em>Appears on:</em>
 <a href="#data.fluid.io/v1alpha1.AlluxioFuseSpec">AlluxioFuseSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.CacheRuntimeClientSpec">CacheRuntimeClientSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.EFCFuseSpec">EFCFuseSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.GooseFSFuseSpec">GooseFSFuseSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JindoFuseSpec">JindoFuseSpec</a>, 
@@ -6180,6 +7043,15 @@ string
 </tr>
 </tbody>
 </table>
+<h3 id="data.fluid.io/v1alpha1.HeadlessRuntimeComponentService">HeadlessRuntimeComponentService
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.ComponentServiceConfig">ComponentServiceConfig</a>)
+</p>
+<p>
+<p>HeadlessRuntimeComponentService defines the configuration for headless service</p>
+</p>
 <h3 id="data.fluid.io/v1alpha1.InitFuseSpec">InitFuseSpec
 </h3>
 <p>
@@ -7681,6 +8553,56 @@ key: accesskey</p>
 </tr>
 </tbody>
 </table>
+<h3 id="data.fluid.io/v1alpha1.MediumSource">MediumSource
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.RuntimeTieredStoreLevel">RuntimeTieredStoreLevel</a>)
+</p>
+<p>
+<p>MediumSource describes the storage medium type for tiered store.
+Only one of its members may be specified.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>processMemory</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.ProcessMemoryMediumSource">
+ProcessMemoryMediumSource
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ProcessMemory indicates that process memory should be used as the storage medium.
+The cache will be stored in the process&rsquo;s memory space.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>volume</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.VolumeMediumSource">
+VolumeMediumSource
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Volume indicates that a Kubernetes volume should be used as the storage medium.
+Supported volume types include hostPath, emptyDir, and ephemeral volumes.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="data.fluid.io/v1alpha1.Metadata">Metadata
 </h3>
 <p>
@@ -7760,6 +8682,7 @@ bool
 (<em>Appears on:</em>
 <a href="#data.fluid.io/v1alpha1.DatasetSpec">DatasetSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.DatasetStatus">DatasetStatus</a>, 
+<a href="#data.fluid.io/v1alpha1.MountPointStatus">MountPointStatus</a>, 
 <a href="#data.fluid.io/v1alpha1.RuntimeStatus">RuntimeStatus</a>)
 </p>
 <p>
@@ -7860,6 +8783,54 @@ bool
 <td>
 <em>(Optional)</em>
 <p>The secret information</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.MountPointStatus">MountPointStatus
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.CacheRuntimeStatus">CacheRuntimeStatus</a>)
+</p>
+<p>
+<p>MountPointStatus describes the status of a single mount point in the dataset</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>mount</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.Mount">
+Mount
+</a>
+</em>
+</td>
+<td>
+<p>Mount contains the mount point configuration from the bound dataset.
+This includes the remote path, mount options, and other mount-specific settings.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>mountTime</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>MountTime is the timestamp of the last successful mount operation.
+If MountTime is earlier than the master component&rsquo;s start time, a remount will be required.</p>
 </td>
 </tr>
 </tbody>
@@ -8184,6 +9155,7 @@ Kubernetes core/v1.NodeAffinity
 <a href="#data.fluid.io/v1alpha1.AlluxioCompTemplateSpec">AlluxioCompTemplateSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.AlluxioFuseSpec">AlluxioFuseSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.AlluxioRuntimeSpec">AlluxioRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.CacheRuntimeSpec">CacheRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.DataLoadSpec">DataLoadSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.DataMigrateSpec">DataMigrateSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.EFCCompTemplateSpec">EFCCompTemplateSpec</a>, 
@@ -8197,6 +9169,7 @@ Kubernetes core/v1.NodeAffinity
 <a href="#data.fluid.io/v1alpha1.JuiceFSRuntimeSpec">JuiceFSRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.Metadata">Metadata</a>, 
 <a href="#data.fluid.io/v1alpha1.Processor">Processor</a>, 
+<a href="#data.fluid.io/v1alpha1.RuntimeComponentCommonSpec">RuntimeComponentCommonSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.ThinFuseSpec">ThinFuseSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.VineyardClientSocketSpec">VineyardClientSocketSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.VineyardCompTemplateSpec">VineyardCompTemplateSpec</a>, 
@@ -8285,6 +9258,17 @@ int32
 </tr>
 </tbody>
 </table>
+<h3 id="data.fluid.io/v1alpha1.ProcessMemoryMediumSource">ProcessMemoryMediumSource
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.MediumSource">MediumSource</a>)
+</p>
+<p>
+<p>ProcessMemoryMediumSource describes process memory as a storage medium.
+When specified, cache data will be stored in the process&rsquo;s memory space,
+and the quota will be added to the container&rsquo;s resource requests and limits.</p>
+</p>
 <h3 id="data.fluid.io/v1alpha1.Processor">Processor
 </h3>
 <p>
@@ -8461,10 +9445,524 @@ int32
 </tr>
 </tbody>
 </table>
+<h3 id="data.fluid.io/v1alpha1.RuntimeComponentCommonSpec">RuntimeComponentCommonSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.CacheRuntimeClientSpec">CacheRuntimeClientSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.CacheRuntimeMasterSpec">CacheRuntimeMasterSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.CacheRuntimeWorkerSpec">CacheRuntimeWorkerSpec</a>)
+</p>
+<p>
+<p>RuntimeComponentCommonSpec describes the common configuration for CacheRuntime components</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>disabled</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Disabled indicates whether the component should be disabled.
+If set to true, the component will not be created.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>runtimeVersion</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.VersionSpec">
+VersionSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>RuntimeVersion is the version information that instructs Fluid to orchestrate a particular version of the runtime.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>options</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Options is a set of key-value pairs that provide additional configuration for the cache system.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podMetadata</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.PodMetadata">
+PodMetadata
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PodMetadata contains labels and annotations that will be propagated to the component&rsquo;s pods.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>resources</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#resourcerequirements-v1-core">
+Kubernetes core/v1.ResourceRequirements
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Resources describes the compute resource requirements.
+More info: <a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/">https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/</a></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>env</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#envvar-v1-core">
+[]Kubernetes core/v1.EnvVar
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Env is a list of environment variables to set in the container.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>volumeMounts</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#volumemount-v1-core">
+[]Kubernetes core/v1.VolumeMount
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>VolumeMounts are the volumes to mount into the container&rsquo;s filesystem.
+Cannot be updated.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>args</code></br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Args are arguments to the entrypoint.
+The container image&rsquo;s CMD is used if this is not provided.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nodeSelector</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>NodeSelector is a selector which must be true for the pod to fit on a node.
+Selector which must match a node&rsquo;s labels for the pod to be scheduled on that node.
+More info: <a href="https://kubernetes.io/docs/concepts/configuration/assign-pod-node/">https://kubernetes.io/docs/concepts/configuration/assign-pod-node/</a></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>tolerations</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#toleration-v1-core">
+[]Kubernetes core/v1.Toleration
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Tolerations are the pod&rsquo;s tolerations.
+If specified, the pod&rsquo;s tolerations.
+More info: <a href="https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/">https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.RuntimeComponentDefinition">RuntimeComponentDefinition
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.RuntimeTopology">RuntimeTopology</a>)
+</p>
+<p>
+<p>RuntimeComponentDefinition defines the configuration for a CacheRuntime component</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>workloadType</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#typemeta-v1-meta">
+Kubernetes meta/v1.TypeMeta
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>WorkloadType is the default workload type of the component</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>options</code></br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Options is a set of key-value pairs that provide additional configuration for the component</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>template</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#podtemplatespec-v1-core">
+Kubernetes core/v1.PodTemplateSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Template describes the pods that will be created.
+The template follows the standard PodTemplateSpec from Kubernetes core.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>service</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.RuntimeComponentService">
+RuntimeComponentService
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Service is the service configuration for the component</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>dependencies</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.RuntimeComponentDependencies">
+RuntimeComponentDependencies
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Dependencies specifies the dependencies required by the component</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.RuntimeComponentDependencies">RuntimeComponentDependencies
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.RuntimeComponentDefinition">RuntimeComponentDefinition</a>)
+</p>
+<p>
+<p>RuntimeComponentDependencies defines the dependencies required by a CacheRuntime component</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>encryptOption</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.EncryptOptionComponentDependency">
+EncryptOptionComponentDependency
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>EncryptOption is the configuration for encrypt option secret mount</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>extraResources</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.ExtraResourcesComponentDependency">
+ExtraResourcesComponentDependency
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ExtraResources specifies the usage of extra resources such as ConfigMaps</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.RuntimeComponentService">RuntimeComponentService
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.RuntimeComponentDefinition">RuntimeComponentDefinition</a>)
+</p>
+<p>
+<p>RuntimeComponentService describes the service configuration for a CacheRuntime component</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>ComponentServiceConfig</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.ComponentServiceConfig">
+ComponentServiceConfig
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>ComponentServiceConfig</code> are embedded into this type.)
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.RuntimeComponentStatus">RuntimeComponentStatus
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.RuntimeComponentStatusCollection">RuntimeComponentStatusCollection</a>)
+</p>
+<p>
+<p>RuntimeComponentStatus describes the observed state of a runtime component.
+It follows the standard Kubernetes pattern for tracking workload status.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>phase</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.RuntimePhase">
+RuntimePhase
+</a>
+</em>
+</td>
+<td>
+<p>Phase is the current lifecycle phase of the component.
+Known phases include: &ldquo;Pending&rdquo;, &ldquo;Running&rdquo;, &ldquo;Failed&rdquo;, etc.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>reason</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Reason is a brief, machine-readable string that gives the reason for the current phase.
+This is useful for understanding why a component is in a particular state.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>message</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Message is a human-readable message indicating details about the component&rsquo;s status.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>readyReplicas</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ReadyReplicas is the number of pods with a Ready condition.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>currentReplicas</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CurrentReplicas is the current number of replicas running for the component</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>desiredReplicas</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>DesiredReplicas is the desired number of replicas as specified in the spec.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>unavailableReplicas</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>UnavailableReplicas is the number of pods that are not available.
+A pod is considered unavailable if it is not ready or has been terminated.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>availableReplicas</code></br>
+<em>
+int32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>AvailableReplicas is the number of pods that are available and ready to serve requests.
+This count includes only pods that have passed readiness checks.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.RuntimeComponentStatusCollection">RuntimeComponentStatusCollection
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.CacheRuntimeStatus">CacheRuntimeStatus</a>)
+</p>
+<p>
+<p>RuntimeComponentStatusCollection describes the status of all runtime components.
+It provides a unified view of master, worker, and client component states.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>master</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.RuntimeComponentStatus">
+RuntimeComponentStatus
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Master is the observed state of the master component.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>worker</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.RuntimeComponentStatus">
+RuntimeComponentStatus
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Worker is the observed state of the worker component.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>client</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.RuntimeComponentStatus">
+RuntimeComponentStatus
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Client is the observed state of the client (FUSE) component.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="data.fluid.io/v1alpha1.RuntimeCondition">RuntimeCondition
 </h3>
 <p>
 (<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.CacheRuntimeStatus">CacheRuntimeStatus</a>, 
 <a href="#data.fluid.io/v1alpha1.RuntimeStatus">RuntimeStatus</a>)
 </p>
 <p>
@@ -8550,6 +10048,40 @@ Kubernetes meta/v1.Time
 </td>
 <td>
 <p>Last time the condition transitioned from one status to another.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.RuntimeExtraResources">RuntimeExtraResources
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.CacheRuntimeClass">CacheRuntimeClass</a>)
+</p>
+<p>
+<p>RuntimeExtraResources defines the extra resources for CacheRuntime</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>configMaps</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.ConfigMapRuntimeExtraResource">
+[]ConfigMapRuntimeExtraResource
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ConfigMaps is a list of ConfigMaps that will be created in the runtime&rsquo;s namespace.
+These ConfigMaps can be referenced and mounted by runtime components.</p>
 </td>
 </tr>
 </tbody>
@@ -8970,6 +10502,193 @@ Kubernetes core/v1.NodeAffinity
 </td>
 <td>
 <p>CacheAffinity represents the runtime worker pods node affinity including node selector</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.RuntimeTieredStore">RuntimeTieredStore
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.CacheRuntimeClientSpec">CacheRuntimeClientSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.CacheRuntimeWorkerSpec">CacheRuntimeWorkerSpec</a>)
+</p>
+<p>
+<p>RuntimeTieredStore describes the tiered storage configuration for cache runtime</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>levels</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.RuntimeTieredStoreLevel">
+[]RuntimeTieredStoreLevel
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Levels is the list of cache storage tiers from highest priority to lowest.
+Each tier can use different storage media (e.g., memory, SSD, HDD).</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.RuntimeTieredStoreLevel">RuntimeTieredStoreLevel
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.RuntimeTieredStore">RuntimeTieredStore</a>)
+</p>
+<p>
+<p>RuntimeTieredStoreLevel describes the configuration for a single tier in the tiered storage</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>medium</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.MediumSource">
+MediumSource
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Medium describes the storage medium type for this tier.
+Supported types include process memory and various volume types.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>path</code></br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Path is a list of file paths to be used for the cache tier.
+Multiple paths can be specified to distribute cache across different mount points.
+For example: [&ldquo;/mnt/cache1&rdquo;, &ldquo;/mnt/cache2&rdquo;].</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>quota</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#quantity-resource-core">
+[]Kubernetes resource.Quantity
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Quota is a list of storage quotas for each path in the tier.
+The length of Quota should match the length of Path.
+Each quota corresponds to the path at the same index.
+For example: [&ldquo;100Gi&rdquo;, &ldquo;50Gi&rdquo;] allocates 100GiB to the first path and 50GiB to the second path.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>high</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>High is the ratio of high watermark of the tier (e.g., &ldquo;0.9&rdquo;).
+When cache usage exceeds this ratio, eviction will be triggered.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>low</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Low is the ratio of low watermark of the tier (e.g., &ldquo;0.7&rdquo;).
+Eviction will continue until cache usage falls below this ratio.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data.fluid.io/v1alpha1.RuntimeTopology">RuntimeTopology
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.CacheRuntimeClass">CacheRuntimeClass</a>)
+</p>
+<p>
+<p>RuntimeTopology defines the topology structure of CacheRuntime components</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>master</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.RuntimeComponentDefinition">
+RuntimeComponentDefinition
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Master is the configuration for master component</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>worker</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.RuntimeComponentDefinition">
+RuntimeComponentDefinition
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Worker is the configuration for worker component</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>client</code></br>
+<em>
+<a href="#data.fluid.io/v1alpha1.RuntimeComponentDefinition">
+RuntimeComponentDefinition
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Client is the configuration for client component</p>
 </td>
 </tr>
 </tbody>
@@ -10247,6 +11966,7 @@ string
 <a href="#data.fluid.io/v1alpha1.InitFuseSpec">InitFuseSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JindoRuntimeSpec">JindoRuntimeSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.JuiceFSRuntimeSpec">JuiceFSRuntimeSpec</a>, 
+<a href="#data.fluid.io/v1alpha1.RuntimeComponentCommonSpec">RuntimeComponentCommonSpec</a>, 
 <a href="#data.fluid.io/v1alpha1.ScriptProcessor">ScriptProcessor</a>)
 </p>
 <p>
@@ -10832,6 +12552,72 @@ Default is null.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="data.fluid.io/v1alpha1.VolumeMediumSource">VolumeMediumSource
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#data.fluid.io/v1alpha1.MediumSource">MediumSource</a>)
+</p>
+<p>
+<p>VolumeMediumSource describes a Kubernetes volume as a storage medium.
+Only one of its members may be specified.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>hostPath</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#hostpathvolumesource-v1-core">
+Kubernetes core/v1.HostPathVolumeSource
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>HostPath represents a pre-existing file or directory on the host machine that is directly exposed to the container.
+More info: <a href="https://kubernetes.io/docs/concepts/storage/volumes#hostpath">https://kubernetes.io/docs/concepts/storage/volumes#hostpath</a></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>emptyDir</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#emptydirvolumesource-v1-core">
+Kubernetes core/v1.EmptyDirVolumeSource
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>EmptyDir represents a temporary directory that shares a pod&rsquo;s lifetime.
+More info: <a href="https://kubernetes.io/docs/concepts/storage/volumes#emptydir">https://kubernetes.io/docs/concepts/storage/volumes#emptydir</a></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>ephemeral</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#ephemeralvolumesource-v1-core">
+Kubernetes core/v1.EphemeralVolumeSource
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Ephemeral represents a volume that is handled by a cluster storage driver.
+The volume&rsquo;s lifecycle is tied to the pod that defines it.
+More info: <a href="https://kubernetes.io/docs/concepts/storage/ephemeral-volumes/">https://kubernetes.io/docs/concepts/storage/ephemeral-volumes/</a></p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="data.fluid.io/v1alpha1.VolumeSource">VolumeSource
 </h3>
 <p>
@@ -10898,5 +12684,5 @@ bool
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>9c50ed52c</code>.
+on git commit <code>fb9e21b1d</code>.
 </em></p>
