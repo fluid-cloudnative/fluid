@@ -28,6 +28,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -640,7 +641,7 @@ func TestJindoCacheEngine_transformMasterResources(t *testing.T) {
 				t.Errorf("JindoCacheEngine.getRUntime() error = %v", err)
 			}
 
-			if !ResourceRequirementsEqual(tt.wantRuntimeResource, runtime.Spec.Master.Resources) {
+			if !utils.ResourceRequirementsEqual(tt.wantRuntimeResource, runtime.Spec.Master.Resources) {
 				t.Errorf("JindoCacheEngine.transformMasterResources() runtime = %v, wantRuntime %v", runtime.Spec.Master.Resources, tt.wantRuntimeResource)
 			}
 
@@ -650,40 +651,6 @@ func TestJindoCacheEngine_transformMasterResources(t *testing.T) {
 
 		})
 	}
-}
-
-func ResourceRequirementsEqual(source corev1.ResourceRequirements,
-	target corev1.ResourceRequirements) bool {
-	return resourceListsEqual(source.Requests, target.Requests) &&
-		resourceListsEqual(source.Limits, target.Limits)
-}
-
-func resourceListsEqual(a corev1.ResourceList, b corev1.ResourceList) bool {
-	a = withoutZeroElems(a)
-	b = withoutZeroElems(b)
-	if len(a) != len(b) {
-		return false
-	}
-	for k, v := range a {
-		vb, found := b[k]
-		if !found {
-			return false
-		}
-		if v.Cmp(vb) != 0 {
-			return false
-		}
-	}
-	return true
-}
-
-func withoutZeroElems(input corev1.ResourceList) (output corev1.ResourceList) {
-	output = corev1.ResourceList{}
-	for k, v := range input {
-		if !v.IsZero() {
-			output[k] = v
-		}
-	}
-	return
 }
 
 func TestJindoCacheEngine_transform(t *testing.T) {

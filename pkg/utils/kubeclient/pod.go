@@ -94,22 +94,6 @@ func isRunningAndReady(pod *corev1.Pod) bool {
 	return pod.Status.Phase == corev1.PodRunning && podutil.IsPodReady(pod)
 }
 
-// GetIpAddressesOfPods gets the ipAddresses of pods
-func GetIpAddressesOfPods(client client.Client, pods []corev1.Pod) (ipAddresses []string, err error) {
-	// nodes := []corev1.Node{}
-	nodes := make([]corev1.Node, 0, len(pods))
-	for _, pod := range pods {
-		nodeName := pod.Spec.NodeName
-		node, err := GetNode(client, nodeName)
-		if err != nil {
-			return ipAddresses, err
-		}
-		nodes = append(nodes, *node)
-	}
-
-	return GetIpAddressesOfNodes(nodes), err
-}
-
 func MergeNodeSelectorAndNodeAffinity(nodeSelector map[string]string, podAffinity *corev1.Affinity) (nodeAffinity *corev1.NodeAffinity) {
 	if podAffinity != nil && podAffinity.NodeAffinity != nil {
 		nodeAffinity = podAffinity.NodeAffinity.DeepCopy()
