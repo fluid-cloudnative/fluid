@@ -6,4 +6,3 @@ const (
 	RPCProtocolTCP  = "tcp"
 	RPCProtocolRDMA = "rdma"
 )
-
