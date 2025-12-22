@@ -18,6 +18,7 @@ package jindocache
 
 import (
 	"fmt"
+	"maps"
 	"os"
 	"regexp"
 	"strconv"
@@ -242,6 +243,16 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 	}
 	properties["namespace.rpc.port"] = strconv.Itoa(value.Master.Port.Rpc)
 	properties["namespace.meta-dir"] = metaPath + "/server"
+
+	if e.RdmaEnabled(runtime) {
+		properties["namespace.rpc.rdma.enable"] = "true"
+		if value.Master.ContainerCapabilities == nil {
+			value.Master.ContainerCapabilities = &corev1.Capabilities{}
+		}
+		value.Master.ContainerCapabilities.Add = append(value.Master.ContainerCapabilities.Add, corev1.Capability("SYS_RESOURCE"))
+		value.Master.ContainerCapabilities.Add = append(value.Master.ContainerCapabilities.Add, corev1.Capability("IPC_LOCK"))
+	}
+
 	// combine properties together
 	if len(runtime.Spec.Master.Properties) > 0 {
 		for k, v := range runtime.Spec.Master.Properties {
@@ -556,6 +567,17 @@ func (e *JindoCacheEngine) transformWorker(runtime *datav1alpha1.JindoRuntime, d
 	properties["storage.data-dirs.capacities"] = userQuotas
 	///properties["storage.data-dirs.capacities"] = "80g,80g,80g"
 
+	if e.RdmaEnabled(runtime) {
+		properties["storage.namespace.rpc.rdma.enable"] = "true"
+		properties["storage.rpc.rdma.enable"] = "true"
+		if value.Worker.ContainerCapabilities == nil {
+			value.Worker.ContainerCapabilities = &corev1.Capabilities{}
+		}
+		value.Worker.ContainerCapabilities.Add = append(value.Worker.ContainerCapabilities.Add, corev1.Capability("SYS_RESOURCE"))
+		value.Worker.ContainerCapabilities.Add = append(value.Worker.ContainerCapabilities.Add, corev1.Capability("IPC_LOCK"))
+
+	}
+
 	if len(runtime.Spec.Worker.Properties) > 0 {
 		for k, v := range runtime.Spec.Worker.Properties {
 			properties[k] = v
@@ -580,6 +602,12 @@ func (e *JindoCacheEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, val
 		"fs.s3.download.thread.concurrency":          "32",
 		"fs.xengine":                                 "jindocache",
 		"jindofsx.read.readahead.prefetcher.version": "default",
+	}
+
+	if e.RdmaEnabled(runtime) {
+		properties["fs.jindocache.namespace.rpc.rdma.enable"] = "true"
+		properties["fs.jindocache.storage.rpc.rdma.enable"] = "true"
+		// no extra container capabilities for fuse because fuse already has an implicit SYS_ADMIN capability.
 	}
 
 	// Assume value.FuseImageTag has been set here
@@ -644,6 +672,14 @@ func (e *JindoCacheEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, val
 		}
 	}
 	value.Fuse.FuseProperties = properties
+
+	// cache client properties should filter out properties related to rdma
+	cacheClientProperties := maps.Clone(properties)
+	delete(cacheClientProperties, "fs.jindocache.namespace.rpc.rdma.enable")
+	delete(cacheClientProperties, "fs.jindocache.storage.rpc.rdma.enable")
+	delete(cacheClientProperties, "fs.jindocache.rpc.rdma.device")
+	value.Fuse.CacheClientProperties = cacheClientProperties
+
 	value.Fuse.HostPID = common.HostPIDEnabled(runtime.Annotations)
 
 	// set critical fuse pod to avoid eviction

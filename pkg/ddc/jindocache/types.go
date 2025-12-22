@@ -63,26 +63,27 @@ type HadoopConfig struct {
 }
 
 type Master struct {
-	ReplicaCount        int                           `json:"replicaCount"`
-	Resources           common.Resources              `json:"resources"`
-	NodeSelector        map[string]string             `json:"nodeSelector,omitempty"`
-	MasterProperties    map[string]string             `json:"properties"`
-	FileStoreProperties map[string]string             `json:"fileStoreProperties"`
-	TokenProperties     map[string]string             `json:"secretProperties"`
-	Port                Ports                         `json:"ports,omitempty"`
-	OssKey              string                        `json:"osskey,omitempty"`
-	OssSecret           string                        `json:"osssecret,omitempty"`
-	Tolerations         []corev1.Toleration           `json:"tolerations,omitempty"`
-	DnsServer           string                        `json:"dnsServer,omitempty"`
-	NameSpace           string                        `json:"namespace,omitempty"`
-	Labels              map[string]string             `json:"labels,omitempty"`
-	Annotations         map[string]string             `json:"annotations,omitempty"`
-	ServiceCount        int                           `json:"svccount"`
-	Env                 map[string]string             `json:"env,omitempty"`
-	CacheSets           map[string]*CacheSet          `json:"cachesets,omitempty"`
-	VolumeMounts        []corev1.VolumeMount          `json:"volumeMounts,omitempty"`
-	Volumes             []corev1.Volume               `json:"volumes,omitempty"`
-	ImagePullSecrets    []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+	ReplicaCount          int                           `json:"replicaCount"`
+	Resources             common.Resources              `json:"resources"`
+	NodeSelector          map[string]string             `json:"nodeSelector,omitempty"`
+	MasterProperties      map[string]string             `json:"properties"`
+	FileStoreProperties   map[string]string             `json:"fileStoreProperties"`
+	TokenProperties       map[string]string             `json:"secretProperties"`
+	Port                  Ports                         `json:"ports,omitempty"`
+	OssKey                string                        `json:"osskey,omitempty"`
+	OssSecret             string                        `json:"osssecret,omitempty"`
+	Tolerations           []corev1.Toleration           `json:"tolerations,omitempty"`
+	DnsServer             string                        `json:"dnsServer,omitempty"`
+	NameSpace             string                        `json:"namespace,omitempty"`
+	Labels                map[string]string             `json:"labels,omitempty"`
+	Annotations           map[string]string             `json:"annotations,omitempty"`
+	ServiceCount          int                           `json:"svccount"`
+	Env                   map[string]string             `json:"env,omitempty"`
+	CacheSets             map[string]*CacheSet          `json:"cachesets,omitempty"`
+	VolumeMounts          []corev1.VolumeMount          `json:"volumeMounts,omitempty"`
+	Volumes               []corev1.Volume               `json:"volumes,omitempty"`
+	ImagePullSecrets      []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+	ContainerCapabilities *corev1.Capabilities          `json:"containerCapabilities,omitempty"`
 }
 
 type Worker struct {
@@ -93,11 +94,12 @@ type Worker struct {
 	Port             Ports               `json:"ports,omitempty"`
 	Tolerations      []corev1.Toleration `json:"tolerations,omitempty"`
 	// Affinity         corev1.Affinity       `json:"affinity,omitempty"`
-	Labels           map[string]string             `json:"labels,omitempty"`
-	Annotations      map[string]string             `json:"annotations,omitempty"`
-	Path             string                        `json:"dataPath"`
-	Env              map[string]string             `json:"env,omitempty"`
-	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+	Labels                map[string]string             `json:"labels,omitempty"`
+	Annotations           map[string]string             `json:"annotations,omitempty"`
+	Path                  string                        `json:"dataPath"`
+	Env                   map[string]string             `json:"env,omitempty"`
+	ImagePullSecrets      []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+	ContainerCapabilities *corev1.Capabilities          `json:"containerCapabilities,omitempty"`
 }
 
 type Ports struct {
@@ -106,23 +108,24 @@ type Ports struct {
 }
 
 type Fuse struct {
-	Args             []string                      `json:"args"`
-	HostPath         string                        `json:"hostPath"`
-	NodeSelector     map[string]string             `json:"nodeSelector,omitempty"`
-	FuseProperties   map[string]string             `json:"properties"`
-	Global           bool                          `json:"global,omitempty"`
-	RunAs            string                        `json:"runAs,omitempty"`
-	Tolerations      []corev1.Toleration           `json:"tolerations,omitempty"`
-	Labels           map[string]string             `json:"labels,omitempty"`
-	Annotations      map[string]string             `json:"annotations,omitempty"`
-	CriticalPod      bool                          `json:"criticalPod,omitempty"`
-	Resources        common.Resources              `json:"resources,omitempty"`
-	MountPath        string                        `json:"mountPath,omitempty"`
-	Mode             string                        `json:"mode,omitempty"`
-	Env              map[string]string             `json:"env,omitempty"`
-	HostPID          bool                          `json:"hostPID,omitempty"`
-	MetricsPort      int                           `json:"metricsPort,omitempty"`
-	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+	Args                  []string                      `json:"args"`
+	HostPath              string                        `json:"hostPath"`
+	NodeSelector          map[string]string             `json:"nodeSelector,omitempty"`
+	CacheClientProperties map[string]string             `json:"cacheClientProperties"`
+	FuseProperties        map[string]string             `json:"properties"`
+	Global                bool                          `json:"global,omitempty"`
+	RunAs                 string                        `json:"runAs,omitempty"`
+	Tolerations           []corev1.Toleration           `json:"tolerations,omitempty"`
+	Labels                map[string]string             `json:"labels,omitempty"`
+	Annotations           map[string]string             `json:"annotations,omitempty"`
+	CriticalPod           bool                          `json:"criticalPod,omitempty"`
+	Resources             common.Resources              `json:"resources,omitempty"`
+	MountPath             string                        `json:"mountPath,omitempty"`
+	Mode                  string                        `json:"mode,omitempty"`
+	Env                   map[string]string             `json:"env,omitempty"`
+	HostPID               bool                          `json:"hostPID,omitempty"`
+	MetricsPort           int                           `json:"metricsPort,omitempty"`
+	ImagePullSecrets      []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 }
 
 type Mounts struct {
