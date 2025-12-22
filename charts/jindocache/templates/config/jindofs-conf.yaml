@@ -62,7 +62,7 @@ data:
     {{- else if $isRaftHa }}
     fs.jindocache.namespace.rpc.address = {{ template "jindofs.fullname" . }}-master-0.{{ .Values.runtimeIdentity.namespace }}:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-1.{{ .Values.runtimeIdentity.namespace }}:{{ .Values.master.ports.rpc }},{{ template "jindofs.fullname" . }}-master-2.{{ .Values.runtimeIdentity.namespace }}:{{ .Values.master.ports.rpc }}
     {{- end }}
-    {{- range $key, $val := .Values.fuse.properties }}
+    {{- range $key, $val := .Values.fuse.cacheClientProperties }}
     {{ $key }} = {{ $val }}
     {{- end }}
     

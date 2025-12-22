@@ -130,6 +130,11 @@ spec:
             value: {{ $val | quote }}
           {{- end }}
           {{- end }}
+          {{- if .Values.worker.containerCapabilities }}
+          securityContext:
+            capabilities:
+              {{ toYaml .Values.worker.containerCapabilities | trim | nindent 14 }}
+          {{- end }}
           ports:
           - containerPort: {{ .Values.worker.ports.rpc }}
             name: rpc

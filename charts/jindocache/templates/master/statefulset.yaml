@@ -142,6 +142,11 @@ spec:
             value: {{ $val | quote }}
           {{- end }}
           {{- end }}
+          {{- if .Values.master.containerCapabilities }}
+          securityContext:
+            capabilities:
+              {{ toYaml .Values.master.containerCapabilities | trim | nindent 14 }}
+          {{- end }}
           ports:
           - containerPort: {{ .Values.master.ports.rpc }}
             name: rpc
