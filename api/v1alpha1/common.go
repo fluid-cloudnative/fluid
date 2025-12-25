@@ -318,3 +318,78 @@ type ClientMetrics struct {
 	// Defaults to None when it is not explicitly set.
 	ScrapeTarget string `json:"scrapeTarget,omitempty"`
 }
+
+// GenericCacheRuntimeTieredStore is a description of the tiered store in generic cacheruntime
+type GenericCacheRuntimeTieredStore struct {
+	// configurations for multiple tiers
+	Levels []GenericCacheRuntimeTieredStoreLevel `json:"levels,omitempty"`
+}
+
+// GenericCacheRuntimeTieredStoreLevel describes configurations a tier needs.
+type GenericCacheRuntimeTieredStoreLevel struct {
+	// Medium is the medium source of this tier
+	Medium MediumSource `json:"medium,omitempty"`
+
+	// File paths to be used for the tier, multiple paths are supported.
+	// Multiple paths should be separated with comma.
+	// For example, "/mnt/cache1,/mnt/cache2".
+	// +kubebuilder:validation:MinLength=1
+	// +optional
+	Path string `json:"path,omitempty"`
+
+	// Quota for the whole tier, e.g., 100Gi
+	// Please note that if there are multiple paths used for this tiered store,
+	// the quota will be equally divided into these paths.
+	// If you'd like to set quota for each path, see QuotaList for more information.
+	// +optional
+	Quota string `json:"quota,omitempty"`
+
+	// Ratio of high watermark of the tier (e.g., 0.9)
+	High string `json:"high,omitempty"`
+
+	// Ratio of low watermark of the tier (e.g., 0.7)
+	Low string `json:"low,omitempty"`
+}
+
+// MediumSource describes the medium source for tiered store
+type MediumSource struct {
+	// ProcessMemory indicates using process memory as the medium source
+	ProcessMemory *ProcessMemoryMediumSource `json:"processMemory,omitempty"`
+
+	// Volume indicates using volume as the medium source
+	Volume *VolumeMediumSource `json:"volume,omitempty"`
+}
+
+//tieredStore:
+//  levels:
+//	- quota: 8Gi # quota will add to component.container.resource.request/limit.memory
+//	  high: "0.99"
+//    low: "0.99"
+//	  mediumSource:
+//      processMemory: {}
+
+// ProcessMemoryMediumSource describes the process memory medium source
+type ProcessMemoryMediumSource struct {
+}
+
+//tieredStore:
+//  levels:
+//	- quota: 8Gi
+//	  high: "0.99"
+//    low: "0.99"
+// 	  path: /dev/shm
+//	  mediumSource:
+//		emptyDir:{}
+//      ephemeral:
+//        volumeClaimTemplate:{}
+//		hostPath:{}
+
+// VolumeMediumSource describes the volume medium source
+type VolumeMediumSource struct {
+	// HostPath represents a host path mapped into a pod
+	HostPath *corev1.HostPathVolumeSource `json:"hostPath,omitempty"`
+	// EmptyDir represents a temporary directory that shares a pod's lifetime
+	EmptyDir *corev1.EmptyDirVolumeSource `json:"emptyDir,omitempty"`
+	// Ephemeral represents a volume that is handled by a cluster storage driver
+	Ephemeral *corev1.EphemeralVolumeSource `json:"ephemeral,omitempty"`
+}
