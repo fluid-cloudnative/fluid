@@ -28,107 +28,136 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.APIGatewayStatus":           schema_fluid_cloudnative_fluid_api_v1alpha1_APIGatewayStatus(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AffinityStrategy":           schema_fluid_cloudnative_fluid_api_v1alpha1_AffinityStrategy(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioCompTemplateSpec":    schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioCompTemplateSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioFuseSpec":            schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioFuseSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioRuntime":             schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioRuntime(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioRuntimeList":         schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioRuntimeList(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioRuntimeSpec":         schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioRuntimeSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheableNodeAffinity":      schema_fluid_cloudnative_fluid_api_v1alpha1_CacheableNodeAffinity(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy":           schema_fluid_cloudnative_fluid_api_v1alpha1_CleanCachePolicy(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ClientMetrics":              schema_fluid_cloudnative_fluid_api_v1alpha1_ClientMetrics(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Condition":                  schema_fluid_cloudnative_fluid_api_v1alpha1_Condition(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Data":                       schema_fluid_cloudnative_fluid_api_v1alpha1_Data(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataBackup":                 schema_fluid_cloudnative_fluid_api_v1alpha1_DataBackup(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataBackupList":             schema_fluid_cloudnative_fluid_api_v1alpha1_DataBackupList(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataBackupSpec":             schema_fluid_cloudnative_fluid_api_v1alpha1_DataBackupSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataLoad":                   schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoad(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataLoadList":               schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoadList(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataLoadSpec":               schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoadSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataMigrate":                schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrate(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataMigrateList":            schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateList(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataMigrateSpec":            schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataProcess":                schema_fluid_cloudnative_fluid_api_v1alpha1_DataProcess(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataProcessList":            schema_fluid_cloudnative_fluid_api_v1alpha1_DataProcessList(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataProcessSpec":            schema_fluid_cloudnative_fluid_api_v1alpha1_DataProcessSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataRestoreLocation":        schema_fluid_cloudnative_fluid_api_v1alpha1_DataRestoreLocation(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataToMigrate":              schema_fluid_cloudnative_fluid_api_v1alpha1_DataToMigrate(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Dataset":                    schema_fluid_cloudnative_fluid_api_v1alpha1_Dataset(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetCondition":           schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetCondition(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetList":                schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetList(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetSpec":                schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetStatus":              schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetStatus(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetToMigrate":           schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetToMigrate(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EFCCompTemplateSpec":        schema_fluid_cloudnative_fluid_api_v1alpha1_EFCCompTemplateSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EFCFuseSpec":                schema_fluid_cloudnative_fluid_api_v1alpha1_EFCFuseSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EFCRuntime":                 schema_fluid_cloudnative_fluid_api_v1alpha1_EFCRuntime(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EFCRuntimeList":             schema_fluid_cloudnative_fluid_api_v1alpha1_EFCRuntimeList(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EFCRuntimeSpec":             schema_fluid_cloudnative_fluid_api_v1alpha1_EFCRuntimeSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOption":              schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOption(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOptionSource":        schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOptionSource(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExternalEndpointSpec":       schema_fluid_cloudnative_fluid_api_v1alpha1_ExternalEndpointSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExternalStorage":            schema_fluid_cloudnative_fluid_api_v1alpha1_ExternalStorage(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSCompTemplateSpec":    schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSCompTemplateSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSFuseSpec":            schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSFuseSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSRuntime":             schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSRuntime(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSRuntimeList":         schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSRuntimeList(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSRuntimeSpec":         schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSRuntimeSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.HCFSStatus":                 schema_fluid_cloudnative_fluid_api_v1alpha1_HCFSStatus(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.InitFuseSpec":               schema_fluid_cloudnative_fluid_api_v1alpha1_InitFuseSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec":              schema_fluid_cloudnative_fluid_api_v1alpha1_InitUsersSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoCompTemplateSpec":      schema_fluid_cloudnative_fluid_api_v1alpha1_JindoCompTemplateSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoFuseSpec":              schema_fluid_cloudnative_fluid_api_v1alpha1_JindoFuseSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoRuntime":               schema_fluid_cloudnative_fluid_api_v1alpha1_JindoRuntime(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoRuntimeList":           schema_fluid_cloudnative_fluid_api_v1alpha1_JindoRuntimeList(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoRuntimeSpec":           schema_fluid_cloudnative_fluid_api_v1alpha1_JindoRuntimeSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JobProcessor":               schema_fluid_cloudnative_fluid_api_v1alpha1_JobProcessor(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSCompTemplateSpec":    schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSCompTemplateSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSFuseSpec":            schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSFuseSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSRuntime":             schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSRuntime(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSRuntimeList":         schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSRuntimeList(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSRuntimeSpec":         schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSRuntimeSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Level":                      schema_fluid_cloudnative_fluid_api_v1alpha1_Level(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.MasterSpec":                 schema_fluid_cloudnative_fluid_api_v1alpha1_MasterSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Metadata":                   schema_fluid_cloudnative_fluid_api_v1alpha1_Metadata(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.MetadataSyncPolicy":         schema_fluid_cloudnative_fluid_api_v1alpha1_MetadataSyncPolicy(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount":                      schema_fluid_cloudnative_fluid_api_v1alpha1_Mount(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.OSAdvise":                   schema_fluid_cloudnative_fluid_api_v1alpha1_OSAdvise(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ObjectRef":                  schema_fluid_cloudnative_fluid_api_v1alpha1_ObjectRef(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationRef":               schema_fluid_cloudnative_fluid_api_v1alpha1_OperationRef(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationStatus":            schema_fluid_cloudnative_fluid_api_v1alpha1_OperationStatus(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata":                schema_fluid_cloudnative_fluid_api_v1alpha1_PodMetadata(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Prefer":                     schema_fluid_cloudnative_fluid_api_v1alpha1_Prefer(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Processor":                  schema_fluid_cloudnative_fluid_api_v1alpha1_Processor(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Require":                    schema_fluid_cloudnative_fluid_api_v1alpha1_Require(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Runtime":                    schema_fluid_cloudnative_fluid_api_v1alpha1_Runtime(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeCondition":           schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeCondition(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeManagement":          schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeManagement(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeStatus":              schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeStatus(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ScriptProcessor":            schema_fluid_cloudnative_fluid_api_v1alpha1_ScriptProcessor(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.SecretKeySelector":          schema_fluid_cloudnative_fluid_api_v1alpha1_SecretKeySelector(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.TargetDataset":              schema_fluid_cloudnative_fluid_api_v1alpha1_TargetDataset(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.TargetDatasetWithMountPath": schema_fluid_cloudnative_fluid_api_v1alpha1_TargetDatasetWithMountPath(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.TargetPath":                 schema_fluid_cloudnative_fluid_api_v1alpha1_TargetPath(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinCompTemplateSpec":       schema_fluid_cloudnative_fluid_api_v1alpha1_ThinCompTemplateSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinFuseSpec":               schema_fluid_cloudnative_fluid_api_v1alpha1_ThinFuseSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntime":                schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntime(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntimeList":            schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeList(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntimeProfile":         schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeProfile(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntimeProfileList":     schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeProfileList(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntimeProfileSpec":     schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeProfileSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntimeProfileStatus":   schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeProfileStatus(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntimeSpec":            schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore":                schema_fluid_cloudnative_fluid_api_v1alpha1_TieredStore(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.User":                       schema_fluid_cloudnative_fluid_api_v1alpha1_User(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec":                schema_fluid_cloudnative_fluid_api_v1alpha1_VersionSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardClientSocketSpec":   schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardClientSocketSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardCompTemplateSpec":   schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardCompTemplateSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardRuntime":            schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardRuntime(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardRuntimeList":        schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardRuntimeList(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardRuntimeSpec":        schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardRuntimeSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VolumeSource":               schema_fluid_cloudnative_fluid_api_v1alpha1_VolumeSource(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.WaitingStatus":              schema_fluid_cloudnative_fluid_api_v1alpha1_WaitingStatus(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.APIGatewayStatus":                  schema_fluid_cloudnative_fluid_api_v1alpha1_APIGatewayStatus(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AffinityStrategy":                  schema_fluid_cloudnative_fluid_api_v1alpha1_AffinityStrategy(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioCompTemplateSpec":           schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioCompTemplateSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioFuseSpec":                   schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioFuseSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioRuntime":                    schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioRuntime(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioRuntimeList":                schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioRuntimeList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.AlluxioRuntimeSpec":                schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioRuntimeSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntime":                      schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntime(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeClass":                 schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeClass(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeClassList":             schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeClassList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeClientSpec":            schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeClientSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeList":                  schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeMasterSpec":            schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeMasterSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeSpec":                  schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeStatus":                schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeStatus(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeWorkerSpec":            schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeWorkerSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheableNodeAffinity":             schema_fluid_cloudnative_fluid_api_v1alpha1_CacheableNodeAffinity(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy":                  schema_fluid_cloudnative_fluid_api_v1alpha1_CleanCachePolicy(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ClientMetrics":                     schema_fluid_cloudnative_fluid_api_v1alpha1_ClientMetrics(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ComponentServiceConfig":            schema_fluid_cloudnative_fluid_api_v1alpha1_ComponentServiceConfig(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Condition":                         schema_fluid_cloudnative_fluid_api_v1alpha1_Condition(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ConfigMapDependencyConfig":         schema_fluid_cloudnative_fluid_api_v1alpha1_ConfigMapDependencyConfig(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ConfigMapRuntimeExtraResource":     schema_fluid_cloudnative_fluid_api_v1alpha1_ConfigMapRuntimeExtraResource(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Data":                              schema_fluid_cloudnative_fluid_api_v1alpha1_Data(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataBackup":                        schema_fluid_cloudnative_fluid_api_v1alpha1_DataBackup(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataBackupList":                    schema_fluid_cloudnative_fluid_api_v1alpha1_DataBackupList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataBackupSpec":                    schema_fluid_cloudnative_fluid_api_v1alpha1_DataBackupSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataLoad":                          schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoad(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataLoadList":                      schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoadList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataLoadSpec":                      schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoadSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataMigrate":                       schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrate(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataMigrateList":                   schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataMigrateSpec":                   schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataProcess":                       schema_fluid_cloudnative_fluid_api_v1alpha1_DataProcess(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataProcessList":                   schema_fluid_cloudnative_fluid_api_v1alpha1_DataProcessList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataProcessSpec":                   schema_fluid_cloudnative_fluid_api_v1alpha1_DataProcessSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataRestoreLocation":               schema_fluid_cloudnative_fluid_api_v1alpha1_DataRestoreLocation(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataToMigrate":                     schema_fluid_cloudnative_fluid_api_v1alpha1_DataToMigrate(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Dataset":                           schema_fluid_cloudnative_fluid_api_v1alpha1_Dataset(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetCondition":                  schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetCondition(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetList":                       schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetSpec":                       schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetStatus":                     schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetStatus(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DatasetToMigrate":                  schema_fluid_cloudnative_fluid_api_v1alpha1_DatasetToMigrate(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EFCCompTemplateSpec":               schema_fluid_cloudnative_fluid_api_v1alpha1_EFCCompTemplateSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EFCFuseSpec":                       schema_fluid_cloudnative_fluid_api_v1alpha1_EFCFuseSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EFCRuntime":                        schema_fluid_cloudnative_fluid_api_v1alpha1_EFCRuntime(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EFCRuntimeList":                    schema_fluid_cloudnative_fluid_api_v1alpha1_EFCRuntimeList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EFCRuntimeSpec":                    schema_fluid_cloudnative_fluid_api_v1alpha1_EFCRuntimeSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOption":                     schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOption(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOptionComponentDependency":  schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOptionComponentDependency(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOptionSource":               schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOptionSource(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExternalEndpointSpec":              schema_fluid_cloudnative_fluid_api_v1alpha1_ExternalEndpointSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExternalStorage":                   schema_fluid_cloudnative_fluid_api_v1alpha1_ExternalStorage(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExtraResourcesComponentDependency": schema_fluid_cloudnative_fluid_api_v1alpha1_ExtraResourcesComponentDependency(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSCompTemplateSpec":           schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSCompTemplateSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSFuseSpec":                   schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSFuseSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSRuntime":                    schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSRuntime(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSRuntimeList":                schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSRuntimeList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSRuntimeSpec":                schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSRuntimeSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.HCFSStatus":                        schema_fluid_cloudnative_fluid_api_v1alpha1_HCFSStatus(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.HeadlessRuntimeComponentService":   schema_fluid_cloudnative_fluid_api_v1alpha1_HeadlessRuntimeComponentService(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.InitFuseSpec":                      schema_fluid_cloudnative_fluid_api_v1alpha1_InitFuseSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec":                     schema_fluid_cloudnative_fluid_api_v1alpha1_InitUsersSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoCompTemplateSpec":             schema_fluid_cloudnative_fluid_api_v1alpha1_JindoCompTemplateSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoFuseSpec":                     schema_fluid_cloudnative_fluid_api_v1alpha1_JindoFuseSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoRuntime":                      schema_fluid_cloudnative_fluid_api_v1alpha1_JindoRuntime(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoRuntimeList":                  schema_fluid_cloudnative_fluid_api_v1alpha1_JindoRuntimeList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoRuntimeSpec":                  schema_fluid_cloudnative_fluid_api_v1alpha1_JindoRuntimeSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JobProcessor":                      schema_fluid_cloudnative_fluid_api_v1alpha1_JobProcessor(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSCompTemplateSpec":           schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSCompTemplateSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSFuseSpec":                   schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSFuseSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSRuntime":                    schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSRuntime(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSRuntimeList":                schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSRuntimeList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSRuntimeSpec":                schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSRuntimeSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Level":                             schema_fluid_cloudnative_fluid_api_v1alpha1_Level(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.MasterSpec":                        schema_fluid_cloudnative_fluid_api_v1alpha1_MasterSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.MediumSource":                      schema_fluid_cloudnative_fluid_api_v1alpha1_MediumSource(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Metadata":                          schema_fluid_cloudnative_fluid_api_v1alpha1_Metadata(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.MetadataSyncPolicy":                schema_fluid_cloudnative_fluid_api_v1alpha1_MetadataSyncPolicy(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount":                             schema_fluid_cloudnative_fluid_api_v1alpha1_Mount(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.MountPointStatus":                  schema_fluid_cloudnative_fluid_api_v1alpha1_MountPointStatus(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.OSAdvise":                          schema_fluid_cloudnative_fluid_api_v1alpha1_OSAdvise(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ObjectRef":                         schema_fluid_cloudnative_fluid_api_v1alpha1_ObjectRef(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationRef":                      schema_fluid_cloudnative_fluid_api_v1alpha1_OperationRef(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationStatus":                   schema_fluid_cloudnative_fluid_api_v1alpha1_OperationStatus(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata":                       schema_fluid_cloudnative_fluid_api_v1alpha1_PodMetadata(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Prefer":                            schema_fluid_cloudnative_fluid_api_v1alpha1_Prefer(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ProcessMemoryMediumSource":         schema_fluid_cloudnative_fluid_api_v1alpha1_ProcessMemoryMediumSource(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Processor":                         schema_fluid_cloudnative_fluid_api_v1alpha1_Processor(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Require":                           schema_fluid_cloudnative_fluid_api_v1alpha1_Require(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Runtime":                           schema_fluid_cloudnative_fluid_api_v1alpha1_Runtime(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentCommonSpec":        schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeComponentCommonSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentDefinition":        schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeComponentDefinition(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentDependencies":      schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeComponentDependencies(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentService":           schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeComponentService(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentStatus":            schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeComponentStatus(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentStatusCollection":  schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeComponentStatusCollection(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeCondition":                  schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeCondition(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeExtraResources":             schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeExtraResources(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeManagement":                 schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeManagement(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeStatus":                     schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeStatus(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeTieredStore":                schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeTieredStore(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeTieredStoreLevel":           schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeTieredStoreLevel(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeTopology":                   schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeTopology(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ScriptProcessor":                   schema_fluid_cloudnative_fluid_api_v1alpha1_ScriptProcessor(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.SecretKeySelector":                 schema_fluid_cloudnative_fluid_api_v1alpha1_SecretKeySelector(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.TargetDataset":                     schema_fluid_cloudnative_fluid_api_v1alpha1_TargetDataset(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.TargetDatasetWithMountPath":        schema_fluid_cloudnative_fluid_api_v1alpha1_TargetDatasetWithMountPath(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.TargetPath":                        schema_fluid_cloudnative_fluid_api_v1alpha1_TargetPath(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinCompTemplateSpec":              schema_fluid_cloudnative_fluid_api_v1alpha1_ThinCompTemplateSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinFuseSpec":                      schema_fluid_cloudnative_fluid_api_v1alpha1_ThinFuseSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntime":                       schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntime(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntimeList":                   schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntimeProfile":                schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeProfile(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntimeProfileList":            schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeProfileList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntimeProfileSpec":            schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeProfileSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntimeProfileStatus":          schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeProfileStatus(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ThinRuntimeSpec":                   schema_fluid_cloudnative_fluid_api_v1alpha1_ThinRuntimeSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore":                       schema_fluid_cloudnative_fluid_api_v1alpha1_TieredStore(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.User":                              schema_fluid_cloudnative_fluid_api_v1alpha1_User(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec":                       schema_fluid_cloudnative_fluid_api_v1alpha1_VersionSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardClientSocketSpec":          schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardClientSocketSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardCompTemplateSpec":          schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardCompTemplateSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardRuntime":                   schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardRuntime(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardRuntimeList":               schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardRuntimeList(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardRuntimeSpec":               schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardRuntimeSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VolumeMediumSource":                schema_fluid_cloudnative_fluid_api_v1alpha1_VolumeMediumSource(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VolumeSource":                      schema_fluid_cloudnative_fluid_api_v1alpha1_VolumeSource(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.WaitingStatus":                     schema_fluid_cloudnative_fluid_api_v1alpha1_WaitingStatus(ref),
 	}
 }
 
@@ -813,6 +842,921 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_AlluxioRuntimeSpec(ref common.R
 	}
 }
 
+func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntime(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CacheRuntime is the Schema for the CacheRuntimes API",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeSpec"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeStatus"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeClass(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CacheRuntimeClass is the Schema for the cacheruntimeclasses API. CacheRuntimeClass defines a class of cache runtime implementations with specific configurations.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"fileSystemType": {
+						SchemaProps: spec.SchemaProps{
+							Description: "FileSystemType is the file system type of the cache runtime (e.g., \"alluxio\", \"juicefs\")",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"topology": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Topology describes the topology of the CacheRuntime components (master, worker, client)",
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeTopology"),
+						},
+					},
+					"extraResources": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ExtraResources specifies additional resources (e.g., ConfigMaps) used by the CacheRuntime components",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeExtraResources"),
+						},
+					},
+				},
+				Required: []string{"fileSystemType"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeExtraResources", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeTopology", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeClassList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CacheRuntimeClassList contains a list of CacheRuntimeClass",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeClass"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeClass", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeClientSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CacheRuntimeClientSpec describes the desired state of CacheRuntime client component",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"disabled": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Disabled indicates whether the component should be disabled. If set to true, the component will not be created.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"runtimeVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RuntimeVersion is the version information that instructs Fluid to orchestrate a particular version of the runtime.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec"),
+						},
+					},
+					"options": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Options is a set of key-value pairs that provide additional configuration for the cache system.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"podMetadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodMetadata contains labels and annotations that will be propagated to the component's pods.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
+						},
+					},
+					"resources": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Resources describes the compute resource requirements. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
+						},
+					},
+					"env": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-patch-merge-key": "name",
+								"x-kubernetes-patch-strategy":  "merge",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Env is a list of environment variables to set in the container.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.EnvVar"),
+									},
+								},
+							},
+						},
+					},
+					"volumeMounts": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-patch-merge-key": "mountPath",
+								"x-kubernetes-patch-strategy":  "merge",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "VolumeMounts are the volumes to mount into the container's filesystem. Cannot be updated.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.VolumeMount"),
+									},
+								},
+							},
+						},
+					},
+					"args": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Args are arguments to the entrypoint. The container image's CMD is used if this is not provided.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"nodeSelector": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-map-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "NodeSelector is a selector which must be true for the pod to fit on a node. Selector which must match a node's labels for the pod to be scheduled on that node. More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"tolerations": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Tolerations are the pod's tolerations. If specified, the pod's tolerations. More info: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.Toleration"),
+									},
+								},
+							},
+						},
+					},
+					"tieredStore": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TieredStore describes the tiered storage configuration used by the client component.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeTieredStore"),
+						},
+					},
+					"cleanPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CleanPolicy determines when to clean up the FUSE client pods. Currently supports two policies: - \"OnDemand\": Clean up the FUSE pod when it is no longer needed on a node - \"OnRuntimeDeleted\": Clean up the FUSE pod only when the CacheRuntime is deleted Defaults to \"OnRuntimeDeleted\".",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeTieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec", "k8s.io/api/core/v1.EnvVar", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.Toleration", "k8s.io/api/core/v1.VolumeMount"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CacheRuntimeList contains a list of CacheRuntime",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntime"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntime", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeMasterSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CacheRuntimeMasterSpec describes the desired state of CacheRuntime master component",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"disabled": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Disabled indicates whether the component should be disabled. If set to true, the component will not be created.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"runtimeVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RuntimeVersion is the version information that instructs Fluid to orchestrate a particular version of the runtime.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec"),
+						},
+					},
+					"options": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Options is a set of key-value pairs that provide additional configuration for the cache system.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"podMetadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodMetadata contains labels and annotations that will be propagated to the component's pods.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
+						},
+					},
+					"resources": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Resources describes the compute resource requirements. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
+						},
+					},
+					"env": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-patch-merge-key": "name",
+								"x-kubernetes-patch-strategy":  "merge",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Env is a list of environment variables to set in the container.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.EnvVar"),
+									},
+								},
+							},
+						},
+					},
+					"volumeMounts": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-patch-merge-key": "mountPath",
+								"x-kubernetes-patch-strategy":  "merge",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "VolumeMounts are the volumes to mount into the container's filesystem. Cannot be updated.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.VolumeMount"),
+									},
+								},
+							},
+						},
+					},
+					"args": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Args are arguments to the entrypoint. The container image's CMD is used if this is not provided.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"nodeSelector": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-map-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "NodeSelector is a selector which must be true for the pod to fit on a node. Selector which must match a node's labels for the pod to be scheduled on that node. More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"tolerations": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Tolerations are the pod's tolerations. If specified, the pod's tolerations. More info: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.Toleration"),
+									},
+								},
+							},
+						},
+					},
+					"replicas": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Replicas is the desired number of replicas of the master component. If unspecified, defaults to 1.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec", "k8s.io/api/core/v1.EnvVar", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.Toleration", "k8s.io/api/core/v1.VolumeMount"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CacheRuntimeSpec describes the desired state of CacheRuntime",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"runtimeClassName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RuntimeClassName is the name of the CacheRuntimeClass to use for this runtime. The CacheRuntimeClass defines the implementation details of the cache runtime.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"master": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Master is the desired state of the master component.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeMasterSpec"),
+						},
+					},
+					"worker": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Worker is the desired state of the worker component.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeWorkerSpec"),
+						},
+					},
+					"client": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Client is the desired state of the client component.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeClientSpec"),
+						},
+					},
+					"options": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Options is a set of key-value pairs that provide additional configuration for the cache system. These options will be propagated to all components.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"podMetadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodMetadata contains labels and annotations that will be propagated to all component pods.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
+						},
+					},
+					"imagePullSecrets": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-patch-merge-key": "name",
+								"x-kubernetes-patch-strategy":  "merge",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec. More info: https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.LocalObjectReference"),
+									},
+								},
+							},
+						},
+					},
+					"volumes": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-patch-merge-key": "name",
+								"x-kubernetes-patch-strategy":  "merge,retainKeys",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Volumes is the list of volumes that can be mounted by containers belonging to the cache runtime components. More info: https://kubernetes.io/docs/concepts/storage/volumes",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.Volume"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"runtimeClassName"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeClientSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeMasterSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeWorkerSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.Volume"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CacheRuntimeStatus describes the observed state of a CacheRuntime",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"valueFile": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ValueFile is the path to the generated values file used for runtime configuration. This file is generated during the setup phase and contains the resolved configuration.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"configFile": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ConfigFile is the path to the engine-specific configuration file. This file contains the cache engine's native configuration format.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"setupDuration": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SetupDuration is the duration spent setting up the runtime, in human-readable format (e.g., \"2m30s\"). This helps users understand the setup time for the runtime.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"conditions": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-map-keys": []interface{}{
+									"type",
+								},
+								"x-kubernetes-list-type":       "map",
+								"x-kubernetes-patch-merge-key": "type",
+								"x-kubernetes-patch-strategy":  "merge",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Conditions represent the latest available observations of the runtime's state. Known condition types include \"Ready\", \"Available\", etc.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeCondition"),
+									},
+								},
+							},
+						},
+					},
+					"selector": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Selector is the label selector in string form, used for service discovery and auto-scaling. This is the serialized form of a label selector that can be used to find runtime pods.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"cacheAffinity": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CacheAffinity describes the node affinity for cache worker pods. This includes node selector terms that specify which nodes are suitable for cache placement.",
+							Ref:         ref("k8s.io/api/core/v1.NodeAffinity"),
+						},
+					},
+					"master": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Master is the observed state of the master component.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentStatus"),
+						},
+					},
+					"worker": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Worker is the observed state of the worker component.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentStatus"),
+						},
+					},
+					"client": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Client is the observed state of the client (FUSE) component.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentStatus"),
+						},
+					},
+					"mountPoints": {
+						SchemaProps: spec.SchemaProps{
+							Description: "MountPoints represents the status of mount points specified in the bound dataset. Each entry tracks the mount configuration and the time of the last successful mount.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.MountPointStatus"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.MountPointStatus", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentStatus", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeCondition", "k8s.io/api/core/v1.NodeAffinity"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeWorkerSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CacheRuntimeWorkerSpec describes the desired state of CacheRuntime worker component",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"disabled": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Disabled indicates whether the component should be disabled. If set to true, the component will not be created.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"runtimeVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RuntimeVersion is the version information that instructs Fluid to orchestrate a particular version of the runtime.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec"),
+						},
+					},
+					"options": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Options is a set of key-value pairs that provide additional configuration for the cache system.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"podMetadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodMetadata contains labels and annotations that will be propagated to the component's pods.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
+						},
+					},
+					"resources": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Resources describes the compute resource requirements. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
+						},
+					},
+					"env": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-patch-merge-key": "name",
+								"x-kubernetes-patch-strategy":  "merge",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Env is a list of environment variables to set in the container.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.EnvVar"),
+									},
+								},
+							},
+						},
+					},
+					"volumeMounts": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-patch-merge-key": "mountPath",
+								"x-kubernetes-patch-strategy":  "merge",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "VolumeMounts are the volumes to mount into the container's filesystem. Cannot be updated.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.VolumeMount"),
+									},
+								},
+							},
+						},
+					},
+					"args": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Args are arguments to the entrypoint. The container image's CMD is used if this is not provided.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"nodeSelector": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-map-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "NodeSelector is a selector which must be true for the pod to fit on a node. Selector which must match a node's labels for the pod to be scheduled on that node. More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"tolerations": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Tolerations are the pod's tolerations. If specified, the pod's tolerations. More info: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.Toleration"),
+									},
+								},
+							},
+						},
+					},
+					"replicas": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Replicas is the desired number of replicas of the worker component. If unspecified, defaults to 1.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"tieredStore": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TieredStore describes the tiered storage configuration used by the worker component.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeTieredStore"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeTieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec", "k8s.io/api/core/v1.EnvVar", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.Toleration", "k8s.io/api/core/v1.VolumeMount"},
+	}
+}
+
 func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheableNodeAffinity(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -887,6 +1831,27 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ClientMetrics(ref common.Refere
 	}
 }
 
+func schema_fluid_cloudnative_fluid_api_v1alpha1_ComponentServiceConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ComponentServiceConfig defines the service configuration for runtime components. Currently only headless service is supported, but this can be extended in the future to support other service types such as ClusterIP, NodePort, LoadBalancer, etc.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"headless": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Headless enables a headless service for the component. A headless service does not allocate a cluster IP and allows direct pod-to-pod communication.",
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.HeadlessRuntimeComponentService"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.HeadlessRuntimeComponentService"},
+	}
+}
+
 func schema_fluid_cloudnative_fluid_api_v1alpha1_Condition(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -942,6 +1907,69 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_Condition(ref common.ReferenceC
 		},
 		Dependencies: []string{
 			"k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_ConfigMapDependencyConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ConfigMapDependencyConfig defines the ConfigMap mount configuration",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name is the ConfigMap template name defined in extraResources.configMaps",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"mountPath": {
+						SchemaProps: spec.SchemaProps{
+							Description: "MountPath is the path within the container at which the ConfigMap should be mounted. Must not contain ':'.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_ConfigMapRuntimeExtraResource(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ConfigMapRuntimeExtraResource defines a ConfigMap template for CacheRuntime extra resources",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name is the name of the ConfigMap. This will be used as the actual ConfigMap name when created in the runtime's namespace.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"data": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Data contains the configuration data. Each key must consist of alphanumeric characters, '-', '_' or '.'. Values with non-UTF-8 byte sequences must use the BinaryData field. The keys stored in Data must not overlap with the keys in the BinaryData field, this is enforced during validation process.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -2687,6 +3715,17 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOption(ref common.Refere
 	}
 }
 
+func schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOptionComponentDependency(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "EncryptOptionComponentDependency defines the configuration for encrypt option dependency",
+				Type:        []string{"object"},
+			},
+		},
+	}
+}
+
 func schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOptionSource(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -2795,6 +3834,35 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ExternalStorage(ref common.Refe
 		},
 		Dependencies: []string{
 			"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOption"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_ExtraResourcesComponentDependency(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ExtraResourcesComponentDependency defines the extra resources configuration for component dependencies",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"configMaps": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ConfigMaps is a list of ConfigMaps in the same namespace to mount into the component",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.ConfigMapDependencyConfig"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.ConfigMapDependencyConfig"},
 	}
 }
 
@@ -3341,6 +4409,17 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_HCFSStatus(ref common.Reference
 						},
 					},
 				},
+			},
+		},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_HeadlessRuntimeComponentService(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "HeadlessRuntimeComponentService defines the configuration for headless service",
+				Type:        []string{"object"},
 			},
 		},
 	}
@@ -4770,6 +5849,33 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_MasterSpec(ref common.Reference
 	}
 }
 
+func schema_fluid_cloudnative_fluid_api_v1alpha1_MediumSource(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "MediumSource describes the storage medium type for tiered store. Only one of its members may be specified.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"processMemory": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ProcessMemory indicates that process memory should be used as the storage medium. The cache will be stored in the process's memory space.",
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.ProcessMemoryMediumSource"),
+						},
+					},
+					"volume": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Volume indicates that a Kubernetes volume should be used as the storage medium. Supported volume types include hostPath, emptyDir, and ephemeral volumes.",
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.VolumeMediumSource"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.ProcessMemoryMediumSource", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VolumeMediumSource"},
+	}
+}
+
 func schema_fluid_cloudnative_fluid_api_v1alpha1_Metadata(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -4922,6 +6028,34 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_Mount(ref common.ReferenceCallb
 		},
 		Dependencies: []string{
 			"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOption"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_MountPointStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "MountPointStatus describes the status of a single mount point in the dataset",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"mount": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Mount contains the mount point configuration from the bound dataset. This includes the remote path, mount options, and other mount-specific settings.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount"),
+						},
+					},
+					"mountTime": {
+						SchemaProps: spec.SchemaProps{
+							Description: "MountTime is the timestamp of the last successful mount operation. If MountTime is earlier than the master component's start time, a remount will be required.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -5207,6 +6341,17 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_Prefer(ref common.ReferenceCall
 	}
 }
 
+func schema_fluid_cloudnative_fluid_api_v1alpha1_ProcessMemoryMediumSource(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ProcessMemoryMediumSource describes process memory as a storage medium. When specified, cache data will be stored in the process's memory space, and the quota will be added to the container's resource requests and limits.",
+				Type:        []string{"object"},
+			},
+		},
+	}
+}
+
 func schema_fluid_cloudnative_fluid_api_v1alpha1_Processor(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -5317,6 +6462,374 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_Runtime(ref common.ReferenceCal
 	}
 }
 
+func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeComponentCommonSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "RuntimeComponentCommonSpec describes the common configuration for CacheRuntime components",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"disabled": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Disabled indicates whether the component should be disabled. If set to true, the component will not be created.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"runtimeVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RuntimeVersion is the version information that instructs Fluid to orchestrate a particular version of the runtime.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec"),
+						},
+					},
+					"options": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Options is a set of key-value pairs that provide additional configuration for the cache system.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"podMetadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodMetadata contains labels and annotations that will be propagated to the component's pods.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata"),
+						},
+					},
+					"resources": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Resources describes the compute resource requirements. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
+						},
+					},
+					"env": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-patch-merge-key": "name",
+								"x-kubernetes-patch-strategy":  "merge",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Env is a list of environment variables to set in the container.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.EnvVar"),
+									},
+								},
+							},
+						},
+					},
+					"volumeMounts": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-patch-merge-key": "mountPath",
+								"x-kubernetes-patch-strategy":  "merge",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "VolumeMounts are the volumes to mount into the container's filesystem. Cannot be updated.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.VolumeMount"),
+									},
+								},
+							},
+						},
+					},
+					"args": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Args are arguments to the entrypoint. The container image's CMD is used if this is not provided.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"nodeSelector": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-map-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "NodeSelector is a selector which must be true for the pod to fit on a node. Selector which must match a node's labels for the pod to be scheduled on that node. More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"tolerations": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Tolerations are the pod's tolerations. If specified, the pod's tolerations. More info: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.Toleration"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec", "k8s.io/api/core/v1.EnvVar", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.Toleration", "k8s.io/api/core/v1.VolumeMount"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeComponentDefinition(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "RuntimeComponentDefinition defines the configuration for a CacheRuntime component",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"workloadType": {
+						SchemaProps: spec.SchemaProps{
+							Description: "WorkloadType is the default workload type of the component",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.TypeMeta"),
+						},
+					},
+					"options": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Options is a set of key-value pairs that provide additional configuration for the component",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"template": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Template describes the pods that will be created. The template follows the standard PodTemplateSpec from Kubernetes core.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/api/core/v1.PodTemplateSpec"),
+						},
+					},
+					"service": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Service is the service configuration for the component",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentService"),
+						},
+					},
+					"dependencies": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Dependencies specifies the dependencies required by the component",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentDependencies"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentDependencies", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentService", "k8s.io/api/core/v1.PodTemplateSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.TypeMeta"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeComponentDependencies(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "RuntimeComponentDependencies defines the dependencies required by a CacheRuntime component",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"encryptOption": {
+						SchemaProps: spec.SchemaProps{
+							Description: "EncryptOption is the configuration for encrypt option secret mount",
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOptionComponentDependency"),
+						},
+					},
+					"extraResources": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ExtraResources specifies the usage of extra resources such as ConfigMaps",
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.ExtraResourcesComponentDependency"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOptionComponentDependency", "github.com/fluid-cloudnative/fluid/api/v1alpha1.ExtraResourcesComponentDependency"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeComponentService(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "RuntimeComponentService describes the service configuration for a CacheRuntime component",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"headless": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Headless enables a headless service for the component. A headless service does not allocate a cluster IP and allows direct pod-to-pod communication.",
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.HeadlessRuntimeComponentService"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.HeadlessRuntimeComponentService"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeComponentStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "RuntimeComponentStatus describes the observed state of a runtime component. It follows the standard Kubernetes pattern for tracking workload status.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"phase": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Phase is the current lifecycle phase of the component. Known phases include: \"Pending\", \"Running\", \"Failed\", etc.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"reason": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Reason is a brief, machine-readable string that gives the reason for the current phase. This is useful for understanding why a component is in a particular state.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"message": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Message is a human-readable message indicating details about the component's status.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"readyReplicas": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ReadyReplicas is the number of pods with a Ready condition.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"currentReplicas": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CurrentReplicas is the current number of replicas running for the component",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"desiredReplicas": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DesiredReplicas is the desired number of replicas as specified in the spec.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"unavailableReplicas": {
+						SchemaProps: spec.SchemaProps{
+							Description: "UnavailableReplicas is the number of pods that are not available. A pod is considered unavailable if it is not ready or has been terminated.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"availableReplicas": {
+						SchemaProps: spec.SchemaProps{
+							Description: "AvailableReplicas is the number of pods that are available and ready to serve requests. This count includes only pods that have passed readiness checks.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+				},
+				Required: []string{"phase"},
+			},
+		},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeComponentStatusCollection(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "RuntimeComponentStatusCollection describes the status of all runtime components. It provides a unified view of master, worker, and client component states.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"master": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Master is the observed state of the master component.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentStatus"),
+						},
+					},
+					"worker": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Worker is the observed state of the worker component.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentStatus"),
+						},
+					},
+					"client": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Client is the observed state of the client (FUSE) component.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentStatus"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentStatus"},
+	}
+}
+
 func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeCondition(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -5372,6 +6885,35 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeCondition(ref common.Ref
 		},
 		Dependencies: []string{
 			"k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeExtraResources(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "RuntimeExtraResources defines the extra resources for CacheRuntime",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"configMaps": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ConfigMaps is a list of ConfigMaps that will be created in the runtime's namespace. These ConfigMaps can be referenced and mounted by runtime components.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.ConfigMapRuntimeExtraResource"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.ConfigMapRuntimeExtraResource"},
 	}
 }
 
@@ -5652,6 +7194,132 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeStatus(ref common.Refere
 		},
 		Dependencies: []string{
 			"github.com/fluid-cloudnative/fluid/api/v1alpha1.APIGatewayStatus", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeCondition", "k8s.io/api/core/v1.NodeAffinity", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeTieredStore(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "RuntimeTieredStore describes the tiered storage configuration for cache runtime",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"levels": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Levels is the list of cache storage tiers from highest priority to lowest. Each tier can use different storage media (e.g., memory, SSD, HDD).",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeTieredStoreLevel"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeTieredStoreLevel"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeTieredStoreLevel(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "RuntimeTieredStoreLevel describes the configuration for a single tier in the tiered storage",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"medium": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Medium describes the storage medium type for this tier. Supported types include process memory and various volume types.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.MediumSource"),
+						},
+					},
+					"path": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Path is a list of file paths to be used for the cache tier. Multiple paths can be specified to distribute cache across different mount points. For example: [\"/mnt/cache1\", \"/mnt/cache2\"].",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"quota": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Quota is a list of storage quotas for each path in the tier. The length of Quota should match the length of Path. Each quota corresponds to the path at the same index. For example: [\"100Gi\", \"50Gi\"] allocates 100GiB to the first path and 50GiB to the second path.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/apimachinery/pkg/api/resource.Quantity"),
+									},
+								},
+							},
+						},
+					},
+					"high": {
+						SchemaProps: spec.SchemaProps{
+							Description: "High is the ratio of high watermark of the tier (e.g., \"0.9\"). When cache usage exceeds this ratio, eviction will be triggered.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"low": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Low is the ratio of low watermark of the tier (e.g., \"0.7\"). Eviction will continue until cache usage falls below this ratio.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.MediumSource", "k8s.io/apimachinery/pkg/api/resource.Quantity"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeTopology(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "RuntimeTopology defines the topology structure of CacheRuntime components",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"master": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Master is the configuration for master component",
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentDefinition"),
+						},
+					},
+					"worker": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Worker is the configuration for worker component",
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentDefinition"),
+						},
+					},
+					"client": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Client is the configuration for client component",
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentDefinition"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentDefinition"},
 	}
 }
 
@@ -7137,6 +8805,39 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardRuntimeSpec(ref common.
 		},
 		Dependencies: []string{
 			"github.com/fluid-cloudnative/fluid/api/v1alpha1.MasterSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardClientSocketSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardCompTemplateSpec", "k8s.io/api/core/v1.Volume"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_VolumeMediumSource(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "VolumeMediumSource describes a Kubernetes volume as a storage medium. Only one of its members may be specified.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"hostPath": {
+						SchemaProps: spec.SchemaProps{
+							Description: "HostPath represents a pre-existing file or directory on the host machine that is directly exposed to the container. More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath",
+							Ref:         ref("k8s.io/api/core/v1.HostPathVolumeSource"),
+						},
+					},
+					"emptyDir": {
+						SchemaProps: spec.SchemaProps{
+							Description: "EmptyDir represents a temporary directory that shares a pod's lifetime. More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir",
+							Ref:         ref("k8s.io/api/core/v1.EmptyDirVolumeSource"),
+						},
+					},
+					"ephemeral": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Ephemeral represents a volume that is handled by a cluster storage driver. The volume's lifecycle is tied to the pod that defines it. More info: https://kubernetes.io/docs/concepts/storage/ephemeral-volumes/",
+							Ref:         ref("k8s.io/api/core/v1.EphemeralVolumeSource"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/api/core/v1.EmptyDirVolumeSource", "k8s.io/api/core/v1.EphemeralVolumeSource", "k8s.io/api/core/v1.HostPathVolumeSource"},
 	}
 }
 
