@@ -31,7 +31,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/thin/referencedataset"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
 type ThinEngine struct {
@@ -107,7 +106,6 @@ func buildThinEngine(id string, ctx cruntime.ReconcileRequestContext) (base.Engi
 	engine.Helper = ctrl.BuildHelper(runtimeInfo, ctx.Client, engine.Log)
 	templateEngine := base.NewTemplateEngine(engine, id, ctx)
 
-	err = kubeclient.EnsureNamespace(ctx.Client, ctx.Namespace)
 	return templateEngine, err
 }
 

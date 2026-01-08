@@ -31,7 +31,6 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
 type JuiceFSEngine struct {
@@ -86,7 +85,6 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 	engine.Helper = ctrl.BuildHelper(runtimeInfo, ctx.Client, engine.Log)
 	template := base.NewTemplateEngine(engine, id, ctx)
 
-	err = kubeclient.EnsureNamespace(ctx.Client, ctx.Namespace)
 	return template, err
 }
 
