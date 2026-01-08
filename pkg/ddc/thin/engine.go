@@ -106,7 +106,7 @@ func buildThinEngine(id string, ctx cruntime.ReconcileRequestContext) (base.Engi
 	engine.Helper = ctrl.BuildHelper(runtimeInfo, ctx.Client, engine.Log)
 	templateEngine := base.NewTemplateEngine(engine, id, ctx)
 
-	return templateEngine, err
+	return templateEngine, nil
 }
 
 func Precheck(client client.Client, key types.NamespacedName) (found bool, err error) {

@@ -85,7 +85,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 
 	template := base.NewTemplateEngine(engine, id, ctx)
 
-	return template, err
+	return template, nil
 }
 
 // Precheck checks if the given key can be found in the current runtime types

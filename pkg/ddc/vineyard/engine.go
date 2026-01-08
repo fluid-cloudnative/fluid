@@ -79,7 +79,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 
 	template := base.NewTemplateEngine(engine, id, ctx)
 
-	return template, err
+	return template, nil
 }
 
 func Precheck(client client.Client, key types.NamespacedName) (found bool, err error) {
