@@ -14,7 +14,7 @@ image:
 # Default registry, namespace and version tag for images managed by fluid
 imagePrefix: &defaultImagePrefix fluidcloudnative
 # imagePrefix: &defaultImagePrefix registry.aliyuncs.com/fluid
-version: &defaultVersion v1.1.0-b0bdac58
+version: &defaultVersion v1.1.0-c2d6f3d
 
 crdUpgrade:
   enabled: true
