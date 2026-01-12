@@ -24,7 +24,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -76,8 +75,7 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 
 	template := base.NewTemplateEngine(engine, id, ctx)
 
-	err = kubeclient.EnsureNamespace(ctx.Client, ctx.Namespace)
-	return template, err
+	return template, nil
 }
 
 func (e *EFCEngine) parseRuntime(ctx cruntime.ReconcileRequestContext) error {
