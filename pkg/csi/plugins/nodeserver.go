@@ -341,11 +341,17 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	}
 
 	// 4. Label node to launch FUSE Pod
-	runtimeInfo, err := base.GetRuntimeInfo(ns.client, name, namespace)
-	if err != nil {
-		return nil, errors.Wrapf(err, "NodeStageVolume: failed to get runtime info for %s/%s", namespace, name)
+	fuseLabelKey := req.GetVolumeContext()[common.VolumeAttrMountPodNodeSelectorKey]
+	if len(fuseLabelKey) == 0 {
+		// This is for backward compatibility
+		// Fall back to get fuse label key by building a runtime info. Building a runtime info could be heavy, so we should try best not to do it.
+		runtimeInfo, err := base.GetRuntimeInfo(ns.client, name, namespace)
+		if err != nil {
+			return nil, errors.Wrapf(err, "NodeStageVolume: failed to get runtime info for %s/%s", namespace, name)
+		}
+		fuseLabelKey = runtimeInfo.GetFuseLabelName()
 	}
-	fuseLabelKey := utils.GetFuseLabelName(namespace, name, runtimeInfo.GetOwnerDatasetUID())
+
 	var labelsToModify common.LabelsToModify
 	labelsToModify.Add(fuseLabelKey, "true")
 
@@ -641,7 +647,7 @@ func (ns *nodeServer) getCleanFuseFunc(volumeId string) (func() error, error) {
 	// 1. get runtime namespace and name from pvc
 	// A nil volumeContext is passed because unlike csi.NodeStageVolumeRequest, csi.NodeUnstageVolumeRequest has
 	// no volume context attribute.
-	pvc, err := volume.GetPVCByVolumeId(ns.apiReader, volumeId)
+	pvc, pv, err := volume.GetVolumePairByVolumeId(ns.apiReader, volumeId)
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
 			// For cases like the related persistent volume has been deleted, ignore it and return success
@@ -702,10 +708,18 @@ func (ns *nodeServer) getCleanFuseFunc(volumeId string) (func() error, error) {
 			return fmt.Errorf("NodeUnstageVolume: can't stop fuse cause it's in use")
 		}
 
+		// Get fuseLabelKey from pv's volume attributes if possible as it is the ground truth.
+		// If no volume attr is found (e.g. pv is created before the feature is added), fall back to get fuseLabelKey from runtime info.
+		var fuseLabelKey string
+		if pv != nil && pv.Spec.CSI != nil {
+			fuseLabelKey = pv.Spec.CSI.VolumeAttributes[common.VolumeAttrMountPodNodeSelectorKey]
+		}
+		if len(fuseLabelKey) == 0 {
+			fuseLabelKey = runtimeInfo.GetFuseLabelName()
+		}
+
 		// remove label on node
-		// Once the label is removed, fuse pod on corresponding node will be terminated
-		// since node selector in the fuse daemonSet no longer matches.
-		fuseLabelKey := utils.GetFuseLabelName(runtimeInfo.GetNamespace(), runtimeInfo.GetName(), runtimeInfo.GetOwnerDatasetUID())
+		// Once the label is removed, fuse pod on corresponding node will be terminated because node selector in the fuse daemonSet no longer matches.
 		var labelsToModify common.LabelsToModify
 		labelsToModify.Delete(fuseLabelKey)
 

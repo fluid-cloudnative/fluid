@@ -27,6 +27,8 @@ const (
 
 	VolumeAttrName = "runtime_name"
 
+	VolumeAttrMountPodNodeSelectorKey = "mount_pod_node_selector_key"
+
 	CSIDriver = "fuse.csi.fluid.io"
 
 	Fluid = "fluid"

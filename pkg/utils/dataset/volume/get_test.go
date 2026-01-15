@@ -56,7 +56,7 @@ var _ = Describe("Get helpers related tests", Label("pkg.utils.dataset.volume.ge
 				)
 			})
 			It("should return the pvc", func() {
-				got, err := GetPVCByVolumeId(clientObj, "ns-name")
+				got, _, err := GetVolumePairByVolumeId(clientObj, "ns-name")
 				Expect(err).To(BeNil())
 				Expect(got).NotTo(BeNil())
 				Expect(got.Name).To(Equal("name"))
@@ -71,7 +71,7 @@ var _ = Describe("Get helpers related tests", Label("pkg.utils.dataset.volume.ge
 				)
 			})
 			It("should return error", func() {
-				_, err := GetPVCByVolumeId(clientObj, "x")
+				_, _, err := GetVolumePairByVolumeId(clientObj, "x")
 				Expect(err).ToNot(BeNil())
 			})
 		})
