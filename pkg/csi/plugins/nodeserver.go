@@ -711,7 +711,7 @@ func (ns *nodeServer) getCleanFuseFunc(volumeId string) (func() error, error) {
 		// Get fuseLabelKey from pv's volume attributes if possible as it is the ground truth.
 		// If no volume attr is found (e.g. pv is created before the feature is added), fall back to get fuseLabelKey from runtime info.
 		var fuseLabelKey string
-		if pv != nil && pv.Spec.CSI != nil {
+		if pv != nil && pv.Spec.CSI != nil && pv.Spec.CSI.VolumeAttributes != nil {
 			fuseLabelKey = pv.Spec.CSI.VolumeAttributes[common.VolumeAttrMountPodNodeSelectorKey]
 		}
 		if len(fuseLabelKey) == 0 {
