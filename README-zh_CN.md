@@ -15,7 +15,7 @@
 
 |![更新](static/bell-outline-badge.svg) 最新进展：|
 |------------------|
-|**🎉 Fluid 正式晋升为 CNCF 孵化项目：2026年1月8日**：CNCF 技术监督委员会（TOC）已投票通过，将 Fluid 纳入 CNCF 孵化阶段——这是项目成熟度和社区影响力的重要里程碑。 |
+|**🎉 Fluid 正式晋升为 CNCF 孵化项目：2026年1月8日**：CNCF 技术监督委员会（TOC）已投票通过，将 Fluid 纳入 CNCF 孵化阶段——这是项目成熟度和社区影响力的重要里程碑。|
 |v1.0.8版发布：2025年10月31日，Fluid v1.0.8  发布！版本更新介绍详情参见 [CHANGELOG](CHANGELOG.md)。|
 |v1.0.7版发布：2025年9月21日，Fluid v1.0.7  发布！版本更新介绍详情参见 [CHANGELOG](CHANGELOG.md)。|
 |v1.0.6版发布：2025年7月12日，Fluid v1.0.6  发布！版本更新介绍详情参见 [CHANGELOG](CHANGELOG.md)。|
