@@ -10,7 +10,8 @@ env:
   GO_VERSION: 1.23.7
 
 # Declare default permissions as read only.
-permissions: read-all
+permissions:
+  contents: read
 
 jobs:
   staticcheck:
