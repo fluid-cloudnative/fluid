@@ -9,7 +9,9 @@ on:
       - 'static/**'
 
 # Declare default permissions as read only.
-permissions: read-all
+permissions:
+  contents: read
+  actions: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
