@@ -6,8 +6,7 @@
 > Fluid project, aid in roadmapping and a tool/documentation for onboarding new
 > maintainers to the project.
 
-Fluid has been in CNCF Sandbox since 2021, and is now applying for
-[Incubation](https://github.com/cncf/toc/issues/1317).
+Fluid joined the CNCF Sandbox in 2021 and was accepted into the Incubating stage on January 8, 2026.
 
 # Table of contents
 
