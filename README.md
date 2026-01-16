@@ -32,7 +32,7 @@ English | [简体中文](./README-zh_CN.md)
 
 | ![notification](static/bell-outline-badge.svg) What is NEW!  |
 | ------------------------------------------------------------ |
-|**🎉 January 8, 2026**: Fluid has been promoted to **CNCF Incubating** status! The CNCF Technical Oversight Committee (TOC) officially accepted Fluid as an incubating project, a major milestone in its maturity and community adoption. |
+|**🎉 January 8, 2026**: Fluid has been promoted to **CNCF Incubating** status! The CNCF Technical Oversight Committee (TOC) officially accepted Fluid as an incubating project, a major milestone in its maturity and community adoption.|
 |v1.0.8 Release: Oct. 31st, 2025. Fluid v1.0.8. Please check the [CHANGELOG](CHANGELOG.md) for details. |
 |v1.0.7 Release: Sep. 21st, 2025. Fluid v1.0.7. Please check the [CHANGELOG](CHANGELOG.md) for details. |
 |v1.0.6 Release: Jul. 12th, 2025. Fluid v1.0.6. Please check the [CHANGELOG](CHANGELOG.md) for details. |
