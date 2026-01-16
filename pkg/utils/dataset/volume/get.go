@@ -48,24 +48,24 @@ func GetNamespacedNameByVolumeId(client client.Reader, volumeId string) (namespa
 	return
 }
 
-func GetPVCByVolumeId(client client.Reader, volumeId string) (*corev1.PersistentVolumeClaim, error) {
+func GetVolumePairByVolumeId(client client.Reader, volumeId string) (*corev1.PersistentVolumeClaim, *corev1.PersistentVolume, error) {
 	pv, err := kubeclient.GetPersistentVolume(client, volumeId)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if pv.Spec.ClaimRef == nil {
-		return nil, errors.Errorf("pv %s has unexpected nil claimRef", volumeId)
+		return nil, nil, errors.Errorf("pv %s has unexpected nil claimRef", volumeId)
 	}
 
 	pvc, err := kubeclient.GetPersistentVolumeClaim(client, pv.Spec.ClaimRef.Name, pv.Spec.ClaimRef.Namespace)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if !kubeclient.CheckIfPVCIsDataset(pvc) {
-		return nil, errors.Errorf("pv %s is not bounded with a fluid pvc", volumeId)
+		return nil, nil, errors.Errorf("pv %s is not bounded with a fluid pvc", volumeId)
 	}
 
-	return pvc, nil
+	return pvc, pv, nil
 }
