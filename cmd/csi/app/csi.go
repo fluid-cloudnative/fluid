@@ -34,9 +34,12 @@ import (
 	utilfeature "github.com/fluid-cloudnative/fluid/pkg/utils/feature"
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
+	zapOpt "go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
@@ -97,6 +100,14 @@ func ErrorAndExit(err error) {
 func handle() {
 	// startReaper()
 	fluid.LogVersion()
+	ctrl.SetLogger(zap.New(func(o *zap.Options) {
+		o.ZapOpts = append(o.ZapOpts, zapOpt.AddCaller())
+	}, func(o *zap.Options) {
+		encCfg := zapOpt.NewProductionEncoderConfig()
+		encCfg.EncodeLevel = zapcore.CapitalLevelEncoder
+		encCfg.EncodeTime = zapcore.ISO8601TimeEncoder
+		o.Encoder = zapcore.NewConsoleEncoder(encCfg)
+	}))
 
 	if pprofAddr != "" {
 		newPprofServer(pprofAddr)
