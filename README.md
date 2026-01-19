@@ -12,13 +12,14 @@
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/fluid-cloudnative/fluid/badge)](https://scorecard.dev/viewer/?uri=github.com/fluid-cloudnative/fluid)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/4886/badge)](https://bestpractices.coreinfrastructure.org/projects/4886)
 [![Leaderboard](https://img.shields.io/badge/Fluid-Check%20Your%20Contribution-orange)](https://opensource.alibaba.com/contribution_leaderboard/details?projectValue=fluid)
+[![CNCF Status](https://img.shields.io/badge/CNCF%20Status-Incubating-informational)](https://www.cncf.io/projects/fluid/)
 
 |:date:&nbsp;Community Meeting|
 |------------------|
 |The Fluid project holds bi-weekly community online meeting. To join or watch previous meeting notes and recordings, please see [meeting schedule](https://github.com/fluid-cloudnative/community/wiki/Meeting-Schedule) and [meeting minutes](https://github.com/fluid-cloudnative/community/wiki/Meeting-Agenda-and-Notes). |
 
 ## What is Fluid?
-Fluid is an open source Kubernetes-native Distributed Dataset Orchestrator and Accelerator for data-intensive applications, such as big data and AI applications. It is hosted by the [Cloud Native Computing Foundation](https://cncf.io) (CNCF) as a sandbox project.
+Fluid is an open source Kubernetes-native Distributed Dataset Orchestrator and Accelerator for data-intensive applications, such as big data and AI applications. It is hosted by the [Cloud Native Computing Foundation](https://cncf.io) (CNCF) as an incubating project.
 
 For more information, please refer to our papers:
 
@@ -31,7 +32,8 @@ English | [简体中文](./README-zh_CN.md)
 
 | ![notification](static/bell-outline-badge.svg) What is NEW!  |
 | ------------------------------------------------------------ |
-|**Latest Release**: Oct. 31st, 2025. Fluid v1.0.8. Please check the [CHANGELOG](CHANGELOG.md) for details. |
+|**🎉 January 8, 2026**: Fluid has been promoted to **CNCF Incubating** status! The CNCF Technical Oversight Committee (TOC) officially accepted Fluid as an incubating project, a major milestone in its maturity and community adoption.|
+|v1.0.8 Release: Oct. 31st, 2025. Fluid v1.0.8. Please check the [CHANGELOG](CHANGELOG.md) for details. |
 |v1.0.7 Release: Sep. 21st, 2025. Fluid v1.0.7. Please check the [CHANGELOG](CHANGELOG.md) for details. |
 |v1.0.6 Release: Jul. 12th, 2025. Fluid v1.0.6. Please check the [CHANGELOG](CHANGELOG.md) for details. |
 | Apr. 27th, 2021. Fluid accepted by **CNCF**! Fluid project was [accepted as an official CNCF Sandbox Project](https://lists.cncf.io/g/cncf-toc/message/5822) by CNCF Technical Oversight Committee (TOC) with a majority vote after the review process. New beginning for Fluid! . |
