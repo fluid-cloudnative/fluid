@@ -10,8 +10,8 @@ RUN make jindoruntime-controller-build && \
     cp bin/jindoruntime-controller /go/bin/jindoruntime-controller
 RUN bash hack/helm/pin_runtime_chart_version.sh "${FLUID_VERSION}"
 
-# alpine:3.20.8
-FROM alpine:3.20.8@sha256:765942a4039992336de8dd5db680586e1a206607dd06170ff0a37267a9e01958
+# alpine:3.23.2
+FROM alpine:3.23.2@sha256:865b95f46d98cf867a156fe4a135ad3fe50d2056aa3f25ed31662dff6da4eb62
 RUN apk add --update bash curl wget iproute2 libc6-compat tzdata vim &&  \
  	rm -rf /var/cache/apk/* && \
  	cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
