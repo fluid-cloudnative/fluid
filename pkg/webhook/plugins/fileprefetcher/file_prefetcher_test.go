@@ -21,7 +21,6 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -29,52 +28,63 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestInjectFilePrefetcherSidecar_WithMatchingContainers_ShouldInsertAfterLastMatch(t *testing.T) {
-	oldContainers := []corev1.Container{
-		{Name: common.FuseContainerName + "-2"},
-		{Name: common.FuseContainerName + "-1"},
-		{Name: "other-container"},
-		{Name: "another-container"},
-	}
-	prefetcher := &FilePrefetcher{}
-	filePrefetcherCtr := corev1.Container{Name: "file-prefetcher-ctr"}
+var _ = Describe("injectFilePrefetcherSidecar", func() {
+	var prefetcher *FilePrefetcher
 
-	newContainers := prefetcher.injectFilePrefetcherSidecar(oldContainers, filePrefetcherCtr)
+	BeforeEach(func() {
+		prefetcher = &FilePrefetcher{}
+	})
 
-	assert.Equal(t, 5, len(newContainers))
-	assert.Equal(t, common.FuseContainerName+"-2", newContainers[0].Name)
-	assert.Equal(t, common.FuseContainerName+"-1", newContainers[1].Name)
-	assert.Equal(t, "file-prefetcher-ctr", newContainers[2].Name)
-	assert.Equal(t, "other-container", newContainers[3].Name)
-	assert.Equal(t, "another-container", newContainers[4].Name)
-}
+	Context("with matching containers", func() {
+		It("should insert after last match", func() {
+			oldContainers := []corev1.Container{
+				{Name: common.FuseContainerName + "-2"},
+				{Name: common.FuseContainerName + "-1"},
+				{Name: "other-container"},
+				{Name: "another-container"},
+			}
+			filePrefetcherCtr := corev1.Container{Name: "file-prefetcher-ctr"}
 
-func TestInjectFilePrefetcherSidecar_WithoutMatchingContainers_ShouldInsertAtBeginning(t *testing.T) {
-	oldContainers := []corev1.Container{
-		{Name: "other-container"},
-		{Name: "another-container"},
-	}
-	prefetcher := &FilePrefetcher{}
-	filePrefetcherCtr := corev1.Container{Name: "file-prefetcher-ctr"}
+			newContainers := prefetcher.injectFilePrefetcherSidecar(oldContainers, filePrefetcherCtr)
 
-	newContainers := prefetcher.injectFilePrefetcherSidecar(oldContainers, filePrefetcherCtr)
+			Expect(newContainers).To(HaveLen(5))
+			Expect(newContainers[0].Name).To(Equal(common.FuseContainerName + "-2"))
+			Expect(newContainers[1].Name).To(Equal(common.FuseContainerName + "-1"))
+			Expect(newContainers[2].Name).To(Equal("file-prefetcher-ctr"))
+			Expect(newContainers[3].Name).To(Equal("other-container"))
+			Expect(newContainers[4].Name).To(Equal("another-container"))
+		})
+	})
 
-	assert.Equal(t, 3, len(newContainers))
-	assert.Equal(t, "file-prefetcher-ctr", newContainers[0].Name)
-	assert.Equal(t, "other-container", newContainers[1].Name)
-	assert.Equal(t, "another-container", newContainers[2].Name)
-}
+	Context("without matching containers", func() {
+		It("should insert at beginning", func() {
+			oldContainers := []corev1.Container{
+				{Name: "other-container"},
+				{Name: "another-container"},
+			}
+			filePrefetcherCtr := corev1.Container{Name: "file-prefetcher-ctr"}
 
-func TestInjectFilePrefetcherSidecar_EmptyContainerList_ShouldOnlyContainFilePrefetcher(t *testing.T) {
-	oldContainers := []corev1.Container{}
-	filePrefetcherCtr := corev1.Container{Name: "file-prefetcher-ctr"}
+			newContainers := prefetcher.injectFilePrefetcherSidecar(oldContainers, filePrefetcherCtr)
 
-	prefetcher := &FilePrefetcher{}
-	newContainers := prefetcher.injectFilePrefetcherSidecar(oldContainers, filePrefetcherCtr)
+			Expect(newContainers).To(HaveLen(3))
+			Expect(newContainers[0].Name).To(Equal("file-prefetcher-ctr"))
+			Expect(newContainers[1].Name).To(Equal("other-container"))
+			Expect(newContainers[2].Name).To(Equal("another-container"))
+		})
+	})
 
-	assert.Equal(t, 1, len(newContainers))
-	assert.Equal(t, "file-prefetcher-ctr", newContainers[0].Name)
-}
+	Context("with empty container list", func() {
+		It("should only contain file prefetcher", func() {
+			oldContainers := []corev1.Container{}
+			filePrefetcherCtr := corev1.Container{Name: "file-prefetcher-ctr"}
+
+			newContainers := prefetcher.injectFilePrefetcherSidecar(oldContainers, filePrefetcherCtr)
+
+			Expect(newContainers).To(HaveLen(1))
+			Expect(newContainers[0].Name).To(Equal("file-prefetcher-ctr"))
+		})
+	})
+})
 
 var _ = Describe("buildFilePrefetcherConfig", func() {
 	var (
@@ -417,7 +427,6 @@ var _ = Describe("buildFilePrefetcherSidecarContainer", func() {
 })
 
 func TestFilePrefetcher(t *testing.T) {
-
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "FilePrefetcher")
 }
