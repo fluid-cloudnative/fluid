@@ -1,6 +1,6 @@
 module github.com/fluid-cloudnative/fluid
 
-go 1.23.7
+go 1.24.12
 
 replace k8s.io/api => k8s.io/api v0.29.15
 

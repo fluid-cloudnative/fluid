@@ -1,6 +1,6 @@
 # Build the dataset-controller manager binary
-# golang:1.23.10-bullseye
-FROM golang:1.23.10-bullseye@sha256:05ed4a0dad540eaf289072132678452ec19fa99481658be4813bff6250fedcee as builder
+# golang:1.24.12-bookworm
+FROM golang:1.24.12-bookworm@sha256:1c64c586e1cf9dc4c394c5896ec574659c792a0840f4fa0eb54a88de146e978b as builder
 
 WORKDIR /go/src/github.com/fluid-cloudnative/fluid
 COPY . .
@@ -11,8 +11,8 @@ RUN make webhook-build && \
 # Debug
 #RUN go install github.com/go-delve/delve/cmd/dlv@v1.8.2
 
-# alpine:3.20.6
-FROM alpine:3.20.6@sha256:de4fe7064d8f98419ea6b49190df1abbf43450c1702eeb864fe9ced453c1cc5f
+# alpine:3.23.2
+FROM alpine:3.23.2@sha256:865b95f46d98cf867a156fe4a135ad3fe50d2056aa3f25ed31662dff6da4eb62
 RUN apk add --update bash curl iproute2 libc6-compat tzdata vim &&  \
 	rm -rf /var/cache/apk/* && \
 	cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
