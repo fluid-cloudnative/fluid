@@ -214,11 +214,13 @@ func (m *mockOperation) UpdateStatusInfoForCompleted(infos map[string]string) er
 	return nil
 }
 
-// No-op for test mock
-func (m *mockOperation) SetTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {}
+func (m *mockOperation) SetTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
+	// No-op for test mock
+}
 
-// No-op for test mock
-func (m *mockOperation) RemoveTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {}
+func (m *mockOperation) RemoveTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
+	// No-op for test mock
+}
 
 func (m *mockOperation) GetStatusHandler() dataoperation.StatusHandler {
 	return nil
