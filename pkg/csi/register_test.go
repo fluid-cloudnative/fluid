@@ -17,15 +17,100 @@ limitations under the License.
 package csi
 
 import (
+	"context"
 	"errors"
+	"net/http"
 	"testing"
 
+	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/config"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	"github.com/fluid-cloudnative/fluid/pkg/csi/config"
+	fluidconfig "github.com/fluid-cloudnative/fluid/pkg/csi/config"
 )
+
+// mockManager implements manager.Manager interface for testing
+type mockManager struct {
+	manager.Manager
+}
+
+func (m *mockManager) Add(runnable manager.Runnable) error {
+	return nil
+}
+
+func (m *mockManager) Elected() <-chan struct{} {
+	return nil
+}
+
+func (m *mockManager) AddMetricsServerExtraHandler(path string, handler http.Handler) error {
+	return nil
+}
+
+func (m *mockManager) AddHealthzCheck(name string, check healthz.Checker) error {
+	return nil
+}
+
+func (m *mockManager) AddReadyzCheck(name string, check healthz.Checker) error {
+	return nil
+}
+
+func (m *mockManager) Start(ctx context.Context) error {
+	return nil
+}
+
+func (m *mockManager) GetConfig() *rest.Config {
+	return nil
+}
+
+func (m *mockManager) GetScheme() *runtime.Scheme {
+	return nil
+}
+
+func (m *mockManager) GetClient() client.Client {
+	return nil
+}
+
+func (m *mockManager) GetFieldIndexer() client.FieldIndexer {
+	return nil
+}
+
+func (m *mockManager) GetCache() cache.Cache {
+	return nil
+}
+
+func (m *mockManager) GetEventRecorderFor(name string) record.EventRecorder {
+	return nil
+}
+
+func (m *mockManager) GetRESTMapper() meta.RESTMapper {
+	return nil
+}
+
+func (m *mockManager) GetAPIReader() client.Reader {
+	return nil
+}
+
+func (m *mockManager) GetWebhookServer() webhook.Server {
+	return nil
+}
+
+func (m *mockManager) GetLogger() logr.Logger {
+	return logr.Discard()
+}
+
+func (m *mockManager) GetControllerOptions() config.Controller {
+	return config.Controller{}
+}
 
 func TestCSI(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -35,7 +120,7 @@ func TestCSI(t *testing.T) {
 var _ = Describe("SetupWithManager", func() {
 	var (
 		mockMgr          manager.Manager
-		ctx              config.RunningContext
+		ctx              fluidconfig.RunningContext
 		originalRegs     map[string]registrationFuncs
 		enabledCalled    bool
 		registerCalled   bool
@@ -43,6 +128,9 @@ var _ = Describe("SetupWithManager", func() {
 	)
 
 	BeforeEach(func() {
+		// Initialize mock manager
+		mockMgr = &mockManager{}
+
 		// Save original registrations with deep copy to prevent test pollution
 		originalRegs = make(map[string]registrationFuncs, len(registraions))
 		for k, v := range registraions {
@@ -54,8 +142,8 @@ var _ = Describe("SetupWithManager", func() {
 		registerCalled = false
 		registerError = nil
 
-		// Create Test Manager and Context
-		ctx = config.RunningContext{}
+		// Create Test Context
+		ctx = fluidconfig.RunningContext{}
 	})
 
 	AfterEach(func() {
@@ -71,7 +159,7 @@ var _ = Describe("SetupWithManager", func() {
 						enabledCalled = true
 						return true
 					},
-					register: func(mgr manager.Manager, ctx config.RunningContext) error {
+					register: func(mgr manager.Manager, ctx fluidconfig.RunningContext) error {
 						registerCalled = true
 						return nil
 					},
@@ -95,7 +183,7 @@ var _ = Describe("SetupWithManager", func() {
 						enabledCalled = true
 						return false
 					},
-					register: func(mgr manager.Manager, ctx config.RunningContext) error {
+					register: func(mgr manager.Manager, ctx fluidconfig.RunningContext) error {
 						registerCalled = true
 						return nil
 					},
@@ -119,7 +207,7 @@ var _ = Describe("SetupWithManager", func() {
 					enabled: func() bool {
 						return true
 					},
-					register: func(mgr manager.Manager, ctx config.RunningContext) error {
+					register: func(mgr manager.Manager, ctx fluidconfig.RunningContext) error {
 						return registerError
 					},
 				},
@@ -153,7 +241,7 @@ var _ = Describe("SetupWithManager", func() {
 						component1Enabled = true
 						return true
 					},
-					register: func(mgr manager.Manager, ctx config.RunningContext) error {
+					register: func(mgr manager.Manager, ctx fluidconfig.RunningContext) error {
 						component1Reg = true
 						return nil
 					},
@@ -163,7 +251,7 @@ var _ = Describe("SetupWithManager", func() {
 						component2Enabled = true
 						return true
 					},
-					register: func(mgr manager.Manager, ctx config.RunningContext) error {
+					register: func(mgr manager.Manager, ctx fluidconfig.RunningContext) error {
 						component2Reg = true
 						return nil
 					},
@@ -194,14 +282,14 @@ var _ = Describe("SetupWithManager", func() {
 			registraions = map[string]registrationFuncs{
 				"enabled-component": {
 					enabled: func() bool { return true },
-					register: func(mgr manager.Manager, ctx config.RunningContext) error {
+					register: func(mgr manager.Manager, ctx fluidconfig.RunningContext) error {
 						enabledReg = true
 						return nil
 					},
 				},
 				"disabled-component": {
 					enabled: func() bool { return false },
-					register: func(mgr manager.Manager, ctx config.RunningContext) error {
+					register: func(mgr manager.Manager, ctx fluidconfig.RunningContext) error {
 						disabledReg = true
 						return nil
 					},
