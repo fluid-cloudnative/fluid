@@ -62,12 +62,11 @@ var _ = Describe("ThinFileUtils", func() {
 
 	Describe("LoadMetadataWithoutTimeout", func() {
 		var (
-			thinFileUtils ThinFileUtils
+			thinFileUtils *ThinFileUtils
 			patches       *Patches
 		)
-
 		BeforeEach(func() {
-			thinFileUtils = ThinFileUtils{log: fake.NullLogger()}
+			thinFileUtils = &ThinFileUtils{log: fake.NullLogger()}
 		})
 
 		AfterEach(func() {
