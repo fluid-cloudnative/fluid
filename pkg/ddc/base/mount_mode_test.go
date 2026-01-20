@@ -81,6 +81,30 @@ func TestParseMountModeSelectorFromStr(t *testing.T) {
 			wantModes: []MountMode{},
 			wantErr:   false,
 		},
+		{
+			name:      "All with other modes takes precedence (reverse order)",
+			input:     "MountPod,All",
+			wantModes: SupportedMountModes,
+			wantErr:   false,
+		},
+		{
+			name:      "None terminates selection (does not clear prior modes)",
+			input:     "MountPod,None",
+			wantModes: []MountMode{MountPodMountMode},
+			wantErr:   false,
+		},
+		{
+			name:      "whitespace in modes returns error",
+			input:     "MountPod, Sidecar",
+			wantModes: nil,
+			wantErr:   true,
+		},
+		{
+			name:      "partial invalid mode returns error",
+			input:     "MountPod,InvalidMode",
+			wantModes: nil,
+			wantErr:   true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -120,5 +144,11 @@ func TestMountModeSelectorSelected(t *testing.T) {
 
 	if selector.Selected(SidecarMountMode) {
 		t.Error("Selected() should return false for non-existing mode")
+	}
+
+	// Verify empty selector matches nothing (Copilot feedback)
+	emptySelector := mountModeSelector{}
+	if emptySelector.Selected(MountPodMountMode) {
+		t.Error("Selected() should return false for empty selector")
 	}
 }
