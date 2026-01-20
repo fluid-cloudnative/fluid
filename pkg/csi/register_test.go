@@ -43,8 +43,11 @@ var _ = Describe("SetupWithManager", func() {
 	)
 
 	BeforeEach(func() {
-		// Save original registrations
-		originalRegs = registraions
+		// Save original registrations with deep copy to prevent test pollution
+		originalRegs = make(map[string]registrationFuncs, len(registraions))
+		for k, v := range registraions {
+			originalRegs[k] = v
+		}
 
 		// Reset test flags
 		enabledCalled = false
@@ -229,9 +232,12 @@ var _ = Describe("SetupWithManager", func() {
 var _ = Describe("init function", func() {
 	It("should initialize registrations map with all components", func() {
 		Expect(registraions).NotTo(BeNil())
-		Expect(registraions).To(HaveKey("plugins"))
-		Expect(registraions).To(HaveKey("recover"))
-		Expect(registraions).To(HaveKey("updatedbconf"))
+		Expect(registraions).To(And(
+			HaveLen(3),
+			HaveKey("plugins"),
+			HaveKey("recover"),
+			HaveKey("updatedbconf"),
+		))
 	})
 
 	It("should have valid enabled and register functions for all components", func() {
