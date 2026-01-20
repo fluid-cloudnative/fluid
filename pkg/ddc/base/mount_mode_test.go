@@ -73,25 +73,29 @@ func TestParseMountModeSelectorFromStr(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ParseMountModeSelectorFromStr(tt.input)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ParseMountModeSelectorFromStr() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if tt.wantErr {
-				return
-			}
-
-			for _, mode := range tt.wantModes {
-				if !got.Selected(mode) {
-					t.Errorf("ParseMountModeSelectorFromStr() missing mode %v", mode)
-				}
-			}
-
-			if len(got) != len(tt.wantModes) {
-				t.Errorf("ParseMountModeSelectorFromStr() got %d modes, want %d", len(got), len(tt.wantModes))
-			}
+			verifyMountModeSelector(t, tt.input, tt.wantModes, tt.wantErr)
 		})
+	}
+}
+
+func verifyMountModeSelector(t *testing.T, input string, wantModes []MountMode, wantErr bool) {
+	got, err := ParseMountModeSelectorFromStr(input)
+	if (err != nil) != wantErr {
+		t.Errorf("ParseMountModeSelectorFromStr() error = %v, wantErr %v", err, wantErr)
+		return
+	}
+	if wantErr {
+		return
+	}
+
+	for _, mode := range wantModes {
+		if !got.Selected(mode) {
+			t.Errorf("ParseMountModeSelectorFromStr() missing mode %v", mode)
+		}
+	}
+
+	if len(got) != len(wantModes) {
+		t.Errorf("ParseMountModeSelectorFromStr() got %d modes, want %d", len(got), len(wantModes))
 	}
 }
 
