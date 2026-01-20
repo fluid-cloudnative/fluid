@@ -77,7 +77,7 @@ VINEYARDRUNTIME_BINARY ?= bin/vineyardruntime-controller
 WEBHOOK_BINARY ?= bin/fluid-webhook
 
 # Miscellaneous
-HELM_VERSION ?= v3.18.4
+HELM_VERSION ?= v3.19.5
 CRD_OPTIONS ?= "crd:maxDescLen=0"
 
 # Build binaries
