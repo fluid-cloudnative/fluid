@@ -21,60 +21,71 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-func TestInjectFilePrefetcherSidecar_WithMatchingContainers_ShouldInsertAfterLastMatch(t *testing.T) {
-	oldContainers := []corev1.Container{
-		{Name: common.FuseContainerName + "-2"},
-		{Name: common.FuseContainerName + "-1"},
-		{Name: "other-container"},
-		{Name: "another-container"},
-	}
-	prefetcher := &FilePrefetcher{}
-	filePrefetcherCtr := corev1.Container{Name: "file-prefetcher-ctr"}
+var _ = Describe("injectFilePrefetcherSidecar", func() {
+	var prefetcher *FilePrefetcher
 
-	newContainers := prefetcher.injectFilePrefetcherSidecar(oldContainers, filePrefetcherCtr)
+	BeforeEach(func() {
+		prefetcher = &FilePrefetcher{}
+	})
 
-	assert.Equal(t, 5, len(newContainers))
-	assert.Equal(t, common.FuseContainerName+"-2", newContainers[0].Name)
-	assert.Equal(t, common.FuseContainerName+"-1", newContainers[1].Name)
-	assert.Equal(t, "file-prefetcher-ctr", newContainers[2].Name)
-	assert.Equal(t, "other-container", newContainers[3].Name)
-	assert.Equal(t, "another-container", newContainers[4].Name)
-}
+	Context("with matching containers", func() {
+		It("should insert after last match", func() {
+			oldContainers := []corev1.Container{
+				{Name: common.FuseContainerName + "-2"},
+				{Name: common.FuseContainerName + "-1"},
+				{Name: "other-container"},
+				{Name: "another-container"},
+			}
+			filePrefetcherCtr := corev1.Container{Name: "file-prefetcher-ctr"}
 
-func TestInjectFilePrefetcherSidecar_WithoutMatchingContainers_ShouldInsertAtBeginning(t *testing.T) {
-	oldContainers := []corev1.Container{
-		{Name: "other-container"},
-		{Name: "another-container"},
-	}
-	prefetcher := &FilePrefetcher{}
-	filePrefetcherCtr := corev1.Container{Name: "file-prefetcher-ctr"}
+			newContainers := prefetcher.injectFilePrefetcherSidecar(oldContainers, filePrefetcherCtr)
 
-	newContainers := prefetcher.injectFilePrefetcherSidecar(oldContainers, filePrefetcherCtr)
+			Expect(newContainers).To(HaveLen(5))
+			Expect(newContainers[0].Name).To(Equal(common.FuseContainerName + "-2"))
+			Expect(newContainers[1].Name).To(Equal(common.FuseContainerName + "-1"))
+			Expect(newContainers[2].Name).To(Equal("file-prefetcher-ctr"))
+			Expect(newContainers[3].Name).To(Equal("other-container"))
+			Expect(newContainers[4].Name).To(Equal("another-container"))
+		})
+	})
 
-	assert.Equal(t, 3, len(newContainers))
-	assert.Equal(t, "file-prefetcher-ctr", newContainers[0].Name)
-	assert.Equal(t, "other-container", newContainers[1].Name)
-	assert.Equal(t, "another-container", newContainers[2].Name)
-}
+	Context("without matching containers", func() {
+		It("should insert at beginning", func() {
+			oldContainers := []corev1.Container{
+				{Name: "other-container"},
+				{Name: "another-container"},
+			}
+			filePrefetcherCtr := corev1.Container{Name: "file-prefetcher-ctr"}
 
-func TestInjectFilePrefetcherSidecar_EmptyContainerList_ShouldOnlyContainFilePrefetcher(t *testing.T) {
-	oldContainers := []corev1.Container{}
-	filePrefetcherCtr := corev1.Container{Name: "file-prefetcher-ctr"}
+			newContainers := prefetcher.injectFilePrefetcherSidecar(oldContainers, filePrefetcherCtr)
 
-	prefetcher := &FilePrefetcher{}
-	newContainers := prefetcher.injectFilePrefetcherSidecar(oldContainers, filePrefetcherCtr)
+			Expect(newContainers).To(HaveLen(3))
+			Expect(newContainers[0].Name).To(Equal("file-prefetcher-ctr"))
+			Expect(newContainers[1].Name).To(Equal("other-container"))
+			Expect(newContainers[2].Name).To(Equal("another-container"))
+		})
+	})
 
-	assert.Equal(t, 1, len(newContainers))
-	assert.Equal(t, "file-prefetcher-ctr", newContainers[0].Name)
-}
+	Context("with empty container list", func() {
+		It("should only contain file prefetcher", func() {
+			oldContainers := []corev1.Container{}
+			filePrefetcherCtr := corev1.Container{Name: "file-prefetcher-ctr"}
+
+			newContainers := prefetcher.injectFilePrefetcherSidecar(oldContainers, filePrefetcherCtr)
+
+			Expect(newContainers).To(HaveLen(1))
+			Expect(newContainers[0].Name).To(Equal("file-prefetcher-ctr"))
+		})
+	})
+})
 
 var _ = Describe("buildFilePrefetcherConfig", func() {
 	var (
@@ -205,6 +216,415 @@ var _ = Describe("buildFilePrefetcherConfig", func() {
 		It("should return an error", func() {
 			_, err := prefetcher.buildFilePrefetcherConfig(pod, runtimeInfos)
 			Expect(err).To(HaveOccurred())
+		})
+	})
+})
+
+var _ = Describe("NewPlugin", func() {
+	It("should create a new FilePrefetcher plugin", func() {
+		plugin, err := NewPlugin(nil, "")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(plugin).NotTo(BeNil())
+		Expect(plugin.GetName()).To(Equal(Name))
+	})
+})
+
+var _ = Describe("Mutate", func() {
+	var (
+		prefetcher   *FilePrefetcher
+		pod          *corev1.Pod
+		runtimeInfos map[string]base.RuntimeInfoInterface
+	)
+
+	BeforeEach(func() {
+		prefetcher = &FilePrefetcher{
+			name: Name,
+			log:  ctrl.Log.WithName("FilePrefetcher"),
+		}
+		pod = &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{},
+			},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{Name: "app-container"},
+				},
+			},
+		}
+		runtimeInfos = map[string]base.RuntimeInfoInterface{}
+		defaultFilePrefetcherImage = "test-default-image"
+	})
+
+	Context("when injection annotation is not set", func() {
+		It("should skip mutation", func() {
+			shouldStop, err := prefetcher.Mutate(pod, runtimeInfos)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(shouldStop).To(BeFalse())
+			Expect(pod.Spec.Containers).To(HaveLen(1))
+		})
+	})
+
+	Context("when injection annotation is false", func() {
+		BeforeEach(func() {
+			pod.Annotations[AnnotationFilePrefetcherInject] = "false"
+		})
+
+		It("should skip mutation", func() {
+			shouldStop, err := prefetcher.Mutate(pod, runtimeInfos)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(shouldStop).To(BeFalse())
+		})
+	})
+
+	Context("when injection is already done", func() {
+		BeforeEach(func() {
+			pod.Annotations[AnnotationFilePrefetcherInject] = common.True
+			pod.Annotations[AnnotationFilePrefetcherInjectDone] = common.True
+		})
+
+		It("should skip mutation", func() {
+			shouldStop, err := prefetcher.Mutate(pod, runtimeInfos)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(shouldStop).To(BeFalse())
+			Expect(pod.Spec.Containers).To(HaveLen(1))
+		})
+	})
+
+	Context("when config building fails", func() {
+		BeforeEach(func() {
+			pod.Annotations[AnnotationFilePrefetcherInject] = common.True
+			defaultFilePrefetcherImage = ""
+		})
+
+		It("should return error and stop", func() {
+			shouldStop, err := prefetcher.Mutate(pod, runtimeInfos)
+			Expect(err).To(HaveOccurred())
+			Expect(shouldStop).To(BeTrue())
+		})
+	})
+
+	Context("when file list is empty or invalid", func() {
+		BeforeEach(func() {
+			pod.Annotations[AnnotationFilePrefetcherInject] = common.True
+			pod.Annotations[AnnotationFilePrefetcherFileList] = "invalid://no-pvc"
+			defaultFilePrefetcherImage = "test-image"
+		})
+
+		It("should skip injection but not error", func() {
+			shouldStop, err := prefetcher.Mutate(pod, runtimeInfos)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(shouldStop).To(BeFalse())
+			Expect(pod.Spec.Containers).To(HaveLen(1))
+		})
+	})
+
+	Context("when successfully injecting with sync prefetch", func() {
+		BeforeEach(func() {
+			pod.Annotations[AnnotationFilePrefetcherInject] = common.True
+			pod.Annotations[AnnotationFilePrefetcherFileList] = "pvc://mypvc/data/*.pkl"
+			pod.Spec.Volumes = []corev1.Volume{
+				{
+					Name: "mypvc-vol",
+					VolumeSource: corev1.VolumeSource{
+						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+							ClaimName: "mypvc",
+						},
+					},
+				},
+			}
+			pod.Spec.Containers = []corev1.Container{
+				{Name: common.FuseContainerName + "-1"},
+				{Name: "app-container"},
+			}
+			runtimeInfos["mypvc"] = &base.RuntimeInfo{}
+		})
+
+		It("should inject prefetcher container and mark as done", func() {
+			shouldStop, err := prefetcher.Mutate(pod, runtimeInfos)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(shouldStop).To(BeFalse())
+			Expect(pod.Spec.Containers).To(HaveLen(3))
+			Expect(pod.Spec.Containers[1].Name).To(Equal(filePrefetcherContainerName))
+			Expect(pod.Annotations[AnnotationFilePrefetcherInjectDone]).To(Equal(common.True))
+			Expect(pod.Spec.Volumes).To(HaveLen(2))
+		})
+	})
+
+	Context("when successfully injecting with async prefetch", func() {
+		BeforeEach(func() {
+			pod.Annotations[AnnotationFilePrefetcherInject] = common.True
+			pod.Annotations[AnnotationFilePrefetcherFileList] = "pvc://mypvc/data/*.pkl"
+			pod.Annotations[AnnotationFilePrefetcherAsync] = "true"
+			pod.Spec.Volumes = []corev1.Volume{
+				{
+					Name: "mypvc-vol",
+					VolumeSource: corev1.VolumeSource{
+						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+							ClaimName: "mypvc",
+						},
+					},
+				},
+			}
+			pod.Spec.Containers = []corev1.Container{
+				{Name: common.FuseContainerName + "-1"},
+				{Name: "app-container"},
+			}
+			runtimeInfos["mypvc"] = &base.RuntimeInfo{}
+		})
+
+		It("should inject status volume into non-fuse containers", func() {
+			shouldStop, err := prefetcher.Mutate(pod, runtimeInfos)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(shouldStop).To(BeFalse())
+
+			// App container should have status volume mount
+			appContainer := pod.Spec.Containers[2]
+			Expect(appContainer.Name).To(Equal("app-container"))
+			Expect(appContainer.VolumeMounts).To(ContainElement(
+				corev1.VolumeMount{
+					Name:      filePrefetcherStatusVolumeName,
+					MountPath: filePrefetcherStatusVolumeMountPath,
+				},
+			))
+
+			// FUSE container should not have status volume mount
+			fuseContainer := pod.Spec.Containers[0]
+			Expect(fuseContainer.VolumeMounts).NotTo(ContainElement(
+				corev1.VolumeMount{
+					Name:      filePrefetcherStatusVolumeName,
+					MountPath: filePrefetcherStatusVolumeMountPath,
+				},
+			))
+		})
+	})
+
+	Context("when using default file list with multiple PVCs", func() {
+		BeforeEach(func() {
+			pod.Annotations[AnnotationFilePrefetcherInject] = common.True
+			pod.Spec.Volumes = []corev1.Volume{
+				{
+					Name: "pvc1-vol",
+					VolumeSource: corev1.VolumeSource{
+						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+							ClaimName: "pvc1",
+						},
+					},
+				},
+				{
+					Name: "pvc2-vol",
+					VolumeSource: corev1.VolumeSource{
+						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+							ClaimName: "pvc2",
+						},
+					},
+				},
+			}
+			runtimeInfos["pvc1"] = &base.RuntimeInfo{}
+			runtimeInfos["pvc2"] = &base.RuntimeInfo{}
+		})
+
+		It("should include all PVCs in file list", func() {
+			shouldStop, err := prefetcher.Mutate(pod, runtimeInfos)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(shouldStop).To(BeFalse())
+
+			prefetcherContainer := pod.Spec.Containers[0]
+			var fileListEnv *corev1.EnvVar
+			for _, env := range prefetcherContainer.Env {
+				if env.Name == envKeyFilePrefetcherFileList {
+					fileListEnv = &env
+					break
+				}
+			}
+			Expect(fileListEnv).NotTo(BeNil())
+			Expect(fileListEnv.Value).To(ContainSubstring("/data/pvc1-vol/**"))
+			Expect(fileListEnv.Value).To(ContainSubstring("/data/pvc2-vol/**"))
+		})
+	})
+})
+
+var _ = Describe("injectFilePrefetcherSidecar edge cases", func() {
+	var prefetcher *FilePrefetcher
+
+	BeforeEach(func() {
+		prefetcher = &FilePrefetcher{}
+	})
+
+	Context("with single FUSE container at the end", func() {
+		It("should insert after the FUSE container", func() {
+			oldContainers := []corev1.Container{
+				{Name: "app-container"},
+				{Name: common.FuseContainerName + "-1"},
+			}
+			filePrefetcherCtr := corev1.Container{Name: "file-prefetcher-ctr"}
+
+			newContainers := prefetcher.injectFilePrefetcherSidecar(oldContainers, filePrefetcherCtr)
+
+			Expect(newContainers).To(HaveLen(3))
+			Expect(newContainers[0].Name).To(Equal("app-container"))
+			Expect(newContainers[1].Name).To(Equal(common.FuseContainerName + "-1"))
+			Expect(newContainers[2].Name).To(Equal("file-prefetcher-ctr"))
+		})
+	})
+
+	Context("with multiple non-consecutive FUSE containers", func() {
+		It("should insert after the last FUSE container", func() {
+			oldContainers := []corev1.Container{
+				{Name: common.FuseContainerName + "-1"},
+				{Name: "app-container-1"},
+				{Name: common.FuseContainerName + "-2"},
+				{Name: "app-container-2"},
+			}
+			filePrefetcherCtr := corev1.Container{Name: "file-prefetcher-ctr"}
+
+			newContainers := prefetcher.injectFilePrefetcherSidecar(oldContainers, filePrefetcherCtr)
+
+			Expect(newContainers).To(HaveLen(5))
+			Expect(newContainers[0].Name).To(Equal(common.FuseContainerName + "-1"))
+			Expect(newContainers[1].Name).To(Equal("app-container-1"))
+			Expect(newContainers[2].Name).To(Equal(common.FuseContainerName + "-2"))
+			Expect(newContainers[3].Name).To(Equal("file-prefetcher-ctr"))
+			Expect(newContainers[4].Name).To(Equal("app-container-2"))
+		})
+	})
+})
+
+var _ = Describe("buildFilePrefetcherSidecarContainer with multiple volumes", func() {
+	var prefetcher *FilePrefetcher
+
+	BeforeEach(func() {
+		prefetcher = &FilePrefetcher{}
+	})
+
+	Context("with multiple volume mounts", func() {
+		It("should mount all volumes correctly", func() {
+			config := filePrefetcherConfig{
+				Image:         "test-image",
+				AsyncPrefetch: true,
+				VolumeMountPaths: map[string]string{
+					"vol1": "/data/vol1",
+					"vol2": "/data/vol2",
+					"vol3": "/data/vol3",
+				},
+				GlobPaths:      "/data/vol1/**;/data/vol2/**;/data/vol3/**",
+				TimeoutSeconds: 60,
+				ExtraEnvs:      map[string]string{},
+			}
+
+			containerSpec, _ := prefetcher.buildFilePrefetcherSidecarContainer(config)
+
+			Expect(containerSpec.VolumeMounts).To(HaveLen(4)) // 3 data volumes + 1 status volume
+
+			volumeNames := make([]string, 0)
+			for _, vm := range containerSpec.VolumeMounts {
+				volumeNames = append(volumeNames, vm.Name)
+			}
+			Expect(volumeNames).To(ContainElements("vol1", "vol2", "vol3", filePrefetcherStatusVolumeName))
+		})
+	})
+})
+
+var _ = Describe("parseGlobPathsFromFileList additional cases", func() {
+	var (
+		pod          *corev1.Pod
+		runtimeInfos map[string]base.RuntimeInfoInterface
+		prefetcher   *FilePrefetcher
+	)
+
+	BeforeEach(func() {
+		pod = &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{},
+			},
+			Spec: corev1.PodSpec{
+				Volumes: []corev1.Volume{
+					{
+						Name: "pvc1-vol",
+						VolumeSource: corev1.VolumeSource{
+							PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+								ClaimName: "pvc1",
+							},
+						},
+					},
+					{
+						Name: "pvc2-vol",
+						VolumeSource: corev1.VolumeSource{
+							PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+								ClaimName: "pvc2",
+							},
+						},
+					},
+				},
+			},
+		}
+		runtimeInfos = map[string]base.RuntimeInfoInterface{
+			"pvc1": &base.RuntimeInfo{},
+			"pvc2": &base.RuntimeInfo{},
+		}
+		prefetcher = &FilePrefetcher{}
+	})
+
+	Context("with mixed valid and invalid paths", func() {
+		It("should only parse valid paths", func() {
+			fileList := "pvc://pvc1/data/*.pkl;invalid://bad;pvc://pvc2/logs/*.log;pvc://nonexistent/test"
+
+			volumeMountPaths, globPaths := prefetcher.parseGlobPathsFromFileList(fileList, pod, runtimeInfos)
+
+			Expect(volumeMountPaths).To(HaveLen(2))
+			Expect(globPaths).To(HaveLen(2))
+			Expect(globPaths).To(ContainElements(
+				"/data/pvc1-vol/data/*.pkl",
+				"/data/pvc2-vol/logs/*.log",
+			))
+		})
+	})
+})
+
+var _ = Describe("buildFilePrefetcherConfig with defaults", func() {
+	var (
+		pod          *corev1.Pod
+		runtimeInfos map[string]base.RuntimeInfoInterface
+		prefetcher   *FilePrefetcher
+	)
+
+	BeforeEach(func() {
+		pod = &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{},
+			},
+			Spec: corev1.PodSpec{
+				Volumes: []corev1.Volume{
+					{
+						Name: "vol",
+						VolumeSource: corev1.VolumeSource{
+							PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+								ClaimName: "pvc",
+							},
+						},
+					},
+				},
+			},
+		}
+		runtimeInfos = map[string]base.RuntimeInfoInterface{
+			"pvc": &base.RuntimeInfo{},
+		}
+		prefetcher = &FilePrefetcher{}
+		defaultFilePrefetcherImage = "default-image"
+	})
+
+	Context("when only required annotations are set", func() {
+		BeforeEach(func() {
+			pod.Annotations[AnnotationFilePrefetcherInject] = common.True
+		})
+
+		It("should use default values for optional fields", func() {
+			config, err := prefetcher.buildFilePrefetcherConfig(pod, runtimeInfos)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(config.Image).To(Equal("default-image"))
+			Expect(config.AsyncPrefetch).To(BeFalse())
+			Expect(config.ExtraEnvs).To(BeEmpty())
+			Expect(config.GlobPaths).To(Equal("/data/vol/**"))
 		})
 	})
 })
@@ -417,7 +837,6 @@ var _ = Describe("buildFilePrefetcherSidecarContainer", func() {
 })
 
 func TestFilePrefetcher(t *testing.T) {
-
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "FilePrefetcher")
 }
