@@ -69,6 +69,18 @@ func TestParseMountModeSelectorFromStr(t *testing.T) {
 			wantModes: nil,
 			wantErr:   true,
 		},
+		{
+			name:      "All with other modes takes precedence",
+			input:     "MountPod,All",
+			wantModes: SupportedMountModes,
+			wantErr:   false,
+		},
+		{
+			name:      "None with other modes takes precedence",
+			input:     "None,Sidecar",
+			wantModes: []MountMode{},
+			wantErr:   false,
+		},
 	}
 
 	for _, tt := range tests {
