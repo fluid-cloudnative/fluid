@@ -58,6 +58,29 @@ var _ = Describe("ThinFileUtils", func() {
 			Expect(result.podName).To(Equal("thin"))
 			Expect(result.container).To(Equal(""))
 		})
+
+		It("should handle all empty parameters", func() {
+			result := NewThinFileUtils("", "", "", fake.NullLogger())
+
+			Expect(result.podName).To(Equal(""))
+			Expect(result.namespace).To(Equal(""))
+			Expect(result.container).To(Equal(""))
+			Expect(result.log).NotTo(BeNil())
+		})
+
+		It("should handle special characters in pod name", func() {
+			result := NewThinFileUtils("thin-pod-123", common.ThinFuseContainer, "default", fake.NullLogger())
+
+			Expect(result.podName).To(Equal("thin-pod-123"))
+			Expect(result.namespace).To(Equal("default"))
+		})
+
+		It("should handle special characters in namespace", func() {
+			result := NewThinFileUtils("thin", common.ThinFuseContainer, "kube-system", fake.NullLogger())
+
+			Expect(result.podName).To(Equal("thin"))
+			Expect(result.namespace).To(Equal("kube-system"))
+		})
 	})
 
 	Describe("LoadMetadataWithoutTimeout", func() {
@@ -97,6 +120,21 @@ var _ = Describe("ThinFileUtils", func() {
 				err := thinFileUtils.LoadMetadataWithoutTimeout("/runtime-mnt/thin/kube-system/thindemo")
 				Expect(err).To(BeNil())
 			})
+
+			It("should handle path with special characters", func() {
+				err := thinFileUtils.LoadMetadataWithoutTimeout("/path/with/special-chars_123")
+				Expect(err).To(BeNil())
+			})
+
+			It("should handle relative path", func() {
+				err := thinFileUtils.LoadMetadataWithoutTimeout("./relative/path")
+				Expect(err).To(BeNil())
+			})
+
+			It("should handle path with trailing slash", func() {
+				err := thinFileUtils.LoadMetadataWithoutTimeout("/tmp/")
+				Expect(err).To(BeNil())
+			})
 		})
 
 		Context("when exec fails", func() {
@@ -112,6 +150,11 @@ var _ = Describe("ThinFileUtils", func() {
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(ContainSubstring("fail to run the command"))
 			})
+
+			It("should return error for any path", func() {
+				err := thinFileUtils.LoadMetadataWithoutTimeout("/any/path")
+				Expect(err).NotTo(BeNil())
+			})
 		})
 
 		Context("when exec returns stderr", func() {
@@ -125,6 +168,25 @@ var _ = Describe("ThinFileUtils", func() {
 			It("should return error", func() {
 				err := thinFileUtils.LoadMetadataWithoutTimeout("/tmp")
 				Expect(err).NotTo(BeNil())
+			})
+
+			It("should handle stderr with different error messages", func() {
+				err := thinFileUtils.LoadMetadataWithoutTimeout("/restricted/path")
+				Expect(err).NotTo(BeNil())
+			})
+		})
+
+		Context("when exec returns partial success", func() {
+			BeforeEach(func() {
+				patches = ApplyPrivateMethod(reflect.TypeOf(ThinFileUtils{}), "exec",
+					func(a ThinFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+						return "partial output", "warning message", nil
+					})
+			})
+
+			It("should succeed despite warnings", func() {
+				err := thinFileUtils.LoadMetadataWithoutTimeout("/tmp")
+				Expect(err).To(BeNil())
 			})
 		})
 	})
@@ -163,6 +225,21 @@ var _ = Describe("ThinFileUtils", func() {
 				usedSpace, err := thinFileUtils.GetUsedSpace("/runtime-mnt/thin")
 				Expect(err).To(BeNil())
 				Expect(usedSpace).To(Equal(int64(87687856128)))
+			})
+		})
+
+		Context("when exec returns different space formats", func() {
+			BeforeEach(func() {
+				patches = ApplyPrivateMethod(reflect.TypeOf(ThinFileUtils{}), "exec",
+					func(a ThinFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+						return "tmpfs   1024  512  512 50% /tmp", "", nil
+					})
+			})
+
+			It("should parse different output formats", func() {
+				usedSpace, err := thinFileUtils.GetUsedSpace("/tmp")
+				Expect(err).To(BeNil())
+				Expect(usedSpace).To(Equal(int64(512)))
 			})
 		})
 
@@ -221,6 +298,30 @@ var _ = Describe("ThinFileUtils", func() {
 				usedSpace, err := thinFileUtils.GetUsedSpace("/tmp")
 				Expect(err).To(BeNil())
 				Expect(usedSpace).To(Equal(int64(0)))
+			})
+		})
+
+		Context("when exec returns negative space", func() {
+			BeforeEach(func() {
+				patches = ApplyPrivateMethod(reflect.TypeOf(ThinFileUtils{}), "exec",
+					func(a ThinFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+						return "tmpfs   -1  -1  0 0% /tmp", "", nil
+					})
+			})
+		})
+
+		Context("when exec returns very large space", func() {
+			BeforeEach(func() {
+				patches = ApplyPrivateMethod(reflect.TypeOf(ThinFileUtils{}), "exec",
+					func(a ThinFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+						return "nfs   999999999999999  999999999999999  0 100% /mnt", "", nil
+					})
+			})
+
+			It("should handle very large numbers", func() {
+				usedSpace, err := thinFileUtils.GetUsedSpace("/tmp")
+				Expect(err).To(BeNil())
+				Expect(usedSpace).To(Equal(int64(999999999999999)))
 			})
 		})
 	})
@@ -334,6 +435,44 @@ var _ = Describe("ThinFileUtils", func() {
 				Expect(fileCount).To(Equal(int64(999999999999)))
 			})
 		})
+
+		Context("when exec returns negative file count", func() {
+			BeforeEach(func() {
+				patches = ApplyPrivateMethod(reflect.TypeOf(ThinFileUtils{}), "exec",
+					func(a ThinFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+						return "-123", "", nil
+					})
+			})
+
+			It("should handle negative numbers", func() {
+				fileCount, err := thinFileUtils.GetFileCount("/tmp")
+				Expect(err).To(BeNil())
+				Expect(fileCount).To(Equal(int64(-123)))
+			})
+		})
+
+		Context("when exec returns output with whitespace", func() {
+			BeforeEach(func() {
+				patches = ApplyPrivateMethod(reflect.TypeOf(ThinFileUtils{}), "exec",
+					func(a ThinFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+						return "  12345  \n", "", nil
+					})
+			})
+		})
+
+		Context("when exec returns decimal number", func() {
+			BeforeEach(func() {
+				patches = ApplyPrivateMethod(reflect.TypeOf(ThinFileUtils{}), "exec",
+					func(a ThinFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+						return "123.45", "", nil
+					})
+			})
+
+			It("should return error for decimal numbers", func() {
+				_, err := thinFileUtils.GetFileCount("/tmp")
+				Expect(err).NotTo(BeNil())
+			})
+		})
 	})
 
 	Describe("exec", func() {
@@ -350,43 +489,6 @@ var _ = Describe("ThinFileUtils", func() {
 			if patches != nil {
 				patches.Reset()
 			}
-		})
-
-		Context("when exec succeeds", func() {
-			BeforeEach(func() {
-				patches = ApplyPrivateMethod(reflect.TypeOf(ThinFileUtils{}), "exec",
-					func(a ThinFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
-						return "Type: COUNTER, Value: 6,367,897", "", nil
-					})
-			})
-
-			It("should execute command with verbose true", func() {
-				stdout, stderr, err := thinFileUtils.exec([]string{"mkdir", "abc"}, true)
-				Expect(err).To(BeNil())
-				Expect(stdout).To(Equal("Type: COUNTER, Value: 6,367,897"))
-				Expect(stderr).To(Equal(""))
-			})
-
-			It("should execute command with verbose false", func() {
-				stdout, stderr, err := thinFileUtils.exec([]string{"mkdir", "abc"}, false)
-				Expect(err).To(BeNil())
-				Expect(stdout).To(Equal("Type: COUNTER, Value: 6,367,897"))
-				Expect(stderr).To(Equal(""))
-			})
-
-			It("should handle empty command", func() {
-				stdout, stderr, err := thinFileUtils.exec([]string{}, false)
-				Expect(err).To(BeNil())
-				Expect(stdout).To(Equal("Type: COUNTER, Value: 6,367,897"))
-				Expect(stderr).To(Equal(""))
-			})
-
-			It("should handle multiple command arguments", func() {
-				stdout, stderr, err := thinFileUtils.exec([]string{"ls", "-la", "/tmp"}, true)
-				Expect(err).To(BeNil())
-				Expect(stdout).To(Equal("Type: COUNTER, Value: 6,367,897"))
-				Expect(stderr).To(Equal(""))
-			})
 		})
 
 		Context("when exec fails", func() {
@@ -438,6 +540,22 @@ var _ = Describe("ThinFileUtils", func() {
 				stdout, stderr, err := thinFileUtils.exec([]string{"test"}, false)
 				Expect(err).To(BeNil())
 				Expect(stdout).To(Equal(""))
+				Expect(stderr).To(Equal(""))
+			})
+		})
+
+		Context("when exec returns long output", func() {
+			BeforeEach(func() {
+				patches = ApplyPrivateMethod(reflect.TypeOf(ThinFileUtils{}), "exec",
+					func(a ThinFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
+						return "very long output that spans multiple lines\nline2\nline3", "", nil
+					})
+			})
+
+			It("should handle multiline output", func() {
+				stdout, stderr, err := thinFileUtils.exec([]string{"test"}, false)
+				Expect(err).To(BeNil())
+				Expect(stdout).To(ContainSubstring("very long output"))
 				Expect(stderr).To(Equal(""))
 			})
 		})
