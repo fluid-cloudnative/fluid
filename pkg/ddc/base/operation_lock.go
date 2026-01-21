@@ -33,6 +33,9 @@ import (
 )
 
 func getDataOperationKey(object client.Object) string {
+	if object == nil || (reflect.ValueOf(object).Kind() == reflect.Ptr && reflect.ValueOf(object).IsNil()) {
+		return ""
+	}
 	return object.GetName()
 }
 
