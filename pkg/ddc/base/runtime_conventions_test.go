@@ -17,67 +17,26 @@ limitations under the License.
 package base
 
 import (
-	"testing"
-
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-func TestRuntimeInfoGetWorkerStatefulsetName(t *testing.T) {
-	tests := []struct {
-		name        string
-		runtimeName string
-		runtimeType string
-		want        string
-	}{
-		{
-			name:        "JindoRuntime uses jindofs suffix",
-			runtimeName: "mydata",
-			runtimeType: common.JindoRuntime,
-			want:        "mydata-jindofs-worker",
-		},
-		{
-			name:        "JindoCacheEngineImpl uses jindofs suffix",
-			runtimeName: "cache",
-			runtimeType: common.JindoCacheEngineImpl,
-			want:        "cache-jindofs-worker",
-		},
-		{
-			name:        "JindoFSxEngineImpl uses jindofs suffix",
-			runtimeName: "fsx",
-			runtimeType: common.JindoFSxEngineImpl,
-			want:        "fsx-jindofs-worker",
-		},
-		{
-			name:        "AlluxioRuntime uses default suffix",
-			runtimeName: "alluxio-data",
-			runtimeType: common.AlluxioRuntime,
-			want:        "alluxio-data-worker",
-		},
-		{
-			name:        "JuiceFSRuntime uses default suffix",
-			runtimeName: "juice",
-			runtimeType: common.JuiceFSRuntime,
-			want:        "juice-worker",
-		},
-		{
-			name:        "empty runtime type uses default suffix",
-			runtimeName: "test",
-			runtimeType: "",
-			want:        "test-worker",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+var _ = Describe("RuntimeInfo.GetWorkerStatefulsetName", func() {
+	DescribeTable("returns correct statefulset name",
+		func(runtimeName, runtimeType, want string) {
 			info := &RuntimeInfo{
-				name:        tt.runtimeName,
-				runtimeType: tt.runtimeType,
+				name:        runtimeName,
+				runtimeType: runtimeType,
 			}
-
-			got := info.GetWorkerStatefulsetName()
-			if got != tt.want {
-				t.Errorf("GetWorkerStatefulsetName() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
+			Expect(info.GetWorkerStatefulsetName()).To(Equal(want))
+		},
+		Entry("JindoRuntime uses jindofs suffix", "mydata", common.JindoRuntime, "mydata-jindofs-worker"),
+		Entry("JindoCacheEngineImpl uses jindofs suffix", "cache", common.JindoCacheEngineImpl, "cache-jindofs-worker"),
+		Entry("JindoFSxEngineImpl uses jindofs suffix", "fsx", common.JindoFSxEngineImpl, "fsx-jindofs-worker"),
+		Entry("AlluxioRuntime uses default suffix", "alluxio-data", common.AlluxioRuntime, "alluxio-data-worker"),
+		Entry("JuiceFSRuntime uses default suffix", "juice", common.JuiceFSRuntime, "juice-worker"),
+		Entry("empty runtime type uses default suffix", "test", "", "test-worker"),
+		Entry("unknown runtime type uses default suffix", "unknown-data", "UnknownRuntime", "unknown-data-worker"),
+	)
+})
