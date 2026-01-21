@@ -137,15 +137,3 @@ func between(a []int, min int, max int) bool {
 	return true
 }
 
-func sameArray(a []int, b []int) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	lenArr := len(a)
-	for i := 0; i < lenArr; i++ {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
-}
