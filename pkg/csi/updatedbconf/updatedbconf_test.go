@@ -91,7 +91,7 @@ var _ = Describe("updateLine", func() {
 			result, changed := updateLine(line, configKeyPruneFs, newValues)
 			
 			Expect(changed).To(BeTrue())
-			Expect(result).To(Equal(`PRUNEFS=" foo bar"`))
+			Expect(result).To(Equal(`PRUNEFS="foo bar"`))
 		})
 
 		It("should handle empty new values slice", func() {
@@ -126,6 +126,26 @@ var _ = Describe("updateLine", func() {
 
 		It("should handle line with leading space in value", func() {
 			line := `PRUNEFS=" foo bar"`
+			newValues := []string{"baz"}
+			
+			result, changed := updateLine(line, configKeyPruneFs, newValues)
+			
+			Expect(changed).To(BeTrue())
+			Expect(result).To(Equal(`PRUNEFS="foo bar baz"`))
+		})
+
+		It("should handle line with multiple spaces between values", func() {
+			line := `PRUNEFS="foo    bar"`
+			newValues := []string{"baz"}
+			
+			result, changed := updateLine(line, configKeyPruneFs, newValues)
+			
+			Expect(changed).To(BeTrue())
+			Expect(result).To(Equal(`PRUNEFS="foo bar baz"`))
+		})
+
+		It("should handle line with tabs between values", func() {
+			line := "PRUNEFS=\"foo\tbar\""
 			newValues := []string{"baz"}
 			
 			result, changed := updateLine(line, configKeyPruneFs, newValues)
@@ -179,10 +199,13 @@ PRUNEFS="foo bar fuse.alluxio-fuse fuse.jindofs-fuse JuiceFS fuse.goosefs-fuse"`
 		It("should create new PRUNEFS and PRUNEPATHS entries when they don't exist", func() {
 			content := `PRUNE_BIND_MOUNTS="yes"`
 
+			expected := `PRUNE_BIND_MOUNTS="yes"
+PRUNEFS="fuse.alluxio-fuse fuse.jindofs-fuse JuiceFS fuse.goosefs-fuse"
+PRUNEPATHS="/runtime-mnt"`
+
 			result, err := updateConfig(content, newFs, newPaths)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result).To(ContainSubstring(`PRUNEFS="fuse.alluxio-fuse fuse.jindofs-fuse JuiceFS fuse.goosefs-fuse"`))
-			Expect(result).To(ContainSubstring(`PRUNEPATHS="/runtime-mnt"`))
+			Expect(result).To(Equal(expected))
 		})
 	})
 
@@ -190,10 +213,12 @@ PRUNEFS="foo bar fuse.alluxio-fuse fuse.jindofs-fuse JuiceFS fuse.goosefs-fuse"`
 		It("should handle empty content", func() {
 			content := ""
 
+			expected := `PRUNEFS="fuse.alluxio-fuse fuse.jindofs-fuse JuiceFS fuse.goosefs-fuse"
+PRUNEPATHS="/runtime-mnt"`
+
 			result, err := updateConfig(content, newFs, newPaths)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result).To(ContainSubstring(`PRUNEFS="fuse.alluxio-fuse fuse.jindofs-fuse JuiceFS fuse.goosefs-fuse"`))
-			Expect(result).To(ContainSubstring(`PRUNEPATHS="/runtime-mnt"`))
+			Expect(result).To(Equal(expected))
 		})
 
 		It("should handle empty newFs slice", func() {
@@ -371,8 +396,8 @@ PRUNEFS="bar fuse.alluxio-fuse fuse.jindofs-fuse JuiceFS fuse.goosefs-fuse"`
 
 			result, err := updateConfig(content, newFs, newPaths)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result).To(ContainSubstring(`PRUNEFS="`))
-			Expect(result).To(ContainSubstring(`PRUNEPATHS="`))
+			Expect(result).To(ContainSubstring(`PRUNEFS="fuse.alluxio-fuse fuse.jindofs-fuse JuiceFS fuse.goosefs-fuse"`))
+			Expect(result).To(ContainSubstring(`PRUNEPATHS="/runtime-mnt"`))
 		})
 
 		It("should only append PRUNEFS when PRUNEPATHS exists", func() {
@@ -387,12 +412,30 @@ PRUNEFS="bar fuse.alluxio-fuse fuse.jindofs-fuse JuiceFS fuse.goosefs-fuse"`
 		It("should only append PRUNEPATHS when PRUNEFS exists", func() {
 			content := `PRUNEFS="foo"`
 
-			expected := `PRUNEFS="foo fuse.alluxio-fuse fuse.jindofs-fuse JuiceFS fuse.goosefs-fuse"
-PRUNEPATHS="/runtime-mnt"`
+			result, err := updateConfig(content, newFs, newPaths)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result).To(ContainSubstring(`PRUNEFS="foo fuse.alluxio-fuse fuse.jindofs-fuse JuiceFS fuse.goosefs-fuse"`))
+			Expect(result).To(ContainSubstring(`PRUNEPATHS="/runtime-mnt"`))
+		})
+	})
+
+	Context("when handling values with extra whitespace", func() {
+		It("should handle values with multiple spaces", func() {
+			content := `PRUNEFS="foo    bar"`
 
 			result, err := updateConfig(content, newFs, newPaths)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result).To(Equal(expected))
+			Expect(result).To(ContainSubstring(`PRUNEFS="foo bar fuse.alluxio-fuse fuse.jindofs-fuse JuiceFS fuse.goosefs-fuse"`))
+			Expect(result).To(ContainSubstring(`PRUNEPATHS="/runtime-mnt"`))
+		})
+
+		It("should handle empty values with spaces", func() {
+			content := `PRUNEFS="   "`
+
+			result, err := updateConfig(content, newFs, newPaths)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result).To(ContainSubstring(`PRUNEFS="fuse.alluxio-fuse fuse.jindofs-fuse JuiceFS fuse.goosefs-fuse"`))
+			Expect(result).To(ContainSubstring(`PRUNEPATHS="/runtime-mnt"`))
 		})
 	})
 })
