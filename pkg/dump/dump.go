@@ -21,6 +21,8 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -30,8 +32,9 @@ import (
 
 var log logr.Logger
 
-var initialized bool
+var initialized int32 // Changed to atomic int32
 
+var dumpfileMutex sync.RWMutex
 var dumpfile string = "%s/%s-%s.txt"
 
 func StackTrace(all bool) string {
@@ -52,39 +55,37 @@ func StackTrace(all bool) string {
 }
 
 func InstallgoroutineDumpGenerator() {
-	if !initialized {
-		log = ctrl.Log.WithName("dump")
-		log.Info("Register goroutine dump generator")
-
-		signals := make(chan os.Signal, 1)
-
-		signal.Notify(signals, syscall.SIGQUIT)
-
-		go func() {
-			for {
-				sig := <-signals
-
-				switch sig {
-				case syscall.SIGQUIT:
-					t := time.Now()
-					timestamp := fmt.Sprint(t.Format("20060102150405"))
-					log.Info("User uses kill -3 to generate goroutine dump")
-					// coredump("/tmp/go_" + timestamp + ".txt")
-					coredump(fmt.Sprintf(dumpfile, "/tmp", "go", timestamp))
-				// case syscall.SIGTERM:
-				// 	fmt.Println("User told me to exit")
-				// 	os.Exit(0)
-				default:
-					continue
-				}
-			}
-
-		}()
-
-		initialized = true
-	} else {
+	if !atomic.CompareAndSwapInt32(&initialized, 0, 1) {
 		log.Info("Do nothing for installing grouting dump.")
+		return
 	}
+
+	log = ctrl.Log.WithName("dump")
+	log.Info("Register goroutine dump generator")
+
+	signals := make(chan os.Signal, 1)
+
+	signal.Notify(signals, syscall.SIGQUIT)
+
+	go func() {
+		for {
+			sig := <-signals
+
+			switch sig {
+			case syscall.SIGQUIT:
+				t := time.Now()
+				timestamp := fmt.Sprint(t.Format("20060102150405"))
+				log.Info("User uses kill -3 to generate goroutine dump")
+				dumpfileMutex.RLock()
+				filename := fmt.Sprintf(dumpfile, "/tmp", "go", timestamp)
+				dumpfileMutex.RUnlock()
+				coredump(filename)
+			default:
+				continue
+			}
+		}
+
+	}()
 }
 
 func coredump(fileName string) {
@@ -97,4 +98,10 @@ func coredump(fileName string) {
 	stdout := fmt.Sprintf("=== received SIGQUIT ===\n*** goroutine dump...\n%s", trace)
 	log.Info(stdout)
 
+}
+
+// ResetForTesting resets the package state for testing purposes
+// This should only be used in tests
+func ResetForTesting() {
+	atomic.StoreInt32(&initialized, 0)
 }

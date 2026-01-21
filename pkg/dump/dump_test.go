@@ -107,13 +107,13 @@ var _ = Describe("StackTrace", func() {
 	})
 })
 
-var _ = Describe("InstallgoroutineDumpGenerator", func() {
+var _ = Describe("InstallgoroutineDumpGenerator", Serial, func() {
 	var initState int32
 
 	BeforeEach(func() {
 		testMutex.Lock()
 		defer testMutex.Unlock()
-		initialized = false
+		ResetForTesting()
 		atomic.StoreInt32(&initState, 0)
 		log = ctrl.Log.WithName("dump")
 	})
@@ -123,14 +123,9 @@ var _ = Describe("InstallgoroutineDumpGenerator", func() {
 			InstallgoroutineDumpGenerator()
 
 			time.Sleep(50 * time.Millisecond)
-			testMutex.Lock()
-			defer testMutex.Unlock()
-			Expect(initialized).To(BeTrue())
+			Expect(atomic.LoadInt32(&initialized)).To(Equal(int32(1)))
 		})
 	})
-
-	// REMOVED: "when installing multiple times" context that was causing race conditions
-	// The concurrent test was testing the same behavior as idempotent test
 
 	Context("when installing multiple times sequentially", func() {
 		It("should be idempotent", func() {
@@ -138,10 +133,8 @@ var _ = Describe("InstallgoroutineDumpGenerator", func() {
 			InstallgoroutineDumpGenerator()
 			time.Sleep(50 * time.Millisecond)
 
-			testMutex.Lock()
-			firstCheck := initialized
-			testMutex.Unlock()
-			Expect(firstCheck).To(BeTrue())
+			firstCheck := atomic.LoadInt32(&initialized)
+			Expect(firstCheck).To(Equal(int32(1)))
 
 			// Subsequent installations should not cause issues
 			for i := 0; i < 4; i++ {
@@ -149,17 +142,13 @@ var _ = Describe("InstallgoroutineDumpGenerator", func() {
 				time.Sleep(20 * time.Millisecond)
 			}
 
-			testMutex.Lock()
-			defer testMutex.Unlock()
-			Expect(initialized).To(BeTrue())
+			Expect(atomic.LoadInt32(&initialized)).To(Equal(int32(1)))
 		})
 	})
 
 	Context("when receiving SIGQUIT signal", func() {
 		It("should create dump file when signal is sent", func() {
-			testMutex.Lock()
-			initialized = false
-			testMutex.Unlock()
+			ResetForTesting()
 
 			InstallgoroutineDumpGenerator()
 			time.Sleep(200 * time.Millisecond)
@@ -296,11 +285,11 @@ var _ = Describe("Coredump", func() {
 	})
 })
 
-var _ = Describe("SignalHandling", func() {
+var _ = Describe("SignalHandling", Serial, func() {
 	BeforeEach(func() {
 		testMutex.Lock()
 		defer testMutex.Unlock()
-		initialized = false
+		ResetForTesting()
 		log = ctrl.Log.WithName("dump")
 	})
 
@@ -320,9 +309,7 @@ var _ = Describe("SignalHandling", func() {
 			InstallgoroutineDumpGenerator()
 			time.Sleep(100 * time.Millisecond)
 
-			testMutex.Lock()
-			defer testMutex.Unlock()
-			Expect(initialized).To(BeTrue())
+			Expect(atomic.LoadInt32(&initialized)).To(Equal(int32(1)))
 		})
 
 		It("should not panic on installation", func() {
