@@ -1,4 +1,4 @@
-package referencedataset_test
+package referencedataset
 
 import (
 	"testing"
