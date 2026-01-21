@@ -29,9 +29,14 @@ import (
 
 var _ = Describe("Enabled", func() {
 	var originalEnv string
+	var originalEnvIsSet bool
+
+	BeforeEach(func() {
+		originalEnv, originalEnvIsSet = os.LookupEnv("NODEPUBLISH_METHOD")
+	})
 
 	AfterEach(func() {
-		if originalEnv == "" {
+		if !originalEnvIsSet {
 			os.Unsetenv("NODEPUBLISH_METHOD")
 		} else {
 			os.Setenv("NODEPUBLISH_METHOD", originalEnv)
