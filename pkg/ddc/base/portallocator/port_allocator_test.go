@@ -60,6 +60,44 @@ var _ = Describe("RuntimePortAllocator", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(containsAny(allocatedPorts, preservedPorts)).To(BeFalse())
 		})
+
+		It("should make released ports available for re-allocation", func() {
+			pr := net.ParsePortRangeOrDie("20000-20010")
+			err := SetupRuntimePortAllocator(nil, pr, "bitmap", dummy)
+			Expect(err).NotTo(HaveOccurred())
+
+			allocator, err := GetRuntimePortAllocator()
+			Expect(err).NotTo(HaveOccurred())
+
+			// Allocate some ports first
+			firstAllocation, err := allocator.GetAvailablePorts(3)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(firstAllocation)).To(Equal(3))
+
+			// Release the allocated ports
+			allocator.ReleaseReservedPorts(firstAllocation)
+
+			// Try to allocate the same number of ports again
+			secondAllocation, err := allocator.GetAvailablePorts(3)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(secondAllocation)).To(Equal(3))
+
+			// Verify that the second allocation contains some of the released ports
+			// (they should be available again)
+			allocatedAgain := false
+			for _, port := range secondAllocation {
+				for _, releasedPort := range firstAllocation {
+					if port == releasedPort {
+						allocatedAgain = true
+						break
+					}
+				}
+				if allocatedAgain {
+					break
+				}
+			}
+			Expect(allocatedAgain).To(BeTrue(), "Released ports should be available for re-allocation")
+		})
 	})
 })
 
