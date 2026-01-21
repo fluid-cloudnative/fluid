@@ -21,7 +21,91 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("configUpdate", func() {
+var _ = Describe("updateLine", func() {
+	Context("when adding new values to existing line", func() {
+		It("should append new values and return true", func() {
+			line := `PRUNEFS="foo bar"`
+			newValues := []string{"baz", "qux"}
+
+			result, changed := updateLine(line, "PRUNEFS", newValues)
+
+			Expect(changed).To(BeTrue())
+			Expect(result).To(Equal(`PRUNEFS="foo bar baz qux"`))
+		})
+	})
+
+	Context("when all values already exist", func() {
+		It("should return original line and false", func() {
+			line := `PRUNEFS="foo bar baz"`
+			newValues := []string{"foo", "bar"}
+
+			result, changed := updateLine(line, "PRUNEFS", newValues)
+
+			Expect(changed).To(BeFalse())
+			Expect(result).To(Equal(line))
+		})
+	})
+
+	Context("when new values contain empty strings", func() {
+		It("should skip empty values", func() {
+			line := `PRUNEFS="foo"`
+			newValues := []string{"", "bar", ""}
+
+			result, changed := updateLine(line, "PRUNEFS", newValues)
+
+			Expect(changed).To(BeTrue())
+			Expect(result).To(Equal(`PRUNEFS="foo bar"`))
+		})
+	})
+
+	Context("when line has various spacing formats", func() {
+		It("should handle line with spaces around equals", func() {
+			line := `PRUNEFS = "foo"`
+			newValues := []string{"bar"}
+
+			result, changed := updateLine(line, "PRUNEFS", newValues)
+
+			Expect(changed).To(BeTrue())
+			Expect(result).To(Equal(`PRUNEFS="foo bar"`))
+		})
+
+		It("should handle line with extra spaces in value", func() {
+			line := `PRUNEFS="  foo  bar  "`
+			newValues := []string{"baz"}
+
+			result, changed := updateLine(line, "PRUNEFS", newValues)
+
+			Expect(changed).To(BeTrue())
+			Expect(result).To(ContainSubstring("baz"))
+		})
+	})
+
+	Context("when no new values provided", func() {
+		It("should return false for empty slice", func() {
+			line := `PRUNEFS="foo bar"`
+			newValues := []string{}
+
+			result, changed := updateLine(line, "PRUNEFS", newValues)
+
+			Expect(changed).To(BeFalse())
+			Expect(result).To(Equal(line))
+		})
+	})
+
+	Context("when dealing with PRUNEPATHS", func() {
+		It("should handle path values correctly", func() {
+			line := `PRUNEPATHS="/tmp /var"`
+			newValues := []string{"/runtime-mnt", "/new-path"}
+
+			result, changed := updateLine(line, "PRUNEPATHS", newValues)
+
+			Expect(changed).To(BeTrue())
+			Expect(result).To(Equal(`PRUNEPATHS="/tmp /var /runtime-mnt /new-path"`))
+		})
+	})
+})
+
+var _ = Describe("updateConfig", func() {
 	Context("when adding new path and fs", func() {
 		It("should update configuration correctly", func() {
 			content := `PRUNE_BIND_MOUNTS="yes"
@@ -68,6 +152,116 @@ PRUNEPATHS="/runtime-mnt"`
 			got, err := updateConfig(content, newFs, newPaths)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(got).To(Equal(want))
+		})
+	})
+
+	Context("when no changes are needed", func() {
+		It("should return original content", func() {
+			content := `PRUNE_BIND_MOUNTS="yes"
+PRUNEPATHS="/tmp /runtime-mnt"
+PRUNEFS="foo bar fuse.alluxio-fuse"`
+			newFs := []string{"fuse.alluxio-fuse"}
+			newPaths := []string{"/runtime-mnt"}
+
+			got, err := updateConfig(content, newFs, newPaths)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(got).To(Equal(content))
+		})
+	})
+
+	Context("when only PRUNEFS config exists", func() {
+		It("should add PRUNEPATHS line", func() {
+			content := `PRUNEFS="foo bar"`
+			newFs := []string{}
+			newPaths := []string{"/runtime-mnt"}
+			want := `PRUNEFS="foo bar"
+PRUNEPATHS="/runtime-mnt"`
+
+			got, err := updateConfig(content, newFs, newPaths)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(got).To(Equal(want))
+		})
+	})
+
+	Context("when only PRUNEPATHS config exists", func() {
+		It("should add PRUNEFS line", func() {
+			content := `PRUNEPATHS="/tmp"`
+			newFs := []string{"fuse.alluxio-fuse"}
+			newPaths := []string{}
+			want := `PRUNEPATHS="/tmp"
+PRUNEFS="fuse.alluxio-fuse"`
+
+			got, err := updateConfig(content, newFs, newPaths)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(got).To(Equal(want))
+		})
+	})
+
+	Context("when content has leading/trailing whitespace on lines", func() {
+		It("should handle whitespace correctly", func() {
+			content := `  PRUNEFS="foo"  
+  PRUNEPATHS="/tmp"  `
+			newFs := []string{"bar"}
+			newPaths := []string{"/new"}
+
+			got, err := updateConfig(content, newFs, newPaths)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(got).To(ContainSubstring("bar"))
+			Expect(got).To(ContainSubstring("/new"))
+		})
+	})
+
+	Context("when both newFs and newPaths are empty", func() {
+		It("should return original content if configs exist", func() {
+			content := `PRUNEFS="foo"
+PRUNEPATHS="/tmp"`
+			newFs := []string{}
+			newPaths := []string{}
+
+			got, err := updateConfig(content, newFs, newPaths)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(got).To(Equal(content))
+		})
+
+		It("should not add lines if configs don't exist", func() {
+			content := `PRUNE_BIND_MOUNTS="yes"`
+			newFs := []string{}
+			newPaths := []string{}
+
+			got, err := updateConfig(content, newFs, newPaths)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(got).To(Equal(content))
+		})
+	})
+
+	Context("when content is empty", func() {
+		It("should add both config lines", func() {
+			content := ``
+			newFs := []string{"fuse.alluxio-fuse"}
+			newPaths := []string{"/runtime-mnt"}
+
+			got, err := updateConfig(content, newFs, newPaths)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(got).To(ContainSubstring(`PRUNEFS="fuse.alluxio-fuse"`))
+			Expect(got).To(ContainSubstring(`PRUNEPATHS="/runtime-mnt"`))
+		})
+	})
+
+	Context("when content has multiple lines with comments", func() {
+		It("should preserve comments and update configs", func() {
+			content := `# This is a comment
+PRUNEFS="foo"
+# Another comment
+PRUNEPATHS="/tmp"`
+			newFs := []string{"bar"}
+			newPaths := []string{"/new"}
+
+			got, err := updateConfig(content, newFs, newPaths)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(got).To(ContainSubstring("# This is a comment"))
+			Expect(got).To(ContainSubstring("# Another comment"))
+			Expect(got).To(ContainSubstring("bar"))
+			Expect(got).To(ContainSubstring("/new"))
 		})
 	})
 })
