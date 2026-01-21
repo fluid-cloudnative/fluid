@@ -87,7 +87,7 @@ func updateConfig(content string, newFs []string, newPaths []string) (string, er
 			}
 		}
 	}
-	
+
 	if !hasPruneFsConfig && len(newFs) > 0 {
 		configChange = true
 		lines = append(lines, fmt.Sprintf(`%s="%s"`, configKeyPruneFs, strings.Join(newFs, " ")))
