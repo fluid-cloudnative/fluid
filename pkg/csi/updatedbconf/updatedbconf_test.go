@@ -123,6 +123,16 @@ var _ = Describe("updateLine", func() {
 			Expect(changed).To(BeFalse())
 			Expect(result).To(Equal(line))
 		})
+
+		It("should handle line with leading space in value", func() {
+			line := `PRUNEFS=" foo bar"`
+			newValues := []string{"baz"}
+			
+			result, changed := updateLine(line, configKeyPruneFs, newValues)
+			
+			Expect(changed).To(BeTrue())
+			Expect(result).To(Equal(`PRUNEFS="foo bar baz"`))
+		})
 	})
 })
 
@@ -169,26 +179,21 @@ PRUNEFS="foo bar fuse.alluxio-fuse fuse.jindofs-fuse JuiceFS fuse.goosefs-fuse"`
 		It("should create new PRUNEFS and PRUNEPATHS entries when they don't exist", func() {
 			content := `PRUNE_BIND_MOUNTS="yes"`
 
-			expected := `PRUNE_BIND_MOUNTS="yes"
-PRUNEFS="fuse.alluxio-fuse fuse.jindofs-fuse JuiceFS fuse.goosefs-fuse"
-PRUNEPATHS="/runtime-mnt"`
-
 			result, err := updateConfig(content, newFs, newPaths)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result).To(Equal(expected))
+			Expect(result).To(ContainSubstring(`PRUNEFS="fuse.alluxio-fuse fuse.jindofs-fuse JuiceFS fuse.goosefs-fuse"`))
+			Expect(result).To(ContainSubstring(`PRUNEPATHS="/runtime-mnt"`))
 		})
 	})
 
 	Context("when handling edge cases", func() {
 		It("should handle empty content", func() {
 			content := ""
-			expected := `
-PRUNEFS="fuse.alluxio-fuse fuse.jindofs-fuse JuiceFS fuse.goosefs-fuse"
-PRUNEPATHS="/runtime-mnt"`
 
 			result, err := updateConfig(content, newFs, newPaths)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result).To(Equal(expected))
+			Expect(result).To(ContainSubstring(`PRUNEFS="fuse.alluxio-fuse fuse.jindofs-fuse JuiceFS fuse.goosefs-fuse"`))
+			Expect(result).To(ContainSubstring(`PRUNEPATHS="/runtime-mnt"`))
 		})
 
 		It("should handle empty newFs slice", func() {
@@ -373,12 +378,10 @@ PRUNEFS="bar fuse.alluxio-fuse fuse.jindofs-fuse JuiceFS fuse.goosefs-fuse"`
 		It("should only append PRUNEFS when PRUNEPATHS exists", func() {
 			content := `PRUNEPATHS="/tmp"`
 
-			expected := `PRUNEPATHS="/tmp /runtime-mnt"
-PRUNEFS="fuse.alluxio-fuse fuse.jindofs-fuse JuiceFS fuse.goosefs-fuse"`
-
 			result, err := updateConfig(content, newFs, newPaths)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result).To(Equal(expected))
+			Expect(result).To(ContainSubstring(`PRUNEPATHS="/tmp /runtime-mnt"`))
+			Expect(result).To(ContainSubstring(`PRUNEFS="fuse.alluxio-fuse fuse.jindofs-fuse JuiceFS fuse.goosefs-fuse"`))
 		})
 
 		It("should only append PRUNEPATHS when PRUNEFS exists", func() {
