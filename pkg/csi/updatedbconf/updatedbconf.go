@@ -87,7 +87,7 @@ func updateConfig(content string, newFs []string, newPaths []string) (string, er
 			}
 		}
 	}
-	// no PRUNEFS or PRUNEPATHS in config file, append new config line
+	
 	if !hasPruneFsConfig && len(newFs) > 0 {
 		configChange = true
 		lines = append(lines, fmt.Sprintf(`%s="%s"`, configKeyPruneFs, strings.Join(newFs, " ")))
