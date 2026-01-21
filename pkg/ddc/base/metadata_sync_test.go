@@ -14,98 +14,200 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package base
+package base_test
 
-import "testing"
+import (
+	"time"
 
-func TestSafeClose(t *testing.T) {
-	var nilCh chan MetadataSyncResult = nil
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+)
 
-	openCh := make(chan MetadataSyncResult)
+const (
+	testDatasetName      = "test-dataset"
+	testDatasetNamespace = "test-namespace"
+)
 
-	closedCh := make(chan MetadataSyncResult)
-	close(closedCh)
-
-	tests := []struct {
-		name       string
-		ch         chan MetadataSyncResult
-		wantClosed bool
-	}{
-		{
-			name:       "close_open_channel",
-			ch:         openCh,
-			wantClosed: false,
-		},
-		{
-			name:       "close_nil_channel",
-			ch:         nilCh,
-			wantClosed: false,
-		},
-		{
-			name:       "close_closed_channel",
-			ch:         closedCh,
-			wantClosed: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if gotClosed := SafeClose(tt.ch); gotClosed != tt.wantClosed {
-				t.Errorf("SafeClose() = %v, want %v", gotClosed, tt.wantClosed)
-			}
+var _ = Describe("MetadataSync", func() {
+	Describe("SafeClose", func() {
+		Context("when channel is nil", func() {
+			It("should return false without panic", func() {
+				var nilCh chan base.MetadataSyncResult
+				closed := base.SafeClose(nilCh)
+				Expect(closed).To(BeFalse())
+			})
 		})
-	}
-}
 
-func TestSafeSend(t *testing.T) {
-	var nilCh chan MetadataSyncResult = nil
-
-	openCh := make(chan MetadataSyncResult)
-	go func() {
-		<-openCh
-	}()
-
-	closedCh := make(chan MetadataSyncResult)
-	close(closedCh)
-
-	type args struct {
-		ch     chan MetadataSyncResult
-		result MetadataSyncResult
-	}
-	tests := []struct {
-		name       string
-		args       args
-		wantClosed bool
-	}{
-		{
-			name: "send_to_open_channel",
-			args: args{
-				ch:     openCh,
-				result: MetadataSyncResult{},
-			},
-			wantClosed: false,
-		},
-		{
-			name: "send_to_nil_channel",
-			args: args{
-				ch:     nilCh,
-				result: MetadataSyncResult{},
-			},
-			wantClosed: false,
-		},
-		{
-			name: "send_to_closed_channel",
-			args: args{
-				ch:     closedCh,
-				result: MetadataSyncResult{},
-			},
-			wantClosed: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if gotClosed := SafeSend(tt.args.ch, tt.args.result); gotClosed != tt.wantClosed {
-				t.Errorf("SafeSend() = %v, want %v", gotClosed, tt.wantClosed)
-			}
+		Context("when channel is open", func() {
+			It("should close the channel and return false", func() {
+				openCh := make(chan base.MetadataSyncResult)
+				closed := base.SafeClose(openCh)
+				Expect(closed).To(BeFalse())
+			})
 		})
-	}
-}
+
+		Context("when channel is already closed", func() {
+			It("should return true without panic", func() {
+				closedCh := make(chan base.MetadataSyncResult)
+				close(closedCh)
+				closed := base.SafeClose(closedCh)
+				Expect(closed).To(BeTrue())
+			})
+		})
+	})
+
+	Describe("SafeSend", func() {
+		Context("when channel is nil", func() {
+			It("should return false without panic", func() {
+				var nilCh chan base.MetadataSyncResult
+				closed := base.SafeSend(nilCh, base.MetadataSyncResult{})
+				Expect(closed).To(BeFalse())
+			})
+		})
+
+		Context("when channel is open", func() {
+			It("should send to the channel and return false", func() {
+				openCh := make(chan base.MetadataSyncResult, 1) // Buffer 1 to prevent blocking
+				result := base.MetadataSyncResult{
+					Done:      true,
+					StartTime: time.Now(),
+					UfsTotal:  "1GB",
+					FileNum:   "100",
+				}
+				closed := base.SafeSend(openCh, result)
+				Expect(closed).To(BeFalse())
+				received := <-openCh
+				Expect(received.Done).To(BeTrue())
+				Expect(received.UfsTotal).To(Equal("1GB"))
+				Expect(received.FileNum).To(Equal("100"))
+			})
+		})
+
+		Context("when channel is already closed", func() {
+			It("should return true without panic", func() {
+				closedCh := make(chan base.MetadataSyncResult)
+				close(closedCh)
+				closed := base.SafeSend(closedCh, base.MetadataSyncResult{})
+				Expect(closed).To(BeTrue())
+			})
+		})
+	})
+
+	Describe("RecordDatasetMetrics", func() {
+		var log = fake.NullLogger()
+
+		Context("when datasetNamespace is empty", func() {
+			It("should return early without panic", func() {
+				result := base.MetadataSyncResult{
+					UfsTotal: "1GB",
+					FileNum:  "100",
+				}
+				Expect(func() {
+					base.RecordDatasetMetrics(result, "", testDatasetName, log)
+				}).NotTo(Panic())
+			})
+		})
+
+		Context("when datasetName is empty", func() {
+			It("should return early without panic", func() {
+				result := base.MetadataSyncResult{
+					UfsTotal: "1GB",
+					FileNum:  "100",
+				}
+				Expect(func() {
+					base.RecordDatasetMetrics(result, testDatasetNamespace, "", log)
+				}).NotTo(Panic())
+			})
+		})
+
+		Context("when UfsTotal is empty", func() {
+			It("should skip parsing UfsTotal without panic", func() {
+				result := base.MetadataSyncResult{
+					UfsTotal: "",
+					FileNum:  "100",
+				}
+				Expect(func() {
+					base.RecordDatasetMetrics(result, testDatasetNamespace, testDatasetName, log)
+				}).NotTo(Panic())
+			})
+		})
+
+		Context("when FileNum is empty", func() {
+			It("should skip parsing FileNum without panic", func() {
+				result := base.MetadataSyncResult{
+					UfsTotal: "1GB",
+					FileNum:  "",
+				}
+				Expect(func() {
+					base.RecordDatasetMetrics(result, testDatasetNamespace, testDatasetName, log)
+				}).NotTo(Panic())
+			})
+		})
+
+		Context("when UfsTotal has invalid format", func() {
+			It("should log error without panic", func() {
+				result := base.MetadataSyncResult{
+					UfsTotal: "invalid-size",
+					FileNum:  "100",
+				}
+				Expect(func() {
+					base.RecordDatasetMetrics(result, testDatasetNamespace, testDatasetName, log)
+				}).NotTo(Panic())
+			})
+		})
+
+		Context("when FileNum has invalid format", func() {
+			It("should log error without panic", func() {
+				result := base.MetadataSyncResult{
+					UfsTotal: "1GB",
+					FileNum:  "not-a-number",
+				}
+				Expect(func() {
+					base.RecordDatasetMetrics(result, testDatasetNamespace, testDatasetName, log)
+				}).NotTo(Panic())
+			})
+		})
+
+		Context("when all parameters are valid", func() {
+			It("should record metrics without panic", func() {
+				result := base.MetadataSyncResult{
+					Done:      true,
+					StartTime: time.Now(),
+					UfsTotal:  "1GB",
+					FileNum:   "100",
+				}
+				Expect(func() {
+					base.RecordDatasetMetrics(result, testDatasetNamespace, testDatasetName, log)
+				}).NotTo(Panic())
+			})
+		})
+
+		Context("when both UfsTotal and FileNum are empty", func() {
+			It("should complete without panic", func() {
+				result := base.MetadataSyncResult{
+					Done:      true,
+					StartTime: time.Now(),
+					UfsTotal:  "",
+					FileNum:   "",
+				}
+				Expect(func() {
+					base.RecordDatasetMetrics(result, testDatasetNamespace, testDatasetName, log)
+				}).NotTo(Panic())
+			})
+		})
+
+		Context("when both namespace and name are empty", func() {
+			It("should return early without panic", func() {
+				result := base.MetadataSyncResult{
+					UfsTotal: "1GB",
+					FileNum:  "100",
+				}
+				Expect(func() {
+					base.RecordDatasetMetrics(result, "", "", log)
+				}).NotTo(Panic())
+			})
+		})
+	})
+})
