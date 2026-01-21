@@ -16,19 +16,14 @@ limitations under the License.
 package dump
 
 import (
+	"os"
+	"syscall"
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"syscall"
-	"testing"
-	"time"
 )
-
-func TestDump(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Dump Suite")
-}
 
 var _ = Describe("StackTrace", func() {
 	Context("when requesting stack trace", func() {
