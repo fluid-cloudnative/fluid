@@ -21,7 +21,7 @@ on:
 # Declare default permissions as read only.
 permissions:
   contents: read
-  actions: write
+  actions: read
 
 jobs:
   analyze:
