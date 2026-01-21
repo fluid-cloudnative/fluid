@@ -38,8 +38,9 @@ import (
 var mockError = errors.New("mock error")
 
 const (
-	mockDatasetName = "fluid-data-set"
-	mockNamespace   = "default"
+	mockDatasetName       = "fluid-data-set"
+	mockNamespace         = "default"
+	shouldReturnErrorDesc = "should return error"
 )
 
 var _ = Describe("Sync Error Paths", func() {
@@ -85,7 +86,7 @@ var _ = Describe("Sync Error Paths", func() {
 
 	Describe("Sync", func() {
 		Context("when SyncMetadata fails", func() {
-			It("should return error", func() {
+			It(shouldReturnErrorDesc, func() {
 				impl.EXPECT().SyncMetadata().Return(mockError).Times(1)
 
 				err := t.Sync(fakeCtx)
@@ -94,7 +95,7 @@ var _ = Describe("Sync Error Paths", func() {
 		})
 
 		Context("when SyncReplicas fails", func() {
-			It("should return error", func() {
+			It(shouldReturnErrorDesc, func() {
 				gomock.InOrder(
 					impl.EXPECT().SyncMetadata().Return(nil).Times(1),
 					impl.EXPECT().SyncReplicas(gomock.Eq(fakeCtx)).Return(mockError).Times(1),
@@ -106,7 +107,7 @@ var _ = Describe("Sync Error Paths", func() {
 		})
 
 		Context("when SyncRuntime fails", func() {
-			It("should return error", func() {
+			It(shouldReturnErrorDesc, func() {
 				gomock.InOrder(
 					impl.EXPECT().SyncMetadata().Return(nil).Times(1),
 					impl.EXPECT().SyncReplicas(gomock.Eq(fakeCtx)).Return(nil).Times(1),
@@ -132,7 +133,7 @@ var _ = Describe("Sync Error Paths", func() {
 		})
 
 		Context("when CheckRuntimeHealthy fails", func() {
-			It("should return error", func() {
+			It(shouldReturnErrorDesc, func() {
 				gomock.InOrder(
 					impl.EXPECT().SyncMetadata().Return(nil).Times(1),
 					impl.EXPECT().SyncReplicas(gomock.Eq(fakeCtx)).Return(nil).Times(1),
@@ -146,7 +147,7 @@ var _ = Describe("Sync Error Paths", func() {
 		})
 
 		Context("when CheckAndUpdateRuntimeStatus fails", func() {
-			It("should return error", func() {
+			It(shouldReturnErrorDesc, func() {
 				gomock.InOrder(
 					impl.EXPECT().SyncMetadata().Return(nil).Times(1),
 					impl.EXPECT().SyncReplicas(gomock.Eq(fakeCtx)).Return(nil).Times(1),
@@ -161,7 +162,7 @@ var _ = Describe("Sync Error Paths", func() {
 		})
 
 		Context("when UpdateCacheOfDataset fails", func() {
-			It("should return error", func() {
+			It(shouldReturnErrorDesc, func() {
 				gomock.InOrder(
 					impl.EXPECT().SyncMetadata().Return(nil).Times(1),
 					impl.EXPECT().SyncReplicas(gomock.Eq(fakeCtx)).Return(nil).Times(1),
@@ -177,7 +178,7 @@ var _ = Describe("Sync Error Paths", func() {
 		})
 
 		Context("when UpdateOnUFSChange fails", func() {
-			It("should return error", func() {
+			It(shouldReturnErrorDesc, func() {
 				datasetWithNewMountPoints := &datav1alpha1.Dataset{
 					Spec: datav1alpha1.DatasetSpec{
 						Mounts: []datav1alpha1.Mount{
@@ -249,7 +250,7 @@ var _ = Describe("Sync Error Paths", func() {
 		})
 
 		Context("when SyncScheduleInfoToCacheNodes fails", func() {
-			It("should return error", func() {
+			It(shouldReturnErrorDesc, func() {
 				gomock.InOrder(
 					impl.EXPECT().SyncMetadata().Return(nil).Times(1),
 					impl.EXPECT().SyncReplicas(gomock.Eq(fakeCtx)).Return(nil).Times(1),
