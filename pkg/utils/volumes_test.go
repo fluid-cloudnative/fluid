@@ -28,7 +28,7 @@ const (
 )
 
 var _ = Describe("TrimVolumes", func() {
-	DescribeTable("TrimVolumes",
+	DescribeTable("should trim volumes correctly",
 		func(volumes []corev1.Volume, names []string, wants []string) {
 			got := TrimVolumes(volumes, names)
 			gotNames := []string{}
@@ -96,7 +96,6 @@ var _ = Describe("TrimVolumes", func() {
 			[]string{"fuse-device", "jindofs-fuse-mount"},
 		),
 	)
-
 })
 
 var _ = Describe("TrimVolumeMounts", func() {
