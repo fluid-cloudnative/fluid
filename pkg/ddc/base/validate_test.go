@@ -17,75 +17,62 @@ limitations under the License.
 package base
 
 import (
-	"testing"
-
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestValidateRuntimeInfo(t *testing.T) {
-	tests := []struct {
-		name               string
-		ownerDatasetUID    string
-		placementModeSet   bool
-		wantErr            bool
-		wantTemporaryError bool
-	}{
-		{
-			name:               "valid runtime info",
-			ownerDatasetUID:    "uid-12345",
-			placementModeSet:   true,
-			wantErr:            false,
-			wantTemporaryError: false,
-		},
-		{
-			name:               "empty OwnerDatasetUID returns temporary error",
-			ownerDatasetUID:    "",
-			placementModeSet:   true,
-			wantErr:            true,
-			wantTemporaryError: true,
-		},
-		{
-			name:               "placement mode not set returns temporary error",
-			ownerDatasetUID:    "uid-12345",
-			placementModeSet:   false,
-			wantErr:            true,
-			wantTemporaryError: true,
-		},
-		{
-			name:               "both invalid returns error for OwnerDatasetUID first",
-			ownerDatasetUID:    "",
-			placementModeSet:   false,
-			wantErr:            true,
-			wantTemporaryError: true,
-		},
-	}
+var _ = Describe("ValidateRuntimeInfo", func() {
+	var (
+		runtimeInfo *mockRuntimeInfoForValidate
+	)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mock := &mockRuntimeInfoForValidate{
-				ownerDatasetUID:  tt.ownerDatasetUID,
-				placementModeSet: tt.placementModeSet,
-			}
+	BeforeEach(func() {
+		runtimeInfo = &mockRuntimeInfoForValidate{}
+	})
 
-			err := ValidateRuntimeInfo(mock)
+	Context("validating runtime info", func() {
+		It("should return nil when all info is valid", func() {
+			runtimeInfo.ownerDatasetUID = "uid-12345"
+			runtimeInfo.placementModeSet = true
 
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ValidateRuntimeInfo() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-
-			if tt.wantErr && tt.wantTemporaryError {
-				if !fluiderrs.IsTemporaryValidationFailed(err) {
-					t.Errorf("ValidateRuntimeInfo() error should be TemporaryValidationFailed, got %T", err)
-				}
-			}
+			err := ValidateRuntimeInfo(runtimeInfo)
+			Expect(err).NotTo(HaveOccurred())
 		})
-	}
-}
+
+		It("should return temporary error when OwnerDatasetUID is empty", func() {
+			runtimeInfo.ownerDatasetUID = ""
+			runtimeInfo.placementModeSet = true
+
+			err := ValidateRuntimeInfo(runtimeInfo)
+			Expect(err).To(HaveOccurred())
+			Expect(fluiderrs.IsTemporaryValidationFailed(err)).To(BeTrue())
+		})
+
+		It("should return temporary error when placement mode is not set", func() {
+			runtimeInfo.ownerDatasetUID = "uid-12345"
+			runtimeInfo.placementModeSet = false
+
+			err := ValidateRuntimeInfo(runtimeInfo)
+			Expect(err).To(HaveOccurred())
+			Expect(fluiderrs.IsTemporaryValidationFailed(err)).To(BeTrue())
+		})
+
+		It("should return error for OwnerDatasetUID first when both invalid", func() {
+			runtimeInfo.ownerDatasetUID = ""
+			runtimeInfo.placementModeSet = false
+
+			err := ValidateRuntimeInfo(runtimeInfo)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("OwnerDatasetUID is not set"))
+			Expect(fluiderrs.IsTemporaryValidationFailed(err)).To(BeTrue())
+		})
+	})
+})
 
 // mockRuntimeInfoForValidate implements RuntimeInfoInterface for testing ValidateRuntimeInfo
 type mockRuntimeInfoForValidate struct {
