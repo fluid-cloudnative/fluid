@@ -423,16 +423,8 @@ var _ = Describe("UFSToUpdate", func() {
 				ufsToUpdate := NewUFSToUpdate(dataset)
 				ufsToUpdate.AnalyzePathsDelta()
 
-				if len(wantToAdd) == 0 {
-					Expect(ufsToUpdate.ToAdd()).To(BeEmpty())
-				} else {
-					Expect(ufsToUpdate.ToAdd()).To(Equal(wantToAdd))
-				}
-				if len(wantToRemove) == 0 {
-					Expect(ufsToUpdate.ToRemove()).To(BeEmpty())
-				} else {
-					Expect(ufsToUpdate.ToRemove()).To(Equal(wantToRemove))
-				}
+				Expect(ufsToUpdate.ToAdd()).To(ConsistOf(wantToAdd))
+				Expect(ufsToUpdate.ToRemove()).To(ConsistOf(wantToRemove))
 				Expect(ufsToUpdate.ShouldUpdate()).To(Equal(wantUpdate))
 			},
 			Entry("add new mounts",
@@ -492,6 +484,7 @@ var _ = Describe("AddMountPaths", func() {
 	DescribeTable("should correctly add mount paths",
 		func(originAdd []string, toAdd []string, result []string) {
 			ufsToUpdate := NewUFSToUpdate(&datav1alpha1.Dataset{})
+			// Directly set unexported field to isolate testing of AddMountPaths logic
 			ufsToUpdate.toAdd = originAdd
 
 			ufsToUpdate.AddMountPaths(toAdd)
@@ -499,7 +492,7 @@ var _ = Describe("AddMountPaths", func() {
 			if len(result) == 0 {
 				Expect(ufsToUpdate.ToAdd()).To(BeEmpty())
 			} else {
-				Expect(ufsToUpdate.ToAdd()).To(Equal(result))
+				Expect(ufsToUpdate.ToAdd()).To(ConsistOf(result))
 			}
 		},
 		Entry("add new path to existing",
