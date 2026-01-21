@@ -17,7 +17,6 @@ limitations under the License.
 package errors
 
 import (
-	"fmt"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -35,51 +34,6 @@ func resource(resource string) schema.GroupResource {
 }
 
 var _ = Describe("Errors", func() {
-	Describe("IsNotSupported", func() {
-		Context("with NotSupported error", func() {
-			It("should return true for NotSupported error", func() {
-				err := NewNotSupported(resource("DataBackup"), "ecaRuntime")
-
-				Expect(IsNotSupported(err)).To(BeTrue())
-			})
-
-			It("should have non-nil error details", func() {
-				err := NewNotSupported(resource("DataBackup"), "ecaRuntime")
-
-				Expect(err.Details()).NotTo(BeNil())
-			})
-
-			It("should have non-empty error message", func() {
-				err := NewNotSupported(resource("DataBackup"), "ecaRuntime")
-
-				Expect(err.Error()).NotTo(BeEmpty())
-			})
-		})
-
-		Context("with other error types", func() {
-			It("should return false for standard errors", func() {
-				err := fmt.Errorf("test")
-
-				Expect(IsNotSupported(err)).To(BeFalse())
-			})
-
-			It("should return false for nil error", func() {
-				Expect(IsNotSupported(nil)).To(BeFalse())
-			})
-		})
-
-		Context("with multiple error types", func() {
-			DescribeTable("should correctly identify NotSupported errors",
-				func(err error, expected bool) {
-					Expect(IsNotSupported(err)).To(Equal(expected))
-				},
-				Entry("NotSupported error", NewNotSupported(resource("DataBackup"), "ecaRuntime"), true),
-				Entry("standard error", fmt.Errorf("test"), false),
-				Entry("nil error", nil, false),
-			)
-		})
-	})
-
 	Describe("resource helper function", func() {
 		It("should create GroupResource with empty group", func() {
 			gr := resource("pods")

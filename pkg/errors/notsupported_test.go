@@ -242,7 +242,6 @@ var _ = Describe("NotSupported", func() {
 		})
 	})
 
-	// Optional: Add edge case tests
 	Describe("Edge Cases", func() {
 		It("should handle special characters in resource names", func() {
 			qualifiedResource := schema.GroupResource{
