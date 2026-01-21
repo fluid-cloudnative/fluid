@@ -23,6 +23,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
+const (
+	cacheDirName = "cache-dir"
+)
+
 var _ = Describe("TrimVolumes", func() {
 	DescribeTable("TrimVolumes",
 		func(volumes []corev1.Volume, names []string, wants []string) {
@@ -59,7 +63,7 @@ var _ = Describe("TrimVolumes", func() {
 					},
 				},
 			},
-			[]string{"datavolume-", "cache-dir", "mem", "ssd", "hdd"},
+			[]string{"datavolume-", cacheDirName, "mem", "ssd", "hdd"},
 			[]string{"test-1", "fuse-device", "jindofs-fuse-mount"},
 		),
 		Entry("exclude",
@@ -88,12 +92,12 @@ var _ = Describe("TrimVolumes", func() {
 					},
 				},
 			},
-			[]string{"datavolume-", "cache-dir", "mem", "ssd", "hdd"},
+			[]string{"datavolume-", cacheDirName, "mem", "ssd", "hdd"},
 			[]string{"fuse-device", "jindofs-fuse-mount"},
 		),
 	)
 
-	})
+})
 
 var _ = Describe("TrimVolumeMounts", func() {
 	DescribeTable("should trim volume mounts",
@@ -117,7 +121,7 @@ var _ = Describe("TrimVolumeMounts", func() {
 					Name: "jindofs-fuse-mount",
 				},
 			},
-			[]string{"datavolumeMount-", "cache-dir", "mem", "ssd", "hdd"},
+			[]string{"datavolumeMount-", cacheDirName, "mem", "ssd", "hdd"},
 			[]string{"test-1", "fuse-device", "jindofs-fuse-mount"},
 		),
 		Entry("exclude",
@@ -132,7 +136,7 @@ var _ = Describe("TrimVolumeMounts", func() {
 					Name: "jindofs-fuse-mount",
 				},
 			},
-			[]string{"datavolumeMount-", "cache-dir", "mem", "ssd", "hdd"},
+			[]string{"datavolumeMount-", cacheDirName, "mem", "ssd", "hdd"},
 			[]string{"fuse-device", "jindofs-fuse-mount"},
 		),
 	)
