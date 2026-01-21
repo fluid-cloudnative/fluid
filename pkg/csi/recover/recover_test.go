@@ -237,7 +237,7 @@ var _ = Describe("FuseRecover", func() {
 				KubeClient:              fakeClient,
 				ApiReader:               fakeClient,
 				Recorder:                record.NewFakeRecorder(1),
-				recoverFusePeriod:       testfuseRecoverPeriod,
+				recoverFusePeriod:       testfuseRecoverPeriod * time.Second,
 				recoverWarningThreshold: 50,
 				locks:                   utils.NewVolumeLocks(),
 			}
