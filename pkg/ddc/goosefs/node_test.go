@@ -146,7 +146,6 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 	})
 
 	fields2 := makeDatasetResourcesFn("hbase", testNodeNamespace, []string{"node2", "node3"})
-	fields2.pods[1].Spec = v1.PodSpec{NodeName: "node3"}
 	fields2.nodes = append(fields2.nodes,
 		&v1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node3"}},
 		&v1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node2", Labels: map[string]string{"fluid.io/s-big-data-hbase": "true"}}},
@@ -210,14 +209,14 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 		engine := getTestGooseFSEngineNode(c, testcase.fields.name, testcase.fields.namespace, true)
 		err := engine.SyncScheduleInfoToCacheNodes()
 		if err != nil {
-			t.Errorf("Got error %v.", err)
+			t.Errorf("testcase %s: Got error %v", testcase.name, err)
 		}
 
 		nodeList := &v1.NodeList{}
 		datasetLabels, parseErr := labels.Parse(fmt.Sprintf(testNodeLabelSelector, engine.runtimeInfo.GetCommonLabelName()))
 		if parseErr != nil {
-			t.Errorf("Got error parsing labels: %v", parseErr)
-			return
+			t.Errorf("testcase %s: Got error parsing labels: %v", testcase.name, parseErr)
+			continue
 		}
 
 		listErr := c.List(context.TODO(), nodeList, &client.ListOptions{
@@ -226,6 +225,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 
 		if listErr != nil {
 			t.Errorf("Got error listing nodes: %v", listErr)
+			continue
 		}
 
 		nodeNames := []string{}
