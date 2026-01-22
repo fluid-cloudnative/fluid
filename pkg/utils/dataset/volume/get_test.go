@@ -47,36 +47,6 @@ var _ = Describe("Get helpers related tests", Label("pkg.utils.dataset.volume.ge
 		clientObj = fake.NewFakeClientWithScheme(scheme, resources...)
 	})
 
-	Context("Test GetPVCByVolumeId()", func() {
-		When("pv is bound to a fluid pvc", func() {
-			BeforeEach(func() {
-				resources = append(resources,
-					&v1.PersistentVolume{ObjectMeta: metav1.ObjectMeta{Name: "ns-name"}, Spec: v1.PersistentVolumeSpec{ClaimRef: &v1.ObjectReference{Namespace: "ns", Name: "name"}}},
-					&v1.PersistentVolumeClaim{ObjectMeta: metav1.ObjectMeta{Name: "name", Namespace: "ns", Labels: map[string]string{common.LabelAnnotationStorageCapacityPrefix + "ns-name": ""}}},
-				)
-			})
-			It("should return the pvc", func() {
-				got, _, err := GetVolumePairByVolumeId(clientObj, "ns-name")
-				Expect(err).To(BeNil())
-				Expect(got).NotTo(BeNil())
-				Expect(got.Name).To(Equal("name"))
-			})
-		})
-
-		When("pv is bound to a non-fluid pvc", func() {
-			BeforeEach(func() {
-				resources = append(resources,
-					&v1.PersistentVolume{ObjectMeta: metav1.ObjectMeta{Name: "x"}, Spec: v1.PersistentVolumeSpec{ClaimRef: &v1.ObjectReference{Namespace: "ns", Name: "n"}}},
-					&v1.PersistentVolumeClaim{ObjectMeta: metav1.ObjectMeta{Name: "n", Namespace: "ns"}},
-				)
-			})
-			It("should return error", func() {
-				_, _, err := GetVolumePairByVolumeId(clientObj, "x")
-				Expect(err).ToNot(BeNil())
-			})
-		})
-	})
-
 	Context("Test GetNamespacedNameByVolumeId()", func() {
 		When("pv has claimRef and pvc is managed by fluid", func() {
 			BeforeEach(func() {
@@ -93,6 +63,13 @@ var _ = Describe("Get helpers related tests", Label("pkg.utils.dataset.volume.ge
 			})
 		})
 
+		When("pv does not exist", func() {
+			It("should return error", func() {
+				_, _, err := GetNamespacedNameByVolumeId(clientObj, "non-existent-pv")
+				Expect(err).NotTo(BeNil())
+			})
+		})
+
 		When("pv has nil claimRef", func() {
 			BeforeEach(func() {
 				resources = append(resources, &v1.PersistentVolume{ObjectMeta: metav1.ObjectMeta{Name: "v"}})
@@ -100,6 +77,124 @@ var _ = Describe("Get helpers related tests", Label("pkg.utils.dataset.volume.ge
 			It("should return error", func() {
 				_, _, err := GetNamespacedNameByVolumeId(clientObj, "v")
 				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(ContainSubstring("has unexpected nil claimRef"))
+			})
+		})
+
+		When("pvc does not exist", func() {
+			BeforeEach(func() {
+				resources = append(resources,
+					&v1.PersistentVolume{ObjectMeta: metav1.ObjectMeta{Name: "pv-orphan"}, Spec: v1.PersistentVolumeSpec{ClaimRef: &v1.ObjectReference{Namespace: "ns", Name: "missing-pvc"}}},
+				)
+			})
+			It("should return error", func() {
+				_, _, err := GetNamespacedNameByVolumeId(clientObj, "pv-orphan")
+				Expect(err).NotTo(BeNil())
+			})
+		})
+
+		When("pvc is not a fluid dataset", func() {
+			BeforeEach(func() {
+				resources = append(resources,
+					&v1.PersistentVolume{ObjectMeta: metav1.ObjectMeta{Name: "pv-regular"}, Spec: v1.PersistentVolumeSpec{ClaimRef: &v1.ObjectReference{Namespace: "ns", Name: "regular-pvc"}}},
+					&v1.PersistentVolumeClaim{ObjectMeta: metav1.ObjectMeta{Name: "regular-pvc", Namespace: "ns"}},
+				)
+			})
+			It("should return error", func() {
+				_, _, err := GetNamespacedNameByVolumeId(clientObj, "pv-regular")
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(ContainSubstring("is not bounded with a fluid pvc"))
+			})
+		})
+	})
+
+	Context("Test GetVolumePairByVolumeId()", func() {
+		When("pv is bound to a fluid pvc", func() {
+			BeforeEach(func() {
+				resources = append(resources,
+					&v1.PersistentVolume{ObjectMeta: metav1.ObjectMeta{Name: "ns-name"}, Spec: v1.PersistentVolumeSpec{ClaimRef: &v1.ObjectReference{Namespace: "ns", Name: "name"}}},
+					&v1.PersistentVolumeClaim{ObjectMeta: metav1.ObjectMeta{Name: "name", Namespace: "ns", Labels: map[string]string{common.LabelAnnotationStorageCapacityPrefix + "ns-name": ""}}},
+				)
+			})
+			It("should return the pvc and pv", func() {
+				pvc, pv, err := GetVolumePairByVolumeId(clientObj, "ns-name")
+				Expect(err).To(BeNil())
+				Expect(pvc).NotTo(BeNil())
+				Expect(pv).NotTo(BeNil())
+				Expect(pvc.Name).To(Equal("name"))
+				Expect(pvc.Namespace).To(Equal("ns"))
+				Expect(pv.Name).To(Equal("ns-name"))
+			})
+		})
+
+		When("pv does not exist", func() {
+			It("should return error and nil pointers", func() {
+				pvc, pv, err := GetVolumePairByVolumeId(clientObj, "non-existent")
+				Expect(err).NotTo(BeNil())
+				Expect(pvc).To(BeNil())
+				Expect(pv).To(BeNil())
+			})
+		})
+
+		When("pv has nil claimRef", func() {
+			BeforeEach(func() {
+				resources = append(resources,
+					&v1.PersistentVolume{ObjectMeta: metav1.ObjectMeta{Name: "pv-no-claim"}},
+				)
+			})
+			It("should return error and nil pointers", func() {
+				pvc, pv, err := GetVolumePairByVolumeId(clientObj, "pv-no-claim")
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(ContainSubstring("has unexpected nil claimRef"))
+				Expect(pvc).To(BeNil())
+				Expect(pv).To(BeNil())
+			})
+		})
+
+		When("pvc does not exist", func() {
+			BeforeEach(func() {
+				resources = append(resources,
+					&v1.PersistentVolume{ObjectMeta: metav1.ObjectMeta{Name: "pv-with-ref"}, Spec: v1.PersistentVolumeSpec{ClaimRef: &v1.ObjectReference{Namespace: "test-ns", Name: "ghost-pvc"}}},
+				)
+			})
+			It("should return error and nil pointers", func() {
+				pvc, pv, err := GetVolumePairByVolumeId(clientObj, "pv-with-ref")
+				Expect(err).NotTo(BeNil())
+				Expect(pvc).To(BeNil())
+				Expect(pv).To(BeNil())
+			})
+		})
+
+		When("pv is bound to a non-fluid pvc", func() {
+			BeforeEach(func() {
+				resources = append(resources,
+					&v1.PersistentVolume{ObjectMeta: metav1.ObjectMeta{Name: "x"}, Spec: v1.PersistentVolumeSpec{ClaimRef: &v1.ObjectReference{Namespace: "ns", Name: "n"}}},
+					&v1.PersistentVolumeClaim{ObjectMeta: metav1.ObjectMeta{Name: "n", Namespace: "ns"}},
+				)
+			})
+			It("should return error and nil pointers", func() {
+				pvc, pv, err := GetVolumePairByVolumeId(clientObj, "x")
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("is not bounded with a fluid pvc"))
+				Expect(pvc).To(BeNil())
+				Expect(pv).To(BeNil())
+			})
+		})
+
+		When("pvc has fluid labels with different format", func() {
+			BeforeEach(func() {
+				resources = append(resources,
+					&v1.PersistentVolume{ObjectMeta: metav1.ObjectMeta{Name: "test-pv"}, Spec: v1.PersistentVolumeSpec{ClaimRef: &v1.ObjectReference{Namespace: "default", Name: "test-pvc"}}},
+					&v1.PersistentVolumeClaim{ObjectMeta: metav1.ObjectMeta{Name: "test-pvc", Namespace: "default", Labels: map[string]string{common.LabelAnnotationStorageCapacityPrefix + "test-pv": "100Gi"}}},
+				)
+			})
+			It("should successfully return pvc and pv", func() {
+				pvc, pv, err := GetVolumePairByVolumeId(clientObj, "test-pv")
+				Expect(err).To(BeNil())
+				Expect(pvc).NotTo(BeNil())
+				Expect(pv).NotTo(BeNil())
+				Expect(pvc.Name).To(Equal("test-pvc"))
+				Expect(pv.Name).To(Equal("test-pv"))
 			})
 		})
 	})
