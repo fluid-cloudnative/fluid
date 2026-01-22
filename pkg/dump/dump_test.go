@@ -183,7 +183,7 @@ var _ = Describe("InstallgoroutineDumpGenerator", Serial, func() {
 				content, err := os.ReadFile(dumpFilePath)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(string(content)).To(ContainSubstring("goroutine"))
-				os.Remove(dumpFilePath)
+
 			}
 		})
 	})
@@ -195,11 +195,9 @@ var _ = Describe("Coredump", func() {
 	BeforeEach(func() {
 		log = ctrl.Log.WithName("dump")
 		testFile = "/tmp/test_coredump.txt"
-		os.Remove(testFile)
 	})
 
 	AfterEach(func() {
-		os.Remove(testFile)
 	})
 
 	Context("when creating a coredump", func() {
@@ -279,7 +277,7 @@ var _ = Describe("Coredump", func() {
 			for _, file := range files {
 				_, err := os.Stat(file)
 				Expect(os.IsNotExist(err)).To(BeFalse())
-				os.Remove(file)
+				_ = os.Remove(file)
 			}
 		})
 	})
@@ -294,12 +292,12 @@ var _ = Describe("SignalHandling", Serial, func() {
 	})
 
 	AfterEach(func() {
-		os.Remove("/tmp/go-test-signal.txt")
+		_ = os.Remove("/tmp/go-test-signal.txt")
 		// Clean up any dump files created during tests
 		files, _ := os.ReadDir("/tmp")
 		for _, file := range files {
 			if len(file.Name()) > 3 && file.Name()[:3] == "go-" && file.Name()[len(file.Name())-4:] == ".txt" {
-				os.Remove("/tmp/" + file.Name())
+				_ = os.Remove("/tmp/" + file.Name())
 			}
 		}
 	})
