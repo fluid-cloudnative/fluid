@@ -40,7 +40,7 @@ func (e *VineyardEngine) Shutdown() (err error) {
 		base.SafeClose(e.MetadataSyncDoneCh)
 	}
 
-	_, err = e.destroyWorkers(-1)
+	err = e.destroyWorkers(-1)
 	if err != nil {
 		return
 	}
@@ -85,14 +85,14 @@ func (e *VineyardEngine) destroyMaster() (err error) {
 	return
 }
 
-func (e *VineyardEngine) destroyWorkers(expectedWorkers int32) (currentWorkers int32, err error) {
+func (e *VineyardEngine) destroyWorkers(expectedWorkers int32) (err error) {
 	//  SchedulerMutex only for patch mode
 	lifecycle.SchedulerMutex.Lock()
 	defer lifecycle.SchedulerMutex.Unlock()
 
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
-		return currentWorkers, err
+		return err
 	}
 
 	return e.Helper.TearDownWorkers(runtimeInfo)

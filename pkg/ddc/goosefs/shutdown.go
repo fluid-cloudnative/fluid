@@ -47,7 +47,7 @@ func (e *GooseFSEngine) Shutdown() (err error) {
 		close(e.MetadataSyncDoneCh)
 	}
 
-	_, err = e.destroyWorkers(-1)
+	err = e.destroyWorkers(-1)
 	if err != nil {
 		return
 	}
@@ -199,13 +199,13 @@ func (e *GooseFSEngine) cleanAll() (err error) {
 
 // destroyWorkers attempts to delete the workers until worker num reaches the given expectedWorkers, if expectedWorkers is -1, it means all the workers should be deleted
 // This func returns currentWorkers representing how many workers are left after this process.
-func (e *GooseFSEngine) destroyWorkers(expectedWorkers int32) (currentWorkers int32, err error) {
+func (e *GooseFSEngine) destroyWorkers(expectedWorkers int32) (err error) {
 	//  SchedulerMutex only for patch mode
 	lifecycle.SchedulerMutex.Lock()
 	defer lifecycle.SchedulerMutex.Unlock()
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
-		return currentWorkers, err
+		return err
 	}
 
 	return e.Helper.TearDownWorkers(runtimeInfo)

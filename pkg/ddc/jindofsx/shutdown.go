@@ -38,7 +38,7 @@ func (e *JindoFSxEngine) Shutdown() (err error) {
 		}
 	}
 
-	_, err = e.destroyWorkers(-1)
+	err = e.destroyWorkers(-1)
 	if err != nil {
 		return
 	}
@@ -142,14 +142,14 @@ func (e *JindoFSxEngine) cleanConfigMap() (err error) {
 }
 
 // destroyWorkers will delete the workers by number of the workers, if workers is -1, it means all the workers are deleted
-func (e *JindoFSxEngine) destroyWorkers(expectedWorkers int32) (currentWorkers int32, err error) {
+func (e *JindoFSxEngine) destroyWorkers(expectedWorkers int32) (err error) {
 	//  SchedulerMutex only for patch mode
 	lifecycle.SchedulerMutex.Lock()
 	defer lifecycle.SchedulerMutex.Unlock()
 
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
-		return currentWorkers, err
+		return err
 	}
 
 	return e.Helper.TearDownWorkers(runtimeInfo)

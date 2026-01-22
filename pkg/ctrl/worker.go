@@ -175,7 +175,7 @@ func (e *Helper) CheckAndSyncWorkerStatus(getRuntimeFn func(client.Client) (base
 // TearDownWorkers tears down workers according to the given runtimeInfo.
 // Note that TearDownWorkers does NOT delete worker statefulset and worker pods, is just cleans labels on nodes.
 // Worker statefulset is installed and managed by Helm, it will be deleted if the helm release is uninstalled in Engine.destroyMaster().
-func (j *Helper) TearDownWorkers(runtimeInfo base.RuntimeInfoInterface) (currentWorkers int32, err error) {
+func (j *Helper) TearDownWorkers(runtimeInfo base.RuntimeInfoInterface) (err error) {
 	var (
 		nodeList           = &corev1.NodeList{}
 		labelExclusiveName = utils.GetExclusiveKey()
@@ -191,7 +191,7 @@ func (j *Helper) TearDownWorkers(runtimeInfo base.RuntimeInfoInterface) (current
 
 	datasetLabels, err := labels.Parse(fmt.Sprintf("%s=true", labelCommonName))
 	if err != nil {
-		return currentWorkers, err
+		return err
 	}
 
 	err = j.client.List(context.TODO(), nodeList, &client.ListOptions{
@@ -199,10 +199,8 @@ func (j *Helper) TearDownWorkers(runtimeInfo base.RuntimeInfoInterface) (current
 	})
 
 	if err != nil {
-		return currentWorkers, err
+		return err
 	}
-
-	currentWorkers = int32(len(nodeList.Items))
 
 	// 1.select the nodes
 	for _, node := range nodeList.Items {
@@ -245,11 +243,9 @@ func (j *Helper) TearDownWorkers(runtimeInfo base.RuntimeInfoInterface) (current
 		})
 
 		if err != nil {
-			return currentWorkers, err
+			return err
 		}
-
-		currentWorkers--
 	}
 
-	return currentWorkers, nil
+	return nil
 }

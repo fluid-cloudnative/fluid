@@ -211,13 +211,11 @@ func TestDestroyWorker(t *testing.T) {
 		if err != nil {
 			t.Errorf("fail to exec the function with the error %v", err)
 		}
-		currentWorkers, err := engine.destroyWorkers(test.expectedWorkers)
+		err := engine.destroyWorkers(test.expectedWorkers)
 		if err != nil {
 			t.Errorf("fail to exec the function with the error %v", err)
 		}
-		if currentWorkers != test.wantedNodeNumber {
-			t.Errorf("shutdown the worker with the wrong number of the workers")
-		}
+
 		for _, node := range nodeInputs {
 			newNode, err := kubeclient.GetNode(client, node.Name)
 			if err != nil {
