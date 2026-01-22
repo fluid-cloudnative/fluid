@@ -119,12 +119,12 @@ func TestCSI(t *testing.T) {
 
 var _ = Describe("SetupWithManager", func() {
 	var (
-		mockMgr          manager.Manager
-		ctx              fluidconfig.RunningContext
-		originalRegs     map[string]registrationFuncs
-		enabledCalled    bool
-		registerCalled   bool
-		registerError    error
+		mockMgr        manager.Manager
+		ctx            fluidconfig.RunningContext
+		originalRegs   map[string]registrationFuncs
+		enabledCalled  bool
+		registerCalled bool
+		registerError  error
 	)
 
 	BeforeEach(func() {
@@ -223,10 +223,10 @@ var _ = Describe("SetupWithManager", func() {
 
 	Context("when multiple components are registered", func() {
 		var (
-			component1Enabled  bool
-			component2Enabled  bool
-			component1Reg      bool
-			component2Reg      bool
+			component1Enabled bool
+			component2Enabled bool
+			component1Reg     bool
+			component2Reg     bool
 		)
 
 		BeforeEach(func() {
