@@ -43,7 +43,7 @@ func (t ThinEngine) Shutdown() (err error) {
 		}
 	}
 
-	err = t.destroyWorkers(-1)
+	err = t.destroyWorkers()
 	if err != nil {
 		return
 	}
@@ -91,7 +91,7 @@ func (t *ThinEngine) cleanupCache() (err error) {
 
 // destroyWorkers attempts to delete the workers until worker num reaches the given expectedWorkers, if expectedWorkers is -1, it means all the workers should be deleted
 // This func returns currentWorkers representing how many workers are left after this process.
-func (t *ThinEngine) destroyWorkers(expectedWorkers int32) (err error) {
+func (t *ThinEngine) destroyWorkers() (err error) {
 	//  SchedulerMutex only for patch mode
 	lifecycle.SchedulerMutex.Lock()
 	defer lifecycle.SchedulerMutex.Unlock()

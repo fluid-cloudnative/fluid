@@ -202,7 +202,7 @@ func TestDestroyWorker(t *testing.T) {
 		if err != nil {
 			t.Errorf("fail to exec the function with the error %v", err)
 		}
-		err := engine.destroyWorkers(test.expectedWorkers)
+		err := engine.destroyWorkers()
 		if err != nil {
 			t.Errorf("fail to exec the function with the error %v", err)
 		}
