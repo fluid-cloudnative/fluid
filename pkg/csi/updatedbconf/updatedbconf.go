@@ -39,7 +39,7 @@ func updateLine(line string, key string, values []string) (string, bool) {
 	line = strings.TrimSpace(line)
 	line = strings.Trim(line, `"`)
 	line = strings.TrimSpace(line)
-	
+
 	// Use strings.Fields instead of strings.Split
 	// strings.Fields automatically handles empty strings and multiple spaces
 	// It returns an empty slice for empty strings, not [""]
@@ -76,7 +76,7 @@ func updateConfig(content string, newFs []string, newPaths []string) (string, er
 	if content != "" {
 		lines = strings.Split(content, "\n")
 	}
-	
+
 	var hasPruneFsConfig = false
 	var hasPrunePathConfig = false
 	var configChange = false

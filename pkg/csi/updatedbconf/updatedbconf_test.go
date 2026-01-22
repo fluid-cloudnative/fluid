@@ -33,9 +33,9 @@ var _ = Describe("updateLine", func() {
 		It("should add new filesystem types to PRUNEFS", func() {
 			line := `PRUNEFS="foo bar"`
 			newValues := []string{"fuse.alluxio-fuse", "JuiceFS"}
-			
+
 			result, changed := updateLine(line, configKeyPruneFs, newValues)
-			
+
 			Expect(changed).To(BeTrue())
 			Expect(result).To(Equal(`PRUNEFS="foo bar fuse.alluxio-fuse JuiceFS"`))
 		})
@@ -43,9 +43,9 @@ var _ = Describe("updateLine", func() {
 		It("should add new paths to PRUNEPATHS", func() {
 			line := `PRUNEPATHS="/tmp /var/spool"`
 			newValues := []string{"/runtime-mnt"}
-			
+
 			result, changed := updateLine(line, configKeyPrunePaths, newValues)
-			
+
 			Expect(changed).To(BeTrue())
 			Expect(result).To(Equal(`PRUNEPATHS="/tmp /var/spool /runtime-mnt"`))
 		})
@@ -53,9 +53,9 @@ var _ = Describe("updateLine", func() {
 		It("should handle line with extra spaces", func() {
 			line := `PRUNEFS  =  "foo bar"  `
 			newValues := []string{"JuiceFS"}
-			
+
 			result, changed := updateLine(line, configKeyPruneFs, newValues)
-			
+
 			Expect(changed).To(BeTrue())
 			Expect(result).To(Equal(`PRUNEFS="foo bar JuiceFS"`))
 		})
@@ -65,9 +65,9 @@ var _ = Describe("updateLine", func() {
 		It("should not add duplicate values and return false", func() {
 			line := `PRUNEFS="foo bar JuiceFS"`
 			newValues := []string{"foo", "bar"}
-			
+
 			result, changed := updateLine(line, configKeyPruneFs, newValues)
-			
+
 			Expect(changed).To(BeFalse())
 			Expect(result).To(Equal(line))
 		})
@@ -75,9 +75,9 @@ var _ = Describe("updateLine", func() {
 		It("should add only new values when some already exist", func() {
 			line := `PRUNEFS="foo bar"`
 			newValues := []string{"foo", "JuiceFS", "bar", "fuse.alluxio-fuse"}
-			
+
 			result, changed := updateLine(line, configKeyPruneFs, newValues)
-			
+
 			Expect(changed).To(BeTrue())
 			Expect(result).To(Equal(`PRUNEFS="foo bar JuiceFS fuse.alluxio-fuse"`))
 		})
@@ -87,9 +87,9 @@ var _ = Describe("updateLine", func() {
 		It("should handle empty existing values", func() {
 			line := `PRUNEFS=""`
 			newValues := []string{"foo", "bar"}
-			
+
 			result, changed := updateLine(line, configKeyPruneFs, newValues)
-			
+
 			Expect(changed).To(BeTrue())
 			Expect(result).To(Equal(`PRUNEFS="foo bar"`))
 		})
@@ -97,9 +97,9 @@ var _ = Describe("updateLine", func() {
 		It("should handle empty new values slice", func() {
 			line := `PRUNEFS="foo bar"`
 			newValues := []string{}
-			
+
 			result, changed := updateLine(line, configKeyPruneFs, newValues)
-			
+
 			Expect(changed).To(BeFalse())
 			Expect(result).To(Equal(line))
 		})
@@ -107,9 +107,9 @@ var _ = Describe("updateLine", func() {
 		It("should filter out empty string values", func() {
 			line := `PRUNEFS="foo"`
 			newValues := []string{"", "bar", ""}
-			
+
 			result, changed := updateLine(line, configKeyPruneFs, newValues)
-			
+
 			Expect(changed).To(BeTrue())
 			Expect(result).To(Equal(`PRUNEFS="foo bar"`))
 		})
@@ -117,9 +117,9 @@ var _ = Describe("updateLine", func() {
 		It("should return false when only empty strings provided", func() {
 			line := `PRUNEFS="foo"`
 			newValues := []string{"", ""}
-			
+
 			result, changed := updateLine(line, configKeyPruneFs, newValues)
-			
+
 			Expect(changed).To(BeFalse())
 			Expect(result).To(Equal(line))
 		})
@@ -127,9 +127,9 @@ var _ = Describe("updateLine", func() {
 		It("should handle line with leading space in value", func() {
 			line := `PRUNEFS=" foo bar"`
 			newValues := []string{"baz"}
-			
+
 			result, changed := updateLine(line, configKeyPruneFs, newValues)
-			
+
 			Expect(changed).To(BeTrue())
 			Expect(result).To(Equal(`PRUNEFS="foo bar baz"`))
 		})
@@ -137,9 +137,9 @@ var _ = Describe("updateLine", func() {
 		It("should handle line with multiple spaces between values", func() {
 			line := `PRUNEFS="foo    bar"`
 			newValues := []string{"baz"}
-			
+
 			result, changed := updateLine(line, configKeyPruneFs, newValues)
-			
+
 			Expect(changed).To(BeTrue())
 			Expect(result).To(Equal(`PRUNEFS="foo bar baz"`))
 		})
@@ -147,9 +147,9 @@ var _ = Describe("updateLine", func() {
 		It("should handle line with tabs between values", func() {
 			line := "PRUNEFS=\"foo\tbar\""
 			newValues := []string{"baz"}
-			
+
 			result, changed := updateLine(line, configKeyPruneFs, newValues)
-			
+
 			Expect(changed).To(BeTrue())
 			Expect(result).To(Equal(`PRUNEFS="foo bar baz"`))
 		})
