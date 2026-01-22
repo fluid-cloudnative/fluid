@@ -177,9 +177,9 @@ var _ = Describe("makeTransport", func() {
 
 			patch := ApplyFunc(transport.TLSConfigFor, func(c *transport.Config) (*tls.Config, error) {
 				// Verify that insecure was set
-				if c.TLS.Insecure && c.TLS.CAData == nil && c.TLS.CAFile == "" {
-					return nil, nil
-				}
+				Expect(c.TLS.Insecure).To(BeTrue())
+				Expect(c.TLS.CAData).To(BeNil())
+				Expect(c.TLS.CAFile).To(BeEmpty())
 				return nil, nil
 			})
 			defer patch.Reset()

@@ -1,4 +1,4 @@
-package kubelet_test
+package kubelet
 
 import (
 	"testing"
