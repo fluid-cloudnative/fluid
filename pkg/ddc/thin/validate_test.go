@@ -24,8 +24,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -263,26 +261,9 @@ func TestThinEngineValidate(t *testing.T) {
 		},
 	}
 
-	daemonSetInput := &appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      runtimeName + "-fuse",
-			Namespace: namespace,
-		},
-		Spec: appsv1.DaemonSetSpec{
-			Template: corev1.PodTemplateSpec{
-				Spec: corev1.PodSpec{
-					NodeSelector: map[string]string{
-						"data.fluid.io/storage-fluid-" + runtimeName: "selector",
-					},
-				},
-			},
-		},
-	}
-
 	testObjs := []runtime.Object{}
 	testObjs = append(testObjs, runtimeInput.DeepCopy())
 	testObjs = append(testObjs, datasetInput.DeepCopy())
-	testObjs = append(testObjs, daemonSetInput.DeepCopy())
 
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
@@ -327,6 +308,30 @@ func TestThinEngineValidate(t *testing.T) {
 							MountPoint: "s3://bucket/path2",
 							Name:       "data",
 							Path:       "/data2",
+						},
+					},
+				},
+			},
+			expectErr: true,
+		},
+		{
+			name: "dataset with duplicate mount paths",
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      runtimeName,
+					Namespace: namespace,
+				},
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							MountPoint: "s3://bucket/path1",
+							Name:       "data1",
+							Path:       "/data",
+						},
+						{
+							MountPoint: "s3://bucket/path2",
+							Name:       "data2",
+							Path:       "/data",
 						},
 					},
 				},
