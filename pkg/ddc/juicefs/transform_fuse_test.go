@@ -155,7 +155,7 @@ var _ = Describe("TransformFuse", func() {
 							createEncryptOption(mockMetaurlKey, mockSecretTest1, mockMetaurlKey),
 						},
 					}},
-				}}, &JuiceFS{}, true,
+				}}, &JuiceFS{}, false,
 		),
 		Entry("secret with access key 2",
 			&datav1alpha1.JuiceFSRuntime{
@@ -172,7 +172,7 @@ var _ = Describe("TransformFuse", func() {
 						},
 					}}}},
 			&JuiceFS{},
-			true,
+			false,
 		),
 		Entry("with debug options",
 			&datav1alpha1.JuiceFSRuntime{
@@ -222,7 +222,7 @@ var _ = Describe("TransformFuse", func() {
 							createEncryptOption(mockMetaurlKey, "not-exist", mockMetaurlKey),
 						},
 					}},
-				}}, &JuiceFS{}, true,
+				}}, &JuiceFS{}, false,
 		),
 		Entry("no metaurl in secret",
 			&datav1alpha1.JuiceFSRuntime{},
@@ -235,7 +235,7 @@ var _ = Describe("TransformFuse", func() {
 							createEncryptOption(mockMetaurlKey, "no-metaurl", mockMetaurlKey),
 						},
 					}},
-				}}, &JuiceFS{}, true,
+				}}, &JuiceFS{}, false,
 		),
 		Entry("tiered store with quota",
 			&datav1alpha1.JuiceFSRuntime{
