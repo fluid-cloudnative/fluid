@@ -18,398 +18,458 @@ package goosefs
 
 import (
 	"strconv"
-	"testing"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestOptimizeDefaultProperties(t *testing.T) {
-	var tests = []struct {
-		runtime      *datav1alpha1.GooseFSRuntime
-		goosefsValue *GooseFS
-		key          string
-		expect       string
-	}{
-		{&datav1alpha1.GooseFSRuntime{
-			Spec: datav1alpha1.GooseFSRuntimeSpec{
-				Properties: map[string]string{},
-			},
-		}, &GooseFS{}, "goosefs.master.journal.type", "UFS"},
-		{&datav1alpha1.GooseFSRuntime{
-			Spec: datav1alpha1.GooseFSRuntimeSpec{
-				Properties: map[string]string{},
-			},
-		}, &GooseFS{Master: Master{
-			Replicas: 3,
-		}}, "goosefs.master.journal.type", "EMBEDDED"},
-	}
-	for _, test := range tests {
-		engine := &GooseFSEngine{}
-		engine.optimizeDefaultProperties(test.runtime, test.goosefsValue)
-		if test.goosefsValue.Properties[test.key] != test.expect {
-			t.Errorf("expected %s, got %v for key %s", test.expect, test.goosefsValue.Properties[test.key], test.key)
-		}
-	}
-}
+var _ = Describe("GooseFSEngine Property Optimization", func() {
+	var engine *GooseFSEngine
 
-func TestOptimizeDefaultPropertiesAndFuseForHTTP(t *testing.T) {
-	var tests = []struct {
-		runtime      *datav1alpha1.GooseFSRuntime
-		goosefsValue *GooseFS
-		dataset      *datav1alpha1.Dataset
-		key          string
-		expect       string
-	}{
-		{&datav1alpha1.GooseFSRuntime{
+	BeforeEach(func() {
+		engine = &GooseFSEngine{}
+	})
+
+	Context("single master replica", func() {
+		It("should set journal type to UFS", func() {
+			runtime := &datav1alpha1.GooseFSRuntime{
+				Spec: datav1alpha1.GooseFSRuntimeSpec{
+					Properties: map[string]string{},
+				},
+			}
+			value := &GooseFS{}
+
+			engine.optimizeDefaultProperties(runtime, value)
+
+			Expect(value.Properties["goosefs.master.journal.type"]).To(Equal("UFS"))
+		})
+	})
+
+	Context("multiple master replicas", func() {
+		It("should set journal type to EMBEDDED", func() {
+			runtime := &datav1alpha1.GooseFSRuntime{
+				Spec: datav1alpha1.GooseFSRuntimeSpec{
+					Properties: map[string]string{},
+				},
+			}
+			value := &GooseFS{
+				Master: Master{Replicas: 3},
+			}
+
+			engine.optimizeDefaultProperties(runtime, value)
+
+			Expect(value.Properties["goosefs.master.journal.type"]).To(Equal("EMBEDDED"))
+		})
+	})
+
+	Context("property already set in runtime", func() {
+		It("should preserve existing property value", func() {
+			runtime := &datav1alpha1.GooseFSRuntime{
+				Spec: datav1alpha1.GooseFSRuntimeSpec{
+					Properties: map[string]string{
+						"goosefs.fuse.jnifuse.enabled": "false",
+					},
+				},
+			}
+			value := &GooseFS{}
+
+			engine.optimizeDefaultProperties(runtime, value)
+
+			Expect(value.Properties["goosefs.fuse.jnifuse.enabled"]).To(Equal("false"))
+		})
+	})
+})
+
+var _ = Describe("GooseFSEngine HTTP Mount Optimization", func() {
+	var engine *GooseFSEngine
+
+	BeforeEach(func() {
+		engine = &GooseFSEngine{}
+	})
+
+	It("should set block size for HTTP mount", func() {
+		runtime := &datav1alpha1.GooseFSRuntime{
 			Spec: datav1alpha1.GooseFSRuntimeSpec{
 				Properties: map[string]string{},
 			},
-		}, &GooseFS{
+		}
+		value := &GooseFS{
 			Properties: map[string]string{},
 			Fuse: Fuse{
 				Args: []string{"fuse", "--fuse-opts=kernel_cache,rw,max_read=131072,attr_timeout=7200,entry_timeout=7200,nonempty"},
 			},
-		},
-			&datav1alpha1.Dataset{
-				Spec: datav1alpha1.DatasetSpec{
-					Mounts: []datav1alpha1.Mount{
-						{MountPoint: "https://mirrors.bit.edu.cn/apache/zookeeper/zookeeper-3.6.2/"},
-						//{MountPoint: "local:///root/test-data"},
-					},
+		}
+		dataset := &datav1alpha1.Dataset{
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{
+					{MountPoint: "https://mirrors.bit.edu.cn/apache/zookeeper/zookeeper-3.6.2/"},
 				},
 			},
-			"goosefs.user.block.size.bytes.default", "256MB"},
-	}
-	for _, test := range tests {
-		engine := &GooseFSEngine{}
-		engine.optimizeDefaultProperties(test.runtime, test.goosefsValue)
-		engine.optimizeDefaultPropertiesAndFuseForHTTP(test.runtime, test.dataset, test.goosefsValue)
-		if test.goosefsValue.Properties[test.key] != test.expect {
-			t.Errorf("expected %s, got %v for key %s", test.expect, test.goosefsValue.Properties[test.key], test.key)
 		}
-	}
-}
 
-func TestOptimizeDefaultPropertiesWithSet(t *testing.T) {
-	var tests = []struct {
-		runtime      *datav1alpha1.GooseFSRuntime
-		goosefsValue *GooseFS
-		key          string
-		expect       string
-	}{
-		{&datav1alpha1.GooseFSRuntime{
-			Spec: datav1alpha1.GooseFSRuntimeSpec{
-				Properties: map[string]string{
-					"goosefs.fuse.jnifuse.enabled": "false",
-				},
-			},
-		}, &GooseFS{}, "goosefs.fuse.jnifuse.enabled", "false"},
-	}
-	for _, test := range tests {
-		engine := &GooseFSEngine{}
-		engine.optimizeDefaultProperties(test.runtime, test.goosefsValue)
-		if test.goosefsValue.Properties[test.key] != test.expect {
-			t.Errorf("expected %s, got %v for key %s", test.expect, test.goosefsValue.Properties[test.key], test.key)
-		}
-	}
-}
+		engine.optimizeDefaultProperties(runtime, value)
+		engine.optimizeDefaultPropertiesAndFuseForHTTP(runtime, dataset, value)
 
-func TestSetDefaultPropertiesWithoutSet(t *testing.T) {
-	var tests = []struct {
-		runtime      *datav1alpha1.GooseFSRuntime
-		goosefsValue *GooseFS
-		key          string
-		value        string
-		expect       string
-	}{
-		{&datav1alpha1.GooseFSRuntime{
-			Spec: datav1alpha1.GooseFSRuntimeSpec{
-				Properties: map[string]string{},
-			},
-		}, &GooseFS{
-			Properties: map[string]string{},
-		}, "goosefs.fuse.jnifuse.enabled", "true", "true"},
-	}
-	for _, test := range tests {
-		setDefaultProperties(test.runtime, test.goosefsValue, test.key, test.value)
-		if test.value != test.expect {
-			t.Errorf("expected %v, got %v for key %s", test.expect, test.value, test.key)
-		}
-	}
-}
+		Expect(value.Properties["goosefs.user.block.size.bytes.default"]).To(Equal("256MB"))
+	})
+})
 
-func TestSetDefaultPropertiesWithSet(t *testing.T) {
-	var tests = []struct {
-		runtime      *datav1alpha1.GooseFSRuntime
-		goosefsValue *GooseFS
-		key          string
-		value        string
-		expect       string
-	}{
-		{&datav1alpha1.GooseFSRuntime{
-			Spec: datav1alpha1.GooseFSRuntimeSpec{
-				Properties: map[string]string{
-					"goosefs.fuse.jnifuse.enabled": "false",
-				},
-			},
-		}, &GooseFS{
-			Properties: map[string]string{},
-		}, "goosefs.fuse.jnifuse.enabled", "true", "false"},
-	}
-	for _, test := range tests {
-		setDefaultProperties(test.runtime, test.goosefsValue, test.key, test.value)
-		if test.value == test.expect {
-			t.Errorf("expected %v, got %v for key %s", test.expect, test.value, test.key)
-		}
-	}
-}
-
-func TestOptimizeDefaultForMasterNoValue(t *testing.T) {
-	var tests = []struct {
-		runtime      *datav1alpha1.GooseFSRuntime
-		goosefsValue *GooseFS
-		expect       []string
-	}{
-		{&datav1alpha1.GooseFSRuntime{
-			Spec: datav1alpha1.GooseFSRuntimeSpec{},
-		}, &GooseFS{
-			Properties: map[string]string{},
-		}, []string{"-Xmx6G",
-			"-XX:+UnlockExperimentalVMOptions"}},
-	}
-	for _, test := range tests {
-		engine := &GooseFSEngine{}
-		engine.optimizeDefaultForMaster(test.runtime, test.goosefsValue)
-		if test.goosefsValue.Master.JvmOptions[1] != test.expect[1] {
-			t.Errorf("expected %v, got %v", test.expect, test.goosefsValue.JvmOptions)
-		}
-	}
-}
-
-func TestOptimizeDefaultForMasterWithValue(t *testing.T) {
-	var tests = []struct {
-		runtime      *datav1alpha1.GooseFSRuntime
-		goosefsValue *GooseFS
-		expect       []string
-	}{
-		{&datav1alpha1.GooseFSRuntime{
-			Spec: datav1alpha1.GooseFSRuntimeSpec{
-				Master: datav1alpha1.GooseFSCompTemplateSpec{
-					JvmOptions: []string{"-Xmx4G"},
-				},
-			},
-		}, &GooseFS{
-			Properties: map[string]string{},
-			Master:     Master{},
-		}, []string{"-Xmx4G"}},
-	}
-	for _, test := range tests {
-		engine := &GooseFSEngine{}
-		engine.optimizeDefaultForMaster(test.runtime, test.goosefsValue)
-		if test.goosefsValue.Master.JvmOptions[0] != test.expect[0] {
-			t.Errorf("expected %v, got %v", test.expect, test.goosefsValue.Master.JvmOptions)
-		}
-	}
-}
-
-func TestOptimizeDefaultForWorkerNoValue(t *testing.T) {
-	var tests = []struct {
-		runtime      *datav1alpha1.GooseFSRuntime
-		goosefsValue *GooseFS
-		expect       []string
-	}{
-		{&datav1alpha1.GooseFSRuntime{
-			Spec: datav1alpha1.GooseFSRuntimeSpec{},
-		}, &GooseFS{
-			Properties: map[string]string{},
-		}, []string{"-Xmx12G",
-			"-XX:+UnlockExperimentalVMOptions",
-			"-XX:MaxDirectMemorySize=32g"}},
-	}
-	for _, test := range tests {
-		engine := &GooseFSEngine{}
-		engine.optimizeDefaultForWorker(test.runtime, test.goosefsValue)
-		if test.goosefsValue.Worker.JvmOptions[1] != test.expect[1] {
-			t.Errorf("expected %v, got %v", test.expect, test.goosefsValue.Worker.JvmOptions)
-		}
-	}
-}
-
-func TestOptimizeDefaultForWorkerWithValue(t *testing.T) {
-	var tests = []struct {
-		runtime      *datav1alpha1.GooseFSRuntime
-		goosefsValue *GooseFS
-		expect       []string
-	}{
-		{&datav1alpha1.GooseFSRuntime{
-			Spec: datav1alpha1.GooseFSRuntimeSpec{
-				Worker: datav1alpha1.GooseFSCompTemplateSpec{
-					JvmOptions: []string{"-Xmx4G"},
-				},
-			},
-		}, &GooseFS{
-			Properties: map[string]string{},
-		}, []string{"-Xmx4G"}},
-	}
-	for _, test := range tests {
-		engine := &GooseFSEngine{}
-		engine.optimizeDefaultForWorker(test.runtime, test.goosefsValue)
-		if test.goosefsValue.Worker.JvmOptions[0] != test.expect[0] {
-			t.Errorf("expected %v, got %v", test.expect, test.goosefsValue.Worker.JvmOptions)
-		}
-	}
-}
-
-func TestOptimizeDefaultForFuseNoValue(t *testing.T) {
-	var tests = []struct {
-		runtime      *datav1alpha1.GooseFSRuntime
-		goosefsValue *GooseFS
-		expect       []string
-	}{
-		{&datav1alpha1.GooseFSRuntime{
-			Spec: datav1alpha1.GooseFSRuntimeSpec{},
-		}, &GooseFS{
-			Properties: map[string]string{},
-		}, []string{"-Xmx16G",
-			"-Xms16G",
-			"-XX:+UseG1GC",
-			"-XX:MaxDirectMemorySize=32g",
-			"-XX:+UnlockExperimentalVMOptions"}},
-	}
-	for _, test := range tests {
-		engine := &GooseFSEngine{}
-		engine.optimizeDefaultFuse(test.runtime, test.goosefsValue)
-		if test.goosefsValue.Fuse.JvmOptions[1] != test.expect[1] {
-			t.Errorf("expected %v, got %v", test.expect, test.goosefsValue.Fuse.JvmOptions)
-		}
-	}
-}
-
-func TestOptimizeDefaultForFuseWithValue(t *testing.T) {
-	var tests = []struct {
-		runtime      *datav1alpha1.GooseFSRuntime
-		goosefsValue *GooseFS
-		expect       []string
-	}{
-		{&datav1alpha1.GooseFSRuntime{
-			Spec: datav1alpha1.GooseFSRuntimeSpec{
-				Fuse: datav1alpha1.GooseFSFuseSpec{
-					JvmOptions: []string{"-Xmx4G"},
-				},
-			},
-		}, &GooseFS{
-			Properties: map[string]string{},
-		}, []string{"-Xmx4G"}},
-	}
-	for _, test := range tests {
-		engine := &GooseFSEngine{}
-		engine.optimizeDefaultFuse(test.runtime, test.goosefsValue)
-		if test.goosefsValue.Fuse.JvmOptions[0] != test.expect[0] {
-			t.Errorf("expected %v, got %v", test.expect, test.goosefsValue.Fuse.JvmOptions)
-		}
-	}
-}
-
-func TestGooseFSEngine_setPortProperties(t *testing.T) {
-	type fields struct {
-		runtime                *datav1alpha1.GooseFSRuntime
-		name                   string
-		namespace              string
-		runtimeType            string
-		Log                    logr.Logger
-		Client                 client.Client
-		gracefulShutdownLimits int32
-		retryShutdown          int32
-		initImage              string
-		MetadataSyncDoneCh     chan base.MetadataSyncResult
-	}
-	type args struct {
-		runtime      *datav1alpha1.GooseFSRuntime
-		goosefsValue *GooseFS
-	}
-
-	var port int = 20000
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-	}{
-		{
-			name: "test",
-			fields: fields{
-				runtime: &datav1alpha1.GooseFSRuntime{},
-			},
-			args: args{
-				runtime: &datav1alpha1.GooseFSRuntime{},
-				goosefsValue: &GooseFS{
-					Master: Master{
-						Ports: Ports{
-							Rpc:      port,
-							Web:      port,
-							Embedded: 0,
-						},
-					},
-					Worker: Worker{
-						Ports: Ports{
-							Rpc: port,
-							Web: port,
-						},
-						Resources: common.Resources{
-							Requests: common.ResourceList{
-								corev1.ResourceCPU:    "100m",
-								corev1.ResourceMemory: "100Mi",
-							},
-						},
-					},
-					JobMaster: JobMaster{
-						Ports: Ports{
-							Rpc:      port,
-							Web:      port,
-							Embedded: 0,
-						},
-					},
-					JobWorker: JobWorker{
-						Ports: Ports{
-							Rpc:  port,
-							Web:  port,
-							Data: port,
-						},
-						Resources: common.Resources{
-							Requests: common.ResourceList{
-								corev1.ResourceCPU:    "100m",
-								corev1.ResourceMemory: "100Mi",
-							},
-						},
-					},
+var _ = Describe("GooseFSEngine Default Property Setting", func() {
+	Context("property not set in runtime", func() {
+		It("should use default value", func() {
+			runtime := &datav1alpha1.GooseFSRuntime{
+				Spec: datav1alpha1.GooseFSRuntimeSpec{
 					Properties: map[string]string{},
 				},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			e := &GooseFSEngine{
-				runtime:                tt.fields.runtime,
-				name:                   tt.fields.name,
-				namespace:              tt.fields.namespace,
-				runtimeType:            tt.fields.runtimeType,
-				Log:                    tt.fields.Log,
-				Client:                 tt.fields.Client,
-				gracefulShutdownLimits: tt.fields.gracefulShutdownLimits,
-				retryShutdown:          tt.fields.retryShutdown,
-				initImage:              tt.fields.initImage,
-				MetadataSyncDoneCh:     tt.fields.MetadataSyncDoneCh,
 			}
-			e.setPortProperties(tt.args.runtime, tt.args.goosefsValue)
-			key := tt.args.goosefsValue.Properties["goosefs.master.rpc.port"]
-			if key != strconv.Itoa(port) {
-				t.Errorf("expected %d, got %s", port, tt.args.goosefsValue.Properties["goosefs.master.rpc.port"])
+			value := &GooseFS{
+				Properties: map[string]string{},
 			}
+
+			setDefaultProperties(runtime, value, "goosefs.fuse.jnifuse.enabled", "true")
+
+			Expect(value.Properties["goosefs.fuse.jnifuse.enabled"]).To(Equal("true"))
 		})
-	}
-}
+	})
+
+	Context("property already set in runtime", func() {
+		It("should not set default when runtime has property", func() {
+			runtime := &datav1alpha1.GooseFSRuntime{
+				Spec: datav1alpha1.GooseFSRuntimeSpec{
+					Properties: map[string]string{
+						"goosefs.fuse.jnifuse.enabled": "false",
+					},
+				},
+			}
+			value := &GooseFS{
+				Properties: map[string]string{},
+			}
+
+			setDefaultProperties(runtime, value, "goosefs.fuse.jnifuse.enabled", "true")
+
+			Expect(value.Properties).NotTo(HaveKey("goosefs.fuse.jnifuse.enabled"))
+		})
+	})
+})
+
+var _ = Describe("GooseFSEngine Master JVM Optimization", func() {
+	var engine *GooseFSEngine
+
+	BeforeEach(func() {
+		engine = &GooseFSEngine{}
+	})
+
+	Context("no JVM options set", func() {
+		It("should set default JVM options", func() {
+			runtime := &datav1alpha1.GooseFSRuntime{
+				Spec: datav1alpha1.GooseFSRuntimeSpec{},
+			}
+			value := &GooseFS{
+				Properties: map[string]string{},
+			}
+
+			engine.optimizeDefaultForMaster(runtime, value)
+
+			Expect(value.Master.JvmOptions).To(ContainElement("-Xmx16G"))
+			Expect(value.Master.JvmOptions).To(ContainElement("-XX:+UnlockExperimentalVMOptions"))
+		})
+	})
+
+	Context("JVM options already set", func() {
+		It("should use runtime JVM options", func() {
+			runtime := &datav1alpha1.GooseFSRuntime{
+				Spec: datav1alpha1.GooseFSRuntimeSpec{
+					Master: datav1alpha1.GooseFSCompTemplateSpec{
+						JvmOptions: []string{"-Xmx4G"},
+					},
+				},
+			}
+			value := &GooseFS{
+				Properties: map[string]string{},
+				Master:     Master{},
+			}
+
+			engine.optimizeDefaultForMaster(runtime, value)
+
+			Expect(value.Master.JvmOptions).To(HaveLen(1))
+			Expect(value.Master.JvmOptions[0]).To(Equal("-Xmx4G"))
+		})
+	})
+})
+
+var _ = Describe("GooseFSEngine Worker JVM Optimization", func() {
+	var engine *GooseFSEngine
+
+	BeforeEach(func() {
+		engine = &GooseFSEngine{}
+	})
+
+	Context("no JVM options set", func() {
+		It("should set default JVM options", func() {
+			runtime := &datav1alpha1.GooseFSRuntime{
+				Spec: datav1alpha1.GooseFSRuntimeSpec{},
+			}
+			value := &GooseFS{
+				Properties: map[string]string{},
+			}
+
+			engine.optimizeDefaultForWorker(runtime, value)
+
+			Expect(value.Worker.JvmOptions).To(ContainElement("-Xmx12G"))
+			Expect(value.Worker.JvmOptions).To(ContainElement("-XX:+UnlockExperimentalVMOptions"))
+			Expect(value.Worker.JvmOptions).To(ContainElement("-XX:MaxDirectMemorySize=32g"))
+		})
+	})
+
+	Context("JVM options already set", func() {
+		It("should use runtime JVM options", func() {
+			runtime := &datav1alpha1.GooseFSRuntime{
+				Spec: datav1alpha1.GooseFSRuntimeSpec{
+					Worker: datav1alpha1.GooseFSCompTemplateSpec{
+						JvmOptions: []string{"-Xmx4G"},
+					},
+				},
+			}
+			value := &GooseFS{
+				Properties: map[string]string{},
+			}
+
+			engine.optimizeDefaultForWorker(runtime, value)
+
+			Expect(value.Worker.JvmOptions).To(HaveLen(1))
+			Expect(value.Worker.JvmOptions[0]).To(Equal("-Xmx4G"))
+		})
+	})
+})
+
+var _ = Describe("GooseFSEngine Fuse JVM Optimization", func() {
+	var engine *GooseFSEngine
+
+	BeforeEach(func() {
+		engine = &GooseFSEngine{}
+	})
+
+	Context("no JVM options set", func() {
+		It("should set default JVM options", func() {
+			runtime := &datav1alpha1.GooseFSRuntime{
+				Spec: datav1alpha1.GooseFSRuntimeSpec{},
+			}
+			value := &GooseFS{
+				Properties: map[string]string{},
+			}
+
+			engine.optimizeDefaultFuse(runtime, value)
+
+			Expect(value.Fuse.JvmOptions).To(ContainElement("-Xmx16G"))
+			Expect(value.Fuse.JvmOptions).To(ContainElement("-Xms16G"))
+			Expect(value.Fuse.JvmOptions).To(ContainElement("-XX:+UseG1GC"))
+			Expect(value.Fuse.JvmOptions).To(ContainElement("-XX:MaxDirectMemorySize=32g"))
+			Expect(value.Fuse.JvmOptions).To(ContainElement("-XX:+UnlockExperimentalVMOptions"))
+		})
+	})
+
+	Context("JVM options already set", func() {
+		It("should use runtime JVM options", func() {
+			runtime := &datav1alpha1.GooseFSRuntime{
+				Spec: datav1alpha1.GooseFSRuntimeSpec{
+					Fuse: datav1alpha1.GooseFSFuseSpec{
+						JvmOptions: []string{"-Xmx4G"},
+					},
+				},
+			}
+			value := &GooseFS{
+				Properties: map[string]string{},
+			}
+
+			engine.optimizeDefaultFuse(runtime, value)
+
+			Expect(value.Fuse.JvmOptions).To(HaveLen(1))
+			Expect(value.Fuse.JvmOptions[0]).To(Equal("-Xmx4G"))
+		})
+	})
+})
+
+var _ = Describe("GooseFSEngine Port Configuration", func() {
+	const testPort = 20000
+
+	It("should set port properties correctly", func() {
+		engine := &GooseFSEngine{
+			runtime: &datav1alpha1.GooseFSRuntime{},
+		}
+		runtime := &datav1alpha1.GooseFSRuntime{}
+		value := &GooseFS{
+			Master: Master{
+				Ports: Ports{
+					Rpc:      testPort,
+					Web:      testPort,
+					Embedded: 0,
+				},
+			},
+			Worker: Worker{
+				Ports: Ports{
+					Rpc: testPort,
+					Web: testPort,
+				},
+				Resources: common.Resources{
+					Requests: common.ResourceList{
+						corev1.ResourceCPU:    "100m",
+						corev1.ResourceMemory: "100Mi",
+					},
+				},
+			},
+			JobMaster: JobMaster{
+				Ports: Ports{
+					Rpc:      testPort,
+					Web:      testPort,
+					Embedded: 0,
+				},
+			},
+			JobWorker: JobWorker{
+				Ports: Ports{
+					Rpc:  testPort,
+					Web:  testPort,
+					Data: testPort,
+				},
+				Resources: common.Resources{
+					Requests: common.ResourceList{
+						corev1.ResourceCPU:    "100m",
+						corev1.ResourceMemory: "100Mi",
+					},
+				},
+			},
+			Properties: map[string]string{},
+		}
+
+		engine.setPortProperties(runtime, value)
+
+		Expect(value.Properties["goosefs.master.rpc.port"]).To(Equal(strconv.Itoa(testPort)))
+	})
+
+	It("should set embedded journal ports when configured", func() {
+		engine := &GooseFSEngine{
+			runtime: &datav1alpha1.GooseFSRuntime{},
+		}
+		runtime := &datav1alpha1.GooseFSRuntime{}
+		value := &GooseFS{
+			Master: Master{
+				Ports: Ports{
+					Rpc:      testPort,
+					Web:      testPort,
+					Embedded: 19200,
+				},
+			},
+			Worker: Worker{
+				Ports: Ports{Rpc: testPort, Web: testPort},
+			},
+			JobMaster: JobMaster{
+				Ports: Ports{
+					Rpc:      testPort,
+					Web:      testPort,
+					Embedded: 19201,
+				},
+			},
+			JobWorker: JobWorker{
+				Ports: Ports{Rpc: testPort, Web: testPort, Data: testPort},
+			},
+			Properties: map[string]string{},
+		}
+
+		engine.setPortProperties(runtime, value)
+
+		Expect(value.Properties["goosefs.master.embedded.journal.port"]).To(Equal("19200"))
+		Expect(value.Properties["goosefs.job.master.embedded.journal.port"]).To(Equal("19201"))
+	})
+
+	It("should set API gateway port when enabled", func() {
+		engine := &GooseFSEngine{
+			runtime: &datav1alpha1.GooseFSRuntime{},
+		}
+		runtime := &datav1alpha1.GooseFSRuntime{
+			Spec: datav1alpha1.GooseFSRuntimeSpec{
+				APIGateway: datav1alpha1.GooseFSCompTemplateSpec{
+					Enabled: true,
+				},
+			},
+		}
+		value := &GooseFS{
+			Master:     Master{Ports: Ports{Rpc: testPort, Web: testPort}},
+			Worker:     Worker{Ports: Ports{Rpc: testPort, Web: testPort}},
+			JobMaster:  JobMaster{Ports: Ports{Rpc: testPort, Web: testPort}},
+			JobWorker:  JobWorker{Ports: Ports{Rpc: testPort, Web: testPort, Data: testPort}},
+			APIGateway: APIGateway{Ports: Ports{Rest: 39999}},
+			Properties: map[string]string{},
+		}
+
+		engine.setPortProperties(runtime, value)
+
+		Expect(value.Properties["goosefs.proxy.web.port"]).To(Equal("39999"))
+	})
+
+	It("should set journal addresses for HA mode", func() {
+		engine := &GooseFSEngine{
+			runtime: &datav1alpha1.GooseFSRuntime{},
+		}
+		runtime := &datav1alpha1.GooseFSRuntime{}
+		value := &GooseFS{
+			FullnameOverride: "test-goosefs",
+			Master: Master{
+				Replicas: 3,
+				Ports:    Ports{Rpc: testPort, Web: testPort, Embedded: 19200},
+			},
+			Worker:     Worker{Ports: Ports{Rpc: testPort, Web: testPort}},
+			JobMaster:  JobMaster{Ports: Ports{Rpc: testPort, Web: testPort, Embedded: 19201}},
+			JobWorker:  JobWorker{Ports: Ports{Rpc: testPort, Web: testPort, Data: testPort}},
+			Properties: map[string]string{},
+		}
+
+		engine.setPortProperties(runtime, value)
+
+		Expect(value.Properties["goosefs.master.embedded.journal.addresses"]).To(ContainSubstring("test-goosefs-master-0:19200"))
+		Expect(value.Properties["goosefs.master.embedded.journal.addresses"]).To(ContainSubstring("test-goosefs-master-1:19200"))
+		Expect(value.Properties["goosefs.master.embedded.journal.addresses"]).To(ContainSubstring("test-goosefs-master-2:19200"))
+	})
+})
+
+var _ = Describe("GooseFSEngine Fuse Args Configuration", func() {
+	var engine *GooseFSEngine
+
+	BeforeEach(func() {
+		engine = &GooseFSEngine{}
+	})
+
+	It("should use runtime fuse args when set", func() {
+		runtime := &datav1alpha1.GooseFSRuntime{
+			Spec: datav1alpha1.GooseFSRuntimeSpec{
+				Fuse: datav1alpha1.GooseFSFuseSpec{
+					Args: []string{"fuse", "--custom-args"},
+				},
+			},
+		}
+		value := &GooseFS{
+			Properties: map[string]string{},
+		}
+
+		engine.optimizeDefaultFuse(runtime, value)
+
+		Expect(value.Fuse.Args).To(Equal([]string{"fuse", "--custom-args"}))
+	})
+
+	It("should set default rw fuse args when not set", func() {
+		runtime := &datav1alpha1.GooseFSRuntime{
+			Spec: datav1alpha1.GooseFSRuntimeSpec{},
+		}
+		value := &GooseFS{
+			Properties: map[string]string{},
+		}
+
+		engine.optimizeDefaultFuse(runtime, value)
+
+		Expect(value.Fuse.Args).To(ContainElement("fuse"))
+		Expect(len(value.Fuse.Args)).To(BeNumerically(">=", 2))
+		Expect(value.Fuse.Args[1]).To(ContainSubstring("rw"))
+	})
+})
