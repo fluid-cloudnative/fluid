@@ -17,6 +17,8 @@ package dump
 
 import (
 	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"syscall"
@@ -60,7 +62,7 @@ var _ = Describe("StackTrace", func() {
 
 		It("should handle buffer growth for very large traces", func() {
 			// Create multiple goroutines to generate a larger stack trace
-			done := make(chan bool)
+			done := make(chan bool, 50)
 			for i := 0; i < 50; i++ {
 				go func() {
 					time.Sleep(100 * time.Millisecond)
@@ -75,6 +77,7 @@ var _ = Describe("StackTrace", func() {
 			for i := 0; i < 50; i++ {
 				<-done
 			}
+			close(done)
 		})
 
 		It("should handle empty buffer case", func() {
@@ -116,6 +119,11 @@ var _ = Describe("InstallgoroutineDumpGenerator", Serial, func() {
 		ResetForTesting()
 		atomic.StoreInt32(&initState, 0)
 		log = ctrl.Log.WithName("dump")
+	})
+
+	AfterEach(func() {
+		// Clean up any dump files created during tests
+		cleanupDumpFiles()
 	})
 
 	Context("when installing for the first time", func() {
@@ -164,19 +172,8 @@ var _ = Describe("InstallgoroutineDumpGenerator", Serial, func() {
 			time.Sleep(500 * time.Millisecond)
 
 			// Check if dump file was created (with timestamp pattern)
-			files, err := os.ReadDir("/tmp")
-			Expect(err).ToNot(HaveOccurred())
-
-			found := false
-			var dumpFilePath string
-			for _, file := range files {
-				if len(file.Name()) > 3 && file.Name()[:3] == "go-" && file.Name()[len(file.Name())-4:] == ".txt" {
-					found = true
-					dumpFilePath = "/tmp/" + file.Name()
-					break
-				}
-			}
-			Expect(found).To(BeTrue())
+			dumpFilePath, found := findDumpFile()
+			Expect(found).To(BeTrue(), "Dump file should be created")
 
 			// Verify file content
 			if dumpFilePath != "" {
@@ -184,6 +181,8 @@ var _ = Describe("InstallgoroutineDumpGenerator", Serial, func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(string(content)).To(ContainSubstring("goroutine"))
 
+				// Clean up
+				_ = os.Remove(dumpFilePath)
 			}
 		})
 	})
@@ -191,13 +190,27 @@ var _ = Describe("InstallgoroutineDumpGenerator", Serial, func() {
 
 var _ = Describe("Coredump", func() {
 	var testFile string
+	var testDir string
 
 	BeforeEach(func() {
 		log = ctrl.Log.WithName("dump")
-		testFile = "/tmp/test_coredump.txt"
+		testDir = os.TempDir()
+		testFile = filepath.Join(testDir, "test_coredump.txt")
 	})
 
 	AfterEach(func() {
+		// Clean up test files
+		if testFile != "" {
+			_ = os.Remove(testFile)
+		}
+
+		// Clean up any additional test files
+		files, _ := os.ReadDir(testDir)
+		for _, file := range files {
+			if strings.HasPrefix(file.Name(), "test_coredump_") {
+				_ = os.Remove(filepath.Join(testDir, file.Name()))
+			}
+		}
 	})
 
 	Context("when creating a coredump", func() {
@@ -205,7 +218,7 @@ var _ = Describe("Coredump", func() {
 			coredump(testFile)
 
 			_, err := os.Stat(testFile)
-			Expect(os.IsNotExist(err)).To(BeFalse())
+			Expect(err).ToNot(HaveOccurred(), "File should exist")
 
 			content, err := os.ReadFile(testFile)
 			Expect(err).ToNot(HaveOccurred())
@@ -215,9 +228,11 @@ var _ = Describe("Coredump", func() {
 		It("should handle write errors gracefully", func() {
 			// Try to write to invalid path
 			invalidFile := "/invalid/path/to/file.txt"
-			coredump(invalidFile)
+
 			// Should not panic, error is logged
-			Expect(true).To(BeTrue())
+			Expect(func() {
+				coredump(invalidFile)
+			}).NotTo(Panic())
 		})
 
 		It("should write complete stack trace to file", func() {
@@ -260,7 +275,7 @@ var _ = Describe("Coredump", func() {
 		It("should handle concurrent calls safely", func() {
 			files := make([]string, 5)
 			for i := 0; i < 5; i++ {
-				files[i] = "/tmp/test_coredump_" + string(rune('a'+i)) + ".txt"
+				files[i] = filepath.Join(testDir, "test_coredump_"+string(rune('a'+i))+".txt")
 			}
 
 			var wg sync.WaitGroup
@@ -275,9 +290,9 @@ var _ = Describe("Coredump", func() {
 
 			// Verify all files were created
 			for _, file := range files {
-				_, err := os.Stat(file)
-				Expect(os.IsNotExist(err)).To(BeFalse())
-				_ = os.Remove(file)
+				info, err := os.Stat(file)
+				Expect(err).ToNot(HaveOccurred(), "File %s should exist", file)
+				Expect(info.Size()).To(BeNumerically(">", 0), "File %s should have content", file)
 			}
 		})
 	})
@@ -292,14 +307,7 @@ var _ = Describe("SignalHandling", Serial, func() {
 	})
 
 	AfterEach(func() {
-		_ = os.Remove("/tmp/go-test-signal.txt")
-		// Clean up any dump files created during tests
-		files, _ := os.ReadDir("/tmp")
-		for _, file := range files {
-			if len(file.Name()) > 3 && file.Name()[:3] == "go-" && file.Name()[len(file.Name())-4:] == ".txt" {
-				_ = os.Remove("/tmp/" + file.Name())
-			}
-		}
+		cleanupDumpFiles()
 	})
 
 	Context("when installing signal handler", func() {
@@ -314,6 +322,17 @@ var _ = Describe("SignalHandling", Serial, func() {
 			Expect(func() {
 				InstallgoroutineDumpGenerator()
 			}).NotTo(Panic())
+		})
+
+		It("should handle multiple signal installations", func() {
+			for i := 0; i < 3; i++ {
+				Expect(func() {
+					InstallgoroutineDumpGenerator()
+					time.Sleep(50 * time.Millisecond)
+				}).NotTo(Panic())
+			}
+
+			Expect(atomic.LoadInt32(&initialized)).To(Equal(int32(1)))
 		})
 	})
 })
@@ -360,10 +379,59 @@ var _ = Describe("DumpfileFormat", func() {
 			got := formatDumpfile("", "", "")
 			Expect(got).To(Equal("/-.txt"))
 		})
+
+		It("should handle paths with trailing slashes", func() {
+			got := formatDumpfile("/tmp/", "go", "20230101")
+			Expect(got).To(ContainSubstring("go-20230101.txt"))
+		})
 	})
 })
 
 // Helper function to format dumpfile path
 func formatDumpfile(dir, prefix, timestamp string) string {
 	return dir + "/" + prefix + "-" + timestamp + ".txt"
+}
+
+// Helper function to find dump files in /tmp
+func findDumpFile() (string, bool) {
+	files, err := os.ReadDir("/tmp")
+	if err != nil {
+		return "", false
+	}
+
+	for _, file := range files {
+		name := file.Name()
+		if strings.HasPrefix(name, "go-") && strings.HasSuffix(name, ".txt") {
+			return filepath.Join("/tmp", name), true
+		}
+	}
+	return "", false
+}
+
+// Helper function to clean up dump files
+func cleanupDumpFiles() {
+	patterns := []string{
+		"/tmp/go-*.txt",
+		"/tmp/test_coredump*.txt",
+		"/tmp/go-test-signal.txt",
+	}
+
+	for _, pattern := range patterns {
+		matches, _ := filepath.Glob(pattern)
+		for _, match := range matches {
+			_ = os.Remove(match)
+		}
+	}
+
+	// Also clean specific /tmp directory
+	files, _ := os.ReadDir("/tmp")
+	for _, file := range files {
+		name := file.Name()
+		if strings.HasPrefix(name, "go-") && strings.HasSuffix(name, ".txt") {
+			_ = os.Remove(filepath.Join("/tmp", name))
+		}
+		if strings.HasPrefix(name, "test_coredump") {
+			_ = os.Remove(filepath.Join("/tmp", name))
+		}
+	}
 }
