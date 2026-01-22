@@ -29,6 +29,9 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
+// mockOperation is a minimal mock implementation of the dataoperation.OperationInterface
+// used to test GetDataOperationValueFile error paths. Most methods return zero/nil values
+// since only GetOperationType and GetOperationObject are exercised in these tests.
 type mockOperation struct {
 	opType dataoperation.OperationType
 	object client.Object
