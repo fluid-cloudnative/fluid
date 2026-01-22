@@ -17,270 +17,297 @@ limitations under the License.
 package base
 
 import (
-	"testing"
-
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestGetFuseDaemonset(t *testing.T) {
-	type testCase struct {
-		name        string
-		namespace   string
-		runtimeType string
-		ds          *appsv1.DaemonSet
-		setClient   bool
-		wantErr     bool
-	}
+var _ = Describe("RuntimeHelper", func() {
 
-	tests := []testCase{
-		{
-			name:        "alluxio",
-			namespace:   "default",
-			runtimeType: common.AlluxioRuntime,
-			ds: &appsv1.DaemonSet{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "alluxio-fuse",
-					Namespace: "default",
-				},
-			},
-			setClient: true,
-			wantErr:   false,
-		}, {
-			name:        "jindo",
-			namespace:   "default",
-			runtimeType: common.JindoRuntime,
-			ds: &appsv1.DaemonSet{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "jindo-jindofs-fuse",
-					Namespace: "default",
-				},
-			},
-			setClient: true,
-			wantErr:   false,
-		}, {
-			name:        "noclient",
-			namespace:   "default",
-			runtimeType: common.JindoRuntime,
-			ds: &appsv1.DaemonSet{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "jindo-jindofs-fuse",
-					Namespace: "default",
-				},
-			},
-			setClient: false,
-			wantErr:   true,
-		},
-	}
+	Describe("getFuseDaemonset", func() {
+		var (
+			runtimeInfo RuntimeInfo
+			scheme      *runtime.Scheme
+		)
 
-	for _, test := range tests {
-		var fakeClient client.Client
-		if test.setClient {
-			objs := []runtime.Object{}
-			s := runtime.NewScheme()
-			_ = corev1.AddToScheme(s)
-			_ = datav1alpha1.AddToScheme(s)
-			_ = appsv1.AddToScheme(s)
-			objs = append(objs, test.ds)
-			fakeClient = fake.NewFakeClientWithScheme(s, objs...)
-		}
-
-		runtimeInfo := RuntimeInfo{
-			name:        test.name,
-			namespace:   test.namespace,
-			runtimeType: test.runtimeType,
-		}
-
-		if fakeClient != nil {
-			runtimeInfo.SetAPIReader(fakeClient)
-		}
-
-		_, err := runtimeInfo.getFuseDaemonset()
-		if (err == nil) == test.wantErr {
-			t.Errorf("testcase %s is failed, want err %v, got err %v", test.name, test.wantErr, err)
-		}
-	}
-}
-
-func TestGetMountInfoFromVolumeClaim(t *testing.T) {
-	namespace := "default"
-	testPVCInputs := []*corev1.PersistentVolumeClaim{{
-		ObjectMeta: metav1.ObjectMeta{Name: "fluid-dataset",
-			Namespace: namespace},
-		Spec: corev1.PersistentVolumeClaimSpec{
-			VolumeName: "default-fluid-dataset",
-		},
-	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "nonfluidpvc",
-			Annotations: common.GetExpectedFluidAnnotations(),
-			Namespace:   namespace},
-		Spec: corev1.PersistentVolumeClaimSpec{
-			VolumeName: "nonfluidpv",
-		},
-	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "nopv",
-			Annotations: common.GetExpectedFluidAnnotations(),
-			Namespace:   namespace},
-		Spec: corev1.PersistentVolumeClaimSpec{
-			VolumeName: "nopv",
-		},
-	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "fluid-dataset-subpath",
-			Annotations: common.GetExpectedFluidAnnotations(),
-			Namespace:   namespace},
-		Spec: corev1.PersistentVolumeClaimSpec{
-			VolumeName: "default-fluid-dataset-subpath",
-		},
-	}}
-
-	objs := []runtime.Object{}
-
-	for _, pvc := range testPVCInputs {
-		objs = append(objs, pvc.DeepCopy())
-	}
-
-	testPVInputs := []*corev1.PersistentVolume{{
-		ObjectMeta: metav1.ObjectMeta{Name: "default-fluid-dataset"},
-		Spec: corev1.PersistentVolumeSpec{
-			PersistentVolumeSource: corev1.PersistentVolumeSource{
-				CSI: &corev1.CSIPersistentVolumeSource{
-					Driver: "fuse.csi.fluid.io",
-					VolumeAttributes: map[string]string{
-						common.VolumeAttrFluidPath: "/runtime-mnt/jindo/big-data/nofounddataset/jindofs-fuse",
-						common.VolumeAttrMountType: common.JindoRuntime,
-					},
-				},
-			},
-		},
-	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "nonfluidpv", Annotations: common.GetExpectedFluidAnnotations()},
-		Spec:       corev1.PersistentVolumeSpec{},
-	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "default-fluid-dataset-subpath"},
-		Spec: corev1.PersistentVolumeSpec{
-			PersistentVolumeSource: corev1.PersistentVolumeSource{
-				CSI: &corev1.CSIPersistentVolumeSource{
-					Driver: "fuse.csi.fluid.io",
-					VolumeAttributes: map[string]string{
-						common.VolumeAttrFluidPath:    "/runtime-mnt/jindo/big-data/nofounddataset/jindofs-fuse",
-						common.VolumeAttrMountType:    common.JindoRuntime,
-						common.VolumeAttrFluidSubPath: "subtest",
-					},
-				},
-			},
-		},
-	}}
-
-	for _, pv := range testPVInputs {
-		objs = append(objs, pv.DeepCopy())
-	}
-
-	type args struct {
-		name      string
-		namespace string
-	}
-	tests := []struct {
-		name        string
-		args        args
-		wantError   bool
-		wantPath    string
-		wantType    string
-		wantSubPath string
-	}{{
-		name: "volumeClaim doesn't exist",
-		args: args{
-			name:      "notExist",
-			namespace: namespace,
-		},
-		wantError: true,
-	}, {
-		name: "non fluid pv",
-		args: args{
-			name:      "nonfluidpvc",
-			namespace: namespace,
-		},
-		wantError: true,
-	}, {
-		name: " fluid pv",
-		args: args{
-			name:      "fluid-dataset",
-			namespace: namespace,
-		},
-		wantError: false,
-		wantPath:  "/runtime-mnt/jindo/big-data/nofounddataset/jindofs-fuse",
-		wantType:  common.JindoRuntime,
-	}, {
-		name: "no pv",
-		args: args{
-			name:      "nopv",
-			namespace: namespace,
-		},
-		wantError: true,
-	}, {
-		name: "sub pv",
-		args: args{
-			name:      "fluid-dataset-subpath",
-			namespace: namespace,
-		},
-		wantError:   false,
-		wantPath:    "/runtime-mnt/jindo/big-data/nofounddataset/jindofs-fuse",
-		wantType:    common.JindoRuntime,
-		wantSubPath: "subtest",
-	}}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			testScheme := runtime.NewScheme()
-			_ = corev1.AddToScheme(testScheme)
-			runtimeInfo := RuntimeInfo{
-				name:        tt.args.name,
-				namespace:   tt.args.namespace,
-				runtimeType: common.JindoRuntime,
-				apiReader:   fake.NewFakeClientWithScheme(testScheme, objs...),
-			}
-
-			path, mountType, subpath, err := runtimeInfo.getMountInfo()
-			got := err != nil
-
-			if got != tt.wantError {
-				t.Errorf("testcase %v getMountInfo() for %v in %v = %v, err = %v", tt.name,
-					tt.args.name,
-					tt.args.namespace,
-					got,
-					err)
-			}
-
-			if path != tt.wantPath {
-				t.Errorf("testcase %v GetMountInfoFromVolumeClaim() for %v in %v  got path  %v, want path = %v", tt.name,
-					tt.args.name,
-					tt.args.namespace,
-					path,
-					tt.wantPath)
-			}
-
-			if mountType != tt.wantType {
-				t.Errorf("testcase %v GetMountInfoFromVolumeClaim() for %v in %v  got mountType  %v, want mountType = %v", tt.name,
-					tt.args.name,
-					tt.args.namespace,
-					mountType,
-					tt.wantType)
-			}
-
-			if subpath != tt.wantSubPath {
-				t.Errorf("testcase %v GetMountInfoFromVolumeClaim() for %v in %v  got subpath  %v, want subpath = %v", tt.name,
-					tt.args.name,
-					tt.args.namespace,
-					subpath,
-					tt.wantSubPath)
-			}
-
+		BeforeEach(func() {
+			scheme = runtime.NewScheme()
+			Expect(corev1.AddToScheme(scheme)).To(Succeed())
+			Expect(datav1alpha1.AddToScheme(scheme)).To(Succeed())
+			Expect(appsv1.AddToScheme(scheme)).To(Succeed())
 		})
-	}
 
-}
+		Context("when the Alluxio runtime fuse daemonset exists", func() {
+			BeforeEach(func() {
+				ds := &appsv1.DaemonSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "alluxio-fuse",
+						Namespace: "default",
+					},
+				}
+				fakeClient := fake.NewFakeClientWithScheme(scheme, ds)
+				runtimeInfo = RuntimeInfo{
+					name:        "alluxio",
+					namespace:   "default",
+					runtimeType: common.AlluxioRuntime,
+				}
+				runtimeInfo.SetAPIReader(fakeClient)
+			})
+
+			It("should retrieve the fuse daemonset successfully", func() {
+				ds, err := runtimeInfo.getFuseDaemonset()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(ds).NotTo(BeNil())
+				Expect(ds.Name).To(Equal("alluxio-fuse"))
+			})
+		})
+
+		Context("when the Jindo runtime fuse daemonset exists", func() {
+			BeforeEach(func() {
+				ds := &appsv1.DaemonSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "jindo-jindofs-fuse",
+						Namespace: "default",
+					},
+				}
+				fakeClient := fake.NewFakeClientWithScheme(scheme, ds)
+				runtimeInfo = RuntimeInfo{
+					name:        "jindo",
+					namespace:   "default",
+					runtimeType: common.JindoRuntime,
+				}
+				runtimeInfo.SetAPIReader(fakeClient)
+			})
+
+			It("should retrieve the fuse daemonset successfully", func() {
+				ds, err := runtimeInfo.getFuseDaemonset()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(ds).NotTo(BeNil())
+				Expect(ds.Name).To(Equal("jindo-jindofs-fuse"))
+			})
+		})
+
+		Context("when no API client is set", func() {
+			BeforeEach(func() {
+				runtimeInfo = RuntimeInfo{
+					name:        "noclient",
+					namespace:   "default",
+					runtimeType: common.JindoRuntime,
+				}
+			})
+
+			It("should return an error", func() {
+				ds, err := runtimeInfo.getFuseDaemonset()
+				Expect(err).To(HaveOccurred())
+				Expect(ds).To(BeNil())
+			})
+		})
+	})
+
+	Describe("getMountInfo", func() {
+		const testNamespace = "default"
+
+		var (
+			runtimeInfo RuntimeInfo
+			scheme      *runtime.Scheme
+			objs        []runtime.Object
+		)
+
+		BeforeEach(func() {
+			scheme = runtime.NewScheme()
+			Expect(corev1.AddToScheme(scheme)).To(Succeed())
+			objs = []runtime.Object{}
+
+			pvcInputs := []corev1.PersistentVolumeClaim{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "fluid-dataset",
+						Namespace: testNamespace,
+					},
+					Spec: corev1.PersistentVolumeClaimSpec{
+						VolumeName: "default-fluid-dataset",
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:        "nonfluidpvc",
+						Namespace:   testNamespace,
+						Annotations: common.GetExpectedFluidAnnotations(),
+					},
+					Spec: corev1.PersistentVolumeClaimSpec{
+						VolumeName: "nonfluidpv",
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:        "nopv",
+						Namespace:   testNamespace,
+						Annotations: common.GetExpectedFluidAnnotations(),
+					},
+					Spec: corev1.PersistentVolumeClaimSpec{
+						VolumeName: "nopv",
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:        "fluid-dataset-subpath",
+						Namespace:   testNamespace,
+						Annotations: common.GetExpectedFluidAnnotations(),
+					},
+					Spec: corev1.PersistentVolumeClaimSpec{
+						VolumeName: "default-fluid-dataset-subpath",
+					},
+				},
+			}
+
+			testPVInputs := []corev1.PersistentVolume{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "default-fluid-dataset"},
+					Spec: corev1.PersistentVolumeSpec{
+						PersistentVolumeSource: corev1.PersistentVolumeSource{
+							CSI: &corev1.CSIPersistentVolumeSource{
+								Driver: "fuse.csi.fluid.io",
+								VolumeAttributes: map[string]string{
+									common.VolumeAttrFluidPath: "/runtime-mnt/jindo/big-data/nofounddataset/jindofs-fuse",
+									common.VolumeAttrMountType: common.JindoRuntime,
+								},
+							},
+						},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "nonfluidpv", Annotations: common.GetExpectedFluidAnnotations()},
+					Spec:       corev1.PersistentVolumeSpec{},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "default-fluid-dataset-subpath"},
+					Spec: corev1.PersistentVolumeSpec{
+						PersistentVolumeSource: corev1.PersistentVolumeSource{
+							CSI: &corev1.CSIPersistentVolumeSource{
+								Driver: "fuse.csi.fluid.io",
+								VolumeAttributes: map[string]string{
+									common.VolumeAttrFluidPath:    "/runtime-mnt/jindo/big-data/nofounddataset/jindofs-fuse",
+									common.VolumeAttrMountType:    common.JindoRuntime,
+									common.VolumeAttrFluidSubPath: "subtest",
+								},
+							},
+						},
+					},
+				},
+			}
+
+			for i := range pvcInputs {
+				objs = append(objs, &pvcInputs[i])
+			}
+			for i := range testPVInputs {
+				objs = append(objs, &testPVInputs[i])
+			}
+		})
+
+		Context("when the volume claim does not exist", func() {
+			BeforeEach(func() {
+				fakeClient := fake.NewFakeClientWithScheme(scheme, objs...)
+				runtimeInfo = RuntimeInfo{
+					name:        "notExist",
+					namespace:   testNamespace,
+					runtimeType: common.JindoRuntime,
+					apiReader:   fakeClient,
+				}
+			})
+
+			It("should return an error", func() {
+				path, mountType, subpath, err := runtimeInfo.getMountInfo()
+				Expect(err).To(HaveOccurred())
+				Expect(path).To(BeEmpty())
+				Expect(mountType).To(BeEmpty())
+				Expect(subpath).To(BeEmpty())
+			})
+		})
+
+		Context("when the PV is not a Fluid PV", func() {
+			BeforeEach(func() {
+				fakeClient := fake.NewFakeClientWithScheme(scheme, objs...)
+				runtimeInfo = RuntimeInfo{
+					name:        "nonfluidpvc",
+					namespace:   testNamespace,
+					runtimeType: common.JindoRuntime,
+					apiReader:   fakeClient,
+				}
+			})
+
+			It("should return an error", func() {
+				path, mountType, subpath, err := runtimeInfo.getMountInfo()
+				Expect(err).To(HaveOccurred())
+				Expect(path).To(BeEmpty())
+				Expect(mountType).To(BeEmpty())
+				Expect(subpath).To(BeEmpty())
+			})
+		})
+
+		Context("when the PV is a valid Fluid PV", func() {
+			BeforeEach(func() {
+				fakeClient := fake.NewFakeClientWithScheme(scheme, objs...)
+				runtimeInfo = RuntimeInfo{
+					name:        "fluid-dataset",
+					namespace:   testNamespace,
+					runtimeType: common.JindoRuntime,
+					apiReader:   fakeClient,
+				}
+			})
+
+			It("should return the correct mount info", func() {
+				path, mountType, subpath, err := runtimeInfo.getMountInfo()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(path).To(Equal("/runtime-mnt/jindo/big-data/nofounddataset/jindofs-fuse"))
+				Expect(mountType).To(Equal(common.JindoRuntime))
+				Expect(subpath).To(BeEmpty())
+			})
+		})
+
+		Context("when the PVC has no bound PV", func() {
+			BeforeEach(func() {
+				fakeClient := fake.NewFakeClientWithScheme(scheme, objs...)
+				runtimeInfo = RuntimeInfo{
+					name:        "nopv",
+					namespace:   testNamespace,
+					runtimeType: common.JindoRuntime,
+					apiReader:   fakeClient,
+				}
+			})
+
+			It("should return an error", func() {
+				path, mountType, subpath, err := runtimeInfo.getMountInfo()
+				Expect(err).To(HaveOccurred())
+				Expect(path).To(BeEmpty())
+				Expect(mountType).To(BeEmpty())
+				Expect(subpath).To(BeEmpty())
+			})
+		})
+
+		Context("when the PV has a subpath configured", func() {
+			BeforeEach(func() {
+				fakeClient := fake.NewFakeClientWithScheme(scheme, objs...)
+				runtimeInfo = RuntimeInfo{
+					name:        "fluid-dataset-subpath",
+					namespace:   testNamespace,
+					runtimeType: common.JindoRuntime,
+					apiReader:   fakeClient,
+				}
+			})
+
+			It("should return the correct mount info with subpath", func() {
+				path, mountType, subpath, err := runtimeInfo.getMountInfo()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(path).To(Equal("/runtime-mnt/jindo/big-data/nofounddataset/jindofs-fuse"))
+				Expect(mountType).To(Equal(common.JindoRuntime))
+				Expect(subpath).To(Equal("subtest"))
+			})
+		})
+	})
+})
