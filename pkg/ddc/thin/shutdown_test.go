@@ -174,6 +174,7 @@ func TestDestroyWorker(t *testing.T) {
 	for _, test := range testCase {
 		engine := &ThinEngine{Log: fake.NullLogger(), runtimeInfo: test.runtimeInfo}
 		engine.Client = client
+		engine.Helper = ctrl.BuildHelper(test.runtimeInfo, client, engine.Log)
 		engine.name = test.runtimeInfo.GetName()
 		engine.namespace = test.runtimeInfo.GetNamespace()
 		if err != nil {
