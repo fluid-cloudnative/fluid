@@ -18,17 +18,12 @@ package handler
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	admissionv1 "k8s.io/api/admission/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -257,54 +252,3 @@ var _ = Describe("FilterActiveHandlers", func() {
 		})
 	})
 })
-
-// mockWebhookServer implements webhook.Server for testing
-type mockWebhookServer struct {
-	handlers map[string]http.Handler
-}
-
-func (m *mockWebhookServer) Register(path string, handler http.Handler) {
-	m.handlers[path] = handler
-}
-
-func (m *mockWebhookServer) Start(ctx context.Context) error {
-	return nil
-}
-
-func (m *mockWebhookServer) StartedChecker() error {
-	return nil
-}
-
-func (m *mockWebhookServer) WebhookMux() *http.ServeMux {
-	return nil
-}
-
-// mockManager implements manager.Manager for testing
-type mockManager struct {
-	client client.Client
-	scheme *runtime.Scheme
-	server *mockWebhookServer
-}
-
-func (m *mockManager) Add(manager.Runnable) error                                     { return nil }
-func (m *mockManager) Elected() <-chan struct{}                                       { return nil }
-func (m *mockManager) SetFields(interface{}) error                                    { return nil }
-func (m *mockManager) AddMetricsExtraHandler(path string, handler http.Handler) error { return nil }
-func (m *mockManager) AddHealthzCheck(name string, check func(req *http.Request) error) error {
-	return nil
-}
-func (m *mockManager) AddReadyzCheck(name string, check func(req *http.Request) error) error {
-	return nil
-}
-func (m *mockManager) Start(ctx context.Context) error             { return nil }
-func (m *mockManager) GetConfig() *runtime.Scheme                  { return m.scheme }
-func (m *mockManager) GetScheme() *runtime.Scheme                  { return m.scheme }
-func (m *mockManager) GetClient() client.Client                    { return m.client }
-func (m *mockManager) GetFieldIndexer() client.FieldIndexer        { return nil }
-func (m *mockManager) GetCache() interface{}                       { return nil }
-func (m *mockManager) GetEventRecorderFor(name string) interface{} { return nil }
-func (m *mockManager) GetRESTMapper() interface{}                  { return nil }
-func (m *mockManager) GetAPIReader() client.Reader                 { return m.client }
-func (m *mockManager) GetWebhookServer() interface{}               { return m.server }
-func (m *mockManager) GetLogger() logr.Logger                      { return ctrl.Log }
-func (m *mockManager) GetControllerOptions() interface{}           { return nil }
