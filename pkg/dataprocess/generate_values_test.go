@@ -18,6 +18,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 var _ = Describe("GenDataProcessValue", func() {
@@ -95,8 +96,8 @@ var _ = Describe("GenDataProcessValue", func() {
 				},
 			}
 
-			// fake client is enough; affinity injection allows nil
-			file, err := GenDataProcessValueFile(nil, dataset, dataProcess)
+			fakeClient := fake.NewClientBuilder().Build()
+			file, err := GenDataProcessValueFile(fakeClient, dataset, dataProcess)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(file).NotTo(BeEmpty())
@@ -130,7 +131,8 @@ var _ = Describe("GenDataProcessValue", func() {
 			},
 		}
 
-		file, err := GenDataProcessValueFile(nil, dataset, dataProcess)
+		fakeClient := fake.NewClientBuilder().Build()
+		file, err := GenDataProcessValueFile(fakeClient, dataset, dataProcess)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(file).NotTo(BeEmpty())
