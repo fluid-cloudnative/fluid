@@ -30,6 +30,14 @@ import (
 )
 
 func TestValidateDuplicateDatasetMounts(t *testing.T) {
+	const (
+		mountPointPath1 = "s3://bucket/path1"
+		mountPointPath2 = "s3://bucket/path2"
+		dataPath        = "/data"
+		dataPath1       = "/data1"
+		dataPath2       = "/data2"
+	)
+
 	testCases := []struct {
 		name      string
 		dataset   *datav1alpha1.Dataset
@@ -82,14 +90,14 @@ func TestValidateDuplicateDatasetMounts(t *testing.T) {
 				Spec: datav1alpha1.DatasetSpec{
 					Mounts: []datav1alpha1.Mount{
 						{
-							MountPoint: "s3://bucket/path1",
+							MountPoint: mountPointPath1,
 							Name:       "data1",
-							Path:       "/data1",
+							Path:       dataPath1,
 						},
 						{
-							MountPoint: "s3://bucket/path2",
+							MountPoint: mountPointPath2,
 							Name:       "data2",
-							Path:       "/data2",
+							Path:       dataPath2,
 						},
 					},
 				},
@@ -106,14 +114,14 @@ func TestValidateDuplicateDatasetMounts(t *testing.T) {
 				Spec: datav1alpha1.DatasetSpec{
 					Mounts: []datav1alpha1.Mount{
 						{
-							MountPoint: "s3://bucket/path1",
+							MountPoint: mountPointPath1,
 							Name:       "data",
-							Path:       "/data1",
+							Path:       dataPath1,
 						},
 						{
-							MountPoint: "s3://bucket/path2",
+							MountPoint: mountPointPath2,
 							Name:       "data",
-							Path:       "/data2",
+							Path:       dataPath2,
 						},
 					},
 				},
@@ -130,14 +138,14 @@ func TestValidateDuplicateDatasetMounts(t *testing.T) {
 				Spec: datav1alpha1.DatasetSpec{
 					Mounts: []datav1alpha1.Mount{
 						{
-							MountPoint: "s3://bucket/path1",
+							MountPoint: mountPointPath1,
 							Name:       "data1",
-							Path:       "/data",
+							Path:       dataPath,
 						},
 						{
-							MountPoint: "s3://bucket/path2",
+							MountPoint: mountPointPath2,
 							Name:       "data2",
-							Path:       "/data",
+							Path:       dataPath,
 						},
 					},
 				},
@@ -154,11 +162,11 @@ func TestValidateDuplicateDatasetMounts(t *testing.T) {
 				Spec: datav1alpha1.DatasetSpec{
 					Mounts: []datav1alpha1.Mount{
 						{
-							MountPoint: "s3://bucket/path1",
+							MountPoint: mountPointPath1,
 							Name:       "data1",
 						},
 						{
-							MountPoint: "s3://bucket/path2",
+							MountPoint: mountPointPath2,
 							Name:       "data2",
 						},
 					},
@@ -176,11 +184,11 @@ func TestValidateDuplicateDatasetMounts(t *testing.T) {
 				Spec: datav1alpha1.DatasetSpec{
 					Mounts: []datav1alpha1.Mount{
 						{
-							MountPoint: "s3://bucket/path1",
+							MountPoint: mountPointPath1,
 							Name:       "data",
 						},
 						{
-							MountPoint: "s3://bucket/path2",
+							MountPoint: mountPointPath2,
 							Name:       "data",
 						},
 					},
@@ -198,13 +206,13 @@ func TestValidateDuplicateDatasetMounts(t *testing.T) {
 				Spec: datav1alpha1.DatasetSpec{
 					Mounts: []datav1alpha1.Mount{
 						{
-							MountPoint: "s3://bucket/path1",
+							MountPoint: mountPointPath1,
 							Name:       "data1",
 						},
 						{
-							MountPoint: "s3://bucket/path2",
+							MountPoint: mountPointPath2,
 							Name:       "data2",
-							Path:       "/data1",
+							Path:       dataPath1,
 						},
 					},
 				},
