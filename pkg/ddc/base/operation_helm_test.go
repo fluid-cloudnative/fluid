@@ -48,11 +48,11 @@ type mockOperation struct {
 	chartDir string
 }
 
-func (m *mockOperation) GetOperationType() dataoperation.OperationType          { return m.opType }
-func (m *mockOperation) GetReleaseNameSpacedName() types.NamespacedName         { return m.nsName }
-func (m *mockOperation) GetChartsDirectory() string                             { return m.chartDir }
-func (m *mockOperation) HasPrecedingOperation() bool                            { panic(unexpectedCallMsg) }
-func (m *mockOperation) GetOperationObject() client.Object                      { panic(unexpectedCallMsg) }
+func (m *mockOperation) GetOperationType() dataoperation.OperationType  { return m.opType }
+func (m *mockOperation) GetReleaseNameSpacedName() types.NamespacedName { return m.nsName }
+func (m *mockOperation) GetChartsDirectory() string                     { return m.chartDir }
+func (m *mockOperation) HasPrecedingOperation() bool                    { panic(unexpectedCallMsg) }
+func (m *mockOperation) GetOperationObject() client.Object              { panic(unexpectedCallMsg) }
 func (m *mockOperation) GetPossibleTargetDatasetNamespacedNames() []types.NamespacedName {
 	panic(unexpectedCallMsg)
 }
@@ -73,8 +73,8 @@ func (m *mockOperation) RemoveTargetDatasetStatusInProgress(dataset *datav1alpha
 	panic(unexpectedCallMsg)
 }
 func (m *mockOperation) GetStatusHandler() dataoperation.StatusHandler { panic(unexpectedCallMsg) }
-func (m *mockOperation) GetTTL() (*int32, error) { panic(unexpectedCallMsg) }
-func (m *mockOperation) GetParallelTaskNumber() int32 { panic(unexpectedCallMsg) }
+func (m *mockOperation) GetTTL() (*int32, error)                       { panic(unexpectedCallMsg) }
+func (m *mockOperation) GetParallelTaskNumber() int32                  { panic(unexpectedCallMsg) }
 
 var _ = Describe("InstallDataOperationHelmIfNotExist", func() {
 	var (
