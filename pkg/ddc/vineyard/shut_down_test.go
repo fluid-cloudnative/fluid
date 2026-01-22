@@ -15,12 +15,17 @@ package vineyard
 
 import (
 	"reflect"
-	"testing"
-
-	appsv1 "k8s.io/api/apps/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	. "github.com/agiledragon/gomonkey/v2"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/net"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
@@ -29,16 +34,9 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	"github.com/go-logr/logr"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/net"
 )
 
-var (
-	testScheme        *runtime.Scheme
-	mockConfigMapData = `
+const mockConfigMapData = `
 master:
   hostNetwork: true
   ports:
@@ -49,7 +47,8 @@ worker:
   ports:
     rpc: 14003
     exporter: 14004`
-)
+
+var testScheme *runtime.Scheme
 
 func init() {
 	testScheme = runtime.NewScheme()
@@ -58,48 +57,109 @@ func init() {
 	_ = appsv1.AddToScheme(testScheme)
 }
 
-func TestDestroyWorker(t *testing.T) {
-	// runtimeInfoSpark tests destroy Worker in exclusive mode.
-	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "fluid", common.VineyardRuntime)
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
-	runtimeInfoSpark.SetupWithDataset(&datav1alpha1.Dataset{
-		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
-	})
+var _ = Describe("VineyardEngine Shutdown Tests", func() {
+	Describe("destroyWorkers", func() {
+		var (
+			runtimeInfoSpark  base.RuntimeInfoInterface
+			runtimeInfoHadoop base.RuntimeInfoInterface
+			nodeInputs        []*corev1.Node
+			fakeClient        client.Client
+		)
 
-	// runtimeInfoSpark tests destroy Worker in shareMode mode.
-	runtimeInfoHadoop, err := base.BuildRuntimeInfo("hadoop", "fluid", common.VineyardRuntime)
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
-	runtimeInfoHadoop.SetupWithDataset(&datav1alpha1.Dataset{
-		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ShareMode},
-	})
-	nodeSelector := map[string]string{
-		"node-select": "true",
-	}
-	runtimeInfoHadoop.SetFuseNodeSelector(nodeSelector)
+		BeforeEach(func() {
+			var err error
+			runtimeInfoSpark, err = base.BuildRuntimeInfo("spark", "fluid", common.VineyardRuntime)
+			Expect(err).NotTo(HaveOccurred())
+			runtimeInfoSpark.SetupWithDataset(&datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
+			})
+			runtimeInfoSpark.SetOwnerDatasetUID("dummy-dataset-uid")
 
-	var nodeInputs = []*corev1.Node{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "test-node-spark",
-				Labels: map[string]string{
-					"fluid.io/dataset-num":                "1",
-					"fluid.io/s-vineyard-fluid-spark":     "true",
-					"fluid.io/s-fluid-spark":              "true",
-					"fluid.io/s-h-vineyard-d-fluid-spark": "5B",
-					"fluid.io/s-h-vineyard-m-fluid-spark": "1B",
-					"fluid.io/s-h-vineyard-t-fluid-spark": "6B",
-					"fluid_exclusive":                     "fluid_spark",
+			runtimeInfoHadoop, err = base.BuildRuntimeInfo("hadoop", "fluid", common.VineyardRuntime)
+			Expect(err).NotTo(HaveOccurred())
+			runtimeInfoHadoop.SetupWithDataset(&datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ShareMode},
+			})
+			runtimeInfoHadoop.SetFuseNodeSelector(map[string]string{"node-select": "true"})
+			runtimeInfoHadoop.SetOwnerDatasetUID("dummy-dataset-uid")
+
+			nodeInputs = []*corev1.Node{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-node-spark",
+						Labels: map[string]string{
+							"fluid.io/dataset-num":                "1",
+							"fluid.io/s-vineyard-fluid-spark":     "true",
+							"fluid.io/s-fluid-spark":              "true",
+							"fluid.io/s-h-vineyard-d-fluid-spark": "5B",
+							"fluid.io/s-h-vineyard-m-fluid-spark": "1B",
+							"fluid.io/s-h-vineyard-t-fluid-spark": "6B",
+							"fluid_exclusive":                     "fluid_spark",
+						},
+					},
 				},
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "test-node-share",
-				Labels: map[string]string{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-node-share",
+						Labels: map[string]string{
+							"fluid.io/dataset-num":                 "2",
+							"fluid.io/s-vineyard-fluid-hadoop":     "true",
+							"fluid.io/s-fluid-hadoop":              "true",
+							"fluid.io/s-h-vineyard-d-fluid-hadoop": "5B",
+							"fluid.io/s-h-vineyard-m-fluid-hadoop": "1B",
+							"fluid.io/s-h-vineyard-t-fluid-hadoop": "6B",
+							"fluid.io/s-vineyard-fluid-hbase":      "true",
+							"fluid.io/s-fluid-hbase":               "true",
+							"fluid.io/s-h-vineyard-d-fluid-hbase":  "5B",
+							"fluid.io/s-h-vineyard-m-fluid-hbase":  "1B",
+							"fluid.io/s-h-vineyard-t-fluid-hbase":  "6B",
+						},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-node-hadoop",
+						Labels: map[string]string{
+							"fluid.io/dataset-num":                 "1",
+							"fluid.io/s-vineyard-fluid-hadoop":     "true",
+							"fluid.io/s-fluid-hadoop":              "true",
+							"fluid.io/s-h-vineyard-d-fluid-hadoop": "5B",
+							"fluid.io/s-h-vineyard-m-fluid-hadoop": "1B",
+							"fluid.io/s-h-vineyard-t-fluid-hadoop": "6B",
+							"node-select":                          "true",
+						},
+					},
+				},
+			}
+
+			testNodes := []runtime.Object{}
+			for _, nodeInput := range nodeInputs {
+				testNodes = append(testNodes, nodeInput.DeepCopy())
+			}
+			fakeClient = fake.NewFakeClientWithScheme(testScheme, testNodes...)
+		})
+
+		Context("when destroying workers in exclusive mode", func() {
+			It("should remove all labels from exclusive node", func() {
+				engine := &VineyardEngine{
+					Log:         fake.NullLogger(),
+					runtimeInfo: runtimeInfoSpark,
+					Client:      fakeClient,
+					name:        runtimeInfoSpark.GetName(),
+					namespace:   runtimeInfoSpark.GetNamespace(),
+				}
+
+				currentWorkers, err := engine.destroyWorkers(-1)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(currentWorkers).To(Equal(int32(0)))
+
+				newNode, err := kubeclient.GetNode(fakeClient, "test-node-spark")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(newNode.Labels).To(BeEmpty())
+
+				newNode, err = kubeclient.GetNode(fakeClient, "test-node-share")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(newNode.Labels).To(Equal(map[string]string{
 					"fluid.io/dataset-num":                 "2",
 					"fluid.io/s-vineyard-fluid-hadoop":     "true",
 					"fluid.io/s-fluid-hadoop":              "true",
@@ -111,325 +171,168 @@ func TestDestroyWorker(t *testing.T) {
 					"fluid.io/s-h-vineyard-d-fluid-hbase":  "5B",
 					"fluid.io/s-h-vineyard-m-fluid-hbase":  "1B",
 					"fluid.io/s-h-vineyard-t-fluid-hbase":  "6B",
-				},
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "test-node-hadoop",
-				Labels: map[string]string{
-					"fluid.io/dataset-num":                 "1",
-					"fluid.io/s-vineyard-fluid-hadoop":     "true",
-					"fluid.io/s-fluid-hadoop":              "true",
-					"fluid.io/s-h-vineyard-d-fluid-hadoop": "5B",
-					"fluid.io/s-h-vineyard-m-fluid-hadoop": "1B",
-					"fluid.io/s-h-vineyard-t-fluid-hadoop": "6B",
-					"node-select":                          "true",
-				},
-			},
-		},
-	}
+				}))
+			})
+		})
 
-	testNodes := []runtime.Object{}
-	for _, nodeInput := range nodeInputs {
-		testNodes = append(testNodes, nodeInput.DeepCopy())
-	}
+		Context("when destroying workers in share mode", func() {
+			It("should decrement shared dataset labels", func() {
+				engine := &VineyardEngine{
+					Log:         fake.NullLogger(),
+					runtimeInfo: runtimeInfoHadoop,
+					Client:      fakeClient,
+					name:        runtimeInfoHadoop.GetName(),
+					namespace:   runtimeInfoHadoop.GetNamespace(),
+				}
 
-	client := fake.NewFakeClientWithScheme(testScheme, testNodes...)
+				currentWorkers, err := engine.destroyWorkers(-1)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(currentWorkers).To(Equal(int32(0)))
 
-	var testCase = []struct {
-		expectedWorkers  int32
-		runtimeInfo      base.RuntimeInfoInterface
-		wantedNodeNumber int32
-		wantedNodeLabels map[string]map[string]string
-	}{
-		{
-			expectedWorkers:  -1,
-			runtimeInfo:      runtimeInfoSpark,
-			wantedNodeNumber: 0,
-			wantedNodeLabels: map[string]map[string]string{
-				"test-node-spark": {},
-				"test-node-share": {
-					"fluid.io/dataset-num":                 "2",
-					"fluid.io/s-vineyard-fluid-hadoop":     "true",
-					"fluid.io/s-fluid-hadoop":              "true",
-					"fluid.io/s-h-vineyard-d-fluid-hadoop": "5B",
-					"fluid.io/s-h-vineyard-m-fluid-hadoop": "1B",
-					"fluid.io/s-h-vineyard-t-fluid-hadoop": "6B",
-					"fluid.io/s-vineyard-fluid-hbase":      "true",
-					"fluid.io/s-fluid-hbase":               "true",
-					"fluid.io/s-h-vineyard-d-fluid-hbase":  "5B",
-					"fluid.io/s-h-vineyard-m-fluid-hbase":  "1B",
-					"fluid.io/s-h-vineyard-t-fluid-hbase":  "6B",
-				},
-				"test-node-hadoop": {
-					"fluid.io/dataset-num":                 "1",
-					"fluid.io/s-vineyard-fluid-hadoop":     "true",
-					"fluid.io/s-fluid-hadoop":              "true",
-					"fluid.io/s-h-vineyard-d-fluid-hadoop": "5B",
-					"fluid.io/s-h-vineyard-m-fluid-hadoop": "1B",
-					"fluid.io/s-h-vineyard-t-fluid-hadoop": "6B",
-					"node-select":                          "true",
-				},
-			},
-		},
-		{
-			expectedWorkers:  -1,
-			runtimeInfo:      runtimeInfoHadoop,
-			wantedNodeNumber: 0,
-			wantedNodeLabels: map[string]map[string]string{
-				"test-node-spark": {},
-				"test-node-share": {
+				newNode, err := kubeclient.GetNode(fakeClient, "test-node-share")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(newNode.Labels).To(Equal(map[string]string{
 					"fluid.io/dataset-num":                "1",
 					"fluid.io/s-vineyard-fluid-hbase":     "true",
 					"fluid.io/s-fluid-hbase":              "true",
 					"fluid.io/s-h-vineyard-d-fluid-hbase": "5B",
 					"fluid.io/s-h-vineyard-m-fluid-hbase": "1B",
 					"fluid.io/s-h-vineyard-t-fluid-hbase": "6B",
-				},
-				"test-node-hadoop": {
+				}))
+
+				newNode, err = kubeclient.GetNode(fakeClient, "test-node-hadoop")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(newNode.Labels).To(Equal(map[string]string{
 					"node-select": "true",
-				},
-			},
-		},
-	}
-	for _, test := range testCase {
-		engine := &VineyardEngine{Log: fake.NullLogger(), runtimeInfo: test.runtimeInfo}
-		engine.Client = client
-		engine.name = test.runtimeInfo.GetName()
-		engine.namespace = test.runtimeInfo.GetNamespace()
-		if err != nil {
-			t.Errorf("fail to exec the function with the error %v", err)
-		}
-		currentWorkers, err := engine.destroyWorkers(test.expectedWorkers)
-		if err != nil {
-			t.Errorf("fail to exec the function with the error %v", err)
-		}
-		if currentWorkers != test.wantedNodeNumber {
-			t.Errorf("shutdown the worker with the wrong number of the workers")
-		}
-		for _, node := range nodeInputs {
-			newNode, err := kubeclient.GetNode(client, node.Name)
-			if err != nil {
-				t.Errorf("fail to get the node with the error %v", err)
-			}
+				}))
+			})
+		})
+	})
 
-			if len(newNode.Labels) != len(test.wantedNodeLabels[node.Name]) {
-				t.Errorf("fail to decrease the labels")
-			}
-			if len(newNode.Labels) != 0 && !reflect.DeepEqual(newNode.Labels, test.wantedNodeLabels[node.Name]) {
-				t.Errorf("fail to decrease the labels")
-			}
-		}
-
-	}
-}
-
-func TestVineyardEngineCleanAll(t *testing.T) {
-	type fields struct {
-		name        string
-		namespace   string
-		cm          *corev1.ConfigMap
-		runtimeType string
-		log         logr.Logger
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		wantErr bool
-	}{
-		{
-			name: "spark",
-			fields: fields{
-				name:        "spark",
-				namespace:   "fluid",
-				runtimeType: "vineyard",
-				cm: &corev1.ConfigMap{
+	Describe("cleanAll", func() {
+		Context("when cleaning all resources", func() {
+			It("should clean up successfully", func() {
+				cm := &corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "spark-vineyard-values",
 						Namespace: "fluid",
 					},
 					Data: map[string]string{"data": mockConfigMapData},
-				},
-				log: fake.NullLogger(),
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			testObjs := []runtime.Object{}
-			testObjs = append(testObjs, tt.fields.cm.DeepCopy())
-			client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+				}
+				testObjs := []runtime.Object{cm.DeepCopy()}
+				fakeClient := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
-			helper := &ctrl.Helper{}
-			patch1 := ApplyMethod(reflect.TypeOf(helper), "CleanUpFuse", func(_ *ctrl.Helper) (int, error) {
-				return 0, nil
+				helper := &ctrl.Helper{}
+				patch := ApplyMethod(reflect.TypeOf(helper), "CleanUpFuse", func(_ *ctrl.Helper) (int, error) {
+					return 0, nil
+				})
+				defer patch.Reset()
+
+				engine := &VineyardEngine{
+					name:        "spark",
+					namespace:   "fluid",
+					runtimeType: "vineyard",
+					Client:      fakeClient,
+					Log:         fake.NullLogger(),
+				}
+
+				err := engine.cleanAll()
+				Expect(err).NotTo(HaveOccurred())
 			})
-			defer patch1.Reset()
-			e := &VineyardEngine{
-				name:      tt.fields.name,
-				namespace: tt.fields.namespace,
-				Client:    client,
-				Log:       tt.fields.log,
-			}
-			if err := e.cleanAll(); (err != nil) != tt.wantErr {
-				t.Errorf("VineyardEngine.cleanAll() error = %v, wantErr %v", err, tt.wantErr)
-			}
 		})
-	}
-}
+	})
 
-func TestVineyardEngineCleanupCache(t *testing.T) {
-	type fields struct {
-		name      string
-		namespace string
-		Log       logr.Logger
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		wantErr bool
-	}{
-		{
-			name: "spark",
-			fields: fields{
-				name:      "spark",
-				namespace: "field",
-				Log:       fake.NullLogger(),
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			engine := &VineyardEngine{
-				name:      tt.fields.name,
-				namespace: tt.fields.namespace,
-				Log:       tt.fields.Log,
-			}
+	Describe("cleanupCache", func() {
+		Context("when cleaning up cache", func() {
+			It("should return nil", func() {
+				engine := &VineyardEngine{
+					name:      "spark",
+					namespace: "fluid",
+					Log:       fake.NullLogger(),
+				}
 
-			patch := ApplyMethod(reflect.TypeOf(engine), "GetReportSummary",
-				func(_ *VineyardEngine) ([]string, error) {
-					return []string{"instances_memory_usage_bytes 1234", "instances_memory_usage_bytes 4321"}, nil
-				})
-			defer patch.Reset()
+				patch := ApplyMethod(reflect.TypeOf(engine), "GetReportSummary",
+					func(_ *VineyardEngine) ([]string, error) {
+						return []string{"instances_memory_usage_bytes 1234"}, nil
+					})
+				defer patch.Reset()
 
-			if err := engine.cleanupCache(); (err != nil) != tt.wantErr {
-				t.Errorf("VineyardEngine.cleanupCache() error = %v, wantErr %v", err, tt.wantErr)
-			}
+				err := engine.cleanupCache()
+				Expect(err).NotTo(HaveOccurred())
+			})
 		})
-	}
-}
+	})
 
-func TestVineyardEngineDestroyMaster(t *testing.T) {
-	type fields struct {
-		name      string
-		namespace string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		wantErr bool
-	}{
-		{
-			name: "spark",
-			fields: fields{
-				name:      "spark",
-				namespace: "fluid",
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			e := &VineyardEngine{
-				name:      tt.fields.name,
-				namespace: tt.fields.namespace,
-			}
+	Describe("destroyMaster", func() {
+		Context("when helm release exists", func() {
+			It("should delete release", func() {
+				engine := &VineyardEngine{
+					name:      "spark",
+					namespace: "fluid",
+				}
 
-			patch1 := ApplyFunc(helm.CheckRelease,
-				func(_ string, _ string) (bool, error) {
-					d := true
-					return d, nil
-				})
-			defer patch1.Reset()
+				patch1 := ApplyFunc(helm.CheckRelease,
+					func(_ string, _ string) (bool, error) {
+						return true, nil
+					})
+				defer patch1.Reset()
 
-			patch2 := ApplyFunc(helm.DeleteRelease,
-				func(_ string, _ string) error {
-					return nil
-				})
-			defer patch2.Reset()
+				patch2 := ApplyFunc(helm.DeleteRelease,
+					func(_ string, _ string) error {
+						return nil
+					})
+				defer patch2.Reset()
 
-			if err := e.destroyMaster(); (err != nil) != tt.wantErr {
-				t.Errorf("VineyardEngine.destroyMaster() error = %v, wantErr %v", err, tt.wantErr)
-			}
+				err := engine.destroyMaster()
+				Expect(err).NotTo(HaveOccurred())
+			})
 		})
-	}
-}
+	})
 
-func TestVineyardEngineReleasePorts(t *testing.T) {
-	dummyPorts := func(client client.Client) (ports []int, err error) {
-		return []int{14000, 14001, 14002, 14003}, nil
-	}
-	type fields struct {
-		runtime     *datav1alpha1.VineyardRuntime
-		name        string
-		namespace   string
-		runtimeType string
-		cm          *corev1.ConfigMap
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		wantErr bool
-	}{
-		{
-			name: "vineyard",
-			fields: fields{
-				name:        "vineyard",
-				namespace:   "fluid",
-				runtimeType: "vineyard",
-				cm: &corev1.ConfigMap{
+	Describe("releasePorts", func() {
+		Context("when configmap exists with port data", func() {
+			It("should release reserved ports", func() {
+				cm := &corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "vineyard-values",
+						Name:      "vineyard-vineyard-values",
 						Namespace: "fluid",
 					},
 					Data: map[string]string{"data": mockConfigMapData},
-				},
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			portRange := "14000-16000"
-			pr, _ := net.ParsePortRange(portRange)
-			testObjs := []runtime.Object{}
-			testObjs = append(testObjs, tt.fields.cm.DeepCopy())
-			client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+				}
+				testObjs := []runtime.Object{cm.DeepCopy()}
+				fakeClient := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
-			e := &VineyardEngine{
-				runtime:   tt.fields.runtime,
-				name:      tt.fields.name,
-				namespace: tt.fields.namespace,
-				Client:    client,
-				Log:       fake.NullLogger(),
-			}
+				portRange := "14000-16000"
+				pr, err := net.ParsePortRange(portRange)
+				Expect(err).NotTo(HaveOccurred())
 
-			err := portallocator.SetupRuntimePortAllocator(client, pr, "bitmap", dummyPorts)
-			if err != nil {
-				t.Fatal(err.Error())
-			}
-			allocator, _ := portallocator.GetRuntimePortAllocator()
-			patch1 := ApplyMethod(reflect.TypeOf(allocator), "ReleaseReservedPorts",
-				func(_ *portallocator.RuntimePortAllocator, ports []int) {
-				})
-			defer patch1.Reset()
+				dummyPorts := func(_ client.Client) ([]int, error) {
+					return []int{14000, 14001, 14002, 14003}, nil
+				}
 
-			if err := e.releasePorts(); (err != nil) != tt.wantErr {
-				t.Errorf("VineyardEngine.releasePorts() error = %v, wantErr %v", err, tt.wantErr)
-			}
+				err = portallocator.SetupRuntimePortAllocator(fakeClient, pr, "bitmap", dummyPorts)
+				Expect(err).NotTo(HaveOccurred())
+
+				allocator, err := portallocator.GetRuntimePortAllocator()
+				Expect(err).NotTo(HaveOccurred())
+
+				patch := ApplyMethod(reflect.TypeOf(allocator), "ReleaseReservedPorts",
+					func(_ *portallocator.RuntimePortAllocator, _ []int) {
+						// No-op for test mock
+					})
+				defer patch.Reset()
+
+				engine := &VineyardEngine{
+					name:        "vineyard",
+					namespace:   "fluid",
+					runtimeType: "vineyard",
+					Client:      fakeClient,
+					Log:         fake.NullLogger(),
+				}
+
+				err = engine.releasePorts()
+				Expect(err).NotTo(HaveOccurred())
+			})
 		})
-	}
-}
+	})
+})
