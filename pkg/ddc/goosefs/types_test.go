@@ -16,51 +16,103 @@ limitations under the License.
 
 package goosefs
 
-import "testing"
+import (
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+)
 
-func TestGetTiredStoreLevel0Path(t *testing.T) {
-	testCases := map[string]struct {
-		name      string
-		namespace string
-		goosefs   *GooseFS
-		wantPath  string
-	}{
-		"test getTiredStoreLevel0Path case 1": {
-			name:      "goosefs-01",
-			namespace: "default",
-			goosefs: &GooseFS{
-				Tieredstore: Tieredstore{
-					Levels: []Level{
-						{
-							Level: 0,
-							Path:  "/mnt/demo/data",
+var _ = Describe("GooseFS Types", func() {
+	Describe("getTiredStoreLevel0Path", func() {
+		var (
+			goosefs   *GooseFS
+			name      string
+			namespace string
+		)
+
+		BeforeEach(func() {
+			name = "goosefs-01"
+			namespace = "default"
+		})
+
+		Context("when tieredstore has level 0", func() {
+			It("should return the configured path", func() {
+				goosefs = &GooseFS{
+					Tieredstore: Tieredstore{
+						Levels: []Level{
+							{
+								Level: 0,
+								Path:  "/mnt/demo/data",
+							},
 						},
 					},
-				},
-			},
-			wantPath: "/mnt/demo/data",
-		},
-		"test getTiredStoreLevel0Path case 2": {
-			name:      "goosefs-01",
-			namespace: "default",
-			goosefs: &GooseFS{
-				Tieredstore: Tieredstore{
-					Levels: []Level{
-						{
-							Level: 1,
-							Path:  "/mnt/demo/data",
+				}
+				got := goosefs.getTiredStoreLevel0Path(name, namespace)
+				Expect(got).To(Equal("/mnt/demo/data"))
+			})
+		})
+
+		Context("when tieredstore has only level 1", func() {
+			It("should return the default shm path", func() {
+				goosefs = &GooseFS{
+					Tieredstore: Tieredstore{
+						Levels: []Level{
+							{
+								Level: 1,
+								Path:  "/mnt/demo/data",
+							},
 						},
 					},
-				},
-			},
-			wantPath: "/dev/shm/default/goosefs-01",
-		},
-	}
+				}
+				got := goosefs.getTiredStoreLevel0Path(name, namespace)
+				Expect(got).To(Equal("/dev/shm/default/goosefs-01"))
+			})
+		})
 
-	for k, item := range testCases {
-		got := item.goosefs.getTiredStoreLevel0Path(item.name, item.namespace)
-		if got != item.wantPath {
-			t.Errorf("%s check failure, want:%s,got:%s", k, item.wantPath, got)
-		}
-	}
-}
+		Context("when tieredstore has multiple levels", func() {
+			It("should return the level 0 path", func() {
+				goosefs = &GooseFS{
+					Tieredstore: Tieredstore{
+						Levels: []Level{
+							{
+								Level: 1,
+								Path:  "/mnt/ssd/data",
+							},
+							{
+								Level: 0,
+								Path:  "/mnt/mem/data",
+							},
+							{
+								Level: 2,
+								Path:  "/mnt/hdd/data",
+							},
+						},
+					},
+				}
+				got := goosefs.getTiredStoreLevel0Path(name, namespace)
+				Expect(got).To(Equal("/mnt/mem/data"))
+			})
+		})
+
+		Context("when tieredstore is empty", func() {
+			It("should return the default shm path", func() {
+				goosefs = &GooseFS{
+					Tieredstore: Tieredstore{
+						Levels: []Level{},
+					},
+				}
+				got := goosefs.getTiredStoreLevel0Path(name, namespace)
+				Expect(got).To(Equal("/dev/shm/default/goosefs-01"))
+			})
+		})
+
+		Context("with different namespace and name", func() {
+			It("should construct the correct default path", func() {
+				goosefs = &GooseFS{
+					Tieredstore: Tieredstore{},
+				}
+				got := goosefs.getTiredStoreLevel0Path("mydata", "production")
+				Expect(got).To(Equal("/dev/shm/production/mydata"))
+			})
+		})
+	})
+})
