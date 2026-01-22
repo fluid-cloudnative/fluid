@@ -44,7 +44,7 @@ var _ = Describe("findInjectedSidecars", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			injectedSidecars, err := findInjectedSidecars(podObjs[0])
-			
+
 			Expect(err).NotTo(HaveOccurred())
 			Expect(injectedSidecars).To(BeEmpty())
 		})
@@ -68,7 +68,7 @@ var _ = Describe("findInjectedSidecars", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			injectedSidecars, err := findInjectedSidecars(podObjs[0])
-			
+
 			Expect(err).NotTo(HaveOccurred())
 			Expect(injectedSidecars).To(HaveLen(1))
 			Expect(injectedSidecars[0].Name).To(Equal("fluid-fuse-0"))
@@ -96,7 +96,7 @@ var _ = Describe("findInjectedSidecars", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			injectedSidecars, err := findInjectedSidecars(podObjs[0])
-			
+
 			Expect(err).NotTo(HaveOccurred())
 			Expect(injectedSidecars).To(HaveLen(2))
 			Expect(injectedSidecars[0].Name).To(Equal("fluid-fuse-0"))
@@ -112,7 +112,7 @@ var _ = Describe("findInjectedSidecars", func() {
 			}
 
 			injectedSidecars, err := findInjectedSidecars(mockPod)
-			
+
 			Expect(err).To(HaveOccurred())
 			Expect(injectedSidecars).To(BeEmpty())
 		})
