@@ -1194,7 +1194,7 @@ var _ = Describe("MutatePodWithReferencedDataset", func() {
 									Name: "data",
 									VolumeSource: corev1.VolumeSource{
 										HostPath: &corev1.HostPathVolumeSource{
-											Path: "/runtime_mnt/done",
+											Path: "/runtime_mnt/done-without-ref-pvc",
 										},
 									},
 								},
