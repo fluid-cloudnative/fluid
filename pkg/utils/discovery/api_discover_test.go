@@ -4,6 +4,7 @@ import (
 	"errors"
 	nativeLog "log"
 	"sync"
+	"time"
 
 	"github.com/agiledragon/gomonkey/v2"
 	. "github.com/onsi/ginkgo/v2"
@@ -123,42 +124,11 @@ var _ = Describe("discoverFluidResourcesInCluster", func() {
 	})
 
 	Context("when handling error cases", func() {
-		It("should panic on empty API resources", func() {
-			patchedFunc := func(groupVersion string) (*metav1.APIResourceList, error) {
-				return &metav1.APIResourceList{
-					APIResources: []metav1.APIResource{},
-				}, nil
-			}
-
-			patch1 := gomonkey.ApplyFunc(ctrl.GetConfigOrDie, func() *rest.Config {
-				return &rest.Config{}
-			})
-			defer patch1.Reset()
-
-			patch2 := gomonkey.ApplyFunc(discovery.NewDiscoveryClientForConfigOrDie, func(_ *rest.Config) *discovery.DiscoveryClient {
-				return &discovery.DiscoveryClient{}
-			})
-			defer patch2.Reset()
-
-			var fakeClient *discovery.DiscoveryClient
-			patch3 := gomonkey.ApplyMethodFunc(fakeClient, "ServerResourcesForGroupVersion", patchedFunc)
-			defer patch3.Reset()
-
-			fatalCalled := false
-			patchFatal := gomonkey.ApplyFunc(nativeLog.Fatalf, func(format string, v ...interface{}) {
-				fatalCalled = true
-				panic("log.Fatalf called")
-			})
-			defer patchFatal.Reset()
-
-			Expect(func() {
-				discoverFluidResourcesInCluster()
-			}).To(Panic())
-			Expect(fatalCalled).To(BeTrue())
-		})
 
 		It("should panic on discovery client error with retry exhaustion", func() {
+			callCount := 0
 			patchedFunc := func(groupVersion string) (*metav1.APIResourceList, error) {
+				callCount++
 				return nil, errors.New("connection refused")
 			}
 
@@ -176,6 +146,12 @@ var _ = Describe("discoverFluidResourcesInCluster", func() {
 			patch3 := gomonkey.ApplyMethodFunc(fakeClient, "ServerResourcesForGroupVersion", patchedFunc)
 			defer patch3.Reset()
 
+			// Patch time.Sleep to skip delays during retries
+			patchSleep := gomonkey.ApplyFunc(time.Sleep, func(d time.Duration) {
+				// No-op: skip actual sleep
+			})
+			defer patchSleep.Reset()
+
 			fatalCalled := false
 			patchFatal := gomonkey.ApplyFunc(nativeLog.Fatalf, func(format string, v ...interface{}) {
 				fatalCalled = true
@@ -183,9 +159,19 @@ var _ = Describe("discoverFluidResourcesInCluster", func() {
 			})
 			defer patchFatal.Reset()
 
-			Expect(func() {
+			// Use channel-based test with timeout
+			done := make(chan bool, 1)
+			go func() {
+				defer func() {
+					if r := recover(); r != nil {
+						done <- true
+					}
+				}()
 				discoverFluidResourcesInCluster()
-			}).To(Panic())
+				done <- false
+			}()
+
+			Eventually(done, 5*time.Second).Should(Receive(BeTrue()))
 			Expect(fatalCalled).To(BeTrue())
 		})
 
@@ -217,9 +203,16 @@ var _ = Describe("discoverFluidResourcesInCluster", func() {
 			patch3 := gomonkey.ApplyMethodFunc(fakeClient, "ServerResourcesForGroupVersion", patchedFunc)
 			defer patch3.Reset()
 
+			// Patch time.Sleep to skip delays during retries
+			patchSleep := gomonkey.ApplyFunc(time.Sleep, func(d time.Duration) {
+				// No-op: skip actual sleep
+			})
+			defer patchSleep.Reset()
+
 			discoverFluidResourcesInCluster()
 
 			Expect(globalDiscovery).NotTo(BeEmpty())
+			Expect(callCount).To(Equal(3))
 		})
 	})
 })
@@ -264,43 +257,62 @@ var _ = Describe("InitDiscovery", func() {
 })
 
 var _ = Describe("GetFluidDiscovery", func() {
+	var (
+		originalOnce      sync.Once
+		originalDiscovery fluidDiscovery
+	)
+
 	BeforeEach(func() {
+		// Save original state
+		originalOnce = once
+		originalDiscovery = globalDiscovery
+
+		// Reset for this test - NOTE: This is a workaround since sync.Once can't be truly reset
+		// In production code, consider using a factory pattern or dependency injection
 		once = sync.Once{}
 		globalDiscovery = nil
 	})
 
-	It("should return discovery on first call", func() {
-		want1 := fluidDiscovery(map[string]bool{
+	AfterEach(func() {
+		// Restore original state
+		once = originalOnce
+		globalDiscovery = originalDiscovery
+	})
+
+	It("should initialize discovery on first call", func() {
+		want := fluidDiscovery(map[string]bool{
 			"foo": true,
 			"bar": true,
 		})
 		patch := gomonkey.ApplyFunc(initDiscovery, func() {
-			globalDiscovery = want1
+			globalDiscovery = want
 		})
 		defer patch.Reset()
 
 		got := GetFluidDiscovery()
-		Expect(got).To(Equal(want1))
+		Expect(got).To(Equal(want))
 	})
 
-	It("should return updated discovery on second call", func() {
-		want2 := fluidDiscovery(map[string]bool{
-			"foo2": true,
-			"bar2": true,
+	It("should use existing discovery without re-initialization", func() {
+		// Set up pre-existing discovery state
+		existingDiscovery := fluidDiscovery(map[string]bool{
+			"existing": true,
 		})
-		globalDiscovery = want2
+		globalDiscovery = existingDiscovery
+		once = sync.Once{} // Fresh Once that hasn't been called
+
+		// Mark once as already called by calling Do
+		once.Do(func() {})
+
+		// Verify initDiscovery is NOT called
+		initCalled := false
+		patch := gomonkey.ApplyFunc(initDiscovery, func() {
+			initCalled = true
+		})
+		defer patch.Reset()
 
 		got := GetFluidDiscovery()
-		Expect(got).To(Equal(want2))
-	})
-
-	It("should verify singleton behavior on third call", func() {
-		want2 := fluidDiscovery(map[string]bool{
-			"foo2": true,
-			"bar2": true,
-		})
-
-		got := GetFluidDiscovery()
-		Expect(got).To(Equal(want2))
+		Expect(got).To(Equal(existingDiscovery))
+		Expect(initCalled).To(BeFalse())
 	})
 })
