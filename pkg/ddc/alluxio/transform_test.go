@@ -294,11 +294,12 @@ func TestTransformWorkers(t *testing.T) {
 	for k, v := range testCases {
 		gotValue := &Alluxio{}
 		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", base.WithTieredStore(v.runtime.Spec.TieredStore))
-		v.runtime.Name = "test"
-		v.runtime.Namespace = "test"
-		runtimeObjs := []runtime.Object{v.runtime.DeepCopy()}
+		runtimeCopy := v.runtime.DeepCopy()
+		runtimeCopy.Name = "test"
+		runtimeCopy.Namespace = "test"
+		runtimeObjs := []runtime.Object{runtimeCopy}
 		engine.Client = fake.NewFakeClientWithScheme(datav1alpha1.UnitTestScheme, runtimeObjs...)
-		if err := engine.transformWorkers(v.runtime, gotValue); err == nil {
+		if err := engine.transformWorkers(runtimeCopy, gotValue); err == nil {
 			if gotValue.Worker.HostNetwork != v.wantValue.Worker.HostNetwork {
 				t.Errorf("check %s failure, got:%t,want:%t",
 					k,
