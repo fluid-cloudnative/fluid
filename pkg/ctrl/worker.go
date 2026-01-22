@@ -25,13 +25,16 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/lifecycle"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
@@ -167,4 +170,86 @@ func (e *Helper) CheckAndSyncWorkerStatus(getRuntimeFn func(client.Client) (base
 	}
 
 	return readyOrPartialReady, nil
+}
+
+// TearDownWorkers tears down workers according to the given runtimeInfo.
+// Note that TearDownWorkers does NOT delete worker statefulset and worker pods, is just cleans labels on nodes.
+// Worker statefulset is installed and managed by Helm, it will be deleted if the helm release is uninstalled in Engine.destroyMaster().
+func (j *Helper) TearDownWorkers(runtimeInfo base.RuntimeInfoInterface) (currentWorkers int32, err error) {
+	var (
+		nodeList           = &corev1.NodeList{}
+		labelExclusiveName = utils.GetExclusiveKey()
+		labelName          = runtimeInfo.GetRuntimeLabelName()
+		labelCommonName    = runtimeInfo.GetCommonLabelName()
+		labelMemoryName    = runtimeInfo.GetLabelNameForMemory()
+		labelDiskName      = runtimeInfo.GetLabelNameForDisk()
+		labelTotalName     = runtimeInfo.GetLabelNameForTotal()
+	)
+
+	labelNames := []string{labelName, labelTotalName, labelDiskName, labelMemoryName, labelCommonName}
+	j.log.Info("check node labels", "labelNames", labelNames)
+
+	datasetLabels, err := labels.Parse(fmt.Sprintf("%s=true", labelCommonName))
+	if err != nil {
+		return currentWorkers, err
+	}
+
+	err = j.client.List(context.TODO(), nodeList, &client.ListOptions{
+		LabelSelector: datasetLabels,
+	})
+
+	if err != nil {
+		return currentWorkers, err
+	}
+
+	currentWorkers = int32(len(nodeList.Items))
+
+	// 1.select the nodes
+	for _, node := range nodeList.Items {
+		if len(node.Labels) == 0 {
+			continue
+		}
+
+		nodeName := node.Name
+		var labelsToModify common.LabelsToModify
+		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+			node, err := kubeclient.GetNode(j.client, nodeName)
+			if err != nil {
+				j.log.Error(err, "Fail to get node", "nodename", nodeName)
+				return err
+			}
+
+			toUpdate := node.DeepCopy()
+			for _, label := range labelNames {
+				labelsToModify.Delete(label)
+			}
+
+			exclusiveLabelValue := runtimeInfo.GetExclusiveLabelValue()
+			if val, exist := toUpdate.Labels[labelExclusiveName]; exist && val == exclusiveLabelValue {
+				labelsToModify.Delete(labelExclusiveName)
+			}
+
+			err = lifecycle.DecreaseDatasetNum(toUpdate, runtimeInfo, &labelsToModify)
+			if err != nil {
+				return err
+			}
+			// Update the toUpdate in UPDATE mode
+			// modifiedLabels, err := utils.ChangeNodeLabelWithUpdateMode(e.Client, toUpdate, labelToModify)
+			// Update the toUpdate in PATCH mode
+			modifiedLabels, err := utils.ChangeNodeLabelWithPatchMode(j.client, toUpdate, labelsToModify)
+			if err != nil {
+				return err
+			}
+			j.log.Info("Destroy worker", "dataset", fmt.Sprintf("%s/%s", runtimeInfo.GetNamespace(), runtimeInfo.GetName()), "deleted worker node", node.Name, "removed or updated labels", modifiedLabels)
+			return nil
+		})
+
+		if err != nil {
+			return currentWorkers, err
+		}
+
+		currentWorkers--
+	}
+
+	return currentWorkers, nil
 }

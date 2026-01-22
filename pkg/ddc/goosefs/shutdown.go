@@ -17,13 +17,10 @@ limitations under the License.
 package goosefs
 
 import (
-	"context"
 	"fmt"
-	"sort"
 	"strings"
 	"time"
 
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/pkg/errors"
@@ -31,10 +28,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/lifecycle"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/util/retry"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // shut down the GooseFS engine
@@ -215,126 +208,5 @@ func (e *GooseFSEngine) destroyWorkers(expectedWorkers int32) (currentWorkers in
 		return currentWorkers, err
 	}
 
-	var (
-		nodeList = &corev1.NodeList{}
-
-		labelExclusiveName = utils.GetExclusiveKey()
-		labelName          = runtimeInfo.GetRuntimeLabelName()
-		labelCommonName    = runtimeInfo.GetCommonLabelName()
-		labelMemoryName    = runtimeInfo.GetLabelNameForMemory()
-		labelDiskName      = runtimeInfo.GetLabelNameForDisk()
-		labelTotalname     = runtimeInfo.GetLabelNameForTotal()
-	)
-
-	labelNames := []string{labelName, labelTotalname, labelDiskName, labelMemoryName, labelCommonName}
-	e.Log.Info("check node labels", "labelNames", labelNames)
-	datasetLabels, err := labels.Parse(fmt.Sprintf("%s=true", labelCommonName))
-	if err != nil {
-		return currentWorkers, err
-	}
-
-	err = e.List(context.TODO(), nodeList, &client.ListOptions{
-		LabelSelector: datasetLabels,
-	})
-
-	if err != nil {
-		return currentWorkers, err
-	}
-
-	currentWorkers = int32(len(nodeList.Items))
-	if expectedWorkers >= currentWorkers {
-		e.Log.Info("No need to scale in. Skip.")
-		return currentWorkers, nil
-	}
-
-	var nodes []corev1.Node
-	if expectedWorkers >= 0 {
-		e.Log.Info("Scale in GooseFS workers", "expectedWorkers", expectedWorkers)
-		// This is a scale in operation
-		nodes, err = e.sortNodesToShutdown(nodeList.Items)
-		if err != nil {
-			return currentWorkers, err
-		}
-
-	} else {
-		// Destroy all workers. This is a subprocess during deletion of GooseFSRuntime
-		nodes = nodeList.Items
-	}
-
-	// 1.select the nodes
-	for _, node := range nodes {
-		if expectedWorkers == currentWorkers {
-			break
-		}
-
-		if len(node.Labels) == 0 {
-			continue
-		}
-
-		nodeName := node.Name
-		var labelsToModify common.LabelsToModify
-		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-			node, err := kubeclient.GetNode(e.Client, nodeName)
-			if err != nil {
-				e.Log.Error(err, "Fail to get node", "nodename", nodeName)
-				return err
-			}
-
-			toUpdate := node.DeepCopy()
-			for _, label := range labelNames {
-				labelsToModify.Delete(label)
-			}
-
-			exclusiveLabelValue := runtimeInfo.GetExclusiveLabelValue()
-			if val, exist := toUpdate.Labels[labelExclusiveName]; exist && val == exclusiveLabelValue {
-				labelsToModify.Delete(labelExclusiveName)
-			}
-
-			err = lifecycle.DecreaseDatasetNum(toUpdate, runtimeInfo, &labelsToModify)
-			if err != nil {
-				return err
-			}
-			// Update the toUpdate in UPDATE mode
-			// modifiedLabels, err := utils.ChangeNodeLabelWithUpdateMode(e.Client, toUpdate, labelToModify)
-			// Update the toUpdate in PATCH mode
-			modifiedLabels, err := utils.ChangeNodeLabelWithPatchMode(e.Client, toUpdate, labelsToModify)
-			if err != nil {
-				return err
-			}
-			e.Log.Info("Destroy worker", "Dataset", e.name, "deleted worker node", node.Name, "removed or updated labels", modifiedLabels)
-			return nil
-		})
-
-		if err != nil {
-			return currentWorkers, err
-		}
-
-		currentWorkers--
-	}
-
-	return currentWorkers, nil
-}
-
-func (e *GooseFSEngine) sortNodesToShutdown(candidateNodes []corev1.Node) (nodes []corev1.Node, err error) {
-	// If fuses are deployed in global mode. Scaling in workers has nothing to do with fuses.
-	// All nodes with related label can be candidate nodes.
-	nodes = candidateNodes
-
-	// Prefer to choose nodes with less data cache.
-	// Since this is just a preference, anything unexpected will be ignored.
-	worker2UsedCapacityMap, err := e.GetWorkerUsedCapacity()
-	if err != nil {
-		e.Log.Info("GetWorkerUsedCapacity when sorting nodes to be shutdowned. Got err: %v. Ignore it", err)
-	}
-
-	if worker2UsedCapacityMap != nil && len(nodes) >= 2 {
-		// Sort candidate nodes by used capacity in ascending order
-		sort.Slice(nodes, func(i, j int) bool {
-			usageNodeA := lookUpUsedCapacity(nodes[i], worker2UsedCapacityMap)
-			usageNodeB := lookUpUsedCapacity(nodes[j], worker2UsedCapacityMap)
-			return usageNodeA < usageNodeB
-		})
-	}
-
-	return nodes, nil
+	return e.Helper.TearDownWorkers(runtimeInfo)
 }
