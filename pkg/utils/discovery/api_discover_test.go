@@ -175,17 +175,10 @@ var _ = Describe("discoverFluidResourcesInCluster", func() {
 			Expect(fatalCalled).To(BeTrue())
 		})
 
-		It("should succeed after retries", func() {
-			callCount := 0
+		It("should panic when no CRDs are found", func() {
 			patchedFunc := func(groupVersion string) (*metav1.APIResourceList, error) {
-				callCount++
-				if callCount < 3 {
-					return nil, errors.New("temporary error")
-				}
 				return &metav1.APIResourceList{
-					APIResources: []metav1.APIResource{
-						{SingularName: "dataset"},
-					},
+					APIResources: []metav1.APIResource{},
 				}, nil
 			}
 
@@ -203,16 +196,31 @@ var _ = Describe("discoverFluidResourcesInCluster", func() {
 			patch3 := gomonkey.ApplyMethodFunc(fakeClient, "ServerResourcesForGroupVersion", patchedFunc)
 			defer patch3.Reset()
 
-			// Patch time.Sleep to skip delays during retries
 			patchSleep := gomonkey.ApplyFunc(time.Sleep, func(d time.Duration) {
 				// No-op: skip actual sleep
 			})
 			defer patchSleep.Reset()
 
-			discoverFluidResourcesInCluster()
+			fatalCalled := false
+			patchFatal := gomonkey.ApplyFunc(nativeLog.Fatalf, func(format string, v ...interface{}) {
+				fatalCalled = true
+				panic("log.Fatalf called")
+			})
+			defer patchFatal.Reset()
 
-			Expect(globalDiscovery).NotTo(BeEmpty())
-			Expect(callCount).To(Equal(3))
+			done := make(chan bool, 1)
+			go func() {
+				defer func() {
+					if r := recover(); r != nil {
+						done <- true
+					}
+				}()
+				discoverFluidResourcesInCluster()
+				done <- false
+			}()
+
+			Eventually(done, 5*time.Second).Should(Receive(BeTrue()))
+			Expect(fatalCalled).To(BeTrue())
 		})
 	})
 })
@@ -258,13 +266,12 @@ var _ = Describe("InitDiscovery", func() {
 
 var _ = Describe("GetFluidDiscovery", func() {
 	var (
-		originalOnce      sync.Once
 		originalDiscovery fluidDiscovery
 	)
 
 	BeforeEach(func() {
 		// Save original state
-		originalOnce = once
+
 		originalDiscovery = globalDiscovery
 
 		// Reset for this test - NOTE: This is a workaround since sync.Once can't be truly reset
@@ -275,7 +282,7 @@ var _ = Describe("GetFluidDiscovery", func() {
 
 	AfterEach(func() {
 		// Restore original state
-		once = originalOnce
+
 		globalDiscovery = originalDiscovery
 	})
 
