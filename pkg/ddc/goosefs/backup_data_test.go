@@ -20,13 +20,14 @@ import (
 	"fmt"
 	"os"
 	"reflect"
-	"strings"
 
 	. "github.com/agiledragon/gomonkey/v2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"gopkg.in/yaml.v2"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	cdatabackup "github.com/fluid-cloudnative/fluid/pkg/databackup"
 	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/goosefs/operations"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -447,6 +448,16 @@ var _ = Describe("GooseFSEngine Data Backup Success Cases", func() {
 				valueFileName, err = engine.generateDataBackupValueFile(ctx, databackup)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(valueFileName).NotTo(BeEmpty())
+
+				content, readErr := os.ReadFile(valueFileName)
+				Expect(readErr).NotTo(HaveOccurred())
+
+				var dataBackupValue cdatabackup.DataBackupValue
+				unmarshalErr := yaml.Unmarshal(content, &dataBackupValue)
+				Expect(unmarshalErr).NotTo(HaveOccurred())
+
+				Expect(dataBackupValue.UserInfo.User).To(Equal(int(backupUID)))
+				Expect(dataBackupValue.UserInfo.Group).To(Equal(int(backupGID)))
 			})
 		})
 
@@ -668,8 +679,14 @@ var _ = Describe("GooseFSEngine Data Backup Value File Content", func() {
 		content, readErr := os.ReadFile(valueFileName)
 		Expect(readErr).NotTo(HaveOccurred())
 
-		contentStr := string(content)
-		Expect(strings.Contains(contentStr, "name:")).To(BeTrue())
-		Expect(strings.Contains(contentStr, "namespace:")).To(BeTrue())
+		var dataBackupValue cdatabackup.DataBackupValue
+		unmarshalErr := yaml.Unmarshal(content, &dataBackupValue)
+		Expect(unmarshalErr).NotTo(HaveOccurred())
+
+		Expect(dataBackupValue.DataBackup.Name).To(Equal(testBackupName))
+		Expect(dataBackupValue.DataBackup.Namespace).To(Equal(testNamespace))
+		Expect(dataBackupValue.DataBackup.Dataset).To(Equal(testDatasetName))
+		Expect(dataBackupValue.UserInfo.User).To(Equal(int(1000)))
+		Expect(dataBackupValue.UserInfo.Group).To(Equal(int(1000)))
 	})
 })
