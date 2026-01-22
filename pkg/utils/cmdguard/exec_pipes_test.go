@@ -2,8 +2,9 @@ package cmdguard
 
 import (
 	"os/exec"
-	"reflect"
-	"testing"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 /*
@@ -22,183 +23,282 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-func TestValidateShellPipeString(t *testing.T) {
-	type args struct {
-		command string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{name: "valid command with grep", args: args{command: "echo hello world | grep hello"}, wantErr: true},
-		{name: "valid command with wc -l", args: args{command: "ls file | wc -l"}, wantErr: false},
-		{name: "invalid command with xyz", args: args{command: "echo hello world | xyz"}, wantErr: true},
-		{name: "invalid command with kubectl", args: args{command: "kubectl hello world | xyz"}, wantErr: true},
-		{name: "illegal sequence in command with &", args: args{command: "echo hello world & echo y"}, wantErr: true},
-		{name: "illegal sequence in command with ;", args: args{command: "ls ; echo y"}, wantErr: true},
-		{name: "command with $", args: args{command: "ls $HOME"}, wantErr: true},
-		{name: "command with absolute path", args: args{command: "ls /etc"}, wantErr: false},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := validateShellPipeString(tt.args.command); (err != nil) != tt.wantErr {
-				t.Errorf("Testcase '%s' ValidateShellPipeString() error = %v, wantErr %v", tt.name, err, tt.wantErr)
-			}
+var _ = Describe("ValidateShellPipeString", func() {
+	Context("when validating pipe commands", func() {
+		It("should reject command with grep", func() {
+			err := validateShellPipeString("echo hello world | grep hello")
+			Expect(err).To(HaveOccurred())
 		})
-	}
-}
 
-func TestShellCommand(t *testing.T) {
-	type args struct {
-		name string
-		arg  []string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantCmd *exec.Cmd
-		wantErr bool
-	}{
-		{name: "valid simple command", args: args{name: "bash", arg: []string{"-c", "ls"}}, wantCmd: exec.Command("bash", "-c", "ls"), wantErr: false},
-		{name: "insufficient arguments", args: args{name: "bash", arg: []string{"-c"}}, wantCmd: nil, wantErr: true},
-		{name: "unknown shell command", args: args{name: "zsh", arg: []string{"-c", "ls"}}, wantCmd: nil, wantErr: true},
-		{name: "valid piped command", args: args{name: "bash", arg: []string{"-c", "ls | grep something"}}, wantCmd: exec.Command("bash", "-c", "ls | grep something"), wantErr: false},
-		{name: "invalid piped command", args: args{name: "bash", arg: []string{"-c", "ls | random-command"}}, wantCmd: nil, wantErr: true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotCmd, err := ShellCommand(tt.args.name, tt.args.arg...)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Testcase '%s': PipeCommand()  error = %v, wantErr %v", tt.name, err, tt.wantErr)
-				return
-			}
-			if gotCmd != nil && !reflect.DeepEqual(gotCmd.Path, tt.wantCmd.Path) {
-				t.Errorf("Testcase '%s': PipeCommand()  = %v, want %v", tt.name, gotCmd, tt.wantCmd)
-			}
-			if gotCmd != nil && !reflect.DeepEqual(gotCmd.Args, tt.wantCmd.Args) {
-				t.Errorf("Testcase '%s': PipeCommand()   = %v, want %v", tt.name, gotCmd, tt.wantCmd)
-			}
+		It("should accept command with wc -l", func() {
+			err := validateShellPipeString("ls file | wc -l")
+			Expect(err).NotTo(HaveOccurred())
 		})
-	}
-}
 
-func TestIsValidCommand(t *testing.T) {
-	type args struct {
-		cmd             string
-		allowedCommands map[string]CommandValidater
-	}
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		{name: "valid bash command", args: args{cmd: "bash", allowedCommands: map[string]CommandValidater{"bash": ExactMatch}}, want: true},
-		{name: "valid sh command", args: args{cmd: "sh", allowedCommands: map[string]CommandValidater{"bash": ExactMatch, "sh": ExactMatch}}, want: true},
-		{name: "invalid zsh command", args: args{cmd: "zsh", allowedCommands: map[string]CommandValidater{"bash": ExactMatch}}, want: false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := isValidCommand(tt.args.cmd, tt.args.allowedCommands); got != tt.want {
-				t.Errorf("Testcase '%s': isValidCommand() = %v, want %v", tt.name, got, tt.want)
-			}
+		It("should reject command with unknown piped command", func() {
+			err := validateShellPipeString("echo hello world | xyz")
+			Expect(err).To(HaveOccurred())
 		})
-	}
-}
 
-func Test_splitShellCommand(t *testing.T) {
-	type args struct {
-		shellCommandSlice []string
-	}
-	tests := []struct {
-		name              string
-		args              args
-		wantShellCommand  string
-		wantPipedCommands string
-		wantErr           bool
-	}{
-		{
-			name:              "valid shell command",
-			args:              args{shellCommandSlice: []string{" bash ", "  -c", "echo foobar | grep foo"}},
-			wantShellCommand:  "bash -c",
-			wantPipedCommands: "echo foobar | grep foo",
-			wantErr:           false,
-		},
-		{
-			name:              "empty shell command",
-			args:              args{shellCommandSlice: []string{}},
-			wantShellCommand:  "",
-			wantPipedCommands: "",
-			wantErr:           true,
-		},
-		{
-			name:              "invalid command without shell",
-			args:              args{shellCommandSlice: []string{"echo foobar | grep foo"}},
-			wantShellCommand:  "",
-			wantPipedCommands: "",
-			wantErr:           true,
-		},
-		{
-			name:              "valid command without shell",
-			args:              args{shellCommandSlice: []string{"test", "hello", "--help"}},
-			wantShellCommand:  "test hello",
-			wantPipedCommands: "--help",
-			wantErr:           false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotShellCommand, gotPipedCommands, err := splitShellCommand(tt.args.shellCommandSlice)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("splitShellCommand() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if gotShellCommand != tt.wantShellCommand {
-				t.Errorf("splitShellCommand() gotShellCommand = %v, want %v", gotShellCommand, tt.wantShellCommand)
-			}
-			if gotPipedCommands != tt.wantPipedCommands {
-				t.Errorf("splitShellCommand() gotPipedCommands = %v, want %v", gotPipedCommands, tt.wantPipedCommands)
-			}
+		It("should reject command with kubectl", func() {
+			err := validateShellPipeString("kubectl hello world | xyz")
+			Expect(err).To(HaveOccurred())
 		})
-	}
-}
 
-func Test_validateShellCommand(t *testing.T) {
-	type args struct {
-		shellCommand string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{
-			name:    "bash shell",
-			args:    args{shellCommand: "bash -c"},
-			wantErr: false,
-		},
-		{
-			name:    "sh shell",
-			args:    args{shellCommand: "sh -c"},
-			wantErr: false,
-		},
-		{
-			name:    "zsh shell(invalid)",
-			args:    args{shellCommand: "zsh -c"},
-			wantErr: true,
-		},
-		{
-			name:    "bash command",
-			args:    args{shellCommand: "bash -s"},
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := validateShellCommand(tt.args.shellCommand); (err != nil) != tt.wantErr {
-				t.Errorf("validateShellCommand() error = %v, wantErr %v", err, tt.wantErr)
-			}
+		It("should reject command with & sequence", func() {
+			err := validateShellPipeString("echo hello world & echo y")
+			Expect(err).To(HaveOccurred())
 		})
-	}
-}
+
+		It("should reject command with ; sequence", func() {
+			err := validateShellPipeString("ls ; echo y")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should reject command with $ variable", func() {
+			err := validateShellPipeString("ls $HOME")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should accept command with absolute path", func() {
+			err := validateShellPipeString("ls /etc")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should reject command with backticks", func() {
+			err := validateShellPipeString("ls `whoami`")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should reject command with parentheses", func() {
+			err := validateShellPipeString("ls (echo test)")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should accept allowed expression ${METAURL}", func() {
+			err := validateShellPipeString("ls ${METAURL}")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should accept multiple valid piped commands", func() {
+			err := validateShellPipeString("ls /var | grep log | wc -l")
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+})
+
+var _ = Describe("ShellCommand", func() {
+	Context("when creating shell commands", func() {
+		It("should create valid simple command", func() {
+			cmd, err := ShellCommand("bash", "-c", "ls")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cmd).NotTo(BeNil())
+			Expect(cmd.Path).To(Equal(exec.Command("bash").Path))
+			Expect(cmd.Args).To(Equal([]string{"bash", "-c", "ls"}))
+		})
+
+		It("should reject insufficient arguments", func() {
+			cmd, err := ShellCommand("bash", "-c")
+			Expect(err).To(HaveOccurred())
+			Expect(cmd).To(BeNil())
+		})
+
+		It("should reject unknown shell command", func() {
+			cmd, err := ShellCommand("zsh", "-c", "ls")
+			Expect(err).To(HaveOccurred())
+			Expect(cmd).To(BeNil())
+		})
+
+		It("should create valid piped command", func() {
+			cmd, err := ShellCommand("bash", "-c", "ls | grep something")
+			Expect(err).To(HaveOccurred())
+			Expect(cmd).To(BeNil())
+		})
+
+		It("should reject invalid piped command", func() {
+			cmd, err := ShellCommand("bash", "-c", "ls | random-command")
+			Expect(err).To(HaveOccurred())
+			Expect(cmd).To(BeNil())
+		})
+
+		It("should accept sh shell", func() {
+			cmd, err := ShellCommand("sh", "-c", "ls")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cmd).NotTo(BeNil())
+		})
+
+		It("should reject command with dangerous sequences", func() {
+			cmd, err := ShellCommand("bash", "-c", "ls; rm -rf /")
+			Expect(err).To(HaveOccurred())
+			Expect(cmd).To(BeNil())
+		})
+
+		It("should accept allowed commands like alluxio", func() {
+			cmd, err := ShellCommand("bash", "-c", "alluxio fs ls /")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cmd).NotTo(BeNil())
+		})
+	})
+})
+
+var _ = Describe("IsValidCommand", func() {
+	Context("when checking command validity", func() {
+		allowedBash := map[string]CommandValidater{"bash": ExactMatch}
+		allowedMultiple := map[string]CommandValidater{"bash": ExactMatch, "sh": ExactMatch}
+
+		It("should accept valid bash command", func() {
+			result := isValidCommand("bash", allowedBash)
+			Expect(result).To(BeTrue())
+		})
+
+		It("should accept valid sh command from multiple allowed", func() {
+			result := isValidCommand("sh", allowedMultiple)
+			Expect(result).To(BeTrue())
+		})
+
+		It("should reject invalid zsh command", func() {
+			result := isValidCommand("zsh", allowedBash)
+			Expect(result).To(BeFalse())
+		})
+
+		It("should work with PrefixMatch", func() {
+			allowedPrefix := map[string]CommandValidater{"ls": PrefixMatch}
+			result := isValidCommand("ls -la", allowedPrefix)
+			Expect(result).To(BeTrue())
+		})
+
+		It("should reject non-matching prefix", func() {
+			allowedPrefix := map[string]CommandValidater{"ls": PrefixMatch}
+			result := isValidCommand("cat file", allowedPrefix)
+			Expect(result).To(BeFalse())
+		})
+	})
+})
+
+var _ = Describe("splitShellCommand", func() {
+	Context("when splitting shell commands", func() {
+		It("should split valid shell command", func() {
+			shellCmd, pipedCmd, err := splitShellCommand([]string{" bash ", "  -c", "echo foobar | grep foo"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(shellCmd).To(Equal("bash -c"))
+			Expect(pipedCmd).To(Equal("echo foobar | grep foo"))
+		})
+
+		It("should reject empty shell command", func() {
+			_, _, err := splitShellCommand([]string{})
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should reject invalid command without shell", func() {
+			_, _, err := splitShellCommand([]string{"echo foobar | grep foo"})
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should split valid command without shell", func() {
+			shellCmd, pipedCmd, err := splitShellCommand([]string{"test", "hello", "--help"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(shellCmd).To(Equal("test hello"))
+			Expect(pipedCmd).To(Equal("--help"))
+		})
+
+		It("should handle extra whitespace", func() {
+			shellCmd, pipedCmd, err := splitShellCommand([]string{"  sh  ", " -c  ", "ls"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(shellCmd).To(Equal("sh -c"))
+			Expect(pipedCmd).To(Equal("ls"))
+		})
+
+		It("should reject too many arguments", func() {
+			_, _, err := splitShellCommand([]string{"bash", "-c", "ls", "extra"})
+			Expect(err).To(HaveOccurred())
+		})
+	})
+})
+
+var _ = Describe("validateShellCommand", func() {
+	Context("when validating shell commands", func() {
+		It("should accept bash shell", func() {
+			err := validateShellCommand("bash -c")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should accept sh shell", func() {
+			err := validateShellCommand("sh -c")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should reject zsh shell", func() {
+			err := validateShellCommand("zsh -c")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should reject bash with wrong flag", func() {
+			err := validateShellCommand("bash -s")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should reject bash without flag", func() {
+			err := validateShellCommand("bash")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should reject unknown shell", func() {
+			err := validateShellCommand("fish -c")
+			Expect(err).To(HaveOccurred())
+		})
+	})
+})
+
+var _ = Describe("checkIllegalSequence", func() {
+	Context("when checking for illegal sequences", func() {
+		It("should reject script with semicolon", func() {
+			err := checkIllegalSequence("ls; rm -rf /")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should reject script with ampersand", func() {
+			err := checkIllegalSequence("ls & whoami")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should reject script with dollar sign", func() {
+			err := checkIllegalSequence("echo $USER")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should reject script with backticks", func() {
+			err := checkIllegalSequence("ls `pwd`")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should reject script with single quotes", func() {
+			err := checkIllegalSequence("echo 'test'")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should reject script with double pipe", func() {
+			err := checkIllegalSequence("ls || echo fail")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should reject script with redirect append", func() {
+			err := checkIllegalSequence("echo test >> file")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should accept allowed expression ${METAURL}", func() {
+			err := checkIllegalSequence("ls ${METAURL}")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should accept safe command", func() {
+			err := checkIllegalSequence("ls /var/log")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should reject parentheses", func() {
+			err := checkIllegalSequence("ls (test)")
+			Expect(err).To(HaveOccurred())
+		})
+	})
+})
