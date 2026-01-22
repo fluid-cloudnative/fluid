@@ -117,7 +117,7 @@ var _ = Describe("Operate", func() {
 
 			It("should transition to Failed on validation error", func() {
 				opStatus.Phase = common.PhaseNone
-				operation.validateErr = mockValidateError
+				operation.validateErr = errMockValidate
 				operation.updateStatusErr = nil
 
 				result, err := t.Operate(fakeCtx, opStatus, operation)
@@ -159,7 +159,7 @@ func newMockOperation() *mockOperation {
 	}
 }
 
-var mockValidateError = errors.New("mock validation error")
+var errMockValidate = errors.New("mock validation error")
 
 func (m *mockOperation) HasPrecedingOperation() bool {
 	return m.hasPreceding
