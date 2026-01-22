@@ -1,0 +1,394 @@
+/*
+  Copyright 2024 The Fluid Authors.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
+
+package thin
+
+import (
+	"testing"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+)
+
+func TestValidateDuplicateDatasetMounts(t *testing.T) {
+	testCases := []struct {
+		name      string
+		dataset   *datav1alpha1.Dataset
+		expectErr bool
+	}{
+		{
+			name:      "nil dataset",
+			dataset:   nil,
+			expectErr: false,
+		},
+		{
+			name: "empty mounts",
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{},
+				},
+			},
+			expectErr: false,
+		},
+		{
+			name: "single mount",
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							MountPoint: "s3://bucket/path",
+							Name:       "data",
+							Path:       "/data",
+						},
+					},
+				},
+			},
+			expectErr: false,
+		},
+		{
+			name: "multiple mounts with unique names and paths",
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							MountPoint: "s3://bucket/path1",
+							Name:       "data1",
+							Path:       "/data1",
+						},
+						{
+							MountPoint: "s3://bucket/path2",
+							Name:       "data2",
+							Path:       "/data2",
+						},
+					},
+				},
+			},
+			expectErr: false,
+		},
+		{
+			name: "duplicate mount names",
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							MountPoint: "s3://bucket/path1",
+							Name:       "data",
+							Path:       "/data1",
+						},
+						{
+							MountPoint: "s3://bucket/path2",
+							Name:       "data",
+							Path:       "/data2",
+						},
+					},
+				},
+			},
+			expectErr: true,
+		},
+		{
+			name: "duplicate mount paths",
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							MountPoint: "s3://bucket/path1",
+							Name:       "data1",
+							Path:       "/data",
+						},
+						{
+							MountPoint: "s3://bucket/path2",
+							Name:       "data2",
+							Path:       "/data",
+						},
+					},
+				},
+			},
+			expectErr: true,
+		},
+		{
+			name: "empty path defaults to name based path",
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							MountPoint: "s3://bucket/path1",
+							Name:       "data1",
+						},
+						{
+							MountPoint: "s3://bucket/path2",
+							Name:       "data2",
+						},
+					},
+				},
+			},
+			expectErr: false,
+		},
+		{
+			name: "empty paths with same names create duplicates",
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							MountPoint: "s3://bucket/path1",
+							Name:       "data",
+						},
+						{
+							MountPoint: "s3://bucket/path2",
+							Name:       "data",
+						},
+					},
+				},
+			},
+			expectErr: true,
+		},
+		{
+			name: "explicit path conflicts with default name path",
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							MountPoint: "s3://bucket/path1",
+							Name:       "data1",
+						},
+						{
+							MountPoint: "s3://bucket/path2",
+							Name:       "data2",
+							Path:       "/data1",
+						},
+					},
+				},
+			},
+			expectErr: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := cruntime.ReconcileRequestContext{
+				Dataset: tc.dataset,
+			}
+			err := validateDuplicateDatasetMounts(ctx)
+			if tc.expectErr && err == nil {
+				t.Errorf("expected error but got nil")
+			}
+			if !tc.expectErr && err != nil {
+				t.Errorf("expected no error but got: %v", err)
+			}
+		})
+	}
+}
+
+func TestThinEngineValidate(t *testing.T) {
+	namespace := "fluid"
+	runtimeName := "thin-test"
+
+	runtimeInput := &datav1alpha1.ThinRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      runtimeName,
+			Namespace: namespace,
+		},
+		Spec: datav1alpha1.ThinRuntimeSpec{
+			Fuse: datav1alpha1.ThinFuseSpec{},
+		},
+	}
+
+	datasetInput := &datav1alpha1.Dataset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      runtimeName,
+			Namespace: namespace,
+			UID:       "test-dataset-uid",
+		},
+		Spec: datav1alpha1.DatasetSpec{
+			PlacementMode: datav1alpha1.ExclusiveMode,
+			Mounts: []datav1alpha1.Mount{
+				{
+					MountPoint: "s3://bucket/path",
+					Name:       "data",
+					Path:       "/data",
+				},
+			},
+		},
+	}
+
+	daemonSetInput := &appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      runtimeName + "-fuse",
+			Namespace: namespace,
+		},
+		Spec: appsv1.DaemonSetSpec{
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					NodeSelector: map[string]string{
+						"data.fluid.io/storage-fluid-" + runtimeName: "selector",
+					},
+				},
+			},
+		},
+	}
+
+	testObjs := []runtime.Object{}
+	testObjs = append(testObjs, runtimeInput.DeepCopy())
+	testObjs = append(testObjs, datasetInput.DeepCopy())
+	testObjs = append(testObjs, daemonSetInput.DeepCopy())
+
+	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+
+	runtimeInfo, _ := base.BuildRuntimeInfo(runtimeName, namespace, common.ThinRuntime)
+	runtimeInfo.SetupWithDataset(datasetInput)
+	runtimeInfo.SetOwnerDatasetUID(datasetInput.UID)
+
+	engine := &ThinEngine{
+		runtime:     runtimeInput,
+		name:        runtimeName,
+		namespace:   namespace,
+		Client:      client,
+		runtimeInfo: runtimeInfo,
+		Log:         fake.NullLogger(),
+	}
+
+	testCases := []struct {
+		name      string
+		dataset   *datav1alpha1.Dataset
+		expectErr bool
+	}{
+		{
+			name:      "valid dataset",
+			dataset:   datasetInput,
+			expectErr: false,
+		},
+		{
+			name: "dataset with duplicate mount names",
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      runtimeName,
+					Namespace: namespace,
+				},
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							MountPoint: "s3://bucket/path1",
+							Name:       "data",
+							Path:       "/data1",
+						},
+						{
+							MountPoint: "s3://bucket/path2",
+							Name:       "data",
+							Path:       "/data2",
+						},
+					},
+				},
+			},
+			expectErr: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := cruntime.ReconcileRequestContext{
+				NamespacedName: types.NamespacedName{
+					Name:      runtimeName,
+					Namespace: namespace,
+				},
+				Dataset: tc.dataset,
+			}
+			err := engine.Validate(ctx)
+			if tc.expectErr && err == nil {
+				t.Errorf("expected error but got nil")
+			}
+			if !tc.expectErr && err != nil {
+				t.Errorf("expected no error but got: %v", err)
+			}
+		})
+	}
+}
+
+func TestThinEngineValidateWithRuntimeInfoError(t *testing.T) {
+	namespace := "fluid"
+	runtimeName := "thin-test"
+
+	runtimeInput := &datav1alpha1.ThinRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      runtimeName,
+			Namespace: namespace,
+		},
+	}
+
+	testObjs := []runtime.Object{}
+	testObjs = append(testObjs, runtimeInput.DeepCopy())
+
+	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+
+	engine := &ThinEngine{
+		runtime:     runtimeInput,
+		name:        runtimeName,
+		namespace:   namespace,
+		Client:      client,
+		runtimeInfo: nil,
+		Log:         fake.NullLogger(),
+	}
+
+	ctx := cruntime.ReconcileRequestContext{
+		NamespacedName: types.NamespacedName{
+			Name:      runtimeName,
+			Namespace: namespace,
+		},
+	}
+
+	err := engine.Validate(ctx)
+	if err == nil {
+		t.Errorf("expected error due to missing runtime info but got nil")
+	}
+}
