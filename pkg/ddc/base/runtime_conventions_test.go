@@ -14,21 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package base
+package base_test
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
+const testNamespace = "default"
+
 var _ = Describe("RuntimeInfo.GetWorkerStatefulsetName", func() {
 	DescribeTable("returns correct statefulset name",
 		func(runtimeName, runtimeType, want string) {
-			info := &RuntimeInfo{
-				name:        runtimeName,
-				runtimeType: runtimeType,
-			}
+			info, err := base.BuildRuntimeInfo(runtimeName, testNamespace, runtimeType)
+			Expect(err).NotTo(HaveOccurred())
 			Expect(info.GetWorkerStatefulsetName()).To(Equal(want))
 		},
 		Entry("JindoRuntime uses jindofs suffix", "mydata", common.JindoRuntime, "mydata-jindofs-worker"),
