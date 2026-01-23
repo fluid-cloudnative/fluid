@@ -40,18 +40,20 @@ var _ = Describe("Ctrl Master Tests", Label("pkg.ctrl.master_test.go"), func() {
 
 	Describe("Test Helper.CheckAndSyncMasterStatus()", func() {
 		Context("Error handling - StatefulSet not found", func() {
-			It("should return error when StatefulSet doesn't exist", func() {
-				alluxioruntime := &datav1alpha1.AlluxioRuntime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-alluxio",
-						Namespace: "fluid",
-					},
-					Status: datav1alpha1.RuntimeStatus{},
-				}
+			var alluxioruntime *datav1alpha1.AlluxioRuntime
+			BeforeEach(func() {
+				alluxioruntime =
+					&datav1alpha1.AlluxioRuntime{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "test-alluxio",
+							Namespace: "fluid",
+						},
+						Status: datav1alpha1.RuntimeStatus{},
+					}
 				resources = []runtime.Object{alluxioruntime}
-				k8sClient = fake.NewFakeClientWithScheme(datav1alpha1.UnitTestScheme, resources...)
-				helper = BuildHelper(runtimeInfo, k8sClient, fake.NullLogger())
+			})
 
+			It("should return error when StatefulSet doesn't exist", func() {
 				getRuntimeFn := func(k8sClient client.Client) (base.RuntimeInterface, error) {
 					runtime := &datav1alpha1.AlluxioRuntime{}
 					err := k8sClient.Get(context.TODO(), types.NamespacedName{Namespace: alluxioruntime.Namespace, Name: alluxioruntime.Name}, runtime)
@@ -63,7 +65,6 @@ var _ = Describe("Ctrl Master Tests", Label("pkg.ctrl.master_test.go"), func() {
 				Expect(ready).To(BeFalse())
 			})
 		})
-
 		Context("Error handling - getRuntimeFn returns error", func() {
 			BeforeEach(func() {
 				masterSts.Spec.Replicas = ptr.To[int32](1)
