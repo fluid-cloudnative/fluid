@@ -185,6 +185,24 @@ var _ = Describe("AlluxioEngine DataBackup Tests", Label("pkg.ddc.alluxio.backup
 			})
 		})
 
+		Context("when InjectAffinityByRunAfterOp fails", func() {
+			BeforeEach(func() {
+				resources = []runtime.Object{dataset, alluxioruntime, masterPod}
+				alluxioruntime.Spec.Replicas = 1
+			})
+
+			It("should return an error", func() {
+				patches = gomonkey.ApplyFunc(dataflow.InjectAffinityByRunAfterOp, func(_ client.Client, _ *datav1alpha1.OperationRef, _ string, _ *corev1.Affinity) (*corev1.Affinity, error) {
+					return nil, fmt.Errorf("InjectAffinityByRunAfterOp error")
+				})
+
+				valueFileName, err := engine.generateDataBackupValueFile(ctx, databackup)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("InjectAffinityByRunAfterOp error"))
+				Expect(valueFileName).To(BeEmpty())
+			})
+		})
+
 		Context("when ParseBackupRestorePath fails", func() {
 			BeforeEach(func() {
 				resources = []runtime.Object{dataset, alluxioruntime, masterPod}
