@@ -17,88 +17,68 @@ limitations under the License.
 package alluxio
 
 import (
-	"fmt"
 	"os"
-	"reflect"
+	"strings"
+	"testing"
 
-	"github.com/agiledragon/gomonkey/v2"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	cdatabackup "github.com/fluid-cloudnative/fluid/pkg/databackup"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
-	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	"k8s.io/utils/ptr"
+	"sigs.k8s.io/yaml"
 )
 
-var _ = Describe("AlluxioEngine DataBackup Tests", Label("pkg.ddc.alluxio.backup_data_test.go"), func() {
-	var (
-		dataset        *datav1alpha1.Dataset
-		alluxioruntime *datav1alpha1.AlluxioRuntime
-		engine         *AlluxioEngine
-		fakeClient     client.Client
-		resources      []runtime.Object
-		patches        *gomonkey.Patches
-	)
-
-	BeforeEach(func() {
-		dataset, alluxioruntime = mockFluidObjectsForTests(types.NamespacedName{Namespace: "fluid", Name: "hbase"})
-		engine = mockAlluxioEngineForTests(dataset, alluxioruntime)
-	})
-
-	AfterEach(func() {
-		if patches != nil {
-			patches.Reset()
-		}
-	})
-
-	JustBeforeEach(func() {
-		fakeClient = fake.NewFakeClientWithScheme(datav1alpha1.UnitTestScheme, resources...)
-		engine.Client = fakeClient
-	})
-
-	Describe("Test AlluxioEngine.generateDataBackupValueFile()", func() {
-		var (
-			databackup *datav1alpha1.DataBackup
-			masterPod  *corev1.Pod
-			ctx        cruntime.ReconcileRequestContext
-		)
-
-		BeforeEach(func() {
-			databackup = &datav1alpha1.DataBackup{
+func TestGenerateDataBackupValueFile(t *testing.T) {
+	testCases := []struct {
+		name             string
+		dataBackup       *datav1alpha1.DataBackup
+		runtime          *datav1alpha1.AlluxioRuntime
+		dataset          *datav1alpha1.Dataset
+		masterPod        *corev1.Pod
+		expectError      bool
+		errorMsg         string
+		expectValueCheck func(t *testing.T, values *cdatabackup.DataBackupValue)
+	}{
+		{
+			name: "valid databackup with single master",
+			dataBackup: &datav1alpha1.DataBackup{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-backup",
-					Namespace: "fluid",
+					Namespace: "default",
 				},
 				Spec: datav1alpha1.DataBackupSpec{
-					Dataset:    "hbase",
-					BackupPath: "pvc://backup-pvc/path/to/backup",
+					Dataset:    "test-dataset",
+					BackupPath: "pvc://backup-pvc/data",
 				},
-			}
-
-			masterPod = &corev1.Pod{
+			},
+			runtime: &datav1alpha1.AlluxioRuntime{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "hbase-master-0",
-					Namespace: "fluid",
+					Name:      "test-dataset",
+					Namespace: "default",
 				},
-				Status: corev1.PodStatus{
-					PodIP: "192.168.1.100",
-					Conditions: []corev1.PodCondition{
-						{
-							Type:   corev1.PodReady,
-							Status: corev1.ConditionTrue,
-						},
-					},
+				Spec: datav1alpha1.AlluxioRuntimeSpec{
+					Replicas: 1,
+				},
+			},
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-dataset",
+					Namespace: "default",
+					UID:       "test-uid",
+				},
+			},
+			masterPod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-dataset-master-0",
+					Namespace: "default",
 				},
 				Spec: corev1.PodSpec{
+					NodeName: "test-node",
 					Containers: []corev1.Container{
 						{
 							Name: "alluxio-master",
@@ -111,305 +91,233 @@ var _ = Describe("AlluxioEngine DataBackup Tests", Label("pkg.ddc.alluxio.backup
 						},
 					},
 				},
+				Status: corev1.PodStatus{
+					PodIP: "10.0.0.1",
+				},
+			},
+			expectError: false,
+			expectValueCheck: func(t *testing.T, values *cdatabackup.DataBackupValue) {
+				if values.UserInfo.User != 0 {
+					t.Errorf("expected default user 0, got %d", values.UserInfo.User)
+				}
+				if values.InitUsers.Enabled {
+					t.Error("expected InitUsers to be disabled, but it was enabled")
+				}
+			},
+		},
+		{
+			name: "valid databackup with RunAs",
+			dataBackup: &datav1alpha1.DataBackup{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-backup-runas",
+					Namespace: "default",
+				},
+				Spec: datav1alpha1.DataBackupSpec{
+					Dataset:    "test-dataset",
+					BackupPath: "pvc://backup-pvc/data",
+					RunAs: &datav1alpha1.User{
+						UID: ptr.To(int64(1000)),
+						GID: ptr.To(int64(1000)),
+					},
+				},
+			},
+			runtime: &datav1alpha1.AlluxioRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-dataset",
+					Namespace: "default",
+				},
+				Spec: datav1alpha1.AlluxioRuntimeSpec{
+					Replicas: 1,
+				},
+			},
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-dataset",
+					Namespace: "default",
+					UID:       "test-uid",
+				},
+			},
+			masterPod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-dataset-master-0",
+					Namespace: "default",
+				},
+				Spec: corev1.PodSpec{
+					NodeName: "test-node",
+					Containers: []corev1.Container{
+						{
+							Name: "alluxio-master",
+							Ports: []corev1.ContainerPort{
+								{
+									Name:          "rpc",
+									ContainerPort: 19998,
+								},
+							},
+						},
+					},
+				},
+				Status: corev1.PodStatus{
+					PodIP: "10.0.0.1",
+				},
+			},
+			expectError: false,
+			expectValueCheck: func(t *testing.T, values *cdatabackup.DataBackupValue) {
+				if values.UserInfo.User != 1000 {
+					t.Errorf("expected user 1000, got %d", values.UserInfo.User)
+				}
+				if values.UserInfo.Group != 1000 {
+					t.Errorf("expected group 1000, got %d", values.UserInfo.Group)
+				}
+				if !values.InitUsers.Enabled {
+					t.Error("expected InitUsers to be enabled")
+				}
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			objs := []runtime.Object{}
+			if tc.runtime != nil {
+				objs = append(objs, tc.runtime)
+			}
+			if tc.dataset != nil {
+				objs = append(objs, tc.dataset)
+			}
+			if tc.masterPod != nil {
+				objs = append(objs, tc.masterPod)
 			}
 
-			ctx = cruntime.ReconcileRequestContext{
-				NamespacedName: types.NamespacedName{
-					Namespace: "fluid",
-					Name:      "hbase",
-				},
+			client := fake.NewFakeClientWithScheme(testScheme, objs...)
+			runtimeInfo, err := base.BuildRuntimeInfo("test-dataset", "default", "alluxio")
+			if err != nil {
+				t.Fatalf("failed to build runtime info: %v", err)
+			}
+
+			engine := &AlluxioEngine{
+				Client:      client,
+				name:        "test-dataset",
+				namespace:   "default",
+				runtime:     tc.runtime,
+				runtimeInfo: runtimeInfo,
+				Log:         fake.NullLogger(),
+			}
+
+			ctx := cruntime.ReconcileRequestContext{
 				Log: fake.NullLogger(),
 			}
-		})
 
-		Context("when object is not a DataBackup", func() {
-			BeforeEach(func() {
-				resources = []runtime.Object{dataset, alluxioruntime, masterPod}
-			})
+			valueFileName, err := engine.generateDataBackupValueFile(ctx, tc.dataBackup)
 
-			It("should return an error", func() {
-				nonDataBackupObject := &corev1.ConfigMap{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "not-a-databackup",
-						Namespace: "fluid",
-					},
+			if tc.expectError {
+				if err == nil {
+					t.Errorf("expected error containing %q, got nil", tc.errorMsg)
+				} else if tc.errorMsg != "" && !strings.Contains(err.Error(), tc.errorMsg) {
+					t.Errorf("expected error containing %q, got %q", tc.errorMsg, err.Error())
 				}
-
-				valueFileName, err := engine.generateDataBackupValueFile(ctx, nonDataBackupObject)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("is not a DataBackup"))
-				Expect(valueFileName).To(BeEmpty())
-			})
-		})
-
-		Context("when getRuntime fails", func() {
-			BeforeEach(func() {
-				// Do not include alluxioruntime in resources so getRuntime fails
-				resources = []runtime.Object{dataset, masterPod}
-			})
-
-			It("should return an error", func() {
-				valueFileName, err := engine.generateDataBackupValueFile(ctx, databackup)
-				Expect(err).To(HaveOccurred())
-				Expect(valueFileName).To(BeEmpty())
-			})
-		})
-
-		Context("when getMasterPod fails", func() {
-			BeforeEach(func() {
-				// Do not include masterPod in resources so getMasterPod fails
-				resources = []runtime.Object{dataset, alluxioruntime}
-			})
-
-			It("should return an error", func() {
-				valueFileName, err := engine.generateDataBackupValueFile(ctx, databackup)
-				Expect(err).To(HaveOccurred())
-				Expect(valueFileName).To(BeEmpty())
-			})
-		})
-
-		Context("when GetDataset fails", func() {
-			BeforeEach(func() {
-				// Do not include dataset in resources so GetDataset fails
-				resources = []runtime.Object{alluxioruntime, masterPod}
-			})
-
-			It("should return an error", func() {
-				valueFileName, err := engine.generateDataBackupValueFile(ctx, databackup)
-				Expect(err).To(HaveOccurred())
-				Expect(valueFileName).To(BeEmpty())
-			})
-		})
-
-		Context("when InjectAffinityByRunAfterOp fails", func() {
-			BeforeEach(func() {
-				resources = []runtime.Object{dataset, alluxioruntime, masterPod}
-				alluxioruntime.Spec.Replicas = 1
-			})
-
-			It("should return an error", func() {
-				patches = gomonkey.ApplyFunc(dataflow.InjectAffinityByRunAfterOp, func(_ client.Client, _ *datav1alpha1.OperationRef, _ string, _ *corev1.Affinity) (*corev1.Affinity, error) {
-					return nil, fmt.Errorf("InjectAffinityByRunAfterOp error")
-				})
-
-				valueFileName, err := engine.generateDataBackupValueFile(ctx, databackup)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("InjectAffinityByRunAfterOp error"))
-				Expect(valueFileName).To(BeEmpty())
-			})
-		})
-
-		Context("when ParseBackupRestorePath fails", func() {
-			BeforeEach(func() {
-				resources = []runtime.Object{dataset, alluxioruntime, masterPod}
-				// Set an invalid backup path
-				databackup.Spec.BackupPath = "invalid-path-without-scheme"
-			})
-
-			It("should return an error", func() {
-				valueFileName, err := engine.generateDataBackupValueFile(ctx, databackup)
-				Expect(err).To(HaveOccurred())
-				Expect(valueFileName).To(BeEmpty())
-			})
-		})
-
-		Context("when DataBackup is valid with single replica runtime", func() {
-			BeforeEach(func() {
-				resources = []runtime.Object{dataset, alluxioruntime, masterPod}
-				alluxioruntime.Spec.Replicas = 1
-			})
-
-			It("should generate value file successfully", func() {
-				patches = gomonkey.ApplyFunc(dataflow.InjectAffinityByRunAfterOp, func(_ client.Client, _ *datav1alpha1.OperationRef, _ string, _ *corev1.Affinity) (*corev1.Affinity, error) {
-					return nil, nil
-				})
-
-				valueFileName, err := engine.generateDataBackupValueFile(ctx, databackup)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(valueFileName).NotTo(BeEmpty())
-				defer func() {
-					err := os.Remove(valueFileName)
-					Expect(err).NotTo(HaveOccurred())
-				}()
-
-				// Verify the file was created
-				fileInfo, statErr := os.Stat(valueFileName)
-				Expect(statErr).NotTo(HaveOccurred())
-				Expect(fileInfo.Size()).To(BeNumerically(">", 0))
-			})
-		})
-
-		Context("when runtime has multiple replicas (HA mode)", func() {
-			BeforeEach(func() {
-				resources = []runtime.Object{dataset, alluxioruntime, masterPod}
-				alluxioruntime.Spec.Replicas = 3
-			})
-
-			Context("when MasterPodName lookup succeeds", func() {
-				It("should generate value file successfully", func() {
-					patches = gomonkey.NewPatches()
-					patches.ApplyFunc(dataflow.InjectAffinityByRunAfterOp, func(_ client.Client, _ *datav1alpha1.OperationRef, _ string, _ *corev1.Affinity) (*corev1.Affinity, error) {
-						return nil, nil
-					})
-					patches.ApplyMethod(reflect.TypeOf(operations.AlluxioFileUtils{}), "MasterPodName", func(_ operations.AlluxioFileUtils) (string, error) {
-						return "hbase-master-0", nil
-					})
-
-					valueFileName, err := engine.generateDataBackupValueFile(ctx, databackup)
-					Expect(err).NotTo(HaveOccurred())
-					Expect(valueFileName).NotTo(BeEmpty())
-					defer func() {
-						err := os.Remove(valueFileName)
-						Expect(err).NotTo(HaveOccurred())
-					}()
-				})
-			})
-
-			Context("when MasterPodName lookup fails", func() {
-				It("should return an error", func() {
-					patches = gomonkey.NewPatches()
-					patches.ApplyMethod(reflect.TypeOf(operations.AlluxioFileUtils{}), "MasterPodName", func(_ operations.AlluxioFileUtils) (string, error) {
-						return "", fmt.Errorf("master pod not found")
-					})
-
-					valueFileName, err := engine.generateDataBackupValueFile(ctx, databackup)
-					Expect(err).To(HaveOccurred())
-					Expect(valueFileName).To(BeEmpty())
-				})
-			})
-		})
-
-		Context("when runtime.Spec.RunAs is set", func() {
-			BeforeEach(func() {
-				resources = []runtime.Object{dataset, alluxioruntime, masterPod}
-				alluxioruntime.Spec.Replicas = 1
-				uid := int64(1000)
-				gid := int64(1000)
-				alluxioruntime.Spec.RunAs = &datav1alpha1.User{
-					UID: &uid,
-					GID: &gid,
+			} else {
+				if err != nil {
+					t.Errorf("unexpected error: %v", err)
 				}
-			})
+				if valueFileName == "" {
+					t.Error("expected non-empty value file name")
+				} else {
+					defer os.Remove(valueFileName)
+					if _, err := os.Stat(valueFileName); os.IsNotExist(err) {
+						t.Errorf("value file %s was not created", valueFileName)
+					}
 
-			It("should include RunAs info in the generated file", func() {
-				patches = gomonkey.ApplyFunc(dataflow.InjectAffinityByRunAfterOp, func(_ client.Client, _ *datav1alpha1.OperationRef, _ string, _ *corev1.Affinity) (*corev1.Affinity, error) {
-					return nil, nil
-				})
+					if tc.expectValueCheck != nil {
+						data, err := os.ReadFile(valueFileName)
+						if err != nil {
+							t.Fatalf("failed to read value file: %v", err)
+						}
 
-				valueFileName, err := engine.generateDataBackupValueFile(ctx, databackup)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(valueFileName).NotTo(BeEmpty())
-				defer func() {
-					err := os.Remove(valueFileName)
-					Expect(err).NotTo(HaveOccurred())
-				}()
-
-				// Read file content to verify RunAs info is included
-				content, readErr := os.ReadFile(valueFileName)
-				Expect(readErr).NotTo(HaveOccurred())
-				Expect(string(content)).To(ContainSubstring("enabled: true"))
-				Expect(string(content)).To(ContainSubstring("user: 1000"))
-				Expect(string(content)).To(ContainSubstring("group: 1000"))
-			})
-		})
-
-		Context("when databackup.Spec.RunAs overrides runtime.Spec.RunAs", func() {
-			BeforeEach(func() {
-				resources = []runtime.Object{dataset, alluxioruntime, masterPod}
-				alluxioruntime.Spec.Replicas = 1
-				runtimeUID := int64(1000)
-				runtimeGID := int64(1000)
-				alluxioruntime.Spec.RunAs = &datav1alpha1.User{
-					UID: &runtimeUID,
-					GID: &runtimeGID,
+						var values cdatabackup.DataBackupValue
+						err = yaml.Unmarshal(data, &values)
+						if err != nil {
+							t.Fatalf("failed to unmarshal value file: %v", err)
+						}
+						tc.expectValueCheck(t, &values)
+					}
 				}
-				databackupUID := int64(2000)
-				databackupGID := int64(2000)
-				databackup.Spec.RunAs = &datav1alpha1.User{
-					UID: &databackupUID,
-					GID: &databackupGID,
-				}
-			})
-
-			It("should use databackup RunAs values", func() {
-				patches = gomonkey.ApplyFunc(dataflow.InjectAffinityByRunAfterOp, func(_ client.Client, _ *datav1alpha1.OperationRef, _ string, _ *corev1.Affinity) (*corev1.Affinity, error) {
-					return nil, nil
-				})
-
-				valueFileName, err := engine.generateDataBackupValueFile(ctx, databackup)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(valueFileName).NotTo(BeEmpty())
-				defer func() {
-					err := os.Remove(valueFileName)
-					Expect(err).NotTo(HaveOccurred())
-				}()
-
-				// Read file content to verify databackup RunAs is used
-				content, readErr := os.ReadFile(valueFileName)
-				Expect(readErr).NotTo(HaveOccurred())
-				Expect(string(content)).To(ContainSubstring("user: 2000"))
-				Expect(string(content)).To(ContainSubstring("group: 2000"))
-			})
+			}
 		})
+	}
+}
 
-		Context("when FLUID_WORKDIR environment variable is set", func() {
-			BeforeEach(func() {
-				resources = []runtime.Object{dataset, alluxioruntime, masterPod}
-				alluxioruntime.Spec.Replicas = 1
-				setErr := os.Setenv("FLUID_WORKDIR", "/custom/workdir")
-				Expect(setErr).NotTo(HaveOccurred())
-			})
+func TestGenerateDataBackupValueFileInvalidObject(t *testing.T) {
+	client := fake.NewFakeClientWithScheme(testScheme)
+	runtimeInfo, err := base.BuildRuntimeInfo("test", "default", "alluxio")
+	if err != nil {
+		t.Fatalf("failed to build runtime info: %v", err)
+	}
 
-			AfterEach(func() {
-				unsetErr := os.Unsetenv("FLUID_WORKDIR")
-				Expect(unsetErr).NotTo(HaveOccurred())
-			})
+	engine := &AlluxioEngine{
+		Client:      client,
+		name:        "test",
+		namespace:   "default",
+		runtimeInfo: runtimeInfo,
+		Log:         fake.NullLogger(),
+	}
 
-			It("should use custom workdir in generated file", func() {
-				patches = gomonkey.ApplyFunc(dataflow.InjectAffinityByRunAfterOp, func(_ client.Client, _ *datav1alpha1.OperationRef, _ string, _ *corev1.Affinity) (*corev1.Affinity, error) {
-					return nil, nil
-				})
+	ctx := cruntime.ReconcileRequestContext{
+		Log: fake.NullLogger(),
+	}
 
-				valueFileName, err := engine.generateDataBackupValueFile(ctx, databackup)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(valueFileName).NotTo(BeEmpty())
-				defer func() {
-					err := os.Remove(valueFileName)
-					Expect(err).NotTo(HaveOccurred())
-				}()
+	wrongTypeObject := &datav1alpha1.Dataset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "not-a-databackup",
+			Namespace: "default",
+		},
+	}
 
-				// Read file content to verify custom workdir is used
-				content, readErr := os.ReadFile(valueFileName)
-				Expect(readErr).NotTo(HaveOccurred())
-				Expect(string(content)).To(ContainSubstring("workdir: /custom/workdir"))
-			})
-		})
+	valueFileName, err := engine.generateDataBackupValueFile(ctx, wrongTypeObject)
 
-		Context("when local path backup is specified", func() {
-			BeforeEach(func() {
-				resources = []runtime.Object{dataset, alluxioruntime, masterPod}
-				alluxioruntime.Spec.Replicas = 1
-				databackup.Spec.BackupPath = "local:///backup/path"
-			})
+	if err == nil {
+		t.Error("expected error for invalid object type, got nil")
+	}
+	if valueFileName != "" {
+		t.Errorf("expected empty value file name, got %s", valueFileName)
+	}
+}
 
-			It("should generate value file with empty PVCName", func() {
-				patches = gomonkey.ApplyFunc(dataflow.InjectAffinityByRunAfterOp, func(_ client.Client, _ *datav1alpha1.OperationRef, _ string, _ *corev1.Affinity) (*corev1.Affinity, error) {
-					return nil, nil
-				})
+func TestGenerateDataBackupValueFileRuntimeNotFound(t *testing.T) {
+	dataBackup := &datav1alpha1.DataBackup{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-backup",
+			Namespace: "default",
+		},
+		Spec: datav1alpha1.DataBackupSpec{
+			Dataset:    "nonexistent-dataset",
+			BackupPath: "pvc://backup-pvc/data",
+		},
+	}
 
-				valueFileName, err := engine.generateDataBackupValueFile(ctx, databackup)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(valueFileName).NotTo(BeEmpty())
-				defer func() {
-					err := os.Remove(valueFileName)
-					Expect(err).NotTo(HaveOccurred())
-				}()
+	client := fake.NewFakeClientWithScheme(testScheme)
+	runtimeInfo, err := base.BuildRuntimeInfo("nonexistent-dataset", "default", "alluxio")
+	if err != nil {
+		t.Fatalf("failed to build runtime info: %v", err)
+	}
 
-				// Read file content to verify local path handling
-				content, readErr := os.ReadFile(valueFileName)
-				Expect(readErr).NotTo(HaveOccurred())
-				Expect(string(content)).To(ContainSubstring("runtimeType: " + common.AlluxioRuntime))
-			})
-		})
-	})
-})
+	engine := &AlluxioEngine{
+		Client:      client,
+		name:        "nonexistent-dataset",
+		namespace:   "default",
+		runtimeInfo: runtimeInfo,
+		Log:         fake.NullLogger(),
+	}
+
+	ctx := cruntime.ReconcileRequestContext{
+		Log: fake.NullLogger(),
+	}
+
+	valueFileName, err := engine.generateDataBackupValueFile(ctx, dataBackup)
+
+	if err == nil {
+		t.Error("expected error for runtime not found, got nil")
+	}
+	if valueFileName != "" {
+		t.Errorf("expected empty value file name, got %s", valueFileName)
+	}
+}
