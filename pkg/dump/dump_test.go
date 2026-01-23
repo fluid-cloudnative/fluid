@@ -194,22 +194,17 @@ var _ = Describe("Coredump", func() {
 
 	BeforeEach(func() {
 		log = ctrl.Log.WithName("dump")
-		testDir = os.TempDir()
+		// Create a unique temporary directory for this test
+		var err error
+		testDir, err = os.MkdirTemp("", "dump_test_*")
+		Expect(err).ToNot(HaveOccurred())
 		testFile = filepath.Join(testDir, "test_coredump.txt")
 	})
 
 	AfterEach(func() {
-		// Clean up test files
-		if testFile != "" {
-			_ = os.Remove(testFile)
-		}
-
-		// Clean up any additional test files
-		files, _ := os.ReadDir(testDir)
-		for _, file := range files {
-			if strings.HasPrefix(file.Name(), "test_coredump_") {
-				_ = os.Remove(filepath.Join(testDir, file.Name()))
-			}
+		// Clean up the entire test directory
+		if testDir != "" {
+			_ = os.RemoveAll(testDir)
 		}
 	})
 
