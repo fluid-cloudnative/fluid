@@ -38,10 +38,10 @@ func TestAlluxioEngineValidate(t *testing.T) {
 	ctx := cruntime.ReconcileRequestContext{}
 
 	testCases := []struct {
-		name           string
-		setupEngine    func() *AlluxioEngine
-		wantErr        bool
-		errContains    string
+		name        string
+		setupEngine func() *AlluxioEngine
+		wantErr     bool
+		errContains string
 	}{
 		{
 			name: "emptyOwnerDatasetUID",
@@ -130,4 +130,3 @@ func TestAlluxioEngineValidate(t *testing.T) {
 		})
 	}
 }
-
