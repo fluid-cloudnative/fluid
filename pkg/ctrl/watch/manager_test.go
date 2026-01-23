@@ -185,7 +185,7 @@ var _ = Describe("ControllerInterface", func() {
 
 	It("should call controller name method", func() {
 		name := reconciler.ControllerName()
-		_ = name
+		Expect(name).To(Equal(""))
 	})
 
 	It("should return non-nil managed resource", func() {
@@ -196,7 +196,9 @@ var _ = Describe("ControllerInterface", func() {
 	It("should execute reconcile without error", func() {
 		ctx := context.Background()
 		req := ctrl.Request{}
-		_, _ = reconciler.Reconcile(ctx, req)
+		result, err := reconciler.Reconcile(ctx, req)
+		Expect(err).To(BeNil())
+		Expect(result).To(Equal(ctrl.Result{}))
 	})
 })
 
