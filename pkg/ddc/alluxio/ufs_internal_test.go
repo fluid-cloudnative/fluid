@@ -45,9 +45,25 @@ const (
 	mockEncryptKeyName   = "aws-access-key"
 	mockEncryptKeyValue  = "test-access-key-value"
 	mockEncryptSecretKey = "access-key"
+	mockMountName        = "test-mount"
+
+	// Test assertion messages
+	testErrMsg         = "should return error"
+	testUFSNotReadyMsg = "UFS is not ready"
+
+	// Test option keys and values
+	testSecretKey       = "secret-key"
+	testExistingValue   = "existing-value"
+	testMountOptKey     = "mount-opt1"
+	testMountOptValue   = "mount-val1"
+	testMountSecretKey  = "mount-secret-key"
+	testSharedOptKey    = "shared-opt1"
+	testSharedOptValue  = "shared-val1"
+	testSharedAccessKey = "shared-access-key"
+	testCommonKey       = "common-key"
 )
 
-var mockError = errors.New("mock error")
+var errMock = errors.New("mock error")
 
 var _ = Describe("AlluxioEngine UFS Internal Tests", Label("pkg.ddc.alluxio.ufs_internal_test.go"), func() {
 	var (
@@ -110,9 +126,9 @@ var _ = Describe("AlluxioEngine UFS Internal Tests", Label("pkg.ddc.alluxio.ufs_
 		})
 
 		When("AlluxioFileUtils.Count fails", func() {
-			It("should return error", func() {
+			It(testErrMsg, func() {
 				patch := gomonkey.ApplyMethodFunc(operations.AlluxioFileUtils{}, "Count", func(alluxioPath string) (int64, int64, int64, error) {
-					return 0, 0, 0, mockError
+					return 0, 0, 0, errMock
 				})
 				defer patch.Reset()
 
@@ -138,9 +154,9 @@ var _ = Describe("AlluxioEngine UFS Internal Tests", Label("pkg.ddc.alluxio.ufs_
 		})
 
 		When("AlluxioFileUtils.GetFileCount fails", func() {
-			It("should return error", func() {
+			It(testErrMsg, func() {
 				patch := gomonkey.ApplyMethodFunc(operations.AlluxioFileUtils{}, "GetFileCount", func() (int64, error) {
-					return 0, mockError
+					return 0, errMock
 				})
 				defer patch.Reset()
 
@@ -157,14 +173,14 @@ var _ = Describe("AlluxioEngine UFS Internal Tests", Label("pkg.ddc.alluxio.ufs_
 				resources = []runtime.Object{}
 			})
 
-			It("should return error", func() {
+			It(testErrMsg, func() {
 				should, err := engine.shouldMountUFS()
 				Expect(err).To(HaveOccurred())
 				Expect(should).To(BeFalse())
 			})
 		})
 
-		When("UFS is not ready", func() {
+		When(testUFSNotReadyMsg, func() {
 			It("should return error indicating UFS not ready", func() {
 				patch := gomonkey.ApplyMethodFunc(operations.AlluxioFileUtils{}, "Ready", func() bool {
 					return false
@@ -173,7 +189,7 @@ var _ = Describe("AlluxioEngine UFS Internal Tests", Label("pkg.ddc.alluxio.ufs_
 
 				should, err := engine.shouldMountUFS()
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("UFS is not ready"))
+				Expect(err.Error()).To(ContainSubstring(testUFSNotReadyMsg))
 				Expect(should).To(BeFalse())
 			})
 		})
@@ -257,14 +273,14 @@ var _ = Describe("AlluxioEngine UFS Internal Tests", Label("pkg.ddc.alluxio.ufs_
 				}
 			})
 
-			It("should return error", func() {
+			It(testErrMsg, func() {
 				patchReady := gomonkey.ApplyMethodFunc(operations.AlluxioFileUtils{}, "Ready", func() bool {
 					return true
 				})
 				defer patchReady.Reset()
 
 				patchIsMounted := gomonkey.ApplyMethodFunc(operations.AlluxioFileUtils{}, "IsMounted", func(alluxioPath string) (bool, error) {
-					return false, mockError
+					return false, errMock
 				})
 				defer patchIsMounted.Reset()
 
@@ -281,14 +297,14 @@ var _ = Describe("AlluxioEngine UFS Internal Tests", Label("pkg.ddc.alluxio.ufs_
 				resources = []runtime.Object{}
 			})
 
-			It("should return error", func() {
+			It(testErrMsg, func() {
 				err := engine.mountUFS()
 				Expect(err).To(HaveOccurred())
 			})
 		})
 
-		When("UFS is not ready", func() {
-			It("should return error", func() {
+		When(testUFSNotReadyMsg, func() {
+			It(testErrMsg, func() {
 				patch := gomonkey.ApplyMethodFunc(operations.AlluxioFileUtils{}, "Ready", func() bool {
 					return false
 				})
@@ -296,7 +312,7 @@ var _ = Describe("AlluxioEngine UFS Internal Tests", Label("pkg.ddc.alluxio.ufs_
 
 				err := engine.mountUFS()
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("UFS is not ready"))
+				Expect(err.Error()).To(ContainSubstring(testUFSNotReadyMsg))
 			})
 		})
 
@@ -353,7 +369,7 @@ var _ = Describe("AlluxioEngine UFS Internal Tests", Label("pkg.ddc.alluxio.ufs_
 					{
 						MountPoint: mockMountPoint,
 						Path:       mockAlluxioPath,
-						Name:       "test-mount",
+						Name:       mockMountName,
 					},
 				}
 			})
@@ -389,14 +405,14 @@ var _ = Describe("AlluxioEngine UFS Internal Tests", Label("pkg.ddc.alluxio.ufs_
 				}
 			})
 
-			It("should return error", func() {
+			It(testErrMsg, func() {
 				patchReady := gomonkey.ApplyMethodFunc(operations.AlluxioFileUtils{}, "Ready", func() bool {
 					return true
 				})
 				defer patchReady.Reset()
 
 				patchIsMounted := gomonkey.ApplyMethodFunc(operations.AlluxioFileUtils{}, "IsMounted", func(alluxioPath string) (bool, error) {
-					return false, mockError
+					return false, errMock
 				})
 				defer patchIsMounted.Reset()
 
@@ -411,12 +427,12 @@ var _ = Describe("AlluxioEngine UFS Internal Tests", Label("pkg.ddc.alluxio.ufs_
 					{
 						MountPoint: mockMountPoint,
 						Path:       mockAlluxioPath,
-						Name:       "test-mount",
+						Name:       mockMountName,
 					},
 				}
 			})
 
-			It("should return error", func() {
+			It(testErrMsg, func() {
 				patchReady := gomonkey.ApplyMethodFunc(operations.AlluxioFileUtils{}, "Ready", func() bool {
 					return true
 				})
@@ -428,7 +444,7 @@ var _ = Describe("AlluxioEngine UFS Internal Tests", Label("pkg.ddc.alluxio.ufs_
 				defer patchIsMounted.Reset()
 
 				patchMount := gomonkey.ApplyMethodFunc(operations.AlluxioFileUtils{}, "Mount", func(alluxioPath string, ufsPath string, options map[string]string, readOnly bool, shared bool) error {
-					return mockError
+					return errMock
 				})
 				defer patchMount.Reset()
 
@@ -457,15 +473,15 @@ var _ = Describe("AlluxioEngine UFS Internal Tests", Label("pkg.ddc.alluxio.ufs_
 		When("encrypt options is empty", func() {
 			It("should return original options unchanged", func() {
 				mOptions := map[string]string{"key1": "value1"}
-				result, err := engine.genEncryptOptions([]datav1alpha1.EncryptOption{}, mOptions, "test-mount")
+				result, err := engine.genEncryptOptions([]datav1alpha1.EncryptOption{}, mOptions, mockMountName)
 				Expect(err).To(BeNil())
 				Expect(result).To(Equal(mOptions))
 			})
 		})
 
 		When("encrypt option key already exists in options", func() {
-			It("should return error", func() {
-				mOptions := map[string]string{mockEncryptKeyName: "existing-value"}
+			It(testErrMsg, func() {
+				mOptions := map[string]string{mockEncryptKeyName: testExistingValue}
 				encryptOpts := []datav1alpha1.EncryptOption{
 					{
 						Name: mockEncryptKeyName,
@@ -478,15 +494,15 @@ var _ = Describe("AlluxioEngine UFS Internal Tests", Label("pkg.ddc.alluxio.ufs_
 					},
 				}
 
-				result, err := engine.genEncryptOptions(encryptOpts, mOptions, "test-mount")
+				result, err := engine.genEncryptOptions(encryptOpts, mOptions, mockMountName)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("set more than one times"))
-				Expect(result).To(HaveKeyWithValue(mockEncryptKeyName, "existing-value"))
+				Expect(result).To(HaveKeyWithValue(mockEncryptKeyName, testExistingValue))
 			})
 		})
 
 		When("secret does not exist", func() {
-			It("should return error", func() {
+			It(testErrMsg, func() {
 				mOptions := map[string]string{}
 				encryptOpts := []datav1alpha1.EncryptOption{
 					{
@@ -500,7 +516,7 @@ var _ = Describe("AlluxioEngine UFS Internal Tests", Label("pkg.ddc.alluxio.ufs_
 					},
 				}
 
-				result, err := engine.genEncryptOptions(encryptOpts, mOptions, "test-mount")
+				result, err := engine.genEncryptOptions(encryptOpts, mOptions, mockMountName)
 				Expect(err).To(HaveOccurred())
 				Expect(result).NotTo(HaveKey(mockEncryptKeyName))
 			})
@@ -508,7 +524,7 @@ var _ = Describe("AlluxioEngine UFS Internal Tests", Label("pkg.ddc.alluxio.ufs_
 
 		When("encrypt options are valid", func() {
 			It("should extract secret values into options", func() {
-				mOptions := map[string]string{"existing-key": "existing-value"}
+				mOptions := map[string]string{"existing-key": testExistingValue}
 				encryptOpts := []datav1alpha1.EncryptOption{
 					{
 						Name: mockEncryptKeyName,
@@ -521,10 +537,10 @@ var _ = Describe("AlluxioEngine UFS Internal Tests", Label("pkg.ddc.alluxio.ufs_
 					},
 				}
 
-				result, err := engine.genEncryptOptions(encryptOpts, mOptions, "test-mount")
+				result, err := engine.genEncryptOptions(encryptOpts, mOptions, mockMountName)
 				Expect(err).To(BeNil())
 				Expect(result).To(HaveKeyWithValue(mockEncryptKeyName, mockEncryptKeyValue))
-				Expect(result).To(HaveKeyWithValue("existing-key", "existing-value"))
+				Expect(result).To(HaveKeyWithValue("existing-key", testExistingValue))
 			})
 		})
 	})
@@ -623,8 +639,8 @@ var _ = Describe("AlluxioEngine UFS Internal Tests", Label("pkg.ddc.alluxio.ufs_
 			ufsToUpdate = utils.NewUFSToUpdate(dataset)
 		})
 
-		When("UFS is not ready", func() {
-			It("should return error", func() {
+		When(testUFSNotReadyMsg, func() {
+			It(testErrMsg, func() {
 				patch := gomonkey.ApplyMethodFunc(operations.AlluxioFileUtils{}, "Ready", func() bool {
 					return false
 				})
@@ -632,7 +648,7 @@ var _ = Describe("AlluxioEngine UFS Internal Tests", Label("pkg.ddc.alluxio.ufs_
 
 				ready, err := engine.updatingUFSWithMountCommand(dataset, ufsToUpdate)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("UFS is not ready"))
+				Expect(err.Error()).To(ContainSubstring(testUFSNotReadyMsg))
 				Expect(ready).To(BeFalse())
 			})
 		})
@@ -643,7 +659,7 @@ var _ = Describe("AlluxioEngine UFS Internal Tests", Label("pkg.ddc.alluxio.ufs_
 					{
 						MountPoint: mockMountPoint,
 						Path:       mockAlluxioPath,
-						Name:       "test-mount",
+						Name:       mockMountName,
 					},
 				}
 				ufsToUpdate.AddMountPaths([]string{mockAlluxioPath})
@@ -711,14 +727,14 @@ var _ = Describe("AlluxioEngine UFS Internal Tests", Label("pkg.ddc.alluxio.ufs_
 				ufsToUpdate.AnalyzePathsDelta()
 			})
 
-			It("should return error", func() {
+			It(testErrMsg, func() {
 				patchReady := gomonkey.ApplyMethodFunc(operations.AlluxioFileUtils{}, "Ready", func() bool {
 					return true
 				})
 				defer patchReady.Reset()
 
 				patchUnMount := gomonkey.ApplyMethodFunc(operations.AlluxioFileUtils{}, "UnMount", func(alluxioPath string) error {
-					return mockError
+					return errMock
 				})
 				defer patchUnMount.Reset()
 
@@ -750,7 +766,7 @@ var _ = Describe("AlluxioEngine UFS Internal Tests", Label("pkg.ddc.alluxio.ufs_
 				resources = []runtime.Object{dataset, alluxioruntime}
 			})
 
-			It("should return error", func() {
+			It(testErrMsg, func() {
 				patchGetConfigmap := gomonkey.ApplyFunc(kubeclient.GetConfigmapByName, func(client client.Client, name string, namespace string) (*corev1.ConfigMap, error) {
 					return nil, nil
 				})
@@ -769,7 +785,7 @@ var _ = Describe("AlluxioEngine UFS Internal Tests", Label("pkg.ddc.alluxio.ufs_
 					{
 						MountPoint: mockMountPoint,
 						Path:       mockAlluxioPath,
-						Name:       "test-mount",
+						Name:       mockMountName,
 					},
 				}
 			})
@@ -807,7 +823,7 @@ var _ = Describe("AlluxioEngine UFS Internal Tests", Label("pkg.ddc.alluxio.ufs_
 		})
 
 		When("execute mount script fails", func() {
-			It("should return error", func() {
+			It(testErrMsg, func() {
 				patchGetConfigmap := gomonkey.ApplyFunc(kubeclient.GetConfigmapByName, func(c client.Client, name string, namespace string) (*corev1.ConfigMap, error) {
 					return mountConfigMap, nil
 				})
@@ -819,7 +835,7 @@ var _ = Describe("AlluxioEngine UFS Internal Tests", Label("pkg.ddc.alluxio.ufs_
 				defer patchGenMountsInfo.Reset()
 
 				patchExecMount := gomonkey.ApplyMethodFunc(operations.AlluxioFileUtils{}, "ExecMountScripts", func() error {
-					return mockError
+					return errMock
 				})
 				defer patchExecMount.Reset()
 
@@ -835,7 +851,7 @@ var _ = Describe("AlluxioEngine UFS Internal Tests", Label("pkg.ddc.alluxio.ufs_
 					{
 						MountPoint: mockMountPoint,
 						Path:       mockAlluxioPath,
-						Name:       "test-mount",
+						Name:       mockMountName,
 					},
 					{
 						MountPoint: "hdfs://another/path",
@@ -919,8 +935,8 @@ var _ = Describe("AlluxioEngine genUFSMountOptions Additional Tests", Label("pkg
 					Namespace: mockNamespace,
 				},
 				Data: map[string][]byte{
-					"access-key": []byte("ak-value"),
-					"secret-key": []byte("sk-value"),
+					mockEncryptSecretKey: []byte("ak-value"),
+					testSecretKey:        []byte("sk-value"),
 				},
 			}
 			resources = append(resources, secret)
@@ -929,17 +945,17 @@ var _ = Describe("AlluxioEngine genUFSMountOptions Additional Tests", Label("pkg
 		When("extractEncryptOptions is true with shared and mount encrypt options", func() {
 			It("should merge all options correctly", func() {
 				mount := datav1alpha1.Mount{
-					Name: "test-mount",
+					Name: mockMountName,
 					Options: map[string]string{
-						"mount-opt1": "mount-val1",
+						testMountOptKey: testMountOptValue,
 					},
 					EncryptOptions: []datav1alpha1.EncryptOption{
 						{
-							Name: "mount-secret-key",
+							Name: testMountSecretKey,
 							ValueFrom: datav1alpha1.EncryptOptionSource{
 								SecretKeyRef: datav1alpha1.SecretKeySelector{
 									Name: mockSecretName,
-									Key:  "secret-key",
+									Key:  testSecretKey,
 								},
 							},
 						},
@@ -947,16 +963,16 @@ var _ = Describe("AlluxioEngine genUFSMountOptions Additional Tests", Label("pkg
 				}
 
 				sharedOptions := map[string]string{
-					"shared-opt1": "shared-val1",
+					testSharedOptKey: testSharedOptValue,
 				}
 
 				sharedEncryptOptions := []datav1alpha1.EncryptOption{
 					{
-						Name: "shared-access-key",
+						Name: testSharedAccessKey,
 						ValueFrom: datav1alpha1.EncryptOptionSource{
 							SecretKeyRef: datav1alpha1.SecretKeySelector{
 								Name: mockSecretName,
-								Key:  "access-key",
+								Key:  mockEncryptSecretKey,
 							},
 						},
 					},
@@ -964,27 +980,27 @@ var _ = Describe("AlluxioEngine genUFSMountOptions Additional Tests", Label("pkg
 
 				result, err := engine.genUFSMountOptions(mount, sharedOptions, sharedEncryptOptions, true)
 				Expect(err).To(BeNil())
-				Expect(result).To(HaveKeyWithValue("mount-opt1", "mount-val1"))
-				Expect(result).To(HaveKeyWithValue("shared-opt1", "shared-val1"))
-				Expect(result).To(HaveKeyWithValue("shared-access-key", "ak-value"))
-				Expect(result).To(HaveKeyWithValue("mount-secret-key", "sk-value"))
+				Expect(result).To(HaveKeyWithValue(testMountOptKey, testMountOptValue))
+				Expect(result).To(HaveKeyWithValue(testSharedOptKey, testSharedOptValue))
+				Expect(result).To(HaveKeyWithValue(testSharedAccessKey, "ak-value"))
+				Expect(result).To(HaveKeyWithValue(testMountSecretKey, "sk-value"))
 			})
 		})
 
 		When("extractEncryptOptions is false", func() {
 			It("should use mount file paths instead of secret values", func() {
 				mount := datav1alpha1.Mount{
-					Name: "test-mount",
+					Name: mockMountName,
 					Options: map[string]string{
-						"mount-opt1": "mount-val1",
+						testMountOptKey: testMountOptValue,
 					},
 					EncryptOptions: []datav1alpha1.EncryptOption{
 						{
-							Name: "mount-secret-key",
+							Name: testMountSecretKey,
 							ValueFrom: datav1alpha1.EncryptOptionSource{
 								SecretKeyRef: datav1alpha1.SecretKeySelector{
 									Name: mockSecretName,
-									Key:  "secret-key",
+									Key:  testSecretKey,
 								},
 							},
 						},
@@ -992,16 +1008,16 @@ var _ = Describe("AlluxioEngine genUFSMountOptions Additional Tests", Label("pkg
 				}
 
 				sharedOptions := map[string]string{
-					"shared-opt1": "shared-val1",
+					testSharedOptKey: testSharedOptValue,
 				}
 
 				sharedEncryptOptions := []datav1alpha1.EncryptOption{
 					{
-						Name: "shared-access-key",
+						Name: testSharedAccessKey,
 						ValueFrom: datav1alpha1.EncryptOptionSource{
 							SecretKeyRef: datav1alpha1.SecretKeySelector{
 								Name: mockSecretName,
-								Key:  "access-key",
+								Key:  mockEncryptSecretKey,
 							},
 						},
 					},
@@ -1009,17 +1025,17 @@ var _ = Describe("AlluxioEngine genUFSMountOptions Additional Tests", Label("pkg
 
 				result, err := engine.genUFSMountOptions(mount, sharedOptions, sharedEncryptOptions, false)
 				Expect(err).To(BeNil())
-				Expect(result).To(HaveKeyWithValue("mount-opt1", "mount-val1"))
-				Expect(result).To(HaveKeyWithValue("shared-opt1", "shared-val1"))
-				Expect(result).To(HaveKeyWithValue("shared-access-key", "/etc/fluid/secrets/"+mockSecretName+"/access-key"))
-				Expect(result).To(HaveKeyWithValue("mount-secret-key", "/etc/fluid/secrets/"+mockSecretName+"/secret-key"))
+				Expect(result).To(HaveKeyWithValue(testMountOptKey, testMountOptValue))
+				Expect(result).To(HaveKeyWithValue(testSharedOptKey, testSharedOptValue))
+				Expect(result).To(HaveKeyWithValue(testSharedAccessKey, "/etc/fluid/secrets/"+mockSecretName+"/access-key"))
+				Expect(result).To(HaveKeyWithValue(testMountSecretKey, "/etc/fluid/secrets/"+mockSecretName+"/secret-key"))
 			})
 		})
 
 		When("genEncryptOptions fails for shared encrypt options", func() {
-			It("should return error", func() {
+			It(testErrMsg, func() {
 				mount := datav1alpha1.Mount{
-					Name:    "test-mount",
+					Name:    mockMountName,
 					Options: map[string]string{},
 				}
 
@@ -1048,19 +1064,19 @@ var _ = Describe("AlluxioEngine genUFSMountOptions Additional Tests", Label("pkg
 		When("mount options override shared options", func() {
 			It("should use mount option value", func() {
 				mount := datav1alpha1.Mount{
-					Name: "test-mount",
+					Name: mockMountName,
 					Options: map[string]string{
-						"common-key": "mount-value",
+						testCommonKey: "mount-value",
 					},
 				}
 
 				sharedOptions := map[string]string{
-					"common-key": "shared-value",
+					testCommonKey: "shared-value",
 				}
 
 				result, err := engine.genUFSMountOptions(mount, sharedOptions, []datav1alpha1.EncryptOption{}, true)
 				Expect(err).To(BeNil())
-				Expect(result).To(HaveKeyWithValue("common-key", "mount-value"))
+				Expect(result).To(HaveKeyWithValue(testCommonKey, "mount-value"))
 			})
 		})
 	})
