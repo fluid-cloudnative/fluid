@@ -361,7 +361,12 @@ var _ = Describe("UpdateMountStatus", func() {
 			updatedDataset, getErr := GetDataset(fakeClient, mockDatasetName, mockDatasetNamespace)
 			Expect(getErr).NotTo(HaveOccurred())
 			Expect(updatedDataset.Status.Phase).To(Equal(datav1alpha1.UpdatingDatasetPhase))
-			Expect(updatedDataset.Status.Conditions[0].Message).To(Equal("The ddc runtime is updating."))
+			Expect(updatedDataset.Status.Conditions).To(ContainElement(
+				And(
+					HaveField("Type", datav1alpha1.DatasetUpdating),
+					HaveField("Message", "The ddc runtime is updating."),
+				),
+			))
 		})
 	})
 
@@ -382,7 +387,12 @@ var _ = Describe("UpdateMountStatus", func() {
 			updatedDataset, getErr := GetDataset(fakeClient, mockDatasetName, mockDatasetNamespace)
 			Expect(getErr).NotTo(HaveOccurred())
 			Expect(updatedDataset.Status.Phase).To(Equal(datav1alpha1.BoundDatasetPhase))
-			Expect(updatedDataset.Status.Conditions[0].Message).To(Equal("The ddc runtime has updated completely."))
+			Expect(updatedDataset.Status.Conditions).To(ContainElement(
+				And(
+					HaveField("Type", datav1alpha1.DatasetReady),
+					HaveField("Message", "The ddc runtime has updated completely."),
+				),
+			))
 		})
 	})
 
