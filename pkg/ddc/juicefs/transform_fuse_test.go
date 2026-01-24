@@ -1014,37 +1014,3 @@ func createEncryptOption(name, secretName, secretKey string) datav1alpha1.Encryp
 		},
 	}
 }
-
-func isSliceEqual(got []string, want []string) bool {
-	if len(got) != len(want) {
-		return false
-	}
-
-	diff := make(map[string]int, len(got))
-	for _, v := range got {
-		diff[v]++
-	}
-	for _, v := range want {
-		if _, ok := diff[v]; !ok {
-			return false
-		}
-		diff[v]--
-		if diff[v] == 0 {
-			delete(diff, v)
-		}
-	}
-	return len(diff) == 0
-}
-
-func isMapEqual(got map[string]string, want map[string]string) bool {
-	if len(got) != len(want) {
-		return false
-	}
-
-	for k, v := range got {
-		if want[k] != v {
-			return false
-		}
-	}
-	return true
-}
