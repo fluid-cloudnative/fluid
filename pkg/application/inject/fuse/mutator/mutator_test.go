@@ -26,16 +26,17 @@ import (
 )
 
 var _ = Describe("FindExtraArgsFromMetadata", func() {
-	Context("when annotations are empty", func() {
-		It("should return empty map", func() {
+	DescribeTable("when annotations do not contain extra args for the platform",
+		func(annotations map[string]string) {
 			metaObj := metav1.ObjectMeta{
-				Annotations: nil,
+				Annotations: annotations,
 			}
 			result := FindExtraArgsFromMetadata(metaObj, "myplatform")
 			Expect(result).To(Equal(map[string]string{}))
-		})
-	})
-
+		},
+		Entry("with nil annotations", nil),
+		Entry("with annotations but no matching ones", map[string]string{"foo": "bar"}),
+	)
 	Context("when annotations exist without extra args", func() {
 		It("should return empty map", func() {
 			metaObj := metav1.ObjectMeta{
@@ -161,4 +162,13 @@ var _ = Describe("BuildMutator", func() {
 			Expect(result).To(BeNil())
 		})
 	})
+	DescribeTable("when platform is invalid",
+		func(platform string) {
+			result, err := BuildMutator(buildArgs, platform)
+			Expect(err).To(HaveOccurred())
+			Expect(result).To(BeNil())
+		},
+		Entry("should return an error if platform is unknown", "unknown-platform"),
+		Entry("should return an error if platform is empty", ""),
+	)
 })
