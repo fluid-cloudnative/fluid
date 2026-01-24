@@ -114,5 +114,14 @@ var _ = Describe("GooseFS Types", func() {
 				Expect(got).To(Equal("/dev/shm/production/mydata"))
 			})
 		})
+
+		Context("when goosefs is nil", func() {
+			It("should return the default shm path without panicking", func() {
+				var goosefs *GooseFS = nil
+				// Note: A nil check will be needed in getTiredStoreLevel0Path for this to pass
+				got := goosefs.getTiredStoreLevel0Path(name, namespace)
+				Expect(got).To(Equal("/dev/shm/default/goosefs-01"))
+			})
+		})
 	})
 })
