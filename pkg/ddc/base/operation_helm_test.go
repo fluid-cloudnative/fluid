@@ -19,8 +19,8 @@ package base_test
 import (
 	"errors"
 
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
+	opmock "github.com/fluid-cloudnative/fluid/pkg/dataoperation/mock"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	enginemock "github.com/fluid-cloudnative/fluid/pkg/ddc/base/mock"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -32,70 +32,29 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
-	unexpectedCallMsg = "unexpected call"
 	shouldReturnError = "should return error"
 	valuesYamlFile    = "values.yaml"
 )
-
-// mockOperation implements dataoperation.OperationInterface for testing
-type mockOperation struct {
-	opType   dataoperation.OperationType
-	nsName   types.NamespacedName
-	chartDir string
-}
-
-func (m *mockOperation) GetOperationType() dataoperation.OperationType  { return m.opType }
-func (m *mockOperation) GetReleaseNameSpacedName() types.NamespacedName { return m.nsName }
-func (m *mockOperation) GetChartsDirectory() string                     { return m.chartDir }
-func (m *mockOperation) HasPrecedingOperation() bool                    { panic(unexpectedCallMsg) }
-func (m *mockOperation) GetOperationObject() client.Object              { panic(unexpectedCallMsg) }
-func (m *mockOperation) GetPossibleTargetDatasetNamespacedNames() []types.NamespacedName {
-	panic(unexpectedCallMsg)
-}
-func (m *mockOperation) GetTargetDataset() (*datav1alpha1.Dataset, error) { panic(unexpectedCallMsg) }
-func (m *mockOperation) UpdateOperationApiStatus(opStatus *datav1alpha1.OperationStatus) error {
-	panic(unexpectedCallMsg)
-}
-func (m *mockOperation) Validate(ctx cruntime.ReconcileRequestContext) ([]datav1alpha1.Condition, error) {
-	panic(unexpectedCallMsg)
-}
-func (m *mockOperation) UpdateStatusInfoForCompleted(infos map[string]string) error {
-	panic(unexpectedCallMsg)
-}
-func (m *mockOperation) SetTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
-	panic(unexpectedCallMsg)
-}
-func (m *mockOperation) RemoveTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
-	panic(unexpectedCallMsg)
-}
-func (m *mockOperation) GetStatusHandler() dataoperation.StatusHandler { panic(unexpectedCallMsg) }
-func (m *mockOperation) GetTTL() (*int32, error)                       { panic(unexpectedCallMsg) }
-func (m *mockOperation) GetParallelTaskNumber() int32                  { panic(unexpectedCallMsg) }
 
 var _ = Describe("InstallDataOperationHelmIfNotExist", func() {
 	var (
 		ctrl     *gomock.Controller
 		mockImpl *enginemock.MockImplement
+		mockOp   *opmock.MockOperationInterface
 		fakeCtx  cruntime.ReconcileRequestContext
-		mockOp   *mockOperation
 		patches  *gomonkey.Patches
 	)
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		mockImpl = enginemock.NewMockImplement(ctrl)
+		mockOp = opmock.NewMockOperationInterface(ctrl)
 		fakeCtx = cruntime.ReconcileRequestContext{
 			Log:        fake.NullLogger(),
 			EngineImpl: "test-engine",
-		}
-		mockOp = &mockOperation{
-			opType:   dataoperation.DataLoadType,
-			nsName:   types.NamespacedName{Name: "release", Namespace: "ns"},
-			chartDir: "/charts",
 		}
 	})
 
@@ -108,6 +67,8 @@ var _ = Describe("InstallDataOperationHelmIfNotExist", func() {
 
 	Context("when release already exists", func() {
 		It("should return nil without installing", func() {
+			mockOp.EXPECT().GetOperationType().Return(dataoperation.DataLoadType)
+			mockOp.EXPECT().GetReleaseNameSpacedName().Return(types.NamespacedName{Name: "release", Namespace: "ns"})
 			patches = gomonkey.ApplyFunc(helm.CheckRelease, func(name, namespace string) (bool, error) {
 				return true, nil
 			})
@@ -123,6 +84,8 @@ var _ = Describe("InstallDataOperationHelmIfNotExist", func() {
 
 	Context("when CheckRelease fails", func() {
 		It(shouldReturnError, func() {
+			mockOp.EXPECT().GetOperationType().Return(dataoperation.DataLoadType)
+			mockOp.EXPECT().GetReleaseNameSpacedName().Return(types.NamespacedName{Name: "release", Namespace: "ns"})
 			patches = gomonkey.ApplyFunc(helm.CheckRelease, func(name, namespace string) (bool, error) {
 				return false, errors.New("check failure")
 			})
@@ -134,6 +97,8 @@ var _ = Describe("InstallDataOperationHelmIfNotExist", func() {
 
 	Context("when value file generation fails", func() {
 		It(shouldReturnError, func() {
+			mockOp.EXPECT().GetOperationType().Return(dataoperation.DataLoadType)
+			mockOp.EXPECT().GetReleaseNameSpacedName().Return(types.NamespacedName{Name: "release", Namespace: "ns"})
 			patches = gomonkey.ApplyFunc(helm.CheckRelease, func(name, namespace string) (bool, error) {
 				return false, nil
 			})
@@ -146,6 +111,9 @@ var _ = Describe("InstallDataOperationHelmIfNotExist", func() {
 
 	Context("when InstallRelease fails", func() {
 		It(shouldReturnError, func() {
+			mockOp.EXPECT().GetOperationType().Return(dataoperation.DataLoadType).Times(2)
+			mockOp.EXPECT().GetReleaseNameSpacedName().Return(types.NamespacedName{Name: "release", Namespace: "ns"})
+			mockOp.EXPECT().GetChartsDirectory().Return("/charts")
 			patches = gomonkey.ApplyFunc(helm.CheckRelease, func(name, namespace string) (bool, error) {
 				return false, nil
 			})
@@ -161,6 +129,9 @@ var _ = Describe("InstallDataOperationHelmIfNotExist", func() {
 
 	Context("when installing successfully with DataLoad type", func() {
 		It("should use engine chart", func() {
+			mockOp.EXPECT().GetOperationType().Return(dataoperation.DataLoadType).Times(2)
+			mockOp.EXPECT().GetReleaseNameSpacedName().Return(types.NamespacedName{Name: "release", Namespace: "ns"})
+			mockOp.EXPECT().GetChartsDirectory().Return("/charts")
 			patches = gomonkey.ApplyFunc(helm.CheckRelease, func(name, namespace string) (bool, error) {
 				return false, nil
 			})
@@ -177,7 +148,9 @@ var _ = Describe("InstallDataOperationHelmIfNotExist", func() {
 
 	Context("when installing successfully with DataProcess type", func() {
 		It("should use common chart", func() {
-			mockOp.opType = dataoperation.DataProcessType
+			mockOp.EXPECT().GetOperationType().Return(dataoperation.DataProcessType).Times(2)
+			mockOp.EXPECT().GetReleaseNameSpacedName().Return(types.NamespacedName{Name: "release", Namespace: "ns"})
+			mockOp.EXPECT().GetChartsDirectory().Return("/charts")
 			patches = gomonkey.ApplyFunc(helm.CheckRelease, func(name, namespace string) (bool, error) {
 				return false, nil
 			})
