@@ -34,6 +34,10 @@ var errDummy = func(client client.Client) (ports []int, err error) {
 }
 
 var _ = Describe("RuntimePortAllocator", func() {
+	BeforeEach(func() {
+		rpa = nil
+	})
+
 	Context("when setup with error", func() {
 		It("should return error when getting allocator", func() {
 			pr := net.ParsePortRangeOrDie("20000-21000")
@@ -62,41 +66,32 @@ var _ = Describe("RuntimePortAllocator", func() {
 		})
 
 		It("should make released ports available for re-allocation", func() {
-			pr := net.ParsePortRangeOrDie("20000-20010")
+			pr := net.ParsePortRangeOrDie("20000-20005")
 			err := SetupRuntimePortAllocator(nil, pr, "bitmap", dummy)
 			Expect(err).NotTo(HaveOccurred())
 
+			preservedPorts, _ := dummy(nil)
 			allocator, err := GetRuntimePortAllocator()
 			Expect(err).NotTo(HaveOccurred())
 
-			// Allocate some ports first
-			firstAllocation, err := allocator.GetAvailablePorts(3)
+			// Allocate all non-preserved ports (range has 6 ports, 3 are preserved, so 3 available)
+			firstAllocation, err := allocator.GetAvailablePorts(pr.Size - len(preservedPorts))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(firstAllocation)).To(Equal(3))
 
-			// Release the allocated ports
-			allocator.ReleaseReservedPorts(firstAllocation)
+			// Release 2 ports
+			portsToRelease := firstAllocation[:2]
+			allocator.ReleaseReservedPorts(portsToRelease)
 
-			// Try to allocate the same number of ports again
-			secondAllocation, err := allocator.GetAvailablePorts(3)
+			// Now allocate 2 more ports - these MUST include the released ports
+			// since we only have 1 unreleased port left
+			secondAllocation, err := allocator.GetAvailablePorts(2)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(secondAllocation)).To(Equal(3))
+			Expect(len(secondAllocation)).To(Equal(2))
 
-			// Verify that the second allocation contains some of the released ports
-			// (they should be available again)
-			allocatedAgain := false
-			for _, port := range secondAllocation {
-				for _, releasedPort := range firstAllocation {
-					if port == releasedPort {
-						allocatedAgain = true
-						break
-					}
-				}
-				if allocatedAgain {
-					break
-				}
-			}
-			Expect(allocatedAgain).To(BeTrue(), "Released ports should be available for re-allocation")
+			// At least one of the released ports must be in the second allocation
+			hasReleasedPort := containsAny(secondAllocation, portsToRelease)
+			Expect(hasReleasedPort).To(BeTrue(), "At least one released port should be re-allocated")
 		})
 	})
 })
