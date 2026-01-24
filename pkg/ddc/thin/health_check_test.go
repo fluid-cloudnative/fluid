@@ -18,8 +18,9 @@ package thin
 
 import (
 	"context"
-	"reflect"
-	"testing"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,367 +36,340 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
-func TestCheckRuntimeHealthy(t *testing.T) {
-	var stsInputs = []appsv1.StatefulSet{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase-worker",
-				Namespace: "fluid",
-			},
-			Status: appsv1.StatefulSetStatus{
-				Replicas:          1,
-				ReadyReplicas:     1,
-				AvailableReplicas: 1,
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-worker",
-				Namespace: "fluid",
-			},
-			Spec: appsv1.StatefulSetSpec{
-				Replicas: ptr.To[int32](1),
-			},
-			Status: appsv1.StatefulSetStatus{
-				Replicas:          1,
-				ReadyReplicas:     0,
-				AvailableReplicas: 0,
-			},
-		},
-	}
+const (
+	healthCheckTestNamespace = "fluid"
+	healthCheckTestHbase     = "hbase"
+	healthCheckTestSpark     = "spark"
+	healthCheckTestName      = "test"
+)
 
-	var daemonSetInputs = []appsv1.DaemonSet{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase-fuse",
-				Namespace: "fluid",
-			},
-			Status: appsv1.DaemonSetStatus{
-				NumberUnavailable: 0,
-				NumberReady:       1,
-				NumberAvailable:   1,
-			},
-		},
-	}
-	testObjs := []runtime.Object{}
-	for _, daemonSet := range daemonSetInputs {
-		testObjs = append(testObjs, daemonSet.DeepCopy())
-	}
-	for _, sts := range stsInputs {
-		testObjs = append(testObjs, sts.DeepCopy())
-	}
+var _ = Describe("ThinEngine Health Check", Label("pkg.ddc.thin.health_check_test.go"), func() {
+	Describe("CheckRuntimeHealthy", func() {
+		var (
+			stsInputs         []appsv1.StatefulSet
+			daemonSetInputs   []appsv1.DaemonSet
+			thinRuntimeInputs []datav1alpha1.ThinRuntime
+			datasetInputs     []*datav1alpha1.Dataset
+		)
 
-	var ThinRuntimeInputs = []datav1alpha1.ThinRuntime{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.ThinRuntimeSpec{
-				Replicas: 1,
-				Worker: datav1alpha1.ThinCompTemplateSpec{
-					Enabled: true,
+		BeforeEach(func() {
+			stsInputs = []appsv1.StatefulSet{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "hbase-worker",
+						Namespace: healthCheckTestNamespace,
+					},
+					Status: appsv1.StatefulSetStatus{
+						Replicas:          1,
+						ReadyReplicas:     1,
+						AvailableReplicas: 1,
+					},
 				},
-			},
-			Status: datav1alpha1.RuntimeStatus{
-				CacheStates: map[common.CacheStateName]string{common.Cached: "true"},
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.ThinRuntimeSpec{
-				Replicas: 1,
-				Worker: datav1alpha1.ThinCompTemplateSpec{
-					Enabled: true,
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-worker",
+						Namespace: healthCheckTestNamespace,
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: ptr.To[int32](1),
+					},
+					Status: appsv1.StatefulSetStatus{
+						Replicas:          1,
+						ReadyReplicas:     0,
+						AvailableReplicas: 0,
+					},
 				},
-			},
-			Status: datav1alpha1.RuntimeStatus{
-				CacheStates: map[common.CacheStateName]string{common.Cached: "true"},
-			},
-		},
-	}
-	for _, ThinRuntime := range ThinRuntimeInputs {
-		testObjs = append(testObjs, ThinRuntime.DeepCopy())
-	}
+			}
 
-	var datasetInputs = []*datav1alpha1.Dataset{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase",
-				Namespace: "fluid",
-			},
-			Spec:   datav1alpha1.DatasetSpec{},
-			Status: datav1alpha1.DatasetStatus{},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test",
-				Namespace: "fluid",
-			},
-			Spec:   datav1alpha1.DatasetSpec{},
-			Status: datav1alpha1.DatasetStatus{},
-		},
-	}
-	for _, dataset := range datasetInputs {
-		testObjs = append(testObjs, dataset.DeepCopy())
-	}
-
-	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-
-	engines := []ThinEngine{
-		{
-			Client:    client,
-			Log:       fake.NullLogger(),
-			namespace: "fluid",
-			name:      "hbase",
-			runtime:   &ThinRuntimeInputs[0],
-		},
-		{
-			Client:    client,
-			Log:       fake.NullLogger(),
-			namespace: "fluid",
-			name:      "test",
-			runtime:   &ThinRuntimeInputs[1],
-		},
-	}
-
-	var testCase = []struct {
-		engine                             ThinEngine
-		expectedErrorNil                   bool
-		expectedWorkerPhase                datav1alpha1.RuntimePhase
-		expectedRuntimeWorkerNumberReady   int32
-		expectedRuntimeWorkerAvailable     int32
-		expectedRuntimeFuseNumberReady     int32
-		expectedRuntimeFuseNumberAvailable int32
-		expectedDataset                    datav1alpha1.Dataset
-	}{
-		{
-			engine:                             engines[0],
-			expectedErrorNil:                   true,
-			expectedWorkerPhase:                "",
-			expectedRuntimeWorkerNumberReady:   1,
-			expectedRuntimeWorkerAvailable:     1,
-			expectedRuntimeFuseNumberReady:     1,
-			expectedRuntimeFuseNumberAvailable: 1,
-			expectedDataset: datav1alpha1.Dataset{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "hbase",
-					Namespace: "fluid",
+			daemonSetInputs = []appsv1.DaemonSet{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "hbase-fuse",
+						Namespace: healthCheckTestNamespace,
+					},
+					Status: appsv1.DaemonSetStatus{
+						NumberUnavailable: 0,
+						NumberReady:       1,
+						NumberAvailable:   1,
+					},
 				},
-				Status: datav1alpha1.DatasetStatus{
-					Phase:       datav1alpha1.BoundDatasetPhase,
-					CacheStates: map[common.CacheStateName]string{common.Cached: "true"},
+			}
+
+			thinRuntimeInputs = []datav1alpha1.ThinRuntime{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      healthCheckTestHbase,
+						Namespace: healthCheckTestNamespace,
+					},
+					Spec: datav1alpha1.ThinRuntimeSpec{
+						Replicas: 1,
+						Worker: datav1alpha1.ThinCompTemplateSpec{
+							Enabled: true,
+						},
+					},
+					Status: datav1alpha1.RuntimeStatus{
+						CacheStates: map[common.CacheStateName]string{common.Cached: "true"},
+					},
 				},
-			},
-		},
-		{
-			engine:                             engines[1],
-			expectedErrorNil:                   false,
-			expectedWorkerPhase:                "",
-			expectedRuntimeWorkerNumberReady:   0,
-			expectedRuntimeWorkerAvailable:     0,
-			expectedRuntimeFuseNumberReady:     0,
-			expectedRuntimeFuseNumberAvailable: 0,
-			expectedDataset: datav1alpha1.Dataset{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "fluid",
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      healthCheckTestName,
+						Namespace: healthCheckTestNamespace,
+					},
+					Spec: datav1alpha1.ThinRuntimeSpec{
+						Replicas: 1,
+						Worker: datav1alpha1.ThinCompTemplateSpec{
+							Enabled: true,
+						},
+					},
+					Status: datav1alpha1.RuntimeStatus{
+						CacheStates: map[common.CacheStateName]string{common.Cached: "true"},
+					},
 				},
-				Status: datav1alpha1.DatasetStatus{
-					Phase:       datav1alpha1.BoundDatasetPhase,
-					CacheStates: map[common.CacheStateName]string{common.Cached: "true"},
+			}
+
+			datasetInputs = []*datav1alpha1.Dataset{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      healthCheckTestHbase,
+						Namespace: healthCheckTestNamespace,
+					},
+					Spec:   datav1alpha1.DatasetSpec{},
+					Status: datav1alpha1.DatasetStatus{},
 				},
-			},
-		},
-	}
-	for _, test := range testCase {
-		runtimeInfo, _ := base.BuildRuntimeInfo(test.engine.name, test.engine.namespace, common.ThinRuntime)
-		test.engine.Helper = ctrl.BuildHelper(runtimeInfo, client, test.engine.Log)
-		err := test.engine.CheckRuntimeHealthy()
-		if err != nil && test.expectedErrorNil == true ||
-			err == nil && test.expectedErrorNil == false {
-			t.Errorf("fail to exec the checkMasterHealthy function with err %v", err)
-			return
-		}
-		if test.expectedErrorNil == false {
-			continue
-		}
-
-		ThinRuntime, err := test.engine.getRuntime()
-		if err != nil {
-			t.Errorf("fail to get the runtime with the error %v", err)
-			return
-		}
-		if ThinRuntime.Status.WorkerNumberReady != test.expectedRuntimeWorkerNumberReady ||
-			ThinRuntime.Status.WorkerNumberAvailable != test.expectedRuntimeWorkerAvailable {
-			t.Errorf("fail to update the runtime")
-			return
-		}
-		if ThinRuntime.Status.FuseNumberReady != test.expectedRuntimeFuseNumberReady ||
-			ThinRuntime.Status.FuseNumberAvailable != test.expectedRuntimeFuseNumberAvailable {
-			t.Errorf("fail to update the runtime")
-			return
-		}
-		_, cond := utils.GetRuntimeCondition(ThinRuntime.Status.Conditions, datav1alpha1.RuntimeWorkersReady)
-		if cond == nil {
-			t.Errorf("fail to update the condition")
-			return
-		}
-		_, cond = utils.GetRuntimeCondition(ThinRuntime.Status.Conditions, datav1alpha1.RuntimeFusesReady)
-		if cond == nil {
-			t.Errorf("fail to update the condition")
-			return
-		}
-
-		var datasets datav1alpha1.DatasetList
-		err = client.List(context.TODO(), &datasets)
-		if err != nil {
-			t.Errorf("fail to list the datasets with error %v", err)
-			return
-		}
-		if !reflect.DeepEqual(datasets.Items[0].Status.Phase, test.expectedDataset.Status.Phase) ||
-			!reflect.DeepEqual(datasets.Items[0].Status.CacheStates, test.expectedDataset.Status.CacheStates) {
-			t.Errorf("fail to exec the function with error %v", err)
-			return
-		}
-	}
-}
-
-func TestCheckFuseHealthy(t *testing.T) {
-	var daemonSetInputs = []appsv1.DaemonSet{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase-fuse",
-				Namespace: "fluid",
-			},
-			Status: appsv1.DaemonSetStatus{
-				NumberUnavailable: 1,
-				NumberReady:       1,
-				NumberAvailable:   1,
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "spark-fuse",
-				Namespace: "fluid",
-			},
-			Status: appsv1.DaemonSetStatus{
-				NumberUnavailable: 0,
-				NumberReady:       1,
-				NumberAvailable:   1,
-			},
-		},
-	}
-
-	testObjs := []runtime.Object{}
-	for _, daemonSet := range daemonSetInputs {
-		testObjs = append(testObjs, daemonSet.DeepCopy())
-	}
-
-	var ThinRuntimeInputs = []datav1alpha1.ThinRuntime{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase",
-				Namespace: "fluid",
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "spark",
-				Namespace: "fluid",
-			},
-		},
-	}
-	for _, ThinRuntimeInput := range ThinRuntimeInputs {
-		testObjs = append(testObjs, ThinRuntimeInput.DeepCopy())
-	}
-	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-
-	engines := []ThinEngine{
-		{
-			Client:    client,
-			Log:       fake.NullLogger(),
-			namespace: "fluid",
-			name:      "hbase",
-			runtime: &datav1alpha1.ThinRuntime{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "hbase",
-					Namespace: "fluid",
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      healthCheckTestName,
+						Namespace: healthCheckTestNamespace,
+					},
+					Spec:   datav1alpha1.DatasetSpec{},
+					Status: datav1alpha1.DatasetStatus{},
 				},
-			},
-			Recorder: record.NewFakeRecorder(1),
-		},
-		{
-			Client:    client,
-			Log:       fake.NullLogger(),
-			namespace: "fluid",
-			name:      "spark",
-			runtime: &datav1alpha1.ThinRuntime{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "spark",
-					Namespace: "fluid",
+			}
+		})
+
+		Context("when workers and fuses are healthy", func() {
+			It("should return no error and update runtime status", func() {
+				testObjs := []runtime.Object{}
+				for _, daemonSet := range daemonSetInputs {
+					testObjs = append(testObjs, daemonSet.DeepCopy())
+				}
+				for _, sts := range stsInputs {
+					testObjs = append(testObjs, sts.DeepCopy())
+				}
+				for _, thinRuntime := range thinRuntimeInputs {
+					testObjs = append(testObjs, thinRuntime.DeepCopy())
+				}
+				for _, dataset := range datasetInputs {
+					testObjs = append(testObjs, dataset.DeepCopy())
+				}
+
+				client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+
+				engine := ThinEngine{
+					Client:    client,
+					Log:       fake.NullLogger(),
+					namespace: healthCheckTestNamespace,
+					name:      healthCheckTestHbase,
+					runtime:   &thinRuntimeInputs[0],
+				}
+
+				runtimeInfo, err := base.BuildRuntimeInfo(engine.name, engine.namespace, common.ThinRuntime)
+				Expect(err).NotTo(HaveOccurred())
+				engine.Helper = ctrl.BuildHelper(runtimeInfo, client, engine.Log)
+
+				err = engine.CheckRuntimeHealthy()
+				Expect(err).NotTo(HaveOccurred())
+
+				thinRuntime, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(thinRuntime.Status.WorkerNumberReady).To(Equal(int32(1)))
+				Expect(thinRuntime.Status.WorkerNumberAvailable).To(Equal(int32(1)))
+				Expect(thinRuntime.Status.FuseNumberReady).To(Equal(int32(1)))
+				Expect(thinRuntime.Status.FuseNumberAvailable).To(Equal(int32(1)))
+
+				_, cond := utils.GetRuntimeCondition(thinRuntime.Status.Conditions, datav1alpha1.RuntimeWorkersReady)
+				Expect(cond).NotTo(BeNil())
+
+				_, cond = utils.GetRuntimeCondition(thinRuntime.Status.Conditions, datav1alpha1.RuntimeFusesReady)
+				Expect(cond).NotTo(BeNil())
+
+				var datasets datav1alpha1.DatasetList
+				err = client.List(context.TODO(), &datasets)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(datasets.Items[0].Status.Phase).To(Equal(datav1alpha1.BoundDatasetPhase))
+				Expect(datasets.Items[0].Status.CacheStates).To(HaveKeyWithValue(common.Cached, "true"))
+			})
+		})
+
+		Context("when workers are not ready", func() {
+			It("should return an error", func() {
+				testObjs := []runtime.Object{}
+				for _, daemonSet := range daemonSetInputs {
+					testObjs = append(testObjs, daemonSet.DeepCopy())
+				}
+				for _, sts := range stsInputs {
+					testObjs = append(testObjs, sts.DeepCopy())
+				}
+				for _, thinRuntime := range thinRuntimeInputs {
+					testObjs = append(testObjs, thinRuntime.DeepCopy())
+				}
+				for _, dataset := range datasetInputs {
+					testObjs = append(testObjs, dataset.DeepCopy())
+				}
+
+				client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+
+				engine := ThinEngine{
+					Client:    client,
+					Log:       fake.NullLogger(),
+					namespace: healthCheckTestNamespace,
+					name:      healthCheckTestName,
+					runtime:   &thinRuntimeInputs[1],
+				}
+
+				runtimeInfo, err := base.BuildRuntimeInfo(engine.name, engine.namespace, common.ThinRuntime)
+				Expect(err).NotTo(HaveOccurred())
+				engine.Helper = ctrl.BuildHelper(runtimeInfo, client, engine.Log)
+
+				err = engine.CheckRuntimeHealthy()
+				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
+
+	Describe("checkFuseHealthy", func() {
+		var (
+			daemonSetInputs   []appsv1.DaemonSet
+			thinRuntimeInputs []datav1alpha1.ThinRuntime
+		)
+
+		BeforeEach(func() {
+			daemonSetInputs = []appsv1.DaemonSet{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "hbase-fuse",
+						Namespace: healthCheckTestNamespace,
+					},
+					Status: appsv1.DaemonSetStatus{
+						NumberUnavailable: 1,
+						NumberReady:       1,
+						NumberAvailable:   1,
+					},
 				},
-			},
-			Recorder: record.NewFakeRecorder(1),
-		},
-	}
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "spark-fuse",
+						Namespace: healthCheckTestNamespace,
+					},
+					Status: appsv1.DaemonSetStatus{
+						NumberUnavailable: 0,
+						NumberReady:       1,
+						NumberAvailable:   1,
+					},
+				},
+			}
 
-	var testCase = []struct {
-		engine                               ThinEngine
-		expectedWorkerPhase                  datav1alpha1.RuntimePhase
-		expectedErrorNil                     bool
-		expectedRuntimeFuseNumberReady       int32
-		expectedRuntimeFuseNumberAvailable   int32
-		expectedRuntimeFuseNumberUnavailable int32
-	}{
-		{
-			engine:                               engines[0],
-			expectedWorkerPhase:                  datav1alpha1.RuntimePhaseNotReady,
-			expectedErrorNil:                     true,
-			expectedRuntimeFuseNumberReady:       1,
-			expectedRuntimeFuseNumberAvailable:   1,
-			expectedRuntimeFuseNumberUnavailable: 1,
-		},
-		{
-			engine:                               engines[1],
-			expectedWorkerPhase:                  datav1alpha1.RuntimePhaseReady,
-			expectedErrorNil:                     true,
-			expectedRuntimeFuseNumberReady:       1,
-			expectedRuntimeFuseNumberAvailable:   1,
-			expectedRuntimeFuseNumberUnavailable: 0,
-		},
-	}
+			thinRuntimeInputs = []datav1alpha1.ThinRuntime{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      healthCheckTestHbase,
+						Namespace: healthCheckTestNamespace,
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      healthCheckTestSpark,
+						Namespace: healthCheckTestNamespace,
+					},
+				},
+			}
+		})
 
-	for _, test := range testCase {
-		runtimeInfo, _ := base.BuildRuntimeInfo(test.engine.name, test.engine.namespace, common.ThinRuntime)
-		test.engine.Helper = ctrl.BuildHelper(runtimeInfo, client, test.engine.Log)
-		_, err := test.engine.checkFuseHealthy()
-		if err != nil && test.expectedErrorNil == true ||
-			err == nil && test.expectedErrorNil == false {
-			t.Errorf("fail to exec the CheckFuseHealthy function with err %v", err)
-			return
-		}
+		Context("when fuse has unavailable pods", func() {
+			It("should update runtime with NotReady phase", func() {
+				testObjs := []runtime.Object{}
+				for _, daemonSet := range daemonSetInputs {
+					testObjs = append(testObjs, daemonSet.DeepCopy())
+				}
+				for _, thinRuntimeInput := range thinRuntimeInputs {
+					testObjs = append(testObjs, thinRuntimeInput.DeepCopy())
+				}
+				client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
-		ThinRuntime, err := test.engine.getRuntime()
-		if err != nil {
-			t.Errorf("fail to get the runtime with the error %v", err)
-			return
-		}
+				engine := ThinEngine{
+					Client:    client,
+					Log:       fake.NullLogger(),
+					namespace: healthCheckTestNamespace,
+					name:      healthCheckTestHbase,
+					runtime: &datav1alpha1.ThinRuntime{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      healthCheckTestHbase,
+							Namespace: healthCheckTestNamespace,
+						},
+					},
+					Recorder: record.NewFakeRecorder(1),
+				}
 
-		if ThinRuntime.Status.FuseNumberReady != test.expectedRuntimeFuseNumberReady ||
-			ThinRuntime.Status.FuseNumberAvailable != test.expectedRuntimeFuseNumberAvailable ||
-			ThinRuntime.Status.FuseNumberUnavailable != test.expectedRuntimeFuseNumberUnavailable {
-			t.Errorf("fail to update the runtime")
-			return
-		}
+				runtimeInfo, err := base.BuildRuntimeInfo(engine.name, engine.namespace, common.ThinRuntime)
+				Expect(err).NotTo(HaveOccurred())
+				engine.Helper = ctrl.BuildHelper(runtimeInfo, client, engine.Log)
 
-		_, cond := utils.GetRuntimeCondition(ThinRuntime.Status.Conditions, datav1alpha1.RuntimeFusesReady)
-		if cond == nil {
-			t.Errorf("fail to update the condition")
-			return
-		}
-	}
-}
+				_, err = engine.checkFuseHealthy()
+				Expect(err).NotTo(HaveOccurred())
+
+				thinRuntime, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(thinRuntime.Status.FuseNumberReady).To(Equal(int32(1)))
+				Expect(thinRuntime.Status.FuseNumberAvailable).To(Equal(int32(1)))
+				Expect(thinRuntime.Status.FuseNumberUnavailable).To(Equal(int32(1)))
+
+				_, cond := utils.GetRuntimeCondition(thinRuntime.Status.Conditions, datav1alpha1.RuntimeFusesReady)
+				Expect(cond).NotTo(BeNil())
+			})
+		})
+
+		Context("when all fuse pods are available", func() {
+			It("should update runtime with Ready phase", func() {
+				testObjs := []runtime.Object{}
+				for _, daemonSet := range daemonSetInputs {
+					testObjs = append(testObjs, daemonSet.DeepCopy())
+				}
+				for _, thinRuntimeInput := range thinRuntimeInputs {
+					testObjs = append(testObjs, thinRuntimeInput.DeepCopy())
+				}
+				client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+
+				engine := ThinEngine{
+					Client:    client,
+					Log:       fake.NullLogger(),
+					namespace: healthCheckTestNamespace,
+					name:      healthCheckTestSpark,
+					runtime: &datav1alpha1.ThinRuntime{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      healthCheckTestSpark,
+							Namespace: healthCheckTestNamespace,
+						},
+					},
+					Recorder: record.NewFakeRecorder(1),
+				}
+
+				runtimeInfo, err := base.BuildRuntimeInfo(engine.name, engine.namespace, common.ThinRuntime)
+				Expect(err).NotTo(HaveOccurred())
+				engine.Helper = ctrl.BuildHelper(runtimeInfo, client, engine.Log)
+
+				_, err = engine.checkFuseHealthy()
+				Expect(err).NotTo(HaveOccurred())
+
+				thinRuntime, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(thinRuntime.Status.FuseNumberReady).To(Equal(int32(1)))
+				Expect(thinRuntime.Status.FuseNumberAvailable).To(Equal(int32(1)))
+				Expect(thinRuntime.Status.FuseNumberUnavailable).To(Equal(int32(0)))
+
+				_, cond := utils.GetRuntimeCondition(thinRuntime.Status.Conditions, datav1alpha1.RuntimeFusesReady)
+				Expect(cond).NotTo(BeNil())
+			})
+		})
+	})
+})
