@@ -24,7 +24,12 @@ import (
 )
 
 const (
-	cacheDirName = "cache-dir"
+	cacheDirName          = "cache-dir"
+	dataVolumePrefix      = "datavolume-"
+	dataVolumeMountPrefix = "datavolumeMount-"
+	memTier               = "mem"
+	ssdTier               = "ssd"
+	hddTier               = "hdd"
 )
 
 var _ = Describe("TrimVolumes", func() {
@@ -63,7 +68,7 @@ var _ = Describe("TrimVolumes", func() {
 					},
 				},
 			},
-			[]string{"datavolume-", cacheDirName, "mem", "ssd", "hdd"},
+			[]string{dataVolumePrefix, cacheDirName, memTier, ssdTier, hddTier},
 			[]string{"test-1", "fuse-device", "jindofs-fuse-mount"},
 		),
 		Entry("exclude",
@@ -92,7 +97,7 @@ var _ = Describe("TrimVolumes", func() {
 					},
 				},
 			},
-			[]string{"datavolume-", cacheDirName, "mem", "ssd", "hdd"},
+			[]string{dataVolumePrefix, cacheDirName, memTier, ssdTier, hddTier},
 			[]string{"fuse-device", "jindofs-fuse-mount"},
 		),
 	)
@@ -120,7 +125,7 @@ var _ = Describe("TrimVolumeMounts", func() {
 					Name: "jindofs-fuse-mount",
 				},
 			},
-			[]string{"datavolumeMount-", cacheDirName, "mem", "ssd", "hdd"},
+			[]string{dataVolumeMountPrefix, cacheDirName, memTier, ssdTier, hddTier},
 			[]string{"test-1", "fuse-device", "jindofs-fuse-mount"},
 		),
 		Entry("exclude",
@@ -135,7 +140,7 @@ var _ = Describe("TrimVolumeMounts", func() {
 					Name: "jindofs-fuse-mount",
 				},
 			},
-			[]string{"datavolumeMount-", cacheDirName, "mem", "ssd", "hdd"},
+			[]string{dataVolumeMountPrefix, cacheDirName, memTier, ssdTier, hddTier},
 			[]string{"fuse-device", "jindofs-fuse-mount"},
 		),
 	)
