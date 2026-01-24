@@ -18,7 +18,6 @@ package juicefs
 
 import (
 	"encoding/base64"
-	"reflect"
 
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo/v2"
@@ -64,6 +63,11 @@ const (
 	mockStorageMinio     = "minio"
 	mockEncodedTest      = "test"
 	mockEncodedTest2     = "test2"
+
+	// Test entry names
+	testEntryCommunityEdition  = "community edition"
+	testEntryEnterpriseEdition = "enterprise edition"
+	testMirrorBucket           = "test-mirror-bucket"
 )
 
 var _ = Describe("TransformFuse", func() {
@@ -551,7 +555,7 @@ var _ = Describe("GenFuseMount", func() {
 			Expect(len(tc.value.Fuse.Command)).To(Equal(len(tc.wantFuseCommand)))
 			Expect(tc.value.Fuse.StatCmd).To(Equal(tc.wantFuseStatCmd))
 		},
-		Entry("community edition",
+		Entry(testEntryCommunityEdition,
 			testCase{
 				name:            "community",
 				engineName:      mockEncodedTest,
@@ -616,7 +620,7 @@ var _ = Describe("GenFuseMount", func() {
 				wantFuseStatCmd: "stat -c %i /test",
 			},
 		),
-		Entry("enterprise edition",
+		Entry(testEntryEnterpriseEdition,
 			testCase{
 				name:            "enterprise",
 				engineName:      mockEncodedTest,
@@ -732,7 +736,7 @@ var _ = Describe("GenFormatCmd", func() {
 			j.genFormatCmd(tc.value, j.runtime.Spec.Configs, tc.options)
 			Expect(tc.value.Configs.FormatCmd).To(Equal(tc.wantFormatCmd))
 		},
-		Entry("community edition",
+		Entry(testEntryCommunityEdition,
 			testCase{
 				name: "community",
 				value: &JuiceFS{
@@ -757,7 +761,7 @@ var _ = Describe("GenFormatCmd", func() {
 				wantFormatCmd: "/usr/local/bin/juicefs format --access-key=${ACCESS_KEY} --secret-key=${SECRET_KEY} --storage=minio --bucket=http://127.0.0.1:9000/minio/test redis://127.0.0.1:6379 test-community",
 			},
 		),
-		Entry("enterprise edition",
+		Entry(testEntryEnterpriseEdition,
 			testCase{
 				name: "enterprise",
 				value: &JuiceFS{
@@ -785,11 +789,11 @@ var _ = Describe("GenFormatCmd", func() {
 			testCase{
 				name: "mirror bucket",
 				value: &JuiceFS{
-					FullnameOverride: "test-mirror-bucket",
+					FullnameOverride: testMirrorBucket,
 					Edition:          EnterpriseEdition,
-					Source:           "test-mirror-bucket",
+					Source:           testMirrorBucket,
 					Configs: Configs{
-						Name:            "test-mirror-bucket",
+						Name:            testMirrorBucket,
 						AccessKeySecret: mockEncodedTest,
 						SecretKeySecret: mockEncodedTest,
 						Bucket:          mockBucketURL,
@@ -824,7 +828,7 @@ var _ = Describe("GenArgs", func() {
 	DescribeTable("genArgs",
 		func(optionMap map[string]string, wantContains []string) {
 			got := genArgs(optionMap)
-			Expect(isSliceEqual(got, wantContains)).To(BeTrue())
+			Expect(got).To(ConsistOf(wantContains))
 		},
 		Entry("with values",
 			map[string]string{"a": "b", "c": ""},
@@ -863,8 +867,8 @@ var _ = Describe("ParseImageTag", func() {
 				Expect(err).To(HaveOccurred())
 			} else {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(reflect.DeepEqual(gotCE, wantCE)).To(BeTrue())
-				Expect(reflect.DeepEqual(gotEE, wantEE)).To(BeTrue())
+				Expect(gotCE).To(Equal(wantCE))
+				Expect(gotEE).To(Equal(wantEE))
 			}
 		},
 		Entry("version format",
@@ -918,7 +922,7 @@ var _ = Describe("GenQuotaCmd", func() {
 				Expect(value.Configs.QuotaCmd).To(Equal(wantQuotaCmd))
 			}
 		},
-		Entry("community edition",
+		Entry(testEntryCommunityEdition,
 			&JuiceFS{
 				Edition: CommunityEdition,
 				Configs: Configs{},
@@ -936,7 +940,7 @@ var _ = Describe("GenQuotaCmd", func() {
 			false,
 			"/usr/local/bin/juicefs quota set redis://127.0.0.1:6379 --path /demo --capacity 1",
 		),
-		Entry("enterprise edition",
+		Entry(testEntryEnterpriseEdition,
 			&JuiceFS{
 				Edition: EnterpriseEdition,
 				Configs: Configs{},
@@ -966,7 +970,7 @@ var _ = Describe("GenMountOptions", func() {
 				Expect(err).To(HaveOccurred())
 			} else {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(isMapEqual(gotOptions, wantOptions)).To(BeTrue())
+				Expect(gotOptions).To(Equal(wantOptions))
 			}
 		},
 		Entry("with tiered store",
@@ -999,7 +1003,7 @@ func createTestSecret(name string, namespace string, data map[string][]byte) *co
 	}
 }
 
-func createEncryptOption(name string, secretName string, secretKey string) datav1alpha1.EncryptOption {
+func createEncryptOption(name, secretName, secretKey string) datav1alpha1.EncryptOption {
 	return datav1alpha1.EncryptOption{
 		Name: name,
 		ValueFrom: datav1alpha1.EncryptOptionSource{
