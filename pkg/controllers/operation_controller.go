@@ -139,7 +139,7 @@ func (o *OperationReconciler) ReconcileInternal(ctx dataoperation.ReconcileReque
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
 			var statusError *apierrors.StatusError
-			if errors.As(err, &statusError) {
+			if errors.As(err, &statusError) && statusError.Status().Details != nil {
 				ctx.Log.Info("The dataset is not found", "dataset", statusError.Status().Details.Name)
 			} else {
 				ctx.Log.Info("The dataset is not found", "error", err)
