@@ -225,44 +225,91 @@ var _ = Describe("ThinEngine Metadata", Label("pkg.ddc.thin.metadata_test.go"), 
 	})
 
 	Describe("SyncMetadata", func() {
+		var (
+			datasetInputs []datav1alpha1.Dataset
+			runtimeInputs []datav1alpha1.ThinRuntime
+		)
+
+		BeforeEach(func() {
+			datasetInputs = []datav1alpha1.Dataset{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      metadataTestHbase,
+						Namespace: metadataTestNamespace,
+					},
+					Status: datav1alpha1.DatasetStatus{
+						UfsTotal: metadataTestUfsTotal,
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      metadataTestSpark,
+						Namespace: metadataTestNamespace,
+					},
+					Status: datav1alpha1.DatasetStatus{
+						UfsTotal: "",
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      metadataTestHadoop,
+						Namespace: metadataTestNamespace,
+					},
+					Spec: datav1alpha1.DatasetSpec{
+						DataRestoreLocation: &datav1alpha1.DataRestoreLocation{
+							Path:     "local:///host1/erf",
+							NodeName: "test-node",
+						},
+					},
+					Status: datav1alpha1.DatasetStatus{
+						UfsTotal: "",
+					},
+				},
+			}
+
+			runtimeInputs = []datav1alpha1.ThinRuntime{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      metadataTestHbase,
+						Namespace: metadataTestNamespace,
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      metadataTestSpark,
+						Namespace: metadataTestNamespace,
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      metadataTestHadoop,
+						Namespace: metadataTestNamespace,
+					},
+				},
+			}
+		})
+
+		createEngine := func(name string) ThinEngine {
+			testObjs := []runtime.Object{}
+			for _, input := range datasetInputs {
+				testObjs = append(testObjs, input.DeepCopy())
+			}
+			for _, input := range runtimeInputs {
+				testObjs = append(testObjs, input.DeepCopy())
+			}
+			client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+
+			return ThinEngine{
+				name:      name,
+				namespace: metadataTestNamespace,
+				Client:    client,
+				Log:       fake.NullLogger(),
+			}
+		}
+
 		Context("when dataset has UfsTotal already set", func() {
 			It("should return no error for hbase", func() {
-				datasetInputs := []datav1alpha1.Dataset{
-					{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      metadataTestHbase,
-							Namespace: metadataTestNamespace,
-						},
-						Status: datav1alpha1.DatasetStatus{
-							UfsTotal: metadataTestUfsTotal,
-						},
-					},
-				}
-				runtimeInputs := []datav1alpha1.ThinRuntime{
-					{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      metadataTestHbase,
-							Namespace: metadataTestNamespace,
-						},
-					},
-				}
-
-				testObjs := []runtime.Object{}
-				for _, datasetInput := range datasetInputs {
-					testObjs = append(testObjs, datasetInput.DeepCopy())
-				}
-				for _, runtimeInput := range runtimeInputs {
-					testObjs = append(testObjs, runtimeInput.DeepCopy())
-				}
-				client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-
-				engine := ThinEngine{
-					name:      metadataTestHbase,
-					namespace: metadataTestNamespace,
-					Client:    client,
-					Log:       fake.NullLogger(),
-				}
-
+				engine := createEngine(metadataTestHbase)
 				err := engine.SyncMetadata()
 				Expect(err).NotTo(HaveOccurred())
 			})
@@ -270,42 +317,7 @@ var _ = Describe("ThinEngine Metadata", Label("pkg.ddc.thin.metadata_test.go"), 
 
 		Context("when dataset has empty UfsTotal", func() {
 			It("should return no error for spark", func() {
-				datasetInputs := []datav1alpha1.Dataset{
-					{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      metadataTestSpark,
-							Namespace: metadataTestNamespace,
-						},
-						Status: datav1alpha1.DatasetStatus{
-							UfsTotal: "",
-						},
-					},
-				}
-				runtimeInputs := []datav1alpha1.ThinRuntime{
-					{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      metadataTestSpark,
-							Namespace: metadataTestNamespace,
-						},
-					},
-				}
-
-				testObjs := []runtime.Object{}
-				for _, datasetInput := range datasetInputs {
-					testObjs = append(testObjs, datasetInput.DeepCopy())
-				}
-				for _, runtimeInput := range runtimeInputs {
-					testObjs = append(testObjs, runtimeInput.DeepCopy())
-				}
-				client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-
-				engine := ThinEngine{
-					name:      metadataTestSpark,
-					namespace: metadataTestNamespace,
-					Client:    client,
-					Log:       fake.NullLogger(),
-				}
-
+				engine := createEngine(metadataTestSpark)
 				err := engine.SyncMetadata()
 				Expect(err).NotTo(HaveOccurred())
 			})
@@ -313,48 +325,7 @@ var _ = Describe("ThinEngine Metadata", Label("pkg.ddc.thin.metadata_test.go"), 
 
 		Context("when dataset has DataRestoreLocation", func() {
 			It("should return no error for hadoop", func() {
-				datasetInputs := []datav1alpha1.Dataset{
-					{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      metadataTestHadoop,
-							Namespace: metadataTestNamespace,
-						},
-						Spec: datav1alpha1.DatasetSpec{
-							DataRestoreLocation: &datav1alpha1.DataRestoreLocation{
-								Path:     "local:///host1/erf",
-								NodeName: "test-node",
-							},
-						},
-						Status: datav1alpha1.DatasetStatus{
-							UfsTotal: "",
-						},
-					},
-				}
-				runtimeInputs := []datav1alpha1.ThinRuntime{
-					{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      metadataTestHadoop,
-							Namespace: metadataTestNamespace,
-						},
-					},
-				}
-
-				testObjs := []runtime.Object{}
-				for _, datasetInput := range datasetInputs {
-					testObjs = append(testObjs, datasetInput.DeepCopy())
-				}
-				for _, runtimeInput := range runtimeInputs {
-					testObjs = append(testObjs, runtimeInput.DeepCopy())
-				}
-				client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-
-				engine := ThinEngine{
-					name:      metadataTestHadoop,
-					namespace: metadataTestNamespace,
-					Client:    client,
-					Log:       fake.NullLogger(),
-				}
-
+				engine := createEngine(metadataTestHadoop)
 				err := engine.SyncMetadata()
 				Expect(err).NotTo(HaveOccurred())
 			})
@@ -407,7 +378,7 @@ var _ = Describe("ThinEngine Metadata", Label("pkg.ddc.thin.metadata_test.go"), 
 				}
 
 				dataset := &datav1alpha1.Dataset{}
-				err = client.Get(context.TODO(), key, dataset)
+				err = client.Get(context.Background(), key, dataset)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(dataset.Status.UfsTotal).To(Equal("2GB"))
 				Expect(dataset.Status.FileNum).To(Equal("5"))
