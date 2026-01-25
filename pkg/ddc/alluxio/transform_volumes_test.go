@@ -32,10 +32,14 @@ const (
 )
 
 var _ = Describe("AlluxioEngine Transform Volumes Tests", Label("pkg.ddc.alluxio.transform_volumes_test.go"), func() {
-	var engine *AlluxioEngine
+	var (
+		engine *AlluxioEngine
+		got    *Alluxio
+	)
 
 	BeforeEach(func() {
 		engine = &AlluxioEngine{}
+		got = &Alluxio{}
 	})
 
 	Describe("transformMasterVolumes", func() {
@@ -63,8 +67,6 @@ var _ = Describe("AlluxioEngine Transform Volumes Tests", Label("pkg.ddc.alluxio
 						},
 					},
 				}
-
-				got := &Alluxio{}
 				err := engine.transformMasterVolumes(runtime, got)
 
 				Expect(err).NotTo(HaveOccurred())
@@ -91,8 +93,6 @@ var _ = Describe("AlluxioEngine Transform Volumes Tests", Label("pkg.ddc.alluxio
 						},
 					},
 				}
-
-				got := &Alluxio{}
 				err := engine.transformMasterVolumes(runtime, got)
 
 				Expect(err).To(HaveOccurred())
@@ -125,8 +125,6 @@ var _ = Describe("AlluxioEngine Transform Volumes Tests", Label("pkg.ddc.alluxio
 						},
 					},
 				}
-
-				got := &Alluxio{}
 				err := engine.transformWorkerVolumes(runtime, got)
 
 				Expect(err).NotTo(HaveOccurred())
@@ -153,8 +151,6 @@ var _ = Describe("AlluxioEngine Transform Volumes Tests", Label("pkg.ddc.alluxio
 						},
 					},
 				}
-
-				got := &Alluxio{}
 				err := engine.transformWorkerVolumes(runtime, got)
 
 				Expect(err).To(HaveOccurred())
@@ -187,8 +183,6 @@ var _ = Describe("AlluxioEngine Transform Volumes Tests", Label("pkg.ddc.alluxio
 						},
 					},
 				}
-
-				got := &Alluxio{}
 				err := engine.transformFuseVolumes(runtime, got)
 
 				Expect(err).NotTo(HaveOccurred())
@@ -215,8 +209,6 @@ var _ = Describe("AlluxioEngine Transform Volumes Tests", Label("pkg.ddc.alluxio
 						},
 					},
 				}
-
-				got := &Alluxio{}
 				err := engine.transformFuseVolumes(runtime, got)
 
 				Expect(err).To(HaveOccurred())
