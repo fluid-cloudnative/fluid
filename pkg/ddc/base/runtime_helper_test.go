@@ -122,10 +122,9 @@ var _ = Describe("RuntimeHelper", func() {
 		BeforeEach(func() {
 			scheme = runtime.NewScheme()
 			Expect(corev1.AddToScheme(scheme)).To(Succeed())
-			objs = []runtime.Object{}
 
-			pvcInputs := []corev1.PersistentVolumeClaim{
-				{
+			objs = []runtime.Object{
+				&corev1.PersistentVolumeClaim{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "fluid-dataset",
 						Namespace: testNamespace,
@@ -134,7 +133,7 @@ var _ = Describe("RuntimeHelper", func() {
 						VolumeName: "default-fluid-dataset",
 					},
 				},
-				{
+				&corev1.PersistentVolumeClaim{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:        "nonfluidpvc",
 						Namespace:   testNamespace,
@@ -144,7 +143,7 @@ var _ = Describe("RuntimeHelper", func() {
 						VolumeName: "nonfluidpv",
 					},
 				},
-				{
+				&corev1.PersistentVolumeClaim{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:        "nopv",
 						Namespace:   testNamespace,
@@ -154,7 +153,7 @@ var _ = Describe("RuntimeHelper", func() {
 						VolumeName: "nopv",
 					},
 				},
-				{
+				&corev1.PersistentVolumeClaim{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:        "fluid-dataset-subpath",
 						Namespace:   testNamespace,
@@ -164,10 +163,7 @@ var _ = Describe("RuntimeHelper", func() {
 						VolumeName: "default-fluid-dataset-subpath",
 					},
 				},
-			}
-
-			testPVInputs := []corev1.PersistentVolume{
-				{
+				&corev1.PersistentVolume{
 					ObjectMeta: metav1.ObjectMeta{Name: "default-fluid-dataset"},
 					Spec: corev1.PersistentVolumeSpec{
 						PersistentVolumeSource: corev1.PersistentVolumeSource{
@@ -181,11 +177,11 @@ var _ = Describe("RuntimeHelper", func() {
 						},
 					},
 				},
-				{
+				&corev1.PersistentVolume{
 					ObjectMeta: metav1.ObjectMeta{Name: "nonfluidpv", Annotations: common.GetExpectedFluidAnnotations()},
 					Spec:       corev1.PersistentVolumeSpec{},
 				},
-				{
+				&corev1.PersistentVolume{
 					ObjectMeta: metav1.ObjectMeta{Name: "default-fluid-dataset-subpath"},
 					Spec: corev1.PersistentVolumeSpec{
 						PersistentVolumeSource: corev1.PersistentVolumeSource{
@@ -200,13 +196,6 @@ var _ = Describe("RuntimeHelper", func() {
 						},
 					},
 				},
-			}
-
-			for i := range pvcInputs {
-				objs = append(objs, &pvcInputs[i])
-			}
-			for i := range testPVInputs {
-				objs = append(objs, &testPVInputs[i])
 			}
 		})
 
