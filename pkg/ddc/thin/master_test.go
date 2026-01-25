@@ -70,83 +70,34 @@ var _ = Describe("Master Tests", func() {
 	})
 
 	Describe("ThinEngine.ShouldSetupMaster", func() {
-		Context("when fuse phase is None", func() {
-			It("should return true", func() {
+		DescribeTable("should correctly determine if master setup is needed",
+			func(phase datav1alpha1.RuntimePhase, expected bool) {
 				runtimeInput := &datav1alpha1.ThinRuntime{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-none",
+						Name:      "test-" + string(phase),
 						Namespace: "fluid",
 					},
 					Status: datav1alpha1.RuntimeStatus{
-						FusePhase: datav1alpha1.RuntimePhaseNone,
+						FusePhase: phase,
 					},
 				}
 				testObjs := []runtime.Object{runtimeInput.DeepCopy()}
 				client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
 				engine := ThinEngine{
-					name:      "test-none",
+					name:      "test-" + string(phase),
 					namespace: "fluid",
 					Client:    client,
 				}
 
 				should, err := engine.ShouldSetupMaster()
 				Expect(err).To(BeNil())
-				Expect(should).To(BeTrue())
-			})
-		})
-
-		Context("when fuse phase is Ready", func() {
-			It("should return false", func() {
-				runtimeInput := &datav1alpha1.ThinRuntime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-ready",
-						Namespace: "fluid",
-					},
-					Status: datav1alpha1.RuntimeStatus{
-						FusePhase: datav1alpha1.RuntimePhaseReady,
-					},
-				}
-				testObjs := []runtime.Object{runtimeInput.DeepCopy()}
-				client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-
-				engine := ThinEngine{
-					name:      "test-ready",
-					namespace: "fluid",
-					Client:    client,
-				}
-
-				should, err := engine.ShouldSetupMaster()
-				Expect(err).To(BeNil())
-				Expect(should).To(BeFalse())
-			})
-		})
-
-		Context("when fuse phase is NotReady", func() {
-			It("should return false", func() {
-				runtimeInput := &datav1alpha1.ThinRuntime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-notready",
-						Namespace: "fluid",
-					},
-					Status: datav1alpha1.RuntimeStatus{
-						FusePhase: datav1alpha1.RuntimePhaseNotReady,
-					},
-				}
-				testObjs := []runtime.Object{runtimeInput.DeepCopy()}
-				client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-
-				engine := ThinEngine{
-					name:      "test-notready",
-					namespace: "fluid",
-					Client:    client,
-				}
-
-				should, err := engine.ShouldSetupMaster()
-				Expect(err).To(BeNil())
-				Expect(should).To(BeFalse())
-			})
-		})
+				Expect(should).To(Equal(expected))
+			},
+			Entry("None phase - should setup", datav1alpha1.RuntimePhaseNone, true),
+			Entry("Ready phase - should not setup", datav1alpha1.RuntimePhaseReady, false),
+			Entry("NotReady phase - should not setup", datav1alpha1.RuntimePhaseNotReady, false),
+		)
 	})
 
 	Describe("ThinEngine.SetupMaster", func() {
