@@ -324,11 +324,7 @@ var _ = Describe("AlluxioEngine Replicas Tests", Label("pkg.ddc.alluxio.replicas
 				Expect(err).NotTo(HaveOccurred())
 
 				// Check that no scaling conditions are present
-				for _, cond := range rt.Status.Conditions {
-					Expect(cond.Type).NotTo(Equal(v1alpha1.RuntimeWorkerScaledOut))
-					Expect(cond.Type).NotTo(Equal(v1alpha1.RuntimeWorkerScaledIn))
-				}
-				Expect(len(rt.Status.Conditions)).To(Equal(0))
+				Expect(rt.Status.Conditions).To(BeEmpty())
 			})
 		})
 	})
