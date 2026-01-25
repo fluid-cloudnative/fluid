@@ -247,16 +247,22 @@ func (r *FuseRecover) lazyUnmountIfNeeded(mountPath string) {
 		glog.Warningf("FuseRecovery: failed to cleanup mount %s: %v", mountPath, err)
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
 	// Wait briefly until the mount is released by the kernel.
-	err := wait.Poll(500*time.Millisecond, 2*time.Second, func() (bool, error) {
+	err := wait.PollUntilContextTimeout(ctx, 500*time.Millisecond, 2*time.Second, false, func(ctx context.Context) (bool, error) {
 		notMnt, err := r.Interface.IsLikelyNotMountPoint(mountPath)
-		if os.IsNotExist(err) {
-			return true, nil
+		if err != nil {
+			if os.IsNotExist(err) {
+				return true, nil
+			}
+			return false, err
 		}
-		return err == nil && notMnt, nil
+		return notMnt, nil
 	})
 	if err != nil {
-		glog.Warningf("FuseRecovery: timeout waiting for mount point %s to be cleaned", mountPath)
+		glog.Warningf("FuseRecovery: failed while waiting for mount point %s to be cleaned: %v", mountPath, err)
 	}
 }
 
