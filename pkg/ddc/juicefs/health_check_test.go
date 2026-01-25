@@ -36,15 +36,15 @@ import (
 )
 
 const (
-	healthCheckTestNamespace       = "fluid"
-	healthCheckTestNameHbase       = "hbase"
-	healthCheckTestNameTest        = "test"
-	healthCheckTestNameSpark       = "spark"
-	healthCheckTestWorkerSuffix    = "-worker"
-	healthCheckTestFuseSuffix      = "-fuse"
-	healthCheckTestEndpoint        = "test Endpoint"
-	healthCheckTestHCFSVersion     = "Underlayer HCFS Compatible Version"
-	healthCheckTestCachedValue     = "true"
+	healthCheckTestNamespace    = "fluid"
+	healthCheckTestNameHbase    = "hbase"
+	healthCheckTestNameTest     = "test"
+	healthCheckTestNameSpark    = "spark"
+	healthCheckTestWorkerSuffix = "-worker"
+	healthCheckTestFuseSuffix   = "-fuse"
+	healthCheckTestEndpoint     = "test Endpoint"
+	healthCheckTestHCFSVersion  = "Underlayer HCFS Compatible Version"
+	healthCheckTestCachedValue  = "true"
 )
 
 var _ = Describe("CheckRuntimeHealthy", Label("pkg.ddc.juicefs.health_check_test.go"), func() {
