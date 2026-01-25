@@ -15,7 +15,6 @@ package vineyard
 
 import (
 	"os"
-	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -306,6 +305,78 @@ var _ = Describe("VineyardEngine Transform", Label("pkg.ddc.vineyard.transform_t
 				actual := engine.transformMasterOptions(runtime)
 				Expect(actual).To(HaveKeyWithValue("vineyardd.reserve.memory", "false"))
 				Expect(actual).To(HaveKeyWithValue("etcd.prefix", "/vineyard-test"))
+			})
+		})
+	})
+
+	Describe("transformWorkers", func() {
+		Context("when image, imageTag and pullPolicy are set directly", func() {
+			It("should use the specified values", func() {
+				runtime := &datav1alpha1.VineyardRuntime{
+					Spec: datav1alpha1.VineyardRuntimeSpec{
+						Replicas: 3,
+						Worker: datav1alpha1.VineyardCompTemplateSpec{
+							Replicas:        2,
+							Image:           "test-image",
+							ImageTag:        "test-tag",
+							ImagePullPolicy: "IfNotPresent",
+						},
+					},
+				}
+
+				runtimeInfo, err := base.BuildRuntimeInfo(transformTestName, transformTestNamespace, transformTestVineyard)
+				Expect(err).NotTo(HaveOccurred())
+
+				engine := &VineyardEngine{
+					Log:         fake.NullLogger(),
+					runtimeInfo: runtimeInfo,
+				}
+
+				value := &Vineyard{}
+				err = engine.transformWorkers(runtime, value)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(value.Worker.Image).To(Equal("test-image"))
+				Expect(value.Worker.ImageTag).To(Equal("test-tag"))
+				Expect(value.Worker.ImagePullPolicy).To(Equal("IfNotPresent"))
+			})
+		})
+
+		Context("when image and tag come from environment", func() {
+			BeforeEach(func() {
+				err := os.Setenv("VINEYARD_WORKER_IMAGE_ENV", "image-from-env:image-tag-from-env")
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			AfterEach(func() {
+				err := os.Unsetenv("VINEYARD_WORKER_IMAGE_ENV")
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("should use image from environment", func() {
+				runtime := &datav1alpha1.VineyardRuntime{
+					Spec: datav1alpha1.VineyardRuntimeSpec{
+						Replicas: 3,
+						Worker: datav1alpha1.VineyardCompTemplateSpec{
+							Replicas:        2,
+							ImagePullPolicy: "IfNotPresent",
+						},
+					},
+				}
+
+				runtimeInfo, err := base.BuildRuntimeInfo(transformTestName, transformTestNamespace, transformTestVineyard)
+				Expect(err).NotTo(HaveOccurred())
+
+				engine := &VineyardEngine{
+					Log:         fake.NullLogger(),
+					runtimeInfo: runtimeInfo,
+				}
+
+				value := &Vineyard{}
+				err = engine.transformWorkers(runtime, value)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(value.Worker.Image).To(Equal("image-from-env"))
+				Expect(value.Worker.ImageTag).To(Equal("image-tag-from-env"))
+				Expect(value.Worker.ImagePullPolicy).To(Equal("IfNotPresent"))
 			})
 		})
 	})
@@ -676,8 +747,3 @@ var _ = Describe("VineyardEngine Transform", Label("pkg.ddc.vineyard.transform_t
 		})
 	})
 })
-
-// Helper function for env-based tests
-func containsEnv(testName string) bool {
-	return strings.Contains(testName, "env")
-}
