@@ -253,12 +253,6 @@ var _ = Describe("VineyardEngine Shutdown Tests", func() {
 					Log:       fake.NullLogger(),
 				}
 
-				patch := ApplyMethod(reflect.TypeOf(engine), "GetReportSummary",
-					func(_ *VineyardEngine) ([]string, error) {
-						return []string{"instances_memory_usage_bytes 1234"}, nil
-					})
-				defer patch.Reset()
-
 				err := engine.cleanupCache()
 				Expect(err).NotTo(HaveOccurred())
 			})
