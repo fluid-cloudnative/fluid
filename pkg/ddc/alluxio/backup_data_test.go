@@ -33,6 +33,11 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+const (
+	testDatasetName      = "test-dataset"
+	testDatasetNamespace = "default"
+)
+
 func TestGenerateDataBackupValueFile(t *testing.T) {
 	testCases := []struct {
 		name             string
@@ -49,17 +54,17 @@ func TestGenerateDataBackupValueFile(t *testing.T) {
 			dataBackup: &datav1alpha1.DataBackup{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-backup",
-					Namespace: "default",
+					Namespace: testDatasetNamespace,
 				},
 				Spec: datav1alpha1.DataBackupSpec{
-					Dataset:    "test-dataset",
+					Dataset:    testDatasetName,
 					BackupPath: "pvc://backup-pvc/data",
 				},
 			},
 			runtime: &datav1alpha1.AlluxioRuntime{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-dataset",
-					Namespace: "default",
+					Name:      testDatasetName,
+					Namespace: testDatasetNamespace,
 				},
 				Spec: datav1alpha1.AlluxioRuntimeSpec{
 					Replicas: 1,
@@ -67,15 +72,15 @@ func TestGenerateDataBackupValueFile(t *testing.T) {
 			},
 			dataset: &datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-dataset",
-					Namespace: "default",
+					Name:      testDatasetName,
+					Namespace: testDatasetNamespace,
 					UID:       "test-uid",
 				},
 			},
 			masterPod: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-dataset-master-0",
-					Namespace: "default",
+					Namespace: testDatasetNamespace,
 				},
 				Spec: corev1.PodSpec{
 					NodeName: "test-node",
@@ -110,10 +115,10 @@ func TestGenerateDataBackupValueFile(t *testing.T) {
 			dataBackup: &datav1alpha1.DataBackup{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-backup-runas",
-					Namespace: "default",
+					Namespace: testDatasetNamespace,
 				},
 				Spec: datav1alpha1.DataBackupSpec{
-					Dataset:    "test-dataset",
+					Dataset:    testDatasetName,
 					BackupPath: "pvc://backup-pvc/data",
 					RunAs: &datav1alpha1.User{
 						UID: ptr.To(int64(1000)),
@@ -123,8 +128,8 @@ func TestGenerateDataBackupValueFile(t *testing.T) {
 			},
 			runtime: &datav1alpha1.AlluxioRuntime{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-dataset",
-					Namespace: "default",
+					Name:      testDatasetName,
+					Namespace: testDatasetNamespace,
 				},
 				Spec: datav1alpha1.AlluxioRuntimeSpec{
 					Replicas: 1,
@@ -132,15 +137,15 @@ func TestGenerateDataBackupValueFile(t *testing.T) {
 			},
 			dataset: &datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-dataset",
-					Namespace: "default",
+					Name:      testDatasetName,
+					Namespace: testDatasetNamespace,
 					UID:       "test-uid",
 				},
 			},
 			masterPod: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-dataset-master-0",
-					Namespace: "default",
+					Namespace: testDatasetNamespace,
 				},
 				Spec: corev1.PodSpec{
 					NodeName: "test-node",
@@ -189,15 +194,15 @@ func TestGenerateDataBackupValueFile(t *testing.T) {
 			}
 
 			client := fake.NewFakeClientWithScheme(testScheme, objs...)
-			runtimeInfo, err := base.BuildRuntimeInfo("test-dataset", "default", "alluxio")
+			runtimeInfo, err := base.BuildRuntimeInfo(testDatasetName, testDatasetNamespace, "alluxio")
 			if err != nil {
 				t.Fatalf("failed to build runtime info: %v", err)
 			}
 
 			engine := &AlluxioEngine{
 				Client:      client,
-				name:        "test-dataset",
-				namespace:   "default",
+				name:        testDatasetName,
+				namespace:   testDatasetNamespace,
 				runtime:     tc.runtime,
 				runtimeInfo: runtimeInfo,
 				Log:         fake.NullLogger(),
@@ -248,7 +253,7 @@ func TestGenerateDataBackupValueFile(t *testing.T) {
 
 func TestGenerateDataBackupValueFileInvalidObject(t *testing.T) {
 	client := fake.NewFakeClientWithScheme(testScheme)
-	runtimeInfo, err := base.BuildRuntimeInfo("test", "default", "alluxio")
+	runtimeInfo, err := base.BuildRuntimeInfo("test", testDatasetNamespace, "alluxio")
 	if err != nil {
 		t.Fatalf("failed to build runtime info: %v", err)
 	}
@@ -256,7 +261,7 @@ func TestGenerateDataBackupValueFileInvalidObject(t *testing.T) {
 	engine := &AlluxioEngine{
 		Client:      client,
 		name:        "test",
-		namespace:   "default",
+		namespace:   testDatasetNamespace,
 		runtimeInfo: runtimeInfo,
 		Log:         fake.NullLogger(),
 	}
@@ -268,7 +273,7 @@ func TestGenerateDataBackupValueFileInvalidObject(t *testing.T) {
 	wrongTypeObject := &datav1alpha1.Dataset{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "not-a-databackup",
-			Namespace: "default",
+			Namespace: testDatasetNamespace,
 		},
 	}
 
@@ -286,7 +291,7 @@ func TestGenerateDataBackupValueFileRuntimeNotFound(t *testing.T) {
 	dataBackup := &datav1alpha1.DataBackup{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-backup",
-			Namespace: "default",
+			Namespace: testDatasetNamespace,
 		},
 		Spec: datav1alpha1.DataBackupSpec{
 			Dataset:    "nonexistent-dataset",
@@ -295,7 +300,7 @@ func TestGenerateDataBackupValueFileRuntimeNotFound(t *testing.T) {
 	}
 
 	client := fake.NewFakeClientWithScheme(testScheme)
-	runtimeInfo, err := base.BuildRuntimeInfo("nonexistent-dataset", "default", "alluxio")
+	runtimeInfo, err := base.BuildRuntimeInfo("nonexistent-dataset", testDatasetNamespace, "alluxio")
 	if err != nil {
 		t.Fatalf("failed to build runtime info: %v", err)
 	}
@@ -303,7 +308,7 @@ func TestGenerateDataBackupValueFileRuntimeNotFound(t *testing.T) {
 	engine := &AlluxioEngine{
 		Client:      client,
 		name:        "nonexistent-dataset",
-		namespace:   "default",
+		namespace:   testDatasetNamespace,
 		runtimeInfo: runtimeInfo,
 		Log:         fake.NullLogger(),
 	}
