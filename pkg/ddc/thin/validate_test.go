@@ -227,11 +227,8 @@ func TestValidateDuplicateDatasetMounts(t *testing.T) {
 				Dataset: tc.dataset,
 			}
 			err := validateDuplicateDatasetMounts(ctx)
-			if tc.expectErr && err == nil {
-				t.Errorf("expected error but got nil")
-			}
-			if !tc.expectErr && err != nil {
-				t.Errorf("expected no error but got: %v", err)
+			if (err != nil) != tc.expectErr {
+				t.Errorf("validateDuplicateDatasetMounts() error = %v, wantErr %v", err, tc.expectErr)
 			}
 		})
 	}
@@ -275,7 +272,10 @@ func TestThinEngineValidate(t *testing.T) {
 
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
-	runtimeInfo, _ := base.BuildRuntimeInfo(runtimeName, namespace, common.ThinRuntime)
+	runtimeInfo, err := base.BuildRuntimeInfo(runtimeName, namespace, common.ThinRuntime)
+	if err != nil {
+		t.Fatalf("failed to build runtime info: %v", err)
+	}
 	runtimeInfo.SetupWithDataset(datasetInput)
 	runtimeInfo.SetOwnerDatasetUID(datasetInput.UID)
 
@@ -358,11 +358,8 @@ func TestThinEngineValidate(t *testing.T) {
 				Dataset: tc.dataset,
 			}
 			err := engine.Validate(ctx)
-			if tc.expectErr && err == nil {
-				t.Errorf("expected error but got nil")
-			}
-			if !tc.expectErr && err != nil {
-				t.Errorf("expected no error but got: %v", err)
+			if (err != nil) != tc.expectErr {
+				t.Errorf("engine.Validate() error = %v, wantErr %v", err, tc.expectErr)
 			}
 		})
 	}
