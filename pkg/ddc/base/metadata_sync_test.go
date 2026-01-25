@@ -165,119 +165,68 @@ var _ = Describe("MetadataSync", func() {
 	})
 
 	Describe("RecordDatasetMetrics", func() {
-		Context("when datasetNamespace is empty", func() {
-			It("should log error about invalid datasetNamespace", func() {
-				log, logBuf := newTestLogger()
-				result := base.MetadataSyncResult{
-					UfsTotal: "1GB",
-					FileNum:  "100",
-				}
-				base.RecordDatasetMetrics(result, "", testDatasetName, log)
-				Expect(logBuf.String()).To(ContainSubstring("fail to validate RecordDatasetMetrics arguments"))
-				Expect(logBuf.String()).To(ContainSubstring("datasetNamespace should not be empty"))
-			})
-		})
-
-		Context("when datasetName is empty", func() {
-			It("should log error about invalid datasetName", func() {
-				log, logBuf := newTestLogger()
-				result := base.MetadataSyncResult{
-					UfsTotal: "1GB",
-					FileNum:  "100",
-				}
-				base.RecordDatasetMetrics(result, testDatasetNamespace, "", log)
-				Expect(logBuf.String()).To(ContainSubstring("fail to validate RecordDatasetMetrics arguments"))
-				Expect(logBuf.String()).To(ContainSubstring("datasetName should not be empty"))
-			})
-		})
-
-		Context("when UfsTotal is empty", func() {
-			It("should skip parsing UfsTotal without error", func() {
-				log, logBuf := newTestLogger()
-				result := base.MetadataSyncResult{
-					UfsTotal: "",
-					FileNum:  "100",
-				}
-				base.RecordDatasetMetrics(result, testDatasetNamespace, testDatasetName, log)
-				Expect(logBuf.String()).NotTo(ContainSubstring("ERROR"))
-			})
-		})
-
-		Context("when FileNum is empty", func() {
-			It("should skip parsing FileNum without error", func() {
-				log, logBuf := newTestLogger()
-				result := base.MetadataSyncResult{
-					UfsTotal: "1GB",
-					FileNum:  "",
-				}
-				base.RecordDatasetMetrics(result, testDatasetNamespace, testDatasetName, log)
-				Expect(logBuf.String()).NotTo(ContainSubstring("ERROR"))
-			})
-		})
-
-		Context("when UfsTotal has invalid format", func() {
-			It("should log error about parsing failure", func() {
-				log, logBuf := newTestLogger()
-				result := base.MetadataSyncResult{
-					UfsTotal: "invalid-size",
-					FileNum:  "100",
-				}
-				base.RecordDatasetMetrics(result, testDatasetNamespace, testDatasetName, log)
-				Expect(logBuf.String()).To(ContainSubstring("fail to parse result.UfsTotal"))
-			})
-		})
-
-		Context("when FileNum has invalid format", func() {
-			It("should log error about atoi failure", func() {
-				log, logBuf := newTestLogger()
-				result := base.MetadataSyncResult{
-					UfsTotal: "1GB",
-					FileNum:  "not-a-number",
-				}
-				base.RecordDatasetMetrics(result, testDatasetNamespace, testDatasetName, log)
-				Expect(logBuf.String()).To(ContainSubstring("fail to atoi result.FileNum"))
-			})
-		})
-
-		Context("when all parameters are valid", func() {
-			It("should record metrics without error", func() {
+		DescribeTable("should handle different input combinations",
+			func(namespace, name, ufsTotal, fileNum string, shouldContain []string, shouldNotContain []string) {
 				log, logBuf := newTestLogger()
 				result := base.MetadataSyncResult{
 					Done:      true,
 					StartTime: time.Now(),
-					UfsTotal:  "1GB",
-					FileNum:   "100",
+					UfsTotal:  ufsTotal,
+					FileNum:   fileNum,
 				}
-				base.RecordDatasetMetrics(result, testDatasetNamespace, testDatasetName, log)
-				Expect(logBuf.String()).NotTo(ContainSubstring("ERROR"))
-			})
-		})
-
-		Context("when both UfsTotal and FileNum are empty", func() {
-			It("should complete without error", func() {
-				log, logBuf := newTestLogger()
-				result := base.MetadataSyncResult{
-					Done:      true,
-					StartTime: time.Now(),
-					UfsTotal:  "",
-					FileNum:   "",
+				base.RecordDatasetMetrics(result, namespace, name, log)
+				for _, s := range shouldContain {
+					Expect(logBuf.String()).To(ContainSubstring(s))
 				}
-				base.RecordDatasetMetrics(result, testDatasetNamespace, testDatasetName, log)
-				Expect(logBuf.String()).NotTo(ContainSubstring("ERROR"))
-			})
-		})
-
-		Context("when both namespace and name are empty", func() {
-			It("should log error about invalid datasetNamespace", func() {
-				log, logBuf := newTestLogger()
-				result := base.MetadataSyncResult{
-					UfsTotal: "1GB",
-					FileNum:  "100",
+				for _, s := range shouldNotContain {
+					Expect(logBuf.String()).NotTo(ContainSubstring(s))
 				}
-				base.RecordDatasetMetrics(result, "", "", log)
-				Expect(logBuf.String()).To(ContainSubstring("fail to validate RecordDatasetMetrics arguments"))
-				Expect(logBuf.String()).To(ContainSubstring("datasetNamespace should not be empty"))
-			})
-		})
+			},
+			Entry("empty namespace",
+				"", testDatasetName, "1GB", "100",
+				[]string{"fail to validate RecordDatasetMetrics arguments", "datasetNamespace should not be empty"},
+				[]string{},
+			),
+			Entry("empty name",
+				testDatasetNamespace, "", "1GB", "100",
+				[]string{"fail to validate RecordDatasetMetrics arguments", "datasetName should not be empty"},
+				[]string{},
+			),
+			Entry("empty UfsTotal",
+				testDatasetNamespace, testDatasetName, "", "100",
+				[]string{},
+				[]string{"ERROR"},
+			),
+			Entry("empty FileNum",
+				testDatasetNamespace, testDatasetName, "1GB", "",
+				[]string{},
+				[]string{"ERROR"},
+			),
+			Entry("invalid UfsTotal format",
+				testDatasetNamespace, testDatasetName, "invalid-size", "100",
+				[]string{"fail to parse result.UfsTotal"},
+				[]string{},
+			),
+			Entry("invalid FileNum format",
+				testDatasetNamespace, testDatasetName, "1GB", "not-a-number",
+				[]string{"fail to atoi result.FileNum"},
+				[]string{},
+			),
+			Entry("all parameters valid",
+				testDatasetNamespace, testDatasetName, "1GB", "100",
+				[]string{},
+				[]string{"ERROR"},
+			),
+			Entry("both UfsTotal and FileNum empty",
+				testDatasetNamespace, testDatasetName, "", "",
+				[]string{},
+				[]string{"ERROR"},
+			),
+			Entry("both namespace and name empty",
+				"", "", "1GB", "100",
+				[]string{"fail to validate RecordDatasetMetrics arguments", "datasetNamespace should not be empty"},
+				[]string{},
+			),
+		)
 	})
 })
