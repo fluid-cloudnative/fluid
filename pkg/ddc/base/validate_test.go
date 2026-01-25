@@ -35,43 +35,38 @@ var _ = Describe("ValidateRuntimeInfo", func() {
 		runtimeInfo = &mockRuntimeInfoForValidate{}
 	})
 
-	Context("validating runtime info", func() {
-		It("should return nil when all info is valid", func() {
-			runtimeInfo.ownerDatasetUID = "uid-12345"
-			runtimeInfo.placementModeSet = true
+	DescribeTable("validating runtime info",
+		func(ownerUID string, placementSet bool, expectError bool, expectTemporary bool, errorSubstring string) {
+			runtimeInfo.ownerDatasetUID = ownerUID
+			runtimeInfo.placementModeSet = placementSet
 
 			err := ValidateRuntimeInfo(runtimeInfo)
-			Expect(err).NotTo(HaveOccurred())
-		})
 
-		It("should return temporary error when OwnerDatasetUID is empty", func() {
-			runtimeInfo.ownerDatasetUID = ""
-			runtimeInfo.placementModeSet = true
-
-			err := ValidateRuntimeInfo(runtimeInfo)
-			Expect(err).To(HaveOccurred())
-			Expect(fluiderrs.IsTemporaryValidationFailed(err)).To(BeTrue())
-		})
-
-		It("should return temporary error when placement mode is not set", func() {
-			runtimeInfo.ownerDatasetUID = "uid-12345"
-			runtimeInfo.placementModeSet = false
-
-			err := ValidateRuntimeInfo(runtimeInfo)
-			Expect(err).To(HaveOccurred())
-			Expect(fluiderrs.IsTemporaryValidationFailed(err)).To(BeTrue())
-		})
-
-		It("should return error for OwnerDatasetUID first when both invalid", func() {
-			runtimeInfo.ownerDatasetUID = ""
-			runtimeInfo.placementModeSet = false
-
-			err := ValidateRuntimeInfo(runtimeInfo)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("OwnerDatasetUID is not set"))
-			Expect(fluiderrs.IsTemporaryValidationFailed(err)).To(BeTrue())
-		})
-	})
+			if expectError {
+				Expect(err).To(HaveOccurred())
+				if expectTemporary {
+					Expect(fluiderrs.IsTemporaryValidationFailed(err)).To(BeTrue())
+				}
+				if errorSubstring != "" {
+					Expect(err.Error()).To(ContainSubstring(errorSubstring))
+				}
+			} else {
+				Expect(err).NotTo(HaveOccurred())
+			}
+		},
+		Entry("all info is valid",
+			"uid-12345", true, false, false, "",
+		),
+		Entry("OwnerDatasetUID is empty",
+			"", true, true, true, "",
+		),
+		Entry("placement mode is not set",
+			"uid-12345", false, true, true, "",
+		),
+		Entry("both OwnerDatasetUID and placement mode invalid - reports UID first",
+			"", false, true, true, "OwnerDatasetUID is not set",
+		),
+	)
 })
 
 // mockRuntimeInfoForValidate implements RuntimeInfoInterface for testing ValidateRuntimeInfo
