@@ -34,18 +34,18 @@ import (
 )
 
 const (
-	workerTestNamespace     = "thin"
-	workerTestFluidNs       = "fluid"
-	workerTestName0         = "test0"
-	workerTestName1         = "test1"
-	workerTestName2         = "test2"
-	workerTestName3         = "test3"
-	workerTestName          = "test"
-	workerTestNodeName      = "test-node"
-	workerTestNodeSelect    = "node-select"
-	workerTestWorkerSuffix  = "-worker"
-	workerTestFuseSuffix    = "-fuse"
-	workerTestSparkName     = "spark"
+	workerTestNamespace      = "thin"
+	workerTestFluidNs        = "fluid"
+	workerTestName0          = "test0"
+	workerTestName1          = "test1"
+	workerTestName2          = "test2"
+	workerTestName3          = "test3"
+	workerTestName           = "test"
+	workerTestNodeName       = "test-node"
+	workerTestNodeSelect     = "node-select"
+	workerTestWorkerSuffix   = "-worker"
+	workerTestFuseSuffix     = "-fuse"
+	workerTestSparkName      = "spark"
 	workerTestWorkerSelector = "app=thin,release=spark,role=thin-worker"
 )
 
