@@ -30,13 +30,14 @@ import (
 )
 
 const (
-	testStatusNamespace       = "fluid"
-	testStatusRuntimeHadoop   = "hadoop"
-	testStatusRuntimeHbase    = "hbase"
-	testStatusRuntimeNoWorker = "no-worker"
-	testStatusRuntimeNoMaster = "no-master"
-	testStatusPhaseNotReady   = "NotReady"
-	testStatusUfsTotal        = "19.07MiB"
+	testStatusNamespace           = "fluid"
+	testStatusRuntimeHadoop       = "hadoop"
+	testStatusRuntimeHbase        = "hbase"
+	testStatusRuntimeNoWorker     = "no-worker"
+	testStatusRuntimeNoMaster     = "no-master"
+	testStatusRuntimeZeroReplicas = "zero-replicas"
+	testStatusPhaseNotReady       = "NotReady"
+	testStatusUfsTotal            = "19.07MiB"
 )
 
 func TestCheckAndUpdateRuntimeStatus(t *testing.T) {
@@ -338,7 +339,7 @@ func TestCheckAndUpdateRuntimeStatusWithZeroReplicas(t *testing.T) {
 	masterInputs := []*appsv1.StatefulSet{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "zero-replicas-master",
+				Name:      testStatusRuntimeZeroReplicas + "-master",
 				Namespace: testStatusNamespace,
 			},
 			Spec: appsv1.StatefulSetSpec{
@@ -353,7 +354,7 @@ func TestCheckAndUpdateRuntimeStatusWithZeroReplicas(t *testing.T) {
 	workerInputs := []appsv1.StatefulSet{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "zero-replicas-worker",
+				Name:      testStatusRuntimeZeroReplicas + "-worker",
 				Namespace: testStatusNamespace,
 			},
 			Spec: appsv1.StatefulSetSpec{
@@ -369,7 +370,7 @@ func TestCheckAndUpdateRuntimeStatusWithZeroReplicas(t *testing.T) {
 	runtimeInputs := []*datav1alpha1.GooseFSRuntime{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "zero-replicas",
+				Name:      testStatusRuntimeZeroReplicas,
 				Namespace: testStatusNamespace,
 			},
 			Spec: datav1alpha1.GooseFSRuntimeSpec{
@@ -400,7 +401,7 @@ func TestCheckAndUpdateRuntimeStatusWithZeroReplicas(t *testing.T) {
 	}
 	fakeClient := fake.NewFakeClientWithScheme(testScheme, objs...)
 
-	engine := newGooseFSEngineREP(fakeClient, "zero-replicas", testStatusNamespace)
+	engine := newGooseFSEngineREP(fakeClient, testStatusRuntimeZeroReplicas, testStatusNamespace)
 
 	patch1 := ApplyMethod(reflect.TypeOf(engine), "GetReportSummary",
 		func(_ *GooseFSEngine) (string, error) {
