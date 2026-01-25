@@ -117,67 +117,50 @@ var _ = Describe("GetDataOperationValueFile", func() {
 		}
 	})
 
-	Context("when operation type is DataMigrate", func() {
-		It("should return error for missing target dataset", func() {
+	DescribeTable("should return error for various operation types",
+		func(opType dataoperation.OperationType, object client.Object) {
 			op := &mockOperation{
-				opType: dataoperation.DataMigrateType,
-				object: &datav1alpha1.DataMigrate{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-migrate",
-						Namespace: "default",
-					},
-				},
+				opType: opType,
+				object: object,
 			}
 			_, err := engine.GetDataOperationValueFile(ctx, op)
 			Expect(err).To(HaveOccurred())
-		})
-	})
-
-	Context("when operation type is DataLoad", func() {
-		It("should return error for missing target dataset", func() {
-			op := &mockOperation{
-				opType: dataoperation.DataLoadType,
-				object: &datav1alpha1.DataLoad{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-load",
-						Namespace: "default",
-					},
+		},
+		Entry("DataMigrate - missing target dataset",
+			dataoperation.DataMigrateType,
+			&datav1alpha1.DataMigrate{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-migrate",
+					Namespace: "default",
 				},
-			}
-			_, err := engine.GetDataOperationValueFile(ctx, op)
-			Expect(err).To(HaveOccurred())
-		})
-	})
-
-	Context("when operation type is DataProcess", func() {
-		It("should return error for missing target dataset", func() {
-			op := &mockOperation{
-				opType: dataoperation.DataProcessType,
-				object: &datav1alpha1.DataProcess{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-process",
-						Namespace: "default",
-					},
+			},
+		),
+		Entry("DataLoad - missing target dataset",
+			dataoperation.DataLoadType,
+			&datav1alpha1.DataLoad{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-load",
+					Namespace: "default",
 				},
-			}
-			_, err := engine.GetDataOperationValueFile(ctx, op)
-			Expect(err).To(HaveOccurred())
-		})
-	})
-
-	Context("when operation type is unsupported", func() {
-		It("should return NotSupported error", func() {
-			op := &mockOperation{
-				opType: dataoperation.DataBackupType,
-				object: &datav1alpha1.DataBackup{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-backup",
-						Namespace: "default",
-					},
+			},
+		),
+		Entry("DataProcess - missing target dataset",
+			dataoperation.DataProcessType,
+			&datav1alpha1.DataProcess{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-process",
+					Namespace: "default",
 				},
-			}
-			_, err := engine.GetDataOperationValueFile(ctx, op)
-			Expect(err).To(HaveOccurred())
-		})
-	})
+			},
+		),
+		Entry("DataBackup - unsupported operation type",
+			dataoperation.DataBackupType,
+			&datav1alpha1.DataBackup{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-backup",
+					Namespace: "default",
+				},
+			},
+		),
+	)
 })
