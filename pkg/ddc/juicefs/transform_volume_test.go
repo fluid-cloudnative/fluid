@@ -218,6 +218,18 @@ var _ = Describe("JuiceFSEngine Transform Volume Tests", Label("pkg.ddc.juicefs.
 				Expect(err).NotTo(HaveOccurred())
 				Expect(value.Worker.Volumes).To(HaveLen(3))
 				Expect(value.Worker.VolumeMounts).To(HaveLen(3))
+				// Verify volume names and paths
+				volumeNames := make([]string, 0, len(value.Worker.Volumes))
+				for _, v := range value.Worker.Volumes {
+					volumeNames = append(volumeNames, v.Name)
+					Expect(v.HostPath).NotTo(BeNil(), "expected HostPath volume type")
+				}
+				mountNames := make([]string, 0, len(value.Worker.VolumeMounts))
+				for _, m := range value.Worker.VolumeMounts {
+					mountNames = append(mountNames, m.Name)
+				}
+				Expect(volumeNames).To(ConsistOf(testCacheDirPrefix+"0", testCacheDirPrefix+"1", testCacheDirPrefix+"2"))
+				Expect(mountNames).To(ConsistOf(testCacheDirPrefix+"0", testCacheDirPrefix+"1", testCacheDirPrefix+"2"))
 			})
 		})
 
@@ -271,6 +283,13 @@ var _ = Describe("JuiceFSEngine Transform Volume Tests", Label("pkg.ddc.juicefs.
 				Expect(err).NotTo(HaveOccurred())
 				Expect(value.Worker.Volumes).To(HaveLen(2))
 				Expect(value.Worker.VolumeMounts).To(HaveLen(2))
+				// Verify that existing "cache" volume is preserved and new cache-dir volume is added
+				volumeNames := make([]string, 0, len(value.Worker.Volumes))
+				for _, v := range value.Worker.Volumes {
+					volumeNames = append(volumeNames, v.Name)
+				}
+				Expect(volumeNames).To(ContainElement("cache"), "existing cache volume should be preserved")
+				Expect(volumeNames).To(ContainElement(testCacheDirPrefix+"0"), "new cache-dir volume should be added")
 			})
 		})
 
@@ -302,6 +321,10 @@ var _ = Describe("JuiceFSEngine Transform Volume Tests", Label("pkg.ddc.juicefs.
 				Expect(err).NotTo(HaveOccurred())
 				Expect(value.Worker.Volumes).To(HaveLen(1))
 				Expect(value.Worker.VolumeMounts).To(HaveLen(1))
+				// Verify volume name and mount path are correct
+				Expect(value.Worker.Volumes[0].Name).To(Equal(testCacheDirPrefix + "0"))
+				Expect(value.Worker.VolumeMounts[0].Name).To(Equal(testCacheDirPrefix + "0"))
+				Expect(value.Worker.VolumeMounts[0].MountPath).To(Equal(testJuiceWorkerCache1))
 			})
 		})
 	})
@@ -399,6 +422,10 @@ var _ = Describe("JuiceFSEngine Transform Volume Tests", Label("pkg.ddc.juicefs.
 				Expect(err).NotTo(HaveOccurred())
 				Expect(value.Fuse.Volumes).To(HaveLen(1))
 				Expect(value.Fuse.VolumeMounts).To(HaveLen(1))
+				// Verify volume name and mount path are correct
+				Expect(value.Fuse.Volumes[0].Name).To(Equal(testCacheDirPrefix + "0"))
+				Expect(value.Fuse.VolumeMounts[0].Name).To(Equal(testCacheDirPrefix + "0"))
+				Expect(value.Fuse.VolumeMounts[0].MountPath).To(Equal(testJuiceFuseCache1))
 			})
 		})
 	})
