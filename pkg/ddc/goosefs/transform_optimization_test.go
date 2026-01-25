@@ -296,10 +296,13 @@ var _ = Describe("GooseFSEngine Fuse JVM Optimization", func() {
 var _ = Describe("GooseFSEngine Port Configuration", func() {
 	const testPort = 20000
 
+	var engine *GooseFSEngine
+
+	BeforeEach(func() {
+		engine = &GooseFSEngine{}
+	})
+
 	It("should set port properties correctly", func() {
-		engine := &GooseFSEngine{
-			runtime: &datav1alpha1.GooseFSRuntime{},
-		}
 		runtime := &datav1alpha1.GooseFSRuntime{}
 		value := &GooseFS{
 			Master: Master{
@@ -350,9 +353,6 @@ var _ = Describe("GooseFSEngine Port Configuration", func() {
 	})
 
 	It("should set embedded journal ports when configured", func() {
-		engine := &GooseFSEngine{
-			runtime: &datav1alpha1.GooseFSRuntime{},
-		}
 		runtime := &datav1alpha1.GooseFSRuntime{}
 		value := &GooseFS{
 			Master: Master{
@@ -385,9 +385,6 @@ var _ = Describe("GooseFSEngine Port Configuration", func() {
 	})
 
 	It("should set API gateway port when enabled", func() {
-		engine := &GooseFSEngine{
-			runtime: &datav1alpha1.GooseFSRuntime{},
-		}
 		runtime := &datav1alpha1.GooseFSRuntime{
 			Spec: datav1alpha1.GooseFSRuntimeSpec{
 				APIGateway: datav1alpha1.GooseFSCompTemplateSpec{
@@ -410,9 +407,6 @@ var _ = Describe("GooseFSEngine Port Configuration", func() {
 	})
 
 	It("should set journal addresses for HA mode", func() {
-		engine := &GooseFSEngine{
-			runtime: &datav1alpha1.GooseFSRuntime{},
-		}
 		runtime := &datav1alpha1.GooseFSRuntime{}
 		value := &GooseFS{
 			FullnameOverride: "test-goosefs",
