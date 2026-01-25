@@ -161,8 +161,8 @@ var _ = Describe("CheckRuntimeHealthy", Label("pkg.ddc.juicefs.health_check_test
 		}
 
 		testObjs = []runtime.Object{}
-		for _, ds := range dsInputs {
-			testObjs = append(testObjs, ds.DeepCopy())
+		for _, daemonSet := range dsInputs {
+			testObjs = append(testObjs, daemonSet.DeepCopy())
 		}
 		for _, sts := range stsInputs {
 			testObjs = append(testObjs, sts.DeepCopy())
@@ -170,8 +170,8 @@ var _ = Describe("CheckRuntimeHealthy", Label("pkg.ddc.juicefs.health_check_test
 		for _, rt := range runtimeInputs {
 			testObjs = append(testObjs, rt.DeepCopy())
 		}
-		for _, ds := range datasetInputs {
-			testObjs = append(testObjs, ds.DeepCopy())
+		for _, dataset := range datasetInputs {
+			testObjs = append(testObjs, dataset.DeepCopy())
 		}
 
 		client = fake.NewFakeClientWithScheme(testScheme, testObjs...)
@@ -212,10 +212,20 @@ var _ = Describe("CheckRuntimeHealthy", Label("pkg.ddc.juicefs.health_check_test
 			var datasets datav1alpha1.DatasetList
 			err = client.List(context.TODO(), &datasets)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(datasets.Items[0].Status.Phase).To(Equal(datav1alpha1.BoundDatasetPhase))
-			Expect(datasets.Items[0].Status.CacheStates).To(HaveKeyWithValue(common.Cached, healthCheckTestCachedValue))
-			Expect(datasets.Items[0].Status.HCFSStatus.Endpoint).To(Equal(healthCheckTestEndpoint))
-			Expect(datasets.Items[0].Status.HCFSStatus.UnderlayerFileSystemVersion).To(Equal(healthCheckTestHCFSVersion))
+
+			// Find the hbase dataset by name instead of relying on list order
+			var hbaseDataset *datav1alpha1.Dataset
+			for i := range datasets.Items {
+				if datasets.Items[i].Name == healthCheckTestNameHbase {
+					hbaseDataset = &datasets.Items[i]
+					break
+				}
+			}
+			Expect(hbaseDataset).NotTo(BeNil())
+			Expect(hbaseDataset.Status.Phase).To(Equal(datav1alpha1.BoundDatasetPhase))
+			Expect(hbaseDataset.Status.CacheStates).To(HaveKeyWithValue(common.Cached, healthCheckTestCachedValue))
+			Expect(hbaseDataset.Status.HCFSStatus.Endpoint).To(Equal(healthCheckTestEndpoint))
+			Expect(hbaseDataset.Status.HCFSStatus.UnderlayerFileSystemVersion).To(Equal(healthCheckTestHCFSVersion))
 		})
 	})
 
