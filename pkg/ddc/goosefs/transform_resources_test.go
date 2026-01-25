@@ -17,6 +17,7 @@ limitations under the License.
 package goosefs
 
 import (
+	"os"
 	"reflect"
 	"testing"
 
@@ -215,6 +216,8 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 			Master:     Master{},
 		}},
 	}
+	_ = os.Setenv("FLUID_UNIT_TEST", "true")
+	defer os.Unsetenv("FLUID_UNIT_TEST")
 	for _, test := range tests {
 		engine := &GooseFSEngine{Log: fake.NullLogger()}
 		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "goosefs", base.WithTieredStore(test.runtime.Spec.TieredStore))
@@ -276,6 +279,8 @@ func TestTransformResourcesForFuseWithValue(t *testing.T) {
 			JobMaster:  JobMaster{},
 		}},
 	}
+	_ = os.Setenv("FLUID_UNIT_TEST", "true")
+	defer os.Unsetenv("FLUID_UNIT_TEST")
 	for _, test := range tests {
 		engine := &GooseFSEngine{Log: fake.NullLogger()}
 		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "goosefs", base.WithTieredStore(test.runtime.Spec.TieredStore))
