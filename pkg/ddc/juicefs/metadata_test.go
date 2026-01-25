@@ -151,6 +151,21 @@ var _ = Describe("ShouldSyncMetadata", Label("pkg.ddc.juicefs.metadata_test.go")
 			Expect(should).To(BeTrue())
 		})
 	})
+
+	Context("when AutoSync is disabled in runtime", func() {
+		It("should return false", func() {
+			engine := JuiceFSEngine{
+				name:      metadataTestNameNoSync,
+				namespace: metadataTestNamespace,
+				Client:    testClient,
+				Log:       fake.NullLogger(),
+			}
+
+			should, err := engine.shouldSyncMetadata()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(should).To(BeFalse())
+		})
+	})
 })
 
 var _ = Describe("SyncMetadata", Label("pkg.ddc.juicefs.metadata_test.go"), func() {
@@ -304,6 +319,20 @@ var _ = Describe("SyncMetadata", Label("pkg.ddc.juicefs.metadata_test.go"), func
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})
+
+	Context("when AutoSync is disabled in runtime", func() {
+		It("should not sync metadata and return no error", func() {
+			engine := JuiceFSEngine{
+				name:      metadataTestNameNoSync,
+				namespace: metadataTestNamespace,
+				Client:    testClient,
+				Log:       fake.NullLogger(),
+			}
+
+			err := engine.SyncMetadata()
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
 })
 
 var _ = Describe("SyncMetadataInternal", Label("pkg.ddc.juicefs.metadata_test.go"), func() {
@@ -367,7 +396,7 @@ var _ = Describe("SyncMetadataInternal", Label("pkg.ddc.juicefs.metadata_test.go
 			}
 
 			dataset := &datav1alpha1.Dataset{}
-			err = testClient.Get(context.TODO(), key, dataset)
+			err = testClient.Get(context.Background(), key, dataset)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dataset.Status.UfsTotal).To(Equal(metadataTestUfsTotalExpected))
 			Expect(dataset.Status.FileNum).To(Equal(metadataTestFileNumExpected))
