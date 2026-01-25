@@ -21,10 +21,11 @@ limitations under the License.
 package base
 
 import (
+	reflect "reflect"
+
 	dataoperation "github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/golang/mock/gomock"
-	reflect "reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -38,6 +39,7 @@ var _ base.Engine = (*MockEngine)(nil)
 type MockEngine struct {
 	ctrl     *gomock.Controller
 	recorder *MockEngineMockRecorder
+	base.DefaultExtendedLifecycleManager
 }
 
 func (m *MockEngine) Operate(ctx runtime.ReconcileRequestContext, opStatus *v1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
