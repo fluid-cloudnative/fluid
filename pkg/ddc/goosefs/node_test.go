@@ -210,13 +210,13 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 		err := engine.SyncScheduleInfoToCacheNodes()
 		if err != nil {
 			t.Errorf("testcase %s: Got error %v", testcase.name, err)
+			continue
 		}
 
 		nodeList := &v1.NodeList{}
 		datasetLabels, parseErr := labels.Parse(fmt.Sprintf(testNodeLabelSelector, engine.runtimeInfo.GetCommonLabelName()))
 		if parseErr != nil {
-			t.Errorf("testcase %s: Got error parsing labels: %v", testcase.name, parseErr)
-			continue
+			t.Fatalf("testcase %s: Got error parsing labels: %v", testcase.name, parseErr)
 		}
 
 		listErr := c.List(context.TODO(), nodeList, &client.ListOptions{
@@ -224,7 +224,7 @@ func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 		})
 
 		if listErr != nil {
-			t.Errorf("Got error listing nodes: %v", listErr)
+			t.Errorf("testcase %s: Got error listing nodes: %v", testcase.name, listErr)
 			continue
 		}
 
