@@ -17,6 +17,7 @@ limitations under the License.
 package base
 
 import (
+	"fmt"
 	"testing"
 
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -70,9 +71,10 @@ func TestDefaultStateMachine_CanTransition(t *testing.T) {
 func TestDefaultStateMachine_TransitionState(t *testing.T) {
 	sm := NewDefaultStateMachine()
 	operationID := "test-op-1"
+	ctx := cruntime.ReconcileRequestContext{}
 
 	// Test valid transition
-	err := sm.TransitionState(operationID, StateInitializing, "Starting operation")
+	err := sm.TransitionState(ctx, operationID, StateInitializing, "Starting operation")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -83,7 +85,7 @@ func TestDefaultStateMachine_TransitionState(t *testing.T) {
 	}
 
 	// Test invalid transition
-	err = sm.TransitionState(operationID, StateCompleted, "Invalid transition")
+	err = sm.TransitionState(ctx, operationID, StateCompleted, "Invalid transition")
 	if err == nil {
 		t.Errorf("Expected error for invalid transition, got nil")
 	}
@@ -112,9 +114,10 @@ func TestDefaultStateMachine_GetStateHistory(t *testing.T) {
 	}
 
 	// Perform transitions
-	sm.TransitionState(operationID, StateInitializing, "Start")
-	sm.TransitionState(operationID, StatePreparing, "Prepare")
-	sm.TransitionState(operationID, StateExecuting, "Execute")
+	ctx := cruntime.ReconcileRequestContext{}
+	sm.TransitionState(ctx, operationID, StateInitializing, "Start")
+	sm.TransitionState(ctx, operationID, StatePreparing, "Prepare")
+	sm.TransitionState(ctx, operationID, StateExecuting, "Execute")
 
 	// Check history
 	history, err = sm.GetStateHistory(operationID)
@@ -148,9 +151,10 @@ func TestDefaultStateMachine_RegisterStateHandler(t *testing.T) {
 
 	// Verify handler is registered by performing a transition that should trigger it
 	operationID := "test-op-3"
-	sm.TransitionState(operationID, StateInitializing, "Start")
-	sm.TransitionState(operationID, StatePreparing, "Prepare")
-	sm.TransitionState(operationID, StateExecuting, "Execute")
+	ctx := cruntime.ReconcileRequestContext{}
+	sm.TransitionState(ctx, operationID, StateInitializing, "Start")
+	sm.TransitionState(ctx, operationID, StatePreparing, "Prepare")
+	sm.TransitionState(ctx, operationID, StateExecuting, "Execute")
 
 	// Handler should have been called
 	if handler.enterCount == 0 {
@@ -161,6 +165,7 @@ func TestDefaultStateMachine_RegisterStateHandler(t *testing.T) {
 func TestDefaultStateMachine_CompleteWorkflow(t *testing.T) {
 	sm := NewDefaultStateMachine()
 	operationID := "workflow-op"
+	ctx := cruntime.ReconcileRequestContext{}
 
 	// Test complete workflow: Idle -> Initializing -> Preparing -> Executing -> Validating -> Completed
 	workflow := []struct {
@@ -175,7 +180,7 @@ func TestDefaultStateMachine_CompleteWorkflow(t *testing.T) {
 	}
 
 	for _, step := range workflow {
-		err := sm.TransitionState(operationID, step.targetState, step.reason)
+		err := sm.TransitionState(ctx, operationID, step.targetState, step.reason)
 		if err != nil {
 			t.Errorf("Failed to transition to %s: %v", step.targetState, err)
 		}
@@ -202,19 +207,20 @@ func TestDefaultStateMachine_CompleteWorkflow(t *testing.T) {
 func TestDefaultStateMachine_RollbackWorkflow(t *testing.T) {
 	sm := NewDefaultStateMachine()
 	operationID := "rollback-op"
+	ctx := cruntime.ReconcileRequestContext{}
 
 	// Simulate failure and rollback: Idle -> Initializing -> Executing -> RollingBack -> Failed
-	sm.TransitionState(operationID, StateInitializing, "Start")
-	sm.TransitionState(operationID, StatePreparing, "Prepare")
-	sm.TransitionState(operationID, StateExecuting, "Execute")
+	sm.TransitionState(ctx, operationID, StateInitializing, "Start")
+	sm.TransitionState(ctx, operationID, StatePreparing, "Prepare")
+	sm.TransitionState(ctx, operationID, StateExecuting, "Execute")
 
 	// Simulate error and rollback
-	err := sm.TransitionState(operationID, StateRollingBack, "Error occurred")
+	err := sm.TransitionState(ctx, operationID, StateRollingBack, "Error occurred")
 	if err != nil {
 		t.Errorf("Failed to transition to RollingBack: %v", err)
 	}
 
-	err = sm.TransitionState(operationID, StateFailed, "Rollback completed")
+	err = sm.TransitionState(ctx, operationID, StateFailed, "Rollback completed")
 	if err != nil {
 		t.Errorf("Failed to transition to Failed: %v", err)
 	}
@@ -239,7 +245,8 @@ func TestDefaultExtendedLifecycleManager_StateMachineMethods(t *testing.T) {
 	}
 
 	// Test TransitionState
-	err = manager.TransitionState("test-op", StateExecuting, "test")
+	ctx := cruntime.ReconcileRequestContext{}
+	err = manager.TransitionState(ctx, "test-op", StateExecuting, "test")
 	if err == nil {
 		t.Errorf("Expected error for TransitionState, got nil")
 	}
@@ -279,22 +286,98 @@ func TestInvalidStateTransitionError(t *testing.T) {
 	}
 }
 
+func TestDefaultStateMachine_HandlerErrorHandling(t *testing.T) {
+	sm := NewDefaultStateMachine()
+	operationID := "error-test-op"
+	ctx := cruntime.ReconcileRequestContext{}
+
+	// Test OnExit handler failure
+	exitHandler := &testStateHandler{failOnExit: true}
+	sm.RegisterStateHandler(StateIdle, exitHandler)
+
+	err := sm.TransitionState(ctx, operationID, StateInitializing, "Start")
+	if err == nil {
+		t.Errorf("Expected error when OnExit handler fails, got nil")
+	}
+	if _, ok := err.(*StateTransitionError); !ok {
+		t.Errorf("Expected StateTransitionError, got %T", err)
+	}
+
+	// Verify state didn't change
+	state, _ := sm.GetCurrentState(operationID)
+	if state != StateIdle {
+		t.Errorf("Expected state to remain Idle after OnExit failure, got %s", state)
+	}
+
+	// Reset and test OnEnter handler failure
+	sm = NewDefaultStateMachine()
+	enterHandler := &testStateHandler{failOnEnter: true}
+	sm.RegisterStateHandler(StateInitializing, enterHandler)
+
+	err = sm.TransitionState(ctx, operationID, StateInitializing, "Start")
+	if err == nil {
+		t.Errorf("Expected error when OnEnter handler fails, got nil")
+	}
+	if _, ok := err.(*StateTransitionError); !ok {
+		t.Errorf("Expected StateTransitionError, got %T", err)
+	}
+
+	// Verify state was rolled back
+	state, _ = sm.GetCurrentState(operationID)
+	if state != StateIdle {
+		t.Errorf("Expected state to be rolled back to Idle after OnEnter failure, got %s", state)
+	}
+}
+
+func TestDefaultStateMachine_OnTransitionHandler(t *testing.T) {
+	sm := NewDefaultStateMachine()
+	operationID := "transition-test-op"
+	ctx := cruntime.ReconcileRequestContext{}
+
+	handler := &testStateHandler{}
+	// Register handler for a different state to test OnTransition is called for all handlers
+	sm.RegisterStateHandler(StateCompleted, handler)
+
+	// Perform transitions
+	sm.TransitionState(ctx, operationID, StateInitializing, "Start")
+	sm.TransitionState(ctx, operationID, StatePreparing, "Prepare")
+	sm.TransitionState(ctx, operationID, StateExecuting, "Execute")
+	sm.TransitionState(ctx, operationID, StateValidating, "Validate")
+	sm.TransitionState(ctx, operationID, StateCompleted, "Complete")
+
+	// OnTransition should have been called for each transition
+	if handler.transitionCount != 5 {
+		t.Errorf("Expected OnTransition to be called 5 times, got %d", handler.transitionCount)
+	}
+}
+
 // testStateHandler is a test implementation of StateHandler
 type testStateHandler struct {
-	enterCount int
-	exitCount  int
+	enterCount      int
+	exitCount       int
+	transitionCount int
+	shouldFail      bool // For testing error handling
+	failOnEnter     bool
+	failOnExit      bool
 }
 
 func (h *testStateHandler) OnEnter(ctx cruntime.ReconcileRequestContext, operationID string, fromState OperationState) error {
 	h.enterCount++
+	if h.failOnEnter {
+		return fmt.Errorf("OnEnter handler failed")
+	}
 	return nil
 }
 
 func (h *testStateHandler) OnExit(ctx cruntime.ReconcileRequestContext, operationID string, toState OperationState) error {
 	h.exitCount++
+	if h.failOnExit {
+		return fmt.Errorf("OnExit handler failed")
+	}
 	return nil
 }
 
 func (h *testStateHandler) OnTransition(ctx cruntime.ReconcileRequestContext, operationID string, transition StateTransition) error {
+	h.transitionCount++
 	return nil
 }

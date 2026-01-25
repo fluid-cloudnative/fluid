@@ -24,15 +24,12 @@ import (
 // including data loading, data processing workflows, and cache-aware data mutations
 type DataLifecycleManager interface {
 	// LoadData loads data into cache from UFS
-	// This is a cache-aware operation that optimizes data placement
 	LoadData(ctx cruntime.ReconcileRequestContext, spec *DataLoadSpec) (*DataLoadResult, error)
 
 	// ProcessData executes data processing workflows on cached data
-	// Returns processing result and any errors encountered
 	ProcessData(ctx cruntime.ReconcileRequestContext, spec *DataProcessSpec) (*DataProcessResult, error)
 
 	// MutateData performs cache-aware data mutations
-	// Ensures mutations are performed efficiently using cache locality
 	MutateData(ctx cruntime.ReconcileRequestContext, spec *DataMutationSpec) (*DataMutationResult, error)
 
 	// GetDataOperationStatus retrieves the current status of a data operation

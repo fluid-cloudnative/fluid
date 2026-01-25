@@ -17,6 +17,7 @@ limitations under the License.
 package base
 
 import (
+	"fmt"
 	"time"
 
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -29,8 +30,7 @@ type StateMachineManager interface {
 	GetCurrentState(operationID string) (OperationState, error)
 
 	// TransitionState attempts to transition to a new state
-	// Returns error if the transition is not allowed
-	TransitionState(operationID string, targetState OperationState, reason string) error
+	TransitionState(ctx cruntime.ReconcileRequestContext, operationID string, targetState OperationState, reason string) error
 
 	// CanTransition checks if a state transition is allowed
 	CanTransition(currentState, targetState OperationState) bool
@@ -152,7 +152,13 @@ func (sm *DefaultStateMachine) GetCurrentState(operationID string) (OperationSta
 }
 
 // TransitionState attempts to transition to a new state
-func (sm *DefaultStateMachine) TransitionState(operationID string, targetState OperationState, reason string) error {
+// The method ensures state consistency by:
+// 1. Validating the transition is allowed
+// 2. Calling OnExit handler (if fails, abort transition)
+// 3. Updating state
+// 4. Calling OnEnter handler (if fails, rollback state)
+// 5. Calling OnTransition handler (for all registered handlers)
+func (sm *DefaultStateMachine) TransitionState(ctx cruntime.ReconcileRequestContext, operationID string, targetState OperationState, reason string) error {
 	currentState, err := sm.GetCurrentState(operationID)
 	if err != nil {
 		return err
@@ -166,7 +172,7 @@ func (sm *DefaultStateMachine) TransitionState(operationID string, targetState O
 		}
 	}
 
-	// Record transition
+	// Prepare transition record
 	transition := StateTransition{
 		FromState: currentState,
 		ToState:   targetState,
@@ -175,22 +181,58 @@ func (sm *DefaultStateMachine) TransitionState(operationID string, targetState O
 		Metadata:  make(map[string]string),
 	}
 
-	sm.history[operationID] = append(sm.history[operationID], transition)
-	sm.states[operationID] = targetState
-
-	// Call handlers
-	// Note: Context is not available in state machine, handlers should handle empty context gracefully
+	// Step 1: Call OnExit handler for current state (if exists)
 	if handler, exists := sm.handlers[currentState]; exists {
-		// OnExit from current state
-		// Using empty context - handlers should handle this appropriately
-		var ctx cruntime.ReconcileRequestContext
-		_ = handler.OnExit(ctx, operationID, targetState)
+		if err := handler.OnExit(ctx, operationID, targetState); err != nil {
+			return &StateTransitionError{
+				OperationID: operationID,
+				From:        currentState,
+				To:          targetState,
+				HandlerType: "OnExit",
+				Err:         err,
+			}
+		}
 	}
 
+	// Step 2: Update state
+	sm.states[operationID] = targetState
+	sm.history[operationID] = append(sm.history[operationID], transition)
+
+	// Step 3: Call OnEnter handler for target state (if exists)
 	if handler, exists := sm.handlers[targetState]; exists {
-		// OnEnter to target state
-		var ctx cruntime.ReconcileRequestContext
-		_ = handler.OnEnter(ctx, operationID, currentState)
+		if err := handler.OnEnter(ctx, operationID, currentState); err != nil {
+			// Rollback state on failure
+			sm.states[operationID] = currentState
+			// Remove the failed transition from history
+			if len(sm.history[operationID]) > 0 {
+				sm.history[operationID] = sm.history[operationID][:len(sm.history[operationID])-1]
+			}
+			return &StateTransitionError{
+				OperationID: operationID,
+				From:        currentState,
+				To:          targetState,
+				HandlerType: "OnEnter",
+				Err:         err,
+			}
+		}
+	}
+
+	// Step 4: Call OnTransition handler for all registered handlers
+	var transitionErrors []error
+	for state, handler := range sm.handlers {
+		if err := handler.OnTransition(ctx, operationID, transition); err != nil {
+			transitionErrors = append(transitionErrors, fmt.Errorf("OnTransition error in handler for state %s: %w", state, err))
+		}
+	}
+
+	if len(transitionErrors) > 0 {
+		return &StateTransitionError{
+			OperationID: operationID,
+			From:        currentState,
+			To:          targetState,
+			HandlerType: "OnTransition",
+			Err:         fmt.Errorf("multiple OnTransition errors: %v", transitionErrors),
+		}
 	}
 
 	return nil
@@ -240,4 +282,22 @@ type InvalidStateTransitionError struct {
 
 func (e *InvalidStateTransitionError) Error() string {
 	return "invalid state transition from " + string(e.From) + " to " + string(e.To) + ": " + e.Reason
+}
+
+// StateTransitionError represents an error during state transition handler execution
+type StateTransitionError struct {
+	OperationID string
+	From        OperationState
+	To          OperationState
+	HandlerType string // "OnExit", "OnEnter", or "OnTransition"
+	Err         error
+}
+
+func (e *StateTransitionError) Error() string {
+	return "state transition error in " + e.HandlerType + " handler for operation " + e.OperationID +
+		" (from " + string(e.From) + " to " + string(e.To) + "): " + e.Err.Error()
+}
+
+func (e *StateTransitionError) Unwrap() error {
+	return e.Err
 }
