@@ -53,26 +53,26 @@ const (
 )
 
 var _ = Describe("ShouldSetupWorkers", Label("pkg.ddc.thin.worker_test.go"), func() {
-	Context("when worker phase is None and worker enabled", func() {
-		It("should return true", func() {
+	DescribeTable("should return correct result based on worker phase and enablement",
+		func(name string, workerEnabled bool, workerPhase datav1alpha1.RuntimePhase, expected bool) {
 			thinRuntime := &datav1alpha1.ThinRuntime{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      workerTestName0,
+					Name:      name,
 					Namespace: workerTestNamespace,
 				},
 				Spec: datav1alpha1.ThinRuntimeSpec{
 					Worker: datav1alpha1.ThinCompTemplateSpec{
-						Enabled: true,
+						Enabled: workerEnabled,
 					},
 				},
 				Status: datav1alpha1.RuntimeStatus{
-					WorkerPhase: datav1alpha1.RuntimePhaseNone,
+					WorkerPhase: workerPhase,
 				},
 			}
 
 			data := &datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      workerTestName0,
+					Name:      name,
 					Namespace: workerTestNamespace,
 				},
 			}
@@ -85,7 +85,7 @@ var _ = Describe("ShouldSetupWorkers", Label("pkg.ddc.thin.worker_test.go"), fun
 
 			mockClient := fake.NewFakeClientWithScheme(s, thinRuntime, data)
 			e := &ThinEngine{
-				name:      workerTestName0,
+				name:      name,
 				namespace: workerTestNamespace,
 				runtime:   thinRuntime,
 				Client:    mockClient,
@@ -93,177 +93,24 @@ var _ = Describe("ShouldSetupWorkers", Label("pkg.ddc.thin.worker_test.go"), fun
 
 			gotShould, err := e.ShouldSetupWorkers()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(gotShould).To(BeTrue())
-		})
-	})
-
-	Context("when worker phase is NotReady", func() {
-		It("should return false", func() {
-			thinRuntime := &datav1alpha1.ThinRuntime{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      workerTestName1,
-					Namespace: workerTestNamespace,
-				},
-				Spec: datav1alpha1.ThinRuntimeSpec{
-					Worker: datav1alpha1.ThinCompTemplateSpec{
-						Enabled: true,
-					},
-				},
-				Status: datav1alpha1.RuntimeStatus{
-					WorkerPhase: datav1alpha1.RuntimePhaseNotReady,
-				},
-			}
-
-			data := &datav1alpha1.Dataset{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      workerTestName1,
-					Namespace: workerTestNamespace,
-				},
-			}
-
-			s := runtime.NewScheme()
-			s.AddKnownTypes(datav1alpha1.GroupVersion, thinRuntime)
-			s.AddKnownTypes(datav1alpha1.GroupVersion, data)
-			err := v1.AddToScheme(s)
-			Expect(err).NotTo(HaveOccurred())
-
-			mockClient := fake.NewFakeClientWithScheme(s, thinRuntime, data)
-			e := &ThinEngine{
-				name:      workerTestName1,
-				namespace: workerTestNamespace,
-				runtime:   thinRuntime,
-				Client:    mockClient,
-			}
-
-			gotShould, err := e.ShouldSetupWorkers()
-			Expect(err).NotTo(HaveOccurred())
-			Expect(gotShould).To(BeFalse())
-		})
-	})
-
-	Context("when worker phase is PartialReady", func() {
-		It("should return false", func() {
-			thinRuntime := &datav1alpha1.ThinRuntime{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      workerTestName2,
-					Namespace: workerTestNamespace,
-				},
-				Spec: datav1alpha1.ThinRuntimeSpec{
-					Worker: datav1alpha1.ThinCompTemplateSpec{
-						Enabled: true,
-					},
-				},
-				Status: datav1alpha1.RuntimeStatus{
-					WorkerPhase: datav1alpha1.RuntimePhasePartialReady,
-				},
-			}
-
-			data := &datav1alpha1.Dataset{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      workerTestName2,
-					Namespace: workerTestNamespace,
-				},
-			}
-
-			s := runtime.NewScheme()
-			s.AddKnownTypes(datav1alpha1.GroupVersion, thinRuntime)
-			s.AddKnownTypes(datav1alpha1.GroupVersion, data)
-			err := v1.AddToScheme(s)
-			Expect(err).NotTo(HaveOccurred())
-
-			mockClient := fake.NewFakeClientWithScheme(s, thinRuntime, data)
-			e := &ThinEngine{
-				name:      workerTestName2,
-				namespace: workerTestNamespace,
-				runtime:   thinRuntime,
-				Client:    mockClient,
-			}
-
-			gotShould, err := e.ShouldSetupWorkers()
-			Expect(err).NotTo(HaveOccurred())
-			Expect(gotShould).To(BeFalse())
-		})
-	})
-
-	Context("when worker phase is Ready", func() {
-		It("should return false", func() {
-			thinRuntime := &datav1alpha1.ThinRuntime{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      workerTestName3,
-					Namespace: workerTestNamespace,
-				},
-				Spec: datav1alpha1.ThinRuntimeSpec{
-					Worker: datav1alpha1.ThinCompTemplateSpec{
-						Enabled: true,
-					},
-				},
-				Status: datav1alpha1.RuntimeStatus{
-					WorkerPhase: datav1alpha1.RuntimePhaseReady,
-				},
-			}
-
-			data := &datav1alpha1.Dataset{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      workerTestName3,
-					Namespace: workerTestNamespace,
-				},
-			}
-
-			s := runtime.NewScheme()
-			s.AddKnownTypes(datav1alpha1.GroupVersion, thinRuntime)
-			s.AddKnownTypes(datav1alpha1.GroupVersion, data)
-			err := v1.AddToScheme(s)
-			Expect(err).NotTo(HaveOccurred())
-
-			mockClient := fake.NewFakeClientWithScheme(s, thinRuntime, data)
-			e := &ThinEngine{
-				name:      workerTestName3,
-				namespace: workerTestNamespace,
-				runtime:   thinRuntime,
-				Client:    mockClient,
-			}
-
-			gotShould, err := e.ShouldSetupWorkers()
-			Expect(err).NotTo(HaveOccurred())
-			Expect(gotShould).To(BeFalse())
-		})
-	})
-
-	Context("when worker is not enabled", func() {
-		It("should return false", func() {
-			thinRuntime := &datav1alpha1.ThinRuntime{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      workerTestName3,
-					Namespace: workerTestNamespace,
-				},
-			}
-
-			data := &datav1alpha1.Dataset{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      workerTestName3,
-					Namespace: workerTestNamespace,
-				},
-			}
-
-			s := runtime.NewScheme()
-			s.AddKnownTypes(datav1alpha1.GroupVersion, thinRuntime)
-			s.AddKnownTypes(datav1alpha1.GroupVersion, data)
-			err := v1.AddToScheme(s)
-			Expect(err).NotTo(HaveOccurred())
-
-			mockClient := fake.NewFakeClientWithScheme(s, thinRuntime, data)
-			e := &ThinEngine{
-				name:      workerTestName3,
-				namespace: workerTestNamespace,
-				runtime:   thinRuntime,
-				Client:    mockClient,
-			}
-
-			gotShould, err := e.ShouldSetupWorkers()
-			Expect(err).NotTo(HaveOccurred())
-			Expect(gotShould).To(BeFalse())
-		})
-	})
+			Expect(gotShould).To(Equal(expected))
+		},
+		Entry("worker phase None and enabled returns true",
+			workerTestName0, true, datav1alpha1.RuntimePhaseNone, true,
+		),
+		Entry("worker phase NotReady returns false",
+			workerTestName1, true, datav1alpha1.RuntimePhaseNotReady, false,
+		),
+		Entry("worker phase PartialReady returns false",
+			workerTestName2, true, datav1alpha1.RuntimePhasePartialReady, false,
+		),
+		Entry("worker phase Ready returns false",
+			workerTestName3, true, datav1alpha1.RuntimePhaseReady, false,
+		),
+		Entry("worker not enabled returns false",
+			workerTestName3, false, datav1alpha1.RuntimePhaseNone, false,
+		),
+	)
 })
 
 var _ = Describe("SetupWorkers", Label("pkg.ddc.thin.worker_test.go"), func() {
