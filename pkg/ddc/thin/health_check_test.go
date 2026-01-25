@@ -198,7 +198,7 @@ var _ = Describe("ThinEngine Health Check", Label("pkg.ddc.thin.health_check_tes
 				err = client.List(context.TODO(), &datasets)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(datasets.Items[0].Status.Phase).To(Equal(datav1alpha1.BoundDatasetPhase))
-				Expect(datasets.Items[0].Status.CacheStates).To(HaveKeyWithValue(common.Cached, "true"))
+				Expect(datasets.Items[0].Status.CacheStates).To(Equal(common.CacheStateList{common.Cached: "true"}))
 			})
 		})
 
