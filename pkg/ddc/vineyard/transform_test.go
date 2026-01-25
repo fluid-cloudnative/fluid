@@ -14,6 +14,7 @@ limitations under the License.
 package vineyard
 
 import (
+	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	"os"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -312,9 +313,21 @@ var _ = Describe("VineyardEngine Transform", Label("pkg.ddc.vineyard.transform_t
 	Describe("transformWorkers", func() {
 		Context("when image, imageTag and pullPolicy are set directly", func() {
 			It("should use the specified values", func() {
-				runtime := &datav1alpha1.VineyardRuntime{
+				vineyardRuntime := &datav1alpha1.VineyardRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      transformTestName,
+						Namespace: transformTestNamespace,
+					},
 					Spec: datav1alpha1.VineyardRuntimeSpec{
 						Replicas: 3,
+						TieredStore: datav1alpha1.TieredStore{
+							Levels: []datav1alpha1.Level{
+								{
+									MediumType: "MEM",
+									Quota:      resource.NewQuantity(1024*1024*1024, resource.BinarySI),
+								},
+							},
+						},
 						Worker: datav1alpha1.VineyardCompTemplateSpec{
 							Replicas:        2,
 							Image:           "test-image",
@@ -324,16 +337,32 @@ var _ = Describe("VineyardEngine Transform", Label("pkg.ddc.vineyard.transform_t
 					},
 				}
 
-				runtimeInfo, err := base.BuildRuntimeInfo(transformTestName, transformTestNamespace, transformTestVineyard)
+				runtimeInfo, err := base.BuildRuntimeInfo(transformTestName, transformTestNamespace, transformTestVineyard,
+					base.WithTieredStore(vineyardRuntime.Spec.TieredStore))
 				Expect(err).NotTo(HaveOccurred())
+
+				dataset := &datav1alpha1.Dataset{
+					Spec: datav1alpha1.DatasetSpec{},
+				}
+				runtimeInfo.SetupWithDataset(dataset)
+
+				s := k8sruntime.NewScheme()
+				s.AddKnownTypes(datav1alpha1.GroupVersion, vineyardRuntime)
+				err = datav1alpha1.AddToScheme(s)
+				Expect(err).NotTo(HaveOccurred())
+
+				mockClient := fake.NewFakeClientWithScheme(s, vineyardRuntime)
 
 				engine := &VineyardEngine{
 					Log:         fake.NullLogger(),
 					runtimeInfo: runtimeInfo,
+					Client:      mockClient,
+					name:        transformTestName,
+					namespace:   transformTestNamespace,
 				}
 
 				value := &Vineyard{}
-				err = engine.transformWorkers(runtime, value)
+				err = engine.transformWorkers(vineyardRuntime, value)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(value.Worker.Image).To(Equal("test-image"))
 				Expect(value.Worker.ImageTag).To(Equal("test-tag"))
@@ -353,9 +382,21 @@ var _ = Describe("VineyardEngine Transform", Label("pkg.ddc.vineyard.transform_t
 			})
 
 			It("should use image from environment", func() {
-				runtime := &datav1alpha1.VineyardRuntime{
+				vineyardRuntime := &datav1alpha1.VineyardRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      transformTestName,
+						Namespace: transformTestNamespace,
+					},
 					Spec: datav1alpha1.VineyardRuntimeSpec{
 						Replicas: 3,
+						TieredStore: datav1alpha1.TieredStore{
+							Levels: []datav1alpha1.Level{
+								{
+									MediumType: "MEM",
+									Quota:      resource.NewQuantity(1024*1024*1024, resource.BinarySI),
+								},
+							},
+						},
 						Worker: datav1alpha1.VineyardCompTemplateSpec{
 							Replicas:        2,
 							ImagePullPolicy: "IfNotPresent",
@@ -363,16 +404,32 @@ var _ = Describe("VineyardEngine Transform", Label("pkg.ddc.vineyard.transform_t
 					},
 				}
 
-				runtimeInfo, err := base.BuildRuntimeInfo(transformTestName, transformTestNamespace, transformTestVineyard)
+				runtimeInfo, err := base.BuildRuntimeInfo(transformTestName, transformTestNamespace, transformTestVineyard,
+					base.WithTieredStore(vineyardRuntime.Spec.TieredStore))
 				Expect(err).NotTo(HaveOccurred())
+
+				dataset := &datav1alpha1.Dataset{
+					Spec: datav1alpha1.DatasetSpec{},
+				}
+				runtimeInfo.SetupWithDataset(dataset)
+
+				s := k8sruntime.NewScheme()
+				s.AddKnownTypes(datav1alpha1.GroupVersion, vineyardRuntime)
+				err = datav1alpha1.AddToScheme(s)
+				Expect(err).NotTo(HaveOccurred())
+
+				mockClient := fake.NewFakeClientWithScheme(s, vineyardRuntime)
 
 				engine := &VineyardEngine{
 					Log:         fake.NullLogger(),
 					runtimeInfo: runtimeInfo,
+					Client:      mockClient,
+					name:        transformTestName,
+					namespace:   transformTestNamespace,
 				}
 
 				value := &Vineyard{}
-				err = engine.transformWorkers(runtime, value)
+				err = engine.transformWorkers(vineyardRuntime, value)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(value.Worker.Image).To(Equal("image-from-env"))
 				Expect(value.Worker.ImageTag).To(Equal("image-tag-from-env"))
