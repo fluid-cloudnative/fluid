@@ -17,12 +17,15 @@
 package thin
 
 import (
+	"context"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -265,7 +268,7 @@ var _ = Describe("ShouldSetupWorkers", Label("pkg.ddc.thin.worker_test.go"), fun
 
 var _ = Describe("SetupWorkers", Label("pkg.ddc.thin.worker_test.go"), func() {
 	Context("when setting up workers with runtimeInfo", func() {
-		It("should succeed without error", func() {
+		It("should scale workers to desired replicas", func() {
 			runtimeInfo, err := base.BuildRuntimeInfo(workerTestName, workerTestFluidNs, common.ThinRuntime)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -292,7 +295,7 @@ var _ = Describe("SetupWorkers", Label("pkg.ddc.thin.worker_test.go"), func() {
 					Namespace: workerTestFluidNs,
 				},
 				Spec: appsv1.StatefulSetSpec{
-					Replicas: ptr.To[int32](1),
+					Replicas: ptr.To[int32](0),
 				},
 			}
 
@@ -303,6 +306,9 @@ var _ = Describe("SetupWorkers", Label("pkg.ddc.thin.worker_test.go"), func() {
 				},
 				Spec: datav1alpha1.ThinRuntimeSpec{
 					Replicas: 1,
+					Worker: datav1alpha1.ThinCompTemplateSpec{
+						Enabled: true,
+					},
 				},
 			}
 
@@ -341,6 +347,15 @@ var _ = Describe("SetupWorkers", Label("pkg.ddc.thin.worker_test.go"), func() {
 			e.Helper = ctrlhelper.BuildHelper(runtimeInfo, mockClient, e.Log)
 			err = e.SetupWorkers()
 			Expect(err).NotTo(HaveOccurred())
+
+			// Verify that the StatefulSet was scaled to the desired replicas
+			var updatedWorker appsv1.StatefulSet
+			err = mockClient.Get(context.TODO(), types.NamespacedName{
+				Name:      workerTestName + workerTestWorkerSuffix,
+				Namespace: workerTestFluidNs,
+			}, &updatedWorker)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(*updatedWorker.Spec.Replicas).To(Equal(int32(1)))
 		})
 	})
 })
