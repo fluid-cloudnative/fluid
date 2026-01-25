@@ -32,11 +32,28 @@ const (
 	testJnifuseKey           = "alluxio.fuse.jnifuse.enabled"
 	testBlockSizeKey         = "alluxio.user.block.size.bytes.default"
 	testMasterRpcPortKey     = "alluxio.master.rpc.port"
+	testMasterWebPortKey     = "alluxio.master.web.port"
+	testWorkerRpcPortKey     = "alluxio.worker.rpc.port"
+	testWorkerWebPortKey     = "alluxio.worker.web.port"
+	testJobMasterRpcPortKey  = "alluxio.job.master.rpc.port"
+	testJobMasterWebPortKey  = "alluxio.job.master.web.port"
+	testJobWorkerRpcPortKey  = "alluxio.job.worker.rpc.port"
+	testJobWorkerWebPortKey  = "alluxio.job.worker.web.port"
+	testJobWorkerDataPortKey = "alluxio.job.worker.data.port"
 	testMountPath            = "/mnt/runtime"
 	testExpectedBlockSize    = "256MB"
 	testExpectedJnifuseTrue  = "true"
 	testExpectedJnifuseFalse = "false"
 )
+
+// Default JVM options for fuse, shared across multiple tests
+var expectedDefaultJvmOptions = []string{
+	"-Xmx16G",
+	"-Xms16G",
+	"-XX:+UseG1GC",
+	"-XX:MaxDirectMemorySize=32g",
+	"-XX:+UnlockExperimentalVMOptions",
+}
 
 var _ = Describe("AlluxioEngine Transform Optimization Tests", Label("pkg.ddc.alluxio.transform_optimization_test.go"), func() {
 	var engine *AlluxioEngine
@@ -241,16 +258,9 @@ var _ = Describe("AlluxioEngine Transform Optimization Tests", Label("pkg.ddc.al
 
 				engine.optimizeDefaultFuse(runtime, alluxioValue, isNewFuseArgVersion)
 
-				expectedJvmOptions := []string{
-					"-Xmx16G",
-					"-Xms16G",
-					"-XX:+UseG1GC",
-					"-XX:MaxDirectMemorySize=32g",
-					"-XX:+UnlockExperimentalVMOptions",
-				}
 				expectedArgs := []string{"fuse", "--fuse-opts=kernel_cache,rw", testMountPath, "/"}
 
-				Expect(alluxioValue.Fuse.JvmOptions).To(Equal(expectedJvmOptions))
+				Expect(alluxioValue.Fuse.JvmOptions).To(Equal(expectedDefaultJvmOptions))
 				Expect(alluxioValue.Fuse.Args).To(Equal(expectedArgs))
 			})
 		})
@@ -270,16 +280,9 @@ var _ = Describe("AlluxioEngine Transform Optimization Tests", Label("pkg.ddc.al
 
 				engine.optimizeDefaultFuse(runtime, alluxioValue, isNewFuseArgVersion)
 
-				expectedJvmOptions := []string{
-					"-Xmx16G",
-					"-Xms16G",
-					"-XX:+UseG1GC",
-					"-XX:MaxDirectMemorySize=32g",
-					"-XX:+UnlockExperimentalVMOptions",
-				}
 				expectedArgs := []string{"fuse", "--fuse-opts=kernel_cache,rw"}
 
-				Expect(alluxioValue.Fuse.JvmOptions).To(Equal(expectedJvmOptions))
+				Expect(alluxioValue.Fuse.JvmOptions).To(Equal(expectedDefaultJvmOptions))
 				Expect(alluxioValue.Fuse.Args).To(Equal(expectedArgs))
 			})
 		})
@@ -404,7 +407,16 @@ var _ = Describe("AlluxioEngine Transform Optimization Tests", Label("pkg.ddc.al
 				}
 				testEngine.setPortProperties(runtime, alluxioValue)
 
-				Expect(alluxioValue.Properties[testMasterRpcPortKey]).To(Equal(strconv.Itoa(port)))
+				expectedPort := strconv.Itoa(port)
+				Expect(alluxioValue.Properties[testMasterRpcPortKey]).To(Equal(expectedPort))
+				Expect(alluxioValue.Properties[testMasterWebPortKey]).To(Equal(expectedPort))
+				Expect(alluxioValue.Properties[testWorkerRpcPortKey]).To(Equal(expectedPort))
+				Expect(alluxioValue.Properties[testWorkerWebPortKey]).To(Equal(expectedPort))
+				Expect(alluxioValue.Properties[testJobMasterRpcPortKey]).To(Equal(expectedPort))
+				Expect(alluxioValue.Properties[testJobMasterWebPortKey]).To(Equal(expectedPort))
+				Expect(alluxioValue.Properties[testJobWorkerRpcPortKey]).To(Equal(expectedPort))
+				Expect(alluxioValue.Properties[testJobWorkerWebPortKey]).To(Equal(expectedPort))
+				Expect(alluxioValue.Properties[testJobWorkerDataPortKey]).To(Equal(expectedPort))
 			})
 		})
 	})
