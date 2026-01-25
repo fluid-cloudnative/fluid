@@ -67,6 +67,16 @@ func newAlluxioEngineREP(client client.Client, name string, namespace string) *A
 	return engine
 }
 
+// hasRuntimeCondition checks if a runtime has a specific condition type
+func hasRuntimeCondition(conditions []v1alpha1.RuntimeCondition, condType v1alpha1.RuntimeConditionType) bool {
+	for _, cond := range conditions {
+		if cond.Type == condType {
+			return true
+		}
+	}
+	return false
+}
+
 var _ = Describe("AlluxioEngine Replicas Tests", Label("pkg.ddc.alluxio.replicas_test.go"), func() {
 	Describe("SyncReplicas", func() {
 		var (
@@ -275,14 +285,7 @@ var _ = Describe("AlluxioEngine Replicas Tests", Label("pkg.ddc.alluxio.replicas
 				rt, err := engine.getRuntime()
 				Expect(err).NotTo(HaveOccurred())
 
-				found := false
-				for _, cond := range rt.Status.Conditions {
-					if cond.Type == v1alpha1.RuntimeWorkerScaledOut {
-						found = true
-						break
-					}
-				}
-				Expect(found).To(BeTrue(), "expected RuntimeWorkerScaledOut condition to be present")
+				Expect(hasRuntimeCondition(rt.Status.Conditions, v1alpha1.RuntimeWorkerScaledOut)).To(BeTrue(), "expected RuntimeWorkerScaledOut condition to be present")
 				Expect(len(rt.Status.Conditions)).To(Equal(3))
 			})
 		})
@@ -299,14 +302,7 @@ var _ = Describe("AlluxioEngine Replicas Tests", Label("pkg.ddc.alluxio.replicas
 				rt, err := engine.getRuntime()
 				Expect(err).NotTo(HaveOccurred())
 
-				found := false
-				for _, cond := range rt.Status.Conditions {
-					if cond.Type == v1alpha1.RuntimeWorkerScaledIn {
-						found = true
-						break
-					}
-				}
-				Expect(found).To(BeTrue(), "expected RuntimeWorkerScaledIn condition to be present")
+				Expect(hasRuntimeCondition(rt.Status.Conditions, v1alpha1.RuntimeWorkerScaledIn)).To(BeTrue(), "expected RuntimeWorkerScaledIn condition to be present")
 				Expect(len(rt.Status.Conditions)).To(Equal(3))
 			})
 		})
