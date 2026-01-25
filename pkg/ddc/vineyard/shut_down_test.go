@@ -59,6 +59,8 @@ func init() {
 
 var _ = Describe("VineyardEngine Shutdown Tests", func() {
 	Describe("destroyWorkers", func() {
+		const dummyDatasetUID = "dummy-dataset-uid"
+
 		var (
 			runtimeInfoSpark  base.RuntimeInfoInterface
 			runtimeInfoHadoop base.RuntimeInfoInterface
@@ -73,7 +75,7 @@ var _ = Describe("VineyardEngine Shutdown Tests", func() {
 			runtimeInfoSpark.SetupWithDataset(&datav1alpha1.Dataset{
 				Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
 			})
-			runtimeInfoSpark.SetOwnerDatasetUID("dummy-dataset-uid")
+			runtimeInfoSpark.SetOwnerDatasetUID(dummyDatasetUID)
 
 			runtimeInfoHadoop, err = base.BuildRuntimeInfo("hadoop", "fluid", common.VineyardRuntime)
 			Expect(err).NotTo(HaveOccurred())
@@ -81,7 +83,7 @@ var _ = Describe("VineyardEngine Shutdown Tests", func() {
 				Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ShareMode},
 			})
 			runtimeInfoHadoop.SetFuseNodeSelector(map[string]string{"node-select": "true"})
-			runtimeInfoHadoop.SetOwnerDatasetUID("dummy-dataset-uid")
+			runtimeInfoHadoop.SetOwnerDatasetUID(dummyDatasetUID)
 
 			nodeInputs = []*corev1.Node{
 				{
