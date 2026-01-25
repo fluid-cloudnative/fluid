@@ -240,16 +240,19 @@ func (r *FuseRecover) lazyUnmountIfNeeded(mountPath string) {
 	// FUSE restart leaves stale mounts. Normal unmount may fail or block.
 	// Lazy unmount prevents stack piling and cleans up /dev/fuse references.
 
-	mounter := mount.New("")
-
-	// Use CleanupMountPoint which handles corrupted mounts and lazy unmount (force=true).
-	if err := mount.CleanupMountPoint(mountPath, mounter, true); err != nil {
+	// Use CleanupMountPoint with extensiveMountPointCheck=true, which relies on
+	// IsNotMountPoint instead of IsLikelyNotMountPoint and properly handles
+	// bind mounts and corrupted mount points during cleanup.
+	if err := mount.CleanupMountPoint(mountPath, r.Interface, true); err != nil {
 		glog.Warningf("FuseRecovery: failed to cleanup mount %s: %v", mountPath, err)
 	}
 
 	// Wait briefly until the mount is released by the kernel.
 	err := wait.Poll(500*time.Millisecond, 2*time.Second, func() (bool, error) {
-		notMnt, err := mounter.IsLikelyNotMountPoint(mountPath)
+		notMnt, err := r.Interface.IsLikelyNotMountPoint(mountPath)
+		if os.IsNotExist(err) {
+			return true, nil
+		}
 		return err == nil && notMnt, nil
 	})
 	if err != nil {
