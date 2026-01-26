@@ -17,9 +17,12 @@ limitations under the License.
 package recover
 
 import (
+	"context"
+	"errors"
 	"os"
 	"reflect"
 	"testing"
+	"time"
 
 	. "github.com/agiledragon/gomonkey/v2"
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -32,6 +35,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apimachineryRuntime "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	k8sexec "k8s.io/utils/exec"
@@ -350,4 +354,72 @@ func TestNewFuseRecover(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestFuseRecover_lazyUnmountIfNeeded(t *testing.T) {
+	Convey("TestFuseRecover_lazyUnmountIfNeeded", t, func() {
+		mountPath := "/test/mount"
+		fakeMounter := &mount.FakeMounter{}
+		r := &FuseRecover{
+			SafeFormatAndMount: mount.SafeFormatAndMount{
+				Interface: fakeMounter,
+			},
+		}
+
+		Convey("Successful cleanup", func() {
+			patchCleanup := ApplyFunc(mount.CleanupMountPoint, func(mountPath string, mounter mount.Interface, extensiveMountPointCheck bool) error {
+				return nil
+			})
+			defer patchCleanup.Reset()
+
+			patchLikely := ApplyMethod(reflect.TypeOf(fakeMounter), "IsLikelyNotMountPoint", func(_ *mount.FakeMounter, file string) (bool, error) {
+				return true, nil
+			})
+			defer patchLikely.Reset()
+
+			r.lazyUnmountIfNeeded(mountPath)
+		})
+
+		Convey("Cleanup failure handling", func() {
+			patchCleanup := ApplyFunc(mount.CleanupMountPoint, func(mountPath string, mounter mount.Interface, extensiveMountPointCheck bool) error {
+				return errors.New("cleanup error")
+			})
+			defer patchCleanup.Reset()
+
+			patchLikely := ApplyMethod(reflect.TypeOf(fakeMounter), "IsLikelyNotMountPoint", func(_ *mount.FakeMounter, file string) (bool, error) {
+				return true, nil
+			})
+			defer patchLikely.Reset()
+
+			r.lazyUnmountIfNeeded(mountPath)
+		})
+
+		Convey("Already-cleaned mount path", func() {
+			patchCleanup := ApplyFunc(mount.CleanupMountPoint, func(mountPath string, mounter mount.Interface, extensiveMountPointCheck bool) error {
+				return nil
+			})
+			defer patchCleanup.Reset()
+
+			patchLikely := ApplyMethod(reflect.TypeOf(fakeMounter), "IsLikelyNotMountPoint", func(_ *mount.FakeMounter, file string) (bool, error) {
+				return false, os.ErrNotExist
+			})
+			defer patchLikely.Reset()
+
+			r.lazyUnmountIfNeeded(mountPath)
+		})
+
+		Convey("Poll timeout behavior", func() {
+			patchCleanup := ApplyFunc(mount.CleanupMountPoint, func(mountPath string, mounter mount.Interface, extensiveMountPointCheck bool) error {
+				return nil
+			})
+			defer patchCleanup.Reset()
+
+			patchWait := ApplyFunc(wait.PollUntilContextTimeout, func(ctx context.Context, interval, timeout time.Duration, immediate bool, condition wait.ConditionWithContextFunc) error {
+				return context.DeadlineExceeded
+			})
+			defer patchWait.Reset()
+
+			r.lazyUnmountIfNeeded(mountPath)
+		})
+	})
 }
