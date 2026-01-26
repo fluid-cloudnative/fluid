@@ -209,8 +209,8 @@ func (e *Helper) TearDownWorkers(runtimeInfo base.RuntimeInfoInterface) (err err
 		}
 
 		nodeName := node.Name
-		var labelsToModify common.LabelsToModify
 		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+			var labelsToModify common.LabelsToModify
 			node, err := kubeclient.GetNode(e.client, nodeName)
 			if err != nil {
 				e.log.Error(err, "Fail to get node", "nodename", nodeName)
