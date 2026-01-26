@@ -17,16 +17,11 @@ limitations under the License.
 package alluxio
 
 import (
-	"context"
 	"fmt"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 
-	"sort"
 	"strings"
-
-	"k8s.io/client-go/util/retry"
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
@@ -35,9 +30,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // shut down the Alluxio engine
@@ -61,7 +53,7 @@ func (e *AlluxioEngine) Shutdown() (err error) {
 		base.SafeClose(e.MetadataSyncDoneCh)
 	}
 
-	_, err = e.destroyWorkers(-1)
+	err = e.destroyWorkers()
 	if err != nil {
 		return
 	}
@@ -210,138 +202,17 @@ func (e *AlluxioEngine) cleanAll() (err error) {
 	return nil
 }
 
-// destroyWorkers attempts to delete the workers until worker num reaches the given expectedWorkers, if expectedWorkers is -1, it means all the workers should be deleted
-// This func returns currentWorkers representing how many workers are left after this process.
-func (e *AlluxioEngine) destroyWorkers(expectedWorkers int32) (currentWorkers int32, err error) {
+// destroyWorkers tears down all Alluxio workers associated with this engine.
+// It acquires the SchedulerMutex for thread safety and delegates deletion to Helper.TearDownWorkers.
+func (e *AlluxioEngine) destroyWorkers() (err error) {
 	//  SchedulerMutex only for patch mode
 	lifecycle.SchedulerMutex.Lock()
 	defer lifecycle.SchedulerMutex.Unlock()
 
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
-		return currentWorkers, err
+		return err
 	}
 
-	var (
-		nodeList           = &corev1.NodeList{}
-		labelExclusiveName = utils.GetExclusiveKey()
-		labelName          = runtimeInfo.GetRuntimeLabelName()
-		labelCommonName    = runtimeInfo.GetCommonLabelName()
-		labelMemoryName    = runtimeInfo.GetLabelNameForMemory()
-		labelDiskName      = runtimeInfo.GetLabelNameForDisk()
-		labelTotalName     = runtimeInfo.GetLabelNameForTotal()
-	)
-
-	labelNames := []string{labelName, labelTotalName, labelDiskName, labelMemoryName, labelCommonName}
-	e.Log.Info("check node labels", "labelNames", labelNames)
-
-	datasetLabels, err := labels.Parse(fmt.Sprintf("%s=true", labelCommonName))
-	if err != nil {
-		return currentWorkers, err
-	}
-
-	err = e.List(context.TODO(), nodeList, &client.ListOptions{
-		LabelSelector: datasetLabels,
-	})
-
-	if err != nil {
-		return currentWorkers, err
-	}
-
-	currentWorkers = int32(len(nodeList.Items))
-	if expectedWorkers >= currentWorkers {
-		e.Log.Info("No need to scale in. Skip.")
-		return currentWorkers, nil
-	}
-
-	var nodes []corev1.Node
-	if expectedWorkers >= 0 {
-		e.Log.Info("Scale in Alluxio workers", "expectedWorkers", expectedWorkers)
-		// This is a scale in operation
-		nodes, err = e.sortNodesToShutdown(nodeList.Items)
-		if err != nil {
-			return currentWorkers, err
-		}
-
-	} else {
-		// Destroy all workers. This is a subprocess during deletion of AlluxioRuntime
-		nodes = nodeList.Items
-	}
-
-	// 1.select the nodes
-	for _, node := range nodes {
-		if expectedWorkers == currentWorkers {
-			break
-		}
-
-		if len(node.Labels) == 0 {
-			continue
-		}
-
-		nodeName := node.Name
-		var labelsToModify common.LabelsToModify
-		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-			node, err := kubeclient.GetNode(e.Client, nodeName)
-			if err != nil {
-				e.Log.Error(err, "Fail to get node", "nodeName", nodeName)
-				return err
-			}
-
-			toUpdate := node.DeepCopy()
-			for _, label := range labelNames {
-				labelsToModify.Delete(label)
-			}
-
-			exclusiveLabelValue := runtimeInfo.GetExclusiveLabelValue()
-			if val, exist := toUpdate.Labels[labelExclusiveName]; exist && val == exclusiveLabelValue {
-				labelsToModify.Delete(labelExclusiveName)
-			}
-
-			err = lifecycle.DecreaseDatasetNum(toUpdate, runtimeInfo, &labelsToModify)
-			if err != nil {
-				return err
-			}
-			// Update the toUpdate in UPDATE mode
-			// modifiedLabels, err := utils.ChangeNodeLabelWithUpdateMode(e.Client, toUpdate, labelToModify)
-			// Update the toUpdate in PATCH mode
-			modifiedLabels, err := utils.ChangeNodeLabelWithPatchMode(e.Client, toUpdate, labelsToModify)
-			if err != nil {
-				return err
-			}
-			e.Log.Info("Destroy worker", "Dataset", e.name, "deleted worker node", node.Name, "removed or updated labels", modifiedLabels)
-			return nil
-		})
-
-		if err != nil {
-			return currentWorkers, err
-		}
-
-		currentWorkers--
-	}
-
-	return currentWorkers, nil
-}
-
-func (e *AlluxioEngine) sortNodesToShutdown(candidateNodes []corev1.Node) (nodes []corev1.Node, err error) {
-	// If fuses are deployed in global mode. Scaling in workers has nothing to do with fuses.
-	// All nodes with related label can be candidate nodes.
-	nodes = candidateNodes
-
-	// Prefer to choose nodes with less data cache.
-	// Since this is just a preference, anything unexpected will be ignored.
-	worker2UsedCapacityMap, err := e.GetWorkerUsedCapacity()
-	if err != nil {
-		e.Log.Info("GetWorkerUsedCapacity when sorting nodes to be shutdowned. Got err: %v. Ignore it", err)
-	}
-
-	if worker2UsedCapacityMap != nil && len(nodes) >= 2 {
-		// Sort candidate nodes by used capacity in ascending order
-		sort.Slice(nodes, func(i, j int) bool {
-			usageNodeA := lookUpUsedCapacity(nodes[i], worker2UsedCapacityMap)
-			usageNodeB := lookUpUsedCapacity(nodes[j], worker2UsedCapacityMap)
-			return usageNodeA < usageNodeB
-		})
-	}
-
-	return nodes, nil
+	return e.Helper.TearDownWorkers(runtimeInfo)
 }
