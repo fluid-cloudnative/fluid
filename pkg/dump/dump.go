@@ -26,16 +26,15 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/go-logr/logr"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-var log logr.Logger
+var log = ctrl.Log.WithName("dump") // Initialize at declaration
 
 var initialized int32 // Changed to atomic int32
 
 var dumpfileMutex sync.RWMutex
-var dumpfile string = "%s/%s-%s.txt"
+var dumpfile string = "%s-%s.txt"
 
 func StackTrace(all bool) string {
 	buf := make([]byte, 10240)
@@ -60,7 +59,6 @@ func InstallgoroutineDumpGenerator() {
 		return
 	}
 
-	log = ctrl.Log.WithName("dump")
 	log.Info("Register goroutine dump generator")
 
 	signals := make(chan os.Signal, 1)
