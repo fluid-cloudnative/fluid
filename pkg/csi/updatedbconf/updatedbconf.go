@@ -39,10 +39,18 @@ func updateLine(line string, key string, values []string) (string, bool) {
 	line = strings.TrimSpace(line)
 	line = strings.Trim(line, `"`)
 	line = strings.TrimSpace(line)
-	current := strings.Split(line, " ")
+
+	// Use strings.Fields instead of strings.Split
+	// strings.Fields automatically handles empty strings and multiple spaces
+	// It returns an empty slice for empty strings, not [""]
+	current := strings.Fields(line)
 
 	newValues := []string{}
 	for _, v := range values {
+		v = strings.TrimSpace(v)
+		if v == "" {
+			continue
+		}
 		exist := false
 		for _, s := range current {
 			if v == s {
@@ -50,7 +58,7 @@ func updateLine(line string, key string, values []string) (string, bool) {
 				break
 			}
 		}
-		if !exist && v != "" {
+		if !exist {
 			newValues = append(newValues, v)
 		}
 	}
@@ -64,14 +72,18 @@ func updateLine(line string, key string, values []string) (string, bool) {
 
 // updateConfig parse the updatedb.conf by line and add the `fs` `path` items
 func updateConfig(content string, newFs []string, newPaths []string) (string, error) {
-	lines := strings.Split(content, "\n")
+	var lines []string
+	if content != "" {
+		lines = strings.Split(content, "\n")
+	}
+
 	var hasPruneFsConfig = false
 	var hasPrunePathConfig = false
 	var configChange = false
 	for i, line := range lines {
-		line = strings.TrimSpace(line)
+		trimmedLine := strings.TrimSpace(line)
 		// update PRUNEFS
-		if strings.HasPrefix(line, configKeyPruneFs) {
+		if strings.HasPrefix(trimmedLine, configKeyPruneFs) {
 			hasPruneFsConfig = true
 			if newline, shouldUpdate := updateLine(line, configKeyPruneFs, newFs); shouldUpdate {
 				configChange = true
@@ -79,7 +91,7 @@ func updateConfig(content string, newFs []string, newPaths []string) (string, er
 			}
 		}
 		// update PRUNEPATHS
-		if strings.HasPrefix(line, configKeyPrunePaths) {
+		if strings.HasPrefix(trimmedLine, configKeyPrunePaths) {
 			hasPrunePathConfig = true
 			if newline, shouldUpdate := updateLine(line, configKeyPrunePaths, newPaths); shouldUpdate {
 				configChange = true
