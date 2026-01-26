@@ -1,5 +1,5 @@
-# alpine:3.20.6
-FROM alpine:3.20.6@sha256:de4fe7064d8f98419ea6b49190df1abbf43450c1702eeb864fe9ced453c1cc5f
+# alpine:3.23.2
+FROM alpine:3.23.2@sha256:865b95f46d98cf867a156fe4a135ad3fe50d2056aa3f25ed31662dff6da4eb62
 
 COPY ./charts/fluid/fluid/crds /fluid/crds
 COPY ./tools/crd-upgrade/upgrade-crds.sh /fluid/upgrade-crds.sh

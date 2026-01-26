@@ -19,7 +19,9 @@ on:
     - cron: '20 21 * * 4'
 
 # Declare default permissions as read only.
-permissions: read-all
+permissions:
+  contents: read
+  actions: read
 
 jobs:
   analyze:
