@@ -173,9 +173,9 @@ func (e *Helper) CheckAndSyncWorkerStatus(getRuntimeFn func(client.Client) (base
 }
 
 // TearDownWorkers tears down workers according to the given runtimeInfo.
-// Note that TearDownWorkers does NOT delete worker statefulset and worker pods, is just cleans labels on nodes.
-// Worker statefulset is installed and managed by Helm, it will be deleted if the helm release is uninstalled in Engine.destroyMaster().
-func (j *Helper) TearDownWorkers(runtimeInfo base.RuntimeInfoInterface) (err error) {
+// Note that TearDownWorkers does NOT delete the worker StatefulSet or worker pods; it only cleans labels on nodes.
+// Worker StatefulSet is installed and managed by Helm. It will be deleted when the helm release is uninstalled in Engine.destroyMaster().
+func (e *Helper) TearDownWorkers(runtimeInfo base.RuntimeInfoInterface) (err error) {
 	var (
 		nodeList           = &corev1.NodeList{}
 		labelExclusiveName = utils.GetExclusiveKey()
@@ -187,14 +187,14 @@ func (j *Helper) TearDownWorkers(runtimeInfo base.RuntimeInfoInterface) (err err
 	)
 
 	labelNames := []string{labelName, labelTotalName, labelDiskName, labelMemoryName, labelCommonName}
-	j.log.Info("check node labels", "labelNames", labelNames)
+	e.log.Info("check node labels", "labelNames", labelNames)
 
 	datasetLabels, err := labels.Parse(fmt.Sprintf("%s=true", labelCommonName))
 	if err != nil {
 		return err
 	}
 
-	err = j.client.List(context.TODO(), nodeList, &client.ListOptions{
+	err = e.client.List(context.TODO(), nodeList, &client.ListOptions{
 		LabelSelector: datasetLabels,
 	})
 
@@ -211,9 +211,9 @@ func (j *Helper) TearDownWorkers(runtimeInfo base.RuntimeInfoInterface) (err err
 		nodeName := node.Name
 		var labelsToModify common.LabelsToModify
 		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-			node, err := kubeclient.GetNode(j.client, nodeName)
+			node, err := kubeclient.GetNode(e.client, nodeName)
 			if err != nil {
-				j.log.Error(err, "Fail to get node", "nodename", nodeName)
+				e.log.Error(err, "Fail to get node", "nodename", nodeName)
 				return err
 			}
 
@@ -234,11 +234,11 @@ func (j *Helper) TearDownWorkers(runtimeInfo base.RuntimeInfoInterface) (err err
 			// Update the toUpdate in UPDATE mode
 			// modifiedLabels, err := utils.ChangeNodeLabelWithUpdateMode(e.Client, toUpdate, labelToModify)
 			// Update the toUpdate in PATCH mode
-			modifiedLabels, err := utils.ChangeNodeLabelWithPatchMode(j.client, toUpdate, labelsToModify)
+			modifiedLabels, err := utils.ChangeNodeLabelWithPatchMode(e.client, toUpdate, labelsToModify)
 			if err != nil {
 				return err
 			}
-			j.log.Info("Destroy worker", "dataset", fmt.Sprintf("%s/%s", runtimeInfo.GetNamespace(), runtimeInfo.GetName()), "deleted worker node", node.Name, "removed or updated labels", modifiedLabels)
+			e.log.Info("Destroy worker", "dataset", fmt.Sprintf("%s/%s", runtimeInfo.GetNamespace(), runtimeInfo.GetName()), "deleted worker node", node.Name, "removed or updated labels", modifiedLabels)
 			return nil
 		})
 
