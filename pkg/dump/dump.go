@@ -29,7 +29,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-var log = ctrl.Log.WithName("dump") 
+var log = ctrl.Log.WithName("dump")
 var initialized int32 // Changed to atomic int32
 
 var dumpfileMutex sync.RWMutex
