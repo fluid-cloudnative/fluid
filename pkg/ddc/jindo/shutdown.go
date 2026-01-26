@@ -142,7 +142,7 @@ func (e *JindoEngine) cleanConfigMap() (err error) {
 	return nil
 }
 
-// destroyWorkers will delete the workers by number of the workers, if workers is -1, it means all the workers are deleted
+// destroyWorkers tears down all worker pods and related node labels for this runtime via Helper.TearDownWorkers.
 func (e *JindoEngine) destroyWorkers() (err error) {
 	//  SchedulerMutex only for patch mode
 	lifecycle.SchedulerMutex.Lock()

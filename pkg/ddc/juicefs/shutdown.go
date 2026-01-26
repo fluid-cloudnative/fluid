@@ -229,8 +229,8 @@ func (j *JuiceFSEngine) getUUID(pod corev1.Pod, containerName string) (uuid stri
 	return
 }
 
-// destroyWorkers attempts to delete the workers until worker num reaches the given expectedWorkers, if expectedWorkers is -1, it means all the workers should be deleted
-// This func returns currentWorkers representing how many workers are left after this process.
+// destroyWorkers tears down all JuiceFS workers for the current runtime while holding SchedulerMutex.
+// Worker and related label cleanup is delegated to Helper.TearDownWorkers.
 func (j *JuiceFSEngine) destroyWorkers() (err error) {
 	//  SchedulerMutex only for patch mode
 	lifecycle.SchedulerMutex.Lock()

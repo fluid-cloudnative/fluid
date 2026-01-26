@@ -197,8 +197,8 @@ func (e *GooseFSEngine) cleanAll() (err error) {
 	return nil
 }
 
-// destroyWorkers attempts to delete the workers until worker num reaches the given expectedWorkers, if expectedWorkers is -1, it means all the workers should be deleted
-// This func returns currentWorkers representing how many workers are left after this process.
+// destroyWorkers tears down the GooseFS worker pods associated with this engine,
+// delegating the actual teardown logic to Helper.TearDownWorkers.
 func (e *GooseFSEngine) destroyWorkers() (err error) {
 	//  SchedulerMutex only for patch mode
 	lifecycle.SchedulerMutex.Lock()

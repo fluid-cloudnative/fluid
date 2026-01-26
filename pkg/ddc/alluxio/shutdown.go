@@ -202,8 +202,8 @@ func (e *AlluxioEngine) cleanAll() (err error) {
 	return nil
 }
 
-// destroyWorkers attempts to delete the workers until worker num reaches the given expectedWorkers, if expectedWorkers is -1, it means all the workers should be deleted
-// This func returns currentWorkers representing how many workers are left after this process.
+// destroyWorkers tears down all Alluxio workers associated with this engine.
+// It acquires the SchedulerMutex for thread safety and delegates deletion to Helper.TearDownWorkers.
 func (e *AlluxioEngine) destroyWorkers() (err error) {
 	//  SchedulerMutex only for patch mode
 	lifecycle.SchedulerMutex.Lock()

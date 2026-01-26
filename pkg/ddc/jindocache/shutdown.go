@@ -142,7 +142,7 @@ func (e *JindoCacheEngine) cleanConfigMap() (err error) {
 	return nil
 }
 
-// destroyWorkers will delete the workers by number of the workers, if workers is -1, it means all the workers are deleted
+// destroyWorkers tears down all worker pods for this runtime using the helper
 func (e *JindoCacheEngine) destroyWorkers() (err error) {
 	//  SchedulerMutex only for patch mode
 	lifecycle.SchedulerMutex.Lock()
