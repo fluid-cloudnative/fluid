@@ -17,7 +17,7 @@ jobs:
   staticcheck:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: dominikh/staticcheck-action@024238d2898c874f26d723e7d0ff4308c35589a2 # v1
 
   lint:
@@ -35,7 +35,7 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Checkout code
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           path: ${{ env.GOPATH }}/src/github.com/fluid-cloudnative/fluid
 
@@ -93,7 +93,7 @@ jobs:
         go-version: ${{ env.GO_VERSION }}
     
     - name: Checkout code
-      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         path: ${{ env.GOPATH }}/src/github.com/fluid-cloudnative/fluid
 
@@ -117,7 +117,7 @@ jobs:
         go-version: ${{ env.GO_VERSION }}
     
     - name: Checkout code
-      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         path: ${{ env.GOPATH }}/src/github.com/fluid-cloudnative/fluid
 
