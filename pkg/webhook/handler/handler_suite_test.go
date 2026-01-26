@@ -1,4 +1,4 @@
-package handler_test
+package handler
 
 import (
 	"testing"
