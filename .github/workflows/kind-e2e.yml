@@ -9,9 +9,7 @@ on:
       - 'static/**'
 
 # Declare default permissions as read only.
-permissions:
-  contents: read
-  actions: write
+permissions: read-all
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -22,6 +20,9 @@ env:
 
 jobs:
   kind-e2e-test:
+    # Job-level permissions: only what this job needs.
+    permissions:
+      actions: read
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
