@@ -38,7 +38,6 @@ import (
 	fluidconfig "github.com/fluid-cloudnative/fluid/pkg/csi/config"
 )
 
-// mockManager implements manager.Manager interface for testing
 type mockManager struct {
 	manager.Manager
 }
