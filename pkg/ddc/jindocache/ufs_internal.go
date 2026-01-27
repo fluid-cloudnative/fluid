@@ -17,7 +17,6 @@ limitations under the License.
 package jindocache
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -36,13 +35,6 @@ func (e *JindoCacheEngine) shouldMountUFS() (should bool, err error) {
 
 	podName, containerName := e.getMasterPodInfo()
 	fileUtils := operations.NewJindoFileUtils(podName, containerName, e.namespace, e.Log)
-
-	ready := fileUtils.Ready()
-	if !ready {
-		should = false
-		err = fmt.Errorf("the UFS is not ready")
-		return should, err
-	}
 
 	// Check if any of the Mounts has not been mounted in Alluxio
 	for _, mount := range dataset.Spec.Mounts {
@@ -71,11 +63,6 @@ func (e *JindoCacheEngine) mountUFS() (err error) {
 	podName, containerName := e.getMasterPodInfo()
 	fileUtils := operations.NewJindoFileUtils(podName, containerName, e.namespace, e.Log)
 
-	ready := fileUtils.Ready()
-	if !ready {
-		return fmt.Errorf("the UFS is not ready")
-	}
-
 	// Iterate all the mount points, do mount if the mount point is not Fluid-native(e.g. HostPath or PVC)
 	for _, mount := range dataset.Spec.Mounts {
 
@@ -101,12 +88,6 @@ func (e *JindoCacheEngine) ShouldRefreshCacheSet() (shouldRefresh bool, err erro
 	podName, containerName := e.getMasterPodInfo()
 	fileUtils := operations.NewJindoFileUtils(podName, containerName, e.namespace, e.Log)
 
-	ready := fileUtils.Ready()
-	if !ready {
-		shouldRefresh = false
-		return shouldRefresh, fmt.Errorf("the UFS is not ready")
-	}
-
 	refreshed, err := fileUtils.IsRefreshed()
 	if err != nil {
 		return
@@ -117,11 +98,6 @@ func (e *JindoCacheEngine) ShouldRefreshCacheSet() (shouldRefresh bool, err erro
 func (e *JindoCacheEngine) RefreshCacheSet() (err error) {
 	podName, containerName := e.getMasterPodInfo()
 	fileUitls := operations.NewJindoFileUtils(podName, containerName, e.namespace, e.Log)
-
-	ready := fileUitls.Ready()
-	if !ready {
-		return fmt.Errorf("the UFS is not ready")
-	}
 
 	err = fileUitls.RefreshCacheSet()
 	return
