@@ -175,10 +175,6 @@ var _ = Describe("AlluxioEngine DataBackup Tests", Label("pkg.ddc.alluxio.backup
 			})
 
 			It("should return an error", func() {
-				patches = gomonkey.ApplyFunc(dataflow.InjectAffinityByRunAfterOp, func(_ client.Client, _ *datav1alpha1.OperationRef, _ string, _ *corev1.Affinity) (*corev1.Affinity, error) {
-					return nil, nil
-				})
-
 				valueFileName, err := engine.generateDataBackupValueFile(ctx, databackup)
 				Expect(err).To(HaveOccurred())
 				Expect(valueFileName).To(BeEmpty())
@@ -211,10 +207,6 @@ var _ = Describe("AlluxioEngine DataBackup Tests", Label("pkg.ddc.alluxio.backup
 			})
 
 			It("should return an error", func() {
-				patches = gomonkey.ApplyFunc(dataflow.InjectAffinityByRunAfterOp, func(_ client.Client, _ *datav1alpha1.OperationRef, _ string, _ *corev1.Affinity) (*corev1.Affinity, error) {
-					return nil, nil
-				})
-
 				valueFileName, err := engine.generateDataBackupValueFile(ctx, databackup)
 				Expect(err).To(HaveOccurred())
 				Expect(valueFileName).To(BeEmpty())
@@ -235,15 +227,15 @@ var _ = Describe("AlluxioEngine DataBackup Tests", Label("pkg.ddc.alluxio.backup
 				valueFileName, err := engine.generateDataBackupValueFile(ctx, databackup)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(valueFileName).NotTo(BeEmpty())
+				defer func() {
+					err := os.Remove(valueFileName)
+					Expect(err).NotTo(HaveOccurred())
+				}()
 
 				// Verify the file was created
 				fileInfo, statErr := os.Stat(valueFileName)
 				Expect(statErr).NotTo(HaveOccurred())
 				Expect(fileInfo.Size()).To(BeNumerically(">", 0))
-
-				// Cleanup
-				cleanupErr := os.Remove(valueFileName)
-				Expect(cleanupErr).NotTo(HaveOccurred())
 			})
 		})
 
@@ -266,10 +258,10 @@ var _ = Describe("AlluxioEngine DataBackup Tests", Label("pkg.ddc.alluxio.backup
 					valueFileName, err := engine.generateDataBackupValueFile(ctx, databackup)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(valueFileName).NotTo(BeEmpty())
-
-					// Cleanup
-					cleanupErr := os.Remove(valueFileName)
-					Expect(cleanupErr).NotTo(HaveOccurred())
+					defer func() {
+						err := os.Remove(valueFileName)
+						Expect(err).NotTo(HaveOccurred())
+					}()
 				})
 			})
 
@@ -307,6 +299,10 @@ var _ = Describe("AlluxioEngine DataBackup Tests", Label("pkg.ddc.alluxio.backup
 				valueFileName, err := engine.generateDataBackupValueFile(ctx, databackup)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(valueFileName).NotTo(BeEmpty())
+				defer func() {
+					err := os.Remove(valueFileName)
+					Expect(err).NotTo(HaveOccurred())
+				}()
 
 				// Read file content to verify RunAs info is included
 				content, readErr := os.ReadFile(valueFileName)
@@ -314,10 +310,6 @@ var _ = Describe("AlluxioEngine DataBackup Tests", Label("pkg.ddc.alluxio.backup
 				Expect(string(content)).To(ContainSubstring("enabled: true"))
 				Expect(string(content)).To(ContainSubstring("user: 1000"))
 				Expect(string(content)).To(ContainSubstring("group: 1000"))
-
-				// Cleanup
-				cleanupErr := os.Remove(valueFileName)
-				Expect(cleanupErr).NotTo(HaveOccurred())
 			})
 		})
 
@@ -347,16 +339,16 @@ var _ = Describe("AlluxioEngine DataBackup Tests", Label("pkg.ddc.alluxio.backup
 				valueFileName, err := engine.generateDataBackupValueFile(ctx, databackup)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(valueFileName).NotTo(BeEmpty())
+				defer func() {
+					err := os.Remove(valueFileName)
+					Expect(err).NotTo(HaveOccurred())
+				}()
 
 				// Read file content to verify databackup RunAs is used
 				content, readErr := os.ReadFile(valueFileName)
 				Expect(readErr).NotTo(HaveOccurred())
 				Expect(string(content)).To(ContainSubstring("user: 2000"))
 				Expect(string(content)).To(ContainSubstring("group: 2000"))
-
-				// Cleanup
-				cleanupErr := os.Remove(valueFileName)
-				Expect(cleanupErr).NotTo(HaveOccurred())
 			})
 		})
 
@@ -381,15 +373,15 @@ var _ = Describe("AlluxioEngine DataBackup Tests", Label("pkg.ddc.alluxio.backup
 				valueFileName, err := engine.generateDataBackupValueFile(ctx, databackup)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(valueFileName).NotTo(BeEmpty())
+				defer func() {
+					err := os.Remove(valueFileName)
+					Expect(err).NotTo(HaveOccurred())
+				}()
 
 				// Read file content to verify custom workdir is used
 				content, readErr := os.ReadFile(valueFileName)
 				Expect(readErr).NotTo(HaveOccurred())
 				Expect(string(content)).To(ContainSubstring("workdir: /custom/workdir"))
-
-				// Cleanup
-				cleanupErr := os.Remove(valueFileName)
-				Expect(cleanupErr).NotTo(HaveOccurred())
 			})
 		})
 
@@ -408,15 +400,15 @@ var _ = Describe("AlluxioEngine DataBackup Tests", Label("pkg.ddc.alluxio.backup
 				valueFileName, err := engine.generateDataBackupValueFile(ctx, databackup)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(valueFileName).NotTo(BeEmpty())
+				defer func() {
+					err := os.Remove(valueFileName)
+					Expect(err).NotTo(HaveOccurred())
+				}()
 
 				// Read file content to verify local path handling
 				content, readErr := os.ReadFile(valueFileName)
 				Expect(readErr).NotTo(HaveOccurred())
 				Expect(string(content)).To(ContainSubstring("runtimeType: " + common.AlluxioRuntime))
-
-				// Cleanup
-				cleanupErr := os.Remove(valueFileName)
-				Expect(cleanupErr).NotTo(HaveOccurred())
 			})
 		})
 	})
