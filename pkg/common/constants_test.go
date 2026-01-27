@@ -17,36 +17,26 @@ limitations under the License.
 package common
 
 import (
-	"testing"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-func TestGetDefaultTieredStoreOrder(t *testing.T) {
-	testCases := map[string]struct {
+var _ = Describe("GetDefaultTieredStoreOrder", func() {
+	type testCase struct {
 		mediumType MediumType
 		want       int
-	}{
-		"test case 1": {
-			mediumType: Memory,
-			want:       0,
-		},
-		"test case 2": {
-			mediumType: SSD,
-			want:       1,
-		},
-		"test case 3": {
-			mediumType: HDD,
-			want:       2,
-		},
-		"test case 4": {
-			mediumType: "unknown",
-			want:       0,
-		},
-	}
-	for k, item := range testCases {
-		result := GetDefaultTieredStoreOrder(item.mediumType)
-		if item.want != result {
-			t.Errorf("%s cannot paas, want %v, get %v", k, item.want, result)
-		}
 	}
 
-}
+	DescribeTable("should return correct order for each medium type",
+		func(tc testCase) {
+			Expect(GetDefaultTieredStoreOrder(tc.mediumType)).To(Equal(tc.want))
+		},
+		Entry("returns 0 for Memory", testCase{mediumType: Memory, want: 0}),
+		Entry("returns 1 for SSD", testCase{mediumType: SSD, want: 1}),
+		Entry("returns 2 for HDD", testCase{mediumType: HDD, want: 2}),
+		Entry("returns 0 for unknown", testCase{mediumType: "unknown", want: 0}),
+		Entry("returns 0 for empty string", testCase{mediumType: "", want: 0}),
+		Entry("returns 0 for nil MediumType", testCase{mediumType: MediumType(""), want: 0}),
+		Entry("returns 0 for random string", testCase{mediumType: MediumType("ramdisk"), want: 0}),
+	)
+})

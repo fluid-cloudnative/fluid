@@ -16,89 +16,48 @@ limitations under the License.
 
 package common
 
-import "testing"
+import (
+	"testing"
 
-func TestIsFluidNativeScheme(t *testing.T) {
-	testCases := map[string]struct {
-		endpoint string
-		want     bool
-	}{
-		"test fluid native scheme case 1": {
-			endpoint: "pvc://mnt/fluid/data",
-			want:     true,
-		},
-		"test fluid native scheme case 2": {
-			endpoint: "local://mnt/fluid/data",
-			want:     true,
-		},
-		"test fluid native scheme case 3": {
-			endpoint: "http://mnt/fluid/data",
-			want:     false,
-		},
-		"test fluid native scheme case 4": {
-			endpoint: "https://mnt/fluid/data",
-			want:     false,
-		},
-	}
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+)
 
-	for k, item := range testCases {
-		got := IsFluidNativeScheme(item.endpoint)
-		if got != item.want {
-			t.Errorf("%s check failure, got:%t,want:%t", k, got, item.want)
-		}
-	}
+func TestCommon(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Common Suite")
 }
 
-func TestIsFluidWebScheme(t *testing.T) {
-	testCases := map[string]struct {
-		endpoint string
-		want     bool
-	}{
-		"test fluid native scheme case 1": {
-			endpoint: "pvc://mnt/fluid/data",
-			want:     false,
+var _ = Describe("IsFluidNativeScheme", func() {
+	DescribeTable("should return correct bool for endpoint",
+		func(endpoint string, want bool) {
+			Expect(IsFluidNativeScheme(endpoint)).To(Equal(want))
 		},
-		"test fluid native scheme case 2": {
-			endpoint: "local://mnt/fluid/data",
-			want:     false,
-		},
-		"test fluid native scheme case 3": {
-			endpoint: "http://mnt/fluid/data",
-			want:     true,
-		},
-		"test fluid native scheme case 4": {
-			endpoint: "https://mnt/fluid/data",
-			want:     true,
-		},
-	}
+		Entry("pvc://mnt/fluid/data", "pvc://mnt/fluid/data", true),
+		Entry("local://mnt/fluid/data", "local://mnt/fluid/data", true),
+		Entry("http://mnt/fluid/data", "http://mnt/fluid/data", false),
+		Entry("https://mnt/fluid/data", "https://mnt/fluid/data", false),
+	)
+})
 
-	for k, item := range testCases {
-		got := IsFluidWebScheme(item.endpoint)
-		if got != item.want {
-			t.Errorf("%s check failure, got:%t,want:%t", k, got, item.want)
-		}
-	}
-}
-
-func TestIsFluidRefScheme(t *testing.T) {
-	testCases := map[string]struct {
-		endpoint string
-		want     bool
-	}{
-		"test fluid native scheme case 1": {
-			endpoint: "dataset://mnt/fluid/data",
-			want:     true,
+var _ = Describe("IsFluidWebScheme", func() {
+	DescribeTable("should return correct bool for endpoint",
+		func(endpoint string, want bool) {
+			Expect(IsFluidWebScheme(endpoint)).To(Equal(want))
 		},
-		"test fluid native scheme case 2": {
-			endpoint: "local://mnt/fluid/data",
-			want:     false,
-		},
-	}
+		Entry("pvc://mnt/fluid/data", "pvc://mnt/fluid/data", false),
+		Entry("local://mnt/fluid/data", "local://mnt/fluid/data", false),
+		Entry("http://mnt/fluid/data", "http://mnt/fluid/data", true),
+		Entry("https://mnt/fluid/data", "https://mnt/fluid/data", true),
+	)
+})
 
-	for k, item := range testCases {
-		got := IsFluidRefSchema(item.endpoint)
-		if got != item.want {
-			t.Errorf("%s check failure, got:%t,want:%t", k, got, item.want)
-		}
-	}
-}
+var _ = Describe("IsFluidRefSchema", func() {
+	DescribeTable("should return correct bool for endpoint",
+		func(endpoint string, want bool) {
+			Expect(IsFluidRefSchema(endpoint)).To(Equal(want))
+		},
+		Entry("dataset://mnt/fluid/data", "dataset://mnt/fluid/data", true),
+		Entry("local://mnt/fluid/data", "local://mnt/fluid/data", false),
+	)
+})

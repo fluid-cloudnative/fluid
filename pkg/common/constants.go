@@ -32,8 +32,6 @@ const (
 
 	RuntimeScaleInFailed = "RuntimeScaleInFailed"
 
-	Succeed = "Succeed"
-
 	FuseRecoverFailed = "FuseRecoverFailed"
 
 	FuseRecoverSucceed = "FuseRecoverSucceed"

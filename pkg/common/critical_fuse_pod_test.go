@@ -17,23 +17,18 @@ limitations under the License.
 package common
 
 import (
-	"testing"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-func TestCriticalFusePodEnabled(t *testing.T) {
-	want := false
-	got := CriticalFusePodEnabled()
+var _ = Describe("CriticalFusePodEnabled", func() {
+	It("should return false", func() {
+		Expect(CriticalFusePodEnabled()).To(BeFalse())
+	})
+})
 
-	if got != want {
-		t.Errorf("want %v, got %v", want, got)
-	}
-}
-
-func TestPortCheckEnabled(t *testing.T) {
-	want := false
-	got := PortCheckEnabled()
-
-	if got != want {
-		t.Errorf("want %v, got %v", want, got)
-	}
-}
+var _ = Describe("PortCheckEnabled", func() {
+	It("should return false", func() {
+		Expect(PortCheckEnabled()).To(BeFalse())
+	})
+})
