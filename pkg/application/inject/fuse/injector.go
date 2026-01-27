@@ -28,6 +28,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/applications/defaultapp"
 	podapp "github.com/fluid-cloudnative/fluid/pkg/utils/applications/pod"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/applications/unstructured"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/discovery"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -44,10 +45,24 @@ type Injector struct {
 }
 
 func NewInjector(client client.Client) *Injector {
+	mode := common.GetSidecarInjectionMode()
+	if mode == common.SidecarInjectionMode_Default {
+		major, minor, err := discovery.GetServerVersion()
+		if err != nil {
+			ctrl.Log.WithName("fuse-injector").V(1).Info("Failed to discover server version, using default sidecar injection mode", "error", err)
+		} else {
+			// Native sidecar is supported and enabled by default in K8s 1.29+
+			if major > 1 || (major == 1 && minor >= 29) {
+				mode = common.SidecarInjectionMode_NativeSidecar
+				ctrl.Log.WithName("fuse-injector").Info("Detected K8s version >= 1.29, using native sidecar mode")
+			}
+		}
+	}
+
 	return &Injector{
 		client:               client,
 		log:                  ctrl.Log.WithName("fuse-injector"),
-		sidecarInjectionMode: common.GetSidecarInjectionMode(),
+		sidecarInjectionMode: mode,
 	}
 }
 
