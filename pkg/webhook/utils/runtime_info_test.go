@@ -1,8 +1,6 @@
 package utils
 
 import (
-	"testing"
-
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	. "github.com/onsi/ginkgo/v2"
@@ -257,58 +255,3 @@ var _ = Describe("RuntimeInfo Utilities", func() {
 		})
 	})
 })
-
-func BenchmarkCollectRuntimeInfosFromPVCs(b *testing.B) {
-	scheme := setupScheme()
-	setupLog := zap.New(zap.UseDevMode(false))
-
-	pvc := &corev1.PersistentVolumeClaim{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "bench-pvc",
-			Namespace: "default",
-			Labels: map[string]string{
-				common.LabelAnnotationStorageCapacityPrefix: "true",
-			},
-		},
-	}
-
-	fakeClient := fake.NewClientBuilder().
-		WithScheme(scheme).
-		WithObjects(pvc).
-		Build()
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_, _ = CollectRuntimeInfosFromPVCs(
-			fakeClient,
-			[]string{"bench-pvc"},
-			"default",
-			setupLog,
-			false,
-		)
-	}
-}
-
-func BenchmarkCheckDatasetBound(b *testing.B) {
-	scheme := setupScheme()
-
-	dataset := &v1alpha1.Dataset{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "bench-dataset",
-			Namespace: "default",
-		},
-		Status: v1alpha1.DatasetStatus{
-			Phase: v1alpha1.BoundDatasetPhase,
-		},
-	}
-
-	fakeClient := fake.NewClientBuilder().
-		WithScheme(scheme).
-		WithObjects(dataset).
-		Build()
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_ = checkDatasetBound(fakeClient, "bench-dataset", "default")
-	}
-}
