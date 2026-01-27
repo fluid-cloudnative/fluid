@@ -168,6 +168,10 @@ func (e *AlluxioEngine) transformCommonPart(runtime *datav1alpha1.AlluxioRuntime
 				value.Properties[k] = v
 			}
 		}
+
+		if m.Shared {
+			value.Properties["alluxio.master.mount.table.root.shared"] = "true"
+		}
 	}
 	e.Log.Info("output", "uRootPath", uRootPath, "m", m)
 	// set alluxio root ufs
