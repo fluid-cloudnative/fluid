@@ -16,6 +16,8 @@ limitations under the License.
 
 package dataoperation
 
+//go:generate mockgen -source=interface.go -destination=mock/mock_operation.go -package=mock
+
 import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
