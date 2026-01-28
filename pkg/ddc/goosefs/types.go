@@ -229,6 +229,9 @@ type cacheStates struct {
 
 func (value *GooseFS) getTiredStoreLevel0Path(name, namespace string) (path string) {
 	path = fmt.Sprintf("/dev/shm/%s/%s", namespace, name)
+	if value == nil {
+		return
+	}
 	for _, level := range value.Tieredstore.Levels {
 		if level.Level == 0 {
 			path = level.Path
