@@ -1,4 +1,4 @@
-package jindofsx_test
+package jindofsx
 
 import (
 	"testing"
