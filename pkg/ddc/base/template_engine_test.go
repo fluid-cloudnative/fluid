@@ -68,17 +68,27 @@ var _ = Describe("TemplateEngine", func() {
 	var (
 		impl *enginemock.MockImplement
 		ctrl *gomock.Controller
+		oldSyncRetryDuration string
+		syncRetryDurationSet bool
 	)
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		impl = enginemock.NewMockImplement(ctrl)
+
+		oldSyncRetryDuration, syncRetryDurationSet = os.LookupEnv("FLUID_SYNC_RETRY_DURATION")
 		_ = os.Setenv("FLUID_SYNC_RETRY_DURATION", "0s")
+
 		t = base.NewTemplateEngine(impl, "default-test", fakeCtx)
 	})
 
 	// Check if all expectations have been met after each It
 	AfterEach(func() {
+		if syncRetryDurationSet {
+			_ = os.Setenv("FLUID_SYNC_RETRY_DURATION", oldSyncRetryDuration)
+		} else {
+			_ = os.Unsetenv("FLUID_SYNC_RETRY_DURATION")
+		}
 		ctrl.Finish()
 	})
 
