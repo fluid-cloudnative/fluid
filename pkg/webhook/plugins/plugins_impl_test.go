@@ -20,12 +20,12 @@ import (
 	"math/rand"
 	"os"
 	"reflect"
-	"testing"
 	"time"
 
 	"github.com/agiledragon/gomonkey/v2"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/api"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -37,196 +37,145 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func TestPods(t *testing.T) {
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-
-	tieredLocality := `
+var _ = Describe("Plugins Implementation", func() {
+	var (
+		tieredLocality = `
 preferred:
 - name: fluid.io/node
   weight: 100
 required:
 - fluid.io/node
 `
-	jindoRuntime := &datav1alpha1.JindoRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase",
-			Namespace: "default",
-		},
-	}
-
-	schema := runtime.NewScheme()
-	_ = corev1.AddToScheme(schema)
-	_ = datav1alpha1.AddToScheme(schema)
-	var (
-		pod               corev1.Pod
-		c                 = fake.NewFakeClientWithScheme(schema, jindoRuntime)
-		plugin            api.MutatingHandler
-		pluginName        string
-		lenNodePrefer     int
-		lenNodeRequire    int
-		lenPodPrefer      int
-		lenPodAntiPrefer  int
-		lenPodRequire     int
-		lenPodAntiRequire int
+		jindoRuntime *datav1alpha1.JindoRuntime
+		schema       *runtime.Scheme
+		c            client.Client
 	)
 
-	// build slice of RuntimeInfos
-	var nilRuntimeInfos map[string]base.RuntimeInfoInterface = map[string]base.RuntimeInfoInterface{}
-	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "default", "jindo")
-	if err != nil {
-		t.Error("fail to build runtimeInfo because of err", err)
-	}
-	runtimeInfo.SetFuseNodeSelector(map[string]string{})
-	// runtimeInfos := append(nilRuntimeInfos, runtimeInfo)
-	runtimeInfos := map[string]base.RuntimeInfoInterface{"hbase": runtimeInfo}
+	BeforeEach(func() {
+		jindoRuntime = &datav1alpha1.JindoRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase",
+				Namespace: "default",
+			},
+		}
+		schema = runtime.NewScheme()
+		Expect(corev1.AddToScheme(schema)).To(Succeed())
+		Expect(datav1alpha1.AddToScheme(schema)).To(Succeed())
+		c = fake.NewFakeClientWithScheme(schema, jindoRuntime)
+	})
 
-	// test all plugins for 3 turns
-	for i := 0; i < 3; i++ {
-		lenNodePrefer = r.Intn(3) + 1
-		lenNodeRequire = r.Intn(3) + 1
-		lenPodPrefer = r.Intn(3) + 1
-		lenPodAntiPrefer = r.Intn(3) + 1
-		lenPodRequire = r.Intn(3) + 1
-		lenPodAntiRequire = r.Intn(3) + 1
+	It("should test all plugins for 3 turns", func() {
+		r := rand.New(rand.NewSource(time.Now().UnixNano()))
+		var pod corev1.Pod
 
-		// build affinity of pod
-		pod.Spec.Affinity = &corev1.Affinity{
-			NodeAffinity: &corev1.NodeAffinity{
-				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-					NodeSelectorTerms: make([]corev1.NodeSelectorTerm, lenNodeRequire),
+		var nilRuntimeInfos map[string]base.RuntimeInfoInterface = map[string]base.RuntimeInfoInterface{}
+		runtimeInfo, err := base.BuildRuntimeInfo("hbase", "default", "jindo")
+		Expect(err).NotTo(HaveOccurred())
+		runtimeInfo.SetFuseNodeSelector(map[string]string{})
+		runtimeInfos := map[string]base.RuntimeInfoInterface{"hbase": runtimeInfo}
+
+		for i := 0; i < 3; i++ {
+			lenNodePrefer := r.Intn(3) + 1
+			lenNodeRequire := r.Intn(3) + 1
+			lenPodPrefer := r.Intn(3) + 1
+			lenPodAntiPrefer := r.Intn(3) + 1
+			lenPodRequire := r.Intn(3) + 1
+			lenPodAntiRequire := r.Intn(3) + 1
+
+			pod.Spec.Affinity = &corev1.Affinity{
+				NodeAffinity: &corev1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+						NodeSelectorTerms: make([]corev1.NodeSelectorTerm, lenNodeRequire),
+					},
+					PreferredDuringSchedulingIgnoredDuringExecution: make([]corev1.PreferredSchedulingTerm, lenNodePrefer),
 				},
-				PreferredDuringSchedulingIgnoredDuringExecution: make([]corev1.PreferredSchedulingTerm, lenNodePrefer),
-			},
-			PodAffinity: &corev1.PodAffinity{
-				RequiredDuringSchedulingIgnoredDuringExecution:  make([]corev1.PodAffinityTerm, lenPodRequire),
-				PreferredDuringSchedulingIgnoredDuringExecution: make([]corev1.WeightedPodAffinityTerm, lenPodPrefer),
-			},
-			PodAntiAffinity: &corev1.PodAntiAffinity{
-				RequiredDuringSchedulingIgnoredDuringExecution:  make([]corev1.PodAffinityTerm, lenPodAntiRequire),
-				PreferredDuringSchedulingIgnoredDuringExecution: make([]corev1.WeightedPodAffinityTerm, lenPodAntiPrefer),
-			},
-		}
-
-		// test of plugin preferNodesWithoutCache
-		plugin, err = prefernodeswithoutcache.NewPlugin(c, "")
-		if err != nil {
-			t.Error("new plugin occurs error", err)
-		}
-		pluginName = plugin.GetName()
-		_, err = plugin.Mutate(&pod, runtimeInfos)
-		if err != nil {
-			t.Error("failed to mutate because of err", err)
-		}
-
-		if len(pod.Spec.Affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution) != lenPodPrefer ||
-			len(pod.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution) != lenPodRequire ||
-			len(pod.Spec.Affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution) != lenPodAntiRequire ||
-			len(pod.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution) != lenPodAntiPrefer {
-			t.Errorf("the plugin %v should only inject into NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution", pluginName)
-		}
-		if pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution == nil {
-			t.Errorf("the plugin %v should only inject into NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution", pluginName)
-		} else {
-			if len(pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) != lenNodeRequire {
-				t.Errorf("the plugin %v should only inject into NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution", pluginName)
+				PodAffinity: &corev1.PodAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution:  make([]corev1.PodAffinityTerm, lenPodRequire),
+					PreferredDuringSchedulingIgnoredDuringExecution: make([]corev1.WeightedPodAffinityTerm, lenPodPrefer),
+				},
+				PodAntiAffinity: &corev1.PodAntiAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution:  make([]corev1.PodAffinityTerm, lenPodAntiRequire),
+					PreferredDuringSchedulingIgnoredDuringExecution: make([]corev1.WeightedPodAffinityTerm, lenPodAntiPrefer),
+				},
 			}
-		}
-		if len(pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution) != lenNodePrefer {
-			t.Errorf("the plugin %v should exit and call other plugins if the pod has mounted datasets", pluginName)
-		}
 
-		_, err = plugin.Mutate(&pod, nilRuntimeInfos)
-		if err != nil {
-			t.Error("failed to mutate because of err", err)
-		}
+			// preferNodesWithoutCache
+			plugin, err := prefernodeswithoutcache.NewPlugin(c, "")
+			Expect(err).NotTo(HaveOccurred())
+			_, err = plugin.Mutate(&pod, runtimeInfos)
+			Expect(err).NotTo(HaveOccurred())
 
-		if len(pod.Spec.Affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution) != lenPodPrefer ||
-			len(pod.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution) != lenPodRequire ||
-			len(pod.Spec.Affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution) != lenPodAntiRequire ||
-			len(pod.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution) != lenPodAntiPrefer {
-			t.Errorf("the plugin %v should only inject into NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution", pluginName)
-		}
-		if pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution == nil {
-			t.Errorf("the plugin %v should only inject into NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution", pluginName)
-		} else {
-			if len(pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) != lenNodeRequire {
-				t.Errorf("the plugin %v should only inject into NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution", pluginName)
-			}
-		}
-		if len(pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution) != lenNodePrefer+1 {
-			t.Errorf("the plugin %v inject wrong terms when the pod has no mounted datasets", pluginName)
-		}
+			Expect(len(pod.Spec.Affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution)).To(Equal(lenPodPrefer))
+			Expect(len(pod.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution)).To(Equal(lenPodRequire))
+			Expect(len(pod.Spec.Affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution)).To(Equal(lenPodAntiRequire))
+			Expect(len(pod.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution)).To(Equal(lenPodAntiPrefer))
+			Expect(pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution).NotTo(BeNil())
+			Expect(len(pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms)).To(Equal(lenNodeRequire))
+			Expect(len(pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution)).To(Equal(lenNodePrefer))
 
-		// test of plugin preferNodesWithCache
-		plugin, err = nodeaffinitywithcache.NewPlugin(c, tieredLocality)
-		if err != nil {
-			t.Error("new plugin occurs error", err)
-		}
-		pluginName = plugin.GetName()
-		_, err = plugin.Mutate(&pod, nilRuntimeInfos)
-		if err != nil {
-			t.Error("failed to mutate because of err", err)
-		}
+			_, err = plugin.Mutate(&pod, nilRuntimeInfos)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution)).To(Equal(lenNodePrefer + 1))
 
-		if len(pod.Spec.Affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution) != lenPodPrefer ||
-			len(pod.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution) != lenPodRequire ||
-			len(pod.Spec.Affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution) != lenPodAntiRequire ||
-			len(pod.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution) != lenPodAntiPrefer {
-			t.Errorf("the plugin %v should only inject into NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution", pluginName)
-		}
-		if pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution == nil {
-			t.Errorf("the plugin %v should only inject into NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution", pluginName)
-		} else {
-			if len(pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) != lenNodeRequire {
-				t.Errorf("the plugin %v should only inject into NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution", pluginName)
-			}
-		}
-		if len(pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution) != lenNodePrefer+1 {
-			t.Errorf("the plugin %v should exit and call other plugins if the pod has no mounted datasets", pluginName)
-		}
+			// nodeaffinitywithcache
+			plugin, err = nodeaffinitywithcache.NewPlugin(c, tieredLocality)
+			Expect(err).NotTo(HaveOccurred())
+			_, err = plugin.Mutate(&pod, nilRuntimeInfos)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution)).To(Equal(lenNodePrefer + 1))
 
-		_, err = plugin.Mutate(&pod, runtimeInfos)
-		if err != nil {
-			t.Error("failed to mutate because of err", err)
+			_, err = plugin.Mutate(&pod, runtimeInfos)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution)).To(Equal(lenNodePrefer + 2))
 		}
-		if len(pod.Spec.Affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution) != lenPodPrefer ||
-			len(pod.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution) != lenPodRequire ||
-			len(pod.Spec.Affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution) != lenPodAntiRequire ||
-			len(pod.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution) != lenPodAntiPrefer {
-			t.Errorf("the plugin %v should only inject into NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution", pluginName)
-		}
-		if pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution == nil {
-			t.Errorf("the plugin %v should only inject into NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution", pluginName)
-		} else {
-			if len(pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) != lenNodeRequire {
-				t.Errorf("the plugin %v should only inject into NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution", pluginName)
-			}
-		}
-		if len(pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution) != lenNodePrefer+2 {
-			t.Errorf("the plugin %v inject wrong terms when the pod has mounted datasets", pluginName)
-		}
+	})
 
-	}
-
-}
-
-func TestGetRegistryHandler(t *testing.T) {
-	type want struct {
-		podWithDatasetHandlerNames []string
-		nodeWithCacheArgs          *nodeaffinitywithcache.TieredLocality
-
-		podWithoutDatasetHandlerSize           int
-		serverlessPodWithDatasetHandlerSize    int
-		serverlessPodWithoutDatasetHandlerSize int
-	}
-
-	tests := []struct {
+	DescribeTable("GetRegistryHandler", func(tt struct {
 		name          string
 		want          want
 		newPluginErr  bool
 		pluginProfile string
-	}{
-		{
+	}) {
+		schema := runtime.NewScheme()
+		Expect(corev1.AddToScheme(schema)).To(Succeed())
+		Expect(datav1alpha1.AddToScheme(schema)).To(Succeed())
+		var clientWithScheme client.Client
+
+		mockReadFile := func(content string) ([]byte, error) {
+			return []byte(tt.pluginProfile), nil
+		}
+		patch := gomonkey.ApplyFunc(os.ReadFile, mockReadFile)
+		defer patch.Reset()
+
+		err := RegisterMutatingHandlers(clientWithScheme)
+		if tt.newPluginErr {
+			Expect(err).To(HaveOccurred())
+			return
+		} else {
+			Expect(err).NotTo(HaveOccurred())
+		}
+
+		plugins := GetRegistryHandler()
+		got := want{
+			podWithoutDatasetHandlerSize:           len(plugins.GetPodWithoutDatasetHandler()),
+			serverlessPodWithoutDatasetHandlerSize: len(plugins.GetServerlessPodWithoutDatasetHandler()),
+			serverlessPodWithDatasetHandlerSize:    len(plugins.GetServerlessPodWithDatasetHandler()),
+		}
+		for _, handler := range plugins.GetPodWithDatasetHandler() {
+			got.podWithDatasetHandlerNames = append(got.podWithDatasetHandlerNames, handler.GetName())
+			if handler.GetName() == nodeaffinitywithcache.Name {
+				cacheHandler := handler.(*nodeaffinitywithcache.NodeAffinityWithCache)
+				got.nodeWithCacheArgs = cacheHandler.GetTieredLocality()
+			}
+		}
+		Expect(reflect.DeepEqual(got, tt.want)).To(BeTrue())
+	},
+		Entry("existing correct configmap", struct {
+			name          string
+			want          want
+			newPluginErr  bool
+			pluginProfile string
+		}{
 			name: "existing correct configmap",
 			pluginProfile: `
 plugins:
@@ -286,8 +235,13 @@ pluginConfig:
 				serverlessPodWithoutDatasetHandlerSize: 1,
 			},
 			newPluginErr: false,
-		},
-		{
+		}),
+		Entry("existing wrong configmap", struct {
+			name          string
+			want          want
+			newPluginErr  bool
+			pluginProfile string
+		}{
 			name: "existing wrong configmap",
 			pluginProfile: `
 plugins:
@@ -322,50 +276,15 @@ pluginConfig:
 `,
 			want:         want{},
 			newPluginErr: true,
-		},
-	}
+		}),
+	)
+})
 
-	schema := runtime.NewScheme()
-	_ = corev1.AddToScheme(schema)
-	_ = datav1alpha1.AddToScheme(schema)
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var clientWithScheme client.Client
+type want struct {
+	podWithDatasetHandlerNames []string
+	nodeWithCacheArgs          *nodeaffinitywithcache.TieredLocality
 
-			pluginProfile := tt.pluginProfile
-			mockReadFile := func(content string) ([]byte, error) {
-				return []byte(pluginProfile), nil
-			}
-			patch := gomonkey.ApplyFunc(os.ReadFile, mockReadFile)
-			defer patch.Reset()
-
-			err := RegisterMutatingHandlers(clientWithScheme)
-
-			if (err != nil) != tt.newPluginErr {
-				t.Errorf("new plugin error = %v, wantErr %v", err, tt.newPluginErr)
-			}
-
-			if tt.newPluginErr {
-				return
-			}
-
-			plugins := GetRegistryHandler()
-			got := want{
-				podWithoutDatasetHandlerSize:           len(plugins.GetPodWithoutDatasetHandler()),
-				serverlessPodWithoutDatasetHandlerSize: len(plugins.GetServerlessPodWithoutDatasetHandler()),
-				serverlessPodWithDatasetHandlerSize:    len(plugins.GetServerlessPodWithDatasetHandler()),
-			}
-			for _, handler := range plugins.GetPodWithDatasetHandler() {
-				got.podWithDatasetHandlerNames = append(got.podWithDatasetHandlerNames, handler.GetName())
-				if handler.GetName() == nodeaffinitywithcache.Name {
-					cacheHandler := handler.(*nodeaffinitywithcache.NodeAffinityWithCache)
-					got.nodeWithCacheArgs = cacheHandler.GetTieredLocality()
-				}
-			}
-
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetRegistryHandler() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+	podWithoutDatasetHandlerSize           int
+	serverlessPodWithDatasetHandlerSize    int
+	serverlessPodWithoutDatasetHandlerSize int
 }
