@@ -100,7 +100,7 @@ type Implement interface {
 	ShouldSyncDatasetMounts() (should bool, err error)
 
 	// SyncDatasetMounts sync the mounts in Dataset's spec into cache engine.
-	// The func should not only handle mounts changes in the Dataset's spec, but also handle cases where a cache engine crashes unexpectedly and lose some mount info.
+	// The func should not only handle mounts changes in the Dataset's spec, but also handle cases where a cache engine lose some mount info because of unexpected crashes.
 	SyncDatasetMounts() (err error)
 
 	// ShouldUpdateUFS check if we need to update the ufs and return all ufs to update
