@@ -23,7 +23,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestGoosefs(t *testing.T) {
+func TestGooseFS(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Goosefs Suite")
+	RunSpecs(t, "GooseFS Suite")
 }
