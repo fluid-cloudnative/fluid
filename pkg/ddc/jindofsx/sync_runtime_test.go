@@ -17,7 +17,8 @@ limitations under the License.
 package jindofsx
 
 import (
-	"testing"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -32,35 +33,61 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func TestJindoFSxEngine_syncMasterSpec(t *testing.T) {
-	res := resource.MustParse("320Gi")
+var _ = Describe("JindoFSxEngine_syncMasterSpec", func() {
+	var res resource.Quantity
+
+	BeforeEach(func() {
+		res = resource.MustParse("320Gi")
+	})
+
 	type fields struct {
 		runtime   *datav1alpha1.JindoRuntime
 		name      string
 		namespace string
-		// runtimeType            string
-
 	}
 	type args struct {
-		ctx cruntime.ReconcileRequestContext
-		// runtime *datav1alpha1.JindoRuntime
+		ctx    cruntime.ReconcileRequestContext
 		master *appsv1.StatefulSet
 	}
-	tests := []struct {
-		name         string
-		fields       fields
-		args         args
-		wantChanged  bool
-		wantErr      bool
-		wantResource corev1.ResourceRequirements
-	}{
-		{
-			name: "Not resource for jindoruntime",
-			fields: fields{
+
+	DescribeTable("sync master spec",
+		func(fields fields, args args, wantChanged bool, wantErr bool, wantResource corev1.ResourceRequirements) {
+			runtimeObjs := []runtime.Object{}
+			runtimeObjs = append(runtimeObjs, args.master.DeepCopy())
+
+			s := runtime.NewScheme()
+			fields.runtime.SetName(fields.name)
+			fields.runtime.SetNamespace(fields.namespace)
+			s.AddKnownTypes(appsv1.SchemeGroupVersion, args.master)
+			s.AddKnownTypes(datav1alpha1.GroupVersion, fields.runtime)
+
+			_ = corev1.AddToScheme(s)
+			runtimeObjs = append(runtimeObjs, fields.runtime)
+			client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+
+			e := &JindoFSxEngine{
+				runtime:   fields.runtime,
+				name:      fields.name,
+				namespace: fields.namespace,
+				Log:       fake.NullLogger(),
+				Client:    client,
+			}
+			gotChanged, err := e.syncMasterSpec(args.ctx, fields.runtime)
+			if wantErr {
+				Expect(err).To(HaveOccurred())
+			} else {
+				Expect(err).NotTo(HaveOccurred())
+			}
+			Expect(gotChanged).To(Equal(wantChanged))
+		},
+
+		Entry("Not resource for jindoruntime",
+			fields{
 				name:      "emtpy",
 				namespace: "default",
 				runtime:   &datav1alpha1.JindoRuntime{},
-			}, args: args{
+			},
+			args{
 				master: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "emtpy-jindofs-master",
@@ -68,15 +95,18 @@ func TestJindoFSxEngine_syncMasterSpec(t *testing.T) {
 					}, Spec: appsv1.StatefulSetSpec{},
 				},
 			},
-			wantChanged: false,
-			wantErr:     false,
-		}, {
-			name: "Master not found",
-			fields: fields{
+			false,
+			false,
+			corev1.ResourceRequirements{},
+		),
+
+		Entry("Master not found",
+			fields{
 				name:      "nomaster",
 				namespace: "default",
 				runtime:   &datav1alpha1.JindoRuntime{},
-			}, args: args{
+			},
+			args{
 				master: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "nomaster",
@@ -84,11 +114,13 @@ func TestJindoFSxEngine_syncMasterSpec(t *testing.T) {
 					}, Spec: appsv1.StatefulSetSpec{},
 				},
 			},
-			wantChanged: false,
-			wantErr:     true,
-		}, {
-			name: "Master not change",
-			fields: fields{
+			false,
+			true,
+			corev1.ResourceRequirements{},
+		),
+
+		Entry("Master not change",
+			fields{
 				name:      "same",
 				namespace: "default",
 				runtime: &datav1alpha1.JindoRuntime{
@@ -111,7 +143,8 @@ func TestJindoFSxEngine_syncMasterSpec(t *testing.T) {
 						},
 					},
 				},
-			}, args: args{
+			},
+			args{
 				master: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "same-jindofs-master",
@@ -135,92 +168,72 @@ func TestJindoFSxEngine_syncMasterSpec(t *testing.T) {
 					},
 				},
 			},
-			wantChanged: false,
-			wantErr:     false,
-			wantResource: corev1.ResourceRequirements{
+			false,
+			false,
+			corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
 					corev1.ResourceCPU: resource.MustParse("100m"),
 				},
 			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			runtimeObjs := []runtime.Object{}
-			runtimeObjs = append(runtimeObjs, tt.args.master.DeepCopy())
+		),
+	)
+})
 
-			s := runtime.NewScheme()
-			// tt.fields.runtime = &datav1alpha1.JindoRuntime{
-			// 	ObjectMeta: metav1.ObjectMeta{
-			// 		Name:      tt.fields.name,
-			// 		Namespace: tt.fields.namespace,
-			// 	},
-			// }
-			tt.fields.runtime.SetName(tt.fields.name)
-			tt.fields.runtime.SetNamespace(tt.fields.namespace)
-			s.AddKnownTypes(appsv1.SchemeGroupVersion, tt.args.master)
-			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
+var _ = Describe("JindoFSxEngine_syncWorkerSpec", func() {
+	var res resource.Quantity
 
-			_ = corev1.AddToScheme(s)
-			runtimeObjs = append(runtimeObjs, tt.fields.runtime)
-			// runtimeObjs = append(runtimeObjs, tt.args.master)
-			client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+	BeforeEach(func() {
+		res = resource.MustParse("320Gi")
+	})
 
-			e := &JindoFSxEngine{
-				runtime:   tt.fields.runtime,
-				name:      tt.fields.name,
-				namespace: tt.fields.namespace,
-				Log:       fake.NullLogger(),
-				Client:    client,
-			}
-			gotChanged, err := e.syncMasterSpec(tt.args.ctx, tt.fields.runtime)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Testcase %s JindoFSxEngine.syncMasterSpec() error = %v, wantErr %v", tt.name, err, tt.wantErr)
-				return
-			}
-			if gotChanged != tt.wantChanged {
-				t.Errorf("Testcase %s JindoFSxEngine.syncMasterSpec() = %v, want %v. got sts resources %v after updated, want %v",
-					tt.name,
-					gotChanged,
-					tt.wantChanged,
-					tt.args.master.Spec.Template.Spec.Containers[0].Resources,
-					tt.wantResource,
-				)
-			}
-
-		})
-	}
-}
-
-func TestJindoFSxEngine_syncWorkerSpec(t *testing.T) {
-	res := resource.MustParse("320Gi")
 	type fields struct {
 		runtime   *datav1alpha1.JindoRuntime
 		name      string
 		namespace string
-		// runtimeType            string
-
 	}
 	type args struct {
-		ctx cruntime.ReconcileRequestContext
-		// runtime *datav1alpha1.JindoRuntime
+		ctx    cruntime.ReconcileRequestContext
 		worker *appsv1.StatefulSet
 	}
-	tests := []struct {
-		name         string
-		fields       fields
-		args         args
-		wantChanged  bool
-		wantErr      bool
-		wantResource corev1.ResourceRequirements
-	}{
-		{
-			name: "Not resource for jindoruntime",
-			fields: fields{
+
+	DescribeTable("sync worker spec",
+		func(fields fields, args args, wantChanged bool, wantErr bool, wantResource corev1.ResourceRequirements) {
+			runtimeObjs := []runtime.Object{}
+			runtimeObjs = append(runtimeObjs, args.worker.DeepCopy())
+
+			s := runtime.NewScheme()
+			fields.runtime.SetName(fields.name)
+			fields.runtime.SetNamespace(fields.namespace)
+			s.AddKnownTypes(appsv1.SchemeGroupVersion, args.worker)
+			s.AddKnownTypes(datav1alpha1.GroupVersion, fields.runtime)
+
+			_ = corev1.AddToScheme(s)
+			runtimeObjs = append(runtimeObjs, fields.runtime)
+			client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+
+			e := &JindoFSxEngine{
+				runtime:   fields.runtime,
+				name:      fields.name,
+				namespace: fields.namespace,
+				Log:       fake.NullLogger(),
+				Client:    client,
+			}
+			gotChanged, err := e.syncWorkerSpec(args.ctx, fields.runtime)
+			if wantErr {
+				Expect(err).To(HaveOccurred())
+			} else {
+				Expect(err).NotTo(HaveOccurred())
+			}
+			Expect(gotChanged).To(Equal(wantChanged))
+		},
+
+		Entry("Not resource for jindoruntime",
+			fields{
 				name:      "emtpy",
 				namespace: "default",
 				runtime:   &datav1alpha1.JindoRuntime{},
-			}, args: args{
+			},
+			args{
 				worker: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "emtpy-jindofs-worker",
@@ -228,15 +241,18 @@ func TestJindoFSxEngine_syncWorkerSpec(t *testing.T) {
 					}, Spec: appsv1.StatefulSetSpec{},
 				},
 			},
-			wantChanged: false,
-			wantErr:     false,
-		}, {
-			name: "worker not found",
-			fields: fields{
+			false,
+			false,
+			corev1.ResourceRequirements{},
+		),
+
+		Entry("worker not found",
+			fields{
 				name:      "noworker",
 				namespace: "default",
 				runtime:   &datav1alpha1.JindoRuntime{},
-			}, args: args{
+			},
+			args{
 				worker: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "noworker",
@@ -244,11 +260,13 @@ func TestJindoFSxEngine_syncWorkerSpec(t *testing.T) {
 					}, Spec: appsv1.StatefulSetSpec{},
 				},
 			},
-			wantChanged: false,
-			wantErr:     true,
-		}, {
-			name: "worker not change",
-			fields: fields{
+			false,
+			true,
+			corev1.ResourceRequirements{},
+		),
+
+		Entry("worker not change",
+			fields{
 				name:      "same",
 				namespace: "default",
 				runtime: &datav1alpha1.JindoRuntime{
@@ -271,7 +289,8 @@ func TestJindoFSxEngine_syncWorkerSpec(t *testing.T) {
 						},
 					},
 				},
-			}, args: args{
+			},
+			args{
 				worker: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "same-jindofs-worker",
@@ -295,92 +314,72 @@ func TestJindoFSxEngine_syncWorkerSpec(t *testing.T) {
 					},
 				},
 			},
-			wantChanged: false,
-			wantErr:     false,
-			wantResource: corev1.ResourceRequirements{
+			false,
+			false,
+			corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
 					corev1.ResourceCPU: resource.MustParse("100m"),
 				},
 			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			runtimeObjs := []runtime.Object{}
-			runtimeObjs = append(runtimeObjs, tt.args.worker.DeepCopy())
+		),
+	)
+})
 
-			s := runtime.NewScheme()
-			// tt.fields.runtime = &datav1alpha1.JindoRuntime{
-			// 	ObjectMeta: metav1.ObjectMeta{
-			// 		Name:      tt.fields.name,
-			// 		Namespace: tt.fields.namespace,
-			// 	},
-			// }
-			tt.fields.runtime.SetName(tt.fields.name)
-			tt.fields.runtime.SetNamespace(tt.fields.namespace)
-			s.AddKnownTypes(appsv1.SchemeGroupVersion, tt.args.worker)
-			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
+var _ = Describe("JindoFSxEngine_syncFuseSpec", func() {
+	var res resource.Quantity
 
-			_ = corev1.AddToScheme(s)
-			runtimeObjs = append(runtimeObjs, tt.fields.runtime)
-			// runtimeObjs = append(runtimeObjs, tt.args.worker)
-			client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+	BeforeEach(func() {
+		res = resource.MustParse("320Gi")
+	})
 
-			e := &JindoFSxEngine{
-				runtime:   tt.fields.runtime,
-				name:      tt.fields.name,
-				namespace: tt.fields.namespace,
-				Log:       fake.NullLogger(),
-				Client:    client,
-			}
-			gotChanged, err := e.syncWorkerSpec(tt.args.ctx, tt.fields.runtime)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Testcase %s JindoFSxEngine.syncWorkerSpec() error = %v, wantErr %v", tt.name, err, tt.wantErr)
-				return
-			}
-			if gotChanged != tt.wantChanged {
-				t.Errorf("Testcase %s JindoFSxEngine.syncWorkerSpec() = %v, want %v. got sts resources %v after updated, want %v",
-					tt.name,
-					gotChanged,
-					tt.wantChanged,
-					tt.args.worker.Spec.Template.Spec.Containers[0].Resources,
-					tt.wantResource,
-				)
-			}
-
-		})
-	}
-}
-
-func TestJindoFSxEngine_syncFuseSpec(t *testing.T) {
-	res := resource.MustParse("320Gi")
 	type fields struct {
 		runtime   *datav1alpha1.JindoRuntime
 		name      string
 		namespace string
-		// runtimeType            string
-
 	}
 	type args struct {
-		ctx cruntime.ReconcileRequestContext
-		// runtime *datav1alpha1.JindoRuntime
+		ctx  cruntime.ReconcileRequestContext
 		fuse *appsv1.DaemonSet
 	}
-	tests := []struct {
-		name         string
-		fields       fields
-		args         args
-		wantChanged  bool
-		wantErr      bool
-		wantResource corev1.ResourceRequirements
-	}{
-		{
-			name: "Not resource for jindoruntime",
-			fields: fields{
+
+	DescribeTable("sync fuse spec",
+		func(fields fields, args args, wantChanged bool, wantErr bool, wantResource corev1.ResourceRequirements) {
+			runtimeObjs := []runtime.Object{}
+			runtimeObjs = append(runtimeObjs, args.fuse.DeepCopy())
+
+			s := runtime.NewScheme()
+			fields.runtime.SetName(fields.name)
+			fields.runtime.SetNamespace(fields.namespace)
+			s.AddKnownTypes(appsv1.SchemeGroupVersion, args.fuse)
+			s.AddKnownTypes(datav1alpha1.GroupVersion, fields.runtime)
+
+			_ = corev1.AddToScheme(s)
+			runtimeObjs = append(runtimeObjs, fields.runtime)
+			client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+
+			e := &JindoFSxEngine{
+				runtime:   fields.runtime,
+				name:      fields.name,
+				namespace: fields.namespace,
+				Log:       fake.NullLogger(),
+				Client:    client,
+			}
+			gotChanged, err := e.syncFuseSpec(args.ctx, fields.runtime)
+			if wantErr {
+				Expect(err).To(HaveOccurred())
+			} else {
+				Expect(err).NotTo(HaveOccurred())
+			}
+			Expect(gotChanged).To(Equal(wantChanged))
+		},
+
+		Entry("Not resource for jindoruntime",
+			fields{
 				name:      "emtpy",
 				namespace: "default",
 				runtime:   &datav1alpha1.JindoRuntime{},
-			}, args: args{
+			},
+			args{
 				fuse: &appsv1.DaemonSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "emtpy-jindofs-fuse",
@@ -388,15 +387,18 @@ func TestJindoFSxEngine_syncFuseSpec(t *testing.T) {
 					}, Spec: appsv1.DaemonSetSpec{},
 				},
 			},
-			wantChanged: false,
-			wantErr:     false,
-		}, {
-			name: "fuse not found",
-			fields: fields{
+			false,
+			false,
+			corev1.ResourceRequirements{},
+		),
+
+		Entry("fuse not found",
+			fields{
 				name:      "nofuse",
 				namespace: "default",
 				runtime:   &datav1alpha1.JindoRuntime{},
-			}, args: args{
+			},
+			args{
 				fuse: &appsv1.DaemonSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "nofuse",
@@ -404,11 +406,13 @@ func TestJindoFSxEngine_syncFuseSpec(t *testing.T) {
 					}, Spec: appsv1.DaemonSetSpec{},
 				},
 			},
-			wantChanged: false,
-			wantErr:     true,
-		}, {
-			name: "fuse not change",
-			fields: fields{
+			false,
+			true,
+			corev1.ResourceRequirements{},
+		),
+
+		Entry("fuse not change",
+			fields{
 				name:      "same",
 				namespace: "default",
 				runtime: &datav1alpha1.JindoRuntime{
@@ -431,7 +435,8 @@ func TestJindoFSxEngine_syncFuseSpec(t *testing.T) {
 						},
 					},
 				},
-			}, args: args{
+			},
+			args{
 				fuse: &appsv1.DaemonSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "same-jindofs-fuse",
@@ -455,59 +460,13 @@ func TestJindoFSxEngine_syncFuseSpec(t *testing.T) {
 					},
 				},
 			},
-			wantChanged: false,
-			wantErr:     false,
-			wantResource: corev1.ResourceRequirements{
+			false,
+			false,
+			corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
 					corev1.ResourceCPU: resource.MustParse("100m"),
 				},
 			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			runtimeObjs := []runtime.Object{}
-			runtimeObjs = append(runtimeObjs, tt.args.fuse.DeepCopy())
-
-			s := runtime.NewScheme()
-			// tt.fields.runtime = &datav1alpha1.JindoRuntime{
-			// 	ObjectMeta: metav1.ObjectMeta{
-			// 		Name:      tt.fields.name,
-			// 		Namespace: tt.fields.namespace,
-			// 	},
-			// }
-			tt.fields.runtime.SetName(tt.fields.name)
-			tt.fields.runtime.SetNamespace(tt.fields.namespace)
-			s.AddKnownTypes(appsv1.SchemeGroupVersion, tt.args.fuse)
-			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
-
-			_ = corev1.AddToScheme(s)
-			runtimeObjs = append(runtimeObjs, tt.fields.runtime)
-			// runtimeObjs = append(runtimeObjs, tt.args.fuse)
-			client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
-
-			e := &JindoFSxEngine{
-				runtime:   tt.fields.runtime,
-				name:      tt.fields.name,
-				namespace: tt.fields.namespace,
-				Log:       fake.NullLogger(),
-				Client:    client,
-			}
-			gotChanged, err := e.syncFuseSpec(tt.args.ctx, tt.fields.runtime)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("testcase %s: JindoFSxEngine.syncFuseSpec() error = %v, wantErr %v", tt.name, err, tt.wantErr)
-				return
-			}
-			if gotChanged != tt.wantChanged {
-				t.Errorf("testcase %s JindoFSxEngine.syncFuseSpec() = %v, want %v. got sts resources %v after updated, want %v",
-					tt.name,
-					gotChanged,
-					tt.wantChanged,
-					tt.args.fuse.Spec.Template.Spec.Containers[0].Resources,
-					tt.wantResource,
-				)
-			}
-
-		})
-	}
-}
+		),
+	)
+})
