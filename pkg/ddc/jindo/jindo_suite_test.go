@@ -1,4 +1,4 @@
-package jindo_test
+package jindo
 
 import (
 	"testing"
