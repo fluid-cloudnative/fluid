@@ -1388,18 +1388,32 @@ var _ = Describe("GetSyncRetryDuration", func() {
 	})
 
 	It("should fail with invalid duration format", func() {
+		oldVal, wasSet := os.LookupEnv(syncRetryDurationEnv)
 		err := os.Setenv(syncRetryDurationEnv, "s")
 		Expect(err).NotTo(HaveOccurred())
-		defer os.Unsetenv(syncRetryDurationEnv)
+		DeferCleanup(func() {
+			if wasSet {
+				_ = os.Setenv(syncRetryDurationEnv, oldVal)
+			} else {
+				_ = os.Unsetenv(syncRetryDurationEnv)
+			}
+		})
 
 		_, err = getSyncRetryDuration()
 		Expect(err).To(HaveOccurred())
 	})
 
 	It("should successfully parse valid duration", func() {
+		oldVal, wasSet := os.LookupEnv(syncRetryDurationEnv)
 		err := os.Setenv(syncRetryDurationEnv, "3s")
 		Expect(err).NotTo(HaveOccurred())
-		defer os.Unsetenv(syncRetryDurationEnv)
+		DeferCleanup(func() {
+			if wasSet {
+				_ = os.Setenv(syncRetryDurationEnv, oldVal)
+			} else {
+				_ = os.Unsetenv(syncRetryDurationEnv)
+			}
+		})
 
 		d, err := getSyncRetryDuration()
 		Expect(err).NotTo(HaveOccurred())
