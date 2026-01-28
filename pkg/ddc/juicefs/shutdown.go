@@ -17,7 +17,6 @@ limitations under the License.
 package juicefs
 
 import (
-	"context"
 	"fmt"
 	"path/filepath"
 	"regexp"
@@ -25,9 +24,6 @@ import (
 
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/util/retry"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -51,7 +47,7 @@ func (j *JuiceFSEngine) Shutdown() (err error) {
 		}
 	}
 
-	_, err = j.destroyWorkers(-1)
+	err = j.destroyWorkers()
 	if err != nil {
 		return
 	}
@@ -233,123 +229,19 @@ func (j *JuiceFSEngine) getUUID(pod corev1.Pod, containerName string) (uuid stri
 	return
 }
 
-// destroyWorkers attempts to delete the workers until worker num reaches the given expectedWorkers, if expectedWorkers is -1, it means all the workers should be deleted
-// This func returns currentWorkers representing how many workers are left after this process.
-func (j *JuiceFSEngine) destroyWorkers(expectedWorkers int32) (currentWorkers int32, err error) {
+// destroyWorkers tears down all JuiceFS workers for the current runtime while holding SchedulerMutex.
+// Worker and related label cleanup is delegated to Helper.TearDownWorkers.
+func (j *JuiceFSEngine) destroyWorkers() (err error) {
 	//  SchedulerMutex only for patch mode
 	lifecycle.SchedulerMutex.Lock()
 	defer lifecycle.SchedulerMutex.Unlock()
 
 	runtimeInfo, err := j.getRuntimeInfo()
 	if err != nil {
-		return currentWorkers, err
+		return err
 	}
 
-	var (
-		nodeList           = &corev1.NodeList{}
-		labelExclusiveName = utils.GetExclusiveKey()
-		labelName          = runtimeInfo.GetRuntimeLabelName()
-		labelCommonName    = runtimeInfo.GetCommonLabelName()
-		labelMemoryName    = runtimeInfo.GetLabelNameForMemory()
-		labelDiskName      = runtimeInfo.GetLabelNameForDisk()
-		labelTotalName     = runtimeInfo.GetLabelNameForTotal()
-	)
-
-	labelNames := []string{labelName, labelTotalName, labelDiskName, labelMemoryName, labelCommonName}
-	j.Log.Info("check node labels", "labelNames", labelNames)
-
-	datasetLabels, err := labels.Parse(fmt.Sprintf("%s=true", labelCommonName))
-	if err != nil {
-		return currentWorkers, err
-	}
-
-	err = j.List(context.TODO(), nodeList, &client.ListOptions{
-		LabelSelector: datasetLabels,
-	})
-
-	if err != nil {
-		return currentWorkers, err
-	}
-
-	currentWorkers = int32(len(nodeList.Items))
-	if expectedWorkers >= currentWorkers {
-		j.Log.Info("No need to scale in. Skip.")
-		return currentWorkers, nil
-	}
-
-	var nodes []corev1.Node
-	if expectedWorkers >= 0 {
-		j.Log.Info("Scale in juicefs workers", "expectedWorkers", expectedWorkers)
-		// This is a scale in operation
-		nodes, err = j.sortNodesToShutdown(nodeList.Items)
-		if err != nil {
-			return currentWorkers, err
-		}
-
-	} else {
-		// Destroy all workers. This is a subprocess during deletion of JuiceFSRuntime
-		nodes = nodeList.Items
-	}
-
-	// 1.select the nodes
-	for _, node := range nodes {
-		if expectedWorkers == currentWorkers {
-			break
-		}
-
-		if len(node.Labels) == 0 {
-			continue
-		}
-
-		nodeName := node.Name
-		var labelsToModify common.LabelsToModify
-		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-			node, err := kubeclient.GetNode(j.Client, nodeName)
-			if err != nil {
-				j.Log.Error(err, "Fail to get node", "nodename", nodeName)
-				return err
-			}
-
-			toUpdate := node.DeepCopy()
-			for _, label := range labelNames {
-				labelsToModify.Delete(label)
-			}
-
-			exclusiveLabelValue := runtimeInfo.GetExclusiveLabelValue()
-			if val, exist := toUpdate.Labels[labelExclusiveName]; exist && val == exclusiveLabelValue {
-				labelsToModify.Delete(labelExclusiveName)
-			}
-
-			err = lifecycle.DecreaseDatasetNum(toUpdate, runtimeInfo, &labelsToModify)
-			if err != nil {
-				return err
-			}
-			// Update the toUpdate in UPDATE mode
-			// modifiedLabels, err := utils.ChangeNodeLabelWithUpdateMode(e.Client, toUpdate, labelToModify)
-			// Update the toUpdate in PATCH mode
-			modifiedLabels, err := utils.ChangeNodeLabelWithPatchMode(j.Client, toUpdate, labelsToModify)
-			if err != nil {
-				return err
-			}
-			j.Log.Info("Destroy worker", "Dataset", j.name, "deleted worker node", node.Name, "removed or updated labels", modifiedLabels)
-			return nil
-		})
-
-		if err != nil {
-			return currentWorkers, err
-		}
-
-		currentWorkers--
-	}
-
-	return currentWorkers, nil
-}
-
-func (j *JuiceFSEngine) sortNodesToShutdown(candidateNodes []corev1.Node) (nodes []corev1.Node, err error) {
-	// If fuses are deployed in global mode. Scaling in workers has nothing to do with fuses.
-	// All nodes with related label can be candidate nodes.
-	nodes = candidateNodes
-	return nodes, nil
+	return j.Helper.TearDownWorkers(runtimeInfo)
 }
 
 func (j *JuiceFSEngine) cleanAll() (err error) {

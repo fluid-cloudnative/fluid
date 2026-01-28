@@ -18,8 +18,9 @@ package portallocator
 
 import (
 	"errors"
-	"testing"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/util/net"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -32,75 +33,110 @@ var errDummy = func(client client.Client) (ports []int, err error) {
 	return nil, errors.New("err")
 }
 
-func TestRuntimePortAllocatorWithError(t *testing.T) {
-	pr := net.ParsePortRangeOrDie("20000-21000")
-	err := SetupRuntimePortAllocator(nil, pr, "bitmap", errDummy)
-	if err != nil {
-		t.Fatalf("failed to setup runtime port allocator due to %v", err)
-	}
+var _ = Describe("RuntimePortAllocator", func() {
+	BeforeEach(func() {
+		rpa = nil
+	})
 
-	_, err = GetRuntimePortAllocator()
-	if err == nil {
-		t.Errorf("Expecetd error when GetRuntimePortAllocator")
-	}
-}
+	Context("when setup with error", func() {
+		It("should return error when getting allocator", func() {
+			pr := net.ParsePortRangeOrDie("20000-21000")
+			err := SetupRuntimePortAllocator(nil, pr, "bitmap", errDummy)
+			Expect(err).NotTo(HaveOccurred())
 
-func TestRuntimePortAllocator(t *testing.T) {
-	pr := net.ParsePortRangeOrDie("20000-21000")
-	err := SetupRuntimePortAllocator(nil, pr, "bitmap", dummy)
-	if err != nil {
-		t.Errorf("get non-nil err when GetRuntimePortAllocator")
-		return
-	}
+			_, err = GetRuntimePortAllocator()
+			Expect(err).To(HaveOccurred())
+		})
+	})
 
-	allocator, err := GetRuntimePortAllocator()
-	if err != nil {
-		t.Errorf("get non-nil err when GetRuntimePortAllocator")
-		return
-	}
+	Context("when releasing ports", func() {
+		It("should not allocate preserved ports", func() {
+			pr := net.ParsePortRangeOrDie("20000-20010")
+			err := SetupRuntimePortAllocator(nil, pr, "bitmap", dummy)
+			Expect(err).NotTo(HaveOccurred())
 
-	expected := []int{20004, 20005, 20006}
-	allocatedPorts, err := allocator.GetAvailablePorts(3)
-	if err != nil || sameArray(expected, allocatedPorts) {
-		t.Errorf("get non-nil err when GetAvailablePortAllocator")
-		return
-	}
+			preservedPorts, _ := dummy(nil)
 
-	toRelease := []int{20003, 20004}
-	allocator.ReleaseReservedPorts(toRelease)
+			allocator, err := GetRuntimePortAllocator()
+			Expect(err).NotTo(HaveOccurred())
 
-	expected = []int{20003, 20004, 20007, 20008}
-	allocatedPorts, err = allocator.GetAvailablePorts(4)
-	if err != nil || sameArray(expected, allocatedPorts) {
-		t.Errorf("get non-nil err when GetAvailablePortAllocator")
-		return
-	}
-}
+			allocatedPorts, err := allocator.GetAvailablePorts(pr.Size - len(preservedPorts))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(containsAny(allocatedPorts, preservedPorts)).To(BeFalse())
+		})
 
-func TestRuntimePortAllocatorRelease(t *testing.T) {
-	pr := net.ParsePortRangeOrDie("20000-20010")
-	err := SetupRuntimePortAllocator(nil, pr, "bitmap", dummy)
-	if err != nil {
-		t.Errorf("get non-nil err when GetRuntimePortAllocator")
-		return
-	}
+		It("should make released ports available for re-allocation", func() {
+			pr := net.ParsePortRangeOrDie("20000-20005")
+			err := SetupRuntimePortAllocator(nil, pr, "bitmap", dummy)
+			Expect(err).NotTo(HaveOccurred())
 
-	preservedPorts, _ := dummy(nil)
+			preservedPorts, _ := dummy(nil)
+			allocator, err := GetRuntimePortAllocator()
+			Expect(err).NotTo(HaveOccurred())
 
-	allocator, err := GetRuntimePortAllocator()
-	if err != nil {
-		t.Errorf("get non-nil err when GetRuntimePortAllocator")
-		return
-	}
+			// Allocate all non-preserved ports (range has 6 ports, 3 are preserved, so 3 available)
+			firstAllocation, err := allocator.GetAvailablePorts(pr.Size - len(preservedPorts))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(firstAllocation)).To(Equal(3))
 
-	allocatedPorts, err := allocator.GetAvailablePorts(pr.Size - len(preservedPorts))
+			// Release 2 ports
+			portsToRelease := firstAllocation[:2]
+			allocator.ReleaseReservedPorts(portsToRelease)
 
-	if err != nil || containsAny(allocatedPorts, preservedPorts) {
-		t.Errorf("get non-nil err when GetAvailablePortAllocator")
-		return
-	}
+			// Now allocate 2 more ports - these MUST include the released ports
+			// since we only have 1 unreleased port left
+			secondAllocation, err := allocator.GetAvailablePorts(2)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(secondAllocation)).To(Equal(2))
 
-}
+			// At least one of the released ports must be in the second allocation
+			hasReleasedPort := containsAny(secondAllocation, portsToRelease)
+			Expect(hasReleasedPort).To(BeTrue(), "At least one released port should be re-allocated")
+		})
+	})
+})
+
+var _ = Describe("UnknownPortAllocator", func() {
+	It("should return error for unknown allocator type", func() {
+		pr := net.ParsePortRangeOrDie("1000-1100")
+		SetupRuntimePortAllocatorWithType(nil, pr, "unknown", dummy)
+
+		_, err := GetRuntimePortAllocator()
+		Expect(err).To(HaveOccurred())
+	})
+})
+
+var _ = Describe("RandomRuntimePortAllocator", func() {
+	var pr *net.PortRange
+	var allocator *RuntimePortAllocator
+
+	BeforeEach(func() {
+		pr = net.ParsePortRangeOrDie("1000-1100")
+		SetupRuntimePortAllocatorWithType(nil, pr, Random, dummy)
+
+		var err error
+		allocator, err = GetRuntimePortAllocator()
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("should return error when allocating more ports than available", func() {
+		_, err := allocator.GetAvailablePorts(pr.Size + 1)
+		Expect(err).To(HaveOccurred())
+	})
+
+	It("should allocate all available ports successfully", func() {
+		allocatedPorts, err := allocator.GetAvailablePorts(pr.Size)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(len(allocatedPorts)).To(Equal(pr.Size))
+		Expect(between(allocatedPorts, pr.Base, pr.Base+pr.Size)).To(BeTrue())
+		Expect(hasDuplicatedElement(allocatedPorts)).To(BeFalse())
+	})
+
+	It("should release reserved ports", func() {
+		toRelease := []int{20003, 20004}
+		allocator.ReleaseReservedPorts(toRelease)
+	})
+})
 
 func containsAny(ports []int, dst []int) bool {
 	m := map[int]bool{}
@@ -117,52 +153,6 @@ func containsAny(ports []int, dst []int) bool {
 	return false
 }
 
-func TestUnknownPortAllocator(t *testing.T) {
-	pr := net.ParsePortRangeOrDie("1000-1100")
-	SetupRuntimePortAllocatorWithType(nil, pr, "unknown", dummy)
-
-	_, err := GetRuntimePortAllocator()
-	if err == nil {
-		t.Errorf("get non-nil err when GetRuntimePortAllocator")
-		return
-	}
-}
-
-func TestRandomRuntimePortAllocator(t *testing.T) {
-	pr := net.ParsePortRangeOrDie("1000-1100")
-	SetupRuntimePortAllocatorWithType(nil, pr, Random, dummy)
-
-	allocator, err := GetRuntimePortAllocator()
-	if err != nil {
-		t.Errorf("get non-nil err when GetRuntimePortAllocator")
-		return
-	}
-
-	_, err = allocator.GetAvailablePorts(pr.Size + 1)
-	if err == nil {
-		t.Errorf("allocate ports shoule have error")
-		return
-	}
-
-	allocatedPorts, err := allocator.GetAvailablePorts(pr.Size)
-	if err != nil {
-		t.Errorf("get non-nil err when GetAvailablePortAllocator")
-		return
-	}
-	if len(allocatedPorts) != pr.Size {
-		t.Errorf("allocate ports size less than required")
-		return
-	}
-	if !between(allocatedPorts, pr.Base, pr.Base+pr.Size) || hasDuplicatedElement(allocatedPorts) {
-		t.Errorf("allocate ports are not all valid")
-		return
-	}
-
-	toRelease := []int{20003, 20004}
-	allocator.ReleaseReservedPorts(toRelease)
-
-}
-
 func hasDuplicatedElement(ports []int) bool {
 	m := map[int]bool{}
 	for _, v := range ports {
@@ -173,20 +163,7 @@ func hasDuplicatedElement(ports []int) bool {
 
 func between(a []int, min int, max int) bool {
 	for _, value := range a {
-		if value < min && value > max {
-			return false
-		}
-	}
-	return true
-}
-
-func sameArray(a []int, b []int) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	lenArr := len(a)
-	for i := 0; i < lenArr; i++ {
-		if a[i] != b[i] {
+		if value < min || value >= max {
 			return false
 		}
 	}

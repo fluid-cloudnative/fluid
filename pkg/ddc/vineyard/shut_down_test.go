@@ -150,10 +150,10 @@ var _ = Describe("VineyardEngine Shutdown Tests", func() {
 					name:        runtimeInfoSpark.GetName(),
 					namespace:   runtimeInfoSpark.GetNamespace(),
 				}
+				engine.Helper = ctrl.BuildHelper(runtimeInfoSpark, fakeClient, engine.Log)
 
-				currentWorkers, err := engine.destroyWorkers(-1)
+				err := engine.destroyWorkers()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(currentWorkers).To(Equal(int32(0)))
 
 				newNode, err := kubeclient.GetNode(fakeClient, "test-node-spark")
 				Expect(err).NotTo(HaveOccurred())
@@ -186,10 +186,10 @@ var _ = Describe("VineyardEngine Shutdown Tests", func() {
 					name:        runtimeInfoHadoop.GetName(),
 					namespace:   runtimeInfoHadoop.GetNamespace(),
 				}
+				engine.Helper = ctrl.BuildHelper(runtimeInfoHadoop, fakeClient, engine.Log)
 
-				currentWorkers, err := engine.destroyWorkers(-1)
+				err := engine.destroyWorkers()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(currentWorkers).To(Equal(int32(0)))
 
 				newNode, err := kubeclient.GetNode(fakeClient, "test-node-share")
 				Expect(err).NotTo(HaveOccurred())
