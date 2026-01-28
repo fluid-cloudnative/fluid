@@ -54,7 +54,7 @@ var _ = Describe("TransformFuse", func() {
 
 			err = engine.transformFuse(tc.runtime, tc.dataset, tc.value)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(tc.value.Fuse.Args[1]).To(Equal(tc.expect[1]))
+			Expect(tc.value.Fuse.Args).To(Equal(tc.expect))
 		},
 		Entry("with owner UID and GID",
 			func() testCase {
