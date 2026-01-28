@@ -19,7 +19,6 @@ package juicefs
 import (
 	"os"
 	"path/filepath"
-	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -241,7 +240,7 @@ var _ = Describe("JuiceFSEngine_GenerateDataLoadValueFileWithRuntimeHDD", func()
 		expectFileName := filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml")
 		fileName, err := engine.generateDataLoadValueFile(context, &dataLoadNoTarget)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(strings.Contains(fileName, expectFileName)).To(BeTrue())
+		Expect(fileName).To(ContainSubstring(expectFileName))
 	})
 
 	It("should generate dataload value file with target", func() {
@@ -255,7 +254,7 @@ var _ = Describe("JuiceFSEngine_GenerateDataLoadValueFileWithRuntimeHDD", func()
 		expectFileName := filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml")
 		fileName, err := engine.generateDataLoadValueFile(context, &dataLoadWithTarget)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(strings.Contains(fileName, expectFileName)).To(BeTrue())
+		Expect(fileName).To(ContainSubstring(expectFileName))
 	})
 })
 
@@ -383,7 +382,7 @@ var _ = Describe("JuiceFSEngine_GenerateDataLoadValueFileWithRuntime", func() {
 		expectFileName := filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml")
 		fileName, err := engine.generateDataLoadValueFile(context, &dataLoadNoTarget)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(strings.Contains(fileName, expectFileName)).To(BeTrue())
+		Expect(fileName).To(ContainSubstring(expectFileName))
 	})
 
 	It("should generate dataload value file with target", func() {
@@ -397,7 +396,7 @@ var _ = Describe("JuiceFSEngine_GenerateDataLoadValueFileWithRuntime", func() {
 		expectFileName := filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml")
 		fileName, err := engine.generateDataLoadValueFile(context, &dataLoadWithTarget)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(strings.Contains(fileName, expectFileName)).To(BeTrue())
+		Expect(fileName).To(ContainSubstring(expectFileName))
 	})
 })
 
@@ -931,10 +930,10 @@ var _ = Describe("JuiceFSEngine_genDataLoadValue", func() {
 					},
 				},
 				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "pods-2",
-					},
-				},
+        			ObjectMeta: metav1.ObjectMeta{
+           				 Name: "pods-2",
+       				 },
+    			},
 			},
 			cacheInfo: map[string]string{
 				Edition:         CommunityEdition,
