@@ -276,9 +276,8 @@ var _ = Describe("JindoEngine", func() {
 		It("should setup master for spark engine", func() {
 			_ = engines[0].SetupMaster()
 			jindoRuntime, _ := engines[0].getRuntime()
-			if jindoRuntime != nil {
-				Expect(len(jindoRuntime.Status.Conditions)).To(Equal(0))
-			}
+			Expect(jindoRuntime).NotTo(BeNil())
+			Expect(len(jindoRuntime.Status.Conditions)).To(Equal(0))
 		})
 	})
 })
