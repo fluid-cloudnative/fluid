@@ -25,7 +25,6 @@ import (
 
 var _ = Describe("GooseFSEngine_SyncRuntime", func() {
 	type testCase struct {
-		name        string
 		ctx         cruntime.ReconcileRequestContext
 		wantChanged bool
 		wantErr     bool
@@ -45,7 +44,6 @@ var _ = Describe("GooseFSEngine_SyncRuntime", func() {
 		},
 		Entry("default case",
 			testCase{
-				name:        "default",
 				wantChanged: false,
 				wantErr:     false,
 			},
