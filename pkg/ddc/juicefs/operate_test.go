@@ -17,6 +17,9 @@ limitations under the License.
 package juicefs
 
 import (
+	"reflect"
+
+	"github.com/agiledragon/gomonkey/v2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,13 +32,14 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
-// mockOperation is a minimal mock implementation of the dataoperation.OperationInterface
-// used to test GetDataOperationValueFile error paths. Most methods return zero/nil values
-// since only GetOperationType and GetOperationObject are exercised in these tests.
+// mockOperation implements dataoperation.OperationInterface for testing.
+// It provides minimal stub implementations to test GetDataOperationValueFile routing logic.
 type mockOperation struct {
-	opType dataoperation.OperationType
-	object client.Object
+	operationType dataoperation.OperationType
+	object        client.Object
 }
+
+var _ dataoperation.OperationInterface = (*mockOperation)(nil)
 
 func (m *mockOperation) HasPrecedingOperation() bool {
 	return false
@@ -62,7 +66,7 @@ func (m *mockOperation) GetChartsDirectory() string {
 }
 
 func (m *mockOperation) GetOperationType() dataoperation.OperationType {
-	return m.opType
+	return m.operationType
 }
 
 func (m *mockOperation) UpdateOperationApiStatus(opStatus *datav1alpha1.OperationStatus) error {
@@ -99,68 +103,161 @@ func (m *mockOperation) GetParallelTaskNumber() int32 {
 
 var _ = Describe("GetDataOperationValueFile", func() {
 	var (
-		engine     *JuiceFSEngine
-		fakeClient client.Client
-		ctx        cruntime.ReconcileRequestContext
+		engine  *JuiceFSEngine
+		ctx     cruntime.ReconcileRequestContext
+		patches *gomonkey.Patches
 	)
 
 	BeforeEach(func() {
-		fakeClient = fake.NewFakeClientWithScheme(testScheme)
 		engine = &JuiceFSEngine{
-			name:      "test",
-			namespace: "default",
-			Client:    fakeClient,
 			Log:       fake.NullLogger(),
+			name:      "test-juicefs",
+			namespace: "default",
 		}
 		ctx = cruntime.ReconcileRequestContext{
-			Client: fakeClient,
+			Log: fake.NullLogger(),
 		}
 	})
 
-	DescribeTable("should return error for various operation types",
-		func(opType dataoperation.OperationType, object client.Object) {
-			op := &mockOperation{
-				opType: opType,
-				object: object,
+	AfterEach(func() {
+		if patches != nil {
+			patches.Reset()
+		}
+	})
+
+	Context("when operation type is unsupported", func() {
+		It("should return NotSupported error for DataBackup type", func() {
+			operation := &mockOperation{
+				operationType: dataoperation.DataBackupType,
+				object: &datav1alpha1.DataBackup{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "DataBackup",
+						APIVersion: "data.fluid.io/v1alpha1",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-backup",
+						Namespace: "default",
+					},
+				},
 			}
-			_, err := engine.GetDataOperationValueFile(ctx, op)
+
+			valueFileName, err := engine.GetDataOperationValueFile(ctx, operation)
+
 			Expect(err).To(HaveOccurred())
-		},
-		Entry("DataMigrate - missing target dataset",
-			dataoperation.DataMigrateType,
-			&datav1alpha1.DataMigrate{
+			Expect(err.Error()).To(ContainSubstring("not supported"))
+			Expect(valueFileName).To(BeEmpty())
+		})
+
+		It("should return NotSupported error for unknown operation type", func() {
+			operation := &mockOperation{
+				operationType: dataoperation.OperationType("UnknownType"),
+				object: &datav1alpha1.DataBackup{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "Unknown",
+						APIVersion: "data.fluid.io/v1alpha1",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-unknown",
+						Namespace: "default",
+					},
+				},
+			}
+
+			valueFileName, err := engine.GetDataOperationValueFile(ctx, operation)
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("not supported"))
+			Expect(valueFileName).To(BeEmpty())
+		})
+	})
+
+	Context("when operation type is DataMigrate", func() {
+		It("should call generateDataMigrateValueFile and return its result", func() {
+			dataMigrate := &datav1alpha1.DataMigrate{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "DataMigrate",
+					APIVersion: "data.fluid.io/v1alpha1",
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-migrate",
 					Namespace: "default",
 				},
-			},
-		),
-		Entry("DataLoad - missing target dataset",
-			dataoperation.DataLoadType,
-			&datav1alpha1.DataLoad{
+			}
+
+			operation := &mockOperation{
+				operationType: dataoperation.DataMigrateType,
+				object:        dataMigrate,
+			}
+
+			patches = gomonkey.ApplyPrivateMethod(reflect.TypeOf(engine), "generateDataMigrateValueFile",
+				func(_ *JuiceFSEngine, _ cruntime.ReconcileRequestContext, _ client.Object) (string, error) {
+					return "/tmp/test-migrate-values.yaml", nil
+				})
+
+			valueFileName, err := engine.GetDataOperationValueFile(ctx, operation)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(valueFileName).To(Equal("/tmp/test-migrate-values.yaml"))
+		})
+	})
+
+	Context("when operation type is DataLoad", func() {
+		It("should call generateDataLoadValueFile and return its result", func() {
+			dataLoad := &datav1alpha1.DataLoad{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "DataLoad",
+					APIVersion: "data.fluid.io/v1alpha1",
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-load",
 					Namespace: "default",
 				},
-			},
-		),
-		Entry("DataProcess - missing target dataset",
-			dataoperation.DataProcessType,
-			&datav1alpha1.DataProcess{
+			}
+
+			operation := &mockOperation{
+				operationType: dataoperation.DataLoadType,
+				object:        dataLoad,
+			}
+
+			patches = gomonkey.ApplyPrivateMethod(reflect.TypeOf(engine), "generateDataLoadValueFile",
+				func(_ *JuiceFSEngine, _ cruntime.ReconcileRequestContext, _ client.Object) (string, error) {
+					return "/tmp/test-load-values.yaml", nil
+				})
+
+			valueFileName, err := engine.GetDataOperationValueFile(ctx, operation)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(valueFileName).To(Equal("/tmp/test-load-values.yaml"))
+		})
+	})
+
+	Context("when operation type is DataProcess", func() {
+		It("should call generateDataProcessValueFile and return its result", func() {
+			dataProcess := &datav1alpha1.DataProcess{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "DataProcess",
+					APIVersion: "data.fluid.io/v1alpha1",
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-process",
 					Namespace: "default",
 				},
-			},
-		),
-		Entry("DataBackup - unsupported operation type",
-			dataoperation.DataBackupType,
-			&datav1alpha1.DataBackup{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-backup",
-					Namespace: "default",
-				},
-			},
-		),
-	)
+			}
+
+			operation := &mockOperation{
+				operationType: dataoperation.DataProcessType,
+				object:        dataProcess,
+			}
+
+			patches = gomonkey.ApplyPrivateMethod(reflect.TypeOf(engine), "generateDataProcessValueFile",
+				func(_ *JuiceFSEngine, _ cruntime.ReconcileRequestContext, _ client.Object) (string, error) {
+					return "/tmp/test-process-values.yaml", nil
+				})
+
+			valueFileName, err := engine.GetDataOperationValueFile(ctx, operation)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(valueFileName).To(Equal("/tmp/test-process-values.yaml"))
+		})
+	})
 })
