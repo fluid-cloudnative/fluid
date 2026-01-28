@@ -109,6 +109,8 @@ var _ = Describe("IsReady", func() {
 		}
 	})
 
+	//contexts
+
 	Context("when node is ready", func() {
 		It("should return true", func() {
 			result := IsReady(readyNode)
