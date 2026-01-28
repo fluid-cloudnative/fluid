@@ -17,130 +17,109 @@ limitations under the License.
 package kubeclient
 
 import (
-	"testing"
-
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestGetNode(t *testing.T) {
-	testNodeInputs := []*corev1.Node{{
-		ObjectMeta: metav1.ObjectMeta{Name: "test1"},
-	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "test2"},
-	}}
+var _ = Describe("GetNode", func() {
+	var (
+		testNodeInputs []*corev1.Node
+		testNodes      []runtime.Object
+		mockClient     client.Client
+	)
 
-	testNodes := []runtime.Object{}
-
-	for _, ns := range testNodeInputs {
-		testNodes = append(testNodes, ns.DeepCopy())
-	}
-
-	client := fake.NewFakeClientWithScheme(testScheme, testNodes...)
-
-	type args struct {
-		name string
-	}
-	tests := []struct {
-		name string
-		args args
-		want *corev1.Node
-	}{
-		{
-			name: "Node doesn't exist",
-			args: args{
-				name: "notExist",
+	BeforeEach(func() {
+		testNodeInputs = []*corev1.Node{
+			{
+				ObjectMeta: metav1.ObjectMeta{Name: "test1"},
 			},
-			want: nil,
-		},
-		{
-			name: "Node exists",
-			args: args{
-				name: "test1",
+			{
+				ObjectMeta: metav1.ObjectMeta{Name: "test2"},
 			},
-			want: testNodeInputs[0].DeepCopy(),
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			want, _ := GetNode(client, tt.args.name)
+		}
 
-			if tt.want == nil {
-				if want != nil {
-					t.Errorf("testcase %v GetNode()'s expected is %v, result is %v", tt.name, tt.want, want)
-				}
-			} else {
-				if want == nil {
-					t.Errorf("testcase %v GetNode()'s expected is %v, result is %v", tt.name, tt.want, want)
-				} else if want.Name != tt.args.name {
-					t.Errorf("testcase %v GetNode()'s expected is %v, result is %v", tt.name, tt.want.Name, want.Name)
-				}
-			}
+		testNodes = []runtime.Object{}
+		for _, ns := range testNodeInputs {
+			testNodes = append(testNodes, ns.DeepCopy())
+		}
 
+		mockClient = fake.NewFakeClientWithScheme(testScheme, testNodes...)
+	})
+
+	Context("when node doesn't exist", func() {
+		It("should return nil", func() {
+			result, err := GetNode(mockClient, "notExist")
+
+			Expect(err).To(HaveOccurred())
+			Expect(result).To(BeNil())
 		})
-	}
-}
+	})
 
-func TestIsReady(t *testing.T) {
+	Context("when node exists", func() {
+		It("should return the node", func() {
+			result, err := GetNode(mockClient, "test1")
 
-	testNodeInputs := []*corev1.Node{{
-		ObjectMeta: metav1.ObjectMeta{Name: "test1"},
-		Status: corev1.NodeStatus{
-			Conditions: []corev1.NodeCondition{
-				{
-					Type:               corev1.NodeReady,
-					Status:             corev1.ConditionTrue,
-					Reason:             "FakeReady",
-					LastTransitionTime: metav1.Now(),
-					LastHeartbeatTime:  metav1.Now(),
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result).NotTo(BeNil())
+			Expect(result.Name).To(Equal("test1"))
+		})
+	})
+})
+
+var _ = Describe("IsReady", func() {
+	var (
+		readyNode    corev1.Node
+		notReadyNode corev1.Node
+	)
+
+	BeforeEach(func() {
+		readyNode = corev1.Node{
+			ObjectMeta: metav1.ObjectMeta{Name: "test1"},
+			Status: corev1.NodeStatus{
+				Conditions: []corev1.NodeCondition{
+					{
+						Type:               corev1.NodeReady,
+						Status:             corev1.ConditionTrue,
+						Reason:             "FakeReady",
+						LastTransitionTime: metav1.Now(),
+						LastHeartbeatTime:  metav1.Now(),
+					},
 				},
 			},
-		},
-	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "test2"},
-		Status: corev1.NodeStatus{
-			Conditions: []corev1.NodeCondition{
-				{
-					Type:               corev1.NodeReady,
-					Status:             corev1.ConditionFalse,
-					Reason:             "FakePending",
-					LastTransitionTime: metav1.Now(),
-					LastHeartbeatTime:  metav1.Now(),
+		}
+
+		notReadyNode = corev1.Node{
+			ObjectMeta: metav1.ObjectMeta{Name: "test2"},
+			Status: corev1.NodeStatus{
+				Conditions: []corev1.NodeCondition{
+					{
+						Type:               corev1.NodeReady,
+						Status:             corev1.ConditionFalse,
+						Reason:             "FakePending",
+						LastTransitionTime: metav1.Now(),
+						LastHeartbeatTime:  metav1.Now(),
+					},
 				},
 			},
-		},
-	}}
+		}
+	})
 
-	type args struct {
-		node corev1.Node
-	}
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		{
-			name: "Node Ready",
-			args: args{
-				node: *testNodeInputs[0],
-			},
-			want: true,
-		}, {
-			name: "Node not Ready",
-			args: args{
-				node: *testNodeInputs[1],
-			},
-			want: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if want := IsReady(tt.args.node); want != tt.want {
-				t.Errorf("testcase %v IsReady()'s wanted %v, actual %v", tt.args.node.Name, tt.want, want)
-			}
+	Context("when node is ready", func() {
+		It("should return true", func() {
+			result := IsReady(readyNode)
+			Expect(result).To(BeTrue())
 		})
-	}
-}
+	})
+
+	Context("when node is not ready", func() {
+		It("should return false", func() {
+			result := IsReady(notReadyNode)
+			Expect(result).To(BeFalse())
+		})
+	})
+})
