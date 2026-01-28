@@ -17,38 +17,29 @@ limitations under the License.
 package base
 
 import (
-	"testing"
-
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
 
-func TestGetDataBackupRef(t *testing.T) {
-	type args struct {
-		object *v1alpha1.DataBackup
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		{
-			name: "test",
-			args: args{
-				object: &v1alpha1.DataBackup{
-					ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
-					Spec:       v1alpha1.DataBackupSpec{},
-				},
-			},
-			want: "test",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := getDataOperationKey(tt.args.object); got != tt.want {
-				t.Errorf("GetDataBackupRef() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
+var _ = Describe("getDataOperationKey", func() {
+	It("should return the object name", func() {
+		obj := &datav1alpha1.DataBackup{
+			ObjectMeta: metav1.ObjectMeta{Name: "my-backup", Namespace: "default"},
+		}
+		Expect(getDataOperationKey(obj)).To(Equal("my-backup"))
+	})
+
+	It("should return empty string for object with no name", func() {
+		obj := &datav1alpha1.DataBackup{
+			ObjectMeta: metav1.ObjectMeta{Name: "", Namespace: "default"},
+		}
+		Expect(getDataOperationKey(obj)).To(Equal(""))
+	})
+
+	It("should return empty string for nil object", func() {
+		var obj *datav1alpha1.DataBackup = nil
+		Expect(getDataOperationKey(obj)).To(Equal(""))
+	})
+})
