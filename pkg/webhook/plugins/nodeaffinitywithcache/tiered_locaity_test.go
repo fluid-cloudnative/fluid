@@ -17,73 +17,68 @@ limitations under the License.
 package nodeaffinitywithcache
 
 import (
+	"github.com/onsi/ginkgo/v2"
+	"github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
-	"testing"
 )
 
-func TestTieredLocality_hasRepeatedLocality(t1 *testing.T) {
-	type args struct {
-		pod *corev1.Pod
-	}
+var _ = ginkgo.Describe("TieredLocality.hasRepeatedLocality", func() {
+	var tieredLocality *TieredLocality
 
-	tieredLocality := &TieredLocality{
-		Preferred: []Preferred{
-			{
-				Name:   "label.a",
-				Weight: 1,
-			},
-			{
-				Name:   "label.b",
-				Weight: 2,
-			},
-		},
-		Required: []string{"label.a"},
-	}
-
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		{
-			name: "empty affinity and selector",
-			args: args{
-				pod: &corev1.Pod{
-					Spec: corev1.PodSpec{},
+	ginkgo.BeforeEach(func() {
+		tieredLocality = &TieredLocality{
+			Preferred: []Preferred{
+				{
+					Name:   "label.a",
+					Weight: 1,
+				},
+				{
+					Name:   "label.b",
+					Weight: 2,
 				},
 			},
-			want: false,
+			Required: []string{"label.a"},
+		}
+	})
+
+	ginkgo.DescribeTable("hasRepeatedLocality cases",
+		func(pod *corev1.Pod, want bool) {
+			got := tieredLocality.hasRepeatedLocality(pod)
+			gomega.Expect(got).To(gomega.Equal(want))
 		},
-		{
-			name: "affinity and empty selector, has same label",
-			args: args{
-				pod: &corev1.Pod{
-					Spec: corev1.PodSpec{
-						Affinity: &corev1.Affinity{
-							NodeAffinity: &corev1.NodeAffinity{
-								RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-									NodeSelectorTerms: []corev1.NodeSelectorTerm{
-										{
-											MatchExpressions: []corev1.NodeSelectorRequirement{
-												{
-													Key:      "label.b",
-													Operator: corev1.NodeSelectorOpIn,
-													Values:   []string{"b.value"},
-												},
+		ginkgo.Entry("empty affinity and selector",
+			&corev1.Pod{
+				Spec: corev1.PodSpec{},
+			},
+			false,
+		),
+		ginkgo.Entry("affinity and empty selector, has same label",
+			&corev1.Pod{
+				Spec: corev1.PodSpec{
+					Affinity: &corev1.Affinity{
+						NodeAffinity: &corev1.NodeAffinity{
+							RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+								NodeSelectorTerms: []corev1.NodeSelectorTerm{
+									{
+										MatchExpressions: []corev1.NodeSelectorRequirement{
+											{
+												Key:      "label.b",
+												Operator: corev1.NodeSelectorOpIn,
+												Values:   []string{"b.value"},
 											},
 										},
 									},
 								},
-								PreferredDuringSchedulingIgnoredDuringExecution: []corev1.PreferredSchedulingTerm{
-									{
-										Weight: 10,
-										Preference: corev1.NodeSelectorTerm{
-											MatchExpressions: []corev1.NodeSelectorRequirement{
-												{
-													Key:      "label.b",
-													Operator: corev1.NodeSelectorOpIn,
-													Values:   []string{"b.value"},
-												},
+							},
+							PreferredDuringSchedulingIgnoredDuringExecution: []corev1.PreferredSchedulingTerm{
+								{
+									Weight: 10,
+									Preference: corev1.NodeSelectorTerm{
+										MatchExpressions: []corev1.NodeSelectorRequirement{
+											{
+												Key:      "label.b",
+												Operator: corev1.NodeSelectorOpIn,
+												Values:   []string{"b.value"},
 											},
 										},
 									},
@@ -93,40 +88,27 @@ func TestTieredLocality_hasRepeatedLocality(t1 *testing.T) {
 					},
 				},
 			},
-			want: true,
-		},
-		{
-			name: "node selector with same label",
-			args: args{
-				pod: &corev1.Pod{
-					Spec: corev1.PodSpec{
-						NodeSelector: map[string]string{
-							"label.a": "a-value",
-						},
+			true,
+		),
+		ginkgo.Entry("node selector with same label",
+			&corev1.Pod{
+				Spec: corev1.PodSpec{
+					NodeSelector: map[string]string{
+						"label.a": "a-value",
 					},
 				},
 			},
-			want: true,
-		},
-		{
-			name: "node selector without same label",
-			args: args{
-				pod: &corev1.Pod{
-					Spec: corev1.PodSpec{
-						NodeSelector: map[string]string{
-							"label.c": "a-value",
-						},
+			true,
+		),
+		ginkgo.Entry("node selector without same label",
+			&corev1.Pod{
+				Spec: corev1.PodSpec{
+					NodeSelector: map[string]string{
+						"label.c": "a-value",
 					},
 				},
 			},
-			want: false,
-		},
-	}
-	for _, tt := range tests {
-		t1.Run(tt.name, func(t1 *testing.T) {
-			if got := tieredLocality.hasRepeatedLocality(tt.args.pod); got != tt.want {
-				t1.Errorf("hasRepeatedLocality() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
+			false,
+		),
+	)
+})
