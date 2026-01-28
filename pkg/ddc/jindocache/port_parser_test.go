@@ -17,8 +17,8 @@ limitations under the License.
 package jindocache
 
 import (
-	"reflect"
-	"testing"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	v1 "k8s.io/api/core/v1"
 )
@@ -53,35 +53,17 @@ client.oss.upload.threads = 4
 client.storage.rpc.port = 18001
 `
 
-func Test_parsePortsFromConfigMap(t *testing.T) {
-	type args struct {
-		configMap *v1.ConfigMap
-	}
-	tests := []struct {
-		name      string
-		args      args
-		wantPorts []int
-		wantErr   bool
-	}{
-		{
-			name: "parse configMap",
-			args: args{configMap: &v1.ConfigMap{Data: map[string]string{
+var _ = Describe("parsePortsFromConfigMap", func() {
+	It("should parse ports from configMap", func() {
+		configMap := &v1.ConfigMap{
+			Data: map[string]string{
 				"jindocache.cfg": cfg,
-			}}},
-			wantPorts: []int{18000, 18001},
-			wantErr:   false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotPorts, err := parsePortsFromConfigMap(tt.args.configMap)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("parsePortsFromConfigMap() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(gotPorts, tt.wantPorts) {
-				t.Errorf("parsePortsFromConfigMap() gotPorts = %v, want %v", gotPorts, tt.wantPorts)
-			}
-		})
-	}
-}
+			},
+		}
+
+		gotPorts, err := parsePortsFromConfigMap(configMap)
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(gotPorts).To(Equal([]int{18000, 18001}))
+	})
+})
