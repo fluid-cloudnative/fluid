@@ -1438,13 +1438,16 @@ var _ = Describe("PermitSync", func() {
 		permit := templateEngine.permitSync(ctx.NamespacedName)
 		Expect(permit).To(BeTrue(), "expect permit initially")
 
+		// Set a long syncRetryDuration to ensure the test is not flaky
+		templateEngine.syncRetryDuration = 1 * time.Hour
 		templateEngine.setTimeOfLastSync()
 		permit = templateEngine.permitSync(ctx.NamespacedName)
 		Expect(permit).To(BeFalse(), "expect not permit immediately after sync")
 
+		// Now set a very short duration and verify permit is granted after waiting
 		templateEngine.setTimeOfLastSync()
 		templateEngine.syncRetryDuration = 1 * time.Microsecond
-		time.Sleep(1 * time.Second)
+		time.Sleep(10 * time.Millisecond) // Wait longer than syncRetryDuration
 		permit = templateEngine.permitSync(ctx.NamespacedName)
 		Expect(permit).To(BeTrue(), "expect permit after retry duration elapsed")
 	})
