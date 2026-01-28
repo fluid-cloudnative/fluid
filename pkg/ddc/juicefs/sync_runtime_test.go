@@ -1977,3 +1977,16 @@ func constructBaseFuseDaemonset() *appsv1.DaemonSet {
 		},
 	}
 }
+
+func isMapEqual(got map[string]string, want map[string]string) bool {
+	if len(got) != len(want) {
+		return false
+	}
+
+	for k, v := range got {
+		if want[k] != v {
+			return false
+		}
+	}
+	return true
+}

@@ -196,17 +196,15 @@ func TestDestroyWorker(t *testing.T) {
 	for _, test := range testCase {
 		engine := &VineyardEngine{Log: fake.NullLogger(), runtimeInfo: test.runtimeInfo}
 		engine.Client = client
+		engine.Helper = ctrl.BuildHelper(test.runtimeInfo, client, engine.Log)
 		engine.name = test.runtimeInfo.GetName()
 		engine.namespace = test.runtimeInfo.GetNamespace()
 		if err != nil {
 			t.Errorf("fail to exec the function with the error %v", err)
 		}
-		currentWorkers, err := engine.destroyWorkers(test.expectedWorkers)
+		err := engine.destroyWorkers()
 		if err != nil {
 			t.Errorf("fail to exec the function with the error %v", err)
-		}
-		if currentWorkers != test.wantedNodeNumber {
-			t.Errorf("shutdown the worker with the wrong number of the workers")
 		}
 		for _, node := range nodeInputs {
 			newNode, err := kubeclient.GetNode(client, node.Name)

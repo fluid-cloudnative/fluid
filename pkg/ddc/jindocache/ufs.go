@@ -17,6 +17,8 @@ limitations under the License.
 package jindocache
 
 import (
+	"fmt"
+
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindocache/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
@@ -33,6 +35,10 @@ func (e *JindoCacheEngine) PrepareUFS() (err error) {
 	if e.runtime.Spec.Master.Disabled {
 		err = nil
 		return
+	}
+
+	if !e.CheckRuntimeReady() {
+		return fmt.Errorf("runtime engine is not ready")
 	}
 
 	// 1. Mount UFS (Synchronous Operation)

@@ -21,10 +21,11 @@ limitations under the License.
 package base
 
 import (
+	reflect "reflect"
+
 	dataoperation "github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/golang/mock/gomock"
-	reflect "reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -381,6 +382,12 @@ func (m *MockImplement) GetDataOperationValueFile(ctx runtime.ReconcileRequestCo
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
+}
+
+// GetDataOperationValueFile indicates an expected call of GetDataOperationValueFile.
+func (mr *MockImplementMockRecorder) GetDataOperationValueFile(ctx, operation interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDataOperationValueFile", reflect.TypeOf((*MockImplement)(nil).GetDataOperationValueFile), ctx, operation)
 }
 
 // CreateVolume mocks base method.
