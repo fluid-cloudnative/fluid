@@ -17,42 +17,48 @@ limitations under the License.
 package goosefs
 
 import (
-	"testing"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
 
-func TestTransformPermission(t *testing.T) {
-
-	keys := []string{
-		"goosefs.master.security.impersonation.root.users",
-		"goosefs.master.security.impersonation.root.groups",
-		"goosefs.security.authorization.permission.enabled",
-	}
-
-	var tests = []struct {
+var _ = Describe("TransformPermission", func() {
+	type testCase struct {
 		runtime *datav1alpha1.GooseFSRuntime
 		value   *GooseFS
 		expect  map[string]string
-	}{
-		{&datav1alpha1.GooseFSRuntime{
-			Spec: datav1alpha1.GooseFSRuntimeSpec{
-				Fuse: datav1alpha1.GooseFSFuseSpec{},
-			},
-		}, &GooseFS{}, map[string]string{
-			"goosefs.master.security.impersonation.root.users":  "*",
-			"goosefs.master.security.impersonation.root.groups": "*",
-			"goosefs.security.authorization.permission.enabled": "false",
-		}},
 	}
-	for _, test := range tests {
-		engine := &GooseFSEngine{}
-		engine.transformPermission(test.runtime, test.value)
-		for _, key := range keys {
-			if test.value.Properties[key] != test.expect[key] {
-				t.Errorf("The key %s expected %s, got %s", key, test.value.Properties[key], test.expect[key])
-			}
-		}
 
-	}
-}
+	DescribeTable("should transform permission properties correctly",
+		func(tc testCase) {
+			keys := []string{
+				"goosefs.master.security.impersonation.root.users",
+				"goosefs.master.security.impersonation.root.groups",
+				"goosefs.security.authorization.permission.enabled",
+			}
+
+			engine := &GooseFSEngine{}
+			engine.transformPermission(tc.runtime, tc.value)
+
+			for _, key := range keys {
+				Expect(tc.value.Properties[key]).To(Equal(tc.expect[key]))
+			}
+		},
+		Entry("default fuse spec",
+			testCase{
+				runtime: &datav1alpha1.GooseFSRuntime{
+					Spec: datav1alpha1.GooseFSRuntimeSpec{
+						Fuse: datav1alpha1.GooseFSFuseSpec{},
+					},
+				},
+				value: &GooseFS{},
+				expect: map[string]string{
+					"goosefs.master.security.impersonation.root.users":  "*",
+					"goosefs.master.security.impersonation.root.groups": "*",
+					"goosefs.security.authorization.permission.enabled": "false",
+				},
+			},
+		),
+	)
+})
