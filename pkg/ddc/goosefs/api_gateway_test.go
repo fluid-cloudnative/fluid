@@ -62,7 +62,6 @@ var _ = Describe("APIGateway", func() {
 	endpointFormat := "%s-master-0.%s:%d"
 
 	type testCase struct {
-		name            string
 		engineName      string
 		engineNamespace string
 		port            int32
@@ -83,7 +82,6 @@ var _ = Describe("APIGateway", func() {
 			},
 			Entry("fluid engine in default namespace",
 				testCase{
-					name:            "case 1",
 					engineName:      "fluid",
 					engineNamespace: "default",
 					port:            8080,
@@ -92,7 +90,6 @@ var _ = Describe("APIGateway", func() {
 			),
 			Entry("demo engine in fluid-system namespace",
 				testCase{
-					name:            "case 2",
 					engineName:      "demo",
 					engineNamespace: common.NamespaceFluidSystem,
 					port:            80,
@@ -113,7 +110,6 @@ var _ = Describe("APIGateway", func() {
 			},
 			Entry("fluid engine in default namespace",
 				testCase{
-					name:            "case 1",
 					engineName:      "fluid",
 					engineNamespace: "default",
 					port:            8080,
@@ -122,7 +118,6 @@ var _ = Describe("APIGateway", func() {
 			),
 			Entry("demo engine in fluid-system namespace",
 				testCase{
-					name:            "case 2",
 					engineName:      "demo",
 					engineNamespace: common.NamespaceFluidSystem,
 					port:            80,
