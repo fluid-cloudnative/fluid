@@ -1,38 +1,16 @@
 package utils
 
 import (
-	"reflect"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 )
 
 var _ = Describe("GetEnvsDifference", func() {
-	validateResult := func(result, expected []corev1.EnvVar) {
-		Expect(result).To(HaveLen(len(expected)))
-
-		expectedMap := make(map[string]bool)
-		for _, v := range expected {
-			expectedMap[v.Name] = true
-		}
-
-		resultMap := make(map[string]bool)
-		for _, v := range result {
-			resultMap[v.Name] = true
-		}
-
-		for name, expectedEnv := range expectedMap {
-			resultEnv, exist := resultMap[name]
-			Expect(exist).To(BeTrue(), "expected env %s should exist in result", name)
-			Expect(reflect.DeepEqual(resultEnv, expectedEnv)).To(BeTrue(), "expected env %v, but got %v", expectedEnv, resultEnv)
-		}
-	}
-
 	DescribeTable("should return correct env difference",
 		func(base, filter, expected []corev1.EnvVar) {
 			result := GetEnvsDifference(base, filter)
-			validateResult(result, expected)
+			Expect(result).To(ConsistOf(expected))
 		},
 		Entry("nil_envs",
 			[]corev1.EnvVar{},
