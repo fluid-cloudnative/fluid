@@ -20,7 +20,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	runtimeschema "k8s.io/apimachinery/pkg/runtime"
+	apimachineryruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/net"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -34,7 +34,7 @@ import (
 var _ = Describe("EFCEngine transform", func() {
 	DescribeTable("should transform runtime successfully",
 		func(runtime *datav1alpha1.EFCRuntime, dataset *datav1alpha1.Dataset) {
-			testObjs := []runtimeschema.Object{}
+			testObjs := []apimachineryruntime.Object{}
 			testObjs = append(testObjs, runtime.DeepCopy())
 			testObjs = append(testObjs, dataset.DeepCopy())
 
