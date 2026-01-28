@@ -39,12 +39,12 @@ var _ = Describe("JindoCacheEngine_syncMasterSpec", func() {
 
 	It("should handle empty resource for jindoruntime", func() {
 		jindoRuntime := &datav1alpha1.JindoRuntime{}
-		jindoRuntime.SetName("emtpy")
+		jindoRuntime.SetName("empty")
 		jindoRuntime.SetNamespace("default")
 
 		master := &appsv1.StatefulSet{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "emtpy-jindofs-master",
+				Name:      "empty-jindofs-master",
 				Namespace: "default",
 			},
 			Spec: appsv1.StatefulSetSpec{},
@@ -60,7 +60,7 @@ var _ = Describe("JindoCacheEngine_syncMasterSpec", func() {
 
 		e := &JindoCacheEngine{
 			runtime:   jindoRuntime,
-			name:      "emtpy",
+			name:      "empty",
 			namespace: "default",
 			Log:       fake.NullLogger(),
 			Client:    client,
@@ -190,12 +190,12 @@ var _ = Describe("JindoCacheEngine_syncWorkerSpec", func() {
 
 	It("should handle empty resource for jindoruntime", func() {
 		jindoRuntime := &datav1alpha1.JindoRuntime{}
-		jindoRuntime.SetName("emtpy")
+		jindoRuntime.SetName("empty")
 		jindoRuntime.SetNamespace("default")
 
 		worker := &appsv1.StatefulSet{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "emtpy-jindofs-worker",
+				Name:      "empty-jindofs-worker",
 				Namespace: "default",
 			},
 			Spec: appsv1.StatefulSetSpec{},
@@ -211,7 +211,7 @@ var _ = Describe("JindoCacheEngine_syncWorkerSpec", func() {
 
 		e := &JindoCacheEngine{
 			runtime:   jindoRuntime,
-			name:      "emtpy",
+			name:      "empty",
 			namespace: "default",
 			Log:       fake.NullLogger(),
 			Client:    client,
@@ -341,12 +341,12 @@ var _ = Describe("JindoCacheEngine_syncFuseSpec", func() {
 
 	It("should handle empty resource for jindoruntime", func() {
 		jindoRuntime := &datav1alpha1.JindoRuntime{}
-		jindoRuntime.SetName("emtpy")
+		jindoRuntime.SetName("empty")
 		jindoRuntime.SetNamespace("default")
 
 		fuse := &appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "emtpy-jindofs-fuse",
+				Name:      "empty-jindofs-fuse",
 				Namespace: "default",
 			},
 			Spec: appsv1.DaemonSetSpec{},
@@ -362,7 +362,7 @@ var _ = Describe("JindoCacheEngine_syncFuseSpec", func() {
 
 		e := &JindoCacheEngine{
 			runtime:   jindoRuntime,
-			name:      "emtpy",
+			name:      "empty",
 			namespace: "default",
 			Log:       fake.NullLogger(),
 			Client:    client,
