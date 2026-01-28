@@ -14,11 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package base_test
+package base
 
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -28,7 +27,7 @@ const testNamespace = "default"
 var _ = Describe("RuntimeInfo.GetWorkerStatefulsetName", func() {
 	DescribeTable("returns correct statefulset name",
 		func(runtimeName, runtimeType, suffix string) {
-			info, err := base.BuildRuntimeInfo(runtimeName, testNamespace, runtimeType)
+			info, err := BuildRuntimeInfo(runtimeName, testNamespace, runtimeType)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(info.GetWorkerStatefulsetName()).To(Equal(runtimeName + suffix))
 		},
