@@ -20,93 +20,91 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
-	"testing"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-func FuzzIsSafePath(f *testing.F) {
-	// f.Add()
-	f.Fuzz(func(t *testing.T, input string) {
-		err := IsValidMountRoot(input)
-		if err == nil {
-			// valid input must start with "/"
-			if !strings.HasPrefix(input, string(filepath.Separator)) {
-				t.Errorf("testcase %s failed, expect the input starts with '/'", input)
-			}
+var _ = Describe("IsValidMountRoot", func() {
+	Describe("Safe paths", func() {
+		type testCase struct {
+			name  string
+			input string
+		}
+		testCases := []testCase{
+			{
+				name:  "validPath-1",
+				input: "/runtime-mnt//alluxio/default/hbase",
+			},
+			{
+				name:  "validPath-2",
+				input: "/opt/20-Runtime-Mnt_1/./alluxio/default/hbase",
+			},
+		}
+		for _, test := range testCases {
+			tc := test
+			It(fmt.Sprintf("should accept %s", tc.name), func() {
+				tt := filepath.Clean(tc.input)
+				GinkgoWriter.Println(tt)
+				got := IsValidMountRoot(tc.input)
+				Expect(got).To(BeNil())
+			})
 		}
 	})
-}
 
-func TestIsSafePathWithSafePath(t *testing.T) {
-
-	type testCase struct {
-		name  string
-		input string
-	}
-
-	testCases := []testCase{
-		{
-			name:  "validPath-1",
-			input: "/runtime-mnt//alluxio/default/hbase",
-		},
-		{
-			name:  "validPath-2",
-			input: "/opt/20-Runtime-Mnt_1/./alluxio/default/hbase",
-		},
-	}
-
-	for _, test := range testCases {
-		tt := filepath.Clean(test.input)
-		print(tt)
-		got := IsValidMountRoot(test.input)
-		if got != nil {
-			t.Errorf("testcase %s failed, expect no error happened, but got an error: %s", test.name, got.Error())
+	Describe("Invalid paths", func() {
+		type testCase struct {
+			name   string
+			input  string
+			expect error
 		}
-	}
-}
-
-func TestIsSafePathWithInvalidPath(t *testing.T) {
-
-	type testCase struct {
-		name   string
-		input  string
-		expect error
-	}
-
-	testCases := []testCase{
-		{
-			name:   "invalidPath-1",
-			input:  "/$test/alluxio/default/hbase",
-			expect: fmt.Errorf(invalidMountRootErrMsgFmt, "/$test/alluxio/default/hbase", "every directory name in the mount root path shuold follow the relaxed DNS (RFC 1123) rule which additionally allows upper case alphabetic character and character '_'"),
-		},
-		{
-			name:   "invalidPath-2",
-			input:  "/test/(alluxio)/default/hbase",
-			expect: fmt.Errorf(invalidMountRootErrMsgFmt, "/test/(alluxio)/default/hbase", "every directory name in the mount root path shuold follow the relaxed DNS (RFC 1123) rule which additionally allows upper case alphabetic character and character '_'"),
-		},
-		{
-			name:   "invalidPath-3",
-			input:  "/test/alluxio/def;ault/hbase",
-			expect: fmt.Errorf(invalidMountRootErrMsgFmt, "/test/alluxio/def;ault/hbase", "every directory name in the mount root path shuold follow the relaxed DNS (RFC 1123) rule which additionally allows upper case alphabetic character and character '_'"),
-		},
-		{
-			name:   "invalidPath-4",
-			input:  "",
-			expect: fmt.Errorf(invalidMountRootErrMsgFmt, "", "the mount root path is empty"),
-		},
-		{
-			name:   "invalidPath-5",
-			input:  "runtime-mnt/default",
-			expect: fmt.Errorf(invalidMountRootErrMsgFmt, "runtime-mnt/default", "the mount root path must be an absolute path"),
-		},
-	}
-
-	for _, test := range testCases {
-		got := IsValidMountRoot(test.input)
-		if got == nil {
-			t.Errorf("testcase %s failed, expect an error happened, but got no error", test.name)
+		testCases := []testCase{
+			{
+				name:   "invalidPath-1",
+				input:  "/$test/alluxio/default/hbase",
+				expect: fmt.Errorf(invalidMountRootErrMsgFmt, "/$test/alluxio/default/hbase", "every directory name in the mount root path shuold follow the relaxed DNS (RFC 1123) rule which additionally allows upper case alphabetic character and character '_'"),
+			},
+			{
+				name:   "invalidPath-2",
+				input:  "/test/(alluxio)/default/hbase",
+				expect: fmt.Errorf(invalidMountRootErrMsgFmt, "/test/(alluxio)/default/hbase", "every directory name in the mount root path shuold follow the relaxed DNS (RFC 1123) rule which additionally allows upper case alphabetic character and character '_'"),
+			},
+			{
+				name:   "invalidPath-3",
+				input:  "/test/alluxio/def;ault/hbase",
+				expect: fmt.Errorf(invalidMountRootErrMsgFmt, "/test/alluxio/def;ault/hbase", "every directory name in the mount root path shuold follow the relaxed DNS (RFC 1123) rule which additionally allows upper case alphabetic character and character '_'"),
+			},
+			{
+				name:   "invalidPath-4",
+				input:  "",
+				expect: fmt.Errorf(invalidMountRootErrMsgFmt, "", "the mount root path is empty"),
+			},
+			{
+				name:   "invalidPath-5",
+				input:  "runtime-mnt/default",
+				expect: fmt.Errorf(invalidMountRootErrMsgFmt, "runtime-mnt/default", "the mount root path must be an absolute path"),
+			},
 		}
-		if got.Error() != test.expect.Error() {
-			t.Errorf("testcase %s failed, expect error: %v, but got error: %v", test.name, test.expect, got)
+		for _, test := range testCases {
+			tc := test
+			It(fmt.Sprintf("should reject %s", tc.name), func() {
+				got := IsValidMountRoot(tc.input)
+				Expect(got).To(HaveOccurred())
+				Expect(got.Error()).To(Equal(tc.expect.Error()))
+			})
 		}
-	}
-}
+	})
+
+	Describe("Fuzz: path must start with / if valid", func() {
+		It("should only accept valid paths starting with /", func() {
+			// Example fuzz-like check for a few cases
+			inputs := []string{"", "foo", "/foo", "foo/bar", "/foo/bar"}
+			for _, input := range inputs {
+				err := IsValidMountRoot(input)
+				if err == nil {
+					Expect(strings.HasPrefix(input, string(filepath.Separator))).To(BeTrue(), "valid input must start with '/'")
+				}
+			}
+		})
+	})
+})
