@@ -18,106 +18,152 @@ package kubeclient
 
 import (
 	"errors"
-	"testing"
 
 	"github.com/agiledragon/gomonkey/v2"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes"
 	rest "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-func TestInitClient(t *testing.T) {
-	PathExistsTrue := func(path string) bool {
-		return true
-	}
-	PathExistsFalse := func(path string) bool {
-		return false
-	}
-	BuildConfigFromFlagsCommon := func(masterUrl, kubeconfigPath string) (*rest.Config, error) {
-		return nil, nil
-	}
-	BuildConfigFromFlagsErr := func(masterUrl, kubeconfigPath string) (*rest.Config, error) {
-		return nil, errors.New("fail to run the function")
-	}
-	NewForConfigCommon := func(c *rest.Config) (*kubernetes.Clientset, error) {
-		return nil, nil
-	}
-	NewForConfigError := func(c *rest.Config) (*kubernetes.Clientset, error) {
-		return nil, errors.New("fail to run the function")
-	}
+var _ = Describe("InitClient", func() {
+	var (
+		pathExistPatch            *gomonkey.Patches
+		buildConfigFromFlagsPatch *gomonkey.Patches
+		newForConfigPatch         *gomonkey.Patches
+	)
 
-	t.Setenv(common.RecommendedKubeConfigPathEnv, "Path for test")
+	BeforeEach(func() {
+		// Set environment variable
+		GinkgoT().Setenv(common.RecommendedKubeConfigPathEnv, "Path for test")
 
-	pathExistPatch := gomonkey.ApplyFunc(utils.PathExists, PathExistsTrue)
-	buildConfigFromFlagsPatch := gomonkey.ApplyFunc(clientcmd.BuildConfigFromFlags, BuildConfigFromFlagsErr)
+		// Reset global variables
+		restConfig = nil
+		clientset = nil
+	})
 
-	restConfig = nil
-	clientset = nil
+	AfterEach(func() {
+		// Reset all patches
+		if pathExistPatch != nil {
+			pathExistPatch.Reset()
+			pathExistPatch = nil
+		}
+		if buildConfigFromFlagsPatch != nil {
+			buildConfigFromFlagsPatch.Reset()
+			buildConfigFromFlagsPatch = nil
+		}
+		if newForConfigPatch != nil {
+			newForConfigPatch.Reset()
+			newForConfigPatch = nil
+		}
+	})
 
-	err := initClient()
-	if err == nil {
-		t.Errorf("expected error, get nil")
-	}
-	buildConfigFromFlagsPatch.Reset()
+	Context("when kubeconfig path exists", func() {
+		BeforeEach(func() {
+			pathExistPatch = gomonkey.ApplyFunc(utils.PathExists, func(path string) bool {
+				return true
+			})
+		})
 
-	buildConfigFromFlagsPatch.ApplyFunc(clientcmd.BuildConfigFromFlags, BuildConfigFromFlagsCommon)
-	newForConfigPatch := gomonkey.ApplyFunc(kubernetes.NewForConfig, NewForConfigError)
-	restConfig = nil
-	clientset = nil
+		Context("when BuildConfigFromFlags fails", func() {
+			BeforeEach(func() {
+				buildConfigFromFlagsPatch = gomonkey.ApplyFunc(clientcmd.BuildConfigFromFlags, func(masterUrl, kubeconfigPath string) (*rest.Config, error) {
+					return nil, errors.New("fail to run the function")
+				})
+			})
 
-	err = initClient()
-	if err == nil {
-		t.Errorf("expected error, get nil")
-	}
-	newForConfigPatch.Reset()
+			It("should return an error", func() {
+				err := initClient()
+				Expect(err).To(HaveOccurred())
+			})
+		})
 
-	newForConfigPatch.ApplyFunc(kubernetes.NewForConfig, NewForConfigCommon)
+		Context("when BuildConfigFromFlags succeeds but NewForConfig fails", func() {
+			BeforeEach(func() {
+				buildConfigFromFlagsPatch = gomonkey.ApplyFunc(clientcmd.BuildConfigFromFlags, func(masterUrl, kubeconfigPath string) (*rest.Config, error) {
+					return nil, nil
+				})
+				newForConfigPatch = gomonkey.ApplyFunc(kubernetes.NewForConfig, func(c *rest.Config) (*kubernetes.Clientset, error) {
+					return nil, errors.New("fail to run the function")
+				})
+			})
 
-	restConfig = nil
-	clientset = nil
+			It("should return an error", func() {
+				err := initClient()
+				Expect(err).To(HaveOccurred())
+			})
+		})
 
-	err = initClient()
-	if err != nil {
-		t.Errorf("expected no error, get %v", err)
-	}
-	newForConfigPatch.Reset()
-	buildConfigFromFlagsPatch.Reset()
-	pathExistPatch.Reset()
+		Context("when both BuildConfigFromFlags and NewForConfig succeed", func() {
+			BeforeEach(func() {
+				buildConfigFromFlagsPatch = gomonkey.ApplyFunc(clientcmd.BuildConfigFromFlags, func(masterUrl, kubeconfigPath string) (*rest.Config, error) {
+					return nil, nil
+				})
+				newForConfigPatch = gomonkey.ApplyFunc(kubernetes.NewForConfig, func(c *rest.Config) (*kubernetes.Clientset, error) {
+					return nil, nil
+				})
+			})
 
-	pathExistPatch.ApplyFunc(utils.PathExists, PathExistsFalse)
-	buildConfigFromFlagsPatch.ApplyFunc(clientcmd.BuildConfigFromFlags, BuildConfigFromFlagsErr)
+			It("should succeed without error", func() {
+				err := initClient()
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+	})
 
-	restConfig = nil
-	clientset = nil
+	Context("when kubeconfig path does not exist", func() {
+		BeforeEach(func() {
+			pathExistPatch = gomonkey.ApplyFunc(utils.PathExists, func(path string) bool {
+				return false
+			})
+		})
 
-	err = initClient()
-	if err == nil {
-		t.Errorf("expected error, get nil")
-	}
-	buildConfigFromFlagsPatch.Reset()
+		Context("when BuildConfigFromFlags fails", func() {
+			BeforeEach(func() {
+				buildConfigFromFlagsPatch = gomonkey.ApplyFunc(clientcmd.BuildConfigFromFlags, func(masterUrl, kubeconfigPath string) (*rest.Config, error) {
+					return nil, errors.New("fail to run the function")
+				})
+			})
 
-	buildConfigFromFlagsPatch.ApplyFunc(clientcmd.BuildConfigFromFlags, BuildConfigFromFlagsCommon)
-	newForConfigPatch.ApplyFunc(kubernetes.NewForConfig, NewForConfigError)
-	restConfig = nil
-	clientset = nil
+			It("should return an error", func() {
+				err := initClient()
+				Expect(err).To(HaveOccurred())
+			})
+		})
 
-	err = initClient()
-	if err == nil {
-		t.Errorf("expected error, get nil")
-	}
-	newForConfigPatch.Reset()
+		Context("when BuildConfigFromFlags succeeds but NewForConfig fails", func() {
+			BeforeEach(func() {
+				buildConfigFromFlagsPatch = gomonkey.ApplyFunc(clientcmd.BuildConfigFromFlags, func(masterUrl, kubeconfigPath string) (*rest.Config, error) {
+					return nil, nil
+				})
+				newForConfigPatch = gomonkey.ApplyFunc(kubernetes.NewForConfig, func(c *rest.Config) (*kubernetes.Clientset, error) {
+					return nil, errors.New("fail to run the function")
+				})
+			})
 
-	newForConfigPatch.ApplyFunc(kubernetes.NewForConfig, NewForConfigCommon)
-	restConfig = nil
-	clientset = nil
+			It("should return an error", func() {
+				err := initClient()
+				Expect(err).To(HaveOccurred())
+			})
+		})
 
-	err = initClient()
-	if err != nil {
-		t.Errorf("expected no error, get %v", err)
-	}
-	newForConfigPatch.Reset()
-	buildConfigFromFlagsPatch.Reset()
-	pathExistPatch.Reset()
-}
+		Context("when both BuildConfigFromFlags and NewForConfig succeed", func() {
+			BeforeEach(func() {
+				buildConfigFromFlagsPatch = gomonkey.ApplyFunc(clientcmd.BuildConfigFromFlags, func(masterUrl, kubeconfigPath string) (*rest.Config, error) {
+					return nil, nil
+				})
+				newForConfigPatch = gomonkey.ApplyFunc(kubernetes.NewForConfig, func(c *rest.Config) (*kubernetes.Clientset, error) {
+					return nil, nil
+				})
+			})
+
+			It("should succeed without error", func() {
+				err := initClient()
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+	})
+})
