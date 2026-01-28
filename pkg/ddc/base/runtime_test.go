@@ -17,9 +17,11 @@ limitations under the License.
 package base
 
 import (
-	"reflect"
-	"testing"
+	"os"
 	"time"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -34,7 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func Test_convertToTieredstoreInfo(t *testing.T) {
+var _ = Describe("convertToTieredstoreInfo", func() {
 	type args struct {
 		tieredstore v1alpha1.TieredStore
 	}
@@ -122,20 +124,19 @@ func Test_convertToTieredstoreInfo(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		It(tt.name, func() {
 			got, err := convertToTieredstoreInfo(tt.args.tieredstore)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("convertToTieredstoreInfo() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("convertToTieredstoreInfo() got = %v, want %v", got, tt.want)
+			if tt.wantErr {
+				Expect(err).To(HaveOccurred())
+			} else {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(got).To(Equal(tt.want))
 			}
 		})
 	}
-}
+})
 
-func TestBuildRuntimeInfo(t *testing.T) {
+var _ = Describe("BuildRuntimeInfo", func() {
 	const runtimetype = "alluxio"
 	type args struct {
 		name        string
@@ -191,30 +192,26 @@ func TestBuildRuntimeInfo(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		It(tt.name, func() {
 			gotRuntime, err := BuildRuntimeInfo(tt.args.name, tt.args.namespace, tt.args.runtimeType, WithTieredStore(tt.args.tieredstore))
-			if (err != nil) != tt.wantErr {
-				t.Errorf("BuildRuntimeInfo() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			if tt.wantErr {
+				Expect(err).To(HaveOccurred())
+			} else {
+				Expect(err).NotTo(HaveOccurred())
 
-			tieredstoreInfo, err := convertToTieredstoreInfo(tieredstore)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("convertToTieredstoreInfo() error = %v, wantErr %v", err, tt.wantErr)
-			}
+				tieredstoreInfo, err := convertToTieredstoreInfo(tieredstore)
+				Expect(err).NotTo(HaveOccurred())
 
-			if gotRuntime.GetName() != tt.wantRuntime.GetName() ||
-				gotRuntime.GetNamespace() != tt.wantRuntime.GetNamespace() ||
-				gotRuntime.GetRuntimeType() != tt.wantRuntime.GetRuntimeType() ||
-				!reflect.DeepEqual(gotRuntime.GetTieredStoreInfo(), tieredstoreInfo) {
-				t.Errorf("BuildRuntimeInfo() gotRuntime = %v, want %v", gotRuntime, tt.wantRuntime)
+				Expect(gotRuntime.GetName()).To(Equal(tt.wantRuntime.GetName()))
+				Expect(gotRuntime.GetNamespace()).To(Equal(tt.wantRuntime.GetNamespace()))
+				Expect(gotRuntime.GetRuntimeType()).To(Equal(tt.wantRuntime.GetRuntimeType()))
+				Expect(gotRuntime.GetTieredStoreInfo()).To(Equal(tieredstoreInfo))
 			}
-
 		})
 	}
-}
+})
 
-func TestCleanPolicy(t *testing.T) {
+var _ = Describe("CleanPolicy", func() {
 	s := runtime.NewScheme()
 
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.AlluxioRuntime{})
@@ -793,21 +790,20 @@ func TestCleanPolicy(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		It(tt.name, func() {
 			// SetupFuseCleanPolicy will be called in GetRuntimeInfo()
 			got, err := GetRuntimeInfo(tt.args.client, tt.args.name, tt.args.namespace)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetRuntimeInfo() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !tt.wantErr && !reflect.DeepEqual(got.GetFuseCleanPolicy(), tt.want.GetFuseCleanPolicy()) {
-				t.Errorf("GetRuntimeInfo() = %#v, want %#v", got, tt.want)
+			if tt.wantErr {
+				Expect(err).To(HaveOccurred())
+			} else {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(got.GetFuseCleanPolicy()).To(Equal(tt.want.GetFuseCleanPolicy()))
 			}
 		})
 	}
-}
+})
 
-func TestGetRuntimeInfo(t *testing.T) {
+var _ = Describe("GetRuntimeInfo", func() {
 	s := runtime.NewScheme()
 
 	alluxioRuntime := v1alpha1.AlluxioRuntime{
@@ -1142,11 +1138,12 @@ func TestGetRuntimeInfo(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		It(tt.name, func() {
 			got, err := GetRuntimeInfo(tt.args.client, tt.args.name, tt.args.namespace)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetRuntimeInfo() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr {
+				Expect(err).To(HaveOccurred())
+			} else {
+				Expect(err).NotTo(HaveOccurred())
 			}
 			if got != nil {
 				got.SetAPIReader(nil)
@@ -1156,14 +1153,14 @@ func TestGetRuntimeInfo(t *testing.T) {
 				tt.want.SetAPIReader(nil)
 			}
 
-			if !tt.wantErr && !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetRuntimeInfo() = %#v\n, want %#v", got, tt.want)
+			if !tt.wantErr {
+				Expect(got).To(Equal(tt.want))
 			}
 		})
 	}
-}
+})
 
-func TestGetRuntimeStatus(t *testing.T) {
+var _ = Describe("GetRuntimeStatus", func() {
 	s := runtime.NewScheme()
 
 	alluxioRuntime := v1alpha1.AlluxioRuntime{
@@ -1373,68 +1370,68 @@ func TestGetRuntimeStatus(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		It(tt.name, func() {
 			_, err := GetRuntimeStatus(tt.args.client, tt.args.runtimeType, tt.args.name, tt.args.namespace)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetRuntimeInfo() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr {
+				Expect(err).To(HaveOccurred())
+			} else {
+				Expect(err).NotTo(HaveOccurred())
 			}
 		})
 	}
-}
+})
 
-func TestGetSyncRetryDuration(t *testing.T) {
+var _ = Describe("GetSyncRetryDuration", func() {
+	It("should get default sync retry duration", func() {
+		_, err := getSyncRetryDuration()
+		Expect(err).NotTo(HaveOccurred())
+	})
 
-	_, err := getSyncRetryDuration()
-	if err != nil {
-		t.Errorf("Failed to getSyncRetryDuration %v", err)
-	}
+	It("should fail with invalid duration format", func() {
+		err := os.Setenv(syncRetryDurationEnv, "s")
+		Expect(err).NotTo(HaveOccurred())
+		defer os.Unsetenv(syncRetryDurationEnv)
 
-	t.Setenv(syncRetryDurationEnv, "s")
-	_, err = getSyncRetryDuration()
-	if err == nil {
-		t.Errorf("Expect to get err, but got nil")
-	}
+		_, err = getSyncRetryDuration()
+		Expect(err).To(HaveOccurred())
+	})
 
-	t.Setenv(syncRetryDurationEnv, "3s")
-	d, err := getSyncRetryDuration()
-	if err != nil {
-		t.Errorf("Failed to getSyncRetryDuration %v", err)
-	}
-	if d == nil {
-		t.Errorf("Failed to set the duration, expect %v, got %v", time.Duration(3*time.Second), d)
-	}
-}
+	It("should successfully parse valid duration", func() {
+		err := os.Setenv(syncRetryDurationEnv, "3s")
+		Expect(err).NotTo(HaveOccurred())
+		defer os.Unsetenv(syncRetryDurationEnv)
 
-func TestPermitSync(t *testing.T) {
+		d, err := getSyncRetryDuration()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(d).NotTo(BeNil())
+		Expect(*d).To(Equal(time.Duration(3 * time.Second)))
+	})
+})
 
-	id := "test id"
-	ctx := cruntime.ReconcileRequestContext{
-		NamespacedName: types.NamespacedName{
-			Name:      "hbase",
-			Namespace: "fluid",
-		},
-		Log:     fakeutils.NullLogger(),
-		Runtime: &v1alpha1.AlluxioRuntime{},
-	}
+var _ = Describe("PermitSync", func() {
+	It("should control sync permission based on time", func() {
+		id := "test id"
+		ctx := cruntime.ReconcileRequestContext{
+			NamespacedName: types.NamespacedName{
+				Name:      "hbase",
+				Namespace: "fluid",
+			},
+			Log:     fakeutils.NullLogger(),
+			Runtime: &v1alpha1.AlluxioRuntime{},
+		}
 
-	templateEngine := NewTemplateEngine(nil, id, ctx)
-	permit := templateEngine.permitSync(types.NamespacedName{Namespace: ctx.Namespace, Name: ctx.Namespace})
-	if !permit {
-		t.Errorf("expect permit, but got %v", permit)
-	}
+		templateEngine := NewTemplateEngine(nil, id, ctx)
+		permit := templateEngine.permitSync(ctx.NamespacedName)
+		Expect(permit).To(BeTrue(), "expect permit initially")
 
-	templateEngine.setTimeOfLastSync()
-	permit = templateEngine.permitSync(types.NamespacedName{Namespace: ctx.Namespace, Name: ctx.Namespace})
-	if permit {
-		t.Errorf("expect not permit, but got %v", permit)
-	}
+		templateEngine.setTimeOfLastSync()
+		permit = templateEngine.permitSync(ctx.NamespacedName)
+		Expect(permit).To(BeFalse(), "expect not permit immediately after sync")
 
-	templateEngine.setTimeOfLastSync()
-	templateEngine.syncRetryDuration = 1 * time.Microsecond
-	time.Sleep(1 * time.Second)
-	permit = templateEngine.permitSync(types.NamespacedName{Namespace: ctx.Namespace, Name: ctx.Namespace})
-	if !permit {
-		t.Errorf("expect permit, but got %v", permit)
-	}
-}
+		templateEngine.setTimeOfLastSync()
+		templateEngine.syncRetryDuration = 1 * time.Microsecond
+		time.Sleep(1 * time.Second)
+		permit = templateEngine.permitSync(ctx.NamespacedName)
+		Expect(permit).To(BeTrue(), "expect permit after retry duration elapsed")
+	})
+})
