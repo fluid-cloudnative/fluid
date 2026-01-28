@@ -17,402 +17,309 @@ limitations under the License.
 package kubeclient
 
 import (
-	"testing"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // Use fake client because of it will be maintained in the long term
 // due to https://github.com/kubernetes-sigs/controller-runtime/pull/1101
-func TestIsPersistentVolumeClaimExist(t *testing.T) {
+var _ = Describe("IsPersistentVolumeClaimExist", func() {
+	var (
+		namespace     string
+		testPVCInputs []*v1.PersistentVolumeClaim
+		client        client.Client
+	)
 
-	namespace := "default"
-	testPVCInputs := []*v1.PersistentVolumeClaim{{
-		ObjectMeta: metav1.ObjectMeta{Name: "notCreatedByFluid",
-			Namespace: namespace},
-		Spec: v1.PersistentVolumeClaimSpec{},
-	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "createdByFluid",
-			Annotations: common.GetExpectedFluidAnnotations(),
-			Namespace:   namespace},
-		Spec: v1.PersistentVolumeClaimSpec{},
-	}}
-
-	testPVCs := []runtime.Object{}
-
-	for _, pvc := range testPVCInputs {
-		testPVCs = append(testPVCs, pvc.DeepCopy())
-	}
-
-	client := fake.NewFakeClientWithScheme(testScheme, testPVCs...)
-
-	type args struct {
-		name        string
-		namespace   string
-		annotations map[string]string
-	}
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		{
-			name: "volume doesn't exist",
-			args: args{
-				name:        "notExist",
-				namespace:   namespace,
-				annotations: map[string]string{},
-			},
-			want: false,
-		},
-		{
-			name: "volume is not created by fluid",
-			args: args{
-				name:        "notCreatedByFluid",
-				namespace:   namespace,
-				annotations: map[string]string{},
-			},
-			want: false,
-		},
-		{
-			name: "volume is created by fluid",
-			args: args{
-				name:        "createdByFluid",
-				namespace:   namespace,
-				annotations: common.GetExpectedFluidAnnotations(),
-			},
-			want: true,
+	BeforeEach(func() {
+		namespace = "default"
+		testPVCInputs = []*v1.PersistentVolumeClaim{{
+			ObjectMeta: metav1.ObjectMeta{Name: "notCreatedByFluid",
+				Namespace: namespace},
+			Spec: v1.PersistentVolumeClaimSpec{},
 		}, {
-			name: "volume is not created by fluid 2",
-			args: args{
-				name: "notCreatedByFluid2",
-				annotations: map[string]string{
-					"test1": "test1",
-				},
-			},
-			want: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got, _ := IsPersistentVolumeClaimExist(client, tt.args.name, tt.args.namespace, tt.args.annotations); got != tt.want {
-				t.Errorf("testcase %v IsPersistentVolumeClaimExist() = %v, want %v", tt.name, got, tt.want)
-			}
+			ObjectMeta: metav1.ObjectMeta{Name: "createdByFluid",
+				Annotations: common.GetExpectedFluidAnnotations(),
+				Namespace:   namespace},
+			Spec: v1.PersistentVolumeClaimSpec{},
+		}}
+
+		testPVCs := []runtime.Object{}
+		for _, pvc := range testPVCInputs {
+			testPVCs = append(testPVCs, pvc.DeepCopy())
+		}
+
+		client = fake.NewFakeClientWithScheme(testScheme, testPVCs...)
+	})
+
+	It("should return false when volume doesn't exist", func() {
+		got, _ := IsPersistentVolumeClaimExist(client, "notExist", namespace, map[string]string{})
+		Expect(got).To(BeFalse())
+	})
+
+	It("should return false when volume is not created by fluid", func() {
+		got, _ := IsPersistentVolumeClaimExist(client, "notCreatedByFluid", namespace, map[string]string{})
+		Expect(got).To(BeFalse())
+	})
+
+	It("should return true when volume is created by fluid", func() {
+		got, _ := IsPersistentVolumeClaimExist(client, "createdByFluid", namespace, common.GetExpectedFluidAnnotations())
+		Expect(got).To(BeTrue())
+	})
+
+	It("should return false when volume is not created by fluid with different annotations", func() {
+		got, _ := IsPersistentVolumeClaimExist(client, "notCreatedByFluid2", "", map[string]string{
+			"test1": "test1",
 		})
-	}
+		Expect(got).To(BeFalse())
+	})
+})
 
-}
+var _ = Describe("DeletePersistentVolumeClaim", func() {
+	var (
+		namespace     string
+		testPVCInputs []*v1.PersistentVolumeClaim
+		client        client.Client
+	)
 
-func TestDeletePersistentVolumeClaim(t *testing.T) {
-	namespace := "default"
-	testPVCInputs := []*v1.PersistentVolumeClaim{{
-		ObjectMeta: metav1.ObjectMeta{Name: "aaa",
-			Namespace: namespace},
-		Spec: v1.PersistentVolumeClaimSpec{},
-	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "bbb",
-			Annotations: common.GetExpectedFluidAnnotations(),
-			Namespace:   namespace},
-		Spec: v1.PersistentVolumeClaimSpec{},
-	}}
-
-	testPVCs := []runtime.Object{}
-
-	for _, pvc := range testPVCInputs {
-		testPVCs = append(testPVCs, pvc.DeepCopy())
-	}
-
-	client := fake.NewFakeClientWithScheme(testScheme, testPVCs...)
-
-	type args struct {
-		name      string
-		namespace string
-	}
-	tests := []struct {
-		name      string
-		namespace string
-		args      args
-		err       error
-	}{
-		{
-			name: "volume doesn't exist",
-			args: args{
-				name:      "notfound",
-				namespace: namespace,
-			},
-			err: nil,
-		},
-		{
-			name: "volume exists",
-			args: args{
-				name:      "found",
-				namespace: namespace,
-			},
-			err: nil,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := DeletePersistentVolumeClaim(client, tt.args.name, tt.args.namespace); err != tt.err {
-				t.Errorf("testcase %v DeletePersistentVolumeClaim() = %v, want %v", tt.name, err, tt.err)
-			}
-		})
-	}
-
-}
-
-func TestGetPvcMountNodes(t *testing.T) {
-	namespace := "test"
-	volumeName1 := "found"
-	volumeName2 := "found1"
-	testPodInputs := []*v1.Pod{{
-		ObjectMeta: metav1.ObjectMeta{Name: "found"},
-		Spec:       v1.PodSpec{},
-	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "bbb", Namespace: namespace},
-		Spec: v1.PodSpec{
-			Volumes: []v1.Volume{
-				{
-					Name: volumeName1,
-					VolumeSource: v1.VolumeSource{
-						PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
-							ClaimName: volumeName1,
-							ReadOnly:  true,
-						}},
-				},
-			},
-			NodeName: "node1",
-		},
-		Status: v1.PodStatus{
-			Phase: v1.PodSucceeded,
-		},
-	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "ccc", Namespace: namespace},
-		Spec: v1.PodSpec{
-			Volumes: []v1.Volume{
-				{
-					Name: volumeName1,
-					VolumeSource: v1.VolumeSource{
-						PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
-							ClaimName: volumeName1,
-							ReadOnly:  true,
-						}},
-				},
-			},
-			NodeName: "node2",
-		},
-		Status: v1.PodStatus{
-			Phase: v1.PodRunning,
-		},
-	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "ddd", Namespace: namespace},
-		Spec: v1.PodSpec{
-			Volumes: []v1.Volume{
-				{
-					Name: volumeName1,
-					VolumeSource: v1.VolumeSource{
-						PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
-							ClaimName: volumeName1,
-							ReadOnly:  true,
-						}},
-				},
-			},
-			NodeName: "node3",
-		},
-		Status: v1.PodStatus{
-			Phase: v1.PodRunning,
-		},
-	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "eee", Namespace: namespace},
-		Spec: v1.PodSpec{
-			Volumes: []v1.Volume{
-				{
-					Name: volumeName2,
-					VolumeSource: v1.VolumeSource{
-						PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
-							ClaimName: volumeName2,
-							ReadOnly:  true,
-						}},
-				},
-			},
-			NodeName: "node4",
-		},
-		Status: v1.PodStatus{
-			Phase: v1.PodRunning,
-		},
-	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "fff", Namespace: namespace},
-		Spec: v1.PodSpec{
-			Volumes: []v1.Volume{
-				{
-					Name: volumeName2,
-					VolumeSource: v1.VolumeSource{
-						PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
-							ClaimName: volumeName2,
-							ReadOnly:  true,
-						}},
-				},
-			},
-			NodeName: "",
-		},
-		Status: v1.PodStatus{
-			Phase: v1.PodRunning,
-		},
-	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "hhh", Namespace: namespace},
-		Spec: v1.PodSpec{
-			Volumes: []v1.Volume{
-				{
-					Name: volumeName2,
-					VolumeSource: v1.VolumeSource{
-						PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
-							ClaimName: volumeName1,
-							ReadOnly:  true,
-						}},
-				},
-			},
-			NodeName: "node3",
-		},
-		Status: v1.PodStatus{
-			Phase: v1.PodRunning,
-		},
-	}}
-
-	testPods := []runtime.Object{}
-
-	for _, pod := range testPodInputs {
-		testPods = append(testPods, pod.DeepCopy())
-	}
-
-	client := fake.NewFakeClientWithScheme(testScheme, testPods...)
-	type args struct {
-		name      string
-		namespace string
-	}
-	tests := []struct {
-		name   string
-		args   args
-		length int
-	}{
-		{
-			name: "node list empty",
-			args: args{
-				name:      "not found",
-				namespace: namespace,
-			},
-			length: 0,
-		},
-		{
-			name: "node list is 1",
-			args: args{
-				name:      volumeName2,
-				namespace: namespace,
-			},
-			length: 1,
+	BeforeEach(func() {
+		namespace = "default"
+		testPVCInputs = []*v1.PersistentVolumeClaim{{
+			ObjectMeta: metav1.ObjectMeta{Name: "aaa",
+				Namespace: namespace},
+			Spec: v1.PersistentVolumeClaimSpec{},
 		}, {
-			name: "node list is 2",
-			args: args{
-				name:      volumeName1,
-				namespace: namespace,
-			},
-			length: 2,
-		},
-	}
+			ObjectMeta: metav1.ObjectMeta{Name: "bbb",
+				Annotations: common.GetExpectedFluidAnnotations(),
+				Namespace:   namespace},
+			Spec: v1.PersistentVolumeClaimSpec{},
+		}}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if pvcMountNodes, _ := GetPvcMountNodes(client, tt.args.name, tt.args.namespace); len(pvcMountNodes) != tt.length {
-				t.Errorf("testcase %v GetPvcMountPods() = %v, want %v", tt.name, pvcMountNodes, tt.length)
-			}
-		})
-	}
-}
+		testPVCs := []runtime.Object{}
+		for _, pvc := range testPVCInputs {
+			testPVCs = append(testPVCs, pvc.DeepCopy())
+		}
 
-func TestRemoveProtectionFinalizer(t *testing.T) {
-	namespace := "default"
-	testPVCInputs := []*v1.PersistentVolumeClaim{{
-		ObjectMeta: metav1.ObjectMeta{Name: "hasNoFinalizer",
-			Namespace: namespace},
-		Spec: v1.PersistentVolumeClaimSpec{
-			VolumeName: "hasNoFinalizer",
-		},
-	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "hasFinalizer",
-			Annotations: common.GetExpectedFluidAnnotations(),
-			Namespace:   namespace,
-			Finalizers:  []string{persistentVolumeClaimProtectionFinalizerName}},
-		Spec: v1.PersistentVolumeClaimSpec{
-			VolumeName: "hasFinalizer",
-		},
-	}}
+		client = fake.NewFakeClientWithScheme(testScheme, testPVCs...)
+	})
 
-	testPVCs := []runtime.Object{}
+	It("should not error when volume doesn't exist", func() {
+		err := DeletePersistentVolumeClaim(client, "notfound", namespace)
+		Expect(err).To(BeNil())
+	})
 
-	for _, pvc := range testPVCInputs {
-		testPVCs = append(testPVCs, pvc.DeepCopy())
-	}
+	It("should not error when volume exists", func() {
+		err := DeletePersistentVolumeClaim(client, "found", namespace)
+		Expect(err).To(BeNil())
+	})
+})
 
-	client := fake.NewFakeClientWithScheme(testScheme, testPVCs...)
+var _ = Describe("GetPvcMountNodes", func() {
+	var (
+		namespace     string
+		volumeName1   string
+		volumeName2   string
+		testPodInputs []*v1.Pod
+		client        client.Client
+	)
 
-	type args struct {
-		name      string
-		namespace string
-	}
-	tests := []struct {
-		name      string
-		args      args
-		wantError bool
-	}{
-		{
-			name: "volumeClaim doesn't exist",
-			args: args{
-				name:      "notExist",
-				namespace: namespace,
-			},
-			wantError: true,
-		},
-		{
-			name: "volumeClaim is not created by fluid",
-			args: args{
-				name:      "notCreatedByFluid",
-				namespace: namespace,
-			},
-			wantError: true,
-		},
-		{
-			name: "volumeClaim is created by fluid",
-			args: args{
-				name:      "hasNoFinalizer",
-				namespace: namespace,
-			},
-			wantError: false,
+	BeforeEach(func() {
+		namespace = "test"
+		volumeName1 = "found"
+		volumeName2 = "found1"
+		testPodInputs = []*v1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "found"},
+			Spec:       v1.PodSpec{},
 		}, {
-			name: "volumeClaim is not created by fluid 2",
-			args: args{
-				name:      "hasFinalizer",
-				namespace: namespace,
+			ObjectMeta: metav1.ObjectMeta{Name: "bbb", Namespace: namespace},
+			Spec: v1.PodSpec{
+				Volumes: []v1.Volume{
+					{
+						Name: volumeName1,
+						VolumeSource: v1.VolumeSource{
+							PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
+								ClaimName: volumeName1,
+								ReadOnly:  true,
+							}},
+					},
+				},
+				NodeName: "node1",
 			},
-			wantError: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := RemoveProtectionFinalizer(client, tt.args.name, tt.args.namespace)
-			got := err != nil
+			Status: v1.PodStatus{
+				Phase: v1.PodSucceeded,
+			},
+		}, {
+			ObjectMeta: metav1.ObjectMeta{Name: "ccc", Namespace: namespace},
+			Spec: v1.PodSpec{
+				Volumes: []v1.Volume{
+					{
+						Name: volumeName1,
+						VolumeSource: v1.VolumeSource{
+							PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
+								ClaimName: volumeName1,
+								ReadOnly:  true,
+							}},
+					},
+				},
+				NodeName: "node2",
+			},
+			Status: v1.PodStatus{
+				Phase: v1.PodRunning,
+			},
+		}, {
+			ObjectMeta: metav1.ObjectMeta{Name: "ddd", Namespace: namespace},
+			Spec: v1.PodSpec{
+				Volumes: []v1.Volume{
+					{
+						Name: volumeName1,
+						VolumeSource: v1.VolumeSource{
+							PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
+								ClaimName: volumeName1,
+								ReadOnly:  true,
+							}},
+					},
+				},
+				NodeName: "node3",
+			},
+			Status: v1.PodStatus{
+				Phase: v1.PodRunning,
+			},
+		}, {
+			ObjectMeta: metav1.ObjectMeta{Name: "eee", Namespace: namespace},
+			Spec: v1.PodSpec{
+				Volumes: []v1.Volume{
+					{
+						Name: volumeName2,
+						VolumeSource: v1.VolumeSource{
+							PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
+								ClaimName: volumeName2,
+								ReadOnly:  true,
+							}},
+					},
+				},
+				NodeName: "node4",
+			},
+			Status: v1.PodStatus{
+				Phase: v1.PodRunning,
+			},
+		}, {
+			ObjectMeta: metav1.ObjectMeta{Name: "fff", Namespace: namespace},
+			Spec: v1.PodSpec{
+				Volumes: []v1.Volume{
+					{
+						Name: volumeName2,
+						VolumeSource: v1.VolumeSource{
+							PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
+								ClaimName: volumeName2,
+								ReadOnly:  true,
+							}},
+					},
+				},
+				NodeName: "",
+			},
+			Status: v1.PodStatus{
+				Phase: v1.PodRunning,
+			},
+		}, {
+			ObjectMeta: metav1.ObjectMeta{Name: "hhh", Namespace: namespace},
+			Spec: v1.PodSpec{
+				Volumes: []v1.Volume{
+					{
+						Name: volumeName2,
+						VolumeSource: v1.VolumeSource{
+							PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
+								ClaimName: volumeName1,
+								ReadOnly:  true,
+							}},
+					},
+				},
+				NodeName: "node3",
+			},
+			Status: v1.PodStatus{
+				Phase: v1.PodRunning,
+			},
+		}}
 
-			if got != tt.wantError {
-				t.Errorf("testcase %v RemoveProtectionFinalizer() for %v in %v = %v, err = %v", tt.name,
-					tt.args.name,
-					tt.args.namespace,
-					got,
-					err)
-			}
+		testPods := []runtime.Object{}
+		for _, pod := range testPodInputs {
+			testPods = append(testPods, pod.DeepCopy())
+		}
 
-		})
-	}
+		client = fake.NewFakeClientWithScheme(testScheme, testPods...)
+	})
 
-}
+	It("should return empty list when node list is empty", func() {
+		pvcMountNodes, _ := GetPvcMountNodes(client, "not found", namespace)
+		Expect(len(pvcMountNodes)).To(Equal(0))
+	})
+
+	It("should return 1 node when node list is 1", func() {
+		pvcMountNodes, _ := GetPvcMountNodes(client, volumeName2, namespace)
+		Expect(len(pvcMountNodes)).To(Equal(1))
+	})
+
+	It("should return 2 nodes when node list is 2", func() {
+		pvcMountNodes, _ := GetPvcMountNodes(client, volumeName1, namespace)
+		Expect(len(pvcMountNodes)).To(Equal(2))
+	})
+})
+
+var _ = Describe("RemoveProtectionFinalizer", func() {
+	var (
+		namespace     string
+		testPVCInputs []*v1.PersistentVolumeClaim
+		client        client.Client
+	)
+
+	BeforeEach(func() {
+		namespace = "default"
+		testPVCInputs = []*v1.PersistentVolumeClaim{{
+			ObjectMeta: metav1.ObjectMeta{Name: "hasNoFinalizer",
+				Namespace: namespace},
+			Spec: v1.PersistentVolumeClaimSpec{
+				VolumeName: "hasNoFinalizer",
+			},
+		}, {
+			ObjectMeta: metav1.ObjectMeta{Name: "hasFinalizer",
+				Annotations: common.GetExpectedFluidAnnotations(),
+				Namespace:   namespace,
+				Finalizers:  []string{persistentVolumeClaimProtectionFinalizerName}},
+			Spec: v1.PersistentVolumeClaimSpec{
+				VolumeName: "hasFinalizer",
+			},
+		}}
+
+		testPVCs := []runtime.Object{}
+		for _, pvc := range testPVCInputs {
+			testPVCs = append(testPVCs, pvc.DeepCopy())
+		}
+
+		client = fake.NewFakeClientWithScheme(testScheme, testPVCs...)
+	})
+
+	It("should error when volumeClaim doesn't exist", func() {
+		err := RemoveProtectionFinalizer(client, "notExist", namespace)
+		Expect(err).NotTo(BeNil())
+	})
+
+	It("should error when volumeClaim is not created by fluid", func() {
+		err := RemoveProtectionFinalizer(client, "notCreatedByFluid", namespace)
+		Expect(err).NotTo(BeNil())
+	})
+
+	It("should not error when volumeClaim has no finalizer", func() {
+		err := RemoveProtectionFinalizer(client, "hasNoFinalizer", namespace)
+		Expect(err).To(BeNil())
+	})
+
+	It("should not error when volumeClaim has finalizer", func() {
+		err := RemoveProtectionFinalizer(client, "hasFinalizer", namespace)
+		Expect(err).To(BeNil())
+	})
+})
