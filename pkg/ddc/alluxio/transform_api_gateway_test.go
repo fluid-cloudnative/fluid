@@ -52,7 +52,7 @@ var _ = Describe("Alluxio", func() {
 				},
 			},
 			false,
-			false,
+			true,
 		),
 		Entry("should sync when runtime disabled and value enabled",
 			&datav1alpha1.AlluxioRuntime{
@@ -68,7 +68,7 @@ var _ = Describe("Alluxio", func() {
 				},
 			},
 			false,
-			false,
+			true,
 		),
 		Entry("should return error when runtime is nil",
 			nil,
