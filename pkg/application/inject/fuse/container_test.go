@@ -17,12 +17,10 @@ limitations under the License.
 package fuse
 
 import (
-	"errors"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/applications/pod"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = Describe("findInjectedSidecars", func() {
@@ -130,56 +128,3 @@ var _ = Describe("findInjectedSidecars", func() {
 	})
 
 })
-
-// mockFluidObject is a mock implementation of common.FluidObject for testing error cases
-type mockFluidObject struct {
-	shouldError bool
-	containers  []corev1.Container
-}
-
-func (m *mockFluidObject) GetContainers() ([]corev1.Container, error) {
-	if m.shouldError {
-		return nil, errors.New("mock error getting containers")
-	}
-	return m.containers, nil
-}
-
-func (m *mockFluidObject) GetInitContainers() ([]corev1.Container, error) {
-	return nil, nil
-}
-
-func (m *mockFluidObject) GetVolumes() ([]corev1.Volume, error) {
-	return nil, nil
-}
-
-func (m *mockFluidObject) GetVolumeMounts() ([]corev1.VolumeMount, error) {
-	return nil, nil
-}
-
-func (m *mockFluidObject) GetNodeSelector() (map[string]string, error) {
-	return nil, nil
-}
-
-func (m *mockFluidObject) GetAnnotations() (map[string]string, error) {
-	return nil, nil
-}
-
-func (m *mockFluidObject) GetLabels() (map[string]string, error) {
-	return nil, nil
-}
-
-func (m *mockFluidObject) GetSchedulerName() (string, error) {
-	return "", nil
-}
-
-func (m *mockFluidObject) GetAffinity() (*corev1.Affinity, error) {
-	return nil, nil
-}
-
-func (m *mockFluidObject) GetTolerations() ([]corev1.Toleration, error) {
-	return nil, nil
-}
-
-func (m *mockFluidObject) GetMetaObject() (metav1.Object, error) {
-	return nil, nil
-}
