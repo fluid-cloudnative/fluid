@@ -19,7 +19,6 @@ package goosefs
 import (
 	"context"
 	"fmt"
-	"reflect"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -65,7 +64,7 @@ var _ = Describe("GooseFSEngine", func() {
 		}
 
 		DescribeTable("should sync schedule info to cache nodes correctly",
-			func(name string, fields fields, expectedNodeNames []string) {
+			func(fields fields, expectedNodeNames []string) {
 				runtimeObjs := []runtimeschema.Object{}
 				runtimeObjs = append(runtimeObjs, fields.worker)
 
@@ -103,11 +102,10 @@ var _ = Describe("GooseFSEngine", func() {
 					return
 				}
 
-				Expect(reflect.DeepEqual(expectedNodeNames, nodeNames)).To(BeTrue(),
+				Expect(nodeNames).To(Equal(expectedNodeNames),
 					fmt.Sprintf("wanted %v, got %v", expectedNodeNames, nodeNames))
 			},
 			Entry("create",
-				"create",
 				fields{
 					name:      "spark",
 					namespace: "big-data",
@@ -166,7 +164,6 @@ var _ = Describe("GooseFSEngine", func() {
 				[]string{"node1"},
 			),
 			Entry("add",
-				"add",
 				fields{
 					name:      "hbase",
 					namespace: "big-data",
@@ -232,7 +229,6 @@ var _ = Describe("GooseFSEngine", func() {
 				[]string{"node3"},
 			),
 			Entry("noController",
-				"noController",
 				fields{
 					name:      "hbase-a",
 					namespace: "big-data",
