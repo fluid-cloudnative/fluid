@@ -18,16 +18,15 @@ package referencedataset
 
 import (
 	"context"
-	"testing"
-	"time"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/go-logr/logr"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,409 +35,375 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestBuildReferenceDatasetThinEngine(t *testing.T) {
-	testScheme := runtime.NewScheme()
-	_ = v1.AddToScheme(testScheme)
-	_ = datav1alpha1.AddToScheme(testScheme)
-	_ = appsv1.AddToScheme(testScheme)
+var _ = Describe("BuildReferenceDatasetThinEngine", func() {
+	var (
+		testScheme *runtime.Scheme
+		testObjs   []runtime.Object
+		fakeClient client.Client
 
-	testObjs := []runtime.Object{}
+		dataset            *datav1alpha1.Dataset
+		alluxioRuntime     *datav1alpha1.AlluxioRuntime
+		refRuntime         *datav1alpha1.ThinRuntime
+		refDataset         *datav1alpha1.Dataset
+		multipleRefDataset *datav1alpha1.Dataset
+		multipleRefRuntime *datav1alpha1.ThinRuntime
+	)
 
-	var dataset = datav1alpha1.Dataset{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "done",
-			Namespace: "big-data",
-		},
-		Status: datav1alpha1.DatasetStatus{
-			Runtimes: []datav1alpha1.Runtime{
-				{
-					Name:      "done",
-					Namespace: "big-data",
-					Type:      common.AlluxioRuntime,
+	BeforeEach(func() {
+		testScheme = runtime.NewScheme()
+		Expect(v1.AddToScheme(testScheme)).To(Succeed())
+		Expect(datav1alpha1.AddToScheme(testScheme)).To(Succeed())
+		Expect(appsv1.AddToScheme(testScheme)).To(Succeed())
+
+		testObjs = []runtime.Object{}
+
+		dataset = &datav1alpha1.Dataset{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "done",
+				Namespace: "big-data",
+			},
+			Status: datav1alpha1.DatasetStatus{
+				Runtimes: []datav1alpha1.Runtime{
+					{
+						Name:      "done",
+						Namespace: "big-data",
+						Type:      common.AlluxioRuntime,
+					},
 				},
 			},
-		},
-	}
-	var runtime = datav1alpha1.AlluxioRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "done",
-			Namespace: "big-data",
-		},
-	}
+		}
 
-	var refRuntime = datav1alpha1.ThinRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase",
-			Namespace: "fluid",
-		},
-	}
-	var refDataset = datav1alpha1.Dataset{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase",
-			Namespace: "fluid",
-		},
-		Spec: datav1alpha1.DatasetSpec{
-			Mounts: []datav1alpha1.Mount{
-				{
-					MountPoint: "dataset://big-data/done",
+		alluxioRuntime = &datav1alpha1.AlluxioRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "done",
+				Namespace: "big-data",
+			},
+		}
+
+		refRuntime = &datav1alpha1.ThinRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase",
+				Namespace: "fluid",
+			},
+		}
+
+		refDataset = &datav1alpha1.Dataset{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{
+					{
+						MountPoint: "dataset://big-data/done",
+					},
 				},
 			},
-		},
-	}
+		}
 
-	var multipleRefDataset = datav1alpha1.Dataset{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase",
-			Namespace: "fluid-mul",
-		},
-		Spec: datav1alpha1.DatasetSpec{
-			Mounts: []datav1alpha1.Mount{
-				{
-					MountPoint: "dataset://big-data/done",
-				},
-				{
-					MountPoint: "http://big-test/done",
+		multipleRefDataset = &datav1alpha1.Dataset{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase",
+				Namespace: "fluid-mul",
+			},
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{
+					{
+						MountPoint: "dataset://big-data/done",
+					},
+					{
+						MountPoint: "http://big-test/done",
+					},
 				},
 			},
-		},
-	}
+		}
 
-	var multipleRefRuntime = datav1alpha1.ThinRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase",
-			Namespace: "fluid-mul",
-		},
-	}
+		multipleRefRuntime = &datav1alpha1.ThinRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase",
+				Namespace: "fluid-mul",
+			},
+		}
 
-	testObjs = append(testObjs, &dataset, &refDataset, &multipleRefDataset)
-	testObjs = append(testObjs, &runtime, &refRuntime, &multipleRefRuntime)
-	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+		testObjs = append(testObjs, dataset, refDataset, multipleRefDataset)
+		testObjs = append(testObjs, alluxioRuntime, refRuntime, multipleRefRuntime)
+		fakeClient = fake.NewFakeClientWithScheme(testScheme, testObjs...)
+	})
 
-	testcases := []struct {
-		name    string
-		ctx     cruntime.ReconcileRequestContext
-		wantErr bool
-	}{
-		{
-			name: "success",
-			ctx: cruntime.ReconcileRequestContext{
+	Context("when building reference dataset thin engine", func() {
+		It("should succeed with valid reference dataset", func() {
+			ctx := cruntime.ReconcileRequestContext{
 				NamespacedName: types.NamespacedName{
 					Name:      "hbase",
 					Namespace: "fluid",
 				},
-				Client:      client,
+				Client:      fakeClient,
 				Log:         fake.NullLogger(),
 				RuntimeType: common.ThinRuntime,
-				Runtime:     &refRuntime,
-			},
-			wantErr: false,
-		},
-		{
-			name: "dataset-not-ref",
-			ctx: cruntime.ReconcileRequestContext{
+				Runtime:     refRuntime,
+			}
+
+			engine, err := BuildReferenceDatasetThinEngine("success", ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(engine).NotTo(BeNil())
+		})
+
+		It("should fail when dataset is not a reference dataset", func() {
+			ctx := cruntime.ReconcileRequestContext{
 				NamespacedName: types.NamespacedName{
 					Name:      "done",
 					Namespace: "big-data",
 				},
-				Client:      client,
+				Client:      fakeClient,
 				Log:         fake.NullLogger(),
 				RuntimeType: common.ThinRuntime,
-				Runtime:     &runtime,
-			},
-			wantErr: true,
-		},
-		{
-			name: "dataset-with-different-format",
-			ctx: cruntime.ReconcileRequestContext{
+				Runtime:     alluxioRuntime,
+			}
+
+			_, err := BuildReferenceDatasetThinEngine("dataset-not-ref", ctx)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should fail when dataset has multiple mount points with different formats", func() {
+			ctx := cruntime.ReconcileRequestContext{
 				NamespacedName: types.NamespacedName{
 					Name:      "hbase",
 					Namespace: "fluid-mul",
 				},
-				Client:      client,
+				Client:      fakeClient,
 				Log:         fake.NullLogger(),
 				RuntimeType: common.ThinRuntime,
-				Runtime:     &multipleRefRuntime,
-			},
-			wantErr: true,
-		},
-	}
-
-	for _, testcase := range testcases {
-		_, err := BuildReferenceDatasetThinEngine(testcase.name, testcase.ctx)
-		hasError := err != nil
-		if testcase.wantErr != hasError {
-			t.Errorf("expect error %t, get error %v", testcase.wantErr, err)
-		}
-	}
-}
-
-func TestReferenceDatasetEngine_Setup(t *testing.T) {
-	testScheme := runtime.NewScheme()
-	_ = v1.AddToScheme(testScheme)
-	_ = datav1alpha1.AddToScheme(testScheme)
-	_ = appsv1.AddToScheme(testScheme)
-
-	testObjs := []runtime.Object{}
-
-	var dataset = datav1alpha1.Dataset{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "done",
-			Namespace: "big-data",
-		},
-		Status: datav1alpha1.DatasetStatus{
-			Runtimes: []datav1alpha1.Runtime{
-				{
-					Name:      "done",
-					Namespace: "big-data",
-					Type:      common.AlluxioRuntime,
-				},
-			},
-			DatasetRef: []string{
-				"fluid/test",
-			},
-		},
-	}
-	var runtime = datav1alpha1.AlluxioRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "done",
-			Namespace: "big-data",
-		},
-	}
-
-	var refRuntime = datav1alpha1.ThinRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase",
-			Namespace: "fluid",
-		},
-	}
-	var refDataset = datav1alpha1.Dataset{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase",
-			Namespace: "fluid",
-		},
-		Spec: datav1alpha1.DatasetSpec{
-			Mounts: []datav1alpha1.Mount{
-				{
-					MountPoint: "dataset://big-data/done",
-				},
-			},
-		},
-	}
-	var configCM = v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      runtime.Name + "-config",
-			Namespace: runtime.Namespace,
-		},
-		Data: map[string]string{
-			"check.sh": "/bin/sh check",
-		},
-	}
-
-	var fuseDs = appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "done-fuse",
-			Namespace: "big-data",
-		},
-		Spec: appsv1.DaemonSetSpec{},
-	}
-
-	testObjs = append(testObjs, &dataset, &refDataset, &configCM, &runtime, &refRuntime, &fuseDs)
-
-	fakeClient := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-
-	type fields struct {
-		Id                string
-		Client            client.Client
-		Log               logr.Logger
-		name              string
-		namespace         string
-		syncRetryDuration time.Duration
-		timeOfLastSync    time.Time
-		runtimeType       string
-	}
-	tests := []struct {
-		name      string
-		fields    fields
-		ctx       cruntime.ReconcileRequestContext
-		wantReady bool
-		wantErr   bool
-		wantCMs   int
-	}{
-		{
-			name: "setup",
-			fields: fields{
-				Client:    fakeClient,
-				name:      refRuntime.Name,
-				namespace: refRuntime.Namespace,
-			},
-			ctx: cruntime.ReconcileRequestContext{
-				Dataset: &refDataset,
-				Client:  fakeClient,
-			},
-			wantReady: true,
-			wantErr:   false,
-			wantCMs:   1,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			e := &ReferenceDatasetEngine{
-				Id:                tt.fields.Id,
-				Client:            tt.fields.Client,
-				Log:               tt.fields.Log,
-				name:              tt.fields.name,
-				namespace:         tt.fields.namespace,
-				syncRetryDuration: tt.fields.syncRetryDuration,
-				timeOfLastSync:    tt.fields.timeOfLastSync,
-				runtimeType:       tt.fields.runtimeType,
+				Runtime:     multipleRefRuntime,
 			}
-			gotReady, err := e.Setup(tt.ctx)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Setup() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if gotReady != tt.wantReady {
-				t.Errorf("Setup() gotReady = %v, want %v", gotReady, tt.wantReady)
-			}
-			if gotReady {
-				updatedDataset := &datav1alpha1.Dataset{}
-				err := fakeClient.Get(context.TODO(), types.NamespacedName{
-					Namespace: runtime.Namespace, Name: runtime.Name,
-				}, updatedDataset)
-				if err != nil {
-					t.Errorf("Get dataset error %v", err)
-					return
-				}
-				if !utils.ContainsString(updatedDataset.Status.DatasetRef, base.GetDatasetRefName(e.name, e.namespace)) {
-					t.Errorf("Setup() not add dataset field DatasetRef")
-				}
-				cmList := &v1.ConfigMapList{}
-				err = fakeClient.List(context.TODO(), cmList, &client.ListOptions{Namespace: e.namespace})
-				if err != nil {
-					t.Errorf("Get dataset error %v", err)
-					return
-				}
-				items := len(cmList.Items)
-				if items != tt.wantCMs {
-					t.Errorf("copy configmap wrong, expect %d, but got %d", tt.wantCMs, items)
-				}
-			}
+
+			_, err := BuildReferenceDatasetThinEngine("dataset-with-different-format", ctx)
+			Expect(err).To(HaveOccurred())
 		})
-	}
-}
+	})
+})
 
-func TestReferenceDatasetEngine_Shutdown(t *testing.T) {
-	testScheme := runtime.NewScheme()
-	_ = v1.AddToScheme(testScheme)
-	_ = datav1alpha1.AddToScheme(testScheme)
-	_ = appsv1.AddToScheme(testScheme)
+var _ = Describe("ReferenceDatasetEngine Setup", func() {
+	var (
+		testScheme *runtime.Scheme
+		testObjs   []runtime.Object
+		fakeClient client.Client
 
-	testObjs := []runtime.Object{}
+		dataset        *datav1alpha1.Dataset
+		alluxioRuntime *datav1alpha1.AlluxioRuntime
+		refRuntime     *datav1alpha1.ThinRuntime
+		refDataset     *datav1alpha1.Dataset
+		configCM       *v1.ConfigMap
+		fuseDs         *appsv1.DaemonSet
+	)
 
-	var dataset = datav1alpha1.Dataset{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "done",
-			Namespace: "big-data",
-		},
-		Status: datav1alpha1.DatasetStatus{
-			Runtimes: []datav1alpha1.Runtime{
-				{
-					Name:      "done",
-					Namespace: "big-data",
-					Type:      common.AlluxioRuntime,
+	BeforeEach(func() {
+		testScheme = runtime.NewScheme()
+		Expect(v1.AddToScheme(testScheme)).To(Succeed())
+		Expect(datav1alpha1.AddToScheme(testScheme)).To(Succeed())
+		Expect(appsv1.AddToScheme(testScheme)).To(Succeed())
+
+		testObjs = []runtime.Object{}
+
+		dataset = &datav1alpha1.Dataset{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "done",
+				Namespace: "big-data",
+			},
+			Status: datav1alpha1.DatasetStatus{
+				Runtimes: []datav1alpha1.Runtime{
+					{
+						Name:      "done",
+						Namespace: "big-data",
+						Type:      common.AlluxioRuntime,
+					},
+				},
+				DatasetRef: []string{
+					"fluid/test",
 				},
 			},
-			DatasetRef: []string{
-				"fluid/hbase",
-				"fluid/test",
-			},
-		},
-	}
-	var runtime = datav1alpha1.AlluxioRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "done",
-			Namespace: "big-data",
-		},
-	}
+		}
 
-	var refRuntime = datav1alpha1.ThinRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase",
-			Namespace: "fluid",
-		},
-	}
-	var refDataset = datav1alpha1.Dataset{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase",
-			Namespace: "fluid",
-		},
-		Spec: datav1alpha1.DatasetSpec{
-			Mounts: []datav1alpha1.Mount{
-				{
-					MountPoint: "dataset://big-data/done",
+		alluxioRuntime = &datav1alpha1.AlluxioRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "done",
+				Namespace: "big-data",
+			},
+		}
+
+		refRuntime = &datav1alpha1.ThinRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase",
+				Namespace: "fluid",
+			},
+		}
+
+		refDataset = &datav1alpha1.Dataset{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{
+					{
+						MountPoint: "dataset://big-data/done",
+					},
 				},
 			},
-		},
-	}
+		}
 
-	testObjs = append(testObjs, &dataset, &refDataset)
+		configCM = &v1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      alluxioRuntime.Name + "-config",
+				Namespace: alluxioRuntime.Namespace,
+			},
+			Data: map[string]string{
+				"check.sh": "/bin/sh check",
+			},
+		}
 
-	testObjs = append(testObjs, &runtime, &refRuntime)
-	fakeClient := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+		fuseDs = &appsv1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "done-fuse",
+				Namespace: "big-data",
+			},
+			Spec: appsv1.DaemonSetSpec{},
+		}
 
-	type fields struct {
-		Id                string
-		Client            client.Client
-		Log               logr.Logger
-		name              string
-		namespace         string
-		syncRetryDuration time.Duration
-		timeOfLastSync    time.Time
-		runtimeType       string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		wantErr bool
-	}{
-		{
-			name: "shutdown",
-			fields: fields{
+		testObjs = append(testObjs, dataset, refDataset, configCM, alluxioRuntime, refRuntime, fuseDs)
+		fakeClient = fake.NewFakeClientWithScheme(testScheme, testObjs...)
+	})
+
+	Context("when setting up reference dataset engine", func() {
+		It("should setup successfully and update dataset references", func() {
+			engine := &ReferenceDatasetEngine{
+				Id:        "",
 				Client:    fakeClient,
+				Log:       logr.Logger{},
 				name:      refRuntime.Name,
 				namespace: refRuntime.Namespace,
-			},
-			wantErr: false,
-		},
-	}
+			}
 
-	for _, tt := range tests {
-		e := &ReferenceDatasetEngine{
-			Id:                tt.fields.Id,
-			Client:            tt.fields.Client,
-			Log:               tt.fields.Log,
-			name:              tt.fields.name,
-			namespace:         tt.fields.namespace,
-			syncRetryDuration: tt.fields.syncRetryDuration,
-			timeOfLastSync:    tt.fields.timeOfLastSync,
-			runtimeType:       tt.fields.runtimeType,
+			ctx := cruntime.ReconcileRequestContext{
+				Dataset: refDataset,
+				Client:  fakeClient,
+			}
+
+			ready, err := engine.Setup(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ready).To(BeTrue())
+
+			// Verify dataset reference was added
+			updatedDataset := &datav1alpha1.Dataset{}
+			err = fakeClient.Get(context.TODO(), types.NamespacedName{
+				Namespace: alluxioRuntime.Namespace,
+				Name:      alluxioRuntime.Name,
+			}, updatedDataset)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(updatedDataset.Status.DatasetRef).To(ContainElement(base.GetDatasetRefName(engine.name, engine.namespace)))
+
+			// Verify configmap was copied
+			cmList := &v1.ConfigMapList{}
+			err = fakeClient.List(context.TODO(), cmList, &client.ListOptions{Namespace: engine.namespace})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cmList.Items).To(HaveLen(1))
+		})
+	})
+})
+
+var _ = Describe("ReferenceDatasetEngine Shutdown", func() {
+	var (
+		testScheme *runtime.Scheme
+		testObjs   []runtime.Object
+		fakeClient client.Client
+
+		dataset        *datav1alpha1.Dataset
+		alluxioRuntime *datav1alpha1.AlluxioRuntime
+		refRuntime     *datav1alpha1.ThinRuntime
+		refDataset     *datav1alpha1.Dataset
+	)
+
+	BeforeEach(func() {
+		testScheme = runtime.NewScheme()
+		Expect(v1.AddToScheme(testScheme)).To(Succeed())
+		Expect(datav1alpha1.AddToScheme(testScheme)).To(Succeed())
+		Expect(appsv1.AddToScheme(testScheme)).To(Succeed())
+
+		testObjs = []runtime.Object{}
+
+		dataset = &datav1alpha1.Dataset{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "done",
+				Namespace: "big-data",
+			},
+			Status: datav1alpha1.DatasetStatus{
+				Runtimes: []datav1alpha1.Runtime{
+					{
+						Name:      "done",
+						Namespace: "big-data",
+						Type:      common.AlluxioRuntime,
+					},
+				},
+				DatasetRef: []string{
+					"fluid/hbase",
+					"fluid/test",
+				},
+			},
 		}
-		if err := e.Shutdown(); (err != nil) != tt.wantErr {
-			t.Errorf("Shutdown() error = %v, wantErr %v", err, tt.wantErr)
-			return
+
+		alluxioRuntime = &datav1alpha1.AlluxioRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "done",
+				Namespace: "big-data",
+			},
 		}
-		updatedDataset := &datav1alpha1.Dataset{}
-		// physicalRuntimeInfo is calculated in Shutdown
-		err := fakeClient.Get(context.TODO(), types.NamespacedName{
-			Namespace: e.physicalRuntimeInfo.GetNamespace(), Name: e.physicalRuntimeInfo.GetName(),
-		}, updatedDataset)
-		if err != nil {
-			t.Errorf("Get dataset error %v", err)
-			return
+
+		refRuntime = &datav1alpha1.ThinRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase",
+				Namespace: "fluid",
+			},
 		}
-		if utils.ContainsString(updatedDataset.Status.DatasetRef, base.GetDatasetRefName(e.name, e.namespace)) {
-			t.Errorf("Shutdown() not remove dataset field DatasetRef")
+
+		refDataset = &datav1alpha1.Dataset{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.DatasetSpec{
+				Mounts: []datav1alpha1.Mount{
+					{
+						MountPoint: "dataset://big-data/done",
+					},
+				},
+			},
 		}
-	}
-}
+
+		testObjs = append(testObjs, dataset, refDataset)
+		testObjs = append(testObjs, alluxioRuntime, refRuntime)
+		fakeClient = fake.NewFakeClientWithScheme(testScheme, testObjs...)
+	})
+
+	Context("when shutting down reference dataset engine", func() {
+		It("should remove dataset reference successfully", func() {
+			engine := &ReferenceDatasetEngine{
+				Id:        "",
+				Client:    fakeClient,
+				Log:       logr.Logger{},
+				name:      refRuntime.Name,
+				namespace: refRuntime.Namespace,
+			}
+
+			err := engine.Shutdown()
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify dataset reference was removed
+			updatedDataset := &datav1alpha1.Dataset{}
+			err = fakeClient.Get(context.TODO(), types.NamespacedName{
+				Namespace: engine.physicalRuntimeInfo.GetNamespace(),
+				Name:      engine.physicalRuntimeInfo.GetName(),
+			}, updatedDataset)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(updatedDataset.Status.DatasetRef).NotTo(ContainElement(base.GetDatasetRefName(engine.name, engine.namespace)))
+		})
+	})
+})
