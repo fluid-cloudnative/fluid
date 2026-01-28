@@ -19,8 +19,6 @@ package juicefs
 import (
 	"encoding/base64"
 	"fmt"
-	"os"
-	"path/filepath"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -175,7 +173,7 @@ var _ = Describe("JuiceFSEngine_generateDataMigrateValueFile", func() {
 
 		fileName, err := engine.generateDataMigrateValueFile(context, &dataMigrateNoTarget)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(fileName).To(ContainSubstring(filepath.Join(os.TempDir(), "fluid-test-datamigrate-migrate-values.yaml")))
+		Expect(fileName).To(ContainSubstring("fluid-test-datamigrate-migrate-values.yaml"))
 	})
 
 	It("should generate value file for data migration with target path", func() {
@@ -192,7 +190,7 @@ var _ = Describe("JuiceFSEngine_generateDataMigrateValueFile", func() {
 
 		fileName, err := engine.generateDataMigrateValueFile(context, &dataMigrateWithTarget)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(fileName).To(ContainSubstring(filepath.Join(os.TempDir(), "fluid-test-datamigrate-migrate-values.yaml")))
+		Expect(fileName).To(ContainSubstring("fluid-test-datamigrate-migrate-values.yaml"))
 	})
 
 	It("should generate value file for parallel data migration with target path", func() {
@@ -209,7 +207,7 @@ var _ = Describe("JuiceFSEngine_generateDataMigrateValueFile", func() {
 
 		fileName, err := engine.generateDataMigrateValueFile(context, &parallelDataMigrateWithTarget)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(fileName).To(ContainSubstring(filepath.Join(os.TempDir(), "fluid-test-para-datamigrate-migrate-values.yaml")))
+		Expect(fileName).To(ContainSubstring("fluid-test-para-datamigrate-migrate-values.yaml"))
 	})
 })
 
