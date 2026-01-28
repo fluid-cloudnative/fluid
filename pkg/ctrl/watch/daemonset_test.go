@@ -17,9 +17,9 @@ limitations under the License.
 package watch
 
 import (
-	"testing"
-
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,138 +27,318 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
-func TestDaemonSetEventHandler_OnCreateFunc(t *testing.T) {
+var _ = Describe("DaemonSetEventHandler", func() {
+	var (
+		handler               *daemonsetEventHandler
+		fakeRuntimeReconciler *FakeRuntimeReconciler
+	)
 
-	// 1. the Object is RuntimeInterface
-	createEvent := event.CreateEvent{
-		Object: &appsv1.DaemonSet{
-			ObjectMeta: metav1.ObjectMeta{
-				OwnerReferences: []metav1.OwnerReference{
-					{
-						Kind:       datav1alpha1.JindoRuntimeKind,
-						APIVersion: datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version,
-						Controller: ptr.To(true),
+	BeforeEach(func() {
+		handler = &daemonsetEventHandler{}
+		fakeRuntimeReconciler = &FakeRuntimeReconciler{}
+	})
+
+	Describe("onCreateFunc", func() {
+		var createFunc func(e event.CreateEvent) bool
+
+		BeforeEach(func() {
+			createFunc = handler.onCreateFunc(fakeRuntimeReconciler)
+		})
+
+		Context("when the object is a DaemonSet with RuntimeInterface owner", func() {
+			It("should return true and reconcile the event", func() {
+				createEvent := event.CreateEvent{
+					Object: &appsv1.DaemonSet{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "test-daemonset",
+							Namespace: "test-namespace",
+							OwnerReferences: []metav1.OwnerReference{
+								{
+									Kind:       datav1alpha1.JindoRuntimeKind,
+									APIVersion: datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version,
+									Controller: ptr.To(true),
+								},
+							},
+						},
 					},
-				},
-			},
-		},
-	}
-	daemonsetEventHandler := &daemonsetEventHandler{}
+				}
 
-	f := daemonsetEventHandler.onCreateFunc(&FakeRuntimeReconciler{})
-	predicate := f(createEvent)
+				result := createFunc(createEvent)
+				Expect(result).To(BeTrue(), "Expected the event to be reconciled")
+			})
+		})
 
-	if !predicate {
-		t.Errorf("The event %v should be reconciled, but skip.", createEvent)
-	}
-
-	// 2. the Object is not RuntimeInterface
-	createEvent.Object = &corev1.Pod{}
-	predicate = f(createEvent)
-	if predicate {
-		t.Errorf("The event %v should ben't reconciled, but pass.", createEvent)
-	}
-
-	// 3. Skip the runtime which is deleting
-	createEvent = event.CreateEvent{
-		Object: &appsv1.DaemonSet{},
-	}
-	createEvent.Object.SetDeletionTimestamp(&metav1.Time{})
-	predicate = f(createEvent)
-	if predicate {
-		t.Errorf("The event %v should ben't reconciled, but pass.", createEvent)
-	}
-
-}
-
-func TestDaemonSetEventHandler_OnUpdateFunc(t *testing.T) {
-
-	updateRuntimeEvent := event.UpdateEvent{
-		ObjectOld: &appsv1.DaemonSet{
-			ObjectMeta: metav1.ObjectMeta{
-				OwnerReferences: []metav1.OwnerReference{
-					{
-						Kind:       datav1alpha1.JindoRuntimeKind,
-						APIVersion: datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version,
-						Controller: ptr.To(true),
+		Context("when the object is not a DaemonSet", func() {
+			It("should return false and skip the event", func() {
+				createEvent := event.CreateEvent{
+					Object: &corev1.Pod{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "test-pod",
+							Namespace: "test-namespace",
+						},
 					},
-				},
-				ResourceVersion: "123",
-			},
-		},
-		ObjectNew: &appsv1.DaemonSet{
-			ObjectMeta: metav1.ObjectMeta{
-				OwnerReferences: []metav1.OwnerReference{
-					{
-						Kind:       datav1alpha1.JindoRuntimeKind,
-						APIVersion: datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version,
-						Controller: ptr.To(true),
+				}
+
+				result := createFunc(createEvent)
+				Expect(result).To(BeFalse(), "Expected the event to be skipped")
+			})
+		})
+
+		Context("when the object has deletion timestamp set", func() {
+			It("should return false and skip the event", func() {
+				now := metav1.Now()
+				createEvent := event.CreateEvent{
+					Object: &appsv1.DaemonSet{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:              "test-daemonset",
+							Namespace:         "test-namespace",
+							DeletionTimestamp: &now,
+						},
 					},
-				},
-				ResourceVersion: "456",
-			},
-		},
-	}
-	daemonsetEventHandler := &daemonsetEventHandler{}
+				}
 
-	f := daemonsetEventHandler.onUpdateFunc(&FakeRuntimeReconciler{})
-	predicate := f(updateRuntimeEvent)
+				result := createFunc(createEvent)
+				Expect(result).To(BeFalse(), "Expected the event to be skipped when deleting")
+			})
+		})
 
-	// 1. expect the updateEvent is validated
-	if !predicate {
-		t.Errorf("The event %v should be reconciled, but skip.", updateRuntimeEvent)
-	}
+		Context("when the object is not managed by the controller", func() {
+			It("should return false and skip the event", func() {
+				createEvent := event.CreateEvent{
+					Object: &appsv1.DaemonSet{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "test-daemonset",
+							Namespace: "test-namespace",
+							// No owner references - not managed
+						},
+					},
+				}
 
-	// 2. expect the updateEvent is not validated due to the resource version is equal
-	updateRuntimeEvent.ObjectOld.SetResourceVersion("456")
-	predicate = f(updateRuntimeEvent)
-	if predicate {
-		t.Errorf("The event %v should ben't reconciled, but pass.", updateRuntimeEvent)
-	}
+				result := createFunc(createEvent)
+				Expect(result).To(BeFalse(), "Expected the event to be skipped when not managed")
+			})
+		})
+	})
 
-	// 3. expect the updateEvent is not validated due to the object is not kind of runtimeInterface
-	updateRuntimeEvent.ObjectOld = &corev1.Pod{}
-	updateRuntimeEvent.ObjectNew = &corev1.Pod{}
-	predicate = f(updateRuntimeEvent)
-	if predicate {
-		t.Errorf("The event %v should ben't reconciled, but pass.", updateRuntimeEvent)
-	}
+	Describe("onUpdateFunc", func() {
+		var updateFunc func(e event.UpdateEvent) bool
 
-	// 4. expect the updateEvent is not validate due the old Object  is not kind of the runtimeInterface
-	updateRuntimeEvent.ObjectNew = &appsv1.DaemonSet{}
-	predicate = f(updateRuntimeEvent)
-	if predicate {
-		t.Errorf("The event %v should ben't reconciled, but pass.", updateRuntimeEvent)
-	}
-}
+		BeforeEach(func() {
+			updateFunc = handler.onUpdateFunc(fakeRuntimeReconciler)
+		})
 
-func TestDaemonSetEventHandler_OnDeleteFunc(t *testing.T) {
+		Context("when both objects are valid DaemonSets with different resource versions", func() {
+			It("should return true and reconcile the event", func() {
+				updateEvent := event.UpdateEvent{
+					ObjectOld: &appsv1.DaemonSet{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "test-daemonset",
+							Namespace: "test-namespace",
+							OwnerReferences: []metav1.OwnerReference{
+								{
+									Kind:       datav1alpha1.JindoRuntimeKind,
+									APIVersion: datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version,
+									Controller: ptr.To(true),
+								},
+							},
+							ResourceVersion: "123",
+						},
+					},
+					ObjectNew: &appsv1.DaemonSet{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "test-daemonset",
+							Namespace: "test-namespace",
+							OwnerReferences: []metav1.OwnerReference{
+								{
+									Kind:       datav1alpha1.JindoRuntimeKind,
+									APIVersion: datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version,
+									Controller: ptr.To(true),
+								},
+							},
+							ResourceVersion: "456",
+						},
+					},
+				}
 
-	// 1. the Object is RuntimeInterface
-	delRuntimeEvent := event.DeleteEvent{
-		Object: &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					Kind:       datav1alpha1.JindoRuntimeKind,
-					APIVersion: datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version,
-					Controller: ptr.To(true),
-				},
-			},
-		}},
-	}
-	daemonsetEventHandler := &daemonsetEventHandler{}
+				result := updateFunc(updateEvent)
+				Expect(result).To(BeTrue(), "Expected the event to be reconciled")
+			})
+		})
 
-	f := daemonsetEventHandler.onDeleteFunc(&FakeRuntimeReconciler{})
-	predicate := f(delRuntimeEvent)
+		Context("when the new object is not a DaemonSet", func() {
+			It("should return false and skip the event", func() {
+				updateEvent := event.UpdateEvent{
+					ObjectOld: &appsv1.DaemonSet{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123",
+						},
+					},
+					ObjectNew: &corev1.Pod{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "test-pod",
+							Namespace: "test-namespace",
+						},
+					},
+				}
 
-	if !predicate {
-		t.Errorf("The event %v should be reconciled, but skip.", delRuntimeEvent)
-	}
+				result := updateFunc(updateEvent)
+				Expect(result).To(BeFalse(), "Expected the event to be skipped")
+			})
+		})
 
-	// 2. the Object is not RuntimeInterface
-	delRuntimeEvent.Object = &corev1.Pod{}
-	predicate = f(delRuntimeEvent)
-	if predicate {
-		t.Errorf("The event %v should ben't reconciled, but pass.", delRuntimeEvent)
-	}
-}
+		Context("when the new object is not managed by the controller", func() {
+			It("should return false and skip the event", func() {
+				updateEvent := event.UpdateEvent{
+					ObjectOld: &appsv1.DaemonSet{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123",
+						},
+					},
+					ObjectNew: &appsv1.DaemonSet{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:            "test-daemonset",
+							Namespace:       "test-namespace",
+							ResourceVersion: "456",
+							// No owner references - not managed
+						},
+					},
+				}
+
+				result := updateFunc(updateEvent)
+				Expect(result).To(BeFalse(), "Expected the event to be skipped when not managed")
+			})
+		})
+
+		Context("when the old object is not a DaemonSet", func() {
+			It("should return false and skip the event", func() {
+				updateEvent := event.UpdateEvent{
+					ObjectOld: &corev1.Pod{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "test-pod",
+							Namespace: "test-namespace",
+						},
+					},
+					ObjectNew: &appsv1.DaemonSet{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "test-daemonset",
+							Namespace: "test-namespace",
+							OwnerReferences: []metav1.OwnerReference{
+								{
+									Kind:       datav1alpha1.JindoRuntimeKind,
+									APIVersion: datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version,
+									Controller: ptr.To(true),
+								},
+							},
+							ResourceVersion: "456",
+						},
+					},
+				}
+
+				result := updateFunc(updateEvent)
+				Expect(result).To(BeFalse(), "Expected the event to be skipped")
+			})
+		})
+
+		Context("when resource versions are the same", func() {
+			It("should return false and skip the event", func() {
+				updateEvent := event.UpdateEvent{
+					ObjectOld: &appsv1.DaemonSet{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "test-daemonset",
+							Namespace: "test-namespace",
+							OwnerReferences: []metav1.OwnerReference{
+								{
+									Kind:       datav1alpha1.JindoRuntimeKind,
+									APIVersion: datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version,
+									Controller: ptr.To(true),
+								},
+							},
+							ResourceVersion: "456",
+						},
+					},
+					ObjectNew: &appsv1.DaemonSet{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "test-daemonset",
+							Namespace: "test-namespace",
+							OwnerReferences: []metav1.OwnerReference{
+								{
+									Kind:       datav1alpha1.JindoRuntimeKind,
+									APIVersion: datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version,
+									Controller: ptr.To(true),
+								},
+							},
+							ResourceVersion: "456",
+						},
+					},
+				}
+
+				result := updateFunc(updateEvent)
+				Expect(result).To(BeFalse(), "Expected the event to be skipped when resource versions match")
+			})
+		})
+	})
+
+	Describe("onDeleteFunc", func() {
+		var deleteFunc func(e event.DeleteEvent) bool
+
+		BeforeEach(func() {
+			deleteFunc = handler.onDeleteFunc(fakeRuntimeReconciler)
+		})
+
+		Context("when the object is a DaemonSet with RuntimeInterface owner", func() {
+			It("should return true and reconcile the event", func() {
+				deleteEvent := event.DeleteEvent{
+					Object: &appsv1.DaemonSet{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "test-daemonset",
+							Namespace: "test-namespace",
+							OwnerReferences: []metav1.OwnerReference{
+								{
+									Kind:       datav1alpha1.JindoRuntimeKind,
+									APIVersion: datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version,
+									Controller: ptr.To(true),
+								},
+							},
+						},
+					},
+				}
+
+				result := deleteFunc(deleteEvent)
+				Expect(result).To(BeTrue(), "Expected the event to be reconciled")
+			})
+		})
+
+		Context("when the object is not a DaemonSet", func() {
+			It("should return false and skip the event", func() {
+				deleteEvent := event.DeleteEvent{
+					Object: &corev1.Pod{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "test-pod",
+							Namespace: "test-namespace",
+						},
+					},
+				}
+
+				result := deleteFunc(deleteEvent)
+				Expect(result).To(BeFalse(), "Expected the event to be skipped")
+			})
+		})
+
+		Context("when the object is not managed by the controller", func() {
+			It("should return false and skip the event", func() {
+				deleteEvent := event.DeleteEvent{
+					Object: &appsv1.DaemonSet{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "test-daemonset",
+							Namespace: "test-namespace",
+							// No owner references - not managed
+						},
+					},
+				}
+
+				result := deleteFunc(deleteEvent)
+				Expect(result).To(BeFalse(), "Expected the event to be skipped when not managed")
+			})
+		})
+	})
+})
