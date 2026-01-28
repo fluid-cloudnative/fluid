@@ -17,7 +17,8 @@ limitations under the License.
 package goosefs
 
 import (
-	"testing"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -30,65 +31,65 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func TestBuild(t *testing.T) {
-	var namespace = v1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "fluid",
-		},
-	}
-	testObjs := []runtime.Object{}
-	testObjs = append(testObjs, namespace.DeepCopy())
-
-	var dataset = datav1alpha1.Dataset{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase",
-			Namespace: "fluid",
-		},
-	}
-	testObjs = append(testObjs, dataset.DeepCopy())
-
-	var runtime = datav1alpha1.GooseFSRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase",
-			Namespace: "fluid",
-		},
-		Spec: datav1alpha1.GooseFSRuntimeSpec{
-			Master: datav1alpha1.GooseFSCompTemplateSpec{
-				Replicas: 1,
+var _ = Describe("Build", func() {
+	It("should build engine successfully", func() {
+		var namespace = v1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "fluid",
 			},
-			Fuse: datav1alpha1.GooseFSFuseSpec{},
-		},
-		Status: datav1alpha1.RuntimeStatus{
-			CacheStates: map[common.CacheStateName]string{
-				common.Cached: "true",
+		}
+		testObjs := []runtime.Object{}
+		testObjs = append(testObjs, namespace.DeepCopy())
+
+		var dataset = datav1alpha1.Dataset{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase",
+				Namespace: "fluid",
 			},
-		},
-	}
-	testObjs = append(testObjs, runtime.DeepCopy())
+		}
+		testObjs = append(testObjs, dataset.DeepCopy())
 
-	var daemonset = appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase-worker",
-			Namespace: "fluid",
-		},
-	}
-	testObjs = append(testObjs, daemonset.DeepCopy())
-	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+		var goosefsRuntime = datav1alpha1.GooseFSRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.GooseFSRuntimeSpec{
+				Master: datav1alpha1.GooseFSCompTemplateSpec{
+					Replicas: 1,
+				},
+				Fuse: datav1alpha1.GooseFSFuseSpec{},
+			},
+			Status: datav1alpha1.RuntimeStatus{
+				CacheStates: map[common.CacheStateName]string{
+					common.Cached: "true",
+				},
+			},
+		}
+		testObjs = append(testObjs, goosefsRuntime.DeepCopy())
 
-	var ctx = cruntime.ReconcileRequestContext{
-		NamespacedName: types.NamespacedName{
-			Name:      "hbase",
-			Namespace: "fluid",
-		},
-		Client:      client,
-		Log:         fake.NullLogger(),
-		RuntimeType: "goosefs",
-		Runtime:     &runtime,
-	}
+		var daemonset = appsv1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hbase-worker",
+				Namespace: "fluid",
+			},
+		}
+		testObjs = append(testObjs, daemonset.DeepCopy())
+		client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
-	engine, err := Build("testId", ctx)
-	if err != nil || engine == nil {
-		t.Errorf("fail to exec the build function with the eror %v", err)
-	}
+		var ctx = cruntime.ReconcileRequestContext{
+			NamespacedName: types.NamespacedName{
+				Name:      "hbase",
+				Namespace: "fluid",
+			},
+			Client:      client,
+			Log:         fake.NullLogger(),
+			RuntimeType: "goosefs",
+			Runtime:     &goosefsRuntime,
+		}
 
-}
+		engine, err := Build("testId", ctx)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(engine).NotTo(BeNil())
+	})
+})
