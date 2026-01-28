@@ -51,6 +51,8 @@ var _ = Describe("Operate", func() {
 		ctrl      *gomock.Controller
 		operation *mockOperation
 		opStatus  *datav1alpha1.OperationStatus
+		oldSyncRetryDuration string
+		syncRetryDurationSet bool
 	)
 
 	BeforeEach(func() {
@@ -77,7 +79,10 @@ var _ = Describe("Operate", func() {
 
 		ctrl = gomock.NewController(GinkgoT())
 		impl = enginemock.NewMockImplement(ctrl)
+
+		oldSyncRetryDuration, syncRetryDurationSet = os.LookupEnv("FLUID_SYNC_RETRY_DURATION")
 		_ = os.Setenv("FLUID_SYNC_RETRY_DURATION", "0s")
+
 		t = base.NewTemplateEngine(impl, "test-engine", fakeCtx)
 
 		operation = newMockOperation()
@@ -85,6 +90,11 @@ var _ = Describe("Operate", func() {
 	})
 
 	AfterEach(func() {
+		if syncRetryDurationSet {
+			_ = os.Setenv("FLUID_SYNC_RETRY_DURATION", oldSyncRetryDuration)
+		} else {
+			_ = os.Unsetenv("FLUID_SYNC_RETRY_DURATION")
+		}
 		ctrl.Finish()
 	})
 
