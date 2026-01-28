@@ -18,71 +18,48 @@ package security
 
 import (
 	"reflect"
-	"testing"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-func TestFilterCommand(t *testing.T) {
-
-	type testCase struct {
-		name   string
-		input  []string
-		expect []string
-	}
-
-	testCases := []testCase{
-		{
-			name:   "withSensitiveKey",
-			input:  []string{"mount", "fs", "aws.secretKey=xxxxxxxxx"},
-			expect: []string{"mount", "fs", "aws.secretKey=[ redacted ]"},
-		}, {
-			name:   "withOutSensitiveKey",
-			input:  []string{"mount", "fs", "alluxio.underfs.s3.inherit.acl=false"},
-			expect: []string{"mount", "fs", "alluxio.underfs.s3.inherit.acl=false"},
-		}, {
-			name:   "key",
-			input:  []string{"mount", "fs", "alluxio.underfs.s3.inherit.acl=false", "aws.secretKey=xxxxxxxxx"},
-			expect: []string{"mount", "fs", "alluxio.underfs.s3.inherit.acl=false", "aws.secretKey=[ redacted ]"},
+var _ = Describe("FilterCommand", func() {
+	DescribeTable("should filter sensitive keys from command",
+		func(input, expect []string) {
+			got := FilterCommand(input)
+			Expect(reflect.DeepEqual(got, expect)).To(BeTrue())
 		},
-	}
+		Entry("withSensitiveKey",
+			[]string{"mount", "fs", "aws.secretKey=xxxxxxxxx"},
+			[]string{"mount", "fs", "aws.secretKey=[ redacted ]"},
+		),
+		Entry("withOutSensitiveKey",
+			[]string{"mount", "fs", "alluxio.underfs.s3.inherit.acl=false"},
+			[]string{"mount", "fs", "alluxio.underfs.s3.inherit.acl=false"},
+		),
+		Entry("key",
+			[]string{"mount", "fs", "alluxio.underfs.s3.inherit.acl=false", "aws.secretKey=xxxxxxxxx"},
+			[]string{"mount", "fs", "alluxio.underfs.s3.inherit.acl=false", "aws.secretKey=[ redacted ]"},
+		),
+	)
+})
 
-	for _, test := range testCases {
-		got := FilterCommand(test.input)
-		if !reflect.DeepEqual(got, test.expect) {
-			t.Errorf("testcase %s is failed due to expect %v, but got %v", test.name, test.expect, got)
-		}
-	}
-
-}
-
-func TestFilterCommandWithSensitive(t *testing.T) {
-
-	type testCase struct {
-		name      string
-		filterKey string
-		input     []string
-		expect    []string
-	}
-
-	testCases := []testCase{
-		{
-			name:      "NotAddSensitiveKey",
-			filterKey: "test",
-			input:     []string{"mount", "fs", "fs.azure.account.key=xxxxxxxxx"},
-			expect:    []string{"mount", "fs", "fs.azure.account.key=xxxxxxxxx"},
-		}, {
-			name:      "AddSensitiveKey",
-			filterKey: "fs.azure.account.key",
-			input:     []string{"mount", "fs", "fs.azure.account.key=false"},
-			expect:    []string{"mount", "fs", "fs.azure.account.key=[ redacted ]"},
+var _ = Describe("FilterCommandWithSensitive", func() {
+	DescribeTable("should filter custom sensitive keys from command",
+		func(filterKey string, input, expect []string) {
+			UpdateSensitiveKey(filterKey)
+			got := FilterCommand(input)
+			Expect(reflect.DeepEqual(got, expect)).To(BeTrue())
 		},
-	}
-
-	for _, test := range testCases {
-		UpdateSensitiveKey(test.filterKey)
-		got := FilterCommand(test.input)
-		if !reflect.DeepEqual(got, test.expect) {
-			t.Errorf("testcase %s is failed due to expect %v, but got %v", test.name, test.expect, got)
-		}
-	}
-
-}
+		Entry("NotAddSensitiveKey",
+			"test",
+			[]string{"mount", "fs", "fs.azure.account.key=xxxxxxxxx"},
+			[]string{"mount", "fs", "fs.azure.account.key=xxxxxxxxx"},
+		),
+		Entry("AddSensitiveKey",
+			"fs.azure.account.key",
+			[]string{"mount", "fs", "fs.azure.account.key=false"},
+			[]string{"mount", "fs", "fs.azure.account.key=[ redacted ]"},
+		),
+	)
+})
