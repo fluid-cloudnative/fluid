@@ -17,168 +17,194 @@ limitations under the License.
 package goosefs
 
 import (
-	"testing"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	v1 "k8s.io/api/core/v1"
 )
 
-func TestTransformDatasetToVolume(t *testing.T) {
-	var ufsPath = UFSPath{}
-	ufsPath.Name = "test"
-	ufsPath.HostPath = "/mnt/test"
-	ufsPath.ContainerPath = "/underFSStorage/test"
-
-	var ufsPath1 = UFSPath{}
-	ufsPath1.Name = "test"
-	ufsPath1.HostPath = "/mnt/test"
-	ufsPath1.ContainerPath = "/underFSStorage"
-
-	var tests = []struct {
-		runtime *datav1alpha1.GooseFSRuntime
-		dataset *datav1alpha1.Dataset
-		value   *GooseFS
-		expect  UFSPath
-	}{
-		{&datav1alpha1.GooseFSRuntime{}, &datav1alpha1.Dataset{
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "local:///mnt/test",
-					Name:       "test",
-				}},
-			},
-		}, &GooseFS{}, ufsPath},
-		{&datav1alpha1.GooseFSRuntime{}, &datav1alpha1.Dataset{
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "local:///mnt/test",
-					Name:       "test",
-					Path:       "/",
-				}},
-			},
-		}, &GooseFS{}, ufsPath1},
-	}
-	for _, test := range tests {
-		engine := &GooseFSEngine{}
-		engine.transformDatasetToVolume(test.runtime, test.dataset, test.value)
-		if test.value.UFSPaths[0].HostPath != test.expect.HostPath ||
-			test.value.UFSPaths[0].ContainerPath != test.expect.ContainerPath {
-			t.Errorf("expected %v, got %v", test.expect, test.value.UFSPaths[0])
+var _ = Describe("TransformDatasetToVolume", func() {
+	Describe("with local mount", func() {
+		type testCase struct {
+			description    string
+			runtime        *datav1alpha1.GooseFSRuntime
+			dataset        *datav1alpha1.Dataset
+			expectPath     string
+			expectHostPath string
 		}
-	}
-}
 
-func TestTransformDatasetToPVC(t *testing.T) {
-	var ufsVolume = UFSVolume{}
-	ufsVolume.Name = "test"
-	ufsVolume.ContainerPath = "/underFSStorage/test"
+		DescribeTable("should transform dataset to volume correctly",
+			func(tc testCase) {
+				value := &GooseFS{}
+				engine := &GooseFSEngine{}
+				engine.transformDatasetToVolume(tc.runtime, tc.dataset, value)
 
-	var ufsVolume1 = UFSVolume{}
-	ufsVolume1.Name = "test1"
-	ufsVolume1.ContainerPath = "/underFSStorage"
-
-	var ufsVolume2 = UFSVolume{}
-	ufsVolume2.Name = "test2"
-	ufsVolume2.SubPath = "subpath"
-	ufsVolume2.ContainerPath = "/underFSStorage/test2"
-
-	var ufsVolume3 = UFSVolume{}
-	ufsVolume3.Name = "test3"
-	ufsVolume3.SubPath = "subpath"
-	ufsVolume3.ContainerPath = "/underFSStorage"
-
-	var tests = []struct {
-		runtime *datav1alpha1.GooseFSRuntime
-		dataset *datav1alpha1.Dataset
-		value   *GooseFS
-		expect  UFSVolume
-	}{
-		{&datav1alpha1.GooseFSRuntime{}, &datav1alpha1.Dataset{
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "pvc://test",
-					Name:       "test",
-				}},
+				Expect(value.UFSPaths).To(HaveLen(1))
+				Expect(value.UFSPaths[0].HostPath).To(Equal(tc.expectHostPath))
+				Expect(value.UFSPaths[0].ContainerPath).To(Equal(tc.expectPath))
 			},
-		}, &GooseFS{}, ufsVolume},
-		{&datav1alpha1.GooseFSRuntime{}, &datav1alpha1.Dataset{
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "pvc://test1",
-					Name:       "test1",
-					Path:       "/",
-				}},
-			},
-		}, &GooseFS{}, ufsVolume1},
-		{&datav1alpha1.GooseFSRuntime{}, &datav1alpha1.Dataset{
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "pvc://test2/subpath",
-					Name:       "test2",
-				}},
-			},
-		}, &GooseFS{}, ufsVolume2},
-		{&datav1alpha1.GooseFSRuntime{}, &datav1alpha1.Dataset{
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "pvc://test3/subpath",
-					Name:       "test3",
-					Path:       "/",
-				}},
-			},
-		}, &GooseFS{}, ufsVolume3},
-	}
-	for _, test := range tests {
-		engine := &GooseFSEngine{}
-		engine.transformDatasetToVolume(test.runtime, test.dataset, test.value)
-		if test.value.UFSVolumes[0].ContainerPath != test.expect.ContainerPath ||
-			test.value.UFSVolumes[0].Name != test.expect.Name ||
-			test.value.UFSVolumes[0].SubPath != test.expect.SubPath {
-			t.Errorf("expected %v, got %v", test.expect, test.value)
+			Entry("local mount without path",
+				testCase{
+					description: "local mount without path",
+					runtime:     &datav1alpha1.GooseFSRuntime{},
+					dataset: &datav1alpha1.Dataset{
+						Spec: datav1alpha1.DatasetSpec{
+							Mounts: []datav1alpha1.Mount{{
+								MountPoint: "local:///mnt/test",
+								Name:       "test",
+							}},
+						},
+					},
+					expectPath:     "/underFSStorage/test",
+					expectHostPath: "/mnt/test",
+				},
+			),
+			Entry("local mount with root path",
+				testCase{
+					description: "local mount with root path",
+					runtime:     &datav1alpha1.GooseFSRuntime{},
+					dataset: &datav1alpha1.Dataset{
+						Spec: datav1alpha1.DatasetSpec{
+							Mounts: []datav1alpha1.Mount{{
+								MountPoint: "local:///mnt/test",
+								Name:       "test",
+								Path:       "/",
+							}},
+						},
+					},
+					expectPath:     "/underFSStorage",
+					expectHostPath: "/mnt/test",
+				},
+			),
+		)
+	})
+
+	Describe("with PVC mount", func() {
+		type testCase struct {
+			description   string
+			runtime       *datav1alpha1.GooseFSRuntime
+			dataset       *datav1alpha1.Dataset
+			expectName    string
+			expectPath    string
+			expectSubPath string
 		}
-	}
-}
 
-func TestTransformDatasetWithAffinity(t *testing.T) {
-	var ufsPath = UFSPath{}
-	ufsPath.Name = "test"
-	ufsPath.HostPath = "/mnt/test"
-	ufsPath.ContainerPath = "/opt/goosefs/underFSStorage/test"
+		DescribeTable("should transform dataset to PVC correctly",
+			func(tc testCase) {
+				value := &GooseFS{}
+				engine := &GooseFSEngine{}
+				engine.transformDatasetToVolume(tc.runtime, tc.dataset, value)
 
-	var tests = []struct {
-		runtime *datav1alpha1.GooseFSRuntime
-		dataset *datav1alpha1.Dataset
-		value   *GooseFS
-		expect  UFSPath
-	}{
-		{&datav1alpha1.GooseFSRuntime{}, &datav1alpha1.Dataset{
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "local:///mnt/test",
-					Name:       "test",
-				}},
-				NodeAffinity: &datav1alpha1.CacheableNodeAffinity{
-					Required: &v1.NodeSelector{
-						NodeSelectorTerms: []v1.NodeSelectorTerm{
-							{
-								MatchExpressions: []v1.NodeSelectorRequirement{
-									{
-										Operator: v1.NodeSelectorOpIn,
-										Values:   []string{"test-label-value"},
+				Expect(value.UFSVolumes).To(HaveLen(1))
+				Expect(value.UFSVolumes[0].Name).To(Equal(tc.expectName))
+				Expect(value.UFSVolumes[0].ContainerPath).To(Equal(tc.expectPath))
+				Expect(value.UFSVolumes[0].SubPath).To(Equal(tc.expectSubPath))
+			},
+			Entry("PVC mount without path",
+				testCase{
+					description: "PVC mount without path",
+					runtime:     &datav1alpha1.GooseFSRuntime{},
+					dataset: &datav1alpha1.Dataset{
+						Spec: datav1alpha1.DatasetSpec{
+							Mounts: []datav1alpha1.Mount{{
+								MountPoint: "pvc://test",
+								Name:       "test",
+							}},
+						},
+					},
+					expectName:    "test",
+					expectPath:    "/underFSStorage/test",
+					expectSubPath: "",
+				},
+			),
+			Entry("PVC mount with root path",
+				testCase{
+					description: "PVC mount with root path",
+					runtime:     &datav1alpha1.GooseFSRuntime{},
+					dataset: &datav1alpha1.Dataset{
+						Spec: datav1alpha1.DatasetSpec{
+							Mounts: []datav1alpha1.Mount{{
+								MountPoint: "pvc://test1",
+								Name:       "test1",
+								Path:       "/",
+							}},
+						},
+					},
+					expectName:    "test1",
+					expectPath:    "/underFSStorage",
+					expectSubPath: "",
+				},
+			),
+			Entry("PVC mount with subpath",
+				testCase{
+					description: "PVC mount with subpath",
+					runtime:     &datav1alpha1.GooseFSRuntime{},
+					dataset: &datav1alpha1.Dataset{
+						Spec: datav1alpha1.DatasetSpec{
+							Mounts: []datav1alpha1.Mount{{
+								MountPoint: "pvc://test2/subpath",
+								Name:       "test2",
+							}},
+						},
+					},
+					expectName:    "test2",
+					expectPath:    "/underFSStorage/test2",
+					expectSubPath: "subpath",
+				},
+			),
+			Entry("PVC mount with subpath and root path",
+				testCase{
+					description: "PVC mount with subpath and root path",
+					runtime:     &datav1alpha1.GooseFSRuntime{},
+					dataset: &datav1alpha1.Dataset{
+						Spec: datav1alpha1.DatasetSpec{
+							Mounts: []datav1alpha1.Mount{{
+								MountPoint: "pvc://test3/subpath",
+								Name:       "test3",
+								Path:       "/",
+							}},
+						},
+					},
+					expectName:    "test3",
+					expectPath:    "/underFSStorage",
+					expectSubPath: "subpath",
+				},
+			),
+		)
+	})
+
+	Describe("with node affinity", func() {
+		It("should set master affinity from dataset", func() {
+			runtime := &datav1alpha1.GooseFSRuntime{}
+			dataset := &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{{
+						MountPoint: "local:///mnt/test",
+						Name:       "test",
+					}},
+					NodeAffinity: &datav1alpha1.CacheableNodeAffinity{
+						Required: &v1.NodeSelector{
+							NodeSelectorTerms: []v1.NodeSelectorTerm{
+								{
+									MatchExpressions: []v1.NodeSelectorRequirement{
+										{
+											Operator: v1.NodeSelectorOpIn,
+											Values:   []string{"test-label-value"},
+										},
 									},
 								},
 							},
 						},
 					},
 				},
-			},
-		}, &GooseFS{}, ufsPath},
-	}
-	for _, test := range tests {
-		engine := &GooseFSEngine{}
-		engine.transformDatasetToVolume(test.runtime, test.dataset, test.value)
-		if test.value.Master.Affinity.NodeAffinity == nil {
-			t.Error("The master affinity is nil")
-		}
-	}
-}
+			}
+			value := &GooseFS{}
+
+			engine := &GooseFSEngine{}
+			engine.transformDatasetToVolume(runtime, dataset, value)
+
+			Expect(value.Master.Affinity.NodeAffinity).NotTo(BeNil())
+		})
+	})
+})
