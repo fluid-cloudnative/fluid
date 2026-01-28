@@ -32,18 +32,10 @@ var _ = Describe("TransformPermission", func() {
 
 	DescribeTable("should transform permission properties correctly",
 		func(tc testCase) {
-			keys := []string{
-				"goosefs.master.security.impersonation.root.users",
-				"goosefs.master.security.impersonation.root.groups",
-				"goosefs.security.authorization.permission.enabled",
-			}
-
 			engine := &GooseFSEngine{}
 			engine.transformPermission(tc.runtime, tc.value)
 
-			for _, key := range keys {
-				Expect(tc.value.Properties[key]).To(Equal(tc.expect[key]))
-			}
+			Expect(tc.value.Properties).To(Equal(tc.expect))
 		},
 		Entry("default fuse spec",
 			testCase{
