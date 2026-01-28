@@ -17,6 +17,8 @@ limitations under the License.
 package juicefs
 
 import (
+	"context"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	ctrlhelper "github.com/fluid-cloudnative/fluid/pkg/ctrl"
@@ -27,9 +29,10 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	runtimeschema "k8s.io/apimachinery/pkg/runtime"
+	apimachineryruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ = Describe("JuiceFSEngine_ShouldSetupWorkers", func() {
@@ -51,7 +54,7 @@ var _ = Describe("JuiceFSEngine_ShouldSetupWorkers", func() {
 			},
 		}
 
-		s := runtimeschema.NewScheme()
+		s := apimachineryruntime.NewScheme()
 		s.AddKnownTypes(datav1alpha1.GroupVersion, runtime, data)
 		_ = v1.AddToScheme(s)
 
@@ -88,7 +91,7 @@ var _ = Describe("JuiceFSEngine_ShouldSetupWorkers", func() {
 			},
 		}
 
-		s := runtimeschema.NewScheme()
+		s := apimachineryruntime.NewScheme()
 		s.AddKnownTypes(datav1alpha1.GroupVersion, runtime, data)
 		_ = v1.AddToScheme(s)
 
@@ -125,7 +128,7 @@ var _ = Describe("JuiceFSEngine_ShouldSetupWorkers", func() {
 			},
 		}
 
-		s := runtimeschema.NewScheme()
+		s := apimachineryruntime.NewScheme()
 		s.AddKnownTypes(datav1alpha1.GroupVersion, runtime, data)
 		_ = v1.AddToScheme(s)
 
@@ -162,7 +165,7 @@ var _ = Describe("JuiceFSEngine_ShouldSetupWorkers", func() {
 			},
 		}
 
-		s := runtimeschema.NewScheme()
+		s := apimachineryruntime.NewScheme()
 		s.AddKnownTypes(datav1alpha1.GroupVersion, runtime, data)
 		_ = v1.AddToScheme(s)
 
@@ -222,7 +225,7 @@ var _ = Describe("JuiceFSEngine_SetupWorkers", func() {
 			},
 		}
 
-		s := runtimeschema.NewScheme()
+		s := apimachineryruntime.NewScheme()
 		data := &datav1alpha1.Dataset{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test",
@@ -248,7 +251,11 @@ var _ = Describe("JuiceFSEngine_SetupWorkers", func() {
 
 		err = e.SetupWorkers()
 		Expect(err).NotTo(HaveOccurred())
-		Expect(*worker.Spec.Replicas).To(Equal(int32(1)))
+
+		var updatedWorker appsv1.StatefulSet
+		err = mockClient.Get(context.TODO(), client.ObjectKey{Name: "test-worker", Namespace: "fluid"}, &updatedWorker)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(*updatedWorker.Spec.Replicas).To(Equal(int32(1)))
 	})
 })
 
@@ -298,7 +305,7 @@ var _ = Describe("JuiceFSEngine_CheckWorkersReady", func() {
 			},
 		}
 
-		s := runtimeschema.NewScheme()
+		s := apimachineryruntime.NewScheme()
 		s.AddKnownTypes(datav1alpha1.GroupVersion, runtime, data)
 		s.AddKnownTypes(appsv1.SchemeGroupVersion, fuse, worker)
 		_ = v1.AddToScheme(s)
@@ -369,7 +376,7 @@ var _ = Describe("JuiceFSEngine_CheckWorkersReady", func() {
 			},
 		}
 
-		s := runtimeschema.NewScheme()
+		s := apimachineryruntime.NewScheme()
 		s.AddKnownTypes(datav1alpha1.GroupVersion, runtime, data)
 		s.AddKnownTypes(appsv1.SchemeGroupVersion, fuse, worker)
 		_ = v1.AddToScheme(s)
