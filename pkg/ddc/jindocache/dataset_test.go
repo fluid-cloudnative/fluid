@@ -241,7 +241,7 @@ var _ = Describe("Dataset", func() {
 		})
 
 		DescribeTable("updating dataset phase",
-			func(phase datav1alpha1.DatasetPhase, expectedPhase datav1alpha1.DatasetPhase, expectedCacheStates map[common.CacheStateName]string, expectedHCFSStatus *datav1alpha1.HCFSStatus) {
+			func(phase datav1alpha1.DatasetPhase, expectedPhase datav1alpha1.DatasetPhase, expectedCacheStates common.CacheStateList, expectedHCFSStatus *datav1alpha1.HCFSStatus) {
 				err := engine.UpdateDatasetStatus(phase)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -255,7 +255,7 @@ var _ = Describe("Dataset", func() {
 			Entry("with Bound phase",
 				datav1alpha1.BoundDatasetPhase,
 				datav1alpha1.BoundDatasetPhase,
-				map[common.CacheStateName]string{common.Cached: "true"},
+				common.CacheStateList{common.Cached: "true"},
 				&datav1alpha1.HCFSStatus{
 					Endpoint:                    "test Endpoint",
 					UnderlayerFileSystemVersion: "Underlayer HCFS Compatible Version",
@@ -264,7 +264,7 @@ var _ = Describe("Dataset", func() {
 			Entry("with Failed phase",
 				datav1alpha1.FailedDatasetPhase,
 				datav1alpha1.FailedDatasetPhase,
-				map[common.CacheStateName]string{common.Cached: "true"},
+				common.CacheStateList{common.Cached: "true"},
 				&datav1alpha1.HCFSStatus{
 					Endpoint:                    "test Endpoint",
 					UnderlayerFileSystemVersion: "Underlayer HCFS Compatible Version",
@@ -273,7 +273,7 @@ var _ = Describe("Dataset", func() {
 			Entry("with None phase",
 				datav1alpha1.NoneDatasetPhase,
 				datav1alpha1.NoneDatasetPhase,
-				map[common.CacheStateName]string{common.Cached: "true"},
+				common.CacheStateList{common.Cached: "true"},
 				&datav1alpha1.HCFSStatus{
 					Endpoint:                    "test Endpoint",
 					UnderlayerFileSystemVersion: "Underlayer HCFS Compatible Version",
