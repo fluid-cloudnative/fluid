@@ -59,7 +59,7 @@ jobs:
               const maxPRs = 2;
               if (openCount > maxPRs) {
                 const availableSlots = 0;
-                const currentStatus = `${availableSlots}/${maxPRs}`;
+                const currentStatus = `${openCount}/${maxPRs}`;
 
                 const message = `This pull request will be temporarily closed (Current status: ${currentStatus} open slots available). We encourage you to submit a new PR once the quota policy permits future contributions.`;
 
