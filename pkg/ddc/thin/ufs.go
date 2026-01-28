@@ -162,3 +162,11 @@ func (t ThinEngine) updateFusePod() (err error) {
 	}
 	return
 }
+
+func (e *ThinEngine) ShouldSyncDatasetMounts() (should bool, err error) {
+	return false, nil
+}
+
+func (e *ThinEngine) SyncDatasetMounts() (err error) {
+	return nil
+}

@@ -21,6 +21,8 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindocache/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // ShouldCheckUFS checks if it requires checking UFS
@@ -111,9 +113,54 @@ func (e *JindoCacheEngine) GetReportSummary() (summary string, err error) {
 
 // JindoCacheEngine hasn't support UpdateOnUFSChange
 func (e *JindoCacheEngine) ShouldUpdateUFS() (ufsToUpdate *utils.UFSToUpdate) {
+	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+	if err != nil {
+		e.Log.Error(err, "failed to get dataset when checking ufs change")
+		return
+	}
+
+	runtime, err := utils.GetJindoRuntime(e.Client, e.name, e.namespace)
+	if err != nil {
+		e.Log.Error(err, "failed to get runtime when checking ufs change")
+		return
+	}
+
+	masterPodName, masterContainerName := e.getMasterPodInfo()
+	masterPod, err := kubeclient.GetPodByName(e.Client, masterPodName, e.namespace)
+	if err != nil || masterPod == nil {
+		e.Log.Error(err, "failed to get master pod when checking ufs change")
+		return
+	}
+
+	var startedAt *metav1.Time
+	for _, containerStatus := range masterPod.Status.ContainerStatuses {
+		if containerStatus.Name == masterContainerName {
+			if containerStatus.State.Running == nil {
+				e.Log.Error(fmt.Errorf("container is not running"), "checkIfRemountRequired", "master pod", masterPodName)
+				return
+			} else {
+				startedAt = &containerStatus.State.Running.StartedAt
+				break
+			}
+		}
+	}
+
+	needReprepareUFS := runtime.Status.MountTime == nil || (startedAt != nil && runtime.Status.MountTime.Before(startedAt))
+	if needReprepareUFS {
+		ufsToUpdate = utils.NewUFSToUpdate(dataset)
+	}
+
 	return
 }
 
 func (e *JindoCacheEngine) UpdateOnUFSChange(*utils.UFSToUpdate) (updateReady bool, err error) {
 	return
+}
+
+func (e *JindoCacheEngine) ShouldSyncDatasetMounts() (should bool, err error) {
+	return false, nil
+}
+
+func (e *JindoCacheEngine) SyncDatasetMounts() (err error) {
+	return nil
 }

@@ -96,6 +96,13 @@ type Implement interface {
 	// PrepareUFS prepare the mounts and metadata if it's not ready
 	PrepareUFS() (err error)
 
+	// ShouldSyncDatasetMounts check if we need to sync the dataset mounts
+	ShouldSyncDatasetMounts() (should bool, err error)
+
+	// SyncDatasetMounts sync the mounts in Dataset's spec into cache engine.
+	// The func should not only handle mounts changes in the Dataset's spec, but also handle cases where a cache engine crashes unexpectedly and lose some mount info.
+	SyncDatasetMounts() (err error)
+
 	// ShouldUpdateUFS check if we need to update the ufs and return all ufs to update
 	// If the ufs have changed and the engine supports add/remove mount points dynamically,
 	// then we need to UpdateOnUFSChange

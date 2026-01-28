@@ -52,3 +52,11 @@ func (j JuiceFSEngine) ShouldUpdateUFS() (ufsToUpdate *utils.UFSToUpdate) {
 func (j JuiceFSEngine) UpdateOnUFSChange(ufsToUpdate *utils.UFSToUpdate) (ready bool, err error) {
 	return true, nil
 }
+
+func (e *JuiceFSEngine) ShouldSyncDatasetMounts() (should bool, err error) {
+	return false, nil
+}
+
+func (e *JuiceFSEngine) SyncDatasetMounts() (err error) {
+	return nil
+}
