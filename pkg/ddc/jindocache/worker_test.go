@@ -17,6 +17,8 @@ limitations under the License.
 package jindocache
 
 import (
+	"context"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -28,9 +30,10 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	runtimeschema "k8s.io/apimachinery/pkg/runtime"
+	apimachineryruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	ctrlhelper "github.com/fluid-cloudnative/fluid/pkg/ctrl"
 )
@@ -60,7 +63,7 @@ var _ = Describe("JindoCacheEngine", func() {
 
 	Describe("SetupWorkers", func() {
 		It("should setup workers in exclusive mode with node", func() {
-			runtimeObjs := []runtimeschema.Object{}
+			runtimeObjs := []apimachineryruntime.Object{}
 			nodeInput := &v1.Node{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-node-spark",
@@ -89,7 +92,7 @@ var _ = Describe("JindoCacheEngine", func() {
 				},
 			}
 
-			s := runtimeschema.NewScheme()
+			s := apimachineryruntime.NewScheme()
 			data := &datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "spark",
@@ -116,11 +119,15 @@ var _ = Describe("JindoCacheEngine", func() {
 			e.Helper = ctrlhelper.BuildHelper(runtimeInfoSpark, mockClient, e.Log)
 			err := e.SetupWorkers()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(*worker.Spec.Replicas).To(Equal(int32(1)))
+
+			var updatedWorker appsv1.StatefulSet
+			err = mockClient.Get(context.TODO(), client.ObjectKey{Name: "spark-jindofs-worker", Namespace: "big-data"}, &updatedWorker)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(*updatedWorker.Spec.Replicas).To(Equal(int32(1)))
 		})
 
 		It("should setup workers in share mode without node", func() {
-			runtimeObjs := []runtimeschema.Object{}
+			runtimeObjs := []apimachineryruntime.Object{}
 
 			worker := &appsv1.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{
@@ -143,7 +150,7 @@ var _ = Describe("JindoCacheEngine", func() {
 				},
 			}
 
-			s := runtimeschema.NewScheme()
+			s := apimachineryruntime.NewScheme()
 			data := &datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "hadoop",
@@ -170,14 +177,18 @@ var _ = Describe("JindoCacheEngine", func() {
 			e.Helper = ctrlhelper.BuildHelper(runtimeInfoHadoop, mockClient, e.Log)
 			err := e.SetupWorkers()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(*worker.Spec.Replicas).To(Equal(int32(1)))
+
+			var updatedWorker appsv1.StatefulSet
+			err = mockClient.Get(context.TODO(), client.ObjectKey{Name: "hadoop-jindofs-worker", Namespace: "big-data"}, &updatedWorker)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(*updatedWorker.Spec.Replicas).To(Equal(int32(1)))
 		})
 	})
 
 	Describe("ShouldSetupWorkers", func() {
 		DescribeTable("should determine if workers need setup",
 			func(name, namespace string, runtime *datav1alpha1.JindoRuntime, wantShould bool) {
-				runtimeObjs := []runtimeschema.Object{}
+				runtimeObjs := []apimachineryruntime.Object{}
 				data := &datav1alpha1.Dataset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      name,
@@ -185,7 +196,7 @@ var _ = Describe("JindoCacheEngine", func() {
 					},
 				}
 
-				s := runtimeschema.NewScheme()
+				s := apimachineryruntime.NewScheme()
 				s.AddKnownTypes(datav1alpha1.GroupVersion, runtime)
 				s.AddKnownTypes(datav1alpha1.GroupVersion, data)
 				_ = v1.AddToScheme(s)
@@ -281,7 +292,7 @@ var _ = Describe("JindoCacheEngine", func() {
 				},
 			}
 
-			runtimeObjs := []runtimeschema.Object{}
+			runtimeObjs := []apimachineryruntime.Object{}
 			data := &datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "spark",
@@ -289,7 +300,7 @@ var _ = Describe("JindoCacheEngine", func() {
 				},
 			}
 
-			s := runtimeschema.NewScheme()
+			s := apimachineryruntime.NewScheme()
 			s.AddKnownTypes(datav1alpha1.GroupVersion, runtime)
 			s.AddKnownTypes(datav1alpha1.GroupVersion, data)
 			s.AddKnownTypes(appsv1.SchemeGroupVersion, worker)
@@ -351,7 +362,7 @@ var _ = Describe("JindoCacheEngine", func() {
 				},
 			}
 
-			runtimeObjs := []runtimeschema.Object{}
+			runtimeObjs := []apimachineryruntime.Object{}
 			data := &datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "hbase",
@@ -359,7 +370,7 @@ var _ = Describe("JindoCacheEngine", func() {
 				},
 			}
 
-			s := runtimeschema.NewScheme()
+			s := apimachineryruntime.NewScheme()
 			s.AddKnownTypes(datav1alpha1.GroupVersion, runtime)
 			s.AddKnownTypes(datav1alpha1.GroupVersion, data)
 			s.AddKnownTypes(appsv1.SchemeGroupVersion, worker)
