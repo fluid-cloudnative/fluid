@@ -247,7 +247,7 @@ var _ = Describe("JindoFSxEngine Dataset Operations", func() {
 				err = fakeClient.List(context.TODO(), &datasets)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(datasets.Items[0].Status.Phase).To(Equal(expectedPhase))
-				Expect(datasets.Items[0].Status.CacheStates).To(Equal(map[common.CacheStateName]string{
+				Expect(datasets.Items[0].Status.CacheStates).To(Equal(common.CacheStateList{
 					common.Cached: "true",
 				}))
 				Expect(datasets.Items[0].Status.HCFSStatus).To(Equal(&datav1alpha1.HCFSStatus{
