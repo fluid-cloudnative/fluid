@@ -1,4 +1,4 @@
-package alluxio_test
+package alluxio
 
 import (
 	"testing"
