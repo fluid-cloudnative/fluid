@@ -3,10 +3,11 @@ package kubeclient
 import (
 	"context"
 	"math/rand"
-	"reflect"
 	"strconv"
-	"testing"
 	"time"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -18,8 +19,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// testScheme is kept as package-level variable for backwards compatibility with other test files
 var (
 	testScheme *runtime.Scheme
 )
@@ -32,627 +35,362 @@ func init() {
 	_ = batchv1.AddToScheme(testScheme)
 }
 
-func TestGetPVCNamesFromPod(t *testing.T) {
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	pod := corev1.Pod{}
-	var pvcNamesWant []string
-	for i := 1; i <= 30; i++ {
-		switch r.Intn(4) {
-		case 0:
-			pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
-				Name: "volume" + strconv.Itoa(i),
-				VolumeSource: corev1.VolumeSource{
-					HostPath: &corev1.HostPathVolumeSource{
-						Path: "/tmp/data" + strconv.Itoa(i),
-					},
-				},
-			})
-		case 1:
-			pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
-				Name: "volume" + strconv.Itoa(i),
-				VolumeSource: corev1.VolumeSource{
-					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-						ClaimName: "pvc" + strconv.Itoa(i),
-						ReadOnly:  true,
-					},
-				},
-			})
-			pvcNamesWant = append(pvcNamesWant, "pvc"+strconv.Itoa(i))
-		case 2:
-			pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
-				Name: "volume" + strconv.Itoa(i),
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			})
-		case 3:
-			pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
-				Name: "volume" + strconv.Itoa(i),
-				VolumeSource: corev1.VolumeSource{
-					NFS: &corev1.NFSVolumeSource{
-						Server:   "172.0.0." + strconv.Itoa(i),
-						Path:     "/data" + strconv.Itoa(i),
-						ReadOnly: true,
-					},
-				},
-			})
-		}
-	}
-	pvcNames := GetPVCNamesFromPod(&pod)
-
-	if !reflect.DeepEqual(pvcNames, pvcNamesWant) {
-		t.Errorf("the result of GetPVCNamesFromPod is not right")
-	}
-
-}
-
-func TestIsCompletePod(t *testing.T) {
-	namespace := "default"
-	pods := []*corev1.Pod{{ObjectMeta: metav1.ObjectMeta{Name: "pod1",
-		Namespace: namespace},
-		Spec: corev1.PodSpec{},
-		Status: corev1.PodStatus{
-			Phase: corev1.PodRunning,
-		},
-	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "pod2",
-			Namespace: namespace},
-		Spec: corev1.PodSpec{},
-		Status: corev1.PodStatus{
-			Phase: corev1.PodSucceeded,
-		},
-	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "pod3",
-			Namespace: namespace},
-		Spec: corev1.PodSpec{},
-		Status: corev1.PodStatus{
-			Phase: corev1.PodFailed,
-		},
-	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "pod4",
-			Namespace:         namespace,
-			DeletionTimestamp: &metav1.Time{Time: time.Now()},
-			Finalizers:        []string{"test.finalizer"},
-		},
-		Spec: corev1.PodSpec{},
-	}}
-
-	type args struct {
-		name      string
-		namespace string
-	}
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		{
-			name: "Pod doesn't exist",
-			args: args{
-				name:      "notExist",
-				namespace: namespace,
-			},
-			want: false,
-		},
-		{
-			name: "Pod is running",
-			args: args{
-				name:      "pod1",
-				namespace: namespace,
-			},
-			want: false,
-		},
-		{
-			name: "Pod is succeed",
-			args: args{
-				name:      "pod2",
-				namespace: namespace,
-			},
-			want: true,
-		},
-		{
-			name: "Pod is failed",
-			args: args{
-				name:      "pod3",
-				namespace: namespace,
-			},
-			want: true,
-		},
-		{
-			name: "Pod's deletion timestamp not nil",
-			args: args{
-				name:      "pod4",
-				namespace: namespace,
-			},
-			want: true,
-		},
-	}
-
-	testPods := []runtime.Object{}
-
-	for _, pod := range pods {
-		testPods = append(testPods, pod.DeepCopy())
-	}
-
-	client := fake.NewFakeClientWithScheme(testScheme, testPods...)
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var pod corev1.Pod
-			var podToTest *corev1.Pod
-			key := types.NamespacedName{
-				Namespace: tt.args.namespace,
-				Name:      tt.args.name,
-			}
-			_ = client.Get(context.TODO(), key, &pod)
-			// if err != nil {
-			// 	t.Errorf("testcase %v IsCompletePod() got err: %v", tt.name, err.Error())
-			// }
-			if len(pod.Name) == 0 {
-				podToTest = nil
-			} else {
-				podToTest = &pod
-			}
-
-			if got := IsCompletePod(podToTest); got != tt.want {
-				t.Errorf("testcase %v IsCompletePod() = %v, want %v, pod %v", tt.name, got, tt.want, pod)
-			}
-		})
-	}
-}
-
-func TestGetPodByName(t *testing.T) {
-	namespace := "default"
-	pods := []*corev1.Pod{{ObjectMeta: metav1.ObjectMeta{Name: "pod1",
-		Namespace: namespace},
-		Spec: corev1.PodSpec{},
-		Status: corev1.PodStatus{
-			Phase: corev1.PodRunning,
-		},
-	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "pod2",
-			Namespace: namespace},
-		Spec: corev1.PodSpec{},
-		Status: corev1.PodStatus{
-			Phase: corev1.PodSucceeded,
-		},
-	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "pod3",
-			Namespace: namespace},
-		Spec: corev1.PodSpec{},
-		Status: corev1.PodStatus{
-			Phase: corev1.PodFailed,
-		},
-	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "pod4",
-			Namespace:         namespace,
-			DeletionTimestamp: &metav1.Time{Time: time.Now()},
-			Finalizers:        []string{"test.finalizer"},
-		},
-		Spec: corev1.PodSpec{},
-	}}
-
-	testPods := []runtime.Object{}
-
-	for _, pod := range pods {
-		testPods = append(testPods, pod.DeepCopy())
-	}
-
-	client := fake.NewFakeClientWithScheme(testScheme, testPods...)
-
-	type args struct {
-		name      string
-		namespace string
-	}
-	tests := []struct {
-		name string
-		args args
-		want *corev1.Pod
-	}{
-		{
-			name: "Pod doesn't exist",
-			args: args{
-				name:      "notExist",
-				namespace: namespace,
-			},
-			want: nil,
-		},
-		{
-			name: "Pod is running",
-			args: args{
-				name:      "pod1",
-				namespace: namespace,
-			},
-			want: &corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta{Name: "pod1",
-					Namespace: namespace},
-				Spec: corev1.PodSpec{},
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			pod, _ := GetPodByName(client, tt.args.name, tt.args.namespace)
-			if tt.want == nil {
-				if pod != nil {
-					t.Errorf("testcase %v GetPodByName() = %v, want %v", tt.name, pod, tt.want)
-				}
-			} else {
-				if pod == nil {
-					t.Errorf("testcase %v GetPodByName() = %v, want %v", tt.name, pod, tt.want)
-				} else if pod.Name != tt.args.name || pod.Namespace != tt.args.namespace {
-					t.Errorf("testcase %v GetPodByName() = %v, want %v", tt.name, pod, tt.want)
+var _ = Describe("Pod Utilities", func() {
+	Describe("GetPVCNamesFromPod", func() {
+		It("should extract PVC names from pod volumes", func() {
+			r := rand.New(rand.NewSource(time.Now().UnixNano()))
+			pod := corev1.Pod{}
+			var pvcNamesWant []string
+			for i := 1; i <= 30; i++ {
+				switch r.Intn(4) {
+				case 0:
+					pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
+						Name: "volume" + strconv.Itoa(i),
+						VolumeSource: corev1.VolumeSource{
+							HostPath: &corev1.HostPathVolumeSource{
+								Path: "/tmp/data" + strconv.Itoa(i),
+							},
+						},
+					})
+				case 1:
+					pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
+						Name: "volume" + strconv.Itoa(i),
+						VolumeSource: corev1.VolumeSource{
+							PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+								ClaimName: "pvc" + strconv.Itoa(i),
+								ReadOnly:  true,
+							},
+						},
+					})
+					pvcNamesWant = append(pvcNamesWant, "pvc"+strconv.Itoa(i))
+				case 2:
+					pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
+						Name: "volume" + strconv.Itoa(i),
+						VolumeSource: corev1.VolumeSource{
+							EmptyDir: &corev1.EmptyDirVolumeSource{},
+						},
+					})
+				case 3:
+					pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
+						Name: "volume" + strconv.Itoa(i),
+						VolumeSource: corev1.VolumeSource{
+							NFS: &corev1.NFSVolumeSource{
+								Server:   "172.0.0." + strconv.Itoa(i),
+								Path:     "/data" + strconv.Itoa(i),
+								ReadOnly: true,
+							},
+						},
+					})
 				}
 			}
-
+			pvcNames := GetPVCNamesFromPod(&pod)
+			Expect(pvcNames).To(Equal(pvcNamesWant))
 		})
-	}
-}
+	})
 
-func TestIsSucceededPod(t *testing.T) {
-	namespace := "default"
-	pods := []*corev1.Pod{{ObjectMeta: metav1.ObjectMeta{Name: "runningPod",
-		Namespace: namespace},
-		Spec: corev1.PodSpec{},
-		Status: corev1.PodStatus{
-			Phase: corev1.PodRunning,
-		},
-	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "succeedPod",
-			Namespace: namespace},
-		Spec: corev1.PodSpec{},
-		Status: corev1.PodStatus{
-			Phase: corev1.PodSucceeded,
-		},
-	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "failedPod",
-			Namespace: namespace},
-		Spec: corev1.PodSpec{},
-		Status: corev1.PodStatus{
-			Phase: corev1.PodFailed,
-		},
-	}}
-	type args struct {
-		pod *corev1.Pod
-	}
-	type testcase struct {
-		name string
-		args args
-		want bool
-	}
+	Describe("IsCompletePod", func() {
+		var (
+			namespace  string
+			pods       []*corev1.Pod
+			fakeClient client.Client
+		)
 
-	tests := []testcase{}
-
-	for _, pod := range pods {
-		tests = append(tests, testcase{
-			name: pod.Name,
-			args: args{
-				pod: pod,
-			},
-		})
-	}
-
-	tests[0].want = false
-	tests[1].want = true
-	tests[2].want = false
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := IsSucceededPod(tt.args.pod); got != tt.want {
-				t.Errorf("testcase %v IsSucceededPod() = %v, want %v", tt.name, got, tt.want)
-			}
-		})
-	}
-}
-
-func TestIsFailedPod(t *testing.T) {
-	namespace := "default"
-	pods := []*corev1.Pod{{ObjectMeta: metav1.ObjectMeta{Name: "runningPod",
-		Namespace: namespace},
-		Spec: corev1.PodSpec{},
-		Status: corev1.PodStatus{
-			Phase: corev1.PodRunning,
-		},
-	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "succeedPod",
-			Namespace: namespace},
-		Spec: corev1.PodSpec{},
-		Status: corev1.PodStatus{
-			Phase: corev1.PodSucceeded,
-		},
-	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "failedPod",
-			Namespace: namespace},
-		Spec: corev1.PodSpec{},
-		Status: corev1.PodStatus{
-			Phase: corev1.PodFailed,
-		},
-	}}
-	type args struct {
-		pod *corev1.Pod
-	}
-	type testcase struct {
-		name string
-		args args
-		want bool
-	}
-
-	tests := []testcase{}
-
-	for _, pod := range pods {
-		tests = append(tests, testcase{
-			name: pod.Name,
-			args: args{
-				pod: pod,
-			},
-		})
-	}
-
-	tests[0].want = false
-	tests[1].want = false
-	tests[2].want = true
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := IsFailedPod(tt.args.pod); got != tt.want {
-				t.Errorf("testcase %v IsFailedPod() = %v, want %v", tt.name, got, tt.want)
-			}
-		})
-	}
-}
-
-func TestIsRunningAndReady(t *testing.T) {
-
-	namespace := "default"
-	pods := []*corev1.Pod{{ObjectMeta: metav1.ObjectMeta{Name: "runningPod",
-		Namespace: namespace},
-		Spec: corev1.PodSpec{},
-		Status: corev1.PodStatus{
-			Phase: corev1.PodRunning,
-			Conditions: []corev1.PodCondition{
+		BeforeEach(func() {
+			namespace = "default"
+			pods = []*corev1.Pod{
 				{
-					Type:   corev1.PodReady,
-					Status: corev1.ConditionTrue,
+					ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: namespace},
+					Spec:       corev1.PodSpec{},
+					Status:     corev1.PodStatus{Phase: corev1.PodRunning},
 				},
-			},
-		},
-	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "succeedPod",
-			Namespace: namespace},
-		Spec: corev1.PodSpec{},
-		Status: corev1.PodStatus{
-			Phase: corev1.PodSucceeded,
-		},
-	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "failedPod",
-			Namespace: namespace},
-		Spec: corev1.PodSpec{},
-		Status: corev1.PodStatus{
-			Phase: corev1.PodFailed,
-		},
-	}}
-	type args struct {
-		pod *corev1.Pod
-	}
-	type testcase struct {
-		name      string
-		args      args
-		isRunning bool
-	}
-
-	tests := []testcase{}
-
-	for _, pod := range pods {
-		tests = append(tests, testcase{
-			name: pod.Name,
-			args: args{
-				pod: pod,
-			},
-		})
-	}
-
-	tests[0].isRunning = true
-	tests[1].isRunning = false
-	tests[2].isRunning = false
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := isRunningAndReady(tt.args.pod); got != tt.isRunning {
-				t.Errorf("testcase %v isRunningAndReady() = %v, want %v", tt.name, got, tt.isRunning)
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "pod2", Namespace: namespace},
+					Spec:       corev1.PodSpec{},
+					Status:     corev1.PodStatus{Phase: corev1.PodSucceeded},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "pod3", Namespace: namespace},
+					Spec:       corev1.PodSpec{},
+					Status:     corev1.PodStatus{Phase: corev1.PodFailed},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:              "pod4",
+						Namespace:         namespace,
+						DeletionTimestamp: &metav1.Time{Time: time.Now()},
+						Finalizers:        []string{"test.finalizer"},
+					},
+					Spec: corev1.PodSpec{},
+				},
 			}
-		})
-	}
-}
 
-func TestMergeNodeSelectorAndNodeAffinity(t *testing.T) {
-	type args struct {
-		nodeSelector map[string]string
-		podAffinity  *corev1.Affinity
-	}
-	tests := []struct {
-		name string
-		args args
-		want *corev1.NodeAffinity
-	}{
-		{
-			name: "pod affinity nil",
-			args: args{},
-			want: &corev1.NodeAffinity{RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-				NodeSelectorTerms: []corev1.NodeSelectorTerm{},
-			}},
-		},
-		{
-			name: "node affinity in pod nil",
-			args: args{
-				podAffinity: &corev1.Affinity{},
+			testPods := []runtime.Object{}
+			for _, pod := range pods {
+				testPods = append(testPods, pod.DeepCopy())
+			}
+			fakeClient = fake.NewFakeClientWithScheme(testScheme, testPods...)
+		})
+
+		type testCase struct {
+			name      string
+			namespace string
+			want      bool
+		}
+
+		DescribeTable("should correctly identify complete pods",
+			func(tc testCase) {
+				var pod corev1.Pod
+				var podToTest *corev1.Pod
+				key := types.NamespacedName{
+					Namespace: tc.namespace,
+					Name:      tc.name,
+				}
+				_ = fakeClient.Get(context.TODO(), key, &pod)
+				if len(pod.Name) == 0 {
+					podToTest = nil
+				} else {
+					podToTest = &pod
+				}
+				Expect(IsCompletePod(podToTest)).To(Equal(tc.want))
 			},
-			want: &corev1.NodeAffinity{RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-				NodeSelectorTerms: []corev1.NodeSelectorTerm{},
-			}},
-		},
-		{
-			name: "node affinity in pod is empty",
-			args: args{
+			Entry("Pod doesn't exist", testCase{name: "notExist", namespace: "default", want: false}),
+			Entry("Pod is running", testCase{name: "pod1", namespace: "default", want: false}),
+			Entry("Pod is succeed", testCase{name: "pod2", namespace: "default", want: true}),
+			Entry("Pod is failed", testCase{name: "pod3", namespace: "default", want: true}),
+			Entry("Pod's deletion timestamp not nil", testCase{name: "pod4", namespace: "default", want: true}),
+		)
+	})
+
+	Describe("GetPodByName", func() {
+		var (
+			namespace  string
+			fakeClient client.Client
+		)
+
+		BeforeEach(func() {
+			namespace = "default"
+			pods := []*corev1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: namespace},
+					Spec:       corev1.PodSpec{},
+					Status:     corev1.PodStatus{Phase: corev1.PodRunning},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "pod2", Namespace: namespace},
+					Spec:       corev1.PodSpec{},
+					Status:     corev1.PodStatus{Phase: corev1.PodSucceeded},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "pod3", Namespace: namespace},
+					Spec:       corev1.PodSpec{},
+					Status:     corev1.PodStatus{Phase: corev1.PodFailed},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:              "pod4",
+						Namespace:         namespace,
+						DeletionTimestamp: &metav1.Time{Time: time.Now()},
+						Finalizers:        []string{"test.finalizer"},
+					},
+					Spec: corev1.PodSpec{},
+				},
+			}
+
+			testPods := []runtime.Object{}
+			for _, pod := range pods {
+				testPods = append(testPods, pod.DeepCopy())
+			}
+			fakeClient = fake.NewFakeClientWithScheme(testScheme, testPods...)
+		})
+
+		It("should return nil for non-existent pod", func() {
+			pod, _ := GetPodByName(fakeClient, "notExist", namespace)
+			Expect(pod).To(BeNil())
+		})
+
+		It("should return pod for existing pod", func() {
+			pod, _ := GetPodByName(fakeClient, "pod1", namespace)
+			Expect(pod).NotTo(BeNil())
+			Expect(pod.Name).To(Equal("pod1"))
+			Expect(pod.Namespace).To(Equal(namespace))
+		})
+	})
+
+	Describe("IsSucceededPod", func() {
+		DescribeTable("should correctly identify succeeded pods",
+			func(phase corev1.PodPhase, want bool) {
+				pod := &corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{Name: "testPod", Namespace: "default"},
+					Spec:       corev1.PodSpec{},
+					Status:     corev1.PodStatus{Phase: phase},
+				}
+				Expect(IsSucceededPod(pod)).To(Equal(want))
+			},
+			Entry("running pod", corev1.PodRunning, false),
+			Entry("succeeded pod", corev1.PodSucceeded, true),
+			Entry("failed pod", corev1.PodFailed, false),
+		)
+	})
+
+	Describe("IsFailedPod", func() {
+		DescribeTable("should correctly identify failed pods",
+			func(phase corev1.PodPhase, want bool) {
+				pod := &corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{Name: "testPod", Namespace: "default"},
+					Spec:       corev1.PodSpec{},
+					Status:     corev1.PodStatus{Phase: phase},
+				}
+				Expect(IsFailedPod(pod)).To(Equal(want))
+			},
+			Entry("running pod", corev1.PodRunning, false),
+			Entry("succeeded pod", corev1.PodSucceeded, false),
+			Entry("failed pod", corev1.PodFailed, true),
+		)
+	})
+
+	Describe("isRunningAndReady", func() {
+		DescribeTable("should correctly identify running and ready pods",
+			func(phase corev1.PodPhase, conditions []corev1.PodCondition, want bool) {
+				pod := &corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{Name: "testPod", Namespace: "default"},
+					Spec:       corev1.PodSpec{},
+					Status:     corev1.PodStatus{Phase: phase, Conditions: conditions},
+				}
+				Expect(isRunningAndReady(pod)).To(Equal(want))
+			},
+			Entry("running and ready pod", corev1.PodRunning, []corev1.PodCondition{
+				{Type: corev1.PodReady, Status: corev1.ConditionTrue},
+			}, true),
+			Entry("succeeded pod", corev1.PodSucceeded, nil, false),
+			Entry("failed pod", corev1.PodFailed, nil, false),
+		)
+	})
+
+	Describe("MergeNodeSelectorAndNodeAffinity", func() {
+		type testCase struct {
+			nodeSelector map[string]string
+			podAffinity  *corev1.Affinity
+			want         *corev1.NodeAffinity
+		}
+
+		DescribeTable("should correctly merge node selector and node affinity",
+			func(tc testCase) {
+				nodeAffinity := MergeNodeSelectorAndNodeAffinity(tc.nodeSelector, tc.podAffinity)
+				Expect(nodeAffinity).To(Equal(tc.want))
+			},
+			Entry("pod affinity nil", testCase{
+				nodeSelector: nil,
+				podAffinity:  nil,
+				want: &corev1.NodeAffinity{RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+					NodeSelectorTerms: []corev1.NodeSelectorTerm{},
+				}},
+			}),
+			Entry("node affinity in pod nil", testCase{
+				nodeSelector: nil,
+				podAffinity:  &corev1.Affinity{},
+				want: &corev1.NodeAffinity{RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+					NodeSelectorTerms: []corev1.NodeSelectorTerm{},
+				}},
+			}),
+			Entry("node affinity in pod is empty", testCase{
+				nodeSelector: nil,
 				podAffinity: &corev1.Affinity{
 					NodeAffinity: &corev1.NodeAffinity{},
 				},
-			},
-			want: &corev1.NodeAffinity{RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-				NodeSelectorTerms: []corev1.NodeSelectorTerm{},
-			}},
-		},
-		{
-			name: "no exist node affinity",
-			args: args{
-				nodeSelector: map[string]string{
-					"a": "b",
-				},
+				want: &corev1.NodeAffinity{RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+					NodeSelectorTerms: []corev1.NodeSelectorTerm{},
+				}},
+			}),
+			Entry("no exist node affinity with preferred scheduling", testCase{
+				nodeSelector: map[string]string{"a": "b"},
 				podAffinity: &corev1.Affinity{
 					NodeAffinity: &corev1.NodeAffinity{
 						PreferredDuringSchedulingIgnoredDuringExecution: []corev1.PreferredSchedulingTerm{
 							{
 								Preference: corev1.NodeSelectorTerm{
 									MatchExpressions: []corev1.NodeSelectorRequirement{
-										{
-											Key:      "c",
-											Operator: corev1.NodeSelectorOpIn,
-											Values:   []string{"d"},
-										},
+										{Key: "c", Operator: corev1.NodeSelectorOpIn, Values: []string{"d"}},
 									},
 								},
 							},
 						},
 					},
 				},
-			},
-			want: &corev1.NodeAffinity{
-				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-					NodeSelectorTerms: []corev1.NodeSelectorTerm{
+				want: &corev1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+						NodeSelectorTerms: []corev1.NodeSelectorTerm{
+							{
+								MatchExpressions: []corev1.NodeSelectorRequirement{
+									{Key: "a", Operator: corev1.NodeSelectorOpIn, Values: []string{"b"}},
+								},
+							},
+						},
+					},
+					PreferredDuringSchedulingIgnoredDuringExecution: []corev1.PreferredSchedulingTerm{
 						{
-							MatchExpressions: []corev1.NodeSelectorRequirement{
-								{
-									Key:      "a",
-									Operator: corev1.NodeSelectorOpIn,
-									Values:   []string{"b"},
+							Preference: corev1.NodeSelectorTerm{
+								MatchExpressions: []corev1.NodeSelectorRequirement{
+									{Key: "c", Operator: corev1.NodeSelectorOpIn, Values: []string{"d"}},
 								},
 							},
 						},
 					},
 				},
-				PreferredDuringSchedulingIgnoredDuringExecution: []corev1.PreferredSchedulingTerm{
-					{
-						Preference: corev1.NodeSelectorTerm{
-							MatchExpressions: []corev1.NodeSelectorRequirement{
-								{
-									Key:      "c",
-									Operator: corev1.NodeSelectorOpIn,
-									Values:   []string{"d"},
+			}),
+			Entry("no exist node affinity simple", testCase{
+				nodeSelector: map[string]string{"a": "b"},
+				podAffinity:  nil,
+				want: &corev1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+						NodeSelectorTerms: []corev1.NodeSelectorTerm{
+							{
+								MatchExpressions: []corev1.NodeSelectorRequirement{
+									{Key: "a", Operator: corev1.NodeSelectorOpIn, Values: []string{"b"}},
 								},
 							},
 						},
 					},
 				},
-			},
-		},
-		{
-			name: "no exist node affinity",
-			args: args{
-				nodeSelector: map[string]string{
-					"a": "b",
-				},
-			},
-			want: &corev1.NodeAffinity{
-				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-					NodeSelectorTerms: []corev1.NodeSelectorTerm{
-						{
-							MatchExpressions: []corev1.NodeSelectorRequirement{
-								{
-									Key:      "a",
-									Operator: corev1.NodeSelectorOpIn,
-									Values:   []string{"b"},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			name: "exist node affinity",
-			args: args{
-				nodeSelector: map[string]string{
-					"a": "b",
-				},
+			}),
+			Entry("exist node affinity", testCase{
+				nodeSelector: map[string]string{"a": "b"},
 				podAffinity: &corev1.Affinity{
 					NodeAffinity: &corev1.NodeAffinity{
 						RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
 							NodeSelectorTerms: []corev1.NodeSelectorTerm{
 								{
 									MatchExpressions: []corev1.NodeSelectorRequirement{
-										{
-											Key:      "c",
-											Operator: corev1.NodeSelectorOpIn,
-											Values:   []string{"d"},
-										},
+										{Key: "c", Operator: corev1.NodeSelectorOpIn, Values: []string{"d"}},
 									},
 								},
 								{
 									MatchExpressions: []corev1.NodeSelectorRequirement{
-										{
-											Key:      "e",
-											Operator: corev1.NodeSelectorOpIn,
-											Values:   []string{"f"},
-										},
+										{Key: "e", Operator: corev1.NodeSelectorOpIn, Values: []string{"f"}},
 									},
 								},
 							},
 						},
 					},
 				},
-			},
-			want: &corev1.NodeAffinity{
-				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-					NodeSelectorTerms: []corev1.NodeSelectorTerm{
-						{
-							MatchExpressions: []corev1.NodeSelectorRequirement{
-								{
-									Key:      "c",
-									Operator: corev1.NodeSelectorOpIn,
-									Values:   []string{"d"},
-								},
-								{
-									Key:      "a",
-									Operator: corev1.NodeSelectorOpIn,
-									Values:   []string{"b"},
+				want: &corev1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+						NodeSelectorTerms: []corev1.NodeSelectorTerm{
+							{
+								MatchExpressions: []corev1.NodeSelectorRequirement{
+									{Key: "c", Operator: corev1.NodeSelectorOpIn, Values: []string{"d"}},
+									{Key: "a", Operator: corev1.NodeSelectorOpIn, Values: []string{"b"}},
 								},
 							},
-						},
-						{
-							MatchExpressions: []corev1.NodeSelectorRequirement{
-								{
-									Key:      "e",
-									Operator: corev1.NodeSelectorOpIn,
-									Values:   []string{"f"},
-								},
-								{
-									Key:      "a",
-									Operator: corev1.NodeSelectorOpIn,
-									Values:   []string{"b"},
+							{
+								MatchExpressions: []corev1.NodeSelectorRequirement{
+									{Key: "e", Operator: corev1.NodeSelectorOpIn, Values: []string{"f"}},
+									{Key: "a", Operator: corev1.NodeSelectorOpIn, Values: []string{"b"}},
 								},
 							},
 						},
 					},
 				},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			nodeAffinity := MergeNodeSelectorAndNodeAffinity(tt.args.nodeSelector, tt.args.podAffinity)
-			if !reflect.DeepEqual(nodeAffinity, tt.want) {
-				t.Errorf("testcase %v IsFailedPod() = %v, want %v", tt.name, nodeAffinity, tt.want)
-			}
-		})
-	}
-}
+			}),
+		)
+	})
+})
