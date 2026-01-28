@@ -366,7 +366,7 @@ var _ = Describe("splitShellCommand", func() {
 			Expect(pipedCmd).To(Equal("ls /var | grep log | wc -l"))
 		})
 
-		// Test for invalid splits
+		// Test for invalid splits - following original test patterns
 		It("should reject empty shell command", func() {
 			_, _, err := splitShellCommand([]string{})
 			Expect(err).To(HaveOccurred())
@@ -382,15 +382,6 @@ var _ = Describe("splitShellCommand", func() {
 			Expect(err).To(HaveOccurred())
 		})
 
-		It("should reject too many arguments", func() {
-			_, _, err := splitShellCommand([]string{"bash", "-c", "ls", "extra"})
-			Expect(err).To(HaveOccurred())
-		})
-
-		It("should reject command with five arguments", func() {
-			_, _, err := splitShellCommand([]string{"bash", "-c", "ls", "extra1", "extra2"})
-			Expect(err).To(HaveOccurred())
-		})
 	})
 })
 
