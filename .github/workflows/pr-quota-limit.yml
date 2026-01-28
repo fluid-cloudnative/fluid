@@ -55,8 +55,8 @@ jobs:
 
               console.log(`User ${prAuthor} has ${openCount} open PR(s)`);
 
-              // Check if exceeds quota (10 PRs max)
-              const maxPRs = 10;
+              // Check if exceeds quota (2 PRs max)
+              const maxPRs = 2;
               if (openCount > maxPRs) {
                 const availableSlots = 0;
                 const currentStatus = `${availableSlots}/${maxPRs}`;
