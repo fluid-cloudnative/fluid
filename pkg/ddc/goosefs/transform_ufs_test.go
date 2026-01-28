@@ -24,10 +24,9 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-var _ = Describe("TransformDatasetToVolume", func() {
+var _ = Describe("TransformDatasetToVolume", Label("pkg.ddc.goosefs.transform_ufs_test.go"), func() {
 	Describe("with local mount", func() {
 		type testCase struct {
-			description    string
 			runtime        *datav1alpha1.GooseFSRuntime
 			dataset        *datav1alpha1.Dataset
 			expectPath     string
@@ -46,8 +45,7 @@ var _ = Describe("TransformDatasetToVolume", func() {
 			},
 			Entry("local mount without path",
 				testCase{
-					description: "local mount without path",
-					runtime:     &datav1alpha1.GooseFSRuntime{},
+					runtime: &datav1alpha1.GooseFSRuntime{},
 					dataset: &datav1alpha1.Dataset{
 						Spec: datav1alpha1.DatasetSpec{
 							Mounts: []datav1alpha1.Mount{{
@@ -62,8 +60,7 @@ var _ = Describe("TransformDatasetToVolume", func() {
 			),
 			Entry("local mount with root path",
 				testCase{
-					description: "local mount with root path",
-					runtime:     &datav1alpha1.GooseFSRuntime{},
+					runtime: &datav1alpha1.GooseFSRuntime{},
 					dataset: &datav1alpha1.Dataset{
 						Spec: datav1alpha1.DatasetSpec{
 							Mounts: []datav1alpha1.Mount{{
@@ -82,7 +79,6 @@ var _ = Describe("TransformDatasetToVolume", func() {
 
 	Describe("with PVC mount", func() {
 		type testCase struct {
-			description   string
 			runtime       *datav1alpha1.GooseFSRuntime
 			dataset       *datav1alpha1.Dataset
 			expectName    string
@@ -103,8 +99,7 @@ var _ = Describe("TransformDatasetToVolume", func() {
 			},
 			Entry("PVC mount without path",
 				testCase{
-					description: "PVC mount without path",
-					runtime:     &datav1alpha1.GooseFSRuntime{},
+					runtime: &datav1alpha1.GooseFSRuntime{},
 					dataset: &datav1alpha1.Dataset{
 						Spec: datav1alpha1.DatasetSpec{
 							Mounts: []datav1alpha1.Mount{{
@@ -120,8 +115,7 @@ var _ = Describe("TransformDatasetToVolume", func() {
 			),
 			Entry("PVC mount with root path",
 				testCase{
-					description: "PVC mount with root path",
-					runtime:     &datav1alpha1.GooseFSRuntime{},
+					runtime: &datav1alpha1.GooseFSRuntime{},
 					dataset: &datav1alpha1.Dataset{
 						Spec: datav1alpha1.DatasetSpec{
 							Mounts: []datav1alpha1.Mount{{
@@ -138,8 +132,7 @@ var _ = Describe("TransformDatasetToVolume", func() {
 			),
 			Entry("PVC mount with subpath",
 				testCase{
-					description: "PVC mount with subpath",
-					runtime:     &datav1alpha1.GooseFSRuntime{},
+					runtime: &datav1alpha1.GooseFSRuntime{},
 					dataset: &datav1alpha1.Dataset{
 						Spec: datav1alpha1.DatasetSpec{
 							Mounts: []datav1alpha1.Mount{{
@@ -155,8 +148,7 @@ var _ = Describe("TransformDatasetToVolume", func() {
 			),
 			Entry("PVC mount with subpath and root path",
 				testCase{
-					description: "PVC mount with subpath and root path",
-					runtime:     &datav1alpha1.GooseFSRuntime{},
+					runtime: &datav1alpha1.GooseFSRuntime{},
 					dataset: &datav1alpha1.Dataset{
 						Spec: datav1alpha1.DatasetSpec{
 							Mounts: []datav1alpha1.Mount{{
