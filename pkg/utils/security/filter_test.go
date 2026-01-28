@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Fluid Author.
+Copyright 2023 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@ limitations under the License.
 package security
 
 import (
-	"reflect"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -27,7 +25,7 @@ var _ = Describe("FilterCommand", func() {
 	DescribeTable("should filter sensitive keys from command",
 		func(input, expect []string) {
 			got := FilterCommand(input)
-			Expect(reflect.DeepEqual(got, expect)).To(BeTrue())
+			Expect(got).To(Equal(expect))
 		},
 		Entry("withSensitiveKey",
 			[]string{"mount", "fs", "aws.secretKey=xxxxxxxxx"},
@@ -48,8 +46,12 @@ var _ = Describe("FilterCommandWithSensitive", func() {
 	DescribeTable("should filter custom sensitive keys from command",
 		func(filterKey string, input, expect []string) {
 			UpdateSensitiveKey(filterKey)
+			DeferCleanup(func() {
+				// Reset by removing the added key
+				delete(sensitiveKeys, filterKey)
+			})
 			got := FilterCommand(input)
-			Expect(reflect.DeepEqual(got, expect)).To(BeTrue())
+			Expect(got).To(Equal(expect))
 		},
 		Entry("NotAddSensitiveKey",
 			"test",
