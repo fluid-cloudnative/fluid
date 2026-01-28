@@ -20,247 +20,108 @@ import (
 	"fmt"
 	"os/exec"
 	"reflect"
-	"testing"
 
 	"github.com/agiledragon/gomonkey/v2"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-func TestCheckCommandArgs(t *testing.T) {
-	type args struct {
-		arg []string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "Test with illegal arguments",
-			args: args{
-				arg: []string{"ls", "|", "grep go"},
+var _ = Describe("cmdguard", func() {
+	Describe("checkCommandArgs", func() {
+		DescribeTable("argument validation",
+			func(arg []string, wantErr bool) {
+				err := checkCommandArgs(arg...)
+				if wantErr {
+					Expect(err).To(HaveOccurred())
+				} else {
+					Expect(err).NotTo(HaveOccurred())
+				}
 			},
-			wantErr: true,
-		},
-		{
-			name: "Test with legal arguments",
-			args: args{
-				arg: []string{"ls"},
+			Entry("illegal arguments", []string{"ls", "|", "grep go"}, true),
+			Entry("legal arguments", []string{"ls"}, false),
+			Entry("illegal redirection", []string{"echo test > /dev/null"}, true),
+		)
+	})
+
+	Describe("Command", func() {
+		DescribeTable("command creation",
+			func(name string, arg []string, wantCmd *exec.Cmd, wantErr bool) {
+				cmd, err := Command(name, arg...)
+				if wantErr {
+					Expect(err).To(HaveOccurred())
+					Expect(cmd).To(BeNil())
+				} else {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(reflect.DeepEqual(cmd, wantCmd)).To(BeTrue())
+				}
 			},
-			wantErr: false,
-		}, {
-			name: "Test with legal arguments2",
-			args: args{
-				arg: []string{"echo test > /dev/null"},
-			},
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := checkCommandArgs(tt.args.arg...); (err != nil) != tt.wantErr {
-				t.Errorf("checkCommandArgs() error = %v, wantErr %v", err, tt.wantErr)
+			Entry("Allowed path list", "kubectl", []string{"create", "configmap"}, exec.Command("kubectl", "create", "configmap"), false),
+			Entry("Valid command arguments", "echo", []string{"Hello", "World"}, exec.Command("echo", "Hello", "World"), false),
+			Entry("Invalid command arguments", "echo", []string{"Hello", "World&"}, nil, true),
+			Entry("Valid shell command", "bash", []string{"-c", "echo hello world"}, exec.Command("bash", "-c", "echo hello world"), false),
+			Entry("Invalid shell command", "sh", []string{"/entrypoint.sh"}, nil, true),
+			Entry("Valid shell pipeline command", "sh", []string{"-c", "ls -lh | grep -c test"}, exec.Command("sh", "-c", "ls -lh | grep -c test"), false),
+			Entry("Invalid shell pipeline command (invalid pipelined command)", "bash", []string{"-c", "du -sh ./ | xargs echo"}, nil, true),
+			Entry("Invalid shell pipeline command (invalid first command)", "bash", []string{"-c", "echo hello | grep hello"}, nil, true),
+			Entry("Invalid shell pipeline command (illegal sequence)", "bash", []string{"-c", "ls -lh $(cat myfile) | grep hello"}, nil, true),
+		)
+	})
+
+	Describe("buildPathList", func() {
+		var (
+			patches *gomonkey.Patches
+		)
+		AfterEach(func() {
+			if patches != nil {
+				patches.Reset()
 			}
 		})
-	}
-}
-
-func TestCommand(t *testing.T) {
-	type args struct {
-		name string
-		arg  []string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantCmd *exec.Cmd
-		wantErr bool
-	}{
-		{
-			name: "Allowed path list",
-			args: args{
-				name: "kubectl",
-				arg:  []string{"create", "configmap"},
-			},
-			wantCmd: exec.Command("kubectl", "create", "configmap"),
-			wantErr: false,
-		}, {
-			name: "Valid command arguments",
-			args: args{
-				name: "echo",
-				arg:  []string{"Hello", "World"},
-			},
-			wantCmd: exec.Command("echo", "Hello", "World"),
-			wantErr: false,
-		},
-		{
-			name: "Invalid command arguments",
-			args: args{
-				name: "echo",
-				arg:  []string{"Hello", "World&"},
-			},
-			wantCmd: nil,
-			wantErr: true,
-		},
-		{
-			name: "Valid shell command",
-			args: args{
-				name: "bash",
-				arg:  []string{"-c", "echo hello world"},
-			},
-			wantCmd: exec.Command("bash", "-c", "echo hello world"),
-			wantErr: false,
-		},
-		{
-			name: "Invalid shell command",
-			args: args{
-				name: "sh",
-				arg:  []string{"/entrypoint.sh"},
-			},
-			wantCmd: nil,
-			wantErr: true,
-		},
-		{
-			name: "Valid shell pipeline command",
-			args: args{
-				name: "sh",
-				arg:  []string{"-c", "ls -lh | grep -c test"},
-			},
-			wantCmd: exec.Command("sh", "-c", "ls -lh | grep -c test"),
-			wantErr: false,
-		},
-		{
-			name: "Invalid shell pipeline command (invalid pipelined command)",
-			args: args{
-				name: "bash",
-				arg:  []string{"-c", "du -sh ./ | xargs echo"},
-			},
-			wantCmd: nil,
-			wantErr: true,
-		},
-		{
-			name: "Invalid shell pipeline command (invalid first command)",
-			args: args{
-				name: "bash",
-				arg:  []string{"-c", "echo hello | grep hello"},
-			},
-			wantCmd: nil,
-			wantErr: true,
-		},
-		{
-			name: "Invalid shell pipeline command (illegal sequence)",
-			args: args{
-				name: "bash",
-				arg:  []string{"-c", "ls -lh $(cat myfile) | grep hello"},
-			},
-			wantCmd: nil,
-			wantErr: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cmd, err := Command(tt.args.name, tt.args.arg...)
-			if (err != nil) != tt.wantErr {
-				t.Fatalf("Command() error = %v, wantErr %v", err, tt.wantErr)
-				return
+		It("should add found path for kubectl", func() {
+			mockLookpathFunc := func(file string) (string, error) {
+				return "/path/to/" + file, nil
 			}
-			if err != nil {
-				return
-			}
-
-			if !reflect.DeepEqual(tt.wantCmd, cmd) {
-				t.Fatalf("Command() = %v, want %v", cmd, tt.wantCmd)
-			}
-
-			// tt.wantCmd = exec.Command(tt.args.name, tt.args.arg...)
-			// if !reflect.DeepEqual(tt.wantCmd.Args, cmd.Args) {
-			// 	t.Errorf("SimpleCommand() = %v, want %v", tt.args.arg, cmd.Args)
-			// }
-			// if !reflect.DeepEqual(tt.wantCmd.Path, cmd.Path) {
-			// 	t.Errorf("SimpleCommand() = %v, want %v", tt.args.arg, cmd.Args)
-			// }
+			patches = gomonkey.ApplyFunc(exec.LookPath, mockLookpathFunc)
+			got := buildPathList(map[string]bool{"kubectl": true})
+			Expect(got).To(Equal(map[string]bool{"kubectl": true, "/path/to/kubectl": true}))
 		})
-	}
-}
-
-func Test_buildPathList(t *testing.T) {
-	type args struct {
-		pathList map[string]bool
-	}
-	tests := []struct {
-		name             string
-		args             args
-		mockLookpathFunc func(file string) (string, error)
-		want             map[string]bool
-	}{
-		{
-			name: "Test with command 'kubectl'",
-			args: args{
-				pathList: map[string]bool{"kubectl": true},
-			},
-			mockLookpathFunc: func(file string) (string, error) {
-				return "/path/to/" + file, nil // Mocked path
-			},
-			want: map[string]bool{"kubectl": true, "/path/to/kubectl": true}, // assuming '/path/to/kubectl' is the path of the 'kubectl' command
-		},
-		{
-			name: "Test with nonexistent command",
-			args: args{
-				pathList: map[string]bool{"nonexistent": true},
-			}, mockLookpathFunc: func(file string) (string, error) {
+		It("should not add path for nonexistent command", func() {
+			mockLookpathFunc := func(file string) (string, error) {
 				return "", fmt.Errorf("Failed to find path")
-			},
-			want: map[string]bool{"nonexistent": true}, // as 'nonexistent' command does not exist, so the result should be same as initial
-		},
-		{
-			name: "Test with full path command",
-			args: args{
-				pathList: map[string]bool{"/usr/local/bin/kubectl": true},
-			},
-			mockLookpathFunc: func(file string) (string, error) {
-				return "/path/to/" + file, nil // Mocked path
-			},
-			want: map[string]bool{"/usr/local/bin/kubectl": true}, // since '/usr/local/bin/kubectl' command already has full path, so the result should be same as initial
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			patches := gomonkey.ApplyFunc(exec.LookPath, tt.mockLookpathFunc)
-			got := buildPathList(tt.args.pathList)
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("buildPathList() = %v, want %v", got, tt.want)
 			}
-			patches.Reset()
+			patches = gomonkey.ApplyFunc(exec.LookPath, mockLookpathFunc)
+			got := buildPathList(map[string]bool{"nonexistent": true})
+			Expect(got).To(Equal(map[string]bool{"nonexistent": true}))
 		})
-	}
-}
-
-func TestValidateCommandSlice(t *testing.T) {
-	type args struct {
-		commandSlice []string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{name: "allowed path list", args: args{[]string{"kubectl", "create", "foobar"}}, wantErr: false},
-		{name: "valid command args", args: args{[]string{"echo", "hello"}}, wantErr: false},
-		{name: "invalid command args", args: args{[]string{"echo", "$MYENV"}}, wantErr: true},
-		{name: "valid shell command", args: args{[]string{"sh", "-c", "echo test"}}, wantErr: false},
-		{name: "invalid shell command", args: args{[]string{"sh", "-c", "echo $MYENV"}}, wantErr: true},
-		{name: "invalid shell command", args: args{[]string{"sh", "myscript.sh"}}, wantErr: true},
-		{name: "valid shell piped command", args: args{[]string{"bash", "-c", "ls -lh ./ | wc -l"}}, wantErr: false},
-		{name: "invalid shell piped command(invalid pipe command)", args: args{[]string{"bash", "-c", "ls -lh ./ | xargs echo"}}, wantErr: true},
-		{name: "invalid shell piped command(invalid first command)", args: args{[]string{"bash", "-c", "echo foobar | grep foo"}}, wantErr: true},
-		{name: "invalid shell piped command(illegal sequence)", args: args{[]string{"bash", "-c", "du -sh ./ | grep $(foo) | wc -l"}}, wantErr: true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := ValidateCommandSlice(tt.args.commandSlice); (err != nil) != tt.wantErr {
-				t.Errorf("ValidateCommandSlice() error = %v, wantErr %v", err, tt.wantErr)
+		It("should keep full path command as is", func() {
+			mockLookpathFunc := func(file string) (string, error) {
+				return "/path/to/" + file, nil
 			}
+			patches = gomonkey.ApplyFunc(exec.LookPath, mockLookpathFunc)
+			got := buildPathList(map[string]bool{"/usr/local/bin/kubectl": true})
+			Expect(got).To(Equal(map[string]bool{"/usr/local/bin/kubectl": true}))
 		})
-	}
-}
+	})
+
+	Describe("ValidateCommandSlice", func() {
+		DescribeTable("command slice validation",
+			func(commandSlice []string, wantErr bool) {
+				err := ValidateCommandSlice(commandSlice)
+				if wantErr {
+					Expect(err).To(HaveOccurred())
+				} else {
+					Expect(err).NotTo(HaveOccurred())
+				}
+			},
+			Entry("allowed path list", []string{"kubectl", "create", "foobar"}, false),
+			Entry("valid command args", []string{"echo", "hello"}, false),
+			Entry("invalid command args", []string{"echo", "$MYENV"}, true),
+			Entry("valid shell command", []string{"sh", "-c", "echo test"}, false),
+			Entry("invalid shell command", []string{"sh", "-c", "echo $MYENV"}, true),
+			Entry("invalid shell command", []string{"sh", "myscript.sh"}, true),
+			Entry("valid shell piped command", []string{"bash", "-c", "ls -lh ./ | wc -l"}, false),
+			Entry("invalid shell piped command(invalid pipe command)", []string{"bash", "-c", "ls -lh ./ | xargs echo"}, true),
+			Entry("invalid shell piped command(invalid first command)", []string{"bash", "-c", "echo foobar | grep foo"}, true),
+			Entry("invalid shell piped command(illegal sequence)", []string{"bash", "-c", "du -sh ./ | grep $(foo) | wc -l"}, true),
+		)
+	})
+})
