@@ -2,93 +2,131 @@ package utils
 
 import (
 	"reflect"
-	"testing"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 )
 
-func TestGeEnvsDifference(t *testing.T) {
-	env1 := corev1.EnvVar{Name: "env1"}
-	env2 := corev1.EnvVar{Name: "env2"}
-	env3 := corev1.EnvVar{Name: "env3"}
-	env4 := corev1.EnvVar{Name: "env4"}
+var _ = Describe("GetEnvsDifference", func() {
+	validateResult := func(result, expected []corev1.EnvVar) {
+		Expect(result).To(HaveLen(len(expected)))
 
-	tests := []struct {
-		name     string
-		base     []corev1.EnvVar
-		filter   []corev1.EnvVar
-		expected []corev1.EnvVar
-	}{
-		{
-			name:     "nil_envs",
-			base:     []corev1.EnvVar{},
-			filter:   []corev1.EnvVar{},
-			expected: []corev1.EnvVar{},
-		},
-		{
-			name:     "test base envs are nil",
-			base:     []corev1.EnvVar{},
-			filter:   []corev1.EnvVar{env1, env2},
-			expected: []corev1.EnvVar{},
-		},
-		{
-			name:     "test exclude envs are nil",
-			base:     []corev1.EnvVar{env1, env2},
-			filter:   []corev1.EnvVar{},
-			expected: []corev1.EnvVar{env1, env2},
-		},
-		{
-			name:     "test base envs are same with exclude envs",
-			base:     []corev1.EnvVar{env1, env2},
-			filter:   []corev1.EnvVar{env1, env2},
-			expected: []corev1.EnvVar{},
-		},
-		{
-			name:     "test base envs includes all exclude envs",
-			base:     []corev1.EnvVar{env1, env2, env3, env4},
-			filter:   []corev1.EnvVar{env2, env4},
-			expected: []corev1.EnvVar{env1, env3},
-		},
-		{
-			name:     "test base envs do not include with exclude envs",
-			base:     []corev1.EnvVar{env1, env2},
-			filter:   []corev1.EnvVar{env3, env4},
-			expected: []corev1.EnvVar{env1, env2},
-		},
-		{
-			name:     "test base envs includes partial exclude envs",
-			base:     []corev1.EnvVar{env1, env2, env3},
-			filter:   []corev1.EnvVar{env2, env4},
-			expected: []corev1.EnvVar{env1, env3},
-		},
+		expectedMap := make(map[string]bool)
+		for _, v := range expected {
+			expectedMap[v.Name] = true
+		}
+
+		resultMap := make(map[string]bool)
+		for _, v := range result {
+			resultMap[v.Name] = true
+		}
+
+		for name, expectedEnv := range expectedMap {
+			resultEnv, exist := resultMap[name]
+			Expect(exist).To(BeTrue(), "expected env %s should exist in result", name)
+			Expect(reflect.DeepEqual(resultEnv, expectedEnv)).To(BeTrue(), "expected env %v, but got %v", expectedEnv, resultEnv)
+		}
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := GetEnvsDifference(tt.base, tt.filter)
-			if len(result) != len(tt.expected) {
-				t.Errorf("expected slice length %d, actual slice length %d", len(tt.expected), len(result))
-				return
-			}
-			expectedMap := make(map[string]bool)
-			for _, v := range tt.expected {
-				expectedMap[v.Name] = true
-			}
-
-			resultMap := make(map[string]bool)
-			for _, v := range result {
-				resultMap[v.Name] = true
-			}
-			for name, expectedEnv := range expectedMap {
-				resultEnv, exist := resultMap[name]
-				if !exist {
-					t.Errorf("expected env %s, but not exist in return", name)
-				}
-
-				if !reflect.DeepEqual(resultEnv, expectedEnv) {
-					t.Errorf("expected env %v, but got %v", expectedEnv, resultEnv)
-				}
-			}
-		})
-	}
-}
+	DescribeTable("should return correct env difference",
+		func(base, filter, expected []corev1.EnvVar) {
+			result := GetEnvsDifference(base, filter)
+			validateResult(result, expected)
+		},
+		Entry("nil_envs",
+			[]corev1.EnvVar{},
+			[]corev1.EnvVar{},
+			[]corev1.EnvVar{},
+		),
+		Entry("test base envs are nil",
+			[]corev1.EnvVar{},
+			func() []corev1.EnvVar {
+				env1 := corev1.EnvVar{Name: "env1"}
+				env2 := corev1.EnvVar{Name: "env2"}
+				return []corev1.EnvVar{env1, env2}
+			}(),
+			[]corev1.EnvVar{},
+		),
+		Entry("test exclude envs are nil",
+			func() []corev1.EnvVar {
+				env1 := corev1.EnvVar{Name: "env1"}
+				env2 := corev1.EnvVar{Name: "env2"}
+				return []corev1.EnvVar{env1, env2}
+			}(),
+			[]corev1.EnvVar{},
+			func() []corev1.EnvVar {
+				env1 := corev1.EnvVar{Name: "env1"}
+				env2 := corev1.EnvVar{Name: "env2"}
+				return []corev1.EnvVar{env1, env2}
+			}(),
+		),
+		Entry("test base envs are same with exclude envs",
+			func() []corev1.EnvVar {
+				env1 := corev1.EnvVar{Name: "env1"}
+				env2 := corev1.EnvVar{Name: "env2"}
+				return []corev1.EnvVar{env1, env2}
+			}(),
+			func() []corev1.EnvVar {
+				env1 := corev1.EnvVar{Name: "env1"}
+				env2 := corev1.EnvVar{Name: "env2"}
+				return []corev1.EnvVar{env1, env2}
+			}(),
+			[]corev1.EnvVar{},
+		),
+		Entry("test base envs includes all exclude envs",
+			func() []corev1.EnvVar {
+				env1 := corev1.EnvVar{Name: "env1"}
+				env2 := corev1.EnvVar{Name: "env2"}
+				env3 := corev1.EnvVar{Name: "env3"}
+				env4 := corev1.EnvVar{Name: "env4"}
+				return []corev1.EnvVar{env1, env2, env3, env4}
+			}(),
+			func() []corev1.EnvVar {
+				env2 := corev1.EnvVar{Name: "env2"}
+				env4 := corev1.EnvVar{Name: "env4"}
+				return []corev1.EnvVar{env2, env4}
+			}(),
+			func() []corev1.EnvVar {
+				env1 := corev1.EnvVar{Name: "env1"}
+				env3 := corev1.EnvVar{Name: "env3"}
+				return []corev1.EnvVar{env1, env3}
+			}(),
+		),
+		Entry("test base envs do not include with exclude envs",
+			func() []corev1.EnvVar {
+				env1 := corev1.EnvVar{Name: "env1"}
+				env2 := corev1.EnvVar{Name: "env2"}
+				return []corev1.EnvVar{env1, env2}
+			}(),
+			func() []corev1.EnvVar {
+				env3 := corev1.EnvVar{Name: "env3"}
+				env4 := corev1.EnvVar{Name: "env4"}
+				return []corev1.EnvVar{env3, env4}
+			}(),
+			func() []corev1.EnvVar {
+				env1 := corev1.EnvVar{Name: "env1"}
+				env2 := corev1.EnvVar{Name: "env2"}
+				return []corev1.EnvVar{env1, env2}
+			}(),
+		),
+		Entry("test base envs includes partial exclude envs",
+			func() []corev1.EnvVar {
+				env1 := corev1.EnvVar{Name: "env1"}
+				env2 := corev1.EnvVar{Name: "env2"}
+				env3 := corev1.EnvVar{Name: "env3"}
+				return []corev1.EnvVar{env1, env2, env3}
+			}(),
+			func() []corev1.EnvVar {
+				env2 := corev1.EnvVar{Name: "env2"}
+				env4 := corev1.EnvVar{Name: "env4"}
+				return []corev1.EnvVar{env2, env4}
+			}(),
+			func() []corev1.EnvVar {
+				env1 := corev1.EnvVar{Name: "env1"}
+				env3 := corev1.EnvVar{Name: "env3"}
+				return []corev1.EnvVar{env1, env3}
+			}(),
+		),
+	)
+})
