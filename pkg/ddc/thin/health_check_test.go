@@ -197,8 +197,18 @@ var _ = Describe("ThinEngine Health Check", Label("pkg.ddc.thin.health_check_tes
 				var datasets datav1alpha1.DatasetList
 				err = client.List(context.TODO(), &datasets)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(datasets.Items[0].Status.Phase).To(Equal(datav1alpha1.BoundDatasetPhase))
-				Expect(datasets.Items[0].Status.CacheStates).To(Equal(common.CacheStateList{common.Cached: "true"}))
+
+				// Find the hbase dataset by name instead of relying on list order
+				var hbaseDataset *datav1alpha1.Dataset
+				for i := range datasets.Items {
+					if datasets.Items[i].Name == healthCheckTestHbase {
+						hbaseDataset = &datasets.Items[i]
+						break
+					}
+				}
+				Expect(hbaseDataset).NotTo(BeNil())
+				Expect(hbaseDataset.Status.Phase).To(Equal(datav1alpha1.BoundDatasetPhase))
+				Expect(hbaseDataset.Status.CacheStates).To(Equal(common.CacheStateList{common.Cached: "true"}))
 			})
 		})
 
