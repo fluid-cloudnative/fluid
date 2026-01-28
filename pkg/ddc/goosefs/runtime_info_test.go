@@ -15,7 +15,8 @@ limitations under the License.
 package goosefs
 
 import (
-	"testing"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -28,13 +29,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func newGooseEngineRT(client client.Client, name string, namespace string, withRuntimeInfo bool, unittest bool) *GooseFSEngine {
+func newGooseEngineRT(c client.Client, name string, namespace string, withRuntimeInfo bool, unittest bool) *GooseFSEngine {
 	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.GooseFSRuntime)
 	engine := &GooseFSEngine{
 		runtime:     &datav1alpha1.GooseFSRuntime{},
 		name:        name,
 		namespace:   namespace,
-		Client:      client,
+		Client:      c,
 		runtimeInfo: nil,
 		UnitTest:    unittest,
 		Log:         fake.NullLogger(),
@@ -46,124 +47,140 @@ func newGooseEngineRT(client client.Client, name string, namespace string, withR
 	return engine
 }
 
-func TestGetRuntimeInfo(t *testing.T) {
-	runtimeInputs := []*datav1alpha1.GooseFSRuntime{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.GooseFSRuntimeSpec{
-				Fuse: datav1alpha1.GooseFSFuseSpec{},
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hadoop",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.GooseFSRuntimeSpec{
-				Fuse: datav1alpha1.GooseFSFuseSpec{},
-			},
-		},
-	}
-	daemonSetInputs := []*v1.DaemonSet{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase-worker",
-				Namespace: "fluid",
-			},
-			Spec: v1.DaemonSetSpec{
-				Template: corev1.PodTemplateSpec{
-					Spec: corev1.PodSpec{NodeSelector: map[string]string{"data.fluid.io/storage-fluid-hbase": "selector"}},
-				},
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hadoop-worker",
-				Namespace: "fluid",
-			},
-			Spec: v1.DaemonSetSpec{
-				Template: corev1.PodTemplateSpec{
-					Spec: corev1.PodSpec{NodeSelector: map[string]string{"data.fluid.io/storage-fluid-hadoop": "selector"}},
-				},
-			},
-		},
-	}
-	dataSetInputs := []*datav1alpha1.Dataset{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hadoop",
-				Namespace: "fluid",
-			},
-		},
-	}
-	objs := []runtime.Object{}
-	for _, runtimeInput := range runtimeInputs {
-		objs = append(objs, runtimeInput.DeepCopy())
-	}
-	for _, daemonSetInput := range daemonSetInputs {
-		objs = append(objs, daemonSetInput.DeepCopy())
-	}
-	for _, dataSetInput := range dataSetInputs {
-		objs = append(objs, dataSetInput.DeepCopy())
-	}
-	//scheme := runtime.NewScheme()
-	//scheme.AddKnownTypes(v1.SchemeGroupVersion, daemonSetWithSelector)
-	//scheme.AddKnownTypes(v1alpha1.GroupVersion,runtimeInput)
-	fakeClient := fake.NewFakeClientWithScheme(testScheme, objs...)
+var _ = Describe("GetRuntimeInfo", func() {
+	var fakeClient client.Client
 
-	testCases := []struct {
+	BeforeEach(func() {
+		runtimeInputs := []*datav1alpha1.GooseFSRuntime{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hbase",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.GooseFSRuntimeSpec{
+					Fuse: datav1alpha1.GooseFSFuseSpec{},
+				},
+			},
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hadoop",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.GooseFSRuntimeSpec{
+					Fuse: datav1alpha1.GooseFSFuseSpec{},
+				},
+			},
+		}
+		daemonSetInputs := []*v1.DaemonSet{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hbase-worker",
+					Namespace: "fluid",
+				},
+				Spec: v1.DaemonSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{NodeSelector: map[string]string{"data.fluid.io/storage-fluid-hbase": "selector"}},
+					},
+				},
+			},
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hadoop-worker",
+					Namespace: "fluid",
+				},
+				Spec: v1.DaemonSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{NodeSelector: map[string]string{"data.fluid.io/storage-fluid-hadoop": "selector"}},
+					},
+				},
+			},
+		}
+		dataSetInputs := []*datav1alpha1.Dataset{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hadoop",
+					Namespace: "fluid",
+				},
+			},
+		}
+		objs := []runtime.Object{}
+		for _, runtimeInput := range runtimeInputs {
+			objs = append(objs, runtimeInput.DeepCopy())
+		}
+		for _, daemonSetInput := range daemonSetInputs {
+			objs = append(objs, daemonSetInput.DeepCopy())
+		}
+		for _, dataSetInput := range dataSetInputs {
+			objs = append(objs, dataSetInput.DeepCopy())
+		}
+		fakeClient = fake.NewFakeClientWithScheme(testScheme, objs...)
+	})
+
+	type testCase struct {
 		name            string
 		namespace       string
 		withRuntimeInfo bool
 		unittest        bool
-		isErr           bool
-		isNil           bool
-	}{
-		{
-			name:            "hbase",
-			namespace:       "fluid",
-			withRuntimeInfo: false,
-			unittest:        false,
-			isErr:           false,
-			isNil:           false,
-		},
-		{
-			name:            "hbase",
-			namespace:       "fluid",
-			withRuntimeInfo: false,
-			unittest:        true,
-			isErr:           false,
-			isNil:           false,
-		},
-		{
-			name:            "hbase",
-			namespace:       "fluid",
-			withRuntimeInfo: true,
-			isErr:           false,
-			isNil:           false,
-		},
-		{
-			name:            "hadoop",
-			namespace:       "fluid",
-			withRuntimeInfo: false,
-			unittest:        false,
-			isErr:           false,
-			isNil:           false,
-		},
+		expectErr       bool
+		expectNil       bool
 	}
-	for _, testCase := range testCases {
-		engine := newGooseEngineRT(fakeClient, testCase.name, testCase.namespace, testCase.withRuntimeInfo, testCase.unittest)
-		runtimeInfo, err := engine.getRuntimeInfo()
-		isNil := runtimeInfo == nil
-		isErr := err != nil
-		if isNil != testCase.isNil {
-			t.Errorf(" want %t, got %t", testCase.isNil, isNil)
-		}
-		if isErr != testCase.isErr {
-			t.Errorf(" want %t, got %t", testCase.isErr, isErr)
-		}
-	}
-}
+
+	DescribeTable("should get runtime info correctly",
+		func(tc testCase) {
+			engine := newGooseEngineRT(fakeClient, tc.name, tc.namespace, tc.withRuntimeInfo, tc.unittest)
+			runtimeInfo, err := engine.getRuntimeInfo()
+
+			if tc.expectErr {
+				Expect(err).To(HaveOccurred())
+			} else {
+				Expect(err).NotTo(HaveOccurred())
+			}
+
+			if tc.expectNil {
+				Expect(runtimeInfo).To(BeNil())
+			} else {
+				Expect(runtimeInfo).NotTo(BeNil())
+			}
+		},
+		Entry("hbase without runtimeInfo, not unittest",
+			testCase{
+				name:            "hbase",
+				namespace:       "fluid",
+				withRuntimeInfo: false,
+				unittest:        false,
+				expectErr:       false,
+				expectNil:       false,
+			},
+		),
+		Entry("hbase without runtimeInfo, unittest",
+			testCase{
+				name:            "hbase",
+				namespace:       "fluid",
+				withRuntimeInfo: false,
+				unittest:        true,
+				expectErr:       false,
+				expectNil:       false,
+			},
+		),
+		Entry("hbase with runtimeInfo",
+			testCase{
+				name:            "hbase",
+				namespace:       "fluid",
+				withRuntimeInfo: true,
+				unittest:        false,
+				expectErr:       false,
+				expectNil:       false,
+			},
+		),
+		Entry("hadoop without runtimeInfo",
+			testCase{
+				name:            "hadoop",
+				namespace:       "fluid",
+				withRuntimeInfo: false,
+				unittest:        false,
+				expectErr:       false,
+				expectNil:       false,
+			},
+		),
+	)
+})
