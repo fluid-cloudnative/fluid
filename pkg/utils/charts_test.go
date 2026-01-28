@@ -37,24 +37,31 @@ var _ = Describe("Utils", func() {
 	})
 
 	Describe("GetChartsDirectory", func() {
-		It("should return /charts when HOME/charts does not exist", func() {
-			f, err := os.CreateTemp("", "test")
-			Expect(err).NotTo(HaveOccurred())
-			testDir := f.Name()
+		BeforeEach(func() {
+			chartFolder = ""
+		})
 
-			GinkgoT().Setenv("HOME", testDir)
+		It("should return /charts when HOME/charts does not exist", func() {
+			tempDir, err := os.MkdirTemp("", "test")
+			Expect(err).NotTo(HaveOccurred())
+			DeferCleanup(os.RemoveAll, tempDir)
+
+			GinkgoT().Setenv("HOME", tempDir)
 			Expect(GetChartsDirectory()).To(Equal("/charts"))
 		})
 
-		It("should return /charts when HOME/charts exists", func() {
+		It("should return home charts folder when HOME/charts exists", func() {
 			tempDir, err := os.MkdirTemp("", "test")
 			Expect(err).NotTo(HaveOccurred())
+			DeferCleanup(os.RemoveAll, tempDir)
 
 			GinkgoT().Setenv("HOME", tempDir)
-			homeChartsFolder := os.Getenv("HOME") + "/charts"
-			err = os.Mkdir(homeChartsFolder, 0600)
+			homeChartsFolder := tempDir + "/charts"
+			err = os.Mkdir(homeChartsFolder, 0755)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(GetChartsDirectory()).To(Equal("/charts"))
+
+			chartFolder = ""
+			Expect(GetChartsDirectory()).To(Equal(homeChartsFolder))
 		})
 	})
 })
