@@ -1,4 +1,4 @@
-package thin_test
+package thin
 
 import (
 	"testing"
