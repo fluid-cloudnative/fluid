@@ -4,13 +4,14 @@ on:
   pull_request:
     types: [opened, reopened]
 
-permissions:
-  pull-requests: write
-  issues: write
+permissions: read-all
 
 jobs:
   check-pr-quota:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: write
     steps:
       - name: Check PR quota
         uses: actions/github-script@v7
