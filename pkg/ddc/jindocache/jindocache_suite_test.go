@@ -1,4 +1,4 @@
-package jindocache_test
+package jindocache
 
 import (
 	"testing"
