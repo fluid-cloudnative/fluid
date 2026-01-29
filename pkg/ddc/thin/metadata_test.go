@@ -22,6 +22,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -49,6 +50,8 @@ var _ = Describe("ThinEngine Metadata", Label("pkg.ddc.thin.metadata_test.go"), 
 		var (
 			datasetInputs []datav1alpha1.Dataset
 			runtimeInputs []datav1alpha1.ThinRuntime
+			testObjs      []runtime.Object
+			client        client.Client
 		)
 
 		BeforeEach(func() {
@@ -125,19 +128,22 @@ var _ = Describe("ThinEngine Metadata", Label("pkg.ddc.thin.metadata_test.go"), 
 					},
 				},
 			}
+
+			testObjs = []runtime.Object{}
+			for _, input := range datasetInputs {
+				testObjs = append(testObjs, input.DeepCopy())
+			}
+			for _, input := range runtimeInputs {
+				testObjs = append(testObjs, input.DeepCopy())
+			}
+		})
+
+		JustBeforeEach(func() {
+			client = fake.NewFakeClientWithScheme(testScheme, testObjs...)
 		})
 
 		Context("when dataset has UfsTotal set", func() {
 			It("should return false for hbase", func() {
-				testObjs := []runtime.Object{}
-				for _, input := range datasetInputs {
-					testObjs = append(testObjs, input.DeepCopy())
-				}
-				for _, input := range runtimeInputs {
-					testObjs = append(testObjs, input.DeepCopy())
-				}
-				client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-
 				engine := ThinEngine{
 					name:      metadataTestHbase,
 					namespace: metadataTestNamespace,
@@ -153,15 +159,6 @@ var _ = Describe("ThinEngine Metadata", Label("pkg.ddc.thin.metadata_test.go"), 
 
 		Context("when dataset has empty UfsTotal and no autosync policy", func() {
 			It("should return false for spark", func() {
-				testObjs := []runtime.Object{}
-				for _, input := range datasetInputs {
-					testObjs = append(testObjs, input.DeepCopy())
-				}
-				for _, input := range runtimeInputs {
-					testObjs = append(testObjs, input.DeepCopy())
-				}
-				client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-
 				engine := ThinEngine{
 					name:      metadataTestSpark,
 					namespace: metadataTestNamespace,
@@ -177,15 +174,6 @@ var _ = Describe("ThinEngine Metadata", Label("pkg.ddc.thin.metadata_test.go"), 
 
 		Context("when autosync is explicitly disabled", func() {
 			It("should return false for noautosync", func() {
-				testObjs := []runtime.Object{}
-				for _, input := range datasetInputs {
-					testObjs = append(testObjs, input.DeepCopy())
-				}
-				for _, input := range runtimeInputs {
-					testObjs = append(testObjs, input.DeepCopy())
-				}
-				client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-
 				engine := ThinEngine{
 					name:      metadataTestNoAutoSync,
 					namespace: metadataTestNamespace,
@@ -201,15 +189,6 @@ var _ = Describe("ThinEngine Metadata", Label("pkg.ddc.thin.metadata_test.go"), 
 
 		Context("when autosync is explicitly enabled", func() {
 			It("should return true for autosync", func() {
-				testObjs := []runtime.Object{}
-				for _, input := range datasetInputs {
-					testObjs = append(testObjs, input.DeepCopy())
-				}
-				for _, input := range runtimeInputs {
-					testObjs = append(testObjs, input.DeepCopy())
-				}
-				client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-
 				engine := ThinEngine{
 					name:      metadataTestAutoSync,
 					namespace: metadataTestNamespace,
@@ -228,6 +207,8 @@ var _ = Describe("ThinEngine Metadata", Label("pkg.ddc.thin.metadata_test.go"), 
 		var (
 			datasetInputs []datav1alpha1.Dataset
 			runtimeInputs []datav1alpha1.ThinRuntime
+			testObjs      []runtime.Object
+			client        client.Client
 		)
 
 		BeforeEach(func() {
@@ -287,18 +268,21 @@ var _ = Describe("ThinEngine Metadata", Label("pkg.ddc.thin.metadata_test.go"), 
 					},
 				},
 			}
-		})
 
-		createEngine := func(name string) ThinEngine {
-			testObjs := []runtime.Object{}
+			testObjs = []runtime.Object{}
 			for _, input := range datasetInputs {
 				testObjs = append(testObjs, input.DeepCopy())
 			}
 			for _, input := range runtimeInputs {
 				testObjs = append(testObjs, input.DeepCopy())
 			}
-			client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+		})
 
+		JustBeforeEach(func() {
+			client = fake.NewFakeClientWithScheme(testScheme, testObjs...)
+		})
+
+		createEngine := func(name string) ThinEngine {
 			return ThinEngine{
 				name:      name,
 				namespace: metadataTestNamespace,
@@ -355,7 +339,7 @@ var _ = Describe("ThinEngine Metadata", Label("pkg.ddc.thin.metadata_test.go"), 
 					namespace:          metadataTestNamespace,
 					Client:             client,
 					Log:                fake.NullLogger(),
-					MetadataSyncDoneCh: make(chan base.MetadataSyncResult),
+					MetadataSyncDoneCh: make(chan base.MetadataSyncResult, 1),
 				}
 
 				result := base.MetadataSyncResult{
