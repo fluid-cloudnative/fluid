@@ -83,7 +83,7 @@ var _ = Describe("VineyardEngine Transform", Label("pkg.ddc.vineyard.transform_t
 				Expect(value.Fuse.ImageTag).To(Equal("dummy-tag"))
 				Expect(value.Fuse.ImagePullPolicy).To(Equal("IfNotPresent"))
 				Expect(string(value.Fuse.CleanPolicy)).To(Equal("OnRuntimeDeleted"))
-				Expect(value.Fuse.Env).To(HaveKeyWithValue("TEST_ENV", "true"))
+				Expect(value.Fuse.Env).To(Equal(map[string]string{"TEST_ENV": "true"}))
 			})
 		})
 
@@ -123,7 +123,7 @@ var _ = Describe("VineyardEngine Transform", Label("pkg.ddc.vineyard.transform_t
 				Expect(value.Fuse.ImageTag).To(Equal(transformTestTagFromEnv))
 				Expect(value.Fuse.ImagePullPolicy).To(Equal("IfNotPresent"))
 				Expect(string(value.Fuse.CleanPolicy)).To(Equal("OnRuntimeDeleted"))
-				Expect(value.Fuse.Env).To(HaveKeyWithValue("TEST_ENV", "true"))
+				Expect(value.Fuse.Env).To(Equal(map[string]string{"TEST_ENV": "true"}))
 			})
 		})
 	})
@@ -599,7 +599,7 @@ var _ = Describe("VineyardEngine Transform", Label("pkg.ddc.vineyard.transform_t
 					runtimeInfo: runtimeInfo,
 				}
 				actual := engine.transformFuseNodeSelector(runtime)
-				Expect(actual).To(HaveKeyWithValue("fluid.io/f-fluid-vineyard", "true"))
+				Expect(actual).To(Equal(map[string]string{"fluid.io/f-fluid-vineyard": "true"}))
 			})
 		})
 	})
