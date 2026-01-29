@@ -18,8 +18,11 @@ package thin
 
 import (
 	"context"
-	"testing"
 	"time"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -30,332 +33,370 @@ import (
 	"k8s.io/utils/ptr"
 )
 
-func TestShouldSyncMetadata(t *testing.T) {
-	datasetInputs := []datav1alpha1.Dataset{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase",
-				Namespace: "fluid",
-			},
-			Status: datav1alpha1.DatasetStatus{
-				UfsTotal: "2Gi",
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "spark",
-				Namespace: "fluid",
-			},
-			Status: datav1alpha1.DatasetStatus{
-				UfsTotal: "",
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "noautosync",
-				Namespace: "fluid",
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "autosync",
-				Namespace: "fluid",
-			},
-		},
-	}
-	runtimeInputs := []datav1alpha1.ThinRuntime{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase",
-				Namespace: "fluid",
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "spark",
-				Namespace: "fluid",
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "noautosync",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.ThinRuntimeSpec{
-				RuntimeManagement: datav1alpha1.RuntimeManagement{
-					MetadataSyncPolicy: datav1alpha1.MetadataSyncPolicy{
-						AutoSync: ptr.To(false),
+const (
+	metadataTestNamespace  = "fluid"
+	metadataTestHbase      = "hbase"
+	metadataTestSpark      = "spark"
+	metadataTestNoAutoSync = "noautosync"
+	metadataTestAutoSync   = "autosync"
+	metadataTestHadoop     = "hadoop"
+	metadataTestTest1      = "test1"
+	metadataTestTest2      = "test2"
+	metadataTestUfsTotal   = "2Gi"
+)
+
+var _ = Describe("ThinEngine Metadata", Label("pkg.ddc.thin.metadata_test.go"), func() {
+	Describe("shouldSyncMetadata", func() {
+		var (
+			datasetInputs []datav1alpha1.Dataset
+			runtimeInputs []datav1alpha1.ThinRuntime
+			testObjs      []runtime.Object
+			client        client.Client
+		)
+
+		BeforeEach(func() {
+			datasetInputs = []datav1alpha1.Dataset{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      metadataTestHbase,
+						Namespace: metadataTestNamespace,
+					},
+					Status: datav1alpha1.DatasetStatus{
+						UfsTotal: metadataTestUfsTotal,
 					},
 				},
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "autosync",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.ThinRuntimeSpec{
-				RuntimeManagement: datav1alpha1.RuntimeManagement{
-					MetadataSyncPolicy: datav1alpha1.MetadataSyncPolicy{
-						AutoSync: ptr.To(true),
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      metadataTestSpark,
+						Namespace: metadataTestNamespace,
+					},
+					Status: datav1alpha1.DatasetStatus{
+						UfsTotal: "",
 					},
 				},
-			},
-		},
-	}
-	testObjs := []runtime.Object{}
-	for _, input := range datasetInputs {
-		testObjs = append(testObjs, input.DeepCopy())
-	}
-	for _, input := range runtimeInputs {
-		testObjs = append(testObjs, input.DeepCopy())
-	}
-	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-
-	engines := []ThinEngine{
-		{
-			name:      "hbase",
-			namespace: "fluid",
-			Client:    client,
-			Log:       fake.NullLogger(),
-		},
-		{
-			name:      "spark",
-			namespace: "fluid",
-			Client:    client,
-			Log:       fake.NullLogger(),
-		},
-		{
-			name:      "noautosync",
-			namespace: "fluid",
-			Client:    client,
-			Log:       fake.NullLogger(),
-		},
-		{
-			name:      "autosync",
-			namespace: "fluid",
-			Client:    client,
-			Log:       fake.NullLogger(),
-		},
-	}
-
-	var testCases = []struct {
-		engine         ThinEngine
-		expectedShould bool
-	}{
-		{
-			engine:         engines[0],
-			expectedShould: false,
-		},
-		{
-			engine:         engines[1],
-			expectedShould: false,
-		},
-		{
-			engine:         engines[2],
-			expectedShould: false,
-		},
-		{
-			engine:         engines[3],
-			expectedShould: true,
-		},
-	}
-
-	for _, test := range testCases {
-		should, err := test.engine.shouldSyncMetadata()
-		if err != nil || should != test.expectedShould {
-			t.Errorf("fail to exec the function")
-		}
-	}
-}
-
-func TestSyncMetadata(t *testing.T) {
-	datasetInputs := []datav1alpha1.Dataset{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase",
-				Namespace: "fluid",
-			},
-			Status: datav1alpha1.DatasetStatus{
-				UfsTotal: "2Gi",
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "spark",
-				Namespace: "fluid",
-			},
-			Status: datav1alpha1.DatasetStatus{
-				UfsTotal: "",
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hadoop",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.DatasetSpec{
-				DataRestoreLocation: &datav1alpha1.DataRestoreLocation{
-					Path:     "local:///host1/erf",
-					NodeName: "test-node",
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      metadataTestNoAutoSync,
+						Namespace: metadataTestNamespace,
+					},
 				},
-			},
-			Status: datav1alpha1.DatasetStatus{
-				UfsTotal: "",
-			},
-		},
-	}
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      metadataTestAutoSync,
+						Namespace: metadataTestNamespace,
+					},
+				},
+			}
 
-	runtimeInputs := []datav1alpha1.ThinRuntime{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase",
-				Namespace: "fluid",
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "spark",
-				Namespace: "fluid",
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hadoop",
-				Namespace: "fluid",
-			},
-		},
-	}
+			runtimeInputs = []datav1alpha1.ThinRuntime{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      metadataTestHbase,
+						Namespace: metadataTestNamespace,
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      metadataTestSpark,
+						Namespace: metadataTestNamespace,
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      metadataTestNoAutoSync,
+						Namespace: metadataTestNamespace,
+					},
+					Spec: datav1alpha1.ThinRuntimeSpec{
+						RuntimeManagement: datav1alpha1.RuntimeManagement{
+							MetadataSyncPolicy: datav1alpha1.MetadataSyncPolicy{
+								AutoSync: ptr.To(false),
+							},
+						},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      metadataTestAutoSync,
+						Namespace: metadataTestNamespace,
+					},
+					Spec: datav1alpha1.ThinRuntimeSpec{
+						RuntimeManagement: datav1alpha1.RuntimeManagement{
+							MetadataSyncPolicy: datav1alpha1.MetadataSyncPolicy{
+								AutoSync: ptr.To(true),
+							},
+						},
+					},
+				},
+			}
 
-	testObjs := []runtime.Object{}
-	for _, datasetInput := range datasetInputs {
-		testObjs = append(testObjs, datasetInput.DeepCopy())
-	}
-	for _, runtimeInput := range runtimeInputs {
-		testObjs = append(testObjs, runtimeInput.DeepCopy())
-	}
-	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+			testObjs = []runtime.Object{}
+			for _, input := range datasetInputs {
+				testObjs = append(testObjs, input.DeepCopy())
+			}
+			for _, input := range runtimeInputs {
+				testObjs = append(testObjs, input.DeepCopy())
+			}
+		})
 
-	engines := []ThinEngine{
-		{
-			name:      "hbase",
-			namespace: "fluid",
-			Client:    client,
-			Log:       fake.NullLogger(),
-		},
-		{
-			name:      "spark",
-			namespace: "fluid",
-			Client:    client,
-			Log:       fake.NullLogger(),
-		},
-	}
+		JustBeforeEach(func() {
+			client = fake.NewFakeClientWithScheme(testScheme, testObjs...)
+		})
 
-	for _, engine := range engines {
-		err := engine.SyncMetadata()
-		if err != nil {
-			t.Errorf("fail to exec the function")
+		Context("when dataset has UfsTotal set", func() {
+			It("should return false for hbase", func() {
+				engine := ThinEngine{
+					name:      metadataTestHbase,
+					namespace: metadataTestNamespace,
+					Client:    client,
+					Log:       fake.NullLogger(),
+				}
+
+				should, err := engine.shouldSyncMetadata()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(should).To(BeFalse())
+			})
+		})
+
+		Context("when dataset has empty UfsTotal and no autosync policy", func() {
+			It("should return false for spark", func() {
+				engine := ThinEngine{
+					name:      metadataTestSpark,
+					namespace: metadataTestNamespace,
+					Client:    client,
+					Log:       fake.NullLogger(),
+				}
+
+				should, err := engine.shouldSyncMetadata()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(should).To(BeFalse())
+			})
+		})
+
+		Context("when autosync is explicitly disabled", func() {
+			It("should return false for noautosync", func() {
+				engine := ThinEngine{
+					name:      metadataTestNoAutoSync,
+					namespace: metadataTestNamespace,
+					Client:    client,
+					Log:       fake.NullLogger(),
+				}
+
+				should, err := engine.shouldSyncMetadata()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(should).To(BeFalse())
+			})
+		})
+
+		Context("when autosync is explicitly enabled", func() {
+			It("should return true for autosync", func() {
+				engine := ThinEngine{
+					name:      metadataTestAutoSync,
+					namespace: metadataTestNamespace,
+					Client:    client,
+					Log:       fake.NullLogger(),
+				}
+
+				should, err := engine.shouldSyncMetadata()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(should).To(BeTrue())
+			})
+		})
+	})
+
+	Describe("SyncMetadata", func() {
+		var (
+			datasetInputs []datav1alpha1.Dataset
+			runtimeInputs []datav1alpha1.ThinRuntime
+			testObjs      []runtime.Object
+			client        client.Client
+		)
+
+		BeforeEach(func() {
+			datasetInputs = []datav1alpha1.Dataset{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      metadataTestHbase,
+						Namespace: metadataTestNamespace,
+					},
+					Status: datav1alpha1.DatasetStatus{
+						UfsTotal: metadataTestUfsTotal,
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      metadataTestSpark,
+						Namespace: metadataTestNamespace,
+					},
+					Status: datav1alpha1.DatasetStatus{
+						UfsTotal: "",
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      metadataTestHadoop,
+						Namespace: metadataTestNamespace,
+					},
+					Spec: datav1alpha1.DatasetSpec{
+						DataRestoreLocation: &datav1alpha1.DataRestoreLocation{
+							Path:     "local:///host1/erf",
+							NodeName: "test-node",
+						},
+					},
+					Status: datav1alpha1.DatasetStatus{
+						UfsTotal: "",
+					},
+				},
+			}
+
+			runtimeInputs = []datav1alpha1.ThinRuntime{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      metadataTestHbase,
+						Namespace: metadataTestNamespace,
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      metadataTestSpark,
+						Namespace: metadataTestNamespace,
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      metadataTestHadoop,
+						Namespace: metadataTestNamespace,
+					},
+				},
+			}
+
+			testObjs = []runtime.Object{}
+			for _, input := range datasetInputs {
+				testObjs = append(testObjs, input.DeepCopy())
+			}
+			for _, input := range runtimeInputs {
+				testObjs = append(testObjs, input.DeepCopy())
+			}
+		})
+
+		JustBeforeEach(func() {
+			client = fake.NewFakeClientWithScheme(testScheme, testObjs...)
+		})
+
+		createEngine := func(name string) ThinEngine {
+			return ThinEngine{
+				name:      name,
+				namespace: metadataTestNamespace,
+				Client:    client,
+				Log:       fake.NullLogger(),
+			}
 		}
-	}
 
-	engine := ThinEngine{
-		name:      "hadoop",
-		namespace: "fluid",
-		Client:    client,
-		Log:       fake.NullLogger(),
-	}
+		Context("when dataset has UfsTotal already set", func() {
+			It("should return no error for hbase", func() {
+				engine := createEngine(metadataTestHbase)
+				err := engine.SyncMetadata()
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
 
-	err := engine.SyncMetadata()
-	if err != nil {
-		t.Errorf("fail to exec function RestoreMetadataInternal: %v", err)
-	}
-}
+		Context("when dataset has empty UfsTotal", func() {
+			It("should return no error for spark", func() {
+				engine := createEngine(metadataTestSpark)
+				err := engine.SyncMetadata()
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
 
-func TestThinEngine_syncMetadataInternal(t *testing.T) {
-	datasetInputs := []datav1alpha1.Dataset{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test1",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.DatasetSpec{},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test2",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.DatasetSpec{},
-		},
-	}
-	testObjs := []runtime.Object{}
-	for _, datasetInput := range datasetInputs {
-		testObjs = append(testObjs, datasetInput.DeepCopy())
-	}
-	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+		Context("when dataset has DataRestoreLocation", func() {
+			It("should return no error for hadoop", func() {
+				engine := createEngine(metadataTestHadoop)
+				err := engine.SyncMetadata()
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+	})
 
-	engines := []ThinEngine{
-		{
-			name:               "test1",
-			namespace:          "fluid",
-			Client:             client,
-			Log:                fake.NullLogger(),
-			MetadataSyncDoneCh: make(chan base.MetadataSyncResult),
-		},
-		{
-			name:               "test2",
-			namespace:          "fluid",
-			Client:             client,
-			Log:                fake.NullLogger(),
-			MetadataSyncDoneCh: nil,
-		},
-	}
+	Describe("syncMetadataInternal", func() {
+		Context("when MetadataSyncDoneCh receives result", func() {
+			It("should update dataset status with UfsTotal and FileNum", func() {
+				datasetInputs := []datav1alpha1.Dataset{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      metadataTestTest1,
+							Namespace: metadataTestNamespace,
+						},
+						Spec: datav1alpha1.DatasetSpec{},
+					},
+				}
+				testObjs := []runtime.Object{}
+				for _, datasetInput := range datasetInputs {
+					testObjs = append(testObjs, datasetInput.DeepCopy())
+				}
+				client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
-	result := base.MetadataSyncResult{
-		StartTime: time.Now(),
-		UfsTotal:  "2GB",
-		Done:      true,
-		FileNum:   "5",
-	}
+				engine := ThinEngine{
+					name:               metadataTestTest1,
+					namespace:          metadataTestNamespace,
+					Client:             client,
+					Log:                fake.NullLogger(),
+					MetadataSyncDoneCh: make(chan base.MetadataSyncResult, 1),
+				}
 
-	var testCase = []struct {
-		engine           ThinEngine
-		expectedResult   bool
-		expectedUfsTotal string
-		expectedFileNum  string
-	}{
-		{
-			engine:           engines[0],
-			expectedUfsTotal: "2GB",
-			expectedFileNum:  "5",
-		},
-	}
+				result := base.MetadataSyncResult{
+					StartTime: time.Now(),
+					UfsTotal:  "2GB",
+					Done:      true,
+					FileNum:   "5",
+				}
 
-	for index, test := range testCase {
-		if index == 0 {
-			go func() {
-				test.engine.MetadataSyncDoneCh <- result
-			}()
-		}
+				go func() {
+					engine.MetadataSyncDoneCh <- result
+				}()
 
-		err := test.engine.syncMetadataInternal()
-		if err != nil {
-			t.Errorf("fail to exec the function with error %v", err)
-		}
+				err := engine.syncMetadataInternal()
+				Expect(err).NotTo(HaveOccurred())
 
-		key := types.NamespacedName{
-			Namespace: test.engine.namespace,
-			Name:      test.engine.name,
-		}
+				key := types.NamespacedName{
+					Namespace: engine.namespace,
+					Name:      engine.name,
+				}
 
-		dataset := &datav1alpha1.Dataset{}
-		err = client.Get(context.TODO(), key, dataset)
-		if err != nil {
-			t.Errorf("failt to get the dataset with error %v", err)
-		}
+				dataset := &datav1alpha1.Dataset{}
+				err = client.Get(context.Background(), key, dataset)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(dataset.Status.UfsTotal).To(Equal("2GB"))
+				Expect(dataset.Status.FileNum).To(Equal("5"))
+			})
+		})
 
-		if dataset.Status.UfsTotal != test.expectedUfsTotal || dataset.Status.FileNum != test.expectedFileNum {
-			t.Errorf("expected UfsTotal %s, get UfsTotal %s, expected FileNum %s, get FileNum %s", test.expectedUfsTotal, dataset.Status.UfsTotal, test.expectedFileNum, dataset.Status.FileNum)
-		}
-	}
-}
+		Context("when MetadataSyncDoneCh is nil", func() {
+			It("should return no error without updating", func() {
+				datasetInputs := []datav1alpha1.Dataset{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      metadataTestTest2,
+							Namespace: metadataTestNamespace,
+						},
+						Spec: datav1alpha1.DatasetSpec{},
+					},
+				}
+				testObjs := []runtime.Object{}
+				for _, datasetInput := range datasetInputs {
+					testObjs = append(testObjs, datasetInput.DeepCopy())
+				}
+				client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+
+				engine := ThinEngine{
+					name:               metadataTestTest2,
+					namespace:          metadataTestNamespace,
+					Client:             client,
+					Log:                fake.NullLogger(),
+					MetadataSyncDoneCh: nil,
+				}
+
+				err := engine.syncMetadataInternal()
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+	})
+})
