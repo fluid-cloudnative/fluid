@@ -4,7 +4,9 @@ on:
   pull_request:
     types: [opened, reopened]
 
-permissions: read-all
+permissions:
+  contents: read
+  actions: read
 
 jobs:
   check-pr-quota:
