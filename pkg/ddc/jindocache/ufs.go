@@ -127,7 +127,7 @@ func (e *JindoCacheEngine) UpdateOnUFSChange(*utils.UFSToUpdate) (updateReady bo
 func (e *JindoCacheEngine) ShouldSyncDatasetMounts() (should bool, err error) {
 	runtime, err := utils.GetJindoRuntime(e.Client, e.name, e.namespace)
 	if err != nil {
-		e.Log.Error(err, "failed to get runtime when checking ufs change")
+		e.Log.Error(err, "failed to get runtime when if dataset mounts need to be synced")
 		return false, errors.WithMessage(err, "failed to get runtime when checking if dataset mounts need to be synced")
 	}
 
@@ -138,7 +138,7 @@ func (e *JindoCacheEngine) ShouldSyncDatasetMounts() (should bool, err error) {
 	masterPodName, masterContainerName := e.getMasterPodInfo()
 	masterPod, err := kubeclient.GetPodByName(e.Client, masterPodName, e.namespace)
 	if err != nil || masterPod == nil {
-		e.Log.Error(err, "failed to get master pod when checking ufs change")
+		e.Log.Error(err, "failed to get master pod when checking if dataset mounts need to be synced")
 		return false, errors.WithMessage(err, "failed to get master pod when checking if dataset mounts need to be synced")
 	}
 
@@ -146,13 +146,18 @@ func (e *JindoCacheEngine) ShouldSyncDatasetMounts() (should bool, err error) {
 	for _, containerStatus := range masterPod.Status.ContainerStatuses {
 		if containerStatus.Name == masterContainerName {
 			if containerStatus.State.Running == nil {
-				e.Log.Info("Jindocache master container is not running, recheck its status in next reconcilation loop")
+				e.Log.Info("Jindocache master container is not running, recheck its status in next reconciliation loop")
 				return false, nil
 			} else {
 				startedAt = &containerStatus.State.Running.StartedAt
 				break
 			}
 		}
+	}
+
+	if startedAt == nil {
+		e.Log.Info("Jindocache master container not found in pod container statuses when checking if dataset mounts need to be synced",
+			"pod", masterPod.Name, "namespace", masterPod.Namespace, "container", masterContainerName)
 	}
 
 	// either runtime.Status.MountTime is not set (for backward compatibility) or runtime.Status.MountTime is earlier than startedAt (i.e. jindocache master is restarted), we need to reprepare UFS
