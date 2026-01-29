@@ -143,6 +143,62 @@ func Test_genDataLoadValue(t *testing.T) {
 		runtime       *datav1alpha1.JindoRuntime
 		want          *cdataload.DataLoadValue
 	}{
+		"dataset without mounts and no explicit target": {
+			image: "fluid:v0.0.1",
+			targetDataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-dataset",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DatasetSpec{},
+			},
+			dataload: &datav1alpha1.DataLoad{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-dataload",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DataLoadSpec{
+					Dataset: datav1alpha1.TargetDataset{
+						Name:      "test-dataset",
+						Namespace: "fluid",
+					},
+				},
+			},
+			runtime: &datav1alpha1.JindoRuntime{
+				Spec: datav1alpha1.JindoRuntimeSpec{
+					TieredStore: datav1alpha1.TieredStore{
+						Levels: []datav1alpha1.Level{
+							{
+								MediumType: "MEM",
+							},
+						},
+					},
+					HadoopConfig: "principal=root",
+				},
+			},
+			want: &cdataload.DataLoadValue{
+				Name:           "test-dataload",
+				OwnerDatasetId: "fluid-test-dataset",
+				Owner: &common.OwnerReference{
+					APIVersion:         "/",
+					Enabled:            true,
+					Name:               "test-dataload",
+					BlockOwnerDeletion: false,
+					Controller:         true,
+				},
+				DataLoadInfo: cdataload.DataLoadInfo{
+					BackoffLimit:     3,
+					Image:            "fluid:v0.0.1",
+					TargetDataset:    "test-dataset",
+					TargetPaths:      []cdataload.TargetPath{},
+					ImagePullSecrets: []corev1.LocalObjectReference{},
+					Options: map[string]string{
+						"loadMemorydata": "true",
+						"hdfsConfig":     "principal=root",
+					},
+				},
+			},
+		},
 		"dataset with multiple mounts and no explicit target": {
 			image: "fluid:v0.0.1",
 			targetDataset: &datav1alpha1.Dataset{
