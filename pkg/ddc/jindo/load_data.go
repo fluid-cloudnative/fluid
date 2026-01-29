@@ -160,13 +160,27 @@ func (e *JindoEngine) genDataLoadValue(image string, runtime *datav1alpha1.Jindo
 	}
 
 	targetPaths := []cdataload.TargetPath{}
-	for _, target := range dataload.Spec.Target {
-		fluidNative := utils.IsTargetPathUnderFluidNativeMounts(target.Path, *targetDataset)
-		targetPaths = append(targetPaths, cdataload.TargetPath{
-			Path:        target.Path,
-			Replicas:    target.Replicas,
-			FluidNative: fluidNative,
-		})
+	if len(dataload.Spec.Target) > 0 {
+		for _, target := range dataload.Spec.Target {
+			fluidNative := utils.IsTargetPathUnderFluidNativeMounts(target.Path, *targetDataset)
+			targetPaths = append(targetPaths, cdataload.TargetPath{
+				Path:        target.Path,
+				Replicas:    target.Replicas,
+				FluidNative: fluidNative,
+			})
+		}
+	} else {
+		for _, m := range targetDataset.Spec.Mounts {
+			if m.Path == "" {
+				continue
+			}
+			fluidNative := utils.IsTargetPathUnderFluidNativeMounts(m.Path, *targetDataset)
+			targetPaths = append(targetPaths, cdataload.TargetPath{
+				Path:        m.Path,
+				Replicas:    1,
+				FluidNative: fluidNative,
+			})
+		}
 	}
 	dataloadInfo.TargetPaths = targetPaths
 	options := map[string]string{}

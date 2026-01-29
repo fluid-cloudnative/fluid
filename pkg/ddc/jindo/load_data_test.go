@@ -143,6 +143,86 @@ func Test_genDataLoadValue(t *testing.T) {
 		runtime       *datav1alpha1.JindoRuntime
 		want          *cdataload.DataLoadValue
 	}{
+		"dataset with multiple mounts and no explicit target": {
+			image: "fluid:v0.0.1",
+			targetDataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-dataset",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							Name:       "spark-0",
+							MountPoint: "local://mnt/data0",
+							Path:       "/mnt0",
+						},
+						{
+							Name:       "spark-1",
+							MountPoint: "local://mnt/data1",
+							Path:       "/mnt1",
+						},
+					},
+				},
+			},
+			dataload: &datav1alpha1.DataLoad{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-dataload",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DataLoadSpec{
+					Dataset: datav1alpha1.TargetDataset{
+						Name:      "test-dataset",
+						Namespace: "fluid",
+					},
+				},
+			},
+			runtime: &datav1alpha1.JindoRuntime{
+				Spec: datav1alpha1.JindoRuntimeSpec{
+					TieredStore: datav1alpha1.TieredStore{
+						Levels: []datav1alpha1.Level{
+							{
+								MediumType: "MEM",
+							},
+						},
+					},
+					HadoopConfig: "principal=root",
+				},
+			},
+			want: &cdataload.DataLoadValue{
+				Name:           "test-dataload",
+				OwnerDatasetId: "fluid-test-dataset",
+				Owner: &common.OwnerReference{
+					APIVersion:         "/",
+					Enabled:            true,
+					Name:               "test-dataload",
+					BlockOwnerDeletion: false,
+					Controller:         true,
+				},
+				DataLoadInfo: cdataload.DataLoadInfo{
+					BackoffLimit:  3,
+					Image:         "fluid:v0.0.1",
+					TargetDataset: "test-dataset",
+					TargetPaths: []cdataload.TargetPath{
+						{
+							Path:        "/mnt0",
+							Replicas:    1,
+							FluidNative: true,
+						},
+						{
+							Path:        "/mnt1",
+							Replicas:    1,
+							FluidNative: true,
+						},
+					},
+					ImagePullSecrets: []corev1.LocalObjectReference{},
+					Options: map[string]string{
+						"loadMemorydata": "true",
+						"hdfsConfig":     "principal=root",
+					},
+				},
+			},
+		},
 		"test case with scheduler name": {
 			image: "fluid:v0.0.1",
 			targetDataset: &datav1alpha1.Dataset{
