@@ -155,7 +155,7 @@ func (e *JindoCacheEngine) ShouldSyncDatasetMounts() (should bool, err error) {
 		}
 	}
 
-	// either runtime.Status.MountTime is not set (for backward compatibility) or startedAt is earlier than runtime.Status.MountTime (i.e. jindocache master is restarted), we need to reprepare UFS
+	// either runtime.Status.MountTime is not set (for backward compatibility) or runtime.Status.MountTime is earlier than startedAt (i.e. jindocache master is restarted), we need to reprepare UFS
 	needReprepareUFS := runtime.Status.MountTime == nil || (startedAt != nil && runtime.Status.MountTime.Before(startedAt))
 
 	return needReprepareUFS, nil

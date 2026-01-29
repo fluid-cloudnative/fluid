@@ -82,7 +82,7 @@ func (t *TemplateEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) 
 	}
 
 	// 6. Sync dataset mounts
-	// TODO: SyncDatasetMounts() and UpdateUFS() should be merged in future refactoring as they describe a similiar workflow
+	// TODO: SyncDatasetMounts() and UpdateUFS() should be merged in future refactoring as they describe a similar workflow
 	var shouldSyncDatasetMounts bool
 	shouldSyncDatasetMounts, err = t.Implement.ShouldSyncDatasetMounts()
 	if err != nil {
