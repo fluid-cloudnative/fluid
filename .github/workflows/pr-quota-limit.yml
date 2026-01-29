@@ -58,7 +58,6 @@ jobs:
               // Check if exceeds quota (15 PRs max)
               const maxPRs = 15;
               if (openCount > maxPRs) {
-                const availableSlots = 0;
                 const currentStatus = `${openCount}/${maxPRs}`;
 
                 const message = `Hi, @${prAuthor}, Thanks for your contribution! To ensure quality reviews, we limit how many concurrent open PRs contributors can open. This pull request will be temporarily closed (Current status: ${currentStatus} open). We encourage you to submit a new PR once the quota policy permits future contributions.`;
