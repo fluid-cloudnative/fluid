@@ -62,11 +62,21 @@ type nodeServer struct {
 	nodeAuthorizedClient *kubernetes.Clientset
 	locks                *utils.VolumeLocks
 	node                 *corev1.Node
+	restrictionChecker    NodeRestrictionChecker
 }
 
 func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
 
 	glog.Infof("NodePublishVolumeRequest is %v", req)
+	if ns.restrictionChecker != nil {
+		restriction, err := ns.restrictionChecker.GetRestriction(ns.nodeId)
+		if err != nil {
+			glog.Warningf("failed to get node restriction for node %s: %v", ns.nodeId, err)
+		} else {
+			glog.Infof("node restriction state for %s: %+v", ns.nodeId, restriction)
+		}
+	}
+
 	targetPath := req.GetTargetPath()
 	// check targetpath validity
 	if len(targetPath) == 0 {
