@@ -42,6 +42,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/controllers"
 	databackupctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/databackup"
 	dataflowctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/dataflow"
+	datacleanctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/dataclean"
 	dataloadctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/dataload"
 	datamigratectl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/datamigrate"
 	dataprocessctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/dataprocess"
@@ -177,6 +178,18 @@ func handle() {
 			mgr.GetEventRecorderFor("DataLoad"),
 		)).SetupWithManager(mgr, controllerOptions); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "DataLoad")
+			os.Exit(1)
+		}
+	}
+
+	if fluidDiscovery.ResourceEnabled("dataclean") {
+		setupLog.Info("Registering DataClean reconciler to Fluid controller manager.")
+		if err = (datacleanctl.NewDataCleanReconciler(mgr.GetClient(),
+			ctrl.Log.WithName("datacleanctl").WithName("DataClean"),
+			mgr.GetScheme(),
+			mgr.GetEventRecorderFor("DataClean"),
+		)).SetupWithManager(mgr, controllerOptions); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "DataClean")
 			os.Exit(1)
 		}
 	}
