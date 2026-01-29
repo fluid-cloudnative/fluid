@@ -177,25 +177,41 @@ func ExecCommandInContainer(podName string, containerName string, namespace stri
 	return ExecCommandInContainerWithFullOutput(context.Background(), podName, containerName, namespace, cmd)
 }
 
+// execResult encapsulates the result of a container exec operation.
+// This struct is used to safely pass results through a channel,
+// avoiding data races on shared variables.
+type execResult struct {
+	stdout string
+	stderr string
+	err    error
+}
+
 // Exec commands in container with a given timeout.
+// This function is thread-safe and avoids data races by using a result channel
+// instead of writing to shared return variables from a goroutine.
 func ExecCommandInContainerWithTimeout(podName string, containerName string, namespace string, cmd []string, timeout time.Duration) (stdout string, stderr string, err error) {
 	ctx, cancel := context.WithTimeout(context.TODO(), timeout)
-	ch := make(chan string, 1)
 	defer cancel()
 
+	// Use a buffered channel to prevent goroutine leak when timeout occurs.
+	// The goroutine can always send its result even if no one is receiving.
+	resultCh := make(chan execResult, 1)
+
 	go func() {
-		stdout, stderr, err = ExecCommandInContainerWithFullOutput(ctx, podName, containerName, namespace, cmd)
-		ch <- "done"
+		out, errOut, execErr := ExecCommandInContainerWithFullOutput(ctx, podName, containerName, namespace, cmd)
+		resultCh <- execResult{stdout: out, stderr: errOut, err: execErr}
 	}()
 
 	select {
-	case <-ch:
-		// Succeeded in time
+	case result := <-resultCh:
+		// Command completed within timeout
+		return result.stdout, result.stderr, result.err
 	case <-ctx.Done():
-		err = fmt.Errorf("timed out for %v", timeout)
+		// Timeout occurred - return timeout error immediately.
+		// The goroutine will eventually complete (context cancellation will propagate)
+		// and send to the buffered channel, which will be garbage collected.
+		return "", "", fmt.Errorf("timed out for %v", timeout)
 	}
-
-	return
 }
 
 func doExecute(ctx context.Context, method string, url *url.URL, config *restclient.Config, stdin io.Reader, stdout, stderr io.Writer, tty bool) error {
