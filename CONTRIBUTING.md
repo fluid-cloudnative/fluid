@@ -104,6 +104,9 @@ Go to the "Pull requests" tab page under your repository and Click the "New Pull
 
 To help reviewers better get your purpose, PR title should be descriptive enough but not too long. It's also recommended that you follow the [PR template](.github/PULL_REQUEST_TEMPLATE.md) as your PR description.
 
+#### PR Quota Policy
+To maintain code quality and avoid conflicts, we enforce a limit on the number of open pull requests per contributor. Each contributor can have a **maximum of 15 open pull requests** at any given time. If you attempt to open or reopen a pull request when you already have 15 open PRs, the pull request will be automatically closed with a notification message. Please wait for some of your existing PRs to be merged or closed before submitting or reopening additional ones.
+
 ### Tracking Your PR
 Once you've submitted the PR to the Fluid project, your PR will be reviewed. Please keep tracking the status of your PR, make responses to the reviewers' comments and update your changes if needed to make your PR get accepted.
 
