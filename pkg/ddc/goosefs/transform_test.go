@@ -17,7 +17,8 @@ limitations under the License.
 package goosefs
 
 import (
-	"testing"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -26,52 +27,60 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
-func TestTransformFuse(t *testing.T) {
+var _ = Describe("TransformFuse", func() {
+	BeforeEach(func() {
+		ctrl.SetLogger(zap.New(func(o *zap.Options) {
+			o.Development = true
+		}))
+	})
 
-	var x int64 = 1000
-	ctrl.SetLogger(zap.New(func(o *zap.Options) {
-		o.Development = true
-	}))
-
-	var tests = []struct {
+	type testCase struct {
 		runtime *datav1alpha1.GooseFSRuntime
 		dataset *datav1alpha1.Dataset
 		value   *GooseFS
 		expect  []string
-	}{
-		{&datav1alpha1.GooseFSRuntime{
-			Spec: datav1alpha1.GooseFSRuntimeSpec{
-				Fuse: datav1alpha1.GooseFSFuseSpec{},
-			},
-		}, &datav1alpha1.Dataset{
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "local:///mnt/test",
-					Name:       "test",
-				}},
-				Owner: &datav1alpha1.User{
-					UID: &x,
-					GID: &x,
-				},
-			},
-		}, &GooseFS{}, []string{"fuse", "--fuse-opts=rw,direct_io,uid=1000,gid=1000,allow_other"}},
 	}
-	for _, test := range tests {
-		runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "goosefs")
-		if err != nil {
-			t.Errorf("fail to create the runtimeInfo with error %v", err)
-		}
-		engine := &GooseFSEngine{
-			runtimeInfo: runtimeInfo,
-			Client:      fakeutils.NewFakeClientWithScheme(testScheme),
-		}
-		engine.Log = ctrl.Log
-		err = engine.transformFuse(test.runtime, test.dataset, test.value)
-		if err != nil {
-			t.Errorf("error %v", err)
-		}
-		if test.value.Fuse.Args[1] != test.expect[1] {
-			t.Errorf("expected %v, got %v", test.expect, test.value.Fuse.Args)
-		}
-	}
-}
+
+	DescribeTable("should transform fuse configuration correctly",
+		func(tc testCase) {
+			runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "goosefs")
+			Expect(err).NotTo(HaveOccurred())
+
+			engine := &GooseFSEngine{
+				runtimeInfo: runtimeInfo,
+				Client:      fakeutils.NewFakeClientWithScheme(testScheme),
+				Log:         ctrl.Log,
+			}
+
+			err = engine.transformFuse(tc.runtime, tc.dataset, tc.value)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(tc.value.Fuse.Args).To(Equal(tc.expect))
+		},
+		Entry("with owner UID and GID",
+			func() testCase {
+				var x int64 = 1000
+				return testCase{
+					runtime: &datav1alpha1.GooseFSRuntime{
+						Spec: datav1alpha1.GooseFSRuntimeSpec{
+							Fuse: datav1alpha1.GooseFSFuseSpec{},
+						},
+					},
+					dataset: &datav1alpha1.Dataset{
+						Spec: datav1alpha1.DatasetSpec{
+							Mounts: []datav1alpha1.Mount{{
+								MountPoint: "local:///mnt/test",
+								Name:       "test",
+							}},
+							Owner: &datav1alpha1.User{
+								UID: &x,
+								GID: &x,
+							},
+						},
+					},
+					value:  &GooseFS{},
+					expect: []string{"fuse", "--fuse-opts=rw,direct_io,uid=1000,gid=1000,allow_other"},
+				}
+			}(),
+		),
+	)
+})
