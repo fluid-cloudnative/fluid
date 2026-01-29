@@ -17,75 +17,80 @@ limitations under the License.
 package alluxio
 
 import (
-	"testing"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
 
-func TestTransformAPIGateway(t *testing.T) {
-	var engine = &AlluxioEngine{}
-	var tests = []struct {
-		runtime *datav1alpha1.AlluxioRuntime
-		value   *Alluxio
-	}{
-		{
-			runtime: &datav1alpha1.AlluxioRuntime{
+var _ = Describe("Alluxio", func() {
+	DescribeTable("transformAPIGateway",
+		func(runtime *datav1alpha1.AlluxioRuntime, value *Alluxio, expectError bool, shouldMatch bool) {
+			engine := &AlluxioEngine{}
+			err := engine.transformAPIGateway(runtime, value)
+
+			if expectError {
+				Expect(err).To(HaveOccurred())
+			} else {
+				Expect(err).NotTo(HaveOccurred())
+				if shouldMatch {
+					Expect(runtime.Spec.APIGateway.Enabled).To(Equal(value.APIGateway.Enabled))
+				}
+			}
+		},
+		Entry("should sync when runtime enabled and value disabled",
+			&datav1alpha1.AlluxioRuntime{
 				Spec: datav1alpha1.AlluxioRuntimeSpec{
 					APIGateway: datav1alpha1.AlluxioCompTemplateSpec{
 						Enabled: true,
 					},
 				},
 			},
-			value: &Alluxio{
+			&Alluxio{
 				APIGateway: APIGateway{
 					Enabled: false,
 				},
 			},
-		},
-		{
-			runtime: &datav1alpha1.AlluxioRuntime{
+			false,
+			true,
+		),
+		Entry("should sync when runtime disabled and value enabled",
+			&datav1alpha1.AlluxioRuntime{
 				Spec: datav1alpha1.AlluxioRuntimeSpec{
 					APIGateway: datav1alpha1.AlluxioCompTemplateSpec{
 						Enabled: false,
 					},
 				},
 			},
-			value: &Alluxio{
+			&Alluxio{
 				APIGateway: APIGateway{
 					Enabled: true,
 				},
 			},
-		},
-		{
-			runtime: nil,
-			value: &Alluxio{
+			false,
+			true,
+		),
+		Entry("should return error when runtime is nil",
+			nil,
+			&Alluxio{
 				APIGateway: APIGateway{
 					Enabled: false,
 				},
 			},
-		},
-		{
-			runtime: &datav1alpha1.AlluxioRuntime{
+			true,
+			false,
+		),
+		Entry("should return error when value is nil",
+			&datav1alpha1.AlluxioRuntime{
 				Spec: datav1alpha1.AlluxioRuntimeSpec{
 					APIGateway: datav1alpha1.AlluxioCompTemplateSpec{
 						Enabled: true,
 					},
 				},
 			},
-			value: nil,
-		},
-	}
-	for _, test := range tests {
-		err := engine.transformAPIGateway(test.runtime, test.value)
-		if test.runtime == nil || test.value == nil {
-			if err == nil {
-				t.Errorf("should return err if it's possible to lead to nil pointer")
-			}
-		} else if test.runtime.Spec.APIGateway.Enabled != test.value.APIGateway.Enabled {
-			t.Errorf("testcase cannot paas because of wrong result,%t != %t",
-				test.runtime.Spec.APIGateway.Enabled,
-				test.value.APIGateway.Enabled)
-		}
-	}
-
-}
+			nil,
+			true,
+			false,
+		),
+	)
+})
