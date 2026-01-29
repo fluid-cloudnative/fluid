@@ -17,7 +17,8 @@
 package efc
 
 import (
-	"testing"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	"k8s.io/apimachinery/pkg/types"
 
@@ -36,489 +37,361 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 )
 
-func TestEFCEngine_ShouldSetupWorkers(t *testing.T) {
-	type fields struct {
-		name      string
-		namespace string
-		runtime   *datav1alpha1.EFCRuntime
-	}
-	tests := []struct {
-		name       string
-		fields     fields
-		wantShould bool
-		wantErr    bool
-	}{
-		{
-			name: "test0",
-			fields: fields{
-				name:      "test0",
-				namespace: "efc",
-				runtime: &datav1alpha1.EFCRuntime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test0",
-						Namespace: "efc",
-					},
-					Status: datav1alpha1.RuntimeStatus{
-						WorkerPhase: datav1alpha1.RuntimePhaseNone,
-					},
-				},
-			},
-			wantShould: true,
-			wantErr:    false,
-		},
-		{
-			name: "test1",
-			fields: fields{
-				name:      "test1",
-				namespace: "efc",
-				runtime: &datav1alpha1.EFCRuntime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test1",
-						Namespace: "efc",
-					},
-					Status: datav1alpha1.RuntimeStatus{
-						WorkerPhase: datav1alpha1.RuntimePhaseNotReady,
-					},
-				},
-			},
-			wantShould: false,
-			wantErr:    false,
-		},
-		{
-			name: "test2",
-			fields: fields{
-				name:      "test2",
-				namespace: "efc",
-				runtime: &datav1alpha1.EFCRuntime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test2",
-						Namespace: "efc",
-					},
-					Status: datav1alpha1.RuntimeStatus{
-						WorkerPhase: datav1alpha1.RuntimePhasePartialReady,
-					},
-				},
-			},
-			wantShould: false,
-			wantErr:    false,
-		},
-		{
-			name: "test3",
-			fields: fields{
-				name:      "test3",
-				namespace: "efc",
-				runtime: &datav1alpha1.EFCRuntime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test3",
-						Namespace: "efc",
-					},
-					Status: datav1alpha1.RuntimeStatus{
-						WorkerPhase: datav1alpha1.RuntimePhaseReady,
-					},
-				},
-			},
-			wantShould: false,
-			wantErr:    false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			runtimeObjs := []runtime.Object{}
-			data := &datav1alpha1.Dataset{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      tt.fields.name,
-					Namespace: tt.fields.namespace,
-				},
-			}
+const (
+	workerTestNamespaceEFC     = "efc"
+	workerTestNamespaceFluid   = "fluid"
+	workerTestNamespaceBigData = "big-data"
+)
 
-			s := runtime.NewScheme()
-			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
-			s.AddKnownTypes(datav1alpha1.GroupVersion, data)
-			_ = v1.AddToScheme(s)
-			runtimeObjs = append(runtimeObjs, tt.fields.runtime, data)
-			mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
-			e := &EFCEngine{
-				name:      tt.fields.name,
-				namespace: tt.fields.namespace,
-				runtime:   tt.fields.runtime,
-				Client:    mockClient,
-			}
+var _ = Describe("EFCEngine Worker", Label("pkg.ddc.efc.worker_test.go"), func() {
+	Describe("ShouldSetupWorkers", func() {
+		var createEngine func(name string, phase datav1alpha1.RuntimePhase) *EFCEngine
 
-			gotShould, err := e.ShouldSetupWorkers()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("EFCEngine.ShouldSetupWorkers() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if gotShould != tt.wantShould {
-				t.Errorf("EFCEngine.ShouldSetupWorkers() = %v, want %v", gotShould, tt.wantShould)
+		BeforeEach(func() {
+			createEngine = func(name string, phase datav1alpha1.RuntimePhase) *EFCEngine {
+				efcRuntime := &datav1alpha1.EFCRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      name,
+						Namespace: workerTestNamespaceEFC,
+					},
+					Status: datav1alpha1.RuntimeStatus{
+						WorkerPhase: phase,
+					},
+				}
+				data := &datav1alpha1.Dataset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      name,
+						Namespace: workerTestNamespaceEFC,
+					},
+				}
+
+				s := runtime.NewScheme()
+				s.AddKnownTypes(datav1alpha1.GroupVersion, efcRuntime)
+				s.AddKnownTypes(datav1alpha1.GroupVersion, data)
+				err := v1.AddToScheme(s)
+				Expect(err).NotTo(HaveOccurred())
+
+				mockClient := fake.NewFakeClientWithScheme(s, efcRuntime, data)
+				return &EFCEngine{
+					name:      name,
+					namespace: workerTestNamespaceEFC,
+					runtime:   efcRuntime,
+					Client:    mockClient,
+				}
 			}
 		})
-	}
-}
 
-func TestEFCEngine_SetupWorkers(t *testing.T) {
-	runtimeInfo, err := base.BuildRuntimeInfo("efc", "fluid", common.EFCRuntime)
+		Context("when WorkerPhase is RuntimePhaseNone", func() {
+			It("should return true", func() {
+				e := createEngine("test0", datav1alpha1.RuntimePhaseNone)
+				gotShould, err := e.ShouldSetupWorkers()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(gotShould).To(BeTrue())
+			})
+		})
 
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
-	runtimeInfo.SetupWithDataset(&datav1alpha1.Dataset{
-		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
+		Context("when WorkerPhase is RuntimePhaseNotReady", func() {
+			It("should return false", func() {
+				e := createEngine("test1", datav1alpha1.RuntimePhaseNotReady)
+				gotShould, err := e.ShouldSetupWorkers()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(gotShould).To(BeFalse())
+			})
+		})
+
+		Context("when WorkerPhase is RuntimePhasePartialReady", func() {
+			It("should return false", func() {
+				e := createEngine("test2", datav1alpha1.RuntimePhasePartialReady)
+				gotShould, err := e.ShouldSetupWorkers()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(gotShould).To(BeFalse())
+			})
+		})
+
+		Context("when WorkerPhase is RuntimePhaseReady", func() {
+			It("should return false", func() {
+				e := createEngine("test3", datav1alpha1.RuntimePhaseReady)
+				gotShould, err := e.ShouldSetupWorkers()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(gotShould).To(BeFalse())
+			})
+		})
 	})
 
-	nodeSelector := map[string]string{
-		"node-select": "true",
-	}
-	runtimeInfo.SetFuseNodeSelector(nodeSelector)
+	Describe("SetupWorkers", func() {
+		var runtimeInfo base.RuntimeInfoInterface
 
-	type fields struct {
-		replicas    int32
-		nodeInputs  []*v1.Node
-		worker      appsv1.StatefulSet
-		runtime     *datav1alpha1.EFCRuntime
-		runtimeInfo base.RuntimeInfoInterface
-		name        string
-		namespace   string
-	}
-	tests := []struct {
-		name   string
-		fields fields
-	}{
-		{
-			name: "test",
-			fields: fields{
-				replicas: 1,
-				nodeInputs: []*v1.Node{
+		BeforeEach(func() {
+			var err error
+			runtimeInfo, err = base.BuildRuntimeInfo(workerTestNamespaceEFC, workerTestNamespaceFluid, common.EFCRuntime)
+			Expect(err).NotTo(HaveOccurred())
+
+			runtimeInfo.SetupWithDataset(&datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
+			})
+
+			nodeSelector := map[string]string{
+				"node-select": "true",
+			}
+			runtimeInfo.SetFuseNodeSelector(nodeSelector)
+		})
+
+		Context("when setting up workers with replicas", func() {
+			It("should setup workers successfully", func() {
+				nodeInputs := []*v1.Node{
 					{
 						ObjectMeta: metav1.ObjectMeta{
 							Name: "test-node",
 						},
 					},
-				},
-				worker: appsv1.StatefulSet{
+				}
+				worker := appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test-worker",
-						Namespace: "fluid",
+						Namespace: workerTestNamespaceFluid,
 					},
 					Spec: appsv1.StatefulSetSpec{
 						Replicas: ptr.To[int32](1),
 					},
-				},
-				runtime: &datav1alpha1.EFCRuntime{
+				}
+				efcRuntime := &datav1alpha1.EFCRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
-						Namespace: "fluid",
+						Namespace: workerTestNamespaceFluid,
 					},
 					Spec: datav1alpha1.EFCRuntimeSpec{
 						Replicas: 1,
 					},
-				},
-				runtimeInfo: runtimeInfo,
-				name:        "test",
-				namespace:   "fluid",
-			},
-		},
-		{
-			name: "test1",
-			fields: fields{
-				replicas: 0,
-				nodeInputs: []*v1.Node{
+				}
+				data := &datav1alpha1.Dataset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: workerTestNamespaceFluid,
+					},
+				}
+
+				runtimeObjs := []runtime.Object{}
+				for _, nodeInput := range nodeInputs {
+					runtimeObjs = append(runtimeObjs, nodeInput.DeepCopy())
+				}
+				runtimeObjs = append(runtimeObjs, worker.DeepCopy())
+
+				s := runtime.NewScheme()
+				s.AddKnownTypes(datav1alpha1.GroupVersion, efcRuntime)
+				s.AddKnownTypes(datav1alpha1.GroupVersion, data)
+				s.AddKnownTypes(appsv1.SchemeGroupVersion, &worker)
+				err := v1.AddToScheme(s)
+				Expect(err).NotTo(HaveOccurred())
+
+				runtimeObjs = append(runtimeObjs, efcRuntime, data)
+				mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+
+				e := &EFCEngine{
+					runtime:     efcRuntime,
+					runtimeInfo: runtimeInfo,
+					Client:      mockClient,
+					name:        "test",
+					namespace:   workerTestNamespaceFluid,
+					Log:         ctrl.Log.WithName("test"),
+				}
+
+				e.Helper = ctrlhelper.BuildHelper(runtimeInfo, mockClient, e.Log)
+				err = e.SetupWorkers()
+				Expect(err).NotTo(HaveOccurred())
+
+				workers, err := ctrlhelper.GetWorkersAsStatefulset(e.Client,
+					types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(*workers.Spec.Replicas).To(Equal(int32(1)))
+			})
+		})
+
+		Context("when setting up workers with disabled worker", func() {
+			It("should setup workers with 0 replicas", func() {
+				nodeInputs := []*v1.Node{
 					{
 						ObjectMeta: metav1.ObjectMeta{
 							Name: "test1-node",
 						},
 					},
-				},
-				worker: appsv1.StatefulSet{
+				}
+				worker := appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test1-worker",
-						Namespace: "fluid",
+						Namespace: workerTestNamespaceFluid,
 					},
 					Spec: appsv1.StatefulSetSpec{
 						Replicas: ptr.To[int32](0),
 					},
-				},
-				runtime: &datav1alpha1.EFCRuntime{
+				}
+				efcRuntime := &datav1alpha1.EFCRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test1",
-						Namespace: "fluid",
+						Namespace: workerTestNamespaceFluid,
 					},
 					Spec: datav1alpha1.EFCRuntimeSpec{
 						Worker: datav1alpha1.EFCCompTemplateSpec{
 							Disabled: true,
 						},
 					},
-				},
-				runtimeInfo: runtimeInfo,
-				name:        "test1",
-				namespace:   "fluid",
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			runtimeObjs := []runtime.Object{}
-			for _, nodeInput := range tt.fields.nodeInputs {
-				runtimeObjs = append(runtimeObjs, nodeInput.DeepCopy())
-			}
-			runtimeObjs = append(runtimeObjs, tt.fields.worker.DeepCopy())
-
-			s := runtime.NewScheme()
-			data := &datav1alpha1.Dataset{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      tt.fields.name,
-					Namespace: tt.fields.namespace,
-				},
-			}
-			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
-			s.AddKnownTypes(datav1alpha1.GroupVersion, data)
-			s.AddKnownTypes(appsv1.SchemeGroupVersion, &tt.fields.worker)
-			_ = v1.AddToScheme(s)
-			runtimeObjs = append(runtimeObjs, tt.fields.runtime)
-			runtimeObjs = append(runtimeObjs, data)
-			mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
-
-			e := &EFCEngine{
-				runtime:     tt.fields.runtime,
-				runtimeInfo: tt.fields.runtimeInfo,
-				Client:      mockClient,
-				name:        tt.fields.name,
-				namespace:   tt.fields.namespace,
-				Log:         ctrl.Log.WithName(tt.fields.name),
-			}
-
-			e.Helper = ctrlhelper.BuildHelper(runtimeInfo, mockClient, e.Log)
-			err = e.SetupWorkers()
-			if err != nil {
-				t.Errorf("EFCEngine.SetupWorkers() error = %v", err)
-			}
-			workers, err := ctrlhelper.GetWorkersAsStatefulset(e.Client,
-				types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
-			if err != nil {
-				t.Errorf("ctrll.GetWorkersAsStatefulset error = %v", err)
-			}
-			if tt.fields.replicas != *workers.Spec.Replicas {
-				t.Errorf("Failed to scale %v for %v", tt.name, tt.fields)
-			}
-		})
-	}
-}
-
-func TestEFCEngine_CheckWorkersReady(t *testing.T) {
-	type fields struct {
-		runtime   *datav1alpha1.EFCRuntime
-		worker    *appsv1.StatefulSet
-		name      string
-		namespace string
-	}
-	tests := []struct {
-		name      string
-		fields    fields
-		wantReady bool
-		wantErr   bool
-	}{
-		{
-			name: "test0",
-			fields: fields{
-				name:      "test0",
-				namespace: "efc",
-				runtime: &datav1alpha1.EFCRuntime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test0",
-						Namespace: "efc",
-					},
-					Spec: datav1alpha1.EFCRuntimeSpec{
-						Replicas: 1,
-						Fuse:     datav1alpha1.EFCFuseSpec{},
-					},
-				},
-				worker: &appsv1.StatefulSet{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test0-worker",
-						Namespace: "efc",
-					},
-					Spec: appsv1.StatefulSetSpec{
-						Replicas: ptr.To[int32](1),
-					},
-					Status: appsv1.StatefulSetStatus{
-						Replicas:      1,
-						ReadyReplicas: 1,
-					},
-				},
-			},
-			wantReady: true,
-			wantErr:   false,
-		},
-		{
-			name: "test1",
-			fields: fields{
-				name:      "test1",
-				namespace: "efc",
-				runtime: &datav1alpha1.EFCRuntime{
+				}
+				data := &datav1alpha1.Dataset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test1",
-						Namespace: "efc",
+						Namespace: workerTestNamespaceFluid,
+					},
+				}
+
+				runtimeObjs := []runtime.Object{}
+				for _, nodeInput := range nodeInputs {
+					runtimeObjs = append(runtimeObjs, nodeInput.DeepCopy())
+				}
+				runtimeObjs = append(runtimeObjs, worker.DeepCopy())
+
+				s := runtime.NewScheme()
+				s.AddKnownTypes(datav1alpha1.GroupVersion, efcRuntime)
+				s.AddKnownTypes(datav1alpha1.GroupVersion, data)
+				s.AddKnownTypes(appsv1.SchemeGroupVersion, &worker)
+				err := v1.AddToScheme(s)
+				Expect(err).NotTo(HaveOccurred())
+
+				runtimeObjs = append(runtimeObjs, efcRuntime, data)
+				mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+
+				e := &EFCEngine{
+					runtime:     efcRuntime,
+					runtimeInfo: runtimeInfo,
+					Client:      mockClient,
+					name:        "test1",
+					namespace:   workerTestNamespaceFluid,
+					Log:         ctrl.Log.WithName("test1"),
+				}
+
+				e.Helper = ctrlhelper.BuildHelper(runtimeInfo, mockClient, e.Log)
+				err = e.SetupWorkers()
+				Expect(err).NotTo(HaveOccurred())
+
+				workers, err := ctrlhelper.GetWorkersAsStatefulset(e.Client,
+					types.NamespacedName{Namespace: e.namespace, Name: e.getWorkerName()})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(*workers.Spec.Replicas).To(Equal(int32(0)))
+			})
+		})
+	})
+
+	Describe("CheckWorkersReady", func() {
+		var createEngineWithWorker func(name string, replicas, readyReplicas int32, workerDisabled bool) *EFCEngine
+
+		BeforeEach(func() {
+			createEngineWithWorker = func(name string, replicas, readyReplicas int32, workerDisabled bool) *EFCEngine {
+				efcRuntime := &datav1alpha1.EFCRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      name,
+						Namespace: workerTestNamespaceEFC,
 					},
 					Spec: datav1alpha1.EFCRuntimeSpec{
-						Replicas: 1,
+						Replicas: int32(replicas),
 						Fuse:     datav1alpha1.EFCFuseSpec{},
-					},
-				},
-				worker: &appsv1.StatefulSet{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test1-worker",
-						Namespace: "efc",
-					},
-					Spec: appsv1.StatefulSetSpec{
-						Replicas: ptr.To[int32](1),
-					},
-					Status: appsv1.StatefulSetStatus{
-						Replicas:      1,
-						ReadyReplicas: 0,
-					},
-				},
-			},
-			wantReady: false,
-			wantErr:   false,
-		},
-		{
-			name: "test2",
-			fields: fields{
-				name:      "test2",
-				namespace: "efc",
-				runtime: &datav1alpha1.EFCRuntime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test2",
-						Namespace: "efc",
-					},
-					Spec: datav1alpha1.EFCRuntimeSpec{
-						Fuse: datav1alpha1.EFCFuseSpec{},
 						Worker: datav1alpha1.EFCCompTemplateSpec{
-							Disabled: true,
+							Disabled: workerDisabled,
 						},
 					},
-				},
-				worker: &appsv1.StatefulSet{
+				}
+				worker := &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test2-worker",
-						Namespace: "efc",
+						Name:      name + "-worker",
+						Namespace: workerTestNamespaceEFC,
 					},
 					Spec: appsv1.StatefulSetSpec{
-						Replicas: ptr.To[int32](0),
+						Replicas: ptr.To(replicas),
 					},
 					Status: appsv1.StatefulSetStatus{
-						Replicas:      0,
-						ReadyReplicas: 0,
+						Replicas:      replicas,
+						ReadyReplicas: readyReplicas,
 					},
-				},
-			},
-			wantReady: true,
-			wantErr:   false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			runtimeObjs := []runtime.Object{}
-			data := &datav1alpha1.Dataset{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      tt.fields.name,
-					Namespace: tt.fields.namespace,
-				},
-			}
+				}
+				data := &datav1alpha1.Dataset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      name,
+						Namespace: workerTestNamespaceEFC,
+					},
+				}
 
-			s := runtime.NewScheme()
-			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
-			s.AddKnownTypes(datav1alpha1.GroupVersion, data)
-			s.AddKnownTypes(appsv1.SchemeGroupVersion, tt.fields.worker)
-			_ = v1.AddToScheme(s)
+				s := runtime.NewScheme()
+				s.AddKnownTypes(datav1alpha1.GroupVersion, efcRuntime)
+				s.AddKnownTypes(datav1alpha1.GroupVersion, data)
+				s.AddKnownTypes(appsv1.SchemeGroupVersion, worker)
+				err := v1.AddToScheme(s)
+				Expect(err).NotTo(HaveOccurred())
 
-			runtimeObjs = append(runtimeObjs, tt.fields.runtime, data, tt.fields.worker)
-			mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
-			e := &EFCEngine{
-				runtime:   tt.fields.runtime,
-				name:      tt.fields.name,
-				namespace: tt.fields.namespace,
-				Client:    mockClient,
-				Log:       ctrl.Log.WithName(tt.fields.name),
-			}
-			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, common.EFCRuntime)
-			if err != nil {
-				t.Errorf("EFCEngine.CheckWorkersReady() error = %v", err)
-			}
-
-			e.Helper = ctrlhelper.BuildHelper(runtimeInfo, mockClient, e.Log)
-
-			gotReady, err := e.CheckWorkersReady()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("EFCEngine.CheckWorkersReady() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if gotReady != tt.wantReady {
-				t.Errorf("EFCEngine.CheckWorkersReady() = %v, want %v", gotReady, tt.wantReady)
+				mockClient := fake.NewFakeClientWithScheme(s, efcRuntime, data, worker)
+				e := &EFCEngine{
+					runtime:   efcRuntime,
+					name:      name,
+					namespace: workerTestNamespaceEFC,
+					Client:    mockClient,
+					Log:       ctrl.Log.WithName(name),
+				}
+				runtimeInfo, err := base.BuildRuntimeInfo(name, workerTestNamespaceEFC, common.EFCRuntime)
+				Expect(err).NotTo(HaveOccurred())
+				e.Helper = ctrlhelper.BuildHelper(runtimeInfo, mockClient, e.Log)
+				return e
 			}
 		})
-	}
-}
 
-func TestEFCEngine_GetWorkerSelectors(t *testing.T) {
-	type fields struct {
-		name string
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   string
-	}{
-		{
-			name: "test0",
-			fields: fields{
-				name: "spark",
-			},
-			want: "app=efc,release=spark,role=efc-worker",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			e := &EFCEngine{
-				name: tt.fields.name,
-			}
-			if got := e.getWorkerSelectors(); got != tt.want {
-				t.Errorf("EFCEngine.getWorkerSelectors() = %v, want %v", got, tt.want)
-			}
+		Context("when all workers are ready", func() {
+			It("should return true", func() {
+				e := createEngineWithWorker("test0", 1, 1, false)
+				gotReady, err := e.CheckWorkersReady()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(gotReady).To(BeTrue())
+			})
 		})
-	}
-}
 
-func TestEFCEngine_syncWorkersEndpoints(t *testing.T) {
-	type fields struct {
-		worker    *appsv1.StatefulSet
-		pods      []*v1.Pod
-		configMap *v1.ConfigMap
-		name      string
-		namespace string
-	}
-	tests := []struct {
-		name      string
-		fields    fields
-		wantErr   bool
-		wantCount int
-	}{
-		{
-			name:      "test",
-			wantErr:   false,
-			wantCount: 1,
-			fields: fields{
-				name:      "spark",
-				namespace: "big-data",
-				worker: &appsv1.StatefulSet{
+		Context("when workers are not ready", func() {
+			It("should return false", func() {
+				e := createEngineWithWorker("test1", 1, 0, false)
+				gotReady, err := e.CheckWorkersReady()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(gotReady).To(BeFalse())
+			})
+		})
+
+		Context("when worker is disabled", func() {
+			It("should return true", func() {
+				e := createEngineWithWorker("test2", 0, 0, true)
+				gotReady, err := e.CheckWorkersReady()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(gotReady).To(BeTrue())
+			})
+		})
+	})
+
+	Describe("getWorkerSelectors", func() {
+		Context("when getting worker selectors", func() {
+			It("should return correct selector string", func() {
+				e := &EFCEngine{
+					name: "spark",
+				}
+				got := e.getWorkerSelectors()
+				Expect(got).To(Equal("app=efc,release=spark,role=efc-worker"))
+			})
+		})
+	})
+
+	Describe("syncWorkersEndpoints", func() {
+		var createSyncTestEngine func(configMapName string) *EFCEngine
+
+		BeforeEach(func() {
+			createCommonObjects := func() (*appsv1.StatefulSet, *v1.Pod) {
+				worker := &appsv1.StatefulSet{
 					TypeMeta: metav1.TypeMeta{
 						Kind:       "StatefulSet",
 						APIVersion: "apps/v1",
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "spark-worker",
-						Namespace: "big-data",
+						Namespace: workerTestNamespaceBigData,
 						UID:       "uid1",
 					},
 					Spec: appsv1.StatefulSetSpec{
@@ -530,177 +403,97 @@ func TestEFCEngine_syncWorkersEndpoints(t *testing.T) {
 							},
 						},
 					},
-				},
-				pods: []*v1.Pod{
-					{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "spark-worker-0",
-							Namespace: "big-data",
-							OwnerReferences: []metav1.OwnerReference{{
-								Kind:       "StatefulSet",
-								APIVersion: "apps/v1",
-								Name:       "spark-worker",
-								UID:        "uid1",
-								Controller: ptr.To(true),
-							}},
-							Labels: map[string]string{
-								"app":              "efc",
-								"role":             "efc-worker",
-								"fluid.io/dataset": "big-data-spark",
-							},
+				}
+				pod := &v1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "spark-worker-0",
+						Namespace: workerTestNamespaceBigData,
+						OwnerReferences: []metav1.OwnerReference{{
+							Kind:       "StatefulSet",
+							APIVersion: "apps/v1",
+							Name:       "spark-worker",
+							UID:        "uid1",
+							Controller: ptr.To(true),
+						}},
+						Labels: map[string]string{
+							"app":              "efc",
+							"role":             "efc-worker",
+							"fluid.io/dataset": "big-data-spark",
 						},
-						Spec: v1.PodSpec{
-							Containers: []v1.Container{
-								{
-									Name: "efc-worker",
-									Ports: []v1.ContainerPort{
-										{
-											Name:          "rpc",
-											ContainerPort: 7788,
-										},
+					},
+					Spec: v1.PodSpec{
+						Containers: []v1.Container{
+							{
+								Name: "efc-worker",
+								Ports: []v1.ContainerPort{
+									{
+										Name:          "rpc",
+										ContainerPort: 7788,
 									},
 								},
 							},
 						},
-						Status: v1.PodStatus{
-							PodIP: "127.0.0.1",
-							Phase: v1.PodRunning,
-							Conditions: []v1.PodCondition{{
-								Type:   v1.PodReady,
-								Status: v1.ConditionTrue,
-							}},
-						},
 					},
-				},
-				configMap: &v1.ConfigMap{
+					Status: v1.PodStatus{
+						PodIP: "127.0.0.1",
+						Phase: v1.PodRunning,
+						Conditions: []v1.PodCondition{{
+							Type:   v1.PodReady,
+							Status: v1.ConditionTrue,
+						}},
+					},
+				}
+				return worker, pod
+			}
+
+			createSyncTestEngine = func(configMapName string) *EFCEngine {
+				worker, pod := createCommonObjects()
+				configMap := &v1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "spark-worker-endpoints",
-						Namespace: "big-data",
+						Name:      configMapName,
+						Namespace: workerTestNamespaceBigData,
 					},
 					Data: map[string]string{
 						WorkerEndpointsDataName: workerEndpointsConfigMapData,
 					},
-				},
-			},
-		},
-		{
-			name:      "test2",
-			wantErr:   true,
-			wantCount: 1,
-			fields: fields{
-				name:      "spark",
-				namespace: "big-data",
-				worker: &appsv1.StatefulSet{
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "StatefulSet",
-						APIVersion: "apps/v1",
-					},
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "spark-worker",
-						Namespace: "big-data",
-						UID:       "uid1",
-					},
-					Spec: appsv1.StatefulSetSpec{
-						Selector: &metav1.LabelSelector{
-							MatchLabels: map[string]string{
-								"app":              "efc",
-								"role":             "efc-worker",
-								"fluid.io/dataset": "big-data-spark",
-							},
-						},
-					},
-				},
-				pods: []*v1.Pod{
-					{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "spark-worker-0",
-							Namespace: "big-data",
-							OwnerReferences: []metav1.OwnerReference{{
-								Kind:       "StatefulSet",
-								APIVersion: "apps/v1",
-								Name:       "spark-worker",
-								UID:        "uid1",
-								Controller: ptr.To(true),
-							}},
-							Labels: map[string]string{
-								"app":              "efc",
-								"role":             "efc-worker",
-								"fluid.io/dataset": "big-data-spark",
-							},
-						},
-						Spec: v1.PodSpec{
-							Containers: []v1.Container{
-								{
-									Name: "efc-worker",
-									Ports: []v1.ContainerPort{
-										{
-											Name:          "rpc",
-											ContainerPort: 7788,
-										},
-									},
-								},
-							},
-						},
-						Status: v1.PodStatus{
-							PodIP: "127.0.0.1",
-							Phase: v1.PodRunning,
-							Conditions: []v1.PodCondition{{
-								Type:   v1.PodReady,
-								Status: v1.ConditionTrue,
-							}},
-						},
-					},
-				},
-				configMap: &v1.ConfigMap{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "hbase-worker-endpoints",
-						Namespace: "big-data",
-					},
-					Data: map[string]string{
-						WorkerEndpointsDataName: workerEndpointsConfigMapData,
-					},
-				},
-			},
-		},
-	}
+				}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			runtimeObjs := []runtime.Object{}
+				s := runtime.NewScheme()
+				s.AddKnownTypes(appsv1.SchemeGroupVersion, worker)
+				s.AddKnownTypes(v1.SchemeGroupVersion, configMap)
+				err := v1.AddToScheme(s)
+				Expect(err).NotTo(HaveOccurred())
 
-			s := runtime.NewScheme()
-			s.AddKnownTypes(appsv1.SchemeGroupVersion, tt.fields.worker)
-			s.AddKnownTypes(v1.SchemeGroupVersion, tt.fields.configMap)
-			_ = v1.AddToScheme(s)
-
-			runtimeObjs = append(runtimeObjs, tt.fields.worker)
-			runtimeObjs = append(runtimeObjs, tt.fields.configMap)
-			for _, pod := range tt.fields.pods {
-				runtimeObjs = append(runtimeObjs, pod)
-			}
-			mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
-			e := &EFCEngine{
-				name:      tt.fields.name,
-				namespace: tt.fields.namespace,
-				Client:    mockClient,
-				Log:       ctrl.Log.WithName(tt.fields.name),
-			}
-			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, common.EFCRuntime)
-			if err != nil {
-				t.Errorf("EFCEngine.CheckWorkersReady() error = %v", err)
-			}
-
-			e.Helper = ctrlhelper.BuildHelper(runtimeInfo, mockClient, e.Log)
-
-			count, err := e.syncWorkersEndpoints()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("EFCEngine.syncWorkersEndpoints() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if count != tt.wantCount {
-				t.Errorf("EFCEngine.syncWorkersEndpoints() count = %v, wantCount %v", count, tt.wantCount)
-				return
+				mockClient := fake.NewFakeClientWithScheme(s, worker, configMap, pod)
+				e := &EFCEngine{
+					name:      "spark",
+					namespace: workerTestNamespaceBigData,
+					Client:    mockClient,
+					Log:       ctrl.Log.WithName("spark"),
+				}
+				runtimeInfo, err := base.BuildRuntimeInfo("spark", workerTestNamespaceBigData, common.EFCRuntime)
+				Expect(err).NotTo(HaveOccurred())
+				e.Helper = ctrlhelper.BuildHelper(runtimeInfo, mockClient, e.Log)
+				return e
 			}
 		})
-	}
-}
+
+		Context("when syncing workers endpoints successfully", func() {
+			It("should return correct count", func() {
+				e := createSyncTestEngine("spark-worker-endpoints")
+				count, err := e.syncWorkersEndpoints()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(count).To(Equal(1))
+			})
+		})
+
+		Context("when config map not found", func() {
+			It("should return error", func() {
+				e := createSyncTestEngine("hbase-worker-endpoints")
+				count, err := e.syncWorkersEndpoints()
+				Expect(err).To(HaveOccurred())
+				Expect(count).To(Equal(1))
+			})
+		})
+	})
+})
