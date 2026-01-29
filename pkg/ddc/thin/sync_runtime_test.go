@@ -17,40 +17,20 @@
 package thin
 
 import (
-	"testing"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	"github.com/fluid-cloudnative/fluid/pkg/runtime"
 )
 
-func TestThinEngine_SyncRuntime(t1 *testing.T) {
-	type fields struct{}
-	type args struct {
-		ctx runtime.ReconcileRequestContext
-	}
-	tests := []struct {
-		name        string
-		fields      fields
-		args        args
-		wantChanged bool
-		wantErr     bool
-	}{
-		{
-			name:        "default",
-			wantChanged: false,
-			wantErr:     false,
-		},
-	}
-	for _, tt := range tests {
-		t1.Run(tt.name, func(t1 *testing.T) {
-			t := ThinEngine{}
-			gotChanged, err := t.SyncRuntime(tt.args.ctx)
-			if (err != nil) != tt.wantErr {
-				t1.Errorf("SyncRuntime() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if gotChanged != tt.wantChanged {
-				t1.Errorf("SyncRuntime() gotChanged = %v, want %v", gotChanged, tt.wantChanged)
-			}
-		})
-	}
-}
+var _ = Describe("ThinEngine_SyncRuntime", func() {
+	It("should return false for changed and no error", func() {
+		var ctx runtime.ReconcileRequestContext
+		engine := ThinEngine{}
+
+		gotChanged, err := engine.SyncRuntime(ctx)
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(gotChanged).To(BeFalse())
+	})
+})
