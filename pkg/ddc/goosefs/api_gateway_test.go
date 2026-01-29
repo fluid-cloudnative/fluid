@@ -18,8 +18,9 @@ package goosefs
 
 import (
 	"fmt"
-	"reflect"
-	"testing"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -29,45 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestGetAPIGatewayStatus(t *testing.T) {
-	endpointFormat := "%s-master-0.%s:%d"
-	testCases := map[string]struct {
-		engineName      string
-		engineNamespace string
-		port            int32
-		wantStatus      *datav1alpha1.APIGatewayStatus
-	}{
-		"test GetAPIGatewayStatus case 1": {
-			engineName:      "fluid",
-			engineNamespace: "default",
-			port:            8080,
-			wantStatus: &datav1alpha1.APIGatewayStatus{
-				Endpoint: fmt.Sprintf(endpointFormat, "fluid", "default", 8080),
-			},
-		},
-		"test GetAPIGatewayStatus case 2": {
-			engineName:      "demo",
-			engineNamespace: common.NamespaceFluidSystem,
-			port:            80,
-			wantStatus: &datav1alpha1.APIGatewayStatus{
-				Endpoint: fmt.Sprintf(endpointFormat, "demo", common.NamespaceFluidSystem, 80),
-			},
-		},
-	}
-
-	for k, item := range testCases {
-		e := mockGooseFSEngineWithClient(item.engineName, item.engineNamespace, item.port)
-		got, _ := e.GetAPIGatewayStatus()
-
-		if !reflect.DeepEqual(got, item.wantStatus) {
-			t.Errorf("%s check failure,want:%v,got:%v", k, item.wantStatus, got)
-		}
-
-	}
-}
-
 func mockGooseFSEngineWithClient(name, ns string, port int32) *GooseFSEngine {
-
 	var mockClient client.Client
 
 	mockSvc := &corev1.Service{
@@ -95,35 +58,72 @@ func mockGooseFSEngineWithClient(name, ns string, port int32) *GooseFSEngine {
 	return e
 }
 
-func TestQueryAPIGatewayEndpoint(t *testing.T) {
+var _ = Describe("APIGateway", func() {
 	endpointFormat := "%s-master-0.%s:%d"
-	testCases := map[string]struct {
+
+	type testCase struct {
 		engineName      string
 		engineNamespace string
 		port            int32
 		wantEndpoint    string
-	}{
-		"test GetAPIGatewayStatus case 1": {
-			engineName:      "fluid",
-			engineNamespace: "default",
-			port:            8080,
-			wantEndpoint:    fmt.Sprintf(endpointFormat, "fluid", "default", 8080),
-		},
-		"test GetAPIGatewayStatus case 2": {
-			engineName:      "demo",
-			engineNamespace: common.NamespaceFluidSystem,
-			port:            80,
-			wantEndpoint:    fmt.Sprintf(endpointFormat, "demo", common.NamespaceFluidSystem, 80),
-		},
 	}
 
-	for k, item := range testCases {
-		e := mockGooseFSEngineWithClient(item.engineName, item.engineNamespace, item.port)
-		got, _ := e.queryAPIGatewayEndpoint()
+	Describe("GetAPIGatewayStatus", func() {
+		DescribeTable("should return correct API gateway status",
+			func(tc testCase) {
+				e := mockGooseFSEngineWithClient(tc.engineName, tc.engineNamespace, tc.port)
+				got, err := e.GetAPIGatewayStatus()
 
-		if !reflect.DeepEqual(got, item.wantEndpoint) {
-			t.Errorf("%s check failure,want:%v,got:%v", k, item.wantEndpoint, got)
-		}
+				Expect(err).NotTo(HaveOccurred())
+				expectedStatus := &datav1alpha1.APIGatewayStatus{
+					Endpoint: fmt.Sprintf(endpointFormat, tc.engineName, tc.engineNamespace, tc.port),
+				}
+				Expect(got).To(Equal(expectedStatus))
+			},
+			Entry("fluid engine in default namespace",
+				testCase{
+					engineName:      "fluid",
+					engineNamespace: "default",
+					port:            8080,
+					wantEndpoint:    fmt.Sprintf(endpointFormat, "fluid", "default", 8080),
+				},
+			),
+			Entry("demo engine in fluid-system namespace",
+				testCase{
+					engineName:      "demo",
+					engineNamespace: common.NamespaceFluidSystem,
+					port:            80,
+					wantEndpoint:    fmt.Sprintf(endpointFormat, "demo", common.NamespaceFluidSystem, 80),
+				},
+			),
+		)
+	})
 
-	}
-}
+	Describe("queryAPIGatewayEndpoint", func() {
+		DescribeTable("should return correct endpoint",
+			func(tc testCase) {
+				e := mockGooseFSEngineWithClient(tc.engineName, tc.engineNamespace, tc.port)
+				got, err := e.queryAPIGatewayEndpoint()
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(got).To(Equal(tc.wantEndpoint))
+			},
+			Entry("fluid engine in default namespace",
+				testCase{
+					engineName:      "fluid",
+					engineNamespace: "default",
+					port:            8080,
+					wantEndpoint:    fmt.Sprintf(endpointFormat, "fluid", "default", 8080),
+				},
+			),
+			Entry("demo engine in fluid-system namespace",
+				testCase{
+					engineName:      "demo",
+					engineNamespace: common.NamespaceFluidSystem,
+					port:            80,
+					wantEndpoint:    fmt.Sprintf(endpointFormat, "demo", common.NamespaceFluidSystem, 80),
+				},
+			),
+		)
+	})
+})
