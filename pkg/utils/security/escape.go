@@ -25,7 +25,7 @@ import (
 // a -> a
 // a b -> a b
 // $a -> $'$a'
-// $'a' -> $'$\'a\”
+// $'a' -> $'$\'a\''
 func EscapeBashStr(s string) string {
 	// Check if string contains any shell-sensitive characters that require escaping
 	// Added '\', '\'', and '\n' to the list as identified by security review
