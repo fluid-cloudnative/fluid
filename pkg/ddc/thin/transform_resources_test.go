@@ -17,106 +17,100 @@
 package thin
 
 import (
-	"testing"
-
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestThinEngine_transformResourcesForFuse(t1 *testing.T) {
-	var tests = []struct {
-		runtime *datav1alpha1.ThinRuntime
-		value   *ThinValue
-	}{
-		{&datav1alpha1.ThinRuntime{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "test",
-			},
-			Spec: datav1alpha1.ThinRuntimeSpec{
-				Fuse: datav1alpha1.ThinFuseSpec{
-					Resources: corev1.ResourceRequirements{
-						Limits: corev1.ResourceList{
-							corev1.ResourceMemory: resource.MustParse("2Gi"),
-							corev1.ResourceCPU:    resource.MustParse("2"),
-						},
-						Requests: corev1.ResourceList{
-							corev1.ResourceMemory: resource.MustParse("2Gi"),
-							corev1.ResourceCPU:    resource.MustParse("2"),
+var _ = Describe("ThinEngine_transformResources", func() {
+	Describe("transformResourcesForFuse", func() {
+		It("should correctly transform fuse resources", func() {
+			runtime := &datav1alpha1.ThinRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test",
+				},
+				Spec: datav1alpha1.ThinRuntimeSpec{
+					Fuse: datav1alpha1.ThinFuseSpec{
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceMemory: resource.MustParse("2Gi"),
+								corev1.ResourceCPU:    resource.MustParse("2"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceMemory: resource.MustParse("2Gi"),
+								corev1.ResourceCPU:    resource.MustParse("2"),
+							},
 						},
 					},
 				},
-			},
-		}, &ThinValue{}},
-	}
-	for _, test := range tests {
-		engine := &ThinEngine{
-			Log:  fake.NullLogger(),
-			name: test.runtime.Name,
-		}
-		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "thin", base.WithTieredStore(test.runtime.Spec.TieredStore))
-		engine.UnitTest = true
-		engine.transformResourcesForFuse(test.runtime.Spec.Fuse.Resources, test.value)
-		wantMemReq := test.runtime.Spec.Fuse.Resources.Requests[corev1.ResourceMemory]
-		wantCpuReq := test.runtime.Spec.Fuse.Resources.Requests[corev1.ResourceCPU]
-		wantMemLim := test.runtime.Spec.Fuse.Resources.Limits[corev1.ResourceMemory]
-		wantCpuLim := test.runtime.Spec.Fuse.Resources.Limits[corev1.ResourceCPU]
-		if (len(test.runtime.Spec.Fuse.Resources.Requests) != 0 &&
-			(wantMemReq.String() != test.value.Fuse.Resources.Requests[corev1.ResourceMemory] || wantCpuReq.String() != test.value.Fuse.Resources.Requests[corev1.ResourceCPU])) ||
-			(len(test.runtime.Spec.Fuse.Resources.Limits) != 0 &&
-				(wantMemLim.String() != test.value.Fuse.Resources.Limits[corev1.ResourceMemory] || wantCpuLim.String() != test.value.Fuse.Resources.Limits[corev1.ResourceCPU])) {
-			t1.Errorf("expected %v, got %v", test.runtime.Spec.Fuse.Resources, test.value.Fuse.Resources)
-		}
-	}
-}
+			}
+			value := &ThinValue{}
 
-func TestThinEngine_transformResourcesForWorker(t1 *testing.T) {
-	var tests = []struct {
-		runtime *datav1alpha1.ThinRuntime
-		value   *ThinValue
-	}{
-		{&datav1alpha1.ThinRuntime{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "test",
-			},
-			Spec: datav1alpha1.ThinRuntimeSpec{
-				Worker: datav1alpha1.ThinCompTemplateSpec{
-					Resources: corev1.ResourceRequirements{
-						Limits: corev1.ResourceList{
-							corev1.ResourceMemory: resource.MustParse("2Gi"),
-							corev1.ResourceCPU:    resource.MustParse("2"),
-						},
-						Requests: corev1.ResourceList{
-							corev1.ResourceMemory: resource.MustParse("2Gi"),
-							corev1.ResourceCPU:    resource.MustParse("2"),
+			engine := &ThinEngine{
+				Log:  fake.NullLogger(),
+				name: runtime.Name,
+			}
+			engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "thin", base.WithTieredStore(runtime.Spec.TieredStore))
+			engine.UnitTest = true
+			engine.transformResourcesForFuse(runtime.Spec.Fuse.Resources, value)
+
+			wantMemReq := runtime.Spec.Fuse.Resources.Requests[corev1.ResourceMemory]
+			wantCpuReq := runtime.Spec.Fuse.Resources.Requests[corev1.ResourceCPU]
+			wantMemLim := runtime.Spec.Fuse.Resources.Limits[corev1.ResourceMemory]
+			wantCpuLim := runtime.Spec.Fuse.Resources.Limits[corev1.ResourceCPU]
+
+			Expect(value.Fuse.Resources.Requests[corev1.ResourceMemory]).To(Equal(wantMemReq.String()))
+			Expect(value.Fuse.Resources.Requests[corev1.ResourceCPU]).To(Equal(wantCpuReq.String()))
+			Expect(value.Fuse.Resources.Limits[corev1.ResourceMemory]).To(Equal(wantMemLim.String()))
+			Expect(value.Fuse.Resources.Limits[corev1.ResourceCPU]).To(Equal(wantCpuLim.String()))
+		})
+	})
+
+	Describe("transformResourcesForWorker", func() {
+		It("should correctly transform worker resources", func() {
+			runtime := &datav1alpha1.ThinRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test",
+				},
+				Spec: datav1alpha1.ThinRuntimeSpec{
+					Worker: datav1alpha1.ThinCompTemplateSpec{
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceMemory: resource.MustParse("2Gi"),
+								corev1.ResourceCPU:    resource.MustParse("2"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceMemory: resource.MustParse("2Gi"),
+								corev1.ResourceCPU:    resource.MustParse("2"),
+							},
 						},
 					},
 				},
-			},
-		}, &ThinValue{}},
-	}
-	for _, test := range tests {
-		engine := &ThinEngine{
-			Log:  fake.NullLogger(),
-			name: test.runtime.Name,
-		}
-		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "thin", base.WithTieredStore(test.runtime.Spec.TieredStore))
-		engine.UnitTest = true
-		engine.transformResourcesForWorker(test.runtime.Spec.Worker.Resources, test.value)
-		wantMemReq := test.runtime.Spec.Worker.Resources.Requests[corev1.ResourceMemory]
-		wantCpuReq := test.runtime.Spec.Worker.Resources.Requests[corev1.ResourceCPU]
-		wantMemLim := test.runtime.Spec.Worker.Resources.Limits[corev1.ResourceMemory]
-		wantCpuLim := test.runtime.Spec.Worker.Resources.Limits[corev1.ResourceCPU]
-		if len(test.runtime.Spec.Worker.Resources.Requests) != 0 &&
-			(wantMemReq.String() != test.value.Worker.Resources.Requests[corev1.ResourceMemory] ||
-				wantCpuReq.String() != test.value.Worker.Resources.Requests[corev1.ResourceCPU]) ||
-			len(test.runtime.Spec.Worker.Resources.Limits) != 0 &&
-				(wantMemLim.String() != test.value.Worker.Resources.Limits[corev1.ResourceMemory] ||
-					wantCpuLim.String() != test.value.Worker.Resources.Limits[corev1.ResourceCPU]) {
-			t1.Errorf("expected %v, got %v", test.runtime.Spec.Worker.Resources, test.value.Worker.Resources)
-		}
-	}
-}
+			}
+			value := &ThinValue{}
+
+			engine := &ThinEngine{
+				Log:  fake.NullLogger(),
+				name: runtime.Name,
+			}
+			engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "thin", base.WithTieredStore(runtime.Spec.TieredStore))
+			engine.UnitTest = true
+			engine.transformResourcesForWorker(runtime.Spec.Worker.Resources, value)
+
+			wantMemReq := runtime.Spec.Worker.Resources.Requests[corev1.ResourceMemory]
+			wantCpuReq := runtime.Spec.Worker.Resources.Requests[corev1.ResourceCPU]
+			wantMemLim := runtime.Spec.Worker.Resources.Limits[corev1.ResourceMemory]
+			wantCpuLim := runtime.Spec.Worker.Resources.Limits[corev1.ResourceCPU]
+
+			Expect(value.Worker.Resources.Requests[corev1.ResourceMemory]).To(Equal(wantMemReq.String()))
+			Expect(value.Worker.Resources.Requests[corev1.ResourceCPU]).To(Equal(wantCpuReq.String()))
+			Expect(value.Worker.Resources.Limits[corev1.ResourceMemory]).To(Equal(wantMemLim.String()))
+			Expect(value.Worker.Resources.Limits[corev1.ResourceCPU]).To(Equal(wantCpuLim.String()))
+		})
+	})
+})
