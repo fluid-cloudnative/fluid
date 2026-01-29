@@ -107,7 +107,7 @@ var _ = Describe("EscapeBashStr", func() {
 
 		It("should handle multiple backslashes", func() {
 			result := EscapeBashStr("test\\\\\\\\value")
-			Expect(result).To(Equal("test\\\\\\\\value"))
+			Expect(result).To(Equal("$'test\\\\\\\\\\\\\\\\value'"))
 		})
 	})
 
@@ -163,12 +163,12 @@ var _ = Describe("EscapeBashStr", func() {
 
 		It("should handle string with only spaces", func() {
 			result := EscapeBashStr("   ")
-			Expect(result).To(Equal("   "))
+			Expect(result).To(Equal("$'   '"))
 		})
 
-		It("should handle string with newlines (no special chars)", func() {
+		It("should handle string with newlines (security critical)", func() {
 			result := EscapeBashStr("line1\nline2")
-			Expect(result).To(Equal("line1\nline2"))
+			Expect(result).To(Equal("$'line1\nline2'"))
 		})
 
 		It("should handle string starting with special character", func() {
@@ -179,6 +179,21 @@ var _ = Describe("EscapeBashStr", func() {
 		It("should handle string ending with special character", func() {
 			result := EscapeBashStr("test$")
 			Expect(result).To(Equal("$'test$'"))
+		})
+
+		It("should handle newline character injection attempt", func() {
+			result := EscapeBashStr("line1\nrm -rf /")
+			Expect(result).To(Equal("$'line1\nrm -rf /'"))
+		})
+
+		It("should handle carriage return injection", func() {
+			result := EscapeBashStr("test\rmalicious")
+			Expect(result).To(Equal("$'test\rmalicious'"))
+		})
+
+		It("should handle tab character", func() {
+			result := EscapeBashStr("test\tvalue")
+			Expect(result).To(Equal("$'test\tvalue'"))
 		})
 	})
 })
@@ -227,6 +242,21 @@ var _ = Describe("containsOne", func() {
 		It("should be case sensitive", func() {
 			result := containsOne("Hello", []rune{'h'})
 			Expect(result).To(BeFalse())
+		})
+
+		It("should detect backslash character", func() {
+			result := containsOne("test\\value", []rune{'\\', '$'})
+			Expect(result).To(BeTrue())
+		})
+
+		It("should detect single quote character", func() {
+			result := containsOne("test'value", []rune{'\'', '$'})
+			Expect(result).To(BeTrue())
+		})
+
+		It("should detect newline character", func() {
+			result := containsOne("test\nvalue", []rune{'\n', '$'})
+			Expect(result).To(BeTrue())
 		})
 	})
 })

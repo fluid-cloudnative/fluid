@@ -27,16 +27,19 @@ import (
 // $a -> $'$a'
 // $'a' -> $'$\'a\”
 func EscapeBashStr(s string) string {
-	if !containsOne(s, []rune{'$', '`', '&', ';', '>', '|', '(', ')'}) {
+	// Check if string contains any shell-sensitive characters that require escaping
+	// Added '\', '\'', and '\n' to the list as identified by security review
+	if !containsOne(s, []rune{'$', '`', '&', ';', '>', '|', '(', ')', '\'', '\\', '\n', '\r', '\t', ' '}) {
 		return s
 	}
 
-	// Escape backslashes first
+	// Escape backslashes first (must be done before escaping quotes)
 	s = strings.ReplaceAll(s, `\`, `\\`)
 
 	// Then escape single quotes
 	s = strings.ReplaceAll(s, `'`, `\'`)
 
+	// Wrap in ANSI-C quoting format
 	return fmt.Sprintf(`$'%s'`, s)
 }
 
