@@ -17,110 +17,152 @@ limitations under the License.
 package jindofsx
 
 import (
-	"testing"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	ctrlhelper "github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/client-go/tools/record"
-	"k8s.io/utils/ptr"
-
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
-
-	ctrlhelper "github.com/fluid-cloudnative/fluid/pkg/ctrl"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestCheckRuntimeHealthy(t *testing.T) {
-	type fields struct {
-		runtime   *datav1alpha1.JindoRuntime
-		worker    *appsv1.StatefulSet
-		master    *appsv1.StatefulSet
-		fuse      *appsv1.DaemonSet
-		name      string
-		namespace string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		wantErr bool
-	}{
-		{
-			name: "healthy",
-			fields: fields{
-				name:      "health-data",
-				namespace: "big-data",
-				runtime: &datav1alpha1.JindoRuntime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "health-data",
-						Namespace: "big-data",
-					},
-					Spec: datav1alpha1.JindoRuntimeSpec{
-						Replicas: 1,
-						Fuse:     datav1alpha1.JindoFuseSpec{},
-					},
-				},
-				worker: &appsv1.StatefulSet{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "health-data-jindofs-worker",
-						Namespace: "big-data",
-					},
-					Spec: appsv1.StatefulSetSpec{
-						Replicas: ptr.To[int32](1),
-					},
-					Status: appsv1.StatefulSetStatus{
-						Replicas:      1,
-						ReadyReplicas: 1,
-					},
-				},
-				master: &appsv1.StatefulSet{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "health-data-jindofs-master",
-						Namespace: "big-data",
-					},
-					Spec: appsv1.StatefulSetSpec{
-						Replicas: ptr.To[int32](1),
-					},
-					Status: appsv1.StatefulSetStatus{
-						Replicas:      1,
-						ReadyReplicas: 1,
-					},
-				},
-				fuse: &appsv1.DaemonSet{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "health-data-jindofs-fuse",
-						Namespace: "big-data",
-					},
-					Status: appsv1.DaemonSetStatus{
-						NumberUnavailable: 0,
-					},
-				},
+var _ = Describe("JindoFSxEngine Health Check Tests", Label("pkg.ddc.jindofsx.health_check_test.go"), func() {
+	var (
+		jindoRuntime *datav1alpha1.JindoRuntime
+		dataset      *datav1alpha1.Dataset
+		worker       *appsv1.StatefulSet
+		master       *appsv1.StatefulSet
+		fuse         *appsv1.DaemonSet
+		engine       *JindoFSxEngine
+		runtimeObjs  []runtime.Object
+		client       client.Client
+		name         string
+		namespace    string
+		runtimeInfo  base.RuntimeInfoInterface
+	)
+
+	BeforeEach(func() {
+		name = "test-data"
+		namespace = "big-data"
+
+		jindoRuntime = &datav1alpha1.JindoRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
 			},
-			wantErr: false,
-		},
-		{
-			name: "master-nohealthy",
-			fields: fields{
-				name:      "unhealthy-master",
-				namespace: "big-data",
-				runtime: &datav1alpha1.JindoRuntime{
+			Spec: datav1alpha1.JindoRuntimeSpec{
+				Replicas: 1,
+				Fuse:     datav1alpha1.JindoFuseSpec{},
+			},
+		}
+
+		dataset = &datav1alpha1.Dataset{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+			},
+		}
+
+		worker = &appsv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name + "-jindofs-worker",
+				Namespace: namespace,
+			},
+			Spec: appsv1.StatefulSetSpec{
+				Replicas: ptr.To[int32](1),
+			},
+			Status: appsv1.StatefulSetStatus{
+				Replicas:      1,
+				ReadyReplicas: 1,
+			},
+		}
+
+		master = &appsv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name + "-jindofs-master",
+				Namespace: namespace,
+			},
+			Spec: appsv1.StatefulSetSpec{
+				Replicas: ptr.To[int32](1),
+			},
+			Status: appsv1.StatefulSetStatus{
+				Replicas:      1,
+				ReadyReplicas: 1,
+			},
+		}
+
+		fuse = &appsv1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name + "-jindofs-fuse",
+				Namespace: namespace,
+			},
+			Status: appsv1.DaemonSetStatus{
+				NumberUnavailable: 0,
+			},
+		}
+
+		runtimeObjs = []runtime.Object{jindoRuntime, dataset, worker, master, fuse}
+	})
+
+	JustBeforeEach(func() {
+		s := runtime.NewScheme()
+		_ = datav1alpha1.AddToScheme(s)
+		_ = v1.AddToScheme(s)
+		_ = appsv1.AddToScheme(s)
+
+		client = fake.NewFakeClientWithScheme(s, runtimeObjs...)
+
+		var err error
+		runtimeInfo, err = base.BuildRuntimeInfo(name, namespace, common.JindoRuntime)
+		Expect(err).To(BeNil())
+
+		engine = &JindoFSxEngine{
+			runtime:   jindoRuntime,
+			name:      name,
+			namespace: namespace,
+			Client:    client,
+			Log:       ctrl.Log.WithName(name),
+			Recorder:  record.NewFakeRecorder(300),
+		}
+
+		engine.Helper = ctrlhelper.BuildHelper(runtimeInfo, client, engine.Log)
+	})
+
+	Describe("Test CheckRuntimeHealthy", func() {
+		Context("when all components are healthy", func() {
+			It("should not return error", func() {
+				err := engine.CheckRuntimeHealthy()
+				Expect(err).To(BeNil())
+			})
+		})
+
+		Context("when master is not healthy", func() {
+			BeforeEach(func() {
+				master = &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "unhealthy-master",
-						Namespace: "big-data",
+						Name:      name + "-jindofs-master",
+						Namespace: namespace,
 					},
-					Spec: datav1alpha1.JindoRuntimeSpec{
-						Replicas: 1,
-						Fuse:     datav1alpha1.JindoFuseSpec{},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: ptr.To[int32](1),
 					},
-				},
-				worker: &appsv1.StatefulSet{
+					Status: appsv1.StatefulSetStatus{
+						ReadyReplicas: 0,
+					},
+				}
+				worker = &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "unhealthy-master-jindofs-worker",
-						Namespace: "big-data",
+						Name:      name + "-jindofs-worker",
+						Namespace: namespace,
 					},
 					Spec: appsv1.StatefulSetSpec{
 						Replicas: ptr.To[int32](1),
@@ -129,47 +171,31 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 						ReadyReplicas: 0,
 						Replicas:      1,
 					},
-				}, master: &appsv1.StatefulSet{
+				}
+				fuse = &appsv1.DaemonSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "unhealthy-master-jindofs-master",
-						Namespace: "big-data",
-					},
-					Spec: appsv1.StatefulSetSpec{
-						Replicas: ptr.To[int32](1),
-					},
-					Status: appsv1.StatefulSetStatus{
-						ReadyReplicas: 0,
-					},
-				}, fuse: &appsv1.DaemonSet{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "unhealthy-master-jindofs-fuse",
-						Namespace: "big-data",
+						Name:      name + "-jindofs-fuse",
+						Namespace: namespace,
 					},
 					Status: appsv1.DaemonSetStatus{
 						NumberUnavailable: 1,
 					},
-				},
-			},
-			wantErr: true,
-		}, {
-			name: "worker-nohealthy",
-			fields: fields{
-				name:      "unhealthy-worker",
-				namespace: "big-data",
-				runtime: &datav1alpha1.JindoRuntime{
+				}
+				runtimeObjs = []runtime.Object{jindoRuntime, dataset, worker, master, fuse}
+			})
+
+			It("should return error", func() {
+				err := engine.CheckRuntimeHealthy()
+				Expect(err).NotTo(BeNil())
+			})
+		})
+
+		Context("when worker is not healthy", func() {
+			BeforeEach(func() {
+				worker = &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "unhealthy-worker",
-						Namespace: "big-data",
-					},
-					Spec: datav1alpha1.JindoRuntimeSpec{
-						Replicas: 1,
-						Fuse:     datav1alpha1.JindoFuseSpec{},
-					},
-				},
-				worker: &appsv1.StatefulSet{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "unhealthy-worker-jindofs-worker",
-						Namespace: "big-data",
+						Name:      name + "-jindofs-worker",
+						Namespace: namespace,
 					},
 					Spec: appsv1.StatefulSetSpec{
 						Replicas: ptr.To[int32](1),
@@ -178,10 +204,11 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 						ReadyReplicas: 0,
 						Replicas:      1,
 					},
-				}, master: &appsv1.StatefulSet{
+				}
+				master = &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "unhealthy-worker-jindofs-master",
-						Namespace: "big-data",
+						Name:      name + "-jindofs-master",
+						Namespace: namespace,
 					},
 					Spec: appsv1.StatefulSetSpec{
 						Replicas: ptr.To[int32](1),
@@ -190,36 +217,31 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 						ReadyReplicas: 1,
 						Replicas:      1,
 					},
-				}, fuse: &appsv1.DaemonSet{
+				}
+				fuse = &appsv1.DaemonSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "unhealthy-worker-jindofs-fuse",
-						Namespace: "big-data",
+						Name:      name + "-jindofs-fuse",
+						Namespace: namespace,
 					},
 					Status: appsv1.DaemonSetStatus{
 						NumberUnavailable: 1,
 					},
-				},
-			},
-			wantErr: true,
-		}, {
-			name: "fuse-nohealthy",
-			fields: fields{
-				name:      "unhealthy-fuse",
-				namespace: "big-data",
-				runtime: &datav1alpha1.JindoRuntime{
+				}
+				runtimeObjs = []runtime.Object{jindoRuntime, dataset, worker, master, fuse}
+			})
+
+			It("should return error", func() {
+				err := engine.CheckRuntimeHealthy()
+				Expect(err).NotTo(BeNil())
+			})
+		})
+
+		Context("when fuse is not healthy but fuse is configured", func() {
+			BeforeEach(func() {
+				worker = &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "unhealthy-fuse",
-						Namespace: "big-data",
-					},
-					Spec: datav1alpha1.JindoRuntimeSpec{
-						Replicas: 1,
-						Fuse:     datav1alpha1.JindoFuseSpec{},
-					},
-				},
-				worker: &appsv1.StatefulSet{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "unhealthy-fuse-jindofs-worker",
-						Namespace: "big-data",
+						Name:      name + "-jindofs-worker",
+						Namespace: namespace,
 					},
 					Spec: appsv1.StatefulSetSpec{
 						Replicas: ptr.To[int32](1),
@@ -228,10 +250,11 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 						ReadyReplicas: 1,
 						Replicas:      1,
 					},
-				}, master: &appsv1.StatefulSet{
+				}
+				master = &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "unhealthy-fuse-jindofs-master",
-						Namespace: "big-data",
+						Name:      name + "-jindofs-master",
+						Namespace: namespace,
 					},
 					Spec: appsv1.StatefulSetSpec{
 						Replicas: ptr.To[int32](1),
@@ -240,35 +263,42 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 						ReadyReplicas: 1,
 						Replicas:      1,
 					},
-				}, fuse: &appsv1.DaemonSet{
+				}
+				fuse = &appsv1.DaemonSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "unhealthy-fuse-jindofs-fuse",
-						Namespace: "big-data",
+						Name:      name + "-jindofs-fuse",
+						Namespace: namespace,
 					},
 					Status: appsv1.DaemonSetStatus{
 						NumberUnavailable: 1,
 					},
-				},
-			},
-			wantErr: false,
-		}, {
-			name: "no-master-nohealthy",
-			fields: fields{
-				name:      "unhealthy-no-master",
-				namespace: "big-data",
-				runtime: &datav1alpha1.JindoRuntime{
+				}
+				runtimeObjs = []runtime.Object{jindoRuntime, dataset, worker, master, fuse}
+			})
+
+			It("should not return error", func() {
+				err := engine.CheckRuntimeHealthy()
+				Expect(err).To(BeNil())
+			})
+		})
+
+		Context("when master not found", func() {
+			BeforeEach(func() {
+				jindoRuntime = &datav1alpha1.JindoRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "unhealthy-no-master",
-						Namespace: "big-data",
+						Namespace: namespace,
 					},
 					Spec: datav1alpha1.JindoRuntimeSpec{
 						Replicas: 1,
 					},
-				},
-				worker: &appsv1.StatefulSet{
+				}
+				name = "unhealthy-no-master"
+
+				worker = &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "unhealthy-no-master-jindofs-worker",
-						Namespace: "big-data",
+						Name:      name + "-jindofs-worker",
+						Namespace: namespace,
 					},
 					Spec: appsv1.StatefulSetSpec{
 						Replicas: ptr.To[int32](1),
@@ -277,10 +307,11 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 						ReadyReplicas: 1,
 						Replicas:      1,
 					},
-				}, master: &appsv1.StatefulSet{
+				}
+				master = &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "unhealthy-no-master-jindofs",
-						Namespace: "big-data",
+						Name:      name + "-jindofs",
+						Namespace: namespace,
 					},
 					Spec: appsv1.StatefulSetSpec{
 						Replicas: ptr.To[int32](1),
@@ -289,35 +320,42 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 						ReadyReplicas: 1,
 						Replicas:      1,
 					},
-				}, fuse: &appsv1.DaemonSet{
+				}
+				fuse = &appsv1.DaemonSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "unhealthy-no-master-jindofs-no-master",
-						Namespace: "big-data",
+						Name:      name + "-jindofs-no-master",
+						Namespace: namespace,
 					},
 					Status: appsv1.DaemonSetStatus{
 						NumberUnavailable: 1,
 					},
-				},
-			},
-			wantErr: true,
-		}, {
-			name: "no-worker-nohealthy",
-			fields: fields{
-				name:      "unhealthy-no-worker",
-				namespace: "big-data",
-				runtime: &datav1alpha1.JindoRuntime{
+				}
+				runtimeObjs = []runtime.Object{jindoRuntime, dataset, worker, master, fuse}
+			})
+
+			It("should return error", func() {
+				err := engine.CheckRuntimeHealthy()
+				Expect(err).NotTo(BeNil())
+			})
+		})
+
+		Context("when worker not found", func() {
+			BeforeEach(func() {
+				jindoRuntime = &datav1alpha1.JindoRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "unhealthy-no-worker",
-						Namespace: "big-data",
+						Namespace: namespace,
 					},
 					Spec: datav1alpha1.JindoRuntimeSpec{
 						Replicas: 1,
 					},
-				},
-				worker: &appsv1.StatefulSet{
+				}
+				name = "unhealthy-no-worker"
+
+				worker = &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "unhealthy-no-worker-jindofs-master",
-						Namespace: "big-data",
+						Name:      name + "-jindofs-master",
+						Namespace: namespace,
 					},
 					Spec: appsv1.StatefulSetSpec{
 						Replicas: ptr.To[int32](1),
@@ -326,10 +364,11 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 						ReadyReplicas: 1,
 						Replicas:      1,
 					},
-				}, master: &appsv1.StatefulSet{
+				}
+				master = &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "unhealthy-no-worker-jindofs",
-						Namespace: "big-data",
+						Name:      name + "-jindofs",
+						Namespace: namespace,
 					},
 					Spec: appsv1.StatefulSetSpec{
 						Replicas: ptr.To[int32](1),
@@ -338,62 +377,23 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 						ReadyReplicas: 1,
 						Replicas:      1,
 					},
-				}, fuse: &appsv1.DaemonSet{
+				}
+				fuse = &appsv1.DaemonSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "unhealthy-no-worker-jindofs-no-worker",
-						Namespace: "big-data",
+						Name:      name + "-jindofs-no-worker",
+						Namespace: namespace,
 					},
 					Status: appsv1.DaemonSetStatus{
 						NumberUnavailable: 1,
 					},
-				},
-			},
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			runtimeObjs := []runtime.Object{}
-			data := &datav1alpha1.Dataset{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      tt.fields.name,
-					Namespace: tt.fields.namespace,
-				},
-			}
+				}
+				runtimeObjs = []runtime.Object{jindoRuntime, dataset, worker, master, fuse}
+			})
 
-			s := runtime.NewScheme()
-			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
-			s.AddKnownTypes(datav1alpha1.GroupVersion, data)
-			s.AddKnownTypes(appsv1.SchemeGroupVersion, tt.fields.worker)
-			s.AddKnownTypes(appsv1.SchemeGroupVersion, tt.fields.fuse)
-
-			_ = v1.AddToScheme(s)
-
-			runtimeObjs = append(runtimeObjs, tt.fields.runtime, data, tt.fields.worker, tt.fields.master, tt.fields.fuse)
-			mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
-			e := &JindoFSxEngine{
-				runtime:   tt.fields.runtime,
-				name:      tt.fields.name,
-				namespace: tt.fields.namespace,
-				Client:    mockClient,
-				Log:       ctrl.Log.WithName(tt.fields.name),
-				Recorder:  record.NewFakeRecorder(300),
-			}
-
-			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, common.JindoRuntime)
-			if err != nil {
-				t.Errorf("JindoFSxEngine.CheckWorkersReady() error = %v", err)
-			}
-
-			e.Helper = ctrlhelper.BuildHelper(runtimeInfo, mockClient, e.Log)
-
-			healthError := e.CheckRuntimeHealthy()
-			hasErr := (healthError != nil)
-			if tt.wantErr != hasErr {
-				t.Errorf("testcase %s check runtime healthy ,hasErr %v, wantErr %v, err:%s", tt.name, hasErr, tt.wantErr, healthError)
-			}
-
+			It("should return error", func() {
+				err := engine.CheckRuntimeHealthy()
+				Expect(err).NotTo(BeNil())
+			})
 		})
-	}
-
-}
+	})
+})
