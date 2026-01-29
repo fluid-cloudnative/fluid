@@ -267,19 +267,19 @@ def __assemble_runtime_by_kind(runtime_kind, name):
     if runtime_kind == "alluxio":
         runtime = Runtime("AlluxioRuntime", name)
         runtime.set_replicas(1)
-        runtime.set_tieredstore("MEM", "/dev/shm", "4Gi")
+        runtime.set_tieredstore("MEM", "/dev/shm", "2Gi")
 
         return runtime
     elif runtime_kind == "jindo":
         runtime = Runtime("JindoRuntime", name)
         runtime.set_replicas(1)
-        runtime.set_tieredstore("MEM", "/dev/shm", "15Gi")
+        runtime.set_tieredstore("MEM", "/dev/shm", "2Gi")
 
         return runtime
 
     elif runtime_kind == "juicefs":
         runtime = Runtime("JuiceFSRuntime", name)
         runtime.set_replicas(1)
-        runtime.set_tieredstore("MEM", "/dev/shm/cache1:/dev/shm/cache2", "4Gi", high="", low="0.1")
+        runtime.set_tieredstore("MEM", "/dev/shm/cache1:/dev/shm/cache2", "2Gi", high="", low="0.1")
 
         return runtime
