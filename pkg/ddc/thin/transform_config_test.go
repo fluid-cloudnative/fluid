@@ -17,125 +17,113 @@
 package thin
 
 import (
-	"reflect"
-	"testing"
-
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestThinEngine_extractVolumeInfo(t *testing.T) {
-	pvc := &corev1.PersistentVolumeClaim{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-pvc",
-			Namespace: "fluid",
-		},
-		Spec: corev1.PersistentVolumeClaimSpec{
-			VolumeName: "test-pv",
-		},
-		Status: corev1.PersistentVolumeClaimStatus{
-			Phase: corev1.ClaimBound,
-		},
-	}
+var _ = Describe("ThinEngine extractVolumeInfo", func() {
+	var engine ThinEngine
 
-	pv := &corev1.PersistentVolume{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-pv",
-		},
-		Spec: corev1.PersistentVolumeSpec{
-			MountOptions: []string{"rw", "noexec"},
-			PersistentVolumeSource: corev1.PersistentVolumeSource{
-				CSI: &corev1.CSIPersistentVolumeSource{
-					NodePublishSecretRef: &corev1.SecretReference{
-						Name:      "my-secret",
-						Namespace: "node-publish-secrets",
-					},
-					VolumeHandle: "test-pv",
-					VolumeAttributes: map[string]string{
-						"test-attr":  "true",
-						"test-attr2": "foobar",
+	BeforeEach(func() {
+		pvc := &corev1.PersistentVolumeClaim{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-pvc",
+				Namespace: "fluid",
+			},
+			Spec: corev1.PersistentVolumeClaimSpec{
+				VolumeName: "test-pv",
+			},
+			Status: corev1.PersistentVolumeClaimStatus{
+				Phase: corev1.ClaimBound,
+			},
+		}
+
+		pv := &corev1.PersistentVolume{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "test-pv",
+			},
+			Spec: corev1.PersistentVolumeSpec{
+				MountOptions: []string{"rw", "noexec"},
+				PersistentVolumeSource: corev1.PersistentVolumeSource{
+					CSI: &corev1.CSIPersistentVolumeSource{
+						NodePublishSecretRef: &corev1.SecretReference{
+							Name:      "my-secret",
+							Namespace: "node-publish-secrets",
+						},
+						VolumeHandle: "test-pv",
+						VolumeAttributes: map[string]string{
+							"test-attr":  "true",
+							"test-attr2": "foobar",
+						},
 					},
 				},
 			},
-		},
-	}
+		}
 
-	client := fake.NewFakeClientWithScheme(testScheme, pvc, pv)
+		client := fake.NewFakeClientWithScheme(testScheme, pvc, pv)
 
-	engine := ThinEngine{
-		name:      "thin-test",
-		namespace: "fluid",
-		Client:    client,
-		Log:       fake.NullLogger(),
-	}
+		engine = ThinEngine{
+			name:      "thin-test",
+			namespace: "fluid",
+			Client:    client,
+			Log:       fake.NullLogger(),
+		}
+	})
 
-	tests := []struct {
-		name             string
-		pvcName          string
-		wantCsiInfo      *corev1.CSIPersistentVolumeSource
-		wantMountOptions []string
-		wantErr          bool
-	}{
-		{
-			name:    "testExtractVolumeInfo",
-			pvcName: "test-pvc",
-			wantCsiInfo: &corev1.CSIPersistentVolumeSource{
-				NodePublishSecretRef: &corev1.SecretReference{
-					Name:      "my-secret",
-					Namespace: "node-publish-secrets",
-				},
-				VolumeHandle: "test-pv",
-				VolumeAttributes: map[string]string{
-					"test-attr":  "true",
-					"test-attr2": "foobar",
-				},
+	It("should extract volume info correctly", func() {
+		wantCsiInfo := &corev1.CSIPersistentVolumeSource{
+			NodePublishSecretRef: &corev1.SecretReference{
+				Name:      "my-secret",
+				Namespace: "node-publish-secrets",
 			},
-			wantMountOptions: []string{"rw", "noexec"},
-			wantErr:          false,
+			VolumeHandle: "test-pv",
+			VolumeAttributes: map[string]string{
+				"test-attr":  "true",
+				"test-attr2": "foobar",
+			},
+		}
+		wantMountOptions := []string{"rw", "noexec"}
+
+		gotCsiInfo, gotMountOptions, err := engine.extractVolumeInfo("test-pvc")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(gotCsiInfo).To(Equal(wantCsiInfo))
+		Expect(gotMountOptions).To(Equal(wantMountOptions))
+	})
+})
+
+var _ = Describe("ThinEngine extractVolumeMountOptions", func() {
+	var engine ThinEngine
+
+	BeforeEach(func() {
+		engine = ThinEngine{}
+	})
+
+	DescribeTable("extracting mount options from PV",
+		func(pv *corev1.PersistentVolume, wantMountOptions []string, wantErr bool) {
+			gotMountOptions, err := engine.extractVolumeMountOptions(pv)
+			if wantErr {
+				Expect(err).To(HaveOccurred())
+			} else {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(gotMountOptions).To(Equal(wantMountOptions))
+			}
 		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotCsiInfo, gotMountOptions, err := engine.extractVolumeInfo(tt.pvcName)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ThinEngine.extractVolumeInfo() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(gotCsiInfo, tt.wantCsiInfo) {
-				t.Errorf("ThinEngine.extractVolumeInfo() gotCsiInfo = %v, want %v", gotCsiInfo, tt.wantCsiInfo)
-			}
-			if !reflect.DeepEqual(gotMountOptions, tt.wantMountOptions) {
-				t.Errorf("ThinEngine.extractVolumeInfo() gotMountOptions = %v, want %v", gotMountOptions, tt.wantMountOptions)
-			}
-		})
-	}
-}
-
-func TestThinEngine_extractVolumeMountOptions(t *testing.T) {
-	engine := ThinEngine{}
-
-	tests := []struct {
-		name             string
-		pv               *corev1.PersistentVolume
-		wantMountOptions []string
-		wantErr          bool
-	}{
-		{
-			name: "test_mount_options_in_annotation",
-			pv: &corev1.PersistentVolume{
+		Entry("mount options in annotation",
+			&corev1.PersistentVolume{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						corev1.MountOptionAnnotation: "rw,noexec,testOpts",
 					},
 				},
 			},
-			wantMountOptions: []string{"rw", "noexec", "testOpts"},
-			wantErr:          false,
-		},
-		{
-			name: "test_mount_options_in_proerty",
-			pv: &corev1.PersistentVolume{
+			[]string{"rw", "noexec", "testOpts"},
+			false,
+		),
+		Entry("mount options in property",
+			&corev1.PersistentVolume{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{},
 				},
@@ -143,20 +131,8 @@ func TestThinEngine_extractVolumeMountOptions(t *testing.T) {
 					MountOptions: []string{"ro", "noexec"},
 				},
 			},
-			wantMountOptions: []string{"ro", "noexec"},
-			wantErr:          false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotMountOptions, err := engine.extractVolumeMountOptions(tt.pv)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ThinEngine.extractVolumeMountOptions() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(gotMountOptions, tt.wantMountOptions) {
-				t.Errorf("ThinEngine.extractVolumeMountOptions() = %v, want %v", gotMountOptions, tt.wantMountOptions)
-			}
-		})
-	}
-}
+			[]string{"ro", "noexec"},
+			false,
+		),
+	)
+})
