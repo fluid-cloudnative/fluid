@@ -25,27 +25,18 @@ import (
 // a -> a
 // a b -> a b
 // $a -> $'$a'
-// $'a' -> $'$\'$a'\'
+// $'a' -> $'$\'a\”
 func EscapeBashStr(s string) string {
 	if !containsOne(s, []rune{'$', '`', '&', ';', '>', '|', '(', ')'}) {
 		return s
 	}
+
+	// Escape backslashes first
 	s = strings.ReplaceAll(s, `\`, `\\`)
+
+	// Then escape single quotes
 	s = strings.ReplaceAll(s, `'`, `\'`)
-	if strings.Contains(s, `\\`) {
-		s = strings.ReplaceAll(s, `\\\\`, `\\`)
-		s = strings.ReplaceAll(s, `\\\'`, `\'`)
-		s = strings.ReplaceAll(s, `\\"`, `\"`)
-		s = strings.ReplaceAll(s, `\\a`, `\a`)
-		s = strings.ReplaceAll(s, `\\b`, `\b`)
-		s = strings.ReplaceAll(s, `\\e`, `\e`)
-		s = strings.ReplaceAll(s, `\\E`, `\E`)
-		s = strings.ReplaceAll(s, `\\n`, `\n`)
-		s = strings.ReplaceAll(s, `\\r`, `\r`)
-		s = strings.ReplaceAll(s, `\\t`, `\t`)
-		s = strings.ReplaceAll(s, `\\v`, `\v`)
-		s = strings.ReplaceAll(s, `\\?`, `\?`)
-	}
+
 	return fmt.Sprintf(`$'%s'`, s)
 }
 
