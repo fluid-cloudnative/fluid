@@ -27,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -149,7 +150,12 @@ var _ = Describe("ThinEngine Health Check", Label("pkg.ddc.thin.health_check_tes
 		})
 
 		Context("when workers and fuses are healthy", func() {
-			It("should return no error and update runtime status", func() {
+			var (
+				client client.Client
+				engine ThinEngine
+			)
+
+			BeforeEach(func() {
 				testObjs := []runtime.Object{}
 				for _, daemonSet := range daemonSetInputs {
 					testObjs = append(testObjs, daemonSet.DeepCopy())
@@ -164,21 +170,25 @@ var _ = Describe("ThinEngine Health Check", Label("pkg.ddc.thin.health_check_tes
 					testObjs = append(testObjs, dataset.DeepCopy())
 				}
 
-				client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+				client = fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
-				engine := ThinEngine{
+				engine = ThinEngine{
 					Client:    client,
 					Log:       fake.NullLogger(),
 					namespace: healthCheckTestNamespace,
 					name:      healthCheckTestHbase,
 					runtime:   &thinRuntimeInputs[0],
 				}
+			})
 
+			JustBeforeEach(func() {
 				runtimeInfo, err := base.BuildRuntimeInfo(engine.name, engine.namespace, common.ThinRuntime)
 				Expect(err).NotTo(HaveOccurred())
 				engine.Helper = ctrl.BuildHelper(runtimeInfo, client, engine.Log)
+			})
 
-				err = engine.CheckRuntimeHealthy()
+			It("should return no error and update runtime status", func() {
+				err := engine.CheckRuntimeHealthy()
 				Expect(err).NotTo(HaveOccurred())
 
 				thinRuntime, err := engine.getRuntime()
@@ -213,7 +223,12 @@ var _ = Describe("ThinEngine Health Check", Label("pkg.ddc.thin.health_check_tes
 		})
 
 		Context("when workers are not ready", func() {
-			It("should return an error", func() {
+			var (
+				client client.Client
+				engine ThinEngine
+			)
+
+			BeforeEach(func() {
 				testObjs := []runtime.Object{}
 				for _, daemonSet := range daemonSetInputs {
 					testObjs = append(testObjs, daemonSet.DeepCopy())
@@ -228,21 +243,25 @@ var _ = Describe("ThinEngine Health Check", Label("pkg.ddc.thin.health_check_tes
 					testObjs = append(testObjs, dataset.DeepCopy())
 				}
 
-				client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+				client = fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
-				engine := ThinEngine{
+				engine = ThinEngine{
 					Client:    client,
 					Log:       fake.NullLogger(),
 					namespace: healthCheckTestNamespace,
 					name:      healthCheckTestName,
 					runtime:   &thinRuntimeInputs[1],
 				}
+			})
 
+			JustBeforeEach(func() {
 				runtimeInfo, err := base.BuildRuntimeInfo(engine.name, engine.namespace, common.ThinRuntime)
 				Expect(err).NotTo(HaveOccurred())
 				engine.Helper = ctrl.BuildHelper(runtimeInfo, client, engine.Log)
+			})
 
-				err = engine.CheckRuntimeHealthy()
+			It("should return an error", func() {
+				err := engine.CheckRuntimeHealthy()
 				Expect(err).To(HaveOccurred())
 			})
 		})
@@ -297,7 +316,12 @@ var _ = Describe("ThinEngine Health Check", Label("pkg.ddc.thin.health_check_tes
 		})
 
 		Context("when fuse has unavailable pods", func() {
-			It("should update runtime with NotReady phase", func() {
+			var (
+				client client.Client
+				engine ThinEngine
+			)
+
+			BeforeEach(func() {
 				testObjs := []runtime.Object{}
 				for _, daemonSet := range daemonSetInputs {
 					testObjs = append(testObjs, daemonSet.DeepCopy())
@@ -305,9 +329,9 @@ var _ = Describe("ThinEngine Health Check", Label("pkg.ddc.thin.health_check_tes
 				for _, thinRuntimeInput := range thinRuntimeInputs {
 					testObjs = append(testObjs, thinRuntimeInput.DeepCopy())
 				}
-				client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+				client = fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
-				engine := ThinEngine{
+				engine = ThinEngine{
 					Client:    client,
 					Log:       fake.NullLogger(),
 					namespace: healthCheckTestNamespace,
@@ -320,12 +344,16 @@ var _ = Describe("ThinEngine Health Check", Label("pkg.ddc.thin.health_check_tes
 					},
 					Recorder: record.NewFakeRecorder(1),
 				}
+			})
 
+			JustBeforeEach(func() {
 				runtimeInfo, err := base.BuildRuntimeInfo(engine.name, engine.namespace, common.ThinRuntime)
 				Expect(err).NotTo(HaveOccurred())
 				engine.Helper = ctrl.BuildHelper(runtimeInfo, client, engine.Log)
+			})
 
-				_, err = engine.checkFuseHealthy()
+			It("should update runtime with NotReady phase", func() {
+				_, err := engine.checkFuseHealthy()
 				Expect(err).NotTo(HaveOccurred())
 
 				thinRuntime, err := engine.getRuntime()
@@ -340,7 +368,12 @@ var _ = Describe("ThinEngine Health Check", Label("pkg.ddc.thin.health_check_tes
 		})
 
 		Context("when all fuse pods are available", func() {
-			It("should update runtime with Ready phase", func() {
+			var (
+				client client.Client
+				engine ThinEngine
+			)
+
+			BeforeEach(func() {
 				testObjs := []runtime.Object{}
 				for _, daemonSet := range daemonSetInputs {
 					testObjs = append(testObjs, daemonSet.DeepCopy())
@@ -348,9 +381,9 @@ var _ = Describe("ThinEngine Health Check", Label("pkg.ddc.thin.health_check_tes
 				for _, thinRuntimeInput := range thinRuntimeInputs {
 					testObjs = append(testObjs, thinRuntimeInput.DeepCopy())
 				}
-				client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+				client = fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
-				engine := ThinEngine{
+				engine = ThinEngine{
 					Client:    client,
 					Log:       fake.NullLogger(),
 					namespace: healthCheckTestNamespace,
@@ -363,12 +396,16 @@ var _ = Describe("ThinEngine Health Check", Label("pkg.ddc.thin.health_check_tes
 					},
 					Recorder: record.NewFakeRecorder(1),
 				}
+			})
 
+			JustBeforeEach(func() {
 				runtimeInfo, err := base.BuildRuntimeInfo(engine.name, engine.namespace, common.ThinRuntime)
 				Expect(err).NotTo(HaveOccurred())
 				engine.Helper = ctrl.BuildHelper(runtimeInfo, client, engine.Log)
+			})
 
-				_, err = engine.checkFuseHealthy()
+			It("should update runtime with Ready phase", func() {
+				_, err := engine.checkFuseHealthy()
 				Expect(err).NotTo(HaveOccurred())
 
 				thinRuntime, err := engine.getRuntime()
