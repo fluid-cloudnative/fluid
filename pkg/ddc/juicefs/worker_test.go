@@ -17,432 +17,400 @@ limitations under the License.
 package juicefs
 
 import (
-	"testing"
+	"context"
 
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	ctrlhelper "github.com/fluid-cloudnative/fluid/pkg/ctrl"
-	"k8s.io/utils/ptr"
-
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
+	apimachineryruntime "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
-
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestJuiceFSEngine_ShouldSetupWorkers(t *testing.T) {
-	type fields struct {
-		name      string
-		namespace string
-		runtime   *datav1alpha1.JuiceFSRuntime
-	}
-	tests := []struct {
-		name       string
-		fields     fields
-		wantShould bool
-		wantErr    bool
-	}{
-		{
-			name: "test0",
-			fields: fields{
-				name:      "test0",
-				namespace: "juicefs",
-				runtime: &datav1alpha1.JuiceFSRuntime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test0",
-						Namespace: "juicefs",
-					},
-					Status: datav1alpha1.RuntimeStatus{
-						WorkerPhase: datav1alpha1.RuntimePhaseNone,
-					},
-				},
+var _ = Describe("JuiceFSEngine_ShouldSetupWorkers", func() {
+	It("should return true when worker phase is None", func() {
+		runtime := &datav1alpha1.JuiceFSRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test0",
+				Namespace: "juicefs",
 			},
-			wantShould: true,
-			wantErr:    false,
-		},
-		{
-			name: "test1",
-			fields: fields{
-				name:      "test1",
-				namespace: "juicefs",
-				runtime: &datav1alpha1.JuiceFSRuntime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test1",
-						Namespace: "juicefs",
-					},
-					Status: datav1alpha1.RuntimeStatus{
-						WorkerPhase: datav1alpha1.RuntimePhaseNotReady,
-					},
-				},
+			Status: datav1alpha1.RuntimeStatus{
+				WorkerPhase: datav1alpha1.RuntimePhaseNone,
 			},
-			wantShould: false,
-			wantErr:    false,
-		},
-		{
-			name: "test2",
-			fields: fields{
-				name:      "test2",
-				namespace: "juicefs",
-				runtime: &datav1alpha1.JuiceFSRuntime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test2",
-						Namespace: "juicefs",
-					},
-					Status: datav1alpha1.RuntimeStatus{
-						WorkerPhase: datav1alpha1.RuntimePhasePartialReady,
-					},
-				},
+		}
+
+		data := &datav1alpha1.Dataset{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test0",
+				Namespace: "juicefs",
 			},
-			wantShould: false,
-			wantErr:    false,
-		},
-		{
-			name: "test3",
-			fields: fields{
-				name:      "test3",
-				namespace: "juicefs",
-				runtime: &datav1alpha1.JuiceFSRuntime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test3",
-						Namespace: "juicefs",
-					},
-					Status: datav1alpha1.RuntimeStatus{
-						WorkerPhase: datav1alpha1.RuntimePhaseReady,
-					},
-				},
-			},
-			wantShould: false,
-			wantErr:    false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			runtimeObjs := []runtime.Object{}
-			data := &datav1alpha1.Dataset{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      tt.fields.name,
-					Namespace: tt.fields.namespace,
-				},
-			}
+		}
 
-			s := runtime.NewScheme()
-			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
-			s.AddKnownTypes(datav1alpha1.GroupVersion, data)
-			_ = v1.AddToScheme(s)
-			runtimeObjs = append(runtimeObjs, tt.fields.runtime, data)
-			mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
-			e := &JuiceFSEngine{
-				name:      tt.fields.name,
-				namespace: tt.fields.namespace,
-				runtime:   tt.fields.runtime,
-				Client:    mockClient,
-			}
+		s := apimachineryruntime.NewScheme()
+		s.AddKnownTypes(datav1alpha1.GroupVersion, runtime, data)
+		_ = v1.AddToScheme(s)
 
-			gotShould, err := e.ShouldSetupWorkers()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("JuiceFSEngine.ShouldSetupWorkers() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if gotShould != tt.wantShould {
-				t.Errorf("JuiceFSEngine.ShouldSetupWorkers() = %v, want %v", gotShould, tt.wantShould)
-			}
-		})
-	}
-}
+		mockClient := fake.NewFakeClientWithScheme(s, runtime, data)
 
-func TestJuiceFSEngine_SetupWorkers(t *testing.T) {
-	runtimeInfo, err := base.BuildRuntimeInfo("juicefs", "fluid", common.JuiceFSRuntime)
+		e := &JuiceFSEngine{
+			name:      "test0",
+			namespace: "juicefs",
+			runtime:   runtime,
+			Client:    mockClient,
+		}
 
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
-	runtimeInfo.SetupWithDataset(&datav1alpha1.Dataset{
-		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
+		gotShould, err := e.ShouldSetupWorkers()
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(gotShould).To(BeTrue())
 	})
 
-	nodeSelector := map[string]string{
-		"node-select": "true",
-	}
-	runtimeInfo.SetFuseNodeSelector(nodeSelector)
-
-	type fields struct {
-		replicas    int32
-		nodeInputs  []*v1.Node
-		worker      appsv1.StatefulSet
-		runtime     *datav1alpha1.JuiceFSRuntime
-		runtimeInfo base.RuntimeInfoInterface
-		name        string
-		namespace   string
-	}
-	tests := []struct {
-		name             string
-		fields           fields
-		wantedNodeLabels map[string]map[string]string
-	}{
-		{
-			name: "test0",
-			fields: fields{
-				replicas: 1,
-				nodeInputs: []*v1.Node{
-					{
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "test-node",
-						},
-					},
-				},
-				worker: appsv1.StatefulSet{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-worker",
-						Namespace: "fluid",
-					},
-					Spec: appsv1.StatefulSetSpec{
-						Replicas: ptr.To[int32](1),
-					},
-				},
-				runtime: &datav1alpha1.JuiceFSRuntime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test",
-						Namespace: "fluid",
-					},
-					Spec: datav1alpha1.JuiceFSRuntimeSpec{
-						Replicas: 1,
-					},
-				},
-				runtimeInfo: runtimeInfo,
-				name:        "test",
-				namespace:   "fluid",
+	It("should return false when worker phase is NotReady", func() {
+		runtime := &datav1alpha1.JuiceFSRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test1",
+				Namespace: "juicefs",
 			},
-			wantedNodeLabels: map[string]map[string]string{
-				"test-node": {
-					"fluid.io/dataset-num":                 "1",
-					"fluid.io/s-fluid-juicefs":             "true",
-					"fluid.io/s-h-juicefs-t-fluid-juicefs": "0B",
-					"fluid.io/s-juicefs-fluid-juicefs":     "true",
-					"fluid_exclusive":                      "fluid_juicefs",
-				},
+			Status: datav1alpha1.RuntimeStatus{
+				WorkerPhase: datav1alpha1.RuntimePhaseNotReady,
 			},
-		},
-	}
+		}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			runtimeObjs := []runtime.Object{}
-			for _, nodeInput := range tt.fields.nodeInputs {
-				runtimeObjs = append(runtimeObjs, nodeInput.DeepCopy())
-			}
-			runtimeObjs = append(runtimeObjs, tt.fields.worker.DeepCopy())
+		data := &datav1alpha1.Dataset{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test1",
+				Namespace: "juicefs",
+			},
+		}
 
-			s := runtime.NewScheme()
-			data := &datav1alpha1.Dataset{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      tt.fields.name,
-					Namespace: tt.fields.namespace,
-				},
-			}
-			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
-			s.AddKnownTypes(datav1alpha1.GroupVersion, data)
-			s.AddKnownTypes(appsv1.SchemeGroupVersion, &tt.fields.worker)
-			_ = v1.AddToScheme(s)
-			runtimeObjs = append(runtimeObjs, tt.fields.runtime)
-			runtimeObjs = append(runtimeObjs, data)
-			mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+		s := apimachineryruntime.NewScheme()
+		s.AddKnownTypes(datav1alpha1.GroupVersion, runtime, data)
+		_ = v1.AddToScheme(s)
 
-			e := &JuiceFSEngine{
-				runtime:     tt.fields.runtime,
-				runtimeInfo: tt.fields.runtimeInfo,
-				Client:      mockClient,
-				name:        tt.fields.name,
-				namespace:   tt.fields.namespace,
-				Log:         ctrl.Log.WithName(tt.fields.name),
-			}
+		mockClient := fake.NewFakeClientWithScheme(s, runtime, data)
 
-			e.Helper = ctrlhelper.BuildHelper(runtimeInfo, mockClient, e.Log)
-			err = e.SetupWorkers()
-			if err != nil {
-				t.Errorf("JuiceFSEngine.SetupWorkers() error = %v", err)
-			}
-			if tt.fields.replicas != *tt.fields.worker.Spec.Replicas {
-				t.Errorf("Failed to scale %v for %v", tt.name, tt.fields)
-			}
+		e := &JuiceFSEngine{
+			name:      "test1",
+			namespace: "juicefs",
+			runtime:   runtime,
+			Client:    mockClient,
+		}
+
+		gotShould, err := e.ShouldSetupWorkers()
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(gotShould).To(BeFalse())
+	})
+
+	It("should return false when worker phase is PartialReady", func() {
+		runtime := &datav1alpha1.JuiceFSRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test2",
+				Namespace: "juicefs",
+			},
+			Status: datav1alpha1.RuntimeStatus{
+				WorkerPhase: datav1alpha1.RuntimePhasePartialReady,
+			},
+		}
+
+		data := &datav1alpha1.Dataset{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test2",
+				Namespace: "juicefs",
+			},
+		}
+
+		s := apimachineryruntime.NewScheme()
+		s.AddKnownTypes(datav1alpha1.GroupVersion, runtime, data)
+		_ = v1.AddToScheme(s)
+
+		mockClient := fake.NewFakeClientWithScheme(s, runtime, data)
+
+		e := &JuiceFSEngine{
+			name:      "test2",
+			namespace: "juicefs",
+			runtime:   runtime,
+			Client:    mockClient,
+		}
+
+		gotShould, err := e.ShouldSetupWorkers()
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(gotShould).To(BeFalse())
+	})
+
+	It("should return false when worker phase is Ready", func() {
+		runtime := &datav1alpha1.JuiceFSRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test3",
+				Namespace: "juicefs",
+			},
+			Status: datav1alpha1.RuntimeStatus{
+				WorkerPhase: datav1alpha1.RuntimePhaseReady,
+			},
+		}
+
+		data := &datav1alpha1.Dataset{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test3",
+				Namespace: "juicefs",
+			},
+		}
+
+		s := apimachineryruntime.NewScheme()
+		s.AddKnownTypes(datav1alpha1.GroupVersion, runtime, data)
+		_ = v1.AddToScheme(s)
+
+		mockClient := fake.NewFakeClientWithScheme(s, runtime, data)
+
+		e := &JuiceFSEngine{
+			name:      "test3",
+			namespace: "juicefs",
+			runtime:   runtime,
+			Client:    mockClient,
+		}
+
+		gotShould, err := e.ShouldSetupWorkers()
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(gotShould).To(BeFalse())
+	})
+})
+
+var _ = Describe("JuiceFSEngine_SetupWorkers", func() {
+	It("should setup workers and scale correctly", func() {
+		runtimeInfo, err := base.BuildRuntimeInfo("juicefs", "fluid", common.JuiceFSRuntime)
+		Expect(err).NotTo(HaveOccurred())
+
+		runtimeInfo.SetupWithDataset(&datav1alpha1.Dataset{
+			Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
 		})
-	}
-}
 
-func TestJuiceFSEngine_CheckWorkersReady(t *testing.T) {
-	type fields struct {
-		runtime   *datav1alpha1.JuiceFSRuntime
-		fuse      *appsv1.DaemonSet
-		worker    *appsv1.StatefulSet
-		name      string
-		namespace string
-	}
-	tests := []struct {
-		name      string
-		fields    fields
-		wantReady bool
-		wantErr   bool
-	}{
-		{
-			name: "test0",
-			fields: fields{
-				name:      "test0",
-				namespace: "juicefs",
-				runtime: &datav1alpha1.JuiceFSRuntime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test0",
-						Namespace: "juicefs",
-					},
-					Spec: datav1alpha1.JuiceFSRuntimeSpec{
-						Replicas: 1,
-						Fuse:     datav1alpha1.JuiceFSFuseSpec{},
-					},
-				},
-				worker: &appsv1.StatefulSet{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test0-worker",
-						Namespace: "juicefs",
-					},
-					Spec: appsv1.StatefulSetSpec{
-						Replicas: ptr.To[int32](1),
-					},
-					Status: appsv1.StatefulSetStatus{
-						Replicas:      1,
-						ReadyReplicas: 1,
-					},
-				},
-				fuse: &appsv1.DaemonSet{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test0-fuse",
-						Namespace: "juicefs",
-					},
-					Status: appsv1.DaemonSetStatus{
-						NumberAvailable:        1,
-						DesiredNumberScheduled: 1,
-						CurrentNumberScheduled: 1,
-					},
-				},
+		nodeSelector := map[string]string{
+			"node-select": "true",
+		}
+		runtimeInfo.SetFuseNodeSelector(nodeSelector)
+
+		node := &v1.Node{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "test-node",
 			},
-			wantReady: true,
-			wantErr:   false,
-		},
-		{
-			name: "test1",
-			fields: fields{
-				name:      "test1",
-				namespace: "juicefs",
-				runtime: &datav1alpha1.JuiceFSRuntime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test1",
-						Namespace: "juicefs",
-					},
-					Spec: datav1alpha1.JuiceFSRuntimeSpec{
-						Replicas: 1,
-						Fuse:     datav1alpha1.JuiceFSFuseSpec{},
-					},
-				},
-				worker: &appsv1.StatefulSet{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test1-worker",
-						Namespace: "juicefs",
-					},
-					Spec: appsv1.StatefulSetSpec{
-						Replicas: ptr.To[int32](1),
-					},
-					Status: appsv1.StatefulSetStatus{
-						Replicas:      1,
-						ReadyReplicas: 0,
-					},
-				},
-				fuse: &appsv1.DaemonSet{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test1-fuse",
-						Namespace: "juicefs",
-					},
-					Status: appsv1.DaemonSetStatus{
-						NumberAvailable:        0,
-						DesiredNumberScheduled: 1,
-						CurrentNumberScheduled: 0,
-					},
-				},
+		}
+
+		worker := appsv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-worker",
+				Namespace: "fluid",
 			},
-			wantReady: false,
-			wantErr:   false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			runtimeObjs := []runtime.Object{}
-			data := &datav1alpha1.Dataset{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      tt.fields.name,
-					Namespace: tt.fields.namespace,
-				},
-			}
-
-			s := runtime.NewScheme()
-			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
-			s.AddKnownTypes(datav1alpha1.GroupVersion, data)
-			s.AddKnownTypes(appsv1.SchemeGroupVersion, tt.fields.fuse)
-			s.AddKnownTypes(appsv1.SchemeGroupVersion, tt.fields.worker)
-			_ = v1.AddToScheme(s)
-
-			runtimeObjs = append(runtimeObjs, tt.fields.runtime, data, tt.fields.fuse, tt.fields.worker)
-			mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
-			e := &JuiceFSEngine{
-				runtime:   tt.fields.runtime,
-				name:      tt.fields.name,
-				namespace: tt.fields.namespace,
-				Client:    mockClient,
-				Log:       ctrl.Log.WithName(tt.fields.name),
-			}
-			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, common.JuiceFSRuntime)
-			if err != nil {
-				t.Errorf("JuiceFSEngine.CheckWorkersReady() error = %v", err)
-			}
-
-			e.Helper = ctrlhelper.BuildHelper(runtimeInfo, mockClient, e.Log)
-
-			gotReady, err := e.CheckWorkersReady()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("JuiceFSEngine.CheckWorkersReady() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if gotReady != tt.wantReady {
-				t.Errorf("JuiceFSEngine.CheckWorkersReady() = %v, want %v", gotReady, tt.wantReady)
-			}
-		})
-	}
-}
-
-func TestJuiceFSEngine_GetWorkerSelectors(t *testing.T) {
-	type fields struct {
-		name string
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   string
-	}{
-		{
-			name: "test0",
-			fields: fields{
-				name: "spark",
+			Spec: appsv1.StatefulSetSpec{
+				Replicas: ptr.To[int32](1),
 			},
-			want: "app=juicefs,release=spark,role=juicefs-worker",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			e := &JuiceFSEngine{
-				name: tt.fields.name,
-			}
-			if got := e.getWorkerSelectors(); got != tt.want {
-				t.Errorf("JuiceFSEngine.getWorkerSelectors() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
+		}
+
+		runtime := &datav1alpha1.JuiceFSRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.JuiceFSRuntimeSpec{
+				Replicas: 1,
+			},
+		}
+
+		s := apimachineryruntime.NewScheme()
+		data := &datav1alpha1.Dataset{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: "fluid",
+			},
+		}
+		s.AddKnownTypes(datav1alpha1.GroupVersion, runtime, data)
+		s.AddKnownTypes(appsv1.SchemeGroupVersion, &worker)
+		_ = v1.AddToScheme(s)
+
+		mockClient := fake.NewFakeClientWithScheme(s, node.DeepCopy(), worker.DeepCopy(), runtime, data)
+
+		e := &JuiceFSEngine{
+			runtime:     runtime,
+			runtimeInfo: runtimeInfo,
+			Client:      mockClient,
+			name:        "test",
+			namespace:   "fluid",
+			Log:         ctrl.Log.WithName("test"),
+		}
+
+		e.Helper = ctrlhelper.BuildHelper(runtimeInfo, mockClient, e.Log)
+
+		err = e.SetupWorkers()
+		Expect(err).NotTo(HaveOccurred())
+
+		var updatedWorker appsv1.StatefulSet
+		err = mockClient.Get(context.TODO(), client.ObjectKey{Name: "test-worker", Namespace: "fluid"}, &updatedWorker)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(*updatedWorker.Spec.Replicas).To(Equal(int32(1)))
+	})
+})
+
+var _ = Describe("JuiceFSEngine_CheckWorkersReady", func() {
+	It("should return true when workers and fuse are ready", func() {
+		runtime := &datav1alpha1.JuiceFSRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test0",
+				Namespace: "juicefs",
+			},
+			Spec: datav1alpha1.JuiceFSRuntimeSpec{
+				Replicas: 1,
+				Fuse:     datav1alpha1.JuiceFSFuseSpec{},
+			},
+		}
+
+		worker := &appsv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test0-worker",
+				Namespace: "juicefs",
+			},
+			Spec: appsv1.StatefulSetSpec{
+				Replicas: ptr.To[int32](1),
+			},
+			Status: appsv1.StatefulSetStatus{
+				Replicas:      1,
+				ReadyReplicas: 1,
+			},
+		}
+
+		fuse := &appsv1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test0-fuse",
+				Namespace: "juicefs",
+			},
+			Status: appsv1.DaemonSetStatus{
+				NumberAvailable:        1,
+				DesiredNumberScheduled: 1,
+				CurrentNumberScheduled: 1,
+			},
+		}
+
+		data := &datav1alpha1.Dataset{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test0",
+				Namespace: "juicefs",
+			},
+		}
+
+		s := apimachineryruntime.NewScheme()
+		s.AddKnownTypes(datav1alpha1.GroupVersion, runtime, data)
+		s.AddKnownTypes(appsv1.SchemeGroupVersion, fuse, worker)
+		_ = v1.AddToScheme(s)
+
+		mockClient := fake.NewFakeClientWithScheme(s, runtime, data, fuse, worker)
+
+		e := &JuiceFSEngine{
+			runtime:   runtime,
+			name:      "test0",
+			namespace: "juicefs",
+			Client:    mockClient,
+			Log:       ctrl.Log.WithName("test0"),
+		}
+
+		runtimeInfo, err := base.BuildRuntimeInfo("test0", "juicefs", common.JuiceFSRuntime)
+		Expect(err).NotTo(HaveOccurred())
+
+		e.Helper = ctrlhelper.BuildHelper(runtimeInfo, mockClient, e.Log)
+
+		gotReady, err := e.CheckWorkersReady()
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(gotReady).To(BeTrue())
+	})
+
+	It("should return false when workers are not ready", func() {
+		runtime := &datav1alpha1.JuiceFSRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test1",
+				Namespace: "juicefs",
+			},
+			Spec: datav1alpha1.JuiceFSRuntimeSpec{
+				Replicas: 1,
+				Fuse:     datav1alpha1.JuiceFSFuseSpec{},
+			},
+		}
+
+		worker := &appsv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test1-worker",
+				Namespace: "juicefs",
+			},
+			Spec: appsv1.StatefulSetSpec{
+				Replicas: ptr.To[int32](1),
+			},
+			Status: appsv1.StatefulSetStatus{
+				Replicas:      1,
+				ReadyReplicas: 0,
+			},
+		}
+
+		fuse := &appsv1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test1-fuse",
+				Namespace: "juicefs",
+			},
+			Status: appsv1.DaemonSetStatus{
+				NumberAvailable:        0,
+				DesiredNumberScheduled: 1,
+				CurrentNumberScheduled: 0,
+			},
+		}
+
+		data := &datav1alpha1.Dataset{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test1",
+				Namespace: "juicefs",
+			},
+		}
+
+		s := apimachineryruntime.NewScheme()
+		s.AddKnownTypes(datav1alpha1.GroupVersion, runtime, data)
+		s.AddKnownTypes(appsv1.SchemeGroupVersion, fuse, worker)
+		_ = v1.AddToScheme(s)
+
+		mockClient := fake.NewFakeClientWithScheme(s, runtime, data, fuse, worker)
+
+		e := &JuiceFSEngine{
+			runtime:   runtime,
+			name:      "test1",
+			namespace: "juicefs",
+			Client:    mockClient,
+			Log:       ctrl.Log.WithName("test1"),
+		}
+
+		runtimeInfo, err := base.BuildRuntimeInfo("test1", "juicefs", common.JuiceFSRuntime)
+		Expect(err).NotTo(HaveOccurred())
+
+		e.Helper = ctrlhelper.BuildHelper(runtimeInfo, mockClient, e.Log)
+
+		gotReady, err := e.CheckWorkersReady()
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(gotReady).To(BeFalse())
+	})
+})
+
+var _ = Describe("JuiceFSEngine_GetWorkerSelectors", func() {
+	It("should return correct worker selector", func() {
+		e := &JuiceFSEngine{
+			name: "spark",
+		}
+
+		got := e.getWorkerSelectors()
+
+		Expect(got).To(Equal("app=juicefs,release=spark,role=juicefs-worker"))
+	})
+})
