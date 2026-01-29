@@ -168,7 +168,7 @@ var _ = Describe("EscapeBashStr", func() {
 
 		It("should handle string with newlines (security critical)", func() {
 			result := EscapeBashStr("line1\nline2")
-			Expect(result).To(Equal("$'line1\nline2'"))
+			Expect(result).To(Equal("$'line1\\nline2'"))
 		})
 
 		It("should handle string starting with special character", func() {
@@ -183,17 +183,17 @@ var _ = Describe("EscapeBashStr", func() {
 
 		It("should handle newline character injection attempt", func() {
 			result := EscapeBashStr("line1\nrm -rf /")
-			Expect(result).To(Equal("$'line1\nrm -rf /'"))
+			Expect(result).To(Equal("$'line1\\nrm -rf /'"))
 		})
 
 		It("should handle carriage return injection", func() {
 			result := EscapeBashStr("test\rmalicious")
-			Expect(result).To(Equal("$'test\rmalicious'"))
+			Expect(result).To(Equal("$'test\\rmalicious'"))
 		})
 
 		It("should handle tab character", func() {
 			result := EscapeBashStr("test\tvalue")
-			Expect(result).To(Equal("$'test\tvalue'"))
+			Expect(result).To(Equal("$'test\\tvalue'"))
 		})
 	})
 })

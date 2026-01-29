@@ -25,22 +25,42 @@ import (
 // a -> a
 // a b -> a b
 // $a -> $'$a'
-// $'a' -> $'$\'a\''
+// $'a' -> $'$\'a\”
 func EscapeBashStr(s string) string {
 	// Check if string contains any shell-sensitive characters that require escaping
-	// Added '\', '\'', and '\n' to the list as identified by security review
+	// Added '\', '\'', '\n', '\r', and '\t' to the list as identified by security review
 	if !containsOne(s, []rune{'$', '`', '&', ';', '>', '|', '(', ')', '\'', '\\', '\n', '\r', '\t', ' '}) {
 		return s
 	}
 
-	// Escape backslashes first (must be done before escaping quotes)
-	s = strings.ReplaceAll(s, `\`, `\\`)
+	// Build the escaped string manually to handle all special cases correctly
+	var result strings.Builder
 
-	// Then escape single quotes
-	s = strings.ReplaceAll(s, `'`, `\'`)
+	for _, ch := range s {
+		switch ch {
+		case '\\':
+			// Escape backslashes by doubling them
+			result.WriteString(`\\`)
+		case '\'':
+			// Escape single quotes
+			result.WriteString(`\'`)
+		case '\n':
+			// Preserve newline as literal \n in ANSI-C quoted string
+			result.WriteString(`\n`)
+		case '\r':
+			// Preserve carriage return as literal \r in ANSI-C quoted string
+			result.WriteString(`\r`)
+		case '\t':
+			// Preserve tab as literal \t in ANSI-C quoted string
+			result.WriteString(`\t`)
+		default:
+			// All other characters (including $, `, &, etc.) are safe within $'...'
+			result.WriteRune(ch)
+		}
+	}
 
 	// Wrap in ANSI-C quoting format
-	return fmt.Sprintf(`$'%s'`, s)
+	return fmt.Sprintf(`$'%s'`, result.String())
 }
 
 func containsOne(target string, chars []rune) bool {
