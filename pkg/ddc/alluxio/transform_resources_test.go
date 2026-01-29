@@ -221,7 +221,7 @@ func TestTransformResourcesForWorkerNoValue(t *testing.T) {
 		{&datav1alpha1.AlluxioRuntime{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test",
-				Namespace: "default",
+				Namespace: "test",
 			},
 			Spec: datav1alpha1.AlluxioRuntimeSpec{
 				TieredStore: datav1alpha1.TieredStore{},
@@ -239,10 +239,7 @@ func TestTransformResourcesForWorkerNoValue(t *testing.T) {
 		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", base.WithTieredStore(test.runtime.Spec.TieredStore))
 		runtimeObjs := []runtime.Object{}
 		runtimeObjs = append(runtimeObjs, test.runtime.DeepCopy())
-		s := runtime.NewScheme()
-		s.AddKnownTypes(datav1alpha1.GroupVersion, test.runtime)
-		_ = corev1.AddToScheme(s)
-		client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+		client := fake.NewFakeClientWithScheme(datav1alpha1.UnitTestScheme, runtimeObjs...)
 		engine.Client = client
 		err := engine.transformResourcesForWorker(test.runtime, test.alluxioValue)
 		if err != nil {
@@ -297,15 +294,11 @@ func TestTransformResourcesForWorkerWithTieredStore(t *testing.T) {
 		// Configure Kubernetes API client mock
 		runtimeObjs := []runtime.Object{}
 		runtimeObjs = append(runtimeObjs, test.runtime.DeepCopy())
-		s := runtime.NewScheme()
-		s.AddKnownTypes(datav1alpha1.GroupVersion, test.runtime)
-		_ = corev1.AddToScheme(s)
-		client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+		client := fake.NewFakeClientWithScheme(datav1alpha1.UnitTestScheme, runtimeObjs...)
 		engine.Client = client
 		// Execute core transformation logic
 		err := engine.transformResourcesForWorker(test.runtime, test.alluxioValue)
 		// Validate error handling and resource allocation
-		t.Log(err)
 		if err != nil {
 			t.Errorf("expected no err, got err %v", err)
 		}
@@ -416,10 +409,7 @@ func TestTransformResourcesForWorkerWithValue(t *testing.T) {
 		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", base.WithTieredStore(test.runtime.Spec.TieredStore))
 		runtimeObjs := []runtime.Object{}
 		runtimeObjs = append(runtimeObjs, test.runtime.DeepCopy())
-		s := runtime.NewScheme()
-		s.AddKnownTypes(datav1alpha1.GroupVersion, test.runtime)
-		_ = corev1.AddToScheme(s)
-		client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+		client := fake.NewFakeClientWithScheme(datav1alpha1.UnitTestScheme, runtimeObjs...)
 		engine.Client = client
 		engine.UnitTest = true
 		err := engine.transformResourcesForWorker(test.runtime, test.alluxioValue)
@@ -526,10 +516,7 @@ func TestTransformResourcesForWorkerWithOnlyRequest(t *testing.T) {
 		engine.UnitTest = true
 		runtimeObjs := []runtime.Object{}
 		runtimeObjs = append(runtimeObjs, test.runtime.DeepCopy())
-		s := runtime.NewScheme()
-		s.AddKnownTypes(datav1alpha1.GroupVersion, test.runtime)
-		_ = corev1.AddToScheme(s)
-		client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+		client := fake.NewFakeClientWithScheme(datav1alpha1.UnitTestScheme, runtimeObjs...)
 		engine.Client = client
 		err := engine.transformResourcesForWorker(test.runtime, test.alluxioValue)
 		if err != nil {
@@ -630,10 +617,7 @@ func TestTransformResourcesForWorkerWithOnlyLimit(t *testing.T) {
 		engine.UnitTest = true
 		runtimeObjs := []runtime.Object{}
 		runtimeObjs = append(runtimeObjs, test.runtime.DeepCopy())
-		s := runtime.NewScheme()
-		s.AddKnownTypes(datav1alpha1.GroupVersion, test.runtime)
-		_ = corev1.AddToScheme(s)
-		client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+		client := fake.NewFakeClientWithScheme(datav1alpha1.UnitTestScheme, runtimeObjs...)
 		engine.Client = client
 		err := engine.transformResourcesForWorker(test.runtime, test.alluxioValue)
 		if err != nil {
@@ -687,6 +671,10 @@ func TestTransformResourcesForFuseWithValue(t *testing.T) {
 		alluxioValue *Alluxio
 	}{
 		{&datav1alpha1.AlluxioRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: "test",
+			},
 			Spec: datav1alpha1.AlluxioRuntimeSpec{
 				Fuse: datav1alpha1.AlluxioFuseSpec{
 					Resources: resources,
@@ -704,9 +692,17 @@ func TestTransformResourcesForFuseWithValue(t *testing.T) {
 		}},
 	}
 	for _, test := range tests {
-		engine := &AlluxioEngine{Log: fake.NullLogger()}
+		engine := &AlluxioEngine{
+			Log:       fake.NullLogger(),
+			name:      "test",
+			namespace: "test",
+		}
 		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", base.WithTieredStore(test.runtime.Spec.TieredStore))
 		engine.UnitTest = true
+		runtimeObjs := []runtime.Object{}
+		runtimeObjs = append(runtimeObjs, test.runtime.DeepCopy())
+		client := fake.NewFakeClientWithScheme(datav1alpha1.UnitTestScheme, runtimeObjs...)
+		engine.Client = client
 		engine.transformResourcesForFuse(test.runtime, test.alluxioValue)
 		if test.alluxioValue.Fuse.Resources.Limits[corev1.ResourceMemory] != "22Gi" {
 			t.Errorf("expected 22Gi, got %v", test.alluxioValue.Fuse.Resources.Limits[corev1.ResourceMemory])
