@@ -24,6 +24,7 @@ bin
 *.swo
 *~
 .vscode
+.qoder
 
 **/*.tgz
 **/.DS_Store

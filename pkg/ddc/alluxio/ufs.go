@@ -201,3 +201,11 @@ func (e *AlluxioEngine) checkIfRemountRequired(ufsToUpdate *utils.UFSToUpdate) {
 		}
 	}
 }
+
+func (e *AlluxioEngine) ShouldSyncDatasetMounts() (should bool, err error) {
+	return false, nil
+}
+
+func (e *AlluxioEngine) SyncDatasetMounts() (err error) {
+	return nil
+}

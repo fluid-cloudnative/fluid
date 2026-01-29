@@ -94,3 +94,11 @@ func (e *EFCEngine) ShouldUpdateUFS() (ufsToUpdate *utils.UFSToUpdate) {
 func (e *EFCEngine) UpdateOnUFSChange(ufsToUpdate *utils.UFSToUpdate) (ready bool, err error) {
 	return true, nil
 }
+
+func (e *EFCEngine) ShouldSyncDatasetMounts() (should bool, err error) {
+	return false, nil
+}
+
+func (e *EFCEngine) SyncDatasetMounts() (err error) {
+	return nil
+}

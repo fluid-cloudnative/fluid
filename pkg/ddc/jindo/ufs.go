@@ -69,3 +69,11 @@ func (e *JindoEngine) ShouldUpdateUFS() (ufsToUpdate *utils.UFSToUpdate) {
 func (e *JindoEngine) UpdateOnUFSChange(*utils.UFSToUpdate) (updateReady bool, err error) {
 	return
 }
+
+func (e *JindoEngine) ShouldSyncDatasetMounts() (should bool, err error) {
+	return false, nil
+}
+
+func (e *JindoEngine) SyncDatasetMounts() (err error) {
+	return nil
+}

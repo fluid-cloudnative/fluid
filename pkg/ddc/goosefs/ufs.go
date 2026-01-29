@@ -119,3 +119,11 @@ func (e *GooseFSEngine) UpdateOnUFSChange(ufsToUpdate *utils.UFSToUpdate) (updat
 	updateReady = true
 	return
 }
+
+func (e *GooseFSEngine) ShouldSyncDatasetMounts() (should bool, err error) {
+	return false, nil
+}
+
+func (e *GooseFSEngine) SyncDatasetMounts() (err error) {
+	return nil
+}
