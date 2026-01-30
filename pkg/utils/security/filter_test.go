@@ -28,6 +28,16 @@ func TestSecurity(t *testing.T) {
 }
 
 var _ = Describe("FilterCommand", func() {
+	BeforeEach(func() {
+		// Reset sensitiveKeys to its initial state before each test
+		sensitiveKeys = map[string]bool{
+			"aws.secretKey":          true,
+			"aws.accessKeyId":        true,
+			"fs.oss.accessKeyId":     true,
+			"fs.oss.accessKeySecret": true,
+		}
+	})
+
 	Context("when filtering commands", func() {
 		It("should redact sensitive keys", func() {
 			input := []string{"mount", "fs", "aws.secretKey=xxxxxxxxx"}
@@ -49,10 +59,27 @@ var _ = Describe("FilterCommand", func() {
 			got := FilterCommand(input)
 			Expect(got).To(Equal(expect))
 		})
+
+		It("should redact multiple sensitive keys in a single string", func() {
+			input := []string{"aws.secretKey=secret and aws.accessKeyId=key"}
+			expect := []string{"aws.secretKey=[ redacted ] and aws.accessKeyId=[ redacted ]"}
+			got := FilterCommand(input)
+			Expect(got).To(Equal(expect))
+		})
 	})
 })
 
 var _ = Describe("FilterCommandWithSensitive", func() {
+	BeforeEach(func() {
+		// Reset sensitiveKeys to its initial state before each test
+		sensitiveKeys = map[string]bool{
+			"aws.secretKey":          true,
+			"aws.accessKeyId":        true,
+			"fs.oss.accessKeyId":     true,
+			"fs.oss.accessKeySecret": true,
+		}
+	})
+
 	Context("when updating sensitive keys", func() {
 		It("should not redact keys that are not added as sensitive", func() {
 			filterKey := "test"

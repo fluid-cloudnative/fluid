@@ -34,14 +34,37 @@ func FilterCommand(command []string) (filteredCommand []string) {
 }
 
 func FilterString(line string) string {
+	result := line
 	for s := range sensitiveKeys {
-		// if the log line contains a secret value redact it
-		if strings.Contains(line, s) {
-			line = s + "=[ redacted ]"
+		// if the log line contains a secret key, redact its value
+		if strings.Contains(result, s) {
+			// Look for pattern "key=" and replace everything after = until space or end
+			searchPattern := s + "="
+			idx := strings.Index(result, searchPattern)
+
+			for idx != -1 {
+				// Find the end of the value (next space or end of string)
+				startValue := idx + len(searchPattern)
+				endValue := startValue
+
+				// Find where the value ends (space, newline, or end of string)
+				for endValue < len(result) && result[endValue] != ' ' && result[endValue] != '\n' && result[endValue] != '\t' {
+					endValue++
+				}
+
+				// Replace the value with [ redacted ]
+				result = result[:startValue] + "[ redacted ]" + result[endValue:]
+
+				// Look for next occurrence
+				idx = strings.Index(result[startValue+len("[ redacted ]"):], searchPattern)
+				if idx != -1 {
+					idx = idx + startValue + len("[ redacted ]")
+				}
+			}
 		}
 	}
 
-	return line
+	return result
 }
 
 func UpdateSensitiveKey(key string) {
