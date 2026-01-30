@@ -1,0 +1,221 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>security: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/fluid-cloudnative/fluid/pkg/utils/security/escape.go (100.0%)</option>
+				
+				<option value="file1">github.com/fluid-cloudnative/fluid/pkg/utils/security/filter.go (100.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">/*
+Copyright 2023 The Fluid Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package security
+
+import (
+        "fmt"
+        "strings"
+)
+
+// According to https://www.gnu.org/software/bash/manual/html_node/ANSI_002dC-Quoting.html#ANSI_002dC-Quoting
+// a -&gt; a
+// a b -&gt; a b
+// $a -&gt; $'$a'
+// $'a' -&gt; $'$\'$a'\'
+func EscapeBashStr(s string) string <span class="cov8" title="1">{
+        if !containsOne(s, []rune{'$', '`', '&amp;', ';', '&gt;', '|', '(', ')'}) </span><span class="cov8" title="1">{
+                return s
+        }</span>
+        <span class="cov8" title="1">s = strings.ReplaceAll(s, `\`, `\\`)
+        s = strings.ReplaceAll(s, `'`, `\'`)
+        if strings.Contains(s, `\\`) </span><span class="cov8" title="1">{
+                s = strings.ReplaceAll(s, `\\\\`, `\\`)
+                s = strings.ReplaceAll(s, `\\\'`, `\'`)
+                s = strings.ReplaceAll(s, `\\"`, `\"`)
+                s = strings.ReplaceAll(s, `\\a`, `\a`)
+                s = strings.ReplaceAll(s, `\\b`, `\b`)
+                s = strings.ReplaceAll(s, `\\e`, `\e`)
+                s = strings.ReplaceAll(s, `\\E`, `\E`)
+                s = strings.ReplaceAll(s, `\\n`, `\n`)
+                s = strings.ReplaceAll(s, `\\r`, `\r`)
+                s = strings.ReplaceAll(s, `\\t`, `\t`)
+                s = strings.ReplaceAll(s, `\\v`, `\v`)
+                s = strings.ReplaceAll(s, `\\?`, `\?`)
+        }</span>
+        <span class="cov8" title="1">return fmt.Sprintf(`$'%s'`, s)</span>
+}
+
+func containsOne(target string, chars []rune) bool <span class="cov8" title="1">{
+        charMap := make(map[rune]bool, len(chars))
+        for _, c := range chars </span><span class="cov8" title="1">{
+                charMap[c] = true
+        }</span>
+        <span class="cov8" title="1">for _, s := range target </span><span class="cov8" title="1">{
+                if charMap[s] </span><span class="cov8" title="1">{
+                        return true
+                }</span>
+        }
+        <span class="cov8" title="1">return false</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">/*
+Copyright 2023 The Fluid Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package security
+
+import "strings"
+
+var sensitiveKeys map[string]bool = map[string]bool{
+        "aws.secretKey":          true,
+        "aws.accessKeyId":        true,
+        "fs.oss.accessKeyId":     true,
+        "fs.oss.accessKeySecret": true,
+}
+
+func FilterCommand(command []string) (filteredCommand []string) <span class="cov8" title="1">{
+        for _, str := range command </span><span class="cov8" title="1">{
+                filteredCommand = append(filteredCommand, FilterString(str))
+        }</span>
+
+        <span class="cov8" title="1">return</span>
+}
+
+func FilterString(line string) string <span class="cov8" title="1">{
+        for s := range sensitiveKeys </span><span class="cov8" title="1">{
+                // if the log line contains a secret value redact it
+                if strings.Contains(line, s) </span><span class="cov8" title="1">{
+                        line = s + "=[ redacted ]"
+                }</span>
+        }
+
+        <span class="cov8" title="1">return line</span>
+}
+
+func UpdateSensitiveKey(key string) <span class="cov8" title="1">{
+        if _, found := sensitiveKeys[key]; !found </span><span class="cov8" title="1">{
+                sensitiveKeys[key] = true
+        }</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
