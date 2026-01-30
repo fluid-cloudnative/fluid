@@ -195,6 +195,7 @@ var _ = Describe("TieredStore", func() {
 			testCases := []struct {
 				name       string
 				sortMedium sortMediumType
+				expected   []common.MediumType
 			}{
 				{
 					name: "already sorted",
@@ -203,16 +204,10 @@ var _ = Describe("TieredStore", func() {
 						common.SSD,
 						common.HDD,
 					},
-				},
-				{
-					name: "with duplicates and invalid types",
-					sortMedium: []common.MediumType{
+					expected: []common.MediumType{
+						common.Memory,
 						common.SSD,
 						common.HDD,
-						common.SSD,
-						"apple",
-						"baba",
-						common.Memory,
 					},
 				},
 				{
@@ -224,11 +219,56 @@ var _ = Describe("TieredStore", func() {
 						common.SSD,
 						common.HDD,
 					},
+					expected: []common.MediumType{
+						common.Memory,
+						common.SSD,
+						common.HDD,
+					},
+				},
+				{
+					name: "unsorted with no duplicates",
+					sortMedium: []common.MediumType{
+						common.HDD,
+						common.Memory,
+						common.SSD,
+					},
+					expected: []common.MediumType{
+						common.Memory,
+						common.SSD,
+						common.HDD,
+					},
+				},
+				{
+					name: "unsorted with duplicates",
+					sortMedium: []common.MediumType{
+						common.HDD,
+						common.SSD,
+						common.Memory,
+						common.SSD,
+						common.HDD,
+						common.Memory,
+					},
+					expected: []common.MediumType{
+						common.Memory,
+						common.SSD,
+						common.HDD,
+					},
 				},
 			}
 
 			for _, tc := range testCases {
 				newMediumTypes := makeMediumTypeSorted(tc.sortMedium)
+
+				// Check that the result has the correct length
+				Expect(newMediumTypes).To(HaveLen(len(tc.expected)),
+					"test case %s: incorrect length", tc.name)
+
+				// Verify the result contains the correct set of unique elements
+				for i, expectedType := range tc.expected {
+					Expect(newMediumTypes[i]).To(Equal(expectedType),
+						"test case %s: element at index %d should be %v, got %v",
+						tc.name, i, expectedType, newMediumTypes[i])
+				}
 
 				if len(newMediumTypes) >= 2 {
 					for index := 1; index < len(newMediumTypes); index++ {
