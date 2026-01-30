@@ -17,8 +17,16 @@ limitations under the License.
 package jindocache
 
 import (
+	"context"
+	"fmt"
+	"reflect"
+
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindocache/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/retry"
 )
 
 // ShouldCheckUFS checks if it requires checking UFS
@@ -33,6 +41,10 @@ func (e *JindoCacheEngine) PrepareUFS() (err error) {
 	if e.runtime.Spec.Master.Disabled {
 		err = nil
 		return
+	}
+
+	if !e.CheckRuntimeReady() {
+		return fmt.Errorf("runtime engine is not ready")
 	}
 
 	// 1. Mount UFS (Synchronous Operation)
@@ -110,4 +122,77 @@ func (e *JindoCacheEngine) ShouldUpdateUFS() (ufsToUpdate *utils.UFSToUpdate) {
 
 func (e *JindoCacheEngine) UpdateOnUFSChange(*utils.UFSToUpdate) (updateReady bool, err error) {
 	return
+}
+
+func (e *JindoCacheEngine) ShouldSyncDatasetMounts() (should bool, err error) {
+	runtime, err := utils.GetJindoRuntime(e.Client, e.name, e.namespace)
+	if err != nil {
+		e.Log.Error(err, "failed to get runtime when if dataset mounts need to be synced")
+		return false, errors.WithMessage(err, "failed to get runtime when checking if dataset mounts need to be synced")
+	}
+
+	if runtime.Spec.Master.Disabled {
+		return false, nil
+	}
+
+	masterPodName, masterContainerName := e.getMasterPodInfo()
+	masterPod, err := kubeclient.GetPodByName(e.Client, masterPodName, e.namespace)
+	if err != nil || masterPod == nil {
+		e.Log.Error(err, "failed to get master pod when checking if dataset mounts need to be synced")
+		return false, errors.WithMessage(err, "failed to get master pod when checking if dataset mounts need to be synced")
+	}
+
+	var startedAt *metav1.Time
+	for _, containerStatus := range masterPod.Status.ContainerStatuses {
+		if containerStatus.Name == masterContainerName {
+			if containerStatus.State.Running == nil {
+				e.Log.Info("Jindocache master container is not running, recheck its status in next reconciliation loop")
+				return false, nil
+			} else {
+				startedAt = &containerStatus.State.Running.StartedAt
+				break
+			}
+		}
+	}
+
+	if startedAt == nil {
+		e.Log.Info("Jindocache master container not found in pod container statuses when checking if dataset mounts need to be synced",
+			"pod", masterPod.Name, "namespace", masterPod.Namespace, "container", masterContainerName)
+	}
+
+	// either runtime.Status.MountTime is not set (for backward compatibility) or runtime.Status.MountTime is earlier than startedAt (i.e. jindocache master is restarted), we need to reprepare UFS
+	needReprepareUFS := runtime.Status.MountTime == nil || (startedAt != nil && runtime.Status.MountTime.Before(startedAt))
+
+	return needReprepareUFS, nil
+}
+
+func (e *JindoCacheEngine) SyncDatasetMounts() (err error) {
+	// remount Dataset.spec.mounts and refresh cachesets
+	if err = e.PrepareUFS(); err != nil {
+		return err
+	}
+
+	// update runtime.Status.MountTime to indicate that the Dataset.spec.mounts has been synced
+	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		runtime, err := utils.GetJindoRuntime(e.Client, e.name, e.namespace)
+		if err != nil {
+			return err
+		}
+
+		runtimeToUpdate := runtime.DeepCopy()
+		nowTime := metav1.Now()
+		runtimeToUpdate.Status.MountTime = &nowTime
+
+		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
+			return e.Client.Status().Update(context.TODO(), runtimeToUpdate)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

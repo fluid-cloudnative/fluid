@@ -21,10 +21,11 @@ limitations under the License.
 package base
 
 import (
+	reflect "reflect"
+
 	dataoperation "github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/golang/mock/gomock"
-	reflect "reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -235,6 +236,8 @@ func (mr *MockDataloaderMockRecorder) CheckRuntimeReady() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckRuntimeReady", reflect.TypeOf((*MockDataloader)(nil).CheckRuntimeReady))
 }
 
+var _ base.Implement = (*MockImplement)(nil)
+
 // MockImplement is a mock of implement interface.
 type MockImplement struct {
 	ctrl     *gomock.Controller
@@ -381,6 +384,12 @@ func (m *MockImplement) GetDataOperationValueFile(ctx runtime.ReconcileRequestCo
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
+}
+
+// GetDataOperationValueFile indicates an expected call of GetDataOperationValueFile.
+func (mr *MockImplementMockRecorder) GetDataOperationValueFile(ctx, operation interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDataOperationValueFile", reflect.TypeOf((*MockImplement)(nil).GetDataOperationValueFile), ctx, operation)
 }
 
 // CreateVolume mocks base method.
@@ -654,6 +663,35 @@ func (m *MockImplement) UpdateDatasetStatus(phase v1alpha1.DatasetPhase) error {
 func (mr *MockImplementMockRecorder) UpdateDatasetStatus(phase interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateDatasetStatus", reflect.TypeOf((*MockImplement)(nil).UpdateDatasetStatus), phase)
+}
+
+// ShouldSyncDatasetMounts mocks base method.
+func (m *MockImplement) ShouldSyncDatasetMounts() (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ShouldSyncDatasetMounts")
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ShouldSyncDatasetMounts indicates an expected call of ShouldSyncDatasetMounts.
+func (mr *MockImplementMockRecorder) ShouldSyncDatasetMounts() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ShouldSyncDatasetMounts", reflect.TypeOf((*MockImplement)(nil).ShouldSyncDatasetMounts))
+}
+
+// SyncDatasetMounts mocks base method.
+func (m *MockImplement) SyncDatasetMounts() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SyncDatasetMounts")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SyncDatasetMounts indicates an expected call of SyncDatasetMounts.
+func (mr *MockImplementMockRecorder) SyncDatasetMounts() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncDatasetMounts", reflect.TypeOf((*MockImplement)(nil).SyncDatasetMounts))
 }
 
 // UpdateOnUFSChange mocks base method.

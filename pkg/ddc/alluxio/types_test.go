@@ -16,51 +16,45 @@ limitations under the License.
 
 package alluxio
 
-import "testing"
+import (
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+)
 
-func TestGetTiredStoreLevel0Path(t *testing.T) {
-	testCases := map[string]struct {
-		name      string
-		namespace string
-		alluxio   *Alluxio
-		wantPath  string
-	}{
-		"test getTiredStoreLevel0Path case 1": {
-			name:      "alluxio-01",
-			namespace: "default",
-			alluxio: &Alluxio{
-				TieredStore: TieredStore{
-					Levels: []Level{
-						{
-							Level: 0,
-							Path:  "/mnt/demo/data",
+var _ = Describe("Alluxio", func() {
+	Describe("getTiredStoreLevel0Path", func() {
+		Context("when level 0 exists", func() {
+			It("should return the configured path", func() {
+				alluxio := &Alluxio{
+					TieredStore: TieredStore{
+						Levels: []Level{
+							{
+								Level: 0,
+								Path:  "/mnt/demo/data",
+							},
 						},
 					},
-				},
-			},
-			wantPath: "/mnt/demo/data",
-		},
-		"test getTiredStoreLevel0Path case 2": {
-			name:      "alluxio-01",
-			namespace: "default",
-			alluxio: &Alluxio{
-				TieredStore: TieredStore{
-					Levels: []Level{
-						{
-							Level: 1,
-							Path:  "/mnt/demo/data",
+				}
+				got := alluxio.getTiredStoreLevel0Path("alluxio-01", "default")
+				Expect(got).To(Equal("/mnt/demo/data"))
+			})
+		})
+
+		Context("when level 0 does not exist", func() {
+			It("should return the default shm path", func() {
+				alluxio := &Alluxio{
+					TieredStore: TieredStore{
+						Levels: []Level{
+							{
+								Level: 1,
+								Path:  "/mnt/demo/data",
+							},
 						},
 					},
-				},
-			},
-			wantPath: "/dev/shm/default/alluxio-01",
-		},
-	}
-
-	for k, item := range testCases {
-		got := item.alluxio.getTiredStoreLevel0Path(item.name, item.namespace)
-		if got != item.wantPath {
-			t.Errorf("%s check failure, want:%s,got:%s", k, item.wantPath, got)
-		}
-	}
-}
+				}
+				got := alluxio.getTiredStoreLevel0Path("alluxio-01", "default")
+				Expect(got).To(Equal("/dev/shm/default/alluxio-01"))
+			})
+		})
+	})
+})
