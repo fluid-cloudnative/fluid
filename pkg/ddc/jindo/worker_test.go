@@ -18,7 +18,9 @@ package jindo
 
 import (
 	"reflect"
-	"testing"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -35,61 +37,87 @@ import (
 	ctrlhelper "github.com/fluid-cloudnative/fluid/pkg/ctrl"
 )
 
-func TestSetupWorkers(t *testing.T) {
+var _ = Describe("JindoEngine Worker", func() {
+	Describe("SetupWorkers", func() {
+		var runtimeInfoSpark base.RuntimeInfoInterface
+		var runtimeInfoHadoop base.RuntimeInfoInterface
 
-	// runtimeInfoSpark tests create worker in exclusive mode.
+		BeforeEach(func() {
+			var err error
+			// runtimeInfoSpark tests create worker in exclusive mode.
+			runtimeInfoSpark, err = base.BuildRuntimeInfo("spark", "big-data", common.JindoRuntime)
+			Expect(err).NotTo(HaveOccurred())
+			runtimeInfoSpark.SetupWithDataset(&datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
+			})
 
-	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "big-data", common.JindoRuntime)
+			// runtimeInfoHadoop tests create worker in shareMode mode.
+			runtimeInfoHadoop, err = base.BuildRuntimeInfo("hadoop", "big-data", common.JindoRuntime)
+			Expect(err).NotTo(HaveOccurred())
+			runtimeInfoHadoop.SetupWithDataset(&datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ShareMode},
+			})
+			nodeSelector := map[string]string{
+				"node-select": "true",
+			}
+			runtimeInfoHadoop.SetFuseNodeSelector(nodeSelector)
+		})
 
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
-	runtimeInfoSpark.SetupWithDataset(&datav1alpha1.Dataset{
-		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
-	})
+		DescribeTable("should set up workers correctly",
+			func(testName string, replicas int32, nodeInputs []*v1.Node, worker *appsv1.StatefulSet,
+				testRuntime *datav1alpha1.JindoRuntime, runtimeInfoGetter func() base.RuntimeInfoInterface,
+				name, namespace string, deprecated bool) {
 
-	// runtimeInfoSpark tests create worker in shareMode mode.
-	runtimeInfoHadoop, err := base.BuildRuntimeInfo("hadoop", "big-data", common.JindoRuntime)
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
-	runtimeInfoHadoop.SetupWithDataset(&datav1alpha1.Dataset{
-		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ShareMode},
-	})
-	nodeSelector := map[string]string{
-		"node-select": "true",
-	}
-	runtimeInfoHadoop.SetFuseNodeSelector(nodeSelector)
+				runtimeInfo := runtimeInfoGetter()
+				runtimeObjs := []runtime.Object{}
+				for _, nodeInput := range nodeInputs {
+					runtimeObjs = append(runtimeObjs, nodeInput.DeepCopy())
+				}
+				runtimeObjs = append(runtimeObjs, worker.DeepCopy())
 
-	type fields struct {
-		replicas         int32
-		nodeInputs       []*v1.Node
-		worker           *appsv1.StatefulSet
-		deprecatedWorker *appsv1.DaemonSet
-		runtime          *datav1alpha1.JindoRuntime
-		runtimeInfo      base.RuntimeInfoInterface
-		name             string
-		namespace        string
-		deprecated       bool
-	}
-	tests := []struct {
-		name             string
-		fields           fields
-		wantedNodeLabels map[string]map[string]string
-	}{
-		{
-			name: "test0",
-			fields: fields{
-				replicas: 1,
-				nodeInputs: []*v1.Node{
+				s := runtime.NewScheme()
+				data := &datav1alpha1.Dataset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      name,
+						Namespace: namespace,
+					},
+				}
+				s.AddKnownTypes(datav1alpha1.GroupVersion, testRuntime)
+				s.AddKnownTypes(datav1alpha1.GroupVersion, data)
+				s.AddKnownTypes(appsv1.SchemeGroupVersion, worker)
+				_ = v1.AddToScheme(s)
+				runtimeObjs = append(runtimeObjs, testRuntime)
+				runtimeObjs = append(runtimeObjs, data)
+				mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+
+				e := &JindoEngine{
+					runtime:     testRuntime,
+					runtimeInfo: runtimeInfo,
+					Client:      mockClient,
+					name:        name,
+					namespace:   namespace,
+					Log:         ctrl.Log.WithName(name),
+				}
+
+				e.Helper = ctrlhelper.BuildHelper(runtimeInfo, mockClient, e.Log)
+				err := e.SetupWorkers()
+				Expect(err).NotTo(HaveOccurred())
+
+				if !deprecated {
+					Expect(*worker.Spec.Replicas).To(Equal(replicas))
+				}
+			},
+			Entry("exclusive mode with node inputs",
+				"test0",
+				int32(1),
+				[]*v1.Node{
 					{
 						ObjectMeta: metav1.ObjectMeta{
 							Name: "test-node-spark",
 						},
 					},
 				},
-				worker: &appsv1.StatefulSet{
-
+				&appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "spark-jindofs-worker",
 						Namespace: "big-data",
@@ -98,7 +126,7 @@ func TestSetupWorkers(t *testing.T) {
 						Replicas: ptr.To[int32](1),
 					},
 				},
-				runtime: &datav1alpha1.JindoRuntime{
+				&datav1alpha1.JindoRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "spark",
 						Namespace: "big-data",
@@ -107,26 +135,16 @@ func TestSetupWorkers(t *testing.T) {
 						Replicas: 1,
 					},
 				},
-				runtimeInfo: runtimeInfoSpark,
-				name:        "spark",
-				namespace:   "big-data",
-			},
-			wantedNodeLabels: map[string]map[string]string{
-				"test-node-spark": {
-					"fluid.io/dataset-num":                "1",
-					"fluid.io/s-jindo-big-data-spark":     "true",
-					"fluid.io/s-big-data-spark":           "true",
-					"fluid.io/s-h-jindo-t-big-data-spark": "0B",
-					"fluid_exclusive":                     "big-data_spark",
-				},
-			},
-		},
-		{
-			name: "test1",
-			fields: fields{
-				replicas: 1,
-				worker: &appsv1.StatefulSet{
-
+				func() base.RuntimeInfoInterface { return runtimeInfoSpark },
+				"spark",
+				"big-data",
+				false,
+			),
+			Entry("share mode without node inputs",
+				"test1",
+				int32(1),
+				[]*v1.Node{},
+				&appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "hadoop-jindofs-worker",
 						Namespace: "big-data",
@@ -135,7 +153,7 @@ func TestSetupWorkers(t *testing.T) {
 						Replicas: ptr.To[int32](1),
 					},
 				},
-				runtime: &datav1alpha1.JindoRuntime{
+				&datav1alpha1.JindoRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "hadoop",
 						Namespace: "big-data",
@@ -144,106 +162,45 @@ func TestSetupWorkers(t *testing.T) {
 						Replicas: 1,
 					},
 				},
-				runtimeInfo: runtimeInfoHadoop,
-				name:        "hadoop",
-				namespace:   "big-data",
-			},
-			wantedNodeLabels: map[string]map[string]string{
-				"test-node-hadoop": {
-					"fluid.io/dataset-num":                 "1",
-					"fluid.io/s-jindo-big-data-hadoop":     "true",
-					"fluid.io/s-big-data-hadoop":           "true",
-					"fluid.io/s-h-jindo-t-big-data-hadoop": "0B",
-				},
-			},
-		},
-	}
+				func() base.RuntimeInfoInterface { return runtimeInfoHadoop },
+				"hadoop",
+				"big-data",
+				false,
+			),
+		)
+	})
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			runtimeObjs := []runtime.Object{}
-			for _, nodeInput := range tt.fields.nodeInputs {
-				runtimeObjs = append(runtimeObjs, nodeInput.DeepCopy())
-			}
-			runtimeObjs = append(runtimeObjs, tt.fields.worker.DeepCopy())
-
-			s := runtime.NewScheme()
-			data := &datav1alpha1.Dataset{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      tt.fields.name,
-					Namespace: tt.fields.namespace,
-				},
-			}
-			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
-			s.AddKnownTypes(datav1alpha1.GroupVersion, data)
-			s.AddKnownTypes(appsv1.SchemeGroupVersion, tt.fields.worker)
-			if tt.fields.deprecatedWorker != nil {
-				s.AddKnownTypes(appsv1.SchemeGroupVersion, tt.fields.deprecatedWorker)
-			}
-			_ = v1.AddToScheme(s)
-			runtimeObjs = append(runtimeObjs, tt.fields.runtime)
-			if tt.fields.deprecatedWorker != nil {
-				runtimeObjs = append(runtimeObjs, tt.fields.deprecatedWorker)
-			}
-			runtimeObjs = append(runtimeObjs, data)
-			mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
-
-			e := &JindoEngine{
-				runtime:     tt.fields.runtime,
-				runtimeInfo: tt.fields.runtimeInfo,
-				Client:      mockClient,
-				name:        tt.fields.name,
-				namespace:   tt.fields.namespace,
-				Log:         ctrl.Log.WithName(tt.fields.name),
-			}
-
-			e.Helper = ctrlhelper.BuildHelper(tt.fields.runtimeInfo, mockClient, e.Log)
-			err := e.SetupWorkers()
-			if err != nil {
-				t.Errorf("testCase %s JindoEngine.SetupWorkers() error = %v", tt.name, err)
-			}
-
-			if !tt.fields.deprecated {
-				if tt.fields.replicas != *tt.fields.worker.Spec.Replicas {
-					t.Errorf("Failed to scale %v for %v", tt.name, tt.fields)
+	Describe("ShouldSetupWorkers", func() {
+		DescribeTable("should return correct result based on worker phase",
+			func(name, namespace string, testRuntime *datav1alpha1.JindoRuntime, wantShould bool) {
+				runtimeObjs := []runtime.Object{}
+				data := &datav1alpha1.Dataset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      name,
+						Namespace: namespace,
+					},
 				}
-			}
 
-			// for _, node := range tt.fields.nodeInputs {
-			// 	newNode, err := kubeclient.GetNode(mockClient, node.Name)
-			// 	if err != nil {
-			// 		t.Errorf("fail to get the node with the error %v", err)
-			// 	}
+				s := runtime.NewScheme()
+				s.AddKnownTypes(datav1alpha1.GroupVersion, testRuntime)
+				s.AddKnownTypes(datav1alpha1.GroupVersion, data)
+				_ = v1.AddToScheme(s)
+				runtimeObjs = append(runtimeObjs, testRuntime, data)
+				mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+				e := &JindoEngine{
+					name:      name,
+					namespace: namespace,
+					runtime:   testRuntime,
+					Client:    mockClient,
+				}
 
-			// 	if len(newNode.Labels) != len(tt.wantedNodeLabels[node.Name]) {
-			// 		t.Errorf("fail to decrease the labels, newNode labels is %v", newNode.Labels)
-			// 	}
-			// 	if len(newNode.Labels) != 0 && !reflect.DeepEqual(newNode.Labels, tt.wantedNodeLabels[node.Name]) {
-			// 		t.Errorf("fail to decrease the labels, newNode labels is %v", newNode.Labels)
-			// 	}
-			// }
-		})
-	}
-}
-
-func TestShouldSetupWorkers(t *testing.T) {
-	type fields struct {
-		name      string
-		namespace string
-		runtime   *datav1alpha1.JindoRuntime
-	}
-	tests := []struct {
-		name       string
-		fields     fields
-		wantShould bool
-		wantErr    bool
-	}{
-		{
-			name: "test0",
-			fields: fields{
-				name:      "spark",
-				namespace: "big-data",
-				runtime: &datav1alpha1.JindoRuntime{
+				gotShould, err := e.ShouldSetupWorkers()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(gotShould).To(Equal(wantShould))
+			},
+			Entry("worker phase none should return true",
+				"spark", "big-data",
+				&datav1alpha1.JindoRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "spark",
 						Namespace: "big-data",
@@ -252,16 +209,11 @@ func TestShouldSetupWorkers(t *testing.T) {
 						WorkerPhase: datav1alpha1.RuntimePhaseNone,
 					},
 				},
-			},
-			wantShould: true,
-			wantErr:    false,
-		},
-		{
-			name: "test1",
-			fields: fields{
-				name:      "hadoop",
-				namespace: "big-data",
-				runtime: &datav1alpha1.JindoRuntime{
+				true,
+			),
+			Entry("worker phase not ready should return false",
+				"hadoop", "big-data",
+				&datav1alpha1.JindoRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "hadoop",
 						Namespace: "big-data",
@@ -270,16 +222,11 @@ func TestShouldSetupWorkers(t *testing.T) {
 						WorkerPhase: datav1alpha1.RuntimePhaseNotReady,
 					},
 				},
-			},
-			wantShould: false,
-			wantErr:    false,
-		},
-		{
-			name: "test2",
-			fields: fields{
-				name:      "hbase",
-				namespace: "big-data",
-				runtime: &datav1alpha1.JindoRuntime{
+				false,
+			),
+			Entry("worker phase partial ready should return false",
+				"hbase", "big-data",
+				&datav1alpha1.JindoRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "hbase",
 						Namespace: "big-data",
@@ -288,16 +235,11 @@ func TestShouldSetupWorkers(t *testing.T) {
 						WorkerPhase: datav1alpha1.RuntimePhasePartialReady,
 					},
 				},
-			},
-			wantShould: false,
-			wantErr:    false,
-		},
-		{
-			name: "test3",
-			fields: fields{
-				name:      "tensorflow",
-				namespace: "ml",
-				runtime: &datav1alpha1.JindoRuntime{
+				false,
+			),
+			Entry("worker phase ready should return false",
+				"tensorflow", "ml",
+				&datav1alpha1.JindoRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "tensorflow",
 						Namespace: "ml",
@@ -306,66 +248,53 @@ func TestShouldSetupWorkers(t *testing.T) {
 						WorkerPhase: datav1alpha1.RuntimePhaseReady,
 					},
 				},
+				false,
+			),
+		)
+	})
+
+	Describe("CheckWorkersReady", func() {
+		DescribeTable("should check workers ready correctly",
+			func(name, namespace string, testRuntime *datav1alpha1.JindoRuntime,
+				worker *appsv1.StatefulSet, fuse *appsv1.DaemonSet, wantReady bool) {
+
+				runtimeObjs := []runtime.Object{}
+				data := &datav1alpha1.Dataset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      name,
+						Namespace: namespace,
+					},
+				}
+
+				s := runtime.NewScheme()
+				s.AddKnownTypes(datav1alpha1.GroupVersion, testRuntime)
+				s.AddKnownTypes(datav1alpha1.GroupVersion, data)
+				s.AddKnownTypes(appsv1.SchemeGroupVersion, worker)
+				s.AddKnownTypes(appsv1.SchemeGroupVersion, fuse)
+				_ = v1.AddToScheme(s)
+
+				runtimeObjs = append(runtimeObjs, testRuntime, data, worker, fuse)
+				mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+				e := &JindoEngine{
+					runtime:   testRuntime,
+					name:      name,
+					namespace: namespace,
+					Client:    mockClient,
+					Log:       ctrl.Log.WithName(name),
+				}
+
+				runtimeInfo, err := base.BuildRuntimeInfo(name, namespace, common.JindoRuntime)
+				Expect(err).NotTo(HaveOccurred())
+
+				e.Helper = ctrlhelper.BuildHelper(runtimeInfo, mockClient, e.Log)
+
+				gotReady, err := e.CheckWorkersReady()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(gotReady).To(Equal(wantReady))
 			},
-			wantShould: false,
-			wantErr:    false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			runtimeObjs := []runtime.Object{}
-			data := &datav1alpha1.Dataset{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      tt.fields.name,
-					Namespace: tt.fields.namespace,
-				},
-			}
-
-			s := runtime.NewScheme()
-			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
-			s.AddKnownTypes(datav1alpha1.GroupVersion, data)
-			_ = v1.AddToScheme(s)
-			runtimeObjs = append(runtimeObjs, tt.fields.runtime, data)
-			mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
-			e := &JindoEngine{
-				name:      tt.fields.name,
-				namespace: tt.fields.namespace,
-				runtime:   tt.fields.runtime,
-				Client:    mockClient,
-			}
-
-			gotShould, err := e.ShouldSetupWorkers()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("JindoEngine.ShouldSetupWorkers() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if gotShould != tt.wantShould {
-				t.Errorf("JindoEngine.ShouldSetupWorkers() = %v, want %v", gotShould, tt.wantShould)
-			}
-		})
-	}
-}
-
-func TestCheckWorkersReady(t *testing.T) {
-	type fields struct {
-		runtime   *datav1alpha1.JindoRuntime
-		worker    *appsv1.StatefulSet
-		fuse      *appsv1.DaemonSet
-		name      string
-		namespace string
-	}
-	tests := []struct {
-		name      string
-		fields    fields
-		wantReady bool
-		wantErr   bool
-	}{
-		{
-			name: "test0",
-			fields: fields{
-				name:      "spark",
-				namespace: "big-data",
-				runtime: &datav1alpha1.JindoRuntime{
+			Entry("workers ready when replicas match",
+				"spark", "big-data",
+				&datav1alpha1.JindoRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "spark",
 						Namespace: "big-data",
@@ -375,7 +304,7 @@ func TestCheckWorkersReady(t *testing.T) {
 						Fuse:     datav1alpha1.JindoFuseSpec{},
 					},
 				},
-				worker: &appsv1.StatefulSet{
+				&appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "spark-jindofs-worker",
 						Namespace: "big-data",
@@ -387,7 +316,7 @@ func TestCheckWorkersReady(t *testing.T) {
 						ReadyReplicas: 1,
 					},
 				},
-				fuse: &appsv1.DaemonSet{
+				&appsv1.DaemonSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "spark-jindofs-fuse",
 						Namespace: "big-data",
@@ -398,16 +327,11 @@ func TestCheckWorkersReady(t *testing.T) {
 						CurrentNumberScheduled: 1,
 					},
 				},
-			},
-			wantReady: true,
-			wantErr:   false,
-		},
-		{
-			name: "test1",
-			fields: fields{
-				name:      "hbase",
-				namespace: "big-data",
-				runtime: &datav1alpha1.JindoRuntime{
+				true,
+			),
+			Entry("workers not ready when replicas don't match",
+				"hbase", "big-data",
+				&datav1alpha1.JindoRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "hbase",
 						Namespace: "big-data",
@@ -417,7 +341,7 @@ func TestCheckWorkersReady(t *testing.T) {
 						Fuse:     datav1alpha1.JindoFuseSpec{},
 					},
 				},
-				worker: &appsv1.StatefulSet{
+				&appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "hbase-jindofs-worker",
 						Namespace: "big-data",
@@ -429,7 +353,7 @@ func TestCheckWorkersReady(t *testing.T) {
 						ReadyReplicas: 0,
 					},
 				},
-				fuse: &appsv1.DaemonSet{
+				&appsv1.DaemonSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "hbase-jindofs-fuse",
 						Namespace: "big-data",
@@ -440,100 +364,48 @@ func TestCheckWorkersReady(t *testing.T) {
 						CurrentNumberScheduled: 0,
 					},
 				},
-			},
-			wantReady: false,
-			wantErr:   false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			runtimeObjs := []runtime.Object{}
-			data := &datav1alpha1.Dataset{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      tt.fields.name,
-					Namespace: tt.fields.namespace,
-				},
-			}
+				false,
+			),
+		)
+	})
 
-			s := runtime.NewScheme()
-			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
-			s.AddKnownTypes(datav1alpha1.GroupVersion, data)
-			s.AddKnownTypes(appsv1.SchemeGroupVersion, tt.fields.worker)
-			s.AddKnownTypes(appsv1.SchemeGroupVersion, tt.fields.fuse)
-			_ = v1.AddToScheme(s)
-
-			runtimeObjs = append(runtimeObjs, tt.fields.runtime, data, tt.fields.worker, tt.fields.fuse)
-			mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+	Describe("getWorkerSelectors", func() {
+		It("should return correct worker selectors", func() {
 			e := &JindoEngine{
-				runtime:   tt.fields.runtime,
-				name:      tt.fields.name,
-				namespace: tt.fields.namespace,
-				Client:    mockClient,
-				Log:       ctrl.Log.WithName(tt.fields.name),
-			}
-
-			runtimeInfo, err := base.BuildRuntimeInfo(tt.fields.name, tt.fields.namespace, common.JindoRuntime)
-			if err != nil {
-				t.Errorf("JindoEngine.CheckWorkersReady() error = %v", err)
-			}
-
-			e.Helper = ctrlhelper.BuildHelper(runtimeInfo, mockClient, e.Log)
-
-			gotReady, err := e.CheckWorkersReady()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("JindoEngine.CheckWorkersReady() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if gotReady != tt.wantReady {
-				t.Errorf("JindoEngine.CheckWorkersReady() = %v, want %v", gotReady, tt.wantReady)
-			}
-		})
-	}
-}
-
-func TestGetWorkerSelectors(t *testing.T) {
-	type fields struct {
-		name string
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   string
-	}{
-		{
-			name: "test0",
-			fields: fields{
 				name: "spark",
-			},
-			want: "app=jindo,release=spark,role=jindo-worker",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			e := &JindoEngine{
-				name: tt.fields.name,
 			}
-			if got := e.getWorkerSelectors(); got != tt.want {
-				t.Errorf("JindoEngine.getWorkerSelectors() = %v, want %v", got, tt.want)
-			}
+			got := e.getWorkerSelectors()
+			Expect(got).To(Equal("app=jindo,release=spark,role=jindo-worker"))
 		})
-	}
-}
+	})
 
-func TestBuildWorkersAffinity(t *testing.T) {
-	type fields struct {
-		dataset *datav1alpha1.Dataset
-		worker  *appsv1.StatefulSet
-		want    *v1.Affinity
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   *v1.Affinity
-	}{
-		{name: "exlusive",
-			fields: fields{
-				dataset: &datav1alpha1.Dataset{
+	Describe("buildWorkersAffinity", func() {
+		DescribeTable("should build workers affinity correctly",
+			func(dataset *datav1alpha1.Dataset, worker *appsv1.StatefulSet, want *v1.Affinity) {
+				s := runtime.NewScheme()
+				s.AddKnownTypes(datav1alpha1.GroupVersion, dataset)
+				s.AddKnownTypes(appsv1.SchemeGroupVersion, worker)
+				_ = v1.AddToScheme(s)
+				runtimeObjs := []runtime.Object{}
+				runtimeObjs = append(runtimeObjs, dataset)
+				runtimeObjs = append(runtimeObjs, worker)
+				mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+				runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "jindo")
+				Expect(err).NotTo(HaveOccurred())
+
+				e := &JindoEngine{
+					name:        dataset.Name,
+					namespace:   dataset.Namespace,
+					Client:      mockClient,
+					runtimeInfo: runtimeInfo,
+				}
+
+				resultWorker, err := e.buildWorkersAffinity(worker)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(reflect.DeepEqual(resultWorker.Spec.Template.Spec.Affinity, want)).To(BeTrue())
+			},
+			Entry("exclusive mode",
+				&datav1alpha1.Dataset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test1",
 						Namespace: "big-data",
@@ -542,7 +414,7 @@ func TestBuildWorkersAffinity(t *testing.T) {
 						PlacementMode: datav1alpha1.ExclusiveMode,
 					},
 				},
-				worker: &appsv1.StatefulSet{
+				&appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test1-jindofs-worker",
 						Namespace: "big-data",
@@ -551,7 +423,7 @@ func TestBuildWorkersAffinity(t *testing.T) {
 						Replicas: ptr.To[int32](1),
 					},
 				},
-				want: &v1.Affinity{
+				&v1.Affinity{
 					PodAntiAffinity: &v1.PodAntiAffinity{
 						RequiredDuringSchedulingIgnoredDuringExecution: []v1.PodAffinityTerm{
 							{
@@ -584,10 +456,9 @@ func TestBuildWorkersAffinity(t *testing.T) {
 						},
 					},
 				},
-			},
-		}, {name: "shared",
-			fields: fields{
-				dataset: &datav1alpha1.Dataset{
+			),
+			Entry("shared mode",
+				&datav1alpha1.Dataset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test2",
 						Namespace: "big-data",
@@ -596,7 +467,7 @@ func TestBuildWorkersAffinity(t *testing.T) {
 						PlacementMode: datav1alpha1.ShareMode,
 					},
 				},
-				worker: &appsv1.StatefulSet{
+				&appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test2-jindofs-worker",
 						Namespace: "big-data",
@@ -605,11 +476,10 @@ func TestBuildWorkersAffinity(t *testing.T) {
 						Replicas: ptr.To[int32](1),
 					},
 				},
-				want: &v1.Affinity{
+				&v1.Affinity{
 					PodAntiAffinity: &v1.PodAntiAffinity{
 						PreferredDuringSchedulingIgnoredDuringExecution: []v1.WeightedPodAffinityTerm{
 							{
-								// The default weight is 50
 								Weight: 50,
 								PodAffinityTerm: v1.PodAffinityTerm{
 									LabelSelector: &metav1.LabelSelector{
@@ -656,10 +526,9 @@ func TestBuildWorkersAffinity(t *testing.T) {
 						},
 					},
 				},
-			},
-		}, {name: "dataset-with-affinity",
-			fields: fields{
-				dataset: &datav1alpha1.Dataset{
+			),
+			Entry("dataset with affinity",
+				&datav1alpha1.Dataset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test3",
 						Namespace: "big-data",
@@ -682,7 +551,7 @@ func TestBuildWorkersAffinity(t *testing.T) {
 						},
 					},
 				},
-				worker: &appsv1.StatefulSet{
+				&appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test3-jindofs-worker",
 						Namespace: "big-data",
@@ -691,7 +560,7 @@ func TestBuildWorkersAffinity(t *testing.T) {
 						Replicas: ptr.To[int32](1),
 					},
 				},
-				want: &v1.Affinity{
+				&v1.Affinity{
 					PodAntiAffinity: &v1.PodAntiAffinity{
 						RequiredDuringSchedulingIgnoredDuringExecution: []v1.PodAffinityTerm{
 							{
@@ -737,40 +606,7 @@ func TestBuildWorkersAffinity(t *testing.T) {
 						},
 					},
 				},
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			s := runtime.NewScheme()
-			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.dataset)
-			s.AddKnownTypes(appsv1.SchemeGroupVersion, tt.fields.worker)
-			_ = v1.AddToScheme(s)
-			runtimeObjs := []runtime.Object{}
-			runtimeObjs = append(runtimeObjs, tt.fields.dataset)
-			runtimeObjs = append(runtimeObjs, tt.fields.worker)
-			mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
-			runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "jindo")
-			if err != nil {
-				t.Errorf("fail to create the runtimeInfo with error %v", err)
-			}
-			e := &JindoEngine{
-				name:        tt.fields.dataset.Name,
-				namespace:   tt.fields.dataset.Namespace,
-				Client:      mockClient,
-				runtimeInfo: runtimeInfo,
-			}
-
-			want := tt.fields.want
-			worker, err := e.buildWorkersAffinity(tt.fields.worker)
-			if err != nil {
-				t.Errorf("JindoEngine.buildWorkersAffinity() = %v", err)
-			}
-
-			if !reflect.DeepEqual(worker.Spec.Template.Spec.Affinity, want) {
-				t.Errorf("Test case %s JindoEngine.buildWorkersAffinity() = %v, want %v", tt.name, worker.Spec.Template.Spec.Affinity, tt.fields.want)
-			}
-		})
-	}
-}
+			),
+		)
+	})
+})
