@@ -328,6 +328,7 @@ type mockCertReadWriter struct {
 	readResp        *generator.Artifacts
 	readResp2       *generator.Artifacts
 	readErr         error
+	readErr2        error
 	writeResp       *generator.Artifacts
 	writeErr        error
 	overwriteResp   *generator.Artifacts
@@ -342,7 +343,7 @@ func (m *mockCertReadWriter) read() (*generator.Artifacts, error) {
 	if m.readCount == 1 {
 		return m.readResp, m.readErr
 	}
-	return m.readResp2, nil
+	return m.readResp2, m.readErr2
 }
 
 func (m *mockCertReadWriter) write() (*generator.Artifacts, error) {
