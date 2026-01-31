@@ -24,7 +24,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"math/big"
-	"testing"
+	
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/webhook/generator"
@@ -34,10 +34,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func TestCertWriter(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "CertWriter Suite")
-}
 
 var _ = Describe("CertWriter", func() {
 	var (
