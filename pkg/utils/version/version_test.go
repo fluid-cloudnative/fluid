@@ -16,61 +16,83 @@ limitations under the License.
 
 package version
 
-import "testing"
+import (
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"testing"
+)
 
-func TestParse(t *testing.T) {
-	validVersions := []string{
-		"2.7.2-SNAPSHOT-3714f2b",
-		"release-2.7.2-SNAPSHOT-3714f2b",
-		"2.8.0",
-	}
-
-	for _, s := range validVersions {
-		t.Run(s, func(t *testing.T) {
-			ver, err := RuntimeVersion(s)
-			t.Log("Valid: ", s, ver, err)
-			if err != nil {
-				t.Errorf("RuntimeVersion unexpected error for version %q: %v", s, err)
-			}
-		})
-	}
+func TestVersion(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Version Suite")
 }
 
-func TestCompare(t *testing.T) {
-	tests := []struct {
-		name      string
-		current   string
-		other     string
-		wantError bool
-		want      int
-	}{
-		{
-			name:      "lessThan",
-			current:   "release-2.7.2-SNAPSHOT-3714f2b",
-			other:     "2.8.0",
-			wantError: false,
-			want:      -1,
-		},
-		{
-			name:      "error",
-			current:   "test-2.7.2-SNAPSHOT-3714f2b",
-			other:     "2.8.0",
-			wantError: true,
-			want:      0,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := Compare(tt.current, tt.other)
-			gotErr := err != nil
-			if gotErr != tt.wantError {
-				t.Errorf("testcase %v compare()'s expected error is %v, result is %v", tt.name, tt.wantError, err)
+var _ = Describe("Version", func() {
+	Describe("RuntimeVersion", func() {
+		Context("when parsing valid version strings", func() {
+			validVersions := []string{
+				"2.7.2-SNAPSHOT-3714f2b",
+				"release-2.7.2-SNAPSHOT-3714f2b",
+				"2.8.0",
 			}
 
-			if got != tt.want {
-				t.Errorf("testcase %v compare()'s expected value is %v, result is %v", tt.name, tt.want, got)
+			for _, versionStr := range validVersions {
+				versionStr := versionStr // capture range variable
+				It("should successfully parse "+versionStr, func() {
+					ver, err := RuntimeVersion(versionStr)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(ver).NotTo(BeNil())
+					GinkgoWriter.Printf("Valid: %s, %v\n", versionStr, ver)
+				})
 			}
-
 		})
-	}
-}
+	})
+
+	Describe("Compare", func() {
+		Context("when comparing version strings", func() {
+			It("should return -1 when current version is less than other", func() {
+				current := "release-2.7.2-SNAPSHOT-3714f2b"
+				other := "2.8.0"
+
+				result, err := Compare(current, other)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(Equal(-1))
+			})
+
+			It("should return error for invalid version format", func() {
+				current := "test-2.7.2-SNAPSHOT-3714f2b"
+				other := "2.8.0"
+
+				result, err := Compare(current, other)
+
+				Expect(err).To(HaveOccurred())
+				Expect(result).To(Equal(0))
+			})
+		})
+
+		Context("when comparing equal versions", func() {
+			It("should return 0", func() {
+				current := "2.8.0"
+				other := "2.8.0"
+
+				result, err := Compare(current, other)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(Equal(0))
+			})
+		})
+
+		Context("when comparing greater versions", func() {
+			It("should return 1 when current version is greater than other", func() {
+				current := "2.9.0"
+				other := "2.8.0"
+
+				result, err := Compare(current, other)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(Equal(1))
+			})
+		})
+	})
+})
