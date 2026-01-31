@@ -85,10 +85,18 @@ do
 done
 
 # different with csi, as here the mount point is the parent dir of the fuse mount point, 
-if [ ! -e  $ConditionPathIsMountPoint/*/$SubPath ] ; then
-  log "sub path [$SubPath] not exist!"
-  exit 2
-fi
+subpath_check_count=1
+subpath_check_limit=30
+while [ ! -e  $ConditionPathIsMountPoint/*/$SubPath ]
+do
+    sleep 1
+    subpath_check_count=¬expr $subpath_check_count + 1¬
+    if test $subpath_check_count -eq $subpath_check_limit
+    then
+        log "timed out checking sub path [$SubPath] for $subpath_check_limit seconds!"
+        exit 2
+    fi
+done
 
 log "succeed in checking mount point $ConditionPathIsMountPoint after $count attempts"
 `
