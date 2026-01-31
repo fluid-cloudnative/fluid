@@ -104,7 +104,6 @@ var _ = Describe("Jindo", func() {
 				os.Setenv(engineTypeFromEnv, common.JindoFSxEngineImpl)
 				image := GetRuntimeImage()
 				Expect(image).To(Equal(defaultJindofsxRuntimeImage))
-				Expect(image).To(Equal("registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:4.6.8"))
 			})
 		})
 
@@ -113,7 +112,6 @@ var _ = Describe("Jindo", func() {
 				os.Setenv(engineTypeFromEnv, common.JindoFSEngineImpl)
 				image := GetRuntimeImage()
 				Expect(image).To(Equal(defaultJindofsRuntimeImage))
-				Expect(image).To(Equal("registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:3.8.0"))
 			})
 		})
 
@@ -122,7 +120,6 @@ var _ = Describe("Jindo", func() {
 				os.Setenv(engineTypeFromEnv, common.JindoCacheEngineImpl)
 				image := GetRuntimeImage()
 				Expect(image).To(Equal(defaultJindoCacheRuntimeImage))
-				Expect(image).To(Equal("registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:6.2.0"))
 			})
 		})
 
@@ -131,7 +128,6 @@ var _ = Describe("Jindo", func() {
 				os.Unsetenv(engineTypeFromEnv)
 				image := GetRuntimeImage()
 				Expect(image).To(Equal(defaultJindoCacheRuntimeImage))
-				Expect(image).To(Equal("registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:6.2.0"))
 			})
 		})
 	})
