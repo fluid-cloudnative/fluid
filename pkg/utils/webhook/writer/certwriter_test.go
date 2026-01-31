@@ -357,66 +357,9 @@ func (m *mockCertReadWriter) overwrite(resourceVersion string) (*generator.Artif
 
 // Helper functions to generate test certificates
 
-func generateValidTestCerts(dnsName string) *generator.Artifacts {
-	// Generate CA
-	caKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		panic(err)
-	}
-
-	caTemplate := &x509.Certificate{
-		SerialNumber: big.NewInt(1),
-		Subject: pkix.Name{
-			CommonName: "Test CA",
-		},
-		NotBefore:             time.Now().Add(-1 * time.Hour),
-		NotAfter:              time.Now().Add(365 * 24 * time.Hour),
-		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageDigitalSignature,
-		BasicConstraintsValid: true,
-		IsCA:                  true,
-	}
-
-	caCertBytes, err := x509.CreateCertificate(rand.Reader, caTemplate, caTemplate, &caKey.PublicKey, caKey)
-	if err != nil {
-		panic(err)
-	}
-
-	caCertPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: caCertBytes})
-
-	// Generate server cert
-	serverKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		panic(err)
-	}
-
-	serverTemplate := &x509.Certificate{
-		SerialNumber: big.NewInt(2),
-		Subject: pkix.Name{
-			CommonName: dnsName,
-		},
-		DNSNames:    []string{dnsName},
-		NotBefore:   time.Now().Add(-1 * time.Hour),
-		NotAfter:    time.Now().Add(365 * 24 * time.Hour),
-		KeyUsage:    x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
-		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-	}
-
-	serverCertBytes, err := x509.CreateCertificate(rand.Reader, serverTemplate, caTemplate, &serverKey.PublicKey, caKey)
-	if err != nil {
-		panic(err)
-	}
-
-	serverCertPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: serverCertBytes})
-	serverKeyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(serverKey)})
-
-	return &generator.Artifacts{
-		Cert:   serverCertPEM,
-		Key:    serverKeyPEM,
-		CACert: caCertPEM,
-	}
-}
-
-func generateCertsWithExpiry(dnsName string, validDuration time.Duration) *generator.Artifacts {
+// generateTestCerts is a shared helper function that generates certificates with the specified validity duration.
+// This function consolidates the certificate generation logic to reduce code duplication.
+func generateTestCerts(dnsName string, validDuration time.Duration) *generator.Artifacts {
 	// Generate CA
 	caKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
@@ -442,7 +385,7 @@ func generateCertsWithExpiry(dnsName string, validDuration time.Duration) *gener
 
 	caCertPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: caCertBytes})
 
-	// Generate server cert with same expiry
+	// Generate server cert
 	serverKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		panic(err)
@@ -473,6 +416,18 @@ func generateCertsWithExpiry(dnsName string, validDuration time.Duration) *gener
 		Key:    serverKeyPEM,
 		CACert: caCertPEM,
 	}
+}
+
+// generateValidTestCerts generates certificates with a standard 1-year validity period.
+// This is a convenience wrapper around generateTestCerts.
+func generateValidTestCerts(dnsName string) *generator.Artifacts {
+	return generateTestCerts(dnsName, 365*24*time.Hour)
+}
+
+// generateCertsWithExpiry generates certificates with a custom validity duration.
+// This is a convenience wrapper around generateTestCerts.
+func generateCertsWithExpiry(dnsName string, validDuration time.Duration) *generator.Artifacts {
+	return generateTestCerts(dnsName, validDuration)
 }
 
 func generateValidKeyPair(dnsName string) ([]byte, []byte) {
