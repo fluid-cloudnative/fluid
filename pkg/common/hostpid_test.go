@@ -16,64 +16,23 @@ limitations under the License.
 
 package common
 
-import "testing"
+import (
+	"github.com/onsi/ginkgo/v2"
+	"github.com/onsi/gomega"
+)
 
-func TestHostPIDEnabled(t *testing.T) {
-	type args struct {
-		annotations map[string]string
-	}
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		{
-			name: "nil, return false",
-			args: args{
-				annotations: nil,
-			},
-			want: false,
+var _ = ginkgo.Describe("HostPIDEnabled", func() {
+	ginkgo.DescribeTable("should correctly determine if HostPID is enabled",
+		func(annotations map[string]string, expected bool) {
+			gomega.Expect(HostPIDEnabled(annotations)).To(gomega.Equal(expected))
 		},
-		{
-			name: "not exist, return false",
-			args: args{
-				annotations: map[string]string{},
-			},
-			want: false,
-		},
-		{
-			name: "wrong value, return false",
-			args: args{
-				annotations: map[string]string{
-					RuntimeFuseHostPIDKey: "sss",
-				},
-			},
-			want: false,
-		},
-		{
-			name: "exist, return true",
-			args: args{
-				annotations: map[string]string{
-					RuntimeFuseHostPIDKey: "true",
-				},
-			},
-			want: true,
-		},
-		{
-			name: "exist True, return true",
-			args: args{
-				annotations: map[string]string{
-					RuntimeFuseHostPIDKey: "True",
-				},
-			},
-			want: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := HostPIDEnabled(tt.args.annotations); got != tt.want {
-				t.Errorf("HostPIDEnabled() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
+		ginkgo.Entry("nil annotations return false", nil, false),
+		ginkgo.Entry("empty annotations return false", map[string]string{}, false),
+		ginkgo.Entry("wrong value returns false",
+			map[string]string{RuntimeFuseHostPIDKey: "sss"}, false),
+		ginkgo.Entry("'true' returns true",
+			map[string]string{RuntimeFuseHostPIDKey: "true"}, true),
+		ginkgo.Entry("'True' returns true",
+			map[string]string{RuntimeFuseHostPIDKey: "True"}, true),
+	)
+})
