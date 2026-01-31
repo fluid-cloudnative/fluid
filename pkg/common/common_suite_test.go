@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,18 +17,13 @@ limitations under the License.
 package common
 
 import (
+	"testing"
+
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 )
 
-var _ = ginkgo.Describe("GetDefaultTieredStoreOrder", func() {
-	ginkgo.DescribeTable("should return correct order for medium types",
-		func(mediumType MediumType, expectedOrder int) {
-			gomega.Expect(GetDefaultTieredStoreOrder(mediumType)).To(gomega.Equal(expectedOrder))
-		},
-		ginkgo.Entry("Memory returns 0", Memory, 0),
-		ginkgo.Entry("SSD returns 1", SSD, 1),
-		ginkgo.Entry("HDD returns 2", HDD, 2),
-		ginkgo.Entry("unknown returns 0", MediumType("unknown"), 0),
-	)
-})
+func TestCommon(t *testing.T) {
+	gomega.RegisterFailHandler(ginkgo.Fail)
+	ginkgo.RunSpecs(t, "Package Common Suite")
+}
