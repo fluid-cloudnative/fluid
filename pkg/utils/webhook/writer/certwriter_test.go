@@ -24,7 +24,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"math/big"
-	
+
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/webhook/generator"
@@ -33,7 +33,6 @@ import (
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
-
 
 var _ = Describe("CertWriter", func() {
 	var (
