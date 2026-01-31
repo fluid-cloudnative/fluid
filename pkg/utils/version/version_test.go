@@ -29,70 +29,34 @@ func TestVersion(t *testing.T) {
 
 var _ = Describe("Version", func() {
 	Describe("RuntimeVersion", func() {
-		Context("when parsing valid version strings", func() {
-			validVersions := []string{
-				"2.7.2-SNAPSHOT-3714f2b",
-				"release-2.7.2-SNAPSHOT-3714f2b",
-				"2.8.0",
-			}
-
-			for _, versionStr := range validVersions {
-				versionStr := versionStr // capture range variable
-				It("should successfully parse "+versionStr, func() {
-					ver, err := RuntimeVersion(versionStr)
-					Expect(err).NotTo(HaveOccurred())
-					Expect(ver).NotTo(BeNil())
-					GinkgoWriter.Printf("Valid: %s, %v\n", versionStr, ver)
-				})
-			}
-		})
+		DescribeTable("when parsing valid version strings",
+			func(versionStr string) {
+				ver, err := RuntimeVersion(versionStr)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(ver).NotTo(BeNil())
+				GinkgoWriter.Printf("Valid: %s, %v\n", versionStr, ver)
+			},
+			Entry("should parse snapshot version", "2.7.2-SNAPSHOT-3714f2b"),
+			Entry("should parse release snapshot version", "release-2.7.2-SNAPSHOT-3714f2b"),
+			Entry("should parse simple version", "2.8.0"),
+		)
 	})
 
 	Describe("Compare", func() {
-		Context("when comparing version strings", func() {
-			It("should return -1 when current version is less than other", func() {
-				current := "release-2.7.2-SNAPSHOT-3714f2b"
-				other := "2.8.0"
-
+		DescribeTable("comparing version strings",
+			func(current, other string, expectedResult int, expectError bool) {
 				result, err := Compare(current, other)
-
-				Expect(err).NotTo(HaveOccurred())
-				Expect(result).To(Equal(-1))
-			})
-
-			It("should return error for invalid version format", func() {
-				current := "test-2.7.2-SNAPSHOT-3714f2b"
-				other := "2.8.0"
-
-				result, err := Compare(current, other)
-
-				Expect(err).To(HaveOccurred())
-				Expect(result).To(Equal(0))
-			})
-		})
-
-		Context("when comparing equal versions", func() {
-			It("should return 0", func() {
-				current := "2.8.0"
-				other := "2.8.0"
-
-				result, err := Compare(current, other)
-
-				Expect(err).NotTo(HaveOccurred())
-				Expect(result).To(Equal(0))
-			})
-		})
-
-		Context("when comparing greater versions", func() {
-			It("should return 1 when current version is greater than other", func() {
-				current := "2.9.0"
-				other := "2.8.0"
-
-				result, err := Compare(current, other)
-
-				Expect(err).NotTo(HaveOccurred())
-				Expect(result).To(Equal(1))
-			})
-		})
+				if expectError {
+					Expect(err).To(HaveOccurred())
+				} else {
+					Expect(err).NotTo(HaveOccurred())
+				}
+				Expect(result).To(Equal(expectedResult))
+			},
+			Entry("should return -1 when current version is less than other", "release-2.7.2-SNAPSHOT-3714f2b", "2.8.0", -1, false),
+			Entry("should return 0 when versions are equal", "2.8.0", "2.8.0", 0, false),
+			Entry("should return 1 when current version is greater than other", "2.9.0", "2.8.0", 1, false),
+			Entry("should return error for invalid version format", "test-2.7.2-SNAPSHOT-3714f2b", "2.8.0", 0, true),
+		)
 	})
 })
