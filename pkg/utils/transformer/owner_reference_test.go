@@ -28,6 +28,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
 )
 
 var _ = Describe("GenerateOwnerReferenceFromObject", func() {
@@ -41,7 +42,7 @@ var _ = Describe("GenerateOwnerReferenceFromObject", func() {
 			fakeClient := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 			obj := &datav1alpha1.Dataset{}
 
-			err := fakeClient.Get(context.TODO(), types.NamespacedName{
+			err := fakeClient.Get(context.Background(), types.NamespacedName{
 				Namespace: dataset.Namespace,
 				Name:      dataset.Name,
 			}, obj)
@@ -278,12 +279,12 @@ var _ = Describe("FilterOwnerByKind", func() {
 
 		Entry("should filter with owner references having all fields populated",
 			[]metav1.OwnerReference{
-				{APIVersion: "data.fluid.io/v1alpha1", Kind: "Dataset", Name: "test-dataset", UID: "12345", Controller: boolPtr(true), BlockOwnerDeletion: boolPtr(true)},
-				{APIVersion: "apps/v1", Kind: "Deployment", Name: "test-deployment", UID: "67890", Controller: boolPtr(false), BlockOwnerDeletion: boolPtr(false)},
+				{APIVersion: "data.fluid.io/v1alpha1", Kind: "Dataset", Name: "test-dataset", UID: "12345", Controller: pointer.Bool(true), BlockOwnerDeletion: pointer.Bool(true)},
+				{APIVersion: "apps/v1", Kind: "Deployment", Name: "test-deployment", UID: "67890", Controller: pointer.Bool(false), BlockOwnerDeletion: pointer.Bool(false)},
 			},
 			"Dataset",
 			[]metav1.OwnerReference{
-				{APIVersion: "data.fluid.io/v1alpha1", Kind: "Dataset", Name: "test-dataset", UID: "12345", Controller: boolPtr(true), BlockOwnerDeletion: boolPtr(true)},
+				{APIVersion: "data.fluid.io/v1alpha1", Kind: "Dataset", Name: "test-dataset", UID: "12345", Controller: pointer.Bool(true), BlockOwnerDeletion: pointer.Bool(true)},
 			},
 		),
 
@@ -364,8 +365,3 @@ var _ = Describe("FilterOwnerByKind", func() {
 		),
 	)
 })
-
-// Helper function to create bool pointers
-func boolPtr(b bool) *bool {
-	return &b
-}
