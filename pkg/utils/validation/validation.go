@@ -46,7 +46,7 @@ func IsValidMountRoot(path string) error {
 		// If the component fails the DNS 1123 conformity test, the function returns an error
 		errs := validation.IsDNS1123Label(part)
 		if len(errs) > 0 {
-			return fmt.Errorf(InvalidMountRootErrMsgFmt, path, "every directory name in the mount root path shuold follow the relaxed DNS (RFC 1123) rule which additionally allows upper case alphabetic character and character '_'")
+			return fmt.Errorf(InvalidMountRootErrMsgFmt, path, "every directory name in the mount root path should follow the relaxed DNS (RFC 1123) rule which additionally allows upper case alphabetic character and character '_'")
 		}
 	}
 
