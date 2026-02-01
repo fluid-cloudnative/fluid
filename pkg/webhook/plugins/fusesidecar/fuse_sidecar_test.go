@@ -21,13 +21,14 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/api"
+	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ = Describe("FuseSidecar Plugin", func() {
@@ -37,7 +38,13 @@ var _ = Describe("FuseSidecar Plugin", func() {
 	)
 
 	BeforeEach(func() {
-		var c client.Client 
+		s := runtime.NewScheme()
+		Expect(corev1.AddToScheme(s)).To(Succeed())
+
+		c := fake.NewClientBuilder().
+			WithScheme(s).
+			Build()
+
 		plugin, err = NewPlugin(c, "")
 	})
 
@@ -87,6 +94,6 @@ var _ = Describe("FuseSidecar Plugin", func() {
 })
 
 func TestFuseSidecar(t *testing.T) {
-    RegisterFailHandler(Fail)
-    RunSpecs(t, "FuseSidecar Plugin Suite")
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "FuseSidecar Plugin Suite")
 }
