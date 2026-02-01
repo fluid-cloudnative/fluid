@@ -17,6 +17,8 @@ limitations under the License.
 package fusesidecar
 
 import (
+	"testing"
+
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/api"
 
@@ -83,3 +85,8 @@ var _ = Describe("FuseSidecar Plugin", func() {
 		})
 	})
 })
+
+func TestFuseSidecar(t *testing.T) {
+    RegisterFailHandler(Fail)
+    RunSpecs(t, "FuseSidecar Plugin Suite")
+}
