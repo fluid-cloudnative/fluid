@@ -1,7 +1,7 @@
 package discovery
 
 import (
-	"fmt"
+	"log"
 	"strconv"
 	"strings"
 
@@ -22,9 +22,10 @@ func SupportsNativeSidecar(cfg *rest.Config) bool {
 		return false
 	}
 	
-	fmt.Printf("SupportsNativeSidecar: cfg.Host = %q\n", cfg.Host)
+	// fmt.Printf("SupportsNativeSidecar: cfg.Host = %q\n", cfg.Host)
 	dc, err := discovery.NewDiscoveryClientForConfig(cfg)
 	if err != nil {
+		log.Printf("Failed to create discovery client for native sidecar detection: %v", err)
 		return false
 	}
 
