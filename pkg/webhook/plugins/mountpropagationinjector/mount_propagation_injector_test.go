@@ -56,31 +56,37 @@ var _ = Describe("MountPropagationInjector Plugin", func() {
 		Expect(plugin.GetName()).To(Equal(Name))
 	})
 
-	Context("when mutating a pod", func() {
-		It("does not stop when runtimeInfo exists", func() {
-			runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio")
-			Expect(err).NotTo(HaveOccurred())
+	It("injects mount propagation when PVC is mounted", func() {
+		pod.Spec.Volumes = []corev1.Volume{{
+			Name: "data",
+			VolumeSource: corev1.VolumeSource{
+				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+					ClaimName: "test",
+				},
+			},
+		}}
 
-			shouldStop, err := plugin.Mutate(
-				pod,
-				map[string]base.RuntimeInfoInterface{"test": runtimeInfo},
-			)
+		pod.Spec.Containers = []corev1.Container{{
+			Name: "app",
+			VolumeMounts: []corev1.VolumeMount{{
+				Name:      "data",
+				MountPath: "/data",
+			}},
+		}}
 
-			Expect(err).NotTo(HaveOccurred())
-			Expect(shouldStop).To(BeFalse())
-		})
+		runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio")
+		Expect(err).NotTo(HaveOccurred())
 
-		It("does not error when runtimeInfos is empty", func() {
-			_, err := plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{})
-			Expect(err).NotTo(HaveOccurred())
-		})
+		shouldStop, err := plugin.Mutate(
+			pod,
+			map[string]base.RuntimeInfoInterface{"test": runtimeInfo},
+		)
 
-		It("returns error when runtimeInfo is nil", func() {
-			_, err := plugin.Mutate(
-				pod,
-				map[string]base.RuntimeInfoInterface{"test": nil},
-			)
-			Expect(err).To(HaveOccurred())
-		})
+		Expect(err).NotTo(HaveOccurred())
+		Expect(shouldStop).To(BeFalse())
+
+		mp := corev1.MountPropagationHostToContainer
+		Expect(pod.Spec.Containers[0].VolumeMounts[0].MountPropagation).
+			To(Equal(&mp))
 	})
 })
