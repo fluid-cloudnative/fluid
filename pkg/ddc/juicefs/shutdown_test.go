@@ -127,6 +127,19 @@ func TestDestroyWorker(t *testing.T) {
 	}
 	runtimeInfoHadoop.SetFuseNodeSelector(nodeSelector)
 
+	sparkRuntime := &datav1alpha1.JuiceFSRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "spark",
+			Namespace: "fluid",
+		},
+	}
+	hadoopRuntime := &datav1alpha1.JuiceFSRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "hadoop",
+			Namespace: "fluid",
+		},
+	}
+
 	var nodeInputs = []*corev1.Node{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -180,6 +193,7 @@ func TestDestroyWorker(t *testing.T) {
 	for _, nodeInput := range nodeInputs {
 		testNodes = append(testNodes, nodeInput.DeepCopy())
 	}
+	testNodes = append(testNodes, sparkRuntime, hadoopRuntime)
 
 	client := fake.NewFakeClientWithScheme(testScheme, testNodes...)
 
@@ -383,17 +397,26 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 	Convey("Test CleanupCache ", t, func() {
 		Convey("cleanup success", func() {
 			var engine *JuiceFSEngine
+
 			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfStatefulSet",
 				func(_ *JuiceFSEngine, dsName string, namespace string) ([]corev1.Pod, error) {
 					r := mockRunningPodsOfStatefulSet()
 					return r, nil
 				})
 			defer patch1.Reset()
-			patch2 := ApplyMethod(reflect.TypeOf(operations.JuiceFileUtils{}), "DeleteCacheDirs",
+
+			patch2 := ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfDaemonset",
+				func(_ *JuiceFSEngine, dsName string, namespace string) ([]corev1.Pod, error) {
+					r := mockRunningPodsOfDaemonSet()
+					return r, nil
+				})
+			defer patch2.Reset()
+
+			patch3 := ApplyMethod(reflect.TypeOf(operations.JuiceFileUtils{}), "DeleteCacheDirs",
 				func(_ operations.JuiceFileUtils, cacheDirs []string) error {
 					return nil
 				})
-			defer patch2.Reset()
+			defer patch3.Reset()
 
 			e := &JuiceFSEngine{
 				name:        "test",
@@ -459,11 +482,18 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 		})
 		Convey("test3", func() {
 			var engine *JuiceFSEngine
+
 			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfStatefulSet",
 				func(_ *JuiceFSEngine, dsName string, namespace string) ([]corev1.Pod, error) {
 					return []corev1.Pod{}, apierrs.NewNotFound(schema.GroupResource{}, "test")
 				})
 			defer patch1.Reset()
+
+			patch2 := ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfDaemonset",
+				func(_ *JuiceFSEngine, dsName string, namespace string) ([]corev1.Pod, error) {
+					return []corev1.Pod{}, apierrs.NewNotFound(schema.GroupResource{}, "test-fuse")
+				})
+			defer patch2.Reset()
 
 			e := &JuiceFSEngine{
 				name:      "test",
@@ -496,6 +526,89 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 			So(got, ShouldNotBeNil)
 		})
 	})
+}
+
+func TestJuiceFSEngine_getFuseCacheDirs(t *testing.T) {
+	type args struct {
+		runtime *datav1alpha1.JuiceFSRuntime
+	}
+	tests := []struct {
+		name          string
+		args          args
+		wantCacheDirs []string
+	}{
+		{
+			name: "test-default",
+			args: args{
+				runtime: &datav1alpha1.JuiceFSRuntime{},
+			},
+			wantCacheDirs: []string{"/var/jfsCache"},
+		},
+		{
+			name: "test-hostpath",
+			args: args{
+				runtime: &datav1alpha1.JuiceFSRuntime{
+					Spec: datav1alpha1.JuiceFSRuntimeSpec{
+						TieredStore: datav1alpha1.TieredStore{
+							Levels: []datav1alpha1.Level{{
+								MediumType: common.Memory,
+								VolumeType: common.VolumeTypeHostPath,
+								Path:       "/mnt/ramdisk",
+							}},
+						},
+					},
+				},
+			},
+			wantCacheDirs: []string{"/mnt/ramdisk"},
+		},
+		{
+			name: "test-emptydir",
+			args: args{
+				runtime: &datav1alpha1.JuiceFSRuntime{
+					Spec: datav1alpha1.JuiceFSRuntimeSpec{
+						TieredStore: datav1alpha1.TieredStore{
+							Levels: []datav1alpha1.Level{{
+								MediumType: common.Memory,
+								VolumeType: common.VolumeTypeEmptyDir,
+								Path:       "/mnt/ramdisk",
+							}},
+						},
+					},
+				},
+			},
+			wantCacheDirs: nil,
+		},
+		{
+			name: "test-fuse-cache-override",
+			args: args{
+				runtime: &datav1alpha1.JuiceFSRuntime{
+					Spec: datav1alpha1.JuiceFSRuntimeSpec{
+						TieredStore: datav1alpha1.TieredStore{
+							Levels: []datav1alpha1.Level{{
+								MediumType: common.Memory,
+								VolumeType: common.VolumeTypeHostPath,
+								Path:       "/mnt/ramdisk",
+							}},
+						},
+						Fuse: datav1alpha1.JuiceFSFuseSpec{
+							Options: map[string]string{
+								"cache-dir": "/fuse/cache",
+							},
+						},
+					},
+				},
+			},
+			wantCacheDirs: []string{"/mnt/ramdisk", "/fuse/cache"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			j := &JuiceFSEngine{}
+			if gotCacheDirs := j.getFuseCacheDirs(tt.args.runtime); !reflect.DeepEqual(gotCacheDirs, tt.wantCacheDirs) {
+				t.Errorf("getFuseCacheDirs() = %v, want %v", gotCacheDirs, tt.wantCacheDirs)
+			}
+		})
+	}
 }
 
 func TestJuiceFSEngine_getUUID_community(t *testing.T) {

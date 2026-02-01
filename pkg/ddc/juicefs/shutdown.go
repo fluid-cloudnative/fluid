@@ -127,40 +127,71 @@ func (j *JuiceFSEngine) cleanupCache() (err error) {
 	j.Log.Info("get runtime info", "runtime", runtime)
 
 	cacheDirs := j.getCacheDirs(runtime)
-
 	workerName := j.getWorkerName()
 	pods, err := j.GetRunningPodsOfStatefulSet(workerName, j.namespace)
 	if err != nil {
-		if utils.IgnoreNotFound(err) == nil {
-			j.Log.Info("worker of runtime %s namespace %s has been shutdown.", runtime.Name, runtime.Namespace)
-			return nil
-		} else {
+		if utils.IgnoreNotFound(err) != nil {
 			return err
 		}
+		j.Log.Info("worker of runtime %s namespace %s has been shutdown.", runtime.Name, runtime.Namespace)
 	}
 
-	if len(pods) == 0 {
-		j.Log.Info("no worker pod of runtime %s namespace %s", runtime.Name, runtime.Namespace)
-		return
-	}
-	uuid, err := j.getUUID(pods[0], common.JuiceFSWorkerContainer)
-	if err != nil {
-		return err
-	}
-	for _, pod := range pods {
-		fileUtils := operations.NewJuiceFileUtils(pod.Name, common.JuiceFSWorkerContainer, j.namespace, j.Log)
-
-		j.Log.Info("Remove cache in worker pod", "pod", pod.Name, "cache", cacheDirs)
-
-		cacheDirsToBeDeleted := []string{}
-		for _, cacheDir := range cacheDirs {
-			cacheDirsToBeDeleted = append(cacheDirsToBeDeleted, filepath.Join(cacheDir, uuid, "raw/chunks"))
-		}
-		err := fileUtils.DeleteCacheDirs(cacheDirsToBeDeleted)
+	var uuid string
+	if len(pods) > 0 {
+		uuid, err = j.getUUID(pods[0], common.JuiceFSWorkerContainer)
 		if err != nil {
 			return err
 		}
+
+		for _, pod := range pods {
+			fileUtils := operations.NewJuiceFileUtils(pod.Name, common.JuiceFSWorkerContainer, j.namespace, j.Log)
+			j.Log.Info("Remove cache in worker pod", "pod", pod.Name, "cache", cacheDirs)
+
+			cacheDirsToBeDeleted := []string{}
+			for _, cacheDir := range cacheDirs {
+				cacheDirsToBeDeleted = append(cacheDirsToBeDeleted, filepath.Join(cacheDir, uuid, "raw/chunks"))
+			}
+			err := fileUtils.DeleteCacheDirs(cacheDirsToBeDeleted)
+			if err != nil {
+				return err
+			}
+		}
 	}
+
+	fuseName := j.getFuseName()
+	fusePods, err := j.GetRunningPodsOfDaemonset(fuseName, j.namespace)
+	if err != nil {
+		if utils.IgnoreNotFound(err) != nil {
+			return err
+		}
+		j.Log.Info("fuse of runtime %s namespace %s has been shutdown.", runtime.Name, runtime.Namespace)
+	}
+
+	if len(fusePods) > 0 {
+		// If UUID was not found from workers (e.g. workers already down), try to get it from fuse
+		if uuid == "" {
+			uuid, err = j.getUUID(fusePods[0], common.JuiceFSFuseContainer)
+			if err != nil {
+				return err
+			}
+		}
+
+		fuseCacheDirs := j.getFuseCacheDirs(runtime)
+		for _, pod := range fusePods {
+			fileUtils := operations.NewJuiceFileUtils(pod.Name, common.JuiceFSFuseContainer, j.namespace, j.Log)
+			j.Log.Info("Remove cache in fuse pod", "pod", pod.Name, "cache", fuseCacheDirs)
+
+			cacheDirsToBeDeleted := []string{}
+			for _, cacheDir := range fuseCacheDirs {
+				cacheDirsToBeDeleted = append(cacheDirsToBeDeleted, filepath.Join(cacheDir, uuid, "raw/chunks"))
+			}
+			err := fileUtils.DeleteCacheDirs(cacheDirsToBeDeleted)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -180,6 +211,30 @@ func (j *JuiceFSEngine) getCacheDirs(runtime *datav1alpha1.JuiceFSRuntime) (cach
 	// if cache-dir is set in worker option, it will override the cache-dir of worker in runtime
 	workerOptions := runtime.Spec.Worker.Options
 	for k, v := range workerOptions {
+		if k == "cache-dir" {
+			cacheDirs = append(cacheDirs, strings.Split(v, ":")...)
+			break
+		}
+	}
+	return
+}
+
+func (j *JuiceFSEngine) getFuseCacheDirs(runtime *datav1alpha1.JuiceFSRuntime) (cacheDirs []string) {
+	cacheDir := common.JuiceFSDefaultCacheDir
+	if len(runtime.Spec.TieredStore.Levels) != 0 {
+		cacheDir = ""
+		// if cache type hostpath, clean it
+		if runtime.Spec.TieredStore.Levels[0].VolumeType == common.VolumeTypeHostPath {
+			cacheDir = runtime.Spec.TieredStore.Levels[0].Path
+		}
+	}
+	if cacheDir != "" {
+		cacheDirs = strings.Split(cacheDir, ":")
+	}
+
+	// if cache-dir is set in fuse option, it will override the cache-dir of fuse in runtime
+	fuseOptions := runtime.Spec.Fuse.Options
+	for k, v := range fuseOptions {
 		if k == "cache-dir" {
 			cacheDirs = append(cacheDirs, strings.Split(v, ":")...)
 			break
