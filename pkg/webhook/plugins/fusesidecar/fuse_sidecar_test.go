@@ -17,56 +17,69 @@ limitations under the License.
 package fusesidecar
 
 import (
-	"testing"
-
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/api"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestMutate(t *testing.T) {
+var _ = Describe("FuseSidecar Plugin", func() {
 	var (
-		client client.Client
-		pod    *corev1.Pod
+		plugin api.MutatingHandler
+		err    error
 	)
 
-	plugin, err := NewPlugin(client, "")
-	if err != nil {
-		t.Error("new plugin occurs error", err)
-	}
-	if plugin.GetName() != Name {
-		t.Errorf("GetName expect %v, got %v", Name, plugin.GetName())
-	}
+	BeforeEach(func() {
+		var c client.Client 
+		plugin, err = NewPlugin(c, "")
+	})
 
-	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio")
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
+	It("creates plugin successfully", func() {
+		Expect(err).NotTo(HaveOccurred())
+		Expect(plugin.GetName()).To(Equal(Name))
+	})
 
-	pod = &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "test",
-		},
-	}
+	Context("when mutating a pod", func() {
+		var pod *corev1.Pod
 
-	shouldStop, err := plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{"test": runtimeInfo})
-	if err != nil {
-		t.Errorf("fail to mutate pod with error %v", err)
-	}
+		BeforeEach(func() {
+			pod = &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "test",
+				},
+			}
+		})
 
-	if shouldStop {
-		t.Errorf("expect shouldStop as false, but got %v", shouldStop)
-	}
+		It("does not stop mutation when runtimeInfo is present", func() {
+			runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio")
+			Expect(err).NotTo(HaveOccurred())
 
-	_, err = plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{})
-	if err != nil {
-		t.Errorf("fail to mutate pod with error %v", err)
-	}
+			shouldStop, err := plugin.Mutate(
+				pod,
+				map[string]base.RuntimeInfoInterface{"test": runtimeInfo},
+			)
 
-	_, err = plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{"test": nil})
-	if err != nil {
-		t.Errorf("expect error is nil")
-	}
-}
+			Expect(err).NotTo(HaveOccurred())
+			Expect(shouldStop).To(BeFalse())
+		})
+
+		It("does not error when runtimeInfos is empty", func() {
+			_, err := plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{})
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("does not error when runtimeInfo is nil", func() {
+			_, err := plugin.Mutate(
+				pod,
+				map[string]base.RuntimeInfoInterface{"test": nil},
+			)
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+})
