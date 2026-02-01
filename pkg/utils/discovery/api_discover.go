@@ -60,11 +60,22 @@ func initDiscovery() {
 }
 
 func discoverFluidResourcesInCluster() {
-	restConfig := ctrl.GetConfigOrDie()
-	var discoveryClient discovery.DiscoveryInterface = discovery.NewDiscoveryClientForConfigOrDie(restConfig)
+	restConfig,err := ctrl.GetConfig()
+	if err!=nil{
+		nativeLog.Fatalf("failed to get kubernetes config: %v", err)
+	}
+
+	if restConfig == nil {
+		nativeLog.Fatalf("kubernetes config is nil")
+	}
+
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(restConfig)
+	if err != nil {
+		nativeLog.Fatalf("failed to create discovery client: %v", err)
+	}
 	fluidGroupVersion := fmt.Sprintf("%s/%s", datav1alpha1.Group, datav1alpha1.Version)
 
-	err := retry.OnError(backOff, func(err error) bool { return true }, func() error {
+	err = retry.OnError(backOff, func(err error) bool { return true }, func() error {
 		resources, discoverErr := discoveryClient.ServerResourcesForGroupVersion(fluidGroupVersion)
 		if discoverErr != nil {
 			return discoverErr
