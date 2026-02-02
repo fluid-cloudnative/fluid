@@ -14,7 +14,7 @@ jobs:
       issues: write
     steps:
       - name: Check PR quota
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             try {
