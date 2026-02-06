@@ -16,12 +16,15 @@ limitations under the License.
 package docker
 
 import (
-	"reflect"
-	"testing"
+	"strings"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
@@ -29,269 +32,231 @@ import (
 
 var testScheme *runtime.Scheme
 
-func init() {
+var _ = BeforeSuite(func() {
 	testScheme = runtime.NewScheme()
-	_ = v1.AddToScheme(testScheme)
-}
+	Expect(v1.AddToScheme(testScheme)).To(Succeed())
+})
 
-func TestParseDockerImage(t *testing.T) {
-	testCases := []struct {
-		input string
-		image string
-		tag   string
-	}{
-		{"test:abc", "test", "abc"},
-		{"test", "test", "latest"},
-		{"test:35000/test:abc", "test:35000/test", "abc"},
-	}
-	for _, tc := range testCases {
-		image, tag := ParseDockerImage(tc.input)
-		if tc.image != image {
-			t.Errorf("expected image %#v, got %#v",
-				tc.image, image)
-		}
+var _ = Describe("Docker", func() {
+	Describe("ParseDockerImage", func() {
+		DescribeTable("parsing docker images",
+			func(input, expectedImage, expectedTag string) {
+				image, tag := ParseDockerImage(input)
+				Expect(image).To(Equal(expectedImage))
+				Expect(tag).To(Equal(expectedTag))
+			},
+			Entry("with explicit tag", "test:abc", "test", "abc"),
+			Entry("without tag defaults to latest", "test", "test", "latest"),
+			Entry("with registry port", "test:35000/test:abc", "test:35000/test", "abc"),
+			Entry("with multiple colons in image name", "registry:5000/namespace:subnamespace/image:v1.0", "registry:5000/namespace:subnamespace/image", "v1.0"),
+			Entry("empty string", "", "", "latest"),
+		)
+	})
 
-		if tc.tag != tag {
-			t.Errorf("expected tag %#v, got %#v",
-				tc.tag, tag)
-		}
-	}
-}
+	Describe("GetImageRepoFromEnv", func() {
+		BeforeEach(func() {
+			GinkgoT().Setenv("FLUID_IMAGE_ENV", "fluid:0.6.0")
+			GinkgoT().Setenv("ALLUXIO_IMAGE_ENV", "alluxio")
+		})
 
-func TestGetImageRepoFromEnv(t *testing.T) {
-	t.Setenv("FLUID_IMAGE_ENV", "fluid:0.6.0")
-	t.Setenv("ALLUXIO_IMAGE_ENV", "alluxio")
+		DescribeTable("getting image repo from environment",
+			func(envName, expected string) {
+				result := GetImageRepoFromEnv(envName)
+				Expect(result).To(Equal(expected))
+			},
+			Entry("valid env with tag", "FLUID_IMAGE_ENV", "fluid"),
+			Entry("non-existent env", "NOT EXIST", ""),
+			Entry("env without tag", "ALLUXIO_IMAGE_ENV", ""),
+		)
+	})
 
-	testCase := []struct {
-		envName string
-		want    string
-	}{
-		{
-			envName: "FLUID_IMAGE_ENV",
-			want:    "fluid",
-		},
-		{
-			envName: "NOT EXIST",
-			want:    "",
-		},
-		{
-			envName: "ALLUXIO_IMAGE_ENV",
-			want:    "",
-		},
-	}
+	Describe("GetImageTagFromEnv", func() {
+		BeforeEach(func() {
+			GinkgoT().Setenv("FLUID_IMAGE_ENV", "fluid:0.6.0")
+			GinkgoT().Setenv("ALLUXIO_IMAGE_ENV", "alluxio")
+		})
 
-	for _, test := range testCase {
-		if result := GetImageRepoFromEnv(test.envName); result != test.want {
-			t.Errorf("expected %v, got %v", test.want, result)
-		}
-	}
-}
+		DescribeTable("getting image tag from environment",
+			func(envName, expected string) {
+				result := GetImageTagFromEnv(envName)
+				Expect(result).To(Equal(expected))
+			},
+			Entry("valid env with tag", "FLUID_IMAGE_ENV", "0.6.0"),
+			Entry("non-existent env", "NOT EXIST", ""),
+			Entry("env without tag", "ALLUXIO_IMAGE_ENV", ""),
+		)
+	})
 
-func TestGetImageTagFromEnv(t *testing.T) {
-	t.Setenv("FLUID_IMAGE_ENV", "fluid:0.6.0")
-	t.Setenv("ALLUXIO_IMAGE_ENV", "alluxio")
+	Describe("GetImagePullSecretsFromEnv", func() {
+		DescribeTable("getting image pull secrets from environment",
+			func(envValue string, expected []v1.LocalObjectReference) {
+				GinkgoT().Setenv(common.EnvImagePullSecretsKey, envValue)
+				result := GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey)
+				Expect(result).To(Equal(expected))
+			},
+			Entry("multiple secrets",
+				"test1,test2",
+				[]v1.LocalObjectReference{
+					{Name: "test1"},
+					{Name: "test2"},
+				}),
+			Entry("empty value",
+				"",
+				[]v1.LocalObjectReference{}),
+			Entry("single secret",
+				"str1",
+				[]v1.LocalObjectReference{{Name: "str1"}}),
+			Entry("trailing comma",
+				"str1,",
+				[]v1.LocalObjectReference{{Name: "str1"}}),
+			Entry("leading commas and trailing comma",
+				",,,str1,",
+				[]v1.LocalObjectReference{{Name: "str1"}}),
+			Entry("multiple secrets with extra commas",
+				",,,str1,,,str2,,",
+				[]v1.LocalObjectReference{{Name: "str1"}, {Name: "str2"}}),
+		)
 
-	testCase := []struct {
-		envName string
-		want    string
-	}{
-		{
-			envName: "FLUID_IMAGE_ENV",
-			want:    "0.6.0",
-		},
-		{
-			envName: "NOT EXIST",
-			want:    "",
-		},
-		{
-			envName: "ALLUXIO_IMAGE_ENV",
-			want:    "",
-		},
-	}
-	for _, test := range testCase {
-		if result := GetImageTagFromEnv(test.envName); result != test.want {
-			t.Errorf("expected %v, got %v", test.want, result)
-		}
-	}
-}
+		It("should return empty slice when environment variable does not exist", func() {
+			result := GetImagePullSecretsFromEnv("NON_EXISTENT_ENV_VAR")
+			Expect(result).To(BeEmpty())
+		})
+	})
 
-func TestGetImagePullSecrets(t *testing.T) {
-	testCases := map[string]struct {
-		envName       string
-		envMockValues string
-		want          []v1.LocalObjectReference
-	}{
-		"test with env value case 1": {
-			envName:       common.EnvImagePullSecretsKey,
-			envMockValues: "test1,test2",
-			want: []v1.LocalObjectReference{
+	Describe("ParseInitImage", func() {
+		Context("with valid environment variable", func() {
+			BeforeEach(func() {
+				GinkgoT().Setenv("FLUID_IMAGE_ENV", "fluid:0.6.0")
+			})
+
+			DescribeTable("parsing init image parameters",
+				func(image, tag, imagePullPolicy, envName, wantImage, wantTag, wantImagePullPolicy string) {
+					resultImage, resultTag, resultImagePullPolicy := ParseInitImage(image, tag, imagePullPolicy, envName)
+					Expect(resultImage).To(Equal(wantImage))
+					Expect(resultTag).To(Equal(wantTag))
+					Expect(resultImagePullPolicy).To(Equal(wantImagePullPolicy))
+				},
+				Entry("all parameters provided with default policy",
+					"fluid", "0.6.0", "", "FLUID_IMAGE_ENV",
+					"fluid", "0.6.0", common.DefaultImagePullPolicy),
+				Entry("empty image with Always policy",
+					"", "0.6.0", "Always", "FLUID_IMAGE_ENV",
+					"fluid", "0.6.0", "Always"),
+				Entry("empty tag with Always policy",
+					"fluid", "", "Always", "FLUID_IMAGE_ENV",
+					"fluid", "0.6.0", "Always"),
+				Entry("all parameters provided with Always policy",
+					"fluid", "0.6.0", "Always", "FLUID_IMAGE_ENV",
+					"fluid", "0.6.0", "Always"),
+			)
+		})
+
+		Context("without environment variable - fallback to default", func() {
+			It("should use default init image when env is not set and params are empty", func() {
+				// Parse the default init image to get expected values
+				defaultImageParts := strings.Split(common.DefaultInitImage, ":")
+				expectedImage := defaultImageParts[0]
+				expectedTag := ""
+				if len(defaultImageParts) >= 2 {
+					expectedTag = defaultImageParts[1]
+				}
+
+				resultImage, resultTag, resultImagePullPolicy := ParseInitImage("", "", "", "NON_EXISTENT_ENV")
+				Expect(resultImage).To(Equal(expectedImage))
+				Expect(resultTag).To(Equal(expectedTag))
+				Expect(resultImagePullPolicy).To(Equal(common.DefaultImagePullPolicy))
+			})
+
+			It("should use default tag when env is not set and tag is empty", func() {
+				defaultImageParts := strings.Split(common.DefaultInitImage, ":")
+				expectedTag := ""
+				if len(defaultImageParts) >= 2 {
+					expectedTag = defaultImageParts[1]
+				}
+
+				resultImage, resultTag, resultImagePullPolicy := ParseInitImage("custom-image", "", "IfNotPresent", "NON_EXISTENT_ENV")
+				Expect(resultImage).To(Equal("custom-image"))
+				Expect(resultTag).To(Equal(expectedTag))
+				Expect(resultImagePullPolicy).To(Equal("IfNotPresent"))
+			})
+		})
+	})
+
+	Describe("GetWorkerImage", func() {
+		var (
+			testClient      client.Client
+			configMapInputs []*v1.ConfigMap
+		)
+
+		BeforeEach(func() {
+			configMapInputs = []*v1.ConfigMap{
 				{
-					Name: "test1",
+					ObjectMeta: metav1.ObjectMeta{Name: "hbase-alluxio-values", Namespace: "default"},
+					Data: map[string]string{
+						"data": "image: fluid\nimageTag: 0.6.0",
+					},
 				},
 				{
-					Name: "test2",
+					ObjectMeta: metav1.ObjectMeta{Name: "spark-alluxio-values", Namespace: "default"},
+					Data: map[string]string{
+						"test-data": "image: fluid\n imageTag: 0.6.0",
+					},
 				},
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "hadoop-alluxio-values", Namespace: "default"},
+					Data: map[string]string{
+						"data": "image: hadoop-image\nimageTag: 2.0.0\nextra: line",
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "kafka-alluxio-values", Namespace: "default"},
+					Data: map[string]string{
+						"data": "imageTag: 1.0.0",
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "redis-alluxio-values", Namespace: "default"},
+					Data: map[string]string{
+						"data": "image: redis-image",
+					},
+				},
+			}
+
+			testConfigMaps := []runtime.Object{}
+			for _, cm := range configMapInputs {
+				testConfigMaps = append(testConfigMaps, cm.DeepCopy())
+			}
+
+			testClient = fake.NewFakeClientWithScheme(testScheme, testConfigMaps...)
+		})
+
+		DescribeTable("getting worker image from ConfigMap",
+			func(datasetName, runtimeType, namespace, wantImageName, wantImageTag string) {
+				resultImageName, resultImageTag := GetWorkerImage(testClient, datasetName, runtimeType, namespace)
+				Expect(resultImageName).To(Equal(wantImageName))
+				Expect(resultImageTag).To(Equal(wantImageTag))
 			},
-		},
-		"test with env value case 2": {
-			envName:       common.EnvImagePullSecretsKey,
-			envMockValues: "",
-			want:          []v1.LocalObjectReference{},
-		},
-		"test with env value case 3": {
-			envName:       common.EnvImagePullSecretsKey,
-			envMockValues: "str1",
-			want:          []v1.LocalObjectReference{{Name: "str1"}},
-		},
-		"test with env value case 4": {
-			envName:       common.EnvImagePullSecretsKey,
-			envMockValues: "str1,",
-			want:          []v1.LocalObjectReference{{Name: "str1"}},
-		},
-		"test with env value case 5": {
-			envName:       common.EnvImagePullSecretsKey,
-			envMockValues: ",,,str1,",
-			want:          []v1.LocalObjectReference{{Name: "str1"}},
-		},
-		"test with env value case 6": {
-			envName:       common.EnvImagePullSecretsKey,
-			envMockValues: ",,,str1,,,str2,,",
-			want:          []v1.LocalObjectReference{{Name: "str1"}, {Name: "str2"}},
-		},
-	}
-
-	for k, v := range testCases {
-		t.Setenv(v.envName, v.envMockValues)
-		got := GetImagePullSecretsFromEnv(v.envName)
-		if !reflect.DeepEqual(got, v.want) {
-			t.Errorf("%s: expected: %s, got: %s", k, v.want, got)
-		}
-	}
-}
-
-func TestParseInitImage(t *testing.T) {
-	t.Setenv("FLUID_IMAGE_ENV", "fluid:0.6.0")
-
-	testCase := []struct {
-		image               string
-		tag                 string
-		imagePullPolicy     string
-		envName             string
-		wantImage           string
-		wantTag             string
-		wantImagePullPolicy string
-	}{
-		{
-			image:               "fluid",
-			tag:                 "0.6.0",
-			imagePullPolicy:     "",
-			envName:             "FLUID_IMAGE_ENV",
-			wantImage:           "fluid",
-			wantTag:             "0.6.0",
-			wantImagePullPolicy: common.DefaultImagePullPolicy,
-		},
-		{
-			image:               "",
-			tag:                 "0.6.0",
-			imagePullPolicy:     "Always",
-			envName:             "FLUID_IMAGE_ENV",
-			wantImage:           "fluid",
-			wantTag:             "0.6.0",
-			wantImagePullPolicy: "Always",
-		},
-		{
-			image:               "fluid",
-			tag:                 "",
-			imagePullPolicy:     "Always",
-			envName:             "FLUID_IMAGE_ENV",
-			wantImage:           "fluid",
-			wantTag:             "0.6.0",
-			wantImagePullPolicy: "Always",
-		},
-		{
-			image:               "fluid",
-			tag:                 "0.6.0",
-			imagePullPolicy:     "Always",
-			envName:             "FLUID_IMAGE_ENV",
-			wantImage:           "fluid",
-			wantTag:             "0.6.0",
-			wantImagePullPolicy: "Always",
-		},
-	}
-	for _, test := range testCase {
-		resultImage, resultTag, resultImagePullPolicy := ParseInitImage(test.image, test.tag, test.imagePullPolicy, test.envName)
-		if resultImage != test.wantImage {
-			t.Errorf("expected %v, got %v", test.wantImage, resultImage)
-		}
-		if resultTag != test.wantTag {
-			t.Errorf("expected %v, got %v", test.wantTag, resultTag)
-		}
-		if resultImagePullPolicy != test.wantImagePullPolicy {
-			t.Errorf("expected %v, got %v", test.wantImagePullPolicy, resultImagePullPolicy)
-		}
-	}
-}
-
-func TestGetWorkerImage(t *testing.T) {
-	configMapInputs := []*v1.ConfigMap{
-		{
-			ObjectMeta: metav1.ObjectMeta{Name: "hbase-alluxio-values", Namespace: "default"},
-			Data: map[string]string{
-				"data": "image: fluid\nimageTag: 0.6.0",
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{Name: "spark-alluxio-values", Namespace: "default"},
-			Data: map[string]string{
-				"test-data": "image: fluid\n imageTag: 0.6.0",
-			},
-		},
-	}
-
-	testConfigMaps := []runtime.Object{}
-	for _, cm := range configMapInputs {
-		testConfigMaps = append(testConfigMaps, cm.DeepCopy())
-	}
-
-	client := fake.NewFakeClientWithScheme(testScheme, testConfigMaps...)
-
-	testCase := []struct {
-		datasetName   string
-		runtimeType   string
-		namespace     string
-		wantImageName string
-		wantImageTag  string
-	}{
-		{
-			datasetName:   "hbase",
-			runtimeType:   "jindoruntime",
-			namespace:     "fluid",
-			wantImageName: "",
-			wantImageTag:  "",
-		},
-		{
-			datasetName:   "hbase",
-			runtimeType:   "alluxio",
-			namespace:     "default",
-			wantImageName: "fluid",
-			wantImageTag:  "0.6.0",
-		},
-		{
-			datasetName:   "spark",
-			runtimeType:   "alluxio",
-			namespace:     "default",
-			wantImageName: "",
-			wantImageTag:  "",
-		},
-	}
-
-	for _, test := range testCase {
-		resultImageName, resultImageTag := GetWorkerImage(client, test.datasetName, test.runtimeType, test.namespace)
-		if resultImageName != test.wantImageName {
-			t.Errorf("expected %v, got %v", test.wantImageName, resultImageName)
-		}
-		if resultImageTag != test.wantImageTag {
-			t.Errorf("expected %v, got %v", test.wantImageTag, resultImageTag)
-		}
-	}
-}
+			Entry("jindoruntime in different namespace",
+				"hbase", "jindoruntime", "fluid",
+				"", ""),
+			Entry("alluxio with valid ConfigMap",
+				"hbase", "alluxio", "default",
+				"fluid", "0.6.0"),
+			Entry("alluxio with invalid ConfigMap data key",
+				"spark", "alluxio", "default",
+				"", ""),
+			Entry("alluxio with both image and imageTag",
+				"hadoop", "alluxio", "default",
+				"hadoop-image", "2.0.0"),
+			Entry("alluxio with only imageTag",
+				"kafka", "alluxio", "default",
+				"", "1.0.0"),
+			Entry("alluxio with only image",
+				"redis", "alluxio", "default",
+				"redis-image", ""),
+			Entry("non-existent ConfigMap",
+				"nonexistent", "alluxio", "default",
+				"", ""),
+		)
+	})
+})
