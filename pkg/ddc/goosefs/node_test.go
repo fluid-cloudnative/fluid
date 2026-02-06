@@ -31,7 +31,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	runtimeschema "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -65,7 +65,7 @@ var _ = Describe("GooseFSEngine", func() {
 
 		DescribeTable("should sync schedule info to cache nodes correctly",
 			func(fields fields, expectedNodeNames []string) {
-				runtimeObjs := []runtimeschema.Object{}
+				runtimeObjs := []runtime.Object{}
 				runtimeObjs = append(runtimeObjs, fields.worker)
 
 				if fields.ds != nil {
