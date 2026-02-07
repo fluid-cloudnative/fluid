@@ -85,7 +85,7 @@ var _ = Describe("GooseFSEngine", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				nodeList := &v1.NodeList{}
-				datasetLabels, err := labels.Parse(fmt.Sprintf("%s=true", engine.runtimeInfo.GetCommonLabelName()))
+			datasetLabels, err := labels.Parse(fmt.Sprintf("%s=true", engine.runtimeInfo.GetRuntimeLabelName()))
 				Expect(err).NotTo(HaveOccurred())
 
 				err = c.List(context.TODO(), nodeList, &client.ListOptions{
