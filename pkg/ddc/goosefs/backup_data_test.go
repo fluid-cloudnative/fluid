@@ -27,6 +27,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdatabackup "github.com/fluid-cloudnative/fluid/pkg/databackup"
 	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/goosefs/operations"
@@ -41,14 +42,14 @@ import (
 )
 
 const (
-	testNamespace   = "fluid"
-	testDatasetName = "test-dataset"
-	testBackupName  = "test-backup"
-	testMasterName  = "test-dataset-master-0"
-	testNodeName    = "test-node"
-	testHostIP      = "192.168.1.100"
-	testBackupPath  = "pvc://backup-pvc/path"
-	testMasterImage = "goosefs-master"
+	testNamespace            = "fluid"
+	testDatasetName          = "test-dataset"
+	testBackupName           = "test-backup"
+	testMasterName           = "test-dataset-master-0"
+	testNodeName             = "test-node"
+	testHostIP               = "192.168.1.100"
+	testBackupPath           = "pvc://backup-pvc/path"
+	testMasterContainerName = "goosefs-master"
 )
 
 var _ = Describe("GooseFSEngine Data Backup", func() {
@@ -585,6 +586,15 @@ var _ = Describe("GooseFSEngine Data Backup Success Cases", func() {
 				valueFileName, err = engine.generateDataBackupValueFile(ctx, databackup)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(valueFileName).NotTo(BeEmpty())
+
+				content, readErr := os.ReadFile(valueFileName)
+				Expect(readErr).NotTo(HaveOccurred())
+
+				var dataBackupValue cdatabackup.DataBackupValue
+				unmarshalErr := yaml.Unmarshal(content, &dataBackupValue)
+				Expect(unmarshalErr).NotTo(HaveOccurred())
+
+				Expect(dataBackupValue.DataBackup.Image).To(Equal(common.DefaultGooseFSRuntimeImage))
 			})
 		})
 	})
@@ -600,11 +610,12 @@ func createMasterPod() *corev1.Pod {
 			NodeName: testNodeName,
 			Containers: []corev1.Container{
 				{
-					Name: testMasterImage,
+					Name: testMasterContainerName,
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          "rpc",
 							ContainerPort: 19998,
+							HostPort:      19998,
 						},
 					},
 				},
