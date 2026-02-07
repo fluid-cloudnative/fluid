@@ -17,6 +17,9 @@ limitations under the License.
 package juicefs
 
 import (
+	"os"
+	"path/filepath"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -26,6 +29,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
@@ -124,6 +128,8 @@ var _ = Describe("JuiceFSEngine_GenerateDataLoadValueFileWithRuntimeHDD", func()
 		statefulsetInputs  []appsv1.StatefulSet
 		podListInputs      []v1.PodList
 		testObjs           []runtime.Object
+		client             client.Client
+		engine             JuiceFSEngine
 		context            cruntime.ReconcileRequestContext
 		dataLoadNoTarget   datav1alpha1.DataLoad
 		dataLoadWithTarget datav1alpha1.DataLoad
@@ -189,10 +195,17 @@ var _ = Describe("JuiceFSEngine_GenerateDataLoadValueFileWithRuntimeHDD", func()
 		for _, podInput := range podListInputs {
 			testObjs = append(testObjs, podInput.DeepCopy())
 		}
-		client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+		client = fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
 		context = cruntime.ReconcileRequestContext{
 			Client: client,
+		}
+
+		engine = JuiceFSEngine{
+			name:      "juicefs",
+			namespace: "fluid",
+			Client:    client,
+			Log:       fake.NullLogger(),
 		}
 
 		dataLoadNoTarget = datav1alpha1.DataLoad{
@@ -227,29 +240,17 @@ var _ = Describe("JuiceFSEngine_GenerateDataLoadValueFileWithRuntimeHDD", func()
 	})
 
 	It("should generate dataload value file with no target", func() {
-		client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-		engine := JuiceFSEngine{
-			name:      "juicefs",
-			namespace: "fluid",
-			Client:    client,
-			Log:       fake.NullLogger(),
-		}
 		fileName, err := engine.generateDataLoadValueFile(context, &dataLoadNoTarget)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(fileName).To(ContainSubstring("fluid-test-dataload-loader-values.yaml"))
+		expectedFileName := filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml")
+		Expect(fileName).To(Equal(expectedFileName))
 	})
 
 	It("should generate dataload value file with target", func() {
-		client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-		engine := JuiceFSEngine{
-			name:      "juicefs",
-			namespace: "fluid",
-			Client:    client,
-			Log:       fake.NullLogger(),
-		}
 		fileName, err := engine.generateDataLoadValueFile(context, &dataLoadWithTarget)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(fileName).To(ContainSubstring("fluid-test-dataload-loader-values.yaml"))
+		expectedFileName := filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml")
+		Expect(fileName).To(Equal(expectedFileName))
 	})
 })
 
@@ -260,6 +261,8 @@ var _ = Describe("JuiceFSEngine_GenerateDataLoadValueFileWithRuntime", func() {
 		statefulsetInputs  []appsv1.StatefulSet
 		podListInputs      []v1.PodList
 		testObjs           []runtime.Object
+		client             client.Client
+		engine             JuiceFSEngine
 		context            cruntime.ReconcileRequestContext
 		dataLoadNoTarget   datav1alpha1.DataLoad
 		dataLoadWithTarget datav1alpha1.DataLoad
@@ -325,10 +328,17 @@ var _ = Describe("JuiceFSEngine_GenerateDataLoadValueFileWithRuntime", func() {
 		for _, podInput := range podListInputs {
 			testObjs = append(testObjs, podInput.DeepCopy())
 		}
-		client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+		client = fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
 		context = cruntime.ReconcileRequestContext{
 			Client: client,
+		}
+
+		engine = JuiceFSEngine{
+			name:      "juicefs",
+			namespace: "fluid",
+			Client:    client,
+			Log:       fake.NullLogger(),
 		}
 
 		dataLoadNoTarget = datav1alpha1.DataLoad{
@@ -341,10 +351,6 @@ var _ = Describe("JuiceFSEngine_GenerateDataLoadValueFileWithRuntime", func() {
 					Name:      "test-dataset",
 					Namespace: "fluid",
 				},
-				Target: []datav1alpha1.TargetPath{{
-					Path:     "/dir",
-					Replicas: 1,
-				}},
 			},
 		}
 		dataLoadWithTarget = datav1alpha1.DataLoad{
@@ -367,29 +373,17 @@ var _ = Describe("JuiceFSEngine_GenerateDataLoadValueFileWithRuntime", func() {
 	})
 
 	It("should generate dataload value file with no target", func() {
-		client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-		engine := JuiceFSEngine{
-			name:      "juicefs",
-			namespace: "fluid",
-			Client:    client,
-			Log:       fake.NullLogger(),
-		}
 		fileName, err := engine.generateDataLoadValueFile(context, &dataLoadNoTarget)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(fileName).To(ContainSubstring("fluid-test-dataload-loader-values.yaml"))
+		expectedFileName := filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml")
+		Expect(fileName).To(Equal(expectedFileName))
 	})
 
 	It("should generate dataload value file with target", func() {
-		client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-		engine := JuiceFSEngine{
-			name:      "juicefs",
-			namespace: "fluid",
-			Client:    client,
-			Log:       fake.NullLogger(),
-		}
 		fileName, err := engine.generateDataLoadValueFile(context, &dataLoadWithTarget)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(fileName).To(ContainSubstring("fluid-test-dataload-loader-values.yaml"))
+		expectedFileName := filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml")
+		Expect(fileName).To(Equal(expectedFileName))
 	})
 })
 
@@ -989,7 +983,8 @@ var _ = Describe("JuiceFSEngine_genDataLoadValue", func() {
 				name:      item.runtimeName,
 				Log:       fake.NullLogger(),
 			}
-			got, _ := engine.genDataLoadValue(item.image, item.cacheInfo, item.pods, item.targetDataset, item.dataload)
+			got, err := engine.genDataLoadValue(item.image, item.cacheInfo, item.pods, item.targetDataset, item.dataload)
+			Expect(err).NotTo(HaveOccurred())
 			Expect(got).To(Equal(item.want))
 		})
 	}
