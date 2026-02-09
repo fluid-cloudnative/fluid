@@ -42,13 +42,13 @@ import (
 )
 
 const (
-	testNamespace            = "fluid"
-	testDatasetName          = "test-dataset"
-	testBackupName           = "test-backup"
-	testMasterName           = "test-dataset-master-0"
-	testNodeName             = "test-node"
-	testHostIP               = "192.168.1.100"
-	testBackupPath           = "pvc://backup-pvc/path"
+	testNamespace           = "fluid"
+	testDatasetName         = "test-dataset"
+	testBackupName          = "test-backup"
+	testMasterName          = "test-dataset-master-0"
+	testNodeName            = "test-node"
+	testHostIP              = "192.168.1.100"
+	testBackupPath          = "pvc://backup-pvc/path"
 	testMasterContainerName = "goosefs-master"
 )
 
