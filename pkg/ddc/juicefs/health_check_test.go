@@ -17,17 +17,17 @@ package juicefs
 
 import (
 	"context"
-	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/tools/record"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	appsv1 "k8s.io/api/apps/v1"
@@ -35,23 +35,34 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-var _ = Describe("CheckRuntimeHealthy", func() {
+const (
+	healthCheckTestNamespace    = "fluid"
+	healthCheckTestNameHbase    = "hbase"
+	healthCheckTestNameTest     = "test"
+	healthCheckTestNameSpark    = "spark"
+	healthCheckTestWorkerSuffix = "-worker"
+	healthCheckTestFuseSuffix   = "-fuse"
+	healthCheckTestEndpoint     = "test Endpoint"
+	healthCheckTestHCFSVersion  = "Underlayer HCFS Compatible Version"
+	healthCheckTestCachedValue  = "true"
+)
+
+var _ = Describe("CheckRuntimeHealthy", Label("pkg.ddc.juicefs.health_check_test.go"), func() {
 	var (
-		stsInputs            []appsv1.StatefulSet
-		daemonSetInputs      []appsv1.DaemonSet
-		juicefsruntimeInputs []datav1alpha1.JuiceFSRuntime
-		datasetInputs        []*datav1alpha1.Dataset
-		testObjs             []runtime.Object
-		fakeClient           client.Client
-		engines              []JuiceFSEngine
+		client        client.Client
+		testObjs      []runtime.Object
+		stsInputs     []appsv1.StatefulSet
+		dsInputs      []appsv1.DaemonSet
+		runtimeInputs []datav1alpha1.JuiceFSRuntime
+		datasetInputs []*datav1alpha1.Dataset
 	)
 
 	BeforeEach(func() {
 		stsInputs = []appsv1.StatefulSet{
 			{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "hbase-worker",
-					Namespace: "fluid",
+					Name:      healthCheckTestNameHbase + healthCheckTestWorkerSuffix,
+					Namespace: healthCheckTestNamespace,
 				},
 				Status: appsv1.StatefulSetStatus{
 					Replicas:          1,
@@ -61,8 +72,8 @@ var _ = Describe("CheckRuntimeHealthy", func() {
 			},
 			{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-worker",
-					Namespace: "fluid",
+					Name:      healthCheckTestNameTest + healthCheckTestWorkerSuffix,
+					Namespace: healthCheckTestNamespace,
 				},
 				Spec: appsv1.StatefulSetSpec{
 					Replicas: ptr.To[int32](1),
@@ -75,11 +86,11 @@ var _ = Describe("CheckRuntimeHealthy", func() {
 			},
 		}
 
-		daemonSetInputs = []appsv1.DaemonSet{
+		dsInputs = []appsv1.DaemonSet{
 			{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "hbase-fuse",
-					Namespace: "fluid",
+					Name:      healthCheckTestNameHbase + healthCheckTestFuseSuffix,
+					Namespace: healthCheckTestNamespace,
 				},
 				Status: appsv1.DaemonSetStatus{
 					NumberUnavailable: 0,
@@ -89,32 +100,32 @@ var _ = Describe("CheckRuntimeHealthy", func() {
 			},
 		}
 
-		juicefsruntimeInputs = []datav1alpha1.JuiceFSRuntime{
+		runtimeInputs = []datav1alpha1.JuiceFSRuntime{
 			{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "hbase",
-					Namespace: "fluid",
+					Name:      healthCheckTestNameHbase,
+					Namespace: healthCheckTestNamespace,
 				},
 				Spec: datav1alpha1.JuiceFSRuntimeSpec{
 					Replicas: 1,
 				},
 				Status: datav1alpha1.RuntimeStatus{
 					CacheStates: map[common.CacheStateName]string{
-						common.Cached: "true",
+						common.Cached: healthCheckTestCachedValue,
 					},
 				},
 			},
 			{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "fluid",
+					Name:      healthCheckTestNameTest,
+					Namespace: healthCheckTestNamespace,
 				},
 				Spec: datav1alpha1.JuiceFSRuntimeSpec{
 					Replicas: 1,
 				},
 				Status: datav1alpha1.RuntimeStatus{
 					CacheStates: map[common.CacheStateName]string{
-						common.Cached: "true",
+						common.Cached: healthCheckTestCachedValue,
 					},
 				},
 			},
@@ -123,129 +134,136 @@ var _ = Describe("CheckRuntimeHealthy", func() {
 		datasetInputs = []*datav1alpha1.Dataset{
 			{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "hbase",
-					Namespace: "fluid",
+					Name:      healthCheckTestNameHbase,
+					Namespace: healthCheckTestNamespace,
 				},
 				Spec: datav1alpha1.DatasetSpec{},
 				Status: datav1alpha1.DatasetStatus{
 					HCFSStatus: &datav1alpha1.HCFSStatus{
-						Endpoint:                    "test Endpoint",
-						UnderlayerFileSystemVersion: "Underlayer HCFS Compatible Version",
+						Endpoint:                    healthCheckTestEndpoint,
+						UnderlayerFileSystemVersion: healthCheckTestHCFSVersion,
 					},
 				},
 			},
 			{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "fluid",
+					Name:      healthCheckTestNameTest,
+					Namespace: healthCheckTestNamespace,
 				},
 				Spec: datav1alpha1.DatasetSpec{},
 				Status: datav1alpha1.DatasetStatus{
 					HCFSStatus: &datav1alpha1.HCFSStatus{
-						Endpoint:                    "test Endpoint",
-						UnderlayerFileSystemVersion: "Underlayer HCFS Compatible Version",
+						Endpoint:                    healthCheckTestEndpoint,
+						UnderlayerFileSystemVersion: healthCheckTestHCFSVersion,
 					},
 				},
 			},
 		}
 
 		testObjs = []runtime.Object{}
-		for _, daemonSet := range daemonSetInputs {
+		for _, daemonSet := range dsInputs {
 			testObjs = append(testObjs, daemonSet.DeepCopy())
 		}
 		for _, sts := range stsInputs {
 			testObjs = append(testObjs, sts.DeepCopy())
 		}
-		for _, juicefsruntime := range juicefsruntimeInputs {
-			testObjs = append(testObjs, juicefsruntime.DeepCopy())
+		for _, rt := range runtimeInputs {
+			testObjs = append(testObjs, rt.DeepCopy())
 		}
 		for _, dataset := range datasetInputs {
 			testObjs = append(testObjs, dataset.DeepCopy())
 		}
 
-		fakeClient = fake.NewFakeClientWithScheme(testScheme, testObjs...)
-
-		engines = []JuiceFSEngine{
-			{
-				Client:    fakeClient,
-				Log:       fake.NullLogger(),
-				namespace: "fluid",
-				name:      "hbase",
-				runtime:   &juicefsruntimeInputs[0],
-				Recorder:  record.NewFakeRecorder(1),
-			},
-			{
-				Client:    fakeClient,
-				Log:       fake.NullLogger(),
-				namespace: "fluid",
-				name:      "test",
-				runtime:   &juicefsruntimeInputs[1],
-				Recorder:  record.NewFakeRecorder(1),
-			},
-		}
+		client = fake.NewFakeClientWithScheme(testScheme, testObjs...)
 	})
 
-	It("should succeed with healthy runtime", func() {
-		engine := engines[0]
-		runtimeInfo, err := base.BuildRuntimeInfo(engine.name, engine.namespace, common.JuiceFSRuntime)
-		Expect(err).NotTo(HaveOccurred())
-		engine.Helper = ctrl.BuildHelper(runtimeInfo, fakeClient, engine.Log)
+	Context("when runtime is healthy", func() {
+		It("should update runtime status correctly", func() {
+			engine := JuiceFSEngine{
+				Client:    client,
+				Log:       fake.NullLogger(),
+				namespace: healthCheckTestNamespace,
+				name:      healthCheckTestNameHbase,
+				runtime:   &runtimeInputs[0],
+				Recorder:  record.NewFakeRecorder(1),
+			}
 
-		err = engine.CheckRuntimeHealthy()
-		Expect(err).NotTo(HaveOccurred())
+			runtimeInfo, err := base.BuildRuntimeInfo(engine.name, engine.namespace, common.JuiceFSRuntime)
+			Expect(err).NotTo(HaveOccurred())
+			engine.Helper = ctrl.BuildHelper(runtimeInfo, client, engine.Log)
 
-		juicefsruntime, err := engine.getRuntime()
-		Expect(err).NotTo(HaveOccurred())
-		Expect(juicefsruntime.Status.WorkerNumberReady).To(Equal(int32(1)))
-		Expect(juicefsruntime.Status.WorkerNumberAvailable).To(Equal(int32(1)))
-		Expect(juicefsruntime.Status.FuseNumberReady).To(Equal(int32(1)))
-		Expect(juicefsruntime.Status.FuseNumberAvailable).To(Equal(int32(1)))
-		Expect(juicefsruntime.Status.FuseNumberUnavailable).To(Equal(int32(0)))
+			err = engine.CheckRuntimeHealthy()
+			Expect(err).NotTo(HaveOccurred())
 
-		_, cond := utils.GetRuntimeCondition(juicefsruntime.Status.Conditions, datav1alpha1.RuntimeWorkersReady)
-		Expect(cond).NotTo(BeNil())
-		_, cond = utils.GetRuntimeCondition(juicefsruntime.Status.Conditions, datav1alpha1.RuntimeFusesReady)
-		Expect(cond).NotTo(BeNil())
+			juicefsruntime, err := engine.getRuntime()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(juicefsruntime.Status.WorkerNumberReady).To(Equal(int32(1)))
+			Expect(juicefsruntime.Status.WorkerNumberAvailable).To(Equal(int32(1)))
+			Expect(juicefsruntime.Status.FuseNumberReady).To(Equal(int32(1)))
+			Expect(juicefsruntime.Status.FuseNumberAvailable).To(Equal(int32(1)))
+			Expect(juicefsruntime.Status.FuseNumberUnavailable).To(Equal(int32(0)))
 
-		var datasets datav1alpha1.DatasetList
-		err = fakeClient.List(context.TODO(), &datasets)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(datasets.Items[0].Status.Phase).To(Equal(datav1alpha1.BoundDatasetPhase))
-		Expect(datasets.Items[0].Status.CacheStates).To(BeEquivalentTo(map[common.CacheStateName]string{
-			common.Cached: "true",
-		}))
-		Expect(datasets.Items[0].Status.HCFSStatus).To(Equal(&datav1alpha1.HCFSStatus{
-			Endpoint:                    "test Endpoint",
-			UnderlayerFileSystemVersion: "Underlayer HCFS Compatible Version",
-		}))
+			_, cond := utils.GetRuntimeCondition(juicefsruntime.Status.Conditions, datav1alpha1.RuntimeWorkersReady)
+			Expect(cond).NotTo(BeNil())
+
+			_, cond = utils.GetRuntimeCondition(juicefsruntime.Status.Conditions, datav1alpha1.RuntimeFusesReady)
+			Expect(cond).NotTo(BeNil())
+
+			var datasets datav1alpha1.DatasetList
+			err = client.List(context.TODO(), &datasets)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Find the hbase dataset by name instead of relying on list order
+			var hbaseDataset *datav1alpha1.Dataset
+			for i := range datasets.Items {
+				if datasets.Items[i].Name == healthCheckTestNameHbase {
+					hbaseDataset = &datasets.Items[i]
+					break
+				}
+			}
+			Expect(hbaseDataset).NotTo(BeNil())
+			Expect(hbaseDataset.Status.Phase).To(Equal(datav1alpha1.BoundDatasetPhase))
+			Expect(hbaseDataset.Status.CacheStates).To(HaveKeyWithValue(common.Cached, healthCheckTestCachedValue))
+			Expect(hbaseDataset.Status.HCFSStatus.Endpoint).To(Equal(healthCheckTestEndpoint))
+			Expect(hbaseDataset.Status.HCFSStatus.UnderlayerFileSystemVersion).To(Equal(healthCheckTestHCFSVersion))
+		})
 	})
 
-	It("should fail with unhealthy runtime", func() {
-		engine := engines[1]
-		runtimeInfo, err := base.BuildRuntimeInfo(engine.name, engine.namespace, common.JuiceFSRuntime)
-		Expect(err).NotTo(HaveOccurred())
-		engine.Helper = ctrl.BuildHelper(runtimeInfo, fakeClient, engine.Log)
+	Context("when worker is not ready", func() {
+		It("should return error", func() {
+			engine := JuiceFSEngine{
+				Client:    client,
+				Log:       fake.NullLogger(),
+				namespace: healthCheckTestNamespace,
+				name:      healthCheckTestNameTest,
+				runtime:   &runtimeInputs[1],
+				Recorder:  record.NewFakeRecorder(1),
+			}
 
-		err = engine.CheckRuntimeHealthy()
-		Expect(err).To(HaveOccurred())
+			runtimeInfo, err := base.BuildRuntimeInfo(engine.name, engine.namespace, common.JuiceFSRuntime)
+			Expect(err).NotTo(HaveOccurred())
+			engine.Helper = ctrl.BuildHelper(runtimeInfo, client, engine.Log)
+
+			err = engine.CheckRuntimeHealthy()
+			Expect(err).To(HaveOccurred())
+		})
 	})
 })
 
-var _ = Describe("CheckFuseHealthy", func() {
+var _ = Describe("CheckFuseHealthy", Label("pkg.ddc.juicefs.health_check_test.go"), func() {
 	var (
-		daemonSetInputs      []appsv1.DaemonSet
-		juicefsruntimeInputs []datav1alpha1.JuiceFSRuntime
-		testObjs             []runtime.Object
-		fakeClient           client.Client
-		engines              []JuiceFSEngine
+		client        client.Client
+		testObjs      []runtime.Object
+		dsInputs      []appsv1.DaemonSet
+		runtimeInputs []datav1alpha1.JuiceFSRuntime
 	)
 
 	BeforeEach(func() {
-		daemonSetInputs = []appsv1.DaemonSet{
+		dsInputs = []appsv1.DaemonSet{
 			{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "hbase-fuse",
-					Namespace: "fluid",
+					Name:      healthCheckTestNameHbase + healthCheckTestFuseSuffix,
+					Namespace: healthCheckTestNamespace,
 				},
 				Status: appsv1.DaemonSetStatus{
 					NumberUnavailable: 1,
@@ -255,8 +273,8 @@ var _ = Describe("CheckFuseHealthy", func() {
 			},
 			{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "spark-fuse",
-					Namespace: "fluid",
+					Name:      healthCheckTestNameSpark + healthCheckTestFuseSuffix,
+					Namespace: healthCheckTestNamespace,
 				},
 				Status: appsv1.DaemonSetStatus{
 					NumberUnavailable: 0,
@@ -266,96 +284,97 @@ var _ = Describe("CheckFuseHealthy", func() {
 			},
 		}
 
-		juicefsruntimeInputs = []datav1alpha1.JuiceFSRuntime{
+		runtimeInputs = []datav1alpha1.JuiceFSRuntime{
 			{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "hbase",
-					Namespace: "fluid",
+					Name:      healthCheckTestNameHbase,
+					Namespace: healthCheckTestNamespace,
 				},
 			},
 			{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "spark",
-					Namespace: "fluid",
+					Name:      healthCheckTestNameSpark,
+					Namespace: healthCheckTestNamespace,
 				},
 			},
 		}
 
 		testObjs = []runtime.Object{}
-		for _, daemonSet := range daemonSetInputs {
-			testObjs = append(testObjs, daemonSet.DeepCopy())
+		for _, ds := range dsInputs {
+			testObjs = append(testObjs, ds.DeepCopy())
 		}
-		for _, juicefsruntimeInput := range juicefsruntimeInputs {
-			testObjs = append(testObjs, juicefsruntimeInput.DeepCopy())
+		for _, rt := range runtimeInputs {
+			testObjs = append(testObjs, rt.DeepCopy())
 		}
 
-		fakeClient = fake.NewFakeClientWithScheme(testScheme, testObjs...)
+		client = fake.NewFakeClientWithScheme(testScheme, testObjs...)
+	})
 
-		engines = []JuiceFSEngine{
-			{
-				Client:    fakeClient,
+	Context("when fuse has unavailable pods", func() {
+		It("should set runtime to NotReady phase", func() {
+			engine := JuiceFSEngine{
+				Client:    client,
 				Log:       fake.NullLogger(),
-				namespace: "fluid",
-				name:      "hbase",
+				namespace: healthCheckTestNamespace,
+				name:      healthCheckTestNameHbase,
 				runtime: &datav1alpha1.JuiceFSRuntime{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "hbase",
-						Namespace: "fluid",
+						Name:      healthCheckTestNameHbase,
+						Namespace: healthCheckTestNamespace,
 					},
 				},
 				Recorder: record.NewFakeRecorder(1),
-			},
-			{
-				Client:    fakeClient,
+			}
+
+			runtimeInfo, err := base.BuildRuntimeInfo(engine.name, engine.namespace, common.JuiceFSRuntime)
+			Expect(err).NotTo(HaveOccurred())
+			engine.Helper = ctrl.BuildHelper(runtimeInfo, client, engine.Log)
+
+			_, err = engine.checkFuseHealthy()
+			Expect(err).NotTo(HaveOccurred())
+
+			juicefsruntime, err := engine.getRuntime()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(juicefsruntime.Status.FuseNumberReady).To(Equal(int32(1)))
+			Expect(juicefsruntime.Status.FuseNumberAvailable).To(Equal(int32(1)))
+			Expect(juicefsruntime.Status.FuseNumberUnavailable).To(Equal(int32(1)))
+
+			_, cond := utils.GetRuntimeCondition(juicefsruntime.Status.Conditions, datav1alpha1.RuntimeFusesReady)
+			Expect(cond).NotTo(BeNil())
+		})
+	})
+
+	Context("when fuse is fully ready", func() {
+		It("should set runtime to Ready phase", func() {
+			engine := JuiceFSEngine{
+				Client:    client,
 				Log:       fake.NullLogger(),
-				namespace: "fluid",
-				name:      "spark",
+				namespace: healthCheckTestNamespace,
+				name:      healthCheckTestNameSpark,
 				runtime: &datav1alpha1.JuiceFSRuntime{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "spark",
-						Namespace: "fluid",
+						Name:      healthCheckTestNameSpark,
+						Namespace: healthCheckTestNamespace,
 					},
 				},
 				Recorder: record.NewFakeRecorder(1),
-			},
-		}
-	})
+			}
 
-	It("should update status with unavailable fuses", func() {
-		engine := engines[0]
-		runtimeInfo, err := base.BuildRuntimeInfo(engine.name, engine.namespace, common.JuiceFSRuntime)
-		Expect(err).NotTo(HaveOccurred())
-		engine.Helper = ctrl.BuildHelper(runtimeInfo, fakeClient, engine.Log)
+			runtimeInfo, err := base.BuildRuntimeInfo(engine.name, engine.namespace, common.JuiceFSRuntime)
+			Expect(err).NotTo(HaveOccurred())
+			engine.Helper = ctrl.BuildHelper(runtimeInfo, client, engine.Log)
 
-		_, err = engine.checkFuseHealthy()
-		Expect(err).NotTo(HaveOccurred())
+			_, err = engine.checkFuseHealthy()
+			Expect(err).NotTo(HaveOccurred())
 
-		juicefsruntime, err := engine.getRuntime()
-		Expect(err).NotTo(HaveOccurred())
-		Expect(juicefsruntime.Status.FuseNumberReady).To(Equal(int32(1)))
-		Expect(juicefsruntime.Status.FuseNumberAvailable).To(Equal(int32(1)))
-		Expect(juicefsruntime.Status.FuseNumberUnavailable).To(Equal(int32(1)))
+			juicefsruntime, err := engine.getRuntime()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(juicefsruntime.Status.FuseNumberReady).To(Equal(int32(1)))
+			Expect(juicefsruntime.Status.FuseNumberAvailable).To(Equal(int32(1)))
+			Expect(juicefsruntime.Status.FuseNumberUnavailable).To(Equal(int32(0)))
 
-		_, cond := utils.GetRuntimeCondition(juicefsruntime.Status.Conditions, datav1alpha1.RuntimeFusesReady)
-		Expect(cond).NotTo(BeNil())
-	})
-
-	It("should update status with all fuses available", func() {
-		engine := engines[1]
-		runtimeInfo, err := base.BuildRuntimeInfo(engine.name, engine.namespace, common.JuiceFSRuntime)
-		Expect(err).NotTo(HaveOccurred())
-		engine.Helper = ctrl.BuildHelper(runtimeInfo, fakeClient, engine.Log)
-
-		_, err = engine.checkFuseHealthy()
-		Expect(err).NotTo(HaveOccurred())
-
-		juicefsruntime, err := engine.getRuntime()
-		Expect(err).NotTo(HaveOccurred())
-		Expect(juicefsruntime.Status.FuseNumberReady).To(Equal(int32(1)))
-		Expect(juicefsruntime.Status.FuseNumberAvailable).To(Equal(int32(1)))
-		Expect(juicefsruntime.Status.FuseNumberUnavailable).To(Equal(int32(0)))
-
-		_, cond := utils.GetRuntimeCondition(juicefsruntime.Status.Conditions, datav1alpha1.RuntimeFusesReady)
-		Expect(cond).NotTo(BeNil())
+			_, cond := utils.GetRuntimeCondition(juicefsruntime.Status.Conditions, datav1alpha1.RuntimeFusesReady)
+			Expect(cond).NotTo(BeNil())
+		})
 	})
 })

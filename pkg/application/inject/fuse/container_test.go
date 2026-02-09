@@ -17,90 +17,114 @@ limitations under the License.
 package fuse
 
 import (
-	"reflect"
-	"testing"
-
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/applications/pod"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 )
 
-func Test_findInjectedSidecars(t *testing.T) {
-
-	pod1 := &corev1.Pod{
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name: "test",
+var _ = Describe("findInjectedSidecars", func() {
+	Context("when there are no injected sidecars", func() {
+		It("should return an empty slice", func() {
+			pod1 := &corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "test",
+						},
+						{
+							Name: "test2",
+						},
+					},
 				},
-				{
-					Name: "test2",
-				},
-			},
-		},
-	}
-	podObjs1, err := pod.NewApplication(pod1).GetPodSpecs()
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	pod2 := &corev1.Pod{
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name: "fluid-fuse-0",
-				},
-				{
-					Name: "test",
-				},
-			},
-		},
-	}
-	podObjs2, err := pod.NewApplication(pod2).GetPodSpecs()
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	type args struct {
-		pod common.FluidObject
-	}
-	tests := []struct {
-		name                 string
-		args                 args
-		wantInjectedSidecars []corev1.Container
-		wantErr              bool
-	}{
-		{
-			name: "no_injected_sidecars",
-			args: args{
-				pod: podObjs1[0],
-			},
-			wantInjectedSidecars: []corev1.Container{},
-			wantErr:              false,
-		},
-		{
-			name: "one_injected_sidecar",
-			args: args{
-				pod: podObjs2[0],
-			},
-			wantInjectedSidecars: []corev1.Container{
-				{
-					Name: "fluid-fuse-0",
-				},
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotInjectedSidecars, err := findInjectedSidecars(tt.args.pod)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("findInjectedSidecars() error = %v, wantErr %v", err, tt.wantErr)
-				return
 			}
-			if !reflect.DeepEqual(gotInjectedSidecars, tt.wantInjectedSidecars) {
-				t.Errorf("findInjectedSidecars() = %v, want %v", gotInjectedSidecars, tt.wantInjectedSidecars)
-			}
+			podObjs, err := pod.NewApplication(pod1).GetPodSpecs()
+			Expect(err).NotTo(HaveOccurred())
+
+			injectedSidecars, err := findInjectedSidecars(podObjs[0])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(injectedSidecars).To(BeEmpty())
 		})
-	}
-}
+	})
+
+	Context("when there is one injected sidecar", func() {
+		It("should return the injected sidecar", func() {
+			pod2 := &corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "fluid-fuse-0",
+						},
+						{
+							Name: "test",
+						},
+					},
+				},
+			}
+			podObjs, err := pod.NewApplication(pod2).GetPodSpecs()
+			Expect(err).NotTo(HaveOccurred())
+
+			injectedSidecars, err := findInjectedSidecars(podObjs[0])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(injectedSidecars).To(HaveLen(1))
+			Expect(injectedSidecars[0].Name).To(Equal("fluid-fuse-0"))
+		})
+	})
+
+	Context("when there are multiple injected sidecars", func() {
+		It("should return all injected sidecars", func() {
+			pod3 := &corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "fluid-fuse-0",
+						},
+						{
+							Name: "test",
+						},
+						{
+							Name: "fluid-fuse-1",
+						},
+						{
+							Name: "fluid-fuse-dataset-xyz",
+						},
+					},
+				},
+			}
+			podObjs, err := pod.NewApplication(pod3).GetPodSpecs()
+			Expect(err).NotTo(HaveOccurred())
+
+			injectedSidecars, err := findInjectedSidecars(podObjs[0])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(injectedSidecars).To(HaveLen(3))
+			Expect(injectedSidecars[0].Name).To(Equal("fluid-fuse-0"))
+			Expect(injectedSidecars[1].Name).To(Equal("fluid-fuse-1"))
+			Expect(injectedSidecars[2].Name).To(Equal("fluid-fuse-dataset-xyz"))
+		})
+	})
+
+	Context("when container name contains but doesn't start with fluid-fuse prefix", func() {
+		It("should only return containers that start with the prefix", func() {
+			pod4 := &corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "test-fluid-fuse",
+						},
+						{
+							Name: "fluid-fuse-0",
+						},
+					},
+				},
+			}
+			podObjs, err := pod.NewApplication(pod4).GetPodSpecs()
+			Expect(err).NotTo(HaveOccurred())
+
+			injectedSidecars, err := findInjectedSidecars(podObjs[0])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(injectedSidecars).To(HaveLen(1))
+			Expect(injectedSidecars[0].Name).To(Equal("fluid-fuse-0"))
+		})
+	})
+
+})

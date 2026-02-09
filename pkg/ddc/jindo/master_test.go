@@ -17,7 +17,8 @@ limitations under the License.
 package jindo
 
 import (
-	"testing"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
@@ -25,277 +26,258 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
+	runtimeschema "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
 )
 
-func TestCheckMasterReady(t *testing.T) {
-	statefulsetInputs := []v1.StatefulSet{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "spark-master",
-				Namespace: "fluid",
-			},
-			Spec: v1.StatefulSetSpec{
-				Replicas: ptr.To[int32](1),
-			},
-			Status: v1.StatefulSetStatus{
-				ReadyReplicas: 1,
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase-master",
-				Namespace: "fluid",
-			},
-			Spec: v1.StatefulSetSpec{
-				Replicas: ptr.To[int32](2),
-			},
-			Status: v1.StatefulSetStatus{
-				ReadyReplicas: 1,
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hadoop-master",
-				Namespace: "fluid",
-			},
-			Spec: v1.StatefulSetSpec{
-				Replicas: ptr.To[int32](1),
-			},
-			Status: v1.StatefulSetStatus{
-				ReadyReplicas: 1,
-			},
-		},
-	}
-	testObjs := []runtime.Object{}
-	for _, statefulset := range statefulsetInputs {
-		testObjs = append(testObjs, statefulset.DeepCopy())
-	}
+var _ = Describe("JindoEngine", func() {
+	Describe("CheckMasterReady", func() {
+		var (
+			statefulsetInputs  []v1.StatefulSet
+			jindoRuntimeInputs []datav1alpha1.JindoRuntime
+			testObjs           []runtimeschema.Object
+			engines            []JindoEngine
+		)
 
-	JindoRuntimeInputs := []datav1alpha1.JindoRuntime{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "spark",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.JindoRuntimeSpec{
-				Master: datav1alpha1.JindoCompTemplateSpec{
-					Replicas: 1,
+		BeforeEach(func() {
+			statefulsetInputs = []v1.StatefulSet{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "spark-master",
+						Namespace: "fluid",
+					},
+					Spec: v1.StatefulSetSpec{
+						Replicas: ptr.To[int32](1),
+					},
+					Status: v1.StatefulSetStatus{
+						ReadyReplicas: 1,
+					},
 				},
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.JindoRuntimeSpec{
-				Master: datav1alpha1.JindoCompTemplateSpec{
-					Replicas: 2,
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "hbase-master",
+						Namespace: "fluid",
+					},
+					Spec: v1.StatefulSetSpec{
+						Replicas: ptr.To[int32](2),
+					},
+					Status: v1.StatefulSetStatus{
+						ReadyReplicas: 1,
+					},
 				},
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hadoop",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.JindoRuntimeSpec{
-				Master: datav1alpha1.JindoCompTemplateSpec{
-					Replicas: 1,
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "hadoop-master",
+						Namespace: "fluid",
+					},
+					Spec: v1.StatefulSetSpec{
+						Replicas: ptr.To[int32](1),
+					},
+					Status: v1.StatefulSetStatus{
+						ReadyReplicas: 1,
+					},
 				},
-			},
-			Status: datav1alpha1.RuntimeStatus{
-				APIGatewayStatus: &datav1alpha1.APIGatewayStatus{
-					Endpoint: "test-endpoint",
+			}
+			testObjs = []runtimeschema.Object{}
+			for _, statefulset := range statefulsetInputs {
+				testObjs = append(testObjs, statefulset.DeepCopy())
+			}
+
+			jindoRuntimeInputs = []datav1alpha1.JindoRuntime{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "spark",
+						Namespace: "fluid",
+					},
+					Spec: datav1alpha1.JindoRuntimeSpec{
+						Master: datav1alpha1.JindoCompTemplateSpec{
+							Replicas: 1,
+						},
+					},
 				},
-			},
-		},
-	}
-	for _, JindoRuntime := range JindoRuntimeInputs {
-		testObjs = append(testObjs, JindoRuntime.DeepCopy())
-	}
-	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "hbase",
+						Namespace: "fluid",
+					},
+					Spec: datav1alpha1.JindoRuntimeSpec{
+						Master: datav1alpha1.JindoCompTemplateSpec{
+							Replicas: 2,
+						},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "hadoop",
+						Namespace: "fluid",
+					},
+					Spec: datav1alpha1.JindoRuntimeSpec{
+						Master: datav1alpha1.JindoCompTemplateSpec{
+							Replicas: 1,
+						},
+					},
+					Status: datav1alpha1.RuntimeStatus{
+						APIGatewayStatus: &datav1alpha1.APIGatewayStatus{
+							Endpoint: "test-endpoint",
+						},
+					},
+				},
+			}
+			for _, jindoRuntime := range jindoRuntimeInputs {
+				testObjs = append(testObjs, jindoRuntime.DeepCopy())
+			}
 
-	engines := []JindoEngine{
-		{
-			name:      "spark",
-			namespace: "fluid",
-			Client:    client,
-			Log:       fake.NullLogger(),
-			Helper:    ctrl.BuildHelper(&base.RuntimeInfo{}, client, fake.NullLogger()),
-		},
-		{
-			name:      "hbase",
-			namespace: "fluid",
-			Client:    client,
-			Log:       fake.NullLogger(),
-			Helper:    ctrl.BuildHelper(&base.RuntimeInfo{}, client, fake.NullLogger()),
-		},
-		{
-			name:      "hadoop",
-			namespace: "fluid",
-			Client:    client,
-			Log:       fake.NullLogger(),
-			Helper:    ctrl.BuildHelper(&base.RuntimeInfo{}, client, fake.NullLogger()),
-		},
-	}
+			client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
-	var testCases = []struct {
-		engine         JindoEngine
-		expectedResult bool
-	}{
-		{
-			engine:         engines[0],
-			expectedResult: false,
-		},
-		{
-			engine:         engines[1],
-			expectedResult: false,
-		},
-	}
+			engines = []JindoEngine{
+				{
+					name:      "spark",
+					namespace: "fluid",
+					Client:    client,
+					Log:       fake.NullLogger(),
+					Helper:    ctrl.BuildHelper(&base.RuntimeInfo{}, client, fake.NullLogger()),
+				},
+				{
+					name:      "hbase",
+					namespace: "fluid",
+					Client:    client,
+					Log:       fake.NullLogger(),
+					Helper:    ctrl.BuildHelper(&base.RuntimeInfo{}, client, fake.NullLogger()),
+				},
+				{
+					name:      "hadoop",
+					namespace: "fluid",
+					Client:    client,
+					Log:       fake.NullLogger(),
+					Helper:    ctrl.BuildHelper(&base.RuntimeInfo{}, client, fake.NullLogger()),
+				},
+			}
+		})
 
-	for _, test := range testCases {
-		if ready, _ := test.engine.CheckMasterReady(); ready != test.expectedResult {
-			t.Errorf("fail to exec the function")
-			return
-		}
-		if !test.expectedResult {
-			continue
-		}
-		JindoRuntime, err := test.engine.getRuntime()
-		if err != nil {
-			t.Errorf("fail to get runtime %v", err)
-			return
-		}
-		if len(JindoRuntime.Status.Conditions) == 0 {
-			t.Errorf("fail to update the runtime conditions")
-			return
-		}
-	}
-}
+		It("should return false when spark master is not ready", func() {
+			ready, _ := engines[0].CheckMasterReady()
+			Expect(ready).To(BeFalse())
+		})
 
-func TestShouldSetupMaster(t *testing.T) {
-	JindoRuntimeInputs := []datav1alpha1.JindoRuntime{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "spark",
-				Namespace: "fluid",
-			},
-			Status: datav1alpha1.RuntimeStatus{
-				MasterPhase: datav1alpha1.RuntimePhaseNotReady,
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase",
-				Namespace: "fluid",
-			},
-			Status: datav1alpha1.RuntimeStatus{
-				MasterPhase: datav1alpha1.RuntimePhaseNone,
-			},
-		},
-	}
-	testObjs := []runtime.Object{}
-	for _, JindoRuntime := range JindoRuntimeInputs {
-		testObjs = append(testObjs, JindoRuntime.DeepCopy())
-	}
-	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+		It("should return false when hbase master is not ready", func() {
+			ready, _ := engines[1].CheckMasterReady()
+			Expect(ready).To(BeFalse())
+		})
+	})
 
-	engines := []JindoEngine{
-		{
-			name:      "spark",
-			namespace: "fluid",
-			Client:    client,
-		},
-		{
-			name:      "hbase",
-			namespace: "fluid",
-			Client:    client,
-		},
-	}
+	Describe("ShouldSetupMaster", func() {
+		var (
+			jindoRuntimeInputs []datav1alpha1.JindoRuntime
+			testObjs           []runtimeschema.Object
+			engines            []JindoEngine
+		)
 
-	var testCases = []struct {
-		engine         JindoEngine
-		expectedResult bool
-	}{
-		{
-			engine:         engines[0],
-			expectedResult: false,
-		},
-		{
-			engine:         engines[1],
-			expectedResult: true,
-		},
-	}
+		BeforeEach(func() {
+			jindoRuntimeInputs = []datav1alpha1.JindoRuntime{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "spark",
+						Namespace: "fluid",
+					},
+					Status: datav1alpha1.RuntimeStatus{
+						MasterPhase: datav1alpha1.RuntimePhaseNotReady,
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "hbase",
+						Namespace: "fluid",
+					},
+					Status: datav1alpha1.RuntimeStatus{
+						MasterPhase: datav1alpha1.RuntimePhaseNone,
+					},
+				},
+			}
+			testObjs = []runtimeschema.Object{}
+			for _, jindoRuntime := range jindoRuntimeInputs {
+				testObjs = append(testObjs, jindoRuntime.DeepCopy())
+			}
+			client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
-	for _, test := range testCases {
-		if should, _ := test.engine.ShouldSetupMaster(); should != test.expectedResult {
-			t.Errorf("fail to exec the function")
-			return
-		}
-	}
-}
+			engines = []JindoEngine{
+				{
+					name:      "spark",
+					namespace: "fluid",
+					Client:    client,
+				},
+				{
+					name:      "hbase",
+					namespace: "fluid",
+					Client:    client,
+				},
+			}
+		})
 
-func TestSetupMaster(t *testing.T) {
-	statefulSetInputs := []v1.StatefulSet{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "spark-master",
-				Namespace: "fluid",
-			},
-			Status: v1.StatefulSetStatus{
-				ReadyReplicas: 1,
-			},
-		},
-	}
+		It("should return false when master phase is not ready", func() {
+			should, _ := engines[0].ShouldSetupMaster()
+			Expect(should).To(BeFalse())
+		})
 
-	testObjs := []runtime.Object{}
-	for _, statefulSet := range statefulSetInputs {
-		testObjs = append(testObjs, statefulSet.DeepCopy())
-	}
+		It("should return true when master phase is none", func() {
+			should, _ := engines[1].ShouldSetupMaster()
+			Expect(should).To(BeTrue())
+		})
+	})
 
-	JindoRuntimeInputs := []datav1alpha1.JindoRuntime{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "spark",
-				Namespace: "fluid",
-			},
-		},
-	}
-	for _, JindoRuntime := range JindoRuntimeInputs {
-		testObjs = append(testObjs, JindoRuntime.DeepCopy())
-	}
-	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+	Describe("SetupMaster", func() {
+		var (
+			statefulSetInputs  []v1.StatefulSet
+			jindoRuntimeInputs []datav1alpha1.JindoRuntime
+			testObjs           []runtimeschema.Object
+			engines            []JindoEngine
+		)
 
-	engines := []JindoEngine{
-		{
-			name:      "spark",
-			namespace: "fluid",
-			Client:    client,
-			Log:       fake.NullLogger(),
-		},
-	}
+		BeforeEach(func() {
+			statefulSetInputs = []v1.StatefulSet{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "spark-master",
+						Namespace: "fluid",
+					},
+					Status: v1.StatefulSetStatus{
+						ReadyReplicas: 1,
+					},
+				},
+			}
 
-	var testCases = []struct {
-		engine                JindoEngine
-		expectedSelector      string
-		expectedConfigMapName string
-	}{
-		{
-			engine:                engines[0],
-			expectedConfigMapName: "spark--values",
-			expectedSelector:      "app=jindo,release=spark,role=jindo-worker",
-		},
-	}
+			testObjs = []runtimeschema.Object{}
+			for _, statefulSet := range statefulSetInputs {
+				testObjs = append(testObjs, statefulSet.DeepCopy())
+			}
 
-	for _, test := range testCases {
-		_ = test.engine.SetupMaster()
-		JindoRuntime, _ := test.engine.getRuntime()
-		if len(JindoRuntime.Status.Conditions) != 0 {
-			t.Errorf("fail to update the runtime")
-			return
-		}
-	}
-}
+			jindoRuntimeInputs = []datav1alpha1.JindoRuntime{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "spark",
+						Namespace: "fluid",
+					},
+				},
+			}
+			for _, jindoRuntime := range jindoRuntimeInputs {
+				testObjs = append(testObjs, jindoRuntime.DeepCopy())
+			}
+			client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+
+			engines = []JindoEngine{
+				{
+					name:      "spark",
+					namespace: "fluid",
+					Client:    client,
+					Log:       fake.NullLogger(),
+				},
+			}
+		})
+
+		It("should setup master for spark engine", func() {
+			_ = engines[0].SetupMaster()
+			jindoRuntime, _ := engines[0].getRuntime()
+			Expect(jindoRuntime).NotTo(BeNil())
+			Expect(len(jindoRuntime.Status.Conditions)).To(Equal(0))
+		})
+	})
+})
