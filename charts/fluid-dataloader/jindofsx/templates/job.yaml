@@ -94,7 +94,7 @@ spec:
 
           {{- $pathReplicas := ""}}
           {{- range .Values.dataloader.targetPaths }}
-          {{- $pathReplicas = cat $pathReplicas ( default 1 .replicas ) ":"}}
+          {{- $pathReplicas = cat $pathReplicas (default 1 .replicas | int) ":"}}
           {{- end }}
           {{- $pathReplicas = $pathReplicas | nospace | trimSuffix ":"}}  
           env:
