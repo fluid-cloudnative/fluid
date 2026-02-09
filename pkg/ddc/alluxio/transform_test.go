@@ -28,6 +28,8 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/net"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -284,11 +286,20 @@ func TestTransformWorkers(t *testing.T) {
 		},
 	}
 
-	engine := &AlluxioEngine{Log: fake.NullLogger()}
+	engine := &AlluxioEngine{
+		Log:       fake.NullLogger(),
+		name:      "test",
+		namespace: "test",
+	}
 	for k, v := range testCases {
 		gotValue := &Alluxio{}
 		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", base.WithTieredStore(v.runtime.Spec.TieredStore))
-		if err := engine.transformWorkers(v.runtime, gotValue); err == nil {
+		runtimeCopy := v.runtime.DeepCopy()
+		runtimeCopy.Name = "test"
+		runtimeCopy.Namespace = "test"
+		runtimeObjs := []runtime.Object{runtimeCopy}
+		engine.Client = fake.NewFakeClientWithScheme(datav1alpha1.UnitTestScheme, runtimeObjs...)
+		if err := engine.transformWorkers(runtimeCopy, gotValue); err == nil {
 			if gotValue.Worker.HostNetwork != v.wantValue.Worker.HostNetwork {
 				t.Errorf("check %s failure, got:%t,want:%t",
 					k,
@@ -1060,7 +1071,11 @@ func TestTransformMasterProperties(t *testing.T) {
 }
 
 func TestTransformWorkerProperties(t *testing.T) {
-	engine := &AlluxioEngine{Log: fake.NullLogger()}
+	engine := &AlluxioEngine{
+		Log:       fake.NullLogger(),
+		name:      "test",
+		namespace: "test",
+	}
 
 	type testCase struct {
 		Name      string
@@ -1073,6 +1088,10 @@ func TestTransformWorkerProperties(t *testing.T) {
 		{
 			Name: "worker properties is not null",
 			Runtime: &datav1alpha1.AlluxioRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "test",
+				},
 				Spec: datav1alpha1.AlluxioRuntimeSpec{
 					Properties: map[string]string{
 						"alluxio.worker.block.heartbeat.interval":      "300sec",
@@ -1104,6 +1123,8 @@ func TestTransformWorkerProperties(t *testing.T) {
 
 	for _, tt := range testCases {
 		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "alluxio", base.WithTieredStore(tt.Runtime.Spec.TieredStore))
+		runtimeObjs := []runtime.Object{tt.Runtime.DeepCopy()}
+		engine.Client = fake.NewFakeClientWithScheme(datav1alpha1.UnitTestScheme, runtimeObjs...)
 		err := engine.transformWorkers(tt.Runtime, tt.Value)
 		if err != nil {
 			t.Fatalf("test name: %s. Expect err = nil, but got err = %v", tt.Name, err)

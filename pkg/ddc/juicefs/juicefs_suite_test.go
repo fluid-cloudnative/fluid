@@ -1,4 +1,4 @@
-package juicefs_test
+package juicefs
 
 import (
 	"testing"

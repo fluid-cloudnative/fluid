@@ -6,6 +6,8 @@ ARG FOUNDATIONDB_TAG=7.3.59
 ARG FOUNDATIONDB_VERSION=${FOUNDATIONDB_TAG}-1
 ARG LIBFUSE_TAG=fuse-3.16.1
 ARG LIBFUSE_VERSION=3.16.1
+ARG RUSTUP_VERSION=1.27.1
+ARG RUSTUP_INIT_SHA256=f39939f3c83a31eda563840394548455a095842de8467556748c55a9346a4959
 
 # Install system dependencies and build tools
 RUN apt update && \
@@ -22,8 +24,8 @@ RUN apt update && \
     rm -rf /var/lib/apt/lists/* apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb
 
 # Install Rust
-RUN wget -O rustup-init "https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/rustup-init" && \
-    echo "f39939f3c83a31eda563840394548455a095842de8467556748c55a9346a4959 *rustup-init" | sha256sum -c - && \
+RUN wget -O rustup-init "https://static.rust-lang.org/rustup/archive/${RUSTUP_VERSION}/x86_64-unknown-linux-gnu/rustup-init" && \
+    echo "${RUSTUP_INIT_SHA256} *rustup-init" | sha256sum -c - && \
     chmod +x rustup-init && \
     ./rustup-init -y --no-modify-path --default-toolchain 1.90.0 && \
     rm rustup-init
