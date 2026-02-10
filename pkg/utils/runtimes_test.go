@@ -17,340 +17,234 @@ limitations under the License
 package utils
 
 import (
-	"testing"
-
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func TestGetAlluxioRuntime(t *testing.T) {
-	runtimeNamespace := "default"
-	runtimeName := "alluxio-runtime-1"
-	alluxio := &datav1alpha1.AlluxioRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      runtimeName,
-			Namespace: runtimeNamespace,
-		},
-	}
+var _ = Describe("GetAlluxioRuntime", func() {
+	var (
+		s              *runtime.Scheme
+		runtimeName    = "alluxio-runtime-1"
+		runtimeNs      = "default"
+		alluxioRuntime *datav1alpha1.AlluxioRuntime
+	)
 
-	s := runtime.NewScheme()
-	s.AddKnownTypes(datav1alpha1.GroupVersion, alluxio)
-
-	fakeClient := fake.NewFakeClientWithScheme(s, alluxio)
-
-	tests := []struct {
-		name      string
-		namespace string
-		wantName  string
-		notFound  bool
-	}{
-		{
-			name:      runtimeName,
-			namespace: runtimeNamespace,
-			wantName:  runtimeName,
-			notFound:  false,
-		},
-		{
-			name:      runtimeName + "not-exist",
-			namespace: runtimeNamespace,
-			wantName:  "",
-			notFound:  true,
-		},
-		{
-			name:      runtimeName,
-			namespace: runtimeNamespace + "not-exist",
-			wantName:  "",
-			notFound:  true,
-		},
-	}
-
-	for k, item := range tests {
-		gotRuntime, err := GetAlluxioRuntime(fakeClient, item.name, item.namespace)
-		if item.notFound {
-			if err == nil || gotRuntime != nil {
-				t.Errorf("%d check failure, want to got nil", k)
-			} else {
-				if !apierrs.IsNotFound(err) {
-					t.Errorf("%d check failure, want notFound err but got %s", k, err)
-				}
-			}
-		} else {
-			if gotRuntime.Name != item.wantName {
-				t.Errorf("%d check failure, got AlluxioRuntime name: %s, want name: %s", k, gotRuntime.Name, item.wantName)
-			}
+	BeforeEach(func() {
+		alluxioRuntime = &datav1alpha1.AlluxioRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      runtimeName,
+				Namespace: runtimeNs,
+			},
 		}
-	}
-}
+		s = runtime.NewScheme()
+		s.AddKnownTypes(datav1alpha1.GroupVersion, alluxioRuntime)
+	})
 
-func TestGetJuiceFSRuntime(t *testing.T) {
-	runtimeNamespace := "default"
-	runtimeName := "juicefs-runtime-1"
-	juicefsRuntime := &datav1alpha1.JuiceFSRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      runtimeName,
-			Namespace: runtimeNamespace,
-		},
-	}
+	DescribeTable("should handle runtime lookup",
+		func(name, namespace, wantName string, notFound bool) {
+			fakeClient := fake.NewFakeClientWithScheme(s, alluxioRuntime)
+			gotRuntime, err := GetAlluxioRuntime(fakeClient, name, namespace)
 
-	s := runtime.NewScheme()
-	s.AddKnownTypes(datav1alpha1.GroupVersion, juicefsRuntime)
-
-	fakeClient := fake.NewFakeClientWithScheme(s, juicefsRuntime)
-
-	tests := []struct {
-		name      string
-		namespace string
-		wantName  string
-		notFound  bool
-	}{
-		{
-			name:      runtimeName,
-			namespace: runtimeNamespace,
-			wantName:  runtimeName,
-			notFound:  false,
-		},
-		{
-			name:      runtimeName + "not-exist",
-			namespace: runtimeNamespace,
-			wantName:  "",
-			notFound:  true,
-		},
-		{
-			name:      runtimeName,
-			namespace: runtimeNamespace + "not-exist",
-			wantName:  "",
-			notFound:  true,
-		},
-	}
-
-	for k, item := range tests {
-		gotRuntime, err := GetJuiceFSRuntime(fakeClient, item.name, item.namespace)
-		if item.notFound {
-			if err == nil || gotRuntime != nil {
-				t.Errorf("%d check failure, want to got nil", k)
+			if notFound {
+				Expect(err).To(HaveOccurred())
+				Expect(gotRuntime).To(BeNil())
+				Expect(apierrs.IsNotFound(err)).To(BeTrue())
 			} else {
-				if !apierrs.IsNotFound(err) {
-					t.Errorf("%d check failure, want notFound err but got %s", k, err)
-				}
+				Expect(err).NotTo(HaveOccurred())
+				Expect(gotRuntime.Name).To(Equal(wantName))
 			}
-		} else {
-			if gotRuntime.Name != item.wantName {
-				t.Errorf("%d check failure, got JuiceFSRuntime name: %s, want name: %s", k, gotRuntime.Name, item.wantName)
-			}
+		},
+		Entry("existing runtime", "alluxio-runtime-1", "default", "alluxio-runtime-1", false),
+		Entry("non-existent name", "alluxio-runtime-1not-exist", "default", "", true),
+		Entry("non-existent namespace", "alluxio-runtime-1", "defaultnot-exist", "", true),
+	)
+})
+
+var _ = Describe("GetJuiceFSRuntime", func() {
+	var (
+		s              *runtime.Scheme
+		runtimeName    = "juicefs-runtime-1"
+		runtimeNs      = "default"
+		juicefsRuntime *datav1alpha1.JuiceFSRuntime
+	)
+
+	BeforeEach(func() {
+		juicefsRuntime = &datav1alpha1.JuiceFSRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      runtimeName,
+				Namespace: runtimeNs,
+			},
 		}
-	}
-}
+		s = runtime.NewScheme()
+		s.AddKnownTypes(datav1alpha1.GroupVersion, juicefsRuntime)
+	})
 
-func TestGetJindoRuntime(t *testing.T) {
-	runtimeNamespace := "default"
-	runtimeName := "jindo-runtime-1"
-	jindo := &datav1alpha1.JindoRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      runtimeName,
-			Namespace: runtimeNamespace,
-		},
-	}
+	DescribeTable("should handle runtime lookup",
+		func(name, namespace, wantName string, notFound bool) {
+			fakeClient := fake.NewFakeClientWithScheme(s, juicefsRuntime)
+			gotRuntime, err := GetJuiceFSRuntime(fakeClient, name, namespace)
 
-	s := runtime.NewScheme()
-	s.AddKnownTypes(datav1alpha1.GroupVersion, jindo)
-
-	fakeClient := fake.NewFakeClientWithScheme(s, jindo)
-
-	tests := []struct {
-		name      string
-		namespace string
-		wantName  string
-		notFound  bool
-	}{
-		{
-			name:      runtimeName,
-			namespace: runtimeNamespace,
-			wantName:  runtimeName,
-			notFound:  false,
-		},
-		{
-			name:      runtimeName + "not-exist",
-			namespace: runtimeNamespace,
-			wantName:  "",
-			notFound:  true,
-		},
-		{
-			name:      runtimeName,
-			namespace: runtimeNamespace + "not-exist",
-			wantName:  "",
-			notFound:  true,
-		},
-	}
-
-	for k, item := range tests {
-		gotRuntime, err := GetJindoRuntime(fakeClient, item.name, item.namespace)
-		if item.notFound {
-			if err == nil || gotRuntime != nil {
-				t.Errorf("%d check failure, want to got nil", k)
+			if notFound {
+				Expect(err).To(HaveOccurred())
+				Expect(gotRuntime).To(BeNil())
+				Expect(apierrs.IsNotFound(err)).To(BeTrue())
 			} else {
-				if !apierrs.IsNotFound(err) {
-					t.Errorf("%d check failure, want notFound err but got %s", k, err)
-				}
+				Expect(err).NotTo(HaveOccurred())
+				Expect(gotRuntime.Name).To(Equal(wantName))
 			}
-		} else {
-			if gotRuntime.Name != item.wantName {
-				t.Errorf("%d check failure, got AlluxioRuntime name: %s, want name: %s", k, gotRuntime.Name, item.wantName)
-			}
+		},
+		Entry("existing runtime", "juicefs-runtime-1", "default", "juicefs-runtime-1", false),
+		Entry("non-existent name", "juicefs-runtime-1not-exist", "default", "", true),
+		Entry("non-existent namespace", "juicefs-runtime-1", "defaultnot-exist", "", true),
+	)
+})
+
+var _ = Describe("GetJindoRuntime", func() {
+	var (
+		s            *runtime.Scheme
+		runtimeName  = "jindo-runtime-1"
+		runtimeNs    = "default"
+		jindoRuntime *datav1alpha1.JindoRuntime
+	)
+
+	BeforeEach(func() {
+		jindoRuntime = &datav1alpha1.JindoRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      runtimeName,
+				Namespace: runtimeNs,
+			},
 		}
-	}
-}
+		s = runtime.NewScheme()
+		s.AddKnownTypes(datav1alpha1.GroupVersion, jindoRuntime)
+	})
 
-func TestGetGooseFSRuntime(t *testing.T) {
-	runtimeNamespace := "default"
-	runtimeName := "goosefs-runtime-1"
-	goosefs := &datav1alpha1.GooseFSRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      runtimeName,
-			Namespace: runtimeNamespace,
-		},
-	}
+	DescribeTable("should handle runtime lookup",
+		func(name, namespace, wantName string, notFound bool) {
+			fakeClient := fake.NewFakeClientWithScheme(s, jindoRuntime)
+			gotRuntime, err := GetJindoRuntime(fakeClient, name, namespace)
 
-	s := runtime.NewScheme()
-	s.AddKnownTypes(datav1alpha1.GroupVersion, goosefs)
-
-	fakeClient := fake.NewFakeClientWithScheme(s, goosefs)
-
-	tests := []struct {
-		name      string
-		namespace string
-		wantName  string
-		notFound  bool
-	}{
-		{
-			name:      runtimeName,
-			namespace: runtimeNamespace,
-			wantName:  runtimeName,
-			notFound:  false,
-		},
-		{
-			name:      runtimeName + "not-exist",
-			namespace: runtimeNamespace,
-			wantName:  "",
-			notFound:  true,
-		},
-		{
-			name:      runtimeName,
-			namespace: runtimeNamespace + "not-exist",
-			wantName:  "",
-			notFound:  true,
-		},
-	}
-
-	for k, item := range tests {
-		gotRuntime, err := GetGooseFSRuntime(fakeClient, item.name, item.namespace)
-		if item.notFound {
-			if err == nil || gotRuntime != nil {
-				t.Errorf("%d check failure, want to got nil", k)
+			if notFound {
+				Expect(err).To(HaveOccurred())
+				Expect(gotRuntime).To(BeNil())
+				Expect(apierrs.IsNotFound(err)).To(BeTrue())
 			} else {
-				if !apierrs.IsNotFound(err) {
-					t.Errorf("%d check failure, want notFound err but got %s", k, err)
-				}
+				Expect(err).NotTo(HaveOccurred())
+				Expect(gotRuntime.Name).To(Equal(wantName))
 			}
-		} else {
-			if gotRuntime.Name != item.wantName {
-				t.Errorf("%d check failure, got GooseFSRuntime name: %s, want name: %s", k, gotRuntime.Name, item.wantName)
-			}
+		},
+		Entry("existing runtime", "jindo-runtime-1", "default", "jindo-runtime-1", false),
+		Entry("non-existent name", "jindo-runtime-1not-exist", "default", "", true),
+		Entry("non-existent namespace", "jindo-runtime-1", "defaultnot-exist", "", true),
+	)
+})
+
+var _ = Describe("GetGooseFSRuntime", func() {
+	var (
+		s              *runtime.Scheme
+		runtimeName    = "goosefs-runtime-1"
+		runtimeNs      = "default"
+		goosefsRuntime *datav1alpha1.GooseFSRuntime
+	)
+
+	BeforeEach(func() {
+		goosefsRuntime = &datav1alpha1.GooseFSRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      runtimeName,
+				Namespace: runtimeNs,
+			},
 		}
-	}
-}
+		s = runtime.NewScheme()
+		s.AddKnownTypes(datav1alpha1.GroupVersion, goosefsRuntime)
+	})
 
-func TestGetThinRuntime(t *testing.T) {
-	runtimeNamespace := "default"
-	runtimeName := "thin-runtime-1"
-	thinRuntime := &datav1alpha1.ThinRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      runtimeName,
-			Namespace: runtimeNamespace,
-		},
-	}
+	DescribeTable("should handle runtime lookup",
+		func(name, namespace, wantName string, notFound bool) {
+			fakeClient := fake.NewFakeClientWithScheme(s, goosefsRuntime)
+			gotRuntime, err := GetGooseFSRuntime(fakeClient, name, namespace)
 
-	s := runtime.NewScheme()
-	s.AddKnownTypes(datav1alpha1.GroupVersion, thinRuntime)
-
-	fakeClient := fake.NewFakeClientWithScheme(s, thinRuntime)
-
-	tests := []struct {
-		name      string
-		namespace string
-		wantName  string
-		notFound  bool
-	}{
-		{
-			name:      runtimeName,
-			namespace: runtimeNamespace,
-			wantName:  runtimeName,
-			notFound:  false,
-		},
-		{
-			name:      runtimeName + "not-exist",
-			namespace: runtimeNamespace,
-			wantName:  "",
-			notFound:  true,
-		},
-		{
-			name:      runtimeName,
-			namespace: runtimeNamespace + "not-exist",
-			wantName:  "",
-			notFound:  true,
-		},
-	}
-
-	for k, item := range tests {
-		gotRuntime, err := GetThinRuntime(fakeClient, item.name, item.namespace)
-		if item.notFound {
-			if err == nil || gotRuntime != nil {
-				t.Errorf("%d check failure, want to got nil", k)
+			if notFound {
+				Expect(err).To(HaveOccurred())
+				Expect(gotRuntime).To(BeNil())
+				Expect(apierrs.IsNotFound(err)).To(BeTrue())
 			} else {
-				if !apierrs.IsNotFound(err) {
-					t.Errorf("%d check failure, want notFound err but got %s", k, err)
-				}
+				Expect(err).NotTo(HaveOccurred())
+				Expect(gotRuntime.Name).To(Equal(wantName))
 			}
-		} else {
-			if gotRuntime.Name != item.wantName {
-				t.Errorf("%d check failure, got ThinRuntime name: %s, want name: %s", k, gotRuntime.Name, item.wantName)
-			}
-		}
-	}
-}
+		},
+		Entry("existing runtime", "goosefs-runtime-1", "default", "goosefs-runtime-1", false),
+		Entry("non-existent name", "goosefs-runtime-1not-exist", "default", "", true),
+		Entry("non-existent namespace", "goosefs-runtime-1", "defaultnot-exist", "", true),
+	)
+})
 
-func TestAddRuntimesIfNotExist(t *testing.T) {
-	var runtime1 = datav1alpha1.Runtime{
-		Name:     "imagenet",
-		Category: common.AccelerateCategory,
-	}
-	var runtime2 = datav1alpha1.Runtime{
-		Name:     "mock-name",
-		Category: "mock-category",
-	}
-	var runtime3 = datav1alpha1.Runtime{
-		Name:     "cifar10",
-		Category: common.AccelerateCategory,
-	}
-	var testCases = []struct {
-		description string
-		runtimes    []datav1alpha1.Runtime
-		newRuntime  datav1alpha1.Runtime
-		expected    []datav1alpha1.Runtime
-	}{
-		{"add runtime to an empty slices successfully",
-			[]datav1alpha1.Runtime{}, runtime1, []datav1alpha1.Runtime{runtime1}},
-		{"duplicate runtime will not be added",
-			[]datav1alpha1.Runtime{runtime1}, runtime1, []datav1alpha1.Runtime{runtime1}},
-		{"add runtime of different name and category successfully",
-			[]datav1alpha1.Runtime{runtime1}, runtime2, []datav1alpha1.Runtime{runtime1, runtime2}},
-		{"runtime of the same category but different name will not be added",
-			[]datav1alpha1.Runtime{runtime1}, runtime3, []datav1alpha1.Runtime{runtime1}},
-	}
-	var runtimeSliceEqual = func(a, b []datav1alpha1.Runtime) bool {
+var _ = Describe("GetThinRuntime", func() {
+	var (
+		s           *runtime.Scheme
+		runtimeName = "thin-runtime-1"
+		runtimeNs   = "default"
+		thinRuntime *datav1alpha1.ThinRuntime
+	)
+
+	BeforeEach(func() {
+		thinRuntime = &datav1alpha1.ThinRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      runtimeName,
+				Namespace: runtimeNs,
+			},
+		}
+		s = runtime.NewScheme()
+		s.AddKnownTypes(datav1alpha1.GroupVersion, thinRuntime)
+	})
+
+	DescribeTable("should handle runtime lookup",
+		func(name, namespace, wantName string, notFound bool) {
+			fakeClient := fake.NewFakeClientWithScheme(s, thinRuntime)
+			gotRuntime, err := GetThinRuntime(fakeClient, name, namespace)
+
+			if notFound {
+				Expect(err).To(HaveOccurred())
+				Expect(gotRuntime).To(BeNil())
+				Expect(apierrs.IsNotFound(err)).To(BeTrue())
+			} else {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(gotRuntime.Name).To(Equal(wantName))
+			}
+		},
+		Entry("existing runtime", "thin-runtime-1", "default", "thin-runtime-1", false),
+		Entry("non-existent name", "thin-runtime-1not-exist", "default", "", true),
+		Entry("non-existent namespace", "thin-runtime-1", "defaultnot-exist", "", true),
+	)
+})
+
+var _ = Describe("AddRuntimesIfNotExist", func() {
+	var (
+		runtime1 datav1alpha1.Runtime
+		runtime2 datav1alpha1.Runtime
+		runtime3 datav1alpha1.Runtime
+	)
+
+	BeforeEach(func() {
+		runtime1 = datav1alpha1.Runtime{
+			Name:     "imagenet",
+			Category: common.AccelerateCategory,
+		}
+		runtime2 = datav1alpha1.Runtime{
+			Name:     "mock-name",
+			Category: "mock-category",
+		}
+		runtime3 = datav1alpha1.Runtime{
+			Name:     "cifar10",
+			Category: common.AccelerateCategory,
+		}
+	})
+
+	runtimeSliceEqual := func(a, b []datav1alpha1.Runtime) bool {
 		if len(a) != len(b) || (a == nil) != (b == nil) {
 			return false
 		}
@@ -361,114 +255,98 @@ func TestAddRuntimesIfNotExist(t *testing.T) {
 		}
 		return true
 	}
-	for _, tc := range testCases {
-		if updatedRuntimes := AddRuntimesIfNotExist(tc.runtimes, tc.newRuntime); !runtimeSliceEqual(tc.expected, updatedRuntimes) {
-			t.Errorf("%s, expected %#v, got %#v",
-				tc.description, tc.expected, updatedRuntimes)
+
+	It("should add runtime to an empty slice successfully", func() {
+		result := AddRuntimesIfNotExist([]datav1alpha1.Runtime{}, runtime1)
+		Expect(runtimeSliceEqual(result, []datav1alpha1.Runtime{runtime1})).To(BeTrue())
+	})
+
+	It("should not add duplicate runtime", func() {
+		result := AddRuntimesIfNotExist([]datav1alpha1.Runtime{runtime1}, runtime1)
+		Expect(runtimeSliceEqual(result, []datav1alpha1.Runtime{runtime1})).To(BeTrue())
+	})
+
+	It("should add runtime of different name and category successfully", func() {
+		result := AddRuntimesIfNotExist([]datav1alpha1.Runtime{runtime1}, runtime2)
+		Expect(runtimeSliceEqual(result, []datav1alpha1.Runtime{runtime1, runtime2})).To(BeTrue())
+	})
+
+	It("should not add runtime of the same category but different name", func() {
+		result := AddRuntimesIfNotExist([]datav1alpha1.Runtime{runtime1}, runtime3)
+		Expect(runtimeSliceEqual(result, []datav1alpha1.Runtime{runtime1})).To(BeTrue())
+	})
+})
+
+var _ = Describe("GetThinRuntimeProfile", func() {
+	var (
+		s                  *runtime.Scheme
+		profileName        = "test-profile"
+		thinRuntimeProfile *datav1alpha1.ThinRuntimeProfile
+	)
+
+	BeforeEach(func() {
+		thinRuntimeProfile = &datav1alpha1.ThinRuntimeProfile{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: profileName,
+			},
 		}
-	}
-}
+		s = runtime.NewScheme()
+		s.AddKnownTypes(datav1alpha1.GroupVersion, thinRuntimeProfile)
+	})
 
-func TestGetThinRuntimeProfile(t *testing.T) {
-	runtimeProfileName := "test-profile"
-	thinRuntimeProfile := &datav1alpha1.ThinRuntimeProfile{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: runtimeProfileName,
-		},
-	}
+	DescribeTable("should handle profile lookup",
+		func(name, wantName string, notFound bool) {
+			fakeClient := fake.NewFakeClientWithScheme(s, thinRuntimeProfile)
+			got, err := GetThinRuntimeProfile(fakeClient, name)
 
-	s := runtime.NewScheme()
-	s.AddKnownTypes(datav1alpha1.GroupVersion, thinRuntimeProfile)
-
-	fakeClient := fake.NewFakeClientWithScheme(s, thinRuntimeProfile)
-
-	tests := []struct {
-		name     string
-		wantName string
-		notFound bool
-	}{
-		{
-			name:     runtimeProfileName,
-			wantName: runtimeProfileName,
-			notFound: false,
-		},
-		{
-			name:     runtimeProfileName + "not-exist",
-			wantName: "",
-			notFound: true,
-		},
-	}
-	for _, tt := range tests {
-		got, err := GetThinRuntimeProfile(fakeClient, tt.name)
-		if tt.notFound {
-			if err == nil || !apierrs.IsNotFound(err) {
-				t.Errorf("check failure, expect not found, but got error: %v", err)
-			}
-		} else {
-			if err != nil {
-				t.Errorf("check failure, expect got thinruntime profile, but got error: %v", err)
-			} else if got.Name != tt.wantName {
-				t.Errorf("check failure, want thinruntime name: %s, but got name: %s", tt.wantName, got.Name)
-			}
-		}
-	}
-}
-
-func TestGetEFCRuntime(t *testing.T) {
-	runtimeNamespace := "default"
-	runtimeName := "efc-runtime-1"
-	efcRuntime := &datav1alpha1.EFCRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      runtimeName,
-			Namespace: runtimeNamespace,
-		},
-	}
-
-	s := runtime.NewScheme()
-	s.AddKnownTypes(datav1alpha1.GroupVersion, efcRuntime)
-
-	fakeClient := fake.NewFakeClientWithScheme(s, efcRuntime)
-
-	tests := []struct {
-		name      string
-		namespace string
-		wantName  string
-		notFound  bool
-	}{
-		{
-			name:      runtimeName,
-			namespace: runtimeNamespace,
-			wantName:  runtimeName,
-			notFound:  false,
-		},
-		{
-			name:      runtimeName + "not-exist",
-			namespace: runtimeNamespace,
-			wantName:  "",
-			notFound:  true,
-		},
-		{
-			name:      runtimeName,
-			namespace: runtimeNamespace + "not-exist",
-			wantName:  "",
-			notFound:  true,
-		},
-	}
-
-	for k, item := range tests {
-		gotRuntime, err := GetEFCRuntime(fakeClient, item.name, item.namespace)
-		if item.notFound {
-			if err == nil || gotRuntime != nil {
-				t.Errorf("%d check failure, want to got nil", k)
+			if notFound {
+				Expect(err).To(HaveOccurred())
+				Expect(apierrs.IsNotFound(err)).To(BeTrue())
 			} else {
-				if !apierrs.IsNotFound(err) {
-					t.Errorf("%d check failure, want notFound err but got %s", k, err)
-				}
+				Expect(err).NotTo(HaveOccurred())
+				Expect(got.Name).To(Equal(wantName))
 			}
-		} else {
-			if gotRuntime.Name != item.wantName {
-				t.Errorf("%d check failure, got EFCRuntime name: %s, want name: %s", k, gotRuntime.Name, item.wantName)
-			}
+		},
+		Entry("existing profile", "test-profile", "test-profile", false),
+		Entry("non-existent profile", "test-profilenot-exist", "", true),
+	)
+})
+
+var _ = Describe("GetEFCRuntime", func() {
+	var (
+		s           *runtime.Scheme
+		runtimeName = "efc-runtime-1"
+		runtimeNs   = "default"
+		efcRuntime  *datav1alpha1.EFCRuntime
+	)
+
+	BeforeEach(func() {
+		efcRuntime = &datav1alpha1.EFCRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      runtimeName,
+				Namespace: runtimeNs,
+			},
 		}
-	}
-}
+		s = runtime.NewScheme()
+		s.AddKnownTypes(datav1alpha1.GroupVersion, efcRuntime)
+	})
+
+	DescribeTable("should handle runtime lookup",
+		func(name, namespace, wantName string, notFound bool) {
+			fakeClient := fake.NewFakeClientWithScheme(s, efcRuntime)
+			gotRuntime, err := GetEFCRuntime(fakeClient, name, namespace)
+
+			if notFound {
+				Expect(err).To(HaveOccurred())
+				Expect(gotRuntime).To(BeNil())
+				Expect(apierrs.IsNotFound(err)).To(BeTrue())
+			} else {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(gotRuntime.Name).To(Equal(wantName))
+			}
+		},
+		Entry("existing runtime", "efc-runtime-1", "default", "efc-runtime-1", false),
+		Entry("non-existent name", "efc-runtime-1not-exist", "default", "", true),
+		Entry("non-existent namespace", "efc-runtime-1", "defaultnot-exist", "", true),
+	)
+})
