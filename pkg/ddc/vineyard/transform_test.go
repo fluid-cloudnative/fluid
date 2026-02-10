@@ -14,10 +14,11 @@ limitations under the License.
 package vineyard
 
 import (
+	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	"os"
-	"reflect"
-	"strings"
-	"testing"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -31,6 +32,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
+const (
+	transformTestNamespace    = "fluid"
+	transformTestName         = "test"
+	transformTestVineyard     = "vineyard"
+	transformTestImageFromEnv = "image-from-env"
+	transformTestTagFromEnv   = "image-tag-from-env"
+)
+
 var (
 	LocalMount = datav1alpha1.Mount{
 		MountPoint: "local:///mnt/test",
@@ -38,706 +47,617 @@ var (
 	}
 )
 
-func TestTransformFuse(t *testing.T) {
-	ctrl.SetLogger(zap.New(func(o *zap.Options) {
-		o.Development = true
-	}))
+var _ = Describe("VineyardEngine Transform", Label("pkg.ddc.vineyard.transform_test.go"), func() {
+	Describe("transformFuse", func() {
+		BeforeEach(func() {
+			ctrl.SetLogger(zap.New(func(o *zap.Options) {
+				o.Development = true
+			}))
+		})
 
-	var tests = map[string]struct {
-		runtime   *datav1alpha1.VineyardRuntime
-		value     *Vineyard
-		expect    []string
-		expectEnv map[string]string
-	}{
-		"test image, imageTag and pullPolicy": {
-			runtime: &datav1alpha1.VineyardRuntime{
-				Spec: datav1alpha1.VineyardRuntimeSpec{
-					Fuse: datav1alpha1.VineyardClientSocketSpec{
-						Image:           "dummy-fuse-image",
-						ImageTag:        "dummy-tag",
-						ImagePullPolicy: "IfNotPresent",
-						Env:             map[string]string{"TEST_ENV": "true"},
-						CleanPolicy:     "OnRuntimeDeleted",
+		Context("when image, imageTag and pullPolicy are set directly", func() {
+			It("should use the specified values", func() {
+				runtime := &datav1alpha1.VineyardRuntime{
+					Spec: datav1alpha1.VineyardRuntimeSpec{
+						Fuse: datav1alpha1.VineyardClientSocketSpec{
+							Image:           "dummy-fuse-image",
+							ImageTag:        "dummy-tag",
+							ImagePullPolicy: "IfNotPresent",
+							Env:             map[string]string{"TEST_ENV": "true"},
+							CleanPolicy:     "OnRuntimeDeleted",
+						},
 					},
-				},
-			},
-			value:     &Vineyard{},
-			expect:    []string{"dummy-fuse-image", "dummy-tag", "IfNotPresent", "OnRuntimeDeleted"},
-			expectEnv: map[string]string{"TEST_ENV": "true"},
-		},
-		"test image, imageTag and pullPolicy from env": {
-			runtime: &datav1alpha1.VineyardRuntime{
-				Spec: datav1alpha1.VineyardRuntimeSpec{
-					Fuse: datav1alpha1.VineyardClientSocketSpec{
-						ImagePullPolicy: "IfNotPresent",
-						Env:             map[string]string{"TEST_ENV": "true"},
-						CleanPolicy:     "OnRuntimeDeleted",
+				}
+				value := &Vineyard{}
+
+				runtimeInfo, err := base.BuildRuntimeInfo(transformTestName, transformTestNamespace, transformTestVineyard)
+				Expect(err).NotTo(HaveOccurred())
+
+				engine := &VineyardEngine{
+					runtimeInfo: runtimeInfo,
+					Log:         ctrl.Log,
+				}
+				engine.transformFuse(runtime, value)
+
+				Expect(value.Fuse.Image).To(Equal("dummy-fuse-image"))
+				Expect(value.Fuse.ImageTag).To(Equal("dummy-tag"))
+				Expect(value.Fuse.ImagePullPolicy).To(Equal("IfNotPresent"))
+				Expect(string(value.Fuse.CleanPolicy)).To(Equal("OnRuntimeDeleted"))
+				Expect(value.Fuse.Env).To(Equal(map[string]string{"TEST_ENV": "true"}))
+			})
+		})
+
+		Context("when image, imageTag come from environment", func() {
+			BeforeEach(func() {
+				err := os.Setenv("VINEYARD_FUSE_IMAGE_ENV", "image-from-env:image-tag-from-env")
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			AfterEach(func() {
+				err := os.Unsetenv("VINEYARD_FUSE_IMAGE_ENV")
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("should use values from environment", func() {
+				runtime := &datav1alpha1.VineyardRuntime{
+					Spec: datav1alpha1.VineyardRuntimeSpec{
+						Fuse: datav1alpha1.VineyardClientSocketSpec{
+							ImagePullPolicy: "IfNotPresent",
+							Env:             map[string]string{"TEST_ENV": "true"},
+							CleanPolicy:     "OnRuntimeDeleted",
+						},
 					},
-				},
-			},
-			value:     &Vineyard{},
-			expect:    []string{"image-from-env", "image-tag-from-env", "IfNotPresent", "OnRuntimeDeleted"},
-			expectEnv: map[string]string{"TEST_ENV": "true"},
-		},
-	}
-	for k, test := range tests {
-		if strings.Contains(k, "env") {
-			_ = os.Setenv("VINEYARD_FUSE_IMAGE_ENV", "image-from-env:image-tag-from-env")
-		}
-		runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "vineyard")
-		if err != nil {
-			t.Errorf("fail to create the runtimeInfo with error %v", err)
-		}
-		engine := &VineyardEngine{
-			runtimeInfo: runtimeInfo,
-		}
-		engine.Log = ctrl.Log
-		engine.transformFuse(test.runtime, test.value)
+				}
+				value := &Vineyard{}
 
-		if test.value.Fuse.Image != test.expect[0] {
-			t.Errorf("Expected Fuse Image %s, got %s", test.expect[0], test.value.Fuse.Image)
-		}
-		if test.value.Fuse.ImageTag != test.expect[1] {
-			t.Errorf("Expected Fuse ImageTag %s, got %s", test.expect[1], test.value.Fuse.ImageTag)
-		}
-		if test.value.Fuse.ImagePullPolicy != test.expect[2] {
-			t.Errorf("Expected Fuse ImagePullPolicy %s, got %s", test.expect[2], test.value.Fuse.ImagePullPolicy)
-		}
-		if string(test.value.Fuse.CleanPolicy) != test.expect[3] {
-			t.Errorf("Expected Fuse CleanPolicy %s, got %s", test.expect[3], test.value.Fuse.CleanPolicy)
-		}
-		if !reflect.DeepEqual(test.value.Fuse.Env, test.expectEnv) {
-			t.Errorf("Expected Fuse Env %v, got %v", test.expectEnv, test.value.Fuse.Env)
-		}
-		if strings.Contains(k, "env") {
-			_ = os.Unsetenv("VINEYARD_FUSE_IMAGE_ENV")
-		}
-	}
-}
+				runtimeInfo, err := base.BuildRuntimeInfo(transformTestName, transformTestNamespace, transformTestVineyard)
+				Expect(err).NotTo(HaveOccurred())
 
-func TestTransformMaster(t *testing.T) {
-	testCases := map[string]struct {
-		runtime   *datav1alpha1.VineyardRuntime
-		wantValue *Vineyard
-	}{
-		"test image, imageTag and pullPolicy": {
-			runtime: &datav1alpha1.VineyardRuntime{
-				Spec: datav1alpha1.VineyardRuntimeSpec{
-					Master: datav1alpha1.MasterSpec{
-						VineyardCompTemplateSpec: datav1alpha1.VineyardCompTemplateSpec{
+				engine := &VineyardEngine{
+					runtimeInfo: runtimeInfo,
+					Log:         ctrl.Log,
+				}
+				engine.transformFuse(runtime, value)
+
+				Expect(value.Fuse.Image).To(Equal(transformTestImageFromEnv))
+				Expect(value.Fuse.ImageTag).To(Equal(transformTestTagFromEnv))
+				Expect(value.Fuse.ImagePullPolicy).To(Equal("IfNotPresent"))
+				Expect(string(value.Fuse.CleanPolicy)).To(Equal("OnRuntimeDeleted"))
+				Expect(value.Fuse.Env).To(Equal(map[string]string{"TEST_ENV": "true"}))
+			})
+		})
+	})
+
+	Describe("transformMasters", func() {
+		Context("when image, imageTag and pullPolicy are set directly", func() {
+			It("should use the specified values", func() {
+				runtime := &datav1alpha1.VineyardRuntime{
+					Spec: datav1alpha1.VineyardRuntimeSpec{
+						Master: datav1alpha1.MasterSpec{
+							VineyardCompTemplateSpec: datav1alpha1.VineyardCompTemplateSpec{
+								Image:           "test-image",
+								ImageTag:        "test-tag",
+								ImagePullPolicy: "IfNotPresent",
+							},
+						},
+					},
+				}
+
+				engine := &VineyardEngine{Log: fake.NullLogger()}
+				ds := &datav1alpha1.Dataset{}
+				gotValue := &Vineyard{}
+
+				err := engine.transformMasters(runtime, ds, gotValue)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(gotValue.Master.Image).To(Equal("test-image"))
+				Expect(gotValue.Master.ImageTag).To(Equal("test-tag"))
+				Expect(gotValue.Master.ImagePullPolicy).To(Equal("IfNotPresent"))
+			})
+		})
+
+		Context("when image, imageTag come from environment", func() {
+			BeforeEach(func() {
+				err := os.Setenv("VINEYARD_MASTER_IMAGE_ENV", "image-from-env:image-tag-from-env")
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			AfterEach(func() {
+				err := os.Unsetenv("VINEYARD_MASTER_IMAGE_ENV")
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("should use values from environment", func() {
+				runtime := &datav1alpha1.VineyardRuntime{
+					Spec: datav1alpha1.VineyardRuntimeSpec{
+						Master: datav1alpha1.MasterSpec{
+							VineyardCompTemplateSpec: datav1alpha1.VineyardCompTemplateSpec{
+								ImagePullPolicy: "IfNotPresent",
+							},
+						},
+					},
+				}
+
+				engine := &VineyardEngine{Log: fake.NullLogger()}
+				ds := &datav1alpha1.Dataset{}
+				gotValue := &Vineyard{}
+
+				err := engine.transformMasters(runtime, ds, gotValue)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(gotValue.Master.Image).To(Equal(transformTestImageFromEnv))
+				Expect(gotValue.Master.ImageTag).To(Equal(transformTestTagFromEnv))
+				Expect(gotValue.Master.ImagePullPolicy).To(Equal("IfNotPresent"))
+			})
+		})
+	})
+
+	Describe("transformMasterSelector", func() {
+		Context("when no NodeSelector is set", func() {
+			It("should return empty map", func() {
+				runtime := &datav1alpha1.VineyardRuntime{
+					Spec: datav1alpha1.VineyardRuntimeSpec{
+						Master: datav1alpha1.MasterSpec{},
+					},
+				}
+
+				engine := &VineyardEngine{}
+				actual := engine.transformMasterSelector(runtime)
+				Expect(actual).To(BeEmpty())
+			})
+		})
+
+		Context("when NodeSelector is set", func() {
+			It("should return the specified selector", func() {
+				runtime := &datav1alpha1.VineyardRuntime{
+					Spec: datav1alpha1.VineyardRuntimeSpec{
+						Master: datav1alpha1.MasterSpec{
+							VineyardCompTemplateSpec: datav1alpha1.VineyardCompTemplateSpec{
+								NodeSelector: map[string]string{"disktype": "ssd"},
+							},
+						},
+					},
+				}
+
+				engine := &VineyardEngine{}
+				actual := engine.transformMasterSelector(runtime)
+				Expect(actual).To(HaveKeyWithValue("disktype", "ssd"))
+			})
+		})
+	})
+
+	Describe("transformMasterPorts", func() {
+		Context("when no ports are set", func() {
+			It("should return default ports", func() {
+				runtime := &datav1alpha1.VineyardRuntime{
+					Spec: datav1alpha1.VineyardRuntimeSpec{
+						Master: datav1alpha1.MasterSpec{
+							VineyardCompTemplateSpec: datav1alpha1.VineyardCompTemplateSpec{
+								Ports: map[string]int{},
+							},
+						},
+					},
+				}
+
+				engine := &VineyardEngine{}
+				actual := engine.transformMasterPorts(runtime)
+				Expect(actual).To(HaveKeyWithValue("client", 2379))
+				Expect(actual).To(HaveKeyWithValue("peer", 2380))
+			})
+		})
+
+		Context("when ports are set", func() {
+			It("should return the specified ports", func() {
+				runtime := &datav1alpha1.VineyardRuntime{
+					Spec: datav1alpha1.VineyardRuntimeSpec{
+						Master: datav1alpha1.MasterSpec{
+							VineyardCompTemplateSpec: datav1alpha1.VineyardCompTemplateSpec{
+								Ports: map[string]int{
+									"client": 1234,
+									"peer":   5678,
+								},
+							},
+						},
+					},
+				}
+
+				engine := &VineyardEngine{}
+				actual := engine.transformMasterPorts(runtime)
+				Expect(actual).To(HaveKeyWithValue("client", 1234))
+				Expect(actual).To(HaveKeyWithValue("peer", 5678))
+			})
+		})
+	})
+
+	Describe("transformMasterOptions", func() {
+		Context("when no options are set", func() {
+			It("should return default options", func() {
+				runtime := &datav1alpha1.VineyardRuntime{
+					Spec: datav1alpha1.VineyardRuntimeSpec{
+						Master: datav1alpha1.MasterSpec{
+							VineyardCompTemplateSpec: datav1alpha1.VineyardCompTemplateSpec{
+								Options: map[string]string{},
+							},
+						},
+					},
+				}
+
+				engine := &VineyardEngine{}
+				actual := engine.transformMasterOptions(runtime)
+				Expect(actual).To(HaveKeyWithValue("vineyardd.reserve.memory", "true"))
+				Expect(actual).To(HaveKeyWithValue("etcd.prefix", "/vineyard"))
+			})
+		})
+
+		Context("when options are set", func() {
+			It("should return the specified options", func() {
+				runtime := &datav1alpha1.VineyardRuntime{
+					Spec: datav1alpha1.VineyardRuntimeSpec{
+						Master: datav1alpha1.MasterSpec{
+							VineyardCompTemplateSpec: datav1alpha1.VineyardCompTemplateSpec{
+								Options: map[string]string{
+									"vineyardd.reserve.memory": "false",
+									"etcd.prefix":              "/vineyard-test",
+								},
+							},
+						},
+					},
+				}
+
+				engine := &VineyardEngine{}
+				actual := engine.transformMasterOptions(runtime)
+				Expect(actual).To(HaveKeyWithValue("vineyardd.reserve.memory", "false"))
+				Expect(actual).To(HaveKeyWithValue("etcd.prefix", "/vineyard-test"))
+			})
+		})
+	})
+
+	Describe("transformWorkers", func() {
+		Context("when image, imageTag and pullPolicy are set directly", func() {
+			It("should use the specified values", func() {
+				vineyardRuntime := &datav1alpha1.VineyardRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      transformTestName,
+						Namespace: transformTestNamespace,
+					},
+					Spec: datav1alpha1.VineyardRuntimeSpec{
+						Replicas: 3,
+						TieredStore: datav1alpha1.TieredStore{
+							Levels: []datav1alpha1.Level{
+								{
+									MediumType: "MEM",
+									Quota:      resource.NewQuantity(1024*1024*1024, resource.BinarySI),
+								},
+							},
+						},
+						Worker: datav1alpha1.VineyardCompTemplateSpec{
+							Replicas:        2,
 							Image:           "test-image",
 							ImageTag:        "test-tag",
 							ImagePullPolicy: "IfNotPresent",
 						},
 					},
-				},
-			},
-			wantValue: &Vineyard{
-				Master: Master{
-					Image:           "test-image",
-					ImageTag:        "test-tag",
-					ImagePullPolicy: "IfNotPresent",
-				},
-			},
-		},
-		"test image, imageTag and pullPolicy from env": {
-			runtime: &datav1alpha1.VineyardRuntime{
-				Spec: datav1alpha1.VineyardRuntimeSpec{
-					Master: datav1alpha1.MasterSpec{
-						VineyardCompTemplateSpec: datav1alpha1.VineyardCompTemplateSpec{
+				}
+
+				runtimeInfo, err := base.BuildRuntimeInfo(transformTestName, transformTestNamespace, transformTestVineyard,
+					base.WithTieredStore(vineyardRuntime.Spec.TieredStore))
+				Expect(err).NotTo(HaveOccurred())
+
+				dataset := &datav1alpha1.Dataset{
+					Spec: datav1alpha1.DatasetSpec{},
+				}
+				runtimeInfo.SetupWithDataset(dataset)
+
+				s := k8sruntime.NewScheme()
+				s.AddKnownTypes(datav1alpha1.GroupVersion, vineyardRuntime)
+				err = datav1alpha1.AddToScheme(s)
+				Expect(err).NotTo(HaveOccurred())
+
+				mockClient := fake.NewFakeClientWithScheme(s, vineyardRuntime)
+
+				engine := &VineyardEngine{
+					Log:         fake.NullLogger(),
+					runtimeInfo: runtimeInfo,
+					Client:      mockClient,
+					name:        transformTestName,
+					namespace:   transformTestNamespace,
+				}
+
+				value := &Vineyard{}
+				err = engine.transformWorkers(vineyardRuntime, value)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(value.Worker.Image).To(Equal("test-image"))
+				Expect(value.Worker.ImageTag).To(Equal("test-tag"))
+				Expect(value.Worker.ImagePullPolicy).To(Equal("IfNotPresent"))
+			})
+		})
+
+		Context("when image and tag come from environment", func() {
+			BeforeEach(func() {
+				err := os.Setenv("VINEYARD_WORKER_IMAGE_ENV", "image-from-env:image-tag-from-env")
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			AfterEach(func() {
+				err := os.Unsetenv("VINEYARD_WORKER_IMAGE_ENV")
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("should use image from environment", func() {
+				vineyardRuntime := &datav1alpha1.VineyardRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      transformTestName,
+						Namespace: transformTestNamespace,
+					},
+					Spec: datav1alpha1.VineyardRuntimeSpec{
+						Replicas: 3,
+						TieredStore: datav1alpha1.TieredStore{
+							Levels: []datav1alpha1.Level{
+								{
+									MediumType: "MEM",
+									Quota:      resource.NewQuantity(1024*1024*1024, resource.BinarySI),
+								},
+							},
+						},
+						Worker: datav1alpha1.VineyardCompTemplateSpec{
+							Replicas:        2,
 							ImagePullPolicy: "IfNotPresent",
 						},
 					},
-				},
-			},
-			wantValue: &Vineyard{
-				Master: Master{
-					Image:           "image-from-env",
-					ImageTag:        "image-tag-from-env",
-					ImagePullPolicy: "IfNotPresent",
-				},
-			},
-		},
-	}
+				}
 
-	engine := &VineyardEngine{Log: fake.NullLogger()}
-	ds := &datav1alpha1.Dataset{}
-	for k, v := range testCases {
-		if strings.Contains(k, "env") {
-			_ = os.Setenv("VINEYARD_MASTER_IMAGE_ENV", "image-from-env:image-tag-from-env")
-		}
-		gotValue := &Vineyard{}
-		if err := engine.transformMasters(v.runtime, ds, gotValue); err == nil {
-			if gotValue.Master.Image != v.wantValue.Master.Image {
-				t.Errorf("check master %s failure, got:%s,want:%s",
-					k,
-					gotValue.Master.Image,
-					v.wantValue.Master.Image,
-				)
-			}
-			if gotValue.Master.ImageTag != v.wantValue.Master.ImageTag {
-				t.Errorf("check master %s failure, got:%s,want:%s",
-					k,
-					gotValue.Master.ImageTag,
-					v.wantValue.Master.ImageTag,
-				)
-			}
-			if gotValue.Master.ImagePullPolicy != v.wantValue.Master.ImagePullPolicy {
-				t.Errorf("check master %s failure, got:%s,want:%s",
-					k,
-					gotValue.Master.ImagePullPolicy,
-					v.wantValue.Master.ImagePullPolicy,
-				)
-			}
-		}
-		if strings.Contains(k, "env") {
-			_ = os.Unsetenv("VINEYARD_MASTER_IMAGE_ENV")
-		}
-	}
-}
+				runtimeInfo, err := base.BuildRuntimeInfo(transformTestName, transformTestNamespace, transformTestVineyard,
+					base.WithTieredStore(vineyardRuntime.Spec.TieredStore))
+				Expect(err).NotTo(HaveOccurred())
 
-func TestTransformWorker(t *testing.T) {
-	testCases := map[string]struct {
-		runtime   *datav1alpha1.VineyardRuntime
-		wantValue *Vineyard
-	}{
-		"test replicas, image, imageTag and pullPolicy": {
-			runtime: &datav1alpha1.VineyardRuntime{
-				Spec: datav1alpha1.VineyardRuntimeSpec{
-					Replicas: 3,
-					Worker: datav1alpha1.VineyardCompTemplateSpec{
-						Replicas:        2,
-						Image:           "test-image",
-						ImageTag:        "test-tag",
-						ImagePullPolicy: "IfNotPresent",
-					},
-				},
-			},
-			wantValue: &Vineyard{
-				Worker: Worker{
-					Image:           "test-image",
-					ImageTag:        "test-tag",
-					ImagePullPolicy: "IfNotPresent",
-				},
-			},
-		},
-		"test replicas, image, imageTag and pullPolicy from env": {
-			runtime: &datav1alpha1.VineyardRuntime{
-				Spec: datav1alpha1.VineyardRuntimeSpec{
-					Replicas: 3,
-					Worker: datav1alpha1.VineyardCompTemplateSpec{
-						Replicas:        2,
-						Image:           "test-image",
-						ImageTag:        "test-tag",
-						ImagePullPolicy: "IfNotPresent",
-					},
-				},
-			},
-			wantValue: &Vineyard{
-				Worker: Worker{
-					Image:           "image-from-env",
-					ImageTag:        "image-tag-from-env",
-					ImagePullPolicy: "IfNotPresent",
-				},
-			},
-		},
-	}
+				dataset := &datav1alpha1.Dataset{
+					Spec: datav1alpha1.DatasetSpec{},
+				}
+				runtimeInfo.SetupWithDataset(dataset)
 
-	engine := &VineyardEngine{Log: fake.NullLogger()}
-	for k, v := range testCases {
-		if strings.Contains(k, "env") {
-			_ = os.Setenv("VINEYARD_WORKER_IMAGE_ENV", "image-from-env:image-tag-from-env")
-		}
-		gotValue := &Vineyard{}
-		engine.runtimeInfo, _ = base.BuildRuntimeInfo("test", "test", "vineyard", base.WithTieredStore(v.runtime.Spec.TieredStore))
-		if err := engine.transformWorkers(v.runtime, gotValue); err == nil {
-			if gotValue.Worker.Replicas != v.wantValue.Worker.Replicas {
-				t.Errorf("check %s failure, got:%d,want:%d",
-					k,
-					gotValue.Worker.Replicas,
-					v.wantValue.Worker.Replicas,
-				)
-			}
-			if gotValue.Worker.Image != v.wantValue.Worker.Image {
-				t.Errorf("check %s failure, got:%s,want:%s",
-					k,
-					gotValue.Worker.Image,
-					v.wantValue.Worker.Image,
-				)
-			}
-			if gotValue.Worker.ImageTag != v.wantValue.Worker.ImageTag {
-				t.Errorf("check %s failure, got:%s,want:%s",
-					k,
-					gotValue.Worker.ImageTag,
-					v.wantValue.Worker.ImageTag,
-				)
-			}
-			if gotValue.Worker.ImagePullPolicy != v.wantValue.Worker.ImagePullPolicy {
-				t.Errorf("check %s failure, got:%s,want:%s",
-					k,
-					gotValue.Worker.ImagePullPolicy,
-					v.wantValue.Worker.ImagePullPolicy,
-				)
-			}
-		}
-		if strings.Contains(k, "env") {
-			_ = os.Unsetenv("VINEYARD_WORKER_IMAGE_ENV")
-		}
-	}
-}
+				s := k8sruntime.NewScheme()
+				s.AddKnownTypes(datav1alpha1.GroupVersion, vineyardRuntime)
+				err = datav1alpha1.AddToScheme(s)
+				Expect(err).NotTo(HaveOccurred())
 
-func TestTransformMasterSelector(t *testing.T) {
-	tests := []struct {
-		name     string
-		runtime  *datav1alpha1.VineyardRuntime
-		expected map[string]string
-	}{
-		{
-			name: "NoNodeSelector",
-			runtime: &datav1alpha1.VineyardRuntime{
-				Spec: datav1alpha1.VineyardRuntimeSpec{
-					Master: datav1alpha1.MasterSpec{},
-				},
-			},
-			expected: map[string]string{},
-		},
-		{
-			name: "WithNodeSelector",
-			runtime: &datav1alpha1.VineyardRuntime{
-				Spec: datav1alpha1.VineyardRuntimeSpec{
-					Master: datav1alpha1.MasterSpec{
-						VineyardCompTemplateSpec: datav1alpha1.VineyardCompTemplateSpec{
-							NodeSelector: map[string]string{"disktype": "ssd"},
-						},
-					},
-				},
-			},
-			expected: map[string]string{"disktype": "ssd"},
-		},
-	}
+				mockClient := fake.NewFakeClientWithScheme(s, vineyardRuntime)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			engine := &VineyardEngine{}
-			actual := engine.transformMasterSelector(tt.runtime)
-			if !reflect.DeepEqual(actual, tt.expected) {
-				t.Errorf("%s: expected %v, got %v", tt.name, tt.expected, actual)
-			}
+				engine := &VineyardEngine{
+					Log:         fake.NullLogger(),
+					runtimeInfo: runtimeInfo,
+					Client:      mockClient,
+					name:        transformTestName,
+					namespace:   transformTestNamespace,
+				}
+
+				value := &Vineyard{}
+				err = engine.transformWorkers(vineyardRuntime, value)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(value.Worker.Image).To(Equal("image-from-env"))
+				Expect(value.Worker.ImageTag).To(Equal("image-tag-from-env"))
+				Expect(value.Worker.ImagePullPolicy).To(Equal("IfNotPresent"))
+			})
 		})
-	}
-}
+	})
 
-func TestTransformMasterPorts(t *testing.T) {
-	tests := []struct {
-		name     string
-		runtime  *datav1alpha1.VineyardRuntime
-		expected map[string]int
-	}{
-		{
-			name: "NoMasterPorts",
-			runtime: &datav1alpha1.VineyardRuntime{
-				Spec: datav1alpha1.VineyardRuntimeSpec{
-					Master: datav1alpha1.MasterSpec{
-						VineyardCompTemplateSpec: datav1alpha1.VineyardCompTemplateSpec{
-							Ports: map[string]int{},
-						},
-					},
-				},
-			},
-			expected: map[string]int{
-				"client": 2379,
-				"peer":   2380,
-			},
-		},
-		{
-			name: "WithMasterPorts",
-			runtime: &datav1alpha1.VineyardRuntime{
-				Spec: datav1alpha1.VineyardRuntimeSpec{
-					Master: datav1alpha1.MasterSpec{
-						VineyardCompTemplateSpec: datav1alpha1.VineyardCompTemplateSpec{
-							Ports: map[string]int{
-								"client": 1234,
-								"peer":   5678,
-							},
-						},
-					},
-				},
-			},
-			expected: map[string]int{
-				"client": 1234,
-				"peer":   5678,
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			engine := &VineyardEngine{}
-			actual := engine.transformMasterPorts(tt.runtime)
-			if !reflect.DeepEqual(actual, tt.expected) {
-				t.Errorf("%s: expected %v, got %v", tt.name, tt.expected, actual)
-			}
-		})
-	}
-}
-
-func TestTransformMasterOptions(t *testing.T) {
-	tests := []struct {
-		name     string
-		runtime  *datav1alpha1.VineyardRuntime
-		expected map[string]string
-	}{
-		{
-			name: "NoMasterOptions",
-			runtime: &datav1alpha1.VineyardRuntime{
-				Spec: datav1alpha1.VineyardRuntimeSpec{
-					Master: datav1alpha1.MasterSpec{
-						VineyardCompTemplateSpec: datav1alpha1.VineyardCompTemplateSpec{
+	Describe("transformWorkerOptions", func() {
+		Context("when no options are set", func() {
+			It("should return empty map", func() {
+				runtime := &datav1alpha1.VineyardRuntime{
+					Spec: datav1alpha1.VineyardRuntimeSpec{
+						Worker: datav1alpha1.VineyardCompTemplateSpec{
 							Options: map[string]string{},
 						},
 					},
-				},
-			},
-			expected: map[string]string{
-				"vineyardd.reserve.memory": "true",
-				"etcd.prefix":              "/vineyard",
-			},
-		},
-		{
-			name: "WithMasterOptions",
-			runtime: &datav1alpha1.VineyardRuntime{
-				Spec: datav1alpha1.VineyardRuntimeSpec{
-					Master: datav1alpha1.MasterSpec{
-						VineyardCompTemplateSpec: datav1alpha1.VineyardCompTemplateSpec{
+				}
+
+				engine := &VineyardEngine{}
+				actual := engine.transformWorkerOptions(runtime)
+				Expect(actual).To(BeEmpty())
+			})
+		})
+
+		Context("when options are set", func() {
+			It("should return the specified options", func() {
+				runtime := &datav1alpha1.VineyardRuntime{
+					Spec: datav1alpha1.VineyardRuntimeSpec{
+						Worker: datav1alpha1.VineyardCompTemplateSpec{
 							Options: map[string]string{
-								"vineyardd.reserve.memory": "false",
-								"etcd.prefix":              "/vineyard-test",
+								"dummy-key": "dummy-value",
 							},
 						},
 					},
-				},
-			},
-			expected: map[string]string{
-				"vineyardd.reserve.memory": "false",
-				"etcd.prefix":              "/vineyard-test",
-			},
-		},
-	}
+				}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			engine := &VineyardEngine{}
-			actual := engine.transformMasterOptions(tt.runtime)
-			if !reflect.DeepEqual(actual, tt.expected) {
-				t.Errorf("%s: expected %v, got %v", tt.name, tt.expected, actual)
-			}
+				engine := &VineyardEngine{}
+				actual := engine.transformWorkerOptions(runtime)
+				Expect(actual).To(HaveKeyWithValue("dummy-key", "dummy-value"))
+			})
 		})
-	}
-}
+	})
 
-func TestTransformWorkerOptions(t *testing.T) {
-	tests := []struct {
-		name     string
-		runtime  *datav1alpha1.VineyardRuntime
-		expected map[string]string
-	}{
-		{
-			name: "NoWorkerOptions",
-			runtime: &datav1alpha1.VineyardRuntime{
-				Spec: datav1alpha1.VineyardRuntimeSpec{
-					Worker: datav1alpha1.VineyardCompTemplateSpec{
-						Options: map[string]string{},
-					},
-				},
-			},
-			expected: map[string]string{},
-		},
-		{
-			name: "WithWorkerOptions",
-			runtime: &datav1alpha1.VineyardRuntime{
-				Spec: datav1alpha1.VineyardRuntimeSpec{
-					Worker: datav1alpha1.VineyardCompTemplateSpec{
-						Options: map[string]string{
-							"dummy-key": "dummy-value",
+	Describe("transformFuseOptions", func() {
+		Context("when no fuse options are set", func() {
+			It("should return default options", func() {
+				runtime := &datav1alpha1.VineyardRuntime{
+					Spec: datav1alpha1.VineyardRuntimeSpec{
+						Fuse: datav1alpha1.VineyardClientSocketSpec{
+							Options: map[string]string{},
 						},
 					},
-				},
-			},
-			expected: map[string]string{
-				"dummy-key": "dummy-value",
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			engine := &VineyardEngine{}
-			actual := engine.transformWorkerOptions(tt.runtime)
-			if !reflect.DeepEqual(actual, tt.expected) {
-				t.Errorf("%s: expected %v, got %v", tt.name, tt.expected, actual)
-			}
-		})
-	}
-}
-
-func TestTransformFuseOptions(t *testing.T) {
-	tests := []struct {
-		name     string
-		runtime  *datav1alpha1.VineyardRuntime
-		value    *Vineyard
-		expected map[string]string
-	}{
-		{
-			name: "NoFuseOptions",
-			runtime: &datav1alpha1.VineyardRuntime{
-				Spec: datav1alpha1.VineyardRuntimeSpec{
-					Fuse: datav1alpha1.VineyardClientSocketSpec{
-						Options: map[string]string{},
-					},
-				},
-			},
-			value: &Vineyard{
-				FullnameOverride: "vineyard",
-				Master: Master{
-					Ports: map[string]int{
-						"client": 2379,
-					},
-				},
-			},
-			expected: map[string]string{
-				"size":          "0",
-				"etcd_endpoint": "http://vineyard-master-0.vineyard-master.default:2379",
-				"etcd_prefix":   "/vineyard",
-			},
-		},
-		{
-			name: "WithFuseOptions",
-			runtime: &datav1alpha1.VineyardRuntime{
-				Spec: datav1alpha1.VineyardRuntimeSpec{
-					Fuse: datav1alpha1.VineyardClientSocketSpec{
-						Options: map[string]string{
-							"size":           "10Gi",
-							"etcd_endpoint":  "http://vineyard-master-0.vineyard-master.default:12379",
-							"reserve_memory": "true",
-						},
-					},
-				},
-			},
-			value: &Vineyard{
-				Master: Master{
-					Ports: map[string]int{
-						"client": 12379,
-					},
-				},
-			},
-			expected: map[string]string{
-				"size":           "10Gi",
-				"etcd_endpoint":  "http://vineyard-master-0.vineyard-master.default:12379",
-				"etcd_prefix":    "/vineyard",
-				"reserve_memory": "true",
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			engine := &VineyardEngine{
-				namespace: "default",
-			}
-			actual := engine.transformFuseOptions(tt.runtime, tt.value)
-			if !reflect.DeepEqual(actual, tt.expected) {
-				t.Errorf("%s: expected %v, got %v", tt.name, tt.expected, actual)
-			}
-		})
-	}
-}
-
-func TestTransformWorkerPorts(t *testing.T) {
-	tests := []struct {
-		name     string
-		runtime  *datav1alpha1.VineyardRuntime
-		expected map[string]int
-	}{
-		{
-			name: "NoWorkerPorts",
-			runtime: &datav1alpha1.VineyardRuntime{
-				Spec: datav1alpha1.VineyardRuntimeSpec{
-					Worker: datav1alpha1.VineyardCompTemplateSpec{
-						Ports: map[string]int{},
-					},
-				},
-			},
-			expected: map[string]int{
-				"rpc":      9600,
-				"exporter": 9144,
-			},
-		},
-		{
-			name: "WithWorkerPorts",
-			runtime: &datav1alpha1.VineyardRuntime{
-				Spec: datav1alpha1.VineyardRuntimeSpec{
-					Worker: datav1alpha1.VineyardCompTemplateSpec{
+				}
+				value := &Vineyard{
+					FullnameOverride: transformTestVineyard,
+					Master: Master{
 						Ports: map[string]int{
-							"rpc":      1234,
-							"exporter": 5678,
+							"client": 2379,
 						},
 					},
-				},
-			},
-			expected: map[string]int{
-				"rpc":      1234,
-				"exporter": 5678,
-			},
-		},
-	}
+				}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			engine := &VineyardEngine{}
-			actual := engine.transformWorkerPorts(tt.runtime)
-			if !reflect.DeepEqual(actual, tt.expected) {
-				t.Errorf("%s: expected %v, got %v", tt.name, tt.expected, actual)
-			}
+				engine := &VineyardEngine{
+					namespace: "default",
+				}
+				actual := engine.transformFuseOptions(runtime, value)
+				Expect(actual).To(HaveKeyWithValue("size", "0"))
+				Expect(actual).To(HaveKeyWithValue("etcd_endpoint", "http://vineyard-master-0.vineyard-master.default:2379"))
+				Expect(actual).To(HaveKeyWithValue("etcd_prefix", "/vineyard"))
+			})
 		})
-	}
-}
 
-func TestTransformFuseNodeSelector(t *testing.T) {
-	tests := []struct {
-		name     string
-		runtime  *datav1alpha1.VineyardRuntime
-		expected map[string]string
-	}{
-		{
-			name: "NoWorkerPorts",
-			runtime: &datav1alpha1.VineyardRuntime{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "vineyard",
-					Namespace: "fluid",
-				},
-				Spec: datav1alpha1.VineyardRuntimeSpec{
-					Worker: datav1alpha1.VineyardCompTemplateSpec{
-						NodeSelector: map[string]string{},
-					},
-				},
-			},
-			expected: map[string]string{
-				"fluid.io/f-fluid-vineyard": "true",
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "vineyard")
-			if err != nil {
-				t.Errorf("fail to create the runtimeInfo with error %v", err)
-			}
-			engine := &VineyardEngine{
-				name:        "vineyard",
-				namespace:   "fluid",
-				runtimeInfo: runtimeInfo,
-			}
-			actual := engine.transformFuseNodeSelector(tt.runtime)
-			if !reflect.DeepEqual(actual, tt.expected) {
-				t.Errorf("%s: expected %v, got %v", tt.name, tt.expected, actual)
-			}
-		})
-	}
-}
-
-func TestTransformTieredStore(t *testing.T) {
-	defaultQuota := resource.MustParse("4Gi")
-	quota := resource.MustParse("20Gi")
-	tests := []struct {
-		name     string
-		runtime  *datav1alpha1.VineyardRuntime
-		expected TieredStore
-	}{
-		{
-			name: "Notieredstore",
-			runtime: &datav1alpha1.VineyardRuntime{
-				Spec: datav1alpha1.VineyardRuntimeSpec{
-					TieredStore: datav1alpha1.TieredStore{},
-				},
-			},
-			expected: TieredStore{
-				Levels: []Level{
-					{
-						MediumType: "MEM",
-						Level:      0,
-						Quota:      &defaultQuota,
-					},
-				},
-			},
-		},
-		{
-			name: "Withtieredstore",
-			runtime: &datav1alpha1.VineyardRuntime{
-				Spec: datav1alpha1.VineyardRuntimeSpec{
-					TieredStore: datav1alpha1.TieredStore{
-						Levels: []datav1alpha1.Level{
-							{
-								MediumType: "MEM",
-								Quota:      &quota,
+		Context("when fuse options are set", func() {
+			It("should return the specified options", func() {
+				runtime := &datav1alpha1.VineyardRuntime{
+					Spec: datav1alpha1.VineyardRuntimeSpec{
+						Fuse: datav1alpha1.VineyardClientSocketSpec{
+							Options: map[string]string{
+								"size":           "10Gi",
+								"etcd_endpoint":  "http://vineyard-master-0.vineyard-master.default:12379",
+								"reserve_memory": "true",
 							},
 						},
 					},
-				},
-			},
-			expected: TieredStore{
-				Levels: []Level{
-					{
-						MediumType: "MEM",
-						Level:      0,
-						Quota:      &quota,
+				}
+				value := &Vineyard{
+					Master: Master{
+						Ports: map[string]int{
+							"client": 12379,
+						},
 					},
-				},
-			},
-		},
-	}
+				}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			engine := &VineyardEngine{}
-			actual, err := engine.transformTieredStore(tt.runtime)
-			if tt.name == "Notieredstore" {
-				if err == nil {
-					t.Errorf("expected error, get nil")
+				engine := &VineyardEngine{
+					namespace: "default",
 				}
-			} else {
-				if !reflect.DeepEqual(actual, tt.expected) {
-					t.Errorf("%s: expected %v, got %v", tt.name, tt.expected, actual)
-				}
-			}
+				actual := engine.transformFuseOptions(runtime, value)
+				Expect(actual).To(HaveKeyWithValue("size", "10Gi"))
+				Expect(actual).To(HaveKeyWithValue("etcd_endpoint", "http://vineyard-master-0.vineyard-master.default:12379"))
+				Expect(actual).To(HaveKeyWithValue("etcd_prefix", "/vineyard"))
+				Expect(actual).To(HaveKeyWithValue("reserve_memory", "true"))
+			})
 		})
-	}
-}
+	})
 
-func TestVineyardEngineAllocatePorts(t *testing.T) {
-	pr := net.ParsePortRangeOrDie("14000-16000")
-	dummyPorts := func(client client.Client) (ports []int, err error) {
-		return []int{14000, 14001, 14002, 14003}, nil
-	}
-	err := portallocator.SetupRuntimePortAllocator(nil, pr, "bitmap", dummyPorts)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	type args struct {
-		runtime *datav1alpha1.VineyardRuntime
-		value   *Vineyard
-	}
-	tests := []struct {
-		name            string
-		args            args
-		wantErr         bool
-		wantMasterPorts map[string]int
-		wantWorkerPorts map[string]int
-	}{
-		{
-			name: "Expect not to allocate ports",
-			args: args{
-				runtime: &datav1alpha1.VineyardRuntime{
+	Describe("transformWorkerPorts", func() {
+		Context("when no ports are set", func() {
+			It("should return default ports", func() {
+				runtime := &datav1alpha1.VineyardRuntime{
+					Spec: datav1alpha1.VineyardRuntimeSpec{
+						Worker: datav1alpha1.VineyardCompTemplateSpec{
+							Ports: map[string]int{},
+						},
+					},
+				}
+
+				engine := &VineyardEngine{}
+				actual := engine.transformWorkerPorts(runtime)
+				Expect(actual).To(HaveKeyWithValue("rpc", 9600))
+				Expect(actual).To(HaveKeyWithValue("exporter", 9144))
+			})
+		})
+
+		Context("when ports are set", func() {
+			It("should return the specified ports", func() {
+				runtime := &datav1alpha1.VineyardRuntime{
+					Spec: datav1alpha1.VineyardRuntimeSpec{
+						Worker: datav1alpha1.VineyardCompTemplateSpec{
+							Ports: map[string]int{
+								"rpc":      1234,
+								"exporter": 5678,
+							},
+						},
+					},
+				}
+
+				engine := &VineyardEngine{}
+				actual := engine.transformWorkerPorts(runtime)
+				Expect(actual).To(HaveKeyWithValue("rpc", 1234))
+				Expect(actual).To(HaveKeyWithValue("exporter", 5678))
+			})
+		})
+	})
+
+	Describe("transformFuseNodeSelector", func() {
+		Context("when no NodeSelector is set", func() {
+			It("should return fluid label", func() {
+				runtime := &datav1alpha1.VineyardRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      transformTestVineyard,
+						Namespace: transformTestNamespace,
+					},
+					Spec: datav1alpha1.VineyardRuntimeSpec{
+						Worker: datav1alpha1.VineyardCompTemplateSpec{
+							NodeSelector: map[string]string{},
+						},
+					},
+				}
+
+				runtimeInfo, err := base.BuildRuntimeInfo(transformTestName, transformTestNamespace, transformTestVineyard)
+				Expect(err).NotTo(HaveOccurred())
+
+				engine := &VineyardEngine{
+					name:        transformTestVineyard,
+					namespace:   transformTestNamespace,
+					runtimeInfo: runtimeInfo,
+				}
+				actual := engine.transformFuseNodeSelector(runtime)
+				Expect(actual).To(Equal(map[string]string{"fluid.io/f-fluid-vineyard": "true"}))
+			})
+		})
+	})
+
+	Describe("transformTieredStore", func() {
+		Context("when no tiered store is set", func() {
+			It("should return error", func() {
+				runtime := &datav1alpha1.VineyardRuntime{
+					Spec: datav1alpha1.VineyardRuntimeSpec{
+						TieredStore: datav1alpha1.TieredStore{},
+					},
+				}
+
+				engine := &VineyardEngine{}
+				_, err := engine.transformTieredStore(runtime)
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		Context("when tiered store is set", func() {
+			It("should return the specified tiered store", func() {
+				quota := resource.MustParse("20Gi")
+				runtime := &datav1alpha1.VineyardRuntime{
+					Spec: datav1alpha1.VineyardRuntimeSpec{
+						TieredStore: datav1alpha1.TieredStore{
+							Levels: []datav1alpha1.Level{
+								{
+									MediumType: "MEM",
+									Quota:      &quota,
+								},
+							},
+						},
+					},
+				}
+
+				engine := &VineyardEngine{}
+				actual, err := engine.transformTieredStore(runtime)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(actual.Levels).To(HaveLen(1))
+				Expect(string(actual.Levels[0].MediumType)).To(Equal("MEM"))
+				Expect(actual.Levels[0].Quota.String()).To(Equal("20Gi"))
+			})
+		})
+	})
+
+	Describe("allocatePorts", func() {
+		BeforeEach(func() {
+			pr := net.ParsePortRangeOrDie("14000-16000")
+			dummyPorts := func(client client.Client) (ports []int, err error) {
+				return []int{14000, 14001, 14002, 14003}, nil
+			}
+			err := portallocator.SetupRuntimePortAllocator(nil, pr, "bitmap", dummyPorts)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		Context("when using ContainerNetwork", func() {
+			It("should not allocate ports", func() {
+				runtime := &datav1alpha1.VineyardRuntime{
 					Spec: datav1alpha1.VineyardRuntimeSpec{
 						Master: datav1alpha1.MasterSpec{
 							VineyardCompTemplateSpec: datav1alpha1.VineyardCompTemplateSpec{
@@ -748,8 +668,8 @@ func TestVineyardEngineAllocatePorts(t *testing.T) {
 							NetworkMode: "ContainerNetwork",
 						},
 					},
-				},
-				value: &Vineyard{
+				}
+				value := &Vineyard{
 					Master: Master{
 						Ports: map[string]int{
 							MasterClientName: MasterClientPort,
@@ -762,22 +682,21 @@ func TestVineyardEngineAllocatePorts(t *testing.T) {
 							WorkerExporterName: WorkerExporterPort,
 						},
 					},
-				},
-			},
-			wantErr: false,
-			wantMasterPorts: map[string]int{
-				MasterClientName: MasterClientPort,
-				MasterPeerName:   MasterPeerPort,
-			},
-			wantWorkerPorts: map[string]int{
-				WorkerRPCName:      WorkerRPCPort,
-				WorkerExporterName: WorkerExporterPort,
-			},
-		},
-		{
-			name: "Expect to allocate ports",
-			args: args{
-				runtime: &datav1alpha1.VineyardRuntime{
+				}
+
+				engine := &VineyardEngine{}
+				err := engine.allocatePorts(value, runtime)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(value.Master.Ports).To(HaveKeyWithValue(MasterClientName, MasterClientPort))
+				Expect(value.Master.Ports).To(HaveKeyWithValue(MasterPeerName, MasterPeerPort))
+				Expect(value.Worker.Ports).To(HaveKeyWithValue(WorkerRPCName, WorkerRPCPort))
+				Expect(value.Worker.Ports).To(HaveKeyWithValue(WorkerExporterName, WorkerExporterPort))
+			})
+		})
+
+		Context("when using HostNetwork", func() {
+			It("should allocate ports within range", func() {
+				runtime := &datav1alpha1.VineyardRuntime{
 					Spec: datav1alpha1.VineyardRuntimeSpec{
 						Master: datav1alpha1.MasterSpec{
 							VineyardCompTemplateSpec: datav1alpha1.VineyardCompTemplateSpec{
@@ -788,8 +707,8 @@ func TestVineyardEngineAllocatePorts(t *testing.T) {
 							NetworkMode: "HostNetwork",
 						},
 					},
-				},
-				value: &Vineyard{
+				}
+				value := &Vineyard{
 					Master: Master{
 						Ports: map[string]int{
 							MasterClientName: MasterClientPort,
@@ -802,141 +721,86 @@ func TestVineyardEngineAllocatePorts(t *testing.T) {
 							WorkerExporterName: WorkerExporterPort,
 						},
 					},
-				},
-			},
-			wantErr: false,
-			wantMasterPorts: map[string]int{
-				MasterClientName: MasterClientPort,
-				MasterPeerName:   MasterPeerPort,
-			},
-			wantWorkerPorts: map[string]int{
-				WorkerRPCName:      WorkerRPCPort,
-				WorkerExporterName: WorkerExporterPort,
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			v := &VineyardEngine{}
-			if err := v.allocatePorts(tt.args.value, tt.args.runtime); (err != nil) != tt.wantErr {
-				t.Errorf("allocatePorts() error = %v, wantErr %v", err, tt.wantErr)
-			}
-			if strings.Contains(tt.name, "Expect not to allocate ports") {
-				if !reflect.DeepEqual(tt.wantMasterPorts, tt.args.value.Master.Ports) {
-					t.Errorf("allocatePorts() got master ports = %v, want %v", tt.args.value.Master.Ports, tt.wantMasterPorts)
 				}
-				if !reflect.DeepEqual(tt.wantWorkerPorts, tt.args.value.Worker.Ports) {
-					t.Errorf("allocatePorts() got worker ports = %v, want %v", tt.args.value.Worker.Ports, tt.wantWorkerPorts)
-				}
-			} else {
-				if len(tt.args.value.Master.Ports) != 2 {
-					t.Errorf("allocatePorts() got master ports = %v, want 2", len(tt.args.value.Master.Ports))
-				}
-				if len(tt.args.value.Worker.Ports) != 2 {
-					t.Errorf("allocatePorts() got worker ports = %v, want 2", len(tt.args.value.Worker.Ports))
-				}
-				if tt.args.value.Master.Ports[MasterClientName] < 14000 || tt.args.value.Master.Ports[MasterClientName] > 16000 {
-					t.Errorf("allocatePorts() got master client port = %v, want between 14000 and 16000", tt.args.value.Master.Ports[MasterClientName])
-				}
-				if tt.args.value.Master.Ports[MasterPeerName] < 14000 || tt.args.value.Master.Ports[MasterPeerName] > 16000 {
-					t.Errorf("allocatePorts() got master peer port = %v, want between 14000 and 16000", tt.args.value.Master.Ports[MasterPeerName])
-				}
-				if tt.args.value.Worker.Ports[WorkerRPCName] < 14000 || tt.args.value.Worker.Ports[WorkerRPCName] > 16000 {
-					t.Errorf("allocatePorts() got worker rpc port = %v, want between 14000 and 16000", tt.args.value.Worker.Ports[WorkerRPCName])
-				}
-				if tt.args.value.Worker.Ports[WorkerExporterName] < 14000 || tt.args.value.Worker.Ports[WorkerExporterName] > 16000 {
-					t.Errorf("allocatePorts() got worker exporter port = %v, want between 14000 and 16000", tt.args.value.Worker.Ports[WorkerExporterName])
-				}
-			}
+
+				engine := &VineyardEngine{}
+				err := engine.allocatePorts(value, runtime)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(len(value.Master.Ports)).To(Equal(2))
+				Expect(len(value.Worker.Ports)).To(Equal(2))
+				Expect(value.Master.Ports[MasterClientName]).To(BeNumerically(">=", 14000))
+				Expect(value.Master.Ports[MasterClientName]).To(BeNumerically("<=", 16000))
+				Expect(value.Master.Ports[MasterPeerName]).To(BeNumerically(">=", 14000))
+				Expect(value.Master.Ports[MasterPeerName]).To(BeNumerically("<=", 16000))
+				Expect(value.Worker.Ports[WorkerRPCName]).To(BeNumerically(">=", 14000))
+				Expect(value.Worker.Ports[WorkerRPCName]).To(BeNumerically("<=", 16000))
+				Expect(value.Worker.Ports[WorkerExporterName]).To(BeNumerically(">=", 14000))
+				Expect(value.Worker.Ports[WorkerExporterName]).To(BeNumerically("<=", 16000))
+			})
 		})
-	}
-}
+	})
 
-func TestVineyardEngineTransformPodMetadata(t *testing.T) {
-	engine := &VineyardEngine{Log: fake.NullLogger()}
-
-	type testCase struct {
-		Name    string
-		Runtime *datav1alpha1.VineyardRuntime
-		Value   *Vineyard
-
-		wantValue *Vineyard
-	}
-
-	testCases := []testCase{
-		{
-			Name: "set_common_labels_and_annotations",
-			Runtime: &datav1alpha1.VineyardRuntime{
-				Spec: datav1alpha1.VineyardRuntimeSpec{
-					PodMetadata: datav1alpha1.PodMetadata{
-						Labels:      map[string]string{"common-key": "common-value"},
-						Annotations: map[string]string{"common-annotation": "val"},
+	Describe("transformPodMetadata", func() {
+		Context("when setting common labels and annotations", func() {
+			It("should apply to all components", func() {
+				runtime := &datav1alpha1.VineyardRuntime{
+					Spec: datav1alpha1.VineyardRuntimeSpec{
+						PodMetadata: datav1alpha1.PodMetadata{
+							Labels:      map[string]string{"common-key": "common-value"},
+							Annotations: map[string]string{"common-annotation": "val"},
+						},
 					},
-				},
-			},
-			Value: &Vineyard{},
-			wantValue: &Vineyard{
-				Master: Master{
-					Labels:      map[string]string{"common-key": "common-value"},
-					Annotations: map[string]string{"common-annotation": "val"},
-				},
-				Worker: Worker{
-					Labels:      map[string]string{"common-key": "common-value"},
-					Annotations: map[string]string{"common-annotation": "val"},
-				},
-				Fuse: Fuse{
-					Labels:      map[string]string{"common-key": "common-value"},
-					Annotations: map[string]string{"common-annotation": "val"},
-				},
-			},
-		},
-		{
-			Name: "set_master_and_workers_labels_and_annotations",
-			Runtime: &datav1alpha1.VineyardRuntime{
-				Spec: datav1alpha1.VineyardRuntimeSpec{
-					PodMetadata: datav1alpha1.PodMetadata{
-						Labels:      map[string]string{"common-key": "common-value"},
-						Annotations: map[string]string{"common-annotation": "val"},
-					},
-					Master: datav1alpha1.MasterSpec{
-						VineyardCompTemplateSpec: datav1alpha1.VineyardCompTemplateSpec{
+				}
+				value := &Vineyard{}
+
+				engine := &VineyardEngine{Log: fake.NullLogger()}
+				engine.transformPodMetadata(runtime, value)
+
+				Expect(value.Master.Labels).To(HaveKeyWithValue("common-key", "common-value"))
+				Expect(value.Master.Annotations).To(HaveKeyWithValue("common-annotation", "val"))
+				Expect(value.Worker.Labels).To(HaveKeyWithValue("common-key", "common-value"))
+				Expect(value.Worker.Annotations).To(HaveKeyWithValue("common-annotation", "val"))
+				Expect(value.Fuse.Labels).To(HaveKeyWithValue("common-key", "common-value"))
+				Expect(value.Fuse.Annotations).To(HaveKeyWithValue("common-annotation", "val"))
+			})
+		})
+
+		Context("when setting component-specific labels and annotations", func() {
+			It("should override common values", func() {
+				runtime := &datav1alpha1.VineyardRuntime{
+					Spec: datav1alpha1.VineyardRuntimeSpec{
+						PodMetadata: datav1alpha1.PodMetadata{
+							Labels:      map[string]string{"common-key": "common-value"},
+							Annotations: map[string]string{"common-annotation": "val"},
+						},
+						Master: datav1alpha1.MasterSpec{
+							VineyardCompTemplateSpec: datav1alpha1.VineyardCompTemplateSpec{
+								PodMetadata: datav1alpha1.PodMetadata{
+									Labels:      map[string]string{"common-key": "master-value"},
+									Annotations: map[string]string{"common-annotation": "master-val"},
+								},
+							},
+						},
+						Worker: datav1alpha1.VineyardCompTemplateSpec{
 							PodMetadata: datav1alpha1.PodMetadata{
-								Labels:      map[string]string{"common-key": "master-value"},
-								Annotations: map[string]string{"common-annotation": "master-val"},
+								Labels:      map[string]string{"common-key": "worker-value"},
+								Annotations: map[string]string{"common-annotation": "worker-val"},
 							},
 						},
 					},
-					Worker: datav1alpha1.VineyardCompTemplateSpec{
-						PodMetadata: datav1alpha1.PodMetadata{
-							Labels:      map[string]string{"common-key": "worker-value"},
-							Annotations: map[string]string{"common-annotation": "worker-val"},
-						},
-					},
-				},
-			},
-			Value: &Vineyard{},
-			wantValue: &Vineyard{
-				Master: Master{
-					Labels:      map[string]string{"common-key": "master-value"},
-					Annotations: map[string]string{"common-annotation": "master-val"},
-				},
-				Worker: Worker{
-					Labels:      map[string]string{"common-key": "worker-value"},
-					Annotations: map[string]string{"common-annotation": "worker-val"},
-				},
-				Fuse: Fuse{
-					Labels:      map[string]string{"common-key": "common-value"},
-					Annotations: map[string]string{"common-annotation": "val"},
-				},
-			},
-		},
-	}
+				}
+				value := &Vineyard{}
 
-	for _, tt := range testCases {
-		engine.transformPodMetadata(tt.Runtime, tt.Value)
+				engine := &VineyardEngine{Log: fake.NullLogger()}
+				engine.transformPodMetadata(runtime, value)
 
-		if !reflect.DeepEqual(tt.Value, tt.wantValue) {
-			t.Fatalf("test name: %s. Expect value %v, but got %v", tt.Name, tt.wantValue, tt.Value)
-		}
-	}
-}
+				Expect(value.Master.Labels).To(HaveKeyWithValue("common-key", "master-value"))
+				Expect(value.Master.Annotations).To(HaveKeyWithValue("common-annotation", "master-val"))
+				Expect(value.Worker.Labels).To(HaveKeyWithValue("common-key", "worker-value"))
+				Expect(value.Worker.Annotations).To(HaveKeyWithValue("common-annotation", "worker-val"))
+				Expect(value.Fuse.Labels).To(HaveKeyWithValue("common-key", "common-value"))
+				Expect(value.Fuse.Annotations).To(HaveKeyWithValue("common-annotation", "val"))
+			})
+		})
+	})
+})

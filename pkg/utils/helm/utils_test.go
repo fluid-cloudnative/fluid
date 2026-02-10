@@ -23,340 +23,509 @@ import (
 	"testing"
 
 	"github.com/agiledragon/gomonkey/v2"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-func TestInstallRelease(t *testing.T) {
-	LookPathCommon := func(file string) (string, error) {
-		return "test-path", nil
-	}
-	LookPathErr := func(file string) (string, error) {
-		return "", errors.New("fail to run the command")
-	}
-	StatCommon := func(name string) (os.FileInfo, error) {
-		return nil, nil
-	}
-	StatErr := func(name string) (os.FileInfo, error) {
-		return nil, errors.New("fail to run the command")
-	}
-	CombinedOutputCommon := func(cmd *exec.Cmd) ([]byte, error) {
-		return []byte("test-output"), nil
-	}
-	CombinedOutputErr := func(cmd *exec.Cmd) ([]byte, error) {
-		return nil, errors.New("fail to run the command")
-	}
-
-	lookPathPatch := gomonkey.ApplyFunc(exec.LookPath, LookPathErr)
-	err := InstallRelease("fluid", "default", "testValueFile", "testChartName")
-	if err == nil {
-		t.Errorf("fail to catch the error")
-	}
-	lookPathPatch.Reset()
-
-	lookPathPatch.ApplyFunc(exec.LookPath, LookPathCommon)
-	statPatch := gomonkey.ApplyFunc(os.Stat, StatErr)
-	err = InstallRelease("fluid", "default", "testValueFile", "/chart/fluid")
-	if err == nil {
-		t.Errorf("fail to catch the error")
-	}
-	statPatch.Reset()
-
-	statPatch.ApplyFunc(os.Stat, StatCommon)
-	combineOutputPatch := gomonkey.ApplyMethod((*exec.Cmd)(nil), "CombinedOutput", CombinedOutputErr)
-	err = InstallRelease("fluid", "default", "testValueFile", "/chart/fluid")
-	if err == nil {
-		t.Errorf("fail to catch the error")
-	}
-	combineOutputPatch.Reset()
-
-	badValue := "test$bad"
-	err = InstallRelease("fluid", badValue, "testValueFile", "/chart/fluid")
-	if err == nil {
-		t.Errorf("fail to catch the error of %s", badValue)
-	}
-
-	combineOutputPatch.ApplyMethod((*exec.Cmd)(nil), "CombinedOutput", CombinedOutputCommon)
-	err = InstallRelease("fluid", "default", "testValueFile", "/chart/fluid")
-	if err != nil {
-		t.Errorf("fail to exec the function")
-	}
-	combineOutputPatch.Reset()
-	lookPathPatch.Reset()
-	statPatch.Reset()
+func TestHelm(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Helm Suite")
 }
 
-func TestCheckRelease(t *testing.T) {
-	LookPathCommon := func(file string) (string, error) {
-		return "test-path", nil
-	}
-	LookPathErr := func(file string) (string, error) {
-		return "", errors.New("fail to run the command")
-	}
-	StartErr := func(cmd *exec.Cmd) error {
-		return errors.New("fail to run the command")
-	}
-	StartCommon := func(cmd *exec.Cmd) error {
-		return nil
-	}
-	WaitErr := func(cmd *exec.Cmd) error {
-		return errors.New("fail to run the command")
-	}
+var _ = Describe("Helm", func() {
+	Describe("InstallRelease", func() {
+		var (
+			lookPathPatch      *gomonkey.Patches
+			statPatch          *gomonkey.Patches
+			combineOutputPatch *gomonkey.Patches
+		)
 
-	lookupPatch := gomonkey.ApplyFunc(exec.LookPath, LookPathErr)
-	_, err := CheckRelease("fluid", "default")
-	if err == nil {
-		t.Errorf("fail to catch the error")
-	}
-	lookupPatch.Reset()
+		AfterEach(func() {
+			if lookPathPatch != nil {
+				lookPathPatch.Reset()
+			}
+			if statPatch != nil {
+				statPatch.Reset()
+			}
+			if combineOutputPatch != nil {
+				combineOutputPatch.Reset()
+			}
+		})
 
-	lookupPatch.ApplyFunc(exec.LookPath, LookPathCommon)
-	startPatch := gomonkey.ApplyMethod((*exec.Cmd)(nil), "Start", StartErr)
-	_, err = CheckRelease("fluid", "default")
-	if err == nil {
-		t.Errorf("fail to catch the error")
-	}
-	startPatch.Reset()
+		Context("when LookPath fails", func() {
+			It("should return an error", func() {
+				lookPathPatch = gomonkey.ApplyFunc(exec.LookPath, func(file string) (string, error) {
+					return "", errors.New("fail to run the command")
+				})
 
-	badValue := "test$bad"
-	_, err = CheckRelease("fluid", badValue)
-	if err == nil {
-		t.Errorf("fail to catch the error of %s", badValue)
-	}
+				err := InstallRelease("fluid", "default", "testValueFile", "testChartName")
+				Expect(err).To(HaveOccurred())
+			})
+		})
 
-	startPatch.ApplyMethod((*exec.Cmd)(nil), "Start", StartCommon)
-	waitPatch := gomonkey.ApplyMethod((*exec.Cmd)(nil), "Wait", WaitErr)
-	_, err = CheckRelease("fluid", "default")
-	if err == nil {
-		t.Errorf("fail to catch the error")
-	}
-	waitPatch.Reset()
-	startPatch.Reset()
-	lookupPatch.Reset()
-}
+		Context("when chart file does not exist", func() {
+			It("should return an error", func() {
+				lookPathPatch = gomonkey.ApplyFunc(exec.LookPath, func(file string) (string, error) {
+					return "test-path", nil
+				})
+				statPatch = gomonkey.ApplyFunc(os.Stat, func(name string) (os.FileInfo, error) {
+					return nil, errors.New("fail to run the command")
+				})
 
-func TestDeleteRelease(t *testing.T) {
-	LookPathCommon := func(file string) (string, error) {
-		return "test-path", nil
-	}
-	LookPathErr := func(file string) (string, error) {
-		return "", errors.New("fail to run the command")
-	}
-	OutputCommon := func(cmd *exec.Cmd) ([]byte, error) {
-		return []byte("fluid:v0.6.0"), nil
-	}
-	OutputErr := func(cmd *exec.Cmd) ([]byte, error) {
-		return nil, errors.New("fail to run the command")
-	}
+				err := InstallRelease("fluid", "default", "testValueFile", "/chart/fluid")
+				Expect(err).To(HaveOccurred())
+			})
+		})
 
-	lookPathPatch := gomonkey.ApplyFunc(exec.LookPath, LookPathErr)
-	err := DeleteRelease("fluid", "default")
-	if err == nil {
-		t.Errorf("fail to catch the error")
-	}
-	lookPathPatch.Reset()
+		Context("when CombinedOutput fails", func() {
+			It("should return an error", func() {
+				lookPathPatch = gomonkey.ApplyFunc(exec.LookPath, func(file string) (string, error) {
+					return "test-path", nil
+				})
+				statPatch = gomonkey.ApplyFunc(os.Stat, func(name string) (os.FileInfo, error) {
+					return nil, nil
+				})
+				combineOutputPatch = gomonkey.ApplyMethod((*exec.Cmd)(nil), "CombinedOutput", func(cmd *exec.Cmd) ([]byte, error) {
+					return nil, errors.New("fail to run the command")
+				})
 
-	lookPathPatch.ApplyFunc(exec.LookPath, LookPathCommon)
-	outputPatch := gomonkey.ApplyMethod((*exec.Cmd)(nil), "Output", OutputErr)
-	err = DeleteRelease("fluid", "default")
-	if err == nil {
-		t.Errorf("fail to catch the error")
-	}
-	outputPatch.Reset()
-	// test check illegal arguements
-	badValue := "test$bad"
-	err = DeleteRelease("fluid", badValue)
-	if err == nil {
-		t.Errorf("fail to catch the error of %s", badValue)
-	}
+				err := InstallRelease("fluid", "default", "testValueFile", "/chart/fluid")
+				Expect(err).To(HaveOccurred())
+			})
+		})
 
-	outputPatch.ApplyMethod((*exec.Cmd)(nil), "Output", OutputCommon)
-	err = DeleteRelease("fluid", "default")
-	if err != nil {
-		t.Errorf("fail to exec the function")
-	}
-	outputPatch.Reset()
-	lookPathPatch.Reset()
-}
+		Context("when namespace contains invalid characters", func() {
+			It("should return an error", func() {
+				lookPathPatch = gomonkey.ApplyFunc(exec.LookPath, func(file string) (string, error) {
+					return "test-path", nil
+				})
+				statPatch = gomonkey.ApplyFunc(os.Stat, func(name string) (os.FileInfo, error) {
+					return nil, nil
+				})
 
-func TestListReleases(t *testing.T) {
-	LookPathCommon := func(file string) (string, error) {
-		return "test-path", nil
-	}
-	LookPathErr := func(file string) (string, error) {
-		return "", errors.New("fail to run the command")
-	}
-	OutputCommon := func(cmd *exec.Cmd) ([]byte, error) {
-		return []byte("fluid:v0.6.0\nfluid:v0.5.0"), nil
-	}
-	OutputErr := func(cmd *exec.Cmd) ([]byte, error) {
-		return nil, errors.New("fail to run the command")
-	}
+				badValue := "test$bad"
+				err := InstallRelease("fluid", badValue, "testValueFile", "/chart/fluid")
+				Expect(err).To(HaveOccurred())
+			})
+		})
 
-	lookPathPatch := gomonkey.ApplyFunc(exec.LookPath, LookPathErr)
-	_, err := ListReleases("default")
-	if err == nil {
-		t.Errorf("fail to catch the error")
-	}
-	lookPathPatch.Reset()
+		Context("when all conditions are met", func() {
+			It("should install release successfully", func() {
+				lookPathPatch = gomonkey.ApplyFunc(exec.LookPath, func(file string) (string, error) {
+					return "test-path", nil
+				})
+				statPatch = gomonkey.ApplyFunc(os.Stat, func(name string) (os.FileInfo, error) {
+					return nil, nil
+				})
+				combineOutputPatch = gomonkey.ApplyMethod((*exec.Cmd)(nil), "CombinedOutput", func(cmd *exec.Cmd) ([]byte, error) {
+					return []byte("test-output"), nil
+				})
 
-	lookPathPatch.ApplyFunc(exec.LookPath, LookPathCommon)
-	outputPatch := gomonkey.ApplyMethod((*exec.Cmd)(nil), "Output", OutputErr)
-	_, err = ListReleases("default")
-	if err == nil {
-		t.Errorf("fail to catch the error")
-	}
-	outputPatch.Reset()
+				err := InstallRelease("fluid", "default", "testValueFile", "/chart/fluid")
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+	})
 
-	outputPatch.ApplyMethod((*exec.Cmd)(nil), "Output", OutputCommon)
-	release, err := ListReleases("default")
-	if err != nil {
-		t.Errorf("fail to exec the function")
-	}
-	if len(release) != 2 {
-		t.Errorf("fail to exec the function ListRelease")
-	}
-	outputPatch.Reset()
+	Describe("CheckRelease", func() {
+		var (
+			lookupPatch *gomonkey.Patches
+			startPatch  *gomonkey.Patches
+			waitPatch   *gomonkey.Patches
+		)
 
-	_, err = ListReleases("def$ault")
-	if err == nil {
-		t.Errorf("fail to catch the error")
-	}
-	lookPathPatch.Reset()
-}
+		AfterEach(func() {
+			if lookupPatch != nil {
+				lookupPatch.Reset()
+			}
+			if startPatch != nil {
+				startPatch.Reset()
+			}
+			if waitPatch != nil {
+				waitPatch.Reset()
+			}
+		})
 
-func TestListReleaseMap(t *testing.T) {
-	LookPathCommon := func(file string) (string, error) {
-		return "test-path", nil
-	}
-	LookPathErr := func(file string) (string, error) {
-		return "", errors.New("fail to run the command")
-	}
-	OutputCommon := func(cmd *exec.Cmd) ([]byte, error) {
-		return []byte("fluid v0.6.0\nspark v0.5.0"), nil
-	}
-	OutputErr := func(cmd *exec.Cmd) ([]byte, error) {
-		return nil, errors.New("fail to run the command")
-	}
+		Context("when LookPath fails", func() {
+			It("should return an error", func() {
+				lookupPatch = gomonkey.ApplyFunc(exec.LookPath, func(file string) (string, error) {
+					return "", errors.New("fail to run the command")
+				})
 
-	lookPathPatch := gomonkey.ApplyFunc(exec.LookPath, LookPathErr)
-	_, err := ListReleaseMap("default")
-	if err == nil {
-		t.Errorf("fail to catch the error")
-	}
-	lookPathPatch.Reset()
+				_, err := CheckRelease("fluid", "default")
+				Expect(err).To(HaveOccurred())
+			})
+		})
 
-	lookPathPatch.ApplyFunc(exec.LookPath, LookPathCommon)
-	outputPatch := gomonkey.ApplyMethod((*exec.Cmd)(nil), "Output", OutputErr)
-	_, err = ListReleaseMap("default")
-	if err == nil {
-		t.Errorf("fail to catch the error")
-	}
-	outputPatch.Reset()
+		Context("when Start fails", func() {
+			It("should return an error", func() {
+				lookupPatch = gomonkey.ApplyFunc(exec.LookPath, func(file string) (string, error) {
+					return "test-path", nil
+				})
+				startPatch = gomonkey.ApplyMethod((*exec.Cmd)(nil), "Start", func(cmd *exec.Cmd) error {
+					return errors.New("fail to run the command")
+				})
 
-	outputPatch.ApplyMethod((*exec.Cmd)(nil), "Output", OutputCommon)
-	release, err := ListReleaseMap("default")
-	if err != nil {
-		t.Errorf("fail to exec the function")
-	}
-	if len(release) != 2 {
-		t.Errorf("fail to split the strout")
-	}
-	outputPatch.Reset()
+				_, err := CheckRelease("fluid", "default")
+				Expect(err).To(HaveOccurred())
+			})
+		})
 
-	_, err = ListReleaseMap("def$ault")
-	if err == nil {
-		t.Errorf("fail to catch the error")
-	}
-	lookPathPatch.Reset()
-}
+		Context("when namespace contains invalid characters", func() {
+			It("should return an error", func() {
+				lookupPatch = gomonkey.ApplyFunc(exec.LookPath, func(file string) (string, error) {
+					return "test-path", nil
+				})
 
-func TestListAllReleasesWithDetail(t *testing.T) {
-	LookPathCommon := func(file string) (string, error) {
-		return "test-path", nil
-	}
-	LookPathErr := func(file string) (string, error) {
-		return "", errors.New("fail to run the command")
-	}
-	OutputCommon := func(cmd *exec.Cmd) ([]byte, error) {
-		return []byte("fluid default 1 2021-07-19 16:20:16.166658248 +0800 CST deployed fluid-0.6.0 0.6.0-3c06c0e\nspark default 2 2021-07-19 16:20:16.166658248 +0800 CST deployed spark-0.3.0 0.3.0-3c06c0e"), nil
-	}
-	OutputErr := func(cmd *exec.Cmd) ([]byte, error) {
-		return nil, errors.New("fail to run the command")
-	}
+				badValue := "test$bad"
+				_, err := CheckRelease("fluid", badValue)
+				Expect(err).To(HaveOccurred())
+			})
+		})
 
-	lookPathPatch := gomonkey.ApplyFunc(exec.LookPath, LookPathErr)
-	_, err := ListAllReleasesWithDetail("default")
-	if err == nil {
-		t.Errorf("fail to catch the error")
-	}
-	lookPathPatch.Reset()
+		Context("when Wait fails", func() {
+			It("should return an error", func() {
+				lookupPatch = gomonkey.ApplyFunc(exec.LookPath, func(file string) (string, error) {
+					return "test-path", nil
+				})
+				startPatch = gomonkey.ApplyMethod((*exec.Cmd)(nil), "Start", func(cmd *exec.Cmd) error {
+					return nil
+				})
+				waitPatch = gomonkey.ApplyMethod((*exec.Cmd)(nil), "Wait", func(cmd *exec.Cmd) error {
+					return errors.New("fail to run the command")
+				})
 
-	lookPathPatch.ApplyFunc(exec.LookPath, LookPathCommon)
-	outputPatch := gomonkey.ApplyMethod((*exec.Cmd)(nil), "Output", OutputErr)
-	_, err = ListAllReleasesWithDetail("default")
-	if err == nil {
-		t.Errorf("fail to catch the error")
-	}
-	outputPatch.Reset()
+				_, err := CheckRelease("fluid", "default")
+				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
 
-	outputPatch.ApplyMethod((*exec.Cmd)(nil), "Output", OutputCommon)
-	release, err := ListAllReleasesWithDetail("default")
-	if err != nil {
-		t.Errorf("fail to exec the function")
-	}
-	if len(release) != 2 {
-		t.Errorf("fail to split the strout")
-	}
-	outputPatch.Reset()
+	Describe("DeleteRelease", func() {
+		var (
+			lookPathPatch *gomonkey.Patches
+			outputPatch   *gomonkey.Patches
+		)
 
-	_, err = ListAllReleasesWithDetail("def$ault")
-	if err == nil {
-		t.Errorf("fail to catch the error")
-	}
-	lookPathPatch.Reset()
-}
+		AfterEach(func() {
+			if lookPathPatch != nil {
+				lookPathPatch.Reset()
+			}
+			if outputPatch != nil {
+				outputPatch.Reset()
+			}
+		})
 
-func TestDeleteReleaseIfExists(t *testing.T) {
-	CheckReleaseCommonTrue := func(name, namespace string) (exist bool, err error) {
-		return true, nil
-	}
-	CheckReleaseCommonFalse := func(name, namespace string) (exist bool, err error) {
-		return false, nil
-	}
-	CheckReleaseErr := func(name, namespace string) (exist bool, err error) {
-		return false, errors.New("fail to run the command")
-	}
-	DeleteReleaseCommon := func(name, namespace string) (err error) {
-		return nil
-	}
-	DeleteReleaseErr := func(name, namespace string) (err error) {
-		return errors.New("fail to run the command")
-	}
+		Context("when LookPath fails", func() {
+			It("should return an error", func() {
+				lookPathPatch = gomonkey.ApplyFunc(exec.LookPath, func(file string) (string, error) {
+					return "", errors.New("fail to run the command")
+				})
 
-	patches := gomonkey.ApplyFunc(CheckRelease, CheckReleaseErr)
-	err := DeleteReleaseIfExists("fluid", "default")
-	if err == nil {
-		t.Errorf("fail to catch the error")
-	}
-	patches.Reset()
+				err := DeleteRelease("fluid", "default")
+				Expect(err).To(HaveOccurred())
+			})
+		})
 
-	patches.ApplyFunc(CheckRelease, CheckReleaseCommonFalse)
-	err = DeleteReleaseIfExists("fluid", "default")
-	if err != nil {
-		t.Errorf("fail to exec the function")
-	}
-	patches.Reset()
+		Context("when Output fails", func() {
+			It("should return an error", func() {
+				lookPathPatch = gomonkey.ApplyFunc(exec.LookPath, func(file string) (string, error) {
+					return "test-path", nil
+				})
+				outputPatch = gomonkey.ApplyMethod((*exec.Cmd)(nil), "Output", func(cmd *exec.Cmd) ([]byte, error) {
+					return nil, errors.New("fail to run the command")
+				})
 
-	patches.ApplyFunc(CheckRelease, CheckReleaseCommonTrue)
-	patches.ApplyFunc(DeleteRelease, DeleteReleaseErr)
-	err = DeleteReleaseIfExists("fluid", "default")
-	if err == nil {
-		t.Errorf("fail to catch the error")
-	}
+				err := DeleteRelease("fluid", "default")
+				Expect(err).To(HaveOccurred())
+			})
+		})
 
-	patches.ApplyFunc(DeleteRelease, DeleteReleaseCommon)
-	err = DeleteReleaseIfExists("fluid", "default")
-	if err != nil {
-		t.Errorf("fail to catch the error")
-	}
-	patches.Reset()
-}
+		Context("when namespace contains invalid characters", func() {
+			It("should return an error", func() {
+				lookPathPatch = gomonkey.ApplyFunc(exec.LookPath, func(file string) (string, error) {
+					return "test-path", nil
+				})
+
+				badValue := "test$bad"
+				err := DeleteRelease("fluid", badValue)
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		Context("when all conditions are met", func() {
+			It("should delete release successfully", func() {
+				lookPathPatch = gomonkey.ApplyFunc(exec.LookPath, func(file string) (string, error) {
+					return "test-path", nil
+				})
+				outputPatch = gomonkey.ApplyMethod((*exec.Cmd)(nil), "Output", func(cmd *exec.Cmd) ([]byte, error) {
+					return []byte("fluid:v0.6.0"), nil
+				})
+
+				err := DeleteRelease("fluid", "default")
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+	})
+
+	Describe("ListReleases", func() {
+		var (
+			lookPathPatch *gomonkey.Patches
+			outputPatch   *gomonkey.Patches
+		)
+
+		AfterEach(func() {
+			if lookPathPatch != nil {
+				lookPathPatch.Reset()
+			}
+			if outputPatch != nil {
+				outputPatch.Reset()
+			}
+		})
+
+		Context("when LookPath fails", func() {
+			It("should return an error", func() {
+				lookPathPatch = gomonkey.ApplyFunc(exec.LookPath, func(file string) (string, error) {
+					return "", errors.New("fail to run the command")
+				})
+
+				_, err := ListReleases("default")
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		Context("when Output fails", func() {
+			It("should return an error", func() {
+				lookPathPatch = gomonkey.ApplyFunc(exec.LookPath, func(file string) (string, error) {
+					return "test-path", nil
+				})
+				outputPatch = gomonkey.ApplyMethod((*exec.Cmd)(nil), "Output", func(cmd *exec.Cmd) ([]byte, error) {
+					return nil, errors.New("fail to run the command")
+				})
+
+				_, err := ListReleases("default")
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		Context("when namespace contains invalid characters", func() {
+			It("should return an error", func() {
+				lookPathPatch = gomonkey.ApplyFunc(exec.LookPath, func(file string) (string, error) {
+					return "test-path", nil
+				})
+
+				_, err := ListReleases("def$ault")
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		Context("when all conditions are met", func() {
+			It("should list releases successfully", func() {
+				lookPathPatch = gomonkey.ApplyFunc(exec.LookPath, func(file string) (string, error) {
+					return "test-path", nil
+				})
+				outputPatch = gomonkey.ApplyMethod((*exec.Cmd)(nil), "Output", func(cmd *exec.Cmd) ([]byte, error) {
+					return []byte("fluid:v0.6.0\nfluid:v0.5.0"), nil
+				})
+
+				release, err := ListReleases("default")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(release).To(HaveLen(2))
+			})
+		})
+	})
+
+	Describe("ListReleaseMap", func() {
+		var (
+			lookPathPatch *gomonkey.Patches
+			outputPatch   *gomonkey.Patches
+		)
+
+		AfterEach(func() {
+			if lookPathPatch != nil {
+				lookPathPatch.Reset()
+			}
+			if outputPatch != nil {
+				outputPatch.Reset()
+			}
+		})
+
+		Context("when LookPath fails", func() {
+			It("should return an error", func() {
+				lookPathPatch = gomonkey.ApplyFunc(exec.LookPath, func(file string) (string, error) {
+					return "", errors.New("fail to run the command")
+				})
+
+				_, err := ListReleaseMap("default")
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		Context("when Output fails", func() {
+			It("should return an error", func() {
+				lookPathPatch = gomonkey.ApplyFunc(exec.LookPath, func(file string) (string, error) {
+					return "test-path", nil
+				})
+				outputPatch = gomonkey.ApplyMethod((*exec.Cmd)(nil), "Output", func(cmd *exec.Cmd) ([]byte, error) {
+					return nil, errors.New("fail to run the command")
+				})
+
+				_, err := ListReleaseMap("default")
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		Context("when namespace contains invalid characters", func() {
+			It("should return an error", func() {
+				lookPathPatch = gomonkey.ApplyFunc(exec.LookPath, func(file string) (string, error) {
+					return "test-path", nil
+				})
+
+				_, err := ListReleaseMap("def$ault")
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		Context("when all conditions are met", func() {
+			It("should list release map successfully", func() {
+				lookPathPatch = gomonkey.ApplyFunc(exec.LookPath, func(file string) (string, error) {
+					return "test-path", nil
+				})
+				outputPatch = gomonkey.ApplyMethod((*exec.Cmd)(nil), "Output", func(cmd *exec.Cmd) ([]byte, error) {
+					return []byte("fluid v0.6.0\nspark v0.5.0"), nil
+				})
+
+				release, err := ListReleaseMap("default")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(release).To(HaveLen(2))
+			})
+		})
+	})
+
+	Describe("ListAllReleasesWithDetail", func() {
+		var (
+			lookPathPatch *gomonkey.Patches
+			outputPatch   *gomonkey.Patches
+		)
+
+		AfterEach(func() {
+			if lookPathPatch != nil {
+				lookPathPatch.Reset()
+			}
+			if outputPatch != nil {
+				outputPatch.Reset()
+			}
+		})
+
+		Context("when LookPath fails", func() {
+			It("should return an error", func() {
+				lookPathPatch = gomonkey.ApplyFunc(exec.LookPath, func(file string) (string, error) {
+					return "", errors.New("fail to run the command")
+				})
+
+				_, err := ListAllReleasesWithDetail("default")
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		Context("when Output fails", func() {
+			It("should return an error", func() {
+				lookPathPatch = gomonkey.ApplyFunc(exec.LookPath, func(file string) (string, error) {
+					return "test-path", nil
+				})
+				outputPatch = gomonkey.ApplyMethod((*exec.Cmd)(nil), "Output", func(cmd *exec.Cmd) ([]byte, error) {
+					return nil, errors.New("fail to run the command")
+				})
+
+				_, err := ListAllReleasesWithDetail("default")
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		Context("when namespace contains invalid characters", func() {
+			It("should return an error", func() {
+				lookPathPatch = gomonkey.ApplyFunc(exec.LookPath, func(file string) (string, error) {
+					return "test-path", nil
+				})
+
+				_, err := ListAllReleasesWithDetail("def$ault")
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		Context("when all conditions are met", func() {
+			It("should list all releases with detail successfully", func() {
+				lookPathPatch = gomonkey.ApplyFunc(exec.LookPath, func(file string) (string, error) {
+					return "test-path", nil
+				})
+				outputPatch = gomonkey.ApplyMethod((*exec.Cmd)(nil), "Output", func(cmd *exec.Cmd) ([]byte, error) {
+					return []byte("fluid default 1 2021-07-19 16:20:16.166658248 +0800 CST deployed fluid-0.6.0 0.6.0-3c06c0e\nspark default 2 2021-07-19 16:20:16.166658248 +0800 CST deployed spark-0.3.0 0.3.0-3c06c0e"), nil
+				})
+
+				release, err := ListAllReleasesWithDetail("default")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(release).To(HaveLen(2))
+			})
+		})
+	})
+
+	Describe("DeleteReleaseIfExists", func() {
+		var patches *gomonkey.Patches
+
+		AfterEach(func() {
+			if patches != nil {
+				patches.Reset()
+			}
+		})
+
+		Context("when CheckRelease fails", func() {
+			It("should return an error", func() {
+				patches = gomonkey.ApplyFunc(CheckRelease, func(name, namespace string) (exist bool, err error) {
+					return false, errors.New("fail to run the command")
+				})
+
+				err := DeleteReleaseIfExists("fluid", "default")
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		Context("when release does not exist", func() {
+			It("should not return an error", func() {
+				patches = gomonkey.ApplyFunc(CheckRelease, func(name, namespace string) (exist bool, err error) {
+					return false, nil
+				})
+
+				err := DeleteReleaseIfExists("fluid", "default")
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+
+		Context("when release exists but DeleteRelease fails", func() {
+			It("should return an error", func() {
+				patches = gomonkey.ApplyFunc(CheckRelease, func(name, namespace string) (exist bool, err error) {
+					return true, nil
+				})
+				patches.ApplyFunc(DeleteRelease, func(name, namespace string) (err error) {
+					return errors.New("fail to run the command")
+				})
+
+				err := DeleteReleaseIfExists("fluid", "default")
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		Context("when release exists and can be deleted", func() {
+			It("should delete successfully", func() {
+				patches = gomonkey.ApplyFunc(CheckRelease, func(name, namespace string) (exist bool, err error) {
+					return true, nil
+				})
+				patches.ApplyFunc(DeleteRelease, func(name, namespace string) (err error) {
+					return nil
+				})
+
+				err := DeleteReleaseIfExists("fluid", "default")
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+	})
+})
