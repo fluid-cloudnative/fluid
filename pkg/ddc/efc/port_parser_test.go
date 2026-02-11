@@ -17,7 +17,8 @@
 package efc
 
 import (
-	"testing"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -27,73 +28,73 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func TestGetReservedPorts(t *testing.T) {
-	configMap := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase-efc-values",
-			Namespace: "fluid",
-		},
-		Data: map[string]string{
-			"data": valuesConfigMapData,
-		},
-	}
-	dataSets := []*v1alpha1.Dataset{
-		{
+var _ = Describe("GetReservedPorts", func() {
+	It("should get reserved ports without error", func() {
+		configMap := &v1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hbase",
+				Name:      "hbase-efc-values",
 				Namespace: "fluid",
 			},
-			Status: v1alpha1.DatasetStatus{
-				Runtimes: []v1alpha1.Runtime{
-					{
-						Name:      "hbase",
-						Namespace: "fluid",
-						Type:      common.EFCRuntime,
+			Data: map[string]string{
+				"data": valuesConfigMapData,
+			},
+		}
+		dataSets := []*v1alpha1.Dataset{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hbase",
+					Namespace: "fluid",
+				},
+				Status: v1alpha1.DatasetStatus{
+					Runtimes: []v1alpha1.Runtime{
+						{
+							Name:      "hbase",
+							Namespace: "fluid",
+							Type:      common.EFCRuntime,
+						},
 					},
 				},
 			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "no-runtime",
-				Namespace: "fluid",
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "no-runtime",
+					Namespace: "fluid",
+				},
 			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "runtime-type",
-				Namespace: "fluid",
-			},
-			Status: v1alpha1.DatasetStatus{
-				Runtimes: []v1alpha1.Runtime{
-					{
-						Type: "not-efc",
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "runtime-type",
+					Namespace: "fluid",
+				},
+				Status: v1alpha1.DatasetStatus{
+					Runtimes: []v1alpha1.Runtime{
+						{
+							Type: "not-efc",
+						},
 					},
 				},
 			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "no-map",
-				Namespace: "fluid",
-			},
-			Status: v1alpha1.DatasetStatus{
-				Runtimes: []v1alpha1.Runtime{
-					{
-						Type: common.EFCRuntime,
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "no-map",
+					Namespace: "fluid",
+				},
+				Status: v1alpha1.DatasetStatus{
+					Runtimes: []v1alpha1.Runtime{
+						{
+							Type: common.EFCRuntime,
+						},
 					},
 				},
 			},
-		},
-	}
-	var runtimeObjs []runtime.Object
-	runtimeObjs = append(runtimeObjs, configMap)
-	for _, dataSet := range dataSets {
-		runtimeObjs = append(runtimeObjs, dataSet.DeepCopy())
-	}
-	fakeClient := fake.NewFakeClientWithScheme(testScheme, runtimeObjs...)
-	_, err := GetReservedPorts(fakeClient)
-	if err != nil {
-		t.Errorf("GetReservedPorts failed.")
-	}
-}
+		}
+		var runtimeObjs []runtime.Object
+		runtimeObjs = append(runtimeObjs, configMap)
+		for _, dataSet := range dataSets {
+			runtimeObjs = append(runtimeObjs, dataSet.DeepCopy())
+		}
+		fakeClient := fake.NewFakeClientWithScheme(testScheme, runtimeObjs...)
+		_, err := GetReservedPorts(fakeClient)
+		Expect(err).NotTo(HaveOccurred())
+	})
+})
