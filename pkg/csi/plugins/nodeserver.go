@@ -62,7 +62,7 @@ type nodeServer struct {
 	nodeAuthorizedClient *kubernetes.Clientset
 	locks                *utils.VolumeLocks
 	node                 *corev1.Node
-	restrictionChecker    NodeRestrictionChecker
+	restrictionChecker   NodeRestrictionChecker
 }
 
 func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {

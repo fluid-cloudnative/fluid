@@ -95,8 +95,8 @@ func (d *driver) newNodeServer() *nodeServer {
 		client:               d.client,
 		apiReader:            d.apiReader,
 		nodeAuthorizedClient: d.nodeAuthorizedClient,
-		locks:                d.locks,	
-		restrictionChecker:    NewNoopRestrictionChecker(),
+		locks:                d.locks,
+		restrictionChecker:   NewNoopRestrictionChecker(),
 	}
 }
 
