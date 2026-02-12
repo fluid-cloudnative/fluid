@@ -51,6 +51,22 @@ type Engine interface {
 
 	// DataOperator is a common interface for Data Operations like DataBackup/DataLoad/DataMigrate etc.
 	DataOperator
+
+	// ExtendedLifecycleManager provides complete data lifecycle management
+	// including data loading, data processing workflows, and cache-aware data mutations.
+	// This is an optional interface - engines can implement it to provide enhanced functionality.
+	ExtendedLifecycleManager
+}
+
+// ExtendedLifecycleManager is an optional interface for engines that support
+// extended data lifecycle management capabilities.
+// Engines that don't implement this interface will have these methods return
+// "not implemented" errors.
+type ExtendedLifecycleManager interface {
+	// DataLifecycleManager provides data lifecycle operations
+	DataLifecycleManager
+	// StateMachineManager provides state machine support for operation lifecycle
+	StateMachineManager
 }
 
 // DataOperator is a common interface of TemplateEngine for Data Operations like DataBackup/DataLoad/DataMigrate etc.
@@ -150,6 +166,8 @@ type Implement interface {
 
 	// Validate checks all spec fields of the Dataset and the Runtime
 	Validate(ctx cruntime.ReconcileRequestContext) (err error)
+
+	Upgrade() (modified bool, err error)
 }
 
 // UnderFileSystemService interface defines the interfaces that should be implemented
