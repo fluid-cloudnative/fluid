@@ -1,7 +1,5 @@
 package plugins
 
-import "k8s.io/klog/v2"
-
 // NodeRestriction represents node-level CSI constraints
 type NodeRestriction struct {
 	CSIDisabled bool
@@ -22,6 +20,5 @@ func NewNoopRestrictionChecker() NodeRestrictionChecker {
 }
 
 func (c *noopRestrictionChecker) GetRestriction(nodeName string) (*NodeRestriction, error) {
-	klog.V(4).Infof("noop node restriction checker for node %s", nodeName)
 	return &NodeRestriction{}, nil
 }
