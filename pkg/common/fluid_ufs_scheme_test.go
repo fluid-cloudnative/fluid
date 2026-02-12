@@ -16,89 +16,41 @@ limitations under the License.
 
 package common
 
-import "testing"
+import (
+	"github.com/onsi/ginkgo/v2"
+	"github.com/onsi/gomega"
+)
 
-func TestIsFluidNativeScheme(t *testing.T) {
-	testCases := map[string]struct {
-		endpoint string
-		want     bool
-	}{
-		"test fluid native scheme case 1": {
-			endpoint: "pvc://mnt/fluid/data",
-			want:     true,
+var _ = ginkgo.Describe("IsFluidNativeScheme", func() {
+	ginkgo.DescribeTable("should correctly identify fluid native schemes",
+		func(endpoint string, expected bool) {
+			gomega.Expect(IsFluidNativeScheme(endpoint)).To(gomega.Equal(expected))
 		},
-		"test fluid native scheme case 2": {
-			endpoint: "local://mnt/fluid/data",
-			want:     true,
-		},
-		"test fluid native scheme case 3": {
-			endpoint: "http://mnt/fluid/data",
-			want:     false,
-		},
-		"test fluid native scheme case 4": {
-			endpoint: "https://mnt/fluid/data",
-			want:     false,
-		},
-	}
+		ginkgo.Entry("pvc scheme is native", "pvc://mnt/fluid/data", true),
+		ginkgo.Entry("local scheme is native", "local://mnt/fluid/data", true),
+		ginkgo.Entry("http scheme is not native", "http://mnt/fluid/data", false),
+		ginkgo.Entry("https scheme is not native", "https://mnt/fluid/data", false),
+	)
+})
 
-	for k, item := range testCases {
-		got := IsFluidNativeScheme(item.endpoint)
-		if got != item.want {
-			t.Errorf("%s check failure, got:%t,want:%t", k, got, item.want)
-		}
-	}
-}
+var _ = ginkgo.Describe("IsFluidWebScheme", func() {
+	ginkgo.DescribeTable("should correctly identify fluid web schemes",
+		func(endpoint string, expected bool) {
+			gomega.Expect(IsFluidWebScheme(endpoint)).To(gomega.Equal(expected))
+		},
+		ginkgo.Entry("pvc scheme is not web", "pvc://mnt/fluid/data", false),
+		ginkgo.Entry("local scheme is not web", "local://mnt/fluid/data", false),
+		ginkgo.Entry("http scheme is web", "http://mnt/fluid/data", true),
+		ginkgo.Entry("https scheme is web", "https://mnt/fluid/data", true),
+	)
+})
 
-func TestIsFluidWebScheme(t *testing.T) {
-	testCases := map[string]struct {
-		endpoint string
-		want     bool
-	}{
-		"test fluid native scheme case 1": {
-			endpoint: "pvc://mnt/fluid/data",
-			want:     false,
+var _ = ginkgo.Describe("IsFluidRefSchema", func() {
+	ginkgo.DescribeTable("should correctly identify fluid ref schemes",
+		func(endpoint string, expected bool) {
+			gomega.Expect(IsFluidRefSchema(endpoint)).To(gomega.Equal(expected))
 		},
-		"test fluid native scheme case 2": {
-			endpoint: "local://mnt/fluid/data",
-			want:     false,
-		},
-		"test fluid native scheme case 3": {
-			endpoint: "http://mnt/fluid/data",
-			want:     true,
-		},
-		"test fluid native scheme case 4": {
-			endpoint: "https://mnt/fluid/data",
-			want:     true,
-		},
-	}
-
-	for k, item := range testCases {
-		got := IsFluidWebScheme(item.endpoint)
-		if got != item.want {
-			t.Errorf("%s check failure, got:%t,want:%t", k, got, item.want)
-		}
-	}
-}
-
-func TestIsFluidRefScheme(t *testing.T) {
-	testCases := map[string]struct {
-		endpoint string
-		want     bool
-	}{
-		"test fluid native scheme case 1": {
-			endpoint: "dataset://mnt/fluid/data",
-			want:     true,
-		},
-		"test fluid native scheme case 2": {
-			endpoint: "local://mnt/fluid/data",
-			want:     false,
-		},
-	}
-
-	for k, item := range testCases {
-		got := IsFluidRefSchema(item.endpoint)
-		if got != item.want {
-			t.Errorf("%s check failure, got:%t,want:%t", k, got, item.want)
-		}
-	}
-}
+		ginkgo.Entry("dataset scheme is ref", "dataset://mnt/fluid/data", true),
+		ginkgo.Entry("local scheme is not ref", "local://mnt/fluid/data", false),
+	)
+})
