@@ -70,7 +70,7 @@ def main():
 
     runtime = fluidapi.Runtime("AlluxioRuntime", name)
     runtime.set_replicas(1)
-    runtime.set_tieredstore("MEM", "/dev/shm", "4Gi")
+    runtime.set_tieredstore("MEM", "/dev/shm", "500Mi")
     runtime.set_namespaced_name(namespace, name)
 
     flow = TestFlow("Alluxio - Test PVC subpath Dataset")

@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"testing"
 
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo/v2"
@@ -39,7 +38,6 @@ import (
 	fluidconfig "github.com/fluid-cloudnative/fluid/pkg/csi/config"
 )
 
-// mockManager implements manager.Manager interface for testing
 type mockManager struct {
 	manager.Manager
 }
@@ -110,11 +108,6 @@ func (m *mockManager) GetLogger() logr.Logger {
 
 func (m *mockManager) GetControllerOptions() config.Controller {
 	return config.Controller{}
-}
-
-func TestCSI(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "CSI Setup Suite")
 }
 
 var _ = Describe("SetupWithManager", func() {

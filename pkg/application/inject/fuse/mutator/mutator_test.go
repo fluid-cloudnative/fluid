@@ -17,61 +17,31 @@ limitations under the License.
 package mutator
 
 import (
-	"reflect"
-	"testing"
-
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestFindExtraArgsFromMetadata(t *testing.T) {
-	type args struct {
-		metaObj  metav1.ObjectMeta
-		platform string
-	}
-	tests := []struct {
-		name          string
-		args          args
-		wantExtraArgs map[string]string
-	}{
-		{
-			name: "empty_annotations",
-			args: args{
-				metaObj: metav1.ObjectMeta{
-					Annotations: nil,
-				},
-				platform: "myplatform",
-			},
-			wantExtraArgs: make(map[string]string),
+var _ = Describe("FindExtraArgsFromMetadata", func() {
+	DescribeTable("should extract extra args from annotations",
+		func(metaObj metav1.ObjectMeta, platform string, wantExtraArgs map[string]string) {
+			gotExtraArgs := FindExtraArgsFromMetadata(metaObj, platform)
+			Expect(gotExtraArgs).To(Equal(wantExtraArgs))
 		},
-		{
-			name: "without_extra_args",
-			args: args{
-				metaObj: metav1.ObjectMeta{
-					Annotations: map[string]string{"foo": "bar"},
-				},
-				platform: "myplatform",
-			},
-			wantExtraArgs: make(map[string]string),
-		},
-		{
-			name: "with_extra_args",
-			args: args{
-				metaObj: metav1.ObjectMeta{
-					Annotations: map[string]string{"foo": "bar", "myplatform.fluid.io/key1": "value1", "myplatform.fluid.io/key2": "value2"},
-				},
-				platform: "myplatform",
-			},
-			wantExtraArgs: map[string]string{
-				"key1": "value1",
-				"key2": "value2",
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if gotExtraArgs := FindExtraArgsFromMetadata(tt.args.metaObj, tt.args.platform); !reflect.DeepEqual(gotExtraArgs, tt.wantExtraArgs) {
-				t.Errorf("FindExtraArgsFromMetadata() = %v, want %v", gotExtraArgs, tt.wantExtraArgs)
-			}
-		})
-	}
-}
+		Entry("empty_annotations",
+			metav1.ObjectMeta{Annotations: nil},
+			"myplatform",
+			map[string]string{},
+		),
+		Entry("without_extra_args",
+			metav1.ObjectMeta{Annotations: map[string]string{"foo": "bar"}},
+			"myplatform",
+			map[string]string{},
+		),
+		Entry("with_extra_args",
+			metav1.ObjectMeta{Annotations: map[string]string{"foo": "bar", "myplatform.fluid.io/key1": "value1", "myplatform.fluid.io/key2": "value2"}},
+			"myplatform",
+			map[string]string{"key1": "value1", "key2": "value2"},
+		),
+	)
+})

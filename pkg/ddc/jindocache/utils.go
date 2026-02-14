@@ -109,11 +109,6 @@ func (e *JindoCacheEngine) TotalJindoStorageBytes() (value int64, err error) {
 		return 0, err
 	}
 
-	ready := fileUtils.Ready()
-	if !ready {
-		return 0, fmt.Errorf("the UFS is not ready")
-	}
-
 	ufsSize := int64(0)
 	for _, mount := range dataset.Spec.Mounts {
 		// e.g. jindo:// + /mybucket -> jindo:///mybucket

@@ -6,216 +6,244 @@ you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
 */
 
 package dataprocess
 
 import (
-	"testing"
-
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 )
 
-func TestScriptProcessorImpl_ValidateDatasetMountPath(t *testing.T) {
-	type fields struct {
-		ScriptProcessor *datav1alpha1.ScriptProcessor
-	}
-	type args struct {
-		datasetMountPath string
-	}
-	tests := []struct {
-		name                      string
-		fields                    fields
-		args                      args
-		wantPass                  bool
-		wantConflictVolName       string
-		wantConflictContainerName string
-	}{
-		{
-			name: "TestConflictVolMountPath",
-			fields: fields{
-				ScriptProcessor: &datav1alpha1.ScriptProcessor{
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      "myvol",
-							MountPath: "/fluid-data",
-						},
-					},
-				},
-			},
-			args: args{
-				datasetMountPath: "/fluid-data",
-			},
-			wantPass:                  false,
-			wantConflictVolName:       "myvol",
-			wantConflictContainerName: DataProcessScriptProcessorContainerName,
-		},
-		{
-			name: "TestRegular",
-			fields: fields{
-				ScriptProcessor: &datav1alpha1.ScriptProcessor{
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      "myvol",
-							MountPath: "/mydata",
-						},
-					},
-				},
-			},
-			args: args{
-				datasetMountPath: "/fluid-data",
-			},
-			wantPass:                  true,
-			wantConflictVolName:       "",
-			wantConflictContainerName: "",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			p := &ScriptProcessorImpl{
-				ScriptProcessor: tt.fields.ScriptProcessor,
-			}
-			gotPass, gotConflictVolName, gotConflictContainerName := p.ValidateDatasetMountPath(tt.args.datasetMountPath)
-			if gotPass != tt.wantPass {
-				t.Errorf("ScriptProcessorImpl.ValidateDatasetMountPath() gotPass = %v, want %v", gotPass, tt.wantPass)
-			}
-			if gotConflictVolName != tt.wantConflictVolName {
-				t.Errorf("ScriptProcessorImpl.ValidateDatasetMountPath() gotConflictVolName = %v, want %v", gotConflictVolName, tt.wantConflictVolName)
-			}
-			if gotConflictContainerName != tt.wantConflictContainerName {
-				t.Errorf("ScriptProcessorImpl.ValidateDatasetMountPath() gotConflictContainerName = %v, want %v", gotConflictContainerName, tt.wantConflictContainerName)
-			}
-		})
-	}
-}
+var _ = Describe("ValidateDatasetMountPath", func() {
 
-func TestJobProcessorImpl_ValidateDatasetMountPath(t *testing.T) {
-	type fields struct {
-		JobProcessor *datav1alpha1.JobProcessor
-	}
-	type args struct {
-		datasetMountPath string
-	}
-	tests := []struct {
-		name                      string
-		fields                    fields
-		args                      args
-		wantPass                  bool
-		wantConflictVolName       string
-		wantConflictContainerName string
-	}{
-		{
-			name: "TestContainerConflictVolMountPath",
-			fields: fields{
-				JobProcessor: &datav1alpha1.JobProcessor{
-					PodSpec: &corev1.PodSpec{
-						Containers: []corev1.Container{
+	Describe("ScriptProcessorImpl", func() {
+
+		Context("when validating dataset mount path", func() {
+
+			It("should fail when volume mount path conflicts", func() {
+				p := &ScriptProcessorImpl{
+					ScriptProcessor: &datav1alpha1.ScriptProcessor{
+						VolumeMounts: []corev1.VolumeMount{
 							{
-								Name: "test-container",
-								VolumeMounts: []corev1.VolumeMount{
-									{
-										Name:      "myvol",
-										MountPath: "/fluid-data",
-									},
-								},
+								Name:      "myvol",
+								MountPath: "/fluid-data",
 							},
 						},
 					},
-				},
-			},
-			args: args{
-				datasetMountPath: "/fluid-data",
-			},
-			wantPass:                  false,
-			wantConflictVolName:       "myvol",
-			wantConflictContainerName: "test-container",
-		},
-		{
-			name: "TestInitContainerConflictVolMountPath",
-			fields: fields{
-				JobProcessor: &datav1alpha1.JobProcessor{
-					PodSpec: &corev1.PodSpec{
-						InitContainers: []corev1.Container{
+				}
+
+				pass, conflictVol, conflictContainer :=
+					p.ValidateDatasetMountPath("/fluid-data")
+
+				Expect(pass).To(BeFalse())
+				Expect(conflictVol).To(Equal("myvol"))
+				Expect(conflictContainer).
+					To(Equal(DataProcessScriptProcessorContainerName))
+			})
+
+			It("should pass when no conflict exists", func() {
+				p := &ScriptProcessorImpl{
+					ScriptProcessor: &datav1alpha1.ScriptProcessor{
+						VolumeMounts: []corev1.VolumeMount{
 							{
-								Name: "test-init-container",
-								VolumeMounts: []corev1.VolumeMount{
-									{
-										Name:      "myvol",
-										MountPath: "/fluid-data",
-									},
-								},
+								Name:      "myvol",
+								MountPath: "/mydata",
 							},
 						},
 					},
-				},
-			},
-			args: args{
-				datasetMountPath: "/fluid-data",
-			},
-			wantPass:                  false,
-			wantConflictVolName:       "myvol",
-			wantConflictContainerName: "test-init-container",
-		},
-		{
-			name: "TestValidateDatasetMountPath",
-			fields: fields{
-				JobProcessor: &datav1alpha1.JobProcessor{
-					PodSpec: &corev1.PodSpec{
-						InitContainers: []corev1.Container{
-							{
-								Name: "test-init-container",
-								VolumeMounts: []corev1.VolumeMount{
-									{
-										Name:      "myvol",
-										MountPath: "/mydata",
-									},
-								},
-							},
-						},
-						Containers: []corev1.Container{
-							{
-								Name: "test-container",
-								VolumeMounts: []corev1.VolumeMount{
-									{
-										Name:      "myvol",
-										MountPath: "/mydata",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			args: args{
-				datasetMountPath: "/fluid-data",
-			},
-			wantPass:                  true,
-			wantConflictVolName:       "",
-			wantConflictContainerName: "",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			p := &JobProcessorImpl{
-				JobProcessor: tt.fields.JobProcessor,
-			}
-			gotPass, gotConflictVolName, gotConflictContainerName := p.ValidateDatasetMountPath(tt.args.datasetMountPath)
-			if gotPass != tt.wantPass {
-				t.Errorf("JobProcessorImpl.ValidateDatasetMountPath() gotPass = %v, want %v", gotPass, tt.wantPass)
-			}
-			if gotConflictVolName != tt.wantConflictVolName {
-				t.Errorf("JobProcessorImpl.ValidateDatasetMountPath() gotConflictVolName = %v, want %v", gotConflictVolName, tt.wantConflictVolName)
-			}
-			if gotConflictContainerName != tt.wantConflictContainerName {
-				t.Errorf("JobProcessorImpl.ValidateDatasetMountPath() gotConflictContainerName = %v, want %v", gotConflictContainerName, tt.wantConflictContainerName)
-			}
+				}
+
+				pass, conflictVol, conflictContainer :=
+					p.ValidateDatasetMountPath("/fluid-data")
+
+				Expect(pass).To(BeTrue())
+				Expect(conflictVol).To(BeEmpty())
+				Expect(conflictContainer).To(BeEmpty())
+			})
 		})
-	}
-}
+	})
+
+	Describe("JobProcessorImpl", func() {
+
+		Context("when container volume mount conflicts", func() {
+			It("should fail and return container name", func() {
+				p := &JobProcessorImpl{
+					JobProcessor: &datav1alpha1.JobProcessor{
+						PodSpec: &corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name: "test-container",
+									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      "myvol",
+											MountPath: "/fluid-data",
+										},
+									},
+								},
+							},
+						},
+					},
+				}
+
+				pass, conflictVol, conflictContainer :=
+					p.ValidateDatasetMountPath("/fluid-data")
+
+				Expect(pass).To(BeFalse())
+				Expect(conflictVol).To(Equal("myvol"))
+				Expect(conflictContainer).To(Equal("test-container"))
+			})
+		})
+
+		Context("when init container volume mount conflicts", func() {
+			It("should fail and return init container name", func() {
+				p := &JobProcessorImpl{
+					JobProcessor: &datav1alpha1.JobProcessor{
+						PodSpec: &corev1.PodSpec{
+							InitContainers: []corev1.Container{
+								{
+									Name: "test-init-container",
+									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      "myvol",
+											MountPath: "/fluid-data",
+										},
+									},
+								},
+							},
+						},
+					},
+				}
+
+				pass, conflictVol, conflictContainer :=
+					p.ValidateDatasetMountPath("/fluid-data")
+
+				Expect(pass).To(BeFalse())
+				Expect(conflictVol).To(Equal("myvol"))
+				Expect(conflictContainer).To(Equal("test-init-container"))
+			})
+		})
+
+		Context("when no container has conflicting mount path", func() {
+			It("should pass validation", func() {
+				p := &JobProcessorImpl{
+					JobProcessor: &datav1alpha1.JobProcessor{
+						PodSpec: &corev1.PodSpec{
+							InitContainers: []corev1.Container{
+								{
+									Name: "test-init-container",
+									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      "myvol",
+											MountPath: "/mydata",
+										},
+									},
+								},
+							},
+							Containers: []corev1.Container{
+								{
+									Name: "test-container",
+									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      "myvol",
+											MountPath: "/mydata",
+										},
+									},
+								},
+							},
+						},
+					},
+				}
+
+				pass, conflictVol, conflictContainer :=
+					p.ValidateDatasetMountPath("/fluid-data")
+
+				Expect(pass).To(BeTrue())
+				Expect(conflictVol).To(BeEmpty())
+				Expect(conflictContainer).To(BeEmpty())
+			})
+		})
+	})
+})
+
+var _ = Describe("GetProcessorImpl", func() {
+
+	It("should return JobProcessorImpl when JobProcessor is set", func() {
+		dp := &datav1alpha1.DataProcess{
+			Spec: datav1alpha1.DataProcessSpec{
+				Processor: datav1alpha1.Processor{
+					Job: &datav1alpha1.JobProcessor{},
+				},
+			},
+		}
+
+		processor := GetProcessorImpl(dp)
+		Expect(processor).To(BeAssignableToTypeOf(&JobProcessorImpl{}))
+	})
+
+	It("should return ScriptProcessorImpl when ScriptProcessor is set", func() {
+		dp := &datav1alpha1.DataProcess{
+			Spec: datav1alpha1.DataProcessSpec{
+				Processor: datav1alpha1.Processor{
+					Script: &datav1alpha1.ScriptProcessor{},
+				},
+			},
+		}
+
+		processor := GetProcessorImpl(dp)
+		Expect(processor).To(BeAssignableToTypeOf(&ScriptProcessorImpl{}))
+	})
+
+	It("should return nil when no processor is set", func() {
+		dp := &datav1alpha1.DataProcess{
+			Spec: datav1alpha1.DataProcessSpec{},
+		}
+
+		processor := GetProcessorImpl(dp)
+		Expect(processor).To(BeNil())
+	})
+})
+
+var _ = Describe("JobProcessorImpl TransformDataProcessValues", func() {
+
+	It("should append volumes and volume mounts to containers and init containers", func() {
+		p := &JobProcessorImpl{
+			JobProcessor: &datav1alpha1.JobProcessor{
+				PodSpec: &corev1.PodSpec{
+					Containers:     []corev1.Container{{Name: "c1"}},
+					InitContainers: []corev1.Container{{Name: "ic1"}},
+				},
+			},
+		}
+
+		value := &DataProcessValue{}
+		volumes := []corev1.Volume{{Name: "dataset-vol"}}
+		mounts := []corev1.VolumeMount{{Name: "dataset-vol", MountPath: "/data"}}
+
+		p.TransformDataProcessValues(value, volumes, mounts)
+
+		Expect(value.DataProcessInfo.JobProcessor).NotTo(BeNil())
+		Expect(value.DataProcessInfo.JobProcessor.PodSpec.Volumes).To(ContainElement(volumes[0]))
+		Expect(value.DataProcessInfo.JobProcessor.PodSpec.Containers[0].VolumeMounts).
+			To(ContainElement(mounts[0]))
+		Expect(value.DataProcessInfo.JobProcessor.PodSpec.InitContainers[0].VolumeMounts).
+			To(ContainElement(mounts[0]))
+	})
+
+	It("should not panic when no containers exist", func() {
+		p := &JobProcessorImpl{
+			JobProcessor: &datav1alpha1.JobProcessor{
+				PodSpec: &corev1.PodSpec{},
+			},
+		}
+
+		value := &DataProcessValue{}
+		Expect(func() {
+			p.TransformDataProcessValues(value, nil, nil)
+		}).NotTo(Panic())
+
+		Expect(value.DataProcessInfo.JobProcessor).NotTo(BeNil())
+	})
+})

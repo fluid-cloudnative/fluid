@@ -96,3 +96,11 @@ func (e *JindoFSxEngine) ShouldUpdateUFS() (ufsToUpdate *utils.UFSToUpdate) {
 func (e *JindoFSxEngine) UpdateOnUFSChange(*utils.UFSToUpdate) (updateReady bool, err error) {
 	return
 }
+
+func (e *JindoFSxEngine) ShouldSyncDatasetMounts() (should bool, err error) {
+	return false, nil
+}
+
+func (e *JindoFSxEngine) SyncDatasetMounts() (err error) {
+	return nil
+}

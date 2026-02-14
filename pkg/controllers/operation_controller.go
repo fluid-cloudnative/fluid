@@ -138,8 +138,12 @@ func (o *OperationReconciler) ReconcileInternal(ctx dataoperation.ReconcileReque
 	targetDataset, err := implement.GetTargetDataset()
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
-			statusError := err.(*apierrors.StatusError)
-			ctx.Log.Info("The dataset is not found", "dataset", statusError.Status().Details.Name)
+			var statusError *apierrors.StatusError
+			if errors.As(err, &statusError) && statusError.Status().Details != nil {
+				ctx.Log.Info("The dataset is not found", "dataset", statusError.Status().Details.Name)
+			} else {
+				ctx.Log.Info("The dataset is not found", "error", err)
+			}
 			o.Recorder.Eventf(object, v1.EventTypeWarning, common.TargetDatasetNotFound, "Target dataset not found: %v", err)
 			return utils.RequeueAfterInterval(20 * time.Second)
 		} else {
