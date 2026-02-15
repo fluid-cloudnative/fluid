@@ -108,9 +108,6 @@ var _ = Describe("SetupAppWatcherWithReconciler", func() {
 
 	Context("when controller creation fails", func() {
 		It("should return an error if controller cannot be created", func() {
-			// This test would require mocking the controller.New function
-			// which is challenging without dependency injection
-			// In practice, you might use a factory pattern to test this
 			Skip("Requires mocking controller.New which is not easily testable")
 		})
 	})
