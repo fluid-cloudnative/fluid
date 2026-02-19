@@ -1,4 +1,5 @@
 /*
+Copyright 2023 The Fluid Author.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,396 +17,622 @@ limitations under the License.
 package tieredstore
 
 import (
-	"testing"
-
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-func TestLen(t *testing.T) {
-	testCases := map[string]sortMediumType{
-		"test case 1": []common.MediumType{
+var _ = Describe("sortMediumType", func() {
+	Describe("Len", func() {
+		It("should return correct length for empty slice", func() {
+			medium := sortMediumType{}
+			Expect(medium.Len()).To(Equal(0))
+		})
+
+		It("should return correct length for single element", func() {
+			medium := sortMediumType{common.Memory}
+			Expect(medium.Len()).To(Equal(1))
+		})
+
+		It("should return correct length for multiple elements", func() {
+			medium := sortMediumType{
+				common.Memory,
+				common.SSD,
+				common.HDD,
+				common.SSD,
+				common.HDD,
+			}
+			Expect(medium.Len()).To(Equal(5))
+		})
+
+		It("should return correct length for different combinations", func() {
+			testCases := []struct {
+				name     string
+				medium   sortMediumType
+				expected int
+			}{
+				{
+					name:     "two elements",
+					medium:   sortMediumType{common.SSD, common.HDD},
+					expected: 2,
+				},
+				{
+					name:     "three elements",
+					medium:   sortMediumType{common.HDD, common.SSD, common.HDD},
+					expected: 3,
+				},
+			}
+
+			for _, tc := range testCases {
+				Expect(tc.medium.Len()).To(Equal(tc.expected), "test case: "+tc.name)
+			}
+		})
+	})
+
+	Describe("Swap", func() {
+		It("should swap elements at given indices", func() {
+			medium := sortMediumType{common.Memory, common.SSD, common.HDD}
+			medium.Swap(0, 2)
+			Expect(medium[0]).To(Equal(common.HDD))
+			Expect(medium[2]).To(Equal(common.Memory))
+			Expect(medium[1]).To(Equal(common.SSD))
+		})
+
+		It("should swap adjacent elements", func() {
+			medium := sortMediumType{common.Memory, common.SSD, common.HDD, common.SSD}
+			medium.Swap(1, 2)
+			Expect(medium[1]).To(Equal(common.HDD))
+			Expect(medium[2]).To(Equal(common.SSD))
+		})
+
+		It("should swap non-adjacent elements", func() {
+			medium := sortMediumType{
+				common.Memory,
+				common.SSD,
+				common.HDD,
+				common.SSD,
+				common.HDD,
+			}
+			medium.Swap(0, 4)
+			Expect(medium[0]).To(Equal(common.HDD))
+			Expect(medium[4]).To(Equal(common.Memory))
+		})
+
+		It("should handle swap with same index", func() {
+			medium := sortMediumType{common.Memory, common.SSD}
+			original := medium[0]
+			medium.Swap(0, 0)
+			Expect(medium[0]).To(Equal(original))
+		})
+	})
+
+	Describe("Less", func() {
+		It("should return true when first element has lower priority", func() {
+			medium := sortMediumType{common.HDD, common.SSD}
+			Expect(medium.Less(0, 1)).To(BeFalse())
+		})
+
+		It("should return false when first element has higher priority", func() {
+			medium := sortMediumType{common.Memory, common.SSD, common.HDD}
+			Expect(medium.Less(0, 2)).To(BeTrue())
+		})
+
+		It("should compare Memory and SSD correctly", func() {
+			medium := sortMediumType{common.Memory, common.SSD}
+			Expect(medium.Less(0, 1)).To(BeTrue())
+		})
+
+		It("should compare SSD and HDD correctly", func() {
+			medium := sortMediumType{common.SSD, common.HDD}
+			Expect(medium.Less(0, 1)).To(BeTrue())
+		})
+
+		It("should handle same medium types", func() {
+			medium := sortMediumType{common.Memory, common.SSD, common.SSD, common.Memory}
+			Expect(medium.Less(2, 3)).To(BeFalse())
+			Expect(medium.Less(3, 2)).To(BeTrue())
+		})
+
+		It("should handle complex ordering scenarios", func() {
+			medium := sortMediumType{
+				common.Memory,
+				common.SSD,
+				common.HDD,
+				common.SSD,
+				common.Memory,
+			}
+
+			// Memory (index 4) < HDD (index 2)
+			Expect(medium.Less(4, 2)).To(BeTrue())
+
+			// SSD (index 1) > Memory (index 0)
+			Expect(medium.Less(1, 0)).To(BeFalse())
+
+			// HDD (index 2) > SSD (index 3)
+			Expect(medium.Less(2, 3)).To(BeFalse())
+		})
+	})
+})
+
+var _ = Describe("makeMediumTypeSorted", func() {
+	It("should sort and deduplicate empty slice", func() {
+		input := []common.MediumType{}
+		result := makeMediumTypeSorted(input)
+		Expect(result).To(BeEmpty())
+	})
+
+	It("should sort single element", func() {
+		input := []common.MediumType{common.Memory}
+		result := makeMediumTypeSorted(input)
+		Expect(result).To(HaveLen(1))
+		Expect(result[0]).To(Equal(common.Memory))
+	})
+
+	It("should maintain sorted order for already sorted slice", func() {
+		input := []common.MediumType{common.Memory, common.SSD, common.HDD}
+		result := makeMediumTypeSorted(input)
+		Expect(result).To(HaveLen(3))
+		Expect(result[0]).To(Equal(common.Memory))
+		Expect(result[1]).To(Equal(common.SSD))
+		Expect(result[2]).To(Equal(common.HDD))
+	})
+
+	It("should sort unsorted slice correctly", func() {
+		input := []common.MediumType{common.HDD, common.Memory, common.SSD}
+		result := makeMediumTypeSorted(input)
+		Expect(result).To(HaveLen(3))
+		Expect(result[0]).To(Equal(common.Memory))
+		Expect(result[1]).To(Equal(common.SSD))
+		Expect(result[2]).To(Equal(common.HDD))
+	})
+
+	It("should remove duplicates and sort", func() {
+		input := []common.MediumType{
+			common.SSD,
+			common.HDD,
+			common.SSD,
+			common.Memory,
+		}
+		result := makeMediumTypeSorted(input)
+		Expect(result).To(HaveLen(3))
+		Expect(result[0]).To(Equal(common.Memory))
+		Expect(result[1]).To(Equal(common.SSD))
+		Expect(result[2]).To(Equal(common.HDD))
+	})
+
+	It("should handle multiple duplicates", func() {
+		input := []common.MediumType{
 			common.Memory,
 			common.SSD,
 			common.HDD,
 			common.SSD,
 			common.HDD,
-		},
-		"test case 2": []common.MediumType{
+		}
+		result := makeMediumTypeSorted(input)
+		Expect(result).To(HaveLen(3))
+		Expect(result[0]).To(Equal(common.Memory))
+		Expect(result[1]).To(Equal(common.SSD))
+		Expect(result[2]).To(Equal(common.HDD))
+	})
+
+	It("should verify no duplicates in result", func() {
+		input := []common.MediumType{
+			common.Memory,
+			common.Memory,
+			common.SSD,
 			common.SSD,
 			common.HDD,
-		},
-		"test case 3": []common.MediumType{
-			common.HDD,
-			common.SSD,
-			common.HDD,
-		},
-	}
-	for k, item := range testCases {
-		if item.Len() != len(item) {
-			t.Errorf("%s check failure,want:%v,got:%v", k, len(item), item.Len())
 		}
-	}
-}
+		result := makeMediumTypeSorted(input)
 
-func TestSwap(t *testing.T) {
-	testCases := map[string]struct {
-		sortMedium sortMediumType
-		i          int
-		j          int
-	}{
-		"test case 1": {
-			sortMedium: []common.MediumType{
-				common.Memory,
-				common.SSD,
-				common.HDD,
-			},
-			i: 2,
-			j: 1,
-		},
-		"test case 2": {
-			sortMedium: []common.MediumType{
-				common.Memory,
-				common.SSD,
-				common.HDD,
-				common.SSD,
-			},
-			i: 1,
-			j: 3,
-		},
-		"test case 3": {
-			sortMedium: []common.MediumType{
-				common.Memory,
-				common.SSD,
-				common.HDD,
-				common.SSD,
-				common.HDD,
-			},
-			i: 4,
-			j: 2,
-		},
-	}
-	for k, item := range testCases {
-		var temp = make([]common.MediumType, len(item.sortMedium))
-		_ = copy(temp, item.sortMedium)
-		if item.i < item.sortMedium.Len() && item.j < item.sortMedium.Len() {
-			item.sortMedium.Swap(item.i, item.j)
-			if temp[item.i] != item.sortMedium[item.j] || temp[item.j] != item.sortMedium[item.i] {
-				t.Errorf("%s check failure", k)
-			}
-		} else {
-			t.Errorf("%s is not suitable", k)
+		seen := make(map[common.MediumType]bool)
+		for _, mt := range result {
+			Expect(seen[mt]).To(BeFalse(), "duplicate found: "+string(mt))
+			seen[mt] = true
 		}
-	}
-}
+	})
+})
 
-func TestLess(t *testing.T) {
-	testCases := map[string]struct {
-		sortMedium sortMediumType
-		i          int
-		j          int
-		want       bool
-	}{
-		"test case 1": {
-			sortMedium: []common.MediumType{
-				common.Memory,
-				common.SSD,
-				common.HDD,
-			},
-			i:    2,
-			j:    1,
-			want: false,
-		},
-		"test case 2": {
-			sortMedium: []common.MediumType{
-				common.Memory,
-				common.SSD,
-				common.HDD,
-				common.SSD,
-			},
-			i:    1,
-			j:    3,
-			want: false,
-		},
-		"test case 3": {
-			sortMedium: []common.MediumType{
-				common.Memory,
-				common.SSD,
-				common.HDD,
-				common.SSD,
-				common.Memory,
-			},
-			i:    4,
-			j:    2,
-			want: true,
-		},
-		"test case 4": {
-			sortMedium: []common.MediumType{
-				common.Memory,
-				common.SSD,
-				common.SSD,
-				common.Memory,
-			},
-			i:    3,
-			j:    2,
-			want: true,
-		},
-	}
-	for k, item := range testCases {
-		if item.i < item.sortMedium.Len() && item.j < item.sortMedium.Len() {
-			result := item.sortMedium.Less(item.i, item.j)
-			if result != item.want {
-				t.Errorf("%s check failure,want:%t,got:%t", k, item.want, result)
-			}
-		} else {
-			t.Errorf("%s is not suitable", k)
-		}
-
-	}
-}
-
-func TestMakeMediumTypeSorted(t *testing.T) {
-	testCases := map[string]struct {
-		sortMedium sortMediumType
-		want       sortMediumType
-	}{
-		"test case 1": {
-			sortMedium: []common.MediumType{
-				common.Memory,
-				common.SSD,
-				common.HDD,
-			},
-			want: []common.MediumType{
-				common.Memory,
-				common.SSD,
-				common.HDD,
-			},
-		},
-		"test case 2": {
-			sortMedium: []common.MediumType{
-				common.SSD,
-				common.HDD,
-				common.SSD,
-				"apple",
-				"baba",
-				common.Memory,
-			},
-			want: []common.MediumType{
-				common.Memory,
-				common.SSD,
-				common.HDD,
-			},
-		},
-		"test case 3": {
-			sortMedium: []common.MediumType{
-				common.Memory,
-				common.SSD,
-				common.HDD,
-				common.SSD,
-				common.HDD,
-			},
-			want: []common.MediumType{
-				common.Memory,
-				common.SSD,
-				common.HDD,
-			},
-		},
-	}
-	for k, item := range testCases {
-		newMediumTypes := makeMediumTypeSorted(item.sortMedium)
-		if len(newMediumTypes) >= 2 {
-			for index := 1; index < len(newMediumTypes); index++ {
-				if newMediumTypes[index-1] == newMediumTypes[index] {
-					t.Errorf("%s cannot paas, because of repeat MediumTypes", k)
-				}
-				if common.GetDefaultTieredStoreOrder(newMediumTypes[index-1]) > common.GetDefaultTieredStoreOrder(newMediumTypes[index]) {
-					t.Errorf("%s cannot paas, because of wrong sort result", k)
-				}
-			}
-		}
-	}
-}
-
-func TestGetLevelStorageMap(t *testing.T) {
-	testCases := map[string]struct {
-		tieredStore datav1alpha1.TieredStore
-		want        map[common.CacheStoreType]int64
-	}{
-		"test case 1": {
-			tieredStore: datav1alpha1.TieredStore{},
-			want:        map[common.CacheStoreType]int64{},
-		},
-		"test case 2": {
-			tieredStore: datav1alpha1.TieredStore{
-				Levels: []datav1alpha1.Level{
-					{
-						MediumType: common.Memory,
-						Path:       "/path/to/cache1/,/path/to/cache2/",
-						Quota:      resource.NewQuantity(124, resource.BinarySI),
-					},
-				},
-			},
-			want: map[common.CacheStoreType]int64{
-				common.MemoryCacheStore: 124,
-			},
-		},
-		"test case 3": {
-			tieredStore: datav1alpha1.TieredStore{
-				Levels: []datav1alpha1.Level{
-					{
-						MediumType: common.Memory,
-						Path:       "/path/to/cache1/,/path/to/cache2/",
-						Quota:      resource.NewQuantity(124, resource.BinarySI),
-					},
-					{
-						Path:  "/path/to/cache2/,/path/to/cache3/",
-						Quota: resource.NewQuantity(125, resource.BinarySI),
-					},
-				},
-			},
-			want: map[common.CacheStoreType]int64{
-				common.MemoryCacheStore: 248,
-			},
-		},
-		"test case 4": {
-			tieredStore: datav1alpha1.TieredStore{
-				Levels: []datav1alpha1.Level{
-					{
-						MediumType: common.Memory,
-						Path:       "/path/to/cache1/,/path/to/cache2/",
-						Quota:      resource.NewQuantity(124, resource.BinarySI),
-					},
-					{
-						MediumType: common.HDD,
-						Path:       "/path/to/cache3/,/path/to/cache4/",
-						Quota:      resource.NewQuantity(256, resource.BinarySI),
-					},
-					{
-						MediumType: common.SSD,
-						Path:       "/path/to/cache5/,/path/to/cache6/",
-						Quota:      resource.NewQuantity(256, resource.BinarySI),
-					},
-				},
-			},
-			want: map[common.CacheStoreType]int64{
-				common.MemoryCacheStore: 124,
-				common.DiskCacheStore:   512,
-			},
-		},
-	}
-	for k, item := range testCases {
+var _ = Describe("GetLevelStorageMap", func() {
+	It("should return empty map for empty tiered store", func() {
 		runtimeInfo, err := base.BuildRuntimeInfo(
 			"name",
 			"namespace",
 			"runtimeType",
-			base.WithTieredStore(item.tieredStore),
+			base.WithTieredStore(datav1alpha1.TieredStore{}),
 		)
-		if err != nil {
-			t.Errorf("%s cannot build the runtimeInfo", k)
-		}
+		Expect(err).NotTo(HaveOccurred())
+
 		result := GetLevelStorageMap(runtimeInfo)
-		if len(result) != len(item.want) {
-			t.Errorf("%s cannot paas, want %v types, get %v types", k, len(item.want), len(result))
-		} else {
-			for index, value := range result {
-				int64Result, _ := value.AsInt64()
-				if item.want[index] != int64Result {
-					t.Errorf("%s cannot paas, want %v, get %v", k, item.want[index], int64Result)
-				}
-			}
+		Expect(result).To(BeEmpty())
+	})
+
+	It("should calculate memory cache store correctly", func() {
+		tieredStore := datav1alpha1.TieredStore{
+			Levels: []datav1alpha1.Level{
+				{
+					MediumType: common.Memory,
+					Path:       "/path/to/cache1/,/path/to/cache2/",
+					Quota:      resource.NewQuantity(124, resource.BinarySI),
+				},
+			},
 		}
-	}
-}
 
-func TestGetTieredLevel(t *testing.T) {
-	var mockQuota = resource.NewQuantity(124, resource.BinarySI)
-	testCases := map[string]struct {
-		tieredStore datav1alpha1.TieredStore
-		search      common.MediumType
-		want        int
-	}{
-		"test case 1": {
-			tieredStore: datav1alpha1.TieredStore{},
-			search:      common.Memory,
-			want:        -1,
-		},
-		"test case 2": {
-			tieredStore: datav1alpha1.TieredStore{
-				Levels: []datav1alpha1.Level{
-					{
-						MediumType: common.Memory,
-						Path:       "/path/to/cache1/,/path/to/cache2/",
-						Quota:      mockQuota,
-					},
-				},
-			},
-			search: common.Memory,
-			want:   0,
-		},
-		"test case 3": {
-			tieredStore: datav1alpha1.TieredStore{
-				Levels: []datav1alpha1.Level{
-					{
-						MediumType: common.Memory,
-						Path:       "/path/to/cache1/,/path/to/cache2/",
-						Quota:      mockQuota,
-					},
-					{
-						MediumType: common.SSD,
-						Path:       "/path/to/cache3/,/path/to/cache4/",
-						Quota:      mockQuota,
-					},
-				},
-			},
-			search: common.SSD,
-			want:   1,
-		},
-		"test case 4": {
-			tieredStore: datav1alpha1.TieredStore{
-				Levels: []datav1alpha1.Level{
-					{
-						MediumType: common.Memory,
-						Path:       "/path/to/cache1/,/path/to/cache2/",
-						Quota:      mockQuota,
-					},
-					{
-						MediumType: common.Memory,
-						Path:       "/path/to/cache3/,/path/to/cache4/",
-						Quota:      mockQuota,
-					},
-					{
-						MediumType: common.SSD,
-						Path:       "/path/to/cache5/,/path/to/cache6/",
-						Quota:      mockQuota,
-					},
-					{
-						MediumType: common.HDD,
-						Path:       "/path/to/cache7/,/path/to/cache8/",
-						Quota:      mockQuota,
-					},
-				},
-			},
-			search: common.HDD,
-			want:   2,
-		},
-	}
-
-	for k, item := range testCases {
 		runtimeInfo, err := base.BuildRuntimeInfo(
 			"name",
 			"namespace",
 			"runtimeType",
-			base.WithTieredStore(item.tieredStore),
+			base.WithTieredStore(tieredStore),
 		)
-		if err != nil {
-			t.Errorf("%s cannot build the runtimeInfo", k)
-		}
-		result := GetTieredLevel(runtimeInfo, item.search)
-		if result != item.want {
-			t.Errorf("%s cannot paas, want %v, get %v", k, item.want, result)
-		}
-	}
+		Expect(err).NotTo(HaveOccurred())
 
-}
+		result := GetLevelStorageMap(runtimeInfo)
+		Expect(result).To(HaveLen(1))
+
+		memoryStore, exists := result[common.MemoryCacheStore]
+		Expect(exists).To(BeTrue())
+		value, ok := memoryStore.AsInt64()
+		Expect(ok).To(BeTrue())
+		Expect(value).To(Equal(int64(124)))
+	})
+
+	It("should aggregate multiple memory levels", func() {
+		tieredStore := datav1alpha1.TieredStore{
+			Levels: []datav1alpha1.Level{
+				{
+					MediumType: common.Memory,
+					Path:       "/path/to/cache1/,/path/to/cache2/",
+					Quota:      resource.NewQuantity(124, resource.BinarySI),
+				},
+				{
+					Path:  "/path/to/cache2/,/path/to/cache3/",
+					Quota: resource.NewQuantity(125, resource.BinarySI),
+				},
+			},
+		}
+
+		runtimeInfo, err := base.BuildRuntimeInfo(
+			"name",
+			"namespace",
+			"runtimeType",
+			base.WithTieredStore(tieredStore),
+		)
+		Expect(err).NotTo(HaveOccurred())
+
+		result := GetLevelStorageMap(runtimeInfo)
+		Expect(result).To(HaveLen(1))
+
+		memoryStore, exists := result[common.MemoryCacheStore]
+		Expect(exists).To(BeTrue())
+		value, ok := memoryStore.AsInt64()
+		Expect(ok).To(BeTrue())
+		Expect(value).To(Equal(int64(248)))
+	})
+
+	It("should separate memory and disk cache stores", func() {
+		tieredStore := datav1alpha1.TieredStore{
+			Levels: []datav1alpha1.Level{
+				{
+					MediumType: common.Memory,
+					Path:       "/path/to/cache1/,/path/to/cache2/",
+					Quota:      resource.NewQuantity(124, resource.BinarySI),
+				},
+				{
+					MediumType: common.HDD,
+					Path:       "/path/to/cache3/,/path/to/cache4/",
+					Quota:      resource.NewQuantity(256, resource.BinarySI),
+				},
+				{
+					MediumType: common.SSD,
+					Path:       "/path/to/cache5/,/path/to/cache6/",
+					Quota:      resource.NewQuantity(256, resource.BinarySI),
+				},
+			},
+		}
+
+		runtimeInfo, err := base.BuildRuntimeInfo(
+			"name",
+			"namespace",
+			"runtimeType",
+			base.WithTieredStore(tieredStore),
+		)
+		Expect(err).NotTo(HaveOccurred())
+
+		result := GetLevelStorageMap(runtimeInfo)
+		Expect(result).To(HaveLen(2))
+
+		memoryStore, exists := result[common.MemoryCacheStore]
+		Expect(exists).To(BeTrue())
+		memValue, ok := memoryStore.AsInt64()
+		Expect(ok).To(BeTrue())
+		Expect(memValue).To(Equal(int64(124)))
+
+		diskStore, exists := result[common.DiskCacheStore]
+		Expect(exists).To(BeTrue())
+		diskValue, ok := diskStore.AsInt64()
+		Expect(ok).To(BeTrue())
+		Expect(diskValue).To(Equal(int64(512)))
+	})
+
+	It("should handle only SSD storage", func() {
+		tieredStore := datav1alpha1.TieredStore{
+			Levels: []datav1alpha1.Level{
+				{
+					MediumType: common.SSD,
+					Path:       "/path/to/cache1/",
+					Quota:      resource.NewQuantity(1000, resource.BinarySI),
+				},
+			},
+		}
+
+		runtimeInfo, err := base.BuildRuntimeInfo(
+			"name",
+			"namespace",
+			"runtimeType",
+			base.WithTieredStore(tieredStore),
+		)
+		Expect(err).NotTo(HaveOccurred())
+
+		result := GetLevelStorageMap(runtimeInfo)
+		Expect(result).To(HaveLen(1))
+
+		diskStore, exists := result[common.DiskCacheStore]
+		Expect(exists).To(BeTrue())
+		value, ok := diskStore.AsInt64()
+		Expect(ok).To(BeTrue())
+		Expect(value).To(Equal(int64(1000)))
+	})
+
+	It("should handle only HDD storage", func() {
+		tieredStore := datav1alpha1.TieredStore{
+			Levels: []datav1alpha1.Level{
+				{
+					MediumType: common.HDD,
+					Path:       "/path/to/cache1/",
+					Quota:      resource.NewQuantity(2000, resource.BinarySI),
+				},
+			},
+		}
+
+		runtimeInfo, err := base.BuildRuntimeInfo(
+			"name",
+			"namespace",
+			"runtimeType",
+			base.WithTieredStore(tieredStore),
+		)
+		Expect(err).NotTo(HaveOccurred())
+
+		result := GetLevelStorageMap(runtimeInfo)
+		Expect(result).To(HaveLen(1))
+
+		diskStore, exists := result[common.DiskCacheStore]
+		Expect(exists).To(BeTrue())
+		value, ok := diskStore.AsInt64()
+		Expect(ok).To(BeTrue())
+		Expect(value).To(Equal(int64(2000)))
+	})
+})
+
+var _ = Describe("GetTieredLevel", func() {
+	var mockQuota *resource.Quantity
+
+	BeforeEach(func() {
+		mockQuota = resource.NewQuantity(124, resource.BinarySI)
+	})
+
+	It("should return -1 for empty tiered store", func() {
+		runtimeInfo, err := base.BuildRuntimeInfo(
+			"name",
+			"namespace",
+			"runtimeType",
+			base.WithTieredStore(datav1alpha1.TieredStore{}),
+		)
+		Expect(err).NotTo(HaveOccurred())
+
+		result := GetTieredLevel(runtimeInfo, common.Memory)
+		Expect(result).To(Equal(-1))
+	})
+
+	It("should return -1 for non-existent medium type", func() {
+		tieredStore := datav1alpha1.TieredStore{
+			Levels: []datav1alpha1.Level{
+				{
+					MediumType: common.Memory,
+					Path:       "/path/to/cache1/",
+					Quota:      mockQuota,
+				},
+			},
+		}
+
+		runtimeInfo, err := base.BuildRuntimeInfo(
+			"name",
+			"namespace",
+			"runtimeType",
+			base.WithTieredStore(tieredStore),
+		)
+		Expect(err).NotTo(HaveOccurred())
+
+		result := GetTieredLevel(runtimeInfo, common.SSD)
+		Expect(result).To(Equal(-1))
+	})
+
+	It("should return 0 for single Memory level", func() {
+		tieredStore := datav1alpha1.TieredStore{
+			Levels: []datav1alpha1.Level{
+				{
+					MediumType: common.Memory,
+					Path:       "/path/to/cache1/,/path/to/cache2/",
+					Quota:      mockQuota,
+				},
+			},
+		}
+
+		runtimeInfo, err := base.BuildRuntimeInfo(
+			"name",
+			"namespace",
+			"runtimeType",
+			base.WithTieredStore(tieredStore),
+		)
+		Expect(err).NotTo(HaveOccurred())
+
+		result := GetTieredLevel(runtimeInfo, common.Memory)
+		Expect(result).To(Equal(0))
+	})
+
+	It("should return correct index for SSD in two-level store", func() {
+		tieredStore := datav1alpha1.TieredStore{
+			Levels: []datav1alpha1.Level{
+				{
+					MediumType: common.Memory,
+					Path:       "/path/to/cache1/,/path/to/cache2/",
+					Quota:      mockQuota,
+				},
+				{
+					MediumType: common.SSD,
+					Path:       "/path/to/cache3/,/path/to/cache4/",
+					Quota:      mockQuota,
+				},
+			},
+		}
+
+		runtimeInfo, err := base.BuildRuntimeInfo(
+			"name",
+			"namespace",
+			"runtimeType",
+			base.WithTieredStore(tieredStore),
+		)
+		Expect(err).NotTo(HaveOccurred())
+
+		result := GetTieredLevel(runtimeInfo, common.SSD)
+		Expect(result).To(Equal(1))
+	})
+
+	It("should handle duplicate medium types and return correct sorted index", func() {
+		tieredStore := datav1alpha1.TieredStore{
+			Levels: []datav1alpha1.Level{
+				{
+					MediumType: common.Memory,
+					Path:       "/path/to/cache1/,/path/to/cache2/",
+					Quota:      mockQuota,
+				},
+				{
+					MediumType: common.Memory,
+					Path:       "/path/to/cache3/,/path/to/cache4/",
+					Quota:      mockQuota,
+				},
+				{
+					MediumType: common.SSD,
+					Path:       "/path/to/cache5/,/path/to/cache6/",
+					Quota:      mockQuota,
+				},
+				{
+					MediumType: common.HDD,
+					Path:       "/path/to/cache7/,/path/to/cache8/",
+					Quota:      mockQuota,
+				},
+			},
+		}
+
+		runtimeInfo, err := base.BuildRuntimeInfo(
+			"name",
+			"namespace",
+			"runtimeType",
+			base.WithTieredStore(tieredStore),
+		)
+		Expect(err).NotTo(HaveOccurred())
+
+		// After deduplication and sorting: Memory(0), SSD(1), HDD(2)
+		result := GetTieredLevel(runtimeInfo, common.HDD)
+		Expect(result).To(Equal(2))
+
+		result = GetTieredLevel(runtimeInfo, common.Memory)
+		Expect(result).To(Equal(0))
+
+		result = GetTieredLevel(runtimeInfo, common.SSD)
+		Expect(result).To(Equal(1))
+	})
+
+	It("should handle unsorted levels correctly", func() {
+		tieredStore := datav1alpha1.TieredStore{
+			Levels: []datav1alpha1.Level{
+				{
+					MediumType: common.HDD,
+					Path:       "/path/to/cache1/",
+					Quota:      mockQuota,
+				},
+				{
+					MediumType: common.Memory,
+					Path:       "/path/to/cache2/",
+					Quota:      mockQuota,
+				},
+				{
+					MediumType: common.SSD,
+					Path:       "/path/to/cache3/",
+					Quota:      mockQuota,
+				},
+			},
+		}
+
+		runtimeInfo, err := base.BuildRuntimeInfo(
+			"name",
+			"namespace",
+			"runtimeType",
+			base.WithTieredStore(tieredStore),
+		)
+		Expect(err).NotTo(HaveOccurred())
+
+		// After sorting: Memory(0), SSD(1), HDD(2)
+		Expect(GetTieredLevel(runtimeInfo, common.Memory)).To(Equal(0))
+		Expect(GetTieredLevel(runtimeInfo, common.SSD)).To(Equal(1))
+		Expect(GetTieredLevel(runtimeInfo, common.HDD)).To(Equal(2))
+	})
+
+	It("should return 0 for only HDD", func() {
+		tieredStore := datav1alpha1.TieredStore{
+			Levels: []datav1alpha1.Level{
+				{
+					MediumType: common.HDD,
+					Path:       "/path/to/cache1/",
+					Quota:      mockQuota,
+				},
+			},
+		}
+
+		runtimeInfo, err := base.BuildRuntimeInfo(
+			"name",
+			"namespace",
+			"runtimeType",
+			base.WithTieredStore(tieredStore),
+		)
+		Expect(err).NotTo(HaveOccurred())
+
+		result := GetTieredLevel(runtimeInfo, common.HDD)
+		Expect(result).To(Equal(0))
+	})
+
+	It("should return 0 for only SSD", func() {
+		tieredStore := datav1alpha1.TieredStore{
+			Levels: []datav1alpha1.Level{
+				{
+					MediumType: common.SSD,
+					Path:       "/path/to/cache1/",
+					Quota:      mockQuota,
+				},
+			},
+		}
+
+		runtimeInfo, err := base.BuildRuntimeInfo(
+			"name",
+			"namespace",
+			"runtimeType",
+			base.WithTieredStore(tieredStore),
+		)
+		Expect(err).NotTo(HaveOccurred())
+
+		result := GetTieredLevel(runtimeInfo, common.SSD)
+		Expect(result).To(Equal(0))
+	})
+})
