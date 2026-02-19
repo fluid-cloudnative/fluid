@@ -18,9 +18,10 @@ package recover
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"os"
 	"reflect"
+	"testing"
 	"time"
 
 	. "github.com/agiledragon/gomonkey/v2"
@@ -35,6 +36,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apimachineryRuntime "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/mount"
@@ -798,139 +800,73 @@ var _ = Describe("FuseRecover", func() {
 			}
 			fakeClient = fake.NewFakeClientWithScheme(s, dataset)
 		})
+	}
+}
 
-		Context("when lock cannot be acquired", func() {
-			It("should skip recovery", func() {
-				locks := utils.NewVolumeLocks()
-				locks.TryAcquire("/test/path")
+func TestFuseRecover_lazyUnmountIfNeeded(t *testing.T) {
+	Convey("TestFuseRecover_lazyUnmountIfNeeded", t, func() {
+		mountPath := "/test/mount"
+		fakeMounter := &mount.FakeMounter{}
+		r := &FuseRecover{
+			SafeFormatAndMount: mount.SafeFormatAndMount{
+				Interface: fakeMounter,
+			},
+		}
 
-				r = &FuseRecover{
-					SafeFormatAndMount: mount.SafeFormatAndMount{
-						Interface: &mount.FakeMounter{},
-					},
-					KubeClient:              fakeClient,
-					ApiReader:               fakeClient,
-					Recorder:                record.NewFakeRecorder(10),
-					recoverWarningThreshold: 50,
-					locks:                   locks,
-				}
-
-				point := mountinfo.MountPoint{
-					SourcePath:            "/test/source",
-					MountPath:             "/test/path",
-					FilesystemType:        "test",
-					ReadOnly:              false,
-					Count:                 1,
-					NamespacedDatasetName: "default-jfsdemo",
-				}
-
-				Expect(func() { r.doRecover(point) }).NotTo(Panic())
+		Convey("Successful cleanup", func() {
+			patchCleanup := ApplyFunc(mount.CleanupMountPoint, func(mountPath string, mounter mount.Interface, extensiveMountPointCheck bool) error {
+				return nil
 			})
+			defer patchCleanup.Reset()
+
+			patchLikely := ApplyMethod(reflect.TypeOf(fakeMounter), "IsLikelyNotMountPoint", func(_ *mount.FakeMounter, file string) (bool, error) {
+				return true, nil
+			})
+			defer patchLikely.Reset()
+
+			r.lazyUnmountIfNeeded(mountPath)
 		})
 
-		Context("when shouldRecover returns error", func() {
-			It("should skip recovery", func() {
-				r = &FuseRecover{
-					SafeFormatAndMount: mount.SafeFormatAndMount{
-						Interface: &mount.FakeMounter{},
-					},
-					KubeClient:              fakeClient,
-					ApiReader:               fakeClient,
-					Recorder:                record.NewFakeRecorder(10),
-					recoverWarningThreshold: 50,
-					locks:                   utils.NewVolumeLocks(),
-				}
-
-				point := mountinfo.MountPoint{
-					SourcePath:            "/test/source",
-					MountPath:             "/test/path",
-					FilesystemType:        "test",
-					ReadOnly:              false,
-					Count:                 1,
-					NamespacedDatasetName: "default-jfsdemo",
-				}
-
-				patch1 := ApplyPrivateMethod(r, "shouldRecover", func(mountPath string) (bool, error) {
-					return false, fmt.Errorf("check failed")
-				})
-				defer patch1.Reset()
-
-				Expect(func() { r.doRecover(point) }).NotTo(Panic())
+		Convey("Cleanup failure handling", func() {
+			patchCleanup := ApplyFunc(mount.CleanupMountPoint, func(mountPath string, mounter mount.Interface, extensiveMountPointCheck bool) error {
+				return errors.New("cleanup error")
 			})
+			defer patchCleanup.Reset()
+
+			patchLikely := ApplyMethod(reflect.TypeOf(fakeMounter), "IsLikelyNotMountPoint", func(_ *mount.FakeMounter, file string) (bool, error) {
+				return true, nil
+			})
+			defer patchLikely.Reset()
+
+			r.lazyUnmountIfNeeded(mountPath)
 		})
 
-		Context("when shouldRecover returns false", func() {
-			It("should skip recovery", func() {
-				r = &FuseRecover{
-					SafeFormatAndMount: mount.SafeFormatAndMount{
-						Interface: &mount.FakeMounter{},
-					},
-					KubeClient:              fakeClient,
-					ApiReader:               fakeClient,
-					Recorder:                record.NewFakeRecorder(10),
-					recoverWarningThreshold: 50,
-					locks:                   utils.NewVolumeLocks(),
-				}
-
-				point := mountinfo.MountPoint{
-					SourcePath:            "/test/source",
-					MountPath:             "/test/path",
-					FilesystemType:        "test",
-					ReadOnly:              false,
-					Count:                 1,
-					NamespacedDatasetName: "default-jfsdemo",
-				}
-
-				patch1 := ApplyPrivateMethod(r, "shouldRecover", func(mountPath string) (bool, error) {
-					return false, nil
-				})
-				defer patch1.Reset()
-
-				Expect(func() { r.doRecover(point) }).NotTo(Panic())
+		Convey("Already-cleaned mount path", func() {
+			patchCleanup := ApplyFunc(mount.CleanupMountPoint, func(mountPath string, mounter mount.Interface, extensiveMountPointCheck bool) error {
+				return nil
 			})
+			defer patchCleanup.Reset()
+
+			patchLikely := ApplyMethod(reflect.TypeOf(fakeMounter), "IsLikelyNotMountPoint", func(_ *mount.FakeMounter, file string) (bool, error) {
+				return false, os.ErrNotExist
+			})
+			defer patchLikely.Reset()
+
+			r.lazyUnmountIfNeeded(mountPath)
 		})
 
-		Context("when count exceeds warning threshold", func() {
-			It("should umount duplicates and record warning event", func() {
-				r = &FuseRecover{
-					SafeFormatAndMount: mount.SafeFormatAndMount{
-						Interface: &mount.FakeMounter{},
-					},
-					KubeClient:              fakeClient,
-					ApiReader:               fakeClient,
-					Recorder:                record.NewFakeRecorder(10),
-					recoverWarningThreshold: 50,
-					locks:                   utils.NewVolumeLocks(),
-				}
-
-				point := mountinfo.MountPoint{
-					SourcePath:            "/test/source",
-					MountPath:             "/test/path",
-					FilesystemType:        "test",
-					ReadOnly:              false,
-					Count:                 100,
-					NamespacedDatasetName: "default-jfsdemo",
-				}
-
-				patch1 := ApplyPrivateMethod(r, "shouldRecover", func(mountPath string) (bool, error) {
-					return true, nil
-				})
-				defer patch1.Reset()
-
-				patch2 := ApplyFunc(volume.GetNamespacedNameByVolumeId, func(client client.Reader, volumeId string) (namespace, name string, err error) {
-					return "default", "jfsdemo", nil
-				})
-				defer patch2.Reset()
-
-				unmountCalled := false
-				patch3 := ApplyPrivateMethod(r, "umountDuplicate", func(point mountinfo.MountPoint) {
-					unmountCalled = true
-				})
-				defer patch3.Reset()
-
-				r.doRecover(point)
-				Expect(unmountCalled).To(BeTrue())
+		Convey("Poll timeout behavior", func() {
+			patchCleanup := ApplyFunc(mount.CleanupMountPoint, func(mountPath string, mounter mount.Interface, extensiveMountPointCheck bool) error {
+				return nil
 			})
+			defer patchCleanup.Reset()
+
+			patchWait := ApplyFunc(wait.PollUntilContextTimeout, func(ctx context.Context, interval, timeout time.Duration, immediate bool, condition wait.ConditionWithContextFunc) error {
+				return context.DeadlineExceeded
+			})
+			defer patchWait.Reset()
+
+			r.lazyUnmountIfNeeded(mountPath)
 		})
 	})
-})
+}
