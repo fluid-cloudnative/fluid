@@ -18,34 +18,50 @@ package utils
 
 import (
 	"os"
-	"testing"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-func TestPathExists(t *testing.T) {
-	path := os.TempDir()
-	if !PathExists(path) {
-		t.Errorf("result of checking if the path exists is wrong")
-	}
-	if PathExists(path + "test/") {
-		t.Errorf("result of checking if the path exists is wrong")
-	}
-}
+var _ = Describe("Utils", func() {
+	Describe("PathExists", func() {
+		It("should return true for existing path", func() {
+			path := os.TempDir()
+			Expect(PathExists(path)).To(BeTrue())
+		})
 
-func TestGetChartsDirectory(t *testing.T) {
-	f, err := os.CreateTemp("", "test")
-	if err != nil {
-		t.Errorf("MkdirTemp failed due to %v", err)
-	}
-	testDir := f.Name()
+		It("should return false for non-existing path", func() {
+			path := os.TempDir() + "test/"
+			Expect(PathExists(path)).To(BeFalse())
+		})
+	})
 
-	t.Setenv("HOME", testDir)
-	if GetChartsDirectory() != "/charts" {
-		t.Errorf("ChartsDirectory should be /charts if ~/charts not exist")
-	}
-	homeChartsFolder := os.Getenv("HOME") + "/charts"
-	// Make Directory if it doesn't exist.
-	_ = os.Mkdir(homeChartsFolder, 0600)
-	if GetChartsDirectory() != "/charts" {
-		t.Errorf("ChartsDirectory should be ~/charts if ~/charts exist")
-	}
-}
+	Describe("GetChartsDirectory", func() {
+		BeforeEach(func() {
+			chartFolder = ""
+		})
+
+		It("should return /charts when HOME/charts does not exist", func() {
+			tempDir, err := os.MkdirTemp("", "test")
+			Expect(err).NotTo(HaveOccurred())
+			DeferCleanup(os.RemoveAll, tempDir)
+
+			GinkgoT().Setenv("HOME", tempDir)
+			Expect(GetChartsDirectory()).To(Equal("/charts"))
+		})
+
+		It("should return home charts folder when HOME/charts exists", func() {
+			tempDir, err := os.MkdirTemp("", "test")
+			Expect(err).NotTo(HaveOccurred())
+			DeferCleanup(os.RemoveAll, tempDir)
+
+			GinkgoT().Setenv("HOME", tempDir)
+			homeChartsFolder := tempDir + "/charts"
+			err = os.Mkdir(homeChartsFolder, 0755)
+			Expect(err).NotTo(HaveOccurred())
+
+			chartFolder = ""
+			Expect(GetChartsDirectory()).To(Equal(homeChartsFolder))
+		})
+	})
+})
