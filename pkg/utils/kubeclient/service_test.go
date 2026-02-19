@@ -16,64 +16,58 @@ limitations under the License.
 package kubeclient
 
 import (
-	"testing"
-
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // Use fake client because of it will be maintained in the long term
 // due to https://github.com/kubernetes-sigs/controller-runtime/pull/1101
-func TestGetServiceByName(t *testing.T) {
-	namespace := "default"
-	testServiceInputs := []*v1.Service{{
-		ObjectMeta: metav1.ObjectMeta{Name: "svc1"},
-		Spec:       v1.ServiceSpec{},
-	}, {
-		ObjectMeta: metav1.ObjectMeta{Name: "svc2", Annotations: common.GetExpectedFluidAnnotations()},
-		Spec:       v1.ServiceSpec{},
-	}}
+var _ = Describe("GetServiceByName", func() {
+	var (
+		namespace         string
+		testServiceInputs []*v1.Service
+		testServices      []runtime.Object
+		mockClient        client.Client
+	)
 
-	testServices := []runtime.Object{}
-
-	for _, pv := range testServiceInputs {
-		testServices = append(testServices, pv.DeepCopy())
-	}
-
-	client := fake.NewFakeClientWithScheme(testScheme, testServices...)
-
-	type args struct {
-		name      string
-		namespace string
-	}
-	tests := []struct {
-		name string
-		args args
-	}{
-		{
-			name: "service doesn't exist",
-			args: args{
-				name:      "notExist",
-				namespace: namespace,
+	BeforeEach(func() {
+		namespace = "default"
+		testServiceInputs = []*v1.Service{
+			{
+				ObjectMeta: metav1.ObjectMeta{Name: "svc1"},
+				Spec:       v1.ServiceSpec{},
 			},
-		},
-		{
-			name: "service is not created by fluid",
-			args: args{
-				name:      "svc1",
-				namespace: namespace,
+			{
+				ObjectMeta: metav1.ObjectMeta{Name: "svc2", Annotations: common.GetExpectedFluidAnnotations()},
+				Spec:       v1.ServiceSpec{},
 			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if _, err := GetServiceByName(client, tt.args.name, tt.args.namespace); err != nil {
-				t.Errorf("testcase %v GetServiceByName() got error %v", tt.name, err)
-			}
+		}
+
+		testServices = []runtime.Object{}
+		for _, pv := range testServiceInputs {
+			testServices = append(testServices, pv.DeepCopy())
+		}
+
+		mockClient = fake.NewFakeClientWithScheme(testScheme, testServices...)
+	})
+
+	Context("when service doesn't exist", func() {
+		It("should not return an error", func() {
+			_, err := GetServiceByName(mockClient, "notExist", namespace)
+			Expect(err).NotTo(HaveOccurred())
 		})
-	}
+	})
 
-}
+	Context("when service is not created by fluid", func() {
+		It("should not return an error", func() {
+			_, err := GetServiceByName(mockClient, "svc1", namespace)
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+})
