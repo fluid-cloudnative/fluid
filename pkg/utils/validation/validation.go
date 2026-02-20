@@ -24,14 +24,15 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation"
 )
 
-const invalidMountRootErrMsgFmt string = "invalid mount root path '%s': %s"
+// InvalidMountRootErrMsgFmt is the error message format for invalid mount root paths
+const InvalidMountRootErrMsgFmt string = "invalid mount root path '%s': %s"
 
 func IsValidMountRoot(path string) error {
 	if len(path) == 0 {
-		return fmt.Errorf(invalidMountRootErrMsgFmt, path, "the mount root path is empty")
+		return fmt.Errorf(InvalidMountRootErrMsgFmt, path, "the mount root path is empty")
 	}
 	if !filepath.IsAbs(path) {
-		return fmt.Errorf(invalidMountRootErrMsgFmt, path, "the mount root path must be an absolute path")
+		return fmt.Errorf(InvalidMountRootErrMsgFmt, path, "the mount root path must be an absolute path")
 	}
 	// Normalize the path and split it into components
 	// The path is an absolute path and to avoid an empty part, we omit the first '/'
@@ -45,7 +46,7 @@ func IsValidMountRoot(path string) error {
 		// If the component fails the DNS 1123 conformity test, the function returns an error
 		errs := validation.IsDNS1123Label(part)
 		if len(errs) > 0 {
-			return fmt.Errorf(invalidMountRootErrMsgFmt, path, "every directory name in the mount root path shuold follow the relaxed DNS (RFC 1123) rule which additionally allows upper case alphabetic character and character '_'")
+			return fmt.Errorf(InvalidMountRootErrMsgFmt, path, "every directory name in the mount root path should follow the relaxed DNS (RFC 1123) rule which additionally allows upper case alphabetic character and character '_'")
 		}
 	}
 
