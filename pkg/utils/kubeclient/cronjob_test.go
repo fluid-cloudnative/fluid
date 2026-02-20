@@ -17,94 +17,93 @@ limitations under the License.
 package kubeclient
 
 import (
-	"reflect"
-	"testing"
 	"time"
 
 	"github.com/agiledragon/gomonkey/v2"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/compatibility"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestGetCronJobStatus(t *testing.T) {
-	nowTime := time.Now()
-	testDate := metav1.NewTime(time.Date(nowTime.Year(), nowTime.Month(), nowTime.Day(), nowTime.Hour(), 0, 0, 0, nowTime.Location()))
+var _ = Describe("GetCronJobStatus", func() {
+	var (
+		nowTime           time.Time
+		testDate          metav1.Time
+		namespace         string
+		testCronJobInputs []*batchv1.CronJob
+		testCronJobs      []runtime.Object
+		client            client.Client
+		patch             *gomonkey.Patches
+	)
 
-	namespace := "default"
-	testCronJobInputs := []*batchv1.CronJob{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test1",
-				Namespace: namespace,
-			},
-			Status: batchv1.CronJobStatus{
-				LastScheduleTime: &testDate,
-			},
-		},
-	}
+	BeforeEach(func() {
+		nowTime = time.Now()
+		testDate = metav1.NewTime(time.Date(nowTime.Year(), nowTime.Month(), nowTime.Day(), nowTime.Hour(), 0, 0, 0, nowTime.Location()))
+		namespace = "default"
 
-	testCronJobs := []runtime.Object{}
-
-	for _, cj := range testCronJobInputs {
-		testCronJobs = append(testCronJobs, cj.DeepCopy())
-	}
-
-	client := fake.NewFakeClientWithScheme(testScheme, testCronJobs...)
-
-	type args struct {
-		key types.NamespacedName
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    *batchv1.CronJobStatus
-		wantErr bool
-	}{
-		{
-			name: "CronJob exists",
-			args: args{
-				key: types.NamespacedName{
-					Namespace: namespace,
+		testCronJobInputs = []*batchv1.CronJob{
+			{
+				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test1",
-				},
-			},
-			want: &batchv1.CronJobStatus{
-				LastScheduleTime: &testDate,
-			},
-			wantErr: false,
-		},
-		{
-			name: "CronJob exists",
-			args: args{
-				key: types.NamespacedName{
 					Namespace: namespace,
-					Name:      "test-notexist",
+				},
+				Status: batchv1.CronJobStatus{
+					LastScheduleTime: &testDate,
 				},
 			},
-			want:    nil,
-			wantErr: true,
-		},
-	}
+		}
 
-	patch := gomonkey.ApplyFunc(compatibility.IsBatchV1CronJobSupported, func() bool {
-		return true
-	})
-	defer patch.Reset()
+		testCronJobs = []runtime.Object{}
+		for _, cj := range testCronJobInputs {
+			testCronJobs = append(testCronJobs, cj.DeepCopy())
+		}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetCronJobStatus(client, tt.args.key)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetCronJobStatus() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetCronJobStatus() = %v, want %v", got, tt.want)
-			}
+		client = fake.NewFakeClientWithScheme(testScheme, testCronJobs...)
+
+		// Apply gomonkey patch
+		patch = gomonkey.ApplyFunc(compatibility.IsBatchV1CronJobSupported, func() bool {
+			return true
 		})
-	}
-}
+	})
+
+	AfterEach(func() {
+		if patch != nil {
+			patch.Reset()
+		}
+	})
+
+	Context("when CronJob exists", func() {
+		It("should return the CronJob status successfully", func() {
+			key := types.NamespacedName{
+				Namespace: namespace,
+				Name:      "test1",
+			}
+
+			got, err := GetCronJobStatus(client, key)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(got).NotTo(BeNil())
+			Expect(got.LastScheduleTime).To(Equal(&testDate))
+		})
+	})
+
+	Context("when CronJob does not exist", func() {
+		It("should return an error", func() {
+			key := types.NamespacedName{
+				Namespace: namespace,
+				Name:      "test-notexist",
+			}
+
+			got, err := GetCronJobStatus(client, key)
+
+			Expect(err).To(HaveOccurred())
+			Expect(got).To(BeNil())
+		})
+	})
+})
