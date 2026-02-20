@@ -16,40 +16,56 @@ limitations under the License.
 
 package options
 
-import "testing"
+import (
+	"os"
 
-func Test_setControllerSkipSyncingRuntime(t *testing.T) {
-	tests := []struct {
-		name   string
-		env    map[string]string
-		expect bool
-	}{
-		{
-			name:   "not set",
-			env:    map[string]string{},
-			expect: false,
-		},
-		{
-			name:   "set true",
-			env:    map[string]string{EnvControllerSkipSyncingRuntime: "true"},
-			expect: true,
-		},
-		{
-			name:   "set false",
-			env:    map[string]string{EnvControllerSkipSyncingRuntime: "false"},
-			expect: false,
-		},
-	}
-	for _, tt := range tests {
-		for k, v := range tt.env {
-			t.Setenv(k, v)
-		}
-		t.Run(tt.name, func(t *testing.T) {
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+)
+
+var _ = Describe("setControllerSkipSyncingRuntime", func() {
+
+	Context("when environment variable is not set", func() {
+		BeforeEach(func() {
+			os.Unsetenv(EnvControllerSkipSyncingRuntime)
+		})
+
+		It("should return false", func() {
 			setControllerSkipSyncingRuntime()
 			got := ShouldSkipSyncingRuntime()
-			if got != tt.expect {
-				t.Errorf("ControllerSkipSyncingRuntime() = %v, want %v", got, tt.expect)
-			}
+			Expect(got).To(BeFalse())
 		})
-	}
-}
+	})
+
+	Context("when environment variable is set to true", func() {
+		BeforeEach(func() {
+			os.Setenv(EnvControllerSkipSyncingRuntime, "true")
+		})
+
+		AfterEach(func() {
+			os.Unsetenv(EnvControllerSkipSyncingRuntime)
+		})
+
+		It("should return true", func() {
+			setControllerSkipSyncingRuntime()
+			got := ShouldSkipSyncingRuntime()
+			Expect(got).To(BeTrue())
+		})
+	})
+
+	Context("when environment variable is set to false", func() {
+		BeforeEach(func() {
+			os.Setenv(EnvControllerSkipSyncingRuntime, "false")
+		})
+
+		AfterEach(func() {
+			os.Unsetenv(EnvControllerSkipSyncingRuntime)
+		})
+
+		It("should return false", func() {
+			setControllerSkipSyncingRuntime()
+			got := ShouldSkipSyncingRuntime()
+			Expect(got).To(BeFalse())
+		})
+	})
+})
