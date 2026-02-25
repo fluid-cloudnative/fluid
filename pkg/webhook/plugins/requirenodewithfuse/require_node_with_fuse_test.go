@@ -17,98 +17,81 @@ limitations under the License.
 package requirenodewithfuse
 
 import (
-	"reflect"
-	"testing"
-
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestGetRequiredSchedulingTermWithGlobalMode(t *testing.T) {
-	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio")
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
+var _ = Describe("RequireNodeWithFuse Plugin", func() {
+	Describe("getRequiredSchedulingTerm", func() {
+		It("should return correct NodeSelectorTerm with selector enabled and disabled", func() {
+			runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio")
+			Expect(err).NotTo(HaveOccurred())
 
-	// Test case 1: Global fuse with selector enable
-	runtimeInfo.SetFuseNodeSelector(map[string]string{"test1": "test1"})
-	terms, _ := getRequiredSchedulingTerm(runtimeInfo)
+			// Global fuse with selector enable
+			runtimeInfo.SetFuseNodeSelector(map[string]string{"test1": "test1"})
+			terms, err := getRequiredSchedulingTerm(runtimeInfo)
+			Expect(err).NotTo(HaveOccurred())
+			expectTerms := corev1.NodeSelectorTerm{
+				MatchExpressions: []corev1.NodeSelectorRequirement{
+					{
+						Key:      "test1",
+						Operator: corev1.NodeSelectorOpIn,
+						Values:   []string{"test1"},
+					},
+				},
+			}
+			Expect(terms).To(Equal(expectTerms))
 
-	expectTerms := corev1.NodeSelectorTerm{
-		MatchExpressions: []corev1.NodeSelectorRequirement{
-			{
-				Key:      "test1",
-				Operator: corev1.NodeSelectorOpIn,
-				Values:   []string{"test1"},
-			},
-		},
-	}
+			// Global fuse with selector disable
+			runtimeInfo.SetFuseNodeSelector(map[string]string{})
+			terms, err = getRequiredSchedulingTerm(runtimeInfo)
+			Expect(err).NotTo(HaveOccurred())
+			expectTerms = corev1.NodeSelectorTerm{MatchExpressions: []corev1.NodeSelectorRequirement{}}
+			Expect(terms).To(Equal(expectTerms))
 
-	if !reflect.DeepEqual(terms, expectTerms) {
-		t.Errorf("getRequiredSchedulingTerm failure, want:%v, got:%v", expectTerms, terms)
-	}
+			// runtimeInfo is nil
+			_, err = getRequiredSchedulingTerm(nil)
+			Expect(err).To(HaveOccurred())
+		})
+	})
 
-	// Test case 2: Global fuse with selector disable
-	runtimeInfo.SetFuseNodeSelector(map[string]string{})
-	terms, _ = getRequiredSchedulingTerm(runtimeInfo)
-	expectTerms = corev1.NodeSelectorTerm{MatchExpressions: []corev1.NodeSelectorRequirement{}}
+	Describe("Mutate", func() {
+		var (
+			cl  client.Client
+			pod *corev1.Pod
+		)
 
-	if !reflect.DeepEqual(terms, expectTerms) {
-		t.Errorf("getRequiredSchedulingTerm failure, want:%v, got:%v", expectTerms, terms)
-	}
+		BeforeEach(func() {
+			cl = nil
+			pod = &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "test",
+				},
+			}
+		})
 
-	// Test case 3: runtime Info is nil to handle the error path
-	_, err = getRequiredSchedulingTerm(nil)
-	if err == nil {
-		t.Errorf("getRequiredSchedulingTerm failure, want:%v, got:%v", nil, err)
-	}
-}
+		It("should create plugin and mutate pod correctly", func() {
+			plugin, err := NewPlugin(cl, "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(plugin.GetName()).To(Equal(Name))
 
-func TestMutate(t *testing.T) {
-	var (
-		client client.Client
-		pod    *corev1.Pod
-	)
+			runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio")
+			Expect(err).NotTo(HaveOccurred())
 
-	plugin, err := NewPlugin(client, "")
-	if err != nil {
-		t.Error("new plugin occurs error", err)
-	}
-	if plugin.GetName() != Name {
-		t.Errorf("GetName expect %v, got %v", Name, plugin.GetName())
-	}
+			shouldStop, err := plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{"pvcName": runtimeInfo})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(shouldStop).To(BeFalse())
 
-	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio")
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
+			_, err = plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{})
+			Expect(err).NotTo(HaveOccurred())
 
-	pod = &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "test",
-		},
-	}
-
-	shouldStop, err := plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{"pvcName": runtimeInfo})
-	if err != nil {
-		t.Errorf("fail to mutate pod with error %v", err)
-	}
-
-	if shouldStop {
-		t.Errorf("expect shouldStop as false, but got %v", shouldStop)
-	}
-
-	_, err = plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{})
-	if err != nil {
-		t.Errorf("fail to mutate pod with error %v", err)
-	}
-
-	_, err = plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{"pvcName": nil})
-	if err == nil {
-		t.Errorf("expect error is not nil")
-	}
-
-}
+			_, err = plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{"pvcName": nil})
+			Expect(err).To(HaveOccurred())
+		})
+	})
+})
