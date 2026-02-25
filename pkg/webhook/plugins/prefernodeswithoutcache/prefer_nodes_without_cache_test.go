@@ -17,120 +17,97 @@ limitations under the License.
 package prefernodeswithoutcache
 
 import (
-	"reflect"
-	"testing"
-
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestGetPreferredSchedulingTermForPodWithoutCacheWithGlobalMode(t *testing.T) {
-	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio")
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
+var _ = Describe("PreferNodesWithoutCache Plugin", func() {
+	Describe("getPreferredSchedulingTermForPodWithoutCache", func() {
+		It("should return correct PreferredSchedulingTerm with selector enabled and disabled", func() {
+			runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio")
+			Expect(err).NotTo(HaveOccurred())
 
-	// Test case 1: Global fuse with selector enable
-	runtimeInfo.SetFuseNodeSelector(map[string]string{"test1": "test1"})
-	term := getPreferredSchedulingTermForPodWithoutCache()
+			runtimeInfo.SetFuseNodeSelector(map[string]string{"test1": "test1"})
+			term := getPreferredSchedulingTermForPodWithoutCache()
 
-	expectTerm := corev1.PreferredSchedulingTerm{
-		Weight: 100,
-		Preference: corev1.NodeSelectorTerm{
-			MatchExpressions: []corev1.NodeSelectorRequirement{
-				{
-					Key:      common.GetDatasetNumLabelName(),
-					Operator: corev1.NodeSelectorOpDoesNotExist,
+			expectTerm := corev1.PreferredSchedulingTerm{
+				Weight: 100,
+				Preference: corev1.NodeSelectorTerm{
+					MatchExpressions: []corev1.NodeSelectorRequirement{
+						{
+							Key:      common.GetDatasetNumLabelName(),
+							Operator: corev1.NodeSelectorOpDoesNotExist,
+						},
+					},
 				},
-			},
-		},
-	}
+			}
+			Expect(term).To(Equal(expectTerm))
 
-	if !reflect.DeepEqual(term, expectTerm) {
-		t.Errorf("getPreferredSchedulingTermForPodWithoutCache failure, want:%v, got:%v", expectTerm, term)
-	}
+			runtimeInfo.SetFuseNodeSelector(map[string]string{})
+			term = getPreferredSchedulingTermForPodWithoutCache()
+			Expect(term).To(Equal(expectTerm))
+		})
 
-	// Test case 2: Global fuse with selector disable
-	runtimeInfo.SetFuseNodeSelector(map[string]string{})
-	term = getPreferredSchedulingTermForPodWithoutCache()
+		It("should return correct PreferredSchedulingTerm with default mode", func() {
+			runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio")
+			Expect(err).NotTo(HaveOccurred())
 
-	if !reflect.DeepEqual(term, expectTerm) {
-		t.Errorf("getPreferredSchedulingTermForPodWithoutCache failure, want:%v, got:%v", expectTerm, term)
-	}
-}
+			runtimeInfo.SetFuseNodeSelector(map[string]string{})
+			term := getPreferredSchedulingTermForPodWithoutCache()
 
-func TestGetPreferredSchedulingTermForPodWithoutCacheWithDefaultMode(t *testing.T) {
-	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio")
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
-
-	runtimeInfo.SetFuseNodeSelector(map[string]string{})
-	term := getPreferredSchedulingTermForPodWithoutCache()
-
-	expectTerm := corev1.PreferredSchedulingTerm{
-		Weight: 100,
-		Preference: corev1.NodeSelectorTerm{
-			MatchExpressions: []corev1.NodeSelectorRequirement{
-				{
-					Key:      common.GetDatasetNumLabelName(),
-					Operator: corev1.NodeSelectorOpDoesNotExist,
+			expectTerm := corev1.PreferredSchedulingTerm{
+				Weight: 100,
+				Preference: corev1.NodeSelectorTerm{
+					MatchExpressions: []corev1.NodeSelectorRequirement{
+						{
+							Key:      common.GetDatasetNumLabelName(),
+							Operator: corev1.NodeSelectorOpDoesNotExist,
+						},
+					},
 				},
-			},
-		},
-	}
+			}
+			Expect(term).To(Equal(expectTerm))
+		})
+	})
 
-	if !reflect.DeepEqual(term, expectTerm) {
-		t.Errorf("getPreferredSchedulingTermForPodWithoutCache failure, want:%v, got:%v", expectTerm, term)
-	}
-}
+	Describe("Mutate", func() {
+		var (
+			cl  client.Client
+			pod *corev1.Pod
+		)
 
-func TestMutate(t *testing.T) {
-	var (
-		client client.Client
-		pod    *corev1.Pod
-	)
+		BeforeEach(func() {
+			cl = nil
+			pod = &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "test",
+				},
+			}
+		})
 
-	plugin, err := NewPlugin(client, "")
-	if err != nil {
-		t.Error("new plugin occurs error", err)
-	}
-	if plugin.GetName() != Name {
-		t.Errorf("GetName expect %v, got %v", Name, plugin.GetName())
-	}
+		It("should create plugin and mutate pod correctly", func() {
+			plugin, err := NewPlugin(cl, "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(plugin.GetName()).To(Equal(Name))
 
-	runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio")
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
+			runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio")
+			Expect(err).NotTo(HaveOccurred())
 
-	pod = &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "test",
-		},
-	}
+			shouldStop, err := plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{"test": runtimeInfo})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(shouldStop).To(BeTrue())
 
-	shouldStop, err := plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{"test": runtimeInfo})
-	if err != nil {
-		t.Errorf("fail to mutate pod with error %v", err)
-	}
+			_, err = plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{})
+			Expect(err).NotTo(HaveOccurred())
 
-	if !shouldStop {
-		t.Errorf("expect shouldStop as true, but got %v", shouldStop)
-	}
-
-	_, err = plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{})
-	if err != nil {
-		t.Errorf("fail to mutate pod with error %v", err)
-	}
-
-	_, err = plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{"test": nil})
-	if err != nil {
-		t.Errorf("fail to mutate pod with error %v", err)
-	}
-
-}
+			_, err = plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{"test": nil})
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+})
