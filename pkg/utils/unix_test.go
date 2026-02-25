@@ -1,51 +1,19 @@
 package utils
 
-import "testing"
+import (
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+)
 
-func TestSplitSchemaAddr(t *testing.T) {
-	type args struct {
-		addr string
-	}
-	tests := []struct {
-		name         string
-		args         args
-		wantProtocol string
-		wantAddr     string
-	}{
-		{
-			name: "Test for unix protocol",
-			args: args{
-				addr: "unix:///foo/bar",
-			},
-			wantProtocol: "unix",
-			wantAddr:     "/foo/bar",
+var _ = Describe("SplitSchemaAddr", func() {
+	DescribeTable("should parse address correctly",
+		func(addr string, wantProtocol string, wantAddr string) {
+			gotProtocol, gotAddr := SplitSchemaAddr(addr)
+			Expect(gotProtocol).To(Equal(wantProtocol))
+			Expect(gotAddr).To(Equal(wantAddr))
 		},
-		{
-			name: "Test for tcp protocol",
-			args: args{
-				addr: "tcp://127.0.0.1:8088",
-			},
-			wantProtocol: "tcp",
-			wantAddr:     "127.0.0.1:8088",
-		},
-		{
-			name: "Test for default protocol",
-			args: args{
-				addr: "127.0.0.1:3456",
-			},
-			wantProtocol: "tcp",
-			wantAddr:     "127.0.0.1:3456",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotProtocol, gotAddr := SplitSchemaAddr(tt.args.addr)
-			if gotProtocol != tt.wantProtocol {
-				t.Errorf("SplitSchemaAddr() gotProtocol = %v, want %v", gotProtocol, tt.wantProtocol)
-			}
-			if gotAddr != tt.wantAddr {
-				t.Errorf("SplitSchemaAddr() gotAddr = %v, want %v", gotAddr, tt.wantAddr)
-			}
-		})
-	}
-}
+		Entry("unix protocol", "unix:///foo/bar", "unix", "/foo/bar"),
+		Entry("tcp protocol", "tcp://127.0.0.1:8088", "tcp", "127.0.0.1:8088"),
+		Entry("default protocol", "127.0.0.1:3456", "tcp", "127.0.0.1:3456"),
+	)
+})
