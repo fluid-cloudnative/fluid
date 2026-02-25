@@ -17,103 +17,103 @@ limitations under the License.
 package watch
 
 import (
-	"testing"
-
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/event"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-func TestOnCreateFunc(t *testing.T) {
+var _ = Describe("runtimeEventHandler", func() {
+	var (
+		handler    *runtimeEventHandler
+		reconciler *FakeRuntimeReconciler
+	)
 
-	// 1. the Object is RuntimeInterface
-	createRuntimeEvent := event.CreateEvent{
-		Object: &datav1alpha1.JindoRuntime{},
-	}
-	runtimeEventHandler := &runtimeEventHandler{}
+	BeforeEach(func() {
+		handler = &runtimeEventHandler{}
+		reconciler = &FakeRuntimeReconciler{}
+	})
 
-	f := runtimeEventHandler.onCreateFunc(&FakeRuntimeReconciler{})
-	predicate := f(createRuntimeEvent)
+	Describe("onCreateFunc", func() {
+		It("should reconcile if the object is RuntimeInterface", func() {
+			createRuntimeEvent := event.CreateEvent{
+				Object: &datav1alpha1.JindoRuntime{},
+			}
+			f := handler.onCreateFunc(reconciler)
+			Expect(f(createRuntimeEvent)).To(BeTrue())
+		})
 
-	if !predicate {
-		t.Errorf("The event %v should be reconciled, but skip.", createRuntimeEvent)
-	}
+		It("should not reconcile if the object is not RuntimeInterface", func() {
+			createRuntimeEvent := event.CreateEvent{
+				Object: &corev1.Pod{},
+			}
+			f := handler.onCreateFunc(reconciler)
+			Expect(f(createRuntimeEvent)).To(BeFalse())
+		})
+	})
 
-	// 2. the Object is not RuntimeInterface
-	createRuntimeEvent.Object = &corev1.Pod{}
-	predicate = f(createRuntimeEvent)
-	if predicate {
-		t.Errorf("The event %v should ben't reconciled, but pass.", createRuntimeEvent)
-	}
-}
+	Describe("onUpdateFunc", func() {
+		var updateRuntimeEvent event.UpdateEvent
 
-func TestOnUpdateFunc(t *testing.T) {
+		BeforeEach(func() {
+			updateRuntimeEvent = event.UpdateEvent{
+				ObjectOld: &datav1alpha1.JindoRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						ResourceVersion: "123",
+					},
+				},
+				ObjectNew: &datav1alpha1.JindoRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						ResourceVersion: "456",
+					},
+				},
+			}
+		})
 
-	updateRuntimeEvent := event.UpdateEvent{
-		ObjectOld: &datav1alpha1.JindoRuntime{
-			ObjectMeta: metav1.ObjectMeta{
-				ResourceVersion: "123",
-			},
-		},
-		ObjectNew: &datav1alpha1.JindoRuntime{
-			ObjectMeta: metav1.ObjectMeta{
-				ResourceVersion: "456",
-			},
-		},
-	}
-	runtimeEventHandler := &runtimeEventHandler{}
+		It("should reconcile if resource versions differ and both are RuntimeInterface", func() {
+			f := handler.onUpdateFunc(reconciler)
+			Expect(f(updateRuntimeEvent)).To(BeTrue())
+		})
 
-	f := runtimeEventHandler.onUpdateFunc(&FakeRuntimeReconciler{})
-	predicate := f(updateRuntimeEvent)
+		It("should not reconcile if resource versions are equal", func() {
+			updateRuntimeEvent.ObjectOld.(*datav1alpha1.JindoRuntime).SetResourceVersion("456")
+			f := handler.onUpdateFunc(reconciler)
+			Expect(f(updateRuntimeEvent)).To(BeFalse())
+		})
 
-	// 1. expect the updateEvent is validated
-	if !predicate {
-		t.Errorf("The event %v should be reconciled, but skip.", updateRuntimeEvent)
-	}
+		It("should not reconcile if both objects are not RuntimeInterface", func() {
+			updateRuntimeEvent.ObjectOld = &corev1.Pod{}
+			updateRuntimeEvent.ObjectNew = &corev1.Pod{}
+			f := handler.onUpdateFunc(reconciler)
+			Expect(f(updateRuntimeEvent)).To(BeFalse())
+		})
 
-	// 2. expect the updateEvent is not validated due to the resource version is equal
-	updateRuntimeEvent.ObjectOld.SetResourceVersion("456")
-	predicate = f(updateRuntimeEvent)
-	if predicate {
-		t.Errorf("The event %v should ben't reconciled, but pass.", updateRuntimeEvent)
-	}
+		It("should not reconcile if only new object is RuntimeInterface", func() {
+			updateRuntimeEvent.ObjectOld = &corev1.Pod{}
+			updateRuntimeEvent.ObjectNew = &datav1alpha1.JindoRuntime{}
+			f := handler.onUpdateFunc(reconciler)
+			Expect(f(updateRuntimeEvent)).To(BeFalse())
+		})
+	})
 
-	// 3. expect the updateEvent is not validated due to the object is not kind of runtimeInterface
-	updateRuntimeEvent.ObjectOld = &corev1.Pod{}
-	updateRuntimeEvent.ObjectNew = &corev1.Pod{}
-	predicate = f(updateRuntimeEvent)
-	if predicate {
-		t.Errorf("The event %v should ben't reconciled, but pass.", updateRuntimeEvent)
-	}
+	Describe("onDeleteFunc", func() {
+		It("should reconcile if the object is RuntimeInterface", func() {
+			delRuntimeEvent := event.DeleteEvent{
+				Object: &datav1alpha1.JindoRuntime{},
+			}
+			f := handler.onDeleteFunc(reconciler)
+			Expect(f(delRuntimeEvent)).To(BeTrue())
+		})
 
-	// 4. expect the updateEvent is not validate due the old Object  is not kind of the runtimeInterface
-	updateRuntimeEvent.ObjectNew = &datav1alpha1.JindoRuntime{}
-	predicate = f(updateRuntimeEvent)
-	if predicate {
-		t.Errorf("The event %v should ben't reconciled, but pass.", updateRuntimeEvent)
-	}
-}
-
-func TestOnDeleteFunc(t *testing.T) {
-
-	// 1. the Object is RuntimeInterface
-	delRuntimeEvent := event.DeleteEvent{
-		Object: &datav1alpha1.JindoRuntime{},
-	}
-	runtimeEventHandler := &runtimeEventHandler{}
-
-	f := runtimeEventHandler.onDeleteFunc(&FakeRuntimeReconciler{})
-	predicate := f(delRuntimeEvent)
-
-	if !predicate {
-		t.Errorf("The event %v should be reconciled, but skip.", delRuntimeEvent)
-	}
-
-	// 2. the Object is not RuntimeInterface
-	delRuntimeEvent.Object = &corev1.Pod{}
-	predicate = f(delRuntimeEvent)
-	if predicate {
-		t.Errorf("The event %v should ben't reconciled, but pass.", delRuntimeEvent)
-	}
-}
+		It("should not reconcile if the object is not RuntimeInterface", func() {
+			delRuntimeEvent := event.DeleteEvent{
+				Object: &corev1.Pod{},
+			}
+			f := handler.onDeleteFunc(reconciler)
+			Expect(f(delRuntimeEvent)).To(BeFalse())
+		})
+	})
+})
