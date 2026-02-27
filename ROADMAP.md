@@ -15,7 +15,7 @@
 
   – **Hot Parameter Swapping**: Runtime modification of cache engine configurations (e.g., Alluxio block size, Jindo worker threads) for traffic spike handling.
 
-- **API upgradation to v1alpha2**
+- **API upgrade to v1alpha2**
 
   – Standardized Conditions, ObservedGeneration, and phase transition semantics for improved GitOps and tooling compatibility.
 
@@ -23,9 +23,9 @@
 
 - **Validation Webhook**
 
- – Admission-time CRD validation with auto-correction suggestions to prevent misconfigurations.
+  – Admission-time CRD validation with auto-correction suggestions to prevent misconfigurations.
 
- – Policy enforcement for resource quotas and security constraints.
+  – Policy enforcement for resource quotas and security constraints.
 
 - **ThinRuntime Productization**
 
