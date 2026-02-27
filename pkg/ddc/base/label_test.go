@@ -17,166 +17,89 @@ limitations under the License.
 package base
 
 import (
-	"testing"
-
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-func TestGetStorageLabelName(t *testing.T) {
-	tests := []struct {
-		info           RuntimeInfo
-		expectedResult string
-	}{
-		{
-			info: RuntimeInfo{
+var _ = Describe("Label Functions", func() {
+	Describe("GetStorageLabelName", func() {
+		It("should return correct storage label name", func() {
+			info := RuntimeInfo{
 				name:        "spark",
 				namespace:   "default",
 				runtimeType: common.AlluxioRuntime,
-			},
+			}
+			result := utils.GetStorageLabelName(common.HumanReadType, common.MemoryStorageType, info.runtimeType, info.namespace, info.name, "")
+			Expect(result).To(Equal("fluid.io/s-h-alluxio-m-default-spark"))
+		})
+	})
 
-			expectedResult: "fluid.io/s-h-alluxio-m-default-spark",
-		},
-	}
-
-	for _, test := range tests {
-		result := utils.GetStorageLabelName(common.HumanReadType, common.MemoryStorageType, test.info.runtimeType, test.info.namespace, test.info.name, "")
-		if test.expectedResult != result {
-			t.Errorf("check failure, expected %s, get %s", test.expectedResult, result)
-		}
-	}
-}
-
-func TestGetLabelNameForMemory(t *testing.T) {
-	tests := []struct {
-		info         RuntimeInfo
-		expectResult string
-	}{
-		{
-			info: RuntimeInfo{
+	Describe("GetLabelNameForMemory", func() {
+		It("should return correct memory label name", func() {
+			info := RuntimeInfo{
 				name:        "spark",
 				namespace:   "default",
 				runtimeType: common.AlluxioRuntime,
-			},
-			expectResult: "fluid.io/s-h-alluxio-m-default-spark",
-		},
-	}
+			}
+			result := info.GetLabelNameForMemory()
+			Expect(result).To(Equal("fluid.io/s-h-alluxio-m-default-spark"))
+		})
+	})
 
-	for _, test := range tests {
-		result := test.info.GetLabelNameForMemory()
-		if test.expectResult != result {
-			t.Errorf("check failure, expected %s, get %s", test.expectResult, result)
-		}
-	}
-}
-
-func TestGetLabelNameForDisk(t *testing.T) {
-	tests := []struct {
-		info         RuntimeInfo
-		expectResult string
-	}{
-		{
-			info: RuntimeInfo{
+	Describe("GetLabelNameForDisk", func() {
+		It("should return correct disk label name", func() {
+			info := RuntimeInfo{
 				name:        "spark",
 				namespace:   "default",
 				runtimeType: common.AlluxioRuntime,
-			},
-			expectResult: "fluid.io/s-h-alluxio-d-default-spark",
-		},
-	}
+			}
+			result := info.GetLabelNameForDisk()
+			Expect(result).To(Equal("fluid.io/s-h-alluxio-d-default-spark"))
+		})
+	})
 
-	for _, test := range tests {
-		result := test.info.GetLabelNameForDisk()
-		if result != test.expectResult {
-			t.Errorf("check failure, expected %s, get %s", test.expectResult, result)
-		}
-	}
-}
-
-func TestGetLabelNameForTotal(t *testing.T) {
-	tests := []struct {
-		info         RuntimeInfo
-		expectResult string
-	}{
-		{
-			info: RuntimeInfo{
+	Describe("GetLabelNameForTotal", func() {
+		It("should return correct total label name", func() {
+			info := RuntimeInfo{
 				name:        "spark",
 				namespace:   "default",
 				runtimeType: common.AlluxioRuntime,
-			},
-			expectResult: "fluid.io/s-h-alluxio-t-default-spark",
-		},
-	}
+			}
+			result := info.GetLabelNameForTotal()
+			Expect(result).To(Equal("fluid.io/s-h-alluxio-t-default-spark"))
+		})
+	})
 
-	for _, test := range tests {
-		result := test.info.GetLabelNameForTotal()
-		if result != test.expectResult {
-			t.Errorf("check failure, expected %s, get %s", test.expectResult, result)
-		}
-	}
-}
-
-func TestGetCommonLabelName(t *testing.T) {
-	tests := []struct {
-		info         RuntimeInfo
-		expectResult string
-	}{
-		{
-			info: RuntimeInfo{
+	Describe("GetCommonLabelName", func() {
+		It("should return correct common label name", func() {
+			info := RuntimeInfo{
 				name:      "spark",
 				namespace: "default",
-			},
-			expectResult: "fluid.io/s-default-spark",
-		},
-	}
+			}
+			result := info.GetCommonLabelName()
+			Expect(result).To(Equal("fluid.io/s-default-spark"))
+		})
+	})
 
-	for _, test := range tests {
-		result := test.info.GetCommonLabelName()
-		if result != test.expectResult {
-			t.Errorf("check failure, expected %s, get %s", test.expectResult, result)
-		}
-	}
-}
-
-func TestGetRuntimeLabelName(t *testing.T) {
-	tests := []struct {
-		info         RuntimeInfo
-		expectResult string
-	}{
-		{
-			info: RuntimeInfo{
+	Describe("GetRuntimeLabelName", func() {
+		It("should return correct runtime label name", func() {
+			info := RuntimeInfo{
 				name:        "spark",
 				namespace:   "default",
 				runtimeType: common.AlluxioRuntime,
-			},
-			expectResult: "fluid.io/s-alluxio-default-spark",
-		},
-	}
+			}
+			result := info.GetRuntimeLabelName()
+			Expect(result).To(Equal("fluid.io/s-alluxio-default-spark"))
+		})
+	})
 
-	for _, test := range tests {
-		result := test.info.GetRuntimeLabelName()
-		if result != test.expectResult {
-			t.Errorf("check failure, expected %s, get %s", test.expectResult, result)
-		}
-	}
-}
-
-func TestGetDatasetNumLabelName(t *testing.T) {
-
-	tests := []struct {
-		info           RuntimeInfo
-		expectedResult string
-	}{
-		{
-			info:           RuntimeInfo{},
-			expectedResult: common.LabelAnnotationDatasetNum,
-		},
-	}
-	for _, test := range tests {
-		result := test.info.GetDatasetNumLabelName()
-		if result != test.expectedResult {
-			t.Errorf("check failure, expected %s, get %s", test.expectedResult, result)
-		}
-	}
-
-}
+	Describe("GetDatasetNumLabelName", func() {
+		It("should return dataset num label name", func() {
+			info := RuntimeInfo{}
+			result := info.GetDatasetNumLabelName()
+			Expect(result).To(Equal(common.LabelAnnotationDatasetNum))
+		})
+	})
+})
