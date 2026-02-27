@@ -47,27 +47,13 @@
   - **Distributed Prewarming**: Maximize bandwidth utilization for fast data loading.  
   - **Throttling Control**: Limit bandwidth usage during prewarming to avoid saturation.  
   - **Rsync Optimization**: Improve cross-region sync efficiency.  
-
- - **Elastic Caching & Cost Optimization**
-
-  – **Disk-Aware Scheduling**: Integrate node disk capacity, utilization, and data locality into Kubernetes scheduler decisions.
-
-  – **Kubernetes Node-Specific Restrictions**_(P1)_: Support node selectors, affinity/anti-affinity, and taint tolerations for cache Pods.
-
- – **Intelligent Autoscaling**: Cost-performance-aware recommendations with cache engine throughput adaptation post-scaling.
-
- – **Cloud-Native Recovery**: Cross-region cache reconstruction via cloud disk snapshots (EBS/Cloud Disk).
-
+  
 - **JindoRuntime High Availability**
-
  – **Master Pod Crash Recovery**: Automatic re-setup and state reconstruction after cache master failure without data loss.
-
  – **Metadata Persistence**: WAL-based metadata recovery for rapid failover.
 
 - **Observability-Driven Optimization**
-
  – **Access Pattern Recognition**: ML-based analysis to auto-inject acceleration strategies (prefetching, block size optimization).
-
  – **Dataset Garbage Collection**: Idle dataset detection via reference counting and access history analysis. 
 
 
