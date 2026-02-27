@@ -80,6 +80,7 @@ var _ = Describe("TemplateEngine", func() {
 	// Check if all expectations have been met after each It
 	AfterEach(func() {
 		ctrl.Finish()
+		_ = os.Unsetenv("FLUID_SYNC_RETRY_DURATION")
 	})
 
 	Describe("Setup", func() {
