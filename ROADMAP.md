@@ -7,7 +7,7 @@
 
 - **Generic Cache Runtime**    
   – **Pluggable Architecture**: Standardized Cache Runtime Interface for rapid integration of new engines (CubeFS, Dragonfly, Vineyard) with minimal boilerplate.
-  – **AdvancedStatefulset-Based Orchestration**: Migrate from StatefulSet to InstanceSet for fine-grained Pod lifecycle management, ordered rollout, and enhanced failover capabilities.
+  – **Orchestration Based on AdvancedStatefulset**: Migrate from StatefulSet to AdvancedStatefulset for fine-grained Pod lifecycle management, ordered rollout, and enhanced failover capabilities.
 
 - **Runtime Dynamic Configuration**
 
@@ -34,7 +34,7 @@
 ### **2. Data Anywhere**  
 **Objective**: Achieve **cross-region, cross-cluster, and cross-platform** data mobility and accessibility.  
 
-- **LLM KV Cache Orchestration**_(P0, New Strategic Focus)_
+- **LLM KV Cache Orchestration**
 
  – **Disaggregated KV Cache**: Externalize vLLM/SGLang KV Cache to Fluid-managed distributed storage, enabling 10x+ throughput improvement for long-context inference.
 
@@ -60,7 +60,7 @@
 ### **3. Data Anytime**  
 **Core Goal**: Ensure **real-time, adaptive, and intelligent** data availability for workloads.  
 
-• **Temporal Workflow Integration**
+- **Temporal Workflow Integration**
 
  – **Kueue-Driven Pipelines**: Trigger training/inference jobs automatically upon DataLoad completion; automate post-job cache eviction and data migration.
 
@@ -68,9 +68,9 @@
 
 - **Developer Experience**
 
- – **Fluid kubectl Plugin**_(P1)_: Native CLI extension (kubectl fluid) for:
+ – **Fluid kubectl Plugin**: Native CLI extension (kubectl fluid) for:
 
-  -  Dataset status inspection and health diagnostics. 
+  - Dataset status inspection and health diagnostics. 
   - On-demand prewarming triggering (kubectl fluid warmup). 
   - Cache performance profiling and bottleneck analysis. 
   - Runtime configuration hot-updates. 
