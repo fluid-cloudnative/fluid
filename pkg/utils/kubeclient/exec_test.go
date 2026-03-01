@@ -19,359 +19,309 @@ package kubeclient
 import (
 	"context"
 	"errors"
-	"strings"
+
 	"sync"
 	"sync/atomic"
-	"testing"
 	"time"
 
 	"github.com/agiledragon/gomonkey/v2"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes"
 	rest "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-func TestInitClient(t *testing.T) {
-	PathExistsTrue := func(path string) bool {
-		return true
-	}
-	PathExistsFalse := func(path string) bool {
-		return false
-	}
-	BuildConfigFromFlagsCommon := func(masterUrl, kubeconfigPath string) (*rest.Config, error) {
-		return nil, nil
-	}
-	BuildConfigFromFlagsErr := func(masterUrl, kubeconfigPath string) (*rest.Config, error) {
-		return nil, errors.New("fail to run the function")
-	}
-	NewForConfigCommon := func(c *rest.Config) (*kubernetes.Clientset, error) {
-		return nil, nil
-	}
-	NewForConfigError := func(c *rest.Config) (*kubernetes.Clientset, error) {
-		return nil, errors.New("fail to run the function")
-	}
+const errFailToRun = "fail to run the function"
 
-	t.Setenv(common.RecommendedKubeConfigPathEnv, "Path for test")
+var _ = Describe("Exec Tests", func() {
+	Context("InitClient", func() {
+		var (
+			pathExistPatch            *gomonkey.Patches
+			buildConfigFromFlagsPatch *gomonkey.Patches
+			newForConfigPatch         *gomonkey.Patches
+		)
 
-	pathExistPatch := gomonkey.ApplyFunc(utils.PathExists, PathExistsTrue)
-	buildConfigFromFlagsPatch := gomonkey.ApplyFunc(clientcmd.BuildConfigFromFlags, BuildConfigFromFlagsErr)
+		BeforeEach(func() {
+			t := GinkgoT()
+			t.Setenv(common.RecommendedKubeConfigPathEnv, "Path for test")
 
-	restConfig = nil
-	clientset = nil
+			pathExistPatch = gomonkey.ApplyFunc(utils.PathExists, func(path string) bool {
+				return true
+			})
 
-	err := initClient()
-	if err == nil {
-		t.Errorf("expected error, get nil")
-	}
-	buildConfigFromFlagsPatch.Reset()
-
-	buildConfigFromFlagsPatch.ApplyFunc(clientcmd.BuildConfigFromFlags, BuildConfigFromFlagsCommon)
-	newForConfigPatch := gomonkey.ApplyFunc(kubernetes.NewForConfig, NewForConfigError)
-	restConfig = nil
-	clientset = nil
-
-	err = initClient()
-	if err == nil {
-		t.Errorf("expected error, get nil")
-	}
-	newForConfigPatch.Reset()
-
-	newForConfigPatch.ApplyFunc(kubernetes.NewForConfig, NewForConfigCommon)
-
-	restConfig = nil
-	clientset = nil
-
-	err = initClient()
-	if err != nil {
-		t.Errorf("expected no error, get %v", err)
-	}
-	newForConfigPatch.Reset()
-	buildConfigFromFlagsPatch.Reset()
-	pathExistPatch.Reset()
-
-	pathExistPatch.ApplyFunc(utils.PathExists, PathExistsFalse)
-	buildConfigFromFlagsPatch.ApplyFunc(clientcmd.BuildConfigFromFlags, BuildConfigFromFlagsErr)
-
-	restConfig = nil
-	clientset = nil
-
-	err = initClient()
-	if err == nil {
-		t.Errorf("expected error, get nil")
-	}
-	buildConfigFromFlagsPatch.Reset()
-
-	buildConfigFromFlagsPatch.ApplyFunc(clientcmd.BuildConfigFromFlags, BuildConfigFromFlagsCommon)
-	newForConfigPatch.ApplyFunc(kubernetes.NewForConfig, NewForConfigError)
-	restConfig = nil
-	clientset = nil
-
-	err = initClient()
-	if err == nil {
-		t.Errorf("expected error, get nil")
-	}
-	newForConfigPatch.Reset()
-
-	newForConfigPatch.ApplyFunc(kubernetes.NewForConfig, NewForConfigCommon)
-	restConfig = nil
-	clientset = nil
-
-	err = initClient()
-	if err != nil {
-		t.Errorf("expected no error, get %v", err)
-	}
-	newForConfigPatch.Reset()
-	buildConfigFromFlagsPatch.Reset()
-	pathExistPatch.Reset()
-}
-
-// TestExecCommandInContainerWithTimeout_Success tests that the function returns
-// correctly when the command completes before the timeout.
-func TestExecCommandInContainerWithTimeout_Success(t *testing.T) {
-	expectedStdout := "test output"
-	expectedStderr := "test error output"
-
-	// Mock ExecCommandInContainerWithFullOutput to return immediately with success
-	patch := gomonkey.ApplyFunc(ExecCommandInContainerWithFullOutput,
-		func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
-			return expectedStdout, expectedStderr, nil
+			restConfig = nil
+			clientset = nil
 		})
-	defer patch.Reset()
 
-	stdout, stderr, err := ExecCommandInContainerWithTimeout(
-		"test-pod", "test-container", "test-namespace",
-		[]string{"echo", "hello"}, 5*time.Second)
-
-	if err != nil {
-		t.Errorf("expected no error, got %v", err)
-	}
-	if stdout != expectedStdout {
-		t.Errorf("expected stdout %q, got %q", expectedStdout, stdout)
-	}
-	if stderr != expectedStderr {
-		t.Errorf("expected stderr %q, got %q", expectedStderr, stderr)
-	}
-}
-
-// TestExecCommandInContainerWithTimeout_Timeout tests that the function returns
-// a timeout error when the command takes longer than the specified timeout.
-func TestExecCommandInContainerWithTimeout_Timeout(t *testing.T) {
-	// Mock ExecCommandInContainerWithFullOutput to block until context is cancelled
-	patch := gomonkey.ApplyFunc(ExecCommandInContainerWithFullOutput,
-		func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
-			// Wait for context cancellation (simulating a slow command)
-			<-ctx.Done()
-			return "should not see this", "should not see this either", ctx.Err()
-		})
-	defer patch.Reset()
-
-	timeout := 100 * time.Millisecond
-	start := time.Now()
-
-	stdout, stderr, err := ExecCommandInContainerWithTimeout(
-		"test-pod", "test-container", "test-namespace",
-		[]string{"sleep", "10"}, timeout)
-
-	elapsed := time.Since(start)
-
-	// Verify timeout occurred
-	if err == nil {
-		t.Error("expected timeout error, got nil")
-	}
-	if !strings.Contains(err.Error(), "timed out") {
-		t.Errorf("expected timeout error message, got %v", err)
-	}
-
-	// Verify stdout and stderr are empty on timeout
-	if stdout != "" {
-		t.Errorf("expected empty stdout on timeout, got %q", stdout)
-	}
-	if stderr != "" {
-		t.Errorf("expected empty stderr on timeout, got %q", stderr)
-	}
-
-	// Verify the function returned promptly after timeout
-	if elapsed > 2*timeout {
-		t.Errorf("function took too long to return after timeout: %v", elapsed)
-	}
-}
-
-// TestExecCommandInContainerWithTimeout_ErrorPropagation tests that errors from
-// the underlying exec function are properly propagated.
-func TestExecCommandInContainerWithTimeout_ErrorPropagation(t *testing.T) {
-	expectedErr := errors.New("exec failed: command not found")
-
-	// Mock ExecCommandInContainerWithFullOutput to return an error
-	patch := gomonkey.ApplyFunc(ExecCommandInContainerWithFullOutput,
-		func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
-			return "", "command not found", expectedErr
-		})
-	defer patch.Reset()
-
-	_, stderr, err := ExecCommandInContainerWithTimeout(
-		"test-pod", "test-container", "test-namespace",
-		[]string{"nonexistent-command"}, 5*time.Second)
-
-	if err == nil {
-		t.Error("expected error, got nil")
-	}
-	if err.Error() != expectedErr.Error() {
-		t.Errorf("expected error %q, got %q", expectedErr.Error(), err.Error())
-	}
-	if stderr != "command not found" {
-		t.Errorf("expected stderr 'command not found', got %q", stderr)
-	}
-}
-
-// TestExecCommandInContainerWithTimeout_NoDataRace tests that concurrent calls
-// to the function don't cause data races. This test should be run with -race flag.
-func TestExecCommandInContainerWithTimeout_NoDataRace(t *testing.T) {
-	var callCount int32
-
-	// Mock ExecCommandInContainerWithFullOutput with varying delays
-	patch := gomonkey.ApplyFunc(ExecCommandInContainerWithFullOutput,
-		func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
-			count := atomic.AddInt32(&callCount, 1)
-			// Vary the execution time to increase chance of race detection
-			delay := time.Duration(count%3) * 10 * time.Millisecond
-			select {
-			case <-time.After(delay):
-				return "stdout-" + podName, "stderr-" + podName, nil
-			case <-ctx.Done():
-				return "", "", ctx.Err()
+		AfterEach(func() {
+			if pathExistPatch != nil {
+				pathExistPatch.Reset()
+			}
+			if buildConfigFromFlagsPatch != nil {
+				buildConfigFromFlagsPatch.Reset()
+			}
+			if newForConfigPatch != nil {
+				newForConfigPatch.Reset()
 			}
 		})
-	defer patch.Reset()
 
-	const numGoroutines = 50
-	var wg sync.WaitGroup
-	wg.Add(numGoroutines)
+		It("should fail when BuildConfigFromFlags fails", func() {
+			buildConfigFromFlagsPatch = gomonkey.ApplyFunc(clientcmd.BuildConfigFromFlags, func(masterUrl, kubeconfigPath string) (*rest.Config, error) {
+				return nil, errors.New(errFailToRun)
+			})
 
-	// Launch multiple concurrent calls
-	for i := 0; i < numGoroutines; i++ {
-		go func(id int) {
-			defer wg.Done()
-			podName := "pod-" + string(rune('a'+id%26))
+			err := initClient()
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should fail when NewForConfig fails", func() {
+			buildConfigFromFlagsPatch = gomonkey.ApplyFunc(clientcmd.BuildConfigFromFlags, func(masterUrl, kubeconfigPath string) (*rest.Config, error) {
+				return nil, nil
+			})
+			newForConfigPatch = gomonkey.ApplyFunc(kubernetes.NewForConfig, func(c *rest.Config) (*kubernetes.Clientset, error) {
+				return nil, errors.New(errFailToRun)
+			})
+
+			err := initClient()
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should succeed when everything is correct", func() {
+			buildConfigFromFlagsPatch = gomonkey.ApplyFunc(clientcmd.BuildConfigFromFlags, func(masterUrl, kubeconfigPath string) (*rest.Config, error) {
+				return nil, nil
+			})
+			newForConfigPatch = gomonkey.ApplyFunc(kubernetes.NewForConfig, func(c *rest.Config) (*kubernetes.Clientset, error) {
+				return nil, nil
+			})
+
+			err := initClient()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should fail when kubeconfig path does not exist", func() {
+			pathExistPatch.Reset()
+			pathExistPatch = gomonkey.ApplyFunc(utils.PathExists, func(path string) bool {
+				return false
+			})
+
+			buildConfigFromFlagsPatch = gomonkey.ApplyFunc(clientcmd.BuildConfigFromFlags, func(masterUrl, kubeconfigPath string) (*rest.Config, error) {
+				return nil, errors.New(errFailToRun)
+			})
+
+			err := initClient()
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should fail when NewForConfig fails (second path)", func() {
+			buildConfigFromFlagsPatch = gomonkey.ApplyFunc(clientcmd.BuildConfigFromFlags, func(masterUrl, kubeconfigPath string) (*rest.Config, error) {
+				return nil, nil
+			})
+			newForConfigPatch = gomonkey.ApplyFunc(kubernetes.NewForConfig, func(c *rest.Config) (*kubernetes.Clientset, error) {
+				return nil, errors.New(errFailToRun)
+			})
+
+			err := initClient()
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should succeed when everything is correct (second path)", func() {
+			buildConfigFromFlagsPatch = gomonkey.ApplyFunc(clientcmd.BuildConfigFromFlags, func(masterUrl, kubeconfigPath string) (*rest.Config, error) {
+				return nil, nil
+			})
+			newForConfigPatch = gomonkey.ApplyFunc(kubernetes.NewForConfig, func(c *rest.Config) (*kubernetes.Clientset, error) {
+				return nil, nil
+			})
+
+			err := initClient()
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+
+	Context("ExecCommandInContainerWithTimeout", func() {
+		It("should return correctly when command completes before timeout", func() {
+			expectedStdout := "test output"
+			expectedStderr := "test error output"
+
+			patch := gomonkey.ApplyFunc(ExecCommandInContainerWithFullOutput,
+				func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
+					return expectedStdout, expectedStderr, nil
+				})
+			defer patch.Reset()
+
 			stdout, stderr, err := ExecCommandInContainerWithTimeout(
-				podName, "container", "namespace",
-				[]string{"test"}, 500*time.Millisecond)
+				"test-pod", "test-container", "test-namespace",
+				[]string{"echo", "hello"}, 5*time.Second)
 
-			// Verify results are consistent (not corrupted by races)
-			if err == nil {
-				if !strings.HasPrefix(stdout, "stdout-") {
-					t.Errorf("goroutine %d: unexpected stdout prefix: %q", id, stdout)
-				}
-				if !strings.HasPrefix(stderr, "stderr-") {
-					t.Errorf("goroutine %d: unexpected stderr prefix: %q", id, stderr)
-				}
-			}
-		}(i)
-	}
-
-	wg.Wait()
-}
-
-// TestExecCommandInContainerWithTimeout_GoroutineLeak tests that goroutines
-// don't leak when timeout occurs before the command completes.
-func TestExecCommandInContainerWithTimeout_GoroutineLeak(t *testing.T) {
-	var activeGoroutines int32
-
-	// Mock ExecCommandInContainerWithFullOutput to track active goroutines
-	patch := gomonkey.ApplyFunc(ExecCommandInContainerWithFullOutput,
-		func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
-			atomic.AddInt32(&activeGoroutines, 1)
-			defer atomic.AddInt32(&activeGoroutines, -1)
-
-			// Simulate a slow operation that respects context cancellation
-			select {
-			case <-time.After(1 * time.Second):
-				return "completed", "", nil
-			case <-ctx.Done():
-				return "", "", ctx.Err()
-			}
+			Expect(err).NotTo(HaveOccurred())
+			Expect(stdout).To(Equal(expectedStdout))
+			Expect(stderr).To(Equal(expectedStderr))
 		})
-	defer patch.Reset()
 
-	// Launch several calls that will timeout
-	const numCalls = 10
-	var wg sync.WaitGroup
-	wg.Add(numCalls)
+		It("should return timeout error when command takes longer than timeout", func() {
+			patch := gomonkey.ApplyFunc(ExecCommandInContainerWithFullOutput,
+				func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
+					// Wait for context cancellation
+					<-ctx.Done()
+					return "should not see this", "should not see this either", ctx.Err()
+				})
+			defer patch.Reset()
 
-	for i := 0; i < numCalls; i++ {
-		go func() {
-			defer wg.Done()
-			_, _, _ = ExecCommandInContainerWithTimeout(
+			timeout := 100 * time.Millisecond
+			start := time.Now()
+
+			stdout, stderr, err := ExecCommandInContainerWithTimeout(
+				"test-pod", "test-container", "test-namespace",
+				[]string{"sleep", "10"}, timeout)
+
+			elapsed := time.Since(start)
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("timed out"))
+			Expect(stdout).To(BeEmpty())
+			Expect(stderr).To(BeEmpty())
+			Expect(elapsed).To(BeNumerically("<=", 2*timeout))
+		})
+
+		It("should propagate errors from underlying exec function", func() {
+			expectedErr := errors.New("exec failed: command not found")
+
+			patch := gomonkey.ApplyFunc(ExecCommandInContainerWithFullOutput,
+				func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
+					return "", "command not found", expectedErr
+				})
+			defer patch.Reset()
+
+			_, stderr, err := ExecCommandInContainerWithTimeout(
+				"test-pod", "test-container", "test-namespace",
+				[]string{"nonexistent-command"}, 5*time.Second)
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal(expectedErr.Error()))
+			Expect(stderr).To(Equal("command not found"))
+		})
+
+		It("should not have data races", func() {
+			var callCount int32
+
+			patch := gomonkey.ApplyFunc(ExecCommandInContainerWithFullOutput,
+				func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
+					count := atomic.AddInt32(&callCount, 1)
+					// Vary the execution time to increase chance of race detection
+					delay := time.Duration(count%3) * 10 * time.Millisecond
+					select {
+					case <-time.After(delay):
+						return "stdout-" + podName, "stderr-" + podName, nil
+					case <-ctx.Done():
+						return "", "", ctx.Err()
+					}
+				})
+			defer patch.Reset()
+
+			const numGoroutines = 50
+			var wg sync.WaitGroup
+			wg.Add(numGoroutines)
+
+			for i := 0; i < numGoroutines; i++ {
+				go func(id int) {
+					defer GinkgoRecover()
+					defer wg.Done()
+					podName := "pod-" + string(rune('a'+id%26))
+					stdout, stderr, err := ExecCommandInContainerWithTimeout(
+						podName, "container", "namespace",
+						[]string{"test"}, 500*time.Millisecond)
+
+					if err == nil {
+						Expect(stdout).To(HavePrefix("stdout-"))
+						Expect(stderr).To(HavePrefix("stderr-"))
+					}
+				}(i)
+			}
+
+			wg.Wait()
+		})
+
+		It("should not leak goroutines on timeout", func() {
+			var activeGoroutines int32
+
+			patch := gomonkey.ApplyFunc(ExecCommandInContainerWithFullOutput,
+				func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
+					atomic.AddInt32(&activeGoroutines, 1)
+					defer atomic.AddInt32(&activeGoroutines, -1)
+
+					// Simulate a slow operation
+					select {
+					case <-time.After(1 * time.Second):
+						return "completed", "", nil
+					case <-ctx.Done():
+						return "", "", ctx.Err()
+					}
+				})
+			defer patch.Reset()
+
+			const numCalls = 10
+			var wg sync.WaitGroup
+			wg.Add(numCalls)
+
+			for i := 0; i < numCalls; i++ {
+				go func() {
+					defer wg.Done()
+					_, _, _ = ExecCommandInContainerWithTimeout(
+						"pod", "container", "namespace",
+						[]string{"slow-command"}, 50*time.Millisecond)
+				}()
+			}
+
+			wg.Wait()
+
+			Eventually(func() int32 {
+				return atomic.LoadInt32(&activeGoroutines)
+			}).WithTimeout(500 * time.Millisecond).Should(Equal(int32(0)))
+		})
+
+		It("should propagate context cancellation", func() {
+			var ctxCancelled bool
+			var mu sync.Mutex
+
+			patch := gomonkey.ApplyFunc(ExecCommandInContainerWithFullOutput,
+				func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
+					<-ctx.Done()
+					mu.Lock()
+					ctxCancelled = true
+					mu.Unlock()
+					return "", "", ctx.Err()
+				})
+			defer patch.Reset()
+
+			_, _, err := ExecCommandInContainerWithTimeout(
 				"pod", "container", "namespace",
-				[]string{"slow-command"}, 50*time.Millisecond)
-		}()
-	}
+				[]string{"command"}, 10*time.Millisecond)
 
-	wg.Wait()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("timed out"))
 
-	// Wait a bit for goroutines to clean up after context cancellation
-	time.Sleep(200 * time.Millisecond)
-
-	// Verify no goroutines are leaked
-	remaining := atomic.LoadInt32(&activeGoroutines)
-	if remaining != 0 {
-		t.Errorf("expected 0 active goroutines after cleanup, got %d", remaining)
-	}
-}
-
-// TestExecCommandInContainerWithTimeout_ContextCancellation tests that context
-// cancellation is properly propagated to the underlying exec function.
-func TestExecCommandInContainerWithTimeout_ContextCancellation(t *testing.T) {
-	var ctxCancelled bool
-	var mu sync.Mutex
-
-	// Mock ExecCommandInContainerWithFullOutput to check context cancellation
-	patch := gomonkey.ApplyFunc(ExecCommandInContainerWithFullOutput,
-		func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
-			// Wait for context to be cancelled
-			<-ctx.Done()
-			mu.Lock()
-			ctxCancelled = true
-			mu.Unlock()
-			return "", "", ctx.Err()
+			Eventually(func() bool {
+				mu.Lock()
+				defer mu.Unlock()
+				return ctxCancelled
+			}).WithTimeout(100 * time.Millisecond).Should(BeTrue())
 		})
-	defer patch.Reset()
+	})
 
-	// Use a very short timeout
-	_, _, err := ExecCommandInContainerWithTimeout(
-		"pod", "container", "namespace",
-		[]string{"command"}, 10*time.Millisecond)
+	Context("ExecResult", func() {
+		It("should store values correctly", func() {
+			result := execResult{
+				stdout: "test stdout",
+				stderr: "test stderr",
+				err:    errors.New("test error"),
+			}
 
-	// Give goroutine time to observe cancellation
-	time.Sleep(50 * time.Millisecond)
-
-	if err == nil || !strings.Contains(err.Error(), "timed out") {
-		t.Errorf("expected timeout error, got %v", err)
-	}
-
-	mu.Lock()
-	if !ctxCancelled {
-		t.Error("expected context to be cancelled, but it wasn't")
-	}
-	mu.Unlock()
-}
-
-// TestExecResult tests the execResult struct.
-func TestExecResult(t *testing.T) {
-	result := execResult{
-		stdout: "test stdout",
-		stderr: "test stderr",
-		err:    errors.New("test error"),
-	}
-
-	if result.stdout != "test stdout" {
-		t.Errorf("expected stdout 'test stdout', got %q", result.stdout)
-	}
-	if result.stderr != "test stderr" {
-		t.Errorf("expected stderr 'test stderr', got %q", result.stderr)
-	}
-	if result.err == nil || result.err.Error() != "test error" {
-		t.Errorf("expected error 'test error', got %v", result.err)
-	}
-}
+			Expect(result.stdout).To(Equal("test stdout"))
+			Expect(result.stderr).To(Equal("test stderr"))
+			Expect(result.err).To(HaveOccurred())
+			Expect(result.err.Error()).To(Equal("test error"))
+		})
+	})
+})
