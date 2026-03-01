@@ -17,44 +17,54 @@ limitations under the License.
 package options
 
 import (
-	"testing"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"os"
 )
 
-func TestCriticalFusePodEnabled(t *testing.T) {
-	type testCase struct {
-		name   string
-		env    map[string]string
-		expect bool
-	}
+var _ = Describe("CriticalFusePodEnabled", func() {
 
-	testCases := []testCase{
-		{
-			name:   "not_set",
-			env:    map[string]string{},
-			expect: false,
-		}, {
-			name: "set_true",
-			env: map[string]string{
-				EnvCriticalFusePodEnabled: "true",
-			},
-			expect: true,
-		}, {
-			name: "set_false",
-			env: map[string]string{
-				EnvCriticalFusePodEnabled: "false",
-			},
-			expect: false,
-		},
-	}
+	Context("when environment variable is not set", func() {
+		BeforeEach(func() {
+			os.Unsetenv(EnvCriticalFusePodEnabled)
+		})
 
-	for _, test := range testCases {
-		for k, v := range test.env {
-			t.Setenv(k, v)
-		}
-		setCriticalFusePodOption()
-		got := CriticalFusePodEnabled()
-		if got != test.expect {
-			t.Errorf("testcase %s is failed due to expect %v, but got %v", test.name, test.expect, got)
-		}
-	}
-}
+		It("should return false", func() {
+			setCriticalFusePodOption()
+			got := CriticalFusePodEnabled()
+			Expect(got).To(BeFalse())
+		})
+	})
+
+	Context("when environment variable is set to true", func() {
+		BeforeEach(func() {
+			os.Setenv(EnvCriticalFusePodEnabled, "true")
+		})
+
+		AfterEach(func() {
+			os.Unsetenv(EnvCriticalFusePodEnabled)
+		})
+
+		It("should return true", func() {
+			setCriticalFusePodOption()
+			got := CriticalFusePodEnabled()
+			Expect(got).To(BeTrue())
+		})
+	})
+
+	Context("when environment variable is set to false", func() {
+		BeforeEach(func() {
+			os.Setenv(EnvCriticalFusePodEnabled, "false")
+		})
+
+		AfterEach(func() {
+			os.Unsetenv(EnvCriticalFusePodEnabled)
+		})
+
+		It("should return false", func() {
+			setCriticalFusePodOption()
+			got := CriticalFusePodEnabled()
+			Expect(got).To(BeFalse())
+		})
+	})
+})
