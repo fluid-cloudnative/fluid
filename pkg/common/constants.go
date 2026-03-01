@@ -225,3 +225,8 @@ const (
 	SkipPrecheckAnnotationKey             = "sidecar.fluid.io/skip-precheck"
 	HostMountPathModeOnDefaultPlatformKey = "default.fuse-sidecar.fluid.io/host-mount-path-mode"
 )
+
+const (
+	// DatasetPolicyAutoCreate indicates that a Dataset should be auto-created for the Runtime.
+	DatasetPolicyAutoCreate = "auto-create"
+)
