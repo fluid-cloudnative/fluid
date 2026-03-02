@@ -19,7 +19,6 @@ package jindocache
 import (
 	"os"
 	"reflect"
-	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -39,40 +38,169 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
-var _ = Describe("TestTransformTolerations", func() {
-	var (
-		engine     *JindoCacheEngine
-		dataset    *datav1alpha1.Dataset
-		jindoValue *Jindo
-	)
+var _ = Describe("JindoCacheEngine Transform", func() {
+	Describe("transformTolerations", func() {
+		var (
+			engine     *JindoCacheEngine
+			dataset    *datav1alpha1.Dataset
+			jindoValue *Jindo
+		)
 
-	BeforeEach(func() {
-		engine = &JindoCacheEngine{
-			Log: fake.NullLogger(),
-		}
-		jindoValue = &Jindo{}
-	})
-
-	Context("when dataset have tolerations", func() {
 		BeforeEach(func() {
-			dataset = &datav1alpha1.Dataset{
-				Spec: datav1alpha1.DatasetSpec{
-					Mounts: []datav1alpha1.Mount{{
-						MountPoint: "local:///mnt/test",
-						Name:       "test",
-					}},
-					Tolerations: []corev1.Toleration{{
-						Key:      "jindo",
-						Operator: "Equals",
-						Value:    "true",
-					}},
-				},
+			engine = &JindoCacheEngine{
+				Log: fake.NullLogger(),
 			}
+			jindoValue = &Jindo{}
 		})
-		Context("and runtime have tolerations", func() {
-			It("Should correctly combine tolerations from dataset and runtime", func() {
+
+		Context("when dataset have tolerations", func() {
+			BeforeEach(func() {
+				dataset = &datav1alpha1.Dataset{
+					Spec: datav1alpha1.DatasetSpec{
+						Mounts: []datav1alpha1.Mount{{
+							MountPoint: "local:///mnt/test",
+							Name:       "test",
+						}},
+						Tolerations: []corev1.Toleration{{
+							Key:      "jindo",
+							Operator: "Equals",
+							Value:    "true",
+						}},
+					},
+				}
+			})
+			Context("and runtime have tolerations", func() {
+				It("should correctly combine tolerations from dataset and runtime", func() {
+					result := resource.MustParse("20Gi")
+					testRuntime := &datav1alpha1.JindoRuntime{
+						Spec: datav1alpha1.JindoRuntimeSpec{
+							Secret: "secret",
+							TieredStore: datav1alpha1.TieredStore{
+								Levels: []datav1alpha1.Level{{
+									MediumType: common.Memory,
+									Quota:      &result,
+									High:       "0.8",
+									Low:        "0.1",
+								}},
+							},
+							Master: datav1alpha1.JindoCompTemplateSpec{
+								Tolerations: []corev1.Toleration{{
+									Key:      "master",
+									Operator: "Equals",
+									Value:    "true",
+								}},
+							},
+							Worker: datav1alpha1.JindoCompTemplateSpec{
+								Tolerations: []corev1.Toleration{{
+									Key:      "worker",
+									Operator: "Equals",
+									Value:    "true",
+								}},
+							},
+							Fuse: datav1alpha1.JindoFuseSpec{
+								Tolerations: []corev1.Toleration{{
+									Key:      "fuse",
+									Operator: "Equals",
+									Value:    "true",
+								}},
+							},
+						},
+					}
+
+					engine.transformTolerations(dataset, testRuntime, jindoValue)
+
+					Expect(len(jindoValue.Master.Tolerations)).To(Equal(2))
+					Expect(len(jindoValue.Worker.Tolerations)).To(Equal(2))
+					Expect(len(jindoValue.Fuse.Tolerations)).To(Equal(2))
+				})
+			})
+
+			Context("and runtime does not have tolerations", func() {
+				It("should contains tolerations defined in dataset", func() {
+					result := resource.MustParse("20Gi")
+					testRuntime := &datav1alpha1.JindoRuntime{
+						Spec: datav1alpha1.JindoRuntimeSpec{
+							Secret: "secret",
+							TieredStore: datav1alpha1.TieredStore{
+								Levels: []datav1alpha1.Level{{
+									MediumType: common.Memory,
+									Quota:      &result,
+									High:       "0.8",
+									Low:        "0.1",
+								}},
+							},
+						},
+					}
+					engine.transformTolerations(dataset, testRuntime, jindoValue)
+
+					Expect(len(jindoValue.Master.Tolerations)).To(Equal(1))
+					Expect(len(jindoValue.Worker.Tolerations)).To(Equal(1))
+					Expect(len(jindoValue.Fuse.Tolerations)).To(Equal(1))
+				})
+			})
+		})
+
+		Context("when only runtime have tolerations", func() {
+			It("should contains tolerations defined in runtime", func() {
+				dataset = &datav1alpha1.Dataset{
+					Spec: datav1alpha1.DatasetSpec{
+						Mounts: []datav1alpha1.Mount{{
+							MountPoint: "local:///mnt/test",
+							Name:       "test",
+						}},
+					},
+				}
+
 				result := resource.MustParse("20Gi")
-				runtime := &datav1alpha1.JindoRuntime{
+				testRuntime := &datav1alpha1.JindoRuntime{
+					Spec: datav1alpha1.JindoRuntimeSpec{
+						TieredStore: datav1alpha1.TieredStore{
+							Levels: []datav1alpha1.Level{{
+								MediumType: common.Memory,
+								Quota:      &result,
+								High:       "0.8",
+								Low:        "0.1",
+							}},
+						},
+						Master: datav1alpha1.JindoCompTemplateSpec{
+							Tolerations: []corev1.Toleration{
+								{
+									Key:      "toleration1",
+									Operator: "Equals",
+									Value:    "master",
+								},
+								{
+									Key:      "toleration2",
+									Operator: "Equals",
+									Value:    "master",
+								},
+							},
+						},
+					},
+				}
+				engine.transformTolerations(dataset, testRuntime, jindoValue)
+
+				Expect(len(jindoValue.Master.Tolerations)).To(Equal(2))
+				Expect(jindoValue.Master.Tolerations[0].Key).To(Equal("toleration1"))
+				Expect(jindoValue.Master.Tolerations[0].Value).To(Equal("master"))
+				Expect(len(jindoValue.Worker.Tolerations)).To(Equal(0))
+				Expect(len(jindoValue.Fuse.Tolerations)).To(Equal(0))
+			})
+		})
+
+		It("should handle table-driven tolerations test", func() {
+			resources := corev1.ResourceRequirements{}
+			resources.Limits = make(corev1.ResourceList)
+			resources.Limits[corev1.ResourceMemory] = resource.MustParse("2Gi")
+
+			result := resource.MustParse("20Gi")
+			tests := []struct {
+				testRuntime *datav1alpha1.JindoRuntime
+				dataset     *datav1alpha1.Dataset
+				jindoValue  *Jindo
+				expect      int
+			}{
+				{&datav1alpha1.JindoRuntime{
 					Spec: datav1alpha1.JindoRuntimeSpec{
 						Secret: "secret",
 						TieredStore: datav1alpha1.TieredStore{
@@ -105,20 +233,75 @@ var _ = Describe("TestTransformTolerations", func() {
 							}},
 						},
 					},
-				}
-
-				engine.transformTolerations(dataset, runtime, jindoValue)
-
-				Expect(len(jindoValue.Master.Tolerations)).To(Equal(2))
-				Expect(len(jindoValue.Worker.Tolerations)).To(Equal(2))
-				Expect(len(jindoValue.Fuse.Tolerations)).To(Equal(2))
-			})
+				}, &datav1alpha1.Dataset{
+					Spec: datav1alpha1.DatasetSpec{
+						Mounts: []datav1alpha1.Mount{{
+							MountPoint: "local:///mnt/test",
+							Name:       "test",
+						}},
+						Tolerations: []corev1.Toleration{{
+							Key:      "jindo",
+							Operator: "Equals",
+							Value:    "true",
+						}},
+					}}, &Jindo{}, 2,
+				},
+			}
+			for _, test := range tests {
+				engine := &JindoCacheEngine{Log: fake.NullLogger()}
+				engine.transformTolerations(test.dataset, test.testRuntime, test.jindoValue)
+				Expect(len(test.jindoValue.Master.Tolerations)).To(Equal(test.expect))
+				Expect(len(test.jindoValue.Worker.Tolerations)).To(Equal(test.expect))
+				Expect(len(test.jindoValue.Fuse.Tolerations)).To(Equal(test.expect))
+			}
 		})
+	})
 
-		Context(" and runtime does not have tolerations", func() {
-			It("Should contains tolerations defined in dataset", func() {
-				result := resource.MustParse("20Gi")
-				runtime := &datav1alpha1.JindoRuntime{
+	Describe("parseSmartDataImage", func() {
+		DescribeTable("should parse smart data image correctly",
+			func(testRuntime *datav1alpha1.JindoRuntime, expect, expectImagePullPolicy, expectDnsServer string) {
+				engine := &JindoCacheEngine{Log: fake.NullLogger()}
+				smartdataConfig := engine.getSmartDataConfigs(testRuntime)
+				registryVersion := smartdataConfig.image + ":" + smartdataConfig.imageTag
+				Expect(registryVersion).To(Equal(expect))
+				Expect(smartdataConfig.imagePullPolicy).To(Equal(expectImagePullPolicy))
+				Expect(smartdataConfig.dnsServer).To(Equal(expectDnsServer))
+			},
+			Entry("default image",
+				&datav1alpha1.JindoRuntime{
+					Spec: datav1alpha1.JindoRuntimeSpec{
+						Secret: "secret",
+					}},
+				"registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:6.2.0",
+				"Always",
+				"1.1.1.1",
+			),
+			Entry("custom image",
+				&datav1alpha1.JindoRuntime{
+					Spec: datav1alpha1.JindoRuntimeSpec{
+						Secret: "secret",
+						JindoVersion: datav1alpha1.VersionSpec{
+							Image:           "jindofs/smartdata",
+							ImageTag:        "testtag",
+							ImagePullPolicy: "IfNotPresent",
+						},
+					}},
+				"jindofs/smartdata:testtag",
+				"IfNotPresent",
+				"1.1.1.1",
+			),
+		)
+	})
+
+	Describe("transformHostNetWork", func() {
+		It("should transform host network correctly", func() {
+			result := resource.MustParse("20Gi")
+			tests := []struct {
+				testRuntime *datav1alpha1.JindoRuntime
+				jindoValue  *Jindo
+				expect      bool
+			}{
+				{&datav1alpha1.JindoRuntime{
 					Spec: datav1alpha1.JindoRuntimeSpec{
 						Secret: "secret",
 						TieredStore: datav1alpha1.TieredStore{
@@ -130,580 +313,263 @@ var _ = Describe("TestTransformTolerations", func() {
 							}},
 						},
 					},
-				}
-				engine.transformTolerations(dataset, runtime, jindoValue)
-
-				Expect(len(jindoValue.Master.Tolerations)).To(Equal(1))
-				Expect(len(jindoValue.Worker.Tolerations)).To(Equal(1))
-				Expect(len(jindoValue.Fuse.Tolerations)).To(Equal(1))
-			})
-		})
-	})
-
-	Context("when only runtime have tolerations", func() {
-		It("Should contains tolerations defined in runtime", func() {
-			dataset = &datav1alpha1.Dataset{
-				Spec: datav1alpha1.DatasetSpec{
-					Mounts: []datav1alpha1.Mount{{
-						MountPoint: "local:///mnt/test",
-						Name:       "test",
-					}},
-				},
-			}
-
-			result := resource.MustParse("20Gi")
-			runtime := &datav1alpha1.JindoRuntime{
-				Spec: datav1alpha1.JindoRuntimeSpec{
-					TieredStore: datav1alpha1.TieredStore{
-						Levels: []datav1alpha1.Level{{
-							MediumType: common.Memory,
-							Quota:      &result,
-							High:       "0.8",
-							Low:        "0.1",
-						}},
-					},
-					Master: datav1alpha1.JindoCompTemplateSpec{
-						Tolerations: []corev1.Toleration{
-							{
-								Key:      "toleration1",
-								Operator: "Equals",
-								Value:    "master",
-							},
-							{
-								Key:      "toleration2",
-								Operator: "Equals",
-								Value:    "master",
-							},
-						},
-					},
-				},
-			}
-			engine.transformTolerations(dataset, runtime, jindoValue)
-
-			Expect(len(jindoValue.Master.Tolerations)).To(Equal(2))
-			Expect(jindoValue.Master.Tolerations[0].Key).To(Equal("toleration1"))
-			Expect(jindoValue.Master.Tolerations[0].Value).To(Equal("master"))
-			Expect(len(jindoValue.Worker.Tolerations)).To(Equal(0))
-			Expect(len(jindoValue.Fuse.Tolerations)).To(Equal(0))
-		})
-	})
-})
-
-func TestTransformTolerations(t *testing.T) {
-	resources := corev1.ResourceRequirements{}
-	resources.Limits = make(corev1.ResourceList)
-	resources.Limits[corev1.ResourceMemory] = resource.MustParse("2Gi")
-
-	result := resource.MustParse("20Gi")
-	var tests = []struct {
-		runtime    *datav1alpha1.JindoRuntime
-		dataset    *datav1alpha1.Dataset
-		jindoValue *Jindo
-		expect     int
-	}{
-		{&datav1alpha1.JindoRuntime{
-			Spec: datav1alpha1.JindoRuntimeSpec{
-				Secret: "secret",
-				TieredStore: datav1alpha1.TieredStore{
-					Levels: []datav1alpha1.Level{{
-						MediumType: common.Memory,
-						Quota:      &result,
-						High:       "0.8",
-						Low:        "0.1",
-					}},
-				},
-				Master: datav1alpha1.JindoCompTemplateSpec{
-					Tolerations: []corev1.Toleration{{
-						Key:      "master",
-						Operator: "Equals",
-						Value:    "true",
-					}},
-				},
-				Worker: datav1alpha1.JindoCompTemplateSpec{
-					Tolerations: []corev1.Toleration{{
-						Key:      "worker",
-						Operator: "Equals",
-						Value:    "true",
-					}},
-				},
-				Fuse: datav1alpha1.JindoFuseSpec{
-					Tolerations: []corev1.Toleration{{
-						Key:      "fuse",
-						Operator: "Equals",
-						Value:    "true",
-					}},
-				},
-			},
-		}, &datav1alpha1.Dataset{
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "local:///mnt/test",
-					Name:       "test",
-				}},
-				Tolerations: []corev1.Toleration{{
-					Key:      "jindo",
-					Operator: "Equals",
-					Value:    "true",
-				}},
-			}}, &Jindo{}, 2,
-		},
-	}
-	for _, test := range tests {
-		engine := &JindoCacheEngine{Log: fake.NullLogger()}
-		engine.transformTolerations(test.dataset, test.runtime, test.jindoValue)
-		if len(test.jindoValue.Master.Tolerations) != test.expect {
-			t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.Master.Tolerations)
-		}
-		if len(test.jindoValue.Worker.Tolerations) != test.expect {
-			t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.Master.Tolerations)
-		}
-		if len(test.jindoValue.Fuse.Tolerations) != test.expect {
-			t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.Master.Tolerations)
-		}
-	}
-}
-
-func TestParseSmartDataImage(t *testing.T) {
-	var tests = []struct {
-		runtime               *datav1alpha1.JindoRuntime
-		dataset               *datav1alpha1.Dataset
-		jindoValue            *Jindo
-		expect                string
-		expectImagePullPolicy string
-		expectDnsServer       string
-	}{
-		{
-			runtime: &datav1alpha1.JindoRuntime{
-				Spec: datav1alpha1.JindoRuntimeSpec{
-					Secret: "secret",
-				}},
-			dataset: &datav1alpha1.Dataset{
-				Spec: datav1alpha1.DatasetSpec{
-					Mounts: []datav1alpha1.Mount{{
-						MountPoint: "local:///mnt/test",
-						Name:       "test",
-						Path:       "/",
-					}},
-				}},
-			jindoValue:            &Jindo{},
-			expect:                "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:6.2.0",
-			expectImagePullPolicy: "Always",
-			expectDnsServer:       "1.1.1.1",
-		},
-		{
-			runtime: &datav1alpha1.JindoRuntime{
-				Spec: datav1alpha1.JindoRuntimeSpec{
-					Secret: "secret",
-					JindoVersion: datav1alpha1.VersionSpec{
-						Image:           "jindofs/smartdata",
-						ImageTag:        "testtag",
-						ImagePullPolicy: "IfNotPresent",
-					},
-				}},
-			dataset: &datav1alpha1.Dataset{
-				Spec: datav1alpha1.DatasetSpec{
-					Mounts: []datav1alpha1.Mount{{
-						MountPoint: "local:///mnt/test",
-						Name:       "test",
-						Path:       "/",
-					}},
-				}},
-			jindoValue:            &Jindo{},
-			expect:                "jindofs/smartdata:testtag",
-			expectImagePullPolicy: "IfNotPresent",
-			expectDnsServer:       "1.1.1.1",
-		},
-	}
-	for _, test := range tests {
-		engine := &JindoCacheEngine{Log: fake.NullLogger()}
-		smartdataConfig := engine.getSmartDataConfigs(test.runtime)
-		registryVersion := smartdataConfig.image + ":" + smartdataConfig.imageTag
-		if registryVersion != test.expect {
-			t.Errorf("expected value %v, but got %v", test.expect, registryVersion)
-		}
-		if smartdataConfig.imagePullPolicy != test.expectImagePullPolicy {
-			t.Errorf("expected imagePullPolicy %v, but got %v", test.expectImagePullPolicy, smartdataConfig.imagePullPolicy)
-		}
-		if smartdataConfig.dnsServer != test.expectDnsServer {
-			t.Errorf("expected dnsServer %v, but got %v", test.expectDnsServer, smartdataConfig.dnsServer)
-		}
-	}
-}
-
-func TestTransformHostNetWork(t *testing.T) {
-	resources := corev1.ResourceRequirements{}
-	resources.Limits = make(corev1.ResourceList)
-	resources.Limits[corev1.ResourceMemory] = resource.MustParse("2Gi")
-
-	result := resource.MustParse("20Gi")
-	var tests = []struct {
-		runtime    *datav1alpha1.JindoRuntime
-		dataset    *datav1alpha1.Dataset
-		jindoValue *Jindo
-		expect     bool
-	}{
-		{&datav1alpha1.JindoRuntime{
-			Spec: datav1alpha1.JindoRuntimeSpec{
-				Secret: "secret",
-				TieredStore: datav1alpha1.TieredStore{
-					Levels: []datav1alpha1.Level{{
-						MediumType: common.Memory,
-						Quota:      &result,
-						High:       "0.8",
-						Low:        "0.1",
-					}},
-				},
-			},
-		}, &datav1alpha1.Dataset{
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "local:///mnt/test",
-					Name:       "test",
-				}},
-			}}, &Jindo{}, true,
-		},
-		{&datav1alpha1.JindoRuntime{
-			Spec: datav1alpha1.JindoRuntimeSpec{
-				Secret: "secret",
-				TieredStore: datav1alpha1.TieredStore{
-					Levels: []datav1alpha1.Level{{
-						MediumType: common.Memory,
-						Quota:      &result,
-						High:       "0.8",
-						Low:        "0.1",
-					}},
-				},
-				NetworkMode: "HostNetwork",
-			},
-		}, &datav1alpha1.Dataset{
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "local:///mnt/test",
-					Name:       "test",
-				}},
-			}}, &Jindo{}, true,
-		},
-		{&datav1alpha1.JindoRuntime{
-			Spec: datav1alpha1.JindoRuntimeSpec{
-				Secret: "secret",
-				TieredStore: datav1alpha1.TieredStore{
-					Levels: []datav1alpha1.Level{{
-						MediumType: common.Memory,
-						Quota:      &result,
-						High:       "0.8",
-						Low:        "0.1",
-					}},
-				},
-				NetworkMode: "ContainerNetwork",
-			},
-		}, &datav1alpha1.Dataset{
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "local:///mnt/test",
-					Name:       "test",
-				}},
-			}}, &Jindo{}, false,
-		},
-	}
-	for _, test := range tests {
-		engine := &JindoCacheEngine{Log: fake.NullLogger()}
-		engine.transformNetworkMode(test.runtime, test.jindoValue)
-		if test.jindoValue.UseHostNetwork != test.expect {
-			t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.UseHostNetwork)
-		}
-	}
-
-	var errortests = []struct {
-		runtime    *datav1alpha1.JindoRuntime
-		dataset    *datav1alpha1.Dataset
-		jindoValue *Jindo
-		expect     bool
-	}{
-		{&datav1alpha1.JindoRuntime{
-			Spec: datav1alpha1.JindoRuntimeSpec{
-				Secret: "secret",
-				TieredStore: datav1alpha1.TieredStore{
-					Levels: []datav1alpha1.Level{{
-						MediumType: common.Memory,
-						Quota:      &result,
-						High:       "0.8",
-						Low:        "0.1",
-					}},
-				},
-				NetworkMode: "Non",
-			},
-		}, &datav1alpha1.Dataset{
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "local:///mnt/test",
-					Name:       "test",
-				}},
-			}}, &Jindo{}, false,
-		},
-	}
-	for _, test := range errortests {
-		engine := &JindoCacheEngine{Log: fake.NullLogger()}
-		engine.transformNetworkMode(test.runtime, test.jindoValue)
-		if test.jindoValue.UseHostNetwork != test.expect {
-			t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.UseHostNetwork)
-		}
-	}
-}
-
-func TestTransformAllocatePorts(t *testing.T) {
-	resources := corev1.ResourceRequirements{}
-	resources.Limits = make(corev1.ResourceList)
-	resources.Limits[corev1.ResourceMemory] = resource.MustParse("2Gi")
-
-	result := resource.MustParse("20Gi")
-	var tests = []struct {
-		runtime    *datav1alpha1.JindoRuntime
-		dataset    *datav1alpha1.Dataset
-		jindoValue *Jindo
-		expect     int
-	}{
-		{&datav1alpha1.JindoRuntime{
-			Spec: datav1alpha1.JindoRuntimeSpec{
-				Secret: "secret",
-				TieredStore: datav1alpha1.TieredStore{
-					Levels: []datav1alpha1.Level{{
-						MediumType: common.Memory,
-						Quota:      &result,
-						High:       "0.8",
-						Low:        "0.1",
-					}},
-				},
-				NetworkMode: "ContainerNetwork",
-			},
-		}, &datav1alpha1.Dataset{
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "local:///mnt/test",
-					Name:       "test",
-				}},
-			}}, &Jindo{}, 8101,
-		},
-		{&datav1alpha1.JindoRuntime{
-			Spec: datav1alpha1.JindoRuntimeSpec{
-				Secret: "secret",
-				TieredStore: datav1alpha1.TieredStore{
-					Levels: []datav1alpha1.Level{{
-						MediumType: common.Memory,
-						Quota:      &result,
-						High:       "0.8",
-						Low:        "0.1",
-					}},
-				},
-				NetworkMode: "ContainerNetwork",
-				Replicas:    3,
-			},
-		}, &datav1alpha1.Dataset{
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "local:///mnt/test",
-					Name:       "test",
-				}},
-			}}, &Jindo{}, 8101,
-		},
-	}
-	for _, test := range tests {
-		engine := &JindoCacheEngine{Log: fake.NullLogger()}
-		engine.transformNetworkMode(test.runtime, test.jindoValue)
-		test.jindoValue.Master.ReplicaCount = 3
-		err := engine.allocatePorts(test.runtime, test.jindoValue)
-		if test.jindoValue.Master.Port.Rpc != test.expect && err != nil {
-			t.Errorf("expected value %v, but got %v, and err %v", test.expect, test.jindoValue.Master.Port.Rpc, err)
-		}
-	}
-}
-
-// func TestTransformResource(t *testing.T) {
-// 	resources := corev1.ResourceRequirements{}
-// 	resources.Limits = make(corev1.ResourceList)
-// 	resources.Limits[corev1.ResourceMemory] = resource.MustParse("2Gi")
-
-// 	result := resource.MustParse("200Gi")
-// 	var tests = []struct {
-// 		runtime      *datav1alpha1.JindoRuntime
-// 		jindoValue   *Jindo
-// 		userQuatas   string
-// 		expectMaster string
-// 		expectWorker string
-// 	}{
-// 		{&datav1alpha1.JindoRuntime{
-// 			Spec: datav1alpha1.JindoRuntimeSpec{
-// 				Secret: "secret",
-// 				TieredStore: datav1alpha1.TieredStore{
-// 					Levels: []datav1alpha1.Level{{
-// 						MediumType: common.Memory,
-// 						Quota:      &result,
-// 						High:       "0.8",
-// 						Low:        "0.1",
-// 					}},
-// 				},
-// 				NetworkMode: "ContainerNetwork",
-// 			},
-// 		}, &Jindo{}, "200g", "30Gi", "200Gi",
-// 		},
-// 	}
-// 	for _, test := range tests {
-// 		engine := &JindoCacheEngine{Log: fake.NullLogger()}
-// 		engine.transformResources(test.runtime, test.jindoValue, test.userQuatas)
-// 		if test.jindoValue.Master.Resources.Requests.Memory != test.expectMaster ||
-// 			test.jindoValue.Worker.Resources.Requests.Memory != test.expectWorker {
-// 			t.Errorf("expected master value %v, worker value %v,  but got %v and %v", test.expectMaster, test.expectWorker, test.jindoValue.Master.Resources.Requests.Memory, test.jindoValue.Worker.Resources.Requests.Memory)
-// 		}
-// 	}
-// }
-
-func TestJindoCacheEngine_transformMasterResources(t *testing.T) {
-	_ = os.Setenv("USE_DEFAULT_MEM_LIMIT", "true")
-	type fields struct {
-		name      string
-		namespace string
-	}
-	type args struct {
-		runtime    *datav1alpha1.JindoRuntime
-		value      *Jindo
-		userQuotas string
-	}
-	quotas := []resource.Quantity{resource.MustParse("200Gi"), resource.MustParse("10Gi")}
-	tests := []struct {
-		name                string
-		fields              fields
-		args                args
-		wantErr             bool
-		wantRuntimeResource corev1.ResourceRequirements
-		wantValue           common.Resources
-	}{
-		// TODO: Add test cases.
-		{
-			name: "runtime_resource_is_null",
-			fields: fields{
-				name:      "testNull",
-				namespace: "default",
-			},
-			args: args{
-				runtime: &datav1alpha1.JindoRuntime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "testNull",
-						Namespace: "default",
-					},
+				}, &Jindo{}, true},
+				{&datav1alpha1.JindoRuntime{
 					Spec: datav1alpha1.JindoRuntimeSpec{
+						Secret: "secret",
 						TieredStore: datav1alpha1.TieredStore{
 							Levels: []datav1alpha1.Level{{
 								MediumType: common.Memory,
-								Quota:      &quotas[0],
+								Quota:      &result,
 								High:       "0.8",
 								Low:        "0.1",
 							}},
 						},
+						NetworkMode: "HostNetwork",
 					},
-				},
-				value:      &Jindo{},
-				userQuotas: "200g",
-			},
-			wantErr: false,
-			wantRuntimeResource: corev1.ResourceRequirements{
-				Requests: corev1.ResourceList{
-					corev1.ResourceMemory: resource.MustParse("30Gi"),
-				},
-			},
-			wantValue: common.Resources{
-				Requests: common.ResourceList{
-					corev1.ResourceMemory: "30Gi",
-				},
-				Limits: common.ResourceList{},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-
-			runtimeObjs := []runtime.Object{}
-			runtimeObjs = append(runtimeObjs, tt.args.runtime.DeepCopy())
-			s := runtime.NewScheme()
-			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.args.runtime)
-			_ = corev1.AddToScheme(s)
-			client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
-			e := &JindoCacheEngine{
-				name:      tt.fields.name,
-				namespace: tt.fields.namespace,
-				Client:    client,
+				}, &Jindo{}, true},
+				{&datav1alpha1.JindoRuntime{
+					Spec: datav1alpha1.JindoRuntimeSpec{
+						Secret: "secret",
+						TieredStore: datav1alpha1.TieredStore{
+							Levels: []datav1alpha1.Level{{
+								MediumType: common.Memory,
+								Quota:      &result,
+								High:       "0.8",
+								Low:        "0.1",
+							}},
+						},
+						NetworkMode: "ContainerNetwork",
+					},
+				}, &Jindo{}, false},
 			}
-
-			if err := e.transformMasterResources(tt.args.runtime, tt.args.value, tt.args.userQuotas); (err != nil) != tt.wantErr {
-				t.Errorf("JindoCacheEngine.transformMasterResources() error = %v, wantErr %v", err, tt.wantErr)
+			for _, test := range tests {
+				engine := &JindoCacheEngine{Log: fake.NullLogger()}
+				engine.transformNetworkMode(test.testRuntime, test.jindoValue)
+				Expect(test.jindoValue.UseHostNetwork).To(Equal(test.expect))
 			}
-
-			runtime, err := e.getRuntime()
-			if err != nil {
-				t.Errorf("JindoCacheEngine.getRUntime() error = %v", err)
-			}
-
-			if !utils.ResourceRequirementsEqual(tt.wantRuntimeResource, runtime.Spec.Master.Resources) {
-				t.Errorf("JindoCacheEngine.transformMasterResources() runtime = %v, wantRuntime %v", runtime.Spec.Master.Resources, tt.wantRuntimeResource)
-			}
-
-			if !reflect.DeepEqual(tt.wantValue, tt.args.value.Master.Resources) {
-				t.Errorf("JindoCacheEngine.transformMasterResources() value = %v, wantValue %v", tt.args.value.Master.Resources, tt.wantValue)
-			}
-
 		})
-	}
-}
 
-func TestJindoCacheEngine_transform(t *testing.T) {
-	type fields struct {
-		runtime   *datav1alpha1.JindoRuntime
-		name      string
-		namespace string
-		dataset   *datav1alpha1.Dataset
-	}
-	type args struct {
-		runtime *datav1alpha1.JindoRuntime
-	}
-	tests := []struct {
-		name      string
-		fields    fields
-		args      args
-		wantValue *Jindo
-		wantErr   bool
-	}{
-		// TODO: Add test cases.
-		{
-			name: "fuseOnly",
-			fields: fields{
-				name:      "test",
-				namespace: "default",
-				runtime: &datav1alpha1.JindoRuntime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test",
-						Namespace: "default",
+		It("should handle invalid network mode", func() {
+			result := resource.MustParse("20Gi")
+			errortests := []struct {
+				testRuntime *datav1alpha1.JindoRuntime
+				jindoValue  *Jindo
+				expect      bool
+			}{
+				{&datav1alpha1.JindoRuntime{
+					Spec: datav1alpha1.JindoRuntimeSpec{
+						Secret: "secret",
+						TieredStore: datav1alpha1.TieredStore{
+							Levels: []datav1alpha1.Level{{
+								MediumType: common.Memory,
+								Quota:      &result,
+								High:       "0.8",
+								Low:        "0.1",
+							}},
+						},
+						NetworkMode: "Non",
 					},
-					Spec: datav1alpha1.JindoRuntimeSpec{},
-				},
-				dataset: &datav1alpha1.Dataset{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test",
-						Namespace: "default",
+				}, &Jindo{}, false},
+			}
+			for _, test := range errortests {
+				engine := &JindoCacheEngine{Log: fake.NullLogger()}
+				engine.transformNetworkMode(test.testRuntime, test.jindoValue)
+				Expect(test.jindoValue.UseHostNetwork).To(Equal(test.expect))
+			}
+		})
+	})
+
+	Describe("transformAllocatePorts", func() {
+		It("should allocate ports correctly", func() {
+			result := resource.MustParse("20Gi")
+			tests := []struct {
+				testRuntime *datav1alpha1.JindoRuntime
+				jindoValue  *Jindo
+				expect      int
+			}{
+				{&datav1alpha1.JindoRuntime{
+					Spec: datav1alpha1.JindoRuntimeSpec{
+						Secret: "secret",
+						TieredStore: datav1alpha1.TieredStore{
+							Levels: []datav1alpha1.Level{{
+								MediumType: common.Memory,
+								Quota:      &result,
+								High:       "0.8",
+								Low:        "0.1",
+							}},
+						},
+						NetworkMode: "ContainerNetwork",
+					},
+				}, &Jindo{}, 8101},
+				{&datav1alpha1.JindoRuntime{
+					Spec: datav1alpha1.JindoRuntimeSpec{
+						Secret: "secret",
+						TieredStore: datav1alpha1.TieredStore{
+							Levels: []datav1alpha1.Level{{
+								MediumType: common.Memory,
+								Quota:      &result,
+								High:       "0.8",
+								Low:        "0.1",
+							}},
+						},
+						NetworkMode: "ContainerNetwork",
+						Replicas:    3,
+					},
+				}, &Jindo{}, 8101},
+			}
+			for _, test := range tests {
+				engine := &JindoCacheEngine{Log: fake.NullLogger()}
+				engine.transformNetworkMode(test.testRuntime, test.jindoValue)
+				test.jindoValue.Master.ReplicaCount = 3
+				err := engine.allocatePorts(test.testRuntime, test.jindoValue)
+				if test.jindoValue.Master.Port.Rpc != test.expect && err != nil {
+					Fail("expected port allocation to match")
+				}
+			}
+		})
+	})
+
+	Describe("transformMasterResources", func() {
+		It("should transform master resources correctly", func() {
+			_ = os.Setenv("USE_DEFAULT_MEM_LIMIT", "true")
+			quotas := []resource.Quantity{resource.MustParse("200Gi"), resource.MustParse("10Gi")}
+			tests := []struct {
+				name                string
+				nameField           string
+				namespace           string
+				testRuntime         *datav1alpha1.JindoRuntime
+				value               *Jindo
+				userQuotas          string
+				wantErr             bool
+				wantRuntimeResource corev1.ResourceRequirements
+				wantValue           common.Resources
+			}{
+				{
+					name:      "runtime_resource_is_null",
+					nameField: "testNull",
+					namespace: "default",
+					testRuntime: &datav1alpha1.JindoRuntime{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "testNull",
+							Namespace: "default",
+						},
+						Spec: datav1alpha1.JindoRuntimeSpec{
+							TieredStore: datav1alpha1.TieredStore{
+								Levels: []datav1alpha1.Level{{
+									MediumType: common.Memory,
+									Quota:      &quotas[0],
+									High:       "0.8",
+									Low:        "0.1",
+								}},
+							},
+						},
+					},
+					value:      &Jindo{},
+					userQuotas: "200g",
+					wantErr:    false,
+					wantRuntimeResource: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceMemory: resource.MustParse("30Gi"),
+						},
+					},
+					wantValue: common.Resources{
+						Requests: common.ResourceList{
+							corev1.ResourceMemory: "30Gi",
+						},
+						Limits: common.ResourceList{},
 					},
 				},
+			}
+			for _, tt := range tests {
+				runtimeObjs := []runtime.Object{}
+				runtimeObjs = append(runtimeObjs, tt.testRuntime.DeepCopy())
+				s := runtime.NewScheme()
+				s.AddKnownTypes(datav1alpha1.GroupVersion, tt.testRuntime)
+				_ = corev1.AddToScheme(s)
+				client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+				e := &JindoCacheEngine{
+					name:      tt.nameField,
+					namespace: tt.namespace,
+					Client:    client,
+				}
+
+				err := e.transformMasterResources(tt.testRuntime, tt.value, tt.userQuotas)
+				if tt.wantErr {
+					Expect(err).To(HaveOccurred())
+				} else {
+					Expect(err).NotTo(HaveOccurred())
+				}
+
+				fetchedRuntime, err := e.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(utils.ResourceRequirementsEqual(tt.wantRuntimeResource, fetchedRuntime.Spec.Master.Resources)).To(BeTrue())
+				Expect(reflect.DeepEqual(tt.wantValue, tt.value.Master.Resources)).To(BeTrue())
+			}
+		})
+	})
+
+	Describe("transform", func() {
+		DescribeTable("should transform runtime correctly",
+			func(name, namespace string, testRuntime *datav1alpha1.JindoRuntime, dataset *datav1alpha1.Dataset, wantErr bool) {
+				runtimeObjs := []runtime.Object{}
+				runtimeObjs = append(runtimeObjs, testRuntime.DeepCopy())
+				runtimeObjs = append(runtimeObjs, dataset.DeepCopy())
+				s := runtime.NewScheme()
+				s.AddKnownTypes(datav1alpha1.GroupVersion, testRuntime)
+				s.AddKnownTypes(datav1alpha1.GroupVersion, dataset)
+				s.AddKnownTypes(datav1alpha1.GroupVersion, &datav1alpha1.DatasetList{})
+				_ = corev1.AddToScheme(s)
+				client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+				runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "jindocache")
+				Expect(err).NotTo(HaveOccurred())
+
+				e := &JindoCacheEngine{
+					runtime:     testRuntime,
+					name:        name,
+					namespace:   namespace,
+					Client:      client,
+					Log:         fake.NullLogger(),
+					runtimeInfo: runtimeInfo,
+				}
+				err = portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = e.transform(testRuntime)
+				if wantErr {
+					Expect(err).To(HaveOccurred())
+				} else {
+					Expect(err).NotTo(HaveOccurred())
+				}
 			},
-		},
-		{
-			name: "pvc",
-			fields: fields{
-				name:      "test",
-				namespace: "default",
-				runtime: &datav1alpha1.JindoRuntime{
+			Entry("fuseOnly",
+				"test", "default",
+				&datav1alpha1.JindoRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
 					},
 					Spec: datav1alpha1.JindoRuntimeSpec{},
 				},
-				dataset: &datav1alpha1.Dataset{
+				&datav1alpha1.Dataset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "default",
+					},
+				},
+				false,
+			),
+			Entry("pvc",
+				"test", "default",
+				&datav1alpha1.JindoRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "default",
+					},
+					Spec: datav1alpha1.JindoRuntimeSpec{},
+				},
+				&datav1alpha1.Dataset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
@@ -716,21 +582,18 @@ func TestJindoCacheEngine_transform(t *testing.T) {
 						},
 					},
 				},
-			},
-		},
-		{
-			name: "pvc-subpath",
-			fields: fields{
-				name:      "test",
-				namespace: "default",
-				runtime: &datav1alpha1.JindoRuntime{
+				false,
+			),
+			Entry("pvc-subpath",
+				"test", "default",
+				&datav1alpha1.JindoRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
 					},
 					Spec: datav1alpha1.JindoRuntimeSpec{},
 				},
-				dataset: &datav1alpha1.Dataset{
+				&datav1alpha1.Dataset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
@@ -743,93 +606,46 @@ func TestJindoCacheEngine_transform(t *testing.T) {
 						},
 					},
 				},
+				false,
+			),
+		)
+	})
+
+	Describe("transformDeployMode", func() {
+		DescribeTable("should transform deploy mode correctly",
+			func(testRuntime *datav1alpha1.JindoRuntime, value *Jindo, wantMaster Master) {
+				e := &JindoCacheEngine{
+					runtime: testRuntime,
+				}
+				value.Master.ReplicaCount = e.transformReplicasCount(testRuntime)
+				value.Master.ServiceCount = e.transformReplicasCount(testRuntime)
+				e.transformDeployMode(testRuntime, value)
+				Expect(reflect.DeepEqual(wantMaster, value.Master)).To(BeTrue())
 			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-
-			runtimeObjs := []runtime.Object{}
-			runtimeObjs = append(runtimeObjs, tt.fields.runtime.DeepCopy())
-			runtimeObjs = append(runtimeObjs, tt.fields.dataset.DeepCopy())
-			s := runtime.NewScheme()
-			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
-			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.dataset)
-			s.AddKnownTypes(datav1alpha1.GroupVersion, &datav1alpha1.DatasetList{})
-			_ = corev1.AddToScheme(s)
-			client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
-			runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "jindocache")
-			if err != nil {
-				t.Errorf("fail to create the runtimeInfo with error %v", err)
-			}
-			e := &JindoCacheEngine{
-				runtime:     tt.fields.runtime,
-				name:        tt.fields.name,
-				namespace:   tt.fields.namespace,
-				Client:      client,
-				Log:         fake.NullLogger(),
-				runtimeInfo: runtimeInfo,
-			}
-			tt.args.runtime = tt.fields.runtime
-			err = portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
-			if err != nil {
-				t.Fatalf("failed to set up runtime port allocator due to %v", err)
-			}
-			_, err = e.transform(tt.args.runtime)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("JindoCacheEngine.transform() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-		})
-	}
-}
-
-func TestJindoCacheEngine_transformDeployMode(t *testing.T) {
-
-	type args struct {
-		runtime *datav1alpha1.JindoRuntime
-		value   *Jindo
-	}
-	tests := []struct {
-		name string
-		args args
-		want *Jindo
-	}{
-		// TODO: Add test cases.
-		{
-			name: "replicas is 1, enabled",
-			args: args{
-				runtime: &datav1alpha1.JindoRuntime{},
-				value:   &Jindo{},
-			},
-			want: &Jindo{
-				Master: Master{
+			Entry("replicas is 1, enabled",
+				&datav1alpha1.JindoRuntime{},
+				&Jindo{},
+				Master{
 					ServiceCount: 1,
 					ReplicaCount: 1,
 				},
-			},
-		}, {
-			name: "replicas is 1, disabled",
-			args: args{
-				runtime: &datav1alpha1.JindoRuntime{
+			),
+			Entry("replicas is 1, disabled",
+				&datav1alpha1.JindoRuntime{
 					Spec: datav1alpha1.JindoRuntimeSpec{
 						Master: datav1alpha1.JindoCompTemplateSpec{
 							Disabled: true,
 						},
 					},
 				},
-				value: &Jindo{},
-			},
-			want: &Jindo{
-				Master: Master{
+				&Jindo{},
+				Master{
 					ServiceCount: 1,
 					ReplicaCount: 0,
 				},
-			},
-		}, {
-			name: "replicas is 1, disabled",
-			args: args{
-				runtime: &datav1alpha1.JindoRuntime{
+			),
+			Entry("replicas is 3, disabled",
+				&datav1alpha1.JindoRuntime{
 					Spec: datav1alpha1.JindoRuntimeSpec{
 						Master: datav1alpha1.JindoCompTemplateSpec{
 							Disabled: true,
@@ -837,187 +653,152 @@ func TestJindoCacheEngine_transformDeployMode(t *testing.T) {
 						},
 					},
 				},
-				value: &Jindo{},
-			},
-			want: &Jindo{
-				Master: Master{
+				&Jindo{},
+				Master{
 					ServiceCount: 3,
 					ReplicaCount: 0,
 				},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			e := &JindoCacheEngine{
-				runtime: tt.args.runtime,
-			}
-			tt.args.value.Master.ReplicaCount = e.transformReplicasCount(tt.args.runtime)
-			tt.args.value.Master.ServiceCount = e.transformReplicasCount(tt.args.runtime)
-			e.transformDeployMode(tt.args.runtime, tt.args.value)
-			if !reflect.DeepEqual(tt.want.Master, tt.args.value.Master) {
-				t.Errorf("Testcase %s failed, wanted %v, got %v.",
-					tt.name,
-					tt.want.Master,
-					tt.args.value.Master)
-			}
-		})
-	}
-}
+			),
+		)
+	})
 
-func TestJindoCacheEngine_transformPodMetadata(t *testing.T) {
-	engine := &JindoCacheEngine{Log: fake.NullLogger()}
+	Describe("transformPodMetadata", func() {
+		It("should transform pod metadata correctly", func() {
+			engine := &JindoCacheEngine{Log: fake.NullLogger()}
 
-	type testCase struct {
-		Name    string
-		Runtime *datav1alpha1.JindoRuntime
-		Value   *Jindo
-
-		wantValue *Jindo
-	}
-
-	testCases := []testCase{
-		{
-			Name: "set_common_labels_and_annotations",
-			Runtime: &datav1alpha1.JindoRuntime{
-				Spec: datav1alpha1.JindoRuntimeSpec{
-					PodMetadata: datav1alpha1.PodMetadata{
-						Labels:      map[string]string{"common-key": "common-value"},
-						Annotations: map[string]string{"common-annotation": "val"},
-					},
-				},
-			},
-			Value: &Jindo{},
-			wantValue: &Jindo{
-				Master: Master{
-					Labels:      map[string]string{"common-key": "common-value"},
-					Annotations: map[string]string{"common-annotation": "val"},
-				},
-				Worker: Worker{
-					Labels:      map[string]string{"common-key": "common-value"},
-					Annotations: map[string]string{"common-annotation": "val"},
-				},
-				Fuse: Fuse{
-					Labels:      map[string]string{"common-key": "common-value"},
-					Annotations: map[string]string{"common-annotation": "val"},
-				},
-			},
-		},
-		{
-			Name: "set_master_and_workers_labels_and_annotations",
-			Runtime: &datav1alpha1.JindoRuntime{
-				Spec: datav1alpha1.JindoRuntimeSpec{
-					PodMetadata: datav1alpha1.PodMetadata{
-						Labels:      map[string]string{"common-key": "common-value"},
-						Annotations: map[string]string{"common-annotation": "val"},
-					},
-					Master: datav1alpha1.JindoCompTemplateSpec{
-						PodMetadata: datav1alpha1.PodMetadata{
-							Labels:      map[string]string{"common-key": "master-value"},
-							Annotations: map[string]string{"common-annotation": "master-val"},
+			testCases := []struct {
+				Name      string
+				Runtime   *datav1alpha1.JindoRuntime
+				Value     *Jindo
+				wantValue *Jindo
+			}{
+				{
+					Name: "set_common_labels_and_annotations",
+					Runtime: &datav1alpha1.JindoRuntime{
+						Spec: datav1alpha1.JindoRuntimeSpec{
+							PodMetadata: datav1alpha1.PodMetadata{
+								Labels:      map[string]string{"common-key": "common-value"},
+								Annotations: map[string]string{"common-annotation": "val"},
+							},
 						},
 					},
-					Worker: datav1alpha1.JindoCompTemplateSpec{
-						PodMetadata: datav1alpha1.PodMetadata{
+					Value: &Jindo{},
+					wantValue: &Jindo{
+						Master: Master{
+							Labels:      map[string]string{"common-key": "common-value"},
+							Annotations: map[string]string{"common-annotation": "val"},
+						},
+						Worker: Worker{
+							Labels:      map[string]string{"common-key": "common-value"},
+							Annotations: map[string]string{"common-annotation": "val"},
+						},
+						Fuse: Fuse{
+							Labels:      map[string]string{"common-key": "common-value"},
+							Annotations: map[string]string{"common-annotation": "val"},
+						},
+					},
+				},
+				{
+					Name: "set_master_and_workers_labels_and_annotations",
+					Runtime: &datav1alpha1.JindoRuntime{
+						Spec: datav1alpha1.JindoRuntimeSpec{
+							PodMetadata: datav1alpha1.PodMetadata{
+								Labels:      map[string]string{"common-key": "common-value"},
+								Annotations: map[string]string{"common-annotation": "val"},
+							},
+							Master: datav1alpha1.JindoCompTemplateSpec{
+								PodMetadata: datav1alpha1.PodMetadata{
+									Labels:      map[string]string{"common-key": "master-value"},
+									Annotations: map[string]string{"common-annotation": "master-val"},
+								},
+							},
+							Worker: datav1alpha1.JindoCompTemplateSpec{
+								PodMetadata: datav1alpha1.PodMetadata{
+									Labels:      map[string]string{"common-key": "worker-value"},
+									Annotations: map[string]string{"common-annotation": "worker-val"},
+								},
+							},
+						},
+					},
+					Value: &Jindo{},
+					wantValue: &Jindo{
+						Master: Master{
+							Labels:      map[string]string{"common-key": "master-value"},
+							Annotations: map[string]string{"common-annotation": "master-val"}},
+						Worker: Worker{
 							Labels:      map[string]string{"common-key": "worker-value"},
 							Annotations: map[string]string{"common-annotation": "worker-val"},
 						},
+						Fuse: Fuse{
+							Labels:      map[string]string{"common-key": "common-value"},
+							Annotations: map[string]string{"common-annotation": "val"},
+						},
 					},
 				},
+			}
+
+			for _, tt := range testCases {
+				err := engine.transformPodMetadata(tt.Runtime, tt.Value)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(reflect.DeepEqual(tt.Value, tt.wantValue)).To(BeTrue())
+			}
+		})
+	})
+
+	Describe("transformLogConfig", func() {
+		It("should transform log config correctly", func() {
+			tests := []struct {
+				testRuntime *datav1alpha1.JindoRuntime
+				jindoValue  *Jindo
+				expect      string
+			}{
+				{&datav1alpha1.JindoRuntime{
+					Spec: datav1alpha1.JindoRuntimeSpec{
+						LogConfig: map[string]string{"logger.level": "6"},
+						Fuse: datav1alpha1.JindoFuseSpec{
+							LogConfig: map[string]string{"logger.level": "6"},
+						},
+					},
+				}, &Jindo{}, "6"},
+			}
+			for _, test := range tests {
+				engine := &JindoCacheEngine{Log: fake.NullLogger()}
+				engine.transformLogConfig(test.testRuntime, test.jindoValue)
+				Expect(test.jindoValue.LogConfig["logger.level"]).To(Equal(test.expect))
+				Expect(test.jindoValue.FuseLogConfig["logger.level"]).To(Equal(test.expect))
+			}
+		})
+	})
+
+	Describe("transformEnvVariables", func() {
+		DescribeTable("should transform env variables correctly",
+			func(name, namespace string, testRuntime *datav1alpha1.JindoRuntime, value *Jindo,
+				expectMasterEnvs, expectWorkerEnvs, expectFuseEnvs map[string]string) {
+				e := &JindoCacheEngine{
+					name:      name,
+					namespace: namespace,
+					Log:       fake.NullLogger(),
+				}
+				e.transformEnvVariables(testRuntime, value)
+				Expect(reflect.DeepEqual(value.Master.Env, expectMasterEnvs)).To(BeTrue())
+				Expect(reflect.DeepEqual(value.Worker.Env, expectWorkerEnvs)).To(BeTrue())
+				Expect(reflect.DeepEqual(value.Fuse.Env, expectFuseEnvs)).To(BeTrue())
 			},
-			Value: &Jindo{},
-			wantValue: &Jindo{
-				Master: Master{
-					Labels:      map[string]string{"common-key": "master-value"},
-					Annotations: map[string]string{"common-annotation": "master-val"}},
-				Worker: Worker{
-					Labels:      map[string]string{"common-key": "worker-value"},
-					Annotations: map[string]string{"common-annotation": "worker-val"},
-				},
-				Fuse: Fuse{
-					Labels:      map[string]string{"common-key": "common-value"},
-					Annotations: map[string]string{"common-annotation": "val"},
-				},
-			},
-		},
-	}
-
-	for _, tt := range testCases {
-		err := engine.transformPodMetadata(tt.Runtime, tt.Value)
-		if err != nil {
-			t.Fatalf("test name: %s. Expect err = nil, but got err = %v", tt.Name, err)
-		}
-
-		if !reflect.DeepEqual(tt.Value, tt.wantValue) {
-			t.Fatalf("test name: %s. Expect value %v, but got %v", tt.Name, tt.wantValue, tt.Value)
-		}
-	}
-}
-
-func TestTransformLogConfig(t *testing.T) {
-	var tests = []struct {
-		runtime    *datav1alpha1.JindoRuntime
-		dataset    *datav1alpha1.Dataset
-		jindoValue *Jindo
-		expect     string
-	}{
-		{&datav1alpha1.JindoRuntime{
-			Spec: datav1alpha1.JindoRuntimeSpec{
-				LogConfig: map[string]string{"logger.level": "6"},
-				Fuse: datav1alpha1.JindoFuseSpec{
-					LogConfig: map[string]string{"logger.level": "6"},
-				},
-			},
-		}, &datav1alpha1.Dataset{
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "local:///mnt/test",
-					Name:       "test",
-					Path:       "/",
-				}},
-			}}, &Jindo{}, "6"},
-	}
-	for _, test := range tests {
-		engine := &JindoCacheEngine{Log: fake.NullLogger()}
-		engine.transformLogConfig(test.runtime, test.jindoValue)
-		if test.jindoValue.LogConfig["logger.level"] != test.expect || test.jindoValue.FuseLogConfig["logger.level"] != test.expect {
-			t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.Fuse.RunAs)
-		}
-	}
-}
-
-func TestJindoCacheEngine_transformEnvVariables(t *testing.T) {
-	type args struct {
-		runtime *datav1alpha1.JindoRuntime
-		value   *Jindo
-	}
-	tests := []struct {
-		name             string
-		args             args
-		expectMasterEnvs map[string]string
-		expectWorkerEnvs map[string]string
-		expectFuseEnvs   map[string]string
-	}{
-		{
-			name: "no_env_variable",
-			args: args{
-				runtime: &datav1alpha1.JindoRuntime{
+			Entry("no_env_variable",
+				"test-no-env", "default",
+				&datav1alpha1.JindoRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test-no-env",
 						Namespace: "default",
 					},
 					Spec: datav1alpha1.JindoRuntimeSpec{},
 				},
-				value: &Jindo{},
-			},
-			expectMasterEnvs: nil,
-			expectWorkerEnvs: nil,
-			expectFuseEnvs:   nil,
-		},
-		{
-			name: "all_env_variable_set",
-			args: args{
-				runtime: &datav1alpha1.JindoRuntime{
+				&Jindo{},
+				nil, nil, nil,
+			),
+			Entry("all_env_variable_set",
+				"test-all-env-set", "default",
+				&datav1alpha1.JindoRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test-all-env-set",
 						Namespace: "default",
@@ -1040,142 +821,90 @@ func TestJindoCacheEngine_transformEnvVariables(t *testing.T) {
 						},
 					},
 				},
-				value: &Jindo{},
+				&Jindo{},
+				map[string]string{"test-master": "foo"},
+				map[string]string{"test-worker": "bar"},
+				map[string]string{"test-fuse": "test"},
+			),
+		)
+	})
+
+	Describe("checkIfSupportSecretMount", func() {
+		DescribeTable("should check secret mount support correctly",
+			func(testRuntime *datav1alpha1.JindoRuntime, smartdataTag, fuseTag string, expect bool) {
+				engine := &JindoCacheEngine{Log: fake.NullLogger()}
+				result := engine.checkIfSupportSecretMount(testRuntime, smartdataTag, fuseTag)
+				Expect(result).To(Equal(expect))
 			},
-			expectMasterEnvs: map[string]string{"test-master": "foo"},
-			expectWorkerEnvs: map[string]string{"test-worker": "bar"},
-			expectFuseEnvs:   map[string]string{"test-fuse": "test"},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			e := &JindoCacheEngine{
-				name:      tt.args.runtime.Name,
-				namespace: tt.args.runtime.Namespace,
-				Log:       fake.NullLogger(),
-			}
-			e.transformEnvVariables(tt.args.runtime, tt.args.value)
-			if !reflect.DeepEqual(tt.args.value.Master.Env, tt.expectMasterEnvs) {
-				t.Fatalf("testcase %s failed: failed to transform env variable for master, expect: %v, got %v", tt.name, tt.args.value.Master.Env, tt.expectMasterEnvs)
-			}
+			Entry("4.5.2 both tags",
+				&datav1alpha1.JindoRuntime{
+					Spec: datav1alpha1.JindoRuntimeSpec{},
+				}, "4.5.2", "4.5.2", false),
+			Entry("4.5.2 smartdata, 6.1.1 fuse",
+				&datav1alpha1.JindoRuntime{
+					Spec: datav1alpha1.JindoRuntimeSpec{},
+				}, "4.5.2", "6.1.1", false),
+			Entry("6.1.1 both tags",
+				&datav1alpha1.JindoRuntime{
+					Spec: datav1alpha1.JindoRuntimeSpec{},
+				}, "6.1.1", "6.1.1", true),
+			Entry("disabled master and worker",
+				&datav1alpha1.JindoRuntime{
+					Spec: datav1alpha1.JindoRuntimeSpec{
+						Master: datav1alpha1.JindoCompTemplateSpec{
+							Disabled: true,
+						},
+						Worker: datav1alpha1.JindoCompTemplateSpec{
+							Disabled: true,
+						},
+					},
+				}, "4.5.2", "6.1.1", true),
+		)
+	})
 
-			if !reflect.DeepEqual(tt.args.value.Worker.Env, tt.expectWorkerEnvs) {
-				t.Fatalf("testcase %s failed: failed to transform env variable for worker, expect: %v, got %v", tt.name, tt.args.value.Worker.Env, tt.expectWorkerEnvs)
-			}
+	Describe("transformPolicy", func() {
+		DescribeTable("should transform policy correctly",
+			func(name, namespace string, testRuntime *datav1alpha1.JindoRuntime, dataset *datav1alpha1.Dataset, wantErr bool) {
+				runtimeObjs := []runtime.Object{}
+				runtimeObjs = append(runtimeObjs, testRuntime.DeepCopy())
+				runtimeObjs = append(runtimeObjs, dataset.DeepCopy())
+				s := runtime.NewScheme()
+				s.AddKnownTypes(datav1alpha1.GroupVersion, testRuntime)
+				s.AddKnownTypes(datav1alpha1.GroupVersion, dataset)
+				s.AddKnownTypes(datav1alpha1.GroupVersion, &datav1alpha1.DatasetList{})
+				_ = corev1.AddToScheme(s)
+				client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+				runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "jinocache")
+				Expect(err).NotTo(HaveOccurred())
 
-			if !reflect.DeepEqual(tt.args.value.Fuse.Env, tt.expectFuseEnvs) {
-				t.Fatalf("testcase %s failed: failed to transform env variable for fuse, expect: %v, got %v", tt.name, tt.args.value.Fuse.Env, tt.expectFuseEnvs)
-			}
-		})
-	}
-}
+				e := &JindoCacheEngine{
+					runtime:     testRuntime,
+					name:        name,
+					namespace:   namespace,
+					Client:      client,
+					Log:         fake.NullLogger(),
+					runtimeInfo: runtimeInfo,
+				}
+				err = portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
+				Expect(err).NotTo(HaveOccurred())
 
-func TestCheckIfSupportSecretMount(t *testing.T) {
-	var tests = []struct {
-		runtime      *datav1alpha1.JindoRuntime
-		dataset      *datav1alpha1.Dataset
-		smartdataTag string
-		fuseTag      string
-		expect       bool
-	}{
-		{&datav1alpha1.JindoRuntime{
-			Spec: datav1alpha1.JindoRuntimeSpec{},
-		}, &datav1alpha1.Dataset{
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "local:///mnt/test",
-					Name:       "test",
-					Path:       "/",
-				}},
-			}}, "4.5.2", "4.5.2", false},
-		{&datav1alpha1.JindoRuntime{
-			Spec: datav1alpha1.JindoRuntimeSpec{},
-		}, &datav1alpha1.Dataset{
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "local:///mnt/test",
-					Name:       "test",
-					Path:       "/",
-				}},
-			}}, "4.5.2", "6.1.1", false},
-		{&datav1alpha1.JindoRuntime{
-			Spec: datav1alpha1.JindoRuntimeSpec{},
-		}, &datav1alpha1.Dataset{
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "local:///mnt/test",
-					Name:       "test",
-					Path:       "/",
-				}},
-			}}, "6.1.1", "6.1.1", true},
-		{&datav1alpha1.JindoRuntime{
-			Spec: datav1alpha1.JindoRuntimeSpec{},
-		}, &datav1alpha1.Dataset{
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "local:///mnt/test",
-					Name:       "test",
-					Path:       "/",
-				}},
-			}}, "6.1.1", "6.1.1", true},
-		{&datav1alpha1.JindoRuntime{
-			Spec: datav1alpha1.JindoRuntimeSpec{
-				Master: datav1alpha1.JindoCompTemplateSpec{
-					Disabled: true,
-				},
-				Worker: datav1alpha1.JindoCompTemplateSpec{
-					Disabled: true,
-				},
+				_, err = e.transform(testRuntime)
+				if wantErr {
+					Expect(err).To(HaveOccurred())
+				} else {
+					Expect(err).NotTo(HaveOccurred())
+				}
 			},
-		}, &datav1alpha1.Dataset{
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "local:///mnt/test",
-					Name:       "test",
-					Path:       "/",
-				}},
-			}}, "4.5.2", "6.1.1", true},
-	}
-	for _, test := range tests {
-		engine := &JindoCacheEngine{Log: fake.NullLogger()}
-		result := engine.checkIfSupportSecretMount(test.runtime, test.smartdataTag, test.fuseTag)
-		if result != test.expect {
-			t.Errorf("expected value %v, but got %v", test.expect, result)
-		}
-	}
-}
-
-func TestJindoCacheEngine_transformPolicy(t *testing.T) {
-	type fields struct {
-		runtime   *datav1alpha1.JindoRuntime
-		name      string
-		namespace string
-		dataset   *datav1alpha1.Dataset
-	}
-	type args struct {
-		runtime *datav1alpha1.JindoRuntime
-	}
-	tests := []struct {
-		name      string
-		fields    fields
-		args      args
-		wantValue *Jindo
-		wantErr   bool
-	}{
-		// TODO: Add test cases.
-		{
-			name: "WRITE_THROUGH_ALWAYS",
-			fields: fields{
-				name:      "test",
-				namespace: "default",
-				runtime: &datav1alpha1.JindoRuntime{
+			Entry("WRITE_THROUGH_ALWAYS",
+				"test", "default",
+				&datav1alpha1.JindoRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
 					},
 					Spec: datav1alpha1.JindoRuntimeSpec{},
 				},
-				dataset: &datav1alpha1.Dataset{
+				&datav1alpha1.Dataset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
@@ -1192,21 +921,18 @@ func TestJindoCacheEngine_transformPolicy(t *testing.T) {
 						},
 					},
 				},
-			},
-		},
-		{
-			name: "CACHE_ONLY_ONCE",
-			fields: fields{
-				name:      "test",
-				namespace: "default",
-				runtime: &datav1alpha1.JindoRuntime{
+				false,
+			),
+			Entry("CACHE_ONLY_ONCE",
+				"test", "default",
+				&datav1alpha1.JindoRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
 					},
 					Spec: datav1alpha1.JindoRuntimeSpec{},
 				},
-				dataset: &datav1alpha1.Dataset{
+				&datav1alpha1.Dataset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
@@ -1223,21 +949,18 @@ func TestJindoCacheEngine_transformPolicy(t *testing.T) {
 						},
 					},
 				},
-			},
-		},
-		{
-			name: "CACHE_ONLY_ALWAYS",
-			fields: fields{
-				name:      "test",
-				namespace: "default",
-				runtime: &datav1alpha1.JindoRuntime{
+				false,
+			),
+			Entry("CACHE_ONLY_ALWAYS error",
+				"test", "default",
+				&datav1alpha1.JindoRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
 					},
 					Spec: datav1alpha1.JindoRuntimeSpec{},
 				},
-				dataset: &datav1alpha1.Dataset{
+				&datav1alpha1.Dataset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
@@ -1254,141 +977,97 @@ func TestJindoCacheEngine_transformPolicy(t *testing.T) {
 						},
 					},
 				},
+				true,
+			),
+		)
+	})
+
+	Describe("transformMasterVolume", func() {
+		DescribeTable("should transform master volume correctly",
+			func(testRuntime *datav1alpha1.JindoRuntime, jindoValue *Jindo, expect int) {
+				engine := &JindoCacheEngine{Log: fake.NullLogger()}
+				err := engine.transformMasterVolumes(testRuntime, jindoValue)
+				if err != nil {
+					GinkgoWriter.Println(err)
+				}
+				Expect(len(jindoValue.Master.VolumeMounts)).To(Equal(expect))
 			},
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+			Entry("matching volume and mount",
+				&datav1alpha1.JindoRuntime{
+					Spec: datav1alpha1.JindoRuntimeSpec{
+						Master: datav1alpha1.JindoCompTemplateSpec{
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "nas",
+								MountPath: "test",
+								SubPath:   "/test",
+							}},
+						},
+						Volumes: []corev1.Volume{{
+							Name: "nas",
+						}},
+					},
+				}, &Jindo{}, 1),
+			Entry("non-matching volume and mount",
+				&datav1alpha1.JindoRuntime{
+					Spec: datav1alpha1.JindoRuntimeSpec{
+						Master: datav1alpha1.JindoCompTemplateSpec{
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "nas",
+								MountPath: "test",
+								SubPath:   "/test",
+							}},
+						},
+						Volumes: []corev1.Volume{{
+							Name: "nas-test",
+						}},
+					},
+				}, &Jindo{}, 0),
+		)
+	})
 
-			runtimeObjs := []runtime.Object{}
-			runtimeObjs = append(runtimeObjs, tt.fields.runtime.DeepCopy())
-			runtimeObjs = append(runtimeObjs, tt.fields.dataset.DeepCopy())
-			s := runtime.NewScheme()
-			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
-			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.dataset)
-			s.AddKnownTypes(datav1alpha1.GroupVersion, &datav1alpha1.DatasetList{})
-			_ = corev1.AddToScheme(s)
-			client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
-			runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "jinocache")
-			if err != nil {
-				t.Errorf("fail to create the runtimeInfo with error %v", err)
-			}
+	Describe("transformCacheSet", func() {
+		DescribeTable("should transform cache set correctly",
+			func(name, namespace string, testRuntime *datav1alpha1.JindoRuntime, dataset *datav1alpha1.Dataset, wantErr bool) {
+				runtimeObjs := []runtime.Object{}
+				runtimeObjs = append(runtimeObjs, testRuntime.DeepCopy())
+				runtimeObjs = append(runtimeObjs, dataset.DeepCopy())
+				s := runtime.NewScheme()
+				s.AddKnownTypes(datav1alpha1.GroupVersion, testRuntime)
+				s.AddKnownTypes(datav1alpha1.GroupVersion, dataset)
+				s.AddKnownTypes(datav1alpha1.GroupVersion, &datav1alpha1.DatasetList{})
+				_ = corev1.AddToScheme(s)
+				client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+				runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "jindocache")
+				Expect(err).NotTo(HaveOccurred())
 
-			e := &JindoCacheEngine{
-				runtime:     tt.fields.runtime,
-				name:        tt.fields.name,
-				namespace:   tt.fields.namespace,
-				Client:      client,
-				Log:         fake.NullLogger(),
-				runtimeInfo: runtimeInfo,
-			}
-			tt.args.runtime = tt.fields.runtime
-			err = portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
-			if err != nil {
-				t.Fatalf("failed to set up runtime port allocator due to %v", err)
-			}
-			_, err = e.transform(tt.args.runtime)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("JindoCacheEngine.transform() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-		})
-	}
-}
+				e := &JindoCacheEngine{
+					runtime:     testRuntime,
+					name:        name,
+					namespace:   namespace,
+					Client:      client,
+					Log:         fake.NullLogger(),
+					runtimeInfo: runtimeInfo,
+				}
+				err = portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
+				Expect(err).NotTo(HaveOccurred())
 
-func TestTransformMasterVolume(t *testing.T) {
-	var tests = []struct {
-		runtime    *datav1alpha1.JindoRuntime
-		dataset    *datav1alpha1.Dataset
-		jindoValue *Jindo
-		expect     int
-	}{
-		{&datav1alpha1.JindoRuntime{
-			Spec: datav1alpha1.JindoRuntimeSpec{
-				Master: datav1alpha1.JindoCompTemplateSpec{
-					VolumeMounts: []corev1.VolumeMount{{
-						Name:      "nas",
-						MountPath: "test",
-						SubPath:   "/test",
-					}},
-				},
-				Volumes: []corev1.Volume{{
-					Name: "nas",
-				}},
+				_, err = e.transform(testRuntime)
+				if wantErr {
+					Expect(err).To(HaveOccurred())
+				} else {
+					Expect(err).NotTo(HaveOccurred())
+				}
 			},
-		}, &datav1alpha1.Dataset{
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "local:///mnt/test",
-					Name:       "test",
-					Path:       "/",
-				}},
-			}}, &Jindo{}, 1},
-		{&datav1alpha1.JindoRuntime{
-			Spec: datav1alpha1.JindoRuntimeSpec{
-				Master: datav1alpha1.JindoCompTemplateSpec{
-					VolumeMounts: []corev1.VolumeMount{{
-						Name:      "nas",
-						MountPath: "test",
-						SubPath:   "/test",
-					}},
-				},
-				Volumes: []corev1.Volume{{
-					Name: "nas-test",
-				}},
-			},
-		}, &datav1alpha1.Dataset{
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "local:///mnt/test",
-					Name:       "test",
-					Path:       "/",
-				}},
-			}}, &Jindo{}, 0},
-	}
-	for _, test := range tests {
-		engine := &JindoCacheEngine{Log: fake.NullLogger()}
-		err := engine.transformMasterVolumes(test.runtime, test.jindoValue)
-		if err != nil {
-			println(err)
-		}
-		if len(test.jindoValue.Master.VolumeMounts) != test.expect {
-			t.Errorf("expected value %v, but got %v", test.expect, len(test.jindoValue.Master.VolumeMounts))
-		}
-	}
-}
-
-func TestJindoCacheEngine_transformCacheSet(t *testing.T) {
-	type fields struct {
-		runtime   *datav1alpha1.JindoRuntime
-		name      string
-		namespace string
-		dataset   *datav1alpha1.Dataset
-	}
-	type args struct {
-		runtime *datav1alpha1.JindoRuntime
-	}
-	tests := []struct {
-		name      string
-		fields    fields
-		args      args
-		wantValue *Jindo
-		wantErr   bool
-	}{
-		{
-			name: "test1",
-			fields: fields{
-				name:      "test",
-				namespace: "default",
-				runtime: &datav1alpha1.JindoRuntime{
+			Entry("valid cache replica",
+				"test", "default",
+				&datav1alpha1.JindoRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
 					},
 					Spec: datav1alpha1.JindoRuntimeSpec{},
 				},
-				dataset: &datav1alpha1.Dataset{
+				&datav1alpha1.Dataset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
@@ -1405,22 +1084,18 @@ func TestJindoCacheEngine_transformCacheSet(t *testing.T) {
 						},
 					},
 				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "test2",
-			fields: fields{
-				name:      "test",
-				namespace: "default",
-				runtime: &datav1alpha1.JindoRuntime{
+				false,
+			),
+			Entry("invalid read cache replica",
+				"test", "default",
+				&datav1alpha1.JindoRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
 					},
 					Spec: datav1alpha1.JindoRuntimeSpec{},
 				},
-				dataset: &datav1alpha1.Dataset{
+				&datav1alpha1.Dataset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
@@ -1437,22 +1112,18 @@ func TestJindoCacheEngine_transformCacheSet(t *testing.T) {
 						},
 					},
 				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "test3",
-			fields: fields{
-				name:      "test",
-				namespace: "default",
-				runtime: &datav1alpha1.JindoRuntime{
+				true,
+			),
+			Entry("invalid write cache replica",
+				"test", "default",
+				&datav1alpha1.JindoRuntime{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
 					},
 					Spec: datav1alpha1.JindoRuntimeSpec{},
 				},
-				dataset: &datav1alpha1.Dataset{
+				&datav1alpha1.Dataset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
@@ -1469,233 +1140,178 @@ func TestJindoCacheEngine_transformCacheSet(t *testing.T) {
 						},
 					},
 				},
-			},
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+				true,
+			),
+		)
+	})
 
-			runtimeObjs := []runtime.Object{}
-			runtimeObjs = append(runtimeObjs, tt.fields.runtime.DeepCopy())
-			runtimeObjs = append(runtimeObjs, tt.fields.dataset.DeepCopy())
-			s := runtime.NewScheme()
-			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.runtime)
-			s.AddKnownTypes(datav1alpha1.GroupVersion, tt.fields.dataset)
-			s.AddKnownTypes(datav1alpha1.GroupVersion, &datav1alpha1.DatasetList{})
-			_ = corev1.AddToScheme(s)
-			client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
-			runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "jindocache")
-			if err != nil {
-				t.Errorf("fail to create the runtimeInfo with error %v", err)
+	Describe("transformSecret", func() {
+		It("should transform secret correctly", func() {
+			jindocacheSecret := &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "fluid",
+				},
+				Data: map[string][]byte{
+					"AccessKeyId":     []byte("test"),
+					"AccessKeySecret": []byte("test"),
+				},
 			}
+			testObjs := []runtime.Object{}
+			testObjs = append(testObjs, (*jindocacheSecret).DeepCopy())
 
-			e := &JindoCacheEngine{
-				runtime:     tt.fields.runtime,
-				name:        tt.fields.name,
-				namespace:   tt.fields.namespace,
-				Client:      client,
-				Log:         fake.NullLogger(),
-				runtimeInfo: runtimeInfo,
+			client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+			engine := JindoCacheEngine{
+				name:      "test",
+				namespace: "fluid",
+				Client:    client,
+				Log:       fake.NullLogger(),
+				runtime: &datav1alpha1.JindoRuntime{
+					Spec: datav1alpha1.JindoRuntimeSpec{
+						Fuse: datav1alpha1.JindoFuseSpec{},
+					},
+				},
 			}
-			tt.args.runtime = tt.fields.runtime
-			err = portallocator.SetupRuntimePortAllocator(client, &net.PortRange{Base: 10, Size: 100}, "bitmap", GetReservedPorts)
-			if err != nil {
-				t.Fatalf("failed to set up runtime port allocator due to %v", err)
+			ctrl.SetLogger(zap.New(func(o *zap.Options) {
+				o.Development = true
+			}))
+
+			tests := []struct {
+				testRuntime *datav1alpha1.JindoRuntime
+				dataset     *datav1alpha1.Dataset
+				value       *Jindo
+			}{
+				{&datav1alpha1.JindoRuntime{
+					Spec: datav1alpha1.JindoRuntimeSpec{
+						Fuse: datav1alpha1.JindoFuseSpec{},
+						Worker: datav1alpha1.JindoCompTemplateSpec{
+							Replicas:     2,
+							Resources:    corev1.ResourceRequirements{},
+							Env:          nil,
+							NodeSelector: nil,
+						},
+					},
+				}, &datav1alpha1.Dataset{
+					Spec: datav1alpha1.DatasetSpec{
+						Mounts: []datav1alpha1.Mount{{
+							MountPoint: "pvc:///mnt/test",
+							Name:       "test",
+							EncryptOptions: []datav1alpha1.EncryptOption{{
+								Name: "fs.oss.accessKeyId",
+								ValueFrom: datav1alpha1.EncryptOptionSource{
+									SecretKeyRef: datav1alpha1.SecretKeySelector{
+										Name: "test",
+										Key:  "AccessKeyId",
+									},
+								},
+							},
+								{
+									Name: "fs.oss.accessKeySecret",
+									ValueFrom: datav1alpha1.EncryptOptionSource{
+										SecretKeyRef: datav1alpha1.SecretKeySelector{
+											Name: "test",
+											Key:  "AccessKeySecret",
+										},
+									},
+								}},
+						}},
+					},
+				}, &Jindo{}},
 			}
-			_, err = e.transform(tt.args.runtime)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("JindoCacheEngine.transform() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			for _, test := range tests {
+				err := engine.transformMaster(test.testRuntime, "/test", test.value, test.dataset, true)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(test.value.SecretKey).To(Equal("AccessKeyId"))
+				Expect(test.value.SecretValue).To(Equal("AccessKeySecret"))
+				Expect(test.value.Secret).To(Equal("test"))
 			}
 		})
-	}
-}
+	})
 
-func TestJindoEngine_transformSecret(t *testing.T) {
-	jindocacheSecret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "fluid",
-		},
-		Data: map[string][]byte{
-			"AccessKeyId":     []byte("test"),
-			"AccessKeySecret": []byte("test"),
-		},
-	}
-	testObjs := []runtime.Object{}
-	testObjs = append(testObjs, (*jindocacheSecret).DeepCopy())
-
-	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-	engine := JindoCacheEngine{
-		name:      "test",
-		namespace: "fluid",
-		Client:    client,
-		Log:       fake.NullLogger(),
-		runtime: &datav1alpha1.JindoRuntime{
-			Spec: datav1alpha1.JindoRuntimeSpec{
-				Fuse: datav1alpha1.JindoFuseSpec{},
-			},
-		},
-	}
-	ctrl.SetLogger(zap.New(func(o *zap.Options) {
-		o.Development = true
-	}))
-
-	var tests = []struct {
-		runtime *datav1alpha1.JindoRuntime
-		dataset *datav1alpha1.Dataset
-		value   *Jindo
-	}{
-		{&datav1alpha1.JindoRuntime{
-			Spec: datav1alpha1.JindoRuntimeSpec{
-				Fuse: datav1alpha1.JindoFuseSpec{},
-				Worker: datav1alpha1.JindoCompTemplateSpec{
-					Replicas:     2,
-					Resources:    corev1.ResourceRequirements{},
-					Env:          nil,
-					NodeSelector: nil,
+	Describe("transformMountpoint", func() {
+		It("should transform mountpoint correctly", func() {
+			jindocacheSecret := &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "fluid",
 				},
-			},
-		}, &datav1alpha1.Dataset{
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "pvc:///mnt/test",
-					Name:       "test",
-					EncryptOptions: []datav1alpha1.EncryptOption{{
-						Name: "fs.oss.accessKeyId",
-						ValueFrom: datav1alpha1.EncryptOptionSource{
-							SecretKeyRef: datav1alpha1.SecretKeySelector{
-								Name: "test",
-								Key:  "AccessKeyId",
-							},
+				Data: map[string][]byte{
+					"AccessKeyId":     []byte("test"),
+					"AccessKeySecret": []byte("test"),
+				},
+			}
+			testObjs := []runtime.Object{}
+			testObjs = append(testObjs, (*jindocacheSecret).DeepCopy())
+
+			client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+			engine := JindoCacheEngine{
+				name:      "test",
+				namespace: "fluid",
+				Client:    client,
+				Log:       fake.NullLogger(),
+				runtime: &datav1alpha1.JindoRuntime{
+					Spec: datav1alpha1.JindoRuntimeSpec{
+						Fuse: datav1alpha1.JindoFuseSpec{},
+					},
+				},
+			}
+			ctrl.SetLogger(zap.New(func(o *zap.Options) {
+				o.Development = true
+			}))
+
+			tests := []struct {
+				testRuntime *datav1alpha1.JindoRuntime
+				dataset     *datav1alpha1.Dataset
+				value       *Jindo
+			}{
+				{&datav1alpha1.JindoRuntime{
+					Spec: datav1alpha1.JindoRuntimeSpec{
+						Fuse: datav1alpha1.JindoFuseSpec{},
+						Worker: datav1alpha1.JindoCompTemplateSpec{
+							Replicas:     2,
+							Resources:    corev1.ResourceRequirements{},
+							Env:          nil,
+							NodeSelector: nil,
 						},
 					},
-						{
-							Name: "fs.oss.accessKeySecret",
-							ValueFrom: datav1alpha1.EncryptOptionSource{
-								SecretKeyRef: datav1alpha1.SecretKeySelector{
-									Name: "test",
-									Key:  "AccessKeySecret",
+				}, &datav1alpha1.Dataset{
+					Spec: datav1alpha1.DatasetSpec{
+						Mounts: []datav1alpha1.Mount{{
+							MountPoint: "dls://test/subdir",
+							Name:       "test",
+							Options: map[string]string{
+								"fs.dls.endpoint": "oss-cn-shanghai.dls.aliyuncs.com",
+								"fs.dls.region":   "oss-cn-shanghai",
+							},
+							EncryptOptions: []datav1alpha1.EncryptOption{{
+								Name: "fs.dls.accessKeyId",
+								ValueFrom: datav1alpha1.EncryptOptionSource{
+									SecretKeyRef: datav1alpha1.SecretKeySelector{
+										Name: "test",
+										Key:  "AccessKeyId",
+									},
 								},
 							},
+								{
+									Name: "fs.dls.accessKeySecret",
+									ValueFrom: datav1alpha1.EncryptOptionSource{
+										SecretKeyRef: datav1alpha1.SecretKeySelector{
+											Name: "test",
+											Key:  "AccessKeySecret",
+										},
+									},
+								}},
 						}},
-				}},
-			},
-		}, &Jindo{}},
-	}
-	for _, test := range tests {
-		err := engine.transformMaster(test.runtime, "/test", test.value, test.dataset, true)
-		if err != nil {
-			t.Errorf("error %v", err)
-		}
-		if test.value.SecretKey != "AccessKeyId" {
-			t.Errorf("expected value AccessKeyId, but got %v", test.value.SecretKey)
-		}
-		if test.value.SecretValue != "AccessKeySecret" {
-			t.Errorf("expected value AccessKeyId, but got %v", test.value.SecretKey)
-		}
-		if test.value.Secret != "test" {
-			t.Errorf("expected value AccessKeyId, but got %v", test.value.SecretKey)
-		}
-	}
-}
-
-func TestJindoEngine_transformMountpoint(t *testing.T) {
-	jindocacheSecret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "fluid",
-		},
-		Data: map[string][]byte{
-			"AccessKeyId":     []byte("test"),
-			"AccessKeySecret": []byte("test"),
-		},
-	}
-	testObjs := []runtime.Object{}
-	testObjs = append(testObjs, (*jindocacheSecret).DeepCopy())
-
-	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-	engine := JindoCacheEngine{
-		name:      "test",
-		namespace: "fluid",
-		Client:    client,
-		Log:       fake.NullLogger(),
-		runtime: &datav1alpha1.JindoRuntime{
-			Spec: datav1alpha1.JindoRuntimeSpec{
-				Fuse: datav1alpha1.JindoFuseSpec{},
-			},
-		},
-	}
-	ctrl.SetLogger(zap.New(func(o *zap.Options) {
-		o.Development = true
-	}))
-
-	var tests = []struct {
-		runtime *datav1alpha1.JindoRuntime
-		dataset *datav1alpha1.Dataset
-		value   *Jindo
-	}{
-		{&datav1alpha1.JindoRuntime{
-			Spec: datav1alpha1.JindoRuntimeSpec{
-				Fuse: datav1alpha1.JindoFuseSpec{},
-				Worker: datav1alpha1.JindoCompTemplateSpec{
-					Replicas:     2,
-					Resources:    corev1.ResourceRequirements{},
-					Env:          nil,
-					NodeSelector: nil,
-				},
-			},
-		}, &datav1alpha1.Dataset{
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "dls://test/subdir",
-					Name:       "test",
-					Options: map[string]string{
-						"fs.dls.endpoint": "oss-cn-shanghai.dls.aliyuncs.com",
-						"fs.dls.region":   "oss-cn-shanghai",
 					},
-					EncryptOptions: []datav1alpha1.EncryptOption{{
-						Name: "fs.dls.accessKeyId",
-						ValueFrom: datav1alpha1.EncryptOptionSource{
-							SecretKeyRef: datav1alpha1.SecretKeySelector{
-								Name: "test",
-								Key:  "AccessKeyId",
-							},
-						},
-					},
-						{
-							Name: "fs.dls.accessKeySecret",
-							ValueFrom: datav1alpha1.EncryptOptionSource{
-								SecretKeyRef: datav1alpha1.SecretKeySelector{
-									Name: "test",
-									Key:  "AccessKeySecret",
-								},
-							},
-						}},
-				}},
-			},
-		}, &Jindo{}},
-	}
-	for _, test := range tests {
-		err := engine.transformMaster(test.runtime, "/test", test.value, test.dataset, true)
-		if err != nil {
-			t.Errorf("error %v", err)
-		}
-		if test.value.SecretKey != "AccessKeyId" {
-			t.Errorf("expected value AccessKeyId, but got %v", test.value.SecretKey)
-		}
-		if test.value.SecretValue != "AccessKeySecret" {
-			t.Errorf("expected value AccessKeyId, but got %v", test.value.SecretKey)
-		}
-		if test.value.Secret != "test" {
-			t.Errorf("expected value AccessKeyId, but got %v", test.value.SecretKey)
-		}
-		if test.value.Master.FileStoreProperties["fs.dls.endpoint"] == "oss-cn-shanghai.dls.aliyuncs.com" {
-			t.Errorf("expected value oss-cn-shanghai.dls.aliyuncs.com, but got %v", test.value.Master.FileStoreProperties["fs.dls.endpoint"])
-		}
-		if test.value.Master.FileStoreProperties["fs.dls.region"] == "oss-cn-shanghai" {
-			t.Errorf("expected value oss-cn-shanghai, but got %v", test.value.Master.FileStoreProperties["fs.dls.region"])
-		}
-	}
-}
+				}, &Jindo{}},
+			}
+			for _, test := range tests {
+				err := engine.transformMaster(test.testRuntime, "/test", test.value, test.dataset, true)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(test.value.SecretKey).To(Equal("AccessKeyId"))
+				Expect(test.value.SecretValue).To(Equal("AccessKeySecret"))
+				Expect(test.value.Secret).To(Equal("test"))
+			}
+		})
+	})
+})
