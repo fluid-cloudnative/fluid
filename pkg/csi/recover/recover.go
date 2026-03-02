@@ -236,6 +236,36 @@ func (r *FuseRecover) shouldRecover(mountPath string) (should bool, err error) {
 	return true, nil
 }
 
+func (r *FuseRecover) lazyUnmountIfNeeded(mountPath string) {
+	// FUSE restart leaves stale mounts. Normal unmount may fail or block.
+	// Lazy unmount prevents stack piling and cleans up /dev/fuse references.
+
+	// Use CleanupMountPoint with extensiveMountPointCheck=true, which relies on
+	// IsNotMountPoint instead of IsLikelyNotMountPoint and properly handles
+	// bind mounts and corrupted mount points during cleanup.
+	if err := mount.CleanupMountPoint(mountPath, r.Interface, true); err != nil {
+		glog.Warningf("FuseRecovery: failed to cleanup mount %s: %v", mountPath, err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	// Wait briefly until the mount is released by the kernel.
+	err := wait.PollUntilContextTimeout(ctx, 500*time.Millisecond, 2*time.Second, false, func(ctx context.Context) (bool, error) {
+		notMnt, err := r.Interface.IsLikelyNotMountPoint(mountPath)
+		if err != nil {
+			if os.IsNotExist(err) {
+				return true, nil
+			}
+			return false, err
+		}
+		return notMnt, nil
+	})
+	if err != nil {
+		glog.Warningf("FuseRecovery: failed while waiting for mount point %s to be cleaned: %v", mountPath, err)
+	}
+}
+
 func (r *FuseRecover) doRecover(point mountinfo.MountPoint) {
 	if lock := r.locks.TryAcquire(point.MountPath); !lock {
 		glog.V(4).Infof("FuseRecovery: fail to acquire lock on path %s, skip recovering it", point.MountPath)
@@ -255,6 +285,9 @@ func (r *FuseRecover) doRecover(point mountinfo.MountPoint) {
 	}
 
 	glog.V(3).Infof("FuseRecovery: recovering broken mount point: %v", point)
+
+	r.lazyUnmountIfNeeded(point.MountPath)
+
 	// if app container restart, umount duplicate mount may lead to recover successes but can not access data
 	// so we only umountDuplicate when it has mounted more than the recoverWarningThreshold
 	// please refer to https://github.com/fluid-cloudnative/fluid/issues/3399 for more information
@@ -263,6 +296,7 @@ func (r *FuseRecover) doRecover(point mountinfo.MountPoint) {
 		r.eventRecord(point, corev1.EventTypeWarning, common.FuseUmountDuplicate)
 		r.umountDuplicate(point)
 	}
+
 	if err := r.recoverBrokenMount(point); err != nil {
 		r.eventRecord(point, corev1.EventTypeWarning, common.FuseRecoverFailed)
 		return
