@@ -157,8 +157,14 @@ func (r *FuseRecover) runOnce() {
 func (r *FuseRecover) recover() {
 	brokenMounts, err := mountinfo.GetBrokenMountPoints()
 	if err != nil {
-		glog.Error(err)
+		// Error: This is an unexpected failure reading mount info - not a recoverable mount issue
+		glog.Errorf("FuseRecovery: failed to get broken mount points: %v", err)
 		return
+	}
+
+	if len(brokenMounts) > 0 {
+		// Info: State transition - detected broken mounts that need recovery
+		glog.V(3).Infof("FuseRecovery: detected %d broken mount point(s) requiring recovery", len(brokenMounts))
 	}
 
 	for _, point := range brokenMounts {
@@ -173,9 +179,11 @@ func (r *FuseRecover) recoverBrokenMount(point mountinfo.MountPoint) (err error)
 		mountOption = append(mountOption, "ro")
 	}
 
-	glog.V(3).Infof("FuseRecovery: Start exec cmd: mount %s %s -o %v \n", point.SourcePath, point.MountPath, mountOption)
+	// Info: Attempting recovery action
+	glog.V(3).Infof("FuseRecovery: attempting bind mount, source=%s mountPath=%s options=%v", point.SourcePath, point.MountPath, mountOption)
 	if err := r.Mount(point.SourcePath, point.MountPath, "none", mountOption); err != nil {
-		glog.Errorf("FuseRecovery: exec cmd: mount -o bind %s %s with err :%v", point.SourcePath, point.MountPath, err)
+		// Warning: Mount failure is recoverable - will retry on next cycle
+		glog.Warningf("FuseRecovery: bind mount failed, mountPath=%s source=%s error=%v", point.MountPath, point.SourcePath, err)
 	}
 	return
 }
@@ -185,9 +193,11 @@ func (r *FuseRecover) recoverBrokenMount(point mountinfo.MountPoint) (err error)
 // don't umount all item, 'mountPropagation' will lose efficacy.
 func (r *FuseRecover) umountDuplicate(point mountinfo.MountPoint) {
 	for i := point.Count; i > 1; i-- {
-		glog.V(3).Infof("FuseRecovery: count: %d, start exec cmd: umount %s", i, point.MountPath)
+		// Info: Cleanup action - removing duplicate mount
+		glog.V(3).Infof("FuseRecovery: unmounting duplicate, mountPath=%s remainingCount=%d", point.MountPath, i)
 		if err := r.Unmount(point.MountPath); err != nil {
-			glog.Errorf("FuseRecovery: exec cmd: umount %s with err: %v", point.MountPath, err)
+			// Warning: Unmount failure is recoverable - will retry
+			glog.Warningf("FuseRecovery: unmount failed, mountPath=%s error=%v", point.MountPath, err)
 		}
 	}
 }
@@ -201,13 +211,15 @@ func (r *FuseRecover) eventRecord(point mountinfo.MountPoint, eventType, eventRe
 	}
 	namespace, datasetName, err := volume.GetNamespacedNameByVolumeId(r.ApiReader, namespacedName)
 	if err != nil {
-		glog.Errorf("error get namespacedName by volume id %s: %v", namespacedName, err)
+		// Error: API failure - cannot record event without dataset reference
+		glog.Errorf("FuseRecovery: failed to get namespace/name by volumeId=%s error=%v", namespacedName, err)
 		return
 	}
 
 	dataset, err := utils.GetDataset(r.KubeClient, datasetName, namespace)
 	if err != nil {
-		glog.Errorf("error get dataset %s namespace %s: %v", datasetName, namespace, err)
+		// Error: API failure - dataset lookup failed
+		glog.Errorf("FuseRecovery: failed to get dataset, name=%s namespace=%s error=%v", datasetName, namespace, err)
 		return
 	}
 	glog.V(4).Infof("record to dataset: %s, namespace: %s", dataset.Name, dataset.Namespace)
@@ -238,34 +250,45 @@ func (r *FuseRecover) shouldRecover(mountPath string) (should bool, err error) {
 
 func (r *FuseRecover) doRecover(point mountinfo.MountPoint) {
 	if lock := r.locks.TryAcquire(point.MountPath); !lock {
-		glog.V(4).Infof("FuseRecovery: fail to acquire lock on path %s, skip recovering it", point.MountPath)
+		// Info: Concurrent recovery in progress - skip to avoid race
+		glog.V(4).Infof("FuseRecovery: skipping recovery, lock held by another goroutine, mountPath=%s", point.MountPath)
 		return
 	}
 	defer r.locks.Release(point.MountPath)
 
 	should, err := r.shouldRecover(point.MountPath)
 	if err != nil {
-		glog.Warningf("FuseRecovery: found path %s which is unable to recover due to error %v, skip it", point.MountPath, err)
+		// Warning: Recovery check failed - may retry next cycle
+		glog.Warningf("FuseRecovery: unable to determine recovery state, mountPath=%s error=%v", point.MountPath, err)
 		return
 	}
 
 	if !should {
-		glog.V(3).Infof("FuseRecovery: path %s has already been cleaned up, skip recovering it", point.MountPath)
+		// Info: Mount already healthy or cleaned up
+		glog.V(3).Infof("FuseRecovery: skipping recovery, mount already cleaned up, mountPath=%s", point.MountPath)
 		return
 	}
 
-	glog.V(3).Infof("FuseRecovery: recovering broken mount point: %v", point)
+	// Info: Starting recovery attempt
+	glog.V(3).Infof("FuseRecovery: starting recovery, mountPath=%s source=%s mountCount=%d", point.MountPath, point.SourcePath, point.Count)
+
 	// if app container restart, umount duplicate mount may lead to recover successes but can not access data
 	// so we only umountDuplicate when it has mounted more than the recoverWarningThreshold
 	// please refer to https://github.com/fluid-cloudnative/fluid/issues/3399 for more information
 	if point.Count > r.recoverWarningThreshold {
-		glog.Warningf("FuseRecovery: Mountpoint %s has been mounted %v times, exceeding the recoveryWarningThreshold %v, unmount duplicate mountpoint to avoid large /proc/self/mountinfo file, this may potentially make data access connection broken", point.MountPath, point.Count, r.recoverWarningThreshold)
+		// Warning: Excessive mount count detected - cleanup required
+		glog.Warningf("FuseRecovery: excessive mount count detected, mountPath=%s count=%d threshold=%d", point.MountPath, point.Count, r.recoverWarningThreshold)
 		r.eventRecord(point, corev1.EventTypeWarning, common.FuseUmountDuplicate)
 		r.umountDuplicate(point)
 	}
+
 	if err := r.recoverBrokenMount(point); err != nil {
+		// Warning logged inside recoverBrokenMount, just record event
 		r.eventRecord(point, corev1.EventTypeWarning, common.FuseRecoverFailed)
 		return
 	}
+
+	// Info: Recovery succeeded - state transition from broken to healthy
+	glog.V(3).Infof("FuseRecovery: recovery succeeded, mountPath=%s", point.MountPath)
 	r.eventRecord(point, corev1.EventTypeNormal, common.FuseRecoverSucceed)
 }
