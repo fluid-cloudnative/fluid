@@ -39,6 +39,7 @@ var _ base.Engine = (*MockEngine)(nil)
 type MockEngine struct {
 	ctrl     *gomock.Controller
 	recorder *MockEngineMockRecorder
+	base.DefaultExtendedLifecycleManager
 }
 
 func (m *MockEngine) Operate(ctx runtime.ReconcileRequestContext, opStatus *v1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
