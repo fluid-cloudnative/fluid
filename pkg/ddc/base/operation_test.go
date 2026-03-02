@@ -86,6 +86,7 @@ var _ = Describe("Operate", func() {
 
 	AfterEach(func() {
 		ctrl.Finish()
+		_ = os.Unsetenv("FLUID_SYNC_RETRY_DURATION")
 	})
 
 	Describe("Operate phase routing", func() {

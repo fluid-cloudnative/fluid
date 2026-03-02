@@ -80,6 +80,7 @@ var _ = Describe("TemplateEngine", func() {
 	// Check if all expectations have been met after each It
 	AfterEach(func() {
 		ctrl.Finish()
+		_ = os.Unsetenv("FLUID_SYNC_RETRY_DURATION")
 	})
 
 	Describe("Setup", func() {
@@ -131,6 +132,7 @@ var _ = Describe("TemplateEngine", func() {
 					impl.EXPECT().CheckRuntimeHealthy().Return(nil).Times(1),
 					impl.EXPECT().CheckAndUpdateRuntimeStatus().Return(true, nil).Times(1),
 					impl.EXPECT().UpdateCacheOfDataset().Return(nil).Times(1),
+					impl.EXPECT().ShouldSyncDatasetMounts().Return(false, nil).Times(1),
 					impl.EXPECT().ShouldUpdateUFS().Return(&utils.UFSToUpdate{}).Times(1),
 					impl.EXPECT().SyncScheduleInfoToCacheNodes().Return(nil).Times(1),
 				)
@@ -166,6 +168,8 @@ var _ = Describe("TemplateEngine", func() {
 					impl.EXPECT().CheckRuntimeHealthy().Return(nil).Times(1),
 					impl.EXPECT().CheckAndUpdateRuntimeStatus().Return(true, nil).Times(1),
 					impl.EXPECT().UpdateCacheOfDataset().Return(nil).Times(1),
+					impl.EXPECT().ShouldSyncDatasetMounts().Return(true, nil).Times(1),
+					impl.EXPECT().SyncDatasetMounts().Return(nil).Times(1),
 					impl.EXPECT().ShouldUpdateUFS().Return(ufsToUpdate).Times(1),
 					impl.EXPECT().UpdateOnUFSChange(ufsToUpdate).Times(1),
 					impl.EXPECT().SyncScheduleInfoToCacheNodes().Return(nil).Times(1),

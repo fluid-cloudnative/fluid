@@ -17,156 +17,129 @@
 package kubeclient
 
 import (
-	"testing"
-
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestDeleteServiceAccount(t *testing.T) {
-	namespace := "default"
-	testSAInput := []*corev1.ServiceAccount{{
-		ObjectMeta: metav1.ObjectMeta{Name: "test1", Namespace: namespace},
-	}}
+var _ = Describe("DeleteServiceAccount", func() {
+	var (
+		namespace           string
+		testSAInput         []*corev1.ServiceAccount
+		testServiceAccounts []runtime.Object
+		fakeClient          client.Client
+	)
 
-	testServiceAccounts := []runtime.Object{}
-
-	for _, ns := range testSAInput {
-		testServiceAccounts = append(testServiceAccounts, ns.DeepCopy())
-	}
-
-	fakeClient := fake.NewFakeClientWithScheme(testScheme, testServiceAccounts...)
-	type args struct {
-		name      string
-		namespace string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "sa doesn't exist",
-			args: args{
-				name:      "notExist",
-				namespace: namespace,
+	BeforeEach(func() {
+		namespace = "default"
+		testSAInput = []*corev1.ServiceAccount{
+			{
+				ObjectMeta: metav1.ObjectMeta{Name: "test1", Namespace: namespace},
 			},
-			wantErr: false,
-		},
-		{
-			name: "sa exist",
-			args: args{
-				name:      "test1",
-				namespace: namespace,
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := DeleteServiceAccount(fakeClient, tt.args.name, tt.args.namespace); (err != nil) != tt.wantErr {
-				t.Errorf("DeleteServiceAccount() error = %v, wantErr %v", err, tt.wantErr)
-			}
+		}
+
+		testServiceAccounts = []runtime.Object{}
+		for _, ns := range testSAInput {
+			testServiceAccounts = append(testServiceAccounts, ns.DeepCopy())
+		}
+
+		fakeClient = fake.NewFakeClientWithScheme(testScheme, testServiceAccounts...)
+	})
+
+	Context("when service account doesn't exist", func() {
+		It("should not return an error", func() {
+			err := DeleteServiceAccount(fakeClient, "notExist", namespace)
+			Expect(err).NotTo(HaveOccurred())
 		})
-	}
-}
+	})
 
-func TestDeleteRole(t *testing.T) {
-	namespace := "default"
-	testRoleInput := []*rbacv1.Role{{
-		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: namespace},
-	}}
-
-	testRole := []runtime.Object{}
-
-	for _, ns := range testRoleInput {
-		testRole = append(testRole, ns.DeepCopy())
-	}
-
-	fakeClient := fake.NewFakeClientWithScheme(testScheme, testRole...)
-	type args struct {
-		name      string
-		namespace string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "test role not exist",
-			args: args{
-				name:      "notExist",
-				namespace: namespace,
-			},
-			wantErr: false,
-		},
-		{
-			name: "test role exist",
-			args: args{
-				name:      "test",
-				namespace: namespace,
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := DeleteRole(fakeClient, tt.args.name, tt.args.namespace); (err != nil) != tt.wantErr {
-				t.Errorf("DeleteRole() error = %v, wantErr %v", err, tt.wantErr)
-			}
+	Context("when service account exists", func() {
+		It("should delete successfully without error", func() {
+			err := DeleteServiceAccount(fakeClient, "test1", namespace)
+			Expect(err).NotTo(HaveOccurred())
 		})
-	}
-}
+	})
+})
 
-func TestDeleteRoleBinding(t *testing.T) {
-	namespace := "default"
-	testRoleBindingInput := []*rbacv1.RoleBinding{{
-		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: namespace},
-	}}
+var _ = Describe("DeleteRole", func() {
+	var (
+		namespace     string
+		testRoleInput []*rbacv1.Role
+		testRole      []runtime.Object
+		fakeClient    client.Client
+	)
 
-	testRoleBinding := []runtime.Object{}
-
-	for _, ns := range testRoleBindingInput {
-		testRoleBinding = append(testRoleBinding, ns.DeepCopy())
-	}
-
-	fakeClient := fake.NewFakeClientWithScheme(testScheme, testRoleBinding...)
-	type args struct {
-		name      string
-		namespace string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "test rolebinding not exist",
-			args: args{
-				name:      "notExist",
-				namespace: namespace,
+	BeforeEach(func() {
+		namespace = "default"
+		testRoleInput = []*rbacv1.Role{
+			{
+				ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: namespace},
 			},
-			wantErr: false,
-		},
-		{
-			name: "test rolebinding exist",
-			args: args{
-				name:      "test",
-				namespace: namespace,
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := DeleteRoleBinding(fakeClient, tt.args.name, tt.args.namespace); (err != nil) != tt.wantErr {
-				t.Errorf("DeleteRoleBinding() error = %v, wantErr %v", err, tt.wantErr)
-			}
+		}
+
+		testRole = []runtime.Object{}
+		for _, ns := range testRoleInput {
+			testRole = append(testRole, ns.DeepCopy())
+		}
+
+		fakeClient = fake.NewFakeClientWithScheme(testScheme, testRole...)
+	})
+
+	Context("when role doesn't exist", func() {
+		It("should not return an error", func() {
+			err := DeleteRole(fakeClient, "notExist", namespace)
+			Expect(err).NotTo(HaveOccurred())
 		})
-	}
-}
+	})
+
+	Context("when role exists", func() {
+		It("should delete successfully without error", func() {
+			err := DeleteRole(fakeClient, "test", namespace)
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+})
+
+var _ = Describe("DeleteRoleBinding", func() {
+	var (
+		namespace            string
+		testRoleBindingInput []*rbacv1.RoleBinding
+		testRoleBinding      []runtime.Object
+		fakeClient           client.Client
+	)
+
+	BeforeEach(func() {
+		namespace = "default"
+		testRoleBindingInput = []*rbacv1.RoleBinding{
+			{
+				ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: namespace},
+			},
+		}
+
+		testRoleBinding = []runtime.Object{}
+		for _, ns := range testRoleBindingInput {
+			testRoleBinding = append(testRoleBinding, ns.DeepCopy())
+		}
+
+		fakeClient = fake.NewFakeClientWithScheme(testScheme, testRoleBinding...)
+	})
+
+	Context("when role binding doesn't exist", func() {
+		It("should not return an error", func() {
+			err := DeleteRoleBinding(fakeClient, "notExist", namespace)
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+
+	Context("when role binding exists", func() {
+		It("should delete successfully without error", func() {
+			err := DeleteRoleBinding(fakeClient, "test", namespace)
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+})

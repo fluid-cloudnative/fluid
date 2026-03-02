@@ -1,11 +1,35 @@
 import json
 import os
+import re
 import subprocess
 
 obj = json.load(open("/etc/fluid/config/config.json"))
 
 mount_point = obj["mounts"][0]["mountPoint"]
 target_path = obj["targetPath"]
+
+# Normalize first to resolve redundant separators, '.' and '..' components
+target_path = os.path.normpath(target_path)
+
+# Validate that the normalized path is an absolute POSIX path
+if not os.path.isabs(target_path) or not target_path.startswith('/'):
+    print(f"Error: target_path must be absolute: {target_path}")
+    exit(1)
+
+# Safety check: ensure no '..' components remain after normalization
+if '..' in target_path.split('/'):
+    print(f"Error: Path traversal using '..' is not allowed in target_path: {target_path}")
+    exit(1)
+
+# Validate that the path contains only safe characters
+if not re.match(r'^[/a-zA-Z0-9._-]+$', target_path):
+    print(f"Error: target_path contains invalid characters: {target_path}")
+    exit(1)
+
+# Prevent mounting on the root directory
+if target_path == '/':
+    print("Error: target_path resolves to the root directory '/' and is not allowed.")
+    exit(1)
 
 os.makedirs(target_path, exist_ok=True)
 

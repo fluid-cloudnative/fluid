@@ -17,349 +17,202 @@ limitations under the License.
 package alluxio
 
 import (
-	"reflect"
-	"testing"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 )
 
-// TestTransformMasterVolumes tests the transformMasterVolumes method.
-// It defines multiple test cases to validate that the function correctly transforms volumes and volume mounts
-// for the Alluxio master component. The test checks both successful transformations and error conditions.
-func TestTransformMasterVolumes(t *testing.T) {
-	type testCase struct {
-		name      string
-		runtime   *datav1alpha1.AlluxioRuntime
-		expect    *Alluxio
-		expectErr bool
-	}
+// Constants for test values
+const (
+	testVolumeName   = "test"
+	testSecretName   = "test"
+	testVolMountPath = "/test"
+)
 
-	testCases := []testCase{
-		{
-			name: "all",
-			runtime: &datav1alpha1.AlluxioRuntime{
-				Spec: datav1alpha1.AlluxioRuntimeSpec{
-					Volumes: []corev1.Volume{
-						{
-							Name: "test",
-							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{
-									SecretName: "test",
-								},
-							},
-						},
-					}, Master: datav1alpha1.AlluxioCompTemplateSpec{
-						VolumeMounts: []corev1.VolumeMount{
+var _ = Describe("AlluxioEngine Transform Volumes Tests", Label("pkg.ddc.alluxio.transform_volumes_test.go"), func() {
+	var (
+		engine *AlluxioEngine
+		got    *Alluxio
+	)
+
+	BeforeEach(func() {
+		engine = &AlluxioEngine{}
+		got = &Alluxio{}
+	})
+
+	Describe("transformMasterVolumes", func() {
+		Context("when both volumes and volume mounts are provided", func() {
+			It("should correctly transform volumes for master", func() {
+				runtime := &datav1alpha1.AlluxioRuntime{
+					Spec: datav1alpha1.AlluxioRuntimeSpec{
+						Volumes: []corev1.Volume{
 							{
-								Name:      "test",
-								MountPath: "/test",
-							},
-						},
-					},
-				},
-			},
-			expect: &Alluxio{
-				Master: Master{
-					Volumes: []corev1.Volume{
-						{
-							Name: "test",
-							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{
-									SecretName: "test",
+								Name: testVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: testSecretName,
+									},
 								},
 							},
 						},
-					}, VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      "test",
-							MountPath: "/test",
+						Master: datav1alpha1.AlluxioCompTemplateSpec{
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      testVolumeName,
+									MountPath: testVolMountPath,
+								},
+							},
 						},
 					},
-				},
-			},
-			expectErr: false,
-		}, {
-			name: "onlyVolumeMounts",
-			runtime: &datav1alpha1.AlluxioRuntime{
-				Spec: datav1alpha1.AlluxioRuntimeSpec{
-					Master: datav1alpha1.AlluxioCompTemplateSpec{
-						VolumeMounts: []corev1.VolumeMount{
+				}
+				err := engine.transformMasterVolumes(runtime, got)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(got.Master.Volumes).To(HaveLen(1))
+				Expect(got.Master.Volumes[0].Name).To(Equal(testVolumeName))
+				Expect(got.Master.Volumes[0].Secret.SecretName).To(Equal(testSecretName))
+				Expect(got.Master.VolumeMounts).To(HaveLen(1))
+				Expect(got.Master.VolumeMounts[0].Name).To(Equal(testVolumeName))
+				Expect(got.Master.VolumeMounts[0].MountPath).To(Equal(testVolMountPath))
+			})
+		})
+
+		Context("when only volume mounts are provided without corresponding volumes", func() {
+			It("should return an error", func() {
+				runtime := &datav1alpha1.AlluxioRuntime{
+					Spec: datav1alpha1.AlluxioRuntimeSpec{
+						Master: datav1alpha1.AlluxioCompTemplateSpec{
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      testVolumeName,
+									MountPath: testVolMountPath,
+								},
+							},
+						},
+					},
+				}
+				err := engine.transformMasterVolumes(runtime, got)
+
+				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
+
+	Describe("transformWorkerVolumes", func() {
+		Context("when both volumes and volume mounts are provided", func() {
+			It("should correctly transform volumes for worker", func() {
+				runtime := &datav1alpha1.AlluxioRuntime{
+					Spec: datav1alpha1.AlluxioRuntimeSpec{
+						Volumes: []corev1.Volume{
 							{
-								Name:      "test",
-								MountPath: "/test",
-							},
-						},
-					},
-				},
-			},
-			expect: &Alluxio{
-				Master: Master{
-					Volumes: []corev1.Volume{
-						{
-							Name: "test",
-							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{
-									SecretName: "test",
+								Name: testVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: testSecretName,
+									},
 								},
 							},
 						},
-					}, VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      "test",
-							MountPath: "/test",
-						},
-					},
-				},
-			},
-			expectErr: true,
-		},
-	}
-
-	for _, testCase := range testCases {
-		engine := &AlluxioEngine{}
-		got := &Alluxio{}
-		err := engine.transformMasterVolumes(testCase.runtime, got)
-		if err != nil && !testCase.expectErr {
-			t.Errorf("Got unexpected error %v for testcase %s", err, testCase.name)
-		}
-
-		if testCase.expectErr {
-			continue
-		}
-
-		if !reflect.DeepEqual(got, testCase.expect) {
-			t.Errorf("want %v, got %v for testcase %s", testCase.expect, got, testCase.name)
-		}
-
-	}
-
-}
-
-// TestTransformWorkerVolumes is a unit test function that tests the transformWorkerVolumes method of the AlluxioEngine.
-// It defines a series of test cases to verify the correctness of volume and volume mount transformations for the Alluxio worker.
-// Each test case includes an input AlluxioRuntime object and an expected Alluxio object, along with a flag to indicate if an error is expected.
-// The function iterates through each test case, applies the transformWorkerVolumes method, and checks if the output matches the expected result.
-// If an error occurs and it is not expected, or if the output does not match the expected result, the test fails with an appropriate error message.
-func TestTransformWorkerVolumes(t *testing.T) {
-	type testCase struct {
-		name      string
-		runtime   *datav1alpha1.AlluxioRuntime
-		expect    *Alluxio
-		expectErr bool
-	}
-	testCases := []testCase{
-		{
-			name: "all",
-			runtime: &datav1alpha1.AlluxioRuntime{
-				Spec: datav1alpha1.AlluxioRuntimeSpec{
-					Volumes: []corev1.Volume{
-						{
-							Name: "test",
-							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{
-									SecretName: "test",
+						Worker: datav1alpha1.AlluxioCompTemplateSpec{
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      testVolumeName,
+									MountPath: testVolMountPath,
 								},
 							},
 						},
 					},
-					Worker: datav1alpha1.AlluxioCompTemplateSpec{
-						VolumeMounts: []corev1.VolumeMount{
+				}
+				err := engine.transformWorkerVolumes(runtime, got)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(got.Worker.Volumes).To(HaveLen(1))
+				Expect(got.Worker.Volumes[0].Name).To(Equal(testVolumeName))
+				Expect(got.Worker.Volumes[0].Secret.SecretName).To(Equal(testSecretName))
+				Expect(got.Worker.VolumeMounts).To(HaveLen(1))
+				Expect(got.Worker.VolumeMounts[0].Name).To(Equal(testVolumeName))
+				Expect(got.Worker.VolumeMounts[0].MountPath).To(Equal(testVolMountPath))
+			})
+		})
+
+		Context("when only volume mounts are provided without corresponding volumes", func() {
+			It("should return an error", func() {
+				runtime := &datav1alpha1.AlluxioRuntime{
+					Spec: datav1alpha1.AlluxioRuntimeSpec{
+						Worker: datav1alpha1.AlluxioCompTemplateSpec{
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      testVolumeName,
+									MountPath: testVolMountPath,
+								},
+							},
+						},
+					},
+				}
+				err := engine.transformWorkerVolumes(runtime, got)
+
+				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
+
+	Describe("transformFuseVolumes", func() {
+		Context("when both volumes and volume mounts are provided", func() {
+			It("should correctly transform volumes for fuse", func() {
+				runtime := &datav1alpha1.AlluxioRuntime{
+					Spec: datav1alpha1.AlluxioRuntimeSpec{
+						Volumes: []corev1.Volume{
 							{
-								Name:      "test",
-								MountPath: "/test",
+								Name: testVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: testSecretName,
+									},
+								},
 							},
 						},
-					},
-				},
-			},
-			expect: &Alluxio{
-				Worker: Worker{
-					Volumes: []corev1.Volume{
-						{
-							Name: "test",
-							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{
-									SecretName: "test",
+						Fuse: datav1alpha1.AlluxioFuseSpec{
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      testVolumeName,
+									MountPath: testVolMountPath,
 								},
 							},
 						},
 					},
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      "test",
-							MountPath: "/test",
-						},
-					},
-				},
-			},
-			expectErr: false,
-		},
-		{
-			name: "onlyVolumeMounts",
-			runtime: &datav1alpha1.AlluxioRuntime{
-				Spec: datav1alpha1.AlluxioRuntimeSpec{
-					Worker: datav1alpha1.AlluxioCompTemplateSpec{
-						VolumeMounts: []corev1.VolumeMount{
-							{
-								Name:      "test",
-								MountPath: "/test",
-							},
-						},
-					},
-				},
-			},
-			expect: &Alluxio{
-				Worker: Worker{
-					Volumes: []corev1.Volume{
-						{
-							Name: "test",
-							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{
-									SecretName: "test",
+				}
+				err := engine.transformFuseVolumes(runtime, got)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(got.Fuse.Volumes).To(HaveLen(1))
+				Expect(got.Fuse.Volumes[0].Name).To(Equal(testVolumeName))
+				Expect(got.Fuse.Volumes[0].Secret.SecretName).To(Equal(testSecretName))
+				Expect(got.Fuse.VolumeMounts).To(HaveLen(1))
+				Expect(got.Fuse.VolumeMounts[0].Name).To(Equal(testVolumeName))
+				Expect(got.Fuse.VolumeMounts[0].MountPath).To(Equal(testVolMountPath))
+			})
+		})
+
+		Context("when only volume mounts are provided without corresponding volumes", func() {
+			It("should return an error", func() {
+				runtime := &datav1alpha1.AlluxioRuntime{
+					Spec: datav1alpha1.AlluxioRuntimeSpec{
+						Fuse: datav1alpha1.AlluxioFuseSpec{
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      testVolumeName,
+									MountPath: testVolMountPath,
 								},
 							},
 						},
 					},
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      "test",
-							MountPath: "/test",
-						},
-					},
-				},
-			},
-			expectErr: true,
-		},
-	}
-	for _, testCase := range testCases {
-		engine := &AlluxioEngine{}
-		got := &Alluxio{}
-		err := engine.transformWorkerVolumes(testCase.runtime, got)
+				}
+				err := engine.transformFuseVolumes(runtime, got)
 
-		if err != nil && !testCase.expectErr {
-			t.Errorf("Got unexpected error %v", err)
-		}
-
-		if testCase.expectErr {
-			continue
-		}
-
-		if !reflect.DeepEqual(got, testCase.expect) {
-			t.Errorf("want %v, got %v for testcase %s", testCase.expect, got, testCase.name)
-		}
-	}
-}
-
-// TestTransformFuseVolumes tests the behavior of the transformFuseVolumes method.
-// It defines multiple test cases to verify whether the Volumes and VolumeMounts
-// in an AlluxioRuntime object are correctly transformed into the Alluxio structure,
-// and checks the error handling logic.
-func TestTransformFuseVolumes(t *testing.T) {
-	type testCase struct {
-		name      string
-		runtime   *datav1alpha1.AlluxioRuntime
-		expect    *Alluxio
-		expectErr bool
-	}
-
-	testCases := []testCase{
-		{
-			name: "all",
-			runtime: &datav1alpha1.AlluxioRuntime{
-				Spec: datav1alpha1.AlluxioRuntimeSpec{
-					Volumes: []corev1.Volume{
-						{
-							Name: "test",
-							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{
-									SecretName: "test",
-								},
-							},
-						},
-					}, Fuse: datav1alpha1.AlluxioFuseSpec{
-						VolumeMounts: []corev1.VolumeMount{
-							{
-								Name:      "test",
-								MountPath: "/test",
-							},
-						},
-					},
-				},
-			},
-			expect: &Alluxio{
-				Fuse: Fuse{
-					Volumes: []corev1.Volume{
-						{
-							Name: "test",
-							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{
-									SecretName: "test",
-								},
-							},
-						},
-					}, VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      "test",
-							MountPath: "/test",
-						},
-					},
-				},
-			},
-			expectErr: false,
-		}, {
-			name: "onlyVolumeMounts",
-			runtime: &datav1alpha1.AlluxioRuntime{
-				Spec: datav1alpha1.AlluxioRuntimeSpec{
-					Fuse: datav1alpha1.AlluxioFuseSpec{
-						VolumeMounts: []corev1.VolumeMount{
-							{
-								Name:      "test",
-								MountPath: "/test",
-							},
-						},
-					},
-				},
-			},
-			expect: &Alluxio{
-				Fuse: Fuse{
-					Volumes: []corev1.Volume{
-						{
-							Name: "test",
-							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{
-									SecretName: "test",
-								},
-							},
-						},
-					}, VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      "test",
-							MountPath: "/test",
-						},
-					},
-				},
-			},
-			expectErr: true,
-		},
-	}
-
-	for _, testCase := range testCases {
-		engine := &AlluxioEngine{}
-		got := &Alluxio{}
-		err := engine.transformFuseVolumes(testCase.runtime, got)
-		if err != nil && !testCase.expectErr {
-			t.Errorf("Got unexpected error %v for testcase %s", err, testCase.name)
-		}
-
-		if testCase.expectErr {
-			continue
-		}
-
-		if !reflect.DeepEqual(got, testCase.expect) {
-			t.Errorf("want %v, got %v for testcase %s", testCase.expect, got, testCase.name)
-		}
-
-	}
-
-}
+				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
+})

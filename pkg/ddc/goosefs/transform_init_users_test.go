@@ -18,102 +18,90 @@ package goosefs
 
 import (
 	"strings"
-	"testing"
 
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
-func TestTransformInitUsersWithoutRunAs(t *testing.T) {
-	var tests = []struct {
-		runtime      *datav1alpha1.GooseFSRuntime
-		goosefsValue *GooseFS
-	}{
-		{&datav1alpha1.GooseFSRuntime{
-			Spec: datav1alpha1.GooseFSRuntimeSpec{},
-		}, &GooseFS{}},
-	}
-	for _, test := range tests {
-		engine := &GooseFSEngine{Log: fake.NullLogger()}
-		engine.transformInitUsers(test.runtime, test.goosefsValue)
-		if test.goosefsValue.InitUsers.Enabled {
-			t.Errorf("expected init users are disabled, but got %v", test.goosefsValue.InitUsers.Enabled)
-		}
-	}
-}
+var _ = Describe("TransformInitUsers", func() {
+	Describe("without RunAs", func() {
+		It("should disable init users when RunAs is not specified", func() {
+			runtime := &datav1alpha1.GooseFSRuntime{
+				Spec: datav1alpha1.GooseFSRuntimeSpec{},
+			}
+			goosefsValue := &GooseFS{}
 
-func TestTransformInitUsersWithRunAs(t *testing.T) {
+			engine := &GooseFSEngine{Log: fake.NullLogger()}
+			engine.transformInitUsers(runtime, goosefsValue)
 
-	value := int64(1000)
-	var tests = []struct {
-		runtime      *datav1alpha1.GooseFSRuntime
-		goosefsValue *GooseFS
-	}{
-		{&datav1alpha1.GooseFSRuntime{
-			Spec: datav1alpha1.GooseFSRuntimeSpec{
-				RunAs: &datav1alpha1.User{
-					UID:       &value,
-					GID:       &value,
-					UserName:  "user1",
-					GroupName: "group1",
+			Expect(goosefsValue.InitUsers.Enabled).To(BeFalse())
+		})
+	})
+
+	Describe("with RunAs", func() {
+		It("should enable init users and set default image", func() {
+			value := int64(1000)
+			runtime := &datav1alpha1.GooseFSRuntime{
+				Spec: datav1alpha1.GooseFSRuntimeSpec{
+					RunAs: &datav1alpha1.User{
+						UID:       &value,
+						GID:       &value,
+						UserName:  "user1",
+						GroupName: "group1",
+					},
 				},
-			},
-		}, &GooseFS{}},
-	}
-	for _, test := range tests {
-		engine := &GooseFSEngine{
-			Log:       fake.NullLogger(),
-			initImage: common.DefaultInitImage,
-		}
-		engine.transformInitUsers(test.runtime, test.goosefsValue)
-		if !test.goosefsValue.InitUsers.Enabled {
-			t.Errorf("expected init users are enabled, but got %v", test.goosefsValue.InitUsers.Enabled)
-		}
+			}
+			goosefsValue := &GooseFS{}
 
-		imageInfo := strings.Split(common.DefaultInitImage, ":")
-		if test.goosefsValue.InitUsers.Image != imageInfo[0] || test.goosefsValue.InitUsers.ImageTag != imageInfo[1] {
-			t.Errorf("expected image info are set properly, but got image: %v, imageTag: %v", test.goosefsValue.InitUsers.Image, test.goosefsValue.InitUsers.ImageTag)
-		}
-	}
-}
+			engine := &GooseFSEngine{
+				Log:       fake.NullLogger(),
+				initImage: common.DefaultInitImage,
+			}
+			engine.transformInitUsers(runtime, goosefsValue)
 
-func TestTransformInitUsersImageOverwrite(t *testing.T) {
-	value := int64(1000)
-	image := "some-registry.some-repository"
-	imageTag := "v1.0.0-abcdefg"
-	var tests = []struct {
-		runtime      *datav1alpha1.GooseFSRuntime
-		goosefsValue *GooseFS
-	}{
-		{&datav1alpha1.GooseFSRuntime{
-			Spec: datav1alpha1.GooseFSRuntimeSpec{
-				RunAs: &datav1alpha1.User{
-					UID:       &value,
-					GID:       &value,
-					UserName:  "user1",
-					GroupName: "group1",
+			Expect(goosefsValue.InitUsers.Enabled).To(BeTrue())
+
+			imageInfo := strings.Split(common.DefaultInitImage, ":")
+			Expect(goosefsValue.InitUsers.Image).To(Equal(imageInfo[0]))
+			Expect(goosefsValue.InitUsers.ImageTag).To(Equal(imageInfo[1]))
+		})
+	})
+
+	Describe("with image overwrite", func() {
+		It("should use custom image when specified in runtime", func() {
+			value := int64(1000)
+			image := "some-registry.some-repository"
+			imageTag := "v1.0.0-abcdefg"
+
+			runtime := &datav1alpha1.GooseFSRuntime{
+				Spec: datav1alpha1.GooseFSRuntimeSpec{
+					RunAs: &datav1alpha1.User{
+						UID:       &value,
+						GID:       &value,
+						UserName:  "user1",
+						GroupName: "group1",
+					},
+					InitUsers: datav1alpha1.InitUsersSpec{
+						Image:    image,
+						ImageTag: imageTag,
+					},
 				},
-				InitUsers: datav1alpha1.InitUsersSpec{
-					Image:    image,
-					ImageTag: imageTag,
-				},
-			},
-		}, &GooseFS{}},
-	}
-	for _, test := range tests {
-		engine := &GooseFSEngine{
-			Log:       fake.NullLogger(),
-			initImage: common.DefaultInitImage,
-		}
-		engine.transformInitUsers(test.runtime, test.goosefsValue)
-		if !test.goosefsValue.InitUsers.Enabled {
-			t.Errorf("expected init users are enabled, but got %v", test.goosefsValue.InitUsers.Enabled)
-		}
+			}
+			goosefsValue := &GooseFS{}
 
-		if test.goosefsValue.InitUsers.Image != image || test.goosefsValue.InitUsers.ImageTag != imageTag {
-			t.Errorf("expected image info should be overwrite, but got image: %v, imageTag: %v", test.goosefsValue.InitUsers.Image, test.goosefsValue.InitUsers.ImageTag)
-		}
-	}
-}
+			engine := &GooseFSEngine{
+				Log:       fake.NullLogger(),
+				initImage: common.DefaultInitImage,
+			}
+			engine.transformInitUsers(runtime, goosefsValue)
+
+			Expect(goosefsValue.InitUsers.Enabled).To(BeTrue())
+			Expect(goosefsValue.InitUsers.Image).To(Equal(image))
+			Expect(goosefsValue.InitUsers.ImageTag).To(Equal(imageTag))
+		})
+	})
+})

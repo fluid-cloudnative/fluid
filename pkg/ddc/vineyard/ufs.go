@@ -60,3 +60,11 @@ func (e *VineyardEngine) UpdateOnUFSChange(ufsToUpdate *utils.UFSToUpdate) (upda
 
 	return
 }
+
+func (e *VineyardEngine) ShouldSyncDatasetMounts() (should bool, err error) {
+	return false, nil
+}
+
+func (e *VineyardEngine) SyncDatasetMounts() (err error) {
+	return nil
+}

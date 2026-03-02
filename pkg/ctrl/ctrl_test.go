@@ -17,40 +17,44 @@ limitations under the License.
 package ctrl
 
 import (
-	"testing"
-
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-	"k8s.io/utils/ptr"
-
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/ptr"
 )
 
-func TestCheckWorkerAffinity(t *testing.T) {
+var _ = Describe("CheckWorkerAffinity", func() {
+	var (
+		s           *runtime.Scheme
+		name        string
+		namespace   string
+		runtimeInfo base.RuntimeInfoInterface
+		h           *Helper
+	)
 
-	s := runtime.NewScheme()
-	name := "check-worker-affinity"
-	namespace := "big-data"
-	runtimeObjs := []runtime.Object{}
-	mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
-	runtimeInfo, err := base.BuildRuntimeInfo(name, namespace, common.JindoRuntime)
-	if err != nil {
-		t.Errorf("testcase %s failed due to %v", name, err)
-	}
-	h := BuildHelper(runtimeInfo, mockClient, fake.NullLogger())
+	BeforeEach(func() {
+		s = runtime.NewScheme()
+		name = "check-worker-affinity"
+		namespace = "big-data"
+		runtimeObjs := []runtime.Object{}
+		mockClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
 
-	tests := []struct {
-		name   string
-		worker *appsv1.StatefulSet
-		want   bool
-	}{
-		{
-			name: "no affinity",
-			worker: &appsv1.StatefulSet{
+		var err error
+		runtimeInfo, err = base.BuildRuntimeInfo(name, namespace, common.JindoRuntime)
+		Expect(err).NotTo(HaveOccurred())
+
+		h = BuildHelper(runtimeInfo, mockClient, fake.NullLogger())
+	})
+
+	Context("when worker has no affinity", func() {
+		It("should return false", func() {
+			worker := &appsv1.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "no-affinity-worker",
 					Namespace: namespace,
@@ -58,11 +62,16 @@ func TestCheckWorkerAffinity(t *testing.T) {
 				Spec: appsv1.StatefulSetSpec{
 					Replicas: ptr.To[int32](1),
 				},
-			},
-			want: false,
-		}, {
-			name: "no node affinity",
-			worker: &appsv1.StatefulSet{
+			}
+
+			result := h.checkWorkerAffinity(worker)
+			Expect(result).To(BeFalse())
+		})
+	})
+
+	Context("when worker has no node affinity", func() {
+		It("should return false", func() {
+			worker := &appsv1.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "no-node-affinity-worker",
 					Namespace: namespace,
@@ -71,13 +80,20 @@ func TestCheckWorkerAffinity(t *testing.T) {
 					Replicas: ptr.To[int32](1),
 					Template: v1.PodTemplateSpec{
 						Spec: v1.PodSpec{
-							Affinity: &v1.Affinity{}}},
+							Affinity: &v1.Affinity{},
+						},
+					},
 				},
-			},
-			want: false,
-		}, {
-			name: "other affinity exists",
-			worker: &appsv1.StatefulSet{
+			}
+
+			result := h.checkWorkerAffinity(worker)
+			Expect(result).To(BeFalse())
+		})
+	})
+
+	Context("when worker has other affinity without matching fluid preference", func() {
+		It("should return false", func() {
+			worker := &appsv1.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      name + "-worker",
 					Namespace: namespace,
@@ -135,11 +151,16 @@ func TestCheckWorkerAffinity(t *testing.T) {
 						},
 					},
 				},
-			},
-			want: false,
-		}, {
-			name: "other affinity exists",
-			worker: &appsv1.StatefulSet{
+			}
+
+			result := h.checkWorkerAffinity(worker)
+			Expect(result).To(BeFalse())
+		})
+	})
+
+	Context("when worker has matching fluid preference affinity", func() {
+		It("should return true", func() {
+			worker := &appsv1.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      name + "-worker",
 					Namespace: namespace,
@@ -197,20 +218,354 @@ func TestCheckWorkerAffinity(t *testing.T) {
 						},
 					},
 				},
-			},
-			want: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-
-			found := h.checkWorkerAffinity(tt.worker)
-
-			if found != tt.want {
-				t.Errorf("Test case %s checkWorkerAffinity() = %v, want %v", tt.name, found, tt.want)
 			}
-		})
-	}
 
-}
+			result := h.checkWorkerAffinity(worker)
+			Expect(result).To(BeTrue())
+		})
+	})
+
+	Context("edge cases", func() {
+		It("should handle worker with nil replicas", func() {
+			worker := &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "nil-replicas-worker",
+					Namespace: namespace,
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Replicas: nil,
+				},
+			}
+
+			result := h.checkWorkerAffinity(worker)
+			Expect(result).To(BeFalse())
+		})
+
+		It("should handle worker with empty pod template", func() {
+			worker := &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "empty-template-worker",
+					Namespace: namespace,
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Replicas: ptr.To[int32](1),
+					Template: v1.PodTemplateSpec{},
+				},
+			}
+
+			result := h.checkWorkerAffinity(worker)
+			Expect(result).To(BeFalse())
+		})
+
+		It("should handle worker with only pod anti-affinity", func() {
+			worker := &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "only-pod-anti-affinity-worker",
+					Namespace: namespace,
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Replicas: ptr.To[int32](1),
+					Template: v1.PodTemplateSpec{
+						Spec: v1.PodSpec{
+							Affinity: &v1.Affinity{
+								PodAntiAffinity: &v1.PodAntiAffinity{
+									RequiredDuringSchedulingIgnoredDuringExecution: []v1.PodAffinityTerm{
+										{
+											LabelSelector: &metav1.LabelSelector{
+												MatchExpressions: []metav1.LabelSelectorRequirement{
+													{
+														Key:      "fluid.io/dataset",
+														Operator: metav1.LabelSelectorOpExists,
+													},
+												},
+											},
+											TopologyKey: "kubernetes.io/hostname",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			result := h.checkWorkerAffinity(worker)
+			Expect(result).To(BeFalse())
+		})
+
+		It("should handle worker with node affinity but no preferred terms", func() {
+			worker := &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "no-preferred-terms-worker",
+					Namespace: namespace,
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Replicas: ptr.To[int32](1),
+					Template: v1.PodTemplateSpec{
+						Spec: v1.PodSpec{
+							Affinity: &v1.Affinity{
+								NodeAffinity: &v1.NodeAffinity{
+									RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
+										NodeSelectorTerms: []v1.NodeSelectorTerm{
+											{
+												MatchExpressions: []v1.NodeSelectorRequirement{
+													{
+														Key:      "nodeA",
+														Operator: v1.NodeSelectorOpIn,
+														Values:   []string{"true"},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			result := h.checkWorkerAffinity(worker)
+			Expect(result).To(BeFalse())
+		})
+
+		It("should handle worker with empty preferred terms", func() {
+			worker := &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "empty-preferred-terms-worker",
+					Namespace: namespace,
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Replicas: ptr.To[int32](1),
+					Template: v1.PodTemplateSpec{
+						Spec: v1.PodSpec{
+							Affinity: &v1.Affinity{
+								NodeAffinity: &v1.NodeAffinity{
+									PreferredDuringSchedulingIgnoredDuringExecution: []v1.PreferredSchedulingTerm{},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			result := h.checkWorkerAffinity(worker)
+			Expect(result).To(BeFalse())
+		})
+	})
+
+	Context("with multiple preferred scheduling terms", func() {
+		It("should return true when matching term is found among multiple terms", func() {
+			worker := &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      name + "-worker",
+					Namespace: namespace,
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Replicas: ptr.To[int32](1),
+					Template: v1.PodTemplateSpec{
+						Spec: v1.PodSpec{
+							Affinity: &v1.Affinity{
+								NodeAffinity: &v1.NodeAffinity{
+									PreferredDuringSchedulingIgnoredDuringExecution: []v1.PreferredSchedulingTerm{
+										{
+											Weight: 50,
+											Preference: v1.NodeSelectorTerm{
+												MatchExpressions: []v1.NodeSelectorRequirement{
+													{
+														Key:      "other-label",
+														Operator: v1.NodeSelectorOpIn,
+														Values:   []string{"value"},
+													},
+												},
+											},
+										},
+										{
+											Weight: 100,
+											Preference: v1.NodeSelectorTerm{
+												MatchExpressions: []v1.NodeSelectorRequirement{
+													{
+														Key:      "fluid.io/f-big-data-" + name,
+														Operator: v1.NodeSelectorOpIn,
+														Values:   []string{"true"},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			result := h.checkWorkerAffinity(worker)
+			Expect(result).To(BeTrue())
+		})
+
+		It("should return false when no matching term is found among multiple terms", func() {
+			worker := &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      name + "-worker",
+					Namespace: namespace,
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Replicas: ptr.To[int32](1),
+					Template: v1.PodTemplateSpec{
+						Spec: v1.PodSpec{
+							Affinity: &v1.Affinity{
+								NodeAffinity: &v1.NodeAffinity{
+									PreferredDuringSchedulingIgnoredDuringExecution: []v1.PreferredSchedulingTerm{
+										{
+											Weight: 50,
+											Preference: v1.NodeSelectorTerm{
+												MatchExpressions: []v1.NodeSelectorRequirement{
+													{
+														Key:      "other-label-1",
+														Operator: v1.NodeSelectorOpIn,
+														Values:   []string{"value"},
+													},
+												},
+											},
+										},
+										{
+											Weight: 100,
+											Preference: v1.NodeSelectorTerm{
+												MatchExpressions: []v1.NodeSelectorRequirement{
+													{
+														Key:      "other-label-2",
+														Operator: v1.NodeSelectorOpIn,
+														Values:   []string{"true"},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			result := h.checkWorkerAffinity(worker)
+			Expect(result).To(BeFalse())
+		})
+	})
+
+	Context("with different namespace combinations", func() {
+		It("should work correctly with different namespace", func() {
+			differentNamespace := "different-namespace"
+			worker := &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      name + "-worker",
+					Namespace: differentNamespace,
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Replicas: ptr.To[int32](1),
+					Template: v1.PodTemplateSpec{
+						Spec: v1.PodSpec{
+							Affinity: &v1.Affinity{
+								NodeAffinity: &v1.NodeAffinity{
+									PreferredDuringSchedulingIgnoredDuringExecution: []v1.PreferredSchedulingTerm{
+										{
+											Weight: 100,
+											Preference: v1.NodeSelectorTerm{
+												MatchExpressions: []v1.NodeSelectorRequirement{
+													{
+														Key:      "fluid.io/f-big-data-" + name,
+														Operator: v1.NodeSelectorOpIn,
+														Values:   []string{"true"},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			result := h.checkWorkerAffinity(worker)
+			Expect(result).To(BeTrue())
+		})
+	})
+
+	Context("with various match expression operators", func() {
+		It("should return true with NotIn operator but matching key pattern", func() {
+			worker := &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      name + "-worker",
+					Namespace: namespace,
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Replicas: ptr.To[int32](1),
+					Template: v1.PodTemplateSpec{
+						Spec: v1.PodSpec{
+							Affinity: &v1.Affinity{
+								NodeAffinity: &v1.NodeAffinity{
+									PreferredDuringSchedulingIgnoredDuringExecution: []v1.PreferredSchedulingTerm{
+										{
+											Weight: 100,
+											Preference: v1.NodeSelectorTerm{
+												MatchExpressions: []v1.NodeSelectorRequirement{
+													{
+														Key:      "fluid.io/f-big-data-" + name,
+														Operator: v1.NodeSelectorOpNotIn,
+														Values:   []string{"false"},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			result := h.checkWorkerAffinity(worker)
+			Expect(result).To(BeTrue())
+		})
+
+		It("should return true with Exists operator and matching key pattern", func() {
+			worker := &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      name + "-worker",
+					Namespace: namespace,
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Replicas: ptr.To[int32](1),
+					Template: v1.PodTemplateSpec{
+						Spec: v1.PodSpec{
+							Affinity: &v1.Affinity{
+								NodeAffinity: &v1.NodeAffinity{
+									PreferredDuringSchedulingIgnoredDuringExecution: []v1.PreferredSchedulingTerm{
+										{
+											Weight: 100,
+											Preference: v1.NodeSelectorTerm{
+												MatchExpressions: []v1.NodeSelectorRequirement{
+													{
+														Key:      "fluid.io/f-big-data-" + name,
+														Operator: v1.NodeSelectorOpExists,
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			result := h.checkWorkerAffinity(worker)
+			Expect(result).To(BeTrue())
+		})
+	})
+})
