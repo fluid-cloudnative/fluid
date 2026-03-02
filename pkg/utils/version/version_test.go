@@ -16,61 +16,41 @@ limitations under the License.
 
 package version
 
-import "testing"
+import (
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+)
 
-func TestParse(t *testing.T) {
-	validVersions := []string{
-		"2.7.2-SNAPSHOT-3714f2b",
-		"release-2.7.2-SNAPSHOT-3714f2b",
-		"2.8.0",
-	}
+var _ = Describe("Version Utils", func() {
+	Describe("RuntimeVersion", func() {
+		validVersions := []string{
+			"2.7.2-SNAPSHOT-3714f2b",
+			"release-2.7.2-SNAPSHOT-3714f2b",
+			"2.8.0",
+		}
+		for _, s := range validVersions {
+			versionStr := s
+			It("should parse valid version: "+versionStr, func() {
+				ver, err := RuntimeVersion(versionStr)
+				GinkgoWriter.Println("Valid: ", versionStr, ver, err)
+				Expect(err).NotTo(HaveOccurred())
+			})
+		}
+	})
 
-	for _, s := range validVersions {
-		t.Run(s, func(t *testing.T) {
-			ver, err := RuntimeVersion(s)
-			t.Log("Valid: ", s, ver, err)
-			if err != nil {
-				t.Errorf("RuntimeVersion unexpected error for version %q: %v", s, err)
-			}
-		})
-	}
-}
-
-func TestCompare(t *testing.T) {
-	tests := []struct {
-		name      string
-		current   string
-		other     string
-		wantError bool
-		want      int
-	}{
-		{
-			name:      "lessThan",
-			current:   "release-2.7.2-SNAPSHOT-3714f2b",
-			other:     "2.8.0",
-			wantError: false,
-			want:      -1,
-		},
-		{
-			name:      "error",
-			current:   "test-2.7.2-SNAPSHOT-3714f2b",
-			other:     "2.8.0",
-			wantError: true,
-			want:      0,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := Compare(tt.current, tt.other)
-			gotErr := err != nil
-			if gotErr != tt.wantError {
-				t.Errorf("testcase %v compare()'s expected error is %v, result is %v", tt.name, tt.wantError, err)
-			}
-
-			if got != tt.want {
-				t.Errorf("testcase %v compare()'s expected value is %v, result is %v", tt.name, tt.want, got)
-			}
-
-		})
-	}
-}
+	Describe("Compare", func() {
+		DescribeTable("should compare versions correctly",
+			func(current, other string, wantError bool, want int) {
+				got, err := Compare(current, other)
+				if wantError {
+					Expect(err).To(HaveOccurred())
+				} else {
+					Expect(err).NotTo(HaveOccurred())
+				}
+				Expect(got).To(Equal(want))
+			},
+			Entry("lessThan", "release-2.7.2-SNAPSHOT-3714f2b", "2.8.0", false, -1),
+			Entry("error", "test-2.7.2-SNAPSHOT-3714f2b", "2.8.0", true, 0),
+		)
+	})
+})
