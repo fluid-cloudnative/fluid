@@ -544,20 +544,19 @@ func (e *JindoEngine) transformFuseArg(runtime *datav1alpha1.JindoRuntime, datas
 
 func (e *JindoEngine) getSmartDataConfigs() (image, tag, dnsServer string) {
 	var (
-		defaultImage     = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata"
-		defaultTag       = "3.8.0"
 		defaultDnsServer = "1.1.1.1"
 	)
 
-	image = docker.GetImageRepoFromEnv(common.JindoSmartDataImageEnv)
-	tag = docker.GetImageTagFromEnv(common.JindoSmartDataImageEnv)
+	fullImage := resolveSmartDataImage()
+	lastColon := strings.LastIndex(fullImage, ":")
+	if lastColon != -1 {
+		image = fullImage[:lastColon]
+		tag = fullImage[lastColon+1:]
+	} else {
+		image = fullImage
+	}
+
 	dnsServer = os.Getenv(common.JindoDnsServer)
-	if len(image) == 0 {
-		image = defaultImage
-	}
-	if len(tag) == 0 {
-		tag = defaultTag
-	}
 	if len(dnsServer) == 0 {
 		dnsServer = defaultDnsServer
 	}
