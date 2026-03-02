@@ -17,12 +17,11 @@ limitations under the License.
 package juicefs
 
 import (
-	"encoding/json"
 	"os"
 	"path/filepath"
-	"reflect"
-	"strings"
-	"testing"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 
@@ -30,6 +29,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
@@ -121,268 +121,286 @@ worker:
     name: cache-dir-1
 `
 
-func TestJuiceFSEngine_GenerateDataLoadValueFileWithRuntimeHDD(t *testing.T) {
-	configMap := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-dataset-juicefs-values",
-			Namespace: "fluid",
-		},
-		Data: map[string]string{
-			"data": valuesConfigMapData,
-		},
-	}
+var _ = Describe("JuiceFSEngine_GenerateDataLoadValueFileWithRuntimeHDD", func() {
+	var (
+		configMap          *v1.ConfigMap
+		datasetInputs      []datav1alpha1.Dataset
+		statefulsetInputs  []appsv1.StatefulSet
+		podListInputs      []v1.PodList
+		testObjs           []runtime.Object
+		client             client.Client
+		engine             JuiceFSEngine
+		context            cruntime.ReconcileRequestContext
+		dataLoadNoTarget   datav1alpha1.DataLoad
+		dataLoadWithTarget datav1alpha1.DataLoad
+	)
 
-	datasetInputs := []datav1alpha1.Dataset{
-		{
+	BeforeEach(func() {
+		configMap = &v1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-dataset",
+				Name:      "test-dataset-juicefs-values",
 				Namespace: "fluid",
 			},
-			Spec: datav1alpha1.DatasetSpec{},
-		},
-	}
-
-	statefulsetInputs := []appsv1.StatefulSet{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "juicefs-worker",
-				Namespace: "fluid",
+			Data: map[string]string{
+				"data": valuesConfigMapData,
 			},
-			Spec: appsv1.StatefulSetSpec{
-				Selector: &metav1.LabelSelector{
-					MatchLabels: map[string]string{"a": "b"},
-				},
-			},
-		},
-	}
-	podListInputs := []v1.PodList{{
-		Items: []v1.Pod{{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: "fluid",
-				Labels:    map[string]string{"a": "b"},
-			},
-			Status: v1.PodStatus{
-				Phase: v1.PodRunning,
-				Conditions: []v1.PodCondition{{
-					Type:   v1.PodReady,
-					Status: v1.ConditionTrue,
-				}},
-			},
-		}},
-	}}
-	testObjs := []runtime.Object{}
-	testObjs = append(testObjs, configMap)
-	for _, datasetInput := range datasetInputs {
-		testObjs = append(testObjs, datasetInput.DeepCopy())
-	}
-	for _, statefulsetInput := range statefulsetInputs {
-		testObjs = append(testObjs, statefulsetInput.DeepCopy())
-	}
-	for _, podInput := range podListInputs {
-		testObjs = append(testObjs, podInput.DeepCopy())
-	}
-	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-
-	context := cruntime.ReconcileRequestContext{
-		Client: client,
-	}
-
-	dataLoadNoTarget := datav1alpha1.DataLoad{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-dataload",
-			Namespace: "fluid",
-		},
-		Spec: datav1alpha1.DataLoadSpec{
-			Dataset: datav1alpha1.TargetDataset{
-				Name:      "test-dataset",
-				Namespace: "fluid",
-			},
-		},
-	}
-	dataLoadWithTarget := datav1alpha1.DataLoad{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-dataload",
-			Namespace: "fluid",
-		},
-		Spec: datav1alpha1.DataLoadSpec{
-			Dataset: datav1alpha1.TargetDataset{
-				Name:      "test-dataset",
-				Namespace: "fluid",
-			},
-			Target: []datav1alpha1.TargetPath{
-				{
-					Path: "/test",
-				},
-			},
-		},
-	}
-
-	testCases := []struct {
-		dataLoad       datav1alpha1.DataLoad
-		expectFileName string
-	}{
-		{
-			dataLoad:       dataLoadNoTarget,
-			expectFileName: filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml"),
-		},
-		{
-			dataLoad:       dataLoadWithTarget,
-			expectFileName: filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml"),
-		},
-	}
-
-	for _, test := range testCases {
-		engine := JuiceFSEngine{
-			name:      "juicefs",
-			namespace: "fluid",
-			Client:    client,
-			Log:       fake.NullLogger(),
 		}
-		if fileName, err := engine.generateDataLoadValueFile(context, &test.dataLoad); err != nil || !strings.Contains(fileName, test.expectFileName) {
-			t.Errorf("fail to generate the dataload value file: %v", err)
+
+		datasetInputs = []datav1alpha1.Dataset{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-dataset",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DatasetSpec{},
+			},
 		}
-	}
-}
 
-func TestJuiceFSEngine_GenerateDataLoadValueFileWithRuntime(t *testing.T) {
-	configMap := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-dataset-juicefs-values",
-			Namespace: "fluid",
-		},
-		Data: map[string]string{
-			"data": ``,
-		},
-	}
-
-	datasetInputs := []datav1alpha1.Dataset{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-dataset",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.DatasetSpec{},
-		},
-	}
-
-	statefulsetInputs := []appsv1.StatefulSet{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "juicefs-worker",
-				Namespace: "fluid",
-			},
-			Spec: appsv1.StatefulSetSpec{
-				Selector: &metav1.LabelSelector{
-					MatchLabels: map[string]string{"a": "b"},
+		statefulsetInputs = []appsv1.StatefulSet{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "juicefs-worker",
+					Namespace: "fluid",
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{"a": "b"},
+					},
 				},
 			},
-		},
-	}
-	podListInputs := []v1.PodList{{
-		Items: []v1.Pod{{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: "fluid",
-				Labels:    map[string]string{"a": "b"},
-			},
-			Status: v1.PodStatus{
-				Phase: v1.PodRunning,
-				Conditions: []v1.PodCondition{{
-					Type:   v1.PodReady,
-					Status: v1.ConditionTrue,
-				}},
-			},
-		}},
-	}}
-	testObjs := []runtime.Object{}
-	testObjs = append(testObjs, configMap)
-	for _, datasetInput := range datasetInputs {
-		testObjs = append(testObjs, datasetInput.DeepCopy())
-	}
-	for _, statefulsetInput := range statefulsetInputs {
-		testObjs = append(testObjs, statefulsetInput.DeepCopy())
-	}
-	for _, podInput := range podListInputs {
-		testObjs = append(testObjs, podInput.DeepCopy())
-	}
-	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-
-	context := cruntime.ReconcileRequestContext{
-		Client: client,
-	}
-
-	dataLoadNoTarget := datav1alpha1.DataLoad{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-dataload",
-			Namespace: "fluid",
-		},
-		Spec: datav1alpha1.DataLoadSpec{
-			Dataset: datav1alpha1.TargetDataset{
-				Name:      "test-dataset",
-				Namespace: "fluid",
-			},
-			Target: []datav1alpha1.TargetPath{{
-				Path:     "/dir",
-				Replicas: 1,
+		}
+		podListInputs = []v1.PodList{{
+			Items: []v1.Pod{{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "fluid",
+					Labels:    map[string]string{"a": "b"},
+				},
+				Status: v1.PodStatus{
+					Phase: v1.PodRunning,
+					Conditions: []v1.PodCondition{{
+						Type:   v1.PodReady,
+						Status: v1.ConditionTrue,
+					}},
+				},
 			}},
-		},
-	}
-	dataLoadWithTarget := datav1alpha1.DataLoad{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-dataload",
-			Namespace: "fluid",
-		},
-		Spec: datav1alpha1.DataLoadSpec{
-			Dataset: datav1alpha1.TargetDataset{
-				Name:      "test-dataset",
-				Namespace: "fluid",
-			},
-			Target: []datav1alpha1.TargetPath{
-				{
-					Path: "/test",
-				},
-			},
-		},
-	}
+		}}
+		testObjs = []runtime.Object{}
+		testObjs = append(testObjs, configMap)
+		for _, datasetInput := range datasetInputs {
+			testObjs = append(testObjs, datasetInput.DeepCopy())
+		}
+		for _, statefulsetInput := range statefulsetInputs {
+			testObjs = append(testObjs, statefulsetInput.DeepCopy())
+		}
+		for _, podInput := range podListInputs {
+			testObjs = append(testObjs, podInput.DeepCopy())
+		}
+		client = fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
-	testCases := []struct {
-		dataLoad       datav1alpha1.DataLoad
-		expectFileName string
-	}{
-		{
-			dataLoad:       dataLoadNoTarget,
-			expectFileName: filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml"),
-		},
-		{
-			dataLoad:       dataLoadWithTarget,
-			expectFileName: filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml"),
-		},
-	}
+		context = cruntime.ReconcileRequestContext{
+			Client: client,
+		}
 
-	for _, test := range testCases {
-		engine := JuiceFSEngine{
+		engine = JuiceFSEngine{
 			name:      "juicefs",
 			namespace: "fluid",
 			Client:    client,
 			Log:       fake.NullLogger(),
 		}
-		if fileName, err := engine.generateDataLoadValueFile(context, &test.dataLoad); err != nil || !strings.Contains(fileName, test.expectFileName) {
-			t.Errorf("fail to generate the dataload value file: %v", err)
-		}
-	}
-}
 
-func TestJuiceFSEngine_CheckRuntimeReady(t *testing.T) {
+		dataLoadNoTarget = datav1alpha1.DataLoad{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-dataload",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.DataLoadSpec{
+				Dataset: datav1alpha1.TargetDataset{
+					Name:      "test-dataset",
+					Namespace: "fluid",
+				},
+			},
+		}
+		dataLoadWithTarget = datav1alpha1.DataLoad{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-dataload",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.DataLoadSpec{
+				Dataset: datav1alpha1.TargetDataset{
+					Name:      "test-dataset",
+					Namespace: "fluid",
+				},
+				Target: []datav1alpha1.TargetPath{
+					{
+						Path: "/test",
+					},
+				},
+			},
+		}
+	})
+
+	It("should generate dataload value file with no target", func() {
+		fileName, err := engine.generateDataLoadValueFile(context, &dataLoadNoTarget)
+		Expect(err).NotTo(HaveOccurred())
+		expectedFileName := filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml")
+		Expect(fileName).To(Equal(expectedFileName))
+	})
+
+	It("should generate dataload value file with target", func() {
+		fileName, err := engine.generateDataLoadValueFile(context, &dataLoadWithTarget)
+		Expect(err).NotTo(HaveOccurred())
+		expectedFileName := filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml")
+		Expect(fileName).To(Equal(expectedFileName))
+	})
+})
+
+var _ = Describe("JuiceFSEngine_GenerateDataLoadValueFileWithRuntime", func() {
+	var (
+		configMap          *v1.ConfigMap
+		datasetInputs      []datav1alpha1.Dataset
+		statefulsetInputs  []appsv1.StatefulSet
+		podListInputs      []v1.PodList
+		testObjs           []runtime.Object
+		client             client.Client
+		engine             JuiceFSEngine
+		context            cruntime.ReconcileRequestContext
+		dataLoadNoTarget   datav1alpha1.DataLoad
+		dataLoadWithTarget datav1alpha1.DataLoad
+	)
+
+	BeforeEach(func() {
+		configMap = &v1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-dataset-juicefs-values",
+				Namespace: "fluid",
+			},
+			Data: map[string]string{
+				"data": ``,
+			},
+		}
+
+		datasetInputs = []datav1alpha1.Dataset{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-dataset",
+					Namespace: "fluid",
+				},
+				Spec: datav1alpha1.DatasetSpec{},
+			},
+		}
+
+		statefulsetInputs = []appsv1.StatefulSet{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "juicefs-worker",
+					Namespace: "fluid",
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{"a": "b"},
+					},
+				},
+			},
+		}
+		podListInputs = []v1.PodList{{
+			Items: []v1.Pod{{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "fluid",
+					Labels:    map[string]string{"a": "b"},
+				},
+				Status: v1.PodStatus{
+					Phase: v1.PodRunning,
+					Conditions: []v1.PodCondition{{
+						Type:   v1.PodReady,
+						Status: v1.ConditionTrue,
+					}},
+				},
+			}},
+		}}
+		testObjs = []runtime.Object{}
+		testObjs = append(testObjs, configMap)
+		for _, datasetInput := range datasetInputs {
+			testObjs = append(testObjs, datasetInput.DeepCopy())
+		}
+		for _, statefulsetInput := range statefulsetInputs {
+			testObjs = append(testObjs, statefulsetInput.DeepCopy())
+		}
+		for _, podInput := range podListInputs {
+			testObjs = append(testObjs, podInput.DeepCopy())
+		}
+		client = fake.NewFakeClientWithScheme(testScheme, testObjs...)
+
+		context = cruntime.ReconcileRequestContext{
+			Client: client,
+		}
+
+		engine = JuiceFSEngine{
+			name:      "juicefs",
+			namespace: "fluid",
+			Client:    client,
+			Log:       fake.NullLogger(),
+		}
+
+		dataLoadNoTarget = datav1alpha1.DataLoad{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-dataload",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.DataLoadSpec{
+				Dataset: datav1alpha1.TargetDataset{
+					Name:      "test-dataset",
+					Namespace: "fluid",
+				},
+			},
+		}
+		dataLoadWithTarget = datav1alpha1.DataLoad{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-dataload",
+				Namespace: "fluid",
+			},
+			Spec: datav1alpha1.DataLoadSpec{
+				Dataset: datav1alpha1.TargetDataset{
+					Name:      "test-dataset",
+					Namespace: "fluid",
+				},
+				Target: []datav1alpha1.TargetPath{
+					{
+						Path: "/test",
+					},
+				},
+			},
+		}
+	})
+
+	It("should generate dataload value file with no target", func() {
+		fileName, err := engine.generateDataLoadValueFile(context, &dataLoadNoTarget)
+		Expect(err).NotTo(HaveOccurred())
+		expectedFileName := filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml")
+		Expect(fileName).To(Equal(expectedFileName))
+	})
+
+	It("should generate dataload value file with target", func() {
+		fileName, err := engine.generateDataLoadValueFile(context, &dataLoadWithTarget)
+		Expect(err).NotTo(HaveOccurred())
+		expectedFileName := filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml")
+		Expect(fileName).To(Equal(expectedFileName))
+	})
+})
+
+var _ = Describe("JuiceFSEngine_CheckRuntimeReady", func() {
 	type fields struct {
 		name      string
 		namespace string
 	}
-	tests := []struct {
+	type testCase struct {
 		name      string
 		fields    fields
 		sts       appsv1.StatefulSet
 		podList   v1.PodList
 		wantReady bool
-	}{
+	}
+
+	tests := []testCase{
 		{
 			name: "test",
 			fields: fields{
@@ -452,9 +470,11 @@ func TestJuiceFSEngine_CheckRuntimeReady(t *testing.T) {
 			wantReady: false,
 		},
 	}
+
 	for _, tt := range tests {
-		testObjs := []runtime.Object{}
-		t.Run(tt.name, func(t *testing.T) {
+		tt := tt // capture range variable
+		It(tt.name, func() {
+			testObjs := []runtime.Object{}
 			testObjs = append(testObjs, tt.sts.DeepCopy())
 			testObjs = append(testObjs, tt.podList.DeepCopy())
 			client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
@@ -464,14 +484,13 @@ func TestJuiceFSEngine_CheckRuntimeReady(t *testing.T) {
 				Client:    client,
 				Log:       fake.NullLogger(),
 			}
-			if gotReady := e.CheckRuntimeReady(); gotReady != tt.wantReady {
-				t.Errorf("CheckRuntimeReady() = %v, want %v", gotReady, tt.wantReady)
-			}
+			gotReady := e.CheckRuntimeReady()
+			Expect(gotReady).To(Equal(tt.wantReady))
 		})
 	}
-}
+})
 
-func TestJuiceFSEngine_genDataLoadValue(t *testing.T) {
+var _ = Describe("JuiceFSEngine_genDataLoadValue", func() {
 	testCases := map[string]struct {
 		image         string
 		runtimeName   string
@@ -956,16 +975,17 @@ func TestJuiceFSEngine_genDataLoadValue(t *testing.T) {
 	}
 
 	for k, item := range testCases {
-		engine := JuiceFSEngine{
-			namespace: "fluid",
-			name:      item.runtimeName,
-			Log:       fake.NullLogger(),
-		}
-		got, _ := engine.genDataLoadValue(item.image, item.cacheInfo, item.pods, item.targetDataset, item.dataload)
-		if !reflect.DeepEqual(got, item.want) {
-			gotJson, _ := json.Marshal(got)
-			wantJson, _ := json.Marshal(item.want)
-			t.Errorf("case %s, got %v\nwant:%v", k, string(gotJson), string(wantJson))
-		}
+		k := k       // capture range variable
+		item := item // capture range variable
+		It(k, func() {
+			engine := JuiceFSEngine{
+				namespace: "fluid",
+				name:      item.runtimeName,
+				Log:       fake.NullLogger(),
+			}
+			got, err := engine.genDataLoadValue(item.image, item.cacheInfo, item.pods, item.targetDataset, item.dataload)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(got).To(Equal(item.want))
+		})
 	}
-}
+})
