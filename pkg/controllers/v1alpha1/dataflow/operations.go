@@ -160,6 +160,17 @@ func reconcileOperationDataFlow(ctx reconcileRequestContext,
 	opStatus datav1alpha1.OperationStatus,
 	updateStatusFn func() error) (needRequeue bool, err error) {
 
+	// Handle case where runAfter was removed from spec after status.waitingFor.operationComplete was set.
+	// This can happen when a user edits the operation to remove the runAfter dependency.
+	if runAfter == nil {
+		ctx.Log.V(1).Info("runAfter is nil, clearing waitingFor status")
+		err = retry.RetryOnConflict(retry.DefaultBackoff, updateStatusFn)
+		if err != nil {
+			return true, errors.Wrap(err, "failed to clear operation waiting status when runAfter is nil")
+		}
+		return false, nil
+	}
+
 	opRefNamespace := ctx.Namespace
 	if len(runAfter.Namespace) != 0 {
 		opRefNamespace = runAfter.Namespace
