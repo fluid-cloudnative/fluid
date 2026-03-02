@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"runtime"
 	"time"
 
 	. "github.com/agiledragon/gomonkey/v2"
@@ -191,6 +192,7 @@ var _ = Describe("FuseRecover", func() {
 				recoverFusePeriod:       100 * time.Millisecond,
 				recoverWarningThreshold: 50,
 				locks:                   utils.NewVolumeLocks(),
+				stateTracker:            NewRecoverStateTracker(),
 			}
 
 			patch1 := ApplyFunc(mountinfo.GetBrokenMountPoints, func() ([]mountinfo.MountPoint, error) {
@@ -240,6 +242,7 @@ var _ = Describe("FuseRecover", func() {
 				recoverFusePeriod:       testfuseRecoverPeriod * time.Second,
 				recoverWarningThreshold: 50,
 				locks:                   utils.NewVolumeLocks(),
+				stateTracker:            NewRecoverStateTracker(),
 			}
 
 			patch1 := ApplyMethod(reflect.TypeOf(fakeMounter), "Mount", func(_ *mount.FakeMounter, source string, target string, _ string, _ []string) error {
@@ -290,6 +293,7 @@ var _ = Describe("FuseRecover", func() {
 					Recorder:                record.NewFakeRecorder(1),
 					recoverWarningThreshold: 50,
 					locks:                   utils.NewVolumeLocks(),
+					stateTracker:            NewRecoverStateTracker(),
 				}
 
 				patch1 := ApplyFunc(mountinfo.GetBrokenMountPoints, func() ([]mountinfo.MountPoint, error) {
@@ -312,6 +316,7 @@ var _ = Describe("FuseRecover", func() {
 					Recorder:                record.NewFakeRecorder(1),
 					recoverWarningThreshold: 50,
 					locks:                   utils.NewVolumeLocks(),
+					stateTracker:            NewRecoverStateTracker(),
 				}
 
 				patch1 := ApplyFunc(mountinfo.GetBrokenMountPoints, func() ([]mountinfo.MountPoint, error) {
@@ -698,6 +703,9 @@ var _ = Describe("FuseRecover", func() {
 	Describe("shouldRecover", func() {
 		Context("when mount point does not exist", func() {
 			It("should return false without error", func() {
+				if runtime.GOOS != "linux" {
+					Skip("mount utilities are only supported on linux")
+				}
 				r := &FuseRecover{
 					SafeFormatAndMount: mount.SafeFormatAndMount{
 						Interface: &mount.FakeMounter{},
@@ -718,6 +726,9 @@ var _ = Describe("FuseRecover", func() {
 
 		Context("when mount point is not mounted", func() {
 			It("should return false without error", func() {
+				if runtime.GOOS != "linux" {
+					Skip("mount utilities are only supported on linux")
+				}
 				r := &FuseRecover{
 					SafeFormatAndMount: mount.SafeFormatAndMount{
 						Interface: &mount.FakeMounter{},
@@ -758,6 +769,9 @@ var _ = Describe("FuseRecover", func() {
 
 		Context("when mount point is valid", func() {
 			It("should return true without error", func() {
+				if runtime.GOOS != "linux" {
+					Skip("mount utilities are only supported on linux")
+				}
 				r := &FuseRecover{
 					SafeFormatAndMount: mount.SafeFormatAndMount{
 						Interface: &mount.FakeMounter{},
@@ -813,6 +827,7 @@ var _ = Describe("FuseRecover", func() {
 					Recorder:                record.NewFakeRecorder(10),
 					recoverWarningThreshold: 50,
 					locks:                   locks,
+					stateTracker:            NewRecoverStateTracker(),
 				}
 
 				point := mountinfo.MountPoint{
@@ -839,6 +854,7 @@ var _ = Describe("FuseRecover", func() {
 					Recorder:                record.NewFakeRecorder(10),
 					recoverWarningThreshold: 50,
 					locks:                   utils.NewVolumeLocks(),
+					stateTracker:            NewRecoverStateTracker(),
 				}
 
 				point := mountinfo.MountPoint{
@@ -870,6 +886,7 @@ var _ = Describe("FuseRecover", func() {
 					Recorder:                record.NewFakeRecorder(10),
 					recoverWarningThreshold: 50,
 					locks:                   utils.NewVolumeLocks(),
+					stateTracker:            NewRecoverStateTracker(),
 				}
 
 				point := mountinfo.MountPoint{
@@ -901,6 +918,7 @@ var _ = Describe("FuseRecover", func() {
 					Recorder:                record.NewFakeRecorder(10),
 					recoverWarningThreshold: 50,
 					locks:                   utils.NewVolumeLocks(),
+					stateTracker:            NewRecoverStateTracker(),
 				}
 
 				point := mountinfo.MountPoint{
