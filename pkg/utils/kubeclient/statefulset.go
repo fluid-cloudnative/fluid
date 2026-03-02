@@ -54,10 +54,16 @@ func ScaleStatefulSet(client client.Client, name string, namespace string, repli
 	return err
 }
 
-// GetStatefulset gets the statefulset by name and namespace
+// GetStatefulset gets the statefulset by name and namespace using context.TODO().
+// For better context propagation, prefer GetStatefulSetWithContext where possible.
 func GetStatefulSet(c client.Client, name string, namespace string) (master *appsv1.StatefulSet, err error) {
+	return GetStatefulSetWithContext(context.TODO(), c, name, namespace)
+}
+
+// GetStatefulSetWithContext gets the statefulset by name and namespace using the provided context.
+func GetStatefulSetWithContext(ctx context.Context, c client.Client, name string, namespace string) (master *appsv1.StatefulSet, err error) {
 	master = &appsv1.StatefulSet{}
-	err = c.Get(context.TODO(), types.NamespacedName{
+	err = c.Get(ctx, types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
 	}, master)
