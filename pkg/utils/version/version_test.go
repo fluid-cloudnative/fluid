@@ -16,61 +16,43 @@ limitations under the License.
 
 package version
 
-import "testing"
+import (
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"testing"
+)
 
-func TestParse(t *testing.T) {
-	validVersions := []string{
-		"2.7.2-SNAPSHOT-3714f2b",
-		"release-2.7.2-SNAPSHOT-3714f2b",
-		"2.8.0",
-	}
-
-	for _, s := range validVersions {
-		t.Run(s, func(t *testing.T) {
-			ver, err := RuntimeVersion(s)
-			t.Log("Valid: ", s, ver, err)
-			if err != nil {
-				t.Errorf("RuntimeVersion unexpected error for version %q: %v", s, err)
-			}
-		})
-	}
+func TestVersion(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Version Suite")
 }
 
-func TestCompare(t *testing.T) {
-	tests := []struct {
-		name      string
-		current   string
-		other     string
-		wantError bool
-		want      int
-	}{
-		{
-			name:      "lessThan",
-			current:   "release-2.7.2-SNAPSHOT-3714f2b",
-			other:     "2.8.0",
-			wantError: false,
-			want:      -1,
+var _ = Describe("Version", func() {
+	DescribeTable("RuntimeVersion",
+		func(versionStr string) {
+			ver, err := RuntimeVersion(versionStr)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ver).NotTo(BeNil())
+			GinkgoWriter.Printf("Valid: %s, %v\n", versionStr, ver)
 		},
-		{
-			name:      "error",
-			current:   "test-2.7.2-SNAPSHOT-3714f2b",
-			other:     "2.8.0",
-			wantError: true,
-			want:      0,
+		Entry("should parse snapshot version", "2.7.2-SNAPSHOT-3714f2b"),
+		Entry("should parse release snapshot version", "release-2.7.2-SNAPSHOT-3714f2b"),
+		Entry("should parse simple version", "2.8.0"),
+	)
+
+	DescribeTable("Compare",
+		func(current, other string, expectedResult int, expectError bool) {
+			result, err := Compare(current, other)
+			if expectError {
+				Expect(err).To(HaveOccurred())
+			} else {
+				Expect(err).NotTo(HaveOccurred())
+			}
+			Expect(result).To(Equal(expectedResult))
 		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := Compare(tt.current, tt.other)
-			gotErr := err != nil
-			if gotErr != tt.wantError {
-				t.Errorf("testcase %v compare()'s expected error is %v, result is %v", tt.name, tt.wantError, err)
-			}
-
-			if got != tt.want {
-				t.Errorf("testcase %v compare()'s expected value is %v, result is %v", tt.name, tt.want, got)
-			}
-
-		})
-	}
-}
+		Entry("should return -1 when current version is less than other", "release-2.7.2-SNAPSHOT-3714f2b", "2.8.0", -1, false),
+		Entry("should return 0 when versions are equal", "2.8.0", "2.8.0", 0, false),
+		Entry("should return 1 when current version is greater than other", "2.9.0", "2.8.0", 1, false),
+		Entry("should return error for invalid version format", "test-2.7.2-SNAPSHOT-3714f2b", "2.8.0", 0, true),
+	)
+})
