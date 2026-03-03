@@ -21,20 +21,12 @@ Fluid需要使用`make`命令进行项目构建，使用以下命令安装`make`
 
 ### 获取项目源码
 ```
-$ export GOPATH=$(go env GOPATH)
-
-$ mkdir $GOPATH/src/github.com/fluid-cloudnative
-
-$ cd $GOPATH/src/github.com/fluid-cloudnative 
-
 $ git clone https://github.com/fluid-cloudnative/fluid.git
 
 $ cd fluid
 ```
 
-> **注意**：本文在非Go Module模式下完成Fluid的编译、运行和调试。
->
-> 有关Go module可以参阅 [Golang 官方文档](https://github.com/golang/go/wiki/Modules) 获取更多信息。
+> **注意**：Fluid使用Go Module进行依赖管理，无需配置GOPATH。
 
 ### 安装`controller-gen`
 
@@ -49,7 +41,7 @@ $ make controller-gen
 $ controller-gen --version 
 Version: v0.8.0
 ```
-> **注意**: controller-gen默认将下载到`$GOPATH/bin`路径下，请确保`$GOPATH/bin`已被添加在开发环境的`$PATH`环境变量中
+> **注意**: controller-gen默认将下载到`$(go env GOPATH)/bin`路径下，请确保该路径已被添加在开发环境的`$PATH`环境变量中
 
 ### 二进制程序编译
 
@@ -115,7 +107,7 @@ $ ln -s $(which helm) /usr/local/bin/ddc-helm
 
 2. 在本地创建相关Charts的软链接目录
 ```
-$ ln -s $GOPATH/src/github.com/fluid-cloudnative/fluid/charts $HOME/charts
+$ ln -s $(pwd)/charts $HOME/charts
 ```
 
 3. 以Alluxio Runtime Controller为例，使用以下命令在本地运行该组件：

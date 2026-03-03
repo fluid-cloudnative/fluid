@@ -20,20 +20,12 @@ See [Install Docker](https://docs.docker.com/engine/install/) for more informati
 ### Get Source Code
 
 ```shell
-$ export GOPATH=$(go env GOPATH)
-
-$ mkdir $GOPATH/src/github.com/fluid-cloudnative
-
-$ cd $GOPATH/src/github.com/fluid-cloudnative 
-
 $ git clone https://github.com/fluid-cloudnative/fluid.git
 
 $ cd fluid
 ```
 
-> **NOTE**: In this document, we build, run and debug under non-module environment. 
->
-> See [Go Modules](https://github.com/golang/go/wiki/Modules) for more information if some issue occurs to you.
+> **NOTE**: Fluid uses Go modules for dependency management. No GOPATH setup is required.
 
 ### Build Binary
 `Makefile` under project directory provides many tasks you may want to use including Test, Build, Debug, Deploy etc.
@@ -217,7 +209,7 @@ $ ln -s $(which helm) /usr/local/bin/ddc-helm
 
 2. Create a soft link directory for related Charts locally
 ```
-$ ln -s $GOPATH/src/github.com/fluid-cloudnative/fluid/charts $HOME/charts
+$ ln -s $(pwd)/charts $HOME/charts
 ```
 
 3. Taking the Alluxio Runtime Controller as an example, run the component locally using the following command：
