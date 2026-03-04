@@ -19,6 +19,7 @@ package handler
 import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/handler/mutating"
+	"github.com/fluid-cloudnative/fluid/pkg/webhook/handler/validating"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/util/sets"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -41,7 +42,7 @@ var (
 
 func init() {
 	addHandlers(mutating.HandlerMap)
-	// addHandlers(validating.HandlerMap)
+	addHandlers(validating.HandlerMap)
 }
 
 // Register registers the handlers to the manager
