@@ -41,6 +41,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	jindoutils "github.com/fluid-cloudnative/fluid/pkg/utils/jindo"
 	fakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -365,6 +366,9 @@ var _ = Describe("OperationReconciler getRuntimeObjectAndEngineImpl", func() {
 		Entry("goosefs", common.GooseFSRuntime, &datav1alpha1.GooseFSRuntime{
 			ObjectMeta: metav1.ObjectMeta{Name: "test-runtime", Namespace: "default"},
 		}, common.GooseFSEngineImpl),
+		Entry("jindo", common.JindoRuntime, &datav1alpha1.JindoRuntime{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-runtime", Namespace: "default"},
+		}, jindoutils.GetDefaultEngineImpl()),
 		Entry("juicefs", common.JuiceFSRuntime, &datav1alpha1.JuiceFSRuntime{
 			ObjectMeta: metav1.ObjectMeta{Name: "test-runtime", Namespace: "default"},
 		}, common.JuiceFSEngineImpl),
@@ -460,6 +464,10 @@ var _ = Describe("OperationReconciler addOwnerAndRequeue", func() {
 		}
 
 		dataset := &datav1alpha1.Dataset{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Dataset",
+				APIVersion: "data.fluid.io/v1alpha1",
+			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-dataset",
 				Namespace: "default",
@@ -500,6 +508,8 @@ var _ = Describe("OperationReconciler addOwnerAndRequeue", func() {
 		Expect(updatedDataload.GetOwnerReferences()).To(HaveLen(1))
 		Expect(updatedDataload.GetOwnerReferences()[0].Name).To(Equal("test-dataset"))
 		Expect(updatedDataload.GetOwnerReferences()[0].UID).To(Equal(types.UID("dataset-uid-456")))
+		Expect(updatedDataload.GetOwnerReferences()[0].APIVersion).To(Equal("data.fluid.io/v1alpha1"))
+		Expect(updatedDataload.GetOwnerReferences()[0].Kind).To(Equal("Dataset"))
 	})
 })
 

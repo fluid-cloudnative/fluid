@@ -99,49 +99,6 @@ var _ = Describe("NewFluidControllerRateLimiter", func() {
 	})
 })
 
-var _ = Describe("NewFluidControllerClient", func() {
-	Describe("HELM_DRIVER env variable handling", func() {
-		var originalVal string
-		var wasSet bool
-
-		BeforeEach(func() {
-			originalVal, wasSet = os.LookupEnv("HELM_DRIVER")
-		})
-
-		AfterEach(func() {
-			if wasSet {
-				Expect(os.Setenv("HELM_DRIVER", originalVal)).To(Succeed())
-			} else {
-				Expect(os.Unsetenv("HELM_DRIVER")).To(Succeed())
-			}
-		})
-
-		It("should call NewCacheClientBypassSecrets when HELM_DRIVER is not set", func() {
-			Expect(os.Unsetenv("HELM_DRIVER")).To(Succeed())
-			// NewFluidControllerClient requires a valid rest.Config, which we
-			// cannot easily provide in a unit test without envtest. We verify
-			// the branching logic indirectly by checking that the env var lookup
-			// returns false when unset.
-			_, exists := os.LookupEnv("HELM_DRIVER")
-			Expect(exists).To(BeFalse())
-		})
-
-		It("should detect HELM_DRIVER=secret for the default client path", func() {
-			Expect(os.Setenv("HELM_DRIVER", "secret")).To(Succeed())
-			driver, exists := os.LookupEnv("HELM_DRIVER")
-			Expect(exists).To(BeTrue())
-			Expect(driver).To(Equal("secret"))
-		})
-
-		It("should use cache-bypass path when HELM_DRIVER is not 'secret'", func() {
-			Expect(os.Setenv("HELM_DRIVER", "configmap")).To(Succeed())
-			driver, exists := os.LookupEnv("HELM_DRIVER")
-			Expect(exists).To(BeTrue())
-			Expect(driver).NotTo(Equal("secret"))
-		})
-	})
-})
-
 var _ = Describe("manager client and config helpers", func() {
 	Describe("NewFluidControllerClient", func() {
 		var (
