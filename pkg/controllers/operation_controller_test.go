@@ -525,7 +525,7 @@ var _ = Describe("OperationReconciler ReconcileInternal", func() {
 		Expect(corev1.AddToScheme(s)).To(Succeed())
 	})
 
-	It("requeues when building operation interface fails", func() {
+	It("returns error when building operation interface fails", func() {
 		obj := &datav1alpha1.DataLoad{ObjectMeta: metav1.ObjectMeta{Name: "load", Namespace: "default"}}
 		fakeClient := fakeclient.NewClientBuilder().WithScheme(s).Build()
 

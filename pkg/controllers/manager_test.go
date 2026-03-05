@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"time"
 
@@ -162,6 +163,14 @@ var _ = Describe("manager client and config helpers", func() {
 		})
 
 		It("sets qps and burst when both are positive", func() {
+			if os.Getenv("FLUID_GET_CONFIG_SUBPROCESS") == "1" {
+				cfg := GetConfigOrDieWithQPSAndBurst(123, 456)
+				if cfg == nil || cfg.QPS != float32(123) || cfg.Burst != 456 {
+					os.Exit(2)
+				}
+				os.Exit(0)
+			}
+
 			tmpDir := GinkgoT().TempDir()
 			kubeconfig := filepath.Join(tmpDir, "config")
 			content := `apiVersion: v1
@@ -185,10 +194,10 @@ current-context: local
 			Expect(os.WriteFile(kubeconfig, []byte(content), 0o600)).To(Succeed())
 			Expect(os.Setenv("KUBECONFIG", kubeconfig)).To(Succeed())
 
-			cfg := GetConfigOrDieWithQPSAndBurst(123, 456)
-			Expect(cfg).NotTo(BeNil())
-			Expect(cfg.QPS).To(Equal(float32(123)))
-			Expect(cfg.Burst).To(Equal(456))
+			cmd := exec.Command(os.Args[0], "-test.run=TestControllers", "-ginkgo.focus=sets qps and burst when both are positive")
+			cmd.Env = append(os.Environ(), "FLUID_GET_CONFIG_SUBPROCESS=1", "KUBECONFIG="+kubeconfig)
+			out, err := cmd.CombinedOutput()
+			Expect(err).NotTo(HaveOccurred(), string(out))
 		})
 	})
 })
