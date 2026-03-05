@@ -207,7 +207,7 @@ var _ = Describe("OperationReconciler engine cache", func() {
 		It("should return cached engine when it already exists", func() {
 			nn := types.NamespacedName{Namespace: "default", Name: "test-runtime"}
 			id := ddc.GenerateEngineID(nn)
-			existingEngine := &fakeEngine{id: id}
+			existingEngine := &fakeEngineCore{id: id}
 			reconciler.engines[id] = existingEngine
 
 			ctx := dataoperation.ReconcileRequestContext{
