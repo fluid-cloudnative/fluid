@@ -42,16 +42,24 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	defaultNamespace           = "default"
+	demoRuntimeName            = "demo-runtime"
+	demoDatasetName            = "demo-dataset"
+	demoPhysicalDatasetMount   = "dataset://demo/physical-dataset"
+	runtimeProtectionFinalizer = "fluid.io/runtime-protection"
+)
+
 var _ = Describe("RuntimeReconciler", func() {
 	Describe("GetRuntimeObjectMeta", func() {
 		It("returns the runtime metadata", func() {
 			r := &RuntimeReconciler{}
-			ctx := cruntime.ReconcileRequestContext{Runtime: newTestAlluxioRuntime("default", "demo-runtime")}
+			ctx := cruntime.ReconcileRequestContext{Runtime: newTestAlluxioRuntime(defaultNamespace, demoRuntimeName)}
 
 			got, err := r.GetRuntimeObjectMeta(ctx)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(got.GetName()).To(Equal("demo-runtime"))
+			Expect(got.GetName()).To(Equal(demoRuntimeName))
 		})
 
 		It("returns an error when runtime is nil", func() {
@@ -66,16 +74,16 @@ var _ = Describe("RuntimeReconciler", func() {
 
 	Describe("GetDataset", func() {
 		It("returns an existing dataset", func() {
-			r := newTestRuntimeReconciler(newTestDataset("default", "demo-dataset"))
+			r := newTestRuntimeReconciler(newTestDataset(defaultNamespace, demoDatasetName))
 			ctx := cruntime.ReconcileRequestContext{
 				Context:        context.Background(),
-				NamespacedName: types.NamespacedName{Namespace: "default", Name: "demo-dataset"},
+				NamespacedName: types.NamespacedName{Namespace: defaultNamespace, Name: demoDatasetName},
 			}
 
 			got, err := r.GetDataset(ctx)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(got.Name).To(Equal("demo-dataset"))
+			Expect(got.Name).To(Equal(demoDatasetName))
 		})
 
 		It("returns a not found error when the dataset is missing", func() {
@@ -97,7 +105,7 @@ var _ = Describe("RuntimeReconciler", func() {
 			r := &RuntimeReconciler{}
 
 			supported, reason := r.CheckIfReferenceDatasetIsSupported(cruntime.ReconcileRequestContext{
-				Dataset:     newTestDataset("default", "demo-dataset"),
+				Dataset:     newTestDataset(defaultNamespace, demoDatasetName),
 				RuntimeType: common.AlluxioRuntime,
 			})
 
@@ -109,8 +117,8 @@ var _ = Describe("RuntimeReconciler", func() {
 			r := &RuntimeReconciler{}
 
 			supported, reason := r.CheckIfReferenceDatasetIsSupported(cruntime.ReconcileRequestContext{
-				Dataset: newTestDatasetWithMounts("default", "demo-dataset", []datav1alpha1.Mount{{
-					MountPoint: "dataset://demo/physical-dataset",
+				Dataset: newTestDatasetWithMounts(defaultNamespace, demoDatasetName, []datav1alpha1.Mount{{
+					MountPoint: demoPhysicalDatasetMount,
 				}}),
 				RuntimeType: common.ThinRuntime,
 			})
@@ -123,8 +131,8 @@ var _ = Describe("RuntimeReconciler", func() {
 			r := &RuntimeReconciler{}
 
 			supported, reason := r.CheckIfReferenceDatasetIsSupported(cruntime.ReconcileRequestContext{
-				Dataset: newTestDatasetWithMounts("default", "demo-dataset", []datav1alpha1.Mount{{
-					MountPoint: "dataset://demo/physical-dataset",
+				Dataset: newTestDatasetWithMounts(defaultNamespace, demoDatasetName, []datav1alpha1.Mount{{
+					MountPoint: demoPhysicalDatasetMount,
 				}}),
 				RuntimeType: common.AlluxioRuntime,
 			})
@@ -136,8 +144,8 @@ var _ = Describe("RuntimeReconciler", func() {
 
 	Describe("AddOwnerAndRequeue", func() {
 		It("adds the dataset as an owner reference and requeues", func() {
-			dataset := newTestDataset("default", "demo-dataset")
-			runtimeObj := newTestAlluxioRuntime("default", "demo-runtime")
+			dataset := newTestDataset(defaultNamespace, demoDatasetName)
+			runtimeObj := newTestAlluxioRuntime(defaultNamespace, demoRuntimeName)
 			r := newTestRuntimeReconciler(dataset, runtimeObj)
 
 			result, err := r.AddOwnerAndRequeue(newTestRequestContext(r.Client, runtimeObj, dataset), dataset)
@@ -156,25 +164,24 @@ var _ = Describe("RuntimeReconciler", func() {
 
 	Describe("AddFinalizerAndRequeue", func() {
 		It("adds the finalizer and requeues", func() {
-			const finalizerName = "fluid.io/runtime-protection"
 
-			runtimeObj := newTestAlluxioRuntime("default", "demo-runtime")
+			runtimeObj := newTestAlluxioRuntime(defaultNamespace, demoRuntimeName)
 			r := newTestRuntimeReconciler(runtimeObj)
 
-			result, err := r.AddFinalizerAndRequeue(newTestRequestContext(r.Client, runtimeObj, nil), finalizerName)
+			result, err := r.AddFinalizerAndRequeue(newTestRequestContext(r.Client, runtimeObj, nil), runtimeProtectionFinalizer)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.Requeue).To(BeTrue())
 
 			updated := &datav1alpha1.AlluxioRuntime{}
 			Expect(r.Get(context.Background(), types.NamespacedName{Namespace: runtimeObj.Namespace, Name: runtimeObj.Name}, updated)).To(Succeed())
-			Expect(updated.Finalizers).To(ContainElement(finalizerName))
+			Expect(updated.Finalizers).To(ContainElement(runtimeProtectionFinalizer))
 		})
 	})
 
 	Describe("ReportDatasetNotReadyCondition", func() {
 		It("reports the dataset not ready condition", func() {
-			dataset := newTestDataset("default", "demo-dataset")
+			dataset := newTestDataset(defaultNamespace, demoDatasetName)
 			r := newTestRuntimeReconciler(dataset)
 			notReadyErr := errors.New("setup failed")
 
@@ -209,8 +216,8 @@ var _ = Describe("RuntimeReconciler", func() {
 	Describe("ForgetMetrics", func() {
 		It("forgets dataset and runtime metrics", func() {
 			r := &RuntimeReconciler{}
-			runtimeObj := newTestAlluxioRuntime("default", "demo-runtime")
-			dataset := newTestDataset("default", "demo-runtime")
+			runtimeObj := newTestAlluxioRuntime(defaultNamespace, demoRuntimeName)
+			dataset := newTestDataset(defaultNamespace, demoRuntimeName)
 			ctx := newTestRequestContext(nil, runtimeObj, dataset)
 
 			runtimeMetricBefore := metrics.GetOrCreateRuntimeMetrics(runtimeObj.GetObjectKind().GroupVersionKind().Kind, ctx.Namespace, ctx.Name)
@@ -238,7 +245,7 @@ var _ = Describe("RuntimeReconciler", func() {
 		})
 
 		It("requeues when the dataset is not found", func() {
-			runtimeObj := newTestAlluxioRuntime("default", "demo-runtime")
+			runtimeObj := newTestAlluxioRuntime(defaultNamespace, demoRuntimeName)
 			impl := &testRuntimeReconcilerImplement{
 				getOrCreateEngine: func(cruntime.ReconcileRequestContext) (base.Engine, error) {
 					return &testEngine{}, nil
@@ -256,8 +263,8 @@ var _ = Describe("RuntimeReconciler", func() {
 		})
 
 		It("delegates runtime deletion and removes the engine on error", func() {
-			dataset := newBoundDataset("default", "demo-runtime")
-			runtimeObj := newDeletingRuntime("default", "demo-runtime", "fluid.io/runtime-protection")
+			dataset := newBoundDataset(defaultNamespace, demoRuntimeName)
+			runtimeObj := newDeletingRuntime(defaultNamespace, demoRuntimeName, runtimeProtectionFinalizer)
 			deletionErr := errors.New("delete failed")
 			engine := &testEngine{}
 			impl := &testRuntimeReconcilerImplement{
@@ -280,8 +287,8 @@ var _ = Describe("RuntimeReconciler", func() {
 		})
 
 		It("requeues when reference datasets are not supported by the runtime", func() {
-			dataset := newBoundDatasetWithMounts("default", "demo-runtime", []datav1alpha1.Mount{{MountPoint: "dataset://demo/physical-dataset"}})
-			runtimeObj := newRuntimeWithOwnersAndFinalizers("default", "demo-runtime", dataset, "fluid.io/runtime-protection")
+			dataset := newBoundDatasetWithMounts(defaultNamespace, demoRuntimeName, []datav1alpha1.Mount{{MountPoint: demoPhysicalDatasetMount}})
+			runtimeObj := newRuntimeWithOwnersAndFinalizers(defaultNamespace, demoRuntimeName, dataset, runtimeProtectionFinalizer)
 			impl := &testRuntimeReconcilerImplement{
 				getOrCreateEngine: func(cruntime.ReconcileRequestContext) (base.Engine, error) {
 					return &testEngine{}, nil
@@ -297,8 +304,8 @@ var _ = Describe("RuntimeReconciler", func() {
 		})
 
 		It("delegates runtime reconciliation when setup prerequisites are satisfied", func() {
-			dataset := newBoundDataset("default", "demo-runtime")
-			runtimeObj := newRuntimeWithOwnersAndFinalizers("default", "demo-runtime", dataset, "fluid.io/runtime-protection")
+			dataset := newBoundDataset(defaultNamespace, demoRuntimeName)
+			runtimeObj := newRuntimeWithOwnersAndFinalizers(defaultNamespace, demoRuntimeName, dataset, runtimeProtectionFinalizer)
 			engine := &testEngine{}
 			impl := &testRuntimeReconcilerImplement{
 				getOrCreateEngine: func(cruntime.ReconcileRequestContext) (base.Engine, error) {
@@ -322,8 +329,8 @@ var _ = Describe("RuntimeReconciler", func() {
 
 	Describe("ReconcileRuntime", func() {
 		It("requeues when validation temporarily fails", func() {
-			dataset := newBoundDataset("default", "demo-runtime")
-			runtimeObj := newTestAlluxioRuntime("default", "demo-runtime")
+			dataset := newBoundDataset(defaultNamespace, demoRuntimeName)
+			runtimeObj := newTestAlluxioRuntime(defaultNamespace, demoRuntimeName)
 			r := newTestRuntimeReconciler(runtimeObj, dataset)
 			engine := &testEngine{validateErr: fluiderrs.NewTemporaryValidationFailed("spec invalid")}
 
@@ -335,8 +342,8 @@ var _ = Describe("RuntimeReconciler", func() {
 		})
 
 		It("reports the dataset not ready when setup is not ready", func() {
-			dataset := newBoundDataset("default", "demo-runtime")
-			runtimeObj := newTestAlluxioRuntime("default", "demo-runtime")
+			dataset := newBoundDataset(defaultNamespace, demoRuntimeName)
+			runtimeObj := newTestAlluxioRuntime(defaultNamespace, demoRuntimeName)
 			r := newTestRuntimeReconciler(runtimeObj, dataset)
 			engine := &testEngine{setupErr: errors.New("setup failed")}
 
@@ -351,8 +358,8 @@ var _ = Describe("RuntimeReconciler", func() {
 		})
 
 		It("creates the volume, syncs the engine, and requeues on success", func() {
-			dataset := newReadyDataset("default", "demo-runtime")
-			runtimeObj := newTestAlluxioRuntime("default", "demo-runtime")
+			dataset := newReadyDataset(defaultNamespace, demoRuntimeName)
+			runtimeObj := newTestAlluxioRuntime(defaultNamespace, demoRuntimeName)
 			r := newTestRuntimeReconciler(runtimeObj, dataset)
 			engine := &testEngine{}
 
@@ -368,8 +375,8 @@ var _ = Describe("RuntimeReconciler", func() {
 
 	Describe("ReconcileRuntimeDeletion", func() {
 		It("requeues when deleting the volume fails", func() {
-			dataset := newBoundDataset("default", "demo-runtime")
-			runtimeObj := newDeletingRuntime("default", "demo-runtime", "fluid.io/runtime-protection")
+			dataset := newBoundDataset(defaultNamespace, demoRuntimeName)
+			runtimeObj := newDeletingRuntime(defaultNamespace, demoRuntimeName, runtimeProtectionFinalizer)
 			r := newTestRuntimeReconciler(runtimeObj, dataset)
 			engine := &testEngine{deleteVolumeErr: errors.New("volume delete failed")}
 
@@ -381,16 +388,16 @@ var _ = Describe("RuntimeReconciler", func() {
 		})
 
 		It("resets the dataset state and removes the runtime finalizer", func() {
-			dataset := newBoundDataset("default", "demo-runtime")
+			dataset := newBoundDataset(defaultNamespace, demoRuntimeName)
 			dataset.Status.Phase = datav1alpha1.BoundDatasetPhase
 			dataset.Status.UfsTotal = "123"
 			dataset.Status.Conditions = []datav1alpha1.DatasetCondition{{Type: datav1alpha1.DatasetReady}}
 			dataset.Status.CacheStates = common.CacheStateList{common.Cached: "9"}
-			dataset.Status.Runtimes = []datav1alpha1.Runtime{{Name: "demo-runtime", Namespace: "default", Category: common.AccelerateCategory}}
+			dataset.Status.Runtimes = []datav1alpha1.Runtime{{Name: demoRuntimeName, Namespace: defaultNamespace, Category: common.AccelerateCategory}}
 			dataset.Status.HCFSStatus = &datav1alpha1.HCFSStatus{}
 			dataset.Status.FileNum = "9"
 
-			runtimeObj := newDeletingRuntime("default", "demo-runtime", "fluid.io/runtime-protection")
+			runtimeObj := newDeletingRuntime(defaultNamespace, demoRuntimeName, runtimeProtectionFinalizer)
 			impl := &testRuntimeReconcilerImplement{}
 			baseClient := newTestClient(runtimeObj, dataset)
 			recordingClient := &runtimeUpdateRecordingClient{Client: baseClient}
@@ -418,7 +425,7 @@ var _ = Describe("RuntimeReconciler", func() {
 			Expect(updatedDataset.Status.FileNum).To(BeEmpty())
 
 			Expect(recordingClient.updatedRuntime).NotTo(BeNil())
-			Expect(recordingClient.updatedRuntime.Finalizers).NotTo(ContainElement("fluid.io/runtime-protection"))
+			Expect(recordingClient.updatedRuntime.Finalizers).NotTo(ContainElement(runtimeProtectionFinalizer))
 		})
 	})
 })
@@ -459,22 +466,18 @@ func newTestRequestContext(clientObj client.Client, runtimeObj *datav1alpha1.All
 	if runtimeObj != nil {
 		ctx.Runtime = runtimeObj
 		ctx.NamespacedName = types.NamespacedName{Namespace: runtimeObj.Namespace, Name: runtimeObj.Name}
-		ctx.Name = runtimeObj.Name
-		ctx.Namespace = runtimeObj.Namespace
 	}
 
 	if dataset != nil {
 		ctx.Dataset = dataset
 		if ctx.NamespacedName == (types.NamespacedName{}) {
 			ctx.NamespacedName = types.NamespacedName{Namespace: dataset.Namespace, Name: dataset.Name}
-			ctx.Name = dataset.Name
-			ctx.Namespace = dataset.Namespace
 		}
 	}
 
 	ctx.Category = common.AccelerateCategory
 	ctx.RuntimeType = common.AlluxioRuntime
-	ctx.FinalizerName = "fluid.io/runtime-protection"
+	ctx.FinalizerName = runtimeProtectionFinalizer
 
 	return ctx
 }
