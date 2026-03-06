@@ -27,6 +27,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const testItem = "test-item"
+
 var _ = Describe("NewFluidControllerRateLimiter", func() {
 	It("should create a rate limiter with valid parameters", func() {
 		limiter := NewFluidControllerRateLimiter(
@@ -45,8 +47,8 @@ var _ = Describe("NewFluidControllerRateLimiter", func() {
 			10,
 			100,
 		)
-		first := limiter.When("test-item")
-		second := limiter.When("test-item")
+		first := limiter.When(testItem)
+		second := limiter.When(testItem)
 		Expect(second).To(BeNumerically(">=", first))
 	})
 
@@ -76,9 +78,9 @@ var _ = Describe("NewFluidControllerRateLimiter", func() {
 		)
 		// Push the item through many failures
 		for i := 0; i < 100; i++ {
-			limiter.When("test-item")
+			limiter.When(testItem)
 		}
-		delay := limiter.When("test-item")
+		delay := limiter.When(testItem)
 		Expect(delay).To(BeNumerically("<=", maxDelay))
 	})
 
@@ -90,10 +92,10 @@ var _ = Describe("NewFluidControllerRateLimiter", func() {
 			100,
 		)
 		for i := 0; i < 10; i++ {
-			limiter.When("test-item")
+			limiter.When(testItem)
 		}
-		limiter.Forget("test-item")
-		delay := limiter.When("test-item")
+		limiter.Forget(testItem)
+		delay := limiter.When(testItem)
 		firstDelay := limiter.When("fresh-item")
 		// After forget, the item's delay should be close to the initial value
 		Expect(delay).To(BeNumerically("<=", firstDelay*2))

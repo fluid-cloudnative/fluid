@@ -45,6 +45,12 @@ import (
 	fakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
+const (
+	testRuntimeName  = "test-runtime"
+	testDataloadName = "test-dataload"
+	testDatasetName  = "test-dataset"
+)
+
 // mockOperationInterfaceBuilder implements dataoperation.OperationInterfaceBuilder
 type mockOperationInterfaceBuilder struct {
 	buildFunc func(object client.Object) (dataoperation.OperationInterface, error)
@@ -93,8 +99,11 @@ func (m *mockOperationInterface) Validate(ctx cruntime.ReconcileRequestContext) 
 func (m *mockOperationInterface) UpdateStatusInfoForCompleted(infos map[string]string) error {
 	return nil
 }
-func (m *mockOperationInterface) SetTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {}
+func (m *mockOperationInterface) SetTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
+	// No-op for test mock
+}
 func (m *mockOperationInterface) RemoveTargetDatasetStatusInProgress(dataset *datav1alpha1.Dataset) {
+	// No-op for test mock
 }
 func (m *mockOperationInterface) GetStatusHandler() dataoperation.StatusHandler { return nil }
 func (m *mockOperationInterface) GetTTL() (ttl *int32, err error)               { return nil, nil }
@@ -147,7 +156,7 @@ var _ = Describe("OperationReconciler engine cache", func() {
 
 	Describe("RemoveEngine", func() {
 		It("should remove an engine from the cache by namespaced name", func() {
-			nn := types.NamespacedName{Namespace: "default", Name: "test-runtime"}
+			nn := types.NamespacedName{Namespace: "default", Name: testRuntimeName}
 			// Use ddc.GenerateEngineID to get the correct key format
 			id := ddc.GenerateEngineID(nn)
 			reconciler.engines[id] = nil // placeholder
@@ -206,7 +215,7 @@ var _ = Describe("OperationReconciler engine cache", func() {
 
 	Describe("GetOrCreateEngine", func() {
 		It("should return cached engine when it already exists", func() {
-			nn := types.NamespacedName{Namespace: "default", Name: "test-runtime"}
+			nn := types.NamespacedName{Namespace: "default", Name: testRuntimeName}
 			id := ddc.GenerateEngineID(nn)
 			existingEngine := &fakeEngineCore{id: id}
 			reconciler.engines[id] = existingEngine
@@ -215,7 +224,7 @@ var _ = Describe("OperationReconciler engine cache", func() {
 				ReconcileRequestContext: cruntime.ReconcileRequestContext{
 					Context: context.Background(),
 					NamespacedName: types.NamespacedName{
-						Name:      "test-runtime",
+						Name:      testRuntimeName,
 						Namespace: "default",
 					},
 				},
@@ -358,25 +367,25 @@ var _ = Describe("OperationReconciler getRuntimeObjectAndEngineImpl", func() {
 				mutex:   &sync.Mutex{},
 			}
 
-			obj, engineImpl, err := reconciler.getRuntimeObjectAndEngineImpl(runtimeType, "test-runtime", "default")
+			obj, engineImpl, err := reconciler.getRuntimeObjectAndEngineImpl(runtimeType, testRuntimeName, "default")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(obj).NotTo(BeNil())
 			Expect(engineImpl).To(Equal(expectedEngineImpl))
 		},
 		Entry("goosefs", common.GooseFSRuntime, &datav1alpha1.GooseFSRuntime{
-			ObjectMeta: metav1.ObjectMeta{Name: "test-runtime", Namespace: "default"},
+			ObjectMeta: metav1.ObjectMeta{Name: testRuntimeName, Namespace: "default"},
 		}, common.GooseFSEngineImpl),
 		Entry("jindo", common.JindoRuntime, &datav1alpha1.JindoRuntime{
-			ObjectMeta: metav1.ObjectMeta{Name: "test-runtime", Namespace: "default"},
+			ObjectMeta: metav1.ObjectMeta{Name: testRuntimeName, Namespace: "default"},
 		}, jindoutils.GetDefaultEngineImpl()),
 		Entry("juicefs", common.JuiceFSRuntime, &datav1alpha1.JuiceFSRuntime{
-			ObjectMeta: metav1.ObjectMeta{Name: "test-runtime", Namespace: "default"},
+			ObjectMeta: metav1.ObjectMeta{Name: testRuntimeName, Namespace: "default"},
 		}, common.JuiceFSEngineImpl),
 		Entry("efc", common.EFCRuntime, &datav1alpha1.EFCRuntime{
-			ObjectMeta: metav1.ObjectMeta{Name: "test-runtime", Namespace: "default"},
+			ObjectMeta: metav1.ObjectMeta{Name: testRuntimeName, Namespace: "default"},
 		}, common.EFCEngineImpl),
 		Entry("vineyard", common.VineyardRuntime, &datav1alpha1.VineyardRuntime{
-			ObjectMeta: metav1.ObjectMeta{Name: "test-runtime", Namespace: "default"},
+			ObjectMeta: metav1.ObjectMeta{Name: testRuntimeName, Namespace: "default"},
 		}, common.VineyardEngineImpl),
 	)
 })
@@ -396,7 +405,7 @@ var _ = Describe("OperationReconciler addFinalizerAndRequeue", func() {
 	It("should add a finalizer to the data operation object and requeue", func() {
 		dataload := &datav1alpha1.DataLoad{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-dataload",
+				Name:      testDataloadName,
 				Namespace: "default",
 			},
 		}
@@ -419,7 +428,7 @@ var _ = Describe("OperationReconciler addFinalizerAndRequeue", func() {
 				Context: context.Background(),
 				Dataset: &datav1alpha1.Dataset{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-dataset",
+						Name:      testDatasetName,
 						Namespace: "default",
 					},
 				},
@@ -436,7 +445,7 @@ var _ = Describe("OperationReconciler addFinalizerAndRequeue", func() {
 		// Verify the finalizer was added
 		updatedDataload := &datav1alpha1.DataLoad{}
 		Expect(fakeClient.Get(context.Background(), types.NamespacedName{
-			Name:      "test-dataload",
+			Name:      testDataloadName,
 			Namespace: "default",
 		}, updatedDataload)).To(Succeed())
 		Expect(updatedDataload.GetFinalizers()).To(ContainElement("fluid.io/dataload-finalizer"))
@@ -458,7 +467,7 @@ var _ = Describe("OperationReconciler addOwnerAndRequeue", func() {
 	It("should add an owner reference and requeue", func() {
 		dataload := &datav1alpha1.DataLoad{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-dataload",
+				Name:      testDataloadName,
 				Namespace: "default",
 			},
 		}
@@ -469,7 +478,7 @@ var _ = Describe("OperationReconciler addOwnerAndRequeue", func() {
 				APIVersion: "data.fluid.io/v1alpha1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-dataset",
+				Name:      testDatasetName,
 				Namespace: "default",
 				UID:       "dataset-uid-456",
 			},
@@ -502,11 +511,11 @@ var _ = Describe("OperationReconciler addOwnerAndRequeue", func() {
 		// Verify the owner reference was added
 		updatedDataload := &datav1alpha1.DataLoad{}
 		Expect(fakeClient.Get(context.Background(), types.NamespacedName{
-			Name:      "test-dataload",
+			Name:      testDataloadName,
 			Namespace: "default",
 		}, updatedDataload)).To(Succeed())
 		Expect(updatedDataload.GetOwnerReferences()).To(HaveLen(1))
-		Expect(updatedDataload.GetOwnerReferences()[0].Name).To(Equal("test-dataset"))
+		Expect(updatedDataload.GetOwnerReferences()[0].Name).To(Equal(testDatasetName))
 		Expect(updatedDataload.GetOwnerReferences()[0].UID).To(Equal(types.UID("dataset-uid-456")))
 		Expect(updatedDataload.GetOwnerReferences()[0].APIVersion).To(Equal("data.fluid.io/v1alpha1"))
 		Expect(updatedDataload.GetOwnerReferences()[0].Kind).To(Equal("Dataset"))
