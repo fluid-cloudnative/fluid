@@ -10,7 +10,7 @@ PREFETCHER_VERSION := v0.1.0
 PACKAGE := github.com/fluid-cloudnative/fluid
 
 # Go and build settings
-GO_MODULE ?= off
+GO_MODULE ?= on
 GC_FLAGS ?= -gcflags="all=-N -l"
 LOCAL_FLAGS ?= -gcflags="all=-N -l"
 CGO_ENABLED ?= 0
