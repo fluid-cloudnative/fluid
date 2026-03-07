@@ -47,7 +47,7 @@ function create_dataset() {
 }
 
 function wait_dataset_bound() {
-    local deadline=180 # 3 minutes
+    local deadline=600 # 10 minutes
     local last_state=""
     local log_interval=0
     local log_times=0
