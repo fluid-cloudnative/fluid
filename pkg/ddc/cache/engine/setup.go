@@ -78,7 +78,17 @@ func (e *CacheEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool, e
 
 	// dataset mount
 	if runtimeValue.Master.Enabled {
-		// currently only support mount ufs for master
+		// Wait for the master pod to be running before executing the mount command.
+		// The pod may still be starting up after StatefulSet creation.
+		masterPodRunning, err := e.isMasterPodRunning(runtimeValue)
+		if err != nil {
+			return false, err
+		}
+		if !masterPodRunning {
+			e.Log.Info("Master pod is not yet running, will retry in next reconcile")
+			return false, nil
+		}
+
 		err = e.PrepareUFS(runtimeClass.Topology.Master.ExecutionEntries, runtimeValue)
 		if err != nil {
 			return false, err
