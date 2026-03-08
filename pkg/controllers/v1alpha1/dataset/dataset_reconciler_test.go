@@ -27,6 +27,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -296,15 +297,9 @@ var _ = Describe("DatasetReconciler (fake client)", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result).To(Equal(ctrl.Result{}))
 
-			// After removing finalizer with deletion timestamp, the object is deleted by Kubernetes
-			// So we verify the finalizer was removed by checking it's no longer in the updates
-			// The fake client will have deleted the object when finalizer was removed
 			stored := &datav1alpha1.Dataset{}
 			getErr := r.Get(ctx, types.NamespacedName{Namespace: "default", Name: "del-clean"}, stored)
-			// Either the object is deleted (not found) or it exists without the finalizer
-			if getErr == nil {
-				Expect(stored.Finalizers).NotTo(ContainElement(finalizer))
-			}
+			Expect(apierrors.IsNotFound(getErr)).To(BeTrue())
 		})
 
 		It("requeues when DatasetRef still has live entries", func() {
