@@ -43,6 +43,7 @@ func restorePrecheckState(t *testing.T) {
 
 	precheckFuncsMu.Lock()
 	originalResolver := resolveDefaultPrecheckFuncs
+	originalCachedPrecheckFuncs := clonePrecheckFuncs(cachedPrecheckFuncs)
 	originalPrecheckFuncs := clonePrecheckFuncs(precheckFuncs)
 	precheckFuncsMu.Unlock()
 
@@ -51,6 +52,7 @@ func restorePrecheckState(t *testing.T) {
 		defer precheckFuncsMu.Unlock()
 
 		resolveDefaultPrecheckFuncs = originalResolver
+		cachedPrecheckFuncs = clonePrecheckFuncs(originalCachedPrecheckFuncs)
 		precheckFuncs = clonePrecheckFuncs(originalPrecheckFuncs)
 	})
 }
@@ -64,6 +66,7 @@ func TestGetPrecheckFuncsResolvesDefaultsLazily(t *testing.T) {
 	}
 
 	precheckFuncsMu.Lock()
+	cachedPrecheckFuncs = nil
 	precheckFuncs = nil
 	resolveDefaultPrecheckFuncs = func() map[string]CheckFunc {
 		calls++
@@ -77,6 +80,14 @@ func TestGetPrecheckFuncsResolvesDefaultsLazily(t *testing.T) {
 	}
 	if got["lazy-controller"] == nil {
 		t.Fatalf("expected lazy resolver result to be returned")
+	}
+
+	gotAgain := getPrecheckFuncs()
+	if calls != 1 {
+		t.Fatalf("expected lazy resolver result to be cached, got %d resolver calls", calls)
+	}
+	if gotAgain["lazy-controller"] == nil {
+		t.Fatalf("expected cached lazy resolver result to be returned")
 	}
 
 	delete(got, "lazy-controller")
@@ -150,6 +161,9 @@ func TestScaleoutRuntimeControllerOnDemandUsesInjectedPrecheckFuncsWithoutResolv
 }
 
 func Test_scaleoutDeploymentIfNeeded(t *testing.T) {
+	restorePrecheckState(t)
+	setPrecheckFunc(map[string]CheckFunc{})
+
 	type args struct {
 		key types.NamespacedName
 		log logr.Logger
@@ -284,13 +298,6 @@ func Test_scaleoutDeploymentIfNeeded(t *testing.T) {
 
 	fakeClient := fake.NewFakeClientWithScheme(s, objs...)
 
-	setPrecheckFunc(map[string]CheckFunc{
-		"alluxioruntime-controller": alluxio.Precheck,
-		"jindoruntime-controller":   jindofsx.Precheck,
-		"juicefsruntime-controller": juicefs.Precheck,
-		"goosefsruntime-controller": goosefs.Precheck,
-	})
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotScale, err := scaleoutDeploymentIfNeeded(fakeClient, tt.args.key, tt.args.log)
@@ -322,6 +329,14 @@ func Test_scaleoutDeploymentIfNeeded(t *testing.T) {
 }
 
 func TestScaleoutRuntimeContollerOnDemand(t *testing.T) {
+	restorePrecheckState(t)
+	setPrecheckFunc(map[string]CheckFunc{
+		"alluxioruntime-controller": alluxio.Precheck,
+		"jindoruntime-controller":   jindofsx.Precheck,
+		"juicefsruntime-controller": juicefs.Precheck,
+		"goosefsruntime-controller": goosefs.Precheck,
+	})
+
 	type args struct {
 		key types.NamespacedName
 		log logr.Logger
