@@ -74,7 +74,7 @@ var _ = Describe("JindoRuntime Controller", func() {
 			jr, ok := obj.(*datav1alpha1.JindoRuntime)
 			Expect(ok).To(BeTrue())
 			Expect(jr.Kind).To(Equal(datav1alpha1.JindoRuntimeKind))
-			Expect(jr.APIVersion).To(ContainSubstring(datav1alpha1.GroupVersion.Group))
+			Expect(jr.APIVersion).To(Equal(datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version))
 		})
 
 		It("should populate APIVersion and Kind correctly", func() {
