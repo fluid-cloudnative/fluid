@@ -35,7 +35,7 @@ var _ = Describe("JindoRuntime Controller", func() {
 	Describe("NewRuntimeReconciler", func() {
 		It("should create a RuntimeReconciler with non-nil fields", func() {
 			s := runtime.NewScheme()
-			_ = datav1alpha1.AddToScheme(s)
+			Expect(datav1alpha1.AddToScheme(s)).NotTo(HaveOccurred())
 			mockClient := fake.NewFakeClientWithScheme(s)
 			recorder := record.NewFakeRecorder(16)
 
@@ -97,7 +97,7 @@ var _ = Describe("JindoRuntime Controller", func() {
 	Describe("Reconcile", func() {
 		It("should return empty result when runtime is not found", func() {
 			s := runtime.NewScheme()
-			_ = datav1alpha1.AddToScheme(s)
+			Expect(datav1alpha1.AddToScheme(s)).NotTo(HaveOccurred())
 			mockClient := fake.NewFakeClientWithScheme(s)
 			recorder := record.NewFakeRecorder(16)
 
@@ -117,7 +117,7 @@ var _ = Describe("JindoRuntime Controller", func() {
 
 		It("should requeue with error when runtime name is invalid DNS label", func() {
 			s := runtime.NewScheme()
-			_ = datav1alpha1.AddToScheme(s)
+			Expect(datav1alpha1.AddToScheme(s)).NotTo(HaveOccurred())
 
 			// Runtime with invalid DNS name (starts with number) triggers validation
 			invalidName := "20-hbase"
