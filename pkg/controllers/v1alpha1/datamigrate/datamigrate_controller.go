@@ -115,6 +115,7 @@ func (r *DataMigrateReconciler) SetupWithManager(mgr ctrl.Manager, options contr
 		return ctrl.NewControllerManagedBy(mgr).
 			WithOptions(options).
 			For(&datav1alpha1.DataMigrate{}).
+			Owns(&batchv1.Job{}).
 			Owns(&batchv1.CronJob{}).
 			Complete(r)
 	} else {
@@ -122,6 +123,7 @@ func (r *DataMigrateReconciler) SetupWithManager(mgr ctrl.Manager, options contr
 		return ctrl.NewControllerManagedBy(mgr).
 			WithOptions(options).
 			For(&datav1alpha1.DataMigrate{}).
+			Owns(&batchv1.Job{}).
 			Owns(&batchv1beta1.CronJob{}).
 			Complete(r)
 	}
