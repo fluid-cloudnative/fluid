@@ -19,15 +19,11 @@ package recover
 import (
 	"context"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubelet"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/mountinfo"
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -38,6 +34,12 @@ import (
 	"k8s.io/utils/mount"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubelet"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/mountinfo"
 )
 
 const (
@@ -160,6 +162,8 @@ func (r *FuseRecover) recover() {
 		glog.Error(err)
 		return
 	}
+
+	sort.Sort(brokenMounts)
 
 	for _, point := range brokenMounts {
 		r.doRecover(point)
