@@ -23,6 +23,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/efc"
@@ -47,14 +48,8 @@ import (
 
 type CheckFunc func(client.Client, types.NamespacedName) (bool, error)
 
-var precheckFuncs map[string]CheckFunc
-
-func setPrecheckFunc(checks map[string]CheckFunc) {
-	precheckFuncs = checks
-}
-
-func init() {
-	allPrecheckFuncs := map[string]CheckFunc{
+var (
+	defaultPrecheckFuncs = map[string]CheckFunc{
 		"alluxioruntime-controller":  alluxio.Precheck,
 		"jindoruntime-controller":    jindofsx.Precheck,
 		"juicefsruntime-controller":  juicefs.Precheck,
@@ -63,8 +58,42 @@ func init() {
 		"efcruntime-controller":      efc.Precheck,
 		"vineyardruntime-controller": vineyard.Precheck,
 	}
+	resolveDefaultPrecheckFuncs = func() map[string]CheckFunc {
+		return filterOutDisabledRuntimes(defaultPrecheckFuncs)
+	}
+	precheckFuncs   map[string]CheckFunc
+	precheckFuncsMu sync.Mutex
+)
 
-	setPrecheckFunc(filterOutDisabledRuntimes(allPrecheckFuncs))
+func setPrecheckFunc(checks map[string]CheckFunc) {
+	precheckFuncsMu.Lock()
+	defer precheckFuncsMu.Unlock()
+
+	precheckFuncs = clonePrecheckFuncs(checks)
+}
+
+func getPrecheckFuncs() map[string]CheckFunc {
+	precheckFuncsMu.Lock()
+	defer precheckFuncsMu.Unlock()
+
+	if precheckFuncs != nil {
+		return clonePrecheckFuncs(precheckFuncs)
+	}
+
+	return clonePrecheckFuncs(resolveDefaultPrecheckFuncs())
+}
+
+func clonePrecheckFuncs(checks map[string]CheckFunc) map[string]CheckFunc {
+	if checks == nil {
+		return nil
+	}
+
+	clonedChecks := make(map[string]CheckFunc, len(checks))
+	for controllerName, checkFn := range checks {
+		clonedChecks[controllerName] = checkFn
+	}
+
+	return clonedChecks
 }
 
 func filterOutDisabledRuntimes(checks map[string]CheckFunc) (filteredChecks map[string]CheckFunc) {
@@ -83,7 +112,7 @@ func filterOutDisabledRuntimes(checks map[string]CheckFunc) (filteredChecks map[
 func ScaleoutRuntimeControllerOnDemand(c client.Client, datasetKey types.NamespacedName, log logr.Logger) (
 	controllerName string, scaleout bool, err error) {
 
-	for myControllerName, checkRuntime := range precheckFuncs {
+	for myControllerName, checkRuntime := range getPrecheckFuncs() {
 		match, err := checkRuntime(c, datasetKey)
 		if err != nil {
 			return controllerName, scaleout, err
