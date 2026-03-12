@@ -35,9 +35,135 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+func restorePrecheckState(t *testing.T) {
+	t.Helper()
+
+	precheckFuncsMu.Lock()
+	originalResolver := resolveDefaultPrecheckFuncs
+	originalCachedPrecheckFuncs := clonePrecheckFuncs(cachedPrecheckFuncs)
+	originalPrecheckFuncs := clonePrecheckFuncs(precheckFuncs)
+	precheckFuncsMu.Unlock()
+
+	t.Cleanup(func() {
+		precheckFuncsMu.Lock()
+		defer precheckFuncsMu.Unlock()
+
+		resolveDefaultPrecheckFuncs = originalResolver
+		cachedPrecheckFuncs = clonePrecheckFuncs(originalCachedPrecheckFuncs)
+		precheckFuncs = clonePrecheckFuncs(originalPrecheckFuncs)
+	})
+}
+
+func TestGetPrecheckFuncsResolvesDefaultsLazily(t *testing.T) {
+	restorePrecheckState(t)
+
+	calls := 0
+	check := func(client.Client, types.NamespacedName) (bool, error) {
+		return false, nil
+	}
+
+	precheckFuncsMu.Lock()
+	cachedPrecheckFuncs = nil
+	precheckFuncs = nil
+	resolveDefaultPrecheckFuncs = func() map[string]CheckFunc {
+		calls++
+		return map[string]CheckFunc{"lazy-controller": check}
+	}
+	precheckFuncsMu.Unlock()
+
+	got := getPrecheckFuncs()
+	if calls != 1 {
+		t.Fatalf("expected lazy resolver to be called once, got %d", calls)
+	}
+	if got["lazy-controller"] == nil {
+		t.Fatalf("expected lazy resolver result to be returned")
+	}
+
+	gotAgain := getPrecheckFuncs()
+	if calls != 1 {
+		t.Fatalf("expected lazy resolver result to be cached, got %d resolver calls", calls)
+	}
+	if gotAgain["lazy-controller"] == nil {
+		t.Fatalf("expected cached lazy resolver result to be returned")
+	}
+
+	delete(got, "lazy-controller")
+	if getPrecheckFuncs()["lazy-controller"] == nil {
+		t.Fatalf("expected getPrecheckFuncs to return a cloned map")
+	}
+}
+
+func TestScaleoutRuntimeControllerOnDemandUsesInjectedPrecheckFuncsWithoutResolvingDefaults(t *testing.T) {
+	restorePrecheckState(t)
+	t.Setenv(common.MyPodNamespace, common.NamespaceFluidSystem)
+
+	s := runtime.NewScheme()
+	_ = appsv1.AddToScheme(s)
+	fakeClient := fake.NewFakeClientWithScheme(s, &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "custom-controller",
+			Namespace: common.NamespaceFluidSystem,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: ptr.To[int32](0),
+		},
+	})
+
+	resolverCalls := 0
+	precheckCalls := 0
+	precheckFuncsMu.Lock()
+	resolveDefaultPrecheckFuncs = func() map[string]CheckFunc {
+		resolverCalls++
+		return map[string]CheckFunc{}
+	}
+	precheckFuncsMu.Unlock()
+	setPrecheckFunc(map[string]CheckFunc{
+		"custom-controller": func(client.Client, types.NamespacedName) (bool, error) {
+			precheckCalls++
+			return true, nil
+		},
+	})
+
+	controllerName, scaleout, err := ScaleoutRuntimeControllerOnDemand(fakeClient, types.NamespacedName{
+		Namespace: corev1.NamespaceDefault,
+		Name:      "dataset",
+	}, fake.NullLogger())
+	if err != nil {
+		t.Fatalf("ScaleoutRuntimeControllerOnDemand() error = %v", err)
+	}
+	if controllerName != "custom-controller" {
+		t.Fatalf("ScaleoutRuntimeControllerOnDemand() controller = %q, want %q", controllerName, "custom-controller")
+	}
+	if !scaleout {
+		t.Fatalf("ScaleoutRuntimeControllerOnDemand() scaleout = false, want true")
+	}
+	if resolverCalls != 0 {
+		t.Fatalf("expected injected prechecks to bypass lazy resolver, got %d resolver calls", resolverCalls)
+	}
+	if precheckCalls != 1 {
+		t.Fatalf("expected injected precheck to run once, got %d", precheckCalls)
+	}
+
+	deploy := &appsv1.Deployment{}
+	err = fakeClient.Get(context.TODO(), types.NamespacedName{
+		Namespace: common.NamespaceFluidSystem,
+		Name:      "custom-controller",
+	}, deploy)
+	if err != nil {
+		t.Fatalf("failed to fetch deployment: %v", err)
+	}
+	if *deploy.Spec.Replicas != 1 {
+		t.Fatalf("expected deployment replicas to scale to 1, got %d", *deploy.Spec.Replicas)
+	}
+}
+
 func Test_scaleoutDeploymentIfNeeded(t *testing.T) {
+	restorePrecheckState(t)
+	setPrecheckFunc(map[string]CheckFunc{})
+
 	type args struct {
 		key types.NamespacedName
 		log logr.Logger
@@ -172,13 +298,6 @@ func Test_scaleoutDeploymentIfNeeded(t *testing.T) {
 
 	fakeClient := fake.NewFakeClientWithScheme(s, objs...)
 
-	setPrecheckFunc(map[string]CheckFunc{
-		"alluxioruntime-controller": alluxio.Precheck,
-		"jindoruntime-controller":   jindofsx.Precheck,
-		"juicefsruntime-controller": juicefs.Precheck,
-		"goosefsruntime-controller": goosefs.Precheck,
-	})
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotScale, err := scaleoutDeploymentIfNeeded(fakeClient, tt.args.key, tt.args.log)
@@ -210,6 +329,14 @@ func Test_scaleoutDeploymentIfNeeded(t *testing.T) {
 }
 
 func TestScaleoutRuntimeContollerOnDemand(t *testing.T) {
+	restorePrecheckState(t)
+	setPrecheckFunc(map[string]CheckFunc{
+		"alluxioruntime-controller": alluxio.Precheck,
+		"jindoruntime-controller":   jindofsx.Precheck,
+		"juicefsruntime-controller": juicefs.Precheck,
+		"goosefsruntime-controller": goosefs.Precheck,
+	})
+
 	type args struct {
 		key types.NamespacedName
 		log logr.Logger
@@ -231,7 +358,7 @@ func TestScaleoutRuntimeContollerOnDemand(t *testing.T) {
 					Name:      "notFound",
 				},
 				log: fake.NullLogger(),
-			}, wantErr: false,
+			}, wantErr: true,
 			wantControllerName: "",
 			wantScaleout:       false,
 		}, {
@@ -243,7 +370,7 @@ func TestScaleoutRuntimeContollerOnDemand(t *testing.T) {
 				},
 				log: fake.NullLogger(),
 			},
-			wantErr:            false,
+			wantErr:            true,
 			wantControllerName: "",
 			wantScaleout:       false,
 		}, {
@@ -369,6 +496,7 @@ func TestScaleoutRuntimeContollerOnDemand(t *testing.T) {
 	fakeClient := fake.NewFakeClientWithScheme(s, objs...)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv(common.MyPodNamespace, common.NamespaceFluidSystem)
 			gotControllerName, gotScaleout, err := ScaleoutRuntimeControllerOnDemand(fakeClient, tt.args.key, tt.args.log)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ScaleoutRuntimeControllerOnDemand() error = %v, wantErr %v", err, tt.wantErr)
