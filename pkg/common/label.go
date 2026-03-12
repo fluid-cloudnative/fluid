@@ -77,6 +77,10 @@ const (
 	//   	"Sidecar": for only sidecar to skip check mount ready,
 	AnnotationSkipCheckMountReadyTarget = LabelAnnotationPrefix + "skip-check-mount-ready-target"
 
+	// AnnotationDatasetPolicy is a runtime annotation that controls how Dataset is handled.
+	// i.e. fluid.io/dataset-policy
+	AnnotationDatasetPolicy = LabelAnnotationPrefix + "dataset-policy"
+
 	// AnnotationDisableRuntimeHelmValueConfig is a runtime label indicates the configmap contains helm value will not be created in setup.
 	AnnotationDisableRuntimeHelmValueConfig = "runtime." + LabelAnnotationPrefix + "disable-helm-value-config"
 
