@@ -35,7 +35,6 @@ var _ = Describe("JuiceFSRuntimeReconciler", func() {
 	Describe("ControllerName", func() {
 		It("should return the constant controller name", func() {
 			r := &JuiceFSRuntimeReconciler{}
-			Expect(r.ControllerName()).To(Equal(controllerName))
 			Expect(r.ControllerName()).To(Equal("JuiceFSRuntimeController"))
 		})
 	})
