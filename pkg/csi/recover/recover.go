@@ -62,6 +62,10 @@ type FuseRecover struct {
 	recoverWarningThreshold int
 
 	locks *utils.VolumeLocks
+
+	// stateTracker provides per-mount backoff and event deduplication
+	// to prevent API server overload from persistent mount failures.
+	stateTracker *RecoverStateTracker
 }
 
 func initializeKubeletClient() (*kubelet.KubeletClient, error) {
@@ -132,6 +136,7 @@ func NewFuseRecover(kubeClient client.Client, recorder record.EventRecorder, api
 		recoverFusePeriod:       recoverFusePeriod,
 		recoverWarningThreshold: recoverWarningThreshold,
 		locks:                   locks,
+		stateTracker:            NewRecoverStateTracker(),
 	}, nil
 }
 
@@ -243,14 +248,31 @@ func (r *FuseRecover) doRecover(point mountinfo.MountPoint) {
 	}
 	defer r.locks.Release(point.MountPath)
 
+	// Initialize state tracking for this mount point
+	_ = r.stateTracker.GetOrCreateState(point.MountPath)
+
+	// Check if we're still in backoff period from previous failures.
+	// This prevents tight retry loops on persistently broken mounts,
+	// reducing CPU usage and API server load.
+	if !r.stateTracker.ShouldAttemptRecovery(point.MountPath) {
+		failures, backoff := r.stateTracker.GetBackoffInfo(point.MountPath)
+		glog.V(4).Infof("FuseRecovery: path %s in backoff period (failures=%d, backoff=%v), skipping this cycle",
+			point.MountPath, failures, backoff)
+		return
+	}
+
 	should, err := r.shouldRecover(point.MountPath)
 	if err != nil {
 		glog.Warningf("FuseRecovery: found path %s which is unable to recover due to error %v, skip it", point.MountPath, err)
+		// Record failure to trigger backoff for shouldRecover errors too
+		r.stateTracker.RecordFailure(point.MountPath)
 		return
 	}
 
 	if !should {
 		glog.V(3).Infof("FuseRecovery: path %s has already been cleaned up, skip recovering it", point.MountPath)
+		// Mount was cleaned up, remove its tracking state
+		r.stateTracker.RemoveState(point.MountPath)
 		return
 	}
 
@@ -260,12 +282,29 @@ func (r *FuseRecover) doRecover(point mountinfo.MountPoint) {
 	// please refer to https://github.com/fluid-cloudnative/fluid/issues/3399 for more information
 	if point.Count > r.recoverWarningThreshold {
 		glog.Warningf("FuseRecovery: Mountpoint %s has been mounted %v times, exceeding the recoveryWarningThreshold %v, unmount duplicate mountpoint to avoid large /proc/self/mountinfo file, this may potentially make data access connection broken", point.MountPath, point.Count, r.recoverWarningThreshold)
-		r.eventRecord(point, corev1.EventTypeWarning, common.FuseUmountDuplicate)
+		// Only emit duplicate mount warning on state change to prevent spam
+		if r.stateTracker.ShouldEmitEvent(point.MountPath, common.FuseUmountDuplicate) {
+			r.eventRecord(point, corev1.EventTypeWarning, common.FuseUmountDuplicate)
+		}
 		r.umountDuplicate(point)
 	}
 	if err := r.recoverBrokenMount(point); err != nil {
-		r.eventRecord(point, corev1.EventTypeWarning, common.FuseRecoverFailed)
+		// Record failure to increase backoff for next attempt
+		r.stateTracker.RecordFailure(point.MountPath)
+		// Only emit failure event on state change (first failure or reason change)
+		// This prevents flooding the event stream with identical failure events
+		if r.stateTracker.ShouldEmitEvent(point.MountPath, common.FuseRecoverFailed) {
+			r.eventRecord(point, corev1.EventTypeWarning, common.FuseRecoverFailed)
+		}
 		return
 	}
-	r.eventRecord(point, corev1.EventTypeNormal, common.FuseRecoverSucceed)
+
+	// Recovery succeeded - reset backoff and emit success event if transitioning from failure
+	wasUnhealthy := !r.stateTracker.GetOrCreateState(point.MountPath).IsHealthy
+	r.stateTracker.RecordSuccess(point.MountPath)
+	// Only emit success event if we were previously in a failed state
+	// This provides clear signal that an issue was resolved without spamming on every healthy check
+	if wasUnhealthy && r.stateTracker.ShouldEmitEvent(point.MountPath, common.FuseRecoverSucceed) {
+		r.eventRecord(point, corev1.EventTypeNormal, common.FuseRecoverSucceed)
+	}
 }
