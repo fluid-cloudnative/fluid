@@ -17,18 +17,10 @@ function panic() {
 
 function setup_minio() {
     kubectl create -f test/gha-e2e/jindo/minio.yaml
-    minio_pod=$(kubectl get pod -oname | grep minio)
-    if [[ -z "$minio_pod" ]]; then
-        panic "failed to find minio pod"
-    fi
+    minio_pod=$(kubectl get pod -l app=minio -oname)
+    kubectl wait --for=condition=Ready $minio_pod --timeout=180s || panic "minio pod is not ready"
 
-    if ! kubectl wait --for=condition=Ready --timeout=180s "$minio_pod"; then
-        panic "timed out waiting for minio pod to become ready"
-    fi
-
-    if ! kubectl exec "$minio_pod" -- /bin/bash -c 'mc alias set myminio http://127.0.0.1:9000 minioadmin minioadmin && mc mb myminio/mybucket && echo "helloworld" > testfile && mc mv testfile myminio/mybucket/subpath/testfile && mc cat myminio/mybucket/subpath/testfile'; then
-        panic "failed to prepare test data in minio"
-    fi
+    kubectl exec $minio_pod -- /bin/sh -c 'mc alias set myminio http://127.0.0.1:9000 minioadmin minioadmin && mc mb myminio/mybucket && echo "helloworld" > testfile && mc mv testfile myminio/mybucket/subpath/testfile && mc cat myminio/mybucket/subpath/testfile' || panic "failed to seed data into minio"
 }
 
 function create_dataset() {

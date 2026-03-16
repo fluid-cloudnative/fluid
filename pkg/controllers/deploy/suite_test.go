@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package deploy
 
 import (
 	"testing"
@@ -23,7 +23,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestControllers(t *testing.T) {
+func TestDeploy(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Package Controllers Suite")
+	RunSpecs(t, "Deploy Suite")
 }
