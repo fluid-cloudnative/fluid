@@ -17,6 +17,8 @@ limitations under the License.
 package poststart
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -34,6 +36,14 @@ type scriptGeneratorHelper struct {
 	scriptContent   string
 	scriptFileName  string
 	scriptMountPath string
+	scriptSHA256    string // SHA256 of scriptContent (first 63 chars), computed at construction
+}
+
+// computeScriptSHA256 computes the SHA256 of content and returns the first 63 hex chars
+// (K8s label values must be <= 63 characters; SHA256 hex is 64 chars).
+func computeScriptSHA256(content string) string {
+	sum := sha256.Sum256([]byte(content))
+	return fmt.Sprintf("%x", sum)[:63]
 }
 
 func (helper *scriptGeneratorHelper) BuildConfigMap(dataset *datav1alpha1.Dataset, configMapKey types.NamespacedName) *corev1.ConfigMap {
@@ -45,11 +55,17 @@ func (helper *scriptGeneratorHelper) BuildConfigMap(dataset *datav1alpha1.Datase
 			Name:      configMapKey.Name,
 			Namespace: configMapKey.Namespace,
 			Labels: map[string]string{
-				common.LabelAnnotationDatasetId: utils.GetDatasetId(configMapKey.Namespace, dataset.Name, string(dataset.UID)),
+				common.LabelAnnotationDatasetId:    utils.GetDatasetId(configMapKey.Namespace, dataset.Name, string(dataset.UID)),
+				common.LabelCheckMountScriptSHA256: helper.scriptSHA256,
 			},
 		},
 		Data: data,
 	}
+}
+
+// GetScriptSHA256 returns the SHA256 of the helper's script content computed at construction.
+func (helper *scriptGeneratorHelper) GetScriptSHA256() string {
+	return helper.scriptSHA256
 }
 
 func (helper *scriptGeneratorHelper) GetNamespacedConfigMapKey(datasetKey types.NamespacedName, runtimeType string) types.NamespacedName {
