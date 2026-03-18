@@ -23,10 +23,12 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/application/inject/fuse/mutator"
 	"github.com/fluid-cloudnative/fluid/pkg/application/inject/fuse/poststart"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/util/retry"
 )
 
 func (s *Injector) injectCheckMountReadyScript(podSpecs *mutator.MutatingPodSpecs, runtimeInfos map[string]base.RuntimeInfoInterface) error {
@@ -131,24 +133,56 @@ func (s *Injector) ensureScriptConfigMapExists(namespace string) (*poststart.Scr
 	appScriptGen := poststart.NewScriptGeneratorForApp(namespace)
 
 	cm := appScriptGen.BuildConfigmap()
-	cmFound, err := kubeclient.IsConfigMapExist(s.client, cm.Name, cm.Namespace)
+	cmKey := fmt.Sprintf("%s/%s", cm.Namespace, cm.Name)
+
+	existingCM, err := kubeclient.GetConfigmapByName(s.client, cm.Name, cm.Namespace)
 	if err != nil {
-		s.log.Error(err, "error when checking configMap's existence", "cm.Name", cm.Name, "cm.Namespace", cm.Namespace)
+		s.log.Error(err, "error when getting configMap", "cm.Name", cm.Name, "cm.Namespace", cm.Namespace)
 		return nil, err
 	}
 
-	cmKey := fmt.Sprintf("%s/%s", cm.Namespace, cm.Name)
-	s.log.V(1).Info("after check configMap existence", "configMap", cmKey, "existence", cmFound)
-	if !cmFound {
+	if existingCM == nil {
+		// ConfigMap does not exist, create it
+		s.log.V(1).Info("configMap not found, creating", "configMap", cmKey)
 		err = s.client.Create(context.TODO(), cm)
 		if err != nil {
 			if otherErr := utils.IgnoreAlreadyExists(err); otherErr != nil {
 				s.log.Error(err, "error when creating new configMap", "cm.Name", cm.Name, "cm.Namespace", cm.Namespace)
 				return nil, err
-			} else {
-				s.log.V(1).Info("configmap already exists, skip", "configMap", cmKey)
+			}
+			s.log.V(1).Info("configmap already exists (concurrent creation), skip", "configMap", cmKey)
+		}
+		return appScriptGen, nil
+	}
+
+	// ConfigMap exists, check if the script SHA256 annotation matches; update with retry on conflict.
+	currentSHA256 := appScriptGen.GetScriptSHA256()
+	if err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		latest, getErr := kubeclient.GetConfigmapByName(s.client, cm.Name, cm.Namespace)
+		if getErr != nil {
+			return getErr
+		}
+		if latest == nil {
+			// Deleted between Get calls; recreate
+			return s.client.Create(context.TODO(), cm)
+		}
+		if latest.Annotations != nil {
+			if annotationSHA256, ok := latest.Annotations[common.AnnotationCheckMountScriptSHA256]; ok && annotationSHA256 == currentSHA256 {
+				s.log.V(1).Info("configmap script is up-to-date, skip update", "configMap", cmKey)
+				return nil
 			}
 		}
+		// SHA256 mismatch or annotation missing: update the ConfigMap with latest script and SHA256
+		s.log.Info("configmap script SHA256 mismatch or annotation missing, updating", "configMap", cmKey, "expectedSHA256", currentSHA256)
+		latest.Data = cm.Data
+		if latest.Annotations == nil {
+			latest.Annotations = map[string]string{}
+		}
+		latest.Annotations[common.AnnotationCheckMountScriptSHA256] = currentSHA256
+		return s.client.Update(context.TODO(), latest)
+	}); err != nil {
+		s.log.Error(err, "error when ensuring configMap is up-to-date", "cm.Name", cm.Name, "cm.Namespace", cm.Namespace)
+		return nil, err
 	}
 
 	return appScriptGen, nil
