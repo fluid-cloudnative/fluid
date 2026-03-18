@@ -108,12 +108,14 @@ type defaultPostStartScriptGenerator struct {
 }
 
 func NewDefaultPostStartScriptGenerator() *defaultPostStartScriptGenerator {
+	content := replacer.Replace(contentPrivilegedSidecar)
 	return &defaultPostStartScriptGenerator{
 		scriptGeneratorHelper: scriptGeneratorHelper{
 			configMapName:   "default-check-mount",
 			scriptFileName:  "check-mount.sh",
 			scriptMountPath: "/check-mount.sh",
-			scriptContent:   replacer.Replace(contentPrivilegedSidecar),
+			scriptContent:   content,
+			scriptSHA256:    computeScriptSHA256(content),
 		},
 	}
 }

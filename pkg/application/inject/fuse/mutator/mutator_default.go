@@ -321,17 +321,45 @@ func prepareFuseContainerPostStartScript(helper *helperData) error {
 	// Fluid assumes pvc name is the same with runtime's name
 	gen := poststart.NewDefaultPostStartScriptGenerator()
 	cmKey := gen.GetNamespacedConfigMapKey(types.NamespacedName{Namespace: datasetNamespace, Name: datasetName}, template.FuseMountInfo.FsType)
-	found, err := kubeclient.IsConfigMapExist(helper.client, cmKey.Name, cmKey.Namespace)
+
+	existingCM, err := kubeclient.GetConfigmapByName(helper.client, cmKey.Name, cmKey.Namespace)
 	if err != nil {
 		return err
 	}
 
-	if !found {
+	if existingCM == nil {
+		// ConfigMap does not exist, create it
 		cm := gen.BuildConfigMap(dataset, cmKey)
 		err = helper.client.Create(context.TODO(), cm)
 		if err != nil {
 			// If ConfigMap creation succeeds concurrently, continue to mutate
 			if otherErr := utils.IgnoreAlreadyExists(err); otherErr != nil {
+				return err
+			}
+		}
+	} else {
+		// ConfigMap exists, check if the script SHA256 label matches
+		currentSHA256 := gen.GetScriptSHA256()
+		needUpdate := true
+		if existingCM.Labels != nil {
+			if labelSHA256, ok := existingCM.Labels[common.LabelCheckMountScriptSHA256]; ok && labelSHA256 == currentSHA256 {
+				needUpdate = false
+			}
+		}
+
+		if needUpdate {
+			// SHA256 mismatch or label missing: update the ConfigMap with latest script and SHA256
+			newCM := gen.BuildConfigMap(dataset, cmKey)
+			existingCM.Data = newCM.Data
+			if existingCM.Labels == nil {
+				existingCM.Labels = map[string]string{}
+			}
+			existingCM.Labels[common.LabelCheckMountScriptSHA256] = currentSHA256
+			// Preserve the dataset-id label if already set
+			if _, ok := existingCM.Labels[common.LabelAnnotationDatasetId]; !ok {
+				existingCM.Labels[common.LabelAnnotationDatasetId] = newCM.Labels[common.LabelAnnotationDatasetId]
+			}
+			if err = helper.client.Update(context.TODO(), existingCM); err != nil {
 				return err
 			}
 		}

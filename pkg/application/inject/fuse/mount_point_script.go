@@ -23,6 +23,7 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/application/inject/fuse/mutator"
 	"github.com/fluid-cloudnative/fluid/pkg/application/inject/fuse/poststart"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
@@ -131,24 +132,47 @@ func (s *Injector) ensureScriptConfigMapExists(namespace string) (*poststart.Scr
 	appScriptGen := poststart.NewScriptGeneratorForApp(namespace)
 
 	cm := appScriptGen.BuildConfigmap()
-	cmFound, err := kubeclient.IsConfigMapExist(s.client, cm.Name, cm.Namespace)
+	cmKey := fmt.Sprintf("%s/%s", cm.Namespace, cm.Name)
+
+	existingCM, err := kubeclient.GetConfigmapByName(s.client, cm.Name, cm.Namespace)
 	if err != nil {
-		s.log.Error(err, "error when checking configMap's existence", "cm.Name", cm.Name, "cm.Namespace", cm.Namespace)
+		s.log.Error(err, "error when getting configMap", "cm.Name", cm.Name, "cm.Namespace", cm.Namespace)
 		return nil, err
 	}
 
-	cmKey := fmt.Sprintf("%s/%s", cm.Namespace, cm.Name)
-	s.log.V(1).Info("after check configMap existence", "configMap", cmKey, "existence", cmFound)
-	if !cmFound {
+	if existingCM == nil {
+		// ConfigMap does not exist, create it
+		s.log.V(1).Info("configMap not found, creating", "configMap", cmKey)
 		err = s.client.Create(context.TODO(), cm)
 		if err != nil {
 			if otherErr := utils.IgnoreAlreadyExists(err); otherErr != nil {
 				s.log.Error(err, "error when creating new configMap", "cm.Name", cm.Name, "cm.Namespace", cm.Namespace)
 				return nil, err
-			} else {
-				s.log.V(1).Info("configmap already exists, skip", "configMap", cmKey)
 			}
+			s.log.V(1).Info("configmap already exists (concurrent creation), skip", "configMap", cmKey)
 		}
+		return appScriptGen, nil
+	}
+
+	// ConfigMap exists, check if the script SHA256 label matches
+	currentSHA256 := appScriptGen.GetScriptSHA256()
+	if existingCM.Labels != nil {
+		if labelSHA256, ok := existingCM.Labels[common.LabelCheckMountScriptSHA256]; ok && labelSHA256 == currentSHA256 {
+			s.log.V(1).Info("configmap script is up-to-date, skip update", "configMap", cmKey)
+			return appScriptGen, nil
+		}
+	}
+
+	// SHA256 mismatch or label missing: update the ConfigMap with latest script and SHA256
+	s.log.Info("configmap script SHA256 mismatch or label missing, updating", "configMap", cmKey, "expectedSHA256", currentSHA256)
+	existingCM.Data = cm.Data
+	if existingCM.Labels == nil {
+		existingCM.Labels = map[string]string{}
+	}
+	existingCM.Labels[common.LabelCheckMountScriptSHA256] = currentSHA256
+	if err = s.client.Update(context.TODO(), existingCM); err != nil {
+		s.log.Error(err, "error when updating configMap", "cm.Name", cm.Name, "cm.Namespace", cm.Namespace)
+		return nil, err
 	}
 
 	return appScriptGen, nil

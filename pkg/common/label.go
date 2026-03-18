@@ -86,6 +86,11 @@ const (
 
 	// i.e. fuse.runtime.fluid.io/generation
 	LabelRuntimeFuseGeneration = "fuse.runtime." + LabelAnnotationPrefix + "generation"
+
+	// LabelCheckMountScriptSHA256 is a label key on the check-mount ConfigMap that stores
+	// the SHA256 (first 63 chars) of the script content, used to detect script updates.
+	// i.e. fluid.io/check-mount-script-sha256
+	LabelCheckMountScriptSHA256 = "fuse.runtime." + LabelAnnotationPrefix + "check-mount-script-sha256"
 )
 
 const (
