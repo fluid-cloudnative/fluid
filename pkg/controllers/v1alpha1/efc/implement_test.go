@@ -88,7 +88,7 @@ var _ = Describe("RuntimeReconciler (EFC) Implement", func() {
 
 		It("should return the runtime when it exists in the cluster", func() {
 			ctx := cruntime.ReconcileRequestContext{
-				Context:        context.TODO(),
+				Context:        context.Background(),
 				NamespacedName: types.NamespacedName{Name: "test", Namespace: "default"},
 			}
 			result, err := r.getRuntime(ctx)
@@ -100,7 +100,7 @@ var _ = Describe("RuntimeReconciler (EFC) Implement", func() {
 
 		It("should return an error when the runtime does not exist", func() {
 			ctx := cruntime.ReconcileRequestContext{
-				Context:        context.TODO(),
+				Context:        context.Background(),
 				NamespacedName: types.NamespacedName{Name: "nonexistent", Namespace: "default"},
 			}
 			result, err := r.getRuntime(ctx)
@@ -124,7 +124,7 @@ var _ = Describe("RuntimeReconciler (EFC) Implement", func() {
 			defer patches.Reset()
 
 			ctx := cruntime.ReconcileRequestContext{
-				Context:        context.TODO(),
+				Context:        context.Background(),
 				NamespacedName: types.NamespacedName{Name: "fail", Namespace: "default"},
 			}
 			engine, err := r.GetOrCreateEngine(ctx)
@@ -144,7 +144,7 @@ var _ = Describe("RuntimeReconciler (EFC) Implement", func() {
 			defer patches.Reset()
 
 			ctx := cruntime.ReconcileRequestContext{
-				Context:        context.TODO(),
+				Context:        context.Background(),
 				NamespacedName: types.NamespacedName{Name: "cached", Namespace: "default"},
 			}
 
@@ -174,7 +174,7 @@ var _ = Describe("RuntimeReconciler (EFC) Implement", func() {
 			r.engines[id] = &mockEngine{}
 
 			ctx := cruntime.ReconcileRequestContext{
-				Context:        context.TODO(),
+				Context:        context.Background(),
 				NamespacedName: types.NamespacedName{Name: "test", Namespace: "default"},
 			}
 			r.RemoveEngine(ctx)
@@ -185,7 +185,7 @@ var _ = Describe("RuntimeReconciler (EFC) Implement", func() {
 
 		It("should not panic when removing a non-existent engine", func() {
 			ctx := cruntime.ReconcileRequestContext{
-				Context:        context.TODO(),
+				Context:        context.Background(),
 				NamespacedName: types.NamespacedName{Name: "ghost", Namespace: "default"},
 			}
 			Expect(func() { r.RemoveEngine(ctx) }).NotTo(Panic())
@@ -203,7 +203,7 @@ var _ = Describe("RuntimeReconciler (EFC) Implement", func() {
 			req := ctrl.Request{
 				NamespacedName: types.NamespacedName{Name: "missing", Namespace: "default"},
 			}
-			result, err := r.Reconcile(context.TODO(), req)
+			result, err := r.Reconcile(context.Background(), req)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result).To(Equal(ctrl.Result{}))
 		})
