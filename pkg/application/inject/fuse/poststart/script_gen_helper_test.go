@@ -17,6 +17,8 @@ limitations under the License.
 package poststart
 
 import (
+	"fmt"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -54,6 +56,7 @@ var _ = Describe("ScriptGeneratorHelper", func() {
 				Expect(cm.Namespace).To(Equal("default"))
 				Expect(cm.Data).To(HaveKeyWithValue("init.sh", "#!/bin/bash\necho 'test'"))
 				Expect(cm.Labels).To(HaveKeyWithValue(common.LabelAnnotationDatasetId, "default-test-dataset"))
+				Expect(cm.Annotations).To(HaveKey(common.AnnotationCheckMountScriptSHA256))
 			})
 		})
 
@@ -279,5 +282,263 @@ var _ = Describe("ScriptGeneratorHelper", func() {
 				Expect(vm.ReadOnly).To(BeTrue())
 			})
 		})
+	})
+})
+
+var _ = Describe("ScriptGeneratorForApp", func() {
+	Describe("NewScriptGeneratorForApp", func() {
+		It("should create generator with correct namespace", func() {
+			g := NewScriptGeneratorForApp("test-ns")
+			Expect(g).NotTo(BeNil())
+			Expect(g.namespace).To(Equal("test-ns"))
+		})
+	})
+
+	Describe("BuildConfigmap", func() {
+		It("should create configmap with correct name, namespace and script content", func() {
+			g := NewScriptGeneratorForApp("default")
+			cm := g.BuildConfigmap()
+
+			Expect(cm.Name).To(Equal(appConfigMapName))
+			Expect(cm.Namespace).To(Equal("default"))
+			Expect(cm.Data).To(HaveKey(appScriptName))
+			Expect(cm.Data[appScriptName]).NotTo(BeEmpty())
+		})
+
+		It("should set the LabelCheckMountScriptSHA256 label", func() {
+			g := NewScriptGeneratorForApp("default")
+			cm := g.BuildConfigmap()
+
+			Expect(cm.Annotations).To(HaveKey(common.AnnotationCheckMountScriptSHA256))
+			Expect(cm.Annotations[common.AnnotationCheckMountScriptSHA256]).To(Equal(appScriptContentSHA256))
+		})
+
+		It("SHA256 label value should be at most 63 characters", func() {
+			g := NewScriptGeneratorForApp("default")
+			cm := g.BuildConfigmap()
+
+			sha256Annotation := cm.Annotations[common.AnnotationCheckMountScriptSHA256]
+			Expect(len(sha256Annotation)).To(BeNumerically("<=", 63))
+		})
+
+		It("should produce the same configmap for different namespaces with only namespace differing", func() {
+			g1 := NewScriptGeneratorForApp("ns-a")
+			g2 := NewScriptGeneratorForApp("ns-b")
+			cm1 := g1.BuildConfigmap()
+			cm2 := g2.BuildConfigmap()
+
+			Expect(cm1.Name).To(Equal(cm2.Name))
+			Expect(cm1.Namespace).To(Equal("ns-a"))
+			Expect(cm2.Namespace).To(Equal("ns-b"))
+			Expect(cm1.Data).To(Equal(cm2.Data))
+			Expect(cm1.Labels).To(Equal(cm2.Labels))
+		})
+	})
+
+	Describe("GetScriptSHA256", func() {
+		It("should return the same SHA256 as stored in appScriptContentSHA256", func() {
+			g := NewScriptGeneratorForApp("default")
+			Expect(g.GetScriptSHA256()).To(Equal(appScriptContentSHA256))
+		})
+
+		It("should return a non-empty SHA256 string with length <= 63", func() {
+			g := NewScriptGeneratorForApp("default")
+			sha := g.GetScriptSHA256()
+			Expect(sha).NotTo(BeEmpty())
+			Expect(len(sha)).To(BeNumerically("<=", 63))
+		})
+	})
+
+	Describe("GetPostStartCommand", func() {
+		It("should return correct exec command with given paths and types", func() {
+			g := NewScriptGeneratorForApp("default")
+			handler := g.GetPostStartCommand("/data1:/data2", "alluxio:jindo")
+
+			Expect(handler).NotTo(BeNil())
+			Expect(handler.Exec).NotTo(BeNil())
+			expectedCmd := fmt.Sprintf("time %s %s %s", appScriptPath, "/data1:/data2", "alluxio:jindo")
+			Expect(handler.Exec.Command).To(Equal([]string{"bash", "-c", expectedCmd}))
+		})
+
+		It("should include the script path in the command", func() {
+			g := NewScriptGeneratorForApp("default")
+			handler := g.GetPostStartCommand("/mnt/data", "juicefs")
+
+			Expect(handler.Exec.Command[2]).To(ContainSubstring(appScriptPath))
+		})
+	})
+
+	Describe("GetVolume", func() {
+		It("should return volume with correct name and configmap reference", func() {
+			g := NewScriptGeneratorForApp("default")
+			vol := g.GetVolume()
+
+			Expect(vol.Name).To(Equal(appVolName))
+			Expect(vol.VolumeSource.ConfigMap).NotTo(BeNil())
+			Expect(vol.VolumeSource.ConfigMap.Name).To(Equal(appConfigMapName))
+		})
+
+		It("should set default mode to 0755", func() {
+			g := NewScriptGeneratorForApp("default")
+			vol := g.GetVolume()
+
+			Expect(vol.VolumeSource.ConfigMap.DefaultMode).NotTo(BeNil())
+			Expect(*vol.VolumeSource.ConfigMap.DefaultMode).To(Equal(int32(0755)))
+		})
+	})
+
+	Describe("GetVolumeMount", func() {
+		It("should return volume mount with correct properties", func() {
+			g := NewScriptGeneratorForApp("default")
+			vm := g.GetVolumeMount()
+
+			Expect(vm.Name).To(Equal(appVolName))
+			Expect(vm.MountPath).To(Equal(appScriptPath))
+			Expect(vm.SubPath).To(Equal(appScriptName))
+			Expect(vm.ReadOnly).To(BeTrue())
+		})
+	})
+
+	Describe("appScriptContentSHA256 init", func() {
+		It("should be initialized with a non-empty value at package init", func() {
+			Expect(appScriptContentSHA256).NotTo(BeEmpty())
+		})
+
+		It("should be consistent with computeScriptSHA256 of the replaced script content", func() {
+			expected := computeScriptSHA256(replacer.Replace(contentCheckMountReadyScript))
+			Expect(appScriptContentSHA256).To(Equal(expected))
+		})
+
+		It("should match the dataset-level LabelAnnotationDatasetId label format", func() {
+			// Verify label value length constraint: SHA256 hex is 64 chars, truncated to 63
+			Expect(len(appScriptContentSHA256)).To(Equal(63))
+		})
+	})
+
+	Describe("BuildConfigmap label consistency with GetScriptSHA256", func() {
+		It("should have consistent SHA256 between label and GetScriptSHA256", func() {
+			g := NewScriptGeneratorForApp("test-ns")
+			cm := g.BuildConfigmap()
+			sha := g.GetScriptSHA256()
+
+			Expect(cm.Annotations[common.AnnotationCheckMountScriptSHA256]).To(Equal(sha))
+		})
+	})
+
+	Describe("integration: BuildConfigmap with dataset-style label check", func() {
+		It("should set label from a dataset-independent fixed hash", func() {
+			// The app configmap SHA256 is fixed (not dataset-scoped), unlike dataset-level configmaps
+			_ = &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "sample-dataset",
+					Namespace: "default",
+					UID:       "sample-uid",
+				},
+			}
+			g := NewScriptGeneratorForApp("default")
+			cm := g.BuildConfigmap()
+
+			// App configmap does NOT have LabelAnnotationDatasetId (dataset-independent)
+			Expect(cm.Labels).NotTo(HaveKey(common.LabelAnnotationDatasetId))
+			// But it MUST have the SHA256 annotation
+			Expect(cm.Annotations).To(HaveKey(common.AnnotationCheckMountScriptSHA256))
+		})
+	})
+})
+
+var _ = Describe("scriptGeneratorHelper.RefreshConfigMapContents", func() {
+	var (
+		dataset      *datav1alpha1.Dataset
+		configMapKey types.NamespacedName
+		helper       *scriptGeneratorHelper
+	)
+
+	BeforeEach(func() {
+		dataset = &datav1alpha1.Dataset{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-dataset",
+				Namespace: "default",
+				UID:       "test-uid",
+			},
+		}
+		configMapKey = types.NamespacedName{Name: "test-cm", Namespace: "default"}
+		helper = &scriptGeneratorHelper{
+			configMapName:  "test-config",
+			scriptFileName: "check-mount.sh",
+			scriptContent:  "#!/bin/bash\necho hello",
+			scriptSHA256:   computeScriptSHA256("#!/bin/bash\necho hello"),
+		}
+	})
+
+	It("should overwrite Data with the new script content", func() {
+		existing := helper.BuildConfigMap(dataset, configMapKey)
+		existing.Data[helper.scriptFileName] = "old content"
+
+		helper.RefreshConfigMapContents(dataset, configMapKey, existing)
+
+		Expect(existing.Data[helper.scriptFileName]).To(Equal("#!/bin/bash\necho hello"))
+	})
+
+	It("should set the SHA256 annotation on the existing configmap", func() {
+		existing := helper.BuildConfigMap(dataset, configMapKey)
+		delete(existing.Annotations, common.AnnotationCheckMountScriptSHA256)
+
+		helper.RefreshConfigMapContents(dataset, configMapKey, existing)
+
+		Expect(existing.Annotations).To(HaveKeyWithValue(common.AnnotationCheckMountScriptSHA256, helper.scriptSHA256))
+	})
+
+	It("should overwrite a stale SHA256 annotation", func() {
+		existing := helper.BuildConfigMap(dataset, configMapKey)
+		existing.Annotations[common.AnnotationCheckMountScriptSHA256] = "stale-sha"
+
+		helper.RefreshConfigMapContents(dataset, configMapKey, existing)
+
+		Expect(existing.Annotations[common.AnnotationCheckMountScriptSHA256]).To(Equal(helper.scriptSHA256))
+	})
+
+	It("should preserve extra labels not managed by the generator", func() {
+		existing := helper.BuildConfigMap(dataset, configMapKey)
+		existing.Labels["user-defined-label"] = "preserved"
+
+		helper.RefreshConfigMapContents(dataset, configMapKey, existing)
+
+		Expect(existing.Labels).To(HaveKeyWithValue("user-defined-label", "preserved"))
+	})
+
+	It("should preserve extra annotations not managed by the generator", func() {
+		existing := helper.BuildConfigMap(dataset, configMapKey)
+		existing.Annotations["kubectl.kubernetes.io/last-applied-configuration"] = "some-value"
+
+		helper.RefreshConfigMapContents(dataset, configMapKey, existing)
+
+		Expect(existing.Annotations).To(HaveKey("kubectl.kubernetes.io/last-applied-configuration"))
+	})
+
+	It("should initialize nil Labels before merging", func() {
+		existing := helper.BuildConfigMap(dataset, configMapKey)
+		existing.Labels = nil
+
+		helper.RefreshConfigMapContents(dataset, configMapKey, existing)
+
+		Expect(existing.Labels).NotTo(BeNil())
+		Expect(existing.Labels).To(HaveKey(common.LabelAnnotationDatasetId))
+	})
+
+	It("should initialize nil Annotations before merging", func() {
+		existing := helper.BuildConfigMap(dataset, configMapKey)
+		existing.Annotations = nil
+
+		helper.RefreshConfigMapContents(dataset, configMapKey, existing)
+
+		Expect(existing.Annotations).NotTo(BeNil())
+		Expect(existing.Annotations).To(HaveKey(common.AnnotationCheckMountScriptSHA256))
+	})
+
+	It("should return the same object pointer", func() {
+		existing := helper.BuildConfigMap(dataset, configMapKey)
+		result := helper.RefreshConfigMapContents(dataset, configMapKey, existing)
+
+		Expect(result).To(BeIdenticalTo(existing))
 	})
 })

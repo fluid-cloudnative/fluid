@@ -22,6 +22,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"time"
 
@@ -29,6 +30,7 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/fluid-cloudnative/fluid/pkg/application/inject/fuse/poststart"
@@ -36,6 +38,8 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 )
 
 var (
@@ -321,20 +325,9 @@ func prepareFuseContainerPostStartScript(helper *helperData) error {
 	// Fluid assumes pvc name is the same with runtime's name
 	gen := poststart.NewDefaultPostStartScriptGenerator()
 	cmKey := gen.GetNamespacedConfigMapKey(types.NamespacedName{Namespace: datasetNamespace, Name: datasetName}, template.FuseMountInfo.FsType)
-	found, err := kubeclient.IsConfigMapExist(helper.client, cmKey.Name, cmKey.Namespace)
-	if err != nil {
-		return err
-	}
 
-	if !found {
-		cm := gen.BuildConfigMap(dataset, cmKey)
-		err = helper.client.Create(context.TODO(), cm)
-		if err != nil {
-			// If ConfigMap creation succeeds concurrently, continue to mutate
-			if otherErr := utils.IgnoreAlreadyExists(err); otherErr != nil {
-				return err
-			}
-		}
+	if err = ensurePostStartConfigMap(helper.client, gen, dataset, cmKey); err != nil {
+		return err
 	}
 
 	template.FuseContainer.VolumeMounts = append(template.FuseContainer.VolumeMounts, gen.GetVolumeMount())
@@ -345,6 +338,63 @@ func prepareFuseContainerPostStartScript(helper *helperData) error {
 	template.VolumesToAdd = append(template.VolumesToAdd, gen.GetVolume(cmKey))
 
 	return nil
+}
+
+// ensurePostStartConfigMap creates the ConfigMap if it does not exist, or updates it when the
+// script content has changed (detected via SHA256 annotation).
+func ensurePostStartConfigMap(c client.Client, gen poststart.ScriptGenerator, dataset *datav1alpha1.Dataset, cmKey types.NamespacedName) error {
+	existingCM, err := kubeclient.GetConfigmapByName(c, cmKey.Name, cmKey.Namespace)
+	if err != nil {
+		return err
+	}
+
+	if existingCM == nil {
+		cm := gen.BuildConfigMap(dataset, cmKey)
+		if createErr := c.Create(context.TODO(), cm); createErr != nil {
+			// If ConfigMap creation succeeds concurrently, continue to mutate
+			return utils.IgnoreAlreadyExists(createErr)
+		}
+		return nil
+	}
+
+	// ConfigMap exists; update with retry on conflict to handle concurrent webhook mutations.
+	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		return updateConfigMapIfStale(c, gen, dataset, cmKey)
+	})
+}
+
+// updateConfigMapIfStale fetches the current ConfigMap from the cluster and updates it when the
+// SHA256 annotation does not match the latest script. It is designed to be called inside a
+// RetryOnConflict loop.
+func updateConfigMapIfStale(c client.Client, gen poststart.ScriptGenerator, dataset *datav1alpha1.Dataset, cmKey types.NamespacedName) error {
+	current, err := kubeclient.GetConfigmapByName(c, cmKey.Name, cmKey.Namespace)
+	if err != nil {
+		return err
+	}
+	if current == nil {
+		// Deleted between Get calls; recreate
+		return c.Create(context.TODO(), gen.BuildConfigMap(dataset, cmKey))
+	}
+
+	if isConfigMapUpToDate(current, gen.GetScriptSHA256()) {
+		return nil
+	}
+
+	latest := gen.RefreshConfigMapContents(dataset, cmKey, current.DeepCopy())
+	if reflect.DeepEqual(current, latest) {
+		return nil
+	}
+	return c.Update(context.TODO(), latest)
+}
+
+// isConfigMapUpToDate returns true when the annotations already carry the expected SHA256,
+// meaning no update is needed.
+func isConfigMapUpToDate(cm *corev1.ConfigMap, expectedSHA256 string) bool {
+	if cm == nil || cm.Annotations == nil {
+		return false
+	}
+	sha, ok := cm.Annotations[common.AnnotationCheckMountScriptSHA256]
+	return ok && sha == expectedSHA256
 }
 
 func transformTemplateWithCacheDirDisabled(helper *helperData) {
