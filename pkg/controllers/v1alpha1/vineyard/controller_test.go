@@ -82,11 +82,11 @@ var _ = Describe("VineyardRuntime Controller", func() {
 			Expect(result).To(Equal(ctrl.Result{}))
 		})
 
-		It("should requeue with error when runtime name is invalid DNS label", func() {
+		It("should requeue with error when runtime name violates the controller DNS-1035 validation rule", func() {
 			s := runtime.NewScheme()
 			Expect(datav1alpha1.AddToScheme(s)).NotTo(HaveOccurred())
 
-			// Runtime with invalid DNS name (starts with number) triggers validation
+			// Runtime name starting with a digit fails the controller's DNS-1035 validation.
 			invalidName := "20-vineyard"
 			vineyardRuntime := &datav1alpha1.VineyardRuntime{
 				ObjectMeta: metav1.ObjectMeta{

@@ -176,7 +176,7 @@ var _ = Describe("VineyardRuntime Implement", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			// Both calls should return the same engine instance (cached)
-			Expect(engine1).To(Equal(engine2))
+			Expect(engine1).To(BeIdenticalTo(engine2))
 		})
 
 		It("should return error for unknown engine impl", func() {
