@@ -21,6 +21,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	VineyardRuntimeKind = "VineyardRuntime"
+)
+
 // VineyardCompTemplateSpec is the common configurations for vineyard components including Master and Worker.
 type VineyardCompTemplateSpec struct {
 	// The replicas of Vineyard component.
