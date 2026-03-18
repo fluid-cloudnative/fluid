@@ -99,6 +99,10 @@ var _ = Describe("OnceStatusHandler", func() {
 	)
 
 	It("returns current status when job is still running (no finished condition)", func() {
+		mockDataload.Status = v1alpha1.OperationStatus{
+			Phase: common.PhasePending,
+		}
+
 		runningJob := batchv1.Job{
 			ObjectMeta: v1.ObjectMeta{
 				Name:      "test-dataload-loader-job",
@@ -118,8 +122,7 @@ var _ = Describe("OnceStatusHandler", func() {
 		opStatus, err := handler.GetOperationStatus(ctx, &mockDataload.Status)
 		Expect(err).NotTo(HaveOccurred())
 		// Status should be returned unchanged when job is still running
-		Expect(opStatus).NotTo(BeNil())
-		Expect(opStatus.Phase).To(Equal(mockDataload.Status.Phase))
+		Expect(opStatus).To(Equal(&mockDataload.Status))
 	})
 
 	It("returns error when job is missing and helm release cleanup fails", func() {

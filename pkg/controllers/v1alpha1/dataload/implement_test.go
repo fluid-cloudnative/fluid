@@ -17,6 +17,8 @@ limitations under the License.
 package dataload
 
 import (
+	"context"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -207,6 +209,14 @@ var _ = Describe("dataLoadOperation", func() {
 			}
 			err := op.UpdateOperationApiStatus(newStatus)
 			Expect(err).NotTo(HaveOccurred())
+
+			persisted := &datav1alpha1.DataLoad{}
+			err = op.Client.Get(context.Background(), types.NamespacedName{
+				Namespace: mockDataload.Namespace,
+				Name:      mockDataload.Name,
+			}, persisted)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(persisted.Status.Phase).To(Equal(newStatus.Phase))
 		})
 	})
 
