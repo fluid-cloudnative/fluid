@@ -41,7 +41,7 @@ var _ = Describe("JindoRuntime Implement", func() {
 	Describe("getRuntime", func() {
 		It("should return the runtime when it exists", func() {
 			s := runtime.NewScheme()
-			_ = datav1alpha1.AddToScheme(s)
+			Expect(datav1alpha1.AddToScheme(s)).NotTo(HaveOccurred())
 
 			jindoRuntime := &datav1alpha1.JindoRuntime{
 				ObjectMeta: metav1.ObjectMeta{
@@ -73,7 +73,7 @@ var _ = Describe("JindoRuntime Implement", func() {
 
 		It("should return error when runtime does not exist", func() {
 			s := runtime.NewScheme()
-			_ = datav1alpha1.AddToScheme(s)
+			Expect(datav1alpha1.AddToScheme(s)).NotTo(HaveOccurred())
 
 			mockClient := fake.NewFakeClientWithScheme(s)
 			recorder := record.NewFakeRecorder(16)
@@ -98,7 +98,7 @@ var _ = Describe("JindoRuntime Implement", func() {
 	Describe("GetOrCreateEngine", func() {
 		It("should create a new engine when not present in cache", func() {
 			s := runtime.NewScheme()
-			_ = datav1alpha1.AddToScheme(s)
+			Expect(datav1alpha1.AddToScheme(s)).NotTo(HaveOccurred())
 
 			jindoRuntime := &datav1alpha1.JindoRuntime{
 				ObjectMeta: metav1.ObjectMeta{
@@ -137,7 +137,7 @@ var _ = Describe("JindoRuntime Implement", func() {
 
 		It("should return cached engine on second call with same context", func() {
 			s := runtime.NewScheme()
-			_ = datav1alpha1.AddToScheme(s)
+			Expect(datav1alpha1.AddToScheme(s)).NotTo(HaveOccurred())
 
 			jindoRuntime := &datav1alpha1.JindoRuntime{
 				ObjectMeta: metav1.ObjectMeta{
@@ -181,7 +181,7 @@ var _ = Describe("JindoRuntime Implement", func() {
 
 		It("should return error for unknown engine impl", func() {
 			s := runtime.NewScheme()
-			_ = datav1alpha1.AddToScheme(s)
+			Expect(datav1alpha1.AddToScheme(s)).NotTo(HaveOccurred())
 
 			jindoRuntime := &datav1alpha1.JindoRuntime{
 				ObjectMeta: metav1.ObjectMeta{
@@ -215,7 +215,7 @@ var _ = Describe("JindoRuntime Implement", func() {
 	Describe("RemoveEngine", func() {
 		It("should remove an engine from the cache", func() {
 			s := runtime.NewScheme()
-			_ = datav1alpha1.AddToScheme(s)
+			Expect(datav1alpha1.AddToScheme(s)).NotTo(HaveOccurred())
 
 			jindoRuntime := &datav1alpha1.JindoRuntime{
 				ObjectMeta: metav1.ObjectMeta{
@@ -256,8 +256,8 @@ var _ = Describe("JindoRuntime Implement", func() {
 
 			// engines map should now be empty
 			r.mutex.Lock()
+			defer r.mutex.Unlock()
 			Expect(r.engines).To(BeEmpty())
-			r.mutex.Unlock()
 		})
 
 		It("should be a no-op when engine is not in cache", func() {
