@@ -357,11 +357,13 @@ var _ = Describe("DatasetReconciler (fake client)", func() {
 		})
 
 		It("requeues when a PVC blocks dataset deletion", func() {
+			const blockedDatasetName = "del-blocked"
+
 			now := metav1.Now()
 			// Create a PVC with the Fluid annotation in the same namespace/name as the dataset.
 			pvc := &corev1.PersistentVolumeClaim{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "del-blocked",
+					Name:      blockedDatasetName,
 					Namespace: "default",
 					Annotations: map[string]string{
 						"CreatedBy": "fluid",
@@ -380,7 +382,7 @@ var _ = Describe("DatasetReconciler (fake client)", func() {
 							Name: "data",
 							VolumeSource: corev1.VolumeSource{
 								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-									ClaimName: "del-blocked",
+									ClaimName: blockedDatasetName,
 								},
 							},
 						},
@@ -392,7 +394,7 @@ var _ = Describe("DatasetReconciler (fake client)", func() {
 			}
 			ds := datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:              "del-blocked",
+					Name:              blockedDatasetName,
 					Namespace:         "default",
 					Finalizers:        []string{finalizer},
 					DeletionTimestamp: &now,

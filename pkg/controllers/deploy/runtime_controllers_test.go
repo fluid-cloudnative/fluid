@@ -258,6 +258,8 @@ var _ = Describe("runtime controller scaleout", func() {
 		})
 
 		It("resolves defaults lazily and caches the result", func() {
+			const lazyControllerName = "lazy-controller"
+
 			calls := 0
 			check := func(client.Client, types.NamespacedName) (bool, error) {
 				return false, nil
@@ -268,20 +270,20 @@ var _ = Describe("runtime controller scaleout", func() {
 			precheckFuncs = nil
 			resolveDefaultPrecheckFuncs = func() map[string]CheckFunc {
 				calls++
-				return map[string]CheckFunc{"lazy-controller": check}
+				return map[string]CheckFunc{lazyControllerName: check}
 			}
 			precheckFuncsMu.Unlock()
 
 			checks := getPrecheckFuncs()
 			Expect(calls).To(Equal(1))
-			Expect(checks["lazy-controller"]).NotTo(BeNil())
+			Expect(checks[lazyControllerName]).NotTo(BeNil())
 
 			checksAgain := getPrecheckFuncs()
 			Expect(calls).To(Equal(1))
-			Expect(checksAgain["lazy-controller"]).NotTo(BeNil())
+			Expect(checksAgain[lazyControllerName]).NotTo(BeNil())
 
-			delete(checks, "lazy-controller")
-			Expect(getPrecheckFuncs()["lazy-controller"]).NotTo(BeNil())
+			delete(checks, lazyControllerName)
+			Expect(getPrecheckFuncs()[lazyControllerName]).NotTo(BeNil())
 		})
 
 		It("does not pin resolved defaults into package-global state", func() {
