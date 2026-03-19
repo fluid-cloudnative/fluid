@@ -34,6 +34,8 @@ import (
 )
 
 var _ = Describe("DataOpJobReconciler", func() {
+	const controllerUIDKey = "controller-uid"
+
 	var testScheme *runtime.Scheme
 
 	BeforeEach(func() {
@@ -133,7 +135,6 @@ var _ = Describe("DataOpJobReconciler", func() {
 			It("injects node labels and returns no-requeue", func() {
 				const (
 					completeJobName = "complete-job"
-					controllerUID   = "controller-uid"
 				)
 
 				job := &batchv1.Job{
@@ -150,7 +151,7 @@ var _ = Describe("DataOpJobReconciler", func() {
 					Spec: batchv1.JobSpec{
 						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
-								controllerUID: "abc-123",
+								controllerUIDKey: "abc-123",
 							},
 						},
 					},
@@ -165,7 +166,7 @@ var _ = Describe("DataOpJobReconciler", func() {
 						Name:      "complete-pod",
 						Namespace: "default",
 						Labels: map[string]string{
-							controllerUID: "abc-123",
+							controllerUIDKey: "abc-123",
 						},
 					},
 					Spec: v1.PodSpec{
@@ -203,10 +204,10 @@ var _ = Describe("DataOpJobReconciler", func() {
 	})
 
 	Describe("injectPodNodeLabelsToJob", func() {
+		const jobControllerUIDValue = "455afc34-93b1-4e75-a6fa-8e13d2c6ca06"
+
 		Context("when job has a succeeded pod", func() {
 			It("should inject node labels as annotations onto the job", func() {
-				const controllerUID = "controller-uid"
-
 				job := &batchv1.Job{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test-job",
@@ -217,7 +218,7 @@ var _ = Describe("DataOpJobReconciler", func() {
 					Spec: batchv1.JobSpec{
 						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
-								controllerUID: "455afc34-93b1-4e75-a6fa-8e13d2c6ca06",
+								controllerUIDKey: jobControllerUIDValue,
 							},
 						},
 					},
@@ -226,7 +227,7 @@ var _ = Describe("DataOpJobReconciler", func() {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test-pod",
 						Labels: map[string]string{
-							controllerUID: "455afc34-93b1-4e75-a6fa-8e13d2c6ca06",
+							controllerUIDKey: jobControllerUIDValue,
 						},
 						Annotations: map[string]string{
 							common.AnnotationDataFlowAffinityLabelsName: "k8s.gpu,,",
@@ -289,8 +290,6 @@ var _ = Describe("DataOpJobReconciler", func() {
 
 		Context("when job has only a failed pod", func() {
 			It("should return an error", func() {
-				const controllerUID = "controller-uid"
-
 				job := &batchv1.Job{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test-job-failed",
@@ -298,7 +297,7 @@ var _ = Describe("DataOpJobReconciler", func() {
 					Spec: batchv1.JobSpec{
 						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
-								controllerUID: "455afc34-93b1-4e75-a6fa-8e13d2c6ca06",
+								controllerUIDKey: jobControllerUIDValue,
 							},
 						},
 					},
@@ -307,7 +306,7 @@ var _ = Describe("DataOpJobReconciler", func() {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test-pod",
 						Labels: map[string]string{
-							controllerUID: "455afc34-93b1-4e75-a6fa-8e13d2c6ca06",
+							controllerUIDKey: jobControllerUIDValue,
 						},
 					},
 					Status: v1.PodStatus{
