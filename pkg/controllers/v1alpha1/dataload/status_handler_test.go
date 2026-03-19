@@ -310,8 +310,35 @@ var _ = Describe("CronStatusHandler", func() {
 
 		opStatus, err := handler.GetOperationStatus(ctx, &mockCronDataload.Status)
 		Expect(err).NotTo(HaveOccurred())
-		// When no current job is found, the status is returned unchanged
-		Expect(opStatus).NotTo(BeNil())
+		expectedStatus := mockCronDataload.Status.DeepCopy()
+		expectedStatus.LastScheduleTime = &lastScheduleTime
+		expectedStatus.LastSuccessfulTime = &lastSuccessfulTime
+		Expect(opStatus).To(Equal(expectedStatus))
+	})
+
+	It("returns current status when cronjob is missing and helm release cleanup succeeds", func() {
+		expectedReleaseName := utils.GetDataLoadReleaseName(mockCronDataload.Name)
+		var cleanupReleaseName string
+		var cleanupNamespace string
+		cleanupPatch := gomonkey.ApplyFunc(helm.DeleteReleaseIfExists, func(name, namespace string) error {
+			cleanupReleaseName = name
+			cleanupNamespace = namespace
+			return nil
+		})
+		defer cleanupPatch.Reset()
+
+		fakeClient := fake.NewFakeClientWithScheme(testScheme, &mockCronDataload)
+		handler := &CronStatusHandler{Client: fakeClient, dataLoad: &mockCronDataload}
+		ctx := cruntime.ReconcileRequestContext{
+			NamespacedName: types.NamespacedName{Namespace: mockCronDataload.Namespace},
+			Log:            fake.NullLogger(),
+		}
+
+		opStatus, err := handler.GetOperationStatus(ctx, &mockCronDataload.Status)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(opStatus).To(Equal(&mockCronDataload.Status))
+		Expect(cleanupReleaseName).To(Equal(expectedReleaseName))
+		Expect(cleanupNamespace).To(Equal(mockCronDataload.Namespace))
 	})
 })
 
