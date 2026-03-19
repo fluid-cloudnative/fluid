@@ -361,6 +361,11 @@ func (r *RuntimeReconciler) AddOwnerAndRequeue(ctx cruntime.ReconcileRequestCont
 
 // GetRuntimeObjectMeta gets runtime object meta
 func (r *RuntimeReconciler) GetRuntimeObjectMeta(ctx cruntime.ReconcileRequestContext) (objectMeta metav1.Object, err error) {
+	if ctx.Runtime == nil || reflect.ValueOf(ctx.Runtime).IsNil() {
+		err = fmt.Errorf("runtime is nil")
+		return
+	}
+
 	objectMetaAccessor, isOM := ctx.Runtime.(metav1.ObjectMetaAccessor)
 	if !isOM {
 		// return utils.RequeueIfError(fmt.Errorf("object is not ObjectMetaAccessor"))
