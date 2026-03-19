@@ -73,7 +73,7 @@ var _ = Describe("DataOpJobReconciler", func() {
 			It("returns an error (not-found propagates)", func() {
 				c := fake.NewFakeClientWithScheme(testScheme)
 				f := &DataOpJobReconciler{Client: c, Log: fake.NullLogger()}
-				_, err := f.Reconcile(context.TODO(), reconcile.Request{
+				_, err := f.Reconcile(context.Background(), reconcile.Request{
 					NamespacedName: types.NamespacedName{Name: "missing-job", Namespace: "default"},
 				})
 				Expect(err).To(HaveOccurred())
@@ -94,7 +94,7 @@ var _ = Describe("DataOpJobReconciler", func() {
 				}
 				c := fake.NewFakeClientWithScheme(testScheme, job)
 				f := &DataOpJobReconciler{Client: c, Log: fake.NullLogger()}
-				result, err := f.Reconcile(context.TODO(), reconcile.Request{
+				result, err := f.Reconcile(context.Background(), reconcile.Request{
 					NamespacedName: types.NamespacedName{Name: "cron-job", Namespace: "default"},
 				})
 				Expect(err).NotTo(HaveOccurred())
@@ -115,14 +115,14 @@ var _ = Describe("DataOpJobReconciler", func() {
 				}
 				c := fake.NewFakeClientWithScheme(testScheme, job)
 				f := &DataOpJobReconciler{Client: c, Log: fake.NullLogger()}
-				result, err := f.Reconcile(context.TODO(), reconcile.Request{
+				result, err := f.Reconcile(context.Background(), reconcile.Request{
 					NamespacedName: types.NamespacedName{Name: "test-job", Namespace: "default"},
 				})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(result.Requeue).To(BeFalse())
 
 				updatedJob := &batchv1.Job{}
-				Expect(c.Get(context.TODO(), types.NamespacedName{Name: "test-job", Namespace: "default"}, updatedJob)).To(Succeed())
+				Expect(c.Get(context.Background(), types.NamespacedName{Name: "test-job", Namespace: "default"}, updatedJob)).To(Succeed())
 				Expect(updatedJob.Annotations).To(HaveKeyWithValue(common.AnnotationDataFlowAffinityInject, "true"))
 			})
 		})
@@ -180,14 +180,14 @@ var _ = Describe("DataOpJobReconciler", func() {
 				}
 				c := fake.NewFakeClientWithScheme(testScheme, job, pod, node)
 				f := &DataOpJobReconciler{Client: c, Log: fake.NullLogger()}
-				result, err := f.Reconcile(context.TODO(), reconcile.Request{
+				result, err := f.Reconcile(context.Background(), reconcile.Request{
 					NamespacedName: types.NamespacedName{Name: "complete-job", Namespace: "default"},
 				})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(result.Requeue).To(BeFalse())
 
 				updatedJob := &batchv1.Job{}
-				Expect(c.Get(context.TODO(), types.NamespacedName{Name: "complete-job", Namespace: "default"}, updatedJob)).To(Succeed())
+				Expect(c.Get(context.Background(), types.NamespacedName{Name: "complete-job", Namespace: "default"}, updatedJob)).To(Succeed())
 				Expect(updatedJob.Annotations).To(HaveKeyWithValue(common.AnnotationDataFlowCustomizedAffinityPrefix+common.K8sNodeNameLabelKey, "node01"))
 				Expect(updatedJob.Annotations).To(HaveKeyWithValue(common.AnnotationDataFlowCustomizedAffinityPrefix+common.K8sRegionLabelKey, "region01"))
 				Expect(updatedJob.Annotations).To(HaveKeyWithValue(common.AnnotationDataFlowCustomizedAffinityPrefix+common.K8sZoneLabelKey, "zone01"))
