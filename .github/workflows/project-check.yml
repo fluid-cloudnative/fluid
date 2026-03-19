@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: dominikh/staticcheck-action@024238d2898c874f26d723e7d0ff4308c35589a2 # v1
+      - uses: dominikh/staticcheck-action@9716614d4101e79b4340dd97b10e54d68234e431 # v1.4.1
 
   lint:
     runs-on: ubuntu-latest
