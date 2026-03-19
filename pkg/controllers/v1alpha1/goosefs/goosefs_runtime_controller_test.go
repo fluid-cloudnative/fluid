@@ -45,6 +45,7 @@ func buildTestReconcileCtx(req ctrl.Request) cruntime.ReconcileRequestContext {
 const (
 	testRuntimeName      = "test-goosefs-runtime"
 	testRuntimeNamespace = "default"
+	envtestRuntimeName   = "envtest-runtime"
 )
 
 var _ = Describe("RuntimeReconciler", func() {
@@ -252,7 +253,7 @@ var _ = Describe("RuntimeReconciler", func() {
 		It("should create and retrieve a GooseFSRuntime via the k8sClient", func() {
 			gooseFSRuntime := &datav1alpha1.GooseFSRuntime{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "envtest-runtime",
+					Name:      envtestRuntimeName,
 					Namespace: "default",
 				},
 				Spec: datav1alpha1.GooseFSRuntimeSpec{},
@@ -264,10 +265,10 @@ var _ = Describe("RuntimeReconciler", func() {
 			By("retrieving the GooseFSRuntime")
 			var fetched datav1alpha1.GooseFSRuntime
 			Expect(k8sClient.Get(context.Background(), types.NamespacedName{
-				Name:      "envtest-runtime",
+				Name:      envtestRuntimeName,
 				Namespace: "default",
 			}, &fetched)).To(Succeed())
-			Expect(fetched.Name).To(Equal("envtest-runtime"))
+			Expect(fetched.Name).To(Equal(envtestRuntimeName))
 
 			By("deleting the GooseFSRuntime")
 			Expect(k8sClient.Delete(context.Background(), gooseFSRuntime)).To(Succeed())
