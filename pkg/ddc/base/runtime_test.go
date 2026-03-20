@@ -218,7 +218,6 @@ var _ = Describe("CleanPolicy", func() {
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.AlluxioRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JindoRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JuiceFSRuntime{})
-	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.GooseFSRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.Dataset{})
 
 	// Test Alluxio Runtime
@@ -485,94 +484,6 @@ var _ = Describe("CleanPolicy", func() {
 	juiceRuntimeObjs = append(juiceRuntimeObjs, &juiceRuntimeOnDemandCleanPolicy, &dataJuiceOnDemandCleanPolicy)
 	juiceRuntimeObjs = append(juiceRuntimeObjs, &juiceRuntimeOnRuntimeDeletedCleanPolicy, &dataJuiceOnRuntimeDeletedCleanPolicy)
 
-	// Test GooseFs Runtime
-	goosefsRuntimeDefaultCleanPolicy := v1alpha1.GooseFSRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "default_policy_goosefs",
-			Namespace: "default",
-		},
-		Spec: v1alpha1.GooseFSRuntimeSpec{
-			Fuse: v1alpha1.GooseFSFuseSpec{},
-		},
-	}
-
-	dataGooseFSDefaultCleanPolicy := v1alpha1.Dataset{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "default_policy_goosefs",
-			Namespace: "default",
-		},
-		Status: v1alpha1.DatasetStatus{
-			Runtimes: []v1alpha1.Runtime{
-				{
-					Name:      "default_policy_goosefs",
-					Namespace: "default",
-					Type:      common.GooseFSRuntime,
-				},
-			},
-		},
-	}
-
-	goosefsRuntimeOnDemandCleanPolicy := v1alpha1.GooseFSRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "on_demand_policy_goosefs",
-			Namespace: "default",
-		},
-		Spec: v1alpha1.GooseFSRuntimeSpec{
-			Fuse: v1alpha1.GooseFSFuseSpec{
-				CleanPolicy: v1alpha1.OnDemandCleanPolicy,
-			},
-		},
-	}
-
-	dataGooseFSOnDemandCleanPolicy := v1alpha1.Dataset{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "on_demand_policy_goosefs",
-			Namespace: "default",
-		},
-		Status: v1alpha1.DatasetStatus{
-			Runtimes: []v1alpha1.Runtime{
-				{
-					Name:      "on_demand_policy_goosefs",
-					Namespace: "default",
-					Type:      common.GooseFSRuntime,
-				},
-			},
-		},
-	}
-
-	goosefsRuntimeOnRuntimeDeletedCleanPolicy := v1alpha1.GooseFSRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "on_runtime_deleted_policy_goosefs",
-			Namespace: "default",
-		},
-		Spec: v1alpha1.GooseFSRuntimeSpec{
-			Fuse: v1alpha1.GooseFSFuseSpec{
-				CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
-			},
-		},
-	}
-
-	dataGooseFSOnRuntimeDeletedCleanPolicy := v1alpha1.Dataset{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "on_runtime_deleted_policy_goosefs",
-			Namespace: "default",
-		},
-		Status: v1alpha1.DatasetStatus{
-			Runtimes: []v1alpha1.Runtime{
-				{
-					Name:      "on_runtime_deleted_policy_goosefs",
-					Namespace: "default",
-					Type:      common.GooseFSRuntime,
-				},
-			},
-		},
-	}
-
-	goosefsRuntimeObjs := []runtime.Object{}
-	goosefsRuntimeObjs = append(goosefsRuntimeObjs, &goosefsRuntimeDefaultCleanPolicy, &dataGooseFSDefaultCleanPolicy)
-	goosefsRuntimeObjs = append(goosefsRuntimeObjs, &goosefsRuntimeOnDemandCleanPolicy, &dataGooseFSOnDemandCleanPolicy)
-	goosefsRuntimeObjs = append(goosefsRuntimeObjs, &goosefsRuntimeOnRuntimeDeletedCleanPolicy, &dataGooseFSOnRuntimeDeletedCleanPolicy)
-
 	type args struct {
 		client    client.Client
 		name      string
@@ -737,57 +648,6 @@ var _ = Describe("CleanPolicy", func() {
 			},
 			wantErr: false,
 		},
-		{
-			name: "default_test_goosefs",
-			args: args{
-				client:    fakeutils.NewFakeClientWithScheme(s, goosefsRuntimeObjs...),
-				name:      "default_policy_goosefs",
-				namespace: "default",
-			},
-			want: &RuntimeInfo{
-				name:        "default_policy_goosefs",
-				namespace:   "default",
-				runtimeType: common.GooseFSRuntime,
-				fuse: Fuse{
-					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "on_demand_test_goosefs",
-			args: args{
-				client:    fakeutils.NewFakeClientWithScheme(s, goosefsRuntimeObjs...),
-				name:      "on_demand_policy_goosefs",
-				namespace: "default",
-			},
-			want: &RuntimeInfo{
-				name:        "on_demand_policy_goosefs",
-				namespace:   "default",
-				runtimeType: common.GooseFSRuntime,
-				fuse: Fuse{
-					CleanPolicy: v1alpha1.OnDemandCleanPolicy,
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "on_runtime_deleted_test-goosefs",
-			args: args{
-				client:    fakeutils.NewFakeClientWithScheme(s, goosefsRuntimeObjs...),
-				name:      "on_runtime_deleted_policy_goosefs",
-				namespace: "default",
-			},
-			want: &RuntimeInfo{
-				name:        "on_runtime_deleted_policy_goosefs",
-				namespace:   "default",
-				runtimeType: common.GooseFSRuntime,
-				fuse: Fuse{
-					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
-				},
-			},
-			wantErr: false,
-		},
 	}
 
 	for _, tt := range tests {
@@ -825,29 +685,6 @@ var _ = Describe("GetRuntimeInfo", func() {
 					Name:      "alluxio",
 					Namespace: "default",
 					Type:      common.AlluxioRuntime,
-				},
-			},
-		},
-	}
-
-	goosefsRuntime := v1alpha1.GooseFSRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "goosefs",
-			Namespace: "default",
-		},
-	}
-
-	dataGooseFS := v1alpha1.Dataset{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "goosefs",
-			Namespace: "default",
-		},
-		Status: v1alpha1.DatasetStatus{
-			Runtimes: []v1alpha1.Runtime{
-				{
-					Name:      "goosefs",
-					Namespace: "default",
-					Type:      common.GooseFSRuntime,
 				},
 			},
 		},
@@ -950,20 +787,17 @@ var _ = Describe("GetRuntimeInfo", func() {
 		},
 	}
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.AlluxioRuntime{})
-	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.GooseFSRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JindoRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JuiceFSRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.EFCRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.Dataset{})
 	_ = v1.AddToScheme(s)
 	alluxioRuntimeObjs := []runtime.Object{}
-	goosefsRuntimeObjs := []runtime.Object{}
 	jindoRuntimeObjs := []runtime.Object{}
 	juicefsRuntimeObjs := []runtime.Object{}
 	efcRuntimeObjs := []runtime.Object{}
 
 	alluxioRuntimeObjs = append(alluxioRuntimeObjs, &alluxioRuntime, &dataAlluxio)
-	goosefsRuntimeObjs = append(goosefsRuntimeObjs, &goosefsRuntime, &dataGooseFS)
 	jindoRuntimeObjs = append(jindoRuntimeObjs, &jindoRuntime, &dataJindo)
 	for _, jfsRuntime := range juicefsRuntimes {
 		juicefsRuntimeObjs = append(juicefsRuntimeObjs, &jfsRuntime)
@@ -999,40 +833,6 @@ var _ = Describe("GetRuntimeInfo", func() {
 				},
 			},
 			wantErr: false,
-		},
-		{
-			name: "goosefs_test",
-			args: args{
-				client:    fakeutils.NewFakeClientWithScheme(s, goosefsRuntimeObjs...),
-				name:      "goosefs",
-				namespace: "default",
-			},
-			want: &RuntimeInfo{
-				name:        "goosefs",
-				namespace:   "default",
-				runtimeType: common.GooseFSRuntime,
-				fuse: Fuse{
-					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "goosefs_test_fake",
-			args: args{
-				client:    fakeutils.NewFakeClientWithScheme(s, goosefsRuntimeObjs...),
-				name:      "goosefs-fake",
-				namespace: "default",
-			},
-			want: &RuntimeInfo{
-				name:        "goosefs-fake",
-				namespace:   "default",
-				runtimeType: common.GooseFSRuntime,
-				fuse: Fuse{
-					CleanPolicy: v1alpha1.OnDemandCleanPolicy,
-				},
-			},
-			wantErr: true,
 		},
 		{
 			name: "jindo_test",
@@ -1156,6 +956,197 @@ var _ = Describe("GetRuntimeInfo", func() {
 
 			if !tt.wantErr {
 				Expect(got).To(Equal(tt.want))
+			}
+		})
+	}
+})
+
+var _ = Describe("GetRuntimeStatus", func() {
+	s := runtime.NewScheme()
+
+	alluxioRuntime := v1alpha1.AlluxioRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "alluxio",
+			Namespace: "default",
+		},
+	}
+
+	jindoRuntime := v1alpha1.JindoRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "jindo",
+			Namespace: "default",
+		},
+	}
+
+	juicefsRuntime := v1alpha1.JuiceFSRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "juice",
+			Namespace: "default",
+		},
+	}
+
+	efcRuntime := v1alpha1.EFCRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "efc",
+			Namespace: "default",
+		},
+	}
+
+	thinRuntime := v1alpha1.ThinRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "thin",
+			Namespace: "default",
+		},
+	}
+
+	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.AlluxioRuntime{})
+	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JindoRuntime{})
+	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JuiceFSRuntime{})
+	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.EFCRuntime{})
+	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.ThinRuntime{})
+	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.Dataset{})
+
+	_ = v1.AddToScheme(s)
+	alluxioRuntimeObjs := []runtime.Object{}
+	jindoRuntimeObjs := []runtime.Object{}
+	juicefsRuntimeObjs := []runtime.Object{}
+	efcRuntimeObjs := []runtime.Object{}
+	thinRuntimeObjs := []runtime.Object{}
+
+	alluxioRuntimeObjs = append(alluxioRuntimeObjs, &alluxioRuntime)
+	jindoRuntimeObjs = append(jindoRuntimeObjs, &jindoRuntime)
+	juicefsRuntimeObjs = append(juicefsRuntimeObjs, &juicefsRuntime)
+	efcRuntimeObjs = append(efcRuntimeObjs, &efcRuntime)
+	thinRuntimeObjs = append(thinRuntimeObjs, &thinRuntime)
+	type args struct {
+		client      client.Client
+		name        string
+		namespace   string
+		runtimeType string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "alluxio_test",
+			args: args{
+				client:      fakeutils.NewFakeClientWithScheme(s, alluxioRuntimeObjs...),
+				name:        "alluxio",
+				namespace:   "default",
+				runtimeType: common.AlluxioRuntime,
+			},
+			wantErr: false,
+		},
+		{
+			name: "alluxio_test_error",
+			args: args{
+				client:      fakeutils.NewFakeClientWithScheme(s, alluxioRuntimeObjs...),
+				name:        "alluxio-error",
+				namespace:   "default",
+				runtimeType: common.AlluxioRuntime,
+			},
+			wantErr: true,
+		},
+		{
+			name: "jindo_test",
+			args: args{
+				client:      fakeutils.NewFakeClientWithScheme(s, jindoRuntimeObjs...),
+				name:        "jindo",
+				namespace:   "default",
+				runtimeType: common.JindoRuntime,
+			},
+			wantErr: false,
+		},
+		{
+			name: "jindo_test_error",
+			args: args{
+				client:      fakeutils.NewFakeClientWithScheme(s, jindoRuntimeObjs...),
+				name:        "jindo-error",
+				namespace:   "default",
+				runtimeType: common.JindoRuntime,
+			},
+			wantErr: true,
+		},
+		{
+			name: "juicefs_test",
+			args: args{
+				client:      fakeutils.NewFakeClientWithScheme(s, juicefsRuntimeObjs...),
+				name:        "juice",
+				namespace:   "default",
+				runtimeType: common.JuiceFSRuntime,
+			},
+			wantErr: false,
+		},
+		{
+			name: "juicefs_test_error",
+			args: args{
+				client:      fakeutils.NewFakeClientWithScheme(s, juicefsRuntimeObjs...),
+				name:        "juice-error",
+				namespace:   "default",
+				runtimeType: common.JuiceFSRuntime,
+			},
+			wantErr: true,
+		},
+		{
+			name: "efc_test",
+			args: args{
+				client:      fakeutils.NewFakeClientWithScheme(s, efcRuntimeObjs...),
+				name:        "efc",
+				namespace:   "default",
+				runtimeType: common.EFCRuntime,
+			},
+			wantErr: false,
+		},
+		{
+			name: "efc_test_error",
+			args: args{
+				client:      fakeutils.NewFakeClientWithScheme(s, efcRuntimeObjs...),
+				name:        "efc-error",
+				namespace:   "default",
+				runtimeType: common.EFCRuntime,
+			},
+			wantErr: true,
+		},
+		{
+			name: "thin_test",
+			args: args{
+				client:      fakeutils.NewFakeClientWithScheme(s, thinRuntimeObjs...),
+				name:        "thin",
+				namespace:   "default",
+				runtimeType: common.ThinRuntime,
+			},
+			wantErr: false,
+		},
+		{
+			name: "thin_test_error",
+			args: args{
+				client:      fakeutils.NewFakeClientWithScheme(s, thinRuntimeObjs...),
+				name:        "thin-error",
+				namespace:   "default",
+				runtimeType: common.ThinRuntime,
+			},
+			wantErr: true,
+		},
+		{
+			name: "default_error",
+			args: args{
+				client:      fakeutils.NewFakeClientWithScheme(s, thinRuntimeObjs...),
+				name:        "thin-not-exit",
+				namespace:   "default",
+				runtimeType: "thin-not-exit",
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		It(tt.name, func() {
+			_, err := GetRuntimeStatus(tt.args.client, tt.args.runtimeType, tt.args.name, tt.args.namespace)
+			if tt.wantErr {
+				Expect(err).To(HaveOccurred())
+			} else {
+				Expect(err).NotTo(HaveOccurred())
 			}
 		})
 	}

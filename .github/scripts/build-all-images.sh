@@ -11,19 +11,17 @@ get_image_tag() {
 
 build_images() {
     images=(
-        "${IMG_REPO}/dataset-controller:${IMAGE_TAG}"
-        "${IMG_REPO}/application-controller:${IMAGE_TAG}"
-        "${IMG_REPO}/alluxioruntime-controller:${IMAGE_TAG}"
-        "${IMG_REPO}/jindoruntime-controller:${IMAGE_TAG}"
-        "${IMG_REPO}/goosefsruntime-controller:${IMAGE_TAG}"
-        "${IMG_REPO}/juicefsruntime-controller:${IMAGE_TAG}"
-        "${IMG_REPO}/thinruntime-controller:${IMAGE_TAG}"
-        "${IMG_REPO}/efcruntime-controller:${IMAGE_TAG}"
-        "${IMG_REPO}/vineyardruntime-controller:${IMAGE_TAG}"
-        "${IMG_REPO}/cacheruntime-controller:${IMAGE_TAG}"
-        "${IMG_REPO}/fluid-csi:${IMAGE_TAG}"
-        "${IMG_REPO}/fluid-webhook:${IMAGE_TAG}"
-        "${IMG_REPO}/fluid-crd-upgrader:${IMAGE_TAG}"
+        ${IMG_REPO}/dataset-controller:${IMAGE_TAG}
+        ${IMG_REPO}/application-controller:${IMAGE_TAG}
+        ${IMG_REPO}/alluxioruntime-controller:${IMAGE_TAG}
+        ${IMG_REPO}/jindoruntime-controller:${IMAGE_TAG}
+        ${IMG_REPO}/juicefsruntime-controller:${IMAGE_TAG}
+        ${IMG_REPO}/thinruntime-controller:${IMAGE_TAG}
+        ${IMG_REPO}/efcruntime-controller:${IMAGE_TAG}
+        ${IMG_REPO}/vineyardruntime-controller:${IMAGE_TAG}
+        ${IMG_REPO}/fluid-csi:${IMAGE_TAG}
+        ${IMG_REPO}/fluid-webhook:${IMAGE_TAG}
+        ${IMG_REPO}/fluid-crd-upgrader:${IMAGE_TAG}
     )
 
     make docker-build-all
