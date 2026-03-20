@@ -117,6 +117,7 @@ func (r *DataLoadReconciler) SetupWithManager(mgr ctrl.Manager, options controll
 		return ctrl.NewControllerManagedBy(mgr).
 			WithOptions(options).
 			For(&datav1alpha1.DataLoad{}).
+			Owns(&batchv1.Job{}).
 			Owns(&batchv1.CronJob{}).
 			Complete(r)
 	} else {
@@ -124,6 +125,7 @@ func (r *DataLoadReconciler) SetupWithManager(mgr ctrl.Manager, options controll
 		return ctrl.NewControllerManagedBy(mgr).
 			WithOptions(options).
 			For(&datav1alpha1.DataLoad{}).
+			Owns(&batchv1.Job{}).
 			Owns(&batchv1beta1.CronJob{}).
 			Complete(r)
 	}
