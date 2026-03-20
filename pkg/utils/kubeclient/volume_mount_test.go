@@ -289,20 +289,6 @@ func TestGetMountPathInContainer(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "test-goosefs",
-			args: args{
-				container: corev1.Container{
-					Name: "test",
-					VolumeMounts: []corev1.VolumeMount{{
-						Name:      "goosefs-fuse-mount",
-						MountPath: "/runtime-mnt/goosefs/default/test",
-					}},
-				},
-			},
-			want:    "/runtime-mnt/goosefs/default/test/goosefs-fuse",
-			wantErr: false,
-		},
-		{
 			name: "test-alluxio",
 			args: args{
 				container: corev1.Container{

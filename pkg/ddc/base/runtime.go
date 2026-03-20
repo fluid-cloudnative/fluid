@@ -457,22 +457,6 @@ func GetRuntimeInfo(reader client.Reader, name, namespace string) (runtimeInfo R
 		}
 		runtimeInfo.SetFuseNodeSelector(jindoRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(jindoRuntime.Spec.Fuse.CleanPolicy)
-	case common.GooseFSRuntime:
-		goosefsRuntime, err := utils.GetGooseFSRuntime(reader, name, namespace)
-		if err != nil {
-			return runtimeInfo, err
-		}
-		opts := []RuntimeInfoOption{
-			WithTieredStore(datav1alpha1.TieredStore{}),
-			WithMetadataList(GetMetadataListFromAnnotation(goosefsRuntime)),
-			WithAnnotations(goosefsRuntime.Annotations),
-		}
-		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.GooseFSRuntime, opts...)
-		if err != nil {
-			return runtimeInfo, err
-		}
-		runtimeInfo.SetFuseNodeSelector(goosefsRuntime.Spec.Fuse.NodeSelector)
-		runtimeInfo.SetupFuseCleanPolicy(goosefsRuntime.Spec.Fuse.CleanPolicy)
 	case common.JuiceFSRuntime:
 		juicefsRuntime, err := utils.GetJuiceFSRuntime(reader, name, namespace)
 		if err != nil {
@@ -559,12 +543,6 @@ func GetRuntimeStatus(client client.Client, runtimeType, name, namespace string)
 		return &runtime.Status, nil
 	case common.JindoRuntime:
 		runtime, err := utils.GetJindoRuntime(client, name, namespace)
-		if err != nil {
-			return status, err
-		}
-		return &runtime.Status, nil
-	case common.GooseFSRuntime:
-		runtime, err := utils.GetGooseFSRuntime(client, name, namespace)
 		if err != nil {
 			return status, err
 		}

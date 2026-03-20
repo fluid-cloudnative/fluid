@@ -288,8 +288,6 @@ func (o *OperationReconciler) getRuntimeObjectAndEngineImpl(runtimeType, name, n
 		runtime, err = utils.GetAlluxioRuntime(o.Client, name, namespace)
 	case common.JindoRuntime:
 		runtime, err = utils.GetJindoRuntime(o.Client, name, namespace)
-	case common.GooseFSRuntime:
-		runtime, err = utils.GetGooseFSRuntime(o.Client, name, namespace)
 	case common.JuiceFSRuntime:
 		runtime, err = utils.GetJuiceFSRuntime(o.Client, name, namespace)
 	case common.EFCRuntime:
@@ -316,8 +314,6 @@ func (o *OperationReconciler) getRuntimeObjectAndEngineImpl(runtimeType, name, n
 		return runtime, ddc.InferEngineImpl(*runtime.GetStatus(), common.AlluxioEngineImpl), nil
 	case common.JindoRuntime:
 		return runtime, ddc.InferEngineImpl(*runtime.GetStatus(), jindoutils.GetDefaultEngineImpl()), nil
-	case common.GooseFSRuntime:
-		return runtime, ddc.InferEngineImpl(*runtime.GetStatus(), common.GooseFSEngineImpl), nil
 	case common.JuiceFSRuntime:
 		return runtime, ddc.InferEngineImpl(*runtime.GetStatus(), common.JuiceFSEngineImpl), nil
 	case common.EFCRuntime:

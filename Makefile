@@ -36,7 +36,6 @@ DATASET_CONTROLLER_IMG ?= ${IMG_REPO}/dataset-controller
 APPLICATION_CONTROLLER_IMG ?= ${IMG_REPO}/application-controller
 ALLUXIORUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/alluxioruntime-controller
 JINDORUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/jindoruntime-controller
-GOOSEFSRUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/goosefsruntime-controller
 JUICEFSRUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/juicefsruntime-controller
 THINRUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/thinruntime-controller
 EFCRUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/efcruntime-controller
@@ -52,7 +51,6 @@ DATASET_DOCKERFILE ?= docker/Dockerfile.dataset
 APPLICATION_DOCKERFILE ?= docker/Dockerfile.application
 ALLUXIORUNTIME_DOCKERFILE ?= docker/Dockerfile.alluxioruntime
 JINDORUNTIME_DOCKERFILE ?= docker/Dockerfile.jindoruntime
-GOOSEFSRUNTIME_DOCKERFILE ?= docker/Dockerfile.goosefsruntime
 JUICEFSRUNTIME_DOCKERFILE ?= docker/Dockerfile.juicefsruntime
 THINRUNTIME_DOCKERFILE ?= docker/Dockerfile.thinruntime
 EFCRUNTIME_DOCKERFILE ?= docker/Dockerfile.efcruntime
@@ -69,7 +67,6 @@ DATASET_BINARY ?= bin/dataset-controller
 APPLICATION_BINARY ?= bin/fluidapp-controller
 ALLUXIORUNTIME_BINARY ?= bin/alluxioruntime-controller
 JINDORUNTIME_BINARY ?= bin/jindoruntime-controller
-GOOSEFSRUNTIME_BINARY ?= bin/goosefsruntime-controller
 JUICEFSRUNTIME_BINARY ?= bin/juicefsruntime-controller
 THINRUNTIME_BINARY ?= bin/thinruntime-controller
 EFCRUNTIME_BINARY ?= bin/efcruntime-controller
@@ -99,7 +96,6 @@ DOCKER_BUILD := docker-build-dataset-controller
 DOCKER_BUILD += docker-build-application-controller
 DOCKER_BUILD += docker-build-alluxioruntime-controller
 DOCKER_BUILD += docker-build-jindoruntime-controller
-DOCKER_BUILD += docker-build-goosefsruntime-controller
 DOCKER_BUILD += docker-build-csi
 DOCKER_BUILD += docker-build-webhook
 DOCKER_BUILD += docker-build-juicefsruntime-controller
@@ -117,7 +113,6 @@ DOCKER_PUSH += docker-push-alluxioruntime-controller
 DOCKER_PUSH += docker-push-jindoruntime-controller
 DOCKER_PUSH += docker-push-csi
 DOCKER_PUSH += docker-push-webhook
-DOCKER_PUSH += docker-push-goosefsruntime-controller
 DOCKER_PUSH += docker-push-juicefsruntime-controller
 DOCKER_PUSH += docker-push-thinruntime-controller
 DOCKER_PUSH += docker-push-efcruntime-controller
@@ -132,7 +127,6 @@ DOCKER_BUILDX_PUSH := docker-buildx-push-dataset-controller
 DOCKER_BUILDX_PUSH += docker-buildx-push-application-controller
 DOCKER_BUILDX_PUSH += docker-buildx-push-alluxioruntime-controller
 DOCKER_BUILDX_PUSH += docker-buildx-push-jindoruntime-controller
-DOCKER_BUILDX_PUSH += docker-buildx-push-goosefsruntime-controller
 DOCKER_BUILDX_PUSH += docker-buildx-push-csi
 DOCKER_BUILDX_PUSH += docker-buildx-push-webhook
 DOCKER_BUILDX_PUSH += docker-buildx-push-juicefsruntime-controller
@@ -226,10 +220,6 @@ alluxioruntime-controller-build:
 jindoruntime-controller-build:
 	CGO_ENABLED=${CGO_ENABLED} GOOS=${GOOS} GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o ${JINDORUNTIME_BINARY} -ldflags '${LDFLAGS}' cmd/jindo/main.go
 
-.PHONY: goosefsruntime-controller-build
-goosefsruntime-controller-build:
-	CGO_ENABLED=${CGO_ENABLED} GOOS=${GOOS} GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o ${GOOSEFSRUNTIME_BINARY} -ldflags '${LDFLAGS}' cmd/goosefs/main.go
-
 .PHONY: juicefsruntime-controller-build
 juicefsruntime-controller-build:
 	CGO_ENABLED=${CGO_ENABLED} GOOS=${GOOS} GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o ${JUICEFSRUNTIME_BINARY} -ldflags '-s -w ${LDFLAGS}' cmd/juicefs/main.go
@@ -270,10 +260,6 @@ docker-build-alluxioruntime-controller:
 .PHONY: docker-build-jindoruntime-controller
 docker-build-jindoruntime-controller:
 	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} ${DOCKER_BUILD_ARGS} . -f ${JINDORUNTIME_DOCKERFILE} -t ${JINDORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
-
-.PHONY: docker-build-goosefsruntime-controller
-docker-build-goosefsruntime-controller:
-	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} ${DOCKER_BUILD_ARGS} . -f ${GOOSEFSRUNTIME_DOCKERFILE} -t ${GOOSEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 .PHONY: docker-build-juicefsruntime-controller
 docker-build-juicefsruntime-controller:
@@ -328,10 +314,6 @@ docker-push-alluxioruntime-controller: docker-build-alluxioruntime-controller
 docker-push-jindoruntime-controller: docker-build-jindoruntime-controller
 	docker push ${JINDORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
-.PHONY: docker-push-goosefsruntime-controller
-docker-push-goosefsruntime-controller: docker-build-goosefsruntime-controller
-	docker push ${GOOSEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
-
 .PHONY: docker-push-juicefsruntime-controller
 docker-push-juicefsruntime-controller: docker-build-juicefsruntime-controller
 	docker push ${JUICEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
@@ -384,10 +366,6 @@ docker-buildx-push-alluxioruntime-controller:
 .PHONY: docker-buildx-push-jindoruntime-controller
 docker-buildx-push-jindoruntime-controller:
 	docker buildx build --push ${DOCKER_BUILD_ARGS} --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} . -f ${JINDORUNTIME_DOCKERFILE} -t ${JINDORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
-
-.PHONY: docker-buildx-push-goosefsruntime-controller
-docker-buildx-push-goosefsruntime-controller:
-	docker buildx build --push ${DOCKER_BUILD_ARGS} --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} . -f ${GOOSEFSRUNTIME_DOCKERFILE} -t ${GOOSEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 .PHONY: docker-buildx-push-juicefsruntime-controller
 docker-buildx-push-juicefsruntime-controller:

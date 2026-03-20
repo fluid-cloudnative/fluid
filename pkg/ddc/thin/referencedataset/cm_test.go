@@ -330,44 +330,6 @@ var _ = Describe("ConfigMap Operations", func() {
 			})
 		})
 
-		Context("when physical runtime is GooseFSRuntime", func() {
-			It("should copy config configmap successfully", func() {
-				configMap := &corev1.ConfigMap{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "goosefs-config",
-						Namespace: "source-ns",
-					},
-				}
-
-				refDataset := &datav1alpha1.Dataset{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "ref-dataset",
-						Namespace: "ref-ns",
-						UID:       types.UID("test-uid"),
-					},
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: "data.fluid.io/v1alpha1",
-						Kind:       "Dataset",
-					},
-				}
-
-				testObjs = append(testObjs, configMap)
-				fakeClient = fake.NewFakeClientWithScheme(testScheme, testObjs...)
-				engine.Client = fakeClient
-
-				runtimeInfo, err := base.BuildRuntimeInfo("goosefs", "source-ns", common.GooseFSRuntime)
-				Expect(err).NotTo(HaveOccurred())
-
-				err = engine.createConfigMapForRefDataset(fakeClient, refDataset, runtimeInfo)
-				Expect(err).NotTo(HaveOccurred())
-
-				var cmList corev1.ConfigMapList
-				err = fakeClient.List(context.TODO(), &cmList, client.InNamespace("ref-ns"))
-				Expect(err).NotTo(HaveOccurred())
-				Expect(cmList.Items).To(HaveLen(1))
-			})
-		})
-
 		Context("when physical runtime is JindoRuntime", func() {
 			It("should copy both client and jindofs configmaps successfully", func() {
 				clientConfigMap := &corev1.ConfigMap{

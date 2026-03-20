@@ -14,7 +14,6 @@ rules:
     resources:
       - alluxioruntimes
       - jindoruntimes
-      - goosefsruntimes
       - juicefsruntimes
       - thinruntimes
       - efcruntimes
@@ -22,7 +21,6 @@ rules:
       - vineyardruntimes
       - alluxioruntimes/status
       - jindoruntimes/status
-      - goosefsruntimes/status
       - juicefsruntimes/status
       - thinruntimes/status
       - efcruntimes/status
