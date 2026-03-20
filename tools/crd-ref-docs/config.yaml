@@ -1,0 +1,14 @@
+processor:
+  ignoreTypes:
+    - "List$"
+  ignoreFields:
+    - "status$"
+    - "TypeMeta$"
+    - "volumeSource"
+
+render:
+  kubernetesVersion: "1.35"
+  knownTypes:
+    - name: VolumeSource
+      package: k8s.io/api/core/v1
+      link: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#volume-v1-core
