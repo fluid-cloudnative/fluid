@@ -15,7 +15,6 @@ function build_images() {
         ${IMG_REPO}/application-controller:${IMAGE_TAG}
         ${IMG_REPO}/alluxioruntime-controller:${IMAGE_TAG}
         ${IMG_REPO}/jindoruntime-controller:${IMAGE_TAG}
-        ${IMG_REPO}/goosefsruntime-controller:${IMAGE_TAG}
         ${IMG_REPO}/juicefsruntime-controller:${IMAGE_TAG}
         ${IMG_REPO}/thinruntime-controller:${IMAGE_TAG}
         ${IMG_REPO}/efcruntime-controller:${IMAGE_TAG}

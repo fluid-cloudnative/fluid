@@ -167,23 +167,6 @@ var _ = Describe("ScriptGeneratorHelper", func() {
 				Expect(key.Namespace).To(Equal("ns"))
 			})
 		})
-
-		Context("mixed case runtime type", func() {
-			It("should return correct configmap key", func() {
-				helper := &scriptGeneratorHelper{
-					configMapName: "my-config",
-				}
-				datasetKey := types.NamespacedName{
-					Name:      "test",
-					Namespace: "test-ns",
-				}
-
-				key := helper.GetNamespacedConfigMapKey(datasetKey, "GooseFS")
-
-				Expect(key.Name).To(Equal("goosefs-my-config"))
-				Expect(key.Namespace).To(Equal("test-ns"))
-			})
-		})
 	})
 
 	Describe("GetVolume", func() {

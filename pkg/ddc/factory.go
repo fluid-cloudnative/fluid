@@ -20,7 +20,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/efc"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/goosefs"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindocache"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindofsx"
@@ -43,7 +42,6 @@ func init() {
 		common.JindoFSEngineImpl:    jindo.Build,
 		common.JindoFSxEngineImpl:   jindofsx.Build,
 		common.JindoCacheEngineImpl: jindocache.Build,
-		common.GooseFSEngineImpl:    goosefs.Build,
 		common.JuiceFSEngineImpl:    juicefs.Build,
 		common.ThinEngineImpl:       thin.Build,
 		common.EFCEngineImpl:        efc.Build,
