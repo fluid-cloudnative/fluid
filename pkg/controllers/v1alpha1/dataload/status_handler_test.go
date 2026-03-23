@@ -40,6 +40,7 @@ const (
 	dataLoadName     = "test-dataload"
 	loaderJobName    = "test-dataload-loader-job"
 	targetDataset    = "hadoop"
+	nodeName         = "node-1"
 )
 
 var _ = Describe("OnceStatusHandler", func() {
@@ -77,7 +78,7 @@ var _ = Describe("OnceStatusHandler", func() {
 							MatchExpressions: []corev1.NodeSelectorRequirement{{
 								Key:      "kubernetes.io/hostname",
 								Operator: corev1.NodeSelectorOpIn,
-								Values:   []string{"node-1"},
+								Values:   []string{nodeName},
 							}},
 						}},
 					},
@@ -144,7 +145,7 @@ var _ = Describe("OnceStatusHandler", func() {
 				Namespace: defaultNamespace,
 				Annotations: map[string]string{
 					common.AnnotationDataFlowAffinityInject:                                        "true",
-					common.AnnotationDataFlowCustomizedAffinityPrefix + common.K8sNodeNameLabelKey: "node-1",
+					common.AnnotationDataFlowCustomizedAffinityPrefix + common.K8sNodeNameLabelKey: nodeName,
 				},
 			},
 			Status: batchv1.JobStatus{
@@ -173,7 +174,7 @@ var _ = Describe("OnceStatusHandler", func() {
 		expression := opStatus.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions[0]
 		Expect(expression.Key).To(Equal(common.K8sNodeNameLabelKey))
 		Expect(expression.Operator).To(Equal(corev1.NodeSelectorOpIn))
-		Expect(expression.Values).To(Equal([]string{"node-1"}))
+		Expect(expression.Values).To(Equal([]string{nodeName}))
 	})
 
 	It("GetOperationStatus returns current status when job is still running (no finished condition)", func() {
