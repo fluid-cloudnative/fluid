@@ -23,6 +23,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -54,6 +55,25 @@ var _ = Describe("OnceStatusHandler", func() {
 				Dataset: v1alpha1.TargetDataset{
 					Name:      "hadoop",
 					Namespace: "default",
+				},
+			},
+			Status: v1alpha1.OperationStatus{
+				Phase:    common.PhasePending,
+				Duration: "3s",
+				Conditions: []v1alpha1.Condition{{
+					Type:   common.Complete,
+					Status: corev1.ConditionTrue,
+				}},
+				NodeAffinity: &corev1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+						NodeSelectorTerms: []corev1.NodeSelectorTerm{{
+							MatchExpressions: []corev1.NodeSelectorRequirement{{
+								Key:      "kubernetes.io/hostname",
+								Operator: corev1.NodeSelectorOpIn,
+								Values:   []string{"node-1"},
+							}},
+						}},
+					},
 				},
 			},
 		}
@@ -118,8 +138,10 @@ var _ = Describe("OnceStatusHandler", func() {
 
 		opStatus, err := handler.GetOperationStatus(ctx, &mockDataload.Status)
 		Expect(err).NotTo(HaveOccurred())
-		// when job is still running, status is returned as-is (no phase change)
+		// when job is still running, status is returned as an unchanged DeepCopy
 		Expect(opStatus).NotTo(BeNil())
+		Expect(opStatus).NotTo(BeIdenticalTo(&mockDataload.Status))
+		Expect(*opStatus).To(Equal(mockDataload.Status))
 	})
 })
 
