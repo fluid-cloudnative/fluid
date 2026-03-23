@@ -39,7 +39,9 @@ import (
 
 func newTestDataLoadOperation(dataLoad *datav1alpha1.DataLoad, objs ...runtime.Object) *dataLoadOperation {
 	testScheme := runtime.NewScheme()
-	_ = datav1alpha1.AddToScheme(testScheme)
+	if err := datav1alpha1.AddToScheme(testScheme); err != nil {
+		panic(err)
+	}
 	allObjs := append([]runtime.Object{dataLoad}, objs...)
 	c := fake.NewFakeClientWithScheme(testScheme, allObjs...)
 	return &dataLoadOperation{
@@ -274,7 +276,7 @@ var _ = Describe("DataLoadReconciler", func() {
 	Describe("Build", func() {
 		It("returns dataLoadOperation for a DataLoad object", func() {
 			testScheme := runtime.NewScheme()
-			_ = datav1alpha1.AddToScheme(testScheme)
+			Expect(datav1alpha1.AddToScheme(testScheme)).To(Succeed())
 			c := fake.NewFakeClientWithScheme(testScheme)
 			r := NewDataLoadReconciler(c, fake.NullLogger(), testScheme, record.NewFakeRecorder(32))
 
@@ -309,7 +311,7 @@ var _ = Describe("DataLoadReconciler", func() {
 	Describe("Reconcile", func() {
 		It("returns no-requeue when DataLoad not found", func() {
 			testScheme := runtime.NewScheme()
-			_ = datav1alpha1.AddToScheme(testScheme)
+			Expect(datav1alpha1.AddToScheme(testScheme)).To(Succeed())
 			c := fake.NewFakeClientWithScheme(testScheme)
 			r := NewDataLoadReconciler(c, fake.NullLogger(), testScheme, record.NewFakeRecorder(32))
 

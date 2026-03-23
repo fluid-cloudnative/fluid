@@ -135,13 +135,14 @@ var _ = Describe("OnceStatusHandler", func() {
 			NamespacedName: types.NamespacedName{Namespace: "default", Name: ""},
 			Log:            fake.NullLogger(),
 		}
+		originalStatus := mockDataload.Status.DeepCopy()
 
 		opStatus, err := handler.GetOperationStatus(ctx, &mockDataload.Status)
 		Expect(err).NotTo(HaveOccurred())
 		// when job is still running, status is returned as an unchanged DeepCopy
 		Expect(opStatus).NotTo(BeNil())
 		Expect(opStatus).NotTo(BeIdenticalTo(&mockDataload.Status))
-		Expect(*opStatus).To(Equal(mockDataload.Status))
+		Expect(*opStatus).To(Equal(*originalStatus))
 	})
 })
 
