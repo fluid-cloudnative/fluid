@@ -87,7 +87,7 @@ var _ = Describe("OnceStatusHandler", func() {
 	})
 
 	DescribeTable("GetOperationStatus",
-		func(job batchv1.Job, expectedPhase common.Phase) {
+		func(job batchv1.Job, expectedPhase common.Phase, expectedConditionType common.ConditionType) {
 			client := fake.NewFakeClientWithScheme(testScheme, &mockDataload, &job)
 			handler := &OnceStatusHandler{Client: client, dataLoad: &mockDataload}
 			ctx := cruntime.ReconcileRequestContext{
@@ -98,6 +98,9 @@ var _ = Describe("OnceStatusHandler", func() {
 			opStatus, err := handler.GetOperationStatus(ctx, &mockDataload.Status)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(opStatus.Phase).To(Equal(expectedPhase))
+			Expect(opStatus.Conditions).To(HaveLen(1))
+			Expect(opStatus.Conditions[0].Type).To(Equal(expectedConditionType))
+			Expect(opStatus.Duration).NotTo(BeEmpty())
 		},
 		Entry("job success yields PhaseComplete",
 			batchv1.Job{
@@ -113,6 +116,7 @@ var _ = Describe("OnceStatusHandler", func() {
 				},
 			},
 			common.PhaseComplete,
+			common.Complete,
 		),
 		Entry("job failed yields PhaseFailed",
 			batchv1.Job{
@@ -128,8 +132,49 @@ var _ = Describe("OnceStatusHandler", func() {
 				},
 			},
 			common.PhaseFailed,
+			common.Failed,
 		),
 	)
+
+	It("generates NodeAffinity when completed job injects affinity and current status has none", func() {
+		mockDataload.Status.NodeAffinity = nil
+		completedJob := batchv1.Job{
+			ObjectMeta: v1.ObjectMeta{
+				Name:      loaderJobName,
+				Namespace: defaultNamespace,
+				Annotations: map[string]string{
+					common.AnnotationDataFlowAffinityInject:                                        "true",
+					common.AnnotationDataFlowCustomizedAffinityPrefix + common.K8sNodeNameLabelKey: "node-1",
+				},
+			},
+			Status: batchv1.JobStatus{
+				Conditions: []batchv1.JobCondition{{
+					Type:               batchv1.JobComplete,
+					Status:             corev1.ConditionTrue,
+					LastProbeTime:      v1.NewTime(time.Now()),
+					LastTransitionTime: v1.NewTime(time.Now()),
+				}},
+			},
+		}
+		client := fake.NewFakeClientWithScheme(testScheme, &mockDataload, &completedJob)
+		handler := &OnceStatusHandler{Client: client, dataLoad: &mockDataload}
+		ctx := cruntime.ReconcileRequestContext{
+			NamespacedName: types.NamespacedName{Namespace: defaultNamespace, Name: ""},
+			Log:            fake.NullLogger(),
+		}
+
+		opStatus, err := handler.GetOperationStatus(ctx, &mockDataload.Status)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(opStatus.Phase).To(Equal(common.PhaseComplete))
+		Expect(opStatus.NodeAffinity).NotTo(BeNil())
+		Expect(opStatus.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution).NotTo(BeNil())
+		Expect(opStatus.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms).To(HaveLen(1))
+		Expect(opStatus.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions).To(HaveLen(1))
+		expression := opStatus.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions[0]
+		Expect(expression.Key).To(Equal(common.K8sNodeNameLabelKey))
+		Expect(expression.Operator).To(Equal(corev1.NodeSelectorOpIn))
+		Expect(expression.Values).To(Equal([]string{"node-1"}))
+	})
 
 	It("GetOperationStatus returns current status when job is still running (no finished condition)", func() {
 		runningJob := batchv1.Job{
