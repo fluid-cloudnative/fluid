@@ -25,6 +25,13 @@ import (
 )
 
 var _ = Describe("IsTargetPathUnderFluidNativeMounts", func() {
+	const (
+		datasetName    = "imagenet"
+		imageNetPath   = "/imagenet"
+		pvcMountPoint  = "pvc://nfs-imagenet"
+		emptyMountPath = ""
+	)
+
 	mockDataset := func(name, mountPoint, path string) v1alpha1.Dataset {
 		return v1alpha1.Dataset{
 			Spec: v1alpha1.DatasetSpec{
@@ -45,33 +52,33 @@ var _ = Describe("IsTargetPathUnderFluidNativeMounts", func() {
 			Expect(got).To(Equal(want))
 		},
 		Entry("non-fluid-native OSS mount returns false",
-			"/imagenet",
-			mockDataset("imagenet", "oss://imagenet-data/", ""),
+			imageNetPath,
+			mockDataset(datasetName, "oss://imagenet-data/", emptyMountPath),
 			false,
 		),
 		Entry("PVC mount returns true",
-			"/imagenet",
-			mockDataset("imagenet", "pvc://nfs-imagenet", ""),
+			imageNetPath,
+			mockDataset(datasetName, pvcMountPoint, emptyMountPath),
 			true,
 		),
 		Entry("hostpath mount returns true",
-			"/imagenet",
-			mockDataset("imagenet", "local:///hostpath_imagenet", ""),
+			imageNetPath,
+			mockDataset(datasetName, "local:///hostpath_imagenet", emptyMountPath),
 			true,
 		),
 		Entry("target subpath under PVC mount returns true",
 			"/imagenet/data/train",
-			mockDataset("imagenet", "pvc://nfs-imagenet", ""),
+			mockDataset(datasetName, pvcMountPoint, emptyMountPath),
 			true,
 		),
 		Entry("target path under mount path returns true",
 			"/dataset/data/train",
-			mockDataset("imagenet", "pvc://nfs-imagenet", "/dataset"),
+			mockDataset(datasetName, pvcMountPoint, "/dataset"),
 			true,
 		),
 		Entry("non-matching path returns false",
 			"/dataset",
-			mockDataset("imagenet", "pvc://nfs-imagenet", ""),
+			mockDataset(datasetName, pvcMountPoint, emptyMountPath),
 			false,
 		),
 	)

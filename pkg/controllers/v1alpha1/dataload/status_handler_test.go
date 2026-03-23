@@ -35,6 +35,13 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
+const (
+	defaultNamespace = "default"
+	dataLoadName     = "test-dataload"
+	loaderJobName    = "test-dataload-loader-job"
+	targetDataset    = "hadoop"
+)
+
 var _ = Describe("OnceStatusHandler", func() {
 	var (
 		testScheme   *runtime.Scheme
@@ -48,13 +55,13 @@ var _ = Describe("OnceStatusHandler", func() {
 
 		mockDataload = v1alpha1.DataLoad{
 			ObjectMeta: v1.ObjectMeta{
-				Name:      "test-dataload",
-				Namespace: "default",
+				Name:      dataLoadName,
+				Namespace: defaultNamespace,
 			},
 			Spec: v1alpha1.DataLoadSpec{
 				Dataset: v1alpha1.TargetDataset{
-					Name:      "hadoop",
-					Namespace: "default",
+					Name:      targetDataset,
+					Namespace: defaultNamespace,
 				},
 			},
 			Status: v1alpha1.OperationStatus{
@@ -84,7 +91,7 @@ var _ = Describe("OnceStatusHandler", func() {
 			client := fake.NewFakeClientWithScheme(testScheme, &mockDataload, &job)
 			handler := &OnceStatusHandler{Client: client, dataLoad: &mockDataload}
 			ctx := cruntime.ReconcileRequestContext{
-				NamespacedName: types.NamespacedName{Namespace: "default", Name: ""},
+				NamespacedName: types.NamespacedName{Namespace: defaultNamespace, Name: ""},
 				Log:            fake.NullLogger(),
 			}
 
@@ -94,7 +101,7 @@ var _ = Describe("OnceStatusHandler", func() {
 		},
 		Entry("job success yields PhaseComplete",
 			batchv1.Job{
-				ObjectMeta: v1.ObjectMeta{Name: "test-dataload-loader-job", Namespace: "default"},
+				ObjectMeta: v1.ObjectMeta{Name: loaderJobName, Namespace: defaultNamespace},
 				Status: batchv1.JobStatus{
 					Conditions: []batchv1.JobCondition{
 						{
@@ -109,7 +116,7 @@ var _ = Describe("OnceStatusHandler", func() {
 		),
 		Entry("job failed yields PhaseFailed",
 			batchv1.Job{
-				ObjectMeta: v1.ObjectMeta{Name: "test-dataload-loader-job", Namespace: "default"},
+				ObjectMeta: v1.ObjectMeta{Name: loaderJobName, Namespace: defaultNamespace},
 				Status: batchv1.JobStatus{
 					Conditions: []batchv1.JobCondition{
 						{
@@ -126,13 +133,13 @@ var _ = Describe("OnceStatusHandler", func() {
 
 	It("GetOperationStatus returns current status when job is still running (no finished condition)", func() {
 		runningJob := batchv1.Job{
-			ObjectMeta: v1.ObjectMeta{Name: "test-dataload-loader-job", Namespace: "default"},
+			ObjectMeta: v1.ObjectMeta{Name: loaderJobName, Namespace: defaultNamespace},
 			Status:     batchv1.JobStatus{}, // no conditions = still running
 		}
 		client := fake.NewFakeClientWithScheme(testScheme, &mockDataload, &runningJob)
 		handler := &OnceStatusHandler{Client: client, dataLoad: &mockDataload}
 		ctx := cruntime.ReconcileRequestContext{
-			NamespacedName: types.NamespacedName{Namespace: "default", Name: ""},
+			NamespacedName: types.NamespacedName{Namespace: defaultNamespace, Name: ""},
 			Log:            fake.NullLogger(),
 		}
 		originalStatus := mockDataload.Status.DeepCopy()
@@ -166,9 +173,9 @@ var _ = Describe("CronStatusHandler", func() {
 		lastSuccessfulTime = v1.NewTime(startTime.Add(time.Second * 10))
 
 		mockCronDataload = v1alpha1.DataLoad{
-			ObjectMeta: v1.ObjectMeta{Name: "test-dataload", Namespace: "default"},
+			ObjectMeta: v1.ObjectMeta{Name: dataLoadName, Namespace: defaultNamespace},
 			Spec: v1alpha1.DataLoadSpec{
-				Dataset:  v1alpha1.TargetDataset{Name: "hadoop", Namespace: "default"},
+				Dataset:  v1alpha1.TargetDataset{Name: targetDataset, Namespace: defaultNamespace},
 				Policy:   "Cron",
 				Schedule: "* * * * *",
 			},
@@ -178,7 +185,7 @@ var _ = Describe("CronStatusHandler", func() {
 		}
 
 		mockCronJob = batchv1.CronJob{
-			ObjectMeta: v1.ObjectMeta{Name: "test-dataload-loader-job", Namespace: "default"},
+			ObjectMeta: v1.ObjectMeta{Name: loaderJobName, Namespace: defaultNamespace},
 			Spec:       batchv1.CronJobSpec{Schedule: "* * * * *"},
 			Status: batchv1.CronJobStatus{
 				LastScheduleTime:   &lastScheduleTime,
@@ -200,8 +207,8 @@ var _ = Describe("CronStatusHandler", func() {
 		job := batchv1.Job{
 			ObjectMeta: v1.ObjectMeta{
 				Name:              "test-dataload-loader-job-1",
-				Namespace:         "default",
-				Labels:            map[string]string{"cronjob": "test-dataload-loader-job"},
+				Namespace:         defaultNamespace,
+				Labels:            map[string]string{"cronjob": loaderJobName},
 				CreationTimestamp: lastScheduleTime,
 			},
 			Status: batchv1.JobStatus{
@@ -229,8 +236,8 @@ var _ = Describe("CronStatusHandler", func() {
 		job := batchv1.Job{
 			ObjectMeta: v1.ObjectMeta{
 				Name:              "test-dataload-loader-job-1",
-				Namespace:         "default",
-				Labels:            map[string]string{"cronjob": "test-dataload-loader-job"},
+				Namespace:         defaultNamespace,
+				Labels:            map[string]string{"cronjob": loaderJobName},
 				CreationTimestamp: lastScheduleTime,
 			},
 			Status: batchv1.JobStatus{},
@@ -265,7 +272,7 @@ var _ = Describe("OnEventStatusHandler", func() {
 		testScheme := runtime.NewScheme()
 		Expect(v1alpha1.AddToScheme(testScheme)).To(Succeed())
 		dataload := &v1alpha1.DataLoad{
-			ObjectMeta: v1.ObjectMeta{Name: "test-dataload", Namespace: "default"},
+			ObjectMeta: v1.ObjectMeta{Name: dataLoadName, Namespace: defaultNamespace},
 		}
 		c := fake.NewFakeClientWithScheme(testScheme, dataload)
 		handler := &OnEventStatusHandler{Client: c, dataLoad: dataload}
