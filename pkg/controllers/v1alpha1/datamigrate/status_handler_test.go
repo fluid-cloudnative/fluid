@@ -17,6 +17,7 @@ limitations under the License.
 package datamigrate
 
 import (
+	"context"
 	"time"
 
 	"github.com/agiledragon/gomonkey/v2"
@@ -147,12 +148,12 @@ var _ = Describe("OnceStatusHandler", func() {
 
 			opStatus, err := handler.GetOperationStatus(ctx, &mockDataMigrate.Status)
 
-			// job still running; GetOperationStatus returns nil result (early return)
+			// job still running; GetOperationStatus returns a deep-copied status without modification
 			Expect(err).NotTo(HaveOccurred())
 			Expect(opStatus).NotTo(BeNil())
 		})
 
-		It("should return PhaseComplete and set NodeAffinity for single-parallelism succeed job", func() {
+		It("should return PhaseComplete for single-parallelism succeed job", func() {
 			parallelism1DataMigrate := v1alpha1.DataMigrate{
 				ObjectMeta: v1.ObjectMeta{
 					Name:      "test",
@@ -469,7 +470,7 @@ var _ = Describe("CronStatusHandler", func() {
 			Expect(*updatedSts.Spec.Replicas).To(Equal(defaultStsReplicas))
 		})
 
-		It("should return PhasePending and scale StatefulSet when job starts with suspend=true", func() {
+		It("should return PhasePending, scale StatefulSet, and unsuspend job when job starts with suspend=true", func() {
 			trueFlag := true
 			job := batchv1.Job{
 				ObjectMeta: v1.ObjectMeta{
@@ -494,6 +495,10 @@ var _ = Describe("CronStatusHandler", func() {
 				},
 			}
 
+			// Start StatefulSet at 0 replicas so ScaleStatefulSet has an observable effect
+			zeroReplicas := int32(0)
+			sts.Spec.Replicas = &zeroReplicas
+
 			fakeClient := fake.NewFakeClientWithScheme(parallelScheme, &parallelDataMigrate, &parallelCronJob, &job, &sts)
 			handler := &CronStatusHandler{Client: fakeClient, dataMigrate: &parallelDataMigrate}
 			ctx := cruntime.ReconcileRequestContext{Log: fake.NullLogger()}
@@ -505,9 +510,18 @@ var _ = Describe("CronStatusHandler", func() {
 			Expect(opStatus.LastSuccessfulTime).To(Equal(&lastSuccessfulTime))
 			Expect(opStatus.Phase).To(Equal(common.PhasePending))
 
+			// Verify StatefulSet was scaled up to Parallelism-1
 			updatedSts, err := kubeclient.GetStatefulSet(fakeClient, sts.Name, sts.Namespace)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(*updatedSts.Spec.Replicas).To(Equal(defaultStsReplicas))
+
+			// Verify job was unsuspended
+			updatedJob := &batchv1.Job{}
+			Expect(fakeClient.Get(context.TODO(), types.NamespacedName{
+				Name:      job.Name,
+				Namespace: job.Namespace,
+			}, updatedJob)).To(Succeed())
+			Expect(*updatedJob.Spec.Suspend).To(BeFalse())
 		})
 	})
 })
