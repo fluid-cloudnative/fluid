@@ -189,6 +189,15 @@ func BuildRuntimeInfo(name string,
 
 type RuntimeInfoOption func(info *RuntimeInfo) error
 
+// GetMetadataListFromAnnotation retrieves the metadata list from the annotations of an object.
+// This function is primarily responsible for extracting the "data.fluid.io/metadataList" annotation,
+// unmarshaling it into a slice of Metadata structs, and returning the result.
+//
+// Parameters:
+// - accessor (metav1.ObjectMetaAccessor): An accessor to retrieve the object's metadata annotations.
+//
+// Returns:
+// - ret ([]datav1alpha1.Metadata): Returns the unmarshaled metadata list if successful, otherwise an empty slice.
 func GetMetadataListFromAnnotation(accessor metav1.ObjectMetaAccessor) (ret []datav1alpha1.Metadata) {
 	annotations := accessor.GetObjectMeta().GetAnnotations()
 	if annotations == nil {
