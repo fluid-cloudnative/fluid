@@ -118,6 +118,9 @@ func (t *TemplateEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) 
 	return t.Implement.SyncScheduleInfoToCacheNodes()
 }
 
+// setTimeOfLastSync updates the synchronization timestamp for the TemplateEngine.
+// This function sets the internal timeOfLastSync field to the current time and 
+// logs the updated time value for tracking purposes.
 func (t *TemplateEngine) setTimeOfLastSync() {
 	t.timeOfLastSync = time.Now()
 	t.Log.V(1).Info("Set timeOfLastSync", "timeOfLastSync", t.timeOfLastSync)
