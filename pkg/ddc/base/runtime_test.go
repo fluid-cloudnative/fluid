@@ -217,7 +217,6 @@ var _ = Describe("CleanPolicy", func() {
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.AlluxioRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JindoRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JuiceFSRuntime{})
-	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.GooseFSRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.Dataset{})
 
 	// Test Alluxio Runtime
@@ -484,94 +483,6 @@ var _ = Describe("CleanPolicy", func() {
 	juiceRuntimeObjs = append(juiceRuntimeObjs, &juiceRuntimeOnDemandCleanPolicy, &dataJuiceOnDemandCleanPolicy)
 	juiceRuntimeObjs = append(juiceRuntimeObjs, &juiceRuntimeOnRuntimeDeletedCleanPolicy, &dataJuiceOnRuntimeDeletedCleanPolicy)
 
-	// Test GooseFs Runtime
-	goosefsRuntimeDefaultCleanPolicy := v1alpha1.GooseFSRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "default_policy_goosefs",
-			Namespace: "default",
-		},
-		Spec: v1alpha1.GooseFSRuntimeSpec{
-			Fuse: v1alpha1.GooseFSFuseSpec{},
-		},
-	}
-
-	dataGooseFSDefaultCleanPolicy := v1alpha1.Dataset{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "default_policy_goosefs",
-			Namespace: "default",
-		},
-		Status: v1alpha1.DatasetStatus{
-			Runtimes: []v1alpha1.Runtime{
-				{
-					Name:      "default_policy_goosefs",
-					Namespace: "default",
-					Type:      common.GooseFSRuntime,
-				},
-			},
-		},
-	}
-
-	goosefsRuntimeOnDemandCleanPolicy := v1alpha1.GooseFSRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "on_demand_policy_goosefs",
-			Namespace: "default",
-		},
-		Spec: v1alpha1.GooseFSRuntimeSpec{
-			Fuse: v1alpha1.GooseFSFuseSpec{
-				CleanPolicy: v1alpha1.OnDemandCleanPolicy,
-			},
-		},
-	}
-
-	dataGooseFSOnDemandCleanPolicy := v1alpha1.Dataset{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "on_demand_policy_goosefs",
-			Namespace: "default",
-		},
-		Status: v1alpha1.DatasetStatus{
-			Runtimes: []v1alpha1.Runtime{
-				{
-					Name:      "on_demand_policy_goosefs",
-					Namespace: "default",
-					Type:      common.GooseFSRuntime,
-				},
-			},
-		},
-	}
-
-	goosefsRuntimeOnRuntimeDeletedCleanPolicy := v1alpha1.GooseFSRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "on_runtime_deleted_policy_goosefs",
-			Namespace: "default",
-		},
-		Spec: v1alpha1.GooseFSRuntimeSpec{
-			Fuse: v1alpha1.GooseFSFuseSpec{
-				CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
-			},
-		},
-	}
-
-	dataGooseFSOnRuntimeDeletedCleanPolicy := v1alpha1.Dataset{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "on_runtime_deleted_policy_goosefs",
-			Namespace: "default",
-		},
-		Status: v1alpha1.DatasetStatus{
-			Runtimes: []v1alpha1.Runtime{
-				{
-					Name:      "on_runtime_deleted_policy_goosefs",
-					Namespace: "default",
-					Type:      common.GooseFSRuntime,
-				},
-			},
-		},
-	}
-
-	goosefsRuntimeObjs := []runtime.Object{}
-	goosefsRuntimeObjs = append(goosefsRuntimeObjs, &goosefsRuntimeDefaultCleanPolicy, &dataGooseFSDefaultCleanPolicy)
-	goosefsRuntimeObjs = append(goosefsRuntimeObjs, &goosefsRuntimeOnDemandCleanPolicy, &dataGooseFSOnDemandCleanPolicy)
-	goosefsRuntimeObjs = append(goosefsRuntimeObjs, &goosefsRuntimeOnRuntimeDeletedCleanPolicy, &dataGooseFSOnRuntimeDeletedCleanPolicy)
-
 	type args struct {
 		client    client.Client
 		name      string
@@ -736,57 +647,6 @@ var _ = Describe("CleanPolicy", func() {
 			},
 			wantErr: false,
 		},
-		{
-			name: "default_test_goosefs",
-			args: args{
-				client:    fakeutils.NewFakeClientWithScheme(s, goosefsRuntimeObjs...),
-				name:      "default_policy_goosefs",
-				namespace: "default",
-			},
-			want: &RuntimeInfo{
-				name:        "default_policy_goosefs",
-				namespace:   "default",
-				runtimeType: common.GooseFSRuntime,
-				fuse: Fuse{
-					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "on_demand_test_goosefs",
-			args: args{
-				client:    fakeutils.NewFakeClientWithScheme(s, goosefsRuntimeObjs...),
-				name:      "on_demand_policy_goosefs",
-				namespace: "default",
-			},
-			want: &RuntimeInfo{
-				name:        "on_demand_policy_goosefs",
-				namespace:   "default",
-				runtimeType: common.GooseFSRuntime,
-				fuse: Fuse{
-					CleanPolicy: v1alpha1.OnDemandCleanPolicy,
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "on_runtime_deleted_test-goosefs",
-			args: args{
-				client:    fakeutils.NewFakeClientWithScheme(s, goosefsRuntimeObjs...),
-				name:      "on_runtime_deleted_policy_goosefs",
-				namespace: "default",
-			},
-			want: &RuntimeInfo{
-				name:        "on_runtime_deleted_policy_goosefs",
-				namespace:   "default",
-				runtimeType: common.GooseFSRuntime,
-				fuse: Fuse{
-					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
-				},
-			},
-			wantErr: false,
-		},
 	}
 
 	for _, tt := range tests {
@@ -824,29 +684,6 @@ var _ = Describe("GetRuntimeInfo", func() {
 					Name:      "alluxio",
 					Namespace: "default",
 					Type:      common.AlluxioRuntime,
-				},
-			},
-		},
-	}
-
-	goosefsRuntime := v1alpha1.GooseFSRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "goosefs",
-			Namespace: "default",
-		},
-	}
-
-	dataGooseFS := v1alpha1.Dataset{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "goosefs",
-			Namespace: "default",
-		},
-		Status: v1alpha1.DatasetStatus{
-			Runtimes: []v1alpha1.Runtime{
-				{
-					Name:      "goosefs",
-					Namespace: "default",
-					Type:      common.GooseFSRuntime,
 				},
 			},
 		},
@@ -949,20 +786,17 @@ var _ = Describe("GetRuntimeInfo", func() {
 		},
 	}
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.AlluxioRuntime{})
-	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.GooseFSRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JindoRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JuiceFSRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.EFCRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.Dataset{})
 	_ = v1.AddToScheme(s)
 	alluxioRuntimeObjs := []runtime.Object{}
-	goosefsRuntimeObjs := []runtime.Object{}
 	jindoRuntimeObjs := []runtime.Object{}
 	juicefsRuntimeObjs := []runtime.Object{}
 	efcRuntimeObjs := []runtime.Object{}
 
 	alluxioRuntimeObjs = append(alluxioRuntimeObjs, &alluxioRuntime, &dataAlluxio)
-	goosefsRuntimeObjs = append(goosefsRuntimeObjs, &goosefsRuntime, &dataGooseFS)
 	jindoRuntimeObjs = append(jindoRuntimeObjs, &jindoRuntime, &dataJindo)
 	for _, jfsRuntime := range juicefsRuntimes {
 		juicefsRuntimeObjs = append(juicefsRuntimeObjs, &jfsRuntime)
@@ -998,40 +832,6 @@ var _ = Describe("GetRuntimeInfo", func() {
 				},
 			},
 			wantErr: false,
-		},
-		{
-			name: "goosefs_test",
-			args: args{
-				client:    fakeutils.NewFakeClientWithScheme(s, goosefsRuntimeObjs...),
-				name:      "goosefs",
-				namespace: "default",
-			},
-			want: &RuntimeInfo{
-				name:        "goosefs",
-				namespace:   "default",
-				runtimeType: common.GooseFSRuntime,
-				fuse: Fuse{
-					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "goosefs_test_fake",
-			args: args{
-				client:    fakeutils.NewFakeClientWithScheme(s, goosefsRuntimeObjs...),
-				name:      "goosefs-fake",
-				namespace: "default",
-			},
-			want: &RuntimeInfo{
-				name:        "goosefs-fake",
-				namespace:   "default",
-				runtimeType: common.GooseFSRuntime,
-				fuse: Fuse{
-					CleanPolicy: v1alpha1.OnDemandCleanPolicy,
-				},
-			},
-			wantErr: true,
 		},
 		{
 			name: "jindo_test",
@@ -1170,13 +970,6 @@ var _ = Describe("GetRuntimeStatus", func() {
 		},
 	}
 
-	goosefsRuntime := v1alpha1.GooseFSRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "goosefs",
-			Namespace: "default",
-		},
-	}
-
 	jindoRuntime := v1alpha1.JindoRuntime{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "jindo",
@@ -1206,7 +999,6 @@ var _ = Describe("GetRuntimeStatus", func() {
 	}
 
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.AlluxioRuntime{})
-	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.GooseFSRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JindoRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JuiceFSRuntime{})
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.EFCRuntime{})
@@ -1215,14 +1007,12 @@ var _ = Describe("GetRuntimeStatus", func() {
 
 	_ = v1.AddToScheme(s)
 	alluxioRuntimeObjs := []runtime.Object{}
-	goosefsRuntimeObjs := []runtime.Object{}
 	jindoRuntimeObjs := []runtime.Object{}
 	juicefsRuntimeObjs := []runtime.Object{}
 	efcRuntimeObjs := []runtime.Object{}
 	thinRuntimeObjs := []runtime.Object{}
 
 	alluxioRuntimeObjs = append(alluxioRuntimeObjs, &alluxioRuntime)
-	goosefsRuntimeObjs = append(goosefsRuntimeObjs, &goosefsRuntime)
 	jindoRuntimeObjs = append(jindoRuntimeObjs, &jindoRuntime)
 	juicefsRuntimeObjs = append(juicefsRuntimeObjs, &juicefsRuntime)
 	efcRuntimeObjs = append(efcRuntimeObjs, &efcRuntime)
@@ -1255,26 +1045,6 @@ var _ = Describe("GetRuntimeStatus", func() {
 				name:        "alluxio-error",
 				namespace:   "default",
 				runtimeType: common.AlluxioRuntime,
-			},
-			wantErr: true,
-		},
-		{
-			name: "goosefs_test",
-			args: args{
-				client:      fakeutils.NewFakeClientWithScheme(s, goosefsRuntimeObjs...),
-				name:        "goosefs",
-				namespace:   "default",
-				runtimeType: common.GooseFSRuntime,
-			},
-			wantErr: false,
-		},
-		{
-			name: "goosefs_test_error",
-			args: args{
-				client:      fakeutils.NewFakeClientWithScheme(s, goosefsRuntimeObjs...),
-				name:        "goosefs-error",
-				namespace:   "default",
-				runtimeType: common.GooseFSRuntime,
 			},
 			wantErr: true,
 		},

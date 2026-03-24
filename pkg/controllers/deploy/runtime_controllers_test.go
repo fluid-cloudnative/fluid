@@ -27,7 +27,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/efc"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/goosefs"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindofsx"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/thin"
@@ -94,8 +93,6 @@ var _ = Describe("runtime controller scaleout", func() {
 			},
 			Entry("defaults zero replicas to one when no annotation exists",
 				newDeployment("unknown-controller", 0, nil), true, int32(1)),
-			Entry("uses the configured replica annotation when it is greater than one",
-				newDeployment("goosefsruntime-controller", 0, map[string]string{common.RuntimeControllerReplicas: "3"}), true, int32(3)),
 			Entry("enforces a minimum of one replica when annotation is zero",
 				newDeployment("juicefsruntime-controller", 0, map[string]string{common.RuntimeControllerReplicas: "0"}), true, int32(1)),
 			Entry("leaves already running controllers unchanged",
@@ -242,7 +239,6 @@ func controllerDeployments() []runtime.Object {
 		newDeployment("alluxioruntime-controller", 0, nil),
 		newDeployment("jindoruntime-controller", 1, nil),
 		newDeployment("juicefsruntime-controller", 0, map[string]string{common.RuntimeControllerReplicas: "0"}),
-		newDeployment("goosefsruntime-controller", 0, map[string]string{common.RuntimeControllerReplicas: "3"}),
 		newDeployment("unknown-controller", 0, nil),
 	}
 }
@@ -250,7 +246,6 @@ func controllerDeployments() []runtime.Object {
 func runtimeObjects() []runtime.Object {
 	return []runtime.Object{
 		&datav1alpha1.AlluxioRuntime{ObjectMeta: metav1.ObjectMeta{Name: "alluxio", Namespace: corev1.NamespaceDefault}},
-		&datav1alpha1.GooseFSRuntime{ObjectMeta: metav1.ObjectMeta{Name: "goosefs", Namespace: corev1.NamespaceDefault}},
 		&datav1alpha1.JindoRuntime{ObjectMeta: metav1.ObjectMeta{Name: "jindo", Namespace: corev1.NamespaceDefault}},
 		&datav1alpha1.JuiceFSRuntime{ObjectMeta: metav1.ObjectMeta{Name: "juicefs", Namespace: corev1.NamespaceDefault}},
 	}
@@ -261,7 +256,6 @@ func runtimePrecheckFuncs() map[string]CheckFunc {
 		"alluxioruntime-controller":  alluxio.Precheck,
 		"jindoruntime-controller":    jindofsx.Precheck,
 		"juicefsruntime-controller":  juicefs.Precheck,
-		"goosefsruntime-controller":  goosefs.Precheck,
 		"thinruntime-controller":     thin.Precheck,
 		"efcruntime-controller":      efc.Precheck,
 		"vineyardruntime-controller": vineyard.Precheck,

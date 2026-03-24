@@ -40,15 +40,15 @@ import (
 
 var (
 	// datavolume-, volume-localtime for JindoFS
-	// mem, ssd, hdd for Alluxio and GooseFS
+	// mem, ssd, hdd for Alluxio
 	// cache-dir for JuiceFS
 	cacheDirNames = []string{"datavolume-", "volume-localtime", "cache-dir", "mem", "ssd", "hdd"}
 
-	// hostpath fuse mount point for Alluxio, JindoFS, GooseFS and JuiceFS
-	hostMountNames = []string{"alluxio-fuse-mount", "jindofs-fuse-mount", "goosefs-fuse-mount", "juicefs-fuse-mount", "thin-fuse-mount", "efc-fuse-mount", "efc-sock"}
+	// hostpath fuse mount point for Alluxio, JindoFS and JuiceFS
+	hostMountNames = []string{"alluxio-fuse-mount", "jindofs-fuse-mount", "juicefs-fuse-mount", "thin-fuse-mount", "efc-fuse-mount", "efc-sock"}
 
-	// fuse devices for Alluxio, JindoFS, GooseFS
-	hostFuseDeviceNames = []string{"alluxio-fuse-device", "jindofs-fuse-device", "goosefs-fuse-device", "thin-fuse-device"}
+	// fuse devices for Alluxio, JindoFS
+	hostFuseDeviceNames = []string{"alluxio-fuse-device", "jindofs-fuse-device", "thin-fuse-device"}
 )
 
 // TODO: DefaultMutator will be rewritten with polymorphism withe platform-specific mutation logic

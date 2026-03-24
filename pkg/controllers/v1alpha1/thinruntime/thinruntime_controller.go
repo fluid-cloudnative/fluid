@@ -146,7 +146,6 @@ func NewCache() cache.Options {
 		common.AlluxioRuntime,
 		common.JindoRuntime,
 		common.JuiceFSRuntime,
-		common.GooseFSRuntime,
 		common.EFCRuntime,
 	})
 	if err != nil {

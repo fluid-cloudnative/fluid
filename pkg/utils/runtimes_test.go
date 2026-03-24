@@ -144,45 +144,6 @@ var _ = Describe("GetJindoRuntime", func() {
 	)
 })
 
-var _ = Describe("GetGooseFSRuntime", func() {
-	var (
-		s              *runtime.Scheme
-		runtimeName    = "goosefs-runtime-1"
-		runtimeNs      = "default"
-		goosefsRuntime *datav1alpha1.GooseFSRuntime
-	)
-
-	BeforeEach(func() {
-		goosefsRuntime = &datav1alpha1.GooseFSRuntime{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      runtimeName,
-				Namespace: runtimeNs,
-			},
-		}
-		s = runtime.NewScheme()
-		s.AddKnownTypes(datav1alpha1.GroupVersion, goosefsRuntime)
-	})
-
-	DescribeTable("should handle runtime lookup",
-		func(name, namespace, wantName string, notFound bool) {
-			fakeClient := fake.NewFakeClientWithScheme(s, goosefsRuntime)
-			gotRuntime, err := GetGooseFSRuntime(fakeClient, name, namespace)
-
-			if notFound {
-				Expect(err).To(HaveOccurred())
-				Expect(gotRuntime).To(BeNil())
-				Expect(apierrs.IsNotFound(err)).To(BeTrue())
-			} else {
-				Expect(err).NotTo(HaveOccurred())
-				Expect(gotRuntime.Name).To(Equal(wantName))
-			}
-		},
-		Entry("existing runtime", "goosefs-runtime-1", "default", "goosefs-runtime-1", false),
-		Entry("non-existent name", "goosefs-runtime-1not-exist", "default", "", true),
-		Entry("non-existent namespace", "goosefs-runtime-1", "defaultnot-exist", "", true),
-	)
-})
-
 var _ = Describe("GetThinRuntime", func() {
 	var (
 		s           *runtime.Scheme

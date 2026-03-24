@@ -74,7 +74,7 @@ csi:
     kubeConfigFile: /etc/kubernetes/kubelet.conf
     certDir: /var/lib/kubelet/pki
     rootDir: /var/lib/kubelet
-  pruneFs: fuse.alluxio-fuse,fuse.jindofs-fuse,fuse.juicefs,fuse.goosefs-fuse,ossfs,alifuse.aliyun-alinas-efc
+  pruneFs: fuse.alluxio-fuse,fuse.jindofs-fuse,fuse.juicefs,ossfs,alifuse.aliyun-alinas-efc
   recoverWarningThreshold: 50
   # default method is "bindMount", "symlink" is also support
   # Notice: if use nodePublishMethod symlink, fuse recovery is not support
@@ -167,43 +167,6 @@ runtime:
       imagePrefix: *defaultImagePrefix
       imageName: init-users
       imageTag: v0.9.0
-  goosefs:
-    replicas: 1
-    env: []
-    tolerations:
-      - operator: Exists
-    resources: ~
-    # resources:
-    #   requests:
-    #     cpu: 500m
-    #     memory: 256Mi
-    #   limits:
-    #     cpu: 1000m
-    #     memory: 512Mi
-    runtimeWorkers: 3
-    kubeClientQPS: 20
-    kubeClientBurst: 30
-    workQueueQPS: 10
-    workQueueBurst: 100
-    portRange: 26000-32000
-    portAllocatePolicy: random
-    enabled: false
-    init:
-      imagePrefix: *defaultImagePrefix
-      imageName: init-users
-      imageTag: v0.9.0
-    controller:
-      imagePrefix: *defaultImagePrefix
-      imageName: goosefsruntime-controller
-      imageTag: *defaultVersion
-    runtime:
-      imagePrefix: ccr.ccs.tencentyun.com/qcloud
-      imageName: goosefs
-      imageTag: v1.2.0
-    fuse:
-      imagePrefix: ccr.ccs.tencentyun.com/qcloud
-      imageName: goosefs-fuse
-      imageTag: v1.2.0
   juicefs:
     replicas: 1
     env: []
