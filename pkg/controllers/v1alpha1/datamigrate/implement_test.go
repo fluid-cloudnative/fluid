@@ -33,6 +33,11 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
+const (
+	testDataMigrateName = "test-migrate"
+	testDatasetName     = "my-dataset"
+)
+
 var _ = Describe("dataMigrateOperation", func() {
 	Describe("Validate", func() {
 		It("should error when SSH secret is not set for parallel migrate", func() {
@@ -106,7 +111,7 @@ var _ = Describe("dataMigrateOperation", func() {
 	Describe("GetOperationObject", func() {
 		It("should return the dataMigrate object", func() {
 			dm := &datav1alpha1.DataMigrate{}
-			dm.Name = "test-migrate"
+			dm.Name = testDataMigrateName
 			op := &dataMigrateOperation{dataMigrate: dm}
 
 			Expect(op.GetOperationObject()).To(Equal(dm))
@@ -375,18 +380,18 @@ var _ = Describe("dataMigrateOperation", func() {
 			Expect(datav1alpha1.AddToScheme(testScheme)).To(Succeed())
 
 			dataset := &datav1alpha1.Dataset{}
-			dataset.Name = "my-dataset"
+			dataset.Name = testDatasetName
 			dataset.Namespace = "default"
 
 			dm := &datav1alpha1.DataMigrate{
 				ObjectMeta: v1.ObjectMeta{
-					Name:      "test-migrate",
+					Name:      testDataMigrateName,
 					Namespace: "default",
 				},
 				Spec: datav1alpha1.DataMigrateSpec{
 					To: datav1alpha1.DataToMigrate{
 						DataSet: &datav1alpha1.DatasetToMigrate{
-							Name:      "my-dataset",
+							Name:      testDatasetName,
 							Namespace: "default",
 						},
 					},
@@ -403,7 +408,7 @@ var _ = Describe("dataMigrateOperation", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result).NotTo(BeNil())
-			Expect(result.Name).To(Equal("my-dataset"))
+			Expect(result.Name).To(Equal(testDatasetName))
 		})
 	})
 
@@ -414,7 +419,7 @@ var _ = Describe("dataMigrateOperation", func() {
 
 			dm := &datav1alpha1.DataMigrate{
 				ObjectMeta: v1.ObjectMeta{
-					Name:      "test-migrate",
+					Name:      testDataMigrateName,
 					Namespace: "default",
 				},
 			}
