@@ -17,6 +17,8 @@ limitations under the License.
 package databackup
 
 import (
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -180,6 +182,7 @@ var _ = Describe("OnceHandler", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(opStatus.Phase).To(Equal(common.PhaseComplete))
 			Expect(opStatus.Conditions).To(HaveLen(1))
+			Expect(opStatus.Conditions[0].LastTransitionTime.Time).To(BeTemporally("~", conditionTime.Time, time.Second))
 		})
 	})
 })
