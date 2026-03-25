@@ -37,7 +37,6 @@ import (
 	"k8s.io/client-go/util/retry"
 )
 
-
 // usedStorageBytesInternal returns the number of bytes currently used by Alluxio storage.
 // This method is intended for internal use by the AlluxioEngine.
 // It currently returns (0, nil) as a placeholder; the actual implementation should query
