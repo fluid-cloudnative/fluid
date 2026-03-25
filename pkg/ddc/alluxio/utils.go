@@ -33,6 +33,16 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 )
 
+// getDataSetFileNum returns the total number of files in the current dataset as a decimal string.
+//
+// It calls TotalFileNums to get the file count, then converts the int64 result to a base-10 string.
+//
+// Parameters:
+// - none (it uses the AlluxioEngine receiver `e`).
+//
+// Returns:
+// - string: the dataset file count in decimal format.
+// - error: non-nil if TotalFileNums fails; otherwise nil.
 func (e *AlluxioEngine) getDataSetFileNum() (string, error) {
 	fileCount, err := e.TotalFileNums()
 	if err != nil {
