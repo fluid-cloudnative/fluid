@@ -344,6 +344,9 @@ func (info *RuntimeInfo) GetFuseNodeSelector() (nodeSelector map[string]string) 
 	return
 }
 
+// SetupFuseCleanPolicy sets the clean policy for the fuse runtime.
+// If the provided policy is NoneCleanPolicy, it defaults to OnRuntimeDeletedCleanPolicy.
+// Otherwise, it assigns the given policy directly to the fuse runtime.
 func (info *RuntimeInfo) SetupFuseCleanPolicy(policy datav1alpha1.FuseCleanPolicy) {
 	if policy == datav1alpha1.NoneCleanPolicy {
 		// Default to set the fuse clean policy to OnRuntimeDeleted
