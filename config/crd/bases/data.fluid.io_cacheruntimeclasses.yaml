@@ -14,7 +14,7 @@ spec:
     listKind: CacheRuntimeClassList
     plural: cacheruntimeclasses
     singular: cacheruntimeclass
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1alpha1
     schema:

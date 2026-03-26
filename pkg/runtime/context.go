@@ -35,7 +35,8 @@ type ReconcileRequestContext struct {
 	*datav1alpha1.Dataset
 	Runtime client.Object
 
-	RuntimeType   string
+	RuntimeType string
+	// EngineImpl is used to indicate different engine implementation for one Runtime, like JindoRuntime(#3672).
 	EngineImpl    string
 	FinalizerName string
 

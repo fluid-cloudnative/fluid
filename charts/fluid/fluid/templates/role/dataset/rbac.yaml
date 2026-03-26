@@ -103,6 +103,8 @@ rules:
       - efcruntimes/status
       - vineyardruntimes
       - vineyardruntimes/status
+      - cacheruntimes
+      - cacheruntimes/status
     verbs:
       - get
       - list

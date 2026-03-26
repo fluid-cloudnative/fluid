@@ -20,6 +20,7 @@ package deploy
 import (
 	"context"
 	"fmt"
+	cache "github.com/fluid-cloudnative/fluid/pkg/ddc/cache/engine"
 	"reflect"
 	"strconv"
 	"strings"
@@ -57,6 +58,7 @@ var (
 		"thinruntime-controller":     thin.Precheck,
 		"efcruntime-controller":      efc.Precheck,
 		"vineyardruntime-controller": vineyard.Precheck,
+		"cacheruntime-controller":    cache.Precheck,
 	}
 	resolveDefaultPrecheckFuncs = func() map[string]CheckFunc {
 		return filterOutDisabledRuntimes(defaultPrecheckFuncs)
@@ -186,3 +188,4 @@ func scaleoutDeploymentIfNeeded(c client.Client, key types.NamespacedName, log l
 
 	return
 }
+
