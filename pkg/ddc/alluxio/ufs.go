@@ -202,6 +202,16 @@ func (e *AlluxioEngine) checkIfRemountRequired(ufsToUpdate *utils.UFSToUpdate) {
 	}
 }
 
+// ShouldSyncDatasetMounts checks whether the dataset mounts need to be synchronized in the AlluxioEngine.
+// This function is primarily responsible for determining if there are any changes to the dataset's mount points
+// that require synchronization with the underlying Alluxio runtime, such as new mounts, removed mounts, or updates
+// to existing mount configurations.
+//
+// Parameters:
+//
+// Returns:
+//   - should (bool): A boolean indicating whether a synchronization of dataset mounts is necessary.
+//   - err (error): Returns an error if the check process fails, otherwise returns nil.
 func (e *AlluxioEngine) ShouldSyncDatasetMounts() (should bool, err error) {
 	return false, nil
 }
