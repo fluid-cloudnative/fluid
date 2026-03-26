@@ -246,6 +246,18 @@ func (info *RuntimeInfo) GetFuseMetricsScrapeTarget() mountModeSelector {
 	return info.fuse.MetricsScrapeTarget
 }
 
+// WithTieredStore converts datav1alpha1.TieredStore to TieredStoreInfo and sets it to RuntimeInfo
+// The conversion is needed because datav1alpha1.TieredStore contains some fields in string type which are not convenient to use, such as Quota and QuotaList, and we want to convert them to more structured type in RuntimeInfo.
+// The conversion logic is as follows:
+// 1. If the length of Levels in datav1alpha1.TieredStore is 0, return an empty TieredStoreInfo.
+// 2. For each level in datav1alpha1.TieredStore, split the Path by comma to get multiple paths.
+// 3. If QuotaList is not set, divide Quota equally to multiple paths and set the quota for each path.
+// 4. If QuotaList is set, split the QuotaList by comma to get multiple quotas, and set the corresponding quota for each path. The value in QuotaList will overwrite the value in Quota if both of them are set.
+// 5. Set other fields in TieredStoreInfo according to the values in datav1alpha1.TieredStore.
+// If there is any error during the conversion, return the error.
+// For example, if the length of quotas in QuotaList is not consistent with the length of paths, return an error. If the quota in Quota or QuotaList can't be parsed to a quantity type, return an error.
+// The reason why we want to convert datav1alpha1.TieredStore to TieredStoreInfo instead of using datav1alpha1.TieredStore directly in RuntimeInfo is that datav1alpha1.TieredStore is designed for users to input the tiered store configuration in a flexible way, while TieredStoreInfo is designed for us to use the tiered store configuration in a more structured way in the code. By converting datav1alpha1.TieredStore to TieredStoreInfo, we can make it easier for us to use the tiered store configuration in the code, and also make it easier for us to validate the tiered store configuration when we convert it.
+// The conversion logic is implemented in the convertToTieredstoreInfo function, and WithTieredStore is a wrapper of it to set the converted TieredStoreInfo to RuntimeInfo.
 func WithTieredStore(tieredStore datav1alpha1.TieredStore) RuntimeInfoOption {
 	return func(info *RuntimeInfo) error {
 		tieredStoreInfo, err := convertToTieredstoreInfo(tieredStore)
