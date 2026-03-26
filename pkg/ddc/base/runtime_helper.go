@@ -71,6 +71,13 @@ func (info *RuntimeInfo) GetFuseContainerTemplate() (template *common.FuseInject
 	return template, nil
 }
 
+// getFuseDaemonset retrieves the FUSE DaemonSet associated with the given runtime.
+// It constructs the DaemonSet name based on the runtime type and then queries the
+// Kubernetes API to fetch the corresponding DaemonSet object.
+//
+// Returns:
+//   - *appsv1.DaemonSet: The FUSE DaemonSet object if found
+//   - error: An error if the API reader is not set, or if the DaemonSet cannot be retrieved
 func (info *RuntimeInfo) getFuseDaemonset() (ds *appsv1.DaemonSet, err error) {
 	if info.apiReader == nil {
 		err = fmt.Errorf("client is not set")
