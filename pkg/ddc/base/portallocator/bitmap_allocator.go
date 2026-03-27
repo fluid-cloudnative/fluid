@@ -35,6 +35,9 @@ func (b *BitMapAllocator) needResetReservedPorts() bool {
 	return true
 }
 
+// newBitMapAllocator creates a bitmap-based port allocator for the given port range.
+// It initializes the underlying allocator and returns a BitMapAllocator instance.
+// It returns an error if the allocator cannot be created.
 func newBitMapAllocator(pr *net.PortRange, log logr.Logger) (BatchAllocatorInterface, error) {
 	// TODO passing offset value.
 	alloc, err := portallocator.New(*pr, func(max int, rangeSpec string, offset int) (allocator.Interface, error) {
