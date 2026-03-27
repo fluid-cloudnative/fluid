@@ -255,6 +255,14 @@ func (info *RuntimeInfo) GetFuseMetricsScrapeTarget() mountModeSelector {
 	return info.fuse.MetricsScrapeTarget
 }
 
+// WithTieredStore converts datav1alpha1.TieredStore to TieredStoreInfo and sets it to RuntimeInfo
+// The conversion is needed because datav1alpha1.TieredStore contains some fields in string type which are not convenient to use, such as Quota and QuotaList, and we want to convert them to more structured type in RuntimeInfo.
+// The conversion logic is as follows:
+// 1. If the length of Levels in datav1alpha1.TieredStore is 0, return an empty TieredStoreInfo.
+// 2. For each level in datav1alpha1.TieredStore, split the Path by comma to get multiple paths.
+// 3. If QuotaList is not set, divide Quota equally to multiple paths and set the quota for each path.
+// 4. If QuotaList is set, split the QuotaList by comma to get multiple quotas, and set the corresponding quota for each path. The value in QuotaList will overwrite the value in Quota if both of them are set.
+// 5. Set other fields in TieredStoreInfo according to the values in datav1alpha1.TieredStore.
 func WithTieredStore(tieredStore datav1alpha1.TieredStore) RuntimeInfoOption {
 	return func(info *RuntimeInfo) error {
 		tieredStoreInfo, err := convertToTieredstoreInfo(tieredStore)
