@@ -19,11 +19,12 @@ package alluxio
 import (
 	"context"
 	"fmt"
-	v1 "k8s.io/api/core/v1"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"time"
+
+	v1 "k8s.io/api/core/v1"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -167,13 +168,24 @@ func (e *AlluxioEngine) processUpdatingUFS(ufsToUpdate *utils.UFSToUpdate) (upda
 
 	if updateReady {
 		// need to reset ufsTotal to Calculating so that SyncMetadata will work
-		datasetToUpdate := dataset.DeepCopy()
-		datasetToUpdate.Status.UfsTotal = metadataSyncNotDoneMsg
-		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
-			err = e.Client.Status().Update(context.TODO(), datasetToUpdate)
+		err = retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
+			dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 			if err != nil {
-				e.Log.Error(err, "fail to update ufsTotal of dataset to Calculating")
+				return
 			}
+			datasetToUpdate := dataset.DeepCopy()
+			datasetToUpdate.Status.UfsTotal = metadataSyncNotDoneMsg
+			if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
+				err = e.Client.Status().Update(context.TODO(), datasetToUpdate)
+				if err != nil {
+					return
+				}
+			}
+			return
+		})
+		if err != nil {
+			e.Log.Error(err, "fail to update ufsTotal of dataset to Calculating")
+			return true, err
 		}
 
 		err = e.SyncMetadata()

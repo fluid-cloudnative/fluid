@@ -28,6 +28,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	securityutil "github.com/fluid-cloudnative/fluid/pkg/utils/security"
 	"github.com/pkg/errors"
+	"k8s.io/client-go/util/retry"
 )
 
 func (e *GooseFSEngine) usedStorageBytesInternal() (value int64, err error) {
@@ -235,13 +236,24 @@ func (e *GooseFSEngine) processUpdatingUFS(ufsToUpdate *utils.UFSToUpdate) (err 
 		}
 	}
 	// need to reset ufsTotal to Calculating so that SyncMetadata will work
-	datasetToUpdate := dataset.DeepCopy()
-	datasetToUpdate.Status.UfsTotal = MetadataSyncNotDoneMsg
-	if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
-		err = e.Client.Status().Update(context.TODO(), datasetToUpdate)
+	err = retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
+		dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 		if err != nil {
-			e.Log.Error(err, "fail to update ufsTotal of dataset to Calculating")
+			return
 		}
+		datasetToUpdate := dataset.DeepCopy()
+		datasetToUpdate.Status.UfsTotal = MetadataSyncNotDoneMsg
+		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
+			err = e.Client.Status().Update(context.TODO(), datasetToUpdate)
+			if err != nil {
+				return
+			}
+		}
+		return
+	})
+	if err != nil {
+		e.Log.Error(err, "fail to update ufsTotal of dataset to Calculating")
+		return err
 	}
 
 	err = e.SyncMetadata()
