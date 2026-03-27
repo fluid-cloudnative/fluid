@@ -36,6 +36,22 @@ import (
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 )
 
+// newEFCEngineREP creates and initializes an EFCEngine instance for testing purposes.
+//
+// This function builds a runtime info object based on the given name and namespace,
+// then constructs an EFCEngine with a fake Kubernetes client, empty runtime object,
+// and a null logger. It also initializes the Helper utility for the engine.
+//
+// It is mainly used in unit tests (e.g., TestSyncReplicas) to simulate
+// EFCEngine behavior without interacting with a real Kubernetes cluster.
+//
+// Parameters:
+//   client    - a Kubernetes client (usually a fake client for testing)
+//   name      - the name of the EFCRuntime
+//   namespace - the namespace of the EFCRuntime
+//
+// Returns:
+//   *EFCEngine - a fully initialized EFCEngine instance for testing
 func newEFCEngineREP(client client.Client, name string, namespace string) *EFCEngine {
 	runTimeInfo, _ := base.BuildRuntimeInfo(name, namespace, common.EFCRuntime)
 	engine := &EFCEngine{
