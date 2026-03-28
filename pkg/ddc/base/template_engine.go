@@ -40,6 +40,7 @@ var _ Engine = (*TemplateEngine)(nil)
 
 type TemplateEngine struct {
 	Implement
+	DefaultExtendedLifecycleManager
 	Id string
 	client.Client
 	Log               logr.Logger
