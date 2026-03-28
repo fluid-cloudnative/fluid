@@ -43,9 +43,12 @@ func newTestScheme() *runtime.Scheme {
 
 var _ = Describe("DataOpJobReconciler", func() {
 	const (
-		controllerUIDKey = "controller-uid"
-		testNodeName     = "node01"
-		testPodName      = "test-pod"
+		controllerUIDKey  = "controller-uid"
+		testNodeName      = "node01"
+		testPodName       = "test-pod"
+		testJobName       = "test-job"
+		customLabelKey    = "custom-label"
+		testControllerUID = "test-uid"
 	)
 
 	var testScheme *runtime.Scheme
@@ -115,8 +118,6 @@ var _ = Describe("DataOpJobReconciler", func() {
 
 		Context("when job is a valid fluid job without affinity annotation", func() {
 			It("injects the dataflow affinity annotation and returns no requeue", func() {
-				const testJobName = "test-job"
-
 				job := &batchv1.Job{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      testJobName,
@@ -211,13 +212,13 @@ var _ = Describe("DataOpJobReconciler", func() {
 				common.K8sNodeNameLabelKey: testNodeName,
 				common.K8sRegionLabelKey:   "region01",
 				common.K8sZoneLabelKey:     "zone01",
-				"custom-label":             "custom-value",
+				customLabelKey:             "custom-value",
 			}
 			exposedLabelNames := []string{
 				common.K8sNodeNameLabelKey,
 				common.K8sRegionLabelKey,
 				common.K8sZoneLabelKey,
-				"custom-label",
+				customLabelKey,
 			}
 
 			fillCustomizedNodeAffinity(annotationsToInject, nodeLabels, exposedLabelNames)
@@ -226,7 +227,7 @@ var _ = Describe("DataOpJobReconciler", func() {
 			Expect(annotationsToInject[common.AnnotationDataFlowCustomizedAffinityPrefix+common.K8sNodeNameLabelKey]).To(Equal(testNodeName))
 			Expect(annotationsToInject[common.AnnotationDataFlowCustomizedAffinityPrefix+common.K8sRegionLabelKey]).To(Equal("region01"))
 			Expect(annotationsToInject[common.AnnotationDataFlowCustomizedAffinityPrefix+common.K8sZoneLabelKey]).To(Equal("zone01"))
-			Expect(annotationsToInject[common.AnnotationDataFlowCustomizedAffinityPrefix+"custom-label"]).To(Equal("custom-value"))
+			Expect(annotationsToInject[common.AnnotationDataFlowCustomizedAffinityPrefix+customLabelKey]).To(Equal("custom-value"))
 		})
 
 		It("skips non-existent labels", func() {
@@ -266,7 +267,7 @@ var _ = Describe("DataOpJobReconciler", func() {
 			It("injects node labels as annotations onto the job", func() {
 				job := &batchv1.Job{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "test-job",
+						Name: testJobName,
 						Labels: map[string]string{
 							common.LabelAnnotationManagedBy: common.Fluid,
 						},
@@ -376,7 +377,7 @@ var _ = Describe("DataOpJobReconciler", func() {
 			It("returns an error", func() {
 				job := &batchv1.Job{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "test-job",
+						Name: testJobName,
 						Labels: map[string]string{
 							common.LabelAnnotationManagedBy: common.Fluid,
 						},
@@ -384,7 +385,7 @@ var _ = Describe("DataOpJobReconciler", func() {
 					Spec: batchv1.JobSpec{
 						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
-								controllerUIDKey: "test-uid",
+								controllerUIDKey: testControllerUID,
 							},
 						},
 					},
@@ -393,7 +394,7 @@ var _ = Describe("DataOpJobReconciler", func() {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: testPodName,
 						Labels: map[string]string{
-							controllerUIDKey: "test-uid",
+							controllerUIDKey: testControllerUID,
 						},
 					},
 					Spec:   v1.PodSpec{NodeName: ""},
@@ -413,7 +414,7 @@ var _ = Describe("DataOpJobReconciler", func() {
 			It("creates the annotations map before injecting labels", func() {
 				job := &batchv1.Job{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "test-job",
+						Name: testJobName,
 						Labels: map[string]string{
 							common.LabelAnnotationManagedBy: common.Fluid,
 						},
@@ -422,7 +423,7 @@ var _ = Describe("DataOpJobReconciler", func() {
 					Spec: batchv1.JobSpec{
 						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
-								controllerUIDKey: "test-uid",
+								controllerUIDKey: testControllerUID,
 							},
 						},
 					},
@@ -431,7 +432,7 @@ var _ = Describe("DataOpJobReconciler", func() {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: testPodName,
 						Labels: map[string]string{
-							controllerUIDKey: "test-uid",
+							controllerUIDKey: testControllerUID,
 						},
 					},
 					Spec:   v1.PodSpec{NodeName: testNodeName},
