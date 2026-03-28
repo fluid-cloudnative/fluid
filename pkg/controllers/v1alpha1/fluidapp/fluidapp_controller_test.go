@@ -19,6 +19,7 @@ package fluidapp
 import (
 	"context"
 
+	"github.com/agiledragon/gomonkey/v2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -31,6 +32,7 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
 func newFluidAppScheme() *runtime.Scheme {
@@ -122,6 +124,11 @@ var _ = Describe("FluidAppReconciler", func() {
 	Describe("internalReconcile", func() {
 		Context("when pod has fuse containers", func() {
 			It("should handle pod reconciliation with fuse sidecars", func() {
+				patches := gomonkey.ApplyFunc(kubeclient.ExecCommandInContainer, func(string, string, string, []string) (string, string, error) {
+					return "", "", nil
+				})
+				defer patches.Reset()
+
 				s := newFluidAppScheme()
 				pod := &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
@@ -137,7 +144,7 @@ var _ = Describe("FluidAppReconciler", func() {
 							{
 								Name: common.FuseContainerName + "-0",
 								VolumeMounts: []corev1.VolumeMount{{
-									Name:      "fuse-mount",
+									Name:      "juicefs-fuse-mount",
 									MountPath: "/mnt/fuse",
 								}},
 							},
