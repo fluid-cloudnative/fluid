@@ -32,9 +32,10 @@ import (
 
 var _ = Describe("FluidAppReconcilerImplement", func() {
 	const (
-		fuseMountPath    = "/mnt/fuse"
-		juicefsFuseMount = "juicefs-fuse-mount"
-		juicefsMountPath = "/mnt/jfs"
+		fuseMountPath              = "/mnt/fuse"
+		juicefsFuseMount           = "juicefs-fuse-mount"
+		juicefsMountPath           = "/mnt/jfs"
+		shouldSucceedWithoutErrors = "should succeed without errors"
 	)
 
 	Describe("NewFluidAppReconcilerImplement", func() {
@@ -66,7 +67,7 @@ var _ = Describe("FluidAppReconcilerImplement", func() {
 		})
 
 		Context("when pod has no fuse containers", func() {
-			It("should succeed without errors", func() {
+			It(shouldSucceedWithoutErrors, func() {
 				pod := &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{Name: "test"},
 					Spec: corev1.PodSpec{
@@ -80,7 +81,7 @@ var _ = Describe("FluidAppReconcilerImplement", func() {
 		})
 
 		Context("when fuse container has no mount path", func() {
-			It("should succeed without errors", func() {
+			It(shouldSucceedWithoutErrors, func() {
 				pod := &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{Name: "test"},
 					Spec: corev1.PodSpec{
@@ -94,7 +95,7 @@ var _ = Describe("FluidAppReconcilerImplement", func() {
 		})
 
 		Context("when fuse container has prestop hook", func() {
-			It("should succeed without errors", func() {
+			It(shouldSucceedWithoutErrors, func() {
 				pod := &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{Name: "test"},
 					Spec: corev1.PodSpec{
