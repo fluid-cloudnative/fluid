@@ -94,4 +94,3 @@ func (handler *runtimeEventHandler) onDeleteFunc(r Controller) func(e event.Dele
 		return true
 	}
 }
-

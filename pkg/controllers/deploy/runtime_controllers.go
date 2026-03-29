@@ -188,4 +188,3 @@ func scaleoutDeploymentIfNeeded(c client.Client, key types.NamespacedName, log l
 
 	return
 }
-

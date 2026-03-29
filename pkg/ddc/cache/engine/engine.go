@@ -104,4 +104,3 @@ func Precheck(client client.Client, key types.NamespacedName) (found bool, err e
 	var obj datav1alpha1.CacheRuntime
 	return utils.CheckObject(client, key, &obj)
 }
-

@@ -312,4 +312,3 @@ type VolumeMediumSource struct {
 func (runtime *CacheRuntime) GetStatus() *CacheRuntimeStatus {
 	return &runtime.Status
 }
-
