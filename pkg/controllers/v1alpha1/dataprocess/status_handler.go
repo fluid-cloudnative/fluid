@@ -55,6 +55,7 @@ func (handler *OnceStatusHandler) GetOperationStatus(ctx runtime.ReconcileReques
 				ctx.Log.Error(err, "failed to delete dataprocess helm release", "namespace", ctx.Namespace, "releaseName", releaseName)
 				return
 			}
+			return
 		}
 
 		// In cases of other error

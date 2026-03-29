@@ -130,6 +130,3 @@ var _ = Describe("DataProcessReconciler", func() {
 		})
 	})
 })
-
-// Ensure fake.NullLogger is usable in tests (imported via suite_test.go BeforeSuite).
-var _ = fake.NullLogger
