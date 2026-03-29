@@ -179,7 +179,7 @@ var _ = Describe("reconcileDataProcess: outer Get failure", func() {
 
 		needRequeue, err := reconcileDataProcess(ctx)
 		Expect(err).To(HaveOccurred())
-		Expect(err.Error()).To(ContainSubstring("failed to get"))
+		Expect(err.Error()).To(ContainSubstring("failed to get dataprocess"))
 		Expect(err.Error()).To(ContainSubstring("server unavailable"))
 		Expect(needRequeue).To(BeTrue())
 	})

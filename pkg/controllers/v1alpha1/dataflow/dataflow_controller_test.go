@@ -24,6 +24,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -89,7 +90,7 @@ var _ = Describe("DataFlowReconciler", func() {
 			precedingLoad := &datav1alpha1.DataLoad{
 				ObjectMeta: metav1.ObjectMeta{Name: "preceding", Namespace: "default"},
 				Status: datav1alpha1.OperationStatus{
-					Phase: "Executing",
+					Phase: common.PhaseExecuting,
 				},
 			}
 
@@ -126,7 +127,7 @@ var _ = Describe("DataFlowReconciler", func() {
 			precedingLoad := &datav1alpha1.DataLoad{
 				ObjectMeta: metav1.ObjectMeta{Name: "preceding", Namespace: "default"},
 				Status: datav1alpha1.OperationStatus{
-					Phase: "Complete",
+					Phase: common.PhaseComplete,
 				},
 			}
 
