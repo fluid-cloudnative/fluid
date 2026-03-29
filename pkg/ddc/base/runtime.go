@@ -293,10 +293,7 @@ func (info *RuntimeInfo) GetNamespace() string {
 	return info.namespace
 }
 
-// GetOwnerDatasetUID retrieves the unique identifier (UID) of the Dataset associated with the RuntimeInfo
-// This method is an implementation of the RuntimeInfoInterface, used to fetch the UID of the owning Dataset from the RuntimeInfo
-// Return value:
-// string: The UID of the Dataset to which the Runtime belongs
+// GetOwnerDatasetUID retrieves the unique identifier (UID) of the owner Dataset.
 func (info *RuntimeInfo) GetOwnerDatasetUID() string {
 	// Returns the value of the ownerDatasetUID field stored in the RuntimeInfo struct
 	return info.ownerDatasetUID
