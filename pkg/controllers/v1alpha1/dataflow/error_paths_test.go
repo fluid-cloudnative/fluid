@@ -290,7 +290,7 @@ var _ = Describe("reconcileDataBackup: updateStatusFn inner Get NotFound path", 
 			},
 		}
 		waitingBackup := &datav1alpha1.DataBackup{
-			ObjectMeta: metav1.ObjectMeta{Name: "backup-1", Namespace: namespace},
+			ObjectMeta: metav1.ObjectMeta{Name: backupName, Namespace: namespace},
 			Spec: datav1alpha1.DataBackupSpec{
 				RunAfter: &datav1alpha1.OperationRef{
 					ObjectRef: datav1alpha1.ObjectRef{
@@ -315,7 +315,7 @@ var _ = Describe("reconcileDataBackup: updateStatusFn inner Get NotFound path", 
 		countClient := interceptor.NewClient(fakeBase, interceptor.Funcs{
 			Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
 				callCount++
-				if callCount >= 3 && key.Name == "backup-1" {
+				if callCount >= 3 && key.Name == backupName {
 					return &statusNotFoundError{name: key.Name}
 				}
 				return c.Get(ctx, key, obj, opts...)
@@ -324,7 +324,7 @@ var _ = Describe("reconcileDataBackup: updateStatusFn inner Get NotFound path", 
 
 		rCtx := reconcileRequestContext{
 			Context:        context.TODO(),
-			NamespacedName: types.NamespacedName{Name: "backup-1", Namespace: namespace},
+			NamespacedName: types.NamespacedName{Name: backupName, Namespace: namespace},
 			Client:         countClient,
 			Log:            logf.Log.WithName("test"),
 			Recorder:       record.NewFakeRecorder(32),

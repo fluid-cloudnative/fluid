@@ -44,6 +44,7 @@ const (
 	itShouldClearWaitingForOperationCompleteAndNotRequeue = "should clear WaitingFor.OperationComplete and not requeue"
 	itShouldRecordWarningAndRequeue                       = "should record a warning and requeue"
 	itShouldSkipReconcilingAndNotRequeue                  = "should skip reconciling and not requeue"
+	itShouldSucceedWithoutCallingStatusUpdate             = "should succeed without calling Status().Update"
 )
 
 // makeTestCtx creates a reconcileRequestContext with a fake client seeded with objs.
@@ -618,7 +619,7 @@ var _ = Describe("reconcileDataBackup no-op path", func() {
 	})
 
 	Context(contextWhenWaitingForOperationCompleteIsAlreadyFalse, func() {
-		It("should succeed without calling Status().Update", func() {
+		It(itShouldSucceedWithoutCallingStatusUpdate, func() {
 			precedingLoad := &datav1alpha1.DataLoad{
 				ObjectMeta: metav1.ObjectMeta{Name: "preceding", Namespace: namespace},
 				Status: datav1alpha1.OperationStatus{
@@ -664,7 +665,7 @@ var _ = Describe("reconcileDataMigrate no-op path", func() {
 	})
 
 	Context(contextWhenWaitingForOperationCompleteIsAlreadyFalse, func() {
-		It("should succeed without calling Status().Update", func() {
+		It(itShouldSucceedWithoutCallingStatusUpdate, func() {
 			precedingBackup := &datav1alpha1.DataBackup{
 				ObjectMeta: metav1.ObjectMeta{Name: "preceding", Namespace: namespace},
 				Status: datav1alpha1.OperationStatus{
@@ -710,7 +711,7 @@ var _ = Describe("reconcileDataProcess no-op path", func() {
 	})
 
 	Context(contextWhenWaitingForOperationCompleteIsAlreadyFalse, func() {
-		It("should succeed without calling Status().Update", func() {
+		It(itShouldSucceedWithoutCallingStatusUpdate, func() {
 			precedingMigrate := &datav1alpha1.DataMigrate{
 				ObjectMeta: metav1.ObjectMeta{Name: "preceding", Namespace: namespace},
 				Status: datav1alpha1.OperationStatus{
