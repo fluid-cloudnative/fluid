@@ -16,13 +16,6 @@
 
 package engine
 
-import (
-	"fmt"
-)
-
-func (e *CacheEngine) getPersistentVolumeName() string {
-	return fmt.Sprintf("%s-%s", e.namespace, e.name)
-}
 func (e *CacheEngine) CreateVolume() (err error) {
 	if err = e.createFusePersistentVolume(); err != nil {
 		return err

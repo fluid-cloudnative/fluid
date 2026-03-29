@@ -418,7 +418,7 @@ docker-buildx-push-thinruntime-controller:
 
 .PHONY: docker-buildx-push-cacheruntime-controller
 docker-buildx-push-cacheruntime-controller:
-	docker buildx build --push --build-arg HELM_VERSION=${HELM_VERSION} --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} . -f ${CACHERUNTIME_DOCKERFILE} -t ${CACHERUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+	docker buildx build --push ${DOCKER_BUILD_ARGS} --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} . -f ${CACHERUNTIME_DOCKERFILE} -t ${CACHERUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 
 .PHONY: docker-buildx-push-efcruntime-controller
