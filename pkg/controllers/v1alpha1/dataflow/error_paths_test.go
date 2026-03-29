@@ -18,6 +18,7 @@ package dataflow
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -41,7 +42,7 @@ const serverUnavailable = "server unavailable"
 
 // newGetErrorClient returns a client that fails every Get with a generic error.
 func newGetErrorClient(s *runtime.Scheme) client.Client {
-	injectErr := fmt.Errorf(serverUnavailable)
+	injectErr := errors.New(serverUnavailable)
 	fakeBase := fakeclient.NewClientBuilder().WithScheme(s).Build()
 	return interceptor.NewClient(fakeBase, interceptor.Funcs{
 		Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
