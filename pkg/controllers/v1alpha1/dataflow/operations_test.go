@@ -33,6 +33,19 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+const (
+	backupName  = "backup-1"
+	loadName    = "load-1"
+	migrateName = "migrate-1"
+	processName = "process-1"
+
+	contextWhenPrecedingOperationIsComplete               = "when preceding operation is complete"
+	contextWhenWaitingForOperationCompleteIsAlreadyFalse  = "when WaitingFor.OperationComplete is already false"
+	itShouldClearWaitingForOperationCompleteAndNotRequeue = "should clear WaitingFor.OperationComplete and not requeue"
+	itShouldRecordWarningAndRequeue                       = "should record a warning and requeue"
+	itShouldSkipReconcilingAndNotRequeue                  = "should skip reconciling and not requeue"
+)
+
 // makeTestCtx creates a reconcileRequestContext with a fake client seeded with objs.
 func makeTestCtx(s *runtime.Scheme, name, namespace string, objs ...runtime.Object) reconcileRequestContext {
 	if s == nil {
@@ -179,7 +192,7 @@ var _ = Describe("reconcileOperationDataFlow", func() {
 	})
 
 	Context("when the waiting DataLoad is not found", func() {
-		It("should skip reconciling and not requeue", func() {
+		It(itShouldSkipReconcilingAndNotRequeue, func() {
 			ctx := makeTestCtx(s, "missing", namespace)
 
 			needRequeue, err := reconcileDataLoad(ctx)
@@ -202,7 +215,7 @@ var _ = Describe("reconcileDataBackup", func() {
 	})
 
 	Context("when the waiting DataBackup is not found", func() {
-		It("should skip reconciling and not requeue", func() {
+		It(itShouldSkipReconcilingAndNotRequeue, func() {
 			ctx := makeTestCtx(s, "missing", namespace)
 
 			needRequeue, err := reconcileDataBackup(ctx)
@@ -211,21 +224,21 @@ var _ = Describe("reconcileDataBackup", func() {
 		})
 	})
 
-	Context("when preceding operation is complete", func() {
-		It("should clear WaitingFor.OperationComplete and not requeue", func() {
+	Context(contextWhenPrecedingOperationIsComplete, func() {
+		It(itShouldClearWaitingForOperationCompleteAndNotRequeue, func() {
 			precedingLoad := &datav1alpha1.DataLoad{
-				ObjectMeta: metav1.ObjectMeta{Name: "load-1", Namespace: namespace},
+				ObjectMeta: metav1.ObjectMeta{Name: loadName, Namespace: namespace},
 				Status: datav1alpha1.OperationStatus{
 					Phase: common.PhaseComplete,
 				},
 			}
 			waitingBackup := &datav1alpha1.DataBackup{
-				ObjectMeta: metav1.ObjectMeta{Name: "backup-1", Namespace: namespace},
+				ObjectMeta: metav1.ObjectMeta{Name: backupName, Namespace: namespace},
 				Spec: datav1alpha1.DataBackupSpec{
 					RunAfter: &datav1alpha1.OperationRef{
 						ObjectRef: datav1alpha1.ObjectRef{
 							Kind: "DataLoad",
-							Name: "load-1",
+							Name: loadName,
 						},
 					},
 				},
@@ -236,14 +249,14 @@ var _ = Describe("reconcileDataBackup", func() {
 				},
 			}
 
-			ctx := makeTestCtx(s, "backup-1", namespace, precedingLoad, waitingBackup)
+			ctx := makeTestCtx(s, backupName, namespace, precedingLoad, waitingBackup)
 
 			needRequeue, err := reconcileDataBackup(ctx)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(needRequeue).To(BeFalse())
 
 			updated := &datav1alpha1.DataBackup{}
-			Expect(ctx.Client.Get(context.TODO(), types.NamespacedName{Name: "backup-1", Namespace: namespace}, updated)).To(Succeed())
+			Expect(ctx.Client.Get(context.TODO(), types.NamespacedName{Name: backupName, Namespace: namespace}, updated)).To(Succeed())
 			Expect(updated.Status.WaitingFor.OperationComplete).NotTo(BeNil())
 			Expect(*updated.Status.WaitingFor.OperationComplete).To(BeFalse())
 		})
@@ -252,18 +265,18 @@ var _ = Describe("reconcileDataBackup", func() {
 	Context("when preceding operation is not complete", func() {
 		It("should request requeue and record a waiting event", func() {
 			precedingLoad := &datav1alpha1.DataLoad{
-				ObjectMeta: metav1.ObjectMeta{Name: "load-1", Namespace: namespace},
+				ObjectMeta: metav1.ObjectMeta{Name: loadName, Namespace: namespace},
 				Status: datav1alpha1.OperationStatus{
 					Phase: common.PhasePending,
 				},
 			}
 			waitingBackup := &datav1alpha1.DataBackup{
-				ObjectMeta: metav1.ObjectMeta{Name: "backup-1", Namespace: namespace},
+				ObjectMeta: metav1.ObjectMeta{Name: backupName, Namespace: namespace},
 				Spec: datav1alpha1.DataBackupSpec{
 					RunAfter: &datav1alpha1.OperationRef{
 						ObjectRef: datav1alpha1.ObjectRef{
 							Kind: "DataLoad",
-							Name: "load-1",
+							Name: loadName,
 						},
 					},
 				},
@@ -277,7 +290,7 @@ var _ = Describe("reconcileDataBackup", func() {
 			recorder := record.NewFakeRecorder(32)
 			ctx := reconcileRequestContext{
 				Context:        context.TODO(),
-				NamespacedName: types.NamespacedName{Name: "backup-1", Namespace: namespace},
+				NamespacedName: types.NamespacedName{Name: backupName, Namespace: namespace},
 				Client:         fake.NewFakeClientWithScheme(s, precedingLoad, waitingBackup),
 				Log:            logf.Log.WithName("test"),
 				Recorder:       recorder,
@@ -305,7 +318,7 @@ var _ = Describe("reconcileDataMigrate", func() {
 	})
 
 	Context("when the waiting DataMigrate is not found", func() {
-		It("should skip reconciling and not requeue", func() {
+		It(itShouldSkipReconcilingAndNotRequeue, func() {
 			ctx := makeTestCtx(s, "missing", namespace)
 
 			needRequeue, err := reconcileDataMigrate(ctx)
@@ -314,21 +327,21 @@ var _ = Describe("reconcileDataMigrate", func() {
 		})
 	})
 
-	Context("when preceding operation is complete", func() {
-		It("should clear WaitingFor.OperationComplete and not requeue", func() {
+	Context(contextWhenPrecedingOperationIsComplete, func() {
+		It(itShouldClearWaitingForOperationCompleteAndNotRequeue, func() {
 			precedingBackup := &datav1alpha1.DataBackup{
-				ObjectMeta: metav1.ObjectMeta{Name: "backup-1", Namespace: namespace},
+				ObjectMeta: metav1.ObjectMeta{Name: backupName, Namespace: namespace},
 				Status: datav1alpha1.OperationStatus{
 					Phase: common.PhaseComplete,
 				},
 			}
 			waitingMigrate := &datav1alpha1.DataMigrate{
-				ObjectMeta: metav1.ObjectMeta{Name: "migrate-1", Namespace: namespace},
+				ObjectMeta: metav1.ObjectMeta{Name: migrateName, Namespace: namespace},
 				Spec: datav1alpha1.DataMigrateSpec{
 					RunAfter: &datav1alpha1.OperationRef{
 						ObjectRef: datav1alpha1.ObjectRef{
 							Kind: "DataBackup",
-							Name: "backup-1",
+							Name: backupName,
 						},
 					},
 				},
@@ -339,14 +352,14 @@ var _ = Describe("reconcileDataMigrate", func() {
 				},
 			}
 
-			ctx := makeTestCtx(s, "migrate-1", namespace, precedingBackup, waitingMigrate)
+			ctx := makeTestCtx(s, migrateName, namespace, precedingBackup, waitingMigrate)
 
 			needRequeue, err := reconcileDataMigrate(ctx)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(needRequeue).To(BeFalse())
 
 			updated := &datav1alpha1.DataMigrate{}
-			Expect(ctx.Client.Get(context.TODO(), types.NamespacedName{Name: "migrate-1", Namespace: namespace}, updated)).To(Succeed())
+			Expect(ctx.Client.Get(context.TODO(), types.NamespacedName{Name: migrateName, Namespace: namespace}, updated)).To(Succeed())
 			Expect(updated.Status.WaitingFor.OperationComplete).NotTo(BeNil())
 			Expect(*updated.Status.WaitingFor.OperationComplete).To(BeFalse())
 		})
@@ -366,7 +379,7 @@ var _ = Describe("reconcileDataProcess", func() {
 	})
 
 	Context("when the waiting DataProcess is not found", func() {
-		It("should skip reconciling and not requeue", func() {
+		It(itShouldSkipReconcilingAndNotRequeue, func() {
 			ctx := makeTestCtx(s, "missing", namespace)
 
 			needRequeue, err := reconcileDataProcess(ctx)
@@ -375,21 +388,21 @@ var _ = Describe("reconcileDataProcess", func() {
 		})
 	})
 
-	Context("when preceding operation is complete", func() {
-		It("should clear WaitingFor.OperationComplete and not requeue", func() {
+	Context(contextWhenPrecedingOperationIsComplete, func() {
+		It(itShouldClearWaitingForOperationCompleteAndNotRequeue, func() {
 			precedingMigrate := &datav1alpha1.DataMigrate{
-				ObjectMeta: metav1.ObjectMeta{Name: "migrate-1", Namespace: namespace},
+				ObjectMeta: metav1.ObjectMeta{Name: migrateName, Namespace: namespace},
 				Status: datav1alpha1.OperationStatus{
 					Phase: common.PhaseComplete,
 				},
 			}
 			waitingProcess := &datav1alpha1.DataProcess{
-				ObjectMeta: metav1.ObjectMeta{Name: "process-1", Namespace: namespace},
+				ObjectMeta: metav1.ObjectMeta{Name: processName, Namespace: namespace},
 				Spec: datav1alpha1.DataProcessSpec{
 					RunAfter: &datav1alpha1.OperationRef{
 						ObjectRef: datav1alpha1.ObjectRef{
 							Kind: "DataMigrate",
-							Name: "migrate-1",
+							Name: migrateName,
 						},
 					},
 				},
@@ -400,14 +413,14 @@ var _ = Describe("reconcileDataProcess", func() {
 				},
 			}
 
-			ctx := makeTestCtx(s, "process-1", namespace, precedingMigrate, waitingProcess)
+			ctx := makeTestCtx(s, processName, namespace, precedingMigrate, waitingProcess)
 
 			needRequeue, err := reconcileDataProcess(ctx)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(needRequeue).To(BeFalse())
 
 			updated := &datav1alpha1.DataProcess{}
-			Expect(ctx.Client.Get(context.TODO(), types.NamespacedName{Name: "process-1", Namespace: namespace}, updated)).To(Succeed())
+			Expect(ctx.Client.Get(context.TODO(), types.NamespacedName{Name: processName, Namespace: namespace}, updated)).To(Succeed())
 			Expect(updated.Status.WaitingFor.OperationComplete).NotTo(BeNil())
 			Expect(*updated.Status.WaitingFor.OperationComplete).To(BeFalse())
 		})
@@ -416,18 +429,18 @@ var _ = Describe("reconcileDataProcess", func() {
 	Context("when preceding operation is not complete", func() {
 		It("should request requeue and record a waiting event", func() {
 			precedingMigrate := &datav1alpha1.DataMigrate{
-				ObjectMeta: metav1.ObjectMeta{Name: "migrate-1", Namespace: namespace},
+				ObjectMeta: metav1.ObjectMeta{Name: migrateName, Namespace: namespace},
 				Status: datav1alpha1.OperationStatus{
 					Phase: common.PhaseExecuting,
 				},
 			}
 			waitingProcess := &datav1alpha1.DataProcess{
-				ObjectMeta: metav1.ObjectMeta{Name: "process-1", Namespace: namespace},
+				ObjectMeta: metav1.ObjectMeta{Name: processName, Namespace: namespace},
 				Spec: datav1alpha1.DataProcessSpec{
 					RunAfter: &datav1alpha1.OperationRef{
 						ObjectRef: datav1alpha1.ObjectRef{
 							Kind: "DataMigrate",
-							Name: "migrate-1",
+							Name: migrateName,
 						},
 					},
 				},
@@ -441,7 +454,7 @@ var _ = Describe("reconcileDataProcess", func() {
 			recorder := record.NewFakeRecorder(32)
 			ctx := reconcileRequestContext{
 				Context:        context.TODO(),
-				NamespacedName: types.NamespacedName{Name: "process-1", Namespace: namespace},
+				NamespacedName: types.NamespacedName{Name: processName, Namespace: namespace},
 				Client:         fake.NewFakeClientWithScheme(s, precedingMigrate, waitingProcess),
 				Log:            logf.Log.WithName("test"),
 				Recorder:       recorder,
@@ -604,7 +617,7 @@ var _ = Describe("reconcileDataBackup no-op path", func() {
 		_ = datav1alpha1.AddToScheme(s)
 	})
 
-	Context("when WaitingFor.OperationComplete is already false", func() {
+	Context(contextWhenWaitingForOperationCompleteIsAlreadyFalse, func() {
 		It("should succeed without calling Status().Update", func() {
 			precedingLoad := &datav1alpha1.DataLoad{
 				ObjectMeta: metav1.ObjectMeta{Name: "preceding", Namespace: namespace},
@@ -613,7 +626,7 @@ var _ = Describe("reconcileDataBackup no-op path", func() {
 				},
 			}
 			waitingBackup := &datav1alpha1.DataBackup{
-				ObjectMeta: metav1.ObjectMeta{Name: "backup-1", Namespace: namespace},
+				ObjectMeta: metav1.ObjectMeta{Name: backupName, Namespace: namespace},
 				Spec: datav1alpha1.DataBackupSpec{
 					RunAfter: &datav1alpha1.OperationRef{
 						ObjectRef: datav1alpha1.ObjectRef{
@@ -629,7 +642,7 @@ var _ = Describe("reconcileDataBackup no-op path", func() {
 				},
 			}
 
-			ctx := makeTestCtx(s, "backup-1", namespace, precedingLoad, waitingBackup)
+			ctx := makeTestCtx(s, backupName, namespace, precedingLoad, waitingBackup)
 
 			needRequeue, err := reconcileDataBackup(ctx)
 			Expect(err).NotTo(HaveOccurred())
@@ -650,7 +663,7 @@ var _ = Describe("reconcileDataMigrate no-op path", func() {
 		_ = datav1alpha1.AddToScheme(s)
 	})
 
-	Context("when WaitingFor.OperationComplete is already false", func() {
+	Context(contextWhenWaitingForOperationCompleteIsAlreadyFalse, func() {
 		It("should succeed without calling Status().Update", func() {
 			precedingBackup := &datav1alpha1.DataBackup{
 				ObjectMeta: metav1.ObjectMeta{Name: "preceding", Namespace: namespace},
@@ -659,7 +672,7 @@ var _ = Describe("reconcileDataMigrate no-op path", func() {
 				},
 			}
 			waitingMigrate := &datav1alpha1.DataMigrate{
-				ObjectMeta: metav1.ObjectMeta{Name: "migrate-1", Namespace: namespace},
+				ObjectMeta: metav1.ObjectMeta{Name: migrateName, Namespace: namespace},
 				Spec: datav1alpha1.DataMigrateSpec{
 					RunAfter: &datav1alpha1.OperationRef{
 						ObjectRef: datav1alpha1.ObjectRef{
@@ -675,7 +688,7 @@ var _ = Describe("reconcileDataMigrate no-op path", func() {
 				},
 			}
 
-			ctx := makeTestCtx(s, "migrate-1", namespace, precedingBackup, waitingMigrate)
+			ctx := makeTestCtx(s, migrateName, namespace, precedingBackup, waitingMigrate)
 
 			needRequeue, err := reconcileDataMigrate(ctx)
 			Expect(err).NotTo(HaveOccurred())
@@ -696,7 +709,7 @@ var _ = Describe("reconcileDataProcess no-op path", func() {
 		_ = datav1alpha1.AddToScheme(s)
 	})
 
-	Context("when WaitingFor.OperationComplete is already false", func() {
+	Context(contextWhenWaitingForOperationCompleteIsAlreadyFalse, func() {
 		It("should succeed without calling Status().Update", func() {
 			precedingMigrate := &datav1alpha1.DataMigrate{
 				ObjectMeta: metav1.ObjectMeta{Name: "preceding", Namespace: namespace},
@@ -705,7 +718,7 @@ var _ = Describe("reconcileDataProcess no-op path", func() {
 				},
 			}
 			waitingProcess := &datav1alpha1.DataProcess{
-				ObjectMeta: metav1.ObjectMeta{Name: "process-1", Namespace: namespace},
+				ObjectMeta: metav1.ObjectMeta{Name: processName, Namespace: namespace},
 				Spec: datav1alpha1.DataProcessSpec{
 					RunAfter: &datav1alpha1.OperationRef{
 						ObjectRef: datav1alpha1.ObjectRef{
@@ -721,7 +734,7 @@ var _ = Describe("reconcileDataProcess no-op path", func() {
 				},
 			}
 
-			ctx := makeTestCtx(s, "process-1", namespace, precedingMigrate, waitingProcess)
+			ctx := makeTestCtx(s, processName, namespace, precedingMigrate, waitingProcess)
 
 			needRequeue, err := reconcileDataProcess(ctx)
 			Expect(err).NotTo(HaveOccurred())
@@ -743,9 +756,9 @@ var _ = Describe("reconcileDataMigrate and reconcileDataProcess not-found events
 	})
 
 	Context("reconcileDataMigrate with preceding op not found", func() {
-		It("should record a warning and requeue", func() {
+		It(itShouldRecordWarningAndRequeue, func() {
 			waitingMigrate := &datav1alpha1.DataMigrate{
-				ObjectMeta: metav1.ObjectMeta{Name: "migrate-1", Namespace: namespace},
+				ObjectMeta: metav1.ObjectMeta{Name: migrateName, Namespace: namespace},
 				Spec: datav1alpha1.DataMigrateSpec{
 					RunAfter: &datav1alpha1.OperationRef{
 						ObjectRef: datav1alpha1.ObjectRef{
@@ -764,7 +777,7 @@ var _ = Describe("reconcileDataMigrate and reconcileDataProcess not-found events
 			recorder := record.NewFakeRecorder(32)
 			ctx := reconcileRequestContext{
 				Context:        context.TODO(),
-				NamespacedName: types.NamespacedName{Name: "migrate-1", Namespace: namespace},
+				NamespacedName: types.NamespacedName{Name: migrateName, Namespace: namespace},
 				Client:         fake.NewFakeClientWithScheme(s, waitingMigrate),
 				Log:            logf.Log.WithName("test"),
 				Recorder:       recorder,
@@ -778,9 +791,9 @@ var _ = Describe("reconcileDataMigrate and reconcileDataProcess not-found events
 	})
 
 	Context("reconcileDataProcess with preceding op not found", func() {
-		It("should record a warning and requeue", func() {
+		It(itShouldRecordWarningAndRequeue, func() {
 			waitingProcess := &datav1alpha1.DataProcess{
-				ObjectMeta: metav1.ObjectMeta{Name: "process-1", Namespace: namespace},
+				ObjectMeta: metav1.ObjectMeta{Name: processName, Namespace: namespace},
 				Spec: datav1alpha1.DataProcessSpec{
 					RunAfter: &datav1alpha1.OperationRef{
 						ObjectRef: datav1alpha1.ObjectRef{
@@ -799,7 +812,7 @@ var _ = Describe("reconcileDataMigrate and reconcileDataProcess not-found events
 			recorder := record.NewFakeRecorder(32)
 			ctx := reconcileRequestContext{
 				Context:        context.TODO(),
-				NamespacedName: types.NamespacedName{Name: "process-1", Namespace: namespace},
+				NamespacedName: types.NamespacedName{Name: processName, Namespace: namespace},
 				Client:         fake.NewFakeClientWithScheme(s, waitingProcess),
 				Log:            logf.Log.WithName("test"),
 				Recorder:       recorder,
@@ -813,9 +826,9 @@ var _ = Describe("reconcileDataMigrate and reconcileDataProcess not-found events
 	})
 
 	Context("reconcileDataBackup with preceding op not found", func() {
-		It("should record a warning and requeue", func() {
+		It(itShouldRecordWarningAndRequeue, func() {
 			waitingBackup := &datav1alpha1.DataBackup{
-				ObjectMeta: metav1.ObjectMeta{Name: "backup-1", Namespace: namespace},
+				ObjectMeta: metav1.ObjectMeta{Name: backupName, Namespace: namespace},
 				Spec: datav1alpha1.DataBackupSpec{
 					RunAfter: &datav1alpha1.OperationRef{
 						ObjectRef: datav1alpha1.ObjectRef{
@@ -834,7 +847,7 @@ var _ = Describe("reconcileDataMigrate and reconcileDataProcess not-found events
 			recorder := record.NewFakeRecorder(32)
 			ctx := reconcileRequestContext{
 				Context:        context.TODO(),
-				NamespacedName: types.NamespacedName{Name: "backup-1", Namespace: namespace},
+				NamespacedName: types.NamespacedName{Name: backupName, Namespace: namespace},
 				Client:         fake.NewFakeClientWithScheme(s, waitingBackup),
 				Log:            logf.Log.WithName("test"),
 				Recorder:       recorder,

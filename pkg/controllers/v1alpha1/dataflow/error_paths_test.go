@@ -37,9 +37,11 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+const serverUnavailable = "server unavailable"
+
 // newGetErrorClient returns a client that fails every Get with a generic error.
 func newGetErrorClient(s *runtime.Scheme) client.Client {
-	injectErr := fmt.Errorf("server unavailable")
+	injectErr := fmt.Errorf(serverUnavailable)
 	fakeBase := fakeclient.NewClientBuilder().WithScheme(s).Build()
 	return interceptor.NewClient(fakeBase, interceptor.Funcs{
 		Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
@@ -66,7 +68,7 @@ var _ = Describe("Reconcile error path: Get failure propagates to error return",
 		}
 		result, err := r.Reconcile(context.TODO(), req)
 		Expect(err).To(HaveOccurred())
-		Expect(err.Error()).To(ContainSubstring("server unavailable"))
+		Expect(err.Error()).To(ContainSubstring(serverUnavailable))
 		// RequeueIfError returns ctrl.Result{} + the error
 		Expect(result).To(Equal(ctrl.Result{}))
 	})
@@ -180,7 +182,7 @@ var _ = Describe("reconcileDataProcess: outer Get failure", func() {
 		needRequeue, err := reconcileDataProcess(ctx)
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("failed to get dataprocess"))
-		Expect(err.Error()).To(ContainSubstring("server unavailable"))
+		Expect(err.Error()).To(ContainSubstring(serverUnavailable))
 		Expect(needRequeue).To(BeTrue())
 	})
 })
