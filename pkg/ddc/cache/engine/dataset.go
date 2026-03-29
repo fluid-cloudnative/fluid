@@ -80,11 +80,10 @@ func (e *CacheEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (err 
 		// TODO(cache runtime): update datasetToUpdate.Status.CacheStates
 
 		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
+			e.Log.Info("the dataset status", "status", datasetToUpdate.Status)
 			err = e.Client.Status().Update(context.TODO(), datasetToUpdate)
 			if err != nil {
 				return err
-			} else {
-				e.Log.Info("No need to update the cache of the data")
 			}
 		}
 

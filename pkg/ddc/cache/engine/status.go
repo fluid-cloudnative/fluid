@@ -65,7 +65,7 @@ func (e *CacheEngine) CheckAndUpdateRuntimeStatus(value *common.CacheRuntimeValu
 		}
 
 		if value.Client.Enabled {
-			err = e.setClientComponentStatus(&runtimeToUpdate.Status.Worker)
+			err = e.setClientComponentStatus(&runtimeToUpdate.Status.Client)
 			if err != nil {
 				return err
 			}

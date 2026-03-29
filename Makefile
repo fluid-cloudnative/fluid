@@ -125,7 +125,7 @@ DOCKER_PUSH += docker-push-webhook
 DOCKER_PUSH += docker-push-goosefsruntime-controller
 DOCKER_PUSH += docker-push-juicefsruntime-controller
 DOCKER_PUSH += docker-push-thinruntime-controller
-DOCKER_PUSH += docker-push-cacheruntime-controller
+#DOCKER_PUSH += docker-push-cacheruntime-controller
 DOCKER_PUSH += docker-push-efcruntime-controller
 DOCKER_PUSH += docker-push-vineyardruntime-controller
 # Not need to push init-users image by default
@@ -143,7 +143,7 @@ DOCKER_BUILDX_PUSH += docker-buildx-push-csi
 DOCKER_BUILDX_PUSH += docker-buildx-push-webhook
 DOCKER_BUILDX_PUSH += docker-buildx-push-juicefsruntime-controller
 DOCKER_BUILDX_PUSH += docker-buildx-push-thinruntime-controller
-DOCKER_BUILDX_PUSH += docker-buildx-push-cacheruntime-controller
+#DOCKER_BUILDX_PUSH += docker-buildx-push-cacheruntime-controller
 DOCKER_BUILDX_PUSH += docker-buildx-push-efcruntime-controller
 DOCKER_BUILDX_PUSH += docker-buildx-push-vineyardruntime-controller
 # Not need to push init-users image by default
