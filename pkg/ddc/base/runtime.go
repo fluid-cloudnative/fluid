@@ -295,7 +295,6 @@ func (info *RuntimeInfo) GetNamespace() string {
 
 // GetOwnerDatasetUID retrieves the unique identifier (UID) of the owner Dataset.
 func (info *RuntimeInfo) GetOwnerDatasetUID() string {
-	// Returns the value of the ownerDatasetUID field stored in the RuntimeInfo struct
 	return info.ownerDatasetUID
 }
 
