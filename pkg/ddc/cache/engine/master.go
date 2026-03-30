@@ -50,6 +50,5 @@ func (e *CacheEngine) shouldSetupMaster() (bool, error) {
 }
 
 func (e *CacheEngine) setupMasterInternal(masterValue *common.CacheRuntimeComponentValue) error {
-	// TODO: Implement
-	return nil
+	return newNotImplementError("setupMasterInternal")
 }

@@ -19,8 +19,7 @@ package engine
 import "github.com/fluid-cloudnative/fluid/pkg/common"
 
 func (e *CacheEngine) PrepareUFS(value *common.CacheRuntimeValue) error {
-	// TODO(cache runtime): Implement
 	// execute mount command in master pod
 
-	return nil
+	return newNotImplementError("PrepareUFS")
 }

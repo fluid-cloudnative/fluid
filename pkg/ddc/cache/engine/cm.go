@@ -19,6 +19,5 @@ package engine
 import "github.com/fluid-cloudnative/fluid/pkg/common"
 
 func (e *CacheEngine) createRuntimeValueConfigMap(value *common.CacheRuntimeValue) error {
-	// TODO(cache runtime): Implement
-	return nil
+	return newNotImplementError("createRuntimeValueConfigMap")
 }

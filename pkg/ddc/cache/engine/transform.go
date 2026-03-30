@@ -22,12 +22,5 @@ import (
 )
 
 func (e *CacheEngine) transform(dataset *datav1alpha1.Dataset, runtime *datav1alpha1.CacheRuntime, runtimeClass *datav1alpha1.CacheRuntimeClass) (*common.CacheRuntimeValue, error) {
-	// TODO(cache runtime): Implement transformMaster, transformWorker, transformClient
-	runtimeValue := &common.CacheRuntimeValue{
-		Master: &common.CacheRuntimeComponentValue{},
-		Worker: &common.CacheRuntimeComponentValue{},
-		Client: &common.CacheRuntimeComponentValue{},
-	}
-
-	return runtimeValue, nil
+	return nil, newNotImplementError("transform")
 }

@@ -29,7 +29,6 @@ import (
 )
 
 func (e *CacheEngine) Operate(ctx cruntime.ReconcileRequestContext, opStatus *v1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
-	// TODO(cache runtime): Implement
 	object := operation.GetOperationObject()
 	// cache runtime engine current not support any data operation
 	err := errors.NewNotSupported(
@@ -43,6 +42,5 @@ func (e *CacheEngine) Operate(ctx cruntime.ReconcileRequestContext, opStatus *v1
 }
 
 func (e *CacheEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, operation dataoperation.OperationInterface) (valueFileName string, err error) {
-	// TODO(cache runtime): Implement
-	return "", nil
+	return "", newNotImplementError("GetDataOperationValueFile")
 }

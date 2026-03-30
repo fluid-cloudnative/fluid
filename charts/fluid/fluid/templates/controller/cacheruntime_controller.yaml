@@ -29,7 +29,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: cacheruntime-controller
-      {{ include "fluid.controlplane.affinity" . | nindent 6}}
+      {{ include "fluid.controlplane.affinity" . | nindent 6 }}
       {{- if .Values.runtime.cache.tolerations }}
       tolerations:
 {{ toYaml .Values.runtime.cache.tolerations | indent 6 }}

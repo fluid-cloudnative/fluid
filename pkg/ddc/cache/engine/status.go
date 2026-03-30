@@ -29,16 +29,13 @@ import (
 )
 
 func (e *CacheEngine) setMasterComponentStatus(status *fluidapi.RuntimeComponentStatus) (ready bool, err error) {
-	// TODO(cache runtime): Implement
-	return true, nil
+	return true, newNotImplementError("setMasterComponentStatus")
 }
 func (e *CacheEngine) setWorkerComponentStatus(status *fluidapi.RuntimeComponentStatus) (ready bool, err error) {
-	// TODO(cache runtime): Implement
-	return true, nil
+	return true, newNotImplementError("setWorkerComponentStatus")
 }
 func (e *CacheEngine) setClientComponentStatus(status *fluidapi.RuntimeComponentStatus) (err error) {
-	// TODO(cache runtime): Implement
-	return nil
+	return newNotImplementError("setClientComponentStatus")
 }
 func (e *CacheEngine) CheckAndUpdateRuntimeStatus(value *common.CacheRuntimeValue) (bool, error) {
 	var masterReady, workerReady, runtimeReady = true, true, false

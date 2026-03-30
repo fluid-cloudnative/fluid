@@ -18,6 +18,5 @@ package engine
 
 // Shutdown and clean up the engine
 func (e *CacheEngine) Shutdown() (err error) {
-	// TODO(cache runtime): Implement
-	return nil
+	return newNotImplementError("Shutdown")
 }

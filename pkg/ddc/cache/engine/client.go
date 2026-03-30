@@ -50,6 +50,5 @@ func (e *CacheEngine) ShouldSetupClient() (bool, error) {
 }
 
 func (e *CacheEngine) SetupClientInternal(clientValue *common.CacheRuntimeComponentValue) error {
-	// TODO(cache runtime): Implement
-	return nil
+	return newNotImplementError("SetupClientInternal")
 }

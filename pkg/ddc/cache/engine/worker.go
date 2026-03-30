@@ -49,6 +49,5 @@ func (e *CacheEngine) ShouldSetupWorker() (bool, error) {
 }
 
 func (e *CacheEngine) SetupWorkerInternal(workerValue *common.CacheRuntimeComponentValue) error {
-	// TODO: Implement
-	return nil
+	return newNotImplementError("SetupWorkerInternal")
 }

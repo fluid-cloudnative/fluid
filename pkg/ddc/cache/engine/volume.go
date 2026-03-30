@@ -40,23 +40,17 @@ func (e *CacheEngine) DeleteVolume() (err error) {
 }
 
 func (e *CacheEngine) createFusePersistentVolume() error {
-	// TODO(cache runtime): Implement, refer to JuiceFS Implementation
-
-	return nil
+	return newNotImplementError("createFusePersistentVolume")
 }
 
 func (e *CacheEngine) createFusePersistentVolumeClaim() error {
-	// TODO(cache runtime): Implement, refer to JuiceFS Implementation
-
-	return nil
+	return newNotImplementError("createFusePersistentVolumeClaim")
 }
 
 func (e *CacheEngine) deleteFusePersistentVolume() error {
-	// TODO(cache runtime): Implement, refer to JuiceFS Implementation
-	return nil
+	return newNotImplementError("deleteFusePersistentVolume")
 }
 
 func (e *CacheEngine) deleteFusePersistentVolumeClaim() error {
-	// TODO(cache runtime): Implement, refer to JuiceFS Implementation
-	return nil
+	return newNotImplementError("deleteFusePersistentVolumeClaim")
 }

@@ -23,8 +23,6 @@ import (
 )
 
 func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
-	// TODO(cache runtime): Implement
-
 	// sync runtime status
 
 	// handle ufs change
@@ -34,7 +32,8 @@ func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
 	// sync metadata
 
 	// SyncScheduleInfoToCacheNodes
-	return nil
+
+	return newNotImplementError("Sync")
 }
 
 func getSyncRetryDuration() (d *time.Duration, err error) {
