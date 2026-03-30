@@ -77,6 +77,11 @@ const (
 	//   	"Sidecar": for only sidecar to skip check mount ready,
 	AnnotationSkipCheckMountReadyTarget = LabelAnnotationPrefix + "skip-check-mount-ready-target"
 
+	// AnnotationCheckMountScriptSHA256 is an annotation key on the check-mount ConfigMap that stores
+	// the SHA256 (first 63 chars) of the script content, used to detect script updates.
+	// i.e. fluid.io/check-mount-script-sha256
+	AnnotationCheckMountScriptSHA256 = LabelAnnotationPrefix + "check-mount-script-sha256"
+
 	// AnnotationDisableRuntimeHelmValueConfig is a runtime label indicates the configmap contains helm value will not be created in setup.
 	AnnotationDisableRuntimeHelmValueConfig = "runtime." + LabelAnnotationPrefix + "disable-helm-value-config"
 
