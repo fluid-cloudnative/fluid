@@ -92,7 +92,7 @@ func TestThinEngine_CreateVolume(t *testing.T) {
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 	engine.Client = client
 
-	err = engine.CreateVolume()
+	err = engine.CreateVolume(context.Background())
 	if err != nil {
 		t.Errorf("fail to exec CreateVolume with error %v", err)
 	}
@@ -159,7 +159,7 @@ func TestThinEngine_createFusePersistentVolume(t *testing.T) {
 		},
 	}
 
-	err = engine.createFusePersistentVolume()
+	err = engine.createFusePersistentVolume(context.Background())
 	if err != nil {
 		t.Errorf("fail to exec createFusePersistentVolume with error %v", err)
 	}
@@ -224,7 +224,7 @@ func TestThinEngine_createFusePersistentVolumeClaim(t *testing.T) {
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 	engine.Client = client
 
-	err = engine.createFusePersistentVolumeClaim()
+	err = engine.createFusePersistentVolumeClaim(context.Background())
 	if err != nil {
 		t.Errorf("fail to exec createFusePersistentVolumeClaim with error %v", err)
 	}

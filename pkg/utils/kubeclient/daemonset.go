@@ -28,8 +28,13 @@ import (
 
 // GetDaemonset gets the daemonset by name and namespace
 func GetDaemonset(c client.Reader, name string, namespace string) (ds *appsv1.DaemonSet, err error) {
+	return GetDaemonsetWithContext(context.TODO(), c, name, namespace)
+}
+
+// GetDaemonsetWithContext gets the daemonset by name and namespace with the caller context.
+func GetDaemonsetWithContext(ctx context.Context, c client.Reader, name string, namespace string) (ds *appsv1.DaemonSet, err error) {
 	ds = &appsv1.DaemonSet{}
-	err = c.Get(context.TODO(), types.NamespacedName{
+	err = c.Get(ctx, types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
 	}, ds)

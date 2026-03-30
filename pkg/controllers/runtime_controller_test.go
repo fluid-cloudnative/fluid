@@ -671,12 +671,12 @@ func (e *testEngine) Setup(cruntime.ReconcileRequestContext) (bool, error) {
 	return e.setupReady, e.setupErr
 }
 
-func (e *testEngine) CreateVolume() error {
+func (e *testEngine) CreateVolume(context.Context) error {
 	e.createVolumeCalls++
 	return e.createVolumeErr
 }
 
-func (e *testEngine) DeleteVolume() error {
+func (e *testEngine) DeleteVolume(context.Context) error {
 	e.deleteVolumeCalls++
 	return e.deleteVolumeErr
 }

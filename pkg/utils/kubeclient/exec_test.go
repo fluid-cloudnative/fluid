@@ -151,7 +151,7 @@ var _ = Describe("Exec Tests", func() {
 				})
 			defer patch.Reset()
 
-			stdout, stderr, err := ExecCommandInContainerWithTimeout(
+			stdout, stderr, err := ExecCommandInContainerWithTimeoutContext(context.Background(),
 				"test-pod", "test-container", "test-namespace",
 				[]string{"echo", "hello"}, 5*time.Second)
 
@@ -172,7 +172,7 @@ var _ = Describe("Exec Tests", func() {
 			timeout := 100 * time.Millisecond
 			start := time.Now()
 
-			stdout, stderr, err := ExecCommandInContainerWithTimeout(
+			stdout, stderr, err := ExecCommandInContainerWithTimeoutContext(context.Background(),
 				"test-pod", "test-container", "test-namespace",
 				[]string{"sleep", "10"}, timeout)
 
@@ -194,13 +194,28 @@ var _ = Describe("Exec Tests", func() {
 				})
 			defer patch.Reset()
 
-			_, stderr, err := ExecCommandInContainerWithTimeout(
+			_, stderr, err := ExecCommandInContainerWithTimeoutContext(context.Background(),
 				"test-pod", "test-container", "test-namespace",
 				[]string{"nonexistent-command"}, 5*time.Second)
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal(expectedErr.Error()))
 			Expect(stderr).To(Equal("command not found"))
+		})
+
+		It("should return context cancellation when parent context is canceled", func() {
+			parentCtx, cancel := context.WithCancel(context.Background())
+			cancel()
+
+			stdout, stderr, err := ExecCommandInContainerWithTimeoutContext(
+				parentCtx,
+				"test-pod", "test-container", "test-namespace",
+				[]string{"echo", "hello"}, 5*time.Second)
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("context canceled"))
+			Expect(stdout).To(BeEmpty())
+			Expect(stderr).To(BeEmpty())
 		})
 
 		It("should not have data races", func() {
@@ -229,7 +244,7 @@ var _ = Describe("Exec Tests", func() {
 					defer GinkgoRecover()
 					defer wg.Done()
 					podName := "pod-" + string(rune('a'+id%26))
-					stdout, stderr, err := ExecCommandInContainerWithTimeout(
+					stdout, stderr, err := ExecCommandInContainerWithTimeoutContext(context.Background(),
 						podName, "container", "namespace",
 						[]string{"test"}, 500*time.Millisecond)
 
@@ -268,7 +283,7 @@ var _ = Describe("Exec Tests", func() {
 			for i := 0; i < numCalls; i++ {
 				go func() {
 					defer wg.Done()
-					_, _, _ = ExecCommandInContainerWithTimeout(
+					_, _, _ = ExecCommandInContainerWithTimeoutContext(context.Background(),
 						"pod", "container", "namespace",
 						[]string{"slow-command"}, 50*time.Millisecond)
 				}()
@@ -295,7 +310,7 @@ var _ = Describe("Exec Tests", func() {
 				})
 			defer patch.Reset()
 
-			_, _, err := ExecCommandInContainerWithTimeout(
+			_, _, err := ExecCommandInContainerWithTimeoutContext(context.Background(),
 				"pod", "container", "namespace",
 				[]string{"command"}, 10*time.Millisecond)
 
@@ -310,18 +325,4 @@ var _ = Describe("Exec Tests", func() {
 		})
 	})
 
-	Context("ExecResult", func() {
-		It("should store values correctly", func() {
-			result := execResult{
-				stdout: "test stdout",
-				stderr: "test stderr",
-				err:    errors.New("test error"),
-			}
-
-			Expect(result.stdout).To(Equal("test stdout"))
-			Expect(result.stderr).To(Equal("test stderr"))
-			Expect(result.err).To(HaveOccurred())
-			Expect(result.err.Error()).To(Equal("test error"))
-		})
-	})
 })

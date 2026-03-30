@@ -17,6 +17,7 @@ limitations under the License.
 package volume
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -26,17 +27,19 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // DeleteFusePersistentVolume
-func DeleteFusePersistentVolume(client client.Client,
+func DeleteFusePersistentVolume(ctx context.Context,
+	client client.Client,
 	runtime base.RuntimeInfoInterface,
 	log logr.Logger) (err error) {
 
 	pvName := runtime.GetPersistentVolumeName()
 
-	err = deleteFusePersistentVolumeIfExists(client, pvName, log)
+	err = deleteFusePersistentVolumeIfExists(ctx, client, pvName, log)
 	if err != nil {
 		return err
 	}
@@ -44,29 +47,28 @@ func DeleteFusePersistentVolume(client client.Client,
 	return err
 }
 
-func deleteFusePersistentVolumeIfExists(client client.Client, pvName string, log logr.Logger) (err error) {
-	found, err := kubeclient.IsPersistentVolumeExist(client, pvName, common.GetExpectedFluidAnnotations())
+func deleteFusePersistentVolumeIfExists(ctx context.Context, client client.Client, pvName string, log logr.Logger) (err error) {
+	found, err := kubeclient.IsPersistentVolumeExistWithContext(ctx, client, pvName, common.GetExpectedFluidAnnotations())
 	if err != nil {
 		return err
 	}
 
 	if found {
-		err = kubeclient.DeletePersistentVolume(client, pvName)
+		err = kubeclient.DeletePersistentVolumeWithContext(ctx, client, pvName)
 		if err != nil {
 			return err
 		}
-		retries := 10
-		for i := 0; i < retries; i++ {
-			found, err = kubeclient.IsPersistentVolumeExist(client, pvName, common.GetExpectedFluidAnnotations())
+		pollCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
+		pollErr := wait.PollUntilContextCancel(pollCtx, time.Second, true, func(pollCtx context.Context) (bool, error) {
+			found, err = kubeclient.IsPersistentVolumeExistWithContext(pollCtx, client, pvName, common.GetExpectedFluidAnnotations())
 			if err != nil {
-				return err
+				return false, err
 			}
-
-			if found {
-				time.Sleep(1 * time.Second)
-			} else {
-				break
-			}
+			return !found, nil
+		})
+		if pollErr != nil && ctx.Err() != nil {
+			return pollErr
 		}
 
 		if found {
@@ -81,55 +83,61 @@ func deleteFusePersistentVolumeIfExists(client client.Client, pvName string, log
 }
 
 // DeleteFusePersistentVolume
-func DeleteFusePersistentVolumeClaim(client client.Client,
+func DeleteFusePersistentVolumeClaim(ctx context.Context,
+	client client.Client,
 	runtime base.RuntimeInfoInterface,
 	log logr.Logger) (err error) {
 
-	found, err := kubeclient.IsPersistentVolumeClaimExist(client, runtime.GetName(), runtime.GetNamespace(), common.GetExpectedFluidAnnotations())
+	found, err := kubeclient.IsPersistentVolumeClaimExistWithContext(ctx, client, runtime.GetName(), runtime.GetNamespace(), common.GetExpectedFluidAnnotations())
 	if err != nil {
 		return err
 	}
 
 	if found {
-		err = kubeclient.DeletePersistentVolumeClaim(client, runtime.GetName(), runtime.GetNamespace())
+		err = kubeclient.DeletePersistentVolumeClaimWithContext(ctx, client, runtime.GetName(), runtime.GetNamespace())
 		if err != nil {
 			return err
 		}
 
 		stillFound := false
-		retries := 10
-		for i := 0; i < retries; i++ {
-			stillFound, err = kubeclient.IsPersistentVolumeClaimExist(client, runtime.GetName(), runtime.GetNamespace(), common.GetExpectedFluidAnnotations())
+		pollCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
+		pollErr := wait.PollUntilContextCancel(pollCtx, time.Second, true, func(pollCtx context.Context) (bool, error) {
+			stillFound, err = kubeclient.IsPersistentVolumeClaimExistWithContext(pollCtx, client, runtime.GetName(), runtime.GetNamespace(), common.GetExpectedFluidAnnotations())
 			if err != nil {
-				return err
+				return false, err
 			}
 
 			if !stillFound {
-				break
+				return true, nil
 			}
 
-			should, err := kubeclient.ShouldRemoveProtectionFinalizer(client, runtime.GetName(), runtime.GetNamespace())
+			should, err := kubeclient.ShouldRemoveProtectionFinalizerWithContext(pollCtx, client, runtime.GetName(), runtime.GetNamespace())
 			if err != nil {
 				// ignore NotFound error and re-check existence if the pvc is already deleted
 				if utils.IgnoreNotFound(err) == nil {
-					continue
+					return false, nil
 				}
+				return false, err
 			}
 
 			if should {
 				log.Info("Should forcibly remove pvc-protection finalizer")
-				err = kubeclient.RemoveProtectionFinalizer(client, runtime.GetName(), runtime.GetNamespace())
+				err = kubeclient.RemoveProtectionFinalizerWithContext(pollCtx, client, runtime.GetName(), runtime.GetNamespace())
 				if err != nil {
 					// ignore NotFound error and re-check existence if the pvc is already deleted
 					if utils.IgnoreNotFound(err) == nil {
-						continue
+						return false, nil
 					}
 					log.Info("Failed to remove finalizers", "name", runtime.GetName(), "namespace", runtime.GetNamespace())
-					return err
+					return false, err
 				}
 			}
 
-			time.Sleep(1 * time.Second)
+			return false, nil
+		})
+		if pollErr != nil && ctx.Err() != nil {
+			return pollErr
 		}
 
 		if stillFound {

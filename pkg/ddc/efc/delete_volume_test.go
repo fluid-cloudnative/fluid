@@ -35,9 +35,11 @@ import (
 )
 
 type TestCase struct {
-	engine    *EFCEngine
-	isDeleted bool
-	isErr     bool
+	name            string
+	namespace       string
+	withRuntimeInfo bool
+	isDeleted       bool
+	isErr           bool
 }
 
 func newTestEFCEngine(client client.Client, name string, namespace string, withRuntimeInfo bool) *EFCEngine {
@@ -59,35 +61,36 @@ func newTestEFCEngine(client client.Client, name string, namespace string, withR
 	return engine
 }
 
-func doTestCases(testCases []TestCase, t *testing.T) {
+func doTestCases(testCases []TestCase, resources []runtime.Object, t *testing.T) {
 	for _, test := range testCases {
-		//var err error = nil
-		err := test.engine.DeleteVolume()
+		fakeClient := fake.NewFakeClientWithScheme(testScheme, resources...)
+		engine := newTestEFCEngine(fakeClient, test.name, test.namespace, test.withRuntimeInfo)
+		err := engine.DeleteVolume(context.Background())
 
 		isErr := err != nil
 		if isErr != test.isErr {
-			t.Errorf("expected %t, got %t.", test.isErr, isErr)
+			t.Errorf("%s/%s withRuntimeInfo=%t: expected error=%t, got %t.", test.namespace, test.name, test.withRuntimeInfo, test.isErr, isErr)
 		}
 
 		pv := &v1.PersistentVolume{}
 		nullPV := v1.PersistentVolume{}
 		keyPV := types.NamespacedName{
-			Name: fmt.Sprintf("%s-%s", test.engine.namespace, test.engine.name),
+			Name: fmt.Sprintf("%s-%s", engine.namespace, engine.name),
 		}
-		_ = test.engine.Client.Get(context.TODO(), keyPV, pv)
+		_ = engine.Client.Get(context.TODO(), keyPV, pv)
 		if test.isDeleted != reflect.DeepEqual(nullPV, *pv) {
-			t.Errorf("PV still exist after delete.")
+			t.Errorf("%s/%s withRuntimeInfo=%t: PV still exist after delete.", test.namespace, test.name, test.withRuntimeInfo)
 		}
 
 		pvc := &v1.PersistentVolumeClaim{}
 		nullPVC := v1.PersistentVolumeClaim{}
 		keyPVC := types.NamespacedName{
-			Name:      test.engine.name,
-			Namespace: test.engine.namespace,
+			Name:      engine.name,
+			Namespace: engine.namespace,
 		}
-		_ = test.engine.Client.Get(context.TODO(), keyPVC, pvc)
+		_ = engine.Client.Get(context.TODO(), keyPVC, pvc)
 		if test.isDeleted != reflect.DeepEqual(nullPVC, *pvc) {
-			t.Errorf("PVC still exist after delete.")
+			t.Errorf("%s/%s withRuntimeInfo=%t: PVC still exist after delete.", test.namespace, test.name, test.withRuntimeInfo)
 		}
 	}
 }
@@ -134,26 +137,28 @@ func TestEFCEngine_DeleteVolume(t *testing.T) {
 		tests = append(tests, pvcInput.DeepCopy())
 	}
 
-	fakeClient := fake.NewFakeClientWithScheme(testScheme, tests...)
-	efcEngineCommon := newTestEFCEngine(fakeClient, "efcdemo", "fluid", true)
-	efcEngineErr := newTestEFCEngine(fakeClient, "error", "fluid", true)
-	efcEngineNoRunTime := newTestEFCEngine(fakeClient, "efcdemo", "fluid", false)
 	var testCases = []TestCase{
 		{
-			engine:    efcEngineCommon,
-			isDeleted: true,
-			isErr:     false,
+			name:            "efcdemo",
+			namespace:       "fluid",
+			withRuntimeInfo: true,
+			isDeleted:       true,
+			isErr:           false,
 		},
 		{
-			engine:    efcEngineErr,
-			isDeleted: false,
-			isErr:     true,
+			name:            "error",
+			namespace:       "fluid",
+			withRuntimeInfo: true,
+			isDeleted:       false,
+			isErr:           true,
 		},
 		{
-			engine:    efcEngineNoRunTime,
-			isDeleted: true,
-			isErr:     true,
+			name:            "efcdemo",
+			namespace:       "fluid",
+			withRuntimeInfo: false,
+			isDeleted:       true,
+			isErr:           true,
 		},
 	}
-	doTestCases(testCases, t)
+	doTestCases(testCases, tests, t)
 }

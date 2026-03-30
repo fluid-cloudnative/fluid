@@ -33,7 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (e *ReferenceDatasetEngine) CreateVolume() (err error) {
+func (e *ReferenceDatasetEngine) CreateVolume(ctx context.Context) (err error) {
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		return err
@@ -44,45 +44,45 @@ func (e *ReferenceDatasetEngine) CreateVolume() (err error) {
 		return err
 	}
 
-	accessModes, err := createFusePersistentVolume(e.Client, runtimeInfo, physicalRuntimeInfo, e.Log)
+	accessModes, err := createFusePersistentVolume(ctx, e.Client, runtimeInfo, physicalRuntimeInfo, e.Log)
 	if err != nil {
 		return err
 	}
-	return createFusePersistentVolumeClaim(e.Client, runtimeInfo, physicalRuntimeInfo, accessModes)
+	return createFusePersistentVolumeClaim(ctx, e.Client, runtimeInfo, physicalRuntimeInfo, accessModes)
 }
 
-func (e *ReferenceDatasetEngine) DeleteVolume() (err error) {
+func (e *ReferenceDatasetEngine) DeleteVolume(ctx context.Context) (err error) {
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		return err
 	}
 
-	err = volumeHelper.DeleteFusePersistentVolumeClaim(e.Client, runtimeInfo, e.Log)
+	err = volumeHelper.DeleteFusePersistentVolumeClaim(ctx, e.Client, runtimeInfo, e.Log)
 	if err != nil {
 		return err
 	}
 
-	err = volumeHelper.DeleteFusePersistentVolume(e.Client, runtimeInfo, e.Log)
+	err = volumeHelper.DeleteFusePersistentVolume(ctx, e.Client, runtimeInfo, e.Log)
 
 	return err
 }
 
-func createFusePersistentVolume(client client.Client, virtualRuntime base.RuntimeInfoInterface, physicalRuntime base.RuntimeInfoInterface, log logr.Logger) (accessModes []corev1.PersistentVolumeAccessMode, err error) {
+func createFusePersistentVolume(ctx context.Context, client client.Client, virtualRuntime base.RuntimeInfoInterface, physicalRuntime base.RuntimeInfoInterface, log logr.Logger) (accessModes []corev1.PersistentVolumeAccessMode, err error) {
 	virtualPvName := virtualRuntime.GetPersistentVolumeName()
-	found, err := kubeclient.IsPersistentVolumeExist(client, virtualPvName, common.GetExpectedFluidAnnotations())
+	found, err := kubeclient.IsPersistentVolumeExistWithContext(ctx, client, virtualPvName, common.GetExpectedFluidAnnotations())
 	if err != nil {
 		return accessModes, err
 	}
 
 	if !found {
-		physicalPV, err := kubeclient.GetPersistentVolume(client, physicalRuntime.GetPersistentVolumeName())
+		physicalPV, err := kubeclient.GetPersistentVolumeWithContext(ctx, client, physicalRuntime.GetPersistentVolumeName())
 		if err != nil {
 			return accessModes, err
 		}
 
 		copiedPvSpec := physicalPV.Spec.DeepCopy()
 
-		virtualDataset, err := utils.GetDataset(client, virtualRuntime.GetName(), virtualRuntime.GetNamespace())
+		virtualDataset, err := utils.GetDatasetWithContext(ctx, client, virtualRuntime.GetName(), virtualRuntime.GetNamespace())
 		if err != nil {
 			return accessModes, err
 		}
@@ -124,7 +124,7 @@ func createFusePersistentVolume(client client.Client, virtualRuntime base.Runtim
 			},
 			Spec: *copiedPvSpec,
 		}
-		err = client.Create(context.TODO(), pv)
+		err = client.Create(ctx, pv)
 		if err != nil {
 			return accessModes, err
 		}
@@ -155,11 +155,11 @@ func accessModesForVirtualDataset(virtualDataset *datav1alpha1.Dataset, modes []
 	return accessModes
 }
 
-func createFusePersistentVolumeClaim(client client.Client, virtualRuntime base.RuntimeInfoInterface, physicalRuntime base.RuntimeInfoInterface, accessModes []corev1.PersistentVolumeAccessMode) (err error) {
+func createFusePersistentVolumeClaim(ctx context.Context, client client.Client, virtualRuntime base.RuntimeInfoInterface, physicalRuntime base.RuntimeInfoInterface, accessModes []corev1.PersistentVolumeAccessMode) (err error) {
 	virtualName := virtualRuntime.GetName()
 	virtualNamespace := virtualRuntime.GetNamespace()
 
-	found, err := kubeclient.IsPersistentVolumeClaimExist(client, virtualName, virtualNamespace, common.GetExpectedFluidAnnotations())
+	found, err := kubeclient.IsPersistentVolumeClaimExistWithContext(ctx, client, virtualName, virtualNamespace, common.GetExpectedFluidAnnotations())
 	if err != nil {
 		return err
 	}
@@ -193,7 +193,7 @@ func createFusePersistentVolumeClaim(client client.Client, virtualRuntime base.R
 			},
 		}
 
-		err = client.Create(context.TODO(), pvc)
+		err = client.Create(ctx, pvc)
 		if err != nil {
 			return err
 		}

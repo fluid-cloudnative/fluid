@@ -16,14 +16,16 @@ limitations under the License.
 
 package base
 
-// Setup the CSI
-func (t *TemplateEngine) CreateVolume() (err error) {
+import "context"
 
-	return t.Implement.CreateVolume()
+// Setup the CSI
+func (t *TemplateEngine) CreateVolume(ctx context.Context) (err error) {
+
+	return t.Implement.CreateVolume(ctx)
 }
 
 // Setup the CSI
-func (t *TemplateEngine) DeleteVolume() (err error) {
+func (t *TemplateEngine) DeleteVolume(ctx context.Context) (err error) {
 
-	return t.Implement.DeleteVolume()
+	return t.Implement.DeleteVolume(ctx)
 }

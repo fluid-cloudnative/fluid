@@ -17,6 +17,7 @@
 package operations
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -51,7 +52,7 @@ func (t ThinFileUtils) exec(command []string, verbose bool) (stdout string, stde
 	redactedCommand := securityutils.FilterCommand(command)
 
 	t.log.V(1).Info("Exec command start", "command", redactedCommand)
-	stdout, stderr, err = kubeclient.ExecCommandInContainerWithTimeout(t.podName, t.container, t.namespace, command, common.FileUtilsExecTimeout)
+	stdout, stderr, err = kubeclient.ExecCommandInContainerWithTimeoutContext(context.TODO(), t.podName, t.container, t.namespace, command, common.FileUtilsExecTimeout)
 	if err != nil {
 		err = errors.Wrapf(err, "error when executing command %v", redactedCommand)
 		return

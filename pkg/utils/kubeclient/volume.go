@@ -39,8 +39,12 @@ var (
 )
 
 func GetPersistentVolume(client client.Reader, name string) (pv *corev1.PersistentVolume, err error) {
+	return GetPersistentVolumeWithContext(context.TODO(), client, name)
+}
+
+func GetPersistentVolumeWithContext(ctx context.Context, client client.Reader, name string) (pv *corev1.PersistentVolume, err error) {
 	pv = &corev1.PersistentVolume{}
-	err = client.Get(context.TODO(), types.NamespacedName{Name: name}, pv)
+	err = client.Get(ctx, types.NamespacedName{Name: name}, pv)
 	if err != nil {
 		return nil, err
 	}
@@ -50,13 +54,17 @@ func GetPersistentVolume(client client.Reader, name string) (pv *corev1.Persiste
 
 // IsPersistentVolumeExist checks if the persistent volume exists given name and annotations of the PV.
 func IsPersistentVolumeExist(client client.Client, name string, annotations map[string]string) (found bool, err error) {
+	return IsPersistentVolumeExistWithContext(context.TODO(), client, name, annotations)
+}
+
+func IsPersistentVolumeExistWithContext(ctx context.Context, client client.Client, name string, annotations map[string]string) (found bool, err error) {
 	key := types.NamespacedName{
 		Name: name,
 	}
 
 	pv := &corev1.PersistentVolume{}
 
-	err = client.Get(context.TODO(), key, pv)
+	err = client.Get(ctx, key, pv)
 	if err != nil {
 		if apierrs.IsNotFound(err) {
 			found = false
@@ -85,13 +93,17 @@ func IsPersistentVolumeExist(client client.Client, name string, annotations map[
 
 // IsPersistentVolumeClaimExist checks if the persistent volume claim exists given name, namespace and annotations of the PVC.
 func IsPersistentVolumeClaimExist(client client.Client, name, namespace string, annotations map[string]string) (found bool, err error) {
+	return IsPersistentVolumeClaimExistWithContext(context.TODO(), client, name, namespace, annotations)
+}
+
+func IsPersistentVolumeClaimExistWithContext(ctx context.Context, client client.Client, name, namespace string, annotations map[string]string) (found bool, err error) {
 	key := types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
 	}
 
 	pvc := &corev1.PersistentVolumeClaim{}
-	err = client.Get(context.TODO(), key, pvc)
+	err = client.Get(ctx, key, pvc)
 	if err != nil {
 		if apierrs.IsNotFound(err) {
 			found = false
@@ -121,12 +133,16 @@ func IsPersistentVolumeClaimExist(client client.Client, name, namespace string, 
 
 // DeletePersistentVolume deletes volume
 func DeletePersistentVolume(client client.Client, name string) (err error) {
+	return DeletePersistentVolumeWithContext(context.TODO(), client, name)
+}
+
+func DeletePersistentVolumeWithContext(ctx context.Context, client client.Client, name string) (err error) {
 	key := types.NamespacedName{
 		Name: name,
 	}
 	found := false
 	pv := &corev1.PersistentVolume{}
-	if err = client.Get(context.TODO(), key, pv); err != nil {
+	if err = client.Get(ctx, key, pv); err != nil {
 		if apierrs.IsNotFound(err) {
 			log.V(1).Info("SKip deleteing the PersistentVolume due to it's not found", "name", name)
 			found = false
@@ -138,7 +154,7 @@ func DeletePersistentVolume(client client.Client, name string) (err error) {
 		found = true
 	}
 	if found {
-		err = client.Delete(context.TODO(), pv)
+		err = client.Delete(ctx, pv)
 		if err != nil && !apierrs.IsNotFound(err) {
 			return fmt.Errorf("error deleting pv %s: %s", name, err.Error())
 		}
@@ -149,6 +165,10 @@ func DeletePersistentVolume(client client.Client, name string) (err error) {
 
 // DeletePersistentVolumeClaim deletes volume claim
 func DeletePersistentVolumeClaim(client client.Client, name, namespace string) (err error) {
+	return DeletePersistentVolumeClaimWithContext(context.TODO(), client, name, namespace)
+}
+
+func DeletePersistentVolumeClaimWithContext(ctx context.Context, client client.Client, name, namespace string) (err error) {
 	key := types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
@@ -156,7 +176,7 @@ func DeletePersistentVolumeClaim(client client.Client, name, namespace string) (
 
 	found := false
 	pvc := &corev1.PersistentVolumeClaim{}
-	if err = client.Get(context.TODO(), key, pvc); err != nil {
+	if err = client.Get(ctx, key, pvc); err != nil {
 		if apierrs.IsNotFound(err) {
 			log.V(1).Info("SKip deleting the PersistentVolumeClaim due to it's not found", "name", name,
 				"namespace", namespace)
@@ -174,7 +194,7 @@ func DeletePersistentVolumeClaim(client client.Client, name, namespace string) (
 			return nil
 		}
 		log.V(1).Info("deleting pvc", "name", pvc.Name, "namespace", pvc.Namespace)
-		err = client.Delete(context.TODO(), pvc)
+		err = client.Delete(ctx, pvc)
 		if err != nil && !apierrs.IsNotFound(err) {
 			return fmt.Errorf("error deleting pvc %s: %s", name, err.Error())
 		}
@@ -195,8 +215,12 @@ func GetPVCsFromPod(pod corev1.Pod) (pvcs []corev1.Volume) {
 
 // GetPvcMountPods get pods that mounted the specific pvc for a given namespace
 func GetPvcMountPods(e client.Client, pvcName, namespace string) ([]corev1.Pod, error) {
+	return GetPvcMountPodsWithContext(context.TODO(), e, pvcName, namespace)
+}
+
+func GetPvcMountPodsWithContext(ctx context.Context, e client.Client, pvcName, namespace string) ([]corev1.Pod, error) {
 	nsPods := corev1.PodList{}
-	err := e.List(context.TODO(), &nsPods, &client.ListOptions{
+	err := e.List(ctx, &nsPods, &client.ListOptions{
 		Namespace: namespace,
 	})
 	if err != nil {
@@ -247,13 +271,17 @@ func GetPvcMountNodes(e client.Client, pvcName, namespace string) (map[string]in
 // RemoveProtectionFinalizer removes finalizers of PersistentVolumeClaim
 // if all owners that this PVC is mounted by are inactive (Succeed or Failed)
 func RemoveProtectionFinalizer(client client.Client, name, namespace string) (err error) {
+	return RemoveProtectionFinalizerWithContext(context.TODO(), client, name, namespace)
+}
+
+func RemoveProtectionFinalizerWithContext(ctx context.Context, client client.Client, name, namespace string) (err error) {
 	key := types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
 	}
 
 	pvc := &corev1.PersistentVolumeClaim{}
-	err = client.Get(context.TODO(), key, pvc)
+	err = client.Get(ctx, key, pvc)
 	if err != nil {
 		return err
 	}
@@ -262,7 +290,7 @@ func RemoveProtectionFinalizer(client client.Client, name, namespace string) (er
 	log.Info("Remove finalizer pvc-protection")
 	finalizers := utils.RemoveString(pvc.Finalizers, persistentVolumeClaimProtectionFinalizerName)
 	pvc.SetFinalizers(finalizers)
-	if err = client.Update(context.TODO(), pvc); err != nil {
+	if err = client.Update(ctx, pvc); err != nil {
 		log.Error(err, "Failed to remove finalizer",
 			"Finalizer", persistentVolumeClaimProtectionFinalizerName)
 		return err
@@ -303,12 +331,16 @@ func ShouldDeleteDataset(client client.Client, name, namespace string) (err erro
 //  1. PVC's in Terminating state for over than 30 seconds
 //  2. PVC's not actively used by any pods
 func ShouldRemoveProtectionFinalizer(client client.Client, name, namespace string) (should bool, err error) {
+	return ShouldRemoveProtectionFinalizerWithContext(context.TODO(), client, name, namespace)
+}
+
+func ShouldRemoveProtectionFinalizerWithContext(ctx context.Context, client client.Client, name, namespace string) (should bool, err error) {
 	key := types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
 	}
 	pvc := &corev1.PersistentVolumeClaim{}
-	err = client.Get(context.TODO(), key, pvc)
+	err = client.Get(ctx, key, pvc)
 	if err != nil {
 		return
 	}
@@ -328,7 +360,7 @@ func ShouldRemoveProtectionFinalizer(client client.Client, name, namespace strin
 	}
 
 	// get pods which mounted this pvc
-	pods, err := GetPvcMountPods(client, name, namespace)
+	pods, err := GetPvcMountPodsWithContext(ctx, client, name, namespace)
 	if err != nil {
 		return
 	}
