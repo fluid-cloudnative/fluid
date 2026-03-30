@@ -287,7 +287,10 @@ var _ = Describe("Delete Volume Tests", Label("pkg.utils.dataset.volume.delete_t
 				err := DeleteFusePersistentVolumeClaim(context.Background(), clientObj, runtimeInfo, log)
 				// Either succeeds or times out - both are valid for this test
 				if err != nil {
-					Expect(err.Error()).To(ContainSubstring("not cleaned up after 10-second retry"))
+					Expect(err.Error()).To(SatisfyAny(
+						ContainSubstring("not cleaned up after 10-second retry"),
+						ContainSubstring("context deadline exceeded"),
+					))
 				}
 			})
 		})
@@ -433,7 +436,10 @@ var _ = Describe("Delete Volume Tests", Label("pkg.utils.dataset.volume.delete_t
 				// The function should attempt to remove the finalizer
 				// Depending on fake client behavior, this may succeed or timeout
 				if err != nil {
-					Expect(err.Error()).To(ContainSubstring("not cleaned up after 10-second retry"))
+					Expect(err.Error()).To(SatisfyAny(
+						ContainSubstring("not cleaned up after 10-second retry"),
+						ContainSubstring("context deadline exceeded"),
+					))
 				}
 			})
 		})

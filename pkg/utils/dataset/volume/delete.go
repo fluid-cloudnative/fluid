@@ -67,7 +67,7 @@ func deleteFusePersistentVolumeIfExists(ctx context.Context, client client.Clien
 			}
 			return !found, nil
 		})
-		if pollErr != nil && ctx.Err() != nil {
+		if pollErr != nil {
 			return pollErr
 		}
 
@@ -136,7 +136,7 @@ func DeleteFusePersistentVolumeClaim(ctx context.Context,
 
 			return false, nil
 		})
-		if pollErr != nil && ctx.Err() != nil {
+		if pollErr != nil {
 			return pollErr
 		}
 
