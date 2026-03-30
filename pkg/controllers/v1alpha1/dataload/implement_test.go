@@ -17,17 +17,20 @@ limitations under the License.
 package dataload
 
 import (
-	"testing"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 )
 
-func TestIsTargetPathUnderFluidNativeMounts(t *testing.T) {
-	type args struct {
-		targetPath string
-		dataset    v1alpha1.Dataset
-	}
+var _ = Describe("IsTargetPathUnderFluidNativeMounts", func() {
+	const (
+		datasetName    = "imagenet"
+		imageNetPath   = "/imagenet"
+		pvcMountPoint  = "pvc://nfs-imagenet"
+		emptyMountPath = ""
+	)
 
 	mockDataset := func(name, mountPoint, path string) v1alpha1.Dataset {
 		return v1alpha1.Dataset{
@@ -43,65 +46,40 @@ func TestIsTargetPathUnderFluidNativeMounts(t *testing.T) {
 		}
 	}
 
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		{
-			name: "test_no_fluid_native",
-			args: args{
-				targetPath: "/imagenet",
-				dataset:    mockDataset("imagenet", "oss://imagenet-data/", ""),
-			},
-			want: false,
+	DescribeTable("path matching",
+		func(targetPath string, dataset v1alpha1.Dataset, want bool) {
+			got := utils.IsTargetPathUnderFluidNativeMounts(targetPath, dataset)
+			Expect(got).To(Equal(want))
 		},
-		{
-			name: "test_pvc",
-			args: args{
-				targetPath: "/imagenet",
-				dataset:    mockDataset("imagenet", "pvc://nfs-imagenet", ""),
-			},
-			want: true,
-		},
-		{
-			name: "test_hostpath",
-			args: args{
-				targetPath: "/imagenet",
-				dataset:    mockDataset("imagenet", "local:///hostpath_imagenet", ""),
-			},
-			want: true,
-		},
-		{
-			name: "test_target_subpath",
-			args: args{
-				targetPath: "/imagenet/data/train",
-				dataset:    mockDataset("imagenet", "pvc://nfs-imagenet", ""),
-			},
-			want: true,
-		},
-		{
-			name: "test_mount_path",
-			args: args{
-				targetPath: "/dataset/data/train",
-				dataset:    mockDataset("imagenet", "pvc://nfs-imagenet", "/dataset"),
-			},
-			want: true,
-		},
-		{
-			name: "test_other",
-			args: args{
-				targetPath: "/dataset",
-				dataset:    mockDataset("imagenet", "pvc://nfs-imagenet", ""),
-			},
-			want: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := utils.IsTargetPathUnderFluidNativeMounts(tt.args.targetPath, tt.args.dataset); got != tt.want {
-				t.Errorf("isTargetPathUnderFluidNativeMounts() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
+		Entry("non-fluid-native OSS mount returns false",
+			imageNetPath,
+			mockDataset(datasetName, "oss://imagenet-data/", emptyMountPath),
+			false,
+		),
+		Entry("PVC mount returns true",
+			imageNetPath,
+			mockDataset(datasetName, pvcMountPoint, emptyMountPath),
+			true,
+		),
+		Entry("hostpath mount returns true",
+			imageNetPath,
+			mockDataset(datasetName, "local:///hostpath_imagenet", emptyMountPath),
+			true,
+		),
+		Entry("target subpath under PVC mount returns true",
+			"/imagenet/data/train",
+			mockDataset(datasetName, pvcMountPoint, emptyMountPath),
+			true,
+		),
+		Entry("target path under mount path returns true",
+			"/dataset/data/train",
+			mockDataset(datasetName, pvcMountPoint, "/dataset"),
+			true,
+		),
+		Entry("non-matching path returns false",
+			"/dataset",
+			mockDataset(datasetName, pvcMountPoint, emptyMountPath),
+			false,
+		),
+	)
+})
