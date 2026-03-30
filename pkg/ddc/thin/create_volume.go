@@ -17,13 +17,14 @@
 package thin
 
 import (
+	"context"
 	volumehelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 )
 
 // CreateVolume creates the persistent volume and persistent volume claim for thin runtime.
 // It first initializes the runtime if not already initialized, then creates the fuse persistent volume
 // and fuse persistent volume claim. This function handles the entire volume creation workflow for thin runtime.
-func (t ThinEngine) CreateVolume() (err error) {
+func (t ThinEngine) CreateVolume(ctx context.Context) (err error) {
 	if t.runtime == nil {
 		t.runtime, err = t.getRuntime()
 		if err != nil {
@@ -31,12 +32,12 @@ func (t ThinEngine) CreateVolume() (err error) {
 		}
 	}
 
-	err = t.createFusePersistentVolume()
+	err = t.createFusePersistentVolume(ctx)
 	if err != nil {
 		return err
 	}
 
-	err = t.createFusePersistentVolumeClaim()
+	err = t.createFusePersistentVolumeClaim(ctx)
 	if err != nil {
 		return err
 	}
@@ -44,13 +45,13 @@ func (t ThinEngine) CreateVolume() (err error) {
 }
 
 // createFusePersistentVolume
-func (t *ThinEngine) createFusePersistentVolume() (err error) {
+func (t *ThinEngine) createFusePersistentVolume(ctx context.Context) (err error) {
 	runtimeInfo, err := t.getRuntimeInfo()
 	if err != nil {
 		return err
 	}
 
-	return volumehelper.CreatePersistentVolumeForRuntime(t.Client,
+	return volumehelper.CreatePersistentVolumeForRuntime(ctx, t.Client,
 		runtimeInfo,
 		t.getTargetPath(),
 		t.runtimeProfile.Spec.FileSystemType,
@@ -58,13 +59,13 @@ func (t *ThinEngine) createFusePersistentVolume() (err error) {
 }
 
 // createFusePersistentVolume
-func (t *ThinEngine) createFusePersistentVolumeClaim() (err error) {
+func (t *ThinEngine) createFusePersistentVolumeClaim(ctx context.Context) (err error) {
 	runtimeInfo, err := t.getRuntimeInfo()
 	if err != nil {
 		return err
 	}
 
-	err = volumehelper.CreatePersistentVolumeClaimForRuntime(t.Client, runtimeInfo, t.Log)
+	err = volumehelper.CreatePersistentVolumeClaimForRuntime(ctx, t.Client, runtimeInfo, t.Log)
 	if err != nil {
 		return err
 	}

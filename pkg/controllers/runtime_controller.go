@@ -187,7 +187,7 @@ func (r *RuntimeReconciler) ReconcileRuntimeDeletion(engine base.Engine, ctx cru
 	log.V(1).Info("process the Runtime Deletion", "Runtime", ctx.NamespacedName)
 
 	// 0. Delete the volume
-	err := engine.DeleteVolume()
+	err := engine.DeleteVolume(ctx)
 	if err != nil {
 		r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to delete volume %v", err)
 		// return utils.RequeueIfError(errors.Wrap(err, "Failed to delete volume"))
@@ -288,7 +288,7 @@ func (r *RuntimeReconciler) ReconcileRuntime(engine base.Engine, ctx cruntime.Re
 	}
 
 	// 2.Setup the volume
-	err = engine.CreateVolume()
+	err = engine.CreateVolume(ctx)
 	if err != nil && utils.IgnoreAlreadyExists(err) != nil {
 		r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to setup volume due to error %v", err)
 		log.Error(err, "Failed to setup the volume")

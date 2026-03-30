@@ -17,6 +17,7 @@ limitations under the License.
 package goosefs
 
 import (
+	"context"
 	volumeHelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 )
 
@@ -26,7 +27,7 @@ import (
 // 2. Deletes the Fuse Persistent Volume Claim (PVC) associated with the volume.
 // 3. Deletes the Fuse Persistent Volume (PV) associated with the volume.
 // Returns an error if any of the steps fail.
-func (e *GooseFSEngine) DeleteVolume() (err error) {
+func (e *GooseFSEngine) DeleteVolume(ctx context.Context) (err error) {
 
 	if e.runtime == nil {
 		e.runtime, err = e.getRuntime()
@@ -35,12 +36,12 @@ func (e *GooseFSEngine) DeleteVolume() (err error) {
 		}
 	}
 
-	err = e.deleteFusePersistentVolumeClaim()
+	err = e.deleteFusePersistentVolumeClaim(ctx)
 	if err != nil {
 		return
 	}
 
-	err = e.deleteFusePersistentVolume()
+	err = e.deleteFusePersistentVolume(ctx)
 	if err != nil {
 		return
 	}
@@ -50,21 +51,21 @@ func (e *GooseFSEngine) DeleteVolume() (err error) {
 }
 
 // deleteFusePersistentVolume
-func (e *GooseFSEngine) deleteFusePersistentVolume() (err error) {
+func (e *GooseFSEngine) deleteFusePersistentVolume(ctx context.Context) (err error) {
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		return err
 	}
 
-	return volumeHelper.DeleteFusePersistentVolume(e.Client, runtimeInfo, e.Log)
+	return volumeHelper.DeleteFusePersistentVolume(ctx, e.Client, runtimeInfo, e.Log)
 }
 
 // deleteFusePersistentVolume
-func (e *GooseFSEngine) deleteFusePersistentVolumeClaim() (err error) {
+func (e *GooseFSEngine) deleteFusePersistentVolumeClaim(ctx context.Context) (err error) {
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		return err
 	}
 
-	return volumeHelper.DeleteFusePersistentVolumeClaim(e.Client, runtimeInfo, e.Log)
+	return volumeHelper.DeleteFusePersistentVolumeClaim(ctx, e.Client, runtimeInfo, e.Log)
 }

@@ -37,13 +37,17 @@ const (
 // GetDataset gets the dataset.
 // It returns a pointer to the dataset if successful.
 func GetDataset(client client.Reader, name, namespace string) (*datav1alpha1.Dataset, error) {
+	return GetDatasetWithContext(context.TODO(), client, name, namespace)
+}
 
+// GetDatasetWithContext gets the dataset with the caller context.
+func GetDatasetWithContext(ctx context.Context, client client.Reader, name, namespace string) (*datav1alpha1.Dataset, error) {
 	key := types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
 	}
 	var dataset datav1alpha1.Dataset
-	if err := client.Get(context.TODO(), key, &dataset); err != nil {
+	if err := client.Get(ctx, key, &dataset); err != nil {
 		return nil, err
 	}
 	return &dataset, nil
@@ -61,7 +65,11 @@ func IsSetupDone(dataset *datav1alpha1.Dataset) (done bool) {
 }
 
 func GetAccessModesOfDataset(client client.Client, name, namespace string) (accessModes []corev1.PersistentVolumeAccessMode, err error) {
-	dataset, err := GetDataset(client, name, namespace)
+	return GetAccessModesOfDatasetWithContext(context.TODO(), client, name, namespace)
+}
+
+func GetAccessModesOfDatasetWithContext(ctx context.Context, client client.Client, name, namespace string) (accessModes []corev1.PersistentVolumeAccessMode, err error) {
+	dataset, err := GetDatasetWithContext(ctx, client, name, namespace)
 	if err != nil {
 		return accessModes, err
 	}
@@ -78,7 +86,11 @@ func GetAccessModesOfDataset(client client.Client, name, namespace string) (acce
 }
 
 func GetPVCStorageCapacityOfDataset(client client.Client, name, namespace string) (storageCapacity resource.Quantity, err error) {
-	dataset, err := GetDataset(client, name, namespace)
+	return GetPVCStorageCapacityOfDatasetWithContext(context.TODO(), client, name, namespace)
+}
+
+func GetPVCStorageCapacityOfDatasetWithContext(ctx context.Context, client client.Client, name, namespace string) (storageCapacity resource.Quantity, err error) {
+	dataset, err := GetDatasetWithContext(ctx, client, name, namespace)
 	if err != nil {
 		return storageCapacity, fmt.Errorf("failed to get dataset %s/%s: %w", namespace, name, err)
 	}

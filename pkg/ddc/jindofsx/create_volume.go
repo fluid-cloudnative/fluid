@@ -17,12 +17,13 @@ limitations under the License.
 package jindofsx
 
 import (
+	"context"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	volumeHelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 )
 
 // CreateVolume creates volume
-func (e *JindoFSxEngine) CreateVolume() (err error) {
+func (e *JindoFSxEngine) CreateVolume(ctx context.Context) (err error) {
 	if e.runtime == nil {
 		e.runtime, err = e.getRuntime()
 		if err != nil {
@@ -30,12 +31,12 @@ func (e *JindoFSxEngine) CreateVolume() (err error) {
 		}
 	}
 
-	err = e.createFusePersistentVolume()
+	err = e.createFusePersistentVolume(ctx)
 	if err != nil {
 		return err
 	}
 
-	err = e.createFusePersistentVolumeClaim()
+	err = e.createFusePersistentVolumeClaim(ctx)
 	if err != nil {
 		return err
 	}
@@ -45,14 +46,14 @@ func (e *JindoFSxEngine) CreateVolume() (err error) {
 }
 
 // createFusePersistentVolume
-func (e *JindoFSxEngine) createFusePersistentVolume() (err error) {
+func (e *JindoFSxEngine) createFusePersistentVolume(ctx context.Context) (err error) {
 
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		return err
 	}
 
-	return volumeHelper.CreatePersistentVolumeForRuntime(e.Client,
+	return volumeHelper.CreatePersistentVolumeForRuntime(ctx, e.Client,
 		runtimeInfo,
 		e.getMountPoint(),
 		common.JindoRuntime,
@@ -60,12 +61,12 @@ func (e *JindoFSxEngine) createFusePersistentVolume() (err error) {
 }
 
 // createFusePersistentVolume
-func (e *JindoFSxEngine) createFusePersistentVolumeClaim() (err error) {
+func (e *JindoFSxEngine) createFusePersistentVolumeClaim(ctx context.Context) (err error) {
 
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		return err
 	}
 
-	return volumeHelper.CreatePersistentVolumeClaimForRuntime(e.Client, runtimeInfo, e.Log)
+	return volumeHelper.CreatePersistentVolumeClaimForRuntime(ctx, e.Client, runtimeInfo, e.Log)
 }
