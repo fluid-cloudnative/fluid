@@ -32,13 +32,15 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/testutil"
 )
 
 type TestCase struct {
 	name            string
 	namespace       string
 	withRuntimeInfo bool
-	isDeleted       bool
+	pvDeleted       bool
+	pvcDeleted      bool
 	isErr           bool
 }
 
@@ -78,7 +80,7 @@ func doTestCases(testCases []TestCase, resources []runtime.Object, t *testing.T)
 			Name: fmt.Sprintf("%s-%s", engine.namespace, engine.name),
 		}
 		_ = engine.Client.Get(context.TODO(), keyPV, pv)
-		if test.isDeleted != reflect.DeepEqual(nullPV, *pv) {
+		if test.pvDeleted != reflect.DeepEqual(nullPV, *pv) {
 			t.Errorf("%s/%s withRuntimeInfo=%t: PV still exist after delete.", test.namespace, test.name, test.withRuntimeInfo)
 		}
 
@@ -89,13 +91,15 @@ func doTestCases(testCases []TestCase, resources []runtime.Object, t *testing.T)
 			Namespace: engine.namespace,
 		}
 		_ = engine.Client.Get(context.TODO(), keyPVC, pvc)
-		if test.isDeleted != reflect.DeepEqual(nullPVC, *pvc) {
+		if test.pvcDeleted != reflect.DeepEqual(nullPVC, *pvc) {
 			t.Errorf("%s/%s withRuntimeInfo=%t: PVC still exist after delete.", test.namespace, test.name, test.withRuntimeInfo)
 		}
 	}
 }
 
 func TestEFCEngine_DeleteVolume(t *testing.T) {
+	t.Setenv(testutil.FluidUnitTestEnv, "true")
+
 	testPVInputs := []*v1.PersistentVolume{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -142,21 +146,24 @@ func TestEFCEngine_DeleteVolume(t *testing.T) {
 			name:            "efcdemo",
 			namespace:       "fluid",
 			withRuntimeInfo: true,
-			isDeleted:       true,
+			pvDeleted:       true,
+			pvcDeleted:      true,
 			isErr:           false,
 		},
 		{
 			name:            "error",
 			namespace:       "fluid",
 			withRuntimeInfo: true,
-			isDeleted:       false,
+			pvDeleted:       false,
+			pvcDeleted:      false,
 			isErr:           true,
 		},
 		{
 			name:            "efcdemo",
 			namespace:       "fluid",
 			withRuntimeInfo: false,
-			isDeleted:       true,
+			pvDeleted:       false,
+			pvcDeleted:      true,
 			isErr:           true,
 		},
 	}
