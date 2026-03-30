@@ -2,17 +2,8 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: dataset-controller
+  name: cacheruntime-controller
 rules:
-  - apiGroups:
-    - ""
-    resources:
-    - persistentvolumes
-    - persistentvolumeclaims
-    verbs:
-    - get
-    - list
-    - watch
   - apiGroups:
     - ""
     resources:
@@ -22,89 +13,90 @@ rules:
     - list
     - watch
   - apiGroups:
-      - batch
+    - ""
     resources:
-      - jobs
-      - jobs/status
-      - cronjobs
-      - cronjobs/status
+    - configmaps
     verbs:
-      - get
-      - list
-      - watch
-      - create
-      - update
-      - delete
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
   - apiGroups:
-      - ""
+    - ""
     resources:
-      - configmaps
+    - persistentvolumeclaims
     verbs:
-      - get
-      - list
-      - watch
-      - create
-      - delete
-      - update
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
   - apiGroups:
-      - ""
+    - ""
     resources:
-      - services
+    - persistentvolumes
     verbs:
-      - create
-      - get
-      - delete
+    - get
+    - list
+    - watch
+    - create
+    - delete
   - apiGroups:
-      - ""
+    - ""
     resources:
-      - pods
+    - pods
     verbs:
-      - get
-      - list
-      - watch
+    - get
+    - list
+    - watch
+    - update
   - apiGroups:
-      - ""
+    - ""
     resources:
-      - pods/exec
+    - pods/exec
     verbs:
-      - create
+    - create
   - apiGroups:
-      - ""
+    - ""
     resources:
-      - events
+    - nodes
     verbs:
-      - create
-      - patch
-{{- template "fluid.helmDriver.rbacs" . }}
+    - get
+    - list
+    - watch
+    - patch
+  - apiGroups:
+    - ""
+    resources:
+    - events
+    verbs:
+    - create
+    - patch
+  - apiGroups:
+    - ""
+    resources:
+    - services
+    verbs:
+    - create
+    - patch
+    - delete
+    - list
+    - watch
+    - get
   - apiGroups:
       - data.fluid.io
     resources:
-      - datamigrates
-      - datamigrates/status
-      - dataloads
-      - dataloads/status
-      - databackups
-      - databackups/status
-      - dataprocesses
-      - dataprocesses/status
-      - datasets
-      - datasets/status
-      - alluxioruntimes
-      - alluxioruntimes/status
-      - jindoruntimes
-      - jindoruntimes/status
-      - goosefsruntimes
-      - goosefsruntimes/status
-      - juicefsruntimes
-      - juicefsruntimes/status
-      - thinruntimes
-      - thinruntimes/status
-      - efcruntimes
-      - efcruntimes/status
-      - vineyardruntimes
-      - vineyardruntimes/status
       - cacheruntimes
+      - cacheruntimeclasses
+      - datasets
       - cacheruntimes/status
+      - cacheruntimeclasses/status
+      - datasets/status
     verbs:
       - get
       - list
@@ -112,11 +104,32 @@ rules:
       - create
       - update
       - patch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - serviceaccounts
+    verbs:
+      - create
+      - list
+      - get
+      - delete
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - clusterroles
+      - clusterrolebindings
+    verbs:
+      - create
+      - list
+      - get
       - delete
   - apiGroups:
       - apps
     resources:
+      - daemonsets
       - statefulsets
+      - daemonsets/status
       - statefulsets/status
     verbs:
       - get
@@ -126,33 +139,12 @@ rules:
       - update
       - patch
       - delete
-  - apiGroups:
-      - apps
-    resources:
-      - daemonsets
-      - daemonsets/status
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - apps
-    resources:
-      - deployments
-      - deployments/scale
-      - deployments/status
-    verbs:
-      - 'get'
-      - 'list'
-      - 'watch'
-      - 'update'
-      - 'patch'
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   namespace: {{ include "fluid.namespace" . }}
-  name: dataset-controller
+  name: cacheruntime-controller
 rules:
   - apiGroups:
       - coordination.k8s.io
@@ -165,7 +157,7 @@ rules:
     resources:
       - leases
     resourceNames:
-      - dataset.data.fluid.io
+      - cache.data.fluid.io
     verbs:
       - get
       - list
@@ -177,32 +169,32 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: dataset-clusterrolebinding
+  name: cacheruntime-clusterrolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: dataset-controller
+  name: cacheruntime-controller
 subjects:
   - kind: ServiceAccount
-    name: dataset-controller
+    name: cacheruntime-controller
     namespace: {{ include "fluid.namespace" . }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: dataset-controller
+  name: cacheruntime-rolebinding
   namespace: {{ include "fluid.namespace" . }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: dataset-controller
+  name: cacheruntime-controller
 subjects:
   - kind: ServiceAccount
-    name: dataset-controller
+    name: cacheruntime-controller
     namespace: {{ include "fluid.namespace" . }}
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: dataset-controller
+  name: cacheruntime-controller
   namespace: {{ include "fluid.namespace" . }}

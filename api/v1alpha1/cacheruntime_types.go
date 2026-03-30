@@ -308,3 +308,7 @@ type VolumeMediumSource struct {
 	// +optional
 	Ephemeral *corev1.EphemeralVolumeSource `json:"ephemeral,omitempty"`
 }
+
+func (runtime *CacheRuntime) GetStatus() *CacheRuntimeStatus {
+	return &runtime.Status
+}

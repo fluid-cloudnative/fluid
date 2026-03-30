@@ -19,6 +19,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	cache "github.com/fluid-cloudnative/fluid/pkg/ddc/cache/engine"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/efc"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/goosefs"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo"
@@ -48,6 +49,7 @@ func init() {
 		common.ThinEngineImpl:       thin.Build,
 		common.EFCEngineImpl:        efc.Build,
 		common.VineyardEngineImpl:   vineyard.Build,
+		common.CacheEngineImpl:      cache.Build,
 	}
 }
 
