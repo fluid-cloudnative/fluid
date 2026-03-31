@@ -435,6 +435,7 @@ func (e *AlluxioEngine) genEncryptOptions(EncryptOptions []datav1alpha1.EncryptO
 	return mOptions, nil
 }
 
+// updateMountTime updates the runtime status MountTime to the current time.
 func (e *AlluxioEngine) updateMountTime() {
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		runtime, err := e.getRuntime()
