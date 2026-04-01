@@ -30,6 +30,7 @@ var _ = Describe("HandlerMap", func() {
 	It("should map WebhookSchedulePodPath to a *FluidMutatingHandler", func() {
 		handler, ok := HandlerMap[common.WebhookSchedulePodPath]
 		Expect(ok).To(BeTrue())
+		Expect(handler).NotTo(BeNil())
 		Expect(handler).To(BeAssignableToTypeOf(&FluidMutatingHandler{}))
 	})
 })
