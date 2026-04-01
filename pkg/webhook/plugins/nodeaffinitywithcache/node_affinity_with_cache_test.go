@@ -39,13 +39,12 @@ required:
 - fluid.io/node
 `
 
-func newTestScheme(t *testing.T) *runtime.Scheme {
-	t.Helper()
-	schema := runtime.NewScheme()
-	require.NoError(t, datav1alpha1.AddToScheme(schema))
-	require.NoError(t, corev1.AddToScheme(schema))
-	return schema
-}
+var testScheme = func() *runtime.Scheme {
+	s := runtime.NewScheme()
+	_ = datav1alpha1.AddToScheme(s)
+	_ = corev1.AddToScheme(s)
+	return s
+}()
 
 func newTestAlluxioRuntime() *datav1alpha1.AlluxioRuntime {
 	return &datav1alpha1.AlluxioRuntime{
@@ -92,8 +91,8 @@ func TestGetPreferredSchedulingTerm(t *testing.T) {
 
 func TestMutateOnlyRequired(t *testing.T) {
 	alluxioRuntime := newTestAlluxioRuntime()
-	schema := newTestScheme(t)
-	cl := fake.NewFakeClientWithScheme(schema, alluxioRuntime)
+
+	cl := fake.NewFakeClientWithScheme(testScheme, alluxioRuntime)
 
 	schedPod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -135,8 +134,8 @@ func TestMutateOnlyRequired(t *testing.T) {
 
 func TestMutateOnlyPrefer(t *testing.T) {
 	alluxioRuntime := newTestAlluxioRuntime()
-	schema := newTestScheme(t)
-	cl := fake.NewFakeClientWithScheme(schema, alluxioRuntime)
+
+	cl := fake.NewFakeClientWithScheme(testScheme, alluxioRuntime)
 
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -169,8 +168,8 @@ func TestMutateOnlyPrefer(t *testing.T) {
 
 func TestMutateBothRequiredAndPrefer(t *testing.T) {
 	alluxioRuntime := newTestAlluxioRuntime()
-	schema := newTestScheme(t)
-	cl := fake.NewFakeClientWithScheme(schema, alluxioRuntime)
+
+	cl := fake.NewFakeClientWithScheme(testScheme, alluxioRuntime)
 
 	schedPod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -251,8 +250,8 @@ func newCacheAlluxioRuntime() *datav1alpha1.AlluxioRuntime {
 
 func TestTieredLocality_MutatePodWithDatasetSched(t *testing.T) {
 	alluxioRuntime := newCacheAlluxioRuntime()
-	schema := newTestScheme(t)
-	cl := fake.NewFakeClientWithScheme(schema, alluxioRuntime)
+
+	cl := fake.NewFakeClientWithScheme(testScheme, alluxioRuntime)
 
 	runtimeInfo, err := base.BuildRuntimeInfo(alluxioRuntime.Name, alluxioRuntime.Namespace, "alluxio")
 	require.NoError(t, err)
@@ -282,8 +281,8 @@ func TestTieredLocality_MutatePodWithDatasetSched(t *testing.T) {
 
 func TestTieredLocality_MutatePodWithPreferredTerms(t *testing.T) {
 	alluxioRuntime := newCacheAlluxioRuntime()
-	schema := newTestScheme(t)
-	cl := fake.NewFakeClientWithScheme(schema, alluxioRuntime)
+
+	cl := fake.NewFakeClientWithScheme(testScheme, alluxioRuntime)
 
 	runtimeInfo, err := base.BuildRuntimeInfo(alluxioRuntime.Name, alluxioRuntime.Namespace, "alluxio")
 	require.NoError(t, err)
@@ -309,8 +308,8 @@ func TestTieredLocality_MutatePodWithPreferredTerms(t *testing.T) {
 
 func TestTieredLocality_SkipMutateWhenPodAlreadyHasPreferred(t *testing.T) {
 	alluxioRuntime := newCacheAlluxioRuntime()
-	schema := newTestScheme(t)
-	cl := fake.NewFakeClientWithScheme(schema, alluxioRuntime)
+
+	cl := fake.NewFakeClientWithScheme(testScheme, alluxioRuntime)
 
 	runtimeInfo, err := base.BuildRuntimeInfo(alluxioRuntime.Name, alluxioRuntime.Namespace, "alluxio")
 	require.NoError(t, err)
@@ -354,8 +353,8 @@ func TestTieredLocality_SkipMutateWhenPodAlreadyHasPreferred(t *testing.T) {
 
 func TestTieredLocality_SkipMutateWhenPluginArgEmpty(t *testing.T) {
 	alluxioRuntime := newCacheAlluxioRuntime()
-	schema := newTestScheme(t)
-	cl := fake.NewFakeClientWithScheme(schema, alluxioRuntime)
+
+	cl := fake.NewFakeClientWithScheme(testScheme, alluxioRuntime)
 
 	runtimeInfo, err := base.BuildRuntimeInfo(alluxioRuntime.Name, alluxioRuntime.Namespace, "alluxio")
 	require.NoError(t, err)
