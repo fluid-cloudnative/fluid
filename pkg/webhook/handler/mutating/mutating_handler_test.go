@@ -1473,10 +1473,7 @@ var _ = Describe("Handle - Global Injection Disabled", func() {
 	})
 
 	It("should skip mutation when global injection is disabled", func() {
-		DeferCleanup(func() {
-			os.Unsetenv(common.EnvDisableInjection)
-		})
-		Expect(os.Setenv(common.EnvDisableInjection, "true")).To(Succeed())
+		GinkgoT().Setenv(common.EnvDisableInjection, "true")
 
 		req := admission.Request{
 			AdmissionRequest: admissionv1.AdmissionRequest{
