@@ -23,13 +23,18 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+const (
+	testLabelA = "label.a"
+	testLabelB = "label.b"
+)
+
 func TestHasRepeatedLocality(t *testing.T) {
 	tieredLocality := &TieredLocality{
 		Preferred: []Preferred{
-			{Name: "label.a", Weight: 1},
-			{Name: "label.b", Weight: 2},
+			{Name: testLabelA, Weight: 1},
+			{Name: testLabelB, Weight: 2},
 		},
-		Required: []string{"label.a"},
+		Required: []string{testLabelA},
 	}
 
 	tests := []struct {
@@ -55,7 +60,7 @@ func TestHasRepeatedLocality(t *testing.T) {
 									{
 										MatchExpressions: []corev1.NodeSelectorRequirement{
 											{
-												Key:      "label.b",
+												Key:      testLabelB,
 												Operator: corev1.NodeSelectorOpIn,
 												Values:   []string{"b.value"},
 											},
@@ -69,7 +74,7 @@ func TestHasRepeatedLocality(t *testing.T) {
 									Preference: corev1.NodeSelectorTerm{
 										MatchExpressions: []corev1.NodeSelectorRequirement{
 											{
-												Key:      "label.b",
+												Key:      testLabelB,
 												Operator: corev1.NodeSelectorOpIn,
 												Values:   []string{"b.value"},
 											},
@@ -88,7 +93,7 @@ func TestHasRepeatedLocality(t *testing.T) {
 			pod: &corev1.Pod{
 				Spec: corev1.PodSpec{
 					NodeSelector: map[string]string{
-						"label.a": "a-value",
+						testLabelA: "a-value",
 					},
 				},
 			},

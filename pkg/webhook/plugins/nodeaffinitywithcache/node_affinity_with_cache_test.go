@@ -248,7 +248,7 @@ func newCacheAlluxioRuntime() *datav1alpha1.AlluxioRuntime {
 	}
 }
 
-func TestTieredLocality_MutatePodWithDatasetSched(t *testing.T) {
+func TestTieredLocalityMutatePodWithDatasetSched(t *testing.T) {
 	alluxioRuntime := newCacheAlluxioRuntime()
 
 	cl := fake.NewFakeClientWithScheme(testScheme, alluxioRuntime)
@@ -279,7 +279,7 @@ func TestTieredLocality_MutatePodWithDatasetSched(t *testing.T) {
 	assert.Len(t, pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, 1)
 }
 
-func TestTieredLocality_MutatePodWithPreferredTerms(t *testing.T) {
+func TestTieredLocalityMutatePodWithPreferredTerms(t *testing.T) {
 	alluxioRuntime := newCacheAlluxioRuntime()
 
 	cl := fake.NewFakeClientWithScheme(testScheme, alluxioRuntime)
@@ -306,7 +306,7 @@ func TestTieredLocality_MutatePodWithPreferredTerms(t *testing.T) {
 	assert.Len(t, pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution, 4)
 }
 
-func TestTieredLocality_SkipMutateWhenPodAlreadyHasPreferred(t *testing.T) {
+func TestTieredLocalitySkipMutateWhenPodAlreadyHasPreferred(t *testing.T) {
 	alluxioRuntime := newCacheAlluxioRuntime()
 
 	cl := fake.NewFakeClientWithScheme(testScheme, alluxioRuntime)
@@ -351,7 +351,7 @@ func TestTieredLocality_SkipMutateWhenPodAlreadyHasPreferred(t *testing.T) {
 	assert.Len(t, pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution, 1)
 }
 
-func TestTieredLocality_SkipMutateWhenPluginArgEmpty(t *testing.T) {
+func TestTieredLocalitySkipMutateWhenPluginArgEmpty(t *testing.T) {
 	alluxioRuntime := newCacheAlluxioRuntime()
 
 	cl := fake.NewFakeClientWithScheme(testScheme, alluxioRuntime)
