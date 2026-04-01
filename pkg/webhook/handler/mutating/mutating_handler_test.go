@@ -23,7 +23,6 @@ import (
 	"github.com/agiledragon/gomonkey/v2"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins"
 	. "github.com/onsi/ginkgo/v2"
@@ -1465,7 +1464,6 @@ var _ = Describe("Handle - Global Injection Disabled", func() {
 	var (
 		decoder *admission.Decoder
 		s       *runtime.Scheme
-		patch   *gomonkey.Patches
 	)
 
 	BeforeEach(func() {
@@ -1474,19 +1472,11 @@ var _ = Describe("Handle - Global Injection Disabled", func() {
 		Expect(corev1.AddToScheme(s)).To(Succeed())
 	})
 
-	AfterEach(func() {
-		if patch != nil {
-			patch.Reset()
-		}
-	})
-
 	It("should skip mutation when global injection is disabled", func() {
-		patch = gomonkey.ApplyFunc(utils.GetBoolValueFromEnv, func(key string, defaultValue bool) bool {
-			if key == common.EnvDisableInjection {
-				return true
-			}
-			return defaultValue
+		DeferCleanup(func() {
+			os.Unsetenv(common.EnvDisableInjection)
 		})
+		Expect(os.Setenv(common.EnvDisableInjection, "true")).To(Succeed())
 
 		req := admission.Request{
 			AdmissionRequest: admissionv1.AdmissionRequest{
