@@ -114,5 +114,59 @@ var _ = Describe("RequireNodeWithFuse Plugin", func() {
 			Expect(terms[0].MatchExpressions[0].Operator).To(Equal(corev1.NodeSelectorOpIn))
 			Expect(terms[0].MatchExpressions[0].Values).To(ConsistOf("true"))
 		})
+
+		// InjectNodeSelectorTerms appends fuse MatchExpressions only into NodeSelectorTerms[0].
+		// A pod with pre-existing terms (A) OR (B) becomes (A AND fuse) OR (B) after injection —
+		// this is the known upstream semantic: term B can still match a node without fuse.
+		It("should append fuse match expression into the first existing node selector term when pod already has multiple required node affinity terms", func() {
+			const fuseKey = "fluid.io/fuse"
+			const termAKey = "zone"
+			const termBKey = "region"
+
+			pod.Spec.Affinity = &corev1.Affinity{
+				NodeAffinity: &corev1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+						NodeSelectorTerms: []corev1.NodeSelectorTerm{
+							{
+								MatchExpressions: []corev1.NodeSelectorRequirement{
+									{Key: termAKey, Operator: corev1.NodeSelectorOpIn, Values: []string{"us-east-1a"}},
+								},
+							},
+							{
+								MatchExpressions: []corev1.NodeSelectorRequirement{
+									{Key: termBKey, Operator: corev1.NodeSelectorOpIn, Values: []string{"us-east-1"}},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			plugin, err := NewPlugin(cl, "")
+			Expect(err).NotTo(HaveOccurred())
+
+			runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio")
+			Expect(err).NotTo(HaveOccurred())
+			runtimeInfo.SetFuseNodeSelector(map[string]string{fuseKey: "true"})
+
+			shouldStop, err := plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{"pvcName": runtimeInfo})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(shouldStop).To(BeFalse())
+
+			terms := pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+			// The two original terms must be preserved; no new term is added.
+			Expect(terms).To(HaveLen(2))
+			// Term[0] gains the fuse expression appended alongside the original zone expression.
+			Expect(terms[0].MatchExpressions).To(HaveLen(2))
+			fuseKeys := make([]string, 0, len(terms[0].MatchExpressions))
+			for _, me := range terms[0].MatchExpressions {
+				fuseKeys = append(fuseKeys, me.Key)
+			}
+			Expect(fuseKeys).To(ContainElement(fuseKey))
+			Expect(fuseKeys).To(ContainElement(termAKey))
+			// Term[1] is left unmodified — it does NOT receive the fuse expression.
+			Expect(terms[1].MatchExpressions).To(HaveLen(1))
+			Expect(terms[1].MatchExpressions[0].Key).To(Equal(termBKey))
+		})
 	})
 })
