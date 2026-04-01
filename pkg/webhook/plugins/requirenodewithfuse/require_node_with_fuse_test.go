@@ -93,5 +93,26 @@ var _ = Describe("RequireNodeWithFuse Plugin", func() {
 			_, err = plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{"pvcName": nil})
 			Expect(err).To(HaveOccurred())
 		})
+
+		It("should inject node selector terms when runtimeInfo has fuse node selectors", func() {
+			plugin, err := NewPlugin(cl, "")
+			Expect(err).NotTo(HaveOccurred())
+
+			runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio")
+			Expect(err).NotTo(HaveOccurred())
+			runtimeInfo.SetFuseNodeSelector(map[string]string{"fluid.io/fuse": "true"})
+
+			shouldStop, err := plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{"pvcName": runtimeInfo})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(shouldStop).To(BeFalse())
+			Expect(pod.Spec.Affinity).NotTo(BeNil())
+			Expect(pod.Spec.Affinity.NodeAffinity).NotTo(BeNil())
+			terms := pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+			Expect(terms).To(HaveLen(1))
+			Expect(terms[0].MatchExpressions).To(HaveLen(1))
+			Expect(terms[0].MatchExpressions[0].Key).To(Equal("fluid.io/fuse"))
+			Expect(terms[0].MatchExpressions[0].Operator).To(Equal(corev1.NodeSelectorOpIn))
+			Expect(terms[0].MatchExpressions[0].Values).To(ConsistOf("true"))
+		})
 	})
 })
