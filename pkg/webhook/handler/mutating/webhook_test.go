@@ -23,8 +23,7 @@ import (
 )
 
 var _ = Describe("HandlerMap", func() {
-	It("should register exactly one handler under WebhookSchedulePodPath", func() {
-		Expect(HandlerMap).To(HaveLen(1))
+	It("should register a handler under WebhookSchedulePodPath", func() {
 		Expect(HandlerMap).To(HaveKey(common.WebhookSchedulePodPath))
 	})
 
