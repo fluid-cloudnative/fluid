@@ -62,10 +62,24 @@ func InjectNodeSelectorTerms(requiredSchedulingTerms []corev1.NodeSelectorTerm, 
 	if len(pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) == 0 {
 		pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms = requiredSchedulingTerms
 	} else {
-		for i := 0; i < len(requiredSchedulingTerms); i++ {
-			pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions =
-				append(pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions, requiredSchedulingTerms[i].MatchExpressions...)
+		existingTerms := pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+		combinedTerms := make([]corev1.NodeSelectorTerm, 0, len(existingTerms)*len(requiredSchedulingTerms))
+		for i := 0; i < len(existingTerms); i++ {
+			if len(existingTerms[i].MatchExpressions) == 0 && len(existingTerms[i].MatchFields) == 0 {
+				continue
+			}
+			for j := 0; j < len(requiredSchedulingTerms); j++ {
+				if len(requiredSchedulingTerms[j].MatchExpressions) == 0 && len(requiredSchedulingTerms[j].MatchFields) == 0 {
+					continue
+				}
+				combinedTerm := corev1.NodeSelectorTerm{
+					MatchExpressions: append(append([]corev1.NodeSelectorRequirement{}, existingTerms[i].MatchExpressions...), requiredSchedulingTerms[j].MatchExpressions...),
+					MatchFields:      append(append([]corev1.NodeSelectorRequirement{}, existingTerms[i].MatchFields...), requiredSchedulingTerms[j].MatchFields...),
+				}
+				combinedTerms = append(combinedTerms, combinedTerm)
+			}
 		}
+		pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms = combinedTerms
 	}
 
 }

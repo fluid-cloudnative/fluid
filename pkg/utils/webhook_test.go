@@ -2,6 +2,7 @@ package utils
 
 import (
 	"math/rand"
+	"reflect"
 	"testing"
 	"time"
 
@@ -73,7 +74,7 @@ func TestInjectNodeSelectorTerms(t *testing.T) {
 	testCases := map[string]struct {
 		nodeSelectorTermList []corev1.NodeSelectorTerm
 		pod                  *corev1.Pod
-		expectLen            int
+		expectTerms          []corev1.NodeSelectorTerm
 	}{
 		"test empty nodeSelectorTermList ": {
 			nodeSelectorTermList: []corev1.NodeSelectorTerm{},
@@ -88,7 +89,7 @@ func TestInjectNodeSelectorTerms(t *testing.T) {
 					},
 				},
 			},
-			expectLen: 0,
+			expectTerms: []corev1.NodeSelectorTerm{},
 		},
 		"test no empty nodeSelectorTermList ": {
 			nodeSelectorTermList: []corev1.NodeSelectorTerm{
@@ -104,7 +105,16 @@ func TestInjectNodeSelectorTerms(t *testing.T) {
 			pod: &corev1.Pod{
 				Spec: corev1.PodSpec{},
 			},
-			expectLen: 1,
+			expectTerms: []corev1.NodeSelectorTerm{
+				{
+					MatchExpressions: []corev1.NodeSelectorRequirement{
+						{
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"test-label-value"},
+						},
+					},
+				},
+			},
 		},
 		"test add no empty nodeSelectorTermList to pod which alredy have matchExpression": {
 			nodeSelectorTermList: []corev1.NodeSelectorTerm{
@@ -138,21 +148,352 @@ func TestInjectNodeSelectorTerms(t *testing.T) {
 					},
 				},
 			},
-			expectLen: 2,
+			expectTerms: []corev1.NodeSelectorTerm{
+				{
+					MatchExpressions: []corev1.NodeSelectorRequirement{
+						{
+							Key:      "test",
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"test-label-value2"},
+						},
+						{
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"test-label-value"},
+						},
+					},
+				},
+			},
+		},
+		"test cross product with existing and injected or terms": {
+			nodeSelectorTermList: []corev1.NodeSelectorTerm{
+				{
+					MatchExpressions: []corev1.NodeSelectorRequirement{
+						{
+							Key:      "disk",
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"ssd"},
+						},
+					},
+				},
+				{
+					MatchExpressions: []corev1.NodeSelectorRequirement{
+						{
+							Key:      "cpu",
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"amd"},
+						},
+					},
+				},
+			},
+			pod: &corev1.Pod{
+				Spec: corev1.PodSpec{
+					Affinity: &corev1.Affinity{
+						NodeAffinity: &corev1.NodeAffinity{
+							RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+								NodeSelectorTerms: []corev1.NodeSelectorTerm{
+									{
+										MatchExpressions: []corev1.NodeSelectorRequirement{
+											{
+												Key:      "zone",
+												Operator: corev1.NodeSelectorOpIn,
+												Values:   []string{"z1"},
+											},
+										},
+									},
+									{
+										MatchExpressions: []corev1.NodeSelectorRequirement{
+											{
+												Key:      "region",
+												Operator: corev1.NodeSelectorOpIn,
+												Values:   []string{"r1"},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectTerms: []corev1.NodeSelectorTerm{
+				{
+					MatchExpressions: []corev1.NodeSelectorRequirement{
+						{
+							Key:      "zone",
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"z1"},
+						},
+						{
+							Key:      "disk",
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"ssd"},
+						},
+					},
+				},
+				{
+					MatchExpressions: []corev1.NodeSelectorRequirement{
+						{
+							Key:      "zone",
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"z1"},
+						},
+						{
+							Key:      "cpu",
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"amd"},
+						},
+					},
+				},
+				{
+					MatchExpressions: []corev1.NodeSelectorRequirement{
+						{
+							Key:      "region",
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"r1"},
+						},
+						{
+							Key:      "disk",
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"ssd"},
+						},
+					},
+				},
+				{
+					MatchExpressions: []corev1.NodeSelectorRequirement{
+						{
+							Key:      "region",
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"r1"},
+						},
+						{
+							Key:      "cpu",
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"amd"},
+						},
+					},
+				},
+			},
+		},
+		"test skip empty existing term when building cross product": {
+			nodeSelectorTermList: []corev1.NodeSelectorTerm{
+				{
+					MatchExpressions: []corev1.NodeSelectorRequirement{
+						{
+							Key:      "fluid.io/fuse",
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"true"},
+						},
+					},
+				},
+			},
+			pod: &corev1.Pod{
+				Spec: corev1.PodSpec{
+					Affinity: &corev1.Affinity{
+						NodeAffinity: &corev1.NodeAffinity{
+							RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+								NodeSelectorTerms: []corev1.NodeSelectorTerm{
+									{},
+									{
+										MatchExpressions: []corev1.NodeSelectorRequirement{
+											{
+												Key:      "region",
+												Operator: corev1.NodeSelectorOpIn,
+												Values:   []string{"us-east-1"},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectTerms: []corev1.NodeSelectorTerm{
+				{
+					MatchExpressions: []corev1.NodeSelectorRequirement{
+						{
+							Key:      "region",
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"us-east-1"},
+						},
+						{
+							Key:      "fluid.io/fuse",
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"true"},
+						},
+					},
+				},
+			},
+		},
+		"test skip empty injected term when building cross product": {
+			nodeSelectorTermList: []corev1.NodeSelectorTerm{
+				{},
+				{
+					MatchExpressions: []corev1.NodeSelectorRequirement{
+						{
+							Key:      "fluid.io/fuse",
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"true"},
+						},
+					},
+				},
+			},
+			pod: &corev1.Pod{
+				Spec: corev1.PodSpec{
+					Affinity: &corev1.Affinity{
+						NodeAffinity: &corev1.NodeAffinity{
+							RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+								NodeSelectorTerms: []corev1.NodeSelectorTerm{
+									{
+										MatchExpressions: []corev1.NodeSelectorRequirement{
+											{
+												Key:      "region",
+												Operator: corev1.NodeSelectorOpIn,
+												Values:   []string{"us-east-1"},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectTerms: []corev1.NodeSelectorTerm{
+				{
+					MatchExpressions: []corev1.NodeSelectorRequirement{
+						{
+							Key:      "region",
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"us-east-1"},
+						},
+						{
+							Key:      "fluid.io/fuse",
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"true"},
+						},
+					},
+				},
+			},
+		},
+		"test merge match fields when building cross product": {
+			nodeSelectorTermList: []corev1.NodeSelectorTerm{
+				{
+					MatchExpressions: []corev1.NodeSelectorRequirement{
+						{
+							Key:      "fluid.io/fuse",
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"true"},
+						},
+					},
+					MatchFields: []corev1.NodeSelectorRequirement{
+						{
+							Key:      "metadata.name",
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"node-b"},
+						},
+					},
+				},
+			},
+			pod: &corev1.Pod{
+				Spec: corev1.PodSpec{
+					Affinity: &corev1.Affinity{
+						NodeAffinity: &corev1.NodeAffinity{
+							RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+								NodeSelectorTerms: []corev1.NodeSelectorTerm{
+									{
+										MatchExpressions: []corev1.NodeSelectorRequirement{
+											{
+												Key:      "region",
+												Operator: corev1.NodeSelectorOpIn,
+												Values:   []string{"us-east-1"},
+											},
+										},
+										MatchFields: []corev1.NodeSelectorRequirement{
+											{
+												Key:      "metadata.name",
+												Operator: corev1.NodeSelectorOpIn,
+												Values:   []string{"node-a"},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectTerms: []corev1.NodeSelectorTerm{
+				{
+					MatchExpressions: []corev1.NodeSelectorRequirement{
+						{
+							Key:      "region",
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"us-east-1"},
+						},
+						{
+							Key:      "fluid.io/fuse",
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"true"},
+						},
+					},
+					MatchFields: []corev1.NodeSelectorRequirement{
+						{
+							Key:      "metadata.name",
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"node-a"},
+						},
+						{
+							Key:      "metadata.name",
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"node-b"},
+						},
+					},
+				},
+			},
 		},
 	}
 
 	for k, item := range testCases {
 		InjectNodeSelectorTerms(item.nodeSelectorTermList, item.pod)
-		if k == "test empty nodeSelectorTermList " {
-			if len(item.pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) !=
-				item.expectLen {
-				t.Errorf("%s InjectNodeSelectorTerms failure, want:%v, got:%v", k, item.expectLen, item.pod.Spec.Affinity.NodeAffinity)
+		if item.pod.Spec.Affinity == nil ||
+			item.pod.Spec.Affinity.NodeAffinity == nil ||
+			item.pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution == nil {
+			if len(item.expectTerms) != 0 {
+				t.Errorf("%s InjectNodeSelectorTerms failure, want:%v, got:nil", k, item.expectTerms)
 			}
-		} else {
-			if len(item.pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions) !=
-				item.expectLen {
-				t.Errorf("%s InjectNodeSelectorTerms failure, want:%v, got:%v", k, item.expectLen, item.pod.Spec.Affinity.NodeAffinity)
+			continue
+		}
+
+		gotTerms := item.pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+		if len(gotTerms) != len(item.expectTerms) {
+			t.Errorf("%s InjectNodeSelectorTerms failure, want:%v, got:%v", k, item.expectTerms, gotTerms)
+			continue
+		}
+
+		for i := range gotTerms {
+			if len(gotTerms[i].MatchExpressions) != len(item.expectTerms[i].MatchExpressions) {
+				t.Errorf("%s InjectNodeSelectorTerms failure, want:%v, got:%v", k, item.expectTerms, gotTerms)
+				break
+			}
+
+			if len(gotTerms[i].MatchFields) != len(item.expectTerms[i].MatchFields) {
+				t.Errorf("%s InjectNodeSelectorTerms failure, want:%v, got:%v", k, item.expectTerms, gotTerms)
+				break
+			}
+
+			for j := range gotTerms[i].MatchExpressions {
+				if !reflect.DeepEqual(gotTerms[i].MatchExpressions[j], item.expectTerms[i].MatchExpressions[j]) {
+					t.Errorf("%s InjectNodeSelectorTerms failure, want:%v, got:%v", k, item.expectTerms, gotTerms)
+					break
+				}
+			}
+
+			for j := range gotTerms[i].MatchFields {
+				if !reflect.DeepEqual(gotTerms[i].MatchFields[j], item.expectTerms[i].MatchFields[j]) {
+					t.Errorf("%s InjectNodeSelectorTerms failure, want:%v, got:%v", k, item.expectTerms, gotTerms)
+					break
+				}
 			}
 		}
 	}
