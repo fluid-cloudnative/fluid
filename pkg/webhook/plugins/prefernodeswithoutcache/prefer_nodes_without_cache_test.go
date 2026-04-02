@@ -26,6 +26,22 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// expectedNoDatasetTerm is the canonical PreferredSchedulingTerm asserted across
+// multiple specs for getPreferredSchedulingTermForPodWithoutCache.
+func expectedNoDatasetTerm() corev1.PreferredSchedulingTerm {
+	return corev1.PreferredSchedulingTerm{
+		Weight: 100,
+		Preference: corev1.NodeSelectorTerm{
+			MatchExpressions: []corev1.NodeSelectorRequirement{
+				{
+					Key:      common.GetDatasetNumLabelName(),
+					Operator: corev1.NodeSelectorOpDoesNotExist,
+				},
+			},
+		},
+	}
+}
+
 var _ = Describe("PreferNodesWithoutCache Plugin", func() {
 	Describe("getPreferredSchedulingTermForPodWithoutCache", func() {
 		It("should return correct PreferredSchedulingTerm with selector enabled and disabled", func() {
@@ -34,23 +50,11 @@ var _ = Describe("PreferNodesWithoutCache Plugin", func() {
 
 			runtimeInfo.SetFuseNodeSelector(map[string]string{"test1": "test1"})
 			term := getPreferredSchedulingTermForPodWithoutCache()
-
-			expectTerm := corev1.PreferredSchedulingTerm{
-				Weight: 100,
-				Preference: corev1.NodeSelectorTerm{
-					MatchExpressions: []corev1.NodeSelectorRequirement{
-						{
-							Key:      common.GetDatasetNumLabelName(),
-							Operator: corev1.NodeSelectorOpDoesNotExist,
-						},
-					},
-				},
-			}
-			Expect(term).To(Equal(expectTerm))
+			Expect(term).To(Equal(expectedNoDatasetTerm()))
 
 			runtimeInfo.SetFuseNodeSelector(map[string]string{})
 			term = getPreferredSchedulingTermForPodWithoutCache()
-			Expect(term).To(Equal(expectTerm))
+			Expect(term).To(Equal(expectedNoDatasetTerm()))
 		})
 
 		It("should return correct PreferredSchedulingTerm with default mode", func() {
@@ -59,19 +63,7 @@ var _ = Describe("PreferNodesWithoutCache Plugin", func() {
 
 			runtimeInfo.SetFuseNodeSelector(map[string]string{})
 			term := getPreferredSchedulingTermForPodWithoutCache()
-
-			expectTerm := corev1.PreferredSchedulingTerm{
-				Weight: 100,
-				Preference: corev1.NodeSelectorTerm{
-					MatchExpressions: []corev1.NodeSelectorRequirement{
-						{
-							Key:      common.GetDatasetNumLabelName(),
-							Operator: corev1.NodeSelectorOpDoesNotExist,
-						},
-					},
-				},
-			}
-			Expect(term).To(Equal(expectTerm))
+			Expect(term).To(Equal(expectedNoDatasetTerm()))
 		})
 	})
 
