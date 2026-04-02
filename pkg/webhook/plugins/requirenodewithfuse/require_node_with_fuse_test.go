@@ -158,15 +158,23 @@ var _ = Describe("RequireNodeWithFuse Plugin", func() {
 			Expect(terms).To(HaveLen(2))
 			// Term[0] gains the fuse expression appended alongside the original zone expression.
 			Expect(terms[0].MatchExpressions).To(HaveLen(2))
-			fuseKeys := make([]string, 0, len(terms[0].MatchExpressions))
-			for _, me := range terms[0].MatchExpressions {
-				fuseKeys = append(fuseKeys, me.Key)
-			}
-			Expect(fuseKeys).To(ContainElement(fuseKey))
-			Expect(fuseKeys).To(ContainElement(termAKey))
+			Expect(terms[0].MatchExpressions).To(ContainElement(corev1.NodeSelectorRequirement{
+				Key:      termAKey,
+				Operator: corev1.NodeSelectorOpIn,
+				Values:   []string{"us-east-1a"},
+			}))
+			Expect(terms[0].MatchExpressions).To(ContainElement(corev1.NodeSelectorRequirement{
+				Key:      fuseKey,
+				Operator: corev1.NodeSelectorOpIn,
+				Values:   []string{"true"},
+			}))
 			// Term[1] is left unmodified — it does NOT receive the fuse expression.
 			Expect(terms[1].MatchExpressions).To(HaveLen(1))
-			Expect(terms[1].MatchExpressions[0].Key).To(Equal(termBKey))
+			Expect(terms[1].MatchExpressions[0]).To(Equal(corev1.NodeSelectorRequirement{
+				Key:      termBKey,
+				Operator: corev1.NodeSelectorOpIn,
+				Values:   []string{"us-east-1"},
+			}))
 		})
 	})
 })
