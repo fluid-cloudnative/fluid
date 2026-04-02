@@ -115,10 +115,7 @@ var _ = Describe("RequireNodeWithFuse Plugin", func() {
 			Expect(terms[0].MatchExpressions[0].Values).To(ConsistOf("true"))
 		})
 
-		// InjectNodeSelectorTerms appends fuse MatchExpressions only into NodeSelectorTerms[0].
-		// A pod with pre-existing terms (A) OR (B) becomes (A AND fuse) OR (B) after injection —
-		// this is the known upstream semantic: term B can still match a node without fuse.
-		It("should append fuse match expression into the first existing node selector term when pod already has multiple required node affinity terms", func() {
+		It("should inject fuse match expression into every existing required node affinity branch", func() {
 			const fuseKey = "fluid.io/fuse"
 			const termAKey = "zone"
 			const termBKey = "region"
@@ -154,9 +151,7 @@ var _ = Describe("RequireNodeWithFuse Plugin", func() {
 			Expect(shouldStop).To(BeFalse())
 
 			terms := pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
-			// The two original terms must be preserved; no new term is added.
 			Expect(terms).To(HaveLen(2))
-			// Term[0] gains the fuse expression appended alongside the original zone expression.
 			Expect(terms[0].MatchExpressions).To(HaveLen(2))
 			Expect(terms[0].MatchExpressions).To(ContainElement(corev1.NodeSelectorRequirement{
 				Key:      termAKey,
@@ -168,13 +163,54 @@ var _ = Describe("RequireNodeWithFuse Plugin", func() {
 				Operator: corev1.NodeSelectorOpIn,
 				Values:   []string{"true"},
 			}))
-			// Term[1] is left unmodified — it does NOT receive the fuse expression.
-			Expect(terms[1].MatchExpressions).To(HaveLen(1))
-			Expect(terms[1].MatchExpressions[0]).To(Equal(corev1.NodeSelectorRequirement{
+			Expect(terms[1].MatchExpressions).To(HaveLen(2))
+			Expect(terms[1].MatchExpressions).To(ContainElement(corev1.NodeSelectorRequirement{
 				Key:      termBKey,
 				Operator: corev1.NodeSelectorOpIn,
 				Values:   []string{"us-east-1"},
 			}))
+			Expect(terms[1].MatchExpressions).To(ContainElement(corev1.NodeSelectorRequirement{
+				Key:      fuseKey,
+				Operator: corev1.NodeSelectorOpIn,
+				Values:   []string{"true"},
+			}))
+		})
+
+		It("should ignore empty existing required node affinity branches when injecting fuse requirements", func() {
+			const fuseKey = "fluid.io/fuse"
+
+			pod.Spec.Affinity = &corev1.Affinity{
+				NodeAffinity: &corev1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+						NodeSelectorTerms: []corev1.NodeSelectorTerm{
+							{},
+							{
+								MatchExpressions: []corev1.NodeSelectorRequirement{
+									{Key: "region", Operator: corev1.NodeSelectorOpIn, Values: []string{"us-east-1"}},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			plugin, err := NewPlugin(cl, "")
+			Expect(err).NotTo(HaveOccurred())
+
+			runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio")
+			Expect(err).NotTo(HaveOccurred())
+			runtimeInfo.SetFuseNodeSelector(map[string]string{fuseKey: "true"})
+
+			shouldStop, err := plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{"pvcName": runtimeInfo})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(shouldStop).To(BeFalse())
+
+			terms := pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+			Expect(terms).To(HaveLen(1))
+			Expect(terms[0].MatchExpressions).To(ContainElements(
+				corev1.NodeSelectorRequirement{Key: "region", Operator: corev1.NodeSelectorOpIn, Values: []string{"us-east-1"}},
+				corev1.NodeSelectorRequirement{Key: fuseKey, Operator: corev1.NodeSelectorOpIn, Values: []string{"true"}},
+			))
 		})
 	})
 })
