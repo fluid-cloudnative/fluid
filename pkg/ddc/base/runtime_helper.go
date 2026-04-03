@@ -94,23 +94,15 @@ func (info *RuntimeInfo) getFuseDaemonset() (ds *appsv1.DaemonSet, err error) {
 	return kubeclient.GetDaemonset(info.apiReader, fuseName, info.GetNamespace())
 }
 
-// getMountInfo 从当前 RuntimeInfo 关联的 PersistentVolume 中提取挂载相关信息。
-// 
-// 该函数首先根据 RuntimeInfo 中记录的 PV 名称，通过 kubeclient 获取对应的 PersistentVolume。
-// 如果获取失败，则返回错误，表示无法找到对应 PVC 绑定的 PV。
-// 
-// 当 PV 的 Spec.CSI 字段存在且包含 VolumeAttributes 时，函数会从中解析出：
-//   - path:       Fluid 存储的实际路径（VolumeAttrFluidPath）
-//   - mountType:  挂载类型（VolumeAttrMountType）
-//   - subpath:    子路径（VolumeAttrFluidSubPath）
-// 
-// 如果 PV 不是由 Fluid 创建（即 CSI 或其 VolumeAttributes 不存在），则返回错误。
-// 
-// 返回值：
-//   - path: 挂载路径
-//   - mountType: 挂载类型
-//   - subpath: 子路径
-//   - err: 错误信息（若有）
+// getMountInfo fetches the PersistentVolume associated with the RuntimeInfo and
+// extracts mounting configurations.
+//
+// It expects the PV to be provisioned by Fluid with valid CSI VolumeAttributes.
+// Returns:
+//   - path: The Fluid volume path.
+//   - mountType: The storage protocol/type (e.g., oss, hdfs).
+//   - subpath: The specific sub-directory within the volume.
+//   - err: Error if the PV lookup fails or if the PV is not managed by Fluid.
 func (info *RuntimeInfo) getMountInfo() (path, mountType, subpath string, err error) {
 	pv, err := kubeclient.GetPersistentVolume(info.apiReader, info.GetPersistentVolumeName())
 	if err != nil {
