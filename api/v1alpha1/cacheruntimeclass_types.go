@@ -142,8 +142,7 @@ type RuntimeExtraResources struct {
 // CacheRuntimeClass is the Schema for the cacheruntimeclasses API.
 // CacheRuntimeClass defines a class of cache runtime implementations with specific configurations.
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:scope=Cluster
-// +kubebuilder:resource:categories={fluid}
+// +kubebuilder:resource:scope=Cluster,categories={fluid}
 // +genclient
 // +genclient:nonNamespaced
 type CacheRuntimeClass struct {

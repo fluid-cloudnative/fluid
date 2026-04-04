@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Fluid Authors.
+Copyright 2026 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,28 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package base
+package app
 
-import (
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-)
+import "github.com/spf13/cobra"
 
-type RuntimeInterface interface {
-
-	// Replicas gets the replicas of runtime worker
-	Replicas() int32
-
-	// GetStatus gets the status of runtime
-	GetStatus() *datav1alpha1.RuntimeStatus
-
-	client.Object
-}
-
-type CacheRuntimeInterface interface {
-
-	// GetStatus gets the status of runtime
-	GetStatus() *datav1alpha1.CacheRuntimeStatus
-
-	client.Object
+func NewCacheControllerCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "cacheruntime-controller",
+		Short: "Controller for cacheruntime",
+	}
+	cmd.AddCommand(startCmd)
+	cmd.AddCommand(versionCmd)
+	return cmd
 }
