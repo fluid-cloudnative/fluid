@@ -570,6 +570,19 @@ func GetRuntimeInfo(reader client.Reader, name, namespace string) (runtimeInfo R
 	return runtimeInfo, err
 }
 
+// GetRuntimeStatus gets the runtime status according to the runtime type, name, and namespace.
+// This function is primarily responsible for retrieving the current status of a specific runtime
+// based on its type from the Kubernetes cluster.
+//
+// Parameters:
+//   - client (client.Client): The Kubernetes client used to interact with the API server.
+//   - runtimeType (string): The type of the runtime (e.g., AlluxioRuntime, JindoRuntime, GooseFSRuntime).
+//   - name (string): The name of the runtime.
+//   - namespace (string): The namespace where the runtime is located.
+//
+// Returns:
+//   - status (*datav1alpha1.RuntimeStatus): The status of the requested runtime.
+//   - err (error): Returns an error if the runtime status cannot be retrieved or the runtime type is unsupported, otherwise returns nil.
 func GetRuntimeStatus(client client.Client, runtimeType, name, namespace string) (status *datav1alpha1.RuntimeStatus, err error) {
 	switch runtimeType {
 	case common.AlluxioRuntime:
