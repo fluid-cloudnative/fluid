@@ -295,6 +295,113 @@ required:
 			Expect(pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms).To(HaveLen(1))
 		})
 
+		It("should combine existing required node affinity branches with injected cache locality terms", func() {
+			plugin, err := NewPlugin(client, customizedTieredLocality)
+			Expect(err).NotTo(HaveOccurred())
+
+			pod := &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "test",
+					Labels: map[string]string{
+						"fluid.io/dataset." + alluxioRuntime.Name + ".sched": "required",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Affinity: &corev1.Affinity{
+						NodeAffinity: &corev1.NodeAffinity{
+							RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+								NodeSelectorTerms: []corev1.NodeSelectorTerm{
+									{
+										MatchExpressions: []corev1.NodeSelectorRequirement{
+											{
+												Key:      "app.kubernetes.io/zone",
+												Operator: corev1.NodeSelectorOpIn,
+												Values:   []string{"zone-app-a"},
+											},
+										},
+									},
+									{
+										MatchExpressions: []corev1.NodeSelectorRequirement{
+											{
+												Key:      "kubernetes.io/hostname",
+												Operator: corev1.NodeSelectorOpIn,
+												Values:   []string{"node-a"},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			_, err = plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{
+				alluxioRuntime.Name: runtimeInfo,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			terms := pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+			Expect(terms).To(HaveLen(2))
+
+			Expect(terms[0].MatchExpressions).To(ContainElements(
+				corev1.NodeSelectorRequirement{Key: "app.kubernetes.io/zone", Operator: corev1.NodeSelectorOpIn, Values: []string{"zone-app-a"}},
+				corev1.NodeSelectorRequirement{Key: runtimeInfo.GetCommonLabelName(), Operator: corev1.NodeSelectorOpIn, Values: []string{"true"}},
+			))
+			Expect(terms[1].MatchExpressions).To(ContainElements(
+				corev1.NodeSelectorRequirement{Key: "kubernetes.io/hostname", Operator: corev1.NodeSelectorOpIn, Values: []string{"node-a"}},
+				corev1.NodeSelectorRequirement{Key: runtimeInfo.GetCommonLabelName(), Operator: corev1.NodeSelectorOpIn, Values: []string{"true"}},
+			))
+		})
+
+		It("should ignore empty existing required node affinity branches when injecting cache locality", func() {
+			plugin, err := NewPlugin(client, customizedTieredLocality)
+			Expect(err).NotTo(HaveOccurred())
+
+			pod := &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "test",
+					Labels: map[string]string{
+						"fluid.io/dataset." + alluxioRuntime.Name + ".sched": "required",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Affinity: &corev1.Affinity{
+						NodeAffinity: &corev1.NodeAffinity{
+							RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+								NodeSelectorTerms: []corev1.NodeSelectorTerm{
+									{},
+									{
+										MatchExpressions: []corev1.NodeSelectorRequirement{
+											{
+												Key:      "kubernetes.io/hostname",
+												Operator: corev1.NodeSelectorOpIn,
+												Values:   []string{"node-a"},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			_, err = plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{
+				alluxioRuntime.Name: runtimeInfo,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			terms := pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+			Expect(terms).To(HaveLen(1))
+			Expect(terms[0].MatchExpressions).To(ContainElements(
+				corev1.NodeSelectorRequirement{Key: "kubernetes.io/hostname", Operator: corev1.NodeSelectorOpIn, Values: []string{"node-a"}},
+				corev1.NodeSelectorRequirement{Key: runtimeInfo.GetCommonLabelName(), Operator: corev1.NodeSelectorOpIn, Values: []string{"true"}},
+			))
+		})
+
 		It("should mutate pod with tiered locality", func() {
 			plugin, err := NewPlugin(client, customizedTieredLocality)
 			Expect(err).NotTo(HaveOccurred())
