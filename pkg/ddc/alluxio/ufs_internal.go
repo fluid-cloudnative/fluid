@@ -190,9 +190,10 @@ func (e *AlluxioEngine) processUpdatingUFS(ufsToUpdate *utils.UFSToUpdate) (upda
 // updatingUFSWithMountCommand updates the Alluxio UFS mount points based on the differences identified in ufsToUpdate.
 // It performs mount operations for new UFS paths specified in ufsToUpdate.ToAdd() and unmount operations for paths
 // listed in ufsToUpdate.ToRemove(). The function skips mount points using Fluid native schemes as they are not editable.
-// For each mount to be added, it merges dataset-level SharedOptions with mount-specific Options, then applies
-// encryption configurations from both SharedEncryptOptions and mount-level EncryptOptions (with latter taking precedence
-// on key conflicts). The function first verifies that the Alluxio master is ready before executing any mount/unmount
+// For each mount to be added, it merges dataset-level SharedOptions with mount-specific Options (with latter taking precedence),
+// then applies encryption configurations from both SharedEncryptOptions and mount-level EncryptOptions. Note that
+// any key conflicts in EncryptOptions will result in an error. The function first verifies that the Alluxio master is ready before executing any mount/unmount
+
 // commands via AlluxioFileUtils.
 //
 // Parameters:
