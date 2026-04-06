@@ -51,11 +51,6 @@ var _ = Describe("PreferNodesWithoutCache Plugin", func() {
 			term = getPreferredSchedulingTermForPodWithoutCache()
 			Expect(term).To(Equal(expectedNoDatasetTerm()))
 		})
-
-		It("should return correct PreferredSchedulingTerm with default mode", func() {
-			term := getPreferredSchedulingTermForPodWithoutCache()
-			Expect(term).To(Equal(expectedNoDatasetTerm()))
-		})
 	})
 
 	Describe("Mutate", func() {
