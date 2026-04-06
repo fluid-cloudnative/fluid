@@ -277,6 +277,29 @@ func TestGetOwnerDatasetUIDFromRuntimeMeta(t *testing.T) {
 		expectErr bool
 	}{
 		{
+			name: "no owner references",
+			meta: metav1.ObjectMeta{
+				Name: "sample-runtime",
+			},
+			wantUID:   "",
+			expectErr: false,
+		},
+		{
+			name: "no dataset owner",
+			meta: metav1.ObjectMeta{
+				Name: "sample-runtime",
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						Kind: "Pod",
+						Name: "some-pod",
+						UID:  types.UID("pod-uid"),
+					},
+				},
+			},
+			wantUID:   "",
+			expectErr: false,
+		},
+		{
 			name: "single dataset owner with same name",
 			meta: metav1.ObjectMeta{
 				Name: "sample-runtime",
@@ -325,6 +348,26 @@ func TestGetOwnerDatasetUIDFromRuntimeMeta(t *testing.T) {
 			},
 			wantUID:   "",
 			expectErr: true,
+		},
+		{
+			name: "multiple owners with only one dataset owner",
+			meta: metav1.ObjectMeta{
+				Name: "sample-runtime",
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						Kind: "Pod",
+						Name: "some-pod",
+						UID:  types.UID("pod-uid"),
+					},
+					{
+						Kind: datav1alpha1.Datasetkind,
+						Name: "sample-runtime",
+						UID:  uid,
+					},
+				},
+			},
+			wantUID:   uid,
+			expectErr: false,
 		},
 	}
 
