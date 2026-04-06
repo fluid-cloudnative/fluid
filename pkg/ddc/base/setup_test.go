@@ -17,6 +17,7 @@ limitations under the License.
 package base_test
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -31,6 +32,7 @@ import (
 
 func newSetupEngine(impl *enginemock.MockImplement) (*base.TemplateEngine, cruntime.ReconcileRequestContext) {
 	ctx := cruntime.ReconcileRequestContext{
+		Context: context.Background(),
 		NamespacedName: types.NamespacedName{
 			Namespace: "default",
 			Name:      "dataset-0",
@@ -39,6 +41,7 @@ func newSetupEngine(impl *enginemock.MockImplement) (*base.TemplateEngine, crunt
 		RuntimeType: "alluxio",
 		Runtime:     &datav1alpha1.AlluxioRuntime{},
 	}
+	ctx.Runtime.GetObjectKind().SetGroupVersionKind(datav1alpha1.GroupVersion.WithKind("AlluxioRuntime"))
 
 	return base.NewTemplateEngine(impl, "setup-test", ctx), ctx
 }
