@@ -22,6 +22,7 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 func TestGetPhysicalDatasetFromMounts(t *testing.T) {
@@ -262,6 +263,80 @@ func TestGetPhysicalDatasetSubPath(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := GetPhysicalDatasetSubPath(tt.args.dataset); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("GetPhysicalDatasetSubPath() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetOwnerDatasetUIDFromRuntimeMeta(t *testing.T) {
+	uid := types.UID("dataset-uid-1")
+	tests := []struct {
+		name      string
+		meta      metav1.ObjectMeta
+		wantUID   types.UID
+		expectErr bool
+	}{
+		{
+			name: "single dataset owner with same name",
+			meta: metav1.ObjectMeta{
+				Name: "sample-runtime",
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						Kind: datav1alpha1.Datasetkind,
+						Name: "sample-runtime",
+						UID:  uid,
+					},
+				},
+			},
+			wantUID:   uid,
+			expectErr: false,
+		},
+		{
+			name: "dataset owner name mismatch",
+			meta: metav1.ObjectMeta{
+				Name: "sample-runtime",
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						Kind: datav1alpha1.Datasetkind,
+						Name: "another-name",
+						UID:  uid,
+					},
+				},
+			},
+			wantUID:   "",
+			expectErr: true,
+		},
+		{
+			name: "multiple dataset owners",
+			meta: metav1.ObjectMeta{
+				Name: "sample-runtime",
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						Kind: datav1alpha1.Datasetkind,
+						Name: "sample-runtime",
+						UID:  uid,
+					},
+					{
+						Kind: datav1alpha1.Datasetkind,
+						Name: "sample-runtime",
+						UID:  types.UID("dataset-uid-2"),
+					},
+				},
+			},
+			wantUID:   "",
+			expectErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotUID, err := GetOwnerDatasetUIDFromRuntimeMeta(tt.meta)
+			if (err != nil) != tt.expectErr {
+				t.Errorf("GetOwnerDatasetUIDFromRuntimeMeta() error = %v, expectErr %v", err, tt.expectErr)
+				return
+			}
+			if gotUID != tt.wantUID {
+				t.Errorf("GetOwnerDatasetUIDFromRuntimeMeta() uid = %v, want %v", gotUID, tt.wantUID)
 			}
 		})
 	}
