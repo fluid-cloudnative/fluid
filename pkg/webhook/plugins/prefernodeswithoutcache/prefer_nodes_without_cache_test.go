@@ -91,7 +91,7 @@ var _ = Describe("PreferNodesWithoutCache Plugin", func() {
 			}
 		})
 
-		It("should create plugin and mutate pod correctly", func() {
+		It("should return early and keep pod unchanged when runtimeInfos is not empty", func() {
 			plugin, err := NewPlugin(cl, "")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(plugin.GetName()).To(Equal(Name))
@@ -102,12 +102,32 @@ var _ = Describe("PreferNodesWithoutCache Plugin", func() {
 			shouldStop, err := plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{"test": runtimeInfo})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(shouldStop).To(BeTrue())
+			Expect(pod.Spec.Affinity).To(BeNil())
+		})
 
-			_, err = plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{})
+		It("should inject preferred scheduling term when runtimeInfos is empty", func() {
+			plugin, err := NewPlugin(cl, "")
 			Expect(err).NotTo(HaveOccurred())
 
-			_, err = plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{"test": nil})
+			shouldStop, err := plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{})
 			Expect(err).NotTo(HaveOccurred())
+			Expect(shouldStop).To(BeTrue())
+			Expect(pod.Spec.Affinity).NotTo(BeNil())
+			Expect(pod.Spec.Affinity.NodeAffinity).NotTo(BeNil())
+			Expect(pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution).To(HaveLen(1))
+			Expect(pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution[0]).To(
+				Equal(getPreferredSchedulingTermForPodWithoutCache()),
+			)
+		})
+
+		It("should handle nil runtime info entries without error", func() {
+			plugin, err := NewPlugin(cl, "")
+			Expect(err).NotTo(HaveOccurred())
+
+			shouldStop, err := plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{"test": nil})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(shouldStop).To(BeTrue())
+			Expect(pod.Spec.Affinity).To(BeNil())
 		})
 	})
 })
