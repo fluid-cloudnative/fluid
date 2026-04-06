@@ -95,8 +95,12 @@ var _ = Describe("PreferNodesWithoutCache Plugin", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(shouldStop).To(BeTrue())
 
-			_, err = plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{})
+			shouldStop, err = plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{})
 			Expect(err).NotTo(HaveOccurred())
+			Expect(shouldStop).To(BeTrue())
+			Expect(pod.Spec.Affinity).NotTo(BeNil())
+			Expect(pod.Spec.Affinity.NodeAffinity).NotTo(BeNil())
+			Expect(pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution).To(Equal([]corev1.PreferredSchedulingTerm{expectedNoDatasetTerm()}))
 
 			_, err = plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{"test": nil})
 			Expect(err).NotTo(HaveOccurred())
