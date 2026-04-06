@@ -44,24 +44,15 @@ func expectedNoDatasetTerm() corev1.PreferredSchedulingTerm {
 
 var _ = Describe("PreferNodesWithoutCache Plugin", func() {
 	Describe("getPreferredSchedulingTermForPodWithoutCache", func() {
-		It("should return correct PreferredSchedulingTerm with selector enabled and disabled", func() {
-			runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio")
-			Expect(err).NotTo(HaveOccurred())
-
-			runtimeInfo.SetFuseNodeSelector(map[string]string{"test1": "test1"})
+		It("should return the same PreferredSchedulingTerm on repeated calls", func() {
 			term := getPreferredSchedulingTermForPodWithoutCache()
 			Expect(term).To(Equal(expectedNoDatasetTerm()))
 
-			runtimeInfo.SetFuseNodeSelector(map[string]string{})
 			term = getPreferredSchedulingTermForPodWithoutCache()
 			Expect(term).To(Equal(expectedNoDatasetTerm()))
 		})
 
 		It("should return correct PreferredSchedulingTerm with default mode", func() {
-			runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio")
-			Expect(err).NotTo(HaveOccurred())
-
-			runtimeInfo.SetFuseNodeSelector(map[string]string{})
 			term := getPreferredSchedulingTermForPodWithoutCache()
 			Expect(term).To(Equal(expectedNoDatasetTerm()))
 		})
