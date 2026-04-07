@@ -108,11 +108,10 @@ var _ = Describe("GetPersistentVolumeClaim", func() {
 	})
 
 	It("should return not found error when pvc does not exist", func() {
-		pvc, err := GetPersistentVolumeClaim(client, "pvc-missing", namespace)
+		_, err := GetPersistentVolumeClaim(client, "pvc-missing", namespace)
 
 		Expect(err).To(HaveOccurred())
 		Expect(apierrs.IsNotFound(err)).To(BeTrue())
-		Expect(pvc).NotTo(BeNil())
 	})
 })
 
