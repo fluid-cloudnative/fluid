@@ -126,7 +126,7 @@ var _ = Describe("IsReady", func() {
 	})
 
 	Context("when node has no NodeReady condition", func() {
-		It("should return true", func() {
+		It("should return false", func() {
 			node := corev1.Node{
 				ObjectMeta: metav1.ObjectMeta{Name: "test3"},
 				Status: corev1.NodeStatus{
@@ -139,7 +139,7 @@ var _ = Describe("IsReady", func() {
 				},
 			}
 			result := IsReady(node)
-			Expect(result).To(BeTrue())
+			Expect(result).To(BeFalse())
 		})
 	})
 

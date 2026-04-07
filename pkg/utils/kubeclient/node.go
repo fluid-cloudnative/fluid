@@ -42,11 +42,10 @@ func GetNode(client client.Reader, name string) (node *corev1.Node, err error) {
 // IsReady checks if the node is ready
 // If the node is ready,it returns True.Otherwise,it returns False.
 func IsReady(node corev1.Node) (ready bool) {
-	ready = true
+	ready = false
 	for _, condition := range node.Status.Conditions {
-		if condition.Type == corev1.NodeReady && condition.Status != corev1.ConditionTrue {
-			ready = false
-			break
+		if condition.Type == corev1.NodeReady {
+			return condition.Status == corev1.ConditionTrue
 		}
 	}
 	return ready
