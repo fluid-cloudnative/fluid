@@ -126,6 +126,17 @@ var _ = Describe("IsReady", func() {
 	})
 
 	Context("when node has no NodeReady condition", func() {
+		It("should return false when conditions are empty", func() {
+			node := corev1.Node{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-empty"},
+				Status: corev1.NodeStatus{
+					Conditions: []corev1.NodeCondition{},
+				},
+			}
+			result := IsReady(node)
+			Expect(result).To(BeFalse())
+		})
+
 		It("should return false", func() {
 			node := corev1.Node{
 				ObjectMeta: metav1.ObjectMeta{Name: "test3"},
