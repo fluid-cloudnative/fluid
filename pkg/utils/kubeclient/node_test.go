@@ -173,7 +173,7 @@ var _ = Describe("IsReady", func() {
 	})
 
 	Context("when one NodeReady condition is false among other conditions", func() {
-		It("should return false", func() {
+		It("should return false when NodeReady is False among other conditions", func() {
 			node := corev1.Node{
 				ObjectMeta: metav1.ObjectMeta{Name: "test5"},
 				Status: corev1.NodeStatus{
