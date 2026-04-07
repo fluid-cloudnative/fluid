@@ -18,7 +18,6 @@ package mutator
 
 import (
 	"fmt"
-	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -27,12 +26,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 )
-
-func TestMutatorHelpers(t *testing.T) {
-	// This file exists to provide shared helper functions for mutator tests.
-	// The actual test helpers are defined below without framework dependencies.
-	t.Skip("helper-only file, no direct test cases")
-}
 
 func test_buildPodToMutate(pvcNames []string) *corev1.Pod {
 	volumes := []corev1.Volume{}

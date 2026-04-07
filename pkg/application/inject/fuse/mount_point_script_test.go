@@ -37,7 +37,7 @@ import (
 func newTestFuseInjector(t *testing.T) (*Injector, client.Client) {
 	t.Helper()
 	scheme := runtime.NewScheme()
-	_ = corev1.AddToScheme(scheme)
+	require.NoError(t, corev1.AddToScheme(scheme))
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 	return &Injector{
 		client: fakeClient,
@@ -81,9 +81,15 @@ func TestInjectCheckMountReadyScript_WithRuntimeInfos(t *testing.T) {
 			},
 		},
 	}
+	runtimeInfo, err := base.BuildRuntimeInfo("test-pvc", "default", common.AlluxioRuntime)
+	require.NoError(t, err)
+	runtimeInfos := map[string]base.RuntimeInfoInterface{"test-pvc": runtimeInfo}
 
-	err := injector.injectCheckMountReadyScript(podSpecs, map[string]base.RuntimeInfoInterface{})
+	err = injector.injectCheckMountReadyScript(podSpecs, runtimeInfos)
 	assert.NoError(t, err)
+	assert.Len(t, podSpecs.Volumes, 2)
+	require.Len(t, podSpecs.Containers, 1)
+	assert.Len(t, podSpecs.Containers[0].VolumeMounts, 2)
 }
 
 func TestInjectCheckMountReadyScript_GenerateName(t *testing.T) {
