@@ -74,6 +74,16 @@ var _ = Describe("GetServiceByName", func() {
 		})
 	})
 
+	Context("when service is created by fluid", func() {
+		It("should return the existing service", func() {
+			svc, err := GetServiceByName(mockClient, "svc2", namespace)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(svc).NotTo(BeNil())
+			Expect(svc.Name).To(Equal("svc2"))
+			Expect(svc.Annotations).To(Equal(common.GetExpectedFluidAnnotations()))
+		})
+	})
+
 	Context("when namespace doesn't match", func() {
 		It("should return nil service and no error", func() {
 			svc, err := GetServiceByName(mockClient, "svc1", "another-namespace")
