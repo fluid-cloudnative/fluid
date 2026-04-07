@@ -1,3 +1,19 @@
+/*
+Copyright 2026 The Fluid Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package mutator
 
 import (
@@ -6,19 +22,16 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 )
 
-func TestMutator(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Mutator Suite")
+func TestMutatorHelpers(t *testing.T) {
+	// This file exists to provide shared helper functions for mutator tests.
+	// The actual test helpers are defined below without framework dependencies.
+	t.Skip("helper-only file, no direct test cases")
 }
 
 func test_buildPodToMutate(pvcNames []string) *corev1.Pod {
@@ -34,14 +47,13 @@ func test_buildPodToMutate(pvcNames []string) *corev1.Pod {
 				},
 			},
 		})
-
 		volumeMounts = append(volumeMounts, corev1.VolumeMount{
 			Name:      volumeName,
 			MountPath: fmt.Sprintf("/data%d", i),
 		})
 	}
 
-	pod := &corev1.Pod{
+	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-pod",
 			Namespace: "default",
@@ -57,8 +69,6 @@ func test_buildPodToMutate(pvcNames []string) *corev1.Pod {
 			Volumes: volumes,
 		},
 	}
-
-	return pod
 }
 
 func test_buildFluidResources(datasetName string, datasetNamespace string) (*datav1alpha1.Dataset, *datav1alpha1.ThinRuntime, *appsv1.DaemonSet, *corev1.PersistentVolume) {
@@ -70,9 +80,7 @@ func test_buildFluidResources(datasetName string, datasetNamespace string) (*dat
 		Spec: datav1alpha1.DatasetSpec{},
 		Status: datav1alpha1.DatasetStatus{
 			Runtimes: []datav1alpha1.Runtime{
-				{
-					Type: common.ThinRuntime,
-				},
+				{Type: common.ThinRuntime},
 			},
 		},
 	}
@@ -110,9 +118,7 @@ func test_buildFluidResources(datasetName string, datasetNamespace string) (*dat
 							SecurityContext: &corev1.SecurityContext{
 								Privileged: ptr.To(true),
 								Capabilities: &corev1.Capabilities{
-									Add: []corev1.Capability{
-										"SYS_ADMIN",
-									},
+									Add: []corev1.Capability{"SYS_ADMIN"},
 								},
 							},
 						},

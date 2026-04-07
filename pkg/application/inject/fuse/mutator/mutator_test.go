@@ -17,31 +17,34 @@ limitations under the License.
 package mutator
 
 import (
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var _ = Describe("FindExtraArgsFromMetadata", func() {
-	DescribeTable("should extract extra args from annotations",
-		func(metaObj metav1.ObjectMeta, platform string, wantExtraArgs map[string]string) {
-			gotExtraArgs := FindExtraArgsFromMetadata(metaObj, platform)
-			Expect(gotExtraArgs).To(Equal(wantExtraArgs))
+func TestFindExtraArgsFromMetadata_EmptyAnnotations(t *testing.T) {
+	metaObj := metav1.ObjectMeta{Annotations: nil}
+	got := FindExtraArgsFromMetadata(metaObj, "myplatform")
+	assert.Equal(t, map[string]string{}, got)
+}
+
+func TestFindExtraArgsFromMetadata_WithoutExtraArgs(t *testing.T) {
+	metaObj := metav1.ObjectMeta{
+		Annotations: map[string]string{"foo": "bar"},
+	}
+	got := FindExtraArgsFromMetadata(metaObj, "myplatform")
+	assert.Equal(t, map[string]string{}, got)
+}
+
+func TestFindExtraArgsFromMetadata_WithExtraArgs(t *testing.T) {
+	metaObj := metav1.ObjectMeta{
+		Annotations: map[string]string{
+			"foo":                      "bar",
+			"myplatform.fluid.io/key1": "value1",
+			"myplatform.fluid.io/key2": "value2",
 		},
-		Entry("empty_annotations",
-			metav1.ObjectMeta{Annotations: nil},
-			"myplatform",
-			map[string]string{},
-		),
-		Entry("without_extra_args",
-			metav1.ObjectMeta{Annotations: map[string]string{"foo": "bar"}},
-			"myplatform",
-			map[string]string{},
-		),
-		Entry("with_extra_args",
-			metav1.ObjectMeta{Annotations: map[string]string{"foo": "bar", "myplatform.fluid.io/key1": "value1", "myplatform.fluid.io/key2": "value2"}},
-			"myplatform",
-			map[string]string{"key1": "value1", "key2": "value2"},
-		),
-	)
-})
+	}
+	got := FindExtraArgsFromMetadata(metaObj, "myplatform")
+	assert.Equal(t, map[string]string{"key1": "value1", "key2": "value2"}, got)
+}

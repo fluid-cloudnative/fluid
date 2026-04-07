@@ -18,14 +18,15 @@ package fuse
 
 import (
 	"context"
+	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/application/inject/fuse/mutator"
 	"github.com/fluid-cloudnative/fluid/pkg/application/inject/fuse/poststart"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/go-logr/logr"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -33,393 +34,283 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-var _ = Describe("Fuse Injector", func() {
-	var (
-		injector     *Injector
-		fakeClient   client.Client
-		scheme       *runtime.Scheme
-		testLogger   logr.Logger
-		namespace    string
-		runtimeInfos map[string]base.RuntimeInfoInterface
-	)
+func newTestFuseInjector(t *testing.T) (*Injector, client.Client) {
+	t.Helper()
+	scheme := runtime.NewScheme()
+	_ = corev1.AddToScheme(scheme)
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
+	return &Injector{
+		client: fakeClient,
+		log:    logr.Discard(),
+	}, fakeClient
+}
 
-	BeforeEach(func() {
-		scheme = runtime.NewScheme()
-		_ = corev1.AddToScheme(scheme)
-		fakeClient = fake.NewClientBuilder().WithScheme(scheme).Build()
-		testLogger = logr.Discard()
-		namespace = "default"
+// ---- injectCheckMountReadyScript tests ----
 
-		injector = &Injector{
-			client: fakeClient,
-			log:    testLogger,
-		}
+func TestInjectCheckMountReadyScript_NoRuntimeInfos(t *testing.T) {
+	injector, _ := newTestFuseInjector(t)
+	podSpecs := &mutator.MutatingPodSpecs{
+		MetaObj:    metav1.ObjectMeta{Name: "test-pod", Namespace: "default"},
+		Volumes:    []corev1.Volume{},
+		Containers: []corev1.Container{},
+	}
 
-	})
+	err := injector.injectCheckMountReadyScript(podSpecs, map[string]base.RuntimeInfoInterface{})
+	assert.NoError(t, err)
+	assert.Len(t, podSpecs.Volumes, 0)
+}
 
-	Describe("injectCheckMountReadyScript", func() {
-		Context("when no runtime infos are provided", func() {
-			It("should skip injection and return nil", func() {
-				podSpecs := &mutator.MutatingPodSpecs{
-					MetaObj: metav1.ObjectMeta{
-						Name:      "test-pod",
-						Namespace: namespace,
-					},
-					Volumes:    []corev1.Volume{},
-					Containers: []corev1.Container{},
-				}
+func TestInjectCheckMountReadyScript_WithRuntimeInfos(t *testing.T) {
+	injector, _ := newTestFuseInjector(t)
+	podSpecs := &mutator.MutatingPodSpecs{
+		MetaObj: metav1.ObjectMeta{Name: "test-pod", Namespace: "default"},
+		Volumes: []corev1.Volume{
+			{
+				Name: "data-volume",
+				VolumeSource: corev1.VolumeSource{
+					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "test-pvc"},
+				},
+			},
+		},
+		Containers: []corev1.Container{
+			{
+				Name: "app-container",
+				VolumeMounts: []corev1.VolumeMount{
+					{Name: "data-volume", MountPath: "/data"},
+				},
+			},
+		},
+	}
 
-				err := injector.injectCheckMountReadyScript(podSpecs, map[string]base.RuntimeInfoInterface{})
-				Expect(err).To(BeNil())
-				Expect(len(podSpecs.Volumes)).To(Equal(0))
-			})
-		})
+	err := injector.injectCheckMountReadyScript(podSpecs, map[string]base.RuntimeInfoInterface{})
+	assert.NoError(t, err)
+}
 
-		Context("when runtime infos are provided", func() {
-			It("should inject script volume and volume mounts", func() {
-				podSpecs := &mutator.MutatingPodSpecs{
-					MetaObj: metav1.ObjectMeta{
-						Name:      "test-pod",
-						Namespace: namespace,
-					},
-					Volumes: []corev1.Volume{
-						{
-							Name: "data-volume",
-							VolumeSource: corev1.VolumeSource{
-								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-									ClaimName: "test-pvc",
-								},
-							},
-						},
-					},
-					Containers: []corev1.Container{
-						{
-							Name: "app-container",
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "data-volume",
-									MountPath: "/data",
-								},
-							},
-						},
-					},
-				}
+func TestInjectCheckMountReadyScript_GenerateName(t *testing.T) {
+	injector, _ := newTestFuseInjector(t)
+	podSpecs := &mutator.MutatingPodSpecs{
+		MetaObj:    metav1.ObjectMeta{GenerateName: "test-pod-", Namespace: "default"},
+		Volumes:    []corev1.Volume{},
+		Containers: []corev1.Container{},
+	}
 
-				err := injector.injectCheckMountReadyScript(podSpecs, runtimeInfos)
-				Expect(err).To(BeNil())
-			})
-		})
+	err := injector.injectCheckMountReadyScript(podSpecs, map[string]base.RuntimeInfoInterface{})
+	assert.NoError(t, err)
+}
 
-		Context("when pod has GenerateName instead of Name", func() {
-			It("should use GenerateName for logging", func() {
-				podSpecs := &mutator.MutatingPodSpecs{
-					MetaObj: metav1.ObjectMeta{
-						GenerateName: "test-pod-",
-						Namespace:    namespace,
-					},
-					Volumes:    []corev1.Volume{},
-					Containers: []corev1.Container{},
-				}
+func TestInjectCheckMountReadyScript_WithPostStartLabel(t *testing.T) {
+	injector, _ := newTestFuseInjector(t)
+	podSpecs := &mutator.MutatingPodSpecs{
+		MetaObj: metav1.ObjectMeta{
+			Name:      "test-pod",
+			Namespace: "default",
+			Labels:    map[string]string{"fluid.io/enable-injection": "true"},
+		},
+		Volumes: []corev1.Volume{
+			{
+				Name: "data-volume",
+				VolumeSource: corev1.VolumeSource{
+					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "test-pvc"},
+				},
+			},
+		},
+		Containers: []corev1.Container{
+			{
+				Name:         "app-container",
+				VolumeMounts: []corev1.VolumeMount{{Name: "data-volume", MountPath: "/data"}},
+			},
+		},
+	}
 
-				err := injector.injectCheckMountReadyScript(podSpecs, runtimeInfos)
-				Expect(err).To(BeNil())
-			})
-		})
+	err := injector.injectCheckMountReadyScript(podSpecs, map[string]base.RuntimeInfoInterface{})
+	assert.NoError(t, err)
+}
 
-		Context("when PostStart injection is enabled", func() {
-			It("should inject PostStart lifecycle hooks", func() {
-				podSpecs := &mutator.MutatingPodSpecs{
-					MetaObj: metav1.ObjectMeta{
-						Name:      "test-pod",
-						Namespace: namespace,
-						Labels: map[string]string{
-							"fluid.io/enable-injection": "true",
-						},
-					},
-					Volumes: []corev1.Volume{
-						{
-							Name: "data-volume",
-							VolumeSource: corev1.VolumeSource{
-								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-									ClaimName: "test-pvc",
-								},
-							},
-						},
-					},
-					Containers: []corev1.Container{
-						{
-							Name: "app-container",
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "data-volume",
-									MountPath: "/data",
-								},
-							},
-						},
-					},
-				}
+func TestInjectCheckMountReadyScript_ExistingPostStart(t *testing.T) {
+	injector, _ := newTestFuseInjector(t)
+	existingPostStart := &corev1.LifecycleHandler{
+		Exec: &corev1.ExecAction{Command: []string{"/bin/sh", "-c", "echo existing"}},
+	}
+	podSpecs := &mutator.MutatingPodSpecs{
+		MetaObj: metav1.ObjectMeta{
+			Name:      "test-pod",
+			Namespace: "default",
+			Labels:    map[string]string{"fluid.io/enable-injection": "true"},
+		},
+		Volumes: []corev1.Volume{
+			{
+				Name: "data-volume",
+				VolumeSource: corev1.VolumeSource{
+					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "test-pvc"},
+				},
+			},
+		},
+		Containers: []corev1.Container{
+			{
+				Name:         "app-container",
+				VolumeMounts: []corev1.VolumeMount{{Name: "data-volume", MountPath: "/data"}},
+				Lifecycle:    &corev1.Lifecycle{PostStart: existingPostStart},
+			},
+		},
+	}
 
-				err := injector.injectCheckMountReadyScript(podSpecs, runtimeInfos)
-				Expect(err).To(BeNil())
-			})
-		})
+	err := injector.injectCheckMountReadyScript(podSpecs, map[string]base.RuntimeInfoInterface{})
+	assert.NoError(t, err)
+	assert.Equal(t, existingPostStart, podSpecs.Containers[0].Lifecycle.PostStart)
+}
 
-		Context("when container already has PostStart lifecycle", func() {
-			It("should skip PostStart injection", func() {
-				existingPostStart := &corev1.LifecycleHandler{
-					Exec: &corev1.ExecAction{
-						Command: []string{"/bin/sh", "-c", "echo existing"},
-					},
-				}
+func TestInjectCheckMountReadyScript_InitContainers(t *testing.T) {
+	injector, _ := newTestFuseInjector(t)
+	podSpecs := &mutator.MutatingPodSpecs{
+		MetaObj: metav1.ObjectMeta{Name: "test-pod", Namespace: "default"},
+		Volumes: []corev1.Volume{
+			{
+				Name: "data-volume",
+				VolumeSource: corev1.VolumeSource{
+					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "test-pvc"},
+				},
+			},
+		},
+		InitContainers: []corev1.Container{
+			{
+				Name:         "init-container",
+				VolumeMounts: []corev1.VolumeMount{{Name: "data-volume", MountPath: "/data"}},
+			},
+		},
+		Containers: []corev1.Container{},
+	}
 
-				podSpecs := &mutator.MutatingPodSpecs{
-					MetaObj: metav1.ObjectMeta{
-						Name:      "test-pod",
-						Namespace: namespace,
-						Labels: map[string]string{
-							"fluid.io/enable-injection": "true",
-						},
-					},
-					Volumes: []corev1.Volume{
-						{
-							Name: "data-volume",
-							VolumeSource: corev1.VolumeSource{
-								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-									ClaimName: "test-pvc",
-								},
-							},
-						},
-					},
-					Containers: []corev1.Container{
-						{
-							Name: "app-container",
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "data-volume",
-									MountPath: "/data",
-								},
-							},
-							Lifecycle: &corev1.Lifecycle{
-								PostStart: existingPostStart,
-							},
-						},
-					},
-				}
+	err := injector.injectCheckMountReadyScript(podSpecs, map[string]base.RuntimeInfoInterface{})
+	assert.NoError(t, err)
+}
 
-				err := injector.injectCheckMountReadyScript(podSpecs, runtimeInfos)
-				Expect(err).To(BeNil())
-				Expect(podSpecs.Containers[0].Lifecycle.PostStart).To(Equal(existingPostStart))
-			})
-		})
+// ---- ensureScriptConfigMapExists tests ----
 
-		Context("when init containers are present", func() {
-			It("should inject into init containers", func() {
-				podSpecs := &mutator.MutatingPodSpecs{
-					MetaObj: metav1.ObjectMeta{
-						Name:      "test-pod",
-						Namespace: namespace,
-					},
-					Volumes: []corev1.Volume{
-						{
-							Name: "data-volume",
-							VolumeSource: corev1.VolumeSource{
-								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-									ClaimName: "test-pvc",
-								},
-							},
-						},
-					},
-					InitContainers: []corev1.Container{
-						{
-							Name: "init-container",
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "data-volume",
-									MountPath: "/data",
-								},
-							},
-						},
-					},
-					Containers: []corev1.Container{},
-				}
+func TestEnsureScriptConfigMapExists_Create(t *testing.T) {
+	injector, fakeClient := newTestFuseInjector(t)
 
-				err := injector.injectCheckMountReadyScript(podSpecs, runtimeInfos)
-				Expect(err).To(BeNil())
-			})
-		})
-	})
+	appScriptGen, err := injector.ensureScriptConfigMapExists("default")
+	require.NoError(t, err)
+	assert.NotNil(t, appScriptGen)
 
-	Describe("ensureScriptConfigMapExists", func() {
-		Context("when configmap does not exist", func() {
-			It("should create the configmap", func() {
-				appScriptGen, err := injector.ensureScriptConfigMapExists(namespace)
-				Expect(err).To(BeNil())
-				Expect(appScriptGen).NotTo(BeNil())
+	cm := appScriptGen.BuildConfigmap()
+	retrievedCM := &corev1.ConfigMap{}
+	err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: cm.Name, Namespace: cm.Namespace}, retrievedCM)
+	assert.NoError(t, err)
+}
 
-				// Verify configmap was created
-				cm := appScriptGen.BuildConfigmap()
-				retrievedCM := &corev1.ConfigMap{}
-				err = fakeClient.Get(context.TODO(), client.ObjectKey{
-					Name:      cm.Name,
-					Namespace: cm.Namespace,
-				}, retrievedCM)
-				Expect(err).To(BeNil())
-			})
-		})
+func TestEnsureScriptConfigMapExists_MatchingSHA256(t *testing.T) {
+	injector, fakeClient := newTestFuseInjector(t)
+	appScriptGen := poststart.NewScriptGeneratorForApp("default")
+	cm := appScriptGen.BuildConfigmap()
+	err := fakeClient.Create(context.TODO(), cm)
+	require.NoError(t, err)
 
-		Context("when configmap already exists with matching SHA256 annotation", func() {
-			It("should skip update and return without error", func() {
-				appScriptGen := poststart.NewScriptGeneratorForApp(namespace)
-				cm := appScriptGen.BuildConfigmap()
-				err := fakeClient.Create(context.TODO(), cm)
-				Expect(err).To(BeNil())
+	_, err = injector.ensureScriptConfigMapExists("default")
+	assert.NoError(t, err)
 
-				_, err = injector.ensureScriptConfigMapExists(namespace)
-				Expect(err).To(BeNil())
+	retrievedCM := &corev1.ConfigMap{}
+	err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: cm.Name, Namespace: cm.Namespace}, retrievedCM)
+	require.NoError(t, err)
+	assert.Contains(t, retrievedCM.Annotations, common.AnnotationCheckMountScriptSHA256)
+	assert.Equal(t, appScriptGen.GetScriptSHA256(), retrievedCM.Annotations[common.AnnotationCheckMountScriptSHA256])
+}
 
-				// Verify configmap is unchanged (no extra update)
-				retrievedCM := &corev1.ConfigMap{}
-				err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: cm.Name, Namespace: cm.Namespace}, retrievedCM)
-				Expect(err).To(BeNil())
-				Expect(retrievedCM.Annotations).To(HaveKey(common.AnnotationCheckMountScriptSHA256))
-				Expect(retrievedCM.Annotations[common.AnnotationCheckMountScriptSHA256]).To(Equal(appScriptGen.GetScriptSHA256()))
-			})
-		})
+func TestEnsureScriptConfigMapExists_StaleSHA256(t *testing.T) {
+	injector, fakeClient := newTestFuseInjector(t)
+	appScriptGen := poststart.NewScriptGeneratorForApp("default")
+	cm := appScriptGen.BuildConfigmap()
+	cm.Annotations[common.AnnotationCheckMountScriptSHA256] = "stale-sha256"
+	cm.Data["check-fluid-mount-ready.sh"] = "old script content"
+	err := fakeClient.Create(context.TODO(), cm)
+	require.NoError(t, err)
 
-		Context("when configmap already exists with stale SHA256 annotation", func() {
-			It("should update the configmap with the latest script and annotation", func() {
-				appScriptGen := poststart.NewScriptGeneratorForApp(namespace)
-				cm := appScriptGen.BuildConfigmap()
-				// Tamper the annotation to simulate an outdated configmap
-				cm.Annotations[common.AnnotationCheckMountScriptSHA256] = "stale-sha256"
-				cm.Data["check-fluid-mount-ready.sh"] = "old script content"
-				err := fakeClient.Create(context.TODO(), cm)
-				Expect(err).To(BeNil())
+	_, err = injector.ensureScriptConfigMapExists("default")
+	assert.NoError(t, err)
 
-				_, err = injector.ensureScriptConfigMapExists(namespace)
-				Expect(err).To(BeNil())
+	retrievedCM := &corev1.ConfigMap{}
+	err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: cm.Name, Namespace: cm.Namespace}, retrievedCM)
+	require.NoError(t, err)
+	assert.Equal(t, appScriptGen.GetScriptSHA256(), retrievedCM.Annotations[common.AnnotationCheckMountScriptSHA256])
+	assert.NotEqual(t, "old script content", retrievedCM.Data["check-fluid-mount-ready.sh"])
+}
 
-				// Verify configmap was updated
-				retrievedCM := &corev1.ConfigMap{}
-				err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: cm.Name, Namespace: cm.Namespace}, retrievedCM)
-				Expect(err).To(BeNil())
-				Expect(retrievedCM.Annotations[common.AnnotationCheckMountScriptSHA256]).To(Equal(appScriptGen.GetScriptSHA256()))
-				Expect(retrievedCM.Data["check-fluid-mount-ready.sh"]).NotTo(Equal("old script content"))
-			})
-		})
+func TestEnsureScriptConfigMapExists_MissingSHA256Annotation(t *testing.T) {
+	injector, fakeClient := newTestFuseInjector(t)
+	appScriptGen := poststart.NewScriptGeneratorForApp("default")
+	cm := appScriptGen.BuildConfigmap()
+	delete(cm.Annotations, common.AnnotationCheckMountScriptSHA256)
+	err := fakeClient.Create(context.TODO(), cm)
+	require.NoError(t, err)
 
-		Context("when configmap already exists without SHA256 annotation", func() {
-			It("should update the configmap to add the annotation", func() {
-				appScriptGen := poststart.NewScriptGeneratorForApp(namespace)
-				cm := appScriptGen.BuildConfigmap()
-				// Remove the annotation to simulate a legacy configmap
-				delete(cm.Annotations, common.AnnotationCheckMountScriptSHA256)
-				err := fakeClient.Create(context.TODO(), cm)
-				Expect(err).To(BeNil())
+	_, err = injector.ensureScriptConfigMapExists("default")
+	assert.NoError(t, err)
 
-				_, err = injector.ensureScriptConfigMapExists(namespace)
-				Expect(err).To(BeNil())
+	retrievedCM := &corev1.ConfigMap{}
+	err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: cm.Name, Namespace: cm.Namespace}, retrievedCM)
+	require.NoError(t, err)
+	assert.Contains(t, retrievedCM.Annotations, common.AnnotationCheckMountScriptSHA256)
+	assert.Equal(t, appScriptGen.GetScriptSHA256(), retrievedCM.Annotations[common.AnnotationCheckMountScriptSHA256])
+}
 
-				retrievedCM := &corev1.ConfigMap{}
-				err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: cm.Name, Namespace: cm.Namespace}, retrievedCM)
-				Expect(err).To(BeNil())
-				Expect(retrievedCM.Annotations).To(HaveKey(common.AnnotationCheckMountScriptSHA256))
-				Expect(retrievedCM.Annotations[common.AnnotationCheckMountScriptSHA256]).To(Equal(appScriptGen.GetScriptSHA256()))
-			})
-		})
-	})
+// ---- collectDatasetVolumeMountInfo tests ----
 
-	Describe("collectDatasetVolumeMountInfo", func() {
-		Context("when volume mount does not reference a PVC", func() {
-			It("should return empty map", func() {
-				volMounts := []corev1.VolumeMount{
-					{
-						Name:      "empty-volume",
-						MountPath: "/empty",
-					},
-				}
+func TestCollectDatasetVolumeMountInfo_NonPVCVolume(t *testing.T) {
+	volMounts := []corev1.VolumeMount{{Name: "empty-volume", MountPath: "/empty"}}
+	volumes := []corev1.Volume{
+		{
+			Name:         "empty-volume",
+			VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
+		},
+	}
 
-				volumes := []corev1.Volume{
-					{
-						Name: "empty-volume",
-						VolumeSource: corev1.VolumeSource{
-							EmptyDir: &corev1.EmptyDirVolumeSource{},
-						},
-					},
-				}
+	result := collectDatasetVolumeMountInfo(volMounts, volumes, map[string]base.RuntimeInfoInterface{})
+	assert.Len(t, result, 0)
+}
 
-				result := collectDatasetVolumeMountInfo(volMounts, volumes, runtimeInfos)
-				Expect(result).To(HaveLen(0))
-			})
-		})
+func TestCollectDatasetVolumeMountInfo_PVCNotInRuntimeInfos(t *testing.T) {
+	volMounts := []corev1.VolumeMount{{Name: "data-volume", MountPath: "/data"}}
+	volumes := []corev1.Volume{
+		{
+			Name: "data-volume",
+			VolumeSource: corev1.VolumeSource{
+				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "unknown-pvc"},
+			},
+		},
+	}
 
-		Context("when PVC is not in runtime infos", func() {
-			It("should return empty map", func() {
-				volMounts := []corev1.VolumeMount{
-					{
-						Name:      "data-volume",
-						MountPath: "/data",
-					},
-				}
+	result := collectDatasetVolumeMountInfo(volMounts, volumes, map[string]base.RuntimeInfoInterface{})
+	assert.Len(t, result, 0)
+}
 
-				volumes := []corev1.Volume{
-					{
-						Name: "data-volume",
-						VolumeSource: corev1.VolumeSource{
-							PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-								ClaimName: "unknown-pvc",
-							},
-						},
-					},
-				}
+// ---- assembleMountInfos tests ----
 
-				result := collectDatasetVolumeMountInfo(volMounts, volumes, runtimeInfos)
-				Expect(result).To(HaveLen(0))
-			})
-		})
-	})
+func TestAssembleMountInfos_MultipleEntries(t *testing.T) {
+	path2RuntimeTypeMap := map[string]string{
+		"/data1": "alluxio",
+		"/data2": "juicefs",
+	}
 
-	Describe("assembleMountInfos", func() {
-		Context("when given path to runtime type map", func() {
-			It("should return colon-separated strings", func() {
-				path2RuntimeTypeMap := map[string]string{
-					"/data1": "alluxio",
-					"/data2": "juicefs",
-				}
+	mountPathStr, mountTypeStr := assembleMountInfos(path2RuntimeTypeMap)
+	assert.Contains(t, mountPathStr, "/data1")
+	assert.Contains(t, mountPathStr, "/data2")
+	assert.Contains(t, mountPathStr, ":")
+	assert.Contains(t, mountTypeStr, "alluxio")
+	assert.Contains(t, mountTypeStr, "juicefs")
+	assert.Contains(t, mountTypeStr, ":")
+}
 
-				mountPathStr, mountTypeStr := assembleMountInfos(path2RuntimeTypeMap)
-				Expect(mountPathStr).To(ContainSubstring("/data1"))
-				Expect(mountPathStr).To(ContainSubstring("/data2"))
-				Expect(mountPathStr).To(ContainSubstring(":"))
-				Expect(mountTypeStr).To(ContainSubstring("alluxio"))
-				Expect(mountTypeStr).To(ContainSubstring("juicefs"))
-				Expect(mountTypeStr).To(ContainSubstring(":"))
-			})
-		})
+func TestAssembleMountInfos_EmptyMap(t *testing.T) {
+	mountPathStr, mountTypeStr := assembleMountInfos(map[string]string{})
+	assert.Equal(t, "", mountPathStr)
+	assert.Equal(t, "", mountTypeStr)
+}
 
-		Context("when given empty map", func() {
-			It("should return empty strings", func() {
-				path2RuntimeTypeMap := map[string]string{}
-
-				mountPathStr, mountTypeStr := assembleMountInfos(path2RuntimeTypeMap)
-				Expect(mountPathStr).To(Equal(""))
-				Expect(mountTypeStr).To(Equal(""))
-			})
-		})
-
-		Context("when given single entry", func() {
-			It("should return strings without colons", func() {
-				path2RuntimeTypeMap := map[string]string{
-					"/data": "alluxio",
-				}
-
-				mountPathStr, mountTypeStr := assembleMountInfos(path2RuntimeTypeMap)
-				Expect(mountPathStr).To(Equal("/data"))
-				Expect(mountTypeStr).To(Equal("alluxio"))
-			})
-		})
-	})
-})
+func TestAssembleMountInfos_SingleEntry(t *testing.T) {
+	mountPathStr, mountTypeStr := assembleMountInfos(map[string]string{"/data": "alluxio"})
+	assert.Equal(t, "/data", mountPathStr)
+	assert.Equal(t, "alluxio", mountTypeStr)
+}
 
 // MockRuntimeInfo is a mock implementation of base.RuntimeInfoInterface for testing
 type MockRuntimeInfo struct {
