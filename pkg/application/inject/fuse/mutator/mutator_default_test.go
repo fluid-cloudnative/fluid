@@ -37,6 +37,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+const (
+	defaultTestDatasetName  = "test-dataset"
+	thinRuntimeMountPathFmt = "/runtime-mnt/thin/%s/%s/"
+)
+
 // buildScheme returns a runtime.Scheme with the required types registered.
 func buildScheme(t *testing.T) *runtime.Scheme {
 	t.Helper()
@@ -71,19 +76,18 @@ func buildDefaultMutatorArgs(t *testing.T, scheme *runtime.Scheme, podToMutate *
 
 func TestDefaultMutator_SinglePVC_BasicMutation(t *testing.T) {
 	const (
-		datasetName      = "test-dataset"
 		datasetNamespace = "fluid"
 	)
 	scheme := buildScheme(t)
-	dataset, runtime, daemonSet, pv := test_buildFluidResources(datasetName, datasetNamespace)
-	podToMutate := test_buildPodToMutate([]string{datasetName})
+	dataset, runtime, daemonSet, pv := test_buildFluidResources(defaultTestDatasetName, datasetNamespace)
+	podToMutate := test_buildPodToMutate([]string{defaultTestDatasetName})
 	args := buildDefaultMutatorArgs(t, scheme, podToMutate, dataset, runtime, daemonSet, pv)
 
 	mutator := NewDefaultMutator(args)
-	runtimeInfo, err := base.GetRuntimeInfo(args.Client, datasetName, datasetNamespace)
+	runtimeInfo, err := base.GetRuntimeInfo(args.Client, defaultTestDatasetName, datasetNamespace)
 	require.NoError(t, err)
 
-	require.NoError(t, mutator.MutateWithRuntimeInfo(datasetName, runtimeInfo, "-0"))
+	require.NoError(t, mutator.MutateWithRuntimeInfo(defaultTestDatasetName, runtimeInfo, "-0"))
 	require.NoError(t, mutator.PostMutate())
 
 	podSpecs := mutator.GetMutatedPodSpecs()
@@ -98,7 +102,7 @@ func TestDefaultMutator_SinglePVC_BasicMutation(t *testing.T) {
 
 	assert.Contains(t, podSpecs.Containers[0].VolumeMounts, corev1.VolumeMount{
 		Name:             "thin-fuse-mount-0",
-		MountPath:        fmt.Sprintf("/runtime-mnt/thin/%s/%s/", datasetNamespace, datasetName),
+		MountPath:        fmt.Sprintf(thinRuntimeMountPathFmt, datasetNamespace, defaultTestDatasetName),
 		MountPropagation: &mountPropBidir,
 	})
 	assert.Contains(t, podSpecs.Containers[0].VolumeMounts, corev1.VolumeMount{
@@ -117,7 +121,7 @@ func TestDefaultMutator_SinglePVC_BasicMutation(t *testing.T) {
 		Name: "data-vol-0",
 		VolumeSource: corev1.VolumeSource{
 			HostPath: &corev1.HostPathVolumeSource{
-				Path: fmt.Sprintf("/runtime-mnt/thin/%s/%s/thin-fuse", datasetNamespace, datasetName),
+				Path: fmt.Sprintf("/runtime-mnt/thin/%s/%s/thin-fuse", datasetNamespace, defaultTestDatasetName),
 			},
 		},
 	}
@@ -138,20 +142,19 @@ func TestDefaultMutator_SinglePVC_BasicMutation(t *testing.T) {
 
 func TestDefaultMutator_SkipSidecarPostStartInject(t *testing.T) {
 	const (
-		datasetName      = "test-dataset"
 		datasetNamespace = "fluid"
 	)
 	scheme := buildScheme(t)
-	dataset, runtime, daemonSet, pv := test_buildFluidResources(datasetName, datasetNamespace)
-	podToMutate := test_buildPodToMutate([]string{datasetName})
+	dataset, runtime, daemonSet, pv := test_buildFluidResources(defaultTestDatasetName, datasetNamespace)
+	podToMutate := test_buildPodToMutate([]string{defaultTestDatasetName})
 	args := buildDefaultMutatorArgs(t, scheme, podToMutate, dataset, runtime, daemonSet, pv)
 	args.Options.SkipSidecarPostStartInject = true
 
 	mutator := NewDefaultMutator(args)
-	runtimeInfo, err := base.GetRuntimeInfo(args.Client, datasetName, datasetNamespace)
+	runtimeInfo, err := base.GetRuntimeInfo(args.Client, defaultTestDatasetName, datasetNamespace)
 	require.NoError(t, err)
 
-	require.NoError(t, mutator.MutateWithRuntimeInfo(datasetName, runtimeInfo, "-0"))
+	require.NoError(t, mutator.MutateWithRuntimeInfo(defaultTestDatasetName, runtimeInfo, "-0"))
 	require.NoError(t, mutator.PostMutate())
 
 	podSpecs := mutator.GetMutatedPodSpecs()
@@ -170,11 +173,11 @@ func TestDefaultMutator_SkipSidecarPostStartInject(t *testing.T) {
 
 func TestDefaultMutator_CustomizedDaemonSetFields(t *testing.T) {
 	const (
-		datasetName      = "test-dataset"
 		datasetNamespace = "fluid"
+		customMyVolPath  = "/tmp/myvol"
 	)
 	scheme := buildScheme(t)
-	dataset, runtime, daemonSet, pv := test_buildFluidResources(datasetName, datasetNamespace)
+	dataset, runtime, daemonSet, pv := test_buildFluidResources(defaultTestDatasetName, datasetNamespace)
 
 	// Add customized fields to the FUSE daemonset
 	daemonSet.Spec.Template.Spec.Containers[0].Env = append(
@@ -183,11 +186,11 @@ func TestDefaultMutator_CustomizedDaemonSetFields(t *testing.T) {
 	)
 	daemonSet.Spec.Template.Spec.Containers[0].VolumeMounts = append(
 		daemonSet.Spec.Template.Spec.Containers[0].VolumeMounts,
-		corev1.VolumeMount{Name: "myvol", MountPath: "/tmp/myvol"},
+		corev1.VolumeMount{Name: "myvol", MountPath: customMyVolPath},
 	)
 	daemonSet.Spec.Template.Spec.Volumes = append(
 		daemonSet.Spec.Template.Spec.Volumes,
-		corev1.Volume{Name: "myvol", VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/tmp/myvol"}}},
+		corev1.Volume{Name: "myvol", VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: customMyVolPath}}},
 	)
 	daemonSet.Spec.Template.Spec.Containers[0].Resources = corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{
@@ -200,14 +203,14 @@ func TestDefaultMutator_CustomizedDaemonSetFields(t *testing.T) {
 		},
 	}
 
-	podToMutate := test_buildPodToMutate([]string{datasetName})
+	podToMutate := test_buildPodToMutate([]string{defaultTestDatasetName})
 	args := buildDefaultMutatorArgs(t, scheme, podToMutate, dataset, runtime, daemonSet, pv)
 
 	mutator := NewDefaultMutator(args)
-	runtimeInfo, err := base.GetRuntimeInfo(args.Client, datasetName, datasetNamespace)
+	runtimeInfo, err := base.GetRuntimeInfo(args.Client, defaultTestDatasetName, datasetNamespace)
 	require.NoError(t, err)
 
-	require.NoError(t, mutator.MutateWithRuntimeInfo(datasetName, runtimeInfo, "-0"))
+	require.NoError(t, mutator.MutateWithRuntimeInfo(defaultTestDatasetName, runtimeInfo, "-0"))
 	require.NoError(t, mutator.PostMutate())
 
 	podSpecs := mutator.GetMutatedPodSpecs()
@@ -215,8 +218,8 @@ func TestDefaultMutator_CustomizedDaemonSetFields(t *testing.T) {
 
 	assert.Len(t, podSpecs.Containers, 2)
 
-	assert.Contains(t, podSpecs.Containers[0].VolumeMounts, corev1.VolumeMount{Name: "myvol-0", MountPath: "/tmp/myvol"})
-	assert.Contains(t, podSpecs.Volumes, corev1.Volume{Name: "myvol-0", VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/tmp/myvol"}}})
+	assert.Contains(t, podSpecs.Containers[0].VolumeMounts, corev1.VolumeMount{Name: "myvol-0", MountPath: customMyVolPath})
+	assert.Contains(t, podSpecs.Volumes, corev1.Volume{Name: "myvol-0", VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: customMyVolPath}}})
 	assert.Contains(t, podSpecs.Containers[0].Env, corev1.EnvVar{Name: "FOO", Value: "BAR"})
 
 	cpu2 := resource.MustParse("2")
@@ -231,31 +234,31 @@ func TestDefaultMutator_CustomizedDaemonSetFields(t *testing.T) {
 
 func TestDefaultMutator_EnableCacheDir(t *testing.T) {
 	const (
-		datasetName      = "test-dataset"
 		datasetNamespace = "fluid"
+		cacheDirName     = "cache-dir"
 	)
 	scheme := buildScheme(t)
-	dataset, runtime, daemonSet, pv := test_buildFluidResources(datasetName, datasetNamespace)
+	dataset, runtime, daemonSet, pv := test_buildFluidResources(defaultTestDatasetName, datasetNamespace)
 
 	// Add cache-dir volume to daemonset
 	daemonSet.Spec.Template.Spec.Volumes = append(
 		daemonSet.Spec.Template.Spec.Volumes,
-		corev1.Volume{Name: "cache-dir", VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/tmp/cache-dir"}}},
+		corev1.Volume{Name: cacheDirName, VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/tmp/cache-dir"}}},
 	)
 	daemonSet.Spec.Template.Spec.Containers[0].VolumeMounts = append(
 		daemonSet.Spec.Template.Spec.Containers[0].VolumeMounts,
-		corev1.VolumeMount{Name: "cache-dir", MountPath: "/tmp/cache-dir"},
+		corev1.VolumeMount{Name: cacheDirName, MountPath: "/tmp/cache-dir"},
 	)
 
-	podToMutate := test_buildPodToMutate([]string{datasetName})
+	podToMutate := test_buildPodToMutate([]string{defaultTestDatasetName})
 	args := buildDefaultMutatorArgs(t, scheme, podToMutate, dataset, runtime, daemonSet, pv)
 	args.Options.EnableCacheDir = true
 
 	mutator := NewDefaultMutator(args)
-	runtimeInfo, err := base.GetRuntimeInfo(args.Client, datasetName, datasetNamespace)
+	runtimeInfo, err := base.GetRuntimeInfo(args.Client, defaultTestDatasetName, datasetNamespace)
 	require.NoError(t, err)
 
-	require.NoError(t, mutator.MutateWithRuntimeInfo(datasetName, runtimeInfo, "-0"))
+	require.NoError(t, mutator.MutateWithRuntimeInfo(defaultTestDatasetName, runtimeInfo, "-0"))
 	require.NoError(t, mutator.PostMutate())
 
 	podSpecs := mutator.GetMutatedPodSpecs()
@@ -266,46 +269,45 @@ func TestDefaultMutator_EnableCacheDir(t *testing.T) {
 	// When EnableCacheDir is true, cache related volumes should be kept
 	foundVolumeMount := false
 	for _, vm := range podSpecs.Containers[0].VolumeMounts {
-		if vm.Name == "cache-dir-0" || vm.Name == "cache-dir" {
+		if vm.Name == cacheDirName+"-0" || vm.Name == cacheDirName {
 			foundVolumeMount = true
 			break
 		}
 	}
-	assert.True(t, foundVolumeMount, "expected a cache-dir volume mount to be present")
+	assert.True(t, foundVolumeMount, "expected a "+cacheDirName+" volume mount to be present")
 
 	foundVolume := false
 	for _, vol := range podSpecs.Volumes {
-		if vol.Name == "cache-dir-0" || vol.Name == "cache-dir" {
+		if vol.Name == cacheDirName+"-0" || vol.Name == cacheDirName {
 			foundVolume = true
 			break
 		}
 	}
-	assert.True(t, foundVolume, "expected a cache-dir volume to be present")
+	assert.True(t, foundVolume, "expected a "+cacheDirName+" volume to be present")
 }
 
 func TestDefaultMutator_FluidSubPath(t *testing.T) {
 	const (
-		datasetName      = "test-dataset"
 		datasetNamespace = "fluid"
 	)
 	scheme := buildScheme(t)
-	dataset, runtime, daemonSet, pv := test_buildFluidResources(datasetName, datasetNamespace)
+	dataset, runtime, daemonSet, pv := test_buildFluidResources(defaultTestDatasetName, datasetNamespace)
 	pv.Spec.CSI.VolumeAttributes[common.VolumeAttrFluidSubPath] = "path-a"
 
-	podToMutate := test_buildPodToMutate([]string{datasetName})
+	podToMutate := test_buildPodToMutate([]string{defaultTestDatasetName})
 	args := buildDefaultMutatorArgs(t, scheme, podToMutate, dataset, runtime, daemonSet, pv)
 
 	mutator := NewDefaultMutator(args)
-	runtimeInfo, err := base.GetRuntimeInfo(args.Client, datasetName, datasetNamespace)
+	runtimeInfo, err := base.GetRuntimeInfo(args.Client, defaultTestDatasetName, datasetNamespace)
 	require.NoError(t, err)
 
-	require.NoError(t, mutator.MutateWithRuntimeInfo(datasetName, runtimeInfo, "-0"))
+	require.NoError(t, mutator.MutateWithRuntimeInfo(defaultTestDatasetName, runtimeInfo, "-0"))
 	require.NoError(t, mutator.PostMutate())
 
 	podSpecs := mutator.GetMutatedPodSpecs()
 	require.NotNil(t, podSpecs)
 
-	expectedHostPath := fmt.Sprintf("/runtime-mnt/thin/%s/%s/thin-fuse/path-a", datasetNamespace, datasetName)
+	expectedHostPath := fmt.Sprintf("/runtime-mnt/thin/%s/%s/thin-fuse/path-a", datasetNamespace, defaultTestDatasetName)
 	assert.Contains(t, podSpecs.Volumes, corev1.Volume{
 		Name: "data-vol-0",
 		VolumeSource: corev1.VolumeSource{
@@ -318,12 +320,11 @@ func TestDefaultMutator_FluidSubPath(t *testing.T) {
 
 func TestDefaultMutator_InitContainerMountsPVC(t *testing.T) {
 	const (
-		datasetName      = "test-dataset"
 		datasetNamespace = "fluid"
 	)
 	scheme := buildScheme(t)
-	dataset, runtime, daemonSet, pv := test_buildFluidResources(datasetName, datasetNamespace)
-	podToMutate := test_buildPodToMutate([]string{datasetName})
+	dataset, runtime, daemonSet, pv := test_buildFluidResources(defaultTestDatasetName, datasetNamespace)
+	podToMutate := test_buildPodToMutate([]string{defaultTestDatasetName})
 
 	// Add an init container that also mounts the Fluid PVC
 	podToMutate.Spec.InitContainers = []corev1.Container{
@@ -339,10 +340,10 @@ func TestDefaultMutator_InitContainerMountsPVC(t *testing.T) {
 	args := buildDefaultMutatorArgs(t, scheme, podToMutate, dataset, runtime, daemonSet, pv)
 
 	mutator := NewDefaultMutator(args)
-	runtimeInfo, err := base.GetRuntimeInfo(args.Client, datasetName, datasetNamespace)
+	runtimeInfo, err := base.GetRuntimeInfo(args.Client, defaultTestDatasetName, datasetNamespace)
 	require.NoError(t, err)
 
-	require.NoError(t, mutator.MutateWithRuntimeInfo(datasetName, runtimeInfo, "-0"))
+	require.NoError(t, mutator.MutateWithRuntimeInfo(defaultTestDatasetName, runtimeInfo, "-0"))
 	require.NoError(t, mutator.PostMutate())
 
 	podSpecs := mutator.GetMutatedPodSpecs()
@@ -363,14 +364,14 @@ func TestDefaultMutator_InitContainerMountsPVC(t *testing.T) {
 	// App sidecar: bidirectional mount
 	assert.Contains(t, podSpecs.Containers[0].VolumeMounts, corev1.VolumeMount{
 		Name:             "thin-fuse-mount-0",
-		MountPath:        fmt.Sprintf("/runtime-mnt/thin/%s/%s/", datasetNamespace, datasetName),
+		MountPath:        fmt.Sprintf(thinRuntimeMountPathFmt, datasetNamespace, defaultTestDatasetName),
 		MountPropagation: &mountPropBidir,
 	})
 
 	// Init sidecar: bidirectional mount
 	assert.Contains(t, podSpecs.InitContainers[0].VolumeMounts, corev1.VolumeMount{
 		Name:             "thin-fuse-mount-0",
-		MountPath:        fmt.Sprintf("/runtime-mnt/thin/%s/%s/", datasetNamespace, datasetName),
+		MountPath:        fmt.Sprintf(thinRuntimeMountPathFmt, datasetNamespace, defaultTestDatasetName),
 		MountPropagation: &mountPropBidir,
 	})
 
@@ -394,12 +395,11 @@ func TestDefaultMutator_InitContainerMountsPVC(t *testing.T) {
 
 func TestDefaultMutator_RandomSuffixMode_WithPodName(t *testing.T) {
 	const (
-		datasetName      = "test-dataset"
 		datasetNamespace = "fluid"
 	)
 	scheme := buildScheme(t)
-	dataset, runtime, daemonSet, pv := test_buildFluidResources(datasetName, datasetNamespace)
-	podToMutate := test_buildPodToMutate([]string{datasetName})
+	dataset, runtime, daemonSet, pv := test_buildFluidResources(defaultTestDatasetName, datasetNamespace)
+	podToMutate := test_buildPodToMutate([]string{defaultTestDatasetName})
 	podToMutate.ObjectMeta.Annotations = map[string]string{
 		common.HostMountPathModeOnDefaultPlatformKey: string(common.HostPathModeRandomSuffix),
 	}
@@ -407,10 +407,10 @@ func TestDefaultMutator_RandomSuffixMode_WithPodName(t *testing.T) {
 	args := buildDefaultMutatorArgs(t, scheme, podToMutate, dataset, runtime, daemonSet, pv)
 
 	mutator := NewDefaultMutator(args)
-	runtimeInfo, err := base.GetRuntimeInfo(args.Client, datasetName, datasetNamespace)
+	runtimeInfo, err := base.GetRuntimeInfo(args.Client, defaultTestDatasetName, datasetNamespace)
 	require.NoError(t, err)
 
-	require.NoError(t, mutator.MutateWithRuntimeInfo(datasetName, runtimeInfo, "-0"))
+	require.NoError(t, mutator.MutateWithRuntimeInfo(defaultTestDatasetName, runtimeInfo, "-0"))
 	require.NoError(t, mutator.PostMutate())
 
 	podSpecs := mutator.GetMutatedPodSpecs()
@@ -433,18 +433,17 @@ func TestDefaultMutator_RandomSuffixMode_WithPodName(t *testing.T) {
 	require.NotNil(t, fuseMountVol)
 	require.NotNil(t, dataVol)
 
-	assert.Regexp(t, `^/runtime-mnt/thin/fluid/test-dataset//test-pod/\d+-[0-9a-z]{1,8}$`, fuseMountVol.HostPath.Path)
-	assert.Regexp(t, `^/runtime-mnt/thin/fluid/test-dataset/test-pod/\d+-[0-9a-z]{1,8}/thin-fuse$`, dataVol.HostPath.Path)
+	assert.Regexp(t, fmt.Sprintf(`^/runtime-mnt/thin/fluid/%s//test-pod/\d+-[0-9a-z]{1,8}$`, defaultTestDatasetName), fuseMountVol.HostPath.Path)
+	assert.Regexp(t, fmt.Sprintf(`^/runtime-mnt/thin/fluid/%s/test-pod/\d+-[0-9a-z]{1,8}/thin-fuse$`, defaultTestDatasetName), dataVol.HostPath.Path)
 }
 
 func TestDefaultMutator_RandomSuffixMode_WithGenerateName(t *testing.T) {
 	const (
-		datasetName      = "test-dataset"
 		datasetNamespace = "fluid"
 	)
 	scheme := buildScheme(t)
-	dataset, runtime, daemonSet, pv := test_buildFluidResources(datasetName, datasetNamespace)
-	podToMutate := test_buildPodToMutate([]string{datasetName})
+	dataset, runtime, daemonSet, pv := test_buildFluidResources(defaultTestDatasetName, datasetNamespace)
+	podToMutate := test_buildPodToMutate([]string{defaultTestDatasetName})
 	podToMutate.ObjectMeta.Annotations = map[string]string{
 		common.HostMountPathModeOnDefaultPlatformKey: string(common.HostPathModeRandomSuffix),
 	}
@@ -454,10 +453,10 @@ func TestDefaultMutator_RandomSuffixMode_WithGenerateName(t *testing.T) {
 	args := buildDefaultMutatorArgs(t, scheme, podToMutate, dataset, runtime, daemonSet, pv)
 
 	mutator := NewDefaultMutator(args)
-	runtimeInfo, err := base.GetRuntimeInfo(args.Client, datasetName, datasetNamespace)
+	runtimeInfo, err := base.GetRuntimeInfo(args.Client, defaultTestDatasetName, datasetNamespace)
 	require.NoError(t, err)
 
-	require.NoError(t, mutator.MutateWithRuntimeInfo(datasetName, runtimeInfo, "-0"))
+	require.NoError(t, mutator.MutateWithRuntimeInfo(defaultTestDatasetName, runtimeInfo, "-0"))
 	require.NoError(t, mutator.PostMutate())
 
 	podSpecs := mutator.GetMutatedPodSpecs()
@@ -480,26 +479,25 @@ func TestDefaultMutator_RandomSuffixMode_WithGenerateName(t *testing.T) {
 	require.NotNil(t, fuseMountVol)
 	require.NotNil(t, dataVol)
 
-	assert.Regexp(t, `^/runtime-mnt/thin/fluid/test-dataset//mypod---generate-name/\d+-[0-9a-z]{1,8}$`, fuseMountVol.HostPath.Path)
-	assert.Regexp(t, `^/runtime-mnt/thin/fluid/test-dataset/mypod---generate-name/\d+-[0-9a-z]{1,8}/thin-fuse$`, dataVol.HostPath.Path)
+	assert.Regexp(t, fmt.Sprintf(`^/runtime-mnt/thin/fluid/%s//mypod---generate-name/\d+-[0-9a-z]{1,8}$`, defaultTestDatasetName), fuseMountVol.HostPath.Path)
+	assert.Regexp(t, fmt.Sprintf(`^/runtime-mnt/thin/fluid/%s/mypod---generate-name/\d+-[0-9a-z]{1,8}/thin-fuse$`, defaultTestDatasetName), dataVol.HostPath.Path)
 }
 
 func TestDefaultMutator_NativeSidecar_AppContainerOnly(t *testing.T) {
 	const (
-		datasetName      = "test-dataset"
 		datasetNamespace = "fluid"
 	)
 	scheme := buildScheme(t)
-	dataset, runtime, daemonSet, pv := test_buildFluidResources(datasetName, datasetNamespace)
-	podToMutate := test_buildPodToMutate([]string{datasetName})
+	dataset, runtime, daemonSet, pv := test_buildFluidResources(defaultTestDatasetName, datasetNamespace)
+	podToMutate := test_buildPodToMutate([]string{defaultTestDatasetName})
 	args := buildDefaultMutatorArgs(t, scheme, podToMutate, dataset, runtime, daemonSet, pv)
 	args.Options.SidecarInjectionMode = common.SidecarInjectionMode_NativeSidecar
 
 	mutator := NewDefaultMutator(args)
-	runtimeInfo, err := base.GetRuntimeInfo(args.Client, datasetName, datasetNamespace)
+	runtimeInfo, err := base.GetRuntimeInfo(args.Client, defaultTestDatasetName, datasetNamespace)
 	require.NoError(t, err)
 
-	require.NoError(t, mutator.MutateWithRuntimeInfo(datasetName, runtimeInfo, "-0"))
+	require.NoError(t, mutator.MutateWithRuntimeInfo(defaultTestDatasetName, runtimeInfo, "-0"))
 	require.NoError(t, mutator.PostMutate())
 
 	podSpecs := mutator.GetMutatedPodSpecs()
@@ -517,12 +515,11 @@ func TestDefaultMutator_NativeSidecar_AppContainerOnly(t *testing.T) {
 
 func TestDefaultMutator_NativeSidecar_BothContainersAndInitContainers(t *testing.T) {
 	const (
-		datasetName      = "test-dataset"
 		datasetNamespace = "fluid"
 	)
 	scheme := buildScheme(t)
-	dataset, runtime, daemonSet, pv := test_buildFluidResources(datasetName, datasetNamespace)
-	podToMutate := test_buildPodToMutate([]string{datasetName})
+	dataset, runtime, daemonSet, pv := test_buildFluidResources(defaultTestDatasetName, datasetNamespace)
+	podToMutate := test_buildPodToMutate([]string{defaultTestDatasetName})
 	podToMutate.Spec.InitContainers = []corev1.Container{
 		{
 			Name:  "init-container",
@@ -537,10 +534,10 @@ func TestDefaultMutator_NativeSidecar_BothContainersAndInitContainers(t *testing
 	args.Options.SidecarInjectionMode = common.SidecarInjectionMode_NativeSidecar
 
 	mutator := NewDefaultMutator(args)
-	runtimeInfo, err := base.GetRuntimeInfo(args.Client, datasetName, datasetNamespace)
+	runtimeInfo, err := base.GetRuntimeInfo(args.Client, defaultTestDatasetName, datasetNamespace)
 	require.NoError(t, err)
 
-	require.NoError(t, mutator.MutateWithRuntimeInfo(datasetName, runtimeInfo, "-0"))
+	require.NoError(t, mutator.MutateWithRuntimeInfo(defaultTestDatasetName, runtimeInfo, "-0"))
 	require.NoError(t, mutator.PostMutate())
 
 	podSpecs := mutator.GetMutatedPodSpecs()
@@ -598,7 +595,7 @@ func TestDefaultMutator_MultiplePVCs(t *testing.T) {
 
 		assert.Contains(t, podSpecs.Containers[0].VolumeMounts, corev1.VolumeMount{
 			Name:             fmt.Sprintf("thin-fuse-mount-%d", i),
-			MountPath:        fmt.Sprintf("/runtime-mnt/thin/%s/%s/", datasetNamespaces[i], datasetNames[i]),
+			MountPath:        fmt.Sprintf(thinRuntimeMountPathFmt, datasetNamespaces[i], datasetNames[i]),
 			MountPropagation: &mountPropBidir,
 		})
 		assert.Contains(t, podSpecs.Containers[0].VolumeMounts, corev1.VolumeMount{
@@ -638,20 +635,19 @@ func TestDefaultMutator_MultiplePVCs(t *testing.T) {
 
 func TestPrepareFuseContainerPostStartScript_MatchingSHA(t *testing.T) {
 	const (
-		datasetName      = "test-dataset"
 		datasetNamespace = "fluid"
 	)
 	scheme := buildScheme(t)
-	dataset, thinRuntime, daemonSet, pv := test_buildFluidResources(datasetName, datasetNamespace)
-	podToMutate := test_buildPodToMutate([]string{datasetName})
+	dataset, thinRuntime, daemonSet, pv := test_buildFluidResources(defaultTestDatasetName, datasetNamespace)
+	podToMutate := test_buildPodToMutate([]string{defaultTestDatasetName})
 	args := buildDefaultMutatorArgs(t, scheme, podToMutate, dataset, thinRuntime, daemonSet, pv)
 	c := args.Client
 
 	// First mutate: creates the ConfigMap
 	mut := NewDefaultMutator(args)
-	runtimeInfo, err := base.GetRuntimeInfo(c, datasetName, datasetNamespace)
+	runtimeInfo, err := base.GetRuntimeInfo(c, defaultTestDatasetName, datasetNamespace)
 	require.NoError(t, err)
-	require.NoError(t, mut.MutateWithRuntimeInfo(datasetName, runtimeInfo, "-0"))
+	require.NoError(t, mut.MutateWithRuntimeInfo(defaultTestDatasetName, runtimeInfo, "-0"))
 
 	// Re-build fresh args/mutator to simulate a second webhook call
 	pod2, err := applicationspod.NewApplication(podToMutate).GetPodSpecs()
@@ -660,29 +656,28 @@ func TestPrepareFuseContainerPostStartScript_MatchingSHA(t *testing.T) {
 	require.NoError(t, err)
 	args2 := MutatorBuildArgs{Client: c, Log: fake.NullLogger(), Options: args.Options, Specs: specs2}
 	mut2 := NewDefaultMutator(args2)
-	runtimeInfo2, err := base.GetRuntimeInfo(c, datasetName, datasetNamespace)
+	runtimeInfo2, err := base.GetRuntimeInfo(c, defaultTestDatasetName, datasetNamespace)
 	require.NoError(t, err)
 
 	// Second mutate: SHA256 matches, should not error
-	assert.NoError(t, mut2.MutateWithRuntimeInfo(datasetName, runtimeInfo2, "-0"))
+	assert.NoError(t, mut2.MutateWithRuntimeInfo(defaultTestDatasetName, runtimeInfo2, "-0"))
 }
 
 func TestPrepareFuseContainerPostStartScript_StaleSHA(t *testing.T) {
 	const (
-		datasetName      = "test-dataset"
 		datasetNamespace = "fluid"
 	)
 	scheme := buildScheme(t)
-	dataset, thinRuntime, daemonSet, pv := test_buildFluidResources(datasetName, datasetNamespace)
-	podToMutate := test_buildPodToMutate([]string{datasetName})
+	dataset, thinRuntime, daemonSet, pv := test_buildFluidResources(defaultTestDatasetName, datasetNamespace)
+	podToMutate := test_buildPodToMutate([]string{defaultTestDatasetName})
 	args := buildDefaultMutatorArgs(t, scheme, podToMutate, dataset, thinRuntime, daemonSet, pv)
 	c := args.Client
 
 	// First mutate: creates the ConfigMap
 	mut := NewDefaultMutator(args)
-	runtimeInfo, err := base.GetRuntimeInfo(c, datasetName, datasetNamespace)
+	runtimeInfo, err := base.GetRuntimeInfo(c, defaultTestDatasetName, datasetNamespace)
 	require.NoError(t, err)
-	require.NoError(t, mut.MutateWithRuntimeInfo(datasetName, runtimeInfo, "-0"))
+	require.NoError(t, mut.MutateWithRuntimeInfo(defaultTestDatasetName, runtimeInfo, "-0"))
 
 	// Deliberately corrupt the SHA256 annotation to simulate a stale configmap
 	cmList := &corev1.ConfigMapList{}
@@ -704,9 +699,9 @@ func TestPrepareFuseContainerPostStartScript_StaleSHA(t *testing.T) {
 	require.NoError(t, err)
 	args2 := MutatorBuildArgs{Client: c, Log: fake.NullLogger(), Options: args.Options, Specs: specs2}
 	mut2 := NewDefaultMutator(args2)
-	runtimeInfo2, err := base.GetRuntimeInfo(c, datasetName, datasetNamespace)
+	runtimeInfo2, err := base.GetRuntimeInfo(c, defaultTestDatasetName, datasetNamespace)
 	require.NoError(t, err)
-	require.NoError(t, mut2.MutateWithRuntimeInfo(datasetName, runtimeInfo2, "-0"))
+	require.NoError(t, mut2.MutateWithRuntimeInfo(defaultTestDatasetName, runtimeInfo2, "-0"))
 
 	// Verify the SHA256 annotation was refreshed
 	updatedCmList := &corev1.ConfigMapList{}

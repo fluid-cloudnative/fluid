@@ -27,6 +27,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
+const (
+	volumeTestVolume20Name = "volume2-0"
+	volumeTestDataVolume   = "data-volume"
+	volumeTestNewVolume    = "new-volume"
+	volumeTestVolumeName   = "test-volume"
+)
+
 func newTestInjector(t *testing.T) *Injector {
 	t.Helper()
 	return &Injector{log: zap.New(zap.UseDevMode(true))}
@@ -86,14 +93,14 @@ func TestAppendVolumes_EmptyExistingVolumes(t *testing.T) {
 	assert.Len(t, resultVolumes, 2)
 	assert.Len(t, conflictMap, 2)
 	assert.Equal(t, "volume1-0", conflictMap["volume1"])
-	assert.Equal(t, "volume2-0", conflictMap["volume2"])
+	assert.Equal(t, volumeTestVolume20Name, conflictMap["volume2"])
 	assert.Equal(t, "volume1-0", resultVolumes[0].Name)
-	assert.Equal(t, "volume2-0", resultVolumes[1].Name)
+	assert.Equal(t, volumeTestVolume20Name, resultVolumes[1].Name)
 }
 
 func TestAppendVolumes_SingleConflict(t *testing.T) {
 	injector := newTestInjector(t)
-	existingVolumes := []corev1.Volume{{Name: "volume1"}, {Name: "volume2-0"}}
+	existingVolumes := []corev1.Volume{{Name: "volume1"}, {Name: volumeTestVolume20Name}}
 	volumesToAdd := []corev1.Volume{{Name: "volume2"}}
 
 	conflictMap, resultVolumes, err := injector.appendVolumes(existingVolumes, volumesToAdd, "-0")
@@ -124,15 +131,15 @@ func TestAppendVolumes_MultipleConflicts(t *testing.T) {
 
 func TestAppendVolumes_ConflictMappingsCorrect(t *testing.T) {
 	injector := newTestInjector(t)
-	existingVolumes := []corev1.Volume{{Name: "data-volume-0"}}
-	volumesToAdd := []corev1.Volume{{Name: "data-volume"}}
+	existingVolumes := []corev1.Volume{{Name: volumeTestDataVolume + "-0"}}
+	volumesToAdd := []corev1.Volume{{Name: volumeTestDataVolume}}
 
 	conflictMap, resultVolumes, err := injector.appendVolumes(existingVolumes, volumesToAdd, "-0")
 
 	assert.NoError(t, err)
 	assert.Len(t, resultVolumes, 2)
-	assert.NotEqual(t, "data-volume-0", conflictMap["data-volume"])
-	assert.NotEqual(t, "data-volume", conflictMap["data-volume"])
+	assert.NotEqual(t, volumeTestDataVolume+"-0", conflictMap[volumeTestDataVolume])
+	assert.NotEqual(t, volumeTestDataVolume, conflictMap[volumeTestDataVolume])
 }
 
 func TestAppendVolumes_SuffixDash1(t *testing.T) {
@@ -185,11 +192,11 @@ func TestRandomizeNewVolumeName_NoConflict(t *testing.T) {
 	injector := newTestInjector(t)
 	existingNames := []string{"volume1", "volume2"}
 
-	newName, err := injector.randomizeNewVolumeName("new-volume", existingNames)
+	newName, err := injector.randomizeNewVolumeName(volumeTestNewVolume, existingNames)
 
 	assert.NoError(t, err)
 	assert.True(t, strings.HasPrefix(newName, common.Fluid))
-	assert.NotEqual(t, "new-volume", newName)
+	assert.NotEqual(t, volumeTestNewVolume, newName)
 	assert.NotContains(t, existingNames, newName)
 }
 
@@ -197,7 +204,7 @@ func TestRandomizeNewVolumeName_FirstAttemptConflict(t *testing.T) {
 	injector := newTestInjector(t)
 	existingNames := []string{"volume1", "volume2"}
 
-	newName, err := injector.randomizeNewVolumeName("test-volume", existingNames)
+	newName, err := injector.randomizeNewVolumeName(volumeTestVolumeName, existingNames)
 
 	assert.NoError(t, err)
 	assert.True(t, strings.HasPrefix(newName, common.Fluid))
@@ -232,9 +239,9 @@ func TestRandomizeNewVolumeName_DifferentNamesOnSubsequentCalls(t *testing.T) {
 	injector := newTestInjector(t)
 	existingNames := []string{}
 
-	name1, err1 := injector.randomizeNewVolumeName("test-volume", existingNames)
+	name1, err1 := injector.randomizeNewVolumeName(volumeTestVolumeName, existingNames)
 	existingNames = append(existingNames, name1)
-	name2, err2 := injector.randomizeNewVolumeName("test-volume", existingNames)
+	name2, err2 := injector.randomizeNewVolumeName(volumeTestVolumeName, existingNames)
 
 	assert.NoError(t, err1)
 	assert.NoError(t, err2)
@@ -253,7 +260,7 @@ func TestRandomizeNewVolumeName_EmptyInput(t *testing.T) {
 func TestRandomizeNewVolumeName_EmptyExistingNames(t *testing.T) {
 	injector := newTestInjector(t)
 
-	newName, err := injector.randomizeNewVolumeName("test-volume", []string{})
+	newName, err := injector.randomizeNewVolumeName(volumeTestVolumeName, []string{})
 
 	assert.NoError(t, err)
 	assert.True(t, strings.HasPrefix(newName, common.Fluid))
@@ -266,7 +273,7 @@ func TestRandomizeNewVolumeName_ManyExistingNames(t *testing.T) {
 		existingNames = append(existingNames, "volume-"+string(rune(i)))
 	}
 
-	newName, err := injector.randomizeNewVolumeName("new-volume", existingNames)
+	newName, err := injector.randomizeNewVolumeName(volumeTestNewVolume, existingNames)
 
 	assert.NoError(t, err)
 	assert.NotEmpty(t, newName)

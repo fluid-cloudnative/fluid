@@ -35,6 +35,8 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
+const injectorRuntimeTestBigDataNamespace = "big-data"
+
 func newSchemeWithFuseTypes(t *testing.T) *runtime.Scheme {
 	t.Helper()
 	s := runtime.NewScheme()
@@ -51,7 +53,7 @@ func TestInjectList_Success(t *testing.T) {
 
 	s := newSchemeWithFuseTypes(t)
 	dataset := &datav1alpha1.Dataset{
-		ObjectMeta: metav1.ObjectMeta{Name: "duplicate", Namespace: "big-data"},
+		ObjectMeta: metav1.ObjectMeta{Name: "duplicate", Namespace: injectorRuntimeTestBigDataNamespace},
 	}
 	pv := &corev1.PersistentVolume{
 		ObjectMeta: metav1.ObjectMeta{Name: "big-data-duplicate"},
@@ -68,11 +70,11 @@ func TestInjectList_Success(t *testing.T) {
 		},
 	}
 	pvc := &corev1.PersistentVolumeClaim{
-		ObjectMeta: metav1.ObjectMeta{Name: "duplicate", Namespace: "big-data"},
+		ObjectMeta: metav1.ObjectMeta{Name: "duplicate", Namespace: injectorRuntimeTestBigDataNamespace},
 		Spec:       corev1.PersistentVolumeClaimSpec{VolumeName: "big-data-duplicate"},
 	}
 	fuse := &appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{Name: "duplicate-jindofs-fuse", Namespace: "big-data"},
+		ObjectMeta: metav1.ObjectMeta{Name: "duplicate-jindofs-fuse", Namespace: injectorRuntimeTestBigDataNamespace},
 		Spec: appsv1.DaemonSetSpec{
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
@@ -122,7 +124,7 @@ func TestInjectList_Success(t *testing.T) {
 			TypeMeta: metav1.TypeMeta{Kind: "Pod", APIVersion: "v1"},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "duplicate-pvc-name",
-				Namespace: "big-data",
+				Namespace: injectorRuntimeTestBigDataNamespace,
 				Labels:    map[string]string{common.InjectFuseSidecar: common.True},
 			},
 			Spec: corev1.PodSpec{
@@ -153,7 +155,7 @@ func TestInjectList_Success(t *testing.T) {
 	fakeClient := fake.NewFakeClientWithScheme(s, []runtime.Object{fuse, pv, pvc, dataset}...)
 	injector := NewInjector(fakeClient)
 
-	runtimeInfo, err := base.BuildRuntimeInfo("duplicate", "big-data", common.JindoRuntime)
+	runtimeInfo, err := base.BuildRuntimeInfo("duplicate", injectorRuntimeTestBigDataNamespace, common.JindoRuntime)
 	require.NoError(t, err)
 	runtimeInfo.SetAPIReader(fakeClient)
 	runtimeInfos := map[string]base.RuntimeInfoInterface{"duplicate": runtimeInfo}
@@ -183,7 +185,7 @@ func TestInjectUnstructured_NotImplemented(t *testing.T) {
 		TypeMeta: metav1.TypeMeta{Kind: "Pod", APIVersion: "v1"},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "duplicate-pvc-name",
-			Namespace: "big-data",
+			Namespace: injectorRuntimeTestBigDataNamespace,
 			Labels:    map[string]string{common.InjectFuseSidecar: common.True},
 		},
 		Spec: corev1.PodSpec{

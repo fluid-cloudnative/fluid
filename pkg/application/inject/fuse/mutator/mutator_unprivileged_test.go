@@ -32,9 +32,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+const unprivilegedTestDatasetName = "test-dataset"
+
 func TestUnprivilegedMutator_SinglePVC_BasicMutation(t *testing.T) {
 	const (
-		datasetName      = "test-dataset"
 		datasetNamespace = "fluid"
 	)
 	scheme := runtime.NewScheme()
@@ -42,15 +43,15 @@ func TestUnprivilegedMutator_SinglePVC_BasicMutation(t *testing.T) {
 	require.NoError(t, corev1.AddToScheme(scheme))
 	require.NoError(t, appsv1.AddToScheme(scheme))
 
-	dataset, runtimeObj, daemonSet, pv := test_buildFluidResources(datasetName, datasetNamespace)
-	podToMutate := test_buildPodToMutate([]string{datasetName})
+	dataset, runtimeObj, daemonSet, pv := test_buildFluidResources(unprivilegedTestDatasetName, datasetNamespace)
+	podToMutate := test_buildPodToMutate([]string{unprivilegedTestDatasetName})
 	args := buildDefaultMutatorArgs(t, scheme, podToMutate, dataset, runtimeObj, daemonSet, pv)
 
 	mutator := NewUnprivilegedMutator(args)
-	runtimeInfo, err := base.GetRuntimeInfo(args.Client, datasetName, datasetNamespace)
+	runtimeInfo, err := base.GetRuntimeInfo(args.Client, unprivilegedTestDatasetName, datasetNamespace)
 	require.NoError(t, err)
 
-	require.NoError(t, mutator.MutateWithRuntimeInfo(datasetName, runtimeInfo, "-0"))
+	require.NoError(t, mutator.MutateWithRuntimeInfo(unprivilegedTestDatasetName, runtimeInfo, "-0"))
 	require.NoError(t, mutator.PostMutate())
 
 	podSpecs := mutator.GetMutatedPodSpecs()
@@ -93,7 +94,7 @@ func TestUnprivilegedMutator_SinglePVC_BasicMutation(t *testing.T) {
 		Name: "data-vol-0",
 		VolumeSource: corev1.VolumeSource{
 			HostPath: &corev1.HostPathVolumeSource{
-				Path: fmt.Sprintf("/runtime-mnt/thin/%s/%s/thin-fuse", datasetNamespace, datasetName),
+				Path: fmt.Sprintf("/runtime-mnt/thin/%s/%s/thin-fuse", datasetNamespace, unprivilegedTestDatasetName),
 			},
 		},
 	})
@@ -112,7 +113,6 @@ func TestUnprivilegedMutator_SinglePVC_BasicMutation(t *testing.T) {
 
 func TestUnprivilegedMutator_FluidSubPath(t *testing.T) {
 	const (
-		datasetName      = "test-dataset"
 		datasetNamespace = "fluid"
 	)
 	scheme := runtime.NewScheme()
@@ -120,17 +120,17 @@ func TestUnprivilegedMutator_FluidSubPath(t *testing.T) {
 	require.NoError(t, corev1.AddToScheme(scheme))
 	require.NoError(t, appsv1.AddToScheme(scheme))
 
-	dataset, runtimeObj, daemonSet, pv := test_buildFluidResources(datasetName, datasetNamespace)
+	dataset, runtimeObj, daemonSet, pv := test_buildFluidResources(unprivilegedTestDatasetName, datasetNamespace)
 	pv.Spec.CSI.VolumeAttributes[common.VolumeAttrFluidSubPath] = "path-a"
 
-	podToMutate := test_buildPodToMutate([]string{datasetName})
+	podToMutate := test_buildPodToMutate([]string{unprivilegedTestDatasetName})
 	args := buildDefaultMutatorArgs(t, scheme, podToMutate, dataset, runtimeObj, daemonSet, pv)
 
 	mutator := NewUnprivilegedMutator(args)
-	runtimeInfo, err := base.GetRuntimeInfo(args.Client, datasetName, datasetNamespace)
+	runtimeInfo, err := base.GetRuntimeInfo(args.Client, unprivilegedTestDatasetName, datasetNamespace)
 	require.NoError(t, err)
 
-	require.NoError(t, mutator.MutateWithRuntimeInfo(datasetName, runtimeInfo, "-0"))
+	require.NoError(t, mutator.MutateWithRuntimeInfo(unprivilegedTestDatasetName, runtimeInfo, "-0"))
 	require.NoError(t, mutator.PostMutate())
 
 	podSpecs := mutator.GetMutatedPodSpecs()
@@ -151,7 +151,7 @@ func TestUnprivilegedMutator_FluidSubPath(t *testing.T) {
 		MountPropagation: &mountPropH2C,
 	})
 
-	expectedHostPath := fmt.Sprintf("/runtime-mnt/thin/%s/%s/thin-fuse/path-a", datasetNamespace, datasetName)
+	expectedHostPath := fmt.Sprintf("/runtime-mnt/thin/%s/%s/thin-fuse/path-a", datasetNamespace, unprivilegedTestDatasetName)
 	assert.Contains(t, podSpecs.Volumes, corev1.Volume{
 		Name: "data-vol-0",
 		VolumeSource: corev1.VolumeSource{
@@ -164,7 +164,6 @@ func TestUnprivilegedMutator_FluidSubPath(t *testing.T) {
 
 func TestUnprivilegedMutator_InitContainerMountsPVC(t *testing.T) {
 	const (
-		datasetName      = "test-dataset"
 		datasetNamespace = "fluid"
 	)
 	scheme := runtime.NewScheme()
@@ -172,8 +171,8 @@ func TestUnprivilegedMutator_InitContainerMountsPVC(t *testing.T) {
 	require.NoError(t, corev1.AddToScheme(scheme))
 	require.NoError(t, appsv1.AddToScheme(scheme))
 
-	dataset, runtimeObj, daemonSet, pv := test_buildFluidResources(datasetName, datasetNamespace)
-	podToMutate := test_buildPodToMutate([]string{datasetName})
+	dataset, runtimeObj, daemonSet, pv := test_buildFluidResources(unprivilegedTestDatasetName, datasetNamespace)
+	podToMutate := test_buildPodToMutate([]string{unprivilegedTestDatasetName})
 
 	// Add an init container that also mounts the Fluid PVC
 	podToMutate.Spec.InitContainers = []corev1.Container{
@@ -189,10 +188,10 @@ func TestUnprivilegedMutator_InitContainerMountsPVC(t *testing.T) {
 	args := buildDefaultMutatorArgs(t, scheme, podToMutate, dataset, runtimeObj, daemonSet, pv)
 
 	mutator := NewUnprivilegedMutator(args)
-	runtimeInfo, err := base.GetRuntimeInfo(args.Client, datasetName, datasetNamespace)
+	runtimeInfo, err := base.GetRuntimeInfo(args.Client, unprivilegedTestDatasetName, datasetNamespace)
 	require.NoError(t, err)
 
-	require.NoError(t, mutator.MutateWithRuntimeInfo(datasetName, runtimeInfo, "-0"))
+	require.NoError(t, mutator.MutateWithRuntimeInfo(unprivilegedTestDatasetName, runtimeInfo, "-0"))
 	require.NoError(t, mutator.PostMutate())
 
 	podSpecs := mutator.GetMutatedPodSpecs()

@@ -34,6 +34,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
+const (
+	mountPointTestPodName    = "test-pod"
+	mountPointTestPVCName    = "test-pvc"
+	mountPointDataVolumeName = "data-volume"
+)
+
 func newTestFuseInjector(t *testing.T) (*Injector, client.Client) {
 	t.Helper()
 	scheme := runtime.NewScheme()
@@ -50,7 +56,7 @@ func newTestFuseInjector(t *testing.T) (*Injector, client.Client) {
 func TestInjectCheckMountReadyScript_NoRuntimeInfos(t *testing.T) {
 	injector, _ := newTestFuseInjector(t)
 	podSpecs := &mutator.MutatingPodSpecs{
-		MetaObj:    metav1.ObjectMeta{Name: "test-pod", Namespace: "default"},
+		MetaObj:    metav1.ObjectMeta{Name: mountPointTestPodName, Namespace: "default"},
 		Volumes:    []corev1.Volume{},
 		Containers: []corev1.Container{},
 	}
@@ -63,12 +69,12 @@ func TestInjectCheckMountReadyScript_NoRuntimeInfos(t *testing.T) {
 func TestInjectCheckMountReadyScript_WithRuntimeInfos(t *testing.T) {
 	injector, _ := newTestFuseInjector(t)
 	podSpecs := &mutator.MutatingPodSpecs{
-		MetaObj: metav1.ObjectMeta{Name: "test-pod", Namespace: "default"},
+		MetaObj: metav1.ObjectMeta{Name: mountPointTestPodName, Namespace: "default"},
 		Volumes: []corev1.Volume{
 			{
-				Name: "data-volume",
+				Name: mountPointDataVolumeName,
 				VolumeSource: corev1.VolumeSource{
-					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "test-pvc"},
+					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: mountPointTestPVCName},
 				},
 			},
 		},
@@ -76,14 +82,14 @@ func TestInjectCheckMountReadyScript_WithRuntimeInfos(t *testing.T) {
 			{
 				Name: "app-container",
 				VolumeMounts: []corev1.VolumeMount{
-					{Name: "data-volume", MountPath: "/data"},
+					{Name: mountPointDataVolumeName, MountPath: "/data"},
 				},
 			},
 		},
 	}
-	runtimeInfo, err := base.BuildRuntimeInfo("test-pvc", "default", common.AlluxioRuntime)
+	runtimeInfo, err := base.BuildRuntimeInfo(mountPointTestPVCName, "default", common.AlluxioRuntime)
 	require.NoError(t, err)
-	runtimeInfos := map[string]base.RuntimeInfoInterface{"test-pvc": runtimeInfo}
+	runtimeInfos := map[string]base.RuntimeInfoInterface{mountPointTestPVCName: runtimeInfo}
 
 	err = injector.injectCheckMountReadyScript(podSpecs, runtimeInfos)
 	assert.NoError(t, err)
@@ -108,22 +114,22 @@ func TestInjectCheckMountReadyScript_WithPostStartLabel(t *testing.T) {
 	injector, _ := newTestFuseInjector(t)
 	podSpecs := &mutator.MutatingPodSpecs{
 		MetaObj: metav1.ObjectMeta{
-			Name:      "test-pod",
+			Name:      mountPointTestPodName,
 			Namespace: "default",
 			Labels:    map[string]string{"fluid.io/enable-injection": "true"},
 		},
 		Volumes: []corev1.Volume{
 			{
-				Name: "data-volume",
+				Name: mountPointDataVolumeName,
 				VolumeSource: corev1.VolumeSource{
-					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "test-pvc"},
+					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: mountPointTestPVCName},
 				},
 			},
 		},
 		Containers: []corev1.Container{
 			{
 				Name:         "app-container",
-				VolumeMounts: []corev1.VolumeMount{{Name: "data-volume", MountPath: "/data"}},
+				VolumeMounts: []corev1.VolumeMount{{Name: mountPointDataVolumeName, MountPath: "/data"}},
 			},
 		},
 	}
@@ -139,22 +145,22 @@ func TestInjectCheckMountReadyScript_ExistingPostStart(t *testing.T) {
 	}
 	podSpecs := &mutator.MutatingPodSpecs{
 		MetaObj: metav1.ObjectMeta{
-			Name:      "test-pod",
+			Name:      mountPointTestPodName,
 			Namespace: "default",
 			Labels:    map[string]string{"fluid.io/enable-injection": "true"},
 		},
 		Volumes: []corev1.Volume{
 			{
-				Name: "data-volume",
+				Name: mountPointDataVolumeName,
 				VolumeSource: corev1.VolumeSource{
-					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "test-pvc"},
+					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: mountPointTestPVCName},
 				},
 			},
 		},
 		Containers: []corev1.Container{
 			{
 				Name:         "app-container",
-				VolumeMounts: []corev1.VolumeMount{{Name: "data-volume", MountPath: "/data"}},
+				VolumeMounts: []corev1.VolumeMount{{Name: mountPointDataVolumeName, MountPath: "/data"}},
 				Lifecycle:    &corev1.Lifecycle{PostStart: existingPostStart},
 			},
 		},
@@ -168,19 +174,19 @@ func TestInjectCheckMountReadyScript_ExistingPostStart(t *testing.T) {
 func TestInjectCheckMountReadyScript_InitContainers(t *testing.T) {
 	injector, _ := newTestFuseInjector(t)
 	podSpecs := &mutator.MutatingPodSpecs{
-		MetaObj: metav1.ObjectMeta{Name: "test-pod", Namespace: "default"},
+		MetaObj: metav1.ObjectMeta{Name: mountPointTestPodName, Namespace: "default"},
 		Volumes: []corev1.Volume{
 			{
-				Name: "data-volume",
+				Name: mountPointDataVolumeName,
 				VolumeSource: corev1.VolumeSource{
-					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "test-pvc"},
+					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: mountPointTestPVCName},
 				},
 			},
 		},
 		InitContainers: []corev1.Container{
 			{
 				Name:         "init-container",
-				VolumeMounts: []corev1.VolumeMount{{Name: "data-volume", MountPath: "/data"}},
+				VolumeMounts: []corev1.VolumeMount{{Name: mountPointDataVolumeName, MountPath: "/data"}},
 			},
 		},
 		Containers: []corev1.Container{},
@@ -275,10 +281,10 @@ func TestCollectDatasetVolumeMountInfo_NonPVCVolume(t *testing.T) {
 }
 
 func TestCollectDatasetVolumeMountInfo_PVCNotInRuntimeInfos(t *testing.T) {
-	volMounts := []corev1.VolumeMount{{Name: "data-volume", MountPath: "/data"}}
+	volMounts := []corev1.VolumeMount{{Name: mountPointDataVolumeName, MountPath: "/data"}}
 	volumes := []corev1.Volume{
 		{
-			Name: "data-volume",
+			Name: mountPointDataVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "unknown-pvc"},
 			},

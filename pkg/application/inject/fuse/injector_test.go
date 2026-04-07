@@ -37,6 +37,13 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
+const (
+	injectorTestFluidNamespace = "fluid-test"
+	injectorTestDataset1Name   = "dataset-1"
+	injectorTestFuse0Name      = "fluid-fuse-0"
+	injectorTestMetricsPort    = "thin-fuse-metrics"
+)
+
 // testCaseContext holds objects needed for injector test cases.
 type testCaseContext struct {
 	in             *corev1.Pod
@@ -286,7 +293,7 @@ func assertInjectionCorrect(t *testing.T, out *corev1.Pod, fuseDs *appsv1.Daemon
 }
 
 func TestInjectPod_SingleDataset(t *testing.T) {
-	testCtx := mockTestCaseContext([]string{"dataset-1"}, "fluid-test")
+	testCtx := mockTestCaseContext([]string{injectorTestDataset1Name}, injectorTestFluidNamespace)
 	injector, c := buildInjectorFromTestCtx(t, testCtx)
 
 	runtimeInfos := map[string]base.RuntimeInfoInterface{}
@@ -301,15 +308,15 @@ func TestInjectPod_SingleDataset(t *testing.T) {
 
 	fuseDs := testCtx.fuseDaemonsets[0]
 	require.NoError(t, err)
-	assert.Equal(t, "fluid-test", out.ObjectMeta.Labels[common.LabelContainerDatasetNamespaceKeyPrefix+"fluid-fuse-0"])
-	assert.Equal(t, "dataset-1", out.ObjectMeta.Labels[common.LabelContainerDatasetNameKeyPrefix+"fluid-fuse-0"])
+	assert.Equal(t, injectorTestFluidNamespace, out.ObjectMeta.Labels[common.LabelContainerDatasetNamespaceKeyPrefix+injectorTestFuse0Name])
+	assert.Equal(t, injectorTestDataset1Name, out.ObjectMeta.Labels[common.LabelContainerDatasetNameKeyPrefix+injectorTestFuse0Name])
 	assert.Len(t, out.Spec.Containers, 2)
 
 	assertInjectionCorrect(t, out, fuseDs, testCtx.datasets[0])
 }
 
 func TestInjectPod_UserSpecifiedFields(t *testing.T) {
-	testCtx := mockTestCaseContext([]string{"dataset-1"}, "fluid-test")
+	testCtx := mockTestCaseContext([]string{injectorTestDataset1Name}, injectorTestFluidNamespace)
 	testCtx.fuseDaemonsets[0].Spec.Template.Spec.Volumes = append(
 		testCtx.fuseDaemonsets[0].Spec.Template.Spec.Volumes,
 		corev1.Volume{Name: "new-vol", VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}},
@@ -336,15 +343,15 @@ func TestInjectPod_UserSpecifiedFields(t *testing.T) {
 
 	fuseDs := testCtx.fuseDaemonsets[0]
 	require.NoError(t, err)
-	assert.Equal(t, "fluid-test", out.ObjectMeta.Labels[common.LabelContainerDatasetNamespaceKeyPrefix+"fluid-fuse-0"])
-	assert.Equal(t, "dataset-1", out.ObjectMeta.Labels[common.LabelContainerDatasetNameKeyPrefix+"fluid-fuse-0"])
+	assert.Equal(t, injectorTestFluidNamespace, out.ObjectMeta.Labels[common.LabelContainerDatasetNamespaceKeyPrefix+injectorTestFuse0Name])
+	assert.Equal(t, injectorTestDataset1Name, out.ObjectMeta.Labels[common.LabelContainerDatasetNameKeyPrefix+injectorTestFuse0Name])
 	assert.Len(t, out.Spec.Containers, 2)
 
 	assertInjectionCorrect(t, out, fuseDs, testCtx.datasets[0])
 }
 
 func TestInjectPod_AlreadyInjected(t *testing.T) {
-	testCtx := mockTestCaseContext([]string{"dataset-1"}, "fluid-test")
+	testCtx := mockTestCaseContext([]string{injectorTestDataset1Name}, injectorTestFluidNamespace)
 	testCtx.in.ObjectMeta.Labels[common.InjectSidecarDone] = common.True
 	injector, c := buildInjectorFromTestCtx(t, testCtx)
 
@@ -362,7 +369,7 @@ func TestInjectPod_AlreadyInjected(t *testing.T) {
 }
 
 func TestInjectPod_DuplicatePVC(t *testing.T) {
-	testCtx := mockTestCaseContext([]string{"dataset-1"}, "fluid-test")
+	testCtx := mockTestCaseContext([]string{injectorTestDataset1Name}, injectorTestFluidNamespace)
 	testCtx.in.Spec.Volumes = append(testCtx.in.Spec.Volumes, corev1.Volume{
 		Name: "duplicate-pvc",
 		VolumeSource: corev1.VolumeSource{
@@ -387,8 +394,8 @@ func TestInjectPod_DuplicatePVC(t *testing.T) {
 
 	out, err := injector.InjectPod(testCtx.in, runtimeInfos)
 	require.NoError(t, err)
-	assert.Equal(t, "fluid-test", out.ObjectMeta.Labels[common.LabelContainerDatasetNamespaceKeyPrefix+"fluid-fuse-0"])
-	assert.Equal(t, "dataset-1", out.ObjectMeta.Labels[common.LabelContainerDatasetNameKeyPrefix+"fluid-fuse-0"])
+	assert.Equal(t, injectorTestFluidNamespace, out.ObjectMeta.Labels[common.LabelContainerDatasetNamespaceKeyPrefix+injectorTestFuse0Name])
+	assert.Equal(t, injectorTestDataset1Name, out.ObjectMeta.Labels[common.LabelContainerDatasetNameKeyPrefix+injectorTestFuse0Name])
 	assert.Len(t, out.Spec.Containers, 2)
 	assertInjectionCorrect(t, out, testCtx.fuseDaemonsets[0], testCtx.datasets[0])
 
@@ -410,7 +417,7 @@ func TestInjectPod_DuplicatePVC(t *testing.T) {
 }
 
 func TestInjectPod_UnprivilegedMutator(t *testing.T) {
-	testCtx := mockTestCaseContext([]string{"dataset-1"}, "fluid-test")
+	testCtx := mockTestCaseContext([]string{injectorTestDataset1Name}, injectorTestFluidNamespace)
 	testCtx.in.Labels[common.InjectUnprivilegedFuseSidecar] = common.True
 	injector, c := buildInjectorFromTestCtx(t, testCtx)
 
@@ -425,8 +432,8 @@ func TestInjectPod_UnprivilegedMutator(t *testing.T) {
 	out, err := injector.InjectPod(testCtx.in, runtimeInfos)
 	require.NoError(t, err)
 
-	assert.Equal(t, "fluid-test", out.ObjectMeta.Labels[common.LabelContainerDatasetNamespaceKeyPrefix+"fluid-fuse-0"])
-	assert.Equal(t, "dataset-1", out.ObjectMeta.Labels[common.LabelContainerDatasetNameKeyPrefix+"fluid-fuse-0"])
+	assert.Equal(t, injectorTestFluidNamespace, out.ObjectMeta.Labels[common.LabelContainerDatasetNamespaceKeyPrefix+injectorTestFuse0Name])
+	assert.Equal(t, injectorTestDataset1Name, out.ObjectMeta.Labels[common.LabelContainerDatasetNameKeyPrefix+injectorTestFuse0Name])
 	assert.Len(t, out.Spec.Containers, 2)
 
 	fuseContainer := out.Spec.Containers[0]
@@ -440,7 +447,7 @@ func TestInjectPod_UnprivilegedMutator(t *testing.T) {
 }
 
 func TestInjectPod_InitContainerWithPVC(t *testing.T) {
-	testCtx := mockTestCaseContext([]string{"dataset-1"}, "fluid-test")
+	testCtx := mockTestCaseContext([]string{injectorTestDataset1Name}, injectorTestFluidNamespace)
 	testCtx.in.Spec.InitContainers = append(testCtx.in.Spec.InitContainers, corev1.Container{
 		Name: "init-container",
 		VolumeMounts: []corev1.VolumeMount{
@@ -477,7 +484,7 @@ func TestInjectPod_InitContainerWithPVC(t *testing.T) {
 }
 
 func TestInjectPod_MultipleDatasets(t *testing.T) {
-	testCtx := mockTestCaseContext([]string{"dataset-1", "dataset-2", "dataset-3"}, "fluid-test")
+	testCtx := mockTestCaseContext([]string{injectorTestDataset1Name, "dataset-2", "dataset-3"}, injectorTestFluidNamespace)
 	injector, c := buildInjectorFromTestCtx(t, testCtx)
 
 	runtimeInfos := map[string]base.RuntimeInfoInterface{}
@@ -491,11 +498,11 @@ func TestInjectPod_MultipleDatasets(t *testing.T) {
 	out, err := injector.InjectPod(testCtx.in, runtimeInfos)
 
 	require.NoError(t, err)
-	assert.Equal(t, "fluid-test", out.ObjectMeta.Labels[common.LabelContainerDatasetNamespaceKeyPrefix+"fluid-fuse-0"])
-	assert.Equal(t, "dataset-1", out.ObjectMeta.Labels[common.LabelContainerDatasetNameKeyPrefix+"fluid-fuse-0"])
-	assert.Equal(t, "fluid-test", out.ObjectMeta.Labels[common.LabelContainerDatasetNamespaceKeyPrefix+"fluid-fuse-1"])
+	assert.Equal(t, injectorTestFluidNamespace, out.ObjectMeta.Labels[common.LabelContainerDatasetNamespaceKeyPrefix+injectorTestFuse0Name])
+	assert.Equal(t, injectorTestDataset1Name, out.ObjectMeta.Labels[common.LabelContainerDatasetNameKeyPrefix+injectorTestFuse0Name])
+	assert.Equal(t, injectorTestFluidNamespace, out.ObjectMeta.Labels[common.LabelContainerDatasetNamespaceKeyPrefix+"fluid-fuse-1"])
 	assert.Equal(t, "dataset-2", out.ObjectMeta.Labels[common.LabelContainerDatasetNameKeyPrefix+"fluid-fuse-1"])
-	assert.Equal(t, "fluid-test", out.ObjectMeta.Labels[common.LabelContainerDatasetNamespaceKeyPrefix+"fluid-fuse-2"])
+	assert.Equal(t, injectorTestFluidNamespace, out.ObjectMeta.Labels[common.LabelContainerDatasetNamespaceKeyPrefix+"fluid-fuse-2"])
 	assert.Equal(t, "dataset-3", out.ObjectMeta.Labels[common.LabelContainerDatasetNameKeyPrefix+"fluid-fuse-2"])
 	assert.Len(t, out.Spec.Containers, 4)
 
@@ -505,27 +512,29 @@ func TestInjectPod_MultipleDatasets(t *testing.T) {
 }
 
 func TestInjectPod_RefDataset(t *testing.T) {
-	testCtx := mockTestCaseContext([]string{"root-dataset"}, "fluid-test")
+	const subDatasetName = "sub-dataset"
+
+	testCtx := mockTestCaseContext([]string{"root-dataset"}, injectorTestFluidNamespace)
 	testCtx.datasets = append(testCtx.datasets, &datav1alpha1.Dataset{
-		ObjectMeta: metav1.ObjectMeta{Name: "sub-dataset", Namespace: "ref"},
+		ObjectMeta: metav1.ObjectMeta{Name: subDatasetName, Namespace: "ref"},
 		Spec: datav1alpha1.DatasetSpec{
-			Mounts: []datav1alpha1.Mount{{MountPoint: "dataset://fluid-test/root-dataset/path-a"}},
+			Mounts: []datav1alpha1.Mount{{MountPoint: "dataset://" + injectorTestFluidNamespace + "/root-dataset/path-a"}},
 		},
 	})
 
 	testCtx.pvcs = append(testCtx.pvcs, &corev1.PersistentVolumeClaim{
-		ObjectMeta: metav1.ObjectMeta{Name: "sub-dataset", Namespace: "ref"},
-		Spec:       corev1.PersistentVolumeClaimSpec{VolumeName: "ref-sub-dataset"},
+		ObjectMeta: metav1.ObjectMeta{Name: subDatasetName, Namespace: "ref"},
+		Spec:       corev1.PersistentVolumeClaimSpec{VolumeName: "ref-" + subDatasetName},
 	})
 
 	testCtx.pvs = append(testCtx.pvs, &corev1.PersistentVolume{
-		ObjectMeta: metav1.ObjectMeta{Name: "ref-sub-dataset"},
+		ObjectMeta: metav1.ObjectMeta{Name: "ref-" + subDatasetName},
 		Spec: corev1.PersistentVolumeSpec{
 			PersistentVolumeSource: corev1.PersistentVolumeSource{
 				CSI: &corev1.CSIPersistentVolumeSource{
 					Driver: "fuse.csi.fluid.io",
 					VolumeAttributes: map[string]string{
-						common.VolumeAttrFluidPath:    "/runtime-mnt/thin/fluid-test/root-dataset/thin-fuse",
+						common.VolumeAttrFluidPath:    "/runtime-mnt/thin/" + injectorTestFluidNamespace + "/root-dataset/thin-fuse",
 						common.VolumeAttrMountType:    common.ThinRuntime,
 						common.VolumeAttrFluidSubPath: "path-a",
 					},
@@ -537,18 +546,18 @@ func TestInjectPod_RefDataset(t *testing.T) {
 	testCtx.in.Namespace = "ref"
 	testCtx.in.Spec.Volumes = []corev1.Volume{
 		{
-			Name: "sub-dataset",
+			Name: subDatasetName,
 			VolumeSource: corev1.VolumeSource{
-				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "sub-dataset"},
+				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: subDatasetName},
 			},
 		},
 	}
 	testCtx.in.Spec.Containers[0].VolumeMounts = []corev1.VolumeMount{
-		{Name: "sub-dataset", MountPath: "/data"},
+		{Name: subDatasetName, MountPath: "/data"},
 	}
 
 	subDatasetFuseDs := testCtx.fuseDaemonsets[0].DeepCopy()
-	subDatasetFuseDs.Name = "sub-dataset-fuse"
+	subDatasetFuseDs.Name = subDatasetName + "-fuse"
 	subDatasetFuseDs.Namespace = "ref"
 	testCtx.fuseDaemonsets = append(testCtx.fuseDaemonsets, subDatasetFuseDs)
 
@@ -567,8 +576,8 @@ func TestInjectPod_RefDataset(t *testing.T) {
 	refDataset := testCtx.datasets[1]
 	rootDataset := testCtx.datasets[0]
 	require.NoError(t, err)
-	assert.Equal(t, "ref", out.ObjectMeta.Labels[common.LabelContainerDatasetNamespaceKeyPrefix+"fluid-fuse-0"])
-	assert.Equal(t, "sub-dataset", out.ObjectMeta.Labels[common.LabelContainerDatasetNameKeyPrefix+"fluid-fuse-0"])
+	assert.Equal(t, "ref", out.ObjectMeta.Labels[common.LabelContainerDatasetNamespaceKeyPrefix+injectorTestFuse0Name])
+	assert.Equal(t, subDatasetName, out.ObjectMeta.Labels[common.LabelContainerDatasetNameKeyPrefix+injectorTestFuse0Name])
 	assert.Len(t, out.Spec.Containers, 2)
 
 	assert.Subset(t, out.Spec.Containers[containerIdx].Command, fuseDs.Spec.Template.Spec.Containers[0].Command)
@@ -599,9 +608,9 @@ func TestInjectPod_RefDataset(t *testing.T) {
 }
 
 func TestInjectPod_FuseMetrics_ScrapeAll(t *testing.T) {
-	testCtx := mockTestCaseContext([]string{"dataset-with-fuse-metrics"}, "fluid-test")
+	testCtx := mockTestCaseContext([]string{"dataset-with-fuse-metrics"}, injectorTestFluidNamespace)
 	testCtx.fuseDaemonsets[0].Spec.Template.Spec.Containers[0].Ports = []corev1.ContainerPort{
-		{Name: "thin-fuse-metrics", ContainerPort: 8080},
+		{Name: injectorTestMetricsPort, ContainerPort: 8080},
 	}
 	injector, c := buildInjectorFromTestCtx(t, testCtx)
 
@@ -629,13 +638,13 @@ func TestInjectPod_FuseMetrics_ScrapeAll(t *testing.T) {
 		}
 	}
 	require.NotNil(t, fuseContainer)
-	assert.Contains(t, fuseContainer.Ports, corev1.ContainerPort{Name: "thin-fuse-metrics", ContainerPort: 8080})
+	assert.Contains(t, fuseContainer.Ports, corev1.ContainerPort{Name: injectorTestMetricsPort, ContainerPort: 8080})
 }
 
 func TestInjectPod_FuseMetrics_MountPodOnly(t *testing.T) {
-	testCtx := mockTestCaseContext([]string{"dataset-with-mountpod-scrape-target"}, "fluid-test")
+	testCtx := mockTestCaseContext([]string{"dataset-with-mountpod-scrape-target"}, injectorTestFluidNamespace)
 	testCtx.fuseDaemonsets[0].Spec.Template.Spec.Containers[0].Ports = []corev1.ContainerPort{
-		{Name: "thin-fuse-metrics", ContainerPort: 8080},
+		{Name: injectorTestMetricsPort, ContainerPort: 8080},
 	}
 	injector, c := buildInjectorFromTestCtx(t, testCtx)
 
@@ -663,13 +672,13 @@ func TestInjectPod_FuseMetrics_MountPodOnly(t *testing.T) {
 		}
 	}
 	require.NotNil(t, fuseContainer)
-	assert.NotContains(t, fuseContainer.Ports, corev1.ContainerPort{Name: "thin-fuse-metrics", ContainerPort: 8080})
+	assert.NotContains(t, fuseContainer.Ports, corev1.ContainerPort{Name: injectorTestMetricsPort, ContainerPort: 8080})
 }
 
 func TestInjectPod_FuseMetrics_SidecarOnly(t *testing.T) {
-	testCtx := mockTestCaseContext([]string{"dataset-with-sidecar-scrape-target"}, "fluid-test")
+	testCtx := mockTestCaseContext([]string{"dataset-with-sidecar-scrape-target"}, injectorTestFluidNamespace)
 	testCtx.fuseDaemonsets[0].Spec.Template.Spec.Containers[0].Ports = []corev1.ContainerPort{
-		{Name: "thin-fuse-metrics", ContainerPort: 8080},
+		{Name: injectorTestMetricsPort, ContainerPort: 8080},
 	}
 	injector, c := buildInjectorFromTestCtx(t, testCtx)
 
@@ -697,5 +706,5 @@ func TestInjectPod_FuseMetrics_SidecarOnly(t *testing.T) {
 		}
 	}
 	require.NotNil(t, fuseContainer)
-	assert.Contains(t, fuseContainer.Ports, corev1.ContainerPort{Name: "thin-fuse-metrics", ContainerPort: 8080})
+	assert.Contains(t, fuseContainer.Ports, corev1.ContainerPort{Name: injectorTestMetricsPort, ContainerPort: 8080})
 }

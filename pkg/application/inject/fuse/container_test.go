@@ -24,6 +24,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+const testFuseSidecarName0 = "fluid-fuse-0"
+
 func TestFindInjectedSidecars_NoSidecars(t *testing.T) {
 	pod1 := &corev1.Pod{
 		Spec: corev1.PodSpec{
@@ -45,7 +47,7 @@ func TestFindInjectedSidecars_OneSidecar(t *testing.T) {
 	pod2 := &corev1.Pod{
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
-				{Name: "fluid-fuse-0"},
+				{Name: testFuseSidecarName0},
 				{Name: "test"},
 			},
 		},
@@ -56,14 +58,14 @@ func TestFindInjectedSidecars_OneSidecar(t *testing.T) {
 	injectedSidecars, err := findInjectedSidecars(podObjs[0])
 	assert.NoError(t, err)
 	assert.Len(t, injectedSidecars, 1)
-	assert.Equal(t, "fluid-fuse-0", injectedSidecars[0].Name)
+	assert.Equal(t, testFuseSidecarName0, injectedSidecars[0].Name)
 }
 
 func TestFindInjectedSidecars_MultipleSidecars(t *testing.T) {
 	pod3 := &corev1.Pod{
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
-				{Name: "fluid-fuse-0"},
+				{Name: testFuseSidecarName0},
 				{Name: "test"},
 				{Name: "fluid-fuse-1"},
 				{Name: "fluid-fuse-dataset-xyz"},
@@ -76,7 +78,7 @@ func TestFindInjectedSidecars_MultipleSidecars(t *testing.T) {
 	injectedSidecars, err := findInjectedSidecars(podObjs[0])
 	assert.NoError(t, err)
 	assert.Len(t, injectedSidecars, 3)
-	assert.Equal(t, "fluid-fuse-0", injectedSidecars[0].Name)
+	assert.Equal(t, testFuseSidecarName0, injectedSidecars[0].Name)
 	assert.Equal(t, "fluid-fuse-1", injectedSidecars[1].Name)
 	assert.Equal(t, "fluid-fuse-dataset-xyz", injectedSidecars[2].Name)
 }
@@ -86,7 +88,7 @@ func TestFindInjectedSidecars_PrefixOnly(t *testing.T) {
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{Name: "test-fluid-fuse"},
-				{Name: "fluid-fuse-0"},
+				{Name: testFuseSidecarName0},
 			},
 		},
 	}
@@ -96,5 +98,5 @@ func TestFindInjectedSidecars_PrefixOnly(t *testing.T) {
 	injectedSidecars, err := findInjectedSidecars(podObjs[0])
 	assert.NoError(t, err)
 	assert.Len(t, injectedSidecars, 1)
-	assert.Equal(t, "fluid-fuse-0", injectedSidecars[0].Name)
+	assert.Equal(t, testFuseSidecarName0, injectedSidecars[0].Name)
 }

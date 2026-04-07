@@ -29,6 +29,11 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
+const (
+	scriptHelperTestDatasetName = "test-dataset"
+	scriptHelperTestNamespace   = "test-ns"
+)
+
 // --- scriptGeneratorHelper.BuildConfigMap ---
 
 func TestScriptGeneratorHelper_BuildConfigMap_Basic(t *testing.T) {
@@ -40,7 +45,7 @@ func TestScriptGeneratorHelper_BuildConfigMap_Basic(t *testing.T) {
 	}
 	dataset := &datav1alpha1.Dataset{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-dataset",
+			Name:      scriptHelperTestDatasetName,
 			Namespace: "default",
 			UID:       "test-uid-123",
 		},
@@ -55,7 +60,7 @@ func TestScriptGeneratorHelper_BuildConfigMap_Basic(t *testing.T) {
 	assert.Equal(t, "my-configmap", cm.Name)
 	assert.Equal(t, "default", cm.Namespace)
 	assert.Equal(t, "#!/bin/bash\necho 'test'", cm.Data["init.sh"])
-	assert.Equal(t, "default-test-dataset", cm.Labels[common.LabelAnnotationDatasetId])
+	assert.Equal(t, "default-"+scriptHelperTestDatasetName, cm.Labels[common.LabelAnnotationDatasetId])
 	assert.Contains(t, cm.Annotations, common.AnnotationCheckMountScriptSHA256)
 }
 
@@ -117,7 +122,7 @@ func TestScriptGeneratorHelper_BuildConfigMap_EmptyScriptContent(t *testing.T) {
 
 func TestScriptGeneratorHelper_GetNamespacedConfigMapKey_Alluxio(t *testing.T) {
 	helper := &scriptGeneratorHelper{configMapName: "poststart-script"}
-	datasetKey := types.NamespacedName{Name: "test-dataset", Namespace: "default"}
+	datasetKey := types.NamespacedName{Name: scriptHelperTestDatasetName, Namespace: "default"}
 
 	key := helper.GetNamespacedConfigMapKey(datasetKey, "Alluxio")
 
@@ -147,12 +152,12 @@ func TestScriptGeneratorHelper_GetNamespacedConfigMapKey_LowercaseRuntime(t *tes
 
 func TestScriptGeneratorHelper_GetNamespacedConfigMapKey_MixedCaseRuntime(t *testing.T) {
 	helper := &scriptGeneratorHelper{configMapName: "my-config"}
-	datasetKey := types.NamespacedName{Name: "test", Namespace: "test-ns"}
+	datasetKey := types.NamespacedName{Name: "test", Namespace: scriptHelperTestNamespace}
 
 	key := helper.GetNamespacedConfigMapKey(datasetKey, "GooseFS")
 
 	assert.Equal(t, "goosefs-my-config", key.Name)
-	assert.Equal(t, "test-ns", key.Namespace)
+	assert.Equal(t, scriptHelperTestNamespace, key.Namespace)
 }
 
 // --- scriptGeneratorHelper.GetVolume ---
@@ -233,9 +238,9 @@ func TestScriptGeneratorHelper_GetVolumeMount_RootPath(t *testing.T) {
 // --- ScriptGeneratorForApp ---
 
 func TestScriptGeneratorForApp_New(t *testing.T) {
-	g := NewScriptGeneratorForApp("test-ns")
+	g := NewScriptGeneratorForApp(scriptHelperTestNamespace)
 	require.NotNil(t, g)
-	assert.Equal(t, "test-ns", g.namespace)
+	assert.Equal(t, scriptHelperTestNamespace, g.namespace)
 }
 
 func TestScriptGeneratorForApp_BuildConfigmap_NameAndNamespace(t *testing.T) {
@@ -349,7 +354,7 @@ func TestScriptGeneratorForApp_AppScriptContentSHA256_Length63(t *testing.T) {
 }
 
 func TestScriptGeneratorForApp_BuildConfigmap_SHA256ConsistentWithGetScriptSHA256(t *testing.T) {
-	g := NewScriptGeneratorForApp("test-ns")
+	g := NewScriptGeneratorForApp(scriptHelperTestNamespace)
 	cm := g.BuildConfigmap()
 	sha := g.GetScriptSHA256()
 
@@ -372,7 +377,7 @@ func newTestHelperAndDataset(t *testing.T) (*scriptGeneratorHelper, *datav1alpha
 	t.Helper()
 	dataset := &datav1alpha1.Dataset{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-dataset",
+			Name:      scriptHelperTestDatasetName,
 			Namespace: "default",
 			UID:       "test-uid",
 		},
