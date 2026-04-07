@@ -231,6 +231,8 @@ var _ = Describe("Pod Utilities", func() {
 				Expect(IsFinishedPod(pod)).To(Equal(want))
 			},
 			Entry("running pod", corev1.PodRunning, false),
+			Entry("pending pod", corev1.PodPending, false),
+			Entry("unknown pod", corev1.PodUnknown, false),
 			Entry("succeeded pod", corev1.PodSucceeded, true),
 			Entry("failed pod", corev1.PodFailed, true),
 		)
