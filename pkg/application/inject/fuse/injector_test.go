@@ -237,6 +237,7 @@ func assertInjectionCorrect(t *testing.T, out *corev1.Pod, fuseDs *appsv1.Daemon
 
 	assert.Subset(t, out.Spec.Containers[containerIdx].Command, fuseDs.Spec.Template.Spec.Containers[0].Command)
 	assert.Subset(t, out.Spec.Containers[containerIdx].Args, fuseDs.Spec.Template.Spec.Containers[0].Args)
+	assert.Subset(t, out.Spec.Containers[containerIdx].Env, fuseDs.Spec.Template.Spec.Containers[0].Env)
 
 	fuseContainerSuffix := strings.TrimPrefix(containerName, common.FuseContainerName)
 
