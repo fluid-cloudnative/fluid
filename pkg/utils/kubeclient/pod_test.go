@@ -216,6 +216,26 @@ var _ = Describe("Pod Utilities", func() {
 		})
 	})
 
+	Describe("IsFinishedPod", func() {
+		It("should return false for nil pod", func() {
+			Expect(IsFinishedPod(nil)).To(BeFalse())
+		})
+
+		DescribeTable("should correctly identify finished pods",
+			func(phase corev1.PodPhase, want bool) {
+				pod := &corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{Name: "testPod", Namespace: "default"},
+					Spec:       corev1.PodSpec{},
+					Status:     corev1.PodStatus{Phase: phase},
+				}
+				Expect(IsFinishedPod(pod)).To(Equal(want))
+			},
+			Entry("running pod", corev1.PodRunning, false),
+			Entry("succeeded pod", corev1.PodSucceeded, true),
+			Entry("failed pod", corev1.PodFailed, true),
+		)
+	})
+
 	Describe("IsSucceededPod", func() {
 		DescribeTable("should correctly identify succeeded pods",
 			func(phase corev1.PodPhase, want bool) {
