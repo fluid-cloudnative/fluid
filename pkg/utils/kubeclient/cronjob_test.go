@@ -25,6 +25,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	batchv1 "k8s.io/api/batch/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -64,6 +66,7 @@ var _ = Describe("GetCronJobStatus", func() {
 			testCronJobs = append(testCronJobs, cj.DeepCopy())
 		}
 
+		_ = batchv1beta1.AddToScheme(testScheme)
 		client = fake.NewFakeClientWithScheme(testScheme, testCronJobs...)
 
 		// Apply gomonkey patch
@@ -101,6 +104,63 @@ var _ = Describe("GetCronJobStatus", func() {
 			}
 
 			got, err := GetCronJobStatus(client, key)
+
+			Expect(err).To(HaveOccurred())
+			Expect(got).To(BeNil())
+		})
+	})
+
+	Context("when batchv1 CronJob is not supported and batchv1beta1 CronJob exists", func() {
+		It("should return converted status from batchv1beta1", func() {
+			key := types.NamespacedName{
+				Namespace: namespace,
+				Name:      "test-beta",
+			}
+			betaCronJob := &batchv1beta1.CronJob{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-beta",
+					Namespace: namespace,
+				},
+				Status: batchv1beta1.CronJobStatus{
+					Active: []corev1.ObjectReference{
+						{Name: "pod-0"},
+					},
+					LastScheduleTime:   &testDate,
+					LastSuccessfulTime: &testDate,
+				},
+			}
+			betaClient := fake.NewFakeClientWithScheme(testScheme, betaCronJob.DeepCopy())
+
+			patch.Reset()
+			patch = gomonkey.ApplyFunc(compatibility.IsBatchV1CronJobSupported, func() bool {
+				return false
+			})
+
+			got, err := GetCronJobStatus(betaClient, key)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(got).NotTo(BeNil())
+			Expect(got.LastScheduleTime).To(Equal(&testDate))
+			Expect(got.LastSuccessfulTime).To(Equal(&testDate))
+			Expect(got.Active).To(HaveLen(1))
+			Expect(got.Active[0].Name).To(Equal("pod-0"))
+		})
+	})
+
+	Context("when batchv1 CronJob is not supported and batchv1beta1 CronJob does not exist", func() {
+		It("should return an error", func() {
+			key := types.NamespacedName{
+				Namespace: namespace,
+				Name:      "test-beta-notexist",
+			}
+			emptyClient := fake.NewFakeClientWithScheme(testScheme)
+
+			patch.Reset()
+			patch = gomonkey.ApplyFunc(compatibility.IsBatchV1CronJobSupported, func() bool {
+				return false
+			})
+
+			got, err := GetCronJobStatus(emptyClient, key)
 
 			Expect(err).To(HaveOccurred())
 			Expect(got).To(BeNil())
