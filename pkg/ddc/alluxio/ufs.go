@@ -112,6 +112,10 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 	return
 }
 
+// ShouldUpdateUFS determines whether the UFS configuration needs to be updated.
+// It retrieves the current dataset, analyzes the path differences to identify
+// which UFS entries require updates, and checks whether remounting is needed
+// for hostpath UFS mounts before returning the update result.
 func (e *AlluxioEngine) ShouldUpdateUFS() (ufsToUpdate *utils.UFSToUpdate) {
 	// 1. get the dataset
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
