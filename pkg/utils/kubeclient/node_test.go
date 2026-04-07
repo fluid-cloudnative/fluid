@@ -155,7 +155,7 @@ var _ = Describe("IsReady", func() {
 	})
 
 	Context("when node ready condition is unknown", func() {
-		It("should return false", func() {
+		It("should return false when NodeReady condition status is Unknown", func() {
 			node := corev1.Node{
 				ObjectMeta: metav1.ObjectMeta{Name: "test4"},
 				Status: corev1.NodeStatus{
