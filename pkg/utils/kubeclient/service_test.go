@@ -40,11 +40,11 @@ var _ = Describe("GetServiceByName", func() {
 		namespace = "default"
 		testServiceInputs = []*v1.Service{
 			{
-				ObjectMeta: metav1.ObjectMeta{Name: "svc1"},
+				ObjectMeta: metav1.ObjectMeta{Name: "svc1", Namespace: namespace},
 				Spec:       v1.ServiceSpec{},
 			},
 			{
-				ObjectMeta: metav1.ObjectMeta{Name: "svc2", Annotations: common.GetExpectedFluidAnnotations()},
+				ObjectMeta: metav1.ObjectMeta{Name: "svc2", Namespace: namespace, Annotations: common.GetExpectedFluidAnnotations()},
 				Spec:       v1.ServiceSpec{},
 			},
 		}
@@ -58,16 +58,27 @@ var _ = Describe("GetServiceByName", func() {
 	})
 
 	Context("when service doesn't exist", func() {
-		It("should not return an error", func() {
-			_, err := GetServiceByName(mockClient, "notExist", namespace)
+		It("should return nil service and no error", func() {
+			svc, err := GetServiceByName(mockClient, "notExist", namespace)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(svc).To(BeNil())
 		})
 	})
 
 	Context("when service is not created by fluid", func() {
-		It("should not return an error", func() {
-			_, err := GetServiceByName(mockClient, "svc1", namespace)
+		It("should return the existing service", func() {
+			svc, err := GetServiceByName(mockClient, "svc1", namespace)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(svc).NotTo(BeNil())
+			Expect(svc.Name).To(Equal("svc1"))
+		})
+	})
+
+	Context("when namespace doesn't match", func() {
+		It("should return nil service and no error", func() {
+			svc, err := GetServiceByName(mockClient, "svc1", "another-namespace")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(svc).To(BeNil())
 		})
 	})
 })
