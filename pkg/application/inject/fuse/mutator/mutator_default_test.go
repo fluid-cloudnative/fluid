@@ -19,6 +19,7 @@ package mutator
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -92,7 +93,7 @@ func TestDefaultMutator_SinglePVC_BasicMutation(t *testing.T) {
 	mountPropH2C := corev1.MountPropagationHostToContainer
 
 	assert.Len(t, podSpecs.Containers, 2)
-	assert.True(t, len(podSpecs.Containers[0].Name) > 0 && podSpecs.Containers[0].Name[:len(common.FuseContainerName)] == common.FuseContainerName,
+	assert.True(t, strings.HasPrefix(podSpecs.Containers[0].Name, common.FuseContainerName),
 		"expected container name to have prefix %s, got %s", common.FuseContainerName, podSpecs.Containers[0].Name)
 
 	assert.Contains(t, podSpecs.Containers[0].VolumeMounts, corev1.VolumeMount{

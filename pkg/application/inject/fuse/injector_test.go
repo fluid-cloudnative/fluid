@@ -431,9 +431,8 @@ func TestInjectPod_UnprivilegedMutator(t *testing.T) {
 	fuseContainer := out.Spec.Containers[0]
 	assert.True(t, strings.HasPrefix(fuseContainer.Name, common.FuseContainerName))
 	assert.NotNil(t, fuseContainer.SecurityContext)
-	if fuseContainer.SecurityContext.Privileged != nil {
-		assert.False(t, *fuseContainer.SecurityContext.Privileged)
-	}
+	require.NotNil(t, fuseContainer.SecurityContext.Privileged)
+	assert.False(t, *fuseContainer.SecurityContext.Privileged)
 	if fuseContainer.SecurityContext.Capabilities != nil {
 		assert.NotContains(t, fuseContainer.SecurityContext.Capabilities.Add, corev1.Capability("SYS_ADMIN"))
 	}
