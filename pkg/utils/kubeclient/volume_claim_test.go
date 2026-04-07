@@ -23,6 +23,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/api/core/v1"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -78,6 +79,40 @@ var _ = Describe("IsPersistentVolumeClaimExist", func() {
 			"test1": "test1",
 		})
 		Expect(got).To(BeFalse())
+	})
+})
+
+var _ = Describe("GetPersistentVolumeClaim", func() {
+	var (
+		namespace string
+		client    client.Client
+	)
+
+	BeforeEach(func() {
+		namespace = "default"
+		pvc := &v1.PersistentVolumeClaim{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "pvc-found",
+				Namespace: namespace,
+			},
+		}
+		client = fake.NewFakeClientWithScheme(testScheme, pvc)
+	})
+
+	It("should return pvc when it exists", func() {
+		pvc, err := GetPersistentVolumeClaim(client, "pvc-found", namespace)
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(pvc).NotTo(BeNil())
+		Expect(pvc.Name).To(Equal("pvc-found"))
+	})
+
+	It("should return not found error when pvc does not exist", func() {
+		pvc, err := GetPersistentVolumeClaim(client, "pvc-missing", namespace)
+
+		Expect(err).To(HaveOccurred())
+		Expect(apierrs.IsNotFound(err)).To(BeTrue())
+		Expect(pvc).NotTo(BeNil())
 	})
 })
 
