@@ -137,7 +137,7 @@ var _ = Describe("IsReady", func() {
 			Expect(result).To(BeFalse())
 		})
 
-		It("should return false", func() {
+		It("should return false when other conditions are present but NodeReady is missing", func() {
 			node := corev1.Node{
 				ObjectMeta: metav1.ObjectMeta{Name: "test3"},
 				Status: corev1.NodeStatus{
