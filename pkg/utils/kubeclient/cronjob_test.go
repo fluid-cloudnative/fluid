@@ -17,6 +17,7 @@ limitations under the License.
 package kubeclient
 
 import (
+	"sync"
 	"time"
 
 	"github.com/agiledragon/gomonkey/v2"
@@ -42,6 +43,8 @@ var _ = Describe("GetCronJobStatus", func() {
 		testCronJobs      []runtime.Object
 		client            client.Client
 		patch             *gomonkey.Patches
+		addSchemeOnce     sync.Once
+		addSchemeErr      error
 	)
 
 	BeforeEach(func() {
@@ -66,7 +69,10 @@ var _ = Describe("GetCronJobStatus", func() {
 			testCronJobs = append(testCronJobs, cj.DeepCopy())
 		}
 
-		_ = batchv1beta1.AddToScheme(testScheme)
+		addSchemeOnce.Do(func() {
+			addSchemeErr = batchv1beta1.AddToScheme(testScheme)
+		})
+		Expect(addSchemeErr).To(Succeed())
 		client = fake.NewFakeClientWithScheme(testScheme, testCronJobs...)
 
 		// Apply gomonkey patch
@@ -110,7 +116,14 @@ var _ = Describe("GetCronJobStatus", func() {
 		})
 	})
 
-	Context("when batchv1 CronJob is not supported and batchv1beta1 CronJob exists", func() {
+	Context("when batchv1 CronJob is not supported", func() {
+		BeforeEach(func() {
+			patch.Reset()
+			patch = gomonkey.ApplyFunc(compatibility.IsBatchV1CronJobSupported, func() bool {
+				return false
+			})
+		})
+
 		It("should return converted status from batchv1beta1", func() {
 			key := types.NamespacedName{
 				Namespace: namespace,
@@ -131,11 +144,6 @@ var _ = Describe("GetCronJobStatus", func() {
 			}
 			betaClient := fake.NewFakeClientWithScheme(testScheme, betaCronJob.DeepCopy())
 
-			patch.Reset()
-			patch = gomonkey.ApplyFunc(compatibility.IsBatchV1CronJobSupported, func() bool {
-				return false
-			})
-
 			got, err := GetCronJobStatus(betaClient, key)
 
 			Expect(err).NotTo(HaveOccurred())
@@ -145,20 +153,12 @@ var _ = Describe("GetCronJobStatus", func() {
 			Expect(got.Active).To(HaveLen(1))
 			Expect(got.Active[0].Name).To(Equal("pod-0"))
 		})
-	})
-
-	Context("when batchv1 CronJob is not supported and batchv1beta1 CronJob does not exist", func() {
 		It("should return an error", func() {
 			key := types.NamespacedName{
 				Namespace: namespace,
 				Name:      "test-beta-notexist",
 			}
 			emptyClient := fake.NewFakeClientWithScheme(testScheme)
-
-			patch.Reset()
-			patch = gomonkey.ApplyFunc(compatibility.IsBatchV1CronJobSupported, func() bool {
-				return false
-			})
 
 			got, err := GetCronJobStatus(emptyClient, key)
 
