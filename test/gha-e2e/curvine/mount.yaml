@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: curvine-mount
+data:
+  # 挂载底层文件系统的脚本（仅限测试场景）
+  mountUfs.sh: |
+    #!/bin/bash
+    # 1. 原始JSON
+    json=$(cat ${FLUID_RUNTIME_CONFIG_PATH})
+    # 2. 提取mounts数组内部内容
+    mounts_raw=$(echo "$json" | sed -E 's/.*"mounts":\[([^]]+)\].*/\1/')
+    
+    # ====================标准兼容的数组拆分（核心！） ====================
+    # 替换},\s{ 为标准正则, 兼容所有POSIX sed, 自动处理空格
+    mounts_items=$(echo "$mounts_raw" \
+      | sed 's/},[[:space:]]*{/\n/g' \
+      | sed 's/^{//; s/}$//; s/^[[:space:]]*//g; s/[[:space:]]*$//g')
+    
+    # 3. 遍历解析
+    index=0
+    echo "$mounts_items" | while IFS= read -r item; do
+        #echo "第 $index 个 mounts 元素"
+        index=$((index + 1))
+    
+        # 提取基础字段
+        mountPoint=$(echo "$item" | sed -nE 's/.*"mountPoint":"([^"]+)".*/\1/p')
+        path=$(echo "$item" | sed -nE 's/.*"path":"([^"]+)".*/\1/p')
+    
+        mounted=$(/app/curvine/bin/cv mount)
+        if echo "$mounted" | grep "$mountPoint"; then
+          continue;
+        fi
+    
+        [ -z "$mountPoint" ] && { echo "mountPoint is not set or empty"; exit 1; } 
+        [ -z "$mountPoint" ] && { echo "path is not set or empty"; exit 1; } 
+    
+        # ==================== 字段提取加p 仅输出匹配结果 ====================
+        access=$(echo "$item" | sed -nE 's/.*"access":"([^"]+)".*/\1/p')
+        secret=$(echo "$item" | sed -nE 's/.*"secret":"([^"]+)".*/\1/p')
+        endpoint=$(echo "$item" | sed -nE 's/.*"endpoint_url":"([^"]+)".*/\1/p')
+        region=$(echo "$item" | sed -nE 's/.*"region_name":"([^"]+)".*/\1/p')
+        path_style=$(echo "$item" | sed -nE 's/.*"path_style":"([^"]+)".*/\1/p')
+    
+        # 打印调试（缺失字段会显示空，正确）
+        echo "access: $access"
+        echo "region: $region"
+        echo "endpoint: $endpoint"
+        echo "path_style: $path_style"
+        echo "secret: $secret"
+    
+        # 必填参数校验
+        CV_PARAMS=""
+        [ -z "$endpoint" ] && { echo "endpoint option is not set or empty"; exit 1; } 
+        [ -z "$access" ] && { echo "access option is not set or empty"; exit 1; } 
+        [ -z "$secret" ] && { echo "secret option is not set or empty"; exit 1; } 
+    
+        # 拼接必填参数
+        CV_PARAMS="$CV_PARAMS -c s3.endpoint_url=$endpoint"
+        CV_PARAMS="$CV_PARAMS -c s3.credentials.access=$access"
+        CV_PARAMS="$CV_PARAMS -c s3.credentials.secret=$secret"
+    
+        # 可选参数：缺失自动跳过
+        [ -n "$region" ] && CV_PARAMS="$CV_PARAMS -c s3.region_name=$region"
+        [ -n "$path_style" ] && CV_PARAMS="$CV_PARAMS -c s3.path_style=$path_style"
+    
+        # 最终命令
+        CMD="/app/curvine/bin/cv mount --mnt-type orch $mountPoint $path $CV_PARAMS"
+        echo "执行命令：$CMD"
+    
+        eval "$CMD"
+        if [ $? -ne 0 ]; then
+          echo "mount $mountPoint failed"
+          exit 1
+        fi
+    done

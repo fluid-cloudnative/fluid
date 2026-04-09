@@ -59,7 +59,7 @@ func (e *CacheEngine) getRuntimeConfigVolumeName() (targetPath string) {
 
 // getRuntimeConfigDir defines the mount directory of runtime config in the pod.
 func (e *CacheEngine) getRuntimeConfigDir() string {
-	return fmt.Sprintf("/etc/fluid/config")
+	return "/etc/fluid/config"
 }
 
 // getRuntimeConfigPath defines the mount path of runtime config in the pod.
