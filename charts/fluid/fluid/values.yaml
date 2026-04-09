@@ -12,9 +12,9 @@ image:
   imagePullSecrets: []
 
 # Default registry, namespace and version tag for images managed by fluid
-imagePrefix: &defaultImagePrefix registry.cn-hangzhou.aliyuncs.com/xliu1992
+imagePrefix: &defaultImagePrefix fluidcloudnative
 # imagePrefix: &defaultImagePrefix registry.aliyuncs.com/fluid
-version: &defaultVersion v1.1.0-b0bdac58
+version: &defaultVersion v1.1.0-b457855
 
 crdUpgrade:
   enabled: true
