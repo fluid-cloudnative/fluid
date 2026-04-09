@@ -63,6 +63,31 @@ spec:
                             type: array
                         type: object
                     type: object
+                  executionEntries:
+                    properties:
+                      mountUFS:
+                        properties:
+                          command:
+                            items:
+                              type: string
+                            type: array
+                          timeout:
+                            type: integer
+                        required:
+                        - command
+                        type: object
+                      reportSummary:
+                        properties:
+                          command:
+                            items:
+                              type: string
+                            type: array
+                          timeout:
+                            type: integer
+                        required:
+                        - command
+                        type: object
+                    type: object
                   options:
                     additionalProperties:
                       type: string
@@ -6866,6 +6891,31 @@ spec:
                                   type: string
                               type: object
                             type: array
+                        type: object
+                    type: object
+                  executionEntries:
+                    properties:
+                      mountUFS:
+                        properties:
+                          command:
+                            items:
+                              type: string
+                            type: array
+                          timeout:
+                            type: integer
+                        required:
+                        - command
+                        type: object
+                      reportSummary:
+                        properties:
+                          command:
+                            items:
+                              type: string
+                            type: array
+                          timeout:
+                            type: integer
+                        required:
+                        - command
                         type: object
                     type: object
                   options:
