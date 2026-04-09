@@ -60,6 +60,25 @@ type RuntimeComponentDefinition struct {
 	// Dependencies specifies the dependencies required by the component
 	// +optional
 	Dependencies RuntimeComponentDependencies `json:"dependencies,omitempty"`
+
+	// ExecutionEntries entries to support out-of-tree integration.
+	// +optional
+	ExecutionEntries *ExecutionEntries `json:"executionEntries,omitempty"`
+}
+
+type ExecutionEntries struct {
+	// MountUFS defines the operations for mounting UFS
+	MountUFS *ExecutionCommonEntry `json:"mountUFS,omitempty"`
+
+	// ReportSummary it defines the operation how to get cache status like capacity, hit ratio etc.
+	ReportSummary *ExecutionCommonEntry `json:"reportSummary,omitempty"`
+}
+
+type ExecutionCommonEntry struct {
+	Command []string `json:"command"`
+
+	// Timeout is the timeout(seconds) for the execution entry
+	Timeout int `json:"timeout,omitempty"`
 }
 
 // EncryptOptionComponentDependency defines the configuration for encrypt option dependency

@@ -175,15 +175,3 @@ func GetCacheRuntime(client client.Reader, name, namespace string) (*datav1alpha
 
 	return &runtime, nil
 }
-
-func GetCacheRuntimeClass(client client.Client, name string) (*datav1alpha1.CacheRuntimeClass, error) {
-	key := types.NamespacedName{
-		Name: name,
-	}
-	var runtimeClass datav1alpha1.CacheRuntimeClass
-	if err := client.Get(context.TODO(), key, &runtimeClass); err != nil {
-		return nil, err
-	}
-
-	return &runtimeClass, nil
-}

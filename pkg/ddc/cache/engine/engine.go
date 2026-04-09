@@ -60,6 +60,10 @@ type CacheEngine struct {
 
 	runtimeType string
 	engineImpl  string
+
+	// TODO(cache runtime): use narrowed interface, and as a part of RuntimeInfoInterface.
+	// always use getRuntimeInfo() method instead of use this directly.
+	runtimeInfo base.RuntimeInfoInterface
 }
 
 // ID returns the id of the engine

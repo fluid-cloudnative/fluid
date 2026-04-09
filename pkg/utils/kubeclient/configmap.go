@@ -166,3 +166,16 @@ func CreateConfigMap(client client.Client, name string, namespace string, key st
 
 	return client.Create(context.TODO(), configMap)
 }
+
+func CreateConfigMapWithOwner(client client.Client, name string, namespace string, data map[string]string, ownerReference []metav1.OwnerReference) (err error) {
+	configMap := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            name,
+			Namespace:       namespace,
+			OwnerReferences: ownerReference,
+		},
+		Data: data,
+	}
+
+	return client.Create(context.TODO(), configMap)
+}

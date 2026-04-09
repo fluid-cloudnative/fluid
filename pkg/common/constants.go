@@ -184,6 +184,8 @@ const (
 	PodRoleType            = "role"
 	DataloadPod            = "dataload-pod"
 	NamespaceFluidSystem   = "fluid-system"
+
+	DefaultNameSpace = "default"
 )
 
 const (

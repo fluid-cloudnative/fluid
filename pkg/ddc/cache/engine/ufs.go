@@ -16,10 +16,28 @@
 
 package engine
 
-import "github.com/fluid-cloudnative/fluid/pkg/common"
+import (
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"time"
+)
 
-func (e *CacheEngine) PrepareUFS(value *common.CacheRuntimeValue) error {
+func (e *CacheEngine) PrepareUFS(entries *datav1alpha1.ExecutionEntries, value *common.CacheRuntimeValue) error {
 	// execute mount command in master pod
+	mountUfs := entries.MountUFS
+	if mountUfs == nil {
+		return nil
+	}
+	podName, containerName, err := e.getMasterPodInfo(value)
+	if err != nil {
+		return err
+	}
 
-	return newNotImplementError("PrepareUFS")
+	fileUtils := newCacheFileUtils(podName, containerName, e.namespace, e.Log)
+	err = fileUtils.Mount(mountUfs.Command, time.Duration(mountUfs.Timeout)*time.Second)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

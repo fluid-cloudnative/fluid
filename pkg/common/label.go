@@ -146,6 +146,15 @@ const (
 	UpdateLabel OperationType = "UpdateValue"
 )
 
+// label and annotations for cacheRuntime
+const (
+	CacheRuntimeLabelAnnotationPrefix = "cacheruntime." + LabelAnnotationPrefix
+
+	LabelCacheRuntimeName = CacheRuntimeLabelAnnotationPrefix + "name"
+
+	LabelCacheRuntimeComponentName = CacheRuntimeLabelAnnotationPrefix + "component-name"
+)
+
 // LabelToModify modifies the labelKey in operationType.
 type LabelToModify struct {
 	labelKey      string

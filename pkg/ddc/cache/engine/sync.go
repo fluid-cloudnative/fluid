@@ -17,15 +17,33 @@
 package engine
 
 import (
+	"context"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
+	"reflect"
 	"time"
 )
 
 func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
-	// sync runtime status
+	// sync the runtime value configmap
+	runtime, err := e.getRuntime()
+	if err != nil {
+		return err
+	}
+
+	err = e.syncRuntimeValueConfigMap(runtime)
+	if err != nil {
+		return err
+	}
+
+	// TODO: implement other logic
 
 	// handle ufs change
+
+	// sync runtime status
 
 	// handle runtime spec change
 
@@ -33,9 +51,46 @@ func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
 
 	// SyncScheduleInfoToCacheNodes
 
-	return newNotImplementError("Sync")
+	return nil
 }
 
+func (e *CacheEngine) syncRuntimeValueConfigMap(runtime *datav1alpha1.CacheRuntime) error {
+	configMap, err := kubeclient.GetConfigmapByName(e.Client, e.getRuntimeConfigConfigMapName(), e.namespace)
+	if err != nil {
+		return err
+	}
+	data, err := e.generateRuntimeConfigData(runtime)
+	if err != nil {
+		return err
+	}
+
+	var True = true
+	owner := []metav1.OwnerReference{
+		{
+			APIVersion:         runtime.APIVersion,
+			Kind:               runtime.Kind,
+			Name:               runtime.Name,
+			UID:                runtime.UID,
+			Controller:         &True,
+			BlockOwnerDeletion: &True,
+		},
+	}
+
+	if configMap == nil {
+		return kubeclient.CreateConfigMapWithOwner(e.Client, e.getRuntimeConfigConfigMapName(), e.namespace, data, owner)
+	}
+
+	configMapToUpdate := configMap.DeepCopy()
+	configMapToUpdate.Data = data
+	if !reflect.DeepEqual(configMapToUpdate, configMap) {
+		err = e.Client.Update(context.TODO(), configMapToUpdate)
+		if err != nil {
+			return err
+		}
+	}
+
+	return err
+}
 func getSyncRetryDuration() (d *time.Duration, err error) {
 	if value, existed := os.LookupEnv(syncRetryDurationEnv); existed {
 		duration, err := time.ParseDuration(value)
