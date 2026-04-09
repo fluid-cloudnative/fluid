@@ -29,6 +29,8 @@ function setup() {
 
 function create_dataset() {
     kubectl create -f test/gha-e2e/curvine/dataset.yaml
+    kubectl create -f test/gha-e2e/curvine/cacheruntime.yaml
+    kubectl create -f test/gha-e2e/curvine/cacheruntimeclass.yaml
 
     if [[ -z "$(kubectl get dataset $dataset_name -oname)" ]]; then
         panic "failed to create dataset $dataset_name"
@@ -96,19 +98,19 @@ function dump_env_and_clean_up() {
     kubectl delete -f test/gha-e2e/curvine/read_job.yaml
     kubectl delete -f test/gha-e2e/curvine/write_job.yaml
     kubectl delete -f test/gha-e2e/curvine/dataset.yaml
-    kubectl delete -f test/gha-e2e/curvine/minio.yamls
-    kubectl delete -f test/gha-e2e/curvine/mount.yaml
     kubectl delete -f test/gha-e2e/curvine/cacheruntime.yaml
     kubectl delete -f test/gha-e2e/curvine/cacheruntimeclass.yaml
+    kubectl delete -f test/gha-e2e/curvine/minio.yaml
+    kubectl delete -f test/gha-e2e/curvine/mount.yaml
+    kubectl delete -f test/gha-e2e/curvine/minio_create_bucket.yaml
 }
 
 
 function main() {
     syslog "[TESTCASE $testname STARTS AT $(date)]"
+    trap dump_env_and_clean_up EXIT
     setup
     create_dataset
-
-    trap dump_env_and_clean_up EXIT
     wait_dataset_bound
     create_job test/gha-e2e/curvine/write_job.yaml $write_job_name
     wait_job_completed $write_job_name

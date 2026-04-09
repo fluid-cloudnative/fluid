@@ -55,8 +55,7 @@ topology:
         # 根据 runtime 生成的配置文件
         initContainers:
           - name: init-curvine
-            #image: hairyhenderson/gomplate:alpine
-            image: registry.cn-hangzhou.aliyuncs.com/xliu1992/gomplate:alpine
+            image: hairyhenderson/gomplate:alpine
             # 挂载共享卷到容器内路径
             volumeMounts:
               - name: shared-config-volume
@@ -65,8 +64,7 @@ topology:
             args: [ "-d", "config=$(FLUID_RUNTIME_CONFIG_PATH)", "-f", "/templates/cluster.toml", "-o", "/etc/curvine/curvine.toml" ]
         containers:
           - name: master
-            # image: "curvine/curvine:latest"
-            image: "curvine:v1"
+            image: "curvine/curvine:latest"
             command:
               - /entrypoint.sh
             args:
@@ -115,8 +113,7 @@ topology:
         # 根据 runtime 生成的配置文件
         initContainers:
           - name: init-curvine
-            #image: hairyhenderson/gomplate:alpine
-            image: registry.cn-hangzhou.aliyuncs.com/xliu1992/gomplate:alpine
+            image: hairyhenderson/gomplate:alpine
             # 挂载共享卷到容器内路径
             volumeMounts:
               - name: shared-config-volume
@@ -125,8 +122,7 @@ topology:
             args: [ "-d", "config=$(FLUID_RUNTIME_CONFIG_PATH)", "-f", "/templates/cluster.toml", "-o", "/etc/curvine/curvine.toml" ]
         containers:
           - name: worker
-            # image: "curvine/curvine:latest"
-            image: "curvine:v1"
+            image: "curvine/curvine:latest"
             command:
               - /entrypoint.sh
             args:
@@ -166,8 +162,7 @@ topology:
         # 根据 runtime 生成的配置文件
         initContainers:
           - name: init-curvine
-            #image: hairyhenderson/gomplate:alpine
-            image: registry.cn-hangzhou.aliyuncs.com/xliu1992/gomplate:alpine
+            image: hairyhenderson/gomplate:alpine
             # 挂载共享卷到容器内路径
             volumeMounts:
               - name: shared-config-volume
@@ -176,8 +171,7 @@ topology:
             args: [ "-d", "config=$(FLUID_RUNTIME_CONFIG_PATH)", "-f", "/templates/cluster.toml", "-o", "/etc/curvine/curvine.toml" ]
         containers:
           - name: client
-            # image: "curvine/curvine:latest"
-            image: "curvine:v1"
+            image: "curvine/curvine:latest"
             securityContext: #通常client需要配置privileged，用于操作fuse设备
               privileged: true
               runAsUser: 0
