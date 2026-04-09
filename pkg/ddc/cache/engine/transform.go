@@ -141,7 +141,7 @@ func (e *CacheEngine) addCommonConfigForComponent(commonConfig *CacheRuntimeComp
 	}
 	names := commonConfig.RuntimeConfigs.ExtraConfigMapNames
 	for _, cm := range componentDefinition.Dependencies.ExtraResources.ConfigMaps {
-		if names[cm.Name] == false {
+		if !names[cm.Name] {
 			e.Log.Error(errors.New("component has undefined config map extra resource"), "type", componentValue.ComponentType, "configMapName", cm.Name)
 		}
 		componentValue.PodTemplateSpec.Spec.Volumes = append(componentValue.PodTemplateSpec.Spec.Volumes, corev1.Volume{

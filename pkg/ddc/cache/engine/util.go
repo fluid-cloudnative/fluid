@@ -32,9 +32,9 @@ func GetComponentServiceName(runtimeName string, componentType common.ComponentT
 	return fmt.Sprintf("svc-%s-%s", runtimeName, componentType)
 }
 
-// getFuseMountPointVolumeName get the volume name of mount path in fuse pod (e.g. /runtime-mnt).
+// getFuseMountPointVolumeName get the volume name of mount path in fuse pod.
 func (e *CacheEngine) getFuseMountPointVolumeName() string {
-	return fmt.Sprintf("fluid-cache-runtime-shared-path")
+	return "fluid-cache-runtime-shared-path"
 }
 
 func (e *CacheEngine) getFuseMountPoint() string {
@@ -47,16 +47,6 @@ func (e *CacheEngine) getFuseMountPoint() string {
 
 	e.Log.Info("mountRoot", "path", mountRoot)
 	return fmt.Sprintf("%s/%s/%s/cache-fuse", mountRoot, e.namespace, e.name)
-}
-
-// getRuntimeEncryptOptionPath get the mounted path of encrypt options for runtime pod.
-func (e *CacheEngine) getRuntimeEncryptOptionPath(secretName string) string {
-	return fmt.Sprintf("/etc/fluid/secrets/%s", secretName)
-}
-
-// getRuntimeEncryptVolumeName get the volume name of getRuntimeEncryptOptionPath.
-func (e *CacheEngine) getRuntimeEncryptVolumeName(secretName string) string {
-	return fmt.Sprintf("fluid-runtime-secret-%s", secretName)
 }
 
 // getRuntimeConfigConfigMapName get the configmap name of the runtime config.
