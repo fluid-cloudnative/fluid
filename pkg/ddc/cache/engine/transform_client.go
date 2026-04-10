@@ -65,7 +65,7 @@ func (e *CacheEngine) transformClient(runtime *datav1alpha1.CacheRuntime, runtim
 	if podTemplateSpec.Spec.NodeSelector == nil {
 		podTemplateSpec.Spec.NodeSelector = map[string]string{}
 	}
-        podTemplateSpec.Spec.NodeSelector[runtimeInfo.GetFuseLabelName()] = "true"
+	podTemplateSpec.Spec.NodeSelector[runtimeInfo.GetFuseLabelName()] = "true"
 
 	// fuse volume mount
 	e.transformFuseMountPointVolumes(podTemplateSpec)
