@@ -13,14 +13,23 @@ import (
 
 // Register update the host /etc/updatedb.conf
 func Register(_ manager.Manager, ctx config.RunningContext) error {
-	content, err := os.ReadFile(updatedbConfPath)
-	if os.IsNotExist(err) {
-		glog.Info("/etc/updatedb.conf not exist, skip updating")
-		return nil
-	}
-	if err != nil {
-		return err
-	}
+        info, err := os.Stat(updatedbConfPath)
+		if os.IsNotExist(err) {
+			glog.Info("/etc/updatedb.conf not exist, skip updating")
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			glog.Warningf("%s is a directory, not a regular file, skip updating", updatedbConfPath)
+			return nil
+		}
+		content, err := os.ReadFile(updatedbConfPath)
+		if err != nil {
+			return err
+		}
+	
 	newConfig, err := updateConfig(string(content), ctx.PruneFs, []string{ctx.PrunePath})
 	if err != nil {
 		glog.Warningf("failed to update updatedb.conf %s ", err)
@@ -47,5 +56,5 @@ func Register(_ manager.Manager, ctx config.RunningContext) error {
 
 // Enabled checks if the updatedb config modifier should be enabled
 func Enabled() bool {
-	return true
+	return false
 }
