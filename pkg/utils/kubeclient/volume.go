@@ -27,6 +27,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -198,6 +199,7 @@ func GetPvcMountPods(e client.Client, pvcName, namespace string) ([]corev1.Pod, 
 	nsPods := corev1.PodList{}
 	err := e.List(context.TODO(), &nsPods, &client.ListOptions{
 		Namespace: namespace,
+		UnsafeDisableDeepCopy: ptr.To(true),
 	})
 	if err != nil {
 		log.Error(err, "Failed to list pods")
