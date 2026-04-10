@@ -61,6 +61,16 @@ func (e *AlluxioEngine) totalStorageBytesInternal() (total int64, err error) {
 	return
 }
 
+// totalFileNumsInternal retrieves the total number of files currently managed by the AlluxioEngine.
+// This function is primarily responsible for obtaining the Master Pod information, 
+// initializing the Alluxio file utilities, and executing the query to fetch the file count.
+//
+// Parameters:
+//  - None.
+//
+// Returns:
+//  - fileCount (int64): The total number of files within the Alluxio file system.
+//  - err (error): Returns an error if the process of getting pod info or fetching the file count fails, otherwise returns nil.
 func (e *AlluxioEngine) totalFileNumsInternal() (fileCount int64, err error) {
 	podName, containerName := e.getMasterPodInfo()
 
