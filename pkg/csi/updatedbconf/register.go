@@ -15,7 +15,7 @@ import (
 func Register(_ manager.Manager, ctx config.RunningContext) error {
         info, err := os.Stat(updatedbConfPath)
 		if os.IsNotExist(err) {
-			glog.Info("/etc/updatedb.conf not exist, skip updating")
+			glog.Infof("%s does not exist, skip updating", updatedbConfPath)
 			return nil
 		}
 		if err != nil {
