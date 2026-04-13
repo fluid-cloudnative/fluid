@@ -94,6 +94,15 @@ func (info *RuntimeInfo) getFuseDaemonset() (ds *appsv1.DaemonSet, err error) {
 	return kubeclient.GetDaemonset(info.apiReader, fuseName, info.GetNamespace())
 }
 
+// getMountInfo fetches the PersistentVolume associated with the RuntimeInfo and
+// extracts mounting configurations.
+//
+// It expects the PV to be provisioned by Fluid with valid CSI VolumeAttributes.
+// Returns:
+//   - path: The Fluid volume path.
+//   - mountType: The storage protocol/type (e.g., oss, hdfs).
+//   - subpath: The specific sub-directory within the volume.
+//   - err: Error if the PV lookup fails or if the PV is not managed by Fluid.
 func (info *RuntimeInfo) getMountInfo() (path, mountType, subpath string, err error) {
 	pv, err := kubeclient.GetPersistentVolume(info.apiReader, info.GetPersistentVolumeName())
 	if err != nil {
