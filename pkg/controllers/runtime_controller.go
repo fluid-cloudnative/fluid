@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	utilsptr "k8s.io/utils/ptr"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -346,10 +347,11 @@ func (r *RuntimeReconciler) AddOwnerAndRequeue(ctx cruntime.ReconcileRequestCont
 		return utils.RequeueIfError(err)
 	}
 	objectMeta.SetOwnerReferences(append(objectMeta.GetOwnerReferences(), metav1.OwnerReference{
-		APIVersion: dataset.APIVersion,
-		Kind:       dataset.Kind,
-		Name:       dataset.Name,
-		UID:        dataset.UID,
+		APIVersion:         dataset.APIVersion,
+		Kind:               dataset.Kind,
+		Name:               dataset.Name,
+		UID:                dataset.UID,
+		BlockOwnerDeletion: utilsptr.To(true),
 	}))
 	if err := r.Update(ctx, ctx.Runtime); err != nil {
 		ctx.Log.Error(err, "Failed to add ownerreference", "StatusUpdateError", ctx)
