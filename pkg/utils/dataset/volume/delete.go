@@ -108,24 +108,28 @@ func DeleteFusePersistentVolumeClaim(client client.Client,
 				break
 			}
 
-			should, err := kubeclient.ShouldRemoveProtectionFinalizer(client, runtime.GetName(), runtime.GetNamespace())
-			if err != nil {
-				// ignore NotFound error and re-check existence if the pvc is already deleted
-				if utils.IgnoreNotFound(err) == nil {
-					continue
-				}
-			}
-
-			if should {
-				log.Info("Should forcibly remove pvc-protection finalizer")
-				err = kubeclient.RemoveProtectionFinalizer(client, runtime.GetName(), runtime.GetNamespace())
+			// WARN: This is a LEGACY MECHANISM and will be removed in the future.
+			// force deletion of pvc-protection finalizer will not be done, we'll wait until the pvc is really deleted by the PV controller.
+			if utils.GetBoolValueFromEnv(common.LegacyEnvForceCleanUpManagedPVC, false) {
+				should, err := kubeclient.ShouldRemoveProtectionFinalizer(client, runtime.GetName(), runtime.GetNamespace())
 				if err != nil {
 					// ignore NotFound error and re-check existence if the pvc is already deleted
 					if utils.IgnoreNotFound(err) == nil {
 						continue
 					}
-					log.Info("Failed to remove finalizers", "name", runtime.GetName(), "namespace", runtime.GetNamespace())
-					return err
+				}
+
+				if should {
+					log.Info("Should forcibly remove pvc-protection finalizer")
+					err = kubeclient.RemoveProtectionFinalizer(client, runtime.GetName(), runtime.GetNamespace())
+					if err != nil {
+						// ignore NotFound error and re-check existence if the pvc is already deleted
+						if utils.IgnoreNotFound(err) == nil {
+							continue
+						}
+						log.Info("Failed to remove finalizers", "name", runtime.GetName(), "namespace", runtime.GetNamespace())
+						return err
+					}
 				}
 			}
 

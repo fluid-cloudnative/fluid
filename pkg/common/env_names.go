@@ -35,3 +35,9 @@ const (
 const (
 	EnvFuseSidecarInjectionMode = "FUSE_SIDECAR_INJECTION_MODE"
 )
+
+// Env names that related to legacy mechanisms for backward compatibility
+const (
+	LegacyEnvBlockInUseDatasetDeletion    = "LEGACY_MECHANISM_BLOCK_IN_USE_DATASET_DELETION"
+	LegacyEnvForceCleanUpManagedPVC = "LEGACY_MECHANISM_FORCE_CLEAN_UP_MANAGED_PVC"
+)

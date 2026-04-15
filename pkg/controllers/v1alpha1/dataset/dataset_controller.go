@@ -195,12 +195,15 @@ func (r *DatasetReconciler) reconcileDatasetDeletion(ctx reconcileRequestContext
 			return utils.RequeueAfterInterval(time.Duration(1 * time.Second))
 		}
 	*/
-	// 1.if there is a pod which is using the dataset (or cannot judge), then requeue
-	err := kubeclient.ShouldDeleteDataset(r.Client, ctx.Name, ctx.Namespace)
-	if err != nil {
-		ctx.Log.Error(err, "Failed to delete dataset", "DatasetDeleteError", ctx)
-		r.Recorder.Eventf(&ctx.Dataset, v1.EventTypeWarning, common.ErrorDeleteDataset, "Failed to delete dataset because err: %s", err.Error())
-		return utils.RequeueAfterInterval(time.Duration(10 * time.Second))
+	// 1.WARN: This is a LEGACY MECHANISM and the check will be skipped in common cases. It will be removed in future.
+	// If there is a pod which is using the dataset (or cannot judge), then requeue
+	if utils.GetBoolValueFromEnv(common.LegacyEnvBlockInUseDatasetDeletion, false) {
+		err := kubeclient.ShouldDeleteDataset(r.Client, ctx.Name, ctx.Namespace)
+		if err != nil {
+			ctx.Log.Error(err, "Failed to delete dataset", "DatasetDeleteError", ctx)
+			r.Recorder.Eventf(&ctx.Dataset, v1.EventTypeWarning, common.ErrorDeleteDataset, "Failed to delete dataset because err: %s", err.Error())
+			return utils.RequeueAfterInterval(time.Duration(10 * time.Second))
+		}
 	}
 
 	// 2. if there are datasets mounted this dataset, check reference dataset existence and requeue if there still has reference dataset
