@@ -28,9 +28,9 @@ function setup() {
 }
 
 function create_dataset() {
+    kubectl create -f test/gha-e2e/curvine/cacheruntimeclass.yaml
     kubectl create -f test/gha-e2e/curvine/dataset.yaml
     kubectl create -f test/gha-e2e/curvine/cacheruntime.yaml
-    kubectl create -f test/gha-e2e/curvine/cacheruntimeclass.yaml
 
     if [[ -z "$(kubectl get dataset $dataset_name -oname)" ]]; then
         panic "failed to create dataset $dataset_name"
@@ -39,6 +39,11 @@ function create_dataset() {
     if [[ -z "$(kubectl get cacheruntime $dataset_name -oname)" ]]; then
         panic "failed to create curvine cache runtime $dataset_name"
     fi
+
+    if [[ -z "$(kubectl get cacheruntimeclass $dataset_name -oname)" ]]; then
+        panic "failed to create curvine cache runtime class $dataset_name"
+    fi
+
 }
 
 function wait_dataset_bound() {

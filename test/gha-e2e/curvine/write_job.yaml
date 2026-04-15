@@ -20,7 +20,7 @@ spec:
           limits:
             ephemeral-storage: "5Gi"
             memory: "512Mi"
-        command: ['sh', '-c', 'mkdir /data/foo && echo helloworld > /data/foo/bar']
+        command: ['sh', '-c', 'echo helloworld > /data/minio/bar']
         volumeMounts:
         - name: data-vol
           mountPath: /data
