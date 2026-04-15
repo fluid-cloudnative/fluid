@@ -77,8 +77,8 @@ type ExecutionEntries struct {
 type ExecutionCommonEntry struct {
 	Command []string `json:"command"`
 
-	// Timeout is the timeout(seconds) for the execution entry
-	Timeout int `json:"timeout,omitempty"`
+	// TimeoutSeconds is the timeout(seconds) for the execution entry, at least(default) 20 seconds.
+	TimeoutSeconds int32 `json:"timeout,omitempty"`
 }
 
 // EncryptOptionComponentDependency defines the configuration for encrypt option dependency

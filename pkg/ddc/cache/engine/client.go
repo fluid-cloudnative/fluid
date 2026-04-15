@@ -82,7 +82,7 @@ func (e *CacheEngine) SetupClientInternal(clientValue *common.CacheRuntimeCompon
 			if len(runtimeToUpdate.Status.Conditions) == 0 {
 				runtimeToUpdate.Status.Conditions = []datav1alpha1.RuntimeCondition{}
 			}
-			cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeMasterInitialized, datav1alpha1.RuntimeMasterInitializedReason,
+			cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeFusesInitialized, datav1alpha1.RuntimeFusesInitializedReason,
 				"The client setup finished.", corev1.ConditionTrue)
 			runtimeToUpdate.Status.Conditions =
 				utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,

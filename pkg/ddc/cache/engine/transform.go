@@ -131,8 +131,14 @@ func (e *CacheEngine) addCommonConfigForComponent(commonConfig *CacheRuntimeComp
 	componentDefinition *datav1alpha1.RuntimeComponentDefinition) error {
 	componentValue.PodTemplateSpec.Spec.Volumes = append(componentValue.PodTemplateSpec.Spec.Volumes, commonConfig.RuntimeConfigs.RuntimeConfigVolume)
 
+	if len(componentValue.PodTemplateSpec.Spec.Containers) == 0 {
+		return fmt.Errorf("component %s must define at least one container", componentValue.ComponentType)
+	}
+
 	// assume the first container uses the runtime config
-	componentValue.PodTemplateSpec.Spec.InitContainers[0].VolumeMounts = append(componentValue.PodTemplateSpec.Spec.InitContainers[0].VolumeMounts, commonConfig.RuntimeConfigs.RuntimeConfigVolumeMount)
+	if len(componentValue.PodTemplateSpec.Spec.InitContainers) > 0 {
+		componentValue.PodTemplateSpec.Spec.InitContainers[0].VolumeMounts = append(componentValue.PodTemplateSpec.Spec.InitContainers[0].VolumeMounts, commonConfig.RuntimeConfigs.RuntimeConfigVolumeMount)
+	}
 	componentValue.PodTemplateSpec.Spec.Containers[0].VolumeMounts = append(componentValue.PodTemplateSpec.Spec.Containers[0].VolumeMounts, commonConfig.RuntimeConfigs.RuntimeConfigVolumeMount)
 
 	// other config maps defined in CacheRuntimeClass

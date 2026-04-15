@@ -3771,7 +3771,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ExecutionCommonEntry(ref common
 					},
 					"timeout": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Timeout is the timeout(seconds) for the execution entry",
+							Description: "TimeoutSeconds is the timeout(seconds) for the execution entry, at least(default) 20 seconds.",
 							Type:        []string{"integer"},
 							Format:      "int32",
 						},

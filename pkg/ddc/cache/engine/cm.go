@@ -154,7 +154,7 @@ func (e *CacheEngine) generateRuntimeConfigData(runtime *datav1alpha1.CacheRunti
 		config.Worker = &common.CacheRuntimeComponentConfig{
 			Enabled:  true,
 			Name:     GetComponentName(e.name, common.ComponentTypeWorker),
-			Replicas: runtime.Spec.Master.Replicas,
+			Replicas: runtime.Spec.Worker.Replicas,
 			Options: utils.UnionMapsWithOverride(
 				utils.UnionMapsWithOverride(runtimeClass.Topology.Worker.Options, runtime.Spec.Options), runtime.Spec.Worker.Options),
 		}
@@ -165,10 +165,10 @@ func (e *CacheEngine) generateRuntimeConfigData(runtime *datav1alpha1.CacheRunti
 		}
 	}
 	if !runtime.Spec.Client.Disabled {
-		config.Worker = &common.CacheRuntimeComponentConfig{
-			Enabled:  true,
-			Name:     GetComponentName(e.name, common.ComponentTypeClient),
-			Replicas: runtime.Spec.Master.Replicas,
+		config.Client = &common.CacheRuntimeComponentConfig{
+			Enabled: true,
+			Name:    GetComponentName(e.name, common.ComponentTypeClient),
+			// Replicas: 1,
 			Options: utils.UnionMapsWithOverride(
 				utils.UnionMapsWithOverride(runtimeClass.Topology.Client.Options, runtime.Spec.Options), runtime.Spec.Client.Options),
 		}

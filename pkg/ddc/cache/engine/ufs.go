@@ -34,7 +34,11 @@ func (e *CacheEngine) PrepareUFS(entries *datav1alpha1.ExecutionEntries, value *
 	}
 
 	fileUtils := newCacheFileUtils(podName, containerName, e.namespace, e.Log)
-	err = fileUtils.Mount(mountUfs.Command, time.Duration(mountUfs.Timeout)*time.Second)
+
+	// at least 20 seconds
+	timeoutSeconds := max(mountUfs.TimeoutSeconds, 20)
+
+	err = fileUtils.Mount(mountUfs.Command, time.Duration(timeoutSeconds)*time.Second)
 	if err != nil {
 		return err
 	}

@@ -72,6 +72,7 @@ spec:
                               type: string
                             type: array
                           timeout:
+                            format: int32
                             type: integer
                         required:
                         - command
@@ -83,6 +84,7 @@ spec:
                               type: string
                             type: array
                           timeout:
+                            format: int32
                             type: integer
                         required:
                         - command
@@ -3487,6 +3489,7 @@ spec:
                               type: string
                             type: array
                           timeout:
+                            format: int32
                             type: integer
                         required:
                         - command
@@ -3498,6 +3501,7 @@ spec:
                               type: string
                             type: array
                           timeout:
+                            format: int32
                             type: integer
                         required:
                         - command
@@ -6902,6 +6906,7 @@ spec:
                               type: string
                             type: array
                           timeout:
+                            format: int32
                             type: integer
                         required:
                         - command
@@ -6913,6 +6918,7 @@ spec:
                               type: string
                             type: array
                           timeout:
+                            format: int32
                             type: integer
                         required:
                         - command

@@ -68,16 +68,16 @@ func (e *CacheEngine) SetupWorkerInternal(workerValue *common.CacheRuntimeCompon
 			return err
 		}
 
-		masterStatus, err := manager.ConstructComponentStatus(context.TODO(), workerValue)
+		workerStatus, err := manager.ConstructComponentStatus(context.TODO(), workerValue)
 		if err != nil {
 			return err
 		}
-		// from RuntimePhaseNone to RuntimePhaseNotReady, not reconcile the master component the next time.
-		masterStatus.Phase = datav1alpha1.RuntimePhaseNotReady
+		// from RuntimePhaseNone to RuntimePhaseNotReady, not reconcile the worker component the next time.
+		workerStatus.Phase = datav1alpha1.RuntimePhaseNotReady
 
 		// TODO: support builds workers affinity ? do it in transformer ?
 		runtimeToUpdate := runtime.DeepCopy()
-		runtimeToUpdate.Status.Master = masterStatus
+		runtimeToUpdate.Status.Worker = workerStatus
 
 		// TODO(cache runtime): why need this line judgement ?
 		if runtime.Status.Worker.Phase == datav1alpha1.RuntimePhaseNone {
