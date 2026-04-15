@@ -17,10 +17,13 @@ limitations under the License.
 package volume
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -97,15 +100,18 @@ func DeleteFusePersistentVolumeClaim(client client.Client,
 		}
 
 		stillFound := false
-		retries := 10
-		for i := 0; i < retries; i++ {
+		ctx, cancelFunc := context.WithTimeout(context.Background(), 1*time.Second)
+		defer cancelFunc()
+
+		backoff := wait.Backoff{Duration: 100 * time.Millisecond, Steps: 10, Jitter: 0.2}
+		err := wait.ExponentialBackoffWithContext(ctx, backoff, func(ctx context.Context) (done bool, err error) {
 			stillFound, err = kubeclient.IsPersistentVolumeClaimExist(client, runtime.GetName(), runtime.GetNamespace(), common.GetExpectedFluidAnnotations())
 			if err != nil {
-				return err
+				return false, err
 			}
 
 			if !stillFound {
-				break
+				return true, nil
 			}
 
 			// WARN: This is a LEGACY MECHANISM and will be removed in the future.
@@ -115,7 +121,7 @@ func DeleteFusePersistentVolumeClaim(client client.Client,
 				if err != nil {
 					// ignore NotFound error and re-check existence if the pvc is already deleted
 					if utils.IgnoreNotFound(err) == nil {
-						continue
+						return false, nil
 					}
 				}
 
@@ -125,28 +131,28 @@ func DeleteFusePersistentVolumeClaim(client client.Client,
 					if err != nil {
 						// ignore NotFound error and re-check existence if the pvc is already deleted
 						if utils.IgnoreNotFound(err) == nil {
-							continue
+							return false, nil
 						}
 						log.Info("Failed to remove finalizers", "name", runtime.GetName(), "namespace", runtime.GetNamespace())
-						return err
+						return false, err
 					}
 				}
 			}
 
-			time.Sleep(1 * time.Second)
+			return false, nil
+		})
+
+		if err != nil {
+			if wait.Interrupted(err) {
+				return errors.Wrapf(err, "timeout waiting for PVC %s to be deleted after 1-second retry", runtime.GetName())
+			}
+			return err
 		}
 
-		if stillFound {
-			return fmt.Errorf("the PVC %s in ns %s is not cleaned up after 10-second retry",
-				runtime.GetName(),
-				runtime.GetNamespace())
-		} else {
-			log.Info("The PVC is deleted successfully",
-				"name", runtime.GetName(),
-				"namespace", runtime.GetNamespace())
-		}
+		log.Info("The PVC is deleted successfully",
+			"name", runtime.GetName(),
+			"namespace", runtime.GetNamespace())
 	}
 
-	return err
-
+	return nil
 }
