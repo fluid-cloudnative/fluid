@@ -26,7 +26,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	"k8s.io/apimachinery/pkg/util/wait"
 	utilsptr "k8s.io/utils/ptr"
 
 	"github.com/go-logr/logr"
@@ -191,10 +190,6 @@ func (r *RuntimeReconciler) ReconcileRuntimeDeletion(engine base.Engine, ctx cru
 	// 0. Delete the volume
 	err := engine.DeleteVolume()
 	if err != nil {
-		if wait.Interrupted(err) {
-			log.Info("detected volume in deletion, will retry after 5 seconds", "error msg", err)
-			return utils.RequeueAfterInterval(time.Duration(5 * time.Second))
-		}
 		r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to delete volume %v", err)
 		// return utils.RequeueIfError(errors.Wrap(err, "Failed to delete volume"))
 		log.Error(err, "Failed to delete volume", "Runtime", ctx.NamespacedName)

@@ -18,7 +18,9 @@ package watch
 
 import (
 	"context"
+
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	webhookReconcile "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/webhook"
@@ -28,12 +30,15 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 var (
@@ -154,6 +159,51 @@ func SetupWatcherForReconciler(mgr ctrl.Manager, options controller.Options, r C
 			UpdateFunc: daemonsetEventHandler.onUpdateFunc(r),
 			DeleteFunc: daemonsetEventHandler.onDeleteFunc(r),
 		})
+	if err != nil {
+		return err
+	}
+
+	// PVC shares the same namespace and name with the runtime, enqueueing request with pvc name and namespace will trigger runtime reconciliation
+	err = c.Watch(source.Kind(mgr.GetCache(), &corev1.PersistentVolumeClaim{}), &handler.EnqueueRequestForObject{}, predicate.Funcs{
+		CreateFunc: func(ce event.CreateEvent) bool { return false },
+		UpdateFunc: func(ue event.UpdateEvent) bool { return false },
+		DeleteFunc: func(de event.DeleteEvent) bool {
+			pvc, ok := de.Object.(*corev1.PersistentVolumeClaim)
+			if !ok {
+				return false
+			}
+			if len(pvc.Annotations) > 0 && pvc.Annotations["CreatedBy"] == "fluid" {
+				return true
+			}
+			return false
+		},
+	})
+
+	if err != nil {
+		return err
+	}
+
+	pvToRuntimeReqFn := func(ctx context.Context, o client.Object) []reconcile.Request {
+		pv, ok := o.(*corev1.PersistentVolume)
+		if !ok {
+			return []reconcile.Request{}
+		}
+
+		if len(pv.Annotations) > 0 && pv.Annotations["CreatedBy"] == "fluid" {
+			if pv.Spec.ClaimRef != nil && len(pv.Spec.ClaimRef.Name) > 0 && len(pv.Spec.ClaimRef.Namespace) > 0 {
+				return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: pv.Spec.ClaimRef.Name, Namespace: pv.Spec.ClaimRef.Namespace}}}
+			}
+		}
+
+		return []reconcile.Request{}
+	}
+
+	err = c.Watch(source.Kind(mgr.GetCache(), &corev1.PersistentVolume{}), handler.EnqueueRequestsFromMapFunc(pvToRuntimeReqFn), predicate.Funcs{
+		CreateFunc: func(ce event.CreateEvent) bool { return false },
+		UpdateFunc: func(ue event.UpdateEvent) bool { return false },
+		DeleteFunc: func(de event.DeleteEvent) bool { return true },
+	})
+
 	if err != nil {
 		return err
 	}
