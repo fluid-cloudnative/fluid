@@ -72,26 +72,33 @@ func (e *CacheEngine) setWorkerComponentStatus(componentValue *common.CacheRunti
 
 	return ready, err
 }
-func (e *CacheEngine) setClientComponentStatus(componentValue *common.CacheRuntimeComponentValue, status *fluidapi.CacheRuntimeStatus) (err error) {
+func (e *CacheEngine) setClientComponentStatus(componentValue *common.CacheRuntimeComponentValue, status *fluidapi.CacheRuntimeStatus) (ready bool, err error) {
 	manager := component.NewComponentHelper(componentValue.WorkloadType, e.Scheme, e.Client)
 
 	clientStatus, err := manager.ConstructComponentStatus(context.TODO(), componentValue)
 	if err != nil {
-		return err
+		return false, err
 	}
-	if clientStatus.DesiredReplicas > 0 {
+	if clientStatus.DesiredReplicas == 0 {
+		clientStatus.Phase = fluidapi.RuntimePhaseReady
+		ready = true
+	} else if clientStatus.ReadyReplicas > 0 {
 		if clientStatus.DesiredReplicas == clientStatus.ReadyReplicas {
 			clientStatus.Phase = fluidapi.RuntimePhaseReady
+			ready = true
 		} else if clientStatus.ReadyReplicas >= 1 {
 			clientStatus.Phase = fluidapi.RuntimePhasePartialReady
+			ready = true
 		}
+	} else {
+		clientStatus.Phase = fluidapi.RuntimePhaseNotReady
 	}
 	status.Client = clientStatus
 
-	return nil
+	return ready, nil
 }
 func (e *CacheEngine) CheckAndUpdateRuntimeStatus(value *common.CacheRuntimeValue) (bool, error) {
-	var masterReady, workerReady, runtimeReady = true, true, false
+	var masterReady, workerReady, clientReady, runtimeReady = true, true, true, false
 
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		runtime, err := e.getRuntime()
@@ -115,16 +122,16 @@ func (e *CacheEngine) CheckAndUpdateRuntimeStatus(value *common.CacheRuntimeValu
 		}
 
 		if value.Client.Enabled {
-			err = e.setClientComponentStatus(value.Client, &runtimeToUpdate.Status)
+			clientReady, err = e.setClientComponentStatus(value.Client, &runtimeToUpdate.Status)
 			if err != nil {
 				return err
 			}
 		}
 
-		if masterReady && workerReady {
+		if masterReady && workerReady && clientReady {
 			runtimeReady = true
 		} else {
-			e.Log.Info(fmt.Sprintf("MasterReady: %v, workerReady: %v", masterReady, workerReady))
+			e.Log.Info(fmt.Sprintf("MasterReady: %v, workerReady: %v, clientReady: %v", masterReady, workerReady, clientReady))
 		}
 
 		// Update the setup time
