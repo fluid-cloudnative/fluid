@@ -35,24 +35,25 @@ import (
 )
 
 // CreatePersistentVolumeForRuntime creates PersistentVolume with the runtime Info
-func CreatePersistentVolumeForRuntime(client client.Client,
+func CreatePersistentVolumeForRuntime(ctx context.Context,
+	client client.Client,
 	runtime base.RuntimeInfoInterface,
 	mountPath string,
 	mountType string,
 	log logr.Logger) (err error) {
-	accessModes, err := utils.GetAccessModesOfDataset(client, runtime.GetName(), runtime.GetNamespace())
+	accessModes, err := utils.GetAccessModesOfDatasetWithContext(ctx, client, runtime.GetName(), runtime.GetNamespace())
 	if err != nil {
 		return err
 	}
 
-	storageCapacity, err := utils.GetPVCStorageCapacityOfDataset(client, runtime.GetName(), runtime.GetNamespace())
+	storageCapacity, err := utils.GetPVCStorageCapacityOfDatasetWithContext(ctx, client, runtime.GetName(), runtime.GetNamespace())
 	if err != nil {
 		return err
 	}
 
 	pvName := runtime.GetPersistentVolumeName()
 
-	found, err := kubeclient.IsPersistentVolumeExist(client, pvName, common.GetExpectedFluidAnnotations())
+	found, err := kubeclient.IsPersistentVolumeExistWithContext(ctx, client, pvName, common.GetExpectedFluidAnnotations())
 	if err != nil {
 		return err
 	}
@@ -154,16 +155,16 @@ func CreatePersistentVolumeForRuntime(client client.Client,
 			}
 		}
 
-		err = client.Create(context.TODO(), pv)
+		err = client.Create(ctx, pv)
 		if err != nil {
 			return err
 		}
 
 		// Poll the PV's status until it enters an "Available" phase. The polling process timeouts after 1 second and retries every 200 milliseconds.
-		timeoutCtx, cancelFn := context.WithTimeout(context.Background(), 1*time.Second)
+		timeoutCtx, cancelFn := context.WithTimeout(ctx, 1*time.Second)
 		defer cancelFn()
 		pollErr := wait.PollUntilContextCancel(timeoutCtx, 200*time.Millisecond, true, func(ctx context.Context) (done bool, err error) {
-			pvCreated, pvErr := kubeclient.GetPersistentVolume(client, pvName)
+			pvCreated, pvErr := kubeclient.GetPersistentVolumeWithContext(ctx, client, pvName)
 			if pvErr != nil {
 				if utils.IgnoreNotFound(pvErr) == nil {
 					log.Info("The persistent volume not found, waiting for cache to sync up", "pv", pvName)
@@ -183,6 +184,9 @@ func CreatePersistentVolumeForRuntime(client client.Client,
 		})
 		if pollErr != nil {
 			log.Error(pollErr, "got error when polling PV's status", "pv", pvName)
+			if ctx.Err() != nil {
+				return pollErr
+			}
 		}
 	} else {
 		log.Info("The persistent volume is created", "name", pvName)
@@ -192,20 +196,21 @@ func CreatePersistentVolumeForRuntime(client client.Client,
 }
 
 // CreatePersistentVolumeClaimForRuntime creates PersistentVolumeClaim with the runtime Info
-func CreatePersistentVolumeClaimForRuntime(client client.Client,
+func CreatePersistentVolumeClaimForRuntime(ctx context.Context,
+	client client.Client,
 	runtime base.RuntimeInfoInterface,
 	log logr.Logger) (err error) {
-	accessModes, err := utils.GetAccessModesOfDataset(client, runtime.GetName(), runtime.GetNamespace())
+	accessModes, err := utils.GetAccessModesOfDatasetWithContext(ctx, client, runtime.GetName(), runtime.GetNamespace())
 	if err != nil {
 		return err
 	}
 
-	storageCapacity, err := utils.GetPVCStorageCapacityOfDataset(client, runtime.GetName(), runtime.GetNamespace())
+	storageCapacity, err := utils.GetPVCStorageCapacityOfDatasetWithContext(ctx, client, runtime.GetName(), runtime.GetNamespace())
 	if err != nil {
 		return err
 	}
 
-	found, err := kubeclient.IsPersistentVolumeClaimExist(client, runtime.GetName(), runtime.GetNamespace(), common.GetExpectedFluidAnnotations())
+	found, err := kubeclient.IsPersistentVolumeClaimExistWithContext(ctx, client, runtime.GetName(), runtime.GetNamespace(), common.GetExpectedFluidAnnotations())
 	if err != nil {
 		return err
 	}
@@ -234,7 +239,7 @@ func CreatePersistentVolumeClaimForRuntime(client client.Client,
 		}
 
 		// record fuse image version in pvc
-		fuseDs, err := kubeclient.GetDaemonset(client, runtime.GetFuseName(), runtime.GetNamespace())
+		fuseDs, err := kubeclient.GetDaemonsetWithContext(ctx, client, runtime.GetFuseName(), runtime.GetNamespace())
 		if err == nil && fuseDs != nil {
 			if len(fuseDs.Spec.Template.Spec.Containers) == 1 {
 				pvc.Labels[common.LabelRuntimeFuseGeneration] = strconv.Itoa(int(fuseDs.Generation))
@@ -250,7 +255,7 @@ func CreatePersistentVolumeClaimForRuntime(client client.Client,
 			pvc.Annotations = utils.UnionMapsWithOverride(pvc.Annotations, metadataList[i].Annotations)
 		}
 
-		err = client.Create(context.TODO(), pvc)
+		err = client.Create(ctx, pvc)
 		if err != nil {
 			return err
 		}

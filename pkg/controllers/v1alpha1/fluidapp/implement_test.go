@@ -17,6 +17,7 @@
 package fluidapp
 
 import (
+	"context"
 	"testing"
 
 	"github.com/agiledragon/gomonkey/v2"
@@ -32,11 +33,11 @@ import (
 )
 
 func TestFluidAppReconcilerImplement_umountFuseSidecars(t *testing.T) {
-	mockExec := func(p1, p2, p3 string, p4 []string) (stdout string, stderr string, e error) {
+	mockExec := func(ctx context.Context, p1, p2, p3 string, p4 []string) (stdout string, stderr string, e error) {
 		return "", "", nil
 	}
 
-	patches := gomonkey.ApplyFunc(kubeclient.ExecCommandInContainer, mockExec)
+	patches := gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithContext, mockExec)
 	defer patches.Reset()
 
 	type fields struct {

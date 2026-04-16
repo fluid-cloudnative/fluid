@@ -17,6 +17,7 @@ limitations under the License.
 package operations
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -55,7 +56,7 @@ func (a AlluxioFileUtils) exec(command []string, verbose bool) (stdout string, s
 	redactedCommand := securityutils.FilterCommand(command)
 
 	a.log.V(1).Info("Exec command start", "command", redactedCommand)
-	stdout, stderr, err = kubeclient.ExecCommandInContainerWithTimeout(a.podName, a.container, a.namespace, command, common.FileUtilsExecTimeout)
+	stdout, stderr, err = kubeclient.ExecCommandInContainerWithTimeoutContext(context.TODO(), a.podName, a.container, a.namespace, command, common.FileUtilsExecTimeout)
 	if err != nil {
 		err = errors.Wrapf(err, "error when executing command %v", redactedCommand)
 		return

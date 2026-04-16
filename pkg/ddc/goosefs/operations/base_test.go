@@ -17,6 +17,7 @@ limitations under the License.
 package operations
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"reflect"
@@ -66,7 +67,9 @@ func TestGooseFSFileUtils_IsExist(t *testing.T) {
 		}
 	}
 
-	patches := gomonkey.ApplyFunc(kubeclient.ExecCommandInContainer, mockExec)
+	patches := gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithContext, func(ctx context.Context, p1, p2, p3 string, p4 []string) (string, string, error) {
+		return mockExec(p1, p2, p3, p4)
+	})
 	defer patches.Reset()
 
 	var tests = []struct {
@@ -107,7 +110,9 @@ func TestGooseFSFileUtils_Du(t *testing.T) {
 		}
 	}
 
-	patches := gomonkey.ApplyFunc(kubeclient.ExecCommandInContainer, mockExec)
+	patches := gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithContext, func(ctx context.Context, p1, p2, p3 string, p4 []string) (string, string, error) {
+		return mockExec(p1, p2, p3, p4)
+	})
 	defer patches.Reset()
 
 	var tests = []struct {
@@ -442,7 +447,9 @@ func TestCount(t *testing.T) {
 		}
 	}
 
-	patches := gomonkey.ApplyFunc(kubeclient.ExecCommandInContainer, mockExec)
+	patches := gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithContext, func(ctx context.Context, p1, p2, p3 string, p4 []string) (string, string, error) {
+		return mockExec(p1, p2, p3, p4)
+	})
 	defer patches.Reset()
 
 	var tests = []struct {
@@ -579,7 +586,9 @@ func TestExecWithoutTimeout(t *testing.T) {
 		return "err", "", errors.New("other error")
 	}
 
-	patches := gomonkey.ApplyFunc(kubeclient.ExecCommandInContainer, mockExecErr)
+	patches := gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithContext, func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
+		return mockExecErr(podName, containerName, namespace, cmd)
+	})
 	defer patches.Reset()
 
 	a := &GooseFSFileUtils{log: fake.NullLogger()}
@@ -588,7 +597,9 @@ func TestExecWithoutTimeout(t *testing.T) {
 		t.Error("check failure, want err, got nil")
 	}
 
-	patches.ApplyFunc(kubeclient.ExecCommandInContainer, mockExecCommon)
+	patches.ApplyFunc(kubeclient.ExecCommandInContainerWithContext, func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
+		return mockExecCommon(podName, containerName, namespace, cmd)
+	})
 	_, _, err = a.execWithoutTimeout([]string{"goosefs", "fsadmin", "report", "capacity"}, true)
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)

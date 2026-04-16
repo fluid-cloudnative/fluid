@@ -17,12 +17,16 @@
 package operations
 
 import (
+	"context"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	securityutils "github.com/fluid-cloudnative/fluid/pkg/utils/security"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 )
+
+var execCommandInContainerWithTimeoutContext = kubeclient.ExecCommandInContainerWithTimeoutContext
 
 type EFCFileUtils struct {
 	podName   string
@@ -45,7 +49,7 @@ func (a EFCFileUtils) exec(command []string, verbose bool) (stdout string, stder
 	// redact sensitive info in command for printing
 	redactedCommand := securityutils.FilterCommand(command)
 
-	stdout, stderr, err = kubeclient.ExecCommandInContainerWithTimeout(a.podName, a.container, a.namespace, command, common.FileUtilsExecTimeout)
+	stdout, stderr, err = execCommandInContainerWithTimeoutContext(context.TODO(), a.podName, a.container, a.namespace, command, common.FileUtilsExecTimeout)
 	if err != nil {
 		err = errors.Wrapf(err, "error when executing command %v", redactedCommand)
 		return

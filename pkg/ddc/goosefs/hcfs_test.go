@@ -17,6 +17,7 @@ limitations under the License.
 package goosefs
 
 import (
+	"context"
 	"errors"
 	"reflect"
 	"testing"
@@ -86,7 +87,9 @@ func TestGetHCFSStatus(t *testing.T) {
 	fakeClientWithErr := fake.NewFakeClientWithScheme(scheme, runtimeObjs...)
 
 	// test common case
-	patches := gomonkey.ApplyFunc(kubeclient.ExecCommandInContainer, mockExecCommon)
+	patches := gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithContext, func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
+		return mockExecCommon(podName, containerName, namespace, cmd)
+	})
 
 	engine := newGooseFSEngineHCFS(fakeClient, "hbase", "fluid")
 	out, err := engine.GetHCFSStatus()
@@ -110,7 +113,9 @@ func TestGetHCFSStatus(t *testing.T) {
 	}
 
 	// test when getConf with err
-	patches.ApplyFunc(kubeclient.ExecCommandInContainer, mockExecErr)
+	patches.ApplyFunc(kubeclient.ExecCommandInContainerWithContext, func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
+		return mockExecErr(podName, containerName, namespace, cmd)
+	})
 	defer patches.Reset()
 
 	engine = newGooseFSEngineHCFS(fakeClient, "hbase", "fluid")
@@ -193,13 +198,11 @@ func TestQueryHCFSEndpoint(t *testing.T) {
 }
 
 func TestCompatibleUFSVersion(t *testing.T) {
-	mockExecCommon := func(podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
-		return "conf", "", nil
-	}
-	mockExecErr := func(podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
-		return "err", "", errors.New("other error")
-	}
-	patches := gomonkey.ApplyFunc(kubeclient.ExecCommandInContainer, mockExecCommon)
+	stdout := "conf"
+	execErr := error(nil)
+	patches := gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithContext, func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
+		return stdout, "", execErr
+	})
 	defer patches.Reset()
 
 	engine := newGooseFSEngineHCFS(nil, "hbase", "fluid")
@@ -208,7 +211,8 @@ func TestCompatibleUFSVersion(t *testing.T) {
 		t.Errorf("expected %s, got %s", "conf", out)
 	}
 
-	patches.ApplyFunc(kubeclient.ExecCommandInContainer, mockExecErr)
+	stdout = "err"
+	execErr = errors.New("other error")
 	engine = newGooseFSEngineHCFS(nil, "hbase", "fluid")
 	out, _ = engine.queryCompatibleUFSVersion()
 	if out != "err" {

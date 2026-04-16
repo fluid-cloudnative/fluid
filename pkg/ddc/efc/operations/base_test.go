@@ -17,12 +17,11 @@
 package operations
 
 import (
+	"context"
 	"errors"
 	"time"
 
-	"github.com/agiledragon/gomonkey/v2"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -49,8 +48,8 @@ var _ = Describe("EFCFileUtils", func() {
 
 	Describe("exec", func() {
 		var (
-			a       EFCFileUtils
-			patches *gomonkey.Patches
+			a            EFCFileUtils
+			originalExec func(context.Context, string, string, string, []string, time.Duration) (string, string, error)
 		)
 
 		BeforeEach(func() {
@@ -60,20 +59,18 @@ var _ = Describe("EFCFileUtils", func() {
 				container: "test-container",
 				log:       fake.NullLogger(),
 			}
+			originalExec = execCommandInContainerWithTimeoutContext
 		})
 
 		AfterEach(func() {
-			if patches != nil {
-				patches.Reset()
-			}
+			execCommandInContainerWithTimeoutContext = originalExec
 		})
 
 		Context("when ExecCommandInContainerWithTimeout fails", func() {
 			It("should return wrapped error", func() {
-				patches = gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithTimeout,
-					func(podName, containerName, namespace string, cmd []string, timeout time.Duration) (string, string, error) {
-						return "", "", errors.New("execution failed")
-					})
+				execCommandInContainerWithTimeoutContext = func(ctx context.Context, podName, containerName, namespace string, cmd []string, timeout time.Duration) (string, string, error) {
+					return "", "", errors.New("execution failed")
+				}
 
 				stdout, stderr, err := a.exec([]string{"test", "command"}, false)
 				Expect(err).To(HaveOccurred())
@@ -83,10 +80,9 @@ var _ = Describe("EFCFileUtils", func() {
 			})
 
 			It("should return wrapped error with stdout and stderr", func() {
-				patches = gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithTimeout,
-					func(podName, containerName, namespace string, cmd []string, timeout time.Duration) (string, string, error) {
-						return "some output", "some error", errors.New("execution failed")
-					})
+				execCommandInContainerWithTimeoutContext = func(ctx context.Context, podName, containerName, namespace string, cmd []string, timeout time.Duration) (string, string, error) {
+					return "some output", "some error", errors.New("execution failed")
+				}
 
 				stdout, stderr, err := a.exec([]string{"test", "command"}, false)
 				Expect(err).To(HaveOccurred())
@@ -98,10 +94,9 @@ var _ = Describe("EFCFileUtils", func() {
 
 		Context("when ExecCommandInContainerWithTimeout succeeds", func() {
 			It("should return stdout and stderr without logging when verbose is false", func() {
-				patches = gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithTimeout,
-					func(podName, containerName, namespace string, cmd []string, timeout time.Duration) (string, string, error) {
-						return "success output", "", nil
-					})
+				execCommandInContainerWithTimeoutContext = func(ctx context.Context, podName, containerName, namespace string, cmd []string, timeout time.Duration) (string, string, error) {
+					return "success output", "", nil
+				}
 
 				stdout, stderr, err := a.exec([]string{"ls", "-la"}, false)
 				Expect(err).NotTo(HaveOccurred())
@@ -110,10 +105,9 @@ var _ = Describe("EFCFileUtils", func() {
 			})
 
 			It("should return stdout and stderr with logging when verbose is true", func() {
-				patches = gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithTimeout,
-					func(podName, containerName, namespace string, cmd []string, timeout time.Duration) (string, string, error) {
-						return "verbose output", "verbose stderr", nil
-					})
+				execCommandInContainerWithTimeoutContext = func(ctx context.Context, podName, containerName, namespace string, cmd []string, timeout time.Duration) (string, string, error) {
+					return "verbose output", "verbose stderr", nil
+				}
 
 				stdout, stderr, err := a.exec([]string{"cat", "file.txt"}, true)
 				Expect(err).NotTo(HaveOccurred())
@@ -125,8 +119,8 @@ var _ = Describe("EFCFileUtils", func() {
 
 	Describe("DeleteDir", func() {
 		var (
-			a       EFCFileUtils
-			patches *gomonkey.Patches
+			a            EFCFileUtils
+			originalExec func(context.Context, string, string, string, []string, time.Duration) (string, string, error)
 		)
 
 		BeforeEach(func() {
@@ -136,20 +130,18 @@ var _ = Describe("EFCFileUtils", func() {
 				container: "test-container",
 				log:       fake.NullLogger(),
 			}
+			originalExec = execCommandInContainerWithTimeoutContext
 		})
 
 		AfterEach(func() {
-			if patches != nil {
-				patches.Reset()
-			}
+			execCommandInContainerWithTimeoutContext = originalExec
 		})
 
 		Context("when exec fails", func() {
 			It("should return error and log with stdout and stderr", func() {
-				patches = gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithTimeout,
-					func(podName, containerName, namespace string, cmd []string, timeout time.Duration) (string, string, error) {
-						return "delete failed output", "delete stderr", errors.New("delete failed")
-					})
+				execCommandInContainerWithTimeoutContext = func(ctx context.Context, podName, containerName, namespace string, cmd []string, timeout time.Duration) (string, string, error) {
+					return "delete failed output", "delete stderr", errors.New("delete failed")
+				}
 
 				err := a.DeleteDir("/test/path")
 				Expect(err).To(HaveOccurred())
@@ -159,20 +151,18 @@ var _ = Describe("EFCFileUtils", func() {
 
 		Context("when exec succeeds", func() {
 			It("should delete directory without error", func() {
-				patches = gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithTimeout,
-					func(podName, containerName, namespace string, cmd []string, timeout time.Duration) (string, string, error) {
-						return "", "", nil
-					})
+				execCommandInContainerWithTimeoutContext = func(ctx context.Context, podName, containerName, namespace string, cmd []string, timeout time.Duration) (string, string, error) {
+					return "", "", nil
+				}
 
 				err := a.DeleteDir("/test/directory")
 				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("should handle deletion with output", func() {
-				patches = gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithTimeout,
-					func(podName, containerName, namespace string, cmd []string, timeout time.Duration) (string, string, error) {
-						return "deleted successfully", "", nil
-					})
+				execCommandInContainerWithTimeoutContext = func(ctx context.Context, podName, containerName, namespace string, cmd []string, timeout time.Duration) (string, string, error) {
+					return "deleted successfully", "", nil
+				}
 
 				err := a.DeleteDir("/another/path")
 				Expect(err).NotTo(HaveOccurred())
@@ -182,8 +172,8 @@ var _ = Describe("EFCFileUtils", func() {
 
 	Describe("Ready", func() {
 		var (
-			a       EFCFileUtils
-			patches *gomonkey.Patches
+			a            EFCFileUtils
+			originalExec func(context.Context, string, string, string, []string, time.Duration) (string, string, error)
 		)
 
 		BeforeEach(func() {
@@ -193,20 +183,18 @@ var _ = Describe("EFCFileUtils", func() {
 				container: "test-container",
 				log:       fake.NullLogger(),
 			}
+			originalExec = execCommandInContainerWithTimeoutContext
 		})
 
 		AfterEach(func() {
-			if patches != nil {
-				patches.Reset()
-			}
+			execCommandInContainerWithTimeoutContext = originalExec
 		})
 
 		Context("when exec fails", func() {
 			It("should return false and log error with stdout and stderr", func() {
-				patches = gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithTimeout,
-					func(podName, containerName, namespace string, cmd []string, timeout time.Duration) (string, string, error) {
-						return "mount output", "mount stderr", errors.New("mount check failed")
-					})
+				execCommandInContainerWithTimeoutContext = func(ctx context.Context, podName, containerName, namespace string, cmd []string, timeout time.Duration) (string, string, error) {
+					return "mount output", "mount stderr", errors.New("mount check failed")
+				}
 
 				ready := a.Ready()
 				Expect(ready).To(BeFalse())
@@ -215,20 +203,18 @@ var _ = Describe("EFCFileUtils", func() {
 
 		Context("when exec succeeds", func() {
 			It("should return true", func() {
-				patches = gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithTimeout,
-					func(podName, containerName, namespace string, cmd []string, timeout time.Duration) (string, string, error) {
-						return "efc mount found", "", nil
-					})
+				execCommandInContainerWithTimeoutContext = func(ctx context.Context, podName, containerName, namespace string, cmd []string, timeout time.Duration) (string, string, error) {
+					return "efc mount found", "", nil
+				}
 
 				ready := a.Ready()
 				Expect(ready).To(BeTrue())
 			})
 
 			It("should return true with mount details", func() {
-				patches = gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithTimeout,
-					func(podName, containerName, namespace string, cmd []string, timeout time.Duration) (string, string, error) {
-						return "/dev/efc on /mnt type efc", "warning", nil
-					})
+				execCommandInContainerWithTimeoutContext = func(ctx context.Context, podName, containerName, namespace string, cmd []string, timeout time.Duration) (string, string, error) {
+					return "/dev/efc on /mnt type efc", "warning", nil
+				}
 
 				ready := a.Ready()
 				Expect(ready).To(BeTrue())

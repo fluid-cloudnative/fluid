@@ -17,6 +17,7 @@ limitations under the License.
 package goosefs
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -224,7 +225,7 @@ func TestTotalStorageBytesInternal(t *testing.T) {
 				Log:       tt.fields.Log,
 			}
 
-			patch1 := ApplyFunc(kubeclient.ExecCommandInContainer, func(podName string, containerName string, namespace string, cmd []string) (string, string, error) {
+			patch1 := ApplyFunc(kubeclient.ExecCommandInContainerWithContext, func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
 				summary, err := mockGooseFSFileUtilsCount()
 				return summary, "", err
 			})
@@ -280,7 +281,7 @@ func TestTotalFileNumsInternal(t *testing.T) {
 				Log:       tt.fields.Log,
 			}
 
-			patch1 := ApplyFunc(kubeclient.ExecCommandInContainer, func(podName string, containerName string, namespace string, cmd []string) (string, string, error) {
+			patch1 := ApplyFunc(kubeclient.ExecCommandInContainerWithContext, func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
 				summary, err := mockGooseFSFileUtilsCount()
 				return summary, "", err
 			})
@@ -347,7 +348,7 @@ func TestShouldMountUFS(t *testing.T) {
 				Log:       tt.fields.Log,
 				Client:    client,
 			}
-			patch1 := ApplyFunc(kubeclient.ExecCommandInContainer, func(podName string, containerName string, namespace string, cmd []string) (string, string, error) {
+			patch1 := ApplyFunc(kubeclient.ExecCommandInContainerWithContext, func(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (string, string, error) {
 				summary := mockGooseFSReportSummary()
 				return summary, "", nil
 			})
