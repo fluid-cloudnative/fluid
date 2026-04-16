@@ -191,6 +191,7 @@ func (e *AlluxioEngine) processUpdatingUFS(ufsToUpdate *utils.UFSToUpdate) (upda
 
 	return
 }
+
 // updatingUFSWithMountCommand updates the Alluxio UFS mount points based on the differences identified in ufsToUpdate.
 // It performs mount operations for new UFS paths specified in ufsToUpdate.ToAdd() and unmount operations for paths
 // listed in ufsToUpdate.ToRemove(). The function skips mount points using Fluid native schemes as they are not editable.
