@@ -16,7 +16,23 @@
 
 package engine
 
+import (
+	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
+)
+
 // Shutdown and clean up the engine
 func (e *CacheEngine) Shutdown() (err error) {
-	return newNotImplementError("Shutdown")
+	info, err := e.getRuntimeInfo()
+	if err != nil {
+		return err
+	}
+	helper := ctrl.BuildHelper(info, e.Client, e.Log)
+	count, err := helper.CleanUpFuse()
+	if err != nil {
+		e.Log.Error(err, "Err in cleaning fuse")
+		return err
+	}
+	e.Log.Info("clean up fuse count", "n", count)
+
+	return nil
 }

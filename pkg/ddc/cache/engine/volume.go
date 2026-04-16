@@ -1,5 +1,5 @@
 /*
-  Copyright 2022 The Fluid Authors.
+  Copyright 2026 The Fluid Authors.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,6 +15,11 @@
 */
 
 package engine
+
+import (
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	volumeHelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
+)
 
 func (e *CacheEngine) CreateVolume() (err error) {
 	if err = e.createFusePersistentVolume(); err != nil {
@@ -40,17 +45,41 @@ func (e *CacheEngine) DeleteVolume() (err error) {
 }
 
 func (e *CacheEngine) createFusePersistentVolume() error {
-	return newNotImplementError("createFusePersistentVolume")
+	runtimeInfo, err := e.getRuntimeInfo()
+	if err != nil {
+		return err
+	}
+
+	return volumeHelper.CreatePersistentVolumeForRuntime(e.Client,
+		runtimeInfo,
+		e.getFuseMountPoint(),
+		common.CacheRuntime,
+		e.Log)
 }
 
 func (e *CacheEngine) createFusePersistentVolumeClaim() error {
-	return newNotImplementError("createFusePersistentVolumeClaim")
+	runtimeInfo, err := e.getRuntimeInfo()
+	if err != nil {
+		return err
+	}
+
+	return volumeHelper.CreatePersistentVolumeClaimForRuntime(e.Client, runtimeInfo, e.Log)
 }
 
 func (e *CacheEngine) deleteFusePersistentVolume() error {
-	return newNotImplementError("deleteFusePersistentVolume")
+	runtimeInfo, err := e.getRuntimeInfo()
+	if err != nil {
+		return err
+	}
+
+	return volumeHelper.DeleteFusePersistentVolume(e.Client, runtimeInfo, e.Log)
 }
 
 func (e *CacheEngine) deleteFusePersistentVolumeClaim() error {
-	return newNotImplementError("deleteFusePersistentVolumeClaim")
+	runtimeInfo, err := e.getRuntimeInfo()
+	if err != nil {
+		return err
+	}
+
+	return volumeHelper.DeleteFusePersistentVolumeClaim(e.Client, runtimeInfo, e.Log)
 }

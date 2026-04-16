@@ -34,7 +34,7 @@ func (e *CacheEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool, e
 
 	dataset := ctx.Dataset
 	runtime := ctx.Runtime.(*datav1alpha1.CacheRuntime)
-	runtimeClass, err := utils.GetCacheRuntimeClass(ctx.Client, runtime.Spec.RuntimeClassName)
+	runtimeClass, err := e.getRuntimeClass(runtime.Spec.RuntimeClassName)
 	if err != nil {
 		return false, errors.Wrapf(err, "failed to get CacheRuntimeClass %s", runtime.Spec.RuntimeClassName)
 	}
@@ -45,7 +45,7 @@ func (e *CacheEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool, e
 	}
 
 	// create runtime value configmap for runtime mount
-	err = e.createRuntimeValueConfigMap(runtimeValue)
+	err = e.createRuntimeConfigMaps(runtimeClass)
 	if err != nil {
 		return false, err
 	}
@@ -78,8 +78,8 @@ func (e *CacheEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool, e
 
 	// dataset mount
 	if runtimeValue.Master.Enabled {
-		// TODO(cache runtime): only master-slave architecture should execute ufs mount?
-		err = e.PrepareUFS(runtimeValue)
+		// currently only support mount ufs for master
+		err = e.PrepareUFS(runtimeClass.Topology.Master.ExecutionEntries, runtimeValue)
 		if err != nil {
 			return false, err
 		}

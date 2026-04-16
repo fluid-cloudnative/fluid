@@ -20,6 +20,7 @@ function build_images() {
         ${IMG_REPO}/thinruntime-controller:${IMAGE_TAG}
         ${IMG_REPO}/efcruntime-controller:${IMAGE_TAG}
         ${IMG_REPO}/vineyardruntime-controller:${IMAGE_TAG}
+        ${IMG_REPO}/cacheruntime-controller:${IMAGE_TAG}
         ${IMG_REPO}/fluid-csi:${IMAGE_TAG}
         ${IMG_REPO}/fluid-webhook:${IMAGE_TAG}
         ${IMG_REPO}/fluid-crd-upgrader:${IMAGE_TAG}

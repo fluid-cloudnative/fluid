@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: minio-bucket-create
+spec:
+  template:
+    spec:
+      containers:
+      - name: mc
+        image: minio/mc
+        resources:
+          limits:
+            memory: "512Mi"
+        command:
+          - /bin/sh
+          - -c
+          - "mc alias set myminio http://minio:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD && mc mb myminio/test"
+        env:
+        # Minio access key and secret key
+        - name: MINIO_ROOT_USER
+          value: "minioadmin"
+        - name: MINIO_ROOT_PASSWORD
+          value: "minioadmin"
+      restartPolicy: OnFailure
+  backoffLimit: 4

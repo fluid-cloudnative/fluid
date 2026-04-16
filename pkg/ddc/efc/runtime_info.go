@@ -57,6 +57,7 @@ func (e *EFCEngine) getRuntimeInfo() (info base.RuntimeInfoInterface, err error)
 			return e.runtimeInfo, err
 		}
 
+		// TODO: why not just get Dataset instance's UID ?
 		uid, err := base.GetOwnerDatasetUIDFromRuntimeMeta(runtime.ObjectMeta)
 		if err != nil {
 			return nil, err

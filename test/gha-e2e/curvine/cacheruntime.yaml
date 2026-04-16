@@ -1,0 +1,36 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: CacheRuntime
+metadata:
+  name: curvine-demo
+spec:
+  runtimeClassName: curvine-demo
+  master:
+    # 如何区分 master 和 journal 的配置，两个在一个进程中（前缀，交给Curvine自行处理）
+    options:  # https://curvineio.github.io/zh-cn/docs/Deploy/Deploy-Curvine-Cluster/Distributed-Mode/conf#master%E9%85%8D%E7%BD%AE%E9%A1%B9
+      key1: master-value1
+    replicas: 1
+  worker:
+    options: # https://curvineio.github.io/zh-cn/docs/Deploy/Deploy-Curvine-Cluster/Distributed-Mode/conf#worker%E9%85%8D%E7%BD%AE%E9%A1%B9
+      key1: worker-value1
+    replicas: 1
+    tieredStore:
+      levels: #worker缓存配置
+        - low: "0.5"
+          high: "0.8"
+          path:
+          - "testing/data"
+          quota:
+          - 1Gi
+          medium:
+            volume:
+              emptyDir: {}
+  client:
+    options:
+      key1: value1
+    volumeMounts: 		#可配置volume和对应的volumeMounts
+      - name: demo
+        mountPath: /mnt
+  volumes:
+    - name: demo
+      persistentVolumeClaim:
+        claimName: curvine-demo

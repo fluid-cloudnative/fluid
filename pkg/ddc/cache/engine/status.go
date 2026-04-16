@@ -21,6 +21,7 @@ import (
 	"fmt"
 	fluidapi "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/cache/component"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
@@ -28,14 +29,66 @@ import (
 	"time"
 )
 
-func (e *CacheEngine) setMasterComponentStatus(status *fluidapi.RuntimeComponentStatus) (ready bool, err error) {
-	return true, newNotImplementError("setMasterComponentStatus")
+func (e *CacheEngine) setMasterComponentStatus(componentValue *common.CacheRuntimeComponentValue, status *fluidapi.CacheRuntimeStatus) (ready bool, err error) {
+	manager := component.NewComponentHelper(componentValue.WorkloadType, e.Scheme, e.Client)
+
+	masterStatus, err := manager.ConstructComponentStatus(context.TODO(), componentValue)
+	if err != nil {
+		return false, err
+	}
+	if masterStatus.ReadyReplicas == masterStatus.DesiredReplicas {
+		masterStatus.Phase = fluidapi.RuntimePhaseReady
+		ready = true
+	} else {
+		masterStatus.Phase = fluidapi.RuntimePhaseNotReady
+	}
+	status.Master = masterStatus
+
+	return ready, err
 }
-func (e *CacheEngine) setWorkerComponentStatus(status *fluidapi.RuntimeComponentStatus) (ready bool, err error) {
-	return true, newNotImplementError("setWorkerComponentStatus")
+func (e *CacheEngine) setWorkerComponentStatus(componentValue *common.CacheRuntimeComponentValue, status *fluidapi.CacheRuntimeStatus) (ready bool, err error) {
+	manager := component.NewComponentHelper(componentValue.WorkloadType, e.Scheme, e.Client)
+
+	workerStatus, err := manager.ConstructComponentStatus(context.TODO(), componentValue)
+	if err != nil {
+		return false, err
+	}
+
+	if workerStatus.DesiredReplicas == 0 {
+		workerStatus.Phase = fluidapi.RuntimePhaseReady
+		ready = true
+	} else if workerStatus.ReadyReplicas > 0 {
+		if workerStatus.DesiredReplicas == workerStatus.ReadyReplicas {
+			workerStatus.Phase = fluidapi.RuntimePhaseReady
+			ready = true
+		} else if workerStatus.ReadyReplicas >= 1 {
+			workerStatus.Phase = fluidapi.RuntimePhasePartialReady
+			ready = true
+		}
+	} else {
+		workerStatus.Phase = fluidapi.RuntimePhaseNotReady
+	}
+	status.Worker = workerStatus
+
+	return ready, err
 }
-func (e *CacheEngine) setClientComponentStatus(status *fluidapi.RuntimeComponentStatus) (err error) {
-	return newNotImplementError("setClientComponentStatus")
+func (e *CacheEngine) setClientComponentStatus(componentValue *common.CacheRuntimeComponentValue, status *fluidapi.CacheRuntimeStatus) (err error) {
+	manager := component.NewComponentHelper(componentValue.WorkloadType, e.Scheme, e.Client)
+
+	clientStatus, err := manager.ConstructComponentStatus(context.TODO(), componentValue)
+	if err != nil {
+		return err
+	}
+	if clientStatus.DesiredReplicas > 0 {
+		if clientStatus.DesiredReplicas == clientStatus.ReadyReplicas {
+			clientStatus.Phase = fluidapi.RuntimePhaseReady
+		} else if clientStatus.ReadyReplicas >= 1 {
+			clientStatus.Phase = fluidapi.RuntimePhasePartialReady
+		}
+	}
+	status.Client = clientStatus
+
+	return nil
 }
 func (e *CacheEngine) CheckAndUpdateRuntimeStatus(value *common.CacheRuntimeValue) (bool, error) {
 	var masterReady, workerReady, runtimeReady = true, true, false
@@ -48,21 +101,21 @@ func (e *CacheEngine) CheckAndUpdateRuntimeStatus(value *common.CacheRuntimeValu
 
 		runtimeToUpdate := runtime.DeepCopy()
 		if value.Master.Enabled {
-			masterReady, err = e.setMasterComponentStatus(&runtimeToUpdate.Status.Master)
+			masterReady, err = e.setMasterComponentStatus(value.Master, &runtimeToUpdate.Status)
 			if err != nil {
 				return err
 			}
 		}
 
 		if value.Worker.Enabled {
-			workerReady, err = e.setWorkerComponentStatus(&runtimeToUpdate.Status.Worker)
+			workerReady, err = e.setWorkerComponentStatus(value.Worker, &runtimeToUpdate.Status)
 			if err != nil {
 				return err
 			}
 		}
 
 		if value.Client.Enabled {
-			err = e.setClientComponentStatus(&runtimeToUpdate.Status.Client)
+			err = e.setClientComponentStatus(value.Client, &runtimeToUpdate.Status)
 			if err != nil {
 				return err
 			}

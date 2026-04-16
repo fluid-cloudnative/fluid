@@ -433,7 +433,7 @@ func convertToTieredstoreInfo(tieredstore datav1alpha1.TieredStore) (TieredStore
 	return tieredstoreInfo, nil
 }
 
-// GetRuntimeInfo gets the RuntimeInfo according to name and namespace of it
+// GetRuntimeInfo gets the RuntimeInfo according to name and namespace of it, must be called after dataset bound.
 func GetRuntimeInfo(reader client.Reader, name, namespace string) (runtimeInfo RuntimeInfoInterface, err error) {
 	dataset, err := utils.GetDataset(reader, name, namespace)
 	if err != nil {
@@ -574,6 +574,8 @@ func GetRuntimeInfo(reader client.Reader, name, namespace string) (runtimeInfo R
 		}
 		runtimeInfo.SetFuseNodeSelector(cacheRuntime.Spec.Client.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(cacheRuntime.Spec.Client.CleanPolicy)
+		// TODO(cache runtime): is this common logic for all runtimes? If so, move to below 'SetOwnerDatasetUID' line.
+		runtimeInfo.SetupWithDataset(dataset)
 	default:
 		err = fmt.Errorf("fail to get runtimeInfo for runtime type: %s", runtimeType)
 		return
@@ -643,6 +645,7 @@ func GetRuntimeStatus(client client.Client, runtimeType, name, namespace string)
 			return status, err
 		}
 		return &runtime.Status, nil
+	// TODO: how to handle with cache runtime? (currently used in app pod affinity scene)
 	default:
 		err = fmt.Errorf("fail to get runtimeInfo for runtime type: %s", runtimeType)
 		return nil, err

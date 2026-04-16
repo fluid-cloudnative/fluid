@@ -80,6 +80,8 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOption":                     schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOption(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOptionComponentDependency":  schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOptionComponentDependency(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOptionSource":               schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOptionSource(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExecutionCommonEntry":              schema_fluid_cloudnative_fluid_api_v1alpha1_ExecutionCommonEntry(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExecutionEntries":                  schema_fluid_cloudnative_fluid_api_v1alpha1_ExecutionEntries(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExternalEndpointSpec":              schema_fluid_cloudnative_fluid_api_v1alpha1_ExternalEndpointSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExternalStorage":                   schema_fluid_cloudnative_fluid_api_v1alpha1_ExternalStorage(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExtraResourcesComponentDependency": schema_fluid_cloudnative_fluid_api_v1alpha1_ExtraResourcesComponentDependency(ref),
@@ -3747,6 +3749,66 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOptionSource(ref common.
 	}
 }
 
+func schema_fluid_cloudnative_fluid_api_v1alpha1_ExecutionCommonEntry(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"command": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"timeout": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TimeoutSeconds is the timeout(seconds) for the execution entry, at least(default) 20 seconds.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+				},
+				Required: []string{"command"},
+			},
+		},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_ExecutionEntries(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"mountUFS": {
+						SchemaProps: spec.SchemaProps{
+							Description: "MountUFS defines the operations for mounting UFS",
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.ExecutionCommonEntry"),
+						},
+					},
+					"reportSummary": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ReportSummary it defines the operation how to get cache status like capacity, hit ratio etc.",
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.ExecutionCommonEntry"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExecutionCommonEntry"},
+	}
+}
+
 func schema_fluid_cloudnative_fluid_api_v1alpha1_ExternalEndpointSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -6667,11 +6729,17 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeComponentDefinition(ref 
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentDependencies"),
 						},
 					},
+					"executionEntries": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ExecutionEntries entries to support out-of-tree integration.",
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.ExecutionEntries"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentDependencies", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentService", "k8s.io/api/core/v1.PodTemplateSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.TypeMeta"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExecutionEntries", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentDependencies", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentService", "k8s.io/api/core/v1.PodTemplateSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.TypeMeta"},
 	}
 }
 

@@ -1,0 +1,31 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: write-job
+  namespace: default
+  labels:
+    app: write-job
+spec:
+  template:
+    metadata:
+      name: write-job
+      labels:
+        app: write-job
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: write-job
+        image: busybox
+        resources:
+          limits:
+            ephemeral-storage: "5Gi"
+            memory: "512Mi"
+        command: ['sh', '-c', 'echo helloworld > /data/minio/bar']
+        volumeMounts:
+        - name: data-vol
+          mountPath: /data
+      automountServiceAccountToken: false
+      volumes:
+      - name: data-vol
+        persistentVolumeClaim:
+          claimName: curvine-demo
