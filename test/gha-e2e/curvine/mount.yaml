@@ -43,11 +43,11 @@ data:
         path_style=$(echo "$item" | sed -nE 's/.*"path_style":"([^"]+)".*/\1/p')
     
         # 打印调试（缺失字段会显示空，正确）
-        echo "access: $access"
-        echo "region: $region"
-        echo "endpoint: $endpoint"
-        echo "path_style: $path_style"
-        echo "secret: $secret"
+        #echo "access: $access"
+        #echo "region: $region"
+        #echo "endpoint: $endpoint"
+        #echo "path_style: $path_style"
+        #echo "secret: $secret"
     
         # 必填参数校验
         CV_PARAMS=""
@@ -65,7 +65,7 @@ data:
         [ -n "$path_style" ] && CV_PARAMS="$CV_PARAMS -c s3.path_style=$path_style"
     
         # 最终命令
-        CMD="/app/curvine/bin/cv mount --mnt-type orch $mountPoint $path $CV_PARAMS"
+        CMD="/app/curvine/bin/cv mount $mountPoint $path --check-path-consist false $CV_PARAMS"
         echo "执行命令：$CMD"
     
         eval "$CMD"
