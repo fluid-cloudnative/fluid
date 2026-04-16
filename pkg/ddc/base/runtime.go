@@ -235,7 +235,16 @@ func WithAnnotations(annotations map[string]string) RuntimeInfoOption {
 func (info *RuntimeInfo) GetAnnotations() map[string]string {
 	return info.annotations
 }
-
+// WithClientMetrics sets the client metrics for the RuntimeInfo.
+// This function returns a RuntimeInfoOption that configures how client metrics 
+// are collected, including setting a default scrape target if none is provided 
+// and parsing the scrape target string into a valid selector.
+//
+// Parameters:
+//  - clientMetrics (datav1alpha1.ClientMetrics): The client metrics configuration to be applied.
+//
+// Returns:
+//  - (RuntimeInfoOption): A function that updates the RuntimeInfo with the specified metrics configuration.
 func WithClientMetrics(clientMetrics datav1alpha1.ClientMetrics) RuntimeInfoOption {
 	return func(info *RuntimeInfo) error {
 		if len(clientMetrics.ScrapeTarget) == 0 {
