@@ -44,11 +44,11 @@ helm install fluid fluid/fluid --devel --version xxx -nfluid-system
 *   MasterSlave：CubeFS/Alluxio
 
 
-| 拓扑 |  | 设置 |
-| --- | --- | --- |
-| Master |  | *   workLoadType：appv1/StatefulSet<br>    <br>*   镜像配置<br>    <br>*   启动命令<br>    <br>*   需要创建HeadlessService<br>    <br>*   需要挂载认证密钥 |
+| 拓扑 |  | 设置                                                                                                                                                                    |
+| --- | --- |-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Master |  | *   workLoadType：appv1/StatefulSet<br>    <br>*   镜像配置<br>   <br>*   启动命令<br>  <br>*   UFS挂载命令<br>   <br>*   需要创建HeadlessService<br>    <br>*   需要挂载认证密钥             |
 | Woker：用于单一worker角色定义 |  | *   workLoadType：appv1/StatefulSet<br>    <br>*   镜像配置<br>    <br>*   启动命令<br>    <br>*   需要创建HeadlessService<br>    <br>*   不需要挂载认证密钥<br>    <br>*   需要配置TieredStore |
-| Client | Fuse | *   角色：Posix客户端<br>    <br>*   workLoadType：appv1/Daemonset<br>    <br>*   镜像配置<br>    <br>*   启动命令<br>    <br>*   不需要挂载认证参数<br>    <br>*   不支持TieredStore |
+| Client | Fuse | *   角色：Posix客户端<br>    <br>*   workLoadType：appv1/Daemonset<br>    <br>*   镜像配置<br>    <br>*   启动命令<br>    <br>*   不需要挂载认证参数<br>    <br>*   不支持TieredStore            |
 
 *   P2P Worker：JuiceFS
 
@@ -75,14 +75,16 @@ helm install fluid fluid/fluid --devel --version xxx -nfluid-system
 
 Topology中comopent主要包含以下内容
 
-| 内容 | 说明 | 建议 |
-| --- | --- | --- |
-| WorkloadType | 该组件的负载类型 | Master/Worker作为有状态应用，采取StatefulSet是最为常见的选择，好处在于可以更方便的配合Headless Service提供的格式化DNS域名进行访问<br>Client如果为Fuse客户端，需要负责为节点上的pod提供Posix访问能力，一般采取Daemonset<br>Client如果为SDK poxy，作为中心化的无状态应用，一般采用Deployment配合ClusterIP类型的Service使用 |
-| Options | 默认options，会被用户设置覆盖 |  |
-| PodTemplateSpec | workload原生字段 |  |
-| Service | 目前仅支持Headless |  |
-| Dependencies | EncryptOption | 该组件是否需要Fluid为其挂载Dataset中定义的用于访问数据源的访问密钥 |
-|  | ExtraResources | 该组件是否需要extraResources【当前版本暂未支持】 |
+| 内容 | 说明                 | 建议                                                                                                                                                                                                                      |
+| --- |--------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| WorkloadType | 该组件的负载类型           | Master/Worker作为有状态应用，采取StatefulSet是最为常见的选择，好处在于可以更方便的配合Headless Service提供的格式化DNS域名进行访问<br>Client如果为Fuse客户端，需要负责为节点上的pod提供Posix访问能力，一般采取Daemonset<br>Client如果为SDK poxy，作为中心化的无状态应用，一般采用Deployment配合ClusterIP类型的Service使用 |
+| Options | 默认options，会被用户设置覆盖 |                                                                                                                                                                                                                         |
+| Template | PodTemplateSpec 原生字段   |                                                                                                                                                                                                                         |
+| Service | 目前仅支持Headless      |                                                                                                                                                                                                                         |
+| Dependencies | EncryptOption      | 该组件是否需要Fluid为其挂载Dataset中定义的用于访问数据源的访问密钥 【当前版本暂未支持】,使用 Dataset 的定义的密钥进行访问。                                                                                                                                               |
+|  | ExtraResources     | 该组件是否需要挂载额外的 ConfigMap （其依赖的ConfigMap 信息定义于 CacheRuntimeClass 的 ExtraResources 字段）。                                                                                                                                     |
+| ExecutionEntries| MountUFS           | 对于Master-Worker架构，当Master Ready时，需要执行底层文件系统的挂载操作。                                                                                                                                                                       |
+| ExecutionEntries| ReportSummary      | 缓存系统定义如何获取缓存信息指标的操作 【当前版本暂未支持】。                                                                                                                                                                                            |
 
 ### 步骤2.1 准备K8s适配的原生镜像及明确组件workloadType和PodTemplate
 
@@ -99,13 +101,14 @@ Topology中comopent主要包含以下内容
 
 ### 步骤2.3 确认Fluid CacheRuntime为组件提供的默认ENV，可被容器内脚本所应用
 
-| ENV | 说明 |
-| --- | --- |
-| FLUID\_DATASET\_NAME | dataset名称，一般用于缓存组概念中用于group间的隔离 |
-| FLUID\_DATASET\_NAMESPACE | dataset所在ns |
-| FLUID\_RUNTIME\_CONFIG\_PATH | 由fluid提供的runtime配置路径 |
+| ENV | 说明                               |
+| --- |----------------------------------|
+| FLUID\_DATASET\_NAME | dataset名称，一般用于缓存组概念中用于group间的隔离  |
+| FLUID\_DATASET\_NAMESPACE | dataset所在namespace               |
+| FLUID\_RUNTIME\_CONFIG\_PATH | 由fluid提供的runtime配置路径             |
 | FLUID\_RUNTIME\_MOUNT\_PATH | 常被Client所使用，client执行mount动作的目标路径 |
-| FLUID\_RUNTIME\_COMPONENT\_TYPE | 表明当前组件是master，worker，还是client |
+| FLUID\_RUNTIME\_COMPONENT\_TYPE | 表明当前组件是master，worker，还是client    |
+| FLUID_RUNTIME_COMPONENT_SVC_NAME | 组件如果定义service，其值为 service 的名称    |
 
 ### 步骤2.4 创建RuntimeClass示例及字段说明：
 
@@ -250,7 +253,9 @@ spec:
 
 ```
 
-### 步骤2.6 确认Fluid CacheRuntime为组件提供的RuntimeConfig，基于原生镜像改造entryPoint脚本，进行参数解析
+### 步骤2.6 确认 Fluid CacheRuntime为组件提供的 RuntimeConfig，进行参数解析启动容器
+> 可以基于原生镜像改造 entryPoint 脚本，先解析 RuntimeConfig，并生成对应的配置文件，后再启动容器。
+> 可以参考官方仓库中的 test/gha-e2e/curvine 的集成示例。
 
 在cacheruntime中，控制面的所有流程全都有Fluid来负责，但作为数据缓存引擎，提供服务时，需要整个缓存系统中的**拓扑**、**数据源、认证、缓存信息，**Fluid会根据不同的Component角色来通过配置文件的方式提供至组件内部，由组件内部进程负责解析该配置，来进行环境变量配置、数据引擎配置文件生成等操作，准备就绪后，可拉起数据引擎进程，解析过程中具体可参考下表：
 
