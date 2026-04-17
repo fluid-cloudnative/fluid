@@ -17,13 +17,20 @@ limitations under the License.
 package mutating
 
 import (
-	"testing"
-
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-func TestMutating(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Mutating Suite")
-}
+var _ = Describe("HandlerMap", func() {
+	It("should register a handler under WebhookSchedulePodPath", func() {
+		Expect(HandlerMap).To(HaveKey(common.WebhookSchedulePodPath))
+	})
+
+	It("should map WebhookSchedulePodPath to a *FluidMutatingHandler", func() {
+		handler, ok := HandlerMap[common.WebhookSchedulePodPath]
+		Expect(ok).To(BeTrue())
+		Expect(handler).NotTo(BeNil())
+		Expect(handler).To(BeAssignableToTypeOf(&FluidMutatingHandler{}))
+	})
+})
