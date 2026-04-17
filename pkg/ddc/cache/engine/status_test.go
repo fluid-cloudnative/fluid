@@ -133,6 +133,109 @@ func TestCheckAndUpdateRuntimeStatusRequiresClientReady(t *testing.T) {
 	}
 }
 
+func TestCheckAndUpdateRuntimeStatusRequiresAllClientReplicasReady(t *testing.T) {
+	const (
+		namespace   = "default"
+		runtimeName = "curvine-demo"
+		masterName  = "curvine-demo-master"
+		workerName  = "curvine-demo-worker"
+		clientName  = "curvine-demo-client"
+	)
+
+	runtime := &datav1alpha1.CacheRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              runtimeName,
+			Namespace:         namespace,
+			CreationTimestamp: metav1.NewTime(time.Now().Add(-time.Minute)),
+		},
+	}
+
+	client := fake.NewFakeClientWithScheme(
+		datav1alpha1.UnitTestScheme,
+		runtime,
+		newStatefulSetComponent(masterName, namespace, 1, 1),
+		newStatefulSetComponent(workerName, namespace, 1, 1),
+		newDaemonSetComponent(clientName, namespace, 2, 1),
+	)
+
+	engine := &CacheEngine{
+		Client:    client,
+		Scheme:    datav1alpha1.UnitTestScheme,
+		name:      runtimeName,
+		namespace: namespace,
+		Log:       fake.NullLogger(),
+	}
+
+	value := &common.CacheRuntimeValue{
+		Master: &common.CacheRuntimeComponentValue{
+			Enabled:      true,
+			Name:         masterName,
+			Namespace:    namespace,
+			WorkloadType: metav1.TypeMeta{APIVersion: "apps/v1", Kind: "StatefulSet"},
+		},
+		Worker: &common.CacheRuntimeComponentValue{
+			Enabled:      true,
+			Name:         workerName,
+			Namespace:    namespace,
+			WorkloadType: metav1.TypeMeta{APIVersion: "apps/v1", Kind: "StatefulSet"},
+		},
+		Client: &common.CacheRuntimeComponentValue{
+			Enabled:      true,
+			Name:         clientName,
+			Namespace:    namespace,
+			WorkloadType: metav1.TypeMeta{APIVersion: "apps/v1", Kind: "DaemonSet"},
+		},
+	}
+
+	ready, err := engine.CheckAndUpdateRuntimeStatus(value)
+	if err != nil {
+		t.Fatalf("CheckAndUpdateRuntimeStatus() unexpected error = %v", err)
+	}
+	if ready {
+		t.Fatalf("expected runtime to stay not ready while client is only partially ready")
+	}
+
+	updatedRuntime := &datav1alpha1.CacheRuntime{}
+	if err := client.Get(context.TODO(), types.NamespacedName{Name: runtimeName, Namespace: namespace}, updatedRuntime); err != nil {
+		t.Fatalf("failed to get runtime after partial-ready status update: %v", err)
+	}
+	if updatedRuntime.Status.Client.Phase != datav1alpha1.RuntimePhasePartialReady {
+		t.Fatalf("expected client phase %q, got %q", datav1alpha1.RuntimePhasePartialReady, updatedRuntime.Status.Client.Phase)
+	}
+	if updatedRuntime.Status.SetupDuration != "" {
+		t.Fatalf("expected setup duration to stay empty before all client replicas are ready, got %q", updatedRuntime.Status.SetupDuration)
+	}
+
+	clientDaemonSet := &appsv1.DaemonSet{}
+	if err := client.Get(context.TODO(), types.NamespacedName{Name: clientName, Namespace: namespace}, clientDaemonSet); err != nil {
+		t.Fatalf("failed to get client daemonset: %v", err)
+	}
+	clientDaemonSet.Status.NumberReady = 2
+	clientDaemonSet.Status.NumberAvailable = 2
+	clientDaemonSet.Status.NumberUnavailable = 0
+	if err := client.Status().Update(context.TODO(), clientDaemonSet); err != nil {
+		t.Fatalf("failed to update client daemonset status: %v", err)
+	}
+
+	ready, err = engine.CheckAndUpdateRuntimeStatus(value)
+	if err != nil {
+		t.Fatalf("CheckAndUpdateRuntimeStatus() unexpected error = %v", err)
+	}
+	if !ready {
+		t.Fatalf("expected runtime to become ready once all client replicas are ready")
+	}
+
+	if err := client.Get(context.TODO(), types.NamespacedName{Name: runtimeName, Namespace: namespace}, updatedRuntime); err != nil {
+		t.Fatalf("failed to get runtime after full-ready status update: %v", err)
+	}
+	if updatedRuntime.Status.Client.Phase != datav1alpha1.RuntimePhaseReady {
+		t.Fatalf("expected client phase %q, got %q", datav1alpha1.RuntimePhaseReady, updatedRuntime.Status.Client.Phase)
+	}
+	if updatedRuntime.Status.SetupDuration == "" {
+		t.Fatalf("expected setup duration to be recorded once all client replicas are ready")
+	}
+}
+
 func newStatefulSetComponent(name, namespace string, desiredReplicas, readyReplicas int32) *appsv1.StatefulSet {
 	replicas := desiredReplicas
 	return &appsv1.StatefulSet{

@@ -88,7 +88,6 @@ func (e *CacheEngine) setClientComponentStatus(componentValue *common.CacheRunti
 			ready = true
 		} else if clientStatus.ReadyReplicas >= 1 {
 			clientStatus.Phase = fluidapi.RuntimePhasePartialReady
-			ready = true
 		}
 	} else {
 		clientStatus.Phase = fluidapi.RuntimePhaseNotReady
