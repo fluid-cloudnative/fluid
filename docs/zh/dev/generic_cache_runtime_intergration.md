@@ -266,99 +266,52 @@ spec:
 {
   "mounts": [
     {
-      "mountPoint": "demofs:///",
+      "mountPoint": "s3://test",
       "options": {
-        "key1": "value1",
-        "key2": "value2"
+        "access": "minioadmin",
+        "endpoint_url": "http://minio:9000",
+        "path_style": "true",
+        "region_name": "us-east-1",
+        "secret": "minioadmin"
       },
-      "name": "demo"
+      "name": "minio",
+      "path": "/minio"
     }
   ],
-  "targetPath": "/runtime-mnt/cache/default/cachefs-demo/thin-fuse",
   "accessModes": [
     "ReadWriteMany"
   ],
+  "targetPath": "/runtime-mnt/cache/default/curvine-demo/cache-fuse",
   "master": {
     "enabled": true,
+    "name": "curvine-demo-master",
     "options": {
-      "key1": "value1",
-        "key2": "value2"
+      "key1": "master-value1"
     },
+    "replicas": 1,
+    "service": {
+      "name": "svc-curvine-demo-master"
+    }
   },
   "worker": {
     "enabled": true,
+    "name": "curvine-demo-worker",
     "options": {
-      "key1": "value1",
-        "key2": "value2"
+      "key1": "worker-value1"
     },
-    "tieredStore": {
-      "levels": [
-        {
-          "path": "/cache-data",
-          "high": "0.8",
-          "low": "0.5",
-          "quota": "40Gi"
-        }
-      ]
-    },
+    "replicas": 1,
+    "service": {
+      "name": "svc-curvine-demo-worker"
+    }
   },
   "client": {
     "enabled": true,
+    "name": "curvine-demo-client",
     "options": {
-      "key1": "value1",
-        "key2": "value2"
+      "key1": "value1"
     },
-    "encryptOption": {
-      "access-key": "/etc/fluid/secrets/jfs-secret/access-key",
-      "secret-key": "/etc/fluid/secrets/jfs-secret/secret-key",
-      "token": "/etc/fluid/secrets/jfs-secret/token"
-    },
-  },
-  "topology": {
-    "master": {
-      "podConfigs": [
-        {
-          "podName": "cachefs-demo-master-0",
-          "podIP": "10.xx.xx.xx"
-        },
-        {
-          "podName": "cachefs-demo-master-1",
-          "podIP": "10.xx.xx.xx"
-        }
-      ],
-      "service": {
-        "name": "cachefs-demo-master"
-      }
-    },
-    "worker": {
-      "podConfigs": [
-        {
-          "podName": "cachefs-demo-worker-0",
-          "podIP": "10.xx.xx.xx"
-        },
-        {
-          "podName": "cachefs-demo-worker-1",
-          "podIP": "10.xx.xx.xx"
-        }
-      ],
-      "service": {
-        "name": ""
-      }
-    },
-    "client": {
-      "podConfigs": [
-        {
-          "podName": "cachefs-demo-client-xxxxx",
-          "podIP": "10.xx.xx.xx"
-        },
-        {
-          "podName": "cachefs-demo-client-xxxxx",
-          "podIP": "10.xx.xx.xx"
-        }
-      ],
-      "service": {
-        "name": ""
-      }
+    "service": {
+      "name": ""
     }
   }
 }

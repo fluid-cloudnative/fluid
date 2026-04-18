@@ -57,6 +57,7 @@
   - [API_Doc](dev/api_doc.md)
   - [Develop with Kind on MacOS](dev/dev_with_kind.md)
   - [Performance Analyze with pprof](dev/pprof.md)
+  - [CacheRuntime Integration Guide](dev/generic_cache_runtime_integration.md)
   + Client Usage
     - [How to create and delete fluid resources using Go client](dev/use_go_create_resource.md)
     - [How to use client other than Go client](dev/multiple-client-support.md)
