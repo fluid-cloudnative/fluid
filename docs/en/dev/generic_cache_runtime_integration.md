@@ -44,11 +44,11 @@ The table below shows basic information examples for deploying several major cac
 *   MasterSlave: CubeFS/Alluxio
 
 
-| Topology |  | Settings                                                                                                                                                                    |
-| --- | --- |-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Master |  | *   workLoadType: apps/v1/StatefulSet<br>    <br>*   Image configuration<br>   <br>*   Startup command<br>  <br>*   UFS mount command<br>   <br>*   HeadlessService needs to be created<br>    <br>*   Authentication keys need to be mounted             |
+| Topology |  | Settings                                                                                                                                                                                                                                                                  |
+| --- | --- |---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Master |  | *   workLoadType: apps/v1/StatefulSet<br>    <br>*   Image configuration<br>   <br>*   Startup command<br>  <br>*   UFS mount command<br>   <br>*   HeadlessService needs to be created<br>    <br>*   Authentication keys need to be mounted                             |
 | Worker: Used for single worker role definition |  | *   workLoadType: apps/v1/StatefulSet<br>    <br>*   Image configuration<br>    <br>*   Startup command<br>    <br>*   HeadlessService needs to be created<br>    <br>*   Authentication keys do NOT need to be mounted<br>    <br>*   TieredStore needs to be configured |
-| Client | Fuse | *   Role: Posix client<br>    <br>*   workLoadType: apps/v1/Daemonset<br>    <br>*   Image configuration<br>    <br>*   Startup command<br>    <br>*   Authentication parameters do NOT need to be mounted<br>    <br>*   TieredStore is NOT supported            |
+| Client | Fuse | *   Role: Posix client<br>    <br>*   workLoadType: apps/v1/DaemonSet<br>    <br>*   Image configuration<br>    <br>*   Startup command<br>    <br>*   Authentication parameters do NOT need to be mounted<br>    <br>*   TieredStore is NOT supported                    |
 
 *   P2P Worker: JuiceFS
 
@@ -56,7 +56,7 @@ The table below shows basic information examples for deploying several major cac
 | Topology | Settings |
 | --- | --- |
 | Worker: Used for single worker role definition | *   workLoadType: apps/v1/StatefulSet<br>    <br>*   Image configuration<br>    <br>*   Startup command<br>    <br>*   HeadlessService<br>    <br>*   Authentication parameters need to be mounted<br>    <br>*   TieredStore is supported |
-| Client | *   Role: Fuse client<br>    <br>*   workLoadType: apps/v1/Daemonset<br>    <br>*   Image configuration<br>    <br>*   Startup command<br>    <br>*   Service is NOT required<br>    <br>*   Authentication parameters need to be mounted<br>    <br>*   TieredStore is supported |
+| Client | *   Role: Fuse client<br>    <br>*   workLoadType: apps/v1/DaemonSet<br>    <br>*   Image configuration<br>    <br>*   Startup command<br>    <br>*   Service is NOT required<br>    <br>*   Authentication parameters need to be mounted<br>    <br>*   TieredStore is supported |
 
 ## Step 2. Prepare Cache System Template
 
@@ -77,7 +77,7 @@ The component in Topology mainly contains the following content:
 
 | Content | Description                 | Recommendation                                                                                                                                                                                                                      |
 | --- |--------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| WorkloadType | The workload type of this component           | For stateful applications like Master/Worker, StatefulSet is the most common choice, as it can more easily cooperate with formatted DNS domain names provided by Headless Service for access<br>If Client is a Fuse client responsible for providing Posix access capability for pods on nodes, Daemonset is generally used<br>If Client is an SDK proxy as a centralized stateless application, Deployment with ClusterIP type Service is generally used |
+| WorkloadType | The workload type of this component           | For stateful applications like Master/Worker, StatefulSet is the most common choice, as it can more easily cooperate with formatted DNS domain names provided by Headless Service for access<br>If Client is a Fuse client responsible for providing Posix access capability for pods on nodes, DaemonSet is generally used<br>If Client is an SDK proxy as a centralized stateless application, Deployment with ClusterIP type Service is generally used |
 | Options | Default options, will be overridden by user settings |                                                                                                                                                                                                                         |
 | Template | PodTemplateSpec native field   |                                                                                                                                                                                                                         |
 | Service | Currently only supports Headless      |                                                                                                                                                                                                                         |
@@ -126,7 +126,7 @@ topology:
     service: # Need to create Headless Service for master, only supported when workloadType is StatefulSet
       headless: {}
     dependencies:
-      encryptOption: {} # Need to provide encryptOption declared by user in dataset for master
+      encryptOption: {} # Current not support
     podTemplateSpec:
       spec:
         restartPolicy: Always
@@ -144,7 +144,7 @@ topology:
       kind: StatefulSet
     service:
       headless: {} # Need to create Headless Service for worker, only supported when workloadType is StatefulSet
-    dependencies: {} # Difference from #14 is that fluid will NOT provide encryptOption declared by user in dataset for worker
+    dependencies: {} 
     podTemplateSpec:
       spec:
         restartPolicy: Always

@@ -46,17 +46,17 @@ helm install fluid fluid/fluid --devel --version xxx -nfluid-system
 
 | 拓扑 |  | 设置                                                                                                                                                                    |
 | --- | --- |-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Master |  | *   workLoadType：appv1/StatefulSet<br>    <br>*   镜像配置<br>   <br>*   启动命令<br>  <br>*   UFS挂载命令<br>   <br>*   需要创建HeadlessService<br>    <br>*   需要挂载认证密钥             |
-| Woker：用于单一worker角色定义 |  | *   workLoadType：appv1/StatefulSet<br>    <br>*   镜像配置<br>    <br>*   启动命令<br>    <br>*   需要创建HeadlessService<br>    <br>*   不需要挂载认证密钥<br>    <br>*   需要配置TieredStore |
-| Client | Fuse | *   角色：Posix客户端<br>    <br>*   workLoadType：appv1/Daemonset<br>    <br>*   镜像配置<br>    <br>*   启动命令<br>    <br>*   不需要挂载认证参数<br>    <br>*   不支持TieredStore            |
+| Master |  | *   workLoadType：apps/v1/StatefulSet<br>    <br>*   镜像配置<br>   <br>*   启动命令<br>  <br>*   UFS挂载命令<br>   <br>*   需要创建HeadlessService<br>    <br>*   需要挂载认证密钥             |
+| Woker：用于单一worker角色定义 |  | *   workLoadType：apps/v1/StatefulSet<br>    <br>*   镜像配置<br>    <br>*   启动命令<br>    <br>*   需要创建HeadlessService<br>    <br>*   不需要挂载认证密钥<br>    <br>*   需要配置TieredStore |
+| Client | Fuse | *   角色：Posix客户端<br>    <br>*   workLoadType：apps/v1/Daemonset<br>    <br>*   镜像配置<br>    <br>*   启动命令<br>    <br>*   不需要挂载认证参数<br>    <br>*   不支持TieredStore            |
 
 *   P2P Worker：JuiceFS
 
 
-| 拓扑 | 设置 |
-| --- | --- |
-| Woker：用于单一worker角色定义 | *   workLoadType：appv1/StatefulSet<br>    <br>*   镜像配置<br>    <br>*   启动命令<br>    <br>*   HeadlessService<br>    <br>*   需要挂载认证参数<br>    <br>*   支持TieredStore |
-| Client | *   角色：Fuse客户端<br>    <br>*   workLoadType：appv1/Daemonset<br>    <br>*   镜像配置<br>    <br>*   启动命令<br>    <br>*   无需Service<br>    <br>*   需要挂载认证参数<br>    <br>*   支持TieredStore |
+| 拓扑 | 设置                                                                                                                                                                                 |
+| --- |------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Woker：用于单一worker角色定义 | *   workLoadType：apps/v1/StatefulSet<br>    <br>*   镜像配置<br>    <br>*   启动命令<br>    <br>*   HeadlessService<br>    <br>*   需要挂载认证参数<br>    <br>*   支持TieredStore                    |
+| Client | *   角色：Fuse客户端<br>    <br>*   workLoadType：apps/v1/Daemonset<br>    <br>*   镜像配置<br>    <br>*   启动命令<br>    <br>*   无需Service<br>    <br>*   需要挂载认证参数<br>    <br>*   支持TieredStore |
 
 ## 步骤 2. 准备缓存系统模板
 
@@ -75,16 +75,16 @@ helm install fluid fluid/fluid --devel --version xxx -nfluid-system
 
 Topology中comopent主要包含以下内容
 
-| 内容 | 说明                 | 建议                                                                                                                                                                                                                      |
-| --- |--------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| WorkloadType | 该组件的负载类型           | Master/Worker作为有状态应用，采取StatefulSet是最为常见的选择，好处在于可以更方便的配合Headless Service提供的格式化DNS域名进行访问<br>Client如果为Fuse客户端，需要负责为节点上的pod提供Posix访问能力，一般采取Daemonset<br>Client如果为SDK poxy，作为中心化的无状态应用，一般采用Deployment配合ClusterIP类型的Service使用 |
-| Options | 默认options，会被用户设置覆盖 |                                                                                                                                                                                                                         |
-| Template | PodTemplateSpec 原生字段   |                                                                                                                                                                                                                         |
-| Service | 目前仅支持Headless      |                                                                                                                                                                                                                         |
-| Dependencies | EncryptOption      | 该组件是否需要Fluid为其挂载Dataset中定义的用于访问数据源的访问密钥 【当前版本暂未支持】,使用 Dataset 的定义的密钥进行访问。                                                                                                                                               |
-|  | ExtraResources     | 该组件是否需要挂载额外的 ConfigMap （其依赖的ConfigMap 信息定义于 CacheRuntimeClass 的 ExtraResources 字段）。                                                                                                                                     |
-| ExecutionEntries| MountUFS           | 对于Master-Worker架构，当Master Ready时，需要执行底层文件系统的挂载操作。                                                                                                                                                                       |
-| ExecutionEntries| ReportSummary      | 缓存系统定义如何获取缓存信息指标的操作 【当前版本暂未支持】。                                                                                                                                                                                            |
+| 内容 | 说明                 | 建议                                                                                                                                                                                                                       |
+| --- |--------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| WorkloadType | 该组件的负载类型           | Master/Worker作为有状态应用，采取StatefulSet是最为常见的选择，好处在于可以更方便的配合Headless Service提供的格式化DNS域名进行访问<br>Client如果为Fuse客户端，需要负责为节点上的pod提供Posix访问能力，一般采取DaemonSet<br>Client如果为SDK proxy，作为中心化的无状态应用，一般采用Deployment配合ClusterIP类型的Service使用 |
+| Options | 默认options，会被用户设置覆盖 |                                                                                                                                                                                                                          |
+| Template | PodTemplateSpec 原生字段   |                                                                                                                                                                                                                          |
+| Service | 目前仅支持Headless      |                                                                                                                                                                                                                          |
+| Dependencies | EncryptOption      | 该组件是否需要Fluid为其挂载Dataset中定义的用于访问数据源的访问密钥 【当前版本暂未支持】,使用 Dataset 的定义的密钥进行访问。                                                                                                                                                |
+|  | ExtraResources     | 该组件是否需要挂载额外的 ConfigMap （其依赖的ConfigMap 信息定义于 CacheRuntimeClass 的 ExtraResources 字段）。                                                                                                                                      |
+| ExecutionEntries| MountUFS           | 对于Master-Worker架构，当Master Ready时，需要执行底层文件系统的挂载操作。                                                                                                                                                                        |
+| ExecutionEntries| ReportSummary      | 缓存系统定义如何获取缓存信息指标的操作 【当前版本暂未支持】。                                                                                                                                                                                          |
 
 ### 步骤2.1 准备K8s适配的原生镜像及明确组件workloadType和PodTemplate
 
@@ -126,7 +126,7 @@ topology:
     service: #需要为master创建Headless Service，仅当workloadType为Statefulset时支持
       headless: {}
     dependencies:
-      encryptOption: {} #需要为master提供用户在dataset中声明的encryptOption
+      encryptOption: {} # 当前暂未支持
     podTemplateSpec:
       spec:
         restartPolicy: Always
@@ -144,7 +144,7 @@ topology:
       kind: StatefulSet
     service:
       headless: {} #需要为worker创建Headless Service，仅当workloadType为Statefulset时支持
-    dependencies: {} #此处与#14区别为fluid不会为worker提供用户在dataset中声明的encryptOption
+    dependencies: {} 
     podTemplateSpec:
       spec:
         restartPolicy: Always
