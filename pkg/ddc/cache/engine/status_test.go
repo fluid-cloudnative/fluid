@@ -103,7 +103,7 @@ func TestCheckAndUpdateRuntimeStatusClientPartialReadyDoesNotBlockRuntimeReady(t
 	}
 }
 
-func TestCheckAndUpdateRuntimeStatusClientZeroDesiredReplicasReportsReady(t *testing.T) {
+func TestCheckAndUpdateRuntimeStatusClientZeroDesiredReplicasStayNotReady(t *testing.T) {
 	engine, client := newStatusTestEngineWithClient(
 		t,
 		fake.NewFakeClientWithScheme(
@@ -124,8 +124,8 @@ func TestCheckAndUpdateRuntimeStatusClientZeroDesiredReplicasReportsReady(t *tes
 	}
 
 	updatedRuntime := getUpdatedRuntime(t, client)
-	if updatedRuntime.Status.Client.Phase != datav1alpha1.RuntimePhaseReady {
-		t.Fatalf("expected client phase %q, got %q", datav1alpha1.RuntimePhaseReady, updatedRuntime.Status.Client.Phase)
+	if updatedRuntime.Status.Client.Phase != datav1alpha1.RuntimePhaseNotReady {
+		t.Fatalf("expected client phase %q, got %q", datav1alpha1.RuntimePhaseNotReady, updatedRuntime.Status.Client.Phase)
 	}
 	if updatedRuntime.Status.Client.DesiredReplicas != 0 {
 		t.Fatalf("expected desired replicas to stay 0, got %d", updatedRuntime.Status.Client.DesiredReplicas)

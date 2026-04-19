@@ -79,7 +79,7 @@ func (e *CacheEngine) setClientComponentStatus(componentValue *common.CacheRunti
 	if err != nil {
 		return false, err
 	}
-	if clientStatus.DesiredReplicas == 0 || clientStatus.ReadyReplicas >= clientStatus.DesiredReplicas {
+	if clientStatus.DesiredReplicas > 0 && clientStatus.ReadyReplicas >= clientStatus.DesiredReplicas {
 		clientStatus.Phase = fluidapi.RuntimePhaseReady
 		ready = true
 	} else if clientStatus.ReadyReplicas > 0 {
