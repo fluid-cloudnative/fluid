@@ -1,5 +1,5 @@
 /*
- Copyright 2024 The Fluid Authors.
+ Copyright 2026 The Fluid Authors.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -21,41 +21,53 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
+func newTestScheme() *runtime.Scheme {
+	testScheme := runtime.NewScheme()
+	_ = v1.AddToScheme(testScheme)
+	_ = batchv1.AddToScheme(testScheme)
+	_ = datav1alpha1.AddToScheme(testScheme)
+	return testScheme
+}
+
 var _ = Describe("DataOpJobReconciler", func() {
-	const controllerUIDKey = "controller-uid"
+	const (
+		controllerUIDKey  = "controller-uid"
+		testNodeName      = "node01"
+		testPodName       = "test-pod"
+		testJobName       = "test-job"
+		customLabelKey    = "custom-label"
+		testControllerUID = "test-uid"
+	)
 
 	var testScheme *runtime.Scheme
 
 	BeforeEach(func() {
-		testScheme = runtime.NewScheme()
-		Expect(v1.AddToScheme(testScheme)).To(Succeed())
-		Expect(batchv1.AddToScheme(testScheme)).To(Succeed())
-		Expect(datav1alpha1.AddToScheme(testScheme)).To(Succeed())
+		testScheme = newTestScheme()
 	})
 
 	Describe("ControllerName", func() {
 		It("returns the controller name constant", func() {
-			f := &DataOpJobReconciler{Log: fake.NullLogger()}
-			Expect(f.ControllerName()).To(Equal(DataOpJobControllerName))
+			reconciler := &DataOpJobReconciler{Log: fake.NullLogger()}
+			Expect(reconciler.ControllerName()).To(Equal(DataOpJobControllerName))
 		})
 	})
 
 	Describe("ManagedResource", func() {
 		It("returns a batchv1.Job object", func() {
-			f := &DataOpJobReconciler{Log: fake.NullLogger()}
-			obj := f.ManagedResource()
+			reconciler := &DataOpJobReconciler{Log: fake.NullLogger()}
+			obj := reconciler.ManagedResource()
 			Expect(obj).To(BeAssignableToTypeOf(&batchv1.Job{}))
 		})
 	})
@@ -72,18 +84,18 @@ var _ = Describe("DataOpJobReconciler", func() {
 
 	Describe("Reconcile", func() {
 		Context("when the job does not exist", func() {
-			It("returns an error (not-found propagates)", func() {
+			It("returns an error when the job is missing", func() {
 				c := fake.NewFakeClientWithScheme(testScheme)
-				f := &DataOpJobReconciler{Client: c, Log: fake.NullLogger()}
-				_, err := f.Reconcile(context.Background(), reconcile.Request{
+				reconciler := &DataOpJobReconciler{Client: c, Log: fake.NullLogger()}
+				_, err := reconciler.Reconcile(context.Background(), reconcile.Request{
 					NamespacedName: types.NamespacedName{Name: "missing-job", Namespace: "default"},
 				})
 				Expect(err).To(HaveOccurred())
 			})
 		})
 
-		Context("when job should not be in queue (cronjob label)", func() {
-			It("returns no-requeue without error", func() {
+		Context("when job should not be in queue", func() {
+			It("returns no requeue without error for cron jobs", func() {
 				job := &batchv1.Job{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "cron-job",
@@ -95,8 +107,8 @@ var _ = Describe("DataOpJobReconciler", func() {
 					},
 				}
 				c := fake.NewFakeClientWithScheme(testScheme, job)
-				f := &DataOpJobReconciler{Client: c, Log: fake.NullLogger()}
-				result, err := f.Reconcile(context.Background(), reconcile.Request{
+				reconciler := &DataOpJobReconciler{Client: c, Log: fake.NullLogger()}
+				result, err := reconciler.Reconcile(context.Background(), reconcile.Request{
 					NamespacedName: types.NamespacedName{Name: "cron-job", Namespace: "default"},
 				})
 				Expect(err).NotTo(HaveOccurred())
@@ -105,9 +117,7 @@ var _ = Describe("DataOpJobReconciler", func() {
 		})
 
 		Context("when job is a valid fluid job without affinity annotation", func() {
-			It("injects the dataflow affinity annotation and returns no-requeue", func() {
-				const testJobName = "test-job"
-
+			It("injects the dataflow affinity annotation and returns no requeue", func() {
 				job := &batchv1.Job{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      testJobName,
@@ -118,8 +128,8 @@ var _ = Describe("DataOpJobReconciler", func() {
 					},
 				}
 				c := fake.NewFakeClientWithScheme(testScheme, job)
-				f := &DataOpJobReconciler{Client: c, Log: fake.NullLogger()}
-				result, err := f.Reconcile(context.Background(), reconcile.Request{
+				reconciler := &DataOpJobReconciler{Client: c, Log: fake.NullLogger()}
+				result, err := reconciler.Reconcile(context.Background(), reconcile.Request{
 					NamespacedName: types.NamespacedName{Name: testJobName, Namespace: "default"},
 				})
 				Expect(err).NotTo(HaveOccurred())
@@ -132,10 +142,8 @@ var _ = Describe("DataOpJobReconciler", func() {
 		})
 
 		Context("when job is complete and has a succeeded pod", func() {
-			It("injects node labels and returns no-requeue", func() {
-				const (
-					completeJobName = "complete-job"
-				)
+			It("injects node labels and returns no requeue", func() {
+				const completeJobName = "complete-job"
 
 				job := &batchv1.Job{
 					ObjectMeta: metav1.ObjectMeta{
@@ -156,9 +164,7 @@ var _ = Describe("DataOpJobReconciler", func() {
 						},
 					},
 					Status: batchv1.JobStatus{
-						Conditions: []batchv1.JobCondition{
-							{Type: batchv1.JobComplete},
-						},
+						Conditions: []batchv1.JobCondition{{Type: batchv1.JobComplete}},
 					},
 				}
 				pod := &v1.Pod{
@@ -169,26 +175,22 @@ var _ = Describe("DataOpJobReconciler", func() {
 							controllerUIDKey: "abc-123",
 						},
 					},
-					Spec: v1.PodSpec{
-						NodeName: "node01",
-					},
-					Status: v1.PodStatus{
-						Phase: v1.PodSucceeded,
-					},
+					Spec:   v1.PodSpec{NodeName: testNodeName},
+					Status: v1.PodStatus{Phase: v1.PodSucceeded},
 				}
 				node := &v1.Node{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "node01",
+						Name: testNodeName,
 						Labels: map[string]string{
-							common.K8sNodeNameLabelKey: "node01",
+							common.K8sNodeNameLabelKey: testNodeName,
 							common.K8sRegionLabelKey:   "region01",
 							common.K8sZoneLabelKey:     "zone01",
 						},
 					},
 				}
 				c := fake.NewFakeClientWithScheme(testScheme, job, pod, node)
-				f := &DataOpJobReconciler{Client: c, Log: fake.NullLogger()}
-				result, err := f.Reconcile(context.Background(), reconcile.Request{
+				reconciler := &DataOpJobReconciler{Client: c, Log: fake.NullLogger()}
+				result, err := reconciler.Reconcile(context.Background(), reconcile.Request{
 					NamespacedName: types.NamespacedName{Name: completeJobName, Namespace: "default"},
 				})
 				Expect(err).NotTo(HaveOccurred())
@@ -196,10 +198,65 @@ var _ = Describe("DataOpJobReconciler", func() {
 
 				updatedJob := &batchv1.Job{}
 				Expect(c.Get(context.Background(), types.NamespacedName{Name: completeJobName, Namespace: "default"}, updatedJob)).To(Succeed())
-				Expect(updatedJob.Annotations).To(HaveKeyWithValue(common.AnnotationDataFlowCustomizedAffinityPrefix+common.K8sNodeNameLabelKey, "node01"))
+				Expect(updatedJob.Annotations).To(HaveKeyWithValue(common.AnnotationDataFlowCustomizedAffinityPrefix+common.K8sNodeNameLabelKey, testNodeName))
 				Expect(updatedJob.Annotations).To(HaveKeyWithValue(common.AnnotationDataFlowCustomizedAffinityPrefix+common.K8sRegionLabelKey, "region01"))
 				Expect(updatedJob.Annotations).To(HaveKeyWithValue(common.AnnotationDataFlowCustomizedAffinityPrefix+common.K8sZoneLabelKey, "zone01"))
 			})
+		})
+	})
+
+	Describe("fillCustomizedNodeAffinity", func() {
+		It("fills annotations with node labels", func() {
+			annotationsToInject := map[string]string{}
+			nodeLabels := map[string]string{
+				common.K8sNodeNameLabelKey: testNodeName,
+				common.K8sRegionLabelKey:   "region01",
+				common.K8sZoneLabelKey:     "zone01",
+				customLabelKey:             "custom-value",
+			}
+			exposedLabelNames := []string{
+				common.K8sNodeNameLabelKey,
+				common.K8sRegionLabelKey,
+				common.K8sZoneLabelKey,
+				customLabelKey,
+			}
+
+			fillCustomizedNodeAffinity(annotationsToInject, nodeLabels, exposedLabelNames)
+
+			Expect(annotationsToInject).To(HaveLen(4))
+			Expect(annotationsToInject[common.AnnotationDataFlowCustomizedAffinityPrefix+common.K8sNodeNameLabelKey]).To(Equal(testNodeName))
+			Expect(annotationsToInject[common.AnnotationDataFlowCustomizedAffinityPrefix+common.K8sRegionLabelKey]).To(Equal("region01"))
+			Expect(annotationsToInject[common.AnnotationDataFlowCustomizedAffinityPrefix+common.K8sZoneLabelKey]).To(Equal("zone01"))
+			Expect(annotationsToInject[common.AnnotationDataFlowCustomizedAffinityPrefix+customLabelKey]).To(Equal("custom-value"))
+		})
+
+		It("skips non-existent labels", func() {
+			annotationsToInject := map[string]string{}
+			nodeLabels := map[string]string{
+				common.K8sNodeNameLabelKey: testNodeName,
+			}
+			exposedLabelNames := []string{
+				common.K8sNodeNameLabelKey,
+				"non-existent-label",
+			}
+
+			fillCustomizedNodeAffinity(annotationsToInject, nodeLabels, exposedLabelNames)
+
+			Expect(annotationsToInject).To(HaveLen(1))
+			Expect(annotationsToInject[common.AnnotationDataFlowCustomizedAffinityPrefix+common.K8sNodeNameLabelKey]).To(Equal(testNodeName))
+		})
+
+		It("handles labels with whitespace", func() {
+			annotationsToInject := map[string]string{}
+			nodeLabels := map[string]string{
+				common.K8sNodeNameLabelKey: testNodeName,
+			}
+			exposedLabelNames := []string{" " + common.K8sNodeNameLabelKey + " "}
+
+			fillCustomizedNodeAffinity(annotationsToInject, nodeLabels, exposedLabelNames)
+
+			Expect(annotationsToInject).To(HaveLen(1))
+			Expect(annotationsToInject[common.AnnotationDataFlowCustomizedAffinityPrefix+common.K8sNodeNameLabelKey]).To(Equal(testNodeName))
 		})
 	})
 
@@ -207,10 +264,10 @@ var _ = Describe("DataOpJobReconciler", func() {
 		const jobControllerUIDValue = "455afc34-93b1-4e75-a6fa-8e13d2c6ca06"
 
 		Context("when job has a succeeded pod", func() {
-			It("should inject node labels as annotations onto the job", func() {
+			It("injects node labels as annotations onto the job", func() {
 				job := &batchv1.Job{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "test-job",
+						Name: testJobName,
 						Labels: map[string]string{
 							common.LabelAnnotationManagedBy: common.Fluid,
 						},
@@ -225,7 +282,7 @@ var _ = Describe("DataOpJobReconciler", func() {
 				}
 				pod := &v1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "test-pod",
+						Name: testPodName,
 						Labels: map[string]string{
 							controllerUIDKey: jobControllerUIDValue,
 						},
@@ -234,34 +291,28 @@ var _ = Describe("DataOpJobReconciler", func() {
 						},
 					},
 					Spec: v1.PodSpec{
-						NodeName: "node01",
+						NodeName: testNodeName,
 						Affinity: &v1.Affinity{
 							NodeAffinity: &v1.NodeAffinity{
 								RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
-									NodeSelectorTerms: []v1.NodeSelectorTerm{
-										{
-											MatchExpressions: []v1.NodeSelectorRequirement{
-												{
-													Key:      "k8s.gpu",
-													Operator: v1.NodeSelectorOpIn,
-													Values:   []string{"true"},
-												},
-											},
-										},
-									},
+									NodeSelectorTerms: []v1.NodeSelectorTerm{{
+										MatchExpressions: []v1.NodeSelectorRequirement{{
+											Key:      "k8s.gpu",
+											Operator: v1.NodeSelectorOpIn,
+											Values:   []string{"true"},
+										}},
+									}},
 								},
 							},
 						},
 					},
-					Status: v1.PodStatus{
-						Phase: v1.PodSucceeded,
-					},
+					Status: v1.PodStatus{Phase: v1.PodSucceeded},
 				}
 				node := &v1.Node{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "node01",
+						Name: testNodeName,
 						Labels: map[string]string{
-							common.K8sNodeNameLabelKey: "node01",
+							common.K8sNodeNameLabelKey: testNodeName,
 							common.K8sRegionLabelKey:   "region01",
 							common.K8sZoneLabelKey:     "zone01",
 							"k8s.gpu":                  "true",
@@ -270,30 +321,24 @@ var _ = Describe("DataOpJobReconciler", func() {
 				}
 
 				c := fake.NewFakeClientWithScheme(testScheme, job, pod, node)
-				f := &DataOpJobReconciler{
-					Client: c,
-					Log:    fake.NullLogger(),
-				}
+				reconciler := &DataOpJobReconciler{Client: c, Log: fake.NullLogger()}
 
-				err := f.injectPodNodeLabelsToJob(job)
+				err := reconciler.injectPodNodeLabelsToJob(job)
 				Expect(err).NotTo(HaveOccurred())
 
-				wantAnnotations := map[string]string{
-					common.AnnotationDataFlowCustomizedAffinityPrefix + common.K8sNodeNameLabelKey: "node01",
+				expectedAnnotations := map[string]string{
+					common.AnnotationDataFlowCustomizedAffinityPrefix + common.K8sNodeNameLabelKey: testNodeName,
 					common.AnnotationDataFlowCustomizedAffinityPrefix + common.K8sRegionLabelKey:   "region01",
 					common.AnnotationDataFlowCustomizedAffinityPrefix + common.K8sZoneLabelKey:     "zone01",
 					common.AnnotationDataFlowCustomizedAffinityPrefix + "k8s.gpu":                  "true",
 				}
-				Expect(job.Annotations).To(Equal(wantAnnotations))
+				Expect(job.Annotations).To(Equal(expectedAnnotations))
 			})
 		})
 
 		Context("when job has only a failed pod", func() {
-			It("should return an error", func() {
+			It("returns an error", func() {
 				job := &batchv1.Job{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "test-job-failed",
-					},
 					Spec: batchv1.JobSpec{
 						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
@@ -304,32 +349,110 @@ var _ = Describe("DataOpJobReconciler", func() {
 				}
 				pod := &v1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "test-pod",
+						Name: testPodName,
 						Labels: map[string]string{
 							controllerUIDKey: jobControllerUIDValue,
 						},
 					},
-					Status: v1.PodStatus{
-						Phase: v1.PodFailed,
-					},
+					Status: v1.PodStatus{Phase: v1.PodFailed},
 				}
 				node := &v1.Node{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "node01",
+						Name: testNodeName,
 						Labels: map[string]string{
-							common.K8sNodeNameLabelKey: "node01",
+							common.K8sNodeNameLabelKey: testNodeName,
 						},
 					},
 				}
 
 				c := fake.NewFakeClientWithScheme(testScheme, job, pod, node)
-				f := &DataOpJobReconciler{
-					Client: c,
-					Log:    fake.NullLogger(),
+				reconciler := &DataOpJobReconciler{Client: c, Log: fake.NullLogger()}
+
+				err := reconciler.injectPodNodeLabelsToJob(job)
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		Context("when pod has no node name", func() {
+			It("returns an error", func() {
+				job := &batchv1.Job{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: testJobName,
+						Labels: map[string]string{
+							common.LabelAnnotationManagedBy: common.Fluid,
+						},
+					},
+					Spec: batchv1.JobSpec{
+						Selector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								controllerUIDKey: testControllerUID,
+							},
+						},
+					},
+				}
+				pod := &v1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: testPodName,
+						Labels: map[string]string{
+							controllerUIDKey: testControllerUID,
+						},
+					},
+					Spec:   v1.PodSpec{NodeName: ""},
+					Status: v1.PodStatus{Phase: v1.PodSucceeded},
 				}
 
-				err := f.injectPodNodeLabelsToJob(job)
+				c := fake.NewFakeClientWithScheme(testScheme, job, pod)
+				reconciler := &DataOpJobReconciler{Client: c, Log: fake.NullLogger()}
+
+				err := reconciler.injectPodNodeLabelsToJob(job)
 				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("no node name"))
+			})
+		})
+
+		Context("when job has nil annotations", func() {
+			It("creates the annotations map before injecting labels", func() {
+				job := &batchv1.Job{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: testJobName,
+						Labels: map[string]string{
+							common.LabelAnnotationManagedBy: common.Fluid,
+						},
+						Annotations: nil,
+					},
+					Spec: batchv1.JobSpec{
+						Selector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								controllerUIDKey: testControllerUID,
+							},
+						},
+					},
+				}
+				pod := &v1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: testPodName,
+						Labels: map[string]string{
+							controllerUIDKey: testControllerUID,
+						},
+					},
+					Spec:   v1.PodSpec{NodeName: testNodeName},
+					Status: v1.PodStatus{Phase: v1.PodSucceeded},
+				}
+				node := &v1.Node{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: testNodeName,
+						Labels: map[string]string{
+							common.K8sNodeNameLabelKey: testNodeName,
+						},
+					},
+				}
+
+				c := fake.NewFakeClientWithScheme(testScheme, job, pod, node)
+				reconciler := &DataOpJobReconciler{Client: c, Log: fake.NullLogger()}
+
+				err := reconciler.injectPodNodeLabelsToJob(job)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(job.Annotations).NotTo(BeNil())
 			})
 		})
 	})

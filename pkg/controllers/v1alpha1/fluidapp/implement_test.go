@@ -1,5 +1,5 @@
 /*
-  Copyright 2022 The Fluid Authors.
+  Copyright 2026 The Fluid Authors.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,70 +17,86 @@
 package fluidapp
 
 import (
-	"testing"
+	"fmt"
 
 	"github.com/agiledragon/gomonkey/v2"
-	"github.com/go-logr/logr"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/record"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
-func TestFluidAppReconcilerImplement_umountFuseSidecars(t *testing.T) {
-	mockExec := func(p1, p2, p3 string, p4 []string) (stdout string, stderr string, e error) {
-		return "", "", nil
-	}
+var _ = Describe("FluidAppReconcilerImplement", func() {
+	const (
+		fuseMountPath              = "/mnt/fuse"
+		juicefsFuseMount           = "juicefs-fuse-mount"
+		juicefsMountPath           = "/mnt/jfs"
+		shouldSucceedWithoutErrors = "should succeed without errors"
+	)
 
-	patches := gomonkey.ApplyFunc(kubeclient.ExecCommandInContainer, mockExec)
-	defer patches.Reset()
+	Describe("NewFluidAppReconcilerImplement", func() {
+		It("should create a new reconciler", func() {
+			reconciler := NewFluidAppReconcilerImplement(nil, fake.NullLogger(), nil)
+			Expect(reconciler).NotTo(BeNil())
+			Expect(reconciler.Log).NotTo(BeNil())
+		})
+	})
 
-	type fields struct {
-		Client   client.Client
-		Log      logr.Logger
-		Recorder record.EventRecorder
-	}
-	type args struct {
-		pod *corev1.Pod
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "test-no-fuse",
-			args: args{
-				pod: &corev1.Pod{
+	Describe("umountFuseSidecars", func() {
+		var patches *gomonkey.Patches
+		var reconciler *FluidAppReconcilerImplement
+
+		BeforeEach(func() {
+			mockExec := func(p1, p2, p3 string, p4 []string) (stdout string, stderr string, e error) {
+				return "", "", nil
+			}
+			patches = gomonkey.ApplyFunc(kubeclient.ExecCommandInContainer, mockExec)
+			reconciler = &FluidAppReconcilerImplement{
+				Log: fake.NullLogger(),
+			}
+		})
+
+		AfterEach(func() {
+			if patches != nil {
+				patches.Reset()
+			}
+		})
+
+		Context("when pod has no fuse containers", func() {
+			It(shouldSucceedWithoutErrors, func() {
+				pod := &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{Name: "test"},
 					Spec: corev1.PodSpec{
 						Containers: []corev1.Container{{Name: "test"}},
 					},
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "test-no-mountpath",
-			args: args{
-				pod: &corev1.Pod{
+				}
+
+				err := reconciler.umountFuseSidecars(pod)
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when fuse container has no mount path", func() {
+			It(shouldSucceedWithoutErrors, func() {
+				pod := &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{Name: "test"},
 					Spec: corev1.PodSpec{
 						Containers: []corev1.Container{{Name: common.FuseContainerName + "-0"}},
 					},
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "test-prestop",
-			args: args{
-				pod: &corev1.Pod{
+				}
+
+				err := reconciler.umountFuseSidecars(pod)
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when fuse container has prestop hook", func() {
+			It(shouldSucceedWithoutErrors, func() {
+				pod := &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{Name: "test"},
 					Spec: corev1.PodSpec{
 						Containers: []corev1.Container{{
@@ -92,64 +108,143 @@ func TestFluidAppReconcilerImplement_umountFuseSidecars(t *testing.T) {
 							},
 						}},
 					},
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "test-mountpath",
-			args: args{
-				pod: &corev1.Pod{
+				}
+
+				err := reconciler.umountFuseSidecars(pod)
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when fuse container has mount path", func() {
+			It("should succeed and umount the path", func() {
+				pod := &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{Name: "test"},
 					Spec: corev1.PodSpec{
 						Containers: []corev1.Container{{
 							Name: common.FuseContainerName + "-0",
 							VolumeMounts: []corev1.VolumeMount{{
-								Name:      "juicefs-fuse-mount",
-								MountPath: "/mnt/jfs",
+								Name:      juicefsFuseMount,
+								MountPath: juicefsMountPath,
 							}},
 						}},
 					},
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "test-multi-sidecar",
-			args: args{
-				pod: &corev1.Pod{
+				}
+
+				err := reconciler.umountFuseSidecars(pod)
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when pod has multiple fuse sidecars", func() {
+			It("should succeed and umount all paths", func() {
+				pod := &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{Name: "test"},
 					Spec: corev1.PodSpec{
 						Containers: []corev1.Container{
 							{
 								Name: common.FuseContainerName + "-0",
 								VolumeMounts: []corev1.VolumeMount{{
-									Name:      "juicefs-fuse-mount",
-									MountPath: "/mnt/jfs",
+									Name:      juicefsFuseMount,
+									MountPath: juicefsMountPath,
 								}},
 							},
 							{
 								Name: common.FuseContainerName + "-1",
 								VolumeMounts: []corev1.VolumeMount{{
-									Name:      "juicefs-fuse-mount",
-									MountPath: "/mnt/jfs",
+									Name:      juicefsFuseMount,
+									MountPath: juicefsMountPath,
 								}},
 							},
 						},
 					},
-				},
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			i := &FluidAppReconcilerImplement{
+				}
+
+				err := reconciler.umountFuseSidecars(pod)
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+	})
+
+	Describe("umountFuseSidecar", func() {
+		var patches *gomonkey.Patches
+		var reconciler *FluidAppReconcilerImplement
+
+		BeforeEach(func() {
+			reconciler = &FluidAppReconcilerImplement{
 				Log: fake.NullLogger(),
 			}
-			if err := i.umountFuseSidecars(tt.args.pod); (err != nil) != tt.wantErr {
-				t.Errorf("umountFuseSidecar() error = %v, wantErr %v", err, tt.wantErr)
+		})
+
+		AfterEach(func() {
+			if patches != nil {
+				patches.Reset()
 			}
 		})
-	}
-}
+
+		Context("when fuse container has empty name", func() {
+			It("should return nil", func() {
+				pod := &corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{Name: "test"},
+				}
+				container := corev1.Container{Name: ""}
+
+				patches = gomonkey.ApplyFunc(kubeclient.ExecCommandInContainer, func(p1, p2, p3 string, p4 []string) (stdout string, stderr string, e error) {
+					return "", "", nil
+				})
+
+				err := reconciler.umountFuseSidecar(pod, container)
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when exec fails with 'not mounted' error", func() {
+			It("should return nil and not retry", func() {
+				pod := &corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
+				}
+				container := corev1.Container{
+					Name: common.FuseContainerName + "-0",
+					VolumeMounts: []corev1.VolumeMount{{
+						Name:      "fuse-mount",
+						MountPath: fuseMountPath,
+					}},
+				}
+
+				patches = gomonkey.ApplyFunc(kubeclient.GetMountPathInContainer, func(c corev1.Container) (string, error) {
+					return fuseMountPath, nil
+				})
+				patches.ApplyFunc(kubeclient.ExecCommandInContainer, func(p1, p2, p3 string, p4 []string) (stdout string, stderr string, e error) {
+					return "", "not mounted", fmt.Errorf("umount failed")
+				})
+
+				err := reconciler.umountFuseSidecar(pod, container)
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when exec fails with exit code 137", func() {
+			It("should return nil and not retry", func() {
+				pod := &corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
+				}
+				container := corev1.Container{
+					Name: common.FuseContainerName + "-0",
+					VolumeMounts: []corev1.VolumeMount{{
+						Name:      "fuse-mount",
+						MountPath: fuseMountPath,
+					}},
+				}
+
+				patches = gomonkey.ApplyFunc(kubeclient.GetMountPathInContainer, func(c corev1.Container) (string, error) {
+					return fuseMountPath, nil
+				})
+				patches.ApplyFunc(kubeclient.ExecCommandInContainer, func(p1, p2, p3 string, p4 []string) (stdout string, stderr string, e error) {
+					return "", "", fmt.Errorf("exit code 137")
+				})
+
+				err := reconciler.umountFuseSidecar(pod, container)
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+	})
+})
