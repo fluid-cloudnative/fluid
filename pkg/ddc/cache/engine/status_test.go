@@ -18,222 +18,243 @@ package engine
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
-func TestCheckAndUpdateRuntimeStatusRequiresClientReady(t *testing.T) {
-	const (
-		namespace   = "default"
-		runtimeName = "curvine-demo"
-		masterName  = "curvine-demo-master"
-		workerName  = "curvine-demo-worker"
-		clientName  = "curvine-demo-client"
+const (
+	testStatusNamespace  = "default"
+	testStatusRuntime    = "curvine-demo"
+	testStatusMaster     = "curvine-demo-master"
+	testStatusWorker     = "curvine-demo-worker"
+	testStatusClient     = "curvine-demo-client"
+	testCacheRuntimeGR   = "cacheruntimes"
+	testCacheRuntimeGV   = "data.fluid.io"
+	testStatusWorkloadAP = "apps/v1"
+)
+
+func TestCheckAndUpdateRuntimeStatusClientNotReadyDoesNotBlockRuntimeReady(t *testing.T) {
+	engine, client := newStatusTestEngineWithClient(
+		t,
+		fake.NewFakeClientWithScheme(
+			datav1alpha1.UnitTestScheme,
+			newStatusTestRuntime(),
+			newStatefulSetComponent(testStatusMaster, testStatusNamespace, 1, 1),
+			newStatefulSetComponent(testStatusWorker, testStatusNamespace, 1, 1),
+			newDaemonSetComponent(testStatusClient, testStatusNamespace, 1, 0),
+		),
 	)
 
-	runtime := &datav1alpha1.CacheRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:              runtimeName,
-			Namespace:         namespace,
-			CreationTimestamp: metav1.NewTime(time.Now().Add(-time.Minute)),
-		},
-	}
-
-	client := fake.NewFakeClientWithScheme(
-		datav1alpha1.UnitTestScheme,
-		runtime,
-		newStatefulSetComponent(masterName, namespace, 1, 1),
-		newStatefulSetComponent(workerName, namespace, 1, 1),
-		newDaemonSetComponent(clientName, namespace, 1, 0),
-	)
-
-	engine := &CacheEngine{
-		Client:    client,
-		Scheme:    datav1alpha1.UnitTestScheme,
-		name:      runtimeName,
-		namespace: namespace,
-		Log:       fake.NullLogger(),
-	}
-
-	value := &common.CacheRuntimeValue{
-		Master: &common.CacheRuntimeComponentValue{
-			Enabled:      true,
-			Name:         masterName,
-			Namespace:    namespace,
-			WorkloadType: metav1.TypeMeta{APIVersion: "apps/v1", Kind: "StatefulSet"},
-		},
-		Worker: &common.CacheRuntimeComponentValue{
-			Enabled:      true,
-			Name:         workerName,
-			Namespace:    namespace,
-			WorkloadType: metav1.TypeMeta{APIVersion: "apps/v1", Kind: "StatefulSet"},
-		},
-		Client: &common.CacheRuntimeComponentValue{
-			Enabled:      true,
-			Name:         clientName,
-			Namespace:    namespace,
-			WorkloadType: metav1.TypeMeta{APIVersion: "apps/v1", Kind: "DaemonSet"},
-		},
-	}
-
-	ready, err := engine.CheckAndUpdateRuntimeStatus(value)
-	if err != nil {
-		t.Fatalf("CheckAndUpdateRuntimeStatus() unexpected error = %v", err)
-	}
-	if ready {
-		t.Fatalf("expected runtime to stay not ready while client is not ready")
-	}
-
-	updatedRuntime := &datav1alpha1.CacheRuntime{}
-	if err := client.Get(context.TODO(), types.NamespacedName{Name: runtimeName, Namespace: namespace}, updatedRuntime); err != nil {
-		t.Fatalf("failed to get runtime after first status update: %v", err)
-	}
-	if updatedRuntime.Status.Client.Phase != datav1alpha1.RuntimePhaseNotReady {
-		t.Fatalf("expected client phase %q, got %q", datav1alpha1.RuntimePhaseNotReady, updatedRuntime.Status.Client.Phase)
-	}
-	if updatedRuntime.Status.SetupDuration != "" {
-		t.Fatalf("expected setup duration to stay empty before runtime is ready, got %q", updatedRuntime.Status.SetupDuration)
-	}
-
-	clientDaemonSet := &appsv1.DaemonSet{}
-	if err := client.Get(context.TODO(), types.NamespacedName{Name: clientName, Namespace: namespace}, clientDaemonSet); err != nil {
-		t.Fatalf("failed to get client daemonset: %v", err)
-	}
-	clientDaemonSet.Status.NumberReady = 1
-	clientDaemonSet.Status.NumberAvailable = 1
-	clientDaemonSet.Status.NumberUnavailable = 0
-	if err := client.Status().Update(context.TODO(), clientDaemonSet); err != nil {
-		t.Fatalf("failed to update client daemonset status: %v", err)
-	}
-
-	ready, err = engine.CheckAndUpdateRuntimeStatus(value)
+	ready, err := engine.CheckAndUpdateRuntimeStatus(newStatusTestRuntimeValue(true))
 	if err != nil {
 		t.Fatalf("CheckAndUpdateRuntimeStatus() unexpected error = %v", err)
 	}
 	if !ready {
-		t.Fatalf("expected runtime to become ready once client is ready")
+		t.Fatalf("expected runtime to become ready once master and worker are ready")
 	}
 
-	if err := client.Get(context.TODO(), types.NamespacedName{Name: runtimeName, Namespace: namespace}, updatedRuntime); err != nil {
-		t.Fatalf("failed to get runtime after second status update: %v", err)
-	}
-	if updatedRuntime.Status.Client.Phase != datav1alpha1.RuntimePhaseReady {
-		t.Fatalf("expected client phase %q, got %q", datav1alpha1.RuntimePhaseReady, updatedRuntime.Status.Client.Phase)
+	updatedRuntime := getUpdatedRuntime(t, client)
+	if updatedRuntime.Status.Client.Phase != datav1alpha1.RuntimePhaseNotReady {
+		t.Fatalf("expected client phase %q, got %q", datav1alpha1.RuntimePhaseNotReady, updatedRuntime.Status.Client.Phase)
 	}
 	if updatedRuntime.Status.SetupDuration == "" {
 		t.Fatalf("expected setup duration to be recorded once runtime is ready")
 	}
 }
 
-func TestCheckAndUpdateRuntimeStatusRequiresAllClientReplicasReady(t *testing.T) {
-	const (
-		namespace   = "default"
-		runtimeName = "curvine-demo"
-		masterName  = "curvine-demo-master"
-		workerName  = "curvine-demo-worker"
-		clientName  = "curvine-demo-client"
+func TestCheckAndUpdateRuntimeStatusClientPartialReadyDoesNotBlockRuntimeReady(t *testing.T) {
+	engine, client := newStatusTestEngineWithClient(
+		t,
+		fake.NewFakeClientWithScheme(
+			datav1alpha1.UnitTestScheme,
+			newStatusTestRuntime(),
+			newStatefulSetComponent(testStatusMaster, testStatusNamespace, 1, 1),
+			newStatefulSetComponent(testStatusWorker, testStatusNamespace, 1, 1),
+			newDaemonSetComponent(testStatusClient, testStatusNamespace, 2, 1),
+		),
 	)
 
-	runtime := &datav1alpha1.CacheRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:              runtimeName,
-			Namespace:         namespace,
-			CreationTimestamp: metav1.NewTime(time.Now().Add(-time.Minute)),
-		},
-	}
-
-	client := fake.NewFakeClientWithScheme(
-		datav1alpha1.UnitTestScheme,
-		runtime,
-		newStatefulSetComponent(masterName, namespace, 1, 1),
-		newStatefulSetComponent(workerName, namespace, 1, 1),
-		newDaemonSetComponent(clientName, namespace, 2, 1),
-	)
-
-	engine := &CacheEngine{
-		Client:    client,
-		Scheme:    datav1alpha1.UnitTestScheme,
-		name:      runtimeName,
-		namespace: namespace,
-		Log:       fake.NullLogger(),
-	}
-
-	value := &common.CacheRuntimeValue{
-		Master: &common.CacheRuntimeComponentValue{
-			Enabled:      true,
-			Name:         masterName,
-			Namespace:    namespace,
-			WorkloadType: metav1.TypeMeta{APIVersion: "apps/v1", Kind: "StatefulSet"},
-		},
-		Worker: &common.CacheRuntimeComponentValue{
-			Enabled:      true,
-			Name:         workerName,
-			Namespace:    namespace,
-			WorkloadType: metav1.TypeMeta{APIVersion: "apps/v1", Kind: "StatefulSet"},
-		},
-		Client: &common.CacheRuntimeComponentValue{
-			Enabled:      true,
-			Name:         clientName,
-			Namespace:    namespace,
-			WorkloadType: metav1.TypeMeta{APIVersion: "apps/v1", Kind: "DaemonSet"},
-		},
-	}
-
-	ready, err := engine.CheckAndUpdateRuntimeStatus(value)
-	if err != nil {
-		t.Fatalf("CheckAndUpdateRuntimeStatus() unexpected error = %v", err)
-	}
-	if ready {
-		t.Fatalf("expected runtime to stay not ready while client is only partially ready")
-	}
-
-	updatedRuntime := &datav1alpha1.CacheRuntime{}
-	if err := client.Get(context.TODO(), types.NamespacedName{Name: runtimeName, Namespace: namespace}, updatedRuntime); err != nil {
-		t.Fatalf("failed to get runtime after partial-ready status update: %v", err)
-	}
-	if updatedRuntime.Status.Client.Phase != datav1alpha1.RuntimePhasePartialReady {
-		t.Fatalf("expected client phase %q, got %q", datav1alpha1.RuntimePhasePartialReady, updatedRuntime.Status.Client.Phase)
-	}
-	if updatedRuntime.Status.SetupDuration != "" {
-		t.Fatalf("expected setup duration to stay empty before all client replicas are ready, got %q", updatedRuntime.Status.SetupDuration)
-	}
-
-	clientDaemonSet := &appsv1.DaemonSet{}
-	if err := client.Get(context.TODO(), types.NamespacedName{Name: clientName, Namespace: namespace}, clientDaemonSet); err != nil {
-		t.Fatalf("failed to get client daemonset: %v", err)
-	}
-	clientDaemonSet.Status.NumberReady = 2
-	clientDaemonSet.Status.NumberAvailable = 2
-	clientDaemonSet.Status.NumberUnavailable = 0
-	if err := client.Status().Update(context.TODO(), clientDaemonSet); err != nil {
-		t.Fatalf("failed to update client daemonset status: %v", err)
-	}
-
-	ready, err = engine.CheckAndUpdateRuntimeStatus(value)
+	ready, err := engine.CheckAndUpdateRuntimeStatus(newStatusTestRuntimeValue(true))
 	if err != nil {
 		t.Fatalf("CheckAndUpdateRuntimeStatus() unexpected error = %v", err)
 	}
 	if !ready {
-		t.Fatalf("expected runtime to become ready once all client replicas are ready")
+		t.Fatalf("expected runtime to become ready once master and worker are ready")
 	}
 
-	if err := client.Get(context.TODO(), types.NamespacedName{Name: runtimeName, Namespace: namespace}, updatedRuntime); err != nil {
-		t.Fatalf("failed to get runtime after full-ready status update: %v", err)
+	updatedRuntime := getUpdatedRuntime(t, client)
+	if updatedRuntime.Status.Client.Phase != datav1alpha1.RuntimePhasePartialReady {
+		t.Fatalf("expected client phase %q, got %q", datav1alpha1.RuntimePhasePartialReady, updatedRuntime.Status.Client.Phase)
 	}
+	if updatedRuntime.Status.SetupDuration == "" {
+		t.Fatalf("expected setup duration to be recorded once runtime is ready")
+	}
+}
+
+func TestCheckAndUpdateRuntimeStatusClientZeroDesiredReplicasReportsReady(t *testing.T) {
+	engine, client := newStatusTestEngineWithClient(
+		t,
+		fake.NewFakeClientWithScheme(
+			datav1alpha1.UnitTestScheme,
+			newStatusTestRuntime(),
+			newStatefulSetComponent(testStatusMaster, testStatusNamespace, 1, 1),
+			newStatefulSetComponent(testStatusWorker, testStatusNamespace, 1, 1),
+			newDaemonSetComponent(testStatusClient, testStatusNamespace, 0, 0),
+		),
+	)
+
+	ready, err := engine.CheckAndUpdateRuntimeStatus(newStatusTestRuntimeValue(true))
+	if err != nil {
+		t.Fatalf("CheckAndUpdateRuntimeStatus() unexpected error = %v", err)
+	}
+	if !ready {
+		t.Fatalf("expected runtime to stay ready when client desires zero replicas")
+	}
+
+	updatedRuntime := getUpdatedRuntime(t, client)
 	if updatedRuntime.Status.Client.Phase != datav1alpha1.RuntimePhaseReady {
 		t.Fatalf("expected client phase %q, got %q", datav1alpha1.RuntimePhaseReady, updatedRuntime.Status.Client.Phase)
 	}
-	if updatedRuntime.Status.SetupDuration == "" {
-		t.Fatalf("expected setup duration to be recorded once all client replicas are ready")
+	if updatedRuntime.Status.Client.DesiredReplicas != 0 {
+		t.Fatalf("expected desired replicas to stay 0, got %d", updatedRuntime.Status.Client.DesiredReplicas)
 	}
+}
+
+func TestCheckAndUpdateRuntimeStatusClientFullyReadyReportsReady(t *testing.T) {
+	engine, client := newStatusTestEngineWithClient(
+		t,
+		fake.NewFakeClientWithScheme(
+			datav1alpha1.UnitTestScheme,
+			newStatusTestRuntime(),
+			newStatefulSetComponent(testStatusMaster, testStatusNamespace, 1, 1),
+			newStatefulSetComponent(testStatusWorker, testStatusNamespace, 1, 1),
+			newDaemonSetComponent(testStatusClient, testStatusNamespace, 2, 2),
+		),
+	)
+
+	ready, err := engine.CheckAndUpdateRuntimeStatus(newStatusTestRuntimeValue(true))
+	if err != nil {
+		t.Fatalf("CheckAndUpdateRuntimeStatus() unexpected error = %v", err)
+	}
+	if !ready {
+		t.Fatalf("expected runtime to stay ready when client is fully ready")
+	}
+
+	updatedRuntime := getUpdatedRuntime(t, client)
+	if updatedRuntime.Status.Client.Phase != datav1alpha1.RuntimePhaseReady {
+		t.Fatalf("expected client phase %q, got %q", datav1alpha1.RuntimePhaseReady, updatedRuntime.Status.Client.Phase)
+	}
+	if updatedRuntime.Status.Client.ReadyReplicas != updatedRuntime.Status.Client.DesiredReplicas {
+		t.Fatalf("expected ready replicas to match desired replicas, got %d/%d", updatedRuntime.Status.Client.ReadyReplicas, updatedRuntime.Status.Client.DesiredReplicas)
+	}
+}
+
+func TestCheckAndUpdateRuntimeStatusRecomputesRuntimeReadyOnRetry(t *testing.T) {
+	baseClient := fake.NewFakeClientWithScheme(
+		datav1alpha1.UnitTestScheme,
+		newStatusTestRuntime(),
+		newStatefulSetComponent(testStatusMaster, testStatusNamespace, 1, 1),
+		newStatefulSetComponent(testStatusWorker, testStatusNamespace, 1, 1),
+	)
+
+	client := &conflictOnceClient{
+		Client: baseClient,
+		statusWriter: &conflictOnceStatusWriter{
+			StatusWriter: baseClient.Status(),
+			beforeConflict: func(ctx context.Context) error {
+				worker := &appsv1.StatefulSet{}
+				if err := baseClient.Get(ctx, types.NamespacedName{Name: testStatusWorker, Namespace: testStatusNamespace}, worker); err != nil {
+					return err
+				}
+
+				worker.Status.ReadyReplicas = 0
+				worker.Status.AvailableReplicas = 0
+				return baseClient.Status().Update(ctx, worker)
+			},
+		},
+	}
+
+	engine, _ := newStatusTestEngineWithClient(t, client)
+	ready, err := engine.CheckAndUpdateRuntimeStatus(newStatusTestRuntimeValue(false))
+	if err != nil {
+		t.Fatalf("CheckAndUpdateRuntimeStatus() unexpected error = %v", err)
+	}
+	if ready {
+		t.Fatalf("expected runtime to be not ready after retry sees worker become not ready")
+	}
+
+	updatedRuntime := getUpdatedRuntime(t, client)
+	if updatedRuntime.Status.Worker.Phase != datav1alpha1.RuntimePhaseNotReady {
+		t.Fatalf("expected worker phase %q, got %q", datav1alpha1.RuntimePhaseNotReady, updatedRuntime.Status.Worker.Phase)
+	}
+	if updatedRuntime.Status.SetupDuration != "" {
+		t.Fatalf("expected setup duration to stay empty when final runtime status is not ready, got %q", updatedRuntime.Status.SetupDuration)
+	}
+}
+
+func newStatusTestEngineWithClient(t *testing.T, client ctrlclient.Client) (*CacheEngine, ctrlclient.Client) {
+	t.Helper()
+
+	return &CacheEngine{
+		Client:    client,
+		Scheme:    datav1alpha1.UnitTestScheme,
+		name:      testStatusRuntime,
+		namespace: testStatusNamespace,
+		Log:       fake.NullLogger(),
+	}, client
+}
+
+func newStatusTestRuntimeValue(enableClient bool) *common.CacheRuntimeValue {
+	value := &common.CacheRuntimeValue{
+		Master: newStatusTestComponentValue(testStatusMaster, "StatefulSet"),
+		Worker: newStatusTestComponentValue(testStatusWorker, "StatefulSet"),
+		Client: newStatusTestComponentValue(testStatusClient, "DaemonSet"),
+	}
+	value.Client.Enabled = enableClient
+
+	return value
+}
+
+func newStatusTestComponentValue(name, kind string) *common.CacheRuntimeComponentValue {
+	return &common.CacheRuntimeComponentValue{
+		Enabled:      true,
+		Name:         name,
+		Namespace:    testStatusNamespace,
+		WorkloadType: metav1.TypeMeta{APIVersion: testStatusWorkloadAP, Kind: kind},
+	}
+}
+
+func newStatusTestRuntime() *datav1alpha1.CacheRuntime {
+	return &datav1alpha1.CacheRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              testStatusRuntime,
+			Namespace:         testStatusNamespace,
+			CreationTimestamp: metav1.NewTime(time.Now().Add(-time.Minute)),
+		},
+	}
+}
+
+func getUpdatedRuntime(t *testing.T, client ctrlclient.Client) *datav1alpha1.CacheRuntime {
+	t.Helper()
+
+	updatedRuntime := &datav1alpha1.CacheRuntime{}
+	if err := client.Get(context.TODO(), types.NamespacedName{Name: testStatusRuntime, Namespace: testStatusNamespace}, updatedRuntime); err != nil {
+		t.Fatalf("failed to get updated runtime: %v", err)
+	}
+
+	return updatedRuntime
 }
 
 func newStatefulSetComponent(name, namespace string, desiredReplicas, readyReplicas int32) *appsv1.StatefulSet {
@@ -268,4 +289,38 @@ func newDaemonSetComponent(name, namespace string, desiredReplicas, readyReplica
 			NumberUnavailable:      desiredReplicas - readyReplicas,
 		},
 	}
+}
+
+type conflictOnceClient struct {
+	ctrlclient.Client
+	statusWriter ctrlclient.StatusWriter
+}
+
+func (c *conflictOnceClient) Status() ctrlclient.StatusWriter {
+	return c.statusWriter
+}
+
+type conflictOnceStatusWriter struct {
+	ctrlclient.StatusWriter
+	beforeConflict func(ctx context.Context) error
+	conflicted     bool
+}
+
+func (w *conflictOnceStatusWriter) Update(ctx context.Context, obj ctrlclient.Object, opts ...ctrlclient.SubResourceUpdateOption) error {
+	if !w.conflicted {
+		w.conflicted = true
+		if w.beforeConflict != nil {
+			if err := w.beforeConflict(ctx); err != nil {
+				return err
+			}
+		}
+
+		return apierrors.NewConflict(
+			schema.GroupResource{Group: testCacheRuntimeGV, Resource: testCacheRuntimeGR},
+			obj.GetName(),
+			errors.New("injected conflict"),
+		)
+	}
+
+	return w.StatusWriter.Update(ctx, obj, opts...)
 }

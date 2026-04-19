@@ -92,9 +92,13 @@ func (e *CacheEngine) setClientComponentStatus(componentValue *common.CacheRunti
 	return ready, nil
 }
 func (e *CacheEngine) CheckAndUpdateRuntimeStatus(value *common.CacheRuntimeValue) (bool, error) {
-	var masterReady, workerReady, clientReady, runtimeReady = true, true, true, false
+	runtimeReady := false
 
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		// Reset readiness on each retry to avoid stale state after conflicts.
+		masterReady, workerReady, clientReady := true, true, true
+		runtimeReady = false
+
 		runtime, err := e.getRuntime()
 		if err != nil {
 			return err
@@ -122,9 +126,8 @@ func (e *CacheEngine) CheckAndUpdateRuntimeStatus(value *common.CacheRuntimeValu
 			}
 		}
 
-		if masterReady && workerReady && clientReady {
-			runtimeReady = true
-		} else {
+		runtimeReady = masterReady && workerReady
+		if !runtimeReady {
 			e.Log.Info(fmt.Sprintf("MasterReady: %v, workerReady: %v, clientReady: %v", masterReady, workerReady, clientReady))
 		}
 
