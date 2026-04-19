@@ -27,6 +27,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -198,6 +199,7 @@ func GetPvcMountPods(e client.Client, pvcName, namespace string) ([]corev1.Pod, 
 	nsPods := corev1.PodList{}
 	err := e.List(context.TODO(), &nsPods, &client.ListOptions{
 		Namespace: namespace,
+		UnsafeDisableDeepCopy: ptr.To(true),
 	})
 	if err != nil {
 		log.Error(err, "Failed to list pods")
@@ -213,35 +215,6 @@ func GetPvcMountPods(e client.Client, pvcName, namespace string) ([]corev1.Pod, 
 		}
 	}
 	return pods, err
-}
-
-// GetPvcMountNodes get nodes which have pods mounted the specific pvc for a given namespace
-// it will only return a map of nodeName and amount of PvcMountPods on it
-// if the Pvc mount Pod has completed, it will be ignored
-// if fail to get pvc mount Nodes, treat every nodes as with no PVC mount Pods
-func GetPvcMountNodes(e client.Client, pvcName, namespace string) (map[string]int64, error) {
-	pvcMountNodes := map[string]int64{}
-	pvcMountPods, err := GetPvcMountPods(e, pvcName, namespace)
-	if err != nil {
-		log.Error(err, "Failed to get PVC Mount Nodes because cannot list pods")
-		return pvcMountNodes, err
-	}
-
-	for _, pod := range pvcMountPods {
-		if IsCompletePod(&pod) {
-			continue
-		}
-		nodeName := pod.Spec.NodeName
-		if nodeName == "" {
-			continue
-		}
-		if _, found := pvcMountNodes[nodeName]; !found {
-			pvcMountNodes[nodeName] = 1
-		} else {
-			pvcMountNodes[nodeName] = pvcMountNodes[nodeName] + 1
-		}
-	}
-	return pvcMountNodes, nil
 }
 
 // RemoveProtectionFinalizer removes finalizers of PersistentVolumeClaim
