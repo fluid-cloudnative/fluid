@@ -10,8 +10,8 @@ RUN make cacheruntime-controller-build && \
     cp bin/cacheruntime-controller /go/bin/cacheruntime-controller
 RUN bash hack/helm/pin_runtime_chart_version.sh "${FLUID_VERSION}"
 
-# alpine:3.20.6
-FROM alpine:3.20.6@sha256:de4fe7064d8f98419ea6b49190df1abbf43450c1702eeb864fe9ced453c1cc5f
+# alpine:3.23.3
+FROM alpine:3.23.3@sha256:25109184c71bdad752c8312a8623239686a9a2071e8825f20acb8f2198c3f659
 RUN apk add --update bash curl wget iproute2 libc6-compat tzdata vim &&  \
  	rm -rf /var/cache/apk/* && \
  	cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
@@ -19,12 +19,8 @@ RUN apk add --update bash curl wget iproute2 libc6-compat tzdata vim &&  \
 
 ARG TARGETARCH
 ARG HELM_VERSION
-RUN wget -O helm-${HELM_VERSION}-linux-${TARGETARCH}.tar.gz https://github.com/fluid-cloudnative/helm/releases/download/${HELM_VERSION}/helm-${HELM_VERSION}-linux-${TARGETARCH}.tar.gz && \
-    tar -xvf helm-${HELM_VERSION}-linux-${TARGETARCH}.tar.gz && \
-    mv linux-${TARGETARCH}/helm /usr/local/bin/ddc-helm && \
-    chmod u+x /usr/local/bin/ddc-helm && \
-    rm -f helm-${HELM_VERSION}-linux-${TARGETARCH}.tar.gz && \
-    rm -rf linux-${TARGETARCH}
+COPY --from=builder /go/src/github.com/fluid-cloudnative/fluid/bin/helm/${HELM_VERSION}/helm-linux-${TARGETARCH} /usr/local/bin/ddc-helm
+RUN chmod u+x /usr/local/bin/ddc-helm
 
 COPY --from=builder /go/src/github.com/fluid-cloudnative/fluid/charts/ /charts
 
