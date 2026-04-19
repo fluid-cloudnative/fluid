@@ -77,6 +77,7 @@
   - [如何参与开发](dev/how_to_develop.md)
   - [API_Doc](dev/api_doc.md)
   - [如何增加新Runtime实现](dev/runtime_dev_guide.md)
+  - [CacheRuntime对接指南](dev/generic_cache_runtime_integration.md)
   + 客户端使用
     - [如何使用Go客户端创建、删除fluid资源](dev/use_go_create_resource.md)
     - [如何使用其他客户端（非GO语言）](dev/multiple-client-support.md)
