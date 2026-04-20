@@ -17,69 +17,72 @@
 package engine
 
 import (
+	"context"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	volumeHelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 )
 
-func (e *CacheEngine) CreateVolume() (err error) {
-	if err = e.createFusePersistentVolume(); err != nil {
+func (e *CacheEngine) CreateVolume(ctx context.Context) (err error) {
+	if err = e.createFusePersistentVolume(ctx); err != nil {
 		return err
 	}
 
-	if err = e.createFusePersistentVolumeClaim(); err != nil {
+	if err = e.createFusePersistentVolumeClaim(ctx); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (e *CacheEngine) DeleteVolume() (err error) {
-	if err = e.deleteFusePersistentVolumeClaim(); err != nil {
+func (e *CacheEngine) DeleteVolume(ctx context.Context) (err error) {
+	if err = e.deleteFusePersistentVolumeClaim(ctx); err != nil {
 		return err
 	}
 
-	if err = e.deleteFusePersistentVolume(); err != nil {
+	if err = e.deleteFusePersistentVolume(ctx); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (e *CacheEngine) createFusePersistentVolume() error {
+func (e *CacheEngine) createFusePersistentVolume(ctx context.Context) error {
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		return err
 	}
 
-	return volumeHelper.CreatePersistentVolumeForRuntime(e.Client,
+	return volumeHelper.CreatePersistentVolumeForRuntime(ctx,
+		e.Client,
 		runtimeInfo,
 		e.getFuseMountPoint(),
 		common.CacheRuntime,
 		e.Log)
 }
 
-func (e *CacheEngine) createFusePersistentVolumeClaim() error {
+func (e *CacheEngine) createFusePersistentVolumeClaim(ctx context.Context) error {
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		return err
 	}
 
-	return volumeHelper.CreatePersistentVolumeClaimForRuntime(e.Client, runtimeInfo, e.Log)
+	return volumeHelper.CreatePersistentVolumeClaimForRuntime(ctx, e.Client, runtimeInfo, e.Log)
 }
 
-func (e *CacheEngine) deleteFusePersistentVolume() error {
+func (e *CacheEngine) deleteFusePersistentVolume(ctx context.Context) error {
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		return err
 	}
 
-	return volumeHelper.DeleteFusePersistentVolume(e.Client, runtimeInfo, e.Log)
+	return volumeHelper.DeleteFusePersistentVolume(ctx, e.Client, runtimeInfo, e.Log)
 }
 
-func (e *CacheEngine) deleteFusePersistentVolumeClaim() error {
+func (e *CacheEngine) deleteFusePersistentVolumeClaim(ctx context.Context) error {
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		return err
 	}
 
-	return volumeHelper.DeleteFusePersistentVolumeClaim(e.Client, runtimeInfo, e.Log)
+	return volumeHelper.DeleteFusePersistentVolumeClaim(ctx, e.Client, runtimeInfo, e.Log)
 }

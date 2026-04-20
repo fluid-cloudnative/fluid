@@ -19,6 +19,7 @@ package kubeclient
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -46,11 +47,14 @@ import (
 // https://github.com/kubernetes/kubernetes/blob/v1.6.1/test/e2e/framework/exec_util.go
 // Global variables
 var (
-	clientset      *kubernetes.Clientset
-	restConfig     *restclient.Config
-	log            logr.Logger = ctrl.Log.WithName("kubeclient")
-	kubeconfigPath             = "~/.kube/config"
-	mutex                      = &sync.Mutex{}
+	clientset                 *kubernetes.Clientset
+	restConfig                *restclient.Config
+	log                       logr.Logger = ctrl.Log.WithName("kubeclient")
+	kubeconfigPath                        = "~/.kube/config"
+	mutex                                 = &sync.Mutex{}
+	buildConfigFromFlags                  = clientcmd.BuildConfigFromFlags
+	newClientsetForConfig                 = kubernetes.NewForConfig
+	execInContainerWithOutput             = ExecCommandInContainerWithFullOutput
 )
 
 // ExecOptions passed to ExecWithOptions
@@ -100,13 +104,13 @@ func initClient() error {
 			kubeconfigPath = ""
 		}
 		log.Info("kubeconfig file is placed.", "config", kubeconfigPath)
-		restConfig, err = clientcmd.BuildConfigFromFlags("", kubeconfigPath)
+		restConfig, err = buildConfigFromFlags("", kubeconfigPath)
 		if err != nil {
 			return err
 		}
 	}
 	if clientset == nil {
-		clientset, err = kubernetes.NewForConfig(restConfig)
+		clientset, err = newClientsetForConfig(restConfig)
 		if err != nil {
 			return err
 		}
@@ -174,44 +178,33 @@ func ExecCommandInContainerWithFullOutput(ctx context.Context, podName string, c
 
 // Exec commands in container without any timeout.
 func ExecCommandInContainer(podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, err error) {
-	return ExecCommandInContainerWithFullOutput(context.Background(), podName, containerName, namespace, cmd)
+	return ExecCommandInContainerWithContext(context.Background(), podName, containerName, namespace, cmd)
 }
 
-// execResult encapsulates the result of a container exec operation.
-// This struct is used to safely pass results through a channel,
-// avoiding data races on shared variables.
-type execResult struct {
-	stdout string
-	stderr string
-	err    error
+// ExecCommandInContainerWithContext executes a command in the container using the caller context.
+func ExecCommandInContainerWithContext(ctx context.Context, podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, err error) {
+	return ExecCommandInContainerWithFullOutput(ctx, podName, containerName, namespace, cmd)
 }
 
 // Exec commands in container with a given timeout.
-// This function is thread-safe and avoids data races by using a result channel
-// instead of writing to shared return variables from a goroutine.
 func ExecCommandInContainerWithTimeout(podName string, containerName string, namespace string, cmd []string, timeout time.Duration) (stdout string, stderr string, err error) {
-	ctx, cancel := context.WithTimeout(context.TODO(), timeout)
+	return ExecCommandInContainerWithTimeoutContext(context.TODO(), podName, containerName, namespace, cmd, timeout)
+}
+
+// ExecCommandInContainerWithTimeoutContext executes a command in the container with a timeout derived from the caller context.
+func ExecCommandInContainerWithTimeoutContext(parentCtx context.Context, podName string, containerName string, namespace string, cmd []string, timeout time.Duration) (stdout string, stderr string, err error) {
+	if parentCtx == nil {
+		parentCtx = context.TODO()
+	}
+
+	ctx, cancel := context.WithTimeout(parentCtx, timeout)
 	defer cancel()
 
-	// Use a buffered channel to prevent goroutine leak when timeout occurs.
-	// The goroutine can always send its result even if no one is receiving.
-	resultCh := make(chan execResult, 1)
-
-	go func() {
-		out, errOut, execErr := ExecCommandInContainerWithFullOutput(ctx, podName, containerName, namespace, cmd)
-		resultCh <- execResult{stdout: out, stderr: errOut, err: execErr}
-	}()
-
-	select {
-	case result := <-resultCh:
-		// Command completed within timeout
-		return result.stdout, result.stderr, result.err
-	case <-ctx.Done():
-		// Timeout occurred - return timeout error immediately.
-		// The goroutine will eventually complete (context cancellation will propagate)
-		// and send to the buffered channel, which will be garbage collected.
-		return "", "", fmt.Errorf("timed out for %v", timeout)
+	stdout, stderr, err = execInContainerWithOutput(ctx, podName, containerName, namespace, cmd)
+	if err != nil && ctx.Err() != nil && errors.Is(err, ctx.Err()) {
+		return "", "", fmt.Errorf("exec command timed out or canceled after %v: %w", timeout, err)
 	}
+	return stdout, stderr, err
 }
 
 func doExecute(ctx context.Context, method string, url *url.URL, config *restclient.Config, stdin io.Reader, stdout, stderr io.Writer, tty bool) error {

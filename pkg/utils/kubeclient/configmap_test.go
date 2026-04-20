@@ -17,6 +17,8 @@ limitations under the License.
 package kubeclient
 
 import (
+	"context"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -121,6 +123,18 @@ var _ = Describe("ConfigMap Operations", func() {
 				Expect(cm2.Name).To(Equal("test2"))
 				Expect(cm1.Data["key1"]).To(Equal("value1"))
 				Expect(cm2.Data["key2"]).To(Equal("value2"))
+			})
+		})
+
+		Context("when caller context is canceled", func() {
+			It("should return the context error", func() {
+				ctx, cancel := context.WithCancel(context.Background())
+				cancel()
+
+				cm, err := GetConfigmapByNameWithContext(ctx, contextAwareClient{Client: testClient}, "test1", namespace)
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError(context.Canceled))
+				Expect(cm).NotTo(BeNil())
 			})
 		})
 	})
@@ -380,6 +394,17 @@ var _ = Describe("ConfigMap Operations", func() {
 
 				Expect(cm1.Data["key1"]).To(Equal("data1"))
 				Expect(cm2.Data["key2"]).To(Equal("data2"))
+			})
+		})
+
+		Context("when caller context is canceled", func() {
+			It("should return the context error without creating the ConfigMap", func() {
+				ctx, cancel := context.WithCancel(context.Background())
+				cancel()
+
+				err := CreateConfigMapWithContext(ctx, contextAwareClient{Client: testClient}, "ctx-canceled", cmNamespace, "key", []byte("value"), "dataset-id")
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError(context.Canceled))
 			})
 		})
 	})

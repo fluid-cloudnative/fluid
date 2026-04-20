@@ -17,6 +17,8 @@ limitations under the License.
 package base
 
 import (
+	"context"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -38,10 +40,10 @@ type Engine interface {
 	Setup(ctx cruntime.ReconcileRequestContext) (ready bool, err error)
 
 	// Setup the Volume
-	CreateVolume() (err error)
+	CreateVolume(ctx context.Context) (err error)
 
 	// Destroy the Volume
-	DeleteVolume() (err error)
+	DeleteVolume(ctx context.Context) (err error)
 
 	// Sync syncs the alluxio runtime
 	Sync(ctx cruntime.ReconcileRequestContext) error
@@ -125,7 +127,7 @@ type Implement interface {
 	CheckAndUpdateRuntimeStatus() (ready bool, err error)
 
 	// CreateVolume create the pv and pvc for the Dataset
-	CreateVolume() error
+	CreateVolume(ctx context.Context) error
 
 	// SyncReplicas syncs the replicas
 	SyncReplicas(ctx cruntime.ReconcileRequestContext) error
@@ -134,7 +136,7 @@ type Implement interface {
 	SyncMetadata() (err error)
 
 	// DeleteVolume Destroy the Volume
-	DeleteVolume() (err error)
+	DeleteVolume(ctx context.Context) (err error)
 
 	// BindToDataset binds the engine to dataset
 	BindToDataset() (err error)

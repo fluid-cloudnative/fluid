@@ -33,6 +33,11 @@ import (
 
 // IsConfigMapExist checks if the configMap exists given its name and namespace.
 func IsConfigMapExist(client client.Client, name, namespace string) (found bool, err error) {
+	return IsConfigMapExistWithContext(context.TODO(), client, name, namespace)
+}
+
+// IsConfigMapExistWithContext checks if the configMap exists given its name and namespace with the caller context.
+func IsConfigMapExistWithContext(ctx context.Context, client client.Client, name, namespace string) (found bool, err error) {
 	key := types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
@@ -40,7 +45,7 @@ func IsConfigMapExist(client client.Client, name, namespace string) (found bool,
 
 	cm := &v1.ConfigMap{}
 
-	if err = client.Get(context.TODO(), key, cm); err != nil {
+	if err = client.Get(ctx, key, cm); err != nil {
 		if apierrs.IsNotFound(err) {
 			found = false
 			err = nil
@@ -53,6 +58,11 @@ func IsConfigMapExist(client client.Client, name, namespace string) (found bool,
 
 // GetConfigmapByName gets configmap with given name and namespace of the configmap.
 func GetConfigmapByName(client client.Client, name, namespace string) (configmap *v1.ConfigMap, err error) {
+	return GetConfigmapByNameWithContext(context.TODO(), client, name, namespace)
+}
+
+// GetConfigmapByNameWithContext gets configmap with given name and namespace of the configmap with the caller context.
+func GetConfigmapByNameWithContext(ctx context.Context, client client.Client, name, namespace string) (configmap *v1.ConfigMap, err error) {
 	key := types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
@@ -60,7 +70,7 @@ func GetConfigmapByName(client client.Client, name, namespace string) (configmap
 
 	configmap = &v1.ConfigMap{}
 
-	if err = client.Get(context.TODO(), key, configmap); err != nil {
+	if err = client.Get(ctx, key, configmap); err != nil {
 		if apierrs.IsNotFound(err) {
 			err = nil
 			configmap = nil
@@ -73,6 +83,11 @@ func GetConfigmapByName(client client.Client, name, namespace string) (configmap
 
 // DeleteConfigMap deletes the configmap given its name and namespace if the configmap exists.
 func DeleteConfigMap(client client.Client, name, namespace string) (err error) {
+	return DeleteConfigMapWithContext(context.TODO(), client, name, namespace)
+}
+
+// DeleteConfigMapWithContext deletes the configmap given its name and namespace if the configmap exists.
+func DeleteConfigMapWithContext(ctx context.Context, client client.Client, name, namespace string) (err error) {
 	key := types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
@@ -80,9 +95,9 @@ func DeleteConfigMap(client client.Client, name, namespace string) (err error) {
 	found := false
 
 	cm := &v1.ConfigMap{}
-	if err = client.Get(context.TODO(), key, cm); err != nil {
+	if err = client.Get(ctx, key, cm); err != nil {
 		if apierrs.IsNotFound(err) {
-			log.V(1).Info("SKip deleteing the configmap due to it's not found", "name", name,
+			log.V(1).Info("Skip deleting the configmap because it was not found", "name", name,
 				"namespace", namespace)
 			found = false
 			err = nil
@@ -93,14 +108,18 @@ func DeleteConfigMap(client client.Client, name, namespace string) (err error) {
 		found = true
 	}
 	if found {
-		err = client.Delete(context.TODO(), cm)
+		err = client.Delete(ctx, cm)
 	}
 
 	return err
 }
 
 func CopyConfigMap(client client.Client, src types.NamespacedName, dst types.NamespacedName, reference metav1.OwnerReference) error {
-	found, err := IsConfigMapExist(client, dst.Name, dst.Namespace)
+	return CopyConfigMapWithContext(context.TODO(), client, src, dst, reference)
+}
+
+func CopyConfigMapWithContext(ctx context.Context, client client.Client, src types.NamespacedName, dst types.NamespacedName, reference metav1.OwnerReference) error {
+	found, err := IsConfigMapExistWithContext(ctx, client, dst.Name, dst.Namespace)
 	if err != nil {
 		return err
 	}
@@ -109,7 +128,7 @@ func CopyConfigMap(client client.Client, src types.NamespacedName, dst types.Nam
 	}
 
 	// copy configmap
-	srcConfigMap, err := GetConfigmapByName(client, src.Name, src.Namespace)
+	srcConfigMap, err := GetConfigmapByNameWithContext(ctx, client, src.Name, src.Namespace)
 	if err != nil {
 		return err
 	}
@@ -136,7 +155,7 @@ func CopyConfigMap(client client.Client, src types.NamespacedName, dst types.Nam
 	}
 	dstConfigMap.Labels[common.LabelAnnotationDatasetId] = utils.GetDatasetId(dst.Namespace, dst.Name, string(reference.UID))
 
-	err = client.Create(context.TODO(), dstConfigMap)
+	err = client.Create(ctx, dstConfigMap)
 	if err != nil {
 		if otherErr := utils.IgnoreAlreadyExists(err); otherErr != nil {
 			return err
@@ -146,11 +165,19 @@ func CopyConfigMap(client client.Client, src types.NamespacedName, dst types.Nam
 }
 
 func UpdateConfigMap(client client.Client, cm *v1.ConfigMap) error {
-	err := client.Update(context.TODO(), cm)
+	return UpdateConfigMapWithContext(context.TODO(), client, cm)
+}
+
+func UpdateConfigMapWithContext(ctx context.Context, client client.Client, cm *v1.ConfigMap) error {
+	err := client.Update(ctx, cm)
 	return err
 }
 
 func CreateConfigMap(client client.Client, name string, namespace string, key string, data []byte, ownerDatasetId string) (err error) {
+	return CreateConfigMapWithContext(context.TODO(), client, name, namespace, key, data, ownerDatasetId)
+}
+
+func CreateConfigMapWithContext(ctx context.Context, client client.Client, name string, namespace string, key string, data []byte, ownerDatasetId string) (err error) {
 	configMap := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -164,7 +191,7 @@ func CreateConfigMap(client client.Client, name string, namespace string, key st
 		},
 	}
 
-	return client.Create(context.TODO(), configMap)
+	return client.Create(ctx, configMap)
 }
 
 func CreateConfigMapWithOwner(client client.Client, name string, namespace string, data map[string]string, ownerReference []metav1.OwnerReference) (err error) {

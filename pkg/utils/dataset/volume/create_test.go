@@ -2,6 +2,7 @@ package volume
 
 import (
 	"context"
+	"time"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -73,13 +74,13 @@ var _ = Describe("Create Volume Tests", Label("pkg.utils.dataset.volume.create_t
 		client = fake.NewFakeClientWithScheme(scheme, resources...)
 	})
 
-	Context("Test CreatePersistentVolumeForRuntime()", func() {
+	Context("Test CreatePersistentVolumeForRuntime(context.Background(), )", func() {
 		When("runtime info has defined node affinity on it", func() {
 			BeforeEach(func() {
 				runtimeInfo.SetFuseNodeSelector(map[string]string{"test-affinity": "true"})
 			})
 			It("should create PV with node affinity and annotations", func() {
-				Expect(CreatePersistentVolumeForRuntime(client, runtimeInfo, "/mnt", "alluxio", log)).To(Succeed())
+				Expect(CreatePersistentVolumeForRuntime(context.Background(), client, runtimeInfo, "/mnt", "alluxio", log)).To(Succeed())
 				var list v1.PersistentVolumeList
 				Expect(client.List(context.TODO(), &list)).To(Succeed())
 				Expect(list.Items).To(HaveLen(1))
@@ -106,7 +107,7 @@ var _ = Describe("Create Volume Tests", Label("pkg.utils.dataset.volume.create_t
 				resources = append(resources, pv)
 			})
 			It("should skip creating PV if it already exists with fluid annotations", func() {
-				Expect(CreatePersistentVolumeForRuntime(client, runtimeInfo, "/mnt", "alluxio", log)).To(Succeed())
+				Expect(CreatePersistentVolumeForRuntime(context.Background(), client, runtimeInfo, "/mnt", "alluxio", log)).To(Succeed())
 				var list v1.PersistentVolumeList
 				Expect(client.List(context.TODO(), &list)).To(Succeed())
 				Expect(list.Items).To(HaveLen(1))
@@ -119,7 +120,7 @@ var _ = Describe("Create Volume Tests", Label("pkg.utils.dataset.volume.create_t
 			})
 
 			It("should create a pv with same access mode", func() {
-				Expect(CreatePersistentVolumeForRuntime(client, runtimeInfo, "/mnt", "alluxio", log)).To(Succeed())
+				Expect(CreatePersistentVolumeForRuntime(context.Background(), client, runtimeInfo, "/mnt", "alluxio", log)).To(Succeed())
 				var list v1.PersistentVolumeList
 				Expect(client.List(context.TODO(), &list)).To(Succeed())
 				Expect(list.Items).To(HaveLen(1))
@@ -131,13 +132,35 @@ var _ = Describe("Create Volume Tests", Label("pkg.utils.dataset.volume.create_t
 
 		When("dataset has no explicit access mode", func() {
 			It("should create pv with default access mode", func() {
-				Expect(CreatePersistentVolumeForRuntime(client, runtimeInfo, "/mnt", "alluxio", log)).To(Succeed())
+				Expect(CreatePersistentVolumeForRuntime(context.Background(), client, runtimeInfo, "/mnt", "alluxio", log)).To(Succeed())
 				var list v1.PersistentVolumeList
 				Expect(client.List(context.TODO(), &list)).To(Succeed())
 				Expect(list.Items).To(HaveLen(1))
 				pv := list.Items[0]
 				Expect(pv.Spec.AccessModes).To(HaveLen(1))
 				Expect(pv.Spec.AccessModes).To(ContainElement(v1.ReadOnlyMany))
+			})
+		})
+
+		When("caller context is canceled", func() {
+			It("should return the context error before creating the PV", func() {
+				ctx, cancel := context.WithCancel(context.Background())
+				cancel()
+
+				err := CreatePersistentVolumeForRuntime(ctx, contextAwareClient{Client: client}, runtimeInfo, "/mnt", "alluxio", log)
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError(context.Canceled))
+			})
+		})
+
+		When("caller context times out while waiting for the PV phase", func() {
+			It("should return the caller context error", func() {
+				ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+				defer cancel()
+
+				err := CreatePersistentVolumeForRuntime(ctx, client, runtimeInfo, "/mnt", "alluxio", log)
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError(context.DeadlineExceeded))
 			})
 		})
 
@@ -149,7 +172,7 @@ var _ = Describe("Create Volume Tests", Label("pkg.utils.dataset.volume.create_t
 				dataset.Annotations[utils.PVCStorageAnnotation] = "10Gi"
 			})
 			It("should use annotated storage capacity", func() {
-				Expect(CreatePersistentVolumeForRuntime(client, runtimeInfo, "/mnt", "alluxio", log)).To(Succeed())
+				Expect(CreatePersistentVolumeForRuntime(context.Background(), client, runtimeInfo, "/mnt", "alluxio", log)).To(Succeed())
 				var list v1.PersistentVolumeList
 				Expect(client.List(context.TODO(), &list)).To(Succeed())
 				pv := list.Items[0]
@@ -167,7 +190,7 @@ var _ = Describe("Create Volume Tests", Label("pkg.utils.dataset.volume.create_t
 				dataset.Annotations[utils.PVCStorageAnnotation] = "invalid-size"
 			})
 			It("should fallback to default storage capacity", func() {
-				Expect(CreatePersistentVolumeForRuntime(client, runtimeInfo, "/mnt", "alluxio", log)).To(Succeed())
+				Expect(CreatePersistentVolumeForRuntime(context.Background(), client, runtimeInfo, "/mnt", "alluxio", log)).To(Succeed())
 				var list v1.PersistentVolumeList
 				Expect(client.List(context.TODO(), &list)).To(Succeed())
 				pv := list.Items[0]
@@ -179,7 +202,7 @@ var _ = Describe("Create Volume Tests", Label("pkg.utils.dataset.volume.create_t
 
 		When("creating pv csi attributes", func() {
 			It("should set mountType/namespace/name and claimRef", func() {
-				Expect(CreatePersistentVolumeForRuntime(client, runtimeInfo, "/mnt", "alluxio", log)).To(Succeed())
+				Expect(CreatePersistentVolumeForRuntime(context.Background(), client, runtimeInfo, "/mnt", "alluxio", log)).To(Succeed())
 				var list v1.PersistentVolumeList
 				Expect(client.List(context.TODO(), &list)).To(Succeed())
 				pv := list.Items[0]
@@ -203,7 +226,7 @@ var _ = Describe("Create Volume Tests", Label("pkg.utils.dataset.volume.create_t
 				Expect(err).To(BeNil())
 			})
 			It("should propagate to pv csi volumeAttributes", func() {
-				Expect(CreatePersistentVolumeForRuntime(client, runtimeInfo, "/mnt", "alluxio", log)).To(Succeed())
+				Expect(CreatePersistentVolumeForRuntime(context.Background(), client, runtimeInfo, "/mnt", "alluxio", log)).To(Succeed())
 				var list v1.PersistentVolumeList
 				Expect(client.List(context.TODO(), &list)).To(Succeed())
 				pv := list.Items[0]
@@ -230,7 +253,7 @@ var _ = Describe("Create Volume Tests", Label("pkg.utils.dataset.volume.create_t
 				Expect(err).To(BeNil())
 			})
 			It("should merge into pv and set node_publish_method", func() {
-				Expect(CreatePersistentVolumeForRuntime(client, runtimeInfo, "/mnt", "alluxio", log)).To(Succeed())
+				Expect(CreatePersistentVolumeForRuntime(context.Background(), client, runtimeInfo, "/mnt", "alluxio", log)).To(Succeed())
 				var list v1.PersistentVolumeList
 				Expect(client.List(context.TODO(), &list)).To(Succeed())
 				pv := list.Items[0]
@@ -244,17 +267,26 @@ var _ = Describe("Create Volume Tests", Label("pkg.utils.dataset.volume.create_t
 	Context("Test CreatePersistentVolumeClaimForRuntime()", func() {
 		It("should create PVC and record fuse generation if exists", func() {
 			runtimeInfo.SetFuseName("hbase-fuse")
-			Expect(CreatePersistentVolumeClaimForRuntime(client, runtimeInfo, log)).To(Succeed())
+			Expect(CreatePersistentVolumeClaimForRuntime(context.Background(), client, runtimeInfo, log)).To(Succeed())
 			var list v1.PersistentVolumeClaimList
 			Expect(client.List(context.TODO(), &list)).To(Succeed())
 			Expect(list.Items).ToNot(BeEmpty())
 		})
 
 		It("should create PVC even if no fuse daemonset found (no generation label)", func() {
-			Expect(CreatePersistentVolumeClaimForRuntime(client, runtimeInfo, log)).To(Succeed())
+			Expect(CreatePersistentVolumeClaimForRuntime(context.Background(), client, runtimeInfo, log)).To(Succeed())
 			var list v1.PersistentVolumeClaimList
 			Expect(client.List(context.TODO(), &list)).To(Succeed())
 			Expect(list.Items).ToNot(BeEmpty())
+		})
+
+		It("should return the context error when caller context is canceled", func() {
+			ctx, cancel := context.WithCancel(context.Background())
+			cancel()
+
+			err := CreatePersistentVolumeClaimForRuntime(ctx, contextAwareClient{Client: client}, runtimeInfo, log)
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(context.Canceled))
 		})
 	})
 })
