@@ -52,7 +52,7 @@ func (e *CacheEngine) generateDataLoadValueFile(ctx cruntime.ReconcileRequestCon
 			schema.GroupResource{
 				Group:    object.GetObjectKind().GroupVersionKind().Group,
 				Resource: object.GetObjectKind().GroupVersionKind().Kind,
-			}, "JuiceFSRuntime")
+			}, "CacheRuntime["+e.name+"]")
 	}
 
 	dataLoadValue, err := e.genDataLoadValue(targetDataset, runtime, runtimeClass, dataload)

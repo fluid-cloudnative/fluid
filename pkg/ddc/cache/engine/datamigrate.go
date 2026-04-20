@@ -12,5 +12,5 @@ func (e *CacheEngine) generateDataMigrateValueFile(ctx cruntime.ReconcileRequest
 		schema.GroupResource{
 			Group:    object.GetObjectKind().GroupVersionKind().Group,
 			Resource: object.GetObjectKind().GroupVersionKind().Kind,
-		}, "JuiceFSRuntime")
+		}, "CacheRuntime["+e.name+"]")
 }

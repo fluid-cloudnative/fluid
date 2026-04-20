@@ -40,6 +40,7 @@ spec:
                   - DataLoad
                   - DataBackup
                   - DataMigrate
+                  - DataProcess
                   type: string
               required:
               - name

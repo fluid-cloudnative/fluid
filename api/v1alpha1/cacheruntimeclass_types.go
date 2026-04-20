@@ -187,7 +187,7 @@ type CacheRuntimeClass struct {
 
 type DataOperationSpec struct {
 	// Name is the data operation name like DataLoad, DataBackup, DataMigrate etc.
-	// +kubebuilder:validation:Enum=DataLoad;DataBackup;DataMigrate
+	// +kubebuilder:validation:Enum=DataLoad;DataBackup;DataMigrate;DataProcess
 	Name string `json:"name"`
 
 	// Image the image for data operation, if not existed, use the runtime/runtimeclass defined worker image.

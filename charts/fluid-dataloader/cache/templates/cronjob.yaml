@@ -6,7 +6,7 @@ metadata:
   labels:
     release: {{ .Release.Name }}
     role: dataload-cronjob
-    app: alluxio
+    app: cache
     targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
     dataload: {{ .Values.name }}
     fluid.io/jobPolicy: cron
@@ -40,7 +40,7 @@ spec:
           labels:
             release: {{ .Release.Name }}
             role: dataload-pod
-            app: alluxio
+            app: cache
             cronjob: {{ printf "%s-job" .Release.Name }}
             targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
             {{- include "library.fluid.labels" . | nindent 12 }}
@@ -55,8 +55,15 @@ spec:
             - name: dataloader
               image: {{ required "Dataloader image should be set" .Values.dataloader.image }}
               imagePullPolicy: IfNotPresent
-              command: ["/bin/sh", "-c"]
-              args: ["/scripts/alluxio_env_init.sh && /scripts/alluxio_dataload.sh"]
+              command:
+              {{- range .Values.dataloader.command }}
+              - {{ . | quote }}
+              {{- end }}
+              args:
+              {{- range .Values.dataloader.args }}
+              - {{ . | quote }}
+              {{- end }}
+
               {{- if .Values.dataloader.resources }}
               resources:
               {{- toYaml .Values.dataloader.resources | nindent 16}}
@@ -73,34 +80,15 @@ spec:
               {{- end }}
               {{- $pathReplicas = $pathReplicas | nospace | trimSuffix ":"}}
               env:
-                - name: ALLUXIO_CLIENT_HOSTNAME
-                  valueFrom:
-                    fieldRef:
-                      fieldPath: status.podIP
-                - name: ALLUXIO_CLIENT_JAVA_OPTS
-                  value: " -Dalluxio.user.hostname=${ALLUXIO_CLIENT_HOSTNAME}"
-                - name: NEED_LOAD_METADATA
-                  value: {{ default false .Values.dataloader.loadMetadata | quote }}
-                - name: DATA_PATH
-                  value: {{ $targetPaths | quote }}
-                - name: PATH_REPLICAS
-                  value: {{ $pathReplicas | quote }}
-              envFrom:
-                - configMapRef:
-                    name: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}-config
-              volumeMounts:
-                - mountPath: /scripts
-                  name: data-load-script
-          volumes:
-            - name: data-load-script
-              configMap:
-                name: {{ printf "%s-data-load-script" .Release.Name }}
-                items:
-                  - key: dataloader.alluxio.init
-                    path: alluxio_env_init.sh
-                    mode: 365
-                  - key: dataloader.distributedLoad
-                    path: alluxio_dataload.sh
-                    mode: 365
+              - name: FLUID_DATALOAD_METADATA
+                value: {{ default false .Values.dataloader.loadMetadata | quote }}
+              - name: FLUID_DATALOAD_DATA_PATH
+                value: {{ $targetPaths | quote }}
+              - name: FLUID_DATALOAD_PATH_REPLICAS
+                value: {{ $pathReplicas | quote }}
+              {{- range .Values.dataloader.envs }}
+              - name: {{ .name }}
+                value: {{ .value | quote }}
+              {{- end }}
 
 {{- end }}
