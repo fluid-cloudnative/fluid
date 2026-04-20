@@ -298,6 +298,14 @@ func (o *OperationReconciler) getRuntimeObjectAndEngineImpl(runtimeType, name, n
 		runtime, err = utils.GetThinRuntime(o.Client, name, namespace)
 	case common.VineyardRuntime:
 		runtime, err = utils.GetVineyardRuntime(o.Client, name, namespace)
+	case common.CacheRuntime:
+		// shortcut for cache
+		cacheRuntime, err := utils.GetCacheRuntime(o.Client, name, namespace)
+		if err != nil {
+			return nil, "", err
+		}
+		// cache engine only has one implementation
+		return cacheRuntime, common.CacheEngineImpl, nil
 	}
 
 	if err != nil {

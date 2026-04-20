@@ -29,6 +29,25 @@ extraResources:
           data_dir = [
             "[DISK]testing/data"
           ]
+dataOperationSpecs:
+  - name: DataLoad
+    command:
+      - "/bin/bash"
+      - "-c"
+    args:
+      # Actually, the cache runtime image should use $(FLUID_RUNTIME_CONFIG_PATH) to generate the config file, and
+      # use $(FLUID_DATALOAD_DATA_PATH) to execute data load.
+      - |
+        # currently we have no customized image supporting dataload for curvine, so we write the curvine.toml with fixed journal address for test case.
+        echo -e '[journal]\njournal_addrs = [\n{id=1, hostname="curvine-demo-master-0.svc-curvine-demo-master"}\n]' > /etc/curvine.toml
+        
+        IFS=: read -ra paths <<< "$FLUID_DATALOAD_DATA_PATH"
+        for p in "${paths[@]}"; do
+          /app/curvine/bin/cv load "$p" --watch --conf /etc/curvine.toml || {
+            echo "Error: load $p failed."
+            exit 1
+          }
+        done
 topology:
   master:
     workloadType: # 以StatefulSet workload创建master
@@ -190,4 +209,3 @@ topology:
           # emptyDir 共享存储（init容器和主容器互通）
           - name: shared-config-volume
             emptyDir: { }
-

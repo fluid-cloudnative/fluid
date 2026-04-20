@@ -1,0 +1,106 @@
+{{- if eq (lower .Values.dataloader.policy) "cron" }}
+apiVersion: {{ ternary "batch/v1" "batch/v1beta1" (.Capabilities.APIVersions.Has "batch/v1/CronJob") }}
+kind: CronJob
+metadata:
+  name: {{ printf "%s-job" .Release.Name }}
+  labels:
+    release: {{ .Release.Name }}
+    role: dataload-cronjob
+    app: alluxio
+    targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
+    dataload: {{ .Values.name }}
+    fluid.io/jobPolicy: cron
+    {{- include "library.fluid.labels" . | nindent 4 }}
+  ownerReferences:
+  {{- if .Values.owner.enabled }}
+    - apiVersion: {{ .Values.owner.apiVersion }}
+      blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+      controller: {{ .Values.owner.controller }}
+      kind: {{ .Values.owner.kind }}
+      name: {{ .Values.owner.name }}
+      uid: {{ .Values.owner.uid }}
+  {{- end }}
+spec:
+  schedule: "{{ .Values.dataloader.schedule }}"
+  jobTemplate:
+    spec:
+      backoffLimit: {{ .Values.dataloader.backoffLimit | default "3" }}
+      completions: 1
+      parallelism: 1
+      template:
+        metadata:
+          name: {{ printf "%s-loader" .Release.Name }}
+          annotations:
+            sidecar.istio.io/inject: "false"
+          {{- if .Values.dataloader.annotations }}
+          {{- range $key, $val := .Values.dataloader.annotations }}
+            {{ $key | quote }}: {{ $val | quote }}
+          {{- end }}
+          {{- end }}
+          labels:
+            release: {{ .Release.Name }}
+            role: dataload-pod
+            app: alluxio
+            cronjob: {{ printf "%s-job" .Release.Name }}
+            targetDataset: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}
+            {{- include "library.fluid.labels" . | nindent 12 }}
+          {{- if .Values.dataloader.labels }}
+          {{- range $key, $val := .Values.dataloader.labels }}
+            {{ $key | quote }}: {{ $val | quote }}
+          {{- end }}
+          {{- end }}
+        spec:
+          {{- include "library.fluid.dataload.cronJobCommonTemplateSpec" . | nindent 10 }}
+          containers:
+            - name: dataloader
+              image: {{ required "Dataloader image should be set" .Values.dataloader.image }}
+              imagePullPolicy: IfNotPresent
+              command: ["/bin/sh", "-c"]
+              args: ["/scripts/alluxio_env_init.sh && /scripts/alluxio_dataload.sh"]
+              {{- if .Values.dataloader.resources }}
+              resources:
+              {{- toYaml .Values.dataloader.resources | nindent 16}}
+              {{- end }}
+              {{- $targetPaths := "" }}
+              {{- range .Values.dataloader.targetPaths }}
+              {{- $targetPaths = cat $targetPaths (required "Path must be set" .path) ":" }}
+              {{- end }}
+              {{- $targetPaths = $targetPaths | nospace | trimSuffix ":" }}
+
+              {{- $pathReplicas := ""}}
+              {{- range .Values.dataloader.targetPaths }}
+              {{- $pathReplicas = cat $pathReplicas ( default 1 .replicas ) ":"}}
+              {{- end }}
+              {{- $pathReplicas = $pathReplicas | nospace | trimSuffix ":"}}
+              env:
+                - name: ALLUXIO_CLIENT_HOSTNAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: status.podIP
+                - name: ALLUXIO_CLIENT_JAVA_OPTS
+                  value: " -Dalluxio.user.hostname=${ALLUXIO_CLIENT_HOSTNAME}"
+                - name: NEED_LOAD_METADATA
+                  value: {{ default false .Values.dataloader.loadMetadata | quote }}
+                - name: DATA_PATH
+                  value: {{ $targetPaths | quote }}
+                - name: PATH_REPLICAS
+                  value: {{ $pathReplicas | quote }}
+              envFrom:
+                - configMapRef:
+                    name: {{ required "targetDataset should be set" .Values.dataloader.targetDataset }}-config
+              volumeMounts:
+                - mountPath: /scripts
+                  name: data-load-script
+          volumes:
+            - name: data-load-script
+              configMap:
+                name: {{ printf "%s-data-load-script" .Release.Name }}
+                items:
+                  - key: dataloader.alluxio.init
+                    path: alluxio_env_init.sh
+                    mode: 365
+                  - key: dataloader.distributedLoad
+                    path: alluxio_dataload.sh
+                    mode: 365
+
+{{- end }}

@@ -16,6 +16,7 @@ spec:
       containers:
       - name: write-job
         image: busybox
+        imagePullPolicy: IfNotPresent
         resources:
           limits:
             ephemeral-storage: "5Gi"

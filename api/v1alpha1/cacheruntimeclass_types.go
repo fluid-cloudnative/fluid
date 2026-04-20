@@ -179,6 +179,26 @@ type CacheRuntimeClass struct {
 	// ExtraResources specifies additional resources (e.g., ConfigMaps) used by the CacheRuntime components
 	// +optional
 	ExtraResources RuntimeExtraResources `json:"extraResources,omitempty"`
+
+	// DataOperationSpecs specifies the data operation spec
+	// +optional
+	DataOperationSpecs []DataOperationSpec `json:"dataOperationSpecs,omitempty"`
+}
+
+type DataOperationSpec struct {
+	// Name is the data operation name like DataLoad, DataBackup, DataMigrate etc.
+	// +kubebuilder:validation:Enum=DataLoad;DataBackup;DataMigrate
+	Name string `json:"name"`
+
+	// Image the image for data operation, if not existed, use the runtime/runtimeclass defined worker image.
+	// +optional
+	Image string `json:"image,omitempty"`
+
+	// Command for data operation Pod container
+	Command []string `json:"command,omitempty"`
+
+	// Args for data operation Pod container
+	Args []string `json:"args,omitempty"`
 }
 
 // CacheRuntimeClassList contains a list of CacheRuntimeClass

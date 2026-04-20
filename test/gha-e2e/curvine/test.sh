@@ -102,6 +102,7 @@ function dump_env_and_clean_up() {
     syslog "Cleaning up resources for testcase $testname"
     kubectl delete -f test/gha-e2e/curvine/read_job.yaml
     kubectl delete -f test/gha-e2e/curvine/write_job.yaml
+    kubectl delete -f test/gha-e2e/curvine/dataload.yaml
     kubectl delete -f test/gha-e2e/curvine/dataset.yaml
     kubectl delete -f test/gha-e2e/curvine/cacheruntime.yaml
     kubectl delete -f test/gha-e2e/curvine/cacheruntimeclass.yaml
@@ -110,6 +111,29 @@ function dump_env_and_clean_up() {
     kubectl delete -f test/gha-e2e/curvine/minio_create_bucket.yaml
 }
 
+function create_dataload() {
+    kubectl create -f test/gha-e2e/curvine/dataload.yaml
+}
+
+function wait_dataload_completed() {
+    local dataload_name=$1
+    local log_interval=0
+    local status
+    while true; do
+        status=$(kubectl get dataload "$dataload_name" -ojsonpath='{@.status.phase}')
+        if [[ "$status" == "Complete" ]]; then
+            syslog "dataload $dataload_name status.phase==Complete"
+            break
+        fi
+        # wait at most 60 seconds
+        if [[ $log_interval -ge 12 ]]; then
+            panic "dataload $dataload_name status is $status, not complete for 60s!"
+        fi
+        sleep 5
+        log_interval=$((log_interval + 1))
+    done
+    syslog "Found succeeded dataload_name $dataload_name"
+}
 
 function main() {
     syslog "[TESTCASE $testname STARTS AT $(date)]"
@@ -117,10 +141,16 @@ function main() {
     setup
     create_dataset
     wait_dataset_bound
+
     create_job test/gha-e2e/curvine/write_job.yaml $write_job_name
     wait_job_completed $write_job_name
+
+    create_dataload 
+    wait_dataload_completed "curvine-dataload"
+
     create_job test/gha-e2e/curvine/read_job.yaml $read_job_name
     wait_job_completed $read_job_name
+
     syslog "[TESTCASE $testname SUCCEEDED AT $(date)]"
 }
 

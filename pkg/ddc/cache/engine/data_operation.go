@@ -18,29 +18,59 @@ package engine
 
 import (
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
-	"github.com/fluid-cloudnative/fluid/pkg/errors"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	fluiderrors "github.com/fluid-cloudnative/fluid/pkg/errors"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 func (e *CacheEngine) Operate(ctx cruntime.ReconcileRequestContext, opStatus *v1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
-	object := operation.GetOperationObject()
-	// cache runtime engine current not support any data operation
-	err := errors.NewNotSupported(
-		schema.GroupResource{
-			Group:    object.GetObjectKind().GroupVersionKind().Group,
-			Resource: object.GetObjectKind().GroupVersionKind().Kind,
-		}, "CacheRuntime")
-	ctx.Log.Error(err, "CacheRuntime does not support data operations")
-	ctx.Recorder.Event(object, v1.EventTypeWarning, common.DataOperationNotSupport, "cacheEngine does not support data operations")
-	return utils.NoRequeue()
+
+	r := base.EngineOperationReconciler{
+		Engine:  e,
+		CClient: e.Client,
+	}
+
+	// use default template engine
+	return r.ReconcileOperation(ctx, opStatus, operation)
+}
+
+// CheckRuntimeReady checks if the runtime is ready
+func (e *CacheEngine) CheckRuntimeReady() bool {
+	// For CacheEngine, we check if both master and worker are ready
+	runtime, err := e.getRuntime()
+	if err != nil {
+		return false
+	}
+	return runtime.Status.Master.Phase == v1alpha1.RuntimePhaseReady &&
+		(runtime.Status.Worker.Phase == v1alpha1.RuntimePhaseReady || runtime.Status.Worker.Phase == v1alpha1.RuntimePhasePartialReady)
 }
 
 func (e *CacheEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, operation dataoperation.OperationInterface) (valueFileName string, err error) {
-	return "", newNotImplementError("GetDataOperationValueFile")
+
+	operationType := operation.GetOperationType()
+	object := operation.GetOperationObject()
+
+	switch operationType {
+	case dataoperation.DataLoadType:
+		valueFileName, err = e.generateDataLoadValueFile(ctx, object)
+		return valueFileName, err
+	case dataoperation.DataProcessType:
+		valueFileName, err = e.generateDataProcessValueFile(ctx, object)
+		return valueFileName, err
+	case dataoperation.DataMigrateType:
+		valueFileName, err = e.generateDataMigrateValueFile(ctx, object)
+		return valueFileName, err
+	case dataoperation.DataBackupType:
+		valueFileName, err = e.generateDataBackupValueFile(ctx, object)
+		return valueFileName, err
+	default:
+		return "", fluiderrors.NewNotSupported(
+			schema.GroupResource{
+				Group:    object.GetObjectKind().GroupVersionKind().Group,
+				Resource: object.GetObjectKind().GroupVersionKind().Kind,
+			}, "JuiceFSRuntime")
+	}
 }

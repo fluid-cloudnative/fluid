@@ -95,7 +95,6 @@ rules:
       - cacheruntimeclasses
       - datasets
       - cacheruntimes/status
-      - cacheruntimeclasses/status
       - datasets/status
     verbs:
       - get
