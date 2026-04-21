@@ -82,6 +82,10 @@ const (
 	// i.e. fluid.io/check-mount-script-sha256
 	AnnotationCheckMountScriptSHA256 = LabelAnnotationPrefix + "check-mount-script-sha256"
 
+	// AnnotationDatasetPolicy is a runtime annotation that controls how Dataset is handled.
+	// i.e. fluid.io/dataset-policy
+	AnnotationDatasetPolicy = LabelAnnotationPrefix + "dataset-policy"
+
 	// AnnotationDisableRuntimeHelmValueConfig is a runtime label indicates the configmap contains helm value will not be created in setup.
 	AnnotationDisableRuntimeHelmValueConfig = "runtime." + LabelAnnotationPrefix + "disable-helm-value-config"
 
