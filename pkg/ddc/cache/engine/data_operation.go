@@ -44,6 +44,11 @@ func (e *CacheEngine) CheckRuntimeReady() bool {
 	if err != nil {
 		return false
 	}
+	// no master architecture
+	if runtime.Spec.Master.Disabled {
+		return runtime.Status.Worker.Phase == v1alpha1.RuntimePhaseReady || runtime.Status.Worker.Phase == v1alpha1.RuntimePhasePartialReady
+	}
+	// master-worker architecture
 	return runtime.Status.Master.Phase == v1alpha1.RuntimePhaseReady &&
 		(runtime.Status.Worker.Phase == v1alpha1.RuntimePhaseReady || runtime.Status.Worker.Phase == v1alpha1.RuntimePhasePartialReady)
 }
