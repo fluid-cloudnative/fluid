@@ -44,8 +44,8 @@ type OperationEngine interface {
 }
 
 type EngineOperationReconciler struct {
-	Engine  OperationEngine
-	CClient client.Client
+	Engine OperationEngine
+	Client client.Client
 }
 
 // ReconcileOperation is the common operation reconciliation logic that can be shared across different engines
@@ -190,13 +190,13 @@ func (e *EngineOperationReconciler) reconcileComplete(ctx cruntime.ReconcileRequ
 	operation dataoperation.OperationInterface) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileComplete")
 
-	client := e.CClient
+	client := e.Client
 
 	// 0. clean up if ttl after finished expired
 	var ttl *time.Duration
 	if utils.NeedCleanUp(opStatus, operation) {
 		var err error
-		ttl, err = processTTL(opStatus, operation, log, ctx, client)
+		ttl, err = processTTL(opStatus, operation, log, client)
 		if err != nil {
 			log.Error(err, fmt.Sprintf(cleanupErrorMsg, operation.GetOperationType()))
 			return utils.RequeueIfError(err)
@@ -274,7 +274,7 @@ func (e *EngineOperationReconciler) reconcileComplete(ctx cruntime.ReconcileRequ
 }
 
 // processTTL processes the operations that need to be cleaned up based on the TTL.
-func processTTL(opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface, log logr.Logger, ctx cruntime.ReconcileRequestContext, client client.Client) (ttl *time.Duration, err error) {
+func processTTL(opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface, log logr.Logger, client client.Client) (ttl *time.Duration, err error) {
 	// Get the remaining time to clean up for the operation.
 	ttl, err = utils.Timeleft(opStatus, operation)
 	if err != nil {
@@ -284,7 +284,7 @@ func processTTL(opStatus *datav1alpha1.OperationStatus, operation dataoperation.
 
 	// If the remaining time is not nil and less than or equal to 0, clean up the data operation.
 	if ttl != nil && *ttl <= 0 {
-		if err = ctx.Client.Delete(context.TODO(), operation.GetOperationObject()); err != nil && utils.IgnoreNotFound(err) != nil {
+		if err = client.Delete(context.TODO(), operation.GetOperationObject()); err != nil && utils.IgnoreNotFound(err) != nil {
 			log.Error(err, "Failed to clean up data operation %s", operation.GetOperationType())
 			return
 		}
@@ -296,13 +296,13 @@ func processTTL(opStatus *datav1alpha1.OperationStatus, operation dataoperation.
 func (e *EngineOperationReconciler) reconcileFailed(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileFailed")
 
-	client := e.CClient
+	client := e.Client
 
 	// 0. clean up if ttl after finished expired
 	var ttl *time.Duration
 	if utils.NeedCleanUp(opStatus, operation) {
 		var err error
-		ttl, err = processTTL(opStatus, operation, log, ctx, client)
+		ttl, err = processTTL(opStatus, operation, log, client)
 		if err != nil {
 			log.Error(err, fmt.Sprintf(cleanupErrorMsg, operation.GetOperationType()))
 			return utils.RequeueIfError(err)

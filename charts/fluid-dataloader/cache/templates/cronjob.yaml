@@ -80,15 +80,15 @@ spec:
               {{- end }}
               {{- $pathReplicas = $pathReplicas | nospace | trimSuffix ":"}}
               env:
-              - name: FLUID_DATALOAD_METADATA
-                value: {{ default false .Values.dataloader.loadMetadata | quote }}
-              - name: FLUID_DATALOAD_DATA_PATH
-                value: {{ $targetPaths | quote }}
-              - name: FLUID_DATALOAD_PATH_REPLICAS
-                value: {{ $pathReplicas | quote }}
-              {{- range .Values.dataloader.envs }}
-              - name: {{ .name }}
-                value: {{ .value | quote }}
-              {{- end }}
+                - name: FLUID_DATALOAD_METADATA
+                  value: {{ default false .Values.dataloader.loadMetadata | quote }}
+                - name: FLUID_DATALOAD_DATA_PATH
+                  value: {{ $targetPaths | quote }}
+                - name: FLUID_DATALOAD_PATH_REPLICAS
+                  value: {{ $pathReplicas | quote }}
+                {{- range .Values.dataloader.envs }}
+                - name: {{ .name }}
+                  value: {{ .value | quote }}
+                {{- end }}
 
 {{- end }}

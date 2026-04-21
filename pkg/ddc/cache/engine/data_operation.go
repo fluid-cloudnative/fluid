@@ -29,8 +29,8 @@ import (
 func (e *CacheEngine) Operate(ctx cruntime.ReconcileRequestContext, opStatus *v1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
 
 	r := base.EngineOperationReconciler{
-		Engine:  e,
-		CClient: e.Client,
+		Engine: e,
+		Client: e.Client,
 	}
 
 	// use default template engine
@@ -73,4 +73,13 @@ func (e *CacheEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestCon
 				Resource: object.GetObjectKind().GroupVersionKind().Kind,
 			}, "CacheRuntime["+e.name+"]")
 	}
+}
+
+func findDataOperationSpec(specs []v1alpha1.DataOperationSpec, opName dataoperation.OperationType) *v1alpha1.DataOperationSpec {
+	for _, op := range specs {
+		if op.Name == string(opName) {
+			return &op
+		}
+	}
+	return nil
 }

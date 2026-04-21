@@ -113,4 +113,10 @@ dataloader:
 
   args: []
 
-  envs: {}
+  # Optional
+  # Description: optional environment variables for the DataLoad container
+  # Each item should be an object with `name` and `value` fields, for example:
+  # envs:
+  #   - name: EXAMPLE_ENV
+  #     value: "example-value"
+  envs: []

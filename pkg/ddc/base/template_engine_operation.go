@@ -29,8 +29,8 @@ func (t *TemplateEngine) Operate(ctx cruntime.ReconcileRequestContext, opStatus 
 	// we can do customized runtime engine override the template engine, implement if needed.
 
 	e := EngineOperationReconciler{
-		Engine:  t,
-		CClient: t.Client,
+		Engine: t,
+		Client: t.Client,
 	}
 
 	// use default template engine

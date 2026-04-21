@@ -1,10 +1,28 @@
+/*
+  Copyright 2026 The Fluid Authors.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
+
 package engine
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
@@ -12,9 +30,10 @@ import (
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/transformer"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/yaml"
 
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -39,23 +58,7 @@ func (e *CacheEngine) generateDataLoadValueFile(ctx cruntime.ReconcileRequestCon
 		return "", err
 	}
 
-	// check runtime class defines the DataLoad or not.
-	var supportDataLoad = false
-	for _, op := range runtimeClass.DataOperationSpecs {
-		if op.Name == string(dataoperation.DataLoadType) {
-			supportDataLoad = true
-			break
-		}
-	}
-	if !supportDataLoad {
-		return "", fluiderrors.NewNotSupported(
-			schema.GroupResource{
-				Group:    object.GetObjectKind().GroupVersionKind().Group,
-				Resource: object.GetObjectKind().GroupVersionKind().Kind,
-			}, "CacheRuntime["+e.name+"]")
-	}
-
-	dataLoadValue, err := e.genDataLoadValue(targetDataset, runtime, runtimeClass, dataload)
+	dataLoadValue, err := e.genDataLoadValue(ctx, targetDataset, runtime, runtimeClass, dataload)
 	if err != nil {
 		return "", err
 	}
@@ -76,11 +79,24 @@ func (e *CacheEngine) generateDataLoadValueFile(ctx cruntime.ReconcileRequestCon
 	return valueFile.Name(), nil
 }
 
-func (e *CacheEngine) genDataLoadValue(targetDataset *v1alpha1.Dataset, runtime *v1alpha1.CacheRuntime,
+func (e *CacheEngine) genDataLoadValue(ctx cruntime.ReconcileRequestContext, targetDataset *v1alpha1.Dataset, runtime *v1alpha1.CacheRuntime,
 	runtimeClass *v1alpha1.CacheRuntimeClass, dataload *v1alpha1.DataLoad) (value *cdataload.DataLoadValue, err error) {
 
+	// check runtime class defines the DataLoad or not.
+	opSpec := findDataOperationSpec(runtimeClass.DataOperationSpecs, dataoperation.DataLoadType)
+	if opSpec == nil {
+		return nil, fluiderrors.NewNotSupported(
+			schema.GroupResource{
+				Group:    runtime.GetObjectKind().GroupVersionKind().Group,
+				Resource: runtime.GetObjectKind().GroupVersionKind().Kind,
+			}, "CacheRuntime["+e.name+"]")
+	}
+
 	// get image pull secrets from runtime class worker pod template
-	imagePullSecrets := runtimeClass.Topology.Worker.Template.Spec.ImagePullSecrets
+	var imagePullSecrets []corev1.LocalObjectReference
+	if runtimeClass.Topology.Worker != nil {
+		imagePullSecrets = runtimeClass.Topology.Worker.Template.Spec.ImagePullSecrets
+	}
 
 	dataloadInfo := cdataload.DataLoadInfo{
 		BackoffLimit:     3,
@@ -94,19 +110,19 @@ func (e *CacheEngine) genDataLoadValue(targetDataset *v1alpha1.Dataset, runtime 
 		Resources:        dataload.Spec.Resources,
 	}
 
-	for _, op := range runtimeClass.DataOperationSpecs {
-		if op.Name == string(dataoperation.DataLoadType) {
-			dataloadInfo.Command = op.Command
-			dataloadInfo.Args = op.Args
-			// runtime class operation image has higher priority
-			dataloadInfo.Image = op.Image
-			if len(dataloadInfo.Image) == 0 {
-				dataloadInfo.Image, err = e.getDataOperationImage(runtime, runtimeClass)
-				if err != nil {
-					return nil, err
-				}
-			}
-			break
+	dataloadInfo.Command = opSpec.Command
+	dataloadInfo.Args = opSpec.Args
+	if len(dataloadInfo.Command) == 0 && len(dataloadInfo.Args) == 0 {
+		ctx.Recorder.Eventf(dataload, corev1.EventTypeWarning, common.DataOperationExecutionFailed, "dataLoad command and args defined in cache runtime class can not be both empty")
+		return nil, errors.New("dataLoad command and args defined in cache runtime class can not be both empty")
+	}
+
+	// DataOperationSpecs image takes precedence; falls back to worker image if empty.
+	dataloadInfo.Image = opSpec.Image
+	if len(dataloadInfo.Image) == 0 {
+		dataloadInfo.Image, err = e.getDataOperationImage(runtime, runtimeClass)
+		if err != nil {
+			return nil, err
 		}
 	}
 
