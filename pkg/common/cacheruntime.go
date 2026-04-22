@@ -77,12 +77,14 @@ type CacheRuntimeConfig struct {
 // MountConfig defines the mount config about dataset Mounts
 type MountConfig struct {
 	MountPoint string `json:"mountPoint"`
-	// TODO: separate encrypt options with mount files for security
-	Options  map[string]string `json:"options,omitempty"`
-	Name     string            `json:"name,omitempty"`
-	Path     string            `json:"path,omitempty"`
-	ReadOnly bool              `json:"readOnly,omitempty"`
-	Shared   bool              `json:"shared,omitempty"`
+	// Non-encrypted mount options, key is the option name, value is the option value.
+	Options map[string]string `json:"options,omitempty"`
+	// Encrypted mount options, key is the option name, value is the secret mount path in container.
+	EncryptOptions map[string]string `json:"encryptOptions,omitempty"`
+	Name           string            `json:"name,omitempty"`
+	Path           string            `json:"path,omitempty"`
+	ReadOnly       bool              `json:"readOnly,omitempty"`
+	Shared         bool              `json:"shared,omitempty"`
 }
 
 type CacheRuntimeComponentConfig struct {
