@@ -62,6 +62,18 @@ func (b *BitMapAllocator) Release(port int) error {
 	return b.alloc.Release(port)
 }
 
+// AllocateBatch allocates a batch of ports from the bitmap allocator.
+// This function attempts to allocate the specified number of consecutive ports and returns them as a slice.
+// If allocation fails for any reason (e.g., insufficient available ports), it will rollback all
+// previously allocated ports in this batch and exit the process with status code 1 to ensure
+// port allocation state consistency.
+//
+// Parameters:
+//   - portNum (int): The number of ports to allocate
+//
+// Returns:
+//   - ports ([]int): A slice containing the allocated port numbers
+//   - err (error): Error if allocation fails (note: function exits process on failure)
 func (b *BitMapAllocator) AllocateBatch(portNum int) (ports []int, err error) {
 	var availPort int
 
