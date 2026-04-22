@@ -9,14 +9,25 @@ spec:
       restartPolicy: Never
       containers:
         - name: busybox
-          image: busybox
+          image: registry-cn-hongkong.ack.aliyuncs.com/acs/smartdata:6.9.1-202509151826
+          imagePullPolicy: IfNotPresent
           resources:
             limits:
               ephemeral-storage: "5Gi"
           command: ["/bin/sh"]
           args:
           - -c
-          - set -ex; test -n "$(ls /data)" && test "$(cat /data/testfile)" = "helloworld"
+          - |
+            set -eu
+            for i in $(seq 1 24); do
+              if test -n "$(ls /data 2>/dev/null)" && test "$(cat /data/testfile 2>/dev/null)" = "helloworld"; then
+                exit 0
+              fi
+              sleep 5
+            done
+            ls -al /data >&2 || true
+            cat /data/testfile >&2 || true
+            exit 1
           volumeMounts:
             - mountPath: /data
               name: fluid-vol
