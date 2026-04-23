@@ -36,7 +36,10 @@ const (
 	testDatasetName      = "spark"
 	testDatasetNamespace = "fluid"
 	testDatasetUID       = "dataset-uid"
+	volumeContextKey     = testContextKey("volume")
 )
+
+type testContextKey string
 
 type stubImplement struct {
 	shouldSetupMasterFn           func() (bool, error)
@@ -297,7 +300,7 @@ var _ = Describe("TemplateEngine volume operations", func() {
 	})
 
 	It("delegates CreateVolume to the implementation", func() {
-		volumeCtx := context.WithValue(context.Background(), "volume", "create")
+		volumeCtx := context.WithValue(context.Background(), volumeContextKey, "create")
 		called := false
 		impl.createVolumeFn = func(ctx context.Context) error {
 			called = true
@@ -310,7 +313,7 @@ var _ = Describe("TemplateEngine volume operations", func() {
 	})
 
 	It("propagates CreateVolume errors", func() {
-		volumeCtx := context.WithValue(context.Background(), "volume", "create-error")
+		volumeCtx := context.WithValue(context.Background(), volumeContextKey, "create-error")
 		expectedErr := errors.New("create failed")
 		impl.createVolumeFn = func(ctx context.Context) error {
 			Expect(ctx).To(BeIdenticalTo(volumeCtx))
@@ -321,7 +324,7 @@ var _ = Describe("TemplateEngine volume operations", func() {
 	})
 
 	It("delegates DeleteVolume to the implementation", func() {
-		volumeCtx := context.WithValue(context.Background(), "volume", "delete")
+		volumeCtx := context.WithValue(context.Background(), volumeContextKey, "delete")
 		called := false
 		impl.deleteVolumeFn = func(ctx context.Context) error {
 			called = true
@@ -334,7 +337,7 @@ var _ = Describe("TemplateEngine volume operations", func() {
 	})
 
 	It("propagates DeleteVolume errors", func() {
-		volumeCtx := context.WithValue(context.Background(), "volume", "delete-error")
+		volumeCtx := context.WithValue(context.Background(), volumeContextKey, "delete-error")
 		expectedErr := errors.New("delete failed")
 		impl.deleteVolumeFn = func(ctx context.Context) error {
 			Expect(ctx).To(BeIdenticalTo(volumeCtx))
