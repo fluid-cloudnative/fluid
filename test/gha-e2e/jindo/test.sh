@@ -388,6 +388,8 @@ function create_warmup_pod() {
     dataset_name=$1
     warmup_name="${dataset_name}-warmup"
 
+    delete_warmup_pod "$dataset_name"
+
     cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: Pod
@@ -428,9 +430,11 @@ function wait_single_mount_data_ready() {
     dataset_name=$1
     deadline=180
     elapsed=0
+    last_found_file=""
 
     while true; do
         found_file=$(kubectl exec "${dataset_name}-warmup" -- /bin/sh -c 'find /data -maxdepth 3 -type f -name testfile 2>/dev/null | head -n 1 || true' 2>/dev/null)
+        last_found_file="$found_file"
         if [[ -n "$found_file" ]]; then
             value=$(kubectl exec "${dataset_name}-warmup" -- /bin/sh -c "cat \"$found_file\" 2>/dev/null || true" 2>/dev/null)
             if [[ "$value" == "helloworld" ]]; then
@@ -439,9 +443,13 @@ function wait_single_mount_data_ready() {
             fi
         fi
 
+        if [[ $((elapsed % 15)) -eq 0 ]]; then
+            syslog "waiting for single-mount data in warmup pod (elapsed ${elapsed}s, last file: ${last_found_file:-<none>})"
+        fi
+
         elapsed=$(expr $elapsed + 5)
         if [[ "$elapsed" -ge "$deadline" ]]; then
-            kubectl exec "${dataset_name}-warmup" -- /bin/sh -c 'ls -al /data >&2 || true; find /data -maxdepth 3 \( -type d -o -type f \) >&2 || true' >/dev/null 2>&1 || true
+            kubectl exec "${dataset_name}-warmup" -- /bin/sh -c 'echo "=== warmup /data ===" >&2; ls -al /data >&2 || true; echo "=== warmup find ===" >&2; find /data -maxdepth 3 \( -type d -o -type f \) >&2 || true' 2>&1 || true
             panic "timeout waiting for single-mount data to become visible in warmup pod"
         fi
 
