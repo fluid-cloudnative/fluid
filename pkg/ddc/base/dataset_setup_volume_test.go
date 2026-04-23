@@ -203,9 +203,6 @@ func newTemplateEngineForTest(impl Implement) (*TemplateEngine, cruntime.Reconci
 	return NewTemplateEngine(impl, "test-engine", ctx), ctx
 }
 
-var _ = Describe("Dataset helpers", func() {
-})
-
 var _ = Describe("TemplateEngine setup", func() {
 	var (
 		impl   *stubImplement
@@ -256,35 +253,46 @@ var _ = Describe("TemplateEngine setup", func() {
 		Expect(ready).To(BeFalse())
 	})
 
-	It("returns not ready when runtime status update fails", func() {
+	It("propagates runtime status update errors without binding the dataset", func() {
 		expectedErr := errors.New("runtime status failed")
+		bindCalled := false
 		impl.shouldSetupMasterFn = func() (bool, error) { return false, nil }
 		impl.checkMasterReadyFn = func() (bool, error) { return true, nil }
 		impl.shouldCheckUFSFn = func() (bool, error) { return false, nil }
 		impl.shouldSetupWorkersFn = func() (bool, error) { return false, nil }
 		impl.checkWorkersReadyFn = func() (bool, error) { return true, nil }
 		impl.checkAndUpdateRuntimeStatusFn = func() (bool, error) { return true, expectedErr }
+		impl.bindToDatasetFn = func() error {
+			bindCalled = true
+			return nil
+		}
 
 		ready, err := engine.Setup(ctx)
 
 		Expect(err).To(MatchError(expectedErr))
-		Expect(ready).To(BeFalse())
+		Expect(ready).To(BeTrue())
+		Expect(bindCalled).To(BeFalse())
 	})
 
-	It("returns not ready when binding the dataset fails", func() {
+	It("propagates dataset binding errors after the runtime becomes ready", func() {
 		expectedErr := errors.New("bind failed")
+		bindCalled := false
 		impl.shouldSetupMasterFn = func() (bool, error) { return false, nil }
 		impl.checkMasterReadyFn = func() (bool, error) { return true, nil }
 		impl.shouldCheckUFSFn = func() (bool, error) { return false, nil }
 		impl.shouldSetupWorkersFn = func() (bool, error) { return false, nil }
 		impl.checkWorkersReadyFn = func() (bool, error) { return true, nil }
 		impl.checkAndUpdateRuntimeStatusFn = func() (bool, error) { return true, nil }
-		impl.bindToDatasetFn = func() error { return expectedErr }
+		impl.bindToDatasetFn = func() error {
+			bindCalled = true
+			return expectedErr
+		}
 
 		ready, err := engine.Setup(ctx)
 
 		Expect(err).To(MatchError(expectedErr))
-		Expect(ready).To(BeFalse())
+		Expect(ready).To(BeTrue())
+		Expect(bindCalled).To(BeTrue())
 	})
 })
 
