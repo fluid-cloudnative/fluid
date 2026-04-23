@@ -424,6 +424,31 @@ function wait_warmup_ready() {
     kubectl wait --for=condition=Ready --timeout=180s pod/${dataset_name}-warmup >/dev/null || panic "warmup pod ${dataset_name}-warmup is not ready"
 }
 
+function wait_single_mount_data_ready() {
+    dataset_name=$1
+    deadline=180
+    elapsed=0
+
+    while true; do
+        found_file=$(kubectl exec "${dataset_name}-warmup" -- /bin/sh -c 'find /data -maxdepth 3 -type f -name testfile 2>/dev/null | head -n 1 || true' 2>/dev/null)
+        if [[ -n "$found_file" ]]; then
+            value=$(kubectl exec "${dataset_name}-warmup" -- /bin/sh -c "cat \"$found_file\" 2>/dev/null || true" 2>/dev/null)
+            if [[ "$value" == "helloworld" ]]; then
+                syslog "Found single-mount data ready in warmup pod at $found_file"
+                break
+            fi
+        fi
+
+        elapsed=$(expr $elapsed + 5)
+        if [[ "$elapsed" -ge "$deadline" ]]; then
+            kubectl exec "${dataset_name}-warmup" -- /bin/sh -c 'ls -al /data >&2 || true; find /data -maxdepth 3 \( -type d -o -type f \) >&2 || true' >/dev/null 2>&1 || true
+            panic "timeout waiting for single-mount data to become visible in warmup pod"
+        fi
+
+        sleep 5
+    done
+}
+
 function create_job() {
     job_file=$1
     job_name=$2
@@ -476,6 +501,9 @@ function run_scenario() {
     create_warmup_pod $dataset_name
     wait_runtime_stable $dataset_name
     wait_warmup_ready $dataset_name
+    if [[ "$dataset_name" == "$s3_dataset_name" ]]; then
+        wait_single_mount_data_ready $dataset_name
+    fi
     create_job $job_file $job_name
     wait_job_completed $job_name
     cleanup_scenario $dataset_file $dataset_name $job_file
