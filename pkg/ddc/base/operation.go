@@ -17,9 +17,10 @@ package base
 import (
 	"context"
 	"fmt"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"reflect"
 	"time"
+
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -31,34 +32,43 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const cleanupErrorMsg = "Failed to get remaining time to clean up for operation %s"
 
-func (t *TemplateEngine) Operate(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus,
+// OperationEngine defines the interface needed for operation reconciliation
+type OperationEngine interface {
+	DataOperatorYamlGenerator
+	CheckRuntimeReady() bool
+}
+
+type EngineOperationReconciler struct {
+	Engine OperationEngine
+	Client client.Client
+}
+
+// ReconcileOperation is the common operation reconciliation logic that can be shared across different engines
+func (e *EngineOperationReconciler) ReconcileOperation(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus,
 	operation dataoperation.OperationInterface) (ctrl.Result, error) {
-
-	// we can do customized runtime engine override the template engine, implement if needed.
-
-	// use default template engine
 	switch opStatus.Phase {
 	case common.PhaseNone:
-		return t.reconcileNone(ctx, opStatus, operation)
+		return e.reconcileNone(ctx, opStatus, operation)
 	case common.PhasePending:
-		return t.reconcilePending(ctx, opStatus, operation)
+		return e.reconcilePending(ctx, opStatus, operation)
 	case common.PhaseExecuting:
-		return t.reconcileExecuting(ctx, opStatus, operation)
+		return e.reconcileExecuting(ctx, opStatus, operation)
 	case common.PhaseComplete:
-		return t.reconcileComplete(ctx, opStatus, operation)
+		return e.reconcileComplete(ctx, opStatus, operation)
 	case common.PhaseFailed:
-		return t.reconcileFailed(ctx, opStatus, operation)
+		return e.reconcileFailed(ctx, opStatus, operation)
 	default:
 		ctx.Log.Error(fmt.Errorf("unknown phase"), "won't reconcile it", "phase", opStatus.Phase)
 		return utils.NoRequeue()
 	}
 }
 
-func (t *TemplateEngine) reconcileNone(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus,
+func (e *EngineOperationReconciler) reconcileNone(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus,
 	operation dataoperation.OperationInterface) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileNone")
 
@@ -99,7 +109,7 @@ func (t *TemplateEngine) reconcileNone(ctx cruntime.ReconcileRequestContext, opS
 	return utils.NoRequeue()
 }
 
-func (t *TemplateEngine) reconcilePending(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus,
+func (e *EngineOperationReconciler) reconcilePending(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus,
 	operation dataoperation.OperationInterface) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcilePending")
 
@@ -110,7 +120,7 @@ func (t *TemplateEngine) reconcilePending(ctx cruntime.ReconcileRequestContext, 
 	}
 
 	// 2. set current data operation to dataset
-	err := SetDataOperationInTargetDataset(ctx, operation, t)
+	err := SetDataOperationInTargetDataset(ctx, operation, e.Engine)
 	if err != nil {
 		return utils.RequeueAfterInterval(20 * time.Second)
 	}
@@ -126,12 +136,12 @@ func (t *TemplateEngine) reconcilePending(ctx cruntime.ReconcileRequestContext, 
 	return utils.NoRequeue()
 }
 
-func (t *TemplateEngine) reconcileExecuting(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus,
+func (e *EngineOperationReconciler) reconcileExecuting(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus,
 	operation dataoperation.OperationInterface) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileExecuting")
 
 	// 1. Install the helm chart if not exists
-	err := InstallDataOperationHelmIfNotExist(ctx, operation, t.Implement)
+	err := InstallDataOperationHelmIfNotExist(ctx, operation, e.Engine)
 	if err != nil {
 		object := operation.GetOperationObject()
 		// runtime does not support current data operation, set status to failed
@@ -176,15 +186,17 @@ func (t *TemplateEngine) reconcileExecuting(ctx cruntime.ReconcileRequestContext
 	return utils.RequeueAfterInterval(20 * time.Second)
 }
 
-func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus,
+func (e *EngineOperationReconciler) reconcileComplete(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus,
 	operation dataoperation.OperationInterface) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileComplete")
+
+	client := e.Client
 
 	// 0. clean up if ttl after finished expired
 	var ttl *time.Duration
 	if utils.NeedCleanUp(opStatus, operation) {
 		var err error
-		ttl, err = t.processTTL(opStatus, operation, log, ctx)
+		ttl, err = processTTL(opStatus, operation, log, client)
 		if err != nil {
 			log.Error(err, fmt.Sprintf(cleanupErrorMsg, operation.GetOperationType()))
 			return utils.RequeueIfError(err)
@@ -245,7 +257,7 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 		// if the status not Complete, there is a new starting job, not scale the statefulset to zero.
 		if operation.GetParallelTaskNumber() > 1 {
 			releaseNameSpacedName := operation.GetReleaseNameSpacedName()
-			err = kubeclient.ScaleStatefulSet(t.Client, utils.GetParallelOperationWorkersName(releaseNameSpacedName.Name), releaseNameSpacedName.Namespace, 0)
+			err = kubeclient.ScaleStatefulSet(client, utils.GetParallelOperationWorkersName(releaseNameSpacedName.Name), releaseNameSpacedName.Namespace, 0)
 			if err != nil {
 				return utils.RequeueIfError(err)
 			}
@@ -262,7 +274,7 @@ func (t *TemplateEngine) reconcileComplete(ctx cruntime.ReconcileRequestContext,
 }
 
 // processTTL processes the operations that need to be cleaned up based on the TTL.
-func (t *TemplateEngine) processTTL(opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface, log logr.Logger, ctx cruntime.ReconcileRequestContext) (ttl *time.Duration, err error) {
+func processTTL(opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface, log logr.Logger, client client.Client) (ttl *time.Duration, err error) {
 	// Get the remaining time to clean up for the operation.
 	ttl, err = utils.Timeleft(opStatus, operation)
 	if err != nil {
@@ -272,7 +284,7 @@ func (t *TemplateEngine) processTTL(opStatus *datav1alpha1.OperationStatus, oper
 
 	// If the remaining time is not nil and less than or equal to 0, clean up the data operation.
 	if ttl != nil && *ttl <= 0 {
-		if err = ctx.Client.Delete(context.TODO(), operation.GetOperationObject()); err != nil && utils.IgnoreNotFound(err) != nil {
+		if err = client.Delete(context.TODO(), operation.GetOperationObject()); err != nil && utils.IgnoreNotFound(err) != nil {
 			log.Error(err, "Failed to clean up data operation %s", operation.GetOperationType())
 			return
 		}
@@ -281,14 +293,16 @@ func (t *TemplateEngine) processTTL(opStatus *datav1alpha1.OperationStatus, oper
 	return
 }
 
-func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
+func (e *EngineOperationReconciler) reconcileFailed(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus, operation dataoperation.OperationInterface) (ctrl.Result, error) {
 	log := ctx.Log.WithName("reconcileFailed")
+
+	client := e.Client
 
 	// 0. clean up if ttl after finished expired
 	var ttl *time.Duration
 	if utils.NeedCleanUp(opStatus, operation) {
 		var err error
-		ttl, err = t.processTTL(opStatus, operation, log, ctx)
+		ttl, err = processTTL(opStatus, operation, log, client)
 		if err != nil {
 			log.Error(err, fmt.Sprintf(cleanupErrorMsg, operation.GetOperationType()))
 			return utils.RequeueIfError(err)
@@ -333,7 +347,7 @@ func (t *TemplateEngine) reconcileFailed(ctx cruntime.ReconcileRequestContext, o
 		// if the status not PhaseFailed, there is a new starting job, not scale the statefulset to zero.
 		if operation.GetParallelTaskNumber() > 1 {
 			releaseNameSpacedName := operation.GetReleaseNameSpacedName()
-			err = kubeclient.ScaleStatefulSet(t.Client, utils.GetParallelOperationWorkersName(releaseNameSpacedName.Name), releaseNameSpacedName.Namespace, 0)
+			err = kubeclient.ScaleStatefulSet(client, utils.GetParallelOperationWorkersName(releaseNameSpacedName.Name), releaseNameSpacedName.Namespace, 0)
 			if err != nil {
 				return utils.RequeueIfError(err)
 			}

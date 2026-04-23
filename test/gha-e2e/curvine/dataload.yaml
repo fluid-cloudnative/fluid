@@ -1,0 +1,10 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: DataLoad
+metadata:
+  name: curvine-dataload
+spec:
+  dataset:
+    name: curvine-demo
+    namespace: default
+  target:
+    - path: /minio

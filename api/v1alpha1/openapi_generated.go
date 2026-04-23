@@ -61,6 +61,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataMigrate":                       schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrate(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataMigrateList":                   schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateList(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataMigrateSpec":                   schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataOperationSpec":                 schema_fluid_cloudnative_fluid_api_v1alpha1_DataOperationSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataProcess":                       schema_fluid_cloudnative_fluid_api_v1alpha1_DataProcess(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataProcessList":                   schema_fluid_cloudnative_fluid_api_v1alpha1_DataProcessList(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataProcessSpec":                   schema_fluid_cloudnative_fluid_api_v1alpha1_DataProcessSpec(ref),
@@ -939,12 +940,26 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeClass(ref common.Re
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeExtraResources"),
 						},
 					},
+					"dataOperationSpecs": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DataOperationSpecs specifies the data operation spec",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.DataOperationSpec"),
+									},
+								},
+							},
+						},
+					},
 				},
 				Required: []string{"fileSystemType"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeExtraResources", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeTopology", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataOperationSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeExtraResources", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeTopology", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -2668,6 +2683,64 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateSpec(ref common.Refe
 		},
 		Dependencies: []string{
 			"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataToMigrate", "github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationRef", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.Toleration"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_DataOperationSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name is the data operation name like DataLoad, DataBackup, DataMigrate etc.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"image": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Image the image for data operation, if not existed, use the runtime/runtimeclass defined worker image.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"command": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Command for data operation Pod container",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"args": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Args for data operation Pod container",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"name"},
+			},
+		},
 	}
 }
 
