@@ -416,6 +416,7 @@ EOF
 function delete_warmup_pod() {
     dataset_name=$1
     kubectl delete pod "${dataset_name}-warmup" --ignore-not-found >/dev/null 2>&1 || true
+    kubectl wait --for=delete --timeout=180s pod/"${dataset_name}-warmup" >/dev/null 2>&1 || true
 }
 
 function wait_warmup_ready() {
@@ -472,13 +473,9 @@ function run_scenario() {
     syslog "Running scenario: $scenario_name"
     create_dataset $dataset_file $dataset_name
     wait_dataset_bound $dataset_name
-    if [[ "$dataset_name" == "$multi_oss_dataset_name" ]]; then
-        create_warmup_pod $dataset_name
-        wait_runtime_stable $dataset_name
-        wait_warmup_ready $dataset_name
-    else
-        wait_runtime_components_ready $dataset_name
-    fi
+    create_warmup_pod $dataset_name
+    wait_runtime_stable $dataset_name
+    wait_warmup_ready $dataset_name
     create_job $job_file $job_name
     wait_job_completed $job_name
     cleanup_scenario $dataset_file $dataset_name $job_file
