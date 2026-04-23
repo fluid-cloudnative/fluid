@@ -190,6 +190,8 @@ const (
 	RuntimeFusesScaledIn RuntimeConditionType = "FusesScaledIn"
 	// RuntimeFusesScaledOut means the fuses of runtime just scaled out
 	RuntimeFusesScaledOut RuntimeConditionType = "FusesScaledOut"
+	// RuntimeWorkerDecommissioning means the runtime is draining workers ahead of a scale-down
+	RuntimeWorkerDecommissioning RuntimeConditionType = "WorkerDecommissioning"
 )
 
 const (
@@ -213,6 +215,8 @@ const (
 	RuntimeFusesScaledInReason = "Fuses scaled in"
 	// RuntimeFusesScaledInReason means the fuses of runtime just scaled out
 	RuntimeFusesScaledOutReason = "Fuses scaled out"
+	// RuntimeWorkerDecommissioningReason means workers are being decommissioned ahead of a scale-down
+	RuntimeWorkerDecommissioningReason = "Workers are being decommissioned"
 )
 
 // Condition describes the state of the cache at a certain point.
