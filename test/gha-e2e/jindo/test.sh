@@ -6,6 +6,7 @@ s3_dataset_name="jindo-demo"
 s3_dataset_file="test/gha-e2e/jindo/dataset.yaml"
 s3_job_name="fluid-test"
 s3_job_file="test/gha-e2e/jindo/job.yaml"
+s3_object_key="subpath/testfile"
 
 multi_oss_dataset_name="jindo-multi-oss-demo"
 multi_oss_dataset_template="test/gha-e2e/jindo/multi-oss-dataset.yaml"
@@ -274,7 +275,7 @@ function setup_minio() {
     kubectl rollout status --timeout=180s deployment/minio-a || panic "minio-a deployment is not ready"
     kubectl rollout status --timeout=180s deployment/minio-b || panic "minio-b deployment is not ready"
 
-    seed_minio_bucket minio minioadmin minioadmin mybucket testfile helloworld 19000
+    seed_minio_bucket minio minioadmin minioadmin mybucket "$s3_object_key" helloworld 19000
     if should_use_minio_multi_oss; then
         seed_minio_bucket minio-a "$multi_oss_access_key_a" "$multi_oss_secret_key_a" "$multi_oss_bucket_a" "$multi_oss_object_key_a" "$multi_oss_expected_data_a" 19001
         seed_minio_bucket minio-b "$multi_oss_access_key_b" "$multi_oss_secret_key_b" "$multi_oss_bucket_b" "$multi_oss_object_key_b" "$multi_oss_expected_data_b" 19002
