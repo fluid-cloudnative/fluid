@@ -108,7 +108,7 @@ func (b *TemplateEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool
 	if err != nil {
 		// b.Log.Error(err, "Check if the runtime is ready")
 		_ = b.loggingErrorExceptConflict(err, "Failed to check if the runtime is ready")
-		return runtimeReady, err
+		return false, err
 	}
 
 	if !runtimeReady {
@@ -120,7 +120,7 @@ func (b *TemplateEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool
 	if err != nil {
 		// b.Log.Error(err, "Bind the dataset")
 		_ = b.loggingErrorExceptConflict(err, "Failed to bind the dataset")
-		return workersReady, err
+		return false, err
 	}
 
 	ready = true
