@@ -20,6 +20,7 @@
     - [Share data across namespace (Sidecar mode)](samples/dataset_across_namespace_with_sidecar.md)
   + Operation
     - [Data Preloading](samples/data_warmup.md)
+    - [CacheRuntime Data Operations](samples/cacheruntime_data_operations.md)
     - [Cache Runtime Manually Scaling](samples/dataset_scaling.md)
     - [Automatic Cleanup Data Operation](samples/automatic_clean_up_data_operation.md)
   + Security
