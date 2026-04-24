@@ -75,13 +75,6 @@ func (e *AlluxioEngine) UpdateCacheOfDataset() (err error) {
 
 // UpdateDatasetStatus updates the status of the dataset
 func (e *AlluxioEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (err error) {
-	// 1. update the runtime status
-	runtime, err := e.getRuntime()
-	if err != nil {
-		return err
-	}
-
-	// 2.update the dataset status
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 		if err != nil {
@@ -126,10 +119,6 @@ func (e *AlluxioEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (er
 			datasetToUpdate.Status.Conditions = utils.UpdateDatasetCondition(datasetToUpdate.Status.Conditions,
 				cond)
 		}
-
-		// TODO: Do we have to update cachestates here? It is updated in AlluxioEngine.UpdateCacheOfDataset()
-		datasetToUpdate.Status.CacheStates = runtime.Status.CacheStates
-		// datasetToUpdate.Status.CacheStates =
 
 		if datasetToUpdate.Status.HCFSStatus == nil {
 			datasetToUpdate.Status.HCFSStatus, err = e.GetHCFSStatus()
