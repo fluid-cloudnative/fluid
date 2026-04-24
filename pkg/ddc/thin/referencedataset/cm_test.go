@@ -33,6 +33,24 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+type contextAwareClient struct {
+	client.Client
+}
+
+func (c contextAwareClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	return c.Client.Get(ctx, key, obj, opts...)
+}
+
+func (c contextAwareClient) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	return c.Client.Create(ctx, obj, opts...)
+}
+
 var _ = Describe("ConfigMap Operations", func() {
 	Describe("copyFuseDaemonSetForRefDataset", func() {
 		var (
@@ -89,7 +107,7 @@ var _ = Describe("ConfigMap Operations", func() {
 				runtimeInfo, err := base.BuildRuntimeInfo("alluxio", "source-ns", common.AlluxioRuntime)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = copyFuseDaemonSetForRefDataset(fakeClient, refDataset, runtimeInfo)
+				err = copyFuseDaemonSetForRefDataset(context.TODO(), fakeClient, refDataset, runtimeInfo)
 				Expect(err).NotTo(HaveOccurred())
 
 				var dsList appsv1.DaemonSetList
@@ -143,7 +161,7 @@ var _ = Describe("ConfigMap Operations", func() {
 				runtimeInfo, err := base.BuildRuntimeInfo("jindo", "source-ns", common.JindoRuntime)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = copyFuseDaemonSetForRefDataset(fakeClient, refDataset, runtimeInfo)
+				err = copyFuseDaemonSetForRefDataset(context.TODO(), fakeClient, refDataset, runtimeInfo)
 				Expect(err).NotTo(HaveOccurred())
 
 				var dsList appsv1.DaemonSetList
@@ -200,7 +218,7 @@ var _ = Describe("ConfigMap Operations", func() {
 				runtimeInfo, err := base.BuildRuntimeInfo("alluxio", "source-ns", common.AlluxioRuntime)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = copyFuseDaemonSetForRefDataset(fakeClient, refDataset, runtimeInfo)
+				err = copyFuseDaemonSetForRefDataset(context.TODO(), fakeClient, refDataset, runtimeInfo)
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
@@ -220,8 +238,25 @@ var _ = Describe("ConfigMap Operations", func() {
 				runtimeInfo, err := base.BuildRuntimeInfo("alluxio", "source-ns", common.AlluxioRuntime)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = copyFuseDaemonSetForRefDataset(fakeClient, refDataset, runtimeInfo)
+				err = copyFuseDaemonSetForRefDataset(context.TODO(), fakeClient, refDataset, runtimeInfo)
 				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		Context("when caller context is canceled", func() {
+			It("should return the context error", func() {
+				fakeClient = contextAwareClient{Client: fake.NewFakeClientWithScheme(testScheme, testObjs...)}
+
+				refDataset := &datav1alpha1.Dataset{
+					ObjectMeta: metav1.ObjectMeta{Name: "ref-dataset", Namespace: "ref-ns", UID: types.UID("test-uid")},
+				}
+				runtimeInfo, err := base.BuildRuntimeInfo("alluxio", "source-ns", common.AlluxioRuntime)
+				Expect(err).NotTo(HaveOccurred())
+				ctx, cancel := context.WithCancel(context.Background())
+				cancel()
+
+				err = copyFuseDaemonSetForRefDataset(ctx, fakeClient, refDataset, runtimeInfo)
+				Expect(err).To(MatchError(context.Canceled))
 			})
 		})
 	})
@@ -278,7 +313,7 @@ var _ = Describe("ConfigMap Operations", func() {
 				runtimeInfo, err := base.BuildRuntimeInfo("alluxio", "source-ns", common.AlluxioRuntime)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = engine.createConfigMapForRefDataset(fakeClient, refDataset, runtimeInfo)
+				err = engine.createConfigMapForRefDataset(context.TODO(), fakeClient, refDataset, runtimeInfo)
 				Expect(err).NotTo(HaveOccurred())
 
 				var cmList corev1.ConfigMapList
@@ -286,6 +321,76 @@ var _ = Describe("ConfigMap Operations", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(cmList.Items).To(HaveLen(1))
 				Expect(cmList.Items[0].Name).To(Equal("alluxio-config"))
+			})
+		})
+
+		Context("when caller context is canceled", func() {
+			It("should return the context error", func() {
+				configMap := &corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{Name: "alluxio-config", Namespace: "source-ns"},
+				}
+				refDataset := &datav1alpha1.Dataset{
+					ObjectMeta: metav1.ObjectMeta{Name: "ref-dataset", Namespace: "ref-ns", UID: types.UID("test-uid")},
+				}
+
+				fakeClient = contextAwareClient{Client: fake.NewFakeClientWithScheme(testScheme, configMap)}
+				engine.Client = fakeClient
+
+				runtimeInfo, err := base.BuildRuntimeInfo("alluxio", "source-ns", common.AlluxioRuntime)
+				Expect(err).NotTo(HaveOccurred())
+				ctx, cancel := context.WithCancel(context.Background())
+				cancel()
+
+				err = engine.createConfigMapForRefDataset(ctx, fakeClient, refDataset, runtimeInfo)
+				Expect(err).To(MatchError(context.Canceled))
+			})
+		})
+
+		Context("when destination configmap already exists", func() {
+			It("should skip without overwriting existing data", func() {
+				sourceConfigMap := &corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{Name: "alluxio-config", Namespace: "source-ns"},
+					Data:       map[string]string{"key": "source"},
+				}
+				existingConfigMap := &corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{Name: "alluxio-config", Namespace: "ref-ns"},
+					Data:       map[string]string{"key": "existing"},
+				}
+				refDataset := &datav1alpha1.Dataset{
+					ObjectMeta: metav1.ObjectMeta{Name: "ref-dataset", Namespace: "ref-ns", UID: types.UID("test-uid")},
+				}
+
+				fakeClient = fake.NewFakeClientWithScheme(testScheme, sourceConfigMap, existingConfigMap)
+				engine.Client = fakeClient
+
+				runtimeInfo, err := base.BuildRuntimeInfo("alluxio", "source-ns", common.AlluxioRuntime)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = engine.createConfigMapForRefDataset(context.TODO(), fakeClient, refDataset, runtimeInfo)
+				Expect(err).NotTo(HaveOccurred())
+
+				cm := &corev1.ConfigMap{}
+				err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: "alluxio-config", Namespace: "ref-ns"}, cm)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cm.Data).To(HaveKeyWithValue("key", "existing"))
+			})
+		})
+
+		Context("when source configmap is missing", func() {
+			It("should return the existing missing source error", func() {
+				refDataset := &datav1alpha1.Dataset{
+					ObjectMeta: metav1.ObjectMeta{Name: "ref-dataset", Namespace: "ref-ns", UID: types.UID("test-uid")},
+				}
+
+				fakeClient = fake.NewFakeClientWithScheme(testScheme, testObjs...)
+				engine.Client = fakeClient
+
+				runtimeInfo, err := base.BuildRuntimeInfo("alluxio", "source-ns", common.AlluxioRuntime)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = engine.createConfigMapForRefDataset(context.TODO(), fakeClient, refDataset, runtimeInfo)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("runtime configmap source-ns/alluxio-config do not exist"))
 			})
 		})
 
@@ -320,7 +425,7 @@ var _ = Describe("ConfigMap Operations", func() {
 				runtimeInfo, err := base.BuildRuntimeInfo("juicefs", "source-ns", common.JuiceFSRuntime)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = engine.createConfigMapForRefDataset(fakeClient, refDataset, runtimeInfo)
+				err = engine.createConfigMapForRefDataset(context.TODO(), fakeClient, refDataset, runtimeInfo)
 				Expect(err).NotTo(HaveOccurred())
 
 				var cmList corev1.ConfigMapList
@@ -358,7 +463,7 @@ var _ = Describe("ConfigMap Operations", func() {
 				runtimeInfo, err := base.BuildRuntimeInfo("goosefs", "source-ns", common.GooseFSRuntime)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = engine.createConfigMapForRefDataset(fakeClient, refDataset, runtimeInfo)
+				err = engine.createConfigMapForRefDataset(context.TODO(), fakeClient, refDataset, runtimeInfo)
 				Expect(err).NotTo(HaveOccurred())
 
 				var cmList corev1.ConfigMapList
@@ -403,7 +508,7 @@ var _ = Describe("ConfigMap Operations", func() {
 				runtimeInfo, err := base.BuildRuntimeInfo("jindo", "source-ns", common.JindoRuntime)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = engine.createConfigMapForRefDataset(fakeClient, refDataset, runtimeInfo)
+				err = engine.createConfigMapForRefDataset(context.TODO(), fakeClient, refDataset, runtimeInfo)
 				Expect(err).NotTo(HaveOccurred())
 
 				var cmList corev1.ConfigMapList
@@ -428,7 +533,7 @@ var _ = Describe("ConfigMap Operations", func() {
 				runtimeInfo, err := base.BuildRuntimeInfo("efc", "source-ns", common.EFCRuntime)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = engine.createConfigMapForRefDataset(fakeClient, refDataset, runtimeInfo)
+				err = engine.createConfigMapForRefDataset(context.TODO(), fakeClient, refDataset, runtimeInfo)
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
@@ -448,7 +553,7 @@ var _ = Describe("ConfigMap Operations", func() {
 				runtimeInfo, err := base.BuildRuntimeInfo("thin", "source-ns", common.ThinRuntime)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = engine.createConfigMapForRefDataset(fakeClient, refDataset, runtimeInfo)
+				err = engine.createConfigMapForRefDataset(context.TODO(), fakeClient, refDataset, runtimeInfo)
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
@@ -468,7 +573,7 @@ var _ = Describe("ConfigMap Operations", func() {
 				runtimeInfo, err := base.BuildRuntimeInfo("unknown", "source-ns", "UnknownRuntime")
 				Expect(err).NotTo(HaveOccurred())
 
-				err = engine.createConfigMapForRefDataset(fakeClient, refDataset, runtimeInfo)
+				err = engine.createConfigMapForRefDataset(context.TODO(), fakeClient, refDataset, runtimeInfo)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fail to get configmap for runtime type"))
 			})

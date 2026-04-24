@@ -527,4 +527,17 @@ var _ = Describe("ConfigMap Operations", func() {
 			})
 		})
 	})
+
+	Describe("CreateConfigMapWithOwner", func() {
+		Context("when caller context is canceled", func() {
+			It("should return the context error without creating the ConfigMap", func() {
+				ctx, cancel := context.WithCancel(context.Background())
+				cancel()
+
+				err := CreateConfigMapWithOwnerWithContext(ctx, contextAwareClient{Client: testClient}, "owner-ctx-canceled", namespace, map[string]string{"key": "value"}, nil)
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError(context.Canceled))
+			})
+		})
+	})
 })
