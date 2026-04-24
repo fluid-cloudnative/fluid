@@ -495,6 +495,9 @@ function cleanup_scenario() {
     kubectl delete -f $job_file --ignore-not-found
     kubectl delete -f $dataset_file --ignore-not-found
     kubectl wait --for=delete --timeout=180s jindoruntime/$dataset_name >/dev/null 2>&1 || true
+    kubectl wait --for=delete --timeout=180s pod -l release=$dataset_name >/dev/null 2>&1 || true
+    kubectl wait --for=delete --timeout=180s pvc/$dataset_name >/dev/null 2>&1 || true
+    kubectl wait --for=delete --timeout=180s pv/default-$dataset_name >/dev/null 2>&1 || true
 }
 
 function run_scenario() {

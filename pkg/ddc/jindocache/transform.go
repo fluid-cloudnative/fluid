@@ -535,7 +535,7 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 				}
 			}
 			if secretMountSupport && hasOSSAccessKeyIDRef != hasOSSAccessKeySecretRef {
-				err = fmt.Errorf("oss bucket %s must configure both fs.oss.accessKeyId and fs.oss.accessKeySecret in encryptOptions when secret mount is enabled", ossBucketName)
+				err = fmt.Errorf("oss bucket %s must configure both fs.oss.accessKeyId and fs.oss.accessKeySecret in encryptOptions; mixing inline and secret-based OSS credentials for the same bucket is not supported with secret projections", ossBucketName)
 				e.Log.Error(err, "mount.MountPoint", mount.MountPoint)
 				return err
 			}
