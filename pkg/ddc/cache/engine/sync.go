@@ -17,7 +17,6 @@
 package engine
 
 import (
-	"context"
 	"os"
 	"reflect"
 	"time"
@@ -41,7 +40,7 @@ func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
 		return err
 	}
 
-	err = e.syncRuntimeValueConfigMap(runtime)
+	err = e.syncRuntimeValueConfigMap(ctx, runtime)
 	if err != nil {
 		return err
 	}
@@ -78,8 +77,8 @@ func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
 	return nil
 }
 
-func (e *CacheEngine) syncRuntimeValueConfigMap(runtime *datav1alpha1.CacheRuntime) error {
-	configMap, err := kubeclient.GetConfigmapByName(e.Client, e.getRuntimeConfigConfigMapName(), e.namespace)
+func (e *CacheEngine) syncRuntimeValueConfigMap(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.CacheRuntime) error {
+	configMap, err := kubeclient.GetConfigmapByNameWithContext(ctx, e.Client, e.getRuntimeConfigConfigMapName(), e.namespace)
 	if err != nil {
 		return err
 	}
@@ -101,13 +100,13 @@ func (e *CacheEngine) syncRuntimeValueConfigMap(runtime *datav1alpha1.CacheRunti
 	}
 
 	if configMap == nil {
-		return kubeclient.CreateConfigMapWithOwner(e.Client, e.getRuntimeConfigConfigMapName(), e.namespace, data, owner)
+		return kubeclient.CreateConfigMapWithOwnerWithContext(ctx, e.Client, e.getRuntimeConfigConfigMapName(), e.namespace, data, owner)
 	}
 
 	configMapToUpdate := configMap.DeepCopy()
 	configMapToUpdate.Data = data
 	if !reflect.DeepEqual(configMapToUpdate, configMap) {
-		err = e.Client.Update(context.TODO(), configMapToUpdate)
+		err = kubeclient.UpdateConfigMapWithContext(ctx, e.Client, configMapToUpdate)
 		if err != nil {
 			return err
 		}

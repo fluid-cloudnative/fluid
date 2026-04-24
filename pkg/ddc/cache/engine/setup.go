@@ -45,7 +45,7 @@ func (e *CacheEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool, e
 	}
 
 	// create runtime value configmap for runtime mount
-	err = e.createRuntimeConfigMaps(runtimeClass)
+	err = e.createRuntimeConfigMaps(ctx, runtimeClass)
 	if err != nil {
 		return false, err
 	}

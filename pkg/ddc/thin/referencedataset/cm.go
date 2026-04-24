@@ -32,7 +32,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
-func copyFuseDaemonSetForRefDataset(client client.Client, refDataset *datav1alpha1.Dataset, physicalRuntimeInfo base.RuntimeInfoInterface) error {
+func copyFuseDaemonSetForRefDataset(ctx context.Context, client client.Client, refDataset *datav1alpha1.Dataset, physicalRuntimeInfo base.RuntimeInfoInterface) error {
 	var fuseName string
 	switch physicalRuntimeInfo.GetRuntimeType() {
 	case common.JindoRuntime:
@@ -40,7 +40,7 @@ func copyFuseDaemonSetForRefDataset(client client.Client, refDataset *datav1alph
 	default:
 		fuseName = physicalRuntimeInfo.GetName() + "-fuse"
 	}
-	ds, err := kubeclient.GetDaemonset(client, fuseName, physicalRuntimeInfo.GetNamespace())
+	ds, err := kubeclient.GetDaemonsetWithContext(ctx, client, fuseName, physicalRuntimeInfo.GetNamespace())
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func copyFuseDaemonSetForRefDataset(client client.Client, refDataset *datav1alph
 	}
 	dsToCreate.Spec.Template.Spec.NodeSelector["fluid.io/fuse-balloon"] = "true"
 
-	err = client.Create(context.TODO(), dsToCreate)
+	err = client.Create(ctx, dsToCreate)
 	if utils.IgnoreAlreadyExists(err) != nil {
 		return err
 	}
@@ -78,7 +78,7 @@ func copyFuseDaemonSetForRefDataset(client client.Client, refDataset *datav1alph
 	return nil
 }
 
-func (e *ReferenceDatasetEngine) createConfigMapForRefDataset(client client.Client, refDataset *datav1alpha1.Dataset, physicalRuntimeInfo base.RuntimeInfoInterface) error {
+func (e *ReferenceDatasetEngine) createConfigMapForRefDataset(ctx context.Context, client client.Client, refDataset *datav1alpha1.Dataset, physicalRuntimeInfo base.RuntimeInfoInterface) error {
 	physicalRuntimeType := physicalRuntimeInfo.GetRuntimeType()
 	physicalRuntimeName := physicalRuntimeInfo.GetName()
 	physicalRuntimeNamespace := physicalRuntimeInfo.GetNamespace()
@@ -104,34 +104,34 @@ func (e *ReferenceDatasetEngine) createConfigMapForRefDataset(client client.Clie
 	//       but duplicated name error can occurs if the dst namespace has same named runtime.
 	case common.AlluxioRuntime:
 		configMapName := physicalRuntimeName + "-config"
-		err := kubeclient.CopyConfigMap(client, types.NamespacedName{Name: configMapName, Namespace: physicalRuntimeNamespace},
+		err := kubeclient.CopyConfigMapWithContext(ctx, client, types.NamespacedName{Name: configMapName, Namespace: physicalRuntimeNamespace},
 			types.NamespacedName{Name: configMapName, Namespace: refNameSpace}, ownerReference)
 		if err != nil {
 			return err
 		}
 	case common.JuiceFSRuntime:
 		fuseScriptConfigMapName := physicalRuntimeName + "-fuse-script"
-		err := kubeclient.CopyConfigMap(client, types.NamespacedName{Name: fuseScriptConfigMapName, Namespace: physicalRuntimeNamespace},
+		err := kubeclient.CopyConfigMapWithContext(ctx, client, types.NamespacedName{Name: fuseScriptConfigMapName, Namespace: physicalRuntimeNamespace},
 			types.NamespacedName{Name: fuseScriptConfigMapName, Namespace: refNameSpace}, ownerReference)
 		if err != nil {
 			return err
 		}
 	case common.GooseFSRuntime:
 		configMapName := physicalRuntimeName + "-config"
-		err := kubeclient.CopyConfigMap(client, types.NamespacedName{Name: configMapName, Namespace: physicalRuntimeNamespace},
+		err := kubeclient.CopyConfigMapWithContext(ctx, client, types.NamespacedName{Name: configMapName, Namespace: physicalRuntimeNamespace},
 			types.NamespacedName{Name: configMapName, Namespace: refNameSpace}, ownerReference)
 		if err != nil {
 			return err
 		}
 	case common.JindoRuntime:
 		clientConfigMapName := physicalRuntimeName + "-jindofs-client-config"
-		err := kubeclient.CopyConfigMap(client, types.NamespacedName{Name: clientConfigMapName, Namespace: physicalRuntimeNamespace},
+		err := kubeclient.CopyConfigMapWithContext(ctx, client, types.NamespacedName{Name: clientConfigMapName, Namespace: physicalRuntimeNamespace},
 			types.NamespacedName{Name: clientConfigMapName, Namespace: refNameSpace}, ownerReference)
 		if err != nil {
 			return err
 		}
 		configMapName := physicalRuntimeName + "-jindofs-config"
-		err = kubeclient.CopyConfigMap(client, types.NamespacedName{Name: configMapName, Namespace: physicalRuntimeNamespace},
+		err = kubeclient.CopyConfigMapWithContext(ctx, client, types.NamespacedName{Name: configMapName, Namespace: physicalRuntimeNamespace},
 			types.NamespacedName{Name: configMapName, Namespace: refNameSpace}, ownerReference)
 		if err != nil {
 			return err
