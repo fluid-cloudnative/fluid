@@ -96,7 +96,7 @@ func (e *CacheEngine) CheckAndUpdateRuntimeStatus(value *common.CacheRuntimeValu
 
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		// Reset readiness on each retry to avoid stale state after conflicts.
-		masterReady, workerReady, clientReady := true, true, true
+		masterReady, workerReady, clientFullyReady := true, true, true
 		runtimeReady = false
 
 		runtime, err := e.getRuntime()
@@ -120,7 +120,7 @@ func (e *CacheEngine) CheckAndUpdateRuntimeStatus(value *common.CacheRuntimeValu
 		}
 
 		if value.Client.Enabled {
-			clientReady, err = e.setClientComponentStatus(value.Client, &runtimeToUpdate.Status)
+			clientFullyReady, err = e.setClientComponentStatus(value.Client, &runtimeToUpdate.Status)
 			if err != nil {
 				return err
 			}
@@ -128,7 +128,13 @@ func (e *CacheEngine) CheckAndUpdateRuntimeStatus(value *common.CacheRuntimeValu
 
 		runtimeReady = masterReady && workerReady
 		if !runtimeReady {
-			e.Log.Info(fmt.Sprintf("MasterReady: %v, workerReady: %v, clientReady: %v", masterReady, workerReady, clientReady))
+			e.Log.Info(fmt.Sprintf(
+				"MasterReady: %v, workerReady: %v, clientFullyReady: %v, clientPhase: %s",
+				masterReady,
+				workerReady,
+				clientFullyReady,
+				runtimeToUpdate.Status.Client.Phase,
+			))
 		}
 
 		// Update the setup time
