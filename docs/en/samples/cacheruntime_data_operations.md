@@ -14,7 +14,7 @@ This document demonstrates how to configure and use the DataLoad feature for Cac
 
 > Note: The DataProcess Spec defines Pod information and mounts the Dataset as a PVC, so no modifications to the caching system are required to use the DataProcess feature.
 
-## Prerequisites
+## Environment Verification
 
 Before running this example, please refer to the [Installation Guide](../userguide/install.md) to complete the Fluid installation and verify that all Fluid components are running properly:
 

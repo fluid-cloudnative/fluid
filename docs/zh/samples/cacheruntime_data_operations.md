@@ -2,7 +2,7 @@
 
 ## 前提说明
 
-本文档是 [CacheRuntime 对接社区文档](../dev/generic_cache_runtime_intergration.md) 的扩展，**假设您已经完成了基础的 CacheRuntime 集成**（包括定义 topology、配置组件等）。
+本文档是 [CacheRuntime 对接社区文档](../dev/generic_cache_runtime_integration.md) 的扩展，**假设您已经完成了基础的 CacheRuntime 集成**（包括定义 topology、配置组件等）。
 
 本文档仅说明如何在已有的 `CacheRuntimeClass` 基础上**新增数据操作支持**，核心改动只有一个字段：`dataOperationSpecs`。
 
@@ -10,7 +10,7 @@
 
 Fluid 的 CacheRuntime 提供了一种通用的缓存运行时抽象，允许用户通过 `CacheRuntimeClass` 定义不同缓存系统的实现细节。从 Fluid 最新版本开始，CacheRuntime 原生支持数据操作（Data Operations），包括数据预热（DataLoad）和数据处理（DataProcess）。
 
-本文档将阐述展示如何为 CacheRuntime 配置和使用 DataLoad 功能。
+本文档将阐述如何为 CacheRuntime 配置和使用 DataLoad 功能。
 
 > 注意： DataProcess Spec 中定义了 Pod 信息，是把 DataSet 当作 PVC 进行挂载使用，因此不需要缓存系统做改动即可使用 DataProcess 功能。
 
@@ -78,7 +78,7 @@ dataOperationSpecs:
 
 | 字段名 | 类型 | 必填 | 说明                                                                                                                        |
 |--------|------|----|---------------------------------------------------------------------------------------------------------------------------|
-| `name` | string |  是 | 操作类型标识符，当前支持的值：<br>• `DataLoad`：数据预热操作<br>•  `DataMigrate`：数据迁移操作（暂未支持)<br>• `DataBackup`：（暂未支持) 数据备份操作|
+| `name` | string |  是 | 操作类型标识符，当前支持的值：<br>• `DataLoad`：数据预热操作<br>•  `DataMigrate`：数据迁移操作（暂未支持)<br>• `DataBackup`：数据备份操作（暂未支持) |
 | `command` | []string |  是 | 容器中执行的命令（entrypoint），通常设置为 `["/bin/bash", "-c"]` 以支持脚本执行                                                                  |
 | `args` | []string |  是 | 命令的参数，通常包含完整的执行脚本。脚本中可使用 Fluid 注入的环境变量（见下文）                                                                               |
 | `image` | string |  否 | 操作使用的容器镜像。<br>• **如果不指定**：默认使用 `CacheRuntimeClass` 中 `worker` 组件的镜像<br>• **如果指定**：使用自定义的专用镜像（适用于需要特殊工具的场景）                |
