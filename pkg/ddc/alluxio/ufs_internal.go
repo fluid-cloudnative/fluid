@@ -19,11 +19,12 @@ package alluxio
 import (
 	"context"
 	"fmt"
-	v1 "k8s.io/api/core/v1"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"time"
+
+	v1 "k8s.io/api/core/v1"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -166,18 +167,11 @@ func (e *AlluxioEngine) processUpdatingUFS(ufsToUpdate *utils.UFSToUpdate) (upda
 	}
 
 	if updateReady {
-		// need to reset ufsTotal to Calculating so that SyncMetadata will work
-		datasetToUpdate := dataset.DeepCopy()
-		datasetToUpdate.Status.UfsTotal = metadataSyncNotDoneMsg
-		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
-			err = e.Client.Status().Update(context.TODO(), datasetToUpdate)
-			if err != nil {
-				e.Log.Error(err, "fail to update ufsTotal of dataset to Calculating")
-			}
+		if err = e.resetUfsTotalForSync(); err != nil {
+			return true, err
 		}
 
-		err = e.SyncMetadata()
-		if err != nil {
+		if err = e.SyncMetadata(); err != nil {
 			// just report this error and ignore it because SyncMetadata isn't on the critical path of Setup
 			e.Log.Error(err, "SyncMetadata", "dataset", e.name)
 			return true, nil
@@ -190,6 +184,24 @@ func (e *AlluxioEngine) processUpdatingUFS(ufsToUpdate *utils.UFSToUpdate) (upda
 	}
 
 	return
+}
+
+// resetUfsTotalForSync resets the dataset's UfsTotal to the "Calculating" sentinel value
+// so that SyncMetadata knows it must resync. The update is wrapped with RetryOnConflict
+// to handle concurrent status updates gracefully.
+func (e *AlluxioEngine) resetUfsTotalForSync() error {
+	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+		if err != nil {
+			return err
+		}
+		datasetToUpdate := dataset.DeepCopy()
+		datasetToUpdate.Status.UfsTotal = metadataSyncNotDoneMsg
+		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
+			return e.Client.Status().Update(context.Background(), datasetToUpdate)
+		}
+		return nil
+	})
 }
 
 // updatingUFSWithMountCommand updates the Alluxio UFS mount points based on the differences identified in ufsToUpdate.
@@ -453,6 +465,7 @@ func (e *AlluxioEngine) genEncryptOptions(EncryptOptions []datav1alpha1.EncryptO
 	return mOptions, nil
 }
 
+// updateMountTime updates the runtime status MountTime to the current time.
 func (e *AlluxioEngine) updateMountTime() {
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		runtime, err := e.getRuntime()

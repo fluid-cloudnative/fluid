@@ -28,6 +28,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	securityutil "github.com/fluid-cloudnative/fluid/pkg/utils/security"
 	"github.com/pkg/errors"
+	"k8s.io/client-go/util/retry"
 )
 
 func (e *GooseFSEngine) usedStorageBytesInternal() (value int64, err error) {
@@ -234,24 +235,35 @@ func (e *GooseFSEngine) processUpdatingUFS(ufsToUpdate *utils.UFSToUpdate) (err 
 			}
 		}
 	}
-	// need to reset ufsTotal to Calculating so that SyncMetadata will work
-	datasetToUpdate := dataset.DeepCopy()
-	datasetToUpdate.Status.UfsTotal = MetadataSyncNotDoneMsg
-	if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
-		err = e.Client.Status().Update(context.TODO(), datasetToUpdate)
-		if err != nil {
-			e.Log.Error(err, "fail to update ufsTotal of dataset to Calculating")
-		}
+	if err = e.resetUfsTotalForSync(); err != nil {
+		return err
 	}
 
-	err = e.SyncMetadata()
-	if err != nil {
+	if err = e.SyncMetadata(); err != nil {
 		// just report this error and ignore it because SyncMetadata isn't on the critical path of Setup
 		e.Log.Error(err, "SyncMetadata", "dataset", e.name)
 		return nil
 	}
 
 	return nil
+}
+
+// resetUfsTotalForSync resets the dataset's UfsTotal to the "Calculating" sentinel value
+// so that SyncMetadata knows it must resync. The update is wrapped with RetryOnConflict
+// to handle concurrent status updates gracefully.
+func (e *GooseFSEngine) resetUfsTotalForSync() error {
+	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+		if err != nil {
+			return err
+		}
+		datasetToUpdate := dataset.DeepCopy()
+		datasetToUpdate.Status.UfsTotal = MetadataSyncNotDoneMsg
+		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
+			return e.Client.Status().Update(context.Background(), datasetToUpdate)
+		}
+		return nil
+	})
 }
 
 // mountUFS() mount all UFSs to GooseFS according to mount points in `dataset.Spec`. If a mount point is Fluid-native, mountUFS() will skip it.
