@@ -64,30 +64,39 @@ func SetDataOperationInTargetDataset(ctx cruntime.ReconcileRequestContext, opera
 	dataOpKey := getDataOperationKey(object)
 
 	// set current data operation in target dataset
-	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		dataset, err := utils.GetDataset(ctx.Client, targetDataset.Name, targetDataset.Namespace)
+	err := updateDatasetDataOperation(ctx, targetDataset.Name, targetDataset.Namespace, operationTypeName, dataOpKey, operation)
+	if err != nil {
+		ctx.Log.Error(err, "can't set lock on target dataset", "targetDataset", targetDataset.Name)
+	}
+	return err
+}
+
+func updateDatasetDataOperation(ctx cruntime.ReconcileRequestContext, name, namespace, operationTypeName, dataOpKey string, operation dataoperation.OperationInterface) error {
+	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		dataset, err := utils.GetDataset(ctx.Client, name, namespace)
 		if err != nil {
 			return err
 		}
 
+		if !dataset.CanStartDataOperation(operationTypeName, operation.GetParallelTaskNumber(), dataOpKey) {
+			return fmt.Errorf("the dataset %s has reached the maximum number of parallel %s operations (limit: %d), please wait", name, operationTypeName, operation.GetParallelTaskNumber())
+		}
+
 		// set current data operation in the target dataset
 		datasetToUpdate := dataset.DeepCopy()
+
 		datasetToUpdate.SetDataOperationInProgress(operationTypeName, dataOpKey)
 		// different operation may set other fields
 		operation.SetTargetDatasetStatusInProgress(datasetToUpdate)
 
 		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
 			if err := ctx.Client.Status().Update(context.TODO(), datasetToUpdate); err != nil {
-				ctx.Log.Info("fail to update target dataset's lock, will requeue", "targetDatasetName", targetDataset.Name)
+				ctx.Log.Info("fail to update target dataset's lock, will requeue", "targetDatasetName", name)
 				return err
 			}
 		}
 		return nil
 	})
-	if err != nil {
-		ctx.Log.Error(err, "can't set lock on target dataset", "targetDataset", targetDataset.Name)
-	}
-	return err
 }
 
 // ReleaseTargetDataset release target dataset OperationRef field which marks the data operation being performed.
@@ -96,7 +105,15 @@ func ReleaseTargetDataset(ctx cruntime.ReconcileRequestContext, operation dataop
 	dataOpKey := getDataOperationKey(operation.GetOperationObject())
 	operationTypeName := string(operation.GetOperationType())
 
-	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+	err := removeDatasetDataOperation(ctx, operationTypeName, dataOpKey, operation)
+	if err != nil {
+		ctx.Log.Error(err, "can't release lock on target dataset")
+	}
+	return err
+}
+
+func removeDatasetDataOperation(ctx cruntime.ReconcileRequestContext, operationTypeName, dataOpKey string, operation dataoperation.OperationInterface) error {
+	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		dataset, err := operation.GetTargetDataset()
 		if err != nil {
 			if utils.IgnoreNotFound(err) == nil {
@@ -122,8 +139,4 @@ func ReleaseTargetDataset(ctx cruntime.ReconcileRequestContext, operation dataop
 		}
 		return nil
 	})
-	if err != nil {
-		ctx.Log.Error(err, "can't release lock on target dataset")
-	}
-	return err
 }
