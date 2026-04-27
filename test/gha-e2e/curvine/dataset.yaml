@@ -1,11 +1,11 @@
-# apiVersion: v1
-# kind: Secret
-# metadata:
-#   name: curvine-secret
-# stringData:
-#   access-key: minioadmin
-#   secret-key: minioadmin
-# ---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: curvine-secret
+stringData:
+  access-key: minioadmin
+  secret-key: minioadmin
+---
 apiVersion: data.fluid.io/v1alpha1
 kind: Dataset
 metadata:
@@ -26,5 +26,14 @@ spec:
         endpoint_url: "http://minio:9000"
         region_name: "us-east-1"
         path_style: "true"
-        access: "minioadmin"
-        secret: "minioadmin"
+      encryptOptions:
+        - name: access
+          valueFrom:
+            secretKeyRef:
+              name: curvine-secret
+              key: access-key
+        - name: secret
+          valueFrom:
+            secretKeyRef:
+              name: curvine-secret
+              key: secret-key

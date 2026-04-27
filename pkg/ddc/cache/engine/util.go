@@ -73,3 +73,18 @@ func (e *CacheEngine) getRuntimeConfigFileName() string {
 func (e *CacheEngine) getRuntimeClassExtraConfigMapVolumeName(name string) string {
 	return fmt.Sprintf("fluid-extra-%s-%s", e.name, name)
 }
+
+// getSecretVolumeName generates the volume name for a secret mount
+func getSecretVolumeName(secretName string) string {
+	return fmt.Sprintf("cache-mount-secret-%s", secretName)
+}
+
+// getSecretMountPath generates the base mount path for a secret in the container
+func getSecretMountPath(secretName string) string {
+	return fmt.Sprintf("/etc/fluid/secrets/%s", secretName)
+}
+
+// getSecretFilePath generates the full file path for a secret key in the container
+func getSecretFilePath(secretName, secretKey string) string {
+	return fmt.Sprintf("%s/%s", getSecretMountPath(secretName), secretKey)
+}
