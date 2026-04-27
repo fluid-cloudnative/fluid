@@ -14,6 +14,7 @@
 + 入门
   - [安装](userguide/install.md)
   - [快速开始](userguide/get_started.md)
+  - [配置最佳实践](userguide/config_best_practices.md)
   - [问题诊断](userguide/troubleshooting.md)
 + 数据集使用
   + 创建
