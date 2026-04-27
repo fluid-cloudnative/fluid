@@ -37,8 +37,8 @@ type DaemonSetManager struct {
 	client client.Client
 }
 
-func newDaemonSetManager(scheme *runtime.Scheme, client client.Client) *DaemonSetManager {
-	return &DaemonSetManager{scheme: scheme, client: client}
+func newDaemonSetManager(client client.Client) *DaemonSetManager {
+	return &DaemonSetManager{client: client}
 }
 
 func (s *DaemonSetManager) Reconciler(ctx context.Context, component *common.CacheRuntimeComponentValue) error {

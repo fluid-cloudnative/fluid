@@ -19,13 +19,14 @@ package engine
 import (
 	"context"
 	"errors"
+	"reflect"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/cache/component"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/util/retry"
-	"reflect"
 )
 
 func (e *CacheEngine) SetupMasterComponent(masterValue *common.CacheRuntimeComponentValue) (bool, error) {
@@ -57,7 +58,7 @@ func (e *CacheEngine) shouldSetupMaster() (bool, error) {
 }
 
 func (e *CacheEngine) setupMasterInternal(masterValue *common.CacheRuntimeComponentValue) error {
-	manager := component.NewComponentHelper(masterValue.WorkloadType, e.Scheme, e.Client)
+	manager := component.NewComponentHelper(masterValue.WorkloadType, e.Client)
 	err := manager.Reconciler(context.TODO(), masterValue)
 	if err != nil {
 		return err

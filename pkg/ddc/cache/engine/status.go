@@ -19,18 +19,19 @@ package engine
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"time"
+
 	fluidapi "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/cache/component"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
-	"reflect"
-	"time"
 )
 
 func (e *CacheEngine) setMasterComponentStatus(componentValue *common.CacheRuntimeComponentValue, status *fluidapi.CacheRuntimeStatus) (ready bool, err error) {
-	manager := component.NewComponentHelper(componentValue.WorkloadType, e.Scheme, e.Client)
+	manager := component.NewComponentHelper(componentValue.WorkloadType, e.Client)
 
 	masterStatus, err := manager.ConstructComponentStatus(context.TODO(), componentValue)
 	if err != nil {
@@ -47,7 +48,7 @@ func (e *CacheEngine) setMasterComponentStatus(componentValue *common.CacheRunti
 	return ready, err
 }
 func (e *CacheEngine) setWorkerComponentStatus(componentValue *common.CacheRuntimeComponentValue, status *fluidapi.CacheRuntimeStatus) (ready bool, err error) {
-	manager := component.NewComponentHelper(componentValue.WorkloadType, e.Scheme, e.Client)
+	manager := component.NewComponentHelper(componentValue.WorkloadType, e.Client)
 
 	workerStatus, err := manager.ConstructComponentStatus(context.TODO(), componentValue)
 	if err != nil {
@@ -73,7 +74,7 @@ func (e *CacheEngine) setWorkerComponentStatus(componentValue *common.CacheRunti
 	return ready, err
 }
 func (e *CacheEngine) setClientComponentStatus(componentValue *common.CacheRuntimeComponentValue, status *fluidapi.CacheRuntimeStatus) (err error) {
-	manager := component.NewComponentHelper(componentValue.WorkloadType, e.Scheme, e.Client)
+	manager := component.NewComponentHelper(componentValue.WorkloadType, e.Client)
 
 	clientStatus, err := manager.ConstructComponentStatus(context.TODO(), componentValue)
 	if err != nil {

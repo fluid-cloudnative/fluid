@@ -19,6 +19,7 @@ package component
 import (
 	"context"
 	"fmt"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -26,19 +27,17 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type StatefulSetManager struct {
-	scheme *runtime.Scheme
 	client client.Client
 }
 
-func newStatefulSetManager(scheme *runtime.Scheme, client client.Client) *StatefulSetManager {
-	return &StatefulSetManager{scheme: scheme, client: client}
+func newStatefulSetManager(client client.Client) *StatefulSetManager {
+	return &StatefulSetManager{client: client}
 }
 
 func (s *StatefulSetManager) Reconciler(ctx context.Context, component *common.CacheRuntimeComponentValue) error {
@@ -95,7 +94,6 @@ func (s *StatefulSetManager) constructStatefulSet(component *common.CacheRuntime
 			},
 		},
 		Spec: appsv1.StatefulSetSpec{
-			ServiceName:         component.Service.Name,
 			Replicas:            &component.Replicas,
 			Template:            podTemplateSpec,
 			PodManagementPolicy: appsv1.ParallelPodManagement,
@@ -104,6 +102,12 @@ func (s *StatefulSetManager) constructStatefulSet(component *common.CacheRuntime
 			},
 		},
 	}
+	
+	// Set ServiceName if service is configured
+	if component.Service != nil {
+		sts.Spec.ServiceName = component.Service.Name
+	}
+	
 	return sts
 }
 func (s *StatefulSetManager) reconcileService(ctx context.Context, component *common.CacheRuntimeComponentValue) error {

@@ -21,10 +21,10 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/go-logr/logr"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -45,10 +45,10 @@ var _ base.Engine = (*CacheEngine)(nil)
 // and use `physical` dataset/runtime to represent the dataset/runtime is mounted by virtual dataset.
 type CacheEngine struct {
 	client.Client
-	Scheme *runtime.Scheme
 
 	Log      logr.Logger
 	Recorder record.EventRecorder
+	Scheme   *runtime.Scheme
 
 	Id        string
 	name      string
@@ -73,17 +73,21 @@ func (e *CacheEngine) ID() string {
 }
 
 func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error) {
+	// Get scheme from client
+	scheme := ctx.Client.Scheme()
+	
 	engine := &CacheEngine{
+		Client:                 ctx.Client,
+		Log:                    ctx.Log,
+		Recorder:               ctx.Recorder,
+		Scheme:                 scheme,
 		Id:                     id,
 		name:                   ctx.Name,
 		namespace:              ctx.Namespace,
+		retryShutdown:          0,
+		gracefulShutdownLimits: 5,
 		runtimeType:            ctx.RuntimeType,
 		engineImpl:             ctx.EngineImpl,
-		Client:                 ctx.Client,
-		Recorder:               ctx.Recorder,
-		Log:                    ctx.Log,
-		gracefulShutdownLimits: 5,
-		retryShutdown:          0,
 	}
 	engine.Log = ctx.Log.WithValues("cache engine", ctx.RuntimeType).WithValues("id", id)
 
