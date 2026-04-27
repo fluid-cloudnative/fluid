@@ -73,27 +73,36 @@ function wait_dataset_bound() {
 
 function wait_cache_client_ready() {
     local deadline=180 # 3 minutes
+    local client_component_name="${dataset_name}-client"
+    local client_selector="cacheruntime.data.fluid.io/component-name=${client_component_name}"
     local last_phase=""
-    local ready_replicas=""
-    local desired_replicas=""
+    local runtime_ready_replicas=""
+    local runtime_desired_replicas=""
+    local ds_ready_replicas=""
+    local ds_desired_replicas=""
+    local pod_states=""
     local log_interval=0
     local log_times=0
 
     while true; do
         last_phase=$(kubectl get cacheruntime "$dataset_name" -ojsonpath='{@.status.client.phase}')
-        ready_replicas=$(kubectl get cacheruntime "$dataset_name" -ojsonpath='{@.status.client.readyReplicas}')
-        desired_replicas=$(kubectl get cacheruntime "$dataset_name" -ojsonpath='{@.status.client.desiredReplicas}')
+        runtime_ready_replicas=$(kubectl get cacheruntime "$dataset_name" -ojsonpath='{@.status.client.readyReplicas}')
+        runtime_desired_replicas=$(kubectl get cacheruntime "$dataset_name" -ojsonpath='{@.status.client.desiredReplicas}')
+        ds_ready_replicas=$(kubectl get daemonset "$client_component_name" -ojsonpath='{@.status.numberReady}' 2>/dev/null)
+        ds_desired_replicas=$(kubectl get daemonset "$client_component_name" -ojsonpath='{@.status.desiredNumberScheduled}' 2>/dev/null)
+        pod_states=$(kubectl get pod -l "$client_selector" -ojsonpath='{range .items[*]}{.metadata.name}:{range .status.containerStatuses[*]}{.ready}{end}:{.status.phase}{" "}{end}' 2>/dev/null)
 
         if [[ $log_interval -eq 3 ]]; then
             log_times=$((log_times + 1))
-            syslog "checking cacheruntime.status.client.phase==Ready (already $((log_times * log_interval * 5))s, last phase: ${last_phase:-<empty>}, readyReplicas: ${ready_replicas:-<empty>}, desiredReplicas: ${desired_replicas:-<empty>})"
+            syslog "checking cache client readiness (already $((log_times * log_interval * 5))s, runtime phase: ${last_phase:-<empty>}, runtime ready/desired: ${runtime_ready_replicas:-<empty>}/${runtime_desired_replicas:-<empty>}, ds ready/desired: ${ds_ready_replicas:-<empty>}/${ds_desired_replicas:-<empty>}, pods: ${pod_states:-<empty>})"
             if [[ $((log_times * log_interval * 5)) -ge $deadline ]]; then
-                panic "timeout waiting for cache client ready after ${deadline}s"
+                panic "timeout waiting for cache client pod ready after ${deadline}s"
             fi
             log_interval=0
         fi
 
-        if [[ "$last_phase" == "Ready" ]]; then
+        if kubectl rollout status daemonset/"$client_component_name" --timeout=5s >/dev/null 2>&1 && \
+            kubectl wait --for=condition=Ready --timeout=5s pod -l "$client_selector" >/dev/null 2>&1; then
             break
         fi
 
@@ -101,7 +110,7 @@ function wait_cache_client_ready() {
         sleep 5
     done
 
-    syslog "Found cacheruntime $dataset_name status.client.phase==Ready"
+    syslog "Found ready cache client pod for $dataset_name"
 }
 
 function create_job() {
@@ -133,15 +142,15 @@ function wait_job_completed() {
 function dump_env_and_clean_up() {
     bash tools/diagnose-fluid-curvine.sh collect --name $dataset_name --namespace default --collect-path ./e2e-tmp/testcase-curvine.tgz
     syslog "Cleaning up resources for testcase $testname"
-    kubectl delete -f test/gha-e2e/curvine/read_job.yaml
-    kubectl delete -f test/gha-e2e/curvine/write_job.yaml
-    kubectl delete -f test/gha-e2e/curvine/dataload.yaml
-    kubectl delete -f test/gha-e2e/curvine/dataset.yaml
-    kubectl delete -f test/gha-e2e/curvine/cacheruntime.yaml
-    kubectl delete -f test/gha-e2e/curvine/cacheruntimeclass.yaml
-    kubectl delete -f test/gha-e2e/curvine/minio.yaml
-    kubectl delete -f test/gha-e2e/curvine/mount.yaml
-    kubectl delete -f test/gha-e2e/curvine/minio_create_bucket.yaml
+    kubectl delete --ignore-not-found -f test/gha-e2e/curvine/read_job.yaml
+    kubectl delete --ignore-not-found -f test/gha-e2e/curvine/write_job.yaml
+    kubectl delete --ignore-not-found -f test/gha-e2e/curvine/dataload.yaml
+    kubectl delete --ignore-not-found -f test/gha-e2e/curvine/dataset.yaml
+    kubectl delete --ignore-not-found -f test/gha-e2e/curvine/cacheruntime.yaml
+    kubectl delete --ignore-not-found -f test/gha-e2e/curvine/cacheruntimeclass.yaml
+    kubectl delete --ignore-not-found -f test/gha-e2e/curvine/minio.yaml
+    kubectl delete --ignore-not-found -f test/gha-e2e/curvine/mount.yaml
+    kubectl delete --ignore-not-found -f test/gha-e2e/curvine/minio_create_bucket.yaml
 }
 
 function create_dataload() {
