@@ -75,7 +75,7 @@ func (e *CacheEngine) ID() string {
 func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error) {
 	// Get scheme from client
 	scheme := ctx.Client.Scheme()
-	
+
 	engine := &CacheEngine{
 		Client:                 ctx.Client,
 		Log:                    ctx.Log,

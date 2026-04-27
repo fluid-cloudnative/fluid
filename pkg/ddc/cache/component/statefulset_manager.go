@@ -102,12 +102,12 @@ func (s *StatefulSetManager) constructStatefulSet(component *common.CacheRuntime
 			},
 		},
 	}
-	
+
 	// Set ServiceName if service is configured
 	if component.Service != nil {
 		sts.Spec.ServiceName = component.Service.Name
 	}
-	
+
 	return sts
 }
 func (s *StatefulSetManager) reconcileService(ctx context.Context, component *common.CacheRuntimeComponentValue) error {
