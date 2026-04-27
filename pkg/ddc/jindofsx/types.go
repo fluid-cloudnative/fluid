@@ -51,6 +51,8 @@ type Jindo struct {
 	UFSVolumes          []UFSVolume                   `json:"ufsVolumes,omitempty"`
 	SecretKey           string                        `json:"secretKey,omitempty"`
 	SecretValue         string                        `json:"secretValue,omitempty"`
+	SecretProjections   []corev1.SecretProjection     `json:"secretProjections,omitempty"`
+	BucketSecretPaths   map[string]string             `json:"bucketSecretPaths,omitempty"`
 	UseStsToken         bool                          `json:"UseStsToken"`
 	MountType           string                        `json:"mountType,omitempty"`
 	ImagePullSecrets    []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`

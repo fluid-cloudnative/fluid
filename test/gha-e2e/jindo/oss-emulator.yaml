@@ -1,0 +1,107 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: oss
+  labels:
+    app.kubernetes.io/part-of: jindo-e2e-oss
+spec:
+  clusterIP: None
+  ports:
+    - port: 9000
+      targetPort: 9000
+  selector:
+    app.kubernetes.io/part-of: jindo-e2e-oss
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oss-a
+  labels:
+    app: oss-a
+    app.kubernetes.io/part-of: jindo-e2e-oss
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oss-a
+      app.kubernetes.io/part-of: jindo-e2e-oss
+  template:
+    metadata:
+      labels:
+        app: oss-a
+        app.kubernetes.io/part-of: jindo-e2e-oss
+    spec:
+      hostname: bucketa
+      subdomain: oss
+      containers:
+        - name: emulator
+          image: fluidcloudnative/oss-emulator:e2e
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "250m"
+              memory: "128Mi"
+          env:
+            - name: BUCKET_NAME
+              value: bucketa
+            - name: ACCESS_KEY_ID
+              value: bucketaadmin
+            - name: OBJECT_KEY
+              value: testfile
+            - name: OBJECT_ALIAS
+              value: bucketatestfile
+            - name: OBJECT_VALUE
+              value: bucket-a-data
+          ports:
+            - containerPort: 9000
+      automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oss-b
+  labels:
+    app: oss-b
+    app.kubernetes.io/part-of: jindo-e2e-oss
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oss-b
+      app.kubernetes.io/part-of: jindo-e2e-oss
+  template:
+    metadata:
+      labels:
+        app: oss-b
+        app.kubernetes.io/part-of: jindo-e2e-oss
+    spec:
+      hostname: bucketb
+      subdomain: oss
+      containers:
+        - name: emulator
+          image: fluidcloudnative/oss-emulator:e2e
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "250m"
+              memory: "128Mi"
+          env:
+            - name: BUCKET_NAME
+              value: bucketb
+            - name: ACCESS_KEY_ID
+              value: bucketbadmin
+            - name: OBJECT_KEY
+              value: testfile
+            - name: OBJECT_ALIAS
+              value: bucketbtestfile
+            - name: OBJECT_VALUE
+              value: bucket-b-data
+          ports:
+            - containerPort: 9000
+      automountServiceAccountToken: false

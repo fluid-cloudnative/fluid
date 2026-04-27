@@ -44,7 +44,32 @@ Distribute credential key and values with secret volume mounting on Jindo's pods
 Distribute credential key and values with secret volumes
 */}}
 {{- define "jindofs.cred.secret.volumes" -}}
-{{- if .Values.UseStsToken }}
+{{- if .Values.secretProjections }}
+- name: jindofs-secret-token
+  projected:
+    sources:
+    {{- if and .Values.UseStsToken .Values.secret }}
+    - secret:
+        name: {{ .Values.secret }}
+    {{- else if .Values.secret }}
+    - secret:
+        name: {{ .Values.secret }}
+        items:
+        - key: {{ .Values.secretKey }}
+          path: AccessKeyId
+        - key: {{ .Values.secretValue }}
+          path: AccessKeySecret
+    {{- end }}
+    {{- range .Values.secretProjections }}
+    - secret:
+        name: {{ .name }}
+        items:
+        {{- range .items }}
+        - key: {{ .key }}
+          path: {{ .path }}
+        {{- end }}
+    {{- end }}
+{{- else if .Values.UseStsToken }}
 - name: jindofs-secret-token
   secret:
     secretName: {{ .Values.secret }}
