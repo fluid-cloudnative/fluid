@@ -114,11 +114,11 @@ func (e *CacheEngine) generateDatasetMountOptions(m *datav1alpha1.Mount, sharedE
 	// collect encrypt options, mount options will overwrite shared options.
 	encryptOptions := map[string]string{}
 	var err error
-	err = e.collectEncryptOptions(sharedEncryptOptions, encryptOptions, m.Name)
+	err = e.collectEncryptOptions(sharedEncryptOptions, encryptOptions)
 	if err != nil {
 		return mOptions, encryptOptions, err
 	}
-	err = e.collectEncryptOptions(m.EncryptOptions, encryptOptions, m.Name)
+	err = e.collectEncryptOptions(m.EncryptOptions, encryptOptions)
 	if err != nil {
 		return mOptions, encryptOptions, err
 	}
@@ -126,8 +126,7 @@ func (e *CacheEngine) generateDatasetMountOptions(m *datav1alpha1.Mount, sharedE
 	return mOptions, encryptOptions, nil
 }
 
-func (e *CacheEngine) collectEncryptOptions(encryptOpts []datav1alpha1.EncryptOption,
-	existingEncryptOpts map[string]string, mountName string) error {
+func (e *CacheEngine) collectEncryptOptions(encryptOpts []datav1alpha1.EncryptOption, existingEncryptOpts map[string]string) error {
 
 	for _, item := range encryptOpts {
 		sRef := item.ValueFrom.SecretKeyRef
