@@ -116,6 +116,21 @@ func TestCreateRuntimeValueConfigMapCreatesMissingConfigMap(t *testing.T) {
 	}
 }
 
+func TestGenerateRuntimeConfigDataWithCanceledContext(t *testing.T) {
+	scheme := newCacheEngineTestScheme(t)
+	runtimeObj := newCacheRuntimeForConfigMapTest()
+	runtimeClass := newCacheRuntimeClassForConfigMapTest()
+	dataset := newDatasetForConfigMapTest()
+	testClient := &contextAwareCacheClient{Client: fake.NewFakeClientWithScheme(scheme, runtimeObj, runtimeClass, dataset)}
+	engine := &CacheEngine{Client: testClient, name: "demo", namespace: "default"}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	if _, err := engine.generateRuntimeConfigData(ctx, runtimeObj); err != context.Canceled {
+		t.Fatalf("expected context.Canceled, got %v", err)
+	}
+}
+
 func TestSyncRuntimeValueConfigMapWithCanceledContext(t *testing.T) {
 	scheme := newCacheEngineTestScheme(t)
 	runtimeObj := newCacheRuntimeForConfigMapTest()
@@ -139,7 +154,7 @@ func TestSyncRuntimeValueConfigMapSkipsUnchangedData(t *testing.T) {
 	dataset := newDatasetForConfigMapTest()
 
 	baseEngine := &CacheEngine{Client: fake.NewFakeClientWithScheme(scheme, runtimeObj, runtimeClass, dataset), name: "demo", namespace: "default"}
-	data, err := baseEngine.generateRuntimeConfigData(runtimeObj)
+	data, err := baseEngine.generateRuntimeConfigData(context.Background(), runtimeObj)
 	if err != nil {
 		t.Fatalf("failed to generate runtime config data: %v", err)
 	}

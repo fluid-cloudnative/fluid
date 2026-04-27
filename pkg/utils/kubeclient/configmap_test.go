@@ -528,7 +528,7 @@ var _ = Describe("ConfigMap Operations", func() {
 		})
 	})
 
-	Describe("CreateConfigMapWithOwner", func() {
+	Describe("CreateConfigMapWithOwnerWithContext", func() {
 		Context("when caller context is canceled", func() {
 			It("should return the context error without creating the ConfigMap", func() {
 				ctx, cancel := context.WithCancel(context.Background())

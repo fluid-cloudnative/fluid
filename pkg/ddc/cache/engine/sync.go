@@ -58,7 +58,7 @@ func (e *CacheEngine) syncRuntimeValueConfigMap(ctx cruntime.ReconcileRequestCon
 	if err != nil {
 		return err
 	}
-	data, err := e.generateRuntimeConfigData(runtime)
+	data, err := e.generateRuntimeConfigData(ctx, runtime)
 	if err != nil {
 		return err
 	}
