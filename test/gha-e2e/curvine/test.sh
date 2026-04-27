@@ -74,7 +74,7 @@ function wait_dataset_bound() {
 function wait_cache_client_ready() {
     local deadline=180 # 3 minutes
     local client_component_name="${dataset_name}-client"
-    local client_selector="cacheruntime.data.fluid.io/component-name=${client_component_name}"
+    local client_selector="cacheruntime.fluid.io/component-name=${client_component_name}"
     local last_phase=""
     local runtime_ready_replicas=""
     local runtime_desired_replicas=""
