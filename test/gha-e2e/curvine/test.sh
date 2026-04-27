@@ -71,6 +71,39 @@ function wait_dataset_bound() {
     syslog "Found dataset $dataset_name status.phase==Bound"
 }
 
+function wait_cache_client_ready() {
+    local deadline=180 # 3 minutes
+    local last_phase=""
+    local ready_replicas=""
+    local desired_replicas=""
+    local log_interval=0
+    local log_times=0
+
+    while true; do
+        last_phase=$(kubectl get cacheruntime "$dataset_name" -ojsonpath='{@.status.client.phase}')
+        ready_replicas=$(kubectl get cacheruntime "$dataset_name" -ojsonpath='{@.status.client.readyReplicas}')
+        desired_replicas=$(kubectl get cacheruntime "$dataset_name" -ojsonpath='{@.status.client.desiredReplicas}')
+
+        if [[ $log_interval -eq 3 ]]; then
+            log_times=$((log_times + 1))
+            syslog "checking cacheruntime.status.client.phase==Ready (already $((log_times * log_interval * 5))s, last phase: ${last_phase:-<empty>}, readyReplicas: ${ready_replicas:-<empty>}, desiredReplicas: ${desired_replicas:-<empty>})"
+            if [[ $((log_times * log_interval * 5)) -ge $deadline ]]; then
+                panic "timeout waiting for cache client ready after ${deadline}s"
+            fi
+            log_interval=0
+        fi
+
+        if [[ "$last_phase" == "Ready" ]]; then
+            break
+        fi
+
+        log_interval=$((log_interval + 1))
+        sleep 5
+    done
+
+    syslog "Found cacheruntime $dataset_name status.client.phase==Ready"
+}
+
 function create_job() {
     local job_file=$1
     local job_name=$2
@@ -141,13 +174,11 @@ function main() {
     setup
     create_dataset
     wait_dataset_bound
-
     create_job test/gha-e2e/curvine/write_job.yaml $write_job_name
     wait_job_completed $write_job_name
-
-    create_dataload 
+    create_dataload
     wait_dataload_completed "curvine-dataload"
-
+    wait_cache_client_ready
     create_job test/gha-e2e/curvine/read_job.yaml $read_job_name
     wait_job_completed $read_job_name
 
