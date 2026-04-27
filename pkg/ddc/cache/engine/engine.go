@@ -21,7 +21,6 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/go-logr/logr"
@@ -48,7 +47,6 @@ type CacheEngine struct {
 
 	Log      logr.Logger
 	Recorder record.EventRecorder
-	Scheme   *runtime.Scheme
 
 	Id        string
 	name      string
@@ -73,14 +71,10 @@ func (e *CacheEngine) ID() string {
 }
 
 func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error) {
-	// Get scheme from client
-	scheme := ctx.Client.Scheme()
-
 	engine := &CacheEngine{
 		Client:                 ctx.Client,
 		Log:                    ctx.Log,
 		Recorder:               ctx.Recorder,
-		Scheme:                 scheme,
 		Id:                     id,
 		name:                   ctx.Name,
 		namespace:              ctx.Namespace,

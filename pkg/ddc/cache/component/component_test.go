@@ -29,6 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ = Describe("ComponentManager", func() {
@@ -109,6 +110,14 @@ var _ = Describe("ComponentManager", func() {
 	})
 })
 
+// setupTestClient creates a fake client with the necessary schemes registered
+func setupTestClient() client.Client {
+	scheme := runtime.NewScheme()
+	_ = appsv1.AddToScheme(scheme)
+	_ = corev1.AddToScheme(scheme)
+	return fake.NewFakeClientWithScheme(scheme)
+}
+
 var _ = Describe("StatefulSetManager", func() {
 	var (
 		manager   *StatefulSetManager
@@ -117,10 +126,7 @@ var _ = Describe("StatefulSetManager", func() {
 	)
 
 	BeforeEach(func() {
-		scheme := runtime.NewScheme()
-		_ = appsv1.AddToScheme(scheme)
-		_ = corev1.AddToScheme(scheme)
-		client := fake.NewFakeClientWithScheme(scheme)
+		client := setupTestClient()
 		manager = newStatefulSetManager(client)
 		ctx = context.Background()
 
@@ -302,10 +308,7 @@ var _ = Describe("DaemonSetManager", func() {
 	)
 
 	BeforeEach(func() {
-		scheme := runtime.NewScheme()
-		_ = appsv1.AddToScheme(scheme)
-		_ = corev1.AddToScheme(scheme)
-		client := fake.NewFakeClientWithScheme(scheme)
+		client := setupTestClient()
 		manager = newDaemonSetManager(client)
 		ctx = context.Background()
 
@@ -425,8 +428,33 @@ var _ = Describe("DaemonSetManager", func() {
 			Expect(status.ReadyReplicas).To(Equal(int32(2)))
 			Expect(status.AvailableReplicas).To(Equal(int32(2)))
 			Expect(status.UnavailableReplicas).To(Equal(int32(1)))
-			// DaemonSet always returns Ready phase regardless of actual status
-			Expect(status.Phase).To(Equal(datav1alpha1.RuntimePhaseReady))
+			// DaemonSet should return NotReady when not all replicas are ready
+			Expect(status.Phase).To(Equal(datav1alpha1.RuntimePhaseNotReady))
+		})
+
+		It("should return NotReady phase when no nodes are ready", func() {
+			ds := &appsv1.DaemonSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-runtime-worker",
+					Namespace: "fluid",
+				},
+				Status: appsv1.DaemonSetStatus{
+					DesiredNumberScheduled: 3,
+					CurrentNumberScheduled: 3,
+					NumberAvailable:        0,
+					NumberUnavailable:      3,
+					NumberReady:            0,
+				},
+			}
+			Expect(manager.client.Create(ctx, ds)).To(Succeed())
+
+			status, err := manager.ConstructComponentStatus(ctx, component)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(status.DesiredReplicas).To(Equal(int32(3)))
+			Expect(status.ReadyReplicas).To(Equal(int32(0)))
+			Expect(status.AvailableReplicas).To(Equal(int32(0)))
+			Expect(status.UnavailableReplicas).To(Equal(int32(3)))
+			Expect(status.Phase).To(Equal(datav1alpha1.RuntimePhaseNotReady))
 		})
 
 		It("should return error when DaemonSet doesn't exist", func() {
