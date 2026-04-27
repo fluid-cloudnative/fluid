@@ -167,7 +167,6 @@ function wait_dataload_completed() {
     done
     syslog "Found succeeded dataload_name $dataload_name"
 }
-
 function main() {
     syslog "[TESTCASE $testname STARTS AT $(date)]"
     trap dump_env_and_clean_up EXIT
