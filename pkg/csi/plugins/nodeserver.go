@@ -438,53 +438,79 @@ func (ns *nodeServer) getNode() (node *corev1.Node, err error) {
 
 func (ns *nodeServer) patchNodeWithLabel(node *corev1.Node, labelsToModify common.LabelsToModify) error {
 	labels := labelsToModify.GetLabels()
-	labelValuePair := map[string]interface{}{}
+	patches := make([]map[string]interface{}, 0, len(labels))
 
 	for _, labelToModify := range labels {
 		operationType := labelToModify.GetOperationType()
-		labelToModifyKey := labelToModify.GetLabelKey()
-		labelToModifyValue := labelToModify.GetLabelValue()
+		labelKey := labelToModify.GetLabelKey()
+		labelValue := labelToModify.GetLabelValue()
+
+		// JSONPatch requires escaping "/" as "~1"
+		// We must escape "~" first to avoid double escaping
+		escapedKey := strings.ReplaceAll(labelKey, "~", "~0")
+		escapedKey = strings.ReplaceAll(escapedKey, "/", "~1")
+		path := "/metadata/labels/" + escapedKey
 
 		switch operationType {
 		case common.AddLabel, common.UpdateLabel:
-			labelValuePair[labelToModifyKey] = labelToModifyValue
+			patches = append(patches, map[string]interface{}{
+				"op":    "add",
+				"path":  path,
+				"value": labelValue,
+			})
 		case common.DeleteLabel:
-			labelValuePair[labelToModifyKey] = nil
+			patches = append(patches, map[string]interface{}{
+				"op":   "remove",
+				"path": path,
+			})
 		default:
-			err := fmt.Errorf("fail to update the label due to the wrong operation: %s", operationType)
-			return err
+			return fmt.Errorf("fail to update the label due to the wrong operation: %s", operationType)
 		}
 	}
 
-	metadata := map[string]interface{}{
-		"metadata": map[string]interface{}{
-			"labels": labelValuePair,
-		},
+	if len(patches) == 0 {
+		return nil
 	}
 
-	patchByteData, err := json.Marshal(metadata)
+	patchBytes, err := json.Marshal(patches)
 	if err != nil {
 		return err
 	}
+
+	var patchErr error
 	useNodeAuthorization := ns.nodeAuthorizedClient != nil
 	if useNodeAuthorization {
-		_, err = ns.nodeAuthorizedClient.CoreV1().Nodes().Patch(context.TODO(), node.Name, types.StrategicMergePatchType, patchByteData, metav1.PatchOptions{})
-		if err != nil {
-			return err
-		}
+		_, patchErr = ns.nodeAuthorizedClient.CoreV1().
+			Nodes().
+			Patch(
+				context.TODO(),
+				node.Name,
+				types.JSONPatchType,
+				patchBytes,
+				metav1.PatchOptions{},
+			)
 	} else {
 		nodeToPatch := &corev1.Node{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: node.Name,
 			},
 		}
-		err = ns.client.Patch(context.TODO(), nodeToPatch, client.RawPatch(types.StrategicMergePatchType, patchByteData))
-		if err != nil {
-			return err
-		}
+
+		patchErr = ns.client.Patch(
+			context.TODO(),
+			nodeToPatch,
+			client.RawPatch(types.JSONPatchType, patchBytes),
+		)
 	}
 
-	return nil
+	if patchErr == nil {
+		// Invalidate cached node to ensure future patch operations (especially deletes)
+		// don't fail due to stale cache logic generating invalid JSONPatch remove ops.
+		// This forces a fresh fetch on the next usage.
+		ns.node = nil
+	}
+
+	return patchErr
 }
 
 func checkMountInUse(volumeName string) (bool, error) {
