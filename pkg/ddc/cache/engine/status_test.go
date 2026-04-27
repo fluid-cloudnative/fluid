@@ -103,7 +103,7 @@ func TestCheckAndUpdateRuntimeStatusClientPartialReadyDoesNotBlockRuntimeReady(t
 	}
 }
 
-func TestCheckAndUpdateRuntimeStatusClientZeroDesiredReplicasStayNotReady(t *testing.T) {
+func TestCheckAndUpdateRuntimeStatusClientZeroDesiredReplicasReportsNotReady(t *testing.T) {
 	engine, client := newStatusTestEngineWithClient(
 		t,
 		fake.NewFakeClientWithScheme(

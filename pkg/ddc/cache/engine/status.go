@@ -72,7 +72,7 @@ func (e *CacheEngine) setWorkerComponentStatus(componentValue *common.CacheRunti
 
 	return ready, err
 }
-func (e *CacheEngine) setClientComponentStatus(componentValue *common.CacheRuntimeComponentValue, status *fluidapi.CacheRuntimeStatus) (ready bool, err error) {
+func (e *CacheEngine) setClientComponentStatus(componentValue *common.CacheRuntimeComponentValue, status *fluidapi.CacheRuntimeStatus) (fullyReady bool, err error) {
 	manager := component.NewComponentHelper(componentValue.WorkloadType, e.Scheme, e.Client)
 
 	clientStatus, err := manager.ConstructComponentStatus(context.TODO(), componentValue)
@@ -81,7 +81,7 @@ func (e *CacheEngine) setClientComponentStatus(componentValue *common.CacheRunti
 	}
 	if clientStatus.DesiredReplicas > 0 && clientStatus.ReadyReplicas >= clientStatus.DesiredReplicas {
 		clientStatus.Phase = fluidapi.RuntimePhaseReady
-		ready = true
+		fullyReady = true
 	} else if clientStatus.ReadyReplicas > 0 {
 		clientStatus.Phase = fluidapi.RuntimePhasePartialReady
 	} else {
@@ -89,14 +89,14 @@ func (e *CacheEngine) setClientComponentStatus(componentValue *common.CacheRunti
 	}
 	status.Client = clientStatus
 
-	return ready, nil
+	return fullyReady, nil
 }
 func (e *CacheEngine) CheckAndUpdateRuntimeStatus(value *common.CacheRuntimeValue) (bool, error) {
 	runtimeReady := false
 
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		// Reset readiness on each retry to avoid stale state after conflicts.
-		masterReady, workerReady, clientFullyReady := true, true, true
+		masterReady, workerReady, clientFullyReady := true, true, false
 		runtimeReady = false
 
 		runtime, err := e.getRuntime()
