@@ -181,8 +181,8 @@ func (r *FuseRecover) recoverBrokenMount(point mountinfo.MountPoint) (err error)
 
 	// Info: Attempting recovery action
 	glog.V(3).Infof("FuseRecovery: attempting bind mount, source=%s mountPath=%s options=%v", point.SourcePath, point.MountPath, mountOption)
-	if err := r.Mount(point.SourcePath, point.MountPath, "none", mountOption); err != nil {
-		// Warning: Mount failure is recoverable - will retry on next cycle
+	if err = r.Mount(point.SourcePath, point.MountPath, "none", mountOption); err != nil {
+		// Warning: Mount failure is propagated to caller, which records FuseRecoverFailed event
 		glog.Warningf("FuseRecovery: bind mount failed, mountPath=%s source=%s error=%v", point.MountPath, point.SourcePath, err)
 	}
 	return
