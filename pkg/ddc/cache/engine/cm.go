@@ -90,7 +90,7 @@ func (e *CacheEngine) createRuntimeValueConfigMap(ctx context.Context, runtime *
 	if configMap != nil {
 		return nil
 	}
-	data, err := e.generateRuntimeConfigData(runtime)
+	data, err := e.generateRuntimeConfigData(ctx, runtime)
 	if err != nil {
 		return errors.Wrap(err, "failed to generate runtime config")
 	}
@@ -99,8 +99,8 @@ func (e *CacheEngine) createRuntimeValueConfigMap(ctx context.Context, runtime *
 }
 
 // generateRuntimeConfigData generate the data in the config map for runtime config
-func (e *CacheEngine) generateRuntimeConfigData(runtime *datav1alpha1.CacheRuntime) (map[string]string, error) {
-	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+func (e *CacheEngine) generateRuntimeConfigData(ctx context.Context, runtime *datav1alpha1.CacheRuntime) (map[string]string, error) {
+	dataset, err := utils.GetDatasetWithContext(ctx, e.Client, e.name, e.namespace)
 	if err != nil {
 		return nil, err
 	}
