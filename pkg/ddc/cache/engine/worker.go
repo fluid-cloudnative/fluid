@@ -18,13 +18,14 @@ package engine
 
 import (
 	"context"
+	"reflect"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/cache/component"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/util/retry"
-	"reflect"
 )
 
 func (e *CacheEngine) SetupWorkerComponent(workerValue *common.CacheRuntimeComponentValue) (bool, error) {
@@ -55,7 +56,7 @@ func (e *CacheEngine) ShouldSetupWorker() (bool, error) {
 }
 
 func (e *CacheEngine) SetupWorkerInternal(workerValue *common.CacheRuntimeComponentValue) error {
-	manager := component.NewComponentHelper(workerValue.WorkloadType, e.Scheme, e.Client)
+	manager := component.NewComponentHelper(workerValue.WorkloadType, e.Client)
 	err := manager.Reconciler(context.TODO(), workerValue)
 	if err != nil {
 		return err
