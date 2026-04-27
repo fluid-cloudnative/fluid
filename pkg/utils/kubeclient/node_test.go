@@ -124,4 +124,77 @@ var _ = Describe("IsReady", func() {
 			Expect(result).To(BeFalse())
 		})
 	})
+
+	Context("when node has no NodeReady condition", func() {
+		It("should return false when conditions are empty", func() {
+			node := corev1.Node{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-empty"},
+				Status: corev1.NodeStatus{
+					Conditions: []corev1.NodeCondition{},
+				},
+			}
+			result := IsReady(node)
+			Expect(result).To(BeFalse())
+		})
+
+		It("should return false when other conditions are present but NodeReady is missing", func() {
+			node := corev1.Node{
+				ObjectMeta: metav1.ObjectMeta{Name: "test3"},
+				Status: corev1.NodeStatus{
+					Conditions: []corev1.NodeCondition{
+						{
+							Type:   corev1.NodeMemoryPressure,
+							Status: corev1.ConditionFalse,
+						},
+					},
+				},
+			}
+			result := IsReady(node)
+			Expect(result).To(BeFalse())
+		})
+	})
+
+	Context("when node ready condition is unknown", func() {
+		It("should return false when NodeReady condition status is Unknown", func() {
+			node := corev1.Node{
+				ObjectMeta: metav1.ObjectMeta{Name: "test4"},
+				Status: corev1.NodeStatus{
+					Conditions: []corev1.NodeCondition{
+						{
+							Type:   corev1.NodeReady,
+							Status: corev1.ConditionUnknown,
+						},
+					},
+				},
+			}
+			result := IsReady(node)
+			Expect(result).To(BeFalse())
+		})
+	})
+
+	Context("when one NodeReady condition is false among other conditions", func() {
+		It("should return false when NodeReady is False among other conditions", func() {
+			node := corev1.Node{
+				ObjectMeta: metav1.ObjectMeta{Name: "test5"},
+				Status: corev1.NodeStatus{
+					Conditions: []corev1.NodeCondition{
+						{
+							Type:   corev1.NodeDiskPressure,
+							Status: corev1.ConditionFalse,
+						},
+						{
+							Type:   corev1.NodeReady,
+							Status: corev1.ConditionFalse,
+						},
+						{
+							Type:   corev1.NodePIDPressure,
+							Status: corev1.ConditionFalse,
+						},
+					},
+				},
+			}
+			result := IsReady(node)
+			Expect(result).To(BeFalse())
+		})
+	})
 })
