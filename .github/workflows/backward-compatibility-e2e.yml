@@ -1,0 +1,79 @@
+name: E2E Backward Compatibility Check
+on:
+  pull_request:
+    branches: [master, release-*]
+    paths-ignore:
+      - "docs/**"
+      - "addons/**"
+      - "sdk/**"
+      - "static/**"
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GO_VERSION: 1.24.12
+
+jobs:
+  backward-compat-test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        kubernetes-version:
+          ["v1.33.2", "v1.30.13", "v1.28.15", "v1.24.17", "v1.22.17"]
+    env:
+      GOPATH: ${{ github.workspace }}
+      GO111MODULE: auto
+      KIND_CLUSTER: fluid-cluster
+    defaults:
+      run:
+        working-directory: ${{ env.GOPATH }}/src/github.com/fluid-cloudnative/fluid
+
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Set up Helm
+        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
+
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: ${{ env.GOPATH }}/src/github.com/fluid-cloudnative/fluid
+
+      - name: Create k8s Kind Cluster
+        uses: helm/kind-action@92086f6be054225fa813e0a4b13787fc9088faab # v1.13.0
+        with:
+          version: v0.29.0
+          node_image: kindest/node:${{ matrix.kubernetes-version }}
+          cluster_name: ${{ env.KIND_CLUSTER }}
+          kubectl_version: ${{ matrix.kubernetes-version }}
+
+      - name: Build current fluid docker images
+        env:
+          IMG_REPO: fluidcloudnative
+        run: |
+          echo ">>> System disk usage before build fluid images"
+          df -h
+          ./.github/scripts/build-all-images.sh
+
+      - name: Run backward compatibility e2e tests
+        timeout-minutes: 40
+        run: |
+          bash ./.github/scripts/gha-backward-compatibility.sh
+
+      - name: Dump environment
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: gha-backward-compat-logs-${{ github.job }}-${{ matrix.kubernetes-version }}
+          path: "src/github.com/fluid-cloudnative/fluid/e2e-tmp/testcase-*.tgz"
+          retention-days: 14
