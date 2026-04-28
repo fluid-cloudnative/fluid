@@ -129,6 +129,7 @@ func (s *StatefulSetManager) ConstructComponentStatus(ctx context.Context, compo
 		runtimePhase = datav1alpha1.RuntimePhaseReady
 	}
 
+	// AvailableReplicas can be greater than CurrentReplicas (Kubernetes API allows this)
 	unavailableReplicas := sts.Status.CurrentReplicas - sts.Status.AvailableReplicas
 	if unavailableReplicas < 0 {
 		unavailableReplicas = 0

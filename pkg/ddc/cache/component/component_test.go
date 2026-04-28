@@ -406,7 +406,7 @@ var _ = Describe("DaemonSetManager", func() {
 			Expect(status.Phase).To(Equal(datav1alpha1.RuntimePhaseReady))
 		})
 
-		It("should return Ready phase even when some nodes are unavailable", func() {
+		It("should return NotReady phase when not all nodes are ready", func() {
 			ds := &appsv1.DaemonSet{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-runtime-worker",
