@@ -84,12 +84,8 @@ func (m *mockRuntimeInfoForValidate) GetPersistentVolumeName() string  { return 
 func (m *mockRuntimeInfoForValidate) GetLabelNameForMemory() string    { return "" }
 func (m *mockRuntimeInfoForValidate) GetLabelNameForDisk() string      { return "" }
 func (m *mockRuntimeInfoForValidate) GetLabelNameForTotal() string     { return "" }
-
-// GetCommonLabelName returns the common label name used in runtime validation.
-// This is a stub implementation for mockRuntimeInfoForValidate and returns
-// an empty string as it is only used for testing purposes.
+// GetCommonLabelName returns the common label name.
 func (m *mockRuntimeInfoForValidate) GetCommonLabelName() string       { return "" }
-
 func (m *mockRuntimeInfoForValidate) GetFuseLabelName() string         { return "" }
 func (m *mockRuntimeInfoForValidate) GetRuntimeLabelName() string      { return "" }
 func (m *mockRuntimeInfoForValidate) GetDatasetNumLabelName() string   { return "" }
