@@ -26,36 +26,45 @@ import (
 // transformEncryptOptionsToComponentVolumes transforms encrypt options from dataset spec to component pod volumes
 // This function can be reused for both Master and Worker components
 func (e *CacheEngine) transformEncryptOptionsToComponentVolumes(dataset *datav1alpha1.Dataset, component *common.CacheRuntimeComponentValue) {
-	if component == nil || !component.Enabled {
+	if component == nil || !component.Enabled || len(component.PodTemplateSpec.Spec.Containers) == 0 {
 		return
 	}
 
+	// Helper to add secret volume and mount to the component
+	addSecret := func(secretName string) {
+		volName := getSecretVolumeName(secretName)
+		volumeToAdd := corev1.Volume{
+			Name: volName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: secretName,
+				},
+			},
+		}
+		component.PodTemplateSpec.Spec.Volumes = utils.AppendOrOverrideVolume(
+			component.PodTemplateSpec.Spec.Volumes, volumeToAdd)
+
+		volumeMountToAdd := corev1.VolumeMount{
+			Name:      volName,
+			ReadOnly:  true,
+			MountPath: getSecretMountPath(secretName),
+		}
+		component.PodTemplateSpec.Spec.Containers[0].VolumeMounts = utils.AppendOrOverrideVolumeMounts(
+			component.PodTemplateSpec.Spec.Containers[0].VolumeMounts, volumeMountToAdd)
+	}
+
+	// 1. Process shared encrypt options once
+	for _, encryptOpt := range dataset.Spec.SharedEncryptOptions {
+		addSecret(encryptOpt.ValueFrom.SecretKeyRef.Name)
+	}
+
+	// 2. Process mount-specific encrypt options, override shared options
 	for _, m := range dataset.Spec.Mounts {
 		if common.IsFluidNativeScheme(m.MountPoint) {
 			continue
 		}
-		for _, encryptOpt := range append(dataset.Spec.SharedEncryptOptions, m.EncryptOptions...) {
-			secretName := encryptOpt.ValueFrom.SecretKeyRef.Name
-
-			volName := getSecretVolumeName(secretName)
-			volumeToAdd := corev1.Volume{
-				Name: volName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: secretName,
-					},
-				},
-			}
-			component.PodTemplateSpec.Spec.Volumes = utils.AppendOrOverrideVolume(
-				component.PodTemplateSpec.Spec.Volumes, volumeToAdd)
-
-			volumeMountToAdd := corev1.VolumeMount{
-				Name:      volName,
-				ReadOnly:  true,
-				MountPath: getSecretMountPath(secretName),
-			}
-			component.PodTemplateSpec.Spec.Containers[0].VolumeMounts = utils.AppendOrOverrideVolumeMounts(
-				component.PodTemplateSpec.Spec.Containers[0].VolumeMounts, volumeMountToAdd)
+		for _, encryptOpt := range m.EncryptOptions {
+			addSecret(encryptOpt.ValueFrom.SecretKeyRef.Name)
 		}
 	}
 }
