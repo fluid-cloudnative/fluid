@@ -80,10 +80,12 @@ func (m *mockRuntimeInfoForValidate) GetOwnerDatasetUID() string { return m.owne
 func (m *mockRuntimeInfoForValidate) IsPlacementModeSet() bool   { return m.placementModeSet }
 
 // Conventions interface methods (stub implementations)
-func (m *mockRuntimeInfoForValidate) GetPersistentVolumeName() string  { return "" }
-func (m *mockRuntimeInfoForValidate) GetLabelNameForMemory() string    { return "" }
-func (m *mockRuntimeInfoForValidate) GetLabelNameForDisk() string      { return "" }
-func (m *mockRuntimeInfoForValidate) GetLabelNameForTotal() string     { return "" }
+func (m *mockRuntimeInfoForValidate) GetPersistentVolumeName() string { return "" }
+func (m *mockRuntimeInfoForValidate) GetLabelNameForMemory() string   { return "" }
+func (m *mockRuntimeInfoForValidate) GetLabelNameForDisk() string     { return "" }
+func (m *mockRuntimeInfoForValidate) GetLabelNameForTotal() string    { return "" }
+
+// GetCommonLabelName returns the common label name.
 func (m *mockRuntimeInfoForValidate) GetCommonLabelName() string       { return "" }
 func (m *mockRuntimeInfoForValidate) GetFuseLabelName() string         { return "" }
 func (m *mockRuntimeInfoForValidate) GetRuntimeLabelName() string      { return "" }
