@@ -33,7 +33,7 @@ data:
         fi
     
         [ -z "$mountPoint" ] && { echo "mountPoint is not set or empty"; exit 1; } 
-        [ -z "$mountPoint" ] && { echo "path is not set or empty"; exit 1; } 
+        [ -z "$path" ] && { echo "path is not set or empty"; exit 1; } 
     
         # ==================== 字段提取加p 仅输出匹配结果 ====================
         # Extract encryptOptions paths from the JSON

@@ -118,10 +118,7 @@ func (e *CacheEngine) generateRuntimeConfigData(runtime *datav1alpha1.CacheRunti
 			Shared:     m.Shared,
 			Path:       m.Path,
 		}
-		options, encryptOptions, err := e.generateDatasetMountOptions(&m, dataset.Spec.SharedEncryptOptions, dataset.Spec.SharedOptions)
-		if err != nil {
-			return nil, err
-		}
+		options, encryptOptions := e.generateDatasetMountOptions(&m, dataset.Spec.SharedEncryptOptions, dataset.Spec.SharedOptions)
 		mountCg.Options = options
 		mountCg.EncryptOptions = encryptOptions
 

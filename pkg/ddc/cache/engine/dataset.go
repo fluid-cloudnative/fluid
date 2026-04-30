@@ -100,7 +100,7 @@ func (e *CacheEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (err 
 }
 
 func (e *CacheEngine) generateDatasetMountOptions(m *datav1alpha1.Mount, sharedEncryptOptions []datav1alpha1.EncryptOption,
-	sharedOptions map[string]string) (map[string]string, map[string]string, error) {
+	sharedOptions map[string]string) (map[string]string, map[string]string) {
 
 	// initialize mount options, mount options will overwrite shared options.
 	mOptions := map[string]string{}
@@ -113,20 +113,13 @@ func (e *CacheEngine) generateDatasetMountOptions(m *datav1alpha1.Mount, sharedE
 
 	// collect encrypt options, mount options will overwrite shared options.
 	encryptOptions := map[string]string{}
-	var err error
-	err = e.collectEncryptOptions(sharedEncryptOptions, encryptOptions)
-	if err != nil {
-		return mOptions, encryptOptions, err
-	}
-	err = e.collectEncryptOptions(m.EncryptOptions, encryptOptions)
-	if err != nil {
-		return mOptions, encryptOptions, err
-	}
+	e.collectEncryptOptions(sharedEncryptOptions, encryptOptions)
+	e.collectEncryptOptions(m.EncryptOptions, encryptOptions)
 
-	return mOptions, encryptOptions, nil
+	return mOptions, encryptOptions
 }
 
-func (e *CacheEngine) collectEncryptOptions(encryptOpts []datav1alpha1.EncryptOption, existingEncryptOpts map[string]string) error {
+func (e *CacheEngine) collectEncryptOptions(encryptOpts []datav1alpha1.EncryptOption, existingEncryptOpts map[string]string) {
 
 	for _, item := range encryptOpts {
 		sRef := item.ValueFrom.SecretKeyRef
@@ -138,6 +131,4 @@ func (e *CacheEngine) collectEncryptOptions(encryptOpts []datav1alpha1.EncryptOp
 		// Store in map: key is option name, value is secret path
 		existingEncryptOpts[item.Name] = secretPath
 	}
-
-	return nil
 }
