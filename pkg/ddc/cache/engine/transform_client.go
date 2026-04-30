@@ -26,7 +26,7 @@ func (e *CacheEngine) transformClient(runtime *datav1alpha1.CacheRuntime, runtim
 	config *CacheRuntimeComponentCommonConfig, value *common.CacheRuntimeValue) error {
 
 	if runtimeClass.Topology.Client == nil || runtime.Spec.Client.Disabled {
-		value.Client.Enabled = false
+		value.Client = &common.CacheRuntimeComponentValue{Enabled: false}
 		return nil
 	}
 

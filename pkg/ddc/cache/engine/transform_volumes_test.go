@@ -87,11 +87,11 @@ var _ = Describe("CacheEngine Transform Volumes Tests", Label("pkg.ddc.cache.eng
 				engine.transformEncryptOptionsToComponentVolumes(dataset, value.Master)
 
 				Expect(value.Master.PodTemplateSpec.Spec.Volumes).To(HaveLen(1))
-				Expect(value.Master.PodTemplateSpec.Spec.Volumes[0].Name).To(Equal("cache-mount-secret-" + testSecretName1))
+				Expect(value.Master.PodTemplateSpec.Spec.Volumes[0].Name).To(Equal(secretVolumeNamePrefix + testSecretName1))
 				Expect(value.Master.PodTemplateSpec.Spec.Volumes[0].Secret.SecretName).To(Equal(testSecretName1))
 
 				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts).To(HaveLen(1))
-				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts[0].Name).To(Equal("cache-mount-secret-" + testSecretName1))
+				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts[0].Name).To(Equal(secretVolumeNamePrefix + testSecretName1))
 				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts[0].MountPath).To(Equal("/etc/fluid/secrets/" + testSecretName1))
 				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts[0].ReadOnly).To(BeTrue())
 			})
@@ -124,11 +124,11 @@ var _ = Describe("CacheEngine Transform Volumes Tests", Label("pkg.ddc.cache.eng
 				engine.transformEncryptOptionsToComponentVolumes(dataset, value.Master)
 
 				Expect(value.Master.PodTemplateSpec.Spec.Volumes).To(HaveLen(1))
-				Expect(value.Master.PodTemplateSpec.Spec.Volumes[0].Name).To(Equal("cache-mount-secret-" + testSecretName2))
+				Expect(value.Master.PodTemplateSpec.Spec.Volumes[0].Name).To(Equal(secretVolumeNamePrefix + testSecretName2))
 				Expect(value.Master.PodTemplateSpec.Spec.Volumes[0].Secret.SecretName).To(Equal(testSecretName2))
 
 				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts).To(HaveLen(1))
-				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts[0].Name).To(Equal("cache-mount-secret-" + testSecretName2))
+				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts[0].Name).To(Equal(secretVolumeNamePrefix + testSecretName2))
 				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts[0].MountPath).To(Equal("/etc/fluid/secrets/" + testSecretName2))
 				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts[0].ReadOnly).To(BeTrue())
 			})
@@ -177,8 +177,8 @@ var _ = Describe("CacheEngine Transform Volumes Tests", Label("pkg.ddc.cache.eng
 					value.Master.PodTemplateSpec.Spec.Volumes[1].Name,
 				}
 				Expect(volumeNames).To(ContainElements(
-					"cache-mount-secret-"+testSecretName1,
-					"cache-mount-secret-"+testSecretName2,
+					secretVolumeNamePrefix+testSecretName1,
+					secretVolumeNamePrefix+testSecretName2,
 				))
 
 				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts).To(HaveLen(2))
@@ -187,8 +187,8 @@ var _ = Describe("CacheEngine Transform Volumes Tests", Label("pkg.ddc.cache.eng
 					value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts[1].Name,
 				}
 				Expect(mountNames).To(ContainElements(
-					"cache-mount-secret-"+testSecretName1,
-					"cache-mount-secret-"+testSecretName2,
+					secretVolumeNamePrefix+testSecretName1,
+					secretVolumeNamePrefix+testSecretName2,
 				))
 			})
 		})
@@ -318,11 +318,11 @@ var _ = Describe("CacheEngine Transform Volumes Tests", Label("pkg.ddc.cache.eng
 
 				// Should only have one volume for the same secret
 				Expect(value.Master.PodTemplateSpec.Spec.Volumes).To(HaveLen(1))
-				Expect(value.Master.PodTemplateSpec.Spec.Volumes[0].Name).To(Equal("cache-mount-secret-" + testSecretName1))
+				Expect(value.Master.PodTemplateSpec.Spec.Volumes[0].Name).To(Equal(secretVolumeNamePrefix + testSecretName1))
 
 				// Should only have one volume mount for the same secret
 				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts).To(HaveLen(1))
-				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts[0].Name).To(Equal("cache-mount-secret-" + testSecretName1))
+				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts[0].Name).To(Equal(secretVolumeNamePrefix + testSecretName1))
 			})
 		})
 	})
@@ -370,11 +370,11 @@ var _ = Describe("CacheEngine Transform Volumes Tests", Label("pkg.ddc.cache.eng
 				engine.transformEncryptOptionsToComponentVolumes(dataset, value.Worker)
 
 				Expect(value.Worker.PodTemplateSpec.Spec.Volumes).To(HaveLen(1))
-				Expect(value.Worker.PodTemplateSpec.Spec.Volumes[0].Name).To(Equal("cache-mount-secret-" + testSecretName1))
+				Expect(value.Worker.PodTemplateSpec.Spec.Volumes[0].Name).To(Equal(secretVolumeNamePrefix + testSecretName1))
 				Expect(value.Worker.PodTemplateSpec.Spec.Volumes[0].Secret.SecretName).To(Equal(testSecretName1))
 
 				Expect(value.Worker.PodTemplateSpec.Spec.Containers[0].VolumeMounts).To(HaveLen(1))
-				Expect(value.Worker.PodTemplateSpec.Spec.Containers[0].VolumeMounts[0].Name).To(Equal("cache-mount-secret-" + testSecretName1))
+				Expect(value.Worker.PodTemplateSpec.Spec.Containers[0].VolumeMounts[0].Name).To(Equal(secretVolumeNamePrefix + testSecretName1))
 				Expect(value.Worker.PodTemplateSpec.Spec.Containers[0].VolumeMounts[0].MountPath).To(Equal("/etc/fluid/secrets/" + testSecretName1))
 				Expect(value.Worker.PodTemplateSpec.Spec.Containers[0].VolumeMounts[0].ReadOnly).To(BeTrue())
 			})

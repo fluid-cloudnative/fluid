@@ -18,6 +18,7 @@ package engine
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -100,10 +101,13 @@ func (e *CacheEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (err 
 }
 
 func (e *CacheEngine) generateDatasetMountOptions(m *datav1alpha1.Mount, sharedEncryptOptions []datav1alpha1.EncryptOption,
-	sharedOptions map[string]string) (map[string]string, map[string]string) {
+	sharedOptions map[string]string) (mOptions map[string]string, encryptOptions map[string]string, err error) {
+
+	// Initialize return maps
+	mOptions = make(map[string]string)
+	encryptOptions = make(map[string]string)
 
 	// initialize mount options, mount options will overwrite shared options.
-	mOptions := map[string]string{}
 	for k, v := range sharedOptions {
 		mOptions[k] = v
 	}
@@ -112,17 +116,25 @@ func (e *CacheEngine) generateDatasetMountOptions(m *datav1alpha1.Mount, sharedE
 	}
 
 	// collect encrypt options, mount options will overwrite shared options.
-	encryptOptions := map[string]string{}
-	e.collectEncryptOptions(sharedEncryptOptions, encryptOptions)
-	e.collectEncryptOptions(m.EncryptOptions, encryptOptions)
+	err = e.collectEncryptOptions(sharedEncryptOptions, encryptOptions)
+	if err != nil {
+		return
+	}
+	err = e.collectEncryptOptions(m.EncryptOptions, encryptOptions)
+	if err != nil {
+		return
+	}
 
-	return mOptions, encryptOptions
+	return
 }
 
-func (e *CacheEngine) collectEncryptOptions(encryptOpts []datav1alpha1.EncryptOption, existingEncryptOpts map[string]string) {
+func (e *CacheEngine) collectEncryptOptions(encryptOpts []datav1alpha1.EncryptOption, existingEncryptOpts map[string]string) error {
 
 	for _, item := range encryptOpts {
 		sRef := item.ValueFrom.SecretKeyRef
+		if sRef.Name == "" || sRef.Key == "" {
+			return fmt.Errorf("encryptOption %s has empty secretKeyRef name or key", item.Name)
+		}
 
 		// Construct the secret mount path in the container
 		// The secret will be mounted at /etc/fluid/secrets/<secret-name>/<key>
@@ -131,4 +143,5 @@ func (e *CacheEngine) collectEncryptOptions(encryptOpts []datav1alpha1.EncryptOp
 		// Store in map: key is option name, value is secret path
 		existingEncryptOpts[item.Name] = secretPath
 	}
+	return nil
 }

@@ -25,7 +25,7 @@ func (e *CacheEngine) transformMaster(dataset *datav1alpha1.Dataset, runtime *da
 	config *CacheRuntimeComponentCommonConfig, value *common.CacheRuntimeValue) error {
 	// TODO: these two field both indicate Master enabled or not, should be combined into one field.
 	if runtimeClass.Topology.Master == nil || runtime.Spec.Master.Disabled {
-		value.Master.Enabled = false
+		value.Master = &common.CacheRuntimeComponentValue{Enabled: false}
 		return nil
 	}
 
