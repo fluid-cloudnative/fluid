@@ -22,8 +22,10 @@ import (
 	"net/http"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -31,6 +33,8 @@ import (
 )
 
 // getPhysicalDatasetRuntimeStatus get the runtime status of the physical dataset
+// Note: This function only supports DDC-based runtimes (Alluxio, Jindo, etc.)
+// CacheRuntime is not supported because its status structure is incompatible with ThinRuntime.
 func (e *ReferenceDatasetEngine) getPhysicalDatasetRuntimeStatus() (status *datav1alpha1.RuntimeStatus, err error) {
 	physicalRuntimeInfo, err := e.getPhysicalRuntimeInfo()
 	if err != nil {
@@ -42,8 +46,61 @@ func (e *ReferenceDatasetEngine) getPhysicalDatasetRuntimeStatus() (status *data
 		return nil, nil
 	}
 
-	return base.GetRuntimeStatus(e.Client, physicalRuntimeInfo.GetRuntimeType(),
+	return getRuntimeStatus(e.Client, physicalRuntimeInfo.GetRuntimeType(),
 		physicalRuntimeInfo.GetName(), physicalRuntimeInfo.GetNamespace())
+}
+
+// getRuntimeStatus gets the runtime status according to the runtime type, name, and namespace.
+// This is a private function used only within the thin runtime package for status synchronization.
+// It returns the raw RuntimeStatus which is incompatible with CacheRuntime's CacheRuntimeStatus.
+func getRuntimeStatus(client client.Client, runtimeType, name, namespace string) (status *datav1alpha1.RuntimeStatus, err error) {
+	switch runtimeType {
+	case common.AlluxioRuntime:
+		runtime, err := utils.GetAlluxioRuntime(client, name, namespace)
+		if err != nil {
+			return status, err
+		}
+		return &runtime.Status, nil
+	case common.JindoRuntime:
+		runtime, err := utils.GetJindoRuntime(client, name, namespace)
+		if err != nil {
+			return status, err
+		}
+		return &runtime.Status, nil
+	case common.GooseFSRuntime:
+		runtime, err := utils.GetGooseFSRuntime(client, name, namespace)
+		if err != nil {
+			return status, err
+		}
+		return &runtime.Status, nil
+	case common.JuiceFSRuntime:
+		runtime, err := utils.GetJuiceFSRuntime(client, name, namespace)
+		if err != nil {
+			return status, err
+		}
+		return &runtime.Status, nil
+	case common.EFCRuntime:
+		runtime, err := utils.GetEFCRuntime(client, name, namespace)
+		if err != nil {
+			return status, err
+		}
+		return &runtime.Status, nil
+	case common.ThinRuntime:
+		runtime, err := utils.GetThinRuntime(client, name, namespace)
+		if err != nil {
+			return status, err
+		}
+		return &runtime.Status, nil
+	case common.VineyardRuntime:
+		runtime, err := utils.GetVineyardRuntime(client, name, namespace)
+		if err != nil {
+			return status, err
+		}
+		return &runtime.Status, nil
+	default:
+		err = fmt.Errorf("%s is not supported as physical runtime for ThinRuntime with reference dataset", runtimeType)
+		return nil, err
+	}
 }
 
 // getRuntime get the current runtime

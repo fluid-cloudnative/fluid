@@ -23,7 +23,9 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -45,6 +47,16 @@ func (s *DaemonSetManager) Reconciler(ctx context.Context, component *common.Cac
 	}
 
 	return reconcileService(ctx, s.client, component)
+}
+
+func (s *DaemonSetManager) GetNodeAffinity(component *common.CacheRuntimeComponentValue) (*corev1.NodeAffinity, error) {
+	ds, err := kubeclient.GetDaemonset(s.client, component.Name, component.Namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	affinity := kubeclient.MergeNodeSelectorAndNodeAffinity(ds.Spec.Template.Spec.NodeSelector, ds.Spec.Template.Spec.Affinity)
+	return affinity, nil
 }
 
 func (s *DaemonSetManager) reconcileDaemonSet(ctx context.Context, component *common.CacheRuntimeComponentValue) error {

@@ -21,6 +21,7 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -28,6 +29,7 @@ import (
 type ComponentManager interface {
 	Reconciler(ctx context.Context, component *common.CacheRuntimeComponentValue) error
 	ConstructComponentStatus(todo context.Context, value *common.CacheRuntimeComponentValue) (v1alpha1.RuntimeComponentStatus, error)
+	GetNodeAffinity(value *common.CacheRuntimeComponentValue) (*corev1.NodeAffinity, error)
 }
 
 func NewComponentHelper(workloadType metav1.TypeMeta, client client.Client) ComponentManager {
