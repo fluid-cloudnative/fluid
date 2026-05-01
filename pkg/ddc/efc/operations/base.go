@@ -77,6 +77,9 @@ func (a EFCFileUtils) DeleteDir(dir string) (err error) {
 	return
 }
 
+// Ready checks whether the EFC mount type exists in the current runtime environment.
+// It executes a mount command to search for the EFC mount type. If the command
+// fails, it logs the error and returns false; otherwise, it returns true.
 func (a EFCFileUtils) Ready() (ready bool) {
 	var (
 		command = []string{"mount", "|", "grep", common.EFCMountType}
