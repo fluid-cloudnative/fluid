@@ -31,11 +31,11 @@ import (
 
 const (
 	engineTestNamespace = "fluid"
-	engineTestName      = "hbase"
+	engineTestName      = "vineyard"
 	engineTestID        = "testId"
 )
 
-var _ = Describe("VineyardEngine", Label("pkg.ddc.vineyard.engine_test.go"), func() {
+var _ = Describe("VineyardEngine", Label("vineyard"), func() {
 	Describe("Build", func() {
 		Context("when runtime is a valid VineyardRuntime", func() {
 			It("should build the template engine", func() {
@@ -56,7 +56,7 @@ var _ = Describe("VineyardEngine", Label("pkg.ddc.vineyard.engine_test.go"), fun
 				engine, err := Build(engineTestID, newEngineTestContext(fakeClient, nil))
 
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal("engine hbase is failed to parse"))
+				Expect(err.Error()).To(Equal("engine vineyard is failed to parse"))
 				Expect(engine).To(BeNil())
 			})
 		})
@@ -69,7 +69,7 @@ var _ = Describe("VineyardEngine", Label("pkg.ddc.vineyard.engine_test.go"), fun
 				engine, err := Build(engineTestID, newEngineTestContext(fakeClient, dataset))
 
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal("engine hbase is failed to parse"))
+				Expect(err.Error()).To(Equal("engine vineyard is failed to parse"))
 				Expect(engine).To(BeNil())
 			})
 		})
@@ -82,7 +82,7 @@ var _ = Describe("VineyardEngine", Label("pkg.ddc.vineyard.engine_test.go"), fun
 				engine, err := Build(engineTestID, newEngineTestContext(fakeClient, vineyardRuntime))
 
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("engine hbase failed to get runtime info"))
+				Expect(err.Error()).To(ContainSubstring("engine vineyard failed to get runtime info"))
 				Expect(engine).To(BeNil())
 			})
 		})
