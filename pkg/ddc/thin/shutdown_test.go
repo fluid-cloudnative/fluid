@@ -112,6 +112,10 @@ func TestDestroyWorker(t *testing.T) {
 	for _, nodeInput := range nodeInputs {
 		testNodes = append(testNodes, nodeInput.DeepCopy())
 	}
+	testNodes = append(testNodes,
+		&datav1alpha1.ThinRuntime{ObjectMeta: metav1.ObjectMeta{Name: "spark", Namespace: "fluid"}},
+		&datav1alpha1.ThinRuntime{ObjectMeta: metav1.ObjectMeta{Name: "hadoop", Namespace: "fluid"}},
+	)
 
 	client := fake.NewFakeClientWithScheme(testScheme, testNodes...)
 
