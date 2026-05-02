@@ -422,6 +422,7 @@ var _ = Describe("JindoCacheEngine shutdown orchestration", func() {
 			Client:    client,
 			name:      "fluid-hadoop",
 			namespace: "default",
+			Helper:    helper,
 		}
 
 		Expect(engine.cleanAll()).To(Succeed())

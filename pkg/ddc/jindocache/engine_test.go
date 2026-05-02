@@ -34,8 +34,6 @@ var _ = Describe("JindoCacheEngine Build and Precheck", func() {
 	const (
 		engineName      = "hbase"
 		engineNamespace = "fluid"
-		errParseFormat  = "engine %s is failed to parse"
-		errInfoFormat   = "engine %s failed to get runtime info"
 	)
 
 	var (
