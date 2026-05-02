@@ -262,7 +262,7 @@ var _ = Describe("JindoCacheEngine_syncMasterSpec", func() {
 			Client:    client,
 		}
 
-		ctx := cruntime.ReconcileRequestContext{}
+		ctx := cruntime.ReconcileRequestContext{Log: fake.NullLogger()}
 		gotChanged, err := e.syncMasterSpec(ctx, jindoRuntime)
 
 		Expect(err).NotTo(HaveOccurred())
@@ -298,7 +298,7 @@ var _ = Describe("JindoCacheEngine_syncMasterSpec", func() {
 			Client:    client,
 		}
 
-		ctx := cruntime.ReconcileRequestContext{}
+		ctx := cruntime.ReconcileRequestContext{Log: fake.NullLogger()}
 		gotChanged, err := e.syncMasterSpec(ctx, jindoRuntime)
 
 		Expect(err).To(HaveOccurred())
@@ -369,7 +369,7 @@ var _ = Describe("JindoCacheEngine_syncMasterSpec", func() {
 			Client:    client,
 		}
 
-		ctx := cruntime.ReconcileRequestContext{}
+		ctx := cruntime.ReconcileRequestContext{Log: fake.NullLogger()}
 		gotChanged, err := e.syncMasterSpec(ctx, jindoRuntime)
 
 		Expect(err).NotTo(HaveOccurred())
@@ -407,7 +407,7 @@ var _ = Describe("JindoCacheEngine_syncMasterSpec", func() {
 			Client:    fakeClient,
 		}
 
-		ctx := cruntime.ReconcileRequestContext{}
+		ctx := cruntime.ReconcileRequestContext{Log: fake.NullLogger()}
 		gotChanged, err := e.syncMasterSpec(ctx, jindoRuntime)
 
 		Expect(err).NotTo(HaveOccurred())
@@ -473,7 +473,7 @@ var _ = Describe("JindoCacheEngine_syncMasterSpec", func() {
 			Client:    fakeClient,
 		}
 
-		ctx := cruntime.ReconcileRequestContext{}
+		ctx := cruntime.ReconcileRequestContext{Log: fake.NullLogger()}
 		gotChanged, err := e.syncMasterSpec(ctx, jindoRuntime)
 
 		Expect(err).NotTo(HaveOccurred())
@@ -521,7 +521,7 @@ var _ = Describe("JindoCacheEngine_syncWorkerSpec", func() {
 			Client:    client,
 		}
 
-		ctx := cruntime.ReconcileRequestContext{}
+		ctx := cruntime.ReconcileRequestContext{Log: fake.NullLogger()}
 		gotChanged, err := e.syncWorkerSpec(ctx, jindoRuntime)
 
 		Expect(err).NotTo(HaveOccurred())
@@ -557,7 +557,7 @@ var _ = Describe("JindoCacheEngine_syncWorkerSpec", func() {
 			Client:    client,
 		}
 
-		ctx := cruntime.ReconcileRequestContext{}
+		ctx := cruntime.ReconcileRequestContext{Log: fake.NullLogger()}
 		gotChanged, err := e.syncWorkerSpec(ctx, jindoRuntime)
 
 		Expect(err).To(HaveOccurred())
@@ -628,7 +628,7 @@ var _ = Describe("JindoCacheEngine_syncWorkerSpec", func() {
 			Client:    client,
 		}
 
-		ctx := cruntime.ReconcileRequestContext{}
+		ctx := cruntime.ReconcileRequestContext{Log: fake.NullLogger()}
 		gotChanged, err := e.syncWorkerSpec(ctx, jindoRuntime)
 
 		Expect(err).NotTo(HaveOccurred())
@@ -666,7 +666,7 @@ var _ = Describe("JindoCacheEngine_syncWorkerSpec", func() {
 			Client:    fakeClient,
 		}
 
-		ctx := cruntime.ReconcileRequestContext{}
+		ctx := cruntime.ReconcileRequestContext{Log: fake.NullLogger()}
 		gotChanged, err := e.syncWorkerSpec(ctx, jindoRuntime)
 
 		Expect(err).NotTo(HaveOccurred())
@@ -732,7 +732,7 @@ var _ = Describe("JindoCacheEngine_syncWorkerSpec", func() {
 			Client:    fakeClient,
 		}
 
-		ctx := cruntime.ReconcileRequestContext{}
+		ctx := cruntime.ReconcileRequestContext{Log: fake.NullLogger()}
 		gotChanged, err := e.syncWorkerSpec(ctx, jindoRuntime)
 
 		Expect(err).NotTo(HaveOccurred())
@@ -780,7 +780,7 @@ var _ = Describe("JindoCacheEngine_syncFuseSpec", func() {
 			Client:    client,
 		}
 
-		ctx := cruntime.ReconcileRequestContext{}
+		ctx := cruntime.ReconcileRequestContext{Log: fake.NullLogger()}
 		gotChanged, err := e.syncFuseSpec(ctx, jindoRuntime)
 
 		Expect(err).NotTo(HaveOccurred())
@@ -816,7 +816,7 @@ var _ = Describe("JindoCacheEngine_syncFuseSpec", func() {
 			Client:    client,
 		}
 
-		ctx := cruntime.ReconcileRequestContext{}
+		ctx := cruntime.ReconcileRequestContext{Log: fake.NullLogger()}
 		gotChanged, err := e.syncFuseSpec(ctx, jindoRuntime)
 
 		Expect(err).To(HaveOccurred())
@@ -887,7 +887,7 @@ var _ = Describe("JindoCacheEngine_syncFuseSpec", func() {
 			Client:    client,
 		}
 
-		ctx := cruntime.ReconcileRequestContext{}
+		ctx := cruntime.ReconcileRequestContext{Log: fake.NullLogger()}
 		gotChanged, err := e.syncFuseSpec(ctx, jindoRuntime)
 
 		Expect(err).NotTo(HaveOccurred())
@@ -925,7 +925,7 @@ var _ = Describe("JindoCacheEngine_syncFuseSpec", func() {
 			Client:    fakeClient,
 		}
 
-		ctx := cruntime.ReconcileRequestContext{}
+		ctx := cruntime.ReconcileRequestContext{Log: fake.NullLogger()}
 		gotChanged, err := e.syncFuseSpec(ctx, jindoRuntime)
 
 		Expect(err).NotTo(HaveOccurred())
@@ -993,7 +993,7 @@ var _ = Describe("JindoCacheEngine_syncFuseSpec", func() {
 			Client:    fakeClient,
 		}
 
-		ctx := cruntime.ReconcileRequestContext{}
+		ctx := cruntime.ReconcileRequestContext{Log: fake.NullLogger()}
 		gotChanged, err := e.syncFuseSpec(ctx, jindoRuntime)
 
 		Expect(err).NotTo(HaveOccurred())
