@@ -127,6 +127,7 @@ var _ = Describe("JindoCacheEngine UFS, operation and validate helpers", func() 
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(valueFile).NotTo(BeEmpty())
+		defer func() { _ = os.Remove(valueFile) }()
 		_, statErr := os.Stat(valueFile)
 		Expect(statErr).NotTo(HaveOccurred())
 	})
