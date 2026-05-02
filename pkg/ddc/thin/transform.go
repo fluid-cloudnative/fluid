@@ -32,6 +32,9 @@ func (t *ThinEngine) transform(runtime *datav1alpha1.ThinRuntime, profile *datav
 		err = fmt.Errorf("the thinRuntime is null")
 		return
 	}
+	if profile == nil {
+		profile = &datav1alpha1.ThinRuntimeProfile{}
+	}
 	defer utils.TimeTrack(time.Now(), "ThinRuntime.Transform", "name", runtime.Name)
 
 	dataset, err := utils.GetDataset(t.Client, t.name, t.namespace)
@@ -44,8 +47,8 @@ func (t *ThinEngine) transform(runtime *datav1alpha1.ThinRuntime, profile *datav
 			Namespace: runtime.Namespace,
 			Name:      runtime.Name,
 		},
-		ImagePullSecrets: profile.Spec.ImagePullSecrets,
 	}
+	value.ImagePullSecrets = profile.Spec.ImagePullSecrets
 	if len(runtime.Spec.ImagePullSecrets) != 0 {
 		value.ImagePullSecrets = runtime.Spec.ImagePullSecrets
 	}
