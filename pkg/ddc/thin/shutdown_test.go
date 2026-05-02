@@ -19,7 +19,6 @@ package thin
 import (
 	"errors"
 	"reflect"
-	"testing"
 
 	. "github.com/agiledragon/gomonkey/v2"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -29,317 +28,418 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	"github.com/go-logr/logr"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestDestroyWorker(t *testing.T) {
-	// runtimeInfoSpark tests destroy Worker in exclusive mode.
-	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "fluid", common.ThinRuntime)
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
-	runtimeInfoSpark.SetupWithDataset(&datav1alpha1.Dataset{
-		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
-	})
-
-	// runtimeInfoSpark tests destroy Worker in shareMode mode.
-	runtimeInfoHadoop, err := base.BuildRuntimeInfo("hadoop", "fluid", common.ThinRuntime)
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
-	runtimeInfoHadoop.SetupWithDataset(&datav1alpha1.Dataset{
-		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ShareMode},
-	})
-	nodeSelector := map[string]string{
-		"node-select": "true",
-	}
-	runtimeInfoHadoop.SetFuseNodeSelector(nodeSelector)
-
-	var nodeInputs = []*corev1.Node{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "test-node-spark",
-				Labels: map[string]string{
-					"fluid.io/dataset-num":            "1",
-					"fluid.io/s-thin-fluid-spark":     "true",
-					"fluid.io/s-fluid-spark":          "true",
-					"fluid.io/s-h-thin-d-fluid-spark": "5B",
-					"fluid.io/s-h-thin-m-fluid-spark": "1B",
-					"fluid.io/s-h-thin-t-fluid-spark": "6B",
-					"fluid_exclusive":                 "fluid_spark",
-				},
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "test-node-share",
-				Labels: map[string]string{
-					"fluid.io/dataset-num":             "2",
-					"fluid.io/s-thin-fluid-hadoop":     "true",
-					"fluid.io/s-fluid-hadoop":          "true",
-					"fluid.io/s-h-thin-d-fluid-hadoop": "5B",
-					"fluid.io/s-h-thin-m-fluid-hadoop": "1B",
-					"fluid.io/s-h-thin-t-fluid-hadoop": "6B",
-					"fluid.io/s-thin-fluid-hbase":      "true",
-					"fluid.io/s-fluid-hbase":           "true",
-					"fluid.io/s-h-thin-d-fluid-hbase":  "5B",
-					"fluid.io/s-h-thin-m-fluid-hbase":  "1B",
-					"fluid.io/s-h-thin-t-fluid-hbase":  "6B",
-				},
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "test-node-hadoop",
-				Labels: map[string]string{
-					"fluid.io/dataset-num":             "1",
-					"fluid.io/s-thin-fluid-hadoop":     "true",
-					"fluid.io/s-fluid-hadoop":          "true",
-					"fluid.io/s-h-thin-d-fluid-hadoop": "5B",
-					"fluid.io/s-h-thin-m-fluid-hadoop": "1B",
-					"fluid.io/s-h-thin-t-fluid-hadoop": "6B",
-					"node-select":                      "true",
-				},
-			},
-		},
-	}
-
-	testNodes := []runtime.Object{}
-	for _, nodeInput := range nodeInputs {
-		testNodes = append(testNodes, nodeInput.DeepCopy())
-	}
-
-	client := fake.NewFakeClientWithScheme(testScheme, testNodes...)
-
-	var testCase = []struct {
-		expectedWorkers  int32
-		runtimeInfo      base.RuntimeInfoInterface
-		wantedNodeNumber int32
-		wantedNodeLabels map[string]map[string]string
-	}{
-		{
-			expectedWorkers:  -1,
-			runtimeInfo:      runtimeInfoSpark,
-			wantedNodeNumber: 0,
-			wantedNodeLabels: map[string]map[string]string{
-				"test-node-spark": {},
-				"test-node-share": {
-					"fluid.io/dataset-num":             "2",
-					"fluid.io/s-thin-fluid-hadoop":     "true",
-					"fluid.io/s-fluid-hadoop":          "true",
-					"fluid.io/s-h-thin-d-fluid-hadoop": "5B",
-					"fluid.io/s-h-thin-m-fluid-hadoop": "1B",
-					"fluid.io/s-h-thin-t-fluid-hadoop": "6B",
-					"fluid.io/s-thin-fluid-hbase":      "true",
-					"fluid.io/s-fluid-hbase":           "true",
-					"fluid.io/s-h-thin-d-fluid-hbase":  "5B",
-					"fluid.io/s-h-thin-m-fluid-hbase":  "1B",
-					"fluid.io/s-h-thin-t-fluid-hbase":  "6B",
-				},
-				"test-node-hadoop": {
-					"fluid.io/dataset-num":             "1",
-					"fluid.io/s-thin-fluid-hadoop":     "true",
-					"fluid.io/s-fluid-hadoop":          "true",
-					"fluid.io/s-h-thin-d-fluid-hadoop": "5B",
-					"fluid.io/s-h-thin-m-fluid-hadoop": "1B",
-					"fluid.io/s-h-thin-t-fluid-hadoop": "6B",
-					"node-select":                      "true",
-				},
-			},
-		},
-		{
-			expectedWorkers:  -1,
-			runtimeInfo:      runtimeInfoHadoop,
-			wantedNodeNumber: 0,
-			wantedNodeLabels: map[string]map[string]string{
-				"test-node-spark": {},
-				"test-node-share": {
-					"fluid.io/dataset-num":            "1",
-					"fluid.io/s-thin-fluid-hbase":     "true",
-					"fluid.io/s-fluid-hbase":          "true",
-					"fluid.io/s-h-thin-d-fluid-hbase": "5B",
-					"fluid.io/s-h-thin-m-fluid-hbase": "1B",
-					"fluid.io/s-h-thin-t-fluid-hbase": "6B",
-				},
-				"test-node-hadoop": {
-					"node-select": "true",
-				},
-			},
-		},
-	}
-	for _, test := range testCase {
-		engine := &ThinEngine{Log: fake.NullLogger(), runtimeInfo: test.runtimeInfo}
-		engine.Client = client
-		engine.Helper = ctrl.BuildHelper(test.runtimeInfo, client, engine.Log)
-		engine.name = test.runtimeInfo.GetName()
-		engine.namespace = test.runtimeInfo.GetNamespace()
-		if err != nil {
-			t.Errorf("fail to exec the function with the error %v", err)
-		}
-		err := engine.destroyWorkers()
-		if err != nil {
-			t.Errorf("fail to exec the function with the error %v", err)
-		}
-		for _, node := range nodeInputs {
-			newNode, err := kubeclient.GetNode(client, node.Name)
-			if err != nil {
-				t.Errorf("fail to get the node with the error %v", err)
-			}
-
-			if len(newNode.Labels) != len(test.wantedNodeLabels[node.Name]) {
-				t.Errorf("fail to decrease the labels")
-			}
-			if len(newNode.Labels) != 0 && !reflect.DeepEqual(newNode.Labels, test.wantedNodeLabels[node.Name]) {
-				t.Errorf("fail to decrease the labels")
-			}
-		}
-
-	}
-}
-
-func TestThinEngine_destroyMaster(t *testing.T) {
-	mockExecCheckReleaseCommonFound := func(name string, namespace string) (exist bool, err error) {
-		return true, nil
-	}
-	mockExecCheckReleaseCommonNotFound := func(name string, namespace string) (exist bool, err error) {
-		return false, nil
-	}
-	mockExecCheckReleaseErr := func(name string, namespace string) (exist bool, err error) {
-		return false, errors.New("fail to check release")
-	}
-	mockExecDeleteReleaseCommon := func(name string, namespace string) error {
-		return nil
-	}
-	mockExecDeleteReleaseErr := func(name string, namespace string) error {
-		return errors.New("fail to delete chart")
-	}
-
-	orphanedCm := &corev1.ConfigMap{
+func buildShutdownRuntime(name, namespace string, placementMode datav1alpha1.PlacementMode, nodeSelector map[string]string) *datav1alpha1.ThinRuntime {
+	return &datav1alpha1.ThinRuntime{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "fluid",
-			Name:      "test-runtimeset",
+			Name:      name,
+			Namespace: namespace,
 		},
-	}
-	client := fake.NewFakeClientWithScheme(testScheme, orphanedCm)
-
-	engine := ThinEngine{
-		name:      "test",
-		namespace: "fluid",
-		Log:       fake.NullLogger(),
-		Client:    client,
-		runtime: &datav1alpha1.ThinRuntime{
-			Spec: datav1alpha1.ThinRuntimeSpec{
-				Fuse: datav1alpha1.ThinFuseSpec{},
-			},
+		Spec: datav1alpha1.ThinRuntimeSpec{
+			Fuse: datav1alpha1.ThinFuseSpec{NodeSelector: nodeSelector},
 		},
+		Status: datav1alpha1.RuntimeStatus{},
 	}
-
-	// check release found & delete common
-	checkReleasePatch := ApplyFunc(helm.CheckRelease, mockExecCheckReleaseCommonFound)
-	deleteReleasePatc := ApplyFunc(helm.DeleteRelease, mockExecDeleteReleaseCommon)
-	err := engine.destroyMaster()
-	if err != nil {
-		t.Errorf("fail to exec check helm release: %v", err)
-	}
-	checkReleasePatch.Reset()
-	deleteReleasePatc.Reset()
-
-	// check release not found
-	checkReleasePatch.ApplyFunc(helm.CheckRelease, mockExecCheckReleaseCommonNotFound)
-	err = engine.destroyMaster()
-	if err != nil {
-		t.Errorf("fail to exec check helm release: %v", err)
-	}
-
-	if cm, err := kubeclient.GetConfigmapByName(engine.Client, orphanedCm.Name, orphanedCm.Namespace); err != nil {
-		t.Errorf("fail to delete orphaned resources: %v", err)
-	} else if cm != nil {
-		t.Errorf("orphaned configmap should be cleaned up")
-	}
-	checkReleasePatch.Reset()
-
-	// check release error
-	checkReleasePatch.ApplyFunc(helm.CheckRelease, mockExecCheckReleaseErr)
-	err = engine.destroyMaster()
-	if err == nil {
-		t.Errorf("fail to exec check helm release: %v", err)
-	}
-	checkReleasePatch.Reset()
-
-	// check release found & delete common error
-	checkReleasePatch.ApplyFunc(helm.CheckRelease, mockExecCheckReleaseCommonFound)
-	deleteReleasePatc.ApplyFunc(helm.DeleteRelease, mockExecDeleteReleaseErr)
-	err = engine.destroyMaster()
-	if err == nil {
-		t.Errorf("fail to exec check helm release: %v", err)
-	}
-	checkReleasePatch.Reset()
-	deleteReleasePatc.Reset()
 }
 
-func TestThinEngine_cleanAll(t *testing.T) {
-	configMaps := []corev1.ConfigMap{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-config",
-				Namespace: "fluid",
-			},
+func buildShutdownDataset(name, namespace string, placementMode datav1alpha1.PlacementMode) *datav1alpha1.Dataset {
+	return &datav1alpha1.Dataset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
 		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-fluid-value",
-				Namespace: "fluid",
-			},
+		Spec: datav1alpha1.DatasetSpec{
+			PlacementMode: placementMode,
 		},
 	}
-	testObjs := []runtime.Object{}
-	for _, cm := range configMaps {
-		testObjs = append(testObjs, cm.DeepCopy())
-	}
+}
 
-	fakeClient := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-	type fields struct {
-		name      string
-		namespace string
-		Client    client.Client
-		log       logr.Logger
+func buildShutdownEngineWithWorkerTeardownFixture(name, namespace string) *ThinEngine {
+	runtimeInfo, err := base.BuildRuntimeInfo(name, namespace, common.ThinRuntime)
+	Expect(err).NotTo(HaveOccurred())
+	runtimeInfo.SetupWithDataset(buildShutdownDataset(name, namespace, datav1alpha1.ExclusiveMode))
+
+	workerLabelName := runtimeInfo.GetCommonLabelName()
+	node := &corev1.Node{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "shutdown-node",
+			Labels: map[string]string{
+				runtimeInfo.GetDatasetNumLabelName(): "1",
+				workerLabelName:                      "true",
+				runtimeInfo.GetRuntimeLabelName():    "true",
+			},
+		},
 	}
-	tests := []struct {
-		name    string
-		fields  fields
-		wantErr bool
-	}{
-		{
-			name: "test",
-			fields: fields{
+	runtimeObj := buildShutdownRuntime(name, namespace, datav1alpha1.ExclusiveMode, nil)
+	datasetObj := buildShutdownDataset(name, namespace, datav1alpha1.ExclusiveMode)
+	valueConfigMapName := name + "-" + common.ThinEngineImpl + "-values"
+	fakeClient := fake.NewFakeClientWithScheme(
+		testScheme,
+		runtimeObj,
+		datasetObj,
+		node,
+		&corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: name + "-config", Namespace: namespace}},
+		&corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: valueConfigMapName, Namespace: namespace}},
+	)
+
+	engine := &ThinEngine{
+		name:        name,
+		namespace:   namespace,
+		runtime:     runtimeObj,
+		Client:      fakeClient,
+		Log:         fake.NullLogger(),
+		engineImpl:  common.ThinEngineImpl,
+		runtimeInfo: runtimeInfo,
+		runtimeType: common.ThinRuntime,
+	}
+	engine.Helper = ctrl.BuildHelper(runtimeInfo, fakeClient, engine.Log)
+
+	return engine
+}
+
+var _ = Describe("ThinEngine shutdown", Label("pkg.ddc.thin.shutdown_test.go"), func() {
+	Describe("destroyWorkers", func() {
+		It("should tear down worker labels after seeding runtime objects required by runtime info", func() {
+			runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "fluid", common.ThinRuntime)
+			Expect(err).NotTo(HaveOccurred())
+			runtimeInfoSpark.SetupWithDataset(buildShutdownDataset("spark", "fluid", datav1alpha1.ExclusiveMode))
+
+			nodeSelector := map[string]string{"node-select": "true"}
+			runtimeInfoHadoop, err := base.BuildRuntimeInfo("hadoop", "fluid", common.ThinRuntime)
+			Expect(err).NotTo(HaveOccurred())
+			runtimeInfoHadoop.SetupWithDataset(buildShutdownDataset("hadoop", "fluid", datav1alpha1.ShareMode))
+			runtimeInfoHadoop.SetFuseNodeSelector(nodeSelector)
+
+			nodeInputs := []*corev1.Node{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-node-spark",
+						Labels: map[string]string{
+							"fluid.io/dataset-num":            "1",
+							"fluid.io/s-thin-fluid-spark":     "true",
+							"fluid.io/s-fluid-spark":          "true",
+							"fluid.io/s-h-thin-d-fluid-spark": "5B",
+							"fluid.io/s-h-thin-m-fluid-spark": "1B",
+							"fluid.io/s-h-thin-t-fluid-spark": "6B",
+							"fluid_exclusive":                 "fluid_spark",
+						},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-node-share",
+						Labels: map[string]string{
+							"fluid.io/dataset-num":             "2",
+							"fluid.io/s-thin-fluid-hadoop":     "true",
+							"fluid.io/s-fluid-hadoop":          "true",
+							"fluid.io/s-h-thin-d-fluid-hadoop": "5B",
+							"fluid.io/s-h-thin-m-fluid-hadoop": "1B",
+							"fluid.io/s-h-thin-t-fluid-hadoop": "6B",
+							"fluid.io/s-thin-fluid-hbase":      "true",
+							"fluid.io/s-fluid-hbase":           "true",
+							"fluid.io/s-h-thin-d-fluid-hbase":  "5B",
+							"fluid.io/s-h-thin-m-fluid-hbase":  "1B",
+							"fluid.io/s-h-thin-t-fluid-hbase":  "6B",
+						},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-node-hadoop",
+						Labels: map[string]string{
+							"fluid.io/dataset-num":             "1",
+							"fluid.io/s-thin-fluid-hadoop":     "true",
+							"fluid.io/s-fluid-hadoop":          "true",
+							"fluid.io/s-h-thin-d-fluid-hadoop": "5B",
+							"fluid.io/s-h-thin-m-fluid-hadoop": "1B",
+							"fluid.io/s-h-thin-t-fluid-hadoop": "6B",
+							"node-select":                      "true",
+						},
+					},
+				},
+			}
+
+			testObjects := []runtime.Object{
+				buildShutdownRuntime("spark", "fluid", datav1alpha1.ExclusiveMode, nil),
+				buildShutdownDataset("spark", "fluid", datav1alpha1.ExclusiveMode),
+				buildShutdownRuntime("hadoop", "fluid", datav1alpha1.ShareMode, nodeSelector),
+				buildShutdownDataset("hadoop", "fluid", datav1alpha1.ShareMode),
+			}
+			for _, nodeInput := range nodeInputs {
+				testObjects = append(testObjects, nodeInput.DeepCopy())
+			}
+
+			fakeClient := fake.NewFakeClientWithScheme(testScheme, testObjects...)
+
+			tests := []struct {
+				runtimeInfo      base.RuntimeInfoInterface
+				wantedNodeLabels map[string]map[string]string
+			}{
+				{
+					runtimeInfo: runtimeInfoSpark,
+					wantedNodeLabels: map[string]map[string]string{
+						"test-node-spark": nil,
+						"test-node-share": {
+							"fluid.io/dataset-num":             "2",
+							"fluid.io/s-thin-fluid-hadoop":     "true",
+							"fluid.io/s-fluid-hadoop":          "true",
+							"fluid.io/s-h-thin-d-fluid-hadoop": "5B",
+							"fluid.io/s-h-thin-m-fluid-hadoop": "1B",
+							"fluid.io/s-h-thin-t-fluid-hadoop": "6B",
+							"fluid.io/s-thin-fluid-hbase":      "true",
+							"fluid.io/s-fluid-hbase":           "true",
+							"fluid.io/s-h-thin-d-fluid-hbase":  "5B",
+							"fluid.io/s-h-thin-m-fluid-hbase":  "1B",
+							"fluid.io/s-h-thin-t-fluid-hbase":  "6B",
+						},
+						"test-node-hadoop": {
+							"fluid.io/dataset-num":             "1",
+							"fluid.io/s-thin-fluid-hadoop":     "true",
+							"fluid.io/s-fluid-hadoop":          "true",
+							"fluid.io/s-h-thin-d-fluid-hadoop": "5B",
+							"fluid.io/s-h-thin-m-fluid-hadoop": "1B",
+							"fluid.io/s-h-thin-t-fluid-hadoop": "6B",
+							"node-select":                      "true",
+						},
+					},
+				},
+				{
+					runtimeInfo: runtimeInfoHadoop,
+					wantedNodeLabels: map[string]map[string]string{
+						"test-node-spark": nil,
+						"test-node-share": {
+							"fluid.io/dataset-num":            "1",
+							"fluid.io/s-thin-fluid-hbase":     "true",
+							"fluid.io/s-fluid-hbase":          "true",
+							"fluid.io/s-h-thin-d-fluid-hbase": "5B",
+							"fluid.io/s-h-thin-m-fluid-hbase": "1B",
+							"fluid.io/s-h-thin-t-fluid-hbase": "6B",
+						},
+						"test-node-hadoop": {
+							"node-select": "true",
+						},
+					},
+				},
+			}
+
+			for _, test := range tests {
+				engine := &ThinEngine{
+					Log:         fake.NullLogger(),
+					Client:      fakeClient,
+					Helper:      ctrl.BuildHelper(test.runtimeInfo, fakeClient, fake.NullLogger()),
+					runtimeInfo: test.runtimeInfo,
+					name:        test.runtimeInfo.GetName(),
+					namespace:   test.runtimeInfo.GetNamespace(),
+					runtimeType: common.ThinRuntime,
+				}
+
+				Expect(engine.destroyWorkers()).To(Succeed())
+
+				for _, node := range nodeInputs {
+					newNode, err := kubeclient.GetNode(fakeClient, node.Name)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(newNode.Labels).To(Equal(test.wantedNodeLabels[node.Name]))
+				}
+			}
+		})
+	})
+
+	Describe("destroyMaster", func() {
+		It("should delete the release when the helm release exists", func() {
+			client := fake.NewFakeClientWithScheme(testScheme)
+			engine := &ThinEngine{
 				name:      "test",
 				namespace: "fluid",
-				Client:    fakeClient,
-				log:       fake.NullLogger(),
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+				Log:       fake.NullLogger(),
+				Client:    client,
+				runtime: &datav1alpha1.ThinRuntime{
+					Spec: datav1alpha1.ThinRuntimeSpec{Fuse: datav1alpha1.ThinFuseSpec{}},
+				},
+			}
+
+			checkReleasePatch := ApplyFunc(helm.CheckRelease, func(name string, namespace string) (bool, error) {
+				Expect(name).To(Equal("test"))
+				Expect(namespace).To(Equal("fluid"))
+				return true, nil
+			})
+			defer checkReleasePatch.Reset()
+
+			deleteReleasePatch := ApplyFunc(helm.DeleteRelease, func(name string, namespace string) error {
+				Expect(name).To(Equal("test"))
+				Expect(namespace).To(Equal("fluid"))
+				return nil
+			})
+			defer deleteReleasePatch.Reset()
+
+			Expect(engine.destroyMaster()).To(Succeed())
+		})
+
+		It("should clean orphaned resources when the helm release does not exist", func() {
+			orphanedCm := &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "fluid",
+					Name:      "test-runtimeset",
+				},
+			}
+			client := fake.NewFakeClientWithScheme(testScheme, orphanedCm)
+			engine := &ThinEngine{
+				name:      "test",
+				namespace: "fluid",
+				Log:       fake.NullLogger(),
+				Client:    client,
+				runtime: &datav1alpha1.ThinRuntime{
+					Spec: datav1alpha1.ThinRuntimeSpec{Fuse: datav1alpha1.ThinFuseSpec{}},
+				},
+			}
+
+			checkReleasePatch := ApplyFunc(helm.CheckRelease, func(name string, namespace string) (bool, error) {
+				return false, nil
+			})
+			defer checkReleasePatch.Reset()
+
+			Expect(engine.destroyMaster()).To(Succeed())
+
+			cm, err := kubeclient.GetConfigmapByName(engine.Client, orphanedCm.Name, orphanedCm.Namespace)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cm).To(BeNil())
+		})
+
+		It("should return an error when checking the helm release fails", func() {
+			client := fake.NewFakeClientWithScheme(testScheme)
+			engine := &ThinEngine{
+				name:      "test",
+				namespace: "fluid",
+				Log:       fake.NullLogger(),
+				Client:    client,
+				runtime: &datav1alpha1.ThinRuntime{
+					Spec: datav1alpha1.ThinRuntimeSpec{Fuse: datav1alpha1.ThinFuseSpec{}},
+				},
+			}
+
+			checkReleasePatch := ApplyFunc(helm.CheckRelease, func(name string, namespace string) (bool, error) {
+				return false, errors.New("fail to check release")
+			})
+			defer checkReleasePatch.Reset()
+
+			Expect(engine.destroyMaster()).To(MatchError("fail to check release"))
+		})
+
+		It("should return an error when deleting an installed release fails", func() {
+			client := fake.NewFakeClientWithScheme(testScheme)
+			engine := &ThinEngine{
+				name:      "test",
+				namespace: "fluid",
+				Log:       fake.NullLogger(),
+				Client:    client,
+				runtime: &datav1alpha1.ThinRuntime{
+					Spec: datav1alpha1.ThinRuntimeSpec{Fuse: datav1alpha1.ThinFuseSpec{}},
+				},
+			}
+
+			checkReleasePatch := ApplyFunc(helm.CheckRelease, func(name string, namespace string) (bool, error) {
+				return true, nil
+			})
+			defer checkReleasePatch.Reset()
+
+			deleteReleasePatch := ApplyFunc(helm.DeleteRelease, func(name string, namespace string) error {
+				return errors.New("fail to delete chart")
+			})
+			defer deleteReleasePatch.Reset()
+
+			Expect(engine.destroyMaster()).To(MatchError("fail to delete chart"))
+		})
+	})
+
+	Describe("cleanAll", func() {
+		It("should clean fuse artifacts and configmaps", func() {
+			configMaps := []runtime.Object{
+				&corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "test-config", Namespace: "fluid"}},
+				&corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "test-thin-values", Namespace: "fluid"}},
+			}
+			fakeClient := fake.NewFakeClientWithScheme(testScheme, configMaps...)
+
 			helper := &ctrl.Helper{}
 			patches := ApplyMethod(reflect.TypeOf(helper), "CleanUpFuse", func(_ *ctrl.Helper) (int, error) {
 				return 0, nil
 			})
 			defer patches.Reset()
-			j := &ThinEngine{
-				name:      tt.fields.name,
-				namespace: tt.fields.namespace,
-				Client:    fakeClient,
-				Log:       tt.fields.log,
+
+			engine := &ThinEngine{
+				name:       "test",
+				namespace:  "fluid",
+				engineImpl: common.ThinEngineImpl,
+				Client:     fakeClient,
+				Log:        fake.NullLogger(),
+				Helper:     helper,
 			}
-			if err := j.cleanAll(); (err != nil) != tt.wantErr {
-				t.Errorf("cleanAll() error = %v, wantErr %v", err, tt.wantErr)
+
+			Expect(engine.cleanAll()).To(Succeed())
+
+			for _, name := range []string{"test-config", "test-thin-values"} {
+				cm, err := kubeclient.GetConfigmapByName(fakeClient, name, "fluid")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cm).To(BeNil())
 			}
 		})
-	}
-}
+	})
+
+	Describe("Shutdown", func() {
+		It("should return the destroyWorkers error after the cache retry limit is reached", func() {
+			engine := &ThinEngine{
+				name:                   "missing-runtime",
+				namespace:              "fluid",
+				Log:                    fake.NullLogger(),
+				Client:                 fake.NewFakeClientWithScheme(testScheme),
+				gracefulShutdownLimits: 1,
+				retryShutdown:          1,
+				runtimeType:            common.ThinRuntime,
+			}
+
+			Expect(engine.Shutdown()).To(HaveOccurred())
+			Expect(engine.Shutdown().Error()).To(ContainSubstring("not found"))
+		})
+
+		It("should return the destroyMaster error after workers are torn down successfully", func() {
+			engine := buildShutdownEngineWithWorkerTeardownFixture("shutdown-master-error", "fluid")
+			engine.gracefulShutdownLimits = 1
+			engine.retryShutdown = 1
+
+			checkReleasePatch := ApplyFunc(helm.CheckRelease, func(name string, namespace string) (bool, error) {
+				return false, errors.New("check release failed")
+			})
+			defer checkReleasePatch.Reset()
+
+			Expect(engine.Shutdown()).To(MatchError("check release failed"))
+		})
+
+		It("should complete shutdown successfully after the cache retry limit is reached", func() {
+			engine := buildShutdownEngineWithWorkerTeardownFixture("shutdown-success", "fluid")
+			engine.gracefulShutdownLimits = 1
+			engine.retryShutdown = 1
+
+			checkReleasePatch := ApplyFunc(helm.CheckRelease, func(name string, namespace string) (bool, error) {
+				return false, nil
+			})
+			defer checkReleasePatch.Reset()
+
+			cleanUpFusePatch := ApplyMethod(reflect.TypeOf(&ctrl.Helper{}), "CleanUpFuse", func(_ *ctrl.Helper) (int, error) {
+				return 0, nil
+			})
+			defer cleanUpFusePatch.Reset()
+
+			Expect(engine.Shutdown()).To(Succeed())
+
+			for _, cmName := range []string{"shutdown-success-config", "shutdown-success-thin-values"} {
+				cm, err := kubeclient.GetConfigmapByName(engine.Client, cmName, "fluid")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cm).To(BeNil())
+			}
+		})
+	})
+})
