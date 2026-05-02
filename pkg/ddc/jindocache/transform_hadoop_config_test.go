@@ -57,7 +57,8 @@ var _ = Describe("JindoCacheEngine transformHadoopConfig", func() {
 
 		err := engine.transformHadoopConfig(runtime, &Jindo{})
 
-		Expect(err).To(MatchError("neither \"hdfs-site.xml\" nor \"core-site.xml\" is found in the specified configMap \"invalid-hadoop-config\" "))
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("neither \"hdfs-site.xml\" nor \"core-site.xml\" is found in the specified configMap \"invalid-hadoop-config\""))
 	})
 
 	It("should include both supported hadoop config files when present", func() {
