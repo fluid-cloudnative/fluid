@@ -401,8 +401,9 @@ var _ = Describe("ThinEngine shutdown", Label("pkg.ddc.thin.shutdown_test.go"), 
 				runtimeType:            common.ThinRuntime,
 			}
 
-			Expect(engine.Shutdown()).To(HaveOccurred())
-			Expect(engine.Shutdown().Error()).To(ContainSubstring("not found"))
+			err := engine.Shutdown()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("not found"))
 		})
 
 		It("should return the destroyMaster error after workers are torn down successfully", func() {
