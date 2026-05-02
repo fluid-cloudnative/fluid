@@ -42,6 +42,7 @@ func buildEngineTestContext(client ctrlclient.Client, runtimeObj ctrlclient.Obje
 		Client:      client,
 		Log:         fake.NullLogger(),
 		RuntimeType: common.ThinRuntime,
+		EngineImpl:  common.ThinEngineImpl,
 		Runtime:     runtimeObj,
 	}
 }

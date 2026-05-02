@@ -41,7 +41,7 @@ var _ = Describe("ThinEngine CheckAndUpdateRuntimeStatus", func() {
 			name:       thinRuntime.Name,
 			namespace:  thinRuntime.Namespace,
 			runtime:    thinRuntime,
-			engineImpl: "thin",
+			engineImpl: common.ThinEngineImpl,
 			Client:     fake.NewFakeClientWithScheme(testScheme, allObjects...),
 			Log:        fake.NullLogger(),
 		}
