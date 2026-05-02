@@ -108,7 +108,7 @@ var _ = Describe("ThinEngine CheckAndUpdateRuntimeStatus", func() {
 		Expect(condition).NotTo(BeNil())
 	})
 
-	It("updates cache affinity and waits for ready workers before marking the runtime ready", func() {
+	It("updates cache affinity and leaves setup duration empty until workers are ready", func() {
 		runtime := newRuntime("workers")
 		runtime.Spec.Replicas = 2
 		runtime.Spec.Worker.Enabled = true
@@ -139,6 +139,7 @@ var _ = Describe("ThinEngine CheckAndUpdateRuntimeStatus", func() {
 		updatedRuntime := &datav1alpha1.ThinRuntime{}
 		Expect(engine.Get(context.TODO(), types.NamespacedName{Name: "workers", Namespace: "fluid"}, updatedRuntime)).To(Succeed())
 		Expect(updatedRuntime.Status.FusePhase).To(Equal(datav1alpha1.RuntimePhaseReady))
+		Expect(updatedRuntime.Status.SetupDuration).To(BeEmpty())
 		Expect(updatedRuntime.Status.CacheAffinity).NotTo(BeNil())
 		Expect(updatedRuntime.Status.CacheAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms).To(HaveLen(1))
 		Expect(updatedRuntime.Status.CacheAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions).To(ContainElement(corev1.NodeSelectorRequirement{
