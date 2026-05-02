@@ -180,6 +180,29 @@ func TestDestroyWorker(t *testing.T) {
 	for _, nodeInput := range nodeInputs {
 		testNodes = append(testNodes, nodeInput.DeepCopy())
 	}
+	runtimeInputs := []*datav1alpha1.JuiceFSRuntime{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      runtimeInfoSpark.GetName(),
+				Namespace: runtimeInfoSpark.GetNamespace(),
+			},
+			Spec: datav1alpha1.JuiceFSRuntimeSpec{
+				Fuse: datav1alpha1.JuiceFSFuseSpec{},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      runtimeInfoHadoop.GetName(),
+				Namespace: runtimeInfoHadoop.GetNamespace(),
+			},
+			Spec: datav1alpha1.JuiceFSRuntimeSpec{
+				Fuse: datav1alpha1.JuiceFSFuseSpec{},
+			},
+		},
+	}
+	for _, runtimeInput := range runtimeInputs {
+		testNodes = append(testNodes, runtimeInput.DeepCopy())
+	}
 
 	client := fake.NewFakeClientWithScheme(testScheme, testNodes...)
 
