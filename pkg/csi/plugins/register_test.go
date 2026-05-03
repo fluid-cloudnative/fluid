@@ -23,6 +23,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/agiledragon/gomonkey/v2"
 	"github.com/fluid-cloudnative/fluid/pkg/csi/config"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/go-logr/logr"
@@ -141,11 +142,17 @@ var _ = Describe("Register", func() {
 		})
 
 		It("should return stat errors for invalid paths", func() {
-			clientset, err := getNodeAuthorizedClientFromKubeletConfig(string([]byte{'\x00'}))
+			statPatch := gomonkey.ApplyFunc(os.Stat, func(string) (os.FileInfo, error) {
+				return nil, stderrors.New("stat failed")
+			})
+			defer statPatch.Reset()
+
+			clientset, err := getNodeAuthorizedClientFromKubeletConfig(filepath.Join(tempDir, "kubelet.conf"))
 
 			Expect(err).To(HaveOccurred())
 			Expect(clientset).To(BeNil())
 			Expect(err.Error()).To(ContainSubstring("fail to stat kubelet config file"))
+			Expect(err.Error()).To(ContainSubstring("stat failed"))
 		})
 	})
 
