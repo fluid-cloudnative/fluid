@@ -69,26 +69,21 @@ func (f *fakeEngine) Operate(ctx cruntime.ReconcileRequestContext, opStatus *flu
 
 var _ = Describe("factory", func() {
 	Describe("CreateEngine", func() {
-		var (
-			originalBuildFuncMap map[string]buildFunc
-		)
-
-		BeforeEach(func() {
-			originalBuildFuncMap = buildFuncMap
-			buildFuncMap = map[string]buildFunc{}
-		})
-
-		AfterEach(func() {
-			buildFuncMap = originalBuildFuncMap
-		})
-
 		It("dispatches using the engine impl and forwards id and context", func() {
 			expectedEngine := &fakeEngine{id: "engine-id"}
 			ctx := cruntime.ReconcileRequestContext{EngineImpl: common.AlluxioEngineImpl}
+			originalBuildFunc, existed := buildFuncMap[common.AlluxioEngineImpl]
 			captured := struct {
 				id  string
 				ctx cruntime.ReconcileRequestContext
 			}{}
+			DeferCleanup(func() {
+				if existed {
+					buildFuncMap[common.AlluxioEngineImpl] = originalBuildFunc
+				} else {
+					delete(buildFuncMap, common.AlluxioEngineImpl)
+				}
+			})
 
 			buildFuncMap[common.AlluxioEngineImpl] = func(id string, gotCtx cruntime.ReconcileRequestContext) (base.Engine, error) {
 				captured.id = id
@@ -107,6 +102,14 @@ var _ = Describe("factory", func() {
 		It("returns builder errors unchanged", func() {
 			expectedErr := fmt.Errorf("builder failed")
 			ctx := cruntime.ReconcileRequestContext{EngineImpl: common.JindoFSEngineImpl}
+			originalBuildFunc, existed := buildFuncMap[common.JindoFSEngineImpl]
+			DeferCleanup(func() {
+				if existed {
+					buildFuncMap[common.JindoFSEngineImpl] = originalBuildFunc
+				} else {
+					delete(buildFuncMap, common.JindoFSEngineImpl)
+				}
+			})
 
 			buildFuncMap[common.JindoFSEngineImpl] = func(id string, gotCtx cruntime.ReconcileRequestContext) (base.Engine, error) {
 				return nil, expectedErr
@@ -116,6 +119,10 @@ var _ = Describe("factory", func() {
 
 			Expect(engine).To(BeNil())
 			Expect(err).To(MatchError(expectedErr))
+		})
+
+		It("keeps unrelated engine registrations available during CreateEngine specs", func() {
+			Expect(buildFuncMap).To(HaveKey(common.GooseFSEngineImpl))
 		})
 
 		It("errors on unknown impl and mentions it", func() {
