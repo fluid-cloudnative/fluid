@@ -461,9 +461,9 @@ var _ = Describe("NodeServer", func() {
 				})
 				defer removeSymlinkPatch.Reset()
 
-				fakeMounter := mount.New("")
+				mounterType := reflect.TypeOf(&mount.Mounter{})
 				isLikelyNotMountPointCalls := 0
-				isLikelyNotMountPointPatch := gomonkey.ApplyMethod(reflect.TypeOf(fakeMounter), "IsLikelyNotMountPoint", func(_ *mount.Mounter, file string) (bool, error) {
+				isLikelyNotMountPointPatch := gomonkey.ApplyMethod(mounterType, "IsLikelyNotMountPoint", func(_ *mount.Mounter, file string) (bool, error) {
 					isLikelyNotMountPointCalls++
 					if isLikelyNotMountPointCalls == 1 {
 						return false, nil
@@ -473,14 +473,14 @@ var _ = Describe("NodeServer", func() {
 				defer isLikelyNotMountPointPatch.Reset()
 
 				unmountCalls := 0
-				unmountPatch := gomonkey.ApplyMethod(reflect.TypeOf(fakeMounter), "Unmount", func(_ *mount.Mounter, target string) error {
+				unmountPatch := gomonkey.ApplyMethod(mounterType, "Unmount", func(_ *mount.Mounter, target string) error {
 					unmountCalls++
 					return nil
 				})
 				defer unmountPatch.Reset()
 
 				cleanupPatch := gomonkey.ApplyFunc(mount.CleanupMountPoint, func(path string, mounter mount.Interface, extensiveMountPointCheck bool) error {
-					return nil
+					return os.RemoveAll(path)
 				})
 				defer cleanupPatch.Reset()
 
@@ -495,6 +495,9 @@ var _ = Describe("NodeServer", func() {
 				Expect(resp).NotTo(BeNil())
 				Expect(unmountCalls).To(Equal(1))
 				Expect(isLikelyNotMountPointCalls).To(Equal(2))
+
+				_, statErr := os.Stat(targetPath)
+				Expect(os.IsNotExist(statErr)).To(BeTrue())
 			})
 		})
 	})
@@ -1026,7 +1029,7 @@ var _ = Describe("NodeServer", func() {
 
 		Context("when path does not exist", func() {
 			It("should return false without error", func() {
-				patch := gomonkey.ApplyMethod(reflect.TypeOf(fakeMounter), "IsLikelyNotMountPoint", func(_ *mount.Mounter, file string) (bool, error) {
+				patch := gomonkey.ApplyMethod(reflect.TypeOf(&mount.Mounter{}), "IsLikelyNotMountPoint", func(_ *mount.Mounter, file string) (bool, error) {
 					return true, os.ErrNotExist
 				})
 				defer patch.Reset()
@@ -1040,7 +1043,7 @@ var _ = Describe("NodeServer", func() {
 
 		Context("when mounter reports a mount point", func() {
 			It("should require unmount", func() {
-				patch := gomonkey.ApplyMethod(reflect.TypeOf(fakeMounter), "IsLikelyNotMountPoint", func(_ *mount.Mounter, file string) (bool, error) {
+				patch := gomonkey.ApplyMethod(reflect.TypeOf(&mount.Mounter{}), "IsLikelyNotMountPoint", func(_ *mount.Mounter, file string) (bool, error) {
 					return false, nil
 				})
 				defer patch.Reset()
@@ -1054,7 +1057,7 @@ var _ = Describe("NodeServer", func() {
 
 		Context("when mounter returns an unexpected error", func() {
 			It("should return the error", func() {
-				patch := gomonkey.ApplyMethod(reflect.TypeOf(fakeMounter), "IsLikelyNotMountPoint", func(_ *mount.Mounter, file string) (bool, error) {
+				patch := gomonkey.ApplyMethod(reflect.TypeOf(&mount.Mounter{}), "IsLikelyNotMountPoint", func(_ *mount.Mounter, file string) (bool, error) {
 					return false, errors.New("unexpected")
 				})
 				defer patch.Reset()
