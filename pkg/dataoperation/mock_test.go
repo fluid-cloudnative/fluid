@@ -30,18 +30,20 @@ var _ = Describe("mockDataloadOperationReconciler", func() {
 		operation = mockDataloadOperationReconciler{}
 	})
 
-	It("should panic for unimplemented operation methods", func() {
-		Expect(func() { operation.HasPrecedingOperation() }).To(PanicWith("unimplemented"))
-		Expect(func() { operation.GetOperationObject() }).To(PanicWith("unimplemented"))
-		Expect(func() { operation.GetChartsDirectory() }).To(PanicWith("unimplemented"))
-		Expect(func() { operation.GetReleaseNameSpacedName() }).To(PanicWith("unimplemented"))
-		Expect(func() { operation.GetStatusHandler() }).To(PanicWith("unimplemented"))
-		Expect(func() { _, _ = operation.GetTargetDataset() }).To(PanicWith("unimplemented"))
-		Expect(func() { operation.GetPossibleTargetDatasetNamespacedNames() }).To(PanicWith("unimplemented"))
-		Expect(func() { operation.RemoveTargetDatasetStatusInProgress(&datav1alpha1.Dataset{}) }).To(PanicWith("unimplemented"))
-		Expect(func() { operation.SetTargetDatasetStatusInProgress(&datav1alpha1.Dataset{}) }).To(PanicWith("unimplemented"))
-		Expect(func() { _ = operation.UpdateOperationApiStatus(&datav1alpha1.OperationStatus{}) }).To(PanicWith("unimplemented"))
-		Expect(func() { _ = operation.UpdateStatusInfoForCompleted(map[string]string{"k": "v"}) }).To(PanicWith("unimplemented"))
-		Expect(func() { _, _ = operation.Validate(runtime.ReconcileRequestContext{}) }).To(PanicWith("unimplemented"))
-	})
+	DescribeTable("should panic for unimplemented operation methods", func(call func()) {
+		Expect(call).To(PanicWith("unimplemented"))
+	},
+		Entry("HasPrecedingOperation", func() { operation.HasPrecedingOperation() }),
+		Entry("GetOperationObject", func() { operation.GetOperationObject() }),
+		Entry("GetChartsDirectory", func() { operation.GetChartsDirectory() }),
+		Entry("GetReleaseNameSpacedName", func() { operation.GetReleaseNameSpacedName() }),
+		Entry("GetStatusHandler", func() { operation.GetStatusHandler() }),
+		Entry("GetTargetDataset", func() { _, _ = operation.GetTargetDataset() }),
+		Entry("GetPossibleTargetDatasetNamespacedNames", func() { operation.GetPossibleTargetDatasetNamespacedNames() }),
+		Entry("RemoveTargetDatasetStatusInProgress", func() { operation.RemoveTargetDatasetStatusInProgress(&datav1alpha1.Dataset{}) }),
+		Entry("SetTargetDatasetStatusInProgress", func() { operation.SetTargetDatasetStatusInProgress(&datav1alpha1.Dataset{}) }),
+		Entry("UpdateOperationApiStatus", func() { _ = operation.UpdateOperationApiStatus(&datav1alpha1.OperationStatus{}) }),
+		Entry("UpdateStatusInfoForCompleted", func() { _ = operation.UpdateStatusInfoForCompleted(map[string]string{"k": "v"}) }),
+		Entry("Validate", func() { _, _ = operation.Validate(runtime.ReconcileRequestContext{}) }),
+	)
 })
