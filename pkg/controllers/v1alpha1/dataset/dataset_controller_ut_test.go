@@ -73,7 +73,7 @@ var _ = Describe("Dataset Controller Unit", func() {
 				Recorder: record.NewFakeRecorder(16),
 			}
 
-			result, err := r.Reconcile(context.TODO(), ctrl.Request{
+			result, err := r.Reconcile(context.Background(), ctrl.Request{
 				NamespacedName: types.NamespacedName{Name: "missing", Namespace: "default"},
 			})
 
@@ -96,11 +96,11 @@ var _ = Describe("Dataset Controller Unit", func() {
 				Recorder: record.NewFakeRecorder(16),
 			}
 
-			_, err := r.Reconcile(context.TODO(), ctrl.Request{
+			_, err := r.Reconcile(context.Background(), ctrl.Request{
 				NamespacedName: types.NamespacedName{Name: invalidName, Namespace: "default"},
 			})
 
-			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(ContainSubstring("metadata.name")))
 		})
 
 		It("should add the finalizer and requeue for a new dataset", func() {
@@ -119,7 +119,7 @@ var _ = Describe("Dataset Controller Unit", func() {
 				ResyncPeriod: 30 * time.Second,
 			}
 
-			result, err := r.Reconcile(context.TODO(), ctrl.Request{
+			result, err := r.Reconcile(context.Background(), ctrl.Request{
 				NamespacedName: types.NamespacedName{Name: dataset.Name, Namespace: dataset.Namespace},
 			})
 
@@ -127,7 +127,7 @@ var _ = Describe("Dataset Controller Unit", func() {
 			Expect(result.Requeue).To(BeTrue())
 
 			updatedDataset := &datav1alpha1.Dataset{}
-			Expect(r.Get(context.TODO(), types.NamespacedName{Name: dataset.Name, Namespace: dataset.Namespace}, updatedDataset)).To(Succeed())
+			Expect(r.Get(context.Background(), types.NamespacedName{Name: dataset.Name, Namespace: dataset.Namespace}, updatedDataset)).To(Succeed())
 			Expect(updatedDataset.GetFinalizers()).To(ContainElement(finalizer))
 		})
 
@@ -154,7 +154,7 @@ var _ = Describe("Dataset Controller Unit", func() {
 				ResyncPeriod: 30 * time.Second,
 			}
 
-			result, err := r.Reconcile(context.TODO(), ctrl.Request{
+			result, err := r.Reconcile(context.Background(), ctrl.Request{
 				NamespacedName: types.NamespacedName{Name: dataset.Name, Namespace: dataset.Namespace},
 			})
 
@@ -162,7 +162,7 @@ var _ = Describe("Dataset Controller Unit", func() {
 			Expect(result).To(Equal(ctrl.Result{}))
 
 			updatedDataset := &datav1alpha1.Dataset{}
-			Expect(r.Get(context.TODO(), types.NamespacedName{Name: dataset.Name, Namespace: dataset.Namespace}, updatedDataset)).To(Succeed())
+			Expect(r.Get(context.Background(), types.NamespacedName{Name: dataset.Name, Namespace: dataset.Namespace}, updatedDataset)).To(Succeed())
 			Expect(updatedDataset.Status.Phase).To(Equal(datav1alpha1.NotBoundDatasetPhase))
 			Expect(updatedDataset.Status.Conditions).To(BeEmpty())
 		})
@@ -194,7 +194,7 @@ var _ = Describe("Dataset Controller Unit", func() {
 			}
 
 			ctx := reconcileRequestContext{
-				Context: context.TODO(),
+				Context: context.Background(),
 				Dataset: *dataset,
 				NamespacedName: types.NamespacedName{
 					Name:      dataset.Name,
@@ -240,7 +240,7 @@ var _ = Describe("Dataset Controller Unit", func() {
 				ResyncPeriod: 20 * time.Second,
 			}
 
-			result, err := r.Reconcile(context.TODO(), ctrl.Request{
+			result, err := r.Reconcile(context.Background(), ctrl.Request{
 				NamespacedName: types.NamespacedName{Name: dataset.Name, Namespace: dataset.Namespace},
 			})
 
@@ -266,10 +266,10 @@ var _ = Describe("Dataset Controller Unit", func() {
 			}
 
 			currentDataset := datav1alpha1.Dataset{}
-			Expect(r.Get(context.TODO(), types.NamespacedName{Name: storedDataset.Name, Namespace: storedDataset.Namespace}, &currentDataset)).To(Succeed())
+			Expect(r.Get(context.Background(), types.NamespacedName{Name: storedDataset.Name, Namespace: storedDataset.Namespace}, &currentDataset)).To(Succeed())
 
 			result, err := r.addFinalizerAndRequeue(reconcileRequestContext{
-				Context: context.TODO(),
+				Context: context.Background(),
 				Dataset: currentDataset,
 			})
 
@@ -277,7 +277,7 @@ var _ = Describe("Dataset Controller Unit", func() {
 			Expect(result.Requeue).To(BeTrue())
 
 			updatedDataset := &datav1alpha1.Dataset{}
-			Expect(r.Get(context.TODO(), types.NamespacedName{Name: storedDataset.Name, Namespace: storedDataset.Namespace}, updatedDataset)).To(Succeed())
+			Expect(r.Get(context.Background(), types.NamespacedName{Name: storedDataset.Name, Namespace: storedDataset.Namespace}, updatedDataset)).To(Succeed())
 			Expect(updatedDataset.GetFinalizers()).To(ContainElement(finalizer))
 		})
 	})
@@ -301,27 +301,34 @@ var _ = Describe("Dataset Controller Unit", func() {
 			}
 
 			currentDataset := datav1alpha1.Dataset{}
-			Expect(r.Get(context.TODO(), types.NamespacedName{Name: storedDataset.Name, Namespace: storedDataset.Namespace}, &currentDataset)).To(Succeed())
+			Expect(r.Get(context.Background(), types.NamespacedName{Name: storedDataset.Name, Namespace: storedDataset.Namespace}, &currentDataset)).To(Succeed())
 
 			result, err := r.reconcileDatasetDeletion(reconcileRequestContext{
-				Context: context.TODO(),
+				Context: context.Background(),
 				Dataset: currentDataset,
+				NamespacedName: types.NamespacedName{
+					Name:      currentDataset.Name,
+					Namespace: currentDataset.Namespace,
+				},
 			})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result).To(Equal(ctrl.Result{}))
 
 			updatedDataset := &datav1alpha1.Dataset{}
-			err = r.Get(context.TODO(), types.NamespacedName{Name: storedDataset.Name, Namespace: storedDataset.Namespace}, updatedDataset)
-			if err == nil {
-				Expect(updatedDataset.GetFinalizers()).NotTo(ContainElement(finalizer))
-			} else {
-				Expect(client.IgnoreNotFound(err)).To(BeNil())
-			}
+			err = r.Get(context.Background(), types.NamespacedName{Name: storedDataset.Name, Namespace: storedDataset.Namespace}, updatedDataset)
+			Expect(err).To(HaveOccurred())
+			Expect(client.IgnoreNotFound(err)).NotTo(HaveOccurred())
 		})
 
 		It("should requeue when referenced datasets are still mounted", func() {
 			deletionTime := metav1.NewTime(time.Now())
+			referencingDataset := &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "consumer-a",
+					Namespace: "default",
+				},
+			}
 			dataset := datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:              "referenced-dataset",
@@ -330,19 +337,23 @@ var _ = Describe("Dataset Controller Unit", func() {
 					DeletionTimestamp: &deletionTime,
 				},
 				Status: datav1alpha1.DatasetStatus{
-					DatasetRef: []string{"consumer-a"},
+					DatasetRef: []string{"default/consumer-a"},
 				},
 			}
 
 			r := &DatasetReconciler{
-				Client:   fake.NewFakeClientWithScheme(scheme, dataset.DeepCopy()),
+				Client:   fake.NewFakeClientWithScheme(scheme, dataset.DeepCopy(), referencingDataset),
 				Scheme:   scheme,
 				Recorder: record.NewFakeRecorder(16),
 			}
 
 			result, err := r.reconcileDatasetDeletion(reconcileRequestContext{
-				Context: context.TODO(),
+				Context: context.Background(),
 				Dataset: dataset,
+				NamespacedName: types.NamespacedName{
+					Name:      dataset.Name,
+					Namespace: dataset.Namespace,
+				},
 			})
 
 			Expect(err).NotTo(HaveOccurred())
@@ -376,18 +387,22 @@ var _ = Describe("Dataset Controller Unit", func() {
 			}
 
 			currentDataset := datav1alpha1.Dataset{}
-			Expect(r.Get(context.TODO(), types.NamespacedName{Name: storedDataset.Name, Namespace: storedDataset.Namespace}, &currentDataset)).To(Succeed())
+			Expect(r.Get(context.Background(), types.NamespacedName{Name: storedDataset.Name, Namespace: storedDataset.Namespace}, &currentDataset)).To(Succeed())
 
 			result, err := r.reconcileDatasetDeletion(reconcileRequestContext{
-				Context: context.TODO(),
+				Context: context.Background(),
 				Dataset: currentDataset,
+				NamespacedName: types.NamespacedName{
+					Name:      currentDataset.Name,
+					Namespace: currentDataset.Namespace,
+				},
 			})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.RequeueAfter).To(Equal(1 * time.Second))
 
 			updatedDataset := &datav1alpha1.Dataset{}
-			Expect(r.Get(context.TODO(), types.NamespacedName{Name: storedDataset.Name, Namespace: storedDataset.Namespace}, updatedDataset)).To(Succeed())
+			Expect(r.Get(context.Background(), types.NamespacedName{Name: storedDataset.Name, Namespace: storedDataset.Namespace}, updatedDataset)).To(Succeed())
 			Expect(updatedDataset.Status.DatasetRef).To(Equal([]string{"default/existing-ref"}))
 		})
 	})
@@ -425,7 +440,7 @@ var _ = Describe("Dataset Controller Unit", func() {
 			}
 
 			_, err := r.reconcileDataset(reconcileRequestContext{
-				Context: context.TODO(),
+				Context: context.Background(),
 				Dataset: dataset,
 				NamespacedName: types.NamespacedName{
 					Name:      dataset.Name,
@@ -468,7 +483,7 @@ var _ = Describe("Dataset Controller Unit", func() {
 			}
 
 			result, err := r.reconcileDataset(reconcileRequestContext{
-				Context: context.TODO(),
+				Context: context.Background(),
 				Dataset: dataset,
 				NamespacedName: types.NamespacedName{
 					Name:      dataset.Name,
@@ -480,7 +495,7 @@ var _ = Describe("Dataset Controller Unit", func() {
 			Expect(result).To(Equal(ctrl.Result{}))
 
 			thinRuntime := &datav1alpha1.ThinRuntime{}
-			Expect(r.Get(context.TODO(), types.NamespacedName{Name: dataset.Name, Namespace: dataset.Namespace}, thinRuntime)).To(Succeed())
+			Expect(r.Get(context.Background(), types.NamespacedName{Name: dataset.Name, Namespace: dataset.Namespace}, thinRuntime)).To(Succeed())
 			Expect(thinRuntime.OwnerReferences).To(HaveLen(1))
 			Expect(thinRuntime.OwnerReferences[0].Name).To(Equal(dataset.Name))
 			Expect(thinRuntime.OwnerReferences[0].UID).To(Equal(dataset.UID))
