@@ -136,14 +136,13 @@ var _ = Describe("Master Tests", func() {
 
 	Describe("ThinEngine.generateThinValueFile", func() {
 		It("generates values when the runtime profile lookup falls back to nil", func() {
-			dataset, runtimeObj, profile := mockFluidObjectsForTests(types.NamespacedName{Name: "test-dataset", Namespace: "default"})
+			dataset, runtimeObj, _ := mockFluidObjectsForTests(types.NamespacedName{Name: "test-dataset", Namespace: "default"})
 			runtimeObj.Spec.Fuse = datav1alpha1.ThinFuseSpec{
 				Image: "runtime-fuse",
 			}
-			profile = nil
 
 			client := fake.NewFakeClientWithScheme(testScheme, dataset, runtimeObj)
-			engine := mockThinEngineForTests(dataset, runtimeObj, profile)
+			engine := mockThinEngineForTests(dataset, runtimeObj, nil)
 			engine.Client = client
 			engine.runtime = runtimeObj
 
