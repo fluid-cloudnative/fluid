@@ -17,17 +17,18 @@
 package efc
 
 import (
-	"testing"
-
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -41,27 +42,17 @@ func init() {
 	_ = appsv1.AddToScheme(testScheme)
 }
 
-func TestBuild(t *testing.T) {
-	var namespace = v1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "fluid",
-		},
-	}
-	testObjs := []runtime.Object{}
-	testObjs = append(testObjs, namespace.DeepCopy())
+const (
+	engineTestNamespace = "fluid"
+	engineTestName      = "hbase"
+	engineTestID        = "testId"
+)
 
-	var dataset = datav1alpha1.Dataset{
+func newEngineRuntime() *datav1alpha1.EFCRuntime {
+	return &datav1alpha1.EFCRuntime{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase",
-			Namespace: "fluid",
-		},
-	}
-	testObjs = append(testObjs, dataset.DeepCopy())
-
-	var runtime = datav1alpha1.EFCRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase",
-			Namespace: "fluid",
+			Name:      engineTestName,
+			Namespace: engineTestNamespace,
 		},
 		Spec: datav1alpha1.EFCRuntimeSpec{
 			Fuse: datav1alpha1.EFCFuseSpec{
@@ -74,78 +65,73 @@ func TestBuild(t *testing.T) {
 			},
 		},
 	}
-	testObjs = append(testObjs, runtime.DeepCopy())
+}
 
-	var sts = appsv1.StatefulSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase-worker",
-			Namespace: "fluid",
-		},
+func newEngineContext(clientObjs ...runtime.Object) cruntime.ReconcileRequestContext {
+	runtime := newEngineRuntime()
+	if len(clientObjs) == 0 {
+		clientObjs = append(clientObjs, runtime.DeepCopy())
 	}
-	testObjs = append(testObjs, sts.DeepCopy())
-	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
-	var ctx = cruntime.ReconcileRequestContext{
+	return cruntime.ReconcileRequestContext{
 		NamespacedName: types.NamespacedName{
-			Name:      "hbase",
-			Namespace: "fluid",
+			Name:      engineTestName,
+			Namespace: engineTestNamespace,
 		},
-		Client:      client,
+		Client:      fake.NewFakeClientWithScheme(testScheme, clientObjs...),
 		Log:         fake.NullLogger(),
 		RuntimeType: common.EFCRuntime,
-		Runtime:     &runtime,
-	}
-
-	engine, err := Build("testId", ctx)
-	if err != nil || engine == nil {
-		t.Errorf("fail to exec the build function with the eror %v", err)
-	}
-
-	var errCtx = cruntime.ReconcileRequestContext{
-		NamespacedName: types.NamespacedName{
-			Name:      "hbase",
-			Namespace: "fluid",
-		},
-		Client:      client,
-		Log:         fake.NullLogger(),
-		RuntimeType: common.EFCRuntime,
-		Runtime:     nil,
-	}
-
-	got, err := Build("testId", errCtx)
-	if err == nil {
-		t.Errorf("expect err, but no err got %v", got)
-	}
-
-	var errCtx2 = cruntime.ReconcileRequestContext{
-		NamespacedName: types.NamespacedName{
-			Name:      "hbase2",
-			Namespace: "fluid",
-		},
-		Client:      client,
-		Log:         fake.NullLogger(),
-		RuntimeType: common.EFCRuntime,
-		Runtime:     &runtime,
-	}
-
-	got2, err2 := Build("testId", errCtx2)
-	if err2 == nil {
-		t.Errorf("expect err, but no err got %v", got2)
-	}
-
-	var errCtx3 = cruntime.ReconcileRequestContext{
-		NamespacedName: types.NamespacedName{
-			Name:      "hbase",
-			Namespace: "fluid",
-		},
-		Client:      client,
-		Log:         fake.NullLogger(),
-		RuntimeType: common.EFCRuntime,
-		Runtime:     &datav1alpha1.JindoRuntime{},
-	}
-
-	got3, err3 := Build("testId", errCtx3)
-	if err3 == nil {
-		t.Errorf("expect err, but no err got %v", got3)
+		Runtime:     runtime,
 	}
 }
+
+var _ = Describe("EFCEngine", func() {
+	Describe("Build", func() {
+		It("builds an engine when the runtime can be resolved", func() {
+			engine, err := Build(engineTestID, newEngineContext())
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(engine).NotTo(BeNil())
+		})
+
+		DescribeTable("returns an error for invalid runtime input",
+			func(runtimeObj client.Object, expectedError string) {
+				ctx := newEngineContext()
+				ctx.Runtime = runtimeObj
+
+				engine, err := Build(engineTestID, ctx)
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal(expectedError))
+				Expect(engine).To(BeNil())
+			},
+			Entry("when runtime is nil", nil, "engine hbase is failed to parse"),
+			Entry("when runtime has the wrong type", &datav1alpha1.JindoRuntime{}, "engine hbase is failed to parse"),
+		)
+
+		It("returns an error when runtime info cannot be resolved", func() {
+			ctx := newEngineContext()
+			ctx.Client = fake.NewFakeClientWithScheme(testScheme)
+
+			engine, err := Build(engineTestID, ctx)
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("engine hbase failed to get runtime info"))
+			Expect(engine).To(BeNil())
+		})
+	})
+
+	DescribeTable("Precheck",
+		func(clientObjs []runtime.Object, expectedFound bool) {
+			found, err := Precheck(
+				fake.NewFakeClientWithScheme(testScheme, clientObjs...),
+				types.NamespacedName{Name: engineTestName, Namespace: engineTestNamespace},
+			)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(found).To(Equal(expectedFound))
+		},
+		Entry("returns true when the runtime exists", []runtime.Object{newEngineRuntime().DeepCopy()}, true),
+		Entry("returns false when the runtime does not exist", []runtime.Object{}, false),
+	)
+})

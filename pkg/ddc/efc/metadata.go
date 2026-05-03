@@ -25,8 +25,20 @@ import (
 	"k8s.io/client-go/util/retry"
 )
 
+var (
+	shouldCheckUFS = func(e *EFCEngine) (bool, error) {
+		return e.ShouldCheckUFS()
+	}
+	totalStorageBytes = func(e *EFCEngine) (int64, error) {
+		return e.TotalStorageBytes()
+	}
+	totalFileNums = func(e *EFCEngine) (int64, error) {
+		return e.TotalFileNums()
+	}
+)
+
 func (e *EFCEngine) SyncMetadata() (err error) {
-	should, err := e.ShouldCheckUFS()
+	should, err := shouldCheckUFS(e)
 	if err != nil {
 		e.Log.Error(err, "Failed to check if should sync metadata")
 		return
@@ -38,14 +50,14 @@ func (e *EFCEngine) SyncMetadata() (err error) {
 }
 
 func (e *EFCEngine) syncMetadataInternal() (err error) {
-	datasetUFSTotalBytes, err := e.TotalStorageBytes()
+	datasetUFSTotalBytes, err := totalStorageBytes(e)
 	if err != nil {
 		e.Log.Error(err, "Failed to get UfsTotal")
 		return err
 	}
 	ufsTotal := utils.BytesSize(float64(datasetUFSTotalBytes))
 
-	fileCount, err := e.TotalFileNums()
+	fileCount, err := totalFileNums(e)
 	if err != nil {
 		e.Log.Error(err, "Failed to get FileNum")
 		return err
