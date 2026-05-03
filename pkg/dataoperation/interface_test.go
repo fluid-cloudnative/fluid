@@ -26,13 +26,20 @@ var _ = Describe("OperationInterface contract", func() {
 		Expect(OperationLabel).To(Equal("fluid.io/operation"))
 	})
 
-	It("should expose the supported operation types", func() {
-		Expect([]OperationType{DataLoadType, DataBackupType, DataMigrateType, DataProcessType}).To(Equal([]OperationType{
-			"DataLoad",
-			"DataBackup",
-			"DataMigrate",
-			"DataProcess",
-		}))
+	It("should expose the dataload operation type constant", func() {
+		Expect(DataLoadType).To(Equal(OperationType("DataLoad")))
+	})
+
+	It("should expose the databackup operation type constant", func() {
+		Expect(DataBackupType).To(Equal(OperationType("DataBackup")))
+	})
+
+	It("should expose the datamigrate operation type constant", func() {
+		Expect(DataMigrateType).To(Equal(OperationType("DataMigrate")))
+	})
+
+	It("should expose the dataprocess operation type constant", func() {
+		Expect(DataProcessType).To(Equal(OperationType("DataProcess")))
 	})
 
 	It("should build a dataload operation with the provided ttl", func() {

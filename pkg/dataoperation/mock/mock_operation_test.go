@@ -52,18 +52,13 @@ var _ = Describe("generated dataoperation mocks", func() {
 		Expect(built).To(Equal(operation))
 	})
 
-	It("should delegate every operation interface method through gomock", func() {
+	It("should delegate getters through gomock", func() {
 		operation := NewMockOperationInterface(ctrl)
 		ttl := int32(42)
 		dataset := &datav1alpha1.Dataset{}
 		namespacedNames := []types.NamespacedName{{Namespace: "fluid", Name: "dataset"}}
 		releaseName := types.NamespacedName{Namespace: "fluid", Name: "release"}
 		statusHandler := NewMockStatusHandler(ctrl)
-		opStatus := &datav1alpha1.OperationStatus{}
-		conditions := []datav1alpha1.Condition{{Type: fluidcommon.Complete}}
-		statusErr := errors.New("status update failed")
-		completionErr := errors.New("completion update failed")
-		validateErr := errors.New("validate failed")
 
 		operation.EXPECT().GetChartsDirectory().Return("/charts")
 		operation.EXPECT().GetOperationObject().Return(nil)
@@ -74,12 +69,6 @@ var _ = Describe("generated dataoperation mocks", func() {
 		operation.EXPECT().GetStatusHandler().Return(statusHandler)
 		operation.EXPECT().GetTTL().Return(&ttl, nil)
 		operation.EXPECT().GetTargetDataset().Return(dataset, nil)
-		operation.EXPECT().HasPrecedingOperation().Return(true)
-		operation.EXPECT().RemoveTargetDatasetStatusInProgress(dataset)
-		operation.EXPECT().SetTargetDatasetStatusInProgress(dataset)
-		operation.EXPECT().UpdateOperationApiStatus(opStatus).Return(statusErr)
-		operation.EXPECT().UpdateStatusInfoForCompleted(map[string]string{"result": "done"}).Return(completionErr)
-		operation.EXPECT().Validate(flruntime.ReconcileRequestContext{}).Return(conditions, validateErr)
 
 		Expect(operation.GetChartsDirectory()).To(Equal("/charts"))
 		Expect(operation.GetOperationObject()).To(BeNil())
@@ -94,12 +83,56 @@ var _ = Describe("generated dataoperation mocks", func() {
 		retrievedDataset, err := operation.GetTargetDataset()
 		Expect(err).NotTo(HaveOccurred())
 		Expect(retrievedDataset).To(Equal(dataset))
+	})
+
+	It("should delegate preceding operation checks through gomock", func() {
+		operation := NewMockOperationInterface(ctrl)
+
+		operation.EXPECT().HasPrecedingOperation().Return(true)
+
 		Expect(operation.HasPrecedingOperation()).To(BeTrue())
+	})
+
+	It("should delegate dataset progress status updates through gomock", func() {
+		operation := NewMockOperationInterface(ctrl)
+		dataset := &datav1alpha1.Dataset{}
+
+		operation.EXPECT().RemoveTargetDatasetStatusInProgress(dataset)
+		operation.EXPECT().SetTargetDatasetStatusInProgress(dataset)
+
 		operation.RemoveTargetDatasetStatusInProgress(dataset)
 		operation.SetTargetDatasetStatusInProgress(dataset)
+	})
+
+	It("should delegate operation status updates through gomock", func() {
+		operation := NewMockOperationInterface(ctrl)
+		opStatus := &datav1alpha1.OperationStatus{}
+		statusErr := errors.New("status update failed")
+
+		operation.EXPECT().UpdateOperationApiStatus(opStatus).Return(statusErr)
+
 		Expect(operation.UpdateOperationApiStatus(opStatus)).To(MatchError(statusErr))
-		Expect(operation.UpdateStatusInfoForCompleted(map[string]string{"result": "done"})).To(MatchError(completionErr))
-		retrievedConditions, err := operation.Validate(flruntime.ReconcileRequestContext{})
+	})
+
+	It("should delegate completion status updates through gomock", func() {
+		operation := NewMockOperationInterface(ctrl)
+		completionErr := errors.New("completion update failed")
+		completionInfo := map[string]string{"result": "done"}
+
+		operation.EXPECT().UpdateStatusInfoForCompleted(completionInfo).Return(completionErr)
+
+		Expect(operation.UpdateStatusInfoForCompleted(completionInfo)).To(MatchError(completionErr))
+	})
+
+	It("should delegate validation through gomock", func() {
+		operation := NewMockOperationInterface(ctrl)
+		conditions := []datav1alpha1.Condition{{Type: fluidcommon.Complete}}
+		validateErr := errors.New("validate failed")
+		ctx := flruntime.ReconcileRequestContext{}
+
+		operation.EXPECT().Validate(gomock.Any()).Return(conditions, validateErr)
+
+		retrievedConditions, err := operation.Validate(ctx)
 		Expect(err).To(MatchError(validateErr))
 		Expect(retrievedConditions).To(Equal(conditions))
 	})
