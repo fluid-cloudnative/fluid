@@ -136,10 +136,12 @@ var _ = Describe("EFCEngine operate", func() {
 			}
 
 			valueFileName, err := engine.GetDataOperationValueFile(cruntime.ReconcileRequestContext{}, operation)
+			if valueFileName != "" {
+				DeferCleanup(os.Remove, valueFileName)
+			}
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(valueFileName).NotTo(BeEmpty())
-			defer os.Remove(valueFileName)
 		})
 	})
 })
