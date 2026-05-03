@@ -178,16 +178,23 @@ var _ = Describe("factory", func() {
 
 	Describe("buildFuncMap", func() {
 		It("registers the expected engines", func() {
-			Expect(buildFuncMap).To(HaveKey(common.AlluxioEngineImpl))
-			Expect(buildFuncMap).To(HaveKey(common.JindoFSEngineImpl))
-			Expect(buildFuncMap).To(HaveKey(common.JindoFSxEngineImpl))
-			Expect(buildFuncMap).To(HaveKey(common.JindoCacheEngineImpl))
-			Expect(buildFuncMap).To(HaveKey(common.GooseFSEngineImpl))
-			Expect(buildFuncMap).To(HaveKey(common.JuiceFSEngineImpl))
-			Expect(buildFuncMap).To(HaveKey(common.ThinEngineImpl))
-			Expect(buildFuncMap).To(HaveKey(common.EFCEngineImpl))
-			Expect(buildFuncMap).To(HaveKey(common.VineyardEngineImpl))
-			Expect(buildFuncMap).To(HaveKey(common.CacheEngineImpl))
+			expectedEngines := []string{
+				common.AlluxioEngineImpl,
+				common.JindoFSEngineImpl,
+				common.JindoFSxEngineImpl,
+				common.JindoCacheEngineImpl,
+				common.GooseFSEngineImpl,
+				common.JuiceFSEngineImpl,
+				common.ThinEngineImpl,
+				common.EFCEngineImpl,
+				common.VineyardEngineImpl,
+				common.CacheEngineImpl,
+			}
+
+			Expect(buildFuncMap).To(HaveLen(len(expectedEngines)))
+			for _, engine := range expectedEngines {
+				Expect(buildFuncMap).To(HaveKey(engine))
+			}
 		})
 	})
 })
