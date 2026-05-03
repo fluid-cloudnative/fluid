@@ -29,7 +29,17 @@ import (
 )
 
 var _ = Describe("EFCEngine metadata", func() {
+	var (
+		originalShouldCheckUFS    func(*EFCEngine) (bool, error)
+		originalTotalStorageBytes func(*EFCEngine) (int64, error)
+		originalTotalFileNums     func(*EFCEngine) (int64, error)
+	)
+
 	BeforeEach(func() {
+		originalShouldCheckUFS = shouldCheckUFS
+		originalTotalStorageBytes = totalStorageBytes
+		originalTotalFileNums = totalFileNums
+
 		shouldCheckUFS = func(e *EFCEngine) (bool, error) {
 			return e.ShouldCheckUFS()
 		}
@@ -39,6 +49,12 @@ var _ = Describe("EFCEngine metadata", func() {
 		totalFileNums = func(e *EFCEngine) (int64, error) {
 			return e.TotalFileNums()
 		}
+	})
+
+	AfterEach(func() {
+		shouldCheckUFS = originalShouldCheckUFS
+		totalStorageBytes = originalTotalStorageBytes
+		totalFileNums = originalTotalFileNums
 	})
 
 	Describe("syncMetadataInternal", func() {

@@ -31,6 +31,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -234,6 +235,11 @@ var _ = Describe("EFCEngine shutdown", func() {
 
 			Expect(engine.cleanAll()).To(Succeed())
 			Expect(cleaned).To(BeTrue())
+
+			deletedConfigMap := &corev1.ConfigMap{}
+			err := client.Get(context.TODO(), types.NamespacedName{Name: "spark-efc-values", Namespace: "fluid"}, deletedConfigMap)
+			Expect(err).To(HaveOccurred())
+			Expect(k8serrors.IsNotFound(err)).To(BeTrue())
 		})
 	})
 
