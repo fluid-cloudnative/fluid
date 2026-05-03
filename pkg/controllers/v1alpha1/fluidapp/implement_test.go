@@ -52,18 +52,20 @@ var _ = Describe("FluidAppReconcilerImplement", func() {
 			Expect(i.umountFuseSidecars(pod)).To(Succeed())
 		})
 
-		It("returns nil when the fuse sidecar has no mount path", func() {
-			patches = gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithContext, func(context.Context, string, string, string, []string) (string, string, error) {
+		It("returns nil when the fuse sidecar mount path lookup is empty", func() {
+			i := &FluidAppReconcilerImplement{Log: fake.NullLogger()}
+			pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "test"}}
+			fuseContainer := corev1.Container{Name: common.FuseContainerName + "-0"}
+
+			patches = gomonkey.ApplyFunc(kubeclient.GetMountPathInContainer, func(corev1.Container) (string, error) {
+				return "", nil
+			})
+			patches.ApplyFunc(kubeclient.ExecCommandInContainerWithContext, func(context.Context, string, string, string, []string) (string, string, error) {
+				Fail("ExecCommandInContainerWithContext should not be called when mount path lookup returns empty")
 				return "", "", nil
 			})
 
-			i := &FluidAppReconcilerImplement{Log: fake.NullLogger()}
-			pod := &corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta{Name: "test"},
-				Spec:       corev1.PodSpec{Containers: []corev1.Container{{Name: common.FuseContainerName + "-0"}}},
-			}
-
-			Expect(i.umountFuseSidecars(pod)).To(Succeed())
+			Expect(i.umountFuseSidecar(pod, fuseContainer)).To(Succeed())
 		})
 
 		It("uses the container prestop command when present", func() {
@@ -111,10 +113,10 @@ var _ = Describe("FluidAppReconcilerImplement", func() {
 		})
 
 		It("unmounts each fuse sidecar container", func() {
-			patches = gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithContext, func(_ context.Context, _, containerName, _ string, cmd []string) (string, string, error) {
-				Expect(containerName).To(ContainSubstring(common.FuseContainerName))
-				Expect(cmd).To(Equal([]string{"umount", expectedJuiceFSMountCmd}))
-				return "", "", nil
+			containerNames := []string{}
+			patches = gomonkey.ApplyFunc((*FluidAppReconcilerImplement).umountFuseSidecar, func(_ *FluidAppReconcilerImplement, _ *corev1.Pod, fuseContainer corev1.Container) error {
+				containerNames = append(containerNames, fuseContainer.Name)
+				return nil
 			})
 
 			i := &FluidAppReconcilerImplement{Log: fake.NullLogger()}
@@ -133,6 +135,8 @@ var _ = Describe("FluidAppReconcilerImplement", func() {
 			}
 
 			Expect(i.umountFuseSidecars(pod)).To(Succeed())
+			Expect(containerNames).To(ConsistOf(common.FuseContainerName+"-0", common.FuseContainerName+"-1"))
+			Expect(containerNames).To(HaveLen(2))
 		})
 	})
 })

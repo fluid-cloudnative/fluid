@@ -29,11 +29,13 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
 var _ = Describe("FluidAppReconciler", func() {
@@ -43,11 +45,19 @@ var _ = Describe("FluidAppReconciler", func() {
 	)
 
 	var scheme *runtime.Scheme
+	var patches *gomonkey.Patches
 
 	BeforeEach(func() {
 		scheme = runtime.NewScheme()
 		Expect(corev1.AddToScheme(scheme)).To(Succeed())
 		Expect(datav1alpha1.AddToScheme(scheme)).To(Succeed())
+	})
+
+	AfterEach(func() {
+		if patches != nil {
+			patches.Reset()
+			patches = nil
+		}
 	})
 
 	Describe("ControllerName", func() {
@@ -80,6 +90,24 @@ var _ = Describe("FluidAppReconciler", func() {
 	})
 
 	Describe("Reconcile", func() {
+		It("returns the pod lookup error", func() {
+			expectedErr := errors.New("get pod failed")
+			patches = gomonkey.ApplyFunc(kubeclient.GetPodByName, func(_ client.Client, name, namespace string) (*corev1.Pod, error) {
+				Expect(name).To(Equal(testPodName))
+				Expect(namespace).To(Equal(testNamespace))
+				return nil, expectedErr
+			})
+
+			r := NewFluidAppReconciler(fake.NewFakeClientWithScheme(scheme), fake.NullLogger(), record.NewFakeRecorder(10))
+
+			result, err := r.Reconcile(context.Background(), reconcile.Request{
+				NamespacedName: types.NamespacedName{Name: testPodName, Namespace: testNamespace},
+			})
+
+			Expect(err).To(MatchError(expectedErr))
+			Expect(result).To(Equal(ctrl.Result{}))
+		})
+
 		It("returns no requeue when the pod does not exist", func() {
 			fakeClient := fake.NewFakeClientWithScheme(scheme)
 			r := NewFluidAppReconciler(fakeClient, fake.NullLogger(), record.NewFakeRecorder(10))
@@ -152,11 +180,10 @@ var _ = Describe("FluidAppReconciler", func() {
 			fakeClient := fake.NewFakeClientWithScheme(scheme, pod)
 			r := NewFluidAppReconciler(fakeClient, fake.NullLogger(), record.NewFakeRecorder(10))
 
-			patches := gomonkey.ApplyFunc((*FluidAppReconcilerImplement).umountFuseSidecars, func(_ *FluidAppReconcilerImplement, gotPod *corev1.Pod) error {
+			patches = gomonkey.ApplyFunc((*FluidAppReconcilerImplement).umountFuseSidecars, func(_ *FluidAppReconcilerImplement, gotPod *corev1.Pod) error {
 				Expect(gotPod.Name).To(Equal(testPodName))
 				return nil
 			})
-			defer patches.Reset()
 
 			result, err := r.Reconcile(context.Background(), reconcile.Request{
 				NamespacedName: types.NamespacedName{Name: testPodName, Namespace: testNamespace},
@@ -173,11 +200,10 @@ var _ = Describe("FluidAppReconciler", func() {
 			pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testPodName, Namespace: testNamespace}}
 			expectedErr := errors.New("umount failed")
 
-			patches := gomonkey.ApplyFunc((*FluidAppReconcilerImplement).umountFuseSidecars, func(_ *FluidAppReconcilerImplement, gotPod *corev1.Pod) error {
+			patches = gomonkey.ApplyFunc((*FluidAppReconcilerImplement).umountFuseSidecars, func(_ *FluidAppReconcilerImplement, gotPod *corev1.Pod) error {
 				Expect(gotPod).To(Equal(pod))
 				return expectedErr
 			})
-			defer patches.Reset()
 
 			result, err := r.internalReconcile(reconcileRequestContext{
 				Context: context.Background(),
@@ -193,11 +219,10 @@ var _ = Describe("FluidAppReconciler", func() {
 			r := NewFluidAppReconciler(fake.NewFakeClientWithScheme(scheme), fake.NullLogger(), record.NewFakeRecorder(10))
 			pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testPodName, Namespace: testNamespace}}
 
-			patches := gomonkey.ApplyFunc((*FluidAppReconcilerImplement).umountFuseSidecars, func(_ *FluidAppReconcilerImplement, gotPod *corev1.Pod) error {
+			patches = gomonkey.ApplyFunc((*FluidAppReconcilerImplement).umountFuseSidecars, func(_ *FluidAppReconcilerImplement, gotPod *corev1.Pod) error {
 				Expect(gotPod).To(Equal(pod))
 				return nil
 			})
-			defer patches.Reset()
 
 			result, err := r.internalReconcile(reconcileRequestContext{
 				Context: context.Background(),
