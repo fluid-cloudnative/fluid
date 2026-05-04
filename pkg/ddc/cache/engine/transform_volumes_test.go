@@ -325,6 +325,123 @@ var _ = Describe("CacheEngine Transform Volumes Tests", Label("pkg.ddc.cache.eng
 				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts[0].Name).To(Equal(secretVolumeNamePrefix + testSecretName1))
 			})
 		})
+
+		Context("when encrypt option has empty secret name", func() {
+			It("should skip encrypt options with empty secret name in shared encrypt options", func() {
+				dataset := &datav1alpha1.Dataset{
+					Spec: datav1alpha1.DatasetSpec{
+						Mounts: []datav1alpha1.Mount{
+							{
+								MountPoint: testMountPoint,
+								Name:       testMountName,
+							},
+						},
+						SharedEncryptOptions: []datav1alpha1.EncryptOption{
+							{
+								Name: "aws-access-key-id",
+								ValueFrom: datav1alpha1.EncryptOptionSource{
+									SecretKeyRef: datav1alpha1.SecretKeySelector{
+										Name: "", // Empty secret name
+										Key:  testSecretKey,
+									},
+								},
+							},
+						},
+					},
+				}
+
+				engine.transformEncryptOptionsToComponentVolumes(dataset, value.Master)
+
+				// Should not add any volumes for empty secret name
+				Expect(value.Master.PodTemplateSpec.Spec.Volumes).To(BeEmpty())
+				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts).To(BeEmpty())
+			})
+
+			It("should skip encrypt options with empty secret name in mount encrypt options", func() {
+				dataset := &datav1alpha1.Dataset{
+					Spec: datav1alpha1.DatasetSpec{
+						Mounts: []datav1alpha1.Mount{
+							{
+								MountPoint: testMountPoint,
+								Name:       testMountName,
+								EncryptOptions: []datav1alpha1.EncryptOption{
+									{
+										Name: "aws-secret-access-key",
+										ValueFrom: datav1alpha1.EncryptOptionSource{
+											SecretKeyRef: datav1alpha1.SecretKeySelector{
+												Name: "", // Empty secret name
+												Key:  testSecretKey,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				}
+
+				engine.transformEncryptOptionsToComponentVolumes(dataset, value.Master)
+
+				// Should not add any volumes for empty secret name
+				Expect(value.Master.PodTemplateSpec.Spec.Volumes).To(BeEmpty())
+				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts).To(BeEmpty())
+			})
+
+			It("should skip empty secret names but process valid ones", func() {
+				dataset := &datav1alpha1.Dataset{
+					Spec: datav1alpha1.DatasetSpec{
+						Mounts: []datav1alpha1.Mount{
+							{
+								MountPoint: testMountPoint,
+								Name:       testMountName,
+								EncryptOptions: []datav1alpha1.EncryptOption{
+									{
+										Name: "invalid-option",
+										ValueFrom: datav1alpha1.EncryptOptionSource{
+											SecretKeyRef: datav1alpha1.SecretKeySelector{
+												Name: "", // Empty secret name - should be skipped
+												Key:  testSecretKey,
+											},
+										},
+									},
+									{
+										Name: "valid-option",
+										ValueFrom: datav1alpha1.EncryptOptionSource{
+											SecretKeyRef: datav1alpha1.SecretKeySelector{
+												Name: testSecretName1, // Valid secret name
+												Key:  testSecretKey,
+											},
+										},
+									},
+								},
+							},
+						},
+						SharedEncryptOptions: []datav1alpha1.EncryptOption{
+							{
+								Name: "another-invalid-option",
+								ValueFrom: datav1alpha1.EncryptOptionSource{
+									SecretKeyRef: datav1alpha1.SecretKeySelector{
+										Name: "", // Empty secret name - should be skipped
+										Key:  testSecretKey,
+									},
+								},
+							},
+						},
+					},
+				}
+
+				engine.transformEncryptOptionsToComponentVolumes(dataset, value.Master)
+
+				// Should only add volume for the valid secret name
+				Expect(value.Master.PodTemplateSpec.Spec.Volumes).To(HaveLen(1))
+				Expect(value.Master.PodTemplateSpec.Spec.Volumes[0].Name).To(Equal(secretVolumeNamePrefix + testSecretName1))
+				Expect(value.Master.PodTemplateSpec.Spec.Volumes[0].Secret.SecretName).To(Equal(testSecretName1))
+
+				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts).To(HaveLen(1))
+				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts[0].Name).To(Equal(secretVolumeNamePrefix + testSecretName1))
+				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts[0].MountPath).To(Equal("/etc/fluid/secrets/" + testSecretName1))
+			})
+		})
 	})
 
 	Describe("transformEncryptOptionsToComponentVolumes for Worker", func() {
@@ -407,6 +524,49 @@ var _ = Describe("CacheEngine Transform Volumes Tests", Label("pkg.ddc.cache.eng
 
 				engine.transformEncryptOptionsToComponentVolumes(dataset, value.Worker)
 
+				Expect(value.Worker.PodTemplateSpec.Spec.Volumes).To(BeEmpty())
+				Expect(value.Worker.PodTemplateSpec.Spec.Containers[0].VolumeMounts).To(BeEmpty())
+			})
+		})
+
+		Context("when encrypt option has empty secret name for worker", func() {
+			It("should skip encrypt options with empty secret name", func() {
+				dataset := &datav1alpha1.Dataset{
+					Spec: datav1alpha1.DatasetSpec{
+						Mounts: []datav1alpha1.Mount{
+							{
+								MountPoint: testMountPoint,
+								Name:       testMountName,
+								EncryptOptions: []datav1alpha1.EncryptOption{
+									{
+										Name: "aws-secret-access-key",
+										ValueFrom: datav1alpha1.EncryptOptionSource{
+											SecretKeyRef: datav1alpha1.SecretKeySelector{
+												Name: "", // Empty secret name
+												Key:  testSecretKey,
+											},
+										},
+									},
+								},
+							},
+						},
+						SharedEncryptOptions: []datav1alpha1.EncryptOption{
+							{
+								Name: "aws-access-key-id",
+								ValueFrom: datav1alpha1.EncryptOptionSource{
+									SecretKeyRef: datav1alpha1.SecretKeySelector{
+										Name: "", // Empty secret name
+										Key:  testSecretKey,
+									},
+								},
+							},
+						},
+					},
+				}
+
+				engine.transformEncryptOptionsToComponentVolumes(dataset, value.Worker)
+
+				// Should not add any volumes for empty secret name
 				Expect(value.Worker.PodTemplateSpec.Spec.Volumes).To(BeEmpty())
 				Expect(value.Worker.PodTemplateSpec.Spec.Containers[0].VolumeMounts).To(BeEmpty())
 			})

@@ -24,7 +24,7 @@ import (
 func (e *CacheEngine) transformWorker(dataset *datav1alpha1.Dataset, runtime *datav1alpha1.CacheRuntime, runtimeClass *datav1alpha1.CacheRuntimeClass,
 	config *CacheRuntimeComponentCommonConfig, value *common.CacheRuntimeValue) error {
 
-	if runtimeClass.Topology.Worker == nil || runtime.Spec.Worker.Disabled {
+	if runtimeClass.Topology == nil || runtimeClass.Topology.Worker == nil || runtime.Spec.Worker.Disabled {
 		value.Worker = &common.CacheRuntimeComponentValue{Enabled: false}
 		return nil
 	}

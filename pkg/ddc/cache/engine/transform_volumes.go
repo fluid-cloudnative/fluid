@@ -32,6 +32,9 @@ func (e *CacheEngine) transformEncryptOptionsToComponentVolumes(dataset *datav1a
 
 	// Helper to add secret volume and mount to the component
 	addSecret := func(secretName string) {
+		if secretName == "" {
+			return
+		}
 		volName := getSecretVolumeName(secretName)
 		volumeToAdd := corev1.Volume{
 			Name: volName,
