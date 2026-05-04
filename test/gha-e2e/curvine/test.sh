@@ -83,14 +83,27 @@ function create_job() {
 
 function wait_job_completed() {
     local job_name=$1
+    local deadline=600
+    local counter=0
     while true; do
         succeed=$(kubectl get job "$job_name" -ojsonpath='{@.status.succeeded}')
-        failed=$(kubectl get job "$job_name" -ojsonpath='{@.status.failed}')
-        if [[ "$failed" -ne "0" ]]; then
-            panic "job failed when accessing data"
-        fi
-        if [[ "$succeed" -eq "1" ]]; then
+        [[ -z "$succeed" ]] && succeed=0
+
+        if [[ "$succeed" -ge "1" ]]; then
             break
+        fi
+
+        # Only fail when the job controller itself marks the job as Failed
+        # (i.e. all backoffLimit retries are exhausted), not on first pod failure.
+        job_failed=$(kubectl get job "$job_name" \
+            -ojsonpath='{.status.conditions[?(@.type=="Failed")].status}' 2>/dev/null || true)
+        if [[ "$job_failed" == "True" ]]; then
+            panic "job $job_name failed when accessing data (all retries exhausted)"
+        fi
+
+        counter=$((counter + 1))
+        if [[ $((counter * 5)) -ge $deadline ]]; then
+            panic "timeout ${deadline}s waiting for job $job_name to complete"
         fi
         sleep 5
     done
