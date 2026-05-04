@@ -26,6 +26,8 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/cache/component"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 )
 
@@ -105,6 +107,24 @@ func (e *CacheEngine) setupMasterInternal(masterValue *common.CacheRuntimeCompon
 	}
 
 	return nil
+}
+
+func (e *CacheEngine) isMasterPodRunning(value *common.CacheRuntimeValue) (bool, error) {
+	podName, _, err := e.getMasterPodInfo(value)
+	if err != nil {
+		return false, err
+	}
+
+	pod := &corev1.Pod{}
+	err = e.Client.Get(context.TODO(), types.NamespacedName{Name: podName, Namespace: e.namespace}, pod)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return pod.Status.Phase == corev1.PodRunning, nil
 }
 
 func (e *CacheEngine) getMasterPodInfo(value *common.CacheRuntimeValue) (podName string, containerName string, err error) {
