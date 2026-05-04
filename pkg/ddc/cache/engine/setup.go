@@ -76,15 +76,6 @@ func (e *CacheEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool, e
 		}
 	}
 
-	// dataset mount
-	if runtimeValue.Master.Enabled {
-		// currently only support mount ufs for master
-		err = e.PrepareUFS(runtimeClass.Topology.Master.ExecutionEntries, runtimeValue)
-		if err != nil {
-			return false, err
-		}
-	}
-
 	ready, err = e.CheckAndUpdateRuntimeStatus(runtimeValue)
 	if err != nil {
 		_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to check if the runtime is ready", types.NamespacedName{Namespace: e.namespace, Name: e.name})
@@ -92,6 +83,16 @@ func (e *CacheEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool, e
 	}
 	if !ready {
 		return
+	}
+
+	// dataset mount after runtime ready to ensure master pod is ready for executing commands.
+	if runtimeValue.Master.Enabled && runtimeClass.Topology != nil &&
+		runtimeClass.Topology.Master != nil && runtimeClass.Topology.Master.ExecutionEntries != nil {
+		// currently only support mount ufs for master in master-worker architecture
+		err = e.PrepareUFS(runtimeClass.Topology.Master.ExecutionEntries.MountUFS, runtimeValue)
+		if err != nil {
+			return false, err
+		}
 	}
 
 	if err = e.BindToDataset(); err != nil {

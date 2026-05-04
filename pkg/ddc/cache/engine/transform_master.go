@@ -21,11 +21,11 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
-func (e *CacheEngine) transformMaster(runtime *datav1alpha1.CacheRuntime, runtimeClass *datav1alpha1.CacheRuntimeClass,
+func (e *CacheEngine) transformMaster(dataset *datav1alpha1.Dataset, runtime *datav1alpha1.CacheRuntime, runtimeClass *datav1alpha1.CacheRuntimeClass,
 	config *CacheRuntimeComponentCommonConfig, value *common.CacheRuntimeValue) error {
 	// TODO: these two field both indicate Master enabled or not, should be combined into one field.
-	if runtimeClass.Topology.Master == nil || runtime.Spec.Master.Disabled {
-		value.Master.Enabled = false
+	if runtimeClass.Topology == nil || runtimeClass.Topology.Master == nil || runtime.Spec.Master.Disabled {
+		value.Master = &common.CacheRuntimeComponentValue{Enabled: false}
 		return nil
 	}
 
@@ -50,6 +50,9 @@ func (e *CacheEngine) transformMaster(runtime *datav1alpha1.CacheRuntime, runtim
 	if err != nil {
 		return err
 	}
+
+	// transform encrypt options to master volumes
+	e.transformEncryptOptionsToComponentVolumes(dataset, value.Master)
 
 	// TODO: transform runtime.Spec.Master, runtimeClass.Topology.Master, dataset.Spec into PodTemplateSpec
 

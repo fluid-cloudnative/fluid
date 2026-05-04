@@ -79,7 +79,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EFCRuntimeList":                    schema_fluid_cloudnative_fluid_api_v1alpha1_EFCRuntimeList(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EFCRuntimeSpec":                    schema_fluid_cloudnative_fluid_api_v1alpha1_EFCRuntimeSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOption":                     schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOption(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOptionComponentDependency":  schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOptionComponentDependency(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOptionSource":               schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOptionSource(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExecutionCommonEntry":              schema_fluid_cloudnative_fluid_api_v1alpha1_ExecutionCommonEntry(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExecutionEntries":                  schema_fluid_cloudnative_fluid_api_v1alpha1_ExecutionEntries(ref),
@@ -3790,17 +3789,6 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOption(ref common.Refere
 	}
 }
 
-func schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOptionComponentDependency(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "EncryptOptionComponentDependency defines the configuration for encrypt option dependency",
-				Type:        []string{"object"},
-			},
-		},
-	}
-}
-
 func schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOptionSource(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -6823,12 +6811,6 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeComponentDependencies(re
 				Description: "RuntimeComponentDependencies defines the dependencies required by a CacheRuntime component",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"encryptOption": {
-						SchemaProps: spec.SchemaProps{
-							Description: "EncryptOption is the configuration for encrypt option secret mount",
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOptionComponentDependency"),
-						},
-					},
 					"extraResources": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ExtraResources specifies the usage of extra resources such as ConfigMaps",
@@ -6839,7 +6821,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeComponentDependencies(re
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOptionComponentDependency", "github.com/fluid-cloudnative/fluid/api/v1alpha1.ExtraResourcesComponentDependency"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExtraResourcesComponentDependency"},
 	}
 }
 
