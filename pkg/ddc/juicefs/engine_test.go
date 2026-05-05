@@ -17,120 +17,140 @@ limitations under the License.
 package juicefs
 
 import (
-	"testing"
+	base "github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func TestBuild(t *testing.T) {
-	var namespace = v1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "fluid",
-		},
-	}
-	testObjs := []runtime.Object{}
-	testObjs = append(testObjs, namespace.DeepCopy())
+var _ = Describe("JuiceFS engine", func() {
+	const (
+		runtimeName      = "hbase"
+		runtimeNamespace = "fluid"
+	)
 
-	var dataset = datav1alpha1.Dataset{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase",
-			Namespace: "fluid",
-		},
-	}
-	testObjs = append(testObjs, dataset.DeepCopy())
+	var (
+		key     types.NamespacedName
+		runtime *datav1alpha1.JuiceFSRuntime
+	)
 
-	var runtime = datav1alpha1.JuiceFSRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase",
-			Namespace: "fluid",
-		},
-		Spec: datav1alpha1.JuiceFSRuntimeSpec{
-			Fuse: datav1alpha1.JuiceFSFuseSpec{},
-		},
-		Status: datav1alpha1.RuntimeStatus{
-			CacheStates: map[common.CacheStateName]string{
-				common.Cached: "true",
+	BeforeEach(func() {
+		key = types.NamespacedName{
+			Name:      runtimeName,
+			Namespace: runtimeNamespace,
+		}
+		runtime = &datav1alpha1.JuiceFSRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      key.Name,
+				Namespace: key.Namespace,
 			},
-		},
-	}
-	testObjs = append(testObjs, runtime.DeepCopy())
-	var runtime2 = datav1alpha1.JuiceFSRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "fluid",
-		},
-		Spec: datav1alpha1.JuiceFSRuntimeSpec{
-			Fuse: datav1alpha1.JuiceFSFuseSpec{},
-		},
-		Status: datav1alpha1.RuntimeStatus{
-			CacheStates: map[common.CacheStateName]string{
-				common.Cached: "true",
-			},
-		},
-	}
+		}
+	})
 
-	var sts = appsv1.StatefulSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase-worker",
-			Namespace: "fluid",
-		},
-	}
-	testObjs = append(testObjs, sts.DeepCopy())
-	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+	Describe("Build", func() {
+		When("the runtime exists and the context runtime is valid", func() {
+			It("builds a template engine", func() {
+				ctx := cruntime.ReconcileRequestContext{
+					NamespacedName: key,
+					Client:         fake.NewFakeClientWithScheme(testScheme, runtime.DeepCopy()),
+					Log:            fake.NullLogger(),
+					RuntimeType:    "juicefs",
+					Runtime:        runtime.DeepCopy(),
+				}
 
-	var ctx = cruntime.ReconcileRequestContext{
-		NamespacedName: types.NamespacedName{
-			Name:      "hbase",
-			Namespace: "fluid",
-		},
-		Client:      client,
-		Log:         fake.NullLogger(),
-		RuntimeType: "juicefs",
-		Runtime:     &runtime,
-	}
+				engine, err := Build("test-id", ctx)
 
-	engine, err := Build("testId", ctx)
-	if err != nil || engine == nil {
-		t.Errorf("fail to exec the build function with the eror %v", err)
-	}
+				Expect(err).NotTo(HaveOccurred())
+				Expect(engine).NotTo(BeNil())
+				Expect(engine).To(BeAssignableToTypeOf(&base.TemplateEngine{}))
+			})
+		})
 
-	var errCtx = cruntime.ReconcileRequestContext{
-		NamespacedName: types.NamespacedName{
-			Name:      "hbase",
-			Namespace: "fluid",
-		},
-		Client:      client,
-		Log:         fake.NullLogger(),
-		RuntimeType: "juicefs",
-		Runtime:     nil,
-	}
+		When("the context runtime is nil", func() {
+			It("returns a parse error", func() {
+				ctx := cruntime.ReconcileRequestContext{
+					NamespacedName: key,
+					Client:         fake.NewFakeClientWithScheme(testScheme, runtime.DeepCopy()),
+					Log:            fake.NullLogger(),
+					RuntimeType:    "juicefs",
+				}
 
-	got, err := Build("testId", errCtx)
-	if err == nil {
-		t.Errorf("expect err, but no err got %v", got)
-	}
+				engine, err := Build("test-id", ctx)
 
-	var errrCtx = cruntime.ReconcileRequestContext{
-		NamespacedName: types.NamespacedName{
-			Name:      "test",
-			Namespace: "fluid",
-		},
-		Client:      client,
-		Log:         fake.NullLogger(),
-		RuntimeType: "juicefs",
-		Runtime:     &runtime2,
-	}
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("failed to parse"))
+				Expect(engine).To(BeNil())
+			})
+		})
 
-	gott, err := Build("testId", errrCtx)
-	if err == nil {
-		t.Errorf("expect err, but no err got %v", gott)
-	}
-}
+		When("the context runtime has the wrong concrete type", func() {
+			It("returns a parse error", func() {
+				ctx := cruntime.ReconcileRequestContext{
+					NamespacedName: key,
+					Client:         fake.NewFakeClientWithScheme(testScheme, runtime.DeepCopy()),
+					Log:            fake.NullLogger(),
+					RuntimeType:    "juicefs",
+					Runtime: &datav1alpha1.AlluxioRuntime{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      key.Name,
+							Namespace: key.Namespace,
+						},
+					},
+				}
+
+				engine, err := Build("test-id", ctx)
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("failed to parse"))
+				Expect(engine).To(BeNil())
+			})
+		})
+
+		When("runtime info cannot be loaded from the client", func() {
+			It("returns a runtime info error", func() {
+				ctx := cruntime.ReconcileRequestContext{
+					NamespacedName: key,
+					Client:         fake.NewFakeClientWithScheme(testScheme),
+					Log:            fake.NullLogger(),
+					RuntimeType:    "juicefs",
+					Runtime:        runtime.DeepCopy(),
+				}
+
+				engine, err := Build("test-id", ctx)
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("failed to get runtime info"))
+				Expect(engine).To(BeNil())
+			})
+		})
+	})
+
+	Describe("Precheck", func() {
+		When("the runtime exists", func() {
+			It("returns found", func() {
+				client := fake.NewFakeClientWithScheme(testScheme, runtime.DeepCopy())
+
+				found, err := Precheck(client, key)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(found).To(BeTrue())
+			})
+		})
+
+		When("the runtime does not exist", func() {
+			It("returns not found without error", func() {
+				client := fake.NewFakeClientWithScheme(testScheme)
+
+				found, err := Precheck(client, key)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(found).To(BeFalse())
+			})
+		})
+	})
+})
