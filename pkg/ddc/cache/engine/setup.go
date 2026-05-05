@@ -50,7 +50,7 @@ func (e *CacheEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool, e
 		return false, err
 	}
 
-	// Create Master/Worker/Client components
+	// Create Master/Worker/Client components, won't be nil.
 	e.Log.Info("Setup runtime", "runtime", ctx.Runtime)
 	if runtimeValue.Master.Enabled {
 		e.Log.Info("Setup master", "runtime", ctx.Runtime)
@@ -86,10 +86,9 @@ func (e *CacheEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool, e
 	}
 
 	// dataset mount after runtime ready to ensure master pod is ready for executing commands.
-	if runtimeValue.Master.Enabled && runtimeClass.Topology != nil &&
-		runtimeClass.Topology.Master != nil && runtimeClass.Topology.Master.ExecutionEntries != nil {
-		// currently only support mount ufs for master in master-worker architecture
-		err = e.PrepareUFS(runtimeClass.Topology.Master.ExecutionEntries.MountUFS, runtimeValue)
+	// currently only support mount ufs for master in master-worker architecture
+	if runtimeValue.Master.Enabled {
+		_, err = e.PrepareUFS(runtimeClass)
 		if err != nil {
 			return false, err
 		}

@@ -28,12 +28,12 @@ data:
         path=$(echo "$item" | sed -nE 's/.*"path":"([^"]+)".*/\1/p')
     
         mounted=$(/app/curvine/bin/cv mount)
-        if echo "$mounted" | grep "$mountPoint"; then
+        if echo "$mounted" | grep "$mountPoint" >/dev/null 2>&1; then
           continue;
         fi
     
-        [ -z "$mountPoint" ] && { echo "mountPoint is not set or empty"; exit 1; } 
-        [ -z "$path" ] && { echo "path is not set or empty"; exit 1; } 
+        [ -z "$mountPoint" ] && { echo "mountPoint is not set or empty" >&2; exit 1; } 
+        [ -z "$path" ] && { echo "path is not set or empty" >&2; exit 1; } 
     
         # ==================== 字段提取加p 仅输出匹配结果 ====================
         # Extract encryptOptions paths from the JSON
@@ -70,9 +70,9 @@ data:
     
         # 必填参数校验
         CV_PARAMS=""
-        [ -z "$endpoint" ] && { echo "endpoint option is not set or empty"; exit 1; } 
-        [ -z "$access" ] && { echo "access option is not set or empty"; exit 1; } 
-        [ -z "$secret" ] && { echo "secret option is not set or empty"; exit 1; } 
+        [ -z "$endpoint" ] && { echo "endpoint option is not set or empty" >&2; exit 1; } 
+        [ -z "$access" ] && { echo "access option is not set or empty" >&2; exit 1; } 
+        [ -z "$secret" ] && { echo "secret option is not set or empty" >&2; exit 1; } 
     
         # 拼接必填参数
         CV_PARAMS="$CV_PARAMS -c s3.endpoint_url=$endpoint"
@@ -85,11 +85,62 @@ data:
     
         # 最终命令
         CMD="/app/curvine/bin/cv mount $mountPoint $path --check-path-consist false $CV_PARAMS"
-        echo "执行命令：$CMD"
+        #echo "执行命令：$CMD"
     
-        eval "$CMD"
+        eval "$CMD" > /dev/null 2>&1
         if [ $? -ne 0 ]; then
-          echo "mount $mountPoint failed"
+          echo "mount $mountPoint failed" >&2
           exit 1
         fi
     done
+    
+    # /app/curvine/bin/cv mount 的输出如下所示
+    # Mount Table:
+    # +-------------+----------------+-------------+-------------+-------------------+
+    # | ID          | Curvine Path   | UFS Path    | Write Type  | Read Verify UFS  |
+    # +-------------+----------------+-------------+-------------+-------------------+
+    # | 1664140379  | /minio         | s3://test/  | fs_mode     | no               |
+    # +-------------+----------------+-------------+-------------+-------------------+
+    # Total mount points: 1 
+    
+    # 获取所有已挂载的 Curvine Path 并组装成 CacheRuntimeMountUfsOutput 格式的 JSON
+    getCurvinePathsAsJson() {
+      local output
+      output=$(/app/curvine/bin/cv mount)
+    
+      # 提取表格中的数据行（跳过表头和分隔线）
+      local paths=()
+      while IFS= read -r line; do
+        # 跳过空行、表头行和分隔线
+        if [[ -z "$line" ]] || [[ "$line" == *"|"*"ID"* ]] || [[ "$line" == *"+"*"-"*"+"* ]] || [[ ! "$line" =~ ^\|  ]] ; then
+          continue
+        fi
+    
+        # 提取第二列（Curvine Path）的值
+        # 格式: | ID          | Curvine Path   | UFS Path    | Write Type  | Read Verify UFS  |
+        local path
+        path=$(echo "$line" | sed -E 's/^\|[[:space:]]*[^|]+\|[[:space:]]*([^|]+)\|.*/\1/' | sed 's/[[:space:]]*$//')
+    
+        if [[ -n "$path" ]]; then
+          paths+=("$path")
+        fi
+      done <<< "$output"
+    
+      # 组装成 CacheRuntimeMountUfsOutput 格式的 JSON: {"mounted": ["path1", "path2", ...]}
+      local json='{"mounted":['
+      for i in "${!paths[@]}"; do
+        if [ $i -gt 0 ]; then
+          json+=","
+        fi
+        # 转义特殊字符并添加到 JSON 数组
+        local escaped_path
+        escaped_path=$(echo "${paths[$i]}" | sed 's/\\/\\\\/g; s/"/\\"/g')
+        json+="\"${escaped_path}\""
+      done
+      json+=']}'
+      echo "$json"
+    }
+    
+    # 调用函数获取 CacheRuntimeMountUfsOutput 格式的 JSON
+    CURVINE_PATHS_JSON=$(getCurvinePathsAsJson)
+    echo "$CURVINE_PATHS_JSON"

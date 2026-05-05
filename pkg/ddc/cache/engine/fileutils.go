@@ -17,23 +17,29 @@
 package engine
 
 import (
+	"time"
+
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	securityutils "github.com/fluid-cloudnative/fluid/pkg/utils/security"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	"time"
 )
 
-type CacheFileUtils struct {
+// CacheFileUtil defines the interface for cache system operations
+type CacheFileUtil interface {
+	Mount(command []string, timeout time.Duration) (stdout string, err error)
+}
+
+type CacheFileUtilImpl struct {
 	podName   string
 	namespace string
 	container string
 	log       logr.Logger
 }
 
-func newCacheFileUtils(podName string, containerName string, namespace string, log logr.Logger) CacheFileUtils {
+func NewCacheFileUtil(podName string, containerName string, namespace string, log logr.Logger) CacheFileUtil {
 
-	return CacheFileUtils{
+	return &CacheFileUtilImpl{
 		podName:   podName,
 		namespace: namespace,
 		container: containerName,
@@ -42,7 +48,7 @@ func newCacheFileUtils(podName string, containerName string, namespace string, l
 }
 
 // exec with timeout
-func (c CacheFileUtils) exec(command []string, timeout time.Duration) (stdout string, stderr string, err error) {
+func (c *CacheFileUtilImpl) exec(command []string, timeout time.Duration) (stdout string, stderr string, err error) {
 	// redact sensitive info in command for printing
 	redactedCommand := securityutils.FilterCommand(command)
 
@@ -57,7 +63,7 @@ func (c CacheFileUtils) exec(command []string, timeout time.Duration) (stdout st
 	return
 }
 
-func (c CacheFileUtils) Mount(command []string, timeout time.Duration) (err error) {
+func (c *CacheFileUtilImpl) Mount(command []string, timeout time.Duration) (stdout string, err error) {
 	stdout, stderr, err := c.exec(command, timeout)
 
 	if err != nil {
@@ -65,5 +71,5 @@ func (c CacheFileUtils) Mount(command []string, timeout time.Duration) (err erro
 		return
 	}
 
-	return nil
+	return stdout, nil
 }
