@@ -1,0 +1,25 @@
+apiVersion: workload.fluid.io/v1alpha1
+kind: AdvancedStatefulSet
+metadata:
+  name: test-asts
+  namespace: default
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: test-asts
+  template:
+    metadata:
+      labels:
+        app: test-asts
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.25
+          ports:
+            - containerPort: 80
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      podUpdatePolicy: InPlaceIfPossible
+      partition: 0
