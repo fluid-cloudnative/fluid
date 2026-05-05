@@ -17,320 +17,206 @@
 package thin
 
 import (
-	"testing"
+	"context"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestBuild(t *testing.T) {
-	var namespace = v1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "fluid",
-		},
-	}
-	testObjs := []runtime.Object{}
-	testObjs = append(testObjs, namespace.DeepCopy())
-
-	var dataset = datav1alpha1.Dataset{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase",
-			Namespace: "fluid",
-		},
-	}
-	testObjs = append(testObjs, dataset.DeepCopy())
-	var runtimeProfile = datav1alpha1.ThinRuntimeProfile{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-profile",
-		},
-		Spec: datav1alpha1.ThinRuntimeProfileSpec{FileSystemType: "test-fstype"},
-	}
-	testObjs = append(testObjs, runtimeProfile.DeepCopy())
-
-	var runtime = datav1alpha1.ThinRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase",
-			Namespace: "fluid",
-		},
-		Spec: datav1alpha1.ThinRuntimeSpec{
-			ThinRuntimeProfileName: "test-profile",
-			Fuse:                   datav1alpha1.ThinFuseSpec{},
-		},
-		Status: datav1alpha1.RuntimeStatus{
-			CacheStates: map[common.CacheStateName]string{
-				common.Cached: "true",
-			},
-		},
-	}
-	testObjs = append(testObjs, runtime.DeepCopy())
-	var runtime2 = datav1alpha1.ThinRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "fluid",
-		},
-		Spec: datav1alpha1.ThinRuntimeSpec{
-			ThinRuntimeProfileName: "test-profile",
-			Fuse:                   datav1alpha1.ThinFuseSpec{},
-		},
-		Status: datav1alpha1.RuntimeStatus{
-			CacheStates: map[common.CacheStateName]string{
-				common.Cached: "true",
-			},
-		},
-	}
-
-	var sts = appsv1.StatefulSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase-worker",
-			Namespace: "fluid",
-		},
-	}
-	testObjs = append(testObjs, sts.DeepCopy())
-	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-
-	var ctx = cruntime.ReconcileRequestContext{
+func buildEngineTestContext(client ctrlclient.Client, runtimeObj ctrlclient.Object, name, namespace string) cruntime.ReconcileRequestContext {
+	return cruntime.ReconcileRequestContext{
 		NamespacedName: types.NamespacedName{
-			Name:      "hbase",
-			Namespace: "fluid",
+			Name:      name,
+			Namespace: namespace,
 		},
 		Client:      client,
 		Log:         fake.NullLogger(),
-		RuntimeType: "thin",
-		Runtime:     &runtime,
-	}
-
-	engine, err := Build("testId", ctx)
-	if err != nil || engine == nil {
-		t.Errorf("fail to exec the build function with the eror %v", err)
-	}
-
-	var errCtx = cruntime.ReconcileRequestContext{
-		NamespacedName: types.NamespacedName{
-			Name:      "hbase",
-			Namespace: "fluid",
-		},
-		Client:      client,
-		Log:         fake.NullLogger(),
-		RuntimeType: "thin",
-		Runtime:     nil,
-	}
-
-	got, err := Build("testId", errCtx)
-	if err == nil {
-		t.Errorf("expect err, but no err got %v", got)
-	}
-
-	var errrCtx = cruntime.ReconcileRequestContext{
-		NamespacedName: types.NamespacedName{
-			Name:      "test",
-			Namespace: "fluid",
-		},
-		Client:      client,
-		Log:         fake.NullLogger(),
-		RuntimeType: "thin",
-		Runtime:     &runtime2,
-	}
-
-	gott, err := Build("testId", errrCtx)
-	if err == nil {
-		t.Errorf("expect err, but no err got %v", gott)
+		RuntimeType: common.ThinRuntime,
+		EngineImpl:  common.ThinEngineImpl,
+		Runtime:     runtimeObj,
 	}
 }
 
-func TestBuildReferenceDatasetEngine(t *testing.T) {
-	var namespace = v1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "fluid",
-		},
-	}
-	testObjs := []runtime.Object{}
-	testObjs = append(testObjs, namespace.DeepCopy())
+var _ = Describe("Thin Engine Build", Label("pkg.ddc.thin.engine_test.go"), func() {
+	Describe("Build", func() {
+		It("should return an error when runtime is nil", func() {
+			client := fake.NewFakeClientWithScheme(testScheme)
 
-	var dataset = datav1alpha1.Dataset{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "done",
-			Namespace: "big-data",
-		},
-		Status: datav1alpha1.DatasetStatus{
-			Runtimes: []datav1alpha1.Runtime{
-				{
-					Name:      "done",
-					Namespace: "big-data",
-					Type:      common.AlluxioRuntime,
-				},
-			},
-		},
-	}
-	var runtime = datav1alpha1.AlluxioRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "done",
-			Namespace: "big-data",
-		},
-	}
+			engine, err := Build("test-id", cruntime.ReconcileRequestContext{
+				NamespacedName: types.NamespacedName{Name: "hbase", Namespace: "fluid"},
+				Client:         client,
+				Log:            fake.NullLogger(),
+				RuntimeType:    common.ThinRuntime,
+				Runtime:        nil,
+			})
 
-	var refRuntime = datav1alpha1.ThinRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase",
-			Namespace: "fluid",
-		},
-	}
-	var refDataset = datav1alpha1.Dataset{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase",
-			Namespace: "fluid",
-		},
-		Spec: datav1alpha1.DatasetSpec{
-			Mounts: []datav1alpha1.Mount{
-				{
-					MountPoint: "dataset://big-data/done",
-				},
-			},
-		},
-	}
-
-	testObjs = append(testObjs, &dataset, &refDataset)
-
-	testObjs = append(testObjs, &runtime, &refRuntime)
-	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-
-	var ctx = cruntime.ReconcileRequestContext{
-		NamespacedName: types.NamespacedName{
-			Name:      "hbase",
-			Namespace: "fluid",
-		},
-		Client:      client,
-		Log:         fake.NullLogger(),
-		RuntimeType: "thin",
-		Runtime:     &refRuntime,
-	}
-
-	engine, err := Build("testId", ctx)
-	if err != nil || engine == nil {
-		t.Errorf("fail to exec the build function with the eror %v", err)
-	}
-
-	var errCtx = cruntime.ReconcileRequestContext{
-		NamespacedName: types.NamespacedName{
-			Name:      "hbase",
-			Namespace: "fluid",
-		},
-		Client:      client,
-		Log:         fake.NullLogger(),
-		RuntimeType: "thin",
-		Runtime:     &runtime,
-	}
-
-	got, err := Build("testId", errCtx)
-	if err == nil {
-		t.Errorf("expect err, but no err got %v", got)
-	}
-}
-
-func TestCheckReferenceDatasetRuntime(t *testing.T) {
-	tests := []struct {
-		name    string
-		dataset *datav1alpha1.Dataset
-		runtime *datav1alpha1.ThinRuntime
-		ctx     cruntime.ReconcileRequestContext
-		want    bool
-		wantErr bool
-	}{
-		{
-			name: "ref-dataset",
-			dataset: &datav1alpha1.Dataset{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "hbase",
-					Namespace: "fluid",
-				},
-				Spec: datav1alpha1.DatasetSpec{
-					Mounts: []datav1alpha1.Mount{
-						{
-							MountPoint: "dataset://test/test",
-						},
-					},
-				},
-			},
-			runtime: &datav1alpha1.ThinRuntime{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "hbase",
-					Namespace: "fluid",
-				},
-				Spec: datav1alpha1.ThinRuntimeSpec{},
-			},
-			want:    true,
-			wantErr: false,
-		},
-		{
-			name: "not-ref-dataset",
-			dataset: &datav1alpha1.Dataset{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "hbase",
-					Namespace: "fluid",
-				},
-			},
-			runtime: &datav1alpha1.ThinRuntime{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "hbase",
-					Namespace: "fluid",
-				},
-				Spec: datav1alpha1.ThinRuntimeSpec{
-					ThinRuntimeProfileName: "1",
-				},
-			},
-			want:    false,
-			wantErr: false,
-		},
-		{
-			name: "dataset-not-exist",
-			dataset: &datav1alpha1.Dataset{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "hbase-no-use",
-					Namespace: "fluid",
-				},
-			},
-			runtime: &datav1alpha1.ThinRuntime{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "hbase",
-					Namespace: "fluid",
-				},
-				Spec: datav1alpha1.ThinRuntimeSpec{
-					ThinRuntimeProfileName: "1",
-				},
-			},
-			want:    false,
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			fakeClient := fake.NewFakeClientWithScheme(testScheme, tt.dataset, tt.runtime)
-			var ctx = cruntime.ReconcileRequestContext{
-				NamespacedName: types.NamespacedName{
-					Name:      "hbase",
-					Namespace: "fluid",
-				},
-				Client:      fakeClient,
-				Log:         fake.NullLogger(),
-				RuntimeType: "thin",
-				Runtime:     tt.runtime,
-			}
-			isRef, err := CheckReferenceDatasetRuntime(ctx, tt.runtime)
-
-			if (err != nil) != tt.wantErr {
-				t.Errorf("expect has error %t, but get error %v", tt.wantErr, err)
-				return
-			}
-
-			if isRef != tt.want {
-				t.Errorf(" expect is ref dataset %t, but get %t", tt.want, err)
-			}
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("runtime is nil"))
+			Expect(engine).To(BeNil())
 		})
-	}
-}
+
+		It("should return an error when runtime type conversion fails", func() {
+			alluxioRuntime := &datav1alpha1.AlluxioRuntime{
+				ObjectMeta: metav1.ObjectMeta{Name: "hbase", Namespace: "fluid"},
+			}
+			client := fake.NewFakeClientWithScheme(testScheme, alluxioRuntime)
+
+			engine, err := Build("test-id", buildEngineTestContext(client, alluxioRuntime, "hbase", "fluid"))
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("type conversion"))
+			Expect(engine).To(BeNil())
+		})
+
+		It("should build a template engine for a normal thin runtime when runtime and profile exist", func() {
+			namespace := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "fluid"}}
+			dataset := &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{Name: "hbase", Namespace: "fluid"},
+			}
+			runtimeProfile := &datav1alpha1.ThinRuntimeProfile{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-profile"},
+				Spec:       datav1alpha1.ThinRuntimeProfileSpec{FileSystemType: "test-fstype"},
+			}
+			thinRuntime := &datav1alpha1.ThinRuntime{
+				ObjectMeta: metav1.ObjectMeta{Name: "hbase", Namespace: "fluid"},
+				Spec: datav1alpha1.ThinRuntimeSpec{
+					ThinRuntimeProfileName: "test-profile",
+					Fuse:                   datav1alpha1.ThinFuseSpec{},
+				},
+				Status: datav1alpha1.RuntimeStatus{
+					CacheStates: map[common.CacheStateName]string{common.Cached: "true"},
+				},
+			}
+			worker := &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{Name: "hbase-worker", Namespace: "fluid"},
+			}
+			client := fake.NewFakeClientWithScheme(testScheme, namespace, dataset, runtimeProfile, thinRuntime, worker)
+
+			engine, err := Build("test-id", buildEngineTestContext(client, thinRuntime, "hbase", "fluid"))
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(engine).NotTo(BeNil())
+		})
+
+		It("should delegate to the reference dataset branch when profile name is empty", func() {
+			namespace := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "fluid"}}
+			physicalDataset := &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{Name: "done", Namespace: "big-data"},
+				Status: datav1alpha1.DatasetStatus{
+					Runtimes: []datav1alpha1.Runtime{{Name: "done", Namespace: "big-data", Type: common.AlluxioRuntime}},
+				},
+			}
+			physicalRuntime := &datav1alpha1.AlluxioRuntime{
+				ObjectMeta: metav1.ObjectMeta{Name: "done", Namespace: "big-data"},
+			}
+			refRuntime := &datav1alpha1.ThinRuntime{
+				ObjectMeta: metav1.ObjectMeta{Name: "hbase", Namespace: "fluid"},
+			}
+			refDataset := &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{Name: "hbase", Namespace: "fluid"},
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{{MountPoint: "dataset://big-data/done"}},
+				},
+			}
+			client := fake.NewFakeClientWithScheme(testScheme, namespace, physicalDataset, physicalRuntime, refRuntime, refDataset)
+
+			engine, err := Build("test-id", buildEngineTestContext(client, refRuntime, "hbase", "fluid"))
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(engine).NotTo(BeNil())
+		})
+
+		It("should return an error when thin runtime profile lookup fails", func() {
+			namespace := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "fluid"}}
+			dataset := &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{Name: "hbase", Namespace: "fluid"},
+			}
+			thinRuntime := &datav1alpha1.ThinRuntime{
+				ObjectMeta: metav1.ObjectMeta{Name: "hbase", Namespace: "fluid"},
+				Spec: datav1alpha1.ThinRuntimeSpec{
+					ThinRuntimeProfileName: "missing-profile",
+				},
+			}
+			client := fake.NewFakeClientWithScheme(testScheme, namespace, dataset, thinRuntime)
+
+			engine, err := Build("test-id", buildEngineTestContext(client, thinRuntime, "hbase", "fluid"))
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("error when getting thinruntime profile missing-profile"))
+			Expect(apierrors.IsNotFound(err)).To(BeTrue())
+			Expect(engine).To(BeNil())
+		})
+
+		It("should return an error when runtime info bootstrap cannot fetch the thin runtime", func() {
+			namespace := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "fluid"}}
+			runtimeProfile := &datav1alpha1.ThinRuntimeProfile{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-profile"},
+				Spec:       datav1alpha1.ThinRuntimeProfileSpec{FileSystemType: "test-fstype"},
+			}
+			thinRuntime := &datav1alpha1.ThinRuntime{
+				ObjectMeta: metav1.ObjectMeta{Name: "hbase", Namespace: "fluid"},
+				Spec: datav1alpha1.ThinRuntimeSpec{
+					ThinRuntimeProfileName: "test-profile",
+				},
+			}
+			client := fake.NewFakeClientWithScheme(testScheme, namespace, runtimeProfile)
+
+			engine, err := Build("test-id", buildEngineTestContext(client, thinRuntime, "hbase", "fluid"))
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("engine hbase failed to get runtime info"))
+			Expect(engine).To(BeNil())
+		})
+	})
+
+	Describe("Precheck", func() {
+		It("should return found true when the thin runtime exists", func() {
+			thinRuntime := &datav1alpha1.ThinRuntime{
+				ObjectMeta: metav1.ObjectMeta{Name: "hbase", Namespace: "fluid"},
+			}
+			client := fake.NewFakeClientWithScheme(testScheme, thinRuntime)
+
+			found, err := Precheck(client, types.NamespacedName{Name: "hbase", Namespace: "fluid"})
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(found).To(BeTrue())
+		})
+
+		It("should return found false when the thin runtime does not exist", func() {
+			client := fake.NewFakeClientWithScheme(testScheme)
+
+			found, err := Precheck(client, types.NamespacedName{Name: "missing", Namespace: "fluid"})
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(found).To(BeFalse())
+		})
+	})
+
+	Describe("CheckReferenceDatasetRuntime", func() {
+		DescribeTable("should match the current thin runtime profile-name contract",
+			func(profileName string, expected bool) {
+				thinRuntime := &datav1alpha1.ThinRuntime{
+					ObjectMeta: metav1.ObjectMeta{Name: "hbase", Namespace: "fluid"},
+					Spec:       datav1alpha1.ThinRuntimeSpec{ThinRuntimeProfileName: profileName},
+				}
+
+				isRef, err := CheckReferenceDatasetRuntime(cruntime.ReconcileRequestContext{Context: context.TODO()}, thinRuntime)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(isRef).To(Equal(expected))
+			},
+			Entry("empty profile name means reference dataset runtime", "", true),
+			Entry("non-empty profile name means normal thin runtime", "test-profile", false),
+		)
+	})
+})
