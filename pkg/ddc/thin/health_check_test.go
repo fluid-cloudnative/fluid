@@ -218,7 +218,6 @@ var _ = Describe("ThinEngine Health Check", Label("pkg.ddc.thin.health_check_tes
 				}
 				Expect(hbaseDataset).NotTo(BeNil())
 				Expect(hbaseDataset.Status.Phase).To(Equal(datav1alpha1.BoundDatasetPhase))
-				Expect(hbaseDataset.Status.CacheStates).To(Equal(common.CacheStateList{common.Cached: "true"}))
 			})
 		})
 

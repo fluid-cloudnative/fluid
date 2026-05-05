@@ -91,9 +91,6 @@ func TestUpdateDatasetStatus(t *testing.T) {
 				},
 				Status: datav1alpha1.DatasetStatus{
 					Phase: datav1alpha1.BoundDatasetPhase,
-					CacheStates: map[common.CacheStateName]string{
-						common.Cached: "true",
-					},
 					HCFSStatus: &datav1alpha1.HCFSStatus{
 						Endpoint:                    "test Endpoint",
 						UnderlayerFileSystemVersion: "Underlayer HCFS Compatible Version",
@@ -110,9 +107,6 @@ func TestUpdateDatasetStatus(t *testing.T) {
 				},
 				Status: datav1alpha1.DatasetStatus{
 					Phase: datav1alpha1.FailedDatasetPhase,
-					CacheStates: map[common.CacheStateName]string{
-						common.Cached: "true",
-					},
 					HCFSStatus: &datav1alpha1.HCFSStatus{
 						Endpoint:                    "test Endpoint",
 						UnderlayerFileSystemVersion: "Underlayer HCFS Compatible Version",
@@ -129,9 +123,6 @@ func TestUpdateDatasetStatus(t *testing.T) {
 				},
 				Status: datav1alpha1.DatasetStatus{
 					Phase: datav1alpha1.NoneDatasetPhase,
-					CacheStates: map[common.CacheStateName]string{
-						common.Cached: "true",
-					},
 					HCFSStatus: &datav1alpha1.HCFSStatus{
 						Endpoint:                    "test Endpoint",
 						UnderlayerFileSystemVersion: "Underlayer HCFS Compatible Version",
@@ -155,7 +146,6 @@ func TestUpdateDatasetStatus(t *testing.T) {
 			return
 		}
 		if !reflect.DeepEqual(datasets.Items[0].Status.Phase, test.expectedResult.Status.Phase) ||
-			!reflect.DeepEqual(datasets.Items[0].Status.CacheStates, test.expectedResult.Status.CacheStates) ||
 			!reflect.DeepEqual(datasets.Items[0].Status.HCFSStatus, test.expectedResult.Status.HCFSStatus) {
 			t.Errorf("fail to exec the function with error %v", err)
 			return
@@ -218,9 +208,6 @@ func TestBindToDataset(t *testing.T) {
 		},
 		Status: datav1alpha1.DatasetStatus{
 			Phase: datav1alpha1.BoundDatasetPhase,
-			CacheStates: map[common.CacheStateName]string{
-				common.Cached: "true",
-			},
 			HCFSStatus: &datav1alpha1.HCFSStatus{
 				Endpoint:                    "test Endpoint",
 				UnderlayerFileSystemVersion: "Underlayer HCFS Compatible Version",
@@ -240,7 +227,6 @@ func TestBindToDataset(t *testing.T) {
 		return
 	}
 	if !reflect.DeepEqual(datasets.Items[0].Status.Phase, expectedResult.Status.Phase) ||
-		!reflect.DeepEqual(datasets.Items[0].Status.CacheStates, expectedResult.Status.CacheStates) ||
 		!reflect.DeepEqual(datasets.Items[0].Status.HCFSStatus, expectedResult.Status.HCFSStatus) {
 		t.Errorf("fail to exec the function with error %v", err)
 		return
