@@ -17,78 +17,136 @@ limitations under the License.
 package jindocache
 
 import (
-	"testing"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestBuild(t *testing.T) {
-	var namespace = v1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "fluid",
-		},
-	}
-	testObjs := []runtime.Object{}
-	testObjs = append(testObjs, namespace.DeepCopy())
+var _ = Describe("JindoCacheEngine Build and Precheck", func() {
+	const (
+		engineName      = "hbase"
+		engineNamespace = "fluid"
+	)
 
-	var dataset = datav1alpha1.Dataset{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase",
-			Namespace: "fluid",
-		},
-	}
-	testObjs = append(testObjs, dataset.DeepCopy())
+	var (
+		namespacedName types.NamespacedName
+		runtimeObj     *datav1alpha1.JindoRuntime
+		reconcileCtx   cruntime.ReconcileRequestContext
+		fakeClient     client.Client
+	)
 
-	var runtime = datav1alpha1.JindoRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase",
-			Namespace: "fluid",
-		},
-		Spec: datav1alpha1.JindoRuntimeSpec{
-			Master: datav1alpha1.JindoCompTemplateSpec{
-				Replicas: 1,
+	buildRuntime := func() *datav1alpha1.JindoRuntime {
+		return &datav1alpha1.JindoRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      engineName,
+				Namespace: engineNamespace,
 			},
-			Fuse: datav1alpha1.JindoFuseSpec{},
-		},
-		Status: datav1alpha1.RuntimeStatus{
-			CacheStates: map[common.CacheStateName]string{
-				common.Cached: "true",
+			Spec: datav1alpha1.JindoRuntimeSpec{
+				Master: datav1alpha1.JindoCompTemplateSpec{
+					Replicas: 1,
+				},
+				Fuse: datav1alpha1.JindoFuseSpec{},
 			},
-		},
-	}
-	testObjs = append(testObjs, runtime.DeepCopy())
-
-	var daemonset = appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hbase-worker",
-			Namespace: "fluid",
-		},
-	}
-	testObjs = append(testObjs, daemonset.DeepCopy())
-	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
-
-	var ctx = cruntime.ReconcileRequestContext{
-		NamespacedName: types.NamespacedName{
-			Name:      "hbase",
-			Namespace: "fluid",
-		},
-		Client:      client,
-		Log:         fake.NullLogger(),
-		RuntimeType: common.JindoRuntime,
-		Runtime:     &runtime,
+		}
 	}
 
-	engine, err := Build("testId", ctx)
-	if err != nil || engine == nil {
-		t.Errorf("fail to exec the build function with the eror %v", err)
+	newContext := func() cruntime.ReconcileRequestContext {
+		return cruntime.ReconcileRequestContext{
+			NamespacedName: namespacedName,
+			Client:         fakeClient,
+			Log:            fake.NullLogger(),
+			RuntimeType:    common.JindoRuntime,
+			EngineImpl:     common.JindoRuntime,
+			Runtime:        runtimeObj,
+		}
 	}
 
-}
+	BeforeEach(func() {
+		namespacedName = types.NamespacedName{Name: engineName, Namespace: engineNamespace}
+		runtimeObj = buildRuntime()
+		fakeClient = fake.NewFakeClientWithScheme(testScheme, runtimeObj.DeepCopy())
+		reconcileCtx = newContext()
+	})
+
+	Describe("Build", func() {
+		It("should build a template engine for a valid Jindo runtime", func() {
+			engine, err := Build("testId", reconcileCtx)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(engine).NotTo(BeNil())
+			Expect(engine.ID()).To(Equal("testId"))
+		})
+
+		It("should fail when reconcile context runtime is nil", func() {
+			reconcileCtx.Runtime = nil
+
+			engine, err := Build("testId", reconcileCtx)
+
+			Expect(err).To(MatchError("engine hbase is failed to parse"))
+			Expect(engine).To(BeNil())
+		})
+
+		It("should fail when reconcile context runtime is not a Jindo runtime", func() {
+			reconcileCtx.Runtime = &datav1alpha1.AlluxioRuntime{}
+
+			engine, err := Build("testId", reconcileCtx)
+
+			Expect(err).To(MatchError("engine hbase is failed to parse"))
+			Expect(engine).To(BeNil())
+		})
+
+		It("should fail when runtime info cannot be loaded from the client", func() {
+			fakeClient = fake.NewFakeClientWithScheme(testScheme)
+			reconcileCtx = newContext()
+
+			engine, err := Build("testId", reconcileCtx)
+
+			Expect(err).To(MatchError("engine hbase failed to get runtime info"))
+			Expect(engine).To(BeNil())
+		})
+	})
+
+	Describe("Precheck", func() {
+		It("should return true when the runtime exists", func() {
+			found, err := Precheck(fakeClient, namespacedName)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(found).To(BeTrue())
+		})
+
+		It("should return false when the runtime does not exist", func() {
+			found, err := Precheck(fakeClient, types.NamespacedName{Name: "missing", Namespace: engineNamespace})
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(found).To(BeFalse())
+		})
+	})
+
+	Describe("Build runtime info behavior", func() {
+		It("should accept a runtime with no annotations or owner references in unit tests", func() {
+			runtimeObj = &datav1alpha1.JindoRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      engineName,
+					Namespace: engineNamespace,
+				},
+			}
+			fakeClient = fake.NewFakeClientWithScheme(testScheme, runtimeObj.DeepCopy(), &v1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{Name: engineNamespace},
+			})
+			reconcileCtx = newContext()
+
+			engine, err := Build("testId", reconcileCtx)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(engine).NotTo(BeNil())
+		})
+	})
+})
