@@ -374,7 +374,7 @@ var _ = Describe("FuseRecover", func() {
 		})
 
 		Context("when mount fails", func() {
-			It("should return without error but log the failure", func() {
+			It("should return the mount error", func() {
 				fakeMounter := &mount.FakeMounter{}
 				r := FuseRecover{SafeFormatAndMount: mount.SafeFormatAndMount{
 					Interface: fakeMounter,
@@ -394,7 +394,7 @@ var _ = Describe("FuseRecover", func() {
 				defer patch1.Reset()
 
 				err := r.recoverBrokenMount(point)
-				Expect(err).NotTo(HaveOccurred())
+				Expect(err).To(HaveOccurred())
 			})
 		})
 	})
