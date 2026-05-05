@@ -137,6 +137,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeTopology":                   schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeTopology(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ScriptProcessor":                   schema_fluid_cloudnative_fluid_api_v1alpha1_ScriptProcessor(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.SecretKeySelector":                 schema_fluid_cloudnative_fluid_api_v1alpha1_SecretKeySelector(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.SecretMountComponentDependency":    schema_fluid_cloudnative_fluid_api_v1alpha1_SecretMountComponentDependency(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.TargetDataset":                     schema_fluid_cloudnative_fluid_api_v1alpha1_TargetDataset(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.TargetDatasetWithMountPath":        schema_fluid_cloudnative_fluid_api_v1alpha1_TargetDatasetWithMountPath(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.TargetPath":                        schema_fluid_cloudnative_fluid_api_v1alpha1_TargetPath(ref),
@@ -6811,6 +6812,12 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeComponentDependencies(re
 				Description: "RuntimeComponentDependencies defines the dependencies required by a CacheRuntime component",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
+					"secretMount": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SecretMount controls whether dataset encrypt-option secrets are mounted into this component pod. Defaults to true for Master/Worker, false for Client unless explicitly enabled.",
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.SecretMountComponentDependency"),
+						},
+					},
 					"extraResources": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ExtraResources specifies the usage of extra resources such as ConfigMaps",
@@ -6821,7 +6828,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeComponentDependencies(re
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExtraResourcesComponentDependency"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExtraResourcesComponentDependency", "github.com/fluid-cloudnative/fluid/api/v1alpha1.SecretMountComponentDependency"},
 	}
 }
 
@@ -7584,6 +7591,26 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_SecretKeySelector(ref common.Re
 					},
 				},
 				Required: []string{"name"},
+			},
+		},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_SecretMountComponentDependency(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "SecretMountComponentDependency defines the secret mount configuration for component dependencies",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"enabled": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Enabled indicates whether dataset encrypt-option secrets should be mounted into this component pod.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
 			},
 		},
 	}
