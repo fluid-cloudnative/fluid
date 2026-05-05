@@ -17,62 +17,69 @@
 package efc
 
 import (
+	"context"
 	"reflect"
-	"testing"
 
-	"github.com/fluid-cloudnative/fluid/pkg/common"
-
-	. "github.com/agiledragon/gomonkey/v2"
+	"github.com/agiledragon/gomonkey/v2"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	"github.com/go-logr/logr"
-	appsv1 "k8s.io/api/apps/v1"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/net"
 )
 
-func init() {
-	testScheme = runtime.NewScheme()
-	_ = corev1.AddToScheme(testScheme)
-	_ = datav1alpha1.AddToScheme(testScheme)
-	_ = appsv1.AddToScheme(testScheme)
+func newShutdownRuntime(name string, placement datav1alpha1.PlacementMode, nodeSelector map[string]string) *datav1alpha1.EFCRuntime {
+	return &datav1alpha1.EFCRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: "fluid",
+		},
+		Spec: datav1alpha1.EFCRuntimeSpec{
+			Fuse: datav1alpha1.EFCFuseSpec{
+				NodeSelector: nodeSelector,
+			},
+		},
+	}
 }
 
-func TestDestroyWorker(t *testing.T) {
-	// runtimeInfoSpark tests destroy Worker in exclusive mode.
-	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "fluid", common.EFCRuntime)
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
-	runtimeInfoSpark.SetupWithDataset(&datav1alpha1.Dataset{
-		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
+func newShutdownRuntimeInfo(name string, placement datav1alpha1.PlacementMode, nodeSelector map[string]string) base.RuntimeInfoInterface {
+	runtimeInfo, err := base.BuildRuntimeInfo(name, "fluid", common.EFCRuntime)
+	Expect(err).NotTo(HaveOccurred())
+	runtimeInfo.SetupWithDataset(&datav1alpha1.Dataset{
+		Spec: datav1alpha1.DatasetSpec{PlacementMode: placement},
 	})
-
-	// runtimeInfoHadoop tests destroy Worker in shareMode mode.
-	runtimeInfoHadoop, err := base.BuildRuntimeInfo("hadoop", "fluid", common.EFCRuntime)
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
+	if len(nodeSelector) > 0 {
+		runtimeInfo.SetFuseNodeSelector(nodeSelector)
 	}
-	runtimeInfoHadoop.SetupWithDataset(&datav1alpha1.Dataset{
-		Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ShareMode},
-	})
-	nodeSelector := map[string]string{
-		"node-select": "true",
-	}
-	runtimeInfoHadoop.SetFuseNodeSelector(nodeSelector)
+	return runtimeInfo
+}
 
-	var nodeInputs = []*corev1.Node{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "test-node-spark",
-				Labels: map[string]string{
+func newShutdownNode(name string, labels map[string]string) *corev1.Node {
+	return &corev1.Node{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: labels,
+		},
+	}
+}
+
+var _ = Describe("EFCEngine shutdown", func() {
+	Describe("destroyWorkers", func() {
+		It("tears down exclusive runtime worker labels after seeding the runtime object", func() {
+			runtimeInfo := newShutdownRuntimeInfo("spark", datav1alpha1.ExclusiveMode, nil)
+			runtimeObj := newShutdownRuntime("spark", datav1alpha1.ExclusiveMode, nil)
+			nodes := []*corev1.Node{
+				newShutdownNode("test-node-spark", map[string]string{
 					"fluid.io/dataset-num":           "1",
 					"fluid.io/s-efc-fluid-spark":     "true",
 					"fluid.io/s-fluid-spark":         "true",
@@ -80,13 +87,8 @@ func TestDestroyWorker(t *testing.T) {
 					"fluid.io/s-h-efc-m-fluid-spark": "1B",
 					"fluid.io/s-h-efc-t-fluid-spark": "6B",
 					"fluid_exclusive":                "fluid_spark",
-				},
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "test-node-share",
-				Labels: map[string]string{
+				}),
+				newShutdownNode("test-node-share", map[string]string{
 					"fluid.io/dataset-num":            "2",
 					"fluid.io/s-efc-fluid-hadoop":     "true",
 					"fluid.io/s-fluid-hadoop":         "true",
@@ -98,45 +100,53 @@ func TestDestroyWorker(t *testing.T) {
 					"fluid.io/s-h-efc-d-fluid-hbase":  "5B",
 					"fluid.io/s-h-efc-m-fluid-hbase":  "1B",
 					"fluid.io/s-h-efc-t-fluid-hbase":  "6B",
-				},
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "test-node-hadoop",
-				Labels: map[string]string{
-					"fluid.io/dataset-num":            "1",
-					"fluid.io/s-efc-fluid-hadoop":     "true",
-					"fluid.io/s-fluid-hadoop":         "true",
-					"fluid.io/s-h-efc-d-fluid-hadoop": "5B",
-					"fluid.io/s-h-efc-m-fluid-hadoop": "1B",
-					"fluid.io/s-h-efc-t-fluid-hadoop": "6B",
-					"node-select":                     "true",
-				},
-			},
-		},
-	}
+				}),
+			}
 
-	testNodes := []runtime.Object{}
-	for _, nodeInput := range nodeInputs {
-		testNodes = append(testNodes, nodeInput.DeepCopy())
-	}
+			objects := []runtime.Object{runtimeObj}
+			for _, node := range nodes {
+				objects = append(objects, node.DeepCopy())
+			}
 
-	client := fake.NewFakeClientWithScheme(testScheme, testNodes...)
+			client := fake.NewFakeClientWithScheme(testScheme, objects...)
+			engine := &EFCEngine{
+				name:        runtimeInfo.GetName(),
+				namespace:   runtimeInfo.GetNamespace(),
+				runtimeType: common.EFCRuntime,
+				runtimeInfo: runtimeInfo,
+				Client:      client,
+				Log:         fake.NullLogger(),
+			}
+			engine.Helper = ctrl.BuildHelper(runtimeInfo, client, engine.Log)
 
-	var testCase = []struct {
-		expectedWorkers  int32
-		runtimeInfo      base.RuntimeInfoInterface
-		wantedNodeNumber int32
-		wantedNodeLabels map[string]map[string]string
-	}{
-		{
-			expectedWorkers:  -1,
-			runtimeInfo:      runtimeInfoSpark,
-			wantedNodeNumber: 0,
-			wantedNodeLabels: map[string]map[string]string{
-				"test-node-spark": {},
-				"test-node-share": {
+			Expect(engine.destroyWorkers()).To(Succeed())
+
+			node := &corev1.Node{}
+			Expect(client.Get(context.TODO(), types.NamespacedName{Name: "test-node-spark"}, node)).To(Succeed())
+			Expect(node.Labels).To(BeEmpty())
+
+			Expect(client.Get(context.TODO(), types.NamespacedName{Name: "test-node-share"}, node)).To(Succeed())
+			Expect(node.Labels).To(Equal(map[string]string{
+				"fluid.io/dataset-num":            "2",
+				"fluid.io/s-efc-fluid-hadoop":     "true",
+				"fluid.io/s-fluid-hadoop":         "true",
+				"fluid.io/s-h-efc-d-fluid-hadoop": "5B",
+				"fluid.io/s-h-efc-m-fluid-hadoop": "1B",
+				"fluid.io/s-h-efc-t-fluid-hadoop": "6B",
+				"fluid.io/s-efc-fluid-hbase":      "true",
+				"fluid.io/s-fluid-hbase":          "true",
+				"fluid.io/s-h-efc-d-fluid-hbase":  "5B",
+				"fluid.io/s-h-efc-m-fluid-hbase":  "1B",
+				"fluid.io/s-h-efc-t-fluid-hbase":  "6B",
+			}))
+		})
+
+		It("tears down shared runtime worker labels after seeding the runtime object", func() {
+			nodeSelector := map[string]string{"node-select": "true"}
+			runtimeInfo := newShutdownRuntimeInfo("hadoop", datav1alpha1.ShareMode, nodeSelector)
+			runtimeObj := newShutdownRuntime("hadoop", datav1alpha1.ShareMode, nodeSelector)
+			nodes := []*corev1.Node{
+				newShutdownNode("test-node-share", map[string]string{
 					"fluid.io/dataset-num":            "2",
 					"fluid.io/s-efc-fluid-hadoop":     "true",
 					"fluid.io/s-fluid-hadoop":         "true",
@@ -148,8 +158,8 @@ func TestDestroyWorker(t *testing.T) {
 					"fluid.io/s-h-efc-d-fluid-hbase":  "5B",
 					"fluid.io/s-h-efc-m-fluid-hbase":  "1B",
 					"fluid.io/s-h-efc-t-fluid-hbase":  "6B",
-				},
-				"test-node-hadoop": {
+				}),
+				newShutdownNode("test-node-hadoop", map[string]string{
 					"fluid.io/dataset-num":            "1",
 					"fluid.io/s-efc-fluid-hadoop":     "true",
 					"fluid.io/s-fluid-hadoop":         "true",
@@ -157,222 +167,187 @@ func TestDestroyWorker(t *testing.T) {
 					"fluid.io/s-h-efc-m-fluid-hadoop": "1B",
 					"fluid.io/s-h-efc-t-fluid-hadoop": "6B",
 					"node-select":                     "true",
-				},
-			},
-		},
-		{
-			expectedWorkers:  -1,
-			runtimeInfo:      runtimeInfoHadoop,
-			wantedNodeNumber: 0,
-			wantedNodeLabels: map[string]map[string]string{
-				"test-node-spark": {},
-				"test-node-share": {
-					"fluid.io/dataset-num":           "1",
-					"fluid.io/s-efc-fluid-hbase":     "true",
-					"fluid.io/s-fluid-hbase":         "true",
-					"fluid.io/s-h-efc-d-fluid-hbase": "5B",
-					"fluid.io/s-h-efc-m-fluid-hbase": "1B",
-					"fluid.io/s-h-efc-t-fluid-hbase": "6B",
-				},
-				"test-node-hadoop": {
-					"node-select": "true",
-				},
-			},
-		},
-	}
-	for _, test := range testCase {
-		engine := &EFCEngine{Log: fake.NullLogger(), runtimeInfo: test.runtimeInfo}
-		engine.Client = client
-		engine.Helper = ctrl.BuildHelper(test.runtimeInfo, client, engine.Log)
-		engine.name = test.runtimeInfo.GetName()
-		engine.namespace = test.runtimeInfo.GetNamespace()
-		if err != nil {
-			t.Errorf("fail to exec the function with the error %v", err)
-		}
-		err := engine.destroyWorkers()
-		if err != nil {
-			t.Errorf("fail to exec the function with the error %v", err)
-		}
-		for _, node := range nodeInputs {
-			newNode, err := kubeclient.GetNode(client, node.Name)
-			if err != nil {
-				t.Errorf("fail to get the node with the error %v", err)
+				}),
 			}
 
-			if len(newNode.Labels) != len(test.wantedNodeLabels[node.Name]) {
-				t.Errorf("fail to decrease the labels")
+			objects := []runtime.Object{runtimeObj}
+			for _, node := range nodes {
+				objects = append(objects, node.DeepCopy())
 			}
-			if len(newNode.Labels) != 0 && !reflect.DeepEqual(newNode.Labels, test.wantedNodeLabels[node.Name]) {
-				t.Errorf("fail to decrease the labels")
+
+			client := fake.NewFakeClientWithScheme(testScheme, objects...)
+			engine := &EFCEngine{
+				name:        runtimeInfo.GetName(),
+				namespace:   runtimeInfo.GetNamespace(),
+				runtimeType: common.EFCRuntime,
+				runtimeInfo: runtimeInfo,
+				Client:      client,
+				Log:         fake.NullLogger(),
 			}
-		}
+			engine.Helper = ctrl.BuildHelper(runtimeInfo, client, engine.Log)
 
-	}
-}
+			Expect(engine.destroyWorkers()).To(Succeed())
 
-func TestEFCEngineCleanAll(t *testing.T) {
-	type fields struct {
-		name        string
-		namespace   string
-		cm          *corev1.ConfigMap
-		runtimeType string
-		log         logr.Logger
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		wantErr bool
-	}{
-		{
-			name: "spark",
-			fields: fields{
-				name:        "spark",
-				namespace:   "fluid",
-				runtimeType: "efc",
-				cm: &corev1.ConfigMap{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "spark-efc-values",
-						Namespace: "fluid",
-					},
-					Data: map[string]string{"data": valuesConfigMapData},
+			node := &corev1.Node{}
+			Expect(client.Get(context.TODO(), types.NamespacedName{Name: "test-node-share"}, node)).To(Succeed())
+			Expect(node.Labels).To(Equal(map[string]string{
+				"fluid.io/dataset-num":           "1",
+				"fluid.io/s-efc-fluid-hbase":     "true",
+				"fluid.io/s-fluid-hbase":         "true",
+				"fluid.io/s-h-efc-d-fluid-hbase": "5B",
+				"fluid.io/s-h-efc-m-fluid-hbase": "1B",
+				"fluid.io/s-h-efc-t-fluid-hbase": "6B",
+			}))
+
+			Expect(client.Get(context.TODO(), types.NamespacedName{Name: "test-node-hadoop"}, node)).To(Succeed())
+			Expect(node.Labels).To(Equal(map[string]string{
+				"node-select": "true",
+			}))
+		})
+	})
+
+	Describe("cleanAll", func() {
+		It("cleans fuse resources and removes the values configmap", func() {
+			configMap := &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "spark-efc-values",
+					Namespace: "fluid",
 				},
-				log: fake.NullLogger(),
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			testObjs := []runtime.Object{}
-			testObjs = append(testObjs, tt.fields.cm.DeepCopy())
-			client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+				Data: map[string]string{"data": valuesConfigMapData},
+			}
+			client := fake.NewFakeClientWithScheme(testScheme, configMap.DeepCopy())
 			helper := &ctrl.Helper{}
-			patch1 := ApplyMethod(reflect.TypeOf(helper), "CleanUpFuse", func(_ *ctrl.Helper) (int, error) {
-				return 0, nil
+			cleaned := false
+			patches := gomonkey.ApplyMethod(reflect.TypeOf(helper), "CleanUpFuse", func(_ *ctrl.Helper) (int, error) {
+				cleaned = true
+				return 1, nil
 			})
-			defer patch1.Reset()
-			e := &EFCEngine{
-				name:      tt.fields.name,
-				namespace: tt.fields.namespace,
-				Client:    client,
-				Log:       tt.fields.log,
-			}
-			if err := e.cleanAll(); (err != nil) != tt.wantErr {
-				t.Errorf("EFCEngine.cleanAll() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
+			defer patches.Reset()
 
-func TestEFCEngineReleasePorts(t *testing.T) {
-	type fields struct {
-		runtime     *datav1alpha1.EFCRuntime
-		name        string
-		namespace   string
-		runtimeType string
-		cm          *corev1.ConfigMap
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		wantErr bool
-	}{
-		{
-			name: "spark",
-			fields: fields{
-				name:        "spark",
-				namespace:   "fluid",
-				runtimeType: "efc",
-				cm: &corev1.ConfigMap{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "spark-efc-values",
-						Namespace: "fluid",
-					},
-					Data: map[string]string{"data": valuesConfigMapData},
+			engine := &EFCEngine{
+				name:       "spark",
+				namespace:  "fluid",
+				engineImpl: common.EFCEngineImpl,
+				Client:     client,
+				Helper:     helper,
+				Log:        fake.NullLogger(),
+			}
+
+			Expect(engine.cleanAll()).To(Succeed())
+			Expect(cleaned).To(BeTrue())
+
+			deletedConfigMap := &corev1.ConfigMap{}
+			err := client.Get(context.TODO(), types.NamespacedName{Name: "spark-efc-values", Namespace: "fluid"}, deletedConfigMap)
+			Expect(err).To(HaveOccurred())
+			Expect(k8serrors.IsNotFound(err)).To(BeTrue())
+		})
+	})
+
+	Describe("releasePorts", func() {
+		It("releases ports parsed from the values configmap", func() {
+			portRange, err := net.ParsePortRange("17673-17674")
+			Expect(err).NotTo(HaveOccurred())
+
+			configMap := &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "spark-efc-values",
+					Namespace: "fluid",
 				},
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			portRange := "26000-32000"
-			pr, _ := net.ParsePortRange(portRange)
-			testObjs := []runtime.Object{}
-			testObjs = append(testObjs, tt.fields.cm.DeepCopy())
-			client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+				Data: map[string]string{"data": valuesConfigMapData},
+			}
+			dataset := &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "spark",
+					Namespace: "fluid",
+				},
+				Status: datav1alpha1.DatasetStatus{
+					Runtimes: []datav1alpha1.Runtime{{
+						Name:      "spark",
+						Namespace: "fluid",
+						Type:      common.EFCRuntime,
+					}},
+				},
+			}
+			client := fake.NewFakeClientWithScheme(testScheme, configMap.DeepCopy(), dataset.DeepCopy())
+			Expect(portallocator.SetupRuntimePortAllocator(client, portRange, "bitmap", GetReservedPorts)).To(Succeed())
 
-			e := &EFCEngine{
-				runtime:   tt.fields.runtime,
-				name:      tt.fields.name,
-				namespace: tt.fields.namespace,
-				Client:    client,
-				Log:       fake.NullLogger(),
+			allocator, err := portallocator.GetRuntimePortAllocator()
+			Expect(err).NotTo(HaveOccurred())
+
+			released := []int{}
+			patches := gomonkey.ApplyMethod(reflect.TypeOf(allocator), "ReleaseReservedPorts", func(_ *portallocator.RuntimePortAllocator, ports []int) {
+				released = append(released, ports...)
+			})
+			defer patches.Reset()
+
+			engine := &EFCEngine{
+				name:       "spark",
+				namespace:  "fluid",
+				engineImpl: common.EFCEngineImpl,
+				Client:     client,
+				Log:        fake.NullLogger(),
 			}
 
-			err := portallocator.SetupRuntimePortAllocator(client, pr, "bitmap", GetReservedPorts)
-			if err != nil {
-				t.Fatalf("failed to set up runtime port allocator due to %v", err)
-			}
-			allocator, _ := portallocator.GetRuntimePortAllocator()
-			patch1 := ApplyMethod(reflect.TypeOf(allocator), "ReleaseReservedPorts",
-				func(_ *portallocator.RuntimePortAllocator, ports []int) {
-				})
-			defer patch1.Reset()
-
-			if err := e.releasePorts(); (err != nil) != tt.wantErr {
-				t.Errorf("EFCEngine.releasePorts() error = %v, wantErr %v", err, tt.wantErr)
-			}
+			Expect(engine.releasePorts()).To(Succeed())
+			Expect(released).To(Equal([]int{17673}))
 		})
-	}
-}
 
-func TestEFCEngineDestroyMaster(t *testing.T) {
-	type fields struct {
-		name      string
-		namespace string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		wantErr bool
-	}{
-		{
-			name: "spark",
-			fields: fields{
-				name:      "spark",
-				namespace: "fluid",
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			e := &EFCEngine{
-				name:      tt.fields.name,
-				namespace: tt.fields.namespace,
+		It("returns without error when the values configmap is absent", func() {
+			portRange, err := net.ParsePortRange("26000-32000")
+			Expect(err).NotTo(HaveOccurred())
+
+			client := fake.NewFakeClientWithScheme(testScheme)
+			Expect(portallocator.SetupRuntimePortAllocator(client, portRange, "bitmap", GetReservedPorts)).To(Succeed())
+
+			engine := &EFCEngine{
+				name:       "spark",
+				namespace:  "fluid",
+				engineImpl: common.EFCEngineImpl,
+				Client:     client,
+				Log:        fake.NullLogger(),
 			}
 
-			patch1 := ApplyFunc(helm.CheckRelease,
-				func(_ string, _ string) (bool, error) {
-					d := true
-					return d, nil
-				})
-			defer patch1.Reset()
-
-			patch2 := ApplyFunc(helm.DeleteRelease,
-				func(_ string, _ string) error {
-					return nil
-				})
-			defer patch2.Reset()
-
-			if err := e.destroyMaster(); (err != nil) != tt.wantErr {
-				t.Errorf("EFCEngine.destroyMaster() error = %v, wantErr %v", err, tt.wantErr)
-			}
+			Expect(engine.releasePorts()).To(Succeed())
 		})
-	}
-}
+	})
 
-func TestEFCEngineCleanupCache(t *testing.T) {
+	Describe("destroyMaster", func() {
+		It("deletes the helm release when it exists", func() {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
 
-}
+			deleted := false
+			patches.ApplyFunc(helm.CheckRelease, func(_ string, _ string) (bool, error) {
+				return true, nil
+			})
+			patches.ApplyFunc(helm.DeleteRelease, func(_ string, _ string) error {
+				deleted = true
+				return nil
+			})
+
+			engine := &EFCEngine{name: "spark", namespace: "fluid"}
+
+			Expect(engine.destroyMaster()).To(Succeed())
+			Expect(deleted).To(BeTrue())
+		})
+
+		It("skips deletion when no helm release exists", func() {
+			patches := gomonkey.NewPatches()
+			defer patches.Reset()
+
+			deleted := false
+			patches.ApplyFunc(helm.CheckRelease, func(_ string, _ string) (bool, error) {
+				return false, nil
+			})
+			patches.ApplyFunc(helm.DeleteRelease, func(_ string, _ string) error {
+				deleted = true
+				return nil
+			})
+
+			engine := &EFCEngine{name: "spark", namespace: "fluid"}
+
+			Expect(engine.destroyMaster()).To(Succeed())
+			Expect(deleted).To(BeFalse())
+		})
+	})
+})
