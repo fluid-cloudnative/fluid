@@ -81,7 +81,7 @@ func (e *CacheEngine) transform(dataset *datav1alpha1.Dataset, runtime *datav1al
 	if err != nil {
 		return nil, err
 	}
-	err = e.transformClient(runtime, runtimeClass, runtimeCommonConfig, runtimeValue)
+	err = e.transformClient(dataset, runtime, runtimeClass, runtimeCommonConfig, runtimeValue)
 	if err != nil {
 		return nil, err
 	}

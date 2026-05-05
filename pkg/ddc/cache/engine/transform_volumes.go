@@ -71,3 +71,13 @@ func (e *CacheEngine) transformEncryptOptionsToComponentVolumes(dataset *datav1a
 		}
 	}
 }
+
+// shouldMountSecrets determines whether secrets should be mounted based on configuration and default behavior
+// config: the SecretMount configuration from CacheRuntimeClass (can be nil)
+// defaultEnabled: the default behavior when config is nil or not explicitly set
+func shouldMountSecrets(config *datav1alpha1.SecretMountComponentDependency, defaultEnabled bool) bool {
+	if config == nil {
+		return defaultEnabled
+	}
+	return config.Enabled
+}

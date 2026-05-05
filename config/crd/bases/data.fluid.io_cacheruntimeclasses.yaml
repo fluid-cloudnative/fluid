@@ -84,6 +84,11 @@ spec:
                               type: object
                             type: array
                         type: object
+                      secretMount:
+                        properties:
+                          enabled:
+                            type: boolean
+                        type: object
                     type: object
                   executionEntries:
                     properties:
@@ -3499,6 +3504,11 @@ spec:
                               type: object
                             type: array
                         type: object
+                      secretMount:
+                        properties:
+                          enabled:
+                            type: boolean
+                        type: object
                     type: object
                   executionEntries:
                     properties:
@@ -6913,6 +6923,11 @@ spec:
                                   type: string
                               type: object
                             type: array
+                        type: object
+                      secretMount:
+                        properties:
+                          enabled:
+                            type: boolean
                         type: object
                     type: object
                   executionEntries:

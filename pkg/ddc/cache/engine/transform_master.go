@@ -51,8 +51,10 @@ func (e *CacheEngine) transformMaster(dataset *datav1alpha1.Dataset, runtime *da
 		return err
 	}
 
-	// transform encrypt options to master volumes
-	e.transformEncryptOptionsToComponentVolumes(dataset, value.Master)
+	// transform encrypt options to master volumes (default enabled for Master)
+	if shouldMountSecrets(component.Dependencies.SecretMount, true) {
+		e.transformEncryptOptionsToComponentVolumes(dataset, value.Master)
+	}
 
 	// TODO: transform runtime.Spec.Master, runtimeClass.Topology.Master, dataset.Spec into PodTemplateSpec
 

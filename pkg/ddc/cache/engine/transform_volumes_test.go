@@ -572,4 +572,113 @@ var _ = Describe("CacheEngine Transform Volumes Tests", Label("pkg.ddc.cache.eng
 			})
 		})
 	})
+
+	Describe("shouldMountSecrets helper function", func() {
+		Context("when SecretMount config is nil", func() {
+			It("should return defaultEnabled value", func() {
+				// Test with defaultEnabled = true (for Master/Worker)
+				Expect(shouldMountSecrets(nil, true)).To(BeTrue())
+
+				// Test with defaultEnabled = false (for Client)
+				Expect(shouldMountSecrets(nil, false)).To(BeFalse())
+			})
+		})
+
+		Context("when SecretMount config is provided", func() {
+			It("should return the configured Enabled value", func() {
+				// Test with Enabled = true
+				config := &datav1alpha1.SecretMountComponentDependency{
+					Enabled: true,
+				}
+				Expect(shouldMountSecrets(config, false)).To(BeTrue())
+
+				// Test with Enabled = false
+				config.Enabled = false
+				Expect(shouldMountSecrets(config, true)).To(BeFalse())
+			})
+		})
+	})
+
+	Describe("Client component secret mount behavior", func() {
+		var (
+			clientValue *common.CacheRuntimeComponentValue
+			dataset     *datav1alpha1.Dataset
+		)
+
+		BeforeEach(func() {
+			clientValue = &common.CacheRuntimeComponentValue{
+				Enabled: true,
+				PodTemplateSpec: corev1.PodTemplateSpec{
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{
+							{
+								Name: "client",
+							},
+						},
+					},
+				},
+			}
+			dataset = &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					SharedEncryptOptions: []datav1alpha1.EncryptOption{
+						{
+							Name: "test-secret",
+							ValueFrom: datav1alpha1.EncryptOptionSource{
+								SecretKeyRef: datav1alpha1.SecretKeySelector{
+									Name: testSecretName1,
+									Key:  testSecretKey,
+								},
+							},
+						},
+					},
+				},
+			}
+		})
+
+		Context("when Client has no SecretMount configuration (default disabled)", func() {
+			It("should not mount secrets to client pod", func() {
+				// Simulate Client with nil SecretMount (default behavior)
+				if shouldMountSecrets(nil, false) {
+					engine.transformEncryptOptionsToComponentVolumes(dataset, clientValue)
+				}
+
+				// Should not add any volumes for Client by default
+				Expect(clientValue.PodTemplateSpec.Spec.Volumes).To(BeEmpty())
+				Expect(clientValue.PodTemplateSpec.Spec.Containers[0].VolumeMounts).To(BeEmpty())
+			})
+		})
+
+		Context("when Client has SecretMount explicitly enabled", func() {
+			It("should mount secrets to client pod", func() {
+				// Simulate Client with SecretMount enabled
+				secretMountConfig := &datav1alpha1.SecretMountComponentDependency{
+					Enabled: true,
+				}
+				if shouldMountSecrets(secretMountConfig, false) {
+					engine.transformEncryptOptionsToComponentVolumes(dataset, clientValue)
+				}
+
+				// Should add volumes for Client when explicitly enabled
+				Expect(clientValue.PodTemplateSpec.Spec.Volumes).To(HaveLen(1))
+				Expect(clientValue.PodTemplateSpec.Spec.Volumes[0].Name).To(Equal(secretVolumeNamePrefix + testSecretName1))
+				Expect(clientValue.PodTemplateSpec.Spec.Containers[0].VolumeMounts).To(HaveLen(1))
+			})
+		})
+
+		Context("when Client has SecretMount explicitly disabled", func() {
+			It("should not mount secrets to client pod", func() {
+				// Simulate Client with SecretMount explicitly disabled
+				secretMountConfig := &datav1alpha1.SecretMountComponentDependency{
+					Enabled: false,
+				}
+				if shouldMountSecrets(secretMountConfig, false) {
+					engine.transformEncryptOptionsToComponentVolumes(dataset, clientValue)
+				}
+
+				// Should not add any volumes for Client
+				Expect(clientValue.PodTemplateSpec.Spec.Volumes).To(BeEmpty())
+				Expect(clientValue.PodTemplateSpec.Spec.Containers[0].VolumeMounts).To(BeEmpty())
+			})
+		})
+	})
 })

@@ -51,8 +51,10 @@ func (e *CacheEngine) transformWorker(dataset *datav1alpha1.Dataset, runtime *da
 		return err
 	}
 
-	// transform encrypt options to worker volumes
-	e.transformEncryptOptionsToComponentVolumes(dataset, value.Worker)
+	// transform encrypt options to worker volumes (default enabled for Worker)
+	if shouldMountSecrets(component.Dependencies.SecretMount, true) {
+		e.transformEncryptOptionsToComponentVolumes(dataset, value.Worker)
+	}
 
 	// TODO: transform runtime.Spec.Worker, runtimeClass.Topology.Worker, dataset.Spec into PodTemplateSpec
 
