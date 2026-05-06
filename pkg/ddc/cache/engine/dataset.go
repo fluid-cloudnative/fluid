@@ -19,15 +19,14 @@ package engine
 import (
 	"context"
 	"fmt"
+	"reflect"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	securityutil "github.com/fluid-cloudnative/fluid/pkg/utils/security"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
-	"reflect"
 )
 
 func (e *CacheEngine) BindToDataset() (err error) {
@@ -102,54 +101,47 @@ func (e *CacheEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (err 
 }
 
 func (e *CacheEngine) generateDatasetMountOptions(m *datav1alpha1.Mount, sharedEncryptOptions []datav1alpha1.EncryptOption,
-	sharedOptions map[string]string) (map[string]string, error) {
+	sharedOptions map[string]string) (mOptions map[string]string, encryptOptions map[string]string, err error) {
 
-	// initialize mount options
-	mOptions := map[string]string{}
+	// Initialize return maps
+	mOptions = make(map[string]string)
+	encryptOptions = make(map[string]string)
+
+	// initialize mount options, mount options will overwrite shared options.
 	for k, v := range sharedOptions {
 		mOptions[k] = v
 	}
-
 	for key, value := range m.Options {
 		mOptions[key] = value
 	}
 
-	// if encryptOptions have the same key with options, it will overwrite the corresponding value
-	var err error
-	mOptions, err = e.genEncryptOptions(sharedEncryptOptions, mOptions, m.Name)
+	// collect encrypt options, mount options will overwrite shared options.
+	err = e.collectEncryptOptions(sharedEncryptOptions, encryptOptions)
 	if err != nil {
-		return mOptions, err
+		return
+	}
+	err = e.collectEncryptOptions(m.EncryptOptions, encryptOptions)
+	if err != nil {
+		return
 	}
 
-	// gen public encryptOptions
-	mOptions, err = e.genEncryptOptions(m.EncryptOptions, mOptions, m.Name)
-	if err != nil {
-		return mOptions, err
-	}
-
-	return mOptions, nil
+	return
 }
 
-func (e *CacheEngine) genEncryptOptions(EncryptOptions []datav1alpha1.EncryptOption, mOptions map[string]string, name string) (map[string]string, error) {
-	for _, item := range EncryptOptions {
-		if _, ok := mOptions[item.Name]; ok {
-			err := fmt.Errorf("the option %s is set more than one times, please double check the dataset's option and encryptOptions", item.Name)
-			return mOptions, err
-		}
+func (e *CacheEngine) collectEncryptOptions(encryptOpts []datav1alpha1.EncryptOption, existingEncryptOpts map[string]string) error {
 
-		securityutil.UpdateSensitiveKey(item.Name)
+	for _, item := range encryptOpts {
 		sRef := item.ValueFrom.SecretKeyRef
-		secret, err := kubeclient.GetSecret(e.Client, sRef.Name, e.namespace)
-		if err != nil {
-			e.Log.Error(err, "get secret by mount encrypt options failed", "name", item.Name)
-			return mOptions, err
+		if sRef.Name == "" || sRef.Key == "" {
+			return fmt.Errorf("encryptOption %s has empty secretKeyRef name or key", item.Name)
 		}
 
-		e.Log.Info("get value from secret", "mount name", name, "secret key", sRef.Key)
+		// Construct the secret mount path in the container
+		// The secret will be mounted at /etc/fluid/secrets/<secret-name>/<key>
+		secretPath := getSecretFilePath(sRef.Name, sRef.Key)
 
-		v := secret.Data[sRef.Key]
-		mOptions[item.Name] = string(v)
+		// Store in map: key is option name, value is secret path
+		existingEncryptOpts[item.Name] = secretPath
 	}
-
-	return mOptions, nil
+	return nil
 }

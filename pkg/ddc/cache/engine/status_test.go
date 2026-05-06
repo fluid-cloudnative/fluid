@@ -209,7 +209,6 @@ func newStatusTestEngineWithClient(t *testing.T, client ctrlclient.Client) (*Cac
 
 	return &CacheEngine{
 		Client:    client,
-		Scheme:    datav1alpha1.UnitTestScheme,
 		name:      testStatusRuntime,
 		namespace: testStatusNamespace,
 		Log:       fake.NullLogger(),

@@ -170,6 +170,9 @@ topology:
       apiVersion: apps/v1
       kind: DaemonSet
     dependencies:
+      # Uncomment to enable secret mount for client (e.g., for JuiceFS FUSE pods)
+      # secretMount:
+      #   enabled: true
       extraResources:
         # 使用 extraResources 时，需要定义其挂载路径
         configMaps:

@@ -19,12 +19,13 @@ package engine
 import (
 	"errors"
 	"fmt"
+	"time"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/transformer"
 	corev1 "k8s.io/api/core/v1"
-	"time"
 )
 
 // CacheRuntimeComponentCommonConfig common config for transform
@@ -52,7 +53,8 @@ type RuntimeConfigVolumeConfig struct {
 
 func (e *CacheEngine) transform(dataset *datav1alpha1.Dataset, runtime *datav1alpha1.CacheRuntime, runtimeClass *datav1alpha1.CacheRuntimeClass) (*common.CacheRuntimeValue, error) {
 
-	if runtimeClass.Topology.Master == nil && runtimeClass.Topology.Worker == nil && runtimeClass.Topology.Client == nil {
+	if runtimeClass.Topology == nil ||
+		(runtimeClass.Topology.Master == nil && runtimeClass.Topology.Worker == nil && runtimeClass.Topology.Client == nil) {
 		return nil, fmt.Errorf("at least one component should be defined in runtimeClass")
 	}
 	defer utils.TimeTrack(time.Now(), "CacheRuntime.transform", "name", runtime.Name)
@@ -71,15 +73,15 @@ func (e *CacheEngine) transform(dataset *datav1alpha1.Dataset, runtime *datav1al
 	}
 
 	// transform the master/worker/client
-	err = e.transformMaster(runtime, runtimeClass, runtimeCommonConfig, runtimeValue)
+	err = e.transformMaster(dataset, runtime, runtimeClass, runtimeCommonConfig, runtimeValue)
 	if err != nil {
 		return nil, err
 	}
-	err = e.transformWorker(runtime, runtimeClass, runtimeCommonConfig, runtimeValue)
+	err = e.transformWorker(dataset, runtime, runtimeClass, runtimeCommonConfig, runtimeValue)
 	if err != nil {
 		return nil, err
 	}
-	err = e.transformClient(runtime, runtimeClass, runtimeCommonConfig, runtimeValue)
+	err = e.transformClient(dataset, runtime, runtimeClass, runtimeCommonConfig, runtimeValue)
 	if err != nil {
 		return nil, err
 	}

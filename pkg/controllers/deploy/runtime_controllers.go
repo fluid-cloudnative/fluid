@@ -63,8 +63,9 @@ var (
 	resolveDefaultPrecheckFuncs = func() map[string]CheckFunc {
 		return filterOutDisabledRuntimes(defaultPrecheckFuncs)
 	}
-	precheckFuncs   map[string]CheckFunc
-	precheckFuncsMu sync.Mutex
+	cachedPrecheckFuncs map[string]CheckFunc
+	precheckFuncs       map[string]CheckFunc
+	precheckFuncsMu     sync.Mutex
 )
 
 func setPrecheckFunc(checks map[string]CheckFunc) {
@@ -82,7 +83,11 @@ func getPrecheckFuncs() map[string]CheckFunc {
 		return clonePrecheckFuncs(precheckFuncs)
 	}
 
-	return clonePrecheckFuncs(resolveDefaultPrecheckFuncs())
+	if cachedPrecheckFuncs == nil {
+		cachedPrecheckFuncs = resolveDefaultPrecheckFuncs()
+	}
+
+	return clonePrecheckFuncs(cachedPrecheckFuncs)
 }
 
 func clonePrecheckFuncs(checks map[string]CheckFunc) map[string]CheckFunc {

@@ -33,11 +33,30 @@ data:
         fi
     
         [ -z "$mountPoint" ] && { echo "mountPoint is not set or empty"; exit 1; } 
-        [ -z "$mountPoint" ] && { echo "path is not set or empty"; exit 1; } 
+        [ -z "$path" ] && { echo "path is not set or empty"; exit 1; } 
     
         # ==================== 字段提取加p 仅输出匹配结果 ====================
-        access=$(echo "$item" | sed -nE 's/.*"access":"([^"]+)".*/\1/p')
-        secret=$(echo "$item" | sed -nE 's/.*"secret":"([^"]+)".*/\1/p')
+        # Extract encryptOptions paths from the JSON
+        encryptOptions_raw=$(echo "$item" | sed -nE 's/.*"encryptOptions":\{([^}]+)\}.*/\1/p')
+        
+        # Extract access and secret file paths from encryptOptions
+        access_path=""
+        secret_path=""
+        if [ -n "$encryptOptions_raw" ]; then
+          access_path=$(echo "$encryptOptions_raw" | sed -nE 's/.*"access":"([^"]+)".*/\1/p')
+          secret_path=$(echo "$encryptOptions_raw" | sed -nE 's/.*"secret":"([^"]+)".*/\1/p')
+        fi
+        
+        # Read actual values from secret files if paths are provided
+        access=""
+        secret=""
+        if [ -n "$access_path" ] && [ -f "$access_path" ]; then
+          access=$(cat "$access_path")
+        fi
+        if [ -n "$secret_path" ] && [ -f "$secret_path" ]; then
+          secret=$(cat "$secret_path")
+        fi
+        
         endpoint=$(echo "$item" | sed -nE 's/.*"endpoint_url":"([^"]+)".*/\1/p')
         region=$(echo "$item" | sed -nE 's/.*"region_name":"([^"]+)".*/\1/p')
         path_style=$(echo "$item" | sed -nE 's/.*"path_style":"([^"]+)".*/\1/p')

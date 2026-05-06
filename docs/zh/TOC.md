@@ -14,6 +14,7 @@
 + 入门
   - [安装](userguide/install.md)
   - [快速开始](userguide/get_started.md)
+  - [配置最佳实践](userguide/config_best_practices.md)
   - [问题诊断](userguide/troubleshooting.md)
 + 数据集使用
   + 创建
@@ -25,6 +26,7 @@
     - [跨namespace共享数据(sidecar模式)](samples/dataset_across_namespace_with_sidecar.md)
   + 操作
     - [数据预加载](samples/data_warmup.md)
+    - [CacheRuntime 数据操作](samples/cacheruntime_data_operations.md)
     - [Cache Runtime手动扩缩容](samples/dataset_scaling.md)
     - [数据操作自动清理](samples/automatic_clean_up_data_operation.md)
   + 安全

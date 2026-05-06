@@ -18,10 +18,10 @@ package component
 
 import (
 	"context"
+
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -30,16 +30,16 @@ type ComponentManager interface {
 	ConstructComponentStatus(todo context.Context, value *common.CacheRuntimeComponentValue) (v1alpha1.RuntimeComponentStatus, error)
 }
 
-func NewComponentHelper(workloadType metav1.TypeMeta, scheme *runtime.Scheme, client client.Client) ComponentManager {
+func NewComponentHelper(workloadType metav1.TypeMeta, client client.Client) ComponentManager {
 	if workloadType.APIVersion == "apps/v1" {
 		if workloadType.Kind == "StatefulSet" {
-			return newStatefulSetManager(scheme, client)
+			return newStatefulSetManager(client)
 		} else if workloadType.Kind == "DaemonSet" {
-			return newDaemonSetManager(scheme, client)
+			return newDaemonSetManager(client)
 		}
 	}
 
-	return newStatefulSetManager(scheme, client)
+	return newStatefulSetManager(client)
 }
 
 // getCommonLabelsFromComponent returns the common labels for component used for stateful

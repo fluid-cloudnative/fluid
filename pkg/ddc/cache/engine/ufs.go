@@ -17,14 +17,14 @@
 package engine
 
 import (
+	"time"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"time"
 )
 
-func (e *CacheEngine) PrepareUFS(entries *datav1alpha1.ExecutionEntries, value *common.CacheRuntimeValue) error {
+func (e *CacheEngine) PrepareUFS(mountUfs *datav1alpha1.ExecutionCommonEntry, value *common.CacheRuntimeValue) error {
 	// execute mount command in master pod
-	mountUfs := entries.MountUFS
 	if mountUfs == nil {
 		return nil
 	}

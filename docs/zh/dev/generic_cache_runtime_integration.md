@@ -81,8 +81,7 @@ Topology中comopent主要包含以下内容
 | Options | 默认options，会被用户设置覆盖 |                                                                                                                                                                                                                          |
 | Template | PodTemplateSpec 原生字段   |                                                                                                                                                                                                                          |
 | Service | 目前仅支持Headless      |                                                                                                                                                                                                                          |
-| Dependencies | EncryptOption      | 该组件是否需要Fluid为其挂载Dataset中定义的用于访问数据源的访问密钥 【当前版本暂未支持】,使用 Dataset 的定义的密钥进行访问。                                                                                                                                                |
-|  | ExtraResources     | 该组件是否需要挂载额外的 ConfigMap （其依赖的ConfigMap 信息定义于 CacheRuntimeClass 的 ExtraResources 字段）。                                                                                                                                      |
+| Dependencies | ExtraResources     | 该组件是否需要挂载额外的 ConfigMap （其依赖的ConfigMap 信息定义于 CacheRuntimeClass 的 ExtraResources 字段）。                                                                                                                                      |
 | ExecutionEntries| MountUFS           | 对于Master-Worker架构，当Master Ready时，需要执行底层文件系统的挂载操作。                                                                                                                                                                        |
 | ExecutionEntries| ReportSummary      | 缓存系统定义如何获取缓存信息指标的操作 【当前版本暂未支持】。                                                                                                                                                                                          |
 
@@ -259,8 +258,7 @@ spec:
 
 在cacheruntime中，控制面的所有流程全都有Fluid来负责，但作为数据缓存引擎，提供服务时，需要整个缓存系统中的**拓扑**、**数据源、认证、缓存信息，**Fluid会根据不同的Component角色来通过配置文件的方式提供至组件内部，由组件内部进程负责解析该配置，来进行环境变量配置、数据引擎配置文件生成等操作，准备就绪后，可拉起数据引擎进程，解析过程中具体可参考下表：
 
-*   以上述资源为例，Master/Worker/Client挂载的由Fluid维护的Config示例如下：
-
+*   以上述资源为例，Master/Worker/Client挂载的由Fluid维护的Config示例如下： 其中，json中的"mounts", "accessModes", "targetPath" 字段信息均是来自于 DataSet 的 Spec 定义。
 
 ```json
 {
@@ -273,6 +271,10 @@ spec:
         "path_style": "true",
         "region_name": "us-east-1",
         "secret": "minioadmin"
+      },
+      "encryptOptions": {
+        "access-key": "/etc/fluid/secrets/minio-secret/access-key",
+        "secret-key": "/etc/fluid/secrets/minio-secret/secret-key"
       },
       "name": "minio",
       "path": "/minio"

@@ -81,8 +81,7 @@ The component in Topology mainly contains the following content:
 | Options | Default options, will be overridden by user settings |                                                                                                                                                                                                                         |
 | Template | PodTemplateSpec native field   |                                                                                                                                                                                                                         |
 | Service | Currently only supports Headless      |                                                                                                                                                                                                                         |
-| Dependencies | EncryptOption      | Whether this component needs Fluid to mount the access keys defined in Dataset for accessing data sources [Not supported in current version], using the keys defined in Dataset for access.                                                                                                                                               |
-|  | ExtraResources     | Whether this component needs to mount additional ConfigMaps (the dependent ConfigMap information is defined in the ExtraResources field of CacheRuntimeClass).                                                                                                                                     |
+| Dependencies | ExtraResources     | Whether this component needs to mount additional ConfigMaps (the dependent ConfigMap information is defined in the ExtraResources field of CacheRuntimeClass).                                                                                                                                     |
 | ExecutionEntries| MountUFS           | For Master-Worker architecture, when Master is Ready, the underlying file system mount operation needs to be executed.                                                                                                                                                                       |
 | ExecutionEntries| ReportSummary      | How the cache system defines operations to obtain cache information metrics [Not supported in current version].                                                                                                                                                                                            |
 
@@ -260,7 +259,7 @@ spec:
 In cacheruntime, all control plane processes are handled by Fluid. However, as a data caching engine, when providing services, the entire cache system requires **topology**, **data source**, **authentication**, and **cache information**. Fluid will provide this information to components through configuration files based on different Component roles. The component's internal process is responsible for parsing this configuration to perform environment variable configuration, data engine configuration file generation, and other operations. After preparation is complete, the data engine process can be started. For specific parsing details, please refer to the table below:
 
 *   Taking the above resources as an example, the Config examples mounted by Master/Worker/Client and maintained by Fluid are as follows:
-
+the `mounts`, `accessModes`, and `targetPath` fields in the JSON are all derived from the Dataset's Spec definition.
 
 ```json
 {
@@ -273,6 +272,10 @@ In cacheruntime, all control plane processes are handled by Fluid. However, as a
         "path_style": "true",
         "region_name": "us-east-1",
         "secret": "minioadmin"
+      },
+      "encryptOptions": {
+        "access-key": "/etc/fluid/secrets/minio-secret/access-key",
+        "secret-key": "/etc/fluid/secrets/minio-secret/secret-key"
       },
       "name": "minio",
       "path": "/minio"

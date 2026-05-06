@@ -81,10 +81,6 @@ type ExecutionCommonEntry struct {
 	TimeoutSeconds int32 `json:"timeout,omitempty"`
 }
 
-// EncryptOptionComponentDependency defines the configuration for encrypt option dependency
-type EncryptOptionComponentDependency struct {
-}
-
 // ExtraResourcesComponentDependency defines the extra resources configuration for component dependencies
 type ExtraResourcesComponentDependency struct {
 	// ConfigMaps is a list of ConfigMaps in the same namespace to mount into the component
@@ -94,13 +90,21 @@ type ExtraResourcesComponentDependency struct {
 
 // RuntimeComponentDependencies defines the dependencies required by a CacheRuntime component
 type RuntimeComponentDependencies struct {
-	// EncryptOption is the configuration for encrypt option secret mount
+	// SecretMount controls whether dataset encrypt-option secrets are mounted into this component pod.
+	// Defaults to true for Master/Worker, false for Client unless explicitly enabled.
 	// +optional
-	EncryptOption *EncryptOptionComponentDependency `json:"encryptOption,omitempty"`
+	SecretMount *SecretMountComponentDependency `json:"secretMount,omitempty"`
 
 	// ExtraResources specifies the usage of extra resources such as ConfigMaps
 	// +optional
 	ExtraResources *ExtraResourcesComponentDependency `json:"extraResources,omitempty"`
+}
+
+// SecretMountComponentDependency defines the secret mount configuration for component dependencies
+type SecretMountComponentDependency struct {
+	// Enabled indicates whether dataset encrypt-option secrets should be mounted into this component pod.
+	// +optional
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 // HeadlessRuntimeComponentService defines the configuration for headless service

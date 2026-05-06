@@ -72,8 +72,6 @@ spec:
                 properties:
                   dependencies:
                     properties:
-                      encryptOption:
-                        type: object
                       extraResources:
                         properties:
                           configMaps:
@@ -85,6 +83,11 @@ spec:
                                   type: string
                               type: object
                             type: array
+                        type: object
+                      secretMount:
+                        properties:
+                          enabled:
+                            type: boolean
                         type: object
                     type: object
                   executionEntries:
@@ -3489,8 +3492,6 @@ spec:
                 properties:
                   dependencies:
                     properties:
-                      encryptOption:
-                        type: object
                       extraResources:
                         properties:
                           configMaps:
@@ -3502,6 +3503,11 @@ spec:
                                   type: string
                               type: object
                             type: array
+                        type: object
+                      secretMount:
+                        properties:
+                          enabled:
+                            type: boolean
                         type: object
                     type: object
                   executionEntries:
@@ -6906,8 +6912,6 @@ spec:
                 properties:
                   dependencies:
                     properties:
-                      encryptOption:
-                        type: object
                       extraResources:
                         properties:
                           configMaps:
@@ -6919,6 +6923,11 @@ spec:
                                   type: string
                               type: object
                             type: array
+                        type: object
+                      secretMount:
+                        properties:
+                          enabled:
+                            type: boolean
                         type: object
                     type: object
                   executionEntries:

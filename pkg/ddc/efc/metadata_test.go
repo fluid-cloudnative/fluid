@@ -28,6 +28,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// TestSyncMetadataInternal tests the syncMetadataInternal method of EFCEngine.
+// It verifies the method's behavior under different scenarios:
+// 1. When TotalStorageBytes returns an error
+// 2. When TotalFileNums returns an error
+// 3. When both TotalStorageBytes and TotalFileNums succeed
 func TestSyncMetadataInternal(t *testing.T) {
 	mockTotalStorageBytesCommon := func(e *EFCEngine) (int64, error) {
 		return 0, nil

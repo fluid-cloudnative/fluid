@@ -42,21 +42,35 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const controllerNamespace = common.NamespaceFluidSystem
+const (
+	controllerNamespace  = common.NamespaceFluidSystem
+	customControllerName = "custom-controller"
+)
 
 var _ = Describe("runtime controller scaleout", func() {
 	var originalPodNamespace string
 	var hadOriginalPodNamespace bool
 	var originalResolveDefaultPrecheckFuncs func() map[string]CheckFunc
+	var originalCachedPrecheckFuncs map[string]CheckFunc
+	var originalPrecheckFuncs map[string]CheckFunc
 
 	BeforeEach(func() {
 		originalPodNamespace, hadOriginalPodNamespace = os.LookupEnv(common.MyPodNamespace)
+
+		precheckFuncsMu.Lock()
 		originalResolveDefaultPrecheckFuncs = resolveDefaultPrecheckFuncs
+		originalCachedPrecheckFuncs = clonePrecheckFuncs(cachedPrecheckFuncs)
+		originalPrecheckFuncs = clonePrecheckFuncs(precheckFuncs)
+		precheckFuncsMu.Unlock()
 	})
 
 	AfterEach(func() {
-		setPrecheckFunc(nil)
+		precheckFuncsMu.Lock()
 		resolveDefaultPrecheckFuncs = originalResolveDefaultPrecheckFuncs
+		cachedPrecheckFuncs = clonePrecheckFuncs(originalCachedPrecheckFuncs)
+		precheckFuncs = clonePrecheckFuncs(originalPrecheckFuncs)
+		precheckFuncsMu.Unlock()
+
 		restoreEnv(common.MyPodNamespace, originalPodNamespace, hadOriginalPodNamespace)
 	})
 
@@ -164,10 +178,49 @@ var _ = Describe("runtime controller scaleout", func() {
 			Expect(*stored.Spec.Replicas).To(Equal(int32(1)))
 		})
 
-		It("keeps package-global precheck functions isolated between tests", func() {
+		It("uses injected precheck funcs without resolving defaults", func() {
+			fakeClient := newFakeClient(newDeployment(customControllerName, 0, nil))
+
+			resolverCalls := 0
+			precheckCalls := 0
+
+			precheckFuncsMu.Lock()
+			resolveDefaultPrecheckFuncs = func() map[string]CheckFunc {
+				resolverCalls++
+				return map[string]CheckFunc{}
+			}
+			precheckFuncsMu.Unlock()
+
+			setPrecheckFunc(map[string]CheckFunc{
+				customControllerName: func(client.Client, types.NamespacedName) (bool, error) {
+					precheckCalls++
+					return true, nil
+				},
+			})
+
+			controllerName, scaled, err := ScaleoutRuntimeControllerOnDemand(fakeClient, types.NamespacedName{
+				Namespace: corev1.NamespaceDefault,
+				Name:      "dataset",
+			}, fake.NullLogger())
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(controllerName).To(Equal(customControllerName))
+			Expect(scaled).To(BeTrue())
+			Expect(resolverCalls).To(Equal(0))
+			Expect(precheckCalls).To(Equal(1))
+
+			stored := &appsv1.Deployment{}
+			Expect(fakeClient.Get(context.TODO(), types.NamespacedName{
+				Namespace: controllerNamespace,
+				Name:      customControllerName,
+			}, stored)).To(Succeed())
+			Expect(*stored.Spec.Replicas).To(Equal(int32(1)))
+		})
+
+		It("returns a not found error when an injected controller has no deployment", func() {
 			fakeClient := newFakeClient(controllerDeployments()...)
 			setPrecheckFunc(map[string]CheckFunc{
-				"custom-controller": func(client.Client, types.NamespacedName) (bool, error) {
+				customControllerName: func(client.Client, types.NamespacedName) (bool, error) {
 					return true, nil
 				},
 			})
@@ -178,7 +231,8 @@ var _ = Describe("runtime controller scaleout", func() {
 			}, fake.NullLogger())
 
 			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(ContainSubstring("custom-controller")))
+			Expect(err).To(MatchError(ContainSubstring(customControllerName)))
+			Expect(err).To(MatchError(ContainSubstring("not found")))
 			Expect(controllerName).To(BeEmpty())
 			Expect(scaled).To(BeFalse())
 		})
@@ -203,7 +257,36 @@ var _ = Describe("runtime controller scaleout", func() {
 			Expect(getPrecheckFuncs()).To(HaveKey("alluxioruntime-controller"))
 		})
 
-		It("does not pin discovery-filtered defaults into package-global state", func() {
+		It("resolves defaults lazily and caches the result", func() {
+			const lazyControllerName = "lazy-controller"
+
+			calls := 0
+			check := func(client.Client, types.NamespacedName) (bool, error) {
+				return false, nil
+			}
+
+			precheckFuncsMu.Lock()
+			cachedPrecheckFuncs = nil
+			precheckFuncs = nil
+			resolveDefaultPrecheckFuncs = func() map[string]CheckFunc {
+				calls++
+				return map[string]CheckFunc{lazyControllerName: check}
+			}
+			precheckFuncsMu.Unlock()
+
+			checks := getPrecheckFuncs()
+			Expect(calls).To(Equal(1))
+			Expect(checks[lazyControllerName]).NotTo(BeNil())
+
+			checksAgain := getPrecheckFuncs()
+			Expect(calls).To(Equal(1))
+			Expect(checksAgain[lazyControllerName]).NotTo(BeNil())
+
+			delete(checks, lazyControllerName)
+			Expect(getPrecheckFuncs()[lazyControllerName]).NotTo(BeNil())
+		})
+
+		It("does not pin resolved defaults into package-global state", func() {
 			resolveDefaultPrecheckFuncs = func() map[string]CheckFunc {
 				return runtimePrecheckFuncs()
 			}
