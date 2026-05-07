@@ -116,7 +116,8 @@ func (e *CacheEngine) generateRuntimeConfigData(runtime *datav1alpha1.CacheRunti
 			MountPoint: m.MountPoint,
 			ReadOnly:   m.ReadOnly,
 			Shared:     m.Shared,
-			Path:       m.Path,
+			// m.Path may be empty.
+			Path: utils.UFSPathBuilder{}.GenUFSPathInUnifiedNamespace(m),
 		}
 		options, encryptOptions, err := e.generateDatasetMountOptions(&m, dataset.Spec.SharedEncryptOptions, dataset.Spec.SharedOptions)
 		if err != nil {
