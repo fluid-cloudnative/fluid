@@ -54,6 +54,15 @@ func (r *RandomAllocator) Allocate(port int) error {
 
 }
 
+// Release releases the resource associated with the given index.
+// For the RandomAllocator, no actual resource is allocated per index,
+// so this method does nothing and always returns a nil error.
+//
+// Parameters:
+//   - i: the index of the resource to release (unused).
+//
+// Returns:
+//   - error: always nil, indicating success with no action.
 func (r *RandomAllocator) Release(i int) error {
 	// no need to release
 	return nil
