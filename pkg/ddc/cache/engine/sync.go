@@ -52,6 +52,9 @@ func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
 
 	// sync runtime status
 	runtimeValue, err := e.transform(dataset, runtime, runtimeClass)
+	if err != nil {
+		return err
+	}
 	// TODO: use different struct for input parameter to avoid fully transform
 	_, err = e.CheckAndUpdateRuntimeStatus(runtimeValue)
 	if err != nil {

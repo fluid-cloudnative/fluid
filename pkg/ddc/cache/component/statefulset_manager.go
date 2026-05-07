@@ -63,7 +63,7 @@ func (s *StatefulSetManager) reconcileStatefulSet(ctx context.Context, component
 	logger := log.FromContext(ctx)
 	logger.Info("start to reconciling sts workload")
 
-	sts, err := kubeclient.GetStatefulSet(s.client, component.Name, component.Namespace)
+	_, err := kubeclient.GetStatefulSet(s.client, component.Name, component.Namespace)
 	if err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
@@ -72,7 +72,7 @@ func (s *StatefulSetManager) reconcileStatefulSet(ctx context.Context, component
 		return nil
 	}
 	// create the stateful set
-	sts = s.constructStatefulSet(component)
+	sts := s.constructStatefulSet(component)
 	err = s.client.Create(ctx, sts)
 	if err != nil {
 		return err

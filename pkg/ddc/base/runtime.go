@@ -627,7 +627,7 @@ func GetRuntimeStatusAccessor(client client.Client, runtimeType, name, namespace
 	switch runtimeType {
 	case common.AlluxioRuntime, common.JindoRuntime, common.GooseFSRuntime,
 		common.JuiceFSRuntime, common.EFCRuntime, common.ThinRuntime, common.VineyardRuntime:
-		status, err := getDDCRuntime(client, runtimeType, name, namespace)
+		status, err := GetDDCRuntimeStatus(client, runtimeType, name, namespace)
 		if err != nil {
 			return nil, err
 		}
@@ -639,12 +639,12 @@ func GetRuntimeStatusAccessor(client client.Client, runtimeType, name, namespace
 		}
 		return &CacheRuntimeStatusAccessor{status: &runtime.Status}, nil
 	default:
-		return nil, fmt.Errorf("fail to get runtimeInfo for runtime type: %s", runtimeType)
+		return nil, fmt.Errorf("fail to get runtime status accessor for runtime type: %s", runtimeType)
 	}
 }
 
-// getDDCRuntime retrieves the runtime object based on runtime type for DDC-based runtimes
-func getDDCRuntime(client client.Client, runtimeType, name, namespace string) (*datav1alpha1.RuntimeStatus, error) {
+// GetDDCRuntimeStatus retrieves the runtime object based on runtime type for DDC-based runtimes
+func GetDDCRuntimeStatus(client client.Client, runtimeType, name, namespace string) (*datav1alpha1.RuntimeStatus, error) {
 	switch runtimeType {
 	case common.AlluxioRuntime:
 		runtime, err := utils.GetAlluxioRuntime(client, name, namespace)
