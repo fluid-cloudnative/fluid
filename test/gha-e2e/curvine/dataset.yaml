@@ -14,8 +14,8 @@ spec:
   accessModes: ["ReadWriteMany"]
   mounts:
     - mountPoint: "s3://test"
+      # path: /minio
       name: minio
-      path: /minio
       # bin/cv mount s3://test /minio \
       # -c s3.endpoint_url=http://127.0.0.1:19000 \
       # -c s3.region_name=us-east-1 \
