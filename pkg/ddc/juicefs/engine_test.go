@@ -128,6 +128,35 @@ var _ = Describe("JuiceFS engine", func() {
 				Expect(engine).To(BeNil())
 			})
 		})
+
+		When("the context runtime is runtime2 named test but the client is missing that runtime", func() {
+			It("returns a runtime info error for the old runtime2 build scenario", func() {
+				runtime2Key := types.NamespacedName{
+					Name:      "test",
+					Namespace: runtimeNamespace,
+				}
+				runtime2 := &datav1alpha1.JuiceFSRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      runtime2Key.Name,
+						Namespace: runtime2Key.Namespace,
+					},
+				}
+
+				ctx := cruntime.ReconcileRequestContext{
+					NamespacedName: runtime2Key,
+					Client:         fake.NewFakeClientWithScheme(testScheme, runtime.DeepCopy()),
+					Log:            fake.NullLogger(),
+					RuntimeType:    "juicefs",
+					Runtime:        runtime2,
+				}
+
+				engine, err := Build("test-id", ctx)
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("failed to get runtime info"))
+				Expect(engine).To(BeNil())
+			})
+		})
 	})
 
 	Describe("Precheck", func() {
