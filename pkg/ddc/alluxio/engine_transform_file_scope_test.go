@@ -47,6 +47,7 @@ func (c erroringGetClient) Get(_ context.Context, _ client.ObjectKey, _ client.O
 var _ = Describe("Alluxio engine and transform file scope", Label("pkg.ddc.alluxio.engine_transform_file_scope_test.go"), func() {
 	Describe("Build", func() {
 		It("returns an error when runtime is missing", func() {
+			// Verify Build rejects reconcile requests without a parsed Alluxio runtime.
 			engine, err := Build("test-id", cruntime.ReconcileRequestContext{
 				NamespacedName: types.NamespacedName{Name: "demo", Namespace: "fluid"},
 				Log:            fake.NullLogger(),
@@ -58,6 +59,7 @@ var _ = Describe("Alluxio engine and transform file scope", Label("pkg.ddc.allux
 		})
 
 		It("returns an error when runtime has the wrong type", func() {
+			// Verify Build rejects reconcile requests carrying a non-Alluxio runtime object.
 			engine, err := Build("test-id", cruntime.ReconcileRequestContext{
 				NamespacedName: types.NamespacedName{Name: "demo", Namespace: "fluid"},
 				Log:            fake.NullLogger(),
@@ -72,6 +74,7 @@ var _ = Describe("Alluxio engine and transform file scope", Label("pkg.ddc.allux
 
 	Describe("Precheck", func() {
 		It("reports whether the alluxio runtime exists", func() {
+			// Confirm Precheck returns true when the target AlluxioRuntime is present.
 			key := types.NamespacedName{Name: "demo", Namespace: "fluid"}
 			runtime := &datav1alpha1.AlluxioRuntime{ObjectMeta: metav1.ObjectMeta{Name: key.Name, Namespace: key.Namespace}}
 			client := fake.NewFakeClientWithScheme(datav1alpha1.UnitTestScheme, runtime)
@@ -83,6 +86,7 @@ var _ = Describe("Alluxio engine and transform file scope", Label("pkg.ddc.allux
 		})
 
 		It("returns false without error when the runtime is absent", func() {
+			// Confirm missing runtimes are treated as a clean not-found result.
 			found, err := Precheck(fake.NewFakeClientWithScheme(datav1alpha1.UnitTestScheme), types.NamespacedName{Name: "missing", Namespace: "fluid"})
 
 			Expect(err).NotTo(HaveOccurred())
@@ -90,6 +94,7 @@ var _ = Describe("Alluxio engine and transform file scope", Label("pkg.ddc.allux
 		})
 
 		It("returns the client error for non-not-found failures", func() {
+			// Confirm unexpected client errors are surfaced instead of coerced into not-found.
 			failingClient := erroringGetClient{
 				Client: fake.NewFakeClientWithScheme(datav1alpha1.UnitTestScheme),
 				err:    apierrors.NewForbidden(schema.GroupResource{Group: datav1alpha1.GroupVersion.Group, Resource: "alluxioruntimes"}, "demo", nil),
@@ -105,6 +110,7 @@ var _ = Describe("Alluxio engine and transform file scope", Label("pkg.ddc.allux
 
 	Describe("transformPlacementMode", func() {
 		It("defaults to exclusive placement when the dataset placement mode is empty", func() {
+			// Ensure empty dataset placement falls back to the runtime default mode.
 			value := &Alluxio{}
 
 			(&AlluxioEngine{}).transformPlacementMode(&datav1alpha1.Dataset{}, value)
@@ -115,6 +121,7 @@ var _ = Describe("Alluxio engine and transform file scope", Label("pkg.ddc.allux
 
 	Describe("transform", func() {
 		It("builds an alluxio value for a dataset-backed runtime", func() {
+			// Cover the file-scope transform path, including mount, config, pod metadata, and tiered-store wiring.
 			namespacedName := types.NamespacedName{Name: "demo", Namespace: "fluid"}
 			dataset, runtime := mockFluidObjectsForTests(namespacedName)
 			dataset.Spec.PlacementMode = ""
