@@ -54,6 +54,8 @@ type stubImplement struct {
 	bindToDatasetFn               func() error
 	createVolumeFn                func(context.Context) error
 	deleteVolumeFn                func(context.Context) error
+	shouldSetupMasterCalls        int
+	checkMasterReadyCalls         int
 }
 
 func (s *stubImplement) GetDataOperationValueFile(cruntime.ReconcileRequestContext, dataoperation.OperationInterface) (string, error) {
@@ -61,6 +63,7 @@ func (s *stubImplement) GetDataOperationValueFile(cruntime.ReconcileRequestConte
 }
 
 func (s *stubImplement) CheckMasterReady() (bool, error) {
+	s.checkMasterReadyCalls++
 	if s.checkMasterReadyFn != nil {
 		return s.checkMasterReadyFn()
 	}
@@ -75,6 +78,7 @@ func (s *stubImplement) CheckWorkersReady() (bool, error) {
 }
 
 func (s *stubImplement) ShouldSetupMaster() (bool, error) {
+	s.shouldSetupMasterCalls++
 	if s.shouldSetupMasterFn != nil {
 		return s.shouldSetupMasterFn()
 	}
@@ -230,6 +234,18 @@ var _ = Describe("TemplateEngine setup", func() {
 		Expect(ready).To(BeTrue())
 	})
 
+	It("propagates errors while deciding whether master setup is required", func() {
+		expectedErr := errors.New("should setup master failed")
+		impl.shouldSetupMasterFn = func() (bool, error) { return false, expectedErr }
+
+		ready, err := engine.Setup(ctx)
+
+		Expect(err).To(MatchError(expectedErr))
+		Expect(ready).To(BeFalse())
+		Expect(impl.shouldSetupMasterCalls).To(Equal(1))
+		Expect(impl.checkMasterReadyCalls).To(BeZero())
+	})
+
 	It("short-circuits when the master is not ready yet", func() {
 		impl.shouldSetupMasterFn = func() (bool, error) { return false, nil }
 		impl.checkMasterReadyFn = func() (bool, error) { return false, nil }
@@ -238,6 +254,28 @@ var _ = Describe("TemplateEngine setup", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(ready).To(BeFalse())
+	})
+
+	It("keeps zero-value stub defaults from reporting a misleading ready state", func() {
+		runtimeStatusChecked := false
+		datasetBound := false
+		impl.checkAndUpdateRuntimeStatusFn = func() (bool, error) {
+			runtimeStatusChecked = true
+			return true, nil
+		}
+		impl.bindToDatasetFn = func() error {
+			datasetBound = true
+			return nil
+		}
+
+		ready, err := engine.Setup(ctx)
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(ready).To(BeFalse())
+		Expect(impl.shouldSetupMasterCalls).To(Equal(1))
+		Expect(impl.checkMasterReadyCalls).To(Equal(1))
+		Expect(runtimeStatusChecked).To(BeFalse())
+		Expect(datasetBound).To(BeFalse())
 	})
 
 	It("short-circuits when the workers are not ready yet", func() {
@@ -251,6 +289,19 @@ var _ = Describe("TemplateEngine setup", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(ready).To(BeFalse())
+	})
+
+	It("propagates errors while checking whether the master is ready", func() {
+		expectedErr := errors.New("check master ready failed")
+		impl.shouldSetupMasterFn = func() (bool, error) { return false, nil }
+		impl.checkMasterReadyFn = func() (bool, error) { return false, expectedErr }
+
+		ready, err := engine.Setup(ctx)
+
+		Expect(err).To(MatchError(expectedErr))
+		Expect(ready).To(BeFalse())
+		Expect(impl.shouldSetupMasterCalls).To(Equal(1))
+		Expect(impl.checkMasterReadyCalls).To(Equal(1))
 	})
 
 	It("propagates runtime status update errors without binding the dataset", func() {
