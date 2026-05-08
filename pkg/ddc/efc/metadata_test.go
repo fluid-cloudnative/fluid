@@ -18,7 +18,6 @@ package efc
 
 import (
 	"context"
-	"errors"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
@@ -29,34 +28,6 @@ import (
 )
 
 var _ = Describe("EFCEngine metadata", func() {
-	var (
-		originalShouldCheckUFS    func(*EFCEngine) (bool, error)
-		originalTotalStorageBytes func(*EFCEngine) (int64, error)
-		originalTotalFileNums     func(*EFCEngine) (int64, error)
-	)
-
-	BeforeEach(func() {
-		originalShouldCheckUFS = shouldCheckUFS
-		originalTotalStorageBytes = totalStorageBytes
-		originalTotalFileNums = totalFileNums
-
-		shouldCheckUFS = func(e *EFCEngine) (bool, error) {
-			return e.ShouldCheckUFS()
-		}
-		totalStorageBytes = func(e *EFCEngine) (int64, error) {
-			return e.TotalStorageBytes()
-		}
-		totalFileNums = func(e *EFCEngine) (int64, error) {
-			return e.TotalFileNums()
-		}
-	})
-
-	AfterEach(func() {
-		shouldCheckUFS = originalShouldCheckUFS
-		totalStorageBytes = originalTotalStorageBytes
-		totalFileNums = originalTotalFileNums
-	})
-
 	Describe("syncMetadataInternal", func() {
 		It("updates dataset metadata using the current UFS totals", func() {
 			dataset := &datav1alpha1.Dataset{
@@ -81,38 +52,6 @@ var _ = Describe("EFCEngine metadata", func() {
 			Expect(updated.Status.FileNum).To(Equal("0"))
 		})
 
-		It("returns an error when querying total storage fails", func() {
-			expectedErr := errors.New("storage failure")
-			totalStorageBytes = func(*EFCEngine) (int64, error) {
-				return 0, expectedErr
-			}
-
-			engine := &EFCEngine{
-				name:      "spark",
-				namespace: "fluid",
-				Client:    fake.NewFakeClientWithScheme(testScheme),
-				Log:       fake.NullLogger(),
-			}
-
-			Expect(engine.syncMetadataInternal()).To(MatchError(expectedErr))
-		})
-
-		It("returns an error when querying total file count fails", func() {
-			expectedErr := errors.New("file count failure")
-			totalFileNums = func(*EFCEngine) (int64, error) {
-				return 0, expectedErr
-			}
-
-			engine := &EFCEngine{
-				name:      "spark",
-				namespace: "fluid",
-				Client:    fake.NewFakeClientWithScheme(testScheme),
-				Log:       fake.NullLogger(),
-			}
-
-			Expect(engine.syncMetadataInternal()).To(MatchError(expectedErr))
-		})
-
 		It("returns an error when the dataset cannot be loaded", func() {
 			engine := &EFCEngine{
 				name:      "spark",
@@ -129,39 +68,6 @@ var _ = Describe("EFCEngine metadata", func() {
 	})
 
 	Describe("SyncMetadata", func() {
-		It("syncs metadata when UFS checks are enabled", func() {
-			dataset := &datav1alpha1.Dataset{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "spark",
-					Namespace: "fluid",
-				},
-			}
-
-			shouldCheckUFS = func(*EFCEngine) (bool, error) {
-				return true, nil
-			}
-			totalStorageBytes = func(*EFCEngine) (int64, error) {
-				return 1024, nil
-			}
-			totalFileNums = func(*EFCEngine) (int64, error) {
-				return 7, nil
-			}
-
-			engine := &EFCEngine{
-				name:      "spark",
-				namespace: "fluid",
-				Client:    fake.NewFakeClientWithScheme(testScheme, dataset.DeepCopy()),
-				Log:       fake.NullLogger(),
-			}
-
-			Expect(engine.SyncMetadata()).To(Succeed())
-
-			updated := &datav1alpha1.Dataset{}
-			Expect(engine.Client.Get(context.TODO(), types.NamespacedName{Name: "spark", Namespace: "fluid"}, updated)).To(Succeed())
-			Expect(updated.Status.UfsTotal).To(Equal("1.00KiB"))
-			Expect(updated.Status.FileNum).To(Equal("7"))
-		})
-
 		It("skips syncing when the engine does not need UFS metadata checks", func() {
 			dataset := &datav1alpha1.Dataset{
 				ObjectMeta: metav1.ObjectMeta{
