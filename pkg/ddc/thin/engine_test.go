@@ -157,6 +157,47 @@ var _ = Describe("Thin Engine Build", Label("pkg.ddc.thin.engine_test.go"), func
 			Expect(engine).To(BeNil())
 		})
 
+		It("should return an error when the request runtime has a different name than the stored thin runtime", func() {
+			namespace := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "fluid"}}
+			dataset := &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{Name: "hbase", Namespace: "fluid"},
+			}
+			runtimeProfile := &datav1alpha1.ThinRuntimeProfile{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-profile"},
+				Spec:       datav1alpha1.ThinRuntimeProfileSpec{FileSystemType: "test-fstype"},
+			}
+			storedRuntime := &datav1alpha1.ThinRuntime{
+				ObjectMeta: metav1.ObjectMeta{Name: "hbase", Namespace: "fluid"},
+				Spec: datav1alpha1.ThinRuntimeSpec{
+					ThinRuntimeProfileName: "test-profile",
+					Fuse:                   datav1alpha1.ThinFuseSpec{},
+				},
+				Status: datav1alpha1.RuntimeStatus{
+					CacheStates: map[common.CacheStateName]string{common.Cached: "true"},
+				},
+			}
+			runtimeWithDifferentName := &datav1alpha1.ThinRuntime{
+				ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "fluid"},
+				Spec: datav1alpha1.ThinRuntimeSpec{
+					ThinRuntimeProfileName: "test-profile",
+					Fuse:                   datav1alpha1.ThinFuseSpec{},
+				},
+				Status: datav1alpha1.RuntimeStatus{
+					CacheStates: map[common.CacheStateName]string{common.Cached: "true"},
+				},
+			}
+			worker := &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{Name: "hbase-worker", Namespace: "fluid"},
+			}
+			client := fake.NewFakeClientWithScheme(testScheme, namespace, dataset, runtimeProfile, storedRuntime, worker)
+
+			engine, err := Build("test-id", buildEngineTestContext(client, runtimeWithDifferentName, "test", "fluid"))
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("engine test failed to get runtime info"))
+			Expect(engine).To(BeNil())
+		})
+
 		It("should return an error when runtime info bootstrap cannot fetch the thin runtime", func() {
 			namespace := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "fluid"}}
 			runtimeProfile := &datav1alpha1.ThinRuntimeProfile{
