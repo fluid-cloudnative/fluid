@@ -17,6 +17,8 @@
 package efc
 
 import (
+	"context"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -67,10 +69,42 @@ func newEngineRuntime() *datav1alpha1.EFCRuntime {
 	}
 }
 
+func newEngineNamespace() *v1.Namespace {
+	return &v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: engineTestNamespace,
+		},
+	}
+}
+
+func newEngineDataset() *datav1alpha1.Dataset {
+	return &datav1alpha1.Dataset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      engineTestName,
+			Namespace: engineTestNamespace,
+		},
+	}
+}
+
+func newEngineWorkerStatefulSet() *appsv1.StatefulSet {
+	return &appsv1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      engineTestName + "-worker",
+			Namespace: engineTestNamespace,
+		},
+	}
+}
+
 func newEngineContext(clientObjs ...runtime.Object) cruntime.ReconcileRequestContext {
 	runtime := newEngineRuntime()
 	if len(clientObjs) == 0 {
-		clientObjs = append(clientObjs, runtime.DeepCopy())
+		clientObjs = append(
+			clientObjs,
+			newEngineNamespace().DeepCopy(),
+			newEngineDataset().DeepCopy(),
+			runtime.DeepCopy(),
+			newEngineWorkerStatefulSet().DeepCopy(),
+		)
 	}
 
 	return cruntime.ReconcileRequestContext{
@@ -87,6 +121,22 @@ func newEngineContext(clientObjs ...runtime.Object) cruntime.ReconcileRequestCon
 
 var _ = Describe("EFCEngine", func() {
 	Describe("Build", func() {
+		It("seeds the legacy default client objects used by the original build test", func() {
+			ctx := newEngineContext()
+
+			namespace := &v1.Namespace{}
+			Expect(ctx.Client.Get(context.TODO(), types.NamespacedName{Name: engineTestNamespace}, namespace)).To(Succeed())
+
+			dataset := &datav1alpha1.Dataset{}
+			Expect(ctx.Client.Get(context.TODO(), types.NamespacedName{Name: engineTestName, Namespace: engineTestNamespace}, dataset)).To(Succeed())
+
+			runtimeObj := &datav1alpha1.EFCRuntime{}
+			Expect(ctx.Client.Get(context.TODO(), types.NamespacedName{Name: engineTestName, Namespace: engineTestNamespace}, runtimeObj)).To(Succeed())
+
+			worker := &appsv1.StatefulSet{}
+			Expect(ctx.Client.Get(context.TODO(), types.NamespacedName{Name: engineTestName + "-worker", Namespace: engineTestNamespace}, worker)).To(Succeed())
+		})
+
 		It("builds an engine when the runtime can be resolved", func() {
 			engine, err := Build(engineTestID, newEngineContext())
 
