@@ -201,15 +201,12 @@ var _ = Describe("FluidAppReconcilerImplement", func() {
 			fuseContainer := corev1.Container{
 				Name: common.FuseContainerName + "-0",
 				VolumeMounts: []corev1.VolumeMount{{
-					Name:      "fuse-mount",
-					MountPath: fuseMountPath,
+					Name:      juicefsFuseMount,
+					MountPath: juicefsMountPath,
 				}},
 			}
 
-			patches = gomonkey.ApplyFunc(kubeclient.GetMountPathInContainer, func(corev1.Container) (string, error) {
-				return fuseMountPath, nil
-			})
-			patches.ApplyFunc(kubeclient.ExecCommandInContainerWithContext, func(context.Context, string, string, string, []string) (string, string, error) {
+			patches = gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithFullOutput, func(context.Context, string, string, string, []string) (string, string, error) {
 				return "", "not mounted", fmt.Errorf("umount failed")
 			})
 
@@ -222,15 +219,12 @@ var _ = Describe("FluidAppReconcilerImplement", func() {
 			fuseContainer := corev1.Container{
 				Name: common.FuseContainerName + "-0",
 				VolumeMounts: []corev1.VolumeMount{{
-					Name:      "fuse-mount",
-					MountPath: fuseMountPath,
+					Name:      juicefsFuseMount,
+					MountPath: juicefsMountPath,
 				}},
 			}
 
-			patches = gomonkey.ApplyFunc(kubeclient.GetMountPathInContainer, func(corev1.Container) (string, error) {
-				return fuseMountPath, nil
-			})
-			patches.ApplyFunc(kubeclient.ExecCommandInContainerWithContext, func(context.Context, string, string, string, []string) (string, string, error) {
+			patches = gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithFullOutput, func(context.Context, string, string, string, []string) (string, string, error) {
 				return "", "", fmt.Errorf("exit code 137")
 			})
 
