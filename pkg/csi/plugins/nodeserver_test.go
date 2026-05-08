@@ -304,6 +304,8 @@ var _ = Describe("NodeServer", func() {
 
 				fluidPath := filepath.Join(tempDir, "runtime", testName)
 				targetPath := filepath.Join(tempDir, "target")
+				fakeMountPath := filepath.Join(tempDir, "mount")
+				originalPath := os.Getenv("PATH")
 
 				isMountedPatch := gomonkey.ApplyFunc(utils.IsMounted, func(absPath string) (bool, error) {
 					return false, os.ErrNotExist
@@ -315,10 +317,11 @@ var _ = Describe("NodeServer", func() {
 				})
 				defer mountReadyPatch.Reset()
 
-				commandPatch := gomonkey.ApplyFunc(cmdguard.Command, func(name string, arg ...string) (*exec.Cmd, error) {
-					return exec.Command("sh", "-c", "exit 0"), nil
+				Expect(os.WriteFile(fakeMountPath, []byte("#!/bin/sh\nexit 0\n"), 0755)).To(Succeed())
+				Expect(os.Setenv("PATH", tempDir+string(os.PathListSeparator)+originalPath)).To(Succeed())
+				DeferCleanup(func() {
+					Expect(os.Setenv("PATH", originalPath)).To(Succeed())
 				})
-				defer commandPatch.Reset()
 
 				req := &csi.NodePublishVolumeRequest{
 					VolumeId:   testVolumeID,
