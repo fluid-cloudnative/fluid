@@ -19,6 +19,7 @@ package jindocache
 import (
 	"context"
 	"reflect"
+	_ "unsafe"
 
 	. "github.com/agiledragon/gomonkey/v2"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -43,6 +44,9 @@ import (
 var (
 	testScheme *runtime.Scheme
 )
+
+//go:linkname runtimePortAllocatorSingleton github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator.rpa
+var runtimePortAllocatorSingleton *portallocator.RuntimePortAllocator
 
 func init() {
 	testScheme = runtime.NewScheme()
@@ -258,6 +262,11 @@ var _ = Describe("JindoCacheEngine shutdown orchestration", func() {
 	})
 
 	It("should release ports from the runtime configmap", func() {
+		originalAllocator := runtimePortAllocatorSingleton
+		DeferCleanup(func() {
+			runtimePortAllocatorSingleton = originalAllocator
+		})
+
 		configMap := &v1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "spark-jindofs-config",
