@@ -100,6 +100,10 @@ func (e *AlluxioEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 	return valueFile.Name(), nil
 }
 
+// genDataLoadValue builds a DataLoadValue for the Fluid dataloader Helm chart from the Alluxio worker
+// image, the target Dataset, and the DataLoad CR. It fills scheduling options (affinity including
+// run-after injection, nodeSelector, tolerations, schedulerName), resolves target paths with
+// Fluid-native mount detection, and attaches owner references for the rendered load Job.
 func (e *AlluxioEngine) genDataLoadValue(image string, targetDataset *datav1alpha1.Dataset, dataload *datav1alpha1.DataLoad) (*cdataload.DataLoadValue, error) {
 	// image pull secrets
 	// if the environment variable is not set, it is still an empty slice
