@@ -225,6 +225,19 @@ func (info *RuntimeInfo) GetMetadataList() []datav1alpha1.Metadata {
 	return info.metadataList
 }
 
+// WithAnnotations creates a RuntimeInfoOption that sets the annotations field of RuntimeInfo.
+// The annotations map usually comes from the Kubernetes runtime object, such as AlluxioRuntime,
+// JindoRuntime, GooseFSRuntime, JuiceFSRuntime, ThinRuntime, EFCRuntime, VineyardRuntime, or CacheRuntime.
+// These annotations are stored in RuntimeInfo so that other components can later retrieve them through
+// GetAnnotations and use them when building, reconciling, or processing runtime-related resources.
+// The function itself does not validate, copy, or transform the input annotations map; it directly assigns
+// the provided map to RuntimeInfo.annotations.
+//
+// Parameters:
+//   - annotations: A map containing annotation key-value pairs associated with the runtime object.
+//
+// Returns:
+//   - RuntimeInfoOption: An option function that writes the given annotations into RuntimeInfo.
 func WithAnnotations(annotations map[string]string) RuntimeInfoOption {
 	return func(info *RuntimeInfo) error {
 		info.annotations = annotations
