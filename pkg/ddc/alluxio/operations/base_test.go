@@ -178,6 +178,9 @@ func TestAlluxioFileUtils_LoadMetadataWithoutTimeout(t *testing.T) {
 	}
 }
 
+// TestAlluxioFileUtils_LoadMetaData tests the AlluxioFileUtils.LoadMetaData method
+// for both failure and success cases by mocking the internal exec command.
+// It accepts a *testing.T and has no return value.
 func TestAlluxioFileUtils_LoadMetaData(t *testing.T) {
 	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "Alluxio cluster summary", "", nil
