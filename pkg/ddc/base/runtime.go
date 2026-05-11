@@ -169,6 +169,18 @@ type CachePath struct {
 	Quota *resource.Quantity
 }
 
+// BuildRuntimeInfo creates and initializes a RuntimeInfoInterface instance with the specified name, namespace, and runtime type.
+// It applies any number of optional configuration functions (opts) to customize the runtime information before returning.
+//
+// Parameters:
+// - name (string): The name of the runtime.
+// - namespace (string): The namespace of the runtime.
+// - runtimeType (string): The type of the runtime (e.g., Alluxio, JuiceFS).
+// - opts (...RuntimeInfoOption): Optional configuration functions that modify the RuntimeInfo struct.
+//
+// Returns:
+// - runtime (RuntimeInfoInterface): A fully configured runtime information object.
+// - err (error): Returns an error if any of the provided options fails to apply.
 func BuildRuntimeInfo(name string,
 	namespace string,
 	runtimeType string,
