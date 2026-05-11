@@ -19,6 +19,7 @@ package jindocache
 import (
 	"context"
 	"reflect"
+	"strings"
 	_ "unsafe"
 
 	. "github.com/agiledragon/gomonkey/v2"
@@ -273,7 +274,12 @@ var _ = Describe("JindoCacheEngine shutdown orchestration", func() {
 				Namespace: "fluid",
 			},
 			Data: map[string]string{
-				"jindocache.cfg": cfg,
+				"jindocache.cfg": strings.Join([]string{
+					"[jindocache-common]",
+					"namespace.rpc.port = 18000",
+					"[jindocache-storage]",
+					"storage.rpc.port = 18001",
+				}, "\n"),
 			},
 		}
 
@@ -440,9 +446,7 @@ var _ = Describe("JindoCacheEngine shutdown orchestration", func() {
 
 func buildRuntimeInfoForCleanAll(name string) base.RuntimeInfoInterface {
 	runtimeInfo, err := base.BuildRuntimeInfo(name, "fluid", common.JindoRuntime)
-	if err != nil {
-		panic(err)
-	}
+	Expect(err).NotTo(HaveOccurred())
 	runtimeInfo.SetupWithDataset(&datav1alpha1.Dataset{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: "fluid"},
 		Spec: datav1alpha1.DatasetSpec{

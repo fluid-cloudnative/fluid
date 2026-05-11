@@ -1,7 +1,7 @@
 package jindocache
 
 import (
-	. "github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -13,7 +13,7 @@ import (
 
 var _ = Describe("JindoCacheEngine transformHadoopConfig", func() {
 	newEngine := func(objects ...runtime.Object) *JindoCacheEngine {
-		return &JindoCacheEngine{Client: NewFakeClientWithScheme(testScheme, objects...)}
+		return &JindoCacheEngine{Client: fake.NewFakeClientWithScheme(testScheme, objects...)}
 	}
 
 	newRuntime := func(configMapName string) *datav1alpha1.JindoRuntime {

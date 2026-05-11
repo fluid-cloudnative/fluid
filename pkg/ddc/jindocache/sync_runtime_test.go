@@ -247,12 +247,7 @@ var _ = Describe("JindoCacheEngine_syncMasterSpec", func() {
 		}
 
 		runtimeObjs := []runtime.Object{master.DeepCopy(), jindoRuntime}
-		s := runtime.NewScheme()
-		s.AddKnownTypes(appsv1.SchemeGroupVersion, master)
-		s.AddKnownTypes(datav1alpha1.GroupVersion, jindoRuntime)
-		_ = corev1.AddToScheme(s)
-
-		client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+		client := fake.NewFakeClientWithScheme(testScheme, runtimeObjs...)
 
 		e := &JindoCacheEngine{
 			runtime:   jindoRuntime,
@@ -283,12 +278,7 @@ var _ = Describe("JindoCacheEngine_syncMasterSpec", func() {
 		}
 
 		runtimeObjs := []runtime.Object{master.DeepCopy(), jindoRuntime}
-		s := runtime.NewScheme()
-		s.AddKnownTypes(appsv1.SchemeGroupVersion, master)
-		s.AddKnownTypes(datav1alpha1.GroupVersion, jindoRuntime)
-		_ = corev1.AddToScheme(s)
-
-		client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+		client := fake.NewFakeClientWithScheme(testScheme, runtimeObjs...)
 
 		e := &JindoCacheEngine{
 			runtime:   jindoRuntime,
@@ -354,12 +344,7 @@ var _ = Describe("JindoCacheEngine_syncMasterSpec", func() {
 		}
 
 		runtimeObjs := []runtime.Object{master.DeepCopy(), jindoRuntime}
-		s := runtime.NewScheme()
-		s.AddKnownTypes(appsv1.SchemeGroupVersion, master)
-		s.AddKnownTypes(datav1alpha1.GroupVersion, jindoRuntime)
-		_ = corev1.AddToScheme(s)
-
-		client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+		client := fake.NewFakeClientWithScheme(testScheme, runtimeObjs...)
 
 		e := &JindoCacheEngine{
 			runtime:   jindoRuntime,
@@ -392,12 +377,7 @@ var _ = Describe("JindoCacheEngine_syncMasterSpec", func() {
 		}
 
 		runtimeObjs := []runtime.Object{master.DeepCopy(), jindoRuntime}
-		s := runtime.NewScheme()
-		s.AddKnownTypes(appsv1.SchemeGroupVersion, master)
-		s.AddKnownTypes(datav1alpha1.GroupVersion, jindoRuntime)
-		_ = corev1.AddToScheme(s)
-
-		fakeClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+		fakeClient := fake.NewFakeClientWithScheme(testScheme, runtimeObjs...)
 
 		e := &JindoCacheEngine{
 			runtime:   jindoRuntime,
@@ -458,12 +438,7 @@ var _ = Describe("JindoCacheEngine_syncMasterSpec", func() {
 		}
 
 		runtimeObjs := []runtime.Object{master.DeepCopy(), jindoRuntime}
-		s := runtime.NewScheme()
-		s.AddKnownTypes(appsv1.SchemeGroupVersion, master)
-		s.AddKnownTypes(datav1alpha1.GroupVersion, jindoRuntime)
-		_ = corev1.AddToScheme(s)
-
-		fakeClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+		fakeClient := fake.NewFakeClientWithScheme(testScheme, runtimeObjs...)
 
 		e := &JindoCacheEngine{
 			runtime:   jindoRuntime,
@@ -506,12 +481,7 @@ var _ = Describe("JindoCacheEngine_syncWorkerSpec", func() {
 		}
 
 		runtimeObjs := []runtime.Object{worker.DeepCopy(), jindoRuntime}
-		s := runtime.NewScheme()
-		s.AddKnownTypes(appsv1.SchemeGroupVersion, worker)
-		s.AddKnownTypes(datav1alpha1.GroupVersion, jindoRuntime)
-		_ = corev1.AddToScheme(s)
-
-		client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+		client := fake.NewFakeClientWithScheme(testScheme, runtimeObjs...)
 
 		e := &JindoCacheEngine{
 			runtime:   jindoRuntime,
@@ -542,12 +512,7 @@ var _ = Describe("JindoCacheEngine_syncWorkerSpec", func() {
 		}
 
 		runtimeObjs := []runtime.Object{worker.DeepCopy(), jindoRuntime}
-		s := runtime.NewScheme()
-		s.AddKnownTypes(appsv1.SchemeGroupVersion, worker)
-		s.AddKnownTypes(datav1alpha1.GroupVersion, jindoRuntime)
-		_ = corev1.AddToScheme(s)
-
-		client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+		client := fake.NewFakeClientWithScheme(testScheme, runtimeObjs...)
 
 		e := &JindoCacheEngine{
 			runtime:   jindoRuntime,
@@ -613,12 +578,7 @@ var _ = Describe("JindoCacheEngine_syncWorkerSpec", func() {
 		}
 
 		runtimeObjs := []runtime.Object{worker.DeepCopy(), jindoRuntime}
-		s := runtime.NewScheme()
-		s.AddKnownTypes(appsv1.SchemeGroupVersion, worker)
-		s.AddKnownTypes(datav1alpha1.GroupVersion, jindoRuntime)
-		_ = corev1.AddToScheme(s)
-
-		client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+		client := fake.NewFakeClientWithScheme(testScheme, runtimeObjs...)
 
 		e := &JindoCacheEngine{
 			runtime:   jindoRuntime,
@@ -651,12 +611,7 @@ var _ = Describe("JindoCacheEngine_syncWorkerSpec", func() {
 		}
 
 		runtimeObjs := []runtime.Object{worker.DeepCopy(), jindoRuntime}
-		s := runtime.NewScheme()
-		s.AddKnownTypes(appsv1.SchemeGroupVersion, worker)
-		s.AddKnownTypes(datav1alpha1.GroupVersion, jindoRuntime)
-		_ = corev1.AddToScheme(s)
-
-		fakeClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+		fakeClient := fake.NewFakeClientWithScheme(testScheme, runtimeObjs...)
 
 		e := &JindoCacheEngine{
 			runtime:   jindoRuntime,
@@ -717,12 +672,7 @@ var _ = Describe("JindoCacheEngine_syncWorkerSpec", func() {
 		}
 
 		runtimeObjs := []runtime.Object{worker.DeepCopy(), jindoRuntime}
-		s := runtime.NewScheme()
-		s.AddKnownTypes(appsv1.SchemeGroupVersion, worker)
-		s.AddKnownTypes(datav1alpha1.GroupVersion, jindoRuntime)
-		_ = corev1.AddToScheme(s)
-
-		fakeClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+		fakeClient := fake.NewFakeClientWithScheme(testScheme, runtimeObjs...)
 
 		e := &JindoCacheEngine{
 			runtime:   jindoRuntime,
@@ -765,12 +715,7 @@ var _ = Describe("JindoCacheEngine_syncFuseSpec", func() {
 		}
 
 		runtimeObjs := []runtime.Object{fuse.DeepCopy(), jindoRuntime}
-		s := runtime.NewScheme()
-		s.AddKnownTypes(appsv1.SchemeGroupVersion, fuse)
-		s.AddKnownTypes(datav1alpha1.GroupVersion, jindoRuntime)
-		_ = corev1.AddToScheme(s)
-
-		client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+		client := fake.NewFakeClientWithScheme(testScheme, runtimeObjs...)
 
 		e := &JindoCacheEngine{
 			runtime:   jindoRuntime,
@@ -801,12 +746,7 @@ var _ = Describe("JindoCacheEngine_syncFuseSpec", func() {
 		}
 
 		runtimeObjs := []runtime.Object{fuse.DeepCopy(), jindoRuntime}
-		s := runtime.NewScheme()
-		s.AddKnownTypes(appsv1.SchemeGroupVersion, fuse)
-		s.AddKnownTypes(datav1alpha1.GroupVersion, jindoRuntime)
-		_ = corev1.AddToScheme(s)
-
-		client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+		client := fake.NewFakeClientWithScheme(testScheme, runtimeObjs...)
 
 		e := &JindoCacheEngine{
 			runtime:   jindoRuntime,
@@ -872,12 +812,7 @@ var _ = Describe("JindoCacheEngine_syncFuseSpec", func() {
 		}
 
 		runtimeObjs := []runtime.Object{fuse.DeepCopy(), jindoRuntime}
-		s := runtime.NewScheme()
-		s.AddKnownTypes(appsv1.SchemeGroupVersion, fuse)
-		s.AddKnownTypes(datav1alpha1.GroupVersion, jindoRuntime)
-		_ = corev1.AddToScheme(s)
-
-		client := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+		client := fake.NewFakeClientWithScheme(testScheme, runtimeObjs...)
 
 		e := &JindoCacheEngine{
 			runtime:   jindoRuntime,
@@ -910,12 +845,7 @@ var _ = Describe("JindoCacheEngine_syncFuseSpec", func() {
 		}
 
 		runtimeObjs := []runtime.Object{fuse.DeepCopy(), jindoRuntime}
-		s := runtime.NewScheme()
-		s.AddKnownTypes(appsv1.SchemeGroupVersion, fuse)
-		s.AddKnownTypes(datav1alpha1.GroupVersion, jindoRuntime)
-		_ = corev1.AddToScheme(s)
-
-		fakeClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+		fakeClient := fake.NewFakeClientWithScheme(testScheme, runtimeObjs...)
 
 		e := &JindoCacheEngine{
 			runtime:   jindoRuntime,
@@ -978,12 +908,7 @@ var _ = Describe("JindoCacheEngine_syncFuseSpec", func() {
 		}
 
 		runtimeObjs := []runtime.Object{fuse.DeepCopy(), jindoRuntime}
-		s := runtime.NewScheme()
-		s.AddKnownTypes(appsv1.SchemeGroupVersion, fuse)
-		s.AddKnownTypes(datav1alpha1.GroupVersion, jindoRuntime)
-		_ = corev1.AddToScheme(s)
-
-		fakeClient := fake.NewFakeClientWithScheme(s, runtimeObjs...)
+		fakeClient := fake.NewFakeClientWithScheme(testScheme, runtimeObjs...)
 
 		e := &JindoCacheEngine{
 			runtime:   jindoRuntime,

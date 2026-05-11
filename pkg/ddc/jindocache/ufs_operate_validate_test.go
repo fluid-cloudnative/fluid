@@ -74,7 +74,7 @@ var _ = Describe("JindoCacheEngine UFS, operation and validate helpers", func() 
 			},
 		}
 
-		_, err := engine.GetDataOperationValueFile(cruntime.ReconcileRequestContext{}, operation)
+		_, err := engine.GetDataOperationValueFile(cruntime.ReconcileRequestContext{Log: fake.NullLogger()}, operation)
 
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("not supported"))
@@ -92,13 +92,13 @@ var _ = Describe("JindoCacheEngine UFS, operation and validate helpers", func() 
 			Spec:       datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
 		})
 
-		Expect(engine.Validate(cruntime.ReconcileRequestContext{})).To(Succeed())
+		Expect(engine.Validate(cruntime.ReconcileRequestContext{Log: fake.NullLogger()})).To(Succeed())
 	})
 
 	It("should return a type error for non-DataProcess objects", func() {
 		engine := newEngine("process-type")
 
-		_, err := engine.generateDataProcessValueFile(cruntime.ReconcileRequestContext{}, &corev1.ConfigMap{})
+		_, err := engine.generateDataProcessValueFile(cruntime.ReconcileRequestContext{Log: fake.NullLogger()}, &corev1.ConfigMap{})
 
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("is not of type DataProcess"))
@@ -123,7 +123,7 @@ var _ = Describe("JindoCacheEngine UFS, operation and validate helpers", func() 
 		}
 		engine := newEngine("dataset", dataset, dataProcess)
 
-		valueFile, err := engine.generateDataProcessValueFile(cruntime.ReconcileRequestContext{}, dataProcess)
+		valueFile, err := engine.generateDataProcessValueFile(cruntime.ReconcileRequestContext{Log: fake.NullLogger()}, dataProcess)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(valueFile).NotTo(BeEmpty())
