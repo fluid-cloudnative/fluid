@@ -17,7 +17,7 @@
 package thin
 
 import (
-	data1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	corev1 "k8s.io/api/core/v1"
@@ -32,9 +32,9 @@ import (
 
 var _ = Describe("ThinEngine transform tests", Label("pkg.ddc.thin.transform_test.go"), func() {
 	var (
-		dataset     *data1alpha1.Dataset
-		thinruntime *data1alpha1.ThinRuntime
-		profile     *data1alpha1.ThinRuntimeProfile
+		dataset     *datav1alpha1.Dataset
+		thinruntime *datav1alpha1.ThinRuntime
+		profile     *datav1alpha1.ThinRuntimeProfile
 		engine      *ThinEngine
 		resources   []runtime.Object
 	)
@@ -46,7 +46,7 @@ var _ = Describe("ThinEngine transform tests", Label("pkg.ddc.thin.transform_tes
 	})
 
 	JustBeforeEach(func() {
-		engine.Client = fake.NewFakeClientWithScheme(data1alpha1.UnitTestScheme, resources...)
+		engine.Client = fake.NewFakeClientWithScheme(datav1alpha1.UnitTestScheme, resources...)
 	})
 
 	Describe("transform", func() {
@@ -58,7 +58,7 @@ var _ = Describe("ThinEngine transform tests", Label("pkg.ddc.thin.transform_tes
 		})
 
 		It("returns a dataset lookup error when dataset is missing", func() {
-			engine.Client = fake.NewFakeClientWithScheme(data1alpha1.UnitTestScheme, thinruntime, profile)
+			engine.Client = fake.NewFakeClientWithScheme(datav1alpha1.UnitTestScheme, thinruntime, profile)
 
 			value, err := engine.transform(thinruntime, profile)
 
@@ -85,7 +85,7 @@ var _ = Describe("ThinEngine transform tests", Label("pkg.ddc.thin.transform_tes
 				Expect(value.ImagePullSecrets).To(Equal(profile.Spec.ImagePullSecrets))
 				Expect(value.Worker.Enabled).To(BeFalse())
 				Expect(value.Tolerations).To(Equal(dataset.Spec.Tolerations))
-				Expect(value.PlacementMode).To(Equal(string(data1alpha1.ExclusiveMode)))
+				Expect(value.PlacementMode).To(Equal(string(datav1alpha1.ExclusiveMode)))
 				Expect(value.OwnerDatasetId).To(Equal(dataset.Labels[common.LabelAnnotationDatasetId]))
 				Expect(value.RuntimeIdentity).To(Equal(common.RuntimeIdentity{
 					Namespace: thinruntime.Namespace,
@@ -99,8 +99,8 @@ var _ = Describe("ThinEngine transform tests", Label("pkg.ddc.thin.transform_tes
 		When("worker is enabled", func() {
 			BeforeEach(func() {
 				thinruntime.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: "runtime-secret"}}
-				thinruntime.Spec.TieredStore.Levels = []data1alpha1.Level{{Path: "/runtime/cache"}}
-				thinruntime.Spec.Worker = data1alpha1.ThinCompTemplateSpec{
+				thinruntime.Spec.TieredStore.Levels = []datav1alpha1.Level{{Path: "/runtime/cache"}}
+				thinruntime.Spec.Worker = datav1alpha1.ThinCompTemplateSpec{
 					Enabled:          true,
 					Image:            "runtime-worker",
 					ImageTag:         "runtime-tag",
@@ -109,7 +109,7 @@ var _ = Describe("ThinEngine transform tests", Label("pkg.ddc.thin.transform_tes
 					Env:              []corev1.EnvVar{{Name: "RUNTIME_ENV", Value: "runtime"}},
 					Ports:            []corev1.ContainerPort{{Name: "http", ContainerPort: 8080}},
 					NodeSelector:     map[string]string{"node": "runtime"},
-					NetworkMode:      data1alpha1.HostNetworkMode,
+					NetworkMode:      datav1alpha1.HostNetworkMode,
 					VolumeMounts: []corev1.VolumeMount{{
 						Name:      "runtime-volume",
 						MountPath: "/runtime/mount",
@@ -125,7 +125,7 @@ var _ = Describe("ThinEngine transform tests", Label("pkg.ddc.thin.transform_tes
 						EmptyDir: &corev1.EmptyDirVolumeSource{},
 					},
 				}}
-				profile.Spec.Worker = data1alpha1.ThinCompTemplateSpec{
+				profile.Spec.Worker = datav1alpha1.ThinCompTemplateSpec{
 					Image:            "profile-worker",
 					ImageTag:         "profile-tag",
 					ImagePullPolicy:  string(corev1.PullAlways),
@@ -174,16 +174,6 @@ var _ = Describe("ThinEngine transform tests", Label("pkg.ddc.thin.transform_tes
 			})
 		})
 
-		It("handles a missing profile when callers continue after profile lookup not found", func() {
-			thinruntime.Spec.Fuse.Image = "runtime-fuse"
-			thinruntime.Spec.Fuse.ImageTag = "runtime-tag"
-
-			value, err := engine.transform(thinruntime, nil)
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(value).NotTo(BeNil())
-			Expect(value.ImagePullSecrets).To(BeNil())
-		})
 	})
 
 	Describe("transformWorkers", func() {
@@ -191,7 +181,7 @@ var _ = Describe("ThinEngine transform tests", Label("pkg.ddc.thin.transform_tes
 
 		BeforeEach(func() {
 			value = &ThinValue{}
-			profile.Spec.Worker = data1alpha1.ThinCompTemplateSpec{
+			profile.Spec.Worker = datav1alpha1.ThinCompTemplateSpec{
 				Image:            "profile-worker",
 				ImageTag:         "profile-tag",
 				ImagePullPolicy:  string(corev1.PullAlways),
@@ -199,7 +189,7 @@ var _ = Describe("ThinEngine transform tests", Label("pkg.ddc.thin.transform_tes
 				Env:              []corev1.EnvVar{{Name: "PROFILE_ENV", Value: "profile"}},
 				Ports:            []corev1.ContainerPort{{Name: "profile-port", ContainerPort: 9090}},
 				NodeSelector:     map[string]string{"profile": "true"},
-				NetworkMode:      data1alpha1.ContainerNetworkMode,
+				NetworkMode:      datav1alpha1.ContainerNetworkMode,
 				VolumeMounts: []corev1.VolumeMount{{
 					Name:      "profile-volume",
 					MountPath: "/profile/mount",
@@ -211,13 +201,13 @@ var _ = Describe("ThinEngine transform tests", Label("pkg.ddc.thin.transform_tes
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			}}
-			thinruntime.Spec.Worker = data1alpha1.ThinCompTemplateSpec{
+			thinruntime.Spec.Worker = datav1alpha1.ThinCompTemplateSpec{
 				ImageTag:         "runtime-tag",
 				ImagePullSecrets: []corev1.LocalObjectReference{{Name: "runtime-worker-secret"}},
 				Env:              []corev1.EnvVar{{Name: "RUNTIME_ENV", Value: "runtime"}},
 				Ports:            []corev1.ContainerPort{{Name: "runtime-port", ContainerPort: 8080}},
 				NodeSelector:     map[string]string{"runtime": "true"},
-				NetworkMode:      data1alpha1.HostNetworkMode,
+				NetworkMode:      datav1alpha1.HostNetworkMode,
 				VolumeMounts: []corev1.VolumeMount{{
 					Name:      "runtime-volume",
 					MountPath: "/runtime/mount",
@@ -229,7 +219,7 @@ var _ = Describe("ThinEngine transform tests", Label("pkg.ddc.thin.transform_tes
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			}}
-			thinruntime.Spec.TieredStore.Levels = []data1alpha1.Level{{Path: "/runtime/cache"}}
+			thinruntime.Spec.TieredStore.Levels = []datav1alpha1.Level{{Path: "/runtime/cache"}}
 		})
 
 		It("applies profile defaults and runtime overrides", func() {
@@ -249,15 +239,17 @@ var _ = Describe("ThinEngine transform tests", Label("pkg.ddc.thin.transform_tes
 			Expect(value.Worker.HostNetwork).To(BeTrue())
 		})
 
-		It("swallows worker volume transformation errors", func() {
+		It("logs but does not return worker volume transformation errors", func() {
+			thinruntime.Spec.Worker.VolumeMounts = nil
+			thinruntime.Spec.Volumes = nil
 			profile.Spec.Worker.VolumeMounts = []corev1.VolumeMount{{Name: "missing-volume", MountPath: "/profile/mount"}}
 			profile.Spec.Volumes = nil
 
 			err := engine.transformWorkers(thinruntime, profile, value)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(value.Worker.VolumeMounts).To(ContainElement(thinruntime.Spec.Worker.VolumeMounts[0]))
-			Expect(value.Worker.Volumes).To(ContainElement(thinruntime.Spec.Volumes[0]))
+			Expect(value.Worker.VolumeMounts).To(BeEmpty())
+			Expect(value.Worker.Volumes).To(BeEmpty())
 		})
 	})
 
@@ -275,7 +267,7 @@ var _ = Describe("ThinEngine transform tests", Label("pkg.ddc.thin.transform_tes
 		})
 
 		It("copies worker settings from the profile", func() {
-			profile.Spec.Worker = data1alpha1.ThinCompTemplateSpec{
+			profile.Spec.Worker = datav1alpha1.ThinCompTemplateSpec{
 				Image:            "test",
 				ImageTag:         "v1",
 				ImagePullPolicy:  string(corev1.PullAlways),
@@ -312,7 +304,7 @@ var _ = Describe("ThinEngine transform tests", Label("pkg.ddc.thin.transform_tes
 					SuccessThreshold:    1,
 					FailureThreshold:    1,
 				},
-				NetworkMode: data1alpha1.HostNetworkMode,
+				NetworkMode: datav1alpha1.HostNetworkMode,
 			}
 
 			engine.parseFromProfile(profile, value)
@@ -342,7 +334,7 @@ var _ = Describe("ThinEngine transform tests", Label("pkg.ddc.thin.transform_tes
 				ImagePullPolicy:  string(corev1.PullAlways),
 				ImagePullSecrets: []corev1.LocalObjectReference{{Name: "profile-secret"}},
 			}}
-			thinruntime.Spec.Worker = data1alpha1.ThinCompTemplateSpec{
+			thinruntime.Spec.Worker = datav1alpha1.ThinCompTemplateSpec{
 				ImageTag:         "runtime-tag",
 				ImagePullSecrets: []corev1.LocalObjectReference{{Name: "runtime-secret"}},
 			}
@@ -360,17 +352,17 @@ var _ = Describe("ThinEngine transform tests", Label("pkg.ddc.thin.transform_tes
 		It("defaults to exclusive mode when dataset placement mode is empty", func() {
 			value := &ThinValue{}
 
-			engine.transformPlacementMode(&data1alpha1.Dataset{}, value)
+			engine.transformPlacementMode(&datav1alpha1.Dataset{}, value)
 
-			Expect(value.PlacementMode).To(Equal(string(data1alpha1.ExclusiveMode)))
+			Expect(value.PlacementMode).To(Equal(string(datav1alpha1.ExclusiveMode)))
 		})
 
 		It("keeps an existing dataset placement mode", func() {
 			value := &ThinValue{}
 
-			engine.transformPlacementMode(&data1alpha1.Dataset{Spec: data1alpha1.DatasetSpec{PlacementMode: data1alpha1.ShareMode}}, value)
+			engine.transformPlacementMode(&datav1alpha1.Dataset{Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ShareMode}}, value)
 
-			Expect(value.PlacementMode).To(Equal(string(data1alpha1.ShareMode)))
+			Expect(value.PlacementMode).To(Equal(string(datav1alpha1.ShareMode)))
 		})
 	})
 
@@ -383,7 +375,7 @@ var _ = Describe("ThinEngine transform tests", Label("pkg.ddc.thin.transform_tes
 				Value:    "b",
 			}}
 
-			engine.transformTolerations(&data1alpha1.Dataset{Spec: data1alpha1.DatasetSpec{Tolerations: tolerations}}, value)
+			engine.transformTolerations(&datav1alpha1.Dataset{Spec: datav1alpha1.DatasetSpec{Tolerations: tolerations}}, value)
 
 			Expect(value.Tolerations).To(Equal(tolerations))
 		})

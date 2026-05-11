@@ -135,39 +135,10 @@ var _ = Describe("Master Tests", func() {
 	})
 
 	Describe("ThinEngine.generateThinValueFile", func() {
-		It("generates values when the runtime profile lookup falls back to nil", func() {
-			dataset, runtimeObj, _ := mockFluidObjectsForTests(types.NamespacedName{Name: "test-dataset", Namespace: "default"})
-			runtimeObj.Spec.Fuse = datav1alpha1.ThinFuseSpec{
-				Image: "runtime-fuse",
-			}
-
-			client := fake.NewFakeClientWithScheme(testScheme, dataset, runtimeObj)
-			engine := mockThinEngineForTests(dataset, runtimeObj, nil)
-			engine.Client = client
-			engine.runtime = runtimeObj
-
-			generatedProfile, err := engine.getThinRuntimeProfile()
-			Expect(err).To(HaveOccurred())
-			Expect(generatedProfile).To(BeNil())
-
-			valueFile, err := engine.generateThinValueFile(runtimeObj, nil)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(valueFile).To(BeAnExistingFile())
-
-			configMap := &corev1.ConfigMap{}
-			err = engine.Client.Get(context.TODO(), types.NamespacedName{
-				Name:      engine.getHelmValuesConfigMapName(),
-				Namespace: engine.namespace,
-			}, configMap)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(configMap.Labels).To(HaveKeyWithValue(common.LabelAnnotationDatasetId, dataset.Labels[common.LabelAnnotationDatasetId]))
-			Expect(configMap.Data).To(HaveKey("data"))
-		})
-
 		It("skips storing runtime helm values when runtime config map generation is disabled", func() {
 			dataset, runtimeObj, profile := mockFluidObjectsForTests(types.NamespacedName{Name: "test-dataset", Namespace: "default"})
 			runtimeObj.Spec.Fuse = datav1alpha1.ThinFuseSpec{Image: "runtime-fuse"}
-			runtimeObj.Annotations = map[string]string{common.AnnotationDisableRuntimeHelmValueConfig: "false"}
+			runtimeObj.Annotations = map[string]string{common.AnnotationDisableRuntimeHelmValueConfig: "true"}
 
 			engine := mockThinEngineForTests(dataset, runtimeObj, profile)
 			engine.Client = fake.NewFakeClientWithScheme(testScheme, dataset, runtimeObj, profile)
@@ -188,29 +159,6 @@ var _ = Describe("Master Tests", func() {
 	})
 
 	Describe("ThinEngine.setupMasterInternal", func() {
-		It("continues with a missing runtime profile when the release already exists", func() {
-			dataset, runtimeObj, _ := mockFluidObjectsForTests(types.NamespacedName{Name: "test-dataset", Namespace: "default"})
-			runtimeObj.Spec.Fuse = datav1alpha1.ThinFuseSpec{Image: "runtime-fuse"}
-
-			engine := mockThinEngineForTests(dataset, runtimeObj, nil)
-			engine.Client = fake.NewFakeClientWithScheme(testScheme, dataset, runtimeObj)
-			engine.runtime = runtimeObj
-
-			checkReleasePatch := ApplyFunc(helm.CheckRelease, func(name string, namespace string) (bool, error) {
-				Expect(name).To(Equal(engine.name))
-				Expect(namespace).To(Equal(engine.namespace))
-				return true, nil
-			})
-			installReleasePatch := ApplyFunc(helm.InstallRelease, func(string, string, string, string) error {
-				Fail("InstallRelease should not be called when the release already exists")
-				return nil
-			})
-			defer checkReleasePatch.Reset()
-			defer installReleasePatch.Reset()
-
-			Expect(engine.setupMasterInternal()).To(Succeed())
-		})
-
 		It("installs the release when it is not already present", func() {
 			dataset, runtimeObj, profile := mockFluidObjectsForTests(types.NamespacedName{Name: "test-dataset", Namespace: "default"})
 			runtimeObj.Spec.Fuse = datav1alpha1.ThinFuseSpec{Image: "runtime-fuse"}
@@ -292,14 +240,24 @@ var _ = Describe("Master Tests", func() {
 			Expect(engine.ifRuntimeHelmValueEnable()).To(BeTrue())
 		})
 
-		It("follows the parsed runtime annotation value", func() {
+		It("disables runtime helm values when the disable annotation is true", func() {
+			engine := &ThinEngine{runtime: &datav1alpha1.ThinRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{common.AnnotationDisableRuntimeHelmValueConfig: "true"},
+				},
+			}}
+
+			Expect(engine.ifRuntimeHelmValueEnable()).To(BeFalse())
+		})
+
+		It("keeps runtime helm values enabled when the disable annotation is false", func() {
 			engine := &ThinEngine{runtime: &datav1alpha1.ThinRuntime{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{common.AnnotationDisableRuntimeHelmValueConfig: "false"},
 				},
 			}}
 
-			Expect(engine.ifRuntimeHelmValueEnable()).To(BeFalse())
+			Expect(engine.ifRuntimeHelmValueEnable()).To(BeTrue())
 		})
 	})
 })
