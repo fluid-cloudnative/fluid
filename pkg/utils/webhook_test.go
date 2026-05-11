@@ -376,6 +376,44 @@ func TestInjectNodeSelectorTerms(t *testing.T) {
 				},
 			},
 		},
+		"test existing match-all terms with injected terms produce injected terms": {
+			nodeSelectorTermList: []corev1.NodeSelectorTerm{
+				{},
+				{
+					MatchExpressions: []corev1.NodeSelectorRequirement{
+						{
+							Key:      "fluid.io/fuse",
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"true"},
+						},
+					},
+				},
+			},
+			pod: &corev1.Pod{
+				Spec: corev1.PodSpec{
+					Affinity: &corev1.Affinity{
+						NodeAffinity: &corev1.NodeAffinity{
+							RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+								NodeSelectorTerms: []corev1.NodeSelectorTerm{
+									{},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectTerms: []corev1.NodeSelectorTerm{
+				{
+					MatchExpressions: []corev1.NodeSelectorRequirement{
+						{
+							Key:      "fluid.io/fuse",
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"true"},
+						},
+					},
+				},
+			},
+		},
 		"test merge match fields when building cross product": {
 			nodeSelectorTermList: []corev1.NodeSelectorTerm{
 				{
