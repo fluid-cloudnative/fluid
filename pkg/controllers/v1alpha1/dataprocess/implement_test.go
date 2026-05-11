@@ -37,7 +37,7 @@ import (
 func newTestDataProcessOperation(s *runtime.Scheme, dp *datav1alpha1.DataProcess) *dataProcessOperation {
 	if s == nil {
 		s = runtime.NewScheme()
-		_ = datav1alpha1.AddToScheme(s)
+		Expect(datav1alpha1.AddToScheme(s)).To(Succeed())
 	}
 	fakeClient := fake.NewFakeClientWithScheme(s, dp)
 	recorder := record.NewFakeRecorder(32)
@@ -232,7 +232,7 @@ var _ = Describe("dataProcessOperation", func() {
 
 		BeforeEach(func() {
 			testScheme = runtime.NewScheme()
-			_ = datav1alpha1.AddToScheme(testScheme)
+			Expect(datav1alpha1.AddToScheme(testScheme)).To(Succeed())
 			ctx = cruntime.ReconcileRequestContext{
 				Log: fake.NullLogger(),
 			}

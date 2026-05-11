@@ -37,7 +37,7 @@ import (
 func newTestDataProcessReconciler(s *runtime.Scheme, objs ...runtime.Object) *DataProcessReconciler {
 	if s == nil {
 		s = runtime.NewScheme()
-		_ = datav1alpha1.AddToScheme(s)
+		Expect(datav1alpha1.AddToScheme(s)).To(Succeed())
 	}
 	fakeClient := fake.NewFakeClientWithScheme(s, objs...)
 	log := logf.Log.WithName("dataprocess-test")
@@ -57,7 +57,7 @@ var _ = Describe("DataProcessReconciler", func() {
 	Describe("NewDataProcessReconciler", func() {
 		It("should create a non-nil reconciler with a Scheme", func() {
 			s := runtime.NewScheme()
-			_ = datav1alpha1.AddToScheme(s)
+			Expect(datav1alpha1.AddToScheme(s)).To(Succeed())
 			r := newTestDataProcessReconciler(s)
 			Expect(r).NotTo(BeNil())
 			Expect(r.Scheme).NotTo(BeNil())
@@ -89,7 +89,7 @@ var _ = Describe("DataProcessReconciler", func() {
 	Describe("Reconcile", func() {
 		It("should return no error when the DataProcess is not found", func() {
 			s := runtime.NewScheme()
-			_ = datav1alpha1.AddToScheme(s)
+			Expect(datav1alpha1.AddToScheme(s)).To(Succeed())
 			r := newTestDataProcessReconciler(s)
 			// No DataProcess objects registered — should get NotFound and return cleanly.
 			req := ctrl.Request{
@@ -102,7 +102,7 @@ var _ = Describe("DataProcessReconciler", func() {
 
 		It("should reconcile successfully when DataProcess exists", func() {
 			s := runtime.NewScheme()
-			_ = datav1alpha1.AddToScheme(s)
+			Expect(datav1alpha1.AddToScheme(s)).To(Succeed())
 			dp := &datav1alpha1.DataProcess{
 				ObjectMeta: v1.ObjectMeta{Name: "test", Namespace: "default"},
 				Spec: datav1alpha1.DataProcessSpec{
