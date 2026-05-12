@@ -17,65 +17,46 @@ limitations under the License.
 package base
 
 import (
-	"fmt"
-	"os"
 	"time"
 
-	"k8s.io/apimachinery/pkg/types"
-
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
-
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	syncRetryDurationEnv string = "FLUID_SYNC_RETRY_DURATION"
-
-	defaultSyncRetryDuration time.Duration = time.Duration(5 * time.Second)
-)
-
-// Use compiler to check if the struct implements all the interface
 var _ Engine = (*TemplateEngine)(nil)
 
+// TemplateEngine implements the Engine interface and some default methods.
 type TemplateEngine struct {
 	Implement
-	Id string
+	// Embed the default implementation to satisfy ExtendedLifecycleManager interface
+	DefaultExtendedLifecycleManager
+
+	Id          string
 	client.Client
-	Log               logr.Logger
-	Context           cruntime.ReconcileRequestContext
-	syncRetryDuration time.Duration
-	timeOfLastSync    time.Time
+	Log         logr.Logger
+	Context     cruntime.ReconcileRequestContext
+	runtimeType string
+
+	// Fields required by syncs.go logic
+	timeOfLastSync time.Time
+	permitSync     bool
 }
 
-// NewTemplateEngine creates template engine
-func NewTemplateEngine(impl Implement,
-	id string,
-	// client client.Client,
-	// log logr.Logger,
-	context cruntime.ReconcileRequestContext) *TemplateEngine {
-	b := &TemplateEngine{
-		Implement: impl,
-		Id:        id,
-		Context:   context,
-		Client:    context.Client,
-		// Log:       log,
+func NewTemplateEngine(impl Implement, id string, ctx cruntime.ReconcileRequestContext) *TemplateEngine {
+	return &TemplateEngine{
+		Implement:                       impl,
+		Id:                              id,
+		Client:                          ctx.Client,
+		Log:                             ctx.Log,
+		Context:                         ctx,
+		runtimeType:                     ctx.RuntimeType,
+		DefaultExtendedLifecycleManager: DefaultExtendedLifecycleManager{},
+		
+		// Initialize sync fields
+		permitSync:     true,
+		timeOfLastSync: time.Now().Add(-1 * time.Hour), // Ensure immediate first sync
 	}
-	b.Log = context.Log.WithValues("engine", context.RuntimeType).WithValues("id", id)
-	// b.timeOfLastSync = time.Now()
-	duration, err := getSyncRetryDuration()
-	if err != nil {
-		b.Log.Error(err, "Failed to parse syncRetryDurationEnv: FLUID_SYNC_RETRY_DURATION, use the default setting")
-	}
-	if duration != nil {
-		b.syncRetryDuration = *duration
-	} else {
-		b.syncRetryDuration = defaultSyncRetryDuration
-	}
-	b.timeOfLastSync = time.Now().Add(-b.syncRetryDuration)
-	b.Log.Info("Set the syncRetryDuration", "syncRetryDuration", b.syncRetryDuration)
-
-	return b
 }
 
 // ID returns the id of the engine
@@ -83,41 +64,5 @@ func (t *TemplateEngine) ID() string {
 	return t.Id
 }
 
-// Shutdown and clean up the engine
-func (t *TemplateEngine) Shutdown() error {
-	return t.Implement.Shutdown()
-}
-
-func (t *TemplateEngine) Validate(ctx cruntime.ReconcileRequestContext) (err error) {
-	return t.Implement.Validate(ctx)
-}
-
-func getSyncRetryDuration() (d *time.Duration, err error) {
-	if value, existed := os.LookupEnv(syncRetryDurationEnv); existed {
-		duration, err := time.ParseDuration(value)
-		if err != nil {
-			return d, err
-		}
-		d = &duration
-	}
-	return
-}
-
-func (t *TemplateEngine) permitSync(key types.NamespacedName) (permit bool) {
-	if time.Since(t.timeOfLastSync) < t.syncRetryDuration {
-		info := fmt.Sprintf("Skipping engine.Sync(). Not permmitted until  %v (syncRetryDuration %v) since timeOfLastSync %v.",
-			t.timeOfLastSync.Add(t.syncRetryDuration),
-			t.syncRetryDuration,
-			t.timeOfLastSync)
-		t.Log.Info(info, "name", key.Name, "namespace", key.Namespace)
-	} else {
-		permit = true
-		info := fmt.Sprintf("Processing engine.Sync(). permmitted  %v (syncRetryDuration %v) since timeOfLastSync %v.",
-			t.timeOfLastSync.Add(t.syncRetryDuration),
-			t.syncRetryDuration,
-			t.timeOfLastSync)
-		t.Log.V(1).Info(info, "name", key.Name, "namespace", key.Namespace)
-	}
-
-	return
-}
+// NOTE: Sync() and Operate() methods are deliberately omitted here
+// because they are defined in pkg/ddc/base/syncs.go and pkg/ddc/base/operation.go

@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-	http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,13 +32,17 @@ import (
 
 // AlluxioEngine implements the Engine interface.
 type AlluxioEngine struct {
-	// *base.TemplateEngine
-	runtime     *datav1alpha1.AlluxioRuntime
-	name        string
-	namespace   string
-	runtimeType string
-	engineImpl  string
-	Log         logr.Logger
+	// Embed DefaultExtendedLifecycleManager to satisfy the ExtendedLifecycle interface
+	base.DefaultExtendedLifecycleManager
+	// Embed StateMachineManager to support state transitions
+	base.StateMachineManager
+
+	runtime            *datav1alpha1.AlluxioRuntime
+	name               string
+	namespace          string
+	runtimeType        string
+	engineImpl         string
+	Log                logr.Logger
 	client.Client
 	retryShutdown      int32
 	initImage          string
@@ -54,21 +58,22 @@ type AlluxioEngine struct {
 // Build function builds the Alluxio Engine
 func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error) {
 	engine := &AlluxioEngine{
-		name:        ctx.Name,
-		namespace:   ctx.Namespace,
-		Client:      ctx.Client,
-		Recorder:    ctx.Recorder,
-		Log:         ctx.Log,
-		runtimeType: ctx.RuntimeType,
-		engineImpl:  ctx.EngineImpl,
-		// defaultGracefulShutdownLimits:       5,
-		// defaultCleanCacheGracePeriodSeconds: 60,
+		name:               ctx.Name,
+		namespace:          ctx.Namespace,
+		Client:             ctx.Client,
+		Recorder:           ctx.Recorder,
+		Log:                ctx.Log,
+		runtimeType:        ctx.RuntimeType,
+		engineImpl:         ctx.EngineImpl,
 		retryShutdown:      0,
 		MetadataSyncDoneCh: nil,
 		lastCacheHitStates: nil,
+
+		// Initialize the default lifecycle manager and state machine
+		DefaultExtendedLifecycleManager: base.DefaultExtendedLifecycleManager{},
+		StateMachineManager:             base.NewDefaultStateMachine(),
 	}
-	// var implement base.Implement = engine
-	// engine.TemplateEngine = template
+
 	if ctx.Runtime != nil {
 		runtime, ok := ctx.Runtime.(*datav1alpha1.AlluxioRuntime)
 		if !ok {
@@ -84,10 +89,14 @@ func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error)
 	if err != nil {
 		return nil, fmt.Errorf("engine %s failed to get runtime info, error %s", ctx.Name, err.Error())
 	}
+	
+	// Assign runtimeInfo to the engine struct so it is accessible later
+	engine.runtimeInfo = runtimeInfo
 
 	// Build the helper
 	engine.Helper = ctrl.BuildHelper(runtimeInfo, ctx.Client, engine.Log)
 
+	// Wrap the AlluxioEngine with the TemplateEngine logic
 	template := base.NewTemplateEngine(engine, id, ctx)
 
 	return template, nil
