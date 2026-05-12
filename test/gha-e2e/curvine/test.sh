@@ -47,7 +47,7 @@ function create_dataset() {
 }
 
 function wait_dataset_bound() {
-    local deadline=180 # 3 minutes
+    local deadline=300 # 5 minutes
     local last_state=""
     local log_interval=0
     local log_times=0
@@ -83,16 +83,24 @@ function create_job() {
 
 function wait_job_completed() {
     local job_name=$1
+    local deadline=300 # 5 minutes
+    local elapsed=0
     while true; do
-        succeed=$(kubectl get job "$job_name" -ojsonpath='{@.status.succeeded}')
-        failed=$(kubectl get job "$job_name" -ojsonpath='{@.status.failed}')
-        if [[ "$failed" -ne "0" ]]; then
-            panic "job failed when accessing data"
+        # Check for terminal Job failure via status.conditions (not individual pod failures,
+        # which can be transient when the FUSE client is still initializing).
+        job_failed=$(kubectl get job "$job_name" -ojsonpath='{@.status.conditions[?(@.type=="Failed")].status}' 2>/dev/null)
+        succeed=$(kubectl get job "$job_name" -ojsonpath='{@.status.succeeded}' 2>/dev/null)
+        if [[ "$job_failed" == "True" ]]; then
+            panic "job $job_name failed when accessing data"
         fi
         if [[ "$succeed" -eq "1" ]]; then
             break
         fi
+        if [[ $elapsed -ge $deadline ]]; then
+            panic "timeout waiting ${deadline}s for job $job_name to complete"
+        fi
         sleep 5
+        elapsed=$((elapsed + 5))
     done
     syslog "Found succeeded job $job_name"
 }
