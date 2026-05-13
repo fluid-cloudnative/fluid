@@ -1421,7 +1421,8 @@ _Appears in:_
 | `replicas` _integer_ | The replicas of the worker, need to be specified |  |  |
 | `runAs` _[User](#user)_ | Manage the user to run Juicefs Runtime |  |  |
 | `disablePrometheus` _boolean_ | Disable monitoring for JuiceFS Runtime<br />Prometheus is enabled by default |  | Optional: \{\} <br /> |
-| `volumes` _[Volume](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#volume-v1-core) array_ | Volumes is the list of Kubernetes volumes that can be mounted by the alluxio runtime components and/or fuses. |  | Optional: \{\} <br /> |
+| `volumes` _[Volume](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#volume-v1-core) array_ | Volumes is the list of Kubernetes volumes that can be mounted by the JuiceFS runtime components and/or fuses. |  | Optional: \{\} <br /> |
+| `volumeClaimTemplates` _[PersistentVolumeClaim](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#persistentvolumeclaim-v1-core) array_ | VolumeClaimTemplates is the list of Kubernetes persistent volume claim templates used by the JuiceFS worker StatefulSet. |  | Optional: \{\} <br /> |
 | `podMetadata` _[PodMetadata](#podmetadata)_ | PodMetadata defines labels and annotations that will be propagated to JuiceFs's pods. |  | Optional: \{\} <br /> |
 | `management` _[RuntimeManagement](#runtimemanagement)_ | RuntimeManagement defines policies when managing the runtime |  | Optional: \{\} <br /> |
 

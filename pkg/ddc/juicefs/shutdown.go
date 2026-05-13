@@ -36,6 +36,14 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 )
 
+var (
+	checkHelmRelease            = helm.CheckRelease
+	deleteHelmRelease           = helm.DeleteRelease
+	getRunningJuiceFSWorkerPods = (*JuiceFSEngine).GetRunningPodsOfStatefulSet
+	deleteJuiceFSCacheDirs      = operations.JuiceFileUtils.DeleteCacheDirs
+	getJuiceFSStatus            = operations.JuiceFileUtils.GetStatus
+)
+
 func (j *JuiceFSEngine) Shutdown() (err error) {
 	if j.retryShutdown < j.gracefulShutdownLimits {
 		err = j.cleanupCache()
@@ -69,13 +77,13 @@ func (j *JuiceFSEngine) Shutdown() (err error) {
 // destroyMaster Destroy the master
 func (j *JuiceFSEngine) destroyMaster() (err error) {
 	var found bool
-	found, err = helm.CheckRelease(j.name, j.namespace)
+	found, err = checkHelmRelease(j.name, j.namespace)
 	if err != nil {
 		return err
 	}
 
 	if found {
-		err = helm.DeleteRelease(j.name, j.namespace)
+		err = deleteHelmRelease(j.name, j.namespace)
 		if err != nil {
 			return
 		}
@@ -129,7 +137,7 @@ func (j *JuiceFSEngine) cleanupCache() (err error) {
 	cacheDirs := j.getCacheDirs(runtime)
 
 	workerName := j.getWorkerName()
-	pods, err := j.GetRunningPodsOfStatefulSet(workerName, j.namespace)
+	pods, err := getRunningJuiceFSWorkerPods(j, workerName, j.namespace)
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
 			j.Log.Info("worker of runtime %s namespace %s has been shutdown.", runtime.Name, runtime.Namespace)
@@ -156,7 +164,7 @@ func (j *JuiceFSEngine) cleanupCache() (err error) {
 		for _, cacheDir := range cacheDirs {
 			cacheDirsToBeDeleted = append(cacheDirsToBeDeleted, filepath.Join(cacheDir, uuid, "raw/chunks"))
 		}
-		err := fileUtils.DeleteCacheDirs(cacheDirsToBeDeleted)
+		err := deleteJuiceFSCacheDirs(fileUtils, cacheDirsToBeDeleted)
 		if err != nil {
 			return err
 		}
@@ -213,7 +221,7 @@ func (j *JuiceFSEngine) getUUID(pod corev1.Pod, containerName string) (uuid stri
 	fileUtils := operations.NewJuiceFileUtils(pod.Name, containerName, j.namespace, j.Log)
 
 	j.Log.Info("Get status in pod", "pod", pod.Name, "source", source)
-	status, err := fileUtils.GetStatus(source)
+	status, err := getJuiceFSStatus(fileUtils, source)
 	if err != nil {
 		return
 	}

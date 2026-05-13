@@ -31,31 +31,41 @@ import (
 
 // transform worker volumes
 func (j *JuiceFSEngine) transformWorkerVolumes(runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) (err error) {
-	if len(runtime.Spec.Worker.VolumeMounts) > 0 {
-		for _, volumeMount := range runtime.Spec.Worker.VolumeMounts {
-			var volume *corev1.Volume
+	volumeClaimTemplates := map[string]corev1.PersistentVolumeClaim{}
+	for _, pvc := range runtime.Spec.VolumeClaimTemplates {
+		volumeClaimTemplates[pvc.Name] = pvc
+	}
+	usedVolumeClaimTemplates := map[string]bool{}
 
-			for _, v := range runtime.Spec.Volumes {
-				if v.Name == volumeMount.Name {
-					volume = &v
-					break
-				}
+	volumes := map[string]corev1.Volume{}
+	for _, v := range runtime.Spec.Volumes {
+		volumes[v.Name] = v
+	}
+
+	addedVolumes := map[string]bool{}
+	for _, volumeMount := range runtime.Spec.Worker.VolumeMounts {
+		if _, ok := volumeClaimTemplates[volumeMount.Name]; ok {
+			usedVolumeClaimTemplates[volumeMount.Name] = true
+		} else {
+			volume, ok := volumes[volumeMount.Name]
+			if !ok {
+				return fmt.Errorf("failed to find volume or volumeClaimTemplate for worker volumeMount %s", volumeMount.Name)
 			}
 
-			if volume == nil {
-				return fmt.Errorf("failed to find the volume for volumeMount %s", volumeMount.Name)
+			if !addedVolumes[volumeMount.Name] {
+				value.Worker.Volumes = append(value.Worker.Volumes, volume)
+				addedVolumes[volumeMount.Name] = true
 			}
-
-			if len(value.Worker.VolumeMounts) == 0 {
-				value.Worker.VolumeMounts = []corev1.VolumeMount{}
-			}
-			value.Worker.VolumeMounts = append(value.Worker.VolumeMounts, volumeMount)
-
-			if len(value.Worker.Volumes) == 0 {
-				value.Worker.Volumes = []corev1.Volume{}
-			}
-			value.Worker.Volumes = append(value.Worker.Volumes, *volume)
 		}
+
+		value.Worker.VolumeMounts = append(value.Worker.VolumeMounts, volumeMount)
+	}
+
+	for _, pvc := range runtime.Spec.VolumeClaimTemplates {
+		if !usedVolumeClaimTemplates[pvc.Name] {
+			return fmt.Errorf("volumeClaimTemplate %s must be mounted by worker volumeMounts", pvc.Name)
+		}
+		value.Worker.VolumeClaimTemplates = append(value.Worker.VolumeClaimTemplates, pvc)
 	}
 
 	return err

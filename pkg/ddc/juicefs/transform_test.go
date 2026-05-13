@@ -111,6 +111,45 @@ var _ = Describe("JuiceFSEngine Transform", func() {
 		})
 	})
 
+	Describe("transformWorkers", func() {
+		It("should return worker volume errors", func() {
+			engine := &JuiceFSEngine{
+				Log: fake.NullLogger(),
+			}
+			runtime := &datav1alpha1.JuiceFSRuntime{
+				Spec: datav1alpha1.JuiceFSRuntimeSpec{
+					VolumeClaimTemplates: []corev1.PersistentVolumeClaim{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "worker-cache",
+							},
+						},
+					},
+				},
+			}
+			dataset := &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{
+							MountPoint: "juicefs:///mnt/test",
+							Name:       "test",
+						},
+					},
+				},
+			}
+			value := &JuiceFS{
+				Edition: CommunityEdition,
+			}
+
+			err := engine.transformWorkers(runtime, dataset, value)
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("volumeClaimTemplate worker-cache"))
+			Expect(err.Error()).To(ContainSubstring("worker volumeMounts"))
+			Expect(value.Worker.VolumeClaimTemplates).To(BeEmpty())
+		})
+	})
+
 	Describe("transformTolerations", func() {
 		It("should transform tolerations correctly", func() {
 			j := &JuiceFSEngine{

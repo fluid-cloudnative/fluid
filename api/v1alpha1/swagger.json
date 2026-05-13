@@ -2488,12 +2488,21 @@
           "$ref": "#/definitions/.TieredStore"
         },
         "volumes": {
-          "description": "Volumes is the list of Kubernetes volumes that can be mounted by the alluxio runtime components and/or fuses.",
+          "description": "Volumes is the list of Kubernetes volumes that can be mounted by the JuiceFS runtime components and/or fuses.",
           "type": "array",
           "items": {
             "default": {},
             "$ref": "#/definitions/v1.Volume"
           }
+        },
+        "volumeClaimTemplates": {
+          "description": "VolumeClaimTemplates is the list of Kubernetes persistent volume claim templates used by the JuiceFS worker StatefulSet.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.PersistentVolumeClaim"
+          },
+          "x-kubernetes-list-type": "atomic"
         },
         "worker": {
           "description": "The component spec of JuiceFS worker",
