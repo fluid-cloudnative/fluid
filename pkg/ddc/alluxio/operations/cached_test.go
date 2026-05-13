@@ -24,6 +24,19 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 )
 
+// TestAlluxioFileUtils_CachedState verifies CachedState behavior for two core paths: when
+// exec fails the error is returned, and when exec succeeds the cache size is parsed from
+// the "Alluxio cluster summary" output (expecting 0B -> cached size 0).
+//
+// Parameters:
+//   - t (*testing.T): The test handle used for reporting failures.
+//
+// Returns:
+//   - none
+//
+// Notes:
+//   - Mocks AlluxioFileUtils.exec to simulate error and successful command output.
+//   - Asserts both error handling and cache size parsing correctness.
 func TestAlluxioFileUtils_CachedState(t *testing.T) {
 	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "Alluxio cluster summary: \n    Master Address: 192.168.0.193:20009  \n Used Capacity: 0B\n", "", nil
