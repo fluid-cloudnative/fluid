@@ -320,6 +320,7 @@ func (info *RuntimeInfo) IsPlacementModeSet() bool {
 	return info.placementMode != nil
 }
 
+// GetPlacementModeWithDefault returns the configured placement mode, or the default value if it is not set.
 func (info *RuntimeInfo) GetPlacementModeWithDefault(defaultMode datav1alpha1.PlacementMode) datav1alpha1.PlacementMode {
 	if !info.IsPlacementModeSet() || info.placementMode == nil {
 		return defaultMode
