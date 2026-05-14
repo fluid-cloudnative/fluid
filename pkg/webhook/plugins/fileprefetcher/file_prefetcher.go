@@ -91,23 +91,29 @@ func (p *FilePrefetcher) Mutate(pod *corev1.Pod, runtimeInfos map[string]base.Ru
 	}
 
 	containerSpec, statusFileVolume := p.buildFilePrefetcherSidecarContainer(config)
+
+	// Inject file prefetcher container right after fuse sidecar containers, we assume fluid's fuse sidecar container is injected together.
+	// e.g. before injection: [C1, FUSE1, FUSE2, C2, C3], after injection: [C1, FUSE1, FUSE2, FILEPREFETCHER, C2, C3]
+	pod.Spec.Containers = p.injectFilePrefetcherSidecar(pod.Spec.Containers, containerSpec)
 	if config.AsyncPrefetch {
 		statusVolumeMount := corev1.VolumeMount{
 			Name:      filePrefetcherStatusVolumeName,
 			MountPath: filePrefetcherStatusVolumeMountPath,
 		}
+		var foundPrefetcherSidecar bool = false
 		for idx, ctr := range pod.Spec.Containers {
-			if strings.HasPrefix(ctr.Name, common.FuseContainerName) {
-				// Skip injecting file prefetcher status volume into fluid's fuse sidecar containers.
+			// Skip injecting status volume until we found a file prefetcher file prefetcher sidecar
+			// e.g. if the containers are [C1, FUSE1, FUSE2, FILEPREFETCHER, C2, C3], only C2 and C3 will get this status volume
+			if !foundPrefetcherSidecar {
+				if strings.HasPrefix(ctr.Name, filePrefetcherContainerName) {
+					foundPrefetcherSidecar = true
+				}
 				continue
 			}
+
 			pod.Spec.Containers[idx].VolumeMounts = append(pod.Spec.Containers[idx].VolumeMounts, statusVolumeMount)
 		}
 	}
-
-	// Inject file prefetcher container right after fuse sidecar containers, we assume fluid's fuse sidecar container is injected together.
-	// e.g. before injection: [C1, FUSE1, FUSE2, C2, C3], after injection: [C1, FUSE1, FUSE2, FILEPREFETCHER, C2, C3]
-	pod.Spec.Containers = p.injectFilePrefetcherSidecar(pod.Spec.Containers, containerSpec)
 	pod.Spec.Volumes = append(pod.Spec.Volumes, statusFileVolume)
 	pod.Annotations[AnnotationFilePrefetcherInjectDone] = common.True
 
@@ -219,11 +225,6 @@ func (p *FilePrefetcher) parseGlobPathsFromFileList(fileList string, pod *corev1
 		} else {
 			pvcName = items[0]
 			globPath = filepath.Clean(fmt.Sprintf("%c%s", filepath.Separator, filepath.Join(items[1:]...)))
-		}
-
-		if _, ok := runtimeInfos[pvcName]; !ok {
-			p.log.Info("skip adding path to prefetch list because the persistentVolumeClaim is not managed by Fluid", "path", uriPath)
-			continue
 		}
 
 		for _, volume := range pod.Spec.Volumes {

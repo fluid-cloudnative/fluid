@@ -401,6 +401,7 @@ webhook:
           - MountPropagationInjector
           - DatasetUsageInjector
         withoutDataset:
+          - FilePrefetcher
           - PreferNodesWithoutCache
       # serverless webhook plugins
       serverless:
@@ -408,7 +409,8 @@ webhook:
           - FilePrefetcher
           - FuseSidecar
           - DatasetUsageInjector
-        withoutDataset: []
+        withoutDataset: 
+          - FilePrefetcher
     pluginConfig:
       - name: NodeAffinityWithCache
         # plugin args is a serialized yaml string.
