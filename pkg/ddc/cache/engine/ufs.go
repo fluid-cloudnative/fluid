@@ -125,6 +125,7 @@ func (e *CacheEngine) UpdateOnUFSChange(runtime *datav1alpha1.CacheRuntime) (err
 	stdout, err := e.PrepareUFS(runtimeClass)
 	if err != nil {
 		e.Log.Error(err, "Failed to add or remove mount points")
+		e.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.RuntimeMountUfsFailed, "Failed to execute mount ufs command")
 		return
 	}
 
@@ -140,7 +141,7 @@ func (e *CacheEngine) UpdateOnUFSChange(runtime *datav1alpha1.CacheRuntime) (err
 		return errors.Wrapf(err, "failed to parse mount ufs output as CacheRuntimeMountUfsOutput, output: %q", stdout)
 	}
 
-	// 5. sync dataset mounts, to prevent the runtime config not updated
+	// 5. sync dataset mounts, to prevent the runtime config not updated in pods in time.
 	err = e.syncDatasetMounts(dataset, mountOutput)
 	if err != nil {
 		e.Log.Error(err, "Failed to sync dataset mounts")
