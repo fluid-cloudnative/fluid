@@ -147,7 +147,7 @@ func (e *CacheEngine) UpdateOnUFSChange(runtime *datav1alpha1.CacheRuntime) (err
 		return err
 	}
 
-	// 5. update latest mount time
+	// 6. update latest mount time
 	err = e.updateMountTime()
 	if err != nil {
 		return

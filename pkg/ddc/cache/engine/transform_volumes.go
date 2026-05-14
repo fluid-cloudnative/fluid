@@ -26,7 +26,7 @@ import (
 // transformEncryptOptionsToComponentVolumes transforms encrypt options from dataset spec to component pod volumes
 // This function can be reused for both Master and Worker components
 func (e *CacheEngine) transformEncryptOptionsToComponentVolumes(dataset *datav1alpha1.Dataset, component *common.CacheRuntimeComponentValue) {
-	if component == nil || !component.Enabled || len(component.PodTemplateSpec.Spec.Containers) == 0 {
+	if dataset == nil || component == nil || !component.Enabled || len(component.PodTemplateSpec.Spec.Containers) == 0 {
 		return
 	}
 
