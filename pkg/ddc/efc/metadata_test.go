@@ -17,166 +17,82 @@
 package efc
 
 import (
-	"errors"
-	"testing"
+	"context"
 
-	"github.com/agiledragon/gomonkey/v2"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 )
 
-// TestSyncMetadataInternal tests the syncMetadataInternal method of EFCEngine.
-// It verifies the method's behavior under different scenarios:
-// 1. When TotalStorageBytes returns an error
-// 2. When TotalFileNums returns an error
-// 3. When both TotalStorageBytes and TotalFileNums succeed
-func TestSyncMetadataInternal(t *testing.T) {
-	mockTotalStorageBytesCommon := func(e *EFCEngine) (int64, error) {
-		return 0, nil
-	}
-	mockTotalStorageBytesError := func(e *EFCEngine) (int64, error) {
-		return 0, errors.New("other error")
-	}
-
-	mockTotalFileNumsCommon := func(e *EFCEngine) (int64, error) {
-		return 0, nil
-	}
-	mockTotalFileNumsError := func(e *EFCEngine) (int64, error) {
-		return 0, errors.New("other error")
-	}
-
-	testObjs := []runtime.Object{}
-	EFCRuntimeInputs := []datav1alpha1.EFCRuntime{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "spark",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.EFCRuntimeSpec{
-				Master: datav1alpha1.EFCCompTemplateSpec{
-					Replicas: 1,
+var _ = Describe("EFCEngine metadata", func() {
+	Describe("syncMetadataInternal", func() {
+		It("updates dataset metadata using the current UFS totals", func() {
+			dataset := &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "spark",
+					Namespace: "fluid",
 				},
-			},
-		},
-	}
-	for _, EFCRuntime := range EFCRuntimeInputs {
-		testObjs = append(testObjs, EFCRuntime.DeepCopy())
-	}
+			}
 
-	var datasetInputs = []datav1alpha1.Dataset{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "spark",
-				Namespace: "fluid",
-			},
-		},
-	}
-	for _, datasetInput := range datasetInputs {
-		testObjs = append(testObjs, datasetInput.DeepCopy())
-	}
+			engine := &EFCEngine{
+				name:      "spark",
+				namespace: "fluid",
+				Client:    fake.NewFakeClientWithScheme(testScheme, dataset.DeepCopy()),
+				Log:       fake.NullLogger(),
+			}
 
-	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+			Expect(engine.syncMetadataInternal()).To(Succeed())
 
-	runtimeInfo, err := base.BuildRuntimeInfo("spark", "fluid", "efc")
-	if err != nil {
-		t.Errorf("fail to create the runtimeInfo with error %v", err)
-	}
+			updated := &datav1alpha1.Dataset{}
+			Expect(engine.Client.Get(context.TODO(), types.NamespacedName{Name: "spark", Namespace: "fluid"}, updated)).To(Succeed())
+			Expect(updated.Status.UfsTotal).To(Equal("0.00B"))
+			Expect(updated.Status.FileNum).To(Equal("0"))
+		})
 
-	engine := &EFCEngine{
-		name:        "spark",
-		namespace:   "fluid",
-		Client:      client,
-		Log:         fake.NullLogger(),
-		runtimeInfo: runtimeInfo,
-	}
+		It("returns an error when the dataset cannot be loaded", func() {
+			engine := &EFCEngine{
+				name:      "spark",
+				namespace: "fluid",
+				Client:    fake.NewFakeClientWithScheme(testScheme),
+				Log:       fake.NullLogger(),
+			}
 
-	patches := gomonkey.ApplyMethod(engine, "TotalStorageBytes", mockTotalStorageBytesError)
-	defer patches.Reset()
+			err := engine.syncMetadataInternal()
 
-	err = engine.syncMetadataInternal()
-	if err == nil {
-		t.Errorf("fail to exec the function")
-	}
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("datasets.data.fluid.io \"spark\" not found"))
+		})
+	})
 
-	patches.ApplyMethod(engine, "TotalStorageBytes", mockTotalStorageBytesCommon)
-	patches.ApplyMethod(engine, "TotalFileNums", mockTotalFileNumsError)
-
-	err = engine.syncMetadataInternal()
-	if err == nil {
-		t.Errorf("fail to exec the function")
-	}
-
-	patches.ApplyMethod(engine, "TotalStorageBytes", mockTotalStorageBytesCommon)
-	patches.ApplyMethod(engine, "TotalFileNums", mockTotalFileNumsCommon)
-
-	err = engine.syncMetadataInternal()
-	if err != nil {
-		t.Errorf("fail to exec the function")
-	}
-}
-
-func TestSyncMetadata(t *testing.T) {
-	mockShouldCheckUFSCommon := func(e *EFCEngine) (should bool, err error) {
-		return true, nil
-	}
-
-	mockTotalStorageBytesCommon := func(e *EFCEngine) (int64, error) {
-		return 0, nil
-	}
-
-	mockTotalFileNumsCommon := func(e *EFCEngine) (int64, error) {
-		return 0, nil
-	}
-
-	testObjs := []runtime.Object{}
-	EFCRuntimeInputs := []datav1alpha1.EFCRuntime{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "spark",
-				Namespace: "fluid",
-			},
-			Spec: datav1alpha1.EFCRuntimeSpec{
-				Master: datav1alpha1.EFCCompTemplateSpec{
-					Replicas: 1,
+	Describe("SyncMetadata", func() {
+		It("skips syncing when the engine does not need UFS metadata checks", func() {
+			dataset := &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "spark",
+					Namespace: "fluid",
 				},
-			},
-		},
-	}
-	for _, EFCRuntime := range EFCRuntimeInputs {
-		testObjs = append(testObjs, EFCRuntime.DeepCopy())
-	}
+				Status: datav1alpha1.DatasetStatus{
+					UfsTotal: "existing-total",
+					FileNum:  "existing-files",
+				},
+			}
 
-	var datasetInputs = []datav1alpha1.Dataset{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "spark",
-				Namespace: "fluid",
-			},
-		},
-	}
-	for _, datasetInput := range datasetInputs {
-		testObjs = append(testObjs, datasetInput.DeepCopy())
-	}
+			engine := &EFCEngine{
+				name:      "spark",
+				namespace: "fluid",
+				Client:    fake.NewFakeClientWithScheme(testScheme, dataset.DeepCopy()),
+				Log:       fake.NullLogger(),
+			}
 
-	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+			Expect(engine.SyncMetadata()).To(Succeed())
 
-	engine := &EFCEngine{
-		name:      "spark",
-		namespace: "fluid",
-		Client:    client,
-		Log:       fake.NullLogger(),
-	}
-
-	patches := gomonkey.ApplyMethod(engine, "ShouldCheckUFS", mockShouldCheckUFSCommon)
-	patches.ApplyMethod(engine, "TotalStorageBytes", mockTotalStorageBytesCommon)
-	patches.ApplyMethod(engine, "TotalFileNums", mockTotalFileNumsCommon)
-	defer patches.Reset()
-
-	err := engine.SyncMetadata()
-	if err != nil {
-		t.Errorf("fail to exec the function")
-	}
-}
+			unchanged := &datav1alpha1.Dataset{}
+			Expect(engine.Client.Get(context.TODO(), types.NamespacedName{Name: "spark", Namespace: "fluid"}, unchanged)).To(Succeed())
+			Expect(unchanged.Status.UfsTotal).To(Equal("existing-total"))
+			Expect(unchanged.Status.FileNum).To(Equal("existing-files"))
+		})
+	})
+})
