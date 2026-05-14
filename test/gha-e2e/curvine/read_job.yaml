@@ -16,6 +16,7 @@ spec:
       containers:
       - name: read-job
         image: busybox
+        imagePullPolicy: IfNotPresent
         resources:
           limits:
             memory: "512Mi"

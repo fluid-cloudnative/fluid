@@ -105,6 +105,7 @@ rules:
       - vineyardruntimes/status
       - cacheruntimes
       - cacheruntimes/status
+      - cacheruntimeclasses
     verbs:
       - get
       - list

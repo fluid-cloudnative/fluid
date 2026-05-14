@@ -20,6 +20,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,6 +47,19 @@ var k8sClient client.Client
 var testEnv *envtest.Environment
 var testCtx = context.Background()
 var useExistingCluster = false
+var testEnvStarted = false
+
+const skipEnvtestStartFailureEnvVar = "FLUID_DATASET_TEST_SKIP_ENVTEST_START_FAILURE"
+
+func allowSkippingEnvtestStartFailure() bool {
+	value, ok := os.LookupEnv(skipEnvtestStartFailureEnvVar)
+	if !ok {
+		return false
+	}
+
+	allowed, err := strconv.ParseBool(value)
+	return err == nil && allowed
+}
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -54,7 +68,7 @@ func TestAPIs(t *testing.T) {
 		"Controller Suite")
 }
 
-var _ = BeforeSuite(func(done Done) {
+var _ = BeforeSuite(func(ctx context.Context) {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 	if env := os.Getenv("USE_EXISTING_CLUSTER"); env != "" {
 		useExistingCluster = true
@@ -67,8 +81,20 @@ var _ = BeforeSuite(func(done Done) {
 
 	var err error
 	cfg, err = testEnv.Start()
-	Expect(err).ToNot(HaveOccurred())
+	if err != nil {
+		if allowSkippingEnvtestStartFailure() {
+			GinkgoLogr.Info(
+				"envtest unavailable, skipping envtest-dependent specs due to explicit opt-in",
+				"envVar", skipEnvtestStartFailureEnvVar,
+				"error", err,
+			)
+			return
+		}
+
+		Expect(err).NotTo(HaveOccurred())
+	}
 	Expect(cfg).ToNot(BeNil())
+	testEnvStarted = true
 
 	err = datav1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
@@ -78,11 +104,13 @@ var _ = BeforeSuite(func(done Done) {
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).ToNot(HaveOccurred())
 	Expect(k8sClient).ToNot(BeNil())
-
-	close(done)
-}, 60)
+})
 
 var _ = AfterSuite(func() {
+	if !testEnvStarted {
+		return
+	}
+
 	By("tearing down the test environment")
 	err := testEnv.Stop()
 	Expect(err).ToNot(HaveOccurred())
@@ -108,6 +136,9 @@ var _ = Describe("dataset", func() {
 	})
 
 	It("Should create dataset successfully", func() {
+		if !testEnvStarted {
+			Skip("envtest not available")
+		}
 		By("create dataset")
 		err := k8sClient.Create(testCtx, &dataset)
 		Expect(err).NotTo(HaveOccurred())

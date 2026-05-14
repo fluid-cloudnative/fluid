@@ -81,10 +81,6 @@ type ExecutionCommonEntry struct {
 	TimeoutSeconds int32 `json:"timeout,omitempty"`
 }
 
-// EncryptOptionComponentDependency defines the configuration for encrypt option dependency
-type EncryptOptionComponentDependency struct {
-}
-
 // ExtraResourcesComponentDependency defines the extra resources configuration for component dependencies
 type ExtraResourcesComponentDependency struct {
 	// ConfigMaps is a list of ConfigMaps in the same namespace to mount into the component
@@ -94,13 +90,21 @@ type ExtraResourcesComponentDependency struct {
 
 // RuntimeComponentDependencies defines the dependencies required by a CacheRuntime component
 type RuntimeComponentDependencies struct {
-	// EncryptOption is the configuration for encrypt option secret mount
+	// SecretMount controls whether dataset encrypt-option secrets are mounted into this component pod.
+	// Defaults to true for Master/Worker, false for Client unless explicitly enabled.
 	// +optional
-	EncryptOption *EncryptOptionComponentDependency `json:"encryptOption,omitempty"`
+	SecretMount *SecretMountComponentDependency `json:"secretMount,omitempty"`
 
 	// ExtraResources specifies the usage of extra resources such as ConfigMaps
 	// +optional
 	ExtraResources *ExtraResourcesComponentDependency `json:"extraResources,omitempty"`
+}
+
+// SecretMountComponentDependency defines the secret mount configuration for component dependencies
+type SecretMountComponentDependency struct {
+	// Enabled indicates whether dataset encrypt-option secrets should be mounted into this component pod.
+	// +optional
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 // HeadlessRuntimeComponentService defines the configuration for headless service
@@ -179,6 +183,26 @@ type CacheRuntimeClass struct {
 	// ExtraResources specifies additional resources (e.g., ConfigMaps) used by the CacheRuntime components
 	// +optional
 	ExtraResources RuntimeExtraResources `json:"extraResources,omitempty"`
+
+	// DataOperationSpecs specifies the data operation spec
+	// +optional
+	DataOperationSpecs []DataOperationSpec `json:"dataOperationSpecs,omitempty"`
+}
+
+type DataOperationSpec struct {
+	// Name is the data operation name like DataLoad, DataBackup, DataMigrate etc.
+	// +kubebuilder:validation:Enum=DataLoad;DataBackup;DataMigrate;DataProcess
+	Name string `json:"name"`
+
+	// Image the image for data operation, if not existed, use the runtime/runtimeclass defined worker image.
+	// +optional
+	Image string `json:"image,omitempty"`
+
+	// Command for data operation Pod container
+	Command []string `json:"command,omitempty"`
+
+	// Args for data operation Pod container
+	Args []string `json:"args,omitempty"`
 }
 
 // CacheRuntimeClassList contains a list of CacheRuntimeClass

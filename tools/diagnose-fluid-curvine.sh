@@ -32,6 +32,7 @@ pod_status() {
   local namespace=${1:-"default"}
   run kubectl get pods -owide -n ${namespace} &>"$diagnose_dir/pods-${namespace}.log"
   run kubectl get pods -oyaml -n ${namespace} &>>"$diagnose_dir/pods-${namespace}.log"
+  run kubectl describe pods -n ${namespace} &>>"$diagnose_dir/pods-${namespace}.log"
 }
 
 fluid_pod_logs() {

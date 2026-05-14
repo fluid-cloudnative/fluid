@@ -8,6 +8,7 @@ spec:
       containers:
       - name: mc
         image: minio/mc
+        imagePullPolicy: IfNotPresent
         resources:
           limits:
             memory: "512Mi"

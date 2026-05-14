@@ -22,11 +22,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (e *CacheEngine) transformClient(runtime *datav1alpha1.CacheRuntime, runtimeClass *datav1alpha1.CacheRuntimeClass,
+func (e *CacheEngine) transformClient(dataset *datav1alpha1.Dataset, runtime *datav1alpha1.CacheRuntime, runtimeClass *datav1alpha1.CacheRuntimeClass,
 	config *CacheRuntimeComponentCommonConfig, value *common.CacheRuntimeValue) error {
 
-	if runtimeClass.Topology.Client == nil || runtime.Spec.Client.Disabled {
-		value.Client.Enabled = false
+	if runtimeClass.Topology == nil || runtimeClass.Topology.Client == nil || runtime.Spec.Client.Disabled {
+		value.Client = &common.CacheRuntimeComponentValue{Enabled: false}
 		return nil
 	}
 
@@ -50,6 +50,11 @@ func (e *CacheEngine) transformClient(runtime *datav1alpha1.CacheRuntime, runtim
 	err := e.addCommonConfigForComponent(config, value.Client, component)
 	if err != nil {
 		return err
+	}
+
+	// transform encrypt options to client volumes (default disabled for Client)
+	if shouldMountSecrets(component.Dependencies.SecretMount, false) {
+		e.transformEncryptOptionsToComponentVolumes(dataset, value.Client)
 	}
 
 	podTemplateSpec := &value.Client.PodTemplateSpec

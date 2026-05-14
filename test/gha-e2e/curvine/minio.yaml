@@ -32,6 +32,7 @@ spec:
       - name: minio
         # Pulls the default Minio image from Docker Hub
         image: minio/minio
+        imagePullPolicy: IfNotPresent
         resources:
           limits:
             memory: "512Mi"

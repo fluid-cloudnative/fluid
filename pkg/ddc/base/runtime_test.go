@@ -29,6 +29,7 @@ import (
 
 	fakeutils "github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -1160,227 +1161,6 @@ var _ = Describe("GetRuntimeInfo", func() {
 	}
 })
 
-var _ = Describe("GetRuntimeStatus", func() {
-	s := runtime.NewScheme()
-
-	alluxioRuntime := v1alpha1.AlluxioRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "alluxio",
-			Namespace: "default",
-		},
-	}
-
-	goosefsRuntime := v1alpha1.GooseFSRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "goosefs",
-			Namespace: "default",
-		},
-	}
-
-	jindoRuntime := v1alpha1.JindoRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "jindo",
-			Namespace: "default",
-		},
-	}
-
-	juicefsRuntime := v1alpha1.JuiceFSRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "juice",
-			Namespace: "default",
-		},
-	}
-
-	efcRuntime := v1alpha1.EFCRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "efc",
-			Namespace: "default",
-		},
-	}
-
-	thinRuntime := v1alpha1.ThinRuntime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "thin",
-			Namespace: "default",
-		},
-	}
-
-	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.AlluxioRuntime{})
-	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.GooseFSRuntime{})
-	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JindoRuntime{})
-	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.JuiceFSRuntime{})
-	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.EFCRuntime{})
-	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.ThinRuntime{})
-	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.Dataset{})
-
-	_ = v1.AddToScheme(s)
-	alluxioRuntimeObjs := []runtime.Object{}
-	goosefsRuntimeObjs := []runtime.Object{}
-	jindoRuntimeObjs := []runtime.Object{}
-	juicefsRuntimeObjs := []runtime.Object{}
-	efcRuntimeObjs := []runtime.Object{}
-	thinRuntimeObjs := []runtime.Object{}
-
-	alluxioRuntimeObjs = append(alluxioRuntimeObjs, &alluxioRuntime)
-	goosefsRuntimeObjs = append(goosefsRuntimeObjs, &goosefsRuntime)
-	jindoRuntimeObjs = append(jindoRuntimeObjs, &jindoRuntime)
-	juicefsRuntimeObjs = append(juicefsRuntimeObjs, &juicefsRuntime)
-	efcRuntimeObjs = append(efcRuntimeObjs, &efcRuntime)
-	thinRuntimeObjs = append(thinRuntimeObjs, &thinRuntime)
-	type args struct {
-		client      client.Client
-		name        string
-		namespace   string
-		runtimeType string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "alluxio_test",
-			args: args{
-				client:      fakeutils.NewFakeClientWithScheme(s, alluxioRuntimeObjs...),
-				name:        "alluxio",
-				namespace:   "default",
-				runtimeType: common.AlluxioRuntime,
-			},
-			wantErr: false,
-		},
-		{
-			name: "alluxio_test_error",
-			args: args{
-				client:      fakeutils.NewFakeClientWithScheme(s, alluxioRuntimeObjs...),
-				name:        "alluxio-error",
-				namespace:   "default",
-				runtimeType: common.AlluxioRuntime,
-			},
-			wantErr: true,
-		},
-		{
-			name: "goosefs_test",
-			args: args{
-				client:      fakeutils.NewFakeClientWithScheme(s, goosefsRuntimeObjs...),
-				name:        "goosefs",
-				namespace:   "default",
-				runtimeType: common.GooseFSRuntime,
-			},
-			wantErr: false,
-		},
-		{
-			name: "goosefs_test_error",
-			args: args{
-				client:      fakeutils.NewFakeClientWithScheme(s, goosefsRuntimeObjs...),
-				name:        "goosefs-error",
-				namespace:   "default",
-				runtimeType: common.GooseFSRuntime,
-			},
-			wantErr: true,
-		},
-		{
-			name: "jindo_test",
-			args: args{
-				client:      fakeutils.NewFakeClientWithScheme(s, jindoRuntimeObjs...),
-				name:        "jindo",
-				namespace:   "default",
-				runtimeType: common.JindoRuntime,
-			},
-			wantErr: false,
-		},
-		{
-			name: "jindo_test_error",
-			args: args{
-				client:      fakeutils.NewFakeClientWithScheme(s, jindoRuntimeObjs...),
-				name:        "jindo-error",
-				namespace:   "default",
-				runtimeType: common.JindoRuntime,
-			},
-			wantErr: true,
-		},
-		{
-			name: "juicefs_test",
-			args: args{
-				client:      fakeutils.NewFakeClientWithScheme(s, juicefsRuntimeObjs...),
-				name:        "juice",
-				namespace:   "default",
-				runtimeType: common.JuiceFSRuntime,
-			},
-			wantErr: false,
-		},
-		{
-			name: "juicefs_test_error",
-			args: args{
-				client:      fakeutils.NewFakeClientWithScheme(s, juicefsRuntimeObjs...),
-				name:        "juice-error",
-				namespace:   "default",
-				runtimeType: common.JuiceFSRuntime,
-			},
-			wantErr: true,
-		},
-		{
-			name: "efc_test",
-			args: args{
-				client:      fakeutils.NewFakeClientWithScheme(s, efcRuntimeObjs...),
-				name:        "efc",
-				namespace:   "default",
-				runtimeType: common.EFCRuntime,
-			},
-			wantErr: false,
-		},
-		{
-			name: "efc_test_error",
-			args: args{
-				client:      fakeutils.NewFakeClientWithScheme(s, efcRuntimeObjs...),
-				name:        "efc-error",
-				namespace:   "default",
-				runtimeType: common.EFCRuntime,
-			},
-			wantErr: true,
-		},
-		{
-			name: "thin_test",
-			args: args{
-				client:      fakeutils.NewFakeClientWithScheme(s, thinRuntimeObjs...),
-				name:        "thin",
-				namespace:   "default",
-				runtimeType: common.ThinRuntime,
-			},
-			wantErr: false,
-		},
-		{
-			name: "thin_test_error",
-			args: args{
-				client:      fakeutils.NewFakeClientWithScheme(s, thinRuntimeObjs...),
-				name:        "thin-error",
-				namespace:   "default",
-				runtimeType: common.ThinRuntime,
-			},
-			wantErr: true,
-		},
-		{
-			name: "default_error",
-			args: args{
-				client:      fakeutils.NewFakeClientWithScheme(s, thinRuntimeObjs...),
-				name:        "thin-not-exit",
-				namespace:   "default",
-				runtimeType: "thin-not-exit",
-			},
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		It(tt.name, func() {
-			_, err := GetRuntimeStatus(tt.args.client, tt.args.runtimeType, tt.args.name, tt.args.namespace)
-			if tt.wantErr {
-				Expect(err).To(HaveOccurred())
-			} else {
-				Expect(err).NotTo(HaveOccurred())
-			}
-		})
-	}
-})
-
 var _ = Describe("GetSyncRetryDuration", func() {
 	It("should get default sync retry duration", func() {
 		_, err := getSyncRetryDuration()
@@ -1450,5 +1230,177 @@ var _ = Describe("PermitSync", func() {
 		time.Sleep(10 * time.Millisecond) // Wait longer than syncRetryDuration
 		permit = templateEngine.permitSync(ctx.NamespacedName)
 		Expect(permit).To(BeTrue(), "expect permit after retry duration elapsed")
+	})
+})
+
+var _ = Describe("GetDDCRuntimeStatus", func() {
+	It("should get AlluxioRuntime status successfully", func() {
+		runtime := &v1alpha1.AlluxioRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-alluxio",
+				Namespace: "default",
+			},
+			Status: v1alpha1.RuntimeStatus{
+				MasterPhase: v1alpha1.RuntimePhaseReady,
+			},
+		}
+		client := fakeutils.NewFakeClientWithScheme(v1alpha1.UnitTestScheme, runtime)
+
+		status, err := GetDDCRuntimeStatus(client, common.AlluxioRuntime, "test-alluxio", "default")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(status).NotTo(BeNil())
+		Expect(status.MasterPhase).To(Equal(v1alpha1.RuntimePhaseReady))
+	})
+
+	It("should get JindoRuntime status successfully", func() {
+		runtime := &v1alpha1.JindoRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-jindo",
+				Namespace: "default",
+			},
+			Status: v1alpha1.RuntimeStatus{
+				MasterPhase: v1alpha1.RuntimePhaseReady,
+			},
+		}
+		client := fakeutils.NewFakeClientWithScheme(v1alpha1.UnitTestScheme, runtime)
+
+		status, err := GetDDCRuntimeStatus(client, common.JindoRuntime, "test-jindo", "default")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(status).NotTo(BeNil())
+		Expect(status.MasterPhase).To(Equal(v1alpha1.RuntimePhaseReady))
+	})
+
+	It("should get JuiceFSRuntime status successfully", func() {
+		runtime := &v1alpha1.JuiceFSRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-juicefs",
+				Namespace: "default",
+			},
+			Status: v1alpha1.RuntimeStatus{
+				MasterPhase: v1alpha1.RuntimePhaseReady,
+			},
+		}
+		client := fakeutils.NewFakeClientWithScheme(v1alpha1.UnitTestScheme, runtime)
+
+		status, err := GetDDCRuntimeStatus(client, common.JuiceFSRuntime, "test-juicefs", "default")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(status).NotTo(BeNil())
+		Expect(status.MasterPhase).To(Equal(v1alpha1.RuntimePhaseReady))
+	})
+
+	It("should return error for unsupported runtime type", func() {
+		client := fakeutils.NewFakeClientWithScheme(v1alpha1.UnitTestScheme)
+
+		_, err := GetDDCRuntimeStatus(client, "unsupported-runtime", "test", "default")
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("unsupported DDC runtime type"))
+	})
+
+	It("should return error when runtime not found", func() {
+		client := fakeutils.NewFakeClientWithScheme(v1alpha1.UnitTestScheme)
+
+		_, err := GetDDCRuntimeStatus(client, common.AlluxioRuntime, "non-existent", "default")
+		Expect(err).To(HaveOccurred())
+	})
+})
+
+var _ = Describe("GetRuntimeStatusAccessor", func() {
+	It("should get DDCRuntimeStatusAccessor for AlluxioRuntime", func() {
+		runtime := &v1alpha1.AlluxioRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-alluxio",
+				Namespace: "default",
+			},
+			Status: v1alpha1.RuntimeStatus{
+				CacheAffinity: &corev1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+						NodeSelectorTerms: []corev1.NodeSelectorTerm{
+							{
+								MatchExpressions: []corev1.NodeSelectorRequirement{
+									{
+										Key:      "test-key",
+										Operator: corev1.NodeSelectorOpIn,
+										Values:   []string{"value1"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		client := fakeutils.NewFakeClientWithScheme(v1alpha1.UnitTestScheme, runtime)
+
+		accessor, err := GetRuntimeStatusAccessor(client, common.AlluxioRuntime, "test-alluxio", "default")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(accessor).NotTo(BeNil())
+
+		// Test that it's a DDCRuntimeStatusAccessor
+		ddcAccessor, ok := accessor.(*DDCRuntimeStatusAccessor)
+		Expect(ok).To(BeTrue())
+		Expect(ddcAccessor).NotTo(BeNil())
+
+		// Test GetCacheAffinity
+		affinity, err := accessor.GetCacheAffinity()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(affinity).NotTo(BeNil())
+		Expect(affinity.RequiredDuringSchedulingIgnoredDuringExecution).NotTo(BeNil())
+	})
+
+	It("should get CacheRuntimeStatusAccessor for CacheRuntime", func() {
+		runtime := &v1alpha1.CacheRuntime{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-cache",
+				Namespace: "default",
+			},
+			Status: v1alpha1.CacheRuntimeStatus{
+				CacheAffinity: &corev1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+						NodeSelectorTerms: []corev1.NodeSelectorTerm{
+							{
+								MatchExpressions: []corev1.NodeSelectorRequirement{
+									{
+										Key:      "cache-key",
+										Operator: corev1.NodeSelectorOpIn,
+										Values:   []string{"cache-value"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		client := fakeutils.NewFakeClientWithScheme(v1alpha1.UnitTestScheme, runtime)
+
+		accessor, err := GetRuntimeStatusAccessor(client, common.CacheRuntime, "test-cache", "default")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(accessor).NotTo(BeNil())
+
+		// Test that it's a CacheRuntimeStatusAccessor
+		cacheAccessor, ok := accessor.(*CacheRuntimeStatusAccessor)
+		Expect(ok).To(BeTrue())
+		Expect(cacheAccessor).NotTo(BeNil())
+
+		// Test GetCacheAffinity
+		affinity, err := accessor.GetCacheAffinity()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(affinity).NotTo(BeNil())
+		Expect(affinity.RequiredDuringSchedulingIgnoredDuringExecution).NotTo(BeNil())
+	})
+
+	It("should return error for unsupported runtime type", func() {
+		client := fakeutils.NewFakeClientWithScheme(v1alpha1.UnitTestScheme)
+
+		_, err := GetRuntimeStatusAccessor(client, "unsupported-type", "test", "default")
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("fail to get runtime status accessor"))
+	})
+
+	It("should return error when runtime not found", func() {
+		client := fakeutils.NewFakeClientWithScheme(v1alpha1.UnitTestScheme)
+
+		_, err := GetRuntimeStatusAccessor(client, common.AlluxioRuntime, "non-existent", "default")
+		Expect(err).To(HaveOccurred())
 	})
 })

@@ -16,7 +16,7 @@ spec:
   tieredstore:
     levels:
       - mediumtype: SSD
-        path: /var/lib/docker/alluxio
+        path: /tmp/alluxio
         quota: 1Gi
         high: "0.95"
         low: "0.7"

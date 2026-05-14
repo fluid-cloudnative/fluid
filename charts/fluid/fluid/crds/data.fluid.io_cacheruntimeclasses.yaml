@@ -22,6 +22,30 @@ spec:
         properties:
           apiVersion:
             type: string
+          dataOperationSpecs:
+            items:
+              properties:
+                args:
+                  items:
+                    type: string
+                  type: array
+                command:
+                  items:
+                    type: string
+                  type: array
+                image:
+                  type: string
+                name:
+                  enum:
+                  - DataLoad
+                  - DataBackup
+                  - DataMigrate
+                  - DataProcess
+                  type: string
+              required:
+              - name
+              type: object
+            type: array
           extraResources:
             properties:
               configMaps:
@@ -48,8 +72,6 @@ spec:
                 properties:
                   dependencies:
                     properties:
-                      encryptOption:
-                        type: object
                       extraResources:
                         properties:
                           configMaps:
@@ -61,6 +83,11 @@ spec:
                                   type: string
                               type: object
                             type: array
+                        type: object
+                      secretMount:
+                        properties:
+                          enabled:
+                            type: boolean
                         type: object
                     type: object
                   executionEntries:
@@ -3465,8 +3492,6 @@ spec:
                 properties:
                   dependencies:
                     properties:
-                      encryptOption:
-                        type: object
                       extraResources:
                         properties:
                           configMaps:
@@ -3478,6 +3503,11 @@ spec:
                                   type: string
                               type: object
                             type: array
+                        type: object
+                      secretMount:
+                        properties:
+                          enabled:
+                            type: boolean
                         type: object
                     type: object
                   executionEntries:
@@ -6882,8 +6912,6 @@ spec:
                 properties:
                   dependencies:
                     properties:
-                      encryptOption:
-                        type: object
                       extraResources:
                         properties:
                           configMaps:
@@ -6895,6 +6923,11 @@ spec:
                                   type: string
                               type: object
                             type: array
+                        type: object
+                      secretMount:
+                        properties:
+                          enabled:
+                            type: boolean
                         type: object
                     type: object
                   executionEntries:

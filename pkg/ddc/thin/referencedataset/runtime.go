@@ -31,6 +31,8 @@ import (
 )
 
 // getPhysicalDatasetRuntimeStatus get the runtime status of the physical dataset
+// Note: This function only supports DDC-based runtimes (Alluxio, Jindo, etc.)
+// CacheRuntime is not supported because its status structure is incompatible with ThinRuntime.
 func (e *ReferenceDatasetEngine) getPhysicalDatasetRuntimeStatus() (status *datav1alpha1.RuntimeStatus, err error) {
 	physicalRuntimeInfo, err := e.getPhysicalRuntimeInfo()
 	if err != nil {
@@ -42,7 +44,7 @@ func (e *ReferenceDatasetEngine) getPhysicalDatasetRuntimeStatus() (status *data
 		return nil, nil
 	}
 
-	return base.GetRuntimeStatus(e.Client, physicalRuntimeInfo.GetRuntimeType(),
+	return base.GetDDCRuntimeStatus(e.Client, physicalRuntimeInfo.GetRuntimeType(),
 		physicalRuntimeInfo.GetName(), physicalRuntimeInfo.GetNamespace())
 }
 

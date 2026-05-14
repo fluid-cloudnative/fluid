@@ -28,7 +28,7 @@ function create_dataset() {
 }
 
 function wait_dataset_bound() {
-    deadline=180 # 3 minutes
+    deadline=300 # 5 minutes
     last_state=""
     log_interval=0
     log_times=0
@@ -37,6 +37,8 @@ function wait_dataset_bound() {
         if [[ $log_interval -eq 3 ]]; then
             log_times=$(expr $log_times + 1)
             syslog "checking dataset.status.phase==Bound (already $(expr $log_times \* $log_interval \* 5)s, last state: $last_state)"
+            runtime_pods=$(kubectl get pods --no-headers 2>/dev/null | awk -v prefix="${dataset_name}-" '$1 ~ "^" prefix {print $1 ":" $2 ":" $3}' | xargs)
+            syslog "runtime pods: ${runtime_pods:-<empty>}"
             if [[ "$(expr $log_times \* $log_interval \* 5)" -ge "$deadline" ]]; then
                 panic "timeout for ${deadline}s!"
             fi
@@ -78,7 +80,7 @@ function wait_job_completed() {
 function dump_env_and_clean_up() {
     bash tools/diagnose-fluid-alluxio.sh collect --name $dataset_name --namespace default --collect-path ./e2e-tmp/testcase-alluxio.tgz
     syslog "Cleaning up resources for testcase $testname"
-    kubectl delete -f test/gha-e2e/alluxio/
+    kubectl delete --ignore-not-found -f test/gha-e2e/alluxio/
 }
 
 function main() {

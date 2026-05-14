@@ -19,18 +19,19 @@ package engine
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"time"
+
 	fluidapi "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/cache/component"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
-	"reflect"
-	"time"
 )
 
 func (e *CacheEngine) setMasterComponentStatus(componentValue *common.CacheRuntimeComponentValue, status *fluidapi.CacheRuntimeStatus) (ready bool, err error) {
-	manager := component.NewComponentHelper(componentValue.WorkloadType, e.Scheme, e.Client)
+	manager := component.NewComponentHelper(componentValue.WorkloadType, e.Client)
 
 	masterStatus, err := manager.ConstructComponentStatus(context.TODO(), componentValue)
 	if err != nil {
@@ -47,7 +48,7 @@ func (e *CacheEngine) setMasterComponentStatus(componentValue *common.CacheRunti
 	return ready, err
 }
 func (e *CacheEngine) setWorkerComponentStatus(componentValue *common.CacheRuntimeComponentValue, status *fluidapi.CacheRuntimeStatus) (ready bool, err error) {
-	manager := component.NewComponentHelper(componentValue.WorkloadType, e.Scheme, e.Client)
+	manager := component.NewComponentHelper(componentValue.WorkloadType, e.Client)
 
 	workerStatus, err := manager.ConstructComponentStatus(context.TODO(), componentValue)
 	if err != nil {
@@ -70,30 +71,41 @@ func (e *CacheEngine) setWorkerComponentStatus(componentValue *common.CacheRunti
 	}
 	status.Worker = workerStatus
 
+	// Worker Affinity
+	affinity, err := manager.GetNodeAffinity(componentValue)
+	if err != nil {
+		return false, err
+	}
+	status.CacheAffinity = affinity
 	return ready, err
 }
-func (e *CacheEngine) setClientComponentStatus(componentValue *common.CacheRuntimeComponentValue, status *fluidapi.CacheRuntimeStatus) (err error) {
-	manager := component.NewComponentHelper(componentValue.WorkloadType, e.Scheme, e.Client)
+func (e *CacheEngine) setClientComponentStatus(componentValue *common.CacheRuntimeComponentValue, status *fluidapi.CacheRuntimeStatus) (fullyReady bool, err error) {
+	manager := component.NewComponentHelper(componentValue.WorkloadType, e.Client)
 
 	clientStatus, err := manager.ConstructComponentStatus(context.TODO(), componentValue)
 	if err != nil {
-		return err
+		return false, err
 	}
-	if clientStatus.DesiredReplicas > 0 {
-		if clientStatus.DesiredReplicas == clientStatus.ReadyReplicas {
-			clientStatus.Phase = fluidapi.RuntimePhaseReady
-		} else if clientStatus.ReadyReplicas >= 1 {
-			clientStatus.Phase = fluidapi.RuntimePhasePartialReady
-		}
+	if clientStatus.DesiredReplicas > 0 && clientStatus.ReadyReplicas >= clientStatus.DesiredReplicas {
+		clientStatus.Phase = fluidapi.RuntimePhaseReady
+		fullyReady = true
+	} else if clientStatus.ReadyReplicas > 0 {
+		clientStatus.Phase = fluidapi.RuntimePhasePartialReady
+	} else {
+		clientStatus.Phase = fluidapi.RuntimePhaseNotReady
 	}
 	status.Client = clientStatus
 
-	return nil
+	return fullyReady, nil
 }
 func (e *CacheEngine) CheckAndUpdateRuntimeStatus(value *common.CacheRuntimeValue) (bool, error) {
-	var masterReady, workerReady, runtimeReady = true, true, false
+	runtimeReady := false
 
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		// Reset readiness on each retry to avoid stale state after conflicts.
+		masterReady, workerReady, clientFullyReady := true, true, false
+		runtimeReady = false
+
 		runtime, err := e.getRuntime()
 		if err != nil {
 			return err
@@ -115,16 +127,21 @@ func (e *CacheEngine) CheckAndUpdateRuntimeStatus(value *common.CacheRuntimeValu
 		}
 
 		if value.Client.Enabled {
-			err = e.setClientComponentStatus(value.Client, &runtimeToUpdate.Status)
+			clientFullyReady, err = e.setClientComponentStatus(value.Client, &runtimeToUpdate.Status)
 			if err != nil {
 				return err
 			}
 		}
 
-		if masterReady && workerReady {
-			runtimeReady = true
-		} else {
-			e.Log.Info(fmt.Sprintf("MasterReady: %v, workerReady: %v", masterReady, workerReady))
+		runtimeReady = masterReady && workerReady
+		if !runtimeReady {
+			e.Log.Info(fmt.Sprintf(
+				"MasterReady: %v, workerReady: %v, clientFullyReady: %v, clientPhase: %s",
+				masterReady,
+				workerReady,
+				clientFullyReady,
+				runtimeToUpdate.Status.Client.Phase,
+			))
 		}
 
 		// Update the setup time

@@ -18,7 +18,6 @@ package thin
 
 import (
 	"context"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -265,6 +264,117 @@ var _ = Describe("ThinEngine Health Check", Label("pkg.ddc.thin.health_check_tes
 				Expect(err).To(HaveOccurred())
 			})
 		})
+
+		Context("when a fuse-only runtime is healthy", func() {
+			var (
+				client client.Client
+				engine ThinEngine
+			)
+
+			BeforeEach(func() {
+				healthyFuse := &appsv1.DaemonSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      healthCheckTestSpark + "-fuse",
+						Namespace: healthCheckTestNamespace,
+					},
+					Status: appsv1.DaemonSetStatus{
+						NumberUnavailable: 0,
+						NumberReady:       1,
+						NumberAvailable:   1,
+					},
+				}
+				runtimeObj := &datav1alpha1.ThinRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      healthCheckTestSpark,
+						Namespace: healthCheckTestNamespace,
+					},
+					Spec: datav1alpha1.ThinRuntimeSpec{},
+					Status: datav1alpha1.RuntimeStatus{
+						CacheStates: map[common.CacheStateName]string{common.Cached: "true"},
+					},
+				}
+				datasetObj := &datav1alpha1.Dataset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      healthCheckTestSpark,
+						Namespace: healthCheckTestNamespace,
+					},
+					Status: datav1alpha1.DatasetStatus{},
+				}
+
+				client = fake.NewFakeClientWithScheme(testScheme, healthyFuse, runtimeObj, datasetObj)
+				engine = ThinEngine{
+					Client:    client,
+					Log:       fake.NullLogger(),
+					namespace: healthCheckTestNamespace,
+					name:      healthCheckTestSpark,
+					runtime:   runtimeObj,
+				}
+			})
+
+			JustBeforeEach(func() {
+				runtimeInfo, err := base.BuildRuntimeInfo(engine.name, engine.namespace, common.ThinRuntime)
+				Expect(err).NotTo(HaveOccurred())
+				engine.Helper = ctrl.BuildHelper(runtimeInfo, client, engine.Log)
+			})
+
+			It("skips worker checks and updates the dataset to bound", func() {
+				err := engine.CheckRuntimeHealthy()
+				Expect(err).NotTo(HaveOccurred())
+
+				updatedRuntime, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(updatedRuntime.Status.FuseNumberReady).To(Equal(int32(1)))
+				Expect(updatedRuntime.Status.FuseNumberAvailable).To(Equal(int32(1)))
+
+				updatedDataset, err := utils.GetDataset(client, healthCheckTestSpark, healthCheckTestNamespace)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(updatedDataset.Status.Phase).To(Equal(datav1alpha1.BoundDatasetPhase))
+			})
+		})
+
+		Context("when checking a fuse-only runtime without a fuse daemonset", func() {
+			var (
+				client client.Client
+				engine ThinEngine
+			)
+
+			BeforeEach(func() {
+				runtimeObj := &datav1alpha1.ThinRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      healthCheckTestSpark,
+						Namespace: healthCheckTestNamespace,
+					},
+					Spec: datav1alpha1.ThinRuntimeSpec{},
+				}
+				datasetObj := &datav1alpha1.Dataset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      healthCheckTestSpark,
+						Namespace: healthCheckTestNamespace,
+					},
+				}
+
+				client = fake.NewFakeClientWithScheme(testScheme, runtimeObj, datasetObj)
+				engine = ThinEngine{
+					Client:    client,
+					Log:       fake.NullLogger(),
+					namespace: healthCheckTestNamespace,
+					name:      healthCheckTestSpark,
+					runtime:   runtimeObj,
+				}
+			})
+
+			JustBeforeEach(func() {
+				runtimeInfo, err := base.BuildRuntimeInfo(engine.name, engine.namespace, common.ThinRuntime)
+				Expect(err).NotTo(HaveOccurred())
+				engine.Helper = ctrl.BuildHelper(runtimeInfo, client, engine.Log)
+			})
+
+			It("returns the fuse check error", func() {
+				err := engine.CheckRuntimeHealthy()
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
 	})
 
 	Describe("checkFuseHealthy", func() {
@@ -417,6 +527,83 @@ var _ = Describe("ThinEngine Health Check", Label("pkg.ddc.thin.health_check_tes
 				_, cond := utils.GetRuntimeCondition(thinRuntime.Status.Conditions, datav1alpha1.RuntimeFusesReady)
 				Expect(cond).NotTo(BeNil())
 			})
+		})
+	})
+
+	Describe("CheckAndUpdateRuntimeStatus", func() {
+		It("initializes fuse-only runtime status and strips mount options", func() {
+			dataset := &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      healthCheckTestSpark,
+					Namespace: healthCheckTestNamespace,
+				},
+				Status: datav1alpha1.DatasetStatus{
+					Mounts: []datav1alpha1.Mount{{
+						MountPoint: "s3://bucket/data",
+						Options:    map[string]string{"endpoint": "test"},
+						EncryptOptions: []datav1alpha1.EncryptOption{{
+							Name: "secret",
+						}},
+					}},
+				},
+			}
+
+			runtimeObj := &datav1alpha1.ThinRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:              healthCheckTestSpark,
+					Namespace:         healthCheckTestNamespace,
+					CreationTimestamp: metav1.Now(),
+				},
+				Spec: datav1alpha1.ThinRuntimeSpec{
+					Fuse: datav1alpha1.ThinFuseSpec{},
+				},
+				Status: datav1alpha1.RuntimeStatus{
+					FusePhase: datav1alpha1.RuntimePhaseNone,
+				},
+			}
+
+			client := fake.NewFakeClientWithScheme(testScheme, dataset, runtimeObj)
+			engine := ThinEngine{
+				Client:    client,
+				Log:       fake.NullLogger(),
+				name:      healthCheckTestSpark,
+				namespace: healthCheckTestNamespace,
+				runtime:   runtimeObj,
+			}
+
+			ready, err := engine.CheckAndUpdateRuntimeStatus()
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ready).To(BeTrue())
+
+			updatedRuntime, err := engine.getRuntime()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(updatedRuntime.Status.FusePhase).To(Equal(datav1alpha1.RuntimePhaseReady))
+			Expect(updatedRuntime.Status.ValueFileConfigmap).To(Equal(engine.getHelmValuesConfigMapName()))
+			Expect(updatedRuntime.Status.SetupDuration).NotTo(BeEmpty())
+			Expect(updatedRuntime.Status.CacheStates).To(HaveKeyWithValue(common.Cached, "N/A"))
+			Expect(updatedRuntime.Status.Mounts).To(HaveLen(1))
+			Expect(updatedRuntime.Status.Mounts[0].Options).To(BeNil())
+			Expect(updatedRuntime.Status.Mounts[0].EncryptOptions).To(BeNil())
+
+			_, cond := utils.GetRuntimeCondition(updatedRuntime.Status.Conditions, datav1alpha1.RuntimeFusesInitialized)
+			Expect(cond).NotTo(BeNil())
+		})
+	})
+
+	Describe("ThinEngine.getDataSetFileNum", func() {
+		It("returns an empty count when no running fuse pod can be found", func() {
+			engine := &ThinEngine{
+				Client:    fake.NewFakeClientWithScheme(testScheme),
+				Log:       fake.NullLogger(),
+				name:      healthCheckTestName,
+				namespace: healthCheckTestNamespace,
+			}
+
+			count, err := engine.getDataSetFileNum()
+
+			Expect(err).To(HaveOccurred())
+			Expect(count).To(BeEmpty())
 		})
 	})
 })

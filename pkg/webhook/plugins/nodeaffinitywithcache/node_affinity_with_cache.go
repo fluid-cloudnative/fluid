@@ -142,7 +142,7 @@ func (p *NodeAffinityWithCache) getTieredLocalityPreferredSchedulingTerms(prefer
 		}
 
 		// get runtime worker node affinity
-		status, err := base.GetRuntimeStatus(p.client, runtimeInfo.GetRuntimeType(), runtimeInfo.GetName(), runtimeInfo.GetNamespace())
+		statusAccessor, err := base.GetRuntimeStatusAccessor(p.client, runtimeInfo.GetRuntimeType(), runtimeInfo.GetName(), runtimeInfo.GetNamespace())
 		if err != nil {
 			return preferredSchedulingTerms, err
 		}
@@ -156,7 +156,10 @@ func (p *NodeAffinityWithCache) getTieredLocalityPreferredSchedulingTerms(prefer
 		}
 
 		// customized locality
-		statusAffinity := status.CacheAffinity
+		statusAffinity, err := statusAccessor.GetCacheAffinity()
+		if err != nil {
+			return preferredSchedulingTerms, err
+		}
 		if statusAffinity != nil && statusAffinity.RequiredDuringSchedulingIgnoredDuringExecution != nil {
 			terms := getPreferredSchedulingTermsFromRequired(statusAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, preferredLocality)
 			preferredSchedulingTerms = append(preferredSchedulingTerms, terms...)
@@ -175,7 +178,7 @@ func (p *NodeAffinityWithCache) getTieredLocalityNodeSelectorTerms(runtimeInfos 
 		}
 
 		// get runtime worker node affinity
-		status, err := base.GetRuntimeStatus(p.client, runtimeInfo.GetRuntimeType(), runtimeInfo.GetName(), runtimeInfo.GetNamespace())
+		statusAccessor, err := base.GetRuntimeStatusAccessor(p.client, runtimeInfo.GetRuntimeType(), runtimeInfo.GetName(), runtimeInfo.GetNamespace())
 		if err != nil {
 			return requiredSchedulingTerms, err
 		}
@@ -188,7 +191,10 @@ func (p *NodeAffinityWithCache) getTieredLocalityNodeSelectorTerms(runtimeInfos 
 		}
 
 		// customized locality
-		cacheAffinity := status.CacheAffinity
+		cacheAffinity, err := statusAccessor.GetCacheAffinity()
+		if err != nil {
+			return requiredSchedulingTerms, err
+		}
 		// only RequiredDuringSchedulingIgnoredDuringExecution, not considering PreferredDuringSchedulingIgnoredDuringExecution
 		if cacheAffinity != nil && cacheAffinity.RequiredDuringSchedulingIgnoredDuringExecution != nil {
 			terms := getNodeSelectorTermsFromRequired(cacheAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, requireLocalityNames)

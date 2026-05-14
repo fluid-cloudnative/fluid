@@ -25,6 +25,9 @@ import (
 	"os"
 )
 
+// IsMountWithConfigMap checks if the mount configuration is stored in a ConfigMap.
+// It looks up the environment variable MountConfigStorage and compares it to ConfigmapStorageName.
+// If the environment variable is set and matches, it returns true; otherwise, it returns the default value true.
 func IsMountWithConfigMap() bool {
 	if envVal, exists := os.LookupEnv(MountConfigStorage); exists {
 		return envVal == ConfigmapStorageName

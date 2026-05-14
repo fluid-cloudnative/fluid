@@ -18,12 +18,39 @@ package engine
 
 import (
 	"context"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/testutil"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+// CacheRuntimeInfo is a wrapper for RuntimeInfoInterface with override methods.
+type CacheRuntimeInfo struct {
+	base.RuntimeInfoInterface
+}
+
+func (info *CacheRuntimeInfo) GetWorkerPods(client client.Client) ([]corev1.Pod, error) {
+	workerName := GetComponentName(info.GetName(), common.ComponentTypeWorker)
+	workers, err := kubeclient.GetStatefulSet(client, workerName, info.GetNamespace())
+	if err != nil {
+		return nil, err
+	}
+	workerSelector, err := metav1.LabelSelectorAsSelector(workers.Spec.Selector)
+	if err != nil {
+		return nil, err
+	}
+
+	workerPods, err := kubeclient.GetPodsForStatefulSet(client, workers, workerSelector)
+
+	return workerPods, err
+}
 
 // getRuntime get the current runtime
 func (e *CacheEngine) getRuntime() (*datav1alpha1.CacheRuntime, error) {
@@ -67,11 +94,12 @@ func (e *CacheEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 			base.WithMetadataList(base.GetMetadataListFromAnnotation(runtime)),
 			base.WithAnnotations(runtime.Annotations),
 		}
-		e.runtimeInfo, err = base.BuildRuntimeInfo(e.name, e.namespace, e.runtimeType, opts...)
+		runtimeInfo, err := base.BuildRuntimeInfo(e.name, e.namespace, e.runtimeType, opts...)
 		if err != nil {
 			return e.runtimeInfo, err
 		}
 
+		e.runtimeInfo = &CacheRuntimeInfo{runtimeInfo}
 		// Setup Fuse Deploy Mode
 		e.runtimeInfo.SetFuseNodeSelector(runtime.Spec.Client.NodeSelector)
 	}

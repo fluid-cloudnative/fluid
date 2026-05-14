@@ -17,9 +17,22 @@
 package engine
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"k8s.io/apimachinery/pkg/util/validation"
+)
+
+// Precomputed max lengths for the 63-char DNS limit
+const (
+	secretVolumeNamePrefix   = "cache-mnt-secret-"
+	secretMaxTotalLength     = validation.DNS1035LabelMaxLength
+	prefixSecretVolumeLength = len(secretVolumeNamePrefix)
+	hashSuffixLength         = 8
+	truncatedSecretMaxLength = secretMaxTotalLength - prefixSecretVolumeLength - hashSuffixLength
 )
 
 // GetComponentName gets the component name using runtime name and component type.
@@ -72,4 +85,39 @@ func (e *CacheEngine) getRuntimeConfigFileName() string {
 
 func (e *CacheEngine) getRuntimeClassExtraConfigMapVolumeName(name string) string {
 	return fmt.Sprintf("fluid-extra-%s-%s", e.name, name)
+}
+
+// getSecretVolumeName generates the volume name for a secret mount
+func getSecretVolumeName(name string) string {
+	fullName := fmt.Sprintf("%s%s", secretVolumeNamePrefix, name)
+	// check volume name length
+	if len(fullName) <= validation.DNS1035LabelMaxLength {
+		return fullName
+	}
+
+	// Case 2: Long name - truncate + hash (fallback)
+	// Step 1: Truncate secret to 36 chars
+	truncatedName := name
+	if len(truncatedName) > truncatedSecretMaxLength {
+		truncatedName = truncatedName[:truncatedSecretMaxLength]
+	}
+
+	// Step 2: Generate 8-char SHA-256 hash of the ORIGINAL secret name (prevents collisions)
+	hash := sha256.Sum256([]byte(name))
+	shortHash := hex.EncodeToString(hash[:])[:hashSuffixLength]
+
+	// Step 3: Combine to exact 63 chars
+	volumeName := secretVolumeNamePrefix + truncatedName + shortHash
+
+	return volumeName
+}
+
+// getSecretMountPath generates the base mount path for a secret in the container
+func getSecretMountPath(secretName string) string {
+	return fmt.Sprintf("/etc/fluid/secrets/%s", secretName)
+}
+
+// getSecretFilePath generates the full file path for a secret key in the container
+func getSecretFilePath(secretName, secretKey string) string {
+	return fmt.Sprintf("%s/%s", getSecretMountPath(secretName), secretKey)
 }

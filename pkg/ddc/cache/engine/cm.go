@@ -18,6 +18,7 @@ package engine
 
 import (
 	"encoding/json"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -115,14 +116,15 @@ func (e *CacheEngine) generateRuntimeConfigData(runtime *datav1alpha1.CacheRunti
 			MountPoint: m.MountPoint,
 			ReadOnly:   m.ReadOnly,
 			Shared:     m.Shared,
-			Path:       m.Path,
+			// m.Path may be empty.
+			Path: utils.UFSPathBuilder{}.GenUFSPathInUnifiedNamespace(m),
 		}
-		// TODO: 默认的加密项的处理？(挂载的形式到 Master 等 Pod 中？）安全性该如何考虑
-		options, err := e.generateDatasetMountOptions(&m, dataset.Spec.SharedEncryptOptions, dataset.Spec.SharedOptions)
+		options, encryptOptions, err := e.generateDatasetMountOptions(&m, dataset.Spec.SharedEncryptOptions, dataset.Spec.SharedOptions)
 		if err != nil {
 			return nil, err
 		}
 		mountCg.Options = options
+		mountCg.EncryptOptions = encryptOptions
 
 		mounts = append(mounts, mountCg)
 	}
