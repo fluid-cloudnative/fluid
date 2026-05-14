@@ -1,15 +1,15 @@
 # Alluxio S3 高并发读调优
 
-本文记录一个面向 AlluxioRuntime + S3 兼容后端高并发读场景的调优 profile。
+本文提供一组面向 AlluxioRuntime + S3 兼容后端高并发读场景的调优配置。
 
-这个配置来自 [issue #5802](https://github.com/fluid-cloudnative/fluid/issues/5802) 的排查：fio 通过 S3 后端的 AlluxioRuntime 读取数据时，在高并发下可能挂住。这个 profile 不修改 Alluxio 内部实现，而是提供一组已经验证过的 AlluxioRuntime 配置，用户可以通过 `spec.properties` 和 FUSE args 显式配置。
+这组配置来自 [issue #5802](https://github.com/fluid-cloudnative/fluid/issues/5802) 的排查：fio 通过 S3 后端的 AlluxioRuntime 读取数据时，在高并发下可能挂住。它不修改 Alluxio 内部实现，用户可以通过 `spec.properties` 和 FUSE args 显式配置。
 
 ## 场景
 
 问题在接近以下环境中复现：
 
 - Kubernetes v1.26.7
-- Fluid v1.0.8 和当前 Fluid master
+- Fluid v1.0.8 和排查时的 Fluid master
 - Alluxio 2.9.5
 - SeaweedFS 3.80 作为 S3 兼容后端
 - 1 个 Alluxio master，1 个 worker，以及 FUSE
@@ -24,18 +24,18 @@ fio -iodepth=1 -rw=read -ioengine=libaio -bs=256k \
   --filename="$FILES" -name=read_test --readonly -direct=1 --runtime=60
 ```
 
-应用调优 profile 前观察到的现象：
+未应用这组调优配置时观察到的现象：
 
 - `numjobs=8` 和 `numjobs=16` 能完成。
 - 更高并发，例如 `numjobs=32` 或 `numjobs=64`，可能挂住。
 - 挂住后测试 Pod 可能无法正常删除。
-- force delete 后，节点上的 fio 或 FUSE 状态仍可能残留卡住。
+- 强制删除后，节点上的 fio 或 FUSE 状态仍可能残留卡住。
 
-排查中最强的信号指向 Alluxio 2.9.5 在 S3 高并发读下的 FUSE/client 读路径。在复现环境中，JNI-FUSE 可能出现路径锁超时；切换到 JNR/libfuse2 后，也需要同时调大 S3 thread、worker client pool，并关闭 direct memory IO，才能让重复 `numjobs=64` 稳定通过。
+验证结果表明，这组调优主要缓解 Alluxio 2.9.5 在 S3 高并发读下的 FUSE/client 读路径压力。在复现环境中，JNI-FUSE 可能出现路径锁超时；使用 JNR/libfuse2 时，还需要同时调大 S3 线程和 worker client pool，并关闭 direct memory IO，才能让重复 `numjobs=64` 稳定通过。
 
 ## 推荐 Runtime 配置
 
-仅建议在 S3 或 S3 兼容后端的高并发读场景中使用这组配置。其他 workload 建议保持默认行为，除非你已经在自己的环境中验证了同样的调优。
+仅建议在 S3 或 S3 兼容后端的高并发读场景中使用这组配置。其他工作负载建议保持默认行为，除非你已经在自己的环境中验证了同样的调优。
 
 ```yaml
 apiVersion: data.fluid.io/v1alpha1
@@ -103,7 +103,7 @@ spec:
 - 使用 libfuse2 时，需要从 FUSE args 中移除 `max_idle_threads=*`。`max_idle_threads` 是 libfuse3 参数。
 - 调大 S3 threads 和 worker client pool，以承载高并发读。
 - 增大 read chunk 和 buffer，减少请求碎片化。
-- 设置 `alluxio.user.direct.memory.io.enabled=false`。在复现环境中，这是让重复 `numjobs=64` 稳定通过的关键。
+- 设置 `alluxio.user.direct.memory.io.enabled=false`。在验证环境中，这是让重复 `numjobs=64` 稳定通过的关键。
 
 ## Dataset 示例
 
@@ -165,7 +165,7 @@ spec:
 
 ## 验证结果
 
-在复现问题的云上环境中，通过 Fluid 生成的 AlluxioRuntime 配置应用上述 profile 后：
+在验证环境中，通过 Fluid 生成的 AlluxioRuntime 配置应用上述调优配置后：
 
 ```text
 numjobs=8: passed
@@ -177,7 +177,7 @@ test Pod deletion: passed
 Alluxio master/worker/fuse restart count: 0
 ```
 
-应用 profile 后未再观察到以下致命症状：
+应用调优配置后未再观察到以下错误症状：
 
 - `DeadlineExceededRuntimeException`
 - `Timer expired`
@@ -187,7 +187,7 @@ Alluxio 日志中仍可能出现 `TempBlockMeta not found` 警告，但在验证
 
 ## 风险和适用范围
 
-- 这是一个调优/configuration profile，不是 Alluxio 内部实现修复。
-- 这些参数已在 issue #5802 的 S3 兼容 workload 中验证。不同 S3 后端、对象大小、网络延迟和并发级别可能仍需要调参。
-- 关闭 direct memory IO 可以提升这个 workload 的稳定性，但可能影响性能。
-- 如果应用这组配置后仍出现同类问题，请在 force delete Pod 前收集 FUSE 日志、worker 日志、节点进程状态、mount 信息和 kubelet 日志。
+- 这是一个调优配置，不是 Alluxio 内部实现修复。
+- 这些参数已在 issue #5802 的 S3 兼容工作负载中验证。不同 S3 后端、对象大小、网络延迟和并发级别可能仍需要调参。
+- 关闭 direct memory IO 可以提升这个工作负载的稳定性，但可能影响性能。
+- 如果应用这组配置后仍出现同类问题，请在强制删除 Pod 前收集 FUSE 日志、worker 日志、节点进程状态、mount 信息和 kubelet 日志。

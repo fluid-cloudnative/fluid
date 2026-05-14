@@ -1,15 +1,15 @@
 # Alluxio S3 High-Concurrency Read Tuning
 
-This document records a tuning profile for high-concurrency read workloads that use AlluxioRuntime with an S3-compatible backend.
+This document provides a tuning profile for high-concurrency read workloads that use AlluxioRuntime with an S3-compatible backend.
 
-It is based on the investigation of [issue #5802](https://github.com/fluid-cloudnative/fluid/issues/5802), where fio reads over an S3-backed AlluxioRuntime could hang at high concurrency. The profile does not change Alluxio internals. It provides a validated AlluxioRuntime configuration that users can apply through `spec.properties` and FUSE args.
+This profile was validated while investigating [issue #5802](https://github.com/fluid-cloudnative/fluid/issues/5802), where fio reads over an S3-backed AlluxioRuntime could hang at high concurrency. It does not change Alluxio internals. Users can apply the configuration through `spec.properties` and FUSE args.
 
 ## Scenario
 
 The issue was reproduced with an environment close to:
 
 - Kubernetes v1.26.7
-- Fluid v1.0.8 and current Fluid master
+- Fluid v1.0.8 and Fluid master at the time of investigation
 - Alluxio 2.9.5
 - SeaweedFS 3.80 as an S3-compatible backend
 - One Alluxio master, one worker, and FUSE
@@ -24,14 +24,14 @@ fio -iodepth=1 -rw=read -ioengine=libaio -bs=256k \
   --filename="$FILES" -name=read_test --readonly -direct=1 --runtime=60
 ```
 
-Observed behavior before applying the tuning profile:
+Observed behavior without this tuning profile:
 
 - `numjobs=8` and `numjobs=16` completed.
 - Higher concurrency, such as `numjobs=32` or `numjobs=64`, could hang.
 - The test Pod could fail to delete normally after the hang.
 - Force deletion could leave fio or FUSE state stuck on the node.
 
-The strongest signals pointed to the Alluxio 2.9.5 FUSE/client read path under high-concurrency S3 reads. In this reproduced environment, JNI-FUSE could hit path-lock timeout symptoms, and a JNR/libfuse2 setup also needed S3 thread/client-pool tuning and direct memory IO disabled to make repeated `numjobs=64` stable.
+The validation suggests this tuning mainly mitigates Alluxio 2.9.5 FUSE/client read-path pressure under high-concurrency S3 reads. In the reproduced environment, JNI-FUSE could hit path-lock timeout symptoms. When using JNR/libfuse2, S3 thread/client-pool tuning and disabling direct memory IO were also required to make repeated `numjobs=64` stable.
 
 ## Recommended Runtime Configuration
 
@@ -165,7 +165,7 @@ spec:
 
 ## Validation Result
 
-In the reproduced cloud environment, after applying the above profile through Fluid-generated AlluxioRuntime configuration:
+In the validation environment, after applying the above profile through Fluid-generated AlluxioRuntime configuration:
 
 ```text
 numjobs=8: passed
@@ -177,7 +177,7 @@ test Pod deletion: passed
 Alluxio master/worker/fuse restart count: 0
 ```
 
-The following fatal symptoms were not observed after applying the profile:
+The following error symptoms were not observed after applying the profile:
 
 - `DeadlineExceededRuntimeException`
 - `Timer expired`
