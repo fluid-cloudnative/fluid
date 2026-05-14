@@ -91,7 +91,7 @@ spec:
   tieredstore:
     levels:
       - mediumtype: SSD
-        path: /home/work/fluid_test
+        path: /path/to/ssd/mount
         quota: 100G
         high: "0.95"
         low: "0.6"
@@ -136,7 +136,7 @@ spec:
 
 ## Test Pod Example
 
-Mount the dataset and run fio from `/data`.
+Mount the dataset and run fio from `/data`. Use an image that includes the `fio` binary, or install `fio` in the test container before running the benchmark.
 
 ```yaml
 apiVersion: v1
@@ -147,7 +147,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: client
-      image: alluxio/alluxio:2.9.5
+      image: <image-with-fio>
       securityContext:
         runAsUser: 0
       command: ["/bin/bash", "-lc", "sleep infinity"]

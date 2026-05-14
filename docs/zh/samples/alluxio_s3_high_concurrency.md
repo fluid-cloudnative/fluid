@@ -91,7 +91,7 @@ spec:
   tieredstore:
     levels:
       - mediumtype: SSD
-        path: /home/work/fluid_test
+        path: /path/to/ssd/mount
         quota: 100G
         high: "0.95"
         low: "0.6"
@@ -136,7 +136,7 @@ spec:
 
 ## 测试 Pod 示例
 
-挂载 Dataset，并在 `/data` 下运行 fio。
+挂载 Dataset，并在 `/data` 下运行 fio。请使用包含 `fio` 命令的镜像，或在测试容器中安装 `fio` 后再运行压测。
 
 ```yaml
 apiVersion: v1
@@ -147,7 +147,7 @@ spec:
   restartPolicy: Never
   containers:
     - name: client
-      image: alluxio/alluxio:2.9.5
+      image: <image-with-fio>
       securityContext:
         runAsUser: 0
       command: ["/bin/bash", "-lc", "sleep infinity"]
