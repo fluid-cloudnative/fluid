@@ -468,6 +468,14 @@ func (a AlluxioFileUtils) LoadMetaData(alluxioPath string, sync bool) (err error
 	return
 }
 
+// Mkdir creates a directory in Alluxio at the specified path.
+// It executes the `alluxio fs mkdir <alluxioPath>` command inside the Alluxio pod's container.
+//
+// Parameters:
+// - alluxioPath (string): The Alluxio path to create.
+//
+// Returns:
+// - err (error): Non-nil if the mkdir command fails or if executing the command returns an error.
 func (a AlluxioFileUtils) Mkdir(alluxioPath string) (err error) {
 	var (
 		command = []string{"alluxio", "fs", "mkdir", alluxioPath}
