@@ -23,7 +23,9 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -47,12 +49,21 @@ func (s *StatefulSetManager) Reconciler(ctx context.Context, component *common.C
 	return reconcileService(ctx, s.client, component)
 }
 
+func (s *StatefulSetManager) GetNodeAffinity(component *common.CacheRuntimeComponentValue) (*corev1.NodeAffinity, error) {
+	sts, err := kubeclient.GetStatefulSet(s.client, component.Name, component.Namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	affinity := kubeclient.MergeNodeSelectorAndNodeAffinity(sts.Spec.Template.Spec.NodeSelector, sts.Spec.Template.Spec.Affinity)
+	return affinity, nil
+}
+
 func (s *StatefulSetManager) reconcileStatefulSet(ctx context.Context, component *common.CacheRuntimeComponentValue) error {
 	logger := log.FromContext(ctx)
 	logger.Info("start to reconciling sts workload")
 
-	sts := &appsv1.StatefulSet{}
-	err := s.client.Get(ctx, types.NamespacedName{Name: component.Name, Namespace: component.Namespace}, sts)
+	_, err := kubeclient.GetStatefulSet(s.client, component.Name, component.Namespace)
 	if err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
@@ -61,7 +72,7 @@ func (s *StatefulSetManager) reconcileStatefulSet(ctx context.Context, component
 		return nil
 	}
 	// create the stateful set
-	sts = s.constructStatefulSet(component)
+	sts := s.constructStatefulSet(component)
 	err = s.client.Create(ctx, sts)
 	if err != nil {
 		return err
@@ -114,8 +125,7 @@ func (s *StatefulSetManager) ConstructComponentStatus(ctx context.Context, compo
 	logger := log.FromContext(ctx)
 	logger.Info("start to ConstructComponentStatus")
 
-	sts := &appsv1.StatefulSet{}
-	err := s.client.Get(ctx, types.NamespacedName{Name: component.Name, Namespace: component.Namespace}, sts)
+	sts, err := kubeclient.GetStatefulSet(s.client, component.Name, component.Namespace)
 	if err != nil {
 		logger.Error(err, fmt.Sprintf("failed to get component: %s/%s", component.Namespace, component.Name))
 		return datav1alpha1.RuntimeComponentStatus{}, err

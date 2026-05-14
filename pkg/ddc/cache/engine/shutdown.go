@@ -27,6 +27,7 @@ func (e *CacheEngine) Shutdown() (err error) {
 		return err
 	}
 	helper := ctrl.BuildHelper(info, e.Client, e.Log)
+	// remove fuse label in worker nodes
 	count, err := helper.CleanUpFuse()
 	if err != nil {
 		e.Log.Error(err, "Err in cleaning fuse")
@@ -34,5 +35,10 @@ func (e *CacheEngine) Shutdown() (err error) {
 	}
 	e.Log.Info("clean up fuse count", "n", count)
 
+	// remove dataset related labels in worker nodes
+	err = helper.TearDownWorkers(info)
+	if err != nil {
+		return err
+	}
 	return nil
 }

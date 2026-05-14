@@ -28,8 +28,9 @@ var _ = Describe("RuntimeInfo.GetWorkerStatefulsetName", func() {
 	DescribeTable("returns correct statefulset name",
 		func(runtimeName, runtimeType, suffix string) {
 			info, err := BuildRuntimeInfo(runtimeName, testNamespace, runtimeType)
+			realInfo := info.(*RuntimeInfo)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(info.GetWorkerStatefulsetName()).To(Equal(runtimeName + suffix))
+			Expect(realInfo.GetWorkerStatefulsetName()).To(Equal(runtimeName + suffix))
 		},
 		Entry("JindoRuntime uses jindofs suffix", "mydata", common.JindoRuntime, "-jindofs-worker"),
 		Entry("JindoCacheEngineImpl uses jindofs suffix", "cache", common.JindoCacheEngineImpl, "-jindofs-worker"),

@@ -71,6 +71,12 @@ func (e *CacheEngine) setWorkerComponentStatus(componentValue *common.CacheRunti
 	}
 	status.Worker = workerStatus
 
+	// Worker Affinity
+	affinity, err := manager.GetNodeAffinity(componentValue)
+	if err != nil {
+		return false, err
+	}
+	status.CacheAffinity = affinity
 	return ready, err
 }
 func (e *CacheEngine) setClientComponentStatus(componentValue *common.CacheRuntimeComponentValue, status *fluidapi.CacheRuntimeStatus) (err error) {

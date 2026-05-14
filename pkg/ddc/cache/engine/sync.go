@@ -18,18 +18,25 @@ package engine
 
 import (
 	"context"
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"reflect"
 	"time"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/lifecycle"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
 	// sync the runtime value configmap
 	runtime, err := e.getRuntime()
+	if err != nil {
+		return err
+	}
+	dataset := ctx.Dataset
+	runtimeClass, err := e.getRuntimeClass(runtime.Spec.RuntimeClassName)
 	if err != nil {
 		return err
 	}
@@ -44,12 +51,29 @@ func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
 	// handle ufs change
 
 	// sync runtime status
+	runtimeValue, err := e.transform(dataset, runtime, runtimeClass)
+	if err != nil {
+		return err
+	}
+	// TODO: use different struct for input parameter to avoid fully transform
+	_, err = e.CheckAndUpdateRuntimeStatus(runtimeValue)
+	if err != nil {
+		return err
+	}
 
 	// handle runtime spec change
 
 	// sync metadata
 
-	// SyncScheduleInfoToCacheNodes
+	// add dataset related labels for worker nodes
+	info, err := e.getRuntimeInfo()
+	if err != nil {
+		return err
+	}
+	err = lifecycle.SyncScheduleInfoToCacheNodes(info, e.Client)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
