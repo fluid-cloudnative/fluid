@@ -21,7 +21,16 @@ print_usage() {
 run() {
   echo
   echo "-----------------run $*------------------"
-  timeout 10s "$@"
+  if command -v timeout >/dev/null 2>&1; then
+    timeout 10s "$@"
+  elif command -v gtimeout >/dev/null 2>&1; then
+    gtimeout 10s "$@"
+  elif command -v perl >/dev/null 2>&1; then
+    # Use Perl to enforce timeout on systems without GNU coreutils (like standard macOS)
+    perl -e 'alarm shift; exec @ARGV' 10 "$@"
+  else
+    "$@"
+  fi
   if [ $? != 0 ]; then
     echo "failed to collect info: $*"
   fi
@@ -52,6 +61,41 @@ fluid_pod_logs() {
 runtime_pod_logs() {
   core_component "${runtime_namespace}" "juicefs-worker" "role=juicefs-worker" "release=${runtime_name}"
   core_component "${runtime_namespace}" "juicefs-fuse" "role=juicefs-fuse" "release=${runtime_name}"
+}
+
+serverless_pod_logs() {
+  # Check if kubectl is available
+  if ! command -v kubectl >/dev/null 2>&1; then
+    echo "kubectl not found, skipping serverless pod logs collection"
+    return
+  fi
+
+  local namespace="${runtime_namespace}"
+  # More specific selector: injected and matching the specific dataset/runtime
+  local label_selector="serverless.fluid.io/inject=true,fluid.io/dataset=${runtime_namespace}.${runtime_name}"
+
+  # Get all pods with the serverless inject label
+  local pods
+  pods=$(kubectl get po -n "${namespace}" -l "${label_selector}" -o jsonpath='{.items[*].metadata.name}' 2>/dev/null)
+  if [[ $? -ne 0 ]]; then
+    echo "failed to get serverless pods in namespace ${namespace}"
+    return
+  fi
+
+  if [[ -n "$pods" ]]; then
+    mkdir -p "$diagnose_dir/pods-${namespace}-serverless"
+    for po in ${pods}; do
+      # Find all containers containing fluid-fuse (covers init-fluid-fuse and fluid-fuse)
+      local containers
+      containers=$(kubectl get po "${po}" -n "${namespace}" -o jsonpath='{.spec.initContainers[*].name} {.spec.containers[*].name}' 2>/dev/null | tr ' ' '\n' | grep 'fluid-fuse')
+      if [[ -n "$containers" ]]; then
+        for container in ${containers}; do
+          kubectl logs "${po}" -c "${container}" -n "${namespace}" &>"$diagnose_dir/pods-${namespace}-serverless/${po}-${container}.log" 2>&1
+        done
+      fi
+    done
+  fi
+  return
 }
 
 core_component() {
@@ -98,6 +142,7 @@ pd_collect() {
   pod_status "${fluid_namespace}"
   pod_status "${runtime_namespace}"
   runtime_pod_logs
+  serverless_pod_logs
   fluid_pod_logs
   kubectl_resource
   archive
