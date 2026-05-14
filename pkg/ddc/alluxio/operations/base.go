@@ -219,6 +219,13 @@ func (a AlluxioFileUtils) ExecMountScripts() error {
 	return nil
 }
 
+// Mount mounts a UFS path to an Alluxio path in the Alluxio filesystem by executing
+// the `alluxio fs mount` command in the master pod container.
+// alluxioPath is the destination path in Alluxio namespace.
+// ufsPath is the source UFS path to mount.
+// options are optional mount properties passed as --option key=value pairs.
+// readOnly forces the mount to be read-only when true.
+// shared enables cross-user sharing of the mount when true.
 func (a AlluxioFileUtils) Mount(alluxioPath string,
 	ufsPath string,
 	options map[string]string,
