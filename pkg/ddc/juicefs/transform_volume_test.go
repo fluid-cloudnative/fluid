@@ -310,7 +310,7 @@ var _ = Describe("JuiceFSEngine Transform Volume Tests", Label("pkg.ddc.juicefs.
 		})
 
 		Context("when a volume and volume claim template share the same name", func() {
-			It("should prefer the claim template and skip the normal volume", func() {
+			It("should return an error to avoid ambiguous worker volume mounts", func() {
 				runtime := &datav1alpha1.JuiceFSRuntime{
 					Spec: datav1alpha1.JuiceFSRuntimeSpec{
 						Volumes: []corev1.Volume{
@@ -347,10 +347,13 @@ var _ = Describe("JuiceFSEngine Transform Volume Tests", Label("pkg.ddc.juicefs.
 				got := &JuiceFS{}
 				err := engine.transformWorkerVolumes(runtime, got)
 
-				Expect(err).NotTo(HaveOccurred())
-				Expect(got.Worker.VolumeMounts).To(HaveLen(1))
-				Expect(got.Worker.VolumeClaimTemplates).To(HaveLen(1))
-				Expect(got.Worker.VolumeClaimTemplates[0].Name).To(Equal(testJuiceVolumeName))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("ambiguous"))
+				Expect(err.Error()).To(ContainSubstring("volumes"))
+				Expect(err.Error()).To(ContainSubstring("volumeClaimTemplates"))
+				Expect(err.Error()).To(ContainSubstring(testJuiceVolumeName))
+				Expect(got.Worker.VolumeMounts).To(BeEmpty())
+				Expect(got.Worker.VolumeClaimTemplates).To(BeEmpty())
 				Expect(got.Worker.Volumes).To(BeEmpty())
 			})
 		})

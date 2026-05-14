@@ -31,16 +31,19 @@ import (
 
 // transform worker volumes
 func (j *JuiceFSEngine) transformWorkerVolumes(runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) (err error) {
-	volumeClaimTemplates := map[string]corev1.PersistentVolumeClaim{}
-	for _, pvc := range runtime.Spec.VolumeClaimTemplates {
-		volumeClaimTemplates[pvc.Name] = pvc
-	}
-	usedVolumeClaimTemplates := map[string]bool{}
-
 	volumes := map[string]corev1.Volume{}
 	for _, v := range runtime.Spec.Volumes {
 		volumes[v.Name] = v
 	}
+
+	volumeClaimTemplates := map[string]corev1.PersistentVolumeClaim{}
+	for _, pvc := range runtime.Spec.VolumeClaimTemplates {
+		if _, ok := volumes[pvc.Name]; ok {
+			return fmt.Errorf("worker volume name %s is ambiguous because it is defined in both volumes and volumeClaimTemplates", pvc.Name)
+		}
+		volumeClaimTemplates[pvc.Name] = pvc
+	}
+	usedVolumeClaimTemplates := map[string]bool{}
 
 	addedVolumes := map[string]bool{}
 	for _, volumeMount := range runtime.Spec.Worker.VolumeMounts {
